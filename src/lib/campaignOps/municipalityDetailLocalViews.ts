@@ -14,6 +14,7 @@ export type OpsLocalStaffPledgeRow = {
   estimatedVotes: VoteEstimateScenarioViewModel
   estimateNote: string | null
   estimatedAt: string | null
+  updatedAt: string
 }
 
 export const findOpsMunicipalityBySlug = (
@@ -41,6 +42,7 @@ export const toLocalStaffPledgeRows = (
         estimatedVotes: toVoteEstimateScenarioViewModel(pledge.estimatedVotes),
         estimateNote: pledge.estimateNote ?? null,
         estimatedAt: pledge.estimatedAt ?? null,
+        updatedAt: pledge.updatedAt,
       }
     })
     .sort((left, right) => left.contactName.localeCompare(right.contactName, 'pt-BR'))

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH, engagementLevels } from '@/lib/engagementLevel'
+import { OPS_UPDATED_AT_CONFLICT_MESSAGE, optionalBaseUpdatedAtSchema } from '@/lib/schemas/opsCas'
 import { positiveRelationshipId, trimmedNullableText } from '@/lib/schemas/primitives'
 import { voteEstimateScenarioFieldsSchema } from '@/lib/schemas/votePledge'
 
@@ -47,6 +48,8 @@ export const municipalityPoliticalTrendSchema = z.object({
   municipality: positiveRelationshipId,
   status: z.enum(politicalTrendStatuses).nullable(),
   note: trimmedNullableText(2000),
+  /** OH10 CAS opt-in on municipality `updatedAt`. Absent → last-write-wins. */
+  baseUpdatedAt: optionalBaseUpdatedAtSchema,
 })
 
 export const parsePoliticalTrendStatusFormValue = (
@@ -68,6 +71,8 @@ export const municipalityAdvisorsAssignmentSchema = z.object({
     .array(positiveRelationshipId)
     .max(MAX_ADVISORS_PER_MUNICIPALITY)
     .transform((ids) => [...new Set(ids)]),
+  /** OH10 CAS opt-in on municipality `updatedAt`. Absent → last-write-wins. */
+  baseUpdatedAt: optionalBaseUpdatedAtSchema,
 })
 
 /** Single-toggle delta from the list popover — one advisor at a time, never the whole array. */
@@ -75,6 +80,8 @@ export const municipalityAdvisorMembershipSchema = z.object({
   municipality: positiveRelationshipId,
   advisor: positiveRelationshipId,
   assigned: z.boolean(),
+  /** OH10 CAS opt-in on municipality `updatedAt`. Absent → last-write-wins. */
+  baseUpdatedAt: optionalBaseUpdatedAtSchema,
 })
 
 export const MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE =
@@ -83,10 +90,16 @@ export const MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE =
 export const MUNICIPALITY_ADVISOR_MEMBERSHIP_SAFE_MESSAGES = [
   MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE,
   MUNICIPALITY_ADVISORS_CAP_MESSAGE,
+  OPS_UPDATED_AT_CONFLICT_MESSAGE,
 ] as const
 
 export const MUNICIPALITY_ENGAGEMENT_LEVEL_UNRESTRICTED_MESSAGE =
   'Somente a coordenação geral ou o candidato move o nível de envolvimento.'
+
+export const MUNICIPALITY_ENGAGEMENT_LEVEL_SAFE_MESSAGES = [
+  MUNICIPALITY_ENGAGEMENT_LEVEL_UNRESTRICTED_MESSAGE,
+  OPS_UPDATED_AT_CONFLICT_MESSAGE,
+] as const
 
 /**
  * E14 — a movement is never just the new level: the motivo and the signals
@@ -102,6 +115,8 @@ export const municipalityEngagementLevelSchema = z.object({
   triangulatedShock: z.boolean().default(false),
   /** Accepts the listed violations knowingly; recorded in the decision snapshot. */
   override: z.boolean().default(false),
+  /** OH10 CAS opt-in on municipality `updatedAt`. Absent → last-write-wins. */
+  baseUpdatedAt: optionalBaseUpdatedAtSchema,
 })
 
 export const municipalityExpectedVotesSchema = z.object({

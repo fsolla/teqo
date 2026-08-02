@@ -25,6 +25,7 @@ import {
   type MunicipalityPoliticalTrendInput,
   type MunicipalityStrategyUpdateInput,
 } from '@/lib/schemas/municipality'
+import { assertOpsUpdatedAtCas } from '@/lib/schemas/opsCas'
 import { normalizeVoteEstimateOnSave, toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { CampaignUser } from '@/payload-types'
 import {
@@ -83,9 +84,24 @@ export const setMunicipalityPoliticalTrendRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: MunicipalityPoliticalTrendInput,
+  options?: { cas?: boolean },
 ) => {
-  const { municipality, status, note } = municipalityPoliticalTrendSchema.parse(input)
+  const { municipality, status, note, baseUpdatedAt } =
+    municipalityPoliticalTrendSchema.parse(input)
+  const enforceCas = options?.cas === true
   const currentActor = await getFreshStaffActor(payload, actor)
+
+  if (enforceCas && baseUpdatedAt !== undefined) {
+    const current = await payload.findByID({
+      collection: 'municipality',
+      id: municipality,
+      depth: 0,
+      select: { updatedAt: true },
+      user: currentActor,
+      overrideAccess: false,
+    })
+    assertOpsUpdatedAtCas(true, baseUpdatedAt, current.updatedAt)
+  }
 
   return payload.update({
     collection: 'municipality',
@@ -103,6 +119,17 @@ export const setMunicipalityPoliticalTrend = async (input: MunicipalityPolitical
   const { payload, actor } = await getCampaignActionContext()
   return setMunicipalityPoliticalTrendRecord(payload, actor, input)
 }
+
+export const setMunicipalityPoliticalTrendCas = async (input: MunicipalityPoliticalTrendInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return setMunicipalityPoliticalTrendRecord(payload, actor, input, { cas: true })
+}
+
+export const setMunicipalityPoliticalTrendCasRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: MunicipalityPoliticalTrendInput,
+) => setMunicipalityPoliticalTrendRecord(payload, actor, input, { cas: true })
 
 /** Staff-only total expected votes for the municipality (distinct from pledge aggregates). */
 export const setMunicipalityExpectedVotesRecord = async (
@@ -148,9 +175,11 @@ export const setMunicipalityEngagementLevelRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: MunicipalityEngagementLevelInput,
+  options?: { cas?: boolean },
 ) => {
-  const { municipality, level, note, reversalSignals, triangulatedShock, override } =
+  const { municipality, level, note, reversalSignals, triangulatedShock, override, baseUpdatedAt } =
     municipalityEngagementLevelSchema.parse(input)
+  const enforceCas = options?.cas === true
 
   return withPayloadTransaction(
     payload,
@@ -170,11 +199,13 @@ export const setMunicipalityEngagementLevelRecord = async (
         collection: 'municipality',
         id: municipality,
         depth: 0,
-        select: { engagementLevel: true, levelChangedAt: true },
+        select: { engagementLevel: true, levelChangedAt: true, updatedAt: true },
         user: currentActor,
         overrideAccess: false,
         req,
       })
+
+      assertOpsUpdatedAtCas(enforceCas, baseUpdatedAt, current.updatedAt)
 
       const from = current.engagementLevel ?? null
       const violations = getEngagementLevelViolations({
@@ -233,13 +264,29 @@ export const setMunicipalityEngagementLevel = async (input: MunicipalityEngageme
   return setMunicipalityEngagementLevelRecord(payload, actor, input)
 }
 
+export const setMunicipalityEngagementLevelCas = async (
+  input: MunicipalityEngagementLevelInput,
+) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return setMunicipalityEngagementLevelRecord(payload, actor, input, { cas: true })
+}
+
+export const setMunicipalityEngagementLevelCasRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: MunicipalityEngagementLevelInput,
+) => setMunicipalityEngagementLevelRecord(payload, actor, input, { cas: true })
+
 /** Advisor assignment is unrestricted staff (coordinator + candidate); the hook validates eligibility. */
 export const assignMunicipalityAdvisorsRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: MunicipalityAdvisorsAssignmentInput,
+  options?: { cas?: boolean },
 ) => {
-  const { municipality, advisors } = municipalityAdvisorsAssignmentSchema.parse(input)
+  const { municipality, advisors, baseUpdatedAt } =
+    municipalityAdvisorsAssignmentSchema.parse(input)
+  const enforceCas = options?.cas === true
 
   return withPayloadTransaction(
     payload,
@@ -252,6 +299,20 @@ export const assignMunicipalityAdvisorsRecord = async (
       )
 
       await acquireTextAdvisoryLocks(payload, req, [`municipality-advisors:${municipality}`])
+
+      if (enforceCas && baseUpdatedAt !== undefined) {
+        // Intentional admin bypass: unrestricted role verified above; advisors
+        // field access would otherwise hide `updatedAt` from some actors.
+        const current = await payload.findByID({
+          collection: 'municipality',
+          id: municipality,
+          depth: 0,
+          select: { updatedAt: true },
+          overrideAccess: true,
+          req,
+        })
+        assertOpsUpdatedAtCas(true, baseUpdatedAt, current.updatedAt)
+      }
 
       // Intentional admin bypass: unrestricted role was freshly verified above;
       // the advisors field is admin-only by field access.
@@ -273,6 +334,17 @@ export const assignMunicipalityAdvisors = async (input: MunicipalityAdvisorsAssi
   return assignMunicipalityAdvisorsRecord(payload, actor, input)
 }
 
+export const assignMunicipalityAdvisorsCas = async (input: MunicipalityAdvisorsAssignmentInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return assignMunicipalityAdvisorsRecord(payload, actor, input, { cas: true })
+}
+
+export const assignMunicipalityAdvisorsCasRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: MunicipalityAdvisorsAssignmentInput,
+) => assignMunicipalityAdvisorsRecord(payload, actor, input, { cas: true })
+
 /**
  * Single-advisor delta from the list popover — writes one toggle instead of
  * replacing the whole `advisors` array, so a concurrent edit from another
@@ -288,8 +360,11 @@ export const setMunicipalityAdvisorMembershipRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: MunicipalityAdvisorMembershipInput,
+  options?: { cas?: boolean },
 ) => {
-  const { municipality, advisor, assigned } = municipalityAdvisorMembershipSchema.parse(input)
+  const { municipality, advisor, assigned, baseUpdatedAt } =
+    municipalityAdvisorMembershipSchema.parse(input)
+  const enforceCas = options?.cas === true
 
   return withPayloadTransaction(
     payload,
@@ -307,10 +382,12 @@ export const setMunicipalityAdvisorMembershipRecord = async (
         collection: 'municipality',
         id: municipality,
         depth: 0,
-        select: { advisors: true },
+        select: { advisors: true, updatedAt: true },
         overrideAccess: true,
         req,
       })
+
+      assertOpsUpdatedAtCas(enforceCas, baseUpdatedAt, current.updatedAt)
 
       const currentAdvisorIDs = uniqueRelationshipIds(current.advisors)
       const nextAdvisorIDs = nextAdvisorIdsAfterMembership(currentAdvisorIDs, advisor, assigned)
@@ -338,3 +415,9 @@ export const setMunicipalityAdvisorMembership = async (
   const { payload, actor } = await getCampaignActionContext()
   return setMunicipalityAdvisorMembershipRecord(payload, actor, input)
 }
+
+export const setMunicipalityAdvisorMembershipCasRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: MunicipalityAdvisorMembershipInput,
+) => setMunicipalityAdvisorMembershipRecord(payload, actor, input, { cas: true })

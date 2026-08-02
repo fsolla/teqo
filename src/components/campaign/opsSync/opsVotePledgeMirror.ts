@@ -48,11 +48,14 @@ export const patchOpsVotePledgeEstimateOptimistic = (
   })
 }
 
-/** Authoritative patch after a successful server write (OH7). */
+/** Authoritative patch after a successful server write (OH7/OH10). */
 export const applyOpsVotePledgeEstimateWrite = (doc: VotePledgeEstimateWriteResult): void => {
   const mapped = mapVotePledgeWriteToOps(doc)
   if (votePledgesCollection.has(mapped.id)) {
     votePledgesCollection.update(mapped.id, (draft) => {
+      draft.declaredVotes = mapped.declaredVotes
+      draft.declaredAt = mapped.declaredAt
+      draft.declaredBy = mapped.declaredBy
       draft.estimatedVotes = mapped.estimatedVotes
       draft.estimateNote = mapped.estimateNote
       draft.estimatedAt = mapped.estimatedAt

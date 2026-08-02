@@ -341,11 +341,13 @@ export const LeadershipsTab = async ({
 export const UpdatesTab = async ({
   municipalityID,
   municipalitySlug,
+  municipalityUpdatedAt,
   rawSearchParams,
   payloadUser: { payload, user },
 }: {
   municipalityID: number
   municipalitySlug: string
+  municipalityUpdatedAt?: string
   rawSearchParams: MunicipalityDetailSearchParams
   payloadUser: PayloadUser
 }) => {
@@ -356,6 +358,7 @@ export const UpdatesTab = async ({
     <div className="flex flex-col gap-6">
       <MunicipalityUpdateForm
         municipalityID={municipalityID}
+        municipalityUpdatedAt={municipalityUpdatedAt}
         formAction={createMunicipalityUpdateFormAction}
       />
       <MunicipalityUpdateFeed updates={feed.updates} />

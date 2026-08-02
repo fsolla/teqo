@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-02):** **OH10** (Issue #171) — writes municipality staff CAS (`baseUpdatedAt`) + outbox irmão (`opsMunicipalityOutbox`) para municipalityUpdate, declareVotes, tendência, engagement e advisors; flag OFF mantém caminhos actuais. Plano: [`oh10-municipality-writes-cas.md`](docs/plans/oh10-municipality-writes-cas.md).
+
 **Recently resolved (2026-08-02):** **OH9** (Issue #172) — detalhe de município dual-path: `MunicipalityDetailHeaderView` partilhado; `OfflineBoundary` (SSR=RSC; offline+`OPS_HYBRID`→Local); `MunicipalityDetailLocal` lê mirror (município + pledges×leaderships); regiões online-only com “Disponível quando estiveres online.”; e2e `campaignOpsOffline` (skip sem flag). Plano: [`oh9-municipio-detalhe-dualpath.md`](docs/plans/oh9-municipio-detalhe-dualpath.md).
 
 **Recently resolved (2026-08-01):** **B114** (Issue #195) — wizard Voltar header = Android back: contrato `wizardBack` + `useWizardBackHistory` (pushState/popstate), previousHrefs canônicos, layer form liderança. Plano: [`wizard-back-navigation-system.md`](docs/plans/wizard-back-navigation-system.md).

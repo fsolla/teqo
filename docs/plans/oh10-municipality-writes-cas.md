@@ -1,7 +1,7 @@
 # OH10 — Writes municipality staff CAS: update, declareVotes, tendência, engagement, advisors
 
-Status: rascunho
-Atualizado em: 2026-08-01
+Status: pronto para PR
+Atualizado em: 2026-08-02
 Issue: #171
 Priority: P1
 Model: cursor-grok-4.5-medium
@@ -10,13 +10,25 @@ Appetite: ~2–3 dias eng
 Depends: OH7, OH9
 Responsável: —
 
+## Débitos pós-/simplify (não bloqueiam OH10)
+
+- Toast de conflito CAS em tendência/nível da lista (só advisors + declareVotes têm escolha Manter/Usar).
+- Unificar executores OH6+OH10 (já previsto em OH13).
+
+## Freshness audit (2026-08-02)
+
+- OH7 (#169) e OH9 (#172) `done`+`in-prod`. OH6 CAS em `estimateVotesCas` + `opsEstimateOutbox` intactos; mirror tem `updatedAt` em `OpsMunicipality` / `OpsVotePledge`.
+- Actions citadas batem: `declareVotesRecord`, `createMunicipalityUpdateRecord`, `setMunicipalityPoliticalTrendRecord`, `setMunicipalityEngagementLevelRecord`, `setMunicipalityAdvisorMembershipRecord` / `assignMunicipalityAdvisorsRecord`.
+- Controles B9 intactos (JSON routes + forms). Sem `baseUpdatedAt` ainda — a implementar.
+- Outbox: executor OH6 fica; OH10 adiciona executor irmão (`opsMunicipalityOutbox`) com as mesmas chaves de merge — evita refactor arriscado do singleton de estimativas; OH13 pode unificar.
+
 ## Premissas
 
 1. Padrão provado: OH6/OH7 (CAS + outbox + mirror keys).
 2. Cada write ganha CAS por `baseUpdatedAt` do doc alvo; sem base → comportamento actual.
 3. Engagement level continua a escrever `allocationDecision` na mesma transação (invariante E14) — o outbox só re-executa a action inteira, nunca a parte.
 
-→ Corrija agora ou sigo com estas.
+→ Confirmadas; a implementar.
 
 ## Objetivos
 

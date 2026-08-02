@@ -139,5 +139,6 @@ export const loadMunicipalityPledges = async (
     estimatedVotes: toVoteEstimateScenarioViewModel(pledge.estimatedVotes),
     estimateNote: pledge.estimateNote ?? null,
     estimatedAt: pledge.estimatedAt ?? null,
+    updatedAt: pledge.updatedAt,
   }))
 }

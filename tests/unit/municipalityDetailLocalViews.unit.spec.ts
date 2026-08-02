@@ -89,6 +89,7 @@ describe('municipalityDetailLocalViews (OH9)', () => {
       declaredVotes: 120,
       estimatedVotes: { pessimistic: 80, central: 100, optimistic: 130 },
       estimateNote: 'Campo',
+      updatedAt: '2026-07-21T00:00:00.000Z',
     })
   })
 })

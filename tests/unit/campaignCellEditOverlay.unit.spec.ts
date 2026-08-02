@@ -13,6 +13,14 @@ import { MunicipalityPortfolioCell } from '@/components/campaign/shared/Municipa
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    refresh: vi.fn(),
+    push: vi.fn(),
+    replace: vi.fn(),
+  }),
+}))
+
 /**
  * B42: the quick-edit cells of `/campanha/municipios` share one container
  * (`CampaignCellEditOverlay`) that is a Popover in the desktop table and a

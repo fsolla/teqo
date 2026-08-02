@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { MunicipalityListEngagementLevelResponse } from '@/app/(campaign)/campanha/(app)/municipios/engagement-level/types'
 import { MunicipalityLevelBadge } from '@/components/campaign/municipality/MunicipalityLevelBadge'
+import { municipalitiesCollection } from '@/components/campaign/opsSync/opsMirrorClient'
+import { enqueueEngagementLevel } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
 import {
   CampaignCellEditOverlay,
   type CampaignCellEditOverlayVariant,
@@ -17,6 +19,7 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
+import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import {
   EMPTY_ENGAGEMENT_LEVEL_LABEL,
   ENGAGEMENT_LEVEL_RULES,
@@ -39,6 +42,8 @@ type MunicipalityListLevelControlProps = {
   level: EngagementLevel | null
   levelNote: string | null
   levelChangedAt: string | null
+  /** OH10 — CAS base when OPS_HYBRID outbox path is on. */
+  updatedAt?: string
   variant: CampaignCellEditOverlayVariant
 }
 
@@ -54,6 +59,7 @@ export const MunicipalityListLevelControl = ({
   level,
   levelNote,
   levelChangedAt,
+  updatedAt,
   variant,
 }: MunicipalityListLevelControlProps) => {
   const [open, setOpen] = useState(false)
@@ -164,6 +170,26 @@ export const MunicipalityListLevelControl = ({
     setServerBlock(null)
 
     try {
+      if (resolveOpsHybridEnabled()) {
+        const mirrorUpdatedAt = municipalitiesCollection.get(municipalityID)?.updatedAt
+        await enqueueEngagementLevel({
+          municipalityId: municipalityID,
+          level: draftLevel,
+          note,
+          reversalSignals,
+          triangulatedShock,
+          override,
+          baseUpdatedAt: mirrorUpdatedAt ?? updatedAt,
+        })
+        setSaved({
+          level: draftLevel,
+          note,
+          changedAt: new Date().toISOString(),
+        })
+        handleOpenChange(false)
+        return
+      }
+
       // Deliberately ignores the transport's `ok` the way the siblings do not:
       // `blocked` arrives as a 409 carrying the violations the coordinator may
       // override, so the status line is not the signal here — the discriminant is.

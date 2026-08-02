@@ -8,6 +8,7 @@ import {
   type OpsMirrorPersistenceMode,
   type OpsMirrorStore,
 } from '@/components/campaign/opsSync/opsMirrorPersistence'
+import { collectOpsMunicipalityOutboxKeys } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
 import { votePledgesCollection } from '@/components/campaign/opsSync/opsVotePledgeMirror'
 import {
   createEmptyOpsSnapshot,
@@ -123,7 +124,9 @@ export const resetOpsMirrorClientForTests = async (): Promise<void> => {
 
 const resolveOutboxKeys = (explicit?: ReadonlySet<OpsOutboxKey>): ReadonlySet<OpsOutboxKey> => {
   if (explicit) return explicit
-  return collectOpsEstimateOutboxKeys()
+  const keys = collectOpsEstimateOutboxKeys()
+  for (const key of collectOpsMunicipalityOutboxKeys()) keys.add(key)
+  return keys
 }
 
 const persistMirrorSnapshot = async (

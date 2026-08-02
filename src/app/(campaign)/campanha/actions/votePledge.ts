@@ -3,6 +3,7 @@
 import type { Payload } from 'payload'
 
 import { relationshipId, requireRelationshipId } from '@/lib/relationship'
+import { assertOpsUpdatedAtCas } from '@/lib/schemas/opsCas'
 import {
   declareVotesSchema,
   estimateVotesSchema,
@@ -29,8 +30,10 @@ export const declareVotesRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: DeclareVotesInput,
+  options?: { cas?: boolean },
 ) => {
   const data = declareVotesSchema.parse(input)
+  const enforceCas = options?.cas === true
 
   return withPayloadTransaction(
     payload,
@@ -89,6 +92,15 @@ export const declareVotesRecord = async (
       })
       const current = existing.docs[0]
 
+      if (enforceCas && data.baseUpdatedAt !== undefined) {
+        if (current) {
+          assertOpsUpdatedAtCas(true, data.baseUpdatedAt, current.updatedAt)
+        } else if (data.baseUpdatedAt !== null) {
+          // Client expected an existing pledge; it is gone — refuse.
+          assertOpsUpdatedAtCas(true, data.baseUpdatedAt, '')
+        }
+      }
+
       if (current) {
         return payload.update({
           collection: 'votePledge',
@@ -122,6 +134,18 @@ export const declareVotes = async (input: DeclareVotesInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return declareVotesRecord(payload, actor, input)
 }
+
+/** OH10 — declare with optional CAS on pledge `updatedAt`. */
+export const declareVotesCas = async (input: DeclareVotesInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return declareVotesRecord(payload, actor, input, { cas: true })
+}
+
+export const declareVotesCasRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: DeclareVotesInput,
+) => declareVotesRecord(payload, actor, input, { cas: true })
 
 /** Staff estimate of the real value — never visible to the leadership. */
 export const estimateVotesRecord = async (

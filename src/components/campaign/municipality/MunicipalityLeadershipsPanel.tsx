@@ -81,7 +81,9 @@ export const MunicipalityLeadershipsPanel = ({
                 <DeclareVotesForm
                   municipalityID={municipalityID}
                   leadershipID={leadership.id}
+                  pledgeId={pledge?.id}
                   currentDeclaredVotes={pledge?.declaredVotes ?? null}
+                  currentUpdatedAt={pledge?.updatedAt ?? null}
                   formAction={declareFormAction}
                 />
               </li>
