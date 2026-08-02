@@ -1,8 +1,7 @@
 'use client'
 
 import { usePathname, useSearchParams } from 'next/navigation'
-import { useMemo } from 'react'
-import { useSyncExternalStore } from 'react'
+import { useMemo, useSyncExternalStore } from 'react'
 
 import { isSameListHref } from '@/lib/listQueryMatch'
 import {

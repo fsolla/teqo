@@ -22,6 +22,7 @@ flowchart LR
 ```
 
 **Opções consideradas:**
+
 - A) Apagar `subtitle` no catálogo e manter `pathRules` com `resolveCatalogEntry` — catálogo ainda carrega prosa morta.
 - B) **`pathRules` → `sectionOnly(title)`** para rotas no escopo; catálogo limpo nas entradas afetadas; metadata já usa só `title`.
 - C) `SetCampaignPageChrome` em cada rota create/edit — duplica o catálogo.
