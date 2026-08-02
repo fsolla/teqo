@@ -29,7 +29,7 @@ export type WizardBackTarget =
   | { kind: 'navigate'; href: string }
   | { kind: 'pop-layer'; layer: WizardClientLayer }
 
-export type WizardBackStepId =
+type WizardBackStepId =
   | 'municipality-search'
   | 'expected-votes'
   | 'signal-type'
