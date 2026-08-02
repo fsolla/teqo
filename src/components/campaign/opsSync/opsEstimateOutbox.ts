@@ -179,3 +179,22 @@ export const collectOpsEstimateOutboxKeys = (): Set<OpsOutboxKey> => {
   }
   return keys
 }
+
+/** Logout wipe — outbox storage + in-memory rows (OH11). */
+export const clearOpsEstimateOutboxForLogout = async (): Promise<void> => {
+  if (executorSingleton) {
+    try {
+      await executorSingleton.clearOutbox()
+      executorSingleton.dispose()
+    } catch {
+      // Best effort — private mode / torn-down storage.
+    }
+    executorSingleton = null
+    initPromise = null
+  }
+  for (const row of opsEstimateOutboxCollection.toArray) {
+    if (opsEstimateOutboxCollection.has(row.pledgeId)) {
+      opsEstimateOutboxCollection.delete(row.pledgeId)
+    }
+  }
+}

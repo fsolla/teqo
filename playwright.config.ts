@@ -119,6 +119,7 @@ export default defineConfig({
       PAYLOAD_SECRET: process.env.PAYLOAD_SECRET ?? 'test-only-secret-not-used-in-production',
       NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? baseURL,
       LIST_UNIFIED: process.env.LIST_UNIFIED ?? '',
+      OPS_HYBRID: process.env.OPS_HYBRID ?? '',
     },
   },
 })

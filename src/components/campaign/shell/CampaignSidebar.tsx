@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useState, type FormEvent, type ReactNode } from 'react'
 
 import { logoutCampaign } from '@/app/(campaign)/campanha/actions/auth'
+import { clearCampaignOpsStorage } from '@/components/campaign/opsSync/clearCampaignOpsStorage'
 import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { CampaignUserAvatar } from '@/components/campaign/shared/CampaignUserAvatar'
 import { CampaignLogo } from '@/components/campaign/shell/campaign-logo'
@@ -79,6 +80,7 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
     clearRecentVisits()
     clearLastActedMunicipality()
     clearMunicipalitySavedFilters()
+    await clearCampaignOpsStorage()
     await clearCampaignPwaCaches()
     // logoutCampaign redirects — no need to reset the pending flag on success.
     await logoutCampaign()

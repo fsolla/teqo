@@ -1,7 +1,7 @@
 # OH11 — SW `/_next/static` cache-first + e2e offline + docs
 
-Status: rascunho
-Atualizado em: 2026-08-01
+Status: entregue
+Atualizado em: 2026-08-02
 Issue: #173
 Priority: P1
 Model: composer-2.5
@@ -42,9 +42,9 @@ Dados: N/A.
 
 - **Quota:** ~0,5
 - **Aceite:**
-  - [ ] chunks `/_next/static/` servidos do cache na 2ª visita offline
-  - [ ] RSC/Flight nunca cacheado (pin existente mantido)
-  - [ ] logout limpa persistence + outbox + caches (ordem documentada no código)
+  - [x] chunks `/_next/static/` servidos do cache na 2ª visita offline
+  - [x] RSC/Flight nunca cacheado (pin existente mantido)
+  - [x] logout limpa persistence + outbox + caches (ordem documentada no código)
 - **Verify:** `pnpm gate:fast` + `campaignPwa.unit.spec.ts`
 - **Files:** `campaignPwa.ts`, `campaignPwaClient.ts`, spec unit
 - **Tamanho:** M
@@ -53,8 +53,8 @@ Dados: N/A.
 
 - **Quota:** ~0,5
 - **Aceite:**
-  - [ ] cenário write→reload→online→sync verde
-  - [ ] CHANGELOG + plano-mãe actualizados
+  - [x] cenário write→reload→online→sync verde
+  - [x] CHANGELOG + plano-mãe actualizados
 - **Verify:** `pnpm gate:fast` + e2e offline
 - **Files:** spec e2e, docs
 - **Tamanho:** M

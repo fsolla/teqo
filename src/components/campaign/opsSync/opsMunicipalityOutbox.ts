@@ -654,3 +654,46 @@ export const discardOpsAdvisorsOutboxRow = (municipalityId: number): void => {
     advisorsOutboxCollection.delete(municipalityId)
   }
 }
+
+const wipeMunicipalityOutboxCollections = (): void => {
+  for (const row of declareVotesOutboxCollection.toArray) {
+    if (declareVotesOutboxCollection.has(row.id)) {
+      declareVotesOutboxCollection.delete(row.id)
+    }
+  }
+  for (const row of municipalityUpdateOutboxCollection.toArray) {
+    if (municipalityUpdateOutboxCollection.has(row.id)) {
+      municipalityUpdateOutboxCollection.delete(row.id)
+    }
+  }
+  for (const row of politicalTrendOutboxCollection.toArray) {
+    if (politicalTrendOutboxCollection.has(row.municipalityId)) {
+      politicalTrendOutboxCollection.delete(row.municipalityId)
+    }
+  }
+  for (const row of engagementLevelOutboxCollection.toArray) {
+    if (engagementLevelOutboxCollection.has(row.municipalityId)) {
+      engagementLevelOutboxCollection.delete(row.municipalityId)
+    }
+  }
+  for (const row of advisorsOutboxCollection.toArray) {
+    if (advisorsOutboxCollection.has(row.municipalityId)) {
+      advisorsOutboxCollection.delete(row.municipalityId)
+    }
+  }
+}
+
+/** Logout wipe — outbox storage + in-memory rows (OH11). */
+export const clearOpsMunicipalityOutboxForLogout = async (): Promise<void> => {
+  if (executorSingleton) {
+    try {
+      await executorSingleton.clearOutbox()
+      executorSingleton.dispose()
+    } catch {
+      // Best effort — private mode / torn-down storage.
+    }
+    executorSingleton = null
+    initPromise = null
+  }
+  wipeMunicipalityOutboxCollections()
+}

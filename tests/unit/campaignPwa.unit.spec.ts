@@ -42,6 +42,22 @@ describe('campaign PWA helpers', () => {
     expect(script).toContain('skipWaiting')
     expect(script).toContain('clients.claim')
   })
+
+  it('serves /_next/static with cache-first and never caches RSC or invite paths', () => {
+    const script = buildCampaignServiceWorkerScript('sha-test')
+
+    expect(script).toContain('isNextStaticPath')
+    expect(script).toContain("pathname.startsWith('/_next/static/')")
+
+    const staticBranch = script.indexOf('isNextStaticPath(url.pathname)')
+    const rscGuard = script.indexOf('if (isRscRequest(request)) return')
+    const inviteGuard = script.indexOf('if (isInvitePath(url.pathname)) return')
+
+    expect(staticBranch).toBeGreaterThan(-1)
+    expect(rscGuard).toBeGreaterThan(staticBranch)
+    expect(inviteGuard).toBeGreaterThan(-1)
+    expect(inviteGuard).toBeLessThan(staticBranch)
+  })
 })
 
 describe('campaign PWA route handlers', () => {
@@ -67,5 +83,6 @@ describe('campaign PWA route handlers', () => {
     expect(body).toContain('campanha-')
     expect(body).toContain(`SCOPE + '/convite'`)
     expect(body).toContain('isRscRequest')
+    expect(body).toContain('isNextStaticPath')
   })
 })

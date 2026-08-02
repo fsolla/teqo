@@ -56,7 +56,7 @@ Brief:
 - Documento-mãe que trava: arquitetura híbrida, escopo do snapshot, CAS/outbox, boundaries, critérios de aceite do projecto e ordem das Issues OH2–OH14.
 - Engenheiro júnior lê este doc + o plano da sua Issue e executa sem reunião.
 - Com `OPS_HYBRID=1` (entregas filhas): abrir `/campanha` sincroniza o snapshot; chrome “Actualizado”; offline renderiza do mirror; writes via outbox + CAS.
-- CI sem `OPS_HYBRID` idêntica a `main`.
+- CI sem `OPS_HYBRID` idêntica a `main`; jornada offline completa em `campaignOpsOffline.e2e.spec.ts` com `OPS_HYBRID=1` (OH11).
 
 ## Dados → decisão → apresentação
 
