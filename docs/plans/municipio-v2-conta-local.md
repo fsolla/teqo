@@ -79,9 +79,9 @@ Na v2, o coordenador precisa ver **meta nos três cenários**, **quanto já est�
 - **Trazer todos os diagnósticos E8 para a dobra.** **Corte:** P/M/O + cobertura + classe; resto sob demanda.
 - **Três coberturas simultâneas (uma por cenário) sempre.** **Corte:** uma cobertura do cenário ativo; os três números de meta ficam visíveis.
 
-## Questões em aberto (produto)
+## Decisões de produto (fechadas)
 
-- **Classe só na conta, só no status, ou nos dois?** **Opções:** A) nos dois (status = glance, conta = com fatores) | B) só na conta. **Recomendação:** A — status já prevê pill; conta reforça com contexto. _(confirmado no shaping — manter)_
+- **Classe só na conta, só no status, ou nos dois?** **Decisão:** A — nos dois (status = glance, conta = com fatores). _(confirmado produto 2026-08-02)_
 
 ## Referências
 

@@ -76,9 +76,9 @@ Hoje as lideranças do município moram numa **aba** que o coordenador não abre
 - **Trazer todas as colunas da lista global de lideranças.** **Corte:** nome, status de apoio, declarado, estimado.
 - **Optimistic UI sem refresh do agregado da conta.** **Corte:** honestidade do resultado (Feel the action) — conta pode atualizar após revalidate.
 
-## Questões em aberto (produto)
+## Decisões de produto (fechadas)
 
-- **Ordenação default do top-N?** **Opções:** A) estimado (senão declarado) desc | B) última atividade. **Recomendação:** A — conversa direto com a conta. _(assumido)_
+- **Ordenação default do top-N?** **Decisão:** A — estimado (senão declarado) desc. _(confirmado produto 2026-08-02)_
 
 ## Referências
 

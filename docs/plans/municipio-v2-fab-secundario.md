@@ -68,9 +68,9 @@ Abas (dossiê, eleições, atualizações, …) e CTAs secundários **não devem
 - **FAB com dezenas de ações.** **Corte:** só as que eram abas/CTAs secundários do detalhe.
 - **Registrar sinal só no FAB e tirar o select da faixa.** **Corte:** select na faixa (B147); FAB é atalho opcional.
 
-## Questões em aberto (produto)
+## Decisões de produto (fechadas)
 
-- **“Registrar sinal” no FAB se já há select na faixa?** **Opções:** A) omitir do FAB | B) atalho que foca/abre o mesmo fluxo. **Recomendação:** B só se o FAB for o hábito mobile; senão A. _(assumido: A na v1 do FAB da v2)_
+- **“Registrar sinal” no FAB se já há select na faixa?** **Decisão:** A — omitir do FAB na v1 (select na faixa é o caminho). _(confirmado produto 2026-08-02)_
 
 ## Referências
 

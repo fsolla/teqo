@@ -74,9 +74,9 @@ Depois de status, conta e rede, o coordenador precisa de um bloco **“o que faz
 - **Painel E11 completo no município.** **Corte:** 0–2 itens.
 - **Checklist E13 expandida sempre.** **Corte:** uma linha + FAB.
 
-## Questões em aberto (produto)
+## Decisões de produto (fechadas)
 
-- **Encaminhamento = campo `nextSteps` da estratégia ou nota separada?** **Opções:** A) reusar `nextSteps` | B) novo conceito. **Recomendação:** A — um só lugar de verdade. _(assumido)_
+- **Encaminhamento = campo `nextSteps` da estratégia ou nota separada?** **Decisão:** A — reusar `nextSteps` (um só lugar de verdade). _(confirmado produto 2026-08-02)_
 
 ## Referências
 

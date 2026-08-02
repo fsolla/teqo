@@ -60,6 +60,15 @@ Este arquivo é o **pai de intenção** do lote. Cada Issue filha tem plano pró
 8. Nome / TI **não** competem no corpo — soft-dep B145 (título no header).
 9. Página antiga intacta até B152.
 
+### Questões dos filhos _(confirmadas produto 2026-08-02)_
+
+10. Sinal “frio”: sentinela “Sem sinal / frio (N dias)” na faixa (B147).
+11. Classe nos **dois** lugares — status + conta (B148).
+12. Top-N da rede ordenado por estimado (senão declarado) desc (B149).
+13. Encaminhamento = `nextSteps` existente (B150).
+14. FAB v1 **sem** atalho “Registrar sinal” (B151).
+15. Cutover canônico = `/campanha/municipios/[slug]` com UI nova (B152); go/no-go do cutover permanece após entregar B147–B151.
+
 ## Soft-deps externos
 
 - **B145** (#315) — título da entidade no header; v2 não redesenha chrome de nome.

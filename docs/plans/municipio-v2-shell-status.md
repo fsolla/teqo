@@ -82,9 +82,9 @@ Abrir o município na v2 e, na **primeira dobra**, ler e alterar a conjuntura (n
 - **Wizard completo de nível (histerese/override) redesenhado do zero.** **Corte:** respeitar ritos de produto já decididos (E14 + B134); só o encaixe na faixa.
 - **Tooltip = página de conceito embutida.** **Corte:** one-liner + link.
 
-## Questões em aberto (produto)
+## Decisões de produto (fechadas)
 
-- **Select de sinal com município “frio” mostra o quê como valor atual?** **Opções:** A) valor sentinela “Sem sinal / frio (N dias)” | B) último tipo + idade na label. **Recomendação:** A na faixa + idade no agregado/tooltip — deixa óbvio que dá para registrar. _(assumido — validar na demo da v2)_
+- **Select de sinal com município “frio” mostra o quê como valor atual?** **Decisão:** A — valor sentinela “Sem sinal / frio (N dias)” na faixa; idade no agregado/tooltip. _(confirmado produto 2026-08-02)_
 
 ## Referências
 

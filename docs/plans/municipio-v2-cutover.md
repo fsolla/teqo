@@ -68,9 +68,9 @@ Enquanto a v2 vive em `/campanha/municipio/<slug>/v2`, a campanha tem **dois det
 - **Big-bang sem semana de paralelo.** **Corte:** B152 só após OK; paralelo existe de propósito.
 - **Preservar abas “por um tempo” ao lado da v2 canônica.** **Corte:** uma experiência; secundárias no FAB.
 
-## Questões em aberto (produto)
+## Decisões de produto (fechadas)
 
-- **URL canônica final?** **Opções:** A) `/campanha/municipios/[slug]` (plural histórico) com UI nova | B) `/campanha/municipio/[slug]` (singular da v2). **Recomendação:** A — menos churn de links externos/hábitos; singular `/municipio/.../v2` foi só paralelo. _(assumido — validar no OK de cutover)_
+- **URL canônica final?** **Decisão:** A — `/campanha/municipios/[slug]` (plural histórico) com a UI nova; `/municipio/.../v2` foi só paralelo (redirect no cutover). _(confirmado produto 2026-08-02; go/no-go do cutover em si continua humano após B147–B151)_
 
 ## Referências
 
