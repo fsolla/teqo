@@ -1,6 +1,6 @@
 /**
- * Demand list omnibox adapter (B128). Status-only; kind/activity deep-links
- * stay URL-only without new list UI. Pure / client-safe.
+ * Demand list omnibox adapter (B128 + B140). Status, kind and free-text search;
+ * activity deep-links stay URL-only without list UI. Pure / client-safe.
  */
 import {
   createOmniboxSuggestionSeed,
@@ -9,13 +9,14 @@ import {
   type CampaignListOmniboxSuggestion,
 } from '@/lib/campaignListOmnibox'
 import {
+  campaignDemandKindLabels,
+  campaignDemandKinds,
   campaignDemandStatusLabels,
   campaignDemandStatuses,
+  type CampaignDemandKind,
   type CampaignDemandStatus,
 } from '@/lib/schemas/campaignDemand'
 import type { DemandListState } from '@/utilities/demand/demandListUrl'
-
-export type { DemandListState }
 
 export type DemandOmniboxAction =
   | { kind: 'url'; state: DemandListState }
@@ -26,27 +27,60 @@ const chipLabel = (dimension: string, value: string): string => `${dimension}: $
 const withPageReset = (state: DemandListState): DemandListState => ({ ...state, page: 1 })
 
 export const buildDemandOmniboxChips = (state: DemandListState): CampaignListOmniboxChip[] => {
-  if (!state.status) return []
-  return [
-    {
+  const chips: CampaignListOmniboxChip[] = []
+
+  if (state.q) chips.push({ id: 'q', label: chipLabel('Busca', state.q) })
+
+  if (state.kind) {
+    chips.push({
+      id: `kind:${state.kind}`,
+      label: chipLabel('Tipo', campaignDemandKindLabels[state.kind]),
+    })
+  }
+
+  if (state.status) {
+    chips.push({
       id: `status:${state.status}`,
       label: chipLabel('Status', campaignDemandStatusLabels[state.status]),
-    },
-  ]
+    })
+  }
+
+  return chips
 }
 
-export const buildDemandOmniboxSuggestionSeeds = () =>
-  campaignDemandStatuses.map((status) =>
-    createOmniboxSuggestionSeed(
-      {
-        id: `status:${status}`,
-        group: 'Status',
-        label: campaignDemandStatusLabels[status],
-        keywords: ['status', 'situacao'],
-      },
-      { emptyQueryVisible: true },
-    ),
-  )
+export const buildDemandOmniboxSuggestionSeeds = () => {
+  const seeds = []
+
+  for (const kind of campaignDemandKinds) {
+    seeds.push(
+      createOmniboxSuggestionSeed(
+        {
+          id: `kind:${kind}`,
+          group: 'Tipo',
+          label: campaignDemandKindLabels[kind],
+          keywords: ['tipo', 'demanda'],
+        },
+        { emptyQueryVisible: true },
+      ),
+    )
+  }
+
+  for (const status of campaignDemandStatuses) {
+    seeds.push(
+      createOmniboxSuggestionSeed(
+        {
+          id: `status:${status}`,
+          group: 'Status',
+          label: campaignDemandStatusLabels[status],
+          keywords: ['status', 'situacao'],
+        },
+        { emptyQueryVisible: true },
+      ),
+    )
+  }
+
+  return seeds
+}
 
 export const filterDemandOmniboxSuggestions = (
   seeds: ReturnType<typeof buildDemandOmniboxSuggestionSeeds>,
@@ -60,6 +94,26 @@ export const applyDemandOmniboxSuggestion = ({
   state: DemandListState
   suggestionId: string
 }): DemandOmniboxAction => {
+  if (suggestionId.startsWith('q:')) {
+    const q = suggestionId.slice(2)
+    return { kind: 'url', state: withPageReset({ ...state, q: q || undefined }) }
+  }
+
+  if (suggestionId.startsWith('kind:')) {
+    const value = suggestionId.slice(5)
+    if (!campaignDemandKinds.includes(value as CampaignDemandKind)) {
+      return { kind: 'url', state }
+    }
+    const kind = value as CampaignDemandKind
+    return {
+      kind: 'url',
+      state: withPageReset({
+        ...state,
+        kind: state.kind === kind ? undefined : kind,
+      }),
+    }
+  }
+
   if (!suggestionId.startsWith('status:')) return { kind: 'url', state }
 
   const value = suggestionId.slice(7)
@@ -84,6 +138,12 @@ export const removeDemandOmniboxChip = ({
   state: DemandListState
   chipId: string
 }): DemandOmniboxAction => {
+  if (chipId === 'q') {
+    return { kind: 'url', state: withPageReset({ ...state, q: undefined }) }
+  }
+  if (chipId.startsWith('kind:')) {
+    return { kind: 'url', state: withPageReset({ ...state, kind: undefined }) }
+  }
   if (chipId.startsWith('status:')) {
     return { kind: 'url', state: withPageReset({ ...state, status: undefined }) }
   }
@@ -94,7 +154,6 @@ export const clearDemandOmnibox = (state: DemandListState): DemandOmniboxAction 
   kind: 'clear',
   state: withPageReset({
     page: 1,
-    ...(state.kind ? { kind: state.kind } : {}),
     ...(state.activityId ? { activityId: state.activityId } : {}),
   }),
 })

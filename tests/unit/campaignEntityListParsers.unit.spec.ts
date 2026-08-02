@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { advisorListHrefForPage, parseAdvisorListParams } from '@/utilities/advisorData'
-import { parseDemandListParams } from '@/utilities/campaignDemandData'
+import { parseDemandListParams } from '@/utilities/demand/demandListUrl'
 import { parseOrganizationListParams } from '@/utilities/organizationData'
 
 const qAndPageParsers = [['advisor', parseAdvisorListParams]] as const
@@ -54,6 +54,11 @@ describe('parseDemandListParams', () => {
     expect(parseDemandListParams({ status: 'fechada' }).status).toBeUndefined()
     expect(parseDemandListParams({ kind: 'material' }).kind).toBe('material')
     expect(parseDemandListParams({ kind: 'outra-coisa' }).kind).toBeUndefined()
+  })
+
+  it('parses trimmed search query', () => {
+    expect(parseDemandListParams({ q: '  banner  ' }).q).toBe('banner')
+    expect(parseDemandListParams({ q: '   ' }).q).toBeUndefined()
   })
 
   it('defaults to page 1 with no filters', () => {
