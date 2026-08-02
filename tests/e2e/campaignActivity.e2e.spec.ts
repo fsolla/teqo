@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures.js'
 
 test.describe('Atividades — registro-fundação', () => {
   test.setTimeout(90_000)
@@ -34,7 +34,7 @@ test.describe('Atividades — registro-fundação', () => {
 
     await page.getByRole('button', { name: 'Criar atividade' }).click()
     await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+$/)
-    await expect(page.getByRole('heading', { name: activityTitle })).toBeVisible({
+    await expect(campaignPageChrome(page, activityTitle)).toBeVisible({
       timeout: 15_000,
     })
     await expect(page.getByText('Obrigação política', { exact: true })).toBeVisible()

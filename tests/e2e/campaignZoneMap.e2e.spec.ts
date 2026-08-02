@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures.js'
 
 /**
  * B8 F2 — Salvador used to be one polygon carrying the whole city's votes, so
@@ -51,5 +51,5 @@ test('the dashboard map paints Salvador zone by zone and opens one', async ({ ca
   await readout.getByRole('link', { name: 'Abrir município' }).click()
   // B145: entity identity lives in the shell header, not a body h1.
   await expect(page).toHaveURL(/\/campanha\/municipios\/salvador-ze-\d+$/)
-  await expect(page.locator('[data-slot="campaign-page-chrome-title"]')).toBeVisible()
+  await expect(campaignPageChrome(page, /Salvador — ZE \d+/)).toBeVisible()
 })
