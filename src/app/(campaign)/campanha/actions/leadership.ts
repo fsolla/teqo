@@ -3,6 +3,10 @@
 import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
+import {
+  assertCampaignDocCas,
+  campaignDocCasLockKey,
+} from '@/app/(campaign)/campanha/actions/assertCampaignDocCas'
 import { nextMunicipalityIdsAfterLeadershipMembership } from '@/lib/leadershipMunicipalityMembership'
 import { nextStateDeputyIdsAfterMembership } from '@/lib/leadershipStateDeputyMembership'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
@@ -182,37 +186,55 @@ export const updateLeadershipInternalRecord = async (
   const { id, municipalities, organizations, stateDeputies, baseUpdatedAt, ...data } =
     leadershipInternalUpdateSchema.parse(input)
   const enforceCas = options?.cas === true
-  const currentActor = await getFreshStaffActor(payload, actor)
 
-  // Row access verifies the current record is in the actor's scope.
-  const current = await payload.findByID({
-    collection: 'leadership',
-    id,
-    depth: 0,
-    user: currentActor,
-    overrideAccess: false,
-  })
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await getFreshStaffActor(payload, actor, req)
 
-  // Stamp already loaded with the row — avoid a second find via assertCampaignDocCas.
-  assertOpsUpdatedAtCas(enforceCas, baseUpdatedAt, current.updatedAt)
+      // Lock + re-read under CAS (Pass 5 P1b). When CAS is not armed, keep the
+      // row-access preflight so out-of-scope updates fail closed before mutate.
+      await assertCampaignDocCas(payload, {
+        collection: 'leadership',
+        id,
+        actor: currentActor,
+        enforceCas,
+        baseUpdatedAt,
+        req,
+      })
+      if (!enforceCas || baseUpdatedAt === undefined) {
+        await payload.findByID({
+          collection: 'leadership',
+          id,
+          depth: 0,
+          select: { id: true },
+          user: currentActor,
+          overrideAccess: false,
+          req,
+        })
+      }
 
-  if (municipalities !== undefined) {
-    await assertMunicipalitiesWithinScope(payload, currentActor, municipalities)
-  }
+      if (municipalities !== undefined) {
+        await assertMunicipalitiesWithinScope(payload, currentActor, municipalities, req)
+      }
 
-  return payload.update({
-    collection: 'leadership',
-    id: current.id,
-    data: {
-      ...data,
-      ...(municipalities === undefined ? {} : { municipalities }),
-      ...(organizations === undefined ? {} : { organizations: organizations ?? [] }),
-      ...(stateDeputies === undefined ? {} : { stateDeputies: stateDeputies ?? [] }),
+      return payload.update({
+        collection: 'leadership',
+        id,
+        data: {
+          ...data,
+          ...(municipalities === undefined ? {} : { municipalities }),
+          ...(organizations === undefined ? {} : { organizations: organizations ?? [] }),
+          ...(stateDeputies === undefined ? {} : { stateDeputies: stateDeputies ?? [] }),
+        },
+        depth: 0,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
     },
-    depth: 0,
-    user: currentActor,
-    overrideAccess: false,
-  })
+    { beginFailureMessage: 'Não foi possível iniciar a atualização da liderança.' },
+  )
 }
 
 export const listMunicipalityLeaderships = async (
@@ -400,26 +422,17 @@ const revalidateLeadershipStateDeputyPaths = (leadershipId: number, stateDeputyS
   }
 }
 
-const LEADERSHIP_RELATION_LOCK_KEYS = {
-  municipalities: 'leadership-municipalities',
-  stateDeputies: 'leadership-state-deputies',
-} as const
-
 /**
  * Opens a leadership for a delta write on one of its relations: reloads the
- * actor, takes the lock that belongs to THAT relation, and reads the current
- * ids under the actor's row access (the same guard
- * `updateLeadershipInternalRecord` relies on).
+ * actor, takes the **document** CAS lock (same key as `assertCampaignDocCas` /
+ * ficha form), and reads the current ids under the actor's row access.
  *
- * The pairing is the point: relation and lock key used to be two independent
- * string literals a few lines apart, so a third relation could quietly take a
- * lock that guards a different column. The rest of the two delta writes — the
- * delta shape, the scope assertion, the slug lookup, the return — is genuinely
- * different in each, and hoisting it would cost six callbacks to share ~24 lines.
+ * Relation-specific keys were dropped in Pass 5 P1b: the ficha form replaces
+ * the whole array under `campaign-doc-cas:leadership:{id}`, so a chip delta
+ * on a different lock could still lost-update against the form. Chip×chip on
+ * the same leadership now serializes too — correct and cheap at our write rate.
  */
-const openLeadershipForRelationDelta = async <
-  Relation extends keyof typeof LEADERSHIP_RELATION_LOCK_KEYS,
->(
+const openLeadershipForRelationDelta = async <Relation extends 'municipalities' | 'stateDeputies'>(
   payload: Payload,
   actor: CampaignUser,
   req: PayloadTransactionRequest,
@@ -428,9 +441,7 @@ const openLeadershipForRelationDelta = async <
 ) => {
   const currentActor = await getFreshStaffActor(payload, actor, req)
 
-  await acquireTextAdvisoryLocks(payload, req, [
-    `${LEADERSHIP_RELATION_LOCK_KEYS[relation]}:${leadershipId}`,
-  ])
+  await acquireTextAdvisoryLocks(payload, req, [campaignDocCasLockKey('leadership', leadershipId)])
 
   const current = await payload.findByID({
     collection: 'leadership',

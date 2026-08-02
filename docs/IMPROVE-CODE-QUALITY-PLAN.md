@@ -238,8 +238,8 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 
 | WS     | Content                                                                                             | Status        |
 | ------ | --------------------------------------------------------------------------------------------------- | ------------- |
-| P5-P0  | Logout always clears persisted outbox+mirror adapters (singleton-independent) + pins                | in-session PR |
-| P5-P1a | Activity hybrid: disable offline-unsupported fields; send null on cleared relations + pins          | in-session PR |
+| P5-P0  | Logout always clears persisted outbox+mirror adapters (singleton-independent) + pins                | merged (#233) |
+| P5-P1a | Activity hybrid: disable offline-unsupported fields; send null on cleared relations + pins          | merged (#234) |
 | P5-P1b | CAS: advisory lock around assert+mutate paths (document key) + concurrent int pin                   | in-session PR |
 | P5-M\* | GUARDRAILS provenance → public issue #s; harden dodgeable miss guards; `Closes #48 #49 #50 #54 #41` | in-session PR |
 
