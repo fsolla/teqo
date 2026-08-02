@@ -47,6 +47,9 @@ const opsEstimateOutboxCollection = createCollection(
 let executorSingleton: OfflineExecutor | null = null
 let initPromise: Promise<OfflineExecutor> | null = null
 
+const ESTIMATE_OUTBOX_DB = 'teqo-ops-estimate'
+const ESTIMATE_OUTBOX_STORE = 'outbox'
+
 const createEstimateOfflineExecutor = (): OfflineExecutor =>
   startOfflineExecutor({
     collections: {
@@ -54,7 +57,7 @@ const createEstimateOfflineExecutor = (): OfflineExecutor =>
       // Mirror rows touched in onMutate must be registered for persistence.
       votePledges: votePledgesCollection,
     },
-    storage: new IndexedDBAdapter('teqo-ops-estimate', 'outbox'),
+    storage: new IndexedDBAdapter(ESTIMATE_OUTBOX_DB, ESTIMATE_OUTBOX_STORE),
     beforeRetry: collapseEstimateOutboxByPledge,
     mutationFns: {
       [ESTIMATE_MUTATION_FN]: async ({ transaction }) => {
@@ -188,18 +191,20 @@ export const collectOpsEstimateOutboxKeys = (): Set<OpsOutboxKey> => {
   return keys
 }
 
-/** Logout wipe — outbox storage + in-memory rows (OH11). */
+/** Logout wipe — persisted IndexedDB even when the executor singleton was never booted (cold reload). */
 export const clearOpsEstimateOutboxForLogout = async (): Promise<void> => {
-  if (executorSingleton) {
-    try {
+  try {
+    if (executorSingleton) {
       await executorSingleton.clearOutbox()
       executorSingleton.dispose()
-    } catch {
-      // Best effort — private mode / torn-down storage.
+    } else {
+      await new IndexedDBAdapter(ESTIMATE_OUTBOX_DB, ESTIMATE_OUTBOX_STORE).clear()
     }
-    executorSingleton = null
-    initPromise = null
+  } catch {
+    // Best effort — private mode / torn-down storage.
   }
+  executorSingleton = null
+  initPromise = null
   for (const row of opsEstimateOutboxCollection.toArray) {
     if (opsEstimateOutboxCollection.has(row.pledgeId)) {
       opsEstimateOutboxCollection.delete(row.pledgeId)

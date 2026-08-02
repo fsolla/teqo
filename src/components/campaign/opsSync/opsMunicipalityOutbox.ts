@@ -148,6 +148,9 @@ const handleUpdatedAtConflict = (
   throw new NonRetriableError(message)
 }
 
+const MUNICIPALITY_OUTBOX_DB = 'teqo-ops-municipality'
+const MUNICIPALITY_OUTBOX_STORE = 'outbox'
+
 const createMunicipalityOfflineExecutor = (): OfflineExecutor =>
   startOfflineExecutor({
     collections: {
@@ -159,7 +162,7 @@ const createMunicipalityOfflineExecutor = (): OfflineExecutor =>
       // Mirror rows touched in onMutate must be registered for persistence.
       votePledges: votePledgesCollection,
     },
-    storage: new IndexedDBAdapter('teqo-ops-municipality', 'outbox'),
+    storage: new IndexedDBAdapter(MUNICIPALITY_OUTBOX_DB, MUNICIPALITY_OUTBOX_STORE),
     beforeRetry: collapseAllMunicipalityOutbox,
     mutationFns: {
       [DECLARE_MUTATION_FN]: async ({ transaction }) => {
@@ -695,17 +698,19 @@ const wipeMunicipalityOutboxCollections = (): void => {
   }
 }
 
-/** Logout wipe — outbox storage + in-memory rows (OH11). */
+/** Logout wipe — persisted IndexedDB even when the executor singleton was never booted (cold reload). */
 export const clearOpsMunicipalityOutboxForLogout = async (): Promise<void> => {
-  if (executorSingleton) {
-    try {
+  try {
+    if (executorSingleton) {
       await executorSingleton.clearOutbox()
       executorSingleton.dispose()
-    } catch {
-      // Best effort — private mode / torn-down storage.
+    } else {
+      await new IndexedDBAdapter(MUNICIPALITY_OUTBOX_DB, MUNICIPALITY_OUTBOX_STORE).clear()
     }
-    executorSingleton = null
-    initPromise = null
+  } catch {
+    // Best effort — private mode / torn-down storage.
   }
+  executorSingleton = null
+  initPromise = null
   wipeMunicipalityOutboxCollections()
 }
