@@ -8,44 +8,29 @@ import {
   type OfflineExecutor,
 } from '@tanstack/offline-transactions'
 
-import {
-  createActivityCas,
-  updateActivityCas,
-} from '@/app/(campaign)/campanha/actions/activity'
+import { updateActivityCas } from '@/app/(campaign)/campanha/actions/activity'
 import { transitionCampaignDemandCas } from '@/app/(campaign)/campanha/actions/demand'
 import {
   createLeadershipCas,
-  setLeadershipMunicipalitiesMembershipCas,
-  setLeadershipStateDeputyMembershipCas,
   updateLeadershipInternalCas,
 } from '@/app/(campaign)/campanha/actions/leadership'
-import { setStateDeputyMunicipalitiesBatchCas } from '@/app/(campaign)/campanha/actions/stateDeputy'
 import {
-  collapseActivityCreateOutbox,
   collapseActivityUpdateOutbox,
   collapseDemandTransitionOutbox,
   collapseLeadershipCreateOutbox,
-  collapseLeadershipMembershipOutbox,
   collapseLeadershipUpdateOutbox,
-  collapseStateDeputyMunicipalitiesOutbox,
-  leadershipMembershipOutboxKey,
-  stateDeputyMunicipalitiesOutboxKey,
-  type OpsActivityCreateOutboxRow,
   type OpsActivityUpdateOutboxRow,
   type OpsDemandTransitionOutboxRow,
   type OpsLeadershipCreateOutboxRow,
-  type OpsLeadershipMembershipOutboxRow,
   type OpsLeadershipUpdateOutboxRow,
-  type OpsStateDeputyMunicipalitiesOutboxRow,
 } from '@/components/campaign/opsSync/opsDomainOutboxModel'
 import {
   activitiesCollection,
   demandsCollection,
   leadershipsCollection,
-  municipalitiesCollection,
 } from '@/components/campaign/opsSync/opsMirrorClient'
 import { opsOutboxKey, type OpsOutboxKey } from '@/lib/campaignOps/opsContract'
-import type { ActivityCreateInput, ActivityUpdateInput } from '@/lib/schemas/activity'
+import type { ActivityUpdateInput } from '@/lib/schemas/activity'
 import type { CampaignDemandStatus } from '@/lib/schemas/campaignDemand'
 import type { SupportStatus } from '@/lib/schemas/leadership'
 import {
@@ -57,9 +42,6 @@ const LEADERSHIP_UPDATE_FN = 'updateLeadershipInternal'
 const LEADERSHIP_CREATE_FN = 'createLeadership'
 const DEMAND_TRANSITION_FN = 'transitionCampaignDemand'
 const ACTIVITY_UPDATE_FN = 'updateActivity'
-const ACTIVITY_CREATE_FN = 'createActivity'
-const STATE_DEPUTY_MUNICIPALITIES_FN = 'setStateDeputyMunicipalitiesBatch'
-const LEADERSHIP_MEMBERSHIP_FN = 'setLeadershipMembership'
 
 const leadershipUpdateOutboxCollection = createCollection(
   localOnlyCollectionOptions<OpsLeadershipUpdateOutboxRow, number>({
@@ -86,27 +68,6 @@ const activityUpdateOutboxCollection = createCollection(
   localOnlyCollectionOptions<OpsActivityUpdateOutboxRow, number>({
     id: 'ops-activity-update-outbox',
     getKey: (row) => row.activityId,
-  }),
-)
-
-const activityCreateOutboxCollection = createCollection(
-  localOnlyCollectionOptions<OpsActivityCreateOutboxRow, string>({
-    id: 'ops-activity-create-outbox',
-    getKey: (row) => row.id,
-  }),
-)
-
-const stateDeputyMunicipalitiesOutboxCollection = createCollection(
-  localOnlyCollectionOptions<OpsStateDeputyMunicipalitiesOutboxRow, string>({
-    id: 'ops-state-deputy-municipalities-outbox',
-    getKey: (row) => row.id,
-  }),
-)
-
-const leadershipMembershipOutboxCollection = createCollection(
-  localOnlyCollectionOptions<OpsLeadershipMembershipOutboxRow, string>({
-    id: 'ops-leadership-membership-outbox',
-    getKey: (row) => row.id,
   }),
 )
 
@@ -137,15 +98,6 @@ const collapseAllDomainOutbox = (
     ...(byFn.get(ACTIVITY_UPDATE_FN)
       ? collapseActivityUpdateOutbox(byFn.get(ACTIVITY_UPDATE_FN)!)
       : []),
-    ...(byFn.get(ACTIVITY_CREATE_FN)
-      ? collapseActivityCreateOutbox(byFn.get(ACTIVITY_CREATE_FN)!)
-      : []),
-    ...(byFn.get(STATE_DEPUTY_MUNICIPALITIES_FN)
-      ? collapseStateDeputyMunicipalitiesOutbox(byFn.get(STATE_DEPUTY_MUNICIPALITIES_FN)!)
-      : []),
-    ...(byFn.get(LEADERSHIP_MEMBERSHIP_FN)
-      ? collapseLeadershipMembershipOutbox(byFn.get(LEADERSHIP_MEMBERSHIP_FN)!)
-      : []),
   ]
 
   for (const [fn, list] of byFn) {
@@ -153,10 +105,7 @@ const collapseAllDomainOutbox = (
       fn !== LEADERSHIP_UPDATE_FN &&
       fn !== LEADERSHIP_CREATE_FN &&
       fn !== DEMAND_TRANSITION_FN &&
-      fn !== ACTIVITY_UPDATE_FN &&
-      fn !== ACTIVITY_CREATE_FN &&
-      fn !== STATE_DEPUTY_MUNICIPALITIES_FN &&
-      fn !== LEADERSHIP_MEMBERSHIP_FN
+      fn !== ACTIVITY_UPDATE_FN
     ) {
       collapsed.push(...list)
     }
@@ -180,9 +129,6 @@ const createDomainOfflineExecutor = (): OfflineExecutor =>
       leadershipCreateOutbox: leadershipCreateOutboxCollection,
       demandTransitionOutbox: demandTransitionOutboxCollection,
       activityUpdateOutbox: activityUpdateOutboxCollection,
-      activityCreateOutbox: activityCreateOutboxCollection,
-      stateDeputyMunicipalitiesOutbox: stateDeputyMunicipalitiesOutboxCollection,
-      leadershipMembershipOutbox: leadershipMembershipOutboxCollection,
     },
     storage: new IndexedDBAdapter('teqo-ops-domain', 'outbox'),
     beforeRetry: collapseAllDomainOutbox,
@@ -364,114 +310,10 @@ const createDomainOfflineExecutor = (): OfflineExecutor =>
           throw error instanceof Error ? error : new Error(message)
         }
       },
-      [ACTIVITY_CREATE_FN]: async ({ transaction }) => {
-        const mutation = transaction.mutations[0]
-        if (!mutation) throw new NonRetriableError('Mutação de criação de atividade vazia.')
-        const row = mutation.modified as OpsActivityCreateOutboxRow
-        try {
-          await createActivityCas(row.payload)
-          activityCreateOutboxCollection.utils.acceptMutations(transaction)
-          if (activityCreateOutboxCollection.has(row.id)) {
-            activityCreateOutboxCollection.delete(row.id)
-          }
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error)
-          if (activityCreateOutboxCollection.has(row.id)) {
-            activityCreateOutboxCollection.update(row.id, (draft) => {
-              draft.status = 'error'
-              draft.errorMessage = message
-            })
-          }
-          throw error instanceof Error ? error : new Error(message)
-        }
-      },
-      [STATE_DEPUTY_MUNICIPALITIES_FN]: async ({ transaction }) => {
-        const mutation = transaction.mutations[0]
-        if (!mutation) throw new NonRetriableError('Mutação de municípios da dobradinha vazia.')
-        const row = mutation.modified as OpsStateDeputyMunicipalitiesOutboxRow
-        try {
-          await setStateDeputyMunicipalitiesBatchCas({
-            stateDeputyId: row.stateDeputyId,
-            municipalityIds: row.municipalityIds,
-            assigned: row.assigned,
-            municipalityBaseUpdatedAt: row.municipalityBaseUpdatedAt,
-          })
-          stateDeputyMunicipalitiesOutboxCollection.utils.acceptMutations(transaction)
-          if (stateDeputyMunicipalitiesOutboxCollection.has(row.id)) {
-            stateDeputyMunicipalitiesOutboxCollection.delete(row.id)
-          }
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error)
-          if (isOpsUpdatedAtConflictMessage(message)) {
-            handleUpdatedAtConflict(message, (serverUpdatedAt) => {
-              if (stateDeputyMunicipalitiesOutboxCollection.has(row.id)) {
-                stateDeputyMunicipalitiesOutboxCollection.update(row.id, (draft) => {
-                  draft.status = 'conflict'
-                  draft.serverUpdatedAt = serverUpdatedAt
-                  draft.errorMessage = message
-                })
-              }
-            })
-          }
-          if (stateDeputyMunicipalitiesOutboxCollection.has(row.id)) {
-            stateDeputyMunicipalitiesOutboxCollection.update(row.id, (draft) => {
-              draft.status = 'error'
-              draft.errorMessage = message
-            })
-          }
-          throw error instanceof Error ? error : new Error(message)
-        }
-      },
-      [LEADERSHIP_MEMBERSHIP_FN]: async ({ transaction }) => {
-        const mutation = transaction.mutations[0]
-        if (!mutation) throw new NonRetriableError('Mutação de vínculo vazia.')
-        const row = mutation.modified as OpsLeadershipMembershipOutboxRow
-        try {
-          if (row.kind === 'municipalities') {
-            await setLeadershipMunicipalitiesMembershipCas({
-              leadershipId: row.leadershipId,
-              municipalityIds: row.municipalityIds ?? [],
-              assigned: row.assigned,
-              baseUpdatedAt: row.baseUpdatedAt,
-            })
-          } else {
-            await setLeadershipStateDeputyMembershipCas({
-              leadershipId: row.leadershipId,
-              stateDeputyId: row.stateDeputyId!,
-              assigned: row.assigned,
-              baseUpdatedAt: row.baseUpdatedAt,
-            })
-          }
-          leadershipMembershipOutboxCollection.utils.acceptMutations(transaction)
-          if (leadershipMembershipOutboxCollection.has(row.id)) {
-            leadershipMembershipOutboxCollection.delete(row.id)
-          }
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error)
-          if (isOpsUpdatedAtConflictMessage(message)) {
-            handleUpdatedAtConflict(message, (serverUpdatedAt) => {
-              if (leadershipMembershipOutboxCollection.has(row.id)) {
-                leadershipMembershipOutboxCollection.update(row.id, (draft) => {
-                  draft.status = 'conflict'
-                  draft.serverUpdatedAt = serverUpdatedAt
-                  draft.errorMessage = message
-                })
-              }
-            })
-          }
-          if (leadershipMembershipOutboxCollection.has(row.id)) {
-            leadershipMembershipOutboxCollection.update(row.id, (draft) => {
-              draft.status = 'error'
-              draft.errorMessage = message
-            })
-          }
-          throw error instanceof Error ? error : new Error(message)
-        }
-      },
     },
   })
 
-export const getOpsDomainOfflineExecutor = async (): Promise<OfflineExecutor> => {
+const getOpsDomainOfflineExecutor = async (): Promise<OfflineExecutor> => {
   if (executorSingleton) {
     await executorSingleton.waitForInit()
     return executorSingleton
@@ -521,7 +363,8 @@ export const enqueueLeadershipUpdate = async (input: {
           if (variables.supportStatus !== undefined) draft.supportStatus = variables.supportStatus
           if (variables.exclusive !== undefined) draft.exclusive = variables.exclusive
           if (variables.notes !== undefined) draft.notes = variables.notes
-          if (variables.municipalities !== undefined) draft.municipalities = variables.municipalities
+          if (variables.municipalities !== undefined)
+            draft.municipalities = variables.municipalities
           if (variables.stateDeputies !== undefined) {
             draft.stateDeputies = variables.stateDeputies ?? []
           }
@@ -662,154 +505,6 @@ export const enqueueActivityUpdate = async (input: {
   run({ ...input, baseUpdatedAt })
 }
 
-export const enqueueActivityCreate = async (input: {
-  clientId: string
-  payload: ActivityCreateInput
-}): Promise<void> => {
-  const executor = await getOpsDomainOfflineExecutor()
-  const run = executor.createOfflineAction<typeof input>({
-    mutationFnName: ACTIVITY_CREATE_FN,
-    onMutate: (variables) => {
-      const next: OpsActivityCreateOutboxRow = {
-        id: variables.clientId,
-        payload: variables.payload,
-        status: 'pending',
-      }
-      if (activityCreateOutboxCollection.has(next.id)) {
-        activityCreateOutboxCollection.update(next.id, (draft) => {
-          Object.assign(draft, next)
-        })
-      } else {
-        activityCreateOutboxCollection.insert(next)
-      }
-    },
-  })
-  run(input)
-}
-
-export const enqueueStateDeputyMunicipalities = async (input: {
-  stateDeputyId: number
-  municipalityIds: number[]
-  assigned: boolean
-  municipalityBaseUpdatedAt?: Record<string, string | null | undefined>
-}): Promise<void> => {
-  const executor = await getOpsDomainOfflineExecutor()
-  const id = stateDeputyMunicipalitiesOutboxKey(
-    input.stateDeputyId,
-    input.municipalityIds,
-    input.assigned,
-  )
-  const municipalityBaseUpdatedAt =
-    input.municipalityBaseUpdatedAt ??
-    Object.fromEntries(
-      input.municipalityIds.map((municipalityId) => [
-        String(municipalityId),
-        municipalitiesCollection.get(municipalityId)?.updatedAt ?? null,
-      ]),
-    )
-
-  const run = executor.createOfflineAction<typeof input>({
-    mutationFnName: STATE_DEPUTY_MUNICIPALITIES_FN,
-    onMutate: (variables) => {
-      const next: OpsStateDeputyMunicipalitiesOutboxRow = {
-        id,
-        stateDeputyId: variables.stateDeputyId,
-        municipalityIds: variables.municipalityIds,
-        assigned: variables.assigned,
-        municipalityBaseUpdatedAt: variables.municipalityBaseUpdatedAt ?? municipalityBaseUpdatedAt,
-        status: 'pending',
-      }
-      if (stateDeputyMunicipalitiesOutboxCollection.has(id)) {
-        stateDeputyMunicipalitiesOutboxCollection.update(id, (draft) => {
-          Object.assign(draft, next)
-          draft.serverUpdatedAt = undefined
-          draft.errorMessage = undefined
-        })
-      } else {
-        stateDeputyMunicipalitiesOutboxCollection.insert(next)
-      }
-    },
-  })
-  run({ ...input, municipalityBaseUpdatedAt })
-}
-
-export const enqueueLeadershipMunicipalitiesMembership = async (input: {
-  leadershipId: number
-  municipalityIds: number[]
-  assigned: boolean
-  baseUpdatedAt?: string | null
-}): Promise<void> => {
-  const executor = await getOpsDomainOfflineExecutor()
-  const targetId = input.municipalityIds[0] ?? 0
-  const id = leadershipMembershipOutboxKey('municipalities', input.leadershipId, targetId)
-  const mirror = leadershipsCollection.get(input.leadershipId)
-  const baseUpdatedAt =
-    input.baseUpdatedAt !== undefined ? input.baseUpdatedAt : (mirror?.updatedAt ?? null)
-
-  const run = executor.createOfflineAction<typeof input>({
-    mutationFnName: LEADERSHIP_MEMBERSHIP_FN,
-    onMutate: (variables) => {
-      const next: OpsLeadershipMembershipOutboxRow = {
-        id,
-        kind: 'municipalities',
-        leadershipId: variables.leadershipId,
-        municipalityIds: variables.municipalityIds,
-        assigned: variables.assigned,
-        baseUpdatedAt: variables.baseUpdatedAt ?? baseUpdatedAt,
-        status: 'pending',
-      }
-      if (leadershipMembershipOutboxCollection.has(id)) {
-        leadershipMembershipOutboxCollection.update(id, (draft) => {
-          Object.assign(draft, next)
-          draft.serverUpdatedAt = undefined
-          draft.errorMessage = undefined
-        })
-      } else {
-        leadershipMembershipOutboxCollection.insert(next)
-      }
-    },
-  })
-  run({ ...input, baseUpdatedAt })
-}
-
-export const enqueueLeadershipStateDeputyMembership = async (input: {
-  leadershipId: number
-  stateDeputyId: number
-  assigned: boolean
-  baseUpdatedAt?: string | null
-}): Promise<void> => {
-  const executor = await getOpsDomainOfflineExecutor()
-  const id = leadershipMembershipOutboxKey('stateDeputies', input.leadershipId, input.stateDeputyId)
-  const mirror = leadershipsCollection.get(input.leadershipId)
-  const baseUpdatedAt =
-    input.baseUpdatedAt !== undefined ? input.baseUpdatedAt : (mirror?.updatedAt ?? null)
-
-  const run = executor.createOfflineAction<typeof input>({
-    mutationFnName: LEADERSHIP_MEMBERSHIP_FN,
-    onMutate: (variables) => {
-      const next: OpsLeadershipMembershipOutboxRow = {
-        id,
-        kind: 'stateDeputies',
-        leadershipId: variables.leadershipId,
-        stateDeputyId: variables.stateDeputyId,
-        assigned: variables.assigned,
-        baseUpdatedAt: variables.baseUpdatedAt ?? baseUpdatedAt,
-        status: 'pending',
-      }
-      if (leadershipMembershipOutboxCollection.has(id)) {
-        leadershipMembershipOutboxCollection.update(id, (draft) => {
-          Object.assign(draft, next)
-          draft.serverUpdatedAt = undefined
-          draft.errorMessage = undefined
-        })
-      } else {
-        leadershipMembershipOutboxCollection.insert(next)
-      }
-    },
-  })
-  run({ ...input, baseUpdatedAt })
-}
-
 export const collectOpsDomainOutboxKeys = (): Set<OpsOutboxKey> => {
   const keys = new Set<OpsOutboxKey>()
   for (const row of leadershipUpdateOutboxCollection.toArray) {
@@ -825,18 +520,6 @@ export const collectOpsDomainOutboxKeys = (): Set<OpsOutboxKey> => {
   for (const row of activityUpdateOutboxCollection.toArray) {
     if (row.status === 'pending' || row.status === 'conflict') {
       keys.add(opsOutboxKey('activities', row.activityId))
-    }
-  }
-  for (const row of stateDeputyMunicipalitiesOutboxCollection.toArray) {
-    if (row.status === 'pending' || row.status === 'conflict') {
-      for (const municipalityId of row.municipalityIds) {
-        keys.add(opsOutboxKey('municipalities', municipalityId))
-      }
-    }
-  }
-  for (const row of leadershipMembershipOutboxCollection.toArray) {
-    if (row.status === 'pending' || row.status === 'conflict') {
-      keys.add(opsOutboxKey('leaderships', row.leadershipId))
     }
   }
   return keys
@@ -933,21 +616,6 @@ const wipeDomainOutboxCollections = (): void => {
   for (const row of activityUpdateOutboxCollection.toArray) {
     if (activityUpdateOutboxCollection.has(row.activityId)) {
       activityUpdateOutboxCollection.delete(row.activityId)
-    }
-  }
-  for (const row of activityCreateOutboxCollection.toArray) {
-    if (activityCreateOutboxCollection.has(row.id)) {
-      activityCreateOutboxCollection.delete(row.id)
-    }
-  }
-  for (const row of stateDeputyMunicipalitiesOutboxCollection.toArray) {
-    if (stateDeputyMunicipalitiesOutboxCollection.has(row.id)) {
-      stateDeputyMunicipalitiesOutboxCollection.delete(row.id)
-    }
-  }
-  for (const row of leadershipMembershipOutboxCollection.toArray) {
-    if (leadershipMembershipOutboxCollection.has(row.id)) {
-      leadershipMembershipOutboxCollection.delete(row.id)
     }
   }
 }

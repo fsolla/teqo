@@ -1,10 +1,10 @@
 import type { OfflineTransaction } from '@tanstack/offline-transactions'
 
-import type { ActivityCreateInput, ActivityUpdateInput } from '@/lib/schemas/activity'
+import type { ActivityUpdateInput } from '@/lib/schemas/activity'
 import type { CampaignDemandStatus } from '@/lib/schemas/campaignDemand'
 import type { SupportStatus } from '@/lib/schemas/leadership'
 
-export type OpsDomainWriteSyncStatus = 'pending' | 'synced' | 'conflict' | 'error'
+type OpsDomainWriteSyncStatus = 'pending' | 'synced' | 'conflict' | 'error'
 
 export type OpsLeadershipUpdateOutboxRow = {
   leadershipId: number
@@ -54,38 +54,6 @@ export type OpsActivityUpdateOutboxRow = {
   errorMessage?: string
 }
 
-export type OpsActivityCreateOutboxRow = {
-  id: string
-  payload: ActivityCreateInput
-  status: OpsDomainWriteSyncStatus
-  errorMessage?: string
-}
-
-export type OpsStateDeputyMunicipalitiesOutboxRow = {
-  id: string
-  stateDeputyId: number
-  municipalityIds: number[]
-  assigned: boolean
-  municipalityBaseUpdatedAt?: Record<string, string | null | undefined>
-  status: OpsDomainWriteSyncStatus
-  serverUpdatedAt?: string | null
-  conflictMunicipalityId?: number
-  errorMessage?: string
-}
-
-export type OpsLeadershipMembershipOutboxRow = {
-  id: string
-  kind: 'municipalities' | 'stateDeputies'
-  leadershipId: number
-  municipalityIds?: number[]
-  stateDeputyId?: number
-  assigned: boolean
-  baseUpdatedAt?: string | null
-  status: OpsDomainWriteSyncStatus
-  serverUpdatedAt?: string | null
-  errorMessage?: string
-}
-
 const collapseByMetadataKey = (
   transactions: OfflineTransaction[],
   metadataKey: string,
@@ -124,28 +92,3 @@ export const collapseDemandTransitionOutbox = (
 export const collapseActivityUpdateOutbox = (
   transactions: OfflineTransaction[],
 ): OfflineTransaction[] => collapseByMetadataKey(transactions, 'activityId')
-
-export const collapseActivityCreateOutbox = (
-  transactions: OfflineTransaction[],
-): OfflineTransaction[] => collapseByMetadataKey(transactions, 'clientId')
-
-export const collapseStateDeputyMunicipalitiesOutbox = (
-  transactions: OfflineTransaction[],
-): OfflineTransaction[] => collapseByMetadataKey(transactions, 'batchKey')
-
-export const collapseLeadershipMembershipOutbox = (
-  transactions: OfflineTransaction[],
-): OfflineTransaction[] => collapseByMetadataKey(transactions, 'membershipKey')
-
-export const leadershipMembershipOutboxKey = (
-  kind: 'municipalities' | 'stateDeputies',
-  leadershipId: number,
-  targetId: number,
-): string => `${kind}:${leadershipId}:${targetId}`
-
-export const stateDeputyMunicipalitiesOutboxKey = (
-  stateDeputyId: number,
-  municipalityIds: readonly number[],
-  assigned: boolean,
-): string =>
-  `${stateDeputyId}:${assigned ? 'add' : 'remove'}:${[...municipalityIds].sort((a, b) => a - b).join(',')}`
