@@ -2,19 +2,24 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Miss #52 (2026-07-30): the municipalities list hydrated ~125 idle Drawer
-// roots (25 rows × 5 sheet controls) and prod tripped React #130 — CSS
-// `display:none` does not remove hydration cost. The fix pattern is ONE
-// shared Drawer per list surface via `CampaignListSheetProvider`, with cell
-// bodies portaled into it. The provider reached the municípios mobile cards
-// and this pass (2026-07-31) the three chip-relation lists (lideranças,
-// dobradinhas, assessores) — this guard keeps the next chip-cell table from
-// mounting sheet overlays providerless.
-describe('shared sheet host for chip-relation cells (miss #52)', () => {
-  const componentRoots = ['src/components', 'src/app'] as const
-  const chipCellUsage = /<MunicipalityPortfolioCell|<LeadershipStateDeputyRelationCell/
+// Miss #48 (public reopen of archive #52, 2026-07-30): the municipalities list
+// hydrated ~125 idle Drawer roots and prod tripped React #130. Fix = ONE shared
+// Drawer per list via `CampaignListSheetProvider`. Pass 5 hardens the guard:
+// any file that mounts `variant="sheet"` must either wrap a provider or be an
+// allowlisted leaf that is composed under a provider by its parent.
 
-  it('wraps every chip-relation table in CampaignListSheetProvider', () => {
+describe('shared sheet host for chip-relation cells (miss #48)', () => {
+  const componentRoots = ['src/components', 'src/app'] as const
+  const sheetVariant = /variant\s*=\s*["']sheet["']/
+  /** Leaves that open sheets but are always composed under a provider parent. */
+  const sheetLeafAllowlist = new Set([
+    'src/components/campaign/municipality/MunicipalityListMobileCards.tsx',
+    'src/components/campaign/shared/RelationChipCell.tsx',
+    'src/components/campaign/shared/CampaignCellEditOverlay.tsx',
+    'src/components/campaign/shared/MunicipalityPortfolioCell.tsx',
+  ])
+
+  it('wraps every sheet-variant surface in CampaignListSheetProvider (or allowlists the leaf)', () => {
     const offenders: string[] = []
 
     for (const root of componentRoots) {
@@ -26,16 +31,18 @@ describe('shared sheet host for chip-relation cells (miss #52)', () => {
         .map((entry) => resolve(entry.parentPath, entry.name))
 
       for (const file of files) {
+        const rel = relative(process.cwd(), file)
         const source = readFileSync(file, 'utf8')
-        if (!chipCellUsage.test(source)) continue
+        if (!sheetVariant.test(source)) continue
         if (source.includes('CampaignListSheetProvider')) continue
-        offenders.push(relative(process.cwd(), file))
+        if (sheetLeafAllowlist.has(rel)) continue
+        offenders.push(rel)
       }
     }
 
     expect(
       offenders,
-      'chip-relation cells open sheet overlays on coarse pointers — wrap the table in CampaignListSheetProvider (one shared Drawer per list)',
+      'sheet overlays need CampaignListSheetProvider (one shared Drawer) — add the provider or extend the leaf allowlist with a parent that already wraps',
     ).toEqual([])
   })
 })

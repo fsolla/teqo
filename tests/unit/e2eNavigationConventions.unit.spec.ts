@@ -2,18 +2,17 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Miss #54 (2026-07-30): a `page.goto` fired while the previous heavy RSC
-// navigation was still in flight aborted with `net::ERR_ABORTED`
-// (campaignSavedFilters, prod build). `goto` stays legal for cold loads and
-// URL contracts — the anti-pattern is two gotos with NOTHING between them
-// that settles the first navigation. A settle is any awaited interaction
-// with the landed page (assertion, fill, click, reload, login…): it proves
-// the previous route rendered before the next one starts.
+// Miss #50 (public reopen of archive #54, 2026-07-30): a `page.goto` fired while
+// the previous heavy RSC navigation was still in flight aborted with
+// `net::ERR_ABORTED` (campaignSavedFilters, prod build). `goto` stays legal for
+// cold loads and URL contracts — the anti-pattern is two gotos with NOTHING
+// between them that settles the first navigation.
 //
-// Miss #53 (2026-07-30): the biometrics probe is one-shot per island mount,
-// so a ceremony that starts before the CDP virtual authenticator answers
-// never sees the enrollment UI. Specs registering a virtual authenticator
-// must gate on `expectCampaignBiometricsReady` first.
+// Miss #49 (public reopen of archive #53, 2026-07-30): the biometrics probe is
+// one-shot per island mount, so a ceremony that starts before the CDP virtual
+// authenticator answers never sees the enrollment UI. Specs must
+// `await addVirtualAuthenticator` *then* `await expectCampaignBiometricsReady`
+// before the enrollment surface (Pass 5 hardening: call-site order).
 
 const e2eRoot = resolve(process.cwd(), 'tests/e2e')
 
@@ -38,7 +37,7 @@ const SETTLE_TOKENS = [
   'expectCampaignBiometricsReady(',
 ] as const
 
-describe('e2e navigation discipline (miss #54)', () => {
+describe('e2e navigation discipline (miss #50)', () => {
   it('never fires two page.goto without settling the first navigation', () => {
     const offenders: string[] = []
 
@@ -62,25 +61,34 @@ describe('e2e navigation discipline (miss #54)', () => {
 
     expect(
       offenders,
-      'settle the first navigation (await expect/waitForURL/click…) before the next page.goto, or navigate in-shell (miss #54)',
+      'settle the first navigation (await expect/waitForURL/click…) before the next page.goto, or navigate in-shell (miss #50)',
     ).toEqual([])
   })
 })
 
-describe('e2e WebAuthn virtual authenticator (miss #53)', () => {
-  it('gates every virtual-authenticator spec on expectCampaignBiometricsReady', () => {
+describe('e2e WebAuthn virtual authenticator (miss #49)', () => {
+  it('registers the virtual authenticator before expectCampaignBiometricsReady', () => {
     const offenders: string[] = []
 
     for (const file of specFiles) {
       const source = readFileSync(file, 'utf8')
-      if (!source.includes('WebAuthn.addVirtualAuthenticator')) continue
-      if (source.includes('expectCampaignBiometricsReady(')) continue
-      offenders.push(relative(process.cwd(), file))
+      // Call sites only — ignore the helper definition and doc comments.
+      const addCall = source.search(/await\s+addVirtualAuthenticator\s*\(/)
+      if (addCall < 0 && !source.includes('WebAuthn.addVirtualAuthenticator')) continue
+      const effectiveAdd =
+        addCall >= 0
+          ? addCall
+          : source.search(/\.send\(\s*['"]WebAuthn\.addVirtualAuthenticator['"]/)
+      if (effectiveAdd < 0) continue
+      const readyCall = source.search(/await\s+expectCampaignBiometricsReady\s*\(/)
+      if (readyCall < 0 || readyCall < effectiveAdd) {
+        offenders.push(relative(process.cwd(), file))
+      }
     }
 
     expect(
       offenders,
-      'call expectCampaignBiometricsReady(page) before the surface whose island probes the authenticator',
+      'await addVirtualAuthenticator(…) then await expectCampaignBiometricsReady(page) before the enrollment UI',
     ).toEqual([])
   })
 })
