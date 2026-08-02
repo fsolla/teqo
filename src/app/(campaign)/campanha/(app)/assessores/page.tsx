@@ -12,6 +12,8 @@ import {
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignSearchForm } from '@/components/campaign/shared/CampaignSearchForm'
 import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
+import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
+import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { CAMPAIGN_ADVISORS_HOME } from '@/lib/campaignPaths'
 import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
@@ -106,12 +108,14 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
 
   return (
     <CampaignPageShell>
-      <CampaignListPageHeader
-        title="Assessores"
-        description="Consulte na tabela; ative Editar para alterar campos e carteira. Nome abre a ficha; e-mail/celular copiam; município abre o município."
-      />
+      <OfflineBoundary fallback={<OpsListLocal slug="assessores" />}>
+        <CampaignListPageHeader
+          title="Assessores"
+          description="Consulte na tabela; ative Editar para alterar campos e carteira. Nome abre a ficha; e-mail/celular copiam; município abre o município."
+        />
 
-      {main}
+        {main}
+      </OfflineBoundary>
     </CampaignPageShell>
   )
 }

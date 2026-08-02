@@ -23,6 +23,8 @@ import {
 } from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
 import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
 import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
+import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
+import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { StateDeputyFilters } from '@/components/campaign/stateDeputy/StateDeputyFilters'
 import { StateDeputySortableHead } from '@/components/campaign/stateDeputy/StateDeputySortableHead'
@@ -283,20 +285,22 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
 
   return (
     <CampaignPageShell>
-      <CampaignListPageHeader
-        title="Dobradinhas"
-        description="Deputados estaduais com quem a campanha dobra — vincule lideranças e municípios direto na lista."
-        actions={
-          <Button asChild className="min-h-11">
-            <Link href="/campanha/dobradinhas/nova">
-              <PlusIcon data-icon="inline-start" aria-hidden="true" />
-              Nova dobradinha
-            </Link>
-          </Button>
-        }
-      />
+      <OfflineBoundary fallback={<OpsListLocal slug="dobradinhas" />}>
+        <CampaignListPageHeader
+          title="Dobradinhas"
+          description="Deputados estaduais com quem a campanha dobra — vincule lideranças e municípios direto na lista."
+          actions={
+            <Button asChild className="min-h-11">
+              <Link href="/campanha/dobradinhas/nova">
+                <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                Nova dobradinha
+              </Link>
+            </Button>
+          }
+        />
 
-      {main}
+        {main}
+      </OfflineBoundary>
     </CampaignPageShell>
   )
 }

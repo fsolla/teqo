@@ -16,6 +16,8 @@ import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFoo
 import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
 import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
+import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
+import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import {
@@ -189,24 +191,26 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
 
   return (
     <CampaignPageShell>
-      <CampaignListPageHeader
-        title="Municípios"
-        description="Os 435 municípios da campanha: um por município da Bahia — em Salvador, uma zona eleitoral cada."
-        scope={
-          <CampaignScopeBadge>{getCampaignScopeLabel(user.role, scopeTotal)}</CampaignScopeBadge>
-        }
-      />
-
-      {main}
-      {listVisitLabel ? (
-        <RecentVisitTracker
-          entry={{
-            href: buildMunicipalityListVisitHref(state),
-            label: listVisitLabel,
-            kind: 'municipalityList',
-          }}
+      <OfflineBoundary fallback={<OpsListLocal slug="municipios" />}>
+        <CampaignListPageHeader
+          title="Municípios"
+          description="Os 435 municípios da campanha: um por município da Bahia — em Salvador, uma zona eleitoral cada."
+          scope={
+            <CampaignScopeBadge>{getCampaignScopeLabel(user.role, scopeTotal)}</CampaignScopeBadge>
+          }
         />
-      ) : null}
+
+        {main}
+        {listVisitLabel ? (
+          <RecentVisitTracker
+            entry={{
+              href: buildMunicipalityListVisitHref(state),
+              label: listVisitLabel,
+              kind: 'municipalityList',
+            }}
+          />
+        ) : null}
+      </OfflineBoundary>
     </CampaignPageShell>
   )
 }

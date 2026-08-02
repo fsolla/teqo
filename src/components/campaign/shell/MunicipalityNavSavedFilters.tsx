@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useId, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
+import { useBrowserOffline } from '@/components/campaign/opsSync/useBrowserOffline'
 import { useMunicipalitySavedFilters } from '@/components/campaign/shared/useMunicipalitySavedFilters'
 import {
   SidebarMenuAction,
@@ -33,6 +34,7 @@ const IGNORED_PARAMS = ['page']
  */
 export const MunicipalityNavSavedFilters = ({ onNavigate }: { onNavigate: () => void }) => {
   const savedFilters = useMunicipalitySavedFilters()
+  const browserOffline = useBrowserOffline()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   // Read once, not tracked: the store owns the list, this is only the
@@ -136,8 +138,19 @@ export const MunicipalityNavSavedFilters = ({ onNavigate }: { onNavigate: () => 
               </SidebarMenuSubButton>
               <SidebarMenuAction
                 type="button"
-                onClick={() => handleRemove(entry)}
-                aria-label={`Apagar o filtro salvo ${entry.name}`}
+                onClick={() => {
+                  if (browserOffline) return
+                  handleRemove(entry)
+                }}
+                disabled={browserOffline}
+                title={
+                  browserOffline ? 'Apagar filtro disponível quando estiveres online.' : undefined
+                }
+                aria-label={
+                  browserOffline
+                    ? `Apagar o filtro salvo ${entry.name} — disponível quando estiveres online.`
+                    : `Apagar o filtro salvo ${entry.name}`
+                }
                 className="top-1 group-focus-within/menu-sub-item:opacity-100 group-hover/menu-sub-item:opacity-100 md:opacity-0"
               >
                 <Trash2Icon aria-hidden="true" />

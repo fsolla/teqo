@@ -4,6 +4,7 @@ import { BookmarkPlusIcon } from 'lucide-react'
 import { useId, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 
+import { useBrowserOffline } from '@/components/campaign/opsSync/useBrowserOffline'
 import { useMunicipalitySavedFilters } from '@/components/campaign/shared/useMunicipalitySavedFilters'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
@@ -21,6 +22,8 @@ import {
   saveMunicipalitySavedFilter,
 } from '@/utilities/municipality/municipalitySavedFilters'
 
+const ONLINE_ONLY_SAVED_FILTER_MESSAGE = 'Disponível quando estiveres online.'
+
 type SaveMunicipalityFilterControlProps = {
   /** The APPLIED state — a search still inside the debounce window is not in the URL yet. */
   state: MunicipalityListState
@@ -36,6 +39,7 @@ type SaveMunicipalityFilterControlProps = {
  */
 export const SaveMunicipalityFilterControl = ({ state }: SaveMunicipalityFilterControlProps) => {
   const savedFilters = useMunicipalitySavedFilters()
+  const browserOffline = useBrowserOffline()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
@@ -52,6 +56,7 @@ export const SaveMunicipalityFilterControl = ({ state }: SaveMunicipalityFilterC
   if (!summary) return null
 
   const handleOpenChange = (next: boolean) => {
+    if (browserOffline) return
     setOpen(next)
     if (!next) return
     setName(existing?.name ?? summary.slice(0, MAX_NAME_LENGTH))
@@ -60,6 +65,7 @@ export const SaveMunicipalityFilterControl = ({ state }: SaveMunicipalityFilterC
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (browserOffline) return
     if (!name.trim()) {
       setErrorMessage('Dê um nome ao filtro.')
       return
@@ -79,6 +85,22 @@ export const SaveMunicipalityFilterControl = ({ state }: SaveMunicipalityFilterC
 
     setOpen(false)
     toast.success(existing ? 'Nome atualizado.' : 'Filtro salvo em Municípios, na navegação.')
+  }
+
+  if (browserOffline) {
+    return (
+      <Button
+        type="button"
+        variant="ghost"
+        className="min-h-11 shrink-0 md:self-end"
+        disabled
+        title={ONLINE_ONLY_SAVED_FILTER_MESSAGE}
+        aria-label={`${existing ? 'Renomear' : 'Salvar'} filtro — ${ONLINE_ONLY_SAVED_FILTER_MESSAGE}`}
+      >
+        <BookmarkPlusIcon aria-hidden="true" />
+        {existing ? 'Renomear' : 'Salvar filtro'}
+      </Button>
+    )
   }
 
   return (

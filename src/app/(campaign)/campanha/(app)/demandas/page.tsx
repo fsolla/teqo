@@ -14,6 +14,8 @@ import {
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
 import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
+import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
+import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
@@ -187,25 +189,27 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
 
   return (
     <CampaignPageShell>
-      <CampaignListPageHeader
-        title="Demandas"
-        description="Necessidades da campanha abertas pelas lideranças, revisadas pela assessoria e — quando preciso — decididas pelo Coordenador Geral."
-        scope={
-          <Badge variant="estimate-pending" className="w-fit">
-            {openCount} {openCount === 1 ? 'demanda em aberto' : 'demandas em aberto'}
-          </Badge>
-        }
-        actions={
-          <Button asChild className="min-h-11">
-            <Link href="/campanha/demandas/nova">
-              <PlusIcon data-icon="inline-start" aria-hidden="true" />
-              Nova demanda
-            </Link>
-          </Button>
-        }
-      />
+      <OfflineBoundary fallback={<OpsListLocal slug="demandas" />}>
+        <CampaignListPageHeader
+          title="Demandas"
+          description="Necessidades da campanha abertas pelas lideranças, revisadas pela assessoria e — quando preciso — decididas pelo Coordenador Geral."
+          scope={
+            <Badge variant="estimate-pending" className="w-fit">
+              {openCount} {openCount === 1 ? 'demanda em aberto' : 'demandas em aberto'}
+            </Badge>
+          }
+          actions={
+            <Button asChild className="min-h-11">
+              <Link href="/campanha/demandas/nova">
+                <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                Nova demanda
+              </Link>
+            </Button>
+          }
+        />
 
-      {main}
+        {main}
+      </OfflineBoundary>
     </CampaignPageShell>
   )
 }

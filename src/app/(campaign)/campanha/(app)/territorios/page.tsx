@@ -11,6 +11,8 @@ import {
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
 import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
+import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
+import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
@@ -82,14 +84,16 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
 
   return (
     <CampaignPageShell>
-      <CampaignListPageHeader
-        className="max-w-prose"
-        title="Territórios de Identidade"
-        titleClassName="text-balance"
-        description="Compare a concentração histórica e a cobertura de assessoria das regiões da Bahia. Abra um território para ver seus municípios."
-        descriptionClassName="text-pretty"
-      />
-      {main}
+      <OfflineBoundary fallback={<OpsListLocal slug="territorios" />}>
+        <CampaignListPageHeader
+          className="max-w-prose"
+          title="Territórios de Identidade"
+          titleClassName="text-balance"
+          description="Compare a concentração histórica e a cobertura de assessoria das regiões da Bahia. Abra um território para ver seus municípios."
+          descriptionClassName="text-pretty"
+        />
+        {main}
+      </OfflineBoundary>
     </CampaignPageShell>
   )
 }
