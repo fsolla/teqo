@@ -50,7 +50,7 @@ Mesma regra nos outros elos: do 1º passo de um subfluxo encadeado, Voltar = úl
 
 - **Vou apresentar dados?** Não
 - **Decisões desbloqueadas:** staff decide se revisa o ajuste anterior ou segue o ritual — sem perder o município já escolhido.
-- **Forma:** *adiada ao plano de implementação*
+- **Forma:** _adiada ao plano de implementação_
 
 ## Direção no codebase (hipótese)
 
