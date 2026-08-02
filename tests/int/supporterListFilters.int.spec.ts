@@ -53,10 +53,11 @@ describe('supporterListFilters', () => {
     })
   })
 
-  it('applies vote intention, city, and municipality filters in both adapters', () => {
+  it('applies vote intention, source, city, and municipality filters in both adapters', () => {
     const state = {
       page: 1,
       voteIntention: 'indeciso' as const,
+      source: 'import_csv' as const,
       city: 'Salvador',
       municipality: 42,
     }
@@ -64,6 +65,7 @@ describe('supporterListFilters', () => {
     expect(toPayloadWhere(state)).toEqual({
       and: [
         { voteIntention: { equals: 'indeciso' } },
+        { source: { equals: 'import_csv' } },
         { 'contact.city': { equals: 'Salvador' } },
         { municipality: { equals: 42 } },
       ],
@@ -71,6 +73,6 @@ describe('supporterListFilters', () => {
 
     const aggregate = toAggregateSqlConditions(state)
     expect(aggregate.needsContactJoin).toBe(true)
-    expect(aggregate.conditions).toHaveLength(3)
+    expect(aggregate.conditions).toHaveLength(4)
   })
 })

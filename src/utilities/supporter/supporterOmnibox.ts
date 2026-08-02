@@ -10,6 +10,7 @@ import {
 import {
   buildSupporterListSearchParams,
   parseSupporterListParams,
+  supporterSourceLabels,
   supporterVoteIntentionLabels,
   type SupporterListState,
 } from '@/utilities/supporter/supporterUi'
@@ -46,6 +47,13 @@ export const buildSupporterOmniboxChips = ({
     chips.push({
       id: `voteIntention:${state.voteIntention}`,
       label: chipLabel('Intenção de voto', supporterVoteIntentionLabels[state.voteIntention]),
+    })
+  }
+
+  if (state.source) {
+    chips.push({
+      id: `source:${state.source}`,
+      label: chipLabel('Fonte', supporterSourceLabels[state.source]),
     })
   }
 
@@ -89,6 +97,20 @@ export const buildSupporterOmniboxSuggestionSeeds = ({
     )
   }
 
+  for (const [value, label] of Object.entries(supporterSourceLabels)) {
+    seeds.push(
+      createOmniboxSuggestionSeed(
+        {
+          id: `source:${value}`,
+          group: 'Fonte',
+          label,
+          keywords: ['fonte', 'origem', 'cadastro', 'import', 'importacao', 'lideranca'],
+        },
+        { emptyQueryVisible: true },
+      ),
+    )
+  }
+
   for (const option of cityOptions) {
     seeds.push(
       createOmniboxSuggestionSeed({
@@ -121,7 +143,7 @@ export const filterSupporterOmniboxSuggestions = (
 
 const setExclusiveField = (
   state: SupporterListState,
-  field: 'voteIntention' | 'city' | 'municipality',
+  field: 'voteIntention' | 'source' | 'city' | 'municipality',
   value: string | undefined,
 ): SupporterListState => {
   const params = buildSupporterListSearchParams(withPageReset(state))
@@ -129,6 +151,8 @@ const setExclusiveField = (
 
   if (field === 'voteIntention') {
     raw.voteIntention = value
+  } else if (field === 'source') {
+    raw.source = value
   } else if (field === 'city') {
     raw.city = value
   } else {
@@ -156,6 +180,15 @@ export const applySupporterOmniboxSuggestion = ({
       state.voteIntention === value
         ? setExclusiveField(state, 'voteIntention', undefined)
         : setExclusiveField(state, 'voteIntention', value)
+    return { kind: 'url', state: next }
+  }
+
+  if (suggestionId.startsWith('source:')) {
+    const value = suggestionId.slice(7)
+    const next =
+      state.source === value
+        ? setExclusiveField(state, 'source', undefined)
+        : setExclusiveField(state, 'source', value)
     return { kind: 'url', state: next }
   }
 
@@ -191,6 +224,10 @@ export const removeSupporterOmniboxChip = ({
 
   if (chipId.startsWith('voteIntention:')) {
     return { kind: 'url', state: setExclusiveField(state, 'voteIntention', undefined) }
+  }
+
+  if (chipId.startsWith('source:')) {
+    return { kind: 'url', state: setExclusiveField(state, 'source', undefined) }
   }
 
   if (chipId.startsWith('city:')) {

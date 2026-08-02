@@ -32,6 +32,12 @@ describe('parseSupporterListParams', () => {
     expect(parseSupporterListParams({ voteIntention: 'talvez' }).voteIntention).toBeUndefined()
   })
 
+  it('keeps only known sources', () => {
+    expect(parseSupporterListParams({ source: 'import_csv' }).source).toBe('import_csv')
+    expect(parseSupporterListParams({ source: 'lideranca' }).source).toBe('lideranca')
+    expect(parseSupporterListParams({ source: 'spam' }).source).toBeUndefined()
+  })
+
   it('canonicalizes city through the Bahia municipality resolver', () => {
     expect(parseSupporterListParams({ city: ' salvador ' }).city).toBe('Salvador')
     expect(parseSupporterListParams({ city: 'Gotham' }).city).toBeUndefined()
@@ -53,10 +59,13 @@ describe('buildSupporterListSearchParams', () => {
       page: 1,
       q: 'ana',
       voteIntention: 'certo',
+      source: 'import_csv',
       city: 'Salvador',
       municipality: 7,
     })
-    expect(params.toString()).toBe('q=ana&voteIntention=certo&city=Salvador&municipality=7')
+    expect(params.toString()).toBe(
+      'q=ana&voteIntention=certo&source=import_csv&city=Salvador&municipality=7',
+    )
   })
 
   it('includes page only beyond 1 and supports the page override', () => {
