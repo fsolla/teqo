@@ -18,8 +18,7 @@ export type CampaignListOmniboxSuggestion = {
   keywords?: readonly string[]
 }
 
-/** Substring match after accent-fold / pt-BR lowercasing. Empty needle matches all. */
-export const omniboxQueryMatches = (
+const omniboxQueryMatches = (
   haystack: string,
   needle: string,
   keywords: readonly string[] = [],
