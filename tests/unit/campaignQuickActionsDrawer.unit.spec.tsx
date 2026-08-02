@@ -439,8 +439,9 @@ describe('CampaignContentScroll quick-actions direction (B105)', () => {
 
     const scrollport = document.querySelector('[data-slot="campaign-content-scroll"]')
     expect(scrollport?.getAttribute('data-home-compact-bottom-padding')).toBe('true')
+    expect(scrollport?.className).toContain('pt-4')
     expect(scrollport?.className).toContain('pb-2')
-    expect(scrollport?.className).toContain('px-4')
+    expect(scrollport?.className).not.toContain('px-4')
     expect(scrollport?.className).not.toContain(' p-4')
   })
 

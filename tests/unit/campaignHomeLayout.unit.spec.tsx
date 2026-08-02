@@ -20,14 +20,28 @@ describe('CampaignHomeLayout', () => {
     expect(actions?.closest('[data-slot="home-dock"]')).not.toBeNull()
   })
 
-  it('bleeds home-actions edge-to-edge on mobile (compensates scroll p-4)', () => {
+  it('bleeds home-actions edge-to-edge on mobile with inner gutter padding', () => {
     const { container } = render(<CampaignHomeLayout actions={<p>Actions block</p>} />)
 
     const actions = container.querySelector('[data-slot="home-actions"]')
     expect(actions?.className).toContain('-mx-4')
     expect(actions?.className).toContain('w-[calc(100%+2rem)]')
+    expect(actions?.className).toContain('px-4')
     expect(actions?.className).toContain('md:mx-0')
     expect(actions?.className).toContain('md:w-auto')
+  })
+
+  it('insets summary and search slots horizontally on mobile', () => {
+    const { container } = render(
+      <CampaignHomeLayout
+        actions={<p>Actions block</p>}
+        searchSlot={<p>Search</p>}
+        summarySlot={<p>Summary</p>}
+      />,
+    )
+
+    expect(container.querySelector('[data-slot="home-summary"]')?.className).toContain('mx-4')
+    expect(container.querySelector('[data-slot="home-search"]')?.className).toContain('mx-4')
   })
 
   it('does not clip horizontal bleed on the actions retraction shell', () => {
