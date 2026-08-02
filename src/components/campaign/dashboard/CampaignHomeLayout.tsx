@@ -75,7 +75,7 @@ export const CampaignHomeLayout = ({
       >
         <div
           data-slot="home-actions"
-          className="min-w-0 -mx-4 w-[calc(100%+2rem)] md:mx-0 md:w-auto"
+          className="min-w-0 md:mx-0 md:w-auto"
         >
           {actions}
         </div>

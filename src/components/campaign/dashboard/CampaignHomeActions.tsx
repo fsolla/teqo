@@ -19,5 +19,5 @@ export const CampaignHomeActions = ({
 
   if (actions.length === 0) return null
 
-  return <CampaignHomeActionStrip actions={actions} className="w-full" />
+  return <CampaignHomeActionStrip actions={actions} className="w-full" variant="responsive" />
 }

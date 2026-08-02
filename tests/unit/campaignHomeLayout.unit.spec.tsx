@@ -19,12 +19,13 @@ describe('CampaignHomeLayout', () => {
     expect(actions?.closest('[data-slot="home-dock"]')).not.toBeNull()
   })
 
-  it('bleeds home-actions edge-to-edge on mobile (compensates scroll p-4)', () => {
+  it('keeps home-actions within page gutter on mobile (B122 grid)', () => {
     const { container } = render(<CampaignHomeLayout actions={<p>Actions block</p>} />)
 
     const actions = container.querySelector('[data-slot="home-actions"]')
     expect(actions).not.toBeNull()
-    expect(actions?.closest('[data-slot="home-actions-chrome"]')).not.toBeNull()
+    expect(actions?.className).not.toMatch(/-mx-4/)
+    expect(actions?.className).not.toMatch(/calc\(100%\+2rem\)/)
   })
 
   it('does not clip horizontal bleed on the actions retraction shell', () => {

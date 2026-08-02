@@ -178,6 +178,7 @@ describe('CampaignHomeActionStrip', () => {
   it('renders a horizontal scroller with list semantics', () => {
     const { container } = render(
       <CampaignHomeActionStrip
+        variant="strip"
         actions={[
           { label: 'Um', icon: BarChart3 },
           { label: 'Dois', icon: BarChart3 },
@@ -189,10 +190,34 @@ describe('CampaignHomeActionStrip', () => {
     expect(scroller).toBeTruthy()
     const list = scroller?.querySelector('ul[role="list"]')
     expect(list).toBeTruthy()
+    expect(list?.className).toMatch(/flex/)
+  })
+
+  it('renders a 2-column grid on mobile when variant is responsive', () => {
+    const { container } = render(
+      <CampaignHomeActionStrip
+        variant="responsive"
+        actions={[
+          { label: 'Um', icon: BarChart3 },
+          { label: 'Dois', icon: BarChart3 },
+        ]}
+      />,
+    )
+
+    const region = container.querySelector('[aria-label="Ações rápidas"]')
+    expect(region).toBeTruthy()
+    const list = region?.querySelector('ul[role="list"]')
+    expect(list).toBeTruthy()
+    expect(list?.className).toMatch(/grid-cols-2/)
+    expect(list?.className).toMatch(/md:flex/)
+    expect(region?.className).not.toMatch(/overflow-x-auto/)
+    expect(region?.className).toMatch(/md:overflow-x-auto/)
   })
 
   it('scrolls horizontally on pointer-fine drag past the threshold', () => {
-    const { container } = render(<CampaignHomeActionStrip actions={manyActions} />)
+    const { container } = render(
+      <CampaignHomeActionStrip variant="strip" actions={manyActions} />,
+    )
     const scroller = getScroller(container)
     mockScrollerOverflow(scroller)
 
@@ -227,6 +252,7 @@ describe('CampaignHomeActionStrip', () => {
     const onClick = vi.fn()
     const { container } = render(
       <CampaignHomeActionStrip
+        variant="strip"
         actions={[{ label: 'Registrar', icon: BarChart3, onClick }, ...manyActions]}
       />,
     )
@@ -246,6 +272,7 @@ describe('CampaignHomeActionStrip', () => {
     const onClick = vi.fn()
     const { container } = render(
       <CampaignHomeActionStrip
+        variant="strip"
         actions={[{ label: 'Registrar', icon: BarChart3, onClick }, ...manyActions.slice(0, 3)]}
       />,
     )
@@ -263,7 +290,10 @@ describe('CampaignHomeActionStrip', () => {
   it('allows child click when movement stays below the drag threshold', () => {
     const onClick = vi.fn()
     const { container } = render(
-      <CampaignHomeActionStrip actions={[{ label: 'Registrar', icon: BarChart3, onClick }]} />,
+      <CampaignHomeActionStrip
+        variant="strip"
+        actions={[{ label: 'Registrar', icon: BarChart3, onClick }]}
+      />,
     )
     const scroller = getScroller(container)
     mockScrollerOverflow(scroller)
@@ -285,6 +315,7 @@ describe('CampaignHomeActionStrip', () => {
     const onLinkClick = vi.fn()
     const { container } = render(
       <CampaignHomeActionStrip
+        variant="strip"
         actions={[
           {
             label: 'Ajustar votos',

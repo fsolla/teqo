@@ -25,10 +25,20 @@ export type CampaignHomeActionButtonProps = {
   href?: string
   onClick?: () => void
   disabled?: boolean
+  layout?: 'strip' | 'grid' | 'responsive'
 }
 
-export const actionControlClassName =
+export const actionStripControlClassName =
   'group box-content flex min-h-11 w-[5.5rem] shrink-0 snap-start flex-col items-center gap-2 rounded-md text-center outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-90 disabled:pointer-events-none disabled:opacity-50'
+
+export const actionGridControlClassName =
+  'group box-content flex min-h-11 w-full flex-col items-center gap-2 rounded-md text-center outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-90 disabled:pointer-events-none disabled:opacity-50'
+
+export const actionResponsiveControlClassName =
+  'group box-content flex min-h-11 w-full flex-col items-center gap-2 rounded-md text-center outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-90 disabled:pointer-events-none disabled:opacity-50 md:w-[5.5rem] md:shrink-0 md:snap-start'
+
+/** @deprecated Use actionStripControlClassName or actionGridControlClassName */
+export const actionControlClassName = actionStripControlClassName
 
 const circleClassName =
   'flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-[transform,colors] duration-150 ease-out motion-reduce:transition-none pointer-fine:group-hover:scale-[1.05] pointer-coarse:group-data-[pressing=true]:scale-[1.05] motion-reduce:scale-100 group-hover:bg-muted/80 group-focus-visible:bg-muted/80'
@@ -51,6 +61,7 @@ export const CampaignHomeActionButton = ({
   href,
   onClick,
   disabled = false,
+  layout = 'strip',
 }: CampaignHomeActionButtonProps) => {
   const isCoarsePointer = useCoarsePointer()
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -74,7 +85,14 @@ export const CampaignHomeActionButton = ({
           },
   })
 
-  const className = cn(actionControlClassName, isInert && 'cursor-default')
+  const className = cn(
+    layout === 'grid'
+      ? actionGridControlClassName
+      : layout === 'responsive'
+        ? actionResponsiveControlClassName
+        : actionStripControlClassName,
+    isInert && 'cursor-default',
+  )
   const aria = {
     'aria-label': label,
     'aria-describedby': drawerOpen && longPressEnabled ? descriptionId : undefined,

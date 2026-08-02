@@ -136,6 +136,7 @@ export const CampaignQuickActionsDrawer = ({
           {showActions ? (
             <div className="-mx-4 w-[calc(100%+2rem)]">
               <CampaignHomeActionStrip
+                variant="strip"
                 actions={actions.map((action) => ({
                   id: action.id,
                   label: action.label,

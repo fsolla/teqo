@@ -102,6 +102,32 @@ test.describe('Início — busca global (B47)', () => {
 })
 
 test.describe('Início — catálogo de ações (B45)', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('staff sees all six home actions in the mobile grid without horizontal scroll', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    const actionsRegion = page.getByLabel('Ações rápidas')
+    await expect(actionsRegion).toBeVisible()
+
+    for (const label of staffActionLabels) {
+      await expect(page.getByRole('link', { name: label, exact: true }).or(
+        page.getByRole('button', { name: label, exact: true }),
+      )).toBeVisible()
+    }
+
+    const overflowX = await actionsRegion.evaluate((el) => getComputedStyle(el).overflowX)
+    expect(overflowX).not.toBe('auto')
+    expect(overflowX).not.toBe('scroll')
+  })
+
   test('staff sees six home actions and can open municipalities without coverage', async ({
     campaign,
     page,
