@@ -562,6 +562,9 @@ export const test = base.extend<CampaignE2ETestFixtures>({
 })
 
 export const campaignPageChrome = (page: Page, title: string) =>
-  page.locator('[data-slot="campaign-page-chrome"]').getByText(title, { exact: true })
+  page
+    .locator('[data-slot="campaign-page-chrome"]')
+    .filter({ visible: true })
+    .getByText(title, { exact: true })
 
 export { expect }

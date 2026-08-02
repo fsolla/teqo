@@ -299,7 +299,7 @@ test.describe('Municípios — jornadas por papel', () => {
     // `password` variable above does NOT unlock the leader account.
     await campaign.login(page, leaderPhone, leaderAccount.password)
     await page.goto(`${campaign.baseURL}/campanha/contatos`)
-    await expect(page.getByText('Cadastre apoiadores pelo celular.')).toBeVisible()
+    await expect(campaignPageChrome(page, 'Contatos')).toBeVisible()
 
     // The leader redirect aborts `goto`'s load event (ERR_ABORTED); the
     // redirect itself is the assertion, and `toHaveURL` retries onto it.
