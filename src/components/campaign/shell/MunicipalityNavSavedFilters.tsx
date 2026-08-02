@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useId, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
+import { OPS_LIST_ONLINE_ONLY_MESSAGE } from '@/components/campaign/opsSync/opsListLocalCopy'
 import { useBrowserOffline } from '@/components/campaign/opsSync/useBrowserOffline'
 import { useMunicipalitySavedFilters } from '@/components/campaign/shared/useMunicipalitySavedFilters'
 import {
@@ -143,12 +144,10 @@ export const MunicipalityNavSavedFilters = ({ onNavigate }: { onNavigate: () => 
                   handleRemove(entry)
                 }}
                 disabled={browserOffline}
-                title={
-                  browserOffline ? 'Apagar filtro disponível quando estiveres online.' : undefined
-                }
+                title={browserOffline ? OPS_LIST_ONLINE_ONLY_MESSAGE : undefined}
                 aria-label={
                   browserOffline
-                    ? `Apagar o filtro salvo ${entry.name} — disponível quando estiveres online.`
+                    ? `Apagar o filtro salvo ${entry.name} — ${OPS_LIST_ONLINE_ONLY_MESSAGE}`
                     : `Apagar o filtro salvo ${entry.name}`
                 }
                 className="top-1 group-focus-within/menu-sub-item:opacity-100 group-hover/menu-sub-item:opacity-100 md:opacity-0"

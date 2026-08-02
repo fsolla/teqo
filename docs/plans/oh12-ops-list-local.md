@@ -51,7 +51,7 @@ flowchart LR
   Bound -->|online| Factory[OpsListPage RSC]
   Bound -->|offline + flag| Local[OpsListLocal slug]
   Local --> Parse[parser URL domínio]
-  Local --> Q[useLiveQuery mirror]
+  Local --> Q[subscribeChanges mirror]
   Q --> Table[CampaignTable + shells]
 ```
 

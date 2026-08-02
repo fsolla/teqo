@@ -4,6 +4,7 @@ import { BookmarkPlusIcon } from 'lucide-react'
 import { useId, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 
+import { OPS_LIST_ONLINE_ONLY_MESSAGE } from '@/components/campaign/opsSync/opsListLocalCopy'
 import { useBrowserOffline } from '@/components/campaign/opsSync/useBrowserOffline'
 import { useMunicipalitySavedFilters } from '@/components/campaign/shared/useMunicipalitySavedFilters'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
@@ -21,8 +22,6 @@ import {
   MAX_NAME_LENGTH,
   saveMunicipalitySavedFilter,
 } from '@/utilities/municipality/municipalitySavedFilters'
-
-const ONLINE_ONLY_SAVED_FILTER_MESSAGE = 'Disponível quando estiveres online.'
 
 type SaveMunicipalityFilterControlProps = {
   /** The APPLIED state — a search still inside the debounce window is not in the URL yet. */
@@ -94,8 +93,8 @@ export const SaveMunicipalityFilterControl = ({ state }: SaveMunicipalityFilterC
         variant="ghost"
         className="min-h-11 shrink-0 md:self-end"
         disabled
-        title={ONLINE_ONLY_SAVED_FILTER_MESSAGE}
-        aria-label={`${existing ? 'Renomear' : 'Salvar'} filtro — ${ONLINE_ONLY_SAVED_FILTER_MESSAGE}`}
+        title={OPS_LIST_ONLINE_ONLY_MESSAGE}
+        aria-label={`${existing ? 'Renomear' : 'Salvar'} filtro — ${OPS_LIST_ONLINE_ONLY_MESSAGE}`}
       >
         <BookmarkPlusIcon aria-hidden="true" />
         {existing ? 'Renomear' : 'Salvar filtro'}

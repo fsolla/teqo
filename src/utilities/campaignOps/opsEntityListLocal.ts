@@ -25,7 +25,7 @@ import {
   type StateDeputyListState,
 } from '@/utilities/stateDeputyListUrl'
 
-export type OpsPagedResult<T> = {
+type OpsPagedResult<T> = {
   rows: T[]
   totalDocs: number
   totalPages: number

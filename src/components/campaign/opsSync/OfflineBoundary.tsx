@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react'
 
+import { useBrowserOffline } from '@/components/campaign/opsSync/useBrowserOffline'
 import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 
 /**
@@ -24,20 +25,10 @@ export const OfflineBoundary = ({
 }) => {
   const hybrid = resolveOpsHybridEnabled()
   const [mounted, setMounted] = useState(false)
-  const [browserOffline, setBrowserOffline] = useState(false)
+  const browserOffline = useBrowserOffline()
 
   useEffect(() => {
     setMounted(true)
-    setBrowserOffline(typeof navigator !== 'undefined' ? !navigator.onLine : false)
-
-    const onOnline = () => setBrowserOffline(false)
-    const onOffline = () => setBrowserOffline(true)
-    window.addEventListener('online', onOnline)
-    window.addEventListener('offline', onOffline)
-    return () => {
-      window.removeEventListener('online', onOnline)
-      window.removeEventListener('offline', onOffline)
-    }
   }, [])
 
   return <div className="contents">{mounted && hybrid && browserOffline ? fallback : children}</div>

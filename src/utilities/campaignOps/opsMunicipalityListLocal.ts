@@ -4,12 +4,8 @@
  * not invent server-only aggregates (classe / déficit / votos 2022).
  */
 import type { OpsMunicipality } from '@/lib/campaignOps/opsContract'
-import { engagementLevelRank, type EngagementLevel } from '@/lib/engagementLevel'
-import {
-  DEFAULT_VOTE_ESTIMATE_SCENARIO,
-  getVoteEstimateForScenario,
-  type VoteEstimateScenario,
-} from '@/lib/voteEstimate'
+import { engagementLevelRank, isEngagementLevel } from '@/lib/engagementLevel'
+import { DEFAULT_VOTE_ESTIMATE_SCENARIO, getVoteEstimateForScenario } from '@/lib/voteEstimate'
 import { strictDecimalInteger } from '@/utilities/campaignListUrl'
 import {
   municipalityPageSize,
@@ -25,8 +21,7 @@ const TREND_SORT_RANK: Record<string, number> = {
   desfavoravel: 0,
 }
 
-/** Sort keys that need TSE / goal-coverage data absent from the mirror. */
-export const OPS_MUNICIPALITY_OFFLINE_UNAVAILABLE_SORTS = new Set<MunicipalityListSortKey>([
+const OPS_MUNICIPALITY_OFFLINE_UNAVAILABLE_SORTS = new Set<MunicipalityListSortKey>([
   'votos',
   'deficit',
   'frescor',
@@ -58,10 +53,7 @@ const matchesMunicipalityFilters = (
   state: MunicipalityListState,
 ): boolean => {
   if (state.q && !matchesQuery(row, state.q)) return false
-  if (
-    state.regions?.length &&
-    !state.regions.includes(row.region as (typeof state.regions)[number])
-  ) {
+  if (state.regions?.length && !state.regions.some((region) => region === row.region)) {
     return false
   }
   if (state.slugs?.length && !state.slugs.includes(row.slug)) return false
@@ -93,7 +85,6 @@ const sortMunicipalityRows = (
   rows: OpsMunicipality[],
   sort: MunicipalityListSortKey,
   dir: 'asc' | 'desc',
-  scenario: VoteEstimateScenario,
 ): OpsMunicipality[] => {
   const factor = dir === 'asc' ? 1 : -1
   return [...rows].sort((left, right) => {
@@ -118,8 +109,10 @@ const sortMunicipalityRows = (
         break
       }
       case 'expectedVotes': {
-        const leftVotes = getVoteEstimateForScenario(left.expectedVotes, scenario) ?? -1
-        const rightVotes = getVoteEstimateForScenario(right.expectedVotes, scenario) ?? -1
+        const leftVotes =
+          getVoteEstimateForScenario(left.expectedVotes, DEFAULT_VOTE_ESTIMATE_SCENARIO) ?? -1
+        const rightVotes =
+          getVoteEstimateForScenario(right.expectedVotes, DEFAULT_VOTE_ESTIMATE_SCENARIO) ?? -1
         cmp = leftVotes - rightVotes
         break
       }
@@ -130,10 +123,12 @@ const sortMunicipalityRows = (
         cmp = (left.advisors?.length ?? 0) - (right.advisors?.length ?? 0)
         break
       case 'nivel': {
-        const leftLevel = left.engagementLevel as EngagementLevel | null | undefined
-        const rightLevel = right.engagementLevel as EngagementLevel | null | undefined
-        const leftRank = leftLevel ? engagementLevelRank[leftLevel] : -1
-        const rightRank = rightLevel ? engagementLevelRank[rightLevel] : -1
+        const leftRank = isEngagementLevel(left.engagementLevel)
+          ? engagementLevelRank[left.engagementLevel]
+          : -1
+        const rightRank = isEngagementLevel(right.engagementLevel)
+          ? engagementLevelRank[right.engagementLevel]
+          : -1
         cmp = leftRank - rightRank
         break
       }
@@ -145,9 +140,7 @@ const sortMunicipalityRows = (
         break
       default: {
         const _exhaustive: never = sort
-        void _exhaustive
-        cmp = left.name.localeCompare(right.name, 'pt-BR')
-        break
+        return _exhaustive
       }
     }
     if (cmp !== 0) return cmp * factor
@@ -158,7 +151,6 @@ const sortMunicipalityRows = (
 export const filterSortPageOpsMunicipalities = (
   rows: ReadonlyArray<OpsMunicipality>,
   state: MunicipalityListState,
-  options: { scenario?: VoteEstimateScenario } = {},
 ): OpsMunicipalityListLocalResult => {
   const classFilterUnavailable = Boolean(state.classes?.length)
   const filtered = rows.filter((row) => matchesMunicipalityFilters(row, state))
@@ -166,12 +158,7 @@ export const filterSortPageOpsMunicipalities = (
   const sortDegraded = OPS_MUNICIPALITY_OFFLINE_UNAVAILABLE_SORTS.has(resolved.sort)
   const effectiveSort: MunicipalityListSortKey = sortDegraded ? 'name' : resolved.sort
   const effectiveDir = sortDegraded ? 'asc' : resolved.dir
-  const sorted = sortMunicipalityRows(
-    filtered,
-    effectiveSort,
-    effectiveDir,
-    options.scenario ?? DEFAULT_VOTE_ESTIMATE_SCENARIO,
-  )
+  const sorted = sortMunicipalityRows(filtered, effectiveSort, effectiveDir)
   const totalDocs = sorted.length
   const totalPages = Math.max(1, Math.ceil(totalDocs / municipalityPageSize))
   const page = Math.min(Math.max(1, state.page), totalPages)

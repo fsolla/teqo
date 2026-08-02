@@ -25,11 +25,7 @@ import {
 } from '@/components/campaign/opsSync/opsMirrorClient'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
-import {
-  CampaignTable,
-  CampaignTableHead,
-  type CampaignTableColumn,
-} from '@/components/campaign/shared/CampaignTable'
+import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
 import { OpsListView } from '@/components/campaign/shared/OpsListView'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import { Button } from '@/components/ui/button'
@@ -42,6 +38,16 @@ import type {
   OpsOrganization,
   OpsStateDeputy,
 } from '@/lib/campaignOps/opsContract'
+import { formatElectionNumber } from '@/lib/electionFormat'
+import {
+  EMPTY_ENGAGEMENT_LEVEL_LABEL,
+  formatEngagementLevelLabel,
+  isEngagementLevel,
+} from '@/lib/engagementLevel'
+import type { OpsListDomainId } from '@/lib/opsListRegistry/opsListRegistry'
+import { campaignDemandKindLabels, campaignDemandStatusLabels } from '@/lib/schemas/campaignDemand'
+import { organizationKindLabels } from '@/lib/schemas/organization'
+import { DEFAULT_VOTE_ESTIMATE_SCENARIO, getVoteEstimateForScenario } from '@/lib/voteEstimate'
 import {
   filterSortPageOpsDemands,
   filterSortPageOpsLeaderships,
@@ -49,26 +55,13 @@ import {
   filterSortPageOpsStateDeputies,
 } from '@/utilities/campaignOps/opsEntityListLocal'
 import { filterSortPageOpsMunicipalities } from '@/utilities/campaignOps/opsMunicipalityListLocal'
-import { formatElectionNumber } from '@/lib/electionFormat'
-import {
-  EMPTY_ENGAGEMENT_LEVEL_LABEL,
-  formatEngagementLevelLabel,
-  isEngagementLevel,
-} from '@/lib/engagementLevel'
-import { getOpsListDomain, type OpsListDomainId } from '@/lib/opsListRegistry/opsListRegistry'
-import { campaignDemandKindLabels, campaignDemandStatusLabels } from '@/lib/schemas/campaignDemand'
-import { organizationKindLabels } from '@/lib/schemas/organization'
-import { DEFAULT_VOTE_ESTIMATE_SCENARIO, getVoteEstimateForScenario } from '@/lib/voteEstimate'
 import { buildDemandListHref, parseDemandListParams } from '@/utilities/demand/demandListUrl'
 import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
 import {
   buildLeadershipListHref,
   parseLeadershipListParams,
 } from '@/utilities/leadership/leadershipListUrl'
-import {
-  politicalTrendLabels,
-  type PoliticalTrendStatus,
-} from '@/utilities/municipality/municipalityLabels'
+import { politicalTrendLabels } from '@/utilities/municipality/municipalityLabels'
 import {
   buildMunicipalityFilterHref,
   clearMunicipalityListFilters,
@@ -154,11 +147,15 @@ const OpsListLocalShell = ({
 )
 
 const OpsListDomainUnavailable = ({ title }: { title: string }) => (
-  <OpsListLocalShell title={title} description={OPS_LIST_DOMAIN_UNAVAILABLE_MESSAGE}>
+  <div className="flex flex-col gap-6">
+    <header className="flex flex-col gap-2">
+      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+      <p className="text-muted-foreground">{OPS_LIST_DOMAIN_UNAVAILABLE_MESSAGE}</p>
+    </header>
     <section aria-label="Lista indisponível offline" className="rounded-xl border px-4 py-6">
       <OpsListLocalNotice>{OPS_LIST_ONLINE_ONLY_MESSAGE}</OpsListLocalNotice>
     </section>
-  </OpsListLocalShell>
+  </div>
 )
 
 /* ——— Municipios ——— */
@@ -231,12 +228,11 @@ const MunicipalityLocalFilters = ({ state }: { state: MunicipalityListState }) =
   )
 }
 
-const municipalityLocalColumns = (): Array<CampaignTableColumn<OpsMunicipality>> => [
+const MUNICIPALITY_LOCAL_COLUMNS: Array<CampaignTableColumn<OpsMunicipality>> = [
   {
     id: 'name',
     label: 'Município',
     mandatory: true,
-    head: <CampaignTableHead>Município</CampaignTableHead>,
     cell: (row) => (
       <div className="flex flex-wrap items-center gap-2">
         <Link
@@ -252,23 +248,20 @@ const municipalityLocalColumns = (): Array<CampaignTableColumn<OpsMunicipality>>
   {
     id: 'region',
     label: 'Território',
-    head: <CampaignTableHead>Território</CampaignTableHead>,
     cellClassName: 'text-muted-foreground',
     cell: (row) => row.region,
   },
   {
     id: 'trend',
     label: 'Tendência',
-    head: <CampaignTableHead>Tendência</CampaignTableHead>,
     cell: (row) => {
-      const status = row.politicalTrend?.status as PoliticalTrendStatus | null | undefined
+      const status = row.politicalTrend?.status
       return status ? politicalTrendLabels[status] : '—'
     },
   },
   {
     id: 'level',
     label: 'Nível',
-    head: <CampaignTableHead>Nível</CampaignTableHead>,
     cell: (row) =>
       isEngagementLevel(row.engagementLevel)
         ? formatEngagementLevelLabel(row.engagementLevel)
@@ -277,7 +270,6 @@ const municipalityLocalColumns = (): Array<CampaignTableColumn<OpsMunicipality>>
   {
     id: 'expectedVotes',
     label: 'Votos estimados',
-    head: <CampaignTableHead>Votos estimados</CampaignTableHead>,
     cellClassName: 'text-right',
     cell: (row) => {
       const votes = getVoteEstimateForScenario(row.expectedVotes, DEFAULT_VOTE_ESTIMATE_SCENARIO)
@@ -287,7 +279,6 @@ const municipalityLocalColumns = (): Array<CampaignTableColumn<OpsMunicipality>>
   {
     id: 'advisors',
     label: 'Assessores',
-    head: <CampaignTableHead>Assessores</CampaignTableHead>,
     cellClassName: 'text-right',
     cell: (row) => String(row.advisors?.length ?? 0),
   },
@@ -310,7 +301,7 @@ const OpsMunicipalityListLocal = () => {
     )
   }
 
-  const columns = municipalityLocalColumns()
+  const columns = MUNICIPALITY_LOCAL_COLUMNS
   const overview = (
     <div className="rounded-xl border px-4 py-3">
       <OpsListLocalNotice>{OPS_LIST_KPI_UNAVAILABLE_MESSAGE}</OpsListLocalNotice>
@@ -362,12 +353,11 @@ const OpsMunicipalityListLocal = () => {
 
 /* ——— Leaderships ——— */
 
-const leadershipLocalColumns = (): Array<CampaignTableColumn<OpsLeadership>> => [
+const LEADERSHIP_LOCAL_COLUMNS: Array<CampaignTableColumn<OpsLeadership>> = [
   {
     id: 'name',
     label: 'Nome',
     mandatory: true,
-    head: <CampaignTableHead>Nome</CampaignTableHead>,
     cell: (row) => (
       <Link
         href={`/campanha/liderancas/${row.id}`}
@@ -380,13 +370,11 @@ const leadershipLocalColumns = (): Array<CampaignTableColumn<OpsLeadership>> => 
   {
     id: 'supportStatus',
     label: 'Status',
-    head: <CampaignTableHead>Status</CampaignTableHead>,
     cell: (row) => supportStatusLabels[row.supportStatus],
   },
   {
     id: 'municipalities',
     label: 'Municípios',
-    head: <CampaignTableHead>Municípios</CampaignTableHead>,
     cellClassName: 'text-right',
     cell: (row) => String(row.municipalities.length),
   },
@@ -423,7 +411,7 @@ const OpsLeadershipListLocal = () => {
         }
         table={
           <CampaignTable
-            columns={leadershipLocalColumns()}
+            columns={LEADERSHIP_LOCAL_COLUMNS}
             rows={pageResult.rows}
             rowKey={(row) => row.id}
             caption="Lideranças (offline)"
@@ -471,7 +459,6 @@ const OpsStateDeputyListLocal = () => {
       id: 'name',
       label: 'Nome',
       mandatory: true,
-      head: <CampaignTableHead>Nome</CampaignTableHead>,
       cell: (row) => (
         <Link
           href={`/campanha/dobradinhas/${row.slug}`}
@@ -484,7 +471,6 @@ const OpsStateDeputyListLocal = () => {
     {
       id: 'party',
       label: 'Partido',
-      head: <CampaignTableHead>Partido</CampaignTableHead>,
       cell: (row) => row.party?.trim() || '—',
     },
   ]
@@ -539,7 +525,6 @@ const OpsOrganizationListLocal = () => {
       id: 'name',
       label: 'Nome',
       mandatory: true,
-      head: <CampaignTableHead>Nome</CampaignTableHead>,
       cell: (row) => (
         <Link
           href={`/campanha/organizacoes/${row.slug}`}
@@ -552,7 +537,6 @@ const OpsOrganizationListLocal = () => {
     {
       id: 'kind',
       label: 'Tipo',
-      head: <CampaignTableHead>Tipo</CampaignTableHead>,
       cell: (row) => organizationKindLabels[row.kind],
     },
   ]
@@ -607,7 +591,6 @@ const OpsDemandListLocal = () => {
       id: 'title',
       label: 'Título',
       mandatory: true,
-      head: <CampaignTableHead>Título</CampaignTableHead>,
       cell: (row) => (
         <Link
           href={`/campanha/demandas/${row.slug}`}
@@ -620,13 +603,11 @@ const OpsDemandListLocal = () => {
     {
       id: 'kind',
       label: 'Tipo',
-      head: <CampaignTableHead>Tipo</CampaignTableHead>,
       cell: (row) => campaignDemandKindLabels[row.kind],
     },
     {
       id: 'status',
       label: 'Status',
-      head: <CampaignTableHead>Status</CampaignTableHead>,
       cell: (row) => campaignDemandStatusLabels[row.status],
     },
   ]
@@ -682,11 +663,6 @@ const DOMAIN_TITLES: Record<OpsListDomainId, string> = {
  * via `subscribeChanges` (same coalesce as MunicipalityDetailLocal).
  */
 export const OpsListLocal = ({ slug }: { slug: OpsListDomainId }) => {
-  const meta = getOpsListDomain(slug)
-  if (!meta) {
-    return <OpsListDomainUnavailable title={slug} />
-  }
-
   switch (slug) {
     case 'municipios':
       return <OpsMunicipalityListLocal />

@@ -1,16 +1,10 @@
 import { expect, test } from './fixtures/campaignE2EFixtures.js'
 
 /**
-<<<<<<< HEAD
- * OH9/OH11 — dual-path municipality detail + full offline journey. Requires
- * `OPS_HYBRID=1` on the Playwright webServer (compile-time). Default CI keeps
- * the flag off so characterization / municipalities specs continue to pin the
- * RSC path.
-=======
- * OH9 / OH12 — dual-path municipality detail + list. Requires `OPS_HYBRID=1` on
- * the Playwright webServer (compile-time). Default CI keeps the flag off so
- * characterization / municipalities specs continue to pin the RSC path.
->>>>>>> c9e3e84f (OH12: OpsListLocal read-only via registry + OfflineBoundary on lists)
+ * OH9/OH11/OH12 — dual-path municipality detail + offline journey + list Local.
+ * Requires `OPS_HYBRID=1` on the Playwright webServer (compile-time). Default CI
+ * keeps the flag off so characterization / municipalities specs continue to pin
+ * the RSC path.
  */
 const opsHybridEnabled =
   process.env.OPS_HYBRID === '1' || process.env.OPS_HYBRID?.toLowerCase() === 'true'
