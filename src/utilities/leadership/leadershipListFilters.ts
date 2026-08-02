@@ -111,9 +111,8 @@ export const toggleLeadershipStateDeputyFilter = (
   return toggleLeadershipMultiFilterValue(state, 'stateDeputy', value)
 }
 
-export const clearLeadershipStateDeputyFilter = (
-  state: LeadershipListState,
-): LeadershipListState => setLeadershipMultiFilterValues(state, 'stateDeputy', [])
+export const clearLeadershipStateDeputyFilter = (state: LeadershipListState): LeadershipListState =>
+  setLeadershipMultiFilterValues(state, 'stateDeputy', [])
 
 /** Exclusive toggle — selecting the active value clears; selecting the other replaces. */
 export const toggleLeadershipAccessFilter = (

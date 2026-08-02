@@ -55,7 +55,6 @@ import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibili
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
 import { formatRelativeAge } from '@/utilities/formatRelativeAge'
-import { loadOrganizationNamesByIds } from '@/utilities/loadNamesByIds'
 import {
   loadLeadershipListPageData,
   type LeadershipRowViewModel,
@@ -74,6 +73,7 @@ import {
   resolveLeadershipListUrl,
   type LeadershipListState,
 } from '@/utilities/leadership/leadershipListUrl'
+import { loadOrganizationNamesByIds } from '@/utilities/loadNamesByIds'
 import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
 import { loadStateDeputySummaries } from '@/utilities/stateDeputyData'
 
