@@ -282,15 +282,6 @@ const SidebarInset = ({ className, ...props }: React.ComponentProps<'main'>) => 
   />
 )
 
-const SidebarHeader = ({ className, ...props }: React.ComponentProps<'div'>) => (
-  <div
-    data-slot="sidebar-header"
-    data-sidebar="header"
-    className={cn('flex flex-col gap-2 p-2', className)}
-    {...props}
-  />
-)
-
 const SidebarFooter = ({ className, ...props }: React.ComponentProps<'div'>) => (
   <div
     data-slot="sidebar-footer"
@@ -513,7 +504,6 @@ export {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarHeader,
   SidebarInset,
   SidebarMenu,
   SidebarMenuAction,
