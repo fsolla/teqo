@@ -99,6 +99,7 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
       showStaffFilters={isStaffView}
       regionFilterOptions={columnFilterOptions.region}
       advisorFilterOptions={columnFilterOptions.advisor}
+      slugFilterValues={columnFilterOptions.name}
     />
   )
 

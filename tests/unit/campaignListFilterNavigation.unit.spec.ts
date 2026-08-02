@@ -11,18 +11,15 @@ vi.mock('next/navigation', async (importActual) => ({
   useRouter: () => ({ replace: routerState.replace }),
 }))
 
-import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
-import { MunicipalityFilters } from '@/components/campaign/municipality/MunicipalityFilters'
 import { TerritoryFilters } from '@/components/campaign/municipality/TerritoryFilters'
 import { CampaignListPendingBoundary } from '@/components/campaign/shared/CampaignListPending'
 import { SEARCH_DEBOUNCE_MS } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import { StateDeputyFilters } from '@/components/campaign/stateDeputy/StateDeputyFilters'
 
 /**
- * The three list filter shells share one navigation scaffold
- * (`useCampaignListFilterNavigation`). These cases are the contract that
- * survives the extraction: debounce window, no-op dedup, unmount cleanup, and
- * carrying the uncommitted search into a filter/sort navigation.
+ * List filter shells that still use the debounced-search scaffold
+ * (`useCampaignListFilterNavigation`). Municípios left this pattern in B127
+ * (omnibox); the hook contract is pinned by dobradinhas + territórios.
  */
 type FilterCase = {
   name: string
@@ -79,35 +76,9 @@ const filterCases: FilterCase[] = [
         regionOptions: [],
       }),
   },
-  {
-    name: 'municípios',
-    searchLabel: 'Buscar município',
-    hrefWithQuery: '/campanha/municipios?q=silva',
-    bareHref: '/campanha/municipios',
-    sortValue: 'name|asc',
-    element: (currentQuery) =>
-      createElement(
-        MunicipalityEstimateScenarioProvider,
-        null,
-        createElement(MunicipalityFilters, {
-          state: { page: 1, ...(currentQuery ? { q: currentQuery } : {}) },
-          showStaffFilters: true,
-          regionFilterOptions: [],
-          advisorFilterOptions: [],
-        }),
-      ),
-    elementWithSort: () =>
-      createElement(
-        MunicipalityEstimateScenarioProvider,
-        null,
-        createElement(MunicipalityFilters, {
-          state: { page: 1, sort: 'name', dir: 'asc' },
-          showStaffFilters: true,
-          regionFilterOptions: [],
-          advisorFilterOptions: [],
-        }),
-      ),
-  },
+  // Municípios (B127) left the debounced-search shell for the omnibox; the
+  // shared hook contract stays pinned by dobradinhas + territórios. Omnibox
+  // apply/remove lives in municipalityOmnibox.unit.spec.ts.
 ]
 
 /**
