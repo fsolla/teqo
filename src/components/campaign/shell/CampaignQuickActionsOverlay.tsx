@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { CampaignGlobalSearchBody } from '@/components/campaign/dashboard/CampaignGlobalSearchMount'
 import { CampaignHomeActionStrip } from '@/components/campaign/dashboard/CampaignHomeActionStrip'
@@ -117,6 +117,7 @@ export const CampaignQuickActionsOverlay = ({
 }) => {
   const isMobile = useIsMobile()
   const { clear } = useHomeSearch()
+  const titleRef = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
     if (!open) clear()
@@ -127,10 +128,12 @@ export const CampaignQuickActionsOverlay = ({
       <Drawer open={open} onOpenChange={onOpenChange} showSwipeHandle>
         <DrawerContent
           id="CampaignQuickActionsOverlay"
-          initialFocus={false}
+          initialFocus={titleRef}
           className="max-h-[85dvh] border-t border-border bg-background text-foreground [--drawer-height:auto]"
         >
-          <DrawerTitle className="sr-only">Ações rápidas</DrawerTitle>
+          <DrawerTitle ref={titleRef} tabIndex={-1} className="sr-only outline-none">
+            Ações rápidas
+          </DrawerTitle>
           <DrawerDescription className="sr-only">
             Ações do contexto e busca na campanha
           </DrawerDescription>
@@ -147,10 +150,15 @@ export const CampaignQuickActionsOverlay = ({
       <DialogContent
         id="CampaignQuickActionsOverlay"
         className="flex max-h-[min(85dvh,40rem)] w-[calc(100vw-2rem)] max-w-lg flex-col gap-4 overflow-hidden p-4 sm:p-6"
-        onOpenAutoFocus={(event) => event.preventDefault()}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault()
+          titleRef.current?.focus()
+        }}
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>Ações rápidas</DialogTitle>
+          <DialogTitle ref={titleRef} tabIndex={-1} className="outline-none">
+            Ações rápidas
+          </DialogTitle>
           <DialogDescription>Ações do contexto e busca na campanha</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col overflow-y-auto">

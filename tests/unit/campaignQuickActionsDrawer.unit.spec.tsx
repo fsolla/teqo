@@ -58,6 +58,15 @@ let innerWidthSpy: ReturnType<typeof vi.spyOn> | undefined
 
 const stubMobileViewport = () => {
   innerWidthSpy = vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(375)
+  matchMediaMock.mockImplementation((query: string) => ({
+    matches: query.includes('max-width'),
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }))
 }
 
 beforeEach(() => {
@@ -359,23 +368,16 @@ describe('CampaignQuickActionsOverlay (B126)', () => {
 
     const input = screen.getByLabelText('Buscar na campanha')
     const actionsChrome = document.querySelector('[data-slot="quick-actions-chrome"]')
+    const title = screen.getByText('Ações rápidas')
 
     expect(document.activeElement).not.toBe(input)
+    expect(document.activeElement).toBe(title)
     expect(actionsChrome?.getAttribute('data-retracted')).toBeNull()
     expect(actionsChrome?.className).not.toContain('grid-rows-[0fr]')
   })
 
   it('shows swipe handle and no dialog close on mobile (B146)', () => {
     stubMobileViewport()
-    matchMediaMock.mockImplementation((query: string) => ({
-      matches: query.includes('max-width'),
-      media: query,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }))
 
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
@@ -403,15 +405,6 @@ describe('CampaignQuickActionsOverlay (B126)', () => {
 
   it('uses mobile drawer with actions above search', () => {
     stubMobileViewport()
-    matchMediaMock.mockImplementation((query: string) => ({
-      matches: query.includes('max-width'),
-      media: query,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }))
 
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
