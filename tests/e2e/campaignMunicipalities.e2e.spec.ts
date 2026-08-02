@@ -440,13 +440,11 @@ test.describe('Municípios — cards no celular (B42)', () => {
 
     // Anywhere outside a control is the município's own link: the click lands on
     // the stretched `after:inset-0` overlay, which belongs to the card heading.
-    // B120 densified the card (no "Tendência" dt label) — tap the territory line
-    // under the name, which is not a quick-edit control.
-    // `force`: Playwright's hit-target check retries forever here precisely
-    // BECAUSE the stretched overlay intercepts the pointer — which is the
-    // behavior under test. Force dispatches the tap at the label's point, the
-    // overlay receives it (as a user's finger would), and the card navigates.
-    await card.locator('p.text-muted-foreground').first().click({ force: true })
+    // B120 densified the card (no "Tendência" dt label). Do NOT tap the territory
+    // line — `TerritoryLink` is `relative` above the overlay on purpose. Tap the
+    // heading text; `force` because Playwright's hit-target check retries forever
+    // when the overlay intercepts — which is the behavior under test.
+    await card.getByRole('heading', { name: municipality.name }).click({ force: true })
     await expect(page).toHaveURL(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
     await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
   })
