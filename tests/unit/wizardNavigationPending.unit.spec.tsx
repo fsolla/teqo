@@ -4,7 +4,8 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 
 const routerState = vi.hoisted(() => ({
   push: vi.fn(),
-  resolvePush: null as (() => void) | null,
+  replace: vi.fn(),
+  resolveNav: null as (() => void) | null,
 }))
 
 vi.mock('next/navigation', async (importActual) => ({
@@ -12,7 +13,7 @@ vi.mock('next/navigation', async (importActual) => ({
   usePathname: () => '/campanha/acoes/atualizar-votos',
   useRouter: () => ({
     push: (...args: unknown[]) => routerState.push(...args),
-    replace: vi.fn(),
+    replace: (...args: unknown[]) => routerState.replace(...args),
   }),
 }))
 
@@ -65,15 +66,16 @@ describe('wizard navigation pending', () => {
   afterEach(() => {
     cleanup()
     routerState.push.mockReset()
-    routerState.resolvePush = null
+    routerState.replace.mockReset()
+    routerState.resolveNav = null
     vi.unstubAllGlobals()
   })
 
   it('dims step content and locks chrome while Voltar navigation is in flight', async () => {
-    routerState.push.mockImplementation(
+    routerState.replace.mockImplementation(
       () =>
         new Promise<void>((resolve) => {
-          routerState.resolvePush = resolve
+          routerState.resolveNav = resolve
         }),
     )
 
@@ -90,7 +92,7 @@ describe('wizard navigation pending', () => {
       fireEvent.click(backLink)
     })
 
-    expect(routerState.push).toHaveBeenCalledWith('/campanha/acoes/atualizar-votos', {
+    expect(routerState.replace).toHaveBeenCalledWith('/campanha/acoes/atualizar-votos', {
       scroll: true,
     })
 
@@ -105,7 +107,7 @@ describe('wizard navigation pending', () => {
     })
 
     await act(async () => {
-      routerState.resolvePush?.()
+      routerState.resolveNav?.()
     })
 
     expect(stepBody!.getAttribute('aria-busy')).not.toBe('true')

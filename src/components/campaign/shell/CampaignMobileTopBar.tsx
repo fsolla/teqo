@@ -56,7 +56,7 @@ export const CampaignMobileTopBar = ({ notificationBell }: { notificationBell?: 
               asChild
               disabled={isPending}
             >
-              <CampaignWizardNavLink href={chrome.previousHref}>
+              <CampaignWizardNavLink href={chrome.previousHref} replace>
                 <ArrowLeft className="size-4 shrink-0" aria-hidden />
                 Voltar
               </CampaignWizardNavLink>

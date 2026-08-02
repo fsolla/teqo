@@ -20,7 +20,6 @@ import {
 } from '@/components/ui/Drawer'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
-import { wizardActionHref } from '@/lib/campaignActionRoutes'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import {
   WIZARD_LEADERSHIP_ADD_TILE_LABEL,
@@ -39,6 +38,7 @@ import {
   resolveWizardChainEntry,
   wizardChainContinueHref,
   wizardChainEndHref,
+  wizardPreviousHref,
 } from '@/lib/wizardActionChain'
 import {
   resolveWizardLeadershipSkip,
@@ -120,7 +120,7 @@ export const WizardLeadershipStep = ({
 
   const handleContinue = () => {
     startContinueTransition(() => {
-      router.replace(chainContinueHref)
+      router.push(chainContinueHref)
     })
   }
 
@@ -129,7 +129,13 @@ export const WizardLeadershipStep = ({
       flowTitle={wizardFlowTitleForSlug(actionSlug)}
       stepTitle={stepTitle}
       isEntryStep={false}
-      previousHref={wizardActionHref(actionSlug, undefined, { returnPath })}
+      previousHref={wizardPreviousHref({
+        actionSlug,
+        stepKind: mode.kind === 'form' ? 'leadership-form' : 'leadership-grid',
+        municipalitySlug,
+        entryAction,
+        returnPath,
+      })}
       dismissHref={wizardChainEndHref(returnPath)}
       municipalityLabel={municipalityName}
       skip={skipConfig}
