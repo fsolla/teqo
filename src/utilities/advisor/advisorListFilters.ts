@@ -3,7 +3,6 @@
  */
 import { strictDecimalInteger } from '@/utilities/campaignListUrl'
 import {
-  advisorListHrefForPage,
   advisorListStateToRawParams,
   parseAdvisorListParams,
   type AdvisorListState,
@@ -38,16 +37,10 @@ export const toggleAdvisorMunicipalityFilter = (
   )
 }
 
-export const clearAdvisorMunicipalityFilter = (state: AdvisorListState): AdvisorListState =>
-  setAdvisorMunicipalityFilterValues(state, [])
-
 /** Drop every filter and the search; keep pagination at page 1. */
 export const clearAdvisorListFilters = (): AdvisorListState => ({
   page: 1,
 })
 
-export const buildAdvisorFilterHref = (next: AdvisorListState): string =>
-  advisorListHrefForPage(next, 1)
-
-export const isAdvisorMunicipalityFilterActive = (state: AdvisorListState): boolean =>
-  Boolean(state.municipalities?.length)
+export const hasAdvisorListActiveFilters = (state: AdvisorListState): boolean =>
+  Boolean(state.q || state.municipalities?.length)

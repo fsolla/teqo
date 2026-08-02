@@ -6,6 +6,7 @@ import { AdvisorFilters } from '@/components/campaign/advisor/AdvisorFilters'
 import { AdvisorsTable } from '@/components/campaign/advisor/AdvisorsTable'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
+import { hasAdvisorListActiveFilters } from '@/utilities/advisor/advisorListFilters'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
@@ -52,7 +53,7 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
     label: getMunicipalityCatalogEntry(entry.slug)?.name ?? entry.slug,
   }))
 
-  const hasActiveFilters = Boolean(state.q || state.municipalities?.length)
+  const hasActiveFilters = hasAdvisorListActiveFilters(state)
 
   return (
     <CampaignPageShell>
