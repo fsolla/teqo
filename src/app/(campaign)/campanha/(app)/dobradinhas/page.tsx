@@ -8,11 +8,7 @@ import { OfflineBoundary } from '@/components/campaign/opsSync/OfflineBoundary'
 import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
-import {
-  CampaignListPendingBoundary,
-  CampaignListResults,
-  CampaignTransitionAnchor,
-} from '@/components/campaign/shared/CampaignListPending'
+import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignListSheetProvider } from '@/components/campaign/shared/CampaignListSheetHost'
 import {
   CampaignTable,
@@ -39,7 +35,6 @@ import {
 } from '@/components/ui/Empty'
 import { resolveVisibleColumns } from '@/lib/campaignColumnVisibility'
 import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
-import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { cn } from '@/lib/utils'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
@@ -264,7 +259,7 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
     />
   ) : null
 
-  const main = resolveListUnifiedEnabled() ? (
+  const main = (
     <OpsListPage
       overview={sortSummaryNode}
       toolbar={filters}
@@ -272,15 +267,6 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
       empty={null}
       footer={footerNode}
     />
-  ) : (
-    <CampaignListPendingBoundary>
-      {filters}
-      <CampaignListResults>
-        {sortSummaryNode}
-        {tableNode}
-        {footerNode}
-      </CampaignListResults>
-    </CampaignListPendingBoundary>
   )
 
   return (

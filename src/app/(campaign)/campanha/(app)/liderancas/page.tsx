@@ -16,11 +16,7 @@ import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignCopyableCell } from '@/components/campaign/shared/CampaignCopyableCell'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
-import {
-  CampaignListPendingBoundary,
-  CampaignListResults,
-  CampaignTransitionAnchor,
-} from '@/components/campaign/shared/CampaignListPending'
+import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignListSheetProvider } from '@/components/campaign/shared/CampaignListSheetHost'
 import {
   CampaignTable,
@@ -50,7 +46,6 @@ import {
   resolvedPortfolioEntriesById,
   type MunicipalityPortfolioIndexEntry,
 } from '@/lib/municipalityPortfolio'
-import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { formatBrazilianPhoneInput, whatsAppHrefForPhone } from '@/lib/phone'
 import { MAX_LEADERSHIP_MUNICIPALITIES } from '@/lib/schemas/leadership'
 import { cn } from '@/lib/utils'
@@ -422,7 +417,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
     />
   ) : null
 
-  const main = resolveListUnifiedEnabled() ? (
+  const main = (
     <OpsListPage
       overview={sortSummaryNode}
       toolbar={filters}
@@ -430,15 +425,6 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
       empty={null}
       footer={footerNode}
     />
-  ) : (
-    <CampaignListPendingBoundary>
-      {filters}
-      <CampaignListResults>
-        {sortSummaryNode}
-        {tableNode}
-        {footerNode}
-      </CampaignListResults>
-    </CampaignListPendingBoundary>
   )
 
   return (

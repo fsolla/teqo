@@ -9,10 +9,6 @@ import { OpsListLocal } from '@/components/campaign/opsSync/OpsListLocal'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignListPageHeader'
-import {
-  CampaignListPendingBoundary,
-  CampaignListResults,
-} from '@/components/campaign/shared/CampaignListPending'
 import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
@@ -20,7 +16,6 @@ import { SupporterFilters } from '@/components/campaign/supporter/SupporterFilte
 import { SupporterList } from '@/components/campaign/supporter/SupporterList'
 import { SupporterListOverview } from '@/components/campaign/supporter/SupporterListOverview'
 import { Button } from '@/components/ui/button'
-import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import { isCampaignCoordinator, isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
@@ -91,7 +86,7 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
       />
     ) : null
 
-  const main = resolveListUnifiedEnabled() ? (
+  const main = (
     <OpsListPage
       overview={overviewNode}
       toolbar={toolbarNode}
@@ -99,15 +94,6 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
       empty={null}
       footer={footerNode}
     />
-  ) : (
-    <CampaignListPendingBoundary>
-      {toolbarNode}
-      <CampaignListResults>
-        {overviewNode}
-        {tableNode}
-        {footerNode}
-      </CampaignListResults>
-    </CampaignListPendingBoundary>
   )
 
   return (

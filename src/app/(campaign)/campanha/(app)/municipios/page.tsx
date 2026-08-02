@@ -1,7 +1,3 @@
-import {
-  CampaignListPendingBoundary,
-  CampaignListResults,
-} from '@/components/campaign/shared/CampaignListPending'
 import config from '@payload-config'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
@@ -19,7 +15,6 @@ import { CampaignListPageHeader } from '@/components/campaign/shared/CampaignLis
 import { CampaignScopeBadge } from '@/components/campaign/shared/CampaignScopeBadge'
 import { OpsListPage } from '@/components/campaign/shared/OpsListPage'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { resolveListUnifiedEnabled } from '@/lib/opsListRegistry/opsListFlag'
 import {
   isCampaignCoordinator,
   isCampaignStaff,
@@ -165,28 +160,16 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
     />
   )
 
-  // Shared pieces; flag only switches the composition shell (CL3 tracer).
-  // Provider wraps both paths the same way (outside the pending boundary).
+  // Provider wraps outside the pending boundary (OpsListPage owns pending chrome).
   const main = wrapStaffListRegion(
     isStaffView,
-    resolveListUnifiedEnabled() ? (
-      <OpsListPage
-        overview={overviewNode}
-        toolbar={filters}
-        table={tableNode}
-        empty={null}
-        footer={footerNode}
-      />
-    ) : (
-      <CampaignListPendingBoundary>
-        {filters}
-        <CampaignListResults>
-          {overviewNode}
-          {tableNode}
-          {footerNode}
-        </CampaignListResults>
-      </CampaignListPendingBoundary>
-    ),
+    <OpsListPage
+      overview={overviewNode}
+      toolbar={filters}
+      table={tableNode}
+      empty={null}
+      footer={footerNode}
+    />,
   )
 
   return (

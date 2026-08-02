@@ -1,7 +1,7 @@
 # Lista unificada `/campanha` — spec-mãe e critérios
 
-Status: travado (freshness audit 2026-08-01 — premissas confirmadas no repo)
-Atualizado em: 2026-08-01
+Status: implementado (flag `LIST_UNIFIED` retirada — CL9, 2026-08-02)
+Atualizado em: 2026-08-02
 Issue: #155
 Priority: P1
 Model: cursor-grok-4.5-high
@@ -13,9 +13,9 @@ Responsável: —
 
 1. Factory = prólogo de página + render com slots; não unifica where/sort/paginação.
 2. `atividades` fica fora da factory (cards + tabs próprios) — **não** entra em `opsListDomains`.
-3. `assessores` e `territorios` precisam de pré-work antes de migrar (CL5a / CL6a).
+3. `assessores` e `territorios` precisavam de pré-work antes de migrar (CL5a / CL6a) — feito.
 4. Saved filters só municípios; allowlist `CampaignListId` para seletor de colunas.
-5. Flag `LIST_UNIFIED` via env (`resolveListUnifiedEnabled` em CL2); URLs públicas intactas.
+5. URLs públicas intactas. Flag `LIST_UNIFIED` **retirada** (CL9): as 8 rotas sempre usam `OpsListPage`.
 
 ## Objetivos
 
@@ -98,11 +98,10 @@ Estado **hoje** (não o contrato-alvo). Para sortModel / canonicalRedirect / col
 
 ## Critérios de aceite do projecto
 
-1. Sem `LIST_UNIFIED`: e2e existentes idênticas a `main`.
-2. Com `LIST_UNIFIED=1`: cada lista migrada renderiza pela `OpsListPage` com paridade funcional/visível.
-3. URLs canónicas e saved filters municípios funcionam igual.
-4. `pnpm gate:fast` + e2e das listas verdes.
-5. Registry falha o build se faltar slug v1 ou coluna sem `label`.
+1. Cada lista v1 renderiza pela `OpsListPage` (sem dual-path / sem `LIST_UNIFIED`).
+2. URLs canónicas e saved filters municípios funcionam igual.
+3. `pnpm gate:fast` + e2e das listas verdes.
+4. Registry falha o build se faltar slug v1 ou coluna sem `label`.
 
 ## Index de planos filhos
 
@@ -117,6 +116,7 @@ Números GitHub (#156–#162) **não** seguem a ordem de execução (CL5=#160, C
 | CL6 | #159  | [`cl6-territorios-factory.md`](cl6-territorios-factory.md)                         | CL3 (+ CL6a bloqueia CL6b) | ~2d      |
 | CL7 | #161  | [`cl7-apoiadores-organizacoes.md`](cl7-apoiadores-organizacoes.md)                 | CL3                        | ~1–1,5d  |
 | CL8 | #162  | [`cl8-contrato-cleanup.md`](cl8-contrato-cleanup.md)                               | CL4–CL7                    | ~1d      |
+| CL9 | —     | [`cl9-list-unified-flag-cleanup.md`](cl9-list-unified-flag-cleanup.md)             | CL8 (+ OH14)               | ~0,5d    |
 
 ## Dependência entre projectos
 
