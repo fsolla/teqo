@@ -138,9 +138,12 @@ export const CampaignHomeActionStrip = ({
         )}
         {...finePointerPanProps}
       >
+        {/* B115 — deliberate px-0: buttons enter from the device edge; the slot's
+            -mx-4 bleed already takes the scroller to the edge. Do not re-add a
+            lateral inset here (product reverted the B101 ul inset). */}
         <ul
           role="list"
-          className="m-0 flex min-w-max list-none snap-x snap-proximity gap-0 px-4 pb-1 md:px-0"
+          className="m-0 flex min-w-max list-none snap-x snap-proximity gap-0 px-0 pb-1"
         >
           {actions?.map(({ id, ...button }) => (
             <li key={id ?? button.href ?? button.label} className="m-0 list-none p-0">
