@@ -3,7 +3,7 @@
  * deployment and computes whether CI should defer another upload (OPS11).
  */
 
-export const DEPLOY_COOLDOWN_MS = 30 * 60 * 1000
+export const DEPLOY_COOLDOWN_MS = 15 * 60 * 1000
 
 const VERCEL_API_BASE = 'https://api.vercel.com'
 
