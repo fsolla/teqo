@@ -59,11 +59,13 @@ N/A
 - Desligar recolhimento B132 ao focar
 - Redesenhar grade ou catálogo
 
+**Defer (gatilho):** extrair `HomeChromeRetractionShell` compartilhado com `CampaignHomeLayout` quando um 3º chrome retrátil for tocado de novo (já é o 3º — `quick-actions-chrome`; extrair em issue futura, fora do appetite B146).
+
 ## Riscos e mitigação
 
 | Risco | Mitigação |
 | ----- | --------- |
-| `initialFocus={false}` quebra a11y teclado | Tab ainda alcança busca/ações; trap permanece |
+| `initialFocus={false}` quebra a11y teclado | Foco no título sr-only (B42), não na busca nem em void |
 | `pr-10` insuficiente em telas estreitas | `md:` só no breakpoint dialog; mobile usa drawer |
 
 ## Aceite de engenharia
