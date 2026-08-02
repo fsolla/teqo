@@ -48,7 +48,7 @@ Depois de status, conta e rede, o coordenador precisa de um bloco **“o que faz
   - CG: “qual o próximo passo que a equipe combinou?”
   - CG: “resolvo esta sugestão agora ou dispenso?”
   - CG: “vale levar o candidato — ou só abrir o compositor depois?”
-- **Forma:** *adiada ao impl*. Restrição: silêncio é pergunta (não empty state vazio mudo).
+- **Forma:** _adiada ao impl_. Restrição: silêncio é pergunta (não empty state vazio mudo).
 
 ## Direção no codebase (hipótese)
 

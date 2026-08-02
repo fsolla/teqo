@@ -49,7 +49,7 @@ Hoje as lideranças do município moram numa **aba** que o coordenador não abre
 - **Decisões desbloqueadas:**
   - Staff: “quem está abaixo do combinado?” / “atualizo a estimativa agora?”
   - CG: “a rede cobre o discurso da meta (B148)?”
-- **Forma:** *adiada ao impl*. Restrição: lista densa; sem dashboard de vaidade de rede.
+- **Forma:** _adiada ao impl_. Restrição: lista densa; sem dashboard de vaidade de rede.
 
 ## Direção no codebase (hipótese)
 

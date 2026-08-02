@@ -53,7 +53,7 @@ Na v2, o coordenador precisa ver **meta nos três cenários**, **quanto já est�
   - CG: “aperto ou alivio a meta neste cenário?”
   - CG/assessor: “a rede cobre a meta ou há déficit material?”
   - CG: “aloco perna como expansão ou defendo reduto?” (classe)
-- **Forma:** *adiada ao impl*. Restrições: leitura relativa/local; classe nunca “órfã” sem poder explicar (tooltip/fatores); sem % estadual absoluto.
+- **Forma:** _adiada ao impl_. Restrições: leitura relativa/local; classe nunca “órfã” sem poder explicar (tooltip/fatores); sem % estadual absoluto.
 
 ## Direção no codebase (hipótese)
 

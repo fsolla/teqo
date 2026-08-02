@@ -53,7 +53,7 @@ Abrir o município na v2 e, na **primeira dobra**, ler e alterar a conjuntura (n
 - **Decisões desbloqueadas:**
   - CG: “subo/desço envolvimento?” / “marco conjuntura?” / “registro sinal agora?”
   - Staff: “este município está frio (silêncio)?”
-- **Forma:** *adiada ao plano de implementação*. Restrição: silêncio/frescor alinhado à regra de produto já usada na lista (ordem de grandeza de dias frios).
+- **Forma:** _adiada ao plano de implementação_. Restrição: silêncio/frescor alinhado à regra de produto já usada na lista (ordem de grandeza de dias frios).
 
 ## Direção no codebase (hipótese)
 

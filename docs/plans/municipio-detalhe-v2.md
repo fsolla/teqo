@@ -37,14 +37,14 @@ Este arquivo é o **pai de intenção** do lote. Cada Issue filha tem plano pró
 
 ## Filhos do lote
 
-| ID | Plano | Outcome em uma linha |
-| ---- | ----- | -------------------- |
-| B147 (#330) | [municipio-v2-shell-status.md](municipio-v2-shell-status.md) | Rota v2 + faixa de status operável |
-| B148 (#331) | [municipio-v2-conta-local.md](municipio-v2-conta-local.md) | Meta P/M/O + cobertura + classe na 1ª dobra |
-| B149 (#332) | [municipio-v2-rede.md](municipio-v2-rede.md) | Rede em lista editável (sem aba) |
-| B150 (#333) | [municipio-v2-agora.md](municipio-v2-agora.md) | Encaminhamento + sugestão + visita condensada |
-| B151 (#334) | [municipio-v2-fab-secundario.md](municipio-v2-fab-secundario.md) | Secundárias no FAB (não na dobra) |
-| B152 (#335) | [municipio-v2-cutover.md](municipio-v2-cutover.md) | v2 vira canônica após OK produto |
+| ID          | Plano                                                            | Outcome em uma linha                          |
+| ----------- | ---------------------------------------------------------------- | --------------------------------------------- |
+| B147 (#330) | [municipio-v2-shell-status.md](municipio-v2-shell-status.md)     | Rota v2 + faixa de status operável            |
+| B148 (#331) | [municipio-v2-conta-local.md](municipio-v2-conta-local.md)       | Meta P/M/O + cobertura + classe na 1ª dobra   |
+| B149 (#332) | [municipio-v2-rede.md](municipio-v2-rede.md)                     | Rede em lista editável (sem aba)              |
+| B150 (#333) | [municipio-v2-agora.md](municipio-v2-agora.md)                   | Encaminhamento + sugestão + visita condensada |
+| B151 (#334) | [municipio-v2-fab-secundario.md](municipio-v2-fab-secundario.md) | Secundárias no FAB (não na dobra)             |
+| B152 (#335) | [municipio-v2-cutover.md](municipio-v2-cutover.md)               | v2 vira canônica após OK produto              |
 
 **Ordem:** B147 primeiro (shell). B148–B151 dependem de B147 e **serializam** entre si na mesma rota v2 (um agente de cada vez no surface). B152 por último, após validação humana.
 
