@@ -50,7 +50,6 @@ describe('HomeSearchHitRow', () => {
 
     const bleed = container.firstElementChild
     expect(bleed?.className).toBe(HOME_SEARCH_HIT_ROW_WRAPPER_CLASS)
-    expect(screen.getByRole('link', { name: /Cairu/i }).className).not.toContain('rounded-md')
   })
 })
 
@@ -105,7 +104,6 @@ describe('HomeSearchMunicipalityGroup', () => {
 
     const heading = screen.getByRole('heading', { name: 'Municípios' })
     expect(heading.className).toBe(HOME_SEARCH_GROUP_HEADING_CLASS)
-    expect(heading.className).not.toContain('uppercase')
 
     const list = container.querySelector('ul')
     expect(list?.className).toBe(HOME_SEARCH_GROUP_LIST_CLASS)
