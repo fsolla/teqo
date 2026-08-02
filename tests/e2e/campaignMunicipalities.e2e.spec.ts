@@ -54,7 +54,10 @@ test.describe('Municípios — list header mobile (B118)', () => {
     await expect(heading).toHaveClass(/sr-only/)
     const headingBox = await heading.boundingBox()
     expect(headingBox?.height ?? 0).toBeLessThanOrEqual(2)
-    await expect(page.locator('header p')).toBeHidden()
+    // Scope to the list page header (description is `hidden md:block`); avoid
+    // strict-mode flakes if React mounts more than one matching `<p>`.
+    const pageHeader = page.locator('header').filter({ has: heading })
+    await expect(pageHeader.locator('p')).toBeHidden()
     await expect(page.locator('[data-scope="campaign"]')).toBeHidden()
     // B120: mobile uses the filter combobox; desktop search stays md+ only.
     await expect(page.getByLabel('Filtrar municípios')).toBeVisible()
