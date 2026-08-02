@@ -2,7 +2,7 @@
  * `pnpm agent:pool` — agent pool supervisor CLI
  * (docs/plans/agent-pool-orchestrator.md).
  *
- * The pool keeps up to POOL_MAX_SLOTS (default 5) Cursor Cloud Agents running
+ * The pool keeps up to POOL_MAX_SLOTS (default 12) Cursor Cloud Agents running
  * work-issue over `ready` autonomous-eligible issues. The supervisor is
  * REMOTE: a stateless GitHub Actions tick (`.github/workflows/agent-pool.yml`)
  * runs `workflow --action …` / `tick --live`; humans drive it via
@@ -62,6 +62,7 @@ import {
   decidePoolAutoStop,
   parsePoolConfig,
   parsePoolEvents,
+  POOL_DEFAULT_MAX_SLOTS,
   POOL_OCCUPIED_CLASSES,
   POOL_VARIABLE_NAMES,
   reconcilePoolClaims,
@@ -430,7 +431,10 @@ const runWorkflow = async ({ action, actor, maxSlots }) => {
       writePoolVariable(POOL_VARIABLE_NAMES.startedAt, now)
       writePoolVariable(POOL_VARIABLE_NAMES.startedBy, actor || 'desconhecido')
       writePoolVariable(POOL_VARIABLE_NAMES.paused, 'false')
-      if (maxSlots) writePoolVariable(POOL_VARIABLE_NAMES.maxSlots, String(maxSlots))
+      writePoolVariable(
+        POOL_VARIABLE_NAMES.maxSlots,
+        String(maxSlots ? Number.parseInt(maxSlots, 10) : POOL_DEFAULT_MAX_SLOTS),
+      )
       log(`pool ligado por ${actor ?? '?'} (${now})`)
       await runTick({ dryRun: false })
       return

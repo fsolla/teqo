@@ -11,7 +11,7 @@ description: >-
 
 # Agent pool — operação do supervisor remoto
 
-O pool mantém até **5 Cursor Cloud Agents** (configurável, máx 8) rodando `work-issue` sobre Issues `ready` elegíveis para autonomia. O supervisor é **determinístico** (não é um agente): workflow **`.github/workflows/agent-pool.yml`** (tick stateless a cada 10 min + a cada merge em `main` + sob dispatch) rodando `scripts/agent-pool.mjs`. Arquitetura e elegibilidade: `docs/plans/agent-pool-orchestrator.md`.
+O pool mantém até **12 Cursor Cloud Agents** (configurável, máx 16) rodando `work-issue` sobre Issues `ready` elegíveis para autonomia. O supervisor é **determinístico** (não é um agente): workflow **`.github/workflows/agent-pool.yml`** (tick stateless a cada 10 min + a cada merge em `main` + sob dispatch) rodando `scripts/agent-pool.mjs`. Arquitetura e elegibilidade: `docs/plans/agent-pool-orchestrator.md`.
 
 **O pool NUNCA deploya** — deploy gated fica em `ci.yml` após merge em `main`.
 
@@ -39,7 +39,7 @@ Apresente, nesta ordem:
 1. **Estado do pool** — `desligado` | `ligado` | `pausado`; `maxSlots`; `startedAt`/`startedBy` se houver; slots `ocupados/max`.
 2. **Workers ativos** (se houver) — Issue #N, URL do agente, classificação do tick (ocupado / auto-merge / …).
 3. **Fila elegível** (`isAutonomousClaimable`, mesma ordem do claim) — lista completa ou as primeiras ~15 se longa.
-4. **Próximas N em paralelo** — destaque as primeiras **`maxSlots`** (default **5**) entradas da fila elegível: são as que o próximo tick claimaria/spawnaria ao ligar (ou no tick seguinte se já ligado com gap). Inclua `#`, id, `model:`, título.
+4. **Próximas N em paralelo** — destaque as primeiras **`maxSlots`** (default **12**) entradas da fila elegível: são as que o próximo tick claimaria/spawnaria ao ligar (ou no tick seguinte se já ligado com gap). Inclua `#`, id, `model:`, título.
 5. **Exclusões relevantes** — `needs:consent` / `blocked` / deps / `migration-busy` (não precisam da lista inteira se for barulho; cite as que o humano costuma achar “por que não entrou”).
 
 ### Confirmação de start (pool desligado)
@@ -79,7 +79,7 @@ Pergunte de forma explícita, por exemplo:
 ## Operação remota (canal canônico = workflow_dispatch)
 
 ```bash
-pnpm agent:pool -- start                # liga (default 5 slots) — só após confirmação no fluxo acima
+pnpm agent:pool -- start                # liga (default 12 slots) — só após confirmação no fluxo acima
 pnpm agent:pool -- start -- --max-slots 3
 pnpm agent:pool -- stop                 # para de spawnar; ativos drenam até o merge
 pnpm agent:pool -- pause                # audit solitário / manutenção
@@ -112,4 +112,4 @@ Os wrappers disparam `gh workflow run agent-pool.yml -f action=…`; acompanhe c
 ## Se algo quebrar
 
 - `tick` vermelho no Actions: ler o log do job — gh sem `actions:write` (permissões do workflow), `CURSOR_API_KEY` ausente/errada, ou API da Cursor fora. O tick seguinte re-tenta; nada fica em estado intermediário perigoso (claim revertido em falha de spawn).
-- "You’ve reached the limit" no spawn: arquivar agents antigos em cursor.com/agents (cap do plano: 8 simultâneos no Pro; o pool usa ≤5 para deixar margem a humanos).
+- "You’ve reached the limit" no spawn: arquivar agents antigos em cursor.com/agents (cap do plano Cursor por tier; o pool default é 12).
