@@ -25,6 +25,9 @@ describe('campaignPageChrome', () => {
     expect(resolveCampaignPageChrome('/campanha/municipios/cairu', 'coordinator')).toEqual({
       title: 'Municípios',
     })
+    expect(resolveCampaignPageChrome('/campanha/municipio/cairu/v2', 'coordinator')).toEqual({
+      title: 'Municípios',
+    })
   })
 
   it('resolves quadro without role-based prose subtitle', () => {
