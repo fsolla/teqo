@@ -216,9 +216,7 @@ describe('CampaignHomeActionStrip', () => {
   })
 
   it('scrolls horizontally on pointer-fine drag past the threshold', () => {
-    const { container } = render(
-      <CampaignHomeActionStrip variant="strip" actions={manyActions} />,
-    )
+    const { container } = render(<CampaignHomeActionStrip variant="strip" actions={manyActions} />)
     const scroller = getScroller(container)
     mockScrollerOverflow(scroller)
 

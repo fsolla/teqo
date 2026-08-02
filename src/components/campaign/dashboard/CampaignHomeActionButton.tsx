@@ -31,10 +31,7 @@ export type CampaignHomeActionButtonProps = {
 const actionControlBaseClassName =
   'group box-content flex min-h-11 flex-col items-center gap-2 rounded-md text-center outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-90 disabled:pointer-events-none disabled:opacity-50'
 
-const actionStripControlClassName = cn(
-  actionControlBaseClassName,
-  'w-[5.5rem] shrink-0 snap-start',
-)
+const actionStripControlClassName = cn(actionControlBaseClassName, 'w-[5.5rem] shrink-0 snap-start')
 
 const actionResponsiveControlClassName = cn(
   actionControlBaseClassName,

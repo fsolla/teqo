@@ -15,14 +15,11 @@ const HomeChromeRetractionShell = ({
   slot,
   className,
   children,
-  allowHorizontalBleed = false,
 }: {
   retracted: boolean
   slot?: string
   className?: string
   children: ReactNode
-  /** B111 — keep Y clip for grid-rows retraction without clipping -mx bleed on X. */
-  allowHorizontalBleed?: boolean
 }) => (
   <div
     data-slot={slot}
@@ -30,12 +27,7 @@ const HomeChromeRetractionShell = ({
     className={cn(homeChromeRetractionClass(retracted), className)}
     aria-hidden={retracted || undefined}
   >
-    <div
-      className={cn('min-h-0', allowHorizontalBleed ? 'overflow-y-hidden' : 'overflow-hidden')}
-      data-allow-horizontal-bleed={allowHorizontalBleed || undefined}
-    >
-      {children}
-    </div>
+    <div className="min-h-0 overflow-hidden">{children}</div>
   </div>
 )
 
@@ -72,10 +64,7 @@ export const CampaignHomeLayout = ({
         slot="home-actions-chrome"
         className="order-1 md:order-2"
       >
-        <div
-          data-slot="home-actions"
-          className="min-w-0 md:mx-0 md:w-auto"
-        >
+        <div data-slot="home-actions" className="min-w-0 md:mx-0 md:w-auto">
           {actions}
         </div>
       </HomeChromeRetractionShell>
