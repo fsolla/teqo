@@ -37,7 +37,7 @@ A lista de organizações **já existe** em `/campanha/organizacoes` (lista, det
 
 - **Vou apresentar dados?** Não
 - **Decisões desbloqueadas:** N/A — só descoberta de uma superfície que já existe
-- **Forma:** *adiada* — N/A
+- **Forma:** _adiada_ — N/A
 
 ## Direção no codebase (hipótese)
 
