@@ -20,7 +20,7 @@ test.describe('Lideranças — shell (OH8)', () => {
     await page.goto(`${campaign.baseURL}/campanha/liderancas`)
     await expect(page.getByRole('heading', { name: 'Lideranças', exact: true })).toBeVisible()
     await expect(page.getByLabel('Buscar liderança por nome')).toBeVisible()
-    await expect(page.getByText(/\d+ lideranças/)).toBeVisible()
+    await expect(page.getByText(/\d+ lideranças/).first()).toBeVisible()
   })
 })
 

@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { expect, reloadWhileOffline, test, waitForCampaignServiceWorker } from './fixtures/campaignE2EFixtures.js'
 
 /** Offline specs intentionally hit blocked network resources — allowlist for the guard. */
 test.use({ expectedRequestFailurePaths: ['/campanha/api/ops-sync', '/favicon.ico'] })
@@ -45,6 +45,7 @@ test.describe('OH6 estimate outbox', () => {
         response.url().includes('/campanha/api/ops-sync') && response.request().method() === 'GET',
       { timeout: 30_000 },
     )
+    await waitForCampaignServiceWorker(page)
 
     await page.context().setOffline(true)
     await page.getByLabel('Média', { exact: true }).fill('55')
@@ -52,7 +53,7 @@ test.describe('OH6 estimate outbox', () => {
     await page.getByRole('button', { name: 'Salvar estimativa' }).click()
     await expect(page.getByText('Pendente', { exact: true })).toBeVisible()
 
-    await page.reload()
+    await reloadWhileOffline(page)
     await expect(page.getByText('Pendente', { exact: true })).toBeVisible()
 
     await page.context().setOffline(false)

@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { expect, reloadWhileOffline, test, waitForCampaignServiceWorker } from './fixtures/campaignE2EFixtures.js'
 
 /** Offline specs intentionally hit blocked network resources — allowlist for the guard. */
 test.use({ expectedRequestFailurePaths: ['/campanha/api/ops-sync', '/favicon.ico'] })
@@ -47,6 +47,7 @@ test.describe('OH9/OH11 campaign ops offline', () => {
         response.url().includes('/campanha/api/ops-sync') && response.request().method() === 'GET',
       { timeout: 30_000 },
     )
+    await waitForCampaignServiceWorker(page)
 
     await page.context().setOffline(true)
 
@@ -101,6 +102,7 @@ test.describe('OH9/OH11 campaign ops offline', () => {
         response.url().includes('/campanha/api/ops-sync') && response.request().method() === 'GET',
       { timeout: 30_000 },
     )
+    await waitForCampaignServiceWorker(page)
 
     await page.context().setOffline(true)
 
@@ -110,7 +112,7 @@ test.describe('OH9/OH11 campaign ops offline', () => {
     await page.getByRole('button', { name: 'Salvar estimativa' }).click()
     await expect(page.getByText('Pendente', { exact: true })).toBeVisible()
 
-    await page.reload()
+    await reloadWhileOffline(page)
     await expect(page.getByText('Pendente', { exact: true })).toBeVisible()
 
     await page.context().setOffline(false)
@@ -142,6 +144,7 @@ test.describe('OH12 municipality list Local', () => {
         response.url().includes('/campanha/api/ops-sync') && response.request().method() === 'GET',
       { timeout: 30_000 },
     )
+    await waitForCampaignServiceWorker(page)
 
     await page.context().setOffline(true)
     await expect(
@@ -150,9 +153,11 @@ test.describe('OH12 municipality list Local', () => {
 
     const search = page.getByLabel('Buscar município')
     await search.fill(municipality.name)
-    await search.press('Enter')
+    await expect(page.getByRole('link', { name: municipality.name })).toBeVisible({
+      timeout: 15_000,
+    })
 
-    await expect(page.getByRole('heading', { name: 'Municípios' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Municípios', exact: true }).first()).toBeVisible()
     await expect(
       page.getByText('Edição na lista disponível quando estiveres online.'),
     ).toBeVisible()
