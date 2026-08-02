@@ -5,6 +5,7 @@ import { getPayload } from 'payload'
 import { AdvisorFilters } from '@/components/campaign/advisor/AdvisorFilters'
 import { AdvisorsTable } from '@/components/campaign/advisor/AdvisorsTable'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
@@ -46,16 +47,23 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
     loadMunicipalityPortfolioIndex(),
   ])
 
+  const municipalityFilterOptions = municipalityIndex.map((entry) => ({
+    value: String(entry.id),
+    label: getMunicipalityCatalogEntry(entry.slug)?.name ?? entry.slug,
+  }))
+
+  const hasActiveFilters = Boolean(state.q || state.municipalities?.length)
+
   return (
     <CampaignPageShell>
       <CampaignListPendingBoundary>
-        <AdvisorFilters state={state} />
+        <AdvisorFilters state={state} municipalityFilterOptions={municipalityFilterOptions} />
 
         <CampaignListResults>
           <AdvisorsTable
             rows={rows}
             municipalityIndex={municipalityIndex}
-            hasQuery={Boolean(state.q)}
+            hasQuery={hasActiveFilters}
             updateProfileAction={updateAdvisorProfileFormAction}
             municipalitiesAction={setAdvisorMunicipalitiesFormAction}
             createAction={createAdvisorFormAction}

@@ -9,6 +9,13 @@ import {
   buildActivityOmniboxChips,
   clearActivityOmnibox,
 } from '@/utilities/activityOmnibox'
+import { parseAdvisorListParams } from '@/utilities/advisor/advisorListUrl'
+import {
+  applyAdvisorOmniboxSuggestion,
+  buildAdvisorOmniboxChips,
+  buildAdvisorOmniboxSuggestionSeeds,
+  filterAdvisorOmniboxSuggestions,
+} from '@/utilities/advisor/advisorOmnibox'
 import { parseActivityListParams } from '@/utilities/activityUi'
 import { parseDemandListParams } from '@/utilities/demand/demandListUrl'
 import {
@@ -144,5 +151,29 @@ describe('list omnibox adapters (B128)', () => {
       withPageReset: (next) => ({ ...next, page: 1 }),
     })
     expect(applied).toEqual({ kind: 'url', state: { page: 1, q: 'ana' } })
+  })
+
+  it('advisor toggles municipality portfolio filter and suggests by name', () => {
+    const base = parseAdvisorListParams({})
+    const applied = applyAdvisorOmniboxSuggestion({
+      state: base,
+      suggestionId: 'municipality:42',
+    })
+    expect(applied.kind).toBe('url')
+    if (applied.kind === 'url') {
+      expect(applied.state.municipalities).toEqual([42])
+    }
+
+    const chips = buildAdvisorOmniboxChips({
+      state: parseAdvisorListParams({ municipality: '42' }),
+      municipalityLabelsById: new Map([[42, 'Feira de Santana']]),
+    })
+    expect(chips[0]?.label).toContain('Feira de Santana')
+
+    const seeds = buildAdvisorOmniboxSuggestionSeeds({
+      municipalityFilterOptions: [{ value: '42', label: 'Feira de Santana' }],
+    })
+    const suggestions = filterAdvisorOmniboxSuggestions(seeds, 'feira')
+    expect(suggestions.some((entry) => entry.group === 'Município (carteira)')).toBe(true)
   })
 })

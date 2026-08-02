@@ -5,29 +5,55 @@ import { useMemo, useState } from 'react'
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import {
-  applySearchOnlyOmniboxSuggestion,
-  buildSearchOnlyOmniboxChips,
-  buildSearchOnlyOmniboxSuggestions,
-  clearSearchOnlyOmnibox,
-  removeSearchOnlyOmniboxChip,
-  type SearchOnlyOmniboxAction,
-} from '@/lib/searchOnlyListOmnibox'
+  applyAdvisorOmniboxSuggestion,
+  buildAdvisorOmniboxChips,
+  buildAdvisorOmniboxSuggestionSeeds,
+  clearAdvisorOmnibox,
+  filterAdvisorOmniboxSuggestions,
+  removeAdvisorOmniboxChip,
+  type AdvisorOmniboxAction,
+} from '@/utilities/advisor/advisorOmnibox'
+import type { AdvisorFilterOption } from '@/utilities/advisor/advisorListFilters'
 import { advisorListHrefForPage, type AdvisorListState } from '@/utilities/advisor/advisorListUrl'
 
-export const AdvisorFilters = ({ state }: { state: AdvisorListState }) => {
+export const AdvisorFilters = ({
+  state,
+  municipalityFilterOptions,
+}: {
+  state: AdvisorListState
+  municipalityFilterOptions: AdvisorFilterOption[]
+}) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
     toHref: (next) => advisorListHrefForPage(next, 1),
   })
   const [query, setQuery] = useState('')
 
-  const withPageReset = (next: AdvisorListState): AdvisorListState => ({ ...next, page: 1 })
+  const municipalityLabelsById = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const option of municipalityFilterOptions) {
+      const id = Number(option.value)
+      if (Number.isSafeInteger(id) && id > 0) map.set(id, option.label)
+    }
+    return map
+  }, [municipalityFilterOptions])
 
-  const chips = useMemo(() => buildSearchOnlyOmniboxChips(state), [state])
+  const chips = useMemo(
+    () => buildAdvisorOmniboxChips({ state, municipalityLabelsById }),
+    [state, municipalityLabelsById],
+  )
 
-  const suggestions = useMemo(() => buildSearchOnlyOmniboxSuggestions(query), [query])
+  const suggestionSeeds = useMemo(
+    () => buildAdvisorOmniboxSuggestionSeeds({ municipalityFilterOptions }),
+    [municipalityFilterOptions],
+  )
 
-  const runAction = (action: SearchOnlyOmniboxAction<AdvisorListState>) => {
+  const suggestions = useMemo(
+    () => filterAdvisorOmniboxSuggestions(suggestionSeeds, query),
+    [suggestionSeeds, query],
+  )
+
+  const runAction = (action: AdvisorOmniboxAction) => {
     if (action.kind === 'clear') {
       setQuery('')
       navigate(action.state)
@@ -45,41 +71,24 @@ export const AdvisorFilters = ({ state }: { state: AdvisorListState }) => {
     >
       <CampaignListOmnibox
         id="advisor-omnibox"
-        label="Buscar assessor por nome ou e-mail"
-        placeholder="Digite para buscar por nome ou e-mail…"
+        label="Filtrar assessores"
+        placeholder="Digite para buscar por nome, e-mail ou município da carteira…"
         chips={chips}
         suggestions={suggestions}
         query={query}
         onQueryChange={setQuery}
         isPending={isPending}
         onSelectSuggestion={(suggestionId) => {
-          runAction(
-            applySearchOnlyOmniboxSuggestion({
-              state,
-              suggestionId,
-              withPageReset,
-            }),
-          )
+          runAction(applyAdvisorOmniboxSuggestion({ state, suggestionId }))
         }}
         onCommitQuery={(text) => {
-          runAction(
-            applySearchOnlyOmniboxSuggestion({
-              state,
-              suggestionId: `q:${text}`,
-              withPageReset,
-            }),
-          )
+          runAction(applyAdvisorOmniboxSuggestion({ state, suggestionId: `q:${text}` }))
         }}
         onRemoveChip={(chipId) => {
-          runAction(removeSearchOnlyOmniboxChip({ state, chipId, withPageReset }))
+          runAction(removeAdvisorOmniboxChip({ state, chipId }))
         }}
         onClearAll={() => {
-          runAction(
-            clearSearchOnlyOmnibox({
-              state,
-              cleared: { page: 1 },
-            }),
-          )
+          runAction(clearAdvisorOmnibox(state))
         }}
       />
     </form>
