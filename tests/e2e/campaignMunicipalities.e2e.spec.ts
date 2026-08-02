@@ -75,6 +75,9 @@ test.describe('Municípios — jornadas por papel', () => {
     // unique, unambiguous string rather than a bare "5.000" substring —
     // that also matches the (opacity-0 but DOM-visible) hover-preview span.
     await expect(page.getByText('Otimista: 5.000')).toBeVisible()
+
+    // B145: assessoria left the detail hero; it still appears on the dossiê tab.
+    await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}?tab=dossie`)
     await expect(page.getByText(`Assessoria: ${advisor.name}`)).toBeVisible()
   })
 
