@@ -33,7 +33,7 @@ on:
           - tick
           - status
       maxSlots:
-        description: 'Slots simultâneos (só com action=start; default 5, máx 8)'
+        description: 'Slots simultâneos (só com action=start; default 12, máx 16)'
         required: false
         type: string
 

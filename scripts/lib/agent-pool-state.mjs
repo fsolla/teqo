@@ -17,10 +17,10 @@ export const POOL_VARIABLE_NAMES = {
   startedBy: 'POOL_STARTED_BY',
 }
 
-export const POOL_DEFAULT_MAX_SLOTS = 5
-// Cursor Pro allows 8 concurrent cloud agents (plan §14); the pool leaves the
-// remaining slots for human sessions.
-export const POOL_HARD_MAX_SLOTS = 8
+export const POOL_DEFAULT_MAX_SLOTS = 12
+// Pro+ / Ultra allow more than Pro's 8 concurrent cloud agents; hard cap is a
+// pool safety rail, not the Cursor plan limit.
+export const POOL_HARD_MAX_SLOTS = 16
 
 /**
  * @param {Record<string, string | undefined>} [vars] raw `gh api` variable map

@@ -1,6 +1,6 @@
 ---
 name: Agent pool orchestrator
-overview: 'Supervisor remoto stateless (GitHub Actions tick) que mantém até 5 Cursor Cloud Agents rodando work-issue sobre Issues ready; claim coordenado pelo supervisor, modelo da Issue no spawn, estado em repo variables + derivação; promote stage→main continua humano.'
+overview: 'Supervisor remoto stateless (GitHub Actions tick) que mantém até 12 Cursor Cloud Agents rodando work-issue sobre Issues ready; claim coordenado pelo supervisor, modelo da Issue no spawn, estado em repo variables + derivação; promote stage→main continua humano.'
 todos:
   - id: fase0-spike
     content: 'Spike API Cursor: GET /v1/models, spawn com model explícito, agentId idempotente, boot real'
@@ -24,7 +24,7 @@ isProject: false
 
 ## 1. Resumo executivo
 
-Um **supervisor remoto stateless** mantém até **5 Cursor Cloud Agents** em paralelo, cada um
+Um **supervisor remoto stateless** mantém até **12 Cursor Cloud Agents** em paralelo, cada um
 executando `work-issue` sobre uma GitHub Issue `ready` e elegível para autonomia. O supervisor
 é um **workflow do GitHub Actions** (`.github/workflows/agent-pool.yml`) que roda
 `node scripts/agent-pool.mjs tick` a cada 10 minutos, a cada merge em `stage`, e sob
@@ -62,7 +62,7 @@ flowchart TB
     Tick <--> Derive
   end
 
-  subgraph workers [Workers — Cursor Cloud Agents, cap 5]
+  subgraph workers [Workers — Cursor Cloud Agents, cap 12]
     Spawn["POST /v1/agents — prompt work-issue + model da Issue"]
     W["worker × N: claim pré-feito → implementa → PR base stage → watch CI até merge"]
     Spawn --> W
@@ -78,7 +78,7 @@ flowchart TB
 
 Cada tick é um job curto (< 2 min) e idempotente que executa, nesta ordem:
 
-1. **Lê config** — repo variables: `POOL_ENABLED`, `POOL_MAX_SLOTS` (default 5), `POOL_PAUSED`,
+1. **Lê config** — repo variables: `POOL_ENABLED`, `POOL_MAX_SLOTS` (default 12), `POOL_PAUSED`,
    `POOL_STARTED_AT`, `POOL_STARTED_BY`.
 2. **Sai cedo** se `POOL_ENABLED != true` ("pool desligado") ou `POOL_PAUSED == true`
    ("pausado — audit solitário").
@@ -129,7 +129,7 @@ O step "set/get variables" usa `gh variable` com `GITHUB_TOKEN` e `permissions: 
 
 ```bash
 # start (qualquer máquina/phone com gh auth; também via browser Actions → Run workflow)
-gh workflow run agent-pool.yml -f action=start            # maxSlots default 5
+gh workflow run agent-pool.yml -f action=start            # maxSlots default 12
 gh workflow run agent-pool.yml -f action=start -f maxSlots=3
 
 # stop (para de spawnar; ativos drenam naturalmente até o merge)
