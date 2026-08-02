@@ -1,4 +1,9 @@
-import { expect, reloadWhileOffline, test, waitForCampaignServiceWorker } from './fixtures/campaignE2EFixtures.js'
+import {
+  expect,
+  reloadWhileOffline,
+  test,
+  waitForCampaignServiceWorker,
+} from './fixtures/campaignE2EFixtures.js'
 
 /** Offline specs intentionally hit blocked network resources — allowlist for the guard. */
 test.use({ expectedRequestFailurePaths: ['/campanha/api/ops-sync', '/favicon.ico'] })
@@ -157,7 +162,9 @@ test.describe('OH12 municipality list Local', () => {
       timeout: 15_000,
     })
 
-    await expect(page.getByRole('heading', { name: 'Municípios', exact: true }).first()).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Municípios', exact: true }).first(),
+    ).toBeVisible()
     await expect(
       page.getByText('Edição na lista disponível quando estiveres online.'),
     ).toBeVisible()
