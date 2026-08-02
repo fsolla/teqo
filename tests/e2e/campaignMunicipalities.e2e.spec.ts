@@ -56,7 +56,9 @@ test.describe('Municípios — list header mobile (B118)', () => {
     expect(headingBox?.height ?? 0).toBeLessThanOrEqual(2)
     await expect(page.locator('header p')).toBeHidden()
     await expect(page.locator('[data-scope="campaign"]')).toBeHidden()
-    await expect(page.getByLabel('Buscar município')).toBeVisible()
+    // B120: mobile uses the filter combobox; desktop search stays md+ only.
+    await expect(page.getByLabel('Filtrar municípios')).toBeVisible()
+    await expect(page.getByLabel('Buscar município')).toBeHidden()
     await expect(page.getByText(/\d+ municípios encontrados/)).toBeVisible()
   })
 })
