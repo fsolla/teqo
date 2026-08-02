@@ -1,9 +1,11 @@
 ---
-description: Estado do projeto da vertical /campanha (Núcleos → Praças → Municípios)
+description: Changelog / notebook da vertical /campanha (Núcleos → Praças → Municípios) — histórico de entregas, NÃO restrições de engenharia
 alwaysApply: false
 ---
 
 # Núcleos Eleitorais → Municípios
+
+**Como ler este notebook:** as entradas "**entregue em código**", decisões de sessão e micro-escolhas de implementação abaixo são **changelog** (o que aconteceu e onde está o plano). Não são locks. Não impeçam editar o código que uma entrega anterior criou; não obriguem a espelhar um twin em vez de mudar o dono. Constraints reais de produto/segurança vivem em `AGENTS.md`, `docs/ARCHITECTURE.md` e `.cursor/rules/engineering-standards.mdc`. Para o estado vivo da fila, use Issues + `project-status` — não trate este arquivo como fonte canônica de "o que ainda pode mudar".
 
 ## Status
 
