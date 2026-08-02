@@ -6,25 +6,26 @@ p1_count: 2
 timestamp: 2026-08-02T18-07-00Z
 slug: nts-campaign-shell-municipalitynavsavedfilters-tsx
 ---
+
 Method: dual-agent (A: dc65e367-57b3-4fa5-947b-a43efdce8fba · B: cb10af92-e254-4c0e-9a39-b100b4226b65)
 
 # Critique — MunicipalityNavSavedFilters (sidebar Municípios)
 
 ## Design Health Score
 
-| # | Heuristic | Score | Key Issue |
-|---|-----------|-------|-----------|
-| 1 | Visibility of System Status | 3 | Active/expanded OK; context (route/hover) not driving disclosure |
-| 2 | Match System / Real World | 3 | Clear aria; sighted UI lacks “filtros salvos” framing |
-| 3 | User Control and Freedom | 4 | Toggle, persist, undo delete |
-| 4 | Consistency and Standards | 3 | Familiar shadcn tree; only campaign submenu |
-| 5 | Error Prevention | 2 | Instant delete (undo mitigates); dense targets |
-| 6 | Recognition Rather Than Recall | 2 | Collapsed bookmarks vanish to a small chevron |
-| 7 | Flexibility and Efficiency | 3 | Strong when open; no contextual auto-open |
-| 8 | Aesthetic and Minimalist Design | 2 | Open list pollutes primary nav; default-open worsens |
-| 9 | Error Recovery | 4 | Undo toast + Desfazer |
-| 10 | Help and Documentation | 1 | No in-nav teach after first save |
-| **Total** | | **27/40** | **Acceptable — significant intent mismatch** |
+| #         | Heuristic                       | Score     | Key Issue                                                        |
+| --------- | ------------------------------- | --------- | ---------------------------------------------------------------- |
+| 1         | Visibility of System Status     | 3         | Active/expanded OK; context (route/hover) not driving disclosure |
+| 2         | Match System / Real World       | 3         | Clear aria; sighted UI lacks “filtros salvos” framing            |
+| 3         | User Control and Freedom        | 4         | Toggle, persist, undo delete                                     |
+| 4         | Consistency and Standards       | 3         | Familiar shadcn tree; only campaign submenu                      |
+| 5         | Error Prevention                | 2         | Instant delete (undo mitigates); dense targets                   |
+| 6         | Recognition Rather Than Recall  | 2         | Collapsed bookmarks vanish to a small chevron                    |
+| 7         | Flexibility and Efficiency      | 3         | Strong when open; no contextual auto-open                        |
+| 8         | Aesthetic and Minimalist Design | 2         | Open list pollutes primary nav; default-open worsens             |
+| 9         | Error Recovery                  | 4         | Undo toast + Desfazer                                            |
+| 10        | Help and Documentation          | 1         | No in-nav teach after first save                                 |
+| **Total** |                                 | **27/40** | **Acceptable — significant intent mismatch**                     |
 
 ## Anti-Patterns Verdict
 
@@ -47,18 +48,23 @@ Craft and a11y of B18 are strong; the open, persisted submenu breaks proximity t
 ## Priority Issues
 
 ### P0 — Disclosure model contradicts product intention
+
 Persisted preference, default open; no hover; no open-on-Municípios-page. Fix: ephemeral/context open.
 
 ### P1 — Open list reads as its own nav section
+
 Tree rail + N×h-7 between Municípios and Territórios. Fix: contextual collapse + tighter/muted sub chrome.
 
 ### P1 — Hover vs offcanvas history
+
 B18 rejected hover for collapsed rail; intention works when panel is visible. Fix: hover/focus-within only while sidebar expanded/open.
 
 ### P2 — Sighted association is chevron-only
+
 No visible “Filtros salvos” framing.
 
 ### P3 — Discoverability after deliberate collapse
+
 Mostly solved by contextual open.
 
 ## Persona Red Flags

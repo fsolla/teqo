@@ -45,7 +45,7 @@ Os atalhos de filtro salvo sob **Municípios** no sidebar de `/campanha` hoje pa
 
 - **Vou apresentar dados?** Não
 - **Decisões desbloqueadas:** N/A — navegação, não métrica
-- **Forma:** *adiada ao plano de implementação*
+- **Forma:** _adiada ao plano de implementação_
 
 ## Direção no codebase (hipótese)
 
