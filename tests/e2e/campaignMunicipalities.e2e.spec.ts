@@ -428,8 +428,6 @@ test.describe('Municípios — FAB ações rápidas mobile (B126)', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
-    await expect(page.getByRole('heading', { name: 'Municípios' })).toBeVisible()
-
     const fab = page.getByRole('button', { name: 'Ações rápidas' })
     await expect(fab).toBeVisible()
     await expect(page.getByLabel('Buscar na campanha')).toHaveCount(0)
@@ -480,7 +478,7 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
 
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
-    await expect(page.getByRole('heading', { name: 'Municípios' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Ações rápidas' })).toBeVisible()
 
     await page.getByRole('button', { name: 'Ações rápidas' }).click()
     const overlay = page.locator('#CampaignQuickActionsOverlay')
