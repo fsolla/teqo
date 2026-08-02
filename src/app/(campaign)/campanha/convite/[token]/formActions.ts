@@ -1,7 +1,5 @@
 'use server'
 
-import { redirect } from 'next/navigation'
-
 import {
   redeemCampaignInviteAutofill,
   redeemCampaignInviteLogin,
@@ -14,8 +12,8 @@ import {
 } from '@/lib/formData'
 import { campaignInviteAutofillSchema, campaignInviteLoginFormSchema } from '@/lib/schemas/invite'
 import {
-  mapCampaignFormActionError,
   runCampaignFormAction,
+  runCampaignRedirectFormAction,
 } from '@/utilities/campaignFormActionError'
 
 export type CampaignInviteFormState = {
@@ -35,13 +33,6 @@ const profileFromForm = (formData: FormData) => ({
   email: nullableFormText(formData, 'email'),
   gender: nullableFormText(formData, 'gender'),
 })
-
-const inviteFormError = (error: unknown): CampaignInviteFormState =>
-  mapCampaignFormActionError({
-    error,
-    genericMessage:
-      'Este convite não está disponível. Peça um novo convite à pessoa que falou com você.',
-  })
 
 export const redeemCampaignInviteAutofillFormAction = async (
   token: string,
@@ -66,19 +57,19 @@ export const redeemCampaignInviteLoginFormAction = async (
   token: string,
   _state: CampaignInviteFormState,
   formData: FormData,
-): Promise<CampaignInviteFormState> => {
-  try {
-    const input = campaignInviteLoginFormSchema.parse({
-      token,
-      ...profileFromForm(formData),
-      password: requiredFormSecret(formData, 'password'),
-      passwordConfirmation: requiredFormSecret(formData, 'passwordConfirmation'),
-      consentAccepted: checkboxFormValue(formData, 'consentAccepted'),
-    })
-    await redeemCampaignInviteLogin(input)
-  } catch (error) {
-    return inviteFormError(error)
-  }
-
-  redirect('/campanha')
-}
+): Promise<CampaignInviteFormState> =>
+  runCampaignRedirectFormAction({
+    execute: async () => {
+      const input = campaignInviteLoginFormSchema.parse({
+        token,
+        ...profileFromForm(formData),
+        password: requiredFormSecret(formData, 'password'),
+        passwordConfirmation: requiredFormSecret(formData, 'passwordConfirmation'),
+        consentAccepted: checkboxFormValue(formData, 'consentAccepted'),
+      })
+      await redeemCampaignInviteLogin(input)
+    },
+    redirectTo: () => '/campanha',
+    genericMessage:
+      'Este convite não está disponível. Peça um novo convite à pessoa que falou com você.',
+  })

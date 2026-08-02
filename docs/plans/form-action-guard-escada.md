@@ -1,6 +1,6 @@
 # Form-action guard — política na escada, não no filename
 
-Status: registrado
+Status: entregue (OPS14 #241, 2026-08-02)
 Atualizado em: 2026-08-02
 Issue: #241 (OPS14)
 Priority: P2

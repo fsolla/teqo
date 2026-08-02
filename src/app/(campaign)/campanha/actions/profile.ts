@@ -9,7 +9,7 @@ import { relationshipId } from '@/lib/relationship'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import {
   CAMPAIGN_SESSION_EXPIRED_MESSAGE,
-  mapCampaignFormActionError,
+  runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
 import {
@@ -48,61 +48,48 @@ export const updateCampaignAvatarFormAction = async (
     return { fieldErrors: { avatar: ['Selecione uma imagem.'] } }
   }
 
-  try {
-    assertCampaignAvatarFile(file)
-  } catch (error) {
-    return mapCampaignFormActionError({
-      error,
-      genericMessage: 'Não foi possível atualizar a foto.',
-      safeMessages: CAMPAIGN_AVATAR_SAFE_ERROR_MESSAGES,
-    })
-  }
+  return runCampaignFormAction({
+    execute: async () => {
+      assertCampaignAvatarFile(file)
 
-  const payload = await getPayload({ config })
-  const previousAvatarID = relationshipId(user.avatar)
+      const payload = await getPayload({ config })
+      const previousAvatarID = relationshipId(user.avatar)
 
-  try {
-    await withPayloadTransaction(payload, async ({ req }) => {
-      const media = await payload.create({
-        collection: 'media',
-        data: { alt: user.name },
-        file: {
-          data: Buffer.from(await file.arrayBuffer()),
-          mimetype: file.type,
-          name: file.name,
-          size: file.size,
-        },
-        overrideAccess: true,
-        req,
+      await withPayloadTransaction(payload, async ({ req }) => {
+        const media = await payload.create({
+          collection: 'media',
+          data: { alt: user.name },
+          file: {
+            data: Buffer.from(await file.arrayBuffer()),
+            mimetype: file.type,
+            name: file.name,
+            size: file.size,
+          },
+          overrideAccess: true,
+          req,
+        })
+
+        await payload.update({
+          collection: 'campaignUser',
+          id: user.id,
+          data: { avatar: media.id },
+          depth: 0,
+          overrideAccess: true,
+          user,
+          req,
+        })
+
+        if (previousAvatarID !== null && previousAvatarID !== media.id) {
+          await deleteAvatarMedia(payload, req, previousAvatarID)
+        }
       })
 
-      await payload.update({
-        collection: 'campaignUser',
-        id: user.id,
-        data: { avatar: media.id },
-        depth: 0,
-        overrideAccess: true,
-        user,
-        req,
-      })
-
-      if (previousAvatarID !== null && previousAvatarID !== media.id) {
-        await deleteAvatarMedia(payload, req, previousAvatarID)
-      }
-    })
-  } catch (error) {
-    return mapCampaignFormActionError({
-      error,
-      genericMessage: 'Não foi possível atualizar a foto.',
-      safeMessages: CAMPAIGN_AVATAR_SAFE_ERROR_MESSAGES,
-    })
-  }
-
-  revalidatePath('/campanha', 'layout')
-  return {
-    status: 'success',
-    message: 'Foto de perfil atualizada.',
-  }
+      revalidatePath('/campanha', 'layout')
+      return { message: 'Foto de perfil atualizada.' }
+    },
+    safeMessages: CAMPAIGN_AVATAR_SAFE_ERROR_MESSAGES,
+    genericMessage: 'Não foi possível atualizar a foto.',
+  })
 }
 
 export const removeCampaignAvatarFormAction = async (
@@ -119,33 +106,28 @@ export const removeCampaignAvatarFormAction = async (
     return { status: 'success', message: 'Foto de perfil removida.' }
   }
 
-  const payload = await getPayload({ config })
+  return runCampaignFormAction({
+    execute: async () => {
+      const payload = await getPayload({ config })
 
-  try {
-    await withPayloadTransaction(payload, async ({ req }) => {
-      await payload.update({
-        collection: 'campaignUser',
-        id: user.id,
-        data: { avatar: null },
-        depth: 0,
-        overrideAccess: true,
-        user,
-        req,
+      await withPayloadTransaction(payload, async ({ req }) => {
+        await payload.update({
+          collection: 'campaignUser',
+          id: user.id,
+          data: { avatar: null },
+          depth: 0,
+          overrideAccess: true,
+          user,
+          req,
+        })
+
+        await deleteAvatarMedia(payload, req, previousAvatarID)
       })
 
-      await deleteAvatarMedia(payload, req, previousAvatarID)
-    })
-  } catch (error) {
-    return mapCampaignFormActionError({
-      error,
-      genericMessage: 'Não foi possível remover a foto.',
-      safeMessages: CAMPAIGN_AVATAR_SAFE_ERROR_MESSAGES,
-    })
-  }
-
-  revalidatePath('/campanha', 'layout')
-  return {
-    status: 'success',
-    message: 'Foto de perfil removida.',
-  }
+      revalidatePath('/campanha', 'layout')
+      return { message: 'Foto de perfil removida.' }
+    },
+    safeMessages: CAMPAIGN_AVATAR_SAFE_ERROR_MESSAGES,
+    genericMessage: 'Não foi possível remover a foto.',
+  })
 }
