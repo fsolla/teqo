@@ -20,10 +20,10 @@ Esta skill transforma ideias soltas em: (1) um **plano de intenção** em `docs/
 ```text
 rascunho local (Issue: —)
   → GATE (Passo 5) + confirmação explícita do lote
-  → register com --plan → Issue NÃO claimável (blocked)
+  → register com --plan → Issue NÃO claimável (blocked; script enforça)
   → commit + PR dos planos (Related #N, nunca Closes)
   → merge em main
-  → promote blocked→ready (agente no Passo 6 + Action no merge — dual, idempotente)
+  → promote blocked→ready (`pnpm agent:ready` + Action OPS18 — dual, idempotente)
   → fila / pool
 ```
 
@@ -31,8 +31,8 @@ rascunho local (Issue: —)
 
 1. **Nada no GitHub antes do gate.** Antes da confirmação explícita do Passo 5: proibido `pnpm agent:register`, `gh issue create`, `gh pr create` / push de PR de planos. Planos locais (`Issue: —`) ok.
 2. **Confirmação = OK ao overview do lote** (ex. “confirma”, “pode registrar”). “Ok” ambíguo no meio da edição **não** dispara o Passo 6.
-3. **Register com `--plan` não nasce `ready`.** Use `--blocked` (ou o default futuro de `agent:register --plan`) até o plano estar em `main`. Sem `--plan` (chore body-only / `file-miss`), pode nascer `ready`.
-4. **Promote só depois do plano em `main`.** Nunca flipar para `ready` com o PR ainda aberto — isso recria a race de claim. Caminhos: (A) agente no fim do Passo 6 após merge; (B) Action determinística no merge que lê `Related #N` (OPS18). Ambos idempotentes.
+3. **Register com `--plan` não nasce `ready`.** O script aplica `blocked` automaticamente quando `--plan` está presente (`--blocked` explícito ainda vale para chores sem plano). Sem `--plan` (chore body-only / `file-miss`), pode nascer `ready`.
+4. **Promote só depois do plano em `main`.** Nunca flipar para `ready` com o PR ainda aberto — isso recria a race de claim. Caminhos: (A) `pnpm agent:ready -- --issue N` no fim do Passo 6 após merge; (B) Action determinística no merge que lê `Related #N` (OPS18). Ambos idempotentes.
 5. **Planos de Issues `in-progress` / `done` / `in-prod` são imutáveis.** Não editar `docs/plans/<slug>.md` nem o body de intenção dessas Issues. Refino → **plano + Issue novos** (sucessor; `depends` no pai se fizer sentido). Enquanto a Issue ainda é só `blocked`/`ready` (sem claim), editar o mesmo plano ainda é barato.
 
 **Canvas UI (obrigatório se muda UI):** itens com superfície Impeccable **B / C / D** (ou qualquer mudança do que o usuário vê/toca) devem ter um **Cursor canvas** de rascunho UI/UX no gate — ver [ui-draft-canvas.md](ui-draft-canvas.md). Classe A / sem UI → sem canvas.
@@ -58,8 +58,13 @@ Aqui **não** se implementa código de produto, **não** se escreve plano de imp
 - [ ] 2. Reserva de IDs de uma vez por trilha (roadmap legacy + issuesById())
 - [ ] 3. Por item (ordem topológica): classificar → fatiar → explorar só o suficiente → intenção completa
 - [ ] 4. Sugestão de modelo × effort via model-selection (uma linha por item)
+<<<<<<< HEAD
 - [ ] 5. GATE: overview do lote + canvas UI/UX (se muda UI) + esboços de fluxo → confirmar/iterar (PARAR aqui até o humano confirmar)
 - [ ] 6. Registro: register --blocked (se --plan) → PR Related → merge → promote ready
+=======
+- [ ] 5. GATE: overview do lote + esboços de fluxo (B/C/D) → confirmar/iterar (PARAR aqui até o humano confirmar; sem Issue/PR)
+- [ ] 6. Registro: `agent:register` (`--plan` → `blocked`) → PR `Related #N` → merge → `pnpm agent:ready`
+>>>>>>> 8fb041f4 (feat(ops): OPS17 — plan-issue blocked até plano em main)
 ```
 
 ## Passo 1 — Parse e dedup
@@ -132,26 +137,38 @@ Antes de criar Issues **ou** abrir PR de planos:
 - Esboço textual de fluxo só se ajudar; não substitui o canvas quando há UI
 - Perguntas acumuladas numa rodada, recomendação de produto primeiro
 
+<<<<<<< HEAD
 **Pare e espere.** Itere (incluindo o canvas, se houver UI) até confirmação explícita do lote. Só então Passo 6.
+=======
+**Pare e espere.** Itere até confirmação explícita do lote (não basta um “ok” solto durante a edição). Só então Passo 6.
+>>>>>>> 8fb041f4 (feat(ops): OPS17 — plan-issue blocked até plano em main)
 
-## Passo 6 — Registro (ordem fixa)
+## Passo 6 — Registro (não claimável até plano em `main`)
 
-1. **Register** (com `--model`; com `--plan` → **`--blocked`** até o plano em `main`):
+Ordem obrigatória (OPS17):
+
+1. **Register** (com `--model`; com `--plan` o script nasce `blocked` — não precisa `--blocked` extra):
 
 ```bash
 pnpm agent:register -- --id <ID> --title "<título>" --prio <P0..P3> \
   --depends <A,B> --kind <feature|chore|...> --plan docs/plans/<slug>.md \
-  --model <slug> --blocked
+  --model <slug>
 ```
 
-Sem `--plan`: omita `--blocked` se a Issue deve nascer claimável.
+Sem `--plan`: nasce `ready` (use `--blocked` só se quiser não-claimável sem plano).
 
 2. Atualize `Issue: #N` (e status) no plano local.
 3. Commit + **`pnpm push`** + PR **Ready** `--base main` com **`Related #N`** (nunca `Closes #N` em PR só de `docs/plans/` — `plans-only-closes`).
 4. Auto-merge (`gh pr merge --auto --merge`); espere o merge em `main`.
-5. **Promote** `blocked`→`ready` na Issue (e comente o motivo). A Action de merge (OPS18) é safety net se este passo falhar — não pule o promote do agente no caminho feliz.
+5. **Promote** com o script (idempotente; só Issues `blocked` + link `docs/plans/`):
 
-**NÃO faz:** editar `docs/roadmap.md`; implementar código; claim; escrever `*-impl.md`; editar plano de Issue `in-progress`/`done`/`in-prod`; marcar `ready` antes do plano em `main`.
+```bash
+pnpm agent:ready -- --issue <N[,N…]>
+```
+
+A Action de merge (OPS18) é safety net se este passo falhar — não pule o promote do agente no caminho feliz.
+
+**NÃO faz:** editar `docs/roadmap.md`; implementar código; claim; escrever `*-impl.md`; editar plano de Issue `in-progress`/`done`/`in-prod`; marcar `ready` antes do plano em `main`; registrar/abrir PR antes do gate.
 
 ## Resumo final
 

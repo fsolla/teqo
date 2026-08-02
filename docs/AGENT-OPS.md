@@ -37,7 +37,8 @@ main → ci.yml full suite → vercel deploy --prod (se verde) → requeue se HE
 | Comando                                                                                                       | Faz                                                                        |
 | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | `pnpm agent:claim [-- --dry-run]`                                                                             | Fila ready+unblocked por prio → `in-progress` + brief                      |
-| `pnpm agent:register -- --id X --title T [--prio P1] [--depends A,B] [--plan docs/plans/x.md] [--model slug]` | Cria Issue                                                                 |
+| `pnpm agent:register -- --id X --title T [--prio P1] [--depends A,B] [--plan docs/plans/x.md] [--model slug]` | Cria Issue (`--plan` ⇒ `blocked` até `agent:ready`; sem plano ⇒ `ready`)   |
+| `pnpm agent:ready -- --issue N[,N…]`                                                                          | Pós-merge do plano: `blocked`→`ready` (só Issues com link `docs/plans/`)   |
 | `pnpm agent:status`                                                                                           | Overview / fila / mermaid                                                  |
 | `pnpm agent:prioritize -- <issue> <P0..P3>`                                                                   | Troca `prio:*`                                                             |
 | `pnpm agent:file-miss -- --title ...`                                                                         | Issue `kind:agent-miss`                                                    |
@@ -47,6 +48,8 @@ main → ci.yml full suite → vercel deploy --prod (se verde) → requeue se HE
 | `pnpm db:seed:minimal`                                                                                        | DB mínimo sintético                                                        |
 
 Labels: `ready|in-progress|blocked|done|in-prod`, `prio:*`, `kind:*`, `needs:*`.
+
+**plan-issue (OPS17):** gate pós-overview fecha o lote antes de qualquer Issue/PR; register com `--plan` nasce `blocked` (não entra na fila do claim/pool); após o PR de planos mergear em `main` (`Related #N`), `pnpm agent:ready` promove a `ready`. Chores sem plano continuam nascendo `ready`.
 
 ## Contrato de PR
 
