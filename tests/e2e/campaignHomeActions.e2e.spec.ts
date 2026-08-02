@@ -3,6 +3,9 @@ import type { Page } from '@playwright/test'
 import { WIZARD_MUNICIPALITY_STEP_TITLE } from '../../src/lib/campaignWizardCopy.js'
 import { expect, test } from './fixtures/campaignE2EFixtures.js'
 
+const wizardMainForFlow = (page: Page, flowTitle: string) =>
+  page.getByRole('main', { name: new RegExp(`Ação: ${flowTitle}`, 'i') })
+
 const staffActionLabels = [
   'Ajustar votos',
   'Registrar sinal',
@@ -187,13 +190,12 @@ test.describe('Wizard — busca município (B60)', () => {
     await expect(
       page.getByLabel(new RegExp(`^Município em atualização: ${municipality.name}`, 'i')),
     ).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Ajustar votos estimados' })).toBeVisible()
+    await expect(page.getByRole('textbox', { name: 'Média' })).toBeVisible()
   })
 })
 
 test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
-  const wizardVoteStep = (page: Page) =>
-    page.getByRole('main', { name: /Ajustar votos estimados/i })
+  const wizardVoteStep = (page: Page) => wizardMainForFlow(page, 'Ajustar votos')
 
   test('shows three scenario inputs and saves without cenario param', async ({
     campaign,
@@ -209,10 +211,9 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
     await page.goto(`/campanha/acoes/atualizar-votos?municipio=${municipality.slug}`)
 
     const step = wizardVoteStep(page)
-    await expect(page.getByRole('heading', { name: 'Ajustar votos estimados' })).toBeVisible({
+    await expect(step.getByRole('textbox', { name: 'Pessimista' })).toBeVisible({
       timeout: 15000,
     })
-    await expect(step.getByRole('textbox', { name: 'Pessimista' })).toBeVisible()
     await expect(step.getByRole('textbox', { name: 'Média' })).toBeVisible()
     await expect(step.getByRole('textbox', { name: 'Otimista' })).toBeVisible()
 
@@ -243,11 +244,11 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`/campanha/acoes/atualizar-votos?municipio=${municipality.slug}`)
 
-    await expect(page.getByRole('heading', { name: 'Ajustar votos estimados' })).toBeVisible({
+    const step = wizardVoteStep(page)
+    await expect(step.getByRole('textbox', { name: 'Pessimista' })).toBeVisible({
       timeout: 15000,
     })
 
-    const step = wizardVoteStep(page)
     await step.getByRole('textbox', { name: 'Pessimista' }).fill('900')
     await step.getByRole('textbox', { name: 'Média' }).fill('100')
     await page.getByRole('button', { name: 'Salvar estimativas →' }).click()
@@ -273,7 +274,7 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
         `^https?://[^/]+/campanha/acoes/atualizar-votos\\?municipio=${municipality.slug}$`,
       ),
     )
-    await expect(page.getByRole('heading', { name: 'Ajustar votos estimados' })).toBeVisible({
+    await expect(wizardVoteStep(page).getByRole('textbox', { name: 'Média' })).toBeVisible({
       timeout: 15000,
     })
   })
@@ -291,7 +292,7 @@ test.describe('Wizard — atualizar liderança (B70)', () => {
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`/campanha/acoes/atualizar-lideranca?municipio=${municipality.slug}`)
 
-    await expect(page.getByRole('heading', { name: 'Quem coordena por aqui?' })).toBeVisible({
+    await expect(page.getByRole('button', { name: 'Adicionar liderança' })).toBeVisible({
       timeout: 15000,
     })
 
@@ -302,10 +303,9 @@ test.describe('Wizard — atualizar liderança (B70)', () => {
     await page.getByLabel('Celular').fill(`719${suffix}`)
     await page.getByRole('button', { name: 'Salvar' }).click()
 
-    await expect(page.getByRole('heading', { name: 'Quem coordena por aqui?' })).toBeVisible({
+    await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible({
       timeout: 15000,
     })
-    await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible()
 
     await page.getByRole('button', { name: 'Continuar' }).click()
     await page.waitForURL(
@@ -313,11 +313,13 @@ test.describe('Wizard — atualizar liderança (B70)', () => {
         `/campanha/acoes/registrar-sinal\\?municipio=${municipality.slug}&entry=update-leadership`,
       ),
     )
-    await expect(page.getByRole('heading', { name: 'Que tipo de sinal?' })).toBeVisible()
+    await expect(page.getByRole('link', { name: /Invasão/i })).toBeVisible()
   })
 })
 
 test.describe('Wizard — registrar sinal (B63)', () => {
+  const wizardSignalTypeStep = (page: Page) => wizardMainForFlow(page, 'Registrar sinal')
+
   test('standalone flow: type grid, body step, save continues the chain', async ({
     campaign,
     page,
@@ -332,15 +334,16 @@ test.describe('Wizard — registrar sinal (B63)', () => {
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`/campanha/acoes/registrar-sinal?municipio=${municipality.slug}`)
 
-    await expect(page.getByRole('heading', { name: 'Que tipo de sinal?' })).toBeVisible({
+    const typeStep = wizardSignalTypeStep(page)
+    await expect(typeStep.getByRole('link', { name: /Invasão/i })).toBeVisible({
       timeout: 15000,
     })
     await expect(page.getByRole('link', { name: 'Pular' })).toHaveCount(0)
 
-    await page.getByRole('link', { name: /Invasão/i }).click()
+    await typeStep.getByRole('link', { name: /Invasão/i }).click()
     await page.waitForURL(/signalType=invasao/)
 
-    await expect(page.getByRole('heading', { name: /Detalhar sinal: Invasão/i })).toBeVisible()
+    await expect(page.getByLabel('O que aconteceu?')).toBeVisible()
 
     const body = page.getByLabel('O que aconteceu?')
     await body.fill('Adversário marcou presença no centro do município.')
@@ -364,7 +367,8 @@ test.describe('Wizard — registrar sinal (B63)', () => {
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`/campanha/acoes/registrar-sinal?municipio=${municipality.slug}`)
 
-    await expect(page.getByRole('heading', { name: 'Que tipo de sinal?' })).toBeVisible({
+    const typeStep = wizardSignalTypeStep(page)
+    await expect(typeStep.getByRole('link', { name: /Invasão/i })).toBeVisible({
       timeout: 15000,
     })
 
