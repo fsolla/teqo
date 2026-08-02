@@ -42,13 +42,7 @@ export type SupporterVoteIntention = (typeof supporterVoteIntentions)[number]
 export const isSupporterVoteIntention = (value: unknown): value is SupporterVoteIntention =>
   typeof value === 'string' && (supporterVoteIntentions as readonly string[]).includes(value)
 
-const supporterSources = [
-  'import_csv',
-  'manual',
-  'lideranca',
-  'convite',
-  'evento',
-] as const
+const supporterSources = ['import_csv', 'manual', 'lideranca', 'convite', 'evento'] as const
 
 export type SupporterSource = (typeof supporterSources)[number]
 

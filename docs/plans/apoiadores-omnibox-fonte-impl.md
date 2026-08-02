@@ -24,6 +24,7 @@ flowchart LR
 ```
 
 **Opções consideradas:**
+
 - A) Estender `SupporterListState` + omnibox adapter (padrão B128)
 - B) Filtro só na UI sem URL (rejeitado — quebra compartilhamento/deep-link)
 - C) Multi-select OR de fontes (rejeitado — produto assume exclusivo)
