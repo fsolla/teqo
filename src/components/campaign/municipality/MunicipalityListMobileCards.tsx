@@ -137,6 +137,7 @@ export const MunicipalityListMobileCards = ({
                       level={municipality.engagementLevel}
                       levelNote={municipality.levelNote}
                       levelChangedAt={municipality.levelChangedAt}
+                      updatedAt={municipality.updatedAt}
                       variant="sheet"
                     />
                   ) : (
@@ -156,6 +157,7 @@ export const MunicipalityListMobileCards = ({
                     municipalityName={municipality.name}
                     status={municipality.politicalTrendStatus}
                     trendNote={municipality.politicalTrendNote}
+                    updatedAt={municipality.updatedAt}
                     variant="sheet"
                   />
                 </dd>
@@ -186,6 +188,7 @@ export const MunicipalityListMobileCards = ({
                       isPriority={isPriority}
                       advisorNamesById={advisorNamesById}
                       options={advisorOptions}
+                      updatedAt={municipality.updatedAt}
                       variant="sheet"
                     />
                   ) : names.length ? (

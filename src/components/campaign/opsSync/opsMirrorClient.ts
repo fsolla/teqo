@@ -3,6 +3,7 @@
 import { createCollection, localOnlyCollectionOptions } from '@tanstack/db'
 
 import { collectOpsEstimateOutboxKeys } from '@/components/campaign/opsSync/opsEstimateOutbox'
+import { collectOpsMunicipalityOutboxKeys } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
 import {
   openOpsMirrorStore,
   type OpsMirrorPersistenceMode,
@@ -46,6 +47,8 @@ const demandsCollection = createRowCollection<OpsDemand>('ops-demands')
 const municipalityUpdatesCollection = createRowCollection<OpsMunicipalityUpdate>(
   'ops-municipality-updates',
 )
+
+export { municipalityUpdatesCollection }
 
 let goalsMirror: OpsGoals | null = null
 let revisedAtMirror: string = new Date(0).toISOString()
@@ -123,7 +126,9 @@ export const resetOpsMirrorClientForTests = async (): Promise<void> => {
 
 const resolveOutboxKeys = (explicit?: ReadonlySet<OpsOutboxKey>): ReadonlySet<OpsOutboxKey> => {
   if (explicit) return explicit
-  return collectOpsEstimateOutboxKeys()
+  const keys = collectOpsEstimateOutboxKeys()
+  for (const key of collectOpsMunicipalityOutboxKeys()) keys.add(key)
+  return keys
 }
 
 const persistMirrorSnapshot = async (

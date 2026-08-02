@@ -14,11 +14,13 @@ import {
   type CampaignCellEditOverlayVariant,
 } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { useCampaignCellFailureChannel } from '@/components/campaign/shared/useCampaignCellFailureChannel'
+import { enqueueAdvisorsAssignment } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Badge } from '@/components/ui/Badge'
 import { Command, CommandInput, CommandItem, CommandList } from '@/components/ui/Command'
 import { Spinner } from '@/components/ui/Spinner'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
+import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import { sameIdSet } from '@/lib/sameIdSet'
 import { cn } from '@/lib/utils'
 import { matchesAtWordStart } from '@/lib/wordStartFilter'
@@ -38,6 +40,8 @@ type MunicipalityListAdvisorsControlProps = {
   isPriority: boolean
   advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>
   options: EligibleAdvisorOption[]
+  /** OH10 — CAS base when OPS_HYBRID outbox path is on. */
+  updatedAt?: string
   variant: CampaignCellEditOverlayVariant
 }
 
@@ -48,6 +52,7 @@ export const MunicipalityListAdvisorsControl = ({
   isPriority,
   advisorNamesById,
   options,
+  updatedAt,
   variant,
 }: MunicipalityListAdvisorsControlProps) => {
   const [open, setOpen] = useState(false)
@@ -122,11 +127,13 @@ export const MunicipalityListAdvisorsControl = ({
 
   const toggle = (advisorId: number, assigned: boolean) => {
     setErrorMessage(null)
+    let nextIds: number[] = []
     setSelectedIDs((current) => {
       const next = new Set(current)
       if (assigned) next.add(advisorId)
       else next.delete(advisorId)
-      return [...next]
+      nextIds = [...next]
+      return nextIds
     })
     setQuery('')
 
@@ -157,6 +164,19 @@ export const MunicipalityListAdvisorsControl = ({
       }
 
       try {
+        if (resolveOpsHybridEnabled()) {
+          await enqueueAdvisorsAssignment({
+            municipalityId: municipalityID,
+            advisors: nextIds,
+            baseUpdatedAt: updatedAt,
+          })
+          if (requestSeq > (latestConfirmedRef.current?.seq ?? 0)) {
+            latestConfirmedRef.current = { seq: requestSeq, advisors: nextIds }
+          }
+          finishRequest()
+          return
+        }
+
         const { ok, payload } = await postCampaignJson<MunicipalityListAdvisorsResponse>(
           ADVISORS_ENDPOINT,
           { municipalityId: municipalityID, advisorId, assigned },

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { optionalBaseUpdatedAtSchema, OPS_UPDATED_AT_CONFLICT_MESSAGE } from '@/lib/schemas/opsCas'
 import {
   MAX_VOTE_COUNT,
   positiveRelationshipId,
@@ -63,6 +64,11 @@ export const municipalityUpdateCreateSchema = z
     activeVolunteers: optionalCount,
     newSupports: optionalCount,
     signalType: z.enum(municipalitySignalTypes).optional(),
+    /**
+     * OH10 CAS opt-in on the parent municipality's `updatedAt` (feed order).
+     * Absent → last-write-wins create.
+     */
+    baseUpdatedAt: optionalBaseUpdatedAtSchema,
   })
   .superRefine((data, context) => {
     if (data.kind === 'semanal') {
@@ -100,5 +106,9 @@ export const municipalityUpdateCreateSchema = z
       }
     }
   })
+
+export const MUNICIPALITY_UPDATE_CREATE_SAFE_MESSAGES = [
+  OPS_UPDATED_AT_CONFLICT_MESSAGE,
+] as const
 
 export type MunicipalityUpdateCreateInput = z.input<typeof municipalityUpdateCreateSchema>

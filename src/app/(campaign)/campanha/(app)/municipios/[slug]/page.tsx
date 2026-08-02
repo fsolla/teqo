@@ -118,6 +118,7 @@ export default async function MunicipalityDetailPage({
             <UpdatesTab
               municipalityID={view.id}
               municipalitySlug={view.slug}
+              municipalityUpdatedAt={view.updatedAt}
               rawSearchParams={rawSearchParams}
               payloadUser={{ payload, user }}
             />

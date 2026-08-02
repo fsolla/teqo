@@ -11,12 +11,14 @@ import {
   type CampaignCellEditOverlayVariant,
 } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { useCampaignCellAutosave } from '@/components/campaign/shared/useCampaignCellAutosave'
+import { enqueuePoliticalTrend } from '@/components/campaign/opsSync/opsMunicipalityOutbox'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Badge } from '@/components/ui/Badge'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
+import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
 import { parsePoliticalTrendStatusFormValue } from '@/lib/schemas/municipality'
 import {
   politicalTrendBadgeVariant,
@@ -44,6 +46,8 @@ type MunicipalityListTrendControlProps = {
   municipalityName: string
   status: MunicipalityListSavedPoliticalTrend['status']
   trendNote: string | null
+  /** OH10 — CAS base when OPS_HYBRID outbox path is on. */
+  updatedAt?: string
   variant: CampaignCellEditOverlayVariant
 }
 
@@ -52,8 +56,10 @@ export const MunicipalityListTrendControl = ({
   municipalityName,
   status,
   trendNote,
+  updatedAt,
   variant,
 }: MunicipalityListTrendControlProps) => {
+  const opsHybrid = resolveOpsHybridEnabled()
   const { open, onOpenChange, value, change, flush, isPending, errorMessage, statusMessage } =
     useCampaignCellAutosave<
       MunicipalityListSavedPoliticalTrend,
@@ -73,6 +79,24 @@ export const MunicipalityListTrendControl = ({
       readSaved: (payload) => payload.savedTrend,
       errorMessage: SAVE_ERROR_MESSAGE,
       pendingMessage: 'Salvando tendência.',
+      persist: opsHybrid
+        ? async (trend) => {
+            await enqueuePoliticalTrend({
+              municipalityId: municipalityID,
+              status: trend.status,
+              note: trend.note,
+              baseUpdatedAt: updatedAt,
+            })
+            return {
+              ok: true,
+              payload: {
+                status: 'success',
+                message: 'Tendência política registrada.',
+                savedTrend: trend,
+              },
+            }
+          }
+        : undefined,
     })
 
   // The only state the hook cannot hold: the textarea's raw text, which the

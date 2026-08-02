@@ -249,6 +249,7 @@ const municipalityListColumns = ({
                 level={municipality.engagementLevel}
                 levelNote={municipality.levelNote}
                 levelChangedAt={municipality.levelChangedAt}
+                updatedAt={municipality.updatedAt}
                 variant="popover"
               />
             ) : (
@@ -288,6 +289,7 @@ const municipalityListColumns = ({
                 isPriority={municipality.priority === 'alta'}
                 advisorNamesById={advisorNamesById}
                 options={advisorOptions}
+                updatedAt={municipality.updatedAt}
                 variant="popover"
               />
             ) : (
@@ -321,6 +323,7 @@ const municipalityListColumns = ({
               municipalityName={municipality.name}
               status={municipality.politicalTrendStatus}
               trendNote={municipality.politicalTrendNote}
+              updatedAt={municipality.updatedAt}
               variant="popover"
             />
           ),

@@ -23,6 +23,14 @@ type UseCampaignCellAutosaveOptions<TValue, TResponse extends CampaignCellAutosa
   errorMessage: string
   /** Announced while a save is in flight, e.g. "Salvando tendência." */
   pendingMessage: string
+  /**
+   * OH10 — optional persist path (outbox). When set, replaces the JSON POST.
+   * Must resolve a success-shaped payload so `readSaved` can adopt the value.
+   */
+  persist?: (
+    value: TValue,
+    signal: AbortSignal,
+  ) => Promise<{ ok: boolean; payload: TResponse }>
 }
 
 /**
@@ -140,11 +148,13 @@ export const useCampaignCellAutosave = <TValue, TResponse extends CampaignCellAu
     }
 
     try {
-      const { ok, payload } = await postCampaignJson<TResponse>(
-        current.endpoint,
-        current.buildBody(next),
-        controller.signal,
-      )
+      const { ok, payload } = current.persist
+        ? await current.persist(next, controller.signal)
+        : await postCampaignJson<TResponse>(
+            current.endpoint,
+            current.buildBody(next),
+            controller.signal,
+          )
 
       if (generation !== saveGenerationRef.current) return
 

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { optionalBaseUpdatedAtSchema, OPS_UPDATED_AT_CONFLICT_MESSAGE } from '@/lib/schemas/opsCas'
 import {
   MAX_VOTE_COUNT,
   positiveRelationshipId,
@@ -34,6 +35,11 @@ export const declareVotesSchema = z.object({
   municipality: positiveRelationshipId,
   leadership: positiveRelationshipId,
   declaredVotes: z.number().int().min(0).max(MAX_VOTE_COUNT),
+  /**
+   * OH10 CAS opt-in on the pledge row's `updatedAt`. Absent → last-write-wins.
+   * When no pledge exists yet, pass `null` to assert a create.
+   */
+  baseUpdatedAt: optionalBaseUpdatedAtSchema,
 })
 
 /** Staff record their internal estimate for one pledge. */
@@ -91,6 +97,7 @@ export const VOTE_PLEDGE_DECLARE_SAFE_MESSAGES = [
   VOTE_PLEDGE_DECLARE_STAFF_MESSAGE,
   VOTE_PLEDGE_MUNICIPALITY_NOT_LINKED_MESSAGE,
   VOTE_PLEDGE_LEADERSHIP_REQUIRED_MESSAGE,
+  OPS_UPDATED_AT_CONFLICT_MESSAGE,
 ] as const
 
 export const VOTE_PLEDGE_ESTIMATE_SAFE_MESSAGES = [

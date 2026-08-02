@@ -38,6 +38,7 @@ export const municipalityListSelect = {
   advisors: true,
   priority: true,
   lastUpdateAt: true,
+  updatedAt: true,
   expectedVotes: true,
   politicalTrend: {
     status: true,
@@ -73,6 +74,8 @@ export type MunicipalityListViewModel = {
    * ordering.
    */
   lastSignalAt: string | null
+  /** OH10 — CAS token for staff writes when OPS_HYBRID is on. */
+  updatedAt: string
   expectedVotes: VoteEstimateScenarioViewModel
   politicalTrendStatus: PoliticalTrendStatus | null
   politicalTrendNote: string | null
@@ -116,6 +119,7 @@ export const toMunicipalityListViewModel = (
       municipality.lastUpdateAt ?? null,
       pledges?.lastPledgeAt ?? null,
     ),
+    updatedAt: municipality.updatedAt,
     expectedVotes: toVoteEstimateScenarioViewModel(municipality.expectedVotes),
     politicalTrendStatus: municipality.politicalTrend?.status ?? null,
     politicalTrendNote: municipality.politicalTrend?.note ?? null,
@@ -149,6 +153,8 @@ export type MunicipalityDetailViewModel = {
   tseZones: number[]
   advisorIDs: number[]
   lastUpdateAt: string | null
+  /** OH10 — CAS token for staff writes when OPS_HYBRID is on. */
+  updatedAt: string
   /** Staff-only block — null for the leader view model. */
   strategy: MunicipalityStrategyViewModel | null
 }
@@ -196,6 +202,7 @@ export const toMunicipalityDetailViewModel = (
     .map(relationshipId)
     .filter((id): id is number => id !== null),
   lastUpdateAt: municipality.lastUpdateAt ?? null,
+  updatedAt: municipality.updatedAt,
   strategy:
     role === 'leader'
       ? null

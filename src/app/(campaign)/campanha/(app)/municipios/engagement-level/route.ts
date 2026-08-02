@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { setMunicipalityEngagementLevel } from '@/app/(campaign)/campanha/actions/municipality'
 import { EngagementLevelBlockedError } from '@/lib/engagementLevel'
 import {
-  MUNICIPALITY_ENGAGEMENT_LEVEL_UNRESTRICTED_MESSAGE,
+  MUNICIPALITY_ENGAGEMENT_LEVEL_SAFE_MESSAGES,
   municipalityEngagementLevelSchema,
 } from '@/lib/schemas/municipality'
 import { positiveRelationshipId } from '@/lib/schemas/primitives'
@@ -25,7 +25,7 @@ export const POST = campaignJsonMutationRoute(
     bodySchema,
     // Only the unrestricted-actor message: this action reloads the actor with
     // its own guard, never through `getFreshStaffActor` (same as `advisors/`).
-    safeMessages: [MUNICIPALITY_ENGAGEMENT_LEVEL_UNRESTRICTED_MESSAGE],
+    safeMessages: MUNICIPALITY_ENGAGEMENT_LEVEL_SAFE_MESSAGES,
     genericMessage: 'Não foi possível registrar o nível. Verifique seu acesso e tente novamente.',
   },
   async ({ municipalityId, ...movement }) => {
