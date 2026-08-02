@@ -8,6 +8,7 @@ import {
   type OpsMirrorPersistenceMode,
   type OpsMirrorStore,
 } from '@/components/campaign/opsSync/opsMirrorPersistence'
+import { votePledgesCollection } from '@/components/campaign/opsSync/opsVotePledgeMirror'
 import {
   createEmptyOpsSnapshot,
   type OpsActivity,
@@ -20,7 +21,6 @@ import {
   type OpsOutboxKey,
   type OpsSnapshot,
   type OpsStateDeputy,
-  type OpsVotePledge,
 } from '@/lib/campaignOps/opsContract'
 import { mergeOpsSnapshot } from '@/lib/campaignOps/opsMerge'
 import { OPS_MIRROR_SCHEMA_VERSION } from '@/lib/campaignOps/opsMirrorVersion'
@@ -38,7 +38,7 @@ const createRowCollection = <T extends { id: number }>(id: string) =>
 
 export const municipalitiesCollection = createRowCollection<OpsMunicipality>('ops-municipalities')
 const leadershipsCollection = createRowCollection<OpsLeadership>('ops-leaderships')
-export const votePledgesCollection = createRowCollection<OpsVotePledge>('ops-vote-pledges')
+export { votePledgesCollection } from '@/components/campaign/opsSync/opsVotePledgeMirror'
 const activitiesCollection = createRowCollection<OpsActivity>('ops-activities')
 const stateDeputiesCollection = createRowCollection<OpsStateDeputy>('ops-state-deputies')
 const organizationsCollection = createRowCollection<OpsOrganization>('ops-organizations')

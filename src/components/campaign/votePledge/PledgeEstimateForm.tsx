@@ -20,6 +20,10 @@ import {
   subscribeOpsEstimateOutboxRow,
 } from '@/components/campaign/opsSync/opsEstimateOutbox'
 import type { OpsEstimateSyncStatus } from '@/components/campaign/opsSync/opsEstimateOutboxModel'
+import {
+  readOpsVotePledge,
+  subscribeOpsVotePledge,
+} from '@/components/campaign/opsSync/opsVotePledgeMirror'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { VoteEstimateScenarioInputs } from '@/components/campaign/votePledge/VoteEstimateScenarioInputs'
 import { Badge } from '@/components/ui/Badge'
@@ -87,7 +91,7 @@ export const PledgeEstimateForm = ({
   pledgeID,
   currentEstimatedVotes,
   currentEstimateNote,
-  currentEstimatedAt,
+  currentEstimatedAt: _currentEstimatedAt,
   opsHybridEnabled,
   formAction,
 }: PledgeEstimateFormProps) => {
@@ -102,14 +106,7 @@ export const PledgeEstimateForm = ({
     )
   }
 
-  return (
-    <HybridPledgeEstimateForm
-      pledgeID={pledgeID}
-      currentEstimatedVotes={currentEstimatedVotes}
-      currentEstimateNote={currentEstimateNote}
-      currentEstimatedAt={currentEstimatedAt}
-    />
-  )
+  return <HybridPledgeEstimateForm pledgeID={pledgeID} />
 }
 
 const LegacyPledgeEstimateForm = ({
@@ -165,26 +162,26 @@ const LegacyPledgeEstimateForm = ({
   )
 }
 
-const HybridPledgeEstimateForm = ({
-  pledgeID,
-  currentEstimatedVotes,
-  currentEstimateNote,
-  currentEstimatedAt,
-}: {
-  pledgeID: number
-  currentEstimatedVotes: VoteEstimateScenarioViewModel
-  currentEstimateNote: string | null
-  currentEstimatedAt: string | null
-}) => {
+const HybridPledgeEstimateForm = ({ pledgeID }: { pledgeID: number }) => {
   const router = useRouter()
   const liveRegionId = useId()
   const formRef = useRef<HTMLFormElement>(null)
   const previousStatusRef = useRef<OpsEstimateSyncStatus | undefined>(undefined)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
-  // Override only until RSC props catch up after "Manter o meu".
+  // Override only until the mirror row catches up after "Manter o meu".
   const [baseOverride, setBaseOverride] = useState<string | null | undefined>(undefined)
-  const baseEstimatedAt = baseOverride !== undefined ? baseOverride : currentEstimatedAt
+
+  const mirrorPledge = useSyncExternalStore(
+    (onStoreChange) => subscribeOpsVotePledge(pledgeID, onStoreChange),
+    () => readOpsVotePledge(pledgeID),
+    () => undefined,
+  )
+
+  const mirrorEstimatedVotes = toVoteEstimateScenarioViewModel(mirrorPledge?.estimatedVotes)
+  const mirrorEstimateNote = mirrorPledge?.estimateNote ?? null
+  const mirrorEstimatedAt = mirrorPledge?.estimatedAt ?? null
+  const baseEstimatedAt = baseOverride !== undefined ? baseOverride : mirrorEstimatedAt
 
   const outboxRow = useSyncExternalStore(
     (onStoreChange) => subscribeOpsEstimateOutboxRow(pledgeID, onStoreChange),
@@ -199,7 +196,7 @@ const HybridPledgeEstimateForm = ({
 
   useEffect(() => {
     setBaseOverride(undefined)
-  }, [currentEstimatedAt])
+  }, [mirrorEstimatedAt])
 
   useEffect(() => {
     const previous = previousStatusRef.current
@@ -262,7 +259,7 @@ const HybridPledgeEstimateForm = ({
 
   const status = outboxRow?.status
   const pending = isSubmitting || status === 'pending'
-  const fieldsKey = `pledge-estimate-fields-${pledgeID}-${outboxRow?.status ?? 'rsc'}-${currentEstimatedAt ?? 'none'}`
+  const fieldsKey = `pledge-estimate-fields-${pledgeID}-${outboxRow?.status ?? 'mirror'}-${mirrorEstimatedAt ?? 'none'}`
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -310,7 +307,7 @@ const HybridPledgeEstimateForm = ({
       <div key={fieldsKey} className="flex flex-col gap-3">
         <VoteEstimateScenarioInputs
           fieldPrefix="estimatedVotes"
-          values={outboxRow?.estimatedVotes ?? currentEstimatedVotes}
+          values={outboxRow?.estimatedVotes ?? mirrorEstimatedVotes}
           idPrefix={`pledge-estimate-${pledgeID}`}
         />
         <Field>
@@ -321,7 +318,7 @@ const HybridPledgeEstimateForm = ({
             id={`pledge-note-${pledgeID}`}
             name="estimateNote"
             maxLength={1000}
-            defaultValue={outboxRow?.estimateNote ?? currentEstimateNote ?? undefined}
+            defaultValue={outboxRow?.estimateNote ?? mirrorEstimateNote ?? undefined}
             className="min-h-11"
           />
         </Field>

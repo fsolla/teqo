@@ -19,6 +19,10 @@ import {
   resolveOpsSyncChromeLabel,
 } from '@/components/campaign/opsSync/opsSyncChromeCopy'
 import {
+  applyOpsVotePledgeEstimateWrite,
+  patchOpsVotePledgeEstimateOptimistic,
+} from '@/components/campaign/opsSync/opsVotePledgeMirror'
+import {
   createEmptyOpsSnapshot,
   opsOutboxKey,
   type OpsSnapshot,
@@ -155,6 +159,37 @@ describe('opsMirrorClient', () => {
     const stored = await store.load()
     expect(stored?.snapshot.municipalities).toHaveLength(2)
     expect(stored?.lastSyncedAt).toBe(sync.lastSyncedAt)
+  })
+
+  it('patches estimate fields after a successful write', () => {
+    applyOpsMirrorSnapshot(baseSnapshot())
+    applyOpsVotePledgeEstimateWrite({
+      id: 10,
+      leadership: 2,
+      municipality: 1,
+      declaredVotes: 100,
+      updatedAt: '2026-08-01T14:00:00.000Z',
+      estimatedVotes: { pessimistic: 90, central: 110, optimistic: 130 },
+      estimateNote: 'patch',
+      estimatedBy: 3,
+      estimatedAt: '2026-08-01T14:00:00.000Z',
+    })
+
+    expect(votePledgesCollection.get(10)?.estimatedVotes?.central).toBe(110)
+    expect(votePledgesCollection.get(10)?.estimatedAt).toBe('2026-08-01T14:00:00.000Z')
+    expect(votePledgesCollection.get(10)?.estimateNote).toBe('patch')
+  })
+
+  it('applies optimistic estimate patches while pending', () => {
+    applyOpsMirrorSnapshot(baseSnapshot())
+    patchOpsVotePledgeEstimateOptimistic(
+      10,
+      { pessimistic: 70, central: 80, optimistic: 90 },
+      'optimistic local',
+    )
+
+    expect(votePledgesCollection.get(10)?.estimatedVotes?.central).toBe(80)
+    expect(votePledgesCollection.get(10)?.estimateNote).toBe('optimistic local')
   })
 
   it('does not smash outbox-marked pledge rows on merge', async () => {

@@ -15,6 +15,11 @@ import {
   type EnqueueEstimateVotesInput,
   type OpsEstimateOutboxRow,
 } from '@/components/campaign/opsSync/opsEstimateOutboxModel'
+import {
+  applyOpsVotePledgeEstimateWrite,
+  patchOpsVotePledgeEstimateOptimistic,
+  readOpsVotePledge,
+} from '@/components/campaign/opsSync/opsVotePledgeMirror'
 import { opsOutboxKey, type OpsOutboxKey } from '@/lib/campaignOps/opsContract'
 import {
   isOpsEstimateConflictMessage,
@@ -48,16 +53,18 @@ const createEstimateOfflineExecutor = (): OfflineExecutor =>
         const row = mutation.modified as OpsEstimateOutboxRow
 
         try {
-          await estimateVotesCas({
+          const updated = await estimateVotesCas({
             pledge: row.pledgeId,
             estimatedVotes: row.estimatedVotes,
             estimateNote: row.estimateNote,
             baseEstimatedAt: row.baseEstimatedAt,
           })
+          applyOpsVotePledgeEstimateWrite(updated)
           opsEstimateOutboxCollection.utils.acceptMutations(transaction)
           if (opsEstimateOutboxCollection.has(row.pledgeId)) {
-            // Drop the local row so RSC props win after refresh (OH7 will
-            // patch the mirror instead of keeping a synced stub).
+            opsEstimateOutboxCollection.update(row.pledgeId, (draft) => {
+              draft.status = 'synced'
+            })
             opsEstimateOutboxCollection.delete(row.pledgeId)
           }
         } catch (error) {
@@ -110,7 +117,13 @@ export const enqueueEstimateVotes = async (input: EnqueueEstimateVotesInput): Pr
   const run = executor.createOfflineAction<EnqueueEstimateVotesInput>({
     mutationFnName: ESTIMATE_MUTATION_FN,
     onMutate: (variables) => {
-      const next = toOpsEstimateOutboxRow(variables, 'pending')
+      const mirrorRow = readOpsVotePledge(variables.pledge)
+      const baseEstimatedAt =
+        variables.baseEstimatedAt !== undefined
+          ? variables.baseEstimatedAt
+          : (mirrorRow?.estimatedAt ?? null)
+      const next = toOpsEstimateOutboxRow({ ...variables, baseEstimatedAt }, 'pending')
+      patchOpsVotePledgeEstimateOptimistic(next.pledgeId, next.estimatedVotes, next.estimateNote)
       if (opsEstimateOutboxCollection.has(next.pledgeId)) {
         opsEstimateOutboxCollection.update(next.pledgeId, (draft) => {
           draft.estimatedVotes = next.estimatedVotes
