@@ -17,10 +17,7 @@ export {
   parseOrganizationListParams,
   resolveOrganizationListUrl,
 } from '@/utilities/organization/organizationListUrl'
-export type {
-  OrganizationListSearchParams,
-  OrganizationListState,
-} from '@/utilities/organization/organizationListUrl'
+export type { OrganizationListState } from '@/utilities/organization/organizationListUrl'
 
 export type OrganizationRowViewModel = {
   id: number

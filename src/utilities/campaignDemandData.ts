@@ -18,7 +18,7 @@ export {
   parseDemandListParams,
   resolveDemandListUrl,
 } from '@/utilities/demand/demandListUrl'
-export type { DemandListSearchParams, DemandListState } from '@/utilities/demand/demandListUrl'
+export type { DemandListState } from '@/utilities/demand/demandListUrl'
 
 export type DemandRowViewModel = {
   id: number
