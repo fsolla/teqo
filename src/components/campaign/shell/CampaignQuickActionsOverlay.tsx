@@ -63,7 +63,10 @@ const OverlayActionsChrome = ({
 }
 
 const OverlaySearchChrome = ({ className }: { className?: string }) => (
-  <div data-slot="quick-actions-search" className={cn('min-w-0', className)}>
+  <div
+    data-slot="quick-actions-search"
+    className={cn('min-w-0 md:pr-10', className)}
+  >
     <CampaignGlobalSearchBody />
   </div>
 )
@@ -121,9 +124,10 @@ export const CampaignQuickActionsOverlay = ({
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
+      <Drawer open={open} onOpenChange={onOpenChange} showSwipeHandle>
         <DrawerContent
           id="CampaignQuickActionsOverlay"
+          initialFocus={false}
           className="max-h-[85dvh] border-t border-border bg-background text-foreground [--drawer-height:auto]"
         >
           <DrawerTitle className="sr-only">Ações rápidas</DrawerTitle>
@@ -143,6 +147,7 @@ export const CampaignQuickActionsOverlay = ({
       <DialogContent
         id="CampaignQuickActionsOverlay"
         className="flex max-h-[min(85dvh,40rem)] w-[calc(100vw-2rem)] max-w-lg flex-col gap-4 overflow-hidden p-4 sm:p-6"
+        onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <DialogHeader className="sr-only">
           <DialogTitle>Ações rápidas</DialogTitle>

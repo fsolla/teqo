@@ -331,6 +331,67 @@ describe('CampaignQuickActionsOverlay (B126)', () => {
     expect((screen.getByLabelText('Buscar na campanha') as HTMLInputElement).value).toBe('')
   })
 
+  it('opens idle without autofocus and keeps actions visible (B146)', () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: idleSuggestPayload,
+    })
+
+    renderOverlay({
+      actions: [
+        {
+          id: 'test',
+          label: 'Registrar',
+          icon: BarChart3,
+          description: 'Teste.',
+          href: '/campanha',
+        },
+      ],
+    })
+
+    const input = screen.getByLabelText('Buscar na campanha')
+    const actionsChrome = document.querySelector('[data-slot="quick-actions-chrome"]')
+
+    expect(document.activeElement).not.toBe(input)
+    expect(actionsChrome?.getAttribute('data-retracted')).toBeNull()
+    expect(actionsChrome?.className).not.toContain('grid-rows-[0fr]')
+  })
+
+  it('shows swipe handle and no dialog close on mobile (B146)', () => {
+    matchMediaMock.mockImplementation((query: string) => ({
+      matches: query.includes('max-width'),
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }))
+
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: idleSuggestPayload,
+    })
+
+    renderOverlay()
+
+    expect(document.querySelector('[data-slot="drawer-swipe-handle"]')).not.toBeNull()
+    expect(screen.queryByRole('button', { name: 'Fechar' })).toBeNull()
+  })
+
+  it('reserves space for close button beside search on desktop (B146)', () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: idleSuggestPayload,
+    })
+
+    renderOverlay()
+
+    const searchChrome = document.querySelector('[data-slot="quick-actions-search"]')
+    expect(searchChrome?.className).toContain('md:pr-10')
+    expect(screen.getByRole('button', { name: 'Fechar' })).toBeTruthy()
+  })
+
   it('uses mobile drawer with actions above search', () => {
     matchMediaMock.mockImplementation((query: string) => ({
       matches: query.includes('max-width'),
