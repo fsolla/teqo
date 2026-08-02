@@ -16,6 +16,15 @@ import {
   buildDemandOmniboxChips,
   clearDemandOmnibox,
 } from '@/utilities/demand/demandOmnibox'
+import { parseOrganizationListParams } from '@/utilities/organization/organizationListUrl'
+import {
+  applyOrganizationOmniboxSuggestion,
+  buildOrganizationOmniboxChips,
+  buildOrganizationOmniboxSuggestionSeeds,
+  clearOrganizationOmnibox,
+  filterOrganizationOmniboxSuggestions,
+  removeOrganizationOmniboxChip,
+} from '@/utilities/organization/organizationOmnibox'
 import { parseLeadershipListParams } from '@/utilities/leadership/leadershipListUrl'
 import {
   applyLeadershipOmniboxSuggestion,
@@ -132,6 +141,45 @@ describe('list omnibox adapters (B128)', () => {
 
     const cleared = clearDemandOmnibox(state)
     if (cleared.kind === 'clear') expect(cleared.state.activityId).toBe(42)
+  })
+
+  it('organization toggles exclusive kind and coexists with search', () => {
+    const base = parseOrganizationListParams({})
+    const applied = applyOrganizationOmniboxSuggestion({
+      state: base,
+      suggestionId: 'kind:sindicato',
+    })
+    expect(applied.kind).toBe('url')
+    if (applied.kind === 'url') expect(applied.state.kind).toBe('sindicato')
+
+    const toggled = applyOrganizationOmniboxSuggestion({
+      state: parseOrganizationListParams({ kind: 'sindicato' }),
+      suggestionId: 'kind:sindicato',
+    })
+    if (toggled.kind === 'url') expect(toggled.state.kind).toBeUndefined()
+
+    const chips = buildOrganizationOmniboxChips(
+      parseOrganizationListParams({ q: 'cut', kind: 'associacao' }),
+    )
+    expect(chips.map((chip) => chip.id)).toEqual(['q', 'kind:associacao'])
+
+    const seeds = buildOrganizationOmniboxSuggestionSeeds()
+    const suggestions = filterOrganizationOmniboxSuggestions(seeds, 'sindicato')
+    expect(suggestions.some((entry) => entry.id === 'kind:sindicato')).toBe(true)
+
+    const removed = removeOrganizationOmniboxChip({
+      state: parseOrganizationListParams({ q: 'cut', kind: 'movimento' }),
+      chipId: 'kind:movimento',
+    })
+    if (removed.kind === 'url') {
+      expect(removed.state.kind).toBeUndefined()
+      expect(removed.state.q).toBe('cut')
+    }
+
+    const cleared = clearOrganizationOmnibox(parseOrganizationListParams({ q: 'x', kind: 'outro' }))
+    if (cleared.kind === 'clear') {
+      expect(cleared.state).toEqual({ page: 1 })
+    }
   })
 
   it('search-only omnibox commits q', () => {
