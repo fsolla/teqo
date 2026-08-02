@@ -27,17 +27,13 @@ describe('loadMunicipalityListPageBundle', () => {
     payload = await getPayload({ config: await config })
   })
 
-  it('keeps a zeroed overview when the filtered municipality set is empty', async () => {
+  it('returns an empty list when the filtered municipality set is empty', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
 
     const bundle = await loadMunicipalityListPageBundle(payload, coordinator, { q: 'zzznomatch' })
 
-    // The overview stays on screen next to the empty state instead of unmounting.
     expect(bundle.municipalities).toHaveLength(0)
-    expect(bundle.overview).not.toBeNull()
-    expect(bundle.overview!.municipalityCount).toBe(0)
-    expect(bundle.overview!.staffVoteTotalByScenario.central).toBe(0)
-    expect(bundle.overview!.goalCoverageByScenario.central.goal).toBe(0)
+    expect(bundle.totalDocs).toBe(0)
   })
 
   it('rolls up staffVoteTotal from expectedVotes when no pledge overrides apply', async () => {
@@ -81,8 +77,6 @@ describe('loadMunicipalityListPageBundle', () => {
       q: municipality.name,
     })
 
-    expect(bundle.overview).not.toBeNull()
-    expect(bundle.overview!.staffVoteTotalByScenario.central).toBeGreaterThanOrEqual(1_500)
     const row = bundle.municipalities.find((item) => item.slug === municipality.slug)
     expect(row?.votePosition2022).not.toBeNull()
     expect(row!.votePosition2022!.totalUnits).toBe(435)
@@ -282,7 +276,7 @@ describe('loadMunicipalityListPageBundle', () => {
   /**
    * E10: the class is derived from the committed TSE artifact, so the filter
    * cannot be a Payload constraint. The bundle must still agree with itself —
-   * rows, `totalDocs` and the overview all counting the filtered scope.
+   * rows and `totalDocs` counting the filtered scope.
    */
   it('filters by the derived territorial class and keeps the overview honest', async () => {
     const fixtures = campaignFixtures()
@@ -326,7 +320,6 @@ describe('loadMunicipalityListPageBundle', () => {
     })
     expect(filtered.municipalities.map((row) => row.slug)).toEqual([first.slug])
     expect(filtered.totalDocs).toBe(1)
-    expect(filtered.overview?.municipalityCount).toBe(1)
     expect(filtered.municipalities[0]!.territorialClass).toBe(firstClass)
     expect(filtered.municipalities[0]!.territorialClassFactors.length).toBeGreaterThan(0)
 
@@ -411,7 +404,6 @@ describe('loadMunicipalityListPageBundle', () => {
     const included = await loadMunicipalityListPageBundle(payload, advisor, {
       q: administered.name,
     })
-    expect(included.overview).not.toBeNull()
     expect(included.municipalities.some((row) => row.slug === administered.slug)).toBe(true)
 
     const outsideSlug = municipalityCatalog.find((entry) => entry.slug !== administered.slug)!.slug
@@ -419,7 +411,6 @@ describe('loadMunicipalityListPageBundle', () => {
     const excluded = await loadMunicipalityListPageBundle(payload, advisor, {
       slug: [outsideSlug],
     })
-    expect(excluded.overview?.municipalityCount).toBe(0)
     expect(excluded.municipalities).toHaveLength(0)
   })
 
@@ -498,7 +489,6 @@ describe('loadMunicipalityListPageBundle', () => {
 
     const bundle = await loadMunicipalityListPageBundle(payload, leader, { q: municipality.name })
 
-    expect(bundle.overview).toBeNull()
     expect(bundle.municipalities).toHaveLength(0)
     expect(bundle.scopeTotal).toBe(0)
   })

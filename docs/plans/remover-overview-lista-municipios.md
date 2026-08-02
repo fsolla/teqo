@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Remover overview da lista de municípios
 
 Status: registrado
@@ -74,3 +75,27 @@ Na lista de municípios (`/campanha/municipios`), o painel de visão geral acima
 - `src/app/(campaign)/campanha/(app)/municipios/page.tsx`
 - `docs/plans/overview-lista-nucleos.md` · `docs/plans/cenario-junto-filtros-municipios.md`
 - E9 / “coluna da vergonha” — contexto em `docs/plans/inteligencia-campanha.md` (não reabrir fila de alocação aqui)
+=======
+# B129 — Remover overview da lista de municípios
+
+Status: aprovado
+Atualizado em: 2026-08-02
+Issue: #266
+
+## Outcome
+
+Tirar o painel de visão geral (“Média nos municípios filtrados” e demais agregados) de `/campanha/municipios` em todos os viewports, para a lista voltar a ser o conteúdo útil logo após os filtros.
+
+## Aceite (produto)
+
+- Overview da lista de municípios ausente em desktop e mobile.
+- Filtros e seletor de cenário na barra de filtros permanecem.
+- Atalho E9 “prioritárias sem responsável” some com o bloco (filtros Prioridade + Assessoria cobrem o recorte).
+- Fora: overview de apoiadores, Início/dashboard, redesign da lista.
+
+## Direção no codebase (hipótese)
+
+- Remover `MunicipalityListOverview` da página e deletar o componente.
+- Retirar `overview` de `loadMunicipalityListPageBundle`; manter `staffScope` só para agregados de linha (pledges, cobertura de meta por município).
+- Atualizar int tests que assertam `bundle.overview`.
+>>>>>>> 0c052371 (B129 — Remove municipality list overview panel)
