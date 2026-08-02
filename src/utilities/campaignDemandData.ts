@@ -4,20 +4,21 @@ import type { Payload } from 'payload'
 
 import { isPopulatedRelationship, relationshipId } from '@/lib/relationship'
 import type { CampaignDemandKind, CampaignDemandStatus } from '@/lib/schemas/campaignDemand'
-import { campaignDemandKinds, campaignDemandStatuses } from '@/lib/schemas/campaignDemand'
 import type { Activity, CampaignDemand, CampaignUser } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import {
-  buildListHref,
-  firstValue,
-  strictDecimalInteger,
-  type RawSearchParams,
-} from '@/utilities/campaignListUrl'
+  buildDemandListHref,
+  parseDemandListParams,
+  type DemandListState,
+} from '@/utilities/demand/demandListUrl'
 import {
   loadCampaignUserNamesByIds,
   loadLeadershipContactNamesByIds,
   loadMunicipalityLabelsByIds,
 } from '@/utilities/loadNamesByIds'
+
+export type { DemandListState }
+export { buildDemandListHref, parseDemandListParams }
 
 const demandPageSize = 25
 
@@ -33,45 +34,6 @@ export type DemandRowViewModel = {
   requesterName: string | null
   createdAt: string
 }
-
-export type DemandListState = {
-  page: number
-  status?: CampaignDemandStatus
-  kind?: CampaignDemandKind
-  activityId?: number
-}
-
-export const parseDemandListParams = (searchParams: RawSearchParams): DemandListState => {
-  const rawStatus = firstValue(searchParams.status)
-  const rawKind = firstValue(searchParams.kind)
-  const activityId = strictDecimalInteger(firstValue(searchParams.activity))
-
-  return {
-    page: strictDecimalInteger(firstValue(searchParams.page)) ?? 1,
-    ...(campaignDemandStatuses.includes(rawStatus as CampaignDemandStatus)
-      ? { status: rawStatus as CampaignDemandStatus }
-      : {}),
-    ...(campaignDemandKinds.includes(rawKind as CampaignDemandKind)
-      ? { kind: rawKind as CampaignDemandKind }
-      : {}),
-    ...(activityId ? { activityId } : {}),
-  }
-}
-
-const buildDemandListSearchParams = (
-  state: DemandListState,
-  page = state.page,
-): URLSearchParams => {
-  const params = new URLSearchParams()
-  if (state.status) params.set('status', state.status)
-  if (state.kind) params.set('kind', state.kind)
-  if (state.activityId) params.set('activity', String(state.activityId))
-  if (page > 1) params.set('page', String(page))
-  return params
-}
-
-export const buildDemandListHref = (state: DemandListState, page: number): string =>
-  buildListHref(state, buildDemandListSearchParams, '/campanha/demandas', page)
 
 const resolveMunicipalityAndRequesterNames = async (
   payload: Payload,

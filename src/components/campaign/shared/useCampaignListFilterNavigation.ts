@@ -12,6 +12,14 @@ import { normalizedText } from '@/utilities/campaignListUrl'
  */
 export const SEARCH_DEBOUNCE_MS = 1000
 
+type StateWithOptionalQ = { q?: string }
+
+const readCommittedQ = (state: object): string | undefined =>
+  'q' in state ? (state as StateWithOptionalQ).q : undefined
+
+const withDraftQ = <State extends object>(state: State, q: string): State =>
+  ({ ...state, q }) as State
+
 /**
  * Navigation scaffold shared by the list filter shells that still use a
  * debounced search box (territórios, dobradinhas). Municípios moved to the
@@ -23,7 +31,7 @@ export const SEARCH_DEBOUNCE_MS = 1000
  * keystrokes are handed to `toHref` untrimmed for the same reason: trimming is
  * the serializer's job, and doing it here too would be a second policy.
  */
-export const useCampaignListFilterNavigation = <State extends { q?: string }>({
+export const useCampaignListFilterNavigation = <State extends object>({
   state,
   toHref,
 }: {
@@ -35,7 +43,7 @@ export const useCampaignListFilterNavigation = <State extends { q?: string }>({
   const router = useRouter()
   const { isPending, startTransition } = useCampaignListTransition()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [search, setSearch] = useState(state.q ?? '')
+  const [search, setSearch] = useState(readCommittedQ(state) ?? '')
 
   /**
    * Follow the URL when the committed query changes under us — back/forward and
@@ -44,10 +52,11 @@ export const useCampaignListFilterNavigation = <State extends { q?: string }>({
    * the next filter touch would put it back (`navigateWithSearch` carries the
    * box). A pending debounce wins: that text is the user's, not the URL's.
    */
-  const [committedQ, setCommittedQ] = useState(state.q)
-  if (state.q !== committedQ) {
-    setCommittedQ(state.q)
-    if (!debounceRef.current) setSearch(state.q ?? '')
+  const [committedQ, setCommittedQ] = useState(readCommittedQ(state))
+  const stateQ = readCommittedQ(state)
+  if (stateQ !== committedQ) {
+    setCommittedQ(stateQ)
+    if (!debounceRef.current) setSearch(stateQ ?? '')
   }
 
   /**
@@ -92,7 +101,7 @@ export const useCampaignListFilterNavigation = <State extends { q?: string }>({
    * showing the text.
    */
   const navigateWithSearch = (next: State) => {
-    navigateTo({ ...next, q: search })
+    navigateTo(withDraftQ(next, search))
   }
 
   /**
@@ -117,7 +126,7 @@ export const useCampaignListFilterNavigation = <State extends { q?: string }>({
     setSearch(value)
     clearDebounce()
     debounceRef.current = setTimeout(() => {
-      navigateTo({ ...stateRef.current, q: value })
+      navigateTo(withDraftQ(stateRef.current, value))
     }, SEARCH_DEBOUNCE_MS)
   }
 
@@ -130,7 +139,7 @@ export const useCampaignListFilterNavigation = <State extends { q?: string }>({
      * summary does not flicker off during the debounce, before the results it
      * describes have actually changed.
      */
-    draftQ: normalizedText(search) || state.q,
+    draftQ: normalizedText(search) || readCommittedQ(state),
     isPending,
     /**
      * Navigate with the caller's state as-is (no draft-search merge). Used by

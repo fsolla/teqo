@@ -3,13 +3,13 @@ import { PlusIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
 import { getPayload } from 'payload'
 
+import { OrganizationFilters } from '@/components/campaign/organization/OrganizationFilters'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
-import { CampaignSearchForm } from '@/components/campaign/shared/CampaignSearchForm'
 import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
@@ -87,18 +87,7 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
       </div>
 
       <CampaignListPendingBoundary>
-        <CampaignSearchForm
-          ariaLabel="Buscar organização por nome"
-          placeholder="Buscar por nome…"
-          initialQuery={state.q ?? ''}
-          basePath="/campanha/organizacoes"
-          // Canonical serialization of the ACTIVE filters minus q/page, so a
-          // search submit preserves `?kind=` instead of silently dropping it.
-          filterParams={buildOrganizationListHref({ ...state, q: undefined }, 1).replace(
-            /^\/campanha\/organizacoes\??/,
-            '',
-          )}
-        />
+        <OrganizationFilters state={state} />
 
         <CampaignListResults>
           <CampaignTable

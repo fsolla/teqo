@@ -3,7 +3,7 @@ import { InboxIcon, PlusIcon } from 'lucide-react'
 import Link from 'next/link'
 import { getPayload } from 'payload'
 
-import { CampaignFilterChips } from '@/components/campaign/shared/CampaignFilterChips'
+import { DemandFilters } from '@/components/campaign/demand/DemandFilters'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
@@ -18,7 +18,6 @@ import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
   campaignDemandKindLabels,
   campaignDemandStatusLabels,
-  campaignDemandStatuses,
   type CampaignDemandStatus,
 } from '@/lib/schemas/campaignDemand'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
@@ -106,9 +105,6 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
   const { rows, totalDocs, totalPages } = await loadDemandListPageData(payload, user, state)
   const columnVisibility = await readCampaignColumnVisibility('demandas')
 
-  const hrefForStatus = (status?: CampaignDemandStatus) =>
-    buildDemandListHref({ ...state, status }, 1)
-
   return (
     <CampaignPageShell>
       <div className="flex justify-end">
@@ -121,17 +117,7 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
       </div>
 
       <CampaignListPendingBoundary>
-        <CampaignFilterChips
-          ariaLabel="Filtrar por status"
-          chips={[
-            { href: hrefForStatus(undefined), label: 'Todas', active: state.status === undefined },
-            ...campaignDemandStatuses.map((status) => ({
-              href: hrefForStatus(status),
-              label: campaignDemandStatusLabels[status],
-              active: state.status === status,
-            })),
-          ]}
-        />
+        <DemandFilters state={state} />
 
         <CampaignListResults>
           <CampaignTable
