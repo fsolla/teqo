@@ -26,20 +26,20 @@ flowchart LR
 
 **Opções consideradas:**
 
-| Opção | Descrição | Veredito |
-| ----- | --------- | -------- |
-| A | `onOpenAutoFocus` / `initialFocus={false}` no overlay + `md:pr-10` na busca + `showSwipeHandle` no drawer | **Recomendada** — mínima, escopada ao dono |
-| B | Header dedicado com X em flow no dialog | Rejeitada — mais chrome, fora do appetite |
-| C | `showCloseButton={false}` + close custom em todo dialog kit | Rejeitada — polui kit global |
+| Opção | Descrição                                                                                                 | Veredito                                   |
+| ----- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| A     | `onOpenAutoFocus` / `initialFocus={false}` no overlay + `md:pr-10` na busca + `showSwipeHandle` no drawer | **Recomendada** — mínima, escopada ao dono |
+| B     | Header dedicado com X em flow no dialog                                                                   | Rejeitada — mais chrome, fora do appetite  |
+| C     | `showCloseButton={false}` + close custom em todo dialog kit                                               | Rejeitada — polui kit global               |
 
 **Recomendação:** A — três props no `CampaignQuickActionsOverlay`, sem alterar `dialog.tsx`/`Drawer.tsx` globalmente.
 
 ### Componentes / mudanças
 
 - **`CampaignQuickActionsOverlay`** (`src/components/campaign/shell/CampaignQuickActionsOverlay.tsx`):
-  - Dialog: `onOpenAutoFocus={(e) => e.preventDefault()}` em `DialogContent`
+  - Dialog: `onOpenAutoFocus` → `preventDefault` + foco no `DialogTitle` (`titleRef`, padrão B42)
   - Dialog: `md:pr-10` em `OverlaySearchChrome` (reserva faixa para X `right-3 size-8`)
-  - Drawer: `showSwipeHandle` no `Drawer`; `initialFocus={false}` em `DrawerContent`
+  - Drawer: `showSwipeHandle` no `Drawer`; `initialFocus={titleRef}` em `DrawerContent`
 - **Migration:** sem migration
 - **Access / Consent:** N/A
 - **UI:** Impeccable B — polimento do chrome existente
@@ -63,10 +63,10 @@ N/A
 
 ## Riscos e mitigação
 
-| Risco | Mitigação |
-| ----- | --------- |
+| Risco                                      | Mitigação                                              |
+| ------------------------------------------ | ------------------------------------------------------ |
 | `initialFocus={false}` quebra a11y teclado | Foco no título sr-only (B42), não na busca nem em void |
-| `pr-10` insuficiente em telas estreitas | `md:` só no breakpoint dialog; mobile usa drawer |
+| `pr-10` insuficiente em telas estreitas    | `md:` só no breakpoint dialog; mobile usa drawer       |
 
 ## Aceite de engenharia
 

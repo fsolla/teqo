@@ -63,10 +63,7 @@ const OverlayActionsChrome = ({
 }
 
 const OverlaySearchChrome = ({ className }: { className?: string }) => (
-  <div
-    data-slot="quick-actions-search"
-    className={cn('min-w-0 md:pr-10', className)}
-  >
+  <div data-slot="quick-actions-search" className={cn('min-w-0 md:pr-10', className)}>
     <CampaignGlobalSearchBody />
   </div>
 )
