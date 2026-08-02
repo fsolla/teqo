@@ -179,7 +179,7 @@ export const CampaignCellEditOverlay = ({
     wasOpenRef.current = open
 
     if (!open) {
-      if (wasOpen) sharedSheet.dismissSheet(onOpenChange)
+      if (wasOpen) sharedSheet.dismissActiveSheet()
       return
     }
 
@@ -204,6 +204,7 @@ export const CampaignCellEditOverlay = ({
         {triggerButton}
         {liveRegion}
         {showPortals && bodyTarget ? createPortal(children, bodyTarget) : null}
+        {/* Portaled footer is outside the Drawer React tree — no DrawerCloseButton (B119). */}
         {showPortals && footerTarget && footer ? createPortal(footer, footerTarget) : null}
       </>
     )
