@@ -32,7 +32,7 @@ export async function collectActionBoundingBoxes(
   return boxes
 }
 
-export function groupActionsByRow(
+function groupActionsByRow(
   boxes: readonly ActionBoundingBox[],
   tolerancePx = ROW_Y_TOLERANCE_PX,
 ): ActionBoundingBox[][] {

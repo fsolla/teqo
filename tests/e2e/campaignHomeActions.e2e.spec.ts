@@ -5,7 +5,6 @@ import { expect, test } from './fixtures/campaignE2EFixtures.js'
 import {
   assertThreeColumnActionGrid,
   collectActionBoundingBoxes,
-  groupActionsByRow,
 } from './helpers/actionGridGeometry.js'
 
 const staffActionLabels = [

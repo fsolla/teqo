@@ -13,7 +13,6 @@ import {
 import {
   assertThreeColumnActionGrid,
   collectActionBoundingBoxes,
-  groupActionsByRow,
 } from './helpers/actionGridGeometry.js'
 
 /**
