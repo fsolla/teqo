@@ -1,6 +1,7 @@
 /**
- * Benchmark the staff ops snapshot (OH3) — same collections and DTO shape that
- * `buildOpsSnapshot` will ship in OH4. Reports per-collection row counts, JSON
+ * Benchmark the staff ops snapshot (OH3/OH4+) — uses the canonical
+ * `buildOpsSnapshot` builder so selects/mappers never drift from
+ * `GET /campanha/api/ops-sync`. Reports per-collection row counts, JSON
  * bytes, gzip bytes and query time; supports measuring `municipality_update`
  * truncation via `--rows municipality_update=N`.
  *
@@ -31,21 +32,17 @@ assertLocalDatabase(
   'This script only reads the local campaign database for snapshot sizing.',
 )
 
-const { OPS_MIRROR_SCHEMA_VERSION } = await import('../src/lib/campaignOps/opsMirrorVersion.ts')
 const { serializeOpsSnapshot } = await import('../src/lib/campaignOps/opsContract.ts')
 const {
   OPS_MUNICIPALITY_UPDATE_LIMIT_PER_MUNICIPALITY,
   OPS_SNAPSHOT_GZIP_TARGET_BYTES,
   OPS_SNAPSHOT_PROD_GZIP_RATIO_ESTIMATE,
   OPS_SNAPSHOT_PROD_MEASURED_JSON_BYTES,
-  truncateMunicipalityUpdates,
 } = await import('../src/lib/campaignOps/opsSnapshotPolicy.ts')
-const { relationshipId, uniqueRelationshipIds } = await import('../src/lib/relationship.ts')
+const { buildOpsSnapshot } = await import('../src/utilities/campaignOps/buildOpsSnapshot.ts')
 const { MINIMAL_CAMPAIGN_USERS } = await import('./lib/seed-minimal-manifest.mjs')
 
 const payloadConfig = (await import('../src/payload.config.ts')).default
-
-/** @typedef {import('../src/lib/campaignOps/opsContract.ts').OpsSnapshot} OpsSnapshot */
 
 const COORDINATOR_EMAIL =
   MINIMAL_CAMPAIGN_USERS.find((user) => user.role === 'coordinator')?.email ??
@@ -120,13 +117,6 @@ const parseCliArgs = (argv) => {
   return rowLimits
 }
 
-const toIso = (value) => {
-  if (value === null || value === undefined || value === '') return null
-  if (typeof value === 'string') return value
-  if (value instanceof Date) return value.toISOString()
-  return String(value)
-}
-
 /** @param {import('payload').Payload} payload */
 const loadCoordinatorActor = async (payload) => {
   const result = await payload.find({
@@ -148,143 +138,6 @@ const loadCoordinatorActor = async (payload) => {
   return { ...doc, collection: 'campaignUser' }
 }
 
-const mapMunicipality = (doc) => ({
-  id: doc.id,
-  name: doc.name,
-  slug: doc.slug,
-  kind: doc.kind,
-  city: doc.city,
-  region: doc.region,
-  ibgeCode: doc.ibgeCode,
-  zoneNumber: doc.zoneNumber ?? null,
-  advisors: uniqueRelationshipIds(doc.advisors),
-  priority: doc.priority ?? null,
-  engagementLevel: doc.engagementLevel ?? null,
-  levelNote: doc.levelNote ?? null,
-  levelChangedAt: toIso(doc.levelChangedAt),
-  expectedVotes: doc.expectedVotes ?? null,
-  politicalTrend: doc.politicalTrend
-    ? {
-        status: doc.politicalTrend.status ?? null,
-        note: doc.politicalTrend.note ?? null,
-        recordedBy: relationshipId(doc.politicalTrend.recordedBy),
-        recordedAt: toIso(doc.politicalTrend.recordedAt),
-      }
-    : null,
-  stateDeputies: uniqueRelationshipIds(doc.stateDeputies),
-  lastUpdateAt: toIso(doc.lastUpdateAt),
-  updatedAt: toIso(doc.updatedAt),
-})
-
-const mapLeadershipContact = (contact) => {
-  if (typeof contact !== 'object' || contact === null) {
-    return { id: relationshipId(contact) ?? 0, name: 'Contato' }
-  }
-  return {
-    id: contact.id,
-    name: contact.name,
-    phone: contact.phone ?? null,
-  }
-}
-
-const mapLeadership = (doc) => ({
-  id: doc.id,
-  contact: mapLeadershipContact(doc.contact),
-  municipalities: uniqueRelationshipIds(doc.municipalities),
-  organizations: uniqueRelationshipIds(doc.organizations),
-  stateDeputies: uniqueRelationshipIds(doc.stateDeputies),
-  exclusive: doc.exclusive ?? null,
-  supportStatus: doc.supportStatus,
-  notes: doc.notes ?? null,
-  updatedAt: toIso(doc.updatedAt),
-})
-
-const mapVotePledge = (doc) => ({
-  id: doc.id,
-  leadership: relationshipId(doc.leadership),
-  municipality: relationshipId(doc.municipality),
-  declaredVotes: doc.declaredVotes,
-  declaredAt: toIso(doc.declaredAt),
-  declaredBy: relationshipId(doc.declaredBy),
-  estimatedVotes: doc.estimatedVotes ?? null,
-  estimateNote: doc.estimateNote ?? null,
-  estimatedBy: relationshipId(doc.estimatedBy),
-  estimatedAt: toIso(doc.estimatedAt),
-  updatedAt: toIso(doc.updatedAt),
-})
-
-const mapActivity = (doc) => ({
-  id: doc.id,
-  title: doc.title,
-  slug: doc.slug,
-  kind: doc.kind,
-  status: doc.status,
-  deputyPresent: doc.deputyPresent ?? null,
-  startAt: toIso(doc.startAt),
-  endAt: toIso(doc.endAt),
-  municipality: relationshipId(doc.municipality),
-  locality: doc.locality ?? null,
-  organizations: uniqueRelationshipIds(doc.organizations),
-  advisors: uniqueRelationshipIds(doc.advisors),
-  leadership: relationshipId(doc.leadership),
-  taskTotal: doc.taskTotal ?? null,
-  taskDoneCount: doc.taskDoneCount ?? null,
-  updatedAt: toIso(doc.updatedAt),
-})
-
-const mapStateDeputy = (doc) => ({
-  id: doc.id,
-  name: doc.name,
-  slug: doc.slug,
-  party: doc.party ?? null,
-  notes: doc.notes ?? null,
-  updatedAt: toIso(doc.updatedAt),
-})
-
-const mapOrganization = (doc) => ({
-  id: doc.id,
-  name: doc.name,
-  slug: doc.slug,
-  kind: doc.kind,
-  municipalities: uniqueRelationshipIds(doc.municipalities),
-  notes: doc.notes ?? null,
-  updatedAt: toIso(doc.updatedAt),
-})
-
-const mapDemand = (doc) => ({
-  id: doc.id,
-  title: doc.title,
-  slug: doc.slug,
-  kind: doc.kind,
-  municipality: relationshipId(doc.municipality),
-  activity: relationshipId(doc.activity),
-  leadership: relationshipId(doc.leadership),
-  status: doc.status,
-  updatedAt: toIso(doc.updatedAt),
-})
-
-const mapMunicipalityUpdate = (doc) => ({
-  id: doc.id,
-  municipality: relationshipId(doc.municipality),
-  author: relationshipId(doc.author),
-  kind: doc.kind,
-  body: doc.body ?? null,
-  signalType: doc.signalType ?? null,
-  updatedAt: toIso(doc.updatedAt),
-  createdAt: toIso(doc.createdAt),
-})
-
-const mapGoals = (doc) =>
-  doc
-    ? {
-        stateGoal: doc.stateGoal,
-        margin: doc.margin ?? null,
-        baseYear: doc.baseYear ?? null,
-        note: doc.note ?? null,
-        updatedAt: toIso(doc.updatedAt),
-      }
-    : null
-
 const measureJson = (value) => {
   const json = typeof value === 'string' ? value : JSON.stringify(value)
   const gzip = gzipSync(json)
@@ -300,258 +153,39 @@ const formatBytes = (bytes) => {
 const formatMs = (ms) => `${ms.toFixed(1)} ms`
 
 /**
- * @param {import('payload').Payload} payload
- * @param {object} actor
+ * @param {import('../src/lib/campaignOps/opsContract.ts').OpsSnapshot} snapshot
+ * @param {import('../src/utilities/campaignOps/buildOpsSnapshot.ts').OpsSnapshotSectionTiming[]} timings
  */
-const timedFindAll = async (payload, actor, collection, options = {}) => {
-  const started = performance.now()
-  const result = await payload.find({
-    collection,
-    depth: options.depth ?? 0,
-    pagination: false,
-    user: actor,
-    overrideAccess: false,
-    select: options.select,
-    sort: options.sort,
-  })
-  const elapsedMs = performance.now() - started
-  return { docs: result.docs, elapsedMs }
-}
+const buildReportSections = (snapshot, timings) => {
+  const timingByKey = new Map(timings.map((timing) => [timing.key, timing]))
 
-const buildSnapshotSections = async (payload, actor, rowLimits) => {
-  /** @type {Array<{ key: string; label: string; rows: number; jsonBytes: number; gzipBytes: number; queryMs: number }>} */
+  /** @type {Array<{ key: string; label: string; rows: number; jsonBytes: number; gzipBytes: number; queryMs: number; truncatedFrom?: number }>} */
   const sections = []
 
-  const municipalitiesResult = await timedFindAll(payload, actor, 'municipality', {
-    select: {
-      name: true,
-      slug: true,
-      kind: true,
-      city: true,
-      region: true,
-      ibgeCode: true,
-      zoneNumber: true,
-      advisors: true,
-      priority: true,
-      engagementLevel: true,
-      levelNote: true,
-      levelChangedAt: true,
-      expectedVotes: true,
-      politicalTrend: true,
-      stateDeputies: true,
-      lastUpdateAt: true,
-      updatedAt: true,
-    },
-  })
-  const municipalities = municipalitiesResult.docs.map(mapMunicipality)
-  const municipalitiesSize = measureJson(municipalities)
-  sections.push({
-    key: 'municipalities',
-    label: 'municipality',
-    rows: municipalities.length,
-    ...municipalitiesSize,
-    queryMs: municipalitiesResult.elapsedMs,
-  })
-
-  const leadershipsResult = await timedFindAll(payload, actor, 'leadership', {
-    depth: 1,
-    select: {
-      contact: true,
-      municipalities: true,
-      organizations: true,
-      stateDeputies: true,
-      exclusive: true,
-      supportStatus: true,
-      notes: true,
-      updatedAt: true,
-    },
-  })
-  const leaderships = leadershipsResult.docs.map(mapLeadership)
-  const leadershipsSize = measureJson(leaderships)
-  sections.push({
-    key: 'leaderships',
-    label: 'leadership',
-    rows: leaderships.length,
-    ...leadershipsSize,
-    queryMs: leadershipsResult.elapsedMs,
-  })
-
-  const votePledgesResult = await timedFindAll(payload, actor, 'votePledge', {
-    select: {
-      leadership: true,
-      municipality: true,
-      declaredVotes: true,
-      declaredAt: true,
-      declaredBy: true,
-      estimatedVotes: true,
-      estimateNote: true,
-      estimatedBy: true,
-      estimatedAt: true,
-      updatedAt: true,
-    },
-  })
-  const votePledges = votePledgesResult.docs.map(mapVotePledge)
-  const votePledgesSize = measureJson(votePledges)
-  sections.push({
-    key: 'votePledges',
-    label: 'vote_pledge',
-    rows: votePledges.length,
-    ...votePledgesSize,
-    queryMs: votePledgesResult.elapsedMs,
-  })
-
-  const activitiesResult = await timedFindAll(payload, actor, 'activity', {
-    select: {
-      title: true,
-      slug: true,
-      kind: true,
-      status: true,
-      deputyPresent: true,
-      startAt: true,
-      endAt: true,
-      municipality: true,
-      locality: true,
-      organizations: true,
-      advisors: true,
-      leadership: true,
-      taskTotal: true,
-      taskDoneCount: true,
-      updatedAt: true,
-    },
-  })
-  const activities = activitiesResult.docs.map(mapActivity)
-  const activitiesSize = measureJson(activities)
-  sections.push({
-    key: 'activities',
-    label: 'activity',
-    rows: activities.length,
-    ...activitiesSize,
-    queryMs: activitiesResult.elapsedMs,
-  })
-
-  const stateDeputiesResult = await timedFindAll(payload, actor, 'stateDeputy', {
-    select: {
-      name: true,
-      slug: true,
-      party: true,
-      notes: true,
-      updatedAt: true,
-    },
-  })
-  const stateDeputies = stateDeputiesResult.docs.map(mapStateDeputy)
-  const stateDeputiesSize = measureJson(stateDeputies)
-  sections.push({
-    key: 'stateDeputies',
-    label: 'state_deputy',
-    rows: stateDeputies.length,
-    ...stateDeputiesSize,
-    queryMs: stateDeputiesResult.elapsedMs,
-  })
-
-  const organizationsResult = await timedFindAll(payload, actor, 'organization', {
-    select: {
-      name: true,
-      slug: true,
-      kind: true,
-      municipalities: true,
-      notes: true,
-      updatedAt: true,
-    },
-  })
-  const organizations = organizationsResult.docs.map(mapOrganization)
-  const organizationsSize = measureJson(organizations)
-  sections.push({
-    key: 'organizations',
-    label: 'organization',
-    rows: organizations.length,
-    ...organizationsSize,
-    queryMs: organizationsResult.elapsedMs,
-  })
-
-  const demandsResult = await timedFindAll(payload, actor, 'campaignDemand', {
-    select: {
-      title: true,
-      slug: true,
-      kind: true,
-      municipality: true,
-      activity: true,
-      leadership: true,
-      status: true,
-      updatedAt: true,
-    },
-  })
-  const demands = demandsResult.docs.map(mapDemand)
-  const demandsSize = measureJson(demands)
-  sections.push({
-    key: 'demands',
-    label: 'campaign_demand',
-    rows: demands.length,
-    ...demandsSize,
-    queryMs: demandsResult.elapsedMs,
-  })
-
-  const updatesResult = await timedFindAll(payload, actor, 'municipalityUpdate', {
-    select: {
-      municipality: true,
-      author: true,
-      kind: true,
-      body: true,
-      signalType: true,
-      updatedAt: true,
-      createdAt: true,
-    },
-    sort: '-updatedAt',
-  })
-  const allUpdates = updatesResult.docs.map(mapMunicipalityUpdate)
-  const municipalityUpdates = truncateMunicipalityUpdates(allUpdates, rowLimits.municipality_update)
-  const municipalityUpdatesSize = measureJson(municipalityUpdates)
-  sections.push({
-    key: 'municipalityUpdates',
-    label: 'municipality_update',
-    rows: municipalityUpdates.length,
-    ...municipalityUpdatesSize,
-    queryMs: updatesResult.elapsedMs,
-    truncatedFrom: allUpdates.length,
-  })
-
-  const goalsStarted = performance.now()
-  const goalsDoc = await payload.findGlobal({
-    slug: 'campaignGoals',
-    depth: 0,
-    user: actor,
-    overrideAccess: false,
-  })
-  const goalsElapsedMs = performance.now() - goalsStarted
-  const goals = mapGoals(goalsDoc)
-  const goalsSize = measureJson(goals)
-  sections.push({
-    key: 'goals',
-    label: 'campaign_goals',
-    rows: goals ? 1 : 0,
-    ...goalsSize,
-    queryMs: goalsElapsedMs,
-  })
-
-  const revisedAt = new Date().toISOString()
-  /** @type {OpsSnapshot} */
-  const snapshot = {
-    revisedAt,
-    schemaVersion: OPS_MIRROR_SCHEMA_VERSION,
-    municipalities,
-    leaderships,
-    votePledges,
-    activities,
-    stateDeputies,
-    organizations,
-    demands,
-    municipalityUpdates,
-    goals,
+  const addSection = (key, value) => {
+    const timing = timingByKey.get(key)
+    const size = measureJson(value)
+    sections.push({
+      key,
+      label: timing?.label ?? key,
+      rows: timing?.rows ?? (Array.isArray(value) ? value.length : value ? 1 : 0),
+      ...size,
+      queryMs: timing?.queryMs ?? 0,
+      ...(timing?.truncatedFrom !== undefined ? { truncatedFrom: timing.truncatedFrom } : {}),
+    })
   }
 
-  const totalSize = measureJson(serializeOpsSnapshot(snapshot))
-  const totalQueryMs = sections.reduce((sum, section) => sum + section.queryMs, 0)
+  addSection('municipalities', snapshot.municipalities)
+  addSection('leaderships', snapshot.leaderships)
+  addSection('votePledges', snapshot.votePledges)
+  addSection('activities', snapshot.activities)
+  addSection('stateDeputies', snapshot.stateDeputies)
+  addSection('organizations', snapshot.organizations)
+  addSection('demands', snapshot.demands)
+  addSection('municipalityUpdates', snapshot.municipalityUpdates)
+  addSection('goals', snapshot.goals)
 
-  return { snapshot, sections, totalSize, totalQueryMs }
+  return sections
 }
 
 const projectProdSnapshot = (sections, rowLimits) => {
@@ -602,7 +236,7 @@ const printReport = (sections, totalSize, totalQueryMs, rowLimits, projection) =
   const divider = header.map(() => '---')
   const lines = [
     '',
-    `[${LABEL}] Ops snapshot benchmark (coordinator, overrideAccess: false)`,
+    `[${LABEL}] Ops snapshot benchmark (coordinator, overrideAccess: false, buildOpsSnapshot)`,
     `[${LABEL}] municipality_update truncation: ${rowLimits.municipality_update} per municipality`,
     '',
     `| ${header.join(' | ')} |`,
@@ -655,7 +289,22 @@ const printReport = (sections, totalSize, totalQueryMs, rowLimits, projection) =
 const rowLimits = parseCliArgs(process.argv.slice(2))
 const payload = await getPayload({ config: payloadConfig })
 const actor = await loadCoordinatorActor(payload)
-const { sections, totalSize, totalQueryMs } = await buildSnapshotSections(payload, actor, rowLimits)
+
+/** @type {import('../src/utilities/campaignOps/buildOpsSnapshot.ts').OpsSnapshotSectionTiming[]} */
+const sectionTimings = []
+
+const buildStarted = performance.now()
+const snapshot = await buildOpsSnapshot(payload, actor, {
+  municipalityUpdateLimit: rowLimits.municipality_update,
+  onSectionLoaded: (section) => {
+    sectionTimings.push(section)
+  },
+})
+const buildElapsedMs = performance.now() - buildStarted
+
+const sections = buildReportSections(snapshot, sectionTimings)
+const totalSize = measureJson(serializeOpsSnapshot(snapshot))
+const totalQueryMs = buildElapsedMs
 const projection = projectProdSnapshot(sections, rowLimits)
 
 printReport(sections, totalSize, totalQueryMs, rowLimits, projection)
