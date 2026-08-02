@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
-import { wizardTrendHref } from '@/lib/campaignActionRoutes'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { wizardFlowTitleForSlug } from '@/lib/campaignWizardCopy'
 import {
@@ -25,6 +24,7 @@ import {
   resolveWizardChainEntry,
   wizardChainContinueHref,
   wizardChainEndHref,
+  wizardPreviousHref,
 } from '@/lib/wizardActionChain'
 import { politicalTrendLabels } from '@/utilities/municipality/municipalityLabels'
 
@@ -61,7 +61,7 @@ export const WizardTrendNoteStep = ({
   useCampaignFormSuccessToast(state, () => {
     recordLastActedMunicipality(municipalitySlug)
     const sessionEntry = resolveWizardChainEntry(entryAction, 'change-trend')
-    router.replace(
+    router.push(
       wizardChainContinueHref(sessionEntry, 'change-trend', municipalitySlug, returnPath),
     )
   })
@@ -71,14 +71,13 @@ export const WizardTrendNoteStep = ({
       flowTitle={wizardFlowTitleForSlug(actionSlug)}
       isEntryStep={false}
       stepTitle={stepTitle}
-      previousHref={wizardTrendHref(
+      previousHref={wizardPreviousHref({
         actionSlug,
+        stepKind: 'trend-note',
         municipalitySlug,
-        undefined,
         entryAction,
-        undefined,
         returnPath,
-      )}
+      })}
       dismissHref={wizardChainEndHref(returnPath)}
       municipalityLabel={municipalityName}
       skip={skip}

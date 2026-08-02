@@ -8,6 +8,7 @@ import {
   resolveWizardChainEntry,
   wizardChainAfter,
   wizardChainContinueHref,
+  wizardPreviousHref,
 } from '@/lib/wizardActionChain'
 
 describe('wizardActionChain', () => {
@@ -86,5 +87,84 @@ describe('wizardActionChain', () => {
     expect(resolveWizardChainEntry(undefined, 'update-votes')).toBe('update-votes')
     expect(resolveWizardChainEntry('register-signal', 'update-votes')).toBe('register-signal')
     expect(resolveWizardChainEntry('register-demand', 'change-trend')).toBe('change-trend')
+  })
+
+  describe('wizardPreviousHref', () => {
+    it('returns chain-end for municipality search', () => {
+      expect(
+        wizardPreviousHref({
+          actionSlug: 'atualizar-votos',
+          stepKind: 'municipality-search',
+        }),
+      ).toBe(CAMPAIGN_HOME)
+    })
+
+    it('returns municipality search for principal post-municipio steps', () => {
+      expect(
+        wizardPreviousHref({
+          actionSlug: 'atualizar-votos',
+          stepKind: 'votes',
+          municipalitySlug: 'cairu',
+        }),
+      ).toBe(`${CAMPAIGN_ACTIONS_HOME}/atualizar-votos`)
+      expect(
+        wizardPreviousHref({
+          actionSlug: 'mudar-tendencia',
+          stepKind: 'trend-choice',
+          municipalitySlug: 'cairu',
+        }),
+      ).toBe(`${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia`)
+    })
+
+    it('returns previous chain principal when chained from another entry', () => {
+      expect(
+        wizardPreviousHref({
+          actionSlug: 'mudar-tendencia',
+          stepKind: 'trend-choice',
+          municipalitySlug: 'cairu',
+          entryAction: 'update-votes',
+        }),
+      ).toBe(`${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu&entry=update-votes`)
+      expect(
+        wizardPreviousHref({
+          actionSlug: 'registrar-sinal',
+          stepKind: 'signal-type',
+          municipalitySlug: 'cairu',
+          entryAction: 'update-votes',
+        }),
+      ).toBe(
+        `${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu&entry=update-votes`,
+      )
+      expect(
+        wizardPreviousHref({
+          actionSlug: 'atualizar-lideranca',
+          stepKind: 'leadership-grid',
+          municipalitySlug: 'cairu',
+          entryAction: 'register-signal',
+        }),
+      ).toBe(`${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu&entry=register-signal`)
+    })
+
+    it('returns internal previous step within a subflow', () => {
+      expect(
+        wizardPreviousHref({
+          actionSlug: 'mudar-tendencia',
+          stepKind: 'trend-note',
+          municipalitySlug: 'cairu',
+          entryAction: 'update-votes',
+        }),
+      ).toBe(`${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu&entry=update-votes`)
+    })
+
+    it('honors return path on municipality search back target', () => {
+      const origin = '/campanha/municipios/cairu'
+      expect(
+        wizardPreviousHref({
+          actionSlug: 'atualizar-votos',
+          stepKind: 'municipality-search',
+          returnPath: origin,
+        }),
+      ).toBe(origin)
+    })
   })
 })

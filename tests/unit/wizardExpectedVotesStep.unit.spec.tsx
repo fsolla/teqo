@@ -6,12 +6,12 @@ import { CampaignWizardChromeProvider } from '@/components/campaign/shell/Campai
 import { CAMPAIGN_ACTIONS_HOME } from '@/lib/campaignActionRoutes'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 
-const replaceMock = vi.fn()
+const pushMock = vi.fn()
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: vi.fn(),
-    replace: replaceMock,
+    push: pushMock,
+    replace: vi.fn(),
   }),
 }))
 
@@ -42,7 +42,7 @@ describe('WizardExpectedVotesStep', () => {
   afterEach(() => {
     cleanup()
     vi.mocked(postCampaignJson).mockReset()
-    replaceMock.mockReset()
+    pushMock.mockReset()
   })
 
   it('applies shortcuts to the focused scenario', () => {
@@ -120,7 +120,7 @@ describe('WizardExpectedVotesStep', () => {
     })
 
     await waitFor(() => {
-      expect(replaceMock).toHaveBeenCalledWith(
+      expect(pushMock).toHaveBeenCalledWith(
         `${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu&entry=update-votes`,
       )
     })

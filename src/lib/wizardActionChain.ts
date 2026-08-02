@@ -5,6 +5,7 @@
 
 import {
   CAMPAIGN_WIZARD_ACTION_SLUGS,
+  campaignWizardActionIdForSlug,
   type CampaignWizardActionId,
   isWizardReturnPath,
   wizardActionHref,
@@ -109,3 +110,130 @@ export const resolveWizardChainEntry = (
   entryAction: CampaignWizardActionId | undefined,
   currentAction: WizardChainActionId,
 ): WizardChainActionId => (isWizardChainActionId(entryAction) ? entryAction : currentAction)
+
+/** Discriminates wizard chrome steps for `wizardPreviousHref` (B135). */
+export type WizardStepKind =
+  | 'municipality-search'
+  | 'votes'
+  | 'trend-choice'
+  | 'trend-note'
+  | 'signal-type'
+  | 'signal-body'
+  | 'leadership-grid'
+  | 'leadership-form'
+
+const wizardPrincipalStepHref = (
+  action: WizardChainActionId,
+  municipalitySlug: string,
+  sessionEntry: WizardChainActionId,
+  returnPath?: string,
+): string => {
+  const actionSlug = CAMPAIGN_WIZARD_ACTION_SLUGS[action]
+  switch (action) {
+    case 'update-votes':
+    case 'update-leadership':
+      return wizardActionHref(actionSlug, municipalitySlug, {
+        entryAction: sessionEntry,
+        returnPath,
+      })
+    case 'register-signal':
+      return wizardSignalHref(actionSlug, municipalitySlug, undefined, sessionEntry, returnPath)
+    case 'change-trend':
+      return wizardTrendHref(
+        actionSlug,
+        municipalitySlug,
+        undefined,
+        sessionEntry,
+        undefined,
+        returnPath,
+      )
+    default: {
+      const exhaustive: never = action
+      return exhaustive
+    }
+  }
+}
+
+/**
+ * Principal step of the chain link immediately before `current` in a session owned by
+ * `sessionEntry`. Undefined when `current` is the session principal (standalone entry).
+ */
+const wizardChainPreviousPrincipalHref = (
+  current: WizardChainActionId,
+  sessionEntry: WizardChainActionId,
+  municipalitySlug: string,
+  returnPath?: string,
+): string | undefined => {
+  if (current === sessionEntry) {
+    return undefined
+  }
+  const queue = wizardChainAfter(sessionEntry)
+  const index = queue.indexOf(current)
+  if (index === -1) {
+    return undefined
+  }
+  if (index === 0) {
+    return wizardPrincipalStepHref(sessionEntry, municipalitySlug, sessionEntry, returnPath)
+  }
+  return wizardPrincipalStepHref(queue[index - 1], municipalitySlug, sessionEntry, returnPath)
+}
+
+type WizardPreviousHrefInput = {
+  actionSlug: string
+  stepKind: WizardStepKind
+  municipalitySlug?: string
+  entryAction?: CampaignWizardActionId
+  returnPath?: string
+}
+
+/**
+ * Href for the logically previous wizard step — internal sub-steps, principal search,
+ * or the preceding B98 chain link's principal step (same município).
+ */
+export const wizardPreviousHref = (input: WizardPreviousHrefInput): string => {
+  const { actionSlug, stepKind, municipalitySlug, entryAction, returnPath } = input
+
+  if (stepKind === 'municipality-search') {
+    return wizardChainEndHref(returnPath)
+  }
+
+  if (stepKind === 'trend-note') {
+    return wizardTrendHref(actionSlug, municipalitySlug, undefined, entryAction, undefined, returnPath)
+  }
+
+  if (stepKind === 'signal-body') {
+    return wizardSignalHref(actionSlug, municipalitySlug, undefined, entryAction, returnPath)
+  }
+
+  if (stepKind === 'leadership-form') {
+    return wizardActionHref(actionSlug, municipalitySlug, { entryAction, returnPath })
+  }
+
+  const currentActionId = campaignWizardActionIdForSlug(actionSlug)
+  const searchHref = wizardActionHref(actionSlug, undefined, { returnPath })
+
+  if (!municipalitySlug || !currentActionId || !isWizardChainActionId(currentActionId)) {
+    return searchHref
+  }
+
+  const sessionEntry = resolveWizardChainEntry(entryAction, currentActionId)
+
+  if (
+    (stepKind === 'votes' || stepKind === 'leadership-grid') &&
+    currentActionId === sessionEntry
+  ) {
+    return searchHref
+  }
+
+  const chainPrev = wizardChainPreviousPrincipalHref(
+    currentActionId,
+    sessionEntry,
+    municipalitySlug,
+    returnPath,
+  )
+  if (chainPrev) {
+    return chainPrev
+  }
+
+  return searchHref
+}

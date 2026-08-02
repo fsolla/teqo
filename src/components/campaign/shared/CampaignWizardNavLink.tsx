@@ -14,15 +14,17 @@ import { cn } from '@/lib/utils'
  */
 export const CampaignWizardNavLink = ({
   href,
+  replace = false,
   className,
   children,
   ...anchorProps
-}: Omit<ComponentPropsWithoutRef<'a'>, 'href'> & { href: string }) => {
+}: Omit<ComponentPropsWithoutRef<'a'>, 'href'> & { href: string; replace?: boolean }) => {
   const { isPending } = useCampaignListTransition()
 
   return (
     <CampaignTransitionAnchor
       href={href}
+      replace={replace}
       className={cn(isPending && 'pointer-events-none', className)}
       aria-busy={isPending || undefined}
       {...anchorProps}
