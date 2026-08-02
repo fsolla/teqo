@@ -50,8 +50,8 @@ export const DemandFilters = ({ state }: { state: DemandListState }) => {
     >
       <CampaignListOmnibox
         id="demand-omnibox"
-        label="Filtrar demandas por status"
-        placeholder="Digite para filtrar por status…"
+        label="Filtrar demandas"
+        placeholder="Digite para buscar ou filtrar por tipo e status…"
         chips={chips}
         suggestions={suggestions}
         query={query}

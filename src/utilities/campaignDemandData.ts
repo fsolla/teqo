@@ -8,6 +8,7 @@ import type { Activity, CampaignDemand, CampaignUser } from '@/payload-types'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import {
   buildDemandListHref,
+  buildDemandListWhere,
   parseDemandListParams,
   type DemandListState,
 } from '@/utilities/demand/demandListUrl'
@@ -103,13 +104,7 @@ export const loadDemandListPageData = async (
   const [result, openCount] = await Promise.all([
     payload.find({
       collection: 'campaignDemand',
-      where: {
-        and: [
-          ...(state.status ? [{ status: { equals: state.status } }] : []),
-          ...(state.kind ? [{ kind: { equals: state.kind } }] : []),
-          ...(state.activityId ? [{ activity: { equals: state.activityId } }] : []),
-        ],
-      },
+      where: buildDemandListWhere(state),
       depth: 0,
       limit: demandPageSize,
       page: state.page,

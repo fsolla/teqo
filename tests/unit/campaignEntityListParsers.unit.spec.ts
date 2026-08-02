@@ -56,6 +56,11 @@ describe('parseDemandListParams', () => {
     expect(parseDemandListParams({ kind: 'outra-coisa' }).kind).toBeUndefined()
   })
 
+  it('parses trimmed search query', () => {
+    expect(parseDemandListParams({ q: '  banner  ' }).q).toBe('banner')
+    expect(parseDemandListParams({ q: '   ' }).q).toBeUndefined()
+  })
+
   it('defaults to page 1 with no filters', () => {
     expect(parseDemandListParams({})).toEqual({ page: 1 })
   })

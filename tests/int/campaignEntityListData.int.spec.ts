@@ -445,6 +445,47 @@ describe('loadDemandListPageData', () => {
 
     await expect(loadDemandListPageData(payload, leader, { page: 1 })).rejects.toThrow(/permissão/i)
   })
+
+  it('narrows by free-text search on title and requester name', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+    const marker = fixtures.marker('demand-q')
+
+    const contact = await fixtures.createContact({ name: `${marker} solicitante` })
+    const leadership = await fixtures.createLeadership({
+      contact: contact.id,
+      municipalities: [municipality.id],
+    })
+
+    const byTitle = await fixtures.createCampaignDemand({
+      municipality: municipality.id,
+      title: `${marker} banner comitê`,
+    })
+    const byRequester = await fixtures.createCampaignDemand({
+      municipality: municipality.id,
+      leadership: leadership.id,
+      title: `${marker} outra demanda`,
+    })
+    await fixtures.createCampaignDemand({
+      municipality: municipality.id,
+      title: `${marker} sem match`,
+    })
+
+    const titleHits = await loadDemandListPageData(payload, coordinator, {
+      page: 1,
+      q: 'banner comitê',
+    })
+    expect(titleHits.rows.some((row) => row.slug === byTitle.slug)).toBe(true)
+    expect(titleHits.rows.some((row) => row.slug === byRequester.slug)).toBe(false)
+
+    const requesterHits = await loadDemandListPageData(payload, coordinator, {
+      page: 1,
+      q: 'solicitante',
+    })
+    expect(requesterHits.rows.some((row) => row.slug === byRequester.slug)).toBe(true)
+    expect(requesterHits.rows.some((row) => row.slug === byTitle.slug)).toBe(false)
+  })
 })
 
 describe('loadAdvisorListPageData', () => {

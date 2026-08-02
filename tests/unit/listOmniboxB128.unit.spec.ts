@@ -121,17 +121,33 @@ describe('list omnibox adapters (B128)', () => {
     expect(applied.kind).toBe('url')
   })
 
-  it('demand toggles exclusive status and preserves deep-link fields on clear', () => {
-    const state = parseDemandListParams({ status: 'aberta', activity: '42' })
+  it('demand toggles exclusive status, kind and search; preserves activity on clear', () => {
+    const state = parseDemandListParams({
+      status: 'aberta',
+      kind: 'material',
+      q: 'banner',
+      activity: '42',
+    })
     const chips = buildDemandOmniboxChips(state)
-    expect(chips[0]?.label).toContain('Aberta')
+    expect(chips.map((chip) => chip.id)).toEqual(['q', 'kind:material', 'status:aberta'])
 
-    const toggled = applyDemandOmniboxSuggestion({ state, suggestionId: 'status:aberta' })
-    expect(toggled.kind).toBe('url')
-    if (toggled.kind === 'url') expect(toggled.state.status).toBeUndefined()
+    const toggledStatus = applyDemandOmniboxSuggestion({ state, suggestionId: 'status:aberta' })
+    expect(toggledStatus.kind).toBe('url')
+    if (toggledStatus.kind === 'url') expect(toggledStatus.state.status).toBeUndefined()
+
+    const toggledKind = applyDemandOmniboxSuggestion({ state, suggestionId: 'kind:transporte' })
+    if (toggledKind.kind === 'url') expect(toggledKind.state.kind).toBe('transporte')
+
+    const search = applyDemandOmniboxSuggestion({ state, suggestionId: 'q:comitê' })
+    if (search.kind === 'url') expect(search.state.q).toBe('comitê')
 
     const cleared = clearDemandOmnibox(state)
-    if (cleared.kind === 'clear') expect(cleared.state.activityId).toBe(42)
+    if (cleared.kind === 'clear') {
+      expect(cleared.state.activityId).toBe(42)
+      expect(cleared.state.kind).toBeUndefined()
+      expect(cleared.state.status).toBeUndefined()
+      expect(cleared.state.q).toBeUndefined()
+    }
   })
 
   it('search-only omnibox commits q', () => {
