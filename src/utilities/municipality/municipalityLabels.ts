@@ -153,19 +153,6 @@ export const formatMunicipalityConcentrationHint = (
 ): string =>
   `Percentual da votação estadual do candidato neste município — não o % dos válidos locais. Colocação: posição no catálogo de ${formatElectionNumber(totalUnits)} unidades.`
 
-export const getCampaignScopeLabel = (
-  role: CampaignUser['role'],
-  municipalityCount: number,
-): string => {
-  if (role === 'advisor') {
-    return `${municipalityCount} ${municipalityCount === 1 ? 'município sob sua assessoria' : 'municípios sob sua assessoria'}`
-  }
-  if (role === 'leader') {
-    return `${municipalityCount} ${municipalityCount === 1 ? 'município em que você atua' : 'municípios em que você atua'}`
-  }
-  return `${municipalityCount} ${municipalityCount === 1 ? 'município' : 'municípios'}`
-}
-
 export const municipalityGeographyParts = (municipality: {
   region: string
   kind: Municipality['kind']

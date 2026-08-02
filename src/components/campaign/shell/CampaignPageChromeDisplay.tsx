@@ -9,7 +9,7 @@ import {
 import { CampaignPageChromeText } from '@/components/campaign/shell/CampaignPageChromeText'
 import { resolveCampaignPageChrome } from '@/lib/campaignPageChrome'
 
-export const useEffectiveCampaignPageChrome = () => {
+const useEffectiveCampaignPageChrome = () => {
   const pathname = usePathname()
   const role = useCampaignPageChromeRole()
   const override = useCampaignPageChromeOverride()
