@@ -367,9 +367,10 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
     .filter((option): option is LeadershipFilterOption => option !== null)
     .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'))
 
+  const stateDeputyById = new Map(stateDeputySummaries.map((summary) => [summary.id, summary]))
   const stateDeputyFilterOptions: LeadershipFilterOption[] = filterFacets.stateDeputyIDs
     .map((id) => {
-      const summary = stateDeputySummaries.find((entry) => entry.id === id)
+      const summary = stateDeputyById.get(id)
       if (!summary) return null
       const label = summary.party ? `${summary.name} (${summary.party})` : summary.name
       return { value: String(id), label }
