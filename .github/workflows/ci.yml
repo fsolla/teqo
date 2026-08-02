@@ -230,7 +230,7 @@ jobs:
       - name: Log deploy deferral
         if: steps.tip.outputs.stale != 'true' && steps.cooldown.outputs.active == 'true'
         run: |
-          echo "Deploy deferred: last production deploy is younger than 30 minutes."
+          echo "Deploy deferred: last production deploy is younger than 15 minutes."
           echo "Requeue will retry in ${{ steps.cooldown.outputs.wait_seconds }}s."
       # `vercel build` shells out to pnpm (packageManager in package.json); without
       # these steps the runner only has npm → spawn pnpm ENOENT.

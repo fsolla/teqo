@@ -27,8 +27,8 @@ const captureFetch = (response: Response) => {
 }
 
 describe('vercelDeployCooldown', () => {
-  it('uses a 30-minute cooldown constant', () => {
-    expect(DEPLOY_COOLDOWN_MS).toBe(30 * 60 * 1000)
+  it('uses a 15-minute cooldown constant', () => {
+    expect(DEPLOY_COOLDOWN_MS).toBe(15 * 60 * 1000)
   })
 
   it('lastProductionReadyAtFromDeployment prefers ready over createdAt', () => {
@@ -45,25 +45,25 @@ describe('vercelDeployCooldown', () => {
     })
   })
 
-  it('computeCooldownWait defers when the last deploy is younger than 30 minutes', () => {
+  it('computeCooldownWait defers when the last deploy is younger than 15 minutes', () => {
     const now = 1_700_000_000_000
     const last = now - 10 * 60 * 1000
 
     expect(computeCooldownWait(last, now)).toEqual({
       active: true,
-      waitSeconds: 20 * 60,
+      waitSeconds: 5 * 60,
       ageMs: 10 * 60 * 1000,
     })
   })
 
-  it('computeCooldownWait clears when the last deploy is older than 30 minutes', () => {
+  it('computeCooldownWait clears when the last deploy is older than 15 minutes', () => {
     const now = 1_700_000_000_000
-    const last = now - 31 * 60 * 1000
+    const last = now - 16 * 60 * 1000
 
     expect(computeCooldownWait(last, now)).toEqual({
       active: false,
       waitSeconds: 0,
-      ageMs: 31 * 60 * 1000,
+      ageMs: 16 * 60 * 1000,
     })
   })
 
