@@ -4,6 +4,7 @@ import { activityKinds, activityStatuses, type ActivityKind } from '@/lib/schema
 import {
   buildListHref,
   firstValue,
+  normalizedText,
   resolveListUrl,
   strictDecimalInteger,
   type RawSearchParams as CampaignListRawSearchParams,
@@ -26,6 +27,7 @@ export const activityTabLabels: Record<ActivityTab, string> = {
 export type ActivityListState = {
   page: number
   tab: ActivityTab
+  q?: string
   kind?: ActivityKind
   status?: ActivityStatus
   municipality?: number
@@ -33,7 +35,7 @@ export type ActivityListState = {
 
 type RawSearchParams = CampaignListRawSearchParams
 
-const activityListParamNames = ['tab', 'kind', 'status', 'municipality', 'page'] as const
+const activityListParamNames = ['q', 'tab', 'kind', 'status', 'municipality', 'page'] as const
 
 const activityListParamNameSet = new Set<string>(activityListParamNames)
 
@@ -48,6 +50,7 @@ const isActivityStatus = (value: string | undefined): value is ActivityStatus =>
 
 export const parseActivityListParams = (params: RawSearchParams): ActivityListState => {
   const rawPage = strictDecimalInteger(firstValue(params.page))
+  const q = normalizedText(firstValue(params.q))
   const rawTab = firstValue(params.tab)
   const tab = isActivityTab(rawTab) ? rawTab : 'proximos'
   const rawKind = firstValue(params.kind)
@@ -59,6 +62,7 @@ export const parseActivityListParams = (params: RawSearchParams): ActivityListSt
   return {
     page: rawPage ?? 1,
     tab,
+    ...(q ? { q } : {}),
     ...(kind ? { kind } : {}),
     ...(status ? { status } : {}),
     ...(municipality ? { municipality } : {}),
@@ -67,6 +71,12 @@ export const parseActivityListParams = (params: RawSearchParams): ActivityListSt
 
 export const buildActivityListWhere = (state: ActivityListState, now: Date): Where => {
   const filters: Where[] = []
+
+  if (state.q) {
+    filters.push({
+      or: [{ title: { contains: state.q } }, { 'responsible.name': { contains: state.q } }],
+    })
+  }
 
   if (state.kind) filters.push({ kind: { equals: state.kind } })
   if (state.municipality) filters.push({ municipality: { equals: state.municipality } })
@@ -91,6 +101,7 @@ export const buildActivityListSearchParams = (
 ): URLSearchParams => {
   const canonicalState = parseActivityListParams({
     page: String(page),
+    q: state.q,
     tab: state.tab,
     kind: state.kind,
     status: state.status,
@@ -98,6 +109,7 @@ export const buildActivityListSearchParams = (
   })
   const params = new URLSearchParams()
 
+  if (canonicalState.q) params.set('q', canonicalState.q)
   if (canonicalState.tab !== 'proximos') params.set('tab', canonicalState.tab)
   if (canonicalState.kind) params.set('kind', canonicalState.kind)
   if (canonicalState.status) params.set('status', canonicalState.status)

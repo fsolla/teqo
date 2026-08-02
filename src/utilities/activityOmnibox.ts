@@ -1,6 +1,6 @@
 /**
- * Activity list omnibox adapter (B128). Pure / client-safe.
- * Tab preset stays outside the omnibox (product map).
+ * Activity list omnibox adapter (B128 + B138). Pure / client-safe.
+ * Window presets and text search live inside the omnibox.
  */
 import {
   createOmniboxSuggestionSeed,
@@ -10,6 +10,8 @@ import {
 } from '@/lib/campaignListOmnibox'
 import { activityKindLabels, activityStatusLabels } from '@/lib/schemas/activity'
 import {
+  activityTabLabels,
+  activityTabs,
   buildActivityListSearchParams,
   parseActivityListParams,
   type ActivityListState,
@@ -52,6 +54,24 @@ const setExclusiveField = (
   return parseStateFromParams(raw)
 }
 
+const tabKeywords: Record<ActivityTab, string[]> = {
+  proximos: ['proximos', 'próximos', 'proximo', 'próximo'],
+  todos: ['todos', 'todas'],
+  realizados: ['realizados', 'realizado'],
+  rascunhos: ['rascunhos', 'rascunho'],
+}
+
+const setTab = (state: ActivityListState, tab: ActivityTab): ActivityListState => {
+  const params = buildActivityListSearchParams(withPageReset({ ...state, tab }))
+  const raw: Record<string, string | string[] | undefined> = Object.fromEntries(params.entries())
+
+  if (tab !== 'todos') {
+    delete raw.status
+  }
+
+  return parseStateFromParams(raw)
+}
+
 export const buildActivityOmniboxChips = ({
   state,
   municipalityLabelsById,
@@ -60,6 +80,15 @@ export const buildActivityOmniboxChips = ({
   municipalityLabelsById: ReadonlyMap<number, string>
 }): CampaignListOmniboxChip[] => {
   const chips: CampaignListOmniboxChip[] = []
+
+  if (state.q) chips.push({ id: 'q', label: chipLabel('Busca', state.q) })
+
+  if (state.tab !== 'proximos') {
+    chips.push({
+      id: `tab:${state.tab}`,
+      label: activityTabLabels[state.tab],
+    })
+  }
 
   if (state.kind) {
     chips.push({
@@ -96,6 +125,20 @@ export const buildActivityOmniboxSuggestionSeeds = ({
   municipalityOptions: readonly ActivityFilterOption[]
 }) => {
   const seeds = []
+
+  for (const tabValue of activityTabs) {
+    seeds.push(
+      createOmniboxSuggestionSeed(
+        {
+          id: `tab:${tabValue}`,
+          group: 'Janela',
+          label: activityTabLabels[tabValue],
+          keywords: ['janela', ...tabKeywords[tabValue]],
+        },
+        { emptyQueryVisible: true },
+      ),
+    )
+  }
 
   for (const [value, label] of Object.entries(activityKindLabels)) {
     seeds.push(
@@ -153,6 +196,19 @@ export const applyActivityOmniboxSuggestion = ({
   state: ActivityListState
   suggestionId: string
 }): ActivityOmniboxAction => {
+  if (suggestionId.startsWith('q:')) {
+    const q = suggestionId.slice(2)
+    return { kind: 'url', state: withPageReset({ ...state, q: q || undefined }) }
+  }
+
+  if (suggestionId.startsWith('tab:')) {
+    const value = suggestionId.slice(4) as ActivityTab
+    if (!activityTabs.includes(value)) return { kind: 'url', state }
+    const next =
+      state.tab === value ? setTab(state, 'proximos') : setTab(state, value)
+    return { kind: 'url', state: next }
+  }
+
   if (suggestionId.startsWith('kind:')) {
     const value = suggestionId.slice(5)
     const next =
@@ -190,6 +246,12 @@ export const removeActivityOmniboxChip = ({
   state: ActivityListState
   chipId: string
 }): ActivityOmniboxAction => {
+  if (chipId === 'q') return { kind: 'url', state: withPageReset({ ...state, q: undefined }) }
+
+  if (chipId.startsWith('tab:')) {
+    return { kind: 'url', state: setTab(state, 'proximos') }
+  }
+
   if (chipId.startsWith('kind:')) {
     return { kind: 'url', state: setExclusiveField(state, 'kind', undefined) }
   }
