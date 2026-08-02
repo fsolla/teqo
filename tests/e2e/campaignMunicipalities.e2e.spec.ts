@@ -154,7 +154,7 @@ test.describe('Municípios — jornadas por papel', () => {
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
     const trendButton = page.getByRole('button', {
-      name: new RegExp(`Editar tendência política em ${municipality.name}`),
+      name: new RegExp(`^Editar tendência política em ${municipality.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
     })
     await trendButton.click()
     const trendPopover = page.locator('[data-slot="popover-content"]')
@@ -172,7 +172,12 @@ test.describe('Municípios — jornadas por papel', () => {
 
     await page.keyboard.press('Escape')
     await page.reload()
-    await trendButton.click()
+    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+    await page
+      .getByRole('button', {
+        name: new RegExp(`^Editar tendência política em ${municipality.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
+      })
+      .click()
     const reopened = page.locator('[data-slot="popover-content"]')
     await expect(reopened.getByLabel('Tendência', { exact: true })).toHaveValue('favoravel')
     await expect(reopened.getByLabel('Justificativa')).toHaveValue(note)
