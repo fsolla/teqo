@@ -15,19 +15,18 @@ Depois de B123, título e subtítulo das seções passaram para o header da app.
 
 ## Persona e fluxo
 
-- **Persona / contexto:** staff (coordenador / assessor / candidato) saltando entre listas; quer a dobra de cima limpa.
+- **Persona / contexto:** staff (coordenador / assessor / candidato) e liderança (Contatos) saltando entre páginas; quer a dobra de cima limpa.
 - **Job principal:** saber onde está sem ler parágrafo no header; em filtro salvo de Municípios, reconhecer o recorte pelo subtítulo.
 - **Fluxo desejado:**
-  1. Abre lista citada → header só com o título da seção (sem subtítulo de prosa).
-  2. Abre Quadro ou create/edit estático → idem (só título; sem prosa).
-  3. Em `/campanha/municipios` sem filtro salvo casado → só “Municípios”.
-  4. Casa com um filtro salvo → subtítulo do header = **nome do filtro**; a label ao lado da busca que repetia esse nome **some**.
-- **Anti-goals de produto:** redesign do shell; sumir com chips/controles de filtro que ainda são a forma de editar o recorte; inventar subtítulo para URL filtrada que não é filtro salvo; mexer em Organizações / Conceitos / Perfil / Contatos (fora do pedido).
+  1. Abre qualquer seção com chrome de catálogo (listas, Quadro, Organizações, Conceitos, Perfil, Contatos, create/edit) → header só com o título (sem subtítulo de prosa).
+  2. Em `/campanha/municipios` sem filtro salvo casado → só “Municípios”.
+  3. Casa com um filtro salvo → subtítulo do header = **nome do filtro**; a label ao lado da busca que repetia esse nome **some**.
+- **Anti-goals de produto:** redesign do shell; sumir com chips/controles de filtro que ainda são a forma de editar o recorte; inventar subtítulo para URL filtrada que não é filtro salvo; auth/wizard.
 
 ### Esboço de fluxo (B)
 
 ```text
-[lista / quadro / nova|editar]
+[lista / quadro / org / conceitos / perfil / contatos / nova|editar]
   → header: "<Título>"
   → (sem L2 de prosa)
 
@@ -43,12 +42,12 @@ Depois de B123, título e subtítulo das seções passaram para o header da app.
 
 ## Objetivo e aceite
 
-- Remover subtítulo de prosa do chrome nas rotas de **lista**: Municípios (vista geral), Territórios, Lideranças, Dobradinhas, Atividades, Demandas, Apoiadores, Assessores.
-- Remover subtítulo de prosa também no **Quadro** e nas rotas **create/edit** estáticas do chrome (ex.: Nova/Editar liderança, atividade, demanda, dobradinha, apoiador, importar CSV, planejar giro, editar município — o que hoje carrega prosa no catálogo/override).
+- Remover subtítulo de prosa do chrome nas rotas de **lista / seção**: Municípios (vista geral), Territórios, Lideranças, Dobradinhas, Atividades, Demandas, Apoiadores, Assessores, **Organizações**, **Conceitos**, **Perfil**, **Contatos**.
+- Remover subtítulo de prosa também no **Quadro** e nas rotas **create/edit** estáticas do chrome (ex.: Nova/Editar liderança, organização, atividade, demanda, dobradinha, apoiador, importar CSV, planejar giro, editar município — o que hoje carrega prosa no catálogo/override).
 - Em Municípios, quando a URL **casa** com um filtro salvo: subtítulo do header = nome do filtro; quando **não** casa (incluindo filtros ad hoc): **sem** subtítulo.
 - Remover a label visível ao lado da barra de busca que hoje mostra o nome/resumo do recorte quando o filtro salvo está ativo (screenshot: “Sem assessor” entre busca e Cenário/Renomear). Não remover o botão Salvar/Renomear nem a affordance de limpar.
 - Detalhe de entidade: inalterado (header = seção; corpo mantém nome do registro).
-- Fora deste item: listas/telas não citadas acima (Organizações, Conceitos, Perfil, Contatos) e auth/wizard.
+- Fora deste item: auth, convite, offline e chrome do wizard.
 
 ## Dados (intenção)
 
@@ -60,7 +59,7 @@ Depois de B123, título e subtítulo das seções passaram para o header da app.
 
 - **Áreas prováveis:** catálogo/resolução de chrome em `src/lib/campaignPageChrome.ts` (+ overrides `SetCampaignPageChrome` nas rotas); header `CampaignPageChromeText` / shell; barra de Municípios (`MunicipalityFilters` / omnibox em `main` — a label vista no screenshot é o resumo ao lado da busca, hoje tipicamente `formatMunicipalityActiveFiltersSummary` / equivalente); match de filtro salvo (B18: `useMunicipalitySavedFilters` + `listQueryMatch`).
 - **Precedente a olhar:** B123 (`docs/plans/orientacao-shell-sem-titulos-secao.md`, #250); B18 filtros salvos.
-- **Risco de acoplamento:** não puxar o serializador pesado de URL de Municípios para o layout inteiro; leader lockdown intocado; não confundir chip de critério editável com a label de nome a remover.
+- **Risco de acoplamento:** não puxar o serializador pesado de URL de Municípios para o layout inteiro; leader lockdown intocado (Contatos); não confundir chip de critério editável com a label de nome a remover.
 
 ## Dependências
 
@@ -68,21 +67,21 @@ Depois de B123, título e subtítulo das seções passaram para o header da app.
 
 ## Fora de escopo
 
-- Organizações (lista), Conceitos, Perfil, Contatos — subtítulos atuais permanecem até pedido explícito.
 - Redesign visual do header além de omitir/substituir subtítulo.
 - Sync multi-device de filtros salvos; saved views em outras listas.
 - Mudar o comportamento dos chips/omnibox como editor de filtro (só a label de nome/resumo duplicada some no caso do filtro salvo).
+- Auth / convite / offline / wizard.
 
 ## Rabbit holes de produto
 
 - **Apagar todos os chips porque “é o nome do filtro”.** Chips são o recorte editável; o pedido é a label de nome ao lado da busca. **Corte:** só a label duplicada; controles de filtro ficam.
 - **Subtítulo = resumo de qualquer URL filtrada.** Isso recria prosa variável no header. **Corte:** só nome de filtro **salvo** casado.
-- **Limpar Organizações/Conceitos “já que estamos no catálogo”.** Estica o item sem pedido. **Corte:** só o conjunto confirmado no gate.
+- **Reintroduzir prosa “útil” em Conceitos/Perfil.** O título da seção basta; glossário e formulário de perfil vivem no corpo. **Corte:** sem subtítulo nessas rotas também.
 
 ## Questões em aberto (produto)
 
 - **URL filtrada sem filtro salvo:** sem subtítulo. **Opções:** A) sem subtítulo · B) resumo dos filtros. **Recomendação:** A. _(confirmado)_
-- **Escopo de listas vs “todas as listas”:** só as citadas + Quadro + create/edit. **Recomendação:** A (listas citadas) + remoção em Quadro/create/edit. _(confirmado)_
+- **Escopo de seções:** listas citadas + Quadro + create/edit + **Organizações, Conceitos, Perfil, Contatos**. **Recomendação:** cobrir o catálogo de prosa do chrome nessas rotas. _(confirmado — expansão pós-gate)_
 - **Label ao lado da busca:** é a peça visível entre busca e Cenário/Renomear (ex. “Sem assessor” no filtro salvo homônimo). **Recomendação:** remover no caso de filtro salvo ativo; nome vai ao subtítulo do header. _(confirmado via screenshot)_
 
 ## Referências
