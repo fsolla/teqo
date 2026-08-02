@@ -1,5 +1,6 @@
 'use client'
 
+import { clearOpsDomainOutboxForLogout } from '@/components/campaign/opsSync/opsDomainOutbox'
 import { clearOpsEstimateOutboxForLogout } from '@/components/campaign/opsSync/opsEstimateOutbox'
 import {
   abortOpsMirrorSync,
@@ -14,6 +15,10 @@ import { clearOpsMunicipalityOutboxForLogout } from '@/components/campaign/opsSy
  */
 export const clearCampaignOpsStorage = async (): Promise<void> => {
   abortOpsMirrorSync()
-  await Promise.all([clearOpsEstimateOutboxForLogout(), clearOpsMunicipalityOutboxForLogout()])
+  await Promise.all([
+    clearOpsEstimateOutboxForLogout(),
+    clearOpsMunicipalityOutboxForLogout(),
+    clearOpsDomainOutboxForLogout(),
+  ])
   await clearOpsMirrorPersistenceForLogout()
 }

@@ -143,6 +143,8 @@ export type ActivityFormViewModel = {
   responsible: { id: number; name: string; phone: string | null } | null
   leadership: { id: number; label: string } | null
   tasks: ActivityFormTaskViewModel[]
+  /** OH13 — CAS token for staff updates when OPS_HYBRID is on. */
+  updatedAt: string
 }
 
 const relationshipIds = (value: unknown): number[] =>
@@ -196,6 +198,7 @@ export const toActivityFormViewModel = (activity: Activity): ActivityFormViewMod
     due: task.due ?? null,
     done: Boolean(task.done),
   })),
+  updatedAt: activity.updatedAt,
 })
 
 const activityDetailContextSelect = {

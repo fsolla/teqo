@@ -153,6 +153,8 @@ export type DemandDetailViewModel = DemandRowViewModel & {
   }>
   canLeaderEdit: boolean
   activity: { title: string; slug: string } | null
+  /** OH13 — CAS token for staff transitions when OPS_HYBRID is on. */
+  updatedAt: string
 }
 
 export const loadDemandDetail = async (
@@ -217,5 +219,6 @@ export const loadDemandDetail = async (
     activity: isPopulatedRelationship<Activity>(demand.activity)
       ? { title: demand.activity.title, slug: demand.activity.slug }
       : null,
+    updatedAt: demand.updatedAt,
   }
 }

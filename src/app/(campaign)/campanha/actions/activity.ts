@@ -2,6 +2,7 @@
 
 import type { Payload } from 'payload'
 
+import { assertCampaignDocCas } from '@/app/(campaign)/campanha/actions/assertCampaignDocCas'
 import {
   ACTIVITY_RESULT_REQUIRED_MESSAGE,
   ACTIVITY_RESULT_STAFF_MESSAGE,
@@ -162,14 +163,25 @@ const updateActivityRecord = async (
   actor: CampaignUser,
   input: ActivityUpdateInput,
   demandDrafts: ActivityDemandDraft[] = [],
+  options?: { cas?: boolean },
 ) => {
-  const { id, ...data } = activityUpdateSchema.parse(input)
+  const { id, baseUpdatedAt, ...data } = activityUpdateSchema.parse(input)
   const demands = activityDemandDraftsSchema.parse(demandDrafts)
+  const enforceCas = options?.cas === true
 
   return withPayloadTransaction(
     payload,
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
+
+      await assertCampaignDocCas(payload, {
+        collection: 'activity',
+        id,
+        actor: currentActor,
+        enforceCas,
+        baseUpdatedAt,
+        req,
+      })
 
       const activity = await payload.update({
         collection: 'activity',
@@ -363,6 +375,15 @@ export const createActivity = async (
   return createActivityRecord(payload, actor, input, demandDrafts)
 }
 
+/**
+ * Outbox / hybrid entry for create — no CAS (new doc).
+ * @public Kept as the CAS-named twin of `createActivity` for offline enqueue.
+ */
+export const createActivityCas = async (
+  input: ActivityCreateInput,
+  demandDrafts: ActivityDemandDraft[] = [],
+) => createActivity(input, demandDrafts)
+
 export const updateActivity = async (
   input: ActivityUpdateInput,
   demandDrafts: ActivityDemandDraft[] = [],
@@ -370,6 +391,21 @@ export const updateActivity = async (
   const { payload, actor } = await getCampaignActionContext()
   return updateActivityRecord(payload, actor, input, demandDrafts)
 }
+
+export const updateActivityCas = async (
+  input: ActivityUpdateInput,
+  demandDrafts: ActivityDemandDraft[] = [],
+) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return updateActivityRecord(payload, actor, input, demandDrafts, { cas: true })
+}
+
+export const updateActivityCasRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: ActivityUpdateInput,
+  demandDrafts: ActivityDemandDraft[] = [],
+) => updateActivityRecord(payload, actor, input, demandDrafts, { cas: true })
 
 export const cancelActivity = async (id: number) => {
   const { payload, actor } = await getCampaignActionContext()

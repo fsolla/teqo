@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { campaignDemandKinds, campaignDemandStatuses } from '@/lib/schemas/campaignDemand'
+import { optionalBaseUpdatedAtSchema } from '@/lib/schemas/opsCas'
 import {
   positiveRelationshipId,
   trimmedNullableText,
@@ -21,6 +22,8 @@ export const campaignDemandTransitionSchema = z.object({
   id: positiveRelationshipId,
   status: z.enum(campaignDemandStatuses),
   decisionNote: trimmedNullableText(2000),
+  /** OH13 — CAS token; absent → last-write-wins. */
+  baseUpdatedAt: optionalBaseUpdatedAtSchema,
 })
 
 export const campaignDemandCostSchema = z.object({

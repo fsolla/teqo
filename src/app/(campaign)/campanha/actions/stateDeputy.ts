@@ -5,6 +5,7 @@ import type { Payload } from 'payload'
 
 import { nextStateDeputyIdsAfterMunicipalityMembership } from '@/lib/municipalityStateDeputyMembership'
 import { uniqueRelationshipIds } from '@/lib/relationship'
+import { assertOpsUpdatedAtCas } from '@/lib/schemas/opsCas'
 import {
   STATE_DEPUTY_CONFLICT_MESSAGE,
   STATE_DEPUTY_STAFF_MESSAGE,
@@ -108,9 +109,11 @@ export const setStateDeputyMunicipalitiesBatchRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: StateDeputyMunicipalitiesBatchInput,
+  options?: { cas?: boolean },
 ) => {
-  const { stateDeputyId, municipalityIds, assigned } =
+  const { stateDeputyId, municipalityIds, assigned, municipalityBaseUpdatedAt } =
     stateDeputyMunicipalitiesBatchSchema.parse(input)
+  const enforceCas = options?.cas === true
   // Already deduped by the schema's `.transform`; sorted only so a batch applies
   // and reports in a stable order — `acquireTextAdvisoryLocks` sorts its own keys,
   // so the deadlock-avoidance ordering does not depend on this line.
@@ -134,18 +137,23 @@ export const setStateDeputyMunicipalitiesBatchRecord = async (
       const changedSlugs: string[] = []
 
       for (const municipalityId of uniqueMunicipalityIds) {
+        const baseForMunicipality = municipalityBaseUpdatedAt?.[String(municipalityId)]
+
         // Row + field access verify the município is in the actor's scope
         // (`canUpdateMunicipality` for advisors, `canManageCampaignStaffField`
         // for the field) — an out-of-scope município throws here.
+        // CAS stamp rides the same load (OH13) — avoid a second findByID.
         const municipality = await payload.findByID({
           collection: 'municipality',
           id: municipalityId,
           depth: 0,
-          select: { stateDeputies: true, slug: true },
+          select: { stateDeputies: true, slug: true, updatedAt: true },
           user: currentActor,
           overrideAccess: false,
           req,
         })
+
+        assertOpsUpdatedAtCas(enforceCas, baseForMunicipality, municipality.updatedAt)
 
         const currentStateDeputyIDs = uniqueRelationshipIds(municipality.stateDeputies)
         const nextStateDeputyIDs = nextStateDeputyIdsAfterMunicipalityMembership(
@@ -204,3 +212,23 @@ export const setStateDeputyMunicipalitiesBatch = async (
   }
   return result
 }
+
+/** @public CAS entry for offline/hybrid batch municipality writes (OH13). */
+export const setStateDeputyMunicipalitiesBatchCas = async (
+  input: StateDeputyMunicipalitiesBatchInput,
+) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const result = await setStateDeputyMunicipalitiesBatchRecord(payload, actor, input, {
+    cas: true,
+  })
+  if (result.slugs.length > 0) {
+    revalidateStateDeputyMunicipalityPaths(result.stateDeputySlug, result.slugs)
+  }
+  return result
+}
+
+export const setStateDeputyMunicipalitiesBatchCasRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: StateDeputyMunicipalitiesBatchInput,
+) => setStateDeputyMunicipalitiesBatchRecord(payload, actor, input, { cas: true })

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { campaignDemandCreateSchema } from '@/lib/schemas/campaignDemandInput'
+import { optionalBaseUpdatedAtSchema } from '@/lib/schemas/opsCas'
 import {
   positiveRelationshipId,
   trimmedNullableText,
@@ -178,6 +179,8 @@ export const activityUpdateSchema = activityFieldsSchema
     responsible: positiveRelationshipId.nullable().optional(),
     leadership: positiveRelationshipId.nullable().optional(),
     status: z.enum(activityStatuses).optional(),
+    /** OH13 — CAS token; absent → last-write-wins. */
+    baseUpdatedAt: optionalBaseUpdatedAtSchema,
   })
   .superRefine((data, context) => {
     validateSchedule(data, context, 'patch')

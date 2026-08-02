@@ -4,6 +4,7 @@ import {
   MAX_MUNICIPALITIES_PER_BATCH,
   MUNICIPALITY_STATE_DEPUTIES_CAP_MESSAGE,
 } from '@/lib/schemas/municipality'
+import { OPS_UPDATED_AT_CONFLICT_MESSAGE, optionalBaseUpdatedAtSchema } from '@/lib/schemas/opsCas'
 import {
   positiveRelationshipId,
   trimmedNullableText,
@@ -50,11 +51,17 @@ export const stateDeputyMunicipalitiesBatchSchema = z.object({
     .max(MAX_MUNICIPALITIES_PER_BATCH)
     .transform((ids) => [...new Set(ids)]),
   assigned: z.boolean(),
+  /**
+   * OH13 — CAS bases keyed by municipality id (batch touches many docs).
+   * Absent / missing id → last-write-wins for that município.
+   */
+  municipalityBaseUpdatedAt: z.record(z.string(), optionalBaseUpdatedAtSchema).optional(),
 })
 
 export const STATE_DEPUTY_MUNICIPALITIES_SAFE_MESSAGES = [
   STATE_DEPUTY_STAFF_MESSAGE,
   MUNICIPALITY_STATE_DEPUTIES_CAP_MESSAGE,
+  OPS_UPDATED_AT_CONFLICT_MESSAGE,
 ] as const
 
 export type StateDeputyCreateInput = z.input<typeof stateDeputyCreateSchema>

@@ -128,6 +128,7 @@ export default async function DemandDetailPage({ params }: DemandDetailPageProps
         status={demand.status}
         canDecideEscalated={isCampaignUnrestricted(user)}
         currentCost={demand.cost}
+        updatedAt={demand.updatedAt}
         transitionFormAction={transitionDemandFormAction}
         costFormAction={setDemandCostFormAction}
         receiptFormAction={attachDemandReceiptFormAction}

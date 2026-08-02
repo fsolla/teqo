@@ -1,23 +1,49 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type FormEvent,
+} from 'react'
+import { toast } from 'sonner'
 
+import {
+  discardOpsLeadershipUpdateOutboxRow,
+  enqueueLeadershipUpdate,
+  readOpsLeadershipUpdateOutboxRow,
+  subscribeOpsLeadershipUpdateOutboxRow,
+} from '@/components/campaign/opsSync/opsDomainOutbox'
+import { leadershipsCollection } from '@/components/campaign/opsSync/opsMirrorClient'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import {
   RelationMultiSelect,
   type RelationOption,
 } from '@/components/campaign/shared/RelationMultiSelect'
+import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import { leadershipSupportStatuses } from '@/lib/schemas/leadership'
+import { resolveOpsHybridEnabled } from '@/lib/campaignOps/opsHybridFlag'
+import { readFormRelationshipIds, readOptionalFormText } from '@/lib/campaignOps/opsHybridFormData'
+import {
+  isSupportStatus,
+  leadershipSupportStatuses,
+  type SupportStatus,
+} from '@/lib/schemas/leadership'
+import { OPS_UPDATED_AT_CONFLICT_MESSAGE } from '@/lib/schemas/opsCas'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
 import type { LeadershipDetailViewModel } from '@/utilities/leadership/leadershipData'
 import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
+
+const CONFLICT_TOAST_ID_PREFIX = 'ops-leadership-update-conflict:'
 
 type LeadershipInternalFormProps = {
   leadership: LeadershipDetailViewModel
@@ -28,6 +54,7 @@ type LeadershipInternalFormProps = {
     state: CampaignFormActionState,
     formData: FormData,
   ) => Promise<CampaignFormActionState>
+  opsHybridEnabled?: boolean
 }
 
 /** Staff-only internal evaluation + links (municipalities, organizations). */
@@ -37,12 +64,116 @@ export const LeadershipInternalForm = ({
   organizationOptions,
   stateDeputyOptions,
   formAction,
+  opsHybridEnabled = resolveOpsHybridEnabled(),
 }: LeadershipInternalFormProps) => {
+  const router = useRouter()
   const [state, submitAction, isPending] = useActionState(formAction, {})
+  const [hybridPending, setHybridPending] = useState(false)
+  const [hybridMessage, setHybridMessage] = useState<string | null>(null)
+  const previousOutboxStatusRef = useRef<string | undefined>(undefined)
+
+  const outboxRow = useSyncExternalStore(
+    (onStoreChange) =>
+      opsHybridEnabled
+        ? subscribeOpsLeadershipUpdateOutboxRow(leadership.id, onStoreChange)
+        : () => undefined,
+    () => (opsHybridEnabled ? readOpsLeadershipUpdateOutboxRow(leadership.id) : undefined),
+    () => undefined,
+  )
+
+  useEffect(() => {
+    const previous = previousOutboxStatusRef.current
+    previousOutboxStatusRef.current = outboxRow?.status
+    if (previous === 'pending' && outboxRow === undefined) {
+      router.refresh()
+    }
+  }, [outboxRow, router])
+
+  useEffect(() => {
+    if (!opsHybridEnabled || outboxRow?.status !== 'conflict') return
+    const toastId = `${CONFLICT_TOAST_ID_PREFIX}${leadership.id}`
+    toast.message(OPS_UPDATED_AT_CONFLICT_MESSAGE, {
+      id: toastId,
+      duration: Infinity,
+      action: {
+        label: 'Manter o meu',
+        onClick: () => {
+          void enqueueLeadershipUpdate({
+            leadershipId: leadership.id,
+            municipalities: outboxRow.municipalities,
+            organizations: outboxRow.organizations,
+            stateDeputies: outboxRow.stateDeputies,
+            exclusive: outboxRow.exclusive,
+            supportStatus: outboxRow.supportStatus,
+            notes: outboxRow.notes,
+            baseUpdatedAt: outboxRow.serverUpdatedAt ?? null,
+          })
+        },
+      },
+      cancel: {
+        label: 'Usar o novo',
+        onClick: () => {
+          discardOpsLeadershipUpdateOutboxRow(leadership.id)
+          router.refresh()
+        },
+      },
+    })
+    return () => {
+      toast.dismiss(toastId)
+    }
+  }, [opsHybridEnabled, outboxRow, leadership.id, router])
+
+  const onHybridSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const form = event.currentTarget
+    const data = new FormData(form)
+    const supportStatusRaw = data.get('supportStatus')
+    const supportStatus =
+      typeof supportStatusRaw === 'string' && isSupportStatus(supportStatusRaw)
+        ? (supportStatusRaw as SupportStatus)
+        : undefined
+    const mirrorUpdatedAt = leadershipsCollection.get(leadership.id)?.updatedAt
+
+    setHybridPending(true)
+    setHybridMessage(null)
+    void enqueueLeadershipUpdate({
+      leadershipId: leadership.id,
+      municipalities: readFormRelationshipIds(data, 'municipalities'),
+      organizations: readFormRelationshipIds(data, 'organizations'),
+      stateDeputies: readFormRelationshipIds(data, 'stateDeputies'),
+      exclusive: data.get('exclusive') === 'true',
+      supportStatus,
+      notes: readOptionalFormText(data, 'notes') ?? null,
+      baseUpdatedAt: mirrorUpdatedAt ?? leadership.updatedAt,
+    }).then(
+      () => {
+        setHybridPending(false)
+        setHybridMessage('Alterações enfileiradas. Serão enviadas ao reconectar.')
+      },
+      (error: unknown) => {
+        setHybridPending(false)
+        setHybridMessage(
+          error instanceof Error ? error.message : 'Não foi possível enfileirar as alterações.',
+        )
+      },
+    )
+  }
+
+  const pending = opsHybridEnabled ? hybridPending || outboxRow?.status === 'pending' : isPending
 
   return (
-    <form action={submitAction} className="flex max-w-2xl flex-col gap-4">
-      <input type="hidden" name="leadershipId" value={leadership.id} />
+    <form
+      action={opsHybridEnabled ? undefined : submitAction}
+      onSubmit={opsHybridEnabled ? onHybridSubmit : undefined}
+      className="flex max-w-2xl flex-col gap-4"
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <input type="hidden" name="leadershipId" value={leadership.id} />
+        {outboxRow?.status === 'pending' ? (
+          <Badge variant="estimate-pending">Pendente</Badge>
+        ) : null}
+        {outboxRow?.status === 'conflict' ? <Badge variant="destructive">Conflito</Badge> : null}
+      </div>
 
       <RelationMultiSelect
         name="municipalities"
@@ -111,9 +242,14 @@ export const LeadershipInternalForm = ({
         />
       </Field>
 
-      <CampaignFormActionMessage state={state} />
-      <Button type="submit" disabled={isPending} className="min-h-11 self-start">
-        {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
+      {!opsHybridEnabled ? <CampaignFormActionMessage state={state} /> : null}
+      {hybridMessage ? (
+        <p className="text-sm text-muted-foreground" role="status">
+          {hybridMessage}
+        </p>
+      ) : null}
+      <Button type="submit" disabled={pending} className="min-h-11 self-start">
+        {pending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
         Salvar
       </Button>
     </form>

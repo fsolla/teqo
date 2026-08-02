@@ -176,7 +176,11 @@ const leadershipColumns = ({
       <LeadershipSortableHead state={state} sortKey="supportStatus" filterParam="supportStatus" />
     ),
     cell: (row) => (
-      <LeadershipListSupportStatusControl leadershipID={row.id} status={row.supportStatus} />
+      <LeadershipListSupportStatusControl
+        leadershipID={row.id}
+        status={row.supportStatus}
+        updatedAt={row.updatedAt}
+      />
     ),
   },
   {
