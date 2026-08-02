@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, type FormEvent, type ReactNode } from 'react'
 
+import { LogOutIcon } from 'lucide-react'
+
 import { logoutCampaign } from '@/app/(campaign)/campanha/actions/auth'
 import { CampaignUserAvatar } from '@/components/campaign/shared/CampaignUserAvatar'
 import { MunicipalityNavSavedFilters } from '@/components/campaign/shell/MunicipalityNavSavedFilters'
@@ -30,6 +32,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { clearLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { clearCampaignPwaCaches } from '@/utilities/campaignPwaClient'
 import type { CampaignUserShellView } from '@/utilities/campaignUserProfile'
+import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import { clearMunicipalitySavedFilters } from '@/utilities/municipality/municipalitySavedFilters'
 import { clearRecentVisits } from '@/utilities/recentVisits'
 
@@ -123,30 +126,34 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        <Link
-          href="/campanha/perfil"
-          className="flex min-w-0 items-center gap-3 rounded-md px-1 py-2 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-        >
-          <CampaignUserAvatar name={user.name} avatarUrl={user.avatarUrl} size="sm" />
-          <div className="flex min-w-0 flex-col gap-0.5 leading-none">
-            <span className="truncate text-sm font-medium text-sidebar-foreground">
-              {user.name}
-            </span>
-            <span className="truncate text-xs text-muted-foreground">Meu perfil</span>
-          </div>
-        </Link>
-        <form onSubmit={handleLogout}>
-          <Button
-            type="submit"
-            variant="outline"
-            size="sm"
-            disabled={isLoggingOut}
-            className="min-h-11 w-full border-sidebar-border bg-sidebar font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        <div className="flex items-center gap-1">
+          <Link
+            href="/campanha/perfil"
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-2 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
           >
-            {isLoggingOut ? <Spinner aria-hidden="true" /> : null}
-            {isLoggingOut ? 'Saindo…' : 'Sair'}
-          </Button>
-        </form>
+            <CampaignUserAvatar name={user.name} avatarUrl={user.avatarUrl} size="sm" />
+            <div className="flex min-w-0 flex-col gap-0.5 leading-none">
+              <span className="truncate text-sm font-medium text-sidebar-foreground">
+                {user.name}
+              </span>
+              <span className="truncate text-xs text-muted-foreground">
+                {campaignRoleLabels[user.role]}
+              </span>
+            </div>
+          </Link>
+          <form onSubmit={handleLogout} className="shrink-0">
+            <Button
+              type="submit"
+              variant="ghost"
+              size="icon"
+              disabled={isLoggingOut}
+              aria-label={isLoggingOut ? 'Saindo…' : 'Sair'}
+              className="size-11 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              {isLoggingOut ? <Spinner aria-hidden="true" /> : <LogOutIcon />}
+            </Button>
+          </form>
+        </div>
       </SidebarFooter>
     </Sidebar>
   )
