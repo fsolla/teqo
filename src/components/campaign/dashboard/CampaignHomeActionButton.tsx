@@ -25,17 +25,25 @@ export type CampaignHomeActionButtonProps = {
   href?: string
   onClick?: () => void
   disabled?: boolean
-  layout?: 'strip' | 'responsive'
+  layout?: 'strip' | 'responsive' | 'grid'
 }
 
 const actionControlBaseClassName =
-  'group box-content flex min-h-11 flex-col items-center gap-2 rounded-md text-center outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-90 disabled:pointer-events-none disabled:opacity-50'
+  'group flex min-h-11 flex-col items-center gap-2 rounded-md text-center outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-90 disabled:pointer-events-none disabled:opacity-50'
 
-const actionStripControlClassName = cn(actionControlBaseClassName, 'w-[5.5rem] shrink-0 snap-start')
+const actionStripControlClassName = cn(
+  actionControlBaseClassName,
+  'box-content w-[5.5rem] shrink-0 snap-start',
+)
 
 const actionResponsiveControlClassName = cn(
   actionControlBaseClassName,
-  'w-full md:w-[5.5rem] md:shrink-0 md:snap-start',
+  'w-full min-w-0 max-w-full md:box-content md:w-[5.5rem] md:max-w-none md:shrink-0 md:snap-start',
+)
+
+const actionGridControlClassName = cn(
+  actionControlBaseClassName,
+  'w-full min-w-0 max-w-full',
 )
 
 const circleClassName =
@@ -84,7 +92,11 @@ export const CampaignHomeActionButton = ({
   })
 
   const className = cn(
-    layout === 'responsive' ? actionResponsiveControlClassName : actionStripControlClassName,
+    layout === 'grid'
+      ? actionGridControlClassName
+      : layout === 'responsive'
+        ? actionResponsiveControlClassName
+        : actionStripControlClassName,
     isInert && 'cursor-default',
   )
   const aria = {
