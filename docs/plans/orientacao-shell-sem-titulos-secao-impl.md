@@ -70,3 +70,11 @@ flowchart LR
 - [x] Aceite de produto da intenção ainda coberto
 - [x] Invariantes AGENTS/engineering-standards
 - [x] Testes unit mobile top bar + metadata resolver previstos
+
+## Débitos deferidos (/simplify)
+
+- **Registry único** (pathRules + metadata por página): defer — gatilho quando 3ª rota dinâmica exigir override; hoje catálogo + metadata explícita é legível.
+- **Resolver único no provider** (evitar dupla resolução mobile/desktop): defer — custo negligível (~28 regex); revisit se bundle crescer.
+- **Desktop header RSC** (slot bell sem client boundary): **corrigido** nesta entrega — `notificationBell` slot como mobile.
+- **Subtitle desktop truncado** em uma linha: defer — validar com usuários; mobile já usa duas linhas.
+- **Table-driven pathRules tests**: defer — cobertura smoke suficiente para B123; expandir se matcher quebrar de novo.

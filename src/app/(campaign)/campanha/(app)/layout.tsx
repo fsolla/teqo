@@ -80,7 +80,9 @@ export default async function CampaignAppLayout({ children }: { children: React.
                   <CampaignMobileTopBar
                     notificationBell={<CampaignNotificationBellSlot user={user} />}
                   />
-                  <CampaignDesktopHeader user={user} />
+                  <CampaignDesktopHeader
+                    notificationBell={<CampaignNotificationBellSlot user={user} />}
+                  />
                   {/*
                 Provider must wrap CampaignAppScrollChrome, not only page children:
                 the mobile quick-actions drawer (B91/B100) mounts as a sibling of
