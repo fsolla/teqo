@@ -424,6 +424,33 @@ test.describe('Municípios — cards no celular (B42)', () => {
     await expect(page).toHaveURL(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
     await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
   })
+
+  test('opens the nivel Drawer without navigating or crashing (B119)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador Mobile Nivel'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    const listURL = `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`
+    await page.goto(listURL)
+
+    const card = page.locator('[data-view="mobile-cards"] article').first()
+    await expect(card).toBeVisible()
+
+    await card.getByRole('button', { name: 'Nível de envolvimento' }).click()
+    const drawer = page.getByRole('dialog', { name: 'Registrar nível de envolvimento' })
+    await expect(drawer).toBeVisible()
+    await expect(drawer.getByText(municipality.name, { exact: true })).toBeVisible()
+    await expect(page).toHaveURL(listURL)
+
+    await drawer.getByRole('button', { name: 'Cancelar' }).click()
+    await expect(drawer).toBeHidden()
+  })
 })
 
 /**

@@ -8,6 +8,7 @@ import { MunicipalityListLevelControl } from '@/components/campaign/municipality
 import { MunicipalityListSignalControl } from '@/components/campaign/municipality/MunicipalityListSignalControl'
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
 import type { CampaignCellEditOverlayVariant } from '@/components/campaign/shared/CampaignCellEditOverlay'
+import { CampaignListSheetProvider } from '@/components/campaign/shared/CampaignListSheetHost'
 import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
@@ -178,6 +179,27 @@ describe('campaign cell edit overlay', () => {
       expect(document.querySelector('[data-slot="popover-content"]')).toBeNull()
     },
   )
+
+  /**
+   * B119: the mobile cards host ONE shared Drawer (`CampaignListSheetProvider`)
+   * and portal cell footers into it. `DrawerCloseButton` must stay inside the
+   * Drawer React tree — portaled footers call `onOpenChange(false)` instead.
+   */
+  it('opens the nivel sheet through CampaignListSheetProvider without crashing', async () => {
+    const nivelCase = overlayCases.find((item) => item.name === 'nível de envolvimento')
+    expect(nivelCase).toBeDefined()
+
+    renderWithTooltip(createElement(CampaignListSheetProvider, null, nivelCase!.element('sheet')))
+
+    fireEvent.click(screen.getByRole('button', { name: nivelCase!.triggerLabel }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog.querySelector('[data-slot="drawer-title"]')?.textContent).toBe(
+      nivelCase!.drawerTitle,
+    )
+    expect(dialog.textContent).toContain('Cancelar')
+    expect(dialog.textContent).toContain(nivelCase!.footerLabel)
+  })
 
   it.each(overlayCases)(
     'keeps $name in a Popover on the desktop table',

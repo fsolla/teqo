@@ -12,7 +12,6 @@ import { useCampaignCellFailureChannel } from '@/components/campaign/shared/useC
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
-import { DrawerCloseButton } from '@/components/ui/Drawer'
 import { Field, FieldContent, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
@@ -239,7 +238,14 @@ export const MunicipalityListLevelControl = ({
         isSheet && open ? (
           <>
             {submitButton}
-            <DrawerCloseButton>Cancelar</DrawerCloseButton>
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11 w-full"
+              onClick={() => handleOpenChange(false)}
+            >
+              Cancelar
+            </Button>
           </>
         ) : undefined
       }
