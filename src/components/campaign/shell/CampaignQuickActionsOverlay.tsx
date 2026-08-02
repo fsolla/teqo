@@ -81,10 +81,7 @@ const CampaignQuickActionsOverlayBody = ({
         <OverlayActionsChrome actions={actions} retracted={focused} />
       </div>
       <OverlaySearchChrome
-        className={cn(
-          'order-2 min-w-0 md:order-1',
-          focused ? 'mt-0 pt-4' : 'mt-4 md:mt-0 md:mb-4',
-        )}
+        className={cn('order-2 min-w-0 md:order-1', focused ? 'mt-0 pt-4' : 'mt-4 md:mt-0 md:mb-4')}
       />
     </div>
   )
