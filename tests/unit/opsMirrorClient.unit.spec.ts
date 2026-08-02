@@ -13,15 +13,15 @@ import {
   syncOpsMirror,
   votePledgesCollection,
 } from '@/components/campaign/opsSync/opsMirrorClient'
-import {
-  applyOpsVotePledgeEstimateWrite,
-  patchOpsVotePledgeEstimateOptimistic,
-} from '@/components/campaign/opsSync/opsVotePledgeMirror'
 import { createMemoryOpsMirrorStore } from '@/components/campaign/opsSync/opsMirrorPersistence'
 import {
   formatOpsSyncRelative,
   resolveOpsSyncChromeLabel,
 } from '@/components/campaign/opsSync/opsSyncChromeCopy'
+import {
+  applyOpsVotePledgeEstimateWrite,
+  patchOpsVotePledgeEstimateOptimistic,
+} from '@/components/campaign/opsSync/opsVotePledgeMirror'
 import {
   createEmptyOpsSnapshot,
   opsOutboxKey,
