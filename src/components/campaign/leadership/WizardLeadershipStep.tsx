@@ -62,10 +62,6 @@ import {
 } from '@/lib/schemas/leadership'
 import { cn } from '@/lib/utils'
 import {
-  WIZARD_THUMB_TILE_GRID_CLASS,
-  WIZARD_THUMB_TILE_ITEM_CLASS,
-} from '@/lib/wizardThumbGrid'
-import {
   resolveWizardChainEntry,
   wizardChainContinueHref,
   wizardChainEndHref,
@@ -75,6 +71,7 @@ import {
   resolveWizardLeadershipSkip,
   type WizardLeadershipTileViewModel,
 } from '@/lib/wizardLeadershipContract'
+import { WIZARD_THUMB_TILE_GRID_CLASS, WIZARD_THUMB_TILE_ITEM_CLASS } from '@/lib/wizardThumbGrid'
 import { fieldError } from '@/utilities/campaignFormFields'
 import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
 
@@ -235,12 +232,7 @@ export const WizardLeadershipStep = ({
             {tiles.length === 0 ? (
               <p className="text-sm text-muted-foreground">{WIZARD_LEADERSHIP_EMPTY_GRID}</p>
             ) : null}
-            <ul
-              className={cn(
-                WIZARD_THUMB_TILE_GRID_CLASS,
-                'md:grid-cols-3 lg:grid-cols-4',
-              )}
-            >
+            <ul className={cn(WIZARD_THUMB_TILE_GRID_CLASS, 'md:grid-cols-3 lg:grid-cols-4')}>
               {tiles.map((tile) => (
                 <li key={tile.id} className={WIZARD_THUMB_TILE_ITEM_CLASS}>
                   <LeadershipTileButton

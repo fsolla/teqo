@@ -45,9 +45,10 @@ test.describe('Wizard — header mobile (B75)', () => {
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`/campanha/acoes/atualizar-votos?municipio=${municipality.slug}`)
 
-    await expect(page.getByRole('heading', { name: 'Ajustar votos estimados' })).toBeVisible({
+    await expect(page.getByRole('main', { name: /Ação: Ajustar votos/i })).toBeVisible({
       timeout: 15000,
     })
+    await expect(page.getByRole('textbox', { name: 'Média' })).toBeVisible()
 
     const topBar = page.locator('[data-slot="campaign-mobile-top-bar"][data-mode="wizard"]')
     await expect(topBar.getByText('Ajustar votos', { exact: true })).toBeVisible()
