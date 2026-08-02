@@ -14,7 +14,7 @@ import {
 import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import { AT_STANDARD_LQ } from '@/lib/territorialClassAnchors'
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO, voteEstimateScenarioLabels } from '@/lib/voteEstimate'
-import type { CampaignUser, Municipality } from '@/payload-types'
+import type { Municipality } from '@/payload-types'
 import { formatRatioAsPercentLabel } from '@/utilities/municipality/goalCoverage'
 import { MUNICIPALITY_COLD_SIGNAL_DAYS } from '@/utilities/municipality/municipalitySignal'
 import type {
