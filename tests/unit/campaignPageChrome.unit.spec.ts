@@ -21,10 +21,13 @@ describe('campaignPageChrome', () => {
     })
   })
 
-  it('resolves detail pages with section title only', () => {
-    expect(resolveCampaignPageChrome('/campanha/municipios/cairu', 'coordinator')).toEqual({
-      title: 'Municípios',
-    })
+  it('returns null for entity detail pages (chrome set per route)', () => {
+    expect(resolveCampaignPageChrome('/campanha/municipios/cairu', 'coordinator')).toBeNull()
+    expect(resolveCampaignPageChrome('/campanha/liderancas/42', 'advisor')).toBeNull()
+    expect(resolveCampaignPageChrome('/campanha/atividades/foo', 'coordinator')).toBeNull()
+  })
+
+  it('keeps section title on parallel municipio v2 route (B147 soft-dep)', () => {
     expect(resolveCampaignPageChrome('/campanha/municipio/cairu/v2', 'coordinator')).toEqual({
       title: 'Municípios',
     })

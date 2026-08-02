@@ -102,8 +102,6 @@ const resolveCatalogEntry = (
     : { title: entry.title }
 }
 
-const sectionOnly = (title: string): CampaignPageChrome => ({ title })
-
 type PathRule = {
   match: (pathname: string) => boolean
   resolve: () => CampaignPageChrome | null
@@ -128,12 +126,12 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => /^\/campanha\/municipios\/[^/]+$/.test(pathname),
-    resolve: () => sectionOnly(campaignPageChromeCatalog.municipios.title),
+    resolve: () => null,
   },
   {
     // B147 parallel v2 — soft-dep B145 for entity name in chrome; section title for now.
     match: (pathname) => /^\/campanha\/municipio\/[^/]+\/v2$/.test(pathname),
-    resolve: () => sectionOnly(campaignPageChromeCatalog.municipios.title),
+    resolve: () => ({ title: campaignPageChromeCatalog.municipios.title }),
   },
   {
     match: (pathname) => pathname === '/campanha/territorios',
@@ -145,7 +143,7 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => /^\/campanha\/liderancas\/[^/]+$/.test(pathname),
-    resolve: () => sectionOnly(campaignPageChromeCatalog.liderancas.title),
+    resolve: () => null,
   },
   {
     match: (pathname) => pathname === '/campanha/liderancas',
@@ -157,7 +155,7 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => /^\/campanha\/dobradinhas\/[^/]+$/.test(pathname),
-    resolve: () => sectionOnly(campaignPageChromeCatalog.dobradinhas.title),
+    resolve: () => null,
   },
   {
     match: (pathname) => pathname === '/campanha/dobradinhas',
@@ -177,7 +175,7 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => /^\/campanha\/atividades\/[^/]+$/.test(pathname),
-    resolve: () => sectionOnly(campaignPageChromeCatalog.atividades.title),
+    resolve: () => null,
   },
   {
     match: (pathname) => pathname === '/campanha/atividades',
@@ -189,7 +187,7 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => /^\/campanha\/demandas\/[^/]+$/.test(pathname),
-    resolve: () => sectionOnly(campaignPageChromeCatalog.demandas.title),
+    resolve: () => null,
   },
   {
     match: (pathname) => pathname === '/campanha/demandas',
@@ -205,7 +203,7 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => /^\/campanha\/apoiadores\/[^/]+$/.test(pathname),
-    resolve: () => sectionOnly(campaignPageChromeCatalog.apoiadores.title),
+    resolve: () => null,
   },
   {
     match: (pathname) => pathname === '/campanha/apoiadores',
@@ -213,7 +211,7 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => /^\/campanha\/assessores\/[^/]+$/.test(pathname),
-    resolve: () => sectionOnly(campaignPageChromeCatalog.assessores.title),
+    resolve: () => null,
   },
   {
     match: (pathname) => pathname === '/campanha/assessores',
@@ -225,7 +223,7 @@ const pathRules: PathRule[] = [
   },
   {
     match: (pathname) => /^\/campanha\/organizacoes\/[^/]+$/.test(pathname),
-    resolve: () => sectionOnly(campaignPageChromeCatalog.organizacoes.title),
+    resolve: () => null,
   },
   {
     match: (pathname) => pathname === '/campanha/organizacoes',

@@ -1,19 +1,34 @@
 import config from '@payload-config'
-import { ArrowLeftIcon, HandshakeIcon, MapPinIcon } from 'lucide-react'
+import { HandshakeIcon, MapPinIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { StateDeputyForm } from '@/components/campaign/stateDeputy/StateDeputyForm'
 import { Badge } from '@/components/ui/Badge'
-import { Button } from '@/components/ui/button'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadStateDeputyDetail } from '@/utilities/stateDeputyData'
 import { updateStateDeputyFormAction } from './formActions'
 
-export const metadata = campaignPageMetadataFromCatalog('dobradinhas')
+export async function generateMetadata({ params }: StateDeputyDetailPageProps) {
+  const { slug } = await params
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
+
+  const stateDeputy = await loadStateDeputyDetail(payload, user, slug)
+  if (!stateDeputy) return campaignPageMetadata({ title: 'Dobradinha' })
+
+  return campaignPageMetadata(
+    stateDeputy.party
+      ? { title: stateDeputy.name, subtitle: stateDeputy.party }
+      : { title: stateDeputy.name },
+  )
+}
 
 type StateDeputyDetailPageProps = {
   params: Promise<{ slug: string }>
@@ -31,21 +46,16 @@ export default async function StateDeputyDetailPage({ params }: StateDeputyDetai
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-2">
-        <Button asChild variant="ghost" className="min-h-11 self-start">
-          <Link href="/campanha/dobradinhas">
-            <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
-            Voltar para dobradinhas
-          </Link>
-        </Button>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{stateDeputy.name}</h1>
-          {stateDeputy.party ? <Badge variant="secondary">{stateDeputy.party}</Badge> : null}
-        </div>
-        {stateDeputy.notes ? (
-          <p className="whitespace-pre-wrap text-sm text-muted-foreground">{stateDeputy.notes}</p>
-        ) : null}
-      </header>
+      <SetCampaignPageChrome
+        chrome={
+          stateDeputy.party
+            ? { title: stateDeputy.name, subtitle: stateDeputy.party }
+            : { title: stateDeputy.name }
+        }
+      />
+      {stateDeputy.notes ? (
+        <p className="whitespace-pre-wrap text-sm text-muted-foreground">{stateDeputy.notes}</p>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section

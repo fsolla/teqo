@@ -1,5 +1,5 @@
 import config from '@payload-config'
-import { ArrowLeftIcon, CalendarDaysIcon, HandshakeIcon } from 'lucide-react'
+import { CalendarDaysIcon, HandshakeIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
@@ -7,16 +7,30 @@ import { getPayload } from 'payload'
 import { ActivityStatusBadge } from '@/components/campaign/activity/ActivityStatusBadge'
 import { OrganizationForm } from '@/components/campaign/organization/OrganizationForm'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { Badge } from '@/components/ui/Badge'
-import { Button } from '@/components/ui/button'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { organizationKindLabels } from '@/lib/schemas/organization'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { loadOrganizationDetail } from '@/utilities/organizationData'
 import { updateOrganizationFormAction } from './formActions'
 
-export const metadata = campaignPageMetadataFromCatalog('organizacoes')
+export async function generateMetadata({ params }: OrganizationDetailPageProps) {
+  const { slug } = await params
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
+
+  const organization = await loadOrganizationDetail(payload, user, slug)
+  if (!organization) return campaignPageMetadata({ title: 'Organização' })
+
+  return campaignPageMetadata({
+    title: organization.name,
+    subtitle: organizationKindLabels[organization.kind],
+  })
+}
 
 type OrganizationDetailPageProps = {
   params: Promise<{ slug: string }>
@@ -38,26 +52,20 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-2">
-        <Button asChild variant="ghost" className="min-h-11 self-start">
-          <Link href="/campanha/organizacoes">
-            <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
-            Voltar para organizações
-          </Link>
-        </Button>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{organization.name}</h1>
-          <Badge variant="secondary">{organizationKindLabels[organization.kind]}</Badge>
-        </div>
-        {organization.municipalityNames.length ? (
-          <p className="text-muted-foreground">
-            Atua em {organization.municipalityNames.join(', ')}
-          </p>
-        ) : null}
-        {organization.notes ? (
-          <p className="whitespace-pre-wrap text-sm text-muted-foreground">{organization.notes}</p>
-        ) : null}
-      </header>
+      <SetCampaignPageChrome
+        chrome={{
+          title: organization.name,
+          subtitle: organizationKindLabels[organization.kind],
+        }}
+      />
+      {organization.municipalityNames.length ? (
+        <p className="text-muted-foreground">
+          Atua em {organization.municipalityNames.join(', ')}
+        </p>
+      ) : null}
+      {organization.notes ? (
+        <p className="whitespace-pre-wrap text-sm text-muted-foreground">{organization.notes}</p>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section

@@ -1,5 +1,5 @@
 import config from '@payload-config'
-import { ArrowLeftIcon, MapPinIcon } from 'lucide-react'
+import { MapPinIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
@@ -7,16 +7,28 @@ import { getPayload } from 'payload'
 import { AdvisorDebouncedTextCell } from '@/components/campaign/advisor/AdvisorDebouncedTextCell'
 import { AdvisorPasswordResetButton } from '@/components/campaign/advisor/AdvisorPasswordResetButton'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { Badge } from '@/components/ui/Badge'
-import { Button } from '@/components/ui/button'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { formatBrazilianPhoneInput } from '@/lib/phone'
 import { isPlanilhaPlaceholderEmail } from '@/lib/schemas/advisor'
 import { loadAdvisorDetail } from '@/utilities/advisorData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { sendAdvisorPasswordResetFormAction, updateAdvisorProfileFormAction } from '../formActions'
 
-export const metadata = campaignPageMetadataFromCatalog('assessores')
+export async function generateMetadata({ params }: AdvisorDetailPageProps) {
+  const { id: rawId } = await params
+  const advisorId = Number(rawId)
+  if (!Number.isInteger(advisorId) || advisorId <= 0) {
+    return campaignPageMetadata({ title: 'Assessor' })
+  }
+
+  const payload = await getPayload({ config })
+  const advisor = await loadAdvisorDetail(payload, advisorId)
+  if (!advisor) return campaignPageMetadata({ title: 'Assessor' })
+
+  return campaignPageMetadata({ title: 'Assessor', subtitle: advisor.name })
+}
 
 type AdvisorDetailPageProps = {
   params: Promise<{ id: string }>
@@ -39,19 +51,11 @@ export default async function AdvisorDetailPage({ params }: AdvisorDetailPagePro
 
   return (
     <CampaignPageShell>
-      <header className="flex flex-col gap-2">
-        <Button asChild variant="ghost" className="min-h-11 self-start">
-          <Link href="/campanha/assessores">
-            <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
-            Voltar para assessores
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-semibold tracking-tight">{advisor.name}</h1>
-        <p className="text-muted-foreground">
-          E-mail e celular salvam sozinhos ao digitar. A carteira de municípios é editada no modo
-          edição da lista.
-        </p>
-      </header>
+      <SetCampaignPageChrome chrome={{ title: 'Assessor', subtitle: advisor.name }} />
+      <p className="text-muted-foreground">
+        E-mail e celular salvam sozinhos ao digitar. A carteira de municípios é editada no modo
+        edição da lista.
+      </p>
 
       <section aria-labelledby="advisor-account-title" className="flex flex-col gap-2">
         <h2 id="advisor-account-title" className="text-base font-medium">
