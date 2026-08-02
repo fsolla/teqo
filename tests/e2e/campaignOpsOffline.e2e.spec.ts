@@ -144,7 +144,13 @@ test.describe('OH12 municipality list Local', () => {
     )
 
     await page.context().setOffline(true)
-    await page.getByLabel('Buscar município').fill(municipality.name)
+    await expect(
+      page.getByText('Edição na lista disponível quando estiveres online.'),
+    ).toBeVisible()
+
+    const search = page.getByLabel('Buscar município')
+    await search.fill(municipality.name)
+    await search.press('Enter')
 
     await expect(page.getByRole('heading', { name: 'Municípios' })).toBeVisible()
     await expect(
