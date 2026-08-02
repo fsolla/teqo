@@ -49,7 +49,7 @@ Hoje o wizard (B94) só prefixa quando a permissão já está `granted` (prompt 
 
 - **Vou apresentar dados?** Sim — 0–1 município resolvido por geo, usado só para **ordenar** a lista.
 - **Decisões desbloqueadas:** staff — “escolho **este** município agora (onde estou / mais perto no meu escopo)?”
-- **Forma:** *adiada ao plano de implementação* — restrição de produto: proximidade **não** vira copy/KPI na row (só ordem); sem % estadual; sem telemetria de posição.
+- **Forma:** _adiada ao plano de implementação_ — restrição de produto: proximidade **não** vira copy/KPI na row (só ordem); sem % estadual; sem telemetria de posição.
 
 ## Direção no codebase (hipótese)
 
