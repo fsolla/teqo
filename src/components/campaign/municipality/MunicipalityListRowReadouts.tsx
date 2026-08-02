@@ -2,7 +2,6 @@
 
 import { CircleAlertIcon } from 'lucide-react'
 
-import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
 import {
@@ -20,7 +19,7 @@ import type { MunicipalityListViewModel } from '@/utilities/municipality/municip
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
-/** E10 classe readout — shared by the table column and the mobile card (B42). */
+/** E10 classe readout — table column (mobile card dropped classe in B120). */
 export const TerritorialClassReadout = ({
   municipality,
 }: {
@@ -85,22 +84,3 @@ export const SignalAgeReadout = ({
     </div>
   )
 }
-
-export const TerritorialClassCardReadout = ({
-  municipality,
-}: {
-  municipality: MunicipalityListViewModel
-}) => (
-  <CampaignHoverTooltip
-    content={
-      municipality.territorialClass === 'sem_base'
-        ? null
-        : formatTerritorialClassWhy(municipality.territorialClassFactors)
-    }
-    align="start"
-  >
-    <span className="relative inline-flex items-center">
-      <TerritorialClassReadout municipality={municipality} />
-    </span>
-  </CampaignHoverTooltip>
-)

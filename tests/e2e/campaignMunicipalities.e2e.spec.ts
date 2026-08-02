@@ -54,9 +54,14 @@ test.describe('Municípios — list header mobile (B118)', () => {
     await expect(heading).toHaveClass(/sr-only/)
     const headingBox = await heading.boundingBox()
     expect(headingBox?.height ?? 0).toBeLessThanOrEqual(2)
-    await expect(page.locator('header p')).toBeHidden()
+    // Scope to the list page header (description is `hidden md:block`); avoid
+    // strict-mode flakes if React mounts more than one matching `<p>`.
+    const pageHeader = page.locator('header').filter({ has: heading })
+    await expect(pageHeader.locator('p')).toBeHidden()
     await expect(page.locator('[data-scope="campaign"]')).toBeHidden()
-    await expect(page.getByLabel('Buscar município')).toBeVisible()
+    // B120: mobile uses the filter combobox; desktop search stays md+ only.
+    await expect(page.getByLabel('Filtrar municípios')).toBeVisible()
+    await expect(page.getByLabel('Buscar município')).toBeHidden()
     await expect(page.getByText(/\d+ municípios encontrados/)).toBeVisible()
   })
 })
@@ -440,15 +445,11 @@ test.describe('Municípios — cards no celular (B42)', () => {
 
     // Anywhere outside a control is the município's own link: the click lands on
     // the stretched `after:inset-0` overlay, which belongs to the card heading.
-    // The tap goes on a field LABEL inside the metrics grid on purpose — the
-    // first version of this card positioned each grid cell instead of each
-    // control, which lifted the labels and their padding above the overlay and
-    // made half the card a tap that neither edited nor navigated.
-    // `force`: Playwright's hit-target check retries forever here precisely
-    // BECAUSE the stretched overlay intercepts the pointer — which is the
-    // behavior under test. Force dispatches the tap at the label's point, the
-    // overlay receives it (as a user's finger would), and the card navigates.
-    await card.getByText('Tendência', { exact: true }).click({ force: true })
+    // B120 densified the card (no "Tendência" dt label). Do NOT tap the territory
+    // line — `TerritoryLink` is `relative` above the overlay on purpose. Tap the
+    // heading text; `force` because Playwright's hit-target check retries forever
+    // when the overlay intercepts — which is the behavior under test.
+    await card.getByRole('heading', { name: municipality.name }).click({ force: true })
     await expect(page).toHaveURL(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
     await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
   })

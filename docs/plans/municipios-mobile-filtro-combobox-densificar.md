@@ -1,13 +1,28 @@
 # Municípios mobile — filtro combobox + densificar lista
 
-Status: ready
-Atualizado em: 2026-08-01
+Status: implemented
+Atualizado em: 2026-08-02
 Issue: #207
 Priority: P1
 Model: cursor-grok-4.5-medium
 Impeccable: C — UI nova do filtro + critique do card (lista existente)
 Appetite: ~2 dias eng; combobox multi-filtro + remoções + critique/polish do card; URL B18 intacta; sem migration
-Responsável: —
+Responsável: pool worker
+
+## Freshness audit (2026-08-02)
+
+- Arquivos citados existem; `municipalityFilterDefinitions` / toggles / `useCampaignListFilterNavigation` / `StrictCombobox`+`ui/combobox` intactos.
+- B119 (`#206`) done+in-prod — hit-target `relative` no `CampaignCellEditOverlay` já verde.
+- B118 ainda in-progress — soft serialize; este item **não** remove o h1 (fica com B118).
+- Overview no desktop: manter `md+` (recomendação A).
+- Sem migration / schema.
+
+## Entrega
+
+- Mobile: `MunicipalityMobileFilterCombobox` (Filter + chips + typeahead) sobre B18.
+- Overview KPI + sort notice: `hidden` &lt;md.
+- Cards densificados (cobertura/nível + controles; sem Classe/2022).
+- Pins unit: chip/URL round-trip; filter navigation atualizado.
 
 ## Design (Impeccable)
 

@@ -34,12 +34,34 @@ type FilterCase = {
   /**
    * A `key|dir` from the list's own sort options that is NOT its default —
    * otherwise `sort=` drops out of the canonical href and the assertion fails
-   * for a reason unrelated to the hook.
+   * for a reason unrelated to the hook. Used by shells that still expose
+   * NativeSelect "Ordenar"; municípios (B120) use `navigateSecondary` instead.
    */
   sortValue: string
+  /** Href after secondary nav with `q=silva` carried. */
+  hrefWithQueryAndSecondary: string
+  /** Href after secondary nav with no query. */
+  hrefWithSecondary: string
+  /**
+   * Non-search control that navigates. Default: change NativeSelect "Ordenar".
+   * Municípios: pick a combobox filter option (sort NativeSelect removed in B120).
+   */
+  navigateSecondary: (filterCase: FilterCase) => void
   element: (currentQuery?: string) => ReactElement
   /** Same shell with `sortValue` already committed — an external navigation. */
   elementWithSort: () => ReactElement
+}
+
+const navigateViaSortSelect = (filterCase: FilterCase) => {
+  fireEvent.change(screen.getByLabelText('Ordenar'), { target: { value: filterCase.sortValue } })
+}
+
+const navigateViaMunicipalityPriorityOption = () => {
+  const combobox = screen.getByRole('combobox', { name: 'Filtrar municípios' })
+  fireEvent.focus(combobox)
+  // Open the list and land on the first staff option (Prioridade · Prioritária).
+  fireEvent.keyDown(combobox, { key: 'ArrowDown' })
+  fireEvent.keyDown(combobox, { key: 'Enter' })
 }
 
 const filterCases: FilterCase[] = [
@@ -49,6 +71,9 @@ const filterCases: FilterCase[] = [
     hrefWithQuery: '/campanha/dobradinhas?q=silva',
     bareHref: '/campanha/dobradinhas',
     sortValue: 'party|asc',
+    hrefWithQueryAndSecondary: '/campanha/dobradinhas?q=silva&sort=party',
+    hrefWithSecondary: '/campanha/dobradinhas?sort=party',
+    navigateSecondary: navigateViaSortSelect,
     element: (currentQuery) =>
       createElement(StateDeputyFilters, {
         state: { page: 1, ...(currentQuery ? { q: currentQuery } : {}) },
@@ -68,6 +93,9 @@ const filterCases: FilterCase[] = [
     hrefWithQuery: '/campanha/territorios?q=silva',
     bareHref: '/campanha/territorios',
     sortValue: 'region|asc',
+    hrefWithQueryAndSecondary: '/campanha/territorios?q=silva&sort=region',
+    hrefWithSecondary: '/campanha/territorios?sort=region',
+    navigateSecondary: navigateViaSortSelect,
     element: (currentQuery) =>
       createElement(TerritoryFilters, {
         state: { page: 1, ...(currentQuery ? { q: currentQuery } : {}) },
@@ -85,6 +113,9 @@ const filterCases: FilterCase[] = [
     hrefWithQuery: '/campanha/municipios?q=silva',
     bareHref: '/campanha/municipios',
     sortValue: 'name|asc',
+    hrefWithQueryAndSecondary: '/campanha/municipios?priority=alta',
+    hrefWithSecondary: '/campanha/municipios?priority=alta',
+    navigateSecondary: navigateViaMunicipalityPriorityOption,
     element: (currentQuery) =>
       createElement(
         MunicipalityEstimateScenarioProvider,
@@ -135,10 +166,10 @@ const searchInput = (label: string) => screen.getByLabelText(label) as HTMLInput
 /**
  * `dir` never appears in these: every `sortValue` here is an `asc` key, which is
  * each list's default direction, so the canonical serializer drops it.
+ * Municípios secondary is priority (B120 combobox), not sort — see
+ * `hrefWithQueryAndSecondary`.
  */
 const sortKeyOf = ({ sortValue }: FilterCase) => sortValue.split('|')[0]
-const hrefWithSort = (filterCase: FilterCase) =>
-  `${filterCase.bareHref}?sort=${sortKeyOf(filterCase)}`
 const hrefWithQueryAndSort = (filterCase: FilterCase) =>
   `${filterCase.bareHref}?q=silva&sort=${sortKeyOf(filterCase)}`
 
@@ -235,18 +266,27 @@ describe('campaign list filter navigation', () => {
   it.each(filterCases)(
     '$name: carries the uncommitted search when another control navigates',
     (filterCase) => {
-      const { searchLabel, sortValue } = filterCase
+      const { searchLabel, navigateSecondary, hrefWithQueryAndSecondary, name } = filterCase
       mountCase(filterCase)
 
       typeSearch(searchLabel, 'silva')
-      fireEvent.change(screen.getByLabelText('Ordenar'), { target: { value: sortValue } })
+      navigateSecondary(filterCase)
 
       expect(routerState.replace).toHaveBeenCalledTimes(1)
-      expect(routerState.replace).toHaveBeenCalledWith(hrefWithQueryAndSort(filterCase), {
+      expect(routerState.replace).toHaveBeenCalledWith(hrefWithQueryAndSecondary, {
         scroll: false,
       })
 
-      // The sort consumed the pending search; the timer must not fire a second one.
+      // Municípios B120: a combobox pick must NOT commit the typeahead draft as
+      // `q` (prefix text ≠ município name). Other shells still carry the draft.
+      if (name !== 'municípios') {
+        expect(hrefWithQueryAndSecondary).toContain('q=silva')
+      } else {
+        expect(hrefWithQueryAndSecondary).not.toContain('q=')
+      }
+
+      // The secondary control consumed the pending search; the timer must not
+      // fire a second navigation.
       advance(SEARCH_DEBOUNCE_MS)
       expect(routerState.replace).toHaveBeenCalledTimes(1)
     },
@@ -287,7 +327,7 @@ describe('campaign list filter navigation', () => {
   it.each(filterCases)(
     '$name: follows the URL when the committed query is dropped from outside the shell',
     (filterCase) => {
-      const { searchLabel, element } = filterCase
+      const { searchLabel, element, navigateSecondary, hrefWithSecondary } = filterCase
       const { rerenderWith } = mountCase(filterCase, 'silva')
 
       // The empty state's "Limpar busca e filtros" is an anchor: it drops `q`
@@ -296,10 +336,8 @@ describe('campaign list filter navigation', () => {
       expect(searchInput(searchLabel).value).toBe('')
 
       // The box must not put the dropped query back on the next filter touch.
-      fireEvent.change(screen.getByLabelText('Ordenar'), {
-        target: { value: filterCase.sortValue },
-      })
-      expect(routerState.replace).toHaveBeenCalledWith(hrefWithSort(filterCase), { scroll: false })
+      navigateSecondary(filterCase)
+      expect(routerState.replace).toHaveBeenCalledWith(hrefWithSecondary, { scroll: false })
     },
   )
 
