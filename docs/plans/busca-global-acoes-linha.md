@@ -69,7 +69,7 @@ flowchart LR
 
 ## Não escopo
 
-Bridge D3–D5. Preview de mensagem rica. Municípios/TIs.
+Bridge WhatsApp (D3–D5, **wont do** 2026-08-01). Preview de mensagem rica. Municípios/TIs.
 
 ## Rabbit holes
 
