@@ -22,12 +22,9 @@ type EditActivityPageProps = {
   params: Promise<{ slug: string }>
 }
 
-const activityEditSubtitle = 'Atualize os detalhes da atividade sem alterar o título original.'
-
 export async function generateMetadata({ params }: EditActivityPageProps) {
   const { slug } = await params
-  if (!slug)
-    return campaignPageMetadata({ title: 'Editar atividade', subtitle: activityEditSubtitle })
+  if (!slug) return campaignPageMetadata({ title: 'Editar atividade' })
 
   const [user, payload] = await Promise.all([
     requireCampaignPageActor({ gate: 'staff', redirectTo: '/campanha/atividades' }),
@@ -36,9 +33,9 @@ export async function generateMetadata({ params }: EditActivityPageProps) {
 
   try {
     const view = await getActivityEditPageData(payload, user, slug)
-    return campaignPageMetadata({ title: `Editar ${view.title}`, subtitle: activityEditSubtitle })
+    return campaignPageMetadata({ title: `Editar ${view.title}` })
   } catch {
-    return campaignPageMetadata({ title: 'Editar atividade', subtitle: activityEditSubtitle })
+    return campaignPageMetadata({ title: 'Editar atividade' })
   }
 }
 
@@ -63,9 +60,7 @@ export default async function EditActivityPage({ params }: EditActivityPageProps
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-      <SetCampaignPageChrome
-        chrome={{ title: `Editar ${view.title}`, subtitle: activityEditSubtitle }}
-      />
+      <SetCampaignPageChrome chrome={{ title: `Editar ${view.title}` }} />
       <ActivityForm
         action={updateActivityFormAction}
         activity={view}

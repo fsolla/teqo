@@ -9,6 +9,7 @@ import { getPayload } from 'payload'
 import { RecentVisitTracker } from '@/components/campaign/dashboard/RecentVisitTracker'
 import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
 import { MunicipalityFilters } from '@/components/campaign/municipality/MunicipalityFilters'
+import { MunicipalityListPageChrome } from '@/components/campaign/municipality/MunicipalityListPageChrome'
 import { MunicipalityList } from '@/components/campaign/municipality/MunicipalityList'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
@@ -150,6 +151,7 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
 
   return (
     <CampaignPageShell>
+      <MunicipalityListPageChrome />
       {main}
       {listVisitLabel ? (
         <RecentVisitTracker

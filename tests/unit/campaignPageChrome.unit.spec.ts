@@ -12,11 +12,12 @@ describe('campaignPageChrome', () => {
     expect(resolveCampaignPageChrome('/campanha/', 'advisor')).toBeNull()
   })
 
-  it('resolves section list chrome', () => {
+  it('resolves section list chrome without prose subtitle', () => {
     expect(resolveCampaignPageChrome('/campanha/municipios', 'coordinator')).toEqual({
       title: 'Municípios',
-      subtitle:
-        'Os 435 municípios da campanha: um por município da Bahia — em Salvador, uma zona eleitoral cada.',
+    })
+    expect(resolveCampaignPageChrome('/campanha/liderancas', 'advisor')).toEqual({
+      title: 'Lideranças',
     })
   })
 
@@ -26,12 +27,19 @@ describe('campaignPageChrome', () => {
     })
   })
 
-  it('uses role-based subtitle for quadro', () => {
-    expect(resolveCampaignPageChrome('/campanha/quadro', 'advisor')?.subtitle).toContain(
-      'sua assessoria',
+  it('resolves quadro without role-based prose subtitle', () => {
+    expect(resolveCampaignPageChrome('/campanha/quadro', 'advisor')).toEqual({ title: 'Quadro' })
+    expect(resolveCampaignPageChrome('/campanha/quadro', 'coordinator')).toEqual({
+      title: 'Quadro',
+    })
+  })
+
+  it('keeps prose subtitle on out-of-scope sections', () => {
+    expect(resolveCampaignPageChrome('/campanha/conceitos', 'coordinator')?.subtitle).toContain(
+      'cada número',
     )
-    expect(resolveCampaignPageChrome('/campanha/quadro', 'coordinator')?.subtitle).toContain(
-      'geral',
+    expect(resolveCampaignPageChrome('/campanha/perfil', 'coordinator')?.subtitle).toContain(
+      'biometria',
     )
   })
 
