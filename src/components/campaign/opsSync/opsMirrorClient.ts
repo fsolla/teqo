@@ -37,13 +37,8 @@ const createRowCollection = <T extends { id: number }>(id: string) =>
   )
 
 export const municipalitiesCollection = createRowCollection<OpsMunicipality>('ops-municipalities')
-<<<<<<< HEAD
-const leadershipsCollection = createRowCollection<OpsLeadership>('ops-leaderships')
-export { votePledgesCollection } from '@/components/campaign/opsSync/opsVotePledgeMirror'
-=======
 export const leadershipsCollection = createRowCollection<OpsLeadership>('ops-leaderships')
-export const votePledgesCollection = createRowCollection<OpsVotePledge>('ops-vote-pledges')
->>>>>>> 719e35ce (OH9: dual-path municipality detail (HeaderView + Local + OfflineBoundary))
+export { votePledgesCollection }
 const activitiesCollection = createRowCollection<OpsActivity>('ops-activities')
 const stateDeputiesCollection = createRowCollection<OpsStateDeputy>('ops-state-deputies')
 const organizationsCollection = createRowCollection<OpsOrganization>('ops-organizations')
