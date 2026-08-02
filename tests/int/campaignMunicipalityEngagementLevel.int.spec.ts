@@ -41,7 +41,6 @@ describe('municipality engagement level (E14)', () => {
       municipality: municipality.id,
       level: 'n3',
       note: 'Prefeitura aliada e duas lideranças novas.',
-      reversalSignals: 'Rompimento do prefeito ou pledges abaixo de 40% da meta.',
     })
     fixtures.touchMunicipality(municipality.id)
 
@@ -61,10 +60,32 @@ describe('municipality engagement level (E14)', () => {
     expect(decision.snapshot).toMatchObject({
       from: null,
       to: 'n3',
-      reversalSignals: 'Rompimento do prefeito ou pledges abaixo de 40% da meta.',
       violations: [],
       overridden: false,
     })
+    expect(decision.snapshot).not.toHaveProperty('reversalSignals')
+  })
+
+  it('accepts an empty motivo and still writes the movement', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+
+    const updated = await setMunicipalityEngagementLevelRecord(payload, coordinator, {
+      municipality: municipality.id,
+      level: 'n1',
+      note: null,
+    })
+    fixtures.touchMunicipality(municipality.id)
+
+    expect(updated.engagementLevel).toBe('n1')
+    expect(updated.levelNote).toBeNull()
+
+    const decisions = await findDecisions(municipality.id)
+    expect(decisions.docs).toHaveLength(1)
+    const decision = decisions.docs[0]!
+    fixtures.own('allocationDecision', decision.id)
+    expect(decision.rationale).toBe('Sem motivo registrado.')
   })
 
   it('holds a movement that breaks the rules and writes nothing', async () => {
@@ -76,7 +97,6 @@ describe('municipality engagement level (E14)', () => {
       municipality: municipality.id,
       level: 'n1',
       note: 'Entrada no mapa como presença de mandato.',
-      reversalSignals: 'Nenhuma agenda executada no trimestre.',
     })
     fixtures.touchMunicipality(municipality.id)
 
@@ -86,7 +106,6 @@ describe('municipality engagement level (E14)', () => {
       municipality: municipality.id,
       level: 'n3',
       note: 'Achismo da semana.',
-      reversalSignals: 'Nada.',
     }).catch((error: unknown) => error)
 
     expect(blocked).toBeInstanceOf(EngagementLevelBlockedError)
@@ -115,7 +134,6 @@ describe('municipality engagement level (E14)', () => {
       municipality: municipality.id,
       level: 'n1',
       note: 'Entrada no mapa.',
-      reversalSignals: 'Agenda vazia por um trimestre.',
     })
     fixtures.touchMunicipality(municipality.id)
 
@@ -123,7 +141,6 @@ describe('municipality engagement level (E14)', () => {
       municipality: municipality.id,
       level: 'n2',
       note: 'Adversário abriu comitê e o prefeito pediu presença.',
-      reversalSignals: 'Comitê adversário fechar.',
       override: true,
     })
     expect(moved.engagementLevel).toBe('n2')
@@ -164,7 +181,6 @@ describe('municipality engagement level (E14)', () => {
       municipality: municipality.id,
       level: 'n3',
       note: 'Três sinais independentes de invasão na mesma semana.',
-      reversalSignals: 'Adversário recuar do território.',
       triangulatedShock: true,
     })
     expect(moved.engagementLevel).toBe('n3')
@@ -191,7 +207,6 @@ describe('municipality engagement level (E14)', () => {
         municipality: municipality.id,
         level: 'n2',
         note: 'Quero subir o meu município.',
-        reversalSignals: 'Nada.',
       }),
     ).rejects.toThrow('coordenação geral ou o candidato')
 
@@ -218,7 +233,6 @@ describe('municipality engagement level (E14)', () => {
       municipality: municipality.id,
       level: 'n4',
       note: 'Prioridade máxima do ciclo.',
-      reversalSignals: 'Queda de captura por dois meses.',
     })
     fixtures.touchMunicipality(municipality.id)
     const decisions = await findDecisions(municipality.id)

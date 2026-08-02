@@ -114,6 +114,13 @@ describe('campaign municipality update domain', () => {
         body: 'Visita adversária confirmada.',
       }).success,
     ).toBe(false)
+    expect(
+      municipalityUpdateCreateSchema.safeParse({
+        municipality: 1,
+        kind: 'sinal',
+        signalType: 'invasao',
+      }).success,
+    ).toBe(true)
   })
 
   it('strips forged author and timestamps from input', () => {

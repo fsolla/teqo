@@ -27,9 +27,12 @@ export const revalidateMunicipalityListPaths = ({
   if (scope === 'detail' || scope === 'both') {
     if (detailSlug) {
       revalidatePath(`/campanha/municipios/${detailSlug}`, 'page')
+      // B147 parallel v2 surface — same municipality, singular path.
+      revalidatePath(`/campanha/municipio/${detailSlug}/v2`, 'page')
       return
     }
 
     revalidatePath('/campanha/municipios/[slug]', 'page')
+    revalidatePath('/campanha/municipio/[slug]/v2', 'page')
   }
 }
