@@ -9,6 +9,7 @@ const routerState = vi.hoisted(() => ({
 
 vi.mock('next/navigation', async (importActual) => ({
   ...(await importActual()),
+  usePathname: () => '/campanha/acoes/atualizar-votos',
   useRouter: () => ({
     push: (...args: unknown[]) => routerState.push(...args),
     replace: vi.fn(),
@@ -17,6 +18,7 @@ vi.mock('next/navigation', async (importActual) => ({
 
 import { CampaignListPendingBoundary } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
+import { CampaignPageChromeProvider } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
 import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { SidebarProvider } from '@/components/ui/Sidebar'
@@ -26,10 +28,11 @@ import { stubMatchMedia } from '../helpers/matchMedia'
 const mountWizardNavigation = () =>
   render(
     <SidebarProvider>
-      <CampaignWizardChromeProvider>
-        <CampaignListPendingBoundary>
-          <CampaignMobileTopBar />
-          <CampaignWizardShell
+      <CampaignPageChromeProvider role="coordinator">
+        <CampaignWizardChromeProvider>
+          <CampaignListPendingBoundary>
+            <CampaignMobileTopBar />
+            <CampaignWizardShell
             flowTitle="Ajustar votos"
             stepTitle="Quantos votos?"
             isEntryStep={false}
@@ -41,6 +44,7 @@ const mountWizardNavigation = () =>
           </CampaignWizardShell>
         </CampaignListPendingBoundary>
       </CampaignWizardChromeProvider>
+      </CampaignPageChromeProvider>
     </SidebarProvider>,
   )
 

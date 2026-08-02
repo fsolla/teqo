@@ -2,6 +2,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('next/navigation', () => ({
+  usePathname: () => '/campanha/acoes/atualizar-votos',
   useRouter: () => ({
     push: vi.fn(),
     replace: vi.fn(),
@@ -9,6 +10,7 @@ vi.mock('next/navigation', () => ({
 }))
 
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
+import { CampaignPageChromeProvider } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
 import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { SidebarProvider } from '@/components/ui/Sidebar'
@@ -18,10 +20,12 @@ import { stubMatchMedia } from '../helpers/matchMedia'
 const renderWizardShell = (props: React.ComponentProps<typeof CampaignWizardShell>) =>
   render(
     <SidebarProvider>
-      <CampaignWizardChromeProvider>
-        <CampaignMobileTopBar />
-        <CampaignWizardShell {...props} />
-      </CampaignWizardChromeProvider>
+      <CampaignPageChromeProvider role="coordinator">
+        <CampaignWizardChromeProvider>
+          <CampaignMobileTopBar />
+          <CampaignWizardShell {...props} />
+        </CampaignWizardChromeProvider>
+      </CampaignPageChromeProvider>
     </SidebarProvider>,
   )
 
@@ -104,35 +108,39 @@ describe('CampaignWizardShell', () => {
   it('skips title focus when contentFocus is none', () => {
     const { rerender } = render(
       <SidebarProvider>
-        <CampaignWizardChromeProvider>
-          <CampaignMobileTopBar />
-          <CampaignWizardShell
-            flowTitle="Ajustar votos"
-            stepTitle="Passo 1"
-            isEntryStep
-            previousHref="/campanha"
-            contentFocus="none"
-          >
-            <input aria-label="Primeiro campo" />
-          </CampaignWizardShell>
-        </CampaignWizardChromeProvider>
+        <CampaignPageChromeProvider role="coordinator">
+          <CampaignWizardChromeProvider>
+            <CampaignMobileTopBar />
+            <CampaignWizardShell
+              flowTitle="Ajustar votos"
+              stepTitle="Passo 1"
+              isEntryStep
+              previousHref="/campanha"
+              contentFocus="none"
+            >
+              <input aria-label="Primeiro campo" />
+            </CampaignWizardShell>
+          </CampaignWizardChromeProvider>
+        </CampaignPageChromeProvider>
       </SidebarProvider>,
     )
 
     rerender(
       <SidebarProvider>
-        <CampaignWizardChromeProvider>
-          <CampaignMobileTopBar />
-          <CampaignWizardShell
-            flowTitle="Ajustar votos"
-            stepTitle="Passo 2"
-            isEntryStep
-            previousHref="/campanha"
-            contentFocus="none"
-          >
-            <input aria-label="Primeiro campo" />
-          </CampaignWizardShell>
-        </CampaignWizardChromeProvider>
+        <CampaignPageChromeProvider role="coordinator">
+          <CampaignWizardChromeProvider>
+            <CampaignMobileTopBar />
+            <CampaignWizardShell
+              flowTitle="Ajustar votos"
+              stepTitle="Passo 2"
+              isEntryStep
+              previousHref="/campanha"
+              contentFocus="none"
+            >
+              <input aria-label="Primeiro campo" />
+            </CampaignWizardShell>
+          </CampaignWizardChromeProvider>
+        </CampaignPageChromeProvider>
       </SidebarProvider>,
     )
 
@@ -144,33 +152,37 @@ describe('CampaignWizardShell', () => {
   it('moves focus to the step title when stepTitle changes', () => {
     const { rerender } = render(
       <SidebarProvider>
-        <CampaignWizardChromeProvider>
-          <CampaignMobileTopBar />
-          <CampaignWizardShell
-            flowTitle="Ajustar votos"
-            stepTitle="Passo 1"
-            isEntryStep
-            previousHref="/campanha"
-          >
-            Corpo
-          </CampaignWizardShell>
-        </CampaignWizardChromeProvider>
+        <CampaignPageChromeProvider role="coordinator">
+          <CampaignWizardChromeProvider>
+            <CampaignMobileTopBar />
+            <CampaignWizardShell
+              flowTitle="Ajustar votos"
+              stepTitle="Passo 1"
+              isEntryStep
+              previousHref="/campanha"
+            >
+              Corpo
+            </CampaignWizardShell>
+          </CampaignWizardChromeProvider>
+        </CampaignPageChromeProvider>
       </SidebarProvider>,
     )
 
     rerender(
       <SidebarProvider>
-        <CampaignWizardChromeProvider>
-          <CampaignMobileTopBar />
-          <CampaignWizardShell
-            flowTitle="Ajustar votos"
-            stepTitle="Passo 2"
-            isEntryStep
-            previousHref="/campanha"
-          >
-            Corpo
-          </CampaignWizardShell>
-        </CampaignWizardChromeProvider>
+        <CampaignPageChromeProvider role="coordinator">
+          <CampaignWizardChromeProvider>
+            <CampaignMobileTopBar />
+            <CampaignWizardShell
+              flowTitle="Ajustar votos"
+              stepTitle="Passo 2"
+              isEntryStep
+              previousHref="/campanha"
+            >
+              Corpo
+            </CampaignWizardShell>
+          </CampaignWizardChromeProvider>
+        </CampaignPageChromeProvider>
       </SidebarProvider>,
     )
 
