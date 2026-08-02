@@ -46,6 +46,13 @@ Modules the 2026-07 hardening phases touch, and where their behavior is pinned:
 | Entity list loaders (Pass 2 W0)                                                                  | scope (leader empty/denied), marker-narrowed q, kind/status filters, pagination shape                                                                         | `campaignEntityListData.int.spec.ts`                                                                                                                                           | advisor loader runs post-gate with `overrideAccess: true` (gate asserted upstream)     |
 | Codebase conventions (tooling guards, 2026-07-25)                                                | `server-only` on Payload-coupled utilities; Praça/Núcleo copy ban; eslint legacy-ignore existence; formActions wrapper usage                                  | `codebaseConventions.unit.spec.ts`                                                                                                                                             | boundary rules themselves live in ESLint (`no-restricted-imports`) + madge in CI       |
 
+## What to pin (and what not to)
+
+- **Pin behavior and structure:** roles, `aria-*`, `data-slot` / `data-*` contracts, hrefs, parsed URL state, access denials, loader shapes, exported CSS _constants_ when the constant _is_ the API (`HOME_SEARCH_GROUP_LIST_CLASS`).
+- **Do not pin Tailwind utility strings for layout geometry** (`expect(el.className).toContain('px-4')`, `-mx-4`, `w-[calc(100%+2rem)]`, `gap-1`, `pb-2`, …). Those freeze compensatory layers and block the honest fix (move inset ownership up the tree). Prefer: slot presence, `data-*` ownership flags, computed box in e2e, or no pin.
+- **Selected / pressed visual state:** prefer `aria-pressed` / `data-state` / role over matching `border-primary` in `className`.
+- Exception: a unit that pins an **exported** class-name constant may assert equality to that constant — not a free-floating utility substring invented in the test.
+
 ## Characterization Backlog
 
 - [ ] `src/utilities/posts.ts` — dedicated spec for `isPostVisible` fail-closed matrix and cache wrappers (confirmed 2026-07-28, Pass 3 audit).

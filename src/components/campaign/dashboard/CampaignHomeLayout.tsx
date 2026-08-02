@@ -59,7 +59,7 @@ export const CampaignHomeLayout = ({
     >
       <div className="flex h-full min-h-0 flex-col">
         {summarySlot ? (
-          <div className="min-w-0" data-slot="home-summary">
+          <div className="min-w-0 mx-4" data-slot="home-summary">
             {summarySlot}
           </div>
         ) : null}
@@ -75,7 +75,7 @@ export const CampaignHomeLayout = ({
       >
         <div
           data-slot="home-actions"
-          className="min-w-0 -mx-4 w-[calc(100%+2rem)] md:mx-0 md:w-auto"
+          className="min-w-0 -mx-4 w-[calc(100%+2rem)] md:mx-0 md:w-auto px-4"
         >
           {actions}
         </div>
@@ -83,7 +83,10 @@ export const CampaignHomeLayout = ({
       {searchSlot ? (
         <div
           data-slot="home-search"
-          className={cn('order-2 min-w-0 md:order-1', focused ? 'mt-0' : 'mt-4 md:mt-0 md:mb-6')}
+          className={cn(
+            'order-2 min-w-0 md:order-1 mx-4',
+            focused ? 'mt-0' : 'mt-4 md:mt-0 md:mb-6',
+          )}
         >
           {searchSlot}
         </div>

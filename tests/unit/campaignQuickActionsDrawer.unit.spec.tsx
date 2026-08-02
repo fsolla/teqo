@@ -150,7 +150,7 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
     expect(screen.getByRole('button', { name: 'Mostrar ações rápidas' })).toBeTruthy()
   })
 
-  it('bleeds the action strip edge-to-edge inside the drawer gutter (B101)', () => {
+  it('mounts the action strip inside the drawer context (B101)', () => {
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
       payload: idleSuggestPayload,
@@ -171,10 +171,8 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
     )
 
     const context = document.getElementById('quickActionContext')
-    const stripBleed = context?.firstElementChild
-    expect(stripBleed?.className).toContain('-mx-4')
-    expect(stripBleed?.className).toContain('w-[calc(100%+2rem)]')
-    expect(stripBleed?.querySelector('[aria-label="Ações rápidas"]')).not.toBeNull()
+    expect(context?.querySelector('[aria-label="Ações rápidas"]')).not.toBeNull()
+    expect(screen.getByRole('link', { name: 'Registrar' })).toBeTruthy()
   })
 
   it('posts home-search when the drawer query is active', async () => {
@@ -365,7 +363,7 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
     expect((screen.getByLabelText('Buscar na campanha') as HTMLInputElement).value).toBe('')
   })
 
-  it('uses compact bottom stack spacing in the drawer (B112)', () => {
+  it('keeps search results under the drawer search stack (B112)', () => {
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
       payload: idleSuggestPayload,
@@ -374,11 +372,10 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
     renderQuickActionsChrome(<CampaignQuickActionsDrawer actions={[]} />)
 
     const context = document.getElementById('quickActionContext')
-    expect(context?.className).toContain('gap-1')
-    expect(context?.className).toContain('pb-[max(0.25rem,env(safe-area-inset-bottom,0px))]')
-
-    const searchStack = document.querySelector('[data-slot="home-search-results"]')?.parentElement
-    expect(searchStack?.className).toContain('gap-1.5')
+    expect(context).not.toBeNull()
+    const results = document.querySelector('[data-slot="home-search-results"]')
+    expect(results).not.toBeNull()
+    expect(context?.contains(results)).toBe(true)
   })
 
   it('toggles between dock and collapsed from the handle', () => {
@@ -430,7 +427,7 @@ describe('CampaignQuickActionsDrawer (B105)', () => {
 })
 
 describe('CampaignContentScroll quick-actions direction (B105)', () => {
-  it('uses compact bottom padding on Início when quick-actions peek is off (B116)', () => {
+  it('marks compact home bottom padding on Início when quick-actions peek is off (B116)', () => {
     render(
       <CampaignContentScroll quickActionsPeek={false} compactHomeBottomPadding>
         <div />
@@ -439,9 +436,6 @@ describe('CampaignContentScroll quick-actions direction (B105)', () => {
 
     const scrollport = document.querySelector('[data-slot="campaign-content-scroll"]')
     expect(scrollport?.getAttribute('data-home-compact-bottom-padding')).toBe('true')
-    expect(scrollport?.className).toContain('pb-2')
-    expect(scrollport?.className).toContain('px-4')
-    expect(scrollport?.className).not.toContain(' p-4')
   })
 
   it('collapses on scroll down and re-docks on scroll up', () => {

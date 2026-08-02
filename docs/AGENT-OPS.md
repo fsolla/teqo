@@ -93,6 +93,10 @@ Vercel Git builds: `scripts/vercel-ignore-build.sh` skipeia **todas** as branche
 
 Supervisor remoto (`agent-pool.yml`): schedule + replenish em merge → `main` + dispatch. Workers PR `--base main`. Default model `composer-2.5`. **Secret `POOL_GITHUB_TOKEN`** obrigatório se `GITHUB_TOKEN` 403 em `/actions/variables`. Doctor: `pnpm agent:pool -- doctor`. Skill: `agent-pool`.
 
+## Código de Issues fechadas
+
+Issue nova = tracking. **Não** cerca o código. Se o fix correcto exige alterar o as-built de Issues já `done`/`in-prod` (apagar CSS compensatório, mudar ownership de layout, reverter decisão local), o agente faz isso na Issue actual e actualiza/apaga pins que congelavam a camada errada. "Não reabrir Issue fechada" = bookkeeping do GitHub, **nunca** "não toque nesse código". Em layout/geometria: na 2ª falha do mesmo sintoma, zoom-out de ownership no composition tree — não empilhar bleed sobre bleed (`work-issue` § Código de Issues anteriores).
+
 ## Guardrails / leitura
 
 `pnpm agent:file-miss` → harvest → `docs/GUARDRAILS.md`. Always-on: `AGENTS.md` → codebase-map → engineering-standards → esta página → PRODUCT/DESIGN/CUSTOMER.

@@ -122,6 +122,14 @@ Ordem fixa, fases pequenas e verificáveis, respeitando o appetite do plano:
 
 Tracer bullet: se a Issue for grande, a primeira fatia vertical real (schema mínimo → uma action → uma superfície UI) vem cedo.
 
+### Código de Issues anteriores (obrigatório)
+
+Issue nova = ticket de tracking. **Não** é cerca em volta do código.
+
+- Se o fix correcto exige alterar código entregue por Issues **já fechadas** (apagar CSS compensatório, mudar quem possui o padding, reverter uma decisão local, fundir duas camadas), **faça-o nesta entrega**. Atualize ou delete pins unitários que congelavam a camada errada.
+- **"Não reabrir Issue fechada"** (quando aparece em planos) significa só: não reabra o GitHub Issue para bookkeeping — abra Issue nova. **Nunca** significa "não toque no código daquela Issue".
+- **Zoom-out na 2ª falha do mesmo sintoma de layout/geometria:** se o plano aponta uma causa local (`px-4` no `ul`, `-mx-*`, overflow) e o produto ainda vê o bug, **pare** e reavalie ownership no composition tree (quem deve possuir o inset?) antes de abrir um 3º ticket compensatório. Não empilhe bleed sobre bleed.
+
 ## Passo 5 — /simplify + débitos
 
 Rode `/simplify` sobre o diff da sessão **antes** do Passo 6. Não pule os reviewers — o simplify deste fluxo é o comando completo, não uma leitura manual do diff.

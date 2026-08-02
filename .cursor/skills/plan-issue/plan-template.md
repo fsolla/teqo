@@ -108,7 +108,13 @@ de produto que originou o item, com data. Responde "por que isso existe".>
 
 <!-- Só decisões caras de reverter. Formato: decisão + por quê + fonte/data + alternativas rejeitadas.
      Ver decision-quality.md. Decisão silenciosa ou sem alternativas rejeitadas é defeito.
-     Decisão repo-wide além deste item → marcar "candidata a doc em docs/" (não criar ADR schema novo sem precedente). -->
+     Decisão repo-wide além deste item → marcar "candidata a doc em docs/" (não criar ADR schema novo sem precedente).
+
+     ANTI-PADRÃO (layout/UI): NÃO escreva "Item novo, não reabrir Bxx / Issues fechadas"
+     como se isso proibisse tocar código antigo. Issue nova = tracking. Se o fix correcto
+     exige reescrever o as-built de Issues fechadas (apagar bleed compensatório, mover
+     ownership de padding), diga isso explicitamente aqui e autorize o work-issue a fazê-lo.
+     "Não reabrir Issue no GitHub" ≠ "não mude o código daquela Issue". -->
 
 - **<Decisão em negrito>.** <Racional e fonte com data.> **Rejeitado:** <alternativa A porque …; B porque …>.
 - **i18n e naming** seguem o AGENTS.md: identificadores em inglês (<listar os principais

@@ -49,7 +49,7 @@ Contra o repositório **antes** de pontuar:
 
 | Check                                                  | Ação se verdadeiro                                              |
 | ------------------------------------------------------ | --------------------------------------------------------------- |
-| Já no diff / código da sessão                          | → balde **já_resolvido** (não reabrir)                          |
+| Já no diff / código da sessão                          | → balde **já_resolvido** (já coberto nesta sessão — não registrar de novo) |
 | Já em `docs/plans/*.md` ou numa Issue (grep + `gh issue list`) | → **absorver** no plano existente ou **descartar** como coberto |
 | Pré-existente em `main`, fora do escopo da entrega     | → **descartar** deste lote (bug separado só se o usuário pedir) |
 | Intentional em `DESIGN.md` / decisão travada           | → **descartar** (ex.: field-mode mobile documentado)            |
@@ -135,7 +135,7 @@ Para cada lote com destino **registrar** ou **absorver**:
 3. Se **absorver** num plano existente: edite o plano (nova fase/seção) — mesmo precedente "Gap vs 2022". **Se a Issue dona do plano estiver `in-progress`, NÃO a edite** — registra como Issue nova com `--depends <id-do-pai>` (destrava sozinha quando o pai flipar `done`).
 4. Se **defer**: anote o gatilho no plano-pai (Adiado com gatilho / Explicitamente fora) ou na mensagem de triage confirmada — não crie Issue só por isso.
 5. No plano, seções obrigatórias além do template:
-   - **Já resolvido no simplify/critique (não reabrir)**
+   - **Já resolvido no simplify/critique** (coberto nesta sessão — não registrar de novo; o implementador **pode** ainda mudar esse código numa Issue futura se o fix correcto exigir)
    - **Explicitamente fora** (skips dos revisores + descartes + defers com gatilho deste triage)
 6. Self-score de decisão ≥4/5 antes de gravar; classe Impeccable A–D conforme o lote (só-backend = A; UX pós-critique = B/C).
 

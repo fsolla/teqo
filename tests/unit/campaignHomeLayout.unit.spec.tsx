@@ -4,14 +4,6 @@ import { describe, expect, it } from 'vitest'
 import { CampaignHomeLayout } from '@/components/campaign/dashboard/CampaignHomeLayout'
 
 describe('CampaignHomeLayout', () => {
-  it('fills the scrollport height on mobile', () => {
-    const { container } = render(<CampaignHomeLayout actions={<p>Actions block</p>} />)
-
-    const root = container.firstElementChild
-    expect(root?.className).toContain('h-full')
-    expect(root?.className).toContain('min-h-0')
-  })
-
   it('renders actions in the home-actions slot inside home-dock', () => {
     const { container } = render(<CampaignHomeLayout actions={<p>Actions block</p>} />)
 
@@ -20,24 +12,12 @@ describe('CampaignHomeLayout', () => {
     expect(actions?.closest('[data-slot="home-dock"]')).not.toBeNull()
   })
 
-  it('bleeds home-actions edge-to-edge on mobile (compensates scroll p-4)', () => {
-    const { container } = render(<CampaignHomeLayout actions={<p>Actions block</p>} />)
-
-    const actions = container.querySelector('[data-slot="home-actions"]')
-    expect(actions?.className).toContain('-mx-4')
-    expect(actions?.className).toContain('w-[calc(100%+2rem)]')
-    expect(actions?.className).toContain('md:mx-0')
-    expect(actions?.className).toContain('md:w-auto')
-  })
-
-  it('does not clip horizontal bleed on the actions retraction shell', () => {
+  it('allows horizontal bleed on the actions retraction shell', () => {
     const { container } = render(<CampaignHomeLayout actions={<p>Actions block</p>} />)
 
     const actionsChrome = container.querySelector('[data-slot="home-actions-chrome"]')
     const bleedWrapper = actionsChrome?.querySelector('[data-allow-horizontal-bleed="true"]')
     expect(bleedWrapper).not.toBeNull()
-    expect(bleedWrapper?.className).toContain('overflow-y-hidden')
-    expect(bleedWrapper?.className).not.toContain('overflow-hidden')
   })
 
   it('renders search slot inside home-dock when provided', () => {
@@ -68,8 +48,6 @@ describe('CampaignHomeLayout', () => {
     expect(chrome).not.toBeNull()
     expect(spacer).not.toBeNull()
     expect(spacer?.getAttribute('aria-hidden')).toBe('true')
-    expect(spacer?.className).toContain('flex-1')
-    expect(spacer?.className).toContain('md:hidden')
     expect(chrome?.nextElementSibling?.getAttribute('data-slot')).toBe('home-dock')
   })
 
@@ -85,12 +63,11 @@ describe('CampaignHomeLayout', () => {
 
     const homeChrome = container.querySelector('[data-slot="home-chrome"]')
     expect(homeChrome?.getAttribute('data-retracted')).toBe('true')
-    expect(homeChrome?.className).toContain('grid-rows-[0fr]')
-    expect(homeChrome?.className).toContain('opacity-0')
+    expect(homeChrome?.getAttribute('aria-hidden')).toBe('true')
 
     const actionsChrome = container.querySelector('[data-slot="home-actions-chrome"]')
     expect(actionsChrome?.getAttribute('data-retracted')).toBe('true')
-    expect(actionsChrome?.className).toContain('grid-rows-[0fr]')
+    expect(actionsChrome?.getAttribute('aria-hidden')).toBe('true')
 
     expect(container.querySelector('[data-slot="home-thumb-spacer"]')).not.toBeNull()
     expect(container.querySelector('[data-slot="home-summary"]')).not.toBeNull()
