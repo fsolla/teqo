@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-02):** **WhatsApp interno D3–D5 descartado** — Issues #30–#32 `wontfix` (bridge Baileys/Evolution/WAHA / linked device): risco de ban do número pessoal do staff. Canal no produto = só `wa.me`. Planos `whatsapp-interno-campanha.md`, `whatsapp-canal-fundacao.md`, `whatsapp-envio-liderancas.md`, `whatsapp-sugestao-atualizacoes.md` removidos; refs em `notifications.md` / convite·email listas / fluxos-ação / regra `nucleos-eleitorais` atualizadas.
+
 **Recently resolved (2026-08-02):** **Agent pool hard max → 12** — `POOL_HARD_MAX_SLOTS` de 8 → 12 (`scripts/lib/agent-pool-state.mjs`); default continua 5. Skill `agent-pool` alinhada.
 
 **Recently resolved (2026-08-01):** **B102** (Issue #129) — crash na busca do bottom drawer (focus/digitação): `TooltipProvider` do layout `(app)` envolvia só `{children}` e o drawer (irmão do scrollport) renderizava hits `priority:alta` via `CampaignHoverTooltip` sem provider. Fix: provider envolve `CampaignAppScrollChrome`; pins unit focus→suggest e type→search. Plano: [`crash-busca-bottom-drawer.md`](docs/plans/crash-busca-bottom-drawer.md).

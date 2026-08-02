@@ -245,5 +245,5 @@ Não competir com os botões.
 - Redesign completo do detalhe / abas
 - Remover o mapa
 - Substituir o sistema de listas
-- App nativo / WhatsApp bridge (D3)
+- App nativo / bridge WhatsApp (D3–D5 descartados — só `wa.me`)
 - Treinar o CG no IA atual
