@@ -45,11 +45,11 @@ Dados: N/A — só layout CSS da strip; sem KPI/série/mapa neste item.
 
 Cadeia já entregue:
 
-| Item | O que fez |
-| ---- | --------- |
-| **B99 ✓** | `-mx-4 w-[calc(100%+2rem)]` no slot `home-actions` (compensa `p-4` do scroll) |
+| Item       | O que fez                                                                                           |
+| ---------- | --------------------------------------------------------------------------------------------------- |
+| **B99 ✓**  | `-mx-4 w-[calc(100%+2rem)]` no slot `home-actions` (compensa `p-4` do scroll)                       |
 | **B101 ✓** | `gap-0` + **`px-4` no `<ul>`** (inset interno deliberado “pra não colar na curved edge”) + pin unit |
-| **B111 ✓** | `allowHorizontalBleed` → `overflow-y-hidden` (não clipar o bleed no eixo X) |
+| **B111 ✓** | `allowHorizontalBleed` → `overflow-y-hidden` (não clipar o bleed no eixo X)                         |
 
 Feedback de produto (2026-08-01): **ainda há faixas brancas** laterais; os botões “aparecem do nada” em vez de **entrar da borda** do celular. Diagnóstico: o bleed do layout já leva o scroller à borda; o **`px-4` remanescente no `<ul>`** de `CampaignHomeActionStrip` recria 16 px de fundo da página de cada lado — exatamente o trilho branco. O pin em `campaignHomeActionButton.unit.spec.tsx` ainda exige `px-4`.
 
