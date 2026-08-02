@@ -62,7 +62,7 @@ export type MunicipalityFilterDefinition = {
   options?: MunicipalityFilterOption[]
 }
 
-export const municipalityFilterDefinitions: MunicipalityFilterDefinition[] = [
+const municipalityFilterDefinitions: MunicipalityFilterDefinition[] = [
   {
     param: 'name',
     label: 'Município',
