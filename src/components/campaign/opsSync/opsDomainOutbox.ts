@@ -130,6 +130,9 @@ const handleUpdatedAtConflict = (
   throw new NonRetriableError(message)
 }
 
+const DOMAIN_OUTBOX_DB = 'teqo-ops-domain'
+const DOMAIN_OUTBOX_STORE = 'outbox'
+
 const createDomainOfflineExecutor = (): OfflineExecutor =>
   startOfflineExecutor({
     collections: {
@@ -142,7 +145,7 @@ const createDomainOfflineExecutor = (): OfflineExecutor =>
       demands: demandsCollection,
       activities: activitiesCollection,
     },
-    storage: new IndexedDBAdapter('teqo-ops-domain', 'outbox'),
+    storage: new IndexedDBAdapter(DOMAIN_OUTBOX_DB, DOMAIN_OUTBOX_STORE),
     beforeRetry: collapseAllDomainOutbox,
     mutationFns: {
       [LEADERSHIP_UPDATE_FN]: async ({ transaction }) => {
@@ -636,17 +639,19 @@ const wipeDomainOutboxCollections = (): void => {
   }
 }
 
-/** Logout wipe — outbox storage + in-memory rows (OH11/OH13). */
+/** Logout wipe — persisted IndexedDB even when the executor singleton was never booted (cold reload). */
 export const clearOpsDomainOutboxForLogout = async (): Promise<void> => {
-  if (executorSingleton) {
-    try {
+  try {
+    if (executorSingleton) {
       await executorSingleton.clearOutbox()
       executorSingleton.dispose()
-    } catch {
-      // Best effort — private mode / torn-down storage.
+    } else {
+      await new IndexedDBAdapter(DOMAIN_OUTBOX_DB, DOMAIN_OUTBOX_STORE).clear()
     }
-    executorSingleton = null
-    initPromise = null
+  } catch {
+    // Best effort — private mode / torn-down storage.
   }
+  executorSingleton = null
+  initPromise = null
   wipeDomainOutboxCollections()
 }

@@ -12,6 +12,7 @@ import {
   stateDeputiesCollection,
 } from '@/components/campaign/opsSync/opsMirrorCollections'
 import {
+  clearAllOpsMirrorPersistence,
   openOpsMirrorStore,
   type OpsMirrorPersistenceMode,
   type OpsMirrorStore,
@@ -117,12 +118,11 @@ export const getOpsMirrorLastSyncedAt = (): string | null => lastSyncedAtMirror
 export const clearOpsMirrorPersistenceForLogout = async (): Promise<void> => {
   wipeOpsMirrorCollections()
   bootPromise = null
-  const store = storeSingleton
   storeSingleton = null
   persistenceMode = null
-  if (store) {
-    await store.clear()
-  }
+  // Clear both durable backends — prior sessions may have used either, and the
+  // singleton is null after a cold reload even when IndexedDB/OPFS still hold data.
+  await clearAllOpsMirrorPersistence()
 }
 
 /** Test/DI seam — reset module singletons between unit cases. */

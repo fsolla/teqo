@@ -156,6 +156,14 @@ const createOpfsOpsMirrorStore = (): OpsMirrorStore => {
  * Boot-time feature detect: try OPFS, fall back to IndexedDB on any failure
  * (private mode, missing API, write probe fail). Never throws.
  */
+/**
+ * Logout wipe for both durable backends. Clears OPFS and IndexedDB even when
+ * the in-memory store singleton was never booted (cold reload after enqueue).
+ */
+export const clearAllOpsMirrorPersistence = async (): Promise<void> => {
+  await Promise.allSettled([createOpfsOpsMirrorStore().clear(), createIdbOpsMirrorStore().clear()])
+}
+
 export const openOpsMirrorStore = async (options?: {
   forceMode?: OpsMirrorPersistenceMode
 }): Promise<OpsMirrorStore> => {

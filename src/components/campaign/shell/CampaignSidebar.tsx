@@ -80,10 +80,13 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
     clearRecentVisits()
     clearLastActedMunicipality()
     clearMunicipalitySavedFilters()
-    await clearCampaignOpsStorage()
-    await clearCampaignPwaCaches()
-    // logoutCampaign redirects — no need to reset the pending flag on success.
-    await logoutCampaign()
+    try {
+      await clearCampaignOpsStorage()
+      await clearCampaignPwaCaches()
+    } finally {
+      // logoutCampaign redirects — always revoke the session even if storage wipe fails.
+      await logoutCampaign()
+    }
   }
 
   return (
