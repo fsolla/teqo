@@ -47,15 +47,14 @@ test.describe('OH9/OH11 campaign ops offline', () => {
     })
 
     await campaign.login(page, advisor.email!, advisor.password)
-    await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
-    await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
-
-    // Wait for ops-sync so the mirror has this município before airplane mode.
-    await page.waitForResponse(
+    const syncResponse = page.waitForResponse(
       (response) =>
         response.url().includes('/campanha/api/ops-sync') && response.request().method() === 'GET',
       { timeout: 30_000 },
     )
+    await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
+    await expect(page.getByRole('heading', { name: municipality.name }).first()).toBeVisible()
+    await syncResponse
     await waitForCampaignServiceWorker(page)
 
     await page.context().setOffline(true)
@@ -103,19 +102,19 @@ test.describe('OH9/OH11 campaign ops offline', () => {
     })
 
     await campaign.login(page, advisor.email!, advisor.password)
-    await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
-    await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
-
-    await page.waitForResponse(
+    const syncResponse = page.waitForResponse(
       (response) =>
         response.url().includes('/campanha/api/ops-sync') && response.request().method() === 'GET',
       { timeout: 30_000 },
     )
+    await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
+    await expect(page.getByRole('heading', { name: municipality.name }).first()).toBeVisible()
+    await syncResponse
     await waitForCampaignServiceWorker(page)
 
     await page.context().setOffline(true)
 
-    await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
+    await expect(page.getByRole('heading', { name: municipality.name }).first()).toBeVisible()
     await page.getByLabel('Média', { exact: true }).fill('42')
     await page.getByLabel('Justificativa').fill('OH11 offline na estrada.')
     await page.getByRole('button', { name: 'Salvar estimativa' }).click()
@@ -145,14 +144,14 @@ test.describe('OH12 municipality list Local', () => {
     fixtures.touchMunicipality(municipality.id)
 
     await campaign.login(page, advisor.email!, advisor.password)
-    await page.goto(`${campaign.baseURL}/campanha/municipios`)
-    await expect(page.getByRole('heading', { name: 'Municípios' })).toBeVisible()
-
-    await page.waitForResponse(
+    const syncResponse = page.waitForResponse(
       (response) =>
         response.url().includes('/campanha/api/ops-sync') && response.request().method() === 'GET',
       { timeout: 30_000 },
     )
+    await page.goto(`${campaign.baseURL}/campanha/municipios`)
+    await expect(page.getByRole('heading', { name: 'Municípios' }).first()).toBeVisible()
+    await syncResponse
     await waitForCampaignServiceWorker(page)
 
     await page.context().setOffline(true)
@@ -160,9 +159,11 @@ test.describe('OH12 municipality list Local', () => {
       page.getByText('Edição na lista disponível quando estiveres online.'),
     ).toBeVisible()
 
-    const search = page.getByLabel('Buscar município')
+    // Prefer the Local search input — OfflineBoundary swap can leave the RSC
+    // `#municipality-search` in the tree briefly (OH14 strict-mode flake).
+    const search = page.locator('#municipality-search-local')
     await search.fill(municipality.name)
-    await expect(page.getByRole('link', { name: municipality.name })).toBeVisible({
+    await expect(page.getByRole('link', { name: municipality.name }).first()).toBeVisible({
       timeout: 15_000,
     })
 
@@ -172,7 +173,7 @@ test.describe('OH12 municipality list Local', () => {
     await expect(
       page.getByText('Edição na lista disponível quando estiveres online.'),
     ).toBeVisible()
-    await expect(page.getByRole('link', { name: municipality.name })).toBeVisible()
+    await expect(page.getByRole('link', { name: municipality.name }).first()).toBeVisible()
     await expect(page.getByText('Indicadores indisponíveis offline.')).toBeVisible()
   })
 })
