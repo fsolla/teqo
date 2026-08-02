@@ -5,8 +5,8 @@
  * Pure — no IO. Used by `agent-register` / `agent-ready` and pinned by unit tests.
  */
 
-import { HUMAN_GATE_LABELS, issueHasPlanLink } from './agent-pool-eligibility.mjs'
 import { labelNames } from './agent-github.mjs'
+import { HUMAN_GATE_LABELS, issueHasPlanLink } from './agent-pool-eligibility.mjs'
 
 /**
  * Initial state label for a newly registered issue.
