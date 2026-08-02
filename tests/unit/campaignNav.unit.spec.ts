@@ -2,12 +2,8 @@
 
 import { describe, expect, it } from 'vitest'
 
-import {
-  getCampaignNav,
-  isCampaignNavActive,
-} from '@/components/campaign/shell/nav'
-
-const ORGANIZATIONS_LIST_PATH = '/campanha/organizacoes'
+import { getCampaignNav, isCampaignNavActive } from '@/components/campaign/shell/nav'
+import { ORGANIZATIONS_LIST_PATH } from '@/lib/campaignQuickActionPaths'
 
 describe('organizations sidebar entry', () => {
   it('is offered to staff after Lideranças', () => {
