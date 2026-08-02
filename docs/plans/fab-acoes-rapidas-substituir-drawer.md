@@ -53,7 +53,7 @@ Isto **reverte** a decisão explícita de B79 que rejeitava FAB e drawer em `md+
 
 - **Vou apresentar dados?** Não
 - **Decisões desbloqueadas:** N/A — chrome de ação/navegação
-- **Forma:** *adiada* — N/A
+- **Forma:** _adiada_ — N/A
 
 Dados: N/A — atalho de intenção; hits de busca e ações já existem.
 
@@ -65,7 +65,7 @@ Dados: N/A — atalho de intenção; hits de busca e ações já existem.
 
 ## Dependências
 
-- Nenhuma dura. Soft: B125 (geo na busca) é independente; este item só muda *como* a busca abre fora do Início.
+- Nenhuma dura. Soft: B125 (geo na busca) é independente; este item só muda _como_ a busca abre fora do Início.
 
 ## Fora de escopo
 
