@@ -51,32 +51,12 @@ import {
   type MunicipalityListViewModel,
 } from '@/utilities/municipality/municipalityViewModels'
 import { loadStateDeputySummaries } from '@/utilities/stateDeputyData'
-import {
-  rollupMunicipalityStaffVotes,
-  type MunicipalityPledgeAggregate,
-} from '@/utilities/votePledgeViews'
+import { type MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
 export const MunicipalityNotFoundError = createEntityNotFoundError(
   'Municipality',
   'Município não encontrado.',
 )
-
-export type MunicipalityListOverviewData = {
-  municipalityCount: number
-  staffVoteTotalByScenario: Record<VoteEstimateScenario, number>
-  pledgeCount: number
-  missingEstimateCount: number
-  withAdvisorCount: number
-  /**
-   * E9 "coluna da vergonha": priority municipalities in scope with nobody
-   * answering for them — the one gap the coordination can close today, so it
-   * gets named as a number and a filtered link instead of hiding inside the
-   * assessoria ratio.
-   */
-  priorityWithoutAdvisorCount: number
-  /** E8 "conta da cadeira" — meta × comprometido do escopo filtrado, por cenário. */
-  goalCoverageByScenario: Record<VoteEstimateScenario, MunicipalityGoalCoverage>
-}
 
 /** Values still reachable under the OTHER active filters (column-filter options). */
 type MunicipalityListFilterFacets = {
@@ -91,7 +71,6 @@ export type MunicipalityListPageBundle = {
   totalDocs: number
   totalPages: number
   scopeTotal: number
-  overview: MunicipalityListOverviewData | null
   filterFacets: MunicipalityListFilterFacets
 }
 
@@ -106,10 +85,9 @@ type MunicipalityFacetRow = Pick<Municipality, 'slug' | 'region' | 'advisors'>
 /**
  * E10's class filter is the only one that isn't a Payload constraint (the
  * class is derived from the committed TSE artifact, not stored), so every
- * place that would otherwise trust `where` — the page query, the overview
- * scope and the facets — has to apply this predicate itself. Returns `null`
- * when no class is selected, which is also the signal to keep the cheap
- * database-paginated path.
+ * place that would otherwise trust `where` — the page query and the facets —
+ * has to apply this predicate itself. Returns `null` when no class is selected,
+ * which is also the signal to keep the cheap database-paginated path.
  */
 const territorialClassFilterPredicate = (
   state: MunicipalityListState,
@@ -320,7 +298,6 @@ export const loadMunicipalityListPageBundle = async (
       totalDocs: 0,
       totalPages: 0,
       scopeTotal: 0,
-      overview: null,
       filterFacets: emptyMunicipalityListFilterFacets,
     }
   }
@@ -389,24 +366,17 @@ export const loadMunicipalityListPageBundle = async (
     isStaff ? loadStatewideSuggestedGoals(payload, user) : null,
   ])
 
-  let overview: MunicipalityListOverviewData | null = null
   let pledgeAggregates = new Map<number, MunicipalityPledgeAggregate>()
   let goalCoverageByMunicipalityID = new Map<
     number,
     Record<VoteEstimateScenario, MunicipalityGoalCoverage>
   >()
 
-  // Computed even for an empty filtered scope: the overview stays on screen
-  // (zeroed) next to the empty state instead of disappearing with the rows.
   if (staffScope) {
     pledgeAggregates = staffScope.pledgeAggregates
-    // Never mutate the scope: `loadMunicipalityScope` is request-cached and
-    // shared with the facets. Filtering here is what keeps the overview
-    // (E8 coverage, E9 shame column) counting the filtered scope.
     const scopedMunicipalities = classMatches
       ? staffScope.municipalities.filter((municipality) => classMatches(municipality.slug))
       : staffScope.municipalities
-    const rollup = rollupMunicipalityStaffVotes(scopedMunicipalities, pledgeAggregates)
     const goalCoverageBundle = await loadMunicipalityGoalCoverageBundle(
       payload,
       user,
@@ -414,20 +384,6 @@ export const loadMunicipalityListPageBundle = async (
       pledgeAggregates,
     )
     goalCoverageByMunicipalityID = goalCoverageBundle.coverageByMunicipalityID
-    overview = {
-      municipalityCount: scopedMunicipalities.length,
-      staffVoteTotalByScenario: { ...rollup.staffVoteTotalByScenario },
-      pledgeCount: rollup.pledgeCount,
-      missingEstimateCount: rollup.missingEstimateCount,
-      withAdvisorCount: scopedMunicipalities.filter(
-        (municipality) => (municipality.advisors ?? []).length > 0,
-      ).length,
-      priorityWithoutAdvisorCount: scopedMunicipalities.filter(
-        (municipality) =>
-          municipality.priority === 'alta' && (municipality.advisors ?? []).length === 0,
-      ).length,
-      goalCoverageByScenario: goalCoverageBundle.aggregateByScenario,
-    }
   }
 
   let pageDocs: Municipality[]
@@ -468,7 +424,6 @@ export const loadMunicipalityListPageBundle = async (
     totalDocs,
     totalPages,
     scopeTotal: scopeCount.totalDocs,
-    overview,
     filterFacets,
   }
 }

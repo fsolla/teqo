@@ -10,7 +10,6 @@ import { RecentVisitTracker } from '@/components/campaign/dashboard/RecentVisitT
 import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
 import { MunicipalityFilters } from '@/components/campaign/municipality/MunicipalityFilters'
 import { MunicipalityList } from '@/components/campaign/municipality/MunicipalityList'
-import { MunicipalityListOverview } from '@/components/campaign/municipality/MunicipalityListOverview'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
@@ -56,13 +55,7 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
   const canMoveEngagementLevel = isCampaignUnrestricted(user)
 
   const pageBundle = await loadMunicipalityListPageBundle(payload, user, rawSearchParams)
-  const {
-    municipalities: listMunicipalities,
-    totalDocs,
-    totalPages,
-    overview,
-    filterFacets,
-  } = pageBundle
+  const { municipalities: listMunicipalities, totalDocs, totalPages, filterFacets } = pageBundle
   const resolvedUrl = resolveMunicipalityListUrl(rawSearchParams, totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
   const { state } = resolvedUrl
@@ -109,20 +102,10 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
     />
   )
 
-  // E9 coluna da vergonha: same scope, filtered down to priority municipalities
-  // with nobody answering for them. `null` when that is already the filter.
-  const shameHref =
-    state.priority === 'alta' && state.coverage === 'sem_assessor'
-      ? null
-      : buildMunicipalityListHref({ ...state, priority: 'alta', coverage: 'sem_assessor' }, 1)
-
-  // The overview and the table's filter header stay mounted even with zero
-  // results — only the rows are replaced by the empty state.
+  // The table's filter header stays mounted even with zero results — only the
+  // rows are replaced by the empty state.
   const listBody = (
     <>
-      {isStaffView && overview ? (
-        <MunicipalityListOverview view={overview} shameHref={shameHref} />
-      ) : null}
       <MunicipalityList
         municipalities={listMunicipalities}
         advisorNamesById={advisorNamesById}

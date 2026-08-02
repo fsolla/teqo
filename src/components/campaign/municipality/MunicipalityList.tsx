@@ -95,7 +95,7 @@ export type MunicipalityListProps = {
   columnVisibility: CampaignColumnVisibility
 }
 
-/** Replaces only the rows: the filter header row and the overview stay put. */
+/** Replaces only the rows: the filter header row stays put. */
 const MunicipalityListEmptyState = ({ state }: { state: MunicipalityListState }) => (
   <Empty className="min-h-56">
     <EmptyHeader>
