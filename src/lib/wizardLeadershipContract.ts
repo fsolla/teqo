@@ -12,6 +12,21 @@ export type WizardLeadershipTileViewModel = {
   supportStatus: SupportStatus | null
   exclusive: boolean
   notes: string | null
+  /** Declared votes for leadership × wizard municipality; 0 when no pledge. */
+  declaredVotes: number
+}
+
+/** Maps pledge rows to leadership id → declaredVotes (absent leadership → omitted). */
+export const declaredVotesByLeadershipFromPledges = (
+  pledges: ReadonlyArray<{ leadership: number | { id: number }; declaredVotes?: number | null }>,
+): Map<number, number> => {
+  const map = new Map<number, number>()
+  for (const pledge of pledges) {
+    const leadershipId =
+      typeof pledge.leadership === 'number' ? pledge.leadership : pledge.leadership.id
+    map.set(leadershipId, pledge.declaredVotes ?? 0)
+  }
+  return map
 }
 
 export type WizardLeadershipSkipAction = {
