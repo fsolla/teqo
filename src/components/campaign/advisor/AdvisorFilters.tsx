@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react'
 
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
+import type { AdvisorFilterOption } from '@/utilities/advisor/advisorListFilters'
+import { advisorListHrefForPage, type AdvisorListState } from '@/utilities/advisor/advisorListUrl'
 import {
   applyAdvisorOmniboxSuggestion,
   buildAdvisorOmniboxChips,
@@ -13,8 +15,6 @@ import {
   removeAdvisorOmniboxChip,
   type AdvisorOmniboxAction,
 } from '@/utilities/advisor/advisorOmnibox'
-import type { AdvisorFilterOption } from '@/utilities/advisor/advisorListFilters'
-import { advisorListHrefForPage, type AdvisorListState } from '@/utilities/advisor/advisorListUrl'
 
 export const AdvisorFilters = ({
   state,

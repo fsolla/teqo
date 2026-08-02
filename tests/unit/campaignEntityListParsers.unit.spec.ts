@@ -33,7 +33,9 @@ describe.each(qAndPageParsers)('%s list parser (q + page)', (_name, parse) => {
   })
 
   it('parses repeatable municipality ids and drops invalid tokens', () => {
-    expect(parseAdvisorListParams({ municipality: ['12', 'bad', '0'] }).municipalities).toEqual([12])
+    expect(parseAdvisorListParams({ municipality: ['12', 'bad', '0'] }).municipalities).toEqual([
+      12,
+    ])
     expect(parseAdvisorListParams({ municipality: ['3', '7'] }).municipalities).toEqual([3, 7])
     expect(parseAdvisorListParams({}).municipalities).toBeUndefined()
   })

@@ -1,12 +1,12 @@
 /**
  * Advisor list filter affordances: município (carteira) toggles and clear.
  */
-import { strictDecimalInteger } from '@/utilities/campaignListUrl'
 import {
   advisorListStateToRawParams,
   parseAdvisorListParams,
   type AdvisorListState,
 } from '@/utilities/advisor/advisorListUrl'
+import { strictDecimalInteger } from '@/utilities/campaignListUrl'
 
 export type AdvisorFilterOption = {
   value: string

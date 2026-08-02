@@ -9,6 +9,7 @@ import {
   buildActivityOmniboxChips,
   clearActivityOmnibox,
 } from '@/utilities/activityOmnibox'
+import { parseActivityListParams } from '@/utilities/activityUi'
 import { parseAdvisorListParams } from '@/utilities/advisor/advisorListUrl'
 import {
   applyAdvisorOmniboxSuggestion,
@@ -16,7 +17,6 @@ import {
   buildAdvisorOmniboxSuggestionSeeds,
   filterAdvisorOmniboxSuggestions,
 } from '@/utilities/advisor/advisorOmnibox'
-import { parseActivityListParams } from '@/utilities/activityUi'
 import { parseDemandListParams } from '@/utilities/demand/demandListUrl'
 import {
   applyDemandOmniboxSuggestion,

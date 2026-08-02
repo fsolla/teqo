@@ -25,6 +25,7 @@ flowchart LR
 ```
 
 **Opções consideradas:**
+
 - A) Estender `searchOnlyListOmnibox` com hooks — rejeitada (não escala; leadership/supporter já têm adapter próprio).
 - B) Adapter `advisorOmnibox` + `advisorListFilters` espelhando lideranças (só dimensão município + busca) — **recomendada**.
 - C) Facet server-side de municípios com assessor — rejeitada nesta fatia (busca tipada no índice de 435 já atende; página já carrega `loadMunicipalityPortfolioIndex`).
@@ -67,3 +68,9 @@ flowchart LR
 - [x] Aceite de produto da intenção ainda coberto
 - [x] Invariantes AGENTS/engineering-standards
 - [x] Testes de domínio previstos (unit/int) onde access/write paths mudam
+
+## Débitos deferidos (simplify)
+
+- Facet server-side restrito a municípios com assessor — gatilho: omnibox ruidosa com 435 seeds.
+- Toggle municipality via parse round-trip — gatilho: segunda dimensão de filtro em assessores.
+- Omnibox `municipality:` slice duplicado em apply/remove — gatilho: refactor cross-list omnibox.
