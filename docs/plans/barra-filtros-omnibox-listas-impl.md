@@ -29,9 +29,9 @@ flowchart LR
 
 **Opções consideradas:**
 
-| | A — Chassis genérico + adapter Municípios | B — Reescrever só MunicipalityFilters sem chassis | C — cmdk CommandDialog global + filtros |
-| --- | --- | --- | --- |
-| | Tipos/UI em `shared` + `lib`; domínio monta chips/sugestões/ações | Tudo no arquivo do piloto | Palette global misturando home search |
+|     | A — Chassis genérico + adapter Municípios                         | B — Reescrever só MunicipalityFilters sem chassis | C — cmdk CommandDialog global + filtros |
+| --- | ----------------------------------------------------------------- | ------------------------------------------------- | --------------------------------------- |
+|     | Tipos/UI em `shared` + `lib`; domínio monta chips/sugestões/ações | Tudo no arquivo do piloto                         | Palette global misturando home search   |
 
 **Recomendação:** A — porque B128 precisa do mesmo gesto; deep module (UI burra + builders puros); evita twin na adoção.  
 **Rejeitadas:** B porque a segunda lista copia 200 linhas; C viola anti-goal “command palette global”.
@@ -90,8 +90,14 @@ Não aplica (só UI do recorte).
 - Adoção B128 nas outras listas.
 - Mover B18 para dentro da omnibox.
 - Debounce de busca “como estava” + chip simultâneo.
-- Virtualizar 435 sugestões (cap por grupo basta no piloto).
+- Virtualizar 435 sugestões (cap por grupo + seeds memoizados no piloto).
 - Redesign do header filter / mapa.
+
+### Débitos deferidos (/simplify 2026-08-02)
+
+- Extrair navigate-only helper do hook de debounce quando 2º consumidor omnibox (B128).
+- Inline `omniboxGroupMatches` se a API não crescer no B128.
+- Anunciar contagem de sugestões (live region) quando polish a11y for pedido.
 
 ## Riscos e mitigação
 

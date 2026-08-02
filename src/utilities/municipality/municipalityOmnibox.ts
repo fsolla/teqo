@@ -4,7 +4,6 @@
  */
 import {
   omniboxGroupMatches,
-  omniboxQueryMatches,
   type CampaignListOmniboxChip,
   type CampaignListOmniboxSuggestion,
 } from '@/lib/campaignListOmnibox'
@@ -15,9 +14,14 @@ import {
   voteEstimateScenarioLabels,
   type VoteEstimateScenario,
 } from '@/lib/voteEstimate'
+import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
+import {
+  municipalityListCoverageLabels,
+  municipalityPriorityLabels,
+} from '@/utilities/municipality/municipalityLabels'
 import {
   clearMunicipalityListFilters,
-  municipalityFilterDefinitions,
+  getMunicipalityFilterDefinition,
   toggleMunicipalityExclusiveFilterValue,
   toggleMunicipalityMultiFilterValue,
   toggleMunicipalityPriorityFilter,
@@ -25,17 +29,11 @@ import {
   type MunicipalityMultiFilterParam,
 } from '@/utilities/municipality/municipalityListFilters'
 import {
-  municipalityListCoverageLabels,
-  municipalityPriorityLabels,
-} from '@/utilities/municipality/municipalityLabels'
-import {
-  defaultMunicipalityListSortDir,
+  isDefaultMunicipalityListSort,
   municipalityListSortOptions,
   resolveMunicipalityListSort,
   type MunicipalityListState,
 } from '@/utilities/municipality/municipalityListUrl'
-
-const DEFAULT_MUNICIPALITY_SORT_KEY = 'deficit' as const
 
 const SUGGESTION_CAP_PER_GROUP = 8
 
@@ -44,12 +42,42 @@ export type MunicipalityOmniboxAction =
   | { kind: 'scenario'; scenario: VoteEstimateScenario }
   | { kind: 'clear'; state: MunicipalityListState; scenario: VoteEstimateScenario }
 
-const isDefaultMunicipalitySort = (state: MunicipalityListState): boolean => {
-  const { sort, dir } = resolveMunicipalityListSort(state)
-  return sort === DEFAULT_MUNICIPALITY_SORT_KEY && dir === defaultMunicipalityListSortDir(sort)
+type SuggestionSeed = CampaignListOmniboxSuggestion & {
+  /** When true, show even with an empty query (dimension shortcuts). */
+  emptyQueryVisible?: boolean
+  normalizedLabel: string
+  normalizedKeywords: readonly string[]
 }
 
+const MULTI_PREFIXES: Array<{ prefix: string; param: MunicipalityMultiFilterParam }> = [
+  { prefix: 'slug:', param: 'slug' },
+  { prefix: 'region:', param: 'region' },
+  { prefix: 'advisor:', param: 'advisor' },
+  { prefix: 'trend:', param: 'trend' },
+  { prefix: 'class:', param: 'class' },
+  { prefix: 'level:', param: 'level' },
+]
+
 const chipLabel = (dimension: string, value: string): string => `${dimension}: ${value}`
+
+const labelForFilterValue = (param: 'trend' | 'class' | 'level', value: string): string =>
+  getMunicipalityFilterDefinition(param).options?.find((option) => option.value === value)?.label ??
+  value
+
+const withPageReset = (state: MunicipalityListState): MunicipalityListState => ({
+  ...state,
+  page: 1,
+})
+
+const seedOf = (
+  suggestion: CampaignListOmniboxSuggestion,
+  extras?: { emptyQueryVisible?: boolean },
+): SuggestionSeed => ({
+  ...suggestion,
+  ...extras,
+  normalizedLabel: normalizeSearchPhrase(suggestion.label),
+  normalizedKeywords: (suggestion.keywords ?? []).map((keyword) => normalizeSearchPhrase(keyword)),
+})
 
 export const buildMunicipalityOmniboxChips = ({
   state,
@@ -97,29 +125,23 @@ export const buildMunicipalityOmniboxChips = ({
     }
 
     for (const trend of state.trends ?? []) {
-      const definition = municipalityFilterDefinitions.find((entry) => entry.param === 'trend')
-      const option = definition?.options?.find((entry) => entry.value === trend)
       chips.push({
         id: `trend:${trend}`,
-        label: chipLabel('Tendência', option?.label ?? trend),
+        label: chipLabel('Tendência', labelForFilterValue('trend', trend)),
       })
     }
 
     for (const territorialClass of state.classes ?? []) {
-      const definition = municipalityFilterDefinitions.find((entry) => entry.param === 'class')
-      const option = definition?.options?.find((entry) => entry.value === territorialClass)
       chips.push({
         id: `class:${territorialClass}`,
-        label: chipLabel('Classe', option?.label ?? territorialClass),
+        label: chipLabel('Classe', labelForFilterValue('class', territorialClass)),
       })
     }
 
     for (const level of state.levels ?? []) {
-      const definition = municipalityFilterDefinitions.find((entry) => entry.param === 'level')
-      const option = definition?.options?.find((entry) => entry.value === level)
       chips.push({
         id: `level:${level}`,
-        label: chipLabel('Nível', option?.label ?? level),
+        label: chipLabel('Nível', labelForFilterValue('level', level)),
       })
     }
 
@@ -131,7 +153,7 @@ export const buildMunicipalityOmniboxChips = ({
     }
   }
 
-  if (!isDefaultMunicipalitySort(state)) {
+  if (!isDefaultMunicipalityListSort(state)) {
     const { sort, dir } = resolveMunicipalityListSort(state)
     const option = municipalityListSortOptions.find(
       (entry) => entry.key === sort && entry.dir === dir,
@@ -145,39 +167,172 @@ export const buildMunicipalityOmniboxChips = ({
   return chips
 }
 
-type SuggestionSeed = CampaignListOmniboxSuggestion & {
-  /** When true, show even with an empty query (dimension shortcuts). */
-  emptyQueryVisible?: boolean
+/** Stable suggestion catalog for a facet snapshot — memoize across keystrokes. */
+export const buildMunicipalityOmniboxSuggestionSeeds = ({
+  showStaffFilters,
+  regionFilterOptions,
+  advisorFilterOptions,
+  slugFilterOptions,
+}: {
+  showStaffFilters: boolean
+  regionFilterOptions: readonly MunicipalityFilterOption[]
+  advisorFilterOptions: readonly MunicipalityFilterOption[]
+  slugFilterOptions: readonly MunicipalityFilterOption[]
+}): SuggestionSeed[] => {
+  const seeds: SuggestionSeed[] = []
+
+  if (showStaffFilters) {
+    seeds.push(
+      seedOf(
+        {
+          id: 'priority:alta',
+          group: 'Prioritária',
+          label: municipalityPriorityLabels.alta,
+          keywords: ['prioritaria', 'prioridade', 'alta'],
+        },
+        { emptyQueryVisible: true },
+      ),
+    )
+  }
+
+  for (const option of slugFilterOptions) {
+    seeds.push(
+      seedOf({
+        id: `slug:${option.value}`,
+        group: 'Município',
+        label: option.label,
+        keywords: ['municipio', option.value],
+      }),
+    )
+  }
+
+  for (const option of regionFilterOptions) {
+    seeds.push(
+      seedOf({
+        id: `region:${option.value}`,
+        group: 'Território',
+        label: option.label,
+        keywords: ['territorio', 'regiao'],
+      }),
+    )
+  }
+
+  if (showStaffFilters) {
+    for (const option of advisorFilterOptions) {
+      seeds.push(
+        seedOf({
+          id: `advisor:${option.value}`,
+          group: 'Assessor',
+          label: option.label,
+          keywords: ['assessor', 'assessoria'],
+        }),
+      )
+    }
+
+    for (const [value, label] of Object.entries(municipalityListCoverageLabels)) {
+      seeds.push(
+        seedOf(
+          {
+            id: `coverage:${value}`,
+            group: 'Assessoria',
+            label,
+            keywords: ['cobertura', 'assessor'],
+          },
+          { emptyQueryVisible: true },
+        ),
+      )
+    }
+
+    for (const param of ['trend', 'class', 'level'] as const) {
+      const definition = getMunicipalityFilterDefinition(param)
+      for (const option of definition.options ?? []) {
+        seeds.push(
+          seedOf({
+            id: `${param}:${option.value}`,
+            group: definition.label,
+            label: option.label,
+            keywords: [definition.label.toLowerCase()],
+          }),
+        )
+      }
+    }
+
+    for (const scenario of VOTE_ESTIMATE_SCENARIOS) {
+      seeds.push(
+        seedOf(
+          {
+            id: `scenario:${scenario}`,
+            group: 'Cenário',
+            label: voteEstimateScenarioLabels[scenario],
+            keywords: ['cenario', 'estimativa', 'cenário'],
+          },
+          { emptyQueryVisible: true },
+        ),
+      )
+    }
+  }
+
+  for (const option of municipalityListSortOptions) {
+    seeds.push(
+      seedOf({
+        id: `sort:${option.key}|${option.dir}`,
+        group: 'Ordenação',
+        label: option.label,
+        keywords: ['ordenar', 'ordenacao', 'ordem', 'sort'],
+      }),
+    )
+  }
+
+  return seeds
 }
 
-const pushMatching = (
-  out: CampaignListOmniboxSuggestion[],
+export const filterMunicipalityOmniboxSuggestions = (
   seeds: readonly SuggestionSeed[],
   query: string,
-): void => {
-  const needle = query.trim()
-  const matched: CampaignListOmniboxSuggestion[] = []
-  for (const seed of seeds) {
-    const { emptyQueryVisible, ...suggestion } = seed
-    if (!needle) {
-      if (emptyQueryVisible) matched.push(suggestion)
-      continue
-    }
-    const groupHit = omniboxGroupMatches(suggestion.group, needle)
-    const labelHit = omniboxQueryMatches(suggestion.label, needle, suggestion.keywords ?? [])
-    if (groupHit || labelHit) matched.push(suggestion)
+): CampaignListOmniboxSuggestion[] => {
+  const suggestions: CampaignListOmniboxSuggestion[] = []
+  const trimmed = query.trim()
+  const normalizedNeedle = normalizeSearchPhrase(trimmed)
+
+  if (trimmed) {
+    suggestions.push({
+      id: `q:${trimmed}`,
+      group: 'Busca',
+      label: chipLabel('Busca', trimmed),
+      keywords: ['busca', 'pesquisar', 'texto'],
+    })
   }
 
-  const byGroup = new Map<string, CampaignListOmniboxSuggestion[]>()
-  for (const suggestion of matched) {
-    const bucket = byGroup.get(suggestion.group) ?? []
-    if (bucket.length >= SUGGESTION_CAP_PER_GROUP) continue
-    bucket.push(suggestion)
-    byGroup.set(suggestion.group, bucket)
+  const groupCounts = new Map<string, number>()
+
+  for (const seed of seeds) {
+    const count = groupCounts.get(seed.group) ?? 0
+    if (count >= SUGGESTION_CAP_PER_GROUP) continue
+
+    if (!normalizedNeedle) {
+      if (!seed.emptyQueryVisible) continue
+    } else {
+      const groupHit = omniboxGroupMatches(seed.group, trimmed)
+      const labelHit =
+        seed.normalizedLabel.includes(normalizedNeedle) ||
+        seed.normalizedKeywords.some((keyword) => keyword.includes(normalizedNeedle))
+      if (!groupHit && !labelHit) continue
+    }
+
+    const {
+      emptyQueryVisible: _visible,
+      normalizedLabel: _label,
+      normalizedKeywords: _kw,
+      ...suggestion
+    } = seed
+    suggestions.push(suggestion)
+    groupCounts.set(seed.group, count + 1)
   }
-  for (const bucket of byGroup.values()) out.push(...bucket)
+
+  return suggestions
 }
 
+/** Convenience for one-shot callers (tests); UI memoizes seeds + filters. */
 export const buildMunicipalityOmniboxSuggestions = ({
   query,
   showStaffFilters,
@@ -190,130 +345,16 @@ export const buildMunicipalityOmniboxSuggestions = ({
   regionFilterOptions: readonly MunicipalityFilterOption[]
   advisorFilterOptions: readonly MunicipalityFilterOption[]
   slugFilterOptions: readonly MunicipalityFilterOption[]
-}): CampaignListOmniboxSuggestion[] => {
-  const suggestions: CampaignListOmniboxSuggestion[] = []
-  const trimmed = query.trim()
-
-  if (trimmed) {
-    suggestions.push({
-      id: `q:${trimmed}`,
-      group: 'Busca',
-      label: chipLabel('Busca', trimmed),
-      keywords: ['busca', 'pesquisar', 'texto'],
-    })
-  }
-
-  const seeds: SuggestionSeed[] = []
-
-  if (showStaffFilters) {
-    seeds.push({
-      id: 'priority:alta',
-      group: 'Prioritária',
-      label: municipalityPriorityLabels.alta,
-      keywords: ['prioritaria', 'prioridade', 'alta'],
-      emptyQueryVisible: true,
-    })
-  }
-
-  for (const option of slugFilterOptions) {
-    seeds.push({
-      id: `slug:${option.value}`,
-      group: 'Município',
-      label: option.label,
-      keywords: ['municipio', option.value],
-    })
-  }
-
-  for (const option of regionFilterOptions) {
-    seeds.push({
-      id: `region:${option.value}`,
-      group: 'Território',
-      label: option.label,
-      keywords: ['territorio', 'regiao'],
-      emptyQueryVisible: false,
-    })
-  }
-
-  if (showStaffFilters) {
-    for (const option of advisorFilterOptions) {
-      seeds.push({
-        id: `advisor:${option.value}`,
-        group: 'Assessor',
-        label: option.label,
-        keywords: ['assessor', 'assessoria'],
-      })
-    }
-
-    for (const [value, label] of Object.entries(municipalityListCoverageLabels)) {
-      seeds.push({
-        id: `coverage:${value}`,
-        group: 'Assessoria',
-        label,
-        keywords: ['cobertura', 'assessor'],
-        emptyQueryVisible: true,
-      })
-    }
-
-    for (const definition of municipalityFilterDefinitions) {
-      if (definition.param !== 'trend' && definition.param !== 'class' && definition.param !== 'level') {
-        continue
-      }
-      for (const option of definition.options ?? []) {
-        seeds.push({
-          id: `${definition.param}:${option.value}`,
-          group: definition.label,
-          label: option.label,
-          keywords: [definition.label.toLowerCase()],
-        })
-      }
-    }
-
-    for (const scenario of VOTE_ESTIMATE_SCENARIOS) {
-      seeds.push({
-        id: `scenario:${scenario}`,
-        group: 'Cenário',
-        label: voteEstimateScenarioLabels[scenario],
-        keywords: ['cenario', 'estimativa', 'cenário'],
-        emptyQueryVisible: true,
-      })
-    }
-  }
-
-  for (const option of municipalityListSortOptions) {
-    seeds.push({
-      id: `sort:${option.key}|${option.dir}`,
-      group: 'Ordenação',
-      label: option.label,
-      keywords: ['ordenar', 'ordenacao', 'ordem', 'sort'],
-    })
-  }
-
-  // Empty focus: surface dimension shortcuts only (no 435-município dump).
-  if (!trimmed) {
-    for (const seed of seeds) {
-      if (!seed.emptyQueryVisible) continue
-      const { emptyQueryVisible: _visible, ...suggestion } = seed
-      suggestions.push(suggestion)
-    }
-    // Always offer a few sort entry points when idle? Product: type "ordenar".
-    // Keep empty focus lean — only exclusive/presentation shortcuts above.
-    return suggestions
-  }
-
-  pushMatching(suggestions, seeds, trimmed)
-  return suggestions
-}
-
-const withPageReset = (state: MunicipalityListState): MunicipalityListState => ({
-  ...state,
-  page: 1,
-})
-
-const applyMultiToggle = (
-  state: MunicipalityListState,
-  param: MunicipalityMultiFilterParam,
-  value: string,
-): MunicipalityListState => toggleMunicipalityMultiFilterValue(state, param, value)
+}): CampaignListOmniboxSuggestion[] =>
+  filterMunicipalityOmniboxSuggestions(
+    buildMunicipalityOmniboxSuggestionSeeds({
+      showStaffFilters,
+      regionFilterOptions,
+      advisorFilterOptions,
+      slugFilterOptions,
+    }),
+    query,
+  )
 
 export const applyMunicipalityOmniboxSuggestion = ({
   state,
@@ -331,23 +372,12 @@ export const applyMunicipalityOmniboxSuggestion = ({
     return { kind: 'url', state: toggleMunicipalityPriorityFilter(state) }
   }
 
-  if (suggestionId.startsWith('slug:')) {
-    return { kind: 'url', state: applyMultiToggle(state, 'slug', suggestionId.slice(5)) }
-  }
-  if (suggestionId.startsWith('region:')) {
-    return { kind: 'url', state: applyMultiToggle(state, 'region', suggestionId.slice(7)) }
-  }
-  if (suggestionId.startsWith('advisor:')) {
-    return { kind: 'url', state: applyMultiToggle(state, 'advisor', suggestionId.slice(8)) }
-  }
-  if (suggestionId.startsWith('trend:')) {
-    return { kind: 'url', state: applyMultiToggle(state, 'trend', suggestionId.slice(6)) }
-  }
-  if (suggestionId.startsWith('class:')) {
-    return { kind: 'url', state: applyMultiToggle(state, 'class', suggestionId.slice(6)) }
-  }
-  if (suggestionId.startsWith('level:')) {
-    return { kind: 'url', state: applyMultiToggle(state, 'level', suggestionId.slice(6)) }
+  for (const { prefix, param } of MULTI_PREFIXES) {
+    if (!suggestionId.startsWith(prefix)) continue
+    return {
+      kind: 'url',
+      state: toggleMunicipalityMultiFilterValue(state, param, suggestionId.slice(prefix.length)),
+    }
   }
 
   if (suggestionId.startsWith('coverage:')) {
@@ -372,8 +402,7 @@ export const applyMunicipalityOmniboxSuggestion = ({
     )
     if (!option) return { kind: 'url', state }
     const next = withPageReset({ ...state, sort: option.key, dir: option.dir })
-    // Canonical default omits sort/dir from the URL — clear when choosing default.
-    if (isDefaultMunicipalitySort(next)) {
+    if (isDefaultMunicipalityListSort(next)) {
       return { kind: 'url', state: withPageReset({ ...state, sort: undefined, dir: undefined }) }
     }
     return { kind: 'url', state: next }
@@ -402,19 +431,12 @@ export const removeMunicipalityOmniboxChip = ({
     return { kind: 'url', state: withPageReset({ ...state, sort: undefined, dir: undefined }) }
   }
 
-  const multiPrefixes: Array<{ prefix: string; param: MunicipalityMultiFilterParam }> = [
-    { prefix: 'slug:', param: 'slug' },
-    { prefix: 'region:', param: 'region' },
-    { prefix: 'advisor:', param: 'advisor' },
-    { prefix: 'trend:', param: 'trend' },
-    { prefix: 'class:', param: 'class' },
-    { prefix: 'level:', param: 'level' },
-  ]
-  for (const { prefix, param } of multiPrefixes) {
+  for (const { prefix, param } of MULTI_PREFIXES) {
     if (!chipId.startsWith(prefix)) continue
-    const value = chipId.slice(prefix.length)
-    // Toggle removes when present.
-    return { kind: 'url', state: applyMultiToggle(state, param, value) }
+    return {
+      kind: 'url',
+      state: toggleMunicipalityMultiFilterValue(state, param, chipId.slice(prefix.length)),
+    }
   }
 
   if (chipId.startsWith('coverage:')) {
@@ -424,7 +446,9 @@ export const removeMunicipalityOmniboxChip = ({
   return { kind: 'url', state }
 }
 
-export const clearMunicipalityOmnibox = (state: MunicipalityListState): MunicipalityOmniboxAction => ({
+export const clearMunicipalityOmnibox = (
+  state: MunicipalityListState,
+): MunicipalityOmniboxAction => ({
   kind: 'clear',
   state: clearMunicipalityListFilters(state),
   scenario: DEFAULT_VOTE_ESTIMATE_SCENARIO,

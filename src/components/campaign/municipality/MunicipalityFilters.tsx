@@ -12,14 +12,16 @@ import {
   municipalityFilterOptionsForSlugs,
   type MunicipalityFilterOption,
 } from '@/utilities/municipality/municipalityListFilters'
+import type { MunicipalityListState } from '@/utilities/municipality/municipalityListUrl'
 import {
   applyMunicipalityOmniboxSuggestion,
   buildMunicipalityOmniboxChips,
-  buildMunicipalityOmniboxSuggestions,
+  buildMunicipalityOmniboxSuggestionSeeds,
   clearMunicipalityOmnibox,
+  filterMunicipalityOmniboxSuggestions,
   removeMunicipalityOmniboxChip,
+  type MunicipalityOmniboxAction,
 } from '@/utilities/municipality/municipalityOmnibox'
-import type { MunicipalityListState } from '@/utilities/municipality/municipalityListUrl'
 
 type MunicipalityFiltersProps = {
   state: MunicipalityListState
@@ -39,7 +41,7 @@ export const MunicipalityFilters = ({
   advisorFilterOptions,
   slugFilterValues = [],
 }: MunicipalityFiltersProps) => {
-  const { navigateWithSearch, isPending } = useCampaignListFilterNavigation({
+  const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
     toHref: buildMunicipalityFilterHref,
   })
@@ -62,22 +64,34 @@ export const MunicipalityFilters = ({
     return map
   }, [advisorFilterOptions])
 
-  const chips = buildMunicipalityOmniboxChips({
-    state,
-    scenario,
-    showStaffFilters,
-    advisorLabelsById,
-  })
+  const chips = useMemo(
+    () =>
+      buildMunicipalityOmniboxChips({
+        state,
+        scenario,
+        showStaffFilters,
+        advisorLabelsById,
+      }),
+    [state, scenario, showStaffFilters, advisorLabelsById],
+  )
 
-  const suggestions = buildMunicipalityOmniboxSuggestions({
-    query,
-    showStaffFilters,
-    regionFilterOptions,
-    advisorFilterOptions,
-    slugFilterOptions,
-  })
+  const suggestionSeeds = useMemo(
+    () =>
+      buildMunicipalityOmniboxSuggestionSeeds({
+        showStaffFilters,
+        regionFilterOptions,
+        advisorFilterOptions,
+        slugFilterOptions,
+      }),
+    [showStaffFilters, regionFilterOptions, advisorFilterOptions, slugFilterOptions],
+  )
 
-  const runAction = (action: ReturnType<typeof applyMunicipalityOmniboxSuggestion>) => {
+  const suggestions = useMemo(
+    () => filterMunicipalityOmniboxSuggestions(suggestionSeeds, query),
+    [suggestionSeeds, query],
+  )
+
+  const runAction = (action: MunicipalityOmniboxAction) => {
     if (action.kind === 'scenario') {
       setScenario?.(action.scenario)
       return
@@ -85,10 +99,10 @@ export const MunicipalityFilters = ({
     if (action.kind === 'clear') {
       setScenario?.(action.scenario)
       setQuery('')
-      navigateWithSearch(action.state)
+      navigate(action.state)
       return
     }
-    navigateWithSearch(action.state)
+    navigate(action.state)
   }
 
   return (
@@ -109,6 +123,9 @@ export const MunicipalityFilters = ({
         isPending={isPending}
         onSelectSuggestion={(suggestionId) => {
           runAction(applyMunicipalityOmniboxSuggestion({ state, suggestionId }))
+        }}
+        onCommitQuery={(text) => {
+          runAction(applyMunicipalityOmniboxSuggestion({ state, suggestionId: `q:${text}` }))
         }}
         onRemoveChip={(chipId) => {
           runAction(removeMunicipalityOmniboxChip({ state, chipId }))

@@ -1,23 +1,10 @@
 'use client'
 
 import { XIcon } from 'lucide-react'
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type ReactNode,
-} from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 
 import { Button } from '@/components/ui/button'
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/Command'
-import { Popover, PopoverContent, PopoverAnchor } from '@/components/ui/Popover'
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/Popover'
 import type {
   CampaignListOmniboxChip,
   CampaignListOmniboxSuggestion,
@@ -34,6 +21,8 @@ export type CampaignListOmniboxProps = {
   onQueryChange: (query: string) => void
   onSelectSuggestion: (suggestionId: string) => void
   onRemoveChip: (chipId: string) => void
+  /** Free-text commit (Enter with no arrow selection / default). Domain owns id scheme. */
+  onCommitQuery?: (query: string) => void
   onClearAll?: () => void
   isPending?: boolean
   /** Domain controls beside the bar (e.g. save bookmark). */
@@ -44,6 +33,10 @@ export type CampaignListOmniboxProps = {
  * Shared list omnibox chassis (B127): chips inside the field, caret to the
  * right, grouped suggestions from the domain adapter. Navigation / URL policy
  * stay in the caller.
+ *
+ * Keyboard contract mirrors RelationChipCell (ARIA combobox by hand): arrows
+ * move the active option, Enter picks it, Escape closes. cmdk is not used —
+ * its Root expects an inner CommandInput and would leave this field mouse-only.
  */
 export const CampaignListOmnibox = ({
   id: idProp,
@@ -55,6 +48,7 @@ export const CampaignListOmnibox = ({
   onQueryChange,
   onSelectSuggestion,
   onRemoveChip,
+  onCommitQuery,
   onClearAll,
   isPending = false,
   trailing,
@@ -62,25 +56,52 @@ export const CampaignListOmnibox = ({
   const reactId = useId()
   const id = idProp ?? `campaign-list-omnibox-${reactId}`
   const listboxId = `${id}-suggestions`
+  const optionId = (index: number) => `${id}-option-${index}`
   const inputRef = useRef<HTMLInputElement>(null)
   const [open, setOpen] = useState(false)
   const [activeChipId, setActiveChipId] = useState<string | null>(null)
+  const [activeIndex, setActiveIndex] = useState(0)
 
   const hasChips = chips.length > 0
   const showSuggestions = open && suggestions.length > 0
+  const safeActiveIndex =
+    suggestions.length === 0 ? 0 : Math.min(activeIndex, suggestions.length - 1)
+  const activeOptionId = showSuggestions ? optionId(safeActiveIndex) : undefined
 
   useEffect(() => {
     if (!open) setActiveChipId(null)
   }, [open])
 
+  useEffect(() => {
+    setActiveIndex(0)
+  }, [query])
+
   const selectSuggestion = (suggestionId: string) => {
     onSelectSuggestion(suggestionId)
     onQueryChange('')
     setOpen(false)
+    setActiveIndex(0)
     inputRef.current?.focus()
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      if (suggestions.length === 0) return
+      event.preventDefault()
+      setOpen(true)
+      const delta = event.key === 'ArrowDown' ? 1 : -1
+      setActiveIndex((current) => (current + delta + suggestions.length) % suggestions.length)
+      return
+    }
+
+    if (event.key === 'Home' || event.key === 'End') {
+      if (suggestions.length === 0) return
+      event.preventDefault()
+      setOpen(true)
+      setActiveIndex(event.key === 'Home' ? 0 : suggestions.length - 1)
+      return
+    }
+
     if (event.key === 'Escape') {
       if (open) {
         event.preventDefault()
@@ -103,24 +124,33 @@ export const CampaignListOmnibox = ({
 
     if (event.key === 'Enter') {
       const trimmed = query.trim()
-      if (!trimmed) return
-      event.preventDefault()
-      // Prefer the explicit Busca suggestion when present; else first match.
-      const searchSuggestion = suggestions.find((entry) => entry.id === `q:${trimmed}`)
-      const first = searchSuggestion ?? suggestions[0]
-      if (first) selectSuggestion(first.id)
+      if (showSuggestions && suggestions[safeActiveIndex]) {
+        event.preventDefault()
+        selectSuggestion(suggestions[safeActiveIndex]!.id)
+        return
+      }
+      if (trimmed && onCommitQuery) {
+        event.preventDefault()
+        onCommitQuery(trimmed)
+        onQueryChange('')
+        setOpen(false)
+      }
     }
   }
 
   const groups = (() => {
-    const map = new Map<string, CampaignListOmniboxSuggestion[]>()
-    for (const suggestion of suggestions) {
+    const map = new Map<string, { suggestion: CampaignListOmniboxSuggestion; index: number }[]>()
+    suggestions.forEach((suggestion, index) => {
       const bucket = map.get(suggestion.group) ?? []
-      bucket.push(suggestion)
+      bucket.push({ suggestion, index })
       map.set(suggestion.group, bucket)
-    }
+    })
     return [...map.entries()]
   })()
+
+  const activeChipLabel = activeChipId
+    ? chips.find((chip) => chip.id === activeChipId)?.label
+    : null
 
   return (
     <div
@@ -145,7 +175,6 @@ export const CampaignListOmnibox = ({
                 'focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50',
               )}
               onMouseDown={(event) => {
-                // Keep focus on the input when clicking chips/padding.
                 if (event.target === event.currentTarget) inputRef.current?.focus()
               }}
             >
@@ -169,7 +198,7 @@ export const CampaignListOmnibox = ({
                       inputRef.current?.focus()
                     }}
                   >
-                    <XIcon className="size-3.5" />
+                    <XIcon className="size-3.5" aria-hidden />
                   </button>
                 </span>
               ))}
@@ -178,8 +207,10 @@ export const CampaignListOmnibox = ({
                 id={id}
                 role="combobox"
                 aria-expanded={showSuggestions}
-                aria-controls={listboxId}
+                aria-controls={showSuggestions ? listboxId : undefined}
+                aria-activedescendant={activeOptionId}
                 aria-autocomplete="list"
+                aria-haspopup="listbox"
                 autoComplete="off"
                 spellCheck={false}
                 placeholder={hasChips ? '' : placeholder}
@@ -196,33 +227,55 @@ export const CampaignListOmnibox = ({
             </div>
           </PopoverAnchor>
           <PopoverContent
-            id={listboxId}
-            role="listbox"
             align="start"
-            className="w-[var(--radix-popover-trigger-width)] min-w-[min(100%,24rem)] p-0"
+            className="w-[var(--radix-popover-trigger-width)] min-w-[min(100%,24rem)] p-1"
             onOpenAutoFocus={(event) => event.preventDefault()}
             onCloseAutoFocus={(event) => event.preventDefault()}
           >
-            <Command shouldFilter={false} className="rounded-xl border-0">
-              <CommandList>
-                {groups.map(([group, items]) => (
-                  <CommandGroup key={group} heading={group}>
-                    {items.map((suggestion) => (
-                      <CommandItem
+            <div
+              id={listboxId}
+              role="listbox"
+              aria-label={label}
+              className="max-h-72 overflow-y-auto"
+            >
+              {groups.map(([group, items]) => (
+                <div key={group} role="group" aria-label={group} className="py-1">
+                  <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">{group}</p>
+                  {items.map(({ suggestion, index }) => {
+                    const active = index === safeActiveIndex
+                    return (
+                      <button
                         key={suggestion.id}
-                        value={suggestion.id}
-                        onSelect={() => selectSuggestion(suggestion.id)}
-                        className="min-h-11"
+                        type="button"
+                        id={optionId(index)}
+                        role="option"
+                        aria-selected={active}
+                        className={cn(
+                          'flex min-h-11 w-full items-center rounded-sm px-2 py-1.5 text-left text-sm outline-hidden',
+                          active ? 'bg-muted text-foreground' : 'text-foreground hover:bg-muted/70',
+                        )}
+                        onMouseEnter={() => setActiveIndex(index)}
+                        onClick={() => selectSuggestion(suggestion.id)}
                       >
                         {suggestion.label}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                ))}
-              </CommandList>
-            </Command>
+                      </button>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
           </PopoverContent>
         </Popover>
+        {activeChipLabel ? (
+          <p className="sr-only" aria-live="polite">
+            {activeChipLabel} selecionado. Backspace remove.
+          </p>
+        ) : null}
+        {isPending ? (
+          <p className="sr-only" aria-live="polite">
+            Atualizando resultados…
+          </p>
+        ) : null}
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center gap-2 md:pt-7">

@@ -128,4 +128,17 @@ describe('municipality omnibox (B127)', () => {
       scenario: 'central',
     })
   })
+
+  it('apply search suggestion sets q without depending on draft search', () => {
+    // Callers must navigate with action.state as-is (hook.navigate), not
+    // navigateWithSearch which would re-inject the unused draft q.
+    const applied = applyMunicipalityOmniboxSuggestion({
+      state: parseMunicipalityListParams({ q: 'old' }),
+      suggestionId: 'q:novo',
+    })
+    expect(applied).toEqual({
+      kind: 'url',
+      state: expect.objectContaining({ q: 'novo', page: 1 }),
+    })
+  })
 })

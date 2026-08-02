@@ -201,6 +201,11 @@ export const resolveMunicipalityListSort = (
   return { sort, dir }
 }
 
+export const isDefaultMunicipalityListSort = (state: MunicipalityListState): boolean => {
+  const { sort, dir } = resolveMunicipalityListSort(state)
+  return sort === DEFAULT_MUNICIPALITY_LIST_SORT_KEY && dir === defaultMunicipalityListSortDir(sort)
+}
+
 export const formatMunicipalityListSortSummary = (
   sort: MunicipalityListSortKey,
   dir: MunicipalityListSortDirection,

@@ -132,6 +132,11 @@ export const useCampaignListFilterNavigation = <State extends { q?: string }>({
      */
     draftQ: normalizedText(search) || state.q,
     isPending,
+    /**
+     * Navigate with the caller's state as-is (no draft-search merge). Used by
+     * shells that own committed `q` themselves (B127 omnibox).
+     */
+    navigate: navigateTo,
     navigateWithSearch,
     clearSearchAndNavigate,
   }
