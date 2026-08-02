@@ -28,7 +28,7 @@ import {
   activitiesCollection,
   demandsCollection,
   leadershipsCollection,
-} from '@/components/campaign/opsSync/opsMirrorClient'
+} from '@/components/campaign/opsSync/opsMirrorCollections'
 import { opsOutboxKey, type OpsOutboxKey } from '@/lib/campaignOps/opsContract'
 import type { ActivityUpdateInput } from '@/lib/schemas/activity'
 import type { CampaignDemandStatus } from '@/lib/schemas/campaignDemand'

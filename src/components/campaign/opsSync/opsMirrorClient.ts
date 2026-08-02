@@ -1,9 +1,16 @@
 'use client'
 
-import { createCollection, localOnlyCollectionOptions } from '@tanstack/db'
-
-import { collectOpsEstimateOutboxKeys } from '@/components/campaign/opsSync/opsEstimateOutbox'
 import { collectOpsDomainOutboxKeys } from '@/components/campaign/opsSync/opsDomainOutbox'
+import { collectOpsEstimateOutboxKeys } from '@/components/campaign/opsSync/opsEstimateOutbox'
+import {
+  activitiesCollection,
+  demandsCollection,
+  leadershipsCollection,
+  municipalitiesCollection,
+  municipalityUpdatesCollection,
+  organizationsCollection,
+  stateDeputiesCollection,
+} from '@/components/campaign/opsSync/opsMirrorCollections'
 import {
   openOpsMirrorStore,
   type OpsMirrorPersistenceMode,
@@ -13,16 +20,9 @@ import { collectOpsMunicipalityOutboxKeys } from '@/components/campaign/opsSync/
 import { votePledgesCollection } from '@/components/campaign/opsSync/opsVotePledgeMirror'
 import {
   createEmptyOpsSnapshot,
-  type OpsActivity,
-  type OpsDemand,
   type OpsGoals,
-  type OpsLeadership,
-  type OpsMunicipality,
-  type OpsMunicipalityUpdate,
-  type OpsOrganization,
   type OpsOutboxKey,
   type OpsSnapshot,
-  type OpsStateDeputy,
 } from '@/lib/campaignOps/opsContract'
 import { mergeOpsSnapshot } from '@/lib/campaignOps/opsMerge'
 import { OPS_MIRROR_SCHEMA_VERSION } from '@/lib/campaignOps/opsMirrorVersion'
@@ -30,24 +30,15 @@ import type { OpsSyncState } from '@/lib/campaignOps/opsSyncMeta'
 
 export const OPS_SYNC_PATH = '/campanha/api/ops-sync'
 
-const createRowCollection = <T extends { id: number }>(id: string) =>
-  createCollection(
-    localOnlyCollectionOptions<T, number>({
-      id,
-      getKey: (row) => row.id,
-    }),
-  )
-
-export const municipalitiesCollection = createRowCollection<OpsMunicipality>('ops-municipalities')
-export const leadershipsCollection = createRowCollection<OpsLeadership>('ops-leaderships')
-export { votePledgesCollection }
-export const activitiesCollection = createRowCollection<OpsActivity>('ops-activities')
-export const stateDeputiesCollection = createRowCollection<OpsStateDeputy>('ops-state-deputies')
-export const organizationsCollection = createRowCollection<OpsOrganization>('ops-organizations')
-export const demandsCollection = createRowCollection<OpsDemand>('ops-demands')
-const municipalityUpdatesCollection = createRowCollection<OpsMunicipalityUpdate>(
-  'ops-municipality-updates',
-)
+export {
+  activitiesCollection,
+  demandsCollection,
+  leadershipsCollection,
+  municipalitiesCollection,
+  organizationsCollection,
+  stateDeputiesCollection,
+  votePledgesCollection,
+}
 
 let goalsMirror: OpsGoals | null = null
 let revisedAtMirror: string = new Date(0).toISOString()
