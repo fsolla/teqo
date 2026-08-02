@@ -36,6 +36,8 @@ type CampaignListSheetContextValue = {
   /** Bumps when the drawer body/footer mount targets attach — portals read this. */
   portalRevision: number
   openSheet: (chrome: CampaignListSheetChrome) => void
+  /** Dismiss whichever cell opened the shared sheet (B119 — stable ref, not callback identity). */
+  dismissActiveSheet: () => void
   dismissSheet: (onOpenChange: (open: boolean) => void) => void
   isActiveSheet: (onOpenChange: (open: boolean) => void) => boolean
 }
@@ -68,13 +70,21 @@ export const CampaignListSheetProvider = ({ children }: { children: ReactNode })
     if (node) setPortalRevision((value) => value + 1)
   }, [])
 
-  const dismissSheet = useCallback((onOpenChange: (open: boolean) => void) => {
-    if (activeOnOpenChangeRef.current !== onOpenChange) return
+  const dismissActiveSheet = useCallback(() => {
+    const onOpenChange = activeOnOpenChangeRef.current
     setOpen(false)
     activeOnOpenChangeRef.current = null
     setChrome(null)
-    onOpenChange(false)
+    onOpenChange?.(false)
   }, [])
+
+  const dismissSheet = useCallback(
+    (onOpenChange: (open: boolean) => void) => {
+      if (activeOnOpenChangeRef.current !== onOpenChange) return
+      dismissActiveSheet()
+    },
+    [dismissActiveSheet],
+  )
 
   const openSheet = useCallback((next: CampaignListSheetChrome) => {
     const previousOnOpenChange = activeOnOpenChangeRef.current
@@ -107,15 +117,14 @@ export const CampaignListSheetProvider = ({ children }: { children: ReactNode })
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
       if (nextOpen) return
-      const onOpenChange = activeOnOpenChangeRef.current
-      if (!onOpenChange) {
+      if (!activeOnOpenChangeRef.current) {
         setOpen(false)
         setChrome(null)
         return
       }
-      dismissSheet(onOpenChange)
+      dismissActiveSheet()
     },
-    [dismissSheet],
+    [dismissActiveSheet],
   )
 
   const contextValue = useMemo(
@@ -124,10 +133,11 @@ export const CampaignListSheetProvider = ({ children }: { children: ReactNode })
       footerPortalRef,
       portalRevision,
       openSheet,
+      dismissActiveSheet,
       dismissSheet,
       isActiveSheet,
     }),
-    [portalRevision, openSheet, dismissSheet, isActiveSheet],
+    [portalRevision, openSheet, dismissActiveSheet, dismissSheet, isActiveSheet],
   )
 
   return (

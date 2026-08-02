@@ -199,6 +199,9 @@ describe('campaign cell edit overlay', () => {
     )
     expect(dialog.textContent).toContain('Cancelar')
     expect(dialog.textContent).toContain(nivelCase!.footerLabel)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
 
   it.each(overlayCases)(

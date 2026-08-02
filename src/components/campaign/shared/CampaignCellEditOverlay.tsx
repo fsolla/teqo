@@ -179,7 +179,7 @@ export const CampaignCellEditOverlay = ({
     wasOpenRef.current = open
 
     if (!open) {
-      if (wasOpen) sharedSheet.dismissSheet(onOpenChange)
+      if (wasOpen) sharedSheet.dismissActiveSheet()
       return
     }
 
