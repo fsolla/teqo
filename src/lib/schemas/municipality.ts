@@ -89,9 +89,8 @@ export const MUNICIPALITY_ENGAGEMENT_LEVEL_UNRESTRICTED_MESSAGE =
   'Somente a coordenação geral ou o candidato move o nível de envolvimento.'
 
 /**
- * E14 + B134 — a movement still records hysteresis/override in the snapshot;
- * Motivo is optional free text (empty OK). "O que faria voltar atrás" left the
- * write model (B147 lands the policy soft-dep; historical snapshot scrub stays B134).
+ * E14 — a movement records the new level plus an optional motivo; hysteresis,
+ * triangulated shock and override stay on the write path (B134).
  */
 export const municipalityEngagementLevelSchema = z.object({
   municipality: positiveRelationshipId,

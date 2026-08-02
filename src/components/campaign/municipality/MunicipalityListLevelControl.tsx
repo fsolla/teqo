@@ -45,8 +45,9 @@ type MunicipalityListLevelControlProps = {
 
 /**
  * E14 — unlike the trend and estimate cells next to it, this one submits
- * explicitly: a movement may need an override / triangulated shock. Motivo is
- * optional (B134/B147). Auto-saving would skip the confirmation rite.
+ * explicitly: a movement may need an override, and the motivo is optional.
+ * Auto-saving half of that would file an incomplete decision under the
+ * coordinator's name.
  */
 export const MunicipalityListLevelControl = ({
   municipalityID,
@@ -170,7 +171,7 @@ export const MunicipalityListLevelControl = ({
         {
           municipalityId: municipalityID,
           level: draftLevel,
-          note: note.trim() ? note : null,
+          note,
           triangulatedShock,
           override,
         },

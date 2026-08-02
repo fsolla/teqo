@@ -94,7 +94,7 @@ export const WizardTrendNoteStep = ({
 
         <div className="flex flex-col gap-2">
           <label htmlFor="wizard-trend-note" className="text-sm font-medium">
-            Por que mudar a tendência?
+            Por que mudar a tendência? (opcional)
           </label>
           <Textarea
             id="wizard-trend-note"
@@ -103,7 +103,6 @@ export const WizardTrendNoteStep = ({
             onChange={(event) => setNote(event.target.value)}
             rows={5}
             maxLength={2000}
-            required
             disabled={isPending}
             autoFocus
             className="min-h-28"

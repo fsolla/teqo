@@ -66,7 +66,7 @@ describe('municipality engagement level (E14)', () => {
     expect(decision.snapshot).not.toHaveProperty('reversalSignals')
   })
 
-  it('accepts an empty motivo and still writes the movement', async () => {
+  it('records a movement with an empty motivo (B134)', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
@@ -85,7 +85,9 @@ describe('municipality engagement level (E14)', () => {
     expect(decisions.docs).toHaveLength(1)
     const decision = decisions.docs[0]!
     fixtures.own('allocationDecision', decision.id)
-    expect(decision.rationale).toBe('Sem motivo registrado.')
+    expect(decision.rationale).toBe('')
+    expect(decision.snapshot).toMatchObject({ from: null, to: 'n1' })
+    expect(decision.snapshot).not.toHaveProperty('reversalSignals')
   })
 
   it('holds a movement that breaks the rules and writes nothing', async () => {
@@ -158,6 +160,7 @@ describe('municipality engagement level (E14)', () => {
       // against undoing a decision, not against deepening it.
       violations: ['dois-movimentos-no-mes'],
     })
+    expect(latest.snapshot).not.toHaveProperty('reversalSignals')
   })
 
   it('accepts a two-level jump when a triangulated shock is declared', async () => {
@@ -194,6 +197,7 @@ describe('municipality engagement level (E14)', () => {
       triangulatedShock: true,
       overridden: false,
     })
+    expect(decisions.docs[0]!.snapshot).not.toHaveProperty('reversalSignals')
   })
 
   it('keeps the ladder with unrestricted staff — the advisor proposes, it does not move', async () => {

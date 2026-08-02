@@ -151,10 +151,6 @@ export const setMunicipalityEngagementLevelRecord = async (
 ) => {
   const { municipality, level, note, triangulatedShock, override } =
     municipalityEngagementLevelSchema.parse(input)
-  const levelNote = note ?? null
-  // allocationDecision.rationale is required; empty Motivo still leaves an
-  // auditable row without inventing coordinator prose.
-  const rationale = levelNote ?? 'Sem motivo registrado.'
 
   return withPayloadTransaction(
     payload,
@@ -194,7 +190,7 @@ export const setMunicipalityEngagementLevelRecord = async (
       const updated = await payload.update({
         collection: 'municipality',
         id: municipality,
-        data: { engagementLevel: level, levelNote },
+        data: { engagementLevel: level, levelNote: note },
         depth: 0,
         user: currentActor,
         overrideAccess: false,
@@ -207,7 +203,7 @@ export const setMunicipalityEngagementLevelRecord = async (
           municipality,
           patternId: ENGAGEMENT_LEVEL_PATTERN_ID,
           outcome: 'movimento',
-          rationale,
+          rationale: note ?? '',
           // Only the values the decision was taken on — no document dumps
           // (the collection caps the serialized snapshot at 16 KB).
           snapshot: {
