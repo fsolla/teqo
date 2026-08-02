@@ -94,7 +94,7 @@ test.describe('Municípios — jornadas por papel', () => {
     )
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
-    const advisorsTrigger = page.getByRole('button', { name: 'Editar assessores' })
+    const advisorsTrigger = page.getByRole('button', { name: 'Editar assessores' }).first()
     await advisorsTrigger.click()
 
     const advisorsPopover = page.locator('[data-slot="popover-content"]')
@@ -124,7 +124,7 @@ test.describe('Municípios — jornadas por papel', () => {
     // Persistence: reload and reopen to confirm the server, not just local
     // state, now holds the assignment.
     await page.reload()
-    await page.getByRole('button', { name: 'Editar assessores' }).click()
+    await page.getByRole('button', { name: 'Editar assessores' }).first().click()
     await expect(
       page.locator('[data-slot="popover-content"]').getByRole('button', {
         name: `Remover ${advisor.name}`,
