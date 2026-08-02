@@ -9,8 +9,6 @@ import { territorialClassSortWeight } from '@/lib/territorialClassSortWeight'
 import config from '@/payload.config'
 import { loadMunicipalityListPageBundle } from '@/utilities/municipality/municipalityPageData'
 import { computeMunicipalityTerritorialClass } from '@/utilities/municipality/municipalityTerritorialClass'
-import { aggregatePledgesByMunicipality } from '@/utilities/votePledgeData'
-import { rollupMunicipalityStaffVotes } from '@/utilities/votePledgeViews'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
@@ -36,42 +34,11 @@ describe('loadMunicipalityListPageBundle', () => {
     expect(bundle.totalDocs).toBe(0)
   })
 
-  it('rolls up staffVoteTotal from expectedVotes when no pledge overrides apply', async () => {
+  it('includes 2022 vote position on list rows', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
     fixtures.touchMunicipality(municipality.id)
-
-    await payload.update({
-      collection: 'municipality',
-      id: municipality.id,
-      data: { expectedVotes: { pessimistic: null, central: 1_500, optimistic: null } },
-      depth: 0,
-      overrideAccess: true,
-    })
-
-    const contact = await fixtures.createContact()
-    const leadership = await fixtures.createLeadership({
-      contact: contact.id,
-      municipalities: [municipality.id],
-      supportStatus: 'engajado',
-    })
-    await fixtures.createVotePledge({
-      leadership: leadership.id,
-      municipality: municipality.id,
-      declaredVotes: 80,
-      estimatedVotes: { pessimistic: null, central: 120, optimistic: null },
-    })
-
-    const refreshedMunicipality = await payload.findByID({
-      collection: 'municipality',
-      id: municipality.id,
-      depth: 0,
-      overrideAccess: true,
-    })
-    const aggregates = await aggregatePledgesByMunicipality(payload, [municipality.id])
-    const rollup = rollupMunicipalityStaffVotes([refreshedMunicipality], aggregates)
-    expect(rollup.staffVoteTotal).toBe(1_500)
 
     const bundle = await loadMunicipalityListPageBundle(payload, coordinator, {
       q: municipality.name,
@@ -278,7 +245,7 @@ describe('loadMunicipalityListPageBundle', () => {
    * cannot be a Payload constraint. The bundle must still agree with itself —
    * rows and `totalDocs` counting the filtered scope.
    */
-  it('filters by the derived territorial class and keeps the overview honest', async () => {
+  it('filters by the derived territorial class and keeps totals honest', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
 

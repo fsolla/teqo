@@ -87,8 +87,7 @@ type MunicipalityFacetRow = Pick<Municipality, 'slug' | 'region' | 'advisors'>
  * class is derived from the committed TSE artifact, not stored), so every
  * place that would otherwise trust `where` — the page query and the facets —
  * has to apply this predicate itself. Returns `null` when no class is selected,
- * when no class is selected, which is also the signal to keep the cheap
- * database-paginated path.
+ * which is also the signal to keep the cheap database-paginated path.
  */
 const territorialClassFilterPredicate = (
   state: MunicipalityListState,

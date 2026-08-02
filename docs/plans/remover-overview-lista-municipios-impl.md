@@ -41,6 +41,7 @@ Appetite restante: remoção cirúrgica (sem redesign)
 
 - Redesenhar `loading.tsx` (fora do aceite).
 - Tocar `SupporterListOverview` ou dashboard.
+- **Defer:** escopo de `loadMunicipalityGoalCoverageBundle` ao page slice quando `isPagedByPayload` (gatilho: perf review pós-B129); skip `aggregateByScenario` no loader de lista (gatilho: 2º consumidor de rows-only).
 
 ## Riscos e mitigação
 
