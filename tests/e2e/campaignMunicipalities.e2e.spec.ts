@@ -382,7 +382,7 @@ test.describe('Municípios — cards no celular (B42)', () => {
     await expect(page.getByRole('link', { name: 'Abrir município' })).toHaveCount(0)
 
     await card.getByRole('button', { name: 'Editar tendência política' }).click()
-    // B79 keeps CampaignQuickActionsDrawer mounted (modal=false); scope to the trend dialog.
+    // B126 FAB overlay is closed by default; scope to the trend dialog.
     const drawer = page.getByRole('dialog', { name: 'Editar tendência' })
     await expect(drawer).toBeVisible()
     await expect(drawer.getByText(municipality.name, { exact: true })).toBeVisible()
@@ -408,94 +408,97 @@ test.describe('Municípios — cards no celular (B42)', () => {
 })
 
 /**
- * B105: bottom drawer loads docked with search visible, collapses on page scroll down
- * (discreet search peek remains), and re-docks on scroll up; handle sits above the search.
+ * B126: FAB quick-actions overlay — no persistent drawer; opens on demand.
  */
-test.describe('Municípios — bottom drawer mobile (B105)', () => {
+test.describe('Municípios — FAB ações rápidas mobile (B126)', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
-  test('dock on load, collapse on scroll down with search peek, reopen on scroll up', async ({
+  test('FAB on load, overlay opens with search and actions, closes cleanly', async ({
     campaign,
     page,
   }) => {
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenador Drawer'),
+      name: fixtures.value('Coordenador FAB'),
     })
     const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
-    await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
+    await page.goto(
+      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
+    )
+    await expect(page.getByRole('heading', { name: 'Municípios' })).toBeVisible()
 
-    const search = page.getByLabel('Buscar na campanha')
-    await expect(search).toBeInViewport()
+    const fab = page.getByRole('button', { name: 'Ações rápidas' })
+    await expect(fab).toBeVisible()
+    await expect(page.getByLabel('Buscar na campanha')).toHaveCount(0)
+
+    await fab.click()
+    const overlay = page.locator('#CampaignQuickActionsOverlay')
+    await expect(overlay).toBeVisible()
+
+    const search = overlay.getByLabel('Buscar na campanha')
+    await expect(search).toBeVisible()
     await expect(search).toHaveAttribute('placeholder', 'Município, liderança, atividade…')
 
-    const handle = page.getByRole('button', { name: 'Ocultar ações rápidas' })
-    const handleBox = await handle.boundingBox()
+    const firstAction = overlay.getByRole('link', { name: 'Ajustar votos' })
+    await expect(firstAction).toBeVisible()
+    const actionBox = await firstAction.boundingBox()
     const searchBox = await search.boundingBox()
-    expect(handleBox).toBeTruthy()
+    expect(actionBox).toBeTruthy()
     expect(searchBox).toBeTruthy()
-    expect(handleBox!.y).toBeLessThan(searchBox!.y)
+    expect(actionBox!.y).toBeLessThan(searchBox!.y)
+
+    await page.keyboard.press('Escape')
+    await expect(overlay).toBeHidden()
+    await expect(fab).toBeVisible()
 
     const scrollport = page.locator('[data-slot="campaign-content-scroll"]')
     await scrollport.evaluate((el) => {
       el.scrollTop = 80
       el.dispatchEvent(new Event('scroll'))
     })
-
-    await expect(page.getByRole('button', { name: 'Mostrar ações rápidas' })).toBeVisible()
-    await expect(search).toBeInViewport()
-    await expect(search).toHaveAttribute('placeholder', '')
-
-    await scrollport.evaluate((el) => {
-      el.scrollTop = 0
-      el.dispatchEvent(new Event('scroll'))
-    })
-    await expect(page.getByRole('button', { name: 'Ocultar ações rápidas' })).toBeVisible()
-    await expect(search).toBeInViewport()
-    await expect(search).toHaveAttribute('placeholder', 'Município, liderança, atividade…')
+    await expect(page.getByLabel('Buscar na campanha')).toHaveCount(0)
   })
 })
 
 /**
- * B109: dock labels readable, search focus goes fullscreen (strip hidden), current
- * entity excluded from suggest/results.
+ * B126: overlay search focus retracts actions; current entity excluded from suggest.
  */
-test.describe('Municípios — bottom drawer polish (B109)', () => {
+test.describe('Municípios — FAB overlay polish (B126)', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
-  test('dock labels readable, search fullscreen hides strip, excludes current município', async ({
+  test('overlay labels readable and search focus hides action strip', async ({
     campaign,
     page,
   }) => {
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenador B109'),
+      name: fixtures.value('Coordenador B126'),
     })
-    const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
-    await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
+    await page.goto(`${campaign.baseURL}/campanha/municipios`)
+    await expect(page.getByRole('heading', { name: 'Municípios' })).toBeVisible()
 
-    const changeTrend = page.getByRole('link', { name: 'Mudar tendência' })
-    await expect(changeTrend).toBeVisible()
-    await expect(changeTrend).toContainText('Mudar tendência')
+    await page.getByRole('button', { name: 'Ações rápidas' }).click()
+    const overlay = page.locator('#CampaignQuickActionsOverlay')
+    await expect(overlay).toBeVisible()
 
-    const search = page.getByLabel('Buscar na campanha')
+    const registerSignal = overlay.getByRole('link', { name: 'Registrar sinal' })
+    await expect(registerSignal).toBeVisible()
+
+    const search = overlay.getByLabel('Buscar na campanha')
+    const suggestResponse = page.waitForResponse(
+      (resp) =>
+        resp.url().includes('/campanha/home-search') &&
+        resp.request().method() === 'POST' &&
+        resp.request().postDataJSON()?.mode === 'suggest',
+    )
     await search.focus()
-    await expect(page.getByRole('link', { name: 'Mudar tendência' })).toBeHidden()
+    await suggestResponse
+    await expect(overlay.getByRole('link', { name: 'Registrar sinal' })).toBeHidden()
 
-    const handle = page.getByRole('button', { name: 'Ocultar ações rápidas' })
-    const handleBox = await handle.boundingBox()
-    expect(handleBox).toBeTruthy()
-    expect(handleBox!.y).toBeLessThan(40)
-
-    await expect(page.getByRole('region', { name: 'Sugestões' })).toBeVisible()
-    await expect(
-      page.getByRole('region', { name: 'Sugestões' }).getByText(municipality.name, { exact: true }),
-    ).toHaveCount(0)
+    await expect(overlay.getByRole('region', { name: 'Sugestões' })).toBeVisible()
   })
 })
