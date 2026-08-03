@@ -52,7 +52,7 @@ test.describe('Municípios — jornadas por papel', () => {
     ).toBeVisible()
 
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
-    await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
+    await expect(campaignPageChrome(page, municipality.name)).toBeVisible()
 
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}/editar`)
     await page.getByLabel(`${advisor.name} `, { exact: false }).check()
@@ -75,6 +75,9 @@ test.describe('Municípios — jornadas por papel', () => {
     // unique, unambiguous string rather than a bare "5.000" substring —
     // that also matches the (opacity-0 but DOM-visible) hover-preview span.
     await expect(page.getByText('Otimista: 5.000')).toBeVisible()
+
+    // B145: assessoria left the detail hero; it still appears on the dossiê tab.
+    await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}?tab=dossie`)
     await expect(page.getByText(`Assessoria: ${advisor.name}`)).toBeVisible()
   })
 
@@ -360,7 +363,7 @@ test.describe('Municípios — jornadas por papel', () => {
     await page.getByLabel('Município').selectOption({ label: municipality.name })
     await page.getByLabel('Detalhe a necessidade').fill('Precisamos para a caminhada de sábado.')
     await page.getByRole('button', { name: 'Abrir demanda' }).click()
-    await expect(page.getByRole('heading', { name: demandTitle })).toBeVisible()
+    await expect(campaignPageChrome(page, demandTitle)).toBeVisible()
     await expect(page.getByRole('button', { name: 'Aprovar' })).toBeVisible()
 
     await page.goto(`${campaign.baseURL}/campanha/demandas`)
@@ -422,7 +425,7 @@ test.describe('Municípios — cards no celular (B42)', () => {
     // overlay receives it (as a user's finger would), and the card navigates.
     await card.getByText('Tendência', { exact: true }).click({ force: true })
     await expect(page).toHaveURL(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
-    await expect(page.getByRole('heading', { name: municipality.name })).toBeVisible()
+    await expect(campaignPageChrome(page, municipality.name)).toBeVisible()
   })
 })
 

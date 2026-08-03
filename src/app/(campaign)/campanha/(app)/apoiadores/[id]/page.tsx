@@ -1,18 +1,18 @@
 import config from '@payload-config'
-import { ArrowLeftIcon, ShieldCheckIcon } from 'lucide-react'
+import { ShieldCheckIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { setSupporterVoteIntentionFormAction } from '@/app/(campaign)/campanha/(app)/apoiadores/[id]/formActions'
 import { ConsentText } from '@/components/campaign/shared/ConsentText'
+import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { RemoveSupporterDataButton } from '@/components/campaign/supporter/RemoveSupporterDataButton'
 import { SupporterShareKit } from '@/components/campaign/supporter/SupporterShareKit'
 import { VoteIntentionControl } from '@/components/campaign/supporter/VoteIntentionControl'
 import { Badge } from '@/components/ui/Badge'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   loadSupporterDetailConsentData,
@@ -25,7 +25,21 @@ import {
 } from '@/utilities/supporter/supporterUi'
 import { parseSupporterId } from '@/utilities/supporter/supporterViewModels'
 
-export const metadata = campaignPageMetadataFromCatalog('apoiadores')
+export async function generateMetadata({ params }: SupporterDetailPageProps) {
+  const { id: rawId } = await params
+  const supporterId = parseSupporterId(rawId)
+  if (supporterId === null) return campaignPageMetadata({ title: 'Apoiador' })
+
+  const [user, payload] = await Promise.all([requireCampaignPageActor(), getPayload({ config })])
+  if (!canAccessSupporterArea(user.role)) return campaignPageMetadata({ title: 'Apoiador' })
+
+  try {
+    const supporter = await loadSupporterDetailPageData(payload, user, supporterId)
+    return campaignPageMetadata({ title: 'Apoiador', subtitle: supporter.name })
+  } catch {
+    return campaignPageMetadata({ title: 'Apoiador' })
+  }
+}
 
 type SupporterDetailPageProps = {
   params: Promise<{ id: string }>
@@ -65,19 +79,11 @@ export default async function SupporterDetailPage({ params }: SupporterDetailPag
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-      <header className="flex flex-col gap-2">
-        <Button asChild variant="ghost" className="w-fit px-0">
-          <Link href="/campanha/apoiadores">
-            <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
-            Voltar para apoiadores
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-semibold tracking-tight">{supporter.name}</h1>
-        <p className="text-muted-foreground">
-          {supporter.city ?? 'Cidade não informada'}
-          {supporter.territory ? ` · ${supporter.territory}` : ''}
-        </p>
-      </header>
+      <SetCampaignPageChrome chrome={{ title: 'Apoiador', subtitle: supporter.name }} />
+      <p className="text-muted-foreground">
+        {supporter.city ?? 'Cidade não informada'}
+        {supporter.territory ? ` · ${supporter.territory}` : ''}
+      </p>
 
       <Card>
         <CardHeader>

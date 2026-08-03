@@ -6,18 +6,15 @@ import { Suspense } from 'react'
 
 import { RecentVisitTracker } from '@/components/campaign/dashboard/RecentVisitTracker'
 import { MunicipalityTabNav } from '@/components/campaign/municipality/MunicipalityTabNav'
+import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { Badge } from '@/components/ui/Badge'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   resolveMunicipalityDetailTab,
   type MunicipalityDetailSearchParams,
 } from '@/utilities/municipality/municipalityDetailTabUi'
-import {
-  formatMunicipalityGeographyLabel,
-  municipalityKindLabels,
-} from '@/utilities/municipality/municipalityLabels'
+import { formatMunicipalityGeographyLabel } from '@/utilities/municipality/municipalityLabels'
 import {
   getMunicipalityDetailViewModel,
   MunicipalityNotFoundError,
@@ -34,14 +31,27 @@ import {
   UpdatesTab,
 } from './MunicipalityDetailTabs'
 
-export const metadata = campaignPageMetadataFromCatalog('municipios')
+export async function generateMetadata({ params }: MunicipalityDetailPageProps) {
+  const { slug } = await params
+  const payload = await getPayload({ config })
+  const user = await requireCampaignPageActor({ gate: 'noLeader' })
+
+  try {
+    const context = await resolveAccessibleMunicipalityContext(payload, user, slug)
+    const view = await getMunicipalityDetailViewModel(payload, context, user)
+    return campaignPageMetadata({
+      title: view.name,
+      subtitle: formatMunicipalityGeographyLabel(view),
+    })
+  } catch {
+    return campaignPageMetadata({ title: 'Município' })
+  }
+}
 
 type MunicipalityDetailPageProps = {
   params: Promise<{ slug: string }>
   searchParams: Promise<MunicipalityDetailSearchParams>
 }
-
-const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
 export default async function MunicipalityDetailPage({
   params,
@@ -68,22 +78,12 @@ export default async function MunicipalityDetailPage({
 
   return (
     <CampaignPageShell>
-      {/* print: the dossier tab carries its own capa; page chrome stays out. */}
-      <header className="flex flex-col gap-2 print:hidden">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{view.name}</h1>
-          <Badge variant="scope">{municipalityKindLabels[view.kind]}</Badge>
-        </div>
-        <p className="text-muted-foreground">{formatMunicipalityGeographyLabel(view)}</p>
-        <p className="text-sm text-muted-foreground">
-          {advisorSummaries.length
-            ? `Assessoria: ${advisorSummaries.map((advisor) => advisor.name).join(', ')}`
-            : 'Sem assessor designado.'}
-          {view.lastUpdateAt
-            ? ` · Última atualização em ${dateFormatter.format(new Date(view.lastUpdateAt))}`
-            : ''}
-        </p>
-      </header>
+      <SetCampaignPageChrome
+        chrome={{
+          title: view.name,
+          subtitle: formatMunicipalityGeographyLabel(view),
+        }}
+      />
 
       <MunicipalityTabNav
         activeTab={activeTab}

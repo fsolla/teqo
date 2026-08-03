@@ -1,15 +1,15 @@
 import config from '@payload-config'
-import { ArrowLeftIcon, PaperclipIcon } from 'lucide-react'
+import { PaperclipIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { DemandWorkflowCard } from '@/components/campaign/demand/DemandWorkflowCard'
+import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { CampaignQuickActionContextSync } from '@/components/campaign/shell/CampaignQuickActionContextSync'
 import { Badge } from '@/components/ui/Badge'
-import { Button } from '@/components/ui/button'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import {
   campaignDemandKindLabels,
   campaignDemandStatusLabels,
@@ -24,7 +24,21 @@ import {
   transitionDemandFormAction,
 } from './formActions'
 
-export const metadata = campaignPageMetadataFromCatalog('demandas')
+export async function generateMetadata({ params }: DemandDetailPageProps) {
+  const { slug } = await params
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
+
+  const demand = await loadDemandDetail(payload, user, slug)
+  if (!demand) return campaignPageMetadata({ title: 'Demanda' })
+
+  return campaignPageMetadata({
+    title: demand.title,
+    subtitle: `${campaignDemandKindLabels[demand.kind]} · ${demand.municipalityName}`,
+  })
+}
 
 type DemandDetailPageProps = {
   params: Promise<{ slug: string }>
@@ -63,48 +77,44 @@ export default async function DemandDetailPage({ params }: DemandDetailPageProps
 
   return (
     <CampaignPageShell>
+      <SetCampaignPageChrome
+        chrome={{
+          title: demand.title,
+          subtitle: `${campaignDemandKindLabels[demand.kind]} · ${demand.municipalityName}`,
+        }}
+      />
       <CampaignQuickActionContextSync
         municipalitySlug={demand.municipalitySlug}
         municipalityId={demand.municipalityId > 0 ? demand.municipalityId : undefined}
         demandSlug={demand.slug}
       />
-      <header className="flex flex-col gap-2">
-        <Button asChild variant="ghost" className="min-h-11 self-start">
-          <Link href="/campanha/demandas">
-            <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
-            Voltar para demandas
-          </Link>
-        </Button>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{demand.title}</h1>
-          <Badge variant={statusVariant[demand.status]}>
-            {campaignDemandStatusLabels[demand.status]}
-          </Badge>
-        </div>
-        <p className="text-muted-foreground">
-          {campaignDemandKindLabels[demand.kind]} ·{' '}
-          <Link
-            href={`/campanha/municipios/${demand.municipalitySlug}`}
-            className="text-primary underline-offset-4 hover:underline"
-          >
-            {demand.municipalityName}
-          </Link>
-          {demand.activity ? (
-            <>
-              {' '}
-              · Atividade:{' '}
-              <Link
-                href={`/campanha/atividades/${demand.activity.slug}`}
-                className="text-primary underline-offset-4 hover:underline"
-              >
-                {demand.activity.title}
-              </Link>
-            </>
-          ) : null}
-          {demand.requesterName ? ` · Solicitada por ${demand.requesterName}` : ''} · Aberta em{' '}
-          {dateTimeFormatter.format(new Date(demand.createdAt))}
-        </p>
-      </header>
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant={statusVariant[demand.status]}>
+          {campaignDemandStatusLabels[demand.status]}
+        </Badge>
+      </div>
+      <p className="text-muted-foreground">
+        <Link
+          href={`/campanha/municipios/${demand.municipalitySlug}`}
+          className="text-primary underline-offset-4 hover:underline"
+        >
+          {demand.municipalityName}
+        </Link>
+        {demand.activity ? (
+          <>
+            {' '}
+            · Atividade:{' '}
+            <Link
+              href={`/campanha/atividades/${demand.activity.slug}`}
+              className="text-primary underline-offset-4 hover:underline"
+            >
+              {demand.activity.title}
+            </Link>
+          </>
+        ) : null}
+        {demand.requesterName ? ` · Solicitada por ${demand.requesterName}` : ''} · Aberta em{' '}
+        {dateTimeFormatter.format(new Date(demand.createdAt))}
+      </p>
 
       {demand.description ? (
         <section aria-label="Descrição da demanda" className="rounded-xl border p-4">

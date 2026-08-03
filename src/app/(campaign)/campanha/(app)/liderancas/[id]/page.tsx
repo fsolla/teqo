@@ -1,18 +1,16 @@
 import config from '@payload-config'
-import { ArrowLeftIcon } from 'lucide-react'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { LeadershipInviteButtons } from '@/components/campaign/invite/LeadershipInviteButtons'
 import { LeadershipInternalForm } from '@/components/campaign/leadership/LeadershipInternalForm'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
+import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { CampaignQuickActionContextSync } from '@/components/campaign/shell/CampaignQuickActionContextSync'
 import { StateDeputyChips } from '@/components/campaign/stateDeputy/StateDeputyChips'
 import { Badge } from '@/components/ui/Badge'
-import { Button } from '@/components/ui/button'
-import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { resolvedPortfolioEntriesById } from '@/lib/municipalityPortfolio'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
@@ -24,7 +22,20 @@ import { loadLeadershipDetail } from '@/utilities/leadership/leadershipData'
 import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
 import { updateLeadershipInternalFormAction } from './formActions'
 
-export const metadata = campaignPageMetadataFromCatalog('liderancas')
+export async function generateMetadata({ params }: LeadershipDetailPageProps) {
+  const { id } = await params
+  if (!/^[1-9]\d*$/.test(id)) return campaignPageMetadata({ title: 'Liderança' })
+
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
+
+  const leadership = await loadLeadershipDetail(payload, user, Number(id))
+  if (!leadership) return campaignPageMetadata({ title: 'Liderança' })
+
+  return campaignPageMetadata({ title: 'Liderança', subtitle: leadership.name })
+}
 
 type LeadershipDetailPageProps = {
   params: Promise<{ id: string }>
@@ -58,34 +69,24 @@ export default async function LeadershipDetailPage({ params }: LeadershipDetailP
 
   return (
     <CampaignPageShell>
+      <SetCampaignPageChrome chrome={{ title: 'Liderança', subtitle: leadership.name }} />
       <CampaignQuickActionContextSync
         leadershipId={leadership.id}
         municipalitySlug={singleMunicipalitySlug}
       />
-      <header className="flex flex-col gap-2">
-        <Button asChild variant="ghost" className="min-h-11 self-start">
-          <Link href="/campanha/liderancas">
-            <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
-            Voltar para lideranças
-          </Link>
-        </Button>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{leadership.name}</h1>
-          {leadership.supportStatus ? (
-            <SupportStatusBadge status={leadership.supportStatus} />
-          ) : null}
-          <Badge variant={leadership.hasAppAccess ? 'estimate-confirmed' : 'outline'}>
-            {leadership.hasAppAccess ? 'Com acesso ao app' : 'Sem acesso ao app'}
-          </Badge>
-        </div>
-        <p className="text-muted-foreground">
-          {leadership.phone ? `Celular ${leadership.phone}` : 'Sem celular registrado'}
-          {leadership.email ? ` · ${leadership.email}` : ''}
-        </p>
-        {leadership.stateDeputies.length > 0 ? (
-          <StateDeputyChips deputies={leadership.stateDeputies} />
-        ) : null}
-      </header>
+      <div className="flex flex-wrap items-center gap-2">
+        {leadership.supportStatus ? <SupportStatusBadge status={leadership.supportStatus} /> : null}
+        <Badge variant={leadership.hasAppAccess ? 'estimate-confirmed' : 'outline'}>
+          {leadership.hasAppAccess ? 'Com acesso ao app' : 'Sem acesso ao app'}
+        </Badge>
+      </div>
+      <p className="text-muted-foreground">
+        {leadership.phone ? `Celular ${leadership.phone}` : 'Sem celular registrado'}
+        {leadership.email ? ` · ${leadership.email}` : ''}
+      </p>
+      {leadership.stateDeputies.length > 0 ? (
+        <StateDeputyChips deputies={leadership.stateDeputies} />
+      ) : null}
 
       <section
         aria-labelledby="leadership-invites-title"

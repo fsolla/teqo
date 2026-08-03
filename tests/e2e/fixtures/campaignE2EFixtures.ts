@@ -561,11 +561,11 @@ export const test = base.extend<CampaignE2ETestFixtures>({
   },
 })
 
-export const campaignPageChrome = (page: Page, title: string) =>
+export const campaignPageChrome = (page: Page, title: string | RegExp) =>
   page
     .locator('[data-slot="campaign-page-chrome"]')
     .filter({ visible: true })
     .locator('[data-slot="campaign-page-chrome-title"]')
-    .getByText(title, { exact: true })
+    .getByText(title, typeof title === 'string' ? { exact: true } : undefined)
 
 export { expect }
