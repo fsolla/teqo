@@ -12,11 +12,8 @@ import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { MunicipalityNotFoundError } from '@/utilities/municipality/municipalityPageData'
-<<<<<<< HEAD
-import { loadMunicipalityV2NetworkData } from '@/utilities/municipality/municipalityV2NetworkData'
-=======
 import { loadMunicipalityV2AgoraData } from '@/utilities/municipality/municipalityV2AgoraData'
->>>>>>> 33101301 (style: prettier B150 files)
+import { loadMunicipalityV2NetworkData } from '@/utilities/municipality/municipalityV2NetworkData'
 import { loadMunicipalityV2StatusData } from '@/utilities/municipality/municipalityV2StatusData'
 
 type MunicipalityV2PageProps = {
