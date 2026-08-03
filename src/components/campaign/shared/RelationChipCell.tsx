@@ -168,12 +168,23 @@ export const RelationChipCell = ({
   const rootRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const chipRowRef = useRef<HTMLDivElement>(null)
+  /** Blur debounce — cleared on unmount so setState cannot fire after jsdom teardown (CI flake). */
+  const blurCloseTimeoutRef = useRef<number | null>(null)
   const baseId = useId()
   const listboxId = (surface: SuggestionSurface) => `${baseId}-${surface}-listbox`
   const optionId = useCallback(
     (surface: SuggestionSurface, index: number) => `${baseId}-${surface}-option-${index}`,
     [baseId],
   )
+
+  useEffect(() => {
+    return () => {
+      if (blurCloseTimeoutRef.current != null) {
+        window.clearTimeout(blurCloseTimeoutRef.current)
+        blurCloseTimeoutRef.current = null
+      }
+    }
+  }, [])
 
   useEffect(() => {
     setOptimistic((current) => {
@@ -685,7 +696,11 @@ export const RelationChipCell = ({
               }}
               onFocus={() => setOpen(true)}
               onBlur={() => {
-                window.setTimeout(() => {
+                if (blurCloseTimeoutRef.current != null) {
+                  window.clearTimeout(blurCloseTimeoutRef.current)
+                }
+                blurCloseTimeoutRef.current = window.setTimeout(() => {
+                  blurCloseTimeoutRef.current = null
                   if (!rootRef.current?.contains(document.activeElement)) {
                     closeSuggestions()
                   }
