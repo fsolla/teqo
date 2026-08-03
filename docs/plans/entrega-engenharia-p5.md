@@ -18,9 +18,9 @@ Inalterado do Pass 3/4: consolidação pode mudar saídas pequenas listadas por 
 
 ## Onda já executada na sessão (P1)
 
-| PR     | Conteúdo                                                                 | Guarda (classe)                                                                 |
-| ------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
-| P5-P1  | After-commit registry em `withPayloadTransaction` + schedule de push; `sendCampaignPushForNotification` soft-fail se a row sumiu | pin unit do registry (5); convenção: push de notificação nunca via `queueMicrotask` sob txn (3) |
+| PR    | Conteúdo                                                                                                                         | Guarda (classe)                                                                                 |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| P5-P1 | After-commit registry em `withPayloadTransaction` + schedule de push; `sendCampaignPushForNotification` soft-fail se a row sumiu | pin unit do registry (5); convenção: push de notificação nunca via `queueMicrotask` sob txn (3) |
 
 ## Ondas do plano (P2→P3, ordenadas por risco × churn do delta)
 
@@ -28,16 +28,16 @@ Inalterado do Pass 3/4: consolidação pode mudar saídas pequenas listadas por 
 
 Executar na ordem do [`entrega-engenharia-p4.md`](entrega-engenharia-p4.md). Contagens Pass 5:
 
-| Item | Medição 2026-08-03 |
-| ---- | ------------------ |
-| P4-A homeSearch | `utilities/homeSearch` **837** LOC; `limit: 0` ×5 |
-| P4-B groups | 6 × `HomeSearch*Group` |
-| P4-C notificationEvents | 254 LOC; `findByID`×7 |
-| P4-D write path | mark-all `limit: 200` + `Promise.all`; subscribe sempre `create`; unsubscribe bypass delete |
-| P4-E wizard drawers | Signal/Trend/Leadership info chrome; Signal/Trend skip trailing ×2 |
-| P4-F labels | `MunicipalityListMobileCards` value-import de `municipalityListUrl` |
-| P4-G | provider no chrome staff; `RelationChipCell` **841** LOC + `aria-live` incondicional |
-| P4-H…L | ratchet bypass, `canReadCampaignUsers`, auth double-read, fixtures, chips-dev flake |
+| Item                    | Medição 2026-08-03                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------- |
+| P4-A homeSearch         | `utilities/homeSearch` **837** LOC; `limit: 0` ×5                                           |
+| P4-B groups             | 6 × `HomeSearch*Group`                                                                      |
+| P4-C notificationEvents | 254 LOC; `findByID`×7                                                                       |
+| P4-D write path         | mark-all `limit: 200` + `Promise.all`; subscribe sempre `create`; unsubscribe bypass delete |
+| P4-E wizard drawers     | Signal/Trend/Leadership info chrome; Signal/Trend skip trailing ×2                          |
+| P4-F labels             | `MunicipalityListMobileCards` value-import de `municipalityListUrl`                         |
+| P4-G                    | provider no chrome staff; `RelationChipCell` **841** LOC + `aria-live` incondicional        |
+| P4-H…L                  | ratchet bypass, `canReadCampaignUsers`, auth double-read, fixtures, chips-dev flake         |
 
 ### Onda 2 — Consolidação do delta (quick-actions / wizard / rotas)
 
@@ -80,13 +80,13 @@ Executar na ordem do [`entrega-engenharia-p4.md`](entrega-engenharia-p4.md). Con
 
 #### P5-G Endurecimento de dodges de guarda (mapa)
 
-| Dodge | Guarda atual | Endurecimento |
-| ----- | ------------ | ------------- |
-| `!!user` / bloco `return Boolean(user)` / helper em subdir de globals | `globalAccessConventions` | banir predicados "truthy user" genéricos + sweep recursivo |
-| `user,` shorthand / alias de método Local API | `localApiOverrideAccessConventions` | cobrir shorthand e `payload.db` paths críticos |
-| `function die(` local em scripts | `scriptCliConventions` | banir die local rotulado; exigir `dieWithLabel` |
-| `payload.find`+slug fixo+mutate; `URLSearchParams` municipio | allocator conventions | cobrir find-by-slug+mutate; encoding |
-| wrapper `goto` / settle em comentário | e2e navigation | tokens de settle só em statements |
+| Dodge                                                                 | Guarda atual                        | Endurecimento                                              |
+| --------------------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------- |
+| `!!user` / bloco `return Boolean(user)` / helper em subdir de globals | `globalAccessConventions`           | banir predicados "truthy user" genéricos + sweep recursivo |
+| `user,` shorthand / alias de método Local API                         | `localApiOverrideAccessConventions` | cobrir shorthand e `payload.db` paths críticos             |
+| `function die(` local em scripts                                      | `scriptCliConventions`              | banir die local rotulado; exigir `dieWithLabel`            |
+| `payload.find`+slug fixo+mutate; `URLSearchParams` municipio          | allocator conventions               | cobrir find-by-slug+mutate; encoding                       |
+| wrapper `goto` / settle em comentário                                 | e2e navigation                      | tokens de settle só em statements                          |
 
 - **Esforço:** M · **Sev:** P2 (classe segurança nos dois primeiros)
 
@@ -115,13 +115,13 @@ Executar na ordem do [`entrega-engenharia-p4.md`](entrega-engenharia-p4.md). Con
 
 ## Defer + gatilho (sem ID novo de entrega)
 
-| Item | Gatilho |
-| ---- | ------- |
-| `/campanha/municipio/[slug]/v2` vs `/municipios/[slug]` | cutover B147 filhos / remoção do v1 |
-| `suggestionCatalog` 646 LOC | 9º pattern ou 2º consumer do evaluator |
-| `MunicipalityMapPanel` / `BahiaMap` | próxima feature que toque orquestração+camada |
-| `municipalityListUrl`/`Omnibox` puros em `utilities` | 3º adapter omnibox novo no mês **ou** P4-F labels move |
-| Omnibox `q:` chip helpers | 3º search-only adapter além dos atuais |
+| Item                                                    | Gatilho                                                |
+| ------------------------------------------------------- | ------------------------------------------------------ |
+| `/campanha/municipio/[slug]/v2` vs `/municipios/[slug]` | cutover B147 filhos / remoção do v1                    |
+| `suggestionCatalog` 646 LOC                             | 9º pattern ou 2º consumer do evaluator                 |
+| `MunicipalityMapPanel` / `BahiaMap`                     | próxima feature que toque orquestração+camada          |
+| `municipalityListUrl`/`Omnibox` puros em `utilities`    | 3º adapter omnibox novo no mês **ou** P4-F labels move |
+| Omnibox `q:` chip helpers                               | 3º search-only adapter além dos atuais                 |
 
 ## Look-alikes rejeitados
 
@@ -134,9 +134,9 @@ Executar na ordem do [`entrega-engenharia-p4.md`](entrega-engenharia-p4.md). Con
 
 ### Novas nesta sessão
 
-| Guarda | Classe | Origem |
-| ------ | ------ | ------ |
-| Push de notificação só após commit (registry) + soft-fail row ausente | 3 + 5 | P5-P1 |
+| Guarda                                                                | Classe | Origem |
+| --------------------------------------------------------------------- | ------ | ------ |
+| Push de notificação só após commit (registry) + soft-fail row ausente | 3 + 5  | P5-P1  |
 
 ### Existentes reafirmadas / a endurecer (P5-G)
 
@@ -144,10 +144,10 @@ Ver tabela da onda 3. Miss fila: vazia.
 
 ### Judgment-only
 
-| Item | Convenção |
-| ---- | --------- |
-| Parallel municipality v2 shell | PRODUCT/B147; cutover apaga o desvio |
-| Map god components | trigger já no ledger Pass 4 |
+| Item                           | Convenção                                         |
+| ------------------------------ | ------------------------------------------------- |
+| Parallel municipality v2 shell | PRODUCT/B147; cutover apaga o desvio              |
+| Map god components             | trigger já no ledger Pass 4                       |
 | Navegação e2e in-shell vs goto | TESTING.md (já declarado judgment-only no Pass 4) |
 
 ## Regras de execução

@@ -212,7 +212,6 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 - [ ] P4-A → P4-L as independent deliveries ([entrega-engenharia-p4.md](plans/entrega-engenharia-p4.md)); oversized items → Issue rastreável via `plan-issue`
 - [ ] Leftovers → ledger via `capture-review-debts`
 
-
 # Pass 5 — Engineering Audit + Remediation (2026-08-03)
 
 ## Context
@@ -235,19 +234,19 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 
 ## Remediation deliveries (in-session)
 
-| WS    | Content                                                                                          | Status                                      |
-| ----- | ------------------------------------------------------------------------------------------------ | ------------------------------------------- |
-| P5-P1 | Push-after-commit for campaign notifications + soft-fail missing row + convention/unit pin       | own PR (Ready + auto-merge), same session   |
+| WS    | Content                                                                                    | Status                                    |
+| ----- | ------------------------------------------------------------------------------------------ | ----------------------------------------- |
+| P5-P1 | Push-after-commit for campaign notifications + soft-fail missing row + convention/unit pin | own PR (Ready + auto-merge), same session |
 
 ## Pass 5 Decisions
 
-| ID  | Decision                                                                                          | Rationale                                                                 |
-| --- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| D1  | No P0 this pass — do not invent security theatre on session-bound self-update bypasses            | IDs from `getCampaignUser()`; pattern matches WebAuthn/notification modules |
-| D2  | P1 = transaction/push ordering only; P4-D mark-all/subscribe stays P2                             | Partial mark-read is correctness debt already planned; push-before-commit can notify on rollback |
-| D3  | municipality v2 parallel route is defer-until-cutover, not a consolidation defect                    | B147 shipped it deliberately; "edit the owner" applies at cutover         |
-| D4  | Miss fila empty → zero new miss guardrails; harden dodges only when shipping related fixes        | Skill scope: miss guardrails + P0/P1; dodge map → plan P5-H               |
-| D5  | Aikido MCP still unavailable in this Cloud environment                                            | Same D6 as Pass 4; ledger row unchanged                                   |
+| ID  | Decision                                                                                   | Rationale                                                                                        |
+| --- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| D1  | No P0 this pass — do not invent security theatre on session-bound self-update bypasses     | IDs from `getCampaignUser()`; pattern matches WebAuthn/notification modules                      |
+| D2  | P1 = transaction/push ordering only; P4-D mark-all/subscribe stays P2                      | Partial mark-read is correctness debt already planned; push-before-commit can notify on rollback |
+| D3  | municipality v2 parallel route is defer-until-cutover, not a consolidation defect          | B147 shipped it deliberately; "edit the owner" applies at cutover                                |
+| D4  | Miss fila empty → zero new miss guardrails; harden dodges only when shipping related fixes | Skill scope: miss guardrails + P0/P1; dodge map → plan P5-H                                      |
+| D5  | Aikido MCP still unavailable in this Cloud environment                                     | Same D6 as Pass 4; ledger row unchanged                                                          |
 
 ## Next Actions
 
