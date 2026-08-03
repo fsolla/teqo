@@ -1,8 +1,10 @@
 /**
- * Plan-issue lifecycle helpers (OPS17): register with `--plan` starts non-claimable;
- * promote to `ready` only after the intention plan is on `main`.
+ * Plan-issue lifecycle helpers (OPS17 + OPS18): register with `--plan` starts
+ * non-claimable; promote to `ready` only after the intention plan is on `main`
+ * (agent `pnpm agent:ready` and/or merge Action reading `Related #N`).
  *
- * Pure — no IO. Used by `agent-register` / `agent-ready` and pinned by unit tests.
+ * Pure — no IO. Used by `agent-register` / `agent-ready` / the OPS18 Action
+ * script and pinned by unit tests.
  */
 
 import { labelNames } from './agent-github.mjs'
@@ -22,6 +24,34 @@ export const resolveRegisterStateLabel = ({ hasPlan, explicitBlocked = false }) 
 const TERMINAL_OR_ACTIVE = ['in-progress', 'done', 'in-prod']
 
 /**
+ * Whole-word `Related #N` only (case-insensitive). Does not match
+ * closing keywords (`Closes`/`Fixes`/`Resolves`) and rejects hyphenated
+ * compounds like `non-related #5`.
+ */
+const RELATED_ISSUE_RE = /(?<![\w-])related\s+#(\d+)\b/gi
+
+/**
+ * Issue numbers cited as `Related #N` in a PR body (plans-only contract).
+ * Deduped, stable first-seen order. Only matches the Related keyword —
+ * closing keywords are owned by issue-done and never appear here.
+ *
+ * @param {string | null | undefined} body
+ * @returns {number[]}
+ */
+export const parseRelatedIssueNumbers = (body) => {
+  if (!body) return []
+  const seen = new Set()
+  const numbers = []
+  for (const match of body.matchAll(RELATED_ISSUE_RE)) {
+    const number = Number(match[1])
+    if (seen.has(number)) continue
+    seen.add(number)
+    numbers.push(number)
+  }
+  return numbers
+}
+
+/**
  * Whether an issue is waiting for its intention plan on `main` and may be
  * flipped `blocked` → `ready` by `agent:ready` (or the OPS18 Action).
  *
@@ -31,6 +61,9 @@ const TERMINAL_OR_ACTIVE = ['in-progress', 'done', 'in-prod']
 export const canPromotePlanIssue = (issue) => {
   if ((issue?.state ?? 'OPEN') !== 'OPEN') return { ok: false, reason: 'not-open' }
   const labels = labelNames(issue ?? { labels: [] })
+  if (labels.includes('ready') && !labels.includes('blocked')) {
+    return { ok: false, reason: 'already-ready' }
+  }
   if (!labels.includes('blocked')) return { ok: false, reason: 'not-blocked' }
   if (TERMINAL_OR_ACTIVE.some((label) => labels.includes(label))) {
     return { ok: false, reason: 'state-label' }

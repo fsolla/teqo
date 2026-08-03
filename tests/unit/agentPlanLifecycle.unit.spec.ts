@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   canPromotePlanIssue,
+  parseRelatedIssueNumbers,
   resolveRegisterStateLabel,
 } from '../../scripts/lib/agent-plan-lifecycle.mjs'
 
@@ -55,9 +56,16 @@ describe('canPromotePlanIssue', () => {
   })
 
   it('rejects issues that are not blocked', () => {
-    expect(canPromotePlanIssue(issue({ labels: [{ name: 'ready' }] }))).toEqual({
+    expect(canPromotePlanIssue(issue({ labels: [{ name: 'prio:P2' }] }))).toEqual({
       ok: false,
       reason: 'not-blocked',
+    })
+  })
+
+  it('reports already-ready when ready without blocked (idempotent skip)', () => {
+    expect(canPromotePlanIssue(issue({ labels: [{ name: 'ready' }] }))).toEqual({
+      ok: false,
+      reason: 'already-ready',
     })
   })
 
@@ -85,5 +93,33 @@ describe('canPromotePlanIssue', () => {
       ok: false,
       reason: 'no-plan-link',
     })
+  })
+})
+
+describe('parseRelatedIssueNumbers', () => {
+  it('extracts Related #N case-insensitively and dedupes', () => {
+    expect(parseRelatedIssueNumbers('Related #296\nrelated #296 and RELATED #301')).toEqual([
+      296, 301,
+    ])
+  })
+
+  it('does not match closing keywords (Closes/Fixes/Resolves)', () => {
+    expect(parseRelatedIssueNumbers('Closes #10\nFixes #11\nResolves #12\nRelated #296')).toEqual([
+      296,
+    ])
+  })
+
+  it('rejects hyphenated compounds and Related without whitespace', () => {
+    expect(parseRelatedIssueNumbers('non-related #5 and Related#296')).toEqual([])
+  })
+
+  it('accepts markdown list form', () => {
+    expect(parseRelatedIssueNumbers('- Related #296\n- Related #301')).toEqual([296, 301])
+  })
+
+  it('returns empty for missing/blank bodies', () => {
+    expect(parseRelatedIssueNumbers(undefined)).toEqual([])
+    expect(parseRelatedIssueNumbers('')).toEqual([])
+    expect(parseRelatedIssueNumbers('no refs here')).toEqual([])
   })
 })

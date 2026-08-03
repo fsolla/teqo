@@ -157,7 +157,7 @@ Sem `--plan`: nasce `ready` (use `--blocked` só se quiser não-claimável sem p
 pnpm agent:ready -- --issue <N[,N…]>
 ```
 
-A Action de merge (OPS18) é safety net se este passo falhar — não pule o promote do agente no caminho feliz.
+A Action de merge (`plan-issue-ready-on-main-merge.yml`, OPS18) é safety net se este passo falhar — não pule o promote do agente no caminho feliz.
 
 **NÃO faz:** editar `docs/roadmap.md`; implementar código; claim; escrever `*-impl.md`; editar plano de Issue `in-progress`/`done`/`in-prod`; marcar `ready` antes do plano em `main`; registrar/abrir PR antes do gate.
 

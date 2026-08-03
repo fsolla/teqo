@@ -1,13 +1,13 @@
 # Promote plan-issue — agente + Action no merge (dual path)
 
-Status: registrado (blocked até plano em main)
-Atualizado em: 2026-08-02
+Status: em execução
+Atualizado em: 2026-08-03
 Issue: #296
 Priority: P1
 Model: cursor-grok-4.5-medium
 Impeccable: A — N/A (workflow + skill; sem UI)
 Appetite: ~0,5 dia eng; um outcome verificável
-Responsável: —
+Responsável: pool
 
 ## Intenção
 

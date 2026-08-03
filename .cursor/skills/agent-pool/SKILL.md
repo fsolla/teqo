@@ -93,7 +93,7 @@ Os wrappers disparam `gh workflow run agent-pool.yml -f action=…`; acompanhe c
 
 `ready` → (tick: claim coordenado, flip + marcador) → `in-progress` → worker spawnado com o `model:` da Issue (fallback `composer-2.5` + **`fast=false`** — omitir `fast` na API vira `composer-2.5-fast` no usage) → PR `--base main` com `Closes #N` → CI green → auto-merge → `done`+`in-prod` (flip determinístico do CI) → tick arquiva o agente e repõe o slot.
 
-Issues nascidas de `plan-issue` com `--plan` **não** entram como `ready`: ficam `blocked` até o plano de intenção estar em `main` e `pnpm agent:ready` (OPS17). O tick não promove — só consome `ready`.
+Issues nascidas de `plan-issue` com `--plan` **não** entram como `ready`: ficam `blocked` até o plano de intenção estar em `main` e promote dual (OPS17 `pnpm agent:ready` + OPS18 Action no merge com `Related #N`). O tick não promove — só consome `ready`.
 
 - **Falha terminal** (run ERROR/CANCELLED/EXPIRED ou fim sem PR): tick comenta, move a Issue para `blocked` e arquiva o agente. **Triage humana**: ler o run em cursor.com/agents, decidir — re-`ready` manual se transitório (o circuit breaker recusa a 3ª tentativa automática), corrigir a spec se sistêmico.
 - **Worker travado**: archive em cursor.com/agents → o próximo tick reconcilia como falha documentada.
