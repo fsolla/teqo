@@ -1,8 +1,10 @@
 /**
- * Plan-issue lifecycle helpers (OPS17): register with `--plan` starts non-claimable;
- * promote to `ready` only after the intention plan is on `main`.
+ * Plan-issue lifecycle helpers (OPS17 + OPS18): register with `--plan` starts
+ * non-claimable; promote to `ready` only after the intention plan is on `main`
+ * (agent `pnpm agent:ready` and/or merge Action reading `Related #N`).
  *
- * Pure — no IO. Used by `agent-register` / `agent-ready` and pinned by unit tests.
+ * Pure — no IO. Used by `agent-register` / `agent-ready` / the OPS18 Action
+ * script and pinned by unit tests.
  */
 
 import { labelNames } from './agent-github.mjs'
@@ -20,6 +22,29 @@ export const resolveRegisterStateLabel = ({ hasPlan, explicitBlocked = false }) 
 }
 
 const TERMINAL_OR_ACTIVE = ['in-progress', 'done', 'in-prod']
+
+/** `Related #N` only — never closing keywords (those are owned by issue-done). */
+const RELATED_ISSUE_RE = /\brelated\s+#(\d+)\b/gi
+
+/**
+ * Issue numbers cited as `Related #N` in a PR body (plans-only contract).
+ * Deduped, stable first-seen order. Ignores Closes/Fixes/Resolves.
+ *
+ * @param {string | null | undefined} body
+ * @returns {number[]}
+ */
+export const parseRelatedIssueNumbers = (body) => {
+  if (!body) return []
+  const seen = new Set()
+  const numbers = []
+  for (const match of body.matchAll(RELATED_ISSUE_RE)) {
+    const number = Number(match[1])
+    if (seen.has(number)) continue
+    seen.add(number)
+    numbers.push(number)
+  }
+  return numbers
+}
 
 /**
  * Whether an issue is waiting for its intention plan on `main` and may be

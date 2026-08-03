@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   canPromotePlanIssue,
+  parseRelatedIssueNumbers,
   resolveRegisterStateLabel,
 } from '../../scripts/lib/agent-plan-lifecycle.mjs'
 
@@ -85,5 +86,25 @@ describe('canPromotePlanIssue', () => {
       ok: false,
       reason: 'no-plan-link',
     })
+  })
+})
+
+describe('parseRelatedIssueNumbers', () => {
+  it('extracts Related #N case-insensitively and dedupes', () => {
+    expect(parseRelatedIssueNumbers('Related #296\nrelated #296 and RELATED #301')).toEqual([
+      296, 301,
+    ])
+  })
+
+  it('ignores closing keywords (Closes/Fixes/Resolves)', () => {
+    expect(parseRelatedIssueNumbers('Closes #10\nFixes #11\nResolves #12\nRelated #296')).toEqual([
+      296,
+    ])
+  })
+
+  it('returns empty for missing/blank bodies', () => {
+    expect(parseRelatedIssueNumbers(undefined)).toEqual([])
+    expect(parseRelatedIssueNumbers('')).toEqual([])
+    expect(parseRelatedIssueNumbers('no refs here')).toEqual([])
   })
 })
