@@ -23,12 +23,17 @@ export const resolveRegisterStateLabel = ({ hasPlan, explicitBlocked = false }) 
 
 const TERMINAL_OR_ACTIVE = ['in-progress', 'done', 'in-prod']
 
-/** `Related #N` only — never closing keywords (those are owned by issue-done). */
-const RELATED_ISSUE_RE = /\brelated\s+#(\d+)\b/gi
+/**
+ * Whole-word `Related #N` only (case-insensitive). Does not match
+ * closing keywords (`Closes`/`Fixes`/`Resolves`) and rejects hyphenated
+ * compounds like `non-related #5`.
+ */
+const RELATED_ISSUE_RE = /(?<![\w-])related\s+#(\d+)\b/gi
 
 /**
  * Issue numbers cited as `Related #N` in a PR body (plans-only contract).
- * Deduped, stable first-seen order. Ignores Closes/Fixes/Resolves.
+ * Deduped, stable first-seen order. Only matches the Related keyword —
+ * closing keywords are owned by issue-done and never appear here.
  *
  * @param {string | null | undefined} body
  * @returns {number[]}
@@ -56,6 +61,9 @@ export const parseRelatedIssueNumbers = (body) => {
 export const canPromotePlanIssue = (issue) => {
   if ((issue?.state ?? 'OPEN') !== 'OPEN') return { ok: false, reason: 'not-open' }
   const labels = labelNames(issue ?? { labels: [] })
+  if (labels.includes('ready') && !labels.includes('blocked')) {
+    return { ok: false, reason: 'already-ready' }
+  }
   if (!labels.includes('blocked')) return { ok: false, reason: 'not-blocked' }
   if (TERMINAL_OR_ACTIVE.some((label) => labels.includes(label))) {
     return { ok: false, reason: 'state-label' }

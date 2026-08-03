@@ -69,8 +69,10 @@ flowchart LR
 - Promover no `ci-pr` / checks do PR aberto.
 - Label nova `needs:plan`.
 - Matar o promote do agente (`agent:ready`).
-- Hoist de `HUMAN_GATE_LABELS` / `issueHasPlanLink` para módulo neutro (ainda 2–3 call sites; defer).
-- Batch soft-fail em `agent:ready` CLI.
+- Hoist `HUMAN_GATE_LABELS` / `issueHasPlanLink` / lista ativa-ou-terminal para módulo neutro — defer até 3º consumidor fora do lifecycle.
+- Extrair executor compartilhado promote-one-issue (`agent:ready` × Action) — defer até 3º call site ou política de falha convergente.
+- Unificar workflows de merge (`issue-done` + plan-ready) num único runner — defer; acoplamento rejeitado na decisão B.
+- Comentário duplicado se agente e Action promovem na mesma janela — benigno; labels idempotentes.
 
 ## Riscos e mitigação
 

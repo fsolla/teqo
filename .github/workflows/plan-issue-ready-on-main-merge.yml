@@ -3,11 +3,13 @@
 # to `ready`. Idempotent with `pnpm agent:ready` (agent happy path).
 #
 # Does NOT run on open PRs — only after merge — so the claim race stays closed.
+# Job is gated on Related # in the body so non-plan merges skip checkout/Node.
 name: Promote plan-issue Related on main merge
 
 on:
   pull_request:
     types: [closed]
+    branches: [main]
 
 permissions:
   issues: write
@@ -16,12 +18,19 @@ permissions:
 
 jobs:
   plan-issue-ready:
-    if: github.event.pull_request.base.ref == 'main' && github.event.pull_request.merged == true
+    if: >-
+      github.event.pull_request.merged == true &&
+      (
+        contains(github.event.pull_request.body, 'Related #') ||
+        contains(github.event.pull_request.body, 'related #') ||
+        contains(github.event.pull_request.body, 'RELATED #')
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
+      PR_BODY: ${{ github.event.pull_request.body }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5

@@ -2,19 +2,20 @@
  * OPS18 safety net — on PR merge to `main`, promote plan-issue Issues cited as
  * `Related #N` from `blocked` → `ready` when they are still awaiting a plan.
  *
- * Soft-skip (never fail the workflow) when an issue is already ready, product-
- * blocked without a plan link, gated by needs:*, or otherwise ineligible.
- * Idempotent with `pnpm agent:ready`.
+ * Soft-skips ineligible Issues (already ready, product-blocked without a plan
+ * link, needs:*, etc.). Flip/comment failures for one Issue are logged and do
+ * not abort siblings. Idempotent with `pnpm agent:ready`.
  *
  *   node scripts/agent-promote-related-on-merge.mjs --pr 123
+ *   PR_BODY='Related #296' node scripts/agent-promote-related-on-merge.mjs --pr 123
  *
- * Env: GH_TOKEN (Actions), GITHUB_REPOSITORY (optional — gh uses default remote).
+ * Env: GH_TOKEN (Actions); optional PR_BODY skips `gh pr view` (Actions event).
  */
 
-import { dieAgent, gh, ghJson, labelNames, parseArgs, setLabels } from './lib/agent-github.mjs'
+import { dieAgent, gh, ghJson, parseArgs, setLabels } from './lib/agent-github.mjs'
 import { canPromotePlanIssue, parseRelatedIssueNumbers } from './lib/agent-plan-lifecycle.mjs'
 
-const die = dieAgent('promote-related-on-merge')
+const die = dieAgent('promote-related')
 const { flags } = parseArgs(process.argv.slice(2), new Set(['pr']))
 
 if (!flags.pr || !/^\d+$/.test(String(flags.pr))) {
@@ -22,8 +23,12 @@ if (!flags.pr || !/^\d+$/.test(String(flags.pr))) {
 }
 
 const prNumber = Number(flags.pr)
-const pr = ghJson(['pr', 'view', String(prNumber), '--json', 'body,number,url'])
-const numbers = parseRelatedIssueNumbers(pr.body)
+const bodyFromEnv = process.env.PR_BODY
+const body =
+  typeof bodyFromEnv === 'string'
+    ? bodyFromEnv
+    : ghJson(['pr', 'view', String(prNumber), '--json', 'body']).body
+const numbers = parseRelatedIssueNumbers(body)
 
 if (numbers.length === 0) {
   console.log(`[agent:promote-related] PR #${prNumber}: no Related #N — nothing to do`)
@@ -55,7 +60,7 @@ for (const number of numbers) {
 
   const verdict = canPromotePlanIssue(issue)
   if (!verdict.ok) {
-    if (verdict.reason === 'not-blocked' && labelNames(issue).includes('ready')) {
+    if (verdict.reason === 'already-ready') {
       console.log(`[agent:promote-related] #${number}: already ready — skip`)
       continue
     }
@@ -63,13 +68,21 @@ for (const number of numbers) {
     continue
   }
 
-  setLabels(number, { add: ['ready'], remove: ['blocked'] })
-  gh([
-    'issue',
-    'comment',
-    String(number),
-    '--body',
-    `Promovido a \`ready\` via Action OPS18 — plano de intenção em \`main\` (PR #${prNumber} com \`Related #${number}\`).`,
-  ])
-  console.log(`[agent:promote-related] #${number}: blocked → ready`)
+  try {
+    setLabels(number, { add: ['ready'], remove: ['blocked'] })
+    gh([
+      'issue',
+      'comment',
+      String(number),
+      '--body',
+      `Promovido a \`ready\` via Action OPS18 — plano de intenção em \`main\` (PR #${prNumber} com \`Related #${number}\`).`,
+    ])
+    console.log(`[agent:promote-related] #${number}: blocked → ready`)
+  } catch (error) {
+    console.log(
+      `[agent:promote-related] #${number}: promote failed (${
+        error instanceof Error ? error.message : String(error)
+      })`,
+    )
+  }
 }

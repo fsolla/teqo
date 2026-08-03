@@ -11,7 +11,7 @@
  * link stay for human triage.
  */
 
-import { dieAgent, gh, ghJson, labelNames, parseArgs, setLabels } from './lib/agent-github.mjs'
+import { dieAgent, gh, ghJson, parseArgs, setLabels } from './lib/agent-github.mjs'
 import { canPromotePlanIssue } from './lib/agent-plan-lifecycle.mjs'
 
 const die = dieAgent('ready')
@@ -42,7 +42,7 @@ for (const number of numbers) {
   ])
   const verdict = canPromotePlanIssue(issue)
   if (!verdict.ok) {
-    if (verdict.reason === 'not-blocked' && labelNames(issue).includes('ready')) {
+    if (verdict.reason === 'already-ready') {
       console.log(`[agent:ready] #${number} already ready — skip`)
       continue
     }
