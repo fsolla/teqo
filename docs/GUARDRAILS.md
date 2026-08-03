@@ -45,6 +45,6 @@ Ledger dos guardrails determinísticos colhidos de `kind:agent-miss` (fluxo `pnp
 
 ## Pass 5 — guardas adicionadas (não-miss)
 
-| Guarda                                                                                     | Origem | Classe | Mecanismo                                                                                                                                 | Status                       |
-| ------------------------------------------------------------------------------------------ | ------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| Push de notificação de campanha só após commit da transação; send soft-fail se a row sumiu | P5-P1  | 3 + 5  | `onPayloadTransactionCommit` em `payloadTransaction.ts`; schedule em `createCampaignNotification`; pin em `notificationPushSchedule` unit | remediação Pass 5 (PR P5-P1) |
+| Guarda                                                                                     | Origem | Classe | Mecanismo                                                                                                                                         | Status      |
+| ------------------------------------------------------------------------------------------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| Push de notificação de campanha só após commit da transação; send soft-fail se a row sumiu | P5-P1  | 3 + 5  | `onPayloadTransactionCommit` em `payloadTransaction.ts`; schedule em `createCampaignNotification`; `notificationPushScheduleConventions` unit pin | vivo Pass 5 |
