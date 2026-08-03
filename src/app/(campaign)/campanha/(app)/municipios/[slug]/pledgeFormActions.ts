@@ -1,8 +1,6 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
-
-import { MAX_VOTE_COUNT } from '@/lib/schemas/primitives'
+import { revalidateMunicipalityListPaths } from '@/utilities/municipality/municipalityRevalidation'
 
 import { declareVotes, estimateVotes } from '@/app/(campaign)/campanha/actions/votePledge'
 import {
@@ -11,6 +9,7 @@ import {
   requiredRelationshipFormValue,
   voteEstimateScenarioFromForm,
 } from '@/lib/formData'
+import { MAX_VOTE_COUNT } from '@/lib/schemas/primitives'
 import {
   VOTE_PLEDGE_DECLARE_SAFE_MESSAGES,
   VOTE_PLEDGE_ESTIMATE_STAFF_MESSAGE,
@@ -36,7 +35,7 @@ export const declareVotesFormAction = async (
       })
 
       await declareVotes({ municipality, leadership, declaredVotes })
-      revalidatePath('/campanha/municipios/[slug]', 'page')
+      revalidateMunicipalityListPaths({ scope: 'detail' })
       return { message: 'Declaração de votos registrada.' }
     },
     safeMessages: declareSafeMessages,
@@ -59,7 +58,7 @@ export const estimateVotesFormAction = async (
         estimatedVotes,
         estimateNote,
       })
-      revalidatePath('/campanha/municipios/[slug]', 'page')
+      revalidateMunicipalityListPaths({ scope: 'detail' })
       return { message: 'Estimativa registrada.' }
     },
     safeMessages: [VOTE_PLEDGE_ESTIMATE_STAFF_MESSAGE],
