@@ -5,10 +5,13 @@
  *     --prio P1 --depends B79 --kind feature --plan docs/plans/x.md [--body "..."]
  *
  * Body = frontmatter (id/depends/priority) + spec (linked plan + --body text).
- * Starts life labeled `ready` (or `blocked` when --blocked).
+ * Starts life labeled `ready`, or `blocked` when `--blocked` / `--plan`
+ * (OPS17: plan-linked Issues are not claimable until the plan is on `main`
+ * and `pnpm agent:ready` promotes them).
  */
 
 import { dieAgent, gh, issuesById, parseArgs, serializeFrontmatter } from './lib/agent-github.mjs'
+import { resolveRegisterStateLabel } from './lib/agent-plan-lifecycle.mjs'
 
 const die = dieAgent('register')
 const { flags } = parseArgs(
@@ -46,8 +49,12 @@ const body = serializeFrontmatter(
     .join('\n\n'),
 )
 
+const stateLabel = resolveRegisterStateLabel({
+  hasPlan: Boolean(flags.plan),
+  explicitBlocked: Boolean(flags.blocked),
+})
 const labels = [
-  flags.blocked ? 'blocked' : 'ready',
+  stateLabel,
   `prio:${priority}`,
   `kind:${flags.kind ?? 'feature'}`,
   ...(flags.labels ?? '')
@@ -66,4 +73,8 @@ const url = gh([
   ...labels.flatMap((label) => ['--label', label]),
 ])
 
-console.log(`[agent:register] created ${url}`)
+const hint =
+  stateLabel === 'blocked' && flags.plan && !flags.blocked
+    ? ' (blocked até plano em main — depois: pnpm agent:ready -- --issue <N>)'
+    : ''
+console.log(`[agent:register] created ${url}${hint}`)
