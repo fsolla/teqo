@@ -32,6 +32,7 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/components/campaign/map',
       'src/components/campaign/shared/CampaignListOmnibox',
       'src/lib/campaignListOmnibox',
+      'src/lib/campaignMunicipality',
       'src/utilities/municipality',
     ],
     specs: [

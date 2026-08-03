@@ -8,6 +8,7 @@ import { MunicipalityV2AgoraSection } from '@/components/campaign/municipality/M
 import { MunicipalityV2NetworkSection } from '@/components/campaign/municipality/MunicipalityV2NetworkSection'
 import { MunicipalityV2StatusStrip } from '@/components/campaign/municipality/MunicipalityV2StatusStrip'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { CampaignQuickActionContextSync } from '@/components/campaign/shell/CampaignQuickActionContextSync'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
@@ -35,6 +36,7 @@ export default async function MunicipalityV2Page({ params }: MunicipalityV2PageP
   ])
 
   let status
+<<<<<<< HEAD
   let network
   let agora
   try {
@@ -43,9 +45,19 @@ export default async function MunicipalityV2Page({ params }: MunicipalityV2PageP
       loadMunicipalityV2NetworkData(payload, user, slug),
       loadMunicipalityV2AgoraData(payload, user, slug),
     ])
+<<<<<<< HEAD
     ;({ status } = statusLoaded)
     network = networkLoaded
     agora = agoraLoaded
+=======
+    ;({ status } = loaded[0])
+    network = loaded[1]
+=======
+  let context
+  try {
+    ;({ status, context } = await loadMunicipalityV2StatusData(payload, user, slug))
+>>>>>>> b1786d18 (B151 — FAB secundário no detalhe município v2 (#334))
+>>>>>>> f198d718 (B151 — FAB secundário no detalhe município v2 (#334))
   } catch (error) {
     if (error instanceof MunicipalityNotFoundError) notFound()
     throw error
@@ -53,6 +65,7 @@ export default async function MunicipalityV2Page({ params }: MunicipalityV2PageP
 
   return (
     <CampaignPageShell>
+      <CampaignQuickActionContextSync municipalitySlug={context.slug} municipalityId={context.id} />
       <div className="flex flex-col gap-8">
         <MunicipalityV2StatusStrip
           status={status}
