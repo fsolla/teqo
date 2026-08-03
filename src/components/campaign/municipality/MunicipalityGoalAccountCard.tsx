@@ -2,16 +2,15 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/municipality/MunicipalityListExpectedVotesControl'
+import {
+  CampaignConceptMetricExplanation,
+  MunicipalityTerritorialClassRow,
+} from '@/components/campaign/municipality/MunicipalityTerritorialClassRow'
 import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
 import { CampaignInfoHint } from '@/components/campaign/shared/CampaignInfoHint'
-import { Badge } from '@/components/ui/Badge'
 import { Progress } from '@/components/ui/Progress'
 import { campaignHoverExplanationClassName } from '@/lib/campaignHoverTooltip'
-import {
-  CAMPAIGN_CONCEPTS_PATH,
-  campaignConceptHref,
-  type CampaignConceptId,
-} from '@/lib/campaignIntelligenceConcepts'
+import { CAMPAIGN_CONCEPTS_PATH } from '@/lib/campaignIntelligenceConcepts'
 import { formatElectionNumber } from '@/lib/electionFormat'
 import { cn } from '@/lib/utils'
 import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
@@ -22,11 +21,6 @@ import {
   goalCoverageProgressPercent,
   type MunicipalityGoalCoverage,
 } from '@/utilities/municipality/goalCoverage'
-import {
-  formatTerritorialClassWhy,
-  territorialClassBadgeVariant,
-  territorialClassLabels,
-} from '@/utilities/municipality/municipalityLabels'
 import type { MunicipalityPotential, RollOff } from '@/utilities/municipality/municipalityPotential'
 import type { MunicipalityTerritorialClassification } from '@/utilities/municipality/municipalityTerritorialClass'
 import type { MunicipalityIntraTerritoryCaptureBenchmark } from '@/utilities/territory/territoryIntraCaptureBenchmark'
@@ -73,93 +67,6 @@ const GoalAccountMetric = ({
     </button>
   </CampaignHoverTooltip>
 )
-
-/**
- * Two-tier tooltip copy: a short lead sentence naming what the metric
- * measures (its one bolded term), then a visually secondary formula line —
- * split per the E8 `/impeccable critique` finding that a single ~40-word
- * sentence with three technical terms didn't resolve the coordinator's
- * confusion. `formula` sits at `text-background/70` (tooltip content is
- * dark, so this lightens rather than muting against a light background).
- *
- * `conceptID` appends E18's "Saiba mais" deep link (every caller documents
- * one, so this is required, not optional). The tooltip content is hoverable
- * (Radix keeps it open while the pointer is inside) and its own touch-dismiss
- * ignores taps on the content, so mouse and touch both reach the link; a
- * keyboard user can't tab into tooltip content, which is why the card
- * title's `CampaignInfoHint` Popover carries the same link.
- */
-const MetricExplanation = ({
-  lead,
-  formula,
-  conceptID,
-}: {
-  lead: ReactNode
-  formula?: ReactNode
-  conceptID: CampaignConceptId
-}) => (
-  <div className="flex flex-col gap-1">
-    <p>{lead}</p>
-    {formula ? <p className="text-background/70">{formula}</p> : null}
-    <Link
-      href={campaignConceptHref(conceptID)}
-      className="font-medium underline underline-offset-2"
-    >
-      Saiba mais
-    </Link>
-  </div>
-)
-
-/**
- * E10 — the class is the one-word reading of the four diagnostics right
- * below it, so it opens that block instead of getting a card of its own.
- * Never the label alone: the two dominant factors ride with it (research
- * §6.4 — a bare label reads as a verdict and buys false confidence).
- */
-const TerritorialClassRow = ({
-  territorialClass,
-}: {
-  territorialClass: MunicipalityTerritorialClassification
-}) => {
-  const why = formatTerritorialClassWhy(territorialClass.factors)
-
-  return (
-    <div className="flex flex-col gap-0.5">
-      <CampaignHoverTooltip
-        content={
-          <MetricExplanation
-            lead={
-              <>
-                <strong>Classe</strong> resume o que este município pede: defender (Reduto), abrir
-                rede (Expansão), manter o padrão (Manutenção) ou não gastar perna (Marginal). Sem
-                série do TSE, a classe fica em Sem base.
-              </>
-            }
-            formula="Leitura relativa: o desempenho aqui contra o padrão estadual do próprio candidato, cruzado com quanto da votação dele vem daqui e quanto voto do campo segue sem captura. É sugestão, não sentença."
-            conceptID="classe-territorial"
-          />
-        }
-        side="right"
-        align="start"
-        sideOffset={8}
-      >
-        <button
-          type="button"
-          aria-label={`Classe: ${territorialClassLabels[territorialClass.class]}. Mais informações`}
-          className="flex min-h-11 w-fit items-center gap-2 rounded-md px-1.5 py-1 text-left outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <span className={cn('text-xs text-muted-foreground', campaignHoverExplanationClassName)}>
-            Classe
-          </span>
-          <Badge variant={territorialClassBadgeVariant[territorialClass.class]}>
-            {territorialClassLabels[territorialClass.class]}
-          </Badge>
-        </button>
-      </CampaignHoverTooltip>
-      <p className="px-1.5 text-xs text-muted-foreground">{why}</p>
-    </div>
-  )
-}
 
 const formatRollOff = (rollOff: RollOff | null): string => {
   if (!rollOff) return 'Sem majoritária 2022 disponível'
@@ -292,13 +199,13 @@ export const MunicipalityGoalAccountCard = ({
       </div>
 
       <div className="flex flex-col gap-3 border-t pt-3">
-        <TerritorialClassRow territorialClass={territorialClass} />
+        <MunicipalityTerritorialClassRow territorialClass={territorialClass} />
         <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
           <GoalAccountMetric
             label="Teto do campo (proj.)"
             value={formatElectionNumber(Math.round(potential.projectedFieldCeiling))}
             explanation={
-              <MetricExplanation
+              <CampaignConceptMetricExplanation
                 lead={
                   <>
                     <strong>Teto do campo</strong> projeta quantos votos válidos o campo pode
@@ -314,7 +221,7 @@ export const MunicipalityGoalAccountCard = ({
             label="Captura (2022)"
             value={formatRatioAsPercentLabel(potential.captureRate2022)}
             explanation={
-              <MetricExplanation
+              <CampaignConceptMetricExplanation
                 lead={
                   <>
                     <strong>Captura</strong> mostra quanto do teto do campo Jorge Solla conquistou
@@ -349,7 +256,7 @@ export const MunicipalityGoalAccountCard = ({
             label={`Share intracampo (${latestIntraFieldShareYear})`}
             value={formatRatioAsPercentLabel(latestIntraFieldShare)}
             explanation={
-              <MetricExplanation
+              <CampaignConceptMetricExplanation
                 lead={
                   <>
                     <strong>Share intracampo</strong> mostra a fração dos votos do campo, só na
@@ -365,7 +272,7 @@ export const MunicipalityGoalAccountCard = ({
             label="Roll-off (2022)"
             value={formatRollOff(potential.rollOff2022)}
             explanation={
-              <MetricExplanation
+              <CampaignConceptMetricExplanation
                 lead={
                   <>
                     <strong>Roll-off</strong> mede quanto voto em branco/nulo a disputa de deputado
