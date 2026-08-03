@@ -53,7 +53,7 @@ Gatilho explícito do adiado em B28: produto pediu correção de contato sem `/a
   - Staff: “este telefone/e-mail/nome está errado ou vazio — corrijo já, sem `/admin`?”
   - Staff: “posso completar fichas seedadas só com nome antes de convidar / ligar?”
   - Staff: “continuo copiando o contato de um toque na varredura?”
-- **Forma:** *adiada ao plano de implementação* — restrição de produto: lápis → input → blur-save; copy/link intactos no clique do valor; sem KPI de “% com telefone”.
+- **Forma:** _adiada ao plano de implementação_ — restrição de produto: lápis → input → blur-save; copy/link intactos no clique do valor; sem KPI de “% com telefone”.
 
 ## Direção no codebase (hipótese)
 
