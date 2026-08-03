@@ -5,15 +5,16 @@ import { getPayload } from 'payload'
 import { createMunicipalityV2SignalFormAction } from '@/app/(campaign)/campanha/(app)/municipio/[slug]/v2/formActions'
 import { resolveSuggestionFormAction } from '@/app/(campaign)/campanha/(app)/suggestionFormActions'
 import { MunicipalityV2AgoraSection } from '@/components/campaign/municipality/MunicipalityV2AgoraSection'
+import { MunicipalityV2LocalAccountSection } from '@/components/campaign/municipality/MunicipalityV2LocalAccountSection'
 import { MunicipalityV2NetworkSection } from '@/components/campaign/municipality/MunicipalityV2NetworkSection'
 import { MunicipalityV2StatusStrip } from '@/components/campaign/municipality/MunicipalityV2StatusStrip'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { CampaignQuickActionContextSync } from '@/components/campaign/shell/CampaignQuickActionContextSync'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { MunicipalityNotFoundError } from '@/utilities/municipality/municipalityPageData'
 import { loadMunicipalityV2AgoraData } from '@/utilities/municipality/municipalityV2AgoraData'
+import { loadMunicipalityV2ContaData } from '@/utilities/municipality/municipalityV2ContaData'
 import { loadMunicipalityV2NetworkData } from '@/utilities/municipality/municipalityV2NetworkData'
 import { loadMunicipalityV2StatusData } from '@/utilities/municipality/municipalityV2StatusData'
 
@@ -36,16 +37,18 @@ export default async function MunicipalityV2Page({ params }: MunicipalityV2PageP
   ])
 
   let status
-  let context
+  let conta
   let network
   let agora
   try {
-    const [statusLoaded, networkLoaded, agoraLoaded] = await Promise.all([
+    const [statusLoaded, contaLoaded, networkLoaded, agoraLoaded] = await Promise.all([
       loadMunicipalityV2StatusData(payload, user, slug),
+      loadMunicipalityV2ContaData(payload, user, slug),
       loadMunicipalityV2NetworkData(payload, user, slug),
       loadMunicipalityV2AgoraData(payload, user, slug),
     ])
-    ;({ status, context } = statusLoaded)
+    ;({ status } = statusLoaded)
+    conta = contaLoaded
     network = networkLoaded
     agora = agoraLoaded
   } catch (error) {
@@ -55,20 +58,16 @@ export default async function MunicipalityV2Page({ params }: MunicipalityV2PageP
 
   return (
     <CampaignPageShell>
-      <CampaignQuickActionContextSync municipalitySlug={context.slug} municipalityId={context.id} />
       <div className="flex flex-col gap-8">
         <MunicipalityV2StatusStrip
           status={status}
           signalFormAction={createMunicipalityV2SignalFormAction}
         />
 
-        {/* Placeholder for B148 — keep the vertical rhythm without shipping twin content. */}
-        <section aria-labelledby="municipio-v2-conta-title" className="flex flex-col gap-2">
-          <h2 id="municipio-v2-conta-title" className="text-base font-medium text-muted-foreground">
-            Conta local
-          </h2>
-          <p className="text-sm text-muted-foreground">Em breve nesta visão.</p>
-        </section>
+        <MunicipalityV2LocalAccountSection
+          conta={conta}
+          territorialClass={status.territorialClass}
+        />
         <MunicipalityV2NetworkSection network={network} />
         <MunicipalityV2AgoraSection agora={agora} resolveAction={resolveSuggestionFormAction} />
       </div>
