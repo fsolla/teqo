@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest'
 import {
   applySearchOnlyOmniboxSuggestion,
   buildSearchOnlyOmniboxChips,
+  buildSearchOnlyOmniboxSuggestions,
+  clearSearchOnlyOmnibox,
+  removeSearchOnlyOmniboxChip,
 } from '@/lib/searchOnlyListOmnibox'
 import {
   applyActivityOmniboxSuggestion,
@@ -309,6 +312,21 @@ describe('list omnibox adapters (B128)', () => {
       withPageReset: (next) => ({ ...next, page: 1 }),
     })
     expect(applied).toEqual({ kind: 'url', state: { page: 1, q: 'ana' } })
+
+    expect(buildSearchOnlyOmniboxSuggestions('x')[0]?.id).toBe('q:x')
+
+    const removed = removeSearchOnlyOmniboxChip({
+      state: { q: 'sindicato', page: 2 },
+      chipId: 'q',
+      withPageReset: (next) => ({ ...next, page: 1 }),
+    })
+    expect(removed).toEqual({ kind: 'url', state: { page: 1, q: undefined } })
+
+    const cleared = clearSearchOnlyOmnibox({
+      state: { q: 'sindicato' },
+      cleared: {},
+    })
+    expect(cleared).toEqual({ kind: 'clear', state: {} })
   })
 
   it('advisor toggles municipality portfolio filter and suggests by name', () => {
