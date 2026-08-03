@@ -41,4 +41,10 @@ Ledger dos guardrails determinísticos colhidos de `kind:agent-miss` (fluxo `pnp
 
 ## Misses colhidas aguardando guarda (fila do harvest)
 
-(nenhuma — todas as 5 abertas em 2026-07-31 foram classificadas: 4 com guarda shippada + 1 com guarda já viva. Novas `kind:agent-miss` entram aqui até o próximo audit.)
+(nenhuma — Pass 4 fechou as 5 abertas em 2026-07-31; Pass 5 (2026-08-03) colheu **0** `kind:agent-miss` abertas. Novas entram aqui até o próximo audit.)
+
+## Pass 5 — guardas adicionadas (não-miss)
+
+| Guarda                                                                                          | Origem   | Classe | Mecanismo                                                                                                                                 | Status        |
+| ----------------------------------------------------------------------------------------------- | -------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| Push de notificação de campanha só após commit da transação; send soft-fail se a row sumiu     | P5-P1    | 3 + 5  | `onPayloadTransactionCommit` em `payloadTransaction.ts`; schedule em `createCampaignNotification`; pin em `notificationPushSchedule` unit | remediação Pass 5 (PR P5-P1) |
