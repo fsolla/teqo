@@ -6,7 +6,7 @@ Three layers, all local-database-only (see `local-database` skill; tests refuse 
 
 - **Unit** (`tests/unit/**/*.unit.spec.ts`, 117 specs as of 2026-07-31, Pass 4 — +6 convention guards land with the Pass 4 remediation PRs): pure logic; runs with a deliberately invalid `DATABASE_URL` so nothing can touch a database.
 - **Integration** (`tests/int/**/*.int.spec.ts`, 71 specs): real Payload + Postgres (`teqo_test`); campaign fixtures allocate seeded municipalities via a Postgres sequence so parallel spec files never share one, and purge residue on claim. Since the miss #73 guardrail (Pass 4), specs that mutate municipalities must use the allocator (no pinned slugs) — enforced by `testMunicipalityAllocatorConventions`. Shared consent rows with stable keys are leased (`tests/helpers/testDatabaseLease.ts`), never owned.
-- **E2E** (`tests/e2e`, Playwright, 17 specs / 48 cases): smoke-level; most campaign behavior is pinned at the int layer.
+- **E2E** (`tests/e2e`, Playwright, 17 specs / 51 cases (Pass 5, 2026-08-03; was 48 at Pass 4)): smoke-level; most campaign behavior is pinned at the int layer.
 
 CI (`.github/workflows/ci-pr.yml`) runs parallel jobs — lint (zero warnings), format, typecheck, knip, cycles, unit/int (**affected by the PR diff**: `vitest --changed` against the PR base via `scripts/test-affected.mjs`, full-suite fallback on high-risk paths), e2e (manifest path→spec via `scripts/e2e-affected.mjs` + `scripts/lib/e2e-affected-manifest.mjs`, blocking; production build + `list`/`github` reporters in CI) and build — against a Postgres 17 service with **`db:seed:minimal`**. Push to `main` (`ci.yml`) always runs the full net including e2e.
 
