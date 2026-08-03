@@ -42,13 +42,7 @@ console.log(
 for (const number of numbers) {
   let issue
   try {
-    issue = ghJson([
-      'issue',
-      'view',
-      String(number),
-      '--json',
-      'number,title,body,state,labels',
-    ])
+    issue = ghJson(['issue', 'view', String(number), '--json', 'number,title,body,state,labels'])
   } catch (error) {
     console.log(
       `[agent:promote-related] #${number}: skip (issue view failed: ${
