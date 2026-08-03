@@ -8,6 +8,7 @@ import { MunicipalityV2AgoraSection } from '@/components/campaign/municipality/M
 import { MunicipalityV2NetworkSection } from '@/components/campaign/municipality/MunicipalityV2NetworkSection'
 import { MunicipalityV2StatusStrip } from '@/components/campaign/municipality/MunicipalityV2StatusStrip'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { CampaignQuickActionContextSync } from '@/components/campaign/shell/CampaignQuickActionContextSync'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
@@ -35,6 +36,7 @@ export default async function MunicipalityV2Page({ params }: MunicipalityV2PageP
   ])
 
   let status
+  let context
   let network
   let agora
   try {
@@ -43,7 +45,7 @@ export default async function MunicipalityV2Page({ params }: MunicipalityV2PageP
       loadMunicipalityV2NetworkData(payload, user, slug),
       loadMunicipalityV2AgoraData(payload, user, slug),
     ])
-    ;({ status } = statusLoaded)
+    ;({ status, context } = statusLoaded)
     network = networkLoaded
     agora = agoraLoaded
   } catch (error) {
@@ -53,6 +55,7 @@ export default async function MunicipalityV2Page({ params }: MunicipalityV2PageP
 
   return (
     <CampaignPageShell>
+      <CampaignQuickActionContextSync municipalitySlug={context.slug} municipalityId={context.id} />
       <div className="flex flex-col gap-8">
         <MunicipalityV2StatusStrip
           status={status}

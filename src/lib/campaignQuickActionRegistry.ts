@@ -2,6 +2,7 @@ import { resolveActivityQuickActions } from '@/lib/activityQuickActions'
 import { resolveAdvisorQuickActionsForPath } from '@/lib/campaignAdvisorQuickActions'
 import { resolveStaffHomeQuickActions } from '@/lib/campaignHomeActions'
 import { resolveMunicipalityQuickActionsForPath } from '@/lib/campaignMunicipalityQuickActions'
+import { resolveMunicipalityV2QuickActionsForPath } from '@/lib/campaignMunicipalityV2QuickActions'
 import { CAMPAIGN_TERRITORIES_HOME } from '@/lib/campaignPaths'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
 import {
@@ -62,6 +63,9 @@ export const resolveQuickActionsForPath = (
   if (isDemandDetailPath(pathname)) {
     return resolveDemandDetailQuickActions(role, context, pathname)
   }
+
+  const municipalityV2Actions = resolveMunicipalityV2QuickActionsForPath(pathname, role, context)
+  if (municipalityV2Actions !== null) return municipalityV2Actions
 
   const municipalityActions = resolveMunicipalityQuickActionsForPath(pathname, role, context)
   if (municipalityActions.length > 0) return municipalityActions
