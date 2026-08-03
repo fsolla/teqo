@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 import {
   createLeadershipRecord,
   listMunicipalityLeaderships,
+  updateLeadershipContactRecord,
   updateLeadershipInternalRecord,
 } from '@/app/(campaign)/campanha/actions/leadership'
 import { Contact } from '@/collections/Contact'
@@ -14,12 +15,13 @@ import { Leadership } from '@/collections/Leadership'
 import { contactSchema } from '@/lib/schemas/contact'
 import { leadershipCreateSchema, leadershipInternalUpdateSchema } from '@/lib/schemas/leadership'
 import config from '@/payload.config'
+import { CONTACT_PHONE_CONFLICT_MESSAGE } from '@/utilities/contactPhoneInvariant'
 import {
   getTestTransactionBackendPID,
   waitForAdvisoryLockWaiter,
 } from '../helpers/testDatabaseLease'
 
-import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { installCampaignFixtures, relationId } from '../helpers/campaignFixtures'
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
@@ -650,5 +652,91 @@ describe('campaign leadership domain', () => {
     expect(guard).toBeGreaterThan(-1)
     expect(guard).toBeLessThan(firstSchemaChange)
     expect(migration).toContain('Refusing to roll back consolidated campaign schema')
+  })
+
+  it('updates leadership contact fields in place (B153)', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+    const phone = fixtures.phone()
+    const created = await createLeadershipRecord(payload, coordinator, {
+      municipalities: [municipality.id],
+      name: 'Nome Original',
+      phone,
+      email: 'original@example.com',
+      supportStatus: 'engajado',
+    })
+
+    await updateLeadershipContactRecord(payload, coordinator, {
+      id: created.id,
+      field: 'name',
+      name: 'Nome Corrigido',
+    })
+    await updateLeadershipContactRecord(payload, coordinator, {
+      id: created.id,
+      field: 'email',
+      email: 'corrigido@example.com',
+    })
+    const newPhone = fixtures.phone()
+    await updateLeadershipContactRecord(payload, coordinator, {
+      id: created.id,
+      field: 'phone',
+      phone: newPhone,
+    })
+
+    const contact = await payload.findByID({
+      collection: 'contact',
+      id: relationId(created.contact)!,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(contact.name).toBe('Nome Corrigido')
+    expect(contact.email).toBe('corrigido@example.com')
+    expect(contact.phone).toBe(newPhone)
+  })
+
+  it('rejects leadership contact phone that belongs to another person', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+    const takenPhone = fixtures.phone()
+    await fixtures.createContact({ phone: takenPhone })
+    const leadership = await createLeadershipRecord(payload, coordinator, {
+      municipalities: [municipality.id],
+      name: 'Liderança Sem Conflito',
+      phone: fixtures.phone(),
+      supportStatus: 'engajado',
+    })
+
+    await expect(
+      updateLeadershipContactRecord(payload, coordinator, {
+        id: leadership.id,
+        field: 'phone',
+        phone: takenPhone,
+      }),
+    ).rejects.toThrow(CONTACT_PHONE_CONFLICT_MESSAGE)
+  })
+
+  it('denies leadership contact edits outside advisor municipality scope', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const home = await fixtures.getMunicipality()
+    const away = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(home, [advisor])
+    const leadership = await createLeadershipRecord(payload, coordinator, {
+      municipalities: [away.id],
+      name: 'Fora da Carteira',
+      phone: fixtures.phone(),
+      supportStatus: 'engajado',
+    })
+
+    await expect(
+      updateLeadershipContactRecord(payload, advisor, {
+        id: leadership.id,
+        field: 'name',
+        name: 'Tentativa',
+      }),
+    ).rejects.toThrow()
   })
 })

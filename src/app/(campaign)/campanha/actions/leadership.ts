@@ -11,12 +11,14 @@ import {
   LEADERSHIP_INVALID_CONTACT_MESSAGE,
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
   LEADERSHIP_STAFF_MESSAGE,
+  leadershipContactUpdateSchema,
   leadershipCreateSchema,
   leadershipInternalUpdateSchema,
   leadershipMunicipalitiesMembershipSchema,
   leadershipStateDeputyMembershipSchema,
   leadershipWizardCreateSchema,
   leadershipWizardUpdateSchema,
+  type LeadershipContactUpdateInput,
   type LeadershipInternalUpdateInput,
   type LeadershipMunicipalitiesMembershipInput,
   type LeadershipStateDeputyMembershipInput,
@@ -43,6 +45,40 @@ const getFreshStaffActor = (
   actor: CampaignUser,
   req?: PayloadTransactionRequest,
 ): Promise<CampaignUser> => reloadStaffActor(payload, actor, LEADERSHIP_STAFF_MESSAGE, req)
+
+const assertLeadershipContactPhoneWritable = async (
+  payload: Payload,
+  req: PayloadTransactionRequest,
+  contactID: number,
+  phone: string,
+) => {
+  if (payload.db.name !== 'postgres') {
+    throw new Error(POSTGRES_DEDUP_LOCK_MESSAGE)
+  }
+
+  await acquireContactPhoneLocks(payload, req, [phone])
+
+  // Intentional admin bypass: staff scope was checked on the leadership; phone
+  // uniqueness must see every contact with the number, not only visible rows.
+  const contactsWithPhone = await payload.find({
+    collection: 'contact',
+    where: { phone: { equals: phone } },
+    depth: 0,
+    limit: 2,
+    pagination: false,
+    overrideAccess: true,
+    req,
+  })
+
+  if (contactsWithPhone.totalDocs > 1) {
+    throw new Error(CONTACT_PHONE_AMBIGUOUS_MESSAGE)
+  }
+
+  const phoneOwner = contactsWithPhone.docs[0]
+  if (phoneOwner && phoneOwner.id !== contactID) {
+    await assertContactPhoneAvailable(payload, req, phone, contactID)
+  }
+}
 
 /** Advisors may only link leaderships to municipalities they administer. */
 const assertMunicipalitiesWithinScope = async (
@@ -237,6 +273,73 @@ export const updateLeadershipInternal = async (input: LeadershipInternalUpdateIn
   return updateLeadershipInternalRecord(payload, actor, input)
 }
 
+export const updateLeadershipContactRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: LeadershipContactUpdateInput,
+) => {
+  const data = leadershipContactUpdateSchema.parse(input)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await getFreshStaffActor(payload, actor, req)
+
+      const current = await payload.findByID({
+        collection: 'leadership',
+        id: data.id,
+        depth: 1,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      const municipalityIDs = uniqueRelationshipIds(current.municipalities)
+      await assertMunicipalitiesWithinScope(payload, currentActor, municipalityIDs, req)
+
+      const contactID = relationshipId(current.contact)
+      if (contactID === null) {
+        throw new Error(LEADERSHIP_INVALID_CONTACT_MESSAGE)
+      }
+
+      const contactData: Partial<Pick<Contact, 'name' | 'phone' | 'email'>> = {}
+
+      if (data.field === 'name') {
+        contactData.name = data.name
+      } else if (data.field === 'email') {
+        contactData.email = data.email ?? null
+      } else if (data.field === 'phone') {
+        if (data.phone) {
+          await assertLeadershipContactPhoneWritable(payload, req, contactID, data.phone)
+          contactData.phone = data.phone
+        } else {
+          contactData.phone = null
+        }
+      }
+
+      // bypass: contact write is staff-scoped via leadership access check above.
+      await payload.update({
+        collection: 'contact',
+        id: contactID,
+        data: contactData,
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+
+      return current
+    },
+    { beginFailureMessage: 'Não foi possível atualizar o contato da liderança.' },
+  )
+}
+
+export const updateLeadershipContact = async (input: LeadershipContactUpdateInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const leadership = await updateLeadershipContactRecord(payload, actor, input)
+  revalidatePath(`/campanha/liderancas/${leadership.id}`, 'page')
+  return leadership
+}
+
 const revalidateLeadershipWizardPaths = (leadershipId: number, municipalitySlug: string) => {
   revalidatePath(`/campanha/liderancas/${leadershipId}`, 'page')
   revalidatePath(`/campanha/municipios/${municipalitySlug}`, 'page')
@@ -276,28 +379,7 @@ const updateLeadershipWizardRecord = async (
         throw new Error(LEADERSHIP_INVALID_CONTACT_MESSAGE)
       }
 
-      await acquireContactPhoneLocks(payload, req, [data.phone])
-
-      // Intentional admin bypass: staff scope was checked on the leadership; contact
-      // PII is updated atomically with the leadership fields in this transaction.
-      const contactsWithPhone = await payload.find({
-        collection: 'contact',
-        where: { phone: { equals: data.phone } },
-        depth: 0,
-        limit: 2,
-        pagination: false,
-        overrideAccess: true,
-        req,
-      })
-
-      if (contactsWithPhone.totalDocs > 1) {
-        throw new Error(CONTACT_PHONE_AMBIGUOUS_MESSAGE)
-      }
-
-      const phoneOwner = contactsWithPhone.docs[0]
-      if (phoneOwner && phoneOwner.id !== contactID) {
-        await assertContactPhoneAvailable(payload, req, data.phone, contactID)
-      }
+      await assertLeadershipContactPhoneWritable(payload, req, contactID, data.phone)
 
       // bypass: contact write is staff-scoped via leadership access check above.
       await payload.update({

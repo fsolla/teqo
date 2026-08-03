@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { LeadershipInviteButtons } from '@/components/campaign/invite/LeadershipInviteButtons'
+import { LeadershipContactSection } from '@/components/campaign/leadership/LeadershipContactSection'
 import { LeadershipInternalForm } from '@/components/campaign/leadership/LeadershipInternalForm'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
@@ -80,10 +81,12 @@ export default async function LeadershipDetailPage({ params }: LeadershipDetailP
           {leadership.hasAppAccess ? 'Com acesso ao app' : 'Sem acesso ao app'}
         </Badge>
       </div>
-      <p className="text-muted-foreground">
-        {leadership.phone ? `Celular ${leadership.phone}` : 'Sem celular registrado'}
-        {leadership.email ? ` · ${leadership.email}` : ''}
-      </p>
+      <LeadershipContactSection
+        leadershipId={leadership.id}
+        name={leadership.name}
+        email={leadership.email}
+        phone={leadership.phone}
+      />
       {leadership.stateDeputies.length > 0 ? (
         <StateDeputyChips deputies={leadership.stateDeputies} />
       ) : null}
