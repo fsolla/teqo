@@ -20,9 +20,7 @@ export const MunicipalityV2NetworkSection = ({ network }: MunicipalityV2NetworkS
         <div className="flex flex-col gap-1">
           <h2 id="municipio-v2-rede-title" className="text-base font-medium text-muted-foreground">
             Rede
-            {network.totalCount > 0
-              ? ` (${formatElectionNumber(network.totalCount)})`
-              : ''}
+            {network.totalCount > 0 ? ` (${formatElectionNumber(network.totalCount)})` : ''}
           </h2>
           <p className="text-sm text-muted-foreground">
             Quem segura o município — ajuste declarado e estimado sem trocar de aba.

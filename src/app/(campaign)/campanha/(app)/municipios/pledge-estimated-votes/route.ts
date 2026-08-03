@@ -3,13 +3,13 @@ import { z } from 'zod'
 
 import { estimateVotes } from '@/app/(campaign)/campanha/actions/votePledge'
 import { positiveRelationshipId } from '@/lib/schemas/primitives'
-import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import {
   VOTE_PLEDGE_ESTIMATE_STAFF_MESSAGE,
   voteEstimateScenarioFieldsSchema,
 } from '@/lib/schemas/votePledge'
-import { revalidateMunicipalityListPaths } from '@/utilities/municipality/municipalityRevalidation'
+import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute'
+import { revalidateMunicipalityListPaths } from '@/utilities/municipality/municipalityRevalidation'
 
 import type { MunicipalityPledgeEstimatedVotesResponse } from './types'
 
@@ -26,8 +26,7 @@ export const POST = campaignJsonMutationRoute(
   {
     bodySchema,
     safeMessages: [VOTE_PLEDGE_ESTIMATE_STAFF_MESSAGE],
-    genericMessage:
-      'Não foi possível salvar a estimativa. Verifique seu acesso e tente novamente.',
+    genericMessage: 'Não foi possível salvar a estimativa. Verifique seu acesso e tente novamente.',
   },
   async ({ pledgeId, estimatedVotes }) => {
     const pledge = await estimateVotes({

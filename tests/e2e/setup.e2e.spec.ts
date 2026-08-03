@@ -32,6 +32,8 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
     '/campanha/municipios/advisors',
     '/campanha/municipios/engagement-level',
     '/campanha/municipios/expected-votes',
+    '/campanha/municipios/pledge-declared-votes',
+    '/campanha/municipios/pledge-estimated-votes',
     '/campanha/municipios/political-trend',
     '/campanha/liderancas/support-status',
     '/campanha/webauthn/login-options',

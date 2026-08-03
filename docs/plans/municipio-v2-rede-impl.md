@@ -31,9 +31,9 @@ flowchart LR
 
 **Opções consideradas:**
 
-| | A — Reusar panels atuais (cards + forms) | B — Lista densa + B9 cell autosave + JSON routes | C — CampaignTable completo com colunas B17 |
-| --- | --- | --- | --- |
-| | Rápido mas cards + Salvar | Alinha B9 e aceite | Overkill sem picker de colunas |
+|     | A — Reusar panels atuais (cards + forms) | B — Lista densa + B9 cell autosave + JSON routes | C — CampaignTable completo com colunas B17 |
+| --- | ---------------------------------------- | ------------------------------------------------ | ------------------------------------------ |
+|     | Rápido mas cards + Salvar                | Alinha B9 e aceite                               | Overkill sem picker de colunas             |
 
 **Recomendação:** B — lista densa com `CampaignCellEditOverlay` + `useCampaignCellAutosave`; writes via `declareVotes`/`estimateVotes` existentes; revalidate v2 via `revalidateMunicipalityListPaths`.
 

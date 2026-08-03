@@ -54,17 +54,18 @@ const MunicipalityV2EstimatedVotesCellEditable = ({
   )
 
   const { open, onOpenChange, value, change, isPending, errorMessage, statusMessage } =
-    useCampaignCellAutosave<VoteEstimateScenarioViewModel, MunicipalityPledgeEstimatedVotesResponse>(
-      {
-        value: estimatedVotes,
-        equals: voteEstimatesEqual,
-        endpoint: MUNICIPALITY_PLEDGE_ESTIMATED_VOTES_ENDPOINT,
-        buildBody: (votes) => ({ pledgeId: pledgeID, estimatedVotes: votes }),
-        readSaved: (payload) => payload.savedEstimatedVotes,
-        errorMessage: SAVE_ERROR_MESSAGE,
-        pendingMessage: 'Salvando estimativa.',
-      },
-    )
+    useCampaignCellAutosave<
+      VoteEstimateScenarioViewModel,
+      MunicipalityPledgeEstimatedVotesResponse
+    >({
+      value: estimatedVotes,
+      equals: voteEstimatesEqual,
+      endpoint: MUNICIPALITY_PLEDGE_ESTIMATED_VOTES_ENDPOINT,
+      buildBody: (votes) => ({ pledgeId: pledgeID, estimatedVotes: votes }),
+      readSaved: (payload) => payload.savedEstimatedVotes,
+      errorMessage: SAVE_ERROR_MESSAGE,
+      pendingMessage: 'Salvando estimativa.',
+    })
 
   const [focusedScenario, setFocusedScenario] = useState<VoteEstimateScenario>('central')
 

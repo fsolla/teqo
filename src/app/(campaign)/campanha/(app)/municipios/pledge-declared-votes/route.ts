@@ -8,8 +8,8 @@ import {
   VOTE_PLEDGE_LEADERSHIP_REQUIRED_MESSAGE,
   VOTE_PLEDGE_MUNICIPALITY_NOT_LINKED_MESSAGE,
 } from '@/lib/schemas/votePledge'
-import { revalidateMunicipalityListPaths } from '@/utilities/municipality/municipalityRevalidation'
 import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute'
+import { revalidateMunicipalityListPaths } from '@/utilities/municipality/municipalityRevalidation'
 
 import type { MunicipalityPledgeDeclaredVotesResponse } from './types'
 
