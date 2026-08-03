@@ -54,6 +54,7 @@ flowchart TB
 ## Rabbit holes / Não escopo (engenharia)
 
 - FAB B151; Conta/Rede B148–B149; compositor completo.
+- **Defer:** unificar `resolveAccessibleMunicipalityContext` entre `loadMunicipalityV2StatusData` e `loadMunicipalityV2AgoraData` quando B148–B149 compuserem um loader de página único.
 
 ## Riscos e mitigação
 
