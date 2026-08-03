@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { LeadershipInviteRowAction } from '@/components/campaign/invite/LeadershipInviteRowAction'
+import { LeadershipContactFieldControl } from '@/components/campaign/leadership/LeadershipContactFieldControl'
 import { LeadershipFilters } from '@/components/campaign/leadership/LeadershipFilters'
 import { LeadershipListSupportStatusControl } from '@/components/campaign/leadership/LeadershipListSupportStatusControl'
 import {
@@ -12,7 +13,6 @@ import {
   LeadershipSortableHead,
 } from '@/components/campaign/leadership/LeadershipSortableHead'
 import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
-import { LeadershipContactFieldControl } from '@/components/campaign/leadership/LeadershipContactFieldControl'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
   CampaignListPendingBoundary,
@@ -159,11 +159,7 @@ const leadershipColumns = ({
     id: 'phone',
     label: 'Celular',
     cell: (row) => (
-      <LeadershipContactFieldControl
-        leadershipId={row.id}
-        field="phone"
-        value={row.phone}
-      />
+      <LeadershipContactFieldControl leadershipId={row.id} field="phone" value={row.phone} />
     ),
   },
   {

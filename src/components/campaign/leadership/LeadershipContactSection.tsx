@@ -35,11 +35,7 @@ export const LeadershipContactSection = ({
       <div className="flex flex-col gap-1">
         <dt className="text-sm text-muted-foreground">Celular</dt>
         <dd>
-          <LeadershipContactFieldControl
-            leadershipId={leadershipId}
-            field="phone"
-            value={phone}
-          />
+          <LeadershipContactFieldControl leadershipId={leadershipId} field="phone" value={phone} />
         </dd>
       </div>
     </dl>

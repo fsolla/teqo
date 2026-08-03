@@ -23,6 +23,7 @@ flowchart LR
 ```
 
 **Opções consideradas:**
+
 - A — JSON route + `useCampaignCellAutosave` (espelho B32 support-status)
 - B — Form action per-field + componente pencil/blur (espelho assessores, UX B153)
 - C — Estender `updateLeadershipWizard` com PATCH parcial

@@ -174,9 +174,7 @@ export const LeadershipContactFieldControl = ({
               <span className="truncate">{value}</span>
             </Link>
           ) : (
-            <span
-              className={cn(campaignReadCellClassName, 'text-sm text-muted-foreground')}
-            >
+            <span className={cn(campaignReadCellClassName, 'text-sm text-muted-foreground')}>
               —
             </span>
           )
