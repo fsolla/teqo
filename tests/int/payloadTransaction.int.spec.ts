@@ -3,7 +3,7 @@
 import type { Payload } from 'payload'
 import { describe, expect, it, vi } from 'vitest'
 
-import { withPayloadTransaction } from '@/utilities/payloadTransaction'
+import { onPayloadTransactionCommit, withPayloadTransaction } from '@/utilities/payloadTransaction'
 
 import { stub } from '../helpers/stub'
 
@@ -130,5 +130,61 @@ describe('withPayloadTransaction', () => {
     expect(failure).toBeInstanceOf(AggregateError)
     expect((failure as AggregateError).errors).toEqual([commit, rollback])
     expect((failure as AggregateError & { cause?: unknown }).cause).toBe(commit)
+  })
+
+  it('runs onPayloadTransactionCommit callbacks only after a successful commit', async () => {
+    const fixture = createPayload()
+    const afterCommit = vi.fn()
+
+    await withPayloadTransaction(fixture.payload, async ({ transactionID }) => {
+      onPayloadTransactionCommit(transactionID, afterCommit)
+      expect(afterCommit).not.toHaveBeenCalled()
+      return 'ok'
+    })
+
+    expect(fixture.commitTransaction).toHaveBeenCalledWith(17)
+    expect(afterCommit).toHaveBeenCalledTimes(1)
+  })
+
+  it('discards onPayloadTransactionCommit callbacks when the callback fails', async () => {
+    const fixture = createPayload()
+    const afterCommit = vi.fn()
+
+    await expect(
+      withPayloadTransaction(fixture.payload, async ({ transactionID }) => {
+        onPayloadTransactionCommit(transactionID, afterCommit)
+        throw new Error('callback falhou')
+      }),
+    ).rejects.toThrow('callback falhou')
+
+    expect(fixture.rollbackTransaction).toHaveBeenCalledWith(17)
+    expect(afterCommit).not.toHaveBeenCalled()
+  })
+
+  it('discards onPayloadTransactionCommit callbacks when commit fails', async () => {
+    const fixture = createPayload({ commitError: new Error('commit falhou') })
+    const afterCommit = vi.fn()
+
+    await expect(
+      withPayloadTransaction(fixture.payload, async ({ transactionID }) => {
+        onPayloadTransactionCommit(transactionID, afterCommit)
+        return 'ok'
+      }),
+    ).rejects.toThrow('commit falhou')
+
+    expect(afterCommit).not.toHaveBeenCalled()
+  })
+
+  it('swallows after-commit callback errors so the write caller still receives the result', async () => {
+    const fixture = createPayload()
+
+    const result = await withPayloadTransaction(fixture.payload, async ({ transactionID }) => {
+      onPayloadTransactionCommit(transactionID, () => {
+        throw new Error('push side-effect failed')
+      })
+      return 'ok'
+    })
+
+    expect(result).toBe('ok')
   })
 })

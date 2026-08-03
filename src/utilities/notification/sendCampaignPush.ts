@@ -5,6 +5,7 @@ import 'server-only'
 import webpush from 'web-push'
 
 import type { NotificationPayload } from '@/lib/notificationContract'
+import type { Notification } from '@/payload-types'
 import type { Payload } from 'payload'
 
 const resolveVapidConfig = (): {
@@ -42,12 +43,19 @@ export const sendCampaignPushForNotification = async (
 ): Promise<void> => {
   if (!ensureVapidConfigured()) return
 
-  const notification = await payload.findByID({
-    collection: 'notification',
-    id: notificationID,
-    depth: 0,
-    overrideAccess: true,
-  })
+  // Soft-fail when the row is gone (rolled-back txn, or a deferred send that
+  // raced commit). Push is best-effort; never throw into an after-commit hook.
+  let notification: Notification
+  try {
+    notification = await payload.findByID({
+      collection: 'notification',
+      id: notificationID,
+      depth: 0,
+      overrideAccess: true,
+    })
+  } catch {
+    return
+  }
 
   const recipientID =
     typeof notification.recipient === 'number' ? notification.recipient : notification.recipient?.id
@@ -55,7 +63,6 @@ export const sendCampaignPushForNotification = async (
 
   const content = notification.payload as NotificationPayload
   if (!content?.title || !content.href) return
-
   const subscriptions = await payload.find({
     collection: 'pushSubscription',
     where: { user: { equals: recipientID } },

@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-03):** **Pass 5 P1** — push de notificação de campanha após commit: `onPayloadTransactionCommit` em `withPayloadTransaction`; `createCampaignNotification` não usa mais `queueMicrotask` sob `req.transactionID`; `sendCampaignPushForNotification` soft-fail se a row sumiu. Guarda `notificationPushScheduleConventions`.
+
 **Recently resolved (2026-08-03):** **OPS18** (Issue #296) — promote dual plan-issue: Action `plan-issue-ready-on-main-merge.yml` no merge lê `Related #N` e promove Issues ainda aguardando plano (`canPromotePlanIssue`); idempotente com `pnpm agent:ready`. Planos: [`plan-issue-promote-dual.md`](docs/plans/plan-issue-promote-dual.md), impl [`plan-issue-promote-dual-impl.md`](docs/plans/plan-issue-promote-dual-impl.md).
 
 **Recently resolved (2026-08-02):** **OPS17** (Issue #292) — ciclo plan-issue: gate pós-overview antes de Issue/PR; `agent:register --plan` nasce `blocked`; após plano em `main`, `pnpm agent:ready` promove a `ready`. Planos: [`plan-issue-lifecycle-ready.md`](docs/plans/plan-issue-lifecycle-ready.md), impl [`plan-issue-lifecycle-ready-impl.md`](docs/plans/plan-issue-lifecycle-ready-impl.md). Action dual no merge = OPS18 (#296).

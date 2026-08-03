@@ -7,6 +7,7 @@ import type { Notification } from '@/payload-types'
 import type { Payload, PayloadRequest } from 'payload'
 
 import { sendCampaignPushForNotification } from '@/utilities/notification/sendCampaignPush'
+import { onPayloadTransactionCommit } from '@/utilities/payloadTransaction'
 
 export type NotificationWriteRequest = Pick<PayloadRequest, 'transactionID'>
 
@@ -15,6 +16,26 @@ type CreateCampaignNotificationInput = {
   type: NotificationType
   payload: NotificationPayload
   municipalityID?: number | null
+}
+
+const scheduleCampaignNotificationPush = (
+  payload: Payload,
+  notificationID: number,
+  req?: NotificationWriteRequest,
+): void => {
+  const run = (): void => {
+    void sendCampaignPushForNotification(payload, notificationID)
+  }
+
+  // Pass 5 P1: never `queueMicrotask` under an open transaction — microtasks
+  // flush before `withPayloadTransaction` reaches `commitTransaction`.
+  const transactionID = req?.transactionID
+  if (typeof transactionID === 'string' || typeof transactionID === 'number') {
+    onPayloadTransactionCommit(transactionID, run)
+    return
+  }
+
+  queueMicrotask(run)
 }
 
 const createCampaignNotification = async (
@@ -35,9 +56,7 @@ const createCampaignNotification = async (
     req,
   })
 
-  queueMicrotask(() => {
-    void sendCampaignPushForNotification(payload, notification.id)
-  })
+  scheduleCampaignNotificationPush(payload, notification.id, req)
 
   return notification
 }
