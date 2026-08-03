@@ -36,7 +36,7 @@ export default async function MunicipalityV2Page({ params }: MunicipalityV2PageP
   ])
 
   let status
-<<<<<<< HEAD
+  let context
   let network
   let agora
   try {
@@ -45,19 +45,9 @@ export default async function MunicipalityV2Page({ params }: MunicipalityV2PageP
       loadMunicipalityV2NetworkData(payload, user, slug),
       loadMunicipalityV2AgoraData(payload, user, slug),
     ])
-<<<<<<< HEAD
-    ;({ status } = statusLoaded)
+    ;({ status, context } = statusLoaded)
     network = networkLoaded
     agora = agoraLoaded
-=======
-    ;({ status } = loaded[0])
-    network = loaded[1]
-=======
-  let context
-  try {
-    ;({ status, context } = await loadMunicipalityV2StatusData(payload, user, slug))
->>>>>>> b1786d18 (B151 — FAB secundário no detalhe município v2 (#334))
->>>>>>> f198d718 (B151 — FAB secundário no detalhe município v2 (#334))
   } catch (error) {
     if (error instanceof MunicipalityNotFoundError) notFound()
     throw error
