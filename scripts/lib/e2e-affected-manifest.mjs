@@ -27,6 +27,7 @@ export const E2E_AFFECTED_MANIFEST = [
   {
     prefixes: [
       `${CAMPAIGN_APP}/municipios`,
+      `${CAMPAIGN_APP}/municipio`,
       'src/components/campaign/municipality',
       'src/components/campaign/map',
       'src/components/campaign/shared/CampaignListOmnibox',

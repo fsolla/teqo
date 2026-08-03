@@ -131,6 +131,11 @@ const pathRules: PathRule[] = [
     resolve: () => sectionOnly(campaignPageChromeCatalog.municipios.title),
   },
   {
+    // B147 parallel v2 — soft-dep B145 for entity name in chrome; section title for now.
+    match: (pathname) => /^\/campanha\/municipio\/[^/]+\/v2$/.test(pathname),
+    resolve: () => sectionOnly(campaignPageChromeCatalog.municipios.title),
+  },
+  {
     match: (pathname) => pathname === '/campanha/territorios',
     resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.territorios),
   },

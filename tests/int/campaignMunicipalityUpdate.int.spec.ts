@@ -114,6 +114,13 @@ describe('campaign municipality update domain', () => {
         body: 'Visita adversária confirmada.',
       }).success,
     ).toBe(false)
+    expect(
+      municipalityUpdateCreateSchema.safeParse({
+        municipality: 1,
+        kind: 'sinal',
+        signalType: 'invasao',
+      }).success,
+    ).toBe(true)
   })
 
   it('strips forged author and timestamps from input', () => {
@@ -210,6 +217,19 @@ describe('campaign municipality update domain', () => {
     expect(created.author).toBe(coordinator.id)
     const visible = await listMunicipalityUpdates(coordinator, municipality.id)
     expect(visible.docs.map(({ id }) => id)).toContain(created.id)
+  })
+
+  it('accepts a sinal with type and empty motivo', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const municipality = await campaignFixtures().getMunicipality()
+
+    const created = await createMunicipalityUpdateRecord(payload, coordinator, {
+      municipality: municipality.id,
+      kind: 'sinal',
+      signalType: 'invasao',
+    })
+    expect(created.signalType).toBe('invasao')
+    expect(created.body).toBeFalsy()
   })
 
   it('limits advisors to administered municipalities for create and read', async () => {

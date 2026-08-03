@@ -83,7 +83,8 @@ export const municipalityUpdateCreateSchema = z
           path: ['needs'],
         })
       }
-    } else if (!data.body) {
+    } else if (data.kind !== 'sinal' && !data.body) {
+      // Sinal inherits B147/B134 optional-motivo: type is enough; body/note is optional.
       context.addIssue({
         code: 'custom',
         message: 'Informe o texto da atualização.',
