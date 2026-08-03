@@ -56,3 +56,11 @@ export const formatMunicipalitySignalAgeLabel = (ageInDays: number | null): stri
  */
 export const formatSilenceAgeLabel = (ageInDays: number | null): string =>
   ageInDays === null ? 'nunca recebeu sinal' : `sem sinal há ${ageInDays} dias`
+
+/** E11 empty queue copy — shared by the detail overview and the v2 Agora block. */
+export const formatMunicipalitySuggestionEmptyMessage = (
+  silence: { lastSignalAgeDays: number | null } | null,
+): string =>
+  silence
+    ? `Nenhum padrão do catálogo dispara aqui — e o município ${formatSilenceAgeLabel(silence.lastSignalAgeDays)}. Silêncio é pergunta: vale checar a rede e o registro.`
+    : 'Nenhum padrão do catálogo dispara aqui agora.'

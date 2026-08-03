@@ -7,6 +7,7 @@ import {
   calendarPhaseLabels,
   calendarPhaseVisitProduct,
   evaluateVisitEligibility,
+  formatVisitEligibilitySummary,
   resolveCalendarPhase,
   VISIT_CONDITIONS,
   VISIT_CONTRAINDICATIONS,
@@ -187,6 +188,36 @@ describe('visit planner copy', () => {
     for (const contraindication of VISIT_CONTRAINDICATIONS) {
       expect(visitContraindicationLabels[contraindication].length).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('formatVisitEligibilitySummary', () => {
+  it('reads eligible when all five conditions are met', () => {
+    const summary = formatVisitEligibilitySummary(evaluateVisitEligibility(input()))
+    expect(summary).toEqual({
+      eligible: true,
+      headline: 'Elegível',
+      detail: 'As cinco condições estão atendidas.',
+    })
+  })
+
+  it('reads not eligible with the contraindication headline when one fires', () => {
+    const summary = formatVisitEligibilitySummary(
+      evaluateVisitEligibility(
+        input({ leadershipCount: 0, pledgeCount: 0, territorialClass: 'sem_base' }),
+      ),
+    )
+    expect(summary.eligible).toBe(false)
+    expect(summary.headline).toBe('Não elegível')
+    expect(summary.detail).toBe(visitContraindicationLabels.perdida)
+  })
+
+  it('names the first unmet condition when there is no contraindication', () => {
+    const summary = formatVisitEligibilitySummary(
+      evaluateVisitEligibility(input({ projectedValidVotes: 1_000, projectedValidVotesCut: 10_000 })),
+    )
+    expect(summary.eligible).toBe(false)
+    expect(summary.detail).toContain(visitConditionLabels.volume)
   })
 })
 

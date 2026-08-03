@@ -285,3 +285,45 @@ export const visitConditionLabels: Record<VisitConditionId, string> = {
   janela: 'Janela política',
   encaixe: 'Encaixe em giro',
 }
+
+export type VisitEligibilitySummary = {
+  eligible: boolean
+  headline: string
+  detail: string
+}
+
+/**
+ * B150 — one-line readout for the v2 "Agora" block: eligible or not, plus a
+ * short reason. Full checklist stays on the FAB/detail card (E13).
+ */
+export const formatVisitEligibilitySummary = (
+  eligibility: VisitEligibility,
+): VisitEligibilitySummary => {
+  const allMet =
+    eligibility.metCount === VISIT_CONDITIONS.length && eligibility.contraindication === null
+
+  if (allMet) {
+    return {
+      eligible: true,
+      headline: 'Elegível',
+      detail: 'As cinco condições estão atendidas.',
+    }
+  }
+
+  if (eligibility.contraindication) {
+    return {
+      eligible: false,
+      headline: 'Não elegível',
+      detail: visitContraindicationLabels[eligibility.contraindication.id],
+    }
+  }
+
+  const firstUnmet = eligibility.conditions.find((condition) => !condition.met)
+  return {
+    eligible: false,
+    headline: 'Não elegível',
+    detail: firstUnmet
+      ? `${visitConditionLabels[firstUnmet.id]}: ${firstUnmet.detail}`
+      : 'Condições incompletas.',
+  }
+}
