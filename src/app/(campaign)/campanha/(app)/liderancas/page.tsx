@@ -12,7 +12,7 @@ import {
   LeadershipSortableHead,
 } from '@/components/campaign/leadership/LeadershipSortableHead'
 import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
-import { CampaignCopyableCell } from '@/components/campaign/shared/CampaignCopyableCell'
+import { LeadershipContactFieldControl } from '@/components/campaign/leadership/LeadershipContactFieldControl'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
   CampaignListPendingBoundary,
@@ -144,29 +144,26 @@ const leadershipColumns = ({
     mandatory: true,
     head: <LeadershipSortableHead state={state} sortKey="name" />,
     cell: (row) => (
-      <Link
-        href={`/campanha/liderancas/${row.id}`}
-        className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline"
-      >
-        {row.name}
-      </Link>
+      <LeadershipContactFieldControl leadershipId={row.id} field="name" value={row.name} />
     ),
   },
   {
     id: 'email',
     label: 'E-mail',
     cellClassName: 'max-w-56',
-    cell: (row) => <CampaignCopyableCell value={row.email} label="E-mail" />,
+    cell: (row) => (
+      <LeadershipContactFieldControl leadershipId={row.id} field="email" value={row.email} />
+    ),
   },
   {
     id: 'phone',
     label: 'Celular',
     cell: (row) => (
-      <CampaignCopyableCell
+      <LeadershipContactFieldControl
+        leadershipId={row.id}
+        field="phone"
         value={row.phone}
-        label="Celular"
         displayValue={row.phone ? formatBrazilianPhoneInput(row.phone) : undefined}
-        className="tabular-nums"
       />
     ),
   },
