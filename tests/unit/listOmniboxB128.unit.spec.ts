@@ -10,7 +10,10 @@ import {
 import {
   applyActivityOmniboxSuggestion,
   buildActivityOmniboxChips,
+  buildActivityOmniboxSuggestionSeeds,
   clearActivityOmnibox,
+  filterActivityOmniboxSuggestions,
+  removeActivityOmniboxChip,
 } from '@/utilities/activityOmnibox'
 import { parseActivityListParams } from '@/utilities/activityUi'
 import { parseAdvisorListParams } from '@/utilities/advisor/advisorListUrl'
@@ -187,6 +190,48 @@ describe('list omnibox adapters (B128)', () => {
 
     const applied = applyActivityOmniboxSuggestion({ state, suggestionId: 'kind:comicio' })
     expect(applied.kind).toBe('url')
+  })
+
+  it('activity applies window preset and search (B138)', () => {
+    const base = parseActivityListParams({})
+    const seeds = buildActivityOmniboxSuggestionSeeds({ tab: base.tab, municipalityOptions: [] })
+    const suggestions = filterActivityOmniboxSuggestions(seeds, 'realizados')
+    expect(suggestions.some((entry) => entry.id === 'tab:realizados')).toBe(true)
+
+    const tabApplied = applyActivityOmniboxSuggestion({
+      state: base,
+      suggestionId: 'tab:realizados',
+    })
+    expect(tabApplied.kind).toBe('url')
+    if (tabApplied.kind === 'url') expect(tabApplied.state.tab).toBe('realizados')
+
+    const searchApplied = applyActivityOmniboxSuggestion({
+      state: parseActivityListParams({ tab: 'todos', status: 'planejado' }),
+      suggestionId: 'q:comício',
+    })
+    expect(searchApplied.kind).toBe('url')
+    if (searchApplied.kind === 'url') {
+      expect(searchApplied.state.q).toBe('comício')
+      expect(searchApplied.state.status).toBe('planejado')
+    }
+
+    const leavingTodos = applyActivityOmniboxSuggestion({
+      state: parseActivityListParams({ tab: 'todos', status: 'planejado' }),
+      suggestionId: 'tab:realizados',
+    })
+    if (leavingTodos.kind === 'url') expect(leavingTodos.state.status).toBeUndefined()
+
+    const chips = buildActivityOmniboxChips({
+      state: parseActivityListParams({ tab: 'realizados', q: 'Maria' }),
+      municipalityLabelsById: new Map(),
+    })
+    expect(chips.map((chip) => chip.id)).toEqual(['q', 'tab:realizados'])
+
+    const removedTab = removeActivityOmniboxChip({
+      state: parseActivityListParams({ tab: 'realizados' }),
+      chipId: 'tab:realizados',
+    })
+    if (removedTab.kind === 'url') expect(removedTab.state.tab).toBe('proximos')
   })
 
   it('demand toggles exclusive status, kind and search; preserves activity on clear', () => {

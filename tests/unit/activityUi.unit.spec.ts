@@ -39,6 +39,12 @@ describe('parseActivityListParams', () => {
     expect(parseActivityListParams({ municipality: '12' }).municipality).toBe(12)
     expect(parseActivityListParams({ municipality: '0' }).municipality).toBeUndefined()
   })
+
+  it('parses and trims q', () => {
+    expect(parseActivityListParams({ q: '  comício  ' }).q).toBe('comício')
+    expect(parseActivityListParams({ q: '   ' }).q).toBeUndefined()
+    expect(parseActivityListParams({ q: 'a' }).q).toBeUndefined()
+  })
 })
 
 describe('buildActivityListWhere (tab → where matrix)', () => {
@@ -81,6 +87,19 @@ describe('buildActivityListWhere (tab → where matrix)', () => {
       ],
     })
   })
+
+  it('filters by title or responsible name when q is set', () => {
+    const where = buildActivityListWhere({ page: 1, tab: 'proximos', q: 'Maria' }, NOW)
+    expect(where).toEqual({
+      and: [
+        {
+          or: [{ title: { contains: 'Maria' } }, { 'responsible.name': { contains: 'Maria' } }],
+        },
+        { status: { in: ['planejado', 'confirmado'] } },
+        { startAt: { greater_than_equal: NOW.toISOString() } },
+      ],
+    })
+  })
 })
 
 describe('buildActivityListSearchParams', () => {
@@ -95,11 +114,14 @@ describe('buildActivityListSearchParams', () => {
     const params = buildActivityListSearchParams({
       page: 1,
       tab: 'todos',
+      q: 'comício',
       kind: 'caminhada',
       status: 'cancelado',
       municipality: 9,
     })
-    expect(params.toString()).toBe('tab=todos&kind=caminhada&status=cancelado&municipality=9')
+    expect(params.toString()).toBe(
+      'q=com%C3%ADcio&tab=todos&kind=caminhada&status=cancelado&municipality=9',
+    )
   })
 })
 
