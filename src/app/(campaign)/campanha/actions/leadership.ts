@@ -46,6 +46,40 @@ const getFreshStaffActor = (
   req?: PayloadTransactionRequest,
 ): Promise<CampaignUser> => reloadStaffActor(payload, actor, LEADERSHIP_STAFF_MESSAGE, req)
 
+const assertLeadershipContactPhoneWritable = async (
+  payload: Payload,
+  req: PayloadTransactionRequest,
+  contactID: number,
+  phone: string,
+) => {
+  if (payload.db.name !== 'postgres') {
+    throw new Error(POSTGRES_DEDUP_LOCK_MESSAGE)
+  }
+
+  await acquireContactPhoneLocks(payload, req, [phone])
+
+  // Intentional admin bypass: staff scope was checked on the leadership; phone
+  // uniqueness must see every contact with the number, not only visible rows.
+  const contactsWithPhone = await payload.find({
+    collection: 'contact',
+    where: { phone: { equals: phone } },
+    depth: 0,
+    limit: 2,
+    pagination: false,
+    overrideAccess: true,
+    req,
+  })
+
+  if (contactsWithPhone.totalDocs > 1) {
+    throw new Error(CONTACT_PHONE_AMBIGUOUS_MESSAGE)
+  }
+
+  const phoneOwner = contactsWithPhone.docs[0]
+  if (phoneOwner && phoneOwner.id !== contactID) {
+    await assertContactPhoneAvailable(payload, req, phone, contactID)
+  }
+}
+
 /** Advisors may only link leaderships to municipalities they administer. */
 const assertMunicipalitiesWithinScope = async (
   payload: Payload,
@@ -274,37 +308,13 @@ export const updateLeadershipContactRecord = async (
         contactData.name = data.name
       } else if (data.field === 'email') {
         contactData.email = data.email ?? null
-      } else if (data.phone) {
-        if (payload.db.name !== 'postgres') {
-          throw new Error(POSTGRES_DEDUP_LOCK_MESSAGE)
+      } else if (data.field === 'phone') {
+        if (data.phone) {
+          await assertLeadershipContactPhoneWritable(payload, req, contactID, data.phone)
+          contactData.phone = data.phone
+        } else {
+          contactData.phone = null
         }
-
-        await acquireContactPhoneLocks(payload, req, [data.phone])
-
-        // Intentional admin bypass: staff scope was checked on the leadership; phone
-        // uniqueness must see every contact with the number, not only visible rows.
-        const contactsWithPhone = await payload.find({
-          collection: 'contact',
-          where: { phone: { equals: data.phone } },
-          depth: 0,
-          limit: 2,
-          pagination: false,
-          overrideAccess: true,
-          req,
-        })
-
-        if (contactsWithPhone.totalDocs > 1) {
-          throw new Error(CONTACT_PHONE_AMBIGUOUS_MESSAGE)
-        }
-
-        const phoneOwner = contactsWithPhone.docs[0]
-        if (phoneOwner && phoneOwner.id !== contactID) {
-          await assertContactPhoneAvailable(payload, req, data.phone, contactID)
-        }
-
-        contactData.phone = data.phone
-      } else {
-        contactData.phone = null
       }
 
       // bypass: contact write is staff-scoped via leadership access check above.
@@ -369,28 +379,7 @@ const updateLeadershipWizardRecord = async (
         throw new Error(LEADERSHIP_INVALID_CONTACT_MESSAGE)
       }
 
-      await acquireContactPhoneLocks(payload, req, [data.phone])
-
-      // Intentional admin bypass: staff scope was checked on the leadership; contact
-      // PII is updated atomically with the leadership fields in this transaction.
-      const contactsWithPhone = await payload.find({
-        collection: 'contact',
-        where: { phone: { equals: data.phone } },
-        depth: 0,
-        limit: 2,
-        pagination: false,
-        overrideAccess: true,
-        req,
-      })
-
-      if (contactsWithPhone.totalDocs > 1) {
-        throw new Error(CONTACT_PHONE_AMBIGUOUS_MESSAGE)
-      }
-
-      const phoneOwner = contactsWithPhone.docs[0]
-      if (phoneOwner && phoneOwner.id !== contactID) {
-        await assertContactPhoneAvailable(payload, req, data.phone, contactID)
-      }
+      await assertLeadershipContactPhoneWritable(payload, req, contactID, data.phone)
 
       // bypass: contact write is staff-scoped via leadership access check above.
       await payload.update({

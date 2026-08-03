@@ -1,7 +1,6 @@
 'use client'
 
 import { LeadershipContactFieldControl } from '@/components/campaign/leadership/LeadershipContactFieldControl'
-import { formatBrazilianPhoneInput } from '@/lib/phone'
 
 type LeadershipContactSectionProps = {
   leadershipId: number
@@ -40,7 +39,6 @@ export const LeadershipContactSection = ({
             leadershipId={leadershipId}
             field="phone"
             value={phone}
-            displayValue={phone ? formatBrazilianPhoneInput(phone) : undefined}
           />
         </dd>
       </div>

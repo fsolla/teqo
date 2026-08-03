@@ -48,7 +48,7 @@ import {
   resolvedPortfolioEntriesById,
   type MunicipalityPortfolioIndexEntry,
 } from '@/lib/municipalityPortfolio'
-import { formatBrazilianPhoneInput, whatsAppHrefForPhone } from '@/lib/phone'
+import { whatsAppHrefForPhone } from '@/lib/phone'
 import { MAX_LEADERSHIP_MUNICIPALITIES } from '@/lib/schemas/leadership'
 import { cn } from '@/lib/utils'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
@@ -163,7 +163,6 @@ const leadershipColumns = ({
         leadershipId={row.id}
         field="phone"
         value={row.phone}
-        displayValue={row.phone ? formatBrazilianPhoneInput(row.phone) : undefined}
       />
     ),
   },

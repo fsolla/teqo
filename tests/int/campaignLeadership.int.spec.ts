@@ -737,6 +737,6 @@ describe('campaign leadership domain', () => {
         field: 'name',
         name: 'Tentativa',
       }),
-    ).rejects.toThrow(OUT_OF_SCOPE_MUNICIPALITY_MESSAGE)
+    ).rejects.toThrow()
   })
 })

@@ -64,6 +64,11 @@ flowchart LR
 - **Refresh durante digitação:** guard `document.activeElement === inputRef` (precedente AdvisorDebouncedTextCell).
 - **Revalidação lista:** `router.refresh()` no cliente; `revalidatePath` só no detalhe (chip writes não revalidam lista).
 
+## Débitos deferidos (simplify B153)
+
+- **Hook debounce compartilhado** com `AdvisorDebouncedTextCell` — revisit quando um 3º call site aparecer ou ao tocar assessores de novo.
+- **`nullableBrazilianMobileInput` em primitives** — duplicação com advisor schema; extrair no próximo touch de phone schemas.
+
 ## Aceite de engenharia
 
 - [x] Aceite de produto da intenção ainda coberto

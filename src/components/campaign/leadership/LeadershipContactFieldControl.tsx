@@ -27,8 +27,6 @@ type LeadershipContactFieldControlProps = {
   leadershipId: number
   field: LeadershipContactField
   value: string | null
-  /** Preformatted display for phone in read mode. */
-  displayValue?: string
   className?: string
 }
 
@@ -48,10 +46,11 @@ export const LeadershipContactFieldControl = ({
   leadershipId,
   field,
   value,
-  displayValue,
   className,
 }: LeadershipContactFieldControlProps) => {
   const label = fieldLabels[field]
+  const phoneDisplayValue =
+    field === 'phone' && value ? formatBrazilianPhoneInput(value) : undefined
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(value ?? '')
@@ -185,7 +184,7 @@ export const LeadershipContactFieldControl = ({
           <CampaignCopyableCell
             value={value}
             label={label}
-            displayValue={displayValue}
+            displayValue={phoneDisplayValue}
             className={field === 'phone' ? 'tabular-nums' : undefined}
           />
         )}
