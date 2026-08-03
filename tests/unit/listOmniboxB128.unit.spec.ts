@@ -329,6 +329,23 @@ describe('list omnibox adapters (B128)', () => {
     expect(cleared).toEqual({ kind: 'clear', state: {} })
   })
 
+  it('search-only omnibox clears and removes chips', () => {
+    expect(buildSearchOnlyOmniboxSuggestions('')).toEqual([])
+
+    const removed = removeSearchOnlyOmniboxChip({
+      state: { q: 'x', page: 2 },
+      chipId: 'q',
+      withPageReset: (next) => ({ ...next, page: 1 }),
+    })
+    expect(removed).toEqual({ kind: 'url', state: { page: 1, q: undefined } })
+
+    const cleared = clearSearchOnlyOmnibox({
+      state: { q: 'x' },
+      cleared: {},
+    })
+    expect(cleared).toEqual({ kind: 'clear', state: {} })
+  })
+
   it('advisor toggles municipality portfolio filter and suggests by name', () => {
     const base = parseAdvisorListParams({})
     const applied = applyAdvisorOmniboxSuggestion({

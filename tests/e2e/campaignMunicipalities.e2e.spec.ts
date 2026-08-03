@@ -10,6 +10,10 @@ import {
   expectPostResponse,
   test,
 } from './fixtures/campaignE2EFixtures.js'
+import {
+  assertThreeColumnActionGrid,
+  collectActionBoundingBoxes,
+} from './helpers/actionGridGeometry.js'
 
 /**
  * Core municipality-model journeys per role: coordinator strategy editing, advisor
@@ -482,6 +486,43 @@ test.describe('Municípios — FAB ações rápidas mobile (B126)', () => {
  */
 test.describe('Municípios — FAB overlay polish (B126)', () => {
   test.use({ viewport: { width: 390, height: 844 } })
+
+  const staffActionLabels = [
+    'Ajustar votos',
+    'Registrar sinal',
+    'Mudar tendência',
+    'Atualizar liderança',
+    'Registrar pedido',
+    'Ver esquecidos',
+  ] as const
+
+  test('overlay actions use a 3×2 grid at mobile width (B136)', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador B136'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/municipios`)
+    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Ações rápidas' }).click()
+    const overlay = page.locator('#CampaignQuickActionsOverlay')
+    await expect(overlay).toBeVisible()
+
+    const actionsRegion = overlay.getByLabel('Ações rápidas')
+    await expect(actionsRegion.locator('ul[data-layout="grid-3"]')).toBeVisible()
+    for (const label of staffActionLabels) {
+      await expect(
+        actionsRegion
+          .getByRole('link', { name: label, exact: true })
+          .or(actionsRegion.getByRole('button', { name: label, exact: true })),
+      ).toBeVisible()
+    }
+
+    const boxes = await collectActionBoundingBoxes(actionsRegion, staffActionLabels)
+    assertThreeColumnActionGrid(boxes, 2)
+  })
 
   test('overlay labels readable and search focus hides action strip', async ({
     campaign,

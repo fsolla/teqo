@@ -171,6 +171,7 @@ describe('CampaignQuickActionsOverlay (B126)', () => {
     const chrome = document.querySelector('[data-slot="quick-actions-chrome"]')
     const list = chrome?.querySelector('ul[role="list"]')
     expect(list?.className).toContain('grid-cols-3')
+    expect(list?.getAttribute('data-layout')).toBe('grid-3')
     expect(list?.className).not.toMatch(/flex/)
     expect(chrome?.querySelector('[aria-label="Ações rápidas"]')).not.toBeNull()
   })

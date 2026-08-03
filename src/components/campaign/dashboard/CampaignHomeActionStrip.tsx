@@ -138,8 +138,8 @@ export const CampaignHomeActionStrip = ({
     isStripLayout
       ? 'flex min-w-max snap-x snap-proximity gap-0 px-4 pb-1 md:px-0'
       : isGridLayout
-        ? 'grid grid-cols-3 gap-3'
-        : 'grid grid-cols-3 gap-3 md:flex md:min-w-max md:snap-x md:snap-proximity md:gap-0 md:px-0 md:pb-1',
+        ? 'grid grid-cols-3 gap-2'
+        : 'grid grid-cols-3 gap-2 md:flex md:min-w-max md:snap-x md:snap-proximity md:gap-0 md:px-0 md:pb-1',
   )
 
   const scrollerClassName = cn(
@@ -160,12 +160,16 @@ export const CampaignHomeActionStrip = ({
         className={scrollerClassName}
         {...finePointerPanProps}
       >
-        <ul role="list" className={listClassName}>
+        <ul
+          role="list"
+          className={listClassName}
+          data-layout={!isStripLayout ? 'grid-3' : undefined}
+        >
           {actions?.map(({ id, ...button }) => (
-            <li key={id ?? button.href ?? button.label} className="m-0 list-none p-0">
+            <li key={id ?? button.href ?? button.label} className="m-0 min-w-0 list-none p-0">
               <CampaignHomeActionButton
                 {...button}
-                layout={isStripLayout ? 'strip' : 'responsive'}
+                layout={isStripLayout ? 'strip' : isGridLayout ? 'grid' : 'responsive'}
               />
             </li>
           ))}

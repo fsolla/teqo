@@ -2,6 +2,10 @@ import type { Page } from '@playwright/test'
 
 import { WIZARD_MUNICIPALITY_STEP_TITLE } from '../../src/lib/campaignWizardCopy.js'
 import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import {
+  assertThreeColumnActionGrid,
+  collectActionBoundingBoxes,
+} from './helpers/actionGridGeometry.js'
 
 const staffActionLabels = [
   'Ajustar votos',
@@ -126,6 +130,11 @@ test.describe('Início — catálogo de ações (B45)', () => {
     const overflowX = await actionsRegion.evaluate((el) => getComputedStyle(el).overflowX)
     expect(overflowX).not.toBe('auto')
     expect(overflowX).not.toBe('scroll')
+
+    const actionList = actionsRegion.locator('ul[data-layout="grid-3"]')
+    await expect(actionList).toBeVisible()
+    const boxes = await collectActionBoundingBoxes(actionsRegion, staffActionLabels)
+    assertThreeColumnActionGrid(boxes, 2)
 
     await page.getByRole('link', { name: 'Ajustar votos', exact: true }).click()
     await page.waitForURL(/\/campanha\/acoes\/atualizar-votos/)

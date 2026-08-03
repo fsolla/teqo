@@ -98,6 +98,15 @@ describe('CampaignHomeActionButton', () => {
     expect(control.className).toContain('w-[5.5rem]')
   })
 
+  it('uses full-width grid sizing when layout is grid (B136)', () => {
+    renderActionButton({ label: 'Registrar', icon: BarChart3, layout: 'grid' })
+    const control = screen.getByRole('button', { name: 'Registrar' })
+    expect(control.className).toContain('w-full')
+    expect(control.className).toContain('min-w-0')
+    expect(control.className).not.toContain('box-content')
+    expect(control.className).not.toContain('w-[5.5rem]')
+  })
+
   it('opens the description drawer on long-press when the pointer is coarse', () => {
     resetCampaignCoarsePointerForTests()
     matchMediaMock.mockImplementation((query: string) => ({
@@ -209,7 +218,9 @@ describe('CampaignHomeActionStrip', () => {
     const list = region?.querySelector('ul[role="list"]')
     expect(list).toBeTruthy()
     expect(list?.className).toMatch(/grid-cols-3/)
+    expect(list?.getAttribute('data-layout')).toBe('grid-3')
     expect(list?.className).toMatch(/md:flex/)
+    expect(list?.querySelector('li')?.className).toContain('min-w-0')
     const regionClasses = region?.className.split(/\s+/) ?? []
     expect(regionClasses).not.toContain('overflow-x-auto')
     expect(regionClasses.some((token) => token.includes('md:overflow-x-auto'))).toBe(true)
@@ -229,6 +240,7 @@ describe('CampaignHomeActionStrip', () => {
     const region = container.querySelector('[aria-label="Ações rápidas"]')
     const list = region?.querySelector('ul[role="list"]')
     expect(list?.className).toMatch(/grid-cols-3/)
+    expect(list?.getAttribute('data-layout')).toBe('grid-3')
     expect(list?.className).not.toMatch(/md:flex/)
     expect(region?.className).not.toMatch(/overflow-x-auto/)
   })
