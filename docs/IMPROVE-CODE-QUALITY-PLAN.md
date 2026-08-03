@@ -1,6 +1,6 @@
 # Improve Code Quality Plan
 
-Four passes so far: **Pass 1** (2026-07-23/24, phases 0–6 below, all done), **Pass 2** (2026-07-25, see [Pass 2](#pass-2--engineering-consolidation-2026-07-25)), **Pass 3** (2026-07-28, audit + plan, see [Pass 3](#pass-3--engineering-audit--consolidation-2026-07-28)) and **Pass 4** (2026-07-31, audit + P0/P1 remediation + miss guardrails in-session, see [Pass 4](#pass-4--engineering-audit--remediation--guardrails-2026-07-31)).
+Five passes so far: **Pass 1** (2026-07-23/24, phases 0–6 below, all done), **Pass 2** (2026-07-25, see [Pass 2](#pass-2--engineering-consolidation-2026-07-25)), **Pass 3** (2026-07-28, audit + plan, see [Pass 3](#pass-3--engineering-audit--consolidation-2026-07-28)), **Pass 4** (2026-07-31, audit + P0/P1 remediation + miss guardrails in-session, see [Pass 4](#pass-4--engineering-audit--remediation--guardrails-2026-07-31)) and **Pass 5** (2026-08-03, audit + P1 remediation in-session, see [Pass 5](#pass-5--engineering-audit--remediation-2026-08-03)).
 
 ## Context
 
@@ -210,4 +210,47 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 
 - [x] Artifacts PR = Ready + auto-merge (mesmo contrato `agent-pr-workflow`; sem exceção de merge humano); remediation PRs merge independently
 - [ ] P4-A → P4-L as independent deliveries ([entrega-engenharia-p4.md](plans/entrega-engenharia-p4.md)); oversized items → Issue rastreável via `plan-issue`
+- [ ] Leftovers → ledger via `capture-review-debts`
+
+# Pass 5 — Engineering Audit + Remediation (2026-08-03)
+
+## Context
+
+- **Started:** 2026-08-03 — second **autonomous (Cursor Cloud)** execution of the `engineering-audit` skill.
+- **Precheck (fail-closed):** `pnpm agent:pool -- status` → pool **desligado** (desde 2026-08-02); solitary audit confirmed. (`gh workflow run` write unavailable in Cloud — fail-closed path not needed.)
+- **Delta anchor:** Pass 4 (2026-07-31). **627 files** / **520 commits** in ~3 days of agent-paradigm work: quick-actions registry ×25, wizard/omnibox ×12+, e2e municipalities ×25, home actions, municipality v2 shell (B147), OPS17/18 plan-issue lifecycle.
+- **Method:** canon loaded (rules, ARCHITECTURE, AGENT-OPS, TECH-DEBT, TESTING, GUARDRAILS, `escala-dry-pos-*`, consolidation precedents, rejected-with-reason); hotspot map; **five parallel sweeps** (lib+scripts, utilities+access, components, app+collections+globals, tests+guard dodges); consolidation hunt under anti-DRY; **0 open `kind:agent-miss`** (fila vazia — #48/#49/#50/#54 already `done`); open ledger rows re-verified; **1 P1** remediated in-session (own PR); P2/P3 → plan/ledger only.
+- **Baseline:** green — `tsc` 0, `lint` 0 warnings, `knip` 0 findings (known `payload.config.ts` loader noise, ledger P3 — verified still true), madge 0 cycles (**859 files**, +85 since Pass 4's 774).
+
+## Audit headlines (all measured)
+
+- **0 P0.** Pass 4 global lockdown held: no `Boolean(user)` update on globals; `CampaignGoals` uses named predicates; collections still declare `access`. Consent fail-closed held.
+- **1 P1:** `createCampaignNotification` schedules push via `queueMicrotask` while the write often rides `req.transactionID` (hooks → `createCampaignNotifications`). Microtasks flush **before** `withPayloadTransaction`'s `commitTransaction`, so push can read/send for a not-yet-committed (or later-rolled-back) row. **Remediated in-session** (after-commit registry + existence-safe send + guard).
+- **Miss harvest:** 0 open `kind:agent-miss` → no new miss guardrails. Existing GUARDRAILS.md entries verified alive (allocator, sheet host, e2e navigation, WebAuthn readiness, global access, CLI, localApi overrideAccess).
+- **Pass 4 P2 waves still open (re-measured):** P4-A homeSearch twins (`utilities/homeSearch` **837** LOC, `limit: 0` ×5); P4-B HomeSearch\*Group ×6; P4-C notificationEvents `findByID`×7 / 254 LOC; P4-D notification write path (mark-all/subscribe/unsubscribe — narrowed, still open); P4-E wizard info Drawer ×3 + skip trailing ×2; P4-F mobile cards → `municipalityListUrl` labels; P4-G provider width + unconditional `aria-live` in `RelationChipCell` (**841** LOC); P4-H–L as ledgered.
+- **Ledger hygiene:** e2e thin row **17 specs / 51 cases** (was 48); `createSupporter`↔`touchedMunicipalities` still true (`campaignFixtures.ts:768-799`); B34+ F2 twin **closed in code** (`LeadershipStateDeputyRelationCell` delegates to `RelationChipCell`); `/campanha/municipio/.../v2` is **intentional** B147 parallel shell — defer until v2 cutover (not a accidental twin).
+- **New P2/P3 (delta):** wizard URL dispatch dual-switch (`wizardActionChain` + `campaignActionRoutes` 252 LOC / 31 exports); staff-detail wizard action id list ×3 adapters; `/acoes/[slug]` 296-line page dispatcher; detail-page metadata+page prologue doubles; `campaignFormFields` living in `utilities` imported by client login forms; guard dodges (`Boolean(user)` only via `=> Boolean(user)`; local `function die()` vs CLI guard; allocator/e2e regex edges).
+- **Rejected / look-alikes:** QuickActions host/overlay/FAB split (not twin of deleted Drawer); `searchOnlyListOmnibox` as degenerate adapter (only `q:` chip knowledge shared); municipality v2 route (product-owned parallel); HomeSearch `*GroupHasHits` too thin; profile/password `overrideAccess: true` on session-bound self-id (established trusted-server pattern — not P0/P1).
+
+## Remediation deliveries (in-session)
+
+| WS    | Content                                                                                    | Status                                    |
+| ----- | ------------------------------------------------------------------------------------------ | ----------------------------------------- |
+| P5-P1 | Push-after-commit for campaign notifications + soft-fail missing row + convention/unit pin | own PR (Ready + auto-merge), same session |
+
+## Pass 5 Decisions
+
+| ID  | Decision                                                                                   | Rationale                                                                                        |
+| --- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| D1  | No P0 this pass — do not invent security theatre on session-bound self-update bypasses     | IDs from `getCampaignUser()`; pattern matches WebAuthn/notification modules                      |
+| D2  | P1 = transaction/push ordering only; P4-D mark-all/subscribe stays P2                      | Partial mark-read is correctness debt already planned; push-before-commit can notify on rollback |
+| D3  | municipality v2 parallel route is defer-until-cutover, not a consolidation defect          | B147 shipped it deliberately; "edit the owner" applies at cutover                                |
+| D4  | Miss fila empty → zero new miss guardrails; harden dodges only when shipping related fixes | Skill scope: miss guardrails + P0/P1; dodge map → plan P5-H                                      |
+| D5  | Aikido MCP still unavailable in this Cloud environment                                     | Same D6 as Pass 4; ledger row unchanged                                                          |
+
+## Next Actions
+
+- [x] Artifacts PR = Ready + auto-merge
+- [x] P5-P1 remediation PR = Ready + auto-merge
+- [ ] P5-A → P5-L as independent deliveries ([entrega-engenharia-p5.md](plans/entrega-engenharia-p5.md)); oversized → `plan-issue`
 - [ ] Leftovers → ledger via `capture-review-debts`
