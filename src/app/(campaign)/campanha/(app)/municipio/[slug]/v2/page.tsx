@@ -3,12 +3,14 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { createMunicipalityV2SignalFormAction } from '@/app/(campaign)/campanha/(app)/municipio/[slug]/v2/formActions'
+import { MunicipalityV2NetworkSection } from '@/components/campaign/municipality/MunicipalityV2NetworkSection'
 import { MunicipalityV2StatusStrip } from '@/components/campaign/municipality/MunicipalityV2StatusStrip'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { MunicipalityNotFoundError } from '@/utilities/municipality/municipalityPageData'
+import { loadMunicipalityV2NetworkData } from '@/utilities/municipality/municipalityV2NetworkData'
 import { loadMunicipalityV2StatusData } from '@/utilities/municipality/municipalityV2StatusData'
 
 type MunicipalityV2PageProps = {
@@ -30,8 +32,14 @@ export default async function MunicipalityV2Page({ params }: MunicipalityV2PageP
   ])
 
   let status
+  let network
   try {
-    ;({ status } = await loadMunicipalityV2StatusData(payload, user, slug))
+    const loaded = await Promise.all([
+      loadMunicipalityV2StatusData(payload, user, slug),
+      loadMunicipalityV2NetworkData(payload, user, slug),
+    ])
+    ;({ status } = loaded[0])
+    network = loaded[1]
   } catch (error) {
     if (error instanceof MunicipalityNotFoundError) notFound()
     throw error
@@ -52,12 +60,8 @@ export default async function MunicipalityV2Page({ params }: MunicipalityV2PageP
           </h2>
           <p className="text-sm text-muted-foreground">Em breve nesta visão.</p>
         </section>
-        <section aria-labelledby="municipio-v2-rede-title" className="flex flex-col gap-2">
-          <h2 id="municipio-v2-rede-title" className="text-base font-medium text-muted-foreground">
-            Rede
-          </h2>
-          <p className="text-sm text-muted-foreground">Em breve nesta visão.</p>
-        </section>
+        <MunicipalityV2NetworkSection network={network} />
+
         <section aria-labelledby="municipio-v2-agora-title" className="flex flex-col gap-2">
           <h2 id="municipio-v2-agora-title" className="text-base font-medium text-muted-foreground">
             Agora
