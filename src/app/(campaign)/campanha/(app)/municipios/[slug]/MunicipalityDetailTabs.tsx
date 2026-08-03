@@ -30,7 +30,7 @@ import {
 import { loadMunicipalityElectoralBaseline } from '@/utilities/municipality/municipalityElectoralBaseline'
 import { loadMunicipalityGoalAccount } from '@/utilities/municipality/municipalityGoalAccount'
 import type { getMunicipalityDetailViewModel } from '@/utilities/municipality/municipalityPageData'
-import { formatSilenceAgeLabel } from '@/utilities/municipality/municipalitySignal'
+import { formatMunicipalitySuggestionEmptyMessage } from '@/utilities/municipality/municipalitySignal'
 import { loadMunicipalityTicketPartners } from '@/utilities/municipality/municipalityTicketPartnerData'
 import { loadMunicipalitySuggestions } from '@/utilities/municipality/municipalityTriggers'
 import {
@@ -149,17 +149,11 @@ const SuggestionsCard = async ({
       activeCount={bundle.suggestions.length}
       resolveAction={resolveSuggestionFormAction}
       emptyState={
-        silence ? (
-          <p className="text-sm text-muted-foreground">
-            Nenhum padrão do catálogo dispara aqui — e o município{' '}
-            {formatSilenceAgeLabel(silence.lastSignalAgeDays)}. Silêncio é pergunta: vale checar a
-            rede e o registro.
-          </p>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Nenhum padrão do catálogo dispara aqui agora.
-          </p>
-        )
+        <p className="text-sm text-muted-foreground">
+          {formatMunicipalitySuggestionEmptyMessage(
+            silence ? { lastSignalAgeDays: silence.lastSignalAgeDays } : null,
+          )}
+        </p>
       }
     />
   )
