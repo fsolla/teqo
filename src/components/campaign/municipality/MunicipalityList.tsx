@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/Empty'
 import {
   resolveVisibleColumns,
+  type CampaignColumnPickerColumn,
   type CampaignColumnVisibility,
 } from '@/lib/campaignColumnVisibility'
 import { formatEngagementLevelLabel } from '@/lib/engagementLevel'
@@ -411,6 +412,29 @@ const municipalityListColumns = ({
         },
       ] satisfies Array<MunicipalityColumn>)),
 ]
+
+export const municipalityListPickerColumns = ({
+  isStaffView,
+}: Pick<MunicipalityListProps, 'isStaffView'>): CampaignColumnPickerColumn[] => {
+  const base: CampaignColumnPickerColumn[] = [
+    { id: 'name', label: municipalityColumnLabels.name, mandatory: true },
+    { id: 'region', label: municipalityColumnLabels.region },
+    { id: 'votos', label: municipalityColumnLabels.votos },
+  ]
+  if (!isStaffView) return base
+
+  return [
+    ...base,
+    { id: 'classe', label: municipalityColumnLabels.classe },
+    { id: 'level', label: municipalityColumnLabels.level },
+    { id: 'advisors', label: municipalityColumnLabels.advisors },
+    { id: 'trend', label: municipalityColumnLabels.trend },
+    { id: 'expectedVotes', label: municipalityColumnLabels.expectedVotes },
+    { id: 'lastSignal', label: municipalityColumnLabels.lastSignal },
+    { id: 'goalCoverage', label: municipalityColumnLabels.goalCoverage },
+    { id: 'lastUpdateAt', label: municipalityColumnLabels.lastUpdateAt },
+  ]
+}
 
 export const MunicipalityList = (props: MunicipalityListProps) => {
   const { municipalities, advisorNamesById, isStaffView, isCoordinator, advisorOptions, state } =

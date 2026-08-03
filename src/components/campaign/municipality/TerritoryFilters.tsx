@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
@@ -22,9 +22,11 @@ import {
 export const TerritoryFilters = ({
   state,
   regionOptions,
+  trailing,
 }: {
   state: TerritoryListState
   regionOptions: TerritoryFilterOption[]
+  trailing?: ReactNode
 }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
@@ -81,6 +83,7 @@ export const TerritoryFilters = ({
         onClearAll={() => {
           runAction(clearTerritoryOmnibox(state))
         }}
+        trailing={trailing}
       />
     </form>
   )

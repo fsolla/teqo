@@ -4,12 +4,15 @@ import { getPayload } from 'payload'
 
 import { TerritoryFilters } from '@/components/campaign/municipality/TerritoryFilters'
 import { TerritoryList } from '@/components/campaign/municipality/TerritoryList'
+import { territoryListColumns } from '@/components/campaign/municipality/TerritoryListColumns'
+import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
@@ -48,7 +51,18 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
   return (
     <CampaignPageShell>
       <CampaignListPendingBoundary>
-        <TerritoryFilters state={state} regionOptions={regionOptions} />
+        <TerritoryFilters
+          state={state}
+          regionOptions={regionOptions}
+          trailing={
+            <CampaignColumnPickerTrailing
+              columnVisibility={columnVisibility}
+              columns={toCampaignColumnPickerColumns(
+                territoryListColumns({ state, regionOptions: regionOptions }),
+              )}
+            />
+          }
+        />
         <CampaignListResults>
           <TerritoryList
             rows={rows}

@@ -8,11 +8,15 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { SupporterFilters } from '@/components/campaign/supporter/SupporterFilters'
-import { SupporterList } from '@/components/campaign/supporter/SupporterList'
+import {
+  SupporterList,
+  supporterPickerColumns,
+} from '@/components/campaign/supporter/SupporterList'
 import { SupporterListOverview } from '@/components/campaign/supporter/SupporterListOverview'
 import { Button } from '@/components/ui/button'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
@@ -102,6 +106,12 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
           key={buildSupporterFiltersKey(state)}
           state={state}
           municipalityOptions={municipalityOptions}
+          trailing={
+            <CampaignColumnPickerTrailing
+              columnVisibility={columnVisibility}
+              columns={supporterPickerColumns}
+            />
+          }
         />
 
         <CampaignListResults>{listBody}</CampaignListResults>

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 
 import { OrganizationFilters } from '@/components/campaign/organization/OrganizationFilters'
+import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
@@ -14,6 +15,7 @@ import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/s
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { organizationKindLabels } from '@/lib/schemas/organization'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
@@ -87,7 +89,15 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
       </div>
 
       <CampaignListPendingBoundary>
-        <OrganizationFilters state={state} />
+        <OrganizationFilters
+          state={state}
+          trailing={
+            <CampaignColumnPickerTrailing
+              columnVisibility={columnVisibility}
+              columns={toCampaignColumnPickerColumns(organizationColumns)}
+            />
+          }
+        />
 
         <CampaignListResults>
           <CampaignTable

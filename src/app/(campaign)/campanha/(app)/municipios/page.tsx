@@ -9,8 +9,12 @@ import { getPayload } from 'payload'
 import { RecentVisitTracker } from '@/components/campaign/dashboard/RecentVisitTracker'
 import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
 import { MunicipalityFilters } from '@/components/campaign/municipality/MunicipalityFilters'
-import { MunicipalityList } from '@/components/campaign/municipality/MunicipalityList'
+import {
+  MunicipalityList,
+  municipalityListPickerColumns,
+} from '@/components/campaign/municipality/MunicipalityList'
 import { MunicipalityListPageChrome } from '@/components/campaign/municipality/MunicipalityListPageChrome'
+import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
@@ -101,6 +105,12 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
       regionFilterOptions={columnFilterOptions.region}
       advisorFilterOptions={columnFilterOptions.advisor}
       slugFilterValues={columnFilterOptions.name}
+      trailing={
+        <CampaignColumnPickerTrailing
+          columnVisibility={columnVisibility}
+          columns={municipalityListPickerColumns({ isStaffView })}
+        />
+      }
     />
   )
 

@@ -42,6 +42,18 @@ export type CampaignColumnVisibility = {
   hiddenColumnIds: readonly string[]
 }
 
+/** Serializable column metadata for `CampaignColumnPicker` (B17 / B137). */
+export type CampaignColumnPickerColumn = {
+  id: string
+  label: string
+  mandatory?: boolean
+}
+
+export const toCampaignColumnPickerColumns = (
+  columns: readonly { id: string; label: string; mandatory?: boolean }[],
+): CampaignColumnPickerColumn[] =>
+  columns.map(({ id, label, mandatory }) => ({ id, label, mandatory }))
+
 /**
  * `listId:colA~colB|otherList:colC`. Every character here is legal in a
  * cookie value (RFC 6265 forbids comma, semicolon, whitespace, quotes and

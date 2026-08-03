@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
@@ -20,9 +20,11 @@ import { municipalityComboboxOptions } from '@/utilities/territory/territoryComb
 export const SupporterFilters = ({
   state,
   municipalityOptions,
+  trailing,
 }: {
   state: SupporterListState
   municipalityOptions: RelationOption[]
+  trailing?: ReactNode
 }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
@@ -109,6 +111,7 @@ export const SupporterFilters = ({
         onClearAll={() => {
           runAction(clearSupporterOmnibox(state))
         }}
+        trailing={trailing}
       />
     </form>
   )
