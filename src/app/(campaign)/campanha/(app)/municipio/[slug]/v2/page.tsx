@@ -2,8 +2,8 @@ import config from '@payload-config'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { resolveSuggestionFormAction } from '@/app/(campaign)/campanha/(app)/suggestionFormActions'
 import { createMunicipalityV2SignalFormAction } from '@/app/(campaign)/campanha/(app)/municipio/[slug]/v2/formActions'
+import { resolveSuggestionFormAction } from '@/app/(campaign)/campanha/(app)/suggestionFormActions'
 import { MunicipalityV2AgoraSection } from '@/components/campaign/municipality/MunicipalityV2AgoraSection'
 import { MunicipalityV2NetworkSection } from '@/components/campaign/municipality/MunicipalityV2NetworkSection'
 import { MunicipalityV2StatusStrip } from '@/components/campaign/municipality/MunicipalityV2StatusStrip'
@@ -11,9 +11,12 @@ import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { loadMunicipalityV2AgoraData } from '@/utilities/municipality/municipalityV2AgoraData'
 import { MunicipalityNotFoundError } from '@/utilities/municipality/municipalityPageData'
+<<<<<<< HEAD
 import { loadMunicipalityV2NetworkData } from '@/utilities/municipality/municipalityV2NetworkData'
+=======
+import { loadMunicipalityV2AgoraData } from '@/utilities/municipality/municipalityV2AgoraData'
+>>>>>>> 33101301 (style: prettier B150 files)
 import { loadMunicipalityV2StatusData } from '@/utilities/municipality/municipalityV2StatusData'
 
 type MunicipalityV2PageProps = {

@@ -214,7 +214,9 @@ describe('formatVisitEligibilitySummary', () => {
 
   it('names the first unmet condition when there is no contraindication', () => {
     const summary = formatVisitEligibilitySummary(
-      evaluateVisitEligibility(input({ projectedValidVotes: 1_000, projectedValidVotesCut: 10_000 })),
+      evaluateVisitEligibility(
+        input({ projectedValidVotes: 1_000, projectedValidVotesCut: 10_000 }),
+      ),
     )
     expect(summary.eligible).toBe(false)
     expect(summary.detail).toContain(visitConditionLabels.volume)

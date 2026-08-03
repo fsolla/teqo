@@ -63,16 +63,14 @@ export const MunicipalityV2NextStepsControl = ({
     setIsPending(true)
     setErrorMessage(null)
 
-    void postCampaignJson<MunicipalityNextStepsResponse>(
-      NEXT_STEPS_ENDPOINT,
-      { municipalityId: municipalityID, nextSteps: normalized || null },
-    ).then(({ ok, payload }) => {
+    void postCampaignJson<MunicipalityNextStepsResponse>(NEXT_STEPS_ENDPOINT, {
+      municipalityId: municipalityID,
+      nextSteps: normalized || null,
+    }).then(({ ok, payload }) => {
       if (id !== requestId.current) return
       setIsPending(false)
       if (!ok || payload.status !== 'success') {
-        setErrorMessage(
-          payload.status === 'error' ? payload.message : SAVE_ERROR_MESSAGE,
-        )
+        setErrorMessage(payload.status === 'error' ? payload.message : SAVE_ERROR_MESSAGE)
         return
       }
       lastSaved.current = normalizeNextSteps(payload.savedNextSteps) ?? ''

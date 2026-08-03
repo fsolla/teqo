@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { municipalityStaffEditSafeMessages } from '@/app/(campaign)/campanha/(app)/municipios/municipalityStaffEditMessages'
 import { updateMunicipalityStrategy } from '@/app/(campaign)/campanha/actions/municipality'
-import { trimmedNullableText, positiveRelationshipId } from '@/lib/schemas/primitives'
+import { positiveRelationshipId, trimmedNullableText } from '@/lib/schemas/primitives'
 import { campaignJsonMutationRoute } from '@/utilities/campaignJsonMutationRoute'
 import { revalidateMunicipalityListPaths } from '@/utilities/municipality/municipalityRevalidation'
 
