@@ -1,17 +1,23 @@
 import config from '@payload-config'
-import { HandshakeIcon, MapPinIcon } from 'lucide-react'
+import { HandshakeIcon, MapPinIcon, UserCogIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { StateDeputyAdvisorRelationCell } from '@/components/campaign/stateDeputy/StateDeputyAdvisorRelationCell'
 import { StateDeputyForm } from '@/components/campaign/stateDeputy/StateDeputyForm'
 import { Badge } from '@/components/ui/Badge'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
+import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { loadEligibleAdvisorOptions } from '@/utilities/campaignRelationOptions'
 import { loadStateDeputyDetail } from '@/utilities/stateDeputyData'
-import { updateStateDeputyFormAction } from './formActions'
+import {
+  setStateDeputyAdvisorMembershipFormAction,
+  updateStateDeputyFormAction,
+} from './formActions'
 
 export async function generateMetadata({ params }: StateDeputyDetailPageProps) {
   const { slug } = await params
@@ -43,6 +49,10 @@ export default async function StateDeputyDetailPage({ params }: StateDeputyDetai
 
   const stateDeputy = await loadStateDeputyDetail(payload, user, slug)
   if (!stateDeputy) notFound()
+
+  // B156 — only coordinator/candidate assign advisors; the rest of staff reads.
+  const canEditAdvisors = isCampaignUnrestricted(user)
+  const advisorOptions = canEditAdvisors ? await loadEligibleAdvisorOptions(payload, user) : []
 
   return (
     <CampaignPageShell>
@@ -118,6 +128,40 @@ export default async function StateDeputyDetailPage({ params }: StateDeputyDetai
               Nenhuma liderança vinculada. Vincule pela ficha da liderança.
             </p>
           )}
+        </section>
+
+        <section
+          aria-labelledby="state-deputy-advisors-title"
+          className="flex flex-col gap-3 rounded-xl border p-4 lg:col-span-2"
+        >
+          <div className="flex items-center gap-2">
+            <UserCogIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+            <h2 id="state-deputy-advisors-title" className="text-base font-medium">
+              Assessores responsáveis
+            </h2>
+            <Badge variant="outline">{stateDeputy.advisors.length}</Badge>
+          </div>
+          <StateDeputyAdvisorRelationCell
+            stateDeputyId={stateDeputy.id}
+            stateDeputyName={stateDeputy.name}
+            advisors={stateDeputy.advisors}
+            options={
+              canEditAdvisors
+                ? advisorOptions.map((option) => ({
+                    id: option.id,
+                    searchLabel: option.name,
+                    item: {
+                      id: option.id,
+                      label: option.name,
+                      href: `/campanha/assessores/${option.id}`,
+                    },
+                  }))
+                : []
+            }
+            membershipAction={setStateDeputyAdvisorMembershipFormAction}
+            readOnly={!canEditAdvisors}
+            measureOverflow={false}
+          />
         </section>
       </div>
 

@@ -88,9 +88,39 @@ export const municipalityStateDeputyCreateSchema = z
     message: 'O partido pode ter no máximo 32 caracteres.',
   })
 
+/**
+ * Cap for `StateDeputy.advisors` (B156) — mirrors `MAX_ADVISORS_PER_MUNICIPALITY`:
+ * a dobradinha has a handful of responsible advisors, and every bounded
+ * relation in `/campanha` carries a cap so `nextIdsAfterMembership` can refuse
+ * with a spoken reason before the optimistic apply.
+ */
+export const MAX_ADVISORS_PER_STATE_DEPUTY = 10
+
+export const STATE_DEPUTY_ADVISORS_CAP_MESSAGE = `Cada dobradinha aceita no máximo ${MAX_ADVISORS_PER_STATE_DEPUTY} assessores.`
+
+export const STATE_DEPUTY_ADVISORS_UNRESTRICTED_MESSAGE =
+  'Somente a coordenação geral ou o candidato gerencia assessores de dobradinhas.'
+
+/**
+ * Delta write for the "Assessores" column/section of a dobradinha (B156) —
+ * one chip toggle on `StateDeputy.advisors`, the owning document (no batch:
+ * the relation lives on the dobradinha itself).
+ */
+export const stateDeputyAdvisorMembershipSchema = z.object({
+  stateDeputyId: positiveRelationshipId,
+  advisorId: positiveRelationshipId,
+  assigned: z.boolean(),
+})
+
+export const STATE_DEPUTY_ADVISOR_SAFE_MESSAGES = [
+  STATE_DEPUTY_ADVISORS_UNRESTRICTED_MESSAGE,
+  STATE_DEPUTY_ADVISORS_CAP_MESSAGE,
+] as const
+
 export type StateDeputyCreateInput = z.input<typeof stateDeputyCreateSchema>
 export type StateDeputyUpdateInput = z.input<typeof stateDeputyUpdateSchema>
 export type StateDeputyMunicipalitiesBatchInput = z.input<
   typeof stateDeputyMunicipalitiesBatchSchema
 >
 export type MunicipalityStateDeputyCreateInput = z.input<typeof municipalityStateDeputyCreateSchema>
+export type StateDeputyAdvisorMembershipInput = z.input<typeof stateDeputyAdvisorMembershipSchema>

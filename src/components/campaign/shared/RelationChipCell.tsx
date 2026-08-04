@@ -157,6 +157,14 @@ type RelationChipCellProps = {
   buildCreateFormData?: (rawName: string) => FormData
   createLabel?: (rawName: string) => string
   createErrorMessage?: string
+
+  // Read-only (B156) ─────────────────────────────────────────────────────────
+  /**
+   * Read-only rendering (B156): chips render linked but the cell carries no
+   * search input, remove affordance, or Drawer trigger — for an actor who may
+   * see the relation but not edit it (staff viewing `StateDeputy.advisors`).
+   */
+  readOnly?: boolean
 }
 
 /**
@@ -193,6 +201,7 @@ export const RelationChipCell = ({
   buildCreateFormData,
   createLabel,
   createErrorMessage = updateErrorMessage,
+  readOnly = false,
 }: RelationChipCellProps) => {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
@@ -732,7 +741,7 @@ export const RelationChipCell = ({
             {chipBody(chip)}
           </Badge>
         )}
-        {isPendingCreate ? null : (
+        {isPendingCreate || readOnly ? null : (
           <button
             type="button"
             data-chip-remove
@@ -940,6 +949,7 @@ export const RelationChipCell = ({
       // Reached only on a fine pointer: the coarse overlay below covers the cell
       // and stops the click, so the pointer policy stays in the media queries.
       onClick={(event) => {
+        if (readOnly) return
         const target = event.target as HTMLElement
         if (target.closest('[data-chip-remove]') || target.closest('a')) return
         inputRef.current?.focus()
@@ -957,43 +967,52 @@ export const RelationChipCell = ({
             )}
           >
             {chips.length === 0 && !searching ? (
-              <span className="px-1 text-sm text-muted-foreground pointer-fine:hidden">—</span>
+              <span
+                className={cn(
+                  'px-1 text-sm text-muted-foreground',
+                  !readOnly && 'pointer-fine:hidden',
+                )}
+              >
+                —
+              </span>
             ) : null}
             {visibleChips.map(inlineChip)}
             {expandToggle}
-            <input
-              ref={inputRef}
-              value={query}
-              role="combobox"
-              aria-expanded={inlineSuggesting}
-              // Only while expanded: the listbox lives inside the Popover, which
-              // Radix unmounts on close, so an unconditional `aria-controls`
-              // points at an id that is not in the document.
-              aria-controls={inlineSuggesting ? listboxId('inline') : undefined}
-              aria-autocomplete="list"
-              aria-activedescendant={inlineSuggesting ? activeOptionId : undefined}
-              onChange={(event) => {
-                setQuery(event.currentTarget.value)
-                setFeedback(null)
-                setOpen(true)
-              }}
-              onFocus={() => setOpen(true)}
-              onBlur={() => {
-                if (blurCloseTimeoutRef.current != null) {
-                  window.clearTimeout(blurCloseTimeoutRef.current)
-                }
-                blurCloseTimeoutRef.current = window.setTimeout(() => {
-                  blurCloseTimeoutRef.current = null
-                  if (!rootRef.current?.contains(document.activeElement)) {
-                    closeSuggestions()
+            {readOnly ? null : (
+              <input
+                ref={inputRef}
+                value={query}
+                role="combobox"
+                aria-expanded={inlineSuggesting}
+                // Only while expanded: the listbox lives inside the Popover, which
+                // Radix unmounts on close, so an unconditional `aria-controls`
+                // points at an id that is not in the document.
+                aria-controls={inlineSuggesting ? listboxId('inline') : undefined}
+                aria-autocomplete="list"
+                aria-activedescendant={inlineSuggesting ? activeOptionId : undefined}
+                onChange={(event) => {
+                  setQuery(event.currentTarget.value)
+                  setFeedback(null)
+                  setOpen(true)
+                }}
+                onFocus={() => setOpen(true)}
+                onBlur={() => {
+                  if (blurCloseTimeoutRef.current != null) {
+                    window.clearTimeout(blurCloseTimeoutRef.current)
                   }
-                }, 120)
-              }}
-              onKeyDown={onSearchKeyDown}
-              placeholder={chips.length ? 'Adicionar…' : copy.searchPlaceholder}
-              aria-label={copy.searchLabel}
-              className="hidden min-h-8 min-w-32 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground pointer-fine:block"
-            />
+                  blurCloseTimeoutRef.current = window.setTimeout(() => {
+                    blurCloseTimeoutRef.current = null
+                    if (!rootRef.current?.contains(document.activeElement)) {
+                      closeSuggestions()
+                    }
+                  }, 120)
+                }}
+                onKeyDown={onSearchKeyDown}
+                placeholder={chips.length ? 'Adicionar…' : copy.searchPlaceholder}
+                aria-label={copy.searchLabel}
+                className="hidden min-h-8 min-w-32 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground pointer-fine:block"
+              />
+            )}
           </div>
         </PopoverAnchor>
         {/* Portaled: the table's scroll container would clip an in-flow listbox. */}
@@ -1021,39 +1040,41 @@ export const RelationChipCell = ({
        * undoes the shared class's hover: this trigger is an invisible pane over
        * the whole cell, and tinting it would tint the chips it covers.
        */}
-      <CampaignCellEditOverlay
-        variant="sheet"
-        open={drawerOpen}
-        // The container's trigger lets the click bubble to the cell root, which
-        // opens the inline suggestions — harmless while the sheet is up, but it
-        // would surface a portaled listbox on a touch device the moment the
-        // sheet closed. Clearing the search on close settles both.
-        //
-        // Guarded on the sheet having actually been open: a closed Drawer still
-        // reports `onOpenChange(false)` when a dismiss elsewhere on the page
-        // sweeps the layer stack, and unguarded this erased whatever the fine
-        // pointer had typed into the inline input.
-        onOpenChange={(next) => {
-          setDrawerOpen(next)
-          if (!next && drawerOpen) closeSuggestions()
-        }}
-        title={drawerTitle}
-        description={ownerName}
-        trigger={null}
-        triggerLabel={resolvedTriggerLabel}
-        triggerClassName="absolute inset-0 hover:bg-transparent pointer-fine:hidden"
-        triggerBusy={isPending}
-        sheetBodyClassName="gap-3"
-      >
-        {/*
-         * Rendered unmounted, like the repo's other in-cell sheets: base-ui
-         * keeps the popup mounted through a ~450 ms exit transition, so gating
-         * this on `drawerOpen` animated an empty collapsing box out of view. The
-         * allocation it saved was measured and is not a cost — the closed portal
-         * emits no DOM, and the class string is a tailwind-merge cache hit.
-         */}
-        <>{editorBody('drawer', drawerSuggesting)}</>
-      </CampaignCellEditOverlay>
+      {readOnly ? null : (
+        <CampaignCellEditOverlay
+          variant="sheet"
+          open={drawerOpen}
+          // The container's trigger lets the click bubble to the cell root, which
+          // opens the inline suggestions — harmless while the sheet is up, but it
+          // would surface a portaled listbox on a touch device the moment the
+          // sheet closed. Clearing the search on close settles both.
+          //
+          // Guarded on the sheet having actually been open: a closed Drawer still
+          // reports `onOpenChange(false)` when a dismiss elsewhere on the page
+          // sweeps the layer stack, and unguarded this erased whatever the fine
+          // pointer had typed into the inline input.
+          onOpenChange={(next) => {
+            setDrawerOpen(next)
+            if (!next && drawerOpen) closeSuggestions()
+          }}
+          title={drawerTitle}
+          description={ownerName}
+          trigger={null}
+          triggerLabel={resolvedTriggerLabel}
+          triggerClassName="absolute inset-0 hover:bg-transparent pointer-fine:hidden"
+          triggerBusy={isPending}
+          sheetBodyClassName="gap-3"
+        >
+          {/*
+           * Rendered unmounted, like the repo's other in-cell sheets: base-ui
+           * keeps the popup mounted through a ~450 ms exit transition, so gating
+           * this on `drawerOpen` animated an empty collapsing box out of view. The
+           * allocation it saved was measured and is not a cost — the closed portal
+           * emits no DOM, and the class string is a tailwind-merge cache hit.
+           */}
+          <>{editorBody('drawer', drawerSuggesting)}</>
+        </CampaignCellEditOverlay>
+      )}
 
       <p className="sr-only" role="status" aria-live="polite">
         {statusMessage}

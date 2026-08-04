@@ -122,9 +122,11 @@ export {
 } from '@/utilities/access/elections'
 
 export {
+  canAssignStateDeputyAdvisors,
   canCreateStateDeputy,
   canDeleteStateDeputy,
   canManageStateDeputy,
+  canManageStateDeputyAdvisors,
   canReadStateDeputy,
 } from '@/utilities/access/stateDeputies'
 
