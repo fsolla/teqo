@@ -37,6 +37,7 @@ import {
 } from '@/lib/campaignQuickActionPaths'
 import { resolveQuickActionsForPath } from '@/lib/campaignQuickActionRegistry'
 import { resolveOrganizationQuickActions } from '@/lib/organizationQuickActions'
+import { SUPPORTER_CREATE_HREF, SUPPORTER_IMPORT_HREF } from '@/lib/supporterQuickActions'
 
 describe('campaignQuickActionMount', () => {
   it('treats Início as exact match only', () => {
@@ -62,6 +63,8 @@ describe('campaignQuickActionMount', () => {
     expect(shouldMountQuickActionsFab('/campanha/territorios', 'coordinator')).toBe(true)
     expect(shouldMountQuickActionsFab('/campanha/demandas', 'coordinator')).toBe(true)
     expect(shouldMountQuickActionsFab('/campanha/demandas/foo', 'coordinator')).toBe(true)
+    expect(shouldMountQuickActionsFab('/campanha/apoiadores', 'coordinator')).toBe(true)
+    expect(shouldMountQuickActionsFab('/campanha/apoiadores/42', 'coordinator')).toBe(true)
     expect(shouldMountQuickActionsFab('/campanha', 'coordinator')).toBe(false)
     expect(shouldMountQuickActionsFab('/campanha/acoes/registrar-sinal', 'advisor')).toBe(false)
   })
@@ -69,6 +72,7 @@ describe('campaignQuickActionMount', () => {
   it('mounts for leader only on contacts', () => {
     expect(shouldMountQuickActionsFab('/campanha/contatos', 'leader')).toBe(true)
     expect(shouldMountQuickActionsFab('/campanha/municipios', 'leader')).toBe(false)
+    expect(shouldMountQuickActionsFab('/campanha/apoiadores', 'leader')).toBe(false)
   })
 
   it('skips the E13 tour composer (B84)', () => {
@@ -257,7 +261,7 @@ describe('campaignQuickActionRegistry', () => {
   })
 
   it('returns empty catalog for unregistered paths', () => {
-    expect(resolveQuickActionsForPath('/campanha/apoiadores', 'coordinator', {})).toEqual([])
+    expect(resolveQuickActionsForPath('/campanha/lugar-inexistente', 'coordinator', {})).toEqual([])
   })
 
   it('returns empty catalog on conceitos and perfil for staff (B90)', () => {
@@ -367,6 +371,31 @@ describe('campaignQuickActionRegistry', () => {
 
   it('returns empty catalog on assessores for advisor lockdown', () => {
     expect(resolveQuickActionsForPath('/campanha/assessores', 'advisor', {})).toEqual([])
+  })
+
+  it('delegates apoiadores list and detail catalogs (B86)', () => {
+    const list = resolveQuickActionsForPath('/campanha/apoiadores', 'coordinator', {})
+    expect(list.map((action) => action.id)).toEqual(['register-supporter', 'import-supporters'])
+    expect(list[0]?.href).toBe(SUPPORTER_CREATE_HREF)
+    expect(list[1]?.href).toBe(SUPPORTER_IMPORT_HREF)
+
+    const advisorList = resolveQuickActionsForPath('/campanha/apoiadores', 'advisor', {})
+    expect(advisorList.map((action) => action.id)).toEqual(['register-supporter'])
+
+    const detail = resolveQuickActionsForPath('/campanha/apoiadores/9', 'candidate', {})
+    expect(detail.map((action) => action.id)).toEqual(['register-supporter'])
+
+    const listTrailingSlash = resolveQuickActionsForPath('/campanha/apoiadores/', 'advisor', {})
+    expect(listTrailingSlash.map((action) => action.id)).toEqual(['register-supporter'])
+
+    const detailTrailingSlash = resolveQuickActionsForPath(
+      '/campanha/apoiadores/9/',
+      'candidate',
+      {},
+    )
+    expect(detailTrailingSlash.map((action) => action.id)).toEqual(['register-supporter'])
+
+    expect(resolveQuickActionsForPath('/campanha/apoiadores', 'leader', {})).toEqual([])
   })
 })
 
