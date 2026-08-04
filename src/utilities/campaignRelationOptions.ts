@@ -5,6 +5,7 @@ import type { Payload } from 'payload'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { populatedContactName } from '@/lib/relationship'
 import type { CampaignUser } from '@/payload-types'
+import { eligibleCampaignStaffWhere } from '@/utilities/campaignAccess'
 
 /** Municipalities the actor may operate on (coordinator: all 436; advisor: administered). */
 export const loadMunicipalityOptions = async (
@@ -105,4 +106,66 @@ export const loadLeadershipOptions = async (
       name: populatedContactName(leadership.contact),
     }))
     .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
+}
+
+export type CampaignUserSummary = {
+  id: number
+  name: string
+}
+
+/**
+ * Names for a set of assigned advisor ids (B156) — the same catalog read the
+ * municipios list does with `loadAdvisorSummaries`, but without the phone and
+ * in the shared relation-options module (the dobradinhas cells need id+name
+ * only). Honours `canReadCampaignUsers` and the eligibility filter, so a
+ * stale id that fell out of staff is dropped — same fail-closed contract as
+ * `loadAdvisorSummaries`.
+ */
+export const loadCampaignUserSummaries = async (
+  payload: Payload,
+  user: CampaignUser,
+  ids: number[],
+): Promise<CampaignUserSummary[]> => {
+  if (ids.length === 0) return []
+
+  const result = await payload.find({
+    collection: 'campaignUser',
+    where: {
+      and: [{ id: { in: ids } }, eligibleCampaignStaffWhere],
+    },
+    depth: 0,
+    pagination: false,
+    select: { name: true },
+    user,
+    overrideAccess: false,
+  })
+  const byId = new Map(result.docs.map((doc) => [doc.id, { id: doc.id, name: doc.name }]))
+
+  return ids.flatMap((id) => {
+    const summary = byId.get(id)
+    return summary ? [summary] : []
+  })
+}
+
+/**
+ * The addable staff catalog for an advisor-relation cell (B156): every
+ * eligible account (coordinator/advisor/candidate), sorted by name. The cell
+ * resolves optimistic adds through it, same role as `getEligibleAdvisorOptions`
+ * on the municipios list.
+ */
+export const loadEligibleAdvisorOptions = async (
+  payload: Payload,
+  user: CampaignUser,
+): Promise<RelationOption[]> => {
+  const result = await payload.find({
+    collection: 'campaignUser',
+    depth: 0,
+    pagination: false,
+    sort: 'name',
+    where: eligibleCampaignStaffWhere,
+    select: { name: true },
+    user,
+    overrideAccess: false,
+  })
+  return result.docs.map(({ id, name }) => ({ id, name }))
 }

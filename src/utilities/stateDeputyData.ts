@@ -2,8 +2,9 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
-import { populatedContactName, relationshipId } from '@/lib/relationship'
+import { populatedContactName, relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 import type { CampaignUser, StateDeputy } from '@/payload-types'
+import { loadCampaignUserSummaries } from '@/utilities/campaignRelationOptions'
 import {
   buildStateDeputyListWhere,
   NO_PARTY_FILTER_VALUE,
@@ -13,7 +14,7 @@ import {
   type StateDeputyListState,
 } from '@/utilities/stateDeputyListUrl'
 
-type LeadershipRelationSummary = {
+type NamedRelationSummary = {
   id: number
   name: string
 }
@@ -24,7 +25,9 @@ export type StateDeputyRowViewModel = {
   slug: string
   party: string | null
   municipalityIDs: number[]
-  leaderships: LeadershipRelationSummary[]
+  leaderships: NamedRelationSummary[]
+  /** B156 — the staff responsible for this dobradinha, names resolved. */
+  advisors: NamedRelationSummary[]
 }
 
 /** Values still reachable under the OTHER active filters (the Partido popover). */
@@ -126,7 +129,7 @@ export const loadStateDeputyListPageData = async (
       limit: stateDeputyPageSize,
       page: state.page,
       sort: resolveStateDeputyListPayloadSort(sort, dir),
-      select: { name: true, slug: true, party: true },
+      select: { name: true, slug: true, party: true, advisors: true },
       user,
       overrideAccess: false,
     }),
@@ -134,7 +137,8 @@ export const loadStateDeputyListPageData = async (
   ])
 
   const stateDeputyIDs = result.docs.map((doc) => doc.id)
-  const leadershipsByDeputy = new Map<number, LeadershipRelationSummary[]>()
+  const leadershipsByDeputy = new Map<number, NamedRelationSummary[]>()
+  const advisorsByDeputy = new Map<number, NamedRelationSummary[]>()
 
   const municipalityIDsByDeputy =
     stateDeputyIDs.length > 0
@@ -142,6 +146,23 @@ export const loadStateDeputyListPageData = async (
       : new Map<number, number[]>()
 
   if (stateDeputyIDs.length) {
+    // B156 — one name lookup for every row's assigned advisors, same
+    // aggregate-over-ids shape as the leaderships query below. The `advisors`
+    // field is already on each doc (depth 0 → ids).
+    const advisorIDs = [
+      ...new Set(result.docs.flatMap((doc) => uniqueRelationshipIds(doc.advisors))),
+    ]
+    if (advisorIDs.length) {
+      const summaries = await loadCampaignUserSummaries(payload, user, advisorIDs)
+      const summaryById = new Map(summaries.map((summary) => [summary.id, summary]))
+      for (const doc of result.docs) {
+        const list = uniqueRelationshipIds(doc.advisors)
+          .map((id) => summaryById.get(id))
+          .filter((summary): summary is NamedRelationSummary => summary !== undefined)
+        advisorsByDeputy.set(doc.id, list)
+      }
+    }
+
     const leaderships = await payload.find({
       collection: 'leadership',
       where: { stateDeputies: { in: stateDeputyIDs } },
@@ -156,7 +177,7 @@ export const loadStateDeputyListPageData = async (
     })
 
     for (const leadership of leaderships.docs) {
-      const summary: LeadershipRelationSummary = {
+      const summary: NamedRelationSummary = {
         id: leadership.id,
         name: populatedContactName(leadership.contact),
       }
@@ -184,6 +205,7 @@ export const loadStateDeputyListPageData = async (
       party: doc.party ?? null,
       municipalityIDs: municipalityIDsByDeputy.get(doc.id) ?? [],
       leaderships: leadershipsByDeputy.get(doc.id) ?? [],
+      advisors: advisorsByDeputy.get(doc.id) ?? [],
     })),
     totalDocs: result.totalDocs,
     totalPages: result.totalPages,
@@ -202,6 +224,8 @@ export type StateDeputyDetailViewModel = StateDeputySummary & {
   notes: string | null
   municipalities: Array<{ id: number; name: string; slug: string }>
   leaderships: Array<{ id: number; name: string }>
+  /** B156 — staff responsible for this dobradinha. */
+  advisors: Array<{ id: number; name: string }>
 }
 
 export const loadStateDeputyDetail = async (
@@ -221,7 +245,7 @@ export const loadStateDeputyDetail = async (
   const stateDeputy = result.docs[0] as StateDeputy | undefined
   if (!stateDeputy) return null
 
-  const [municipalities, leaderships] = await Promise.all([
+  const [municipalities, leaderships, advisorSummaries] = await Promise.all([
     payload.find({
       collection: 'municipality',
       where: { stateDeputies: { in: [stateDeputy.id] } },
@@ -243,6 +267,7 @@ export const loadStateDeputyDetail = async (
       user,
       overrideAccess: false,
     }),
+    loadCampaignUserSummaries(payload, user, uniqueRelationshipIds(stateDeputy.advisors)),
   ])
 
   return {
@@ -260,6 +285,7 @@ export const loadStateDeputyDetail = async (
       id: leadership.id,
       name: populatedContactName(leadership.contact),
     })),
+    advisors: advisorSummaries,
   }
 }
 
@@ -277,6 +303,8 @@ export const loadStateDeputySummaries = async (
     pagination: false,
     sort: 'name',
     select: { name: true, slug: true, party: true },
+    // Intentional admin bypass: id lookups for the home-search card, no
+    // actor-scoping possible or needed (B52 precedent).
     overrideAccess: true,
   })
 

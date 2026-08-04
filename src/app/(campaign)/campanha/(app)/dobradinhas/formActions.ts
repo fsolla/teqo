@@ -1,7 +1,10 @@
 'use server'
 
 import { setLeadershipStateDeputyMembership } from '@/app/(campaign)/campanha/actions/leadership'
-import { setStateDeputyMunicipalitiesBatch } from '@/app/(campaign)/campanha/actions/stateDeputy'
+import {
+  setStateDeputyAdvisorMembership,
+  setStateDeputyMunicipalitiesBatch,
+} from '@/app/(campaign)/campanha/actions/stateDeputy'
 import {
   repeatedRelationshipFormValues,
   requiredFormBoolean,
@@ -11,7 +14,10 @@ import {
   LEADERSHIP_STAFF_MESSAGE,
   LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE,
 } from '@/lib/schemas/leadership'
-import { STATE_DEPUTY_MUNICIPALITIES_SAFE_MESSAGES } from '@/lib/schemas/stateDeputy'
+import {
+  STATE_DEPUTY_ADVISOR_SAFE_MESSAGES,
+  STATE_DEPUTY_MUNICIPALITIES_SAFE_MESSAGES,
+} from '@/lib/schemas/stateDeputy'
 import {
   runCampaignFormAction,
   type CampaignFormActionState,
@@ -35,6 +41,24 @@ export const setLeadershipStateDeputyMembershipFormAction = async (
     },
     safeMessages,
     genericMessage: 'Não foi possível atualizar as lideranças. Tente novamente.',
+  })
+
+/** One chip toggle in the "Assessores" column/section of a dobradinha (B156). */
+export const setStateDeputyAdvisorMembershipFormAction = async (
+  _state: CampaignFormActionState,
+  formData: FormData,
+): Promise<CampaignFormActionState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      await setStateDeputyAdvisorMembership({
+        stateDeputyId: requiredRelationshipFormValue(formData, 'stateDeputyId'),
+        advisorId: requiredRelationshipFormValue(formData, 'advisorId'),
+        assigned: requiredFormBoolean(formData, 'assigned'),
+      })
+      return { message: 'Assessores atualizados.' }
+    },
+    safeMessages: STATE_DEPUTY_ADVISOR_SAFE_MESSAGES,
+    genericMessage: 'Não foi possível atualizar os assessores. Tente novamente.',
   })
 
 /**

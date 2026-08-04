@@ -456,6 +456,7 @@ export interface StateDeputy {
   slug: string;
   party?: string | null;
   notes?: string | null;
+  advisors?: (number | CampaignUser)[] | null;
   createdBy?: (number | null) | CampaignUser;
   updatedAt: string;
   createdAt: string;
@@ -1630,6 +1631,7 @@ export interface StateDeputySelect<T extends boolean = true> {
   slug?: T;
   party?: T;
   notes?: T;
+  advisors?: T;
   createdBy?: T;
   updatedAt?: T;
   createdAt?: T;

@@ -1,6 +1,6 @@
 # Impl: B156 — Assessores por dobradinha
 
-Status: rascunho
+Status: aprovado
 Atualizado em: 2026-08-04
 Issue: #360
 Intenção: docs/plans/assessores-dobradinhas.md
@@ -84,9 +84,19 @@ flowchart LR
 
 ## Aceite de engenharia
 
-- [ ] Aceite de produto da intenção coberto: campo, coluna, seção, validação e access conforme travado
-- [ ] Invariantes AGENTS/engineering-standards: Local API `user` + `overrideAccess: false` onde o padrão manda (bypass só com comentário, após `reloadUnrestrictedActor`); escrita em transação com lock aditivo; zero warnings; sem twin (extração no mesmo delivery)
-- [ ] Testes previstos: int do membership (roles, no-op, cap, ineligible) + unit da célula nova; existentes verdes
-- [ ] Migration commitada (`.ts` + `.json` + `index.ts`) e `generate:types` rodado
+- [x] Aceite de produto da intenção coberto: campo, coluna, seção, validação e access conforme travado
+- [x] Invariantes AGENTS/engineering-standards: Local API `user` + `overrideAccess: false` onde o padrão manda (bypass só com comentário, após `reloadUnrestrictedActor`); escrita em transação com lock aditivo; zero warnings; sem twin (extração no mesmo delivery)
+- [x] Testes previstos: int do membership (roles, no-op, cap, ineligible) + unit da célula nova; existentes verdes
+- [x] Migration commitada (`.ts` + `.json` + `index.ts`) e `generate:types` rodado
+
+## Execução
+
+- /simplify: 3 revisores read-only, sem BLOCKING. Fixes aplicados: chips sem href em readOnly (rota `/campanha/assessores/[id]` é unrestricted-only — dead-end para staff), gate da description do head por `canEditAdvisors`, `lg:col-span-2` na seção do detalhe, copy "Nenhum assessor vinculado.", `summaryById` Map no loader, `stateDeputySlug === undefined` no teste de no-op, `readOnly` removido da casca de lideranças (especulativo). Débitos deferidos registrados em Issues.
+
+## Adiado com gatilho (débitos do /simplify)
+
+- **Catálogo de staff duplicado** (`loadCampaignUserSummaries`/`loadEligibleAdvisorOptions` em `campaignRelationOptions` vs `loadAdvisorSummaries`/`getEligibleAdvisorOptions` em `municipalityViewModels`). Gatilho: 3º consumidor do catálogo (ex. advisors de atividade na lista) ou próximo toque no domínio de municípios — aí o `campaignRelationOptions` vira dono único e os loaders de municípios delegam.
+- **`validateStateDeputyAdvisors` duplica `validateMunicipalityAdvisors`**. Gatilho: 3ª collection com campo `advisors` (ex. `activity`) — extrair `validateEligibleStaffAdvisors` compartilhado (cuidado com o pin de bypass do conventions test ao mover o `overrideAccess`).
+- **Célula sem `maxItems`** (cap 10 só no servidor, com flicker+revert em vez de recusa pré-otimista). Gatilho: o toggle de assessores ganhar batch ou o cap virar atrito medido.
 
 Self-score decision-quality: 5/5 — (1) decisões caras (cell, access, cap) com rejeitadas; (2) cabe no appetite (mecânica sobre padrões existentes); (3) rabbit holes nomeados; (4) reusa `RelationChipCell`, `withPayloadTransaction`, `reloadUnrestrictedActor`, `nextIdsAfterMembership`, shells de lista; (5) outcome de produto intacto.

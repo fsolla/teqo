@@ -6,19 +6,27 @@ import type { Payload } from 'payload'
 import { nextStateDeputyIdsAfterMunicipalityMembership } from '@/lib/municipalityStateDeputyMembership'
 import { uniqueRelationshipIds } from '@/lib/relationship'
 import {
+  STATE_DEPUTY_ADVISORS_UNRESTRICTED_MESSAGE,
   STATE_DEPUTY_CONFLICT_MESSAGE,
   STATE_DEPUTY_STAFF_MESSAGE,
   municipalityStateDeputyCreateSchema,
+  stateDeputyAdvisorMembershipSchema,
   stateDeputyCreateSchema,
   stateDeputyMunicipalitiesBatchSchema,
   stateDeputyUpdateSchema,
   type MunicipalityStateDeputyCreateInput,
+  type StateDeputyAdvisorMembershipInput,
   type StateDeputyCreateInput,
   type StateDeputyMunicipalitiesBatchInput,
   type StateDeputyUpdateInput,
 } from '@/lib/schemas/stateDeputy'
+import { nextStateDeputyAdvisorIdsAfterMembership } from '@/lib/stateDeputyAdvisorMembership'
 import type { CampaignUser } from '@/payload-types'
-import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
+import {
+  getCampaignActionContext,
+  reloadStaffActor,
+  reloadUnrestrictedActor,
+} from '@/utilities/campaignActionContext'
 import {
   mapStaffEntityConflict,
   runStaffEntityMutation,
@@ -110,6 +118,76 @@ const revalidateStateDeputyMunicipalityPaths = (
  * (`canManageCampaignStaffField`) is staff-wide, so `overrideAccess: false`
  * on both the read and the write is what refuses an out-of-scope município.
  */
+export const setStateDeputyAdvisorMembershipRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: StateDeputyAdvisorMembershipInput,
+) => {
+  const { stateDeputyId, advisorId, assigned } = stateDeputyAdvisorMembershipSchema.parse(input)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      // Role gate only — the read/write below run under overrideAccess (the
+      // `advisors` field's update access is admin-only in the collection
+      // config), so the fresh actor exists solely to make the assertion.
+      await reloadUnrestrictedActor(payload, actor, STATE_DEPUTY_ADVISORS_UNRESTRICTED_MESSAGE, req)
+
+      await acquireTextAdvisoryLocks(payload, req, [`state-deputy-advisors:${stateDeputyId}`])
+
+      const stateDeputy = await payload.findByID({
+        collection: 'stateDeputy',
+        id: stateDeputyId,
+        depth: 0,
+        select: { advisors: true, slug: true },
+        // Intentional admin bypass: the unrestricted role was verified above;
+        // the `advisors` field's update access is admin-only in the collection
+        // config, same contract as `setAdvisorMunicipalitiesBatchRecord`. The
+        // `beforeValidate` eligibility hook still runs under overrideAccess.
+        overrideAccess: true,
+        req,
+      })
+
+      const currentAdvisorIDs = uniqueRelationshipIds(stateDeputy.advisors)
+      const nextAdvisorIDs = nextStateDeputyAdvisorIdsAfterMembership(
+        currentAdvisorIDs,
+        advisorId,
+        assigned,
+      )
+
+      // No-op: nothing to write, and nothing for the caller to revalidate —
+      // the slug lookup below exists only to target that revalidate.
+      if (nextAdvisorIDs === null) {
+        return { stateDeputySlug: undefined }
+      }
+
+      // Same intentional bypass as the read: the unrestricted role was verified
+      // above, and the `beforeValidate` eligibility hook still runs under it.
+      await payload.update({
+        collection: 'stateDeputy',
+        id: stateDeputyId,
+        data: { advisors: nextAdvisorIDs },
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+
+      return { stateDeputySlug: stateDeputy.slug }
+    },
+    { beginFailureMessage: 'Não foi possível atualizar os assessores da dobradinha.' },
+  )
+}
+
+export const setStateDeputyAdvisorMembership = async (input: StateDeputyAdvisorMembershipInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const { stateDeputySlug } = await setStateDeputyAdvisorMembershipRecord(payload, actor, input)
+  // The list is deliberately absent: the chip cell that calls this IS on it and
+  // already shows the toggle. The detail page is the route an actor cannot see
+  // from here — same reasoning as the leadership twin (B31).
+  if (stateDeputySlug) revalidatePath(`/campanha/dobradinhas/${stateDeputySlug}`, 'page')
+  return stateDeputySlug
+}
+
 export const setStateDeputyMunicipalitiesBatchRecord = async (
   payload: Payload,
   actor: CampaignUser,

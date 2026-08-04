@@ -23,6 +23,7 @@ import {
 } from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
 import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { StateDeputyAdvisorRelationCell } from '@/components/campaign/stateDeputy/StateDeputyAdvisorRelationCell'
 import { StateDeputyFilters } from '@/components/campaign/stateDeputy/StateDeputyFilters'
 import { StateDeputySortableHead } from '@/components/campaign/stateDeputy/StateDeputySortableHead'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -38,10 +39,13 @@ import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
 import { cn } from '@/lib/utils'
-import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
+import { getAdvisorMunicipalityIds, isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { loadLeadershipOptions } from '@/utilities/campaignRelationOptions'
+import {
+  loadEligibleAdvisorOptions,
+  loadLeadershipOptions,
+} from '@/utilities/campaignRelationOptions'
 import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
 import {
   loadStateDeputyListPageData,
@@ -63,6 +67,7 @@ import {
 
 import {
   setLeadershipStateDeputyMembershipFormAction,
+  setStateDeputyAdvisorMembershipFormAction,
   setStateDeputyMunicipalitiesFormAction,
 } from './formActions'
 
@@ -102,6 +107,8 @@ const stateDeputyColumns = (
   partyFilterOptions: StateDeputyFilterOption[],
   hasNoPartyOption: boolean,
   leadershipOptions: RelationCellOption[],
+  advisorOptions: RelationCellOption[],
+  canEditAdvisors: boolean,
   municipalityIndex: MunicipalityPortfolioIndexEntry[],
   addableMunicipalityIds: ReadonlySet<number> | undefined,
 ): Array<CampaignTableColumn<StateDeputyRowViewModel>> => [
@@ -174,6 +181,30 @@ const stateDeputyColumns = (
       />
     ),
   },
+  {
+    id: 'advisors',
+    label: 'Assessores',
+    head: canEditAdvisors ? (
+      <CampaignTableHead description="Edite aqui: passe o mouse em um chip para remover, ou busque para adicionar. Quem responde por esta dobradinha.">
+        Assessores
+      </CampaignTableHead>
+    ) : (
+      <CampaignTableHead description="Quem responde por esta dobradinha.">
+        Assessores
+      </CampaignTableHead>
+    ),
+    cellClassName: 'max-w-72 whitespace-normal',
+    cell: (row) => (
+      <StateDeputyAdvisorRelationCell
+        stateDeputyId={row.id}
+        stateDeputyName={row.name}
+        advisors={row.advisors}
+        options={canEditAdvisors ? advisorOptions : []}
+        membershipAction={setStateDeputyAdvisorMembershipFormAction}
+        readOnly={!canEditAdvisors}
+      />
+    ),
+  },
 ]
 
 export default async function StateDeputiesPage({ searchParams }: StateDeputiesPageProps) {
@@ -188,15 +219,22 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
 
   const columnVisibility = await readCampaignColumnVisibility('dobradinhas')
   const isLeadershipVisible = !columnVisibility.hiddenColumnIds.includes('leaderships')
+  const isAdvisorsVisible = !columnVisibility.hiddenColumnIds.includes('advisors')
+  // Advisor assignment is unrestricted-only (B156); the rest of staff reads.
+  const canEditAdvisors = isCampaignUnrestricted(user)
 
   const [
     { rows, totalDocs, totalPages, filterFacets },
     leadershipOptions,
+    advisorOptions,
     municipalityIndex,
     administeredIds,
   ] = await Promise.all([
     loadStateDeputyListPageData(payload, user, canonicalUrl.state),
     isLeadershipVisible ? loadLeadershipOptions(payload, user) : Promise.resolve([]),
+    isAdvisorsVisible && canEditAdvisors
+      ? loadEligibleAdvisorOptions(payload, user)
+      : Promise.resolve([]),
     loadMunicipalityPortfolioIndex(),
     user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : null,
   ])
@@ -220,6 +258,16 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
         href: `/campanha/liderancas/${option.id}`,
       },
     })),
+    advisorOptions.map((option) => ({
+      id: option.id,
+      searchLabel: option.name,
+      item: {
+        id: option.id,
+        label: option.name,
+        href: `/campanha/assessores/${option.id}`,
+      },
+    })),
+    canEditAdvisors,
     municipalityIndex,
     administeredIds ? new Set(administeredIds) : undefined,
   )
