@@ -6,6 +6,7 @@ import {
   formatAdvisorNamesTooltip,
   MunicipalityAdvisorAvatarStack,
 } from '@/components/campaign/municipality/MunicipalityAdvisorAvatarStack'
+import { MunicipalityAdvisorCreateProvider } from '@/components/campaign/municipality/MunicipalityAdvisorCreateProvider'
 import { MunicipalityLevelBadge } from '@/components/campaign/municipality/MunicipalityLevelBadge'
 import { MunicipalityListAdvisorsControl } from '@/components/campaign/municipality/MunicipalityListAdvisorsControl'
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/municipality/MunicipalityListExpectedVotesControl'
@@ -450,7 +451,7 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
   ).some((column) => column.id === 'votos')
 
   return (
-    <>
+    <MunicipalityAdvisorCreateProvider>
       <MunicipalityListMobileSection
         municipalities={municipalities}
         advisorNamesById={advisorNamesById}
@@ -479,6 +480,6 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
         rowKey={(municipality) => municipality.id}
         empty={<MunicipalityListEmptyState state={state} />}
       />
-    </>
+    </MunicipalityAdvisorCreateProvider>
   )
 }

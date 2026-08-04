@@ -1,6 +1,6 @@
 'use client'
 
-import { XIcon } from 'lucide-react'
+import { UserPlusIcon, XIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { MunicipalityListAdvisorsResponse } from '@/app/(campaign)/campanha/(app)/municipios/advisors/types'
@@ -9,6 +9,7 @@ import {
   formatAdvisorNamesTooltip,
   MunicipalityAdvisorAvatarStack,
 } from '@/components/campaign/municipality/MunicipalityAdvisorAvatarStack'
+import { useMunicipalityAdvisorCreate } from '@/components/campaign/municipality/MunicipalityAdvisorCreateProvider'
 import {
   CampaignCellEditOverlay,
   type CampaignCellEditOverlayVariant,
@@ -29,6 +30,14 @@ import type {
 
 const ADVISORS_ENDPOINT = '/campanha/municipios/advisors'
 const SAVE_ERROR_MESSAGE = 'Não foi possível atualizar os assessores. Tente novamente.'
+
+/** B154 — sentinel temp id for an in-flight inline create; negative = never a real account. */
+const isPendingCreateId = (id: number): boolean => id < 0
+
+// Shared empty values so the memos stay referentially stable when the bridge
+// is absent (standalone renders in unit tests) or nothing is pending.
+const EMPTY_CREATED_OPTIONS: EligibleAdvisorOption[] = []
+const EMPTY_PENDING_CREATES: ReadonlyMap<number, string> = new Map()
 
 type MunicipalityListAdvisorsControlProps = {
   municipalityID: number
@@ -84,17 +93,41 @@ export const MunicipalityListAdvisorsControl = ({
     setSelectedIDs(currentAdvisorIDs)
   }, [currentAdvisorIDs])
 
+  // B154 — advisors created inline since the page last rendered server-side,
+  // shared across every row's popover through `MunicipalityAdvisorCreateProvider`
+  // (null when the control renders standalone, e.g. in unit tests).
+  const createBridge = useMunicipalityAdvisorCreate()
+  const createdOptions = createBridge?.createdOptions ?? EMPTY_CREATED_OPTIONS
+  const registerCreatedAdvisor = createBridge?.registerCreatedAdvisor
+  // tempId → name for in-flight creates: the chip renders optimistically while
+  // the request is out, and the id is not known until the response arrives.
+  const [pendingCreates, setPendingCreates] =
+    useState<ReadonlyMap<number, string>>(EMPTY_PENDING_CREATES)
+
   // Every eligible account (coordinator/advisor/candidate) is listed here
   // regardless of current assignment, so it doubles as the name lookup for an
   // id the popover just optimistically added — no round trip needed to label
   // it. `advisorNamesById` is the fallback for an id that fell out of
   // eligibility but is still assigned; `advisorEntriesFromIds` drops the rare
   // id found in neither, same as every other advisor cell in the list.
+  const effectiveOptions = useMemo(() => {
+    // The provider bridge can outlive a server re-render (sort/filter
+    // navigation keeps client state, and `getEligibleAdvisorOptions` then
+    // returns the created account again), so the same advisor can arrive
+    // twice — dedupe by id to keep combobox entries and React keys unique.
+    const byId = new Map<number, EligibleAdvisorOption>()
+    for (const option of options) byId.set(option.id, option)
+    for (const option of createdOptions) byId.set(option.id, option)
+    return [...byId.values()]
+  }, [options, createdOptions])
+
   const advisorLookup = useMemo(() => {
     const lookup = new Map<number, { id: number; name: string }>(advisorNamesById)
-    for (const option of options) lookup.set(option.id, { id: option.id, name: option.name })
+    for (const option of effectiveOptions)
+      lookup.set(option.id, { id: option.id, name: option.name })
+    for (const [tempId, name] of pendingCreates) lookup.set(tempId, { id: tempId, name })
     return lookup
-  }, [advisorNamesById, options])
+  }, [advisorNamesById, effectiveOptions, pendingCreates])
 
   const selectedSet = useMemo(() => new Set(selectedIDs), [selectedIDs])
   const chips = useMemo(
@@ -116,11 +149,26 @@ export const MunicipalityListAdvisorsControl = ({
       : 'sem assessor'
 
   const filteredOptions = useMemo(
-    () => options.filter((option) => matchesAtWordStart(option.name, query)),
-    [options, query],
+    () => effectiveOptions.filter((option) => matchesAtWordStart(option.name, query)),
+    [effectiveOptions, query],
   )
 
+  // Single settle point shared by the toggle and the inline create (success,
+  // mapped error, network failure): decrements the pending count and, once it
+  // reaches 0, stops the spinner and reconciles to the latest confirmed server
+  // set — even on a request's own failure, an earlier delta in the same batch
+  // may have already confirmed one.
+  const finishRequest = () => {
+    pendingCountRef.current = Math.max(0, pendingCountRef.current - 1)
+    if (pendingCountRef.current > 0) return
+    setIsPending(false)
+    if (latestConfirmedRef.current) setSelectedIDs(latestConfirmedRef.current.advisors)
+  }
+
   const toggle = (advisorId: number, assigned: boolean) => {
+    // A negative id is a B154 pending-create sentinel, never a real account —
+    // the temp chip has no remove affordance, so this only guards the path.
+    if (isPendingCreateId(advisorId)) return
     setErrorMessage(null)
     setSelectedIDs((current) => {
       const next = new Set(current)
@@ -142,18 +190,6 @@ export const MunicipalityListAdvisorsControl = ({
           else next.add(advisorId)
           return [...next]
         })
-      }
-
-      // Single settle point for every exit path (success, mapped error,
-      // network failure): decrements the pending count and, once it reaches
-      // 0, stops the spinner and reconciles to the latest confirmed server
-      // set — even on this request's own failure, an earlier delta in the
-      // same batch may have already confirmed one.
-      const finishRequest = () => {
-        pendingCountRef.current = Math.max(0, pendingCountRef.current - 1)
-        if (pendingCountRef.current > 0) return
-        setIsPending(false)
-        if (latestConfirmedRef.current) setSelectedIDs(latestConfirmedRef.current.advisors)
       }
 
       try {
@@ -181,11 +217,92 @@ export const MunicipalityListAdvisorsControl = ({
     })()
   }
 
+  /**
+   * B154 — name-only inline create, assigned to this município. The chip goes
+   * up immediately under a sentinel temp id (the real id only exists once the
+   * response lands); the request rides the same seq/pending machinery as the
+   * toggle, so out-of-order settles and the cap failure reconcile exactly like
+   * a toggle — a failed create reverts the temp chip and shows the Alert.
+   */
+  const createAdvisor = (name: string) => {
+    // A create is not an idempotent delta: re-activating the same name while a
+    // create is in flight would mint a second account. The temp chip already
+    // signals the pending one — skip.
+    if ([...pendingCreates.values()].includes(name)) return
+    setErrorMessage(null)
+    setQuery('')
+
+    pendingCountRef.current += 1
+    setIsPending(true)
+    const requestSeq = (requestSeqRef.current += 1)
+    const tempId = -requestSeq
+
+    setSelectedIDs((current) => [...current, tempId])
+    setPendingCreates((current) => new Map(current).set(tempId, name))
+
+    void (async () => {
+      const revertCreate = () => {
+        setSelectedIDs((current) => current.filter((id) => id !== tempId))
+        setPendingCreates((current) => {
+          const next = new Map(current)
+          next.delete(tempId)
+          return next
+        })
+      }
+
+      try {
+        const { ok, payload } = await postCampaignJson<MunicipalityListAdvisorsResponse>(
+          ADVISORS_ENDPOINT,
+          { municipalityId: municipalityID, name },
+        )
+
+        if (!ok || payload.status !== 'success') {
+          revertCreate()
+          reportFailure(payload.status === 'error' ? payload.message : SAVE_ERROR_MESSAGE)
+          finishRequest()
+          return
+        }
+
+        if (requestSeq > (latestConfirmedRef.current?.seq ?? 0)) {
+          latestConfirmedRef.current = { seq: requestSeq, advisors: payload.advisors }
+        }
+
+        const createdAdvisor = payload.createdAdvisor
+        if (createdAdvisor) {
+          // Swap the sentinel for the real id right away: if another delta is
+          // still in flight the reconcile is deferred, and the chip must not
+          // vanish in the gap (the lookup drops a temp id the moment its
+          // pending entry is removed).
+          setSelectedIDs((current) => [...current.filter((id) => id !== tempId), createdAdvisor.id])
+          setPendingCreates((current) => {
+            const next = new Map(current)
+            next.delete(tempId)
+            return next
+          })
+          // Make the account selectable in every other row's popover on this
+          // page load — `createdOptions` is the client-side bridge until the
+          // next navigation's `getEligibleAdvisorOptions` picks it up.
+          registerCreatedAdvisor?.({
+            id: createdAdvisor.id,
+            name: createdAdvisor.name,
+            isCurrent: false,
+          })
+        }
+        finishRequest()
+      } catch {
+        revertCreate()
+        reportFailure(SAVE_ERROR_MESSAGE)
+        finishRequest()
+      }
+    })()
+  }
+
   const statusMessage = errorMessage ? errorMessage : isPending ? 'Salvando assessores.' : ''
   // The body pads its own sections (`px-4`, aligned with the Drawer header) so
   // the `Command` can stay full-bleed in both containers — hence `px-0` on the
   // sheet body and `p-0` on the popover content.
   const isSheet = variant === 'sheet'
+  const trimmedQuery = query.trim()
 
   return (
     <CampaignCellEditOverlay
@@ -224,25 +341,38 @@ export const MunicipalityListAdvisorsControl = ({
       </div>
       {chips.length > 0 ? (
         <div className="flex shrink-0 flex-wrap gap-1.5 px-4 pt-2">
-          {chips.map((chip) => (
-            <button
-              key={chip.id}
-              type="button"
-              // A 20px pill is a fine mouse target and a bad thumb one: the
-              // Drawer pads it to the 44px minimum without growing the pill.
-              className={cn('inline-flex items-center', isSheet && 'min-h-11')}
-              aria-label={`Remover ${chip.name}`}
-              onClick={() => toggle(chip.id, false)}
-            >
+          {chips.map((chip) =>
+            // A pending-create chip has no remove affordance: the server-side
+            // create cannot be cancelled mid-flight, so removal waits for the
+            // real account (and the real toggle) once the response lands.
+            isPendingCreateId(chip.id) ? (
               <Badge
+                key={chip.id}
                 variant="secondary"
-                className="max-w-full cursor-pointer gap-1 pr-1 font-normal hover:bg-destructive/15"
+                className={cn('max-w-full font-normal', isSheet && 'min-h-11')}
               >
                 <span className="truncate">{chip.name}</span>
-                <XIcon className="size-3 shrink-0 opacity-70" aria-hidden="true" />
               </Badge>
-            </button>
-          ))}
+            ) : (
+              <button
+                key={chip.id}
+                type="button"
+                // A 20px pill is a fine mouse target and a bad thumb one: the
+                // Drawer pads it to the 44px minimum without growing the pill.
+                className={cn('inline-flex items-center', isSheet && 'min-h-11')}
+                aria-label={`Remover ${chip.name}`}
+                onClick={() => toggle(chip.id, false)}
+              >
+                <Badge
+                  variant="secondary"
+                  className="max-w-full cursor-pointer gap-1 pr-1 font-normal hover:bg-destructive/15"
+                >
+                  <span className="truncate">{chip.name}</span>
+                  <XIcon className="size-3 shrink-0 opacity-70" aria-hidden="true" />
+                </Badge>
+              </button>
+            ),
+          )}
         </div>
       ) : null}
       <Command shouldFilter={false} className="mt-1">
@@ -254,7 +384,20 @@ export const MunicipalityListAdvisorsControl = ({
         />
         <CommandList>
           {filteredOptions.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-muted-foreground">Nenhum resultado.</p>
+            trimmedQuery.length >= 2 && trimmedQuery.length <= 160 ? (
+              <CommandItem
+                value={`create-${trimmedQuery}`}
+                className={isSheet ? 'min-h-11' : undefined}
+                onSelect={() => createAdvisor(trimmedQuery)}
+              >
+                <UserPlusIcon className="size-4 shrink-0" aria-hidden="true" />
+                <span className="truncate">Criar assessor “{trimmedQuery}”</span>
+              </CommandItem>
+            ) : (
+              <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+                Nenhum resultado.
+              </p>
+            )
           ) : (
             filteredOptions.map((option) => {
               const assigned = selectedSet.has(option.id)
