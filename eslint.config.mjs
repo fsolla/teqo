@@ -223,6 +223,9 @@ const eslintConfig = [
     // Playwright artifacts (generated on e2e failures/reports):
     'playwright-report/**',
     'test-results/**',
+    // Vendored agent material (same carve-out as .prettierignore):
+    '.agents/**',
+    '.cursor/**',
   ]),
 ]
 
