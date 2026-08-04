@@ -10,7 +10,11 @@
     "tests/helpers/serverOnly.ts"
   ],
   "project": ["src/**/*.{ts,tsx,js}", "scripts/**/*.mjs", "tests/**/*.ts"],
-  "ignore": [],
+  "ignore": [
+    "src/components/ui/bubble.tsx",
+    "src/components/ui/marker.tsx",
+    "src/components/ui/message.tsx"
+  ],
   "paths": {
     "server-only": ["tests/helpers/serverOnly.ts"]
   },

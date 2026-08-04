@@ -654,7 +654,7 @@ export interface AllocationDecision {
   municipality: number | Municipality;
   patternId: string;
   outcome: 'aceita' | 'descarta' | 'movimento' | 'adiada';
-  rationale: string;
+  rationale?: string | null;
   alternativeReading?: string | null;
   /**
    * Somente os números e classificações usados no momento da decisão.

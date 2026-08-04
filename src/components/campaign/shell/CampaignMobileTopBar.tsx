@@ -150,7 +150,7 @@ export const CampaignMobileTopBar = ({ notificationBell }: { notificationBell?: 
         <SidebarTrigger className="text-primary-foreground" />
       )}
       <CampaignPageChromeDisplay layout="mobile" />
-      {notificationBell ? <div className="shrink-0">{notificationBell}</div> : null}
+      {notificationBell ? <div className="ml-auto shrink-0">{notificationBell}</div> : null}
     </header>
   )
 }

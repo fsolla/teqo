@@ -13,7 +13,7 @@ import type { CampaignRole } from '@/lib/campaignRoles'
 export const CampaignContentScroll = ({ children }: { children: ReactNode }) => (
   <div
     data-slot="campaign-content-scroll"
-    className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-6 print:h-auto print:overflow-visible print:p-0"
+    className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-6 print:h-auto print:overflow-visible print:p-0 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
   >
     {children}
   </div>
