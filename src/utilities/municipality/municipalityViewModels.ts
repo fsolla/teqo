@@ -4,13 +4,13 @@ import type { Payload } from 'payload'
 
 import type { EngagementLevel } from '@/lib/engagementLevel'
 import type { MunicipalityVoteRankEntry } from '@/lib/municipalityVoteRank'
-import { relationshipId } from '@/lib/relationship'
+import { populatedContactName, relationshipId } from '@/lib/relationship'
 import {
   toVoteEstimateScenarioViewModel,
   type VoteEstimateScenario,
   type VoteEstimateScenarioViewModel,
 } from '@/lib/voteEstimate'
-import type { CampaignUser, Municipality } from '@/payload-types'
+import type { CampaignUser, Leadership, Municipality } from '@/payload-types'
 import { eligibleCampaignStaffWhere } from '@/utilities/campaignAccess'
 import {
   createEmptyGoalCoverageByScenario,
@@ -65,6 +65,8 @@ export type MunicipalityListViewModel = {
   ibgeCode: string
   zoneNumber: number | null
   advisorIDs: number[]
+  /** B155 — leadership ids linked to this município (reverse read of `leadership.municipalities`). */
+  leadershipIDs: number[]
   priority: 'alta' | 'normal'
   lastUpdateAt: string | null
   /**
@@ -95,6 +97,8 @@ export const toMunicipalityListViewModel = (
   pledges: MunicipalityPledgeAggregate | undefined,
   votePosition2022: MunicipalityListViewModel['votePosition2022'],
   goalCoverageByScenario?: Record<VoteEstimateScenario, MunicipalityGoalCoverage>,
+  /** B155 — empty for non-staff views; the leader never renders this column. */
+  leadershipIDs: number[] = [],
 ): MunicipalityListViewModel => {
   const territorialClass = computeMunicipalityTerritorialClass(municipality.slug)
 
@@ -110,6 +114,7 @@ export const toMunicipalityListViewModel = (
     advisorIDs: (municipality.advisors ?? [])
       .map(relationshipId)
       .filter((id): id is number => id !== null),
+    leadershipIDs,
     priority: municipality.priority === 'alta' ? 'alta' : 'normal',
     lastUpdateAt: municipality.lastUpdateAt ?? null,
     lastSignalAt: resolveMunicipalityLastSignalAt(
@@ -277,4 +282,104 @@ export const getEligibleAdvisorOptions = async (
       isCurrent: id === user.id,
     }))
     .sort((left, right) => Number(right.isCurrent) - Number(left.isCurrent))
+}
+
+// ---------------------------------------------------------------------------
+// B155 — Lideranças na lista de municípios
+// ---------------------------------------------------------------------------
+
+export type MunicipalityLeadershipSummary = {
+  id: number
+  name: string
+}
+
+export type EligibleLeadershipOption = {
+  id: number
+  name: string
+}
+
+const emptyLeadershipSummaries = {
+  leadershipIDsByMunicipality: new Map<number, number[]>(),
+  summariesById: new Map<number, MunicipalityLeadershipSummary>(),
+} as const
+
+/**
+ * B155 — one reverse batch over `leadership.municipalities` for the município
+ * list page: which leaderships each listed município links to (ids) plus the
+ * contact-name lookup for their chips. Names ship in the cell, so the read
+ * honours `canReadLeadership` (`user` + `overrideAccess: false`) — an advisor
+ * only ever sees the leaderships of the municípios they administer.
+ */
+export const loadMunicipalityLeadershipSummaries = async (
+  payload: Payload,
+  user: CampaignUser,
+  municipalityIDs: readonly number[],
+): Promise<{
+  leadershipIDsByMunicipality: ReadonlyMap<number, number[]>
+  summariesById: ReadonlyMap<number, MunicipalityLeadershipSummary>
+}> => {
+  if (municipalityIDs.length === 0) return emptyLeadershipSummaries
+
+  const result = await payload.find({
+    collection: 'leadership',
+    where: { municipalities: { in: municipalityIDs } },
+    depth: 1,
+    limit: 0,
+    pagination: false,
+    select: { municipalities: true, contact: true },
+    user,
+    overrideAccess: false,
+  })
+
+  const leadershipIDsByMunicipality = new Map<number, number[]>()
+  const summariesById = new Map<number, MunicipalityLeadershipSummary>()
+
+  for (const doc of result.docs as Leadership[]) {
+    const leadershipID = relationshipId(doc.id)
+    if (leadershipID === null) continue
+
+    summariesById.set(leadershipID, { id: leadershipID, name: populatedContactName(doc.contact) })
+
+    for (const municipality of doc.municipalities ?? []) {
+      const municipalityID = relationshipId(municipality)
+      if (municipalityID === null) continue
+      const list = leadershipIDsByMunicipality.get(municipalityID) ?? []
+      list.push(leadershipID)
+      leadershipIDsByMunicipality.set(municipalityID, list)
+    }
+  }
+
+  return { leadershipIDsByMunicipality, summariesById }
+}
+
+/**
+ * B155 — every leadership the actor may add to a município from the popover:
+ * all of them for unrestricted staff, portfolio-scoped for an advisor (the
+ * same `canReadLeadership` the list cells trust). Sorted by contact name for
+ * the Command; `createdAt` keeps the underlying fetch deterministic.
+ */
+export const getEligibleLeadershipOptions = async (
+  payload: Payload,
+  user: CampaignUser,
+): Promise<EligibleLeadershipOption[]> => {
+  const result = await payload.find({
+    collection: 'leadership',
+    depth: 1,
+    limit: 0,
+    pagination: false,
+    sort: 'createdAt',
+    select: { contact: true },
+    user,
+    overrideAccess: false,
+  })
+
+  return result.docs
+    .map((doc) => {
+      const leadership = doc as Leadership
+      const id = relationshipId(leadership.id)
+      if (id === null) return null
+      return { id, name: populatedContactName(leadership.contact) }
+    })
+    .filter((option): option is EligibleLeadershipOption => option !== null)
+    .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
 }

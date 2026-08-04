@@ -36,6 +36,7 @@ import {
 import { loadMunicipalityListPageBundle } from '@/utilities/municipality/municipalityPageData'
 import {
   getEligibleAdvisorOptions,
+  getEligibleLeadershipOptions,
   loadAdvisorSummaries,
 } from '@/utilities/municipality/municipalityViewModels'
 import { createMunicipalityListSignalFormAction } from './municipalityStaffFormActions'
@@ -60,7 +61,13 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
   const canMoveEngagementLevel = isCampaignUnrestricted(user)
 
   const pageBundle = await loadMunicipalityListPageBundle(payload, user, rawSearchParams)
-  const { municipalities: listMunicipalities, totalDocs, totalPages, filterFacets } = pageBundle
+  const {
+    municipalities: listMunicipalities,
+    totalDocs,
+    totalPages,
+    filterFacets,
+    leadershipNamesById,
+  } = pageBundle
   const resolvedUrl = resolveMunicipalityListUrl(rawSearchParams, totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
   const { state } = resolvedUrl
@@ -75,10 +82,13 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
       ...filterFacets.advisorIDs,
     ]),
   ]
-  const [advisorSummaries, advisorOptions] = await Promise.all([
+  const [advisorSummaries, advisorOptions, leadershipOptions] = await Promise.all([
     isStaffView ? loadAdvisorSummaries(payload, user, advisorIDs) : [],
     // Only the coordinator-only assign-advisors control consumes these.
     isCoordinator ? getEligibleAdvisorOptions(payload, user) : [],
+    // All staff edit the Lideranças column (scoped server-side); the leader
+    // never reaches this page (`gate: noLeader`).
+    isStaffView ? getEligibleLeadershipOptions(payload, user) : [],
   ])
   const advisorNamesById = new Map(advisorSummaries.map((advisor) => [advisor.id, advisor]))
 
@@ -121,10 +131,12 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
       <MunicipalityList
         municipalities={listMunicipalities}
         advisorNamesById={advisorNamesById}
+        leadershipNamesById={leadershipNamesById}
         isStaffView={isStaffView}
         isCoordinator={isCoordinator}
         canMoveEngagementLevel={canMoveEngagementLevel}
         advisorOptions={advisorOptions}
+        leadershipOptions={leadershipOptions}
         columnFilterOptions={columnFilterOptions}
         signalFormAction={createMunicipalityListSignalFormAction}
         state={state}

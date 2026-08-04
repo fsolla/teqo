@@ -102,6 +102,19 @@ export const leadershipWizardCreateSchema = leadershipWizardFieldsSchema.extend(
   municipalityId: positiveRelationshipId,
 })
 
+/**
+ * B155 — inline create from the "Lideranças" column of `/campanha/municipios`:
+ * name + phone only, linked to the município whose popover created it. Strict
+ * so the toggle shape (`leadershipId`/`assigned`) can never slip through.
+ */
+export const municipalityLeadershipCreateSchema = z.strictObject({
+  municipalityId: positiveRelationshipId,
+  name: z.string().trim().min(2).max(120),
+  phone: brazilianMobile,
+})
+
+export type MunicipalityLeadershipCreateInput = z.input<typeof municipalityLeadershipCreateSchema>
+
 export const leadershipWizardUpdateSchema = leadershipWizardFieldsSchema.extend({
   id: positiveRelationshipId,
 })

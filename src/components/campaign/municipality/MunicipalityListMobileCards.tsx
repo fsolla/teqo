@@ -11,6 +11,7 @@ import { MunicipalityLevelBadge } from '@/components/campaign/municipality/Munic
 import { MunicipalityListAdvisorsControl } from '@/components/campaign/municipality/MunicipalityListAdvisorsControl'
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/municipality/MunicipalityListExpectedVotesControl'
 import { MunicipalityListGoalCoverageCell } from '@/components/campaign/municipality/MunicipalityListGoalCoverageCell'
+import { MunicipalityListLeadershipsControl } from '@/components/campaign/municipality/MunicipalityListLeadershipsControl'
 import { MunicipalityListLevelControl } from '@/components/campaign/municipality/MunicipalityListLevelControl'
 import {
   SignalAgeReadout,
@@ -26,7 +27,9 @@ import { municipalityGeographyParts } from '@/utilities/municipality/municipalit
 import { municipalityColumnLabels } from '@/utilities/municipality/municipalityListUrl'
 import type {
   EligibleAdvisorOption,
+  EligibleLeadershipOption,
   MunicipalityAdvisorSummary,
+  MunicipalityLeadershipSummary,
   MunicipalityListViewModel,
 } from '@/utilities/municipality/municipalityViewModels'
 import { toMunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
@@ -39,10 +42,14 @@ type MunicipalityStaffFormAction = (
 export type MunicipalityListMobileCardsProps = {
   municipalities: MunicipalityListViewModel[]
   advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>
+  /** B155 — contact-name lookup for the Lideranças sheet chips. */
+  leadershipNamesById: ReadonlyMap<number, MunicipalityLeadershipSummary>
   isStaffView: boolean
   isCoordinator: boolean
   canMoveEngagementLevel: boolean
   advisorOptions: EligibleAdvisorOption[]
+  /** B155 — every leadership the actor may add, for the Lideranças sheet. */
+  leadershipOptions: EligibleLeadershipOption[]
   signalFormAction: MunicipalityStaffFormAction
   emptySlot: ReactNode
 }
@@ -54,10 +61,12 @@ export type MunicipalityListMobileCardsProps = {
 export const MunicipalityListMobileCards = ({
   municipalities,
   advisorNamesById,
+  leadershipNamesById,
   isStaffView,
   isCoordinator,
   canMoveEngagementLevel,
   advisorOptions,
+  leadershipOptions,
   signalFormAction,
   emptySlot,
 }: MunicipalityListMobileCardsProps) => (
@@ -193,6 +202,19 @@ export const MunicipalityListMobileCards = ({
                   ) : (
                     <MissingAdvisorBadge isPriority={isPriority} />
                   )}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Lideranças</dt>
+                <dd>
+                  <MunicipalityListLeadershipsControl
+                    municipalityID={municipality.id}
+                    municipalityName={municipality.name}
+                    currentLeadershipIDs={municipality.leadershipIDs}
+                    leadershipNamesById={leadershipNamesById}
+                    options={leadershipOptions}
+                    variant="sheet"
+                  />
                 </dd>
               </div>
             </dl>

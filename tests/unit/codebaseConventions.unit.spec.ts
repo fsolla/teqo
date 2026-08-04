@@ -533,6 +533,9 @@ describe('advisor scope fragment comes from access/shared.ts', () => {
     'src/utilities/leadership/leadershipData.ts',
     'src/utilities/leadership/leadershipListUrl.ts',
     'src/utilities/municipality/municipalityTriggers.ts',
+    // B155 — the municipality list surface reads `leadership.municipalities`
+    // by reverse batch; same distinct form as `leadershipData.ts` above.
+    'src/utilities/municipality/municipalityViewModels.ts',
     'src/utilities/visit/visitPlannerData.ts',
     'src/utilities/votePledgeData.ts',
   ])

@@ -24,6 +24,7 @@ import {
   type LeadershipStateDeputyMembershipInput,
   type LeadershipWizardCreateInput,
   type LeadershipWizardUpdateInput,
+  type MunicipalityLeadershipCreateInput,
 } from '@/lib/schemas/leadership'
 import type { CampaignUser, Contact } from '@/payload-types'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
@@ -33,6 +34,7 @@ import {
   assertContactPhoneAvailable,
   CONTACT_PHONE_AMBIGUOUS_MESSAGE,
 } from '@/utilities/contactPhoneInvariant'
+import { loadMunicipalityLeadershipSummaries } from '@/utilities/municipality/municipalityViewModels'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import {
@@ -448,6 +450,89 @@ export const createLeadershipWizard = async (
   const leadership = await createLeadershipWizardRecord(payload, actor, input)
   revalidateLeadershipWizardPaths(leadership.id, municipalitySlug)
   return leadership
+}
+
+/**
+ * B155 — inline create from the "Lideranças" column of `/campanha/municipios`.
+ * Thin municipality-surface entry point over the wizard create (Contact dedup
+ * by phone, transaction, locks). The list we are ON is deliberately not
+ * revalidated — the chip already shows optimistically (B34 contract); the
+ * leadership list and the município detail are, so the new row appears there
+ * without waiting for a refresh.
+ */
+export const createMunicipalityLeadership = async (input: MunicipalityLeadershipCreateInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const leadership = await createLeadershipWizardRecord(payload, actor, {
+    name: input.name,
+    phone: input.phone,
+    municipalityId: input.municipalityId,
+  })
+
+  // Intentional admin bypass: existence is enforced by the write's own
+  // relationship validation; this read only resolves the revalidate target.
+  const municipality = await payload.findByID({
+    collection: 'municipality',
+    id: input.municipalityId,
+    depth: 0,
+    select: { slug: true },
+    overrideAccess: true,
+  })
+  revalidateLeadershipWizardPaths(leadership.id, municipality.slug)
+
+  // Scoped reverse read doubles as the reconcile payload and the chip name:
+  // a phone-matched create (`contactReused`) keeps the Contact's own name,
+  // which the optimistic chip must show from the start.
+  const { leadershipIDsByMunicipality, summariesById } = await loadMunicipalityLeadershipSummaries(
+    payload,
+    actor,
+    [input.municipalityId],
+  )
+  return {
+    leadership,
+    leadershipIDs: leadershipIDsByMunicipality.get(input.municipalityId) ?? [],
+    createdLeadershipName: summariesById.get(leadership.id)?.name ?? input.name,
+  }
+}
+
+/**
+ * B155 — one-chip toggle from the "Lideranças" column of `/campanha/municipios`:
+ * the same B34 membership delta (lock, scope-check, floor/cap) keyed by the
+ * município side, plus the resulting municipality-side id set. The list we are
+ * on is skipped (optimistic chip); the leadership ficha, the município detail
+ * AND `/campanha/liderancas` are busted — unlike B34, the caller is NOT on that
+ * list, so its stale router cache must not survive.
+ */
+export const setMunicipalityLeadershipMembership = async (input: {
+  municipalityId: number
+  leadershipId: number
+  assigned: boolean
+}) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const { leadership, municipalitySlugs } = await setLeadershipMunicipalitiesMembershipRecord(
+    payload,
+    actor,
+    {
+      leadershipId: input.leadershipId,
+      municipalityIds: [input.municipalityId],
+      assigned: input.assigned,
+    },
+  )
+
+  // No-op writes nothing, so there is nothing to revalidate.
+  if (municipalitySlugs.length > 0) {
+    revalidateLeadershipMunicipalityPaths(input.leadershipId, municipalitySlugs)
+    revalidatePath('/campanha/liderancas', 'page')
+  }
+
+  const { leadershipIDsByMunicipality } = await loadMunicipalityLeadershipSummaries(
+    payload,
+    actor,
+    [input.municipalityId],
+  )
+  return {
+    leadership,
+    leadershipIDs: leadershipIDsByMunicipality.get(input.municipalityId) ?? [],
+  }
 }
 
 /**
