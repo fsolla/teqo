@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 
 import { CAMPAIGN_HOME, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
+import { normalizePathname } from '@/lib/campaignQuickActionPaths'
 import type { CampaignUser } from '@/payload-types'
 
 export type CampaignPageChrome = {
@@ -9,13 +10,6 @@ export type CampaignPageChrome = {
 }
 
 type CampaignRole = CampaignUser['role']
-
-const normalizePathname = (pathname: string): string => {
-  if (pathname.length > 1 && pathname.endsWith('/')) {
-    return pathname.slice(0, -1)
-  }
-  return pathname
-}
 
 /** Client-safe vocabulary for shell chrome and tab titles (B123). */
 export const campaignPageChromeCatalog = {

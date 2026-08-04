@@ -11,6 +11,7 @@ import {
   type ResolvedCampaignHomeAction,
 } from '@/lib/campaignHomeActions'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
+import { isListPath } from '@/lib/campaignQuickActionPaths'
 import type { CampaignRole } from '@/lib/campaignRoles'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 
@@ -25,7 +26,7 @@ const LEADERSHIP_DETAIL_WIZARD_IDS: readonly CampaignWizardActionId[] = [
 ]
 
 const isLeadershipListPath = (pathname: string): boolean =>
-  pathname === LEADERSHIP_LIST_PATH || pathname === `${LEADERSHIP_LIST_PATH}/`
+  isListPath(pathname, LEADERSHIP_LIST_PATH)
 
 const parseLeadershipDetailId = (pathname: string): number | undefined => {
   const match = pathname.match(/^\/campanha\/liderancas\/(\d+)$/)

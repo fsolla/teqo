@@ -16,8 +16,16 @@ export type OrganizationQuickActionSurface =
   | { kind: 'list' }
   | { kind: 'detail'; organizationSlug: string }
 
-const normalizePathname = (pathname: string): string =>
+/**
+ * Strips a single trailing slash for client-side path comparisons, preserving `/`.
+ * Homes in this codebase are never `/`, so `/campanha/` → `/campanha` while `/` stays `/`.
+ */
+export const normalizePathname = (pathname: string): string =>
   pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname
+
+/** Whether `pathname` is exactly `home`, with an optional trailing slash (list pages). */
+export const isListPath = (pathname: string, home: string): boolean =>
+  normalizePathname(pathname) === home
 
 const listDetailSlug = (
   pathname: string,

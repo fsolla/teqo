@@ -2,6 +2,7 @@ import { UserPlus } from 'lucide-react'
 
 import { CAMPAIGN_ADVISORS_HOME } from '@/lib/campaignPaths'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
+import { isListPath } from '@/lib/campaignQuickActionPaths'
 import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
 import { isUnrestrictedCampaignRole, type CampaignRole } from '@/lib/campaignRoles'
 
@@ -13,7 +14,7 @@ export const advisorQuickCreateHref =
 const advisorDetailPathPattern = /^\/campanha\/assessores\/(\d+)(?:\/|$)/
 
 export const isAdvisorsListPath = (pathname: string): boolean =>
-  pathname === CAMPAIGN_ADVISORS_HOME || pathname === `${CAMPAIGN_ADVISORS_HOME}/`
+  isListPath(pathname, CAMPAIGN_ADVISORS_HOME)
 
 export const isAdvisorsPath = (pathname: string): boolean =>
   isAdvisorsListPath(pathname) || parseAdvisorDetailId(pathname) !== undefined
