@@ -29,6 +29,7 @@ import {
 import type { CampaignRole } from '@/lib/campaignRoles'
 import { resolveLeaderContactsQuickActions } from '@/lib/leaderContactsQuickActions'
 import { resolveOrganizationQuickActions } from '@/lib/organizationQuickActions'
+import { resolveSupporterQuickActionsForPath } from '@/lib/supporterQuickActions'
 
 const isTerritoriesListPath = (pathname: string): boolean =>
   pathname === CAMPAIGN_TERRITORIES_HOME || pathname.startsWith(`${CAMPAIGN_TERRITORIES_HOME}/`)
@@ -81,6 +82,9 @@ export const resolveQuickActionsForPath = (
 
   const advisorActions = resolveAdvisorQuickActionsForPath(pathname, role, context)
   if (advisorActions.length > 0) return advisorActions
+
+  const supporterActions = resolveSupporterQuickActionsForPath(pathname, role, context)
+  if (supporterActions.length > 0) return supporterActions
 
   if (isTerritoriesListPath(pathname)) {
     return resolveStaffHomeQuickActions(role, pathname)
