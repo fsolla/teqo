@@ -9,6 +9,7 @@ import {
   trimmedNullableText,
   trimmedOptionalText,
 } from '@/lib/schemas/primitives'
+import { parseStateDeputyNameParty } from '@/lib/stateDeputyNameParty'
 
 export const stateDeputyCreateSchema = z.object({
   name: z.string().trim().min(2).max(160),
@@ -35,6 +36,13 @@ export const STATE_DEPUTY_STAFF_MESSAGE =
 export const STATE_DEPUTY_CONFLICT_MESSAGE = 'Já existe uma dobradinha com este nome.'
 
 /**
+ * B157 — thrown by `setCanonicalStateDeputySlug` when a name slugifies empty;
+ * safelisted by the inline-create route (a "Criar …" query of only punctuation
+ * must not collapse into the generic message).
+ */
+export const STATE_DEPUTY_NAME_REQUIRED_MESSAGE = 'Informe um nome com letras ou números.'
+
+/**
  * Delta write for the "Municípios" column of `/campanha/dobradinhas` (B37) —
  * adds or removes a set of municipalities (one chip, or a whole território/ZE)
  * on `municipality.stateDeputies` — the inverted side of the relation this
@@ -57,8 +65,32 @@ export const STATE_DEPUTY_MUNICIPALITIES_SAFE_MESSAGES = [
   MUNICIPALITY_STATE_DEPUTIES_CAP_MESSAGE,
 ] as const
 
+/**
+ * B157 — inline create from the municípios list ("Criar dobradinha 'texto'"):
+ * the raw search text is split by `parseStateDeputyNameParty`, so a trailing
+ * `(PARTIDO)` becomes the party and the rest the name. The pipe re-validates
+ * AFTER the split — a name that only parses to empty (e.g. "(PT)") is refused
+ * instead of minting a deputy named "(PT)".
+ */
+export const municipalityStateDeputyCreateSchema = z
+  .object({
+    municipalityId: positiveRelationshipId,
+    rawName: z.string().min(1).max(200),
+  })
+  .transform((input) => {
+    const { name, party } = parseStateDeputyNameParty(input.rawName)
+    return { municipalityId: input.municipalityId, name, party }
+  })
+  .refine((value) => value.name.length >= 2 && value.name.length <= 160, {
+    message: 'O nome precisa ter entre 2 e 160 caracteres.',
+  })
+  .refine((value) => (value.party ?? '').length <= 32, {
+    message: 'O partido pode ter no máximo 32 caracteres.',
+  })
+
 export type StateDeputyCreateInput = z.input<typeof stateDeputyCreateSchema>
 export type StateDeputyUpdateInput = z.input<typeof stateDeputyUpdateSchema>
 export type StateDeputyMunicipalitiesBatchInput = z.input<
   typeof stateDeputyMunicipalitiesBatchSchema
 >
+export type MunicipalityStateDeputyCreateInput = z.input<typeof municipalityStateDeputyCreateSchema>

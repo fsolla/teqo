@@ -1,6 +1,6 @@
 'use client'
 
-import { XIcon } from 'lucide-react'
+import { PlusIcon, XIcon } from 'lucide-react'
 import Link from 'next/link'
 import {
   useCallback,
@@ -15,13 +15,17 @@ import {
 } from 'react'
 import { toast } from 'sonner'
 
-import { CampaignCellEditOverlay } from '@/components/campaign/shared/CampaignCellEditOverlay'
+import {
+  CampaignCellEditOverlay,
+  type CampaignCellEditOverlayVariant,
+} from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/Popover'
 import { sameIdSet } from '@/lib/sameIdSet'
 import { cn } from '@/lib/utils'
+import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { firstFormActionMessage } from '@/utilities/campaignFormFields'
 
@@ -33,6 +37,9 @@ const resultsMessage = (count: number): string => {
   if (count === 0) return 'Nenhum resultado.'
   return count === 1 ? '1 resultado.' : `${count} resultados.`
 }
+
+/** B157 — the "Criar …" suggestion's listbox key (no real id yet). */
+const CREATE_HIT_KEY = '__create__'
 
 const withDelta = (
   base: readonly number[],
@@ -47,7 +54,7 @@ const withDelta = (
   return [...next]
 }
 
-type SuggestionSurface = 'inline' | 'drawer'
+type SuggestionSurface = 'inline' | 'drawer' | 'popover'
 
 export type RelationChip = {
   key: string
@@ -80,6 +87,8 @@ export type RelationChipCellCopy = {
   savingMessage: string
   savedMessage: string
   removedMessage: (count: number) => string
+  /** B157 — announced while the only suggestion is the "Criar …" option. */
+  createHintMessage?: string
   /** Only invoked when `minItems` is actually configured. */
   floorMessage?: (min: number) => string
   /** Only invoked when `maxItems` is actually configured. */
@@ -113,11 +122,41 @@ type RelationChipCellProps = {
   ) => Promise<CampaignFormActionState>
   drawerTitle: string
   /** Full aria-label for the coarse-pointer, cell-wide Drawer trigger. */
-  triggerLabel: string
+  triggerLabel: string | ((chips: RelationChip[]) => string)
   updateErrorMessage: string
   copy: RelationChipCellCopy
   /** Clamp rest chips to 3 rows + "Ver mais…". Default true; pass false when few chips are expected. */
   measureOverflow?: boolean
+
+  // Trigger mode (B157) ───────────────────────────────────────────────────────
+  /**
+   * Custom closed-cell display (e.g. an avatar stack). When present, the cell
+   * renders this node as the edit trigger and the editor body — assigned chips
+   * + search + create — opens in a `CampaignCellEditOverlay` of
+   * `editorVariant`, instead of the inline row editor / coarse Drawer split.
+   * `chips` includes the optimistic state (and any pending/created chip).
+   */
+  trigger?: (chips: RelationChip[], isPending: boolean) => ReactNode
+  /** The overlay variant in trigger mode — the call site knows its viewport. */
+  editorVariant?: CampaignCellEditOverlayVariant
+  /** Popover-only hover/focus read without opening the editor. */
+  triggerTooltip?: (chips: RelationChip[]) => ReactNode
+
+  // Inline create (B157) ─────────────────────────────────────────────────────
+  /**
+   * When set (with `buildCreateFormData`), a search with no hits and a
+   * plausible name offers "Criar …" as the only suggestion: the chip goes up
+   * under a pending marker, the action creates + assigns server-side, and the
+   * returned `createdChip` swaps in optimistically until the RSC refresh
+   * brings the real id into `ids`.
+   */
+  createAction?: (
+    state: CampaignFormActionState,
+    formData: FormData,
+  ) => Promise<CampaignFormActionState & { createdChip?: RelationChip }>
+  buildCreateFormData?: (rawName: string) => FormData
+  createLabel?: (rawName: string) => string
+  createErrorMessage?: string
 }
 
 /**
@@ -147,9 +186,18 @@ export const RelationChipCell = ({
   updateErrorMessage,
   copy,
   measureOverflow = true,
+  trigger,
+  editorVariant = 'popover',
+  triggerTooltip,
+  createAction,
+  buildCreateFormData,
+  createLabel,
+  createErrorMessage = updateErrorMessage,
 }: RelationChipCellProps) => {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
+  /** B157 — trigger mode's overlay open state (the inline `open` stays inert there). */
+  const [editorOpen, setEditorOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [optimistic, setOptimistic] = useState<number[] | null>(null)
   const [expanded, setExpanded] = useState(false)
@@ -161,6 +209,10 @@ export const RelationChipCell = ({
   const [feedback, setFeedback] = useState<
     { kind: 'saved' } | { kind: 'error'; message: string } | null
   >(null)
+  /** B157 — the optimistic chip of an in-flight inline create (no remove affordance). */
+  const [pendingCreate, setPendingCreate] = useState<RelationChip | null>(null)
+  /** B157 — chips the create action already returned, until `ids` catches up. */
+  const [createdChips, setCreatedChips] = useState<RelationChip[]>([])
   /** Active suggestion (ARIA 1.2 combobox): index 0 is pre-selected, so Enter always picks. */
   const [activeIndex, setActiveIndex] = useState(0)
   /** Only keyboard movement should scroll: the mouse is already where it points. */
@@ -176,6 +228,11 @@ export const RelationChipCell = ({
     (surface: SuggestionSurface, index: number) => `${baseId}-${surface}-option-${index}`,
     [baseId],
   )
+
+  /** B157 — trigger mode replaces the inline row editor with a custom closed display + overlay. */
+  const isTriggerMode = trigger !== undefined
+  const canCreate = createAction !== undefined && buildCreateFormData !== undefined
+  const effectiveMeasureOverflow = measureOverflow && !isTriggerMode
 
   useEffect(() => {
     return () => {
@@ -209,28 +266,92 @@ export const RelationChipCell = ({
   }, [effectiveIds])
 
   const assignedIds = useMemo(() => new Set(effectiveIds), [effectiveIds])
-  const chips = useMemo(() => buildChips(effectiveIds), [effectiveIds, buildChips])
+  const chips = useMemo(() => {
+    const base = buildChips(effectiveIds)
+    // B157 — chips the create action already returned render from their own
+    // data only until the catalog knows them: `base` resolves them as soon as
+    // the RSC refresh brings the option, so the copy drops out then — without
+    // depending on `ids` arriving (a refresh superseded by a removal must not
+    // leave a duplicate copy behind, and the `effectiveIds` check keeps a chip
+    // the user just removed from coming back).
+    const baseIds = new Set(base.map((chip) => chip.ids[0]))
+    const created = createdChips.filter(
+      (chip) => !baseIds.has(chip.ids[0]) && effectiveIds.includes(chip.ids[0]),
+    )
+    const pending = pendingCreate ? [pendingCreate] : []
+    return [...base, ...created, ...pending]
+  }, [buildChips, effectiveIds, createdChips, pendingCreate])
+
+  // B157 — hygiene: once the server id arrives, the created chip's copy is
+  // redundant state. Bails on no-op so cells that never create (B36/B37) do
+  // not pay a fresh-array render pass on every mount / refresh.
+  useEffect(() => {
+    setCreatedChips((current) => {
+      if (current.length === 0) return current
+      const next = current.filter((chip) => !ids.includes(chip.ids[0]))
+      return next.length === current.length ? current : next
+    })
+  }, [ids])
+
+  /** B157 — the trigger's closed display reads the same optimistic chips. */
+  const triggerNode = trigger?.(chips, isPending)
+  const triggerTooltipNode = triggerTooltip ? triggerTooltip(chips) : undefined
+  const resolvedTriggerLabel =
+    typeof triggerLabel === 'function' ? triggerLabel(chips) : triggerLabel
 
   const searching = query.trim().length > 0
+  const trimmedQuery = query.trim()
   /**
    * Per surface, because Radix can close the popover with text still in the
    * input — and because the inline list is PORTALED, so `pointer-coarse:hidden`
    * on the cell would not hide it while the Drawer is up.
    */
-  const inlineSuggesting = searching && open && !drawerOpen
+  const inlineSuggesting = searching && open && !drawerOpen && !isTriggerMode
   const drawerSuggesting = searching && drawerOpen
-  const suggesting = inlineSuggesting || drawerSuggesting
+  const popoverSuggesting = searching && editorOpen && isTriggerMode
+  const suggesting = inlineSuggesting || drawerSuggesting || popoverSuggesting
   const hits = useMemo(
     () => (suggesting ? searchHits(query, assignedIds) : []),
     [suggesting, query, searchHits, assignedIds],
   )
 
-  const hitsKey = hits.map((hit) => hit.key).join('|')
+  /**
+   * B157 — when the search matches nothing and a create is wired up, the ONLY
+   * suggestion is "Criar …" (B154 pattern). It rides the same ARIA listbox and
+   * the same keyboard contract as the hits: arrows reach it, Enter fires it.
+   * Suppressed when the query EXACTLY matches an already-assigned chip's
+   * label (normalized): the search only offers addable items, so an exact
+   * assigned name would otherwise offer to mint a duplicate of it — while a
+   * mere prefix ("Fulano" when "Fulano Silva (PT)" is assigned) still allows
+   * creating a genuinely new name. The `chips.some` runs last so cells
+   * without create wiring (B36/B37) never pay its per-chip normalization.
+   */
+  const normalizedCreateQuery = normalizeSearchPhrase(trimmedQuery)
+  const createHit: RelationSearchHit | null =
+    canCreate &&
+    suggesting &&
+    hits.length === 0 &&
+    trimmedQuery.length >= 2 &&
+    trimmedQuery.length <= 160 &&
+    !chips.some((chip) => normalizeSearchPhrase(chip.label) === normalizedCreateQuery)
+      ? {
+          key: CREATE_HIT_KEY,
+          label: createLabel ? createLabel(trimmedQuery) : `Criar “${trimmedQuery}”`,
+          ids: [],
+        }
+      : null
+  const listOptions = createHit ? [...hits, createHit] : hits
+
+  const optionsKey = listOptions.map((option) => option.key).join('|')
   useEffect(() => {
     setActiveIndex(0)
-  }, [hitsKey])
+  }, [optionsKey])
 
-  const activeSurface: SuggestionSurface = drawerOpen ? 'drawer' : 'inline'
+  const activeSurface: SuggestionSurface = isTriggerMode
+    ? 'popover'
+    : drawerOpen
+      ? 'drawer'
+      : 'inline'
   useEffect(() => {
     if (!activeFromKeyboard.current) return
     document.getElementById(optionId(activeSurface, activeIndex))?.scrollIntoView({
@@ -253,12 +374,12 @@ export const RelationChipCell = ({
   // button is absolutely positioned, so revealing it never changes a chip's box.
   const chipsKey = chips.map((chip) => chip.key).join('|')
   useEffect(() => {
-    if (!measureOverflow) return
+    if (!effectiveMeasureOverflow) return
     invalidateMeasurement()
-  }, [chipsKey, measureOverflow, invalidateMeasurement])
+  }, [chipsKey, effectiveMeasureOverflow, invalidateMeasurement])
 
   useEffect(() => {
-    if (!measureOverflow) return
+    if (!effectiveMeasureOverflow) return
     const row = chipRowRef.current
     if (!row) return
     // Seeded here so the observer's initial callback isn't read as a resize.
@@ -270,7 +391,7 @@ export const RelationChipCell = ({
     })
     observer.observe(row)
     return () => observer.disconnect()
-  }, [measureOverflow, invalidateMeasurement])
+  }, [effectiveMeasureOverflow, invalidateMeasurement])
 
   /**
    * Runs on the frames where every chip is in the DOM, so the packing of the
@@ -278,7 +399,7 @@ export const RelationChipCell = ({
    * read from the real layout instead of estimated from label lengths.
    */
   useEffect(() => {
-    if (!measureOverflow) return
+    if (!effectiveMeasureOverflow) return
     if (visibleChipCount !== null) return
     const row = chipRowRef.current
     if (!row) return
@@ -316,7 +437,7 @@ export const RelationChipCell = ({
     }
 
     setVisibleChipCount(fitting)
-  }, [measureOverflow, measureToken, visibleChipCount])
+  }, [effectiveMeasureOverflow, measureToken, visibleChipCount])
 
   /**
    * Every delta is applied functionally, forward and back: two chips toggled in
@@ -408,6 +529,49 @@ export const RelationChipCell = ({
     commit(hit.ids, true)
   }
 
+  /**
+   * B157 — inline create ("Criar …" when the search matches nothing). The chip
+   * goes up immediately under a pending marker (no remove affordance — the
+   * create cannot be cancelled mid-flight, same contract as B154); the action
+   * creates + assigns server-side, and the returned `createdChip` swaps in
+   * optimistically. A failed create reverts the chip and shows the error.
+   */
+  const create = (rawName: string) => {
+    if (!createAction || !buildCreateFormData || pendingCreate) return
+    setQuery('')
+    setFeedback(null)
+    setPendingCreate({ key: `create-${rawName}`, label: rawName, ids: [] })
+
+    startTransition(async () => {
+      const result = await createAction({}, buildCreateFormData(rawName))
+      if (result.status !== 'success' || !result.createdChip) {
+        setPendingCreate(null)
+        const message = firstFormActionMessage(result) ?? createErrorMessage
+        setFeedback({ kind: 'error', message })
+        toast.error(message)
+        return
+      }
+      const created = result.createdChip
+      setPendingCreate(null)
+      setCreatedChips((current) => [...current, created])
+      // Adopt the real id optimistically: the chip becomes removable right
+      // away, and the reconcile effect above clears once the RSC refresh
+      // brings the id into `ids`.
+      setOptimistic((current) => withDelta(current ?? latestIds.current, created.ids, true))
+    })
+  }
+
+  /** One pick path for hits AND the "Criar …" option (same ARIA listbox). */
+  const pickOption = (index: number) => {
+    const option = listOptions[index]
+    if (!option) return
+    if (option === createHit) {
+      create(trimmedQuery)
+      return
+    }
+    pickHit(option)
+  }
+
   const closeSuggestions = () => {
     setOpen(false)
     setQuery('')
@@ -431,29 +595,28 @@ export const RelationChipCell = ({
    */
   const onSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      if (hits.length === 0) return
+      if (listOptions.length === 0) return
       event.preventDefault()
       const delta = event.key === 'ArrowDown' ? 1 : -1
       activeFromKeyboard.current = true
-      setActiveIndex((current) => (current + delta + hits.length) % hits.length)
+      setActiveIndex((current) => (current + delta + listOptions.length) % listOptions.length)
       return
     }
     if (event.key === 'Home' || event.key === 'End') {
-      if (hits.length === 0) return
+      if (listOptions.length === 0) return
       event.preventDefault()
       activeFromKeyboard.current = true
-      setActiveIndex(event.key === 'Home' ? 0 : hits.length - 1)
+      setActiveIndex(event.key === 'Home' ? 0 : listOptions.length - 1)
       return
     }
     if (event.key === 'Enter') {
-      const hit = hits[activeIndex]
-      if (!hit) return
+      if (listOptions.length === 0) return
       event.preventDefault()
-      pickHit(hit)
+      pickOption(activeIndex)
       return
     }
     if (event.key === 'Escape') {
-      if (drawerOpen) {
+      if (drawerOpen || isTriggerMode) {
         setQuery('')
         return
       }
@@ -463,12 +626,12 @@ export const RelationChipCell = ({
   }
 
   // Editing needs every chip reachable, so focusing the cell always expands it.
-  const showAllChips = !measureOverflow || expanded || open
-  const measuring = measureOverflow && visibleChipCount === null
+  const showAllChips = !effectiveMeasureOverflow || expanded || open
+  const measuring = effectiveMeasureOverflow && visibleChipCount === null
   const hasHiddenChips =
-    measureOverflow && visibleChipCount !== null && visibleChipCount < chips.length
+    effectiveMeasureOverflow && visibleChipCount !== null && visibleChipCount < chips.length
   const visibleChips =
-    !measureOverflow || showAllChips || measuring || visibleChipCount === null
+    !effectiveMeasureOverflow || showAllChips || measuring || visibleChipCount === null
       ? chips
       : chips.slice(0, visibleChipCount)
   /**
@@ -489,7 +652,9 @@ export const RelationChipCell = ({
     : feedback?.kind === 'error'
       ? feedback.message
       : suggesting
-        ? resultsMessage(hits.length)
+        ? createHit
+          ? (copy.createHintMessage ?? 'Nenhum resultado — opção de criar disponível.')
+          : resultsMessage(hits.length)
         : feedback?.kind === 'saved'
           ? copy.savedMessage
           : ''
@@ -547,6 +712,9 @@ export const RelationChipCell = ({
    */
   const inlineChip = (chip: RelationChip) => {
     const floorReason = removalFloorReason(chip)
+    // A pending-create chip has no remove affordance: the server-side create
+    // cannot be cancelled mid-flight, so removal waits for the real id (B154).
+    const isPendingCreate = chip.key === pendingCreate?.key
     return (
       <span
         key={chip.key}
@@ -564,34 +732,37 @@ export const RelationChipCell = ({
             {chipBody(chip)}
           </Badge>
         )}
-        <button
-          type="button"
-          data-chip-remove
-          aria-disabled={floorReason !== null || undefined}
-          aria-label={chipRemoveLabel(chip, floorReason)}
-          className={cn(
-            // `border-muted-foreground/70`: the default 12%-alpha `border` token
-            // does not reach 3:1 against a `secondary` chip (SC 1.4.11).
-            'absolute -top-1 -right-1 hidden size-4 place-items-center rounded-full border border-muted-foreground/70 bg-background text-muted-foreground opacity-0 transition-opacity pointer-fine:grid',
-            "before:absolute before:-inset-1 before:content-['']",
-            'group-hover/chip:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-            floorReason
-              ? 'cursor-not-allowed'
-              : 'hover:border-destructive hover:bg-destructive/10 hover:text-destructive hover:opacity-100',
-          )}
-          onClick={(event) => {
-            event.stopPropagation()
-            attemptRemove(chip)
-          }}
-        >
-          <XIcon className="size-2.5" aria-hidden="true" />
-        </button>
+        {isPendingCreate ? null : (
+          <button
+            type="button"
+            data-chip-remove
+            aria-disabled={floorReason !== null || undefined}
+            aria-label={chipRemoveLabel(chip, floorReason)}
+            className={cn(
+              // `border-muted-foreground/70`: the default 12%-alpha `border` token
+              // does not reach 3:1 against a `secondary` chip (SC 1.4.11).
+              'absolute -top-1 -right-1 hidden size-4 place-items-center rounded-full border border-muted-foreground/70 bg-background text-muted-foreground opacity-0 transition-opacity pointer-fine:grid',
+              "before:absolute before:-inset-1 before:content-['']",
+              'group-hover/chip:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+              floorReason
+                ? 'cursor-not-allowed'
+                : 'hover:border-destructive hover:bg-destructive/10 hover:text-destructive hover:opacity-100',
+            )}
+            onClick={(event) => {
+              event.stopPropagation()
+              attemptRemove(chip)
+            }}
+          >
+            <XIcon className="size-2.5" aria-hidden="true" />
+          </button>
+        )}
       </span>
     )
   }
 
   const suggestionOption = (hit: RelationSearchHit, index: number, surface: SuggestionSurface) => {
-    const capped = additionCapReason(hit.ids) !== null
+    const isCreateHit = hit.key === CREATE_HIT_KEY
+    const capped = !isCreateHit && additionCapReason(hit.ids) !== null
     const active = index === activeIndex
     return (
       <button
@@ -600,7 +771,6 @@ export const RelationChipCell = ({
         type="button"
         role="option"
         aria-selected={active}
-        aria-disabled={capped || undefined}
         tabIndex={-1}
         className={cn(
           'flex w-full items-start gap-2 rounded-md px-2 py-2 text-left text-sm',
@@ -612,8 +782,9 @@ export const RelationChipCell = ({
           activeFromKeyboard.current = false
           setActiveIndex(index)
         }}
-        onClick={() => pickHit(hit)}
+        onClick={() => pickOption(index)}
       >
+        {isCreateHit ? <PlusIcon className="mt-0.5 size-4 shrink-0" aria-hidden="true" /> : null}
         <span className="min-w-0 flex-1">
           <span className="block truncate font-medium">{hit.label}</span>
           {hit.description ? (
@@ -630,20 +801,132 @@ export const RelationChipCell = ({
   /**
    * The listbox stays mounted while empty (the input's `aria-controls` must
    * resolve) and the "no results" copy sits OUTSIDE it — inside, a screen
-   * reader would count it as a selectable option.
+   * reader would count it as a selectable option. The "Criar …" option rides
+   * INSIDE the listbox: it is actionable, and the keyboard contract reaches it.
    */
   const suggestionList = (surface: SuggestionSurface) => (
     <>
       <div role="listbox" id={listboxId(surface)} aria-label={copy.suggestionsLabel}>
-        {hits.map((hit, index) => suggestionOption(hit, index, surface))}
+        {listOptions.map((option, index) => suggestionOption(option, index, surface))}
       </div>
-      {hits.length === 0 ? (
+      {listOptions.length === 0 ? (
         <p className="px-2 py-2 text-sm text-muted-foreground">Nenhum resultado.</p>
       ) : null}
     </>
   )
 
-  const activeOptionId = hits.length > 0 ? optionId(activeSurface, activeIndex) : undefined
+  const activeOptionId = listOptions.length > 0 ? optionId(activeSurface, activeIndex) : undefined
+
+  /** One chip row of the editor list (Drawer or trigger-mode Popover). */
+  const chipListItem = (chip: RelationChip) => {
+    const floorReason = removalFloorReason(chip)
+    const isPendingCreate = chip.key === pendingCreate?.key
+    return (
+      <li
+        key={chip.key}
+        className="flex min-h-11 items-center justify-between gap-2 rounded-md border px-2"
+      >
+        {chip.href ? (
+          <Link
+            href={chip.href}
+            className="flex min-h-11 min-w-0 flex-1 items-center underline-offset-4 hover:underline"
+          >
+            <Badge variant="secondary" className="min-w-0 font-normal">
+              {chipBody(chip)}
+            </Badge>
+          </Link>
+        ) : (
+          <Badge variant="secondary" className="min-w-0 gap-1 font-normal">
+            {chipBody(chip)}
+          </Badge>
+        )}
+        {isPendingCreate ? null : (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={cn('size-11 shrink-0', floorReason && 'opacity-50')}
+            aria-disabled={floorReason !== null || undefined}
+            aria-label={chipRemoveLabel(chip, floorReason)}
+            onClick={() => attemptRemove(chip)}
+          >
+            <XIcon className="size-4" aria-hidden="true" />
+          </Button>
+        )}
+      </li>
+    )
+  }
+
+  /**
+   * The editor body shared by the coarse Drawer and the trigger-mode overlay:
+   * assigned chips (removable, linked) + the search combobox + suggestions.
+   */
+  const editorBody = (surface: 'drawer' | 'popover', suggesting: boolean) => (
+    <>
+      {chips.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{copy.emptyDrawerMessage}</p>
+      ) : (
+        <ul className="flex flex-col gap-1">{chips.map(chipListItem)}</ul>
+      )}
+      <Input
+        value={query}
+        autoFocus={surface === 'popover'}
+        role="combobox"
+        aria-expanded={suggesting}
+        // Same as the inline input: the list is only rendered while searching,
+        // so a permanent `aria-controls` would dangle.
+        aria-controls={suggesting ? listboxId(surface) : undefined}
+        aria-autocomplete="list"
+        aria-activedescendant={suggesting ? activeOptionId : undefined}
+        onChange={(event) => {
+          setQuery(event.currentTarget.value)
+          setFeedback(null)
+        }}
+        onKeyDown={onSearchKeyDown}
+        placeholder={copy.searchPlaceholder}
+        aria-label={copy.searchLabel}
+        className="min-h-11"
+      />
+      {searching ? <div className="flex flex-col gap-1">{suggestionList(surface)}</div> : null}
+    </>
+  )
+
+  // B157 trigger mode: the closed cell is the custom display (e.g. an avatar
+  // stack) and the editor opens in a `CampaignCellEditOverlay` of the call
+  // site's variant — Popover on the desktop table, shared Drawer on the
+  // mobile cards — same gesture contract as the advisors column (B27/B154).
+  if (isTriggerMode) {
+    return (
+      <div ref={rootRef} aria-busy={isPending || undefined} className="relative min-w-56">
+        <CampaignCellEditOverlay
+          variant={editorVariant}
+          open={editorOpen}
+          onOpenChange={(next) => {
+            setEditorOpen(next)
+            // Guarded on the editor having actually been open: a closed overlay
+            // can still report `onOpenChange(false)` from a page-wide dismiss.
+            if (!next && editorOpen) closeSuggestions()
+          }}
+          title={drawerTitle}
+          description={ownerName}
+          trigger={triggerNode}
+          triggerLabel={resolvedTriggerLabel}
+          triggerBusy={isPending}
+          statusMessage={statusMessage}
+          tooltipContent={triggerTooltipNode}
+          contentClassName="w-80 p-0"
+          // The sheet body already carries `px-4 pt-3 pb-2` — zeroing the
+          // horizontal padding here makes the shared body wrapper the single
+          // padding owner for both surfaces (16 px in each).
+          sheetBodyClassName="px-0"
+        >
+          <div className="flex flex-col gap-3 px-4 py-3">
+            {editorBody('popover', popoverSuggesting)}
+          </div>
+        </CampaignCellEditOverlay>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -757,7 +1040,7 @@ export const RelationChipCell = ({
         title={drawerTitle}
         description={ownerName}
         trigger={null}
-        triggerLabel={triggerLabel}
+        triggerLabel={resolvedTriggerLabel}
         triggerClassName="absolute inset-0 hover:bg-transparent pointer-fine:hidden"
         triggerBusy={isPending}
         sheetBodyClassName="gap-3"
@@ -769,68 +1052,7 @@ export const RelationChipCell = ({
          * allocation it saved was measured and is not a cost — the closed portal
          * emits no DOM, and the class string is a tailwind-merge cache hit.
          */}
-        <>
-          {chips.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{copy.emptyDrawerMessage}</p>
-          ) : (
-            <ul className="flex flex-col gap-1">
-              {chips.map((chip) => {
-                const floorReason = removalFloorReason(chip)
-                return (
-                  <li
-                    key={chip.key}
-                    className="flex min-h-11 items-center justify-between gap-2 rounded-md border px-2"
-                  >
-                    {chip.href ? (
-                      <Link
-                        href={chip.href}
-                        className="flex min-h-11 min-w-0 flex-1 items-center underline-offset-4 hover:underline"
-                      >
-                        <Badge variant="secondary" className="min-w-0 font-normal">
-                          {chipBody(chip)}
-                        </Badge>
-                      </Link>
-                    ) : (
-                      <Badge variant="secondary" className="min-w-0 gap-1 font-normal">
-                        {chipBody(chip)}
-                      </Badge>
-                    )}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className={cn('size-11 shrink-0', floorReason && 'opacity-50')}
-                      aria-disabled={floorReason !== null || undefined}
-                      aria-label={chipRemoveLabel(chip, floorReason)}
-                      onClick={() => attemptRemove(chip)}
-                    >
-                      <XIcon className="size-4" aria-hidden="true" />
-                    </Button>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-          <Input
-            value={query}
-            role="combobox"
-            aria-expanded={drawerSuggesting}
-            // Same as the inline input: the drawer list is only rendered while
-            // searching, so a permanent `aria-controls` would dangle.
-            aria-controls={drawerSuggesting ? listboxId('drawer') : undefined}
-            aria-autocomplete="list"
-            aria-activedescendant={drawerSuggesting ? activeOptionId : undefined}
-            onChange={(event) => {
-              setQuery(event.currentTarget.value)
-              setFeedback(null)
-            }}
-            onKeyDown={onSearchKeyDown}
-            placeholder={copy.searchPlaceholder}
-            aria-label={copy.searchLabel}
-            className="min-h-11"
-          />
-          {searching ? <div className="flex flex-col gap-1">{suggestionList('drawer')}</div> : null}
-        </>
+        <>{editorBody('drawer', drawerSuggesting)}</>
       </CampaignCellEditOverlay>
 
       <p className="sr-only" role="status" aria-live="polite">

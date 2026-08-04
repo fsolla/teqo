@@ -25,6 +25,7 @@ import {
 } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
 import {
   buildMunicipalityListVisitHref,
   buildMunicipalityListVisitLabel,
@@ -39,7 +40,11 @@ import {
   getEligibleLeadershipOptions,
   loadAdvisorSummaries,
 } from '@/utilities/municipality/municipalityViewModels'
-import { createMunicipalityListSignalFormAction } from './municipalityStaffFormActions'
+import {
+  createMunicipalityListSignalFormAction,
+  createMunicipalityStateDeputyFormAction,
+  setMunicipalityStateDeputiesFormAction,
+} from './municipalityStaffFormActions'
 
 export const metadata = campaignPageMetadataFromCatalog('municipios')
 
@@ -82,14 +87,18 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
       ...filterFacets.advisorIDs,
     ]),
   ]
-  const [advisorSummaries, advisorOptions, leadershipOptions] = await Promise.all([
-    isStaffView ? loadAdvisorSummaries(payload, user, advisorIDs) : [],
-    // Only the coordinator-only assign-advisors control consumes these.
-    isCoordinator ? getEligibleAdvisorOptions(payload, user) : [],
-    // All staff edit the Lideranças column (scoped server-side); the leader
-    // never reaches this page (`gate: noLeader`).
-    isStaffView ? getEligibleLeadershipOptions(payload, user) : [],
-  ])
+  const [advisorSummaries, advisorOptions, leadershipOptions, stateDeputyOptions] =
+    await Promise.all([
+      isStaffView ? loadAdvisorSummaries(payload, user, advisorIDs) : [],
+      // Only the coordinator-only assign-advisors control consumes these.
+      isCoordinator ? getEligibleAdvisorOptions(payload, user) : [],
+      // All staff edit the Lideranças column (scoped server-side); the leader
+      // never reaches this page (`gate: noLeader`).
+      isStaffView ? getEligibleLeadershipOptions(payload, user) : [],
+      // B157 — the Dobradinhas column is coordinator + candidate only; the
+      // catalog serves the avatar-stack display, the tooltip and the search.
+      canMoveEngagementLevel ? loadStateDeputyOptions(payload, user) : [],
+    ])
   const advisorNamesById = new Map(advisorSummaries.map((advisor) => [advisor.id, advisor]))
 
   const selectedAdvisorIDs = new Set(state.advisors ?? [])
@@ -118,7 +127,10 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
       trailing={
         <CampaignColumnPickerTrailing
           columnVisibility={columnVisibility}
-          columns={municipalityListPickerColumns({ isStaffView })}
+          columns={municipalityListPickerColumns({
+            isStaffView,
+            isCampaignUnrestricted: canMoveEngagementLevel,
+          })}
         />
       }
     />
@@ -134,9 +146,13 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
         leadershipNamesById={leadershipNamesById}
         isStaffView={isStaffView}
         isCoordinator={isCoordinator}
+        isCampaignUnrestricted={canMoveEngagementLevel}
         canMoveEngagementLevel={canMoveEngagementLevel}
         advisorOptions={advisorOptions}
         leadershipOptions={leadershipOptions}
+        stateDeputyOptions={stateDeputyOptions}
+        stateDeputyCommitAction={setMunicipalityStateDeputiesFormAction}
+        stateDeputyCreateAction={createMunicipalityStateDeputyFormAction}
         columnFilterOptions={columnFilterOptions}
         signalFormAction={createMunicipalityListSignalFormAction}
         state={state}

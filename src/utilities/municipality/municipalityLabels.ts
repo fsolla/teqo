@@ -190,6 +190,7 @@ export type MunicipalityListColumnId =
   | 'level'
   | 'advisors'
   | 'leaderships'
+  | 'stateDeputies'
   | 'trend'
   | 'expectedVotes'
   | 'lastSignal'
@@ -220,6 +221,8 @@ export const municipalityColumnDescriptions: Record<MunicipalityListColumnId, st
   level: campaignConceptOneLiner('nivel-de-envolvimento'),
   advisors: 'Assessor(es) responsável(is) pelo município — o coordenador atribui clicando aqui.',
   leaderships: 'Lideranças vinculadas ao município — a equipe adiciona e remove clicando aqui.',
+  stateDeputies:
+    'Deputados estaduais com quem a campanha dobra neste município — coordenação e candidato editam clicando aqui.',
   trend: 'Tendência política percebida pela equipe: favorável, neutra ou desfavorável.',
   expectedVotes: campaignConceptOneLiner('meta'),
   lastSignal: `Última atualização da equipe ou declaração de liderança, o que for mais recente. Fica destacado a partir de ${MUNICIPALITY_COLD_SIGNAL_DAYS} dias sem registro.`,

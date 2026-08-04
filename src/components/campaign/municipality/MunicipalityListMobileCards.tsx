@@ -22,7 +22,12 @@ import { MunicipalityListTrendControl } from '@/components/campaign/municipality
 import { MunicipalityPriorityIndicator } from '@/components/campaign/municipality/MunicipalityPriorityIndicator'
 import { MunicipalityVotePositionReadout } from '@/components/campaign/municipality/MunicipalityVotePositionReadout'
 import { TerritoryLink } from '@/components/campaign/municipality/TerritoryLink'
+import {
+  MunicipalityStateDeputyRelationCell,
+  type MunicipalityStateDeputyCreateAction,
+} from '@/components/campaign/shared/MunicipalityStateDeputyRelationCell'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
+import type { StateDeputyRelationOption } from '@/utilities/campaignRelationOptions'
 import { municipalityGeographyParts } from '@/utilities/municipality/municipalityLabels'
 import { municipalityColumnLabels } from '@/utilities/municipality/municipalityListUrl'
 import type {
@@ -46,10 +51,14 @@ export type MunicipalityListMobileCardsProps = {
   leadershipNamesById: ReadonlyMap<number, MunicipalityLeadershipSummary>
   isStaffView: boolean
   isCoordinator: boolean
+  isCampaignUnrestricted: boolean
   canMoveEngagementLevel: boolean
   advisorOptions: EligibleAdvisorOption[]
   /** B155 — every leadership the actor may add, for the Lideranças sheet. */
   leadershipOptions: EligibleLeadershipOption[]
+  stateDeputyOptions: StateDeputyRelationOption[]
+  stateDeputyCommitAction: MunicipalityStaffFormAction
+  stateDeputyCreateAction: MunicipalityStateDeputyCreateAction
   signalFormAction: MunicipalityStaffFormAction
   emptySlot: ReactNode
 }
@@ -64,9 +73,13 @@ export const MunicipalityListMobileCards = ({
   leadershipNamesById,
   isStaffView,
   isCoordinator,
+  isCampaignUnrestricted,
   canMoveEngagementLevel,
   advisorOptions,
   leadershipOptions,
+  stateDeputyOptions,
+  stateDeputyCommitAction,
+  stateDeputyCreateAction,
   signalFormAction,
   emptySlot,
 }: MunicipalityListMobileCardsProps) => (
@@ -217,6 +230,22 @@ export const MunicipalityListMobileCards = ({
                   />
                 </dd>
               </div>
+              {isCampaignUnrestricted ? (
+                <div className="col-span-2">
+                  <dt className="text-muted-foreground">Dobradinhas</dt>
+                  <dd>
+                    <MunicipalityStateDeputyRelationCell
+                      municipalityId={municipality.id}
+                      municipalityName={municipality.name}
+                      stateDeputyIDs={municipality.stateDeputyIDs}
+                      options={stateDeputyOptions}
+                      commitAction={stateDeputyCommitAction}
+                      createAction={stateDeputyCreateAction}
+                      editorVariant="sheet"
+                    />
+                  </dd>
+                </div>
+              ) : null}
             </dl>
           ) : null}
         </article>
