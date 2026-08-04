@@ -100,7 +100,7 @@ Mobile (< 1024px)
 
 - **Vou apresentar dados?** Nao -- **Dados: N/A**. Layout/CSS de colunas existentes.
 - **Decisoes desbloqueadas:** Nenhuma decisao eleitoral nova.
-- **Forma:** *adiada ao plano de implementacao*.
+- **Forma:** _adiada ao plano de implementacao_.
 
 ## Mapa de prioridade das colunas (canonico)
 
@@ -108,22 +108,23 @@ Fonte unica de default, prioridade e breakpoint para TODAS as colunas da tabela 
 
 **Breakpoints:** >= 1400px (wide), >= 1200px (medium), >= 1024px (narrow), < 1024px (mobile cards).
 
-| # | Coluna | ID | Header | Default | Prio | >= 1400px | >= 1200px | >= 1024px |
-|---|--------|----|--------|---------|------|-----------|-----------|-----------|
-| 1 | Nome (+Territorio) | `name` | Municipio | visivel | P0 | OK | OK | OK |
-| 2 | 2022 | `votos` | 2022 | visivel | P0 | OK | OK | OK |
-| 3 | 2026 | `expectedVotes` | 2026 | visivel | P0 | OK | OK | OK |
-| 4 | Assessor | `advisors` | Assessor | visivel | P1 | OK | OK | OK |
-| 5 | Lideranca (futuro: B155) | `leaderships` | Lideranca | visivel | P1 | OK | OK | OK |
-| 6 | Dobradinha (futuro) | `stateDeputies` | Dobradinha | visivel | P1 | OK | OK | OK |
-| 7 | Tendencia | `trend` | Tendencia | visivel | P3 | OK | OK | -- |
-| 8 | Nivel | `level` | Nivel | visivel | P4 | OK | -- | -- |
-| 9 | Classe | `classe` | Classe | visivel | P4 | OK | -- | -- |
-| -- | **Acoes** | `actions` | *(sem header)* | dinamica | -- | se Tend ou Sinal ocultos | mesmo | mesmo |
-| 10 | Cobertura | `goalCoverage` | Cobertura | **oculta** | P5 | OK (se opt-in) | -- | -- |
-| 11 | Sinal | `lastSignal` | Sinal | **oculta** | P5 | OK (se opt-in) | -- | -- |
+| #   | Coluna                   | ID              | Header         | Default    | Prio | >= 1400px                | >= 1200px | >= 1024px |
+| --- | ------------------------ | --------------- | -------------- | ---------- | ---- | ------------------------ | --------- | --------- |
+| 1   | Nome (+Territorio)       | `name`          | Municipio      | visivel    | P0   | OK                       | OK        | OK        |
+| 2   | 2022                     | `votos`         | 2022           | visivel    | P0   | OK                       | OK        | OK        |
+| 3   | 2026                     | `expectedVotes` | 2026           | visivel    | P0   | OK                       | OK        | OK        |
+| 4   | Assessor                 | `advisors`      | Assessor       | visivel    | P1   | OK                       | OK        | OK        |
+| 5   | Lideranca (futuro: B155) | `leaderships`   | Lideranca      | visivel    | P1   | OK                       | OK        | OK        |
+| 6   | Dobradinha (futuro)      | `stateDeputies` | Dobradinha     | visivel    | P1   | OK                       | OK        | OK        |
+| 7   | Tendencia                | `trend`         | Tendencia      | visivel    | P3   | OK                       | OK        | --        |
+| 8   | Nivel                    | `level`         | Nivel          | visivel    | P4   | OK                       | --        | --        |
+| 9   | Classe                   | `classe`        | Classe         | visivel    | P4   | OK                       | --        | --        |
+| --  | **Acoes**                | `actions`       | _(sem header)_ | dinamica   | --   | se Tend ou Sinal ocultos | mesmo     | mesmo     |
+| 10  | Cobertura                | `goalCoverage`  | Cobertura      | **oculta** | P5   | OK (se opt-in)           | --        | --        |
+| 11  | Sinal                    | `lastSignal`    | Sinal          | **oculta** | P5   | OK (se opt-in)           | --        | --        |
 
 **Notas:**
+
 - Territorio nao e coluna -- e 2a linha do Nome (sempre visivel).
 - Default = estado inicial para novos atores (pre-povoado no cookie B17). Colunas `oculta` entram em `hiddenColumnIds`.
 - **Acoes e dinamica:** renderiza apenas quando Tendencia OU Sinal estao ocultos. Se ambos visiveis, nao renderiza. Nao aparece no seletor B17.
