@@ -4,6 +4,8 @@ Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agente
 
 ---
 
+**Recently resolved (2026-08-03):** **B86** (Issue #22) — ações rápidas de apoiadores (staff), último catálogo do lote B80–B90: módulo `supporterQuickActions.ts` (espelha B87) com `register-supporter` → `/apoiadores/novo` (todo staff) e `import-supporters` → `/apoiadores/importar` (coordinator-only, espelha `isCampaignCoordinator`); superfície lista+detalhe numérico; `novo`/`importar` só-busca; leader fora. Sem migration/Consent. Impl [`acoes-rapidas-apoiadores-impl.md`](docs/plans/acoes-rapidas-apoiadores-impl.md); débito S1 (normalização de pathname de lista, 6+ call sites) → #353 [`escala-dry-pos-acoes-rapidas.md`](docs/plans/escala-dry-pos-acoes-rapidas.md).
+
 **Recently resolved (2026-08-03):** **Pass 5 P1** — push de notificação de campanha após commit: `onPayloadTransactionCommit` em `withPayloadTransaction`; `createCampaignNotification` não usa mais `queueMicrotask` sob `req.transactionID`; `sendCampaignPushForNotification` soft-fail se a row sumiu. Guarda `notificationPushScheduleConventions`.
 
 **Recently resolved (2026-08-03):** **Pass 5 — auditoria de engenharia autônoma** — precheck solitário (pool desligado); delta desde Pass 4 = 627 arquivos / 520 commits; baseline verde (madge **859** arquivos). **0 P0**; **1 P1** — push de notificação via `queueMicrotask` sob `req.transactionID` corria antes do commit (`createCampaignNotification`) → after-commit registry + soft-fail. **0** `kind:agent-miss` abertas. Carry-forward P4-A…P4-L re-medido; ondas novas P5-A…P5-L em [`entrega-engenharia-p5.md`](plans/entrega-engenharia-p5.md).
