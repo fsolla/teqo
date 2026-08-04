@@ -261,9 +261,7 @@ describe('campaignQuickActionRegistry', () => {
   })
 
   it('returns empty catalog for unregistered paths', () => {
-    expect(resolveQuickActionsForPath('/campanha/lugar-inexistente', 'coordinator', {})).toEqual(
-      [],
-    )
+    expect(resolveQuickActionsForPath('/campanha/lugar-inexistente', 'coordinator', {})).toEqual([])
   })
 
   it('returns empty catalog on conceitos and perfil for staff (B90)', () => {
@@ -390,7 +388,11 @@ describe('campaignQuickActionRegistry', () => {
     const listTrailingSlash = resolveQuickActionsForPath('/campanha/apoiadores/', 'advisor', {})
     expect(listTrailingSlash.map((action) => action.id)).toEqual(['register-supporter'])
 
-    const detailTrailingSlash = resolveQuickActionsForPath('/campanha/apoiadores/9/', 'candidate', {})
+    const detailTrailingSlash = resolveQuickActionsForPath(
+      '/campanha/apoiadores/9/',
+      'candidate',
+      {},
+    )
     expect(detailTrailingSlash.map((action) => action.id)).toEqual(['register-supporter'])
 
     expect(resolveQuickActionsForPath('/campanha/apoiadores', 'leader', {})).toEqual([])

@@ -30,6 +30,7 @@ flowchart LR
 **Opções consideradas:** A | B | C
 **Recomendação:** **A** — módulo novo `supporterQuickActions.ts` espelhando `campaignAdvisorQuickActions.ts` (B87), com superfície lista+detalhe, catálogo de 2 launchers, import gated a coordinator; registro no registry central; testes unit espelhando B87/B85.
 **Rejeitadas:**
+
 - **B — superfície inclui `/apoiadores/novo` e `/apoiadores/importar` com o mesmo catálogo:** redundante (a página já é o próprio formulário/wizard); precedente B85 exclui `nova` do detalhe e deixa a página de form com FAB só-busca. Rejeitada.
 - **C — "Importar CSV" para todo staff (`isUnrestrictedCampaignRole`):** espelha a intenção mas NÃO o gate de servidor — `importar/page.tsx` redireciona não-coordinator para `/apoiadores`; o launcher levaria advisor/candidate a um redirect. O drawer deve espelhar o gate da página (coordinator-only), como o botão "Importar CSV" da lista faz.
 - **D — catálogo com A1–A5 do Início (prefill de município):** rejeitado pela própria intenção (questão em aberto → recomendação A) e não há município garantido no contexto da ficha de apoiador.

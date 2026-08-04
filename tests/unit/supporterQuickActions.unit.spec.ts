@@ -33,10 +33,7 @@ describe('supporterQuickActions paths', () => {
 describe('resolveSupporterListQuickActions', () => {
   it('returns register-supporter + import-supporters for coordinator', () => {
     const actions = resolveSupporterListQuickActions('coordinator')
-    expect(actions.map((action) => action.id)).toEqual([
-      'register-supporter',
-      'import-supporters',
-    ])
+    expect(actions.map((action) => action.id)).toEqual(['register-supporter', 'import-supporters'])
     expect(actions[0]?.href).toBe(SUPPORTER_CREATE_HREF)
     expect(actions[1]?.href).toBe(SUPPORTER_IMPORT_HREF)
   })
@@ -70,16 +67,10 @@ describe('resolveSupporterDetailQuickActions', () => {
 describe('resolveSupporterQuickActionsForPath', () => {
   it('delegates list and detail catalogs (B86)', () => {
     const list = resolveSupporterQuickActionsForPath('/campanha/apoiadores', 'coordinator', {})
-    expect(list.map((action) => action.id)).toEqual([
-      'register-supporter',
-      'import-supporters',
-    ])
+    expect(list.map((action) => action.id)).toEqual(['register-supporter', 'import-supporters'])
 
     const detail = resolveSupporterQuickActionsForPath('/campanha/apoiadores/7', 'coordinator', {})
-    expect(detail.map((action) => action.id)).toEqual([
-      'register-supporter',
-      'import-supporters',
-    ])
+    expect(detail.map((action) => action.id)).toEqual(['register-supporter', 'import-supporters'])
   })
 
   it('returns empty catalog on form and wizard pages (search-only FAB)', () => {
