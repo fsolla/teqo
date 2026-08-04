@@ -87,17 +87,18 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
       ...filterFacets.advisorIDs,
     ]),
   ]
-  const [advisorSummaries, advisorOptions, leadershipOptions, stateDeputyOptions] = await Promise.all([
-    isStaffView ? loadAdvisorSummaries(payload, user, advisorIDs) : [],
-    // Only the coordinator-only assign-advisors control consumes these.
-    isCoordinator ? getEligibleAdvisorOptions(payload, user) : [],
-    // All staff edit the Lideranças column (scoped server-side); the leader
-    // never reaches this page (`gate: noLeader`).
-    isStaffView ? getEligibleLeadershipOptions(payload, user) : [],
-    // B157 — the Dobradinhas column is coordinator + candidate only; the
-    // catalog serves the avatar-stack display, the tooltip and the search.
-    canMoveEngagementLevel ? loadStateDeputyOptions(payload, user) : [],
-  ])
+  const [advisorSummaries, advisorOptions, leadershipOptions, stateDeputyOptions] =
+    await Promise.all([
+      isStaffView ? loadAdvisorSummaries(payload, user, advisorIDs) : [],
+      // Only the coordinator-only assign-advisors control consumes these.
+      isCoordinator ? getEligibleAdvisorOptions(payload, user) : [],
+      // All staff edit the Lideranças column (scoped server-side); the leader
+      // never reaches this page (`gate: noLeader`).
+      isStaffView ? getEligibleLeadershipOptions(payload, user) : [],
+      // B157 — the Dobradinhas column is coordinator + candidate only; the
+      // catalog serves the avatar-stack display, the tooltip and the search.
+      canMoveEngagementLevel ? loadStateDeputyOptions(payload, user) : [],
+    ])
   const advisorNamesById = new Map(advisorSummaries.map((advisor) => [advisor.id, advisor]))
 
   const selectedAdvisorIDs = new Set(state.advisors ?? [])
