@@ -5,20 +5,43 @@ import {
   MUNICIPALITY_ADVISORS_CAP_MESSAGE,
 } from '@/lib/schemas/municipality'
 import {
+  advisorNameSchema,
   brazilianMobile,
   optionalPersistedEmail,
   positiveRelationshipId,
   trimmedOptionalText,
 } from '@/lib/schemas/primitives'
+import { slugify } from '@/lib/slug'
 
 const PLANILHA_INVALID_EMAIL_SUFFIX = '@planilha.invalid'
+const INLINE_STUB_EMAIL_SUFFIX = '@criado.invalid'
 
+/**
+ * Seed (`@planilha.invalid`, E4R) and inline-created (`@criado.invalid`, B154)
+ * stub emails — non-routable placeholders that mark a not-yet-activated
+ * account. Shared by the password-reset guard (`PLACEHOLDER_RESET_MESSAGE`) and
+ * the advisors list e-mail cell, so an inline-created account behaves exactly
+ * like a seeded one until a coordinator swaps in real credentials.
+ */
 export const isPlanilhaPlaceholderEmail = (email: string | null | undefined): boolean =>
-  typeof email === 'string' && email.trim().toLowerCase().endsWith(PLANILHA_INVALID_EMAIL_SUFFIX)
+  typeof email === 'string' &&
+  (email.trim().toLowerCase().endsWith(PLANILHA_INVALID_EMAIL_SUFFIX) ||
+    email.trim().toLowerCase().endsWith(INLINE_STUB_EMAIL_SUFFIX))
 
 /** Stable seed-style placeholder used when the e-mail field is cleared in the list UI. */
 export const planilhaPlaceholderEmailForAdvisor = (advisorId: number): string =>
   `assessor-${advisorId}${PLANILHA_INVALID_EMAIL_SUFFIX}`
+
+/**
+ * Inline-create stub (B154): `<slug-do-nome>@criado.invalid`, `-N` from the
+ * second occurrence — `campaignUser.email` is unique while `name` is not, so
+ * two advisors whose names slugify identically get distinct stubs. Same
+ * deterministic pattern as the E4R seed; `name` is only the input to `slugify`.
+ */
+export const stubCampaignUserEmailFor = (name: string, occurrence = 1): string => {
+  const localPart = slugify(name) || 'assessor'
+  return `${localPart}${occurrence > 1 ? `-${occurrence}` : ''}${INLINE_STUB_EMAIL_SUFFIX}`
+}
 
 const advisorPhoneInput = z.union([brazilianMobile, z.literal(''), z.null()]).optional()
 
@@ -53,7 +76,7 @@ export const ADVISOR_ACTION_SAFE_MESSAGES = [
 ] as const
 
 export const advisorCreateSchema = z.object({
-  name: z.string().trim().min(2).max(160),
+  name: advisorNameSchema,
   email: z.email('E-mail inválido.'),
   phone: optionalAdvisorPhone,
 })

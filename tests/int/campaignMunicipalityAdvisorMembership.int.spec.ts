@@ -4,7 +4,11 @@ import type { Payload } from 'payload'
 import { getPayload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { setMunicipalityAdvisorMembershipRecord } from '@/app/(campaign)/campanha/actions/municipality'
+import {
+  createMunicipalityAdvisorRecord,
+  setMunicipalityAdvisorMembershipRecord,
+} from '@/app/(campaign)/campanha/actions/municipality'
+import { stubCampaignUserEmailFor } from '@/lib/schemas/advisor'
 import config from '@/payload.config'
 
 import { installCampaignFixtures, relationIds } from '../helpers/campaignFixtures'
@@ -137,5 +141,121 @@ describe('setMunicipalityAdvisorMembershipRecord (B27)', () => {
         assigned: true,
       }),
     ).rejects.toThrow(/no máximo 10 assessores/i)
+  })
+})
+
+describe('createMunicipalityAdvisorRecord (B154)', () => {
+  const findAccount = async (id: number) =>
+    payload.findByID({ collection: 'campaignUser', id, depth: 0, overrideAccess: true })
+
+  it.each(['coordinator', 'candidate'] as const)(
+    'lets a %s create an advisor by name and assign it to the município',
+    async (role) => {
+      const fixtures = campaignFixtures()
+      const actor = await fixtures.createCampaignUser(role)
+      const municipality = await fixtures.getMunicipality()
+      const name = fixtures.value('Novo Assessor')
+
+      const created = await createMunicipalityAdvisorRecord(payload, actor, {
+        municipality: municipality.id,
+        name,
+      })
+      fixtures.touchMunicipality(municipality.id)
+
+      expect(relationIds(created.advisors)).toContain(created.createdAdvisorId)
+
+      const account = await findAccount(created.createdAdvisorId)
+      expect(account.role).toBe('advisor')
+      expect(account.email).toBe(stubCampaignUserEmailFor(name))
+      // The random password is never shared and the stub e-mail cannot route
+      // (reset is blocked for placeholders), so the account cannot log in until
+      // a coordinator swaps in real credentials — same contract as E4R seeds.
+    },
+  )
+
+  it('assigns a -N stub when a same-name account already has the first one', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+    const name = fixtures.value('Maria Silva')
+
+    const first = await createMunicipalityAdvisorRecord(payload, coordinator, {
+      municipality: municipality.id,
+      name,
+    })
+    const second = await createMunicipalityAdvisorRecord(payload, coordinator, {
+      municipality: municipality.id,
+      name,
+    })
+
+    expect(second.createdAdvisorId).not.toBe(first.createdAdvisorId)
+    // `campaignUser.name` is not unique — both accounts are legal, the stub
+    // e-mail is what gets the deterministic `-N`.
+    expect((await findAccount(first.createdAdvisorId)).email).toBe(stubCampaignUserEmailFor(name))
+    expect((await findAccount(second.createdAdvisorId)).email).toBe(
+      stubCampaignUserEmailFor(name, 2),
+    )
+    expect(relationIds(second.advisors)).toContain(second.createdAdvisorId)
+  })
+
+  it('denies advisor and leader actors without creating an account', async () => {
+    const fixtures = campaignFixtures()
+    const advisorActor = await fixtures.createCampaignUser('advisor')
+    const leaderActor = await fixtures.createCampaignUser('leader')
+    const municipality = await fixtures.getMunicipality()
+    const name = fixtures.value('Bloqueado')
+
+    for (const actor of [advisorActor, leaderActor]) {
+      await expect(
+        createMunicipalityAdvisorRecord(payload, actor, {
+          municipality: municipality.id,
+          name,
+        }),
+      ).rejects.toThrow(/coordenação geral ou o candidato/i)
+    }
+
+    const stub = stubCampaignUserEmailFor(name)
+    const existing = await payload.find({
+      collection: 'campaignUser',
+      where: { email: { equals: stub } },
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+    })
+    expect(existing.totalDocs).toBe(0)
+  })
+
+  it('rejects at the 10-advisor cap and rolls the account create back', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+
+    for (let index = 0; index < 10; index += 1) {
+      const advisor = await fixtures.createCampaignUser('advisor')
+      await setMunicipalityAdvisorMembershipRecord(payload, coordinator, {
+        municipality: municipality.id,
+        advisor: advisor.id,
+        assigned: true,
+      })
+    }
+    fixtures.touchMunicipality(municipality.id)
+
+    const name = fixtures.value('Cap Estourado')
+    await expect(
+      createMunicipalityAdvisorRecord(payload, coordinator, {
+        municipality: municipality.id,
+        name,
+      }),
+    ).rejects.toThrow(/no máximo 10 assessores/i)
+
+    // Same transaction: the failed assignment rolled the account create back.
+    const orphan = await payload.find({
+      collection: 'campaignUser',
+      where: { email: { equals: stubCampaignUserEmailFor(name) } },
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+    })
+    expect(orphan.totalDocs).toBe(0)
   })
 })

@@ -1,7 +1,11 @@
 import { z } from 'zod'
 
 import { ENGAGEMENT_LEVEL_TEXT_MAX_LENGTH, engagementLevels } from '@/lib/engagementLevel'
-import { positiveRelationshipId, trimmedNullableText } from '@/lib/schemas/primitives'
+import {
+  advisorNameSchema,
+  positiveRelationshipId,
+  trimmedNullableText,
+} from '@/lib/schemas/primitives'
 import { voteEstimateScenarioFieldsSchema } from '@/lib/schemas/votePledge'
 
 export const politicalTrendStatuses = ['favoravel', 'neutra', 'desfavoravel'] as const
@@ -77,6 +81,18 @@ export const municipalityAdvisorMembershipSchema = z.object({
   assigned: z.boolean(),
 })
 
+/**
+ * B154 — inline create from the list popover: name-only account (`advisor`
+ * role, stub e-mail) assigned to the município in the same write. The name
+ * rule is the shared `advisorNameSchema` from the leaf primitives module —
+ * `schemas/advisor.ts` already imports from this one, so the reverse import
+ * would close a cycle.
+ */
+export const municipalityAdvisorCreateSchema = z.object({
+  municipality: positiveRelationshipId,
+  name: advisorNameSchema,
+})
+
 export const MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE =
   'Somente a coordenação geral ou o candidato designa assessores.'
 
@@ -84,6 +100,15 @@ export const MUNICIPALITY_ADVISOR_MEMBERSHIP_SAFE_MESSAGES = [
   MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE,
   MUNICIPALITY_ADVISORS_CAP_MESSAGE,
 ] as const
+
+/**
+ * B154 — internal failure of the deterministic stub probe (the bounded loop
+ * found no free `<slug>@criado.invalid` e-mail). Not safelisted: it collapses
+ * to the route's generic message, exactly as an unexpected unique violation
+ * would.
+ */
+export const MUNICIPALITY_ADVISOR_STUB_EMAIL_MESSAGE =
+  'Não foi possível gerar um e-mail placeholder único para o assessor.'
 
 export const MUNICIPALITY_ENGAGEMENT_LEVEL_UNRESTRICTED_MESSAGE =
   'Somente a coordenação geral ou o candidato move o nível de envolvimento.'
@@ -113,5 +138,6 @@ export type MunicipalityAdvisorsAssignmentInput = z.input<
   typeof municipalityAdvisorsAssignmentSchema
 >
 export type MunicipalityAdvisorMembershipInput = z.input<typeof municipalityAdvisorMembershipSchema>
+export type MunicipalityAdvisorCreateInput = z.input<typeof municipalityAdvisorCreateSchema>
 export type MunicipalityExpectedVotesInput = z.input<typeof municipalityExpectedVotesSchema>
 export type MunicipalityEngagementLevelInput = z.input<typeof municipalityEngagementLevelSchema>

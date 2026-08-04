@@ -199,17 +199,13 @@ describe('campaign advisor management (B19)', () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const advisor = await fixtures.createCampaignUser('advisor')
+    // Both municipios go through the allocation mechanism: globally unique
+    // across parallel spec files AND purged of residue on claim. The old
+    // arbitrary `id not_equals` pick could land on a municipio a parallel test
+    // had just filled to the 10-advisor cap, making the batch throw.
     const first = await fixtures.getMunicipality()
-    const second = (
-      await payload.find({
-        collection: 'municipality',
-        where: { id: { not_equals: first.id } },
-        limit: 1,
-        depth: 0,
-        overrideAccess: true,
-      })
-    ).docs[0]
-    expect(second).toBeTruthy()
+    const second = await fixtures.getMunicipality()
+    expect(second.id).not.toBe(first.id)
 
     await setAdvisorMunicipalitiesBatchRecord(payload, coordinator, {
       advisorId: advisor.id,

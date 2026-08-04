@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, type ReactNode } from 'react'
+import { Fragment, useMemo, useState, type ReactNode } from 'react'
 
 import { useMunicipalityEstimateScenarioOptional } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
 import { SaveMunicipalityFilterControl } from '@/components/campaign/municipality/SaveMunicipalityFilterControl'
@@ -136,12 +136,14 @@ export const MunicipalityFilters = ({
         onClearAll={() => {
           runAction(clearMunicipalityOmnibox(state))
         }}
-        trailing={
-          <>
-            {trailing}
-            <SaveMunicipalityFilterControl state={state} />
-          </>
-        }
+        trailing={[
+          // React reconciles unkeyed fragments' children as a keyed list — a
+          // bare `<> {trailing} <Save…/> </>` logs a key warning on every
+          // municipios render (and fails the e2e console guard). Keyed array
+          // children keep the two controls side by side without the warning.
+          <Fragment key="column-picker">{trailing}</Fragment>,
+          <SaveMunicipalityFilterControl key="save-filter" state={state} />,
+        ]}
       />
     </form>
   )

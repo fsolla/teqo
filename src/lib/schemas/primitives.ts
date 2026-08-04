@@ -2,6 +2,14 @@ import { z } from 'zod'
 
 import { BRAZILIAN_PHONE_INVALID_MESSAGE, normalizeBrazilianPhone } from '@/lib/phone'
 
+/**
+ * The assessor display-name rule, shared by the B19 account screen, the B154
+ * inline create and the wire contract of `POST /campanha/municipios/advisors`.
+ * Owned here (a leaf module) because `schemas/advisor.ts` already imports from
+ * `schemas/municipality.ts`, so the reverse import would close a cycle.
+ */
+export const advisorNameSchema = z.string().trim().min(2).max(160)
+
 export const positiveRelationshipId = z.number().int().positive()
 
 export const trimmedOptionalText = (maximum: number) =>

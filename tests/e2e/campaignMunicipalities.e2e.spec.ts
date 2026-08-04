@@ -155,6 +155,76 @@ test.describe('Municípios — jornadas por papel', () => {
     ).toBeVisible()
   })
 
+  test('coordinator creates an advisor inline in the list combobox (B154)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador Inline'),
+    })
+    const password = coordinator.password
+    const municipality = await fixtures.claimMunicipality()
+    // Unique per run (uuid + counter), so no eligible account matches it — the
+    // combobox must offer the create option, not an existing advisor.
+    const newAdvisorName = fixtures.value('Novo Assessor')
+
+    await campaign.login(page, coordinator.email!, password)
+    await page.goto(
+      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
+    )
+    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+
+    const advisorsTrigger = page.getByRole('button', {
+      name: `Editar assessores em ${municipality.name}`,
+    })
+    await advisorsTrigger.click()
+    const advisorsPopover = page.locator('[data-slot="popover-content"]')
+    await expect(advisorsPopover).toBeVisible()
+
+    const search = advisorsPopover.getByRole('combobox', { name: 'Buscar assessor' })
+    const createOption = advisorsPopover.getByRole('option', {
+      name: new RegExp(`^Criar assessor.*${newAdvisorName}`),
+    })
+    // The removable chip only exists once the response lands — the optimistic
+    // temp chip has no remove affordance. `count()` guard: once the create
+    // succeeded and registered the account, the create option is gone, so a
+    // retry must not try to click it again (it would time out) — skipping the
+    // click and waiting for the chip is what a post-success retry does.
+    const chip = advisorsPopover.getByRole('button', { name: `Remover ${newAdvisorName}` })
+
+    await expect(async () => {
+      await search.fill(newAdvisorName)
+      if (await createOption.count()) await createOption.click({ timeout: 1_000 })
+      await expect(chip).toBeVisible({ timeout: 5_000 })
+    }).toPass({ timeout: 25_000 })
+
+    // Same popover, no reload: typing the name now lists the account instead of
+    // offering to create it again — the local bridge registered it.
+    await search.fill(newAdvisorName)
+    await expect(advisorsPopover.getByRole('option', { name: newAdvisorName })).toBeVisible()
+    await expect(advisorsPopover.getByRole('option', { name: /Criar assessor/ })).toHaveCount(0)
+
+    // The popover stays open after the write (auto-save, not submit+close).
+    await expect(advisorsPopover).toBeVisible()
+    await page.keyboard.press('Escape')
+
+    // Persistence: reload and reopen to confirm the server holds the account
+    // and the assignment, not just the local optimistic state.
+    await page.reload()
+    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+    await page
+      .getByRole('button', {
+        name: `Editar assessores em ${municipality.name} — ${newAdvisorName}`,
+      })
+      .click()
+    await expect(
+      page.locator('[data-slot="popover-content"]').getByRole('button', {
+        name: `Remover ${newAdvisorName}`,
+      }),
+    ).toBeVisible()
+  })
+
   test('coordinator sets trend status and justification with auto-save (B24)', async ({
     campaign,
     page,
@@ -512,6 +582,13 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
     await page.getByRole('button', { name: 'Ações rápidas' }).click()
     const overlay = page.locator('#CampaignQuickActionsOverlay')
     await expect(overlay).toBeVisible()
+    // The Drawer slides in over ~450ms (`duration-450`); `toBeVisible` fires
+    // mid-flight, so measuring right away reads items at different slide
+    // offsets and the 3×2 grouping falls apart. Wait for the entrance
+    // animation to settle before collecting geometry.
+    await overlay.evaluate(async (el) => {
+      await Promise.all(el.getAnimations().map((animation) => animation.finished))
+    })
 
     const actionsRegion = overlay.getByLabel('Ações rápidas')
     await expect(actionsRegion.locator('ul[data-layout="grid-3"]')).toBeVisible()
