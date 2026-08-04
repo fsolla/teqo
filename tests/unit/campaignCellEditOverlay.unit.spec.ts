@@ -129,7 +129,6 @@ const overlayCases: OverlayCase[] = [
         municipalityName: MUNICIPALITY_NAME,
         lastSignalAt: null,
         variant,
-        formAction: async () => ({}),
         children: createElement('span', null, 'Sem sinal'),
       }),
   },
@@ -292,7 +291,10 @@ describe('campaign cell edit overlay', () => {
    * would look right and do nothing.
    */
   it('submits the signal form from a button rendered in the sheet footer', async () => {
-    const formAction = vi.fn(async () => ({}))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json({ status: 'success', message: 'Sinal registrado.' })),
+    )
 
     renderWithTooltip(
       // `createElement`'s typing puts a required `children` in props, so the
@@ -304,7 +306,6 @@ describe('campaign cell edit overlay', () => {
         municipalityName: MUNICIPALITY_NAME,
         lastSignalAt: null,
         variant: 'sheet',
-        formAction,
         children: createElement('span', null, 'Sem sinal'),
       }),
     )
@@ -326,7 +327,7 @@ describe('campaign cell edit overlay', () => {
 
     fireEvent.click(submit as HTMLButtonElement)
 
-    await waitFor(() => expect(formAction).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1))
   })
 
   /**

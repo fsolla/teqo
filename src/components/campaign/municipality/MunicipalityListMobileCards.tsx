@@ -59,7 +59,6 @@ export type MunicipalityListMobileCardsProps = {
   stateDeputyOptions: StateDeputyRelationOption[]
   stateDeputyCommitAction: MunicipalityStaffFormAction
   stateDeputyCreateAction: MunicipalityStateDeputyCreateAction
-  signalFormAction: MunicipalityStaffFormAction
   emptySlot: ReactNode
 }
 
@@ -80,7 +79,6 @@ export const MunicipalityListMobileCards = ({
   stateDeputyOptions,
   stateDeputyCommitAction,
   stateDeputyCreateAction,
-  signalFormAction,
   emptySlot,
 }: MunicipalityListMobileCardsProps) => (
   <div data-view="mobile-cards" className="flex flex-col gap-4 md:hidden">
@@ -191,7 +189,6 @@ export const MunicipalityListMobileCards = ({
                     municipalityName={municipality.name}
                     lastSignalAt={municipality.lastSignalAt}
                     variant="sheet"
-                    formAction={signalFormAction}
                   >
                     <SignalAgeReadout lastSignalAt={municipality.lastSignalAt} layout="card" />
                   </MunicipalityListSignalControl>

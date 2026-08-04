@@ -49,7 +49,7 @@ const toRelationHit = (hit: MunicipalityPortfolioSearchHit): RelationSearchHit =
   ids: hit.kind === 'municipality' ? [hit.municipalityId] : hit.municipalityIds,
 })
 
-type MunicipalityPortfolioCellProps = {
+export type MunicipalityPortfolioCellProps = {
   /** `null` in draft mode (a row that does not exist yet). */
   ownerId: number | null
   /** Whose portfolio this is — spoken in the aria-labels and the Drawer. */

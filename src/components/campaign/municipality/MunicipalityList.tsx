@@ -115,7 +115,6 @@ export type MunicipalityListProps = {
   stateDeputyCommitAction: MunicipalityStaffFormAction
   stateDeputyCreateAction: MunicipalityStateDeputyCreateAction
   columnFilterOptions: MunicipalityColumnFilterOptions
-  signalFormAction: MunicipalityStaffFormAction
   state: MunicipalityListState
   columnVisibility: CampaignColumnVisibility
 }
@@ -173,7 +172,6 @@ const municipalityListColumns = ({
   stateDeputyOptions,
   stateDeputyCommitAction,
   stateDeputyCreateAction,
-  signalFormAction,
 }: MunicipalityListProps): Array<MunicipalityColumn> => [
   {
     id: 'name',
@@ -453,7 +451,6 @@ const municipalityListColumns = ({
               municipalityName={municipality.name}
               lastSignalAt={municipality.lastSignalAt}
               variant="popover"
-              formAction={signalFormAction}
             >
               <SignalAgeReadout lastSignalAt={municipality.lastSignalAt} layout="table" />
             </MunicipalityListSignalControl>
@@ -567,7 +564,6 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
           stateDeputyOptions={stateDeputyOptions}
           stateDeputyCommitAction={stateDeputyCommitAction}
           stateDeputyCreateAction={stateDeputyCreateAction}
-          signalFormAction={props.signalFormAction}
           emptySlot={<MunicipalityListEmptyState state={state} />}
         />
 

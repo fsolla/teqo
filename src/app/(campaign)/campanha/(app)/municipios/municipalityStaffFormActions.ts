@@ -5,7 +5,6 @@ import {
   setMunicipalityExpectedVotes,
   setMunicipalityPoliticalTrend,
 } from '@/app/(campaign)/campanha/actions/municipality'
-import { createMunicipalityUpdate } from '@/app/(campaign)/campanha/actions/municipalityUpdate'
 import {
   createMunicipalityStateDeputy,
   setStateDeputyMunicipalitiesBatch,
@@ -27,14 +26,12 @@ import {
   MUNICIPALITY_STATE_DEPUTIES_CAP_MESSAGE,
   parsePoliticalTrendStatusFormValue,
 } from '@/lib/schemas/municipality'
-import { parseMunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
 import {
   STATE_DEPUTY_CONFLICT_MESSAGE,
   STATE_DEPUTY_MUNICIPALITIES_SAFE_MESSAGES,
   STATE_DEPUTY_NAME_REQUIRED_MESSAGE,
   STATE_DEPUTY_STAFF_MESSAGE,
 } from '@/lib/schemas/stateDeputy'
-import { WIZARD_SIGNAL_SAVED_MESSAGE } from '@/lib/wizardSignalUi'
 import {
   runCampaignFormAction,
   type CampaignFormActionState,
@@ -99,26 +96,6 @@ export const assignMunicipalityAdvisorsFormAction = async (
     safeMessages: [MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE],
     genericMessage:
       'Não foi possível atualizar os assessores. Verifique seu acesso e tente novamente.',
-  })
-
-export const createMunicipalityListSignalFormAction = async (
-  _state: CampaignFormActionState,
-  formData: FormData,
-): Promise<CampaignFormActionState> =>
-  runCampaignFormAction({
-    execute: async () => {
-      const municipality = requiredRelationshipFormValue(formData, 'municipalityId')
-
-      await createMunicipalityUpdate({
-        municipality,
-        kind: 'sinal',
-        body: optionalFormText(formData, 'body'),
-        signalType: parseMunicipalitySignalType(optionalFormText(formData, 'signalType')),
-      })
-      revalidateMunicipalityListPaths({ slug: optionalMunicipalitySlugFromForm(formData) })
-      return { message: WIZARD_SIGNAL_SAVED_MESSAGE }
-    },
-    genericMessage: 'Não foi possível registrar o sinal. Verifique seu acesso e tente novamente.',
   })
 
 /**

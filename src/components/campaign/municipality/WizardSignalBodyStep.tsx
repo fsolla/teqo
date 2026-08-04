@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useActionState } from 'react'
 
-import { createMunicipalityListSignalFormAction } from '@/app/(campaign)/campanha/(app)/municipios/municipalityStaffFormActions'
+import { createMunicipalityV2SignalFormAction as createMunicipalityListSignalFormAction } from '@/app/(campaign)/campanha/(app)/municipio/[slug]/v2/formActions'
 import { WizardSignalSkipTrailing } from '@/components/campaign/municipality/WizardSignalSkipTrailing'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'

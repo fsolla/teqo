@@ -61,7 +61,7 @@ export default async function MunicipalityV2Page({ params }: MunicipalityV2PageP
       <div className="flex flex-col gap-8">
         <MunicipalityV2StatusStrip
           status={status}
-          signalFormAction={createMunicipalityV2SignalFormAction}
+          signalFormAction={(formData) => createMunicipalityV2SignalFormAction({}, formData)}
         />
 
         <MunicipalityV2LocalAccountSection

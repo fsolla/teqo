@@ -41,7 +41,6 @@ import {
   loadAdvisorSummaries,
 } from '@/utilities/municipality/municipalityViewModels'
 import {
-  createMunicipalityListSignalFormAction,
   createMunicipalityStateDeputyFormAction,
   setMunicipalityStateDeputiesFormAction,
 } from './municipalityStaffFormActions'
@@ -154,7 +153,6 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
         stateDeputyCommitAction={setMunicipalityStateDeputiesFormAction}
         stateDeputyCreateAction={createMunicipalityStateDeputyFormAction}
         columnFilterOptions={columnFilterOptions}
-        signalFormAction={createMunicipalityListSignalFormAction}
         state={state}
         columnVisibility={columnVisibility}
       />

@@ -1,27 +1,26 @@
 'use client'
 
-import { useActionState, useId, useState, type ReactNode } from 'react'
+import { useId, useState, type FormEvent, type ReactNode } from 'react'
 
+import type { MunicipalityListSignalResponse } from '@/app/(campaign)/campanha/(app)/municipios/signal/types'
 import { MunicipalitySignalFields } from '@/components/campaign/municipality/MunicipalitySignalFields'
 import {
   CampaignCellEditOverlay,
   type CampaignCellEditOverlayVariant,
 } from '@/components/campaign/shared/CampaignCellEditOverlay'
-import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
-import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
+import { useCampaignCellFailureChannel } from '@/components/campaign/shared/useCampaignCellFailureChannel'
+import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { DrawerCloseButton } from '@/components/ui/Drawer'
 import { Spinner } from '@/components/ui/Spinner'
-import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
+import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import {
   formatMunicipalitySignalAgeLabel,
   municipalitySignalAgeInDays,
 } from '@/utilities/municipality/municipalitySignal'
 
-type MunicipalityStaffFormAction = (
-  state: CampaignFormActionState,
-  formData: FormData,
-) => Promise<CampaignFormActionState>
+const SIGNAL_ENDPOINT = '/campanha/municipios/signal'
+const SAVE_ERROR_MESSAGE = 'Não foi possível registrar o sinal. Tente novamente.'
 
 type MunicipalityListSignalControlProps = {
   municipalityID: number
@@ -29,39 +28,64 @@ type MunicipalityListSignalControlProps = {
   municipalityName: string
   lastSignalAt: string | null
   variant: CampaignCellEditOverlayVariant
-  formAction: MunicipalityStaffFormAction
   children: ReactNode
 }
 
 export const MunicipalityListSignalControl = ({
   municipalityID,
-  municipalitySlug,
+  municipalitySlug: _municipalitySlug,
   municipalityName,
   lastSignalAt,
   variant,
-  formAction,
   children,
 }: MunicipalityListSignalControlProps) => {
   const [open, setOpen] = useState(false)
   const [formKey, setFormKey] = useState(0)
-  const [state, submitAction, isPending] = useActionState(formAction, {})
+  const [isPending, setIsPending] = useState(false)
+  const { errorMessage, setErrorMessage, reportFailure, noteOpenChange } =
+    useCampaignCellFailureChannel()
   const reactId = useId()
   const idPrefix = `municipality-list-signal-${variant}-${municipalityID}-${reactId}`
   const formId = `${idPrefix}-form`
   const isSheet = variant === 'sheet'
   const frescorLabel = formatMunicipalitySignalAgeLabel(municipalitySignalAgeInDays(lastSignalAt))
 
-  useCampaignFormSuccessToast(state, () => {
-    setOpen(false)
-    setFormKey((key) => key + 1)
-  })
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen)
+    noteOpenChange(nextOpen)
+  }
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setErrorMessage(null)
+    setIsPending(true)
+
+    const formData = new FormData(event.currentTarget)
+    const body = (formData.get('body') as string) || undefined
+    const signalType = (formData.get('signalType') as string) || undefined
+
+    try {
+      const { ok, payload } = await postCampaignJson<MunicipalityListSignalResponse>(
+        SIGNAL_ENDPOINT,
+        { municipalityId: municipalityID, body, signalType },
+      )
+
+      if (!ok || payload.status !== 'success') {
+        reportFailure(payload.status === 'error' ? payload.message : SAVE_ERROR_MESSAGE)
+        setIsPending(false)
+        return
+      }
+
+      setOpen(false)
+      setFormKey((key) => key + 1)
+    } catch {
+      reportFailure(SAVE_ERROR_MESSAGE)
+    } finally {
+      setIsPending(false)
+    }
+  }
 
   const submitButton = (
-    // On the sheet this button lives in the footer, outside the `<form>` it
-    // submits: `form={formId}` is the standard association, and React's action
-    // still runs because the submit event fires on the form either way. That is
-    // what let this control drop the Drawer/Popover it used to hand-roll only
-    // because its `<form>` had to wrap the footer (B32+ F5).
     <Button type="submit" form={formId} disabled={isPending} className="min-h-11 w-full">
       {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
       Registrar sinal
@@ -72,7 +96,7 @@ export const MunicipalityListSignalControl = ({
     <CampaignCellEditOverlay
       variant={variant}
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={handleOpenChange}
       title="Registrar sinal"
       description={municipalityName}
       triggerLabel={`Registrar sinal em ${municipalityName} — ${frescorLabel}`}
@@ -93,14 +117,16 @@ export const MunicipalityListSignalControl = ({
       <form
         key={formKey}
         id={formId}
-        action={submitAction}
+        onSubmit={handleSubmit}
         className="flex flex-col gap-3"
         aria-busy={isPending || undefined}
       >
-        <input type="hidden" name="municipalityId" value={municipalityID} />
-        <input type="hidden" name="municipalitySlug" value={municipalitySlug} />
-        <MunicipalitySignalFields idPrefix={idPrefix} fieldErrors={state.fieldErrors} />
-        {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}
+        <MunicipalitySignalFields idPrefix={idPrefix} />
+        {errorMessage ? (
+          <Alert variant="destructive">
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        ) : null}
         {isSheet ? null : submitButton}
       </form>
     </CampaignCellEditOverlay>

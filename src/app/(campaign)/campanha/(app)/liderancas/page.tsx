@@ -8,10 +8,12 @@ import { LeadershipInviteRowAction } from '@/components/campaign/invite/Leadersh
 import { LeadershipContactFieldControl } from '@/components/campaign/leadership/LeadershipContactFieldControl'
 import { LeadershipFilters } from '@/components/campaign/leadership/LeadershipFilters'
 import { LeadershipListSupportStatusControl } from '@/components/campaign/leadership/LeadershipListSupportStatusControl'
+import { LeadershipMunicipalitiesColumnCell } from '@/components/campaign/leadership/LeadershipMunicipalitiesColumnCell'
 import {
   LeadershipFilterHead,
   LeadershipSortableHead,
 } from '@/components/campaign/leadership/LeadershipSortableHead'
+import { LeadershipStateDeputiesColumnCell } from '@/components/campaign/leadership/LeadershipStateDeputiesColumnCell'
 import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
@@ -25,11 +27,7 @@ import {
   CampaignTableHead,
   type CampaignTableColumn,
 } from '@/components/campaign/shared/CampaignTable'
-import {
-  LeadershipStateDeputyRelationCell,
-  type RelationCellOption,
-} from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
-import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
+import { type RelationCellOption } from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -77,11 +75,6 @@ import {
 import { loadOrganizationNamesByIds } from '@/utilities/loadNamesByIds'
 import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
 import { loadStateDeputySummaries } from '@/utilities/stateDeputyData'
-
-import {
-  setLeadershipMunicipalitiesFormAction,
-  setLeadershipStateDeputyMembershipFormAction,
-} from './formActions'
 
 export const metadata = campaignPageMetadataFromCatalog('liderancas')
 
@@ -192,7 +185,7 @@ const leadershipColumns = ({
     ),
     cellClassName: 'max-w-64 whitespace-normal',
     cell: (row) => (
-      <MunicipalityPortfolioCell
+      <LeadershipMunicipalitiesColumnCell
         ownerId={row.id}
         ownerName={row.name}
         municipalityIds={row.municipalityIDs}
@@ -200,7 +193,6 @@ const leadershipColumns = ({
         {...(addableMunicipalityIds ? { addableIds: addableMunicipalityIds } : {})}
         minItems={1}
         maxItems={MAX_LEADERSHIP_MUNICIPALITIES}
-        commitAction={setLeadershipMunicipalitiesFormAction}
         drawerTitle="Municípios da liderança"
         updateErrorMessage="Não foi possível atualizar os municípios."
       />
@@ -217,7 +209,7 @@ const leadershipColumns = ({
     label: 'Dobradinhas',
     cellClassName: 'max-w-56 whitespace-normal',
     cell: (row) => (
-      <LeadershipStateDeputyRelationCell
+      <LeadershipStateDeputiesColumnCell
         direction="fromLeadership"
         fixedId={row.id}
         ownerName={row.name}
@@ -228,7 +220,6 @@ const leadershipColumns = ({
           ...(deputy.party ? { party: deputy.party } : {}),
         }))}
         options={stateDeputyOptions}
-        membershipAction={setLeadershipStateDeputyMembershipFormAction}
         measureOverflow={false}
       />
     ),

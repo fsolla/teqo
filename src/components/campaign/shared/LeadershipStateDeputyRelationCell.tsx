@@ -17,7 +17,7 @@ export type {
 
 type LeadershipStateDeputyRelationDirection = 'fromLeadership' | 'fromStateDeputy'
 
-type LeadershipStateDeputyRelationCellProps = {
+export type LeadershipStateDeputyRelationCellProps = {
   direction: LeadershipStateDeputyRelationDirection
   fixedId: number
   /** Whose relation this is — spoken in the aria-labels and the Drawer. */
