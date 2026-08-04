@@ -347,7 +347,9 @@ describe('campaign visual foundation', () => {
     // accessible label (the closed cell reads WHO is assigned without opening).
     expect(html).toContain('>F<') // Fulano
     expect(html).toContain('>B<') // Beltrana
-    expect(html).toContain('aria-label="Editar dobradinhas em Seabra — Fulano (PT), Beltrana (PSB)"')
+    expect(html).toContain(
+      'aria-label="Editar dobradinhas em Seabra — Fulano (PT), Beltrana (PSB)"',
+    )
     // Empty município reads "—".
     expect(html).toContain('>—<')
   })
