@@ -64,7 +64,7 @@ Lista de municípios (staff)
 
 - **Vou apresentar dados?** Não — coluna qualitativa de vínculo. Sem métrica, contagem, série ou ranking.
 - **Decisões desbloqueadas:** Staff decide "quem está conosco neste município" diretamente na lista, sem abrir ficha externa.
-- **Forma:** *adiada ao plano de implementação* — chips com nome do contato, igual a assessores.
+- **Forma:** _adiada ao plano de implementação_ — chips com nome do contato, igual a assessores.
 
 ## Direção no codebase (hipótese)
 
