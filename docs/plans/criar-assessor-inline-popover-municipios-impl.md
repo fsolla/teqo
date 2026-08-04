@@ -140,3 +140,8 @@ Três revisores paralelos (qualidade, reuso/DRY, comportamento) no diff do B154;
 - Reconcile assume commit na ordem de envio (machinery-wide do B27, toggle compartilha): um interleave raro pode dropar o chip do create até a próxima navegação. **Gatilho:** chip sumindo observado em produção.
 
 **Descartado:** renomear `isPlanilhaPlaceholderEmail` (drive-by de 4 call sites pré-existentes); alias table do E4R no stub (TLDs distintos, sem colisão); `payload-types.ts` com drift do B134 (regenerado por cada run e2e — pertence à entrega do B134).
+
+**Pré-existente documentado (não é débito do B154):**
+
+- **Raça do batch B19** (`campaignAdvisorManagement.int.spec.ts`): o teste escolhia o 2º município com `id not_equals` cru — podia cair num município que um spec paralelo acabara de encher até o cap 10. Os testes de cap do B154 agravaram a probabilidade. **Fixado neste PR**: `getMunicipality()` nos dois municípios (alocação globalmente única + purga de resíduo).
+- **Flake pré-existente `testDatabaseLease` × `onda0Provision`** (`~1 em 4–5 runs`, ~48 workers paralelos): `onda0Provision.int.spec.ts` grava os textos Onda 0 (banner "Texto provisório…") na mesma row `lideranca-autopreenchimento` que `withMutableConsentFixture` muta/restaura — os dois specs de infra disputam a row sem coordenação. Reproduz em main limpo; nenhuma relação com B154 (nenhum arquivo deste PR toca consent/lease). Fix exige coordenação entre os dois specs de infra (ex.: onda0Provision respeitar o lease) — fora do escopo desta entrega, registrado aqui para não se perder.
