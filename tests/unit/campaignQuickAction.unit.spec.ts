@@ -133,6 +133,13 @@ describe('campaignQuickActionPaths (shared list helpers, C86+)', () => {
     expect(normalizePathname('/campanha')).toBe('/campanha')
     expect(normalizePathname('/')).toBe('/')
     expect(normalizePathname('/campanha/apoiadores/')).toBe('/campanha/apoiadores')
+    expect(normalizePathname('/campanha//')).toBe('/campanha/')
+  })
+
+  it('pins the degenerate inputs the inline matchers used to handle', () => {
+    expect(isListPath('/campanha/demandas//', '/campanha/demandas')).toBe(false)
+    expect(isListPath('', '/campanha/demandas')).toBe(false)
+    expect(isListPath('/', '/')).toBe(true)
   })
 })
 

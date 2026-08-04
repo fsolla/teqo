@@ -8,7 +8,7 @@ import {
   type CampaignRole,
 } from '@/lib/campaignRoles'
 
-/** Início matches only exactly — same rule as sidebar nav. */
+/** Same exact-match rule as the sidebar nav. */
 export const isCampaignHomePath = (pathname: string): boolean => isListPath(pathname, CAMPAIGN_HOME)
 
 export const isCampaignActionsPath = (pathname: string): boolean =>

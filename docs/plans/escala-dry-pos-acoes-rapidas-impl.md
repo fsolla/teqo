@@ -107,3 +107,21 @@ N/A — refactor estrutural; nenhuma métrica, série, ranking ou mapa novo.
 - [ ] Invariantes AGENTS/engineering-standards: client-safe, sem migration, sem access/Consent, identificadores em inglês
 - [ ] Testes de domínio: specs existentes dos 9 wrappers + describe novo de `isListPath`/`normalizePathname`
 - [ ] Self-score decision-quality: 5/5 (decisões caras com rejeitadas; appetite respeitado; rabbit holes nomeados; depth check reusa o home existente; outcome preservado)
+
+## Simplify (2026-08-04) — aplicado e deferido
+
+3 revisores paralelos (read-only) no diff da sessão; veredito do revisor de corretude: **bordas fechadas, comportamento preservado** (tabela de equivalência borda a borda dos matchers antigo × `isListPath`). Revisor de reuse: **sem duplicação real remanescente** (zero matchers exatos fora do diff; prefix-matches de descendentes deixados de fora por semântica diferente).
+
+**Aplicados (fixes pontuais que preservam comportamento):**
+
+- JSDoc de `normalizePathname` documenta o invariante "homes nunca são `/` nem terminam com slash" (S1 quality).
+- Wording do JSDoc de `isListPath` corrigido ("equals `home`, optionally with a single trailing slash") (S3 quality).
+- Testes novos pinando multi-slash (`/campanha//`) e inputs degenerados (`''`, `'/'` como home, double trailing slash) (S2 quality + S1 correctness).
+- Comentário de `isCampaignHomePath` encurtado para o why ("same exact-match rule as the sidebar nav") (S4 quality).
+
+**Descartados:**
+
+- `isLeadershipListPath` como wrapper privado com 1 call site — manter (consistência de padrão com os 7 irmãos; inline seria micro-otimização de estilo) (S1 reuse, score 1).
+- Contrato `home` sem tipo restrito — JSDoc documenta; gatilho: chamador futuro com home terminando em `/` (S2 correctness, score 1).
+
+**Defer com gatilho (já registrados na intenção, não reabrir):** derivação de regex numérica de detalhe (3º vertical com `[id]` numérico — hoje 2: advisor + supporter); cache `Map<CampaignRole>` (4º site com shape compatível); id `register-supporter` sobrecarregado (agregação de catálogos).
