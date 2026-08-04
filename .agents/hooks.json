@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": "node \".agents/hooks/guard-env-files.mjs\"",
+        "timeout": 5
+      }
+    ]
+  }
+}
