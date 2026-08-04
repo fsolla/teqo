@@ -20,6 +20,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import type { CampaignColumnVisibility } from '@/lib/campaignColumnVisibility'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
+import type { StateDeputyRelationOption } from '@/utilities/campaignRelationOptions'
 import { createEmptyGoalCoverageByScenario } from '@/utilities/municipality/goalCoverage'
 import { municipalityPriorityIndicatorLabel } from '@/utilities/municipality/municipalityLabels'
 import type {
@@ -44,6 +45,7 @@ const noopListFormAction = async (
 
 const municipalityListDefaultProps = {
   isCoordinator: false,
+  isCampaignUnrestricted: false,
   columnVisibility: {
     listId: 'municipios',
     hiddenColumnIds: [],
@@ -52,6 +54,9 @@ const municipalityListDefaultProps = {
   advisorOptions: [],
   leadershipNamesById: new Map(),
   leadershipOptions: [],
+  stateDeputyOptions: [],
+  stateDeputyCommitAction: noopListFormAction,
+  stateDeputyCreateAction: async () => ({}),
   columnFilterOptions: { name: [], region: [], advisor: [] },
   signalFormAction: noopListFormAction,
   state: { page: 1 },
@@ -180,6 +185,7 @@ describe('campaign visual foundation', () => {
         zoneNumber: null,
         advisorIDs: [advisor.id],
         leadershipIDs: [11],
+        stateDeputyIDs: [],
         priority: 'alta',
         lastUpdateAt: null,
         lastSignalAt: null,
@@ -224,6 +230,7 @@ describe('campaign visual foundation', () => {
         zoneNumber: 3,
         advisorIDs: [],
         leadershipIDs: [],
+        stateDeputyIDs: [],
         priority: 'normal',
         lastUpdateAt: null,
         lastSignalAt: null,
@@ -285,6 +292,120 @@ describe('campaign visual foundation', () => {
     expect(tbodyHtml).toContain('Seabra')
   })
 
+  it('renders the Dobradinhas column for unrestricted staff with the advisors-style display', () => {
+    const stateDeputyOptions: StateDeputyRelationOption[] = [
+      { id: 11, name: 'Fulano (PT)', plainName: 'Fulano', party: 'PT', slug: 'fulano' },
+      { id: 12, name: 'Beltrana (PSB)', plainName: 'Beltrana', party: 'PSB', slug: 'beltrana' },
+    ]
+    const baseRow = stub<MunicipalityListViewModel>({
+      id: 1,
+      name: 'Seabra',
+      slug: 'seabra',
+      kind: 'municipio',
+      city: 'Seabra',
+      region: 'Chapada Diamantina',
+      ibgeCode: '2929800',
+      zoneNumber: null,
+      priority: 'normal',
+      advisorIDs: [],
+      leadershipIDs: [],
+      lastUpdateAt: null,
+      lastSignalAt: null,
+      expectedVotes: toVoteEstimateScenarioViewModel(null),
+      politicalTrendStatus: null,
+      politicalTrendNote: null,
+      engagementLevel: null,
+      levelNote: null,
+      levelChangedAt: null,
+      pledges: createEmptyMunicipalityPledgeAggregate(),
+      goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
+      territorialClass: 'sem_base',
+      territorialClassFactors: [],
+    })
+    const municipalities: MunicipalityListViewModel[] = [
+      { ...baseRow, id: 1, stateDeputyIDs: [11, 12] },
+      { ...baseRow, id: 2, name: 'Uauá', slug: 'uaua', stateDeputyIDs: [] },
+    ]
+
+    const html = renderWithAppRouter(
+      createElement(MunicipalityList, {
+        municipalities,
+        advisorNamesById: new Map(),
+        ...municipalityListDefaultProps,
+        isStaffView: true,
+        isCampaignUnrestricted: true,
+        stateDeputyOptions,
+      }),
+    )
+
+    // B157: the new column's header explanation makes it 12 staff tooltips
+    // (11 with B155's Lideranças column + this one).
+    const theadHtml = html.slice(html.indexOf('<thead'), html.indexOf('</thead>'))
+    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(12)
+    expect(theadHtml).toContain('Dobradinhas')
+    // Avatar-stack display: initials circles + the names in the trigger's
+    // accessible label (the closed cell reads WHO is assigned without opening).
+    expect(html).toContain('>F<') // Fulano
+    expect(html).toContain('>B<') // Beltrana
+    expect(html).toContain('aria-label="Editar dobradinhas em Seabra — Fulano (PT), Beltrana (PSB)"')
+    // Empty município reads "—".
+    expect(html).toContain('>—<')
+  })
+
+  it('keeps the Dobradinhas column out of the advisor and leader views', () => {
+    const municipalities: MunicipalityListViewModel[] = [
+      stub<MunicipalityListViewModel>({
+        id: 1,
+        name: 'Seabra',
+        slug: 'seabra',
+        kind: 'municipio',
+        city: 'Seabra',
+        region: 'Chapada Diamantina',
+        ibgeCode: '2929800',
+        zoneNumber: null,
+        priority: 'normal',
+        advisorIDs: [],
+        leadershipIDs: [],
+        stateDeputyIDs: [],
+        lastUpdateAt: null,
+        lastSignalAt: null,
+        expectedVotes: toVoteEstimateScenarioViewModel(null),
+        politicalTrendStatus: null,
+        politicalTrendNote: null,
+        engagementLevel: null,
+        levelNote: null,
+        levelChangedAt: null,
+        pledges: createEmptyMunicipalityPledgeAggregate(),
+        goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
+        territorialClass: 'sem_base',
+        territorialClassFactors: [],
+      }),
+    ]
+
+    const advisorHtml = renderWithAppRouter(
+      createElement(MunicipalityList, {
+        municipalities,
+        advisorNamesById: new Map(),
+        ...municipalityListDefaultProps,
+        isStaffView: true,
+        // Advisor: staff view, but NOT unrestricted — the column must not render.
+        isCampaignUnrestricted: false,
+      }),
+    )
+    expect(advisorHtml).not.toContain('Dobradinhas')
+
+    const leaderHtml = renderWithAppRouter(
+      createElement(MunicipalityList, {
+        municipalities,
+        advisorNamesById: new Map(),
+        ...municipalityListDefaultProps,
+        isStaffView: false,
+        isCampaignUnrestricted: false,
+      }),
+    )
+    expect(leaderHtml).not.toContain('Dobradinhas')
+  })
+
   /**
    * E10: the class is a suggestion, and a suggestion without its reason reads
    * as a verdict (research §6.4). The reason moved into the column's
@@ -306,6 +427,7 @@ describe('campaign visual foundation', () => {
             region: 'Chapada Diamantina',
             advisorIDs: [],
             leadershipIDs: [],
+            stateDeputyIDs: [],
             priority: 'normal',
             expectedVotes: toVoteEstimateScenarioViewModel(null),
             pledges: createEmptyMunicipalityPledgeAggregate(),
@@ -326,6 +448,7 @@ describe('campaign visual foundation', () => {
             region: 'Chapada Diamantina',
             advisorIDs: [],
             leadershipIDs: [],
+            stateDeputyIDs: [],
             priority: 'normal',
             expectedVotes: toVoteEstimateScenarioViewModel(null),
             pledges: createEmptyMunicipalityPledgeAggregate(),
@@ -371,6 +494,7 @@ describe('campaign visual foundation', () => {
             zoneNumber: null,
             advisorIDs: [],
             leadershipIDs: [],
+            stateDeputyIDs: [],
             priority: 'alta',
             lastUpdateAt: staleSignal,
             lastSignalAt: staleSignal,
@@ -416,6 +540,7 @@ describe('campaign visual foundation', () => {
             zoneNumber: null,
             advisorIDs: [],
             leadershipIDs: [],
+            stateDeputyIDs: [],
             priority: 'normal',
             lastUpdateAt: null,
             lastSignalAt: null,
@@ -458,6 +583,7 @@ describe('campaign visual foundation', () => {
             zoneNumber: null,
             advisorIDs: [],
             leadershipIDs: [],
+            stateDeputyIDs: [],
             priority: 'normal',
             lastUpdateAt: null,
             lastSignalAt: null,
@@ -506,6 +632,7 @@ describe('campaign visual foundation', () => {
             zoneNumber: null,
             advisorIDs: [],
             leadershipIDs: [],
+            stateDeputyIDs: [],
             priority: 'alta',
             lastUpdateAt: null,
             lastSignalAt: null,
@@ -599,7 +726,7 @@ describe('campaign visual foundation', () => {
 
       const withAdvisors = renderWithTooltip(
         createElement(MunicipalityList, {
-          municipalities: [{ ...baseMunicipality, advisorIDs: [7] }],
+          municipalities: [{ ...baseMunicipality, advisorIDs: [7], stateDeputyIDs: [8] }],
           advisorNamesById: new Map([[7, { id: 7, name: 'Ana Bastos', phone: null }]]),
           isStaffView: true,
           ...municipalityListDefaultProps,
@@ -611,7 +738,7 @@ describe('campaign visual foundation', () => {
 
       const withoutAdvisors = renderWithTooltip(
         createElement(MunicipalityList, {
-          municipalities: [{ ...baseMunicipality, advisorIDs: [] }],
+          municipalities: [{ ...baseMunicipality, advisorIDs: [], stateDeputyIDs: [] }],
           advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
           isStaffView: true,
           ...municipalityListDefaultProps,

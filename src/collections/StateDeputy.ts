@@ -1,6 +1,7 @@
 import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
+import { STATE_DEPUTY_NAME_REQUIRED_MESSAGE } from '@/lib/schemas/stateDeputy'
 import { slugify } from '@/lib/slug'
 import { trimmedText } from '@/lib/text'
 import {
@@ -21,7 +22,7 @@ const setCanonicalStateDeputySlug: CollectionBeforeValidateHook = ({
   const name = trimmedText(data.name ?? originalDoc?.name)
   const slug = slugify(name)
   if (!slug) {
-    throw new APIError('Informe um nome com letras ou números.', 400)
+    throw new APIError(STATE_DEPUTY_NAME_REQUIRED_MESSAGE, 400)
   }
   if (operation === 'update' && data.name !== undefined && name !== originalDoc?.name) {
     throw new APIError('O nome da dobradinha não pode ser alterado após a criação.', 409)

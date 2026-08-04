@@ -8,16 +8,22 @@ import { uniqueRelationshipIds } from '@/lib/relationship'
 import {
   STATE_DEPUTY_CONFLICT_MESSAGE,
   STATE_DEPUTY_STAFF_MESSAGE,
+  municipalityStateDeputyCreateSchema,
   stateDeputyCreateSchema,
   stateDeputyMunicipalitiesBatchSchema,
   stateDeputyUpdateSchema,
+  type MunicipalityStateDeputyCreateInput,
   type StateDeputyCreateInput,
   type StateDeputyMunicipalitiesBatchInput,
   type StateDeputyUpdateInput,
 } from '@/lib/schemas/stateDeputy'
 import type { CampaignUser } from '@/payload-types'
 import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
-import { runStaffEntityMutation, type StaffEntityPolicy } from '@/utilities/campaignEntityActions'
+import {
+  mapStaffEntityConflict,
+  runStaffEntityMutation,
+  type StaffEntityPolicy,
+} from '@/utilities/campaignEntityActions'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
 import { revalidateMunicipalityListPaths } from '@/utilities/municipality/municipalityRevalidation'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
@@ -204,3 +210,105 @@ export const setStateDeputyMunicipalitiesBatch = async (
   }
   return result
 }
+
+/**
+ * B157 — name-only (+ party via `Nome (PARTIDO)`) inline create from the
+ * "Dobradinhas" column of `/campanha/municipios`. Creates the `stateDeputy`
+ * and assigns it to the município in the SAME transaction: if the assign
+ * fails (out-of-scope município, cap), the create rolls back with it — no
+ * orphan, same contract as `createMunicipalityAdvisorRecord` (B154). The
+ * unique `name`/`slug` violation is mapped to the safe conflict message; the
+ * município write re-checks `canUpdateMunicipality` through the same
+ * `user`-threaded read as the B37 batch.
+ */
+export const createMunicipalityStateDeputyRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: MunicipalityStateDeputyCreateInput,
+) => {
+  const { municipalityId, name, party } = municipalityStateDeputyCreateSchema.parse(input)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await reloadStaffActor(payload, actor, STATE_DEPUTY_STAFF_MESSAGE, req)
+
+      await acquireTextAdvisoryLocks(payload, req, [
+        `municipality-state-deputies:${municipalityId}`,
+      ])
+
+      let created
+      try {
+        created = await payload.create({
+          collection: 'stateDeputy',
+          data: hookFilledCreateData<'stateDeputy'>({ name, ...(party ? { party } : {}) }),
+          depth: 0,
+          user: currentActor,
+          overrideAccess: false,
+          req,
+        })
+      } catch (error) {
+        // Same translation as the shared owner (`runStaffEntityMutation`): the
+        // pattern covers the insert race, `ValidationError` covers Payload's
+        // pre-insert unique check — in this create path the only validation
+        // left after zod IS the unique name/slug check.
+        const conflict = mapStaffEntityConflict(error, stateDeputyPolicy)
+        if (conflict) throw conflict
+        throw error
+      }
+
+      const municipality = await payload.findByID({
+        collection: 'municipality',
+        id: municipalityId,
+        depth: 0,
+        select: { stateDeputies: true, slug: true },
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      const nextStateDeputyIDs = nextStateDeputyIdsAfterMunicipalityMembership(
+        uniqueRelationshipIds(municipality.stateDeputies),
+        created.id,
+        true,
+      )
+      // Unreachable — the created id cannot already be assigned — but mirrors
+      // the B154 twin's no-write return so the null branch is honest.
+      if (nextStateDeputyIDs !== null) {
+        await payload.update({
+          collection: 'municipality',
+          id: municipalityId,
+          data: { stateDeputies: nextStateDeputyIDs },
+          depth: 0,
+          user: currentActor,
+          overrideAccess: false,
+          req,
+        })
+      }
+
+      return {
+        stateDeputy: {
+          id: created.id,
+          name: created.name,
+          slug: created.slug,
+          party: created.party ?? null,
+        },
+        municipalitySlug: typeof municipality.slug === 'string' ? municipality.slug : undefined,
+      }
+    },
+    { beginFailureMessage: 'Não foi possível iniciar a criação da dobradinha.' },
+  )
+}
+
+export const createMunicipalityStateDeputy = async (input: MunicipalityStateDeputyCreateInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const result = await createMunicipalityStateDeputyRecord(payload, actor, input)
+  if (result.municipalitySlug) {
+    revalidateStateDeputyMunicipalityPaths(result.stateDeputy.slug, [result.municipalitySlug])
+  }
+  return result
+}
+
+export type MunicipalityStateDeputyCreateResult = Awaited<
+  ReturnType<typeof createMunicipalityStateDeputyRecord>
+>

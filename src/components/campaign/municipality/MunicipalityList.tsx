@@ -31,6 +31,10 @@ import {
   CampaignTableHead,
   type CampaignTableColumn,
 } from '@/components/campaign/shared/CampaignTable'
+import {
+  MunicipalityStateDeputyRelationCell,
+  type MunicipalityStateDeputyCreateAction,
+} from '@/components/campaign/shared/MunicipalityStateDeputyRelationCell'
 import { buttonVariants } from '@/components/ui/button'
 import {
   Empty,
@@ -48,6 +52,7 @@ import {
 import { formatEngagementLevelLabel } from '@/lib/engagementLevel'
 import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
+import type { StateDeputyRelationOption } from '@/utilities/campaignRelationOptions'
 import {
   formatTerritorialClassWhy,
   municipalityColumnDescriptions,
@@ -100,9 +105,15 @@ export type MunicipalityListProps = {
    * quietly hiding the control from the candidate.
    */
   canMoveEngagementLevel: boolean
+  /** B157 — the Dobradinhas column is coordinator + candidate only (intention aceite). */
+  isCampaignUnrestricted: boolean
   advisorOptions: EligibleAdvisorOption[]
   /** B155 — every leadership the actor may add, for the Lideranças popover. */
   leadershipOptions: EligibleLeadershipOption[]
+  /** B157 — the dobradinha catalog: chips, tooltip and search all read it. */
+  stateDeputyOptions: StateDeputyRelationOption[]
+  stateDeputyCommitAction: MunicipalityStaffFormAction
+  stateDeputyCreateAction: MunicipalityStateDeputyCreateAction
   columnFilterOptions: MunicipalityColumnFilterOptions
   signalFormAction: MunicipalityStaffFormAction
   state: MunicipalityListState
@@ -152,12 +163,16 @@ const municipalityListColumns = ({
   state,
   isStaffView,
   isCoordinator,
+  isCampaignUnrestricted,
   canMoveEngagementLevel,
   columnFilterOptions,
   advisorNamesById,
   advisorOptions,
   leadershipNamesById,
   leadershipOptions,
+  stateDeputyOptions,
+  stateDeputyCommitAction,
+  stateDeputyCreateAction,
   signalFormAction,
 }: MunicipalityListProps): Array<MunicipalityColumn> => [
   {
@@ -320,6 +335,35 @@ const municipalityListColumns = ({
               ? null
               : formatAdvisorNamesTooltip(advisorEntries(municipality, advisorNamesById)),
         },
+        ...(isCampaignUnrestricted
+          ? ([
+              {
+                // B157 — "who doubles with us here", next to "who takes care of
+                // it": the advisors-style avatar stack + hover detail, with an
+                // editor (Popover on desktop / Drawer on mobile) that also
+                // creates dobradinhas inline. Coordinator + candidate only.
+                id: 'stateDeputies',
+                label: municipalityColumnLabels.stateDeputies,
+                head: (
+                  <CampaignTableHead description={municipalityColumnDescriptions.stateDeputies}>
+                    {municipalityColumnLabels.stateDeputies}
+                  </CampaignTableHead>
+                ),
+                cellClassName: 'max-w-56 whitespace-normal',
+                cell: (municipality) => (
+                  <MunicipalityStateDeputyRelationCell
+                    municipalityId={municipality.id}
+                    municipalityName={municipality.name}
+                    stateDeputyIDs={municipality.stateDeputyIDs}
+                    options={stateDeputyOptions}
+                    commitAction={stateDeputyCommitAction}
+                    createAction={stateDeputyCreateAction}
+                    editorVariant="popover"
+                  />
+                ),
+              },
+            ] satisfies Array<MunicipalityColumn>)
+          : []),
         {
           // Right after "Assessores": the two relations of "who" in the
           // município sit together, and both are editable by all staff (the
@@ -453,7 +497,11 @@ const municipalityListColumns = ({
 
 export const municipalityListPickerColumns = ({
   isStaffView,
-}: Pick<MunicipalityListProps, 'isStaffView'>): CampaignColumnPickerColumn[] => {
+  isCampaignUnrestricted,
+}: Pick<
+  MunicipalityListProps,
+  'isStaffView' | 'isCampaignUnrestricted'
+>): CampaignColumnPickerColumn[] => {
   const base: CampaignColumnPickerColumn[] = [
     { id: 'name', label: municipalityColumnLabels.name, mandatory: true },
     { id: 'region', label: municipalityColumnLabels.region },
@@ -467,6 +515,9 @@ export const municipalityListPickerColumns = ({
     { id: 'level', label: municipalityColumnLabels.level },
     { id: 'advisors', label: municipalityColumnLabels.advisors },
     { id: 'leaderships', label: municipalityColumnLabels.leaderships },
+    ...(isCampaignUnrestricted
+      ? [{ id: 'stateDeputies', label: municipalityColumnLabels.stateDeputies }]
+      : []),
     { id: 'trend', label: municipalityColumnLabels.trend },
     { id: 'expectedVotes', label: municipalityColumnLabels.expectedVotes },
     { id: 'lastSignal', label: municipalityColumnLabels.lastSignal },
@@ -482,8 +533,12 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
     leadershipNamesById,
     isStaffView,
     isCoordinator,
+    isCampaignUnrestricted,
     advisorOptions,
     leadershipOptions,
+    stateDeputyOptions,
+    stateDeputyCommitAction,
+    stateDeputyCreateAction,
     state,
   } = props
   const { sort: activeSort, dir: activeDir } = resolveMunicipalityListSort(state)
@@ -505,9 +560,13 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
           leadershipNamesById={leadershipNamesById}
           isStaffView={isStaffView}
           isCoordinator={isCoordinator}
+          isCampaignUnrestricted={isCampaignUnrestricted}
           canMoveEngagementLevel={props.canMoveEngagementLevel}
           advisorOptions={advisorOptions}
           leadershipOptions={leadershipOptions}
+          stateDeputyOptions={stateDeputyOptions}
+          stateDeputyCommitAction={stateDeputyCommitAction}
+          stateDeputyCreateAction={stateDeputyCreateAction}
           signalFormAction={props.signalFormAction}
           emptySlot={<MunicipalityListEmptyState state={state} />}
         />

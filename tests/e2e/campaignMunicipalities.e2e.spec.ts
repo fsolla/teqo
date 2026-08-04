@@ -225,6 +225,75 @@ test.describe('Municípios — jornadas por papel', () => {
     ).toBeVisible()
   })
 
+  test('coordinator creates a dobradinha inline in the list combobox (B157)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador Dobradinhas'),
+    })
+    const password = coordinator.password
+    const municipality = await fixtures.claimMunicipality()
+    // Unique per run (uuid + counter), so no catalog entry matches it — the
+    // combobox must offer the create option, not an existing dobradinha.
+    const deputyName = fixtures.value('Deputado Novo')
+    const party = 'PCdoB'
+
+    await campaign.login(page, coordinator.email!, password)
+    await page.goto(
+      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
+    )
+    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+
+    const deputiesTrigger = page.getByRole('button', {
+      name: `Editar dobradinhas em ${municipality.name}`,
+    })
+    await deputiesTrigger.click()
+    const deputiesPopover = page.locator('[data-slot="popover-content"]')
+    await expect(deputiesPopover).toBeVisible()
+
+    const search = deputiesPopover.getByRole('combobox', { name: 'Buscar dobradinha' })
+    // "Cicrano (PCdoB)" → name "Cicrano", party "PCdoB" (B157 syntax).
+    const createOption = deputiesPopover.getByRole('option', {
+      name: new RegExp(`^Criar dobradinha.*${deputyName}`),
+    })
+    const chip = deputiesPopover.getByRole('button', {
+      name: `Remover ${deputyName} (${party})`,
+    })
+
+    // Same retry contract as B154: a click before hydration is a silent no-op,
+    // and once the create succeeded the option is gone (count() guard).
+    await expect(async () => {
+      await search.fill(`${deputyName} (${party})`)
+      if (await createOption.count()) await createOption.click({ timeout: 1_000 })
+      await expect(chip).toBeVisible({ timeout: 5_000 })
+    }).toPass({ timeout: 25_000 })
+
+    // Same popover, no reload: typing the party now must NOT offer to create a
+    // duplicate — the search only lists ADDABLE items, so the assigned chip's
+    // own name never appears as an option; the "Criar …" suppression is what
+    // proves the RSC refresh brought the new deputy into the catalog.
+    await search.fill(party)
+    await expect(deputiesPopover.getByRole('option', { name: /Criar dobradinha/ })).toHaveCount(0)
+    await expect(chip).toBeVisible()
+
+    // The popover stays open after the write (auto-save, not submit+close).
+    await expect(deputiesPopover).toBeVisible()
+    await page.keyboard.press('Escape')
+
+    // Persistence: reload and reopen — the server holds both the deputy and
+    // the assignment, not just the local optimistic state.
+    await page.reload()
+    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+    await page.getByRole('button', { name: `Editar dobradinhas em ${municipality.name}` }).click()
+    await expect(
+      page.locator('[data-slot="popover-content"]').getByRole('button', {
+        name: `Remover ${deputyName} (${party})`,
+      }),
+    ).toBeVisible()
+  })
+
   test('coordinator sets trend status and justification with auto-save (B24)', async ({
     campaign,
     page,

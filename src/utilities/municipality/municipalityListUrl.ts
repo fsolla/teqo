@@ -109,6 +109,8 @@ export const municipalityColumnLabels: Record<MunicipalityListColumnId, string> 
   advisors: municipalityListSortLabels.coverage,
   /** B155 — the column has no sort/filter; the label stands alone in the picker. */
   leaderships: 'Lideranças',
+  /** B157 — nova coluna entre Assessores e Tendência (grupo "rede"). */
+  stateDeputies: 'Dobradinhas',
   trend: municipalityListSortLabels.trend,
   expectedVotes: municipalityListSortLabels.expectedVotes,
   /** The column shows the signal; `frescor` sorts by how old it is. */

@@ -36,6 +36,7 @@ export const municipalityListSelect = {
   ibgeCode: true,
   zoneNumber: true,
   advisors: true,
+  stateDeputies: true,
   priority: true,
   lastUpdateAt: true,
   expectedVotes: true,
@@ -67,6 +68,8 @@ export type MunicipalityListViewModel = {
   advisorIDs: number[]
   /** B155 — leadership ids linked to this município (reverse read of `leadership.municipalities`). */
   leadershipIDs: number[]
+  /** B157 — vínculos de dobradinhas para a coluna estilo assessores. */
+  stateDeputyIDs: number[]
   priority: 'alta' | 'normal'
   lastUpdateAt: string | null
   /**
@@ -115,6 +118,9 @@ export const toMunicipalityListViewModel = (
       .map(relationshipId)
       .filter((id): id is number => id !== null),
     leadershipIDs,
+    stateDeputyIDs: (municipality.stateDeputies ?? [])
+      .map(relationshipId)
+      .filter((id): id is number => id !== null),
     priority: municipality.priority === 'alta' ? 'alta' : 'normal',
     lastUpdateAt: municipality.lastUpdateAt ?? null,
     lastSignalAt: resolveMunicipalityLastSignalAt(
