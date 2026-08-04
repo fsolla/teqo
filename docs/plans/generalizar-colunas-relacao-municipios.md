@@ -1,6 +1,6 @@
 # Generalizar editor e display das colunas de relação na lista de municípios
 
-Status: blocked
+Status: ready
 Atualizado em: 2026-08-04
 Issue: #374
 Priority: P2
