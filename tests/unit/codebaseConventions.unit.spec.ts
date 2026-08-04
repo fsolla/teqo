@@ -201,6 +201,10 @@ describe('campaign JSON mutation route convention', () => {
       'src/app/(frontend)/api/revalidate/route.ts',
       'server-to-server: authenticated by a secret header, deliberately callable cross-origin',
     ],
+    [
+      'src/app/(campaign)/campanha/api/ai-chat/route.ts',
+      'streaming AI endpoint (ReadableStream, not JSON) — cookie-authenticated via campaign-token, origin-checked by cookie path',
+    ],
   ])
 
   it('builds every POST route under src/app with campaignJsonMutationRoute', () => {

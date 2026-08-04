@@ -5,6 +5,7 @@ import { getPayload } from 'payload'
 import React from 'react'
 
 import { CampaignListPendingBoundary } from '@/components/campaign/shared/CampaignListPending'
+import { CampaignAISidebarShell } from '@/components/campaign/shell/ai/CampaignAISidebarShell'
 import {
   BiometricEnrollmentToast,
   type BiometricEnrollmentOffer,
@@ -72,37 +73,43 @@ export default async function CampaignAppLayout({ children }: { children: React.
       <CampaignSidebarViewportDefault hasSidebarCookie={hasSidebarCookie} />
       <CampaignSidebar user={campaignUserShellView(user)} />
       <SidebarInset className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible">
-        <CampaignPageChromeProvider role={user.role}>
-          <CampaignWizardChromeProvider>
-            <CampaignHomeSearchChromeProvider>
-              <CampaignQuickActionContextProvider>
-                <CampaignListPendingBoundary>
-                  <CampaignMobileTopBar
-                    notificationBell={<CampaignNotificationBellSlot user={user} />}
-                  />
-                  <CampaignDesktopHeader
-                    notificationBell={<CampaignNotificationBellSlot user={user} />}
-                  />
-                  {/*
+        <CampaignAISidebarShell>
+          <CampaignPageChromeProvider role={user.role}>
+            <CampaignWizardChromeProvider>
+              <CampaignHomeSearchChromeProvider>
+                <CampaignQuickActionContextProvider>
+                  <CampaignListPendingBoundary>
+                    <CampaignMobileTopBar
+                      notificationBell={<CampaignNotificationBellSlot user={user} />}
+                    />
+                    <CampaignDesktopHeader
+                      notificationBell={<CampaignNotificationBellSlot user={user} />}
+                    />
+                    {/*
                 Provider must wrap CampaignAppScrollChrome, not only page children:
                 the quick-actions FAB overlay (B126) mounts as a sibling of
                 the scrollport and renders search hits with CampaignHoverTooltip
                 (priority flag). Nested only around {children} left focus→suggest
                 without a provider and crashed the page (B102).
               */}
-                  <TooltipProvider delayDuration={300}>
-                    <CampaignAppScrollChrome role={user.role}>{children}</CampaignAppScrollChrome>
-                  </TooltipProvider>
-                  <Toaster position="top-center" />
-                  <InstallPwaToast />
-                  {biometricEnrollment ? (
-                    <BiometricEnrollmentToast {...biometricEnrollment} />
-                  ) : null}
-                </CampaignListPendingBoundary>
-              </CampaignQuickActionContextProvider>
-            </CampaignHomeSearchChromeProvider>
-          </CampaignWizardChromeProvider>
-        </CampaignPageChromeProvider>
+                    <TooltipProvider delayDuration={300}>
+                      <div className="flex min-h-0 flex-1 flex-col">
+                        <CampaignAppScrollChrome role={user.role}>
+                          {children}
+                        </CampaignAppScrollChrome>
+                      </div>
+                    </TooltipProvider>
+                    <Toaster position="top-center" />
+                    <InstallPwaToast />
+                    {biometricEnrollment ? (
+                      <BiometricEnrollmentToast {...biometricEnrollment} />
+                    ) : null}
+                  </CampaignListPendingBoundary>
+                </CampaignQuickActionContextProvider>
+              </CampaignHomeSearchChromeProvider>
+            </CampaignWizardChromeProvider>
+          </CampaignPageChromeProvider>
+        </CampaignAISidebarShell>
       </SidebarInset>
     </SidebarProvider>
   )

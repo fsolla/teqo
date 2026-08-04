@@ -25,8 +25,10 @@ export const CampaignAppScrollChrome = ({
 
   return (
     <CampaignGlobalSearchProvider>
-      <CampaignContentScroll>{children}</CampaignContentScroll>
-      <CampaignQuickActionsHost role={role} />
+      <div className="flex min-h-0 flex-1 flex-col">
+        <CampaignContentScroll>{children}</CampaignContentScroll>
+        <CampaignQuickActionsHost role={role} />
+      </div>
     </CampaignGlobalSearchProvider>
   )
 }
