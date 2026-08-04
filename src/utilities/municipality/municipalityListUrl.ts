@@ -107,6 +107,8 @@ export const municipalityColumnLabels: Record<MunicipalityListColumnId, string> 
   classe: municipalityListSortLabels.classe,
   level: municipalityListSortLabels.nivel,
   advisors: municipalityListSortLabels.coverage,
+  /** B155 — the column has no sort/filter; the label stands alone in the picker. */
+  leaderships: 'Lideranças',
   trend: municipalityListSortLabels.trend,
   expectedVotes: municipalityListSortLabels.expectedVotes,
   /** The column shows the signal; `frescor` sorts by how old it is. */

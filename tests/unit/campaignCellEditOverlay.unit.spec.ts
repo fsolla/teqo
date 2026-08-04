@@ -4,6 +4,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 
 import { MunicipalityListAdvisorsControl } from '@/components/campaign/municipality/MunicipalityListAdvisorsControl'
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/municipality/MunicipalityListExpectedVotesControl'
+import { MunicipalityListLeadershipsControl } from '@/components/campaign/municipality/MunicipalityListLeadershipsControl'
 import { MunicipalityListLevelControl } from '@/components/campaign/municipality/MunicipalityListLevelControl'
 import { MunicipalityListSignalControl } from '@/components/campaign/municipality/MunicipalityListSignalControl'
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
@@ -68,6 +69,20 @@ const overlayCases: OverlayCase[] = [
         isPriority: false,
         advisorNamesById: new Map([[7, { id: 7, name: 'Ana Bastos', phone: null }]]),
         options: [{ id: 7, name: 'Ana Bastos', isCurrent: false }],
+        variant,
+      }),
+  },
+  {
+    name: 'lideranças',
+    triggerLabel: `Editar lideranças em ${MUNICIPALITY_NAME} — Maria de Jesus`,
+    drawerTitle: 'Gerenciar lideranças',
+    element: (variant) =>
+      createElement(MunicipalityListLeadershipsControl, {
+        municipalityID: 1,
+        municipalityName: MUNICIPALITY_NAME,
+        currentLeadershipIDs: [11],
+        leadershipNamesById: new Map([[11, { id: 11, name: 'Maria de Jesus' }]]),
+        options: [{ id: 11, name: 'Maria de Jesus' }],
         variant,
       }),
   },

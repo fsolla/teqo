@@ -189,6 +189,7 @@ export type MunicipalityListColumnId =
   // for the same column is `nivel`, and both URL spellings are frozen (B18).
   | 'level'
   | 'advisors'
+  | 'leaderships'
   | 'trend'
   | 'expectedVotes'
   | 'lastSignal'
@@ -218,6 +219,7 @@ export const municipalityColumnDescriptions: Record<MunicipalityListColumnId, st
   classe: CLASS_COLUMN_DESCRIPTION,
   level: campaignConceptOneLiner('nivel-de-envolvimento'),
   advisors: 'Assessor(es) responsável(is) pelo município — o coordenador atribui clicando aqui.',
+  leaderships: 'Lideranças vinculadas ao município — a equipe adiciona e remove clicando aqui.',
   trend: 'Tendência política percebida pela equipe: favorável, neutra ou desfavorável.',
   expectedVotes: campaignConceptOneLiner('meta'),
   lastSignal: `Última atualização da equipe ou declaração de liderança, o que for mais recente. Fica destacado a partir de ${MUNICIPALITY_COLD_SIGNAL_DAYS} dias sem registro.`,

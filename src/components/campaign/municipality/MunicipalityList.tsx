@@ -7,10 +7,12 @@ import {
   MunicipalityAdvisorAvatarStack,
 } from '@/components/campaign/municipality/MunicipalityAdvisorAvatarStack'
 import { MunicipalityAdvisorCreateProvider } from '@/components/campaign/municipality/MunicipalityAdvisorCreateProvider'
+import { MunicipalityLeadershipCreateProvider } from '@/components/campaign/municipality/MunicipalityLeadershipCreateProvider'
 import { MunicipalityLevelBadge } from '@/components/campaign/municipality/MunicipalityLevelBadge'
 import { MunicipalityListAdvisorsControl } from '@/components/campaign/municipality/MunicipalityListAdvisorsControl'
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/municipality/MunicipalityListExpectedVotesControl'
 import { MunicipalityListGoalCoverageCell } from '@/components/campaign/municipality/MunicipalityListGoalCoverageCell'
+import { MunicipalityListLeadershipsControl } from '@/components/campaign/municipality/MunicipalityListLeadershipsControl'
 import { MunicipalityListLevelControl } from '@/components/campaign/municipality/MunicipalityListLevelControl'
 import { MunicipalityListMobileSection } from '@/components/campaign/municipality/MunicipalityListMobileSection'
 import {
@@ -24,7 +26,11 @@ import { MunicipalitySortableHead } from '@/components/campaign/municipality/Mun
 import { MunicipalityVotePositionReadout } from '@/components/campaign/municipality/MunicipalityVotePositionReadout'
 import { TerritoryLink } from '@/components/campaign/municipality/TerritoryLink'
 import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
-import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
+import {
+  CampaignTable,
+  CampaignTableHead,
+  type CampaignTableColumn,
+} from '@/components/campaign/shared/CampaignTable'
 import { buttonVariants } from '@/components/ui/button'
 import {
   Empty,
@@ -60,7 +66,9 @@ import {
 } from '@/utilities/municipality/municipalityListUrl'
 import type {
   EligibleAdvisorOption,
+  EligibleLeadershipOption,
   MunicipalityAdvisorSummary,
+  MunicipalityLeadershipSummary,
   MunicipalityListViewModel,
 } from '@/utilities/municipality/municipalityViewModels'
 import { toMunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
@@ -82,6 +90,8 @@ type MunicipalityColumnFilterOptions = {
 export type MunicipalityListProps = {
   municipalities: MunicipalityListViewModel[]
   advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>
+  /** B155 — contact-name lookup for the Lideranças column chips. */
+  leadershipNamesById: ReadonlyMap<number, MunicipalityLeadershipSummary>
   isStaffView: boolean
   isCoordinator: boolean
   /**
@@ -91,6 +101,8 @@ export type MunicipalityListProps = {
    */
   canMoveEngagementLevel: boolean
   advisorOptions: EligibleAdvisorOption[]
+  /** B155 — every leadership the actor may add, for the Lideranças popover. */
+  leadershipOptions: EligibleLeadershipOption[]
   columnFilterOptions: MunicipalityColumnFilterOptions
   signalFormAction: MunicipalityStaffFormAction
   state: MunicipalityListState
@@ -144,6 +156,8 @@ const municipalityListColumns = ({
   columnFilterOptions,
   advisorNamesById,
   advisorOptions,
+  leadershipNamesById,
+  leadershipOptions,
   signalFormAction,
 }: MunicipalityListProps): Array<MunicipalityColumn> => [
   {
@@ -307,6 +321,29 @@ const municipalityListColumns = ({
               : formatAdvisorNamesTooltip(advisorEntries(municipality, advisorNamesById)),
         },
         {
+          // Right after "Assessores": the two relations of "who" in the
+          // município sit together, and both are editable by all staff (the
+          // advisor only within their portfolio, enforced server-side).
+          id: 'leaderships',
+          label: municipalityColumnLabels.leaderships,
+          // No sort, no filter — the B22 explanation rides on the plain head.
+          head: (
+            <CampaignTableHead description={municipalityColumnDescriptions.leaderships}>
+              {municipalityColumnLabels.leaderships}
+            </CampaignTableHead>
+          ),
+          cell: (municipality) => (
+            <MunicipalityListLeadershipsControl
+              municipalityID={municipality.id}
+              municipalityName={municipality.name}
+              currentLeadershipIDs={municipality.leadershipIDs}
+              leadershipNamesById={leadershipNamesById}
+              options={leadershipOptions}
+              variant="popover"
+            />
+          ),
+        },
+        {
           id: 'trend',
           label: municipalityColumnLabels.trend,
           head: (
@@ -429,6 +466,7 @@ export const municipalityListPickerColumns = ({
     { id: 'classe', label: municipalityColumnLabels.classe },
     { id: 'level', label: municipalityColumnLabels.level },
     { id: 'advisors', label: municipalityColumnLabels.advisors },
+    { id: 'leaderships', label: municipalityColumnLabels.leaderships },
     { id: 'trend', label: municipalityColumnLabels.trend },
     { id: 'expectedVotes', label: municipalityColumnLabels.expectedVotes },
     { id: 'lastSignal', label: municipalityColumnLabels.lastSignal },
@@ -438,8 +476,16 @@ export const municipalityListPickerColumns = ({
 }
 
 export const MunicipalityList = (props: MunicipalityListProps) => {
-  const { municipalities, advisorNamesById, isStaffView, isCoordinator, advisorOptions, state } =
-    props
+  const {
+    municipalities,
+    advisorNamesById,
+    leadershipNamesById,
+    isStaffView,
+    isCoordinator,
+    advisorOptions,
+    leadershipOptions,
+    state,
+  } = props
   const { sort: activeSort, dir: activeDir } = resolveMunicipalityListSort(state)
   const sortSummary = formatMunicipalityListSortSummary(activeSort, activeDir)
   const columns = municipalityListColumns(props)
@@ -452,34 +498,38 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
 
   return (
     <MunicipalityAdvisorCreateProvider>
-      <MunicipalityListMobileSection
-        municipalities={municipalities}
-        advisorNamesById={advisorNamesById}
-        isStaffView={isStaffView}
-        isCoordinator={isCoordinator}
-        canMoveEngagementLevel={props.canMoveEngagementLevel}
-        advisorOptions={advisorOptions}
-        signalFormAction={props.signalFormAction}
-        emptySlot={<MunicipalityListEmptyState state={state} />}
-      />
+      <MunicipalityLeadershipCreateProvider>
+        <MunicipalityListMobileSection
+          municipalities={municipalities}
+          advisorNamesById={advisorNamesById}
+          leadershipNamesById={leadershipNamesById}
+          isStaffView={isStaffView}
+          isCoordinator={isCoordinator}
+          canMoveEngagementLevel={props.canMoveEngagementLevel}
+          advisorOptions={advisorOptions}
+          leadershipOptions={leadershipOptions}
+          signalFormAction={props.signalFormAction}
+          emptySlot={<MunicipalityListEmptyState state={state} />}
+        />
 
-      {/* A sticky <th> can't paint the row border, hence the inset shadow. */}
-      <CampaignTable
-        className="hidden overflow-visible md:block"
-        containerClassName="overflow-x-auto"
-        headerClassName="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-background [&_th]:shadow-[inset_0_-1px_0_var(--border)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl [&_tr]:border-b-0"
-        caption={
-          <>
-            {sortSummary}
-            {showsVoteColumn ? `. Coluna 2022: ${municipalityColumnDescriptions.votos}` : null}
-          </>
-        }
-        columns={columns}
-        columnVisibility={props.columnVisibility}
-        rows={municipalities}
-        rowKey={(municipality) => municipality.id}
-        empty={<MunicipalityListEmptyState state={state} />}
-      />
+        {/* A sticky <th> can't paint the row border, hence the inset shadow. */}
+        <CampaignTable
+          className="hidden overflow-visible md:block"
+          containerClassName="overflow-x-auto"
+          headerClassName="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-background [&_th]:shadow-[inset_0_-1px_0_var(--border)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl [&_tr]:border-b-0"
+          caption={
+            <>
+              {sortSummary}
+              {showsVoteColumn ? `. Coluna 2022: ${municipalityColumnDescriptions.votos}` : null}
+            </>
+          }
+          columns={columns}
+          columnVisibility={props.columnVisibility}
+          rows={municipalities}
+          rowKey={(municipality) => municipality.id}
+          empty={<MunicipalityListEmptyState state={state} />}
+        />
+      </MunicipalityLeadershipCreateProvider>
     </MunicipalityAdvisorCreateProvider>
   )
 }

@@ -44,10 +44,12 @@ import {
   territorialClassSortWeight,
 } from '@/utilities/municipality/municipalityTerritorialClass'
 import {
+  loadMunicipalityLeadershipSummaries,
   municipalityListSelect,
   toMunicipalityDetailViewModel,
   toMunicipalityListViewModel,
   type MunicipalityDetailViewModel,
+  type MunicipalityLeadershipSummary,
   type MunicipalityListViewModel,
 } from '@/utilities/municipality/municipalityViewModels'
 import { loadStateDeputySummaries } from '@/utilities/stateDeputyData'
@@ -72,7 +74,11 @@ export type MunicipalityListPageBundle = {
   totalPages: number
   scopeTotal: number
   filterFacets: MunicipalityListFilterFacets
+  /** B155 — contact-name lookup for the chips of the município list rows. */
+  leadershipNamesById: ReadonlyMap<number, MunicipalityLeadershipSummary>
 }
+
+const EMPTY_LEADERSHIP_NAMES: ReadonlyMap<number, MunicipalityLeadershipSummary> = new Map()
 
 const emptyMunicipalityListFilterFacets: MunicipalityListFilterFacets = {
   slugs: [],
@@ -299,6 +305,7 @@ export const loadMunicipalityListPageBundle = async (
       totalPages: 0,
       scopeTotal: 0,
       filterFacets: emptyMunicipalityListFilterFacets,
+      leadershipNamesById: EMPTY_LEADERSHIP_NAMES,
     }
   }
 
@@ -412,6 +419,17 @@ export const loadMunicipalityListPageBundle = async (
     pageDocs = allDocs.slice(start, start + municipalityPageSize)
   }
 
+  // B155 — the leaderships of the visible page only (staff surfaces; the
+  // leader view already returned above). One reverse batch: ids per município
+  // for the rows, contact names for the chips.
+  const leadershipBundle = isStaff
+    ? await loadMunicipalityLeadershipSummaries(
+        payload,
+        user,
+        pageDocs.map((municipality) => municipality.id),
+      )
+    : null
+
   return {
     municipalities: pageDocs.map((municipality) =>
       toMunicipalityListViewModel(
@@ -419,12 +437,14 @@ export const loadMunicipalityListPageBundle = async (
         isStaff ? pledgeAggregates.get(municipality.id) : undefined,
         ranks.get(municipality.slug) ?? null,
         isStaff ? goalCoverageByMunicipalityID.get(municipality.id) : undefined,
+        leadershipBundle?.leadershipIDsByMunicipality.get(municipality.id) ?? [],
       ),
     ),
     totalDocs,
     totalPages,
     scopeTotal: scopeCount.totalDocs,
     filterFacets,
+    leadershipNamesById: leadershipBundle?.summariesById ?? EMPTY_LEADERSHIP_NAMES,
   }
 }
 

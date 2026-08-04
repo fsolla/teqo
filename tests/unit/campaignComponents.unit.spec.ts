@@ -50,6 +50,8 @@ const municipalityListDefaultProps = {
   } satisfies CampaignColumnVisibility,
   canMoveEngagementLevel: false,
   advisorOptions: [],
+  leadershipNamesById: new Map(),
+  leadershipOptions: [],
   columnFilterOptions: { name: [], region: [], advisor: [] },
   signalFormAction: noopListFormAction,
   state: { page: 1 },
@@ -177,6 +179,7 @@ describe('campaign visual foundation', () => {
         ibgeCode: '2929800',
         zoneNumber: null,
         advisorIDs: [advisor.id],
+        leadershipIDs: [11],
         priority: 'alta',
         lastUpdateAt: null,
         lastSignalAt: null,
@@ -220,6 +223,7 @@ describe('campaign visual foundation', () => {
         ibgeCode: '2927408',
         zoneNumber: 3,
         advisorIDs: [],
+        leadershipIDs: [],
         priority: 'normal',
         lastUpdateAt: null,
         lastSignalAt: null,
@@ -243,6 +247,7 @@ describe('campaign visual foundation', () => {
         advisorNamesById: new Map([[advisor.id, advisor]]),
         isStaffView: true,
         ...municipalityListDefaultProps,
+        leadershipNamesById: new Map([[11, { id: 11, name: 'Maria de Jesus' }]]),
       }),
     )
 
@@ -264,12 +269,15 @@ describe('campaign visual foundation', () => {
     expect(html).not.toContain('Cobertura da meta')
     expect(html).toContain('80%')
     expect(html).toContain('Faltam 300 votos para a meta')
+    // B155: the Lideranças column chips the linked leaderships by name.
+    expect(html).toContain('Lideranças')
+    expect(html).toContain('Maria de Jesus')
     // B22: every one of the 11 staff columns carries a header explanation —
     // pinned inside `<thead>` itself, since `cellTooltip` (e.g. "Classe") and
     // the mobile card's own class tooltip (B42) add triggers of their own.
     const [, tbodyHtml = ''] = html.split('<tbody')
     const theadHtml = html.slice(html.indexOf('<thead'), html.indexOf('</thead>'))
-    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(10)
+    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(11)
 
     // B41: horizontal scroll table with a pinned Município column header.
     expect(html).toContain('data-slot="table-container"')
@@ -297,6 +305,7 @@ describe('campaign visual foundation', () => {
             city: 'Seabra',
             region: 'Chapada Diamantina',
             advisorIDs: [],
+            leadershipIDs: [],
             priority: 'normal',
             expectedVotes: toVoteEstimateScenarioViewModel(null),
             pledges: createEmptyMunicipalityPledgeAggregate(),
@@ -316,6 +325,7 @@ describe('campaign visual foundation', () => {
             city: 'Sem série',
             region: 'Chapada Diamantina',
             advisorIDs: [],
+            leadershipIDs: [],
             priority: 'normal',
             expectedVotes: toVoteEstimateScenarioViewModel(null),
             pledges: createEmptyMunicipalityPledgeAggregate(),
@@ -360,6 +370,7 @@ describe('campaign visual foundation', () => {
             ibgeCode: '2903201',
             zoneNumber: null,
             advisorIDs: [],
+            leadershipIDs: [],
             priority: 'alta',
             lastUpdateAt: staleSignal,
             lastSignalAt: staleSignal,
@@ -404,6 +415,7 @@ describe('campaign visual foundation', () => {
             ibgeCode: '2932002',
             zoneNumber: null,
             advisorIDs: [],
+            leadershipIDs: [],
             priority: 'normal',
             lastUpdateAt: null,
             lastSignalAt: null,
@@ -445,6 +457,7 @@ describe('campaign visual foundation', () => {
             ibgeCode: '2914703',
             zoneNumber: null,
             advisorIDs: [],
+            leadershipIDs: [],
             priority: 'normal',
             lastUpdateAt: null,
             lastSignalAt: null,
@@ -492,6 +505,7 @@ describe('campaign visual foundation', () => {
             ibgeCode: '2929800',
             zoneNumber: null,
             advisorIDs: [],
+            leadershipIDs: [],
             priority: 'alta',
             lastUpdateAt: null,
             lastSignalAt: null,
@@ -555,7 +569,7 @@ describe('campaign visual foundation', () => {
       // The staff `<thead>` already carries 11 header-explanation tooltips
       // (B22), regardless of row data. This baseline isolates the advisors
       // CELL tooltip, the one this test actually exercises.
-      const HEADER_TOOLTIP_COUNT = 10
+      const HEADER_TOOLTIP_COUNT = 11
       const baseMunicipality = {
         id: 1,
         name: 'Seabra',
@@ -565,6 +579,8 @@ describe('campaign visual foundation', () => {
         region: 'Chapada Diamantina',
         ibgeCode: '2929800',
         zoneNumber: null,
+        advisorIDs: [],
+        leadershipIDs: [],
         priority: 'normal' as const,
         lastUpdateAt: null,
         lastSignalAt: null,
