@@ -2,6 +2,7 @@ import { FileUp, UserPlus } from 'lucide-react'
 
 import { CAMPAIGN_SUPPORTERS_HOME } from '@/lib/campaignPaths'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
+import { isListPath } from '@/lib/campaignQuickActionPaths'
 import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
 import { isStaffCampaignRole, type CampaignRole } from '@/lib/campaignRoles'
 
@@ -12,7 +13,7 @@ export const SUPPORTER_IMPORT_HREF = `${CAMPAIGN_SUPPORTERS_HOME}/importar` as c
 const supporterDetailPathPattern = /^\/campanha\/apoiadores\/(\d+)(?:\/|$)/
 
 export const isSupportersListPath = (pathname: string): boolean =>
-  pathname === CAMPAIGN_SUPPORTERS_HOME || pathname === `${CAMPAIGN_SUPPORTERS_HOME}/`
+  isListPath(pathname, CAMPAIGN_SUPPORTERS_HOME)
 
 export const parseSupporterDetailId = (pathname: string): number | undefined => {
   const match = pathname.match(supporterDetailPathPattern)

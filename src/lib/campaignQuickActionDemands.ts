@@ -6,6 +6,7 @@ import {
 import { homeActionsForRole } from '@/lib/campaignHomeActions'
 import { CAMPAIGN_DEMANDS_HOME } from '@/lib/campaignPaths'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
+import { isListPath } from '@/lib/campaignQuickActionPaths'
 import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
 import { isStaffCampaignRole, type CampaignRole } from '@/lib/campaignRoles'
 
@@ -27,7 +28,7 @@ export const demandCreateHref = (municipalityId?: number): string => {
 }
 
 export const isDemandsListPath = (pathname: string): boolean =>
-  pathname === CAMPAIGN_DEMANDS_HOME || pathname === `${CAMPAIGN_DEMANDS_HOME}/`
+  isListPath(pathname, CAMPAIGN_DEMANDS_HOME)
 
 export const isDemandDetailPath = (pathname: string): boolean => {
   if (!pathname.startsWith(`${CAMPAIGN_DEMANDS_HOME}/`)) {

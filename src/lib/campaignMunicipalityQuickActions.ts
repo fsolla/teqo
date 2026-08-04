@@ -5,6 +5,7 @@ import {
   type ResolvedCampaignHomeAction,
 } from '@/lib/campaignHomeActions'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
+import { isListPath } from '@/lib/campaignQuickActionPaths'
 import type { CampaignRole } from '@/lib/campaignRoles'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 
@@ -13,7 +14,7 @@ const MUNICIPALITIES_LIST_PATH = '/campanha/municipios' as const
 const municipalityDetailPathPattern = /^\/campanha\/municipios\/([^/]+)(?:\/|$)/
 
 export const isMunicipalitiesListPath = (pathname: string): boolean =>
-  pathname === MUNICIPALITIES_LIST_PATH || pathname === `${MUNICIPALITIES_LIST_PATH}/`
+  isListPath(pathname, MUNICIPALITIES_LIST_PATH)
 
 export const parseMunicipalityDetailSlug = (pathname: string): string | undefined => {
   const match = pathname.match(municipalityDetailPathPattern)

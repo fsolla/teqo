@@ -32,6 +32,8 @@ import {
   ORGANIZATIONS_LIST_PATH,
   ORGANIZATION_NEW_PATH,
   isActivityTourComposerPath,
+  isListPath,
+  normalizePathname,
   parseActivityQuickActionSurface,
   parseOrganizationQuickActionSurface,
 } from '@/lib/campaignQuickActionPaths'
@@ -111,6 +113,33 @@ describe('campaignQuickActionPaths (activities)', () => {
     expect(parseActivityQuickActionSurface(ACTIVITY_NEW_PATH)).toBeNull()
     expect(parseActivityQuickActionSurface(ACTIVITY_TOUR_COMPOSER_PATH)).toBeNull()
     expect(parseActivityQuickActionSurface('/campanha/atividades/foo/editar')).toBeNull()
+  })
+})
+
+describe('campaignQuickActionPaths (shared list helpers, C86+)', () => {
+  it('matches exactly with an optional trailing slash', () => {
+    expect(isListPath('/campanha/demandas', '/campanha/demandas')).toBe(true)
+    expect(isListPath('/campanha/demandas/', '/campanha/demandas')).toBe(true)
+  })
+
+  it('rejects siblings and descendants', () => {
+    expect(isListPath('/campanha/demandas/nova', '/campanha/demandas')).toBe(false)
+    expect(isListPath('/campanha/demandas/pedido-cairu', '/campanha/demandas')).toBe(false)
+    expect(isListPath('/campanha/municipios', '/campanha/demandas')).toBe(false)
+  })
+
+  it('normalizes a single trailing slash while preserving /', () => {
+    expect(normalizePathname('/campanha/')).toBe('/campanha')
+    expect(normalizePathname('/campanha')).toBe('/campanha')
+    expect(normalizePathname('/')).toBe('/')
+    expect(normalizePathname('/campanha/apoiadores/')).toBe('/campanha/apoiadores')
+    expect(normalizePathname('/campanha//')).toBe('/campanha/')
+  })
+
+  it('pins the degenerate inputs the inline matchers used to handle', () => {
+    expect(isListPath('/campanha/demandas//', '/campanha/demandas')).toBe(false)
+    expect(isListPath('', '/campanha/demandas')).toBe(false)
+    expect(isListPath('/', '/')).toBe(true)
   })
 })
 

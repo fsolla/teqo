@@ -1,16 +1,15 @@
 import { CAMPAIGN_ACTIONS_HOME } from '@/lib/campaignActionRoutes'
 import { isAdvisorsPath } from '@/lib/campaignAdvisorQuickActions'
 import { CAMPAIGN_HOME, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
-import { isActivityTourComposerPath } from '@/lib/campaignQuickActionPaths'
+import { isActivityTourComposerPath, isListPath } from '@/lib/campaignQuickActionPaths'
 import {
   isStaffCampaignRole,
   isUnrestrictedCampaignRole,
   type CampaignRole,
 } from '@/lib/campaignRoles'
 
-/** Início matches only exactly — same rule as sidebar nav. */
-export const isCampaignHomePath = (pathname: string): boolean =>
-  pathname === CAMPAIGN_HOME || pathname === `${CAMPAIGN_HOME}/`
+/** Same exact-match rule as the sidebar nav. */
+export const isCampaignHomePath = (pathname: string): boolean => isListPath(pathname, CAMPAIGN_HOME)
 
 export const isCampaignActionsPath = (pathname: string): boolean =>
   pathname === CAMPAIGN_ACTIONS_HOME || pathname.startsWith(`${CAMPAIGN_ACTIONS_HOME}/`)

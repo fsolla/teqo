@@ -1,14 +1,15 @@
 import { CAMPAIGN_CONCEPTS_PATH } from '@/lib/campaignIntelligenceConcepts'
 import { CAMPAIGN_PROFILE_HOME } from '@/lib/campaignPaths'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
+import { isListPath } from '@/lib/campaignQuickActionPaths'
 import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
 import { isStaffCampaignRole, type CampaignRole } from '@/lib/campaignRoles'
 
 export const isConceptsPath = (pathname: string): boolean =>
-  pathname === CAMPAIGN_CONCEPTS_PATH || pathname === `${CAMPAIGN_CONCEPTS_PATH}/`
+  isListPath(pathname, CAMPAIGN_CONCEPTS_PATH)
 
 export const isProfilePath = (pathname: string): boolean =>
-  pathname === CAMPAIGN_PROFILE_HOME || pathname === `${CAMPAIGN_PROFILE_HOME}/`
+  isListPath(pathname, CAMPAIGN_PROFILE_HOME)
 
 /** B90 — reference/account surfaces with search-only drawer (no action catalog). */
 export const isReferenceQuickActionPath = (pathname: string): boolean =>

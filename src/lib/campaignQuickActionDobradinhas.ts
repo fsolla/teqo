@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react'
 
 import { resolveStaffHomeQuickActions } from '@/lib/campaignHomeActions'
+import { isListPath } from '@/lib/campaignQuickActionPaths'
 import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
 import { isStaffCampaignRole, type CampaignRole } from '@/lib/campaignRoles'
 
@@ -9,7 +10,7 @@ const STATE_DEPUTY_CREATE_PATH = '/campanha/dobradinhas/nova' as const
 const STATE_DEPUTY_PATH_PREFIX = `${STATE_DEPUTY_LIST_PATH}/` as const
 
 const isStateDeputyListPath = (pathname: string): boolean =>
-  pathname === STATE_DEPUTY_LIST_PATH || pathname === `${STATE_DEPUTY_LIST_PATH}/`
+  isListPath(pathname, STATE_DEPUTY_LIST_PATH)
 
 const isStateDeputyCreatePath = (pathname: string): boolean => pathname === STATE_DEPUTY_CREATE_PATH
 
