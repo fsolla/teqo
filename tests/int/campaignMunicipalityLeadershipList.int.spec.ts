@@ -4,7 +4,11 @@ import type { Payload } from 'payload'
 import { getPayload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { createLeadershipRecord } from '@/app/(campaign)/campanha/actions/leadership'
+import {
+  createLeadershipRecord,
+  createMunicipalityLeadershipRecord,
+} from '@/app/(campaign)/campanha/actions/leadership'
+import { relationshipId } from '@/lib/relationship'
 import config from '@/payload.config'
 import { loadMunicipalityListPageBundle } from '@/utilities/municipality/municipalityPageData'
 import {
@@ -130,24 +134,52 @@ describe('B155 — lideranças na lista de municípios (leitura reversa + opçõ
     expect(leaderBundle.leadershipNamesById.size).toBe(0)
   })
 
-  it('sees an inline-created leadership through the column read (create → summarize)', async () => {
+  it('creates an inline leadership with name only and exposes it through the column read', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
 
-    // The route's create branch calls `createLeadershipWizardRecord`, which is
-    // the same validated path as `createLeadershipRecord` with one município —
-    // this pins the create → column-read integration.
-    const created = await createLeadershipRecord(payload, coordinator, {
-      municipalities: [municipality.id],
+    const created = await createMunicipalityLeadershipRecord(payload, coordinator, {
+      municipalityId: municipality.id,
       name: 'Criada na Reunião',
-      phone: fixtures.phone(),
     })
+
+    const contactID = relationshipId(created.leadership.contact)
+    if (contactID === null) throw new Error('A liderança criada deve referenciar um contato.')
+    const contact = await payload.findByID({
+      collection: 'contact',
+      id: contactID,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(contact.phone).toBeNull()
 
     const { leadershipIDsByMunicipality, summariesById } =
       await loadMunicipalityLeadershipSummaries(payload, coordinator, [municipality.id])
 
-    expect(leadershipIDsByMunicipality.get(municipality.id)).toContain(created.id)
-    expect(summariesById.get(created.id)?.name).toBe('Criada na Reunião')
+    expect(leadershipIDsByMunicipality.get(municipality.id)).toContain(created.leadership.id)
+    expect(summariesById.get(created.leadership.id)?.name).toBe('Criada na Reunião')
+  })
+
+  it('keeps phone dedup on the complete leadership create path', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+    const phone = fixtures.phone()
+
+    const first = await createLeadershipRecord(payload, coordinator, {
+      municipalities: [municipality.id],
+      name: 'Nome Original',
+      phone,
+    })
+    await expect(
+      createLeadershipRecord(payload, coordinator, {
+        municipalities: [municipality.id],
+        name: 'Outro Nome',
+        phone,
+      }),
+    ).rejects.toThrow('Esta pessoa já está cadastrada como liderança')
+
+    expect(first.contactReused).toBe(false)
   })
 })

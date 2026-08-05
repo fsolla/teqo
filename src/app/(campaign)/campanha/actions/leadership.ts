@@ -18,6 +18,7 @@ import {
   leadershipStateDeputyMembershipSchema,
   leadershipWizardCreateSchema,
   leadershipWizardUpdateSchema,
+  municipalityLeadershipCreateSchema,
   type LeadershipContactUpdateInput,
   type LeadershipInternalUpdateInput,
   type LeadershipMunicipalitiesMembershipInput,
@@ -110,11 +111,14 @@ const isUniqueLeadershipConflict = (error: unknown): boolean => {
 }
 
 type LeadershipCreateData = ReturnType<typeof leadershipCreateSchema.parse>
+type ValidatedLeadershipCreateData = Omit<LeadershipCreateData, 'phone'> & {
+  phone?: string | null
+}
 
 const createValidatedLeadershipRecord = async (
   payload: Payload,
   actor: CampaignUser,
-  data: LeadershipCreateData,
+  data: ValidatedLeadershipCreateData,
 ) => {
   try {
     return await withPayloadTransaction(
@@ -122,27 +126,29 @@ const createValidatedLeadershipRecord = async (
       async ({ req }) => {
         const currentActor = await getFreshStaffActor(payload, actor, req)
         await assertMunicipalitiesWithinScope(payload, currentActor, data.municipalities, req)
-        if (payload.db.name !== 'postgres') {
-          throw new Error(POSTGRES_DEDUP_LOCK_MESSAGE)
-        }
-        await acquireContactPhoneLocks(payload, req, [data.phone])
-        // Intentional admin bypass: staff scope was freshly checked; these internal reads and
-        // writes atomically maintain the normalized Contact ↔ Leadership join.
-        const contacts = await payload.find({
-          collection: 'contact',
-          where: { phone: { equals: data.phone } },
-          depth: 0,
-          limit: 2,
-          pagination: false,
-          overrideAccess: true,
-          req,
-        })
+        let contactID: number | undefined
+        if (data.phone) {
+          if (payload.db.name !== 'postgres') {
+            throw new Error(POSTGRES_DEDUP_LOCK_MESSAGE)
+          }
+          await acquireContactPhoneLocks(payload, req, [data.phone])
+          // Intentional admin bypass: staff scope was freshly checked; these internal reads and
+          // writes atomically maintain the normalized Contact ↔ Leadership join.
+          const contacts = await payload.find({
+            collection: 'contact',
+            where: { phone: { equals: data.phone } },
+            depth: 0,
+            limit: 2,
+            pagination: false,
+            overrideAccess: true,
+            req,
+          })
 
-        if (contacts.totalDocs > 1) {
-          throw new Error(CONTACT_PHONE_AMBIGUOUS_MESSAGE)
+          if (contacts.totalDocs > 1) {
+            throw new Error(CONTACT_PHONE_AMBIGUOUS_MESSAGE)
+          }
+          contactID = contacts.docs[0]?.id
         }
-
-        let contactID = contacts.docs[0]?.id
         const contactReused = Boolean(contactID)
 
         if (!contactID) {
@@ -162,7 +168,7 @@ const createValidatedLeadershipRecord = async (
             collection: 'contact',
             data: {
               name: data.name,
-              phone: data.phone,
+              phone: data.phone ?? null,
               email: data.email,
               gender: data.gender,
               state: 'BA' as Contact['state'],
@@ -454,19 +460,43 @@ export const createLeadershipWizard = async (
 
 /**
  * B155 — inline create from the "Lideranças" column of `/campanha/municipios`.
- * Thin municipality-surface entry point over the wizard create (Contact dedup
- * by phone, transaction, locks). The list we are ON is deliberately not
+ * Name-only municipality-surface entry point over the transactional create.
+ * The list we are ON is deliberately not
  * revalidated — the chip already shows optimistically (B34 contract); the
  * leadership list and the município detail are, so the new row appears there
  * without waiting for a refresh.
  */
+export const createMunicipalityLeadershipRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: MunicipalityLeadershipCreateInput,
+) => {
+  const data = municipalityLeadershipCreateSchema.parse(input)
+  const leadership = await createValidatedLeadershipRecord(payload, actor, {
+    name: data.name,
+    phone: null,
+    municipalities: [data.municipalityId],
+    email: undefined,
+    exclusive: true,
+    supportStatus: 'a_abordar',
+    notes: undefined,
+  })
+
+  const { leadershipIDsByMunicipality, summariesById } = await loadMunicipalityLeadershipSummaries(
+    payload,
+    actor,
+    [data.municipalityId],
+  )
+  return {
+    leadership,
+    leadershipIDs: leadershipIDsByMunicipality.get(data.municipalityId) ?? [],
+    createdLeadershipName: summariesById.get(leadership.id)?.name ?? data.name,
+  }
+}
+
 export const createMunicipalityLeadership = async (input: MunicipalityLeadershipCreateInput) => {
   const { payload, actor } = await getCampaignActionContext()
-  const leadership = await createLeadershipWizardRecord(payload, actor, {
-    name: input.name,
-    phone: input.phone,
-    municipalityId: input.municipalityId,
-  })
+  const result = await createMunicipalityLeadershipRecord(payload, actor, input)
 
   // Intentional admin bypass: existence is enforced by the write's own
   // relationship validation; this read only resolves the revalidate target.
@@ -477,21 +507,8 @@ export const createMunicipalityLeadership = async (input: MunicipalityLeadership
     select: { slug: true },
     overrideAccess: true,
   })
-  revalidateLeadershipWizardPaths(leadership.id, municipality.slug)
-
-  // Scoped reverse read doubles as the reconcile payload and the chip name:
-  // a phone-matched create (`contactReused`) keeps the Contact's own name,
-  // which the optimistic chip must show from the start.
-  const { leadershipIDsByMunicipality, summariesById } = await loadMunicipalityLeadershipSummaries(
-    payload,
-    actor,
-    [input.municipalityId],
-  )
-  return {
-    leadership,
-    leadershipIDs: leadershipIDsByMunicipality.get(input.municipalityId) ?? [],
-    createdLeadershipName: summariesById.get(leadership.id)?.name ?? input.name,
-  }
+  revalidateLeadershipWizardPaths(result.leadership.id, municipality.slug)
+  return result
 }
 
 /**
