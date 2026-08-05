@@ -56,54 +56,54 @@ Inventário do que a Sollinha **deve poder** montar no v1. Cada linha = vista re
 
 ### A. Homes / referência
 
-| Destino | Path | Quando oferecer |
-| ------- | ---- | --------------- |
-| Início (mapa / dashboard) | `/campanha` | “volta pro início”, visão geral |
-| Conceitos / glossário | `/campanha/conceitos` (+ âncora `#…` se o conceito for conhecido) | explicar captura, LQ, nível, etc. |
-| Perfil | `/campanha/perfil` | raro; só se pedir |
-| Quadro | `/campanha/quadro` | se o usuário citar o quadro |
+| Destino                   | Path                                                              | Quando oferecer                   |
+| ------------------------- | ----------------------------------------------------------------- | --------------------------------- |
+| Início (mapa / dashboard) | `/campanha`                                                       | “volta pro início”, visão geral   |
+| Conceitos / glossário     | `/campanha/conceitos` (+ âncora `#…` se o conceito for conhecido) | explicar captura, LQ, nível, etc. |
+| Perfil                    | `/campanha/perfil`                                                | raro; só se pedir                 |
+| Quadro                    | `/campanha/quadro`                                                | se o usuário citar o quadro       |
 
 ### B. Detalhes de entidade (1 registro)
 
-| Entidade | Path | Identificador que a tool precisa |
-| -------- | ---- | -------------------------------- |
-| Município | `/campanha/municipios/[slug]` | slug canônico (não nome solto sem resolver) |
-| Liderança | `/campanha/liderancas/[id]` | id |
-| Dobradinha | `/campanha/dobradinhas/[slug]` | slug |
-| Assessor | `/campanha/assessores/[id]` | id |
-| Organização | `/campanha/organizacoes/[slug]` | slug |
-| Atividade | `/campanha/atividades/[slug]` | slug |
-| Demanda | `/campanha/demandas/[slug]` | slug |
-| Apoiador | `/campanha/apoiadores/[id]` | id |
+| Entidade    | Path                            | Identificador que a tool precisa            |
+| ----------- | ------------------------------- | ------------------------------------------- |
+| Município   | `/campanha/municipios/[slug]`   | slug canônico (não nome solto sem resolver) |
+| Liderança   | `/campanha/liderancas/[id]`     | id                                          |
+| Dobradinha  | `/campanha/dobradinhas/[slug]`  | slug                                        |
+| Assessor    | `/campanha/assessores/[id]`     | id                                          |
+| Organização | `/campanha/organizacoes/[slug]` | slug                                        |
+| Atividade   | `/campanha/atividades/[slug]`   | slug                                        |
+| Demanda     | `/campanha/demandas/[slug]`     | slug                                        |
+| Apoiador    | `/campanha/apoiadores/[id]`     | id                                          |
 
 ### C. Listas com recorte (filtros que já existem na URL)
 
-| Lista | Path base | Recortes úteis para a IA (já suportados) |
-| ----- | --------- | ---------------------------------------- |
-| Municípios | `/campanha/municipios` | busca `q`; município(s) por slug; território de identidade; **assessor**; com/sem assessor; prioridade alta; tendência; classe territorial; nível N0–N4 / sem nível; compare (mapa) |
-| Lideranças | `/campanha/liderancas` | `q`; status; município(s); organização(ões); dobradinha(s); com/sem acesso ao app |
-| Dobradinhas | `/campanha/dobradinhas` | `q`; partido(s) — **sem filtro por assessor hoje** |
-| Assessores | `/campanha/assessores` | `q`; município(s) da carteira |
-| Organizações | `/campanha/organizacoes` | `q`; tipo |
-| Atividades | `/campanha/atividades` | preset/tab (próximos/todos/…); tipo; status; município; `q` |
-| Demandas | `/campanha/demandas` | `q`; status; tipo; atividade |
-| Apoiadores | `/campanha/apoiadores` | `q`; intenção de voto; fonte; município/cidade |
-| Territórios | `/campanha/territorios` | (contrato de sort/filtro já da lista) |
+| Lista        | Path base                | Recortes úteis para a IA (já suportados)                                                                                                                                            |
+| ------------ | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Municípios   | `/campanha/municipios`   | busca `q`; município(s) por slug; território de identidade; **assessor**; com/sem assessor; prioridade alta; tendência; classe territorial; nível N0–N4 / sem nível; compare (mapa) |
+| Lideranças   | `/campanha/liderancas`   | `q`; status; município(s); organização(ões); dobradinha(s); com/sem acesso ao app                                                                                                   |
+| Dobradinhas  | `/campanha/dobradinhas`  | `q`; partido(s) — **sem filtro por assessor hoje**                                                                                                                                  |
+| Assessores   | `/campanha/assessores`   | `q`; município(s) da carteira                                                                                                                                                       |
+| Organizações | `/campanha/organizacoes` | `q`; tipo                                                                                                                                                                           |
+| Atividades   | `/campanha/atividades`   | preset/tab (próximos/todos/…); tipo; status; município; `q`                                                                                                                         |
+| Demandas     | `/campanha/demandas`     | `q`; status; tipo; atividade                                                                                                                                                        |
+| Apoiadores   | `/campanha/apoiadores`   | `q`; intenção de voto; fonte; município/cidade                                                                                                                                      |
+| Territórios  | `/campanha/territorios`  | (contrato de sort/filtro já da lista)                                                                                                                                               |
 
 ### D. Fluxos auxiliares (incluir só se couber no appetite sem puxar wizard)
 
-| Destino | Path | Nota |
-| ------- | ---- | ---- |
-| Compositor de giro | `/campanha/atividades/giros` | staff; sem parâmetros inventados além do que o compositor já lê |
-| Nova entidade (`…/nova`) | vários | **fora do v1** — escreve/cria; anti-goal write |
+| Destino                  | Path                         | Nota                                                            |
+| ------------------------ | ---------------------------- | --------------------------------------------------------------- |
+| Compositor de giro       | `/campanha/atividades/giros` | staff; sem parâmetros inventados além do que o compositor já lê |
+| Nova entidade (`…/nova`) | vários                       | **fora do v1** — escreve/cria; anti-goal write                  |
 
 ### E. Lacunas conscientes (NÃO inventar neste item)
 
-| Pedido humano típico | Situação no app hoje | O que a Sollinha deve fazer neste item |
-| -------------------- | -------------------- | -------------------------------------- |
-| “Dobradinhas do assessor X” (lista filtrada) | Relação assessor↔dobradinha existe (B156), **filtro na lista de dobradinhas não** | Oferecer **ficha do assessor** e/ou listar dobradinhas via tool de dados + links de **detalhe** de cada dobradinha; **não** fabricar `?advisor=` em `/campanha/dobradinhas` |
-| “Municípios do assessor X” | **Sim** — `?advisor=` na lista de municípios | Preferir lista filtrada + opcionalmente ficha do assessor |
-| Detalhe município v2 (`/campanha/municipio/…/v2`) | Paralelo / cutover (B152) | Preferir **canônico** `/campanha/municipios/[slug]` até cutover de produto |
+| Pedido humano típico                              | Situação no app hoje                                                              | O que a Sollinha deve fazer neste item                                                                                                                                      |
+| ------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| “Dobradinhas do assessor X” (lista filtrada)      | Relação assessor↔dobradinha existe (B156), **filtro na lista de dobradinhas não** | Oferecer **ficha do assessor** e/ou listar dobradinhas via tool de dados + links de **detalhe** de cada dobradinha; **não** fabricar `?advisor=` em `/campanha/dobradinhas` |
+| “Municípios do assessor X”                        | **Sim** — `?advisor=` na lista de municípios                                      | Preferir lista filtrada + opcionalmente ficha do assessor                                                                                                                   |
+| Detalhe município v2 (`/campanha/municipio/…/v2`) | Paralelo / cutover (B152)                                                         | Preferir **canônico** `/campanha/municipios/[slug]` até cutover de produto                                                                                                  |
 
 ### F. Como a IA deve escolher (orientação de produto no prompt)
 
@@ -152,7 +152,7 @@ Inventário do que a Sollinha **deve poder** montar no v1. Cada linha = vista re
 
 ## Referências
 
-- GitHub Issue — (após register)
+- GitHub Issue #383
 - Canvas UI (gate): N/A
 - [`ai-chat-sollinha.md`](ai-chat-sollinha.md) — v1 entregue
 - `src/utilities/ai/tools/`, `src/utilities/ai/systemPrompt.ts`, `src/components/campaign/shell/ai/CampaignAIChat.tsx`
