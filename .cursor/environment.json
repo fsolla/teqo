@@ -1,0 +1,4 @@
+{
+  "install": "pnpm install --frozen-lockfile && pnpm run prepare && bash ./.cursor/cloud-setup.sh",
+  "start": "bash ./.cursor/ensure-postgres.sh"
+}

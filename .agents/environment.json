@@ -1,4 +1,0 @@
-{
-  "install": "pnpm install --frozen-lockfile && pnpm run prepare && bash ./.agents/cloud-setup.sh",
-  "start": "bash ./.agents/ensure-postgres.sh"
-}

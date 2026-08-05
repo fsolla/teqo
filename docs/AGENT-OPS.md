@@ -91,7 +91,7 @@ Vercel Git builds: `scripts/vercel-ignore-build.sh` skipeia **todas** as branche
 
 ## Cursor Cloud
 
-`.agents/environment.json` instala deps + Postgres nativo + `db:seed:minimal`. Sem secrets de prod. Preferir `pnpm push`; escape `git push --no-verify` só no cutover documentado acima.
+`.cursor/environment.json` instala deps + Postgres nativo + `db:seed:minimal`. Sem secrets de prod. Preferir `pnpm push`; escape `git push --no-verify` só no cutover documentado acima.
 
 ## Agent pool
 

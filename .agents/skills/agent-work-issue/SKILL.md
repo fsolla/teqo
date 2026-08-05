@@ -46,7 +46,7 @@ pnpm i   # se node_modules ausente/stale
 
 ### Cloud (sem Docker)
 
-Não use `pnpm db:start`. Postgres via `.agents/environment.json`. `gate:fast` / `gate:push` não precisam de DB. **Proibido** `git push --no-verify` no fechamento.
+Não use `pnpm db:start`. Postgres via `.cursor/environment.json`. `gate:fast` / `gate:push` não precisam de DB. **Proibido** `git push --no-verify` no fechamento.
 
 ## Passo 1 — Sessão (Issue já claimada)
 
