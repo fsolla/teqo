@@ -147,9 +147,11 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
   }) => {
     test.slow()
 
-    // Calibrated so the real sidebar/chat transitions cross the 66rem stage
-    // even when both campaign rails consume their full production widths.
-    await page.setViewportSize({ width: 1920, height: 900 })
+    // At 1600px the real desktop rails straddle the responsive stages: the
+    // collapsed sidebar adds a column and the open chat removes one. A wider
+    // viewport can leave all optional columns visible in both states, which
+    // would only prove that the container shrank, not that its query reacted.
+    await page.setViewportSize({ width: 1600, height: 900 })
     await loginWithAllColumns(page, campaign)
     const container = municipalityContainer(page)
     const viewportBefore = page.viewportSize()

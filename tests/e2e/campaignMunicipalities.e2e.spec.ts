@@ -26,6 +26,30 @@ const showAllMunicipalityColumns = (page: Page, url: string) =>
     },
   ])
 
+const municipalityContainer = (page: Page) =>
+  page.locator('[data-container="municipality-list"]').last()
+
+const visibleMunicipalityButton = (page: Page, name: string) =>
+  municipalityContainer(page).getByRole('button', { name }).filter({ visible: true })
+
+const ensureWideMunicipalityList = async (page: Page) => {
+  // The resizable panel hydrates independently from the RSC list and can
+  // change the container stage after a cell first becomes visible. These
+  // desktop cell journeys wait for the widest table stage; B158 exercises the
+  // rail transition itself in its dedicated spec.
+  await page.waitForLoadState('networkidle')
+  const container = municipalityContainer(page)
+  const width = await container.evaluate((element) => element.clientWidth)
+  const close = page.getByRole('button', { name: 'Fechar', exact: true }).filter({ visible: true })
+  // A collapsed Panel can leave its overflowing close button technically
+  // visible. Only click when the list itself proves the chat still consumes
+  // space; otherwise the click is a no-op against an already collapsed rail.
+  if (width < 78 * 16 && (await close.isVisible())) await close.click()
+  await expect
+    .poll(() => container.evaluate((element) => element.clientWidth))
+    .toBeGreaterThanOrEqual(78 * 16)
+}
+
 /**
  * Core municipality-model journeys per role: coordinator strategy editing, advisor
  * scoping, staff declare/estimate privacy boundary, leader lockdown, and staff-only
@@ -121,12 +145,18 @@ test.describe('Municípios — jornadas por papel', () => {
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+    await ensureWideMunicipalityList(page)
 
     // Name includes the município — a substring search can return neighbors
     // (strict-mode flake when two "Editar assessores …" buttons match).
-    const advisorsTrigger = page.getByRole('button', {
-      name: `Editar assessores em ${municipality.name}`,
-    })
+    // A concurrent RSC navigation may briefly retain the previous segment.
+    // Scope the editor to the appended, active municipality container so a
+    // hidden copy cannot absorb Playwright's click retries until timeout.
+    const advisorsTrigger = visibleMunicipalityButton(
+      page,
+      `Editar assessores em ${municipality.name}`,
+    )
+    await expect(advisorsTrigger).toBeVisible()
     await advisorsTrigger.click()
 
     const advisorsPopover = page.locator('[data-slot="popover-content"]')
@@ -160,11 +190,11 @@ test.describe('Municípios — jornadas por papel', () => {
     // state, now holds the assignment.
     await page.reload()
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
-    await page
-      .getByRole('button', {
-        name: `Editar assessores em ${municipality.name} — ${advisor.name}`,
-      })
-      .click()
+    await ensureWideMunicipalityList(page)
+    await visibleMunicipalityButton(
+      page,
+      `Editar assessores em ${municipality.name} — ${advisor.name}`,
+    ).click()
     await expect(
       page.locator('[data-slot="popover-content"]').getByRole('button', {
         name: `Remover ${advisor.name}`,
@@ -192,10 +222,12 @@ test.describe('Municípios — jornadas por papel', () => {
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+    await ensureWideMunicipalityList(page)
 
-    const advisorsTrigger = page.getByRole('button', {
-      name: `Editar assessores em ${municipality.name}`,
-    })
+    const advisorsTrigger = visibleMunicipalityButton(
+      page,
+      `Editar assessores em ${municipality.name}`,
+    )
     await advisorsTrigger.click()
     const advisorsPopover = page.locator('[data-slot="popover-content"]')
     await expect(advisorsPopover).toBeVisible()
@@ -231,11 +263,11 @@ test.describe('Municípios — jornadas por papel', () => {
     // and the assignment, not just the local optimistic state.
     await page.reload()
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
-    await page
-      .getByRole('button', {
-        name: `Editar assessores em ${municipality.name} — ${newAdvisorName}`,
-      })
-      .click()
+    await ensureWideMunicipalityList(page)
+    await visibleMunicipalityButton(
+      page,
+      `Editar assessores em ${municipality.name} — ${newAdvisorName}`,
+    ).click()
     await expect(
       page.locator('[data-slot="popover-content"]').getByRole('button', {
         name: `Remover ${newAdvisorName}`,
@@ -264,10 +296,12 @@ test.describe('Municípios — jornadas por papel', () => {
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+    await ensureWideMunicipalityList(page)
 
-    const deputiesTrigger = page.getByRole('button', {
-      name: `Editar dobradinhas em ${municipality.name}`,
-    })
+    const deputiesTrigger = visibleMunicipalityButton(
+      page,
+      `Editar dobradinhas em ${municipality.name}`,
+    )
     await deputiesTrigger.click()
     const deputiesPopover = page.locator('[data-slot="popover-content"]')
     await expect(deputiesPopover).toBeVisible()
@@ -305,7 +339,8 @@ test.describe('Municípios — jornadas por papel', () => {
     // the assignment, not just the local optimistic state.
     await page.reload()
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
-    await page.getByRole('button', { name: `Editar dobradinhas em ${municipality.name}` }).click()
+    await ensureWideMunicipalityList(page)
+    await visibleMunicipalityButton(page, `Editar dobradinhas em ${municipality.name}`).click()
     await expect(
       page.locator('[data-slot="popover-content"]').getByRole('button', {
         name: `Remover ${deputyName} (${party})`,
@@ -374,14 +409,17 @@ test.describe('Municípios — jornadas por papel', () => {
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+    await ensureWideMunicipalityList(page)
 
     // Anchored: a bare template regex on a municipality name collides with
     // prefix-shared names (Conde/Condeúba — 23/435 measured in the catalog),
     // and `exact` no longer matches because the accessible name appends the
     // current signal state ("— Sem sinal").
-    const signalTrigger = page.getByRole('button', {
-      name: new RegExp(`^Registrar sinal em ${municipality.name} —`),
-    })
+    const signalTrigger = municipalityContainer(page)
+      .getByRole('button', {
+        name: new RegExp(`^Registrar sinal em ${municipality.name} —`),
+      })
+      .filter({ visible: true })
     await expect(signalTrigger).toBeVisible()
     await signalTrigger.click()
 
@@ -391,9 +429,13 @@ test.describe('Municípios — jornadas por papel', () => {
       .getByRole('textbox', { name: 'Texto' })
       .fill('Liderança local reportou visita adversária na feira.')
     await signalForm.getByLabel('Tipo do sinal').selectOption('visita_adversario')
-    await signalForm.getByRole('button', { name: 'Registrar sinal', exact: true }).click()
+    await Promise.all([
+      expectPostResponse(page, '/campanha/municipios'),
+      signalForm.getByRole('button', { name: 'Registrar sinal', exact: true }).click(),
+    ])
 
-    await expect(page.getByText('Sinal registrado.', { exact: true })).toBeVisible()
+    // The toast is intentionally transient; the persisted freshness label is
+    // the stable success contract and must arrive after the server response.
     await expect(
       page.getByRole('button', {
         name: `Registrar sinal em ${municipality.name} — hoje`,
