@@ -5,7 +5,10 @@ import { expect, test } from './fixtures/campaignE2EFixtures.js'
 const REM_IN_PIXELS = 16
 const municipalityColumnsCookie = encodeURIComponent('municipios:__none__')
 
-const municipalityContainer = (page: Page) => page.locator('[data-container="municipality-list"]')
+// During a concurrent RSC navigation Next may briefly retain the previous
+// segment beside the incoming one. The current segment is appended last.
+const municipalityContainer = (page: Page) =>
+  page.locator('[data-container="municipality-list"]').last()
 
 const setContainerWidth = async (container: Locator, width: number) => {
   await container.evaluate((element, nextWidth) => {
@@ -62,8 +65,8 @@ const loginWithAllColumns = async (
     },
   ])
   await page.goto('/campanha/municipios')
-  await expect(municipalityContainer(page)).toBeVisible()
   await page.waitForLoadState('networkidle')
+  await expect(municipalityContainer(page)).toBeVisible()
 }
 
 const expectedHeadersAt = (width: number) => {
@@ -144,7 +147,9 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
   }) => {
     test.slow()
 
-    await page.setViewportSize({ width: 1800, height: 900 })
+    // Calibrated so the real sidebar/chat transitions cross the 66rem stage
+    // even when both campaign rails consume their full production widths.
+    await page.setViewportSize({ width: 1920, height: 900 })
     await loginWithAllColumns(page, campaign)
     const container = municipalityContainer(page)
     const viewportBefore = page.viewportSize()
@@ -155,17 +160,44 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
     await expect
       .poll(() => container.evaluate((element) => element.clientWidth))
       .toBeGreaterThan(widthWithSidebar)
+    await expect
+      .poll(async () => (await visibleHeaders(container)).length)
+      .toBeGreaterThan(headersWithSidebar.length)
+    const widthAfterSidebarToggle = await container.evaluate((element) => element.clientWidth)
+    const initiallyOpenChatClose = page
+      .getByRole('button', { name: 'Fechar', exact: true })
+      .filter({ visible: true })
+    if ((await initiallyOpenChatClose.count()) > 0) {
+      await initiallyOpenChatClose.click()
+      await expect
+        .poll(() => container.evaluate((element) => element.clientWidth))
+        .toBeGreaterThan(widthAfterSidebarToggle)
+    }
+    const widthWithoutSidebar = await container.evaluate((element) => element.clientWidth)
     const headersWithoutSidebar = await visibleHeaders(container)
-    expect(headersWithoutSidebar.length).toBeGreaterThan(headersWithSidebar.length)
 
-    await page.getByRole('button', { name: 'Sollinha — Assistente virtual' }).first().click()
+    await page
+      .getByRole('button', { name: 'Sollinha — Assistente virtual' })
+      .filter({ visible: true })
+      .click()
+    await expect
+      .poll(() => container.evaluate((element) => element.clientWidth))
+      .toBeLessThan(widthWithoutSidebar)
+    await expect
+      .poll(async () => (await visibleHeaders(container)).length)
+      .toBeLessThan(headersWithoutSidebar.length)
     const widthWithChat = await container.evaluate((element) => element.clientWidth)
     const headersWithChat = await visibleHeaders(container)
-    await page.getByRole('button', { name: 'Fechar' }).last().click()
+    await page
+      .getByRole('button', { name: 'Fechar', exact: true })
+      .filter({ visible: true })
+      .click()
     await expect
       .poll(() => container.evaluate((element) => element.clientWidth))
       .toBeGreaterThan(widthWithChat)
-    expect((await visibleHeaders(container)).length).toBeGreaterThan(headersWithChat.length)
+    await expect
+      .poll(async () => (await visibleHeaders(container)).length)
+      .toBeGreaterThan(headersWithChat.length)
     expect(page.viewportSize()).toEqual(viewportBefore)
     await expectNoHorizontalOverflow(container)
   })

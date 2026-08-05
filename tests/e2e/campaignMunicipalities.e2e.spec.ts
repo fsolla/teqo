@@ -1,3 +1,5 @@
+import type { Page } from '@playwright/test'
+
 import { SUPPORTER_REGISTRATION_CONSENT_KEY } from '../../src/lib/campaignConsentKeys.js'
 import {
   ensureLeasedConsent,
@@ -15,6 +17,15 @@ import {
   collectActionBoundingBoxes,
 } from './helpers/actionGridGeometry.js'
 
+const showAllMunicipalityColumns = (page: Page, url: string) =>
+  page.context().addCookies([
+    {
+      name: 'campaign_columns',
+      value: encodeURIComponent('municipios:__none__'),
+      url,
+    },
+  ])
+
 /**
  * Core municipality-model journeys per role: coordinator strategy editing, advisor
  * scoping, staff declare/estimate privacy boundary, leader lockdown, and staff-only
@@ -26,6 +37,14 @@ import {
  */
 
 test.describe('Municípios — jornadas por papel', () => {
+  test.beforeEach(async ({ page }) => {
+    // B158 keys the table stages to content width and gives fresh profiles a
+    // compact default. These pre-B158 journeys exercise specific desktop
+    // cells, so make that prerequisite explicit instead of finding hidden
+    // copies in the always-mounted mobile-card tree.
+    await page.setViewportSize({ width: 2400, height: 1000 })
+  })
+
   test('coordinator opens the municipalities list, edits strategy and assigns an advisor', async ({
     campaign,
     page,
@@ -41,6 +60,7 @@ test.describe('Municípios — jornadas por papel', () => {
     const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, password)
+    await showAllMunicipalityColumns(page, campaign.baseURL)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
@@ -96,6 +116,7 @@ test.describe('Municípios — jornadas por papel', () => {
     const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, password)
+    await showAllMunicipalityColumns(page, campaign.baseURL)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
@@ -117,16 +138,12 @@ test.describe('Municípios — jornadas por papel', () => {
     // No "Salvar" button in this popover: selecting the option auto-saves the
     // delta and renders it as a removable chip immediately.
     const chip = advisorsPopover.getByRole('button', { name: `Remover ${advisor.name}` })
-    // Click the option itself: the inner text generic does not always trigger
-    // the combobox selection (measured — the popover stayed on "selected: você").
-    // Retry loop for the pre-hydration flake class (same as
-    // `checkRadixWhenHydrated`): a click before React attaches is a silent
-    // no-op, so the probe retries until the chip sticks.
-    await expect(async () => {
-      await search.fill(searchNamePart)
-      await option.click({ timeout: 1_000 })
-      await expect(chip).toBeVisible({ timeout: 4_000 })
-    }).toPass({ timeout: 20_000 })
+    // Opening this client-only popover already proves hydration. Wait for the
+    // write itself: the chip and trigger are optimistic and do not prove the
+    // assignment reached the database before the reload below.
+    await search.fill(searchNamePart)
+    await Promise.all([expectPostResponse(page, '/campanha/municipios/advisors'), option.click()])
+    await expect(chip).toBeVisible()
 
     // The popover stays open after the write (auto-save, not submit+close).
     await expect(advisorsPopover).toBeVisible()
@@ -170,6 +187,7 @@ test.describe('Municípios — jornadas por papel', () => {
     const newAdvisorName = fixtures.value('Novo Assessor')
 
     await campaign.login(page, coordinator.email!, password)
+    await showAllMunicipalityColumns(page, campaign.baseURL)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
@@ -241,6 +259,7 @@ test.describe('Municípios — jornadas por papel', () => {
     const party = 'PCdoB'
 
     await campaign.login(page, coordinator.email!, password)
+    await showAllMunicipalityColumns(page, campaign.baseURL)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
@@ -307,6 +326,7 @@ test.describe('Municípios — jornadas por papel', () => {
     const note = fixtures.value('Vereador confirmou apoio local')
 
     await campaign.login(page, coordinator.email!, password)
+    await showAllMunicipalityColumns(page, campaign.baseURL)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
@@ -349,6 +369,7 @@ test.describe('Municípios — jornadas por papel', () => {
     const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, password)
+    await showAllMunicipalityColumns(page, campaign.baseURL)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
@@ -433,6 +454,7 @@ test.describe('Municípios — jornadas por papel', () => {
 
     // Advisor scope: only the administered municipality shows up.
     await campaign.login(page, advisor.email!, password)
+    await showAllMunicipalityColumns(page, campaign.baseURL)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
     await expect(
       page.getByRole('link', { name: administered.name, exact: true }).first(),

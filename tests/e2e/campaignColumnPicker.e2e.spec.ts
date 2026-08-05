@@ -39,8 +39,8 @@ test.describe('Seletor de colunas', () => {
     await campaign.login(page, email, password)
     await page.goto('/campanha/municipios')
 
-    const levelHeader = page.getByRole('columnheader', { name: /Nível/ })
-    await expect(levelHeader).toBeVisible()
+    const votesHeader = page.getByRole('columnheader', { name: /2022/ })
+    await expect(votesHeader).toBeVisible()
 
     const picker = page.getByRole('button', { name: /Mostrar ou ocultar colunas/ })
     await picker.click()
@@ -57,15 +57,15 @@ test.describe('Seletor de colunas', () => {
       .toContain('municipios:__none__')
 
     await picker.click()
-    await page.getByRole('checkbox', { name: 'Nível' }).click()
+    await page.getByRole('checkbox', { name: 'Votação 2022' }).click()
     // Closing flushes the batched cookie write and refreshes the RSC.
     await page.keyboard.press('Escape')
 
-    await expect(levelHeader).toHaveCount(0, REFRESH)
+    await expect(votesHeader).toHaveCount(0, REFRESH)
     await expect(page.getByRole('button', { name: /1 oculta/ })).toBeVisible()
 
     await page.reload()
-    await expect(page.getByRole('columnheader', { name: /Nível/ })).toHaveCount(0, REFRESH)
+    await expect(page.getByRole('columnheader', { name: /2022/ })).toHaveCount(0, REFRESH)
 
     // The cookie carries one key per list: another list is untouched. The
     // territories list is the honest neighbour here — its 27 rows come from
@@ -79,9 +79,9 @@ test.describe('Seletor de colunas', () => {
     await page.getByRole('button', { name: 'Restaurar todas' }).click()
     await page.keyboard.press('Escape')
 
-    await expect(page.getByRole('columnheader', { name: /Nível/ })).toBeVisible(REFRESH)
+    await expect(page.getByRole('columnheader', { name: /2022/ })).toBeVisible(REFRESH)
     await page.reload()
-    await expect(page.getByRole('columnheader', { name: /Nível/ })).toBeVisible(REFRESH)
+    await expect(page.getByRole('columnheader', { name: /2022/ })).toBeVisible(REFRESH)
     await expect
       .poll(
         async () =>
