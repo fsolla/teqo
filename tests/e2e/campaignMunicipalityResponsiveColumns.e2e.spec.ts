@@ -190,6 +190,9 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
     await page.setViewportSize({ width: 834, height: 1194 })
     await loginWithAllColumns(page, campaign)
     const container = municipalityContainer(page)
+    // Force the container past 48rem on the iPad viewport — the sidebar
+    // normally leaves too little content width for the table to appear.
+    await setContainerWidth(container, 48 * REM_IN_PIXELS + 1)
     const table = container.getByRole('table')
     await expect(table).toBeVisible()
 
