@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   parseCampaignHiddenColumns,
+  resolveCampaignColumnVisibility,
   resolveVisibleColumns,
   serializeCampaignHiddenColumns,
   toggleHiddenColumn,
@@ -18,9 +19,13 @@ describe('parseCampaignHiddenColumns', () => {
     })
   })
 
-  it('shows the full table when the cookie is absent, empty or malformed', () => {
+  it('keeps an absent list distinct from an explicitly empty list', () => {
     expect(parseCampaignHiddenColumns(undefined)).toEqual({})
     expect(parseCampaignHiddenColumns('')).toEqual({})
+    expect(parseCampaignHiddenColumns('municipios:__none__')).toEqual({ municipios: [] })
+  })
+
+  it('ignores malformed entries instead of guessing', () => {
     expect(parseCampaignHiddenColumns('garbage')).toEqual({})
     expect(parseCampaignHiddenColumns(':kind')).toEqual({})
     expect(parseCampaignHiddenColumns('municipios:')).toEqual({})
@@ -42,18 +47,39 @@ describe('parseCampaignHiddenColumns', () => {
 })
 
 describe('serializeCampaignHiddenColumns', () => {
-  it('round-trips through parse and omits lists with nothing hidden', () => {
-    const value = { municipios: ['kind', 'trend'], demandas: ['requester'] }
+  it('round-trips hidden columns and explicit empty lists', () => {
+    const value = { municipios: ['kind', 'trend'], demandas: [] }
     const serialized = serializeCampaignHiddenColumns(value)
 
     expect(parseCampaignHiddenColumns(serialized)).toEqual(value)
-    expect(serializeCampaignHiddenColumns({ municipios: [] })).toBe('')
+    expect(serializeCampaignHiddenColumns({ municipios: [] })).toBe('municipios:__none__')
+    expect(serializeCampaignHiddenColumns({})).toBe('')
   })
 
   it('never emits a character that would break the cookie value', () => {
     const serialized = serializeCampaignHiddenColumns({ municipios: ['kind', 'trend'] })
 
     expect(serialized).not.toMatch(/[;,\s"\\]/)
+  })
+})
+
+describe('resolveCampaignColumnVisibility', () => {
+  it('applies compact defaults only when municipios is absent', () => {
+    expect(resolveCampaignColumnVisibility('municipios', {})).toEqual({
+      listId: 'municipios',
+      hiddenColumnIds: ['goalCoverage', 'lastSignal'],
+    })
+    expect(resolveCampaignColumnVisibility('municipios', { municipios: [] })).toEqual({
+      listId: 'municipios',
+      hiddenColumnIds: [],
+    })
+  })
+
+  it('keeps the existing empty default for every other list', () => {
+    expect(resolveCampaignColumnVisibility('liderancas', {})).toEqual({
+      listId: 'liderancas',
+      hiddenColumnIds: [],
+    })
   })
 })
 
