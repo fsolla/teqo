@@ -97,8 +97,8 @@ Componentes:
 - `.github/workflows/ci-pr.yml` (job `checks` / `migration-lock` como paralelo barato)
 - `.github/workflows/issue-done-on-main-merge.yml` — regex `closes|fixes`
 - `.github/pull_request_template.md` — `Closes #` default
-- `.cursor/skills/plan-issue/SKILL.md` — Passo 6
-- `.cursor/rules/agent-pr-workflow.mdc`
+- `.agents/skills/plan-issue/SKILL.md` — Passo 6
+- `.agents/rules/agent-pr-workflow.mdc`
 - `docs/GUARDRAILS.md`
 - `scripts/ci-scope.mjs` — precedente de classificar diff
 

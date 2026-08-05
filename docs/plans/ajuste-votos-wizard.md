@@ -165,4 +165,4 @@ Componentes:
 
 - [fluxos-acao-primeiro-inicio.md](fluxos-acao-primeiro-inicio.md) · [cenarios-estimativa-votos.md](cenarios-estimativa-votos.md) · `src/lib/voteEstimate.ts` · `MunicipalityListExpectedVotesControl.tsx` · `VoteEstimateScenarioInputs.tsx` · collection `Municipality` hook de ordem
 - AGENTS.md — assimetria leader; `overrideAccess: false`
-- `PRODUCT.md` / `DESIGN.md` · `.cursor/rules/campanha-edit-where-you-see.mdc` (exceção submit explícito)
+- `PRODUCT.md` / `DESIGN.md` · `.agents/rules/campanha-edit-where-you-see.mdc` (exceção submit explícito)

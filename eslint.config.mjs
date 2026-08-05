@@ -225,7 +225,6 @@ const eslintConfig = [
     'test-results/**',
     // Vendored agent material (same carve-out as .prettierignore):
     '.agents/**',
-    '.cursor/**',
   ]),
 ]
 

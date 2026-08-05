@@ -20,7 +20,7 @@ As-built bate com as Decisões travadas de mutação/reuso; só o packaging de U
 
 ## Design (Impeccable)
 
-Âncoras: `PRODUCT.md` (princípios 3 **Edit where you see**, 4 **Auto-save, no Save button**, 8 Feel the action; anti-goals "spreadsheet mode" e "always-mounted inputs on every row") / `DESIGN.md` (register `product`; Field Desk) · tema `data-theme='campaign'` · precedentes de interação [`AdvisorMunicipalityCell.tsx`](../../src/components/campaign/advisor/AdvisorMunicipalityCell.tsx) (B19 ✓ — chips removíveis + typeahead + otimista + `ResizeObserver`/"Ver mais…") e o desenho ainda não implementado do **B31** ([`dobradinhas-lista-liderancas.md`](dobradinhas-lista-liderancas.md) — chips + Popover + `Command`, sem "Ver mais…", para a mesma relação `leadership.stateDeputies` na direção oposta) · shells `CampaignTable` / `CampaignPageShell` · regras `.cursor/rules/campanha-edit-where-you-see.mdc` e `campanha-action-feedback.mdc`.
+Âncoras: `PRODUCT.md` (princípios 3 **Edit where you see**, 4 **Auto-save, no Save button**, 8 Feel the action; anti-goals "spreadsheet mode" e "always-mounted inputs on every row") / `DESIGN.md` (register `product`; Field Desk) · tema `data-theme='campaign'` · precedentes de interação [`AdvisorMunicipalityCell.tsx`](../../src/components/campaign/advisor/AdvisorMunicipalityCell.tsx) (B19 ✓ — chips removíveis + typeahead + otimista + `ResizeObserver`/"Ver mais…") e o desenho ainda não implementado do **B31** ([`dobradinhas-lista-liderancas.md`](dobradinhas-lista-liderancas.md) — chips + Popover + `Command`, sem "Ver mais…", para a mesma relação `leadership.stateDeputies` na direção oposta) · shells `CampaignTable` / `CampaignPageShell` · regras `.agents/rules/campanha-edit-where-you-see.mdc` e `campanha-action-feedback.mdc`.
 
 Na implementação (`implement-roadmap-item`): craft compacto (a maior parte da interação já foi decidida no B31; craft aqui é sobretudo a direção nova + o clamp de overflow) → critique → polish. `harden`/`optimize` só sob gatilho do Passo 8.
 
@@ -138,4 +138,4 @@ Depth check: reusa `CampaignTable`, `Popover`/`Command`/`Badge` do kit, `wordSta
 - `src/utilities/access/leaderships.ts` (`canReadLeadership`, `canManageLeadership`) — access que a leitura/escrita reusa sem alterar
 - `src/lib/wordStartFilter.ts` (`matchesAtWordStart`, `normalizeSearchPhrase`) — busca acento-insensível reusada
 - AGENTS.md — Campaign Municípios model, Transaction Safety, naming em inglês/copy em pt-BR
-- `.cursor/rules/campanha-edit-where-you-see.mdc`, `.cursor/rules/campanha-action-feedback.mdc` — princípios de UX herdados de Assessores/B31
+- `.agents/rules/campanha-edit-where-you-see.mdc`, `.agents/rules/campanha-action-feedback.mdc` — princípios de UX herdados de Assessores/B31

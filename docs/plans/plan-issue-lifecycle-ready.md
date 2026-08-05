@@ -46,7 +46,7 @@ Omitido — superfície A (processo).
 
 ## Direção no codebase (hipótese)
 
-- **Áreas prováveis:** `.cursor/skills/plan-issue/` (SKILL + checklist Passo 5/6), `scripts/agent-register.mjs`, elegibilidade do pool (`scripts/lib/agent-pool-eligibility.mjs` + pins em `tests/unit/agentPoolEligibility.unit.spec.ts`), menção curta em `docs/AGENT-OPS.md` / skill `agent-pool` se o contrato de labels mudar.
+- **Áreas prováveis:** `.agents/skills/plan-issue/` (SKILL + checklist Passo 5/6), `scripts/agent-register.mjs`, elegibilidade do pool (`scripts/lib/agent-pool-eligibility.mjs` + pins em `tests/unit/agentPoolEligibility.unit.spec.ts`), menção curta em `docs/AGENT-OPS.md` / skill `agent-pool` se o contrato de labels mudar.
 - **Precedente a olhar:** gate Passo 5 já escrito na skill (hoje só soft); `needs:consent` / `requirements-changed` como “não claimar”; OPS12 `plans-only-closes` (`Related #N`).
 - **Risco de acoplamento:** fila `ready` é o contrato compartilhado de `agent:claim` e do pool — mudar o momento do flip afeta os dois.
 
@@ -76,8 +76,8 @@ Omitido — superfície A (processo).
 ## Referências
 
 - GitHub Issue #292
-- `.cursor/skills/plan-issue/SKILL.md` (Passo 5 gate / Passo 6 register)
+- `.agents/skills/plan-issue/SKILL.md` (Passo 5 gate / Passo 6 register)
 - `scripts/agent-register.mjs` (default `ready`)
 - `scripts/lib/agent-pool-eligibility.mjs` (`issueHasPlanLink` = warn)
 - `docs/AGENT-OPS.md`
-- `.cursor/skills/agent-pool/SKILL.md`
+- `.agents/skills/agent-pool/SKILL.md`

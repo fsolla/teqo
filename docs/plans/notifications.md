@@ -86,4 +86,4 @@ Componentes:
 
 - `docs/roadmap.md` (linhas 57, 60, 61)
 - `AGENTS.md` — Campaign auth, Campaign nuclei MVP, transações, `Consent` por chave
-- `.cursor/rules/projects/nucleos-eleitorais.mdc`
+- `.agents/rules/projects/nucleos-eleitorais.mdc`

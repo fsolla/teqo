@@ -172,4 +172,4 @@ Depth check: reusa `Popover`/`Command`/`Badge` do kit, `CampaignTable`, a lib pu
 - [`campaignRelationOptions.ts`](../../src/utilities/campaignRelationOptions.ts) (`loadMunicipalityOptions`) — escopo do assessor para sugestões
 - [`combobox-assessores-lista-municipios.md`](combobox-assessores-lista-municipios.md) (**B27**), [`dobradinhas-lista-liderancas.md`](dobradinhas-lista-liderancas.md) (**B31**), [`gerenciar-assessores.md`](gerenciar-assessores.md) (**B19 ✓**), [`ordenacao-filtros-lista-dobradinhas.md`](ordenacao-filtros-lista-dobradinhas.md) (**B33**)
 - AGENTS.md — Campaign Municípios model, Transaction Safety, naming inglês/copy pt-BR
-- `.cursor/rules/campanha-edit-where-you-see.mdc`, `.cursor/rules/campanha-action-feedback.mdc`
+- `.agents/rules/campanha-edit-where-you-see.mdc`, `.agents/rules/campanha-action-feedback.mdc`

@@ -46,7 +46,7 @@ Omitido — superfície A.
 
 ## Direção no codebase (hipótese)
 
-- **Áreas prováveis:** novo workflow (ou extensão cuidadosa de `issue-done-on-main-merge.yml`), helper puro testável para parse de `Related #N` + regra de promote, `.cursor/skills/plan-issue/SKILL.md` (Passo 6), nota em `docs/AGENT-OPS.md`.
+- **Áreas prováveis:** novo workflow (ou extensão cuidadosa de `issue-done-on-main-merge.yml`), helper puro testável para parse de `Related #N` + regra de promote, `.agents/skills/plan-issue/SKILL.md` (Passo 6), nota em `docs/AGENT-OPS.md`.
 - **Precedente a olhar:** `issue-done-on-main-merge.yml` (`Closes`→`done`); OPS12 `plans-only-closes`; OPS17 `#292` / `docs/plans/plan-issue-lifecycle-ready.md`.
 - **Risco de acoplamento:** flip frouxo promove Issue `blocked` por dependência de produto; misturar com o job de `Closes` sem cuidado.
 
@@ -76,5 +76,5 @@ Omitido — superfície A.
 - GitHub Issue #296
 - GitHub Issue OPS17 #292
 - `.github/workflows/issue-done-on-main-merge.yml`
-- `.cursor/skills/plan-issue/SKILL.md`
+- `.agents/skills/plan-issue/SKILL.md`
 - `docs/plans/plan-issue-lifecycle-ready.md`

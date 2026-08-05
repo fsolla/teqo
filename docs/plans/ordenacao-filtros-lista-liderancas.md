@@ -164,4 +164,4 @@ Componentes (molde B33 — não re-extrair chrome):
 - `src/components/campaign/municipality/MunicipalitySortableHead.tsx`, `MunicipalityHeaderFilter.tsx`, `src/components/campaign/shared/CampaignTable.tsx` — origem da extração e destino das colunas
 - `src/collections/Leadership.ts`, `src/utilities/access/` — campos indexados (`supportStatus`, `sector`, `municipalities`, `user`) e escopo do assessor
 - AGENTS.md — Campaign auth e RBAC, `overrideAccess: false` com `user`, pessoa é sempre `Contact` + join, naming (identificadores em inglês, copy pt-BR), sem migration neste item
-- `PRODUCT.md` / `DESIGN.md` — Field Desk, anti-goals de dashboard, "Edit where you see" (não se aplica na v1 desta tela) · `.cursor/rules/campanha-action-feedback.mdc` (pending honesto no resultado)
+- `PRODUCT.md` / `DESIGN.md` — Field Desk, anti-goals de dashboard, "Edit where you see" (não se aplica na v1 desta tela) · `.agents/rules/campanha-action-feedback.mdc` (pending honesto no resultado)

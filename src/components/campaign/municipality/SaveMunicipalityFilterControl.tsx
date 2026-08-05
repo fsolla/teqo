@@ -30,7 +30,7 @@ type SaveMunicipalityFilterControlProps = {
  * Names the current recorte and keeps it in the sidebar (B18).
  *
  * Naming is confirmatory, so this is the explicit-submit exception
- * `.cursor/rules/campanha-edit-where-you-see.mdc` already carves out for flows
+ * `.agents/rules/campanha-edit-where-you-see.mdc` already carves out for flows
  * that need a note — and it keeps this control out of the auto-save machine the
  * quick-edit cells share.
  */

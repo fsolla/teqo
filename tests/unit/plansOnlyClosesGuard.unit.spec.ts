@@ -33,7 +33,7 @@ describe('plansOnlyClosesGuard', () => {
     expect(isPlansOnlyDiff(['docs/plans/bottom-drawer-peek-acoes-busca.md'])).toBe(true)
     expect(isPlansOnlyDiff([])).toBe(false)
     expect(isPlansOnlyDiff(['docs/plans/a.md', 'docs/plans/sub/b.md'])).toBe(true)
-    expect(isPlansOnlyDiff(['docs/plans/a.md', '.cursor/skills/plan-issue/SKILL.md'])).toBe(false)
+    expect(isPlansOnlyDiff(['docs/plans/a.md', '.agents/skills/plan-issue/SKILL.md'])).toBe(false)
   })
 
   it('finds closing keywords case-insensitively', () => {

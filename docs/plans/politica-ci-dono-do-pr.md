@@ -40,8 +40,8 @@ Decisão de produto (2026-07-30, brief do lote CI): **done = PR mergeado em `sta
 Componentes (texto, não código):
 
 - **`docs/AGENT-OPS.md`** — novo bloco na seção "Fluxo": "Dono do PR, dono do CI" (definição de done, triagem das 3 classes de falha, limite de blast radius, flaky→quarentena+débito).
-- **`.cursor/skills/work-issue/SKILL.md`** — Passo 6.5 reforçado: falha no ci-pr → corrige na mesma branch **qualquer que seja a origem**, citando AGENT-OPS; "fora do escopo" não é critério de parada.
-- **`.cursor/rules/engineering-standards.mdc`** — linha no "After every change": CI vermelho no seu PR é seu, mesmo pré-existente.
+- **`.agents/skills/work-issue/SKILL.md`** — Passo 6.5 reforçado: falha no ci-pr → corrige na mesma branch **qualquer que seja a origem**, citando AGENT-OPS; "fora do escopo" não é critério de parada.
+- **`.agents/rules/engineering-standards.mdc`** — linha no "After every change": CI vermelho no seu PR é seu, mesmo pré-existente.
 - **`docs/CHANGELOG-AGENTS.md`** — entrada do incidente PR #50 → esta política.
 
 Texto-núcleo proposto (núcleo único citado nos três):
@@ -70,6 +70,6 @@ Nenhum neste item.
 ## Referências
 
 - Incidente: PR #50, run 30558184687 (migration-lock sem checkout; int fora da feature)
-- `docs/AGENT-OPS.md` — seção "Fluxo"; `.cursor/skills/work-issue/SKILL.md` — Passo 6
-- `.cursor/rules/engineering-standards.mdc` — "After every change"
+- `docs/AGENT-OPS.md` — seção "Fluxo"; `.agents/skills/work-issue/SKILL.md` — Passo 6
+- `.agents/rules/engineering-standards.mdc` — "After every change"
 - Issue #43 (OPS2) — harvest agent-miss → guardrails

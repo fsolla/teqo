@@ -1098,6 +1098,7 @@ export class CampaignFixtures {
           levelNote: null,
           strengths: [],
           risks: [],
+          stateDeputies: [],
           dobradinhaNotes: null,
           nextSteps: null,
           lastUpdateAt: null,

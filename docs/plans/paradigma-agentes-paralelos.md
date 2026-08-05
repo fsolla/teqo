@@ -15,7 +15,7 @@ todos:
     content: 'Neon prod snapshot → branch stage; runbook refresh (nova branch + swap secret) via workflow_dispatch humano'
     status: pending
   - id: onda0-cursor-context
-    content: 'AGENT-OPS.md + fatiar AGENTS + kernels + .cursorignore + Cloud env + hooks portáteis + standards fast-gate + PR template + README cheatsheet'
+    content: 'AGENT-OPS.md + fatiar AGENTS + kernels + .agentignore + Cloud env + hooks portáteis + standards fast-gate + PR template + README cheatsheet'
     status: pending
   - id: onda0-remove-codeberg
     content: 'Remover Codeberg de package.json/AGENTS/TECH-DEBT/ci.yml e qualquer referência; GitHub = única casa'
@@ -221,13 +221,13 @@ Cloud env: `gh` autenticado (Cursor GitHub integration); sem secrets de stage/pr
 
 ## Cursor Cloud readiness
 
-| Item     | Ação                                                            |
-| -------- | --------------------------------------------------------------- |
-| Contexto | Fatiar AGENTS; kernels PRODUCT/DESIGN/CUSTOMER; `.cursorignore` |
-| Env      | Compose Postgres + `migrate` + `db:seed:minimal`                |
-| Hooks    | Paths relativos                                                 |
-| Regra    | PR base `stage`; nunca Neon; 1 Issue/run                        |
-| Brief    | stdout do claim                                                 |
+| Item     | Ação                                                           |
+| -------- | -------------------------------------------------------------- |
+| Contexto | Fatiar AGENTS; kernels PRODUCT/DESIGN/CUSTOMER; `.agentignore` |
+| Env      | Compose Postgres + `migrate` + `db:seed:minimal`               |
+| Hooks    | Paths relativos                                                |
+| Regra    | PR base `stage`; nunca Neon; 1 Issue/run                       |
+| Brief    | stdout do claim                                                |
 
 ---
 
@@ -248,7 +248,7 @@ Igual: `file-miss` → harvest → PR com `codebaseConventions`/ESLint → ledge
 4. **Stage DB** (Neon prod snapshot) + runbook refresh **semanal**.
 5. **Vercel preview** para branch `stage` na Onda 0.
 6. Labels/prio + scripts `claim|register|prioritize|file-miss|promote` + seed Issues (body = plan atual, `depends` do roadmap).
-7. Contexto Cursor: `AGENT-OPS.md`, fatiar AGENTS, kernels, `.cursorignore`, Cloud env (Compose+seed:minimal), hooks portáteis, standards fast-gate, PR template.
+7. Contexto Cursor: `AGENT-OPS.md`, fatiar AGENTS, kernels, `.agentignore`, Cloud env (Compose+seed:minimal), hooks portáteis, standards fast-gate, PR template.
 8. **README cheatsheet** — seção curta no topo do [`README.md`](README.md) para humanos: fluxo em 5 linhas, comandos `pnpm agent:*`, labels, o que o agente faz sozinho vs o que exige humano, links para `AGENT-OPS.md`/CI/skills. Não duplicar o setup local — só a operação agentic.
 
 Ordenar: 0 primeiro (limpa base), depois 1/2, depois 3/4/5, depois 6/7/8.

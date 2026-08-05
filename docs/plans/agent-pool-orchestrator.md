@@ -214,7 +214,7 @@ Parâmetros (só relevantes ao backoff de retry de tick): `spawnRetryBackoff = p
 ## 5. Seleção de modelo
 
 - Fonte: frontmatter `model:` da Issue (escrito por `agent:register --model`, tabela de slugs
-  em `.cursor/skills/model-selection/SKILL.md`).
+  em `.agents/skills/model-selection/SKILL.md`).
 - Spawn: `model: { id: <slug>, params: [...] }` no body do `POST /v1/agents`. A API valida contra
   `GET /v1/models` (ids + aliases + params, ex.: `composer-2.5` com param `fast`).
 - **Namespace:** os slugs do repo (Task tool) e os da Cloud API são tabelas irmãs, não idênticas.
@@ -274,7 +274,7 @@ rotação documentada no runbook). `GITHUB_TOKEN` com `issues: write` (flip/come
 | `tests/unit/agentPoolModels.unit.spec.ts`      | novo — mapping/fallback/validação                                     | 2                                       |
 | `tests/unit/agentPoolPrompt.unit.spec.ts`      | novo — contrato do prompt (issue N, sem claim, PR base stage)         | 2                                       |
 | `docs/plans/agent-pool-orchestrator.md`        | este plano + resultados do spike                                      | 0                                       |
-| `.cursor/skills/agent-pool/SKILL.md`           | novo — runbook humano (start/stop/status/triage)                      | 4                                       |
+| `.agents/skills/agent-pool/SKILL.md`           | novo — runbook humano (start/stop/status/triage)                      | 4                                       |
 | `docs/AGENT-OPS.md`                            | linha na tabela de comandos + seção curta de secrets                  | 4                                       |
 | `docs/CHANGELOG-AGENTS.md`                     | uma entrada curta                                                     | 4                                       |
 
@@ -347,7 +347,7 @@ ou deixar bloqueada.
 
 - **Fase 0 — spike (30–45 min, antes de qualquer PR):** `GET /v1/me` + `GET /v1/models` (dump
   commitado neste plano); spawn de 1 agente de teste no repo com `model.id` explícito e prompt
-  trivial; confirmar: boot via `.cursor/environment.json`, `gh` autenticado no worker, tempo real
+  trivial; confirmar: boot via `.agents/environment.json`, `gh` autenticado no worker, tempo real
   de boot, formato exato do `agentId` cliente (`bc-…`) e o `409` no re-POST. Resultado: seção de
   evidências atualizada + tabela de mapeamento de modelos.
 - **Fase 1 — fundação read-only (appetite ~2–3h de sessão):** PR A — eligibility, state,
@@ -367,7 +367,7 @@ de spec — ops infra). **Schedule só ativa após o promote humano a `main`.**
 
 - `pnpm agent:promote` (promote `stage→main` é humano — o pool nunca chama).
 - Qualquer `DATABASE_URL` de stage/prod no supervisor ou nos workers (Cloud usa
-  `.cursor/cloud-setup.sh` + seed mínimo; o workflow não recebe secrets de banco).
+  `.agents/cloud-setup.sh` + seed mínimo; o workflow não recebe secrets de banco).
 - Editar Issues `in-progress` de outros agentes/humanos (o pool só toca as que ele claimou).
 - Substituir ou alterar o fluxo `plan-issue` → `work-issue` para Issues normais.
 - Supervisor local (`/loop`, `while` em shell, daemon em VPS) como default — rejeitado.
@@ -488,7 +488,7 @@ EXPIRED`, com `git.branches[].prUrl`. SSE stream existe mas não é necessária 
    cron "pode atrasar, nunca adianta". Avaliado como supervisor e rejeitado para v1 (D1); fica
    como plano B de superfície.
    Fonte: <https://cursor.com/docs/cloud-agent/automations>.
-7. **Ambiente do worker:** repo-file managed (`.cursor/environment.json` presente → install
+7. **Ambiente do worker:** repo-file managed (`.agents/environment.json` presente → install
    `pnpm install + cloud-setup.sh`: Postgres nativo + migrate + seed mínimo, sem secrets de
    stage/prod). Confirmado pelo MCP `cursor-cloud-environment-info` deste próprio run.
 8. **MCP `cursor-cloud`** (diagnóstico): `list-cloud-agents` com filtros de status/fonte,
@@ -500,7 +500,7 @@ EXPIRED`, com `git.branches[].prUrl`. SSE stream existe mas não é necessária 
 Verificado neste run (Cloud Agent `bc-9cd1a18c-…`, repo fsolla/teqo):
 
 - **Environment repo-file confirmado em produção:** o `environment-info` deste run reporta
-  `source: Repository` + `environmentJsonPath: .cursor/environment.json` — workers spawnados
+  `source: Repository` + `environmentJsonPath: .agents/environment.json` — workers spawnados
   pela API neste repo bootam com `pnpm install` + `cloud-setup.sh` (Postgres nativo + migrate +
   seed mínimo), sem secrets de stage/prod. Item 7 acima confirmado empiricamente.
 - **Formato de id:** runs usam `bc-<uuid>` (este run: `bc-9cd1a18c-3f2b-4661-b18b-401db63c1182`),

@@ -111,5 +111,5 @@ Depth check: nenhum módulo novo — três edições em dois arquivos que já do
 - `src/app/(campaign)/campanha/(app)/atividades/giros/page.tsx`
 - `src/app/(campaign)/campanha/(app)/municipios/page.tsx` — precedente de montagem boundary + results
 - `tests/unit/campaignListFilterNavigation.unit.spec.ts` — molde do teste
-- `.cursor/rules/engineering-standards.mdc` — § Loading feedback ("a região de RESULTADOS dima")
+- `.agents/rules/engineering-standards.mdc` — § Loading feedback ("a região de RESULTADOS dima")
 - `PRODUCT.md` / `DESIGN.md` — Field Desk

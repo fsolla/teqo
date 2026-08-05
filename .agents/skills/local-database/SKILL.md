@@ -15,7 +15,7 @@ Production is a live **Neon Postgres** with real citizens' PII. Local developmen
 
 ## Cursor Cloud (sem Docker)
 
-VMs Cloud **não rodam** `docker compose` / `pnpm db:start`. Postgres nativo: `.cursor/environment.json` (`cloud-setup.sh` + `ensure-postgres.sh`). Mesmos URLs `localhost:5432/teqo` e `teqo_test`. Agentes em `work-issue` / `agent-work-issue`: não tente Docker; `gate:fast`/`gate:push` não precisam de banco.
+VMs Cloud **não rodam** `docker compose` / `pnpm db:start`. Postgres nativo: `.agents/environment.json` (`cloud-setup.sh` + `ensure-postgres.sh`). Mesmos URLs `localhost:5432/teqo` e `teqo_test`. Agentes em `work-issue` / `agent-work-issue`: não tente Docker; `gate:fast`/`gate:push` não precisam de banco.
 
 ## Local connection values
 

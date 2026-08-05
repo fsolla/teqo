@@ -30,7 +30,7 @@ export const buildPoolWorkerPrompt = ({ issueNumber, issueTitle, issueId, planPa
     '',
     '## Fluxo',
     '',
-    'Siga a skill `.cursor/skills/agent-work-issue/SKILL.md` por completo (Issue já claimada):',
+    'Siga a skill `.agents/skills/agent-work-issue/SKILL.md` por completo (Issue já claimada):',
     '1. Rode `pnpm i` se `node_modules` não existir.',
     planPath
       ? `2. Plano de intenção: \`${planPath}\` — abra-o; depois Plan mode e escreva \`docs/plans/<slug>-impl.md\` (engenharia deliberada; pode divergir da hipótese de direção se o aceite de produto se mantiver).`
@@ -42,7 +42,7 @@ export const buildPoolWorkerPrompt = ({ issueNumber, issueTitle, issueId, planPa
     '',
     '## Proibido',
     '',
-    '- `DATABASE_URL` de prod ou `ALLOW_REMOTE_DB` — o setup local (`.cursor/cloud-setup.sh` + seed mínimo) cobre tudo.',
+    '- `DATABASE_URL` de prod ou `ALLOW_REMOTE_DB` — o setup local (`.agents/cloud-setup.sh` + seed mínimo) cobre tudo.',
     `- Editar outras Issues \`in-progress\` ou trabalhar fora da Issue #${issueNumber}.`,
     '- Tratar o plano de intenção como contrato de engenharia — ele é intenção; o `*-impl.md` é a engenharia.',
     '',

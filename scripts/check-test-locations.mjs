@@ -41,7 +41,7 @@ function walk(dir, out = []) {
   for (const entry of entries) {
     if (entry.name.startsWith('.') && entry.name !== '.env.test') {
       if (entry.isDirectory() && IGNORE_DIRS.has(entry.name)) continue
-      if (entry.isDirectory() && entry.name !== '.github' && entry.name !== '.cursor') continue
+      if (entry.isDirectory() && entry.name !== '.github' && entry.name !== '.agents') continue
     }
     if (IGNORE_DIRS.has(entry.name)) continue
     const absolute = path.join(dir, entry.name)

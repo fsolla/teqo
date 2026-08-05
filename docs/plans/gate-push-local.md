@@ -15,7 +15,7 @@ Dados: N/A — chore de DX.
 
 ## Contexto
 
-`.husky/pre-push` é uma linha: `pnpm lint && pnpm format:check && pnpm typecheck`. Mas o fast gate exigido por `.cursor/rules/engineering-standards.mdc` (desde 2026-07-30) e por `work-issue` Passo 4.3 é **lint + tsc + test:unit + format:check + check:cycles**. Resultado: agentes e humanos pusham verde no hook e quebram no CI por unit/cycles que nunca rodaram localmente. Não existe pre-commit hook.
+`.husky/pre-push` é uma linha: `pnpm lint && pnpm format:check && pnpm typecheck`. Mas o fast gate exigido por `.agents/rules/engineering-standards.mdc` (desde 2026-07-30) e por `work-issue` Passo 4.3 é **lint + tsc + test:unit + format:check + check:cycles**. Resultado: agentes e humanos pusham verde no hook e quebram no CI por unit/cycles que nunca rodaram localmente. Não existe pre-commit hook.
 
 Decisão de produto (2026-07-30, brief do lote CI): scripts DRY (`gate:fast`, `gate:push`), divisão pre-commit vs pre-push explícita, escape hatch documentado.
 
@@ -43,9 +43,9 @@ Componentes:
 
 - **`package.json`** — scripts `gate:fast`, `gate:ci` (`scripts/gate-ci.mjs`) e `gate:push` (= `gate:ci`).
 - **`.husky/pre-push`** — `pnpm gate:push`.
-- **`.cursor/rules/engineering-standards.mdc`** — item 3 do "After every change" passa a citar `pnpm gate:fast` / `pnpm gate:push`.
+- **`.agents/rules/engineering-standards.mdc`** — item 3 do "After every change" passa a citar `pnpm gate:fast` / `pnpm gate:push`.
 - **`docs/AGENT-OPS.md`** — linha do fast gate local atualizada para os scripts.
-- **`.cursor/skills/work-issue/SKILL.md`** — Passo 4.3/6.1 cita `pnpm gate:push`.
+- **`.agents/skills/work-issue/SKILL.md`** — Passo 4.3/6.1 cita `pnpm gate:push`.
 
 Sem migration, sem código de app.
 
@@ -69,5 +69,5 @@ Nenhum neste item.
 ## Referências
 
 - `.husky/pre-push` (linha atual), `package.json` (scripts de gate existentes)
-- `.cursor/rules/engineering-standards.mdc` — "Gate em duas velocidades"
-- `docs/AGENT-OPS.md` — fast gate local; `.cursor/skills/work-issue/SKILL.md` — Passo 4.3
+- `.agents/rules/engineering-standards.mdc` — "Gate em duas velocidades"
+- `docs/AGENT-OPS.md` — fast gate local; `.agents/skills/work-issue/SKILL.md` — Passo 4.3

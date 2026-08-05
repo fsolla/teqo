@@ -13,7 +13,7 @@ Responsável: —
 
 ## Design (Impeccable)
 
-Âncoras: `PRODUCT.md` (princípio 3 **Edit where you see**, princípio 4 **Auto-save, no Save button**, princípio 8 **Feel the action**) / `DESIGN.md` (register `product` — Field Desk) · tema `data-theme='campaign'` · regras `.cursor/rules/campanha-edit-where-you-see.mdc` e `.cursor/rules/campanha-action-feedback.mdc` · precedente vivo: [`MunicipalityListExpectedVotesControl.tsx`](../../src/components/campaign/municipality/MunicipalityListExpectedVotesControl.tsx).
+Âncoras: `PRODUCT.md` (princípio 3 **Edit where you see**, princípio 4 **Auto-save, no Save button**, princípio 8 **Feel the action**) / `DESIGN.md` (register `product` — Field Desk) · tema `data-theme='campaign'` · regras `.agents/rules/campanha-edit-where-you-see.mdc` e `.agents/rules/campanha-action-feedback.mdc` · precedente vivo: [`MunicipalityListExpectedVotesControl.tsx`](../../src/components/campaign/municipality/MunicipalityListExpectedVotesControl.tsx).
 
 Na implementação (`implement-roadmap-item`): craft compacto → critique → polish (sem shape — o popover já existe e o padrão de auto-save já está no produto ao lado, na mesma linha da tabela).
 

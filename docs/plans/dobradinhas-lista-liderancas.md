@@ -9,7 +9,7 @@ Responsável: —
 
 ## Design (Impeccable)
 
-Âncoras: `PRODUCT.md` (princípio 3 **Edit where you see**, 4 **Auto-save, no Save button**, 8 Feel the action; anti-goals "spreadsheet mode" e "always-mounted inputs on every row") / `DESIGN.md` (register `product`; Field Desk) · tema `data-theme='campaign'` · precedentes de interação [`AdvisorMunicipalityCell.tsx`](../../src/components/campaign/advisor/AdvisorMunicipalityCell.tsx) (B19 ✓ — chips removíveis + typeahead + otimista) e o popover de edição rápida da lista de municípios (B9 ✓ / **B27**) · shells `CampaignTable` / `CampaignPageShell` · regras `.cursor/rules/campanha-edit-where-you-see.mdc` e `campanha-action-feedback.mdc`.
+Âncoras: `PRODUCT.md` (princípio 3 **Edit where you see**, 4 **Auto-save, no Save button**, 8 Feel the action; anti-goals "spreadsheet mode" e "always-mounted inputs on every row") / `DESIGN.md` (register `product`; Field Desk) · tema `data-theme='campaign'` · precedentes de interação [`AdvisorMunicipalityCell.tsx`](../../src/components/campaign/advisor/AdvisorMunicipalityCell.tsx) (B19 ✓ — chips removíveis + typeahead + otimista) e o popover de edição rápida da lista de municípios (B9 ✓ / **B27**) · shells `CampaignTable` / `CampaignPageShell` · regras `.agents/rules/campanha-edit-where-you-see.mdc` e `campanha-action-feedback.mdc`.
 
 Na implementação (`implement-roadmap-item`): craft compacto → critique → polish. `harden`/`optimize` só sob gatilho do Passo 8.
 
@@ -135,7 +135,7 @@ Depth check: reusa `CampaignTable`, `Popover`/`Command`/`Badge` do kit, `wordSta
 - [`campaignRelationOptions.ts`](../../src/utilities/campaignRelationOptions.ts) — `loadStateDeputyOptions`
 - [`combobox-assessores-lista-municipios.md`](combobox-assessores-lista-municipios.md) (B27) · [`email-celular-lista-liderancas.md`](email-celular-lista-liderancas.md) (B28) · [`ordenacao-filtros-lista-liderancas.md`](ordenacao-filtros-lista-liderancas.md) (B29) · [`convite-whatsapp-lista-liderancas.md`](convite-whatsapp-lista-liderancas.md) (B30) · [`gerenciar-assessores.md`](gerenciar-assessores.md) (B19 ✓)
 - AGENTS.md — Campaign auth, naming, `overrideAccess: false`, escrita transacional, `Contact` join
-- `PRODUCT.md` / `DESIGN.md` — princípios 3, 4 e 8; Field Desk · `.cursor/rules/campanha-edit-where-you-see.mdc`
+- `PRODUCT.md` / `DESIGN.md` — princípios 3, 4 e 8; Field Desk · `.agents/rules/campanha-edit-where-you-see.mdc`
 
 ## Revisão na entrega (2026-07-26)
 

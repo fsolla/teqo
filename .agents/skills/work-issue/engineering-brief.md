@@ -4,9 +4,9 @@ Leia o que for relevante **antes** de travar a abordagem no `*-impl.md`. Não in
 
 ## Pinos do repo (sempre)
 
-- `.cursor/rules/codebase-map.mdc` — direção `lib/` → `utilities/` → `components/` → `app/`; dono da feature
-- `.cursor/rules/engineering-standards.mdc` — gates, type honesty, client boundary, caching ladder, access
-- `.cursor/rules/security-critical.mdc` — quando tocar access/Local API/overrideAccess
+- `.agents/rules/codebase-map.mdc` — direção `lib/` → `utilities/` → `components/` → `app/`; dono da feature
+- `.agents/rules/engineering-standards.mdc` — gates, type honesty, client boundary, caching ladder, access
+- `.agents/rules/security-critical.mdc` — quando tocar access/Local API/overrideAccess
 - `AGENTS.md` — auth campanha, Consent fail-closed, transactions, naming, DB local
 - `docs/ARCHITECTURE.md` — se a mudança cruza verticais ou modelo de domínio
 

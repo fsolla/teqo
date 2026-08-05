@@ -71,7 +71,7 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 | W0  | Safety net: pin list URL parsers + list loaders (unit + int smokes); TESTING/TECH-DEBT truth-up                                         | [pinagem-superficies-lista.md](plans/pinagem-superficies-lista.md)       | done   | 2026-07-25 |
 | W1  | Generalized campaign list system (D1 core + municipality; D2 migrate entity triplet/demandas/apoiadores/assessores + delete superseded) | [sistema-listas-campanha.md](plans/sistema-listas-campanha.md)           | done   | 2026-07-25 |
 | W2  | Architecture decision (DDD/clean-arch/SDP evaluation → conventions + boundary fixes) + staged `components/campaign` subfolders          | [decisao-arquitetura-dominios.md](plans/decisao-arquitetura-dominios.md) | done   | 2026-07-25 |
-| W3  | `docs/ARCHITECTURE.md` + `.cursor/rules/codebase-map.mdc`                                                                               | [mapa-mental-arquitetura.md](plans/mapa-mental-arquitetura.md)           | done   | 2026-07-25 |
+| W3  | `docs/ARCHITECTURE.md` + `.agents/rules/codebase-map.mdc`                                                                               | [mapa-mental-arquitetura.md](plans/mapa-mental-arquitetura.md)           | done   | 2026-07-25 |
 | W4a | `electionInsights.ts` gut/split: extract `electionFormat`, keep voteTrend, delete dead clusters (before E10)                            | [split-election-insights.md](plans/split-election-insights.md)           | done   | 2026-07-25 |
 | W4b | knip unused-exports warn→error: delete zero-ref exports, un-export in-file symbols, config, CI flip                                     | (tracker only)                                                           | done   | 2026-07-25 |
 | W4c | Detail-page RSC extraction (`municipios/[slug]`, `planos/[slug]`) + dedupe detail-tab helper twins                                      | (tracker only)                                                           | done   | 2026-07-25 |
@@ -116,7 +116,7 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 ## Context
 
 - **Started:** 2026-07-28 (audit executed and plan signed off same day).
-- **Trigger:** user-requested sweep for code smells + consolidation of similar components/hooks/functions (even when not identical — small behavior deltas accepted under the behavior-delta protocol), inspired by the engineering-standards skills catalog. The audit method is now codified as the reusable skill `.cursor/skills/engineering-audit/SKILL.md`.
+- **Trigger:** user-requested sweep for code smells + consolidation of similar components/hooks/functions (even when not identical — small behavior deltas accepted under the behavior-delta protocol), inspired by the engineering-standards skills catalog. The audit method is now codified as the reusable skill `.agents/skills/engineering-audit/SKILL.md`.
 - **Method:** read-only audit. Canon loaded (rules, ARCHITECTURE, TECH-DEBT, TESTING, `escala-dry-pos-*` plans, consolidation precedents, rejected-with-reason list); hotspot map (churn × size × static gates); **five parallel sweeps** (lib+scripts, utilities+access, components, app+collections+globals, tests); consolidation hunt under the anti-DRY rule (knowledge, not text); 11 open ledger rows re-verified.
 - **Baseline:** green — `tsc` 0 errors, `lint` 0 warnings, `knip` 0 findings (known `payload.config.ts` load error, P3), madge 0 cycles (650 files).
 - **Audit headlines (all measured):**

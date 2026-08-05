@@ -20,7 +20,7 @@ main → ci.yml full suite → vercel deploy --prod (se verde) → requeue se HE
 
 **Skills:** `plan-issue` (intenção + Issues) → `work-issue` (humano: claim → impl plan → confirmação → execução) ou `agent-work-issue` (pool: já claimada → impl plan → execução sem pausa) → `/simplify` → `capture-review-debts` → PR `--base main` → `project-status`. `docs/roadmap.md` = legado congelado; fonte canônica = GitHub Issues.
 
-- **Agente faz sozinho:** `pnpm agent:claim` → implementa → **`pnpm push`** → PR **Ready** (nunca draft) com `Closes #N` → `gh pr merge --auto --merge` → `gh pr checks --watch --required`. Regra always-on: `.cursor/rules/agent-pr-workflow.mdc`. Em Cursor Cloud: `ManagePullRequest` com `draft: false`, depois armar auto-merge via `gh pr merge --auto --merge` (o default draft da tool **não** vale neste repo).
+- **Agente faz sozinho:** `pnpm agent:claim` → implementa → **`pnpm push`** → PR **Ready** (nunca draft) com `Closes #N` → `gh pr merge --auto --merge` → `gh pr checks --watch --required`. Regra always-on: `.agents/rules/agent-pr-workflow.mdc`. Em Cursor Cloud: `ManagePullRequest` com `draft: false`, depois armar auto-merge via `gh pr merge --auto --merge` (o default draft da tool **não** vale neste repo).
 - **Só humano:** secrets Vercel (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`), `POOL_GITHUB_TOKEN`, `pnpm configure:branch-protection`, editar envs Neon/Vercel.
 
 ### Dono do PR, dono do CI
@@ -91,7 +91,7 @@ Vercel Git builds: `scripts/vercel-ignore-build.sh` skipeia **todas** as branche
 
 ## Cursor Cloud
 
-`.cursor/environment.json` instala deps + Postgres nativo + `db:seed:minimal`. Sem secrets de prod. Preferir `pnpm push`; escape `git push --no-verify` só no cutover documentado acima.
+`.agents/environment.json` instala deps + Postgres nativo + `db:seed:minimal`. Sem secrets de prod. Preferir `pnpm push`; escape `git push --no-verify` só no cutover documentado acima.
 
 ## Agent pool
 

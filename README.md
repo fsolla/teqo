@@ -111,7 +111,7 @@ Then run:
 - `pnpm test:e2e` — Playwright (requires the test DB schema and a free port)
 - `pnpm test:all` — unit + integration + E2E
 
-Quality gates (also enforced by CI on the GitHub mirror): `pnpm lint` (zero warnings — `--max-warnings=0`), `pnpm typecheck`, and `pnpm exec knip` (dead files/dependencies fail; delete what your change orphaned). Standards: `.cursor/rules/engineering-standards.mdc`.
+Quality gates (also enforced by CI on the GitHub mirror): `pnpm lint` (zero warnings — `--max-warnings=0`), `pnpm typecheck`, and `pnpm exec knip` (dead files/dependencies fail; delete what your change orphaned). Standards: `.agents/rules/engineering-standards.mdc`.
 
 ## Tech Stack
 
@@ -122,7 +122,7 @@ Quality gates (also enforced by CI on the GitHub mirror): `pnpm lint` (zero warn
 
 ## Campaign (`/campanha`)
 
-Internal campaign tool for electoral nuclei, local leaderships, vote estimates, field updates, and WhatsApp invites. Authenticated separately from `/admin` via the `campaignUser` collection (`geral` / `coordenador` / `lideranca`). Operational status and decisions: [`.cursor/rules/projects/nucleos-eleitorais.mdc`](.cursor/rules/projects/nucleos-eleitorais.mdc). Conventions and deploy checklist: `AGENTS.md` (“Campaign auth” / “Campaign nuclei MVP”).
+Internal campaign tool for electoral nuclei, local leaderships, vote estimates, field updates, and WhatsApp invites. Authenticated separately from `/admin` via the `campaignUser` collection (`geral` / `coordenador` / `lideranca`). Operational status and decisions: [`.agents/rules/projects/nucleos-eleitorais.mdc`](.agents/rules/projects/nucleos-eleitorais.mdc). Conventions and deploy checklist: `AGENTS.md` (“Campaign auth” / “Campaign nuclei MVP”).
 
 **Production blocker:** do not load real leadership data or enable invites until counsel-approved `Consent.key = 'lideranca-autopreenchimento'` exists. Absolute invite URLs require `NEXT_PUBLIC_SITE_URL` as an exact HTTPS DNS origin in production.
 

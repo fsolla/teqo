@@ -1,6 +1,6 @@
 # Pass 3 — Auditoria de engenharia e consolidação
 
-**Data:** 2026-07-28 · **Método:** skill [`engineering-audit`](../../.cursor/skills/engineering-audit/SKILL.md) (Pass-style; cinco varreduras paralelas read-only) · **Tracker:** [IMPROVE-CODE-QUALITY-PLAN.md](../IMPROVE-CODE-QUALITY-PLAN.md) · **Ledger:** [TECH-DEBT.md](../TECH-DEBT.md)
+**Data:** 2026-07-28 · **Método:** skill [`engineering-audit`](../../.agents/skills/engineering-audit/SKILL.md) (Pass-style; cinco varreduras paralelas read-only) · **Tracker:** [IMPROVE-CODE-QUALITY-PLAN.md](../IMPROVE-CODE-QUALITY-PLAN.md) · **Ledger:** [TECH-DEBT.md](../TECH-DEBT.md)
 
 ## Contexto e manchetes
 
