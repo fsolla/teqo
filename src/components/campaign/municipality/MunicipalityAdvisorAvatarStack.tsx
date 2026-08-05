@@ -1,9 +1,8 @@
 import { CircleAlertIcon } from 'lucide-react'
 import type { ReactElement } from 'react'
 
-import { Avatar, AvatarFallback } from '@/components/ui/Avatar'
+import { MunicipalityRelationAvatarStack } from '@/components/campaign/shared/MunicipalityRelationAvatarStack'
 import { Badge } from '@/components/ui/Badge'
-import { campaignUserInitials } from '@/utilities/campaignUserProfile'
 import { municipalityListCoverageLabels } from '@/utilities/municipality/municipalityLabels'
 
 export type MunicipalityAdvisorAvatarEntry = {
@@ -59,15 +58,10 @@ export const MunicipalityAdvisorAvatarStack = ({
   if (!advisors.length) return <MissingAdvisorBadge isPriority={isPriority} />
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex -space-x-2">
-        {advisors.slice(0, maxVisible).map((advisor) => (
-          <Avatar key={advisor.id} className="size-8 border-2 border-background">
-            <AvatarFallback>{campaignUserInitials(advisor.name)}</AvatarFallback>
-          </Avatar>
-        ))}
-      </div>
-      <span className="sr-only">{advisors.map((advisor) => advisor.name).join(', ')}</span>
-    </div>
+    <MunicipalityRelationAvatarStack
+      entries={advisors.map((advisor) => ({ id: advisor.id, label: advisor.name }))}
+      emptyState={null}
+      maxVisible={maxVisible}
+    />
   )
 }
