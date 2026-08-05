@@ -182,7 +182,6 @@ export const formatMunicipalityGeographyLabel = (municipality: {
  */
 export type MunicipalityListColumnId =
   | 'name'
-  | 'region'
   | 'votos'
   | 'classe'
   // Matches the column's own `id` and its `?level=` filter param; the SORT key
@@ -214,8 +213,7 @@ const CLASS_COLUMN_DESCRIPTION =
  * on props, so there is nothing to recompute per render.
  */
 export const municipalityColumnDescriptions: Record<MunicipalityListColumnId, string> = {
-  name: 'Nome do município e prioridade da campanha.',
-  region: 'Território de Identidade (Bahia) a que o município pertence.',
+  name: 'Nome do município, Território de Identidade e prioridade da campanha.',
   votos: formatMunicipalityConcentrationHint(),
   classe: CLASS_COLUMN_DESCRIPTION,
   level: campaignConceptOneLiner('nivel-de-envolvimento'),
@@ -224,7 +222,8 @@ export const municipalityColumnDescriptions: Record<MunicipalityListColumnId, st
   stateDeputies:
     'Deputados estaduais com quem a campanha dobra neste município — coordenação e candidato editam clicando aqui.',
   trend: 'Tendência política percebida pela equipe: favorável, neutra ou desfavorável.',
-  expectedVotes: campaignConceptOneLiner('meta'),
+  expectedVotes:
+    'Estimativa de votos do candidato neste município em 2026. Ordena pelo cenário central, independente do cenário selecionado acima.',
   lastSignal: `Última atualização da equipe ou declaração de liderança, o que for mais recente. Fica destacado a partir de ${MUNICIPALITY_COLD_SIGNAL_DAYS} dias sem registro.`,
   // The scenario picker above the table is client state, so the server can
   // only sort by one scenario — named here so the ordering never looks

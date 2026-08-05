@@ -22,7 +22,7 @@ let cookieJar = ''
 
 const COLUMNS = [
   { id: 'name', label: 'Município', mandatory: true },
-  { id: 'region', label: 'Território' },
+  { id: 'goalCoverage', label: 'Cobertura' },
   { id: 'trend', label: 'Tendência' },
 ]
 
@@ -73,7 +73,7 @@ describe('CampaignColumnPicker', () => {
       render(picker([]))
       openMenu()
 
-      fireEvent.click(screen.getByRole('checkbox', { name: 'Território' }))
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Cobertura' }))
       // Reading the next label takes longer than any debounce worth having:
       // a second between checkboxes must still be one refresh, not two.
       await vi.advanceTimersByTimeAsync(1_000)
@@ -84,7 +84,7 @@ describe('CampaignColumnPicker', () => {
       closeMenu()
 
       expect(refresh).toHaveBeenCalledTimes(1)
-      expect(cookieJar).toContain('campaign_columns=municipios:region~trend')
+      expect(cookieJar).toContain('campaign_columns=municipios:goalCoverage~trend')
     } finally {
       vi.useRealTimers()
     }
@@ -96,14 +96,14 @@ describe('CampaignColumnPicker', () => {
     try {
       render(picker([]))
       openMenu()
-      fireEvent.click(screen.getByRole('checkbox', { name: 'Território' }))
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Cobertura' }))
 
       await vi.advanceTimersByTimeAsync(3_000)
 
       // The idle timer is durability, not the commit: a slow reader who takes
       // more than the interval between checkboxes must not pay a route render
       // per column, which is the failure the 400 ms debounce was rejected for.
-      expect(cookieJar).toContain('campaign_columns=municipios:region')
+      expect(cookieJar).toContain('campaign_columns=municipios:goalCoverage')
       expect(refresh).not.toHaveBeenCalled()
 
       closeMenu()
@@ -114,11 +114,11 @@ describe('CampaignColumnPicker', () => {
   })
 
   it('does not refresh a session that ends where it started', () => {
-    render(picker(['region']))
+    render(picker(['goalCoverage']))
     openMenu()
 
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Território' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Território' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Cobertura' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Cobertura' }))
     closeMenu()
 
     expect(refresh).not.toHaveBeenCalled()
@@ -130,10 +130,21 @@ describe('CampaignColumnPicker', () => {
 
     // Radix reports no close event here, so without the unmount flush this
     // choice would be lost to a sidebar navigation with no feedback at all.
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Território' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Cobertura' }))
     unmount()
 
-    expect(cookieJar).toContain('campaign_columns=municipios:region')
+    expect(cookieJar).toContain('campaign_columns=municipios:goalCoverage')
+  })
+
+  it('serializes restoring every municipality column as an explicit empty choice', () => {
+    render(picker(['trend']))
+    openMenu()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restaurar todas' }))
+    closeMenu()
+
+    expect(cookieJar).toContain('campaign_columns=municipios:__none__')
+    expect(refresh).toHaveBeenCalledTimes(1)
   })
 
   it('never lets the mandatory column be unchecked', () => {
@@ -150,7 +161,7 @@ describe('CampaignColumnPicker', () => {
     const { rerender } = render(picker([]))
     openMenu()
 
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Território' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Cobertura' }))
     closeMenu()
     await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
 
@@ -158,8 +169,8 @@ describe('CampaignColumnPicker', () => {
     openMenu()
     fireEvent.click(screen.getByRole('checkbox', { name: 'Tendência' }))
     // … and the RSC payload of the FIRST one lands inside it. Adopting it here
-    // would uncheck nothing and re-commit `region` alone, dropping `trend`.
-    rerender(picker(['region']))
+    // would uncheck nothing and re-commit `goalCoverage` alone, dropping `trend`.
+    rerender(picker(['goalCoverage']))
 
     expect(screen.getByRole('checkbox', { name: 'Tendência' }).getAttribute('aria-checked')).toBe(
       'false',
@@ -167,19 +178,19 @@ describe('CampaignColumnPicker', () => {
 
     closeMenu()
     await waitFor(() => expect(refresh).toHaveBeenCalledTimes(2))
-    expect(cookieJar).toContain('campaign_columns=municipios:region~trend')
+    expect(cookieJar).toContain('campaign_columns=municipios:goalCoverage~trend')
   })
 
   it('adopts the server payload once nothing is pending', async () => {
     const { rerender } = render(picker([]))
 
-    rerender(picker(['region']))
+    rerender(picker(['goalCoverage']))
     openMenu()
 
     await waitFor(() =>
-      expect(
-        screen.getByRole('checkbox', { name: 'Território' }).getAttribute('aria-checked'),
-      ).toBe('false'),
+      expect(screen.getByRole('checkbox', { name: 'Cobertura' }).getAttribute('aria-checked')).toBe(
+        'false',
+      ),
     )
     expect(refresh).not.toHaveBeenCalled()
   })

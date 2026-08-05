@@ -8,7 +8,10 @@ import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared
 
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
 import { formatAdvisorNamesTooltip } from '@/components/campaign/municipality/MunicipalityAdvisorAvatarStack'
-import { MunicipalityList } from '@/components/campaign/municipality/MunicipalityList'
+import {
+  MunicipalityList,
+  municipalityListPickerColumns,
+} from '@/components/campaign/municipality/MunicipalityList'
 import { MunicipalityListAdvisorsControl } from '@/components/campaign/municipality/MunicipalityListAdvisorsControl'
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
 import { TseZoneBadge } from '@/components/campaign/municipality/TseZoneBadge'
@@ -61,6 +64,34 @@ const municipalityListDefaultProps = {
   signalFormAction: noopListFormAction,
   state: { page: 1 },
 }
+
+const responsiveMunicipality = stub<MunicipalityListViewModel>({
+  id: 1,
+  name: 'São Francisco do Conde com nome extenso',
+  slug: 'sao-francisco-do-conde',
+  kind: 'municipio',
+  city: 'São Francisco do Conde',
+  region: 'Metropolitano de Salvador',
+  ibgeCode: '2929206',
+  zoneNumber: null,
+  advisorIDs: [],
+  leadershipIDs: [],
+  stateDeputyIDs: [],
+  priority: 'normal',
+  lastUpdateAt: null,
+  lastSignalAt: null,
+  expectedVotes: toVoteEstimateScenarioViewModel(null),
+  politicalTrendStatus: null,
+  politicalTrendNote: null,
+  engagementLevel: null,
+  levelNote: null,
+  levelChangedAt: null,
+  pledges: createEmptyMunicipalityPledgeAggregate(),
+  votePosition2022: null,
+  territorialClass: 'sem_base',
+  territorialClassFactors: [],
+  goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
+})
 
 const mockAppRouter = stub<Parameters<typeof AppRouterContext.Provider>[0]['value']>({
   push: () => {},
@@ -279,15 +310,22 @@ describe('campaign visual foundation', () => {
     // B155: the Lideranças column chips the linked leaderships by name.
     expect(html).toContain('Lideranças')
     expect(html).toContain('Maria de Jesus')
-    // B22: every one of the 11 staff columns carries a header explanation —
+    // B22: every one of the 10 visible-by-default staff columns carries a header explanation —
     // pinned inside `<thead>` itself, since `cellTooltip` (e.g. "Classe") and
     // the mobile card's own class tooltip (B42) add triggers of their own.
     const [, tbodyHtml = ''] = html.split('<tbody')
     const theadHtml = html.slice(html.indexOf('<thead'), html.indexOf('</thead>'))
-    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(11)
+    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(10)
 
-    // B41: horizontal scroll table with a pinned Município column header.
+    // B158: the table is container-driven and clips instead of delegating to a
+    // horizontal scroller. Município remains pinned and owns the territory subline.
+    expect(html).toContain('data-container="municipality-list"')
+    expect(html).toContain('@container/municipality-list')
+    expect(html).toContain('@min-[48rem]/municipality-list:block')
+    expect(html).toContain('@min-[48rem]/municipality-list:hidden')
     expect(html).toContain('data-slot="table-container"')
+    expect(html).toContain('overflow-x-hidden')
+    expect(html).not.toContain('overflow-x-auto')
     expect(theadHtml).toContain('Município')
     expect(tbodyHtml).toContain('Seabra')
   })
@@ -338,11 +376,10 @@ describe('campaign visual foundation', () => {
       }),
     )
 
-    // B157: the new column's header explanation makes it 12 staff tooltips
-    // (11 with B155's Lideranças column + this one).
+    // B157/B158: Dobradinha adds one explanation to the 10-column staff baseline.
     const theadHtml = html.slice(html.indexOf('<thead'), html.indexOf('</thead>'))
-    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(12)
-    expect(theadHtml).toContain('Dobradinhas')
+    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(11)
+    expect(theadHtml).toContain('Dobradinha')
     // Avatar-stack display: initials circles + the names in the trigger's
     // accessible label (the closed cell reads WHO is assigned without opening).
     expect(html).toContain('>F<') // Fulano
@@ -663,10 +700,113 @@ describe('campaign visual foundation', () => {
     expect(html).not.toContain('Faltam')
     expect(html).not.toContain('Prioritária')
     expect(html).not.toContain(`aria-label="${municipalityPriorityIndicatorLabel}"`)
-    // B22: the leader view's 5 columns (name/region/kind/votos/lastUpdateAt)
-    // also carry header explanations.
+    // B22/B158: the leader view keeps only Município, 2022 and Atualização;
+    // all three carry header explanations.
     const [theadHtml] = html.split('<tbody')
-    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(4)
+    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(3)
+  })
+
+  describe('B158 responsive municipality columns', () => {
+    const renderResponsiveList = (hiddenColumnIds: string[] = []) =>
+      renderWithAppRouter(
+        createElement(MunicipalityList, {
+          municipalities: [responsiveMunicipality],
+          advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
+          ...municipalityListDefaultProps,
+          isStaffView: true,
+          isCampaignUnrestricted: true,
+          columnVisibility: { listId: 'municipios', hiddenColumnIds },
+        }),
+      )
+
+    it('keeps the table order, territory subline, and symmetric container-query classes', () => {
+      const html = renderResponsiveList()
+      const theadHtml = html.slice(html.indexOf('<thead'), html.indexOf('</thead>'))
+      const tbodyHtml = html.slice(html.indexOf('<tbody'), html.indexOf('</tbody>'))
+      const labels = [
+        'Município',
+        '2022',
+        '2026',
+        'Nível',
+        'Classe',
+        'Assessor',
+        'Tendência',
+        'Liderança',
+        'Dobradinha',
+        'Cobertura',
+        'Sinal',
+      ]
+
+      let previousIndex = -1
+      for (const label of labels) {
+        const labelIndex = theadHtml.indexOf(label)
+        expect(labelIndex, `${label} deve aparecer depois da coluna anterior`).toBeGreaterThan(
+          previousIndex,
+        )
+        previousIndex = labelIndex
+      }
+
+      expect(theadHtml).not.toContain('Território')
+      const nameCellHtml = tbodyHtml.split('<td')[1] ?? ''
+      expect(nameCellHtml).toContain('São Francisco do Conde com nome extenso')
+      expect(nameCellHtml).toContain('Metropolitano de Salvador')
+      expect(nameCellHtml).toContain('href="/campanha/territorios#ti-metropolitano-de-salvador"')
+
+      for (const className of [
+        'hidden @min-[54rem]/municipality-list:table-cell',
+        'hidden @min-[66rem]/municipality-list:table-cell',
+        'hidden @min-[72rem]/municipality-list:table-cell',
+        'hidden @min-[78rem]/municipality-list:table-cell',
+      ]) {
+        expect(html.split(className)).toHaveLength(3)
+      }
+      expect(tbodyHtml).toContain('@min-[60rem]/municipality-list:hidden')
+      expect(tbodyHtml).toContain('@min-[60rem]/municipality-list:inline-flex')
+      expect(tbodyHtml).toContain('@min-[84rem]/municipality-list:hidden')
+      expect(tbodyHtml).toContain('@min-[84rem]/municipality-list:block')
+
+      const firstRowCells = tbodyHtml.split('<td').slice(1)
+      expect(firstRowCells[3]?.split('</td>')[0]).toContain('>—</span>')
+      expect(html).toContain('Sem nível')
+    })
+
+    it.each([
+      { hidden: [], hasActions: false },
+      { hidden: ['trend'], hasActions: true },
+      { hidden: ['lastSignal'], hasActions: true },
+      { hidden: ['trend', 'lastSignal'], hasActions: true },
+    ])('mounts one trend and signal editor in the table for $hidden', ({ hidden, hasActions }) => {
+      const html = renderResponsiveList(hidden)
+      const tableHtml = html.slice(html.indexOf('<table'), html.indexOf('</table>'))
+      const theadHtml = tableHtml.slice(tableHtml.indexOf('<thead'), tableHtml.indexOf('</thead>'))
+
+      expect(tableHtml.match(/aria-label="Editar tendência política/g)).toHaveLength(1)
+      expect(tableHtml.match(/aria-label="Registrar sinal em/g)).toHaveLength(1)
+      expect(theadHtml.includes('Ações')).toBe(hasActions)
+    })
+
+    it('keeps removed and internal columns out of the municipality picker', () => {
+      const columns = municipalityListPickerColumns({
+        isStaffView: true,
+        isCampaignUnrestricted: true,
+      })
+
+      expect(columns.map((column) => column.id)).toEqual([
+        'name',
+        'votos',
+        'expectedVotes',
+        'level',
+        'classe',
+        'advisors',
+        'trend',
+        'leaderships',
+        'stateDeputies',
+        'goalCoverage',
+        'lastSignal',
+      ])
+      expect(columns).not.toContainEqual(expect.objectContaining({ id: 'region' }))
+      expect(columns).not.toContainEqual(expect.objectContaining({ id: 'actions' }))
+    })
   })
 
   /**
@@ -695,10 +835,10 @@ describe('campaign visual foundation', () => {
     })
 
     it('wraps the advisor cell in a tooltip only when there is a name to show', () => {
-      // The staff `<thead>` already carries 11 header-explanation tooltips
+      // The staff `<thead>` already carries 10 header-explanation tooltips
       // (B22), regardless of row data. This baseline isolates the advisors
       // CELL tooltip, the one this test actually exercises.
-      const HEADER_TOOLTIP_COUNT = 11
+      const HEADER_TOOLTIP_COUNT = 10
       const baseMunicipality = {
         id: 1,
         name: 'Seabra',

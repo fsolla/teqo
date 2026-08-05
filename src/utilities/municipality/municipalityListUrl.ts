@@ -101,21 +101,18 @@ export const municipalityListSortLabels: Record<MunicipalityListSortKey, string>
  */
 export const municipalityColumnLabels: Record<MunicipalityListColumnId, string> = {
   name: municipalityListSortLabels.name,
-  region: municipalityListSortLabels.region,
   /** Header is the bare year, under the "2022" group of the table. */
   votos: 'Votação 2022',
-  classe: municipalityListSortLabels.classe,
+  expectedVotes: 'Estimativa 2026',
   level: municipalityListSortLabels.nivel,
-  advisors: municipalityListSortLabels.coverage,
-  /** B155 — the column has no sort/filter; the label stands alone in the picker. */
-  leaderships: 'Lideranças',
-  /** B157 — nova coluna entre Assessores e Tendência (grupo "rede"). */
-  stateDeputies: 'Dobradinhas',
+  classe: municipalityListSortLabels.classe,
+  advisors: 'Assessor',
   trend: municipalityListSortLabels.trend,
-  expectedVotes: municipalityListSortLabels.expectedVotes,
-  /** The column shows the signal; `frescor` sorts by how old it is. */
-  lastSignal: 'Último sinal',
+  leaderships: 'Liderança',
+  stateDeputies: 'Dobradinha',
   goalCoverage: municipalityListSortLabels.deficit,
+  /** The column shows the signal; `frescor` sorts by how old it is. */
+  lastSignal: 'Sinal',
   lastUpdateAt: municipalityListSortLabels.lastUpdateAt,
 }
 
