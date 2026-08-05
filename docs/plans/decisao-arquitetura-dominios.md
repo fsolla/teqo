@@ -37,5 +37,5 @@ Nenhum item bloqueado (moves per-domain em branches curtas); navegação de agen
 
 ## Referências
 
-- `.cursor/rules/engineering-standards.mdc` (regra lib/utilities), AGENTS.md (estrutura), auditoria de fronteiras 2026-07-25
+- `.agents/rules/engineering-standards.mdc` (regra lib/utilities), AGENTS.md (estrutura), auditoria de fronteiras 2026-07-25
 - `src/utilities/campaignAccess.ts` (precedente de split within-layer com re-export surface)

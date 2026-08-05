@@ -9,7 +9,7 @@ Responsável: —
 
 ## Design (Impeccable)
 
-Âncoras: `PRODUCT.md` § **Feel the action** · `.cursor/rules/campanha-action-feedback.mdc` · precedente `CampaignListPendingBoundary` / `CampaignListResults` / `useCampaignListTransition` (`src/components/campaign/shared/CampaignListPending.tsx`) e fill-in do compositor de giro ([feedback-pendente-compositor-giro.md](feedback-pendente-compositor-giro.md)) · tema `data-theme='campaign'`.
+Âncoras: `PRODUCT.md` § **Feel the action** · `.agents/rules/campanha-action-feedback.mdc` · precedente `CampaignListPendingBoundary` / `CampaignListResults` / `useCampaignListTransition` (`src/components/campaign/shared/CampaignListPending.tsx`) e fill-in do compositor de giro ([feedback-pendente-compositor-giro.md](feedback-pendente-compositor-giro.md)) · tema `data-theme='campaign'`.
 
 Na implementação (`implement-roadmap-item`): craft compacto → critique → polish. Sem shape novo.
 
@@ -104,7 +104,7 @@ Componentes:
 - `src/components/campaign/shared/CampaignListPending.tsx` — boundary, hook, results, `CampaignTransitionAnchor`
 - `docs/plans/chassis-wizard-campanha.md` (B59 ✓) · `docs/plans/header-mobile-wizard-campanha.md` (B75) · `docs/plans/busca-municipio-wizard.md` (B60 ✓)
 - `docs/plans/feedback-pendente-compositor-giro.md` — precedente não-lista
-- `.cursor/rules/campanha-action-feedback.mdc` · `PRODUCT.md` § Feel the action
+- `.agents/rules/campanha-action-feedback.mdc` · `PRODUCT.md` § Feel the action
 - AGENTS.md — sem Consent; naming
 
 Qualidade de decisão: 4/5

@@ -154,7 +154,7 @@ Recomendação de instalação do `/campanha` como PWA, exibida no início da se
 - `docs/roadmap.md` (linhas 58, 62, 81)
 - `docs/plans/notifications.md` — push depende deste plano
 - `AGENTS.md` — Campaign auth, naming conventions, transações
-- `.cursor/rules/projects/nucleos-eleitorais.mdc`
+- `.agents/rules/projects/nucleos-eleitorais.mdc`
 - `src/app/(campaign)/layout.tsx` — root layout da vertical (onde os metadados entram)
 - `src/app/(campaign)/campanha/(app)/layout.tsx` — shell autenticado (monta o `<InstallPwaToast />`)
 - `src/components/ui/Toaster.tsx` — sonner já montado; reusar, não duplicar

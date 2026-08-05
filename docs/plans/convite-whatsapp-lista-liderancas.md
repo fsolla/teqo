@@ -112,4 +112,4 @@ Componentes:
 - `src/components/campaign/advisor/AdvisorsTable.tsx` (linhas ~86–93, ~411–437) — precedente de ícone de linha com disable por telefone
 - `tests/unit/campaignInviteInteractions.unit.spec.ts`, `tests/int/campaignInvite.int.spec.ts` — padrão de teste da action/UI de convite existente
 - AGENTS.md — Local API `overrideAccess: false` (já respeitado pela action reusada), Campaign auth
-- `PRODUCT.md` / `.cursor/rules/campanha-edit-where-you-see.mdc`, `.cursor/rules/campanha-action-feedback.mdc` — princípios de UI herdados
+- `PRODUCT.md` / `.agents/rules/campanha-edit-where-you-see.mdc`, `.agents/rules/campanha-action-feedback.mdc` — princípios de UI herdados

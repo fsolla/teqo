@@ -73,7 +73,7 @@ Idênticos a `agent-work-issue`:
 - `capture-review-debts` **com** gate humano (Passo 5 daquela skill) — não use o modo autônomo do pool
 - `pnpm push` → PR Ready `--base main` + `Closes #N` → auto-merge → `gh pr checks --watch --required`
 
-Detalhes, Prep Cloud, invariantes e templates: leia [`agent-work-issue/SKILL.md`](../agent-work-issue/SKILL.md) e os arquivos em `.cursor/skills/work-issue/` (`engineering-brief.md`, `implementation-template.md`, `decision-quality.md`).
+Detalhes, Prep Cloud, invariantes e templates: leia [`agent-work-issue/SKILL.md`](../agent-work-issue/SKILL.md) e os arquivos em `.agents/skills/work-issue/` (`engineering-brief.md`, `implementation-template.md`, `decision-quality.md`).
 
 ## Resumo final
 

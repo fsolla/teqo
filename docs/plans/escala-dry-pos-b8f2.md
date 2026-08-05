@@ -160,4 +160,4 @@ Componentes:
 - `src/components/campaign/map/BahiaMap.tsx` (`:73-90` duas malhas) + `MunicipalityMapPanel.tsx` (ressalva; lista `zoneBreakdown` → fill-in [remover-lista-zonas-mapa-inicio.md](remover-lista-zonas-mapa-inicio.md)) — F3
 - `src/utilities/municipalityMapNavigation.ts` + `src/lib/municipalityProximity.ts` + `src/lib/bahiaGeometriesTypes.ts` + `tests/helpers/featureBounds.ts` — F4
 - AGENTS.md — geometrias B2/B8 F2, gate por entrega, `overrideAccess: false` com `user`
-- `.cursor/rules/engineering-standards.mdc` — "dead code dies immediately" (F4), depth check (F1/F2)
+- `.agents/rules/engineering-standards.mdc` — "dead code dies immediately" (F4), depth check (F1/F2)

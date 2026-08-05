@@ -99,7 +99,7 @@ Componentes:
 - **`tests/unit/codebaseConventions.unit.spec.ts`**: o describe "banned campaign terminology" vira table-driven —
   `[{ id, pattern, remedy, allowlist }]` com a linha existente (Praça/Núcleo → Município, allowlist `src/lib/cities.ts`) e a nova (termo antigo da agenda → Atividade/`activity`, allowlist do próprio spec). O walker passa a percorrer `src/`, `tests/` e `scripts/`, pulando `src/migrations/`.
 - **Testes renomeados**: `tests/int/campaignActionPlan.int.spec.ts` → `campaignActivity.int.spec.ts`, `tests/unit/actionPlanUi.unit.spec.ts` → `activityUi.unit.spec.ts`, `tests/e2e/campaignActionPlan.e2e.spec.ts` → `campaignActivity.e2e.spec.ts`; `tests/helpers/campaignFixtures.ts` e `tests/e2e/fixtures/campaignE2EFixtures.ts` acompanham (inclusive a chave `action_plan_id` do cleanup de locked documents).
-- **Docs vivos**: `AGENTS.md` (seções "Campaign action plans (C3)" e a lista de collections), `.cursor/rules/codebase-map.mdc` (lista de domínios de `components/campaign`), `.cursor/rules/projects/nucleos-eleitorais.mdc` e o `docs/roadmap.md`. Planos entregues e migrations ficam como estão.
+- **Docs vivos**: `AGENTS.md` (seções "Campaign action plans (C3)" e a lista de collections), `.agents/rules/codebase-map.mdc` (lista de domínios de `components/campaign`), `.agents/rules/projects/nucleos-eleitorais.mdc` e o `docs/roadmap.md`. Planos entregues e migrations ficam como estão.
 
 ## Dependências
 

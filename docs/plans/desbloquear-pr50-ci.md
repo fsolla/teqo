@@ -74,4 +74,4 @@ Nenhum neste item.
 - `.github/workflows/ci-pr.yml` — job `migration-lock`
 - `tests/int/homeSearchLeaderships.int.spec.ts` + `tests/int/homeSearchDemands.int.spec.ts` (padrão-alvo)
 - `scripts/lib/seed-minimal-manifest.mjs` — `MINIMAL_LEADERSHIPS`
-- `.cursor/skills/work-issue/SKILL.md` — Passo 6 (acompanhar checks até o merge)
+- `.agents/skills/work-issue/SKILL.md` — Passo 6 (acompanhar checks até o merge)

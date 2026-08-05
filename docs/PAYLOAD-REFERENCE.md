@@ -2,7 +2,7 @@
 
 Movido do `AGENTS.md` em 2026-07-30. Referência sob demanda (config, collections, fields, hooks, queries, components, endpoints, drafts, plugins, best practices, gotchas). Não é contexto always-on.
 
-Os padrões CRÍTICOS de segurança também vivem em `.cursor/rules/security-critical.mdc` (always-on).
+Os padrões CRÍTICOS de segurança também vivem em `.agents/rules/security-critical.mdc` (always-on).
 
 ---
 
@@ -1008,7 +1008,7 @@ export const myPlugin =
 
 ## Additional Context Files
 
-For deeper exploration of specific topics, refer to the context files located in `.cursor/rules/`:
+For deeper exploration of specific topics, refer to the context files located in `.agents/rules/`:
 
 ### Available Context Files
 

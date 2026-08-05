@@ -53,7 +53,7 @@ flowchart LR
 - **`scripts/lib/agent-plan-lifecycle.mjs`:** puro — `resolveRegisterStateLabel({ hasPlan, explicitBlocked })`, `canPromotePlanIssue(issue)` (blocked + link `docs/plans/` + open + sem in-progress/done/in-prod).
 - **`scripts/agent-register.mjs`:** usa o helper; com `--plan` nasce `blocked` (mesmo sem `--blocked`); sem `--plan` preserva `ready` / `--blocked`.
 - **`scripts/agent-ready.mjs` + `pnpm agent:ready`:** flip `blocked`→`ready` idempotente; comenta motivo; recusa se não for “aguardando plano”.
-- **`.cursor/skills/plan-issue/SKILL.md`:** Passo 5 = gate duro (sem Issue/PR até OK explícito ao lote); Passo 6 = register → PR `Related #N` → merge → `agent:ready`.
+- **`.agents/skills/plan-issue/SKILL.md`:** Passo 5 = gate duro (sem Issue/PR até OK explícito ao lote); Passo 6 = register → PR `Related #N` → merge → `agent:ready`.
 - **`docs/AGENT-OPS.md` + skill `agent-pool` (menção curta) + nota em `capture-review-debts`:** contrato de labels / promote após plano em `main`.
 - **Tests:** `tests/unit/agentPlanLifecycle.unit.spec.ts` (register label + canPromote).
 - **Migration / Access / Consent / UI:** N/A (Impeccable A).

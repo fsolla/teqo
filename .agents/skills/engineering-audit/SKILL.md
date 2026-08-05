@@ -46,8 +46,8 @@ Method: the engineering skills this repo follows (improve-code-quality, clean-co
 
 Read, in this order:
 
-1. `.cursor/rules/engineering-standards.mdc` — gates, type honesty, client boundary, caching ladder, access control.
-2. `.cursor/rules/codebase-map.mdc` — dependency direction, where things live, the list system, invariants.
+1. `.agents/rules/engineering-standards.mdc` — gates, type honesty, client boundary, caching ladder, access control.
+2. `.agents/rules/codebase-map.mdc` — dependency direction, where things live, the list system, invariants.
 3. `docs/ARCHITECTURE.md` — layers, bounded contexts, decision log.
 4. `AGENTS.md` — operational rules + "Recently resolved" history (Pass 1, Pass 2, every post-Pass-2 delivery's /simplify findings).
 5. `docs/AGENT-OPS.md` — paradigma de agentes paralelos vigente (claim→PR→main, skills plan-issue / work-issue / agent-work-issue / project-status). O audit avalia o repo **contra** esse fluxo, não contra o fluxo legacy de roadmap.md.

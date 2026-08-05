@@ -122,5 +122,5 @@ Componentes:
 - [sistema-listas-campanha.md](sistema-listas-campanha.md) (Pass 2 W1 — rabbit hole de generalizar o header) · [pagina-territorios-identidade.md](pagina-territorios-identidade.md) (B21 — gatilho do head genérico) · [explicacao-colunas-header-listas.md](explicacao-colunas-header-listas.md) (B22 — mesma estratégia de peça compartilhada; vizinho no mesmo `TableHead`) · [seletor-colunas-lista-municipios.md](seletor-colunas-lista-municipios.md) (B17)
 - `src/components/campaign/municipality/MunicipalityHeaderFilter.tsx`, `MunicipalityFilters.tsx` — os dois controles a alterar
 - `src/utilities/municipalityListFilters.ts`, `src/utilities/municipalityPageData.ts` (facetas) — origem e tipos das opções
-- AGENTS.md — naming (identificadores em inglês, copy pt-BR), fronteira `lib/` puro vs `utilities/` acoplado; `.cursor/rules/campanha-action-feedback.mdc` (Feel the action)
+- AGENTS.md — naming (identificadores em inglês, copy pt-BR), fronteira `lib/` puro vs `utilities/` acoplado; `.agents/rules/campanha-action-feedback.mdc` (Feel the action)
 - `PRODUCT.md` / `DESIGN.md` — Field Desk, Restrained, anti-goal de spreadsheet/data-grid

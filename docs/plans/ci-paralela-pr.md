@@ -86,5 +86,5 @@ Componentes:
 
 - `.github/workflows/ci-pr.yml` (job único atual), `ci.yml`, `ci-stage.yml` (comentário do subset)
 - `docs/AGENT-OPS.md` — tabela "CI por alvo" e "Contrato de PR"
-- AGENTS.md / `.cursor/rules/engineering-standards.mdc` — gate em duas velocidades, comandos bare
+- AGENTS.md / `.agents/rules/engineering-standards.mdc` — gate em duas velocidades, comandos bare
 - Run 30558184687 — baseline de wall-clock (9m37s serial até a falha)

@@ -20,7 +20,7 @@ Um humano ou agente novo se orienta no repo em minutos, sem arqueologia de git/A
 - Decision log: todas as decisões do Pass 2 (D1–D6) + as decisões estruturais herdadas (transações multi-collection, consent fail-closed, migrations only).
 - Cross-links para PRODUCT/DESIGN/CUSTOMER/research para o "porquê" — sem duplicar conteúdo.
 
-**2. `.cursor/rules/codebase-map.mdc`** — mapa navegacional compacto (~150 linhas), always-applied, criado com o skill `create-rule`: onde vive cada coisa, como achar o dono de uma feature, convenção de manutenção ("atualizado no mesmo PR que move coisas").
+**2. `.agents/rules/codebase-map.mdc`** — mapa navegacional compacto (~150 linhas), always-applied, criado com o skill `create-rule`: onde vive cada coisa, como achar o dono de uma feature, convenção de manutenção ("atualizado no mesmo PR que move coisas").
 
 ## Regras
 

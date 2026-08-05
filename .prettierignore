@@ -33,5 +33,6 @@ output/
 # Static assets and vendored agent material
 public/
 .agents/
+.agent/
 .cursor/
 docs/sheets/
