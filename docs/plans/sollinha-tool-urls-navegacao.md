@@ -1,6 +1,6 @@
 # B162 — Sollinha: tool de URLs para navegar a vistas de interesse
 
-Status: blocked (plano — aguarda merge em main → ready)
+Status: ready
 Atualizado em: 2026-08-05
 Issue: #383
 Priority: P1
