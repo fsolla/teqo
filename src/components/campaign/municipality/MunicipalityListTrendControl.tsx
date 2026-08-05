@@ -1,5 +1,6 @@
 'use client'
 
+import { CircleHelpIcon, MinusIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import type {
@@ -45,7 +46,14 @@ type MunicipalityListTrendControlProps = {
   status: MunicipalityListSavedPoliticalTrend['status']
   trendNote: string | null
   variant: CampaignCellEditOverlayVariant
+  triggerPresentation?: 'full' | 'compact' | 'adaptive'
 }
+
+const politicalTrendIcon = {
+  favoravel: TrendingUpIcon,
+  neutra: MinusIcon,
+  desfavoravel: TrendingDownIcon,
+} as const
 
 export const MunicipalityListTrendControl = ({
   municipalityID,
@@ -53,6 +61,7 @@ export const MunicipalityListTrendControl = ({
   status,
   trendNote,
   variant,
+  triggerPresentation = 'full',
 }: MunicipalityListTrendControlProps) => {
   const { open, onOpenChange, value, change, flush, isPending, errorMessage, statusMessage } =
     useCampaignCellAutosave<
@@ -88,6 +97,25 @@ export const MunicipalityListTrendControl = ({
 
   const hasNote = Boolean(value.note)
   const trendLabel = value.status ? politicalTrendLabels[value.status] : 'Não registrada'
+  const TrendIcon = value.status ? politicalTrendIcon[value.status] : CircleHelpIcon
+  const badgeVariant = value.status ? politicalTrendBadgeVariant[value.status] : 'outline'
+  const fullTrigger = <Badge variant={badgeVariant}>{trendLabel}</Badge>
+  const compactTrigger = (
+    <Badge variant={badgeVariant} className="size-7 justify-center p-0">
+      <TrendIcon className="size-4" aria-hidden="true" />
+    </Badge>
+  )
+  const trigger =
+    triggerPresentation === 'full' ? (
+      fullTrigger
+    ) : triggerPresentation === 'compact' ? (
+      compactTrigger
+    ) : (
+      <>
+        <span className="@min-[60rem]/municipality-list:hidden">{compactTrigger}</span>
+        <span className="hidden @min-[60rem]/municipality-list:inline-flex">{fullTrigger}</span>
+      </>
+    )
 
   return (
     <CampaignCellEditOverlay
@@ -102,17 +130,12 @@ export const MunicipalityListTrendControl = ({
       // `MunicipalityListSignalControl`'s.
       triggerLabel={`Editar tendência política em ${municipalityName} — ${trendLabel}`}
       triggerBusy={isPending}
+      triggerClassName={triggerPresentation === 'full' ? undefined : 'min-w-11'}
       statusMessage={statusMessage}
       tooltipContent={hasNote ? <p className="whitespace-pre-wrap">{value.note}</p> : null}
       contentClassName="w-72 p-3"
       preventPopoverAutoFocus
-      trigger={
-        value.status ? (
-          <Badge variant={politicalTrendBadgeVariant[value.status]}>{trendLabel}</Badge>
-        ) : (
-          <Badge variant="outline">{trendLabel}</Badge>
-        )
-      }
+      trigger={trigger}
     >
       <div className="relative flex flex-col gap-3">
         {isPending ? (

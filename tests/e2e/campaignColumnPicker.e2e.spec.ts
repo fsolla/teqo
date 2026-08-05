@@ -25,6 +25,9 @@ test.describe('Seletor de colunas', () => {
     // Crosses two heavy list routes; `/campanha/liderancas` only finishes
     // compiling in dev when an authenticated request reaches its tree.
     test.slow()
+    // B158 switches to cards below 48rem of content width. Give this picker
+    // regression enough content room to observe table headers directly.
+    await page.setViewportSize({ width: 1800, height: 900 })
 
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator', {
@@ -36,20 +39,33 @@ test.describe('Seletor de colunas', () => {
     await campaign.login(page, email, password)
     await page.goto('/campanha/municipios')
 
-    const regionHeader = page.getByRole('columnheader', { name: /Território/ })
-    await expect(regionHeader).toBeVisible()
+    const votesHeader = page.getByRole('columnheader', { name: /2022/ })
+    await expect(votesHeader).toBeVisible()
 
     const picker = page.getByRole('button', { name: /Mostrar ou ocultar colunas/ })
     await picker.click()
-    await page.getByRole('checkbox', { name: 'Território' }).click()
+    // A fresh profile receives B158's two defaults. Restoring all records the
+    // deliberate empty preference instead of reverting to those defaults.
+    await page.getByRole('button', { name: 'Restaurar todas' }).click()
+    await page.keyboard.press('Escape')
+    await expect
+      .poll(
+        async () =>
+          (await page.context().cookies()).find((cookie) => cookie.name === 'campaign_columns')
+            ?.value,
+      )
+      .toContain('municipios:__none__')
+
+    await picker.click()
+    await page.getByRole('checkbox', { name: 'Votação 2022' }).click()
     // Closing flushes the batched cookie write and refreshes the RSC.
     await page.keyboard.press('Escape')
 
-    await expect(regionHeader).toHaveCount(0, REFRESH)
+    await expect(votesHeader).toHaveCount(0, REFRESH)
     await expect(page.getByRole('button', { name: /1 oculta/ })).toBeVisible()
 
     await page.reload()
-    await expect(page.getByRole('columnheader', { name: /Território/ })).toHaveCount(0, REFRESH)
+    await expect(page.getByRole('columnheader', { name: /2022/ })).toHaveCount(0, REFRESH)
 
     // The cookie carries one key per list: another list is untouched. The
     // territories list is the honest neighbour here — its 27 rows come from
@@ -63,7 +79,16 @@ test.describe('Seletor de colunas', () => {
     await page.getByRole('button', { name: 'Restaurar todas' }).click()
     await page.keyboard.press('Escape')
 
-    await expect(page.getByRole('columnheader', { name: /Território/ })).toBeVisible(REFRESH)
+    await expect(page.getByRole('columnheader', { name: /2022/ })).toBeVisible(REFRESH)
+    await page.reload()
+    await expect(page.getByRole('columnheader', { name: /2022/ })).toBeVisible(REFRESH)
+    await expect
+      .poll(
+        async () =>
+          (await page.context().cookies()).find((cookie) => cookie.name === 'campaign_columns')
+            ?.value,
+      )
+      .toContain('municipios:__none__')
   })
 
   test('lists the mandatory column without letting it be unchecked', async ({ campaign, page }) => {

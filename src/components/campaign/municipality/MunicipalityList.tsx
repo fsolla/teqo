@@ -1,4 +1,4 @@
-import { SearchXIcon } from 'lucide-react'
+import { ActivityIcon, CircleAlertIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
 
 import {
@@ -69,6 +69,10 @@ import {
   resolveMunicipalityListSort,
   type MunicipalityListState,
 } from '@/utilities/municipality/municipalityListUrl'
+import {
+  isMunicipalitySignalCold,
+  municipalitySignalAgeInDays,
+} from '@/utilities/municipality/municipalitySignal'
 import type {
   EligibleAdvisorOption,
   EligibleLeadershipOption,
@@ -155,8 +159,48 @@ const advisorEntries = (
  * Desktop table columns (Pass 2 W1). `id` is the picker key, cookie key, and B22
  * description key — typed instead of widening to `string`.
  */
+type MunicipalityTableColumnId = MunicipalityListColumnId | 'actions'
+
 type MunicipalityColumn = CampaignTableColumn<MunicipalityListViewModel> & {
-  id: MunicipalityListColumnId
+  id: MunicipalityTableColumnId
+}
+
+const responsiveColumnClassName = {
+  advisors: 'hidden @min-[54rem]/municipality-list:table-cell',
+  leaderships: 'hidden @min-[66rem]/municipality-list:table-cell',
+  stateDeputies: 'hidden @min-[72rem]/municipality-list:table-cell',
+  goalCoverage: 'hidden @min-[78rem]/municipality-list:table-cell',
+} as const satisfies Partial<Record<MunicipalityTableColumnId, string>>
+
+const MunicipalityListSignalTrigger = ({
+  lastSignalAt,
+  presentation,
+}: {
+  lastSignalAt: string | null
+  presentation: 'compact' | 'adaptive'
+}) => {
+  const isCold = isMunicipalitySignalCold(municipalitySignalAgeInDays(lastSignalAt))
+  const Icon = isCold ? CircleAlertIcon : ActivityIcon
+  const compact = (
+    <Icon
+      className={cn(
+        'size-4',
+        isCold ? 'text-estimate-pending-foreground' : 'text-muted-foreground',
+      )}
+      aria-hidden="true"
+    />
+  )
+
+  if (presentation === 'compact') return compact
+
+  return (
+    <>
+      <span className="@min-[84rem]/municipality-list:hidden">{compact}</span>
+      <span className="hidden @min-[84rem]/municipality-list:block">
+        <SignalAgeReadout lastSignalAt={lastSignalAt} layout="table" />
+      </span>
+    </>
+  )
 }
 
 const municipalityListColumns = ({
@@ -174,326 +218,373 @@ const municipalityListColumns = ({
   stateDeputyCommitAction,
   stateDeputyCreateAction,
   signalFormAction,
-}: MunicipalityListProps): Array<MunicipalityColumn> => [
-  {
-    id: 'name',
-    label: municipalityColumnLabels.name,
-    mandatory: true,
-    head: (
-      <MunicipalitySortableHead
-        state={state}
-        sortKey="name"
-        filterParam="name"
-        filterOptions={columnFilterOptions.name}
-        showPriorityFilter={isStaffView}
-        description={municipalityColumnDescriptions.name}
-        className="sticky left-0 z-20 min-w-56 bg-background"
+  columnVisibility,
+}: MunicipalityListProps): Array<MunicipalityColumn> => {
+  const manuallyHidden = isStaffView ? new Set(columnVisibility.hiddenColumnIds) : new Set<string>()
+  const trendIsHidden = manuallyHidden.has('trend')
+  const signalIsHidden = manuallyHidden.has('lastSignal')
+
+  const renderTrendControl = (
+    municipality: MunicipalityListViewModel,
+    triggerPresentation: 'compact' | 'adaptive',
+  ) => (
+    <MunicipalityListTrendControl
+      municipalityID={municipality.id}
+      municipalityName={municipality.name}
+      status={municipality.politicalTrendStatus}
+      trendNote={municipality.politicalTrendNote}
+      variant="popover"
+      triggerPresentation={triggerPresentation}
+    />
+  )
+
+  const renderSignalControl = (
+    municipality: MunicipalityListViewModel,
+    triggerPresentation: 'compact' | 'adaptive',
+  ) => (
+    <MunicipalityListSignalControl
+      municipalityID={municipality.id}
+      municipalitySlug={municipality.slug}
+      municipalityName={municipality.name}
+      lastSignalAt={municipality.lastSignalAt}
+      variant="popover"
+      formAction={signalFormAction}
+    >
+      <MunicipalityListSignalTrigger
+        lastSignalAt={municipality.lastSignalAt}
+        presentation={triggerPresentation}
       />
-    ),
-    cellClassName: 'sticky left-0 z-[5] min-w-56 whitespace-normal bg-background',
-    cell: (municipality) => (
-      <div className="flex flex-wrap items-center gap-2">
-        <Link
-          href={`/campanha/municipios/${municipality.slug}`}
-          className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline"
-        >
-          {municipality.name}
-        </Link>
-        {municipality.priority === 'alta' && isStaffView ? <MunicipalityPriorityIndicator /> : null}
-      </div>
-    ),
-  },
-  {
-    id: 'region',
-    label: municipalityColumnLabels.region,
-    head: (
-      <MunicipalitySortableHead
-        state={state}
-        sortKey="region"
-        filterParam="region"
-        filterOptions={columnFilterOptions.region}
-        description={municipalityColumnDescriptions.region}
-      />
-    ),
-    cellClassName: 'max-w-56 whitespace-normal text-muted-foreground',
-    cell: (municipality) => <TerritoryLink region={municipality.region} />,
-  },
-  {
-    id: 'votos',
-    label: municipalityColumnLabels.votos,
-    head: (
-      <MunicipalitySortableHead
-        state={state}
-        sortKey="votos"
-        align="right"
-        description={municipalityColumnDescriptions.votos}
-      />
-    ),
-    cellClassName: 'text-right',
-    cell: (municipality) =>
-      municipality.votePosition2022 ? (
-        <MunicipalityVotePositionReadout position={municipality.votePosition2022} layout="table" />
-      ) : (
-        <span className="text-muted-foreground">—</span>
+    </MunicipalityListSignalControl>
+  )
+
+  return [
+    {
+      id: 'name',
+      label: municipalityColumnLabels.name,
+      mandatory: true,
+      head: (
+        <MunicipalitySortableHead
+          state={state}
+          sortKey="name"
+          filterParam="name"
+          filterOptions={columnFilterOptions.name}
+          showPriorityFilter={isStaffView}
+          description={municipalityColumnDescriptions.name}
+          className="sticky left-0 z-20 w-52 max-w-52 whitespace-normal bg-background"
+        />
       ),
-  },
-  ...(isStaffView
-    ? ([
-        {
-          // Sits right after "2022": both read the same TSE artifact, and the
-          // class is the one-word summary of the votes beside it.
-          id: 'classe',
-          label: municipalityColumnLabels.classe,
-          head: (
-            <MunicipalitySortableHead
-              state={state}
-              sortKey="classe"
-              filterParam="class"
-              description={municipalityColumnDescriptions.classe}
-            />
-          ),
-          cell: (municipality) => <TerritorialClassReadout municipality={municipality} />,
-          // The factors behind the label — the cell keeps them as `sr-only`
-          // text, so this stays a redundant affordance (see `cellTooltip`).
-          cellTooltip: (municipality) =>
-            municipality.territorialClass === 'sem_base'
-              ? null
-              : formatTerritorialClassWhy(municipality.territorialClassFactors),
-        },
-        {
-          // Right after "Classe": the pair reads diagnosis then decision.
-          id: 'level',
-          label: municipalityColumnLabels.level,
-          head: (
-            <MunicipalitySortableHead
-              state={state}
-              sortKey="nivel"
-              filterParam="level"
-              description={municipalityColumnDescriptions.level}
-            />
-          ),
-          cell: (municipality) =>
-            canMoveEngagementLevel ? (
-              <MunicipalityListLevelControl
-                municipalityID={municipality.id}
-                municipalityName={municipality.name}
-                level={municipality.engagementLevel}
-                levelNote={municipality.levelNote}
-                levelChangedAt={municipality.levelChangedAt}
-                variant="popover"
-              />
-            ) : (
-              <MunicipalityLevelBadge
-                level={municipality.engagementLevel}
-                note={municipality.levelNote}
-                layout="table"
+      cellClassName: 'sticky left-0 z-[5] w-52 max-w-52 whitespace-normal bg-background',
+      cell: (municipality) => (
+        <div className="flex min-w-0 max-w-52 flex-col gap-0.5">
+          <div className="flex min-w-0 items-start gap-1.5">
+            <Link
+              href={`/campanha/municipios/${municipality.slug}`}
+              className="line-clamp-2 min-h-11 min-w-0 flex-1 py-2 font-medium text-primary underline-offset-4 hover:underline"
+            >
+              {municipality.name}
+            </Link>
+            {municipality.priority === 'alta' && isStaffView ? (
+              <span className="mt-2 shrink-0">
+                <MunicipalityPriorityIndicator />
+              </span>
+            ) : null}
+          </div>
+          <span className="block truncate text-xs text-muted-foreground">
+            <TerritoryLink region={municipality.region} />
+          </span>
+        </div>
+      ),
+    },
+    {
+      id: 'votos',
+      label: municipalityColumnLabels.votos,
+      head: (
+        <MunicipalitySortableHead
+          state={state}
+          sortKey="votos"
+          align="right"
+          description={municipalityColumnDescriptions.votos}
+        />
+      ),
+      cellClassName: 'text-right',
+      cell: (municipality) =>
+        municipality.votePosition2022 ? (
+          <MunicipalityVotePositionReadout
+            position={municipality.votePosition2022}
+            layout="table"
+          />
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    ...(isStaffView
+      ? ([
+          {
+            id: 'expectedVotes',
+            label: municipalityColumnLabels.expectedVotes,
+            head: (
+              <MunicipalitySortableHead
+                state={state}
+                sortKey="expectedVotes"
+                align="center"
+                description={municipalityColumnDescriptions.expectedVotes}
+              >
+                2026
+              </MunicipalitySortableHead>
+            ),
+            cellClassName: 'relative overflow-visible align-middle text-center tabular-nums',
+            cell: (municipality) => (
+              <div className="flex min-h-11 items-center justify-center">
+                <MunicipalityListExpectedVotesControl
+                  municipalityID={municipality.id}
+                  municipalityName={municipality.name}
+                  expectedVotes={municipality.expectedVotes}
+                  pledgeCoverage={toMunicipalityPledgeCoverageView(municipality.pledges)}
+                  variant="popover"
+                />
+              </div>
+            ),
+          },
+          {
+            // The declared investment follows the 2026 estimate: diagnosis and
+            // decision stay together before the derived territorial class.
+            id: 'level',
+            label: municipalityColumnLabels.level,
+            head: (
+              <MunicipalitySortableHead
+                state={state}
+                sortKey="nivel"
+                filterParam="level"
+                description={municipalityColumnDescriptions.level}
               />
             ),
-          // The editable cell wraps its own trigger in a tooltip; declaring it
-          // here too would double it up on the same gesture (as in `advisors`).
-          cellTooltip: (municipality) =>
-            canMoveEngagementLevel || !municipality.engagementLevel
-              ? null
-              : [formatEngagementLevelLabel(municipality.engagementLevel), municipality.levelNote]
-                  .filter(Boolean)
-                  .join(' — '),
-        },
-        {
-          id: 'advisors',
-          label: municipalityColumnLabels.advisors,
-          head: (
-            <MunicipalitySortableHead
-              state={state}
-              sortKey="coverage"
-              filterParam="advisor"
-              filterOptions={columnFilterOptions.advisor}
-              description={municipalityColumnDescriptions.advisors}
-            />
-          ),
-          cell: (municipality) =>
-            isCoordinator ? (
-              <MunicipalityListAdvisorsControl
-                municipalityID={municipality.id}
-                municipalityName={municipality.name}
-                currentAdvisorIDs={municipality.advisorIDs}
-                isPriority={municipality.priority === 'alta'}
-                advisorNamesById={advisorNamesById}
-                options={advisorOptions}
-                variant="popover"
-              />
-            ) : (
-              <MunicipalityAdvisorAvatarStack
-                advisors={advisorEntries(municipality, advisorNamesById)}
-                isPriority={municipality.priority === 'alta'}
+            cell: (municipality) =>
+              canMoveEngagementLevel ? (
+                <MunicipalityListLevelControl
+                  municipalityID={municipality.id}
+                  municipalityName={municipality.name}
+                  level={municipality.engagementLevel}
+                  levelNote={municipality.levelNote}
+                  levelChangedAt={municipality.levelChangedAt}
+                  variant="popover"
+                />
+              ) : municipality.engagementLevel ? (
+                <MunicipalityLevelBadge
+                  level={municipality.engagementLevel}
+                  note={municipality.levelNote}
+                  layout="table"
+                />
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              ),
+            // The editable cell wraps its own trigger in a tooltip; declaring it
+            // here too would double it up on the same gesture (as in `advisors`).
+            cellTooltip: (municipality) =>
+              canMoveEngagementLevel || !municipality.engagementLevel
+                ? null
+                : [formatEngagementLevelLabel(municipality.engagementLevel), municipality.levelNote]
+                    .filter(Boolean)
+                    .join(' — '),
+          },
+          {
+            id: 'classe',
+            label: municipalityColumnLabels.classe,
+            head: (
+              <MunicipalitySortableHead
+                state={state}
+                sortKey="classe"
+                filterParam="class"
+                description={municipalityColumnDescriptions.classe}
               />
             ),
-          // The coordinator's cell already wraps its own Popover trigger in a
-          // tooltip (see `MunicipalityListAdvisorsControl`) — declaring it
-          // here too would double it up on the same gesture.
-          cellTooltip: (municipality) =>
-            isCoordinator
-              ? null
-              : formatAdvisorNamesTooltip(advisorEntries(municipality, advisorNamesById)),
-        },
-        ...(isCampaignUnrestricted
-          ? ([
-              {
-                // B157 — "who doubles with us here", next to "who takes care of
-                // it": the advisors-style avatar stack + hover detail, with an
-                // editor (Popover on desktop / Drawer on mobile) that also
-                // creates dobradinhas inline. Coordinator + candidate only.
-                id: 'stateDeputies',
-                label: municipalityColumnLabels.stateDeputies,
-                head: (
-                  <CampaignTableHead description={municipalityColumnDescriptions.stateDeputies}>
-                    {municipalityColumnLabels.stateDeputies}
-                  </CampaignTableHead>
-                ),
-                cellClassName: 'max-w-56 whitespace-normal',
-                cell: (municipality) => (
-                  <MunicipalityStateDeputyRelationCell
-                    municipalityId={municipality.id}
-                    municipalityName={municipality.name}
-                    stateDeputyIDs={municipality.stateDeputyIDs}
-                    options={stateDeputyOptions}
-                    commitAction={stateDeputyCommitAction}
-                    createAction={stateDeputyCreateAction}
-                    editorVariant="popover"
-                  />
-                ),
-              },
-            ] satisfies Array<MunicipalityColumn>)
-          : []),
-        {
-          // Right after "Assessores": the two relations of "who" in the
-          // município sit together, and both are editable by all staff (the
-          // advisor only within their portfolio, enforced server-side).
-          id: 'leaderships',
-          label: municipalityColumnLabels.leaderships,
-          // No sort, no filter — the B22 explanation rides on the plain head.
-          head: (
-            <CampaignTableHead description={municipalityColumnDescriptions.leaderships}>
-              {municipalityColumnLabels.leaderships}
-            </CampaignTableHead>
-          ),
-          cell: (municipality) => (
-            <MunicipalityListLeadershipsControl
-              municipalityID={municipality.id}
-              municipalityName={municipality.name}
-              currentLeadershipIDs={municipality.leadershipIDs}
-              leadershipNamesById={leadershipNamesById}
-              options={leadershipOptions}
-              variant="popover"
-            />
-          ),
-        },
-        {
-          id: 'trend',
-          label: municipalityColumnLabels.trend,
-          head: (
-            <MunicipalitySortableHead
-              state={state}
-              sortKey="trend"
-              filterParam="trend"
-              description={municipalityColumnDescriptions.trend}
-            />
-          ),
-          cell: (municipality) => (
-            <MunicipalityListTrendControl
-              municipalityID={municipality.id}
-              municipalityName={municipality.name}
-              status={municipality.politicalTrendStatus}
-              trendNote={municipality.politicalTrendNote}
-              variant="popover"
-            />
-          ),
-        },
-        {
-          id: 'expectedVotes',
-          label: municipalityColumnLabels.expectedVotes,
-          head: (
-            <MunicipalitySortableHead
-              state={state}
-              sortKey="expectedVotes"
-              align="center"
-              description={municipalityColumnDescriptions.expectedVotes}
-            />
-          ),
-          cellClassName: 'relative overflow-visible align-middle text-center',
-          cell: (municipality) => (
-            <div className="flex min-h-11 items-center justify-center">
-              <MunicipalityListExpectedVotesControl
+            cell: (municipality) => <TerritorialClassReadout municipality={municipality} />,
+            // The factors behind the label — the cell keeps them as `sr-only`
+            // text, so this stays a redundant affordance (see `cellTooltip`).
+            cellTooltip: (municipality) =>
+              municipality.territorialClass === 'sem_base'
+                ? null
+                : formatTerritorialClassWhy(municipality.territorialClassFactors),
+          },
+          {
+            id: 'advisors',
+            label: municipalityColumnLabels.advisors,
+            head: (
+              <MunicipalitySortableHead
+                state={state}
+                sortKey="coverage"
+                filterParam="advisor"
+                filterOptions={columnFilterOptions.advisor}
+                description={municipalityColumnDescriptions.advisors}
+                className={responsiveColumnClassName.advisors}
+              />
+            ),
+            cellClassName: responsiveColumnClassName.advisors,
+            cell: (municipality) =>
+              isCoordinator ? (
+                <MunicipalityListAdvisorsControl
+                  municipalityID={municipality.id}
+                  municipalityName={municipality.name}
+                  currentAdvisorIDs={municipality.advisorIDs}
+                  isPriority={municipality.priority === 'alta'}
+                  advisorNamesById={advisorNamesById}
+                  options={advisorOptions}
+                  variant="popover"
+                />
+              ) : (
+                <MunicipalityAdvisorAvatarStack
+                  advisors={advisorEntries(municipality, advisorNamesById)}
+                  isPriority={municipality.priority === 'alta'}
+                />
+              ),
+            // The coordinator's cell already wraps its own Popover trigger in a
+            // tooltip (see `MunicipalityListAdvisorsControl`) — declaring it
+            // here too would double it up on the same gesture.
+            cellTooltip: (municipality) =>
+              isCoordinator
+                ? null
+                : formatAdvisorNamesTooltip(advisorEntries(municipality, advisorNamesById)),
+          },
+          {
+            id: 'trend',
+            label: municipalityColumnLabels.trend,
+            head: (
+              <MunicipalitySortableHead
+                state={state}
+                sortKey="trend"
+                filterParam="trend"
+                description={municipalityColumnDescriptions.trend}
+              />
+            ),
+            cell: (municipality) => renderTrendControl(municipality, 'adaptive'),
+          },
+          {
+            id: 'leaderships',
+            label: municipalityColumnLabels.leaderships,
+            head: (
+              <CampaignTableHead
+                description={municipalityColumnDescriptions.leaderships}
+                className={responsiveColumnClassName.leaderships}
+              >
+                {municipalityColumnLabels.leaderships}
+              </CampaignTableHead>
+            ),
+            cellClassName: responsiveColumnClassName.leaderships,
+            cell: (municipality) => (
+              <MunicipalityListLeadershipsControl
                 municipalityID={municipality.id}
                 municipalityName={municipality.name}
-                expectedVotes={municipality.expectedVotes}
-                pledgeCoverage={toMunicipalityPledgeCoverageView(municipality.pledges)}
+                currentLeadershipIDs={municipality.leadershipIDs}
+                leadershipNamesById={leadershipNamesById}
+                options={leadershipOptions}
                 variant="popover"
               />
-            </div>
-          ),
-        },
-        {
-          id: 'lastSignal',
-          label: municipalityColumnLabels.lastSignal,
-          head: (
-            <MunicipalitySortableHead
-              state={state}
-              sortKey="frescor"
-              description={municipalityColumnDescriptions.lastSignal}
-            >
-              {/* The one header that does NOT inherit its sort label: the column
-                  shows the signal, `frescor` sorts by how old it is. */}
-              {municipalityColumnLabels.lastSignal}
-            </MunicipalitySortableHead>
-          ),
-          cell: (municipality) => (
-            <MunicipalityListSignalControl
-              municipalityID={municipality.id}
-              municipalitySlug={municipality.slug}
-              municipalityName={municipality.name}
-              lastSignalAt={municipality.lastSignalAt}
-              variant="popover"
-              formAction={signalFormAction}
-            >
-              <SignalAgeReadout lastSignalAt={municipality.lastSignalAt} layout="table" />
-            </MunicipalityListSignalControl>
-          ),
-        },
-        {
-          id: 'goalCoverage',
-          label: municipalityColumnLabels.goalCoverage,
-          head: (
-            <MunicipalitySortableHead
-              state={state}
-              sortKey="deficit"
-              description={municipalityColumnDescriptions.goalCoverage}
-            />
-          ),
-          cell: (municipality) => (
-            <MunicipalityListGoalCoverageCell
-              coverageByScenario={municipality.goalCoverageByScenario}
-            />
-          ),
-        },
-      ] satisfies Array<MunicipalityColumn>)
-    : ([
-        {
-          id: 'lastUpdateAt',
-          label: municipalityColumnLabels.lastUpdateAt,
-          head: (
-            <MunicipalitySortableHead
-              state={state}
-              sortKey="lastUpdateAt"
-              description={municipalityColumnDescriptions.lastUpdateAt}
-            />
-          ),
-          cell: (municipality) =>
-            municipality.lastUpdateAt
-              ? dateFormatter.format(new Date(municipality.lastUpdateAt))
-              : 'Sem atualização',
-        },
-      ] satisfies Array<MunicipalityColumn>)),
-]
+            ),
+          },
+          ...(isCampaignUnrestricted
+            ? ([
+                {
+                  id: 'stateDeputies',
+                  label: municipalityColumnLabels.stateDeputies,
+                  head: (
+                    <CampaignTableHead
+                      description={municipalityColumnDescriptions.stateDeputies}
+                      className={responsiveColumnClassName.stateDeputies}
+                    >
+                      {municipalityColumnLabels.stateDeputies}
+                    </CampaignTableHead>
+                  ),
+                  cellClassName: cn(
+                    responsiveColumnClassName.stateDeputies,
+                    'max-w-56 whitespace-normal',
+                  ),
+                  cell: (municipality) => (
+                    <MunicipalityStateDeputyRelationCell
+                      municipalityId={municipality.id}
+                      municipalityName={municipality.name}
+                      stateDeputyIDs={municipality.stateDeputyIDs}
+                      options={stateDeputyOptions}
+                      commitAction={stateDeputyCommitAction}
+                      createAction={stateDeputyCreateAction}
+                      editorVariant="popover"
+                    />
+                  ),
+                },
+              ] satisfies Array<MunicipalityColumn>)
+            : []),
+
+          {
+            id: 'goalCoverage',
+            label: municipalityColumnLabels.goalCoverage,
+            head: (
+              <MunicipalitySortableHead
+                state={state}
+                sortKey="deficit"
+                description={municipalityColumnDescriptions.goalCoverage}
+                className={responsiveColumnClassName.goalCoverage}
+              />
+            ),
+            cellClassName: responsiveColumnClassName.goalCoverage,
+            cell: (municipality) => (
+              <MunicipalityListGoalCoverageCell
+                coverageByScenario={municipality.goalCoverageByScenario}
+              />
+            ),
+          },
+          {
+            id: 'lastSignal',
+            label: municipalityColumnLabels.lastSignal,
+            head: (
+              <MunicipalitySortableHead
+                state={state}
+                sortKey="frescor"
+                description={municipalityColumnDescriptions.lastSignal}
+              >
+                {municipalityColumnLabels.lastSignal}
+              </MunicipalitySortableHead>
+            ),
+            cell: (municipality) => renderSignalControl(municipality, 'adaptive'),
+          },
+          ...(trendIsHidden || signalIsHidden
+            ? ([
+                {
+                  id: 'actions',
+                  label: 'Ações',
+                  mandatory: true,
+                  head: (
+                    <CampaignTableHead align="right">
+                      <span className="sr-only">Ações</span>
+                    </CampaignTableHead>
+                  ),
+                  cellClassName: 'text-right',
+                  cell: (municipality) => (
+                    <div className="flex items-center justify-end gap-1">
+                      {trendIsHidden ? renderTrendControl(municipality, 'compact') : null}
+                      {signalIsHidden ? renderSignalControl(municipality, 'compact') : null}
+                    </div>
+                  ),
+                },
+              ] satisfies Array<MunicipalityColumn>)
+            : []),
+        ] satisfies Array<MunicipalityColumn>)
+      : ([
+          {
+            id: 'lastUpdateAt',
+            label: municipalityColumnLabels.lastUpdateAt,
+            head: (
+              <MunicipalitySortableHead
+                state={state}
+                sortKey="lastUpdateAt"
+                description={municipalityColumnDescriptions.lastUpdateAt}
+              />
+            ),
+            cell: (municipality) =>
+              municipality.lastUpdateAt
+                ? dateFormatter.format(new Date(municipality.lastUpdateAt))
+                : 'Sem atualização',
+          },
+        ] satisfies Array<MunicipalityColumn>)),
+  ]
+}
 
 export const municipalityListPickerColumns = ({
   isStaffView,
@@ -504,25 +595,23 @@ export const municipalityListPickerColumns = ({
 >): CampaignColumnPickerColumn[] => {
   const base: CampaignColumnPickerColumn[] = [
     { id: 'name', label: municipalityColumnLabels.name, mandatory: true },
-    { id: 'region', label: municipalityColumnLabels.region },
     { id: 'votos', label: municipalityColumnLabels.votos },
   ]
   if (!isStaffView) return base
 
   return [
     ...base,
-    { id: 'classe', label: municipalityColumnLabels.classe },
+    { id: 'expectedVotes', label: municipalityColumnLabels.expectedVotes },
     { id: 'level', label: municipalityColumnLabels.level },
+    { id: 'classe', label: municipalityColumnLabels.classe },
     { id: 'advisors', label: municipalityColumnLabels.advisors },
+    { id: 'trend', label: municipalityColumnLabels.trend },
     { id: 'leaderships', label: municipalityColumnLabels.leaderships },
     ...(isCampaignUnrestricted
       ? [{ id: 'stateDeputies', label: municipalityColumnLabels.stateDeputies }]
       : []),
-    { id: 'trend', label: municipalityColumnLabels.trend },
-    { id: 'expectedVotes', label: municipalityColumnLabels.expectedVotes },
-    { id: 'lastSignal', label: municipalityColumnLabels.lastSignal },
     { id: 'goalCoverage', label: municipalityColumnLabels.goalCoverage },
-    { id: 'lastUpdateAt', label: municipalityColumnLabels.lastUpdateAt },
+    { id: 'lastSignal', label: municipalityColumnLabels.lastSignal },
   ]
 }
 
@@ -554,40 +643,42 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
   return (
     <MunicipalityAdvisorCreateProvider>
       <MunicipalityLeadershipCreateProvider>
-        <MunicipalityListMobileSection
-          municipalities={municipalities}
-          advisorNamesById={advisorNamesById}
-          leadershipNamesById={leadershipNamesById}
-          isStaffView={isStaffView}
-          isCoordinator={isCoordinator}
-          isCampaignUnrestricted={isCampaignUnrestricted}
-          canMoveEngagementLevel={props.canMoveEngagementLevel}
-          advisorOptions={advisorOptions}
-          leadershipOptions={leadershipOptions}
-          stateDeputyOptions={stateDeputyOptions}
-          stateDeputyCommitAction={stateDeputyCommitAction}
-          stateDeputyCreateAction={stateDeputyCreateAction}
-          signalFormAction={props.signalFormAction}
-          emptySlot={<MunicipalityListEmptyState state={state} />}
-        />
+        <div data-container="municipality-list" className="@container/municipality-list">
+          <MunicipalityListMobileSection
+            municipalities={municipalities}
+            advisorNamesById={advisorNamesById}
+            leadershipNamesById={leadershipNamesById}
+            isStaffView={isStaffView}
+            isCoordinator={isCoordinator}
+            isCampaignUnrestricted={isCampaignUnrestricted}
+            canMoveEngagementLevel={props.canMoveEngagementLevel}
+            advisorOptions={advisorOptions}
+            leadershipOptions={leadershipOptions}
+            stateDeputyOptions={stateDeputyOptions}
+            stateDeputyCommitAction={stateDeputyCommitAction}
+            stateDeputyCreateAction={stateDeputyCreateAction}
+            signalFormAction={props.signalFormAction}
+            emptySlot={<MunicipalityListEmptyState state={state} />}
+          />
 
-        {/* A sticky <th> can't paint the row border, hence the inset shadow. */}
-        <CampaignTable
-          className="hidden overflow-visible md:block"
-          containerClassName="overflow-x-auto"
-          headerClassName="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-background [&_th]:shadow-[inset_0_-1px_0_var(--border)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl [&_tr]:border-b-0"
-          caption={
-            <>
-              {sortSummary}
-              {showsVoteColumn ? `. Coluna 2022: ${municipalityColumnDescriptions.votos}` : null}
-            </>
-          }
-          columns={columns}
-          columnVisibility={props.columnVisibility}
-          rows={municipalities}
-          rowKey={(municipality) => municipality.id}
-          empty={<MunicipalityListEmptyState state={state} />}
-        />
+          {/* A sticky <th> can't paint the row border, hence the inset shadow. */}
+          <CampaignTable
+            className="hidden overflow-visible @min-[48rem]/municipality-list:block"
+            containerClassName="overflow-x-auto supports-[container-type:inline-size]:overflow-x-hidden"
+            headerClassName="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-background [&_th]:shadow-[inset_0_-1px_0_var(--border)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl [&_tr]:border-b-0"
+            caption={
+              <>
+                {sortSummary}
+                {showsVoteColumn ? `. Coluna 2022: ${municipalityColumnDescriptions.votos}` : null}
+              </>
+            }
+            columns={columns}
+            columnVisibility={props.columnVisibility}
+            rows={municipalities}
+            rowKey={(municipality) => municipality.id}
+            empty={<MunicipalityListEmptyState state={state} />}
+          />
+        </div>
       </MunicipalityLeadershipCreateProvider>
     </MunicipalityAdvisorCreateProvider>
   )

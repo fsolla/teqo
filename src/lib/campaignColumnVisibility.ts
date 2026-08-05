@@ -63,7 +63,12 @@ export const toCampaignColumnPickerColumns = (
 const LIST_SEPARATOR = '|'
 const LIST_ID_SEPARATOR = ':'
 const COLUMN_SEPARATOR = '~'
+const EXPLICIT_EMPTY_COLUMNS = '__none__'
 const COLUMN_ID_PATTERN = /^[A-Za-z0-9_-]+$/
+
+const DEFAULT_HIDDEN_COLUMN_IDS: Partial<Record<CampaignListId, readonly string[]>> = {
+  municipios: ['goalCoverage', 'lastSignal'],
+}
 
 const isCampaignListId = (value: string): value is CampaignListId =>
   CAMPAIGN_LIST_IDS.some((listId) => listId === value)
@@ -83,12 +88,19 @@ export const parseCampaignHiddenColumns = (raw: string | undefined): CampaignHid
     // An id matching nothing on the table is inert, so the length cap above is
     // the only bound worth having — a per-list one would also have to be
     // mirrored in `serialize`, or writing 41 and reading back 40 would differ.
+    const encodedColumns = entry.slice(separatorIndex + 1)
+    if (encodedColumns === EXPLICIT_EMPTY_COLUMNS) {
+      parsed[listId] = []
+      continue
+    }
+
     const columnIds = [
       ...new Set(
-        entry
-          .slice(separatorIndex + 1)
+        encodedColumns
           .split(COLUMN_SEPARATOR)
-          .filter((columnId) => COLUMN_ID_PATTERN.test(columnId)),
+          .filter(
+            (columnId) => columnId !== EXPLICIT_EMPTY_COLUMNS && COLUMN_ID_PATTERN.test(columnId),
+          ),
       ),
     ]
 
@@ -100,10 +112,26 @@ export const parseCampaignHiddenColumns = (raw: string | undefined): CampaignHid
 
 export const serializeCampaignHiddenColumns = (value: CampaignHiddenColumns): string =>
   CAMPAIGN_LIST_IDS.flatMap((listId) => {
-    const columnIds = (value[listId] ?? []).filter((columnId) => COLUMN_ID_PATTERN.test(columnId))
-    if (!columnIds.length) return []
-    return [`${listId}${LIST_ID_SEPARATOR}${columnIds.join(COLUMN_SEPARATOR)}`]
+    if (!Object.prototype.hasOwnProperty.call(value, listId)) return []
+
+    const columnIds = (value[listId] ?? []).filter(
+      (columnId) => columnId !== EXPLICIT_EMPTY_COLUMNS && COLUMN_ID_PATTERN.test(columnId),
+    )
+    const encodedColumns = columnIds.length
+      ? columnIds.join(COLUMN_SEPARATOR)
+      : EXPLICIT_EMPTY_COLUMNS
+    return [`${listId}${LIST_ID_SEPARATOR}${encodedColumns}`]
   }).join(LIST_SEPARATOR)
+
+export const resolveCampaignColumnVisibility = (
+  listId: CampaignListId,
+  hiddenColumns: CampaignHiddenColumns,
+): CampaignColumnVisibility => ({
+  listId,
+  hiddenColumnIds: Object.prototype.hasOwnProperty.call(hiddenColumns, listId)
+    ? (hiddenColumns[listId] ?? [])
+    : (DEFAULT_HIDDEN_COLUMN_IDS[listId] ?? []),
+})
 
 /**
  * Records one toggle. Hiding is stored (never the visible set), so a column

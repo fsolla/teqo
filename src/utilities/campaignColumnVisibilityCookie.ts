@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import {
   CAMPAIGN_COLUMNS_COOKIE,
   parseCampaignHiddenColumns,
+  resolveCampaignColumnVisibility,
   type CampaignColumnVisibility,
   type CampaignListId,
 } from '@/lib/campaignColumnVisibility'
@@ -20,5 +21,5 @@ export const readCampaignColumnVisibility = async (
   const cookieStore = await cookies()
   const raw = cookieStore.get(CAMPAIGN_COLUMNS_COOKIE)?.value
 
-  return { listId, hiddenColumnIds: parseCampaignHiddenColumns(raw)[listId] ?? [] }
+  return resolveCampaignColumnVisibility(listId, parseCampaignHiddenColumns(raw))
 }

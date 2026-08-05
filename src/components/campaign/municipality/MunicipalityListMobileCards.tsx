@@ -83,7 +83,10 @@ export const MunicipalityListMobileCards = ({
   signalFormAction,
   emptySlot,
 }: MunicipalityListMobileCardsProps) => (
-  <div data-view="mobile-cards" className="flex flex-col gap-4 md:hidden">
+  <div
+    data-view="mobile-cards"
+    className="flex flex-col gap-4 @min-[48rem]/municipality-list:hidden"
+  >
     {municipalities.length === 0 ? emptySlot : null}
     {municipalities.map((municipality) => {
       const names = advisorEntriesFromIds(municipality.advisorIDs, advisorNamesById).map(

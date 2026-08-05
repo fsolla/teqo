@@ -248,12 +248,17 @@ export const MunicipalityListLevelControl = ({
       preventPopoverAutoFocus
       trigger={
         // The sheet has no hover to carry the rest, so the trigger spells the
-        // level out there and stays the bare numeral in the table.
-        <MunicipalityLevelBadge
-          level={currentLevel}
-          note={isSheet ? currentNote : null}
-          layout={isSheet ? 'card' : 'table'}
-        />
+        // level out there. In the table, absence follows the shared cell pattern
+        // (`—`) while the button's aria-label still announces "Sem nível".
+        currentLevel || isSheet ? (
+          <MunicipalityLevelBadge
+            level={currentLevel}
+            note={isSheet ? currentNote : null}
+            layout={isSheet ? 'card' : 'table'}
+          />
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        )
       }
     >
       <div className="flex flex-col gap-3">
