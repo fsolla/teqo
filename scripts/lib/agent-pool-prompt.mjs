@@ -42,7 +42,7 @@ export const buildPoolWorkerPrompt = ({ issueNumber, issueTitle, issueId, planPa
     '',
     '## Proibido',
     '',
-    '- `DATABASE_URL` de prod ou `ALLOW_REMOTE_DB` — o setup local (`.agents/cloud-setup.sh` + seed mínimo) cobre tudo.',
+    '- `DATABASE_URL` de prod ou `ALLOW_REMOTE_DB` — o setup local (`.cursor/cloud-setup.sh` + seed mínimo) cobre tudo.',
     `- Editar outras Issues \`in-progress\` ou trabalhar fora da Issue #${issueNumber}.`,
     '- Tratar o plano de intenção como contrato de engenharia — ele é intenção; o `*-impl.md` é a engenharia.',
     '',
