@@ -1,191 +1,270 @@
-# Colunas responsivas na tabela de Municipios (sem scroll horizontal)
+# B158 — Colunas adaptativas na tabela de Municípios
 
-Status: rascunho
-Atualizado em: 2026-08-04
+Status: rascunho revisado
+Atualizado em: 2026-08-05
 Issue: #364
 Priority: P1
 Model: composer-2.5
-Impeccable: B — encaixe em `CampaignTable` / `MunicipalityList` (desktop/tablet); sem rota nova
-Canvas UI: /Users/francisco.solla/.cursor/projects/Users-francisco-solla-cursor-worktrees-teqo-5hoy/canvases/plan-b158-ui-draft.canvas.tsx
-Appetite: ~1-1,5 dia eng; um outcome verificavel
-Responsavel: --
+Impeccable: Adapt / modo Operate — densidade progressiva dentro do painel de conteúdo
+Canvas UI: `/Users/francisco.solla/.cursor/projects/Users-francisco-solla-cursor-worktrees-teqo-5hoy/canvases/plan-b158-ui-draft.canvas.tsx` (referência histórica; o contrato abaixo prevalece)
+Appetite: ~1,5–2 dias eng; um outcome verificável
+Responsável: —
 
-## Intencao
+## Intenção
 
-A tabela de Municipios em `/campanha/municipios` tem 10+ colunas no modo staff. Em tablets e laptops de campo (resolucao ~1366x768 ou menor, comum na mesa do assessor), a tabela **estoura a viewport** e forca scroll horizontal. Coordenadores e assessores relatam que o scroll horizontal atrapalha a leitura da fila -- diferentemente do scroll vertical, que e natural, o horizontal quebra a varredura rapida de "quem esta no topo / o que atacar".
+A tabela de Municípios em `/campanha/municipios` tem 10+ colunas no modo staff. O espaço útil não depende mais apenas da viewport: a página pode dividir a largura entre **sidebar, painel de conteúdo e chat**, cada um aberto ou fechado. Breakpoints de tela não representam o espaço que a tabela realmente recebeu.
 
-O seletor manual de colunas (B17) existe, mas exige que o ator **decida** quais colunas esconder -- uma decisao que a maioria nao toma, ou toma uma vez e esquece. A tela deveria se adaptar sozinha.
+A lista deve responder à largura do **painel de conteúdo**, mostrar primeiro as colunas que sustentam a decisão e acrescentar as demais uma a uma conforme houver espaço — sem scroll horizontal e sem exigir configuração prévia do ator.
 
-Alem disso, varias colunas tem largura ditada pelo **titulo do header** (ex.: "Votos estimados" ocupa mais espaco que os numeros da coluna), e nao pelo conteudo. Em telas estreitas, cada pixel conta.
+O seletor manual de colunas (B17) continua existindo. Ele expressa preferência; as container queries expressam capacidade física do painel.
 
-**Decisoes de produto acumuladas (gate 2026-08-04):**
+## Decisões de produto consolidadas
 
-1. **Territorio na 2a linha do nome** -- a coluna Territorio deixa de existir como coluna independente. O territorio aparece como segunda linha discreta abaixo do nome do municipio, na mesma celula.
-2. **"Sem nivel" vira "--"** -- mesmo padrao das colunas 2022 e Classe para ausencia de dado.
-3. **Headers no singular + renomeios:** "Assessores" -> "Assessor", "Liderancas" -> "Lideranca", "Dobradinhas" -> "Dobradinha", "Votos estimados" -> "2026" (com tooltip explicando: "Estimativa de votos do candidato neste municipio em 2026"), "Ultimo sinal" -> "Sinal".
-4. **Cobertura e Sinal ocultos por padrao** -- colunas de leitura derivada. Comecam pre-povoadas no `hiddenColumnIds` do cookie B17; o ator que quiser ve-las marca no seletor.
-5. **Prioridade de colunas por breakpoint** -- CSS-only, sem JS de resize. Mapa de prioridade P0 (sempre visivel) a P5 (opt-in).
-6. **Coluna Acoes dinamica** -- nao aparece no seletor B17. Visivel apenas quando **Tendencia OU Sinal** estao ocultos (por breakpoint ou escolha manual). Se ambos estao visiveis, a coluna Acoes some completamente.
-   - Tendencia oculta -> icone de Tendencia na coluna Acoes (cor do campo Tendencia: favoravel/neutra/desfavoravel)
-   - Sinal oculto -> icone de adicionar sinal na coluna Acoes
-   - Ambos ocultos -> ambos os icones
+1. **Container queries, não media queries.** O wrapper da lista vira um named container. Abrir ou fechar sidebar/chat recalcula as colunas sem JavaScript de resize.
+2. **Território na segunda linha do nome.** A coluna `region` deixa de existir. `TerritoryLink` aparece sob o nome do município, em texto secundário e truncado.
+3. **Filtro de território preservado no omnibox.** `MunicipalityFilters` já oferece sugestões e chips de território; essa passa a ser a entrada canônica. Remover a coluna não remove `regionFilterOptions`, `?region=` nem o estado do filtro.
+4. **Sort legado por território preservado.** `sort=region` continua válido por compatibilidade de URL e aparece no resumo quando ativo, mas deixa de ter um header clicável. Não será criada uma segunda affordance de sort neste item.
+5. **Ausência de nível vira `—`.** O filtro `sem_nivel` continua sendo uma resposta operacional real; somente a célula usa o padrão visual de ausência.
+6. **Headers curtos:** `Assessor`, `Liderança`, `Dobradinha`, `2026`, `Sinal`. O header `2026` explica a estimativa no tooltip B22.
+7. **Cobertura e Sinal ocultos por padrão.** Novos estados de preferência começam com `goalCoverage` e `lastSignal` ocultos; ambos continuam disponíveis no seletor.
+8. **Densidade progressiva.** Colunas entram individualmente conforme o container cresce. `Tendência` e `Sinal` são adaptativas: usam ícone compacto quando não cabe o readout completo, sem montar um segundo editor.
+9. **Ações cobre apenas ocultação manual.** Se o ator ocultar `trend` ou `lastSignal`, a coluna interna `actions` monta o editor correspondente. Container query nunca duplica o controle: uma coluna adaptativa compacta no próprio lugar.
+10. **Sem fallback horizontal.** A tabela não usa `overflow-x-auto`; cards continuam sendo a superfície do container realmente estreito.
 
-## Persona e fluxo
+## Persona e job
 
-- **Persona / contexto:** Coordenador-geral ou assessor em tablet/laptop de campo (~1366x768), no calor da operacao, alternando entre a lista e o detalhe de municipio. Precisa escanear rapidamente, nao configurar tabela.
-- **Job principal:** Ver as colunas de decisao (nome+territorio, 2022, 2026, nivel, classe) sem scroll horizontal. Quando uma coluna recolhe por falta de espaco, o icone de acao correspondente aparece na coluna Acoes para manter o caminho de escrita acessivel.
-- **Fluxo desejado:**
-  1. Abre `/campanha/municipios` em qualquer tela >= 1024px. Tabela sem scroll horizontal.
-  2. Coluna Acoes aparece no extremo direito **apenas se** Tendencia ou Sinal estiverem ocultos.
-  3. Em tela larga com ambas visiveis: coluna Acoes nao renderiza.
-  4. Ao estreitar a tela e Tendencia recolher (P3): icone de Tendencia aparece na coluna Acoes, com a cor do status atual.
-  5. Ao estreitar mais e Sinal recolher (P5): icone de Sinal aparece na coluna Acoes.
-  6. Ambos os icones abrem o mesmo popover que as colunas correspondentes usam hoje.
-  7. Nomes longos quebram em ate 2 linhas; territorio em 2a linha truncada.
-  8. Headers quebram em 2 linhas quando reduz a largura da coluna (so em whitespace).
-- **Anti-goals de produto:**
-  - Nao e substituir o seletor manual de colunas (B17) -- ele continua disponivel.
-  - Nao e "table-fixed" com larguras CSS arbitrarias.
-  - Nao e truncar dados numericos ou badges.
-  - Nao e voltar ao scroll horizontal como fallback.
-  - Acoes nao aparece no seletor B17 (nao e uma coluna que o ator controla).
+- **Persona:** coordenador, candidato ou assessor usando tablet/laptop de campo, com sidebar e/ou chat alternando o espaço disponível.
+- **Job:** escanear nome, base de 2022, estimativa de 2026, nível e classe; reconhecer tendência e manter ações rápidas acessíveis; receber mais contexto de rede conforme o painel cresce.
+- **Princípio:** adaptar ao espaço que o conteúdo recebeu, não ao dispositivo que o hospeda.
 
-### Esboco de fluxo
+## Fluxo desejado
+
+1. O painel de conteúdo abre estreito: a lista usa cards.
+2. Ao ganhar largura suficiente, entra a tabela essencial.
+3. Cada faixa adicional introduz uma coluna, sem salto de três ou quatro colunas de uma vez.
+4. Abrir o chat ou a sidebar faz o processo inverso imediatamente via CSS.
+5. `Tendência` e `Sinal`, quando escolhidos no B17, encolhem para um trigger de ícone antes de desaparecerem.
+6. Se o ator os ocultar manualmente, seus triggers migram no render do servidor para `Ações`, no extremo direito.
+7. O filtro de território continua disponível no omnibox e seus chips continuam refletindo `?region=`.
+
+## Contrato entre preferência e capacidade
+
+A regra efetiva é:
 
 ```text
-Desktop largo (>=1400px) -- default: Tendencia visivel, Sinal oculto -> Acoes visivel (icone Sinal)
-  [Nome+Territorio | 2022 | 2026 | Assessor | Lideranca | Dobradinha | Tendencia | Nivel | Classe | (S)]
-  -> 10 colunas; (S) = icone de Sinal na coluna Acoes
-
-Desktop largo (>=1400px) -- com Sinal habilitado no seletor, Tendencia visivel -> Acoes some
-  [Nome+Territorio | 2022 | 2026 | Assessor | Lideranca | Dobradinha | Tendencia | Nivel | Classe | Sinal]
-  -> 10 colunas; Acoes oculta (Tendencia e Sinal ambos visiveis)
-
-Tablet (~1200px) -- Tendencia recolhe (P3), Sinal oculto -> Acoes visivel (icones Tendencia + Sinal)
-  [Nome+Territorio | 2022 | 2026 | Assessor | Lideranca | Dobradinha | Nivel | Classe | (T)(S)]
-  -> 9 colunas; (T) = icone Tendencia colorido, (S) = icone Sinal
-
-Laptop estreito (~1024px) -- P1 e P3 recolhem, P0 + P4 visiveis
-  [Nome+Territorio | 2022 | 2026 | Nivel | Classe | (T)(S)]
-  -> 6 colunas
-
-Mobile (< 1024px)
-  -> Cards (inalterado)
+coluna renderizada = permitida pelo papel
+                  AND não ocultada manualmente
+                  AND faixa do container permite a coluna
 ```
+
+Exceções:
+
+- `name` é obrigatória.
+- `trend` e `lastSignal`, quando manualmente visíveis, permanecem renderizados na tabela e alternam **compacto ↔ completo** conforme o container.
+- Se `trend` ou `lastSignal` estiver manualmente oculto, seu editor é renderizado uma única vez dentro de `actions`.
+- Mostrar manualmente uma coluna não força o painel a ultrapassar sua capacidade. O automático vence apenas na dimensão de espaço; a preferência continua guardada para quando houver largura.
+
+## Matriz canônica por largura do container
+
+Os valores abaixo são **breakpoints iniciais do painel de conteúdo**, não da viewport. Devem ser calibrados no craft contra o conteúdo real, mas a ordem de entrada é contrato de produto. Uma calibração pode mover um corte; não pode agrupar colunas nem trocar a prioridade sem atualizar este plano.
+
+| Faixa do container  | Superfície / coluna que entra | Estado acumulado                                                                    |
+| ------------------- | ----------------------------- | ----------------------------------------------------------------------------------- |
+| `< 48rem` (< 768px) | Cards                         | Cards existentes; tabela ausente                                                    |
+| `C0 >= 48rem`       | Tabela essencial              | Nome+Território, 2022, 2026, Nível, Classe, Tendência compacta, Ações se necessária |
+| `C1 >= 54rem`       | Assessor                      | C0 + Assessor                                                                       |
+| `C2 >= 60rem`       | Tendência completa            | C1; trigger troca ícone por badge/readout no mesmo controle                         |
+| `C3 >= 66rem`       | Liderança                     | C2 + Liderança                                                                      |
+| `C4 >= 72rem`       | Dobradinha                    | C3 + Dobradinha, somente coordinator/candidate                                      |
+| `C5 >= 78rem`       | Cobertura opt-in              | C4 + Cobertura, se habilitada no B17                                                |
+| `C6 >= 84rem`       | Sinal completo opt-in         | C5; Sinal, se habilitado, troca ícone por readout de idade                          |
+
+### Ordem visual estável
+
+Quando todas estão disponíveis:
+
+1. `name` — Município + Território
+2. `votos` — 2022
+3. `expectedVotes` — 2026
+4. `level` — Nível
+5. `classe` — Classe
+6. `advisors` — Assessor
+7. `trend` — Tendência
+8. `leaderships` — Liderança
+9. `stateDeputies` — Dobradinha, quando o papel permite
+10. `goalCoverage` — Cobertura, opt-in
+11. `lastSignal` — Sinal, opt-in
+12. `actions` — somente quando Tendência e/ou Sinal foram ocultos manualmente
+
+A ordem prioriza diagnóstico/decisão, depois responsabilidade e rede. A tabela não muda a ordem ao cruzar faixas; apenas acrescenta ou compacta células.
+
+## Colunas adaptativas e montagem única
+
+### Tendência
+
+- Manualmente visível:
+  - C0–C1: um trigger de ícone com cor semântica do status atual.
+  - C2+: o mesmo `MunicipalityListTrendControl` mostra o badge completo.
+- Manualmente oculta: a coluna `trend` não é renderizada e uma única instância do controle aparece em `actions`.
+- Estado sem tendência usa ícone neutro e nome acessível “Tendência não registrada”.
+
+### Sinal
+
+- Manualmente visível:
+  - C0–C5: o mesmo `MunicipalityListSignalControl` usa trigger de adicionar/atualizar sinal.
+  - C6+: troca para `SignalAgeReadout` no mesmo controle.
+- Manualmente oculto: uma única instância aparece em `actions`.
+
+### Ações
+
+- ID interno: `actions`.
+- Não entra em `MunicipalityListColumnId`, `municipalityColumnLabels`, `municipalityColumnDescriptions` nem no picker B17.
+- Usa um tipo local, por exemplo `MunicipalityTableColumnId = MunicipalityListColumnId | 'actions'`.
+- Possui header visualmente oculto “Ações” para manter a semântica da tabela.
+- Só entra no DOM quando `trend` ou `lastSignal` está manualmente oculto.
+- Os triggers têm nome acessível, tooltip redundante e alvo mínimo de 44×44px.
+- Nunca existem duas instâncias do mesmo editor na mesma linha.
+
+## Defaults do B17 sem ambiguidade
+
+O cookie atual omite uma lista cujo conjunto de ocultas é vazio. Portanto, “nunca configurou” e “restaurou todas” são indistinguíveis. B158 precisa evoluir o formato antes de aplicar defaults.
+
+### Contrato escolhido
+
+- O formato passa a representar explicitamente uma lista configurada com zero ocultas, usando um sentinel reservado e versionado pelo parser/serializer.
+- Exemplo conceitual: `municipios:__none__` significa “configurado; todas visíveis”. O sentinel nunca é exposto como column ID.
+- Ausência da entrada `municipios` significa “usar defaults atuais da lista”.
+- Defaults de Municípios: `['goalCoverage', 'lastSignal']`.
+- `Restaurar todas` persiste o estado explícito vazio; não volta aos defaults no refresh.
+- Cookies legados sem entrada de Municípios adotam o novo preset compacto uma vez. Após a primeira interação, o estado fica explícito.
+- As outras listas mantêm default vazio e comportamento existente.
+- O controle continua sendo preferência por dispositivo/browser, não por usuário autenticado.
 
 ## Objetivo e aceite
 
-- **Tabela sem scroll horizontal:** em qualquer viewport >= 1024px, `containerClassName` deixa de ser `overflow-x-auto` e a tabela nao produz barra de rolagem horizontal.
-- **Largura segue o conteudo:** colunas com dados curtos (ex.: "2022" com numero de 1-3 digitos + badge, "Nivel" com badge N0-N4) ocupam ~o espaco do dado, nao do titulo do header.
-- **Headers com quebra de linha:** onde o titulo do header for mais largo que os dados, o header quebra em 2+ linhas (so em whitespace, nunca no meio de palavra).
-- **"Sem nivel" vira "--"** na coluna Nivel -- mesmo padrao das colunas 2022 e Classe para ausencia de dado.
-- **Headers no singular + renomeios:** "Assessor", "Lideranca", "Dobradinha", "2026", "Sinal". O header "2026" tem tooltip (B22): "Estimativa de votos do candidato neste municipio em 2026."
-- **Territorio na 2a linha do nome:** a coluna `region` deixa de existir. Na celula `name`, abaixo do nome do municipio, o territorio aparece em texto menor e tom secundario. O link para o territorio (`TerritoryLink`) migra para essa segunda linha.
-- **Cobertura e Sinal ocultos por padrao:** pre-povoados no `hiddenColumnIds` do cookie B17. O ator habilita manualmente no seletor.
-- **Coluna Acoes dinamica (id: `actions`):**
-  - NAO aparece no seletor B17 (nao e uma coluna que o ator controla).
-  - Renderiza apenas quando **Tendencia ou Sinal** estao ocultos (por breakpoint ou escolha manual B17).
-  - Se ambos estao visiveis, a coluna Acoes nao renderiza (nem aparece no DOM).
-  - Icone de Tendencia: mesma cor do status atual (verde = favoravel, cinza = neutra, vermelho = desfavoravel). Abre o popover de `MunicipalityListTrendControl`.
-  - Icone de Sinal: icone padrao de adicionar. Abre o popover de `MunicipalityListSignalControl`.
-  - Ambos os icones coexistem na mesma celula quando ambos estao ocultos.
-- **Prioridade de colunas por breakpoint:** CSS-only. Mapa P0-P5 (ver tabela abaixo).
-- **Nome com largura maxima:** coluna `name` com `max-w-52` (~208px); nomes quebram em 2 linhas. Territorio truncado em 1 linha.
-- **Coluna `name` mantem sticky left.**
-- **Seletor B17 preservado:** o manual vence o automatico. Coluna Acoes nao aparece no seletor.
-- **Sem regressao no mobile:** cards `< md` seguem inalterados.
-- **Guardrails:** sem migration, sem collection, sem Consent, sem server action; sem mudanca no contrato de URL; sem novo cookie.
+- A tabela responde à largura do named container do painel de conteúdo, inclusive quando sidebar/chat abrem ou fecham sem mudar a viewport.
+- Não há barra de rolagem horizontal nem overflow do shell em nenhuma faixa de tabela.
+- A transição cards ↔ tabela é baseada no container em 48rem.
+- As colunas entram uma por vez na ordem C0–C6.
+- `name` continua sticky left e passa a ter largura máxima aproximada de 13rem; nome quebra em até duas linhas e território trunca em uma.
+- Headers podem quebrar apenas em whitespace; números e badges não truncam.
+- Território continua filtrável no omnibox; chips e URLs `?region=` permanecem intactos.
+- URLs legadas com `sort=region` continuam válidas.
+- `Nível` sem valor renderiza `—`.
+- Headers e labels usam singular; `2026` tem tooltip: “Estimativa de votos do candidato neste município em 2026. Ordena pelo cenário central, independente do cenário selecionado acima.”
+- Cobertura e Sinal começam ocultos nos defaults de Municípios.
+- `actions` não aparece no picker e só existe no DOM por ocultação manual de Tendência/Sinal.
+- Cada editor de Tendência/Sinal é montado no máximo uma vez por linha.
+- Cards mantêm conteúdo e interação atuais; somente o gatilho cards/tabela muda de media query para container query.
+- Sem migration, collection, Consent, server action ou mudança de contrato público de URL.
 
-## Dados (intencao)
+## Direção no codebase
 
-- **Vou apresentar dados?** Nao -- **Dados: N/A**. Layout/CSS de colunas existentes.
-- **Decisoes desbloqueadas:** Nenhuma decisao eleitoral nova.
-- **Forma:** _adiada ao plano de implementacao_.
+### `MunicipalityList.tsx`
 
-## Mapa de prioridade das colunas (canonico)
+- Envolver cards + tabela em `@container/municipality-list`.
+- Trocar `md:hidden` / `md:block` por variantes do named container.
+- Remover a definição `region`; mover `TerritoryLink` para a segunda linha de `name`.
+- Reordenar as definições conforme a ordem visual canônica.
+- Aplicar classes de container query simétricas ao `<th>` e `<td>` de cada coluna.
+- Remover `containerClassName="overflow-x-auto"`; usar overflow visível/oculto sem scroller horizontal.
+- Calcular no servidor somente a ocultação manual para decidir `actions`.
+- Não usar `window`, `ResizeObserver`, `useMediaQuery` ou `useMemo` de viewport.
 
-Fonte unica de default, prioridade e breakpoint para TODAS as colunas da tabela de municipios -- existentes e futuras. Quem adicionar uma coluna nova atualiza esta tabela.
+### Controles
 
-**Breakpoints:** >= 1400px (wide), >= 1200px (medium), >= 1024px (narrow), < 1024px (mobile cards).
+- `MunicipalityListTrendControl.tsx`: adicionar seam tipado de apresentação (`compact`/`full` ou triggers responsivos dentro da mesma instância), preservando `triggerLabel`, autosave e feedback.
+- `MunicipalityListSignalControl.tsx`: reutilizar o `children` já existente para alternar ícone/readout dentro da mesma instância.
+- Ícones não duplicam significado apenas por cor: `aria-label` sempre inclui o estado textual.
 
-| #   | Coluna                   | ID              | Header         | Default    | Prio | >= 1400px                | >= 1200px | >= 1024px |
-| --- | ------------------------ | --------------- | -------------- | ---------- | ---- | ------------------------ | --------- | --------- |
-| 1   | Nome (+Territorio)       | `name`          | Municipio      | visivel    | P0   | OK                       | OK        | OK        |
-| 2   | 2022                     | `votos`         | 2022           | visivel    | P0   | OK                       | OK        | OK        |
-| 3   | 2026                     | `expectedVotes` | 2026           | visivel    | P0   | OK                       | OK        | OK        |
-| 4   | Assessor                 | `advisors`      | Assessor       | visivel    | P1   | OK                       | OK        | OK        |
-| 5   | Lideranca (futuro: B155) | `leaderships`   | Lideranca      | visivel    | P1   | OK                       | OK        | OK        |
-| 6   | Dobradinha (futuro)      | `stateDeputies` | Dobradinha     | visivel    | P1   | OK                       | OK        | OK        |
-| 7   | Tendencia                | `trend`         | Tendencia      | visivel    | P3   | OK                       | OK        | --        |
-| 8   | Nivel                    | `level`         | Nivel          | visivel    | P4   | OK                       | --        | --        |
-| 9   | Classe                   | `classe`        | Classe         | visivel    | P4   | OK                       | --        | --        |
-| --  | **Acoes**                | `actions`       | _(sem header)_ | dinamica   | --   | se Tend ou Sinal ocultos | mesmo     | mesmo     |
-| 10  | Cobertura                | `goalCoverage`  | Cobertura      | **oculta** | P5   | OK (se opt-in)           | --        | --        |
-| 11  | Sinal                    | `lastSignal`    | Sinal          | **oculta** | P5   | OK (se opt-in)           | --        | --        |
+### Filtro e URL
 
-**Notas:**
+- `MunicipalityFilters.tsx` e `municipalityOmnibox.ts`: sem mudança comportamental; manter `regionFilterOptions`, sugestões e chips.
+- `municipalityListUrl.ts`: manter `region` em `MunicipalityListSortKey`, parsing, serialização e labels de sort; remover apenas `region` de `municipalityColumnLabels` quando o tipo de coluna deixar de incluí-la.
+- Estado ativo `sort=region` continua anunciado por `formatMunicipalityListSortSummary`.
 
-- Territorio nao e coluna -- e 2a linha do Nome (sempre visivel).
-- Default = estado inicial para novos atores (pre-povoado no cookie B17). Colunas `oculta` entram em `hiddenColumnIds`.
-- **Acoes e dinamica:** renderiza apenas quando Tendencia OU Sinal estao ocultos. Se ambos visiveis, nao renderiza. Nao aparece no seletor B17.
-- Ordem visual (esquerda -> direita): linhas 1-9 + Acoes (extremo direito, quando visivel). 10 e 11 aparecem antes de Acoes quando habilitadas.
-- Colunas futuras (5 e 6): P1, visiveis por default, recolhem abaixo de 1200px.
-- Breakpoints sao CSS-only (`hidden lg:table-cell`, `hidden xl:table-cell`, etc.).
+### Tipos e labels
 
-## Direcao no codebase (hipotese)
+- `MunicipalityListColumnId` perde `region`.
+- `actions` fica em união local da tabela, não nos records canônicos do picker/B22.
+- Atualizar labels para singular e `expectedVotes` para label/header apropriados: picker “Estimativa 2026”, header “2026”. Se necessário, separar label serializável do texto telegráfico do header, seguindo o precedente de `votos`.
 
-- **Areas provaveis:**
-  - `src/components/campaign/municipality/MunicipalityList.tsx` -- definicao de colunas e render. A coluna `region` some; entra `actions` (dinamica). Headers atualizados para singular + "2026" + "Sinal".
-  - `src/utilities/municipality/municipalityListUrl.ts` -- `municipalityColumnLabels` atualizado: perde `region`, renomeia headers, ganha `actions`; `municipalityListSortLabels` atualizado (ex.: `expectedVotes: '2026'`).
-  - `src/utilities/municipality/municipalityLabels.ts` -- `MunicipalityListColumnId` perde `'region'`, ganha `'actions'`; `municipalityColumnDescriptions` atualizado (ex.: `expectedVotes` descreve "Estimativa de votos... 2026").
-  - `src/components/campaign/municipality/MunicipalityListSignalControl.tsx` -- reusado na coluna `actions` com icone em vez de `SignalAgeReadout`.
-  - `src/components/campaign/municipality/MunicipalityListTrendControl.tsx` -- reusado na coluna `actions` com icone colorido.
-  - `src/components/campaign/shared/CampaignTable.tsx` -- seam para `containerClassName` sem `overflow-x-auto`.
-  - `src/components/ui/Table.tsx` -- sobrescrever `whitespace-nowrap` via `className` nas colunas de municipios.
-  - `src/lib/campaignColumnVisibility.ts` -- `resolveVisibleColumns`; a prioridade por breakpoint e CSS (`hidden lg:table-cell` etc.).
-- **Coluna Acoes dinamica:** a decisao "renderiza ou nao" e client-side, baseada em quais colunas estao visiveis apos aplicar B17 + breakpoints. Pode ser implementada como:
-  - Um `useMemo` no componente `MunicipalityList` que verifica se `trend` e `lastSignal` estao em `hiddenColumnIds` OU seriam escondidas pelo breakpoint atual.
-  - Ou CSS puro: a coluna Acoes tem `hidden` condicional + uma media query que a mostra quando as colunas alvo estao `hidden`.
-- **Colunas futuras (B155 + Dobradinhas):** mesmo contrato de antes -- P1, visiveis por default, recolhem abaixo de 1200px.
-- **Precedente a olhar:** B17, B41, `TerritoryList.tsx`.
-- **Risco de acoplamento:** `ui/Table` e base compartilhada -- sobrescrever `whitespace-nowrap` so nas colunas de municipios.
+### Cookie B17
 
-## Dependencias
+- `campaignColumnVisibility.ts`: parser/serializer distinguem entrada ausente de conjunto explicitamente vazio; testes de round-trip cobrem o sentinel.
+- `campaignColumnVisibilityCookie.ts`: aplica defaults por lista somente quando a entrada está ausente.
+- `CampaignColumnPicker.tsx`: `Restaurar todas` persiste vazio explícito.
 
-- Suave: B17 (seletor manual) -- coexiste; este item pre-povoa `hiddenColumnIds` com `['lastSignal', 'goalCoverage']`.
-- Suave: B41 (scroll horizontal) -- este item remove o `overflow-x-auto`.
-- Suave: B155 (coluna Liderancas) e coluna Dobradinhas -- nao bloqueiam; este plano reserva posicao e prioridade.
-- Nenhuma dura.
+### Shared table
+
+- Evitar alterar `ui/Table` globalmente.
+- `CampaignTable` só ganha seam compartilhado se a implementação provar que classes simétricas de head/cell não podem ficar na definição local. Não criar API genérica por antecipação.
+
+## Verificação obrigatória
+
+### Unit/static markup
+
+- Ordem das colunas e labels por papel.
+- `region` ausente da tabela/picker, mas presente no parser/serializer de URL e no omnibox.
+- `actions` ausente do picker.
+- `actions` ausente do DOM quando Tendência e Sinal estão manualmente visíveis.
+- Cada cenário manual (`trend`, `lastSignal`, ambos ocultos) monta exatamente um editor por linha.
+- Tendência e Sinal contêm variantes compacta/completa na mesma instância, controladas apenas por CSS.
+- Nível nulo renderiza `—`.
+- Cookie: legado ausente → defaults; vazio explícito → todas; restaurar todas sobrevive ao round-trip; outras listas não mudam.
+
+### Browser/E2E
+
+Testar o **container**, não apenas presets de viewport:
+
+1. painel `<48rem`: cards visíveis, tabela ausente;
+2. C0, C1, C2, C3, C4, C5 e C6, incluindo 1px antes/depois de cada corte;
+3. mesma viewport com sidebar/chat em combinações aberto/fechado;
+4. `tableContainer.scrollWidth <= tableContainer.clientWidth` em todas as faixas;
+5. nomes longos de município/território e relações com muitos nomes;
+6. coordinator/candidate com Dobradinha e advisor sem essa coluna;
+7. teclado e leitor de tela nos triggers compactos;
+8. touch target mínimo de 44px;
+9. Chrome e Safari/iPad para sticky left + container query.
+
+Os cortes podem ser ajustados uma vez no craft com evidência de `scrollWidth`, em lote. Depois da calibração, os valores finais ficam pinados nos testes; não criar loop de microajustes.
+
+## Dependências
+
+- B17 entregue — requer evolução compatível do formato do cookie.
+- B41 entregue — B158 substitui o scroller horizontal da lista de Municípios; não altera outras listas.
+- B155 e B157 entregues — Liderança e Dobradinha já são colunas reais e entram na matriz.
+- Nenhuma dependência dura externa.
 
 ## Fora de escopo
 
-- Cards mobile (< 1024px).
-- Outras listas alem de `/campanha/municipios`.
-- Resize manual, drag-and-drop, prioridade configuravel por ator.
-- Icones adicionais na coluna Acoes alem de Tendencia e Sinal.
-- Implementar as colunas Liderancas (B155) e Dobradinhas.
+- Mudar conteúdo ou controles dos cards.
+- Aplicar container-query columns às outras listas.
+- Reorder manual, resize, drag-and-drop ou prioridade configurável.
+- Novo sort de território no omnibox.
+- Otimizar loaders conforme coluna visível.
+- Novos ícones de ação além de Tendência e Sinal.
 
-## Rabbit holes de produto
+## Rabbit holes cortados
 
-- **Container queries vs breakpoints fixos.** **Corte:** breakpoints Tailwind alinhados com o shell.
-- **"Prioridade configuravel por ator".** **Corte:** prioridade fixa no codigo.
-- **Acoes dinamica vs B17.** A coluna Acoes nao aparece no seletor -- evitar que o ator a desmarque e perca o caminho de escrita. **Corte:** `actions` nao entra em `municipalityListPickerColumns`.
+- **Breakpoints de viewport:** rejeitados; três painéis tornam viewport um proxy incorreto.
+- **JavaScript de resize:** rejeitado; Tailwind/CSS container queries resolvem o layout sem hidratação adicional.
+- **Duplicar popovers entre coluna e Ações:** rejeitado; cada editor monta uma vez.
+- **`table-fixed` e larguras arbitrárias por coluna:** rejeitado; conteúdo dita largura, com apenas limites no nome e modos compactos explícitos.
+- **Scroll horizontal como rede de segurança:** rejeitado; teste de `scrollWidth` é gate.
+- **Mostrar manualmente acima da capacidade:** rejeitado; preferência não pode estourar o painel.
 
-## Questoes em aberto (produto)
-
-- **Ordem visual das colunas de rede:** Assessor, Lideranca, Dobradinha, Tendencia -- ou Assessor, Tendencia, Lideranca, Dobradinha? **Recomendacao:** Assessor, Lideranca, Dobradinha, Tendencia (pessoas vinculadas antes da leitura politica). _(assumido)_
-- **Cor do icone de Tendencia na coluna Acoes:** replica a cor do badge do status atual (verde/amarelo/vermelho/cinza) ou usa uma cor neutra? **Recomendacao:** replica a cor do status -- o icone substitui a coluna, entao deve comunicar a mesma informacao. _(assumido)_
-- **Header "2026" precisa de tooltip?** Sim -- `municipalityColumnDescriptions.expectedVotes`: "Estimativa de votos do candidato neste municipio em 2026. Ordena pelo cenario central, independente do cenario selecionado acima." _(assumido)_
-
-## Referencias
+## Referências
 
 - `src/components/campaign/municipality/MunicipalityList.tsx`
+- `src/components/campaign/municipality/MunicipalityFilters.tsx`
+- `src/components/campaign/municipality/MunicipalityListTrendControl.tsx`
+- `src/components/campaign/municipality/MunicipalityListSignalControl.tsx`
 - `src/components/campaign/shared/CampaignTable.tsx`
-- `src/components/ui/Table.tsx`
+- `src/components/campaign/shared/CampaignColumnPicker.tsx`
 - `src/lib/campaignColumnVisibility.ts`
+- `src/utilities/campaignColumnVisibilityCookie.ts`
 - `src/utilities/municipality/municipalityListUrl.ts`
 - `src/utilities/municipality/municipalityLabels.ts`
-- `docs/plans/seletor-colunas-lista-municipios.md` -- B17
-- `docs/plans/scroll-horizontal-lista-municipios.md` -- B41
-- B155 (Issue #359) -- coluna Liderancas (futuro)
-- Canvas UI: `/Users/francisco.solla/.cursor/projects/Users-francisco-solla-cursor-worktrees-teqo-5hoy/canvases/plan-b158-ui-draft.canvas.tsx`
+- `docs/plans/seletor-colunas-lista-municipios.md` — B17
+- `docs/plans/scroll-horizontal-lista-municipios.md` — B41
