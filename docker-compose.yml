@@ -13,6 +13,10 @@ services:
       POSTGRES_DB: teqo
     ports:
       - '5432:5432'
+    # Default max_connections=100 is tight for vitest forks (≈CPUs × pg pool)
+    # plus a leftover `next start` from local repro. Raise the ceiling so the
+    # int gate fails on real assertions, not "too many clients already".
+    command: ['postgres', '-c', 'max_connections=200']
     volumes:
       - pgdata:/var/lib/postgresql/data
       # Runs only on first initialization of the volume. Creates the dedicated

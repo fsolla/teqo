@@ -15,9 +15,14 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     include: ['tests/int/**/*.int.spec.ts'],
-    // Int specs hit a real Postgres under a ~48-way parallel suite, so wall
-    // time is dominated by pool contention, not by the code under test. The
-    // 5s default made legitimately heavy RSC-composition tests flake as the
+    // Cap forks so each worker's Payload pg pool stays under Docker Postgres
+    // max_connections=100 on high-core laptops (default worker count ≈ CPUs;
+    // 16× pool-max-10 ≈ 160 clients → "too many clients already", which then
+    // cascades into unrelated QueryError noise). CI runners have fewer CPUs.
+    maxWorkers: 8,
+    // Int specs hit a real Postgres under a parallel suite, so wall time is
+    // dominated by pool contention, not by the code under test. The 5s
+    // default made legitimately heavy RSC-composition tests flake as the
     // suite grew (municipalityPageData was the first); one global budget
     // beats per-test overrides. Genuinely hung tests still fail — just 10s
     // later. The unit suite keeps the 5s default.
