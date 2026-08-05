@@ -220,7 +220,7 @@ const municipalityListColumns = ({
   signalFormAction,
   columnVisibility,
 }: MunicipalityListProps): Array<MunicipalityColumn> => {
-  const manuallyHidden = new Set(columnVisibility.hiddenColumnIds)
+  const manuallyHidden = isStaffView ? new Set(columnVisibility.hiddenColumnIds) : new Set<string>()
   const trendIsHidden = manuallyHidden.has('trend')
   const signalIsHidden = manuallyHidden.has('lastSignal')
 
@@ -664,7 +664,7 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
           {/* A sticky <th> can't paint the row border, hence the inset shadow. */}
           <CampaignTable
             className="hidden overflow-visible @min-[48rem]/municipality-list:block"
-            containerClassName="overflow-x-hidden"
+            containerClassName="overflow-x-auto supports-[container-type:inline-size]:overflow-x-hidden"
             headerClassName="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-background [&_th]:shadow-[inset_0_-1px_0_var(--border)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl [&_tr]:border-b-0"
             caption={
               <>

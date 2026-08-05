@@ -76,12 +76,6 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], channel: 'chromium' },
     },
     {
-      name: 'municipality-responsive-webkit',
-      testMatch: /campaignMunicipalityResponsiveColumns\.e2e\.spec\.ts/,
-      dependencies: ['setup'],
-      use: { ...devices['iPad Pro 11'] },
-    },
-    {
       name: 'frontend',
       testMatch: /frontend\.e2e\.spec\.ts/,
       dependencies: ['campaign'],

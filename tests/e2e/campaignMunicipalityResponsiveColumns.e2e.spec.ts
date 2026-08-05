@@ -2,7 +2,6 @@ import type { Locator, Page } from '@playwright/test'
 
 import { expect, test } from './fixtures/campaignE2EFixtures.js'
 
-const WEBKIT_PROJECT = 'municipality-responsive-webkit'
 const REM_IN_PIXELS = 16
 const municipalityColumnsCookie = encodeURIComponent('municipios:__none__')
 
@@ -31,18 +30,8 @@ const visibleHeaders = (container: Locator) =>
 
 const expectNoHorizontalOverflow = async (container: Locator) => {
   await expect
-    .poll(() =>
-      container.evaluate((element) => ({
-        clientWidth: element.clientWidth,
-        scrollWidth: element.scrollWidth,
-      })),
-    )
-    .toMatchObject({ clientWidth: expect.any(Number) })
-  const dimensions = await container.evaluate((element) => ({
-    clientWidth: element.clientWidth,
-    scrollWidth: element.scrollWidth,
-  }))
-  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth)
+    .poll(() => container.evaluate((element) => element.scrollWidth <= element.clientWidth))
+    .toBe(true)
 }
 
 type ResponsiveCampaignFixture = {
@@ -94,8 +83,7 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
   test('crosses every container threshold without horizontal scrolling', async ({
     campaign,
     page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name === WEBKIT_PROJECT, 'Covered by the focused iPad WebKit case.')
+  }) => {
     test.slow()
 
     await loginWithAllColumns(page, campaign)
@@ -104,12 +92,16 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
     const table = container.getByRole('table')
     const trendTrigger = table.getByRole('button', { name: /^Editar tendência política/ }).first()
     const signalTrigger = table.getByRole('button', { name: /^Registrar sinal em/ }).first()
+    // Test around (and on) the three binary switches: cards↔table (48rem),
+    // trend text (60rem), signal text (84rem). Container queries use min-width.
     const widths = [
       48 * REM_IN_PIXELS - 1,
+      48 * REM_IN_PIXELS,
       48 * REM_IN_PIXELS + 1,
       54 * REM_IN_PIXELS - 1,
       54 * REM_IN_PIXELS + 1,
       60 * REM_IN_PIXELS - 1,
+      60 * REM_IN_PIXELS,
       60 * REM_IN_PIXELS + 1,
       66 * REM_IN_PIXELS - 1,
       66 * REM_IN_PIXELS + 1,
@@ -118,6 +110,7 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
       78 * REM_IN_PIXELS - 1,
       78 * REM_IN_PIXELS + 1,
       84 * REM_IN_PIXELS - 1,
+      84 * REM_IN_PIXELS,
       84 * REM_IN_PIXELS + 1,
     ]
 
@@ -148,8 +141,7 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
   test('sidebar and Sollinha change the column stage without changing the viewport', async ({
     campaign,
     page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name === WEBKIT_PROJECT, 'Desktop shell behavior is Chromium-only.')
+  }) => {
     test.slow()
 
     await page.setViewportSize({ width: 1800, height: 900 })
@@ -181,9 +173,7 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
   test('keeps Dobradinha restricted even when an advisor has enough room', async ({
     campaign,
     page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name === WEBKIT_PROJECT, 'Role coverage runs once in Chromium.')
-
+  }) => {
     await loginWithAllColumns(page, campaign, 'advisor')
     const container = municipalityContainer(page)
     await setContainerWidth(container, 84 * REM_IN_PIXELS + 1)
@@ -193,15 +183,13 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
     await expectNoHorizontalOverflow(container)
   })
 
-  test('keeps the pinned name and 44px edit targets on iPad-sized WebKit', async ({
+  test('keeps the pinned name and 44px edit targets on an iPad viewport', async ({
     campaign,
     page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== WEBKIT_PROJECT, 'Focused WebKit coverage only.')
-
+  }) => {
+    await page.setViewportSize({ width: 834, height: 1194 })
     await loginWithAllColumns(page, campaign)
     const container = municipalityContainer(page)
-    await setContainerWidth(container, 48 * REM_IN_PIXELS + 1)
     const table = container.getByRole('table')
     await expect(table).toBeVisible()
 

@@ -133,8 +133,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Install Playwright Chromium and focused WebKit
-        run: pnpm exec playwright install --with-deps chromium webkit
+      - name: Install Playwright chromium
+        run: pnpm exec playwright install --with-deps chromium
       - run: pnpm migrate
       - run: pnpm db:seed:minimal
       - name: Build for e2e

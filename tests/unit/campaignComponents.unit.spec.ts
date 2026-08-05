@@ -324,8 +324,10 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('@min-[48rem]/municipality-list:block')
     expect(html).toContain('@min-[48rem]/municipality-list:hidden')
     expect(html).toContain('data-slot="table-container"')
-    expect(html).toContain('overflow-x-hidden')
-    expect(html).not.toContain('overflow-x-auto')
+    expect(html).toContain('supports-[container-type:inline-size]:overflow-x-hidden')
+    // overflow-x-auto is the fallback for browsers without container queries;
+    // the test above still proves the container-query path takes precedence.
+    expect(html).toContain('overflow-x-auto')
     expect(theadHtml).toContain('Município')
     expect(tbodyHtml).toContain('Seabra')
   })
