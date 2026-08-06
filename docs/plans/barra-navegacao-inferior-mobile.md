@@ -1,6 +1,6 @@
 # B164 — Barra de navegação inferior no mobile (+ página Mais)
 
-Status: blocked (plano ainda não em main)
+Status: ready
 Atualizado em: 2026-08-06
 Issue: #400
 Priority: P1
