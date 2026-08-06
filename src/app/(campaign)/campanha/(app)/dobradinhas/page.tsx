@@ -184,15 +184,11 @@ const stateDeputyColumns = (
   {
     id: 'advisors',
     label: 'Assessores',
-    head: canEditAdvisors ? (
-      <CampaignTableHead description="Edite aqui: passe o mouse em um chip para remover, ou busque para adicionar. Quem responde por esta dobradinha.">
-        Assessores
-      </CampaignTableHead>
-    ) : (
-      <CampaignTableHead description="Quem responde por esta dobradinha.">
-        Assessores
-      </CampaignTableHead>
-    ),
+    // No `description` here: `CampaignTableHead`'s hover tooltip
+    // (`CampaignHoverTooltip`) plus `StateDeputyAdvisorRelationCell` on this
+    // list breaks production SSR with "Element type is invalid … undefined".
+    // Municípios keeps its tooltip; Assessores relies on the cell chrome.
+    head: <CampaignTableHead>Assessores</CampaignTableHead>,
     cellClassName: 'max-w-72 whitespace-normal',
     cell: (row) => (
       <StateDeputyAdvisorRelationCell
