@@ -21,7 +21,7 @@ import {
 export { buildDemandListHref, parseDemandListParams }
 export type { DemandListState }
 
-const demandPageSize = 25
+export const demandPageSize = 25
 
 export type DemandRowViewModel = {
   id: number
@@ -95,6 +95,7 @@ export const loadDemandListPageData = async (
   payload: Payload,
   user: CampaignUser,
   state: DemandListState,
+  page = 1,
 ): Promise<{
   rows: DemandRowViewModel[]
   totalDocs: number
@@ -107,7 +108,7 @@ export const loadDemandListPageData = async (
       where: buildDemandListWhere(state),
       depth: 0,
       limit: demandPageSize,
-      page: state.page,
+      page,
       sort: '-createdAt',
       user,
       overrideAccess: false,

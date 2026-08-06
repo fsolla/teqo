@@ -298,7 +298,7 @@ describe('list omnibox adapters (B128)', () => {
 
     const cleared = clearOrganizationOmnibox(parseOrganizationListParams({ q: 'x', kind: 'outro' }))
     if (cleared.kind === 'clear') {
-      expect(cleared.state).toEqual({ page: 1 })
+      expect(cleared.state).toEqual({})
     }
   })
 

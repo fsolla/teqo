@@ -292,6 +292,7 @@ export const loadMunicipalityListPageBundle = async (
   payload: Payload,
   user: CampaignUser,
   searchParams: MunicipalityListSearchParams,
+  page = 1,
 ): Promise<MunicipalityListPageBundle> => {
   const state = parseMunicipalityListParams(searchParams)
   const where = buildMunicipalityListWhere(state)
@@ -331,7 +332,7 @@ export const loadMunicipalityListPageBundle = async (
     ...(isPagedByPayload
       ? {
           limit: municipalityPageSize,
-          page: state.page,
+          page,
         }
       : {
           limit: 0,
@@ -415,7 +416,7 @@ export const loadMunicipalityListPageBundle = async (
     })
     totalDocs = allDocs.length
     totalPages = Math.max(1, Math.ceil(totalDocs / municipalityPageSize))
-    const start = (state.page - 1) * municipalityPageSize
+    const start = (page - 1) * municipalityPageSize
     pageDocs = allDocs.slice(start, start + municipalityPageSize)
   }
 

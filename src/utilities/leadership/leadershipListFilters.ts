@@ -32,7 +32,7 @@ export const leadershipAccessFilterOptions: LeadershipFilterOption[] = (
 ).map((value) => ({ value, label: leadershipAccessFilterLabels[value] }))
 
 const withLeadershipListPageReset = (state: LeadershipListState): LeadershipListState =>
-  parseLeadershipListParams(leadershipListStateToRawParams({ ...state, page: 1 }, 1))
+  parseLeadershipListParams(leadershipListStateToRawParams(state))
 
 /**
  * Writes the RAW param and lets `parseLeadershipListParams` validate, so no
@@ -44,7 +44,7 @@ const setLeadershipMultiFilterValues = (
   values: string[],
 ): LeadershipListState =>
   parseLeadershipListParams({
-    ...leadershipListStateToRawParams({ ...state, page: 1 }, 1),
+    ...leadershipListStateToRawParams(state),
     [param]: values,
   })
 
@@ -137,7 +137,7 @@ export const clearLeadershipListFilters = (state: LeadershipListState): Leadersh
 })
 
 export const buildLeadershipFilterHref = (next: LeadershipListState): string =>
-  buildLeadershipListHref(next, 1)
+  buildLeadershipListHref(next)
 
 export const isLeadershipColumnFilterActive = (
   state: LeadershipListState,

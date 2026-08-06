@@ -286,7 +286,6 @@ describe('loadOrganizationListPageData', () => {
     })
 
     const match = await loadOrganizationListPageData(payload, coordinator, {
-      page: 1,
       q: organization.name,
       kind: 'associacao',
     })
@@ -299,7 +298,6 @@ describe('loadOrganizationListPageData', () => {
     })
 
     const kindMiss = await loadOrganizationListPageData(payload, coordinator, {
-      page: 1,
       q: organization.name,
       kind: 'sindicato',
     })
@@ -449,7 +447,6 @@ describe('loadDemandListPageData', () => {
     })
 
     const open = await loadDemandListPageData(payload, coordinator, {
-      page: 1,
       status: 'aberta',
     })
     const row = open.rows.find((candidate) => candidate.slug === demand.slug)
@@ -463,7 +460,6 @@ describe('loadDemandListPageData', () => {
     expect(open.totalPages).toBeGreaterThanOrEqual(1)
 
     const closed = await loadDemandListPageData(payload, coordinator, {
-      page: 1,
       status: 'rejeitada',
     })
     expect(closed.rows.some((candidate) => candidate.slug === demand.slug)).toBe(false)
@@ -473,7 +469,7 @@ describe('loadDemandListPageData', () => {
     const fixtures = campaignFixtures()
     const leader = await fixtures.createCampaignUser('leader')
 
-    await expect(loadDemandListPageData(payload, leader, { page: 1 })).rejects.toThrow(/permissão/i)
+    await expect(loadDemandListPageData(payload, leader, {})).rejects.toThrow(/permissão/i)
   })
 
   it('narrows by free-text search on title and requester name', async () => {
@@ -503,21 +499,18 @@ describe('loadDemandListPageData', () => {
     })
 
     const titleHits = await loadDemandListPageData(payload, coordinator, {
-      page: 1,
       q: 'banner comitê',
     })
     expect(titleHits.rows.some((row) => row.slug === byTitle.slug)).toBe(true)
     expect(titleHits.rows.some((row) => row.slug === byRequester.slug)).toBe(false)
 
     const requesterHits = await loadDemandListPageData(payload, coordinator, {
-      page: 1,
       q: 'solicitante',
     })
     expect(requesterHits.rows.some((row) => row.slug === byRequester.slug)).toBe(true)
     expect(requesterHits.rows.some((row) => row.slug === byTitle.slug)).toBe(false)
 
     const noMatch = await loadDemandListPageData(payload, coordinator, {
-      page: 1,
       q: 'zzznomatch',
     })
     expect(noMatch.rows.some((row) => row.slug === byTitle.slug)).toBe(false)

@@ -24,10 +24,9 @@ describe('state deputy list URL contract', () => {
     expect(parseStateDeputyListParams({})).toEqual({ page: 1 })
   })
 
-  it('validates page as a positive decimal integer', () => {
-    expect(parseStateDeputyListParams({ page: '4' }).page).toBe(4)
+  it('B161 — page left the URL contract: any page token drops to 1', () => {
+    expect(parseStateDeputyListParams({ page: '4' }).page).toBe(1)
     expect(parseStateDeputyListParams({ page: '0' }).page).toBe(1)
-    expect(parseStateDeputyListParams({ page: '-2' }).page).toBe(1)
     expect(parseStateDeputyListParams({ page: 'abc' }).page).toBe(1)
   })
 
@@ -67,7 +66,7 @@ describe('state deputy list URL contract', () => {
       sort: 'party',
       dir: 'desc',
     })
-    expect(buildStateDeputyListHref(state, 1)).toBe(
+    expect(buildStateDeputyListHref(state)).toBe(
       '/campanha/dobradinhas?q=edu&party=PT&party=PSD&sort=party&dir=desc',
     )
   })
@@ -84,11 +83,11 @@ describe('state deputy list URL contract', () => {
     expect(resolveStateDeputyListPayloadSort('party', 'desc')).toBe('-party')
   })
 
-  it('clamps an out-of-range page and redirects non-canonical query strings', () => {
-    expect(resolveStateDeputyListUrl({ page: '9' }, 2)).toEqual({
-      state: { page: 2 },
-      href: '/campanha/dobradinhas?page=2',
-      redirectHref: '/campanha/dobradinhas?page=2',
+  it('B161 — drops stale page params and redirects non-canonical query strings', () => {
+    expect(resolveStateDeputyListUrl({ page: '9' })).toEqual({
+      state: { page: 1 },
+      href: '/campanha/dobradinhas',
+      redirectHref: '/campanha/dobradinhas',
     })
     expect(resolveStateDeputyListUrl({ q: '  edu  ', unknown: 'x' })).toEqual({
       state: { page: 1, q: 'edu' },

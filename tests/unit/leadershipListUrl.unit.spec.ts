@@ -29,10 +29,9 @@ describe('leadership list URL contract', () => {
     expect(parseLeadershipListParams({})).toEqual({ page: 1 })
   })
 
-  it('validates page as a positive decimal integer', () => {
-    expect(parseLeadershipListParams({ page: '4' }).page).toBe(4)
+  it('B161 — page left the URL contract: any page token drops to 1', () => {
+    expect(parseLeadershipListParams({ page: '4' }).page).toBe(1)
     expect(parseLeadershipListParams({ page: '0' }).page).toBe(1)
-    expect(parseLeadershipListParams({ page: '-2' }).page).toBe(1)
     expect(parseLeadershipListParams({ page: 'abc' }).page).toBe(1)
   })
 
@@ -98,7 +97,7 @@ describe('leadership list URL contract', () => {
       sort: 'name',
       dir: 'asc',
     })
-    expect(buildLeadershipListHref(state, 1)).toBe(
+    expect(buildLeadershipListHref(state)).toBe(
       '/campanha/liderancas?q=ana&status=a_abordar&municipality=7&organization=5&organization=8&stateDeputy=21&access=sem&sort=name',
     )
   })
@@ -127,11 +126,11 @@ describe('leadership list URL contract', () => {
     expect(resolveLeadershipListPayloadSort('supportStatus', 'asc')).toBe('supportStatus')
   })
 
-  it('clamps an out-of-range page and redirects non-canonical query strings', () => {
-    expect(resolveLeadershipListUrl({ page: '9' }, 2)).toEqual({
-      state: { page: 2 },
-      href: '/campanha/liderancas?page=2',
-      redirectHref: '/campanha/liderancas?page=2',
+  it('B161 — drops stale page params and redirects non-canonical query strings', () => {
+    expect(resolveLeadershipListUrl({ page: '9' })).toEqual({
+      state: { page: 1 },
+      href: '/campanha/liderancas',
+      redirectHref: '/campanha/liderancas',
     })
     expect(resolveLeadershipListUrl({ q: '  ana  ', unknown: 'x' })).toEqual({
       state: { page: 1, q: 'ana' },

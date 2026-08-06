@@ -1,8 +1,15 @@
 'use server'
 
+import config from '@payload-config'
 import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
+import { getPayload } from 'payload'
 
+import {
+  CAMPAIGN_LIST_LOAD_ERROR_MESSAGE,
+  CAMPAIGN_LIST_SESSION_EXPIRED_MESSAGE,
+  type CampaignListNextPageResult,
+} from '@/lib/campaignListPage'
 import { nextMunicipalityIdsAfterLeadershipMembership } from '@/lib/leadershipMunicipalityMembership'
 import { nextStateDeputyIdsAfterMembership } from '@/lib/leadershipStateDeputyMembership'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
@@ -28,13 +35,20 @@ import {
   type MunicipalityLeadershipCreateInput,
 } from '@/lib/schemas/leadership'
 import type { CampaignUser, Contact } from '@/payload-types'
-import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
+import { getAdvisorMunicipalityIds, isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
+import { getCampaignUser } from '@/utilities/campaignAuth'
+import { rawSearchParamsFromQueryString, strictDecimalInteger } from '@/utilities/campaignListUrl'
 import {
   acquireContactPhoneLocks,
   assertContactPhoneAvailable,
   CONTACT_PHONE_AMBIGUOUS_MESSAGE,
 } from '@/utilities/contactPhoneInvariant'
+import {
+  loadLeadershipListPageData,
+  type LeadershipRowViewModel,
+} from '@/utilities/leadership/leadershipData'
+import { parseLeadershipListParams } from '@/utilities/leadership/leadershipListUrl'
 import { loadMunicipalityLeadershipSummaries } from '@/utilities/municipality/municipalityViewModels'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
@@ -804,4 +818,32 @@ export const setLeadershipMunicipalitiesMembership = async (
     revalidateLeadershipMunicipalityPaths(input.leadershipId, municipalitySlugs)
   }
   return leadership
+}
+
+/**
+ * B161 — incremental load for the continuous list (see demand.ts twin).
+ */
+export const fetchNextLeadershipListPage = async (
+  query: string,
+  page: number,
+): Promise<CampaignListNextPageResult<LeadershipRowViewModel>> => {
+  const nextPage = strictDecimalInteger(String(page))
+  if (!nextPage || nextPage < 2) {
+    return { status: 'error', message: CAMPAIGN_LIST_LOAD_ERROR_MESSAGE }
+  }
+
+  const actor = await getCampaignUser()
+  if (!actor) return { status: 'error', message: CAMPAIGN_LIST_SESSION_EXPIRED_MESSAGE }
+  if (!isCampaignStaff(actor)) return { status: 'error', message: CAMPAIGN_LIST_LOAD_ERROR_MESSAGE }
+
+  const payload = await getPayload({ config })
+  const state = parseLeadershipListParams(rawSearchParamsFromQueryString(query))
+  const { rows, totalDocs, totalPages } = await loadLeadershipListPageData(
+    payload,
+    actor,
+    state,
+    nextPage,
+  )
+
+  return { status: 'ok', rows, totalDocs, hasMore: nextPage < totalPages }
 }

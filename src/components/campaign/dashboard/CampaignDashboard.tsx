@@ -48,7 +48,7 @@ const buildZoneCityHrefs = (
   for (const [ibgeCode, entries] of Object.entries(buildMunicipalitiesByIbgeCode(accessible))) {
     if (entries.length < 2) continue
     const city = municipalityForCode(ibgeCode)
-    if (city) hrefs[ibgeCode] = buildMunicipalityListHref({ page: 1, q: city }, 1)
+    if (city) hrefs[ibgeCode] = buildMunicipalityListHref({ page: 1, q: city })
   }
 
   return hrefs
@@ -181,7 +181,7 @@ export const CampaignDashboard = ({
           </div>
           {view.highPriorityCount > view.priorityMunicipalities.length ? (
             <Button asChild variant="ghost" className="min-h-11">
-              <Link href={buildMunicipalityListHref({ page: 1, priority: 'alta' }, 1)}>
+              <Link href={buildMunicipalityListHref({ page: 1, priority: 'alta' })}>
                 Ver todas
                 <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
               </Link>

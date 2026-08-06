@@ -7,6 +7,7 @@
 import type { Where } from 'payload'
 
 import { type BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
+import { type CampaignColumnPickerColumn } from '@/lib/campaignColumnVisibility'
 import { engagementLevels, type EngagementLevel } from '@/lib/engagementLevel'
 import { isMunicipalitySlug } from '@/lib/municipalityCatalog'
 import {
@@ -166,7 +167,6 @@ const municipalityListParamNames = [
   'compare',
   'sort',
   'dir',
-  'page',
 ] as const
 
 const municipalityListParamNameSet = new Set<string>(municipalityListParamNames)
@@ -271,9 +271,7 @@ const engagementLevelFilterSet = new Set<string>(municipalityListLevelFilterValu
 
 export const municipalityListStateToRawParams = (
   state: MunicipalityListState,
-  page = state.page,
 ): MunicipalityListSearchParams => ({
-  page: String(page),
   q: state.q,
   region: state.regions,
   slug: state.slugs,
@@ -291,7 +289,6 @@ export const municipalityListStateToRawParams = (
 export const parseMunicipalityListParams = (
   params: MunicipalityListSearchParams,
 ): MunicipalityListState => {
-  const rawPage = strictDecimalInteger(firstValue(params.page))
   const q = normalizedText(firstValue(params.q))
   const regions = parseRegionsParam(params.region)
   const slugs = parseSlugsParam(params.slug)
@@ -317,7 +314,8 @@ export const parseMunicipalityListParams = (
   const dir = rawDir && municipalityListSortDirSet.has(rawDir) ? rawDir : undefined
 
   return {
-    page: rawPage ?? 1,
+    // B161 — continuous list: `page` left the URL contract; pinned at 1.
+    page: 1,
     ...(q ? { q } : {}),
     ...(regions.length ? { regions } : {}),
     ...(slugs.length ? { slugs } : {}),
@@ -413,21 +411,17 @@ export const serializeCanonicalMunicipalityListSearchParams = (
       params.set('dir', resolvedDir)
     }
   }
-  if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
 
   return params
 }
 
-const buildMunicipalityListSearchParams = (
-  state: MunicipalityListState,
-  page = state.page,
-): URLSearchParams =>
+const buildMunicipalityListSearchParams = (state: MunicipalityListState): URLSearchParams =>
   serializeCanonicalMunicipalityListSearchParams(
-    parseMunicipalityListParams(municipalityListStateToRawParams(state, page)),
+    parseMunicipalityListParams(municipalityListStateToRawParams(state)),
   )
 
-export const buildMunicipalityListHref = (state: MunicipalityListState, page: number): string =>
-  buildListHref(state, buildMunicipalityListSearchParams, '/campanha/municipios', page)
+export const buildMunicipalityListHref = (state: MunicipalityListState): string =>
+  buildListHref(state, buildMunicipalityListSearchParams, '/campanha/municipios')
 
 export const buildMunicipalitySortHref = createSortToggleHref<
   MunicipalityListState,
@@ -438,7 +432,7 @@ export const buildMunicipalitySortHref = createSortToggleHref<
     return { sort, dir: state.dir ?? defaultMunicipalityListSortDir(sort) }
   },
   defaultDir: defaultMunicipalityListSortDir,
-  buildHref: (state) => buildMunicipalityListHref(state, 1),
+  buildHref: buildMunicipalityListHref,
 })
 
 const formatMunicipalitySortOptionLabel = (
@@ -490,7 +484,6 @@ export const parseMunicipalitySortValue = (
 
 export const resolveMunicipalityListUrl = (
   params: MunicipalityListSearchParams,
-  totalPages?: number,
 ): {
   state: MunicipalityListState
   href: string
@@ -502,5 +495,38 @@ export const resolveMunicipalityListUrl = (
     parse: parseMunicipalityListParams,
     buildSearchParams: buildMunicipalityListSearchParams,
     basePath: '/campanha/municipios',
-    totalPages,
   })
+
+/**
+ * B161 — the column picker list for `/campanha/municipios`. Lives here (not in
+ * the client `MunicipalityList`) because the RSC page composes the picker
+ * trailing; pure data, safe on both sides of the boundary.
+ */
+export const municipalityListPickerColumns = ({
+  isStaffView,
+  isCampaignUnrestricted,
+}: {
+  isStaffView: boolean
+  isCampaignUnrestricted: boolean
+}): CampaignColumnPickerColumn[] => {
+  const base: CampaignColumnPickerColumn[] = [
+    { id: 'name', label: municipalityColumnLabels.name, mandatory: true },
+    { id: 'votos', label: municipalityColumnLabels.votos },
+  ]
+  if (!isStaffView) return base
+
+  return [
+    ...base,
+    { id: 'expectedVotes', label: municipalityColumnLabels.expectedVotes },
+    { id: 'level', label: municipalityColumnLabels.level },
+    { id: 'classe', label: municipalityColumnLabels.classe },
+    { id: 'advisors', label: municipalityColumnLabels.advisors },
+    { id: 'trend', label: municipalityColumnLabels.trend },
+    { id: 'leaderships', label: municipalityColumnLabels.leaderships },
+    ...(isCampaignUnrestricted
+      ? [{ id: 'stateDeputies', label: municipalityColumnLabels.stateDeputies }]
+      : []),
+    { id: 'goalCoverage', label: municipalityColumnLabels.goalCoverage },
+    { id: 'lastSignal', label: municipalityColumnLabels.lastSignal },
+  ]
+}

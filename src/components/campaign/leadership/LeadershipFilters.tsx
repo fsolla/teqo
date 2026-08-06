@@ -25,12 +25,14 @@ export const LeadershipFilters = ({
   organizationFilterOptions,
   stateDeputyFilterOptions,
   trailing,
+  totalDocs,
 }: {
   state: LeadershipListState
   municipalityFilterOptions: LeadershipFilterOption[]
   organizationFilterOptions: LeadershipFilterOption[]
   stateDeputyFilterOptions: LeadershipFilterOption[]
   trailing?: ReactNode
+  totalDocs?: number
 }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
@@ -134,6 +136,7 @@ export const LeadershipFilters = ({
         onClearAll={() => {
           runAction(clearLeadershipOmnibox(state))
         }}
+        totalDocs={totalDocs}
         trailing={trailing}
       />
     </form>

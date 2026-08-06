@@ -10,8 +10,12 @@ import {
   type RawSearchParams,
 } from '@/utilities/campaignListUrl'
 
+/**
+ * B161 — the list is continuous (infinite scroll); `page` left the URL
+ * contract: it is never parsed nor serialized, and a stale `?page=` is just
+ * another unknown param the canonical pass drops.
+ */
 export type DemandListState = {
-  page: number
   q?: string
   status?: CampaignDemandStatus
   kind?: CampaignDemandKind
@@ -25,7 +29,6 @@ export const parseDemandListParams = (searchParams: RawSearchParams): DemandList
   const q = normalizedText(firstValue(searchParams.q))
 
   return {
-    page: strictDecimalInteger(firstValue(searchParams.page)) ?? 1,
     ...(q ? { q } : {}),
     ...(campaignDemandStatuses.includes(rawStatus as CampaignDemandStatus)
       ? { status: rawStatus as CampaignDemandStatus }
@@ -53,18 +56,14 @@ export const buildDemandListWhere = (state: DemandListState): Where => {
   return filters.length ? { and: filters } : {}
 }
 
-const buildDemandListSearchParams = (
-  state: DemandListState,
-  page = state.page,
-): URLSearchParams => {
+const buildDemandListSearchParams = (state: DemandListState): URLSearchParams => {
   const params = new URLSearchParams()
   if (state.q) params.set('q', state.q)
   if (state.status) params.set('status', state.status)
   if (state.kind) params.set('kind', state.kind)
   if (state.activityId) params.set('activity', String(state.activityId))
-  if (page > 1) params.set('page', String(page))
   return params
 }
 
-export const buildDemandListHref = (state: DemandListState, page: number): string =>
-  buildListHref(state, buildDemandListSearchParams, '/campanha/demandas', page)
+export const buildDemandListHref = (state: DemandListState): string =>
+  buildListHref(state, buildDemandListSearchParams, '/campanha/demandas')

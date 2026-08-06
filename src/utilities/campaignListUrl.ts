@@ -1,5 +1,20 @@
 export type RawSearchParams = Record<string, string | string[] | undefined>
 
+/**
+ * B161 — rebuilds `RawSearchParams` from a canonical query string so the
+ * infinite-scroll server actions parse the client-sent query through the
+ * exact same parser the URL contract uses (unknown/invalid tokens drop).
+ */
+export const rawSearchParamsFromQueryString = (query: string): RawSearchParams => {
+  const params = new URLSearchParams(query)
+  const raw: RawSearchParams = {}
+  for (const name of new Set(params.keys())) {
+    const values = params.getAll(name)
+    raw[name] = values.length === 1 ? (values[0] ?? '') : values
+  }
+  return raw
+}
+
 export const firstValue = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value
 
@@ -109,11 +124,20 @@ export const buildListHref = <State>(
   state: State,
   buildSearchParams: (state: State, page?: number) => URLSearchParams,
   basePath: string,
-  page: number,
+  page?: number,
 ): string => {
   const params = buildSearchParams(state, page)
   const query = params.toString()
   return query ? `${basePath}?${query}` : basePath
+}
+
+/**
+ * B161 — the incremental-load signature: the canonical query without the
+ * path (`''` when the list has no active filter/sort).
+ */
+export const queryFromCanonicalHref = (href: string): string => {
+  const index = href.indexOf('?')
+  return index === -1 ? '' : href.slice(index + 1)
 }
 
 export type ListSortDirection = 'asc' | 'desc'

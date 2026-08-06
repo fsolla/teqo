@@ -8,7 +8,7 @@ import { expect, test } from './fixtures/campaignE2EFixtures.js'
  * there must not be read as a regression here.
  */
 
-/** 416 whole municipalities — deep enough that `?page=2` is a real page. */
+/** 416 whole municipalities — deep enough that a recorte has plenty of rows. */
 const SAVED_RECORTE = '/campanha/municipios?priority=alta'
 
 const SAVED_NAME = 'Recorte do teste'
@@ -54,8 +54,10 @@ test.describe('Filtros salvos de Municípios', () => {
     await expect(shortcut).toBeVisible()
     await expect(shortcut).toHaveAttribute('aria-current', 'page')
 
-    // A page is a position inside the recorte, not part of it.
+    // B161: `page` left the URL contract — a stale `?page=2` canonicalizes
+    // away and the recorte stays current.
     await page.goto(`${SAVED_RECORTE}&page=2`, NAVIGATION)
+    await expect(page).toHaveURL(SAVED_RECORTE, NAVIGATION)
     await expect(shortcut).toHaveAttribute('aria-current', 'page')
 
     // Another recorte is not this one, and the shortcut brings it back. Use the

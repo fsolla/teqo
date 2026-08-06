@@ -24,11 +24,13 @@ export const StateDeputyFilters = ({
   partyOptions,
   hasNoParty,
   trailing,
+  totalDocs,
 }: {
   state: StateDeputyListState
   partyOptions: StateDeputyFilterOption[]
   hasNoParty: boolean
   trailing?: ReactNode
+  totalDocs?: number
 }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
@@ -73,6 +75,7 @@ export const StateDeputyFilters = ({
         query={query}
         onQueryChange={setQuery}
         isPending={isPending}
+        totalDocs={totalDocs}
         onSelectSuggestion={(suggestionId) => {
           runAction(applyStateDeputyOmniboxSuggestion({ state, suggestionId }))
         }}

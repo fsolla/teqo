@@ -14,7 +14,6 @@ import {
   firstValue,
   normalizedText,
   resolveListUrl,
-  strictDecimalInteger,
   type RawSearchParams,
 } from '@/utilities/campaignListUrl'
 
@@ -43,7 +42,7 @@ export type StateDeputyListState = {
 
 export type StateDeputyListSearchParams = RawSearchParams
 
-const stateDeputyListParamNames = ['q', 'party', 'sort', 'dir', 'page'] as const
+const stateDeputyListParamNames = ['q', 'party', 'sort', 'dir'] as const
 const stateDeputyListParamNameSet = new Set<string>(stateDeputyListParamNames)
 
 const DEFAULT_STATE_DEPUTY_LIST_SORT_KEY: StateDeputyListSortKey = 'name'
@@ -84,9 +83,7 @@ export const formatStateDeputyListSortSummary = (
 
 export const stateDeputyListStateToRawParams = (
   state: StateDeputyListState,
-  page = state.page,
 ): StateDeputyListSearchParams => ({
-  page: String(page),
   q: state.q,
   party: state.parties,
   sort: state.sort,
@@ -96,7 +93,6 @@ export const stateDeputyListStateToRawParams = (
 export const parseStateDeputyListParams = (
   params: StateDeputyListSearchParams,
 ): StateDeputyListState => {
-  const rawPage = strictDecimalInteger(firstValue(params.page))
   const q = normalizedText(firstValue(params.q))
   // `allParamValues` already trims and dedupes; only the length cap is ours.
   const parties = allParamValues(params.party).filter((token) => token.length <= 32)
@@ -112,7 +108,8 @@ export const parseStateDeputyListParams = (
       : undefined
 
   return {
-    page: rawPage ?? 1,
+    // B161 — continuous list: `page` left the URL contract; pinned at 1.
+    page: 1,
     ...(q ? { q } : {}),
     ...(parties.length ? { parties } : {}),
     ...(sort ? { sort } : {}),
@@ -160,21 +157,17 @@ export const serializeCanonicalStateDeputyListSearchParams = (
     params.set('sort', resolvedSort)
     if (resolvedDir !== DEFAULT_STATE_DEPUTY_LIST_SORT_DIR) params.set('dir', resolvedDir)
   }
-  if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
 
   return params
 }
 
-const buildStateDeputyListSearchParams = (
-  state: StateDeputyListState,
-  page = state.page,
-): URLSearchParams =>
+const buildStateDeputyListSearchParams = (state: StateDeputyListState): URLSearchParams =>
   serializeCanonicalStateDeputyListSearchParams(
-    parseStateDeputyListParams(stateDeputyListStateToRawParams(state, page)),
+    parseStateDeputyListParams(stateDeputyListStateToRawParams(state)),
   )
 
-export const buildStateDeputyListHref = (state: StateDeputyListState, page: number): string =>
-  buildListHref(state, buildStateDeputyListSearchParams, '/campanha/dobradinhas', page)
+export const buildStateDeputyListHref = (state: StateDeputyListState): string =>
+  buildListHref(state, buildStateDeputyListSearchParams, '/campanha/dobradinhas')
 
 export const buildStateDeputySortHref = createSortToggleHref<
   StateDeputyListState,
@@ -182,7 +175,7 @@ export const buildStateDeputySortHref = createSortToggleHref<
 >({
   resolveCurrentSort: resolveStateDeputyListSort,
   defaultDir: () => DEFAULT_STATE_DEPUTY_LIST_SORT_DIR,
-  buildHref: (state) => buildStateDeputyListHref(state, 1),
+  buildHref: buildStateDeputyListHref,
 })
 
 const sortOptionLabel = (key: StateDeputyListSortKey, dir: StateDeputyListSortDirection): string =>
@@ -210,7 +203,6 @@ export const parseStateDeputySortValue = (
 
 export const resolveStateDeputyListUrl = (
   params: StateDeputyListSearchParams,
-  totalPages?: number,
 ): {
   state: StateDeputyListState
   href: string
@@ -222,5 +214,4 @@ export const resolveStateDeputyListUrl = (
     parse: parseStateDeputyListParams,
     buildSearchParams: buildStateDeputyListSearchParams,
     basePath: '/campanha/dobradinhas',
-    totalPages,
   })

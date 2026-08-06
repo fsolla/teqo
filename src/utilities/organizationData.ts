@@ -16,7 +16,7 @@ import {
 export { buildOrganizationListHref, parseOrganizationListParams }
 export type { OrganizationListState }
 
-const organizationPageSize = 25
+export const organizationPageSize = 25
 
 export type OrganizationRowViewModel = {
   id: number
@@ -39,6 +39,7 @@ export const loadOrganizationListPageData = async (
   payload: Payload,
   user: CampaignUser,
   state: OrganizationListState,
+  page = 1,
 ): Promise<{ rows: OrganizationRowViewModel[]; totalDocs: number; totalPages: number }> => {
   const result = await payload.find({
     collection: 'organization',
@@ -50,7 +51,7 @@ export const loadOrganizationListPageData = async (
     },
     depth: 0,
     limit: organizationPageSize,
-    page: state.page,
+    page,
     sort: 'name',
     user,
     overrideAccess: false,

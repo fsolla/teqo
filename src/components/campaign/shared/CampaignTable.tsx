@@ -61,6 +61,13 @@ export type CampaignTableColumn<Row> = {
    */
   cellTooltip?: (row: Row) => ReactNode
   cellClassName?: string | ((row: Row) => string | undefined)
+  /**
+   * B161 — container-query visibility for the continuous table primitive:
+   * applied to the default `<th>` and every cell so a hidden column
+   * disappears as a unit. Columns with a custom `head` own their head-side
+   * classes (B158 pattern in municípios).
+   */
+  responsiveClassName?: string
   /** B17 — a mandatory column is listed in the picker but cannot be unchecked. */
   mandatory?: boolean
 }

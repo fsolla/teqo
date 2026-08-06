@@ -25,6 +25,12 @@ export type CampaignListOmniboxProps = {
   onCommitQuery?: (query: string) => void
   onClearAll?: () => void
   isPending?: boolean
+  /**
+   * B161 — the filtered universe count, discreetly beside the label. Server
+   * data: it refreshes with the RSC re-render a filter navigation triggers,
+   * dimming with the rest of the controls while pending.
+   */
+  totalDocs?: number
   /** Domain controls beside the bar (e.g. save bookmark). */
   trailing?: ReactNode
 }
@@ -51,6 +57,7 @@ export const CampaignListOmnibox = ({
   onCommitQuery,
   onClearAll,
   isPending = false,
+  totalDocs,
   trailing,
 }: CampaignListOmniboxProps) => {
   const reactId = useId()
@@ -161,6 +168,9 @@ export const CampaignListOmnibox = ({
       <div className="min-w-0 flex-1">
         <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-foreground">
           {label}
+          {totalDocs !== undefined ? (
+            <span className="ml-1.5 font-normal text-muted-foreground">· {totalDocs}</span>
+          ) : null}
         </label>
         <Popover
           open={showSuggestions}

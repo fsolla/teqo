@@ -18,13 +18,15 @@ import {
 export const DemandFilters = ({
   state,
   trailing,
+  totalDocs,
 }: {
   state: DemandListState
   trailing?: ReactNode
+  totalDocs?: number
 }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
-    toHref: (next) => buildDemandListHref(next, 1),
+    toHref: buildDemandListHref,
   })
   const [query, setQuery] = useState('')
 
@@ -62,6 +64,7 @@ export const DemandFilters = ({
         query={query}
         onQueryChange={setQuery}
         isPending={isPending}
+        totalDocs={totalDocs}
         onSelectSuggestion={(suggestionId) => {
           runAction(applyDemandOmniboxSuggestion({ state, suggestionId }))
         }}

@@ -4,12 +4,13 @@ import {
   buildListHref,
   firstValue,
   normalizedText,
-  strictDecimalInteger,
   type RawSearchParams,
 } from '@/utilities/campaignListUrl'
 
+/**
+ * B161 — continuous list: `page` left the URL contract (see demandListUrl).
+ */
 export type OrganizationListState = {
-  page: number
   q?: string
   kind?: OrganizationKind
 }
@@ -21,7 +22,6 @@ export const parseOrganizationListParams = (
   const rawKind = firstValue(searchParams.kind)
 
   return {
-    page: strictDecimalInteger(firstValue(searchParams.page)) ?? 1,
     ...(q ? { q } : {}),
     ...(organizationKinds.includes(rawKind as OrganizationKind)
       ? { kind: rawKind as OrganizationKind }
@@ -29,16 +29,12 @@ export const parseOrganizationListParams = (
   }
 }
 
-const buildOrganizationListSearchParams = (
-  state: OrganizationListState,
-  page = state.page,
-): URLSearchParams => {
+const buildOrganizationListSearchParams = (state: OrganizationListState): URLSearchParams => {
   const params = new URLSearchParams()
   if (state.q) params.set('q', state.q)
   if (state.kind) params.set('kind', state.kind)
-  if (page > 1) params.set('page', String(page))
   return params
 }
 
-export const buildOrganizationListHref = (state: OrganizationListState, page: number): string =>
-  buildListHref(state, buildOrganizationListSearchParams, '/campanha/organizacoes', page)
+export const buildOrganizationListHref = (state: OrganizationListState): string =>
+  buildListHref(state, buildOrganizationListSearchParams, '/campanha/organizacoes')

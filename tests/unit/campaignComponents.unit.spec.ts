@@ -8,10 +8,7 @@ import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared
 
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
 import { formatAdvisorNamesTooltip } from '@/components/campaign/municipality/MunicipalityAdvisorAvatarStack'
-import {
-  MunicipalityList,
-  municipalityListPickerColumns,
-} from '@/components/campaign/municipality/MunicipalityList'
+import { MunicipalityList } from '@/components/campaign/municipality/MunicipalityList'
 import { MunicipalityListAdvisorsControl } from '@/components/campaign/municipality/MunicipalityListAdvisorsControl'
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
 import { TseZoneBadge } from '@/components/campaign/municipality/TseZoneBadge'
@@ -26,6 +23,7 @@ import type { CampaignFormActionState } from '@/utilities/campaignFormActionErro
 import type { StateDeputyRelationOption } from '@/utilities/campaignRelationOptions'
 import { createEmptyGoalCoverageByScenario } from '@/utilities/municipality/goalCoverage'
 import { municipalityPriorityIndicatorLabel } from '@/utilities/municipality/municipalityLabels'
+import { municipalityListPickerColumns } from '@/utilities/municipality/municipalityListUrl'
 import type {
   MunicipalityAdvisorSummary,
   MunicipalityListViewModel,
@@ -55,7 +53,7 @@ const municipalityListDefaultProps = {
   } satisfies CampaignColumnVisibility,
   canMoveEngagementLevel: false,
   advisorOptions: [],
-  leadershipNamesById: new Map(),
+  leadershipSummaries: [],
   leadershipOptions: [],
   stateDeputyOptions: [],
   stateDeputyCommitAction: noopListFormAction,
@@ -282,10 +280,10 @@ describe('campaign visual foundation', () => {
     const html = renderWithAppRouter(
       createElement(MunicipalityList, {
         municipalities,
-        advisorNamesById: new Map([[advisor.id, advisor]]),
+        advisorSummaries: [advisor],
         isStaffView: true,
         ...municipalityListDefaultProps,
-        leadershipNamesById: new Map([[11, { id: 11, name: 'Maria de Jesus' }]]),
+        leadershipSummaries: [{ id: 11, name: 'Maria de Jesus' }],
       }),
     )
 
@@ -324,10 +322,11 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('@min-[48rem]/municipality-list:block')
     expect(html).toContain('@min-[48rem]/municipality-list:hidden')
     expect(html).toContain('data-slot="table-container"')
-    expect(html).toContain('supports-[container-type:inline-size]:overflow-x-hidden')
-    // overflow-x-auto is the fallback for browsers without container queries;
-    // the test above still proves the container-query path takes precedence.
-    expect(html).toContain('overflow-x-auto')
+    // B161: the continuous list frame clips horizontal overflow WITHOUT
+    // becoming a scroll container, so the sticky header resolves against the
+    // page scroller — the B158 horizontal-scroller fallback is gone.
+    expect(html).toContain('overflow-x-clip')
+    expect(html).not.toContain('overflow-x-auto')
     expect(theadHtml).toContain('Município')
     expect(tbodyHtml).toContain('Seabra')
   })
@@ -370,7 +369,7 @@ describe('campaign visual foundation', () => {
     const html = renderWithAppRouter(
       createElement(MunicipalityList, {
         municipalities,
-        advisorNamesById: new Map(),
+        advisorSummaries: [],
         ...municipalityListDefaultProps,
         isStaffView: true,
         isCampaignUnrestricted: true,
@@ -426,7 +425,7 @@ describe('campaign visual foundation', () => {
     const advisorHtml = renderWithAppRouter(
       createElement(MunicipalityList, {
         municipalities,
-        advisorNamesById: new Map(),
+        advisorSummaries: [],
         ...municipalityListDefaultProps,
         isStaffView: true,
         // Advisor: staff view, but NOT unrestricted — the column must not render.
@@ -438,7 +437,7 @@ describe('campaign visual foundation', () => {
     const leaderHtml = renderWithAppRouter(
       createElement(MunicipalityList, {
         municipalities,
-        advisorNamesById: new Map(),
+        advisorSummaries: [],
         ...municipalityListDefaultProps,
         isStaffView: false,
         isCampaignUnrestricted: false,
@@ -499,7 +498,7 @@ describe('campaign visual foundation', () => {
             goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
           }),
         ],
-        advisorNamesById: new Map(),
+        advisorSummaries: [],
         isStaffView: true,
         ...municipalityListDefaultProps,
       }),
@@ -552,7 +551,7 @@ describe('campaign visual foundation', () => {
             goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
           },
         ],
-        advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
+        advisorSummaries: [],
         isStaffView: true,
         ...municipalityListDefaultProps,
       }),
@@ -598,7 +597,7 @@ describe('campaign visual foundation', () => {
             goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
           },
         ],
-        advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
+        advisorSummaries: [],
         isStaffView: true,
         ...municipalityListDefaultProps,
       }),
@@ -647,7 +646,7 @@ describe('campaign visual foundation', () => {
             goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
           },
         ],
-        advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
+        advisorSummaries: [],
         isStaffView: true,
         ...municipalityListDefaultProps,
       }),
@@ -690,7 +689,7 @@ describe('campaign visual foundation', () => {
             goalCoverageByScenario: createEmptyGoalCoverageByScenario(),
           },
         ],
-        advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
+        advisorSummaries: [],
         isStaffView: false,
         ...municipalityListDefaultProps,
       }),
@@ -713,7 +712,7 @@ describe('campaign visual foundation', () => {
       renderWithAppRouter(
         createElement(MunicipalityList, {
           municipalities: [responsiveMunicipality],
-          advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
+          advisorSummaries: [],
           ...municipalityListDefaultProps,
           isStaffView: true,
           isCampaignUnrestricted: true,
@@ -871,7 +870,7 @@ describe('campaign visual foundation', () => {
       const withAdvisors = renderWithTooltip(
         createElement(MunicipalityList, {
           municipalities: [{ ...baseMunicipality, advisorIDs: [7], stateDeputyIDs: [8] }],
-          advisorNamesById: new Map([[7, { id: 7, name: 'Ana Bastos', phone: null }]]),
+          advisorSummaries: [{ id: 7, name: 'Ana Bastos', phone: null }],
           isStaffView: true,
           ...municipalityListDefaultProps,
         }),
@@ -883,7 +882,7 @@ describe('campaign visual foundation', () => {
       const withoutAdvisors = renderWithTooltip(
         createElement(MunicipalityList, {
           municipalities: [{ ...baseMunicipality, advisorIDs: [], stateDeputyIDs: [] }],
-          advisorNamesById: new Map<number, MunicipalityAdvisorSummary>(),
+          advisorSummaries: [],
           isStaffView: true,
           ...municipalityListDefaultProps,
         }),

@@ -21,13 +21,15 @@ import {
 export const OrganizationFilters = ({
   state,
   trailing,
+  totalDocs,
 }: {
   state: OrganizationListState
   trailing?: ReactNode
+  totalDocs?: number
 }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
-    toHref: (next) => buildOrganizationListHref(next, 1),
+    toHref: buildOrganizationListHref,
   })
   const [query, setQuery] = useState('')
 
@@ -82,6 +84,7 @@ export const OrganizationFilters = ({
         onClearAll={() => {
           runAction(clearOrganizationOmnibox(state))
         }}
+        totalDocs={totalDocs}
         trailing={trailing}
       />
     </form>

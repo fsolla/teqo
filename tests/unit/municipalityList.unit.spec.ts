@@ -36,18 +36,18 @@ describe('municipality list sort params (A11 + B15 + E9)', () => {
     const state = parseMunicipalityListParams({ sort: 'deficit', dir: 'desc' })
     expect(state).toMatchObject({ sort: 'deficit', dir: 'desc' })
     expect(resolveMunicipalityListSort(state)).toEqual({ sort: 'deficit', dir: 'desc' })
-    expect(buildMunicipalityListHref(state, 1)).toBe('/campanha/municipios')
+    expect(buildMunicipalityListHref(state)).toBe('/campanha/municipios')
   })
 
   it('treats an empty query as deficit desc (biggest uncovered goal first)', () => {
     const state = parseMunicipalityListParams({})
     expect(resolveMunicipalityListSort(state)).toEqual({ sort: 'deficit', dir: 'desc' })
-    expect(buildMunicipalityListHref(state, 1)).toBe('/campanha/municipios')
+    expect(buildMunicipalityListHref(state)).toBe('/campanha/municipios')
   })
 
   it('keeps sort=votos in the URL now that it is no longer the default', () => {
     const state = parseMunicipalityListParams({ sort: 'votos', dir: 'desc' })
-    expect(buildMunicipalityListHref(state, 1)).toBe('/campanha/municipios?sort=votos')
+    expect(buildMunicipalityListHref(state)).toBe('/campanha/municipios?sort=votos')
   })
 
   it('opens frescor on the coldest signal (desc default) and keeps asc explicit', () => {
@@ -64,13 +64,13 @@ describe('municipality list sort params (A11 + B15 + E9)', () => {
     const state = parseMunicipalityListParams({ sort: 'name', dir: 'asc' })
     expect(state.sort).toBe('name')
     expect(state.dir).toBe('asc')
-    expect(buildMunicipalityListHref(state, 1)).toBe('/campanha/municipios?sort=name')
+    expect(buildMunicipalityListHref(state)).toBe('/campanha/municipios?sort=name')
   })
 
   it('keeps sort=votos&dir=asc when ascending', () => {
     const state = parseMunicipalityListParams({ sort: 'votos', dir: 'asc' })
     expect(state).toMatchObject({ sort: 'votos', dir: 'asc' })
-    expect(buildMunicipalityListHref(state, 1)).toBe('/campanha/municipios?sort=votos&dir=asc')
+    expect(buildMunicipalityListHref(state)).toBe('/campanha/municipios?sort=votos&dir=asc')
   })
 
   it('toggles deficit from the default desc to asc', () => {
@@ -266,8 +266,8 @@ describe('municipality list header filters (B16+)', () => {
 
     const withTwo = toggleMunicipalityMultiFilterValue(withRegion, 'region', 'Recôncavo')
     expect(withTwo.regions).toEqual(['Irecê', 'Recôncavo'])
-    expect(buildMunicipalityListHref(withTwo, 1)).toContain('region=Irec')
-    expect(buildMunicipalityListHref(withTwo, 1)).toContain('region=Rec')
+    expect(buildMunicipalityListHref(withTwo)).toContain('region=Irec')
+    expect(buildMunicipalityListHref(withTwo)).toContain('region=Rec')
 
     const cleared = toggleMunicipalityMultiFilterValue(withRegion, 'region', 'Irecê')
     expect(cleared.regions).toBeUndefined()

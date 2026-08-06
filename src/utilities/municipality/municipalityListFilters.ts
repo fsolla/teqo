@@ -165,7 +165,7 @@ export const getMunicipalityMultiFilterValues = (
 }
 
 const withMunicipalityListPageReset = (state: MunicipalityListState): MunicipalityListState =>
-  parseMunicipalityListParams(municipalityListStateToRawParams({ ...state, page: 1 }, 1))
+  parseMunicipalityListParams(municipalityListStateToRawParams(state))
 
 /** Toggle exclusivity: clicking the active value clears (coverage). */
 export const toggleMunicipalityExclusiveFilterValue = (
@@ -196,7 +196,7 @@ const setMunicipalityMultiFilterValues = (
   values: string[],
 ): MunicipalityListState =>
   parseMunicipalityListParams({
-    ...municipalityListStateToRawParams({ ...state, page: 1 }, 1),
+    ...municipalityListStateToRawParams(state),
     [param]: values,
   })
 
@@ -237,7 +237,7 @@ export const clearMunicipalityListFilters = (
 ): MunicipalityListState => ({ page: 1, sort: state.sort, dir: state.dir })
 
 export const buildMunicipalityFilterHref = (next: MunicipalityListState): string =>
-  buildMunicipalityListHref(next, 1)
+  buildMunicipalityListHref(next)
 
 const trendStatusCount = Object.keys(politicalTrendLabels).length
 
@@ -383,7 +383,7 @@ export const buildMunicipalityListVisitLabel = (state: MunicipalityListState): s
 }
 
 export const buildMunicipalityListVisitHref = (state: MunicipalityListState): string =>
-  buildMunicipalityListHref(state, 1)
+  buildMunicipalityListHref(state)
 
 /**
  * The href a saved filter (B18) bookmarks: the visit href minus `compare`, which
@@ -391,4 +391,4 @@ export const buildMunicipalityListVisitHref = (state: MunicipalityListState): st
  * which the list's param set only carries so a hand-typed URL survives.
  */
 export const buildMunicipalitySavedFilterHref = (state: MunicipalityListState): string =>
-  buildMunicipalityListHref({ ...state, compare: undefined }, 1)
+  buildMunicipalityListHref({ ...state, compare: undefined })

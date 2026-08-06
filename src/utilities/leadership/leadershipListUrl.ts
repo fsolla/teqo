@@ -49,7 +49,6 @@ const leadershipListParamNames = [
   'access',
   'sort',
   'dir',
-  'page',
 ] as const
 const leadershipListParamNameSet = new Set<string>(leadershipListParamNames)
 
@@ -103,9 +102,7 @@ export const formatLeadershipListSortSummary = (
 
 export const leadershipListStateToRawParams = (
   state: LeadershipListState,
-  page = state.page,
 ): LeadershipListSearchParams => ({
-  page: String(page),
   q: state.q,
   status: state.statuses,
   municipality: state.municipalities?.map(String),
@@ -119,7 +116,6 @@ export const leadershipListStateToRawParams = (
 export const parseLeadershipListParams = (
   params: LeadershipListSearchParams,
 ): LeadershipListState => {
-  const rawPage = strictDecimalInteger(firstValue(params.page))
   const q = normalizedText(firstValue(params.q))
   const statuses = parseExhaustiveEnumParam<SupportStatus>(params.status, supportStatusSet)
   const municipalities = allParamValues(params.municipality)
@@ -148,7 +144,9 @@ export const parseLeadershipListParams = (
       : undefined
 
   return {
-    page: rawPage ?? 1,
+    // B161 — continuous list: `page` left the URL contract; the state field
+    // stays (shared `ListStateWithPage` machinery) pinned at 1.
+    page: 1,
     ...(q ? { q } : {}),
     ...(statuses.length ? { statuses } : {}),
     ...(municipalities.length ? { municipalities } : {}),
@@ -208,21 +206,17 @@ export const serializeCanonicalLeadershipListSearchParams = (
       params.set('dir', resolvedDir)
     }
   }
-  if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
 
   return params
 }
 
-const buildLeadershipListSearchParams = (
-  state: LeadershipListState,
-  page = state.page,
-): URLSearchParams =>
+const buildLeadershipListSearchParams = (state: LeadershipListState): URLSearchParams =>
   serializeCanonicalLeadershipListSearchParams(
-    parseLeadershipListParams(leadershipListStateToRawParams(state, page)),
+    parseLeadershipListParams(leadershipListStateToRawParams(state)),
   )
 
-export const buildLeadershipListHref = (state: LeadershipListState, page: number): string =>
-  buildListHref(state, buildLeadershipListSearchParams, '/campanha/liderancas', page)
+export const buildLeadershipListHref = (state: LeadershipListState): string =>
+  buildListHref(state, buildLeadershipListSearchParams, '/campanha/liderancas')
 
 export const buildLeadershipSortHref = createSortToggleHref<
   LeadershipListState,
@@ -230,12 +224,11 @@ export const buildLeadershipSortHref = createSortToggleHref<
 >({
   resolveCurrentSort: resolveLeadershipListSort,
   defaultDir: defaultLeadershipListSortDir,
-  buildHref: (state) => buildLeadershipListHref(state, 1),
+  buildHref: buildLeadershipListHref,
 })
 
 export const resolveLeadershipListUrl = (
   params: LeadershipListSearchParams,
-  totalPages?: number,
 ): {
   state: LeadershipListState
   href: string
@@ -247,5 +240,4 @@ export const resolveLeadershipListUrl = (
     parse: parseLeadershipListParams,
     buildSearchParams: buildLeadershipListSearchParams,
     basePath: '/campanha/liderancas',
-    totalPages,
   })

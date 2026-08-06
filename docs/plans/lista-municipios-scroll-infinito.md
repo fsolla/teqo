@@ -20,7 +20,7 @@ O pedido: as 5 listas viram contínuas — rolar até o fim e as linhas continua
 
 ## As-built (entrega)
 
-_(pendente — preenchido quando a Issue for implementada e mergereada)_
+Entregue em 2026-08-05 (Issue #382). Primitivo compartilhado `CampaignInfiniteTable` (client): virtualização TanStack Virtual sobre o scroller da shell (`CampaignContentScroll` é a única superfície de rolagem), sentinela `react-intersection-observer` com skeletons otimistas, barra de controles sticky medida por ResizeObserver + thead sticky via variável CSS, frame `overflow-x-clip` (sem scrollbar interno; sticky resolve contra a página). As 5 listas ganharam wrappers client com colunas (antes RSC) e server actions `fetchNextXListPage` por domínio (fail-closed sem sessão/papel, `overrideAccess: false` nos loaders). `page` saiu do contrato de URL das 5 listas (redirect canônico remove `?page=` stale); coorte paginada intocada. Municípios: cards mobile recebem as linhas acumuladas; território colado ao nome (alvo de toque via pseudo-elemento); colunas responsivas por container query também nas outras 4 listas (necessário para o clip não esconder colunas úteis em painel estreito — extensão da hipótese da intenção, validada no browser). Reset por assinatura com ajuste de estado em fase de render (sem frame misto); flush de autosave no unmount (virtualização pode desmontar linha em edição). Sem migration. Débitos deferidos com gatilho: S1–S5 no impl plan.
 
 ## Persona e fluxo
 

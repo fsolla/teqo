@@ -68,15 +68,18 @@ export const LeadershipFilterHead = ({
   children,
   options,
   description,
+  className,
 }: {
   state: LeadershipListState
   filterParam: LeadershipFilterParam
   children: ReactNode
   options?: LeadershipFilterOption[]
   description?: ReactNode
+  className?: string
 }) => (
   <CampaignTableHead
     description={description}
+    className={className}
     filter={<LeadershipHeaderFilter state={state} filterParam={filterParam} options={options} />}
   >
     {children}

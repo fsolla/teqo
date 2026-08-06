@@ -42,7 +42,7 @@ export const toggleStateDeputyPartyFilter = (
     ? current.filter((party) => party !== value)
     : [...current, value]
   return parseStateDeputyListParams({
-    ...stateDeputyListStateToRawParams({ ...state, page: 1 }, 1),
+    ...stateDeputyListStateToRawParams(state),
     party: parties,
   })
 }
@@ -50,7 +50,7 @@ export const toggleStateDeputyPartyFilter = (
 /** Per-column clear (the header popover's "Limpar") — keeps the search and sort. */
 export const clearStateDeputyPartyFilter = (state: StateDeputyListState): StateDeputyListState =>
   parseStateDeputyListParams({
-    ...stateDeputyListStateToRawParams({ ...state, page: 1 }, 1),
+    ...stateDeputyListStateToRawParams(state),
     party: undefined,
   })
 
@@ -66,11 +66,11 @@ export const clearStateDeputyListFilters = (state: StateDeputyListState): StateD
 })
 
 /**
- * Every filter change resets pagination, so the page-1 pin belongs here rather
- * than at each call site — sibling of `buildMunicipalityFilterHref`.
+ * Sibling of `buildMunicipalityFilterHref`. (B161: page left the URL contract,
+ * so there is nothing left to reset — the wrapper keeps the round-trip.)
  */
 export const buildStateDeputyFilterHref = (next: StateDeputyListState): string =>
-  buildStateDeputyListHref(next, 1)
+  buildStateDeputyListHref(next)
 
 export const isStateDeputyPartyFilterActive = (state: StateDeputyListState): boolean =>
   Boolean(state.parties?.length)

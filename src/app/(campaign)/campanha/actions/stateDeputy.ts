@@ -1,8 +1,15 @@
 'use server'
 
+import config from '@payload-config'
 import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
+import { getPayload } from 'payload'
 
+import {
+  CAMPAIGN_LIST_LOAD_ERROR_MESSAGE,
+  CAMPAIGN_LIST_SESSION_EXPIRED_MESSAGE,
+  type CampaignListNextPageResult,
+} from '@/lib/campaignListPage'
 import { nextStateDeputyIdsAfterMunicipalityMembership } from '@/lib/municipalityStateDeputyMembership'
 import { uniqueRelationshipIds } from '@/lib/relationship'
 import {
@@ -22,20 +29,28 @@ import {
 } from '@/lib/schemas/stateDeputy'
 import { nextStateDeputyAdvisorIdsAfterMembership } from '@/lib/stateDeputyAdvisorMembership'
 import type { CampaignUser } from '@/payload-types'
+import { isCampaignStaff } from '@/utilities/campaignAccess'
 import {
   getCampaignActionContext,
   reloadStaffActor,
   reloadUnrestrictedActor,
 } from '@/utilities/campaignActionContext'
+import { getCampaignUser } from '@/utilities/campaignAuth'
 import {
   mapStaffEntityConflict,
   runStaffEntityMutation,
   type StaffEntityPolicy,
 } from '@/utilities/campaignEntityActions'
+import { rawSearchParamsFromQueryString, strictDecimalInteger } from '@/utilities/campaignListUrl'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
 import { revalidateMunicipalityListPaths } from '@/utilities/municipality/municipalityRevalidation'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
+import {
+  loadStateDeputyListPageData,
+  type StateDeputyRowViewModel,
+} from '@/utilities/stateDeputyData'
+import { parseStateDeputyListParams } from '@/utilities/stateDeputyListUrl'
 
 const stateDeputyPolicy: StaffEntityPolicy = {
   staffMessage: STATE_DEPUTY_STAFF_MESSAGE,
@@ -390,3 +405,31 @@ export const createMunicipalityStateDeputy = async (input: MunicipalityStateDepu
 export type MunicipalityStateDeputyCreateResult = Awaited<
   ReturnType<typeof createMunicipalityStateDeputyRecord>
 >
+
+/**
+ * B161 — incremental load for the continuous list (see demand.ts twin).
+ */
+export const fetchNextStateDeputyListPage = async (
+  query: string,
+  page: number,
+): Promise<CampaignListNextPageResult<StateDeputyRowViewModel>> => {
+  const nextPage = strictDecimalInteger(String(page))
+  if (!nextPage || nextPage < 2) {
+    return { status: 'error', message: CAMPAIGN_LIST_LOAD_ERROR_MESSAGE }
+  }
+
+  const actor = await getCampaignUser()
+  if (!actor) return { status: 'error', message: CAMPAIGN_LIST_SESSION_EXPIRED_MESSAGE }
+  if (!isCampaignStaff(actor)) return { status: 'error', message: CAMPAIGN_LIST_LOAD_ERROR_MESSAGE }
+
+  const payload = await getPayload({ config })
+  const state = parseStateDeputyListParams(rawSearchParamsFromQueryString(query))
+  const { rows, totalDocs, totalPages } = await loadStateDeputyListPageData(
+    payload,
+    actor,
+    state,
+    nextPage,
+  )
+
+  return { status: 'ok', rows, totalDocs, hasMore: nextPage < totalPages }
+}

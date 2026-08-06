@@ -1,207 +1,36 @@
 import config from '@payload-config'
-import { PlusIcon, SearchXIcon } from 'lucide-react'
+import { PlusIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
-import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
-import {
-  CampaignListPendingBoundary,
-  CampaignListResults,
-  CampaignTransitionAnchor,
-} from '@/components/campaign/shared/CampaignListPending'
-import { CampaignListSheetProvider } from '@/components/campaign/shared/CampaignListSheetHost'
-import {
-  CampaignTable,
-  CampaignTableHead,
-  type CampaignTableColumn,
-} from '@/components/campaign/shared/CampaignTable'
-import {
-  LeadershipStateDeputyRelationCell,
-  type RelationCellOption,
-} from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
-import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
+import { CampaignListPendingBoundary } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { StateDeputyAdvisorRelationCell } from '@/components/campaign/stateDeputy/StateDeputyAdvisorRelationCell'
-import { StateDeputyFilters } from '@/components/campaign/stateDeputy/StateDeputyFilters'
-import { StateDeputySortableHead } from '@/components/campaign/stateDeputy/StateDeputySortableHead'
-import { Button, buttonVariants } from '@/components/ui/button'
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/Empty'
-import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
+import { StateDeputyListTable } from '@/components/campaign/stateDeputy/StateDeputyListTable'
+import { Button } from '@/components/ui/button'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
-import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
-import { cn } from '@/lib/utils'
 import { getAdvisorMunicipalityIds, isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
+import { queryFromCanonicalHref } from '@/utilities/campaignListUrl'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   loadEligibleAdvisorOptions,
   loadLeadershipOptions,
 } from '@/utilities/campaignRelationOptions'
 import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
+import { loadStateDeputyListPageData } from '@/utilities/stateDeputyData'
 import {
-  loadStateDeputyListPageData,
-  type StateDeputyRowViewModel,
-} from '@/utilities/stateDeputyData'
-import {
-  buildStateDeputyFilterHref,
-  clearStateDeputyListFilters,
-  type StateDeputyFilterOption,
-} from '@/utilities/stateDeputyListFilters'
-import {
-  buildStateDeputyListHref,
   formatStateDeputyListSortSummary,
   resolveStateDeputyListSort,
   resolveStateDeputyListUrl,
-  stateDeputyListSortLabels,
-  type StateDeputyListState,
+  stateDeputyPageSize,
 } from '@/utilities/stateDeputyListUrl'
-
-import {
-  setLeadershipStateDeputyMembershipFormAction,
-  setStateDeputyAdvisorMembershipFormAction,
-  setStateDeputyMunicipalitiesFormAction,
-} from './formActions'
 
 export const metadata = campaignPageMetadataFromCatalog('dobradinhas')
 
 type StateDeputiesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
-
-const StateDeputyListEmptyState = ({ state }: { state: StateDeputyListState }) => (
-  <Empty className="min-h-56">
-    <EmptyHeader>
-      <EmptyMedia variant="icon">
-        <SearchXIcon aria-hidden="true" />
-      </EmptyMedia>
-      <EmptyTitle>Nenhuma dobradinha encontrada</EmptyTitle>
-      <EmptyDescription>
-        Ajuste a busca ou os filtros para encontrar as dobradinhas.
-      </EmptyDescription>
-    </EmptyHeader>
-    <EmptyContent>
-      {/* Same contract as the filter bar's Limpar: drop filters, keep the sort. */}
-      <CampaignTransitionAnchor
-        href={buildStateDeputyFilterHref(clearStateDeputyListFilters(state))}
-        replace
-        scroll={false}
-        className={cn(buttonVariants({ variant: 'outline' }), 'min-h-11')}
-      >
-        Limpar busca e filtros
-      </CampaignTransitionAnchor>
-    </EmptyContent>
-  </Empty>
-)
-
-const stateDeputyColumns = (
-  state: StateDeputyListState,
-  partyFilterOptions: StateDeputyFilterOption[],
-  hasNoPartyOption: boolean,
-  leadershipOptions: RelationCellOption[],
-  advisorOptions: RelationCellOption[],
-  canEditAdvisors: boolean,
-  municipalityIndex: MunicipalityPortfolioIndexEntry[],
-  addableMunicipalityIds: ReadonlySet<number> | undefined,
-): Array<CampaignTableColumn<StateDeputyRowViewModel>> => [
-  {
-    id: 'name',
-    label: stateDeputyListSortLabels.name,
-    mandatory: true,
-    head: <StateDeputySortableHead state={state} sortKey="name" />,
-    cell: (row) => (
-      <Link
-        href={`/campanha/dobradinhas/${row.slug}`}
-        className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline"
-      >
-        {row.name}
-      </Link>
-    ),
-  },
-  {
-    id: 'party',
-    label: stateDeputyListSortLabels.party,
-    head: (
-      <StateDeputySortableHead
-        state={state}
-        sortKey="party"
-        filterOptions={partyFilterOptions}
-        hasNoPartyOption={hasNoPartyOption}
-      />
-    ),
-    cellClassName: 'text-muted-foreground',
-    cell: (row) => row.party ?? '—',
-  },
-  {
-    id: 'municipalities',
-    label: 'Municípios',
-    head: (
-      <CampaignTableHead description="Edite aqui: passe o mouse em um chip para remover, ou busque para adicionar. Um território ou ZE entra e sai como um bloco.">
-        Municípios
-      </CampaignTableHead>
-    ),
-    cellClassName: 'max-w-64 whitespace-normal',
-    cell: (row) => (
-      <MunicipalityPortfolioCell
-        ownerId={row.id}
-        ownerName={row.name}
-        municipalityIds={row.municipalityIDs}
-        municipalityIndex={municipalityIndex}
-        {...(addableMunicipalityIds ? { addableIds: addableMunicipalityIds } : {})}
-        commitAction={setStateDeputyMunicipalitiesFormAction}
-        drawerTitle="Municípios da dobradinha"
-        updateErrorMessage="Não foi possível atualizar os municípios."
-      />
-    ),
-  },
-  {
-    id: 'leaderships',
-    label: 'Lideranças',
-    cellClassName: 'max-w-72 whitespace-normal',
-    cell: (row) => (
-      <LeadershipStateDeputyRelationCell
-        direction="fromStateDeputy"
-        fixedId={row.id}
-        ownerName={row.name}
-        items={row.leaderships.map((leadership) => ({
-          id: leadership.id,
-          label: leadership.name,
-          href: `/campanha/liderancas/${leadership.id}`,
-        }))}
-        options={leadershipOptions}
-        membershipAction={setLeadershipStateDeputyMembershipFormAction}
-      />
-    ),
-  },
-  {
-    id: 'advisors',
-    label: 'Assessores',
-    // No `description` here: `CampaignTableHead`'s hover tooltip
-    // (`CampaignHoverTooltip`) plus `StateDeputyAdvisorRelationCell` on this
-    // list breaks production SSR with "Element type is invalid … undefined".
-    // Municípios keeps its tooltip; Assessores relies on the cell chrome.
-    head: <CampaignTableHead>Assessores</CampaignTableHead>,
-    cellClassName: 'max-w-72 whitespace-normal',
-    cell: (row) => (
-      <StateDeputyAdvisorRelationCell
-        stateDeputyId={row.id}
-        stateDeputyName={row.name}
-        advisors={row.advisors}
-        options={canEditAdvisors ? advisorOptions : []}
-        membershipAction={setStateDeputyAdvisorMembershipFormAction}
-        readOnly={!canEditAdvisors}
-      />
-    ),
-  },
-]
 
 export default async function StateDeputiesPage({ searchParams }: StateDeputiesPageProps) {
   const rawSearchParams = await searchParams
@@ -220,7 +49,7 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
   const canEditAdvisors = isCampaignUnrestricted(user)
 
   const [
-    { rows, totalDocs, totalPages, filterFacets },
+    { rows, totalDocs, filterFacets },
     leadershipOptions,
     advisorOptions,
     municipalityIndex,
@@ -234,39 +63,12 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
     loadMunicipalityPortfolioIndex(),
     user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : null,
   ])
-  const resolvedUrl = resolveStateDeputyListUrl(rawSearchParams, totalPages)
-  if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
-  const { state } = resolvedUrl
+  const { state } = canonicalUrl
 
   const { sort, dir } = resolveStateDeputyListSort(state)
   const sortSummary = formatStateDeputyListSortSummary(sort, dir)
   const partyFilterOptions = filterFacets.parties.map((party) => ({ value: party, label: party }))
-  const columns = stateDeputyColumns(
-    state,
-    partyFilterOptions,
-    filterFacets.hasNoParty,
-    leadershipOptions.map((option) => ({
-      id: option.id,
-      searchLabel: option.name,
-      item: {
-        id: option.id,
-        label: option.name,
-        href: `/campanha/liderancas/${option.id}`,
-      },
-    })),
-    advisorOptions.map((option) => ({
-      id: option.id,
-      searchLabel: option.name,
-      item: {
-        id: option.id,
-        label: option.name,
-        href: `/campanha/assessores/${option.id}`,
-      },
-    })),
-    canEditAdvisors,
-    municipalityIndex,
-    administeredIds ? new Set(administeredIds) : undefined,
-  )
+  const query = queryFromCanonicalHref(canonicalUrl.href)
 
   return (
     <CampaignPageShell>
@@ -280,42 +82,38 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
       </div>
 
       <CampaignListPendingBoundary>
-        <StateDeputyFilters
+        <StateDeputyListTable
+          rows={rows}
+          totalDocs={totalDocs}
+          pageSize={stateDeputyPageSize}
           state={state}
-          partyOptions={partyFilterOptions}
+          query={query}
+          columnVisibility={columnVisibility}
+          partyFilterOptions={partyFilterOptions}
           hasNoParty={filterFacets.hasNoParty}
-          trailing={
-            <CampaignColumnPickerTrailing
-              columnVisibility={columnVisibility}
-              columns={toCampaignColumnPickerColumns(columns)}
-            />
-          }
+          leadershipOptions={leadershipOptions.map((option) => ({
+            id: option.id,
+            searchLabel: option.name,
+            item: {
+              id: option.id,
+              label: option.name,
+              href: `/campanha/liderancas/${option.id}`,
+            },
+          }))}
+          advisorOptions={advisorOptions.map((option) => ({
+            id: option.id,
+            searchLabel: option.name,
+            item: {
+              id: option.id,
+              label: option.name,
+              href: `/campanha/assessores/${option.id}`,
+            },
+          }))}
+          canEditAdvisors={canEditAdvisors}
+          municipalityIndex={municipalityIndex}
+          {...(administeredIds ? { addableMunicipalityIds: administeredIds } : {})}
+          sortSummary={sortSummary}
         />
-
-        <CampaignListResults>
-          {/* One shared Drawer for every chip-cell sheet on coarse pointers
-              (miss #52 — never a Drawer root per opened cell). */}
-          <CampaignListSheetProvider>
-            <CampaignTable
-              caption={`${sortSummary}. Deputados estaduais com quem a campanha dobra.`}
-              columns={columns}
-              columnVisibility={columnVisibility}
-              rows={rows}
-              rowKey={(row) => row.id}
-              empty={<StateDeputyListEmptyState state={state} />}
-            />
-          </CampaignListSheetProvider>
-          {rows.length ? (
-            <CampaignListFooter
-              totalDocs={totalDocs}
-              singular="dobradinha"
-              plural="dobradinhas"
-              page={state.page}
-              totalPages={totalPages}
-              hrefForPage={(page) => buildStateDeputyListHref(state, page)}
-            />
-          ) : null}
-        </CampaignListResults>
       </CampaignListPendingBoundary>
     </CampaignPageShell>
   )

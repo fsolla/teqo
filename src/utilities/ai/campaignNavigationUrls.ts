@@ -397,21 +397,18 @@ const buildPathForRequest = (
       const levels = request.levels?.filter((level): level is MunicipalityListLevelFilterValue =>
         municipalityLevelFilterSet.has(level),
       )
-      const path = buildMunicipalityListHref(
-        {
-          page: 1,
-          ...(request.q?.trim() ? { q: request.q.trim() } : {}),
-          ...(slugs?.length ? { slugs } : {}),
-          ...(request.regions?.length ? { regions: request.regions } : {}),
-          ...(advisors?.length ? { advisors } : {}),
-          ...(request.coverage ? { coverage: request.coverage } : {}),
-          ...(request.priority ? { priority: request.priority } : {}),
-          ...(trends?.length ? { trends } : {}),
-          ...(classes?.length ? { classes } : {}),
-          ...(levels?.length ? { levels } : {}),
-        },
-        1,
-      )
+      const path = buildMunicipalityListHref({
+        page: 1,
+        ...(request.q?.trim() ? { q: request.q.trim() } : {}),
+        ...(slugs?.length ? { slugs } : {}),
+        ...(request.regions?.length ? { regions: request.regions } : {}),
+        ...(advisors?.length ? { advisors } : {}),
+        ...(request.coverage ? { coverage: request.coverage } : {}),
+        ...(request.priority ? { priority: request.priority } : {}),
+        ...(trends?.length ? { trends } : {}),
+        ...(classes?.length ? { classes } : {}),
+        ...(levels?.length ? { levels } : {}),
+      })
       return { ok: true, path, label: defaultLabel('Municípios', request.label) }
     }
     case 'leadershipList': {
@@ -427,29 +424,23 @@ const buildPathForRequest = (
       const stateDeputies = request.stateDeputies?.filter(
         (id) => positiveInt(id, 'stateDeputy') !== null,
       )
-      const path = buildLeadershipListHref(
-        {
-          page: 1,
-          ...(request.q?.trim() ? { q: request.q.trim() } : {}),
-          ...(statuses?.length ? { statuses } : {}),
-          ...(municipalities?.length ? { municipalities } : {}),
-          ...(organizations?.length ? { organizations } : {}),
-          ...(stateDeputies?.length ? { stateDeputies } : {}),
-          ...(request.access ? { access: request.access } : {}),
-        },
-        1,
-      )
+      const path = buildLeadershipListHref({
+        page: 1,
+        ...(request.q?.trim() ? { q: request.q.trim() } : {}),
+        ...(statuses?.length ? { statuses } : {}),
+        ...(municipalities?.length ? { municipalities } : {}),
+        ...(organizations?.length ? { organizations } : {}),
+        ...(stateDeputies?.length ? { stateDeputies } : {}),
+        ...(request.access ? { access: request.access } : {}),
+      })
       return { ok: true, path, label: defaultLabel('Lideranças', request.label) }
     }
     case 'dobradinhaList': {
-      const path = buildStateDeputyListHref(
-        {
-          page: 1,
-          ...(request.q?.trim() ? { q: request.q.trim() } : {}),
-          ...(request.parties?.length ? { parties: request.parties } : {}),
-        },
-        1,
-      )
+      const path = buildStateDeputyListHref({
+        page: 1,
+        ...(request.q?.trim() ? { q: request.q.trim() } : {}),
+        ...(request.parties?.length ? { parties: request.parties } : {}),
+      })
       return { ok: true, path, label: defaultLabel('Dobradinhas', request.label) }
     }
     case 'advisorList': {
@@ -469,14 +460,10 @@ const buildPathForRequest = (
     case 'organizationList': {
       const kind =
         request.kind && organizationKinds.includes(request.kind) ? request.kind : undefined
-      const path = buildOrganizationListHref(
-        {
-          page: 1,
-          ...(request.q?.trim() ? { q: request.q.trim() } : {}),
-          ...(kind ? { kind } : {}),
-        },
-        1,
-      )
+      const path = buildOrganizationListHref({
+        ...(request.q?.trim() ? { q: request.q.trim() } : {}),
+        ...(kind ? { kind } : {}),
+      })
       return { ok: true, path, label: defaultLabel('Organizações', request.label) }
     }
     case 'activityList': {
@@ -510,16 +497,12 @@ const buildPathForRequest = (
         request.kind && campaignDemandKinds.includes(request.kind) ? request.kind : undefined
       const activityId =
         request.activityId !== undefined ? positiveInt(request.activityId, 'activity') : undefined
-      const path = buildDemandListHref(
-        {
-          page: 1,
-          ...(request.q?.trim() ? { q: request.q.trim() } : {}),
-          ...(status ? { status } : {}),
-          ...(kind ? { kind } : {}),
-          ...(activityId ? { activityId } : {}),
-        },
-        1,
-      )
+      const path = buildDemandListHref({
+        ...(request.q?.trim() ? { q: request.q.trim() } : {}),
+        ...(status ? { status } : {}),
+        ...(kind ? { kind } : {}),
+        ...(activityId ? { activityId } : {}),
+      })
       return { ok: true, path, label: defaultLabel('Demandas', request.label) }
     }
     case 'supporterList': {

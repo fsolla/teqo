@@ -1,5 +1,10 @@
+'use client'
+
 import { ActivityIcon, CircleAlertIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
+
+import { fetchNextMunicipalityListPage } from '@/app/(campaign)/campanha/actions/municipality'
 
 import {
   advisorEntriesFromIds,
@@ -25,9 +30,9 @@ import { MunicipalityPriorityIndicator } from '@/components/campaign/municipalit
 import { MunicipalitySortableHead } from '@/components/campaign/municipality/MunicipalitySortableHead'
 import { MunicipalityVotePositionReadout } from '@/components/campaign/municipality/MunicipalityVotePositionReadout'
 import { TerritoryLink } from '@/components/campaign/municipality/TerritoryLink'
+import { CampaignInfiniteTable } from '@/components/campaign/shared/CampaignInfiniteTable'
 import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
 import {
-  CampaignTable,
   CampaignTableHead,
   type CampaignTableColumn,
 } from '@/components/campaign/shared/CampaignTable'
@@ -46,7 +51,6 @@ import {
 } from '@/components/ui/Empty'
 import {
   resolveVisibleColumns,
-  type CampaignColumnPickerColumn,
   type CampaignColumnVisibility,
 } from '@/lib/campaignColumnVisibility'
 import { formatEngagementLevelLabel } from '@/lib/engagementLevel'
@@ -66,6 +70,7 @@ import {
   buildMunicipalityListHref,
   formatMunicipalityListSortSummary,
   municipalityColumnLabels,
+  municipalityPageSize,
   resolveMunicipalityListSort,
   type MunicipalityListState,
 } from '@/utilities/municipality/municipalityListUrl'
@@ -97,10 +102,10 @@ type MunicipalityColumnFilterOptions = {
 }
 
 export type MunicipalityListProps = {
-  municipalities: MunicipalityListViewModel[]
-  advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>
+  municipalities: readonly MunicipalityListViewModel[]
+  advisorSummaries: readonly MunicipalityAdvisorSummary[]
   /** B155 — contact-name lookup for the Lideranças column chips. */
-  leadershipNamesById: ReadonlyMap<number, MunicipalityLeadershipSummary>
+  leadershipSummaries: readonly MunicipalityLeadershipSummary[]
   isStaffView: boolean
   isCoordinator: boolean
   /**
@@ -122,6 +127,12 @@ export type MunicipalityListProps = {
   signalFormAction: MunicipalityStaffFormAction
   state: MunicipalityListState
   columnVisibility: CampaignColumnVisibility
+  /** B161 — infinite scroll: canonical query (no page) + filtered total. */
+  query?: string
+  totalDocs?: number
+  pageSize?: number
+  /** The sticky filter omnibox slot (server-composed). */
+  controls?: ReactNode
 }
 
 /** Replaces only the rows: the filter header row stays put. */
@@ -139,7 +150,7 @@ const MunicipalityListEmptyState = ({ state }: { state: MunicipalityListState })
     <EmptyContent>
       {/* Same contract as the filter bar's Limpar: drop filters, keep the sort. */}
       <CampaignTransitionAnchor
-        href={buildMunicipalityListHref(clearMunicipalityListFilters(state), 1)}
+        href={buildMunicipalityListHref(clearMunicipalityListFilters(state))}
         replace
         scroll={false}
         className={cn(buttonVariants({ variant: 'outline' }), 'min-h-11')}
@@ -154,6 +165,18 @@ const advisorEntries = (
   municipality: MunicipalityListViewModel,
   advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>,
 ) => advisorEntriesFromIds(municipality.advisorIDs, advisorNamesById)
+
+/**
+ * B161 — the column builder reads name lookups as Maps; the client component
+ * builds them from the serializable summary arrays (page 1 + appended pages).
+ */
+type MunicipalityColumnContext = Omit<
+  MunicipalityListProps,
+  'advisorSummaries' | 'leadershipSummaries'
+> & {
+  advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>
+  leadershipNamesById: ReadonlyMap<number, MunicipalityLeadershipSummary>
+}
 
 /**
  * Desktop table columns (Pass 2 W1). `id` is the picker key, cookie key, and B22
@@ -219,7 +242,7 @@ const municipalityListColumns = ({
   stateDeputyCreateAction,
   signalFormAction,
   columnVisibility,
-}: MunicipalityListProps): Array<MunicipalityColumn> => {
+}: MunicipalityColumnContext): Array<MunicipalityColumn> => {
   const manuallyHidden = isStaffView ? new Set(columnVisibility.hiddenColumnIds) : new Set<string>()
   const trendIsHidden = manuallyHidden.has('trend')
   const signalIsHidden = manuallyHidden.has('lastSignal')
@@ -277,9 +300,12 @@ const municipalityListColumns = ({
       cell: (municipality) => (
         <div className="flex min-w-0 max-w-52 flex-col gap-0.5">
           <div className="flex min-w-0 items-start gap-1.5">
+            {/* B161: the territory reads right below the name — the touch
+                target ≥44px comes from the hit-area pseudo-element, not from
+                a min-height that pushes the second line away. */}
             <Link
               href={`/campanha/municipios/${municipality.slug}`}
-              className="line-clamp-2 min-h-11 min-w-0 flex-1 py-2 font-medium text-primary underline-offset-4 hover:underline"
+              className="relative line-clamp-2 min-w-0 flex-1 font-medium text-primary underline-offset-4 hover:underline after:absolute after:inset-x-0 after:-inset-y-2.5"
             >
               {municipality.name}
             </Link>
@@ -586,40 +612,11 @@ const municipalityListColumns = ({
   ]
 }
 
-export const municipalityListPickerColumns = ({
-  isStaffView,
-  isCampaignUnrestricted,
-}: Pick<
-  MunicipalityListProps,
-  'isStaffView' | 'isCampaignUnrestricted'
->): CampaignColumnPickerColumn[] => {
-  const base: CampaignColumnPickerColumn[] = [
-    { id: 'name', label: municipalityColumnLabels.name, mandatory: true },
-    { id: 'votos', label: municipalityColumnLabels.votos },
-  ]
-  if (!isStaffView) return base
-
-  return [
-    ...base,
-    { id: 'expectedVotes', label: municipalityColumnLabels.expectedVotes },
-    { id: 'level', label: municipalityColumnLabels.level },
-    { id: 'classe', label: municipalityColumnLabels.classe },
-    { id: 'advisors', label: municipalityColumnLabels.advisors },
-    { id: 'trend', label: municipalityColumnLabels.trend },
-    { id: 'leaderships', label: municipalityColumnLabels.leaderships },
-    ...(isCampaignUnrestricted
-      ? [{ id: 'stateDeputies', label: municipalityColumnLabels.stateDeputies }]
-      : []),
-    { id: 'goalCoverage', label: municipalityColumnLabels.goalCoverage },
-    { id: 'lastSignal', label: municipalityColumnLabels.lastSignal },
-  ]
-}
-
 export const MunicipalityList = (props: MunicipalityListProps) => {
   const {
     municipalities,
-    advisorNamesById,
-    leadershipNamesById,
+    advisorSummaries,
+    leadershipSummaries,
     isStaffView,
     isCoordinator,
     isCampaignUnrestricted,
@@ -632,7 +629,75 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
   } = props
   const { sort: activeSort, dir: activeDir } = resolveMunicipalityListSort(state)
   const sortSummary = formatMunicipalityListSortSummary(activeSort, activeDir)
-  const columns = municipalityListColumns(props)
+
+  // Page 1 lookups come as arrays (serializable); appended pages merge below.
+  // Same lifecycle as the primitive's accumulation: a query change starts a new
+  // sweep, so the stale lookups are dropped in the render phase too.
+  const activeQuery = props.query ?? ''
+  const [lookups, setLookups] = useState<{
+    query: string
+    leadership: readonly MunicipalityLeadershipSummary[]
+    advisor: readonly MunicipalityAdvisorSummary[]
+  }>({ query: activeQuery, leadership: [], advisor: [] })
+  if (lookups.query !== activeQuery) {
+    setLookups({ query: activeQuery, leadership: [], advisor: [] })
+  }
+
+  const leadershipNamesById = useMemo(() => {
+    const map = new Map<number, MunicipalityLeadershipSummary>()
+    for (const summary of leadershipSummaries) map.set(summary.id, summary)
+    for (const summary of lookups.leadership) map.set(summary.id, summary)
+    return map
+  }, [leadershipSummaries, lookups.leadership])
+
+  const advisorNamesById = useMemo(() => {
+    const map = new Map<number, MunicipalityAdvisorSummary>()
+    for (const summary of advisorSummaries) map.set(summary.id, summary)
+    for (const summary of lookups.advisor) map.set(summary.id, summary)
+    return map
+  }, [advisorSummaries, lookups.advisor])
+
+  const fetchNextPageWithLookups = useCallback(
+    async (page: number) => {
+      const result = await fetchNextMunicipalityListPage(activeQuery, page)
+      if (result.status === 'ok') {
+        setLookups((current) => ({
+          ...current,
+          leadership: [...current.leadership, ...result.leadershipSummaries],
+          advisor: [...current.advisor, ...result.advisorSummaries],
+        }))
+      }
+      return result
+    },
+    [activeQuery],
+  )
+
+  const columns = useMemo(
+    () =>
+      municipalityListColumns({
+        ...props,
+        advisorNamesById,
+        leadershipNamesById,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      state,
+      isStaffView,
+      isCoordinator,
+      isCampaignUnrestricted,
+      props.canMoveEngagementLevel,
+      props.columnFilterOptions,
+      props.columnVisibility,
+      advisorNamesById,
+      advisorOptions,
+      leadershipNamesById,
+      leadershipOptions,
+      stateDeputyOptions,
+      stateDeputyCommitAction,
+      stateDeputyCreateAction,
+      props.signalFormAction,
+    ],
+  )
   // Asks the same function the table asks, so a column that becomes
   // `mandatory` cannot be on screen while the caption denies it.
   const showsVoteColumn = resolveVisibleColumns(
@@ -643,42 +708,45 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
   return (
     <MunicipalityAdvisorCreateProvider>
       <MunicipalityLeadershipCreateProvider>
-        <div data-container="municipality-list" className="@container/municipality-list">
-          <MunicipalityListMobileSection
-            municipalities={municipalities}
-            advisorNamesById={advisorNamesById}
-            leadershipNamesById={leadershipNamesById}
-            isStaffView={isStaffView}
-            isCoordinator={isCoordinator}
-            isCampaignUnrestricted={isCampaignUnrestricted}
-            canMoveEngagementLevel={props.canMoveEngagementLevel}
-            advisorOptions={advisorOptions}
-            leadershipOptions={leadershipOptions}
-            stateDeputyOptions={stateDeputyOptions}
-            stateDeputyCommitAction={stateDeputyCommitAction}
-            stateDeputyCreateAction={stateDeputyCreateAction}
-            signalFormAction={props.signalFormAction}
-            emptySlot={<MunicipalityListEmptyState state={state} />}
-          />
-
-          {/* A sticky <th> can't paint the row border, hence the inset shadow. */}
-          <CampaignTable
-            className="hidden overflow-visible @min-[48rem]/municipality-list:block"
-            containerClassName="overflow-x-auto supports-[container-type:inline-size]:overflow-x-hidden"
-            headerClassName="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-background [&_th]:shadow-[inset_0_-1px_0_var(--border)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl [&_tr]:border-b-0"
-            caption={
-              <>
-                {sortSummary}
-                {showsVoteColumn ? `. Coluna 2022: ${municipalityColumnDescriptions.votos}` : null}
-              </>
-            }
-            columns={columns}
-            columnVisibility={props.columnVisibility}
-            rows={municipalities}
-            rowKey={(municipality) => municipality.id}
-            empty={<MunicipalityListEmptyState state={state} />}
-          />
-        </div>
+        <CampaignInfiniteTable
+          dataContainer="municipality-list"
+          className="@container/municipality-list"
+          tableClassName="hidden @min-[48rem]/municipality-list:block"
+          columns={columns}
+          columnVisibility={props.columnVisibility}
+          rows={municipalities}
+          rowKey={(municipality) => municipality.id}
+          totalDocs={props.totalDocs ?? municipalities.length}
+          pageSize={props.pageSize ?? municipalityPageSize}
+          query={activeQuery}
+          fetchNextPage={fetchNextPageWithLookups}
+          caption={
+            <>
+              {sortSummary}
+              {showsVoteColumn ? `. Coluna 2022: ${municipalityColumnDescriptions.votos}` : null}
+            </>
+          }
+          controls={props.controls}
+          resultsHeader={(loadedRows) => (
+            <MunicipalityListMobileSection
+              municipalities={[...loadedRows]}
+              advisorNamesById={advisorNamesById}
+              leadershipNamesById={leadershipNamesById}
+              isStaffView={isStaffView}
+              isCoordinator={isCoordinator}
+              isCampaignUnrestricted={isCampaignUnrestricted}
+              canMoveEngagementLevel={props.canMoveEngagementLevel}
+              advisorOptions={advisorOptions}
+              leadershipOptions={leadershipOptions}
+              stateDeputyOptions={stateDeputyOptions}
+              stateDeputyCommitAction={stateDeputyCommitAction}
+              stateDeputyCreateAction={stateDeputyCreateAction}
+              signalFormAction={props.signalFormAction}
+              emptySlot={<MunicipalityListEmptyState state={state} />}
+            />
+          )}
+          empty={<MunicipalityListEmptyState state={state} />}
+        />
       </MunicipalityLeadershipCreateProvider>
     </MunicipalityAdvisorCreateProvider>
   )

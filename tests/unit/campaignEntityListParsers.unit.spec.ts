@@ -47,9 +47,8 @@ describe('parseOrganizationListParams', () => {
     expect(parseOrganizationListParams({ kind: 'clube' }).kind).toBeUndefined()
   })
 
-  it('combines q, kind and page', () => {
+  it('combines q and kind; B161 dropped page from the contract', () => {
     expect(parseOrganizationListParams({ q: 'cut', kind: 'sindicato', page: '2' })).toEqual({
-      page: 2,
       q: 'cut',
       kind: 'sindicato',
     })
@@ -69,8 +68,9 @@ describe('parseDemandListParams', () => {
     expect(parseDemandListParams({ q: '   ' }).q).toBeUndefined()
   })
 
-  it('defaults to page 1 with no filters', () => {
-    expect(parseDemandListParams({})).toEqual({ page: 1 })
+  it('B161 — continuous list: page left the URL contract', () => {
+    expect(parseDemandListParams({})).toEqual({})
+    expect(parseDemandListParams({ page: '3' })).toEqual({})
   })
 })
 

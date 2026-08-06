@@ -126,7 +126,7 @@ export type ResolvedCampaignHomeAction = CampaignHomeAction & {
   href?: string
 }
 
-/** Mirrors Início `buildMunicipalityListHref({ coverage: 'sem_assessor', sort: 'votos' }, 1)`. */
+/** Mirrors Início `buildMunicipalityListHref({ coverage: 'sem_assessor', sort: 'votos' })`. */
 export const UNCOVERED_MUNICIPALITIES_LIST_HREF =
   '/campanha/municipios?coverage=sem_assessor&sort=votos' as const
 

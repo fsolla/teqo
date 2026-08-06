@@ -17,7 +17,6 @@ describe('activity linked demands scale (C11)', () => {
 
   it('parses activity filter on the demand list', () => {
     expect(parseDemandListParams({ activity: '42', page: '2' })).toEqual({
-      page: 2,
       activityId: 42,
     })
   })

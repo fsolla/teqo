@@ -1,30 +1,21 @@
 import config from '@payload-config'
-import { PlusIcon, SearchXIcon } from 'lucide-react'
+import { PlusIcon } from 'lucide-react'
 import Link from 'next/link'
 import { getPayload } from 'payload'
 
-import { OrganizationFilters } from '@/components/campaign/organization/OrganizationFilters'
-import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
-import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
-import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
-import {
-  CampaignListPendingBoundary,
-  CampaignListResults,
-} from '@/components/campaign/shared/CampaignListPending'
-import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/shared/CampaignTable'
+import { OrganizationListTable } from '@/components/campaign/organization/OrganizationListTable'
+import { CampaignListPendingBoundary } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
-import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
-import { organizationKindLabels } from '@/lib/schemas/organization'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
+import { queryFromCanonicalHref } from '@/utilities/campaignListUrl'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   buildOrganizationListHref,
   loadOrganizationListPageData,
+  organizationPageSize,
   parseOrganizationListParams,
-  type OrganizationRowViewModel,
 } from '@/utilities/organizationData'
 
 export const metadata = campaignPageMetadataFromCatalog('organizacoes')
@@ -32,39 +23,6 @@ export const metadata = campaignPageMetadataFromCatalog('organizacoes')
 type OrganizationsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
-
-const organizationColumns: Array<CampaignTableColumn<OrganizationRowViewModel>> = [
-  {
-    id: 'name',
-    label: 'Nome',
-    mandatory: true,
-    cell: (row) => (
-      <Link
-        href={`/campanha/organizacoes/${row.slug}`}
-        className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline"
-      >
-        {row.name}
-      </Link>
-    ),
-  },
-  {
-    id: 'kind',
-    label: 'Tipo',
-    cell: (row) => <Badge variant="secondary">{organizationKindLabels[row.kind]}</Badge>,
-  },
-  {
-    id: 'municipalities',
-    label: 'Municípios de atuação',
-    cellClassName: 'max-w-64 whitespace-normal text-muted-foreground',
-    cell: (row) => row.municipalityNames.join(', ') || '—',
-  },
-  {
-    id: 'leaderships',
-    label: 'Lideranças',
-    cellClassName: 'tabular-nums',
-    cell: (row) => row.leadershipCount,
-  },
-]
 
 export default async function OrganizationsPage({ searchParams }: OrganizationsPageProps) {
   const rawSearchParams = await searchParams
@@ -74,8 +32,9 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
   ])
 
   const state = parseOrganizationListParams(rawSearchParams)
-  const { rows, totalDocs, totalPages } = await loadOrganizationListPageData(payload, user, state)
+  const { rows, totalDocs } = await loadOrganizationListPageData(payload, user, state)
   const columnVisibility = await readCampaignColumnVisibility('organizacoes')
+  const query = queryFromCanonicalHref(buildOrganizationListHref(state))
 
   return (
     <CampaignPageShell>
@@ -89,48 +48,14 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
       </div>
 
       <CampaignListPendingBoundary>
-        <OrganizationFilters
+        <OrganizationListTable
+          rows={rows}
+          totalDocs={totalDocs}
+          pageSize={organizationPageSize}
           state={state}
-          trailing={
-            <CampaignColumnPickerTrailing
-              columnVisibility={columnVisibility}
-              columns={toCampaignColumnPickerColumns(organizationColumns)}
-            />
-          }
+          query={query}
+          columnVisibility={columnVisibility}
         />
-
-        <CampaignListResults>
-          <CampaignTable
-            columns={organizationColumns}
-            columnVisibility={columnVisibility}
-            rows={rows}
-            rowKey={(row) => row.id}
-            empty={
-              <CampaignListEmptyState
-                icon={SearchXIcon}
-                title="Nenhuma organização cadastrada"
-                description="Cadastre sindicatos, associações e movimentos para vincular lideranças e atividades."
-              >
-                <Button asChild className="min-h-11">
-                  <Link href="/campanha/organizacoes/nova">
-                    <PlusIcon data-icon="inline-start" aria-hidden="true" />
-                    Nova organização
-                  </Link>
-                </Button>
-              </CampaignListEmptyState>
-            }
-          />
-          {rows.length ? (
-            <CampaignListFooter
-              totalDocs={totalDocs}
-              singular="organização"
-              plural="organizações"
-              page={state.page}
-              totalPages={totalPages}
-              hrefForPage={(page) => buildOrganizationListHref(state, page)}
-            />
-          ) : null}
-        </CampaignListResults>
       </CampaignListPendingBoundary>
     </CampaignPageShell>
   )

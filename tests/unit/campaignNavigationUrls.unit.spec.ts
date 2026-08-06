@@ -53,10 +53,12 @@ describe('campaignNavigationUrls', () => {
     expect(outcome.ok).toBe(true)
     if (outcome.ok) {
       expect(outcome.path).toBe(
-        buildMunicipalityListHref(
-          { page: 1, coverage: 'sem_assessor', priority: 'alta', advisors: [42] },
-          1,
-        ),
+        buildMunicipalityListHref({
+          page: 1,
+          coverage: 'sem_assessor',
+          priority: 'alta',
+          advisors: [42],
+        }),
       )
     }
   })

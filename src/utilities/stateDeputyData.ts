@@ -114,6 +114,7 @@ export const loadStateDeputyListPageData = async (
   payload: Payload,
   user: CampaignUser,
   state: StateDeputyListState,
+  page = 1,
 ): Promise<{
   rows: StateDeputyRowViewModel[]
   totalDocs: number
@@ -127,7 +128,7 @@ export const loadStateDeputyListPageData = async (
       where: buildStateDeputyListWhere(state),
       depth: 0,
       limit: stateDeputyPageSize,
-      page: state.page,
+      page,
       sort: resolveStateDeputyListPayloadSort(sort, dir),
       select: { name: true, slug: true, party: true, advisors: true },
       user,

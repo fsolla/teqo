@@ -298,6 +298,7 @@ export const loadLeadershipListPageData = async (
   payload: Payload,
   user: CampaignUser,
   state: LeadershipListState,
+  page = 1,
 ): Promise<{
   rows: LeadershipRowViewModel[]
   totalDocs: number
@@ -320,7 +321,7 @@ export const loadLeadershipListPageData = async (
       where: buildLeadershipListWhere(state),
       depth: 1,
       limit: leadershipPageSize,
-      page: state.page,
+      page,
       sort: resolveLeadershipListPayloadSort(sort, dir),
       user,
       overrideAccess: false,

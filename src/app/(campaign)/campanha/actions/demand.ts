@@ -1,7 +1,14 @@
 'use server'
 
+import config from '@payload-config'
 import type { Payload } from 'payload'
+import { getPayload } from 'payload'
 
+import {
+  CAMPAIGN_LIST_LOAD_ERROR_MESSAGE,
+  CAMPAIGN_LIST_SESSION_EXPIRED_MESSAGE,
+  type CampaignListNextPageResult,
+} from '@/lib/campaignListPage'
 import {
   CAMPAIGN_DEMAND_COST_STAFF_MESSAGE,
   CAMPAIGN_DEMAND_RECEIPT_EMPTY_MESSAGE,
@@ -25,6 +32,10 @@ import {
   reloadCampaignActor,
   reloadStaffActor,
 } from '@/utilities/campaignActionContext'
+import { getCampaignUser } from '@/utilities/campaignAuth'
+import { loadDemandListPageData, type DemandRowViewModel } from '@/utilities/campaignDemandData'
+import { rawSearchParamsFromQueryString, strictDecimalInteger } from '@/utilities/campaignListUrl'
+import { parseDemandListParams } from '@/utilities/demand/demandListUrl'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
@@ -202,4 +213,35 @@ export const transitionCampaignDemand = async (input: CampaignDemandTransitionIn
 export const setCampaignDemandCost = async (input: CampaignDemandCostInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return setCampaignDemandCostRecord(payload, actor, input)
+}
+
+/**
+ * B161 — incremental load for the continuous list. Re-runs the page's own
+ * loader under the session's user, so role scoping applies to appended rows
+ * exactly as it does to page 1; fail-closed when the session is gone or the
+ * actor is not staff (the list surface itself is `gate: 'staff'`).
+ */
+export const fetchNextDemandListPage = async (
+  query: string,
+  page: number,
+): Promise<CampaignListNextPageResult<DemandRowViewModel>> => {
+  const nextPage = strictDecimalInteger(String(page))
+  if (!nextPage || nextPage < 2) {
+    return { status: 'error', message: CAMPAIGN_LIST_LOAD_ERROR_MESSAGE }
+  }
+
+  const actor = await getCampaignUser()
+  if (!actor) return { status: 'error', message: CAMPAIGN_LIST_SESSION_EXPIRED_MESSAGE }
+  if (!isCampaignStaff(actor)) return { status: 'error', message: CAMPAIGN_LIST_LOAD_ERROR_MESSAGE }
+
+  const payload = await getPayload({ config })
+  const state = parseDemandListParams(rawSearchParamsFromQueryString(query))
+  const { rows, totalDocs, totalPages } = await loadDemandListPageData(
+    payload,
+    actor,
+    state,
+    nextPage,
+  )
+
+  return { status: 'ok', rows, totalDocs, hasMore: nextPage < totalPages }
 }

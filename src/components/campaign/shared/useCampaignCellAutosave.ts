@@ -85,6 +85,10 @@ export const useCampaignCellAutosave = <TValue, TResponse extends CampaignCellAu
     setValue(next)
   }
 
+  // The cleanup below flushes through the latest `save`, so unmounting a row
+  // (B161 virtualization) cannot read a stale closure.
+  const saveRef = useRef<((next: TValue) => Promise<void>) | null>(null)
+
   // Adopt server props only when they change from outside (navigation / RSC refresh).
   useEffect(() => {
     if (optionsRef.current.equals(serverValue, lastPropsRef.current)) return
@@ -97,12 +101,21 @@ export const useCampaignCellAutosave = <TValue, TResponse extends CampaignCellAu
     // otherwise re-run this on every render.
   }, [serverValue])
 
-  // A row unmounted mid-debounce drops the pending edit. Deliberate: there
-  // would be nothing left to report a failure through.
+  // A row unmounted mid-debounce used to drop the pending edit. With the
+  // virtualized list (B161) scrolling unmounts rows while an editor is open,
+  // so losing keystrokes became realistic: flush best-effort instead. The
+  // failure channel dies with the row, so a failed flush is silent; an
+  // in-flight request is superseded by the flush's own abort-previous logic.
   useEffect(
     () => () => {
+      const hadPendingDebounce = saveTimeoutRef.current !== undefined
       clearTimeout(saveTimeoutRef.current)
-      abortRef.current?.abort()
+      saveTimeoutRef.current = undefined
+      if (hadPendingDebounce && saveRef.current) {
+        void saveRef.current(valueRef.current).catch(() => {})
+      } else {
+        abortRef.current?.abort()
+      }
     },
     [],
   )
@@ -171,6 +184,8 @@ export const useCampaignCellAutosave = <TValue, TResponse extends CampaignCellAu
       }
     }
   }
+
+  saveRef.current = save
 
   /**
    * Applies the value locally and schedules the save; a value already settled

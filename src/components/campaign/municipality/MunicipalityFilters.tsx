@@ -32,6 +32,8 @@ type MunicipalityFiltersProps = {
   advisorFilterOptions: MunicipalityFilterOption[]
   /** Facet slugs (labeled from the catalog on the client). */
   slugFilterValues?: readonly string[]
+  /** B161 — the filtered universe count, beside the label. */
+  totalDocs?: number
   /** Beside the omnibox (B137): column picker, save bookmark, … */
   trailing?: ReactNode
 }
@@ -42,6 +44,7 @@ export const MunicipalityFilters = ({
   regionFilterOptions,
   advisorFilterOptions,
   slugFilterValues = [],
+  totalDocs,
   trailing,
 }: MunicipalityFiltersProps) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
@@ -122,6 +125,7 @@ export const MunicipalityFilters = ({
         chips={chips}
         suggestions={suggestions}
         query={query}
+        totalDocs={totalDocs}
         onQueryChange={setQuery}
         isPending={isPending}
         onSelectSuggestion={(suggestionId) => {

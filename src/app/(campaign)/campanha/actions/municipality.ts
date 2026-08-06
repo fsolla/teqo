@@ -2,8 +2,14 @@
 
 import { randomBytes } from 'node:crypto'
 
+import config from '@payload-config'
 import type { Payload } from 'payload'
+import { getPayload } from 'payload'
 
+import {
+  CAMPAIGN_LIST_LOAD_ERROR_MESSAGE,
+  CAMPAIGN_LIST_SESSION_EXPIRED_MESSAGE,
+} from '@/lib/campaignListPage'
 import {
   ENGAGEMENT_LEVEL_PATTERN_ID,
   EngagementLevelBlockedError,
@@ -33,12 +39,18 @@ import {
 } from '@/lib/schemas/municipality'
 import { normalizeVoteEstimateOnSave, toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { CampaignUser } from '@/payload-types'
+import { isCampaignLeader } from '@/utilities/campaignAccess'
 import {
   getCampaignActionContext,
   reloadStaffActor,
   reloadUnrestrictedActor,
 } from '@/utilities/campaignActionContext'
+import { getCampaignUser } from '@/utilities/campaignAuth'
+import { rawSearchParamsFromQueryString, strictDecimalInteger } from '@/utilities/campaignListUrl'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
+import type { MunicipalityListNextPageResult } from '@/utilities/municipality/municipalityListNextPage'
+import { loadMunicipalityListPageBundle } from '@/utilities/municipality/municipalityPageData'
+import { loadAdvisorSummaries } from '@/utilities/municipality/municipalityViewModels'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
@@ -465,4 +477,47 @@ const nextFreeStubCampaignEmail = async (
     if (existing.totalDocs === 0) return candidate
   }
   throw new Error(MUNICIPALITY_ADVISOR_STUB_EMAIL_MESSAGE)
+}
+
+/**
+ * B161 — incremental load for the continuous municípios list. Re-runs the
+ * page's own bundle under the session's user (access + derived sorts alike);
+ * the per-page leadership/advisor name lookups travel with the rows so the
+ * client can label appended chips. Fail-closed without a session; leaders
+ * never reach this surface (`gate: 'noLeader'` on the page).
+ */
+export const fetchNextMunicipalityListPage = async (
+  query: string,
+  page: number,
+): Promise<MunicipalityListNextPageResult> => {
+  const nextPage = strictDecimalInteger(String(page))
+  if (!nextPage || nextPage < 2) {
+    return { status: 'error', message: CAMPAIGN_LIST_LOAD_ERROR_MESSAGE }
+  }
+
+  const actor = await getCampaignUser()
+  if (!actor) return { status: 'error', message: CAMPAIGN_LIST_SESSION_EXPIRED_MESSAGE }
+  if (isCampaignLeader(actor)) return { status: 'error', message: CAMPAIGN_LIST_LOAD_ERROR_MESSAGE }
+
+  const payload = await getPayload({ config })
+  const bundle = await loadMunicipalityListPageBundle(
+    payload,
+    actor,
+    rawSearchParamsFromQueryString(query),
+    nextPage,
+  )
+
+  const advisorIDs = [
+    ...new Set(bundle.municipalities.flatMap((municipality) => municipality.advisorIDs)),
+  ]
+  const advisorSummaries = await loadAdvisorSummaries(payload, actor, advisorIDs)
+
+  return {
+    status: 'ok',
+    rows: bundle.municipalities,
+    leadershipSummaries: [...bundle.leadershipNamesById.values()],
+    advisorSummaries,
+    totalDocs: bundle.totalDocs,
+    hasMore: nextPage < bundle.totalPages,
+  }
 }

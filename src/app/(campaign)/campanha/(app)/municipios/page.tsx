@@ -1,7 +1,4 @@
-import {
-  CampaignListPendingBoundary,
-  CampaignListResults,
-} from '@/components/campaign/shared/CampaignListPending'
+import { CampaignListPendingBoundary } from '@/components/campaign/shared/CampaignListPending'
 import config from '@payload-config'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
@@ -9,13 +6,9 @@ import { getPayload } from 'payload'
 import { RecentVisitTracker } from '@/components/campaign/dashboard/RecentVisitTracker'
 import { MunicipalityEstimateScenarioProvider } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
 import { MunicipalityFilters } from '@/components/campaign/municipality/MunicipalityFilters'
-import {
-  MunicipalityList,
-  municipalityListPickerColumns,
-} from '@/components/campaign/municipality/MunicipalityList'
+import { MunicipalityList } from '@/components/campaign/municipality/MunicipalityList'
 import { MunicipalityListPageChrome } from '@/components/campaign/municipality/MunicipalityListPageChrome'
 import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
-import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
@@ -24,6 +17,7 @@ import {
   isCampaignUnrestricted,
 } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
+import { queryFromCanonicalHref } from '@/utilities/campaignListUrl'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
 import {
@@ -31,7 +25,8 @@ import {
   buildMunicipalityListVisitLabel,
 } from '@/utilities/municipality/municipalityListFilters'
 import {
-  buildMunicipalityListHref,
+  municipalityListPickerColumns,
+  municipalityPageSize,
   resolveMunicipalityListUrl,
 } from '@/utilities/municipality/municipalityListUrl'
 import { loadMunicipalityListPageBundle } from '@/utilities/municipality/municipalityPageData'
@@ -69,13 +64,10 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
   const {
     municipalities: listMunicipalities,
     totalDocs,
-    totalPages,
     filterFacets,
     leadershipNamesById,
   } = pageBundle
-  const resolvedUrl = resolveMunicipalityListUrl(rawSearchParams, totalPages)
-  if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
-  const { state } = resolvedUrl
+  const { state } = canonicalUrl
   const listVisitLabel = buildMunicipalityListVisitLabel(state)
   const columnVisibility = await readCampaignColumnVisibility('municipios')
 
@@ -124,6 +116,7 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
       regionFilterOptions={columnFilterOptions.region}
       advisorFilterOptions={columnFilterOptions.advisor}
       slugFilterValues={columnFilterOptions.name}
+      totalDocs={totalDocs}
       trailing={
         <CampaignColumnPickerTrailing
           columnVisibility={columnVisibility}
@@ -136,53 +129,42 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
     />
   )
 
+  const query = queryFromCanonicalHref(canonicalUrl.href)
+
   // The table's filter header stays mounted even with zero results — only the
   // rows are replaced by the empty state.
-  const listBody = (
-    <>
-      <MunicipalityList
-        municipalities={listMunicipalities}
-        advisorNamesById={advisorNamesById}
-        leadershipNamesById={leadershipNamesById}
-        isStaffView={isStaffView}
-        isCoordinator={isCoordinator}
-        isCampaignUnrestricted={canMoveEngagementLevel}
-        canMoveEngagementLevel={canMoveEngagementLevel}
-        advisorOptions={advisorOptions}
-        leadershipOptions={leadershipOptions}
-        stateDeputyOptions={stateDeputyOptions}
-        stateDeputyCommitAction={setMunicipalityStateDeputiesFormAction}
-        stateDeputyCreateAction={createMunicipalityStateDeputyFormAction}
-        columnFilterOptions={columnFilterOptions}
-        signalFormAction={createMunicipalityListSignalFormAction}
-        state={state}
-        columnVisibility={columnVisibility}
-      />
-      <CampaignListFooter
-        totalDocs={totalDocs}
-        singular="município encontrado"
-        plural="municípios encontrados"
-        page={state.page}
-        totalPages={totalPages}
-        hrefForPage={(page) => buildMunicipalityListHref(state, page)}
-      />
-    </>
+  const list = (
+    <MunicipalityList
+      municipalities={listMunicipalities}
+      advisorSummaries={advisorSummaries}
+      leadershipSummaries={[...leadershipNamesById.values()]}
+      isStaffView={isStaffView}
+      isCoordinator={isCoordinator}
+      isCampaignUnrestricted={canMoveEngagementLevel}
+      canMoveEngagementLevel={canMoveEngagementLevel}
+      advisorOptions={advisorOptions}
+      leadershipOptions={leadershipOptions}
+      stateDeputyOptions={stateDeputyOptions}
+      stateDeputyCommitAction={setMunicipalityStateDeputiesFormAction}
+      stateDeputyCreateAction={createMunicipalityStateDeputyFormAction}
+      columnFilterOptions={columnFilterOptions}
+      signalFormAction={createMunicipalityListSignalFormAction}
+      state={state}
+      columnVisibility={columnVisibility}
+      query={query}
+      totalDocs={totalDocs}
+      pageSize={municipalityPageSize}
+      controls={filters}
+    />
   )
 
   // Shared transition: filters navigate, results dim. Staff provider wraps filters + results.
-  const listRegion = (
-    <>
-      {filters}
-      <CampaignListResults>{listBody}</CampaignListResults>
-    </>
-  )
-
   const main = (
     <CampaignListPendingBoundary>
       {isStaffView ? (
-        <MunicipalityEstimateScenarioProvider>{listRegion}</MunicipalityEstimateScenarioProvider>
+        <MunicipalityEstimateScenarioProvider>{list}</MunicipalityEstimateScenarioProvider>
       ) : (
-        listRegion
+        list
       )}
     </CampaignListPendingBoundary>
   )

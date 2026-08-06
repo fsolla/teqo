@@ -21,11 +21,6 @@ export type OrganizationOmniboxAction =
 
 const chipLabel = (dimension: string, value: string): string => `${dimension}: ${value}`
 
-const withPageReset = (state: OrganizationListState): OrganizationListState => ({
-  ...state,
-  page: 1,
-})
-
 export const buildOrganizationOmniboxChips = (
   state: OrganizationListState,
 ): CampaignListOmniboxChip[] => {
@@ -70,7 +65,7 @@ export const applyOrganizationOmniboxSuggestion = ({
 }): OrganizationOmniboxAction => {
   if (suggestionId.startsWith('q:')) {
     const q = suggestionId.slice(2)
-    return { kind: 'url', state: withPageReset({ ...state, q: q || undefined }) }
+    return { kind: 'url', state: { ...state, q: q || undefined } }
   }
 
   if (!suggestionId.startsWith('kind:')) return { kind: 'url', state }
@@ -83,10 +78,10 @@ export const applyOrganizationOmniboxSuggestion = ({
   const kind = value as OrganizationKind
   return {
     kind: 'url',
-    state: withPageReset({
+    state: {
       ...state,
       kind: state.kind === kind ? undefined : kind,
-    }),
+    },
   }
 }
 
@@ -98,11 +93,11 @@ export const removeOrganizationOmniboxChip = ({
   chipId: string
 }): OrganizationOmniboxAction => {
   if (chipId === 'q') {
-    return { kind: 'url', state: withPageReset({ ...state, q: undefined }) }
+    return { kind: 'url', state: { ...state, q: undefined } }
   }
 
   if (chipId.startsWith('kind:')) {
-    return { kind: 'url', state: withPageReset({ ...state, kind: undefined }) }
+    return { kind: 'url', state: { ...state, kind: undefined } }
   }
 
   return { kind: 'url', state }
@@ -112,5 +107,5 @@ export const clearOrganizationOmnibox = (
   _state: OrganizationListState,
 ): OrganizationOmniboxAction => ({
   kind: 'clear',
-  state: withPageReset({ page: 1 }),
+  state: {},
 })
