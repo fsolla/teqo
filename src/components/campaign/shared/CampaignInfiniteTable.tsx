@@ -254,13 +254,16 @@ export const CampaignInfiniteTable = <Row,>({
 
   const virtualizer = useVirtualizer({
     count: itemCount,
-    estimateSize: () => ESTIMATED_ROW_HEIGHT,
-    getScrollElement: () => scrollElement,
+    estimateSize: useCallback(() => ESTIMATED_ROW_HEIGHT, []),
+    getScrollElement: useCallback(() => scrollElement, [scrollElement]),
     overscan: 8,
-    getItemKey: (index) => {
-      const row = loadedRows[index]
-      return row ? rowKey(row) : `skeleton-${index}`
-    },
+    getItemKey: useCallback(
+      (index: number) => {
+        const row = loadedRows[index]
+        return row ? rowKey(row) : `skeleton-${index}`
+      },
+      [loadedRows, rowKey],
+    ),
   })
 
   const virtualItems = virtualizer.getVirtualItems()
