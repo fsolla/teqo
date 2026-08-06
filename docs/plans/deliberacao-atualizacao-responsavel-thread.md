@@ -48,7 +48,7 @@ Com a atualização virando o lugar único do “o que aconteceu” (**C87**), a
   - Coordenação: “quem resolve este fato?”
   - Responsável: “o que falta / o que já fiz?” (no fio)
   - Coordenação: “podemos dar por encerrado?”
-- **Forma:** *adiada* — sem dashboard de tickets; restrição: não inventar KPI estadual a partir do fio.
+- **Forma:** _adiada_ — sem dashboard de tickets; restrição: não inventar KPI estadual a partir do fio.
 
 ## Direção no codebase (hipótese)
 

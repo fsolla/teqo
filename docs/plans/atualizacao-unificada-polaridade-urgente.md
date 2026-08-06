@@ -46,7 +46,7 @@ Hoje o staff escolhe entre semanal / urgente / nota / sinal (e, no sinal, ainda 
 - **Decisões desbloqueadas:**
   - Coordenação: “o que ouvi hoje é bom, neutro ou ruim — e é urgente?”
   - Fila: onde o município ficou sem registro recente (inalterado em intenção).
-- **Forma:** *adiada ao plano de implementação* — restrição: sem % estadual absoluto; polaridade é classificação do **registro**, não KPI estadual.
+- **Forma:** _adiada ao plano de implementação_ — restrição: sem % estadual absoluto; polaridade é classificação do **registro**, não KPI estadual.
 
 ## Direção no codebase (hipótese)
 
