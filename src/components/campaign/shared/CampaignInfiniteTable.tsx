@@ -43,7 +43,7 @@ const FETCH_AHEAD_MARGIN = '0px 0px 600px 0px'
  */
 const CONTROLS_BOTTOM_PADDING = 12
 
-type FetchState = { status: 'idle' } | { status: 'fetching' } | { status: 'error'; message: string }
+type FetchStatus = 'idle' | 'fetching' | 'error'
 
 type CampaignInfiniteTableProps<Row> = {
   columns: Array<CampaignTableColumn<Row>>
@@ -146,7 +146,8 @@ export const CampaignInfiniteTable = <Row,>({
     hasMore: boolean
     total: number
   }>({ query, pages: [], hasMore: totalDocs > rows.length, total: totalDocs })
-  const [fetchState, setFetchState] = useState<FetchState>({ status: 'idle' })
+  const [fetchStatus, setFetchStatus] = useState<FetchStatus>('idle')
+  const [fetchError, setFetchError] = useState<string | null>(null)
   /** Invalidates in-flight fetches when the filter/sort signature changes. */
   const fetchGenerationRef = useRef(0)
   const appendedPagesRef = useRef(appended.pages)
@@ -163,7 +164,8 @@ export const CampaignInfiniteTable = <Row,>({
   if (appended.query !== query) {
     fetchGenerationRef.current += 1
     setAppended({ query, pages: [], hasMore: totalDocs > rows.length, total: totalDocs })
-    setFetchState({ status: 'idle' })
+    setFetchStatus('idle')
+    setFetchError(null)
   } else if (appended.pages.length === 0 && appended.total !== totalDocs) {
     setAppended({ ...appended, total: totalDocs, hasMore: totalDocs > rows.length })
   }
@@ -213,7 +215,8 @@ export const CampaignInfiniteTable = <Row,>({
   const loadNextPage = useCallback(async () => {
     const generation = ++fetchGenerationRef.current
     const nextPage = appendedPagesRef.current.length + 2
-    setFetchState({ status: 'fetching' })
+    setFetchStatus('fetching')
+    setFetchError(null)
 
     let result: CampaignListNextPageResult<Row>
     try {
@@ -224,7 +227,8 @@ export const CampaignInfiniteTable = <Row,>({
     if (fetchGenerationRef.current !== generation) return
 
     if (result.status === 'error') {
-      setFetchState({ status: 'error', message: result.message })
+      setFetchStatus('error')
+      setFetchError(result.message)
       return
     }
 
@@ -234,7 +238,8 @@ export const CampaignInfiniteTable = <Row,>({
       total: result.totalDocs,
       hasMore: result.hasMore,
     }))
-    setFetchState({ status: 'idle' })
+    setFetchStatus('idle')
+    setFetchError(null)
   }, [fetchNextPage])
 
   const { ref: sentinelRef, inView } = useInView({
@@ -243,11 +248,11 @@ export const CampaignInfiniteTable = <Row,>({
   })
 
   useEffect(() => {
-    if (inView && hasMore && fetchState.status === 'idle') void loadNextPage()
-  }, [inView, hasMore, fetchState.status, loadNextPage])
+    if (inView && hasMore && fetchStatus === 'idle') void loadNextPage()
+  }, [inView, hasMore, fetchStatus, loadNextPage])
 
   const skeletonCount =
-    fetchState.status === 'fetching'
+    fetchStatus === 'fetching'
       ? Math.min(pageSize, Math.max(0, appended.total - loadedRows.length))
       : 0
   const itemCount = loadedRows.length + skeletonCount
@@ -338,7 +343,7 @@ export const CampaignInfiniteTable = <Row,>({
               'overflow-x-clip overflow-y-visible rounded-xl border bg-background',
               tableClassName,
             )}
-            aria-busy={fetchState.status === 'fetching'}
+            aria-busy={fetchStatus === 'fetching'}
           >
             <Table
               containerClassName="overflow-visible"
@@ -422,18 +427,18 @@ export const CampaignInfiniteTable = <Row,>({
           {/* Live region stays mounted so assistive tech observes the change
               (CampaignListResults pattern). */}
           <p className="sr-only" aria-live="polite">
-            {fetchState.status === 'fetching'
+            {fetchStatus === 'fetching'
               ? 'Carregando mais resultados…'
-              : fetchState.status === 'error'
-                ? fetchState.message
+              : fetchStatus === 'error'
+                ? fetchError
                 : ''}
           </p>
-          {fetchState.status === 'error' ? (
+          {fetchStatus === 'error' ? (
             <div
               role="status"
               className="flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground"
             >
-              <span>{fetchState.message}</span>
+              <span>{fetchError}</span>
               <Button type="button" variant="ghost" className="min-h-11" onClick={loadNextPage}>
                 Tentar novamente
               </Button>
