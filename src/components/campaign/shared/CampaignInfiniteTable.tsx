@@ -177,6 +177,8 @@ export const CampaignInfiniteTable = <Row,>({
     const extra = appended.pages.flat().filter((row) => !seedKeys.has(rowKey(row)))
     return [...rows, ...extra]
   }, [rows, appended.pages, rowKey])
+  const loadedRowsRef = useRef(loadedRows)
+  loadedRowsRef.current = loadedRows
 
   useEffect(() => {
     setScrollElement(rootRef.current?.closest(CAMPAIGN_CONTENT_SCROLL_SELECTOR) ?? null)
@@ -259,10 +261,10 @@ export const CampaignInfiniteTable = <Row,>({
     overscan: 8,
     getItemKey: useCallback(
       (index: number) => {
-        const row = loadedRows[index]
+        const row = loadedRowsRef.current[index]
         return row ? rowKey(row) : `skeleton-${index}`
       },
-      [loadedRows, rowKey],
+      [rowKey],
     ),
   })
 
