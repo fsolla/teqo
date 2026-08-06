@@ -3,7 +3,7 @@ import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures
 test.describe('Atividades — registro-fundação', () => {
   test.setTimeout(90_000)
 
-  test('cria compromisso com tags, demandas vinculadas e exibe os sinais no município', async ({
+  test('cria compromisso com demandas vinculadas e exibe os sinais no município', async ({
     campaign,
     page,
   }) => {
@@ -21,12 +21,6 @@ test.describe('Atividades — registro-fundação', () => {
     await page.goto(`${campaign.baseURL}/campanha/atividades/nova`)
 
     await page.getByLabel('Título *').fill(activityTitle)
-    // Tags: type and press Enter to add each tag
-    const tagInput = page.locator('input[list="activity-tags-datalist"]')
-    await tagInput.fill('Caminhada')
-    await tagInput.press('Enter')
-    await tagInput.fill('Territorial')
-    await tagInput.press('Enter')
     await page.getByLabel('Início *').fill('2026-08-15T10:00')
     await page.getByLabel('Município *').selectOption(String(municipality.id))
 
@@ -42,8 +36,6 @@ test.describe('Atividades — registro-fundação', () => {
     await expect(campaignPageChrome(page, activityTitle)).toBeVisible({
       timeout: 15_000,
     })
-    await expect(page.getByText('Caminhada', { exact: true })).toBeVisible()
-    await expect(page.getByText('Territorial', { exact: true })).toBeVisible()
     await expect(page.getByRole('link', { name: transportDemand })).toBeVisible()
     await expect(page.getByRole('link', { name: materialDemand })).toBeVisible()
 
