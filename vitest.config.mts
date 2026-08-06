@@ -11,9 +11,7 @@ import { defineConfig } from 'vitest/config'
 // `maxWorkers: 8` on CI: Vitest treats that as "use up to 8" even on 2–4
 // vCPU runners, which starves shared advisory leases (invite/consent) and
 // times out at 15s. Leave CI on Vitest's CPU-relative default.
-const maxWorkers = process.env.CI
-  ? undefined
-  : Math.min(8, os.availableParallelism())
+const maxWorkers = process.env.CI ? undefined : Math.min(8, os.availableParallelism())
 
 export default defineConfig({
   resolve: {
