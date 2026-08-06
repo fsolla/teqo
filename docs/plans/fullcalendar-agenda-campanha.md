@@ -17,7 +17,7 @@ Com o modelo enxuto (C14), a maior alavanca de adoção é **ver e mexer o tempo
 
 ## Persona e fluxo
 
-- **Persona / contexto:** coordenador na semana do candidato; assessor no recorte de municípios; quem só precisa *ver* usa filtros (ex.: deputado presente).
+- **Persona / contexto:** coordenador na semana do candidato; assessor no recorte de municípios; quem só precisa _ver_ usa filtros (ex.: deputado presente).
 - **Job principal:** enxergar a semana filtrada, criar no slot, abrir compromisso; remarcar presença do deputado só se for coordenador/candidato.
 - **Fluxo desejado:** Agenda → semana → aplica filtros (tags / município / deputado presente) → cria no vazio / abre evento / arrasta (se permitido) → detalhe operacional quando precisar.
 - **Anti-goals de produto:** N calendários tipo Google Resources; sync nesta fatia; assessor remarcar agenda do deputado.
