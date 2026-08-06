@@ -31,7 +31,7 @@ test.describe('Atividades — registro-fundação', () => {
     await page.getByLabel('Título da demanda 2').fill(materialDemand)
     await page.getByLabel('Tipo da demanda 2').selectOption('material')
 
-    await page.getByRole('button', { name: 'Criar compromisso' }).click()
+    await page.getByRole('button', { name: 'Criar atividade' }).click()
     await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+$/)
     await expect(campaignPageChrome(page, activityTitle)).toBeVisible({
       timeout: 15_000,
