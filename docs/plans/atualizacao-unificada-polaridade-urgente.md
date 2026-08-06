@@ -1,6 +1,6 @@
 # C87 — Atualização unificada (texto + polaridade + urgente)
 
-Status: blocked (plano local; promove após merge em main)
+Status: ready
 Atualizado em: 2026-08-06
 Issue: #396
 Priority: P1
