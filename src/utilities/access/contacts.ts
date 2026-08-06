@@ -53,6 +53,26 @@ const getAccessibleContactIds = (
       }
     }
 
+    // Advisors already read every dobradinha. Include the normalized Contacts
+    // backing those rows without widening access to other Contacts.
+    if (currentUser.role === 'advisor' && collections.stateDeputy) {
+      // Intentional admin bypass: StateDeputy access already scopes the advisor's rows.
+      const stateDeputyResult = await find({
+        collection: 'stateDeputy',
+        depth: 0,
+        limit: 0,
+        overrideAccess: true,
+        pagination: false,
+        req,
+        select: { contact: true },
+        where: {},
+      })
+      for (const doc of stateDeputyResult.docs) {
+        const id = relationshipId(doc.contact)
+        if (id !== null) contactIDs.push(id)
+      }
+    }
+
     // Advisors read contacts of supporters in their municipalities; leaders read
     // contacts of the supporters they created — mirroring `canReadSupporter`.
     const supporterWhere =

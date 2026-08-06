@@ -14,7 +14,7 @@ import { loadAdvisorListPageData } from '@/utilities/advisorData'
 import { loadDemandListPageData } from '@/utilities/campaignDemandData'
 import { loadLeadershipListPageData } from '@/utilities/leadership/leadershipData'
 import { loadOrganizationListPageData } from '@/utilities/organizationData'
-import { loadStateDeputyListPageData } from '@/utilities/stateDeputyData'
+import { loadStateDeputyDetail, loadStateDeputyListPageData } from '@/utilities/stateDeputyData'
 import { NO_PARTY_FILTER_VALUE } from '@/utilities/stateDeputyListUrl'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
@@ -312,11 +312,12 @@ describe('loadStateDeputyListPageData', () => {
   it('narrows by q with zeroed relation counts for a fresh deputy', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
-    const stateDeputy = await fixtures.createStateDeputy({ party: 'PT' })
+    const deputyName = fixtures.value('Deputado')
+    const stateDeputy = await fixtures.createStateDeputy({ name: deputyName, party: 'PT' })
 
     const result = await loadStateDeputyListPageData(payload, coordinator, {
       page: 1,
-      q: stateDeputy.name,
+      q: deputyName,
     })
 
     expect(result.totalDocs).toBe(1)
@@ -333,7 +334,8 @@ describe('loadStateDeputyListPageData', () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
-    const stateDeputy = await fixtures.createStateDeputy({ party: 'PT' })
+    const deputyName = fixtures.value('Deputado')
+    const stateDeputy = await fixtures.createStateDeputy({ name: deputyName, party: 'PT' })
     const contact = await fixtures.createContact()
     const leadership = await fixtures.createLeadership({
       contact: contact.id,
@@ -349,7 +351,7 @@ describe('loadStateDeputyListPageData', () => {
 
     const result = await loadStateDeputyListPageData(payload, coordinator, {
       page: 1,
-      q: stateDeputy.name,
+      q: deputyName,
     })
 
     expect(result.rows[0]).toMatchObject({
@@ -435,6 +437,19 @@ describe('loadStateDeputyListPageData', () => {
       parties: ['PT'],
     })
     expect(filteredByPt.filterFacets).toEqual({ parties: ['PSD', 'PT'], hasNoParty: true })
+  })
+})
+
+describe('loadStateDeputyDetail', () => {
+  it('resolves an oversized numeric legacy slug without coercing it to an ID', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const name = '12345678901234567890'
+    const stateDeputy = await fixtures.createStateDeputy({ name })
+
+    const result = await loadStateDeputyDetail(payload, coordinator, stateDeputy.slug)
+
+    expect(result).toMatchObject({ id: stateDeputy.id, name })
   })
 })
 

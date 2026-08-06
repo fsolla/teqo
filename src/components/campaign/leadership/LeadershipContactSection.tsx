@@ -1,6 +1,7 @@
 'use client'
 
-import { LeadershipContactFieldControl } from '@/components/campaign/leadership/LeadershipContactFieldControl'
+import { updateLeadershipContactFormAction } from '@/app/(campaign)/campanha/(app)/liderancas/formActions'
+import { CampaignInlineEditableCell } from '@/components/campaign/shared/CampaignInlineEditableCell'
 
 type LeadershipContactSectionProps = {
   leadershipId: number
@@ -23,19 +24,43 @@ export const LeadershipContactSection = ({
       <div className="flex flex-col gap-1">
         <dt className="text-sm text-muted-foreground">Nome</dt>
         <dd>
-          <LeadershipContactFieldControl leadershipId={leadershipId} field="name" value={name} />
+          <CampaignInlineEditableCell
+            recordId={leadershipId}
+            recordIdField="leadershipId"
+            field="name"
+            value={name}
+            label="Nome"
+            formAction={updateLeadershipContactFormAction}
+            href={`/campanha/liderancas/${leadershipId}`}
+          />
         </dd>
       </div>
       <div className="flex flex-col gap-1">
         <dt className="text-sm text-muted-foreground">E-mail</dt>
         <dd>
-          <LeadershipContactFieldControl leadershipId={leadershipId} field="email" value={email} />
+          <CampaignInlineEditableCell
+            recordId={leadershipId}
+            recordIdField="leadershipId"
+            field="email"
+            value={email}
+            label="E-mail"
+            formAction={updateLeadershipContactFormAction}
+            readBehavior="copy"
+          />
         </dd>
       </div>
       <div className="flex flex-col gap-1">
         <dt className="text-sm text-muted-foreground">Celular</dt>
         <dd>
-          <LeadershipContactFieldControl leadershipId={leadershipId} field="phone" value={phone} />
+          <CampaignInlineEditableCell
+            recordId={leadershipId}
+            recordIdField="leadershipId"
+            field="phone"
+            value={phone}
+            label="Celular"
+            formAction={updateLeadershipContactFormAction}
+            readBehavior="copy"
+          />
         </dd>
       </div>
     </dl>

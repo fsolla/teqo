@@ -789,11 +789,11 @@ for (const [slug, entry] of staffRoster) {
 
 const existingDeputies = await payload.find({
   collection: 'stateDeputy',
-  depth: 0,
+  depth: 1,
   limit: 5000,
   pagination: false,
   overrideAccess: true,
-  select: { name: true, slug: true },
+  select: { contact: true, slug: true },
 })
 const deputiesBySlug = new Map(existingDeputies.docs.map((deputy) => [deputy.slug, deputy]))
 
@@ -1124,9 +1124,20 @@ try {
     let deputiesCreated = 0
     for (const plan of deputyPlans.values()) {
       if (plan.deputyId != null) continue
+      const contact = await payload.create({
+        collection: 'contact',
+        data: {
+          name: plan.name,
+          state: 'BA',
+          city: null,
+        },
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
       const created = await payload.create({
         collection: 'stateDeputy',
-        data: { name: plan.name },
+        data: { contact: contact.id },
         depth: 0,
         overrideAccess: true,
         req,

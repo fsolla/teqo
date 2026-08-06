@@ -1,7 +1,7 @@
 import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
-import { uniqueRelationshipIds } from '@/lib/relationship'
+import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 import { STATE_DEPUTY_NAME_REQUIRED_MESSAGE } from '@/lib/schemas/stateDeputy'
 import { slugify } from '@/lib/slug'
 import { trimmedText } from '@/lib/text'
@@ -16,24 +16,63 @@ import {
   eligibleCampaignStaffWhere,
 } from '@/utilities/campaignAccess'
 import { stampCampaignCreatedBy, systemStampedActorField } from '@/utilities/campaignAuditFields'
+import { assertStateDeputyNameAvailable } from '@/utilities/stateDeputy/nameInvariant'
 
-const setCanonicalStateDeputySlug: CollectionBeforeValidateHook = ({
+const setCanonicalStateDeputySlug: CollectionBeforeValidateHook = async ({
   data,
   operation,
   originalDoc,
+  req,
 }) => {
   if (!data) return data
-  const name = trimmedText(data.name ?? originalDoc?.name)
-  const slug = slugify(name)
-  if (!slug) {
-    throw new APIError(STATE_DEPUTY_NAME_REQUIRED_MESSAGE, 400)
+
+  if (operation === 'update') {
+    const contactID = relationshipId(data.contact ?? originalDoc?.contact)
+    if (contactID !== null) {
+      const contact = await req.payload.findByID({
+        collection: 'contact',
+        id: contactID,
+        depth: 0,
+        select: { name: true },
+        // Intentional bypass: this read derives the invariant name after the
+        // authorized StateDeputy relation update.
+        overrideAccess: true,
+        req,
+      })
+      await assertStateDeputyNameAvailable(req.payload, req, contact.name, originalDoc?.id)
+    }
+    data.slug = originalDoc?.slug ?? data.slug
+    return data
   }
-  if (operation === 'update' && data.name !== undefined && name !== originalDoc?.name) {
-    throw new APIError('O nome da dobradinha não pode ser alterado após a criação.', 409)
+
+  const contactID = relationshipId(data.contact)
+  if (contactID === null) {
+    throw new APIError('O contato da dobradinha é obrigatório.', 400)
   }
-  data.name = name
-  data.slug = operation === 'create' ? slug : originalDoc?.slug
-  return data
+
+  return req.payload
+    .findByID({
+      collection: 'contact',
+      id: contactID,
+      depth: 0,
+      select: { name: true },
+      // Intentional bypass: the create action has already authorized the staff
+      // actor; this lookup only derives the immutable legacy alias from Contact.
+      overrideAccess: true,
+      req,
+    })
+    .then((contact) => {
+      const name = trimmedText(contact.name)
+      const slug = slugify(name)
+      if (!slug) {
+        throw new APIError(STATE_DEPUTY_NAME_REQUIRED_MESSAGE, 400)
+      }
+
+      return assertStateDeputyNameAvailable(req.payload, req, name).then(() => {
+        data.slug = slug
+        return data
+      })
+    })
 }
 
 const validateStateDeputyAdvisors: CollectionBeforeValidateHook = async ({ data, req }) => {
@@ -75,8 +114,8 @@ export const StateDeputy: CollectionConfig = {
   },
   admin: {
     group: 'Campanha',
-    useAsTitle: 'name',
-    defaultColumns: ['name', 'party', 'updatedAt'],
+    useAsTitle: 'contact',
+    defaultColumns: ['contact', 'party', 'updatedAt'],
     description:
       'Deputados estaduais com quem a campanha dobra. Vincule a municípios e lideranças nas fichas correspondentes.',
   },
@@ -92,14 +131,16 @@ export const StateDeputy: CollectionConfig = {
   },
   fields: [
     {
-      name: 'name',
-      type: 'text',
-      label: 'Nome',
+      name: 'contact',
+      type: 'relationship',
+      relationTo: 'contact',
+      label: 'Contato',
       required: true,
-      minLength: 2,
-      maxLength: 160,
       unique: true,
       index: true,
+      access: {
+        update: canSetCampaignSystemField,
+      },
     },
     {
       name: 'slug',

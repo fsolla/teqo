@@ -1,6 +1,12 @@
 import { CitiesByState } from '@/lib/cities'
 import { z } from 'zod'
 
+import {
+  brazilianMobile,
+  optionalPersistedEmail,
+  positiveRelationshipId,
+} from '@/lib/schemas/primitives'
+
 export type StateKey = keyof typeof CitiesByState
 
 export const contactSchema = z.object({
@@ -31,3 +37,30 @@ export const contactSchema = z.object({
     .transform((v) => (v === '' ? undefined : v))
     .optional(),
 })
+
+const contactPhoneInput = z.union([brazilianMobile, z.literal(''), z.null()]).optional()
+
+const nullableContactPhone = contactPhoneInput.transform((value) =>
+  value === '' || value === undefined ? null : value,
+)
+
+/** Per-field Contact write shared by campaign person joins. */
+export const contactFieldUpdateSchema = z.discriminatedUnion('field', [
+  z.object({
+    id: positiveRelationshipId,
+    field: z.literal('name'),
+    name: z.string().trim().min(2).max(120),
+  }),
+  z.object({
+    id: positiveRelationshipId,
+    field: z.literal('email'),
+    email: optionalPersistedEmail,
+  }),
+  z.object({
+    id: positiveRelationshipId,
+    field: z.literal('phone'),
+    phone: nullableContactPhone,
+  }),
+])
+
+export type ContactFieldUpdateInput = z.input<typeof contactFieldUpdateSchema>

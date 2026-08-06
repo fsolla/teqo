@@ -452,12 +452,55 @@ export interface Municipality {
  */
 export interface StateDeputy {
   id: number;
-  name: string;
+  contact: number | Contact;
   slug: string;
   party?: string | null;
   notes?: string | null;
   advisors?: (number | CampaignUser)[] | null;
   createdBy?: (number | null) | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contact".
+ */
+export interface Contact {
+  id: number;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  gender?: ('feminino' | 'masculino' | 'outro' | 'nao_informado') | null;
+  state:
+    | 'AC'
+    | 'AL'
+    | 'AM'
+    | 'AP'
+    | 'BA'
+    | 'CE'
+    | 'DF'
+    | 'ES'
+    | 'GO'
+    | 'MA'
+    | 'MG'
+    | 'MS'
+    | 'MT'
+    | 'PA'
+    | 'PB'
+    | 'PE'
+    | 'PI'
+    | 'PR'
+    | 'RJ'
+    | 'RN'
+    | 'RO'
+    | 'RR'
+    | 'RS'
+    | 'SC'
+    | 'SE'
+    | 'SP'
+    | 'TO';
+  city?: string | null;
+  postalCode?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -543,49 +586,6 @@ export interface Leadership {
   consentedAt?: string | null;
   notes?: string | null;
   createdBy?: (number | null) | CampaignUser;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "contact".
- */
-export interface Contact {
-  id: number;
-  name: string;
-  email?: string | null;
-  phone?: string | null;
-  gender?: ('feminino' | 'masculino' | 'outro' | 'nao_informado') | null;
-  state:
-    | 'AC'
-    | 'AL'
-    | 'AM'
-    | 'AP'
-    | 'BA'
-    | 'CE'
-    | 'DF'
-    | 'ES'
-    | 'GO'
-    | 'MA'
-    | 'MG'
-    | 'MS'
-    | 'MT'
-    | 'PA'
-    | 'PB'
-    | 'PE'
-    | 'PI'
-    | 'PR'
-    | 'RJ'
-    | 'RN'
-    | 'RO'
-    | 'RR'
-    | 'RS'
-    | 'SC'
-    | 'SE'
-    | 'SP'
-    | 'TO';
-  city?: string | null;
-  postalCode?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1615,7 +1615,7 @@ export interface OrganizationSelect<T extends boolean = true> {
  * via the `definition` "stateDeputy_select".
  */
 export interface StateDeputySelect<T extends boolean = true> {
-  name?: T;
+  contact?: T;
   slug?: T;
   party?: T;
   notes?: T;

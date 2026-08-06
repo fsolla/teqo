@@ -33,12 +33,12 @@ describe('setStateDeputyAdvisorMembershipRecord (B156)', () => {
       const stateDeputy = await fixtures.createStateDeputy()
       const advisor = await fixtures.createCampaignUser('advisor')
 
-      const { stateDeputySlug } = await setStateDeputyAdvisorMembershipRecord(payload, actor, {
+      const { stateDeputyID } = await setStateDeputyAdvisorMembershipRecord(payload, actor, {
         stateDeputyId: stateDeputy.id,
         advisorId: advisor.id,
         assigned: true,
       })
-      expect(stateDeputySlug).toBe(stateDeputy.slug)
+      expect(stateDeputyID).toBe(stateDeputy.id)
 
       const assigned = await payload.findByID({
         collection: 'stateDeputy',
@@ -117,13 +117,13 @@ describe('setStateDeputyAdvisorMembershipRecord (B156)', () => {
       assigned: true,
     })
 
-    // No-op contract: no slug back (the caller then skips the revalidate).
-    const { stateDeputySlug } = await setStateDeputyAdvisorMembershipRecord(payload, coordinator, {
+    // No-op contract: no id back (the caller then skips the revalidate).
+    const { stateDeputyID } = await setStateDeputyAdvisorMembershipRecord(payload, coordinator, {
       stateDeputyId: stateDeputy.id,
       advisorId: advisor.id,
       assigned: true,
     })
-    expect(stateDeputySlug).toBeUndefined()
+    expect(stateDeputyID).toBeUndefined()
 
     const after = await payload.findByID({
       collection: 'stateDeputy',

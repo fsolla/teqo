@@ -93,7 +93,9 @@ type VotePledgeInput = Partial<
 type OrganizationInput = Partial<
   Pick<Organization, 'name' | 'slug' | 'kind' | 'notes' | 'municipalities'>
 >
-type StateDeputyInput = Partial<Pick<StateDeputy, 'name' | 'slug' | 'party' | 'notes'>>
+type StateDeputyInput = Partial<Pick<StateDeputy, 'contact' | 'slug' | 'party' | 'notes'>> & {
+  name?: string
+}
 type CampaignDemandInput = Partial<
   Pick<
     CampaignDemand,
@@ -730,13 +732,15 @@ export class CampaignFixtures {
   }
 
   async createStateDeputy(input: StateDeputyInput = {}): Promise<StateDeputy> {
-    const name = input.name ?? this.value('Deputado')
+    const { contact: inputContact, name, ...stateDeputyInput } = input
+    const contact =
+      inputContact ?? (await this.createContact({ name: name ?? this.value('Deputado') }))
     const stateDeputy = await this.rootPayload.create({
       collection: 'stateDeputy',
       data: {
-        ...input,
-        name,
-        slug: input.slug ?? this.value('deputado'),
+        ...stateDeputyInput,
+        contact: relationId(contact),
+        slug: stateDeputyInput.slug ?? this.value('deputado'),
       },
       depth: 0,
     })

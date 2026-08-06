@@ -1,10 +1,12 @@
 import { CitiesByState } from '@/lib/cities'
 import { BRAZILIAN_PHONE_INVALID_MESSAGE, normalizeBrazilianPhone } from '@/lib/phone'
+import { trimmedText } from '@/lib/text'
 import { canManageContacts, canReadContacts } from '@/utilities/campaignAccess'
 import {
   acquireContactPhoneLocks,
   assertContactPhoneAvailable,
 } from '@/utilities/contactPhoneInvariant'
+import { assertStateDeputyNameAvailable } from '@/utilities/stateDeputy/nameInvariant'
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
@@ -45,6 +47,38 @@ const enforceUniqueContactPhone: CollectionBeforeChangeHook = async ({
     phone,
     operation === 'update' ? Number(originalDoc?.id) : undefined,
   )
+  return data
+}
+
+const enforceStateDeputyName: CollectionBeforeChangeHook = async ({
+  data,
+  operation,
+  originalDoc,
+  req,
+}) => {
+  if (operation !== 'update' || !data || data.name === undefined || !originalDoc) return data
+
+  const currentName = trimmedText(originalDoc.name)
+  const nextName = trimmedText(data.name)
+  if (nextName === currentName) return data
+
+  const linkedDeputy = await req.payload.find({
+    collection: 'stateDeputy',
+    where: { contact: { equals: originalDoc.id } },
+    depth: 0,
+    limit: 1,
+    pagination: false,
+    // Intentional bypass: Contact access is broader than the deputy's scope; this
+    // lookup only determines whether the name invariant applies.
+    overrideAccess: true,
+    req,
+  })
+
+  const stateDeputyID = linkedDeputy.docs[0]?.id
+  if (stateDeputyID !== undefined) {
+    await assertStateDeputyNameAvailable(req.payload, req, nextName, stateDeputyID)
+  }
+
   return data
 }
 
@@ -91,7 +125,7 @@ export const Contact: CollectionConfig = {
         return data
       },
     ],
-    beforeChange: [enforceUniqueContactPhone],
+    beforeChange: [enforceUniqueContactPhone, enforceStateDeputyName],
   },
   fields: [
     {

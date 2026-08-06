@@ -19,6 +19,7 @@ const testDatabaseUrl =
   process.env.DATABASE_URL ?? 'postgresql://teqo:teqo@localhost:5432/teqo_test'
 const adminUrl = testDatabaseUrl.replace(/\/[^/]+$/, '/postgres')
 const consolidatedName = '20260718_010733_consolidate_campaign_schema'
+const stateDeputyContactMigrationName = '20260806_082110_add_state_deputy_contact'
 type MigrationDatabase = MigrateUpArgs['db']
 let databaseSequence = 0
 let databaseName = ''
@@ -186,5 +187,87 @@ describe('campaign migration existing-schema reconciliation', () => {
       WHERE "email" = 'rollback-sentinel@example.test'
     `)
     expect(sentinel.rows[0]?.count).toBe(1)
+  })
+
+  it('backfills StateDeputy Contacts and remains idempotent', async () => {
+    if (!database) throw new Error('Disposable database is not initialized.')
+    const migration = migrations.find(({ name }) => name === stateDeputyContactMigrationName)
+    if (!migration) throw new Error('StateDeputy Contact migration is not registered.')
+
+    await migration.down(stub<MigrateDownArgs>({ db: database }))
+    await database.execute(sql`
+      INSERT INTO "state_deputy" ("name", "slug")
+      VALUES ('Legado Um', 'legado-um'), ('Legado Dois', 'legado-dois')
+    `)
+    const legacyRead = await database.execute(sql`
+      SELECT "name" AS legacy_name
+      FROM "state_deputy"
+      WHERE "slug" IN ('legado-um', 'legado-dois')
+      ORDER BY "id"
+    `)
+    expect(legacyRead.rows).toEqual([{ legacy_name: 'Legado Um' }, { legacy_name: 'Legado Dois' }])
+
+    await migration.up(stub<MigrateUpArgs>({ db: database }))
+    const firstRead = await database.execute(sql`
+      SELECT contact."name" AS contact_name
+      FROM "state_deputy" AS state_deputy
+      JOIN "contact" AS contact ON contact."id" = state_deputy."contact_id"
+      ORDER BY state_deputy."id"
+    `)
+    expect(firstRead.rows).toEqual([{ contact_name: 'Legado Um' }, { contact_name: 'Legado Dois' }])
+
+    await migration.up(stub<MigrateUpArgs>({ db: database }))
+    const contactCount = await database.execute(sql`
+      SELECT count(*)::integer AS count
+      FROM "contact"
+      WHERE "name" IN ('Legado Um', 'Legado Dois')
+    `)
+    expect(contactCount.rows[0]?.count).toBe(2)
+  })
+
+  it('keeps the required StateDeputy Contact relation from being nulled on delete', async () => {
+    if (!database) throw new Error('Disposable database is not initialized.')
+
+    const result = await database.execute(sql`
+      SELECT confdeltype
+      FROM pg_constraint
+      WHERE conname = 'state_deputy_contact_id_contact_id_fk'
+    `)
+
+    expect(result.rows).toEqual([{ confdeltype: 'r' }])
+  })
+
+  it('refuses rollback after Contact names diverge into a duplicate', async () => {
+    if (!database) throw new Error('Disposable database is not initialized.')
+    const migration = migrations.find(({ name }) => name === stateDeputyContactMigrationName)
+    if (!migration) throw new Error('StateDeputy Contact migration is not registered.')
+
+    const contacts = await database.execute(sql`
+      INSERT INTO "contact" ("name", "state")
+      VALUES ('Mesmo Nome', 'BA'), ('Outro Nome', 'BA')
+      RETURNING "id"
+    `)
+    await database.execute(sql`
+      INSERT INTO "state_deputy" ("contact_id", "slug")
+      VALUES (${contacts.rows[0]?.id}, 'mesmo-nome-um'), (${contacts.rows[1]?.id}, 'mesmo-nome-dois')
+    `)
+    await database.execute(sql`
+      UPDATE "contact"
+      SET "name" = 'Mesmo Nome'
+      WHERE "id" = ${contacts.rows[1]?.id}
+    `)
+
+    await expect(migration.down(stub<MigrateDownArgs>({ db: database }))).rejects.toThrow(
+      'Contact names are not unique',
+    )
+    const columns = await database.execute(sql`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'state_deputy'
+        AND column_name IN ('name', 'contact_id')
+      ORDER BY column_name
+    `)
+    expect(columns.rows).toEqual([{ column_name: 'contact_id' }])
   })
 })

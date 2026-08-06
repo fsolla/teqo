@@ -5,7 +5,6 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { LeadershipInviteRowAction } from '@/components/campaign/invite/LeadershipInviteRowAction'
-import { LeadershipContactFieldControl } from '@/components/campaign/leadership/LeadershipContactFieldControl'
 import { LeadershipFilters } from '@/components/campaign/leadership/LeadershipFilters'
 import { LeadershipListSupportStatusControl } from '@/components/campaign/leadership/LeadershipListSupportStatusControl'
 import {
@@ -13,6 +12,7 @@ import {
   LeadershipSortableHead,
 } from '@/components/campaign/leadership/LeadershipSortableHead'
 import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
+import { CampaignInlineEditableCell } from '@/components/campaign/shared/CampaignInlineEditableCell'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
   CampaignListPendingBoundary,
@@ -81,6 +81,7 @@ import { loadStateDeputySummaries } from '@/utilities/stateDeputyData'
 import {
   setLeadershipMunicipalitiesFormAction,
   setLeadershipStateDeputyMembershipFormAction,
+  updateLeadershipContactFormAction,
 } from './formActions'
 
 export const metadata = campaignPageMetadataFromCatalog('liderancas')
@@ -144,7 +145,15 @@ const leadershipColumns = ({
     mandatory: true,
     head: <LeadershipSortableHead state={state} sortKey="name" />,
     cell: (row) => (
-      <LeadershipContactFieldControl leadershipId={row.id} field="name" value={row.name} />
+      <CampaignInlineEditableCell
+        recordId={row.id}
+        recordIdField="leadershipId"
+        field="name"
+        value={row.name}
+        label="Nome"
+        formAction={updateLeadershipContactFormAction}
+        href={`/campanha/liderancas/${row.id}`}
+      />
     ),
   },
   {
@@ -152,14 +161,30 @@ const leadershipColumns = ({
     label: 'E-mail',
     cellClassName: 'max-w-56',
     cell: (row) => (
-      <LeadershipContactFieldControl leadershipId={row.id} field="email" value={row.email} />
+      <CampaignInlineEditableCell
+        recordId={row.id}
+        recordIdField="leadershipId"
+        field="email"
+        value={row.email}
+        label="E-mail"
+        formAction={updateLeadershipContactFormAction}
+        readBehavior="copy"
+      />
     ),
   },
   {
     id: 'phone',
     label: 'Celular',
     cell: (row) => (
-      <LeadershipContactFieldControl leadershipId={row.id} field="phone" value={row.phone} />
+      <CampaignInlineEditableCell
+        recordId={row.id}
+        recordIdField="leadershipId"
+        field="phone"
+        value={row.phone}
+        label="Celular"
+        formAction={updateLeadershipContactFormAction}
+        readBehavior="copy"
+      />
     ),
   },
   {
@@ -224,7 +249,7 @@ const leadershipColumns = ({
         items={row.stateDeputies.map((deputy) => ({
           id: deputy.id,
           label: deputy.name,
-          href: `/campanha/dobradinhas/${deputy.slug}`,
+          href: `/campanha/dobradinhas/${deputy.id}`,
           ...(deputy.party ? { party: deputy.party } : {}),
         }))}
         options={stateDeputyOptions}
@@ -380,7 +405,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
       item: {
         id: option.id,
         label: option.plainName,
-        href: `/campanha/dobradinhas/${option.slug}`,
+        href: `/campanha/dobradinhas/${option.id}`,
         ...(option.party ? { party: option.party } : {}),
       },
     })),

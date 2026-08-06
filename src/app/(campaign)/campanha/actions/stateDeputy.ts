@@ -4,24 +4,28 @@ import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
 import { nextStateDeputyIdsAfterMunicipalityMembership } from '@/lib/municipalityStateDeputyMembership'
-import { uniqueRelationshipIds } from '@/lib/relationship'
+import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
+import { contactFieldUpdateSchema, type ContactFieldUpdateInput } from '@/lib/schemas/contact'
 import {
   STATE_DEPUTY_ADVISORS_UNRESTRICTED_MESSAGE,
   STATE_DEPUTY_CONFLICT_MESSAGE,
+  STATE_DEPUTY_INVALID_CONTACT_MESSAGE,
   STATE_DEPUTY_STAFF_MESSAGE,
   municipalityStateDeputyCreateSchema,
   stateDeputyAdvisorMembershipSchema,
   stateDeputyCreateSchema,
   stateDeputyMunicipalitiesBatchSchema,
+  stateDeputyPartyUpdateSchema,
   stateDeputyUpdateSchema,
   type MunicipalityStateDeputyCreateInput,
   type StateDeputyAdvisorMembershipInput,
   type StateDeputyCreateInput,
   type StateDeputyMunicipalitiesBatchInput,
+  type StateDeputyPartyUpdateInput,
   type StateDeputyUpdateInput,
 } from '@/lib/schemas/stateDeputy'
 import { nextStateDeputyAdvisorIdsAfterMembership } from '@/lib/stateDeputyAdvisorMembership'
-import type { CampaignUser } from '@/payload-types'
+import type { CampaignUser, Contact } from '@/payload-types'
 import {
   getCampaignActionContext,
   reloadStaffActor,
@@ -32,15 +36,62 @@ import {
   runStaffEntityMutation,
   type StaffEntityPolicy,
 } from '@/utilities/campaignEntityActions'
+import { assertContactPhoneWritable } from '@/utilities/contactPhoneInvariant'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
 import { revalidateMunicipalityListPaths } from '@/utilities/municipality/municipalityRevalidation'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
+import { assertStateDeputyNameAvailable } from '@/utilities/stateDeputy/nameInvariant'
 
 const stateDeputyPolicy: StaffEntityPolicy = {
   staffMessage: STATE_DEPUTY_STAFF_MESSAGE,
-  conflictPattern: /state_deputy_(name|slug)|duplicate key/i,
+  conflictPattern: /state_deputy_(contact|slug)|duplicate key/i,
   conflictMessage: STATE_DEPUTY_CONFLICT_MESSAGE,
+}
+
+type StateDeputyCreationData = {
+  name: string
+  party?: string | null
+  notes?: string | null
+}
+
+const createStateDeputyWithContact = async (
+  payload: Payload,
+  actor: CampaignUser,
+  data: StateDeputyCreationData,
+  req: { transactionID: number | string },
+) => {
+  // Intentional admin bypass: Contact is admin-managed, while this staff action
+  // owns the atomic Contact ↔ StateDeputy creation.
+  await assertStateDeputyNameAvailable(payload, req, data.name)
+
+  const contact = await payload.create({
+    collection: 'contact',
+    data: {
+      name: data.name,
+      email: null,
+      phone: null,
+      state: 'BA' as Contact['state'],
+      city: null,
+    },
+    depth: 0,
+    // Intentional admin bypass: this Contact write is owned by the atomic staff action.
+    overrideAccess: true,
+    req,
+  })
+
+  return payload.create({
+    collection: 'stateDeputy',
+    data: hookFilledCreateData<'stateDeputy'>({
+      contact: contact.id,
+      ...(data.party === undefined ? {} : { party: data.party }),
+      ...(data.notes === undefined ? {} : { notes: data.notes }),
+    }),
+    depth: 0,
+    user: actor,
+    overrideAccess: false,
+    req,
+  })
 }
 
 const createStateDeputyRecord = async (
@@ -49,15 +100,20 @@ const createStateDeputyRecord = async (
   input: StateDeputyCreateInput,
 ) => {
   const data = stateDeputyCreateSchema.parse(input)
-  return runStaffEntityMutation(payload, actor, stateDeputyPolicy, (currentActor) =>
-    payload.create({
-      collection: 'stateDeputy',
-      data: hookFilledCreateData<'stateDeputy'>(data),
-      depth: 0,
-      user: currentActor,
-      overrideAccess: false,
-    }),
-  )
+  try {
+    return await withPayloadTransaction(
+      payload,
+      async ({ req }) => {
+        const currentActor = await reloadStaffActor(payload, actor, STATE_DEPUTY_STAFF_MESSAGE, req)
+        return createStateDeputyWithContact(payload, currentActor, data, req)
+      },
+      { beginFailureMessage: 'Não foi possível iniciar a transação da dobradinha.' },
+    )
+  } catch (error) {
+    const conflict = mapStaffEntityConflict(error, stateDeputyPolicy)
+    if (conflict) throw conflict
+    throw error
+  }
 }
 
 const updateStateDeputyRecord = async (
@@ -78,14 +134,111 @@ const updateStateDeputyRecord = async (
   )
 }
 
+export const updateStateDeputyPartyRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: StateDeputyPartyUpdateInput,
+) => {
+  const { id, party } = stateDeputyPartyUpdateSchema.parse(input)
+  return runStaffEntityMutation(payload, actor, stateDeputyPolicy, (currentActor) =>
+    payload.update({
+      collection: 'stateDeputy',
+      id,
+      data: { party },
+      depth: 0,
+      user: currentActor,
+      overrideAccess: false,
+    }),
+  )
+}
+
+export const updateStateDeputyContactRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: ContactFieldUpdateInput,
+) => {
+  const data = contactFieldUpdateSchema.parse(input)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await reloadStaffActor(payload, actor, STATE_DEPUTY_STAFF_MESSAGE, req)
+      const current = await payload.findByID({
+        collection: 'stateDeputy',
+        id: data.id,
+        depth: 0,
+        select: { contact: true },
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      const contactID = relationshipId(current.contact)
+      if (contactID === null) throw new Error(STATE_DEPUTY_INVALID_CONTACT_MESSAGE)
+
+      const contactData: Partial<Pick<Contact, 'name' | 'phone' | 'email'>> = {}
+      if (data.field === 'name') {
+        await assertStateDeputyNameAvailable(payload, req, data.name, data.id)
+        contactData.name = data.name
+      } else if (data.field === 'email') {
+        contactData.email = data.email ?? null
+      } else if (data.field === 'phone') {
+        if (data.phone) {
+          await assertContactPhoneWritable(payload, req, contactID, data.phone)
+          contactData.phone = data.phone
+        } else {
+          contactData.phone = null
+        }
+      }
+
+      // Bypass: the StateDeputy row access above established staff scope.
+      await payload.update({
+        collection: 'contact',
+        id: contactID,
+        data: contactData,
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+
+      return current
+    },
+    { beginFailureMessage: 'Não foi possível atualizar o contato da dobradinha.' },
+  )
+}
+
 export const createStateDeputy = async (input: StateDeputyCreateInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return createStateDeputyRecord(payload, actor, input)
 }
 
+const revalidateStateDeputyPaths = (stateDeputyID: number) => {
+  revalidatePath('/campanha/dobradinhas', 'page')
+  revalidatePath(`/campanha/dobradinhas/${stateDeputyID}`, 'page')
+  revalidatePath('/campanha/liderancas', 'page')
+  revalidatePath('/campanha/liderancas/[id]', 'page')
+  revalidateMunicipalityListPaths({ scope: 'both' })
+}
+
 export const updateStateDeputy = async (input: StateDeputyUpdateInput) => {
   const { payload, actor } = await getCampaignActionContext()
-  return updateStateDeputyRecord(payload, actor, input)
+  const updated = await updateStateDeputyRecord(payload, actor, input)
+  revalidateStateDeputyPaths(updated.id)
+  return updated
+}
+
+export const updateStateDeputyParty = async (input: StateDeputyPartyUpdateInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const updated = await updateStateDeputyPartyRecord(payload, actor, input)
+  revalidateStateDeputyPaths(updated.id)
+  return updated
+}
+
+export const updateStateDeputyContact = async (input: ContactFieldUpdateInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const updated = await updateStateDeputyContactRecord(payload, actor, input)
+  revalidateStateDeputyPaths(updated.id)
+  return updated
 }
 
 /**
@@ -95,11 +248,11 @@ export const updateStateDeputy = async (input: StateDeputyUpdateInput) => {
  * and the município index for a change already on screen.
  */
 const revalidateStateDeputyMunicipalityPaths = (
-  stateDeputySlug: string | undefined,
+  stateDeputyID: number | undefined,
   municipalitySlugs: readonly string[],
 ) => {
-  if (stateDeputySlug) {
-    revalidatePath(`/campanha/dobradinhas/${stateDeputySlug}`, 'page')
+  if (stateDeputyID) {
+    revalidatePath(`/campanha/dobradinhas/${stateDeputyID}`, 'page')
   }
   revalidateMunicipalityListPaths({ scope: 'list' })
   for (const slug of municipalitySlugs) {
@@ -139,7 +292,7 @@ export const setStateDeputyAdvisorMembershipRecord = async (
         collection: 'stateDeputy',
         id: stateDeputyId,
         depth: 0,
-        select: { advisors: true, slug: true },
+        select: { advisors: true },
         // Intentional admin bypass: the unrestricted role was verified above;
         // the `advisors` field's update access is admin-only in the collection
         // config, same contract as `setAdvisorMunicipalitiesBatchRecord`. The
@@ -155,10 +308,9 @@ export const setStateDeputyAdvisorMembershipRecord = async (
         assigned,
       )
 
-      // No-op: nothing to write, and nothing for the caller to revalidate —
-      // the slug lookup below exists only to target that revalidate.
+      // No-op: nothing to write, and nothing for the caller to revalidate.
       if (nextAdvisorIDs === null) {
-        return { stateDeputySlug: undefined }
+        return { stateDeputyID: undefined }
       }
 
       // Same intentional bypass as the read: the unrestricted role was verified
@@ -172,7 +324,7 @@ export const setStateDeputyAdvisorMembershipRecord = async (
         req,
       })
 
-      return { stateDeputySlug: stateDeputy.slug }
+      return { stateDeputyID: stateDeputyId }
     },
     { beginFailureMessage: 'Não foi possível atualizar os assessores da dobradinha.' },
   )
@@ -180,12 +332,12 @@ export const setStateDeputyAdvisorMembershipRecord = async (
 
 export const setStateDeputyAdvisorMembership = async (input: StateDeputyAdvisorMembershipInput) => {
   const { payload, actor } = await getCampaignActionContext()
-  const { stateDeputySlug } = await setStateDeputyAdvisorMembershipRecord(payload, actor, input)
+  const { stateDeputyID } = await setStateDeputyAdvisorMembershipRecord(payload, actor, input)
   // The list is deliberately absent: the chip cell that calls this IS on it and
   // already shows the toggle. The detail page is the route an actor cannot see
   // from here — same reasoning as the leadership twin (B31).
-  if (stateDeputySlug) revalidatePath(`/campanha/dobradinhas/${stateDeputySlug}`, 'page')
-  return stateDeputySlug
+  if (stateDeputyID) revalidatePath(`/campanha/dobradinhas/${stateDeputyID}`, 'page')
+  return stateDeputyID
 }
 
 export const setStateDeputyMunicipalitiesBatchRecord = async (
@@ -251,28 +403,10 @@ export const setStateDeputyMunicipalitiesBatchRecord = async (
         if (typeof municipality.slug === 'string') changedSlugs.push(municipality.slug)
       }
 
-      // Resolved AFTER the loop, and only when something changed: the slug
-      // exists solely to target the revalidate, which the caller skips on a
-      // no-op batch — so on a no-op this read was pure waste (the guard the
-      // `setLeadershipMunicipalitiesMembershipRecord` twin already had).
-      // Intentional admin bypass: existence is otherwise enforced by Payload's
-      // relationship validation on `update` (precedent:
-      // `setLeadershipStateDeputyMembershipRecord`, B31).
-      const stateDeputySlug =
-        changedSlugs.length > 0
-          ? (
-              await payload.findByID({
-                collection: 'stateDeputy',
-                id: stateDeputyId,
-                depth: 0,
-                select: { slug: true },
-                overrideAccess: true,
-                req,
-              })
-            ).slug
-          : undefined
-
-      return { stateDeputySlug, slugs: changedSlugs }
+      return {
+        stateDeputyID: changedSlugs.length > 0 ? stateDeputyId : undefined,
+        slugs: changedSlugs,
+      }
     },
     { beginFailureMessage: 'Não foi possível atualizar os municípios da dobradinha.' },
   )
@@ -284,7 +418,7 @@ export const setStateDeputyMunicipalitiesBatch = async (
   const { payload, actor } = await getCampaignActionContext()
   const result = await setStateDeputyMunicipalitiesBatchRecord(payload, actor, input)
   if (result.slugs.length > 0) {
-    revalidateStateDeputyMunicipalityPaths(result.stateDeputySlug, result.slugs)
+    revalidateStateDeputyMunicipalityPaths(result.stateDeputyID, result.slugs)
   }
   return result
 }
@@ -295,7 +429,7 @@ export const setStateDeputyMunicipalitiesBatch = async (
  * and assigns it to the município in the SAME transaction: if the assign
  * fails (out-of-scope município, cap), the create rolls back with it — no
  * orphan, same contract as `createMunicipalityAdvisorRecord` (B154). The
- * unique `name`/`slug` violation is mapped to the safe conflict message; the
+ * unique `slug` violation is mapped to the safe conflict message; the
  * município write re-checks `canUpdateMunicipality` through the same
  * `user`-threaded read as the B37 batch.
  */
@@ -317,19 +451,12 @@ export const createMunicipalityStateDeputyRecord = async (
 
       let created
       try {
-        created = await payload.create({
-          collection: 'stateDeputy',
-          data: hookFilledCreateData<'stateDeputy'>({ name, ...(party ? { party } : {}) }),
-          depth: 0,
-          user: currentActor,
-          overrideAccess: false,
-          req,
-        })
+        created = await createStateDeputyWithContact(payload, currentActor, { name, party }, req)
       } catch (error) {
         // Same translation as the shared owner (`runStaffEntityMutation`): the
         // pattern covers the insert race, `ValidationError` covers Payload's
         // pre-insert unique check — in this create path the only validation
-        // left after zod IS the unique name/slug check.
+        // left after zod IS the unique slug check.
         const conflict = mapStaffEntityConflict(error, stateDeputyPolicy)
         if (conflict) throw conflict
         throw error
@@ -367,7 +494,7 @@ export const createMunicipalityStateDeputyRecord = async (
       return {
         stateDeputy: {
           id: created.id,
-          name: created.name,
+          name,
           slug: created.slug,
           party: created.party ?? null,
         },
@@ -382,7 +509,7 @@ export const createMunicipalityStateDeputy = async (input: MunicipalityStateDepu
   const { payload, actor } = await getCampaignActionContext()
   const result = await createMunicipalityStateDeputyRecord(payload, actor, input)
   if (result.municipalitySlug) {
-    revalidateStateDeputyMunicipalityPaths(result.stateDeputy.slug, [result.municipalitySlug])
+    revalidateStateDeputyMunicipalityPaths(result.stateDeputy.id, [result.municipalitySlug])
   }
   return result
 }

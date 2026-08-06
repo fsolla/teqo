@@ -69,7 +69,7 @@ describe('MunicipalityStateDeputyRelationCell shared editor (B159)', () => {
       screen.getByRole('button', { name: 'Editar dobradinhas em Seabra — Beltrana (PSB)' }),
     ).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Beltrana (PSB)' }).getAttribute('href')).toBe(
-      '/campanha/dobradinhas/beltrana',
+      '/campanha/dobradinhas/7',
     )
   })
 })

@@ -12,7 +12,7 @@ import {
 import { parseStateDeputyNameParty } from '@/lib/stateDeputyNameParty'
 
 export const stateDeputyCreateSchema = z.object({
-  name: z.string().trim().min(2).max(160),
+  name: z.string().trim().min(2).max(120),
   party: trimmedOptionalText(32),
   notes: trimmedOptionalText(4000),
 })
@@ -22,6 +22,14 @@ export const stateDeputyUpdateSchema = z.object({
   party: trimmedNullableText(32),
   notes: trimmedNullableText(4000),
 })
+
+export const stateDeputyPartyUpdateSchema = z.object({
+  id: positiveRelationshipId,
+  party: trimmedNullableText(32),
+})
+
+export const STATE_DEPUTY_INVALID_CONTACT_MESSAGE = 'Contato da dobradinha inválido.'
+export const STATE_DEPUTY_INVALID_FIELD_MESSAGE = 'Campo de dobradinha inválido.'
 
 /**
  * Refused staff-only write on any dobradinha — thrown by the create/update
@@ -81,8 +89,8 @@ export const municipalityStateDeputyCreateSchema = z
     const { name, party } = parseStateDeputyNameParty(input.rawName)
     return { municipalityId: input.municipalityId, name, party }
   })
-  .refine((value) => value.name.length >= 2 && value.name.length <= 160, {
-    message: 'O nome precisa ter entre 2 e 160 caracteres.',
+  .refine((value) => value.name.length >= 2 && value.name.length <= 120, {
+    message: 'O nome precisa ter entre 2 e 120 caracteres.',
   })
   .refine((value) => (value.party ?? '').length <= 32, {
     message: 'O partido pode ter no máximo 32 caracteres.',
@@ -119,6 +127,7 @@ export const STATE_DEPUTY_ADVISOR_SAFE_MESSAGES = [
 
 export type StateDeputyCreateInput = z.input<typeof stateDeputyCreateSchema>
 export type StateDeputyUpdateInput = z.input<typeof stateDeputyUpdateSchema>
+export type StateDeputyPartyUpdateInput = z.input<typeof stateDeputyPartyUpdateSchema>
 export type StateDeputyMunicipalitiesBatchInput = z.input<
   typeof stateDeputyMunicipalitiesBatchSchema
 >

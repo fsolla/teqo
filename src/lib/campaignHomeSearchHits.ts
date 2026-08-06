@@ -35,6 +35,7 @@ export type HomeSearchLeadershipHit = {
 }
 
 export type HomeSearchStateDeputyHit = {
+  id: number
   slug: string
   name: string
   party: string | null

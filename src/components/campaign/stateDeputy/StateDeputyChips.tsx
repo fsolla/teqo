@@ -14,7 +14,7 @@ export const StateDeputyChips = ({ deputies }: StateDeputyChipsProps) => {
     <div className="flex flex-wrap gap-1">
       {deputies.map((deputy) => (
         <Badge key={deputy.id} variant="outline" asChild>
-          <Link href={`/campanha/dobradinhas/${deputy.slug}`}>
+          <Link href={`/campanha/dobradinhas/${deputy.id}`}>
             {deputy.name}
             {deputy.party ? ` (${deputy.party})` : ''}
           </Link>

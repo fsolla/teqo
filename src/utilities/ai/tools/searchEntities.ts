@@ -2,6 +2,7 @@ import { tool } from 'ai'
 import { z } from 'zod'
 
 import type { AIToolContext } from '@/lib/ai/types'
+import { populatedContactName } from '@/lib/relationship'
 
 type SearchHit = {
   collection: string
@@ -102,22 +103,24 @@ export const searchEntities = (ctx: AIToolContext) =>
       const depResult = await payload.find({
         collection: 'stateDeputy',
         where: {
-          name: { like: query },
+          'contact.name': { like: query },
         },
-        depth: 0,
+        depth: 1,
         limit: 5,
         pagination: false,
-        select: { name: true, party: true },
-        sort: 'name',
+        select: { contact: true, party: true },
+        sort: 'contact.name',
         overrideAccess: false,
         user: ctx.user,
       })
 
       for (const doc of depResult.docs as Array<Record<string, unknown>>) {
+        const name = populatedContactName(doc.contact)
         hits.push({
           collection: 'stateDeputy',
-          label: doc.name as string,
+          label: name,
           description: `Dobradinha — ${(doc.party as string) ?? 'sem partido'}`,
+          href: `/campanha/dobradinhas/${doc.id as number}`,
         })
       }
 
