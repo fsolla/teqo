@@ -3,7 +3,7 @@ import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures
 test.describe('Atividades — registro-fundação', () => {
   test.setTimeout(90_000)
 
-  test('registra origem, cria demandas vinculadas e exibe a explicação dos sinais', async ({
+  test('cria compromisso com demandas vinculadas e exibe os sinais no município', async ({
     campaign,
     page,
   }) => {
@@ -21,8 +21,7 @@ test.describe('Atividades — registro-fundação', () => {
     await page.goto(`${campaign.baseURL}/campanha/atividades/nova`)
 
     await page.getByLabel('Título *').fill(activityTitle)
-    await page.getByLabel('Tipo de atividade *').selectOption('caminhada')
-    await page.getByLabel('Origem da atividade').selectOption('obrigacao_politica')
+    await page.getByLabel('Início *').fill('2026-08-15T10:00')
     await page.getByLabel('Município *').selectOption(String(municipality.id))
 
     await page.getByRole('button', { name: 'Adicionar demanda' }).click()
@@ -37,7 +36,6 @@ test.describe('Atividades — registro-fundação', () => {
     await expect(campaignPageChrome(page, activityTitle)).toBeVisible({
       timeout: 15_000,
     })
-    await expect(page.getByText('Obrigação política', { exact: true })).toBeVisible()
     await expect(page.getByRole('link', { name: transportDemand })).toBeVisible()
     await expect(page.getByRole('link', { name: materialDemand })).toBeVisible()
 

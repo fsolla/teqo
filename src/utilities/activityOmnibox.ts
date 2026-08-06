@@ -9,7 +9,7 @@ import {
   type CampaignListOmniboxSuggestion,
 } from '@/lib/campaignListOmnibox'
 import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/contactSearchQuery'
-import { activityKindLabels, activityStatusLabels } from '@/lib/schemas/activity'
+import { activityStatusLabels } from '@/lib/schemas/activity'
 import {
   activityTabLabels,
   activityTabs,
@@ -38,14 +38,14 @@ const parseStateFromParams = (
 
 const setExclusiveField = (
   state: ActivityListState,
-  field: 'kind' | 'status' | 'municipality',
+  field: 'tag' | 'status' | 'municipality',
   value: string | undefined,
 ): ActivityListState => {
   const params = buildActivityListSearchParams(withPageReset(state))
   const raw: Record<string, string | string[] | undefined> = Object.fromEntries(params.entries())
 
-  if (field === 'kind') {
-    raw.kind = value
+  if (field === 'tag') {
+    raw.tag = value
   } else if (field === 'status') {
     raw.status = value
   } else {
@@ -59,7 +59,6 @@ const tabKeywords: Record<ActivityTab, string[]> = {
   proximos: ['proximos', 'próximos', 'proximo', 'próximo'],
   todos: ['todos', 'todas'],
   realizados: ['realizados', 'realizado'],
-  rascunhos: ['rascunhos', 'rascunho'],
 }
 
 const setTab = (state: ActivityListState, tab: ActivityTab): ActivityListState => {
@@ -91,10 +90,10 @@ export const buildActivityOmniboxChips = ({
     })
   }
 
-  if (state.kind) {
+  if (state.tag) {
     chips.push({
-      id: `kind:${state.kind}`,
-      label: chipLabel('Tipo', activityKindLabels[state.kind]),
+      id: `tag:${state.tag}`,
+      label: chipLabel('Tag', state.tag),
     })
   }
 
@@ -121,9 +120,11 @@ export const buildActivityOmniboxChips = ({
 export const buildActivityOmniboxSuggestionSeeds = ({
   tab,
   municipalityOptions,
+  knownTags,
 }: {
   tab: ActivityTab
   municipalityOptions: readonly ActivityFilterOption[]
+  knownTags?: readonly string[]
 }) => {
   const seeds = []
 
@@ -141,14 +142,14 @@ export const buildActivityOmniboxSuggestionSeeds = ({
     )
   }
 
-  for (const [value, label] of Object.entries(activityKindLabels)) {
+  for (const tag of knownTags ?? []) {
     seeds.push(
       createOmniboxSuggestionSeed(
         {
-          id: `kind:${value}`,
-          group: 'Tipo',
-          label,
-          keywords: ['tipo', 'atividade'],
+          id: `tag:${tag}`,
+          group: 'Tag',
+          label: tag,
+          keywords: ['tag', 'tipo'],
         },
         { emptyQueryVisible: true },
       ),
@@ -210,12 +211,12 @@ export const applyActivityOmniboxSuggestion = ({
     return { kind: 'url', state: next }
   }
 
-  if (suggestionId.startsWith('kind:')) {
-    const value = suggestionId.slice(5)
+  if (suggestionId.startsWith('tag:')) {
+    const value = suggestionId.slice(4)
     const next =
-      state.kind === value
-        ? setExclusiveField(state, 'kind', undefined)
-        : setExclusiveField(state, 'kind', value)
+      state.tag === value
+        ? setExclusiveField(state, 'tag', undefined)
+        : setExclusiveField(state, 'tag', value)
     return { kind: 'url', state: next }
   }
 
@@ -253,8 +254,8 @@ export const removeActivityOmniboxChip = ({
     return { kind: 'url', state: setTab(state, 'proximos') }
   }
 
-  if (chipId.startsWith('kind:')) {
-    return { kind: 'url', state: setExclusiveField(state, 'kind', undefined) }
+  if (chipId.startsWith('tag:')) {
+    return { kind: 'url', state: setExclusiveField(state, 'tag', undefined) }
   }
 
   if (chipId.startsWith('status:')) {

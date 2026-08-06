@@ -24,7 +24,7 @@ import { buildTourComposerHref, parseTourComposerParams } from '@/utilities/visi
 import {
   composeTourSuggestion,
   resolveTourStopRole,
-  tourStopRoleActivityKind,
+  tourStopRoleActivityTags,
   tourSuggestionSlugs,
   type VisitCandidateViewModel,
 } from '@/utilities/visit/visitPlannerViews'
@@ -52,7 +52,7 @@ const toStopOption = (
     name: candidate.name,
     role,
     suggested,
-    kind: tourStopRoleActivityKind[role],
+    tags: tourStopRoleActivityTags[role],
     metCount: candidate.eligibility.metCount,
     conditionCount: candidate.eligibility.conditions.length,
     unmetConditionLabels: candidate.eligibility.conditions

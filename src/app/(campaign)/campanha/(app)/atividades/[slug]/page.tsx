@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
-import { activityKindLabels } from '@/lib/schemas/activity'
+
 import { getActivityDetailPageData } from '@/utilities/activityDetailPageData'
 import {
   getActivityDetailTabRedirect,
@@ -109,7 +109,11 @@ export default async function ActivityDetailPage({
         <div className="flex flex-wrap items-center gap-2">
           <ActivityStatusBadge status={view.status} />
           {view.deputyPresent ? <Badge>Deputado presente</Badge> : null}
-          <Badge variant="secondary">{activityKindLabels[view.kind]}</Badge>
+          {view.tags.map((tag) => (
+            <Badge key={tag} variant="secondary">
+              {tag}
+            </Badge>
+          ))}
           <span className="text-muted-foreground">
             {view.startAt ? formatBahiaDateTimeLabel(view.startAt) : 'Data a definir'}
           </span>

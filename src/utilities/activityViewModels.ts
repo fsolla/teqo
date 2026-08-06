@@ -1,6 +1,5 @@
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import { isPopulatedRelationship, relationshipId } from '@/lib/relationship'
-import type { ActivityOrigin } from '@/lib/schemas/activity'
 import type { Activity, CampaignUser, Contact, Municipality, Organization } from '@/payload-types'
 import type { ActivityDetailTab } from '@/utilities/activityDetailTabUi'
 
@@ -41,7 +40,7 @@ const formatActivityLocationLabel = ({
 export const activityListSelect = {
   title: true,
   slug: true,
-  kind: true,
+  tags: true,
   status: true,
   deputyPresent: true,
   startAt: true,
@@ -57,7 +56,7 @@ export type ActivityListViewModel = {
   id: number
   title: string
   slug: string
-  kind: Activity['kind']
+  tags: string[]
   status: Activity['status']
   deputyPresent: boolean
   startAt: string | null
@@ -80,7 +79,7 @@ export const toActivityListViewModel = (activity: Activity): ActivityListViewMod
     id: activity.id,
     title: activity.title,
     slug: activity.slug,
-    kind: activity.kind,
+    tags: activity.tags ?? [],
     status: activity.status,
     deputyPresent: Boolean(activity.deputyPresent),
     startAt: activity.startAt ?? null,
@@ -99,14 +98,12 @@ export const toActivityListViewModel = (activity: Activity): ActivityListViewMod
 export const activityFormSelect = {
   title: true,
   slug: true,
-  kind: true,
-  origin: true,
+  tags: true,
   status: true,
   description: true,
   deputyPresent: true,
   startAt: true,
   endAt: true,
-  deadline: true,
   municipality: true,
   locality: true,
   organizations: true,
@@ -128,14 +125,12 @@ export type ActivityFormViewModel = {
   id: number
   title: string
   slug: string
-  kind: Activity['kind']
-  origin: ActivityOrigin
+  tags: string[]
   status: Activity['status']
   description: string | null
   deputyPresent: boolean
   startAt: string | null
   endAt: string | null
-  deadline: string | null
   municipalityId: number | null
   locality: string | null
   organizationIDs: number[]
@@ -152,14 +147,12 @@ export const toActivityFormViewModel = (activity: Activity): ActivityFormViewMod
   id: activity.id,
   title: activity.title,
   slug: activity.slug,
-  kind: activity.kind,
-  origin: activity.origin ?? 'dado',
+  tags: activity.tags ?? [],
   status: activity.status,
   description: activity.description ?? null,
   deputyPresent: Boolean(activity.deputyPresent),
   startAt: activity.startAt ?? null,
   endAt: activity.endAt ?? null,
-  deadline: activity.deadline ?? null,
   municipalityId: relationshipId(activity.municipality),
   locality: activity.locality ?? null,
   organizationIDs: relationshipIds(activity.organizations),
@@ -201,14 +194,12 @@ export const toActivityFormViewModel = (activity: Activity): ActivityFormViewMod
 const activityDetailContextSelect = {
   title: true,
   slug: true,
-  kind: true,
-  origin: true,
+  tags: true,
   status: true,
   description: true,
   deputyPresent: true,
   startAt: true,
   endAt: true,
-  deadline: true,
   municipality: true,
   locality: true,
   organizations: true,
@@ -269,14 +260,12 @@ export type ActivityDetailViewModel = {
   id: number
   title: string
   slug: string
-  kind: Activity['kind']
-  origin: ActivityOrigin
+  tags: string[]
   status: Activity['status']
   description: string | null
   deputyPresent: boolean
   startAt: string | null
   endAt: string | null
-  deadline: string | null
   municipality: ActivityMunicipalitySummary | null
   locality: string | null
   locationLabel: string
@@ -340,14 +329,12 @@ export const toActivityDetailViewModel = (
     id: activity.id,
     title: activity.title,
     slug: activity.slug,
-    kind: activity.kind,
-    origin: activity.origin ?? 'dado',
+    tags: activity.tags ?? [],
     status: activity.status,
     description: activity.description ?? null,
     deputyPresent: Boolean(activity.deputyPresent),
     startAt: activity.startAt ?? null,
     endAt: activity.endAt ?? null,
-    deadline: activity.deadline ?? null,
     municipality,
     locality: activity.locality ?? null,
     locationLabel: formatActivityLocationLabel({

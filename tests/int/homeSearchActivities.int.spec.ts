@@ -20,8 +20,8 @@ const campaignFixtures = installCampaignFixtures({
 
 const validActivityInput = (municipalityId: number, title: string) => ({
   title,
-  kind: 'caminhada' as const,
-  status: 'planejado' as const,
+  tags: ['Caminhada'],
+  status: 'confirmado' as const,
   startAt: new Date(Date.now() + 86_400_000).toISOString(),
   municipality: municipalityId,
   locality: 'Centro',
@@ -113,16 +113,25 @@ describe('searchHomeActivities (B51)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
     const title = fixtures.value('Rascunho sem data')
-    const activity = await createActivityRecord(payload, coordinator, {
-      title,
-      kind: 'caminhada',
-      status: 'rascunho',
-      municipality: municipality.id,
-    })
-    fixtures.own('activity', activity.id)
+    // Intentionally omits startAt (tour draft bypass) — the hook allows this
+    // via isTourDraft context, but the Payload type requires it.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const activity = (await (payload.create as any)({
+      collection: 'activity',
+      data: {
+        title,
+        tags: ['Caminhada'],
+        municipality: municipality.id,
+        createdBy: coordinator.id,
+      },
+      overrideAccess: true,
+      context: { isTourDraft: true },
+      draft: false,
+    })) as { id: number }
+    fixtures.own('activity', activity.id as number)
 
     const result = await searchHomeActivities(payload, coordinator, 'Rascunho')
-    const hit = result.find((row) => row.id === activity.id)
+    const hit = result.find((row) => row.id === (activity.id as number))
     expect(hit?.secondary).toContain('Data a definir')
     expect(hit?.secondary).toContain(municipality.name)
   })

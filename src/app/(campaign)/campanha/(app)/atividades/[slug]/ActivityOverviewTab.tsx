@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
-import { activityOriginLabels } from '@/lib/schemas/activity'
 import { campaignDemandKindLabels, campaignDemandStatusLabels } from '@/lib/schemas/campaignDemand'
 import type { getActivityDetailPageData } from '@/utilities/activityDetailPageData'
 
@@ -73,16 +72,20 @@ export const ActivityOverviewTab = ({
               <dd>{view.endAt ? formatBahiaDateTimeLabel(view.endAt) : '—'}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Prazo de conclusão</dt>
-              <dd>{view.deadline ? formatBahiaDateTimeLabel(view.deadline) : '—'}</dd>
-            </div>
-            <div>
               <dt className="text-muted-foreground">Responsável</dt>
               <dd>{view.responsibleName ?? 'Não definido'}</dd>
             </div>
-            <div>
-              <dt className="text-muted-foreground">Origem da atividade</dt>
-              <dd>{activityOriginLabels[view.origin]}</dd>
+            <div className="sm:col-span-2">
+              <dt className="text-muted-foreground">Tags</dt>
+              <dd className="flex flex-wrap gap-1 pt-1">
+                {view.tags.length > 0
+                  ? view.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary">
+                        {tag}
+                      </Badge>
+                    ))
+                  : '—'}
+              </dd>
             </div>
           </dl>
         </CardContent>

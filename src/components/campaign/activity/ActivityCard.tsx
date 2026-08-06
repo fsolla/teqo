@@ -4,14 +4,17 @@ import Link from 'next/link'
 import { ActivityStatusBadge } from '@/components/campaign/activity/ActivityStatusBadge'
 import { Badge } from '@/components/ui/Badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { activityKindLabels } from '@/lib/schemas/activity'
 import { formatActivityWhenLabel, type ActivityListViewModel } from '@/utilities/activityViewModels'
 
 export const ActivityCard = ({ activity }: { activity: ActivityListViewModel }) => (
   <Card>
     <CardHeader>
       <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="secondary">{activityKindLabels[activity.kind]}</Badge>
+        {activity.tags.map((tag) => (
+          <Badge key={tag} variant="secondary">
+            {tag}
+          </Badge>
+        ))}
         <ActivityStatusBadge status={activity.status} />
         {activity.deputyPresent ? <Badge>Deputado presente</Badge> : null}
       </div>

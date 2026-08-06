@@ -38,8 +38,8 @@ const campaignFixtures = installCampaignFixtures({
 
 const validActivityInput = (municipalityId: number) => ({
   title: campaignFixtures().value('Caminhada Centro'),
-  kind: 'caminhada' as const,
-  status: 'planejado' as const,
+  tags: ['Caminhada'],
+  status: 'confirmado' as const,
   startAt: new Date(Date.now() + 86_400_000).toISOString(),
   municipality: municipalityId,
   locality: 'Centro',
@@ -50,23 +50,16 @@ describe('activity domain', () => {
     payload = await getPayload({ config: await config })
   })
 
-  it('requires startAt outside rascunho and allows drafts without it', () => {
+  it('requires startAt on create and update', () => {
+    // Create schema only accepts 'confirmado' and always requires startAt.
     expect(
       activityCreateSchema.safeParse({
         ...validActivityInput(1),
-        status: 'rascunho',
-        startAt: undefined,
-      }).success,
-    ).toBe(true)
-
-    expect(
-      activityCreateSchema.safeParse({
-        ...validActivityInput(1),
-        status: 'planejado',
         startAt: undefined,
       }).success,
     ).toBe(false)
 
+    // Update schema also requires startAt.
     expect(
       activityUpdateSchema.safeParse({
         id: 1,
@@ -79,38 +72,16 @@ describe('activity domain', () => {
   it('requires a municipality on create', () => {
     const result = activityCreateSchema.safeParse({
       title: campaignFixtures().value('Atividade sem município'),
-      kind: 'caminhada',
-      status: 'rascunho',
+      tags: ['Caminhada'],
+      status: 'confirmado',
     })
     expect(result.success).toBe(false)
-  })
-
-  it('keeps the recorded origin of a new activity', () => {
-    const parsed = activityCreateSchema.parse({
-      ...validActivityInput(1),
-      origin: 'pedido_broker',
-    })
-
-    expect(parsed.origin).toBe('pedido_broker')
-  })
-
-  it('parses the origin selected in the activity form', () => {
-    const formData = new FormData()
-    formData.set('title', 'Caminhada no centro')
-    formData.set('kind', 'caminhada')
-    formData.set('status', 'rascunho')
-    formData.set('municipality', '1')
-    formData.set('origin', 'obrigacao_politica')
-    formData.set('tasksJson', '[]')
-
-    expect(parseActivityCreateFormData(formData).origin).toBe('obrigacao_politica')
   })
 
   it('parses several demand drafts from the activity form', () => {
     const formData = new FormData()
     formData.set('title', 'Caminhada no centro')
-    formData.set('kind', 'caminhada')
-    formData.set('status', 'rascunho')
+    formData.set('status', 'cancelado')
     formData.set('municipality', '1')
     formData.set('tasksJson', '[]')
     formData.set(
@@ -138,7 +109,6 @@ describe('activity domain', () => {
       {
         ...validActivityInput(municipality.id),
         title: fixtures.value('Atividade com demandas'),
-        origin: 'dado',
       },
       [
         { title: fixtures.value('Panfletos'), kind: 'material' },
@@ -359,12 +329,12 @@ describe('activity domain', () => {
         data: stub<ActivityCreateData>({
           ...validActivityInput(municipality.id),
           title: fixtures.value('Atividade sem data'),
-          startAt: null,
+          startAt: undefined,
           createdBy: coordinator.id,
         }),
         overrideAccess: true,
       }),
-    ).rejects.toThrow('Informe a data e horário de início ao planejar ou confirmar a atividade.')
+    ).rejects.toThrow('Informe a data e horário de início do compromisso.')
 
     const start = new Date(Date.now() + 86_400_000)
     await expect(
@@ -440,8 +410,8 @@ describe('tour composer (E13)', () => {
       parseTourDraftFormData(
         tourFormData(
           [
-            { municipality: 7, kind: 'comicio', origin: 'dado' },
-            { municipality: 9, kind: 'reuniao_apoio', origin: 'pedido_broker' },
+            { municipality: 7, tags: ['Comício'] },
+            { municipality: 9, tags: ['Reunião de Apoio'] },
           ],
           { note: 'Falar com o vereador antes.' },
         ),
@@ -450,8 +420,8 @@ describe('tour composer (E13)', () => {
       tourName: 'Giro Sisal 27/07',
       note: 'Falar com o vereador antes.',
       stops: [
-        { municipality: 7, kind: 'comicio', origin: 'dado' },
-        { municipality: 9, kind: 'reuniao_apoio', origin: 'pedido_broker' },
+        { municipality: 7, tags: ['Comício'] },
+        { municipality: 9, tags: ['Reunião de Apoio'] },
       ],
     })
   })
@@ -459,19 +429,11 @@ describe('tour composer (E13)', () => {
   it('refuses a composition it cannot trust', () => {
     expect(() => parseTourDraftFormData(tourFormData([]))).toThrow(/ao menos uma parada/i)
     expect(() =>
-      parseTourDraftFormData(tourFormData([{ municipality: 7, kind: 'visita', origin: 'dado' }])),
-    ).toThrow(/Paradas do giro inválidas/i)
-    expect(() =>
-      parseTourDraftFormData(tourFormData([{ municipality: 0, kind: 'comicio', origin: 'dado' }])),
+      parseTourDraftFormData(tourFormData([{ municipality: 0, tags: ['Comício'] }])),
     ).toThrow(/Paradas do giro inválidas/i)
     expect(() =>
       parseTourDraftFormData(
-        tourFormData([{ municipality: 7, kind: 'comicio', origin: 'inventada' }]),
-      ),
-    ).toThrow(/Paradas do giro inválidas/i)
-    expect(() =>
-      parseTourDraftFormData(
-        tourFormData([{ municipality: 7, kind: 'comicio', origin: 'dado' }], {
+        tourFormData([{ municipality: 7, tags: ['Comício'] }], {
           tourName: 'G'.repeat(120),
         }),
       ),
@@ -491,8 +453,8 @@ describe('tour composer (E13)', () => {
       tourName,
       note: 'Falar com o vereador antes.',
       stops: [
-        { municipality: anchor.id, kind: 'comicio', origin: 'dado' },
-        { municipality: satellite.id, kind: 'reuniao_apoio', origin: 'dado' },
+        { municipality: anchor.id, tags: ['Comício'] },
+        { municipality: satellite.id, tags: ['Reunião de Apoio'] },
       ],
     })
     created.forEach((activity) => fixtures.own('activity', activity.id))
@@ -509,7 +471,7 @@ describe('tour composer (E13)', () => {
     ).toBe(true)
     // Drafts without a date, flagged as the candidate's own agenda: that flag is
     // what makes a giro derivable without a `tour` entity.
-    expect(created.every((activity) => activity.status === 'rascunho')).toBe(true)
+    expect(created.every((activity) => activity.status === 'confirmado')).toBe(true)
     expect(created.every((activity) => activity.deputyPresent === true)).toBe(true)
     expect(created.every((activity) => activity.startAt === null)).toBe(true)
   })
@@ -529,8 +491,8 @@ describe('tour composer (E13)', () => {
         tourName,
         note: undefined,
         stops: [
-          { municipality: inPortfolio.id, kind: 'comicio', origin: 'dado' },
-          { municipality: outOfPortfolio.id, kind: 'reuniao_apoio', origin: 'dado' },
+          { municipality: inPortfolio.id, tags: ['Comício'] },
+          { municipality: outOfPortfolio.id, tags: ['Reunião de Apoio'] },
         ],
       }),
     ).rejects.toThrow(/fora do seu escopo|saiu do seu escopo/i)
@@ -557,8 +519,7 @@ describe('tour composer (E13)', () => {
         note: undefined,
         stops: Array.from({ length: 9 }, () => ({
           municipality: municipality.id,
-          kind: 'reuniao_apoio' as const,
-          origin: 'dado' as const,
+          tags: ['Reunião de Apoio'] as const,
         })),
       }),
     ).rejects.toThrow(/no máximo 8 paradas/i)

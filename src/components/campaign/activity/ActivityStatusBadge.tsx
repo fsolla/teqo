@@ -5,8 +5,6 @@ import type { ActivityStatus } from '@/utilities/activityUi'
 type BadgeVariant = NonNullable<Parameters<typeof badgeVariants>[0]>['variant']
 
 const statusVariant: Record<ActivityStatus, BadgeVariant> = {
-  rascunho: 'outline',
-  planejado: 'secondary',
   confirmado: 'default',
   realizado: 'estimate-confirmed',
   cancelado: 'destructive',

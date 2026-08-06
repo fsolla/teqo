@@ -16,7 +16,7 @@ import {
   type ActivityDemandDraft,
   type ActivityUpdateInput,
 } from '@/lib/schemas/activity'
-import type { CampaignUser } from '@/payload-types'
+import type { Activity, CampaignUser } from '@/payload-types'
 import type { ParsedTourDraftFormData } from '@/utilities/activityFormData'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
@@ -40,7 +40,11 @@ export const createActivityRecord = async (
   input: ActivityCreateInput,
   demandDrafts: ActivityDemandDraft[] = [],
 ) => {
-  const data = activityCreateSchema.parse(input)
+  const raw = activityCreateSchema.parse(input)
+  // Payload date fields accept string | undefined, not null. Strip nulls.
+  const data = Object.fromEntries(
+    Object.entries(raw).filter(([, value]) => value !== null),
+  ) as Record<string, unknown>
   const demands = activityDemandDraftsSchema.parse(demandDrafts)
 
   return withPayloadTransaction(
@@ -61,7 +65,7 @@ export const createActivityRecord = async (
           collection: 'campaignDemand',
           data: hookFilledCreateData<'campaignDemand'>({
             ...demand,
-            municipality: data.municipality,
+            municipality: raw.municipality,
             activity: activity.id,
           }),
           depth: 0,
@@ -130,14 +134,18 @@ export const createTourDraftActivitiesRecord = async (
 
       const created = []
       for (const stop of stops) {
-        const data = activityCreateSchema.parse({
+        // Tour stops don't carry a startAt — the coordination sets it later.
+        // We bypass activityCreateSchema (which requires startAt) and build
+        // the create data directly; the beforeValidate hook allows this via
+        // the isTourDraft context flag.
+        const data = {
           ...stop,
           title: `${tourName} — ${nameByID.get(stop.municipality)}`,
-          status: 'rascunho',
-          // The whole point of the planner: these drafts are the candidate's agenda.
+          status: 'confirmado' as const,
           deputyPresent: true,
           ...(note ? { description: note } : {}),
-        })
+          tags: stop.tags ?? [],
+        }
 
         created.push(
           await payload.create({
@@ -146,6 +154,7 @@ export const createTourDraftActivitiesRecord = async (
             depth: 0,
             user: currentActor,
             overrideAccess: false,
+            context: { isTourDraft: true },
             req,
           }),
         )
@@ -163,7 +172,18 @@ const updateActivityRecord = async (
   input: ActivityUpdateInput,
   demandDrafts: ActivityDemandDraft[] = [],
 ) => {
-  const { id, ...data } = activityUpdateSchema.parse(input)
+  const { id, ...rawData } = activityUpdateSchema.parse(input)
+  // Payload date fields accept string | undefined, not null.
+  // Strip nulls only for required-ish fields; keep null for optional
+  // fields (endAt, responsible, leadership) so clearing them works.
+  const data = {
+    ...Object.fromEntries(
+      Object.entries(rawData).filter(([key, value]) => {
+        if (value === null && (key === 'startAt' || key === 'status')) return false
+        return true
+      }),
+    ),
+  } as Record<string, unknown>
   const demands = activityDemandDraftsSchema.parse(demandDrafts)
 
   return withPayloadTransaction(
@@ -171,7 +191,7 @@ const updateActivityRecord = async (
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
 
-      const activity = await payload.update({
+      const activity = (await payload.update({
         collection: 'activity',
         id,
         data,
@@ -179,7 +199,7 @@ const updateActivityRecord = async (
         user: currentActor,
         overrideAccess: false,
         req,
-      })
+      })) as unknown as Activity
 
       const municipality =
         typeof activity.municipality === 'number' ? activity.municipality : activity.municipality.id

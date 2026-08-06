@@ -1,7 +1,7 @@
 import type { Where } from 'payload'
 
 import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/contactSearchQuery'
-import { activityKinds, activityStatuses, type ActivityKind } from '@/lib/schemas/activity'
+import { activityStatuses, type ActivityStatus } from '@/lib/schemas/activity'
 import {
   buildListHref,
   firstValue,
@@ -13,38 +13,34 @@ import {
 
 export const activityPageSize = 25
 
-export const activityTabs = ['proximos', 'todos', 'realizados', 'rascunhos'] as const
+export const activityTabs = ['proximos', 'todos', 'realizados'] as const
 export type ActivityTab = (typeof activityTabs)[number]
 
-export type ActivityStatus = (typeof activityStatuses)[number]
+export { type ActivityStatus }
 
 export const activityTabLabels: Record<ActivityTab, string> = {
   proximos: 'Próximos',
   todos: 'Todos',
   realizados: 'Realizados',
-  rascunhos: 'Rascunhos',
 }
 
 export type ActivityListState = {
   page: number
   tab: ActivityTab
   q?: string
-  kind?: ActivityKind
+  tag?: string
   status?: ActivityStatus
   municipality?: number
 }
 
 type RawSearchParams = CampaignListRawSearchParams
 
-const activityListParamNames = ['q', 'tab', 'kind', 'status', 'municipality', 'page'] as const
+const activityListParamNames = ['q', 'tab', 'tag', 'status', 'municipality', 'page'] as const
 
 const activityListParamNameSet = new Set<string>(activityListParamNames)
 
 const isActivityTab = (value: string | undefined): value is ActivityTab =>
   activityTabs.includes(value as ActivityTab)
-
-const isActivityKind = (value: string | undefined): value is ActivityKind =>
-  activityKinds.includes(value as ActivityKind)
 
 const isActivityStatus = (value: string | undefined): value is ActivityStatus =>
   activityStatuses.includes(value as ActivityStatus)
@@ -60,8 +56,8 @@ export const parseActivityListParams = (params: RawSearchParams): ActivityListSt
   const q = isActivityListSearchReady(normalizedText(firstValue(params.q)))
   const rawTab = firstValue(params.tab)
   const tab = isActivityTab(rawTab) ? rawTab : 'proximos'
-  const rawKind = firstValue(params.kind)
-  const kind = isActivityKind(rawKind) ? rawKind : undefined
+  const rawTag = firstValue(params.tag)
+  const tag = rawTag?.trim() ? rawTag.trim() : undefined
   const rawStatus = tab === 'todos' ? firstValue(params.status) : undefined
   const status = isActivityStatus(rawStatus) ? rawStatus : undefined
   const municipality = strictDecimalInteger(firstValue(params.municipality))
@@ -70,7 +66,7 @@ export const parseActivityListParams = (params: RawSearchParams): ActivityListSt
     page: rawPage ?? 1,
     tab,
     ...(q ? { q } : {}),
-    ...(kind ? { kind } : {}),
+    ...(tag ? { tag } : {}),
     ...(status ? { status } : {}),
     ...(municipality ? { municipality } : {}),
   }
@@ -88,16 +84,14 @@ export const buildActivityListWhere = (state: ActivityListState, now: Date): Whe
     }
   }
 
-  if (state.kind) filters.push({ kind: { equals: state.kind } })
+  if (state.tag) filters.push({ tags: { contains: state.tag } })
   if (state.municipality) filters.push({ municipality: { equals: state.municipality } })
 
   if (state.tab === 'proximos') {
-    filters.push({ status: { in: ['planejado', 'confirmado'] } })
+    filters.push({ status: { equals: 'confirmado' } })
     filters.push({ startAt: { greater_than_equal: now.toISOString() } })
   } else if (state.tab === 'realizados') {
     filters.push({ status: { equals: 'realizado' } })
-  } else if (state.tab === 'rascunhos') {
-    filters.push({ status: { equals: 'rascunho' } })
   } else if (state.status) {
     filters.push({ status: { equals: state.status } })
   }
@@ -113,7 +107,7 @@ export const buildActivityListSearchParams = (
     page: String(page),
     q: state.q,
     tab: state.tab,
-    kind: state.kind,
+    tag: state.tag,
     status: state.status,
     municipality: state.municipality === undefined ? undefined : String(state.municipality),
   })
@@ -121,7 +115,7 @@ export const buildActivityListSearchParams = (
 
   if (canonicalState.q) params.set('q', canonicalState.q)
   if (canonicalState.tab !== 'proximos') params.set('tab', canonicalState.tab)
-  if (canonicalState.kind) params.set('kind', canonicalState.kind)
+  if (canonicalState.tag) params.set('tag', canonicalState.tag)
   if (canonicalState.status) params.set('status', canonicalState.status)
   if (canonicalState.municipality) params.set('municipality', String(canonicalState.municipality))
   if (canonicalState.page > 1) params.set('page', String(canonicalState.page))

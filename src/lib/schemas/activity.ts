@@ -22,59 +22,17 @@ export const ACTIVITY_RESULT_TOO_LONG_MESSAGE =
 export const ACTIVITY_RESULT_STAFF_MESSAGE =
   'Apenas a equipe da campanha pode registrar o resultado da atividade.'
 
-export const activityKinds = [
-  'caminhada',
-  'comicio',
-  'carreata',
-  'panfletagem',
-  'porta_a_porta',
-  'reuniao_apoio',
-  'lancamento',
-  'convencao',
-  'ato',
-  'entrevista',
-  'producao_conteudo',
-  'digital',
-  'outro',
-] as const
-export type ActivityKind = (typeof activityKinds)[number]
+/**
+ * C14 — tags are free-form labels the mesa invents (comício, imprensa, etc.).
+ * No rigid taxonomy; the filter is the value. Max 20 tags, 80 chars each.
+ */
+export const MAX_ACTIVITY_TAGS = 20
+export const MAX_ACTIVITY_TAG_LENGTH = 80
 
-export const activityStatuses = [
-  'rascunho',
-  'planejado',
-  'confirmado',
-  'realizado',
-  'cancelado',
-] as const
+export const activityStatuses = ['confirmado', 'realizado', 'cancelado'] as const
+export type ActivityStatus = (typeof activityStatuses)[number]
 
-export const activityOrigins = ['dado', 'pedido_broker', 'obrigacao_politica'] as const
-export type ActivityOrigin = (typeof activityOrigins)[number]
-
-export const activityOriginLabels: Record<ActivityOrigin, string> = {
-  dado: 'Baseado em dado',
-  pedido_broker: 'Pedido de broker',
-  obrigacao_politica: 'Obrigação política',
-}
-
-export const activityKindLabels: Record<ActivityKind, string> = {
-  caminhada: 'Caminhada',
-  comicio: 'Comício',
-  carreata: 'Carreata',
-  panfletagem: 'Panfletagem',
-  porta_a_porta: 'Porta a porta',
-  reuniao_apoio: 'Reunião de apoio',
-  lancamento: 'Lançamento',
-  convencao: 'Convenção',
-  ato: 'Ato',
-  entrevista: 'Entrevista',
-  producao_conteudo: 'Produção de conteúdo',
-  digital: 'Digital',
-  outro: 'Outro',
-}
-
-export const activityStatusLabels: Record<(typeof activityStatuses)[number], string> = {
-  rascunho: 'Rascunho',
-  planejado: 'Planejado',
+export const activityStatusLabels: Record<ActivityStatus, string> = {
   confirmado: 'Confirmado',
   realizado: 'Realizado',
   cancelado: 'Cancelado',
@@ -102,15 +60,18 @@ const taskSchema = z.object({
   done: z.boolean().optional(),
 })
 
+const activityTagsSchema = z
+  .array(z.string().trim().min(1).max(MAX_ACTIVITY_TAG_LENGTH))
+  .max(MAX_ACTIVITY_TAGS)
+
 const activityFieldsSchema = z.object({
   title: z.string().trim().min(2).max(160),
-  kind: z.enum(activityKinds),
+  tags: activityTagsSchema.optional(),
   status: z.enum(activityStatuses).optional(),
   description: trimmedOptionalText(4000),
   deputyPresent: z.boolean().optional(),
   startAt: z.string().datetime().optional().nullable(),
   endAt: z.string().datetime().optional().nullable(),
-  deadline: z.string().datetime().optional().nullable(),
   municipality: positiveRelationshipId,
   locality: trimmedOptionalText(160),
   organizations: z.array(positiveRelationshipId).max(MAX_ACTIVITY_ORGANIZATIONS).optional(),
@@ -118,23 +79,21 @@ const activityFieldsSchema = z.object({
   responsible: positiveRelationshipId.optional(),
   leadership: positiveRelationshipId.optional(),
   tasks: z.array(taskSchema).optional(),
-  origin: z.enum(activityOrigins).optional(),
 })
 
 const validateSchedule = (
   data: {
-    status?: (typeof activityStatuses)[number] | null
+    status?: ActivityStatus | null
     startAt?: string | null
     endAt?: string | null
   },
   context: z.RefinementCtx,
-  mode: 'create' | 'patch',
+  requireStart: boolean,
 ) => {
-  const status = data.status ?? (mode === 'create' ? 'rascunho' : undefined)
-  if (status && status !== 'rascunho' && !data.startAt) {
+  if (requireStart && !data.startAt) {
     context.addIssue({
       code: 'custom',
-      message: 'Informe a data e horário de início ao planejar ou confirmar a atividade.',
+      message: 'Informe a data e horário de início do compromisso.',
       path: ['startAt'],
     })
   }
@@ -154,16 +113,15 @@ const validateSchedule = (
 
 export const activityCreateSchema = activityFieldsSchema
   .extend({
-    status: z.enum(['rascunho', 'planejado']).default('rascunho'),
+    status: z.enum(['confirmado']).default('confirmado'),
   })
   .superRefine((data, context) => {
-    validateSchedule(data, context, 'create')
+    validateSchedule(data, context, true)
   })
   .transform((data) => ({
     ...data,
-    startAt: data.startAt ?? null,
-    endAt: data.endAt ?? null,
-    deadline: data.deadline ?? null,
+    endAt: data.endAt ?? undefined,
+    tags: data.tags ?? [],
   }))
 
 export const activityUpdateSchema = activityFieldsSchema
@@ -174,27 +132,24 @@ export const activityUpdateSchema = activityFieldsSchema
     description: trimmedNullableText(4000),
     startAt: z.string().datetime().nullable().optional(),
     endAt: z.string().datetime().nullable().optional(),
-    deadline: z.string().datetime().nullable().optional(),
     responsible: positiveRelationshipId.nullable().optional(),
     leadership: positiveRelationshipId.nullable().optional(),
     status: z.enum(activityStatuses).optional(),
   })
   .superRefine((data, context) => {
-    validateSchedule(data, context, 'patch')
+    validateSchedule(data, context, true)
   })
 
 export type ActivityCreateInput = z.input<typeof activityCreateSchema>
 export type ActivityUpdateInput = z.input<typeof activityUpdateSchema>
 
 /**
- * E13 — one stop of a giro, as the composer submits it: which município, what
- * happens there, where the decision came from. The title is deliberately NOT
- * part of it: it is composed on the server from the município's own name, so a
- * client cannot label a draft after a município it did not pick.
+ * E13 — one stop of a giro, as the composer submits it: which município and
+ * what tags the stop generates. The title is deliberately NOT part of it: it
+ * is composed on the server from the município's own name, so a client cannot
+ * label a draft after a município it did not pick.
  */
-const tourStopDraftSchema = activityFieldsSchema
-  .pick({ municipality: true, kind: true })
-  .extend({ origin: z.enum(activityOrigins) })
+const tourStopDraftSchema = activityFieldsSchema.pick({ municipality: true, tags: true })
 
 export const tourStopDraftsSchema = z.array(tourStopDraftSchema)
 

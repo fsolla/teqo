@@ -112,7 +112,7 @@ const ADVERSARY_SIGNAL_TYPES: MunicipalitySignalType[] = [
 ]
 
 /** Agenda legs: drafts are intentions and cancellations never happened. */
-const AGENDA_ACTIVITY_STATUSES = ['planejado', 'confirmado', 'realizado'] as const
+const AGENDA_ACTIVITY_STATUSES = ['confirmado', 'realizado'] as const
 
 const isoDaysAgo = (now: Date, days: number): string =>
   new Date(now.getTime() - days * DAY_MS).toISOString()
