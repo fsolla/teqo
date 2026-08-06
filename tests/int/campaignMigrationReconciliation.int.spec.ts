@@ -225,6 +225,37 @@ describe('campaign migration existing-schema reconciliation', () => {
     expect(contactCount.rows[0]?.count).toBe(2)
   })
 
+  it('rejects legacy names over the Contact limit before changing schema', async () => {
+    if (!database) throw new Error('Disposable database is not initialized.')
+    const migration = migrations.find(({ name }) => name === stateDeputyContactMigrationName)
+    if (!migration) throw new Error('StateDeputy Contact migration is not registered.')
+
+    await migration.down(stub<MigrateDownArgs>({ db: database }))
+    const legacyName = 'L'.repeat(121)
+    await database.execute(sql`
+      INSERT INTO "state_deputy" ("name", "slug")
+      VALUES (${legacyName}, 'legado-longo')
+    `)
+
+    await expect(migration.up(stub<MigrateUpArgs>({ db: database }))).rejects.toThrow()
+
+    const columns = await database.execute(sql`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'state_deputy'
+        AND column_name IN ('name', 'contact_id')
+      ORDER BY column_name
+    `)
+    expect(columns.rows).toEqual([{ column_name: 'name' }])
+    const contacts = await database.execute(sql`
+      SELECT count(*)::integer AS count
+      FROM "contact"
+      WHERE "name" = ${legacyName}
+    `)
+    expect(contacts.rows[0]?.count).toBe(0)
+  })
+
   it('keeps the required StateDeputy Contact relation from being nulled on delete', async () => {
     if (!database) throw new Error('Disposable database is not initialized.')
 

@@ -3,6 +3,34 @@ import { sql, type MigrateDownArgs, type MigrateUpArgs } from '@payloadcms/db-po
 export async function up({ db }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
     DO $$
+    DECLARE
+      has_legacy_name boolean;
+      has_long_name boolean;
+    BEGIN
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'state_deputy'
+          AND column_name = 'name'
+      ) INTO has_legacy_name;
+
+      IF has_legacy_name THEN
+        EXECUTE $check$
+          SELECT EXISTS (
+            SELECT 1
+            FROM "state_deputy"
+            WHERE char_length("name") > 120
+          )
+        $check$ INTO has_long_name;
+
+        IF has_long_name THEN
+          RAISE EXCEPTION 'Cannot migrate StateDeputy: a legacy name exceeds Contact''s 120-character limit';
+        END IF;
+      END IF;
+    END $$;
+
+    DO $$
     BEGIN
       IF NOT EXISTS (
         SELECT 1
