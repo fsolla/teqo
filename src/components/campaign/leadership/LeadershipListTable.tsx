@@ -353,6 +353,7 @@ export const LeadershipListTable = ({
         columnVisibility={columnVisibility}
         rows={rows}
         rowKey={(row) => row.id}
+        rowClassName="min-h-11"
         totalDocs={totalDocs}
         pageSize={pageSize}
         query={query}
