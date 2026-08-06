@@ -1,6 +1,6 @@
 # Editar nome, partido, e-mail e telefone na lista de dobradinhas
 
-Status: blocked (plano → main)
+Status: ready
 Atualizado em: 2026-08-06
 Issue: #391
 Priority: P1
