@@ -10,7 +10,7 @@ import { ACTIVITY_TOUR_COMPOSER_PATH } from '@/lib/campaignQuickActionPaths'
 import type { CampaignRole } from '@/lib/campaignRoles'
 import { isStaffCampaignRole, isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
 import { isMunicipalitySlug } from '@/lib/municipalityCatalog'
-import { activityKinds, activityStatuses, type ActivityKind } from '@/lib/schemas/activity'
+import { activityStatuses } from '@/lib/schemas/activity'
 import {
   campaignDemandKinds,
   campaignDemandStatuses,
@@ -166,7 +166,7 @@ export type CampaignNavigationLinkRequest =
       destination: 'activityList'
       tab?: ActivityTab
       q?: string
-      kind?: ActivityKind
+      tag?: string
       status?: (typeof activityStatuses)[number]
       municipality?: number
     })
@@ -481,7 +481,7 @@ const buildPathForRequest = (
     }
     case 'activityList': {
       const tab = request.tab && activityTabs.includes(request.tab) ? request.tab : undefined
-      const kind = request.kind && activityKinds.includes(request.kind) ? request.kind : undefined
+      const tag = request.tag?.trim() ? request.tag.trim() : undefined
       const status =
         request.status && activityStatuses.includes(request.status) ? request.status : undefined
       const municipality =
@@ -493,7 +493,7 @@ const buildPathForRequest = (
           page: 1,
           tab: tab ?? 'proximos',
           ...(request.q?.trim() ? { q: request.q.trim() } : {}),
-          ...(kind ? { kind } : {}),
+          ...(tag ? { tag } : {}),
           ...(status ? { status } : {}),
           ...(municipality ? { municipality } : {}),
         },

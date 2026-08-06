@@ -31,14 +31,9 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
 import { formatIsoAsBahiaDateTimeInput } from '@/lib/campaignTime'
 import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
-import {
-  activityKindLabels,
-  activityOriginLabels,
-  activityStatusLabels,
-} from '@/lib/schemas/activity'
+import { MAX_ACTIVITY_TAG_LENGTH, MAX_ACTIVITY_TAGS } from '@/lib/schemas/activity'
 import type { ActivityLeadershipOption } from '@/utilities/activityLeadershipOptions'
 import type { ActivityFormViewModel } from '@/utilities/activityViewModels'
 import { fieldError } from '@/utilities/campaignFormFields'
@@ -66,9 +61,91 @@ export type ActivityFormFieldsProps = {
   submittedTitle?: string
   searchContacts: (query: string) => Promise<ContactComboboxOption[]>
   searchLeaderships: (query: string) => Promise<ActivityLeadershipOption[]>
+  /** Tags already used across activities, for autocomplete. */
+  knownTags?: string[]
 }
 
-const editableStatuses = ['rascunho', 'planejado'] as const
+const TagInput = ({
+  initialTags = [],
+  knownTags = [],
+  error,
+}: {
+  initialTags?: string[]
+  knownTags?: string[]
+  error?: string
+}) => {
+  const [tags, setTags] = useState<string[]>(initialTags)
+  const [input, setInput] = useState('')
+
+  const datalistId = 'activity-tags-datalist'
+
+  const addTag = (raw: string) => {
+    const trimmed = raw.trim().slice(0, MAX_ACTIVITY_TAG_LENGTH)
+    if (!trimmed) return
+    if (tags.includes(trimmed)) return
+    if (tags.length >= MAX_ACTIVITY_TAGS) return
+    setTags((current) => [...current, trimmed])
+    setInput('')
+  }
+
+  const removeTag = (tag: string) => {
+    setTags((current) => current.filter((entry) => entry !== tag))
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {tags.map((tag) => (
+          <span
+            key={tag}
+            className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-xs"
+          >
+            {tag}
+            <button
+              type="button"
+              onClick={() => removeTag(tag)}
+              className="rounded-sm opacity-70 hover:opacity-100"
+              aria-label={`Remover tag ${tag}`}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        {tags.length < MAX_ACTIVITY_TAGS ? (
+          <Input
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ',') {
+                event.preventDefault()
+                addTag(input)
+              } else if (event.key === 'Backspace' && !input && tags.length > 0) {
+                setTags((current) => current.slice(0, -1))
+              }
+            }}
+            onBlur={() => addTag(input)}
+            placeholder={tags.length === 0 ? 'Ex.: comício, imprensa…' : 'Adicionar tag…'}
+            className="min-h-9 flex-1"
+            list={datalistId}
+            maxLength={MAX_ACTIVITY_TAG_LENGTH}
+          />
+        ) : null}
+        <datalist id={datalistId}>
+          {knownTags
+            .filter((tag) => !tags.includes(tag))
+            .map((tag) => (
+              <option key={tag} value={tag} />
+            ))}
+        </datalist>
+      </div>
+      <input type="hidden" name="tagsJson" value={JSON.stringify(tags)} />
+      <FieldDescription>
+        Classificação livre do compromisso. Digite e pressione Enter ou vírgula para adicionar.
+      </FieldDescription>
+      {error ? <FieldError>{error}</FieldError> : null}
+    </div>
+  )
+}
 
 const ActivityFormFields = ({
   municipalityOptions,
@@ -80,15 +157,9 @@ const ActivityFormFields = ({
   submittedTitle,
   searchContacts,
   searchLeaderships,
+  knownTags = [],
 }: ActivityFormFieldsProps) => {
   const errorFor = (name: string) => fieldError(fieldErrors, name)
-  const statusIsEditable =
-    !activity || editableStatuses.includes(activity.status as (typeof editableStatuses)[number])
-  const [status, setStatus] = useState<(typeof editableStatuses)[number]>(
-    activity && editableStatuses.includes(activity.status as (typeof editableStatuses)[number])
-      ? (activity.status as (typeof editableStatuses)[number])
-      : 'rascunho',
-  )
   const [responsible, setResponsible] = useState<ContactComboboxOption | null>(
     activity?.responsible
       ? {
@@ -104,11 +175,7 @@ const ActivityFormFields = ({
 
   return (
     <FieldGroup>
-      {statusIsEditable ? (
-        <input type="hidden" name="status" value={status} />
-      ) : (
-        <input type="hidden" name="status" value={activity?.status ?? 'rascunho'} />
-      )}
+      <input type="hidden" name="status" value="confirmado" />
 
       <Card>
         <CardHeader>
@@ -134,78 +201,16 @@ const ActivityFormFields = ({
                 <FieldError id="title-error">{errorFor('title')}</FieldError>
               ) : null}
             </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field data-invalid={Boolean(errorFor('kind'))}>
-                <FieldLabel htmlFor="kind">Tipo de atividade *</FieldLabel>
-                <NativeSelect
-                  id="kind"
-                  name="kind"
-                  defaultValue={activity?.kind}
-                  required
-                  aria-invalid={Boolean(errorFor('kind'))}
-                  aria-describedby={errorFor('kind') ? 'kind-error' : undefined}
-                  className="w-full **:data-[slot=native-select]:min-h-11"
-                >
-                  <NativeSelectOption value="">Selecione um tipo</NativeSelectOption>
-                  {Object.entries(activityKindLabels).map(([value, label]) => (
-                    <NativeSelectOption key={value} value={value}>
-                      {label}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
-                {errorFor('kind') ? (
-                  <FieldError id="kind-error">{errorFor('kind')}</FieldError>
-                ) : null}
-              </Field>
-              <Field>
-                <FieldLegend>Status *</FieldLegend>
-                {statusIsEditable ? (
-                  <>
-                    <ToggleGroup
-                      type="single"
-                      value={status}
-                      onValueChange={(value) => value && setStatus(value as typeof status)}
-                      variant="outline"
-                      className="flex w-full flex-wrap justify-start"
-                      aria-label="Status da atividade"
-                    >
-                      <ToggleGroupItem value="planejado">Planejado</ToggleGroupItem>
-                      <ToggleGroupItem value="rascunho">Rascunho</ToggleGroupItem>
-                    </ToggleGroup>
-                    <FieldDescription>
-                      Rascunhos não exigem data. Atividades planejadas exigem data e horário de
-                      início.
-                    </FieldDescription>
-                  </>
-                ) : (
-                  <FieldDescription>
-                    Status atual: {activity ? activityStatusLabels[activity.status] : ''}. Use as
-                    ações do detalhe para marcar como realizado ou cancelado.
-                  </FieldDescription>
-                )}
-              </Field>
-            </div>
-            <Field data-invalid={Boolean(errorFor('origin'))}>
-              <FieldLabel htmlFor="origin">Origem da atividade</FieldLabel>
-              <NativeSelect
-                id="origin"
-                name="origin"
-                defaultValue={activity?.origin ?? 'dado'}
-                className="w-full **:data-[slot=native-select]:min-h-11 sm:max-w-sm"
-                aria-invalid={Boolean(errorFor('origin'))}
-              >
-                {Object.entries(activityOriginLabels).map(([value, label]) => (
-                  <NativeSelectOption key={value} value={value}>
-                    {label}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-              <FieldDescription>
-                Registra se a atividade nasceu da análise de dados, de um pedido de articulação ou
-                de um compromisso político.
-              </FieldDescription>
-              {errorFor('origin') ? <FieldError>{errorFor('origin')}</FieldError> : null}
+
+            <Field data-invalid={Boolean(errorFor('tagsJson'))}>
+              <FieldLabel>Tags</FieldLabel>
+              <TagInput
+                initialTags={activity?.tags ?? []}
+                knownTags={knownTags}
+                error={errorFor('tagsJson')}
+              />
             </Field>
+
             <Field data-invalid={Boolean(errorFor('description'))}>
               <FieldLabel htmlFor="description">Descrição</FieldLabel>
               <Textarea
@@ -236,9 +241,9 @@ const ActivityFormFields = ({
           <CardTitle>Data e horário</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Field data-invalid={Boolean(errorFor('startAt'))}>
-              <FieldLabel htmlFor="startAt">Início {status !== 'rascunho' ? '*' : null}</FieldLabel>
+              <FieldLabel htmlFor="startAt">Início *</FieldLabel>
               <Input
                 id="startAt"
                 name="startAt"
@@ -246,7 +251,7 @@ const ActivityFormFields = ({
                 defaultValue={
                   activity?.startAt ? formatIsoAsBahiaDateTimeInput(activity.startAt) : ''
                 }
-                required={status !== 'rascunho'}
+                required
                 className="min-h-11"
                 aria-invalid={Boolean(errorFor('startAt'))}
                 aria-describedby={errorFor('startAt') ? 'startAt-error' : undefined}
@@ -268,23 +273,6 @@ const ActivityFormFields = ({
               />
               {errorFor('endAt') ? (
                 <FieldError id="endAt-error">{errorFor('endAt')}</FieldError>
-              ) : null}
-            </Field>
-            <Field data-invalid={Boolean(errorFor('deadline'))}>
-              <FieldLabel htmlFor="deadline">Prazo de conclusão</FieldLabel>
-              <Input
-                id="deadline"
-                name="deadline"
-                type="datetime-local"
-                defaultValue={
-                  activity?.deadline ? formatIsoAsBahiaDateTimeInput(activity.deadline) : ''
-                }
-                className="min-h-11"
-                aria-invalid={Boolean(errorFor('deadline'))}
-                aria-describedby={errorFor('deadline') ? 'deadline-error' : undefined}
-              />
-              {errorFor('deadline') ? (
-                <FieldError id="deadline-error">{errorFor('deadline')}</FieldError>
               ) : null}
             </Field>
           </div>
@@ -463,51 +451,64 @@ export const ActivityForm = ({
   municipalityOptions,
   organizationOptions,
   advisorOptions,
-  canManageAdvisors = false,
+  canManageAdvisors,
   activity,
-  submitLabel,
+  fieldErrors: externalFieldErrors,
+  submittedTitle,
   searchContacts,
   searchLeaderships,
+  knownTags,
+  submitLabel,
 }: ActivityFormFieldsProps & {
   action: ActivityFormAction
-  submitLabel: string
+  submitLabel?: string
 }) => {
-  const [state, formAction, pending] = useActionState(action, {})
+  const [state, submitAction, isPending] = useActionState(action, {})
 
   return (
-    <form action={formAction} className="flex max-w-3xl flex-col gap-6">
-      {activity ? <input type="hidden" name="id" value={activity.id} /> : null}
-      {state.message ? (
-        <Alert variant="destructive" aria-live="polite">
-          <AlertTitle>Não foi possível salvar</AlertTitle>
-          <AlertDescription>{state.message}</AlertDescription>
-        </Alert>
-      ) : null}
-      {state.existingHref ? (
-        <Button asChild variant="outline" className="min-h-11 w-fit">
-          <Link href={state.existingHref}>Abrir atividade existente</Link>
-        </Button>
-      ) : null}
+    <form action={submitAction} className="flex flex-col gap-5">
       <ActivityFormFields
         municipalityOptions={municipalityOptions}
         organizationOptions={organizationOptions}
         advisorOptions={advisorOptions}
         canManageAdvisors={canManageAdvisors}
         activity={activity}
-        fieldErrors={state.fieldErrors}
-        submittedTitle={state.submittedTitle}
+        fieldErrors={state.fieldErrors ?? externalFieldErrors}
+        submittedTitle={state.submittedTitle ?? submittedTitle}
         searchContacts={searchContacts}
         searchLeaderships={searchLeaderships}
+        knownTags={knownTags}
       />
+
+      {state.existingHref ? (
+        <Alert variant="destructive">
+          <AlertTitle>Já existe uma atividade com este título</AlertTitle>
+          <AlertDescription>
+            <a
+              href={state.existingHref}
+              className="font-medium text-primary underline underline-offset-4"
+            >
+              Ver atividade existente
+            </a>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {state.message ? (
+        <Alert variant="destructive">
+          <AlertTitle>Nada foi gravado</AlertTitle>
+          <AlertDescription>{state.message}</AlertDescription>
+        </Alert>
+      ) : null}
+
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <Button asChild variant="outline" className="min-h-11">
           <Link href={activity ? `/campanha/atividades/${activity.slug}` : '/campanha/atividades'}>
             Cancelar
           </Link>
         </Button>
-        <Button type="submit" className="min-h-11" disabled={pending}>
-          {pending ? <Spinner data-icon="inline-start" /> : null}
-          {pending ? 'Salvando…' : submitLabel}
+        <Button type="submit" disabled={isPending} className="min-h-11">
+          {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
+          {submitLabel ?? (activity ? 'Salvar alterações' : 'Criar compromisso')}
         </Button>
       </div>
     </form>

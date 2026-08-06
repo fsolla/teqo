@@ -7,7 +7,7 @@ import {
   campaignIntelligenceConcepts,
   type CampaignConceptId,
 } from '@/lib/campaignIntelligenceConcepts'
-import { activityKinds, activityStatuses } from '@/lib/schemas/activity'
+import { activityStatuses } from '@/lib/schemas/activity'
 import { campaignDemandKinds, campaignDemandStatuses } from '@/lib/schemas/campaignDemand'
 import { leadershipSupportStatuses } from '@/lib/schemas/leadership'
 import { organizationKinds } from '@/lib/schemas/organization'
@@ -156,7 +156,7 @@ const linkRequestSchema = z.discriminatedUnion('destination', [
     destination: z.literal('activityList'),
     tab: z.enum(activityTabs).optional(),
     q: z.string().optional(),
-    kind: z.enum(activityKinds).optional(),
+    tag: z.string().trim().min(1).optional(),
     status: z.enum(activityStatuses).optional(),
     municipality: z.number().int().positive().optional(),
     label: labelSchema,

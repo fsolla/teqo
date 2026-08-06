@@ -730,30 +730,18 @@ export interface Activity {
   id: number;
   title: string;
   slug: string;
-  kind:
-    | 'caminhada'
-    | 'comicio'
-    | 'carreata'
-    | 'panfletagem'
-    | 'porta_a_porta'
-    | 'reuniao_apoio'
-    | 'lancamento'
-    | 'convencao'
-    | 'ato'
-    | 'entrevista'
-    | 'producao_conteudo'
-    | 'digital'
-    | 'outro';
-  status: 'rascunho' | 'planejado' | 'confirmado' | 'realizado' | 'cancelado';
+  /**
+   * Classificação livre do compromisso (ex.: comício, imprensa, reunião).
+   */
+  tags?: string[] | null;
+  status: 'confirmado' | 'realizado' | 'cancelado';
   description?: string | null;
-  origin?: ('dado' | 'pedido_broker' | 'obrigacao_politica') | null;
   /**
    * Marque quando o deputado Jorge Solla estiver presente na atividade.
    */
   deputyPresent?: boolean | null;
   startAt?: string | null;
   endAt?: string | null;
-  deadline?: string | null;
   municipality: number | Municipality;
   locality?: string | null;
   organizations?: (number | Organization)[] | null;
@@ -1763,14 +1751,12 @@ export interface MunicipalityUpdateSelect<T extends boolean = true> {
 export interface ActivitySelect<T extends boolean = true> {
   title?: T;
   slug?: T;
-  kind?: T;
+  tags?: T;
   status?: T;
   description?: T;
-  origin?: T;
   deputyPresent?: T;
   startAt?: T;
   endAt?: T;
-  deadline?: T;
   municipality?: T;
   locality?: T;
   organizations?: T;

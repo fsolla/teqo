@@ -6,24 +6,16 @@ import type {
 import { APIError } from 'payload'
 
 import { relationshipId } from '@/lib/relationship'
-import {
-  activityKindLabels,
-  activityKinds,
-  activityOriginLabels,
-  activityOrigins,
-  activityStatusLabels,
-  activityStatuses,
-} from '@/lib/schemas/activity'
+import { activityStatusLabels, activityStatuses } from '@/lib/schemas/activity'
 import { slugify } from '@/lib/slug'
 import { trimmedText } from '@/lib/text'
+import { isCampaignUnrestricted } from '@/utilities/access/shared'
 import {
   canCreateActivity,
   canCreateActivityAdvisors,
   canDeleteActivity,
   canManageActivityAdvisors,
-  canManageCampaignStaffField,
   canReadActivity,
-  canReadCampaignStaffField,
   canSetActivityStatus,
   canSetActivitySystemField,
   canUpdateActivity,
@@ -34,19 +26,9 @@ import { systemStampedActorField } from '@/utilities/campaignAuditFields'
 const isActivityMutationShortcut = (context: Record<string, unknown> | undefined) =>
   context?.mutationKind === 'taskToggle' || context?.mutationKind === 'appendUpdate'
 
-const ACTIVITY_KIND_OPTIONS = activityKinds.map((value) => ({
-  value,
-  label: activityKindLabels[value],
-}))
-
 const ACTIVITY_STATUS_OPTIONS = activityStatuses.map((value) => ({
   value,
   label: activityStatusLabels[value],
-}))
-
-const ACTIVITY_ORIGIN_OPTIONS = activityOrigins.map((value) => ({
-  value,
-  label: activityOriginLabels[value],
 }))
 
 const relationshipIds = (value: unknown): number[] =>
@@ -55,12 +37,11 @@ const relationshipIds = (value: unknown): number[] =>
 const activityStaffFieldSnapshot = (doc: Record<string, unknown>) => ({
   title: trimmedText(doc.title),
   slug: doc.slug ?? null,
-  kind: doc.kind ?? null,
+  tags: Array.isArray(doc.tags) ? [...doc.tags].sort() : [],
   status: doc.status ?? null,
   description: trimmedText(doc.description),
   startAt: doc.startAt ?? null,
   endAt: doc.endAt ?? null,
-  deadline: doc.deadline ?? null,
   municipality: relationshipId(doc.municipality),
   locality: trimmedText(doc.locality),
   deputyPresent: Boolean(doc.deputyPresent),
@@ -70,7 +51,6 @@ const activityStaffFieldSnapshot = (doc: Record<string, unknown>) => ({
   leadership: relationshipId(doc.leadership),
   resultSummary: trimmedText(doc.resultSummary),
   resultMedia: relationshipIds(doc.resultMedia),
-  origin: doc.origin ?? null,
 })
 
 const setCanonicalActivitySlug: CollectionBeforeValidateHook = ({
@@ -102,17 +82,16 @@ const validateActivitySchedule: CollectionBeforeValidateHook = ({
 }) => {
   if (isActivityMutationShortcut(context)) return data
   if (!data) return data
+  // Tour drafts are created without startAt; the coordination sets it later.
+  if (context?.isTourDraft) return data
 
   const nextData = operation === 'update' ? { ...originalDoc, ...data } : data
-  const status = typeof nextData.status === 'string' ? nextData.status : 'rascunho'
   const startAt = nextData.startAt ?? null
   const endAt = nextData.endAt ?? null
 
-  if (status !== 'rascunho' && !startAt) {
-    throw new APIError(
-      'Informe a data e horário de início ao planejar ou confirmar a atividade.',
-      400,
-    )
+  // C14: startAt is always required (no more rascunho without date).
+  if (!startAt) {
+    throw new APIError('Informe a data e horário de início do compromisso.', 400)
   }
 
   if (startAt && endAt) {
@@ -150,6 +129,43 @@ const validateActivityAdvisors: CollectionBeforeValidateHook = async ({ data, re
     throw new APIError(
       'Cada responsável deve ter papel de Coordenador Geral, Assessor ou Candidato.',
       400,
+    )
+  }
+
+  return data
+}
+
+/**
+ * C14 — deputyPresent time gate: only coordinator and candidate can reschedule
+ * (change startAt/endAt) an activity where the deputy is present. Advisors can
+ * create/edit the rest of the activity but cannot move the time of a
+ * deputy-present commitment.
+ */
+const validateDeputyPresentTimeGate: CollectionBeforeValidateHook = async ({
+  data,
+  operation,
+  originalDoc,
+  req,
+  context,
+}) => {
+  if (isActivityMutationShortcut(context)) return data
+  if (!data) return data
+  if (operation === 'create') return data
+  if (!originalDoc?.deputyPresent) return data
+
+  const timeChanged =
+    (data.startAt !== undefined && data.startAt !== (originalDoc.startAt ?? null)) ||
+    (data.endAt !== undefined && data.endAt !== (originalDoc.endAt ?? null))
+
+  if (!timeChanged) return data
+
+  const user = req.user
+  if (!user || user.collection !== 'campaignUser') return data
+
+  if (!isCampaignUnrestricted(user)) {
+    throw new APIError(
+      'Apenas o Coordenador Geral ou o Candidato podem remarcar compromisso com deputado presente.',
+      403,
     )
   }
 
@@ -238,26 +254,26 @@ const deriveActivityFields: CollectionBeforeChangeHook = ({
           403,
         )
       }
-    }
 
-    if (Array.isArray(data.tasks) && Array.isArray(originalDoc?.tasks)) {
-      const previousTasks = originalDoc.tasks as Record<string, unknown>[]
-      if (data.tasks.length !== previousTasks.length) {
+      if (Array.isArray(data.tasks) && Array.isArray(originalDoc?.tasks)) {
+        const previousTasks = originalDoc.tasks as Record<string, unknown>[]
+        if (data.tasks.length !== previousTasks.length) {
+          throw new APIError('Lideranças não podem adicionar ou remover tarefas.', 403)
+        }
+        for (const [index, task] of data.tasks.entries()) {
+          const previousTask = previousTasks[index]
+          const taskRecord = task as Record<string, unknown>
+          if (
+            trimmedText(taskRecord.title) !== trimmedText(previousTask.title) ||
+            relationshipId(taskRecord.responsible) !== relationshipId(previousTask.responsible) ||
+            (taskRecord.due ?? null) !== (previousTask.due ?? null)
+          ) {
+            throw new APIError('Lideranças só podem marcar tarefas como concluídas.', 403)
+          }
+        }
+      } else if (Array.isArray(data.tasks) && !Array.isArray(originalDoc?.tasks)) {
         throw new APIError('Lideranças não podem adicionar ou remover tarefas.', 403)
       }
-      for (const [index, task] of data.tasks.entries()) {
-        const previousTask = previousTasks[index]
-        const taskRecord = task as Record<string, unknown>
-        if (
-          trimmedText(taskRecord.title) !== trimmedText(previousTask.title) ||
-          relationshipId(taskRecord.responsible) !== relationshipId(previousTask.responsible) ||
-          (taskRecord.due ?? null) !== (previousTask.due ?? null)
-        ) {
-          throw new APIError('Lideranças só podem marcar tarefas como concluídas.', 403)
-        }
-      }
-    } else if (Array.isArray(data.tasks) && !Array.isArray(originalDoc?.tasks)) {
-      throw new APIError('Lideranças não podem adicionar ou remover tarefas.', 403)
     }
   }
 
@@ -273,7 +289,7 @@ export const Activity: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'title',
-    defaultColumns: ['title', 'kind', 'status', 'municipality', 'startAt', 'updatedAt'],
+    defaultColumns: ['title', 'tags', 'status', 'municipality', 'startAt', 'updatedAt'],
   },
   access: {
     create: canCreateActivity,
@@ -282,16 +298,16 @@ export const Activity: CollectionConfig = {
     delete: canDeleteActivity,
   },
   hooks: {
-    beforeValidate: [setCanonicalActivitySlug, validateActivitySchedule, validateActivityAdvisors],
+    beforeValidate: [
+      setCanonicalActivitySlug,
+      validateActivitySchedule,
+      validateActivityAdvisors,
+      validateDeputyPresentTimeGate,
+    ],
     beforeChange: [deriveActivityFields],
     afterChange: [
-      async ({ doc, operation, previousDoc, req }) => {
-        const becameVisible =
-          operation === 'create'
-            ? doc.status !== 'rascunho'
-            : previousDoc?.status === 'rascunho' && doc.status !== 'rascunho'
-        if (!becameVisible) return doc
-
+      async ({ doc, req }) => {
+        // C14: all activities are visible (no more rascunho).
         const { notifyActivityNeedsAttention } =
           await import('@/utilities/notification/notificationEvents')
         await notifyActivityNeedsAttention(req, doc)
@@ -325,19 +341,21 @@ export const Activity: CollectionConfig = {
       },
     },
     {
-      name: 'kind',
-      type: 'select',
-      label: 'Tipo de atividade',
-      required: true,
+      name: 'tags',
+      type: 'text',
+      label: 'Tags',
+      hasMany: true,
       index: true,
-      options: [...ACTIVITY_KIND_OPTIONS],
+      admin: {
+        description: 'Classificação livre do compromisso (ex.: comício, imprensa, reunião).',
+      },
     },
     {
       name: 'status',
       type: 'select',
       label: 'Status',
       required: true,
-      defaultValue: 'rascunho',
+      defaultValue: 'confirmado',
       index: true,
       access: {
         create: canSetActivityStatus,
@@ -350,18 +368,6 @@ export const Activity: CollectionConfig = {
       type: 'textarea',
       label: 'Descrição',
       maxLength: 4000,
-    },
-    {
-      name: 'origin',
-      type: 'select',
-      label: 'Origem da atividade',
-      defaultValue: 'dado',
-      options: ACTIVITY_ORIGIN_OPTIONS,
-      access: {
-        create: canManageCampaignStaffField,
-        read: canReadCampaignStaffField,
-        update: canManageCampaignStaffField,
-      },
     },
     {
       name: 'deputyPresent',
@@ -388,16 +394,6 @@ export const Activity: CollectionConfig = {
       name: 'endAt',
       type: 'date',
       label: 'Término',
-      admin: {
-        date: {
-          pickerAppearance: 'dayAndTime',
-        },
-      },
-    },
-    {
-      name: 'deadline',
-      type: 'date',
-      label: 'Prazo de conclusão',
       admin: {
         date: {
           pickerAppearance: 'dayAndTime',

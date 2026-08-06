@@ -33,9 +33,8 @@ describe('parseActivityListParams', () => {
     expect(parseActivityListParams({ tab: 'todos', status: 'inexistente' }).status).toBeUndefined()
   })
 
-  it('validates kind and municipality', () => {
-    expect(parseActivityListParams({ kind: 'caminhada' }).kind).toBe('caminhada')
-    expect(parseActivityListParams({ kind: 'festa' }).kind).toBeUndefined()
+  it('validates tag and municipality', () => {
+    expect(parseActivityListParams({ tag: 'Caminhada' }).tag).toBe('Caminhada')
     expect(parseActivityListParams({ municipality: '12' }).municipality).toBe(12)
     expect(parseActivityListParams({ municipality: '0' }).municipality).toBeUndefined()
   })
@@ -48,22 +47,19 @@ describe('parseActivityListParams', () => {
 })
 
 describe('buildActivityListWhere (tab → where matrix)', () => {
-  it('proximos = planejado/confirmado starting from now', () => {
+  it('proximos = confirmado starting from now', () => {
     const where = buildActivityListWhere({ page: 1, tab: 'proximos' }, NOW)
     expect(where).toEqual({
       and: [
-        { status: { in: ['planejado', 'confirmado'] } },
+        { status: { equals: 'confirmado' } },
         { startAt: { greater_than_equal: NOW.toISOString() } },
       ],
     })
   })
 
-  it('realizados and rascunhos filter by their status', () => {
+  it('realizados filters by its status', () => {
     expect(buildActivityListWhere({ page: 1, tab: 'realizados' }, NOW)).toEqual({
       and: [{ status: { equals: 'realizado' } }],
-    })
-    expect(buildActivityListWhere({ page: 1, tab: 'rascunhos' }, NOW)).toEqual({
-      and: [{ status: { equals: 'rascunho' } }],
     })
   })
 
@@ -74,14 +70,14 @@ describe('buildActivityListWhere (tab → where matrix)', () => {
     })
   })
 
-  it('prepends kind and municipality filters on any tab', () => {
+  it('prepends tag and municipality filters on any tab', () => {
     const where = buildActivityListWhere(
-      { page: 1, tab: 'realizados', kind: 'comicio', municipality: 3 },
+      { page: 1, tab: 'realizados', tag: 'Comício', municipality: 3 },
       NOW,
     )
     expect(where).toEqual({
       and: [
-        { kind: { equals: 'comicio' } },
+        { tags: { contains: 'Comício' } },
         { municipality: { equals: 3 } },
         { status: { equals: 'realizado' } },
       ],
@@ -95,7 +91,7 @@ describe('buildActivityListWhere (tab → where matrix)', () => {
         {
           or: [{ title: { contains: 'Maria' } }, { 'responsible.name': { contains: 'Maria' } }],
         },
-        { status: { in: ['planejado', 'confirmado'] } },
+        { status: { equals: 'confirmado' } },
         { startAt: { greater_than_equal: NOW.toISOString() } },
       ],
     })
@@ -115,12 +111,12 @@ describe('buildActivityListSearchParams', () => {
       page: 1,
       tab: 'todos',
       q: 'comício',
-      kind: 'caminhada',
+      tag: 'Caminhada',
       status: 'cancelado',
       municipality: 9,
     })
     expect(params.toString()).toBe(
-      'q=com%C3%ADcio&tab=todos&kind=caminhada&status=cancelado&municipality=9',
+      'q=com%C3%ADcio&tab=todos&tag=Caminhada&status=cancelado&municipality=9',
     )
   })
 })
@@ -134,8 +130,8 @@ describe('hrefs and canonical URL resolution', () => {
   })
 
   it('derives the filters key from the canonical serialization', () => {
-    expect(buildActivityFiltersKey({ page: 1, tab: 'todos', kind: 'comicio' })).toBe(
-      'tab=todos&kind=comicio',
+    expect(buildActivityFiltersKey({ page: 1, tab: 'todos', tag: 'Comício' })).toBe(
+      'tab=todos&tag=Com%C3%ADcio',
     )
   })
 

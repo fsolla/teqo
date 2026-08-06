@@ -10,16 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  activityKindLabels,
-  activityOriginLabels,
-  activityOrigins,
-  type ActivityKind,
-  type ActivityOrigin,
-} from '@/lib/schemas/activity'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
 import type { TourStopRole } from '@/utilities/visit/visitPlannerViews'
@@ -29,9 +21,6 @@ import {
   tourStopRoleDescriptions,
   tourStopRoleLabels,
 } from '@/utilities/visit/visitPlannerViews'
-
-/** The composition came from the numbers; the coordination changes it per stop. */
-const DEFAULT_STOP_ORIGIN: ActivityOrigin = 'dado'
 
 /**
  * One candidate stop, already reduced to what the decision needs. Numbers arrive
@@ -45,8 +34,8 @@ export type TourStopOption = {
   name: string
   role: TourStopRole
   suggested: boolean
-  /** Activity kind the stop generates, derived from its role. */
-  kind: ActivityKind
+  /** Activity tags the stop generates, derived from its role. */
+  tags: string[]
   metCount: number
   conditionCount: number
   unmetConditionLabels: string[]
@@ -58,18 +47,13 @@ export type TourStopOption = {
 const StopRow = ({
   stop,
   checked,
-  origin,
   onToggle,
-  onOriginChange,
 }: {
   stop: TourStopOption
   checked: boolean
-  origin: ActivityOrigin
   onToggle: (checked: boolean) => void
-  onOriginChange: (origin: ActivityOrigin) => void
 }) => {
   const checkboxId = `tour-stop-${stop.slug}`
-  const originId = `tour-origin-${stop.slug}`
 
   return (
     <li className="flex flex-col gap-3 p-4 data-[checked=false]:bg-muted/20" data-checked={checked}>
@@ -112,30 +96,17 @@ const StopRow = ({
               Ver dossiê
               <ExternalLinkIcon aria-hidden="true" className="ml-1 inline size-3" />
             </Link>
-            <span className="text-xs text-muted-foreground">
-              Gera: {activityKindLabels[stop.kind]}
+            <span className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+              Tags:{' '}
+              {stop.tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="text-[10px]">
+                  {tag}
+                </Badge>
+              ))}
             </span>
           </div>
         </div>
       </div>
-
-      {checked ? (
-        <Field className="sm:max-w-xs sm:pl-7">
-          <FieldLabel htmlFor={originId}>Origem desta parada</FieldLabel>
-          <NativeSelect
-            id={originId}
-            value={origin}
-            onChange={(event) => onOriginChange(event.target.value as ActivityOrigin)}
-            className="min-h-11 w-full"
-          >
-            {activityOrigins.map((value) => (
-              <NativeSelectOption key={value} value={value}>
-                {activityOriginLabels[value]}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </Field>
-      ) : null}
     </li>
   )
 }
@@ -166,7 +137,6 @@ export const TourComposerForm = ({
   const [selectedSlugs, setSelectedSlugs] = useState<string[]>(() =>
     stops.filter((stop) => stop.suggested).map((stop) => stop.slug),
   )
-  const [origins, setOrigins] = useState<Record<string, ActivityOrigin>>({})
 
   const selectedSet = useMemo(() => new Set(selectedSlugs), [selectedSlugs])
 
@@ -177,11 +147,10 @@ export const TourComposerForm = ({
           .filter((stop) => selectedSet.has(stop.slug))
           .map((stop) => ({
             municipality: stop.municipalityID,
-            kind: stop.kind,
-            origin: origins[stop.slug] ?? DEFAULT_STOP_ORIGIN,
+            tags: stop.tags,
           })),
       ),
-    [stops, selectedSet, origins],
+    [stops, selectedSet],
   )
 
   const overCap = selectedSlugs.length > MAX_TOUR_STOPS
@@ -209,11 +178,7 @@ export const TourComposerForm = ({
               key={stop.slug}
               stop={stop}
               checked={selectedSet.has(stop.slug)}
-              origin={origins[stop.slug] ?? DEFAULT_STOP_ORIGIN}
               onToggle={(checked) => toggleStop(stop.slug, checked)}
-              onOriginChange={(origin) =>
-                setOrigins((current) => ({ ...current, [stop.slug]: origin }))
-              }
             />
           ))}
         </ul>
@@ -231,8 +196,8 @@ export const TourComposerForm = ({
             className="min-h-11"
           />
           <FieldDescription>
-            Cada rascunho recebe este nome mais o município — assim o giro se lê como um conjunto na
-            lista de Atividades.
+            Cada compromisso recebe este nome mais o município — assim o giro se lê como um conjunto
+            na lista de Atividades.
           </FieldDescription>
           {fieldError(state.fieldErrors, 'tourName') ? (
             <FieldError>{fieldError(state.fieldErrors, 'tourName')}</FieldError>
@@ -242,7 +207,7 @@ export const TourComposerForm = ({
           <FieldLabel htmlFor="tour-note">Nota de janela política</FieldLabel>
           <Textarea id="tour-note" name="note" rows={4} maxLength={4000} />
           <FieldDescription>
-            Vai na descrição de cada rascunho: com quem falar, o que já foi combinado, o que não
+            Vai na descrição de cada compromisso: com quem falar, o que já foi combinado, o que não
             pode ser dito.
           </FieldDescription>
         </Field>
@@ -270,7 +235,7 @@ export const TourComposerForm = ({
             ? 'Selecione ao menos uma parada.'
             : overCap
               ? `Um giro é um dia ou dois: escolha no máximo ${MAX_TOUR_STOPS} paradas.`
-              : 'Os rascunhos entram sem data, com presença do candidato marcada. A data e o horário você define em cada atividade.'}
+              : 'Os compromissos entram com presença do candidato marcada. A data e o horário você define em cada atividade.'}
         </p>
       </div>
     </form>

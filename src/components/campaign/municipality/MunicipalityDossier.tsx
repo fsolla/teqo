@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/Badge'
 import type { MunicipalityAgeBandKey } from '@/lib/bahiaMunicipalityDemographics'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import { formatElectionNumber } from '@/lib/electionFormat'
-import { activityKindLabels } from '@/lib/schemas/activity'
+
 import type { ActivityListViewModel } from '@/utilities/activityViewModels'
 import {
   formatGoalCoverageDeficitLabel,
@@ -77,7 +77,11 @@ const ActivityListItem = ({ activity }: { activity: ActivityListViewModel }) => 
       >
         {activity.title}
       </Link>
-      <Badge variant="secondary">{activityKindLabels[activity.kind]}</Badge>
+      {activity.tags.map((tag) => (
+        <Badge key={tag} variant="secondary">
+          {tag}
+        </Badge>
+      ))}
       <ActivityStatusBadge status={activity.status} />
       {activity.deputyPresent ? <Badge>Deputado presente</Badge> : null}
     </div>

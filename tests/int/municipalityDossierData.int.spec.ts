@@ -66,8 +66,8 @@ describe('municipality dossier data (E16)', () => {
 
       const upcomingActivity = await createActivityRecord(payload, coordinator, {
         title: fixtures.value('Caminhada dossiê'),
-        kind: 'caminhada',
-        status: 'planejado',
+        tags: ['Caminhada'],
+        status: 'confirmado',
         startAt: new Date(Date.now() + 86_400_000).toISOString(),
         municipality: municipality.id,
         locality: 'Centro',

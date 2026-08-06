@@ -13,10 +13,10 @@ import {
 } from '@/lib/formData'
 import {
   activityDemandDraftsSchema,
-  activityKinds,
-  activityOrigins,
   activityStatuses,
   MAX_ACTIVITY_DEMAND_DRAFTS,
+  MAX_ACTIVITY_TAG_LENGTH,
+  MAX_ACTIVITY_TAGS,
   tourStopDraftsSchema,
   type ActivityCreateInput,
   type ActivityDemandDraft,
@@ -36,7 +36,7 @@ const parseDateTimeFormField = (formData: FormData, field: string): string | und
   const value = optionalFormText(formData, field)
   if (!value) return undefined
   const iso = parseBahiaDateTimeInput(value)
-  if (!iso) throw new FormDataBoundaryError(field, 'Data e horário inválidos.')
+  if (!iso) throw new FormDataBoundaryError(field, 'Data e horários inválidos.')
   return iso
 }
 
@@ -100,20 +100,32 @@ const parseDemandDraftsFormData = (formData: FormData): ActivityDemandDraft[] =>
   throw new FormDataBoundaryError('demandsJson', 'Lista de demandas inválida.')
 }
 
+const parseTagsFormData = (formData: FormData): string[] => {
+  const raw = boundedJsonFormValue(formData, 'tagsJson', 4_000)
+  if (raw === undefined) return []
+  if (!Array.isArray(raw)) {
+    throw new FormDataBoundaryError('tagsJson', 'Lista de tags inválida.')
+  }
+  const tags = raw
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter((tag) => tag.length > 0)
+    .map((tag) => tag.slice(0, MAX_ACTIVITY_TAG_LENGTH))
+    .slice(0, MAX_ACTIVITY_TAGS)
+  return tags
+}
+
 const parseSharedActivityFormData = (formData: FormData) => {
   const responsible = nullableRelationshipFormValue(formData, 'responsible')
   const leadership = nullableRelationshipFormValue(formData, 'leadership')
 
   return {
     title: optionalFormText(formData, 'title') ?? '',
-    kind: optionalFormText(formData, 'kind') as (typeof activityKinds)[number],
-    origin: optionalFormText(formData, 'origin') as (typeof activityOrigins)[number] | undefined,
+    tags: parseTagsFormData(formData),
     status: optionalFormText(formData, 'status') as (typeof activityStatuses)[number] | undefined,
     description: optionalFormText(formData, 'description'),
     deputyPresent: checkboxFormValue(formData, 'deputyPresent'),
     startAt: parseDateTimeFormField(formData, 'startAt'),
     endAt: parseDateTimeFormField(formData, 'endAt'),
-    deadline: parseDateTimeFormField(formData, 'deadline'),
     municipality: requiredRelationshipFormValue(formData, 'municipality'),
     locality: optionalFormText(formData, 'locality'),
     organizations: repeatedRelationshipFormValues(formData, 'organizations'),
@@ -134,7 +146,7 @@ export const parseActivityCreateFormData = (formData: FormData): ParsedActivityC
 
   return {
     ...shared,
-    status: (shared.status ?? 'rascunho') as ActivityCreateInput['status'],
+    status: (shared.status ?? 'confirmado') as ActivityCreateInput['status'],
     responsible: shared.responsible ?? undefined,
     leadership: shared.leadership ?? undefined,
     organizations: shared.organizations.length ? shared.organizations : undefined,
@@ -195,7 +207,6 @@ export const parseActivityUpdateFormData = (formData: FormData): ParsedActivityU
     description: shared.description ?? null,
     startAt: shared.startAt ?? null,
     endAt: shared.endAt ?? null,
-    deadline: shared.deadline ?? null,
     responsible: shared.responsible,
     leadership: shared.leadership,
     organizations: shared.organizations,

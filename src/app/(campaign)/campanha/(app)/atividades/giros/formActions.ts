@@ -32,7 +32,7 @@ export const createTourDraftsFormAction = async (
 ): Promise<CampaignFormActionState> =>
   runCampaignRedirectFormAction({
     execute: async () => createTourDraftActivities(parseTourDraftFormData(formData)),
-    redirectTo: () => buildActivityListHref({ page: 1, tab: 'rascunhos' }, 1),
+    redirectTo: () => buildActivityListHref({ page: 1, tab: 'todos' }, 1),
     safeMessages: TOUR_SAFE_MESSAGES,
     genericMessage:
       'Não foi possível gerar os rascunhos do giro. Verifique se algum título já existe e tente novamente.',

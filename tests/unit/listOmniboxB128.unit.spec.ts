@@ -177,7 +177,7 @@ describe('list omnibox adapters (B128)', () => {
   })
 
   it('activity clears filters but keeps tab', () => {
-    const state = parseActivityListParams({ tab: 'todos', kind: 'comicio', status: 'planejado' })
+    const state = parseActivityListParams({ tab: 'todos', tag: 'Comício', status: 'confirmado' })
     const chips = buildActivityOmniboxChips({ state, municipalityLabelsById: new Map() })
     expect(chips.length).toBeGreaterThan(0)
 
@@ -185,10 +185,10 @@ describe('list omnibox adapters (B128)', () => {
     expect(cleared.kind).toBe('clear')
     if (cleared.kind === 'clear') {
       expect(cleared.state.tab).toBe('todos')
-      expect(cleared.state.kind).toBeUndefined()
+      expect(cleared.state.tag).toBeUndefined()
     }
 
-    const applied = applyActivityOmniboxSuggestion({ state, suggestionId: 'kind:comicio' })
+    const applied = applyActivityOmniboxSuggestion({ state, suggestionId: 'tag:Comício' })
     expect(applied.kind).toBe('url')
   })
 
@@ -206,17 +206,17 @@ describe('list omnibox adapters (B128)', () => {
     if (tabApplied.kind === 'url') expect(tabApplied.state.tab).toBe('realizados')
 
     const searchApplied = applyActivityOmniboxSuggestion({
-      state: parseActivityListParams({ tab: 'todos', status: 'planejado' }),
+      state: parseActivityListParams({ tab: 'todos', status: 'confirmado' }),
       suggestionId: 'q:comício',
     })
     expect(searchApplied.kind).toBe('url')
     if (searchApplied.kind === 'url') {
       expect(searchApplied.state.q).toBe('comício')
-      expect(searchApplied.state.status).toBe('planejado')
+      expect(searchApplied.state.status).toBe('confirmado')
     }
 
     const leavingTodos = applyActivityOmniboxSuggestion({
-      state: parseActivityListParams({ tab: 'todos', status: 'planejado' }),
+      state: parseActivityListParams({ tab: 'todos', status: 'confirmado' }),
       suggestionId: 'tab:realizados',
     })
     if (leavingTodos.kind === 'url') expect(leavingTodos.state.status).toBeUndefined()

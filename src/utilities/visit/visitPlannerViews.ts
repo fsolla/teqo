@@ -1,5 +1,5 @@
 import type { BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
-import type { ActivityKind } from '@/lib/schemas/activity'
+// C14: ActivityKind removed; stops carry free-form tags now.
 import type { CalendarPhase } from '@/lib/visitPlannerAnchors'
 import type { MunicipalityGoalCoverage } from '@/utilities/municipality/goalCoverage'
 import type { MunicipalityTerritorialClass } from '@/utilities/municipality/municipalityTerritorialClass'
@@ -151,10 +151,14 @@ export const resolveTourStopRole = (
  * marker, so every stop keeps the real kind of what happens there — an act at
  * the anchor, a support meeting at a stop that is being opened.
  */
-export const tourStopRoleActivityKind: Record<TourStopRole, ActivityKind> = {
-  ancora: 'comicio',
-  satelite: 'reuniao_apoio',
-  semente: 'reuniao_apoio',
+/**
+ * C14 — the activity tags each role generates. `deputyPresent` is still the
+ * candidate-presence marker on the resulting activity.
+ */
+export const tourStopRoleActivityTags: Record<TourStopRole, string[]> = {
+  ancora: ['Comício'],
+  satelite: ['Reunião de apoio'],
+  semente: ['Reunião de apoio'],
 }
 
 /**

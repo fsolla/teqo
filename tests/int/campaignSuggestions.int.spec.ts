@@ -166,7 +166,7 @@ describe('loadMunicipalitySuggestions (E11)', () => {
       collection: 'activity',
       data: stub<ActivityCreateData>({
         title: fixtures.value('Caminhada Centro'),
-        kind: 'caminhada',
+        tags: ['Caminhada'],
         status: 'realizado',
         startAt: new Date(Date.now() - 10 * DAY_MS).toISOString(),
         municipality: municipality.id,
