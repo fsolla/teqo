@@ -24,6 +24,8 @@ import {
 import type { DemandRowViewModel } from '@/utilities/campaignDemandData'
 import type { DemandListState } from '@/utilities/demand/demandListUrl'
 
+const rowKeyById = <T extends { id: string | number }>(row: T) => row.id
+
 const statusVariant: Record<
   CampaignDemandStatus,
   'secondary' | 'estimate-pending' | 'destructive' | 'estimate-confirmed'
@@ -112,7 +114,7 @@ export const DemandListTable = ({
       columns={demandColumns}
       columnVisibility={columnVisibility}
       rows={rows}
-      rowKey={(row) => row.id}
+      rowKey={rowKeyById}
       totalDocs={totalDocs}
       pageSize={pageSize}
       query={query}

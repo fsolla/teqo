@@ -20,6 +20,8 @@ import { organizationKindLabels } from '@/lib/schemas/organization'
 import type { OrganizationListState } from '@/utilities/organization/organizationListUrl'
 import type { OrganizationRowViewModel } from '@/utilities/organizationData'
 
+const rowKeyById = <T extends { id: string | number }>(row: T) => row.id
+
 // B161 — columns are client-defined now (appended rows render here, not in RSC).
 const organizationColumns: Array<CampaignTableColumn<OrganizationRowViewModel>> = [
   {
@@ -83,7 +85,7 @@ export const OrganizationListTable = ({
       columns={organizationColumns}
       columnVisibility={columnVisibility}
       rows={rows}
-      rowKey={(row) => row.id}
+      rowKey={rowKeyById}
       totalDocs={totalDocs}
       pageSize={pageSize}
       query={query}

@@ -59,6 +59,8 @@ import {
 } from '@/utilities/leadership/leadershipListFilters'
 import type { LeadershipListState } from '@/utilities/leadership/leadershipListUrl'
 
+const rowKeyById = <T extends { id: string | number }>(row: T) => row.id
+
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
 const LeadershipListEmptyState = ({ state }: { state: LeadershipListState }) => (
@@ -352,7 +354,7 @@ export const LeadershipListTable = ({
         columns={columns}
         columnVisibility={columnVisibility}
         rows={rows}
-        rowKey={(row) => row.id}
+        rowKey={rowKeyById}
         totalDocs={totalDocs}
         pageSize={pageSize}
         query={query}

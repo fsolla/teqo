@@ -48,6 +48,8 @@ import {
   type StateDeputyFilterOption,
 } from '@/utilities/stateDeputyListFilters'
 import {
+
+const rowKeyById = <T extends { id: string | number }>(row: T) => row.id
   stateDeputyListSortLabels,
   type StateDeputyListState,
 } from '@/utilities/stateDeputyListUrl'
@@ -238,7 +240,7 @@ export const StateDeputyListTable = ({
         columns={columns}
         columnVisibility={columnVisibility}
         rows={rows}
-        rowKey={(row) => row.id}
+        rowKey={rowKeyById}
         totalDocs={totalDocs}
         pageSize={pageSize}
         query={query}

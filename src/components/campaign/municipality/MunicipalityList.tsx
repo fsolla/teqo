@@ -87,6 +87,8 @@ import type {
 } from '@/utilities/municipality/municipalityViewModels'
 import { toMunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
 
+const rowKeyById = <T extends { id: string | number }>(row: T) => row.id
+
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
 type MunicipalityStaffFormAction = (
@@ -715,7 +717,7 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
           columns={columns}
           columnVisibility={props.columnVisibility}
           rows={municipalities}
-          rowKey={(municipality) => municipality.id}
+          rowKey={rowKeyById}
           totalDocs={props.totalDocs ?? municipalities.length}
           pageSize={props.pageSize ?? municipalityPageSize}
           query={activeQuery}
