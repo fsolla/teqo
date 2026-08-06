@@ -1,6 +1,6 @@
 # C89 — Feed da campanha de atualizações (cada update = thread)
 
-Status: blocked (plano ainda não em main)
+Status: ready
 Atualizado em: 2026-08-06
 Issue: #401
 Priority: P1
