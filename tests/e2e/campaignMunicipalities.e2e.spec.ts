@@ -29,8 +29,12 @@ const showAllMunicipalityColumns = (page: Page, url: string) =>
 const municipalityContainer = (page: Page) =>
   page.locator('[data-container="municipality-list"]').last()
 
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 const visibleMunicipalityButton = (page: Page, name: string) =>
-  municipalityContainer(page).getByRole('button', { name }).filter({ visible: true })
+  municipalityContainer(page)
+    .getByRole('button', { name: new RegExp(`^${escapeRegExp(name)}(?: —|$)`) })
+    .filter({ visible: true })
 
 const ensureWideMunicipalityList = async (page: Page) => {
   // The resizable panel hydrates independently from the RSC list and can

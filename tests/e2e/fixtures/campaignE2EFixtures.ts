@@ -19,6 +19,7 @@ type OwnedCollection =
   | 'campaignUser'
   | 'organization'
   | 'contact'
+  | 'stateDeputy'
   | 'leadership'
   | 'votePledge'
   | 'campaignDemand'
@@ -39,6 +40,7 @@ const deletionOrder: OwnedCollection[] = [
   'leadership',
   'supporter',
   'organization',
+  'stateDeputy',
   'contact',
   'campaignUser',
   'consent',
@@ -276,6 +278,15 @@ class CampaignE2EOwnership {
 
     const userIDs = this.ids('campaignUser')
     const contactIDs = this.ids('contact')
+    const stateDeputies = contactIDs.length
+      ? await this.rootPayload.find({
+          collection: 'stateDeputy',
+          where: { contact: { in: contactIDs } },
+          depth: 0,
+          pagination: false,
+        })
+      : { docs: [] }
+    for (const stateDeputy of stateDeputies.docs) this.own('stateDeputy', stateDeputy.id)
     const leaderships = await this.rootPayload.find({
       collection: 'leadership',
       where: {
