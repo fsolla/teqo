@@ -1,6 +1,6 @@
 # C88 — Deliberação na atualização (responsável, thread, resolvido)
 
-Status: blocked (plano local; promove após merge em main)
+Status: ready
 Atualizado em: 2026-08-06
 Issue: #397
 Priority: P1
