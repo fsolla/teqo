@@ -31,6 +31,8 @@ const municipalityContainer = (page: Page) =>
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
+// The button keeps a state suffix; the boundary prevents "São Félix" matching
+// the longer municipality "São Félix do Coribe".
 const visibleMunicipalityButton = (page: Page, name: string) =>
   municipalityContainer(page)
     .getByRole('button', { name: new RegExp(`^${escapeRegExp(name)}(?: —|$)`) })
