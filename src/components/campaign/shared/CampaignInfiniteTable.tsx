@@ -177,8 +177,6 @@ export const CampaignInfiniteTable = <Row,>({
     const extra = appended.pages.flat().filter((row) => !seedKeys.has(rowKey(row)))
     return [...rows, ...extra]
   }, [rows, appended.pages, rowKey])
-  const loadedRowsRef = useRef(loadedRows)
-  loadedRowsRef.current = loadedRows
 
   useEffect(() => {
     setScrollElement(rootRef.current?.closest(CAMPAIGN_CONTENT_SCROLL_SELECTOR) ?? null)
@@ -256,16 +254,13 @@ export const CampaignInfiniteTable = <Row,>({
 
   const virtualizer = useVirtualizer({
     count: itemCount,
-    estimateSize: useCallback(() => ESTIMATED_ROW_HEIGHT, []),
-    getScrollElement: useCallback(() => scrollElement, [scrollElement]),
+    estimateSize: () => ESTIMATED_ROW_HEIGHT,
+    getScrollElement: () => scrollElement,
     overscan: 8,
-    getItemKey: useCallback(
-      (index: number) => {
-        const row = loadedRowsRef.current[index]
-        return row ? rowKey(row) : `skeleton-${index}`
-      },
-      [rowKey],
-    ),
+    getItemKey: (index) => {
+      const row = loadedRows[index]
+      return row ? rowKey(row) : `skeleton-${index}`
+    },
   })
 
   const virtualItems = virtualizer.getVirtualItems()

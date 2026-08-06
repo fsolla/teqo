@@ -97,6 +97,14 @@ test.describe('campaign leaderships list', () => {
       name: 'Buscar município, território de identidade ou zona eleitoral',
     })
     await search.fill(added.name)
+    // Diagnostic: check if the listbox is in the DOM
+    const listbox = page.locator('[role="listbox"]')
+    const listboxCount = await listbox.count()
+    console.log(`Listbox count after fill: ${listboxCount}`)
+    if (listboxCount > 0) {
+      const listboxHTML = await listbox.first().innerHTML()
+      console.log(`Listbox HTML: ${listboxHTML.substring(0, 500)}`)
+    }
     const suggestion = page
       .getByRole('option')
       .filter({ has: page.getByText(added.name, { exact: true }) })
