@@ -7,6 +7,7 @@
 
 import type { AIToolContext } from '@/lib/ai/types'
 
+import { buildCampaignLinks } from '@/utilities/ai/tools/buildCampaignLinks'
 import { calculate } from '@/utilities/ai/tools/calculate'
 import { getDobradinhas } from '@/utilities/ai/tools/getDobradinhas'
 import { getLeaderships } from '@/utilities/ai/tools/getLeaderships'
@@ -18,6 +19,7 @@ import { searchEntities } from '@/utilities/ai/tools/searchEntities'
 
 export const buildAITools = (ctx: AIToolContext) => ({
   calculate,
+  buildCampaignLinks: buildCampaignLinks(ctx),
   getMunicipalityVotes: getMunicipalityVotes(ctx),
   getTopDeputies: getTopDeputies(ctx),
   getDobradinhas: getDobradinhas(ctx),
