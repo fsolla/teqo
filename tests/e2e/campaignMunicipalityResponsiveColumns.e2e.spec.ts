@@ -78,7 +78,7 @@ const expectedHeadersAt = (width: number) => {
   if (width >= 66 * REM_IN_PIXELS) headers.push('Liderança')
   if (width >= 72 * REM_IN_PIXELS) headers.push('Dobradinha')
   if (width >= 78 * REM_IN_PIXELS) headers.push('Cobertura')
-  headers.push('Sinal')
+  headers.push('Atualização')
   return headers
 }
 

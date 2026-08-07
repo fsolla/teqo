@@ -398,7 +398,7 @@ test.describe('Municípios — jornadas por papel', () => {
     await expect(reopened.getByLabel('Justificativa')).toHaveValue(note)
   })
 
-  test('coordinator registers a typed signal from the list freshness cell', async ({
+  test('coordinator registers an adversary-signal update from the list freshness cell', async ({
     campaign,
     page,
   }) => {
@@ -434,7 +434,8 @@ test.describe('Municípios — jornadas por papel', () => {
     await signalForm
       .getByRole('textbox', { name: 'Texto' })
       .fill('Liderança local reportou visita adversária na feira.')
-    await signalForm.getByLabel('Tipo do sinal').selectOption('visita_adversario')
+    await signalForm.getByLabel('Polaridade').selectOption('ruim')
+    await signalForm.getByLabel('Sinalizar adversário').check()
     await Promise.all([
       expectPostResponse(page, '/campanha/municipios'),
       signalForm.getByRole('button', { name: 'Registrar atualização', exact: true }).click(),

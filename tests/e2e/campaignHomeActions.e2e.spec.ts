@@ -363,7 +363,7 @@ test.describe('Wizard — registrar atualização (C87)', () => {
         `/campanha/acoes/mudar-tendencia\\?municipio=${municipality.slug}&entry=register-update`,
       ),
     )
-    await expect(page.getByText('Atualização registrada.')).toBeVisible()
+    await expect(page.getByText('Atualização registrada com sucesso.')).toBeVisible()
   })
 
   test('renders the unified fields without legacy signal-type navigation', async ({
