@@ -22,12 +22,29 @@ type NamedRelationSummary = {
 export type StateDeputyRowViewModel = {
   id: number
   name: string
+  email: string | null
+  phone: string | null
   slug: string
   party: string | null
   municipalityIDs: number[]
   leaderships: NamedRelationSummary[]
   /** B156 — the staff responsible for this dobradinha, names resolved. */
   advisors: NamedRelationSummary[]
+}
+
+const stateDeputyContactSummary = (
+  contact: StateDeputy['contact'],
+): { id: number; name: string; email: string | null; phone: string | null } => {
+  if (typeof contact === 'object' && contact !== null) {
+    return {
+      id: contact.id,
+      name: contact.name,
+      email: contact.email ?? null,
+      phone: contact.phone ?? null,
+    }
+  }
+
+  return { id: Number(contact), name: 'Contato', email: null, phone: null }
 }
 
 /** Values still reachable under the OTHER active filters (the Partido popover). */
@@ -125,11 +142,11 @@ export const loadStateDeputyListPageData = async (
     payload.find({
       collection: 'stateDeputy',
       where: buildStateDeputyListWhere(state),
-      depth: 0,
+      depth: 1,
       limit: stateDeputyPageSize,
       page: state.page,
       sort: resolveStateDeputyListPayloadSort(sort, dir),
-      select: { name: true, slug: true, party: true, advisors: true },
+      select: { contact: true, slug: true, party: true, advisors: true },
       user,
       overrideAccess: false,
     }),
@@ -199,8 +216,8 @@ export const loadStateDeputyListPageData = async (
 
   return {
     rows: result.docs.map((doc) => ({
+      ...stateDeputyContactSummary(doc.contact),
       id: doc.id,
-      name: doc.name,
       slug: doc.slug,
       party: doc.party ?? null,
       municipalityIDs: municipalityIDsByDeputy.get(doc.id) ?? [],
@@ -221,6 +238,8 @@ export type StateDeputySummary = {
 }
 
 export type StateDeputyDetailViewModel = StateDeputySummary & {
+  email: string | null
+  phone: string | null
   notes: string | null
   municipalities: Array<{ id: number; name: string; slug: string }>
   leaderships: Array<{ id: number; name: string }>
@@ -231,18 +250,29 @@ export type StateDeputyDetailViewModel = StateDeputySummary & {
 export const loadStateDeputyDetail = async (
   payload: Payload,
   user: CampaignUser,
-  slug: string,
+  identifier: string,
 ): Promise<StateDeputyDetailViewModel | null> => {
+  const numericCandidate = /^[1-9]\d*$/.test(identifier) ? Number(identifier) : null
+  const numericID =
+    numericCandidate !== null && Number.isSafeInteger(numericCandidate) ? numericCandidate : null
   const result = await payload.find({
     collection: 'stateDeputy',
-    where: { slug: { equals: slug } },
-    depth: 0,
-    limit: 1,
+    where:
+      numericID === null
+        ? { slug: { equals: identifier } }
+        : { or: [{ id: { equals: numericID } }, { slug: { equals: identifier } }] },
+    depth: 1,
+    limit: numericID === null ? 1 : 2,
     pagination: false,
     user,
     overrideAccess: false,
   })
-  const stateDeputy = result.docs[0] as StateDeputy | undefined
+  // Numeric legacy slugs are rare but valid; an actual ID wins when both exist.
+  const stateDeputy = (
+    numericID === null
+      ? result.docs[0]
+      : (result.docs.find((doc) => doc.id === numericID) ?? result.docs[0])
+  ) as StateDeputy | undefined
   if (!stateDeputy) return null
 
   const [municipalities, leaderships, advisorSummaries] = await Promise.all([
@@ -271,8 +301,8 @@ export const loadStateDeputyDetail = async (
   ])
 
   return {
+    ...stateDeputyContactSummary(stateDeputy.contact),
     id: stateDeputy.id,
-    name: stateDeputy.name,
     slug: stateDeputy.slug,
     party: stateDeputy.party ?? null,
     notes: stateDeputy.notes ?? null,
@@ -298,11 +328,11 @@ export const loadStateDeputySummaries = async (
   const result = await payload.find({
     collection: 'stateDeputy',
     where: { id: { in: ids } },
-    depth: 0,
+    depth: 1,
     limit: 0,
     pagination: false,
-    sort: 'name',
-    select: { name: true, slug: true, party: true },
+    sort: 'contact.name',
+    select: { contact: true, slug: true, party: true },
     // Intentional admin bypass: id lookups for the home-search card, no
     // actor-scoping possible or needed (B52 precedent).
     overrideAccess: true,
@@ -313,7 +343,7 @@ export const loadStateDeputySummaries = async (
       doc.id,
       {
         id: doc.id,
-        name: doc.name,
+        name: stateDeputyContactSummary(doc.contact).name,
         slug: doc.slug,
         party: doc.party ?? null,
       },

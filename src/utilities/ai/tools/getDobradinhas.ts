@@ -3,6 +3,7 @@ import type { Where } from 'payload'
 import { z } from 'zod'
 
 import type { AIToolContext } from '@/lib/ai/types'
+import { populatedContactName, relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 
 type Dobradinha = {
   name: string
@@ -29,8 +30,39 @@ export const getDobradinhas = (ctx: AIToolContext) =>
       const { payload } = ctx
 
       const andClauses: Where[] = []
+      let municipalityContext: { name: string; slug: string } | undefined
+
+      if (municipality) {
+        const munResult = await payload.find({
+          collection: 'municipality',
+          where: {
+            or: [
+              { name: { equals: municipality } },
+              { slug: { equals: municipality.toLowerCase().replace(/\s+/g, '-') } },
+            ],
+          },
+          depth: 0,
+          limit: 1,
+          pagination: false,
+          select: { name: true, slug: true, stateDeputies: true },
+          overrideAccess: false,
+          user: ctx.user,
+        })
+
+        const mun = munResult.docs[0]
+        if (!mun) return { message: `Nenhuma dobradinha encontrada em "${municipality}".` }
+
+        const stateDeputyIDs = uniqueRelationshipIds(mun.stateDeputies)
+        if (stateDeputyIDs.length === 0) {
+          return { message: `Nenhuma dobradinha encontrada em "${municipality}".` }
+        }
+
+        municipalityContext = { name: mun.name, slug: mun.slug }
+        andClauses.push({ id: { in: stateDeputyIDs } })
+      }
+
       if (deputyName) {
-        andClauses.push({ name: { like: deputyName } })
+        andClauses.push({ 'contact.name': { like: deputyName } })
       }
 
       const where: Where = andClauses.length > 0 ? { and: andClauses } : {}
@@ -41,56 +73,40 @@ export const getDobradinhas = (ctx: AIToolContext) =>
         depth: 1,
         limit: 20,
         pagination: false,
-        select: { name: true, party: true, slug: true, notes: true },
-        sort: 'name',
+        select: { contact: true, party: true, slug: true, notes: true },
+        sort: 'contact.name',
         overrideAccess: false,
         user: ctx.user,
       })
 
-      let deputies: Dobradinha[] = result.docs.map((doc: Record<string, unknown>) => ({
-        name: doc.name as string,
-        party: (doc.party as string) ?? null,
-        slug: doc.slug as string,
-        municipalities: [],
-        notes: (doc.notes as string) ?? null,
-      }))
-
-      // If municipality filter is provided, query the municipality to get its dobradinhas
-      if (municipality) {
-        const munResult = await payload.find({
-          collection: 'municipality',
-          where: {
-            or: [
-              { name: { equals: municipality } },
-              { slug: { equals: municipality.toLowerCase().replace(/\s+/g, '-') } },
-            ],
-          },
-          depth: 1,
-          limit: 1,
+      const contactIDs = result.docs
+        .map((doc) => relationshipId(doc.contact))
+        .filter((id): id is number => id !== null)
+      const contactNames = new Map<number, string>()
+      if (contactIDs.length > 0) {
+        const contacts = await payload.find({
+          collection: 'contact',
+          where: { id: { in: contactIDs } },
+          depth: 0,
+          limit: 0,
           pagination: false,
-          select: { name: true, slug: true, stateDeputies: true },
+          select: { name: true },
           overrideAccess: false,
           user: ctx.user,
         })
-
-        if (munResult.docs.length > 0) {
-          const mun = munResult.docs[0] as Record<string, unknown>
-          const linkedDeputies = (mun.stateDeputies as Array<{ name: string }>) ?? []
-          const linkedNames = new Set(linkedDeputies.map((d) => d.name))
-
-          // Enrich deputies with municipality info
-          for (const deputy of deputies) {
-            if (linkedNames.has(deputy.name)) {
-              deputy.municipalities.push({
-                name: mun.name as string,
-                slug: mun.slug as string,
-              })
-            }
-          }
-
-          deputies = deputies.filter((d) => linkedNames.has(d.name))
-        }
+        for (const contact of contacts.docs) contactNames.set(contact.id, contact.name)
       }
+
+      const deputies: Dobradinha[] = result.docs.map((doc: Record<string, unknown>) => ({
+        name: populatedContactName(
+          doc.contact,
+          contactNames.get(relationshipId(doc.contact) ?? -1) ?? 'Contato',
+        ),
+        party: (doc.party as string) ?? null,
+        slug: doc.slug as string,
+        municipalities: municipalityContext ? [municipalityContext] : [],
+        notes: (doc.notes as string) ?? null,
+      }))
 
       if (deputies.length === 0) {
         if (municipality) {

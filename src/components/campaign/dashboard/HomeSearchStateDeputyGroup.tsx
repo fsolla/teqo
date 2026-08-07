@@ -37,9 +37,9 @@ export const HomeSearchStateDeputyGroup = () => {
       <h2 className={HOME_SEARCH_GROUP_HEADING_CLASS}>Dobradinhas</h2>
       <ul className={HOME_SEARCH_GROUP_LIST_CLASS}>
         {visibleStateDeputies.map((hit) => (
-          <li key={`state-deputy-${hit.slug}`}>
+          <li key={`state-deputy-${hit.id}`}>
             <HomeSearchHitRow
-              href={`/campanha/dobradinhas/${hit.slug}`}
+              href={`/campanha/dobradinhas/${hit.id}`}
               primary={hit.name}
               secondary={formatStateDeputySecondary(hit.party, hit.municipalityCount)}
             />

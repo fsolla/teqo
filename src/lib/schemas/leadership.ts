@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { contactFieldUpdateSchema } from '@/lib/schemas/contact'
 import {
   brazilianMobile,
   optionalPersistedEmail,
@@ -152,29 +153,7 @@ export type LeadershipMunicipalitiesMembershipInput = z.input<
   typeof leadershipMunicipalitiesMembershipSchema
 >
 
-const leadershipContactPhoneInput = z.union([brazilianMobile, z.literal(''), z.null()]).optional()
-
-const nullableLeadershipContactPhone = leadershipContactPhoneInput.transform((value) =>
-  value === '' || value === undefined ? null : value,
-)
-
 /** Per-field Contact write for B153 inline edit (lista + detalhe). */
-export const leadershipContactUpdateSchema = z.discriminatedUnion('field', [
-  z.object({
-    id: positiveRelationshipId,
-    field: z.literal('name'),
-    name: z.string().trim().min(2).max(120),
-  }),
-  z.object({
-    id: positiveRelationshipId,
-    field: z.literal('email'),
-    email: optionalPersistedEmail,
-  }),
-  z.object({
-    id: positiveRelationshipId,
-    field: z.literal('phone'),
-    phone: nullableLeadershipContactPhone,
-  }),
-])
+export const leadershipContactUpdateSchema = contactFieldUpdateSchema
 
 export type LeadershipContactUpdateInput = z.input<typeof leadershipContactUpdateSchema>

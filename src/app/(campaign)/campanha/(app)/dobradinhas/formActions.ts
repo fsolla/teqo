@@ -4,10 +4,14 @@ import { setLeadershipStateDeputyMembership } from '@/app/(campaign)/campanha/ac
 import {
   setStateDeputyAdvisorMembership,
   setStateDeputyMunicipalitiesBatch,
+  updateStateDeputyContact,
+  updateStateDeputyParty,
 } from '@/app/(campaign)/campanha/actions/stateDeputy'
 import {
+  nullableFormText,
   repeatedRelationshipFormValues,
   requiredFormBoolean,
+  requiredFormText,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
 import {
@@ -16,14 +20,87 @@ import {
 } from '@/lib/schemas/leadership'
 import {
   STATE_DEPUTY_ADVISOR_SAFE_MESSAGES,
+  STATE_DEPUTY_CONFLICT_MESSAGE,
+  STATE_DEPUTY_INVALID_CONTACT_MESSAGE,
+  STATE_DEPUTY_INVALID_FIELD_MESSAGE,
   STATE_DEPUTY_MUNICIPALITIES_SAFE_MESSAGES,
+  STATE_DEPUTY_STAFF_MESSAGE,
 } from '@/lib/schemas/stateDeputy'
 import {
   runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
+import {
+  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
+  CONTACT_PHONE_CONFLICT_MESSAGE,
+} from '@/utilities/contactPhoneInvariant'
 
 const safeMessages = [LEADERSHIP_STAFF_MESSAGE, LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE] as const
+
+const stateDeputyContactSafeMessages = [
+  STATE_DEPUTY_STAFF_MESSAGE,
+  STATE_DEPUTY_CONFLICT_MESSAGE,
+  STATE_DEPUTY_INVALID_CONTACT_MESSAGE,
+  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
+  CONTACT_PHONE_CONFLICT_MESSAGE,
+] as const
+
+const stateDeputyPartySafeMessages = [STATE_DEPUTY_STAFF_MESSAGE] as const
+
+/** Per-field Contact edit for B163 (lista + ficha). */
+export const updateStateDeputyContactFormAction = async (
+  _state: CampaignFormActionState,
+  formData: FormData,
+): Promise<CampaignFormActionState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      const id = requiredRelationshipFormValue(formData, 'stateDeputyId')
+      const field = requiredFormText(formData, 'field')
+
+      if (field === 'name') {
+        await updateStateDeputyContact({
+          id,
+          field: 'name',
+          name: requiredFormText(formData, 'name'),
+        })
+      } else if (field === 'email') {
+        await updateStateDeputyContact({
+          id,
+          field: 'email',
+          email: nullableFormText(formData, 'email') ?? undefined,
+        })
+      } else if (field === 'phone') {
+        await updateStateDeputyContact({
+          id,
+          field: 'phone',
+          phone: nullableFormText(formData, 'phone'),
+        })
+      } else {
+        throw new Error(STATE_DEPUTY_INVALID_FIELD_MESSAGE)
+      }
+
+      return { message: 'Salvo.' }
+    },
+    safeMessages: stateDeputyContactSafeMessages,
+    genericMessage: 'Não foi possível salvar. Verifique os dados e tente novamente.',
+  })
+
+/** Inline party edit for B163; notes are deliberately left untouched. */
+export const updateStateDeputyPartyFormAction = async (
+  _state: CampaignFormActionState,
+  formData: FormData,
+): Promise<CampaignFormActionState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      await updateStateDeputyParty({
+        id: requiredRelationshipFormValue(formData, 'stateDeputyId'),
+        party: nullableFormText(formData, 'party'),
+      })
+      return { message: 'Salvo.' }
+    },
+    safeMessages: stateDeputyPartySafeMessages,
+    genericMessage: 'Não foi possível salvar o partido. Verifique os dados e tente novamente.',
+  })
 
 /** One chip toggle in the "Lideranças" column of `/campanha/dobradinhas` (B36). */
 export const setLeadershipStateDeputyMembershipFormAction = async (

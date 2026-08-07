@@ -31,11 +31,7 @@ export const StateDeputyForm = ({ formAction, initial, initialName }: StateDeput
   return (
     <form action={submitAction} className="flex max-w-2xl flex-col gap-4">
       {initial ? <input type="hidden" name="stateDeputyId" value={initial.id} /> : null}
-      {isEdit ? (
-        <p className="text-sm text-muted-foreground">
-          O nome da dobradinha não pode ser alterado após a criação.
-        </p>
-      ) : (
+      {!isEdit ? (
         <Field>
           <FieldLabel htmlFor="state-deputy-name">Nome</FieldLabel>
           <Input
@@ -43,7 +39,7 @@ export const StateDeputyForm = ({ formAction, initial, initialName }: StateDeput
             name="name"
             required
             minLength={2}
-            maxLength={160}
+            maxLength={120}
             defaultValue={initialName}
             className="min-h-11"
           />
@@ -51,7 +47,7 @@ export const StateDeputyForm = ({ formAction, initial, initialName }: StateDeput
             <FieldError>{fieldError(state.fieldErrors, 'name')}</FieldError>
           ) : null}
         </Field>
-      )}
+      ) : null}
       <Field>
         <FieldLabel htmlFor="state-deputy-party">Partido</FieldLabel>
         <Input

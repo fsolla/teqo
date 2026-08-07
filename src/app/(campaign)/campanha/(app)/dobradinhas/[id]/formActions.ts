@@ -31,7 +31,7 @@ export const updateStateDeputyFormAction = async (
         party: nullableFormText(formData, 'party'),
         notes: nullableFormText(formData, 'notes'),
       })
-      revalidatePath('/campanha/dobradinhas/[slug]', 'page')
+      revalidatePath('/campanha/dobradinhas/[id]', 'page')
       return { message: 'Dobradinha atualizada.' }
     },
     safeMessages: [STATE_DEPUTY_STAFF_MESSAGE],

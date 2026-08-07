@@ -789,20 +789,45 @@ for (const [slug, entry] of staffRoster) {
 
 const existingDeputies = await payload.find({
   collection: 'stateDeputy',
-  depth: 0,
+  depth: 1,
   limit: 5000,
   pagination: false,
   overrideAccess: true,
-  select: { name: true, slug: true },
+  select: { contact: true, slug: true },
 })
 const deputiesBySlug = new Map(existingDeputies.docs.map((deputy) => [deputy.slug, deputy]))
+const deputiesByContactName = new Map()
+for (const deputy of existingDeputies.docs) {
+  const contact =
+    typeof deputy.contact === 'object' && deputy.contact !== null ? deputy.contact : null
+  const contactNameSlug = slugify(String(contact?.name ?? ''))
+  if (!contactNameSlug) continue
+  const matches = deputiesByContactName.get(contactNameSlug) ?? []
+  matches.push(deputy)
+  deputiesByContactName.set(contactNameSlug, matches)
+}
+const matchedDeputyIDs = new Set()
 
 const deputyPlans = new Map()
 for (const [slug, entry] of deputyRoster) {
-  const existing = deputiesBySlug.get(slug) ?? null
+  const name = canonicalRosterName(entry)
+  const existingBySlug = deputiesBySlug.get(slug)
+  const nameMatches = (deputiesByContactName.get(slugify(name)) ?? []).filter(
+    (deputy) => !matchedDeputyIDs.has(deputy.id),
+  )
+  const existingByName = nameMatches.length === 1 ? nameMatches[0] : null
+  const existing =
+    (existingBySlug && !matchedDeputyIDs.has(existingBySlug.id) ? existingBySlug : null) ??
+    existingByName
+  if (existing && existingBySlug?.id !== existing.id) {
+    warnings.push(
+      `Dobradinha "${name}" encontrada pelo nome atual do Contato; o slug legado "${existing.slug}" foi preservado.`,
+    )
+  }
+  if (existing) matchedDeputyIDs.add(existing.id)
   deputyPlans.set(slug, {
     slug,
-    name: canonicalRosterName(entry),
+    name,
     existing,
     deputyId: existing ? existing.id : null,
     entry,
@@ -1124,9 +1149,20 @@ try {
     let deputiesCreated = 0
     for (const plan of deputyPlans.values()) {
       if (plan.deputyId != null) continue
+      const contact = await payload.create({
+        collection: 'contact',
+        data: {
+          name: plan.name,
+          state: 'BA',
+          city: null,
+        },
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
       const created = await payload.create({
         collection: 'stateDeputy',
-        data: { name: plan.name },
+        data: { contact: contact.id },
         depth: 0,
         overrideAccess: true,
         req,

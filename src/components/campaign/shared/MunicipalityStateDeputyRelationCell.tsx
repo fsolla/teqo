@@ -45,7 +45,7 @@ const entryOf = (option: StateDeputyRelationOption): MunicipalityRelationEntry =
   label: option.name,
   initialsLabel: option.plainName,
   searchText: `${option.plainName} ${option.party ?? ''}`,
-  href: `/campanha/dobradinhas/${option.slug}`,
+  href: `/campanha/dobradinhas/${option.id}`,
 })
 
 const entriesFor = (options: readonly StateDeputyRelationOption[]) => {
@@ -98,7 +98,7 @@ export const MunicipalityStateDeputyRelationCell = ({
         label: stateDeputyDisplayName(created.name, created.party),
         initialsLabel: created.name,
         searchText: `${created.name} ${created.party ?? ''}`,
-        href: `/campanha/dobradinhas/${created.slug}`,
+        href: `/campanha/dobradinhas/${created.id}`,
       },
     }
   }
@@ -123,7 +123,7 @@ export const MunicipalityStateDeputyRelationCell = ({
       }
       emptyState={<span className="text-sm text-muted-foreground">—</span>}
       createLabel={(name) => `Criar dobradinha “${name}”`}
-      createMaxLength={160}
+      createMaxLength={120}
       sortSelected={false}
       onToggle={toggle}
       onCreate={create}

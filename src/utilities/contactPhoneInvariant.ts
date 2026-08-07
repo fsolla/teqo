@@ -3,7 +3,10 @@ import 'server-only'
 import type { Payload, PayloadRequest } from 'payload'
 
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
-import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
+import {
+  acquireTextAdvisoryLocks,
+  POSTGRES_DEDUP_LOCK_MESSAGE,
+} from '@/utilities/postgresTransactionLocks'
 
 export const CONTACT_PHONE_CONFLICT_MESSAGE = 'Já existe outro contato com este celular.'
 
@@ -14,7 +17,7 @@ export const CONTACT_PHONE_CONFLICT_MESSAGE = 'Já existe outro contato com este
 export const CONTACT_PHONE_AMBIGUOUS_MESSAGE =
   'Existe mais de um contato com este celular. Resolva a duplicidade no admin antes de continuar.'
 
-type ContactPhonePayload = Pick<Payload, 'db' | 'find'>
+type ContactPhonePayload = Pick<Payload, 'db' | 'find' | 'findByID'>
 type ContactPhoneRequest = PayloadTransactionRequest | PayloadRequest
 
 export const contactPhoneLockKeys = (phones: string[]): string[] =>
@@ -51,4 +54,61 @@ export const assertContactPhoneAvailable = async (
     req,
   })
   if (conflicts.totalDocs > 0) throw new Error(conflictMessage)
+}
+
+/**
+ * Checks the phone invariant for an already-authorized Contact update. The
+ * caller must prove access to the owning campaign join before using the
+ * intentional admin-bypass reads/writes here.
+ */
+export const assertContactPhoneWritable = async (
+  payload: ContactPhonePayload,
+  req: ContactPhoneRequest,
+  contactID: number,
+  phone: string,
+): Promise<void> => {
+  if (payload.db.name !== 'postgres') {
+    throw new Error(POSTGRES_DEDUP_LOCK_MESSAGE)
+  }
+
+  const currentContact = await payload.findByID({
+    collection: 'contact',
+    id: contactID,
+    depth: 0,
+    select: { phone: true },
+    // Intentional admin bypass: the caller has already proved ownership through
+    // the campaign join; this read only obtains the old value for lock ordering.
+    overrideAccess: true,
+    req,
+  })
+  const oldPhone = currentContact.phone ?? undefined
+
+  // Lock both sides before checking availability. This prevents concurrent
+  // swaps (A -> B and B -> A) from waiting on each other's hook locks.
+  await acquireContactPhoneLocks(
+    payload,
+    req,
+    [oldPhone, phone].filter((value): value is string => Boolean(value)),
+  )
+
+  const contactsWithPhone = await payload.find({
+    collection: 'contact',
+    where: { phone: { equals: phone } },
+    depth: 0,
+    limit: 2,
+    pagination: false,
+    // Intentional admin bypass: phone uniqueness must see every Contact,
+    // including one outside the actor's campaign scope.
+    overrideAccess: true,
+    req,
+  })
+
+  if (contactsWithPhone.totalDocs > 1) {
+    throw new Error(CONTACT_PHONE_AMBIGUOUS_MESSAGE)
+  }
+
+  const phoneOwner = contactsWithPhone.docs[0]
+  if (phoneOwner && phoneOwner.id !== contactID) {
+    await assertContactPhoneAvailable(payload, req, phone, contactID)
+  }
 }

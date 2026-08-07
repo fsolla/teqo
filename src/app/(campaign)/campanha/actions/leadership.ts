@@ -32,7 +32,7 @@ import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
 import {
   acquireContactPhoneLocks,
-  assertContactPhoneAvailable,
+  assertContactPhoneWritable,
   CONTACT_PHONE_AMBIGUOUS_MESSAGE,
 } from '@/utilities/contactPhoneInvariant'
 import { loadMunicipalityLeadershipSummaries } from '@/utilities/municipality/municipalityViewModels'
@@ -48,40 +48,6 @@ const getFreshStaffActor = (
   actor: CampaignUser,
   req?: PayloadTransactionRequest,
 ): Promise<CampaignUser> => reloadStaffActor(payload, actor, LEADERSHIP_STAFF_MESSAGE, req)
-
-const assertLeadershipContactPhoneWritable = async (
-  payload: Payload,
-  req: PayloadTransactionRequest,
-  contactID: number,
-  phone: string,
-) => {
-  if (payload.db.name !== 'postgres') {
-    throw new Error(POSTGRES_DEDUP_LOCK_MESSAGE)
-  }
-
-  await acquireContactPhoneLocks(payload, req, [phone])
-
-  // Intentional admin bypass: staff scope was checked on the leadership; phone
-  // uniqueness must see every contact with the number, not only visible rows.
-  const contactsWithPhone = await payload.find({
-    collection: 'contact',
-    where: { phone: { equals: phone } },
-    depth: 0,
-    limit: 2,
-    pagination: false,
-    overrideAccess: true,
-    req,
-  })
-
-  if (contactsWithPhone.totalDocs > 1) {
-    throw new Error(CONTACT_PHONE_AMBIGUOUS_MESSAGE)
-  }
-
-  const phoneOwner = contactsWithPhone.docs[0]
-  if (phoneOwner && phoneOwner.id !== contactID) {
-    await assertContactPhoneAvailable(payload, req, phone, contactID)
-  }
-}
 
 /** Advisors may only link leaderships to municipalities they administer. */
 const assertMunicipalitiesWithinScope = async (
@@ -318,7 +284,7 @@ export const updateLeadershipContactRecord = async (
         contactData.email = data.email ?? null
       } else if (data.field === 'phone') {
         if (data.phone) {
-          await assertLeadershipContactPhoneWritable(payload, req, contactID, data.phone)
+          await assertContactPhoneWritable(payload, req, contactID, data.phone)
           contactData.phone = data.phone
         } else {
           contactData.phone = null
@@ -387,7 +353,7 @@ const updateLeadershipWizardRecord = async (
         throw new Error(LEADERSHIP_INVALID_CONTACT_MESSAGE)
       }
 
-      await assertLeadershipContactPhoneWritable(payload, req, contactID, data.phone)
+      await assertContactPhoneWritable(payload, req, contactID, data.phone)
 
       // bypass: contact write is staff-scoped via leadership access check above.
       await payload.update({
@@ -556,11 +522,11 @@ export const setMunicipalityLeadershipMembership = async (input: {
  * `/campanha/liderancas` — the list the chip was toggled ON — is deliberately
  * NOT here: see `revalidateLeadershipMunicipalityPaths` below for the reason.
  */
-const revalidateLeadershipStateDeputyPaths = (leadershipId: number, stateDeputySlug?: string) => {
+const revalidateLeadershipStateDeputyPaths = (leadershipId: number, stateDeputyID?: number) => {
   revalidatePath(`/campanha/liderancas/${leadershipId}`, 'page')
   revalidatePath('/campanha/dobradinhas', 'page')
-  if (stateDeputySlug) {
-    revalidatePath(`/campanha/dobradinhas/${stateDeputySlug}`, 'page')
+  if (stateDeputyID) {
+    revalidatePath(`/campanha/dobradinhas/${stateDeputyID}`, 'page')
   }
 }
 
@@ -578,7 +544,7 @@ const LEADERSHIP_RELATION_LOCK_KEYS = {
  * The pairing is the point: relation and lock key used to be two independent
  * string literals a few lines apart, so a third relation could quietly take a
  * lock that guards a different column. The rest of the two delta writes — the
- * delta shape, the scope assertion, the slug lookup, the return — is genuinely
+ * delta shape, the scope assertion, the return — is genuinely
  * different in each, and hoisting it would cost six callbacks to share ~24 lines.
  */
 const openLeadershipForRelationDelta = async <
@@ -642,25 +608,10 @@ export const setLeadershipStateDeputyMembershipRecord = async (
         assigned,
       )
 
-      // No-op: nothing to write, and nothing for the caller to revalidate —
-      // skip the slug lookup below, which exists only to target that revalidate.
+      // No-op: nothing to write, and nothing for the caller to revalidate.
       if (nextStateDeputyIDs === null) {
-        return { leadership: current, stateDeputySlug: undefined }
+        return { leadership: current, stateDeputyID: undefined }
       }
-
-      // Intentional admin bypass: only used to resolve the slug of the
-      // touched deputy for a targeted revalidate; existence is otherwise
-      // enforced by Payload's relationship validation on `update`.
-      const stateDeputySlug = (
-        await payload.findByID({
-          collection: 'stateDeputy',
-          id: stateDeputyId,
-          depth: 0,
-          select: { slug: true },
-          overrideAccess: true,
-          req,
-        })
-      ).slug
 
       const updated = await payload.update({
         collection: 'leadership',
@@ -672,7 +623,7 @@ export const setLeadershipStateDeputyMembershipRecord = async (
         req,
       })
 
-      return { leadership: updated, stateDeputySlug }
+      return { leadership: updated, stateDeputyID: stateDeputyId }
     },
     { beginFailureMessage: 'Não foi possível atualizar as dobradinhas.' },
   )
@@ -682,13 +633,13 @@ export const setLeadershipStateDeputyMembership = async (
   input: LeadershipStateDeputyMembershipInput,
 ) => {
   const { payload, actor } = await getCampaignActionContext()
-  const { leadership, stateDeputySlug } = await setLeadershipStateDeputyMembershipRecord(
+  const { leadership, stateDeputyID } = await setLeadershipStateDeputyMembershipRecord(
     payload,
     actor,
     input,
   )
   // No-op writes nothing, so there is nothing to revalidate.
-  if (stateDeputySlug) revalidateLeadershipStateDeputyPaths(input.leadershipId, stateDeputySlug)
+  if (stateDeputyID) revalidateLeadershipStateDeputyPaths(input.leadershipId, stateDeputyID)
   return leadership
 }
 
@@ -749,8 +700,7 @@ export const setLeadershipMunicipalitiesMembershipRecord = async (
         assigned,
       )
 
-      // No-op: nothing to write, and nothing for the caller to revalidate —
-      // skip the slug lookup below, which exists only to target that revalidate.
+      // No-op: nothing to write, and nothing for the caller to revalidate.
       if (change === null) {
         return { leadership: current, municipalitySlugs: [] }
       }

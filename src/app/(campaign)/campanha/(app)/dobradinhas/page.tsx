@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
+import { CampaignInlineEditableCell } from '@/components/campaign/shared/CampaignInlineEditableCell'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
   CampaignListPendingBoundary,
@@ -69,6 +70,8 @@ import {
   setLeadershipStateDeputyMembershipFormAction,
   setStateDeputyAdvisorMembershipFormAction,
   setStateDeputyMunicipalitiesFormAction,
+  updateStateDeputyContactFormAction,
+  updateStateDeputyPartyFormAction,
 } from './formActions'
 
 export const metadata = campaignPageMetadataFromCatalog('dobradinhas')
@@ -118,12 +121,17 @@ const stateDeputyColumns = (
     mandatory: true,
     head: <StateDeputySortableHead state={state} sortKey="name" />,
     cell: (row) => (
-      <Link
-        href={`/campanha/dobradinhas/${row.slug}`}
-        className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-4 hover:underline"
-      >
-        {row.name}
-      </Link>
+      <CampaignInlineEditableCell
+        recordId={row.id}
+        recordIdField="stateDeputyId"
+        field="name"
+        value={row.name}
+        label="Nome"
+        formAction={updateStateDeputyContactFormAction}
+        href={`/campanha/dobradinhas/${row.id}`}
+        editTrigger="cell"
+        saveOnChange={false}
+      />
     ),
   },
   {
@@ -137,8 +145,53 @@ const stateDeputyColumns = (
         hasNoPartyOption={hasNoPartyOption}
       />
     ),
-    cellClassName: 'text-muted-foreground',
-    cell: (row) => row.party ?? '—',
+    cellClassName: 'min-w-32',
+    cell: (row) => (
+      <CampaignInlineEditableCell
+        recordId={row.id}
+        recordIdField="stateDeputyId"
+        field="party"
+        value={row.party}
+        label="Partido"
+        formAction={updateStateDeputyPartyFormAction}
+        editTrigger="cell"
+        saveOnChange={false}
+      />
+    ),
+  },
+  {
+    id: 'email',
+    label: 'E-mail',
+    cellClassName: 'max-w-56',
+    cell: (row) => (
+      <CampaignInlineEditableCell
+        recordId={row.id}
+        recordIdField="stateDeputyId"
+        field="email"
+        value={row.email}
+        label="E-mail"
+        formAction={updateStateDeputyContactFormAction}
+        editTrigger="cell"
+        saveOnChange={false}
+      />
+    ),
+  },
+  {
+    id: 'phone',
+    label: 'Telefone',
+    cellClassName: 'min-w-40',
+    cell: (row) => (
+      <CampaignInlineEditableCell
+        recordId={row.id}
+        recordIdField="stateDeputyId"
+        field="phone"
+        value={row.phone}
+        label="Telefone"
+        formAction={updateStateDeputyContactFormAction}
+        editTrigger="cell"
+        saveOnChange={false}
+      />
+    ),
   },
   {
     id: 'municipalities',

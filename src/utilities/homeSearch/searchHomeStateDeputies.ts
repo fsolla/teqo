@@ -14,6 +14,7 @@ import {
   compareHomeSearchNameRelevance,
   normalizeHomeSearchName,
 } from '@/lib/homeSearchMunicipalityMatch'
+import { populatedContactName } from '@/lib/relationship'
 import { matchesNormalizedAtWordStart } from '@/lib/wordStartFilter'
 import type { CampaignUser } from '@/payload-types'
 import { municipalityIdsByStateDeputyIds } from '@/utilities/stateDeputyData'
@@ -39,13 +40,13 @@ export const searchHomeStateDeputies = async (
   const result = await payload.find({
     collection: 'stateDeputy',
     where: {
-      or: [{ name: { contains: query } }, { party: { contains: query } }],
+      or: [{ 'contact.name': { contains: query } }, { party: { contains: query } }],
     },
-    depth: 0,
+    depth: 1,
     limit: 0,
     pagination: false,
-    sort: 'name',
-    select: { name: true, slug: true, party: true },
+    sort: 'contact.name',
+    select: { contact: true, slug: true, party: true },
     user,
     overrideAccess: false,
   })
@@ -59,7 +60,8 @@ export const searchHomeStateDeputies = async (
   }> = []
 
   for (const doc of result.docs) {
-    const normalizedName = normalizeHomeSearchName(doc.name)
+    const name = populatedContactName(doc.contact)
+    const normalizedName = normalizeHomeSearchName(name)
     const normalizedParty = doc.party ? normalizeHomeSearchName(doc.party) : ''
     const nameMatch = matchesNormalizedAtWordStart(normalizedName, normalizedQuery)
     const partyMatch =
@@ -69,7 +71,7 @@ export const searchHomeStateDeputies = async (
     candidates.push({
       normalizedName: nameMatch ? normalizedName : normalizedParty,
       slug: doc.slug,
-      name: doc.name,
+      name,
       party: doc.party ?? null,
       id: doc.id,
     })
@@ -91,6 +93,7 @@ export const searchHomeStateDeputies = async (
         normalizedName: row.normalizedName,
         tieBreakDesc: municipalityCount,
         hit: {
+          id: row.id,
           slug: row.slug,
           name: row.name,
           party: row.party,

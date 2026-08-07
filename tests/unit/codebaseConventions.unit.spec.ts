@@ -574,7 +574,7 @@ describe('admin bypasses carry a justification comment', () => {
     ['src/app/(campaign)/campanha/actions/municipality.ts', 1],
     ['src/app/(campaign)/campanha/actions/password.ts', 2],
     ['src/app/(campaign)/campanha/actions/profile.ts', 4],
-    ['src/app/(campaign)/campanha/actions/stateDeputy.ts', 1],
+    ['src/app/(campaign)/campanha/actions/stateDeputy.ts', 0],
     ['src/app/(campaign)/campanha/actions/supporter.ts', 9],
     ['src/app/(campaign)/campanha/actions/supporterImport.ts', 2],
     ['src/app/(campaign)/campanha/actions/votePledge.ts', 1],

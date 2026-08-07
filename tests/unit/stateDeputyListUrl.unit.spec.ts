@@ -80,7 +80,7 @@ describe('state deputy list URL contract', () => {
   })
 
   it('resolves the payload sort string with the descending prefix', () => {
-    expect(resolveStateDeputyListPayloadSort('name', 'asc')).toBe('name')
+    expect(resolveStateDeputyListPayloadSort('name', 'asc')).toBe('contact.name')
     expect(resolveStateDeputyListPayloadSort('party', 'desc')).toBe('-party')
   })
 

@@ -44,6 +44,7 @@ assertLocalDatabase(
 const config = (await import('../src/payload.config.ts')).default
 const { provisionOnda0ConsentAndPrivacy } = await import('../src/utilities/onda0Provision.ts')
 const { hashConsentContent } = await import('../src/utilities/consentContentHash.ts')
+const { withPayloadTransaction } = await import('../src/utilities/payloadTransaction.ts')
 const { WHATSAPP_SUBSCRIPTION_CONSENT_KEY } = await import('../src/lib/campaignConsentKeys.ts')
 
 const payload = await getPayload({ config })
@@ -151,12 +152,48 @@ try {
     },
     `organization ${MINIMAL_ORGANIZATION.slug}`,
   )
-  const stateDeputy = await upsert(
-    'stateDeputy',
-    { slug: { equals: MINIMAL_STATE_DEPUTY.slug } },
-    { ...MINIMAL_STATE_DEPUTY },
-    `stateDeputy ${MINIMAL_STATE_DEPUTY.slug}`,
-  )
+  let stateDeputy = await findOne('stateDeputy', {
+    slug: { equals: MINIMAL_STATE_DEPUTY.slug },
+  })
+  if (!stateDeputy) {
+    stateDeputy = await withPayloadTransaction(payload, async ({ req }) => {
+      const contactResult = await payload.find({
+        collection: 'contact',
+        where: { email: { equals: `${MINIMAL_STATE_DEPUTY.slug}@planilha.invalid` } },
+        depth: 0,
+        limit: 1,
+        pagination: false,
+        overrideAccess: true,
+        req,
+      })
+      const contact =
+        contactResult.docs[0] ??
+        (await payload.create({
+          collection: 'contact',
+          data: {
+            name: MINIMAL_STATE_DEPUTY.name,
+            email: `${MINIMAL_STATE_DEPUTY.slug}@planilha.invalid`,
+            state: 'BA',
+            city: null,
+          },
+          depth: 0,
+          overrideAccess: true,
+          req,
+        }))
+
+      return payload.create({
+        collection: 'stateDeputy',
+        data: { contact: contact.id, party: MINIMAL_STATE_DEPUTY.party },
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+    })
+    console.log(`[seed:minimal] created contact ${MINIMAL_STATE_DEPUTY.name}`)
+    console.log(`[seed:minimal] created stateDeputy ${MINIMAL_STATE_DEPUTY.slug}`)
+  } else {
+    console.log(`[seed:minimal] ok (exists) stateDeputy ${MINIMAL_STATE_DEPUTY.slug}`)
+  }
 
   // 5. Leaderships (contact upserted by phone; leadership unique by contact).
   for (const entry of MINIMAL_LEADERSHIPS) {

@@ -72,7 +72,10 @@ export const resolveStateDeputyListSort = (
 export const resolveStateDeputyListPayloadSort = (
   sort: StateDeputyListSortKey,
   dir: StateDeputyListSortDirection,
-): string => (dir === 'desc' ? `-${sort}` : sort)
+): string => {
+  const path = sort === 'name' ? 'contact.name' : sort
+  return dir === 'desc' ? `-${path}` : path
+}
 
 export const formatStateDeputyListSortSummary = (
   sort: StateDeputyListSortKey,
@@ -122,7 +125,7 @@ export const parseStateDeputyListParams = (
 
 export const buildStateDeputyListWhere = (state: StateDeputyListState): Where => {
   const filters: Where[] = []
-  if (state.q) filters.push({ name: { contains: state.q } })
+  if (state.q) filters.push({ 'contact.name': { contains: state.q } })
 
   if (state.parties?.length) {
     const namedParties = state.parties.filter((party) => party !== NO_PARTY_FILTER_VALUE)

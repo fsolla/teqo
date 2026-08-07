@@ -1,12 +1,13 @@
 import config from '@payload-config'
 import { HandshakeIcon, MapPinIcon, UserCogIcon } from 'lucide-react'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { StateDeputyAdvisorRelationCell } from '@/components/campaign/stateDeputy/StateDeputyAdvisorRelationCell'
+import { StateDeputyContactSection } from '@/components/campaign/stateDeputy/StateDeputyContactSection'
 import { StateDeputyForm } from '@/components/campaign/stateDeputy/StateDeputyForm'
 import { Badge } from '@/components/ui/Badge'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
@@ -20,13 +21,13 @@ import {
 } from './formActions'
 
 export async function generateMetadata({ params }: StateDeputyDetailPageProps) {
-  const { slug } = await params
+  const { id } = await params
   const [user, payload] = await Promise.all([
     requireCampaignPageActor({ gate: 'staff' }),
     getPayload({ config }),
   ])
 
-  const stateDeputy = await loadStateDeputyDetail(payload, user, slug)
+  const stateDeputy = await loadStateDeputyDetail(payload, user, id)
   if (!stateDeputy) return campaignPageMetadata({ title: 'Dobradinha' })
 
   return campaignPageMetadata(
@@ -37,18 +38,19 @@ export async function generateMetadata({ params }: StateDeputyDetailPageProps) {
 }
 
 type StateDeputyDetailPageProps = {
-  params: Promise<{ slug: string }>
+  params: Promise<{ id: string }>
 }
 
 export default async function StateDeputyDetailPage({ params }: StateDeputyDetailPageProps) {
-  const { slug } = await params
+  const { id } = await params
   const [user, payload] = await Promise.all([
     requireCampaignPageActor({ gate: 'staff' }),
     getPayload({ config }),
   ])
 
-  const stateDeputy = await loadStateDeputyDetail(payload, user, slug)
+  const stateDeputy = await loadStateDeputyDetail(payload, user, id)
   if (!stateDeputy) notFound()
+  if (String(stateDeputy.id) !== id) redirect(`/campanha/dobradinhas/${stateDeputy.id}`)
 
   // B156 — only coordinator/candidate assign advisors; the rest of staff reads.
   const canEditAdvisors = isCampaignUnrestricted(user)
@@ -62,6 +64,12 @@ export default async function StateDeputyDetailPage({ params }: StateDeputyDetai
             ? { title: stateDeputy.name, subtitle: stateDeputy.party }
             : { title: stateDeputy.name }
         }
+      />
+      <StateDeputyContactSection
+        stateDeputyId={stateDeputy.id}
+        name={stateDeputy.name}
+        email={stateDeputy.email}
+        phone={stateDeputy.phone}
       />
       {stateDeputy.notes ? (
         <p className="whitespace-pre-wrap text-sm text-muted-foreground">{stateDeputy.notes}</p>

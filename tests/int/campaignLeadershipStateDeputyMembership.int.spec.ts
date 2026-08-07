@@ -39,14 +39,14 @@ describe('setLeadershipStateDeputyMembershipRecord (B31)', () => {
       })
       const stateDeputy = await fixtures.createStateDeputy()
 
-      const { leadership: assigned, stateDeputySlug } =
+      const { leadership: assigned, stateDeputyID } =
         await setLeadershipStateDeputyMembershipRecord(payload, actor, {
           leadershipId: leadership.id,
           stateDeputyId: stateDeputy.id,
           assigned: true,
         })
       expect(stateDeputyIds(assigned)).toContain(stateDeputy.id)
-      expect(stateDeputySlug).toBe(stateDeputy.slug)
+      expect(stateDeputyID).toBe(stateDeputy.id)
 
       const { leadership: removed } = await setLeadershipStateDeputyMembershipRecord(
         payload,
