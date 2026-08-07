@@ -25,6 +25,8 @@ pnpm worktree kill [--force]  # destrói o worktree em que o shell atual está
 
 No opencode, isso é o comando **`/worktree next`** / **`/worktree kill`** (`.opencode/commands/worktree.md`), que só repassa `$ARGUMENTS` para o script.
 
+No terminal interativo, para `--go` trocar de diretório de verdade, use a função `worktree()` de **`.agents/shell/worktree.sh`** (uma linha de `source` no profile): o script imprime `cd <dir>` e a função o aplica no shell que te chamou — node não consegue mudar o cwd do shell pai.
+
 ## Fluxo quando invocado como skill (agentes que não têm opencode)
 
 1. Rode `pnpm worktree next` e leia a saída inteira. Se a fila estiver vazia, ele para sozinho — não crie worktree sem Issue.

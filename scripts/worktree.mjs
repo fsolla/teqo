@@ -4,10 +4,11 @@
  *
  *   pnpm worktree next [--go]      cria worktree a partir de origin/main para a
  *                                  próxima Issue claimável; branch `<code>-<slug>`.
- *                                  Com `--go`, imprime `cd <dir>` no fim para o
- *                                  shell chamador aplicar (node não muda o cwd
- *                                  do shell pai; no terminal: `eval "$(pnpm
- *                                  worktree next --go)"`).
+ *                                  Com `--go`, imprime `cd <dir>` no fim — node
+ *                                  não muda o cwd do shell pai; o shell chamador
+ *                                  aplica (opencode/CDP usa o opencode command;
+ *                                  terminal interativo: função `worktree()` em
+ *                                  `.agents/shell/worktree.sh`, sourced no profile).
  *   pnpm worktree kill [--force]   destrói o worktree em que o shell atual está
  *                                  (recusa worktree sujo sem `--force`)
  *
@@ -131,7 +132,8 @@ const subcommand = positional[0]
 if (!subcommand) {
   console.log('Uso: pnpm worktree next [--go] | kill [--force]')
   console.log('  next [--go]     cria worktree da próxima Issue claimável (branch <code>-<slug>);')
-  console.log('                  com --go imprime `cd <dir>` no fim para o shell chamador aplicar')
+  console.log('                  com --go imprime `cd <dir>` no fim (quem aplica o cd: opencode')
+  console.log('                  command, ou a função `worktree()` de .agents/shell/worktree.sh)')
   console.log('  kill [--force]  destrói o worktree em que você está (recusa sujo sem --force)')
   process.exit(1)
 }
