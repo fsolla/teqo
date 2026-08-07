@@ -41,9 +41,9 @@ describe('issueCodeAndSubject', () => {
 
 describe('branchNameForIssue', () => {
   it('builds <code>-<slug> with the repo slugify', () => {
-    expect(
-      branchNameForIssue(issue({ title: 'C15 — FullCalendar em /campanha/agenda' })),
-    ).toBe('C15-fullcalendar-em-campanha-agenda')
+    expect(branchNameForIssue(issue({ title: 'C15 — FullCalendar em /campanha/agenda' }))).toBe(
+      'C15-fullcalendar-em-campanha-agenda',
+    )
   })
 
   it('strips accents from the pt-BR title', () => {
@@ -62,6 +62,8 @@ describe('branchNameForIssue', () => {
   })
 
   it('throws when the issue has no code — never invents', () => {
-    expect(() => branchNameForIssue(issue({ meta: {}, title: 'Sem código' }))).toThrow(/frontmatter/)
+    expect(() => branchNameForIssue(issue({ meta: {}, title: 'Sem código' }))).toThrow(
+      /frontmatter/,
+    )
   })
 })
