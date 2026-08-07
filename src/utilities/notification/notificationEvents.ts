@@ -9,7 +9,8 @@ import {
   SKIP_CAMPAIGN_NOTIFICATION_CONTEXT_KEY,
 } from '@/lib/notificationContract'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
-import { municipalityUpdateKindLabels } from '@/lib/schemas/municipalityUpdate'
+import type { MunicipalityUpdatePolarity } from '@/lib/schemas/municipalityUpdate'
+import { municipalityUpdatePolarityLabels } from '@/lib/schemas/municipalityUpdate'
 import { createCampaignNotifications } from '@/utilities/notification/createCampaignNotification'
 import { resolveMunicipalityStaffRecipientIds } from '@/utilities/notification/notificationRecipients'
 
@@ -29,7 +30,7 @@ export const notifyMunicipalityUpdateCreated = async (
     id: number
     municipality: unknown
     author: unknown
-    kind: string
+    polarity: MunicipalityUpdatePolarity
   },
 ): Promise<void> => {
   if (shouldSkipCampaignNotification(req.context)) return
@@ -60,9 +61,11 @@ export const notifyMunicipalityUpdateCreated = async (
     authorName = author.name
   }
 
-  const kindLabel =
-    doc.kind in municipalityUpdateKindLabels
-      ? municipalityUpdateKindLabels[doc.kind as keyof typeof municipalityUpdateKindLabels]
+  const polarityLabel =
+    doc.polarity in municipalityUpdatePolarityLabels
+      ? municipalityUpdatePolarityLabels[
+          doc.polarity as keyof typeof municipalityUpdatePolarityLabels
+        ]
       : 'Atualização'
 
   const recipientIDs = await resolveMunicipalityStaffRecipientIds(
@@ -79,7 +82,7 @@ export const notifyMunicipalityUpdateCreated = async (
       type: 'municipality_update',
       municipalityID,
       payload: {
-        title: `${kindLabel} — ${municipality.name}`,
+        title: `${polarityLabel} — ${municipality.name}`,
         detail: `${authorName} registrou uma atualização`,
         href: `/campanha/municipios/${municipality.slug}`,
       },

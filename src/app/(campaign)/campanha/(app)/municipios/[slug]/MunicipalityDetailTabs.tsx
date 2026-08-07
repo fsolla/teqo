@@ -13,6 +13,7 @@ import { MunicipalityVisitEligibilityCard } from '@/components/campaign/municipa
 import { MunicipalityZoneNeighborhoodsCard } from '@/components/campaign/municipality/MunicipalityZoneNeighborhoodsCard'
 import { CampaignListPagination } from '@/components/campaign/shared/CampaignListPagination'
 import { SuggestionsPanel } from '@/components/campaign/suggestion/SuggestionsPanel'
+import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import type { VoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
 import type { getCampaignUser } from '@/utilities/campaignAuth'
 import { loadFederalCandidateOptions } from '@/utilities/electionCandidateOptions'
@@ -340,19 +341,21 @@ export const UpdatesTab = async ({
 }) => {
   const feedState = parseMunicipalityUpdateFeedParams(rawSearchParams)
   const feed = await loadMunicipalityUpdatesFeed(payload, user, municipalityID, feedState)
+  const isStaff = isStaffCampaignRole(user.role)
 
   return (
     <div className="flex flex-col gap-6">
       <MunicipalityUpdateForm
         municipalityID={municipalityID}
         formAction={createMunicipalityUpdateFormAction}
+        isStaff={isStaff}
       />
       <MunicipalityUpdateFeed updates={feed.updates} />
       <CampaignListPagination
         page={feed.page}
         totalPages={feed.totalPages}
         hrefForPage={(page) =>
-          `/campanha/municipios/${municipalitySlug}?tab=updates${feedState.kind ? `&updateKind=${feedState.kind}` : ''}&updatePage=${page}`
+          `/campanha/municipios/${municipalitySlug}?tab=updates&updatePage=${page}`
         }
       />
     </div>

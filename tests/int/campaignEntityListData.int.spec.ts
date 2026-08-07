@@ -444,7 +444,7 @@ describe('loadStateDeputyDetail', () => {
   it('resolves an oversized numeric legacy slug without coercing it to an ID', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
-    const name = '12345678901234567890'
+    const name = `${fixtures.value('12345678901234567890')}`
     const stateDeputy = await fixtures.createStateDeputy({ name })
 
     const result = await loadStateDeputyDetail(payload, coordinator, stateDeputy.slug)

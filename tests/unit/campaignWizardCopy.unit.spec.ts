@@ -13,7 +13,7 @@ import {
 describe('campaignWizardCopy', () => {
   it('maps wizard slugs to home action flow titles', () => {
     expect(wizardFlowTitleForSlug('atualizar-votos')).toBe('Ajustar votos')
-    expect(wizardFlowTitleForSlug('registrar-sinal')).toBe('Registrar sinal')
+    expect(wizardFlowTitleForSlug('registrar-atualizacao')).toBe('Registrar atualização')
     expect(wizardFlowTitleForSlug('inventado')).toBe('Continuar')
   })
 

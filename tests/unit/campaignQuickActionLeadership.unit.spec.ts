@@ -20,7 +20,7 @@ describe('resolveLeadershipQuickActions', () => {
     })
     expect(actions?.map((action) => action.id)).toEqual([
       'update-votes',
-      'register-signal',
+      'register-update',
       'change-trend',
       'update-leadership',
       'register-demand',

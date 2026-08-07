@@ -1,10 +1,9 @@
 import { notFound, redirect } from 'next/navigation'
 
 import { WizardLeadershipStep } from '@/components/campaign/leadership/WizardLeadershipStep'
-import { WizardSignalBodyStep } from '@/components/campaign/municipality/WizardSignalBodyStep'
-import { WizardSignalTypeStep } from '@/components/campaign/municipality/WizardSignalTypeStep'
 import { WizardTrendChoiceStep } from '@/components/campaign/municipality/WizardTrendChoiceStep'
 import { WizardTrendNoteStep } from '@/components/campaign/municipality/WizardTrendNoteStep'
+import { WizardUpdateBodyStep } from '@/components/campaign/municipality/WizardUpdateBodyStep'
 import { WizardExpectedVotesStep } from '@/components/campaign/shared/WizardExpectedVotesStep'
 import { WizardMunicipalitySearchStep } from '@/components/campaign/shared/WizardMunicipalitySearchStep'
 import { WizardMunicipalitySelectedStub } from '@/components/campaign/shared/WizardMunicipalitySelectedStub'
@@ -16,7 +15,6 @@ import {
   parseWizardLeadershipIdParam,
   parseWizardMunicipioParam,
   parseWizardReturnPath,
-  resolveWizardSignalTypeParam,
   resolveWizardTrendStatusParam,
   WIZARD_ENTRY_ACTION_QUERY_KEY,
   WIZARD_LEADERSHIP_ID_QUERY_KEY,
@@ -24,15 +22,13 @@ import {
   WIZARD_NOTE_PREFILL_QUERY_KEY,
   WIZARD_RETURN_PATH_QUERY_KEY,
   WIZARD_SCENARIO_QUERY_KEY,
-  WIZARD_SIGNAL_BODY_QUERY_KEY,
-  WIZARD_SIGNAL_TYPE_QUERY_KEY,
   WIZARD_TREND_STATUS_QUERY_KEY,
   WIZARD_VOTE_FROM_QUERY_KEY,
   WIZARD_VOTE_TO_QUERY_KEY,
   wizardActionHref,
-  wizardSignalHref,
   wizardTrendHref,
 } from '@/lib/campaignActionRoutes'
+import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import {
   buildPoliticalTrendNotePrefill,
   resolvePoliticalTrendNotePrefillSource,
@@ -55,8 +51,6 @@ const politicalTrendWizardPrefillParams = (
 ): Record<string, string> | undefined => {
   const keys = [
     WIZARD_NOTE_PREFILL_QUERY_KEY,
-    WIZARD_SIGNAL_BODY_QUERY_KEY,
-    WIZARD_SIGNAL_TYPE_QUERY_KEY,
     WIZARD_VOTE_FROM_QUERY_KEY,
     WIZARD_VOTE_TO_QUERY_KEY,
   ] as const
@@ -181,15 +175,10 @@ export default async function CampaignActionWizardPage({
     const entryAction = parseWizardEntryActionParam(
       resolvedSearchParams[WIZARD_ENTRY_ACTION_QUERY_KEY],
     )
-    const { signalType } = resolveWizardSignalTypeParam(
-      resolvedSearchParams[WIZARD_SIGNAL_TYPE_QUERY_KEY],
-    )
     const prefillExtraParams = politicalTrendWizardPrefillParams(resolvedSearchParams)
     const prefillSource = resolvePoliticalTrendNotePrefillSource({
       entryAction,
       notePrefill: resolvedSearchParams[WIZARD_NOTE_PREFILL_QUERY_KEY],
-      signalType,
-      signalBody: resolvedSearchParams[WIZARD_SIGNAL_BODY_QUERY_KEY],
       voteFrom: resolvedSearchParams[WIZARD_VOTE_FROM_QUERY_KEY],
       voteTo: resolvedSearchParams[WIZARD_VOTE_TO_QUERY_KEY],
     })
@@ -249,39 +238,20 @@ export default async function CampaignActionWizardPage({
     )
   }
 
-  if (slug === CAMPAIGN_WIZARD_ACTION_SLUGS['register-signal']) {
+  if (slug === CAMPAIGN_WIZARD_ACTION_SLUGS['register-update']) {
     const entryAction = parseWizardEntryActionParam(
       resolvedSearchParams[WIZARD_ENTRY_ACTION_QUERY_KEY],
     )
-    const { signalType, invalid } = resolveWizardSignalTypeParam(
-      resolvedSearchParams[WIZARD_SIGNAL_TYPE_QUERY_KEY],
-    )
-
-    if (invalid) {
-      redirect(wizardSignalHref(slug, municipalitySlug, undefined, entryAction))
-    }
-
-    if (signalType) {
-      return (
-        <WizardSignalBodyStep
-          actionSlug={slug}
-          municipalityId={municipality.id}
-          municipalityName={municipality.name}
-          municipalitySlug={municipality.slug}
-          signalType={signalType}
-          entryAction={entryAction}
-          returnPath={returnPath}
-        />
-      )
-    }
 
     return (
-      <WizardSignalTypeStep
+      <WizardUpdateBodyStep
         actionSlug={slug}
+        municipalityId={municipality.id}
         municipalityName={municipality.name}
         municipalitySlug={municipality.slug}
         entryAction={entryAction}
         returnPath={returnPath}
+        isStaff={isStaffCampaignRole(user.role)}
       />
     )
   }

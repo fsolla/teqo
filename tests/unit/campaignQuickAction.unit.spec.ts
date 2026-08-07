@@ -69,7 +69,9 @@ describe('campaignQuickActionMount', () => {
     expect(shouldMountQuickActionsFab('/campanha/apoiadores', 'coordinator')).toBe(true)
     expect(shouldMountQuickActionsFab('/campanha/apoiadores/42', 'coordinator')).toBe(true)
     expect(shouldMountQuickActionsFab('/campanha', 'coordinator')).toBe(false)
-    expect(shouldMountQuickActionsFab('/campanha/acoes/registrar-sinal', 'advisor')).toBe(false)
+    expect(shouldMountQuickActionsFab('/campanha/acoes/registrar-atualizacao', 'advisor')).toBe(
+      false,
+    )
   })
 
   it('mounts for leader only on contacts', () => {
@@ -333,9 +335,9 @@ describe('campaignQuickActionRegistry', () => {
         municipalitySlug: 'salvador-ze-01',
       },
     )
-    const registerSignal = actions.find((action) => action.id === 'register-signal')
-    expect(registerSignal?.href).toBe(
-      `/campanha/acoes/${CAMPAIGN_WIZARD_ACTION_SLUGS['register-signal']}?municipio=salvador-ze-01&from=%2Fcampanha%2Fatividades%2Fevento-zona-1`,
+    const registerUpdate = actions.find((action) => action.id === 'register-update')
+    expect(registerUpdate?.href).toBe(
+      `/campanha/acoes/${CAMPAIGN_WIZARD_ACTION_SLUGS['register-update']}?municipio=salvador-ze-01&from=%2Fcampanha%2Fatividades%2Fevento-zona-1`,
     )
   })
 
@@ -372,7 +374,7 @@ describe('campaignQuickActionRegistry', () => {
     })
     expect(actions.map((action) => action.id)).toEqual([
       'update-votes',
-      'register-signal',
+      'register-update',
       'change-trend',
       'update-leadership',
       'register-demand',

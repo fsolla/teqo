@@ -4,20 +4,25 @@ import { revalidatePath } from 'next/cache'
 
 import { createMunicipalityUpdate } from '@/app/(campaign)/campanha/actions/municipalityUpdate'
 import {
-  optionalFormText,
   optionalIntegerFormValue,
   requiredFormText,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
 import {
-  municipalityUpdateKinds,
-  parseMunicipalitySignalType,
-  type MunicipalityUpdateKind,
+  MUNICIPALITY_UPDATE_POLARITY_REQUIRED_MESSAGE,
+  parseMunicipalityUpdatePolarity,
 } from '@/lib/schemas/municipalityUpdate'
 import {
   runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
+
+/** Checkbox pairs with hidden "false"; last value wins (same as leadership exclusive). */
+const formBoolean = (formData: FormData, field: string): boolean => {
+  const values = formData.getAll(field)
+  if (values.length === 0) return false
+  return values.at(-1) === 'true'
+}
 
 export const createMunicipalityUpdateFormAction = async (
   _state: CampaignFormActionState,
@@ -26,21 +31,19 @@ export const createMunicipalityUpdateFormAction = async (
   runCampaignFormAction({
     execute: async () => {
       const municipality = requiredRelationshipFormValue(formData, 'municipalityId')
-      const rawKind = requiredFormText(formData, 'kind')
-      const kind = municipalityUpdateKinds.includes(rawKind as MunicipalityUpdateKind)
-        ? (rawKind as MunicipalityUpdateKind)
-        : 'semanal'
+      const polarity = parseMunicipalityUpdatePolarity(requiredFormText(formData, 'polarity'))
+      if (!polarity) {
+        throw new Error(MUNICIPALITY_UPDATE_POLARITY_REQUIRED_MESSAGE)
+      }
 
       await createMunicipalityUpdate({
         municipality,
-        kind,
-        worked: optionalFormText(formData, 'worked'),
-        failed: optionalFormText(formData, 'failed'),
-        needs: optionalFormText(formData, 'needs'),
-        body: optionalFormText(formData, 'body'),
+        body: requiredFormText(formData, 'body'),
+        polarity,
+        urgent: formBoolean(formData, 'urgent'),
         activeVolunteers: optionalIntegerFormValue(formData, 'activeVolunteers'),
         newSupports: optionalIntegerFormValue(formData, 'newSupports'),
-        signalType: parseMunicipalitySignalType(optionalFormText(formData, 'signalType')),
+        adversarySignal: formBoolean(formData, 'adversarySignal'),
       })
       revalidatePath('/campanha/municipios/[slug]', 'page')
       return { message: 'Atualização registrada com sucesso.' }

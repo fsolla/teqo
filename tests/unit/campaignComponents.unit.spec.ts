@@ -563,7 +563,7 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('Sem responsável')
     expect(html).toContain(`há ${staleDays} dias`)
     expect(html).toContain('data-signal="cold"')
-    expect(html).toContain('Último sinal')
+    expect(html).toContain('Última atualização')
   })
 
   it('reads "Sem sinal" when nothing was ever recorded for the município', () => {
@@ -736,7 +736,7 @@ describe('campaign visual foundation', () => {
         'Liderança',
         'Dobradinha',
         'Cobertura',
-        'Sinal',
+        'Atualização',
       ]
 
       let previousIndex = -1
@@ -783,7 +783,7 @@ describe('campaign visual foundation', () => {
       const theadHtml = tableHtml.slice(tableHtml.indexOf('<thead'), tableHtml.indexOf('</thead>'))
 
       expect(tableHtml.match(/aria-label="Editar tendência política/g)).toHaveLength(1)
-      expect(tableHtml.match(/aria-label="Registrar sinal em/g)).toHaveLength(1)
+      expect(tableHtml.match(/aria-label="Registrar atualização em/g)).toHaveLength(1)
       expect(theadHtml.includes('Ações')).toBe(hasActions)
     })
 

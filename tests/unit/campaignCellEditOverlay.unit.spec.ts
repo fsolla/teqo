@@ -6,8 +6,8 @@ import { MunicipalityListAdvisorsControl } from '@/components/campaign/municipal
 import { MunicipalityListExpectedVotesControl } from '@/components/campaign/municipality/MunicipalityListExpectedVotesControl'
 import { MunicipalityListLeadershipsControl } from '@/components/campaign/municipality/MunicipalityListLeadershipsControl'
 import { MunicipalityListLevelControl } from '@/components/campaign/municipality/MunicipalityListLevelControl'
-import { MunicipalityListSignalControl } from '@/components/campaign/municipality/MunicipalityListSignalControl'
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
+import { MunicipalityListUpdateControl } from '@/components/campaign/municipality/MunicipalityListUpdateControl'
 import type { CampaignCellEditOverlayVariant } from '@/components/campaign/shared/CampaignCellEditOverlay'
 import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -116,20 +116,21 @@ const overlayCases: OverlayCase[] = [
   },
   {
     name: 'sinal',
-    triggerLabel: `Registrar sinal em ${MUNICIPALITY_NAME} — Sem sinal`,
-    drawerTitle: 'Registrar sinal',
-    footerLabel: 'Registrar sinal',
+    triggerLabel: `Registrar atualização em ${MUNICIPALITY_NAME} — Sem sinal`,
+    drawerTitle: 'Registrar atualização',
+    footerLabel: 'Registrar atualização',
     element: (variant) =>
       // `createElement`'s typing puts a required `children` in props, so the
       // rest-argument form this rule prefers does not type-check here.
       // eslint-disable-next-line react/no-children-prop
-      createElement(MunicipalityListSignalControl, {
+      createElement(MunicipalityListUpdateControl, {
         municipalityID: 1,
         municipalitySlug: 'feira-de-santana',
         municipalityName: MUNICIPALITY_NAME,
         lastSignalAt: null,
         variant,
         formAction: async () => ({}),
+        isStaff: true,
         children: createElement('span', null, 'Sem sinal'),
       }),
   },
@@ -298,28 +299,34 @@ describe('campaign cell edit overlay', () => {
       // `createElement`'s typing puts a required `children` in props, so the
       // rest-argument form this rule prefers does not type-check here.
       // eslint-disable-next-line react/no-children-prop
-      createElement(MunicipalityListSignalControl, {
+      createElement(MunicipalityListUpdateControl, {
         municipalityID: 1,
         municipalitySlug: 'feira-de-santana',
         municipalityName: MUNICIPALITY_NAME,
         lastSignalAt: null,
         variant: 'sheet',
         formAction,
+        isStaff: true,
         children: createElement('span', null, 'Sem sinal'),
       }),
     )
 
     fireEvent.click(
-      screen.getByRole('button', { name: `Registrar sinal em ${MUNICIPALITY_NAME} — Sem sinal` }),
+      screen.getByRole('button', {
+        name: `Registrar atualização em ${MUNICIPALITY_NAME} — Sem sinal`,
+      }),
     )
 
     const dialog = await screen.findByRole('dialog')
     // The select is `required`: an invalid form never fires submit, and the
     // case would pass for the wrong reason.
-    fireEvent.change(screen.getByLabelText('Tipo do sinal'), { target: { value: 'invasao' } })
+    fireEvent.change(screen.getByLabelText('Polaridade'), { target: { value: 'boa' } })
+    fireEvent.change(screen.getByLabelText('Texto'), {
+      target: { value: 'Atualização registrada no campo.' },
+    })
 
     const submit = dialog.querySelector<HTMLButtonElement>('[data-slot="drawer-footer"] button')
-    expect(submit?.textContent).toContain('Registrar sinal')
+    expect(submit?.textContent).toContain('Registrar atualização')
     expect(submit?.getAttribute('form')).toBe(
       dialog.querySelector('form')?.getAttribute('id') ?? null,
     )

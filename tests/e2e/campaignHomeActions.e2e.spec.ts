@@ -9,7 +9,7 @@ import {
 
 const staffActionLabels = [
   'Ajustar votos',
-  'Registrar sinal',
+  'Registrar atualização',
   'Mudar tendência',
   'Atualizar liderança',
   'Registrar pedido',
@@ -328,15 +328,45 @@ test.describe('Wizard — atualizar liderança (B70)', () => {
     await page.getByRole('button', { name: 'Continuar' }).click()
     await page.waitForURL(
       new RegExp(
-        `/campanha/acoes/registrar-sinal\\?municipio=${municipality.slug}&entry=update-leadership`,
+        `/campanha/acoes/registrar-atualizacao\\?municipio=${municipality.slug}&entry=update-leadership`,
       ),
     )
-    await expect(page.getByRole('heading', { name: 'Que tipo de sinal?' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Registrar atualização' })).toBeVisible()
   })
 })
 
-test.describe('Wizard — registrar sinal (B63)', () => {
-  test('standalone flow: type grid, body step, save continues the chain', async ({
+test.describe('Wizard — registrar atualização (C87)', () => {
+  test('standalone flow: unified form, save continues the chain', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
+    })
+
+    const municipality = await fixtures.claimMunicipality()
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`/campanha/acoes/registrar-atualizacao?municipio=${municipality.slug}`)
+
+    await expect(page.getByRole('heading', { name: 'Registrar atualização' })).toBeVisible({
+      timeout: 15000,
+    })
+    await expect(page.getByRole('link', { name: 'Pular' })).toHaveCount(0)
+
+    await page
+      .getByLabel('Texto da atualização')
+      .fill('Adversário marcou presença no centro do município.')
+    await page.getByLabel('Polaridade').selectOption('ruim')
+    await page.getByRole('button', { name: 'Salvar' }).click()
+
+    await page.waitForURL(
+      new RegExp(
+        `/campanha/acoes/mudar-tendencia\\?municipio=${municipality.slug}&entry=register-update`,
+      ),
+    )
+    await expect(page.getByText('Atualização registrada com sucesso.')).toBeVisible()
+  })
+
+  test('renders the unified fields without legacy signal-type navigation', async ({
     campaign,
     page,
   }) => {
@@ -344,55 +374,19 @@ test.describe('Wizard — registrar sinal (B63)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
     })
-
     const municipality = await fixtures.claimMunicipality()
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto(`/campanha/acoes/registrar-sinal?municipio=${municipality.slug}`)
+    await page.goto(`/campanha/acoes/registrar-atualizacao?municipio=${municipality.slug}`)
 
-    await expect(page.getByRole('heading', { name: 'Que tipo de sinal?' })).toBeVisible({
+    await expect(page.getByRole('heading', { name: 'Registrar atualização' })).toBeVisible({
       timeout: 15000,
     })
-    await expect(page.getByRole('link', { name: 'Pular' })).toHaveCount(0)
-
-    await page.getByRole('link', { name: /Invasão/i }).click()
-    await page.waitForURL(/signalType=invasao/)
-
-    await expect(page.getByRole('heading', { name: /Detalhar sinal: Invasão/i })).toBeVisible()
-
-    const body = page.getByLabel('O que aconteceu?')
-    await body.fill('Adversário marcou presença no centro do município.')
-    await page.getByRole('button', { name: 'Salvar' }).click()
-
-    await page.waitForURL(
-      new RegExp(
-        `/campanha/acoes/mudar-tendencia\\?municipio=${municipality.slug}&entry=register-signal`,
-      ),
-    )
-    await expect(page.getByText('Sinal registrado.')).toBeVisible()
-  })
-
-  test('info button opens drawer without advancing to body step', async ({ campaign, page }) => {
-    const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
-    const municipality = await fixtures.claimMunicipality()
-
-    await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto(`/campanha/acoes/registrar-sinal?municipio=${municipality.slug}`)
-
-    await expect(page.getByRole('heading', { name: 'Que tipo de sinal?' })).toBeVisible({
-      timeout: 15000,
-    })
-
-    await page.getByRole('button', { name: /Informações sobre Invasão/i }).click()
-    await expect(page.getByRole('dialog')).toBeVisible()
-    await expect(page.getByText(/O adversário está ocupando espaço/i)).toBeVisible()
     await expect(page).not.toHaveURL(/signalType=/)
-
-    await page.getByRole('button', { name: 'Fechar' }).click()
-    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await expect(page.getByLabel('Texto da atualização')).toBeVisible()
+    await expect(page.getByLabel('Polaridade')).toBeVisible()
+    await expect(page.getByLabel('Sinalizar como urgente')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Que tipo de sinal?' })).toHaveCount(0)
   })
 
   test('embedded flow shows skip link to the next chain step', async ({ campaign, page }) => {
@@ -404,7 +398,7 @@ test.describe('Wizard — registrar sinal (B63)', () => {
 
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(
-      `/campanha/acoes/registrar-sinal?municipio=${municipality.slug}&entry=update-votes`,
+      `/campanha/acoes/registrar-atualizacao?municipio=${municipality.slug}&entry=update-votes`,
     )
 
     const skip = page.getByRole('link', { name: 'Pular' })

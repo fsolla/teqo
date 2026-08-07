@@ -17,8 +17,8 @@ import {
   SignalAgeReadout,
   TerritorialClassCardReadout,
 } from '@/components/campaign/municipality/MunicipalityListRowReadouts'
-import { MunicipalityListSignalControl } from '@/components/campaign/municipality/MunicipalityListSignalControl'
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
+import { MunicipalityListUpdateControl } from '@/components/campaign/municipality/MunicipalityListUpdateControl'
 import { MunicipalityPriorityIndicator } from '@/components/campaign/municipality/MunicipalityPriorityIndicator'
 import { MunicipalityVotePositionReadout } from '@/components/campaign/municipality/MunicipalityVotePositionReadout'
 import { TerritoryLink } from '@/components/campaign/municipality/TerritoryLink'
@@ -186,18 +186,19 @@ export const MunicipalityListMobileCards = ({
                 </dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Último sinal</dt>
+                <dt className="text-muted-foreground">Última atualização</dt>
                 <dd>
-                  <MunicipalityListSignalControl
+                  <MunicipalityListUpdateControl
                     municipalityID={municipality.id}
                     municipalitySlug={municipality.slug}
                     municipalityName={municipality.name}
                     lastSignalAt={municipality.lastSignalAt}
                     variant="sheet"
                     formAction={signalFormAction}
+                    isStaff={isCampaignUnrestricted}
                   >
                     <SignalAgeReadout lastSignalAt={municipality.lastSignalAt} layout="card" />
-                  </MunicipalityListSignalControl>
+                  </MunicipalityListUpdateControl>
                 </dd>
               </div>
               <div>

@@ -3,13 +3,13 @@ import { describe, expect, it } from 'vitest'
 import {
   buildMunicipalityV2StatusAggregate,
   MUNICIPALITY_V2_SIGNAL_COLD_VALUE,
-  resolveMunicipalityV2SignalSelectState,
+  resolveMunicipalityV2UpdateState,
 } from '@/utilities/municipality/municipalityV2StatusView'
 
 describe('municipalityV2StatusView', () => {
   it('uses cold sentinel when there is no recent signal', () => {
-    const state = resolveMunicipalityV2SignalSelectState(
-      { signalType: null, lastSignalAt: null },
+    const state = resolveMunicipalityV2UpdateState(
+      { polarity: null, lastSignalAt: null },
       new Date('2026-08-02T12:00:00.000Z'),
     )
     expect(state.value).toBe(MUNICIPALITY_V2_SIGNAL_COLD_VALUE)
@@ -18,29 +18,29 @@ describe('municipalityV2StatusView', () => {
   })
 
   it('does not claim frio when frescor is warm but typeless', () => {
-    const state = resolveMunicipalityV2SignalSelectState(
+    const state = resolveMunicipalityV2UpdateState(
       {
-        signalType: null,
+        polarity: null,
         lastSignalAt: '2026-08-01T12:00:00.000Z',
       },
       new Date('2026-08-02T12:00:00.000Z'),
     )
     expect(state.value).toBe(MUNICIPALITY_V2_SIGNAL_COLD_VALUE)
     expect(state.isCold).toBe(false)
-    expect(state.label).toBe('Sem tipo de sinal')
+    expect(state.label).toBe('Sem polaridade')
   })
 
-  it('keeps the typed signal when still warm', () => {
-    const state = resolveMunicipalityV2SignalSelectState(
+  it('keeps the typed polarity when still warm', () => {
+    const state = resolveMunicipalityV2UpdateState(
       {
-        signalType: 'invasao',
+        polarity: 'ruim',
         lastSignalAt: '2026-08-01T12:00:00.000Z',
       },
       new Date('2026-08-02T12:00:00.000Z'),
     )
-    expect(state.value).toBe('invasao')
+    expect(state.value).toBe('ruim')
     expect(state.isCold).toBe(false)
-    expect(state.label).toBe('Invasão')
+    expect(state.label).toBe('Ruim')
   })
 
   it('builds the aggregate from the three note axes', () => {
@@ -49,8 +49,8 @@ describe('municipalityV2StatusView', () => {
         engagementLevel: 'n2',
         levelNote: 'Subiu o nível',
         trendNote: 'Tendência melhor',
-        signalType: 'esfriamento',
-        signalBody: 'Rede parou',
+        updatePolarity: 'ruim',
+        updateBody: 'Rede parou',
         lastSignalAt: '2026-08-01T12:00:00.000Z',
       },
       new Date('2026-08-02T12:00:00.000Z'),
@@ -64,8 +64,8 @@ describe('municipalityV2StatusView', () => {
         engagementLevel: 'n1',
         levelNote: null,
         trendNote: null,
-        signalType: null,
-        signalBody: null,
+        updatePolarity: null,
+        updateBody: null,
         lastSignalAt: null,
       },
       new Date('2026-08-02T12:00:00.000Z'),

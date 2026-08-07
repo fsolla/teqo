@@ -47,12 +47,13 @@ test.describe('Atividades — registro-fundação', () => {
     await expect(page.getByLabel('Município')).toHaveValue(String(municipality.id))
 
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}?tab=updates`)
-    await page.getByLabel('Tipo', { exact: true }).selectOption('sinal')
-    await expect(page.getByText('Invasão:', { exact: true })).toBeVisible()
-    await expect(page.getByText('Adversário ocupando nosso espaço.')).toBeVisible()
-    await expect(page.getByText('Rede esfriou:', { exact: true })).toBeVisible()
-    await expect(page.getByText('Adversário apareceu:', { exact: true })).toBeVisible()
-    await expect(page.getByText('Alguém pediu algo:', { exact: true })).toBeVisible()
+    // Unified C87 surface: body + polarity + urgent + adversary signal, no
+    // legacy kind/signal-type navigation.
+    await expect(page.getByLabel('Texto da atualização')).toBeVisible()
+    await expect(page.getByLabel('Polaridade')).toBeVisible()
+    await expect(page.getByLabel('Sinalizar como urgente')).toBeVisible()
+    await expect(page.getByLabel('Sinalizar adversário')).toBeVisible()
+    await expect(page.getByLabel('Tipo', { exact: true })).toHaveCount(0)
   })
 })
 

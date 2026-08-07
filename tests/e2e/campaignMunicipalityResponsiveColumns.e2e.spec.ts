@@ -78,7 +78,7 @@ const expectedHeadersAt = (width: number) => {
   if (width >= 66 * REM_IN_PIXELS) headers.push('Liderança')
   if (width >= 72 * REM_IN_PIXELS) headers.push('Dobradinha')
   if (width >= 78 * REM_IN_PIXELS) headers.push('Cobertura')
-  headers.push('Sinal')
+  headers.push('Atualização')
   return headers
 }
 
@@ -94,7 +94,7 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
     const cards = container.locator('[data-view="mobile-cards"]')
     const table = container.getByRole('table')
     const trendTrigger = table.getByRole('button', { name: /^Editar tendência política/ }).first()
-    const signalTrigger = table.getByRole('button', { name: /^Registrar sinal em/ }).first()
+    const signalTrigger = table.getByRole('button', { name: /^Registrar atualização em/ }).first()
     // Test around (and on) the three binary switches: cards↔table (48rem),
     // trend text (60rem), signal text (84rem). Container queries use min-width.
     const widths = [
@@ -237,7 +237,7 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
 
     for (const trigger of [
       table.getByRole('button', { name: /^Editar tendência política/ }).first(),
-      table.getByRole('button', { name: /^Registrar sinal em/ }).first(),
+      table.getByRole('button', { name: /^Registrar atualização em/ }).first(),
     ]) {
       const box = await trigger.boundingBox()
       expect(box?.width).toBeGreaterThanOrEqual(44)

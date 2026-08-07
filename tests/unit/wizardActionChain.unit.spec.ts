@@ -21,26 +21,26 @@ describe('wizardActionChain', () => {
   it('returns the full queue after the principal action', () => {
     expect(wizardChainAfter('update-votes')).toEqual([
       'change-trend',
-      'register-signal',
+      'register-update',
       'update-leadership',
     ])
     expect(wizardChainAfter('update-votes', 'update-votes')).toEqual([
       'change-trend',
-      'register-signal',
+      'register-update',
       'update-leadership',
     ])
-    expect(wizardChainAfter('register-signal', 'register-signal')).toEqual([
+    expect(wizardChainAfter('register-update', 'register-update')).toEqual([
       'change-trend',
       'update-votes',
       'update-leadership',
     ])
     expect(wizardChainAfter('change-trend', 'change-trend')).toEqual([
-      'register-signal',
+      'register-update',
       'update-votes',
       'update-leadership',
     ])
     expect(wizardChainAfter('update-leadership', 'update-leadership')).toEqual([
-      'register-signal',
+      'register-update',
       'update-votes',
       'change-trend',
     ])
@@ -48,12 +48,12 @@ describe('wizardActionChain', () => {
 
   it('slices the remaining queue after a chained step', () => {
     expect(wizardChainAfter('update-votes', 'change-trend')).toEqual([
-      'register-signal',
+      'register-update',
       'update-leadership',
     ])
-    expect(wizardChainAfter('update-votes', 'register-signal')).toEqual(['update-leadership'])
+    expect(wizardChainAfter('update-votes', 'register-update')).toEqual(['update-leadership'])
     expect(wizardChainAfter('update-votes', 'update-leadership')).toEqual([])
-    expect(nextWizardChainStep('change-trend', 'register-signal')).toBe('update-votes')
+    expect(nextWizardChainStep('change-trend', 'register-update')).toBe('update-votes')
     expect(nextWizardChainStep('update-leadership', 'change-trend')).toBeUndefined()
   })
 
@@ -62,10 +62,10 @@ describe('wizardActionChain', () => {
       `${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu&entry=update-votes`,
     )
     expect(wizardChainContinueHref('update-votes', 'change-trend', 'cairu')).toBe(
-      `${CAMPAIGN_ACTIONS_HOME}/registrar-sinal?municipio=cairu&entry=update-votes`,
+      `${CAMPAIGN_ACTIONS_HOME}/registrar-atualizacao?municipio=cairu&entry=update-votes`,
     )
-    expect(wizardChainContinueHref('register-signal', 'change-trend', 'cairu')).toBe(
-      `${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu&entry=register-signal`,
+    expect(wizardChainContinueHref('register-update', 'change-trend', 'cairu')).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu&entry=register-update`,
     )
     expect(wizardChainContinueHref('change-trend', 'update-leadership', 'cairu')).toBe(
       CAMPAIGN_HOME,
@@ -79,13 +79,13 @@ describe('wizardActionChain', () => {
       origin,
     )
     expect(wizardChainContinueHref('update-votes', 'change-trend', 'cairu', origin)).toBe(
-      `${CAMPAIGN_ACTIONS_HOME}/registrar-sinal?municipio=cairu&entry=update-votes&from=${encodeURIComponent(origin)}`,
+      `${CAMPAIGN_ACTIONS_HOME}/registrar-atualizacao?municipio=cairu&entry=update-votes&from=${encodeURIComponent(origin)}`,
     )
   })
 
   it('resolves session entry from query or current principal', () => {
     expect(resolveWizardChainEntry(undefined, 'update-votes')).toBe('update-votes')
-    expect(resolveWizardChainEntry('register-signal', 'update-votes')).toBe('register-signal')
+    expect(resolveWizardChainEntry('register-update', 'update-votes')).toBe('register-update')
     expect(resolveWizardChainEntry('register-demand', 'change-trend')).toBe('change-trend')
   })
 
@@ -127,8 +127,8 @@ describe('wizardActionChain', () => {
       ).toBe(`${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu&entry=update-votes`)
       expect(
         wizardPreviousHref({
-          actionSlug: 'registrar-sinal',
-          stepKind: 'signal-type',
+          actionSlug: 'registrar-atualizacao',
+          stepKind: 'update-body',
           municipalitySlug: 'cairu',
           entryAction: 'update-votes',
         }),
@@ -138,9 +138,9 @@ describe('wizardActionChain', () => {
           actionSlug: 'atualizar-lideranca',
           stepKind: 'leadership-grid',
           municipalitySlug: 'cairu',
-          entryAction: 'register-signal',
+          entryAction: 'register-update',
         }),
-      ).toBe(`${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu&entry=register-signal`)
+      ).toBe(`${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu&entry=register-update`)
     })
 
     it('returns internal previous step within a subflow', () => {

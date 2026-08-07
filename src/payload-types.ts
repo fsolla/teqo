@@ -830,14 +830,12 @@ export interface MunicipalityUpdate {
   id: number;
   municipality: number | Municipality;
   author: number | CampaignUser;
-  kind: 'semanal' | 'urgente' | 'nota' | 'sinal';
-  worked?: string | null;
-  failed?: string | null;
-  needs?: string | null;
+  polarity: 'boa' | 'neutra' | 'ruim';
+  urgent?: boolean | null;
+  adversarySignal?: boolean | null;
+  body: string;
   activeVolunteers?: number | null;
   newSupports?: number | null;
-  body?: string | null;
-  signalType?: ('invasao' | 'esfriamento' | 'visita_adversario' | 'proposta_broker' | 'outro') | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1733,14 +1731,12 @@ export interface SupporterImportBatchSelect<T extends boolean = true> {
 export interface MunicipalityUpdateSelect<T extends boolean = true> {
   municipality?: T;
   author?: T;
-  kind?: T;
-  worked?: T;
-  failed?: T;
-  needs?: T;
+  polarity?: T;
+  urgent?: T;
+  adversarySignal?: T;
+  body?: T;
   activeVolunteers?: T;
   newSupports?: T;
-  body?: T;
-  signalType?: T;
   updatedAt?: T;
   createdAt?: T;
 }

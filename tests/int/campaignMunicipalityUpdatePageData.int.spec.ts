@@ -69,19 +69,15 @@ describe('campaign municipality update page data queries', () => {
     payload = await getPayload({ config: await config })
   })
 
-  it('parses feed params with a validated kind and strict positive page', () => {
+  it('parses feed params with a strict positive page', () => {
     expect(parseMunicipalityUpdateFeedParams({})).toEqual({ page: 1 })
-    expect(parseMunicipalityUpdateFeedParams({ updateKind: 'nota', updatePage: '2' })).toEqual({
-      kind: 'nota',
+    expect(parseMunicipalityUpdateFeedParams({ updatePage: '2' })).toEqual({
       page: 2,
     })
-    expect(parseMunicipalityUpdateFeedParams({ updateKind: 'invalida', updatePage: '0' })).toEqual({
+    expect(parseMunicipalityUpdateFeedParams({ updatePage: '0' })).toEqual({
       page: 1,
     })
-    expect(
-      parseMunicipalityUpdateFeedParams({ updateKind: ['urgente'], updatePage: ['3'] }),
-    ).toEqual({
-      kind: 'urgente',
+    expect(parseMunicipalityUpdateFeedParams({ updatePage: ['3'] })).toEqual({
       page: 3,
     })
   })
@@ -99,7 +95,7 @@ describe('campaign municipality update page data queries', () => {
         data: {
           municipality: municipality.id,
           author: user.id,
-          kind: 'nota',
+          polarity: 'neutra',
           body: `Atualização ${index}`,
         },
         depth: 0,
@@ -107,7 +103,7 @@ describe('campaign municipality update page data queries', () => {
     }
 
     const { queries, result } = await capturePoolQueries(() =>
-      loadMunicipalityUpdatesFeed(payload, user, municipality.id, { kind: 'nota', page: 1 }),
+      loadMunicipalityUpdatesFeed(payload, user, municipality.id, { page: 1 }),
     )
     const updateQueries = queries.filter(({ text }) => /\bfrom\s+"municipality_update"/i.test(text))
     const updateDataQueries = updateQueries.filter((query) => queryLimit(query) !== undefined)
@@ -119,12 +115,12 @@ describe('campaign municipality update page data queries', () => {
     expect(result.updates).toHaveLength(4)
     expect(result.totalDocs).toBe(4)
     expect(result.updates[0]).toMatchObject({
-      kind: 'nota',
+      polarity: 'neutra',
       authorName: user.name,
     })
   })
 
-  it('filters the feed by kind and paginates', async () => {
+  it('paginates the unified feed', async () => {
     const user = await campaignFixtures().createCampaignUser('coordinator')
     const municipality = await campaignFixtures().getMunicipality()
     for (let index = 0; index < 3; index += 1) {
@@ -133,7 +129,7 @@ describe('campaign municipality update page data queries', () => {
         data: {
           municipality: municipality.id,
           author: user.id,
-          kind: 'nota',
+          polarity: 'neutra',
           body: `Nota ${index}`,
         },
         depth: 0,
@@ -144,21 +140,18 @@ describe('campaign municipality update page data queries', () => {
       data: {
         municipality: municipality.id,
         author: user.id,
-        kind: 'urgente',
+        polarity: 'ruim',
+        urgent: true,
         body: 'Urgente único',
       },
       depth: 0,
     })
 
-    const urgentOnly = await loadMunicipalityUpdatesFeed(payload, user, municipality.id, {
-      kind: 'urgente',
-      page: 1,
-    })
-    expect(urgentOnly.totalDocs).toBe(1)
-    expect(urgentOnly.updates[0]?.body).toBe('Urgente único')
-
     const all = await loadMunicipalityUpdatesFeed(payload, user, municipality.id, { page: 1 })
     expect(all.totalDocs).toBe(4)
+    expect(all.updates.some((update) => update.body === 'Urgente único' && update.urgent)).toBe(
+      true,
+    )
   })
 
   it('loads only the latest-three preview', async () => {
@@ -170,7 +163,7 @@ describe('campaign municipality update page data queries', () => {
         data: {
           municipality: municipality.id,
           author: user.id,
-          kind: 'nota',
+          polarity: 'neutra',
           body: `Prévia ${index}`,
         },
         depth: 0,
@@ -196,7 +189,7 @@ describe('campaign municipality update page data queries', () => {
     await campaignFixtures().createMunicipalityUpdate({
       municipality: municipality.id,
       author: coordinator.id,
-      kind: 'nota',
+      polarity: 'neutra',
       body: 'Registro da coordenação',
     })
 

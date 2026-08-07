@@ -11,10 +11,9 @@ import { APIError } from 'payload'
 
 import { relationshipId } from '@/lib/relationship'
 import {
-  municipalitySignalTypeLabels,
-  municipalitySignalTypes,
-  municipalityUpdateKindLabels,
-  municipalityUpdateKinds,
+  MUNICIPALITY_UPDATE_BODY_REQUIRED_MESSAGE,
+  municipalityUpdatePolarities,
+  municipalityUpdatePolarityLabels,
 } from '@/lib/schemas/municipalityUpdate'
 import {
   canCreateMunicipalityUpdate,
@@ -25,19 +24,15 @@ import {
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 
 const DERIVED_MUNICIPALITY_UPDATE_CONTEXT = 'municipalityUpdateDerivedField'
-const MUNICIPALITY_UPDATE_KIND_OPTIONS = municipalityUpdateKinds.map((value) => ({
-  label: municipalityUpdateKindLabels[value],
-  value,
-}))
-const MUNICIPALITY_SIGNAL_TYPE_OPTIONS = municipalitySignalTypes.map((value) => ({
-  label: municipalitySignalTypeLabels[value],
+const MUNICIPALITY_UPDATE_POLARITY_OPTIONS = municipalityUpdatePolarities.map((value) => ({
+  label: municipalityUpdatePolarityLabels[value],
   value,
 }))
 
 const nonEmptyText = (value: unknown): boolean =>
   typeof value === 'string' && value.trim().length > 0
 
-const validateMunicipalityUpdateKind: CollectionBeforeValidateHook = ({
+const validateMunicipalityUpdatePolarity: CollectionBeforeValidateHook = ({
   data,
   operation,
   originalDoc,
@@ -45,23 +40,16 @@ const validateMunicipalityUpdateKind: CollectionBeforeValidateHook = ({
   if (!data) return data
 
   const nextData = operation === 'update' ? { ...originalDoc, ...data } : data
-  const kind = nextData.kind ?? 'semanal'
 
-  if (kind === 'semanal') {
-    if (!nonEmptyText(nextData.worked)) throw new APIError('Informe o que funcionou.', 400)
-    if (!nonEmptyText(nextData.failed)) throw new APIError('Informe o que não funcionou.', 400)
-    if (!nonEmptyText(nextData.needs)) throw new APIError('Informe o que você precisa.', 400)
-  } else if (kind === 'sinal') {
-    // Motivo/body is optional (B147/B134); type is the required discriminator.
-    if (typeof nextData.signalType !== 'string') {
-      throw new APIError('Informe o tipo do sinal.', 400)
-    }
-  } else if (!nonEmptyText(nextData.body)) {
-    throw new APIError('Informe o texto da atualização.', 400)
+  if (!nonEmptyText(nextData.body)) {
+    throw new APIError(MUNICIPALITY_UPDATE_BODY_REQUIRED_MESSAGE, 400)
   }
 
-  if (kind !== 'sinal') {
-    data.signalType = null
+  if (
+    nextData.polarity === undefined ||
+    !municipalityUpdatePolarities.includes(nextData.polarity)
+  ) {
+    throw new APIError('Informe a polaridade da atualização.', 400)
   }
 
   return data
@@ -193,8 +181,8 @@ export const MunicipalityUpdate: CollectionConfig = {
   },
   admin: {
     group: 'Campanha',
-    useAsTitle: 'kind',
-    defaultColumns: ['municipality', 'author', 'kind', 'createdAt'],
+    useAsTitle: 'body',
+    defaultColumns: ['municipality', 'author', 'polarity', 'urgent', 'createdAt'],
   },
   access: {
     create: canCreateMunicipalityUpdate,
@@ -203,7 +191,7 @@ export const MunicipalityUpdate: CollectionConfig = {
     delete: canMutateMunicipalityUpdate,
   },
   hooks: {
-    beforeValidate: [validateMunicipalityUpdateKind],
+    beforeValidate: [validateMunicipalityUpdatePolarity],
     beforeChange: [lockMunicipalitiesBeforeChange],
     beforeDelete: [lockMunicipalityBeforeDelete],
     afterChange: [recomputeChangedMunicipalities],
@@ -234,40 +222,37 @@ export const MunicipalityUpdate: CollectionConfig = {
       },
     },
     {
-      name: 'kind',
+      name: 'polarity',
       type: 'select',
-      label: 'Tipo',
+      label: 'Polaridade',
       required: true,
-      defaultValue: 'semanal',
+      defaultValue: 'neutra',
       index: true,
-      options: MUNICIPALITY_UPDATE_KIND_OPTIONS,
+      options: MUNICIPALITY_UPDATE_POLARITY_OPTIONS,
     },
     {
-      name: 'worked',
-      type: 'textarea',
-      label: 'O que funcionou',
-      maxLength: 3000,
+      name: 'urgent',
+      type: 'checkbox',
+      label: 'Urgente',
+      defaultValue: false,
+      index: true,
+    },
+    {
+      name: 'adversarySignal',
+      type: 'checkbox',
+      label: 'Alerta de adversário',
+      defaultValue: false,
+      index: true,
       admin: {
-        condition: (_, siblingData) => siblingData.kind === 'semanal',
+        condition: (req) => req?.user?.collection === 'users',
       },
     },
     {
-      name: 'failed',
+      name: 'body',
       type: 'textarea',
-      label: 'O que não funcionou',
-      maxLength: 3000,
-      admin: {
-        condition: (_, siblingData) => siblingData.kind === 'semanal',
-      },
-    },
-    {
-      name: 'needs',
-      type: 'textarea',
-      label: 'O que preciso',
-      maxLength: 3000,
-      admin: {
-        condition: (_, siblingData) => siblingData.kind === 'semanal',
-      },
+      label: 'Texto',
+      maxLength: 5000,
+      required: true,
     },
     {
       name: 'activeVolunteers',
@@ -280,24 +265,6 @@ export const MunicipalityUpdate: CollectionConfig = {
       type: 'number',
       label: 'Novos apoios',
       min: 0,
-    },
-    {
-      name: 'body',
-      type: 'textarea',
-      label: 'Texto',
-      maxLength: 5000,
-      admin: {
-        condition: (_, siblingData) => siblingData.kind !== 'semanal',
-      },
-    },
-    {
-      name: 'signalType',
-      type: 'select',
-      label: 'Tipo de sinal',
-      options: MUNICIPALITY_SIGNAL_TYPE_OPTIONS,
-      admin: {
-        condition: (_, siblingData) => siblingData.kind === 'sinal',
-      },
     },
   ],
 }

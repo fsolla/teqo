@@ -8,8 +8,8 @@ import {
   type EngagementLevel,
 } from '@/lib/engagementLevel'
 import {
-  municipalitySignalTypeLabels,
-  type MunicipalitySignalType,
+  municipalityUpdatePolarityLabels,
+  type MunicipalityUpdatePolarity,
 } from '@/lib/schemas/municipalityUpdate'
 import type { PoliticalTrendStatus } from '@/utilities/municipality/municipalityLabels'
 import {
@@ -30,8 +30,8 @@ export type MunicipalityV2StatusViewModel = {
   politicalTrendStatus: PoliticalTrendStatus | null
   politicalTrendNote: string | null
   lastSignalAt: string | null
-  lastSignalType: MunicipalitySignalType | null
-  lastSignalBody: string | null
+  lastUpdatePolarity: MunicipalityUpdatePolarity | null
+  lastUpdateBody: string | null
   territorialClass: MunicipalityTerritorialClassification
 }
 
@@ -41,15 +41,15 @@ export const MUNICIPALITY_V2_SIGNAL_COLD_VALUE = '__cold__'
 export type MunicipalityV2StatusNotes = {
   levelNote: string | null
   trendNote: string | null
-  signalBody: string | null
-  signalType: MunicipalitySignalType | null
+  updateBody: string | null
+  updatePolarity: MunicipalityUpdatePolarity | null
   lastSignalAt: string | null
   engagementLevel: EngagementLevel | null
 }
 
-export type MunicipalityV2SignalSelectState = {
-  /** Current `<select>` value — signal type or cold sentinel. */
-  value: MunicipalitySignalType | typeof MUNICIPALITY_V2_SIGNAL_COLD_VALUE
+export type MunicipalityV2UpdateState = {
+  /** Current `<select>` value — polarity or cold sentinel. */
+  value: MunicipalityUpdatePolarity | typeof MUNICIPALITY_V2_SIGNAL_COLD_VALUE
   /** Short label for the control (and cold readout). */
   label: string
   ageInDays: number | null
@@ -57,17 +57,17 @@ export type MunicipalityV2SignalSelectState = {
 }
 
 /**
- * Product assumption (intention open Q): cold → sentinel “Sem sinal / frio”
- * in the strip; age lives in aggregate/tooltip. Warm but typeless → “Sem tipo”
+ * Product assumption (intention open Q): cold → sentinel "Sem sinal / frio"
+ * in the strip; age lives in aggregate/tooltip. Warm but typeless → "Sem tipo"
  * without claiming frio (frescor can still be warm from notes/pledges).
  */
-export const resolveMunicipalityV2SignalSelectState = (
+export const resolveMunicipalityV2UpdateState = (
   input: {
-    signalType: MunicipalitySignalType | null
+    polarity: MunicipalityUpdatePolarity | null
     lastSignalAt: string | null
   },
   now: Date = new Date(),
-): MunicipalityV2SignalSelectState => {
+): MunicipalityV2UpdateState => {
   const ageInDays = municipalitySignalAgeInDays(input.lastSignalAt, now)
   const isCold = isMunicipalitySignalCold(ageInDays)
 
@@ -82,25 +82,25 @@ export const resolveMunicipalityV2SignalSelectState = (
     }
   }
 
-  if (!input.signalType) {
+  if (!input.polarity) {
     return {
       value: MUNICIPALITY_V2_SIGNAL_COLD_VALUE,
-      label: 'Sem tipo de sinal',
+      label: 'Sem polaridade',
       ageInDays,
       isCold: false,
     }
   }
 
   return {
-    value: input.signalType,
-    label: municipalitySignalTypeLabels[input.signalType],
+    value: input.polarity,
+    label: municipalityUpdatePolarityLabels[input.polarity],
     ageInDays,
     isCold: false,
   }
 }
 
 /**
- * Aggregate under the status strip: latest notes from level · trend · signal,
+ * Aggregate under the status strip: latest notes from level · trend · update,
  * with absence/age when there is nothing to quote.
  */
 export const buildMunicipalityV2StatusAggregate = (
@@ -115,12 +115,15 @@ export const buildMunicipalityV2StatusAggregate = (
 
   const trendPart = input.trendNote?.trim() ? input.trendNote.trim() : 'Tendência sem nota'
 
-  const signalState = resolveMunicipalityV2SignalSelectState(input, now)
-  const signalPart = input.signalBody?.trim()
-    ? input.signalBody.trim()
-    : signalState.isCold
-      ? signalState.label
-      : `${signalState.label} — sem nota`
+  const updateState = resolveMunicipalityV2UpdateState(
+    { polarity: input.updatePolarity, lastSignalAt: input.lastSignalAt },
+    now,
+  )
+  const updatePart = input.updateBody?.trim()
+    ? input.updateBody.trim()
+    : updateState.isCold
+      ? updateState.label
+      : `${updateState.label} — sem nota`
 
-  return `${levelPart} · ${trendPart} · ${signalPart}`
+  return `${levelPart} · ${trendPart} · ${updatePart}`
 }

@@ -8,7 +8,6 @@ import {
   campaignWizardActionIdForSlug,
   isWizardReturnPath,
   wizardActionHref,
-  wizardSignalHref,
   wizardTrendHref,
   type CampaignWizardActionId,
 } from '@/lib/campaignActionRoutes'
@@ -18,10 +17,10 @@ import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 export type WizardChainActionId = Exclude<CampaignWizardActionId, 'register-demand'>
 
 const WIZARD_CHAIN_AFTER = {
-  'update-votes': ['change-trend', 'register-signal', 'update-leadership'],
-  'register-signal': ['change-trend', 'update-votes', 'update-leadership'],
-  'change-trend': ['register-signal', 'update-votes', 'update-leadership'],
-  'update-leadership': ['register-signal', 'update-votes', 'change-trend'],
+  'update-votes': ['change-trend', 'register-update', 'update-leadership'],
+  'register-update': ['change-trend', 'update-votes', 'update-leadership'],
+  'change-trend': ['register-update', 'update-votes', 'update-leadership'],
+  'update-leadership': ['register-update', 'update-votes', 'change-trend'],
 } as const satisfies Record<WizardChainActionId, readonly WizardChainActionId[]>
 
 export const isWizardChainActionId = (
@@ -62,9 +61,8 @@ const wizardHrefForChainStep = (
   switch (action) {
     case 'update-votes':
     case 'update-leadership':
+    case 'register-update':
       return wizardActionHref(actionSlug, municipalitySlug, { entryAction, returnPath })
-    case 'register-signal':
-      return wizardSignalHref(actionSlug, municipalitySlug, undefined, entryAction, returnPath)
     case 'change-trend':
       return wizardTrendHref(
         actionSlug,
@@ -111,14 +109,15 @@ export const resolveWizardChainEntry = (
   currentAction: WizardChainActionId,
 ): WizardChainActionId => (isWizardChainActionId(entryAction) ? entryAction : currentAction)
 
-/** Discriminates wizard chrome steps for `wizardPreviousHref` (B135). */
+/**
+ * register-update, update-votes, update-leadership all use wizardActionHref.
+ */
 type WizardStepKind =
   | 'municipality-search'
   | 'votes'
   | 'trend-choice'
   | 'trend-note'
-  | 'signal-type'
-  | 'signal-body'
+  | 'update-body'
   | 'leadership-grid'
   | 'leadership-form'
 
@@ -132,12 +131,11 @@ const wizardPrincipalStepHref = (
   switch (action) {
     case 'update-votes':
     case 'update-leadership':
+    case 'register-update':
       return wizardActionHref(actionSlug, municipalitySlug, {
         entryAction: sessionEntry,
         returnPath,
       })
-    case 'register-signal':
-      return wizardSignalHref(actionSlug, municipalitySlug, undefined, sessionEntry, returnPath)
     case 'change-trend':
       return wizardTrendHref(
         actionSlug,
@@ -206,10 +204,6 @@ export const wizardPreviousHref = (input: WizardPreviousHrefInput): string => {
       undefined,
       returnPath,
     )
-  }
-
-  if (stepKind === 'signal-body') {
-    return wizardSignalHref(actionSlug, municipalitySlug, undefined, entryAction, returnPath)
   }
 
   if (stepKind === 'leadership-form') {

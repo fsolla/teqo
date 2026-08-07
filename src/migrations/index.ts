@@ -42,6 +42,7 @@ import * as migration_20260802_230000_strip_engagement_reversal_signals from './
 import * as migration_20260804_061017_add_state_deputy_advisors from './20260804_061017_add_state_deputy_advisors';
 import * as migration_20260806_082110_add_state_deputy_contact from './20260806_082110_add_state_deputy_contact';
 import * as migration_20260806_120000_c14_remodel_activity_agenda from './20260806_120000_c14_remodel_activity_agenda';
+import * as migration_20260807_030000_unify_municipality_update from './20260807_030000_unify_municipality_update';
 
 export const migrations = [
   {
@@ -263,5 +264,10 @@ export const migrations = [
     up: migration_20260806_120000_c14_remodel_activity_agenda.up,
     down: migration_20260806_120000_c14_remodel_activity_agenda.down,
     name: '20260806_120000_c14_remodel_activity_agenda',
+  },
+  {
+    up: migration_20260807_030000_unify_municipality_update.up,
+    down: migration_20260807_030000_unify_municipality_update.down,
+    name: '20260807_030000_unify_municipality_update',
   },
 ];

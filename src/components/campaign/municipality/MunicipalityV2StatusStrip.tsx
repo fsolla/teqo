@@ -30,10 +30,9 @@ import {
   politicalTrendStatuses,
 } from '@/lib/schemas/municipality'
 import {
-  municipalitySignalTypeLabels,
-  municipalitySignalTypes,
-  parseMunicipalitySignalType,
-  type MunicipalitySignalType,
+  MUNICIPALITY_UPDATE_BODY_REQUIRED_MESSAGE,
+  municipalityUpdatePolarityLabels,
+  type MunicipalityUpdatePolarity,
 } from '@/lib/schemas/municipalityUpdate'
 import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
@@ -47,7 +46,7 @@ import { formatMunicipalitySignalAgeLabel } from '@/utilities/municipality/munic
 import {
   buildMunicipalityV2StatusAggregate,
   MUNICIPALITY_V2_SIGNAL_COLD_VALUE,
-  resolveMunicipalityV2SignalSelectState,
+  resolveMunicipalityV2UpdateState,
   type MunicipalityV2StatusViewModel,
 } from '@/utilities/municipality/municipalityV2StatusView'
 
@@ -55,9 +54,9 @@ const ENGAGEMENT_LEVEL_ENDPOINT = '/campanha/municipios/engagement-level'
 const POLITICAL_TREND_ENDPOINT = '/campanha/municipios/political-trend'
 const LEVEL_ERROR = 'Não foi possível registrar o nível. Tente novamente.'
 const TREND_ERROR = 'Não foi possível salvar a tendência. Tente novamente.'
-const SIGNAL_ERROR = 'Não foi possível registrar o sinal. Tente novamente.'
+const UPDATE_ERROR = 'Não foi possível registrar a atualização. Tente novamente.'
 
-type PendingAxis = 'level' | 'trend' | 'signal' | null
+type PendingAxis = 'level' | 'trend' | 'update' | null
 
 type MunicipalityV2StatusStripProps = {
   status: MunicipalityV2StatusViewModel
@@ -101,6 +100,8 @@ const ConceptTooltip = ({
   </CampaignHoverTooltip>
 )
 
+const polarityOptions: readonly MunicipalityUpdatePolarity[] = ['boa', 'neutra', 'ruim']
+
 export const MunicipalityV2StatusStrip = ({
   status,
   signalFormAction,
@@ -114,16 +115,14 @@ export const MunicipalityV2StatusStrip = ({
   const [levelChangedAt, setLevelChangedAt] = useState(status.levelChangedAt)
   const [trendStatus, setTrendStatus] = useState(status.politicalTrendStatus)
   const [trendNote, setTrendNote] = useState(status.politicalTrendNote)
-  const [signalType, setSignalType] = useState(status.lastSignalType)
-  const [signalBody, setSignalBody] = useState(status.lastSignalBody)
+  const [polarity, setPolarity] = useState(status.lastUpdatePolarity)
+  const [updateBody, setUpdateBody] = useState(status.lastUpdateBody)
   const [lastSignalAt, setLastSignalAt] = useState(status.lastSignalAt)
 
   const [pendingAxis, setPendingAxis] = useState<PendingAxis>(null)
   const [draftLevel, setDraftLevel] = useState<EngagementLevel | null>(null)
   const [draftTrend, setDraftTrend] = useState<typeof trendStatus>(null)
-  const [draftSignal, setDraftSignal] = useState<MunicipalitySignalType | null>(null)
-  const [triangulatedShock, setTriangulatedShock] = useState(false)
-  const [override, setOverride] = useState(false)
+  const [draftPolarity, setDraftPolarity] = useState<MunicipalityUpdatePolarity | null>(null)
   const [serverBlock, setServerBlock] = useState<EngagementLevelViolation[] | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isPending, setIsPending] = useState(false)
@@ -137,20 +136,20 @@ export const MunicipalityV2StatusStrip = ({
     setLevelChangedAt(status.levelChangedAt)
     setTrendStatus(status.politicalTrendStatus)
     setTrendNote(status.politicalTrendNote)
-    setSignalType(status.lastSignalType)
-    setSignalBody(status.lastSignalBody)
+    setPolarity(status.lastUpdatePolarity)
+    setUpdateBody(status.lastUpdateBody)
     setLastSignalAt(status.lastSignalAt)
   }, [status])
 
-  const signalSelect = resolveMunicipalityV2SignalSelectState({
-    signalType,
+  const updateSelect = resolveMunicipalityV2UpdateState({
+    polarity,
     lastSignalAt,
   })
   const aggregate = buildMunicipalityV2StatusAggregate({
     levelNote,
     trendNote,
-    signalBody,
-    signalType,
+    updateBody,
+    updatePolarity: polarity,
     lastSignalAt,
     engagementLevel: level,
   })
@@ -163,7 +162,7 @@ export const MunicipalityV2StatusStrip = ({
             to: draftLevel,
             levelChangedAt,
             now: new Date(),
-            triangulatedShock,
+            triangulatedShock: false,
           }),
           ...(serverBlock ?? []),
         ]
@@ -182,9 +181,7 @@ export const MunicipalityV2StatusStrip = ({
     setPendingAxis(null)
     setDraftLevel(null)
     setDraftTrend(null)
-    setDraftSignal(null)
-    setTriangulatedShock(false)
-    setOverride(false)
+    setDraftPolarity(null)
     setServerBlock(null)
     setErrorMessage(null)
   }
@@ -202,9 +199,9 @@ export const MunicipalityV2StatusStrip = ({
         {
           municipalityId: status.id,
           level: draftLevel,
-          note: reason.trim() ? reason : null,
-          triangulatedShock,
-          override,
+          note: reason.trim() ? reason.trim() : null,
+          triangulatedShock: false,
+          override: false,
         },
         controller.signal,
       )
@@ -241,7 +238,7 @@ export const MunicipalityV2StatusStrip = ({
         {
           municipalityId: status.id,
           status: draftTrend,
-          note: reason.trim() ? reason : null,
+          note: reason.trim() ? reason.trim() : null,
         },
         controller.signal,
       )
@@ -261,28 +258,34 @@ export const MunicipalityV2StatusStrip = ({
     }
   }
 
-  const confirmSignal = async (reason: string) => {
-    if (!draftSignal || isPending) return
+  const confirmUpdate = async (reason: string) => {
+    if (!draftPolarity || isPending) return
+    const body = reason.trim()
+    if (!body) {
+      setErrorMessage(MUNICIPALITY_UPDATE_BODY_REQUIRED_MESSAGE)
+      return
+    }
     setIsPending(true)
     setErrorMessage(null)
     try {
       const formData = new FormData()
       formData.set('municipalityId', String(status.id))
-      formData.set('municipalitySlug', status.slug)
-      formData.set('signalType', draftSignal)
-      if (reason.trim()) formData.set('body', reason.trim())
+      formData.set('polarity', draftPolarity)
+      formData.set('body', body)
+      formData.set('urgent', 'false')
+      formData.set('adversarySignal', 'false')
       const result = await signalFormAction(formData)
       if (result.status !== 'success') {
-        setErrorMessage(result.message || SIGNAL_ERROR)
+        setErrorMessage(result.message || UPDATE_ERROR)
         return
       }
-      setSignalType(draftSignal)
-      setSignalBody(reason.trim() ? reason.trim() : null)
+      setPolarity(draftPolarity)
+      setUpdateBody(reason.trim() ? reason.trim() : null)
       setLastSignalAt(new Date().toISOString())
       closeDialog()
       router.refresh()
     } catch {
-      setErrorMessage(SIGNAL_ERROR)
+      setErrorMessage(UPDATE_ERROR)
     } finally {
       setIsPending(false)
     }
@@ -293,8 +296,8 @@ export const MunicipalityV2StatusStrip = ({
       ? 'Confirmar nível de envolvimento'
       : pendingAxis === 'trend'
         ? 'Confirmar tendência'
-        : pendingAxis === 'signal'
-          ? 'Confirmar sinal'
+        : pendingAxis === 'update'
+          ? 'Confirmar atualização'
           : ''
 
   const dialogDescription =
@@ -304,8 +307,8 @@ export const MunicipalityV2StatusStrip = ({
         ? draftTrend
           ? politicalTrendLabels[draftTrend]
           : 'Não registrada'
-        : pendingAxis === 'signal' && draftSignal
-          ? municipalitySignalTypeLabels[draftSignal]
+        : pendingAxis === 'update' && draftPolarity
+          ? municipalityUpdatePolarityLabels[draftPolarity]
           : ''
 
   return (
@@ -327,14 +330,11 @@ export const MunicipalityV2StatusStrip = ({
               onChange={(event) => {
                 const next = event.target.value
                 if (!isEngagementLevel(next) || next === level) {
-                  // Reset select to current when choosing empty / same.
                   event.target.value = level ?? ''
                   return
                 }
                 setDraftLevel(next)
                 setPendingAxis('level')
-                setTriangulatedShock(false)
-                setOverride(false)
                 setServerBlock(null)
                 setErrorMessage(null)
               }}
@@ -378,38 +378,38 @@ export const MunicipalityV2StatusStrip = ({
         </Field>
 
         <Field>
-          <ConceptTooltip conceptId="pauta-do-silencio" label="Sinal">
-            <FieldLabel htmlFor={`${formId}-signal`}>Sinal</FieldLabel>
+          <ConceptTooltip conceptId="pauta-do-silencio" label="Polaridade">
+            <FieldLabel htmlFor={`${formId}-update`}>Polaridade</FieldLabel>
           </ConceptTooltip>
           <NativeSelect
-            id={`${formId}-signal`}
+            id={`${formId}-update`}
             className="min-h-11 w-full"
-            value={signalSelect.value}
-            aria-busy={isPending && pendingAxis === 'signal' ? true : undefined}
+            value={updateSelect.value}
+            aria-busy={isPending && pendingAxis === 'update' ? true : undefined}
             onChange={(event) => {
               const raw = event.target.value
               if (raw === MUNICIPALITY_V2_SIGNAL_COLD_VALUE) {
-                event.target.value = signalSelect.value
+                event.target.value = updateSelect.value
                 return
               }
-              const next = parseMunicipalitySignalType(raw)
-              if (!next || next === signalSelect.value) {
-                event.target.value = signalSelect.value
+              const next = raw as MunicipalityUpdatePolarity
+              if (!next || next === polarity) {
+                event.target.value = updateSelect.value
                 return
               }
-              setDraftSignal(next)
-              setPendingAxis('signal')
+              setDraftPolarity(next)
+              setPendingAxis('update')
               setErrorMessage(null)
             }}
           >
-            {signalSelect.isCold ? (
+            {updateSelect.isCold ? (
               <NativeSelectOption value={MUNICIPALITY_V2_SIGNAL_COLD_VALUE}>
-                {signalSelect.label}
+                {updateSelect.label}
               </NativeSelectOption>
             ) : null}
-            {municipalitySignalTypes.map((option) => (
+            {polarityOptions.map((option) => (
               <NativeSelectOption key={option} value={option}>
-                {municipalitySignalTypeLabels[option]}
+                {municipalityUpdatePolarityLabels[option]}
               </NativeSelectOption>
             ))}
           </NativeSelect>
@@ -425,7 +425,7 @@ export const MunicipalityV2StatusStrip = ({
             </Badge>
             <ConceptTooltip conceptId="pauta-do-silencio" label="Frescor">
               <span className="text-xs text-muted-foreground">
-                {formatMunicipalitySignalAgeLabel(signalSelect.ageInDays)}
+                {formatMunicipalitySignalAgeLabel(updateSelect.ageInDays)}
               </span>
             </ConceptTooltip>
           </div>
@@ -451,15 +451,15 @@ export const MunicipalityV2StatusStrip = ({
         isPending={isPending}
         errorMessage={errorMessage}
         showTriangulatedShock={Boolean(isJump)}
-        triangulatedShock={triangulatedShock}
-        onTriangulatedShockChange={setTriangulatedShock}
+        triangulatedShock={false}
+        onTriangulatedShockChange={() => {}}
         violations={uniqueLevelViolations}
-        override={override}
-        onOverrideChange={setOverride}
+        override={false}
+        onOverrideChange={() => {}}
         onConfirm={(reason) => {
           if (pendingAxis === 'level') void confirmLevel(reason)
           else if (pendingAxis === 'trend') void confirmTrend(reason)
-          else if (pendingAxis === 'signal') void confirmSignal(reason)
+          else if (pendingAxis === 'update') void confirmUpdate(reason)
         }}
       />
     </section>
