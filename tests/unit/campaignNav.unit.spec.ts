@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { getCampaignNav, isCampaignNavActive } from '@/components/campaign/shell/nav'
+import { CAMPAIGN_AGENDA_HOME } from '@/lib/campaignPaths'
 import { ORGANIZATIONS_LIST_PATH } from '@/lib/campaignQuickActionPaths'
 
 describe('organizations sidebar entry', () => {
@@ -30,5 +31,24 @@ describe('organizations sidebar entry', () => {
       true,
     )
     expect(isCampaignNavActive('/campanha/organizacoes/nova', ORGANIZATIONS_LIST_PATH)).toBe(true)
+  })
+})
+
+describe('agenda sidebar entry', () => {
+  it('replaces Atividades for staff and stays hidden from leaders', () => {
+    for (const role of ['coordinator', 'candidate', 'advisor'] as const) {
+      const agenda = getCampaignNav(role).find((item) => item.href === CAMPAIGN_AGENDA_HOME)
+      expect(agenda?.title).toBe('Agenda')
+    }
+    expect(getCampaignNav('leader').map((item) => item.href)).not.toContain(CAMPAIGN_AGENDA_HOME)
+  })
+
+  it('stays active on the agenda and legacy activity routes', () => {
+    expect(isCampaignNavActive(CAMPAIGN_AGENDA_HOME, CAMPAIGN_AGENDA_HOME)).toBe(true)
+    expect(isCampaignNavActive('/campanha/atividades', CAMPAIGN_AGENDA_HOME)).toBe(true)
+    expect(isCampaignNavActive('/campanha/atividades/comicio', CAMPAIGN_AGENDA_HOME)).toBe(true)
+    expect(isCampaignNavActive('/campanha/atividades/comicio/editar', CAMPAIGN_AGENDA_HOME)).toBe(
+      true,
+    )
   })
 })

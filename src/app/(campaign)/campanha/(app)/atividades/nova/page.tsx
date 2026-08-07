@@ -8,6 +8,8 @@ import {
 import { createActivityFormAction } from '@/app/(campaign)/campanha/(app)/atividades/formActions'
 import { ActivityForm } from '@/components/campaign/activity/ActivityForm'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { loadAccessibleActivityTags } from '@/utilities/activityPageData'
+import { parseActivityAgendaReturnHref, parseActivityCreatePrefill } from '@/utilities/activityUi'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   loadMunicipalityOptions,
@@ -17,18 +19,32 @@ import { getEligibleAdvisorOptions } from '@/utilities/municipality/municipality
 
 export const metadata = campaignPageMetadataFromCatalog('atividadesNova')
 
-export default async function NewActivityPage() {
+type NewActivityPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
+
+export default async function NewActivityPage({ searchParams }: NewActivityPageProps) {
+  const rawSearchParams = await searchParams
   const [user, payload] = await Promise.all([
-    requireCampaignPageActor({ gate: 'staff', redirectTo: '/campanha/atividades' }),
+    requireCampaignPageActor({ gate: 'staff', redirectTo: '/campanha/agenda' }),
     getPayload({ config }),
   ])
 
   const canManageAdvisors = user.role === 'coordinator'
-  const [municipalityOptions, organizationOptions, advisorOptions] = await Promise.all([
+  const [municipalityOptions, organizationOptions, advisorOptions, knownTags] = await Promise.all([
     loadMunicipalityOptions(payload, user),
     loadOrganizationOptions(payload, user),
     canManageAdvisors ? getEligibleAdvisorOptions(payload, user) : Promise.resolve([]),
+    loadAccessibleActivityTags(payload, user),
   ])
+  const accessibleMunicipalityIDs = new Set(municipalityOptions.map((option) => option.id))
+  const accessibleTags = new Set(knownTags)
+  const initialValues = parseActivityCreatePrefill(rawSearchParams, accessibleMunicipalityIDs)
+  const cancelHref = parseActivityAgendaReturnHref(
+    rawSearchParams.returnTo,
+    accessibleMunicipalityIDs,
+    accessibleTags,
+  )
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
@@ -38,6 +54,9 @@ export default async function NewActivityPage() {
         organizationOptions={organizationOptions}
         advisorOptions={advisorOptions}
         canManageAdvisors={canManageAdvisors}
+        initialValues={initialValues}
+        cancelHref={cancelHref}
+        knownTags={knownTags}
         submitLabel="Criar atividade"
         searchContacts={searchActivityContactOptions}
         searchLeaderships={searchActivityLeadershipOptionsAction}

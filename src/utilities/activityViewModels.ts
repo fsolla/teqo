@@ -1,6 +1,7 @@
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import { isPopulatedRelationship, relationshipId } from '@/lib/relationship'
 import type { Activity, CampaignUser, Contact, Municipality, Organization } from '@/payload-types'
+import { canCampaignUserRescheduleActivity } from '@/utilities/access/activities'
 import type { ActivityDetailTab } from '@/utilities/activityDetailTabUi'
 
 export type ActivityMunicipalitySummary = {
@@ -37,7 +38,7 @@ const formatActivityLocationLabel = ({
   locality?: string | null
 }): string => [municipalityName, locality].filter(Boolean).join(' · ')
 
-export const activityListSelect = {
+export const activityAgendaSelect = {
   title: true,
   slug: true,
   tags: true,
@@ -47,10 +48,52 @@ export const activityListSelect = {
   endAt: true,
   municipality: true,
   locality: true,
+} as const
+
+export const activityListSelect = {
+  ...activityAgendaSelect,
   responsible: true,
   taskDoneCount: true,
   taskTotal: true,
 } as const
+
+export type ActivityAgendaEvent = {
+  id: number
+  title: string
+  href: string
+  tags: string[]
+  status: Activity['status']
+  deputyPresent: boolean
+  startAt: string
+  endAt: string | null
+  municipality: ActivityMunicipalitySummary | null
+  locality: string | null
+  canReschedule: boolean
+}
+
+export const toActivityAgendaEvent = (
+  activity: Activity,
+  user: CampaignUser,
+): ActivityAgendaEvent => {
+  if (!activity.startAt) {
+    throw new Error('Atividade sem data não pode ser convertida em evento de agenda.')
+  }
+
+  const deputyPresent = Boolean(activity.deputyPresent)
+  return {
+    id: activity.id,
+    title: activity.title,
+    href: `/campanha/atividades/${activity.slug}`,
+    tags: activity.tags ?? [],
+    status: activity.status,
+    deputyPresent,
+    startAt: activity.startAt,
+    endAt: activity.endAt ?? null,
+    municipality: activityMunicipalitySummary(activity.municipality),
+    locality: activity.locality ?? null,
+    canReschedule: canCampaignUserRescheduleActivity(user, deputyPresent),
+  }
+}
 
 export type ActivityListViewModel = {
   id: number

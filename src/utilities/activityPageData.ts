@@ -2,17 +2,21 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import type { ActivityAgendaRequestData } from '@/lib/schemas/activity'
 import type { Activity, CampaignUser } from '@/payload-types'
 import type { ActivityDetailTab } from '@/utilities/activityDetailTabUi'
 import {
   activityPageSize,
+  buildActivityAgendaWhere,
   buildActivityListWhere,
   parseActivityListParams,
 } from '@/utilities/activityUi'
 import {
+  activityAgendaSelect,
   activityFormSelect,
   activityListSelect,
   getActivityDetailSelect,
+  toActivityAgendaEvent,
   toActivityFormViewModel,
 } from '@/utilities/activityViewModels'
 import { createEntityNotFoundError } from '@/utilities/entityNotFound'
@@ -50,6 +54,43 @@ export const loadActivityListPageData = async (
   })
 
   return { result, state }
+}
+
+export const loadActivityAgendaEventsData = async (
+  payload: Pick<Payload, 'find'>,
+  user: CampaignUser,
+  request: ActivityAgendaRequestData,
+) => {
+  const result = await payload.find({
+    collection: 'activity',
+    depth: 1,
+    limit: 0,
+    pagination: false,
+    sort: 'startAt',
+    where: buildActivityAgendaWhere(request, request.rangeStart, request.rangeEnd),
+    select: activityAgendaSelect,
+    user,
+    overrideAccess: false,
+  })
+
+  return result.docs.map((activity) => toActivityAgendaEvent(activity as Activity, user))
+}
+
+export const loadAccessibleActivityTags = async (
+  payload: Pick<Payload, 'find'>,
+  user: CampaignUser,
+): Promise<string[]> => {
+  const result = await payload.find({
+    collection: 'activity',
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { tags: true },
+    user,
+    overrideAccess: false,
+  })
+  const tags = new Set(result.docs.flatMap((activity) => activity.tags ?? []))
+  return [...tags].sort((left, right) => left.localeCompare(right, 'pt-BR'))
 }
 
 const getActivityDetailQueryDepth = (activeTab: ActivityDetailTab): number =>

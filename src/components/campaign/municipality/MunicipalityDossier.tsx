@@ -294,7 +294,7 @@ export const MunicipalityDossier = ({
         <SectionHeader
           id="dossier-agenda-title"
           title="Agenda no município"
-          seeAllHref={`/campanha/atividades?municipality=${view.id}`}
+          seeAllHref={`/campanha/agenda?municipality=${view.id}`}
           seeAllLabel="Ver agenda completa"
         />
         {data.upcomingActivities.length ? (

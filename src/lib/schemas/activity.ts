@@ -21,6 +21,10 @@ export const ACTIVITY_RESULT_TOO_LONG_MESSAGE =
   'Resultado muito longo. Reduza o texto e tente novamente.'
 export const ACTIVITY_RESULT_STAFF_MESSAGE =
   'Apenas a equipe da campanha pode registrar o resultado da atividade.'
+export const ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE =
+  'Apenas o Coordenador Geral ou o Candidato podem remarcar compromisso com deputado presente.'
+export const ACTIVITY_RESCHEDULE_FAILED_MESSAGE =
+  'Não foi possível remarcar a atividade. O horário anterior foi mantido.'
 
 /**
  * C14 — tags are free-form labels the mesa invents (comício, imprensa, etc.).
@@ -28,6 +32,7 @@ export const ACTIVITY_RESULT_STAFF_MESSAGE =
  */
 export const MAX_ACTIVITY_TAGS = 20
 export const MAX_ACTIVITY_TAG_LENGTH = 80
+export const ACTIVITY_AGENDA_MAX_RANGE_DAYS = 45
 
 export const activityStatuses = ['confirmado', 'realizado', 'cancelado'] as const
 export type ActivityStatus = (typeof activityStatuses)[number]
@@ -111,6 +116,51 @@ const validateSchedule = (
   }
 }
 
+const isoInstantSchema = z.string().datetime({ offset: true })
+
+export const activityAgendaRequestSchema = z
+  .object({
+    rangeStart: isoInstantSchema,
+    rangeEnd: isoInstantSchema,
+    municipality: positiveRelationshipId.optional(),
+    deputyPresent: z.literal(true).optional(),
+    tag: z.string().trim().min(1).max(MAX_ACTIVITY_TAG_LENGTH).optional(),
+  })
+  .superRefine((data, context) => {
+    const start = new Date(data.rangeStart)
+    const end = new Date(data.rangeEnd)
+    const duration = end.getTime() - start.getTime()
+    const maximumDuration = ACTIVITY_AGENDA_MAX_RANGE_DAYS * 86_400_000
+
+    if (!(duration > 0) || duration > maximumDuration) {
+      context.addIssue({
+        code: 'custom',
+        message: `Consulte no máximo ${ACTIVITY_AGENDA_MAX_RANGE_DAYS} dias da agenda por vez.`,
+        path: ['rangeEnd'],
+      })
+    }
+  })
+  .transform((data) => ({
+    ...data,
+    rangeStart: new Date(data.rangeStart).toISOString(),
+    rangeEnd: new Date(data.rangeEnd).toISOString(),
+  }))
+
+export const activityRescheduleSchema = z
+  .object({
+    id: positiveRelationshipId,
+    startAt: isoInstantSchema,
+    endAt: isoInstantSchema.nullable(),
+  })
+  .superRefine((data, context) => {
+    validateSchedule(data, context, true)
+  })
+  .transform((data) => ({
+    ...data,
+    startAt: new Date(data.startAt).toISOString(),
+    endAt: data.endAt ? new Date(data.endAt).toISOString() : null,
+  }))
+
 export const activityCreateSchema = activityFieldsSchema
   .extend({
     status: z.enum(['confirmado']).default('confirmado'),
@@ -142,6 +192,9 @@ export const activityUpdateSchema = activityFieldsSchema
 
 export type ActivityCreateInput = z.input<typeof activityCreateSchema>
 export type ActivityUpdateInput = z.input<typeof activityUpdateSchema>
+export type ActivityAgendaRequest = z.input<typeof activityAgendaRequestSchema>
+export type ActivityAgendaRequestData = z.output<typeof activityAgendaRequestSchema>
+export type ActivityRescheduleInput = z.input<typeof activityRescheduleSchema>
 
 /**
  * E13 — one stop of a giro, as the composer submits it: which município and

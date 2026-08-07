@@ -6,11 +6,16 @@ import type {
 import { APIError } from 'payload'
 
 import { relationshipId } from '@/lib/relationship'
-import { activityStatusLabels, activityStatuses } from '@/lib/schemas/activity'
+import {
+  ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE,
+  activityStatusLabels,
+  activityStatuses,
+} from '@/lib/schemas/activity'
 import { slugify } from '@/lib/slug'
 import { trimmedText } from '@/lib/text'
-import { isCampaignUnrestricted } from '@/utilities/access/shared'
+import { getFreshCampaignUser } from '@/utilities/access/shared'
 import {
+  canCampaignUserRescheduleActivity,
   canCreateActivity,
   canCreateActivityAdvisors,
   canDeleteActivity,
@@ -151,7 +156,6 @@ const validateDeputyPresentTimeGate: CollectionBeforeValidateHook = async ({
   if (isActivityMutationShortcut(context)) return data
   if (!data) return data
   if (operation === 'create') return data
-  if (!originalDoc?.deputyPresent) return data
 
   const timeChanged =
     (data.startAt !== undefined && data.startAt !== (originalDoc.startAt ?? null)) ||
@@ -159,14 +163,14 @@ const validateDeputyPresentTimeGate: CollectionBeforeValidateHook = async ({
 
   if (!timeChanged) return data
 
-  const user = req.user
-  if (!user || user.collection !== 'campaignUser') return data
+  const deputyPresent = Boolean(originalDoc?.deputyPresent || data.deputyPresent)
+  if (!deputyPresent) return data
 
-  if (!isCampaignUnrestricted(user)) {
-    throw new APIError(
-      'Apenas o Coordenador Geral ou o Candidato podem remarcar compromisso com deputado presente.',
-      403,
-    )
+  if (!req.user || req.user.collection !== 'campaignUser') return data
+  const user = await getFreshCampaignUser(req)
+
+  if (!user || !canCampaignUserRescheduleActivity(user, deputyPresent)) {
+    throw new APIError(ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE, 403)
   }
 
   return data

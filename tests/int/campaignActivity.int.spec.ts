@@ -11,8 +11,14 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import {
   createActivityRecord,
   createTourDraftActivitiesRecord,
+  loadActivityAgendaEventsRecord,
+  rescheduleActivityRecord,
 } from '@/app/(campaign)/campanha/actions/activity'
-import { activityCreateSchema, activityUpdateSchema } from '@/lib/schemas/activity'
+import {
+  ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE,
+  activityCreateSchema,
+  activityUpdateSchema,
+} from '@/lib/schemas/activity'
 import config from '@/payload.config'
 import { parseActivityCreateFormData, parseTourDraftFormData } from '@/utilities/activityFormData'
 import {
@@ -44,6 +50,24 @@ const validActivityInput = (municipalityId: number) => ({
   municipality: municipalityId,
   locality: 'Centro',
 })
+
+const createActivityInAdvisorScope = async (title: string, deputyPresent: boolean) => {
+  const fixtures = campaignFixtures()
+  const advisor = await fixtures.createCampaignUser('advisor')
+  const municipality = await fixtures.getMunicipality()
+  await fixtures.assignMunicipalityAdvisors(municipality, [advisor])
+  const activity = await payload.create({
+    collection: 'activity',
+    data: stub<ActivityCreateData>({
+      ...validActivityInput(municipality.id),
+      title: fixtures.value(title),
+      deputyPresent,
+    }),
+    overrideAccess: true,
+  })
+  fixtures.own('activity', activity.id)
+  return { activity, advisor }
+}
 
 describe('activity domain', () => {
   beforeAll(async () => {
@@ -350,6 +374,160 @@ describe('activity domain', () => {
         overrideAccess: true,
       }),
     ).rejects.toThrow('O horário de término deve ser posterior ao de início.')
+  })
+
+  it('loads only accessible events matching the agenda range and filters', async () => {
+    const fixtures = campaignFixtures()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const [inScope, outOfScope] = await Promise.all([
+      fixtures.getMunicipality(),
+      fixtures.getMunicipality(),
+    ])
+    await fixtures.assignMunicipalityAdvisors(inScope, [advisor])
+    const rangeStart = new Date('2026-08-03T03:00:00.000Z')
+    const rangeEnd = new Date('2026-08-10T03:00:00.000Z')
+
+    const matching = await payload.create({
+      collection: 'activity',
+      data: stub<ActivityCreateData>({
+        ...validActivityInput(inScope.id),
+        title: fixtures.value('Comício que atravessa a semana'),
+        tags: ['Comício'],
+        deputyPresent: true,
+        startAt: new Date(rangeStart.getTime() - 3_600_000).toISOString(),
+        endAt: new Date(rangeStart.getTime() + 3_600_000).toISOString(),
+      }),
+      overrideAccess: true,
+    })
+    fixtures.own('activity', matching.id)
+
+    for (const data of [
+      {
+        title: fixtures.value('Tag diferente'),
+        municipality: inScope.id,
+        tags: ['Reunião'],
+      },
+      {
+        title: fixtures.value('Fora do escopo'),
+        municipality: outOfScope.id,
+        tags: ['Comício'],
+      },
+    ]) {
+      const activity = await payload.create({
+        collection: 'activity',
+        data: stub<ActivityCreateData>({
+          ...validActivityInput(data.municipality),
+          ...data,
+          deputyPresent: true,
+          startAt: new Date(rangeStart.getTime() + 3_600_000).toISOString(),
+        }),
+        overrideAccess: true,
+      })
+      fixtures.own('activity', activity.id)
+    }
+
+    const events = await loadActivityAgendaEventsRecord(payload, advisor, {
+      rangeStart: rangeStart.toISOString(),
+      rangeEnd: rangeEnd.toISOString(),
+      municipality: inScope.id,
+      deputyPresent: true,
+      tag: 'Comício',
+    })
+
+    expect(events.map((event) => event.id)).toEqual([matching.id])
+    expect(events[0]?.municipality?.id).toBe(inScope.id)
+    expect(events[0]?.canReschedule).toBe(false)
+  })
+
+  it('allows an advisor to reschedule an ordinary activity in their scope', async () => {
+    const { activity, advisor } = await createActivityInAdvisorScope(
+      'Atividade comum para remarcar',
+      false,
+    )
+    const nextStart = new Date(Date.now() + 172_800_000).toISOString()
+
+    const updated = await rescheduleActivityRecord(payload, advisor, {
+      id: activity.id,
+      startAt: nextStart,
+      endAt: null,
+    })
+
+    expect(updated.startAt).toBe(nextStart)
+    expect(updated.endAt).toBeNull()
+  })
+
+  it('keeps a deputy commitment unchanged when an advisor tries to reschedule it', async () => {
+    const { activity, advisor } = await createActivityInAdvisorScope(
+      'Agenda do deputado protegida',
+      true,
+    )
+    const originalStart = activity.startAt
+
+    await expect(
+      rescheduleActivityRecord(payload, advisor, {
+        id: activity.id,
+        startAt: new Date(Date.now() + 259_200_000).toISOString(),
+        endAt: null,
+      }),
+    ).rejects.toThrow(ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE)
+
+    const persisted = await payload.findByID({
+      collection: 'activity',
+      id: activity.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(persisted.startAt).toBe(originalStart)
+  })
+
+  it('allows coordinator and candidate to reschedule a deputy commitment', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const candidate = await fixtures.createCampaignUser('candidate')
+    const municipality = await fixtures.getMunicipality()
+    const activity = await payload.create({
+      collection: 'activity',
+      data: stub<ActivityCreateData>({
+        ...validActivityInput(municipality.id),
+        title: fixtures.value('Agenda do deputado liberada'),
+        deputyPresent: true,
+      }),
+      overrideAccess: true,
+    })
+    fixtures.own('activity', activity.id)
+
+    for (const [actor, offset] of [
+      [coordinator, 345_600_000],
+      [candidate, 432_000_000],
+    ] as const) {
+      const nextStart = new Date(Date.now() + offset).toISOString()
+      const updated = await rescheduleActivityRecord(payload, actor, {
+        id: activity.id,
+        startAt: nextStart,
+        endAt: null,
+      })
+      expect(updated.startAt).toBe(nextStart)
+    }
+  })
+
+  it('blocks changing the time while marking an activity as deputy-present', async () => {
+    const { activity, advisor } = await createActivityInAdvisorScope(
+      'Presença e horário no mesmo write',
+      false,
+    )
+
+    await expect(
+      payload.update({
+        collection: 'activity',
+        id: activity.id,
+        data: {
+          deputyPresent: true,
+          startAt: new Date(Date.now() + 518_400_000).toISOString(),
+        },
+        user: advisor,
+        overrideAccess: false,
+      }),
+    ).rejects.toThrow(ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE)
   })
 
   it('denies leaders from updating activities', async () => {

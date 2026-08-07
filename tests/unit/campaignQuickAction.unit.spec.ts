@@ -26,6 +26,7 @@ import {
   shouldMountQuickActionsFab,
 } from '@/lib/campaignQuickActionMount'
 import {
+  ACTIVITY_DETAIL_ROOT_PATH,
   ACTIVITY_LIST_PATH,
   ACTIVITY_NEW_PATH,
   ACTIVITY_TOUR_COMPOSER_PATH,
@@ -103,7 +104,10 @@ describe('campaignQuickActionPaths (activities)', () => {
   it('parses list and detail surfaces', () => {
     expect(parseActivityQuickActionSurface(ACTIVITY_LIST_PATH)).toEqual({ kind: 'list' })
     expect(parseActivityQuickActionSurface(`${ACTIVITY_LIST_PATH}/`)).toEqual({ kind: 'list' })
-    expect(parseActivityQuickActionSurface('/campanha/atividades/caminhada-centro')).toEqual({
+    expect(parseActivityQuickActionSurface(ACTIVITY_DETAIL_ROOT_PATH)).toEqual({ kind: 'list' })
+    expect(
+      parseActivityQuickActionSurface(`${ACTIVITY_DETAIL_ROOT_PATH}/caminhada-centro`),
+    ).toEqual({
       kind: 'detail',
       activitySlug: 'caminhada-centro',
     })

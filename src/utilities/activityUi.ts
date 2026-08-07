@@ -1,10 +1,16 @@
 import type { Where } from 'payload'
 
+import { CAMPAIGN_AGENDA_HOME } from '@/lib/campaignPaths'
 import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/contactSearchQuery'
-import { activityStatuses, type ActivityStatus } from '@/lib/schemas/activity'
+import {
+  activityStatuses,
+  MAX_ACTIVITY_TAG_LENGTH,
+  type ActivityStatus,
+} from '@/lib/schemas/activity'
 import {
   buildListHref,
   firstValue,
+  inspectRawListParams,
   normalizedText,
   resolveListUrl,
   strictDecimalInteger,
@@ -34,6 +40,184 @@ export type ActivityListState = {
 }
 
 type RawSearchParams = CampaignListRawSearchParams
+
+export type ActivityAgendaState = {
+  municipality?: number
+  deputyPresent?: true
+  tag?: string
+}
+
+const activityAgendaParamNames = ['municipality', 'deputyPresent', 'tag'] as const
+const activityAgendaParamNameSet = new Set<string>(activityAgendaParamNames)
+
+const activityTag = (value: string | undefined): string | undefined => {
+  const tag = normalizedText(value)
+  return tag && tag.length <= MAX_ACTIVITY_TAG_LENGTH ? tag : undefined
+}
+
+export const parseActivityAgendaParams = (params: RawSearchParams): ActivityAgendaState => {
+  const municipality = strictDecimalInteger(firstValue(params.municipality))
+  const deputyPresent = firstValue(params.deputyPresent) === '1' ? true : undefined
+  const tag = activityTag(firstValue(params.tag))
+
+  return {
+    ...(municipality ? { municipality } : {}),
+    ...(deputyPresent ? { deputyPresent } : {}),
+    ...(tag ? { tag } : {}),
+  }
+}
+
+export const buildActivityAgendaSearchParams = (state: ActivityAgendaState): URLSearchParams => {
+  const canonicalState = parseActivityAgendaParams({
+    municipality: state.municipality === undefined ? undefined : String(state.municipality),
+    deputyPresent: state.deputyPresent ? '1' : undefined,
+    tag: state.tag,
+  })
+  const params = new URLSearchParams()
+
+  if (canonicalState.municipality) {
+    params.set('municipality', String(canonicalState.municipality))
+  }
+  if (canonicalState.deputyPresent) params.set('deputyPresent', '1')
+  if (canonicalState.tag) params.set('tag', canonicalState.tag)
+
+  return params
+}
+
+export const buildActivityAgendaHref = (state: ActivityAgendaState): string => {
+  const query = buildActivityAgendaSearchParams(state).toString()
+  return query ? `${CAMPAIGN_AGENDA_HOME}?${query}` : CAMPAIGN_AGENDA_HOME
+}
+
+export const restrictActivityAgendaState = (
+  state: ActivityAgendaState,
+  accessibleMunicipalityIDs: ReadonlySet<number>,
+  accessibleTags: ReadonlySet<string>,
+): ActivityAgendaState => ({
+  ...(state.municipality && accessibleMunicipalityIDs.has(state.municipality)
+    ? { municipality: state.municipality }
+    : {}),
+  ...(state.deputyPresent ? { deputyPresent: true } : {}),
+  ...(state.tag && accessibleTags.has(state.tag) ? { tag: state.tag } : {}),
+})
+
+export const resolveActivityAgendaUrl = (
+  params: RawSearchParams,
+): {
+  state: ActivityAgendaState
+  href: string
+  redirectHref?: string
+} => {
+  const state = parseActivityAgendaParams(params)
+  const canonicalQuery = buildActivityAgendaSearchParams(state).toString()
+  const href = canonicalQuery ? `${CAMPAIGN_AGENDA_HOME}?${canonicalQuery}` : CAMPAIGN_AGENDA_HOME
+  const raw = inspectRawListParams(params, activityAgendaParamNameSet)
+
+  return {
+    state,
+    href,
+    ...(raw.hasUnsupportedParams || raw.query !== canonicalQuery ? { redirectHref: href } : {}),
+  }
+}
+
+export const buildActivityAgendaWhere = (
+  state: ActivityAgendaState,
+  rangeStart: string,
+  rangeEnd: string,
+): Where => {
+  const filters: Where[] = [
+    { startAt: { less_than: rangeEnd } },
+    {
+      or: [
+        { endAt: { greater_than: rangeStart } },
+        {
+          and: [{ endAt: { exists: false } }, { startAt: { greater_than_equal: rangeStart } }],
+        },
+      ],
+    },
+  ]
+
+  if (state.municipality) filters.push({ municipality: { equals: state.municipality } })
+  if (state.deputyPresent) filters.push({ deputyPresent: { equals: true } })
+  if (state.tag) filters.push({ tags: { contains: state.tag } })
+
+  return { and: filters }
+}
+
+export type ActivityCreatePrefill = {
+  startAt?: string
+  endAt?: string
+  municipalityId?: number
+}
+
+export const buildActivityCreateHref = (
+  agendaState: ActivityAgendaState,
+  prefill: Omit<ActivityCreatePrefill, 'municipalityId'> = {},
+): string => {
+  const params = new URLSearchParams()
+  if (prefill.startAt) params.set('startAt', prefill.startAt)
+  if (prefill.endAt) params.set('endAt', prefill.endAt)
+  if (agendaState.municipality) params.set('municipality', String(agendaState.municipality))
+  params.set('returnTo', buildActivityAgendaHref(agendaState))
+  return `/campanha/atividades/nova?${params.toString()}`
+}
+
+export const parseActivityAgendaReturnHref = (
+  value: string | string[] | undefined,
+  accessibleMunicipalityIDs: ReadonlySet<number>,
+  accessibleTags: ReadonlySet<string>,
+): string => {
+  const raw = firstValue(value)
+  if (!raw) return CAMPAIGN_AGENDA_HOME
+
+  const base = new URL('https://campaign.invalid')
+  let returnUrl: URL
+  try {
+    returnUrl = new URL(raw, base)
+  } catch {
+    return CAMPAIGN_AGENDA_HOME
+  }
+  if (returnUrl.origin !== base.origin || returnUrl.pathname !== CAMPAIGN_AGENDA_HOME) {
+    return CAMPAIGN_AGENDA_HOME
+  }
+
+  const state = restrictActivityAgendaState(
+    parseActivityAgendaParams({
+      municipality: returnUrl.searchParams.get('municipality') ?? undefined,
+      deputyPresent: returnUrl.searchParams.get('deputyPresent') ?? undefined,
+      tag: returnUrl.searchParams.get('tag') ?? undefined,
+    }),
+    accessibleMunicipalityIDs,
+    accessibleTags,
+  )
+  return buildActivityAgendaHref(state)
+}
+
+const isoInstantPattern = /^\d{4}-\d{2}-\d{2}T.+(?:Z|[+-]\d{2}:\d{2})$/
+
+const normalizedIsoInstant = (value: string | undefined): string | undefined => {
+  if (!value || !isoInstantPattern.test(value)) return undefined
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString()
+}
+
+export const parseActivityCreatePrefill = (
+  params: RawSearchParams,
+  accessibleMunicipalityIDs: ReadonlySet<number>,
+): ActivityCreatePrefill => {
+  const startAt = normalizedIsoInstant(firstValue(params.startAt))
+  const rawEndAt = normalizedIsoInstant(firstValue(params.endAt))
+  const endAt = startAt && rawEndAt && new Date(rawEndAt) > new Date(startAt) ? rawEndAt : undefined
+  const rawMunicipality = strictDecimalInteger(firstValue(params.municipality))
+  const municipalityId =
+    rawMunicipality && accessibleMunicipalityIDs.has(rawMunicipality) ? rawMunicipality : undefined
+
+  return {
+    ...(startAt ? { startAt } : {}),
+    ...(endAt ? { endAt } : {}),
+    ...(municipalityId ? { municipalityId } : {}),
+  }
+}
 
 const activityListParamNames = ['q', 'tab', 'tag', 'status', 'municipality', 'page'] as const
 

@@ -14,7 +14,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
-import { LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
+import { CAMPAIGN_AGENDA_HOME, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
 import { isStaffCampaignRole, isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
 import type { CampaignUser } from '@/payload-types'
 import { canAccessSupporterArea } from '@/utilities/supporter/supporterUi'
@@ -40,7 +40,7 @@ const staffNav: CampaignNavItem[] = [
   { title: 'Lideranças', href: '/campanha/liderancas', icon: HandshakeIcon },
   { title: 'Organizações', href: '/campanha/organizacoes', icon: LandmarkIcon },
   { title: 'Dobradinhas', href: '/campanha/dobradinhas', icon: Users2Icon },
-  { title: 'Atividades', href: '/campanha/atividades', icon: CalendarDaysIcon },
+  { title: 'Agenda', href: CAMPAIGN_AGENDA_HOME, icon: CalendarDaysIcon },
   { title: 'Demandas', href: '/campanha/demandas', icon: InboxIcon },
   { title: 'Apoiadores', href: '/campanha/apoiadores', icon: UsersIcon },
   { title: 'Assessores', href: '/campanha/assessores', icon: UserCogIcon },
@@ -83,5 +83,6 @@ export const isCampaignNavActive = (pathname: string, href: string): boolean => 
   if (href === '/campanha') {
     return pathname === '/campanha' || pathname === '/campanha/'
   }
+  if (href === CAMPAIGN_AGENDA_HOME && pathname.startsWith('/campanha/atividades')) return true
   return pathname === href || pathname.startsWith(`${href}/`)
 }

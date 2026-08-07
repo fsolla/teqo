@@ -35,6 +35,7 @@ import { formatIsoAsBahiaDateTimeInput } from '@/lib/campaignTime'
 import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
 import { MAX_ACTIVITY_TAG_LENGTH, MAX_ACTIVITY_TAGS } from '@/lib/schemas/activity'
 import type { ActivityLeadershipOption } from '@/utilities/activityLeadershipOptions'
+import type { ActivityCreatePrefill } from '@/utilities/activityUi'
 import type { ActivityFormViewModel } from '@/utilities/activityViewModels'
 import { fieldError } from '@/utilities/campaignFormFields'
 import type { EligibleAdvisorOption } from '@/utilities/municipality/municipalityViewModels'
@@ -57,6 +58,7 @@ export type ActivityFormFieldsProps = {
   advisorOptions?: EligibleAdvisorOption[]
   canManageAdvisors?: boolean
   activity?: ActivityFormViewModel
+  initialValues?: ActivityCreatePrefill
   fieldErrors?: Record<string, string[]>
   submittedTitle?: string
   searchContacts: (query: string) => Promise<ContactComboboxOption[]>
@@ -153,6 +155,7 @@ const ActivityFormFields = ({
   advisorOptions = [],
   canManageAdvisors = false,
   activity,
+  initialValues,
   fieldErrors = {},
   submittedTitle,
   searchContacts,
@@ -172,6 +175,9 @@ const ActivityFormFields = ({
   const [leadership, setLeadership] = useState<ActivityLeadershipOption | null>(
     activity?.leadership ? { id: activity.leadership.id, label: activity.leadership.label } : null,
   )
+  const initialStartAt = activity?.startAt ?? initialValues?.startAt
+  const initialEndAt = activity?.endAt ?? initialValues?.endAt
+  const initialMunicipalityId = activity?.municipalityId ?? initialValues?.municipalityId
 
   return (
     <FieldGroup>
@@ -248,9 +254,7 @@ const ActivityFormFields = ({
                 id="startAt"
                 name="startAt"
                 type="datetime-local"
-                defaultValue={
-                  activity?.startAt ? formatIsoAsBahiaDateTimeInput(activity.startAt) : ''
-                }
+                defaultValue={initialStartAt ? formatIsoAsBahiaDateTimeInput(initialStartAt) : ''}
                 required
                 className="min-h-11"
                 aria-invalid={Boolean(errorFor('startAt'))}
@@ -266,7 +270,7 @@ const ActivityFormFields = ({
                 id="endAt"
                 name="endAt"
                 type="datetime-local"
-                defaultValue={activity?.endAt ? formatIsoAsBahiaDateTimeInput(activity.endAt) : ''}
+                defaultValue={initialEndAt ? formatIsoAsBahiaDateTimeInput(initialEndAt) : ''}
                 className="min-h-11"
                 aria-invalid={Boolean(errorFor('endAt'))}
                 aria-describedby={errorFor('endAt') ? 'endAt-error' : undefined}
@@ -290,7 +294,7 @@ const ActivityFormFields = ({
               <NativeSelect
                 id="municipality"
                 name="municipality"
-                defaultValue={activity?.municipalityId ? String(activity.municipalityId) : ''}
+                defaultValue={initialMunicipalityId ? String(initialMunicipalityId) : ''}
                 required
                 aria-invalid={Boolean(errorFor('municipality'))}
                 aria-describedby={errorFor('municipality') ? 'municipality-error' : undefined}
@@ -453,15 +457,18 @@ export const ActivityForm = ({
   advisorOptions,
   canManageAdvisors,
   activity,
+  initialValues,
   fieldErrors: externalFieldErrors,
   submittedTitle,
   searchContacts,
   searchLeaderships,
   knownTags,
   submitLabel,
+  cancelHref,
 }: ActivityFormFieldsProps & {
   action: ActivityFormAction
   submitLabel?: string
+  cancelHref?: string
 }) => {
   const [state, submitAction, isPending] = useActionState(action, {})
 
@@ -473,6 +480,7 @@ export const ActivityForm = ({
         advisorOptions={advisorOptions}
         canManageAdvisors={canManageAdvisors}
         activity={activity}
+        initialValues={initialValues}
         fieldErrors={state.fieldErrors ?? externalFieldErrors}
         submittedTitle={state.submittedTitle ?? submittedTitle}
         searchContacts={searchContacts}
@@ -502,7 +510,13 @@ export const ActivityForm = ({
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <Button asChild variant="outline" className="min-h-11">
-          <Link href={activity ? `/campanha/atividades/${activity.slug}` : '/campanha/atividades'}>
+          <Link
+            href={
+              activity
+                ? `/campanha/atividades/${activity.slug}`
+                : (cancelHref ?? '/campanha/agenda')
+            }
+          >
             Cancelar
           </Link>
         </Button>

@@ -19,6 +19,9 @@ describe('campaignPageChrome', () => {
     expect(resolveCampaignPageChrome('/campanha/liderancas', 'advisor')).toEqual({
       title: 'Lideranças',
     })
+    expect(resolveCampaignPageChrome('/campanha/agenda', 'coordinator')).toEqual({
+      title: 'Agenda',
+    })
   })
 
   it('returns null for entity detail pages (chrome set per route)', () => {

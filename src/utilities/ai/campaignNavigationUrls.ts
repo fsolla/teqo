@@ -5,7 +5,12 @@ import {
   campaignIntelligenceConcepts,
   type CampaignConceptId,
 } from '@/lib/campaignIntelligenceConcepts'
-import { CAMPAIGN_HOME, CAMPAIGN_PROFILE_HOME, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
+import {
+  CAMPAIGN_AGENDA_HOME,
+  CAMPAIGN_HOME,
+  CAMPAIGN_PROFILE_HOME,
+  LEADER_CONTACTS_HOME,
+} from '@/lib/campaignPaths'
 import { ACTIVITY_TOUR_COMPOSER_PATH } from '@/lib/campaignQuickActionPaths'
 import type { CampaignRole } from '@/lib/campaignRoles'
 import { isStaffCampaignRole, isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
@@ -27,7 +32,12 @@ import {
   type SupporterVoteIntention,
 } from '@/lib/schemas/supporter'
 import type { CampaignUser } from '@/payload-types'
-import { activityTabs, buildActivityListHref, type ActivityTab } from '@/utilities/activityUi'
+import {
+  activityTabs,
+  buildActivityAgendaHref,
+  buildActivityListHref,
+  type ActivityTab,
+} from '@/utilities/activityUi'
 import { advisorListHrefForPage } from '@/utilities/advisor/advisorListUrl'
 import { buildDemandListHref } from '@/utilities/demand/demandListUrl'
 import { buildLeadershipListHref } from '@/utilities/leadership/leadershipListUrl'
@@ -169,6 +179,7 @@ export type CampaignNavigationLinkRequest =
       tag?: string
       status?: (typeof activityStatuses)[number]
       municipality?: number
+      deputyPresent?: boolean
     })
   | (BaseLinkFields & {
       destination: 'demandList'
@@ -488,18 +499,37 @@ const buildPathForRequest = (
         request.municipality !== undefined
           ? positiveInt(request.municipality, 'municipality')
           : undefined
-      const path = buildActivityListHref(
-        {
-          page: 1,
-          tab: tab ?? 'proximos',
-          ...(request.q?.trim() ? { q: request.q.trim() } : {}),
-          ...(tag ? { tag } : {}),
-          ...(status ? { status } : {}),
-          ...(municipality ? { municipality } : {}),
-        },
-        1,
-      )
-      return { ok: true, path, label: defaultLabel('Atividades', request.label) }
+      const usesLegacyList = Boolean(request.q?.trim() || tab || status)
+      if (usesLegacyList && request.deputyPresent) {
+        return {
+          ok: false,
+          error:
+            'O filtro de deputado presente pertence à Agenda e não pode ser combinado com busca, aba ou status da lista antiga.',
+          alternatives: [CAMPAIGN_AGENDA_HOME, '/campanha/atividades'],
+        }
+      }
+      const path = usesLegacyList
+        ? buildActivityListHref(
+            {
+              page: 1,
+              tab: tab ?? 'proximos',
+              ...(request.q?.trim() ? { q: request.q.trim() } : {}),
+              ...(tag ? { tag } : {}),
+              ...(status ? { status } : {}),
+              ...(municipality ? { municipality } : {}),
+            },
+            1,
+          )
+        : buildActivityAgendaHref({
+            ...(tag ? { tag } : {}),
+            ...(municipality ? { municipality } : {}),
+            ...(request.deputyPresent ? { deputyPresent: true } : {}),
+          })
+      return {
+        ok: true,
+        path,
+        label: defaultLabel(usesLegacyList ? 'Atividades' : 'Agenda', request.label),
+      }
     }
     case 'demandList': {
       const status =
