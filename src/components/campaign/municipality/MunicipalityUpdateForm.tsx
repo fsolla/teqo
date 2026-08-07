@@ -4,21 +4,14 @@ import { useActionState, useState } from 'react'
 
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/Checkbox'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  municipalitySignalTypeDescriptions,
-  municipalitySignalTypeLabels,
-  municipalitySignalTypes,
-  municipalityUpdateKindLabels,
-  municipalityUpdateKinds,
-  type MunicipalityUpdateKind,
-} from '@/lib/schemas/municipalityUpdate'
+import type { MunicipalityUpdatePolarity } from '@/lib/schemas/municipalityUpdate'
+import { municipalityUpdatePolarityLabels } from '@/lib/schemas/municipalityUpdate'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
-import { fieldError } from '@/utilities/campaignFormFields'
 
 type MunicipalityUpdateFormProps = {
   municipalityID: number
@@ -26,129 +19,94 @@ type MunicipalityUpdateFormProps = {
     state: CampaignFormActionState,
     formData: FormData,
   ) => Promise<CampaignFormActionState>
+  isStaff: boolean
 }
 
 export const MunicipalityUpdateForm = ({
   municipalityID,
   formAction,
+  isStaff,
 }: MunicipalityUpdateFormProps) => {
   const [state, submitAction, isPending] = useActionState(formAction, {})
-  const [kind, setKind] = useState<MunicipalityUpdateKind>('semanal')
+  const [polarity, setPolarity] = useState<MunicipalityUpdatePolarity>('neutra')
 
   return (
     <form action={submitAction} className="flex flex-col gap-4 rounded-xl border p-4">
       <h3 className="text-base font-medium">Registrar atualização</h3>
       <input type="hidden" name="municipalityId" value={municipalityID} />
+
       <Field>
-        <FieldLabel htmlFor="municipality-update-kind">Tipo</FieldLabel>
+        <FieldLabel htmlFor="municipality-update-body">Texto da atualização</FieldLabel>
+        <FieldDescription>Descreva o que aconteceu de forma clara e objetiva.</FieldDescription>
+        <Textarea
+          id="municipality-update-body"
+          name="body"
+          rows={4}
+          maxLength={5000}
+          required
+          disabled={isPending}
+        />
+        {state.fieldErrors?.body ? <FieldError>{state.fieldErrors.body}</FieldError> : null}
+      </Field>
+
+      <Field>
+        <FieldLabel htmlFor="municipality-update-polarity">Polaridade</FieldLabel>
         <NativeSelect
-          id="municipality-update-kind"
-          name="kind"
-          value={kind}
-          onChange={(event) => setKind(event.target.value as MunicipalityUpdateKind)}
-          className="min-h-11 w-full sm:w-56"
+          id="municipality-update-polarity"
+          name="polarity"
+          value={polarity}
+          onChange={(event) => setPolarity(event.target.value as MunicipalityUpdatePolarity)}
+          required
+          disabled={isPending}
+          className="w-48"
         >
-          {municipalityUpdateKinds.map((entry) => (
-            <NativeSelectOption key={entry} value={entry}>
-              {municipalityUpdateKindLabels[entry]}
+          {(['boa', 'neutra', 'ruim'] as const).map((option) => (
+            <NativeSelectOption key={option} value={option}>
+              {municipalityUpdatePolarityLabels[option]}
             </NativeSelectOption>
           ))}
         </NativeSelect>
+        <FieldDescription>Selecione a polaridade do fato observado.</FieldDescription>
       </Field>
-      {kind === 'semanal' ? (
-        <>
-          <Field>
-            <FieldLabel htmlFor="municipality-update-worked">O que funcionou</FieldLabel>
-            <Textarea id="municipality-update-worked" name="worked" rows={3} maxLength={3000} />
-            {fieldError(state.fieldErrors, 'worked') ? (
-              <FieldError>{fieldError(state.fieldErrors, 'worked')}</FieldError>
-            ) : null}
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="municipality-update-failed">O que não funcionou</FieldLabel>
-            <Textarea id="municipality-update-failed" name="failed" rows={3} maxLength={3000} />
-            {fieldError(state.fieldErrors, 'failed') ? (
-              <FieldError>{fieldError(state.fieldErrors, 'failed')}</FieldError>
-            ) : null}
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="municipality-update-needs">O que preciso</FieldLabel>
-            <Textarea id="municipality-update-needs" name="needs" rows={3} maxLength={3000} />
-            {fieldError(state.fieldErrors, 'needs') ? (
-              <FieldError>{fieldError(state.fieldErrors, 'needs')}</FieldError>
-            ) : null}
-          </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field>
-              <FieldLabel htmlFor="municipality-update-volunteers">Voluntários ativos</FieldLabel>
-              <Input
-                id="municipality-update-volunteers"
-                name="activeVolunteers"
-                type="number"
-                min={0}
-                inputMode="numeric"
-                className="min-h-11"
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="municipality-update-supports">Novos apoios</FieldLabel>
-              <Input
-                id="municipality-update-supports"
-                name="newSupports"
-                type="number"
-                min={0}
-                inputMode="numeric"
-                className="min-h-11"
-              />
-            </Field>
+
+      <div className="flex items-center gap-3">
+        <input type="hidden" name="urgent" value="false" />
+        <Checkbox
+          id="municipality-update-urgent"
+          name="urgent"
+          value="true"
+          defaultChecked={false}
+          disabled={isPending}
+        />
+        <FieldLabel htmlFor="municipality-update-urgent" className="font-normal">
+          Sinalizar como urgente
+        </FieldLabel>
+      </div>
+
+      {isStaff ? (
+        <div className="flex items-start gap-3">
+          <input type="hidden" name="adversarySignal" value="false" />
+          <Checkbox
+            id="municipality-update-adversary"
+            name="adversarySignal"
+            value="true"
+            defaultChecked={false}
+            disabled={isPending}
+            className="mt-0.5"
+          />
+          <div className="flex flex-col gap-1">
+            <FieldLabel htmlFor="municipality-update-adversary" className="font-normal">
+              Sinalizar adversário
+            </FieldLabel>
+            <FieldDescription>
+              Marque se este é um fato relacionado a um adversário político.
+            </FieldDescription>
           </div>
-        </>
+        </div>
       ) : (
-        <>
-          <Field>
-            <FieldLabel htmlFor="municipality-update-body">Texto</FieldLabel>
-            <Textarea
-              id="municipality-update-body"
-              name="body"
-              rows={kind === 'sinal' ? 2 : 4}
-              maxLength={5000}
-            />
-            {fieldError(state.fieldErrors, 'body') ? (
-              <FieldError>{fieldError(state.fieldErrors, 'body')}</FieldError>
-            ) : null}
-          </Field>
-          {kind === 'sinal' ? (
-            <Field>
-              <FieldLabel htmlFor="municipality-update-signal-type">Tipo do sinal</FieldLabel>
-              <NativeSelect
-                id="municipality-update-signal-type"
-                name="signalType"
-                defaultValue=""
-                required
-                className="sm:w-72"
-              >
-                <NativeSelectOption value="">Selecione</NativeSelectOption>
-                {municipalitySignalTypes.map((entry) => (
-                  <NativeSelectOption key={entry} value={entry}>
-                    {municipalitySignalTypeLabels[entry]}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-              <FieldDescription>Escolha o fato político observado:</FieldDescription>
-              <ul className="flex flex-col gap-1 text-xs text-muted-foreground">
-                {municipalitySignalTypes.map((entry) => (
-                  <li key={entry}>
-                    <span className="font-medium text-foreground">
-                      {municipalitySignalTypeLabels[entry]}:
-                    </span>{' '}
-                    {municipalitySignalTypeDescriptions[entry]}
-                  </li>
-                ))}
-              </ul>
-            </Field>
-          ) : null}
-        </>
+        <input type="hidden" name="adversarySignal" value="false" />
       )}
+
       <CampaignFormActionMessage state={state} successFallbackMessage="Atualização registrada." />
       <Button type="submit" disabled={isPending} className="min-h-11 self-start">
         {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}

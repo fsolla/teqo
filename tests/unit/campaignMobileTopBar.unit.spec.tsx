@@ -138,7 +138,7 @@ describe('CampaignMobileTopBar', () => {
   it('renders skip link instead of dismiss when chained flow defines skip', () => {
     renderTopBar({
       wizardChrome: {
-        flowTitle: 'Registrar sinal',
+        flowTitle: 'Registrar atualização',
         stepKind: 'continue',
         previousHref: '/campanha/acoes/atualizar-votos?municipio=cairu',
         dismissHref: '/campanha',

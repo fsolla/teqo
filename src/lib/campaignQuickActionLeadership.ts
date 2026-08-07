@@ -19,7 +19,7 @@ const LEADERSHIP_LIST_PATH = '/campanha/liderancas' as const
 
 const LEADERSHIP_DETAIL_WIZARD_IDS: readonly CampaignWizardActionId[] = [
   'update-votes',
-  'register-signal',
+  'register-update',
   'change-trend',
   'update-leadership',
   'register-demand',

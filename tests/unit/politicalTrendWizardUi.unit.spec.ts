@@ -45,22 +45,15 @@ describe('politicalTrendWizardUi', () => {
 
   it('shows skip to the next chain step when embedded from another wizard', () => {
     expect(shouldShowWizardTrendSkip('update-votes')).toBe(true)
-    expect(shouldShowWizardTrendSkip('register-signal')).toBe(true)
+    expect(shouldShowWizardTrendSkip('register-update')).toBe(true)
     expect(resolveWizardTrendSkip('update-votes', 'cairu')).toEqual({
       label: WIZARD_CHAIN_SKIP_LABEL,
-      href: `${CAMPAIGN_ACTIONS_HOME}/registrar-sinal?municipio=cairu&entry=update-votes`,
+      href: `${CAMPAIGN_ACTIONS_HOME}/registrar-atualizacao?municipio=cairu&entry=update-votes`,
     })
   })
 
   it('builds note prefills from embedded wizard sources', () => {
     expect(buildPoliticalTrendNotePrefill({ kind: 'none' })).toBe('')
-    expect(
-      buildPoliticalTrendNotePrefill({
-        kind: 'signal',
-        signalType: 'invasao',
-        description: 'Reunião do adversário no território',
-      }),
-    ).toBe('Sinal de invasão: Reunião do adversário no território')
     expect(
       buildPoliticalTrendNotePrefill({
         kind: 'voteAdjustment',
@@ -84,15 +77,9 @@ describe('politicalTrendWizardUi', () => {
 
     expect(
       resolvePoliticalTrendNotePrefillSource({
-        entryAction: 'register-signal',
-        signalType: 'esfriamento',
-        signalBody: 'Lideranças sumiram',
+        entryAction: 'register-update',
       }),
-    ).toEqual({
-      kind: 'signal',
-      signalType: 'esfriamento',
-      description: 'Lideranças sumiram',
-    })
+    ).toEqual({ kind: 'none' })
 
     expect(
       resolvePoliticalTrendNotePrefillSource({

@@ -19,8 +19,8 @@ import {
   SignalAgeReadout,
   TerritorialClassReadout,
 } from '@/components/campaign/municipality/MunicipalityListRowReadouts'
-import { MunicipalityListSignalControl } from '@/components/campaign/municipality/MunicipalityListSignalControl'
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
+import { MunicipalityListUpdateControl } from '@/components/campaign/municipality/MunicipalityListUpdateControl'
 import { MunicipalityPriorityIndicator } from '@/components/campaign/municipality/MunicipalityPriorityIndicator'
 import { MunicipalitySortableHead } from '@/components/campaign/municipality/MunicipalitySortableHead'
 import { MunicipalityVotePositionReadout } from '@/components/campaign/municipality/MunicipalityVotePositionReadout'
@@ -242,19 +242,20 @@ const municipalityListColumns = ({
     municipality: MunicipalityListViewModel,
     triggerPresentation: 'compact' | 'adaptive',
   ) => (
-    <MunicipalityListSignalControl
+    <MunicipalityListUpdateControl
       municipalityID={municipality.id}
       municipalitySlug={municipality.slug}
       municipalityName={municipality.name}
       lastSignalAt={municipality.lastSignalAt}
       variant="popover"
       formAction={signalFormAction}
+      isStaff={isCampaignUnrestricted}
     >
       <MunicipalityListSignalTrigger
         lastSignalAt={municipality.lastSignalAt}
         presentation={triggerPresentation}
       />
-    </MunicipalityListSignalControl>
+    </MunicipalityListUpdateControl>
   )
 
   return [

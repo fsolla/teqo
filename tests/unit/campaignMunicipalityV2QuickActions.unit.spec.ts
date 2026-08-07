@@ -47,9 +47,9 @@ describe('resolveMunicipalityV2QuickActions', () => {
     )
   })
 
-  it('omits register-signal and wizard operational actions', () => {
+  it('omits register-update and wizard operational actions', () => {
     const actions = resolveMunicipalityV2QuickActions('advisor', 'cairu', 1)
-    expect(actions.some((action) => action.id === 'register-signal')).toBe(false)
+    expect(actions.some((action) => action.id === 'register-update')).toBe(false)
     expect(actions.some((action) => action.id === 'update-votes')).toBe(false)
   })
 

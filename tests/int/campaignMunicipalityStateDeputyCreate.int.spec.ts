@@ -193,14 +193,16 @@ describe('StateDeputy contact fields (B163)', () => {
   it('updates Contact fields and party without changing the legacy slug', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
-    const stateDeputy = await fixtures.createStateDeputy({ name: 'Nome Original', party: 'PT' })
+    const originalName = `${fixtures.value('Nome')} Original`
+    const correctedName = `${fixtures.value('Nome')} Corrigido`
+    const stateDeputy = await fixtures.createStateDeputy({ name: originalName, party: 'PT' })
     const legacySlug = stateDeputy.slug
     const phone = fixtures.phone()
 
     await updateStateDeputyContactRecord(payload, coordinator, {
       id: stateDeputy.id,
       field: 'name',
-      name: 'Nome Corrigido',
+      name: correctedName,
     })
     await updateStateDeputyContactRecord(payload, coordinator, {
       id: stateDeputy.id,
@@ -226,7 +228,7 @@ describe('StateDeputy contact fields (B163)', () => {
     expect(updated.slug).toBe(legacySlug)
     expect(updated.party).toBe('PSD')
     expect(updated.contact).toMatchObject({
-      name: 'Nome Corrigido',
+      name: correctedName,
       email: 'corrigido@example.com',
       phone,
     })
@@ -235,7 +237,9 @@ describe('StateDeputy contact fields (B163)', () => {
   it('rejects a phone already owned by another Contact', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
-    const stateDeputy = await fixtures.createStateDeputy({ name: 'Dobradinha Principal' })
+    const stateDeputy = await fixtures.createStateDeputy({
+      name: `${fixtures.value('Dobradinha')} Principal`,
+    })
     const takenPhone = fixtures.phone()
     await fixtures.createContact({ phone: takenPhone })
 
@@ -251,14 +255,16 @@ describe('StateDeputy contact fields (B163)', () => {
   it('rejects renaming a dobradinha to another dobradinha name', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
-    await fixtures.createStateDeputy({ name: 'Nome já usado' })
-    const stateDeputy = await fixtures.createStateDeputy({ name: 'Nome atual' })
+    const usedName = `${fixtures.value('Nome')} já usado`
+    const currentName = `${fixtures.value('Nome')} atual`
+    await fixtures.createStateDeputy({ name: usedName })
+    const stateDeputy = await fixtures.createStateDeputy({ name: currentName })
 
     await expect(
       updateStateDeputyContactRecord(payload, coordinator, {
         id: stateDeputy.id,
         field: 'name',
-        name: 'Nome já usado',
+        name: usedName,
       }),
     ).rejects.toThrow(STATE_DEPUTY_CONFLICT_MESSAGE)
 
@@ -268,20 +274,22 @@ describe('StateDeputy contact fields (B163)', () => {
       depth: 1,
       overrideAccess: true,
     })
-    expect(unchanged.contact).toMatchObject({ name: 'Nome atual' })
+    expect(unchanged.contact).toMatchObject({ name: currentName })
   })
 
   it('keeps the name invariant when an admin edits the linked Contact directly', async () => {
     const fixtures = campaignFixtures()
-    const first = await fixtures.createStateDeputy({ name: 'Nome já usado' })
-    const second = await fixtures.createStateDeputy({ name: 'Nome atual' })
+    const usedName = `${fixtures.value('Nome')} já usado`
+    const currentName = `${fixtures.value('Nome')} atual`
+    const first = await fixtures.createStateDeputy({ name: usedName })
+    const second = await fixtures.createStateDeputy({ name: currentName })
     const secondContactID = typeof second.contact === 'object' ? second.contact.id : second.contact
 
     await expect(
       payload.update({
         collection: 'contact',
         id: secondContactID,
-        data: { name: 'Nome já usado' },
+        data: { name: usedName },
         depth: 0,
         overrideAccess: true,
       }),
@@ -293,7 +301,7 @@ describe('StateDeputy contact fields (B163)', () => {
       depth: 0,
       overrideAccess: true,
     })
-    expect(unchanged.name).toBe('Nome atual')
+    expect(unchanged.name).toBe(currentName)
     expect(first.id).not.toBe(second.id)
   })
 })

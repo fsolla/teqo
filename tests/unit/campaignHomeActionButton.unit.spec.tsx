@@ -61,8 +61,8 @@ const renderActionButton = (props: CampaignHomeActionButtonProps) =>
 
 describe('CampaignHomeActionButton', () => {
   it('exposes the label as the accessible name', () => {
-    renderActionButton({ label: 'Registrar sinal', icon: BarChart3 })
-    expect(screen.getByRole('button', { name: 'Registrar sinal' })).toBeTruthy()
+    renderActionButton({ label: 'Registrar atualização', icon: BarChart3 })
+    expect(screen.getByRole('button', { name: 'Registrar atualização' })).toBeTruthy()
   })
 
   it('fires onClick on a short tap when there is no description', () => {

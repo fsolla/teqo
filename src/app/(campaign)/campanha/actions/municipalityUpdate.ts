@@ -7,6 +7,7 @@ import {
   type MunicipalityUpdateCreateInput,
 } from '@/lib/schemas/municipalityUpdate'
 import type { CampaignUser } from '@/payload-types'
+import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
@@ -22,6 +23,10 @@ export const createMunicipalityUpdateRecord = async (
     payload,
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
+
+      if (!isCampaignStaff(currentActor)) {
+        data.adversarySignal = false
+      }
 
       return payload.create({
         collection: 'municipalityUpdate',

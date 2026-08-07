@@ -4,23 +4,19 @@ import {
   parsePoliticalTrendStatusFormValue,
   type PoliticalTrendStatusValue,
 } from '@/lib/schemas/municipality'
-import {
-  parseMunicipalitySignalType,
-  type MunicipalitySignalType,
-} from '@/lib/schemas/municipalityUpdate'
 
 export const CAMPAIGN_ACTIONS_HOME = '/campanha/acoes' as const
 
 export type CampaignWizardActionId =
   | 'update-votes'
-  | 'register-signal'
+  | 'register-update'
   | 'change-trend'
   | 'update-leadership'
   | 'register-demand'
 
 export const CAMPAIGN_WIZARD_ACTION_SLUGS: Record<CampaignWizardActionId, string> = {
   'update-votes': 'atualizar-votos',
-  'register-signal': 'registrar-sinal',
+  'register-update': 'registrar-atualizacao',
   'change-trend': 'mudar-tendencia',
   'update-leadership': 'atualizar-lideranca',
   'register-demand': 'registrar-pedido',
@@ -51,15 +47,11 @@ export const WIZARD_MUNICIPIO_QUERY_KEY = 'municipio' as const
 /** Legacy B61 ritual param — canonical URLs omit it (B77). */
 export const WIZARD_SCENARIO_QUERY_KEY = 'cenario' as const
 
-export const WIZARD_SIGNAL_TYPE_QUERY_KEY = 'signalType' as const
-
 export const WIZARD_ENTRY_ACTION_QUERY_KEY = 'entry' as const
 
 export const WIZARD_TREND_STATUS_QUERY_KEY = 'trendStatus' as const
 
 export const WIZARD_NOTE_PREFILL_QUERY_KEY = 'notePrefill' as const
-
-export const WIZARD_SIGNAL_BODY_QUERY_KEY = 'signalBody' as const
 
 export const WIZARD_VOTE_FROM_QUERY_KEY = 'voteFrom' as const
 
@@ -167,43 +159,21 @@ export const parseWizardEntryActionParam = (
   return trimmed
 }
 
-export const wizardSignalHref = (
-  actionSlug: string,
-  municipalitySlug?: string,
-  signalType?: MunicipalitySignalType,
-  entryAction?: CampaignWizardActionId,
-  returnPath?: string,
-): string => {
-  const base = `${CAMPAIGN_ACTIONS_HOME}/${actionSlug}`
-  if (!municipalitySlug) {
-    return appendWizardReturnPath(base, returnPath)
-  }
-
-  const params = new URLSearchParams({ [WIZARD_MUNICIPIO_QUERY_KEY]: municipalitySlug })
-  if (signalType) {
-    params.set(WIZARD_SIGNAL_TYPE_QUERY_KEY, signalType)
-  }
-  if (entryAction) {
-    params.set(WIZARD_ENTRY_ACTION_QUERY_KEY, entryAction)
-  }
-  return appendWizardReturnPath(`${base}?${params.toString()}`, returnPath)
-}
-
-export const resolveWizardSignalTypeParam = (
+export const resolveWizardTrendStatusParam = (
   value: string | string[] | undefined,
-): { signalType?: MunicipalitySignalType; invalid: boolean } => {
+): { trendStatus?: PoliticalTrendStatusValue; invalid: boolean } => {
   const raw = Array.isArray(value) ? value[0] : value
   const trimmed = raw?.trim()
   if (!trimmed) {
-    return { signalType: undefined, invalid: false }
+    return { trendStatus: undefined, invalid: false }
   }
 
-  const signalType = parseMunicipalitySignalType(trimmed)
-  if (signalType) {
-    return { signalType, invalid: false }
+  const trendStatus = parsePoliticalTrendStatusFormValue(trimmed)
+  if (trendStatus) {
+    return { trendStatus, invalid: false }
   }
 
-  return { signalType: undefined, invalid: true }
+  return { trendStatus: undefined, invalid: true }
 }
 
 export const wizardTrendHref = (
@@ -232,21 +202,4 @@ export const wizardTrendHref = (
     }
   }
   return appendWizardReturnPath(`${base}?${params.toString()}`, returnPath)
-}
-
-export const resolveWizardTrendStatusParam = (
-  value: string | string[] | undefined,
-): { trendStatus?: PoliticalTrendStatusValue; invalid: boolean } => {
-  const raw = Array.isArray(value) ? value[0] : value
-  const trimmed = raw?.trim()
-  if (!trimmed) {
-    return { trendStatus: undefined, invalid: false }
-  }
-
-  const trendStatus = parsePoliticalTrendStatusFormValue(trimmed)
-  if (trendStatus) {
-    return { trendStatus, invalid: false }
-  }
-
-  return { trendStatus: undefined, invalid: true }
 }

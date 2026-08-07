@@ -23,7 +23,7 @@ import { isStaffCampaignRole, type CampaignRole } from '@/lib/campaignRoles'
 
 type CampaignHomeActionId =
   | 'update-votes'
-  | 'register-signal'
+  | 'register-update'
   | 'change-trend'
   | 'update-leadership'
   | 'register-demand'
@@ -46,10 +46,10 @@ const staffHomeActionsCoordinator: readonly CampaignHomeAction[] = [
     description: 'Atualizar a projeção (média, pessimista, otimista) de um município',
   },
   {
-    id: 'register-signal',
-    label: 'Registrar sinal',
+    id: 'register-update',
+    label: 'Registrar atualização',
     icon: Megaphone,
-    description: 'Anotar sinal urgente: invasão, perda de apoio, novo apoio, dificuldade',
+    description: 'Anotar o que aconteceu no município — texto, polaridade e urgência.',
   },
   {
     id: 'change-trend',

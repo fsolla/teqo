@@ -1,10 +1,6 @@
 import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
 import { WIZARD_CHAIN_SKIP_LABEL } from '@/lib/campaignWizardCopy'
 import { politicalTrendStatuses, type PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
-import {
-  municipalitySignalTypeLabels,
-  type MunicipalitySignalType,
-} from '@/lib/schemas/municipalityUpdate'
 import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
 
 const politicalTrendDisplayLabels: Record<PoliticalTrendStatusValue, string> = {
@@ -85,7 +81,6 @@ export const resolveWizardTrendSkip = (
 
 export type PoliticalTrendNotePrefillSource =
   | { kind: 'none' }
-  | { kind: 'signal'; signalType: MunicipalitySignalType; description: string }
   | { kind: 'voteAdjustment'; previousValue: number; newValue: number }
   | { kind: 'custom'; text: string }
 
@@ -93,8 +88,6 @@ export const buildPoliticalTrendNotePrefill = (source: PoliticalTrendNotePrefill
   switch (source.kind) {
     case 'none':
       return ''
-    case 'signal':
-      return `Sinal de ${municipalitySignalTypeLabels[source.signalType].toLowerCase()}: ${source.description}`
     case 'voteAdjustment':
       return `Ajuste de votos: ${source.previousValue} → ${source.newValue}`
     case 'custom':
@@ -117,28 +110,17 @@ const parseOptionalIntParam = (value: string | string[] | undefined): number | u
 export const resolvePoliticalTrendNotePrefillSource = ({
   entryAction,
   notePrefill,
-  signalType,
-  signalBody,
   voteFrom,
   voteTo,
 }: {
   entryAction?: CampaignWizardActionId
   notePrefill?: string | string[] | undefined
-  signalType?: MunicipalitySignalType
-  signalBody?: string | string[] | undefined
   voteFrom?: string | string[] | undefined
   voteTo?: string | string[] | undefined
 }): PoliticalTrendNotePrefillSource => {
   const customText = Array.isArray(notePrefill) ? notePrefill[0] : notePrefill
   if (customText?.trim()) {
     return { kind: 'custom', text: customText.trim() }
-  }
-
-  if (entryAction === 'register-signal' && signalType) {
-    const body = Array.isArray(signalBody) ? signalBody[0] : signalBody
-    if (body?.trim()) {
-      return { kind: 'signal', signalType, description: body.trim() }
-    }
   }
 
   if (entryAction === 'update-votes') {

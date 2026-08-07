@@ -11,7 +11,6 @@ import {
 import { ELECTION_YEAR_2014, ELECTION_YEAR_2018, ELECTION_YEAR_2022 } from '@/lib/electionResults'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
-import type { MunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
 import {
   evaluateMunicipalityTriggers,
   isSuggestionSuppressedByDecision,
@@ -103,13 +102,6 @@ export type MunicipalitySuggestionsBundle = {
   silence: MunicipalitySilenceEntry[]
   evaluatedCount: number
 }
-
-/** P1's threat leg: signal types that read as an adversary move. */
-const ADVERSARY_SIGNAL_TYPES: MunicipalitySignalType[] = [
-  'invasao',
-  'visita_adversario',
-  'proposta_broker',
-]
 
 /** Agenda legs: drafts are intentions and cancellations never happened. */
 const AGENDA_ACTIVITY_STATUSES = ['confirmado', 'realizado'] as const
@@ -226,8 +218,7 @@ export const loadMunicipalitySuggestions = async (
       where: {
         and: [
           { municipality: { in: municipalityIDs } },
-          { kind: { equals: 'sinal' } },
-          { signalType: { in: ADVERSARY_SIGNAL_TYPES } },
+          { adversarySignal: { equals: true } },
           {
             createdAt: {
               greater_than: isoDaysAgo(now, SUGGESTION_INPUT_WINDOWS.adversarySignalDays),

@@ -17,7 +17,7 @@ import { isStaffCampaignRole, type CampaignRole } from '@/lib/campaignRoles'
 
 const WIZARD_ACTION_IDS: readonly CampaignWizardActionId[] = [
   'update-votes',
-  'register-signal',
+  'register-update',
   'change-trend',
   'update-leadership',
   'register-demand',

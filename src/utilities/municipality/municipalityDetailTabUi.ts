@@ -20,7 +20,7 @@ const helpers = createDetailTabHelpers<MunicipalityDetailTab>({
     dossie: [],
     elections: ['compare'],
     leaderships: ['leadershipQ', 'leadershipPage'],
-    updates: ['updateKind', 'updatePage', 'newUpdate'],
+    updates: ['updatePage', 'newUpdate'],
     demands: ['demandStatus'],
   },
   basePath: (municipalitySlug) => `/campanha/municipios/${municipalitySlug}`,

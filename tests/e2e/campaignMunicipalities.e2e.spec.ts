@@ -423,7 +423,7 @@ test.describe('Municípios — jornadas por papel', () => {
     // current signal state ("— Sem sinal").
     const signalTrigger = municipalityContainer(page)
       .getByRole('button', {
-        name: new RegExp(`^Registrar sinal em ${municipality.name} —`),
+        name: new RegExp(`^Registrar atualização em ${municipality.name} —`),
       })
       .filter({ visible: true })
     await expect(signalTrigger).toBeVisible()
@@ -437,14 +437,14 @@ test.describe('Municípios — jornadas por papel', () => {
     await signalForm.getByLabel('Tipo do sinal').selectOption('visita_adversario')
     await Promise.all([
       expectPostResponse(page, '/campanha/municipios'),
-      signalForm.getByRole('button', { name: 'Registrar sinal', exact: true }).click(),
+      signalForm.getByRole('button', { name: 'Registrar atualização', exact: true }).click(),
     ])
 
     // The toast is intentionally transient; the persisted freshness label is
     // the stable success contract and must arrive after the server response.
     await expect(
       page.getByRole('button', {
-        name: `Registrar sinal em ${municipality.name} — hoje`,
+        name: `Registrar atualização em ${municipality.name} — hoje`,
       }),
     ).toBeVisible()
   })
@@ -701,7 +701,7 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
 
   const staffActionLabels = [
     'Ajustar votos',
-    'Registrar sinal',
+    'Registrar atualização',
     'Mudar tendência',
     'Atualizar liderança',
     'Registrar pedido',
@@ -760,7 +760,7 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
     const overlay = page.locator('#CampaignQuickActionsOverlay')
     await expect(overlay).toBeVisible()
 
-    const registerSignal = overlay.getByRole('link', { name: 'Registrar sinal' })
+    const registerSignal = overlay.getByRole('link', { name: 'Registrar atualização' })
     await expect(registerSignal).toBeVisible()
 
     const search = overlay.getByLabel('Buscar na campanha')
@@ -772,7 +772,7 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
     )
     await search.focus()
     await suggestResponse
-    await expect(overlay.getByRole('link', { name: 'Registrar sinal' })).toBeHidden()
+    await expect(overlay.getByRole('link', { name: 'Registrar atualização' })).toBeHidden()
 
     // Overlay scopes search suggest — list page has no E11 SuggestionsPanel.
     await expect(overlay.getByRole('region', { name: 'Sugestões' })).toBeVisible()

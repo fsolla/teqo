@@ -14,7 +14,7 @@ export const CAMPAIGN_DEMANDS_CREATE_HREF = `${CAMPAIGN_DEMANDS_HOME}/nova` as c
 
 const DETAIL_WIZARD_ACTION_IDS: readonly CampaignWizardActionId[] = [
   'update-votes',
-  'register-signal',
+  'register-update',
   'change-trend',
   'update-leadership',
   'register-demand',

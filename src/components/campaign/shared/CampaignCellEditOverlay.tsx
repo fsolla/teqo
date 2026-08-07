@@ -73,7 +73,7 @@ type CampaignCellEditOverlayProps = {
 /**
  * Container for the list's in-cell quick-edit surfaces: a Popover on `md+`, a
  * bottom Drawer below it, where a Popover competes with the virtual keyboard
- * (B42; `MunicipalityListSignalControl` set the precedent in B26).
+ * (B42; `MunicipalityListUpdateControl` set the precedent in B26).
  *
  * The variant comes from the call site, not from `matchMedia`: the lists render
  * the mobile cards (`md:hidden`) and the table (`hidden md:block`) as sibling

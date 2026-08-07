@@ -2,7 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
-import type { MunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
+import type { MunicipalityUpdatePolarity } from '@/lib/schemas/municipalityUpdate'
 import type { CampaignUser } from '@/payload-types'
 import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import {
@@ -19,18 +19,17 @@ import { aggregateMunicipalityPledgesFromRows } from '@/utilities/votePledgeView
 
 export type { MunicipalityV2StatusViewModel }
 
-const loadLatestSignal = async (
+const loadLatestUpdate = async (
   payload: Payload,
   user: CampaignUser,
   municipalityID: number,
-): Promise<{ type: MunicipalitySignalType | null; body: string | null }> => {
+): Promise<{ polarity: MunicipalityUpdatePolarity | null; body: string | null }> => {
   const feed = await loadMunicipalityUpdatesFeed(payload, user, municipalityID, {
     page: 1,
-    kind: 'sinal',
   })
   const latest = feed.updates[0]
-  if (!latest) return { type: null, body: null }
-  return { type: latest.signalType, body: latest.body }
+  if (!latest) return { polarity: null, body: null }
+  return { polarity: latest.polarity ?? null, body: latest.body ?? null }
 }
 
 export const loadMunicipalityV2StatusData = async (
@@ -39,10 +38,10 @@ export const loadMunicipalityV2StatusData = async (
   municipalitySlug: string,
 ): Promise<{ context: AccessibleMunicipalityContext; status: MunicipalityV2StatusViewModel }> => {
   const context = await resolveAccessibleMunicipalityContext(payload, user, municipalitySlug)
-  const [view, pledges, latestSignal] = await Promise.all([
+  const [view, pledges, latestUpdate] = await Promise.all([
     getMunicipalityDetailViewModel(payload, context, user),
     loadMunicipalityPledges(payload, user, context.id),
-    loadLatestSignal(payload, user, context.id),
+    loadLatestUpdate(payload, user, context.id),
   ])
 
   const strategy = view.strategy
@@ -70,8 +69,8 @@ export const loadMunicipalityV2StatusData = async (
       politicalTrendStatus: strategy.politicalTrend.status,
       politicalTrendNote: strategy.politicalTrend.note,
       lastSignalAt,
-      lastSignalType: latestSignal.type,
-      lastSignalBody: latestSignal.body,
+      lastUpdatePolarity: latestUpdate.polarity,
+      lastUpdateBody: latestUpdate.body,
       territorialClass: computeMunicipalityTerritorialClass(view.slug),
     },
   }

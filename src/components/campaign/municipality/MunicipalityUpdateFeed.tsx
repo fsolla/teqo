@@ -1,8 +1,5 @@
 import { Badge } from '@/components/ui/Badge'
-import {
-  municipalitySignalTypeLabels,
-  municipalityUpdateKindLabels,
-} from '@/lib/schemas/municipalityUpdate'
+import { municipalityUpdatePolarityLabels } from '@/lib/schemas/municipalityUpdate'
 import type { MunicipalityUpdateViewModel } from '@/utilities/municipality/municipalityUpdatePageData'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
@@ -12,11 +9,10 @@ const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
 
 const numberFormatter = new Intl.NumberFormat('pt-BR')
 
-const kindVariant = {
-  semanal: 'secondary',
-  urgente: 'destructive',
-  nota: 'outline',
-  sinal: 'default',
+const polarityVariant = {
+  boa: 'default',
+  neutra: 'secondary',
+  ruim: 'destructive',
 } as const
 
 export const MunicipalityUpdateFeed = ({ updates }: { updates: MunicipalityUpdateViewModel[] }) => {
@@ -33,37 +29,19 @@ export const MunicipalityUpdateFeed = ({ updates }: { updates: MunicipalityUpdat
       {updates.map((update) => (
         <li key={update.id} className="flex flex-col gap-3 rounded-xl border p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={kindVariant[update.kind]}>
-              {municipalityUpdateKindLabels[update.kind]}
+            <Badge variant={polarityVariant[update.polarity]}>
+              {municipalityUpdatePolarityLabels[update.polarity]}
             </Badge>
+            {update.urgent ? <Badge variant="destructive">Urgente</Badge> : null}
+            {update.adversarySignal ? <Badge variant="outline">Adversário</Badge> : null}
             <span className="text-sm font-medium">{update.authorName}</span>
             <span className="text-sm text-muted-foreground">
               {dateTimeFormatter.format(new Date(update.createdAt))}
             </span>
           </div>
-          {update.kind === 'semanal' ? (
-            <dl className="flex flex-col gap-2 text-sm">
-              <div>
-                <dt className="font-medium">O que funcionou</dt>
-                <dd className="whitespace-pre-wrap text-muted-foreground">{update.worked}</dd>
-              </div>
-              <div>
-                <dt className="font-medium">O que não funcionou</dt>
-                <dd className="whitespace-pre-wrap text-muted-foreground">{update.failed}</dd>
-              </div>
-              <div>
-                <dt className="font-medium">O que preciso</dt>
-                <dd className="whitespace-pre-wrap text-muted-foreground">{update.needs}</dd>
-              </div>
-            </dl>
-          ) : (
-            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{update.body}</p>
-          )}
-          {update.kind === 'sinal' && update.signalType ? (
-            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <Badge variant="outline">{municipalitySignalTypeLabels[update.signalType]}</Badge>
-            </div>
-          ) : null}
+          <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+            {update.body ?? 'Sem texto.'}
+          </p>
           {update.activeVolunteers != null || update.newSupports != null ? (
             <p className="text-sm text-muted-foreground">
               {update.activeVolunteers != null

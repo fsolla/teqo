@@ -12,7 +12,7 @@ import {
 
 const wizardActionIds = [
   'update-votes',
-  'register-signal',
+  'register-update',
   'change-trend',
   'update-leadership',
   'register-demand',

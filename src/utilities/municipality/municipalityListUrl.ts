@@ -112,7 +112,7 @@ export const municipalityColumnLabels: Record<MunicipalityListColumnId, string> 
   stateDeputies: 'Dobradinha',
   goalCoverage: municipalityListSortLabels.deficit,
   /** The column shows the signal; `frescor` sorts by how old it is. */
-  lastSignal: 'Sinal',
+  lastSignal: 'Atualização',
   lastUpdateAt: municipalityListSortLabels.lastUpdateAt,
 }
 

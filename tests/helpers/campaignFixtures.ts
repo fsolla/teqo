@@ -82,7 +82,7 @@ type LeadershipInput = Partial<
 type MunicipalityUpdateInput = Partial<
   Pick<
     MunicipalityUpdate,
-    'kind' | 'worked' | 'failed' | 'needs' | 'activeVolunteers' | 'newSupports' | 'body'
+    'polarity' | 'urgent' | 'adversarySignal' | 'activeVolunteers' | 'newSupports' | 'body'
   >
 > &
   Pick<MunicipalityUpdate, 'municipality' | 'author'>
@@ -807,8 +807,10 @@ export class CampaignFixtures {
     const update = await this.rootPayload.create({
       collection: 'municipalityUpdate',
       data: {
-        kind: 'nota',
+        polarity: 'neutra',
         body: this.value('Atualização'),
+        urgent: false,
+        adversarySignal: false,
         ...input,
         municipality: relationId(input.municipality),
         author: relationId(input.author),

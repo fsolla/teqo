@@ -1,105 +1,39 @@
 import { z } from 'zod'
 
-import {
-  MAX_VOTE_COUNT,
-  positiveRelationshipId,
-  trimmedOptionalText,
-} from '@/lib/schemas/primitives'
+import { MAX_VOTE_COUNT, positiveRelationshipId } from '@/lib/schemas/primitives'
 
-export const municipalityUpdateKinds = ['semanal', 'urgente', 'nota', 'sinal'] as const
-export type MunicipalityUpdateKind = (typeof municipalityUpdateKinds)[number]
+export const municipalityUpdatePolarities = ['boa', 'neutra', 'ruim'] as const
+export type MunicipalityUpdatePolarity = (typeof municipalityUpdatePolarities)[number]
 
-export const municipalityUpdateKindLabels: Record<MunicipalityUpdateKind, string> = {
-  semanal: 'Semanal',
-  urgente: 'Urgente',
-  nota: 'Nota',
-  sinal: 'Sinal',
+export const municipalityUpdatePolarityLabels: Record<MunicipalityUpdatePolarity, string> = {
+  boa: 'Boa',
+  neutra: 'Neutra',
+  ruim: 'Ruim',
 }
 
-export const municipalitySignalTypes = [
-  'invasao',
-  'esfriamento',
-  'visita_adversario',
-  'proposta_broker',
-  'outro',
-] as const
-export type MunicipalitySignalType = (typeof municipalitySignalTypes)[number]
+export const MUNICIPALITY_UPDATE_POLARITY_REQUIRED_MESSAGE = 'Informe a polaridade da atualização.'
 
-export const municipalitySignalTypeLabels: Record<MunicipalitySignalType, string> = {
-  invasao: 'Invasão',
-  esfriamento: 'Rede esfriou',
-  visita_adversario: 'Adversário apareceu',
-  proposta_broker: 'Alguém pediu algo',
-  outro: 'Outro',
-}
+export const MUNICIPALITY_UPDATE_BODY_REQUIRED_MESSAGE = 'Informe o texto da atualização.'
 
-export const municipalitySignalTypeDescriptions: Record<MunicipalitySignalType, string> = {
-  invasao: 'Adversário ocupando nosso espaço.',
-  esfriamento: 'Aliados pararam de responder ou caíram.',
-  visita_adversario: 'Visita ou agenda dele no município.',
-  proposta_broker: 'Liderança ou intermediário pediu ou ofereceu algo.',
-  outro: 'Fato importante que não encaixa acima.',
-}
-
-export const parseMunicipalitySignalType = (
+export const parseMunicipalityUpdatePolarity = (
   raw: string | undefined,
-): MunicipalitySignalType | undefined => {
+): MunicipalityUpdatePolarity | undefined => {
   if (!raw) return undefined
-  return municipalitySignalTypes.includes(raw as MunicipalitySignalType)
-    ? (raw as MunicipalitySignalType)
+  return municipalityUpdatePolarities.includes(raw as MunicipalityUpdatePolarity)
+    ? (raw as MunicipalityUpdatePolarity)
     : undefined
 }
 
 const optionalCount = z.number().int().min(0).max(MAX_VOTE_COUNT).optional()
 
-export const municipalityUpdateCreateSchema = z
-  .object({
-    municipality: positiveRelationshipId,
-    kind: z.enum(municipalityUpdateKinds).default('semanal'),
-    worked: trimmedOptionalText(3000),
-    failed: trimmedOptionalText(3000),
-    needs: trimmedOptionalText(3000),
-    body: trimmedOptionalText(5000),
-    activeVolunteers: optionalCount,
-    newSupports: optionalCount,
-    signalType: z.enum(municipalitySignalTypes).optional(),
-  })
-  .superRefine((data, context) => {
-    if (data.kind === 'semanal') {
-      if (!data.worked) {
-        context.addIssue({ code: 'custom', message: 'Informe o que funcionou.', path: ['worked'] })
-      }
-      if (!data.failed) {
-        context.addIssue({
-          code: 'custom',
-          message: 'Informe o que não funcionou.',
-          path: ['failed'],
-        })
-      }
-      if (!data.needs) {
-        context.addIssue({
-          code: 'custom',
-          message: 'Informe o que você precisa.',
-          path: ['needs'],
-        })
-      }
-    } else if (data.kind !== 'sinal' && !data.body) {
-      // Sinal inherits B147/B134 optional-motivo: type is enough; body/note is optional.
-      context.addIssue({
-        code: 'custom',
-        message: 'Informe o texto da atualização.',
-        path: ['body'],
-      })
-    }
-    if (data.kind === 'sinal') {
-      if (!data.signalType) {
-        context.addIssue({
-          code: 'custom',
-          message: 'Informe o tipo do sinal.',
-          path: ['signalType'],
-        })
-      }
-    }
-  })
+export const municipalityUpdateCreateSchema = z.object({
+  municipality: positiveRelationshipId,
+  body: z.string().trim().min(1, MUNICIPALITY_UPDATE_BODY_REQUIRED_MESSAGE).max(5000),
+  polarity: z.enum(municipalityUpdatePolarities),
+  urgent: z.boolean().default(false),
+  activeVolunteers: optionalCount,
+  newSupports: optionalCount,
+  adversarySignal: z.boolean().default(false),
+})
 
 export type MunicipalityUpdateCreateInput = z.input<typeof municipalityUpdateCreateSchema>

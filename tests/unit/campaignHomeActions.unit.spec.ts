@@ -10,7 +10,7 @@ import { buildMunicipalityListHref } from '@/utilities/municipality/municipality
 
 const staffActionIds = [
   'update-votes',
-  'register-signal',
+  'register-update',
   'change-trend',
   'update-leadership',
   'register-demand',
@@ -61,8 +61,8 @@ describe('toHomeActionButtonProps', () => {
     expect(uncovered?.href).toBe(UNCOVERED_MUNICIPALITIES_LIST_HREF)
     const updateVotes = props.find((action) => action.id === 'update-votes')
     expect(updateVotes?.href).toBe('/campanha/acoes/atualizar-votos')
-    const registerSignal = props.find((action) => action.id === 'register-signal')
-    expect(registerSignal?.href).toBe('/campanha/acoes/registrar-sinal')
+    const registerUpdate = props.find((action) => action.id === 'register-update')
+    expect(registerUpdate?.href).toBe('/campanha/acoes/registrar-atualizacao')
   })
 
   it('omits uncovered href when not provided', () => {

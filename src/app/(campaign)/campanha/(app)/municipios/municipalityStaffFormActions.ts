@@ -14,6 +14,7 @@ import {
 import {
   nullableFormText,
   optionalFormText,
+  optionalIntegerFormValue,
   optionalMunicipalitySlugFromForm,
   repeatedRelationshipFormValues,
   requiredFormBoolean,
@@ -27,14 +28,16 @@ import {
   MUNICIPALITY_STATE_DEPUTIES_CAP_MESSAGE,
   parsePoliticalTrendStatusFormValue,
 } from '@/lib/schemas/municipality'
-import { parseMunicipalitySignalType } from '@/lib/schemas/municipalityUpdate'
+import {
+  MUNICIPALITY_UPDATE_POLARITY_REQUIRED_MESSAGE,
+  parseMunicipalityUpdatePolarity,
+} from '@/lib/schemas/municipalityUpdate'
 import {
   STATE_DEPUTY_CONFLICT_MESSAGE,
   STATE_DEPUTY_MUNICIPALITIES_SAFE_MESSAGES,
   STATE_DEPUTY_NAME_REQUIRED_MESSAGE,
   STATE_DEPUTY_STAFF_MESSAGE,
 } from '@/lib/schemas/stateDeputy'
-import { WIZARD_SIGNAL_SAVED_MESSAGE } from '@/lib/wizardSignalUi'
 import {
   runCampaignFormAction,
   type CampaignFormActionState,
@@ -101,24 +104,39 @@ export const assignMunicipalityAdvisorsFormAction = async (
       'Não foi possível atualizar os assessores. Verifique seu acesso e tente novamente.',
   })
 
-export const createMunicipalityListSignalFormAction = async (
+/** Checkbox pairs with hidden "false"; last value wins (same as leadership exclusive). */
+const formBoolean = (formData: FormData, field: string): boolean => {
+  const values = formData.getAll(field)
+  if (values.length === 0) return false
+  return values.at(-1) === 'true'
+}
+
+export const createMunicipalityListUpdateFormAction = async (
   _state: CampaignFormActionState,
   formData: FormData,
 ): Promise<CampaignFormActionState> =>
   runCampaignFormAction({
     execute: async () => {
       const municipality = requiredRelationshipFormValue(formData, 'municipalityId')
+      const polarity = parseMunicipalityUpdatePolarity(requiredFormText(formData, 'polarity'))
+      if (!polarity) {
+        throw new Error(MUNICIPALITY_UPDATE_POLARITY_REQUIRED_MESSAGE)
+      }
 
       await createMunicipalityUpdate({
         municipality,
-        kind: 'sinal',
-        body: optionalFormText(formData, 'body'),
-        signalType: parseMunicipalitySignalType(optionalFormText(formData, 'signalType')),
+        body: requiredFormText(formData, 'body'),
+        polarity,
+        urgent: formBoolean(formData, 'urgent'),
+        activeVolunteers: optionalIntegerFormValue(formData, 'activeVolunteers'),
+        newSupports: optionalIntegerFormValue(formData, 'newSupports'),
+        adversarySignal: formBoolean(formData, 'adversarySignal'),
       })
       revalidateMunicipalityListPaths({ slug: optionalMunicipalitySlugFromForm(formData) })
-      return { message: WIZARD_SIGNAL_SAVED_MESSAGE }
+      return { message: 'Atualização registrada.' }
     },
-    genericMessage: 'Não foi possível registrar o sinal. Verifique seu acesso e tente novamente.',
+    genericMessage:
+      'Não foi possível registrar a atualização. Verifique seu acesso e tente novamente.',
   })
 
 /**

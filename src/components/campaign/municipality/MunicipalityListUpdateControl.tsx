@@ -2,7 +2,7 @@
 
 import { useActionState, useId, useState, type ReactNode } from 'react'
 
-import { MunicipalitySignalFields } from '@/components/campaign/municipality/MunicipalitySignalFields'
+import { MunicipalityUpdateFields } from '@/components/campaign/municipality/MunicipalityUpdateFields'
 import {
   CampaignCellEditOverlay,
   type CampaignCellEditOverlayVariant,
@@ -23,30 +23,32 @@ type MunicipalityStaffFormAction = (
   formData: FormData,
 ) => Promise<CampaignFormActionState>
 
-type MunicipalityListSignalControlProps = {
+type MunicipalityListUpdateControlProps = {
   municipalityID: number
   municipalitySlug: string
   municipalityName: string
   lastSignalAt: string | null
   variant: CampaignCellEditOverlayVariant
   formAction: MunicipalityStaffFormAction
+  isStaff: boolean
   children: ReactNode
 }
 
-export const MunicipalityListSignalControl = ({
+export const MunicipalityListUpdateControl = ({
   municipalityID,
   municipalitySlug,
   municipalityName,
   lastSignalAt,
   variant,
   formAction,
+  isStaff,
   children,
-}: MunicipalityListSignalControlProps) => {
+}: MunicipalityListUpdateControlProps) => {
   const [open, setOpen] = useState(false)
   const [formKey, setFormKey] = useState(0)
   const [state, submitAction, isPending] = useActionState(formAction, {})
   const reactId = useId()
-  const idPrefix = `municipality-list-signal-${variant}-${municipalityID}-${reactId}`
+  const idPrefix = `municipality-list-update-${variant}-${municipalityID}-${reactId}`
   const formId = `${idPrefix}-form`
   const isSheet = variant === 'sheet'
   const frescorLabel = formatMunicipalitySignalAgeLabel(municipalitySignalAgeInDays(lastSignalAt))
@@ -57,14 +59,9 @@ export const MunicipalityListSignalControl = ({
   })
 
   const submitButton = (
-    // On the sheet this button lives in the footer, outside the `<form>` it
-    // submits: `form={formId}` is the standard association, and React's action
-    // still runs because the submit event fires on the form either way. That is
-    // what let this control drop the Drawer/Popover it used to hand-roll only
-    // because its `<form>` had to wrap the footer (B32+ F5).
     <Button type="submit" form={formId} disabled={isPending} className="min-h-11 w-full">
       {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
-      Registrar sinal
+      Registrar atualização
     </Button>
   )
 
@@ -73,11 +70,11 @@ export const MunicipalityListSignalControl = ({
       variant={variant}
       open={open}
       onOpenChange={setOpen}
-      title="Registrar sinal"
+      title="Registrar atualização"
       description={municipalityName}
-      triggerLabel={`Registrar sinal em ${municipalityName} — ${frescorLabel}`}
+      triggerLabel={`Registrar atualização em ${municipalityName} — ${frescorLabel}`}
       triggerBusy={isPending}
-      statusMessage={isPending ? 'Registrando sinal…' : ''}
+      statusMessage={isPending ? 'Registrando atualização…' : ''}
       triggerClassName="min-w-11 text-left"
       contentClassName="w-80"
       trigger={children}
@@ -99,7 +96,11 @@ export const MunicipalityListSignalControl = ({
       >
         <input type="hidden" name="municipalityId" value={municipalityID} />
         <input type="hidden" name="municipalitySlug" value={municipalitySlug} />
-        <MunicipalitySignalFields idPrefix={idPrefix} fieldErrors={state.fieldErrors} />
+        <MunicipalityUpdateFields
+          idPrefix={idPrefix}
+          fieldErrors={state.fieldErrors}
+          isStaff={isStaff}
+        />
         {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}
         {isSheet ? null : submitButton}
       </form>

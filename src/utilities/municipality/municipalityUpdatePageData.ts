@@ -3,11 +3,10 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import { relationshipId } from '@/lib/relationship'
-import type {
-  MunicipalitySignalType,
-  MunicipalityUpdateKind,
+import {
+  municipalityUpdatePolarities,
+  type MunicipalityUpdatePolarity,
 } from '@/lib/schemas/municipalityUpdate'
-import { municipalityUpdateKinds } from '@/lib/schemas/municipalityUpdate'
 import type { CampaignUser, MunicipalityUpdate } from '@/payload-types'
 import { loadCampaignUserNamesByIds } from '@/utilities/loadNamesByIds'
 
@@ -15,20 +14,17 @@ export const municipalityUpdatesPageSize = 10
 
 export type MunicipalityUpdateViewModel = {
   id: number
-  kind: MunicipalityUpdateKind
   authorName: string
   createdAt: string
-  worked: string | null
-  failed: string | null
-  needs: string | null
   body: string | null
+  polarity: MunicipalityUpdatePolarity
+  urgent: boolean
   activeVolunteers: number | null
   newSupports: number | null
-  signalType: MunicipalitySignalType | null
+  adversarySignal: boolean
 }
 
 export type MunicipalityUpdateFeedState = {
-  kind?: MunicipalityUpdateKind
   page: number
 }
 
@@ -36,16 +32,10 @@ export const parseMunicipalityUpdateFeedParams = (
   searchParams: Record<string, string | string[] | undefined>,
 ): MunicipalityUpdateFeedState => {
   const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value)
-  const rawKind = first(searchParams.updateKind)
   const rawPage = first(searchParams.updatePage)
   const page = rawPage && /^[1-9]\d*$/.test(rawPage) ? Number(rawPage) : 1
 
-  return {
-    ...(municipalityUpdateKinds.includes(rawKind as MunicipalityUpdateKind)
-      ? { kind: rawKind as MunicipalityUpdateKind }
-      : {}),
-    page,
-  }
+  return { page }
 }
 
 export const loadMunicipalityUpdatesFeed = async (
@@ -62,10 +52,7 @@ export const loadMunicipalityUpdatesFeed = async (
   const result = await payload.find({
     collection: 'municipalityUpdate',
     where: {
-      and: [
-        { municipality: { equals: municipalityID } },
-        ...(state.kind ? [{ kind: { equals: state.kind } }] : []),
-      ],
+      municipality: { equals: municipalityID },
     },
     depth: 0,
     limit: municipalityUpdatesPageSize,
@@ -87,18 +74,17 @@ export const loadMunicipalityUpdatesFeed = async (
   return {
     updates: result.docs.map((update) => {
       const doc = update as MunicipalityUpdate
+      const polarity = doc.polarity as MunicipalityUpdatePolarity | undefined
       return {
         id: doc.id,
-        kind: doc.kind as MunicipalityUpdateKind,
         authorName: authorNameById.get(relationshipId(doc.author) ?? -1) ?? 'Usuário',
         createdAt: doc.createdAt,
-        worked: doc.worked ?? null,
-        failed: doc.failed ?? null,
-        needs: doc.needs ?? null,
         body: doc.body ?? null,
+        polarity: polarity && municipalityUpdatePolarities.includes(polarity) ? polarity : 'neutra',
+        urgent: Boolean(doc.urgent),
         activeVolunteers: doc.activeVolunteers ?? null,
         newSupports: doc.newSupports ?? null,
-        signalType: doc.signalType ?? null,
+        adversarySignal: Boolean(doc.adversarySignal),
       }
     }),
     totalDocs: result.totalDocs,

@@ -295,7 +295,7 @@ describe('loadMunicipalitySuggestions (E11)', () => {
     await fixtures.createMunicipalityUpdate({
       municipality: municipality.id,
       author: author.id,
-      kind: 'nota',
+      polarity: 'neutra',
       body: 'Conversa com o presidente do sindicato.',
     })
 

@@ -68,65 +68,62 @@ describe('campaign municipality update domain', () => {
     payload = await getPayload({ config: await config })
   })
 
-  it('requires weekly answers and requires body for urgent notes', () => {
+  it('requires body and polarity and accepts urgent and adversary flags', () => {
     expect(
       municipalityUpdateCreateSchema.safeParse({
         municipality: 1,
-        kind: 'semanal',
-        worked: 'Mobilização na feira',
-        failed: 'Chuva forte',
-        needs: 'Material impresso',
+        polarity: 'neutra',
+        body: 'Mobilização na feira',
       }).success,
     ).toBe(true)
     expect(
       municipalityUpdateCreateSchema.safeParse({
         municipality: 1,
-        kind: 'semanal',
-        worked: 'Mobilização na feira',
+        body: 'Sem polaridade',
       }).success,
     ).toBe(false)
     expect(
       municipalityUpdateCreateSchema.safeParse({
         municipality: 1,
-        kind: 'urgente',
+        polarity: 'ruim',
+        urgent: true,
         body: 'Precisamos responder hoje.',
       }).success,
     ).toBe(true)
     expect(
       municipalityUpdateCreateSchema.safeParse({
         municipality: 1,
-        kind: 'nota',
+        polarity: 'neutra',
         body: '   ',
       }).success,
     ).toBe(false)
     expect(
       municipalityUpdateCreateSchema.safeParse({
         municipality: 1,
-        kind: 'sinal',
+        polarity: 'ruim',
         body: 'Ex-prefeito retirou o apoio na feira.',
-        signalType: 'esfriamento',
       }).success,
     ).toBe(true)
     expect(
       municipalityUpdateCreateSchema.safeParse({
         municipality: 1,
-        kind: 'sinal',
+        polarity: 'invalid',
         body: 'Visita adversária confirmada.',
       }).success,
     ).toBe(false)
     expect(
       municipalityUpdateCreateSchema.safeParse({
         municipality: 1,
-        kind: 'sinal',
-        signalType: 'invasao',
+        polarity: 'ruim',
+        adversarySignal: true,
       }).success,
-    ).toBe(true)
+    ).toBe(false)
   })
 
   it('strips forged author and timestamps from input', () => {
     const parsed = municipalityUpdateCreateSchema.parse({
       municipality: 1,
-      kind: 'nota',
+      polarity: 'neutra',
       body: 'Registro de campo',
       author: 999,
       createdAt: '2000-01-01T00:00:00.000Z',
@@ -135,12 +132,14 @@ describe('campaign municipality update domain', () => {
 
     expect(parsed).toEqual({
       municipality: 1,
-      kind: 'nota',
+      polarity: 'neutra',
       body: 'Registro de campo',
+      urgent: false,
+      adversarySignal: false,
     })
   })
 
-  it('enforces kind validation through the Local API', async () => {
+  it('enforces body and polarity validation through the Local API', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
     const municipality = await campaignFixtures().getMunicipality()
 
@@ -149,19 +148,21 @@ describe('campaign municipality update domain', () => {
         collection: 'municipalityUpdate',
         data: stub<MunicipalityUpdateCreateData>({
           municipality: municipality.id,
-          kind: 'semanal',
-          worked: 'Somente uma resposta',
+          // @ts-expect-error Testing invalid polarity value
+          polarity: 'invalid',
+          body: 'Somente uma resposta',
         }),
         user: coordinator,
         overrideAccess: false,
       }),
-    ).rejects.toThrow('não funcionou')
+    ).rejects.toThrow('polaridade')
     await expect(
       payload.create({
         collection: 'municipalityUpdate',
         data: stub<MunicipalityUpdateCreateData>({
           municipality: municipality.id,
-          kind: 'urgente',
+          polarity: 'ruim',
+          urgent: true,
           body: '   ',
         }),
         user: coordinator,
@@ -204,10 +205,8 @@ describe('campaign municipality update domain', () => {
     // Forged `author` goes through a widened variable: the schema must strip it.
     const forgedInput = {
       municipality: municipality.id,
-      kind: 'semanal' as const,
-      worked: 'Visitas concluídas',
-      failed: 'Dois endereços fechados',
-      needs: 'Mais panfletos',
+      polarity: 'neutra' as const,
+      body: 'Visitas concluídas',
       activeVolunteers: 7,
       newSupports: 12,
       author: 999,
@@ -219,17 +218,19 @@ describe('campaign municipality update domain', () => {
     expect(visible.docs.map(({ id }) => id)).toContain(created.id)
   })
 
-  it('accepts a sinal with type and empty motivo', async () => {
+  it('accepts an adversary update with body', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
     const municipality = await campaignFixtures().getMunicipality()
 
     const created = await createMunicipalityUpdateRecord(payload, coordinator, {
       municipality: municipality.id,
-      kind: 'sinal',
-      signalType: 'invasao',
+      polarity: 'ruim',
+      adversarySignal: true,
+      body: 'Visita adversária confirmada.',
     })
-    expect(created.signalType).toBe('invasao')
-    expect(created.body).toBeFalsy()
+    expect(created.adversarySignal).toBe(true)
+    expect(created.polarity).toBe('ruim')
+    expect(created.body).toBe('Visita adversária confirmada.')
   })
 
   it('limits advisors to administered municipalities for create and read', async () => {
@@ -242,7 +243,7 @@ describe('campaign municipality update domain', () => {
 
     const created = await createMunicipalityUpdateRecord(payload, advisor, {
       municipality: assigned.id,
-      kind: 'nota',
+      polarity: 'neutra',
       body: 'Atualização permitida',
     })
     expect((await listMunicipalityUpdates(advisor, assigned.id)).docs).toEqual(
@@ -251,14 +252,14 @@ describe('campaign municipality update domain', () => {
     await expect(
       createMunicipalityUpdateRecord(payload, advisor, {
         municipality: other.id,
-        kind: 'nota',
+        polarity: 'neutra',
         body: 'Atualização fora do escopo',
       }),
     ).rejects.toThrow()
 
     await createMunicipalityUpdateRecord(payload, otherAdvisor, {
       municipality: other.id,
-      kind: 'nota',
+      polarity: 'neutra',
       body: 'Atualização alheia',
     })
     const foreign = await listMunicipalityUpdates(advisor, other.id)
@@ -274,7 +275,8 @@ describe('campaign municipality update domain', () => {
     await expect(
       createMunicipalityUpdateRecord(payload, leader, {
         municipality: municipality.id,
-        kind: 'urgente',
+        polarity: 'ruim',
+        urgent: true,
         body: 'Pedido da própria liderança',
       }),
     ).rejects.toThrow()
@@ -288,7 +290,7 @@ describe('campaign municipality update domain', () => {
 
     const created = await createMunicipalityUpdateRecord(payload, coordinator, {
       municipality: municipality.id,
-      kind: 'nota',
+      polarity: 'neutra',
       body: 'Registro do staff',
     })
 
@@ -312,7 +314,7 @@ describe('campaign municipality update domain', () => {
     await expect(
       createMunicipalityUpdateRecord(payload, unlinked, {
         municipality: municipality.id,
-        kind: 'nota',
+        polarity: 'neutra',
         body: 'Sem vínculo',
       }),
     ).rejects.toThrow()
@@ -326,7 +328,7 @@ describe('campaign municipality update domain', () => {
         collection: 'municipalityUpdate',
         data: stub<MunicipalityUpdateCreateData>({
           municipality: municipality.id,
-          kind: 'nota',
+          polarity: 'neutra',
           body: 'Tentativa anônima',
         }),
         overrideAccess: false,
@@ -350,7 +352,7 @@ describe('campaign municipality update domain', () => {
     await createUpdateAccessLeadershipGraph(coordinator, leader, municipality.id, 'engajado')
     const created = await createMunicipalityUpdateRecord(payload, coordinator, {
       municipality: municipality.id,
-      kind: 'nota',
+      polarity: 'neutra',
       body: 'Registro imutável',
     })
 
@@ -382,7 +384,7 @@ describe('campaign municipality update domain', () => {
       Array.from({ length: 8 }, (_, index) =>
         createMunicipalityUpdateRecord(payload, coordinator, {
           municipality: municipality.id,
-          kind: 'nota',
+          polarity: 'neutra',
           body: `Registro concorrente ${index}`,
         }),
       ),
@@ -421,7 +423,7 @@ describe('campaign municipality update domain', () => {
     })
     const pending = createMunicipalityUpdateRecord(payload, coordinator, {
       municipality: municipality.id,
-      kind: 'nota',
+      polarity: 'neutra',
       body: 'Registro bloqueado até a liberação',
     })
 
@@ -455,7 +457,7 @@ describe('campaign municipality update domain', () => {
       created.push(
         await createMunicipalityUpdateRecord(payload, coordinator, {
           municipality: municipality.id,
-          kind: 'nota',
+          polarity: 'neutra',
           body: `Registro para exclusão concorrente ${index}`,
         }),
       )
@@ -491,12 +493,12 @@ describe('campaign municipality update domain', () => {
     const newMunicipality = await campaignFixtures().getMunicipality()
     const oldRemaining = await createMunicipalityUpdateRecord(payload, coordinator, {
       municipality: oldMunicipality.id,
-      kind: 'nota',
+      polarity: 'neutra',
       body: 'Permanece no município original',
     })
     const moved = await createMunicipalityUpdateRecord(payload, coordinator, {
       municipality: oldMunicipality.id,
-      kind: 'nota',
+      polarity: 'neutra',
       body: 'Será transferido',
     })
 
@@ -528,13 +530,13 @@ describe('campaign municipality update domain', () => {
     const municipality = await campaignFixtures().getMunicipality()
     const first = await createMunicipalityUpdateRecord(payload, coordinator, {
       municipality: municipality.id,
-      kind: 'nota',
+      polarity: 'neutra',
       body: 'Primeiro registro',
     })
     await new Promise((resolve) => setTimeout(resolve, 5))
     const second = await createMunicipalityUpdateRecord(payload, coordinator, {
       municipality: municipality.id,
-      kind: 'nota',
+      polarity: 'neutra',
       body: 'Segundo registro',
     })
 
@@ -590,7 +592,7 @@ describe('campaign municipality update domain', () => {
       await expect(
         createMunicipalityUpdateRecord(payload, coordinator, {
           municipality: municipality.id,
-          kind: 'nota',
+          polarity: 'neutra',
           body: 'Este registro deve reverter',
         }),
       ).rejects.toThrow('falha forçada')

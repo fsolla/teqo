@@ -34,20 +34,19 @@ describe('searchHomeStateDeputies (B52)', () => {
   it('matches state deputies by word-start on the name for staff', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
-    const stateDeputy = await fixtures.createStateDeputy({ name: 'Zeca Oliveira Dobradinha' })
+    const uniqueName = `${fixtures.value('Zeca')} Oliveira`
+    const stateDeputy = await fixtures.createStateDeputy({ name: uniqueName })
 
     const result = await searchHomeStateDeputies(payload, coordinator, 'Zeca')
     expect(result.some((hit) => hit.slug === stateDeputy.slug)).toBe(true)
-    expect(result.find((hit) => hit.slug === stateDeputy.slug)?.name).toBe(
-      'Zeca Oliveira Dobradinha',
-    )
+    expect(result.find((hit) => hit.slug === stateDeputy.slug)?.name).toBe(uniqueName)
   })
 
   it('matches state deputies by word-start on the party when the name does not match', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const stateDeputy = await fixtures.createStateDeputy({
-      name: 'Maria Silva',
+      name: `${fixtures.value('Maria')} Silva`,
       party: 'PSOL',
     })
 
@@ -58,7 +57,8 @@ describe('searchHomeStateDeputies (B52)', () => {
   it('returns state deputy hits for advisor role when name matches', async () => {
     const fixtures = campaignFixtures()
     const advisor = await fixtures.createCampaignUser('advisor')
-    const stateDeputy = await fixtures.createStateDeputy({ name: 'Assessoria Dobradinha' })
+    const uniqueName = `${fixtures.value('Assessoria')} Dobradinha`
+    const stateDeputy = await fixtures.createStateDeputy({ name: uniqueName })
 
     const result = await searchHomeStateDeputies(payload, advisor, 'Assessoria')
     expect(result.some((hit) => hit.slug === stateDeputy.slug)).toBe(true)
@@ -67,7 +67,8 @@ describe('searchHomeStateDeputies (B52)', () => {
   it('reports municipality count on matched state deputies', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
-    const stateDeputy = await fixtures.createStateDeputy({ name: 'Carteira Dobradinha' })
+    const uniqueName = `${fixtures.value('Carteira')} Dobradinha`
+    const stateDeputy = await fixtures.createStateDeputy({ name: uniqueName })
     // Allocated, never pinned slugs: parallel specs mutating the same seeded
     // municipality deadlocked municipality_rels (miss #73).
     const first = await fixtures.getMunicipality()

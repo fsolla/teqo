@@ -127,7 +127,7 @@ export const MunicipalityListTrendControl = ({
       // The label names the current reading: an `aria-label` replaces the
       // badge's own text, so without it the trigger would announce the verb and
       // swallow the value every sighted user reads off the pill. Same shape as
-      // `MunicipalityListSignalControl`'s.
+      // `MunicipalityListUpdateControl`'s.
       triggerLabel={`Editar tendência política em ${municipalityName} — ${trendLabel}`}
       triggerBusy={isPending}
       triggerClassName={triggerPresentation === 'full' ? undefined : 'min-w-11'}
