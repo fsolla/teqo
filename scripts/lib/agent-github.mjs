@@ -136,6 +136,22 @@ export const setLabels = (number, { add = [], remove = [] }) => {
   if (add.length + remove.length > 0) gh(args)
 }
 
+export const nextClaimableIssue = () => {
+  const openReady = ghJson([
+    'issue',
+    'list',
+    '--state',
+    'open',
+    '--label',
+    'ready',
+    '--limit',
+    '200',
+    '--json',
+    'number,title,body,labels,createdAt,state',
+  ])
+  return buildClaimQueue(openReady, issuesById())[0] ?? null
+}
+
 export const parseArgs = (argv, flagsWithValue) => {
   const flags = {}
   const positional = []
