@@ -105,6 +105,7 @@ export {
 } from '@/utilities/access/demands'
 
 export {
+  canCampaignUserRescheduleActivity,
   canCreateActivity,
   canCreateActivityAdvisors,
   canDeleteActivity,

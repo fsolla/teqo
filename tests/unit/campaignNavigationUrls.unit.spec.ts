@@ -3,7 +3,12 @@
 import { describe, expect, it } from 'vitest'
 
 import { campaignConceptHref } from '@/lib/campaignIntelligenceConcepts'
-import { CAMPAIGN_HOME, CAMPAIGN_PROFILE_HOME, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
+import {
+  CAMPAIGN_AGENDA_HOME,
+  CAMPAIGN_HOME,
+  CAMPAIGN_PROFILE_HOME,
+  LEADER_CONTACTS_HOME,
+} from '@/lib/campaignPaths'
 import type { CampaignUser } from '@/payload-types'
 import {
   buildCampaignNavigationLink,
@@ -110,6 +115,34 @@ describe('campaignNavigationUrls', () => {
       path: campaignConceptHref('captura'),
       label: 'Captura',
     })
+  })
+
+  it('uses agenda URLs for calendar filters and keeps advanced legacy list links', () => {
+    const agenda = buildCampaignNavigationLink(coordinator.role, {
+      destination: 'activityList',
+      municipality: 12,
+      tag: 'Comício',
+      deputyPresent: true,
+    })
+    expect(agenda).toEqual({
+      ok: true,
+      path: `${CAMPAIGN_AGENDA_HOME}?municipality=12&deputyPresent=1&tag=Com%C3%ADcio`,
+      label: 'Agenda',
+    })
+
+    const legacy = buildCampaignNavigationLink(coordinator.role, {
+      destination: 'activityList',
+      q: 'centro',
+      tab: 'todos',
+    })
+    expect(legacy.ok && legacy.path).toBe('/campanha/atividades?q=centro&tab=todos')
+
+    const mixed = buildCampaignNavigationLink(coordinator.role, {
+      destination: 'activityList',
+      q: 'centro',
+      deputyPresent: true,
+    })
+    expect(mixed.ok).toBe(false)
   })
 
   it('returns partial success in batch mode', () => {

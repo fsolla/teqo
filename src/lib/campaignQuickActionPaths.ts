@@ -1,10 +1,14 @@
 /** Client-safe quick-action path helpers for the B84+ vertical registries. */
 
-export const ACTIVITY_LIST_PATH = '/campanha/atividades' as const
+import { CAMPAIGN_AGENDA_HOME } from '@/lib/campaignPaths'
 
-export const ACTIVITY_NEW_PATH = '/campanha/atividades/nova' as const
+export const ACTIVITY_LIST_PATH = CAMPAIGN_AGENDA_HOME
 
-export const ACTIVITY_TOUR_COMPOSER_PATH = '/campanha/atividades/giros' as const
+export const ACTIVITY_DETAIL_ROOT_PATH = '/campanha/atividades' as const
+
+export const ACTIVITY_NEW_PATH = `${ACTIVITY_DETAIL_ROOT_PATH}/nova` as const
+
+export const ACTIVITY_TOUR_COMPOSER_PATH = `${ACTIVITY_DETAIL_ROOT_PATH}/giros` as const
 
 export const ORGANIZATIONS_LIST_PATH = '/campanha/organizacoes' as const
 
@@ -42,13 +46,15 @@ const listDetailSlug = (
 }
 
 const activityDetailSlug = (pathname: string): string | null =>
-  listDetailSlug(pathname, ACTIVITY_LIST_PATH, ['nova', 'giros'])
+  listDetailSlug(pathname, ACTIVITY_DETAIL_ROOT_PATH, ['nova', 'giros'])
 
 export const parseActivityQuickActionSurface = (
   pathname: string,
 ): ActivityQuickActionSurface | null => {
   const normalized = normalizePathname(pathname)
-  if (normalized === ACTIVITY_LIST_PATH) return { kind: 'list' }
+  if (normalized === ACTIVITY_LIST_PATH || normalized === ACTIVITY_DETAIL_ROOT_PATH) {
+    return { kind: 'list' }
+  }
   const slug = activityDetailSlug(normalized)
   return slug ? { kind: 'detail', activitySlug: slug } : null
 }

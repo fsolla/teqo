@@ -4,6 +4,7 @@
 
 import type { Access, FieldAccess, Where } from 'payload'
 
+import type { CampaignUser } from '@/payload-types'
 import { getAccessibleMunicipalityIds } from '@/utilities/access/municipalities'
 import {
   advisorMunicipalityScopeWhere,
@@ -22,6 +23,11 @@ const canStaffCreateActivity: FieldAccess = async ({ req }) => {
 }
 
 export const canCreateActivity: Access = canStaffCreateActivity
+
+export const canCampaignUserRescheduleActivity = (
+  user: CampaignUser,
+  deputyPresent: boolean,
+): boolean => isCampaignStaff(user) && (!deputyPresent || isCampaignUnrestricted(user))
 
 export const canReadActivity: Access = async ({ req }): Promise<boolean | Where> => {
   if (isPayloadAdmin(req.user)) return true

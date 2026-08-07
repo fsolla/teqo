@@ -1,3 +1,5 @@
+import { formatBahiaCivilDate, parseBahiaDateTimeInput } from '../../src/lib/campaignTime.js'
+import { hookFilledCreateData } from '../../src/utilities/hookFilledData.js'
 import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures.js'
 
 test.describe('Atividades — registro-fundação', () => {
@@ -51,5 +53,119 @@ test.describe('Atividades — registro-fundação', () => {
     await expect(page.getByText('Rede esfriou:', { exact: true })).toBeVisible()
     await expect(page.getByText('Adversário apareceu:', { exact: true })).toBeVisible()
     await expect(page.getByText('Alguém pediu algo:', { exact: true })).toBeVisible()
+  })
+})
+
+test.describe('Agenda — calendário operacional', () => {
+  test.setTimeout(90_000)
+
+  test('abre a semana, combina filtros e navega para o detalhe', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.claimMunicipality()
+    const title = fixtures.value('Comício na agenda')
+    const civilDate = formatBahiaCivilDate(new Date())
+    const startAt = parseBahiaDateTimeInput(`${civilDate}T10:00`)
+    if (!startAt) throw new Error('Falha ao montar horário da fixture de agenda.')
+
+    const activity = await fixtures.payload.create({
+      collection: 'activity',
+      data: hookFilledCreateData<'activity'>({
+        title,
+        tags: ['Comício'],
+        status: 'confirmado',
+        deputyPresent: true,
+        startAt,
+        municipality: municipality.id,
+      }),
+      depth: 0,
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/agenda`)
+
+    await expect(campaignPageChrome(page, 'Agenda')).toBeVisible()
+    await expect(page.getByText(title, { exact: true })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('tab', { name: /semana/i })).toBeVisible()
+    await expect(page.getByRole('tab', { name: /mês/i })).toBeVisible()
+    await expect(page.getByRole('tab', { name: /lista/i })).toBeVisible()
+
+    const eventLink = page.getByRole('link', { name: new RegExp(title) })
+    const eventBox = await eventLink.boundingBox()
+    if (!eventBox) throw new Error('O compromisso não expôs área arrastável.')
+    await page.mouse.move(eventBox.x + eventBox.width / 2, eventBox.y + eventBox.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(eventBox.x + eventBox.width / 2, eventBox.y + eventBox.height / 2 + 60, {
+      steps: 20,
+    })
+    await page.mouse.up()
+    await expect(page.getByText('Horário atualizado.')).toBeVisible()
+    await expect
+      .poll(async () => {
+        const persisted = await fixtures.payload.findByID({
+          collection: 'activity',
+          id: activity.id,
+          depth: 0,
+        })
+        return persisted.startAt
+      })
+      .not.toBe(startAt)
+
+    await page.getByLabel('Município').selectOption(String(municipality.id))
+    await page.getByLabel('Tag').selectOption('Comício')
+    await page.getByLabel('Deputado presente').check()
+    await expect(page).toHaveURL(
+      `${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}&deputyPresent=1&tag=Com%C3%ADcio`,
+    )
+    await expect(page.getByText(title, { exact: true })).toBeVisible()
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.getByRole('tab', { name: /lista/i }).click()
+    await expect(page.getByText(title, { exact: true })).toBeVisible()
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true)
+
+    await page.getByText(title, { exact: true }).click()
+    await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+(?:\?tab=overview)?$/)
+    await expect(campaignPageChrome(page, title)).toBeVisible()
+  })
+
+  test('leva o slot semanal para o formulário existente', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.claimMunicipality()
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}`)
+    const dayCell = page.getByRole('gridcell').nth(1)
+    await dayCell.scrollIntoViewIfNeeded()
+    const [slotBox, dayBox] = await Promise.all([
+      page.locator('[data-time="14:00:00"]').last().boundingBox(),
+      dayCell.boundingBox(),
+    ])
+    if (!slotBox || !dayBox) throw new Error('A grade semanal não expôs o slot esperado.')
+    await dayCell.click({
+      position: {
+        x: dayBox.width / 2,
+        y: slotBox.y - dayBox.y + slotBox.height / 2,
+      },
+    })
+
+    await expect(page).toHaveURL(/\/campanha\/atividades\/nova\?startAt=/)
+    const [startValue, endValue] = await Promise.all([
+      page.getByLabel('Início *').inputValue(),
+      page.getByLabel('Término').inputValue(),
+    ])
+    const [startAt, endAt] = [startValue, endValue].map(parseBahiaDateTimeInput)
+    expect(startAt).not.toBeNull()
+    expect(endAt).not.toBeNull()
+    if (!startAt || !endAt) throw new Error('O formulário não recebeu o intervalo do slot.')
+    expect(new Date(endAt).getTime() - new Date(startAt).getTime()).toBe(3_600_000)
+    await expect(page.getByLabel('Município *')).toHaveValue(String(municipality.id))
+    await expect(page.getByRole('link', { name: 'Cancelar' })).toHaveAttribute(
+      'href',
+      `/campanha/agenda?municipality=${municipality.id}`,
+    )
   })
 })

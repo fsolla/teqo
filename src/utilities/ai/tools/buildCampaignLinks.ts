@@ -159,6 +159,7 @@ const linkRequestSchema = z.discriminatedUnion('destination', [
     tag: z.string().trim().min(1).optional(),
     status: z.enum(activityStatuses).optional(),
     municipality: z.number().int().positive().optional(),
+    deputyPresent: z.boolean().optional(),
     label: labelSchema,
   }),
   z.object({

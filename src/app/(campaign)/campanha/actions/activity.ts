@@ -3,22 +3,29 @@
 import type { Payload } from 'payload'
 
 import {
+  ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE,
+  ACTIVITY_RESCHEDULE_FAILED_MESSAGE,
   ACTIVITY_RESULT_REQUIRED_MESSAGE,
   ACTIVITY_RESULT_STAFF_MESSAGE,
   ACTIVITY_RESULT_TOO_LONG_MESSAGE,
   ACTIVITY_TASK_NOT_FOUND_MESSAGE,
   ACTIVITY_UPDATE_BODY_REQUIRED_MESSAGE,
   ACTIVITY_UPDATE_BODY_TOO_LONG_MESSAGE,
+  activityAgendaRequestSchema,
   activityCreateSchema,
   activityDemandDraftsSchema,
+  activityRescheduleSchema,
   activityUpdateSchema,
+  type ActivityAgendaRequest,
   type ActivityCreateInput,
   type ActivityDemandDraft,
+  type ActivityRescheduleInput,
   type ActivityUpdateInput,
 } from '@/lib/schemas/activity'
 import type { Activity, CampaignUser } from '@/payload-types'
 import type { ParsedTourDraftFormData } from '@/utilities/activityFormData'
-import { isCampaignStaff } from '@/utilities/campaignAccess'
+import { loadActivityAgendaEventsData } from '@/utilities/activityPageData'
+import { canCampaignUserRescheduleActivity, isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
@@ -33,6 +40,56 @@ import {
 
 const MAX_ACTIVITY_UPDATE_BODY_LENGTH = 4000
 const MAX_ACTIVITY_RESULT_SUMMARY_LENGTH = 6000
+
+export const loadActivityAgendaEventsRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: ActivityAgendaRequest,
+) => {
+  const request = activityAgendaRequestSchema.parse(input)
+  const currentActor = await reloadCampaignActor(payload, actor)
+  return loadActivityAgendaEventsData(payload, currentActor, request)
+}
+
+export const rescheduleActivityRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: ActivityRescheduleInput,
+) => {
+  const schedule = activityRescheduleSchema.parse(input)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await reloadCampaignActor(payload, actor, req)
+      await acquireTextAdvisoryLocks(payload, req, [`activity:${schedule.id}`])
+      const current = await payload.findByID({
+        collection: 'activity',
+        id: schedule.id,
+        depth: 0,
+        select: { deputyPresent: true },
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      if (!canCampaignUserRescheduleActivity(currentActor, Boolean(current.deputyPresent))) {
+        throw new Error(ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE)
+      }
+
+      return payload.update({
+        collection: 'activity',
+        id: schedule.id,
+        data: { startAt: schedule.startAt, endAt: schedule.endAt },
+        depth: 0,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+    },
+    { beginFailureMessage: 'Não foi possível iniciar a remarcação da atividade.' },
+  )
+}
 
 export const createActivityRecord = async (
   payload: Payload,
@@ -190,6 +247,7 @@ const updateActivityRecord = async (
     payload,
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
+      await acquireTextAdvisoryLocks(payload, req, [`activity:${id}`])
 
       const activity = (await payload.update({
         collection: 'activity',
@@ -381,6 +439,29 @@ export const createActivity = async (
 ) => {
   const { payload, actor } = await getCampaignActionContext()
   return createActivityRecord(payload, actor, input, demandDrafts)
+}
+
+export const loadActivityAgendaEvents = async (input: ActivityAgendaRequest) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return loadActivityAgendaEventsRecord(payload, actor, input)
+}
+
+export type ActivityRescheduleResult = { ok: true } | { ok: false; message: string }
+
+export const rescheduleActivity = async (
+  input: ActivityRescheduleInput,
+): Promise<ActivityRescheduleResult> => {
+  try {
+    const { payload, actor } = await getCampaignActionContext()
+    await rescheduleActivityRecord(payload, actor, input)
+    return { ok: true }
+  } catch (error) {
+    const message =
+      error instanceof Error && error.message === ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE
+        ? error.message
+        : ACTIVITY_RESCHEDULE_FAILED_MESSAGE
+    return { ok: false, message }
+  }
 }
 
 export const updateActivity = async (

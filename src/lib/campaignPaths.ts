@@ -9,6 +9,8 @@ export const CAMPAIGN_ADVISORS_HOME = '/campanha/assessores' as const
 
 export const CAMPAIGN_SUPPORTERS_HOME = '/campanha/apoiadores' as const
 
+export const CAMPAIGN_AGENDA_HOME = '/campanha/agenda' as const
+
 export const LEADER_CONTACTS_HOME = '/campanha/contatos' as const
 
 export const CAMPAIGN_PROFILE_HOME = '/campanha/perfil' as const

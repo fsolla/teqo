@@ -45,6 +45,7 @@ export const E2E_AFFECTED_MANIFEST = [
   },
   {
     prefixes: [
+      `${CAMPAIGN_APP}/agenda`,
       `${CAMPAIGN_APP}/atividades`,
       'src/components/campaign/activity',
       'src/utilities/activity',
