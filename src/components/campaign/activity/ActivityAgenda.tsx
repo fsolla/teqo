@@ -1,6 +1,7 @@
 'use client'
 
 import FullCalendar, {
+  type CalendarRef,
   type DateClickInfo,
   type DatesSetInfo,
   type EventDisplayInfo,
@@ -54,6 +55,8 @@ const eventColors: Record<ActivityStatus, { color: string; contrastColor: string
   cancelado: { color: 'var(--muted)', contrastColor: 'var(--muted-foreground)' },
 }
 
+const MOBILE_BREAKPOINT_PX = 640
+
 const toEventInput = (event: ActivityAgendaEvent): EventInput => ({
   id: String(event.id),
   title: event.title,
@@ -97,6 +100,9 @@ const renderEventContent = ({ event, timeText }: EventDisplayInfo) => {
 
 export const ActivityAgenda = ({ state }: { state: ActivityAgendaState }) => {
   const router = useRouter()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const calendarRef = useRef<CalendarRef>(null)
+  const narrowRef = useRef<boolean | null>(null)
   const mountedRef = useRef(false)
   const pendingEventIDs = useRef(new Set<string>())
   const [visibleRange, setVisibleRange] = useState<{ start: string; end: string } | null>(null)
@@ -111,6 +117,32 @@ export const ActivityAgenda = ({ state }: { state: ActivityAgendaState }) => {
     return () => {
       mountedRef.current = false
     }
+  }, [])
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const applyResponsiveView = () => {
+      const api = calendarRef.current?.getApi()
+      if (!api) return
+      const isNarrow = container.getBoundingClientRect().width < MOBILE_BREAKPOINT_PX
+      const previous = narrowRef.current
+      narrowRef.current = isNarrow
+      if (previous !== null && isNarrow === previous) return
+      const viewType = api.view.type
+      if (isNarrow && viewType === 'timeGridWeek') {
+        api.changeView('timeGridDay')
+      } else if (!isNarrow && viewType === 'timeGridDay') {
+        api.changeView('timeGridWeek')
+      }
+    }
+
+    applyResponsiveView()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(applyResponsiveView)
+    observer.observe(container)
+    return () => observer.disconnect()
   }, [])
 
   useEffect(() => {
@@ -271,8 +303,9 @@ export const ActivityAgenda = ({ state }: { state: ActivityAgendaState }) => {
         </div>
       ) : null}
 
-      <div className="activity-agenda" aria-busy={isLoading || savingCount > 0}>
+      <div className="activity-agenda" aria-busy={isLoading || savingCount > 0} ref={containerRef}>
         <FullCalendar
+          ref={calendarRef}
           plugins={[themePlugin, timeGridPlugin, dayGridPlugin, listPlugin, interactionPlugin]}
           locale={ptBrLocale}
           timeZone="America/Bahia"
@@ -281,7 +314,7 @@ export const ActivityAgenda = ({ state }: { state: ActivityAgendaState }) => {
           headerToolbar={{
             start: 'prev,next today',
             center: 'title',
-            end: 'timeGridWeek,dayGridMonth,listMonth',
+            end: 'timeGridWeek,timeGridDay,dayGridMonth,listMonth',
           }}
           height="auto"
           slotMinTime="07:00:00"
