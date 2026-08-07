@@ -72,7 +72,9 @@
     "typecheck": "tsc --noEmit",
     "typecheck:tsc6": "tsc6 --noEmit",
     "prepare": "husky",
-    "agent:status": "node scripts/agent-status.mjs"
+    "agent:status": "node scripts/agent-status.mjs",
+    "worktree": "node scripts/worktree.mjs",
+    "issue": "node scripts/issue.mjs"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^3.0.19",
