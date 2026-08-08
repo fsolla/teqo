@@ -71,10 +71,6 @@ export const ActivityOverviewTab = ({
               <dt className="text-muted-foreground">Término</dt>
               <dd>{view.endAt ? formatBahiaDateTimeLabel(view.endAt) : '—'}</dd>
             </div>
-            <div>
-              <dt className="text-muted-foreground">Responsável</dt>
-              <dd>{view.responsibleName ?? 'Não definido'}</dd>
-            </div>
             <div className="sm:col-span-2">
               <dt className="text-muted-foreground">Tags</dt>
               <dd className="flex flex-wrap gap-1 pt-1">
@@ -97,15 +93,20 @@ export const ActivityOverviewTab = ({
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm">
           <div>
-            <p className="text-muted-foreground">Assessores responsáveis</p>
-            {view.advisors.length ? (
-              <ul role="list" className="flex flex-col gap-1">
-                {view.advisors.map((advisor) => (
-                  <li key={advisor.id}>{advisor.name}</li>
+            <p className="text-muted-foreground">Responsáveis</p>
+            {view.responsibles.length ? (
+              <ul role="list" className="flex flex-wrap gap-1.5 pt-1">
+                {view.responsibles.map((responsible) => (
+                  <li key={`${responsible.relationTo}:${responsible.id}`}>
+                    <Badge variant="outline" className="gap-1.5">
+                      <span>{responsible.name}</span>
+                      <span className="text-muted-foreground">{responsible.typeLabel}</span>
+                    </Badge>
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground">Nenhum assessor vinculado.</p>
+              <p className="text-muted-foreground">Nenhum responsável definido.</p>
             )}
           </div>
           <div>

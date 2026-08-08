@@ -39,9 +39,27 @@ export const ActivityCard = ({ activity }: { activity: ActivityListViewModel }) 
         </div>
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-sm">
-        <span className="flex items-center gap-1.5 text-muted-foreground">
+        <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
           <UserIcon aria-hidden="true" className="size-4 shrink-0" />
-          Resp: {activity.responsibleName ?? 'Não definido'}
+          {activity.responsibles.length ? (
+            <span className="flex min-w-0 flex-wrap gap-1">
+              {activity.responsibles.slice(0, 2).map((responsible) => (
+                <Badge
+                  key={`${responsible.relationTo}:${responsible.id}`}
+                  variant="outline"
+                  className="min-w-0 gap-1"
+                >
+                  <span className="truncate">{responsible.name}</span>
+                  <span className="shrink-0 text-muted-foreground">{responsible.typeLabel}</span>
+                </Badge>
+              ))}
+              {activity.responsibles.length > 2 ? (
+                <Badge variant="outline">+{activity.responsibles.length - 2}</Badge>
+              ) : null}
+            </span>
+          ) : (
+            'Resp: Não definido'
+          )}
         </span>
         {activity.taskProgress.total > 0 ? (
           <span className="font-medium tabular-nums text-muted-foreground">

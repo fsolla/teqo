@@ -5,7 +5,6 @@ import {
   boundedJsonFormValue,
   checkboxFormValue,
   FormDataBoundaryError,
-  nullableRelationshipFormValue,
   optionalFormText,
   repeatedRelationshipFormValues,
   requiredFormText,
@@ -13,13 +12,16 @@ import {
 } from '@/lib/formData'
 import {
   activityDemandDraftsSchema,
+  activityResponsibleSchema,
   activityStatuses,
   MAX_ACTIVITY_DEMAND_DRAFTS,
+  MAX_ACTIVITY_RESPONSIBLES,
   MAX_ACTIVITY_TAG_LENGTH,
   MAX_ACTIVITY_TAGS,
   tourStopDraftsSchema,
   type ActivityCreateInput,
   type ActivityDemandDraft,
+  type ActivityResponsibleCollection,
   type ActivityUpdateInput,
   type TourStopDraft,
 } from '@/lib/schemas/activity'
@@ -114,10 +116,41 @@ const parseTagsFormData = (formData: FormData): string[] => {
   return tags
 }
 
-const parseSharedActivityFormData = (formData: FormData) => {
-  const responsible = nullableRelationshipFormValue(formData, 'responsible')
-  const leadership = nullableRelationshipFormValue(formData, 'leadership')
+type ParsedResponsible = {
+  relationTo: ActivityResponsibleCollection
+  value: number
+}
 
+/**
+ * C90 — the polymorphic multi-value `responsible` submits as a bounded JSON
+ * field (same precedent as `tasksJson`/`tagsJson`): repeated hidden inputs
+ * would lose the `relationTo` correlation.
+ */
+const parseResponsiblesFormData = (formData: FormData): ParsedResponsible[] => {
+  const raw = boundedJsonFormValue(formData, 'responsiblesJson', 8_000)
+  if (raw === undefined) return []
+  if (!Array.isArray(raw)) {
+    throw new FormDataBoundaryError('responsiblesJson', 'Lista de responsáveis inválida.')
+  }
+  if (raw.length > MAX_ACTIVITY_RESPONSIBLES) {
+    throw new FormDataBoundaryError(
+      'responsiblesJson',
+      `Informe no máximo ${MAX_ACTIVITY_RESPONSIBLES} responsáveis.`,
+    )
+  }
+  return raw.map((item, index) => {
+    const parsed = activityResponsibleSchema.safeParse(item)
+    if (!parsed.success) {
+      throw new FormDataBoundaryError(
+        'responsiblesJson',
+        `Responsável ${index + 1} inválido. Atualize a página e refaça a escolha.`,
+      )
+    }
+    return parsed.data
+  })
+}
+
+const parseSharedActivityFormData = (formData: FormData) => {
   return {
     title: optionalFormText(formData, 'title') ?? '',
     tags: parseTagsFormData(formData),
@@ -129,8 +162,7 @@ const parseSharedActivityFormData = (formData: FormData) => {
     municipality: requiredRelationshipFormValue(formData, 'municipality'),
     locality: optionalFormText(formData, 'locality'),
     organizations: repeatedRelationshipFormValues(formData, 'organizations'),
-    responsible,
-    leadership,
+    responsible: parseResponsiblesFormData(formData),
     tasks: parseTasksFormData(formData),
     demands: parseDemandDraftsFormData(formData),
   }
@@ -142,15 +174,12 @@ export type ParsedActivityCreateFormData = ActivityCreateInput & {
 
 export const parseActivityCreateFormData = (formData: FormData): ParsedActivityCreateFormData => {
   const shared = parseSharedActivityFormData(formData)
-  const advisorIds = repeatedRelationshipFormValues(formData, 'advisors')
 
   return {
     ...shared,
     status: (shared.status ?? 'confirmado') as ActivityCreateInput['status'],
-    responsible: shared.responsible ?? undefined,
-    leadership: shared.leadership ?? undefined,
+    responsible: shared.responsible.length ? shared.responsible : undefined,
     organizations: shared.organizations.length ? shared.organizations : undefined,
-    advisors: advisorIds.length ? advisorIds : undefined,
   }
 }
 
@@ -194,10 +223,6 @@ export type ParsedActivityUpdateFormData = ActivityUpdateInput & {
 
 export const parseActivityUpdateFormData = (formData: FormData): ParsedActivityUpdateFormData => {
   const shared = parseSharedActivityFormData(formData)
-  const advisorIds = repeatedRelationshipFormValues(formData, 'advisors')
-  // Checkboxes only submit when checked, so a hidden marker distinguishes
-  // "advisors section rendered but all unchecked" from "not editable" (advisor view).
-  const hasAdvisors = formData.has('advisorsSubmitted')
 
   return {
     ...shared,
@@ -207,9 +232,10 @@ export const parseActivityUpdateFormData = (formData: FormData): ParsedActivityU
     description: shared.description ?? null,
     startAt: shared.startAt ?? null,
     endAt: shared.endAt ?? null,
-    responsible: shared.responsible,
-    leadership: shared.leadership,
     organizations: shared.organizations,
-    advisors: hasAdvisors ? advisorIds : undefined,
+    // Update always submits the full list (possibly empty) so clearing works.
+    // Invariant: the form always renders `responsiblesJson` (even empty) — a
+    // partial form that omits it would silently clear `responsible`.
+    responsible: shared.responsible,
   }
 }

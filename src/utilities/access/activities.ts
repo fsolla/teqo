@@ -9,7 +9,6 @@ import { getAccessibleMunicipalityIds } from '@/utilities/access/municipalities'
 import {
   advisorMunicipalityScopeWhere,
   getFreshCampaignUser,
-  isCampaignCoordinator,
   isCampaignLeader,
   isCampaignStaff,
   isCampaignUnrestricted,
@@ -41,9 +40,12 @@ export const canReadActivity: Access = async ({ req }): Promise<boolean | Where>
     const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
     return {
       or: [
+        // C90 — polymorphic `responsible`: the only scalar query the adapter
+        // supports on a multi-relation relationship is the object notation
+        // with `equals` (see @payloadcms/drizzle sanitizeQueryValue).
         {
-          advisors: {
-            contains: currentUser.id,
+          responsible: {
+            equals: { relationTo: 'campaignUser', value: currentUser.id },
           },
         },
         advisorMunicipalityScopeWhere('municipality', municipalityIDs),
@@ -63,10 +65,5 @@ export const canSetActivitySystemField: FieldAccess = ({ req }) => isPayloadAdmi
 
 export const canSetActivityStatus: FieldAccess = canStaffCreateActivity
 
-export const canCreateActivityAdvisors: FieldAccess = canStaffCreateActivity
-
-export const canManageActivityAdvisors: FieldAccess = async ({ req }) => {
-  if (isPayloadAdmin(req.user)) return true
-
-  return isCampaignCoordinator(await getFreshCampaignUser(req))
-}
+/** C90 — the unified `responsible` field is editable by any staff with row access. */
+export const canSetActivityResponsible: FieldAccess = canStaffCreateActivity

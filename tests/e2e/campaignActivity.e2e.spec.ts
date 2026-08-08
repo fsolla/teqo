@@ -26,6 +26,11 @@ test.describe('Atividades — registro-fundação', () => {
     await page.getByLabel('Início *').fill('2026-08-15T10:00')
     await page.getByLabel('Município *').selectOption(String(municipality.id))
 
+    // C90 — the unified polymorphic selector replaces the old Contact
+    // responsável + assessores/liderança fields.
+    await expect(page.getByRole('button', { name: /Responsáveis: Nenhum/ })).toBeVisible()
+    await expect(page.getByText('Assessores responsáveis')).toHaveCount(0)
+
     await page.getByRole('button', { name: 'Adicionar demanda' }).click()
     await page.getByLabel('Título da demanda 1').fill(transportDemand)
     await page.getByLabel('Tipo da demanda 1').selectOption('transporte')

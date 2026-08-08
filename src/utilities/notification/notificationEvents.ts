@@ -9,6 +9,7 @@ import {
   SKIP_CAMPAIGN_NOTIFICATION_CONTEXT_KEY,
 } from '@/lib/notificationContract'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
+import { parseActivityResponsibleEntries } from '@/lib/schemas/activity'
 import type { MunicipalityUpdatePolarity } from '@/lib/schemas/municipalityUpdate'
 import { municipalityUpdatePolarityLabels } from '@/lib/schemas/municipalityUpdate'
 import { createCampaignNotifications } from '@/utilities/notification/createCampaignNotification'
@@ -161,7 +162,7 @@ export const notifyActivityNeedsAttention = async (
     title: string
     slug: string
     municipality: unknown
-    advisors?: unknown
+    responsible?: unknown
   },
 ): Promise<void> => {
   if (shouldSkipCampaignNotification(req.context)) return
@@ -178,9 +179,15 @@ export const notifyActivityNeedsAttention = async (
     req,
   })
 
-  const advisorIDs = uniqueRelationshipIds(doc.advisors as readonly unknown[] | null | undefined)
-
-  const recipientIDs = [...new Set(advisorIDs)]
+  // C90 — recipients are the staff members listed as responsible for the
+  // commitment (leadership/dobradinha entries have no notification account).
+  const recipientIDs = [
+    ...new Set(
+      parseActivityResponsibleEntries(doc.responsible)
+        .filter((entry) => entry.relationTo === 'campaignUser')
+        .map((entry) => entry.value),
+    ),
+  ]
 
   await createCampaignNotifications(
     req.payload,

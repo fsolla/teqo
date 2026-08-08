@@ -262,9 +262,10 @@ export const buildActivityListWhere = (state: ActivityListState, now: Date): Whe
   if (state.q) {
     const q = isActivityListSearchReady(state.q)
     if (q) {
-      filters.push({
-        or: [{ title: { contains: q } }, { 'responsible.name': { contains: q } }],
-      })
+      // C90 — `responsible` is a polymorphic multi-relation; a nested
+      // `responsible.name` query is not supported on it, so the list search is
+      // title-only (see impl plan).
+      filters.push({ title: { contains: q } })
     }
   }
 

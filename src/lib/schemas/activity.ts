@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { relationshipId } from '@/lib/relationship'
 import { campaignDemandCreateSchema } from '@/lib/schemas/campaignDemandInput'
 import {
   positiveRelationshipId,
@@ -46,6 +47,9 @@ export const activityStatusLabels: Record<ActivityStatus, string> = {
 const MAX_ACTIVITY_ORGANIZATIONS = 20
 export const MAX_ACTIVITY_DEMAND_DRAFTS = 20
 
+/** C90 — cap for the polymorphic multi-value `responsible` field. */
+export const MAX_ACTIVITY_RESPONSIBLES = 20
+
 const activityDemandDraftSchema = campaignDemandCreateSchema.pick({
   title: true,
   kind: true,
@@ -69,6 +73,52 @@ const activityTagsSchema = z
   .array(z.string().trim().min(1).max(MAX_ACTIVITY_TAG_LENGTH))
   .max(MAX_ACTIVITY_TAGS)
 
+const activityResponsibleCollections = ['campaignUser', 'leadership', 'stateDeputy'] as const
+export type ActivityResponsibleCollection = (typeof activityResponsibleCollections)[number]
+
+export const activityResponsibleTypeLabels: Record<ActivityResponsibleCollection, string> = {
+  campaignUser: 'Equipe',
+  leadership: 'Liderança',
+  stateDeputy: 'Dobradinha',
+}
+
+export type ActivityResponsibleEntry = {
+  relationTo: ActivityResponsibleCollection
+  value: number
+}
+
+/**
+ * Normalizes a polymorphic `responsible` value (ids or `{relationTo, value}`
+ * objects at any depth) into typed entries, dropping malformed rows. Shared by
+ * the collection validation, the notification recipients and the view models —
+ * one place to add a future responsible kind.
+ */
+export const parseActivityResponsibleEntries = (value: unknown): ActivityResponsibleEntry[] =>
+  (Array.isArray(value) ? value : [])
+    .map((entry): ActivityResponsibleEntry | null => {
+      if (typeof entry !== 'object' || entry === null) return null
+      const record = entry as { relationTo?: unknown; value?: unknown }
+      const relationTo = activityResponsibleCollections.find(
+        (candidate) => candidate === record.relationTo,
+      )
+      if (!relationTo) return null
+      const id = relationshipId(record.value)
+      return id === null ? null : { relationTo, value: id }
+    })
+    .filter((entry): entry is ActivityResponsibleEntry => entry !== null)
+
+/**
+ * C90 — one typed responsible entry. `value` must be a positive id and the
+ * `relationTo` one of the allowed collections; the collection hook re-verifies
+ * the entity exists / stays eligible.
+ */
+export const activityResponsibleSchema = z.object({
+  relationTo: z.enum(activityResponsibleCollections),
+  value: positiveRelationshipId,
+})
+
+const activityResponsiblesSchema = z.array(activityResponsibleSchema).max(MAX_ACTIVITY_RESPONSIBLES)
+
 const activityFieldsSchema = z.object({
   title: z.string().trim().min(2).max(160),
   tags: activityTagsSchema.optional(),
@@ -80,9 +130,7 @@ const activityFieldsSchema = z.object({
   municipality: positiveRelationshipId,
   locality: trimmedOptionalText(160),
   organizations: z.array(positiveRelationshipId).max(MAX_ACTIVITY_ORGANIZATIONS).optional(),
-  advisors: z.array(positiveRelationshipId).optional(),
-  responsible: positiveRelationshipId.optional(),
-  leadership: positiveRelationshipId.optional(),
+  responsible: activityResponsiblesSchema.optional(),
   tasks: z.array(taskSchema).optional(),
 })
 
@@ -182,8 +230,6 @@ export const activityUpdateSchema = activityFieldsSchema
     description: trimmedNullableText(4000),
     startAt: z.string().datetime().nullable().optional(),
     endAt: z.string().datetime().nullable().optional(),
-    responsible: positiveRelationshipId.nullable().optional(),
-    leadership: positiveRelationshipId.nullable().optional(),
     status: z.enum(activityStatuses).optional(),
   })
   .superRefine((data, context) => {

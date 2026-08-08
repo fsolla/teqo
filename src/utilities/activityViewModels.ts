@@ -1,6 +1,20 @@
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
-import { isPopulatedRelationship, relationshipId } from '@/lib/relationship'
-import type { Activity, CampaignUser, Contact, Municipality, Organization } from '@/payload-types'
+import { isPopulatedRelationship, populatedContactName, relationshipId } from '@/lib/relationship'
+import {
+  activityResponsibleTypeLabels,
+  parseActivityResponsibleEntries,
+  type ActivityResponsibleCollection,
+  type ActivityResponsibleEntry,
+} from '@/lib/schemas/activity'
+import type {
+  Activity,
+  CampaignUser,
+  Contact,
+  Leadership,
+  Municipality,
+  Organization,
+  StateDeputy,
+} from '@/payload-types'
 import { canCampaignUserRescheduleActivity } from '@/utilities/access/activities'
 import type { ActivityDetailTab } from '@/utilities/activityDetailTabUi'
 
@@ -16,6 +30,60 @@ export const activityMunicipalitySummary = (
   isPopulatedRelationship<Municipality>(municipality)
     ? { id: municipality.id, name: municipality.name, slug: municipality.slug }
     : null
+
+// ---------------------------------------------------------------------------
+// C90 — polymorphic `responsible` display (typed chips)
+// ---------------------------------------------------------------------------
+
+export type ActivityResponsibleDisplay = {
+  relationTo: ActivityResponsibleCollection
+  id: number
+  name: string
+  typeLabel: string
+}
+
+const responsibleEntryName = (
+  relationTo: ActivityResponsibleEntry['relationTo'],
+  value: unknown,
+): string | null => {
+  switch (relationTo) {
+    case 'campaignUser':
+      return isPopulatedRelationship<CampaignUser>(value) ? value.name : null
+    case 'leadership':
+      return isPopulatedRelationship<Leadership>(value)
+        ? populatedContactName((value as Leadership).contact)
+        : null
+    case 'stateDeputy':
+      return isPopulatedRelationship<StateDeputy>(value)
+        ? populatedContactName((value as StateDeputy).contact)
+        : null
+  }
+}
+
+/** Maps a polymorphic `responsible` value (ids or populated docs) to display chips. */
+const mapActivityResponsibles = (
+  value: readonly unknown[] | null | undefined,
+): ActivityResponsibleDisplay[] => {
+  const populatedByKey = new Map<string, unknown>()
+  for (const raw of Array.isArray(value) ? value : []) {
+    const record = raw as { relationTo?: unknown; value?: unknown }
+    const id = relationshipId(record.value)
+    if (typeof record.relationTo === 'string' && id !== null) {
+      populatedByKey.set(`${record.relationTo}:${id}`, record.value)
+    }
+  }
+
+  return parseActivityResponsibleEntries(value).map((entry) => ({
+    relationTo: entry.relationTo,
+    id: entry.value,
+    name:
+      responsibleEntryName(
+        entry.relationTo,
+        populatedByKey.get(`${entry.relationTo}:${entry.value}`),
+      ) ?? `Responsável #${entry.value}`,
+    typeLabel: activityResponsibleTypeLabels[entry.relationTo],
+  }))
+}
 
 export const formatActivityWhenLabel = (startAt: string | null | undefined): string =>
   startAt ? formatBahiaDateTimeLabel(startAt) : 'Data a definir'
@@ -107,7 +175,7 @@ export type ActivityListViewModel = {
   municipalityName: string | null
   locality: string | null
   locationLabel: string
-  responsibleName: string | null
+  responsibles: ActivityResponsibleDisplay[]
   taskProgress: { done: number; total: number }
 }
 
@@ -130,7 +198,7 @@ export const toActivityListViewModel = (activity: Activity): ActivityListViewMod
     municipalityName,
     locality: activity.locality ?? null,
     locationLabel: formatActivityLocationLabel({ municipalityName, locality: activity.locality }),
-    responsibleName: relationshipName(activity.responsible),
+    responsibles: mapActivityResponsibles(activity.responsible),
     taskProgress: {
       done: activity.taskDoneCount ?? 0,
       total: activity.taskTotal ?? 0,
@@ -150,9 +218,7 @@ export const activityFormSelect = {
   municipality: true,
   locality: true,
   organizations: true,
-  advisors: true,
   responsible: true,
-  leadership: true,
   tasks: true,
 } as const
 
@@ -177,9 +243,7 @@ export type ActivityFormViewModel = {
   municipalityId: number | null
   locality: string | null
   organizationIDs: number[]
-  advisorIDs: number[]
-  responsible: { id: number; name: string; phone: string | null } | null
-  leadership: { id: number; label: string } | null
+  responsibles: ActivityResponsibleDisplay[]
   tasks: ActivityFormTaskViewModel[]
 }
 
@@ -199,26 +263,7 @@ export const toActivityFormViewModel = (activity: Activity): ActivityFormViewMod
   municipalityId: relationshipId(activity.municipality),
   locality: activity.locality ?? null,
   organizationIDs: relationshipIds(activity.organizations),
-  advisorIDs: relationshipIds(activity.advisors),
-  responsible: isPopulatedRelationship<Contact>(activity.responsible)
-    ? {
-        id: activity.responsible.id,
-        name: activity.responsible.name,
-        phone: activity.responsible.phone ?? null,
-      }
-    : null,
-  leadership: (() => {
-    const leadershipId = relationshipId(activity.leadership)
-    if (!leadershipId) return null
-    if (isPopulatedRelationship(activity.leadership)) {
-      const contact = activity.leadership.contact
-      const contactName = isPopulatedRelationship<Contact>(contact)
-        ? contact.name
-        : `Liderança #${leadershipId}`
-      return { id: leadershipId, label: contactName }
-    }
-    return { id: leadershipId, label: `Liderança #${leadershipId}` }
-  })(),
+  responsibles: mapActivityResponsibles(activity.responsible),
   tasks: (activity.tasks ?? []).map((task) => ({
     id: task.id ?? null,
     title: task.title,
@@ -246,7 +291,6 @@ const activityDetailContextSelect = {
   municipality: true,
   locality: true,
   organizations: true,
-  advisors: true,
   responsible: true,
   createdBy: true,
   updatedAt: true,
@@ -313,9 +357,7 @@ export type ActivityDetailViewModel = {
   locality: string | null
   locationLabel: string
   organizations: Array<{ id: number; name: string }>
-  advisors: Array<{ id: number; name: string }>
-  responsibleId: number | null
-  responsibleName: string | null
+  responsibles: ActivityResponsibleDisplay[]
   taskProgress: { done: number; total: number }
   tasks: ActivityTaskViewModel[]
   updates: ActivityUpdateViewModel[]
@@ -390,14 +432,7 @@ export const toActivityDetailViewModel = (
           isPopulatedRelationship<Organization>(organization),
         )
         .map(({ id, name }) => ({ id, name })) ?? [],
-    advisors:
-      activity.advisors
-        ?.filter((advisor): advisor is CampaignUser =>
-          isPopulatedRelationship<CampaignUser>(advisor),
-        )
-        .map(({ id, name }) => ({ id, name })) ?? [],
-    responsibleId: relationshipId(activity.responsible),
-    responsibleName: relationshipName(activity.responsible),
+    responsibles: mapActivityResponsibles(activity.responsible),
     taskProgress: {
       done: activity.taskDoneCount ?? 0,
       total: activity.taskTotal ?? 0,
