@@ -747,9 +747,22 @@ export interface Activity {
   municipality: number | Municipality;
   locality?: string | null;
   organizations?: (number | Organization)[] | null;
-  advisors?: (number | CampaignUser)[] | null;
-  responsible?: (number | null) | Contact;
-  leadership?: (number | null) | Leadership;
+  responsible?:
+    | (
+        | {
+            relationTo: 'campaignUser';
+            value: number | CampaignUser;
+          }
+        | {
+            relationTo: 'leadership';
+            value: number | Leadership;
+          }
+        | {
+            relationTo: 'stateDeputy';
+            value: number | StateDeputy;
+          }
+      )[]
+    | null;
   tasks?:
     | {
         title: string;
@@ -1787,9 +1800,7 @@ export interface ActivitySelect<T extends boolean = true> {
   municipality?: T;
   locality?: T;
   organizations?: T;
-  advisors?: T;
   responsible?: T;
-  leadership?: T;
   tasks?:
     | T
     | {

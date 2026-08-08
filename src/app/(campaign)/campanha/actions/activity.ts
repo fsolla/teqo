@@ -232,7 +232,7 @@ const updateActivityRecord = async (
   const { id, ...rawData } = activityUpdateSchema.parse(input)
   // Payload date fields accept string | undefined, not null.
   // Strip nulls only for required-ish fields; keep null for optional
-  // fields (endAt, responsible, leadership) so clearing them works.
+  // fields (endAt) so clearing them works.
   const data = {
     ...Object.fromEntries(
       Object.entries(rawData).filter(([key, value]) => {

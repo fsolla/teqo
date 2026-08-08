@@ -93,13 +93,11 @@ describe('buildActivityListWhere (tab → where matrix)', () => {
     })
   })
 
-  it('filters by title or responsible name when q is set', () => {
+  it('filters by title when q is set (C90 — responsible is polymorphic, title-only)', () => {
     const where = buildActivityListWhere({ page: 1, tab: 'proximos', q: 'Maria' }, NOW)
     expect(where).toEqual({
       and: [
-        {
-          or: [{ title: { contains: 'Maria' } }, { 'responsible.name': { contains: 'Maria' } }],
-        },
+        { title: { contains: 'Maria' } },
         { status: { equals: 'confirmado' } },
         { startAt: { greater_than_equal: NOW.toISOString() } },
       ],

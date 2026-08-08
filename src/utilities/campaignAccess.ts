@@ -107,10 +107,9 @@ export {
 export {
   canCampaignUserRescheduleActivity,
   canCreateActivity,
-  canCreateActivityAdvisors,
   canDeleteActivity,
-  canManageActivityAdvisors,
   canReadActivity,
+  canSetActivityResponsible,
   canSetActivityStatus,
   canSetActivitySystemField,
   canUpdateActivity,

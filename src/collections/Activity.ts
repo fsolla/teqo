@@ -8,8 +8,10 @@ import { APIError } from 'payload'
 import { relationshipId } from '@/lib/relationship'
 import {
   ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE,
-  activityStatusLabels,
   activityStatuses,
+  activityStatusLabels,
+  MAX_ACTIVITY_RESPONSIBLES,
+  parseActivityResponsibleEntries,
 } from '@/lib/schemas/activity'
 import { slugify } from '@/lib/slug'
 import { trimmedText } from '@/lib/text'
@@ -17,10 +19,9 @@ import { getFreshCampaignUser } from '@/utilities/access/shared'
 import {
   canCampaignUserRescheduleActivity,
   canCreateActivity,
-  canCreateActivityAdvisors,
   canDeleteActivity,
-  canManageActivityAdvisors,
   canReadActivity,
+  canSetActivityResponsible,
   canSetActivityStatus,
   canSetActivitySystemField,
   canUpdateActivity,
@@ -51,9 +52,11 @@ const activityStaffFieldSnapshot = (doc: Record<string, unknown>) => ({
   locality: trimmedText(doc.locality),
   deputyPresent: Boolean(doc.deputyPresent),
   organizations: relationshipIds(doc.organizations),
-  advisors: relationshipIds(doc.advisors),
-  responsible: relationshipId(doc.responsible),
-  leadership: relationshipId(doc.leadership),
+  responsible: JSON.stringify(
+    parseActivityResponsibleEntries(doc.responsible)
+      .map(({ relationTo, value }) => `${relationTo}:${value}`)
+      .sort(),
+  ),
   resultSummary: trimmedText(doc.resultSummary),
   resultMedia: relationshipIds(doc.resultMedia),
 })
@@ -110,31 +113,99 @@ const validateActivitySchedule: CollectionBeforeValidateHook = ({
   return data
 }
 
-const validateActivityAdvisors: CollectionBeforeValidateHook = async ({ data, req, context }) => {
+/**
+ * C90 — every `responsible` entry must point at a real, allowed entity:
+ * staff `campaignUser` (assessor/candidato/coordenador) must stay eligible,
+ * and `leadership`/`stateDeputy` ids must exist. Existence is verified as
+ * admin truth so a staff member responsible for a commitment can always
+ * re-save it as-is — the form's selector scopes the choice to the actor's
+ * portfolio, not the save validation.
+ */
+const validateActivityResponsibles: CollectionBeforeValidateHook = async ({
+  data,
+  req,
+  context,
+}) => {
   if (isActivityMutationShortcut(context)) return data
   if (!data) return data
-  if (data.advisors === undefined) return data
+  if (data.responsible === undefined) return data
 
-  const advisorIDs = [...new Set(relationshipIds(data.advisors))]
-  if (advisorIDs.length === 0) return data
-
-  const eligibleAdvisors = await req.payload.find({
-    collection: 'campaignUser',
-    depth: 0,
-    pagination: false,
-    where: {
-      and: [{ id: { in: advisorIDs } }, eligibleCampaignStaffWhere],
-    },
-    select: { name: true },
-    overrideAccess: true,
-    req,
-  })
-
-  if (eligibleAdvisors.docs.length !== advisorIDs.length) {
+  const entries = parseActivityResponsibleEntries(data.responsible)
+  if (entries.length === 0) return data
+  if (entries.length > MAX_ACTIVITY_RESPONSIBLES) {
     throw new APIError(
-      'Cada responsável deve ter papel de Coordenador Geral, Assessor ou Candidato.',
+      `Informe no máximo ${MAX_ACTIVITY_RESPONSIBLES} responsáveis pelo compromisso.`,
       400,
     )
+  }
+
+  const staffIDs = [
+    ...new Set(
+      entries.filter((entry) => entry.relationTo === 'campaignUser').map((entry) => entry.value),
+    ),
+  ]
+  const leadershipIDs = [
+    ...new Set(
+      entries.filter((entry) => entry.relationTo === 'leadership').map((entry) => entry.value),
+    ),
+  ]
+  const deputyIDs = [
+    ...new Set(
+      entries.filter((entry) => entry.relationTo === 'stateDeputy').map((entry) => entry.value),
+    ),
+  ]
+
+  if (staffIDs.length > 0) {
+    // bypass: eligibility is an admin truth — row access would reject
+    // no-user/admin creates and empty requests; the where filter is the gate.
+    const eligibleStaff = await req.payload.find({
+      collection: 'campaignUser',
+      depth: 0,
+      pagination: false,
+      where: {
+        and: [{ id: { in: staffIDs } }, eligibleCampaignStaffWhere],
+      },
+      select: { name: true },
+      overrideAccess: true,
+      req,
+    })
+    if (eligibleStaff.docs.length !== staffIDs.length) {
+      throw new APIError(
+        'Cada responsável deve ter papel de Coordenador Geral, Assessor ou Candidato.',
+        400,
+      )
+    }
+  }
+
+  if (leadershipIDs.length > 0) {
+    // bypass: existence check only — the actor must be able to save an intact
+    // responsible list even for leaderships outside their read scope.
+    const leaderships = await req.payload.find({
+      collection: 'leadership',
+      depth: 0,
+      pagination: false,
+      where: { id: { in: leadershipIDs } },
+      overrideAccess: true,
+      req,
+    })
+    if (leaderships.docs.length !== leadershipIDs.length) {
+      throw new APIError('Responsável de liderança inválido.', 400)
+    }
+  }
+
+  if (deputyIDs.length > 0) {
+    // bypass: existence check only — see the leadership leg above.
+    const deputies = await req.payload.find({
+      collection: 'stateDeputy',
+      depth: 0,
+      pagination: false,
+      where: { id: { in: deputyIDs } },
+      overrideAccess: true,
+      req,
+    })
+    if (deputies.docs.length !== deputyIDs.length) {
+      throw new APIError('Responsável de dobradinha inválido.', 400)
+    }
   }
 
   return data
@@ -188,9 +259,10 @@ const deriveActivityFields: CollectionBeforeChangeHook = ({
     data.createdBy = req.user.id
     if (
       req.user.role === 'advisor' &&
-      (data.advisors === undefined || (Array.isArray(data.advisors) && data.advisors.length === 0))
+      (data.responsible === undefined ||
+        (Array.isArray(data.responsible) && data.responsible.length === 0))
     ) {
-      data.advisors = [req.user.id]
+      data.responsible = [{ relationTo: 'campaignUser', value: req.user.id }]
     }
   }
 
@@ -305,7 +377,7 @@ export const Activity: CollectionConfig = {
     beforeValidate: [
       setCanonicalActivitySlug,
       validateActivitySchedule,
-      validateActivityAdvisors,
+      validateActivityResponsibles,
       validateDeputyPresentTimeGate,
     ],
     beforeChange: [deriveActivityFields],
@@ -427,31 +499,20 @@ export const Activity: CollectionConfig = {
       index: true,
     },
     {
-      name: 'advisors',
+      // C90 — one polymorphic multi-value field replaces the old `advisors`
+      // (staff hasMany), `leadership` (hasOne) and `responsible` (Contact)
+      // fields. Anyone conducting the commitment — staff, a leadership or a
+      // dobradinha — lives here.
+      name: 'responsible',
       type: 'relationship',
-      relationTo: 'campaignUser',
-      label: 'Assessores responsáveis',
+      relationTo: ['campaignUser', 'leadership', 'stateDeputy'],
+      label: 'Responsáveis',
       hasMany: true,
       index: true,
       access: {
-        create: canCreateActivityAdvisors,
-        update: canManageActivityAdvisors,
+        create: canSetActivityResponsible,
+        update: canSetActivityResponsible,
       },
-      filterOptions: eligibleCampaignStaffWhere,
-    },
-    {
-      name: 'responsible',
-      type: 'relationship',
-      relationTo: 'contact',
-      label: 'Responsável',
-      index: true,
-    },
-    {
-      name: 'leadership',
-      type: 'relationship',
-      relationTo: 'leadership',
-      label: 'Liderança',
-      index: true,
     },
     {
       name: 'tasks',

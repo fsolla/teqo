@@ -5,40 +5,29 @@ import { useActionState, useState } from 'react'
 
 import { ActivityDemandFields } from '@/components/campaign/activity/ActivityDemandFields'
 import { ActivityTaskFields } from '@/components/campaign/activity/ActivityTaskFields'
-import { AsyncSearchCombobox } from '@/components/campaign/shared/AsyncSearchCombobox'
-import {
-  ContactCombobox,
-  type ContactComboboxOption,
-} from '@/components/campaign/shared/ContactCombobox'
+import type { ContactComboboxOption } from '@/components/campaign/shared/ContactCombobox'
 import {
   RelationMultiSelect,
   type RelationOption,
 } from '@/components/campaign/shared/RelationMultiSelect'
+import {
+  ResponsibleMultiSelect,
+  type ResponsibleOption,
+} from '@/components/campaign/shared/ResponsibleMultiSelect'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/Checkbox'
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from '@/components/ui/field'
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { formatIsoAsBahiaDateTimeInput } from '@/lib/campaignTime'
-import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
 import { MAX_ACTIVITY_TAG_LENGTH, MAX_ACTIVITY_TAGS } from '@/lib/schemas/activity'
-import type { ActivityLeadershipOption } from '@/utilities/activityLeadershipOptions'
 import type { ActivityCreatePrefill } from '@/utilities/activityUi'
 import type { ActivityFormViewModel } from '@/utilities/activityViewModels'
 import { fieldError } from '@/utilities/campaignFormFields'
-import type { EligibleAdvisorOption } from '@/utilities/municipality/municipalityViewModels'
 
 export type ActivityFormState = {
   message?: string
@@ -55,14 +44,12 @@ type ActivityFormAction = (
 export type ActivityFormFieldsProps = {
   municipalityOptions: RelationOption[]
   organizationOptions: RelationOption[]
-  advisorOptions?: EligibleAdvisorOption[]
-  canManageAdvisors?: boolean
   activity?: ActivityFormViewModel
   initialValues?: ActivityCreatePrefill
   fieldErrors?: Record<string, string[]>
   submittedTitle?: string
   searchContacts: (query: string) => Promise<ContactComboboxOption[]>
-  searchLeaderships: (query: string) => Promise<ActivityLeadershipOption[]>
+  searchResponsibles: (query: string) => Promise<ResponsibleOption[]>
   /** Tags already used across activities, for autocomplete. */
   knownTags?: string[]
 }
@@ -152,29 +139,16 @@ const TagInput = ({
 const ActivityFormFields = ({
   municipalityOptions,
   organizationOptions,
-  advisorOptions = [],
-  canManageAdvisors = false,
   activity,
   initialValues,
   fieldErrors = {},
   submittedTitle,
   searchContacts,
-  searchLeaderships,
+  searchResponsibles,
   knownTags = [],
 }: ActivityFormFieldsProps) => {
   const errorFor = (name: string) => fieldError(fieldErrors, name)
-  const [responsible, setResponsible] = useState<ContactComboboxOption | null>(
-    activity?.responsible
-      ? {
-          id: activity.responsible.id,
-          name: activity.responsible.name,
-          phone: activity.responsible.phone,
-        }
-      : null,
-  )
-  const [leadership, setLeadership] = useState<ActivityLeadershipOption | null>(
-    activity?.leadership ? { id: activity.leadership.id, label: activity.leadership.label } : null,
-  )
+  const initialResponsibles = activity?.responsibles ?? []
   const initialStartAt = activity?.startAt ?? initialValues?.startAt
   const initialEndAt = activity?.endAt ?? initialValues?.endAt
   const initialMunicipalityId = activity?.municipalityId ?? initialValues?.municipalityId
@@ -336,41 +310,14 @@ const ActivityFormFields = ({
         </CardHeader>
         <CardContent>
           <FieldGroup>
-            <Field data-invalid={Boolean(errorFor('responsible'))}>
-              <FieldLabel>Responsável</FieldLabel>
-              <ContactCombobox
-                name="responsible"
-                label="Responsável pela atividade"
-                current={responsible}
-                search={searchContacts}
-                onChange={setResponsible}
-              />
-              {errorFor('responsible') ? (
-                <FieldError id="responsible-error">{errorFor('responsible')}</FieldError>
-              ) : null}
-            </Field>
-
-            <Field data-invalid={Boolean(errorFor('leadership'))}>
-              <FieldLabel>Liderança vinculada</FieldLabel>
-              <AsyncSearchCombobox
-                name="leadership"
-                label="Liderança vinculada"
-                value={leadership}
-                emptyOptionLabel="Nenhuma"
-                dialogDescription="Busque lideranças engajadas por nome ou celular."
-                isQueryReady={isContactSearchQueryReady}
-                queryTooShortMessage="Digite ao menos dois caracteres para buscar."
-                search={searchLeaderships}
-                onChange={setLeadership}
-              />
-              <FieldDescription>
-                Quando vinculada, a liderança engajada vê a atividade e pode marcar tarefas e
-                registrar atualizações.
-              </FieldDescription>
-              {errorFor('leadership') ? (
-                <FieldError id="leadership-error">{errorFor('leadership')}</FieldError>
-              ) : null}
-            </Field>
+            <ResponsibleMultiSelect
+              name="responsiblesJson"
+              label="Responsáveis"
+              value={initialResponsibles}
+              error={errorFor('responsiblesJson')}
+              description="Quem conduz este compromisso: equipe da campanha, liderança ou dobradinha — um ou vários."
+              search={searchResponsibles}
+            />
 
             <RelationMultiSelect
               name="organizations"
@@ -380,47 +327,6 @@ const ActivityFormFields = ({
               error={errorFor('organizations')}
               placeholder="Adicionar organização…"
             />
-
-            {canManageAdvisors ? (
-              <FieldSet
-                aria-invalid={Boolean(errorFor('advisors'))}
-                aria-describedby={errorFor('advisors') ? 'advisors-error' : undefined}
-              >
-                <FieldLegend>Assessores responsáveis</FieldLegend>
-                <FieldDescription>
-                  Assessores selecionados podem editar esta atividade e gerenciar suas tarefas.
-                </FieldDescription>
-                <input type="hidden" name="advisorsSubmitted" value="1" />
-                {advisorOptions.length ? (
-                  <div data-slot="checkbox-group" className="grid gap-2 sm:grid-cols-2">
-                    {advisorOptions.map((advisor) => (
-                      <FieldLabel key={advisor.id}>
-                        <Field orientation="horizontal" className="min-h-11 rounded-lg border p-3">
-                          <Checkbox
-                            name="advisors"
-                            value={String(advisor.id)}
-                            defaultChecked={
-                              activity
-                                ? activity.advisorIDs.includes(advisor.id)
-                                : advisor.isCurrent
-                            }
-                          />
-                          <span>
-                            {advisor.name}
-                            {advisor.isCurrent ? ' (você)' : ''}
-                          </span>
-                        </Field>
-                      </FieldLabel>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Nenhum assessor disponível.</p>
-                )}
-                {errorFor('advisors') ? (
-                  <FieldError id="advisors-error">{errorFor('advisors')}</FieldError>
-                ) : null}
-              </FieldSet>
-            ) : null}
           </FieldGroup>
         </CardContent>
       </Card>
@@ -454,14 +360,12 @@ export const ActivityForm = ({
   action,
   municipalityOptions,
   organizationOptions,
-  advisorOptions,
-  canManageAdvisors,
   activity,
   initialValues,
   fieldErrors: externalFieldErrors,
   submittedTitle,
   searchContacts,
-  searchLeaderships,
+  searchResponsibles,
   knownTags,
   submitLabel,
   cancelHref,
@@ -477,14 +381,12 @@ export const ActivityForm = ({
       <ActivityFormFields
         municipalityOptions={municipalityOptions}
         organizationOptions={organizationOptions}
-        advisorOptions={advisorOptions}
-        canManageAdvisors={canManageAdvisors}
         activity={activity}
         initialValues={initialValues}
         fieldErrors={state.fieldErrors ?? externalFieldErrors}
         submittedTitle={state.submittedTitle ?? submittedTitle}
         searchContacts={searchContacts}
-        searchLeaderships={searchLeaderships}
+        searchResponsibles={searchResponsibles}
         knownTags={knownTags}
       />
 

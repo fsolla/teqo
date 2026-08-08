@@ -14,6 +14,7 @@ import {
   loadActivityAgendaEventsRecord,
   rescheduleActivityRecord,
 } from '@/app/(campaign)/campanha/actions/activity'
+import { relationshipId } from '@/lib/relationship'
 import {
   ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE,
   activityCreateSchema,
@@ -28,7 +29,7 @@ import {
   getAccessibleLeadershipIds,
 } from '@/utilities/campaignAccess'
 
-import { installCampaignFixtures, relationId, relationIds } from '../helpers/campaignFixtures'
+import { installCampaignFixtures, relationId } from '../helpers/campaignFixtures'
 import { stub } from '../helpers/stub'
 
 /** Create data with server-derived fields (e.g. `slug`) intentionally omitted. */
@@ -246,9 +247,10 @@ describe('activity domain', () => {
       collection: 'activity',
       data: stub<ActivityCreateData>({
         ...validActivityInput(municipality.id),
-        advisors: [advisor.id],
-        leadership: leadership.id,
-        responsible: contact.id,
+        responsible: [
+          { relationTo: 'campaignUser', value: advisor.id },
+          { relationTo: 'leadership', value: leadership.id },
+        ],
         createdBy: coordinator.id,
       }),
       overrideAccess: true,
@@ -264,14 +266,20 @@ describe('activity domain', () => {
       req: stub<PayloadRequest>({ user: advisor, payload, context: {} }),
     })
     expect(advisorRead).toEqual({
-      or: [{ advisors: { contains: advisor.id } }, { municipality: { in: [municipality.id] } }],
+      or: [
+        { responsible: { equals: { relationTo: 'campaignUser', value: advisor.id } } },
+        { municipality: { in: [municipality.id] } },
+      ],
     })
 
     const otherAdvisorRead = await canReadActivity({
       req: stub<PayloadRequest>({ user: otherAdvisor, payload, context: {} }),
     })
     expect(otherAdvisorRead).toEqual({
-      or: [{ advisors: { contains: otherAdvisor.id } }, { municipality: { in: [] } }],
+      or: [
+        { responsible: { equals: { relationTo: 'campaignUser', value: otherAdvisor.id } } },
+        { municipality: { in: [] } },
+      ],
     })
 
     const leaderRead = await canReadActivity({
@@ -289,7 +297,10 @@ describe('activity domain', () => {
       req: stub<PayloadRequest>({ user: advisor, payload, context: {} }),
     })
     expect(advisorUpdate).toEqual({
-      or: [{ advisors: { contains: advisor.id } }, { municipality: { in: [municipality.id] } }],
+      or: [
+        { responsible: { equals: { relationTo: 'campaignUser', value: advisor.id } } },
+        { municipality: { in: [municipality.id] } },
+      ],
     })
 
     const visibleToAdvisor = await payload.find({
@@ -321,7 +332,102 @@ describe('activity domain', () => {
     ).rejects.toThrow(/permissão/i)
   })
 
-  it('auto-includes the creating advisor in advisors', async () => {
+  it('grants an advisor access to an activity they are responsible for outside their portfolio (C90 polymorphic leg)', async () => {
+    const fixtures = campaignFixtures()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const [ownMunicipality, otherMunicipality] = await Promise.all([
+      fixtures.getMunicipality(),
+      fixtures.getMunicipality(),
+    ])
+    await fixtures.assignMunicipalityAdvisors(ownMunicipality, [advisor])
+
+    const visibleByResponsibility = await payload.create({
+      collection: 'activity',
+      data: stub<ActivityCreateData>({
+        ...validActivityInput(otherMunicipality.id),
+        title: fixtures.value('Fora do portfólio, mas responsável'),
+        responsible: [{ relationTo: 'campaignUser', value: advisor.id }],
+      }),
+      overrideAccess: true,
+    })
+    fixtures.own('activity', visibleByResponsibility.id)
+
+    const invisible = await payload.create({
+      collection: 'activity',
+      data: stub<ActivityCreateData>({
+        ...validActivityInput(otherMunicipality.id),
+        title: fixtures.value('Fora do portfólio e sem o assessor'),
+      }),
+      overrideAccess: true,
+    })
+    fixtures.own('activity', invisible.id)
+
+    const result = await payload.find({
+      collection: 'activity',
+      where: { id: { in: [visibleByResponsibility.id, invisible.id] } },
+      user: advisor,
+      overrideAccess: false,
+      depth: 0,
+    })
+
+    // The polymorphic `responsible` object-notation equals is the exact leg
+    // that keeps the advisor's right when the municipality scope does not.
+    expect(result.docs.map((doc) => doc.id)).toEqual([visibleByResponsibility.id])
+  })
+
+  it('lets a responsible advisor re-save an activity whose leadership they cannot read (C90 existence validation)', async () => {
+    const fixtures = campaignFixtures()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const foreignMunicipality = await fixtures.getMunicipality()
+    const foreignLeadership = await fixtures.createLeadership({
+      contact: (await fixtures.createContact()).id,
+      municipalities: [foreignMunicipality.id],
+      supportStatus: 'engajado',
+    })
+
+    const activity = await payload.create({
+      collection: 'activity',
+      data: stub<ActivityCreateData>({
+        ...validActivityInput(foreignMunicipality.id),
+        title: fixtures.value('Atividade que o assessor precisa editar'),
+        responsible: [
+          { relationTo: 'campaignUser', value: advisor.id },
+          { relationTo: 'leadership', value: foreignLeadership.id },
+        ],
+      }),
+      overrideAccess: true,
+    })
+    fixtures.own('activity', activity.id)
+
+    // The advisor has no portfolio in the foreign municipality, so the
+    // leadership is outside their read scope — but they are responsible and
+    // re-submitting the intact list must not dead-end the save.
+    const updated = await payload.update({
+      collection: 'activity',
+      id: activity.id,
+      data: {
+        description: 'Ajuste do assessor responsável.',
+        responsible: [
+          { relationTo: 'campaignUser', value: advisor.id },
+          { relationTo: 'leadership', value: foreignLeadership.id },
+        ],
+      },
+      user: advisor,
+      overrideAccess: false,
+    })
+
+    expect(updated.description).toBe('Ajuste do assessor responsável.')
+    const persisted = await payload.findByID({
+      collection: 'activity',
+      id: activity.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    const responsibleIDs = (persisted.responsible ?? []).map((entry) => relationshipId(entry.value))
+    expect(responsibleIDs).toEqual(expect.arrayContaining([advisor.id, foreignLeadership.id]))
+  })
+
+  it('auto-includes the creating advisor as responsible', async () => {
     const fixtures = campaignFixtures()
     const advisor = await fixtures.createCampaignUser('advisor')
     const municipality = await fixtures.getMunicipality()
@@ -338,7 +444,8 @@ describe('activity domain', () => {
     })
     fixtures.own('activity', activity.id)
 
-    expect(relationIds(activity.advisors)).toEqual([advisor.id])
+    const responsibleIDs = (activity.responsible ?? []).map((entry) => relationId(entry.value))
+    expect(responsibleIDs).toEqual([advisor.id])
     expect(relationId(activity.createdBy)).toBe(advisor.id)
   })
 
@@ -537,7 +644,7 @@ describe('activity domain', () => {
     const contact = await fixtures.createContact()
     const municipality = await fixtures.getMunicipality()
     await fixtures.assignMunicipalityAdvisors(municipality, [advisor])
-    const leadership = await fixtures.createLeadership({
+    await fixtures.createLeadership({
       contact: contact.id,
       municipalities: [municipality.id],
       user: leaderAccount.id,
@@ -549,8 +656,7 @@ describe('activity domain', () => {
       data: stub<ActivityCreateData>({
         ...validActivityInput(municipality.id),
         title: fixtures.value('Atividade Tarefas'),
-        advisors: [advisor.id],
-        leadership: leadership.id,
+        responsible: [{ relationTo: 'campaignUser', value: advisor.id }],
         tasks: [{ title: 'Levar faixas', done: false }],
       }),
       overrideAccess: true,
