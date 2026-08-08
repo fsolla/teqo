@@ -276,22 +276,25 @@ const municipalityListColumns = ({
       ),
       cellClassName: 'sticky left-0 z-[5] w-52 max-w-52 whitespace-normal bg-background',
       cell: (municipality) => (
-        <div className="flex min-w-0 max-w-52 flex-col gap-0.5">
+        // B165 — the name+territory read as one block: the row's minimum height
+        // lives on the cell, so a 1-line name keeps the other columns aligned
+        // while the territory sits ~2px under the name with no forced box below.
+        <div className="flex min-h-11 min-w-0 max-w-52 flex-col gap-0.5">
           <div className="flex min-w-0 items-start gap-1.5">
             <Link
               href={`/campanha/municipios/${municipality.slug}`}
-              className="line-clamp-2 min-h-11 min-w-0 flex-1 py-2 font-medium text-primary underline-offset-4 hover:underline"
+              className="line-clamp-2 min-w-0 flex-1 pt-1 font-medium text-primary underline-offset-4 hover:underline"
             >
               {municipality.name}
             </Link>
             {municipality.priority === 'alta' && isStaffView ? (
-              <span className="mt-2 shrink-0">
+              <span className="mt-[5px] shrink-0">
                 <MunicipalityPriorityIndicator />
               </span>
             ) : null}
           </div>
           <span className="block truncate text-xs text-muted-foreground">
-            <TerritoryLink region={municipality.region} />
+            <TerritoryLink region={municipality.region} compact />
           </span>
         </div>
       ),
