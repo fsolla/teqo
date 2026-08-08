@@ -122,8 +122,16 @@
 }
 
 @media (max-width: 767px) {
+  .activity-agenda-shell {
+    /* Edge-to-edge on phones: break out of the p-4 scroll padding and drop
+       the card side chrome so the calendar bleeds to the screen edges. */
+    margin-inline: -1rem;
+    border-inline: 0;
+    border-radius: 0;
+  }
+
   .activity-agenda {
-    padding: 0.5rem;
+    padding: 0.5rem 0;
     font-size: 0.75rem;
   }
 
