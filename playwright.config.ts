@@ -9,6 +9,9 @@ import { assertTestDatabase } from './tests/helpers/assertTestDatabase'
  * `override: true` guarantees the test DB wins over anything in the shell.
  */
 loadEnv({ path: '.env.test', override: true })
+// Per-worktree isolation: `.env.test.local` (gitignored, written by
+// `pnpm worktree next`) wins over the committed `.env.test` when present.
+loadEnv({ path: '.env.test.local', override: true })
 
 // Optional local override when the default Docker port is occupied (e.g. mapped
 // to 5433) — same escape hatch vitest.setup.ts documents.

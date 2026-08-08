@@ -15,8 +15,11 @@ services:
       - '5432:5432'
     # Default max_connections=100 is tight for vitest forks (≈CPUs × pg pool)
     # plus a leftover `next start` from local repro. Raise the ceiling so the
-    # int gate fails on real assertions, not "too many clients already".
-    command: ['postgres', '-c', 'max_connections=200']
+    # int gate fails on real assertions, not "too many clients already". 400
+    # leaves headroom for several agents' int suites on the SAME container in
+    # parallel (each worktree provisions its own databases — see
+    # scripts/worktree.mjs — but they share this one Postgres on 5432).
+    command: ['postgres', '-c', 'max_connections=400']
     volumes:
       - pgdata:/var/lib/postgresql/data
       # Runs only on first initialization of the volume. Creates the dedicated
