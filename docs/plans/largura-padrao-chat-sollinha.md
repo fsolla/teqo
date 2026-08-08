@@ -26,7 +26,7 @@ O assistente Sollinha abre **grande demais** no desktop: o painel nasce com 25% 
 - Ao abrir o chat no desktop — sozinho (carregamento) ou pelo botão do header — o painel nasce com **25% da janela, no máximo 360 px** (ou seja: `min(25%, 360 px)`).
 - O usuário pode redimensionar livremente após abrir: mais largo **sem teto superior** (limitado apenas pelo espaço que a janela/área principal permite) e mais estreito até o mínimo de ~280 px.
 - O **último tamanho escolhido pelo usuário é lembrado** e usado nas próximas aberturas; o teto de 360 px vale para a abertura padrão quando não há tamanho salvo.
-- Em telas onde 25% já é menor que 360 px, o comportamento atual não muda (o teto é um *máximo*, não um alvo fixo).
+- Em telas onde 25% já é menor que 360 px, o comportamento atual não muda (o teto é um _máximo_, não um alvo fixo).
 - Mobile (drawer full-screen) e demais superfícies de `/campanha` intactos.
 
 ## Dados (intenção)
