@@ -1,11 +1,10 @@
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
-import { wizardActionHref } from '@/lib/campaignActionRoutes'
+import { wizardActionHref, wizardReturnHref } from '@/lib/campaignActionRoutes'
 import {
   wizardFlowTitleForSlug,
   wizardNextStepPlaceholder,
   wizardNextStepTitle,
 } from '@/lib/campaignWizardCopy'
-import { wizardChainEndHref } from '@/lib/wizardActionChain'
 
 type WizardMunicipalitySelectedStubProps = {
   actionSlug: string
@@ -23,7 +22,7 @@ export const WizardMunicipalitySelectedStub = ({
     stepTitle={wizardNextStepTitle(actionSlug)}
     isEntryStep={false}
     previousHref={wizardActionHref(actionSlug, undefined, { returnPath })}
-    dismissHref={wizardChainEndHref(returnPath)}
+    dismissHref={wizardReturnHref(returnPath)}
     municipalityLabel={municipalityName}
   >
     <p className="text-sm text-muted-foreground">{wizardNextStepPlaceholder(actionSlug)}</p>

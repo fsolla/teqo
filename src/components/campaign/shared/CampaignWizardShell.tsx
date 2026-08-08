@@ -6,7 +6,6 @@ import { CampaignListResults } from '@/components/campaign/shared/CampaignListPe
 import {
   toCampaignWizardChromeState,
   useSetCampaignWizardChrome,
-  type CampaignWizardChromeSkip,
 } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import { WIZARD_STEP_PENDING_MESSAGE, wizardFlowChromeAriaLabel } from '@/lib/campaignWizardCopy'
@@ -19,8 +18,6 @@ export type CampaignWizardShellProps = {
   previousHref: string
   dismissHref?: string
   municipalityLabel?: string
-  skip?: CampaignWizardChromeSkip
-  trailingAction?: ReactNode
   contentAlign?: 'start' | 'end'
   /** When `'none'`, the shell does not move focus to the step title — use on form steps that autofocus an input. */
   contentFocus?: 'title' | 'none'
@@ -34,8 +31,6 @@ export const CampaignWizardShell = ({
   previousHref,
   dismissHref = CAMPAIGN_HOME,
   municipalityLabel,
-  skip,
-  trailingAction,
   contentAlign = 'start',
   contentFocus = 'title',
   children,
@@ -52,9 +47,8 @@ export const CampaignWizardShell = ({
         previousHref,
         dismissHref,
         municipalityLabel,
-        skip,
       }),
-    [dismissHref, flowTitle, isEntryStep, municipalityLabel, previousHref, skip],
+    [dismissHref, flowTitle, isEntryStep, municipalityLabel, previousHref],
   )
 
   useSetCampaignWizardChrome(chrome)
@@ -66,8 +60,6 @@ export const CampaignWizardShell = ({
 
   return (
     <div className="flex min-h-full w-full flex-col">
-      {trailingAction ? <div className="hidden justify-end md:flex">{trailingAction}</div> : null}
-
       <main
         aria-labelledby={hasStepTitle ? titleId : undefined}
         aria-label={hasStepTitle ? undefined : wizardFlowChromeAriaLabel(flowTitle)}

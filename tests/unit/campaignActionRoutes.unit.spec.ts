@@ -8,13 +8,15 @@ import {
   hasWizardScenarioParam,
   isCampaignWizardActionId,
   isCampaignWizardActionSlug,
-  parseWizardEntryActionParam,
   parseWizardLeadershipIdParam,
   parseWizardMunicipioParam,
   resolveWizardTrendStatusParam,
   wizardActionHref,
+  wizardPreviousHref,
+  wizardReturnHref,
   wizardTrendHref,
 } from '@/lib/campaignActionRoutes'
+import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 
 describe('campaignActionRoutes', () => {
   it.each(
@@ -39,9 +41,6 @@ describe('campaignActionRoutes', () => {
     expect(wizardActionHref('atualizar-votos')).toBe(`${CAMPAIGN_ACTIONS_HOME}/atualizar-votos`)
     expect(wizardActionHref('atualizar-votos', 'cairu')).toBe(
       `${CAMPAIGN_ACTIONS_HOME}/atualizar-votos?municipio=cairu`,
-    )
-    expect(wizardActionHref('atualizar-lideranca', 'cairu', { entryAction: 'update-votes' })).toBe(
-      `${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca?municipio=cairu&entry=update-votes`,
     )
     expect(wizardActionHref('atualizar-lideranca', 'cairu', { leadershipId: 42 })).toBe(
       `${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca?municipio=cairu&leadershipId=42`,
@@ -74,22 +73,16 @@ describe('campaignActionRoutes', () => {
     expect(campaignWizardActionIdForSlug('inventado')).toBeUndefined()
   })
 
-  it('parses entry action search param', () => {
-    expect(parseWizardEntryActionParam('update-leadership')).toBe('update-leadership')
-    expect(parseWizardEntryActionParam('update-votes')).toBe('update-votes')
-    expect(parseWizardEntryActionParam('invalid')).toBeUndefined()
-    expect(parseWizardEntryActionParam(undefined)).toBeUndefined()
-  })
-
-  it('builds trend wizard hrefs with optional trendStatus and entry', () => {
+  it('builds trend wizard hrefs with optional trendStatus and return path', () => {
     expect(wizardTrendHref('mudar-tendencia', 'cairu')).toBe(
       `${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu`,
     )
     expect(wizardTrendHref('mudar-tendencia', 'cairu', 'favoravel')).toBe(
       `${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu&trendStatus=favoravel`,
     )
-    expect(wizardTrendHref('mudar-tendencia', 'cairu', 'neutra', 'update-votes')).toBe(
-      `${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu&trendStatus=neutra&entry=update-votes`,
+    const origin = '/campanha/municipios/cairu'
+    expect(wizardTrendHref('mudar-tendencia', 'cairu', 'neutra', origin)).toBe(
+      `${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu&trendStatus=neutra&from=${encodeURIComponent(origin)}`,
     )
   })
 
@@ -106,5 +99,95 @@ describe('campaignActionRoutes', () => {
       trendStatus: undefined,
       invalid: true,
     })
+  })
+})
+
+describe('wizardReturnHref (B110)', () => {
+  it('falls back to Início without a return path', () => {
+    expect(wizardReturnHref(undefined)).toBe(CAMPAIGN_HOME)
+  })
+
+  it('honors an allowlisted return path', () => {
+    expect(wizardReturnHref('/campanha/municipios/cairu')).toBe('/campanha/municipios/cairu')
+  })
+
+  it.each(['/campanha/acoes/atualizar-votos', '/campanha/login', 'https://evil.example'])(
+    'rejects %s and falls back to Início',
+    (path) => {
+      expect(wizardReturnHref(path)).toBe(CAMPAIGN_HOME)
+    },
+  )
+})
+
+describe('wizardPreviousHref', () => {
+  it('returns the return target for municipality search', () => {
+    expect(
+      wizardPreviousHref({
+        actionSlug: 'atualizar-votos',
+        stepKind: 'municipality-search',
+      }),
+    ).toBe(CAMPAIGN_HOME)
+  })
+
+  it('returns municipality search for principal post-municipio steps', () => {
+    expect(
+      wizardPreviousHref({
+        actionSlug: 'atualizar-votos',
+        stepKind: 'votes',
+        municipalitySlug: 'cairu',
+      }),
+    ).toBe(`${CAMPAIGN_ACTIONS_HOME}/atualizar-votos`)
+    expect(
+      wizardPreviousHref({
+        actionSlug: 'mudar-tendencia',
+        stepKind: 'trend-choice',
+        municipalitySlug: 'cairu',
+      }),
+    ).toBe(`${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia`)
+    expect(
+      wizardPreviousHref({
+        actionSlug: 'registrar-atualizacao',
+        stepKind: 'update-body',
+        municipalitySlug: 'cairu',
+      }),
+    ).toBe(`${CAMPAIGN_ACTIONS_HOME}/registrar-atualizacao`)
+    expect(
+      wizardPreviousHref({
+        actionSlug: 'atualizar-lideranca',
+        stepKind: 'leadership-grid',
+        municipalitySlug: 'cairu',
+      }),
+    ).toBe(`${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca`)
+  })
+
+  it('returns the trend choice step from the trend note step', () => {
+    expect(
+      wizardPreviousHref({
+        actionSlug: 'mudar-tendencia',
+        stepKind: 'trend-note',
+        municipalitySlug: 'cairu',
+      }),
+    ).toBe(`${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu`)
+  })
+
+  it('returns the leadership grid from the leadership form step', () => {
+    expect(
+      wizardPreviousHref({
+        actionSlug: 'atualizar-lideranca',
+        stepKind: 'leadership-form',
+        municipalitySlug: 'cairu',
+      }),
+    ).toBe(`${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca?municipio=cairu`)
+  })
+
+  it('honors return path on municipality search back target', () => {
+    const origin = '/campanha/municipios/cairu'
+    expect(
+      wizardPreviousHref({
+        actionSlug: 'atualizar-votos',
+        stepKind: 'municipality-search',
+        returnPath: origin,
+      }),
+    ).toBe(origin)
   })
 })

@@ -26,9 +26,6 @@ const wizardNavButtonClass =
 const wizardDismissButtonClass =
   'size-11 shrink-0 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'
 
-const wizardSkipButtonClass =
-  'min-h-11 max-w-[9rem] px-2 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'
-
 const wizardTitleSkeletonClass = 'mx-auto motion-reduce:animate-none bg-primary-foreground/20'
 
 export const CampaignMobileTopBar = ({ notificationBell }: { notificationBell?: ReactNode }) => {
@@ -90,34 +87,17 @@ export const CampaignMobileTopBar = ({ notificationBell }: { notificationBell?: 
         </div>
 
         <div className="flex shrink-0 items-center">
-          {chrome.skip ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={wizardSkipButtonClass}
-              asChild
-              disabled={isPending}
-            >
-              <CampaignWizardNavLink href={chrome.skip.href} title={chrome.skip.label}>
-                {chrome.skip.label}
-              </CampaignWizardNavLink>
-            </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              size="icon"
-              className={wizardDismissButtonClass}
-              asChild
-              disabled={isPending}
-            >
-              <CampaignWizardNavLink
-                href={chrome.dismissHref}
-                aria-label={WIZARD_DISMISS_ARIA_LABEL}
-              >
-                <X className="size-5" aria-hidden />
-              </CampaignWizardNavLink>
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={wizardDismissButtonClass}
+            asChild
+            disabled={isPending}
+          >
+            <CampaignWizardNavLink href={chrome.dismissHref} aria-label={WIZARD_DISMISS_ARIA_LABEL}>
+              <X className="size-5" aria-hidden />
+            </CampaignWizardNavLink>
+          </Button>
         </div>
       </header>
     )

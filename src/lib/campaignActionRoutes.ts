@@ -1,5 +1,6 @@
 /** Client-safe entry paths for UX-1 action wizards under `/campanha/acoes`. */
 
+import { CAMPAIGN_HOME } from '@/lib/campaignPaths'
 import {
   parsePoliticalTrendStatusFormValue,
   type PoliticalTrendStatusValue,
@@ -47,15 +48,7 @@ export const WIZARD_MUNICIPIO_QUERY_KEY = 'municipio' as const
 /** Legacy B61 ritual param — canonical URLs omit it (B77). */
 export const WIZARD_SCENARIO_QUERY_KEY = 'cenario' as const
 
-export const WIZARD_ENTRY_ACTION_QUERY_KEY = 'entry' as const
-
 export const WIZARD_TREND_STATUS_QUERY_KEY = 'trendStatus' as const
-
-export const WIZARD_NOTE_PREFILL_QUERY_KEY = 'notePrefill' as const
-
-export const WIZARD_VOTE_FROM_QUERY_KEY = 'voteFrom' as const
-
-export const WIZARD_VOTE_TO_QUERY_KEY = 'voteTo' as const
 
 export const WIZARD_LEADERSHIP_ID_QUERY_KEY = 'leadershipId' as const
 
@@ -68,7 +61,7 @@ const WIZARD_RETURN_PATH_AUTH_PREFIXES = [
   '/campanha/webauthn',
 ] as const
 
-/** Allowlisted internal return paths for wizard dismiss / chain end (B110). */
+/** Allowlisted internal return paths for wizard dismiss / return (B110). */
 export const isWizardReturnPath = (pathname: string): boolean => {
   if (!pathname.startsWith('/campanha')) return false
   if (pathname.startsWith('/campanha/acoes')) return false
@@ -98,7 +91,6 @@ export const appendWizardReturnPath = (href: string, returnPath?: string): strin
 }
 
 export type WizardActionHrefOptions = {
-  entryAction?: CampaignWizardActionId
   leadershipId?: number
   returnPath?: string
 }
@@ -109,15 +101,12 @@ export const wizardActionHref = (
   options?: WizardActionHrefOptions,
 ): string => {
   const base = `${CAMPAIGN_ACTIONS_HOME}/${actionSlug}`
-  if (!municipalitySlug && !options?.leadershipId && !options?.entryAction) {
+  if (!municipalitySlug && options?.leadershipId === undefined) {
     return appendWizardReturnPath(base, options?.returnPath)
   }
   const params = new URLSearchParams()
   if (municipalitySlug) {
     params.set(WIZARD_MUNICIPIO_QUERY_KEY, municipalitySlug)
-  }
-  if (options?.entryAction) {
-    params.set(WIZARD_ENTRY_ACTION_QUERY_KEY, options.entryAction)
   }
   if (options?.leadershipId !== undefined) {
     params.set(WIZARD_LEADERSHIP_ID_QUERY_KEY, String(options.leadershipId))
@@ -148,17 +137,6 @@ export const parseWizardLeadershipIdParam = (
 export const hasWizardScenarioParam = (value: string | string[] | undefined): boolean =>
   parseWizardMunicipioParam(value) !== undefined
 
-export const parseWizardEntryActionParam = (
-  value: string | string[] | undefined,
-): CampaignWizardActionId | undefined => {
-  const raw = Array.isArray(value) ? value[0] : value
-  const trimmed = raw?.trim()
-  if (!trimmed || !isCampaignWizardActionId(trimmed)) {
-    return undefined
-  }
-  return trimmed
-}
-
 export const resolveWizardTrendStatusParam = (
   value: string | string[] | undefined,
 ): { trendStatus?: PoliticalTrendStatusValue; invalid: boolean } => {
@@ -180,8 +158,6 @@ export const wizardTrendHref = (
   actionSlug: string,
   municipalitySlug?: string,
   trendStatus?: PoliticalTrendStatusValue,
-  entryAction?: CampaignWizardActionId,
-  extraParams?: Record<string, string>,
   returnPath?: string,
 ): string => {
   const base = `${CAMPAIGN_ACTIONS_HOME}/${actionSlug}`
@@ -193,13 +169,51 @@ export const wizardTrendHref = (
   if (trendStatus) {
     params.set(WIZARD_TREND_STATUS_QUERY_KEY, trendStatus)
   }
-  if (entryAction) {
-    params.set(WIZARD_ENTRY_ACTION_QUERY_KEY, entryAction)
-  }
-  if (extraParams) {
-    for (const [key, value] of Object.entries(extraParams)) {
-      if (value) params.set(key, value)
-    }
-  }
   return appendWizardReturnPath(`${base}?${params.toString()}`, returnPath)
+}
+
+/** Dismiss / return target for wizard steps: allowlisted `from`, else Início (B110). */
+export const wizardReturnHref = (returnPath?: string): string =>
+  returnPath && isWizardReturnPath(returnPath) ? returnPath : CAMPAIGN_HOME
+
+/**
+ * Principal wizard steps (register-update, update-votes, change-trend,
+ * update-leadership) share the municipality-search route for "back".
+ */
+type WizardStepKind =
+  | 'municipality-search'
+  | 'votes'
+  | 'trend-choice'
+  | 'trend-note'
+  | 'update-body'
+  | 'leadership-grid'
+  | 'leadership-form'
+
+type WizardPreviousHrefInput = {
+  actionSlug: string
+  stepKind: WizardStepKind
+  municipalitySlug?: string
+  returnPath?: string
+}
+
+/**
+ * Href for the logically previous wizard step — internal sub-steps only. Every
+ * principal wizard step goes back to the municipality search of its own flow.
+ */
+export const wizardPreviousHref = (input: WizardPreviousHrefInput): string => {
+  const { actionSlug, stepKind, municipalitySlug, returnPath } = input
+
+  if (stepKind === 'municipality-search') {
+    return wizardReturnHref(returnPath)
+  }
+
+  if (stepKind === 'trend-note') {
+    return wizardTrendHref(actionSlug, municipalitySlug, undefined, returnPath)
+  }
+
+  if (stepKind === 'leadership-form') {
+    return wizardActionHref(actionSlug, municipalitySlug, { returnPath })
+  }
+
+  return wizardActionHref(actionSlug, undefined, { returnPath })
 }

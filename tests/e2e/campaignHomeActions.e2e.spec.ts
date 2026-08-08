@@ -239,13 +239,35 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
     await step.getByRole('textbox', { name: 'Otimista' }).fill('350')
     await page.getByRole('button', { name: 'Salvar estimativas →' }).click()
 
-    await page.waitForURL(
-      new RegExp(
-        `/campanha/acoes/mudar-tendencia\\?municipio=${municipality.slug}&entry=update-votes`,
-      ),
-    )
+    await page.waitForURL(/^https?:\/\/[^/]+\/campanha\/?$/)
     await expect(page.getByText('Votos estimados atualizados.')).toBeVisible({ timeout: 15000 })
     expect(page.url()).not.toContain('cenario=')
+  })
+
+  test('saving votes returns to the allowlisted origin (B110 backdrop)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(
+      `/campanha/acoes/atualizar-votos?municipio=${municipality.slug}&from=${encodeURIComponent(`/campanha/municipios/${municipality.slug}`)}`,
+    )
+
+    await expect(page.getByRole('heading', { name: 'Ajustar votos estimados' })).toBeVisible({
+      timeout: 15000,
+    })
+
+    const step = wizardVoteStep(page)
+    await step.getByRole('textbox', { name: 'Média' }).fill('210')
+    await page.getByRole('button', { name: 'Salvar estimativas →' }).click()
+
+    await page.waitForURL(new RegExp(`/campanha/municipios/${municipality.slug}\\/?$`))
   })
 
   test('incoherent estimates show inline warning without changing URL', async ({
@@ -298,7 +320,7 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
 })
 
 test.describe('Wizard — atualizar liderança (B70)', () => {
-  test('create leadership, save, and continue into the chain', async ({ campaign, page }) => {
+  test('create leadership, save, and return to origin (B168)', async ({ campaign, page }) => {
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
@@ -323,20 +345,19 @@ test.describe('Wizard — atualizar liderança (B70)', () => {
     await expect(page.getByRole('heading', { name: 'Quem coordena por aqui?' })).toBeVisible({
       timeout: 15000,
     })
-    await expect(page.getByRole('button', { name: 'Continuar' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Concluir' })).toBeVisible()
 
-    await page.getByRole('button', { name: 'Continuar' }).click()
-    await page.waitForURL(
-      new RegExp(
-        `/campanha/acoes/registrar-atualizacao\\?municipio=${municipality.slug}&entry=update-leadership`,
-      ),
-    )
-    await expect(page.getByRole('heading', { name: 'Registrar atualização' })).toBeVisible()
+    await page.getByRole('button', { name: 'Concluir' }).click()
+    await page.waitForURL(/^https?:\/\/[^/]+\/campanha\/?$/)
+    await expect(page.getByRole('link', { name: /Voltar/ })).toHaveCount(0)
   })
 })
 
 test.describe('Wizard — registrar atualização (C87)', () => {
-  test('standalone flow: unified form, save continues the chain', async ({ campaign, page }) => {
+  test('standalone flow: unified form, save returns to origin (B168)', async ({
+    campaign,
+    page,
+  }) => {
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
@@ -358,11 +379,7 @@ test.describe('Wizard — registrar atualização (C87)', () => {
     await page.getByLabel('Polaridade').selectOption('ruim')
     await page.getByRole('button', { name: 'Salvar' }).click()
 
-    await page.waitForURL(
-      new RegExp(
-        `/campanha/acoes/mudar-tendencia\\?municipio=${municipality.slug}&entry=register-update`,
-      ),
-    )
+    await page.waitForURL(/^https?:\/\/[^/]+\/campanha\/?$/)
     await expect(page.getByText('Atualização registrada com sucesso.')).toBeVisible()
   })
 
@@ -389,7 +406,7 @@ test.describe('Wizard — registrar atualização (C87)', () => {
     await expect(page.getByRole('heading', { name: 'Que tipo de sinal?' })).toHaveCount(0)
   })
 
-  test('embedded flow shows skip link to the next chain step', async ({ campaign, page }) => {
+  test('stale entry param is ignored — never a skip link (B168)', async ({ campaign, page }) => {
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenadora Geral'),
@@ -401,11 +418,40 @@ test.describe('Wizard — registrar atualização (C87)', () => {
       `/campanha/acoes/registrar-atualizacao?municipio=${municipality.slug}&entry=update-votes`,
     )
 
-    const skip = page.getByRole('link', { name: 'Pular' })
-    await expect(skip).toBeVisible({ timeout: 15000 })
-    await expect(skip).toHaveAttribute(
-      'href',
-      `/campanha/acoes/atualizar-lideranca?municipio=${municipality.slug}&entry=update-votes`,
-    )
+    await expect(page.getByRole('heading', { name: 'Registrar atualização' })).toBeVisible({
+      timeout: 15000,
+    })
+    await expect(page.getByRole('link', { name: 'Pular' })).toHaveCount(0)
+  })
+})
+
+test.describe('Wizard — mudar tendência (B97 / B168)', () => {
+  test('changing trend and saving returns to origin instead of advancing', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Geral'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`/campanha/acoes/mudar-tendencia?municipio=${municipality.slug}`)
+
+    await expect(page.getByRole('heading', { name: /Tendência/ })).toBeVisible({
+      timeout: 15000,
+    })
+
+    await page.locator('main a[href*="trendStatus"]').first().click()
+    await expect(page.getByRole('heading', { name: /^Mudar tendência para / })).toBeVisible({
+      timeout: 15000,
+    })
+    await expect(page.getByRole('link', { name: 'Pular' })).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Salvar' }).click()
+
+    await page.waitForURL(/^https?:\/\/[^/]+\/campanha\/?$/)
+    await expect(page.getByText('Tendência política registrada.')).toBeVisible()
   })
 })

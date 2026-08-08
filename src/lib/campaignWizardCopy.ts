@@ -1,10 +1,8 @@
 import {
   CAMPAIGN_WIZARD_ACTION_SLUGS,
   campaignWizardActionIdForSlug,
-  type CampaignWizardActionId,
 } from '@/lib/campaignActionRoutes'
 import { wizardFlowTitleForActionId } from '@/lib/campaignHomeActions'
-import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
 
 export const WIZARD_MUNICIPALITY_STEP_TITLE = 'Em qual município?' as const
 
@@ -32,36 +30,9 @@ export const WIZARD_MUNICIPALITY_SEARCH_EMPTY = 'Nenhum município encontrado.' 
 
 export const WIZARD_VOTES_SAVED_MESSAGE = 'Votos estimados atualizados.' as const
 
-export const WIZARD_CHAIN_SKIP_LABEL = 'Pular' as const
-
 export const WIZARD_VOTES_FINAL_CTA_LABEL = 'Salvar estimativas →' as const
 
 const WIZARD_NEXT_STEP_GENERIC_PLACEHOLDER = 'Próximo passo deste fluxo em breve.' as const
-
-export type WizardVotesSkipAction = {
-  label: string
-  href: string
-}
-
-const shouldShowWizardVotesSkip = (entryAction: CampaignWizardActionId | undefined): boolean =>
-  entryAction != null && entryAction !== 'update-votes'
-
-export const resolveWizardVotesSkip = (
-  entryAction: CampaignWizardActionId | undefined,
-  municipalitySlug: string,
-  returnPath?: string,
-): WizardVotesSkipAction | undefined =>
-  shouldShowWizardVotesSkip(entryAction)
-    ? {
-        label: WIZARD_CHAIN_SKIP_LABEL,
-        href: wizardChainContinueHref(
-          resolveWizardChainEntry(entryAction, 'update-votes'),
-          'update-votes',
-          municipalitySlug,
-          returnPath,
-        ),
-      }
-    : undefined
 
 export const wizardNextStepTitle = (actionSlug: string): string => {
   if (actionSlug === CAMPAIGN_WIZARD_ACTION_SLUGS['update-votes']) {
@@ -79,7 +50,7 @@ export const WIZARD_LEADERSHIP_FORM_CREATE_TITLE = 'Nova liderança' as const
 
 export const WIZARD_LEADERSHIP_FORM_EDIT_TITLE = 'Atualizar liderança' as const
 
-export const WIZARD_LEADERSHIP_CONTINUE_LABEL = 'Continuar' as const
+export const WIZARD_LEADERSHIP_CONCLUDE_LABEL = 'Concluir' as const
 
 export const WIZARD_LEADERSHIP_ADD_TILE_LABEL = 'Adicionar liderança' as const
 

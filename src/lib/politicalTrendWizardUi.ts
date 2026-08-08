@@ -1,7 +1,4 @@
-import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
-import { WIZARD_CHAIN_SKIP_LABEL } from '@/lib/campaignWizardCopy'
 import { politicalTrendStatuses, type PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
-import { resolveWizardChainEntry, wizardChainContinueHref } from '@/lib/wizardActionChain'
 
 const politicalTrendDisplayLabels: Record<PoliticalTrendStatusValue, string> = {
   favoravel: 'Favorável',
@@ -16,11 +13,6 @@ export const WIZARD_TREND_CLEAR_LABEL = 'Limpar' as const
 export const WIZARD_TREND_SAVED_MESSAGE = 'Tendência política registrada.' as const
 
 export const WIZARD_TREND_UNREGISTERED_TITLE = 'Tendência não registrada' as const
-
-export type WizardTrendSkipAction = {
-  label: string
-  href: string
-}
 
 export const wizardTrendChoiceStepTitle = (
   currentStatus: PoliticalTrendStatusValue | null,
@@ -56,80 +48,4 @@ export const resolveWizardTrendNoteDestination = (
   }
 
   return 'note'
-}
-
-export const shouldShowWizardTrendSkip = (
-  entryAction: CampaignWizardActionId | undefined,
-): boolean => entryAction != null && entryAction !== 'change-trend'
-
-export const resolveWizardTrendSkip = (
-  entryAction: CampaignWizardActionId | undefined,
-  municipalitySlug: string,
-  returnPath?: string,
-): WizardTrendSkipAction | undefined =>
-  shouldShowWizardTrendSkip(entryAction)
-    ? {
-        label: WIZARD_CHAIN_SKIP_LABEL,
-        href: wizardChainContinueHref(
-          resolveWizardChainEntry(entryAction, 'change-trend'),
-          'change-trend',
-          municipalitySlug,
-          returnPath,
-        ),
-      }
-    : undefined
-
-export type PoliticalTrendNotePrefillSource =
-  | { kind: 'none' }
-  | { kind: 'voteAdjustment'; previousValue: number; newValue: number }
-  | { kind: 'custom'; text: string }
-
-export const buildPoliticalTrendNotePrefill = (source: PoliticalTrendNotePrefillSource): string => {
-  switch (source.kind) {
-    case 'none':
-      return ''
-    case 'voteAdjustment':
-      return `Ajuste de votos: ${source.previousValue} → ${source.newValue}`
-    case 'custom':
-      return source.text
-    default: {
-      const exhaustive: never = source
-      return exhaustive
-    }
-  }
-}
-
-const parseOptionalIntParam = (value: string | string[] | undefined): number | undefined => {
-  const raw = Array.isArray(value) ? value[0] : value
-  const trimmed = raw?.trim()
-  if (!trimmed) return undefined
-  const parsed = Number.parseInt(trimmed, 10)
-  return Number.isFinite(parsed) ? parsed : undefined
-}
-
-export const resolvePoliticalTrendNotePrefillSource = ({
-  entryAction,
-  notePrefill,
-  voteFrom,
-  voteTo,
-}: {
-  entryAction?: CampaignWizardActionId
-  notePrefill?: string | string[] | undefined
-  voteFrom?: string | string[] | undefined
-  voteTo?: string | string[] | undefined
-}): PoliticalTrendNotePrefillSource => {
-  const customText = Array.isArray(notePrefill) ? notePrefill[0] : notePrefill
-  if (customText?.trim()) {
-    return { kind: 'custom', text: customText.trim() }
-  }
-
-  if (entryAction === 'update-votes') {
-    const previousValue = parseOptionalIntParam(voteFrom)
-    const newValue = parseOptionalIntParam(voteTo)
-    if (previousValue !== undefined && newValue !== undefined) {
-      return { kind: 'voteAdjustment', previousValue, newValue }
-    }
-  }
-
-  return { kind: 'none' }
 }

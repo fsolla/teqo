@@ -7,7 +7,6 @@ import { toast } from 'sonner'
 
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
 import { WizardLeadershipForm } from '@/components/campaign/leadership/WizardLeadershipForm'
-import { CampaignWizardNavLink } from '@/components/campaign/shared/CampaignWizardNavLink'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
@@ -19,11 +18,11 @@ import {
   DrawerTitle,
 } from '@/components/ui/Drawer'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
+import { wizardPreviousHref, wizardReturnHref } from '@/lib/campaignActionRoutes'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import {
   WIZARD_LEADERSHIP_ADD_TILE_LABEL,
-  WIZARD_LEADERSHIP_CONTINUE_LABEL,
+  WIZARD_LEADERSHIP_CONCLUDE_LABEL,
   WIZARD_LEADERSHIP_EMPTY_GRID,
   WIZARD_LEADERSHIP_EMPTY_NOTES,
   WIZARD_LEADERSHIP_FORM_CREATE_TITLE,
@@ -34,23 +33,13 @@ import {
 } from '@/lib/campaignWizardCopy'
 import { truncateNameAtWordBoundary } from '@/lib/leadershipNameTruncate'
 import { cn } from '@/lib/utils'
-import {
-  resolveWizardChainEntry,
-  wizardChainContinueHref,
-  wizardChainEndHref,
-  wizardPreviousHref,
-} from '@/lib/wizardActionChain'
-import {
-  resolveWizardLeadershipSkip,
-  type WizardLeadershipTileViewModel,
-} from '@/lib/wizardLeadershipContract'
+import { type WizardLeadershipTileViewModel } from '@/lib/wizardLeadershipContract'
 
 type WizardLeadershipStepProps = {
   actionSlug: string
   municipalityId: number
   municipalityName: string
   municipalitySlug: string
-  entryAction?: CampaignWizardActionId
   initialTiles: WizardLeadershipTileViewModel[]
   initialLeadershipId?: number
   returnPath?: string
@@ -71,7 +60,6 @@ export const WizardLeadershipStep = ({
   municipalityId,
   municipalityName,
   municipalitySlug,
-  entryAction,
   initialTiles,
   initialLeadershipId,
   returnPath,
@@ -89,26 +77,12 @@ export const WizardLeadershipStep = ({
   const [dirty, setDirty] = useState(false)
   const [infoTile, setInfoTile] = useState<WizardLeadershipTileViewModel | null>(null)
 
-  const skipConfig = resolveWizardLeadershipSkip(entryAction, municipalitySlug, returnPath)
-  const chainContinueHref = wizardChainContinueHref(
-    resolveWizardChainEntry(entryAction, 'update-leadership'),
-    'update-leadership',
-    municipalitySlug,
-    returnPath,
-  )
-
   const stepTitle =
     mode.kind === 'grid'
       ? WIZARD_LEADERSHIP_GRID_TITLE
       : mode.leadership
         ? WIZARD_LEADERSHIP_FORM_EDIT_TITLE
         : WIZARD_LEADERSHIP_FORM_CREATE_TITLE
-
-  const trailingAction = skipConfig ? (
-    <Button variant="ghost" size="sm" className="min-h-11 px-2 text-sm" asChild>
-      <CampaignWizardNavLink href={skipConfig.href}>{skipConfig.label}</CampaignWizardNavLink>
-    </Button>
-  ) : undefined
 
   const handleSaved = useCallback(() => {
     recordLastActedMunicipality(municipalitySlug)
@@ -120,7 +94,7 @@ export const WizardLeadershipStep = ({
 
   const handleContinue = () => {
     startContinueTransition(() => {
-      router.push(chainContinueHref)
+      router.push(wizardReturnHref(returnPath))
     })
   }
 
@@ -133,13 +107,10 @@ export const WizardLeadershipStep = ({
         actionSlug,
         stepKind: mode.kind === 'form' ? 'leadership-form' : 'leadership-grid',
         municipalitySlug,
-        entryAction,
         returnPath,
       })}
-      dismissHref={wizardChainEndHref(returnPath)}
+      dismissHref={wizardReturnHref(returnPath)}
       municipalityLabel={municipalityName}
-      skip={skipConfig}
-      trailingAction={trailingAction}
       contentFocus={mode.kind === 'form' ? 'none' : 'title'}
     >
       {mode.kind === 'form' ? (
@@ -184,7 +155,7 @@ export const WizardLeadershipStep = ({
       {dirty && mode.kind === 'grid' ? (
         <div className="fixed bottom-4 right-4 z-20 pb-[max(0px,env(safe-area-inset-bottom))]">
           <Button className="min-h-11 shadow-md" onClick={handleContinue} disabled={isContinuing}>
-            {WIZARD_LEADERSHIP_CONTINUE_LABEL}
+            {WIZARD_LEADERSHIP_CONCLUDE_LABEL}
           </Button>
         </div>
       ) : null}
