@@ -8,6 +8,13 @@
 
 import { slugify } from '../../src/lib/slug.ts'
 
+/**
+ * Generic branch of the /plan-issue planning worktree (`pnpm worktree plan`).
+ * Deliberately NOT tied to any Issue: it must never collide with the
+ * `<code>-<slug>` branch `worktree next` derives for the next claimable Issue.
+ */
+export const PLAN_WORKTREE_BRANCH = 'plans/plan-issue'
+
 /** Strip the leading `<code> — ` (or any dash variant) off a title. */
 const stripCodePrefix = (title, code) => {
   const escaped = code.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

@@ -11,6 +11,9 @@
 # Uso (terminal interativo):
 #   worktree next [--go]   cria/reutiliza o worktree da próxima Issue claimável;
 #                          com --go, cd para dentro dele
+#   worktree plan [--go]   cria/reutiliza o worktree de planejamento do /plan-issue
+#                          (branch fixo plans/plan-issue, sem vínculo com a fila);
+#                          com --go, cd para dentro dele
 #   worktree kill [--force]
 #
 # Read-only no GitHub — claim continua sendo `pnpm agent:claim`.

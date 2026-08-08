@@ -17,6 +17,14 @@
  *                              paralelo não disputarem porta 3000 nem o
  *                              `teqo_test` compartilhado. `--no-migrate` pula a
  *                              aplicação das migrations nos bancos novos.
+ *   pnpm worktree plan [--go] [--no-migrate]
+ *                              cria/reutiliza o worktree de PLANEJAMENTO
+ *                              (branch fixo `plans/plan-issue`) para rodar a
+ *                              skill /plan-issue sem ocupar o main; NÃO é
+ *                              nomeado nem derivado de Issue nenhuma, então um
+ *                              `next` posterior da próxima Issue nunca colide
+ *                              (nem no branch, nem no slot). Mesmo provisionamento
+ *                              isolado do `next`.
  *   pnpm worktree kill [--force]   destrói o worktree em que o shell atual está
  *                              (recusa worktree sujo sem `--force`) e remove os
  *                              bancos gerados do worktree (best-effort)
@@ -41,7 +49,7 @@ import {
   isGeneratedDatabaseName,
   worktreeEnvironment,
 } from './lib/worktree-env.mjs'
-import { branchNameForIssue } from './lib/worktree.mjs'
+import { branchNameForIssue, PLAN_WORKTREE_BRANCH } from './lib/worktree.mjs'
 
 const die = dieAgent('worktree')
 const WORKTREES_ROOT = join(homedir(), '.cursor', 'worktrees', 'teqo')
@@ -197,8 +205,10 @@ const writeFallbackEnv = (dir, branch) => {
  * Deterministic per-worktree environment: shared container + own databases +
  * own dev-server port + env files + migrations. Skips everything when a
  * manual `.env.local`/`.env.test.local` (no marker) exists — never clobbers.
+ * `purpose` labels the env comment (`next` | `plan`); `issue` is optional and
+ * fills the `issue #N` part of the comment only when present.
  */
-const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot }) => {
+const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpose = 'next' }) => {
   const manual =
     (existsSync(join(dir, '.env.local')) && !envFileIsGenerated(dir, '.env.local')) ||
     (existsSync(join(dir, '.env.test.local')) && !envFileIsGenerated(dir, '.env.test.local'))
@@ -231,9 +241,12 @@ const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot }) => 
   const payloadSecret = mainEnv.PAYLOAD_SECRET ?? randomBytes(24).toString('hex')
   const copy = (key) => (mainEnv[key] ? [`${key}=${mainEnv[key]}`] : [])
 
+  const issueLabel = issue ? ` · issue #${issue.number}` : ''
+  const generatedBy = `gerado por pnpm worktree ${purpose}`
+
   const devEnv = [
     GENERATED_ENV_MARKER,
-    `# branch ${branch} · issue #${issue.number} · slot ${env.slot} — gerado por pnpm worktree next`,
+    `# branch ${branch}${issueLabel} · slot ${env.slot} — ${generatedBy}`,
     `DATABASE_URL=${devUrl}`,
     `PORT=${env.devPort}`,
     `NEXT_PUBLIC_SITE_URL=http://localhost:${env.devPort}`,
@@ -254,7 +267,7 @@ const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot }) => 
 
   const testEnv = [
     GENERATED_ENV_MARKER,
-    `# branch ${branch} · issue #${issue.number} · slot ${env.slot} — gerado por pnpm worktree next`,
+    `# branch ${branch}${issueLabel} · slot ${env.slot} — ${generatedBy}`,
     '# Lido DEPOIS de .env.test (vitest.setup.ts / playwright.config.ts) — suites isoladas.',
     `DATABASE_URL=${testUrl}`,
     `NEXT_PUBLIC_SITE_URL=http://localhost:${env.devPort}`,
@@ -314,6 +327,54 @@ const cmdNext = async (go, skipMigrate) => {
   await provision({ dir, branch, issue, env, skipMigrate, mainRoot })
 
   console.log(`\nAmbiente isolado do worktree (slot ${env.slot}):`)
+  console.log(`  dev server: http://localhost:${env.devPort}   (pnpm dev)`)
+  console.log(`  banco dev:  postgresql://teqo:teqo@localhost:5432/${env.devDatabase}`)
+  console.log(`  banco test: postgresql://teqo:teqo@localhost:5432/${env.testDatabase}`)
+
+  if (go) console.log(`cd ${dir}`)
+}
+
+/**
+ * `plan` — the /plan-issue planning worktree. Deliberately NOT tied to the
+ * claim queue and NOT named after any Issue: `PLAN_WORKTREE_BRANCH` is a fixed
+ * generic branch, so a later `pnpm worktree next` for the next claimable Issue
+ * never collides with it (branch name nor slot — the plan env registers its
+ * hashed slot via the marker and `next` bumps around it). Same isolated env
+ * provisioning as `next`.
+ */
+const cmdPlan = async (go, skipMigrate) => {
+  const branch = PLAN_WORKTREE_BRANCH
+  if (git(['check-ref-format', '--allow-onelevel', branch], { okIfFails: true }) === null) {
+    die(`Branch plan inválido para refname: ${branch}`)
+  }
+  const dir = join(WORKTREES_ROOT, branch)
+
+  git(['fetch', 'origin'])
+
+  const entries = parseWorktreeList(git(['worktree', 'list', '--porcelain']))
+  if (entries.some((entry) => resolve(entry.path) === resolve(dir))) {
+    console.log(`Worktree de planejamento já existe em ${dir} — reutilizando, sem duplicar.`)
+  } else {
+    const branchExists =
+      git(['show-ref', '--verify', '--quiet', `refs/heads/${branch}`], { okIfFails: true }) !== null
+    const flag = branchExists ? '-B' : '-b'
+    git(['worktree', 'add', flag, branch, dir, 'origin/main'])
+
+    console.log('Worktree de planejamento criado:')
+    console.log(`  branch: ${branch}`)
+    console.log(`  path:   ${dir}`)
+    console.log('  origem: origin/main')
+  }
+
+  const mainRoot = entries[0]?.path
+  const env = worktreeEnvironment({
+    branch,
+    code: null,
+    takenSlots: readLiveSlots(entries, dir),
+  })
+  await provision({ dir, branch, env, skipMigrate, mainRoot, purpose: 'plan' })
+
+  console.log(`\nAmbiente isolado do worktree de planejamento (slot ${env.slot}):`)
   console.log(`  dev server: http://localhost:${env.devPort}   (pnpm dev)`)
   console.log(`  banco dev:  postgresql://teqo:teqo@localhost:5432/${env.devDatabase}`)
   console.log(`  banco test: postgresql://teqo:teqo@localhost:5432/${env.testDatabase}`)
@@ -405,12 +466,20 @@ const { flags, positional } = parseArgs(process.argv.slice(2), new Set())
 const subcommand = positional[0]
 
 if (!subcommand) {
-  console.log('Uso: pnpm worktree next [--go] [--no-migrate] | kill [--force]')
+  console.log(
+    'Uso: pnpm worktree next [--go] [--no-migrate] | plan [--go] [--no-migrate] | kill [--force]',
+  )
   console.log('  next [--go] [--no-migrate]')
   console.log('    cria worktree da próxima Issue claimável (branch <code>-<slug>) e provisiona o')
   console.log('    ambiente isolado: porta de dev + bancos próprios (determinístico do branch);')
   console.log('    com --go imprime `cd <dir>` no fim (quem aplica o cd: opencode command, ou a')
   console.log('    função `worktree()` de .agents/shell/worktree.sh); --no-migrate pula migrations')
+  console.log('  plan [--go] [--no-migrate]')
+  console.log(
+    '    cria/reutiliza o worktree de planejamento (branch plans/plan-issue) para rodar a',
+  )
+  console.log('    skill /plan-issue sem ocupar o main nem travar na fila; provisiona o mesmo')
+  console.log('    ambiente isolado de `next`; nunca colide com o branch <code>-<slug> de `next`')
   console.log('  kill [--force]  destrói o worktree em que você está (recusa sujo sem --force) e')
   console.log('                  remove os bancos gerados do worktree (best-effort)')
   process.exit(1)
@@ -418,10 +487,11 @@ if (!subcommand) {
 
 try {
   if (subcommand === 'next') await cmdNext(Boolean(flags.go), Boolean(flags['no-migrate']))
+  else if (subcommand === 'plan') await cmdPlan(Boolean(flags.go), Boolean(flags['no-migrate']))
   else if (subcommand === 'kill') {
     if (flags.go) die('`--go` só faz sentido com `next`.')
     await cmdKill(Boolean(flags.force))
-  } else die(`subcomando desconhecido: ${subcommand} (esperado: next | kill)`)
+  } else die(`subcomando desconhecido: ${subcommand} (esperado: next | plan | kill)`)
 } catch (error) {
   if (error?.stderr) die(error.stderr.toString().trim())
   die(error?.message ?? String(error))
