@@ -79,5 +79,6 @@ flowchart LR
 **Já resolvido por decisão (descartado de propósito):** `clearSavedChatWidthPx` sem caller de produção — mantido por simetria com os libs irmãos (`campaignLastActedMunicipality`/`recentVisits`) e usado pelo unit spec; `rAF` no primeiro commit em mobile resize de painel `display:none` — inerte, autocorrige no cruzamento de volta ao desktop.
 
 **Explicitamente fora / defer com gatilho:**
+
 - O sizing é um `requestAnimationFrame` one-shot; se um first-paint travado entregar `groupWidth <= 0`, o mount inteiro fica no default cru 25%. Gatilho para revisit: se um relato real (não o e2e) mostrar o painel abrindo > 360 px no desktop, trocar o one-shot por um `ResizeObserver` que aplica o tamanho ao estabilizar. Não registrado agora (sem evidência; rAF pós-layout mede 1664 no e2e).
 - Floor de ~280 px no painel só é coberto no resolver unit, não contra `minSize`/drag real — comportamento pré-existente do library, fora do aceite deste item.
