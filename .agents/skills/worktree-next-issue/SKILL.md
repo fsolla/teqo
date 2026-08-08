@@ -20,10 +20,13 @@ A lógica determinística (fila → código+slug → branch → worktree) vive e
 
 ```bash
 pnpm worktree next [--go] [--no-migrate]  # cria worktree de origin/main + provisiona o ambiente
+pnpm worktree plan [--go] [--no-migrate]  # worktree de PLANEJAMENTO (/plan-issue), branch fixo plans/plan-issue
 pnpm worktree kill [--force]              # destrói o worktree atual + remove seus bancos gerados
 ```
 
 No opencode, isso é o comando **`/worktree next`** / **`/worktree kill`** (`.opencode/commands/worktree.md`), que só repassa `$ARGUMENTS` para o script.
+
+`plan` é o primo do `next`: worktree de **planejamento** (branch fixo `plans/plan-issue`) para rodar a skill `/plan-issue` sem ocupar o main. Não é nomeado por Issue nenhuma — proposital, para um `next` posterior da próxima Issue nunca colidir em branch nem em slot. O fluxo desta skill (fila → próxima Issue → implementação) é só `next`.
 
 No terminal interativo, para `--go` trocar de diretório de verdade, use a função `worktree()` de **`.agents/shell/worktree.sh`** (uma linha de `source` no profile): o script imprime `cd <dir>` e a função o aplica no shell que te chamou — node não consegue mudar o cwd do shell pai.
 

@@ -3,16 +3,20 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  GENERATED_ENV_MARKER,
   devDatabaseForSlot,
   devPortForSlot,
+  GENERATED_ENV_MARKER,
   hashSlotOf,
   isGeneratedDatabaseName,
   numericSlotOfCode,
   testDatabaseForSlot,
   worktreeEnvironment,
 } from '../../scripts/lib/worktree-env.mjs'
-import { branchNameForIssue, issueCodeAndSubject } from '../../scripts/lib/worktree.mjs'
+import {
+  branchNameForIssue,
+  issueCodeAndSubject,
+  PLAN_WORKTREE_BRANCH,
+} from '../../scripts/lib/worktree.mjs'
 
 type TestIssue = {
   number: number
@@ -123,6 +127,21 @@ describe('worktreeEnvironment (per-worktree ports and databases)', () => {
     expect(devPortForSlot(env.slot)).toBe(env.devPort)
     expect(devDatabaseForSlot(env.slot)).toBe(env.devDatabase)
     expect(testDatabaseForSlot(env.slot)).toBe(env.testDatabase)
+  })
+
+  it('plan worktree derives a stable hashed slot and never collides with `next`', () => {
+    expect(PLAN_WORKTREE_BRANCH).toBe('plans/plan-issue')
+    expect(PLAN_WORKTREE_BRANCH).not.toMatch(/^[A-Z][A-Za-z0-9]*-/)
+    const env = worktreeEnvironment({ branch: PLAN_WORKTREE_BRANCH, code: null })
+    expect(env.slot).toBe(hashSlotOf(PLAN_WORKTREE_BRANCH))
+    expect(numericSlotOfCode('')).toBeNull()
+    expect(env).toEqual(worktreeEnvironment({ branch: PLAN_WORKTREE_BRANCH, code: null }))
+    const bumped = worktreeEnvironment({
+      branch: PLAN_WORKTREE_BRANCH,
+      code: null,
+      takenSlots: new Set([env.slot]),
+    })
+    expect(bumped.slot).toBe(env.slot + 1)
   })
 
   it('caps huge codes into the hash range instead of absurd ports', () => {
