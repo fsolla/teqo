@@ -53,7 +53,7 @@ flowchart TD
 - **`src/app/(campaign)/campanha/(app)/layout.tsx`**: renderizar `<CampaignBottomNav role={user.role} />` quando `isStaffCampaignRole(user.role)` — sibling de `TooltipProvider > div`, fora do flex flow (`fixed`).
 - **`src/components/campaign/shell/CampaignQuickActionsHost.tsx`**:
   - `CampaignContentScroll`: `pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-6` (mobile gap para a barra).
-  - FAB: `className={showBottomNav ? 'bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-4' : undefined}` — sobe quando a barra existe.
+  - FAB: `className={showBottomNav ? 'bottom-[calc(7rem+env(safe-area-inset-bottom))] md:bottom-4' : undefined}` — 7rem clears a 4rem bottom nav + the AI FAB (bottom-20, 2rem button → top at 7rem); sobe quando a barra existe.
 
 - **Migration:** sem migration — chrome de navegação.
 - **Access / Consent:** `isStaffCampaignRole` reusado; `canAccessSupporterArea` / `isUnrestrictedCampaignRole` já filtram `Apoiadores`/`Assessores` em `getCampaignNav` → herdados. Sem Consent.

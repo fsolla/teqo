@@ -45,7 +45,7 @@ export const CampaignQuickActionsHost = ({ role }: { role: CampaignRole }) => {
         open={open}
         onOpenChange={handleOpenChange}
         className={
-          showBottomNav ? 'bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-4' : undefined
+          showBottomNav ? 'bottom-[calc(7rem+env(safe-area-inset-bottom))] md:bottom-4' : undefined
         }
       />
       <CampaignQuickActionsOverlay open={open} onOpenChange={handleOpenChange} actions={actions} />
