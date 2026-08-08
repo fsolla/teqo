@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  activitySlotPrefill,
   activityTabs,
   buildActivityAgendaHref,
   buildActivityAgendaSearchParams,
@@ -306,5 +307,55 @@ describe('activity create prefill', () => {
         new Set(),
       ),
     ).toEqual({ startAt: '2026-08-07T13:00:00.000Z' })
+  })
+
+  it('carries the inline title into the creation URL (C91)', () => {
+    expect(
+      buildActivityCreateHref(
+        { tag: 'Comício' },
+        {
+          startAt: '2026-08-07T13:00:00.000Z',
+          endAt: '2026-08-07T13:30:00.000Z',
+          municipalityId: 3,
+          title: 'Café com apoiadores',
+        },
+      ),
+    ).toBe(
+      '/campanha/atividades/nova?startAt=2026-08-07T13%3A00%3A00.000Z&endAt=2026-08-07T13%3A30%3A00.000Z&municipality=3&title=Caf%C3%A9+com+apoiadores&returnTo=%2Fcampanha%2Fagenda%3Ftag%3DCom%25C3%25ADcio',
+    )
+  })
+
+  it('prefers the inline municipality over the agenda filter', () => {
+    expect(buildActivityCreateHref({ municipality: 12 }, { municipalityId: 3 })).toBe(
+      '/campanha/atividades/nova?municipality=3&returnTo=%2Fcampanha%2Fagenda%3Fmunicipality%3D12',
+    )
+  })
+
+  it('parses a bounded inline title and drops an oversized one', () => {
+    expect(parseActivityCreatePrefill({ title: '  Café com apoiadores  ' }, new Set())).toEqual({
+      title: 'Café com apoiadores',
+    })
+    expect(parseActivityCreatePrefill({ title: 'a'.repeat(200) }, new Set())).toEqual({})
+  })
+})
+
+describe('activity slot prefill (C91)', () => {
+  it('uses the snapped slot interval for time grids', () => {
+    expect(activitySlotPrefill({ allDay: false, dateStr: '2026-08-07T13:00:00-03:00' })).toEqual({
+      startAt: '2026-08-07T16:00:00.000Z',
+      endAt: '2026-08-07T16:30:00.000Z',
+    })
+  })
+
+  it('falls back to the 09:00–10:00 window on an all-day click', () => {
+    expect(activitySlotPrefill({ allDay: true, dateStr: '2026-08-07' })).toEqual({
+      startAt: '2026-08-07T12:00:00.000Z',
+      endAt: '2026-08-07T13:00:00.000Z',
+    })
+  })
+
+  it('returns null for an unparseable date', () => {
+    expect(activitySlotPrefill({ allDay: false, dateStr: 'não é uma data' })).toBeNull()
+    expect(activitySlotPrefill({ allDay: true, dateStr: 'não é uma data' })).toBeNull()
   })
 })

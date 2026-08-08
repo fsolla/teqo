@@ -19,7 +19,6 @@ import '@fullcalendar/react/themes/classic/theme.css'
 import timeGridPlugin from '@fullcalendar/react/timegrid'
 import { UserRoundCheckIcon } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -27,14 +26,22 @@ import {
   loadActivityAgendaEvents,
   rescheduleActivity,
 } from '@/app/(campaign)/campanha/actions/activity'
+import {
+  ActivityInlineCreate,
+  type ActivityInlineCreateDraft,
+} from '@/components/campaign/activity/ActivityInlineCreate'
+import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { Button } from '@/components/ui/button'
-import { parseBahiaDateTimeInput } from '@/lib/campaignTime'
 import {
   ACTIVITY_RESCHEDULE_FAILED_MESSAGE,
   activityStatusLabels,
   type ActivityStatus,
 } from '@/lib/schemas/activity'
-import { buildActivityCreateHref, type ActivityAgendaState } from '@/utilities/activityUi'
+import {
+  activitySlotPrefill,
+  buildActivityCreateHref,
+  type ActivityAgendaState,
+} from '@/utilities/activityUi'
 import type { ActivityAgendaEvent } from '@/utilities/activityViewModels'
 
 import './ActivityAgenda.css'
@@ -98,8 +105,13 @@ const renderEventContent = ({ event, timeText }: EventDisplayInfo) => {
   )
 }
 
-export const ActivityAgenda = ({ state }: { state: ActivityAgendaState }) => {
-  const router = useRouter()
+export const ActivityAgenda = ({
+  state,
+  municipalityOptions = [],
+}: {
+  state: ActivityAgendaState
+  municipalityOptions?: RelationOption[]
+}) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const calendarRef = useRef<CalendarRef>(null)
   const narrowRef = useRef<boolean | null>(null)
@@ -111,6 +123,8 @@ export const ActivityAgenda = ({ state }: { state: ActivityAgendaState }) => {
   const [isLoading, setIsLoading] = useState(true)
   const [savingCount, setSavingCount] = useState(0)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [isNarrow, setIsNarrow] = useState(false)
+  const [createDraft, setCreateDraft] = useState<ActivityInlineCreateDraft | null>(null)
 
   useEffect(() => {
     mountedRef.current = true
@@ -129,6 +143,7 @@ export const ActivityAgenda = ({ state }: { state: ActivityAgendaState }) => {
       const isNarrow = container.getBoundingClientRect().width < MOBILE_BREAKPOINT_PX
       const previous = narrowRef.current
       narrowRef.current = isNarrow
+      setIsNarrow((current) => (current === isNarrow ? current : isNarrow))
       if (previous !== null && isNarrow === previous) return
       const viewType = api.view.type
       if (isNarrow && viewType === 'timeGridWeek') {
@@ -243,27 +258,21 @@ export const ActivityAgenda = ({ state }: { state: ActivityAgendaState }) => {
     [persistSchedule],
   )
 
-  const handleDateClick = useCallback(
-    (info: DateClickInfo) => {
-      if (info.allDay) {
-        const startAt = parseBahiaDateTimeInput(`${info.dateStr.slice(0, 10)}T09:00`)
-        const endAt = startAt
-          ? new Date(new Date(startAt).getTime() + 3_600_000).toISOString()
-          : undefined
-        router.push(buildActivityCreateHref(state, { startAt: startAt ?? undefined, endAt }))
-        return
-      }
-      const start = new Date(info.dateStr)
-      const end = new Date(start.getTime() + 3_600_000)
-      router.push(
-        buildActivityCreateHref(state, {
-          startAt: start.toISOString(),
-          endAt: end.toISOString(),
-        }),
-      )
-    },
-    [router, state],
-  )
+  const handleDateClick = useCallback((info: DateClickInfo) => {
+    const prefill = activitySlotPrefill(info)
+    if (!prefill) return
+
+    const jsEvent = info.jsEvent as MouseEvent | undefined
+    const hasPoint = typeof jsEvent?.clientX === 'number' && typeof jsEvent?.clientY === 'number'
+    const anchor = hasPoint
+      ? { x: (jsEvent as MouseEvent).clientX, y: (jsEvent as MouseEvent).clientY }
+      : (() => {
+          const rect = containerRef.current?.getBoundingClientRect()
+          return rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null
+        })()
+
+    setCreateDraft({ ...prefill, anchor })
+  }, [])
 
   const emptyHref = buildActivityCreateHref(state)
 
@@ -335,6 +344,18 @@ export const ActivityAgenda = ({ state }: { state: ActivityAgendaState }) => {
           headingLevel={2}
         />
       </div>
+
+      <ActivityInlineCreate
+        draft={createDraft}
+        isNarrow={isNarrow}
+        agendaState={state}
+        municipalityOptions={municipalityOptions}
+        onClose={() => setCreateDraft(null)}
+        onCreated={() => {
+          setCreateDraft(null)
+          setReloadCount((count) => count + 1)
+        }}
+      />
     </section>
   )
 }

@@ -144,13 +144,18 @@ test.describe('Agenda — calendário operacional', () => {
     await expect(campaignPageChrome(page, title)).toBeVisible()
   })
 
-  test('leva o slot semanal para o formulário existente', async ({ campaign, page }) => {
+  test('cria compromisso inline no slot clicado, sem sair da agenda', async ({
+    campaign,
+    page,
+  }) => {
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.claimMunicipality()
+    const title = fixtures.value('Café inline na agenda')
 
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}`)
+
     const dayCell = page.getByRole('gridcell').nth(1)
     await dayCell.scrollIntoViewIfNeeded()
     const [slotBox, dayBox] = await Promise.all([
@@ -165,7 +170,61 @@ test.describe('Agenda — calendário operacional', () => {
       },
     })
 
+    // The click no longer navigates: the inline overlay opens at the slot.
+    await expect(page).toHaveURL(new RegExp('/campanha/agenda.*'))
+    const startInput = page.getByLabel('Início *')
+    await expect(startInput).toBeVisible()
+    const [startValue, endValue] = await Promise.all([
+      startInput.inputValue(),
+      page.getByLabel('Término').inputValue(),
+    ])
+    const [startAt, endAt] = [startValue, endValue].map(parseBahiaDateTimeInput)
+    expect(startAt).not.toBeNull()
+    expect(endAt).not.toBeNull()
+    if (!startAt || !endAt) throw new Error('O overlay não recebeu o intervalo do slot.')
+    expect(new Date(endAt).getTime() - new Date(startAt).getTime()).toBe(1_800_000)
+    await expect(page.getByLabel('Município *')).toHaveValue(municipality.name)
+
+    await page.getByLabel('Título *').fill(title)
+    await page.getByRole('button', { name: 'Salvar' }).click()
+
+    await expect(page.getByText(title, { exact: true })).toBeVisible({ timeout: 15_000 })
+    await expect(page).toHaveURL(new RegExp('/campanha/agenda.*'))
+  })
+
+  test('"Mais detalhes" pré-preenche o formulário completo com o rascunho', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.claimMunicipality()
+    const title = fixtures.value('Detalhes inline da agenda')
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}`)
+
+    const dayCell = page.getByRole('gridcell').nth(1)
+    await dayCell.scrollIntoViewIfNeeded()
+    const [slotBox, dayBox] = await Promise.all([
+      page.locator('[data-time="14:00:00"]').last().boundingBox(),
+      dayCell.boundingBox(),
+    ])
+    if (!slotBox || !dayBox) throw new Error('A grade semanal não expôs o slot esperado.')
+    await dayCell.click({
+      position: {
+        x: dayBox.width / 2,
+        y: slotBox.y - dayBox.y + slotBox.height / 2,
+      },
+    })
+
+    await expect(page.getByLabel('Título *')).toBeVisible()
+    await page.getByLabel('Título *').fill(title)
+    await page.getByRole('link', { name: 'Mais detalhes' }).click()
+
     await expect(page).toHaveURL(/\/campanha\/atividades\/nova\?startAt=/)
+    await expect(page.getByLabel('Título *')).toHaveValue(title)
+    await expect(page.getByLabel('Município *')).toHaveValue(String(municipality.id))
     const [startValue, endValue] = await Promise.all([
       page.getByLabel('Início *').inputValue(),
       page.getByLabel('Término').inputValue(),
@@ -174,11 +233,6 @@ test.describe('Agenda — calendário operacional', () => {
     expect(startAt).not.toBeNull()
     expect(endAt).not.toBeNull()
     if (!startAt || !endAt) throw new Error('O formulário não recebeu o intervalo do slot.')
-    expect(new Date(endAt).getTime() - new Date(startAt).getTime()).toBe(3_600_000)
-    await expect(page.getByLabel('Município *')).toHaveValue(String(municipality.id))
-    await expect(page.getByRole('link', { name: 'Cancelar' })).toHaveAttribute(
-      'href',
-      `/campanha/agenda?municipality=${municipality.id}`,
-    )
+    expect(new Date(endAt).getTime() - new Date(startAt).getTime()).toBe(1_800_000)
   })
 })

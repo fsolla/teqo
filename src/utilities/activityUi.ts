@@ -1,6 +1,7 @@
 import type { Where } from 'payload'
 
 import { CAMPAIGN_AGENDA_HOME } from '@/lib/campaignPaths'
+import { parseBahiaDateTimeInput } from '@/lib/campaignTime'
 import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/contactSearchQuery'
 import {
   activityStatuses,
@@ -148,18 +149,44 @@ export type ActivityCreatePrefill = {
   startAt?: string
   endAt?: string
   municipalityId?: number
+  title?: string
 }
 
 export const buildActivityCreateHref = (
   agendaState: ActivityAgendaState,
-  prefill: Omit<ActivityCreatePrefill, 'municipalityId'> = {},
+  prefill: Partial<ActivityCreatePrefill> = {},
 ): string => {
   const params = new URLSearchParams()
   if (prefill.startAt) params.set('startAt', prefill.startAt)
   if (prefill.endAt) params.set('endAt', prefill.endAt)
-  if (agendaState.municipality) params.set('municipality', String(agendaState.municipality))
+  const municipalityId = prefill.municipalityId ?? agendaState.municipality
+  if (municipalityId) params.set('municipality', String(municipalityId))
+  if (prefill.title) params.set('title', prefill.title)
   params.set('returnTo', buildActivityAgendaHref(agendaState))
   return `/campanha/atividades/nova?${params.toString()}`
+}
+
+/**
+ * C91 — the inline create overlay prefills the slot the staff clicked. The
+ * FullCalendar `dateClick` already snaps the click to a slot boundary, so for
+ * the week/day grids the interval is the slot itself (30 min); an all-day
+ * click (month grid) falls back to the historical 09:00–10:00 window.
+ */
+export const activitySlotPrefill = (info: {
+  allDay: boolean
+  dateStr: string
+}): { startAt: string; endAt: string } | null => {
+  if (info.allDay) {
+    const startAt = parseBahiaDateTimeInput(`${info.dateStr.slice(0, 10)}T09:00`)
+    if (!startAt) return null
+    return { startAt, endAt: new Date(new Date(startAt).getTime() + 3_600_000).toISOString() }
+  }
+  const start = new Date(info.dateStr)
+  if (Number.isNaN(start.getTime())) return null
+  return {
+    startAt: start.toISOString(),
+    endAt: new Date(start.getTime() + 1_800_000).toISOString(),
+  }
 }
 
 export const parseActivityAgendaReturnHref = (
@@ -212,10 +239,14 @@ export const parseActivityCreatePrefill = (
   const municipalityId =
     rawMunicipality && accessibleMunicipalityIDs.has(rawMunicipality) ? rawMunicipality : undefined
 
+  const title = normalizedText(firstValue(params.title))
+  const trimmedTitle = title && title.length <= 160 ? title : undefined
+
   return {
     ...(startAt ? { startAt } : {}),
     ...(endAt ? { endAt } : {}),
     ...(municipalityId ? { municipalityId } : {}),
+    ...(trimmedTitle ? { title: trimmedTitle } : {}),
   }
 }
 

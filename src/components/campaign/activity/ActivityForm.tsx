@@ -168,7 +168,7 @@ const ActivityFormFields = ({
               <Input
                 id="title"
                 name="title"
-                defaultValue={submittedTitle ?? activity?.title}
+                defaultValue={submittedTitle ?? initialValues?.title ?? activity?.title}
                 minLength={2}
                 maxLength={160}
                 className="min-h-11"

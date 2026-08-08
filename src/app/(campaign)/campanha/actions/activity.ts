@@ -24,6 +24,7 @@ import {
 } from '@/lib/schemas/activity'
 import type { Activity, CampaignUser } from '@/payload-types'
 import type { ParsedTourDraftFormData } from '@/utilities/activityFormData'
+import { mapActivityInlineCreateError } from '@/utilities/activityInlineErrors'
 import { loadActivityAgendaEventsData } from '@/utilities/activityPageData'
 import { canCampaignUserRescheduleActivity, isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
@@ -461,6 +462,28 @@ export const rescheduleActivity = async (
         ? error.message
         : ACTIVITY_RESCHEDULE_FAILED_MESSAGE
     return { ok: false, message }
+  }
+}
+
+export type ActivityInlineCreateResult =
+  | { ok: true }
+  | { ok: false; message: string; fieldErrors?: Record<string, string[]> }
+
+/**
+ * C91 — server surface for the agenda's inline quick create. Goes through the
+ * same `createActivityRecord` (one transaction, `overrideAccess: false` with
+ * the actor, the advisor's portfolio scope inherited from the full form) but
+ * returns a result instead of throwing, so the overlay can stay open on a
+ * failure — same `{ ok }` contract as `rescheduleActivity`.
+ */
+export const createActivityInline = async (
+  input: ActivityCreateInput,
+): Promise<ActivityInlineCreateResult> => {
+  try {
+    await createActivity(input)
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, ...mapActivityInlineCreateError(error) }
   }
 }
 
