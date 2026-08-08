@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation'
 import { useActionState } from 'react'
 
 import { createMunicipalityUpdateFormAction } from '@/app/(campaign)/campanha/(app)/municipios/[slug]/updateFormActions'
-import { WizardSkipTrailing } from '@/components/campaign/municipality/WizardSkipTrailing'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
 import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
@@ -14,28 +13,17 @@ import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
+import { wizardPreviousHref, wizardReturnHref } from '@/lib/campaignActionRoutes'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { wizardFlowTitleForSlug } from '@/lib/campaignWizardCopy'
 import { municipalityUpdatePolarityLabels } from '@/lib/schemas/municipalityUpdate'
-import {
-  resolveWizardChainEntry,
-  wizardChainContinueHref,
-  wizardChainEndHref,
-  wizardPreviousHref,
-} from '@/lib/wizardActionChain'
-import {
-  resolveWizardUpdateSkip,
-  WIZARD_UPDATE_BODY_STEP_TITLE,
-  WIZARD_UPDATE_SAVE_LABEL,
-} from '@/lib/wizardUpdateUi'
+import { WIZARD_UPDATE_BODY_STEP_TITLE, WIZARD_UPDATE_SAVE_LABEL } from '@/lib/wizardUpdateUi'
 
 type WizardUpdateBodyStepProps = {
   actionSlug: string
   municipalityId: number
   municipalityName: string
   municipalitySlug: string
-  entryAction?: CampaignWizardActionId
   returnPath?: string
   isStaff: boolean
 }
@@ -45,21 +33,16 @@ export const WizardUpdateBodyStep = ({
   municipalityId,
   municipalityName,
   municipalitySlug,
-  entryAction,
   returnPath,
   isStaff,
 }: WizardUpdateBodyStepProps) => {
   const router = useRouter()
   const [state, submitAction, isPending] = useActionState(createMunicipalityUpdateFormAction, {})
-  const skip = resolveWizardUpdateSkip(entryAction, municipalitySlug, returnPath)
   const stepTitle = WIZARD_UPDATE_BODY_STEP_TITLE
 
   useCampaignFormSuccessToast(state, () => {
     recordLastActedMunicipality(municipalitySlug)
-    const sessionEntry = resolveWizardChainEntry(entryAction, 'register-update')
-    router.push(
-      wizardChainContinueHref(sessionEntry, 'register-update', municipalitySlug, returnPath),
-    )
+    router.push(wizardReturnHref(returnPath))
   })
 
   return (
@@ -71,13 +54,10 @@ export const WizardUpdateBodyStep = ({
         actionSlug,
         stepKind: 'update-body',
         municipalitySlug,
-        entryAction,
         returnPath,
       })}
-      dismissHref={wizardChainEndHref(returnPath)}
+      dismissHref={wizardReturnHref(returnPath)}
       municipalityLabel={municipalityName}
-      skip={skip}
-      trailingAction={skip ? <WizardSkipTrailing skip={skip} /> : undefined}
       contentFocus="none"
     >
       <form

@@ -1,18 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { CAMPAIGN_ACTIONS_HOME } from '@/lib/campaignActionRoutes'
-import { WIZARD_CHAIN_SKIP_LABEL } from '@/lib/campaignWizardCopy'
 import {
   politicalTrendWizardMeta,
   politicalTrendWizardMetaByStatus,
 } from '@/lib/politicalTrendWizardMeta'
 import {
-  buildPoliticalTrendNotePrefill,
-  resolvePoliticalTrendNotePrefillSource,
   resolveWizardTrendNoteDestination,
-  resolveWizardTrendSkip,
   selectablePoliticalTrendStatuses,
-  shouldShowWizardTrendSkip,
   WIZARD_TREND_UNREGISTERED_TITLE,
   wizardTrendChoiceStepTitle,
 } from '@/lib/politicalTrendWizardUi'
@@ -34,58 +28,6 @@ describe('politicalTrendWizardUi', () => {
     expect(resolveWizardTrendNoteDestination('favoravel', 'neutra')).toBe('note')
     expect(resolveWizardTrendNoteDestination('favoravel', 'favoravel')).toBe('home')
     expect(resolveWizardTrendNoteDestination('favoravel', null)).toBe('note')
-  })
-
-  it('hides skip for standalone change-trend entry', () => {
-    expect(shouldShowWizardTrendSkip(undefined)).toBe(false)
-    expect(shouldShowWizardTrendSkip('change-trend')).toBe(false)
-    expect(resolveWizardTrendSkip(undefined, 'cairu')).toBeUndefined()
-    expect(resolveWizardTrendSkip('change-trend', 'cairu')).toBeUndefined()
-  })
-
-  it('shows skip to the next chain step when embedded from another wizard', () => {
-    expect(shouldShowWizardTrendSkip('update-votes')).toBe(true)
-    expect(shouldShowWizardTrendSkip('register-update')).toBe(true)
-    expect(resolveWizardTrendSkip('update-votes', 'cairu')).toEqual({
-      label: WIZARD_CHAIN_SKIP_LABEL,
-      href: `${CAMPAIGN_ACTIONS_HOME}/registrar-atualizacao?municipio=cairu&entry=update-votes`,
-    })
-  })
-
-  it('builds note prefills from embedded wizard sources', () => {
-    expect(buildPoliticalTrendNotePrefill({ kind: 'none' })).toBe('')
-    expect(
-      buildPoliticalTrendNotePrefill({
-        kind: 'voteAdjustment',
-        previousValue: 120,
-        newValue: 180,
-      }),
-    ).toBe('Ajuste de votos: 120 → 180')
-    expect(buildPoliticalTrendNotePrefill({ kind: 'custom', text: 'Contexto do fluxo' })).toBe(
-      'Contexto do fluxo',
-    )
-  })
-
-  it('resolves prefill sources from entry action and query params', () => {
-    expect(
-      resolvePoliticalTrendNotePrefillSource({
-        entryAction: 'update-votes',
-        voteFrom: '100',
-        voteTo: '150',
-      }),
-    ).toEqual({ kind: 'voteAdjustment', previousValue: 100, newValue: 150 })
-
-    expect(
-      resolvePoliticalTrendNotePrefillSource({
-        entryAction: 'register-update',
-      }),
-    ).toEqual({ kind: 'none' })
-
-    expect(
-      resolvePoliticalTrendNotePrefillSource({
-        notePrefill: 'Texto direto',
-      }),
-    ).toEqual({ kind: 'custom', text: 'Texto direto' })
   })
 })
 

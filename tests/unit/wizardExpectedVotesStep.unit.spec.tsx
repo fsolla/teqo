@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { WizardExpectedVotesStep } from '@/components/campaign/shared/WizardExpectedVotesStep'
 import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
-import { CAMPAIGN_ACTIONS_HOME } from '@/lib/campaignActionRoutes'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 
 const pushMock = vi.fn()
@@ -96,7 +95,7 @@ describe('WizardExpectedVotesStep', () => {
     expect(screen.getByLabelText('Pessimista').getAttribute('aria-invalid')).toBeNull()
   })
 
-  it('posts batch expected votes and continues the wizard chain', async () => {
+  it('posts batch expected votes and returns to origin', async () => {
     vi.mocked(postCampaignJson).mockResolvedValue({
       ok: true,
       payload: {
@@ -120,18 +119,32 @@ describe('WizardExpectedVotesStep', () => {
     })
 
     await waitFor(() => {
-      expect(pushMock).toHaveBeenCalledWith(
-        `${CAMPAIGN_ACTIONS_HOME}/mudar-tendencia?municipio=cairu&entry=update-votes`,
-      )
+      expect(pushMock).toHaveBeenCalledWith('/campanha')
     })
   })
 
-  it('shows skip to the next chain step when votes is chained', () => {
-    renderVotesStep({ ...defaultProps, entryAction: 'register-update' })
+  it('returns to the allowlisted origin when a return path is set (B110)', async () => {
+    vi.mocked(postCampaignJson).mockResolvedValue({
+      ok: true,
+      payload: {
+        status: 'success',
+        savedExpectedVotes: { pessimistic: 150, central: 250, optimistic: 350 },
+      },
+    })
 
-    const skip = screen.getByRole('link', { name: /^Pular$/i })
-    expect(skip.getAttribute('href')).toBe(
-      `${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca?municipio=cairu&entry=register-update`,
-    )
+    renderVotesStep({ ...defaultProps, returnPath: '/campanha/municipios/cairu' })
+
+    fireEvent.change(screen.getByLabelText('Média'), { target: { value: '250' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar estimativas →' }))
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith('/campanha/municipios/cairu')
+    })
+  })
+
+  it('never renders a chain skip link (B168)', () => {
+    renderVotesStep({ ...defaultProps })
+
+    expect(screen.queryByRole('link', { name: /^Pular$/i })).toBeNull()
   })
 })

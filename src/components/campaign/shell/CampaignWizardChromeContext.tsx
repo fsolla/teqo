@@ -11,18 +11,12 @@ import {
   type SetStateAction,
 } from 'react'
 
-export type CampaignWizardChromeSkip = {
-  label: string
-  href: string
-}
-
 export type CampaignWizardChromeState = {
   flowTitle: string
   municipalityLabel?: string
   stepKind: 'entry' | 'continue'
   previousHref?: string
   dismissHref: string
-  skip?: CampaignWizardChromeSkip
 }
 
 type CampaignWizardChromeContextValue = {
@@ -60,7 +54,6 @@ type CampaignWizardChromeInput = {
   previousHref: string
   dismissHref: string
   municipalityLabel?: string
-  skip?: CampaignWizardChromeSkip
 }
 
 export const toCampaignWizardChromeState = ({
@@ -69,14 +62,12 @@ export const toCampaignWizardChromeState = ({
   previousHref,
   dismissHref,
   municipalityLabel,
-  skip,
 }: CampaignWizardChromeInput): CampaignWizardChromeState => ({
   flowTitle,
   municipalityLabel,
   stepKind: isEntryStep ? 'entry' : 'continue',
   previousHref: isEntryStep ? undefined : previousHref,
   dismissHref,
-  skip,
 })
 
 export const useSetCampaignWizardChrome = (state: CampaignWizardChromeState | null): void => {

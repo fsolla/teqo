@@ -135,24 +135,20 @@ describe('CampaignMobileTopBar', () => {
     expect(screen.getByRole('link', { name: 'Sair da ação' })).toBeTruthy()
   })
 
-  it('renders skip link instead of dismiss when chained flow defines skip', () => {
+  it('renders dismiss on every wizard step and never a skip link (B168)', () => {
     renderTopBar({
       wizardChrome: {
         flowTitle: 'Registrar atualização',
         stepKind: 'continue',
         previousHref: '/campanha/acoes/atualizar-votos?municipio=cairu',
         dismissHref: '/campanha',
-        skip: {
-          label: 'Pular',
-          href: '/campanha/acoes/mudar-tendencia?municipio=cairu',
-        },
       },
     })
 
-    expect(screen.getByRole('link', { name: 'Pular' }).getAttribute('href')).toBe(
-      '/campanha/acoes/mudar-tendencia?municipio=cairu',
+    expect(screen.getByRole('link', { name: 'Sair da ação' }).getAttribute('href')).toBe(
+      '/campanha',
     )
-    expect(screen.queryByRole('link', { name: 'Sair da ação' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Pular' })).toBeNull()
   })
 
   it('keeps wizard mode when chrome updates between steps', () => {

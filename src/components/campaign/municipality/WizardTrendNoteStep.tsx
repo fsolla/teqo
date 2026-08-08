@@ -4,28 +4,17 @@ import { useRouter } from 'next/navigation'
 import { useActionState, useState } from 'react'
 
 import { setMunicipalityPoliticalTrendFormAction } from '@/app/(campaign)/campanha/(app)/municipios/municipalityStaffFormActions'
-import { WizardTrendSkipTrailing } from '@/components/campaign/municipality/WizardTrendSkipTrailing'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
 import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import type { CampaignWizardActionId } from '@/lib/campaignActionRoutes'
+import { wizardPreviousHref, wizardReturnHref } from '@/lib/campaignActionRoutes'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { wizardFlowTitleForSlug } from '@/lib/campaignWizardCopy'
-import {
-  resolveWizardTrendSkip,
-  WIZARD_TREND_CLEAR_LABEL,
-  WIZARD_TREND_SAVE_LABEL,
-} from '@/lib/politicalTrendWizardUi'
+import { WIZARD_TREND_CLEAR_LABEL, WIZARD_TREND_SAVE_LABEL } from '@/lib/politicalTrendWizardUi'
 import type { PoliticalTrendStatusValue } from '@/lib/schemas/municipality'
-import {
-  resolveWizardChainEntry,
-  wizardChainContinueHref,
-  wizardChainEndHref,
-  wizardPreviousHref,
-} from '@/lib/wizardActionChain'
 import { politicalTrendLabels } from '@/utilities/municipality/municipalityLabels'
 
 type WizardTrendNoteStepProps = {
@@ -34,8 +23,6 @@ type WizardTrendNoteStepProps = {
   municipalityName: string
   municipalitySlug: string
   trendStatus: PoliticalTrendStatusValue
-  initialNote: string
-  entryAction?: CampaignWizardActionId
   returnPath?: string
 }
 
@@ -45,23 +32,19 @@ export const WizardTrendNoteStep = ({
   municipalityName,
   municipalitySlug,
   trendStatus,
-  initialNote,
-  entryAction,
   returnPath,
 }: WizardTrendNoteStepProps) => {
   const router = useRouter()
-  const [note, setNote] = useState(initialNote)
+  const [note, setNote] = useState('')
   const [state, submitAction, isPending] = useActionState(
     setMunicipalityPoliticalTrendFormAction,
     {},
   )
-  const skip = resolveWizardTrendSkip(entryAction, municipalitySlug, returnPath)
   const stepTitle = `Mudar tendência para ${politicalTrendLabels[trendStatus]}`
 
   useCampaignFormSuccessToast(state, () => {
     recordLastActedMunicipality(municipalitySlug)
-    const sessionEntry = resolveWizardChainEntry(entryAction, 'change-trend')
-    router.push(wizardChainContinueHref(sessionEntry, 'change-trend', municipalitySlug, returnPath))
+    router.push(wizardReturnHref(returnPath))
   })
 
   return (
@@ -73,13 +56,10 @@ export const WizardTrendNoteStep = ({
         actionSlug,
         stepKind: 'trend-note',
         municipalitySlug,
-        entryAction,
         returnPath,
       })}
-      dismissHref={wizardChainEndHref(returnPath)}
+      dismissHref={wizardReturnHref(returnPath)}
       municipalityLabel={municipalityName}
-      skip={skip}
-      trailingAction={skip ? <WizardTrendSkipTrailing skip={skip} /> : undefined}
       contentFocus="none"
     >
       <form

@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { CAMPAIGN_ACTIONS_HOME } from '@/lib/campaignActionRoutes'
 import {
-  resolveWizardVotesSkip,
-  WIZARD_CHAIN_SKIP_LABEL,
   WIZARD_DISMISS_ARIA_LABEL,
   wizardFlowChromeAriaLabel,
   wizardFlowTitleForSlug,
@@ -21,15 +18,5 @@ describe('campaignWizardCopy', () => {
     expect(wizardFlowChromeAriaLabel('Ajustar votos')).toBe('Ação: Ajustar votos')
     expect(wizardMunicipalityChromeAriaLabel('Cairu')).toBe('Município em atualização: Cairu')
     expect(WIZARD_DISMISS_ARIA_LABEL).toBe('Sair da ação')
-  })
-
-  it('uses the shared chain skip label for embedded vote adjustments', () => {
-    expect(WIZARD_CHAIN_SKIP_LABEL).toBe('Pular')
-    expect(resolveWizardVotesSkip(undefined, 'cairu')).toBeUndefined()
-    expect(resolveWizardVotesSkip('update-votes', 'cairu')).toBeUndefined()
-    expect(resolveWizardVotesSkip('change-trend', 'cairu')).toEqual({
-      label: WIZARD_CHAIN_SKIP_LABEL,
-      href: `${CAMPAIGN_ACTIONS_HOME}/atualizar-lideranca?municipio=cairu&entry=change-trend`,
-    })
   })
 })
