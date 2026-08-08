@@ -68,6 +68,16 @@ flowchart LR
 
 ## Aceite de engenharia
 
-- [ ] Aceite de produto da intenção ainda coberto (default capado + resize livre + persistência de tamanho; mobile intacto)
-- [ ] Invariantes AGENTS/engineering-standards (sem Local API/overrideAccess; client-only; identificadores em inglês)
-- [ ] Testes de domínio previstos (unit do resolver/storage; e2e existente segue verde)
+- [x] Aceite de produto da intenção ainda coberto (default capado + resize livre + persistência de tamanho; mobile intacto)
+- [x] Invariantes AGENTS/engineering-standards (sem Local API/overrideAccess; client-only; identificadores em inglês)
+- [x] Testes de domínio (unit do resolver/storage 12 casos; e2e dedicado cobre cap + drag livre + persistência via reload e via botão do header; responsive columns B158 segue verde)
+
+## Revisão /simplify (3 reviewers) — desfecho
+
+**Já resolvido na sessão (não reabrir):** assert racy do e2e (cap e reload agora usam `expect.poll` determinístico — o primeiro paint a 25% cru vazava o gate cru `>360`); double-click do Separator resetava para o default cru 25% sem teto → `disableDoubleClick`; `clamp` quando grupo < piso devolvia 280 > grupo → clamp padrão + casos unit; `boundingBox()!` do drag sem `toBeVisible` prévio; botão do header passou a ser coberto no e2e; `hasUserSizedRef`/`isCollapsed()`/guardas validados pelos 3 reviewers.
+
+**Já resolvido por decisão (descartado de propósito):** `clearSavedChatWidthPx` sem caller de produção — mantido por simetria com os libs irmãos (`campaignLastActedMunicipality`/`recentVisits`) e usado pelo unit spec; `rAF` no primeiro commit em mobile resize de painel `display:none` — inerte, autocorrige no cruzamento de volta ao desktop.
+
+**Explicitamente fora / defer com gatilho:**
+- O sizing é um `requestAnimationFrame` one-shot; se um first-paint travado entregar `groupWidth <= 0`, o mount inteiro fica no default cru 25%. Gatilho para revisit: se um relato real (não o e2e) mostrar o painel abrindo > 360 px no desktop, trocar o one-shot por um `ResizeObserver` que aplica o tamanho ao estabilizar. Não registrado agora (sem evidência; rAF pós-layout mede 1664 no e2e).
+- Floor de ~280 px no painel só é coberto no resolver unit, não contra `minSize`/drag real — comportamento pré-existente do library, fora do aceite deste item.
