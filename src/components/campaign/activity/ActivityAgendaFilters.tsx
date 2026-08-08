@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
+import { CalendarFeedButton } from '@/components/campaign/activity/CalendarFeedButton'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import { Button } from '@/components/ui/button'
@@ -9,16 +10,30 @@ import { Checkbox } from '@/components/ui/Checkbox'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { buildActivityAgendaHref, type ActivityAgendaState } from '@/utilities/activityUi'
 
+type CalendarFeedSummary = {
+  id: number
+  label: string
+  createdAt: string
+}
+
 type ActivityAgendaFiltersProps = {
   state: ActivityAgendaState
   municipalityOptions: RelationOption[]
   knownTags: string[]
+  feeds?: CalendarFeedSummary[]
+  onCreateFeed?: (
+    label: string,
+  ) => Promise<{ ok: true; feedUrl: string } | { ok: false; message: string }>
+  onRevokeFeed?: (feedId: number) => Promise<{ ok: boolean }>
 }
 
 export const ActivityAgendaFilters = ({
   state,
   municipalityOptions,
   knownTags,
+  feeds = [],
+  onCreateFeed,
+  onRevokeFeed,
 }: ActivityAgendaFiltersProps) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
@@ -106,6 +121,16 @@ export const ActivityAgendaFilters = ({
         >
           Limpar filtros
         </Button>
+
+        {onCreateFeed && onRevokeFeed && (
+          <CalendarFeedButton
+            state={state}
+            hasFilters={hasFilters}
+            feeds={feeds}
+            onCreateFeed={onCreateFeed}
+            onRevokeFeed={onRevokeFeed}
+          />
+        )}
       </div>
       <p className="sr-only" aria-live="polite">
         {isPending ? 'Atualizando os compromissos da agenda.' : 'Filtros da agenda atualizados.'}

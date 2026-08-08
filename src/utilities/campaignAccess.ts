@@ -145,3 +145,11 @@ export {
   canWriteNotifications,
   canWritePushSubscriptions,
 } from '@/utilities/access/notifications'
+
+export {
+  canCreateCalendarFeed,
+  canDeleteCalendarFeed,
+  canReadCalendarFeed,
+  canSetCalendarFeedSystemField,
+  canUpdateCalendarFeed,
+} from '@/utilities/access/calendarFeeds'

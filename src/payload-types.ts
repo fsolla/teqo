@@ -86,6 +86,7 @@ export interface Config {
     supporterImportBatch: SupporterImportBatch;
     municipalityUpdate: MunicipalityUpdate;
     activity: Activity;
+    calendarFeed: CalendarFeed;
     electionTally: ElectionTally;
     electionCandidateVote: ElectionCandidateVote;
     electionCandidate: ElectionCandidate;
@@ -125,6 +126,7 @@ export interface Config {
     supporterImportBatch: SupporterImportBatchSelect<false> | SupporterImportBatchSelect<true>;
     municipalityUpdate: MunicipalityUpdateSelect<false> | MunicipalityUpdateSelect<true>;
     activity: ActivitySelect<false> | ActivitySelect<true>;
+    calendarFeed: CalendarFeedSelect<false> | CalendarFeedSelect<true>;
     electionTally: ElectionTallySelect<false> | ElectionTallySelect<true>;
     electionCandidateVote: ElectionCandidateVoteSelect<false> | ElectionCandidateVoteSelect<true>;
     electionCandidate: ElectionCandidateSelect<false> | ElectionCandidateSelect<true>;
@@ -840,6 +842,31 @@ export interface MunicipalityUpdate {
   createdAt: string;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "calendarFeed".
+ */
+export interface CalendarFeed {
+  id: number;
+  secretSlug: string;
+  /**
+   * Nome descritivo para identificar o feed (ex: "Só deputado presente")
+   */
+  label: string;
+  /**
+   * Se vazio, inclui todos os municípios do escopo do criador
+   */
+  filterMunicipality?: (number | null) | Municipality;
+  filterDeputyPresent?: boolean | null;
+  /**
+   * Se vazio, inclui todas as tags
+   */
+  filterTag?: string | null;
+  revokedAt?: string | null;
+  createdBy: number | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Totais oficiais TSE por município e zona (dado público).
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1303,6 +1330,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'activity';
         value: number | Activity;
+      } | null)
+    | ({
+        relationTo: 'calendarFeed';
+        value: number | CalendarFeed;
       } | null)
     | ({
         relationTo: 'electionTally';
@@ -1783,6 +1814,21 @@ export interface ActivitySelect<T extends boolean = true> {
   resultMedia?: T;
   resultRecordedBy?: T;
   resultRecordedAt?: T;
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "calendarFeed_select".
+ */
+export interface CalendarFeedSelect<T extends boolean = true> {
+  secretSlug?: T;
+  label?: T;
+  filterMunicipality?: T;
+  filterDeputyPresent?: T;
+  filterTag?: T;
+  revokedAt?: T;
   createdBy?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -2346,6 +2392,7 @@ export interface TaskCreateCollectionExport {
       | 'supporterImportBatch'
       | 'municipalityUpdate'
       | 'activity'
+      | 'calendarFeed'
       | 'electionTally'
       | 'electionCandidateVote'
       | 'electionCandidate'
