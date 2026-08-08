@@ -63,7 +63,7 @@ N/A — chrome de navegação, sem dados hexibidos (a intenção já declara que
 ## Riscos e mitigação
 
 - **Risco:** rótulo 10px quebra acessibilidade percebida. **Mitigação:** é o tamanho do canvas aprovado; rótulos continuam `font-medium`, ícone `size-5` inalterado, alvo de toque pleno; nenhum rótulo some.
-- **Risco:** `nowrap` + fonte pequena ainda estoura em viewport 320px. **Mitigação:** 10px "Atualizações" ≈ 66px em célula ≥64px (320px/5); o teste e2e novo pina a não-sobreposição em 390px (viewport do suite) e valida `fontSize`; se 320px for exigido depois, é outro item.
+- **Risco:** `nowrap` + fonte pequena ainda estoura em viewport extremo. **Mitigação (gatilho deferido):** 10px "Atualizações" ≈ 66px em célula ≥64px (320px/5); o e2e novo pina a não-sobreposição e `paddingTop`/`fontSize` em 390px **e 320px**. Reserva: viewport < 280px ou text-zoom do acessível é um gatilho para outro item (fonte 8px ou rótulo oculto) — não tratar aqui.
 - **Risco:** mudança quebra o FAB. **Mitigação:** FAB test (y < nav.y) já cobre; barra cresce ~10px, `bottom-[7rem]` sobra.
 
 ## Aceite de engenharia
