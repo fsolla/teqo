@@ -9,11 +9,15 @@
 import { slugify } from '../../src/lib/slug.ts'
 
 /**
- * Generic branch of the /plan-issue planning worktree (`pnpm worktree plan`).
- * Deliberately NOT tied to any Issue: it must never collide with the
- * `<code>-<slug>` branch `worktree next` derives for the next claimable Issue.
+ * Prefix of every `/plan-issue` planning-worktree branch (`pnpm worktree
+ * plan`). Lowercase-led `plans/…`, so it can never collide with a `next`
+ * branch — `<Code>-<slug>` is always uppercase-led — neither in branch name
+ * nor, structurally, in the port/slot space derived from the branch.
  */
-export const PLAN_WORKTREE_BRANCH = 'plans/plan-issue'
+export const PLAN_BRANCH_PREFIX = 'plans/plan-issue'
+
+/** Total branch-name budget for plan branches — mirrors `branchNameForIssue`. */
+const PLAN_BRANCH_MAX_LENGTH = 60
 
 /** Strip the leading `<code> — ` (or any dash variant) off a title. */
 const stripCodePrefix = (title, code) => {
@@ -48,4 +52,40 @@ export const branchNameForIssue = (issue, maxLength = 60) => {
   if (full.length <= maxLength) return full
   const keep = Math.max(1, maxLength - code.length - 1)
   return `${code}-${slug.slice(0, keep)}`
+}
+
+/**
+ * Branch for a `/plan-issue` planning worktree. Every invocation must land on
+ * a DIFFERENT branch so parallel planning sessions coexist:
+ *  - `bag` given → `plans/plan-issue-<bag-slug>`; if that name is already
+ *    taken, `plans/plan-issue-<bag-slug>-2`, `-3`, …
+ *  - no `bag` → the next free sequential `plans/plan-issue-1`, `-2`, `-3`, …
+ * `taken` = branch short-names already alive (local refs + origin); when a
+ * name is free it is reused only as a name-free slot — the branch is created
+ * fresh from `origin/main` each time. The lowercase `plans/…` prefix cannot
+ * collide with `next`'s uppercase-led `<Code>-<slug>` branches.
+ */
+export const planBranchName = ({ bag = '', taken = new Set() }) => {
+  const hasBag = typeof bag === 'string' && bag.trim().length > 0
+
+  if (!hasBag) {
+    for (let n = 1; ; n += 1) {
+      const candidate = `${PLAN_BRANCH_PREFIX}-${n}`
+      if (!taken.has(candidate)) return candidate
+    }
+  }
+
+  const slug = slugify(bag) || 'plano'
+  const base = `${PLAN_BRANCH_PREFIX}-${slug.slice(
+    0,
+    PLAN_BRANCH_MAX_LENGTH - PLAN_BRANCH_PREFIX.length - 1,
+  )}`
+  if (!taken.has(base)) return base
+
+  for (let n = 2; ; n += 1) {
+    const suffix = `-${n}`
+    const keep = Math.max(1, PLAN_BRANCH_MAX_LENGTH - PLAN_BRANCH_PREFIX.length - 1 - suffix.length)
+    const candidate = `${PLAN_BRANCH_PREFIX}-${slug.slice(0, keep)}${suffix}`
+    if (!taken.has(candidate)) return candidate
+  }
 }
