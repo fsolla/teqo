@@ -1,6 +1,6 @@
 # B171 — Barra inferior mobile: folga no topo + rótulos sem sobreposição
 
-Status: rascunho
+Status: ready
 Atualizado em: 2026-08-08
 Issue: #443
 Priority: P1
