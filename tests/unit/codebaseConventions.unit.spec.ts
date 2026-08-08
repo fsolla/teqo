@@ -386,6 +386,7 @@ describe('src/utilities top-level is pinned', () => {
     'activityUi.ts',
     'activityViewModels.ts',
     'advisorData.ts',
+    'calendarFeed.ts',
     'campaignAccess.ts',
     'campaignActionContext.ts',
     'campaignAuditFields.ts',

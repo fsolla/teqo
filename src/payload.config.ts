@@ -11,6 +11,7 @@ import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { pt } from 'payload/i18n/pt'
 import { Activity } from './collections/Activity'
 import { AllocationDecision } from './collections/AllocationDecision'
+import { CalendarFeed } from './collections/CalendarFeed'
 import { CampaignDemand } from './collections/CampaignDemand'
 import { CampaignInvite } from './collections/CampaignInvite'
 import { CampaignUser } from './collections/CampaignUser'
@@ -105,6 +106,7 @@ export default buildConfig({
     SupporterImportBatch,
     MunicipalityUpdate,
     Activity,
+    CalendarFeed,
     ElectionTally,
     ElectionCandidateVote,
     ElectionCandidate,

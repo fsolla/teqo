@@ -43,6 +43,7 @@ import * as migration_20260804_061017_add_state_deputy_advisors from './20260804
 import * as migration_20260806_082110_add_state_deputy_contact from './20260806_082110_add_state_deputy_contact';
 import * as migration_20260806_120000_c14_remodel_activity_agenda from './20260806_120000_c14_remodel_activity_agenda';
 import * as migration_20260807_030000_unify_municipality_update from './20260807_030000_unify_municipality_update';
+import * as migration_20260808_134911_add_calendar_feed from './20260808_134911_add_calendar_feed';
 
 export const migrations = [
   {
@@ -269,5 +270,10 @@ export const migrations = [
     up: migration_20260807_030000_unify_municipality_update.up,
     down: migration_20260807_030000_unify_municipality_update.down,
     name: '20260807_030000_unify_municipality_update',
+  },
+  {
+    up: migration_20260808_134911_add_calendar_feed.up,
+    down: migration_20260808_134911_add_calendar_feed.down,
+    name: '20260808_134911_add_calendar_feed'
   },
 ];
