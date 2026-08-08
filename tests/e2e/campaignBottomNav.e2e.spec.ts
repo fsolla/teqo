@@ -114,4 +114,42 @@ test.describe('Mobile bottom nav (B164)', () => {
       expect(fabBox.y).toBeLessThan(navBox.y)
     }
   })
+
+  test('items breathe below the top edge and labels never overlap (B171)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Estilo'),
+    })
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha')
+
+    const bottomNav = page.locator('[aria-label="Navegação principal"]')
+    await expect(bottomNav).toBeVisible()
+
+    // A small breathing gap between the item content and the bar's top border.
+    const paddingTop = await bottomNav.evaluate((el) => parseFloat(getComputedStyle(el).paddingTop))
+    expect(paddingTop).toBeGreaterThanOrEqual(8)
+
+    // Labels render smaller than the original text-xs (12px).
+    const labels = bottomNav.locator('a > span, button > span')
+    await expect(labels).toHaveCount(5)
+    const sizes = await labels.evaluateAll((els) =>
+      els.map((el) => parseFloat(getComputedStyle(el).fontSize)),
+    )
+    for (const fontSize of sizes) expect(fontSize).toBeLessThan(12)
+
+    // Adjacent labels must not overlap horizontally on a mobile viewport.
+    const boxes = await labels.evaluateAll((els) =>
+      els.map((el) => {
+        const rect = el.getBoundingClientRect()
+        return { left: rect.left, right: rect.right }
+      }),
+    )
+    for (let i = 1; i < boxes.length; i++) {
+      expect(boxes[i].left).toBeGreaterThanOrEqual(boxes[i - 1].right - 0.5)
+    }
+  })
 })
