@@ -29,6 +29,7 @@ const panelWidth = (panel: Locator) => panel.evaluate((element) => element.clien
 
 const dragSeparatorBy = async (page: Page, deltaX: number) => {
   const separator = chatSeparator(page)
+  await expect(separator).toBeVisible()
   const box = (await separator.boundingBox())!
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.mouse.down()
@@ -65,12 +66,14 @@ test.describe('B166 — largura padrão do chat Sollinha com teto no desktop', (
     const resizedWidth = await panelWidth(panel)
 
     // The chosen size was saved locally: a page reload reopens at it, not at
-    // the capped default.
+    // the capped default. Poll against the dragged size (the raw 25% first
+    // paint would already pass a bare ">360" gate, so wait for the restore).
     await page.reload()
     await expect(panel).toBeVisible()
-    await expect.poll(() => panelWidth(panel)).toBeGreaterThan(360)
+    await expect
+      .poll(async () => Math.abs((await panelWidth(panel)) - resizedWidth))
+      .toBeLessThanOrEqual(4)
     const restoredWidth = await panelWidth(panel)
-    expect(Math.abs(restoredWidth - resizedWidth)).toBeLessThanOrEqual(4)
 
     // Reopening via the header button (acceptance 1 — "pelo botão") restores
     // the same remembered width instead of a fresh cap.
@@ -83,8 +86,8 @@ test.describe('B166 — largura padrão do chat Sollinha com teto no desktop', (
       .getByRole('button', { name: 'Sollinha — Assistente virtual' })
       .filter({ visible: true })
       .click()
-    await expect.poll(() => panelWidth(panel)).toBeGreaterThan(360)
-    const buttonOpenWidth = await panelWidth(panel)
-    expect(Math.abs(buttonOpenWidth - restoredWidth)).toBeLessThanOrEqual(4)
+    await expect
+      .poll(async () => Math.abs((await panelWidth(panel)) - restoredWidth))
+      .toBeLessThanOrEqual(4)
   })
 })

@@ -59,6 +59,10 @@ describe('defaultChatWidthPx', () => {
     expect(defaultChatWidthPx(1000)).toBe(CHAT_MIN_PX)
     expect(defaultChatWidthPx(700)).toBe(CHAT_MIN_PX)
   })
+
+  it('yields the group width for a group narrower than the floor', () => {
+    expect(defaultChatWidthPx(200)).toBe(200)
+  })
 })
 
 describe('resolveChatPanelWidthPx', () => {
@@ -77,5 +81,9 @@ describe('resolveChatPanelWidthPx', () => {
 
   it('clamps a saved choice below the floor up to CHAT_MIN_PX', () => {
     expect(resolveChatPanelWidthPx(1920, 150)).toBe(CHAT_MIN_PX)
+  })
+
+  it('yields the group width for a saved choice on a group narrower than the floor', () => {
+    expect(resolveChatPanelWidthPx(200, 520)).toBe(200)
   })
 })

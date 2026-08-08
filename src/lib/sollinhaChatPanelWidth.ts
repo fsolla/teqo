@@ -44,7 +44,7 @@ export const clearSavedChatWidthPx = (): void => {
 }
 
 const clamp = (value: number, min: number, max: number): number =>
-  Math.min(Math.max(value, min), Math.max(min, max))
+  Math.min(Math.max(value, min), max)
 
 /** Default open width: 25% of the group, capped at `CHAT_DEFAULT_MAX_PX`. */
 export const defaultChatWidthPx = (groupWidthPx: number): number =>
@@ -52,7 +52,9 @@ export const defaultChatWidthPx = (groupWidthPx: number): number =>
 
 /**
  * Width for the next open: the remembered choice wins (even above the cap),
- * otherwise the capped 25% default. Always bounded to `[CHAT_MIN_PX, group]`.
+ * otherwise the capped 25% default. Bounded to `CHAT_MIN_PX` and to the group
+ * itself — a group narrower than the floor (degenerate layout) yields the
+ * group width, and the library re-clamps the rendered panel at its `minSize`.
  */
 export const resolveChatPanelWidthPx = (groupWidthPx: number, savedPx: number | null): number =>
   savedPx === null ? defaultChatWidthPx(groupWidthPx) : clamp(savedPx, CHAT_MIN_PX, groupWidthPx)
