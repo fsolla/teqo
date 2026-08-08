@@ -19,11 +19,17 @@ import { diagnoseDatabaseTarget } from './db-doctor.mjs'
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 const readTestEnv = () => {
-  try {
-    return parseEnv(readFileSync(path.join(repoRoot, '.env.test'), 'utf8'))
-  } catch {
-    return {}
+  // `.env.test.local` (per-worktree, gitignored, written by `pnpm worktree next`)
+  // wins over the committed `.env.test`, mirroring vitest.setup.ts.
+  const layered = {}
+  for (const name of ['.env.test', '.env.test.local']) {
+    try {
+      Object.assign(layered, parseEnv(readFileSync(path.join(repoRoot, name), 'utf8')))
+    } catch {
+      // file missing — fine
+    }
   }
+  return layered
 }
 
 const testEnv = readTestEnv()
@@ -31,7 +37,10 @@ const testEnv = readTestEnv()
 /** Env for migrate / seed / build — matches ci-pr.yml service Postgres. */
 const dbEnv = {
   ...process.env,
-  DATABASE_URL: testEnv.DATABASE_URL ?? 'postgresql://teqo:teqo@localhost:5432/teqo_test',
+  DATABASE_URL:
+    testEnv.TEQO_TEST_DATABASE_URL ??
+    testEnv.DATABASE_URL ??
+    'postgresql://teqo:teqo@localhost:5432/teqo_test',
   PAYLOAD_SECRET: testEnv.PAYLOAD_SECRET ?? 'test-only-secret-not-used-in-production',
   NEXT_PUBLIC_SITE_URL: testEnv.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
 }

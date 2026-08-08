@@ -68,7 +68,9 @@ Teqo then becomes a configurable base product for other politicians in Brazil:
 6. Start the dev server: `pnpm dev`
 7. Open: `http://localhost:3000`
 
-Useful scripts: `pnpm db:start` / `pnpm db:stop` (local Postgres), `pnpm db:pull` (refresh local content from prod), `pnpm db:seed:posts` (import news posts/tags fresh from the live jorgesolla.com.br site into the local db; idempotent by slug, refuses a non-local database), `pnpm db:seed:tse` (import TSE 2014/2018/2022 Bahia election results into the local db; idempotent per year/office/turn scope, refuses a non-local database), `pnpm build:election-aggregates` (regenerate the committed TSE aggregate artifact in `src/lib/electionAggregates/` from locally seeded data).
+Useful scripts: `pnpm db:start` / `pnpm db:stop` (local Postgres — always the same shared container via `-p teqo`, from any directory), `pnpm db:pull` (refresh local content from prod), `pnpm db:seed:posts` (import news posts/tags fresh from the live jorgesolla.com.br site into the local db; idempotent by slug, refuses a non-local database), `pnpm db:seed:tse` (import TSE 2014/2018/2022 Bahia election results into the local db; idempotent per year/office/turn scope, refuses a non-local database), `pnpm build:election-aggregates` (regenerate the committed TSE aggregate artifact in `src/lib/electionAggregates/` from locally seeded data).
+
+Parallel worktrees get isolated environments: `pnpm worktree next` derives a per-branch dev port (`3100+slot`) and its own databases (`teqo_wt<slot>` / `teqo_wt<slot>_test`), so agents never fight over port 3000 or the shared `teqo_test`. See `.agents/skills/local-database`.
 
 ### Content & cache revalidation
 

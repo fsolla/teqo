@@ -243,13 +243,24 @@ const readEnvFile = (path) => {
   }
 }
 
+/**
+ * Test target exactly as the suites resolve it: `.env.test` then
+ * `.env.test.local` (per-worktree, gitignored, wins), then the
+ * TEQO_TEST_DATABASE_URL escape hatch beats DATABASE_URL (same order as
+ * vitest.setup.ts / playwright.config.ts).
+ */
+const readTestTargetEnv = () => {
+  const layered = { ...readEnvFile('.env.test'), ...readEnvFile('.env.test.local') }
+  return layered.TEQO_TEST_DATABASE_URL ?? layered.DATABASE_URL
+}
+
 const main = async () => {
   // Next.js precedence for the dev target, without mutating process.env.
   const devUrl =
     process.env.DATABASE_URL ??
     readEnvFile('.env.local').DATABASE_URL ??
     readEnvFile('.env').DATABASE_URL
-  const testUrl = readEnvFile('.env.test').DATABASE_URL
+  const testUrl = readTestTargetEnv()
 
   let healthy = warnOnSharedDataVolumes()
   if (devUrl) {
