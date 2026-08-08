@@ -55,7 +55,7 @@ export const CampaignBottomNav = ({ user }: { user: CampaignUserShellView }) => 
           'fixed inset-x-0 bottom-0 z-30 grid w-full',
           'grid-cols-[repeat(5,minmax(0,1fr))]',
           'border-t bg-background',
-          'pb-[env(safe-area-inset-bottom)]',
+          'pt-2.5 pb-[env(safe-area-inset-bottom)]',
           'md:hidden print:hidden',
         )}
       >
@@ -71,7 +71,7 @@ export const CampaignBottomNav = ({ user }: { user: CampaignUserShellView }) => 
                 aria-label="Mais"
                 onClick={() => setOverflowOpen(true)}
                 className={cn(
-                  'flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium text-muted-foreground outline-none',
+                  'flex flex-1 flex-col items-center justify-center gap-1 text-[10px] whitespace-nowrap font-medium text-muted-foreground outline-none',
                   'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                   active && 'text-primary',
                 )}
@@ -87,7 +87,7 @@ export const CampaignBottomNav = ({ user }: { user: CampaignUserShellView }) => 
               href={item.href}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium text-muted-foreground outline-none',
+                'flex flex-1 flex-col items-center justify-center gap-1 text-[10px] whitespace-nowrap font-medium text-muted-foreground outline-none',
                 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                 active && 'text-primary',
               )}
