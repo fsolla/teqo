@@ -11,6 +11,7 @@ import {
   type BiometricEnrollmentOffer,
 } from '@/components/campaign/shell/BiometricEnrollmentToast'
 import { CampaignAppScrollChrome } from '@/components/campaign/shell/CampaignAppScrollChrome'
+import { CampaignBottomNav } from '@/components/campaign/shell/CampaignBottomNav'
 import { CampaignDesktopHeader } from '@/components/campaign/shell/CampaignDesktopHeader'
 import { CampaignHomeSearchChromeProvider } from '@/components/campaign/shell/CampaignHomeSearchChromeContext'
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
@@ -24,6 +25,7 @@ import { InstallPwaToast } from '@/components/campaign/shell/InstallPwaToast'
 import { SIDEBAR_COOKIE_NAME, SidebarInset, SidebarProvider } from '@/components/ui/Sidebar'
 import { Toaster } from '@/components/ui/Toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { deviceLabelFromUserAgent } from '@/lib/deviceLabel'
 import { getCampaignUserWithAvatar } from '@/utilities/campaignAuth'
 import { campaignUserShellView } from '@/utilities/campaignUserProfile'
@@ -98,6 +100,9 @@ export default async function CampaignAppLayout({ children }: { children: React.
                           {children}
                         </CampaignAppScrollChrome>
                       </div>
+                      {isStaffCampaignRole(user.role) ? (
+                        <CampaignBottomNav user={campaignUserShellView(user)} />
+                      ) : null}
                     </TooltipProvider>
                     <Toaster position="top-center" />
                     <InstallPwaToast />

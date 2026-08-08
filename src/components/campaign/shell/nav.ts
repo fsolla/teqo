@@ -1,6 +1,8 @@
 import {
+  BellIcon,
   BookOpenIcon,
   CalendarDaysIcon,
+  EllipsisVerticalIcon,
   HandshakeIcon,
   HomeIcon,
   InboxIcon,
@@ -14,7 +16,11 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
-import { CAMPAIGN_AGENDA_HOME, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
+import {
+  CAMPAIGN_AGENDA_HOME,
+  CAMPAIGN_UPDATES_HREF,
+  LEADER_CONTACTS_HOME,
+} from '@/lib/campaignPaths'
 import { isStaffCampaignRole, isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
 import type { CampaignUser } from '@/payload-types'
 import { canAccessSupporterArea } from '@/utilities/supporter/supporterUi'
@@ -83,6 +89,42 @@ export const isCampaignNavActive = (pathname: string, href: string): boolean => 
   if (href === '/campanha') {
     return pathname === '/campanha' || pathname === '/campanha/'
   }
+  if (href === CAMPAIGN_UPDATES_HREF) {
+    return pathname === CAMPAIGN_UPDATES_HREF || pathname.startsWith(`${CAMPAIGN_UPDATES_HREF}/`)
+  }
   if (href === CAMPAIGN_AGENDA_HOME && pathname.startsWith('/campanha/atividades')) return true
   return pathname === href || pathname.startsWith(`${href}/`)
+}
+
+// The four primary destinations shown in the bottom nav (all except "Mais").
+// Used to exclude them from the overflow drawer.
+const bottomNavPrimaryHrefs: ReadonlySet<string> = new Set([
+  '/campanha',
+  MUNICIPALITY_NAV_HREF,
+  CAMPAIGN_UPDATES_HREF,
+  CAMPAIGN_AGENDA_HOME,
+])
+
+/** The five staff items in the mobile bottom nav — Início, Municípios,
+ * Atualizações, Agenda, Mais. Leaders get nothing (lockdown). */
+const bottomNavStaff: CampaignNavItem[] = [
+  { title: 'Início', href: '/campanha', icon: HomeIcon },
+  { title: 'Municípios', href: MUNICIPALITY_NAV_HREF, icon: MapPinIcon },
+  { title: 'Atualizações', href: CAMPAIGN_UPDATES_HREF, icon: BellIcon },
+  { title: 'Agenda', href: CAMPAIGN_AGENDA_HOME, icon: CalendarDaysIcon },
+  { title: 'Mais', href: '', icon: EllipsisVerticalIcon },
+]
+
+/** Primary navigation for the mobile bottom bar. Staff only — leaders are
+ * in lockdown and use the sidebar Sheet (Meus contatos) instead. */
+export const getCampaignBottomNav = (role: CampaignUser['role']): CampaignNavItem[] =>
+  isStaffCampaignRole(role) ? bottomNavStaff : []
+
+/** Overflow destinations for the "Mais" drawer — staff nav items that are
+ * not in the bottom nav's four primaries, plus Conceitos. Perfil and Sair
+ * are rendered inline in the drawer footer (same as sidebar). */
+export const getCampaignOverflowNav = (role: CampaignUser['role']): CampaignNavItem[] => {
+  if (!isStaffCampaignRole(role)) return []
+  const primary = getCampaignNav(role).filter((item) => !bottomNavPrimaryHrefs.has(item.href))
+  return [...primary, ...getCampaignSecondaryNav(role)]
 }

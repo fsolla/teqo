@@ -102,7 +102,7 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/lib/campaignReferenceQuickActions',
       'src/lib/campaignPaths.ts',
     ],
-    specs: ['campaign-pwa', 'campaignWizardChrome', 'campaignMunicipalities'],
+    specs: ['campaign-pwa', 'campaignWizardChrome', 'campaignBottomNav', 'campaignMunicipalities'],
   },
   // Domains without a dedicated e2e family still wake campaign home smoke so
   // the affected classifier cannot return mode=none on an unmapped domain dir.
@@ -133,6 +133,7 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/lib/wizardMunicipalitySuggestMerge',
       `${CAMPAIGN_APP}/apoiadores`,
       `${CAMPAIGN_APP}/assessores`,
+      `${CAMPAIGN_APP}/atualizacoes`,
       `${CAMPAIGN_APP}/contatos`,
       `${CAMPAIGN_APP}/demandas`,
       `${CAMPAIGN_APP}/dobradinhas`,

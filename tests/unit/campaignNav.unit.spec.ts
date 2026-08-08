@@ -2,8 +2,13 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { getCampaignNav, isCampaignNavActive } from '@/components/campaign/shell/nav'
-import { CAMPAIGN_AGENDA_HOME } from '@/lib/campaignPaths'
+import {
+  getCampaignBottomNav,
+  getCampaignNav,
+  getCampaignOverflowNav,
+  isCampaignNavActive,
+} from '@/components/campaign/shell/nav'
+import { CAMPAIGN_AGENDA_HOME, CAMPAIGN_UPDATES_HREF } from '@/lib/campaignPaths'
 import { ORGANIZATIONS_LIST_PATH } from '@/lib/campaignQuickActionPaths'
 
 describe('organizations sidebar entry', () => {
@@ -50,5 +55,50 @@ describe('agenda sidebar entry', () => {
     expect(isCampaignNavActive('/campanha/atividades/comicio/editar', CAMPAIGN_AGENDA_HOME)).toBe(
       true,
     )
+  })
+})
+
+describe('mobile bottom nav', () => {
+  it('offers exactly five primary items to staff, zero to leaders', () => {
+    for (const role of ['coordinator', 'advisor', 'candidate'] as const) {
+      const items = getCampaignBottomNav(role)
+      expect(items).toHaveLength(5)
+      expect(items.map((i) => i.title)).toEqual([
+        'Início',
+        'Municípios',
+        'Atualizações',
+        'Agenda',
+        'Mais',
+      ])
+      expect(items.map((i) => i.href)).toContain(CAMPAIGN_UPDATES_HREF)
+    }
+    expect(getCampaignBottomNav('leader')).toHaveLength(0)
+  })
+
+  it('keeps Atualizações and Mais out of the overflow drawer', () => {
+    const overflow = getCampaignOverflowNav('coordinator').map((i) => i.href)
+    expect(overflow).not.toContain(CAMPAIGN_UPDATES_HREF)
+    expect(overflow).not.toContain('')
+    // The four primaries (minus Mais) must not appear in overflow.
+    expect(overflow).not.toContain('/campanha')
+    expect(overflow).not.toContain('/campanha/municipios')
+    expect(overflow).not.toContain(CAMPAIGN_AGENDA_HOME)
+  })
+
+  it('overflow includes secondary nav (Conceitos)', () => {
+    const overflow = getCampaignOverflowNav('coordinator').map((i) => i.href)
+    expect(overflow).toContain('/campanha/conceitos')
+  })
+
+  it('overflow is zero for leaders', () => {
+    expect(getCampaignOverflowNav('leader')).toHaveLength(0)
+  })
+
+  it('matches Atualizações by prefix', () => {
+    expect(isCampaignNavActive(CAMPAIGN_UPDATES_HREF, CAMPAIGN_UPDATES_HREF)).toBe(true)
+    expect(isCampaignNavActive(`${CAMPAIGN_UPDATES_HREF}/algum-fio`, CAMPAIGN_UPDATES_HREF)).toBe(
+      true,
+    )
+    expect(isCampaignNavActive('/campanha/mais', CAMPAIGN_UPDATES_HREF)).toBe(false)
   })
 })

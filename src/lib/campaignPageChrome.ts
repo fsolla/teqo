@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 
-import { CAMPAIGN_HOME, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
+import { CAMPAIGN_HOME, CAMPAIGN_UPDATES_HREF, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
 import { normalizePathname } from '@/lib/campaignQuickActionPaths'
 import type { CampaignUser } from '@/payload-types'
 
@@ -79,6 +79,9 @@ export const campaignPageChromeCatalog = {
     title: 'Conceitos de inteligência',
     subtitle:
       'O que cada número da campanha mede e como é calculado. Só o que o produto já calcula hoje — a lista cresce conforme novas análises entram.',
+  },
+  atualizacoes: {
+    title: 'Atualizações',
   },
   contatos: {
     title: 'Contatos',
@@ -233,6 +236,10 @@ const pathRules: PathRule[] = [
   {
     match: (pathname) => pathname === '/campanha/conceitos',
     resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.conceitos),
+  },
+  {
+    match: (pathname) => pathname === CAMPAIGN_UPDATES_HREF,
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.atualizacoes),
   },
   {
     match: (pathname) => pathname === LEADER_CONTACTS_HOME,

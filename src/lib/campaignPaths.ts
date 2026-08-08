@@ -14,3 +14,5 @@ export const CAMPAIGN_AGENDA_HOME = '/campanha/agenda' as const
 export const LEADER_CONTACTS_HOME = '/campanha/contatos' as const
 
 export const CAMPAIGN_PROFILE_HOME = '/campanha/perfil' as const
+
+export const CAMPAIGN_UPDATES_HREF = '/campanha/atualizacoes' as const
