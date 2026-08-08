@@ -17,14 +17,17 @@
  *                              paralelo não disputarem porta 3000 nem o
  *                              `teqo_test` compartilhado. `--no-migrate` pula a
  *                              aplicação das migrations nos bancos novos.
- *   pnpm worktree plan [--go] [--no-migrate]
- *                              cria/reutiliza o worktree de PLANEJAMENTO
- *                              (branch fixo `plans/plan-issue`) para rodar a
- *                              skill /plan-issue sem ocupar o main; NÃO é
- *                              nomeado nem derivado de Issue nenhuma, então um
- *                              `next` posterior da próxima Issue nunca colide
- *                              (nem no branch, nem no slot). Mesmo provisionamento
- *                              isolado do `next`.
+ *   pnpm worktree plan [bag] [--go] [--no-migrate]
+ *                              cria um worktree de PLANEJAMENTO novo para rodar
+ *                              a skill /plan-issue sem ocupar o main — cada
+ *                              invocação cria UM DIFERENTE, para sessões de
+ *                              planejamento paralelas: com `bag`, branch
+ *                              `plans/plan-issue-<bag>` (e `-2`, `-3`, … se o
+ *                              nome já estiver vivo); sem `bag`, o próximo
+ *                              sequencial `plans/plan-issue-<n>` livre. Nenhum
+ *                              deles (branch nem slot) colide com um `next`
+ *                              posterior (prefixo minúsculo `plans/…`).
+ *                              Mesmo provisionamento isolado do `next`.
  *   pnpm worktree kill [--force]   destrói o worktree em que o shell atual está
  *                              (recusa worktree sujo sem `--force`) e remove os
  *                              bancos gerados do worktree (best-effort)
@@ -49,7 +52,7 @@ import {
   isGeneratedDatabaseName,
   worktreeEnvironment,
 } from './lib/worktree-env.mjs'
-import { branchNameForIssue, PLAN_WORKTREE_BRANCH } from './lib/worktree.mjs'
+import { branchNameForIssue, planBranchName } from './lib/worktree.mjs'
 
 const die = dieAgent('worktree')
 const WORKTREES_ROOT = join(homedir(), '.cursor', 'worktrees', 'teqo')
@@ -335,36 +338,59 @@ const cmdNext = async (go, skipMigrate) => {
 }
 
 /**
- * `plan` — the /plan-issue planning worktree. Deliberately NOT tied to the
- * claim queue and NOT named after any Issue: `PLAN_WORKTREE_BRANCH` is a fixed
- * generic branch, so a later `pnpm worktree next` for the next claimable Issue
- * never collides with it (branch name nor slot — the plan env registers its
- * hashed slot via the marker and `next` bumps around it). Same isolated env
- * provisioning as `next`.
+ * `plan` — a `/plan-issue` planning worktree. Deliberately NOT tied to the
+ * claim queue and NOT named after any Issue: the branch is derived either from
+ * an optional `bag` slug (`plans/plan-issue-<bag>`, suffixed `-2`, `-3`, … on
+ * collision) or from the next free sequential `plans/plan-issue-<n>`, so a
+ * later `pnpm worktree next` for the next claimable Issue never collides with
+ * it (branch name nor slot — each plan env registers its hashed slot via the
+ * marker and `next` bumps around it). Every invocation creates a DIFFERENT
+ * worktree — parallel `/plan-issue` sessions never share one. Same isolated
+ * env provisioning as `next`.
  */
-const cmdPlan = async (go, skipMigrate) => {
-  const branch = PLAN_WORKTREE_BRANCH
+const cmdPlan = async (go, skipMigrate, bag) => {
+  git(['fetch', 'origin'])
+
+  const entries = parseWorktreeList(git(['worktree', 'list', '--porcelain']))
+
+  const taken = new Set()
+  for (const scope of [
+    (
+      git(['for-each-ref', '--format=%(refname:short)', 'refs/heads'], {
+        okIfFails: true,
+      }) ?? ''
+    ).split('\n'),
+    (
+      git(['for-each-ref', '--format=%(refname:short)', 'refs/remotes/origin'], {
+        okIfFails: true,
+      }) ?? ''
+    )
+      .split('\n')
+      .map((name) => name.replace(/^origin\//, '')),
+  ]) {
+    for (const name of scope) if (name) taken.add(name)
+  }
+
+  const branch = planBranchName({ bag, taken })
   if (git(['check-ref-format', '--allow-onelevel', branch], { okIfFails: true }) === null) {
     die(`Branch plan inválido para refname: ${branch}`)
   }
   const dir = join(WORKTREES_ROOT, branch)
 
-  git(['fetch', 'origin'])
-
-  const entries = parseWorktreeList(git(['worktree', 'list', '--porcelain']))
   if (entries.some((entry) => resolve(entry.path) === resolve(dir))) {
-    console.log(`Worktree de planejamento já existe em ${dir} — reutilizando, sem duplicar.`)
-  } else {
-    const branchExists =
-      git(['show-ref', '--verify', '--quiet', `refs/heads/${branch}`], { okIfFails: true }) !== null
-    const flag = branchExists ? '-B' : '-b'
-    git(['worktree', 'add', flag, branch, dir, 'origin/main'])
-
-    console.log('Worktree de planejamento criado:')
-    console.log(`  branch: ${branch}`)
-    console.log(`  path:   ${dir}`)
-    console.log('  origem: origin/main')
+    die(
+      `Já existe um worktree de planejamento em ${dir} (branch ${branch} não detectado nos refs). Rode \`pnpm worktree kill\` de dentro dele.`,
+    )
   }
+
+  const label = bag && bag.trim() ? `lote "${bag}"` : 'sequencial'
+  git(['worktree', 'add', '-b', branch, dir, 'origin/main'])
+
+  console.log('Worktree de planejamento criado:')
+  console.log(`  sessão: ${label}`)
+  console.log(`  branch: ${branch}`)
+  console.log(`  path:   ${dir}`)
+  console.log('  origem: origin/main')
 
   const mainRoot = entries[0]?.path
   const env = worktreeEnvironment({
@@ -467,19 +493,20 @@ const subcommand = positional[0]
 
 if (!subcommand) {
   console.log(
-    'Uso: pnpm worktree next [--go] [--no-migrate] | plan [--go] [--no-migrate] | kill [--force]',
+    'Uso: pnpm worktree next [--go] [--no-migrate] | plan [bag] [--go] [--no-migrate] | kill [--force]',
   )
   console.log('  next [--go] [--no-migrate]')
   console.log('    cria worktree da próxima Issue claimável (branch <code>-<slug>) e provisiona o')
   console.log('    ambiente isolado: porta de dev + bancos próprios (determinístico do branch);')
   console.log('    com --go imprime `cd <dir>` no fim (quem aplica o cd: opencode command, ou a')
   console.log('    função `worktree()` de .agents/shell/worktree.sh); --no-migrate pula migrations')
-  console.log('  plan [--go] [--no-migrate]')
+  console.log(`\n  plan [bag] [--go] [--no-migrate]`)
   console.log(
-    '    cria/reutiliza o worktree de planejamento (branch plans/plan-issue) para rodar a',
+    '    cria um worktree de planejamento DIFERENTE a cada invocação (sessões /plan-issue',
   )
-  console.log('    skill /plan-issue sem ocupar o main nem travar na fila; provisiona o mesmo')
-  console.log('    ambiente isolado de `next`; nunca colide com o branch <code>-<slug> de `next`')
+  console.log('    paralelas): com bag, branch plans/plan-issue-<bag> (sufixo -2/-3 se o nome já')
+  console.log('    existir); sem bag, o próximo plans/plan-issue-<n> sequencial livre; o prefixo')
+  console.log('    minúsculo plans/… nunca colide com o branch <code>-<slug> de `next`')
   console.log('  kill [--force]  destrói o worktree em que você está (recusa sujo sem --force) e')
   console.log('                  remove os bancos gerados do worktree (best-effort)')
   process.exit(1)
@@ -487,7 +514,8 @@ if (!subcommand) {
 
 try {
   if (subcommand === 'next') await cmdNext(Boolean(flags.go), Boolean(flags['no-migrate']))
-  else if (subcommand === 'plan') await cmdPlan(Boolean(flags.go), Boolean(flags['no-migrate']))
+  else if (subcommand === 'plan')
+    await cmdPlan(Boolean(flags.go), Boolean(flags['no-migrate']), positional[1])
   else if (subcommand === 'kill') {
     if (flags.go) die('`--go` só faz sentido com `next`.')
     await cmdKill(Boolean(flags.force))

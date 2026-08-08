@@ -15,7 +15,8 @@ import {
 import {
   branchNameForIssue,
   issueCodeAndSubject,
-  PLAN_WORKTREE_BRANCH,
+  PLAN_BRANCH_PREFIX,
+  planBranchName,
 } from '../../scripts/lib/worktree.mjs'
 
 type TestIssue = {
@@ -82,6 +83,50 @@ describe('branchNameForIssue', () => {
   })
 })
 
+describe('planBranchName (per-invocation planning worktrees)', () => {
+  it('no bag → first free sequential plans/plan-issue-<n>', () => {
+    expect(planBranchName({})).toBe('plans/plan-issue-1')
+    expect(planBranchName({ bag: '' })).toBe('plans/plan-issue-1')
+    expect(planBranchName({ bag: '   ' })).toBe('plans/plan-issue-1')
+  })
+
+  it('no bag → skips taken sequential names (parallel sessions)', () => {
+    const taken = new Set(['plans/plan-issue-1', 'plans/plan-issue-2'])
+    expect(planBranchName({ taken })).toBe('plans/plan-issue-3')
+  })
+
+  it('named bag → plans/plan-issue-<slug> when free', () => {
+    expect(planBranchName({ bag: 'Agenda eleitoral' })).toBe('plans/plan-issue-agenda-eleitoral')
+  })
+
+  it('named bag whose name is taken → suffixed -2, -3, …', () => {
+    const taken = new Set(['plans/plan-issue-agenda'])
+    expect(planBranchName({ bag: 'agenda', taken })).toBe('plans/plan-issue-agenda-2')
+
+    taken.add('plans/plan-issue-agenda-2')
+    expect(planBranchName({ bag: 'agenda', taken })).toBe('plans/plan-issue-agenda-3')
+  })
+
+  it('each invocation returns a different branch for the same bag (live name)', () => {
+    const first = planBranchName({ bag: 'municipios' })
+    const second = planBranchName({ bag: 'municipios', taken: new Set([first]) })
+    expect(second).toBe(`${first}-2`)
+  })
+
+  it('never collides with a `next` branch (uppercase-led <Code>-<slug>)', () => {
+    const taken = new Set(['C15-fullcalendar-em-campanha-agenda'])
+    for (const bag of ['agenda', 'municipios', 'C15']) {
+      const branch = planBranchName({ bag, taken })
+      expect(branch).toMatch(/^plans\/plan-issue/)
+      expect(branch).not.toMatch(/^[A-Z][A-Za-z0-9]*-/)
+    }
+  })
+
+  it('a numeric bag shares the sequential namespace (uniform)', () => {
+    expect(planBranchName({ bag: '3' })).toBe('plans/plan-issue-3')
+  })
+})
+
 describe('worktreeEnvironment (per-worktree ports and databases)', () => {
   it('derives slot, port and database names deterministically from the branch', () => {
     const env = worktreeEnvironment({ branch: 'C15-foo', code: 'C15' })
@@ -130,17 +175,14 @@ describe('worktreeEnvironment (per-worktree ports and databases)', () => {
   })
 
   it('plan worktree derives a stable hashed slot and never collides with `next`', () => {
-    expect(PLAN_WORKTREE_BRANCH).toBe('plans/plan-issue')
-    expect(PLAN_WORKTREE_BRANCH).not.toMatch(/^[A-Z][A-Za-z0-9]*-/)
-    const env = worktreeEnvironment({ branch: PLAN_WORKTREE_BRANCH, code: null })
-    expect(env.slot).toBe(hashSlotOf(PLAN_WORKTREE_BRANCH))
+    const branch = planBranchName({ bag: 'agenda' })
+    expect(branch).toBe(`${PLAN_BRANCH_PREFIX}-agenda`)
+    expect(PLAN_BRANCH_PREFIX).not.toMatch(/^[A-Z][A-Za-z0-9]*-/)
+    const env = worktreeEnvironment({ branch, code: null })
+    expect(env.slot).toBe(hashSlotOf(branch))
     expect(numericSlotOfCode('')).toBeNull()
-    expect(env).toEqual(worktreeEnvironment({ branch: PLAN_WORKTREE_BRANCH, code: null }))
-    const bumped = worktreeEnvironment({
-      branch: PLAN_WORKTREE_BRANCH,
-      code: null,
-      takenSlots: new Set([env.slot]),
-    })
+    expect(env).toEqual(worktreeEnvironment({ branch, code: null }))
+    const bumped = worktreeEnvironment({ branch, code: null, takenSlots: new Set([env.slot]) })
     expect(bumped.slot).toBe(env.slot + 1)
   })
 
