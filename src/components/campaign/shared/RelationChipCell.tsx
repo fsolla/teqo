@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -382,12 +383,19 @@ export const RelationChipCell = ({
   // chips must not throw away a measurement that is still valid. The remove
   // button is absolutely positioned, so revealing it never changes a chip's box.
   const chipsKey = chips.map((chip) => chip.key).join('|')
-  useEffect(() => {
+
+  // B169 — the whole measure→collapse cycle runs in `useLayoutEffect`, not
+  // `useEffect`: measuring after paint made the clamp height (`max-h-18`, 72px)
+  // render for a frame and only then collapse to the computed 3-row slice (rows
+  // that fit ~2 lines shift visibly) — a LayoutShift wave down the table on every
+  // remount (RSC navigation, pagination, sorting, filtering). Measuring
+  // synchronously before paint keeps the first frame already at final height.
+  useLayoutEffect(() => {
     if (!effectiveMeasureOverflow) return
     invalidateMeasurement()
   }, [chipsKey, effectiveMeasureOverflow, invalidateMeasurement])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!effectiveMeasureOverflow) return
     const row = chipRowRef.current
     if (!row) return
@@ -407,7 +415,7 @@ export const RelationChipCell = ({
    * three visible rows — and the room the toggle needs on the third one — is
    * read from the real layout instead of estimated from label lengths.
    */
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!effectiveMeasureOverflow) return
     if (visibleChipCount !== null) return
     const row = chipRowRef.current
