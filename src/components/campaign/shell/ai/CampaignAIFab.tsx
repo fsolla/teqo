@@ -23,7 +23,7 @@ export const CampaignAIFab = ({ className }: { className?: string }) => {
         size="icon"
         className="pointer-events-auto size-8 rounded-full shadow-lg"
         aria-label="Sollinha — Assistente virtual"
-        onClick={() => ctx?.setOpenMobile(true)}
+        onClick={() => ctx?.setOpen(true)}
       >
         <Bot className="size-4" aria-hidden />
       </Button>

@@ -1,23 +1,34 @@
 'use client'
 
+import { useChat } from '@ai-sdk/react'
+import { DefaultChatTransport, type AbstractChat, type ChatStatus, type UIMessage } from 'ai'
 import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type MutableRefObject,
   type ReactNode,
 } from 'react'
 import type { PanelImperativeHandle } from 'react-resizable-panels'
 
+import { useIsMobileMeasured } from '@/hooks/use-mobile'
+
 type AISidebarContextValue = {
+  /** The chat is showing — single source of truth across panel (desktop) and drawer (mobile). */
   open: boolean
-  /** Opens/closes the desktop Panel AND toggles the mobile Drawer. */
+  isMobile: boolean
+  /** The first matchMedia measurement has landed (false during the hydration frame). */
+  measured: boolean
+  messages: UIMessage[]
+  status: ChatStatus
+  sendMessage: AbstractChat<UIMessage>['sendMessage']
+  /** Opens/closes the chat. The desktop Panel and the mobile Drawer react to `open`. */
   setOpen: (open: boolean) => void
-  /** Opens the mobile Drawer only — does NOT expand the desktop Panel. */
-  setOpenMobile: (open: boolean) => void
-  /** Toggles the desktop Panel. */
+  /** Toggles the chat. */
   toggle: () => void
 }
 
@@ -31,29 +42,44 @@ export const CampaignAISidebarProvider = ({
   children: ReactNode
 }) => {
   const [open, setOpen] = useState(false)
+  const { isMobile, measured } = useIsMobileMeasured()
 
-  const setOpenWithPanel = useCallback(
-    (next: boolean) => {
-      setOpen(next)
-      if (next) {
-        panelRef.current?.expand()
-      } else {
-        panelRef.current?.collapse()
-      }
-    },
-    [panelRef],
-  )
+  const chat = useChat({
+    id: 'campaign-sollinha',
+    transport: useMemo(() => new DefaultChatTransport({ api: '/campanha/api/ai-chat' }), []),
+  })
 
-  const setOpenMobile = useCallback((next: boolean) => {
-    setOpen(next)
-    // Don't touch the Panel — it's hidden on mobile
-  }, [])
+  // The chat has two surfaces keyed by viewport — the desktop panel and the
+  // mobile drawer — and both derive from the SAME `open` flag. Crossing the
+  // breakpoint therefore needs no migration of its own: the surface that renders
+  // just follows `open && viewport`. The only work is keeping `open` truthful:
+  // on the desktop settle the panel starts at its RRP default (25%) while `open`
+  // begins false — reconcile `open` to the panel's real visibility so a visible
+  // chat is "open" (makes close work and the drawer open on resize). A fresh
+  // mobile visit keeps `open` false (no spontaneous chat).
+  const settledRef = useRef(false)
+  useEffect(() => {
+    if (settledRef.current) return
+    settledRef.current = measured
+    if (measured && !isMobile && !panelRef.current?.isCollapsed()) {
+      setOpen(true)
+    }
+  }, [measured, isMobile, panelRef])
 
-  const toggle = useCallback(() => setOpenWithPanel(!open), [open, setOpenWithPanel])
+  const toggle = useCallback(() => setOpen(!open), [open])
 
   const value = useMemo(
-    () => ({ open, setOpen: setOpenWithPanel, setOpenMobile, toggle }),
-    [open, setOpenWithPanel, setOpenMobile, toggle],
+    () => ({
+      open,
+      isMobile,
+      measured,
+      messages: chat.messages,
+      status: chat.status,
+      sendMessage: chat.sendMessage,
+      setOpen,
+      toggle,
+    }),
+    [open, isMobile, measured, chat.messages, chat.status, chat.sendMessage, setOpen, toggle],
   )
 
   return <AISidebarContext.Provider value={value}>{children}</AISidebarContext.Provider>

@@ -403,6 +403,14 @@ body,
   .scrollbar-hide::-webkit-scrollbar {
     display: none; /* Chrome, Safari */
   }
+
+  /* B167 — the chat Panel's footprint is hidden by this class instead of RRP's
+     imperative collapse: `display:none !important` beats the `display:flex`
+     react-resizable-panels writes inline on the Panel element on every render,
+     so hiding survives RRP's own (async, viewport-driven) re-layouts. */
+  .b167-ai-chat-hidden {
+    display: none !important;
+  }
 }
 
 /* E16 — municipality dossier print view: compact A4 typography (one step down

@@ -1,9 +1,7 @@
 'use client'
 
-import { useChat } from '@ai-sdk/react'
-import { DefaultChatTransport } from 'ai'
 import { Bot, Send, User } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -14,19 +12,23 @@ import { Message, MessageAvatar, MessageContent } from '@/components/ui/message'
 import { Spinner } from '@/components/ui/Spinner'
 import { cn } from '@/lib/utils'
 
+import { useAISidebar } from '@/components/campaign/shell/ai/CampaignAISidebarContext'
+
 export const CampaignAIChat = ({ className }: { className?: string }) => {
-  const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: '/campanha/api/ai-chat' }),
-  })
+  const ctx = useAISidebar()
   const [input, setInput] = useState('')
-  const viewportRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  const messages = useMemo(() => ctx?.messages ?? [], [ctx])
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  if (!ctx) return null
+
+  const { sendMessage, status } = ctx
   const busy = status !== 'ready'
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -39,10 +41,7 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
   return (
     <div className={cn('grid min-h-0 grid-rows-[1fr_auto]', className)}>
       {/* Messages area */}
-      <div
-        ref={viewportRef}
-        className="min-h-0 overflow-y-auto px-4 py-3 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
-      >
+      <div className="min-h-0 overflow-y-auto px-4 py-3 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center px-4 text-center">
             <div className="max-w-xs space-y-3">
