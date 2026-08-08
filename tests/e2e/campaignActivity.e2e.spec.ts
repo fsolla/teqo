@@ -125,6 +125,13 @@ test.describe('Agenda — calendário operacional', () => {
     )
     await expect(page.getByText(title, { exact: true })).toBeVisible()
 
+    // B167: when the viewport shrinks to mobile, a chat that was open on the
+    // desktop panel migrates to the open full-screen drawer — which would cover
+    // the agenda. Close it first so this mobile-layout step is unobstructed.
+    await page
+      .getByRole('button', { name: 'Fechar', exact: true })
+      .filter({ visible: true })
+      .click()
     await page.setViewportSize({ width: 390, height: 844 })
     await page.getByRole('tab', { name: /lista/i }).click()
     await expect(page.getByText(title, { exact: true })).toBeVisible()

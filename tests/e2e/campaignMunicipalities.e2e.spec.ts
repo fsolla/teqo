@@ -124,7 +124,10 @@ test.describe('Municípios — jornadas por papel', () => {
     // (visually a hover-only preview otherwise), so assert against that
     // unique, unambiguous string rather than a bare "5.000" substring —
     // that also matches the (opacity-0 but DOM-visible) hover-preview span.
-    await expect(page.getByText('Otimista: 5.000')).toBeVisible()
+    // `.nth(0)`: the cell's sr-only summary is first in DOM; the preview span
+    // duplicates the text when a row is hovered, making a bare getByText a
+    // strict-mode violation (observed flaky on CI).
+    await expect(page.getByText('Otimista: 5.000').nth(0)).toBeVisible()
 
     // B145: assessoria left the detail hero; it still appears on the dossiê tab.
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}?tab=dossie`)
