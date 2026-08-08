@@ -1,31 +1,70 @@
-import { Inbox } from 'lucide-react'
+import config from '@payload-config'
+import { redirect } from 'next/navigation'
+import { getPayload } from 'payload'
 
+import { CampaignUpdatesFeed } from '@/components/campaign/municipality/CampaignUpdatesFeed'
+import { CampaignUpdatesFilters } from '@/components/campaign/municipality/CampaignUpdatesFilters'
+import {
+  CampaignListPendingBoundary,
+  CampaignListResults,
+} from '@/components/campaign/shared/CampaignListPending'
+import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import {
+  loadCampaignUpdatesFeed,
+  loadCampaignUpdatesFeedFacets,
+} from '@/utilities/municipality/campaignUpdatesFeedData'
+import {
+  buildCampaignUpdatesFeedHref,
+  resolveCampaignUpdatesFeedUrl,
+} from '@/utilities/municipality/municipalityUpdateListUrl'
 
 export const metadata = campaignPageMetadataFromCatalog('atualizacoes')
 
-/**
- * B164 placeholder — staff-only. The `Atualizações` nav item points here so
- * the bottom nav has a destination to route to; the content is an honest sign
- * that the feed is not built yet (no fake skeleton rows).
- */
-export default async function CampaignUpdatesPage() {
-  await requireCampaignPageActor({ gate: 'staff' })
+type CampaignUpdatesPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
+
+export default async function CampaignUpdatesPage({ searchParams }: CampaignUpdatesPageProps) {
+  const rawSearchParams = await searchParams
+  const canonicalUrl = resolveCampaignUpdatesFeedUrl(rawSearchParams)
+  if (canonicalUrl.redirectHref) redirect(canonicalUrl.redirectHref)
+
+  const [user, payload] = await Promise.all([
+    requireCampaignPageActor({ gate: 'staff' }),
+    getPayload({ config }),
+  ])
+  const isStaff = isCampaignStaff(user)
+
+  const { state } = canonicalUrl
+  const [feed, facets] = await Promise.all([
+    loadCampaignUpdatesFeed(payload, user, state),
+    loadCampaignUpdatesFeedFacets(payload, user),
+  ])
+
+  const resolvedUrl = resolveCampaignUpdatesFeedUrl(rawSearchParams, feed.totalPages)
+  if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
+  const { state: canonicalState } = resolvedUrl
 
   return (
-    <CampaignPageShell className="items-center py-12">
-      <div className="flex flex-col items-center gap-4 text-center">
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-muted">
-          <Inbox aria-hidden="true" className="size-6 text-muted-foreground" />
-        </div>
-        <h1 className="text-xl font-semibold">Atualizações em breve</h1>
-        <p className="max-w-sm text-sm text-muted-foreground">
-          O painel de atualizações da campanha ainda está em construção. Volte depois para conferir
-          as novidades.
-        </p>
-      </div>
+    <CampaignPageShell>
+      <CampaignListPendingBoundary>
+        <CampaignUpdatesFilters state={canonicalState} facets={facets} isStaff={isStaff} />
+        <CampaignListResults>
+          <CampaignUpdatesFeed cards={feed.cards} />
+          <CampaignListFooter
+            totalDocs={feed.totalDocs}
+            singular="atualização encontrada"
+            plural="atualizações encontradas"
+            page={feed.page}
+            totalPages={feed.totalPages}
+            hrefForPage={(page) => buildCampaignUpdatesFeedHref(canonicalState, page)}
+          />
+        </CampaignListResults>
+      </CampaignListPendingBoundary>
     </CampaignPageShell>
   )
 }
