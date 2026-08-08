@@ -100,7 +100,7 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
           }}
         />
         <CampaignListResults>
-          <ActivityAgenda state={state} />
+          <ActivityAgenda state={state} municipalityOptions={municipalityOptions} />
         </CampaignListResults>
       </CampaignListPendingBoundary>
     </CampaignPageShell>

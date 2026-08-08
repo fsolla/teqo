@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
   loadEvents: vi.fn(),
   reschedule: vi.fn(),
+  createInline: vi.fn(),
+  searchResponsibles: vi.fn(),
   revertDrop: vi.fn(),
   revertResize: vi.fn(),
   routerPush: vi.fn(),
@@ -15,6 +17,11 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/app/(campaign)/campanha/actions/activity', () => ({
   loadActivityAgendaEvents: (...args: unknown[]) => mocks.loadEvents(...args),
   rescheduleActivity: (...args: unknown[]) => mocks.reschedule(...args),
+  createActivityInline: (...args: unknown[]) => mocks.createInline(...args),
+}))
+
+vi.mock('@/app/(campaign)/campanha/(app)/atividades/contactSearchActions', () => ({
+  searchActivityResponsibleOptionsAction: (query: string) => mocks.searchResponsibles(query),
 }))
 
 vi.mock('next/navigation', () => ({
@@ -25,6 +32,12 @@ vi.mock('sonner', () => ({
   toast: { error: mocks.toastError, success: mocks.toastSuccess },
 }))
 
+type DateClickInfo = {
+  allDay: boolean
+  dateStr: string
+  jsEvent: MouseEvent
+}
+
 type ScheduleMutationInfo = {
   event: { id: string; startStr: string; endStr: string }
   revert: () => void
@@ -34,6 +47,7 @@ type CalendarProps = {
   datesSet: (info: { startStr: string; endStr: string }) => void
   eventDrop: (info: ScheduleMutationInfo) => void
   eventResize: (info: ScheduleMutationInfo) => void
+  dateClick: (info: DateClickInfo) => void
 }
 
 vi.mock('@fullcalendar/react', () => {
@@ -54,6 +68,19 @@ vi.mock('@fullcalendar/react', () => {
     return createElement(
       'div',
       null,
+      createElement(
+        'button',
+        {
+          type: 'button',
+          onClick: () =>
+            props.dateClick({
+              allDay: false,
+              dateStr: '2026-08-07T13:00:00-03:00',
+              jsEvent: new MouseEvent('click'),
+            }),
+        },
+        'Clicar slot',
+      ),
       createElement(
         'button',
         { type: 'button', onClick: () => props.eventDrop({ event, revert: mocks.revertDrop }) },
@@ -106,5 +133,20 @@ describe('ActivityAgenda schedule failures', () => {
 
     await waitFor(() => expect(mocks.revertResize).toHaveBeenCalledOnce())
     expect(mocks.toastError).toHaveBeenCalledWith('Remarcação recusada.')
+  })
+
+  it('abre a criação inline no clique de um slot vazio, sem navegar', async () => {
+    mocks.loadEvents.mockResolvedValue([])
+    render(<ActivityAgenda state={{}} />)
+
+    await waitFor(() => expect(mocks.loadEvents).toHaveBeenCalled())
+    expect(mocks.routerPush).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clicar slot' }))
+
+    const startInput = await screen.findByLabelText('Início *')
+    expect((startInput as HTMLInputElement).value).toBe('2026-08-07T13:00')
+    expect((screen.getByLabelText('Término') as HTMLInputElement).value).toBe('2026-08-07T13:30')
+    expect(mocks.routerPush).not.toHaveBeenCalled()
   })
 })
