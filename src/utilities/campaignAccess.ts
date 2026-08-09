@@ -149,6 +149,8 @@ export {
   canCreateCalendarFeed,
   canDeleteCalendarFeed,
   canReadCalendarFeed,
+  canSetCalendarFeedRevocation,
+  canSetCalendarFeedSecret,
   canSetCalendarFeedSystemField,
   canUpdateCalendarFeed,
 } from '@/utilities/access/calendarFeeds'
