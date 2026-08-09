@@ -24,11 +24,7 @@ type AgendaFeedChromeProps = {
  * exposes the sheet to the mobile FAB quick action and owns the single shared
  * dialog instance.
  */
-export const AgendaFeedChrome = ({
-  feeds,
-  onCreateFeed,
-  onRevokeFeed,
-}: AgendaFeedChromeProps) => {
+export const AgendaFeedChrome = ({ feeds, onCreateFeed, onRevokeFeed }: AgendaFeedChromeProps) => {
   const { setContext } = useCampaignQuickActionContext()
   const [open, setOpen] = useState(false)
   const openFeed = useCallback(() => setOpen(true), [])

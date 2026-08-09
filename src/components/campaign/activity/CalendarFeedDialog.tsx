@@ -204,11 +204,7 @@ export const CalendarFeedDialog = ({
                 Cancelar
               </Button>
             ) : null}
-            <Button
-              type="button"
-              onClick={handleCreate}
-              disabled={!label.trim() || isCreating}
-            >
+            <Button type="button" onClick={handleCreate} disabled={!label.trim() || isCreating}>
               {isCreating ? 'Gerando...' : 'Gerar link'}
             </Button>
           </div>
@@ -224,8 +220,8 @@ export const CalendarFeedDialog = ({
           <DrawerHeader className="text-left">
             <DrawerTitle>Sincronizar com Google Calendar</DrawerTitle>
             <DrawerDescription>
-              Gere um link de import para sincronizar a agenda com o Google Calendar.
-              Alterações em Teqo serão refletidas automaticamente.
+              Gere um link de import para sincronizar a agenda com o Google Calendar. Alterações em
+              Teqo serão refletidas automaticamente.
             </DrawerDescription>
           </DrawerHeader>
           <div className="overflow-y-auto px-4 pb-2">{body}</div>
@@ -243,8 +239,8 @@ export const CalendarFeedDialog = ({
         <DialogHeader>
           <DialogTitle>Sincronizar com Google Calendar</DialogTitle>
           <DialogDescription>
-            Gere um link de import para sincronizar a agenda com o Google Calendar.
-            Alterações em Teqo serão refletidas automaticamente.
+            Gere um link de import para sincronizar a agenda com o Google Calendar. Alterações em
+            Teqo serão refletidas automaticamente.
           </DialogDescription>
         </DialogHeader>
         {body}
