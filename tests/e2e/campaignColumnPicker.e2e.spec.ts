@@ -69,9 +69,11 @@ test.describe('Seletor de colunas', () => {
 
     // The cookie carries one key per list: another list is untouched. The
     // territories list is the honest neighbour here — its 27 rows come from
-    // the catalog, so it never falls into an empty state.
+    // the catalog, so it never falls into an empty state. B175 removed the
+    // "Municípios" column (the count moved into the name), so "2022" (P0,
+    // always on) is the marker that the municipios cookie did not leak.
     await page.goto('/campanha/territorios')
-    await expect(page.getByRole('columnheader', { name: /Municípios/ })).toBeVisible()
+    await expect(page.getByRole('columnheader', { name: /2022/ })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Mostrar ou ocultar colunas' })).toBeVisible()
 
     await page.goto('/campanha/municipios')

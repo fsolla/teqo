@@ -4,7 +4,7 @@ import { getPayload } from 'payload'
 
 import { TerritoryFilters } from '@/components/campaign/municipality/TerritoryFilters'
 import { TerritoryList } from '@/components/campaign/municipality/TerritoryList'
-import { territoryListColumns } from '@/components/campaign/municipality/TerritoryListColumns'
+import { territoryListPickerColumns } from '@/components/campaign/municipality/TerritoryListColumns'
 import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
@@ -12,7 +12,6 @@ import {
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
@@ -39,7 +38,7 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
     getPayload({ config }),
   ])
 
-  const allRows = await loadTerritoryOverview(payload, user)
+  const { rows: allRows, references } = await loadTerritoryOverview(payload, user)
   const columnVisibility = await readCampaignColumnVisibility('territorios')
   const { state } = resolvedUrl
   const { sort, dir } = resolveTerritoryListSort(state)
@@ -57,9 +56,7 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
           trailing={
             <CampaignColumnPickerTrailing
               columnVisibility={columnVisibility}
-              columns={toCampaignColumnPickerColumns(
-                territoryListColumns({ state, regionOptions: regionOptions }),
-              )}
+              columns={territoryListPickerColumns()}
             />
           }
         />
@@ -68,6 +65,7 @@ export default async function TerritoriesPage({ searchParams }: TerritoriesPageP
             rows={rows}
             state={state}
             regionOptions={regionOptions}
+            references={references}
             columnVisibility={columnVisibility}
           />
           <CampaignListFooter

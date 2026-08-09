@@ -48,10 +48,11 @@ export const searchHomeMunicipalities = async (
 
   const normalizedQuery = normalizeHomeSearchName(query)
 
-  const [municipalityHits, territoryRows] = await Promise.all([
+  const [municipalityHits, territoryOverview] = await Promise.all([
     searchStaffMunicipalityHits(payload, user, query),
     loadTerritoryOverview(payload, user),
   ])
+  const territoryRows = territoryOverview.rows
   const territoryHits: HomeSearchTerritoryHit[] = territoryRows
     .map((row) => {
       const normalizedName = normalizeHomeSearchName(row.region)
