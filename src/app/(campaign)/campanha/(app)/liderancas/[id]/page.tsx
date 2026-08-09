@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { LeadershipInviteButtons } from '@/components/campaign/invite/LeadershipInviteButtons'
+import { LeadershipAdvisorRelationCell } from '@/components/campaign/leadership/LeadershipAdvisorRelationCell'
 import { LeadershipContactSection } from '@/components/campaign/leadership/LeadershipContactSection'
 import { LeadershipInternalForm } from '@/components/campaign/leadership/LeadershipInternalForm'
 import { SupportStatusBadge } from '@/components/campaign/leadership/SupportStatusBadge'
@@ -13,15 +14,21 @@ import { StateDeputyChips } from '@/components/campaign/stateDeputy/StateDeputyC
 import { Badge } from '@/components/ui/Badge'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { resolvedPortfolioEntriesById } from '@/lib/municipalityPortfolio'
+import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
+  loadEligibleAdvisorOptions,
   loadMunicipalityOptions,
   loadOrganizationOptions,
   loadStateDeputyOptions,
 } from '@/utilities/campaignRelationOptions'
 import { loadLeadershipDetail } from '@/utilities/leadership/leadershipData'
 import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
-import { updateLeadershipInternalFormAction } from './formActions'
+import { UserCogIcon } from 'lucide-react'
+import {
+  setLeadershipAdvisorMembershipFormAction,
+  updateLeadershipInternalFormAction,
+} from './formActions'
 
 export async function generateMetadata({ params }: LeadershipDetailPageProps) {
   const { id } = await params
@@ -62,6 +69,11 @@ export default async function LeadershipDetailPage({ params }: LeadershipDetailP
       loadMunicipalityPortfolioIndex(),
     ])
 
+  // C99 — only coordinator/candidate assign leadership advisors; the rest of
+  // staff reads (same gate as the dobradinha section, B156).
+  const canEditAdvisors = isCampaignUnrestricted(user)
+  const advisorOptions = canEditAdvisors ? await loadEligibleAdvisorOptions(payload, user) : []
+
   const municipalityById = resolvedPortfolioEntriesById(municipalityIndex)
   const municipalitySlugs = leadership.municipalityIDs
     .map((id) => municipalityById.get(id)?.slug)
@@ -90,6 +102,39 @@ export default async function LeadershipDetailPage({ params }: LeadershipDetailP
       {leadership.stateDeputies.length > 0 ? (
         <StateDeputyChips deputies={leadership.stateDeputies} />
       ) : null}
+
+      <section
+        aria-labelledby="leadership-advisors-title"
+        className="flex flex-col gap-3 rounded-xl border p-4"
+      >
+        <div className="flex items-center gap-2">
+          <UserCogIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+          <h2 id="leadership-advisors-title" className="text-base font-medium">
+            Assessores responsáveis
+          </h2>
+          <Badge variant="outline">{leadership.advisors.length}</Badge>
+        </div>
+        <LeadershipAdvisorRelationCell
+          leadershipId={leadership.id}
+          leadershipName={leadership.name}
+          advisors={leadership.advisors}
+          options={
+            canEditAdvisors
+              ? advisorOptions.map((option) => ({
+                  id: option.id,
+                  searchLabel: option.name,
+                  item: {
+                    id: option.id,
+                    label: option.name,
+                    href: `/campanha/assessores/${option.id}`,
+                  },
+                }))
+              : []
+          }
+          membershipAction={setLeadershipAdvisorMembershipFormAction}
+          readOnly={!canEditAdvisors}
+        />
+      </section>
 
       <section
         aria-labelledby="leadership-invites-title"

@@ -10,13 +10,14 @@ import {
   engagementLevels,
   formatEngagementLevelLabel,
 } from '@/lib/engagementLevel'
-import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
+import { relationshipId } from '@/lib/relationship'
 import { politicalTrendStatuses } from '@/lib/schemas/municipality'
 import {
   getVoteEstimateOrderViolation,
   VOTE_ESTIMATE_ORDER_ERROR_MESSAGE,
   type VoteEstimateScenarioFields,
 } from '@/lib/voteEstimate'
+import { validateEligibleCampaignStaffAdvisors } from '@/utilities/access/campaignStaffAdvisors'
 import {
   canAssignMunicipalityAdvisors,
   canCreateMunicipality,
@@ -84,34 +85,6 @@ const validateExpectedVotes: CollectionBeforeValidateHook = ({ data, originalDoc
   return data
 }
 
-const validateMunicipalityAdvisors: CollectionBeforeValidateHook = async ({ data, req }) => {
-  if (!data || data.advisors === undefined) return data
-
-  const advisorIDs = Array.isArray(data.advisors) ? uniqueRelationshipIds(data.advisors) : []
-  if (advisorIDs.length === 0) return data
-
-  const eligibleAdvisors = await req.payload.find({
-    collection: 'campaignUser',
-    depth: 0,
-    pagination: false,
-    where: {
-      and: [{ id: { in: advisorIDs } }, eligibleCampaignStaffWhere],
-    },
-    select: { name: true },
-    overrideAccess: true,
-    req,
-  })
-
-  if (eligibleAdvisors.docs.length !== advisorIDs.length) {
-    throw new APIError(
-      'Cada assessor deve ter papel de Coordenador Geral, Assessor ou Candidato.',
-      400,
-    )
-  }
-
-  return data
-}
-
 /**
  * E14 — `levelChangedAt` is the clock the movement rules read (protection
  * window, one movement per month), so it is derived here rather than trusted
@@ -171,7 +144,7 @@ export const Municipality: CollectionConfig = {
     delete: canDeleteMunicipality,
   },
   hooks: {
-    beforeValidate: [validateMunicipalityAdvisors, validateExpectedVotes],
+    beforeValidate: [validateEligibleCampaignStaffAdvisors, validateExpectedVotes],
     beforeChange: [derivePoliticalTrendAudit, deriveEngagementLevelAudit],
   },
   fields: [

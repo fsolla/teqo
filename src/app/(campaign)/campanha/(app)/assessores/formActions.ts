@@ -18,10 +18,21 @@ import {
   runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
+import {
+  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
+  CONTACT_PHONE_CONFLICT_MESSAGE,
+} from '@/utilities/contactPhoneInvariant'
 
 const INVALID_FIELD_MESSAGE = 'Campo inválido.'
 
-const advisorSafeMessages = [...ADVISOR_ACTION_SAFE_MESSAGES, INVALID_FIELD_MESSAGE] as const
+// The C99 ficha-sync fails the account edit with the ficha's own phone
+// messages when the phone belongs to another ficha (or to two).
+const advisorSafeMessages = [
+  ...ADVISOR_ACTION_SAFE_MESSAGES,
+  INVALID_FIELD_MESSAGE,
+  CONTACT_PHONE_CONFLICT_MESSAGE,
+  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
+] as const
 
 export const updateAdvisorProfileFormAction = async (
   _state: CampaignFormActionState,

@@ -11,20 +11,17 @@ import {
   supporterRemoveSchema,
   supporterVoteIntentionSchema,
 } from '@/lib/schemas/supporter'
-import type { CampaignUser, Contact } from '@/payload-types'
+import type { CampaignUser } from '@/payload-types'
 import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
 import {
   requireSupporterRegistrationConsent,
   requireSupporterVoteIntentionConsent,
   type ConsentDescriptor,
 } from '@/utilities/campaignConsent'
-import {
-  acquireContactPhoneLocks,
-  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
-} from '@/utilities/contactPhoneInvariant'
+import { findOrCreateContactByPhone } from '@/utilities/contactIdentity'
+import { acquireContactPhoneLocks } from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
-import { POSTGRES_DEDUP_LOCK_MESSAGE } from '@/utilities/postgresTransactionLocks'
 import { isUniqueSupporterConflict } from '@/utilities/supporter/supporterErrors'
 
 import {
@@ -70,61 +67,6 @@ const assertCanManageSupporter = async (
     req,
   })
 
-export const upsertContactByPhone = async ({
-  payload,
-  req,
-  phone,
-  name,
-  email,
-  city,
-}: {
-  payload: Payload
-  req: PayloadTransactionRequest
-  phone: string
-  name: string
-  email?: string
-  city?: string
-}): Promise<{ contactID: number; reused: boolean }> => {
-  const contacts = await payload.find({
-    collection: 'contact',
-    where: { phone: { equals: phone } },
-    depth: 0,
-    limit: 2,
-    pagination: false,
-    overrideAccess: true,
-    req,
-  })
-
-  if (contacts.totalDocs > 1) {
-    throw new Error(CONTACT_PHONE_AMBIGUOUS_MESSAGE)
-  }
-
-  const existing = contacts.docs[0]
-  if (existing) {
-    return { contactID: existing.id, reused: true }
-  }
-
-  const contact = await payload.create({
-    collection: 'contact',
-    data: {
-      name,
-      phone,
-      email,
-      state: 'BA' as Contact['state'],
-      city,
-    },
-    depth: 0,
-    overrideAccess: true,
-    // Callers of upsertContactByPhone have already acquired the phone advisory
-    // lock in the same transaction, so the Contact phone-invariant hook can
-    // skip its redundant lock+availability check.
-    context: { skipContactPhoneInvariant: true },
-    req,
-  })
-
-  return { contactID: contact.id, reused: false }
-}
-
 const createValidatedSupporter = async (payload: Payload, actor: CampaignUser, input: unknown) => {
   const data = supporterCreateSchema.parse(input)
 
@@ -147,12 +89,7 @@ const createValidatedSupporter = async (payload: Payload, actor: CampaignUser, i
           voteIntentionConsent = await requireSupporterVoteIntentionConsent(payload, req)
         }
 
-        if (payload.db.name !== 'postgres') {
-          throw new Error(POSTGRES_DEDUP_LOCK_MESSAGE)
-        }
-
-        await acquireContactPhoneLocks(payload, req, [data.phone])
-        const { contactID, reused } = await upsertContactByPhone({
+        const { contactID, reused } = await findOrCreateContactByPhone({
           payload,
           req,
           phone: data.phone,

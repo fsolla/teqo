@@ -1,16 +1,17 @@
 import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
-import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
+import { relationshipId } from '@/lib/relationship'
 import { STATE_DEPUTY_NAME_REQUIRED_MESSAGE } from '@/lib/schemas/stateDeputy'
 import { slugify } from '@/lib/slug'
 import { trimmedText } from '@/lib/text'
+import { validateEligibleCampaignStaffAdvisors } from '@/utilities/access/campaignStaffAdvisors'
 import {
-  canAssignStateDeputyAdvisors,
+  canAssignCampaignStaffAdvisors,
   canCreateStateDeputy,
   canDeleteStateDeputy,
+  canManageCampaignStaffAdvisors,
   canManageStateDeputy,
-  canManageStateDeputyAdvisors,
   canReadStateDeputy,
   canSetCampaignSystemField,
   eligibleCampaignStaffWhere,
@@ -75,37 +76,6 @@ const setCanonicalStateDeputySlug: CollectionBeforeValidateHook = async ({
     })
 }
 
-const validateStateDeputyAdvisors: CollectionBeforeValidateHook = async ({ data, req }) => {
-  if (!data || data.advisors === undefined) return data
-
-  const advisorIDs = Array.isArray(data.advisors) ? uniqueRelationshipIds(data.advisors) : []
-  if (advisorIDs.length === 0) return data
-
-  const eligibleAdvisors = await req.payload.find({
-    collection: 'campaignUser',
-    depth: 0,
-    pagination: false,
-    where: {
-      and: [{ id: { in: advisorIDs } }, eligibleCampaignStaffWhere],
-    },
-    select: { name: true },
-    // Intentional admin bypass: eligibility is a pure role check that must run
-    // for every caller (including /admin), independent of the actor's read
-    // scope over `campaignUser` — mirrors `validateMunicipalityAdvisors`.
-    overrideAccess: true,
-    req,
-  })
-
-  if (eligibleAdvisors.docs.length !== advisorIDs.length) {
-    throw new APIError(
-      'Cada assessor deve ter papel de Coordenador Geral, Assessor ou Candidato.',
-      400,
-    )
-  }
-
-  return data
-}
-
 export const StateDeputy: CollectionConfig = {
   slug: 'stateDeputy',
   labels: {
@@ -126,7 +96,7 @@ export const StateDeputy: CollectionConfig = {
     delete: canDeleteStateDeputy,
   },
   hooks: {
-    beforeValidate: [setCanonicalStateDeputySlug, validateStateDeputyAdvisors],
+    beforeValidate: [setCanonicalStateDeputySlug, validateEligibleCampaignStaffAdvisors],
     beforeChange: [stampCampaignCreatedBy],
   },
   fields: [
@@ -178,8 +148,8 @@ export const StateDeputy: CollectionConfig = {
       hasMany: true,
       index: true,
       access: {
-        create: canAssignStateDeputyAdvisors,
-        update: canManageStateDeputyAdvisors,
+        create: canAssignCampaignStaffAdvisors,
+        update: canManageCampaignStaffAdvisors,
       },
       filterOptions: eligibleCampaignStaffWhere,
     },

@@ -354,7 +354,7 @@ describe('campaign authentication foundation', () => {
           overrideAccess: false,
         }),
       ).rejects.toThrow(
-        'Remova ou substitua este usuário da assessoria de todos os municípios antes de alterar o papel para liderança.',
+        'Remova ou substitua este usuário da assessoria de municípios, dobradinhas ou lideranças antes de alterar o papel para liderança.',
       )
 
       if (admin) {

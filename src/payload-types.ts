@@ -265,6 +265,7 @@ export interface User {
  */
 export interface CampaignUser {
   id: number;
+  contact?: (number | null) | Contact;
   name: string;
   avatar?: (number | null) | Media;
   role: 'coordinator' | 'advisor' | 'candidate' | 'leader';
@@ -288,6 +289,49 @@ export interface CampaignUser {
     | null;
   password?: string | null;
   collection: 'campaignUser';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contact".
+ */
+export interface Contact {
+  id: number;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  gender?: ('feminino' | 'masculino' | 'outro' | 'nao_informado') | null;
+  state:
+    | 'AC'
+    | 'AL'
+    | 'AM'
+    | 'AP'
+    | 'BA'
+    | 'CE'
+    | 'DF'
+    | 'ES'
+    | 'GO'
+    | 'MA'
+    | 'MG'
+    | 'MS'
+    | 'MT'
+    | 'PA'
+    | 'PB'
+    | 'PE'
+    | 'PI'
+    | 'PR'
+    | 'RJ'
+    | 'RN'
+    | 'RO'
+    | 'RR'
+    | 'RS'
+    | 'SC'
+    | 'SE'
+    | 'SP'
+    | 'TO';
+  city?: string | null;
+  postalCode?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -464,49 +508,6 @@ export interface StateDeputy {
   createdAt: string;
 }
 /**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "contact".
- */
-export interface Contact {
-  id: number;
-  name: string;
-  email?: string | null;
-  phone?: string | null;
-  gender?: ('feminino' | 'masculino' | 'outro' | 'nao_informado') | null;
-  state:
-    | 'AC'
-    | 'AL'
-    | 'AM'
-    | 'AP'
-    | 'BA'
-    | 'CE'
-    | 'DF'
-    | 'ES'
-    | 'GO'
-    | 'MA'
-    | 'MG'
-    | 'MS'
-    | 'MT'
-    | 'PA'
-    | 'PB'
-    | 'PE'
-    | 'PI'
-    | 'PR'
-    | 'RJ'
-    | 'RN'
-    | 'RO'
-    | 'RR'
-    | 'RS'
-    | 'SC'
-    | 'SE'
-    | 'SP'
-    | 'TO';
-  city?: string | null;
-  postalCode?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * Endpoints Web Push por dispositivo. Não armazena dados biométricos.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -580,6 +581,7 @@ export interface Leadership {
   municipalities: (number | Municipality)[];
   organizations?: (number | Organization)[] | null;
   stateDeputies?: (number | StateDeputy)[] | null;
+  advisors?: (number | CampaignUser)[] | null;
   exclusive?: boolean | null;
   supportStatus: 'engajado' | 'a_abordar' | 'em_disputa' | 'negativo';
   user?: (number | null) | CampaignUser;
@@ -1472,6 +1474,7 @@ export interface UsersSelect<T extends boolean = true> {
  * via the `definition` "campaignUser_select".
  */
 export interface CampaignUserSelect<T extends boolean = true> {
+  contact?: T;
   name?: T;
   avatar?: T;
   role?: T;
@@ -1627,6 +1630,7 @@ export interface LeadershipSelect<T extends boolean = true> {
   municipalities?: T;
   organizations?: T;
   stateDeputies?: T;
+  advisors?: T;
   exclusive?: T;
   supportStatus?: T;
   user?: T;

@@ -3,14 +3,18 @@ import { APIError } from 'payload'
 
 import { relationshipId } from '@/lib/relationship'
 import { MAX_LEADERSHIP_MUNICIPALITIES } from '@/lib/schemas/leadership'
+import { validateEligibleCampaignStaffAdvisors } from '@/utilities/access/campaignStaffAdvisors'
 import {
+  canAssignCampaignStaffAdvisors,
   canCreateLeadership,
   canDeleteLeadership,
+  canManageCampaignStaffAdvisors,
   canManageCampaignStaffField,
   canManageLeadership,
   canReadCampaignStaffField,
   canReadLeadership,
   canSetAdministrativeLeadershipField,
+  eligibleCampaignStaffWhere,
 } from '@/utilities/campaignAccess'
 import { stampCampaignCreatedBy, systemStampedActorField } from '@/utilities/campaignAuditFields'
 
@@ -59,7 +63,7 @@ export const Leadership: CollectionConfig = {
     delete: canDeleteLeadership,
   },
   hooks: {
-    beforeValidate: [requireAtLeastOneMunicipality],
+    beforeValidate: [requireAtLeastOneMunicipality, validateEligibleCampaignStaffAdvisors],
     beforeChange: [stampCampaignCreatedBy],
   },
   fields: [
@@ -100,6 +104,19 @@ export const Leadership: CollectionConfig = {
       label: 'Dobradinhas',
       hasMany: true,
       index: true,
+    },
+    {
+      name: 'advisors',
+      type: 'relationship',
+      relationTo: 'campaignUser',
+      label: 'Assessores responsáveis',
+      hasMany: true,
+      index: true,
+      access: {
+        create: canAssignCampaignStaffAdvisors,
+        update: canManageCampaignStaffAdvisors,
+      },
+      filterOptions: eligibleCampaignStaffWhere,
     },
     {
       name: 'exclusive',
