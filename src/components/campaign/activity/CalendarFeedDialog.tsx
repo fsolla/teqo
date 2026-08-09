@@ -38,8 +38,6 @@ type CalendarFeedDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   feeds: CalendarFeedSummary[]
-  /** Whether the current agenda recorte can generate a feed (has filters). */
-  canGenerate: boolean
   onCreateFeed: (label: string) => Promise<CreateCalendarFeedResult>
   onRevokeFeed: (feedId: number) => Promise<{ ok: boolean }>
 }
@@ -47,13 +45,14 @@ type CalendarFeedDialogProps = {
 /**
  * Calendar feed dialog (nomear → copiar → revogar). Shared by the desktop
  * header icon and the mobile FAB quick action — rendered once per host, opened
- * by either trigger. Bottom sheet on mobile, dialog on desktop (C94).
+ * by either trigger. Bottom sheet on mobile, dialog on desktop (C94). Always
+ * enabled for staff (C93): with zero filters the feed covers the creator's
+ * full read scope.
  */
 export const CalendarFeedDialog = ({
   open,
   onOpenChange,
   feeds,
-  canGenerate,
   onCreateFeed,
   onRevokeFeed,
 }: CalendarFeedDialogProps) => {
@@ -65,7 +64,7 @@ export const CalendarFeedDialog = ({
   const [copied, setCopied] = useState(false)
 
   const handleCreate = async () => {
-    if (!label.trim() || !canGenerate || isCreating) return
+    if (!label.trim() || isCreating) return
     setIsCreating(true)
     setError(null)
     const result = await onCreateFeed(label.trim())
@@ -154,12 +153,6 @@ export const CalendarFeedDialog = ({
         </div>
       ) : (
         <div className="space-y-4">
-          {!canGenerate ? (
-            <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-              Aplique filtros à agenda para gerar um link de import.
-            </p>
-          ) : null}
-
           <div className="space-y-2">
             <label htmlFor="feed-label" className="text-sm font-medium">
               Nome do feed
@@ -214,7 +207,7 @@ export const CalendarFeedDialog = ({
             <Button
               type="button"
               onClick={handleCreate}
-              disabled={!label.trim() || !canGenerate || isCreating}
+              disabled={!label.trim() || isCreating}
             >
               {isCreating ? 'Gerando...' : 'Gerar link'}
             </Button>
@@ -231,7 +224,7 @@ export const CalendarFeedDialog = ({
           <DrawerHeader className="text-left">
             <DrawerTitle>Sincronizar com Google Calendar</DrawerTitle>
             <DrawerDescription>
-              Gere um link de import para sincronizar este recorte da agenda com o Google Calendar.
+              Gere um link de import para sincronizar a agenda com o Google Calendar.
               Alterações em Teqo serão refletidas automaticamente.
             </DrawerDescription>
           </DrawerHeader>
@@ -250,7 +243,7 @@ export const CalendarFeedDialog = ({
         <DialogHeader>
           <DialogTitle>Sincronizar com Google Calendar</DialogTitle>
           <DialogDescription>
-            Gere um link de import para sincronizar este recorte da agenda com o Google Calendar.
+            Gere um link de import para sincronizar a agenda com o Google Calendar.
             Alterações em Teqo serão refletidas automaticamente.
           </DialogDescription>
         </DialogHeader>

@@ -53,8 +53,6 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
   const accessibleHref = buildActivityAgendaHref(state)
   if (accessibleHref !== resolvedUrl.href) redirect(accessibleHref)
 
-  const canGenerateFeed = Boolean(state.municipality || state.deputyPresent || state.tag)
-
   return (
     <CampaignPageShell className="gap-6">
       <AgendaFeedChrome
@@ -63,7 +61,6 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
           label: f.label,
           createdAt: f.createdAt,
         }))}
-        canGenerate={canGenerateFeed}
         onCreateFeed={async (label) => {
           'use server'
           return createCalendarFeedLink({

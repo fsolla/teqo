@@ -14,20 +14,18 @@ import { Button } from '@/components/ui/button'
 
 type AgendaFeedChromeProps = {
   feeds: CalendarFeedSummary[]
-  /** Whether the current agenda recorte has filters (feed gate, C93 handles "sem filtros"). */
-  canGenerate: boolean
   onCreateFeed: (label: string) => Promise<CreateCalendarFeedResult>
   onRevokeFeed: (feedId: number) => Promise<{ ok: boolean }>
 }
 
 /**
- * Agenda page → app chrome bridge for the calendar-feed surface (C94):
- * registers the desktop header icon (agenda-contextual), exposes the sheet to
- * the mobile FAB quick action and owns the single shared dialog instance.
+ * Agenda page → app chrome bridge for the calendar-feed surface (C94, gate
+ * unlocked by C93): registers the desktop header icon (agenda-contextual),
+ * exposes the sheet to the mobile FAB quick action and owns the single shared
+ * dialog instance.
  */
 export const AgendaFeedChrome = ({
   feeds,
-  canGenerate,
   onCreateFeed,
   onRevokeFeed,
 }: AgendaFeedChromeProps) => {
@@ -50,14 +48,13 @@ export const AgendaFeedChrome = ({
         size="icon"
         className="size-11 hidden shrink-0 md:inline-flex"
         aria-label="Link de import"
-        title={canGenerate ? 'Link de import' : 'Aplique filtros para gerar um link de import'}
-        disabled={!canGenerate}
+        title="Link de import"
         onClick={openFeed}
       >
         <CalendarIcon className="size-5" aria-hidden />
       </Button>
     ),
-    [canGenerate, openFeed],
+    [openFeed],
   )
 
   return (
@@ -68,7 +65,6 @@ export const AgendaFeedChrome = ({
         open={open}
         onOpenChange={setOpen}
         feeds={feeds}
-        canGenerate={canGenerate}
         onCreateFeed={onCreateFeed}
         onRevokeFeed={onRevokeFeed}
       />

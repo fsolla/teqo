@@ -37,7 +37,7 @@ const listQuickActions = (context: CampaignQuickActionContext): readonly Campaig
           id: 'import-calendar',
           label: 'Link de import',
           icon: Calendar,
-          description: 'Gerar link para sincronizar este recorte da agenda com o Google Calendar',
+          description: 'Gerar link para sincronizar a agenda com o Google Calendar',
           onAction: context.openCalendarFeed,
         },
       ]
