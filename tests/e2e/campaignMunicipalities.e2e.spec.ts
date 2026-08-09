@@ -131,7 +131,9 @@ test.describe('Municípios — jornadas por papel', () => {
 
     // B145: assessoria left the detail hero; it still appears on the dossiê tab.
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}?tab=dossie`)
-    await expect(page.getByText(`Assessoria: ${advisor.name}`)).toBeVisible()
+    // `.nth(0)`: same transient hydration duplicate the "Otimista: 5.000"
+    // assertion pins — the server-composed slot briefly renders twice.
+    await expect(page.getByText(`Assessoria: ${advisor.name}`).nth(0)).toBeVisible()
   })
 
   test('coordinator assigns an advisor from the list combobox with auto-save (B27)', async ({

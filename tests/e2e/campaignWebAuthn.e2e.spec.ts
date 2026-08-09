@@ -74,7 +74,10 @@ test('enrolls a passkey, signs in with it, then revokes it', async ({
   await expectCampaignBiometricsReady(page)
   await page.goto('/campanha/perfil')
 
-  await expect(page.getByText('Nenhum aparelho cadastrado ainda.')).toBeVisible()
+  // `.nth(0)`: during hydration the server-composed slot can briefly coexist
+  // with its re-rendered copy (same transient duplicate the municipios spec
+  // pins for "Otimista: 5.000") — the copy settles to one element.
+  await expect(page.getByText('Nenhum aparelho cadastrado ainda.').nth(0)).toBeVisible()
 
   const deviceLabel = page.getByLabel('Nome deste aparelho')
   await expect(deviceLabel).toBeVisible()
