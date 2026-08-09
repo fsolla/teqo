@@ -50,6 +50,7 @@ import {
   DEV_PORT_BASE,
   GENERATED_ENV_MARKER,
   isGeneratedDatabaseName,
+  worktreeEnvFileContents,
   worktreeEnvironment,
 } from './lib/worktree-env.mjs'
 import { branchNameForIssue, planBranchName } from './lib/worktree.mjs'
@@ -236,8 +237,6 @@ const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpo
 
   const devDatabase = env.devDatabase
   const testDatabase = env.testDatabase
-  const devUrl = `postgresql://teqo:teqo@localhost:5432/${devDatabase}`
-  const testUrl = `postgresql://teqo:teqo@localhost:5432/${testDatabase}`
   await ensureDatabases([devDatabase, testDatabase])
 
   const mainEnv = readMainEnv(mainRoot)
@@ -247,36 +246,26 @@ const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpo
   const issueLabel = issue ? ` · issue #${issue.number}` : ''
   const generatedBy = `gerado por pnpm worktree ${purpose}`
 
-  const devEnv = [
-    GENERATED_ENV_MARKER,
-    `# branch ${branch}${issueLabel} · slot ${env.slot} — ${generatedBy}`,
-    `DATABASE_URL=${devUrl}`,
-    `PORT=${env.devPort}`,
-    `NEXT_PUBLIC_SITE_URL=http://localhost:${env.devPort}`,
-    `PLAYWRIGHT_BASE_URL=http://localhost:${env.devPort}`,
-    `PAYLOAD_SECRET=${payloadSecret}`,
-    ...copy('BLOB_READ_WRITE_TOKEN'),
-    ...copy('NEXT_PUBLIC_VAPID_PUBLIC_KEY'),
-    ...copy('VAPID_PUBLIC_KEY'),
-    ...copy('VAPID_PRIVATE_KEY'),
-    ...copy('VAPID_SUBJECT'),
-    ...copy('RESEND_API_KEY'),
-    ...copy('CAMPAIGN_EMAIL_FROM'),
-    ...copy('CAMPAIGN_EMAIL_FROM_NAME'),
-    '',
-  ].join('\n')
-  writeFileSync(join(dir, '.env.local'), devEnv)
+  const { dev: devLines, test: testLines } = worktreeEnvFileContents({
+    branch,
+    issueLabel,
+    generatedBy,
+    env,
+    payloadSecret,
+    copiedLines: [
+      ...copy('BLOB_READ_WRITE_TOKEN'),
+      ...copy('NEXT_PUBLIC_VAPID_PUBLIC_KEY'),
+      ...copy('VAPID_PUBLIC_KEY'),
+      ...copy('VAPID_PRIVATE_KEY'),
+      ...copy('VAPID_SUBJECT'),
+      ...copy('RESEND_API_KEY'),
+      ...copy('CAMPAIGN_EMAIL_FROM'),
+      ...copy('CAMPAIGN_EMAIL_FROM_NAME'),
+    ],
+  })
+  writeFileSync(join(dir, '.env.local'), devLines.join('\n'))
   console.log(`[worktree] .env.local escrito (porta ${env.devPort}).`)
-
-  const testEnv = [
-    GENERATED_ENV_MARKER,
-    `# branch ${branch}${issueLabel} · slot ${env.slot} — ${generatedBy}`,
-    '# Lido DEPOIS de .env.test (vitest.setup.ts / playwright.config.ts) — suites isoladas.',
-    `DATABASE_URL=${testUrl}`,
-    `NEXT_PUBLIC_SITE_URL=http://localhost:${env.devPort}`,
-    '',
-  ].join('\n')
-  writeFileSync(join(dir, '.env.test.local'), testEnv)
+  writeFileSync(join(dir, '.env.test.local'), testLines.join('\n'))
   console.log('[worktree] .env.test.local escrito.')
 
   if (skipMigrate) {
