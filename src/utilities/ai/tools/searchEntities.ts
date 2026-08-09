@@ -3,6 +3,8 @@ import { z } from 'zod'
 
 import type { AIToolContext } from '@/lib/ai/types'
 import { populatedContactName } from '@/lib/relationship'
+import { salvadorCity } from '@/lib/salvadorCity'
+import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 
 type SearchHit = {
   collection: string
@@ -26,6 +28,19 @@ export const searchEntities = (ctx: AIToolContext) =>
       const { payload } = ctx
 
       const hits: SearchHit[] = []
+
+      // B178 — the virtual Salvador city is a navigation destination the Sollinha
+      // keeps hallucinating about: whenever the query matches the capital, the
+      // city page is the canonical hit (the 19 ZE rows follow below).
+      const normalizedQuery = normalizeSearchPhrase(query)
+      if (normalizedQuery && normalizeSearchPhrase(salvadorCity.name).includes(normalizedQuery)) {
+        hits.push({
+          collection: 'cidade',
+          label: salvadorCity.name,
+          description: 'Cidade — agregado das 19 zonas eleitorais',
+          href: `/campanha/municipios/${salvadorCity.slug}`,
+        })
+      }
 
       // Search municipalities
       const munResult = await payload.find({

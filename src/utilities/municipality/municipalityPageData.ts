@@ -12,9 +12,14 @@ import {
   type MunicipalityVoteRankEntry,
 } from '@/lib/municipalityVoteRank'
 import { relationshipId } from '@/lib/relationship'
+import { SALVADOR_CITY_SLUG } from '@/lib/salvadorCity'
 import { type VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, Municipality } from '@/payload-types'
-import { isCampaignLeader, isCampaignStaff } from '@/utilities/campaignAccess'
+import {
+  isCampaignLeader,
+  isCampaignStaff,
+  isCampaignUnrestricted,
+} from '@/utilities/campaignAccess'
 import { NO_PARTY_FILTER_VALUE } from '@/utilities/campaignListUrl'
 import { createEntityNotFoundError } from '@/utilities/entityNotFound'
 import {
@@ -25,6 +30,12 @@ import {
   centralDeficitSortValue,
   type MunicipalityGoalCoverage,
 } from '@/utilities/municipality/goalCoverage'
+import {
+  buildCityMunicipalityDoc,
+  cityMatchesFilter,
+  cityTerritorialClass,
+  insertCityAtNativeSortPosition,
+} from '@/utilities/municipality/municipalityCityRow'
 import {
   loadMunicipalityGoalCoverageBundle,
   loadStatewideSuggestedGoals,
@@ -45,6 +56,7 @@ import { resolveMunicipalityLastSignalAt } from '@/utilities/municipality/munici
 import {
   computeMunicipalityTerritorialClass,
   territorialClassSortWeight,
+  type MunicipalityTerritorialClassification,
 } from '@/utilities/municipality/municipalityTerritorialClass'
 import {
   loadMunicipalityLeadershipSummaries,
@@ -55,6 +67,10 @@ import {
   type MunicipalityLeadershipSummary,
   type MunicipalityListViewModel,
 } from '@/utilities/municipality/municipalityViewModels'
+import {
+  citySortVoteEntry,
+  cityVoteRankEntry,
+} from '@/utilities/municipality/salvadorCityAggregates'
 import { loadStateDeputySummaries } from '@/utilities/stateDeputyData'
 import { type MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 
@@ -302,13 +318,23 @@ type DerivedSortContext = {
     Record<VoteEstimateScenario, MunicipalityGoalCoverage>
   >
   pledgeAggregates: ReadonlyMap<number, MunicipalityPledgeAggregate>
+  /** B178 — city aggregate class override (the artifact lookup by slug would miss). */
+  classBySlug?: ReadonlyMap<string, MunicipalityTerritorialClassification>
+  /** B178 — the virtual city row: inserted at its native-sort position. */
+  citySlug?: string
 }
 
 const applyDerivedMunicipalitySort = (
   docs: Municipality[],
   sortKey: MunicipalityListSortKey,
   dir: MunicipalityListSortDirection,
-  { ranks, goalCoverageByMunicipalityID, pledgeAggregates }: DerivedSortContext,
+  {
+    ranks,
+    goalCoverageByMunicipalityID,
+    pledgeAggregates,
+    classBySlug,
+    citySlug,
+  }: DerivedSortContext,
 ): Municipality[] => {
   switch (sortKey) {
     case 'expectedVotes':
@@ -363,12 +389,27 @@ const applyDerivedMunicipalitySort = (
         docs,
         dir,
         (municipality) =>
-          territorialClassSortWeight[computeMunicipalityTerritorialClass(municipality.slug).class],
+          territorialClassSortWeight[
+            (
+              classBySlug?.get(municipality.slug) ??
+              computeMunicipalityTerritorialClass(municipality.slug)
+            ).class
+          ],
       )
     default:
       // Native keys reach here when a derived FILTER forced the in-memory
-      // path; the query already sorted them, so the order is preserved.
-      return docs
+      // path; the query already sorted them, so the order is preserved — with
+      // one exception: the virtual city row never passed through SQL, so it is
+      // inserted at its own position without re-sorting the DB docs.
+      if (!citySlug) return docs
+      const city = docs.find((doc) => doc.slug === citySlug)
+      if (!city) return docs
+      return insertCityAtNativeSortPosition(
+        docs.filter((doc) => doc !== city),
+        city,
+        sortKey,
+        dir,
+      )
   }
 }
 
@@ -379,6 +420,7 @@ export const loadMunicipalityListPageBundle = async (
 ): Promise<MunicipalityListPageBundle> => {
   const state = parseMunicipalityListParams(searchParams)
   const isStaff = isCampaignStaff(user)
+  const isUnrestricted = isCampaignUnrestricted(user)
   const { sort: sortKey, dir: sortDir } = resolveMunicipalityListSort(state)
 
   if (isCampaignLeader(user)) {
@@ -401,11 +443,36 @@ export const loadMunicipalityListPageBundle = async (
   const ranks = computeVoteRankByYear(DEFAULT_VOTE_RANK_YEAR)
   const nativeSortField = payloadSortFieldByKey[sortKey]
   const classMatches = territorialClassFilterPredicate(state)
+  // B178 — the Salvador city row behaves like a normal entity: it is selected
+  // by the same filters that would select a municipality with its virtual
+  // values. Advisors only see it when they explicitly search for the city
+  // (their portfolio is per-ZE and the city is not administered by anyone);
+  // coordinator/candidate see it in any recorte that selects it.
+  const cityInRecorte = cityMatchesFilter(state) && (isUnrestricted || Boolean(state.q))
   // A derived filter can't be expressed in `where`, so it forces the
   // load-everything path even when the SORT itself is native — otherwise the
   // page would drop rows out of a 25-row window and `totalDocs` would count
-  // municípios the filter excludes.
-  const isPagedByPayload = nativeSortField !== undefined && !classMatches
+  // municípios the filter excludes. The virtual city row can never ride the
+  // SQL page either: it only exists in memory.
+  const isPagedByPayload = nativeSortField !== undefined && !classMatches && !cityInRecorte
+
+  // B178 — two rank views of the same 435-unit table: the sort ranks carry the
+  // city's summed votes (so `votos` orders it by its real total), the row
+  // ranks carry the city's COMPETITIVE entry ("12º de 663") when the year has
+  // one — without it the column renders its dash instead of a fake rank.
+  let sortRanks: ReadonlyMap<string, MunicipalityVoteRankEntry> = ranks
+  let rowRanks: ReadonlyMap<string, MunicipalityVoteRankEntry> = ranks
+  if (cityInRecorte) {
+    const mergedSort = new Map(ranks)
+    mergedSort.set(SALVADOR_CITY_SLUG, citySortVoteEntry())
+    sortRanks = mergedSort
+    const mergedRows = new Map(ranks)
+    const cityEntry = cityVoteRankEntry()
+    if (cityEntry) mergedRows.set(SALVADOR_CITY_SLUG, cityEntry)
+    rowRanks = mergedRows
+  }
+  const classBySlug: ReadonlyMap<string, MunicipalityTerritorialClassification> | undefined =
+    cityInRecorte ? new Map([[SALVADOR_CITY_SLUG, cityTerritorialClass()]]) : undefined
 
   const listQuery = payload.find({
     collection: 'municipality',
@@ -469,6 +536,12 @@ export const loadMunicipalityListPageBundle = async (
     isStaff ? loadStatewideSuggestedGoals(payload, user) : null,
   ])
 
+  // B178 — the city slug joins the name-filter options whenever the recorte
+  // shows the city row, so the filter can be applied/undone like any other.
+  if (cityInRecorte && !filterFacets.slugs.includes(SALVADOR_CITY_SLUG)) {
+    filterFacets.slugs = [...filterFacets.slugs, SALVADOR_CITY_SLUG]
+  }
+
   let pledgeAggregates = new Map<number, MunicipalityPledgeAggregate>()
   let goalCoverageByMunicipalityID = new Map<
     number,
@@ -504,11 +577,24 @@ export const loadMunicipalityListPageBundle = async (
           classMatches(municipality.slug),
         )
       : (listResult.docs as Municipality[])
-    const allDocs = applyDerivedMunicipalitySort(scopedDocs, sortKey, sortDir, {
-      ranks,
-      goalCoverageByMunicipalityID,
-      pledgeAggregates,
-    })
+    // B178 — the city row joins the in-memory recorte (class filter applied to
+    // its AGGREGATE class, not the per-slug artifact lookup). It enters the
+    // sort with its virtual values; native sorts position it explicitly.
+    const cityClassSelected =
+      !classMatches || Boolean(state.classes?.includes(cityTerritorialClass().class))
+    const cityDoc = cityInRecorte && cityClassSelected ? buildCityMunicipalityDoc() : null
+    const allDocs = applyDerivedMunicipalitySort(
+      cityDoc ? [...scopedDocs, cityDoc] : scopedDocs,
+      sortKey,
+      sortDir,
+      {
+        ranks: sortRanks,
+        goalCoverageByMunicipalityID,
+        pledgeAggregates,
+        classBySlug,
+        citySlug: cityDoc ? SALVADOR_CITY_SLUG : undefined,
+      },
+    )
     totalDocs = allDocs.length
     totalPages = Math.max(1, Math.ceil(totalDocs / municipalityPageSize))
     const start = (state.page - 1) * municipalityPageSize
@@ -527,15 +613,18 @@ export const loadMunicipalityListPageBundle = async (
     : null
 
   return {
-    municipalities: pageDocs.map((municipality) =>
-      toMunicipalityListViewModel(
+    municipalities: pageDocs.map((municipality) => {
+      const isCity = municipality.slug === SALVADOR_CITY_SLUG
+      return toMunicipalityListViewModel(
         municipality,
         isStaff ? pledgeAggregates.get(municipality.id) : undefined,
-        ranks.get(municipality.slug) ?? null,
+        rowRanks.get(municipality.slug) ?? null,
         isStaff ? goalCoverageByMunicipalityID.get(municipality.id) : undefined,
         leadershipBundle?.leadershipIDsByMunicipality.get(municipality.id) ?? [],
-      ),
-    ),
+        isCity,
+        isCity ? classBySlug?.get(SALVADOR_CITY_SLUG) : undefined,
+      )
+    }),
     totalDocs,
     totalPages,
     scopeTotal: scopeCount.totalDocs,

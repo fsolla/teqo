@@ -553,6 +553,10 @@ describe('advisor scope fragment comes from access/shared.ts', () => {
     'src/utilities/municipality/municipalityViewModels.ts',
     'src/utilities/visit/visitPlannerData.ts',
     'src/utilities/votePledgeData.ts',
+    // B178 — the city overview batches activities across the 19 Salvador zone
+    // ids (a domain filter over a known set, not an actor access scope); the
+    // single-id form the dossier uses goes through `buildActivityListWhere`.
+    'src/app/(campaign)/campanha/(app)/municipios/[slug]/CityDetailSections.tsx',
   ])
 
   it('keeps the scope fragment out of re-spellings', () => {

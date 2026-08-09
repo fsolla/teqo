@@ -459,4 +459,166 @@ describe('loadMunicipalityListPageBundle', () => {
     expect(bundle.municipalities).toHaveLength(0)
     expect(bundle.scopeTotal).toBe(0)
   })
+
+  // -------------------------------------------------------------------------
+  // B178 — Salvador city aggregate row (virtual, common-row behavior)
+  // -------------------------------------------------------------------------
+
+  const salvadorZoneSlugs = municipalityCatalog
+    .filter((entry) => entry.kind === 'zona' && entry.city === 'Salvador')
+    .map((entry) => entry.slug)
+
+  const cityRow = (bundle: Awaited<ReturnType<typeof loadMunicipalityListPageBundle>>) =>
+    bundle.municipalities.find((row) => row.slug === 'salvador')
+
+  it('shows the city row alongside the 19 zones when q matches Salvador', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+
+    const bundle = await loadMunicipalityListPageBundle(payload, coordinator, { q: 'salvador' })
+
+    expect(bundle.municipalities).toHaveLength(20)
+    expect(bundle.totalDocs).toBe(20)
+    for (const slug of salvadorZoneSlugs) {
+      expect(bundle.municipalities.some((row) => row.slug === slug)).toBe(true)
+    }
+    const city = cityRow(bundle)
+    expect(city).toBeDefined()
+    expect(city?.isCity).toBe(true)
+    expect(city?.id).toBeLessThan(0)
+  })
+
+  it('includes the city row in the default recorte with honest totals (436 rows)', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+
+    const bundle = await loadMunicipalityListPageBundle(payload, coordinator, {})
+
+    // The city counts as a row (it is a common line of the list) but never
+    // as an operational unit: the catalog stays at 435.
+    expect(bundle.totalDocs).toBe(municipalityCatalog.length + 1)
+    expect(bundle.totalPages).toBe(Math.ceil(bundle.totalDocs / 25))
+    expect(bundle.municipalities).toHaveLength(25)
+  })
+
+  it('renders the city row with the competitive position and a real aggregate class', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+
+    const bundle = await loadMunicipalityListPageBundle(payload, coordinator, { q: 'salvador' })
+
+    const city = cityRow(bundle)
+    expect(city?.votePosition2022).not.toBeNull()
+    expect(city?.votePosition2022?.votes).toBeGreaterThan(0)
+    expect(city?.votePosition2022?.rank).toBeGreaterThanOrEqual(1)
+    expect(city?.votePosition2022?.totalUnits).toBeGreaterThanOrEqual(city!.votePosition2022!.rank)
+    // The aggregate class of the capital comes from the summed artifact, never
+    // from a per-slug lookup that would read "Sem base" for the unknown slug.
+    expect(city?.territorialClass).not.toBe('sem_base')
+  })
+
+  it('selects the city row by its own slug filter', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+
+    const bundle = await loadMunicipalityListPageBundle(payload, coordinator, {
+      slug: ['salvador'],
+    })
+
+    expect(bundle.municipalities).toHaveLength(1)
+    expect(cityRow(bundle)?.isCity).toBe(true)
+    expect(bundle.totalDocs).toBe(1)
+  })
+
+  it('selects the city row under the Metropolitano region filter but not others', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+
+    const metropolitano = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: 'salvador',
+      region: ['Metropolitano de Salvador'],
+    })
+    expect(cityRow(metropolitano)).toBeDefined()
+    expect(metropolitano.totalDocs).toBe(20)
+
+    const chapada = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: 'salvador',
+      region: ['Chapada Diamantina'],
+    })
+    expect(cityRow(chapada)).toBeUndefined()
+    expect(chapada.municipalities).toHaveLength(0)
+  })
+
+  it('selects the city row under absence sentinels and excludes it under named values', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+
+    const semNivel = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: 'salvador',
+      level: ['sem_nivel'],
+    })
+    expect(cityRow(semNivel)).toBeDefined()
+    expect(semNivel.totalDocs).toBe(20)
+
+    const nivelN0 = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: 'salvador',
+      level: ['n0'],
+    })
+    expect(cityRow(nivelN0)).toBeUndefined()
+    expect(nivelN0.municipalities).toHaveLength(0)
+
+    const comAssessor = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: 'salvador',
+      coverage: 'com_assessor',
+    })
+    expect(cityRow(comAssessor)).toBeUndefined()
+  })
+
+  it('positions the city row under a native sort without re-sorting the rest', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+
+    const bundle = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: 'salvador',
+      sort: 'name',
+    })
+
+    // The DB rows keep the SQL order verbatim — the city is INSERTED, never
+    // re-sorted with the rest (a full in-memory sort would drift collation).
+    const direct = await payload.find({
+      collection: 'municipality',
+      where: { name: { contains: 'salvador' } },
+      depth: 0,
+      limit: 0,
+      pagination: false,
+      sort: 'name',
+      select: { slug: true },
+      overrideAccess: true,
+    })
+    const directOrder = direct.docs.map((doc) => doc.slug)
+    const bundleZoneOrder = bundle.municipalities
+      .filter((row) => row.slug !== 'salvador')
+      .map((row) => row.slug)
+    expect(bundleZoneOrder).toEqual(directOrder)
+
+    // The city lands inside the Salvador block — under pt-BR collation the
+    // "— ZE N" names sort before "Salvador (cidade)", so it sits at the block
+    // edge (immediately after the last zone), never at the recorte start.
+    const cityIndex = bundle.municipalities.findIndex((row) => row.slug === 'salvador')
+    expect(cityIndex).toBeGreaterThan(0)
+    expect(bundle.municipalities[cityIndex - 1]?.kind).toBe('zona')
+  })
+
+  it('shows the city row to an advisor only when they search for the city', async () => {
+    const fixtures = campaignFixtures()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const administered = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
+
+    const defaultList = await loadMunicipalityListPageBundle(payload, advisor, {})
+    expect(cityRow(defaultList)).toBeUndefined()
+
+    const searched = await loadMunicipalityListPageBundle(payload, advisor, { q: 'salvador' })
+    expect(cityRow(searched)).toBeDefined()
+  })
 })

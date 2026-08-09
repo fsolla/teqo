@@ -48,6 +48,14 @@ describe('campaignNavigationUrls', () => {
     }
   })
 
+  it('accepts the virtual Salvador city slug (B178)', () => {
+    const outcome = buildCampaignNavigationLink(coordinator.role, {
+      destination: 'municipality',
+      slug: 'salvador',
+    })
+    expect(outcome).toEqual({ ok: true, path: '/campanha/municipios/salvador', label: 'Município' })
+  })
+
   it('delegates municipality list filters to buildMunicipalityListHref', () => {
     const outcome = buildCampaignNavigationLink(coordinator.role, {
       destination: 'municipalityList',

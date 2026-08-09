@@ -26,6 +26,8 @@ import {
   MunicipalityStateDeputyRelationCell,
   type MunicipalityStateDeputyCreateAction,
 } from '@/components/campaign/shared/MunicipalityStateDeputyRelationCell'
+import { Badge } from '@/components/ui/Badge'
+import { SALVADOR_CITY_AGGREGATE_LABEL } from '@/lib/salvadorCity'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import type { StateDeputyRelationOption } from '@/utilities/campaignRelationOptions'
 import { municipalityGeographyParts } from '@/utilities/municipality/municipalityLabels'
@@ -95,6 +97,7 @@ export const MunicipalityListMobileCards = ({
       const position = municipality.votePosition2022
       const isPriority = municipality.priority === 'alta'
       const { region, zoneSuffix } = municipalityGeographyParts(municipality)
+      const isCity = municipality.isCity
       return (
         <article
           key={municipality.id}
@@ -102,25 +105,32 @@ export const MunicipalityListMobileCards = ({
         >
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-col gap-1">
-              <h3 className="font-medium">
+              <h3 className="flex items-center gap-1.5 font-medium">
                 <Link
                   href={`/campanha/municipios/${municipality.slug}`}
                   className="rounded-md after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {municipality.name}
                 </Link>
+                {isCity ? <Badge variant="secondary">Cidade</Badge> : null}
               </h3>
               <p className="text-sm text-muted-foreground">
-                <span className="relative">
-                  <TerritoryLink region={region} />
-                </span>
-                {zoneSuffix ? ` ${zoneSuffix}` : null}
+                {isCity ? (
+                  SALVADOR_CITY_AGGREGATE_LABEL
+                ) : (
+                  <>
+                    <span className="relative">
+                      <TerritoryLink region={region} />
+                    </span>
+                    {zoneSuffix ? ` ${zoneSuffix}` : null}
+                  </>
+                )}
               </p>
               {position ? (
                 <MunicipalityVotePositionReadout position={position} layout="card" />
               ) : null}
             </div>
-            {isPriority && isStaffView ? (
+            {!isCity && isPriority && isStaffView ? (
               <MunicipalityPriorityIndicator className="relative size-11" />
             ) : null}
           </div>
@@ -143,19 +153,25 @@ export const MunicipalityListMobileCards = ({
               <div>
                 <dt className="text-muted-foreground">Votos estimados</dt>
                 <dd>
-                  <MunicipalityListExpectedVotesControl
-                    municipalityID={municipality.id}
-                    municipalityName={municipality.name}
-                    expectedVotes={municipality.expectedVotes}
-                    pledgeCoverage={toMunicipalityPledgeCoverageView(municipality.pledges)}
-                    variant="sheet"
-                  />
+                  {isCity ? (
+                    <span className="text-muted-foreground">—</span>
+                  ) : (
+                    <MunicipalityListExpectedVotesControl
+                      municipalityID={municipality.id}
+                      municipalityName={municipality.name}
+                      expectedVotes={municipality.expectedVotes}
+                      pledgeCoverage={toMunicipalityPledgeCoverageView(municipality.pledges)}
+                      variant="sheet"
+                    />
+                  )}
                 </dd>
               </div>
               <div className="col-span-2">
                 <dt className="text-muted-foreground">Nível</dt>
                 <dd>
-                  {canMoveEngagementLevel ? (
+                  {isCity ? (
+                    <span className="text-muted-foreground">—</span>
+                  ) : canMoveEngagementLevel ? (
                     <MunicipalityListLevelControl
                       municipalityID={municipality.id}
                       municipalityName={municipality.name}
@@ -176,35 +192,45 @@ export const MunicipalityListMobileCards = ({
               <div>
                 <dt className="text-muted-foreground">Tendência</dt>
                 <dd>
-                  <MunicipalityListTrendControl
-                    municipalityID={municipality.id}
-                    municipalityName={municipality.name}
-                    status={municipality.politicalTrendStatus}
-                    trendNote={municipality.politicalTrendNote}
-                    variant="sheet"
-                  />
+                  {isCity ? (
+                    <Badge variant="outline">Não registrada</Badge>
+                  ) : (
+                    <MunicipalityListTrendControl
+                      municipalityID={municipality.id}
+                      municipalityName={municipality.name}
+                      status={municipality.politicalTrendStatus}
+                      trendNote={municipality.politicalTrendNote}
+                      variant="sheet"
+                    />
+                  )}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Última atualização</dt>
                 <dd>
-                  <MunicipalityListUpdateControl
-                    municipalityID={municipality.id}
-                    municipalitySlug={municipality.slug}
-                    municipalityName={municipality.name}
-                    lastSignalAt={municipality.lastSignalAt}
-                    variant="sheet"
-                    formAction={signalFormAction}
-                    isStaff={isCampaignUnrestricted}
-                  >
-                    <SignalAgeReadout lastSignalAt={municipality.lastSignalAt} layout="card" />
-                  </MunicipalityListUpdateControl>
+                  {isCity ? (
+                    <SignalAgeReadout lastSignalAt={null} layout="card" />
+                  ) : (
+                    <MunicipalityListUpdateControl
+                      municipalityID={municipality.id}
+                      municipalitySlug={municipality.slug}
+                      municipalityName={municipality.name}
+                      lastSignalAt={municipality.lastSignalAt}
+                      variant="sheet"
+                      formAction={signalFormAction}
+                      isStaff={isCampaignUnrestricted}
+                    >
+                      <SignalAgeReadout lastSignalAt={municipality.lastSignalAt} layout="card" />
+                    </MunicipalityListUpdateControl>
+                  )}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Assessores</dt>
                 <dd>
-                  {isCoordinator ? (
+                  {isCity ? (
+                    <span className="text-muted-foreground">—</span>
+                  ) : isCoordinator ? (
                     <MunicipalityListAdvisorsControl
                       municipalityID={municipality.id}
                       municipalityName={municipality.name}
@@ -224,14 +250,18 @@ export const MunicipalityListMobileCards = ({
               <div>
                 <dt className="text-muted-foreground">Lideranças</dt>
                 <dd>
-                  <MunicipalityListLeadershipsControl
-                    municipalityID={municipality.id}
-                    municipalityName={municipality.name}
-                    currentLeadershipIDs={municipality.leadershipIDs}
-                    leadershipNamesById={leadershipNamesById}
-                    options={leadershipOptions}
-                    variant="sheet"
-                  />
+                  {isCity ? (
+                    <span className="text-muted-foreground">—</span>
+                  ) : (
+                    <MunicipalityListLeadershipsControl
+                      municipalityID={municipality.id}
+                      municipalityName={municipality.name}
+                      currentLeadershipIDs={municipality.leadershipIDs}
+                      leadershipNamesById={leadershipNamesById}
+                      options={leadershipOptions}
+                      variant="sheet"
+                    />
+                  )}
                 </dd>
               </div>
               {/* B176 — staff-wide since 2026-08-09; the write stays scoped to
@@ -240,15 +270,19 @@ export const MunicipalityListMobileCards = ({
                 <div className="col-span-2">
                   <dt className="text-muted-foreground">Dobradinhas</dt>
                   <dd>
-                    <MunicipalityStateDeputyRelationCell
-                      municipalityId={municipality.id}
-                      municipalityName={municipality.name}
-                      stateDeputyIDs={municipality.stateDeputyIDs}
-                      options={stateDeputyOptions}
-                      commitAction={stateDeputyCommitAction}
-                      createAction={stateDeputyCreateAction}
-                      editorVariant="sheet"
-                    />
+                    {isCity ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      <MunicipalityStateDeputyRelationCell
+                        municipalityId={municipality.id}
+                        municipalityName={municipality.name}
+                        stateDeputyIDs={municipality.stateDeputyIDs}
+                        options={stateDeputyOptions}
+                        commitAction={stateDeputyCommitAction}
+                        createAction={stateDeputyCreateAction}
+                        editorVariant="sheet"
+                      />
+                    )}
                   </dd>
                 </div>
               ) : null}
