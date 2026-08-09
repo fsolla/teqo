@@ -134,6 +134,15 @@ estadual — leitura relativa à carteira (restrição da intenção). Sem % abs
 - **Saved filters (B18)** — não desta fatia; o contrato de URL já fica
   canônico para servir de base.
 
+### Adiado com gatilho (triage 2026-08-08)
+
+- **Promover `parseSlugsParam`/`parseAuthorsParam` para `campaignListUrl`**
+  (gémeos dos helpers privados do `municipalityListUrl`; DRY 2 call sites).
+  Gatilho: "quando um 3º `*ListUrl` precisar do mesmo parse de slugs/ids".
+- Descartados (cheap_polish): `isStaff` constante na rota; copy do empty-state
+  em função de filtro ativo; `loading.tsx` da rota; `revalidatePath` no-op;
+  dedup manual pré-existente no `municipalityUpdatePageData`.
+
 ## Riscos e mitigação
 
 - **`contains` em `textarea` (body):** campo text no Postgres; mesmo caret de
