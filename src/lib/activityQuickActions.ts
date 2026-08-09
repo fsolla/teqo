@@ -1,4 +1,4 @@
-import { ClipboardList, ListChecks, MapPinned, Pencil, Plus } from 'lucide-react'
+import { Calendar, ClipboardList, ListChecks, MapPinned, Pencil, Plus } from 'lucide-react'
 
 import {
   CAMPAIGN_WIZARD_ACTION_SLUGS,
@@ -23,7 +23,7 @@ const WIZARD_ACTION_IDS: readonly CampaignWizardActionId[] = [
   'register-demand',
 ]
 
-const listQuickActions = (): readonly CampaignQuickAction[] => [
+const listQuickActions = (context: CampaignQuickActionContext): readonly CampaignQuickAction[] => [
   {
     id: 'new-activity',
     label: 'Nova atividade',
@@ -31,6 +31,17 @@ const listQuickActions = (): readonly CampaignQuickAction[] => [
     description: 'Criar caminhada, comício, panfletagem ou outra ação de campanha',
     href: ACTIVITY_NEW_PATH,
   },
+  ...(context.openCalendarFeed
+    ? [
+        {
+          id: 'import-calendar',
+          label: 'Link de import',
+          icon: Calendar,
+          description: 'Gerar link para sincronizar este recorte da agenda com o Google Calendar',
+          onAction: context.openCalendarFeed,
+        },
+      ]
+    : []),
   {
     id: 'plan-tour',
     label: 'Planejar giro',
@@ -101,7 +112,7 @@ export const resolveActivityQuickActions = (
   if (!isStaffCampaignRole(role)) return []
 
   if (surface.kind === 'list') {
-    return listQuickActions()
+    return listQuickActions(context)
   }
 
   const activitySlug = context.activitySlug ?? surface.activitySlug

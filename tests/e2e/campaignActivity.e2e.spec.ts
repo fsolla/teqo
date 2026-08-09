@@ -117,11 +117,21 @@ test.describe('Agenda — calendário operacional', () => {
       })
       .not.toBe(startAt)
 
-    await page.getByLabel('Município').selectOption(String(municipality.id))
-    await page.getByLabel('Tag').selectOption('Comício')
-    await page.getByLabel('Deputado presente').check()
+    const omniboxInput = page.getByRole('combobox', { name: 'Filtrar agenda' })
+
+    await omniboxInput.fill(municipality.name!)
+    await page.getByRole('option', { name: municipality.name, exact: true }).click()
+
+    await omniboxInput.fill('Comício')
+    await page.getByRole('option', { name: 'Comício', exact: true }).click()
+
+    await omniboxInput.fill('Deputado')
+    await page.getByRole('option', { name: 'Deputado presente', exact: true }).click()
+    await expect(page.locator('button[aria-label="Remover Deputado presente"]')).toBeVisible()
+
     await expect(page).toHaveURL(
       `${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}&deputyPresent=1&tag=Com%C3%ADcio`,
+      { timeout: 20_000 },
     )
     await expect(page.getByText(title, { exact: true })).toBeVisible()
 
@@ -158,10 +168,14 @@ test.describe('Agenda — calendário operacional', () => {
 
     const dayCell = page.getByRole('gridcell').nth(1)
     await dayCell.scrollIntoViewIfNeeded()
-    const [slotBox, dayBox] = await Promise.all([
-      page.locator('[data-time="14:00:00"]').last().boundingBox(),
-      dayCell.boundingBox(),
-    ])
+    // FullCalendar renders the time axis lazily and re-lays out on mount —
+    // wait for both targets to be attached+visible before measuring, or the
+    // bounding boxes race the grid render.
+    const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
+    await expect(slotLocator).toBeVisible()
+    await expect(dayCell).toBeVisible()
+    const slotBox = await slotLocator.boundingBox()
+    const dayBox = await dayCell.boundingBox()
     if (!slotBox || !dayBox) throw new Error('A grade semanal não expôs o slot esperado.')
     await dayCell.click({
       position: {
@@ -206,10 +220,11 @@ test.describe('Agenda — calendário operacional', () => {
 
     const dayCell = page.getByRole('gridcell').nth(1)
     await dayCell.scrollIntoViewIfNeeded()
-    const [slotBox, dayBox] = await Promise.all([
-      page.locator('[data-time="14:00:00"]').last().boundingBox(),
-      dayCell.boundingBox(),
-    ])
+    const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
+    await expect(slotLocator).toBeVisible()
+    await expect(dayCell).toBeVisible()
+    const slotBox = await slotLocator.boundingBox()
+    const dayBox = await dayCell.boundingBox()
     if (!slotBox || !dayBox) throw new Error('A grade semanal não expôs o slot esperado.')
     await dayCell.click({
       position: {

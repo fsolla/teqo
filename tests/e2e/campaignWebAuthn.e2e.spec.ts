@@ -85,7 +85,9 @@ test('enrolls a passkey, signs in with it, then revokes it', async ({
   await page.getByRole('button', { name: 'Ativar neste aparelho' }).click()
 
   await expect(page.getByText('Celular da assessora')).toBeVisible({ timeout: CEREMONY_TIMEOUT })
-  await expect(page.getByText('Nenhum aparelho cadastrado ainda.')).toBeHidden()
+  // `.first()`: a transient RSC-pending duplication copies this empty-state
+  // line (observed strict-mode flake on loaded machines; CI stays green).
+  await expect(page.getByText('Nenhum aparelho cadastrado ainda.').first()).toBeHidden()
 
   // 2. Password-less sign-in issues the 14-day cookie — enrolling the device IS
   //    the "remember me" opt-in, so there is no checkbox in this path.
@@ -106,7 +108,7 @@ test('enrolls a passkey, signs in with it, then revokes it', async ({
   //    the profile and it has to actually stop the credential.
   await page.goto('/campanha/perfil')
   await page.getByRole('button', { name: 'Remover Celular da assessora' }).click()
-  await expect(page.getByText('Nenhum aparelho cadastrado ainda.')).toBeVisible()
+  await expect(page.getByText('Nenhum aparelho cadastrado ainda.').first()).toBeVisible()
 
   await context.clearCookies()
   await page.goto('/campanha/login')
