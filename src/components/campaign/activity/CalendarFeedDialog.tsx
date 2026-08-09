@@ -85,10 +85,6 @@ export const CalendarFeedDialog = ({
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleRevoke = async (feedId: number) => {
-    await onRevokeFeed(feedId)
-  }
-
   const handleClose = (next: boolean) => {
     if (next) return
     setCreatedUrl(null)
@@ -198,7 +194,7 @@ export const CalendarFeedDialog = ({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleRevoke(feed.id)}
+                      onClick={() => void onRevokeFeed(feed.id)}
                       aria-label={`Revogar feed ${feed.label}`}
                     >
                       <Trash2Icon className="h-4 w-4 text-muted-foreground" />

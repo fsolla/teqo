@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 
 import { CampaignAIHeaderButton } from '@/components/campaign/shell/ai/CampaignAIHeaderButton'
 import { useCampaignHeaderActions } from '@/components/campaign/shell/CampaignPageChromeContext'
@@ -15,7 +15,9 @@ export const CampaignDesktopHeader = ({ notificationBell }: { notificationBell?:
       <SidebarTrigger />
       <CampaignPageChromeDisplay layout="desktop" className="flex-1" />
       <div className="ml-auto flex shrink-0 items-center gap-1">
-        {Object.values(headerActions)}
+        {Object.entries(headerActions).map(([id, node]) => (
+          <Fragment key={id}>{node}</Fragment>
+        ))}
         {notificationBell ?? null}
         <CampaignAIHeaderButton />
       </div>

@@ -56,7 +56,10 @@ const OverlayActionsChrome = ({
             label: action.label,
             icon: action.icon,
             description: action.description,
-            href: action.href,
+            // Dialog-style actions win over a route when both are present
+            // (`CampaignHomeActionButton` renders the href branch without
+            // onClick, which would silently drop the action and the close).
+            href: action.onAction ? undefined : action.href,
             onClick: action.onAction
               ? () => {
                   action.onAction?.()

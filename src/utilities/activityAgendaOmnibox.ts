@@ -20,7 +20,7 @@ export type ActivityAgendaOmniboxAction =
   | { kind: 'url'; state: ActivityAgendaState }
   | { kind: 'clear' }
 
-export type ActivityAgendaFilterOption = {
+type ActivityAgendaFilterOption = {
   value: string
   label: string
 }

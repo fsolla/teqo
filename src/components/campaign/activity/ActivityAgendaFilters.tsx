@@ -2,7 +2,7 @@
 
 import { MapPinnedIcon, PlusIcon } from 'lucide-react'
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
@@ -35,6 +35,10 @@ type ActivityAgendaFiltersProps = {
  * Deputado presente (chip bool), with the desktop create entries as icon
  * buttons beside the bar. Mobile creates live in the FAB drawer, so the
  * trailing icons are desktop-only. Filter state stays on the URL.
+ *
+ * A local `draft` mirrors the URL state so consecutive picks within the same
+ * RSC pending window apply cumulatively (a bare `state` prop would drop the
+ * first selection while the router.replace round-trip is in flight).
  */
 export const ActivityAgendaFilters = ({
   state,
@@ -45,7 +49,10 @@ export const ActivityAgendaFilters = ({
     state,
     toHref: buildActivityAgendaHref,
   })
+  const [draft, setDraft] = useState(state)
   const [query, setQuery] = useState('')
+
+  useEffect(() => setDraft(state), [state])
 
   const municipalityLabelsById = useMemo(() => {
     const map = new Map<number, string>()
@@ -65,8 +72,8 @@ export const ActivityAgendaFilters = ({
   )
 
   const chips = useMemo(
-    () => buildActivityAgendaOmniboxChips({ state, municipalityLabelsById }),
-    [state, municipalityLabelsById],
+    () => buildActivityAgendaOmniboxChips({ state: draft, municipalityLabelsById }),
+    [draft, municipalityLabelsById],
   )
 
   const suggestionSeeds = useMemo(
@@ -86,9 +93,11 @@ export const ActivityAgendaFilters = ({
   const runAction = (action: ActivityAgendaOmniboxAction) => {
     if (action.kind === 'clear') {
       setQuery('')
+      setDraft({})
       navigate({})
       return
     }
+    setDraft(action.state)
     navigate(action.state)
   }
 
@@ -103,10 +112,10 @@ export const ActivityAgendaFilters = ({
       onQueryChange={setQuery}
       isPending={isPending}
       onSelectSuggestion={(suggestionId) => {
-        runAction(applyActivityAgendaOmniboxSuggestion({ state, suggestionId }))
+        runAction(applyActivityAgendaOmniboxSuggestion({ state: draft, suggestionId }))
       }}
       onRemoveChip={(chipId) => {
-        runAction(removeActivityAgendaOmniboxChip({ state, chipId }))
+        runAction(removeActivityAgendaOmniboxChip({ state: draft, chipId }))
       }}
       onClearAll={() => {
         runAction(clearActivityAgendaOmnibox())

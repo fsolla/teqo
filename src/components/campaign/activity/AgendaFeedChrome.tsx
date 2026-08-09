@@ -1,7 +1,7 @@
 'use client'
 
 import { CalendarIcon } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   CalendarFeedDialog,
@@ -42,22 +42,27 @@ export const AgendaFeedChrome = ({
     }
   }, [setContext, openFeed])
 
+  const headerButton = useMemo(
+    () => (
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-11 hidden shrink-0 md:inline-flex"
+        aria-label="Link de import"
+        title={canGenerate ? 'Link de import' : 'Aplique filtros para gerar um link de import'}
+        disabled={!canGenerate}
+        onClick={openFeed}
+      >
+        <CalendarIcon className="size-5" aria-hidden />
+      </Button>
+    ),
+    [canGenerate, openFeed],
+  )
+
   return (
     <>
-      <SetCampaignHeaderAction id="calendar-feed">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-11 hidden shrink-0 md:inline-flex"
-          aria-label="Link de import"
-          title={canGenerate ? 'Link de import' : 'Aplique filtros para gerar um link de import'}
-          disabled={!canGenerate}
-          onClick={openFeed}
-        >
-          <CalendarIcon className="size-5" aria-hidden />
-        </Button>
-      </SetCampaignHeaderAction>
+      <SetCampaignHeaderAction id="calendar-feed">{headerButton}</SetCampaignHeaderAction>
 
       <CalendarFeedDialog
         open={open}
