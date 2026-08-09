@@ -121,7 +121,8 @@ export const buildCityMunicipalityDoc = (): Municipality => ({
  * of the list: the DB docs already carry the SQL order, and a full in-memory
  * re-sort would drift collation (accents etc.). Only the city is compared —
  * name/region by pt-BR collation; `lastUpdateAt`/`trend` have null city values
- * and sort last in both directions (the app convention for nulls).
+ * and follow Postgres' native null ordering (NULLS LAST on ASC, NULLS FIRST on
+ * DESC), so the row sits with the other municipalities that have no value.
  */
 export const insertCityAtNativeSortPosition = (
   docs: readonly Municipality[],
@@ -129,7 +130,9 @@ export const insertCityAtNativeSortPosition = (
   sortKey: MunicipalityListSortKey,
   dir: MunicipalityListSortDirection,
 ): Municipality[] => {
-  if (sortKey !== 'name' && sortKey !== 'region') return [...docs, city]
+  if (sortKey !== 'name' && sortKey !== 'region') {
+    return dir === 'desc' ? [city, ...docs] : [...docs, city]
+  }
   const compareToCity = (doc: Municipality): number =>
     sortKey === 'name'
       ? doc.name.localeCompare(city.name, 'pt-BR')

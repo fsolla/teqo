@@ -25,10 +25,14 @@ import { salvadorCity } from '@/lib/salvadorCity'
  */
 
 /**
- * The city baseline = the SUM of its 19 zone-slug baselines, folded once per
- * process (the artifact is immutable).
+ * The city baseline = the SUM of its 19 zone-slug baselines, folded ONCE per
+ * process (the artifact is immutable — same memoization as
+ * `getStatewideFederalTotals`). The city never carries its own votes: this is
+ * a derived view of the same cells the zones already hold.
  */
-export const cityFederalBaseline = (): MunicipalityFederalBaseline => {
+let cityBaselineCache: MunicipalityFederalBaseline | null = null
+
+const foldCityFederalBaseline = (): MunicipalityFederalBaseline => {
   const total: MunicipalityFederalBaseline = {
     votesByYear: {},
     validVotesByYear: {},
@@ -105,6 +109,11 @@ export const cityFederalBaseline = (): MunicipalityFederalBaseline => {
 
   if (majoritarian) total.majoritarian2022 = majoritarian
   return total
+}
+
+export const cityFederalBaseline = (): MunicipalityFederalBaseline => {
+  if (!cityBaselineCache) cityBaselineCache = foldCityFederalBaseline()
+  return cityBaselineCache
 }
 
 /** Share of the candidate's statewide (artifact) votes that came from Salvador, per year — 0..1. */

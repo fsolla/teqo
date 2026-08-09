@@ -9,6 +9,7 @@ import {
 } from '@/lib/bahiaElectionAggregates'
 import { BASELINE_TICKET_2022, HISTORICAL_SERIES_YEARS } from '@/lib/electionResults'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
+import { isCitySlug } from '@/lib/salvadorCity'
 import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   VOTE_ESTIMATE_SCENARIOS,
@@ -255,14 +256,23 @@ export const loadMunicipalityMapBundle = async (
   if (user.role === 'leader') return null
 
   const state = parseMunicipalityListParams(searchParams)
+  // B178 — the virtual city slug must never narrow the map scope: the map
+  // only paints catalog units and the city has no polygon/map key, so a
+  // `?slug=salvador` recorte would silently empty the map. The list row is the
+  // surface for the aggregate; the map keeps its catalog-only contract.
+  const mapState: MunicipalityListState = (() => {
+    if (!state.slugs?.some(isCitySlug)) return state
+    const catalogSlugs = state.slugs.filter((slug) => !isCitySlug(slug))
+    return catalogSlugs.length ? { ...state, slugs: catalogSlugs } : { ...state, slugs: undefined }
+  })()
   // B176 — the map shares the list URL, so a leadership/party recorte must
   // carry its relation catalog into the very same `where` the list uses. Lazy
   // per active filter, so the dashboard landing page pays no extra reads.
-  const relationCatalog = await loadMunicipalityListRelationCatalog(payload, user, state)
+  const relationCatalog = await loadMunicipalityListRelationCatalog(payload, user, mapState)
   const scope = await loadMunicipalityScope(
     payload,
     user,
-    buildMunicipalityListWhere(state, relationCatalog),
+    buildMunicipalityListWhere(mapState, relationCatalog),
   )
   const municipalities = scopeMunicipalitiesFromDocs(scope.municipalities)
   if (municipalities.length === 0) return null
@@ -270,7 +280,7 @@ export const loadMunicipalityMapBundle = async (
   return buildMunicipalityMapBundleFromMunicipalities(
     payload,
     user,
-    state,
+    mapState,
     municipalities,
     scope.pledgeAggregates,
   )

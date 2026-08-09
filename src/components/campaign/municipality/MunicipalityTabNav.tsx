@@ -22,15 +22,18 @@ export const MunicipalityTabNav = ({
   municipalitySlug,
   searchParams,
   tabs = municipalityDetailTabs,
+  ariaLabel = 'Seções do município',
 }: {
   activeTab: MunicipalityDetailTab
   municipalitySlug: string
   searchParams: MunicipalityDetailSearchParams
   /** B178 — the city page renders a reduced tab set (its data owners only). */
   tabs?: readonly MunicipalityDetailTab[]
+  /** B178 — the city page labels the same nav as the capital's sections. */
+  ariaLabel?: string
 }) => (
   <nav
-    aria-label="Seções do município"
+    aria-label={ariaLabel}
     className="h-14 min-w-0 overflow-x-auto overflow-y-hidden border-b print:hidden"
   >
     <ul

@@ -116,7 +116,9 @@ export const MunicipalityListMobileCards = ({
               </h3>
               <p className="text-sm text-muted-foreground">
                 {isCity ? (
-                  SALVADOR_CITY_AGGREGATE_LABEL
+                  <>
+                    {SALVADOR_CITY_AGGREGATE_LABEL} · {region}
+                  </>
                 ) : (
                   <>
                     <span className="relative">
@@ -209,7 +211,10 @@ export const MunicipalityListMobileCards = ({
                 <dt className="text-muted-foreground">Última atualização</dt>
                 <dd>
                   {isCity ? (
-                    <SignalAgeReadout lastSignalAt={null} layout="card" />
+                    // The city never has a signal (nothing is recorded on the
+                    // aggregate) — a plain dash, not the cold-signal alert the
+                    // readout would paint for a null timestamp.
+                    <span className="text-muted-foreground">—</span>
                   ) : (
                     <MunicipalityListUpdateControl
                       municipalityID={municipality.id}

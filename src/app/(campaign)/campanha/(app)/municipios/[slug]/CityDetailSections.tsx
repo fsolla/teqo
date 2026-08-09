@@ -20,6 +20,11 @@ import {
 
 const CITY_SERIES_YEARS = [2014, 2018, ELECTION_YEAR_2022] as const
 
+const activityDateFormatter = new Intl.DateTimeFormat('pt-BR', {
+  day: '2-digit',
+  month: 'short',
+})
+
 const now = () => new Date()
 
 /**
@@ -187,7 +192,7 @@ export const CityOverviewTab = async ({
           </p>
         </div>
         <ol className="flex flex-col">
-          {topZones.map(({ entry, votes }, index) => (
+          {topZones.map(({ entry, votes }) => (
             <li key={entry.slug} className="flex items-center justify-between gap-3 py-1.5">
               <Link
                 href={`/campanha/municipios/${entry.slug}`}
@@ -197,9 +202,6 @@ export const CityOverviewTab = async ({
               </Link>
               <span className="text-sm tabular-nums text-muted-foreground">
                 {formatElectionNumber(votes)}
-              </span>
-              <span aria-hidden="true" className="sr-only">
-                {index === 0 ? ' — maior votação da capital' : ''}
               </span>
             </li>
           ))}
@@ -240,11 +242,25 @@ export const CityOverviewTab = async ({
           </div>
           <div className="flex flex-col gap-1">
             <p className="text-sm font-medium">Agenda na capital</p>
-            {upcoming.length ? (
+            {cityZoneIDs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                A capital não está no seu recorte de atuação.
+              </p>
+            ) : upcoming.length ? (
               <ol className="flex flex-col gap-1">
                 {upcoming.map((activity) => (
-                  <li key={activity.id} className="text-sm text-muted-foreground">
-                    {activity.title}
+                  <li key={activity.id} className="text-sm">
+                    <Link
+                      href={`/campanha/atividades/${activity.slug}`}
+                      className="text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+                    >
+                      <span className="font-medium tabular-nums text-foreground">
+                        {activity.startAt
+                          ? activityDateFormatter.format(new Date(activity.startAt))
+                          : null}
+                      </span>{' '}
+                      {activity.title}
+                    </Link>
                   </li>
                 ))}
               </ol>

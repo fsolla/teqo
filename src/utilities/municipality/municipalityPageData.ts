@@ -577,12 +577,11 @@ export const loadMunicipalityListPageBundle = async (
           classMatches(municipality.slug),
         )
       : (listResult.docs as Municipality[])
-    // B178 — the city row joins the in-memory recorte (class filter applied to
-    // its AGGREGATE class, not the per-slug artifact lookup). It enters the
-    // sort with its virtual values; native sorts position it explicitly.
-    const cityClassSelected =
-      !classMatches || Boolean(state.classes?.includes(cityTerritorialClass().class))
-    const cityDoc = cityInRecorte && cityClassSelected ? buildCityMunicipalityDoc() : null
+    // B178 — the city row joins the in-memory recorte and enters the sort with
+    // its virtual values; native sorts position it explicitly.
+    // (`cityMatchesFilter` already rejected the city when the class filter
+    // excludes its aggregate class, so nothing extra to check here.)
+    const cityDoc = cityInRecorte ? buildCityMunicipalityDoc() : null
     const allDocs = applyDerivedMunicipalitySort(
       cityDoc ? [...scopedDocs, cityDoc] : scopedDocs,
       sortKey,
