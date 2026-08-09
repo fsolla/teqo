@@ -168,10 +168,14 @@ test.describe('Agenda — calendário operacional', () => {
 
     const dayCell = page.getByRole('gridcell').nth(1)
     await dayCell.scrollIntoViewIfNeeded()
-    const [slotBox, dayBox] = await Promise.all([
-      page.locator('[data-time="14:00:00"]').last().boundingBox(),
-      dayCell.boundingBox(),
-    ])
+    // FullCalendar renders the time axis lazily and re-lays out on mount —
+    // wait for both targets to be attached+visible before measuring, or the
+    // bounding boxes race the grid render.
+    const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
+    await expect(slotLocator).toBeVisible()
+    await expect(dayCell).toBeVisible()
+    const slotBox = await slotLocator.boundingBox()
+    const dayBox = await dayCell.boundingBox()
     if (!slotBox || !dayBox) throw new Error('A grade semanal não expôs o slot esperado.')
     await dayCell.click({
       position: {
@@ -216,10 +220,11 @@ test.describe('Agenda — calendário operacional', () => {
 
     const dayCell = page.getByRole('gridcell').nth(1)
     await dayCell.scrollIntoViewIfNeeded()
-    const [slotBox, dayBox] = await Promise.all([
-      page.locator('[data-time="14:00:00"]').last().boundingBox(),
-      dayCell.boundingBox(),
-    ])
+    const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
+    await expect(slotLocator).toBeVisible()
+    await expect(dayCell).toBeVisible()
+    const slotBox = await slotLocator.boundingBox()
+    const dayBox = await dayCell.boundingBox()
     if (!slotBox || !dayBox) throw new Error('A grade semanal não expôs o slot esperado.')
     await dayCell.click({
       position: {
