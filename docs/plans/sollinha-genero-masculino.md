@@ -1,6 +1,6 @@
 # B179 — Sollinha: persona no gênero masculino (prompt + referências .md)
 
-Status: plano — registrado (blocked até plano em main)
+Status: entregue (2026-08-09 — prompt + UI no masculino)
 Atualizado em: 2026-08-09
 Issue: #462
 Priority: P2
@@ -70,6 +70,6 @@ Resolvidas no gate (2026-08-09):
 ## Referências
 
 - Canvas UI (gate): N/A
-- `src/utilities/ai/systemPrompt.ts` (linha 1: “Você é a Sollinha…”)
+- `src/utilities/ai/systemPrompt.ts` (linha 1: “Você é o Sollinha…” — corrigido no B179)
 - Planos da família: [`ai-chat-sollinha.md`](ai-chat-sollinha.md) (frozen), [`sollinha-tool-urls-navegacao.md`](sollinha-tool-urls-navegacao.md) (ready/editable), [`sollinha-cidades-mais-votado.md`](sollinha-cidades-mais-votado.md) (novo)
 - AGENTS.md — convenções de naming/idioma (rótulos visíveis em pt, identificadores em inglês); regra de planos frozen

@@ -20,7 +20,7 @@ const MESSAGE = 'Mensagem que migra entre as superficies'
 
 const openChatAndSend = async (page: Page) => {
   await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
-  const input = page.getByRole('textbox', { name: 'Pergunte para a Sollinha...' })
+  const input = page.getByRole('textbox', { name: 'Pergunte para o Sollinha...' })
   await input.fill(MESSAGE)
   await input.press('Enter')
   await expect(page.getByText(MESSAGE)).toBeVisible({ timeout: 20_000 })
