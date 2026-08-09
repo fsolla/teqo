@@ -101,6 +101,32 @@ describe('CampaignMobileTopBar', () => {
     expect(collapse).toHaveBeenCalledTimes(1)
   })
 
+  it('does not render the sidebar trigger for staff in app mode (C102)', () => {
+    const { container } = renderTopBar({})
+
+    const topBar = container.querySelector('[data-slot="campaign-mobile-top-bar"]')
+    expect(topBar?.getAttribute('data-mode')).toBe('app')
+    expect(screen.queryByRole('button', { name: 'Abrir ou fechar menu da campanha' })).toBeNull()
+  })
+
+  it('renders the sidebar trigger for the leader in app mode (C102)', () => {
+    const { container } = render(
+      <SidebarProvider>
+        <CampaignPageChromeProvider role="leader">
+          <CampaignWizardChromeProvider>
+            <CampaignHomeSearchChromeProvider>
+              <CampaignMobileTopBar />
+            </CampaignHomeSearchChromeProvider>
+          </CampaignWizardChromeProvider>
+        </CampaignPageChromeProvider>
+      </SidebarProvider>,
+    )
+
+    const topBar = container.querySelector('[data-slot="campaign-mobile-top-bar"]')
+    expect(topBar?.getAttribute('data-mode')).toBe('app')
+    expect(screen.getByRole('button', { name: 'Abrir ou fechar menu da campanha' })).toBeTruthy()
+  })
+
   it('renders wizard entry mode with dismiss control and flow title', () => {
     renderTopBar({
       wizardChrome: {

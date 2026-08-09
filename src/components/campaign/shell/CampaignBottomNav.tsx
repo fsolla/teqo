@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
 
 import { logoutCampaign } from '@/app/(campaign)/campanha/actions/auth'
+import { MunicipalityNavSavedFilters } from '@/components/campaign/shell/MunicipalityNavSavedFilters'
 import {
   getCampaignBottomNav,
   getCampaignOverflowNav,
@@ -115,26 +116,34 @@ export const CampaignBottomNav = ({ user }: { user: CampaignUserShellView }) => 
             <DrawerDescription>Destinos da campanha</DrawerDescription>
           </DrawerHeader>
 
-          <div className="flex flex-col gap-1 px-4 pb-0">
-            {overflowNav.map((item) => {
-              const active = isCampaignNavActive(pathname, item.href)
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={active ? 'page' : undefined}
-                  onClick={() => setOverflowOpen(false)}
-                  className={cn(
-                    'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground outline-none',
-                    'hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring',
-                    active && 'bg-muted text-primary',
-                  )}
-                >
-                  <item.icon aria-hidden="true" className="size-5 shrink-0" />
-                  <span>{item.title}</span>
-                </Link>
-              )
-            })}
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2">
+            <div className="flex flex-col gap-1">
+              {overflowNav.map((item) => {
+                const active = isCampaignNavActive(pathname, item.href)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={active ? 'page' : undefined}
+                    onClick={() => setOverflowOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground outline-none',
+                      'hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring',
+                      active && 'bg-muted text-primary',
+                    )}
+                  >
+                    <item.icon aria-hidden="true" className="size-5 shrink-0" />
+                    <span>{item.title}</span>
+                  </Link>
+                )
+              })}
+            </div>
+            {/* C102: the sheet is gone for staff on mobile — B18's saved filters
+                move into the overflow drawer, the new home of secondary nav. */}
+            <MunicipalityNavSavedFilters
+              variant="overflow"
+              onNavigate={() => setOverflowOpen(false)}
+            />
           </div>
 
           <DrawerFooter>

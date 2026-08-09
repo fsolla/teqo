@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/Sidebar'
 import { Spinner } from '@/components/ui/Spinner'
 import { clearLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
+import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { clearCampaignPwaCaches } from '@/utilities/campaignPwaClient'
 import type { CampaignUserShellView } from '@/utilities/campaignUserProfile'
 import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
@@ -66,6 +67,11 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
   const { isMobile, setOpenMobile } = useSidebar()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const secondaryNav = getCampaignSecondaryNav(user.role)
+
+  // C102: on mobile the staff navigates from the bottom bar + "Mais" drawer,
+  // so the nav sheet never mounts for staff — every destination lives below.
+  // The leader keeps it (lockdown, no bottom nav). Desktop rail is untouched.
+  if (isMobile && isStaffCampaignRole(user.role)) return null
 
   const closeMobileSidebar = () => {
     if (isMobile) setOpenMobile(false)

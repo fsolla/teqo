@@ -6,13 +6,17 @@ import { Fragment, type ReactNode } from 'react'
 import { useCampaignListTransition } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignWizardNavLink } from '@/components/campaign/shared/CampaignWizardNavLink'
 import { useCampaignHomeSearchChrome } from '@/components/campaign/shell/CampaignHomeSearchChromeContext'
-import { useCampaignHeaderActions } from '@/components/campaign/shell/CampaignPageChromeContext'
+import {
+  useCampaignHeaderActions,
+  useCampaignPageChromeRole,
+} from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageChromeDisplay } from '@/components/campaign/shell/CampaignPageChromeDisplay'
 import { useCampaignWizardChrome } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { Button } from '@/components/ui/button'
 import { SidebarTrigger } from '@/components/ui/Sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { HOME_SEARCH_COLLAPSE_ARIA_LABEL } from '@/lib/campaignHomeSearchContract'
+import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import {
   WIZARD_APP_TOP_BAR_ARIA_LABEL,
   WIZARD_DISMISS_ARIA_LABEL,
@@ -33,6 +37,7 @@ export const CampaignMobileTopBar = ({ notificationBell }: { notificationBell?: 
   const chrome = useCampaignWizardChrome()
   const homeSearchChrome = useCampaignHomeSearchChrome()
   const headerActions = useCampaignHeaderActions()
+  const role = useCampaignPageChromeRole()
   const { isPending } = useCampaignListTransition()
 
   if (chrome) {
@@ -128,7 +133,10 @@ export const CampaignMobileTopBar = ({ notificationBell }: { notificationBell?: 
           <ArrowLeft className="size-4 shrink-0" aria-hidden />
           Voltar
         </Button>
-      ) : (
+      ) : isStaffCampaignRole(role) ? null : (
+        // C102: staff navigates from the bottom bar + "Mais" — the hamburger is
+        // only the leader's (lockdown, no bottom nav). The sheet itself is
+        // unmounted for staff in CampaignSidebar.
         <SidebarTrigger className="text-primary-foreground" />
       )}
       <CampaignPageChromeDisplay layout="mobile" />
