@@ -91,6 +91,16 @@ flowchart LR
 - `handleRevoke` sem wrapper async inútil; `ActivityAgendaFilterOption` não exportado.
 - Deferido (DRY <3 call sites): extrair `chipLabel`/seeds de município/tag compartilhados para `lib/campaignListOmnibox`.
 
+## Débitos deferidos (capture-review-debts)
+
+| Débito | Gatilho de revisitação |
+| ------ | ---------------------- |
+| Query textual sem match fica presa no omnibox da agenda (sem `onCommitQuery`; `q:` é filtrado de propósito) | Se um usuário relatar confusão, ou quando um omnibox sem busca textual voltar a aparecer em outra lista |
+| `CampaignQuickAction` permite `href`+`onAction` juntos (mitigado: `onAction` vence no overlay; tipo união discriminada seria refactor amplo) | Na próxima Issue que tocar `CampaignQuickActionTypes`/overlay |
+| Closure de filtro pode ficar stale dentro do diálogo de feed aberto (comportamento herdado do C92) | C93 (gerar sem filtros) ao mexer no diálogo |
+| Feeds listados no diálogo só atualizam em re-render da página (herdado do C92) | Idem |
+| `SetCampaignHeaderAction` re-registra quando o host re-renderiza (agora memoizado; C95 deve revisitar o shape do slot) | C95 (seletor de semana no header) |
+
 ## Riscos e mitigação (executados)
 
 - **Header** `[actions][sino][IA]` conforme o gate; sem `useSearchParams` no layout.
