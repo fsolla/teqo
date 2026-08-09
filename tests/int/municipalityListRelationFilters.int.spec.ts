@@ -46,7 +46,8 @@ describe('municipality list relation filters (B176)', () => {
       fixtures.getMunicipality(),
       fixtures.getMunicipality(),
     ])
-    const scope = [a.id, b.id, c.id]
+    // `idsFor` returns ascending ids, so the expected scope must be sorted too.
+    const scope = [a.id, b.id, c.id].sort((left, right) => left - right)
 
     const idsFor = async (extra: Where): Promise<number[]> => {
       const result = await payload.find({
