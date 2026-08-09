@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CalendarFeedDialog } from '@/components/campaign/activity/CalendarFeedDialog'
 import { TooltipProvider } from '@/components/ui/tooltip'
