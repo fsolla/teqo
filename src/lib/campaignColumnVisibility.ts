@@ -68,6 +68,9 @@ const COLUMN_ID_PATTERN = /^[A-Za-z0-9_-]+$/
 
 const DEFAULT_HIDDEN_COLUMN_IDS: Partial<Record<CampaignListId, readonly string[]>> = {
   municipios: ['goalCoverage', 'lastSignal'],
+  // B175 — Cobertura is the deepest rung (P3) and only shows when the actor
+  // opts in from the picker, mirroring the municipios precedent.
+  territorios: ['cobertura'],
 }
 
 const isCampaignListId = (value: string): value is CampaignListId =>

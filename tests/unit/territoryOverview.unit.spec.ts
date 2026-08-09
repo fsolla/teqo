@@ -29,8 +29,11 @@ const input = (
   kind: 'municipio',
   votesByYear: { 2022: 0 },
   validVotesByYear: { 2022: 0 },
-  estimate2026: 0,
-  advisorCount: 0,
+  estimateByScenario: { pessimistic: 0, central: 0, optimistic: 0 },
+  hasEstimate: false,
+  advisorIDs: [],
+  leadershipIDs: [],
+  stateDeputyIDs: [],
   ownVotes2022: 0,
   fieldCeiling2022: 0,
   goalCoverage: emptyGoalCoverage,
@@ -45,8 +48,11 @@ const fixture: TerritoryMunicipalityInput[] = [
     city: 'Ibipeba',
     votesByYear: { 2014: 10, 2018: 20, 2022: 30 },
     validVotesByYear: { 2022: 1000 },
-    estimate2026: 40,
-    advisorCount: 1,
+    estimateByScenario: { pessimistic: 35, central: 40, optimistic: 45 },
+    hasEstimate: true,
+    advisorIDs: [7],
+    leadershipIDs: [11, 12],
+    stateDeputyIDs: [1, 2],
     ownVotes2022: 30,
     fieldCeiling2022: 300,
     goalCoverage: { goal: 100, committed: 20, coverageRatio: 0.2, deficit: 80 },
@@ -57,8 +63,10 @@ const fixture: TerritoryMunicipalityInput[] = [
     city: 'Irecê',
     votesByYear: { 2014: 5, 2018: 15, 2022: 25 },
     validVotesByYear: { 2022: 2000 },
-    estimate2026: 35,
-    advisorCount: 0,
+    estimateByScenario: { pessimistic: 33, central: 35, optimistic: 37 },
+    advisorIDs: [],
+    leadershipIDs: [11],
+    stateDeputyIDs: [2, 3],
     ownVotes2022: 25,
     fieldCeiling2022: 100,
     goalCoverage: { goal: 50, committed: 10, coverageRatio: 0.2, deficit: 40 },
@@ -70,8 +78,9 @@ const fixture: TerritoryMunicipalityInput[] = [
     city: 'Barra',
     votesByYear: { 2014: 100, 2018: 110, 2022: 120 },
     validVotesByYear: { 2022: 5000 },
-    estimate2026: 150,
-    advisorCount: 2,
+    estimateByScenario: { pessimistic: 140, central: 150, optimistic: 160 },
+    hasEstimate: true,
+    advisorIDs: [7, 8],
     ownVotes2022: 120,
     fieldCeiling2022: 1200,
   }),
@@ -83,8 +92,10 @@ const fixture: TerritoryMunicipalityInput[] = [
     kind: 'zona',
     votesByYear: { 2014: 1000, 2018: 1100, 2022: 1200 },
     validVotesByYear: { 2022: 40000 },
-    estimate2026: 1300,
-    advisorCount: 1,
+    estimateByScenario: { pessimistic: 1200, central: 1300, optimistic: 1400 },
+    hasEstimate: true,
+    advisorIDs: [9],
+    stateDeputyIDs: [5],
     ownVotes2022: 1200,
     fieldCeiling2022: 12000,
   }),
@@ -94,8 +105,8 @@ const fixture: TerritoryMunicipalityInput[] = [
     city: 'Camaçari',
     votesByYear: { 2014: 200, 2018: 210, 2022: 220 },
     validVotesByYear: { 2022: 8000 },
-    estimate2026: 250,
-    advisorCount: 0,
+    estimateByScenario: { pessimistic: 240, central: 250, optimistic: 260 },
+    advisorIDs: [10],
     ownVotes2022: 220,
     fieldCeiling2022: 2200,
   }),
@@ -117,9 +128,35 @@ describe('computeTerritoryRollup', () => {
     expect(irece.municipalityCount).toBe(2)
   })
 
-  it('sums 2026 estimates', () => {
+  it('sums 2026 estimates per scenario', () => {
     const irece = rows.find((row) => row.region === 'Irecê')!
-    expect(irece.estimate2026).toBe(75)
+    expect(irece.estimateByScenario).toEqual({
+      pessimistic: 68,
+      central: 75,
+      optimistic: 82,
+    })
+  })
+
+  it('flags a territory as having an estimate when any municipality does', () => {
+    const irece = rows.find((row) => row.region === 'Irecê')!
+    const metro = rows.find((row) => row.region === 'Metropolitano de Salvador')!
+    expect(irece.hasEstimate).toBe(true)
+    expect(metro.hasEstimate).toBe(true)
+    const allEmpty = computeTerritoryRollup([
+      input({ slug: 'x', region: 'Velho Chico', city: 'X' }),
+    ])
+    expect(allEmpty[0].hasEstimate).toBe(false)
+  })
+
+  it('unions advisors, leaderships and state deputies per territory (dedup)', () => {
+    const irece = rows.find((row) => row.region === 'Irecê')!
+    const velhoChico = rows.find((row) => row.region === 'Velho Chico')!
+    const metro = rows.find((row) => row.region === 'Metropolitano de Salvador')!
+    expect(irece.advisorIDs).toEqual([7])
+    expect(irece.leadershipIDs).toEqual([11, 12])
+    expect(irece.stateDeputyIDs).toEqual([1, 2, 3])
+    expect(velhoChico.advisorIDs).toEqual([7, 8])
+    expect(metro.advisorIDs).toEqual([9, 10])
   })
 
   it('counts municipalities with advisor', () => {
@@ -144,7 +181,12 @@ describe('computeTerritoryRollup', () => {
     expect(demais.municipalityCount).toBe(1)
     // Sub-rows sum to the Metropolitano total.
     expect(salvador.votesByYear[2022] + demais.votesByYear[2022]).toBe(metro.votesByYear[2022])
-    expect(salvador.estimate2026 + demais.estimate2026).toBe(metro.estimate2026)
+    expect(salvador.estimateByScenario.central + demais.estimateByScenario.central).toBe(
+      metro.estimateByScenario.central,
+    )
+    // Sub-rows carry their own network sets (Salvador zones × Demais RMS).
+    expect(salvador.advisorIDs).toEqual([9])
+    expect(demais.advisorIDs).toEqual([10])
   })
 
   it('returns zero % when state total is zero', () => {
@@ -209,12 +251,14 @@ describe('filterTerritoryRows', () => {
   })
 
   it('treats com assessor as complete coverage and sem assessor as any gap', () => {
+    // Velho Chico (1/1) and Metropolitano (Salvador + Camaçari both with advisor) are complete.
     expect(
       filterTerritoryRows(rows, { coverage: 'com_assessor' }).map((row) => row.region),
-    ).toEqual(['Velho Chico'])
+    ).toEqual(['Velho Chico', 'Metropolitano de Salvador'])
+    // Irecê has only ibipeba with an advisor → a gap.
     expect(
       filterTerritoryRows(rows, { coverage: 'sem_assessor' }).map((row) => row.region),
-    ).toEqual(['Irecê', 'Metropolitano de Salvador'])
+    ).toEqual(['Irecê'])
   })
 
   it('keeps Metropolitano sub-rows attached when the parent matches', () => {

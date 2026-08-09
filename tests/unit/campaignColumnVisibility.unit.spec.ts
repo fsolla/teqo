@@ -81,6 +81,17 @@ describe('resolveCampaignColumnVisibility', () => {
       hiddenColumnIds: [],
     })
   })
+
+  it('hides Cobertura by default on territorios (B175), like goalCoverage on municipios', () => {
+    expect(resolveCampaignColumnVisibility('territorios', {})).toEqual({
+      listId: 'territorios',
+      hiddenColumnIds: ['cobertura'],
+    })
+    expect(resolveCampaignColumnVisibility('territorios', { territorios: [] })).toEqual({
+      listId: 'territorios',
+      hiddenColumnIds: [],
+    })
+  })
 })
 
 describe('toggleHiddenColumn', () => {

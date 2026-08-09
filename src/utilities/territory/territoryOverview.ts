@@ -21,6 +21,11 @@ import {
   METROPOLITANO_SALVADOR_SUB_ROW_LABEL,
 } from '@/lib/metropolitanoTerritoryPeers'
 import { territorialClassSortWeight } from '@/lib/territorialClassSortWeight'
+import {
+  VOTE_ESTIMATE_SCENARIOS,
+  zeroByVoteEstimateScenario,
+  type VoteEstimateScenario,
+} from '@/lib/voteEstimate'
 import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 import type { MunicipalityGoalCoverage } from '@/utilities/municipality/goalCoverage'
 import { aggregateGoalCoverage } from '@/utilities/municipality/goalCoverage'
@@ -60,8 +65,13 @@ export type TerritoryMunicipalityInput = {
   kind: 'municipio' | 'zona'
   votesByYear: Record<string, number>
   validVotesByYear: Record<string, number>
-  estimate2026: number
-  advisorCount: number
+  /** Staff totals per scenario (estimated[S] ?? pledge aggregate for S), summed per TI. */
+  estimateByScenario: Record<VoteEstimateScenario, number>
+  /** Any municipality in the TI carries an estimate or a declared pledge — drives "—" vs value. */
+  hasEstimate: boolean
+  advisorIDs: number[]
+  leadershipIDs: number[]
+  stateDeputyIDs: number[]
   ownVotes2022: number
   fieldCeiling2022: number
   goalCoverage: MunicipalityGoalCoverage
@@ -72,8 +82,12 @@ type TerritoryOverviewSubRow = {
   municipalityCount: number
   votesByYear: Record<string, number>
   validVotes2022: number
-  estimate2026: number
+  estimateByScenario: Record<VoteEstimateScenario, number>
+  hasEstimate: boolean
   withAdvisorCount: number
+  advisorIDs: number[]
+  leadershipIDs: number[]
+  stateDeputyIDs: number[]
   pctPropriaVotacao: number
 } & TerritoryE12Rollup & {
     territorialClass?: MunicipalityTerritorialClassification | null
@@ -85,8 +99,12 @@ export type TerritoryOverviewRow = {
   votesByYear: Record<string, number>
   validVotes2022: number
   pctPropriaVotacao: number
-  estimate2026: number
+  estimateByScenario: Record<VoteEstimateScenario, number>
+  hasEstimate: boolean
   withAdvisorCount: number
+  advisorIDs: number[]
+  leadershipIDs: number[]
+  stateDeputyIDs: number[]
   subRows?: TerritoryOverviewSubRow[]
 } & TerritoryE12Rollup & {
     territorialClass?: MunicipalityTerritorialClassification | null
@@ -115,8 +133,18 @@ type Accumulator = {
   municipalityCount: number
   votesByYear: Record<string, number>
   validVotes2022: number
-  estimate2026: number
+  estimateByScenario: Record<VoteEstimateScenario, number>
+  hasEstimate: boolean
   withAdvisorCount: number
+  advisorIDs: number[]
+  leadershipIDs: number[]
+  stateDeputyIDs: number[]
+}
+
+/** Unique-append of relation ids — sets per TI are a handful of entries. */
+const pushUniqueIds = (target: number[], ids: readonly number[]): number[] => {
+  for (const id of ids) if (!target.includes(id)) target.push(id)
+  return target
 }
 
 /**
@@ -189,8 +217,12 @@ const createAccumulator = (region: string): Accumulator => ({
   municipalityCount: 0,
   votesByYear: {},
   validVotes2022: 0,
-  estimate2026: 0,
+  estimateByScenario: zeroByVoteEstimateScenario(),
+  hasEstimate: false,
   withAdvisorCount: 0,
+  advisorIDs: [],
+  leadershipIDs: [],
+  stateDeputyIDs: [],
 })
 
 const accumulateInto = (acc: Accumulator, input: TerritoryMunicipalityInput): void => {
@@ -199,8 +231,14 @@ const accumulateInto = (acc: Accumulator, input: TerritoryMunicipalityInput): vo
     acc.votesByYear[year] = (acc.votesByYear[year] ?? 0) + votes
   }
   acc.validVotes2022 += input.validVotesByYear[ELECTION_YEAR_2022] ?? 0
-  acc.estimate2026 += input.estimate2026
-  if (input.advisorCount > 0) acc.withAdvisorCount += 1
+  for (const scenario of VOTE_ESTIMATE_SCENARIOS) {
+    acc.estimateByScenario[scenario] += input.estimateByScenario[scenario]
+  }
+  acc.hasEstimate = acc.hasEstimate || input.hasEstimate
+  if (input.advisorIDs.length > 0) acc.withAdvisorCount += 1
+  pushUniqueIds(acc.advisorIDs, input.advisorIDs)
+  pushUniqueIds(acc.leadershipIDs, input.leadershipIDs)
+  pushUniqueIds(acc.stateDeputyIDs, input.stateDeputyIDs)
 }
 
 const pctOf = (acc: Accumulator, stateTotal2022: number): number =>
@@ -216,8 +254,12 @@ const finalizeRow = (
   votesByYear: { ...acc.votesByYear },
   validVotes2022: acc.validVotes2022,
   pctPropriaVotacao: pctOf(acc, stateTotal2022),
-  estimate2026: acc.estimate2026,
+  estimateByScenario: { ...acc.estimateByScenario },
+  hasEstimate: acc.hasEstimate,
   withAdvisorCount: acc.withAdvisorCount,
+  advisorIDs: [...acc.advisorIDs],
+  leadershipIDs: [...acc.leadershipIDs],
+  stateDeputyIDs: [...acc.stateDeputyIDs],
   ...e12,
 })
 
@@ -231,8 +273,12 @@ const finalizeSubRow = (
   municipalityCount: acc.municipalityCount,
   votesByYear: { ...acc.votesByYear },
   validVotes2022: acc.validVotes2022,
-  estimate2026: acc.estimate2026,
+  estimateByScenario: { ...acc.estimateByScenario },
+  hasEstimate: acc.hasEstimate,
   withAdvisorCount: acc.withAdvisorCount,
+  advisorIDs: [...acc.advisorIDs],
+  leadershipIDs: [...acc.leadershipIDs],
+  stateDeputyIDs: [...acc.stateDeputyIDs],
   pctPropriaVotacao: pctOf(acc, stateTotal2022),
   ...e12,
 })
@@ -323,7 +369,7 @@ const rowSortValue = (row: TerritoryOverviewRow, key: TerritorySortKey): number 
     case 'validVotes2022':
       return row.validVotes2022
     case 'estimate2026':
-      return row.estimate2026
+      return row.estimateByScenario.central
     case 'coverage':
       return row.municipalityCount > 0 ? row.withAdvisorCount / row.municipalityCount : 0
     case 'cobertura':

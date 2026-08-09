@@ -15,6 +15,7 @@ import {
 import type { CampaignColumnVisibility } from '@/lib/campaignColumnVisibility'
 import { territoryAnchorId } from '@/lib/territoryAnchor'
 import { cn } from '@/lib/utils'
+import type { TerritoryNetworkReferences } from '@/utilities/territory/loadTerritoryOverview'
 import {
   clearTerritoryListFilters,
   type TerritoryFilterOption,
@@ -58,31 +59,37 @@ export const TerritoryList = ({
   rows,
   state,
   regionOptions,
+  references,
   columnVisibility,
 }: {
   rows: TerritoryOverviewRow[]
   state: TerritoryListState
   regionOptions: TerritoryFilterOption[]
+  references: TerritoryNetworkReferences
   columnVisibility: CampaignColumnVisibility
 }) => {
   const { sort, dir } = resolveTerritoryListSort(state)
   const sortSummary = formatTerritoryListSortSummary(sort, dir)
 
   return (
-    <CampaignTable
-      caption={`${sortSummary}. Comparação dos Territórios de Identidade. Leitura regional; a alocação é decidida por município.`}
-      className="overflow-visible"
-      containerClassName="overflow-x-auto"
-      headerClassName="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-background [&_th]:shadow-[inset_0_-1px_0_var(--border)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl [&_tr]:border-b-0"
-      columns={territoryListColumns({ state, regionOptions })}
-      columnVisibility={columnVisibility}
-      rows={flattenTerritoryRows(rows)}
-      rowKey={(row) => (row.variant === 'parent' ? row.region : `${row.parentRegion}-${row.label}`)}
-      rowId={(row) => (row.variant === 'parent' ? territoryAnchorId(row.region) : undefined)}
-      rowClassName={(row) =>
-        row.variant === 'sub' ? 'bg-muted/30' : 'scroll-mt-6 target:bg-muted/50'
-      }
-      empty={<TerritoryListEmptyState state={state} />}
-    />
+    <div data-container="territory-list" className="@container/territory-list">
+      <CampaignTable
+        caption={`${sortSummary}. Comparação dos Territórios de Identidade. Leitura regional; a alocação é decidida por município.`}
+        className="overflow-visible"
+        containerClassName="overflow-x-auto supports-[container-type:inline-size]:overflow-x-hidden"
+        headerClassName="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-background [&_th]:shadow-[inset_0_-1px_0_var(--border)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl [&_tr]:border-b-0"
+        columns={territoryListColumns({ state, regionOptions, references })}
+        columnVisibility={columnVisibility}
+        rows={flattenTerritoryRows(rows)}
+        rowKey={(row) =>
+          row.variant === 'parent' ? row.region : `${row.parentRegion}-${row.label}`
+        }
+        rowId={(row) => (row.variant === 'parent' ? territoryAnchorId(row.region) : undefined)}
+        rowClassName={(row) =>
+          row.variant === 'sub' ? 'bg-muted/30' : 'scroll-mt-6 target:bg-muted/50'
+        }
+        empty={<TerritoryListEmptyState state={state} />}
+      />
+    </div>
   )
 }

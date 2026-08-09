@@ -45,13 +45,13 @@ const DEFAULT_TERRITORY_LIST_SORT_DIR: TerritoryListSortDirection = 'desc'
 export const territoryListSortLabels: Record<TerritoryListSortKey, string> = {
   region: 'Território',
   municipalities: 'Municípios',
-  votes2022: 'Votos 2022',
+  votes2022: '2022',
   pct: '% da própria votação',
   validVotes2022: 'Válidos 2022',
-  estimate2026: 'Estimativa 2026 (média)',
+  estimate2026: '2026',
   coverage: 'Assessoria',
-  cobertura: 'Cobertura da meta',
-  captura: 'Captura (2022)',
+  cobertura: 'Cobertura',
+  captura: 'Captura',
   classe: 'Classe',
 }
 
