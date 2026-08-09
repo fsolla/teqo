@@ -38,11 +38,12 @@ const CITY_PAGE_SUBTITLE = 'Metropolitano de Salvador · ZE 1–19 · capital (a
 
 export async function generateMetadata({ params }: MunicipalityDetailPageProps) {
   const { slug } = await params
+  // Same gate as the page itself: the city metadata is staff-only too.
+  const user = await requireCampaignPageActor({ gate: 'noLeader' })
   if (isCitySlug(slug)) {
     return campaignPageMetadata({ title: salvadorCity.name, subtitle: CITY_PAGE_SUBTITLE })
   }
   const payload = await getPayload({ config })
-  const user = await requireCampaignPageActor({ gate: 'noLeader' })
 
   try {
     const context = await resolveAccessibleMunicipalityContext(payload, user, slug)
@@ -86,6 +87,7 @@ export default async function MunicipalityDetailPage({
           municipalitySlug={salvadorCity.slug}
           searchParams={rawSearchParams}
           tabs={cityMunicipalityDetailTabs}
+          ariaLabel="Seções da capital"
         />
         {cityTab === 'overview' ? <CityOverviewTab payload={payload} user={user} /> : null}
         {cityTab === 'elections' ? (

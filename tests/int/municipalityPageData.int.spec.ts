@@ -609,6 +609,85 @@ describe('loadMunicipalityListPageBundle', () => {
     expect(bundle.municipalities[cityIndex - 1]?.kind).toBe('zona')
   })
 
+  it('orders the city row by its real summed votes under sort=votos', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+
+    const descending = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: 'salvador',
+      sort: 'votos',
+    })
+    expect(descending.municipalities[0]?.slug).toBe('salvador')
+    expect(descending.municipalities[0]?.isCity).toBe(true)
+
+    const ascending = await loadMunicipalityListPageBundle(payload, coordinator, {
+      q: 'salvador',
+      sort: 'votos',
+      dir: 'asc',
+    })
+    expect(ascending.municipalities[ascending.municipalities.length - 1]?.slug).toBe('salvador')
+  })
+
+  it('paginates the city row like a common row (last page) and beyond totalPages', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+
+    // Metropolitano de Salvador: catalog municipalities + the city row, sorted
+    // by name — the Salvador block (with the city) lands on the last page.
+    const metropolitanoCount =
+      municipalityCatalog.filter((entry) => entry.region === 'Metropolitano de Salvador').length + 1
+    const pageOne = await loadMunicipalityListPageBundle(payload, coordinator, {
+      region: ['Metropolitano de Salvador'],
+      sort: 'name',
+    })
+    expect(pageOne.totalDocs).toBe(metropolitanoCount)
+    expect(pageOne.totalPages).toBe(Math.ceil(metropolitanoCount / 25))
+    expect(pageOne.municipalities).toHaveLength(25)
+    expect(pageOne.municipalities.some((row) => row.slug === 'salvador')).toBe(false)
+
+    const lastPage = pageOne.totalPages
+    const pageLast = await loadMunicipalityListPageBundle(payload, coordinator, {
+      region: ['Metropolitano de Salvador'],
+      sort: 'name',
+      page: String(lastPage),
+    })
+    expect(pageLast.municipalities.some((row) => row.slug === 'salvador')).toBe(true)
+    expect(pageLast.municipalities).toHaveLength(metropolitanoCount - 25 * (lastPage - 1))
+
+    const beyond = await loadMunicipalityListPageBundle(payload, coordinator, {
+      region: ['Metropolitano de Salvador'],
+      sort: 'name',
+      page: String(lastPage + 1),
+    })
+    expect(beyond.municipalities).toHaveLength(0)
+  })
+
+  it('keeps the advisor rule conjunctive: city hidden without q, filtered by other filters', async () => {
+    const fixtures = campaignFixtures()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const administered = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
+
+    // Slug recorte alone does not reveal the city to an advisor (only q does).
+    const bySlug = await loadMunicipalityListPageBundle(payload, advisor, {
+      slug: ['salvador'],
+    })
+    expect(cityRow(bySlug)).toBeUndefined()
+
+    // q + a filter the city passes keeps it; q + a named-value filter hides it.
+    const withAbsence = await loadMunicipalityListPageBundle(payload, advisor, {
+      q: 'salvador',
+      coverage: 'sem_assessor',
+    })
+    expect(cityRow(withAbsence)).toBeDefined()
+
+    const withNamed = await loadMunicipalityListPageBundle(payload, advisor, {
+      q: 'salvador',
+      level: ['n0'],
+    })
+    expect(cityRow(withNamed)).toBeUndefined()
+  })
+
   it('shows the city row to an advisor only when they search for the city', async () => {
     const fixtures = campaignFixtures()
     const advisor = await fixtures.createCampaignUser('advisor')

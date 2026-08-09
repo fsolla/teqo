@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -111,5 +114,15 @@ describe('salvador city aggregate', () => {
     expect(isCitySlug('salvador')).toBe(true)
     expect(isCitySlug('salvador-ze-1')).toBe(false)
     expect(isCitySlug('feira-de-santana')).toBe(false)
+  })
+
+  it('stays client-bundle-safe: the descriptor never imports the election artifact', () => {
+    // The 623 KB committed baseline must never ride the browser bundle — the
+    // client imports this module (list rows, omnibox, filter labels), so the
+    // artifact and `server-only` are banned from its IMPORTS; the folded
+    // aggregates live in the server-only `salvadorCityAggregates.ts`.
+    const source = readFileSync(join(process.cwd(), 'src/lib/salvadorCity.ts'), 'utf8')
+    expect(source).not.toMatch(/^import .*bahiaElectionAggregates/m)
+    expect(source).not.toMatch(/^import 'server-only'/m)
   })
 })

@@ -323,7 +323,9 @@ const municipalityListColumns = ({
           </div>
           <span className="block truncate text-xs text-muted-foreground">
             {municipality.isCity ? (
-              SALVADOR_CITY_AGGREGATE_LABEL
+              <>
+                {SALVADOR_CITY_AGGREGATE_LABEL} · {municipality.region}
+              </>
             ) : (
               <TerritoryLink region={municipality.region} compact />
             )}

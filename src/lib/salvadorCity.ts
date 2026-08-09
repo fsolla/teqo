@@ -30,7 +30,7 @@ export const SALVADOR_CITY_SLUG = 'salvador' as const
 /** List/detail display name of the aggregate row — "Salvador" is the city, the row is the aggregate. */
 const SALVADOR_CITY_DISPLAY_NAME = 'Salvador (cidade)' as const
 
-export const SALVADOR_CITY_AGGREGATE_LABEL = 'Cidade · agregado das 19 zonas' as const
+export const SALVADOR_CITY_AGGREGATE_LABEL = 'Agregado das 19 zonas' as const
 
 export type SalvadorCityDescriptor = {
   slug: typeof SALVADOR_CITY_SLUG
@@ -45,11 +45,13 @@ export type SalvadorCityDescriptor = {
   tseZones: readonly number[]
 }
 
-const salvadorZoneEntries = (): ReturnType<typeof municipalityCatalogEntriesForCity> =>
-  municipalityCatalogEntriesForCity(SALVADOR_CITY)
+/** The 19 ZE entries, ordered by zone number (catalog order). */
+export const salvadorZoneCatalogEntries = (): ReturnType<
+  typeof municipalityCatalogEntriesForCity
+> => municipalityCatalogEntriesForCity(SALVADOR_CITY)
 
 const buildSalvadorCityDescriptor = (): SalvadorCityDescriptor => {
-  const zoneEntries = salvadorZoneEntries()
+  const zoneEntries = salvadorZoneCatalogEntries()
   if (zoneEntries.length !== 19) {
     // The catalog is the frozen 435 snapshot; Salvador's 19 ZEs are a product
     // invariant of the remodel — fail loudly instead of aggregating a drift.
@@ -84,8 +86,3 @@ export const municipalityDisplayNameForSlug = (slug: string): string | null => {
   if (isCitySlug(slug)) return salvadorCity.name
   return getMunicipalityCatalogEntry(slug)?.name ?? null
 }
-
-/** The 19 ZE entries, ordered by zone number (catalog order). */
-export const salvadorZoneCatalogEntries = (): ReturnType<
-  typeof municipalityCatalogEntriesForCity
-> => salvadorZoneEntries()

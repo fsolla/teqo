@@ -138,10 +138,14 @@ describe('insertCityAtNativeSortPosition', () => {
     expect(sorted[zoneIndex + 1]?.name).toBe('Salvador — ZE 19')
   })
 
-  it('sorts the city to the end for null-valued native keys', () => {
+  it('follows the native null ordering for null-valued keys (last on asc, first on desc)', () => {
     const sorted = insertCityAtNativeSortPosition(docs, cityDoc, 'lastUpdateAt', 'asc')
     expect(sorted[sorted.length - 1]?.slug).toBe(cityDoc.slug)
-    const sortedDesc = insertCityAtNativeSortPosition(docs, cityDoc, 'trend', 'desc')
-    expect(sortedDesc[sortedDesc.length - 1]?.slug).toBe(cityDoc.slug)
+    // Postgres puts NULLS FIRST on DESC — the city (no lastUpdateAt) sits with
+    // the other municipalities that have no value, not at the bottom.
+    const sortedDesc = insertCityAtNativeSortPosition(docs, cityDoc, 'lastUpdateAt', 'desc')
+    expect(sortedDesc[0]?.slug).toBe(cityDoc.slug)
+    const trendAsc = insertCityAtNativeSortPosition(docs, cityDoc, 'trend', 'asc')
+    expect(trendAsc[trendAsc.length - 1]?.slug).toBe(cityDoc.slug)
   })
 })
