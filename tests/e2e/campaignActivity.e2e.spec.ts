@@ -290,13 +290,14 @@ test.describe('Agenda — calendário operacional', () => {
     // Desktop: switch to month; the URL gains `view=month` and the calendar
     // actually renders the month grid (not just the selector label). The
     // FullCalendar v7 classic theme hashes its view classes, so the stable
-    // signal is the "Hoje" button's aria-label ("Este mês") plus the grid.
+    // signal is the "Hoje" button's aria-label ("Este mês") plus a grid.
+    // (`.first()`: FC keeps stale view grids in the DOM while transitioning.)
     await viewSelector.click()
     await page.getByRole('menuitemradio', { name: 'Mês', exact: true }).click()
     await expect(page).toHaveURL(`${campaign.baseURL}/campanha/agenda?view=month`)
     await expect(viewSelector).toHaveAttribute('aria-label', 'Modo de visualização: Mês')
     await expect(page.getByRole('button', { name: 'Este mês' })).toBeVisible({ timeout: 15_000 })
-    await expect(page.locator('[role="grid"]')).toBeVisible()
+    await expect(page.getByRole('grid').first()).toBeVisible()
 
     // Persists across a reload (screen state lives beside the filter, on the URL).
     await page.reload()
@@ -324,7 +325,7 @@ test.describe('Agenda — calendário operacional', () => {
     await expect(page).toHaveURL(`${campaign.baseURL}/campanha/agenda?view=list`)
     await expect(viewSelector).toHaveAttribute('aria-label', 'Modo de visualização: Lista')
     await expect(page.getByRole('button', { name: 'Este mês' })).toBeVisible({ timeout: 15_000 })
-    await expect(page.locator('[role="grid"]')).toHaveCount(0, { timeout: 15_000 })
+    await expect(page.getByRole('grid')).toHaveCount(0, { timeout: 15_000 })
 
     // A navigation that drops the `view` param returns the calendar to the
     // responsive default instead of keeping an orphan view the selector no
@@ -335,6 +336,6 @@ test.describe('Agenda — calendário operacional', () => {
     await expect(page.getByRole('button', { name: 'Hoje', exact: true })).toBeVisible({
       timeout: 15_000,
     })
-    await expect(page.locator('[role="grid"]')).toBeVisible()
+    await expect(page.getByRole('grid').first()).toBeVisible()
   })
 })
