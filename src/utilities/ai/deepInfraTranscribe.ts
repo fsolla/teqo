@@ -2,8 +2,10 @@ import 'server-only'
 
 /**
  * Transcribes a recorded voice clip to text via Deep Infra's OpenAI-compatible
- * transcription endpoint (B173). Same provider/key as the Sollinha LLM
- * (`DEEPINFRA_API_KEY`), so one account, one key, one invoice.
+ * transcription endpoint (B173). Deep Infra serves Whisper large-v3 at
+ * $0.00045/audio minute — the cheapest speech-to-text around — so it stays
+ * here even though the Sollinha LLM talks to api.deepseek.com directly
+ * (`DEEPSEEK_API_KEY`); this path uses its own `DEEPINFRA_API_KEY`.
  *
  * The audio is forwarded as a multipart `file` and never persisted anywhere —
  * it lives only in this function's memory for the duration of the provider

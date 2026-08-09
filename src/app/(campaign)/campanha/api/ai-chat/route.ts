@@ -1,4 +1,4 @@
-import { deepInfra } from '@ai-sdk/deepinfra'
+import { deepSeek } from '@ai-sdk/deepseek'
 import configPromise from '@payload-config'
 import {
   convertToModelMessages,
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
   const { messages } = await req.json()
 
   const result = streamText({
-    model: deepInfra('deepseek-ai/DeepSeek-V4-Flash'),
+    model: deepSeek('deepseek-v4-flash'),
     system: AI_SYSTEM_PROMPT,
     messages: await convertToModelMessages(messages),
     tools: buildAITools({ user, payload }),
