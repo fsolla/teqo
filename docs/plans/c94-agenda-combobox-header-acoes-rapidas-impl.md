@@ -82,6 +82,15 @@ flowchart LR
 - O **overlay do FAB fecha ao disparar uma ação dialog** (`onActionClick` no `CampaignQuickActionsOverlay`) — senão o sheet da agenda abriria por cima do drawer aberto.
 - `playwright.config.ts` ganhou `webServer.timeout = 240s` **local-only** (`CI ? undefined`) — a máquina compartilhada (load 60+ de worktrees paralelos) estourava o boot de 60s em `pnpm dev`.
 
+## Pós-/simplify (reviewers paralelos)
+
+- **P1 corrigido:** `ActivityAgendaFilters` mantém espelho `draft` do estado (padrão do filtro antigo) para picks consecutivos dentro da janela pending do RSC aplicarem **cumulativos** — derivar do prop `state` solto dropava a primeira seleção (regressão desta entrega, achada pelo reviewer de correção).
+- **P2 corrigido:** no overlay, `onAction` vence `href` deterministicamente (o botão ignora `onClick` na branch Link — combo latente).
+- Botão do header memoizado (`useMemo`) no `AgendaFeedChrome` — registra só quando `canGenerate`/`open` muda.
+- Chaves nos nós de `headerActions` (C95 terá 2+).
+- `handleRevoke` sem wrapper async inútil; `ActivityAgendaFilterOption` não exportado.
+- Deferido (DRY <3 call sites): extrair `chipLabel`/seeds de município/tag compartilhados para `lib/campaignListOmnibox`.
+
 ## Riscos e mitigação (executados)
 
 - **Header** `[actions][sino][IA]` conforme o gate; sem `useSearchParams` no layout.
