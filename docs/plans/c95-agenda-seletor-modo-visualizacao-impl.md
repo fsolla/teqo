@@ -106,10 +106,10 @@ flowchart LR
 
 ## Débitos deferidos (gatilho de revisitação)
 
-| Débito | Gatilho |
-| ------ | ------- |
-| `menuitemradio` sem typeahead; anchor híbrido mantém ctrl/middle-click abrindo href (comportamento de link, não de radio) | Próxima Issue que tocar a11y do menu do header |
-| Sem caminho de UI para "voltar ao modo automático" (uma vez escolhida, `view` fica na URL; "Limpar" preserva de propósito) | Se produto pedir default responsivo restaurado por um gesto |
+| Débito                                                                                                                                                  | Gatilho                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `menuitemradio` sem typeahead; anchor híbrido mantém ctrl/middle-click abrindo href (comportamento de link, não de radio)                               | Próxima Issue que tocar a11y do menu do header                                                      |
+| Sem caminho de UI para "voltar ao modo automático" (uma vez escolhida, `view` fica na URL; "Limpar" preserva de propósito)                              | Se produto pedir default responsivo restaurado por um gesto                                         |
 | `useNarrowViewport` do seletor (viewport 640) vs `applyResponsiveView` do calendário (container 640) — banda residual documentada (768–896 com sidebar) | Se o seletor e o calendário precisarem concordar sempre (mudar o probe do calendário para viewport) |
 
 ## Aceite de engenharia
