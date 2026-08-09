@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  activityAgendaViewFcId,
+  activityAgendaViewLabels,
+  activityAgendaViews,
   activitySlotPrefill,
   activityTabs,
   buildActivityAgendaHref,
@@ -202,6 +205,74 @@ describe('activity agenda URL contract', () => {
         new Set(['Reunião']),
       ),
     ).toEqual({ deputyPresent: true })
+  })
+})
+
+describe('activity agenda view modes (C95)', () => {
+  it('parses only the declared view codes fail-closed', () => {
+    expect(parseActivityAgendaParams({ view: 'month' }).view).toBe('month')
+    expect(parseActivityAgendaParams({ view: 'week' }).view).toBe('week')
+    expect(parseActivityAgendaParams({ view: 'day' }).view).toBe('day')
+    expect(parseActivityAgendaParams({ view: 'list' }).view).toBe('list')
+    expect(parseActivityAgendaParams({ view: 'bogus' }).view).toBeUndefined()
+    expect(parseActivityAgendaParams({ view: 'timeGridMonth' }).view).toBeUndefined()
+  })
+
+  it('maps every declared view code to a FullCalendar view id', () => {
+    expect(activityAgendaViews).toEqual(['week', 'day', 'month', 'list'])
+    expect(activityAgendaViewFcId).toEqual({
+      week: 'timeGridWeek',
+      day: 'timeGridDay',
+      month: 'dayGridMonth',
+      list: 'listMonth',
+    })
+  })
+
+  it('labels every declared view mode in pt-BR for the header selector', () => {
+    expect(activityAgendaViewLabels).toEqual({
+      week: 'Semana',
+      day: 'Dia',
+      month: 'Mês',
+      list: 'Lista',
+    })
+  })
+
+  it('serializes the view last in the canonical agenda query', () => {
+    expect(
+      buildActivityAgendaSearchParams({
+        municipality: 12,
+        deputyPresent: true,
+        tag: 'Comício',
+        view: 'month',
+      }).toString(),
+    ).toBe('municipality=12&deputyPresent=1&tag=Com%C3%ADcio&view=month')
+    expect(buildActivityAgendaHref({ view: 'day' })).toBe('/campanha/agenda?view=day')
+  })
+
+  it('canonicalizes an unknown view out of the URL', () => {
+    expect(resolveActivityAgendaUrl({ view: 'bogus', municipality: '12' }).redirectHref).toBe(
+      '/campanha/agenda?municipality=12',
+    )
+    expect(resolveActivityAgendaUrl({ view: 'month' }).redirectHref).toBeUndefined()
+  })
+
+  it('keeps the view when restricting the agenda state', () => {
+    expect(
+      restrictActivityAgendaState({ tag: 'Fora', view: 'list' }, new Set(), new Set()),
+    ).toEqual({ view: 'list' })
+  })
+
+  it('round-trips the view through the create return href', () => {
+    expect(
+      parseActivityAgendaReturnHref(
+        '/campanha/agenda?municipality=12&view=month',
+        new Set([12]),
+        new Set(),
+      ),
+    ).toBe('/campanha/agenda?municipality=12&view=month')
+    expect(parseActivityAgendaReturnHref('/campanha/agenda?view=bogus', new Set(), new Set())).toBe(
+      '/campanha/agenda',
+    )
   })
 })
 

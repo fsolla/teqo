@@ -10,6 +10,7 @@ import {
 import { ActivityAgenda } from '@/components/campaign/activity/ActivityAgenda'
 import { ActivityAgendaFilters } from '@/components/campaign/activity/ActivityAgendaFilters'
 import { AgendaFeedChrome } from '@/components/campaign/activity/AgendaFeedChrome'
+import { AgendaViewChrome } from '@/components/campaign/activity/AgendaViewChrome'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
@@ -55,6 +56,9 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
 
   return (
     <CampaignPageShell className="gap-6">
+      {/* C95: mounted before AgendaFeedChrome so the header cluster orders
+          [Semana ▾][Link de import][Notificações][IA] (gate da intenção). */}
+      <AgendaViewChrome state={state} />
       <AgendaFeedChrome
         feeds={feeds.map((f) => ({
           id: f.id,
