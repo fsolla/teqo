@@ -18,7 +18,6 @@ import themePlugin from '@fullcalendar/react/themes/classic'
 import '@fullcalendar/react/themes/classic/theme.css'
 import timeGridPlugin from '@fullcalendar/react/timegrid'
 import { UserRoundCheckIcon } from 'lucide-react'
-import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -37,11 +36,7 @@ import {
   activityStatusLabels,
   type ActivityStatus,
 } from '@/lib/schemas/activity'
-import {
-  activitySlotPrefill,
-  buildActivityCreateHref,
-  type ActivityAgendaState,
-} from '@/utilities/activityUi'
+import { activitySlotPrefill, type ActivityAgendaState } from '@/utilities/activityUi'
 import type { ActivityAgendaEvent } from '@/utilities/activityViewModels'
 
 import './ActivityAgenda.css'
@@ -274,8 +269,6 @@ export const ActivityAgenda = ({
     setCreateDraft({ ...prefill, anchor })
   }, [])
 
-  const emptyHref = buildActivityCreateHref(state)
-
   return (
     <section className="activity-agenda-shell" aria-label="Calendário de atividades">
       <div className="sr-only" aria-live="polite">
@@ -299,15 +292,6 @@ export const ActivityAgenda = ({
             onClick={() => setReloadCount((count) => count + 1)}
           >
             Tentar novamente
-          </Button>
-        </div>
-      ) : null}
-
-      {!isLoading && !loadError && events.length === 0 ? (
-        <div className="activity-agenda-notice" role="status">
-          <span>Nenhum compromisso nesta janela e neste filtro.</span>
-          <Button asChild variant="outline" className="min-h-11">
-            <Link href={emptyHref}>Criar atividade</Link>
           </Button>
         </div>
       ) : null}

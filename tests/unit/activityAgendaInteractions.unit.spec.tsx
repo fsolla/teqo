@@ -149,4 +149,14 @@ describe('ActivityAgenda schedule failures', () => {
     expect((screen.getByLabelText('Término') as HTMLInputElement).value).toBe('2026-08-07T13:30')
     expect(mocks.routerPush).not.toHaveBeenCalled()
   })
+
+  it('não exibe o aviso de janela vazia nem o botão de criação acima do calendário', async () => {
+    mocks.loadEvents.mockResolvedValue([])
+    render(<ActivityAgenda state={{}} />)
+
+    await waitFor(() => expect(mocks.loadEvents).toHaveBeenCalled())
+
+    expect(screen.queryByText('Nenhum compromisso nesta janela e neste filtro.')).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Criar atividade' })).toBeNull()
+  })
 })
