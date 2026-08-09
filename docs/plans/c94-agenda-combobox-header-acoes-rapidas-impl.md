@@ -90,6 +90,7 @@ flowchart LR
 - Chaves nos nós de `headerActions` (C95 terá 2+).
 - `handleRevoke` sem wrapper async inútil; `ActivityAgendaFilterOption` não exportado.
 - Deferido (DRY <3 call sites): extrair `chipLabel`/seeds de município/tag compartilhados para `lib/campaignListOmnibox`.
+- **E2E:** os testes de slot do calendário (`cria inline`, `Mais detalhes`) ganharam waits de visibilidade (`[data-time="14:00:00"]:visible` + `dayCell`) antes de medir — o FullCalendar renderiza o eixo de tempo lazy e re-layout no mount; os `boundingBox` antigos corriam a renderização (flake que também existe no commit base; agora estabilizado).
 
 ## Débitos deferidos (capture-review-debts)
 
