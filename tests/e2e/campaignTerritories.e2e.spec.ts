@@ -51,8 +51,10 @@ test.describe('Territórios de Identidade', () => {
     await campaign.login(page, email, password)
     await page.goto('/campanha/territorios')
 
-    await expect(page.locator('#ti-irece')).toBeVisible()
-    await expect(page.locator('#ti-velho-chico')).toBeVisible()
+    // `.first()`: transient RSC-pending duplication copies the rows (observed
+    // strict-mode flake on loaded machines; CI stays green).
+    await expect(page.locator('#ti-irece').first()).toBeVisible()
+    await expect(page.locator('#ti-velho-chico').first()).toBeVisible()
   })
 
   test('a wide panel surfaces the read-only network columns; Cobertura stays hidden by default', async ({

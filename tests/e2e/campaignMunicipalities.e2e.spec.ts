@@ -130,7 +130,10 @@ test.describe('Municípios — jornadas por papel', () => {
     await expect(page.getByText('Otimista: 5.000').nth(0)).toBeVisible()
 
     // B145: assessoria left the detail hero; it still appears on the dossiê tab.
+    // `.first()`: transient RSC-pending duplication also duplicates this line
+    // (same strict-mode flake as the "Otimista" assert above).
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}?tab=dossie`)
+
     // `.nth(0)`: same transient hydration duplicate the "Otimista: 5.000"
     // assertion pins — the server-composed slot briefly renders twice.
     await expect(page.getByText(`Assessoria: ${advisor.name}`).nth(0)).toBeVisible()
