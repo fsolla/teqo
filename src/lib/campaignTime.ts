@@ -157,3 +157,37 @@ export const latestIsoTimestamp = (
   if (!right) return left
   return right > left ? right : left
 }
+
+/**
+ * C97 — the inline create picker offers time in fixed steps. 15 min covers
+ * off-slot commitments (e.g. 09:45) without turning the select into a
+ * spreadsheet; the agenda grid itself is 30 min.
+ */
+export const timeStepMinutes = 15
+
+/** Civil hour labels 00–23 — the picker is 24h by construction (no meridiem). */
+export const hourOptions: string[] = Array.from({ length: 24 }, (_, hour) => pad(hour))
+
+/** Civil minute labels on a step grid, e.g. 00/15/30/45 for the 15-min step. */
+export const minuteOptionsForStep = (step = timeStepMinutes): string[] =>
+  Array.from({ length: 60 / step }, (_, index) => pad(index * step))
+
+/** Rounds a civil datetime's minutes down to the step (C97 picker invariant). */
+export const floorToMinuteStep = (civil: string, step = timeStepMinutes): string => {
+  const match = bahiaDateTimeInputPattern.exec(civil)
+  if (!match) return civil
+  const [, year, month, day, hour, minute] = match
+  return `${year}-${month}-${day}T${hour}:${pad(Math.floor(Number(minute) / step) * step)}`
+}
+
+/**
+ * Formats a civil datetime input value as a pt-BR label in Bahia civil time —
+ * pure string arithmetic, so the 24h display never depends on the browser
+ * locale or the Intl engine's hour cycle (C97).
+ */
+export const formatBahiaCivilDateTimeLabel = (civil: string): string => {
+  const match = bahiaDateTimeInputPattern.exec(civil)
+  if (!match) return civil
+  const [, year, month, day, hour, minute] = match
+  return `${day}/${month}/${year} às ${hour}:${minute}`
+}
