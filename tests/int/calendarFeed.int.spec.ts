@@ -3,6 +3,7 @@
 import { getPayload, type Payload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
+import { createActivityRecord } from '@/app/(campaign)/campanha/actions/activity'
 import {
   createCalendarFeedLinkRecord,
   listCalendarFeedsRecord,
@@ -10,6 +11,7 @@ import {
   type CalendarFeedLinkResult,
 } from '@/app/(campaign)/campanha/actions/calendarFeed'
 import config from '@/payload.config'
+import { loadFeedActivities, resolveFeedCreatorAccess } from '@/utilities/calendarFeed'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
 
 import { installCampaignFixtures, relationId } from '../helpers/campaignFixtures'
@@ -31,6 +33,15 @@ const requireOk = (result: CalendarFeedLinkResult): CalendarFeedOk => {
   if (!result.ok) throw new Error(result.message)
   return result
 }
+
+const validActivityInput = (municipalityId: number, title: string) => ({
+  title,
+  tags: ['Caminhada'],
+  status: 'confirmado' as const,
+  startAt: new Date(Date.now() + 86_400_000).toISOString(),
+  municipality: municipalityId,
+  locality: 'Centro',
+})
 
 describe('campaign calendar feed domain', () => {
   beforeAll(async () => {
@@ -237,5 +248,113 @@ describe('campaign calendar feed domain', () => {
       overrideAccess: false,
     })
     expect((feed as unknown as CalendarFeedWithSecret).secretSlug).toBeUndefined()
+  })
+
+  it('lets a pinned feed of an in-scope advisor serve that municipality activities (C96)', async () => {
+    const advisor = await campaignFixtures().createCampaignUser('advisor')
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const municipality = await campaignFixtures().getMunicipality()
+    await campaignFixtures().assignMunicipalityAdvisors(municipality, [advisor.id])
+
+    const activity = await createActivityRecord(
+      payload,
+      coordinator,
+      validActivityInput(relationId(municipality), campaignFixtures().value('Caminhada assessor')),
+    )
+    campaignFixtures().own('activity', activity.id)
+
+    const ok = requireOk(
+      await createCalendarFeedLinkRecord(payload, advisor, {
+        label: 'Carteira',
+        filterMunicipality: relationId(municipality),
+      }),
+    )
+    campaignFixtures().own('calendarFeed', ok.feedId)
+
+    const feed = await payload.findByID({
+      collection: 'calendarFeed',
+      id: ok.feedId,
+      depth: 0,
+      overrideAccess: true,
+    })
+    const access = await resolveFeedCreatorAccess(payload, feed)
+    expect(access.accessible).toBe(true)
+    expect(access.municipalityIds).toContain(relationId(municipality))
+
+    const activities = await loadFeedActivities(payload, feed, access.municipalityIds)
+    expect(activities.map((doc) => doc.id)).toContain(activity.id)
+  })
+
+  it('stops serving a pinned municipality once the advisor is removed (C96)', async () => {
+    const advisor = await campaignFixtures().createCampaignUser('advisor')
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const municipality = await campaignFixtures().getMunicipality()
+    await campaignFixtures().assignMunicipalityAdvisors(municipality, [advisor.id])
+
+    const activity = await createActivityRecord(
+      payload,
+      coordinator,
+      validActivityInput(relationId(municipality), campaignFixtures().value('Caminhada removida')),
+    )
+    campaignFixtures().own('activity', activity.id)
+
+    const ok = requireOk(
+      await createCalendarFeedLinkRecord(payload, advisor, {
+        label: 'Carteira',
+        filterMunicipality: relationId(municipality),
+      }),
+    )
+    campaignFixtures().own('calendarFeed', ok.feedId)
+
+    // The advisor loses the municipality after creating the feed. The read must
+    // re-derive scope on every request (fail-closed), not trust write time.
+    await campaignFixtures().assignMunicipalityAdvisors(municipality.id, [])
+
+    const feed = await payload.findByID({
+      collection: 'calendarFeed',
+      id: ok.feedId,
+      depth: 0,
+      overrideAccess: true,
+    })
+    const access = await resolveFeedCreatorAccess(payload, feed)
+    expect(access.accessible).toBe(true)
+    expect(access.municipalityIds).toEqual([])
+
+    const activities = await loadFeedActivities(payload, feed, access.municipalityIds)
+    expect(activities.map((doc) => doc.id)).not.toContain(activity.id)
+    expect(activities).toHaveLength(0)
+  })
+
+  it('keeps a coordinator pinned feed serving the municipality (unrestricted, C96)', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const municipality = await campaignFixtures().getMunicipality()
+
+    const activity = await createActivityRecord(
+      payload,
+      coordinator,
+      validActivityInput(relationId(municipality), campaignFixtures().value('Caminhada coord')),
+    )
+    campaignFixtures().own('activity', activity.id)
+
+    const ok = requireOk(
+      await createCalendarFeedLinkRecord(payload, coordinator, {
+        label: 'Coord geral',
+        filterMunicipality: relationId(municipality),
+      }),
+    )
+    campaignFixtures().own('calendarFeed', ok.feedId)
+
+    const feed = await payload.findByID({
+      collection: 'calendarFeed',
+      id: ok.feedId,
+      depth: 0,
+      overrideAccess: true,
+    })
+    const access = await resolveFeedCreatorAccess(payload, feed)
+    expect(access.accessible).toBe(true)
+    expect(access.municipalityIds).toBeNull()
+
+    const activities = await loadFeedActivities(payload, feed, access.municipalityIds)
+    expect(activities.map((doc) => doc.id)).toContain(activity.id)
   })
 })
