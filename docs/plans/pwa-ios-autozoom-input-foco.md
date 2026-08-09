@@ -1,6 +1,6 @@
 # PWA iOS: foco na omnibox de filtros aplica auto-zoom que não volta
 
-Status: planejado (blocked — plano aguardando merge em main)
+Status: ready
 Atualizado em: 2026-08-09
 Issue: #501
 Priority: P1

@@ -1,6 +1,6 @@
 # PWA iOS: tela fica ampliada e com as bordas cortadas (zoom preso)
 
-Status: planejado (blocked — plano aguardando merge em main)
+Status: ready
 Atualizado em: 2026-08-09
 Issue: #500
 Priority: P1
