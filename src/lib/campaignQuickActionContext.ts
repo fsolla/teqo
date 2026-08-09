@@ -10,6 +10,12 @@ export type CampaignQuickActionContext = {
   activitySlug?: string
   demandSlug?: string
   advisorId?: number
+  /**
+   * Dialog-style action bridged by the agenda page: opens the calendar-feed
+   * dialog (C94). A function can live in this client-only context — never
+   * crossed server→client.
+   */
+  openCalendarFeed?: () => void
 }
 
 export const emptyCampaignQuickActionContext = (): CampaignQuickActionContext => ({})

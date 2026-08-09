@@ -385,6 +385,7 @@ describe('src/utilities top-level is pinned', () => {
   const pinnedTopLevel = new Set<string>([
     'activityDetailPageData.ts',
     'activityDetailTabUi.ts',
+    'activityAgendaOmnibox.ts',
     'activityFormData.ts',
     'activityInlineErrors.ts',
     'activityOmnibox.ts',

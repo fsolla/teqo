@@ -1,140 +1,143 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { MapPinnedIcon, PlusIcon } from 'lucide-react'
+import Link from 'next/link'
+import { useMemo, useState } from 'react'
 
-import { CalendarFeedButton } from '@/components/campaign/activity/CalendarFeedButton'
+import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/Checkbox'
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { buildActivityAgendaHref, type ActivityAgendaState } from '@/utilities/activityUi'
-
-type CalendarFeedSummary = {
-  id: number
-  label: string
-  createdAt: string
-}
+import { ACTIVITY_TOUR_COMPOSER_PATH } from '@/lib/campaignQuickActionPaths'
+import {
+  applyActivityAgendaOmniboxSuggestion,
+  buildActivityAgendaOmniboxChips,
+  buildActivityAgendaOmniboxSuggestionSeeds,
+  clearActivityAgendaOmnibox,
+  filterActivityAgendaOmniboxSuggestions,
+  removeActivityAgendaOmniboxChip,
+  type ActivityAgendaOmniboxAction,
+} from '@/utilities/activityAgendaOmnibox'
+import {
+  buildActivityAgendaHref,
+  buildActivityCreateHref,
+  type ActivityAgendaState,
+} from '@/utilities/activityUi'
 
 type ActivityAgendaFiltersProps = {
   state: ActivityAgendaState
   municipalityOptions: RelationOption[]
   knownTags: string[]
-  feeds?: CalendarFeedSummary[]
-  onCreateFeed?: (
-    label: string,
-  ) => Promise<{ ok: true; feedUrl: string } | { ok: false; message: string }>
-  onRevokeFeed?: (feedId: number) => Promise<{ ok: boolean }>
 }
 
+/**
+ * Agenda toolbar (C94): one omnibox filtering Município (único) + Tag +
+ * Deputado presente (chip bool), with the desktop create entries as icon
+ * buttons beside the bar. Mobile creates live in the FAB drawer, so the
+ * trailing icons are desktop-only. Filter state stays on the URL.
+ */
 export const ActivityAgendaFilters = ({
   state,
   municipalityOptions,
   knownTags,
-  feeds = [],
-  onCreateFeed,
-  onRevokeFeed,
 }: ActivityAgendaFiltersProps) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
     toHref: buildActivityAgendaHref,
   })
-  const [draft, setDraft] = useState(state)
+  const [query, setQuery] = useState('')
 
-  useEffect(() => setDraft(state), [state])
+  const municipalityLabelsById = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const option of municipalityOptions) {
+      if (Number.isSafeInteger(option.id) && option.id > 0) map.set(option.id, option.name)
+    }
+    return map
+  }, [municipalityOptions])
 
-  const update = (next: ActivityAgendaState) => {
-    setDraft(next)
-    navigate(next)
+  const municipalityFilterOptions = useMemo(
+    () =>
+      municipalityOptions.map((option) => ({
+        value: String(option.id),
+        label: option.name,
+      })),
+    [municipalityOptions],
+  )
+
+  const chips = useMemo(
+    () => buildActivityAgendaOmniboxChips({ state, municipalityLabelsById }),
+    [state, municipalityLabelsById],
+  )
+
+  const suggestionSeeds = useMemo(
+    () =>
+      buildActivityAgendaOmniboxSuggestionSeeds({
+        municipalityOptions: municipalityFilterOptions,
+        knownTags,
+      }),
+    [municipalityFilterOptions, knownTags],
+  )
+
+  const suggestions = useMemo(
+    () => filterActivityAgendaOmniboxSuggestions(suggestionSeeds, query),
+    [suggestionSeeds, query],
+  )
+
+  const runAction = (action: ActivityAgendaOmniboxAction) => {
+    if (action.kind === 'clear') {
+      setQuery('')
+      navigate({})
+      return
+    }
+    navigate(action.state)
   }
 
-  const hasFilters = Boolean(draft.municipality || draft.deputyPresent || draft.tag)
-
   return (
-    <section
-      aria-label="Filtros da agenda"
-      aria-busy={isPending}
-      className="rounded-xl border bg-card p-4 transition-opacity data-[pending=true]:opacity-70"
-      data-pending={isPending}
-    >
-      <div className="grid gap-4 md:grid-cols-[minmax(12rem,1fr)_minmax(11rem,0.7fr)_auto_auto] md:items-end">
-        <div className="grid gap-1.5">
-          <label className="text-sm font-medium" htmlFor="agenda-municipality">
-            Município
-          </label>
-          <NativeSelect
-            id="agenda-municipality"
-            value={draft.municipality ? String(draft.municipality) : ''}
-            onChange={(event) => {
-              const municipality = Number(event.target.value)
-              update({
-                ...draft,
-                municipality: municipality > 0 ? municipality : undefined,
-              })
-            }}
-            className="w-full **:data-[slot=native-select]:min-h-11"
+    <CampaignListOmnibox
+      id="agenda-omnibox"
+      label="Filtrar agenda"
+      placeholder="Filtrar por município, tag, deputado presente…"
+      chips={chips}
+      suggestions={suggestions}
+      query={query}
+      onQueryChange={setQuery}
+      isPending={isPending}
+      onSelectSuggestion={(suggestionId) => {
+        runAction(applyActivityAgendaOmniboxSuggestion({ state, suggestionId }))
+      }}
+      onRemoveChip={(chipId) => {
+        runAction(removeActivityAgendaOmniboxChip({ state, chipId }))
+      }}
+      onClearAll={() => {
+        runAction(clearActivityAgendaOmnibox())
+      }}
+      trailing={
+        <div className="hidden items-center gap-2 md:flex">
+          <Button
+            asChild
+            variant="outline"
+            size="icon"
+            className="min-w-11"
+            aria-label="Planejar giro"
+            title="Planejar giro"
           >
-            <NativeSelectOption value="">Todos os municípios</NativeSelectOption>
-            {municipalityOptions.map((option) => (
-              <NativeSelectOption key={option.id} value={String(option.id)}>
-                {option.name}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </div>
-
-        <div className="grid gap-1.5">
-          <label className="text-sm font-medium" htmlFor="agenda-tag">
-            Tag
-          </label>
-          <NativeSelect
-            id="agenda-tag"
-            value={draft.tag ?? ''}
-            onChange={(event) => update({ ...draft, tag: event.target.value || undefined })}
-            className="w-full **:data-[slot=native-select]:min-h-11"
+            <Link href={ACTIVITY_TOUR_COMPOSER_PATH}>
+              <MapPinnedIcon className="size-5" aria-hidden />
+            </Link>
+          </Button>
+          <Button
+            asChild
+            size="icon"
+            className="min-w-11"
+            aria-label="Nova atividade"
+            title="Nova atividade"
           >
-            <NativeSelectOption value="">Todas as tags</NativeSelectOption>
-            {knownTags.map((tag) => (
-              <NativeSelectOption key={tag} value={tag}>
-                {tag}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
+            <Link href={buildActivityCreateHref(state)}>
+              <PlusIcon className="size-5" aria-hidden />
+            </Link>
+          </Button>
         </div>
-
-        <label className="flex min-h-11 items-center gap-3 rounded-lg border px-3 text-sm font-medium">
-          <Checkbox
-            checked={Boolean(draft.deputyPresent)}
-            onCheckedChange={(checked) =>
-              update({ ...draft, deputyPresent: checked === true ? true : undefined })
-            }
-          />
-          Deputado presente
-        </label>
-
-        <Button
-          type="button"
-          variant="ghost"
-          className="min-h-11"
-          disabled={!hasFilters}
-          onClick={() => update({})}
-        >
-          Limpar filtros
-        </Button>
-
-        {onCreateFeed && onRevokeFeed && (
-          <CalendarFeedButton
-            state={state}
-            hasFilters={hasFilters}
-            feeds={feeds}
-            onCreateFeed={onCreateFeed}
-            onRevokeFeed={onRevokeFeed}
-          />
-        )}
-      </div>
-      <p className="sr-only" aria-live="polite">
-        {isPending ? 'Atualizando os compromissos da agenda.' : 'Filtros da agenda atualizados.'}
-      </p>
-    </section>
+      }
+    />
   )
 }

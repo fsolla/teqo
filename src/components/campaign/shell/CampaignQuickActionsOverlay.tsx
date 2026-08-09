@@ -32,9 +32,12 @@ const overlayRetractionClass = (retracted: boolean) =>
 const OverlayActionsChrome = ({
   actions,
   retracted,
+  onActionClick,
 }: {
   actions: readonly CampaignQuickAction[]
   retracted: boolean
+  /** Fired after an `onAction` (dialog-style) quick action runs — closes the drawer. */
+  onActionClick: () => void
 }) => {
   if (actions.length === 0) return null
 
@@ -54,6 +57,12 @@ const OverlayActionsChrome = ({
             icon: action.icon,
             description: action.description,
             href: action.href,
+            onClick: action.onAction
+              ? () => {
+                  action.onAction?.()
+                  onActionClick()
+                }
+              : undefined,
           }))}
           className="w-full"
         />
@@ -70,15 +79,17 @@ const OverlaySearchChrome = ({ className }: { className?: string }) => (
 
 const CampaignQuickActionsOverlayBody = ({
   actions,
+  onActionClick,
 }: {
   actions: readonly CampaignQuickAction[]
+  onActionClick: () => void
 }) => {
   const { uiFocused: focused } = useHomeSearch()
 
   return (
     <div className="flex min-h-0 flex-col">
       <div className="order-1 md:order-2">
-        <OverlayActionsChrome actions={actions} retracted={focused} />
+        <OverlayActionsChrome actions={actions} retracted={focused} onActionClick={onActionClick} />
       </div>
       <OverlaySearchChrome
         className={cn('order-2 min-w-0 md:order-1', focused ? 'mt-0 pt-4' : 'mt-4 md:mt-0 md:mb-4')}
@@ -89,8 +100,10 @@ const CampaignQuickActionsOverlayBody = ({
 
 const CampaignQuickActionsOverlayContent = ({
   actions,
+  onActionClick,
 }: {
   actions: readonly CampaignQuickAction[]
+  onActionClick: () => void
 }) => {
   const pathname = usePathname()
   const { context } = useCampaignQuickActionContext()
@@ -98,7 +111,7 @@ const CampaignQuickActionsOverlayContent = ({
 
   return (
     <HomeSearchExcludeProvider value={excludeContext}>
-      <CampaignQuickActionsOverlayBody actions={actions} />
+      <CampaignQuickActionsOverlayBody actions={actions} onActionClick={onActionClick} />
     </HomeSearchExcludeProvider>
   )
 }
@@ -135,7 +148,10 @@ export const CampaignQuickActionsOverlay = ({
             Ações do contexto e busca na campanha
           </DrawerDescription>
           <div className="flex flex-col overflow-y-auto px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
-            <CampaignQuickActionsOverlayContent actions={actions} />
+            <CampaignQuickActionsOverlayContent
+              actions={actions}
+              onActionClick={() => onOpenChange(false)}
+            />
           </div>
         </DrawerContent>
       </Drawer>
@@ -159,7 +175,10 @@ export const CampaignQuickActionsOverlay = ({
           <DialogDescription>Ações do contexto e busca na campanha</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col overflow-y-auto">
-          <CampaignQuickActionsOverlayContent actions={actions} />
+          <CampaignQuickActionsOverlayContent
+            actions={actions}
+            onActionClick={() => onOpenChange(false)}
+          />
         </div>
       </DialogContent>
     </Dialog>

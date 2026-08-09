@@ -109,6 +109,9 @@ export default defineConfig({
      */
     reuseExistingServer: false,
     url: baseURL,
+    // Local-only tolerance for parallel-worktree load (machine load ~60); CI
+    // boots the production build and keeps the usual 60s budget.
+    timeout: process.env.CI ? undefined : 240_000,
     /* Force the isolated test database into the server process. */
     env: {
       DATABASE_URL: process.env.DATABASE_URL as string,

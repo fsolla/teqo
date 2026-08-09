@@ -117,9 +117,19 @@ test.describe('Agenda — calendário operacional', () => {
       })
       .not.toBe(startAt)
 
-    await page.getByLabel('Município').selectOption(String(municipality.id))
-    await page.getByLabel('Tag').selectOption('Comício')
-    await page.getByLabel('Deputado presente').check()
+    const omniboxInput = page.getByRole('combobox', { name: 'Filtrar agenda' })
+
+    await omniboxInput.click()
+    await omniboxInput.fill(municipality.name!)
+    await page.getByRole('option', { name: municipality.name, exact: true }).click()
+
+    await omniboxInput.click()
+    await omniboxInput.fill('Comício')
+    await page.getByRole('option', { name: 'Comício', exact: true }).click()
+
+    await omniboxInput.click()
+    await page.getByRole('option', { name: 'Deputado presente', exact: true }).click()
+
     await expect(page).toHaveURL(
       `${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}&deputyPresent=1&tag=Com%C3%ADcio`,
     )

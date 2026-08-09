@@ -7,4 +7,6 @@ export type CampaignQuickAction = {
   icon: LucideIcon
   description: string
   href?: string
+  /** Dialog-style actions (no route); the drawer button fires it instead of navigating. */
+  onAction?: () => void
 }
