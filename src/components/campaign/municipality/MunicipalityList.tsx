@@ -484,37 +484,36 @@ const municipalityListColumns = ({
               />
             ),
           },
-          ...(isCampaignUnrestricted
-            ? ([
-                {
-                  id: 'stateDeputies',
-                  label: municipalityColumnLabels.stateDeputies,
-                  head: (
-                    <CampaignTableHead
-                      description={municipalityColumnDescriptions.stateDeputies}
-                      className={responsiveColumnClassName.stateDeputies}
-                    >
-                      {municipalityColumnLabels.stateDeputies}
-                    </CampaignTableHead>
-                  ),
-                  cellClassName: cn(
-                    responsiveColumnClassName.stateDeputies,
-                    'max-w-56 whitespace-normal',
-                  ),
-                  cell: (municipality) => (
-                    <MunicipalityStateDeputyRelationCell
-                      municipalityId={municipality.id}
-                      municipalityName={municipality.name}
-                      stateDeputyIDs={municipality.stateDeputyIDs}
-                      options={stateDeputyOptions}
-                      commitAction={stateDeputyCommitAction}
-                      createAction={stateDeputyCreateAction}
-                      editorVariant="popover"
-                    />
-                  ),
-                },
-              ] satisfies Array<MunicipalityColumn>)
-            : []),
+          {
+            // B176 — staff-wide since 2026-08-09: the edit is scoped to the
+            // actor's administered municípios server-side (B37/B157), so the
+            // advisor gets the same inline control the Lideranças column has.
+            id: 'stateDeputies',
+            label: municipalityColumnLabels.stateDeputies,
+            head: (
+              <CampaignTableHead
+                description={municipalityColumnDescriptions.stateDeputies}
+                className={responsiveColumnClassName.stateDeputies}
+              >
+                {municipalityColumnLabels.stateDeputies}
+              </CampaignTableHead>
+            ),
+            cellClassName: cn(
+              responsiveColumnClassName.stateDeputies,
+              'max-w-56 whitespace-normal',
+            ),
+            cell: (municipality) => (
+              <MunicipalityStateDeputyRelationCell
+                municipalityId={municipality.id}
+                municipalityName={municipality.name}
+                stateDeputyIDs={municipality.stateDeputyIDs}
+                options={stateDeputyOptions}
+                commitAction={stateDeputyCommitAction}
+                createAction={stateDeputyCreateAction}
+                editorVariant="popover"
+              />
+            ),
+          },
 
           {
             id: 'goalCoverage',
@@ -592,11 +591,7 @@ const municipalityListColumns = ({
 
 export const municipalityListPickerColumns = ({
   isStaffView,
-  isCampaignUnrestricted,
-}: Pick<
-  MunicipalityListProps,
-  'isStaffView' | 'isCampaignUnrestricted'
->): CampaignColumnPickerColumn[] => {
+}: Pick<MunicipalityListProps, 'isStaffView'>): CampaignColumnPickerColumn[] => {
   const base: CampaignColumnPickerColumn[] = [
     { id: 'name', label: municipalityColumnLabels.name, mandatory: true },
     { id: 'votos', label: municipalityColumnLabels.votos },
@@ -611,9 +606,7 @@ export const municipalityListPickerColumns = ({
     { id: 'advisors', label: municipalityColumnLabels.advisors },
     { id: 'trend', label: municipalityColumnLabels.trend },
     { id: 'leaderships', label: municipalityColumnLabels.leaderships },
-    ...(isCampaignUnrestricted
-      ? [{ id: 'stateDeputies', label: municipalityColumnLabels.stateDeputies }]
-      : []),
+    { id: 'stateDeputies', label: municipalityColumnLabels.stateDeputies },
     { id: 'goalCoverage', label: municipalityColumnLabels.goalCoverage },
     { id: 'lastSignal', label: municipalityColumnLabels.lastSignal },
   ]

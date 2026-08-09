@@ -30,10 +30,26 @@ type MunicipalityFiltersProps = {
   regionFilterOptions: MunicipalityFilterOption[]
   /** Advisor options already narrowed by the other active filters. */
   advisorFilterOptions: MunicipalityFilterOption[]
+  /** B176 — Dobradinha, Liderança and Partido options (named, narrowed). */
+  stateDeputyFilterOptions: MunicipalityFilterOption[]
+  leadershipFilterOptions: MunicipalityFilterOption[]
+  partyFilterOptions: MunicipalityFilterOption[]
   /** Facet slugs (labeled from the catalog on the client). */
   slugFilterValues?: readonly string[]
   /** Beside the omnibox (B137): column picker, save bookmark, … */
   trailing?: ReactNode
+}
+
+/** Chip-label lookup for a numeric-id filter dimension (advisor/dobradinha/liderança). */
+const labelsByIdFromOptions = (
+  options: readonly MunicipalityFilterOption[],
+): Map<number, string> => {
+  const map = new Map<number, string>()
+  for (const option of options) {
+    const id = Number(option.value)
+    if (Number.isSafeInteger(id) && id > 0) map.set(id, option.label)
+  }
+  return map
 }
 
 export const MunicipalityFilters = ({
@@ -41,6 +57,9 @@ export const MunicipalityFilters = ({
   showStaffFilters,
   regionFilterOptions,
   advisorFilterOptions,
+  stateDeputyFilterOptions = [],
+  leadershipFilterOptions = [],
+  partyFilterOptions = [],
   slugFilterValues = [],
   trailing,
 }: MunicipalityFiltersProps) => {
@@ -58,14 +77,20 @@ export const MunicipalityFilters = ({
     [slugFilterValues],
   )
 
-  const advisorLabelsById = useMemo(() => {
-    const map = new Map<number, string>()
-    for (const option of advisorFilterOptions) {
-      const id = Number(option.value)
-      if (Number.isSafeInteger(id) && id > 0) map.set(id, option.label)
-    }
-    return map
-  }, [advisorFilterOptions])
+  const advisorLabelsById = useMemo(
+    () => labelsByIdFromOptions(advisorFilterOptions),
+    [advisorFilterOptions],
+  )
+
+  const stateDeputyLabelsById = useMemo(
+    () => labelsByIdFromOptions(stateDeputyFilterOptions),
+    [stateDeputyFilterOptions],
+  )
+
+  const leadershipLabelsById = useMemo(
+    () => labelsByIdFromOptions(leadershipFilterOptions),
+    [leadershipFilterOptions],
+  )
 
   const chips = useMemo(
     () =>
@@ -74,8 +99,17 @@ export const MunicipalityFilters = ({
         scenario,
         showStaffFilters,
         advisorLabelsById,
+        stateDeputyLabelsById,
+        leadershipLabelsById,
       }),
-    [state, scenario, showStaffFilters, advisorLabelsById],
+    [
+      state,
+      scenario,
+      showStaffFilters,
+      advisorLabelsById,
+      stateDeputyLabelsById,
+      leadershipLabelsById,
+    ],
   )
 
   const suggestionSeeds = useMemo(
@@ -85,8 +119,19 @@ export const MunicipalityFilters = ({
         regionFilterOptions,
         advisorFilterOptions,
         slugFilterOptions,
+        stateDeputyFilterOptions,
+        leadershipFilterOptions,
+        partyFilterOptions,
       }),
-    [showStaffFilters, regionFilterOptions, advisorFilterOptions, slugFilterOptions],
+    [
+      showStaffFilters,
+      regionFilterOptions,
+      advisorFilterOptions,
+      slugFilterOptions,
+      stateDeputyFilterOptions,
+      leadershipFilterOptions,
+      partyFilterOptions,
+    ],
   )
 
   const suggestions = useMemo(

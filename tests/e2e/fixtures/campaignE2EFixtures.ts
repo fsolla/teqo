@@ -425,6 +425,7 @@ class CampaignE2EOwnership {
             levelNote: null,
             strengths: [],
             risks: [],
+            stateDeputies: [],
             dobradinhaNotes: null,
             nextSteps: null,
             lastUpdateAt: null,

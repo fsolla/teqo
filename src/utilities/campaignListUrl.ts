@@ -1,4 +1,40 @@
+import type { Where } from 'payload'
+
 export type RawSearchParams = Record<string, string | string[] | undefined>
+
+/**
+ * Sentinel for the "Sem partido" filter row — `party` is a free-text optional
+ * field (no closed enum to validate a real value against), so this constant
+ * is the only reserved token; a dobradinha whose actual party name collided
+ * with it would be indistinguishable, an accepted precedent-level risk (the
+ * curated field spans a couple dozen Brazilian party acronyms). Lives here so
+ * every list that filters municipalities by a dobradinha's party — the
+ * dobradinhas list and the municípios list — shares ONE sentinel value.
+ */
+export const NO_PARTY_FILTER_VALUE = 'sem_partido'
+
+/**
+ * Splits a multi-value filter into its named values and whether the "absence"
+ * sentinel is selected. Every list filter with a selectable absence (level's
+ * "Sem nível", party's "Sem partido", B176's "Sem dobradinha" / "Sem
+ * liderança") repeats this pair — extract here instead of a per-list copy.
+ */
+export const splitAbsenceFilterValues = <Named>(
+  values: readonly Named[],
+  isAbsence: (value: Named) => boolean,
+): { named: Named[]; hasAbsence: boolean } => {
+  const named: Named[] = []
+  let hasAbsence = false
+  for (const value of values) {
+    if (isAbsence(value)) hasAbsence = true
+    else named.push(value)
+  }
+  return { named, hasAbsence }
+}
+
+/** Collapses 0..n OR branches: none → undefined, one → the branch, many → `{ or }`. */
+export const collapseListWhereOrBranches = (branches: readonly Where[]): Where | undefined =>
+  branches.length > 1 ? { or: [...branches] } : branches[0]
 
 export const firstValue = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value

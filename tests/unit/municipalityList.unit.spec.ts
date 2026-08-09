@@ -479,3 +479,169 @@ describe('buildMunicipalityFilterOptionHref (B16+ fast path)', () => {
     )
   })
 })
+
+describe('municipality list relation filters (B176)', () => {
+  it('canonicalizes stateDeputy/leadership ids ascending with the sentinel last', () => {
+    const state = parseMunicipalityListParams({
+      stateDeputy: ['5', 'sem_dobradinha', '3', '5', 'abc'],
+      leadership: ['sem_lideranca', '2', '8'],
+    })
+    expect(state.stateDeputies).toEqual([3, 5, 'sem_dobradinha'])
+    expect(state.leaderships).toEqual([2, 8, 'sem_lideranca'])
+    expect(buildMunicipalityListHref(state, 1)).toBe(
+      '/campanha/municipios?stateDeputy=3&stateDeputy=5&stateDeputy=sem_dobradinha&leadership=2&leadership=8&leadership=sem_lideranca',
+    )
+  })
+
+  it('parses parties by insertion order, deduped, with the sentinel last', () => {
+    const state = parseMunicipalityListParams({
+      party: ['PSD', 'PT', 'PSD', 'sem_partido'],
+    })
+    expect(state.parties).toEqual(['PSD', 'PT', 'sem_partido'])
+    expect(buildMunicipalityListHref(state, 1)).toBe(
+      '/campanha/municipios?party=PSD&party=PT&party=sem_partido',
+    )
+    // The sentinel canonicalizes LAST regardless of where it appeared, so one
+    // value set maps to one URL (same contract as the relationship dims).
+    const sentinelFirst = parseMunicipalityListParams({ party: ['sem_partido', 'PT', 'PT'] })
+    expect(sentinelFirst.parties).toEqual(['PT', 'sem_partido'])
+    expect(buildMunicipalityListHref(sentinelFirst, 1)).toBe(
+      '/campanha/municipios?party=PT&party=sem_partido',
+    )
+  })
+
+  it('serializes the three dimensions together with the rest of the state', () => {
+    const state = parseMunicipalityListParams({
+      region: 'Irecê',
+      stateDeputy: '4',
+      leadership: ['sem_lideranca', '9'],
+      party: 'PCdoB',
+    })
+    const href = buildMunicipalityListHref(state, 1)
+    expect(href).toContain('stateDeputy=4')
+    expect(href).toContain('leadership=9&leadership=sem_lideranca')
+    expect(href).toContain('party=PCdoB')
+
+    // URL → raw plain-record params → parse, mirroring what the page's
+    // `searchParams` object carries into `parseMunicipalityListParams`.
+    const query = new URLSearchParams(href.split('?')[1])
+    const raw: Record<string, string | string[] | undefined> = {}
+    for (const key of query.keys()) {
+      const values = query.getAll(key)
+      raw[key] = values.length === 1 ? values[0] : values
+    }
+    expect(parseMunicipalityListParams(raw)).toEqual(state)
+  })
+
+  it('builds the direct dobradinha where (in / exists), no catalog needed', () => {
+    expect(buildMunicipalityListWhere(parseMunicipalityListParams({ stateDeputy: '4' }))).toEqual({
+      and: [{ stateDeputies: { in: [4] } }],
+    })
+    expect(
+      buildMunicipalityListWhere(parseMunicipalityListParams({ stateDeputy: 'sem_dobradinha' })),
+    ).toEqual({ and: [{ stateDeputies: { exists: false } }] })
+    expect(
+      buildMunicipalityListWhere(
+        parseMunicipalityListParams({ stateDeputy: ['4', 'sem_dobradinha'] }),
+      ),
+    ).toEqual({
+      and: [{ or: [{ stateDeputies: { in: [4] } }, { stateDeputies: { exists: false } }] }],
+    })
+  })
+
+  const catalog = {
+    leadershipMunicipalityIDsByLeadership: new Map([
+      [1, [10, 11]],
+      [2, [12]],
+    ]),
+    allLeadershipMunicipalityIDs: new Set([10, 11, 12]),
+    stateDeputyIDsByParty: new Map([
+      ['PT', [4, 5]],
+      ['PSD', [6]],
+    ]),
+    allPartyStateDeputyIDs: new Set([4, 5, 6]),
+  }
+
+  it('builds the reverse leadership where from the catalog (in / not_in)', () => {
+    expect(
+      buildMunicipalityListWhere(parseMunicipalityListParams({ leadership: ['1', '2'] }), catalog),
+    ).toEqual({ and: [{ id: { in: [10, 11, 12] } }] })
+
+    expect(
+      buildMunicipalityListWhere(
+        parseMunicipalityListParams({ leadership: 'sem_lideranca' }),
+        catalog,
+      ),
+    ).toEqual({ and: [{ id: { not_in: [10, 11, 12] } }] })
+  })
+
+  it('builds the cross party where from the catalog (in / not_in)', () => {
+    expect(
+      buildMunicipalityListWhere(parseMunicipalityListParams({ party: ['PT'] }), catalog),
+    ).toEqual({ and: [{ stateDeputies: { in: [4, 5] } }] })
+
+    expect(
+      buildMunicipalityListWhere(parseMunicipalityListParams({ party: 'sem_partido' }), catalog),
+    ).toEqual({ and: [{ stateDeputies: { not_in: [4, 5, 6] } }] })
+
+    expect(
+      buildMunicipalityListWhere(
+        parseMunicipalityListParams({ party: ['PT', 'sem_partido'] }),
+        catalog,
+      ),
+    ).toEqual({
+      and: [{ or: [{ stateDeputies: { in: [4, 5] } }, { stateDeputies: { not_in: [4, 5, 6] } }] }],
+    })
+  })
+
+  it('fails closed: leadership/party filter without the catalog throws', () => {
+    expect(() =>
+      buildMunicipalityListWhere(parseMunicipalityListParams({ leadership: '1' })),
+    ).toThrow(/missing relation catalog/)
+    expect(() => buildMunicipalityListWhere(parseMunicipalityListParams({ party: 'PT' }))).toThrow(
+      /missing relation catalog/,
+    )
+    // Dobradinha (direct) never needs the catalog.
+    expect(() =>
+      buildMunicipalityListWhere(parseMunicipalityListParams({ stateDeputy: '4' })),
+    ).not.toThrow()
+  })
+
+  it('summarizes the three dimensions in the active-filters summary', () => {
+    expect(
+      formatMunicipalityActiveFiltersSummary(
+        parseMunicipalityListParams({ stateDeputy: ['1', '2'] }),
+      ),
+    ).toBe('2 dobradinhas')
+    expect(
+      formatMunicipalityActiveFiltersSummary(
+        parseMunicipalityListParams({ stateDeputy: ['1', 'sem_dobradinha'] }),
+      ),
+    ).toBe('1 dobradinha + sem dobradinha')
+    expect(
+      formatMunicipalityActiveFiltersSummary(
+        parseMunicipalityListParams({ leadership: 'sem_lideranca' }),
+      ),
+    ).toBe('Sem liderança')
+    expect(
+      formatMunicipalityActiveFiltersSummary(
+        parseMunicipalityListParams({ party: ['PT', 'PSD', 'sem_partido'] }),
+      ),
+    ).toBe('Partido PT, PSD + sem partido')
+  })
+
+  it('keeps the B176 toggles on the canonical fast-path href', () => {
+    const state = parseMunicipalityListParams({ party: 'PT' })
+    expect(buildMunicipalityFilterOptionHref(state, 'stateDeputy', '5')).toBe(
+      buildMunicipalityFilterHref(toggleMunicipalityMultiFilterValue(state, 'stateDeputy', '5')),
+    )
+    expect(buildMunicipalityFilterOptionHref(state, 'leadership', 'sem_lideranca')).toBe(
+      buildMunicipalityFilterHref(
+        toggleMunicipalityMultiFilterValue(state, 'leadership', 'sem_lideranca'),
+      ),
+    )
+    expect(buildMunicipalityFilterOptionHref(state, 'party', 'PSD')).toBe(
+      buildMunicipalityFilterHref(toggleMunicipalityMultiFilterValue(state, 'party', 'PSD')),
+    )
+  })
+})

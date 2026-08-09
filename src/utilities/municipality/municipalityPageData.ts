@@ -15,6 +15,7 @@ import { relationshipId } from '@/lib/relationship'
 import { type VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, Municipality } from '@/payload-types'
 import { isCampaignLeader, isCampaignStaff } from '@/utilities/campaignAccess'
+import { NO_PARTY_FILTER_VALUE } from '@/utilities/campaignListUrl'
 import { createEntityNotFoundError } from '@/utilities/entityNotFound'
 import {
   loadMunicipalityScope,
@@ -33,11 +34,13 @@ import {
   municipalityPageSize,
   parseMunicipalityListParams,
   resolveMunicipalityListSort,
+  type MunicipalityListRelationCatalog,
   type MunicipalityListSearchParams,
   type MunicipalityListSortDirection,
   type MunicipalityListSortKey,
   type MunicipalityListState,
 } from '@/utilities/municipality/municipalityListUrl'
+import { loadMunicipalityListRelationCatalog } from '@/utilities/municipality/municipalityRelationSets'
 import { resolveMunicipalityLastSignalAt } from '@/utilities/municipality/municipalitySignal'
 import {
   computeMunicipalityTerritorialClass,
@@ -66,6 +69,12 @@ type MunicipalityListFilterFacets = {
   slugs: string[]
   regions: string[]
   advisorIDs: number[]
+  /** B176 — stateDeputy ids still reachable under the other filters. */
+  stateDeputyIDs: number[]
+  /** B176 — leadership id+name pairs still reachable under the other filters. */
+  leadershipOptions: MunicipalityLeadershipSummary[]
+  /** B176 — party names still reachable under the other filters (no sentinel). */
+  parties: string[]
 }
 
 export type MunicipalityListPageBundle = {
@@ -84,9 +93,15 @@ const emptyMunicipalityListFilterFacets: MunicipalityListFilterFacets = {
   slugs: [],
   regions: [],
   advisorIDs: [],
+  stateDeputyIDs: [],
+  leadershipOptions: [],
+  parties: [],
 }
 
-type MunicipalityFacetRow = Pick<Municipality, 'slug' | 'region' | 'advisors'>
+type MunicipalityFacetRow = Pick<
+  Municipality,
+  'id' | 'slug' | 'region' | 'advisors' | 'stateDeputies'
+>
 
 /**
  * E10's class filter is the only one that isn't a Payload constraint (the
@@ -115,6 +130,7 @@ const loadMunicipalityListFilterFacets = async (
   payload: Payload,
   user: CampaignUser,
   state: MunicipalityListState,
+  relationCatalog: MunicipalityListRelationCatalog,
   /** The scope read is a PROMISE so the facets can join the page's main `Promise.all` (B16+). */
   loadedScope: { where: Where; rows: Promise<MunicipalityFacetRow[]> } | null,
 ): Promise<MunicipalityListFilterFacets> => {
@@ -124,12 +140,19 @@ const loadMunicipalityListFilterFacets = async (
   const applyClassFilter = (rows: MunicipalityFacetRow[]): MunicipalityFacetRow[] =>
     classMatches ? rows.filter((row) => classMatches(row.slug)) : rows
 
+  // Dobradinha links are stored on the rows; a deputy id → party inverse comes
+  // from the request-scoped catalog, so the Partido facet never re-queries.
+  const partyOfStateDeputyID = new Map<number, string>()
+  for (const [party, stateDeputyIDs] of relationCatalog.stateDeputyIDsByParty) {
+    for (const id of stateDeputyIDs) partyOfStateDeputyID.set(id, party)
+  }
+
   const rowsByWhere = new Map<string, Promise<MunicipalityFacetRow[]>>()
   if (loadedScope) {
     rowsByWhere.set(JSON.stringify(loadedScope.where), loadedScope.rows.then(applyClassFilter))
   }
   const facetRows = (omit: Partial<MunicipalityListState>): Promise<MunicipalityFacetRow[]> => {
-    const where = buildMunicipalityListWhere({ ...state, ...omit })
+    const where = buildMunicipalityListWhere({ ...state, ...omit }, relationCatalog)
     const key = JSON.stringify(where)
     const pending = rowsByWhere.get(key)
     if (pending) return pending
@@ -141,7 +164,7 @@ const loadMunicipalityListFilterFacets = async (
         depth: 0,
         limit: 0,
         pagination: false,
-        select: { slug: true, region: true, advisors: true },
+        select: { id: true, slug: true, region: true, advisors: true, stateDeputies: true },
         user,
         overrideAccess: false,
       })
@@ -150,13 +173,29 @@ const loadMunicipalityListFilterFacets = async (
     return rows
   }
 
-  const [slugRows, regionRows, advisorRows] = await Promise.all([
-    facetRows({ slugs: undefined, priority: undefined }),
-    facetRows({ regions: undefined }),
-    facetRows({ advisors: undefined, coverage: undefined }),
-  ])
+  // Named selections are unioned in: a selection must stay visible to be undone.
+  const selectedStateDeputyIDs = new Set<number>()
+  for (const value of state.stateDeputies ?? []) {
+    if (typeof value === 'number') selectedStateDeputyIDs.add(value)
+  }
+  const selectedLeadershipIDs = new Set<number>()
+  for (const value of state.leaderships ?? []) {
+    if (typeof value === 'number') selectedLeadershipIDs.add(value)
+  }
+  const selectedParties = new Set(
+    (state.parties ?? []).filter((party) => party !== NO_PARTY_FILTER_VALUE),
+  )
 
-  // Selected values are unioned in: a selection must stay visible to be undone.
+  const [slugRows, regionRows, advisorRows, stateDeputyRows, leadershipRows, partyRows] =
+    await Promise.all([
+      facetRows({ slugs: undefined, priority: undefined }),
+      facetRows({ regions: undefined }),
+      facetRows({ advisors: undefined, coverage: undefined }),
+      facetRows({ stateDeputies: undefined }),
+      facetRows({ leaderships: undefined }),
+      facetRows({ parties: undefined }),
+    ])
+
   const availableSlugs = new Set([...slugRows.map((row) => row.slug), ...(state.slugs ?? [])])
   const availableRegions = new Set<string>([
     ...regionRows.map((row) => row.region),
@@ -170,12 +209,57 @@ const loadMunicipalityListFilterFacets = async (
     }
   }
 
+  const availableStateDeputyIDs = new Set<number>(selectedStateDeputyIDs)
+  for (const row of stateDeputyRows) {
+    for (const stateDeputy of row.stateDeputies ?? []) {
+      const id = relationshipId(stateDeputy)
+      if (id !== null) availableStateDeputyIDs.add(id)
+    }
+  }
+
+  const availableParties = new Set<string>(selectedParties)
+  for (const row of partyRows) {
+    for (const stateDeputy of row.stateDeputies ?? []) {
+      const id = relationshipId(stateDeputy)
+      if (id === null) continue
+      const party = partyOfStateDeputyID.get(id)
+      if (party) availableParties.add(party)
+    }
+  }
+
+  // Leaderships of the facet's own row set: the reverse read returns the ids
+  // plus the contact names the filter chips need (honours `canReadLeadership`).
+  const facetLeadershipRows = await loadMunicipalityLeadershipSummaries(
+    payload,
+    user,
+    leadershipRows.map((row) => row.id),
+  )
+  const leadershipNamesById = new Map(facetLeadershipRows.summariesById)
+  for (const leadershipID of selectedLeadershipIDs) {
+    const summary = leadershipNamesById.get(leadershipID)
+    if (!summary) {
+      // A selected leadership that the reversed read cannot see (deleted or
+      // scoped out) stays listed so the filter can be undone.
+      leadershipNamesById.set(leadershipID, {
+        id: leadershipID,
+        name: `Liderança #${leadershipID}`,
+      })
+    }
+  }
+  const availableLeadershipIDs = new Set<number>(selectedLeadershipIDs)
+  for (const leadershipID of leadershipNamesById.keys()) availableLeadershipIDs.add(leadershipID)
+
   return {
     slugs: municipalityCatalog
       .filter((entry) => availableSlugs.has(entry.slug))
       .map((entry) => entry.slug),
     regions: bahiaIdentityTerritories.filter((territory) => availableRegions.has(territory)),
     advisorIDs: [...availableAdvisorIDs].sort((left, right) => left - right),
+    stateDeputyIDs: [...availableStateDeputyIDs].sort((left, right) => left - right),
+    leadershipOptions: [...availableLeadershipIDs]
+      .sort((left, right) => left - right)
+      .map((id) => leadershipNamesById.get(id)!),
+    parties: [...availableParties].sort((left, right) => left.localeCompare(right, 'pt-BR')),
   }
 }
 
@@ -294,7 +378,6 @@ export const loadMunicipalityListPageBundle = async (
   searchParams: MunicipalityListSearchParams,
 ): Promise<MunicipalityListPageBundle> => {
   const state = parseMunicipalityListParams(searchParams)
-  const where = buildMunicipalityListWhere(state)
   const isStaff = isCampaignStaff(user)
   const { sort: sortKey, dir: sortDir } = resolveMunicipalityListSort(state)
 
@@ -308,6 +391,12 @@ export const loadMunicipalityListPageBundle = async (
       leadershipNamesById: EMPTY_LEADERSHIP_NAMES,
     }
   }
+
+  // B176 — one request-scoped catalog for every where build (page + facets):
+  // the reverse (`leadership`) and cross (`party`) filters read it. Lazy per
+  // active filter, so a plain list visit pays no extra reads.
+  const relationCatalog = await loadMunicipalityListRelationCatalog(payload, user, state)
+  const where = buildMunicipalityListWhere(state, relationCatalog)
 
   const ranks = computeVoteRankByYear(DEFAULT_VOTE_RANK_YEAR)
   const nativeSortField = payloadSortFieldByKey[sortKey]
@@ -342,7 +431,13 @@ export const loadMunicipalityListPageBundle = async (
   // Request-scoped shared load (docs + pledge aggregates in one place).
   const staffScopePromise = isStaff
     ? isPagedByPayload
-      ? loadMunicipalityScope(payload, user, where)
+      ? loadMunicipalityScope(payload, user, where, {
+          // B176 — the paged path seeds the facet memo from these scope rows,
+          // and the Dobradinha/Partido facets read `stateDeputies` off them.
+          // Without the widened select those option groups render empty under
+          // a native sort (the cache key separates the widened call — P3-E).
+          extraSelect: { stateDeputies: true },
+        })
       : listQuery.then((result) =>
           loadMunicipalityScopeFromDocs(payload, result.docs as Municipality[]),
         )
@@ -363,6 +458,7 @@ export const loadMunicipalityListPageBundle = async (
       payload,
       user,
       state,
+      relationCatalog,
       isStaff
         ? { where, rows: staffScopePromise.then((scope) => scope?.municipalities ?? []) }
         : null,

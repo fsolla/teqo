@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { NO_PARTY_FILTER_VALUE } from '@/utilities/campaignListUrl'
 import {
   clearStateDeputyListFilters,
   clearStateDeputyPartyFilter,
@@ -9,7 +10,6 @@ import {
 import {
   buildStateDeputyListHref,
   buildStateDeputySortHref,
-  NO_PARTY_FILTER_VALUE,
   parseStateDeputyListParams,
   parseStateDeputySortValue,
   resolveStateDeputyListPayloadSort,

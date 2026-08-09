@@ -7,6 +7,7 @@ import {
   type CampaignListOmniboxChip,
   type CampaignListOmniboxSuggestion,
 } from '@/lib/campaignListOmnibox'
+import { NO_PARTY_FILTER_VALUE } from '@/utilities/campaignListUrl'
 import {
   buildStateDeputyPartyOptions,
   clearStateDeputyListFilters,
@@ -14,7 +15,6 @@ import {
   type StateDeputyFilterOption,
 } from '@/utilities/stateDeputyListFilters'
 import {
-  NO_PARTY_FILTER_VALUE,
   resolveStateDeputyListSort,
   stateDeputyListSortOptions,
   type StateDeputyListSortDirection,

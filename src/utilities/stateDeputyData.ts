@@ -4,10 +4,10 @@ import type { Payload } from 'payload'
 
 import { populatedContactName, relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 import type { CampaignUser, StateDeputy } from '@/payload-types'
+import { NO_PARTY_FILTER_VALUE } from '@/utilities/campaignListUrl'
 import { loadCampaignUserSummaries } from '@/utilities/campaignRelationOptions'
 import {
   buildStateDeputyListWhere,
-  NO_PARTY_FILTER_VALUE,
   resolveStateDeputyListPayloadSort,
   resolveStateDeputyListSort,
   stateDeputyPageSize,

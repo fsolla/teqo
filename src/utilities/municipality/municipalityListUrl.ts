@@ -12,11 +12,14 @@ import { isMunicipalitySlug } from '@/lib/municipalityCatalog'
 import {
   allParamValues,
   buildListHref,
+  collapseListWhereOrBranches,
   createSortToggleHref,
   firstValue,
+  NO_PARTY_FILTER_VALUE,
   normalizedText,
   parseExhaustiveEnumParam,
   resolveListUrl,
+  splitAbsenceFilterValues,
   strictDecimalInteger,
   type RawSearchParams as CampaignListRawSearchParams,
 } from '@/utilities/campaignListUrl'
@@ -64,6 +67,26 @@ export const municipalityListLevelFilterValues: readonly MunicipalityListLevelFi
   ...engagementLevels,
   NO_LEVEL_FILTER_VALUE,
 ]
+
+/**
+ * Sentinel for the "Sem dobradinha" filter row: the municipality↔dobradinha
+ * link is a hasMany relationship (`municipality.stateDeputies`), so absence is
+ * `stateDeputies: { exists: false }` — the same pair (reserved token + absence
+ * branch) as `NO_LEVEL_FILTER_VALUE` and `NO_PARTY_FILTER_VALUE`.
+ */
+export const NO_STATE_DEPUTY_FILTER_VALUE = 'sem_dobradinha'
+
+/**
+ * Sentinel for the "Sem liderança" filter row. The link is reverse
+ * (`leadership.municipalities`), so absence is expressed as "municipality not
+ * linked to ANY leadership in the actor's scope" — see
+ * `MunicipalityListRelationCatalog.allLeadershipMunicipalityIDs`.
+ */
+export const NO_LEADERSHIP_FILTER_VALUE = 'sem_lideranca'
+
+type MunicipalityListStateDeputyFilterValue = number | typeof NO_STATE_DEPUTY_FILTER_VALUE
+
+type MunicipalityListLeadershipFilterValue = number | typeof NO_LEADERSHIP_FILTER_VALUE
 
 /**
  * E9 allocation queue: the list opens on the decision it exists to serve —
@@ -145,10 +168,45 @@ export type MunicipalityListState = {
    * Never holds the full set (same "todos" canonicalization as `trends`).
    */
   levels?: MunicipalityListLevelFilterValue[]
+  /**
+   * Multi-select (OR) B176 — stateDeputy ids linked to the município, plus the
+   * "Sem dobradinha" sentinel. Direct relationship (`municipality.stateDeputies`),
+   * so unlike `leaderships`/`parties` it needs no precomputed catalog.
+   */
+  stateDeputies?: MunicipalityListStateDeputyFilterValue[]
+  /**
+   * Multi-select (OR) B176 — leadership ids acting in the município, plus the
+   * "Sem liderança" sentinel. Reverse relationship (`leadership.municipalities`),
+   * so `buildMunicipalityListWhere` derives the municipality-id set from the
+   * request-scoped `MunicipalityListRelationCatalog`.
+   */
+  leaderships?: MunicipalityListLeadershipFilterValue[]
+  /**
+   * Multi-select (OR) B176 — party names of the município's dobradinhas, plus
+   * `NO_PARTY_FILTER_VALUE`. Needs the party→deputy-id lookup in the catalog.
+   */
+  parties?: string[]
   /** Candidate number for the map comparison mode (does not filter the list). */
   compare?: number
   sort?: MunicipalityListSortKey
   dir?: MunicipalityListSortDirection
+}
+
+/**
+ * B176 — the request-scoped relation sets `buildMunicipalityListWhere` needs to
+ * turn the reverse (`leadership.municipalities`) and cross (`stateDeputy.party`)
+ * filters into municipality-level `where` clauses. State-independent, so a page
+ * or the map loads it ONCE and the pure where-builder derives per-state branches.
+ */
+export type MunicipalityListRelationCatalog = {
+  /** Scoped leadership id → municipality ids it acts in (the actor's read scope). */
+  leadershipMunicipalityIDsByLeadership: ReadonlyMap<number, readonly number[]>
+  /** Municipality ids linked to ANY scoped leadership — for "Sem liderança". */
+  allLeadershipMunicipalityIDs: ReadonlySet<number>
+  /** Party name → stateDeputy ids carrying it — for named party filters. */
+  stateDeputyIDsByParty: ReadonlyMap<string, readonly number[]>
+  /** StateDeputy ids that carry any party — for "Sem partido". */
+  allPartyStateDeputyIDs: ReadonlySet<number>
 }
 
 export type MunicipalityListSearchParams = CampaignListRawSearchParams
@@ -163,6 +221,9 @@ const municipalityListParamNames = [
   'trend',
   'class',
   'level',
+  'stateDeputy',
+  'leadership',
+  'party',
   'compare',
   'sort',
   'dir',
@@ -265,6 +326,67 @@ const parseAdvisorsParam = (raw: string | string[] | undefined): number[] => {
   return advisors.sort((left, right) => left - right)
 }
 
+/**
+ * B176 — a relationship multi-select whose absence is a reserved sentinel token
+ * (`sem_dobradinha` / `sem_lideranca`): integer ids sort ascending and the
+ * sentinel rides last, so one value set canonicalizes to one URL. Also the
+ * canonicalizer the fast-path toggle (`buildMunicipalityFilterOptionHref`) uses.
+ */
+export const canonicalRelationshipWithAbsenceValues = <Sentinel extends string>(
+  raw: string | string[] | undefined,
+  sentinel: Sentinel,
+): Array<number | Sentinel> => {
+  const ids: number[] = []
+  const seen = new Set<number>()
+  let hasAbsence = false
+  for (const token of allParamValues(raw)) {
+    if (token === sentinel) {
+      hasAbsence = true
+      continue
+    }
+    const id = strictDecimalInteger(token)
+    if (id === undefined || seen.has(id)) continue
+    seen.add(id)
+    ids.push(id)
+  }
+  return [...ids.sort((left, right) => left - right), ...(hasAbsence ? [sentinel] : [])]
+}
+
+const parseStateDeputiesParam = (
+  raw: string | string[] | undefined,
+): MunicipalityListStateDeputyFilterValue[] =>
+  canonicalRelationshipWithAbsenceValues(raw, NO_STATE_DEPUTY_FILTER_VALUE)
+
+const parseLeadershipsParam = (
+  raw: string | string[] | undefined,
+): MunicipalityListLeadershipFilterValue[] =>
+  canonicalRelationshipWithAbsenceValues(raw, NO_LEADERSHIP_FILTER_VALUE)
+
+/**
+ * B176 — party values canonicalize the same way the relationship dims do:
+ * named parties keep first-seen order (deduped, ≤32 chars) and the "Sem
+ * partido" sentinel rides last, so one value set maps to one URL. Shared by
+ * the URL parser and the fast-path toggle so both writers agree.
+ */
+export const canonicalPartyValues = (values: readonly string[]): string[] => {
+  const named: string[] = []
+  const seen = new Set<string>()
+  let hasAbsence = false
+  for (const value of values) {
+    if (value === NO_PARTY_FILTER_VALUE) {
+      hasAbsence = true
+      continue
+    }
+    if (seen.has(value) || value.length > 32) continue
+    seen.add(value)
+    named.push(value)
+  }
+  return [...named, ...(hasAbsence ? [NO_PARTY_FILTER_VALUE] : [])]
+}
+
+const parsePartiesParam = (raw: string | string[] | undefined): string[] =>
+  canonicalPartyValues(allParamValues(raw))
+
 const politicalTrendStatusSet = new Set<string>(Object.keys(politicalTrendLabels))
 const territorialClassSet = new Set<string>(Object.keys(territorialClassLabels))
 const engagementLevelFilterSet = new Set<string>(municipalityListLevelFilterValues)
@@ -283,6 +405,9 @@ export const municipalityListStateToRawParams = (
   trend: state.trends,
   class: state.classes,
   level: state.levels,
+  stateDeputy: state.stateDeputies?.map(String),
+  leadership: state.leaderships?.map(String),
+  party: state.parties,
   compare: state.compare === undefined ? undefined : String(state.compare),
   sort: state.sort,
   dir: state.dir,
@@ -310,6 +435,9 @@ export const parseMunicipalityListParams = (
     params.level,
     engagementLevelFilterSet,
   )
+  const stateDeputies = parseStateDeputiesParam(params.stateDeputy)
+  const leaderships = parseLeadershipsParam(params.leadership)
+  const parties = parsePartiesParam(params.party)
   const rawCompare = strictDecimalInteger(firstValue(params.compare))
   const rawSort = firstValue(params.sort) as MunicipalityListSortKey | undefined
   const sort = rawSort && municipalityListSortKeySet.has(rawSort) ? rawSort : undefined
@@ -329,13 +457,19 @@ export const parseMunicipalityListParams = (
     ...(trends.length ? { trends } : {}),
     ...(classes.length ? { classes } : {}),
     ...(levels.length ? { levels } : {}),
+    ...(stateDeputies.length ? { stateDeputies } : {}),
+    ...(leaderships.length ? { leaderships } : {}),
+    ...(parties.length ? { parties } : {}),
     ...(rawCompare && rawCompare <= 99999 ? { compare: rawCompare } : {}),
     ...(sort ? { sort } : {}),
     ...(dir ? { dir } : {}),
   }
 }
 
-export const buildMunicipalityListWhere = (state: MunicipalityListState): Where => {
+export const buildMunicipalityListWhere = (
+  state: MunicipalityListState,
+  relationCatalog?: MunicipalityListRelationCatalog,
+): Where => {
   const filters: Where[] = []
   const searchedZone = strictDecimalInteger(state.q)
 
@@ -359,16 +493,77 @@ export const buildMunicipalityListWhere = (state: MunicipalityListState): Where 
   if (state.levels?.length) {
     // "Sem nível" is absence, which no `in` can express — it rides along as an
     // OR branch so "N0 ou sem nível" (the triage view) is one query.
-    const selectedLevels = state.levels.filter(
-      (level): level is EngagementLevel => level !== NO_LEVEL_FILTER_VALUE,
+    const { named: selectedLevels, hasAbsence } = splitAbsenceFilterValues(
+      state.levels,
+      (level) => level === NO_LEVEL_FILTER_VALUE,
     )
     const levelFilters: Where[] = []
     if (selectedLevels.length) levelFilters.push({ engagementLevel: { in: selectedLevels } })
-    if (state.levels.includes(NO_LEVEL_FILTER_VALUE)) {
-      levelFilters.push({ engagementLevel: { exists: false } })
+    if (hasAbsence) levelFilters.push({ engagementLevel: { exists: false } })
+    const branch = collapseListWhereOrBranches(levelFilters)
+    if (branch) filters.push(branch)
+  }
+
+  // --- B176: dobradinha (direct relationship) --------------------------------
+  if (state.stateDeputies?.length) {
+    const { named: selectedStateDeputies, hasAbsence } = splitAbsenceFilterValues(
+      state.stateDeputies,
+      (value) => value === NO_STATE_DEPUTY_FILTER_VALUE,
+    )
+    const stateDeputyFilters: Where[] = []
+    if (selectedStateDeputies.length) {
+      stateDeputyFilters.push({ stateDeputies: { in: selectedStateDeputies } })
     }
-    const [onlyFilter, ...restFilters] = levelFilters
-    filters.push(onlyFilter && restFilters.length === 0 ? onlyFilter : { or: levelFilters })
+    if (hasAbsence) stateDeputyFilters.push({ stateDeputies: { exists: false } })
+    const branch = collapseListWhereOrBranches(stateDeputyFilters)
+    if (branch) filters.push(branch)
+  }
+
+  // --- B176: leadership (reverse relation — needs the catalog) --------------
+  if (state.leaderships?.length) {
+    assertMunicipalityRelationCatalog(state.leaderships, relationCatalog)
+    const { named: selectedLeaderships, hasAbsence } = splitAbsenceFilterValues(
+      state.leaderships,
+      (value) => value === NO_LEADERSHIP_FILTER_VALUE,
+    )
+    const leadershipFilters: Where[] = []
+    if (selectedLeaderships.length) {
+      leadershipFilters.push({
+        id: {
+          in: unionSortedIDsFrom(
+            relationCatalog.leadershipMunicipalityIDsByLeadership,
+            selectedLeaderships.filter((id): id is number => typeof id === 'number'),
+          ),
+        },
+      })
+    }
+    if (hasAbsence) {
+      leadershipFilters.push({ id: { not_in: [...relationCatalog.allLeadershipMunicipalityIDs] } })
+    }
+    const branch = collapseListWhereOrBranches(leadershipFilters)
+    if (branch) filters.push(branch)
+  }
+
+  // --- B176: partido da dobradinha (cross read — needs the catalog) ---------
+  if (state.parties?.length) {
+    assertMunicipalityRelationCatalog(state.parties, relationCatalog)
+    const { named: namedParties, hasAbsence } = splitAbsenceFilterValues(
+      state.parties,
+      (party) => party === NO_PARTY_FILTER_VALUE,
+    )
+    const partyFilters: Where[] = []
+    if (namedParties.length) {
+      partyFilters.push({
+        stateDeputies: {
+          in: unionSortedIDsFrom(relationCatalog.stateDeputyIDsByParty, namedParties),
+        },
+      })
+    }
+    if (hasAbsence) {
+      partyFilters.push({ stateDeputies: { not_in: [...relationCatalog.allPartyStateDeputyIDs] } })
+    }
+    const branch = collapseListWhereOrBranches(partyFilters)
+    if (branch) filters.push(branch)
   }
   // `state.classes` is absent on purpose: the class is derived from the TSE
   // artifact, not stored, so it can't be a Payload constraint. `municipalityPageData`
@@ -376,6 +571,29 @@ export const buildMunicipalityListWhere = (state: MunicipalityListState): Where 
 
   return filters.length ? { and: filters } : {}
 }
+
+/**
+ * Fail-closed: the reverse (`leadership`) and cross (`party`) filters can only
+ * become a `where` with the request-scoped catalog. Dropping the filter
+ * silently would hand back a WIDER recorte than the URL asked for.
+ */
+function assertMunicipalityRelationCatalog(
+  values: readonly unknown[],
+  relationCatalog: MunicipalityListRelationCatalog | undefined,
+): asserts relationCatalog is MunicipalityListRelationCatalog {
+  if (!relationCatalog) {
+    throw new Error(
+      `buildMunicipalityListWhere: missing relation catalog for the filter ${JSON.stringify(values)}`,
+    )
+  }
+}
+
+/** Union of the id lists behind each key, sorted ascending — the OR of a relation dimension. */
+const unionSortedIDsFrom = <Key>(
+  byKey: ReadonlyMap<Key, readonly number[]>,
+  keys: readonly Key[],
+): number[] =>
+  [...new Set(keys.flatMap((key) => byKey.get(key) ?? []))].sort((left, right) => left - right)
 
 /**
  * Serializes a state that is ALREADY canonical (came out of
@@ -404,6 +622,13 @@ export const serializeCanonicalMunicipalityListSearchParams = (
     params.append('class', territorialClass)
   }
   for (const level of canonicalState.levels ?? []) params.append('level', level)
+  for (const stateDeputy of canonicalState.stateDeputies ?? []) {
+    params.append('stateDeputy', String(stateDeputy))
+  }
+  for (const leadership of canonicalState.leaderships ?? []) {
+    params.append('leadership', String(leadership))
+  }
+  for (const party of canonicalState.parties ?? []) params.append('party', party)
   if (canonicalState.compare) params.set('compare', String(canonicalState.compare))
   // Omit the default pair (staff: deficit+desc). Keep `sort` whenever the pair
   // is non-default so `dir` is never orphaned (e.g. votos+asc → sort=votos&dir=asc).

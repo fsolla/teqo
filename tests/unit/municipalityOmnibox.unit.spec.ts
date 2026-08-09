@@ -26,6 +26,8 @@ describe('municipality omnibox (B127)', () => {
       scenario: 'optimistic',
       showStaffFilters: true,
       advisorLabelsById: new Map(),
+      stateDeputyLabelsById: new Map(),
+      leadershipLabelsById: new Map(),
     })
     expect(chips.map((chip) => chip.id)).toEqual([
       'q',
@@ -43,6 +45,8 @@ describe('municipality omnibox (B127)', () => {
       scenario: DEFAULT_VOTE_ESTIMATE_SCENARIO,
       showStaffFilters: true,
       advisorLabelsById: new Map(),
+      stateDeputyLabelsById: new Map(),
+      leadershipLabelsById: new Map(),
     })
     expect(chips).toEqual([])
   })
@@ -54,6 +58,9 @@ describe('municipality omnibox (B127)', () => {
       regionFilterOptions: [],
       advisorFilterOptions: [],
       slugFilterOptions: [{ value: 'salvador', label: 'Salvador' }],
+      stateDeputyFilterOptions: [],
+      leadershipFilterOptions: [],
+      partyFilterOptions: [],
     })
     expect(suggestions.some((entry) => entry.id === 'q:pri')).toBe(true)
     expect(suggestions.some((entry) => entry.id === 'priority:alta')).toBe(true)
@@ -66,8 +73,91 @@ describe('municipality omnibox (B127)', () => {
       regionFilterOptions: [],
       advisorFilterOptions: [],
       slugFilterOptions: [],
+      stateDeputyFilterOptions: [],
+      leadershipFilterOptions: [],
+      partyFilterOptions: [],
     })
     expect(suggestions.some((entry) => entry.group === 'Ordenação')).toBe(true)
+  })
+
+  it('suggests Dobradinha, Liderança and Partido options (B176)', () => {
+    const suggestions = buildMunicipalityOmniboxSuggestions({
+      query: 'mar',
+      showStaffFilters: true,
+      regionFilterOptions: [],
+      advisorFilterOptions: [],
+      slugFilterOptions: [],
+      stateDeputyFilterOptions: [{ value: '12', label: 'Maria Souza (PSD)' }],
+      leadershipFilterOptions: [{ value: '7', label: 'Maria de Fátima' }],
+      partyFilterOptions: [{ value: 'PSD', label: 'PSD' }],
+    })
+    expect(suggestions.some((entry) => entry.id === 'stateDeputy:12')).toBe(true)
+    expect(suggestions.some((entry) => entry.id === 'leadership:7')).toBe(true)
+    // Typing a party acronym matches the label itself.
+    const byParty = buildMunicipalityOmniboxSuggestions({
+      query: 'psd',
+      showStaffFilters: true,
+      regionFilterOptions: [],
+      advisorFilterOptions: [],
+      slugFilterOptions: [],
+      stateDeputyFilterOptions: [],
+      leadershipFilterOptions: [],
+      partyFilterOptions: [{ value: 'PSD', label: 'PSD' }],
+    })
+    expect(byParty.some((entry) => entry.id === 'party:PSD')).toBe(true)
+  })
+
+  it('reveals the "Sem …" sentinel options while typing "sem"', () => {
+    const suggestions = buildMunicipalityOmniboxSuggestions({
+      query: 'sem',
+      showStaffFilters: true,
+      regionFilterOptions: [],
+      advisorFilterOptions: [],
+      slugFilterOptions: [],
+      stateDeputyFilterOptions: [],
+      leadershipFilterOptions: [],
+      partyFilterOptions: [],
+    })
+    expect(suggestions.map((entry) => entry.id)).toEqual(
+      expect.arrayContaining([
+        'stateDeputy:sem_dobradinha',
+        'leadership:sem_lideranca',
+        'party:sem_partido',
+      ]),
+    )
+  })
+
+  it('applies the B176 relation filters inclusively and removes single chips', () => {
+    const applied = applyMunicipalityOmniboxSuggestion({
+      state: base,
+      suggestionId: 'stateDeputy:12',
+    })
+    expect(applied.kind).toBe('url')
+    if (applied.kind !== 'url') return
+    expect(applied.state.stateDeputies).toEqual([12])
+
+    const withSentinel = applyMunicipalityOmniboxSuggestion({
+      state: applied.state,
+      suggestionId: 'leadership:sem_lideranca',
+    })
+    expect(withSentinel.kind).toBe('url')
+    if (withSentinel.kind === 'url') {
+      expect(withSentinel.state.leaderships).toEqual(['sem_lideranca'])
+    }
+
+    const withParty = applyMunicipalityOmniboxSuggestion({
+      state: base,
+      suggestionId: 'party:PSD',
+    })
+    expect(withParty.kind).toBe('url')
+    if (withParty.kind === 'url') expect(withParty.state.parties).toEqual(['PSD'])
+
+    const removed = removeMunicipalityOmniboxChip({
+      state: parseMunicipalityListParams({ stateDeputy: ['12', '5'] }),
+      chipId: 'stateDeputy:5',
+    })
+    expect(removed.kind).toBe('url')
+    if (removed.kind === 'url') expect(removed.state.stateDeputies).toEqual([12])
   })
 
   it('applies text search and toggles inclusive filters', () => {

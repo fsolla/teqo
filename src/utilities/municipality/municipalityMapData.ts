@@ -41,6 +41,7 @@ import {
   mapKeyForMunicipality,
 } from '@/utilities/municipality/municipalityMapNavigation'
 import { projectedValidVotes } from '@/utilities/municipality/municipalityPotential'
+import { loadMunicipalityListRelationCatalog } from '@/utilities/municipality/municipalityRelationSets'
 import {
   computeMunicipalityTerritorialClass,
   type MunicipalityTerritorialClass,
@@ -254,7 +255,15 @@ export const loadMunicipalityMapBundle = async (
   if (user.role === 'leader') return null
 
   const state = parseMunicipalityListParams(searchParams)
-  const scope = await loadMunicipalityScope(payload, user, buildMunicipalityListWhere(state))
+  // B176 — the map shares the list URL, so a leadership/party recorte must
+  // carry its relation catalog into the very same `where` the list uses. Lazy
+  // per active filter, so the dashboard landing page pays no extra reads.
+  const relationCatalog = await loadMunicipalityListRelationCatalog(payload, user, state)
+  const scope = await loadMunicipalityScope(
+    payload,
+    user,
+    buildMunicipalityListWhere(state, relationCatalog),
+  )
   const municipalities = scopeMunicipalitiesFromDocs(scope.municipalities)
   if (municipalities.length === 0) return null
 
