@@ -11,7 +11,7 @@ import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures
  * filterless feed content via the C93 int tests; the e2e here pins the real
  * end-to-end flow on the dev server.
  */
-const isProdMode = process.env.E2E_PROD === '1' || process.env.CI === '1'
+const isProdMode = ['1', 'true'].includes(process.env.E2E_PROD ?? '') || ['1', 'true'].includes(process.env.CI ?? '')
 
 test.describe('Agenda — link de import (C98)', () => {
   test.setTimeout(90_000)
