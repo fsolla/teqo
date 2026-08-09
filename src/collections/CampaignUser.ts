@@ -1,5 +1,7 @@
 import { CAMPAIGN_SESSION_TTL_LONG } from '@/lib/campaignSessionTtl'
 import { normalizeBrazilianPhone } from '@/lib/phone'
+import { relationshipId } from '@/lib/relationship'
+import { isPlanilhaPlaceholderEmail } from '@/lib/schemas/advisor'
 import type { CampaignUser as CampaignUserDocument } from '@/payload-types'
 import {
   canCreateCampaignUserPhone,
@@ -8,17 +10,21 @@ import {
   canReadCampaignUserIdentity,
   canReadCampaignUserPhone,
   canReadCampaignUsers,
+  canSetCampaignSystemField,
   canUpdateCampaignUser,
   canUpdateCampaignUserAvatar,
   canUpdateCampaignUserPhone,
 } from '@/utilities/campaignAccess'
 import { buildCampaignPasswordResetUrl } from '@/utilities/campaignPasswordReset'
+import { findOrCreateContactByPhone } from '@/utilities/contactIdentity'
 import {
   APIError,
   type CollectionAfterReadHook,
   type CollectionBeforeChangeHook,
   type CollectionBeforeDeleteHook,
   type CollectionConfig,
+  type Payload,
+  type PayloadRequest,
 } from 'payload'
 
 const removePrivateAuthFields: CollectionAfterReadHook<CampaignUserDocument> = async ({
@@ -58,21 +64,43 @@ const preventAssignedAdvisorDowngrade: CollectionBeforeChangeHook<CampaignUserDo
     return data
   }
 
-  const assignedMunicipality = await req.payload.find({
-    collection: 'municipality',
-    where: {
-      advisors: { contains: originalDoc.id },
-    },
-    depth: 0,
-    limit: 1,
-    select: { name: true },
-    overrideAccess: true,
-    req,
-  })
+  // Intentional admin bypass: the downgrade guard must see every relation the
+  // account is assigned to, regardless of the actor's read scope.
+  const assignments = await Promise.all([
+    req.payload.find({
+      collection: 'municipality',
+      where: { advisors: { contains: originalDoc.id } },
+      depth: 0,
+      limit: 1,
+      select: { slug: true },
+      overrideAccess: true,
+      req,
+    }),
+    req.payload.find({
+      collection: 'stateDeputy',
+      where: { advisors: { contains: originalDoc.id } },
+      depth: 0,
+      limit: 1,
+      select: { slug: true },
+      // Same justified bypass as the municipality probe above.
+      overrideAccess: true,
+      req,
+    }),
+    req.payload.find({
+      collection: 'leadership',
+      where: { advisors: { contains: originalDoc.id } },
+      depth: 0,
+      limit: 1,
+      select: { contact: true },
+      // Same justified bypass as the probes above.
+      overrideAccess: true,
+      req,
+    }),
+  ])
 
-  if (assignedMunicipality.totalDocs > 0) {
+  if (assignments.some((result) => result.totalDocs > 0)) {
     throw new APIError(
-      'Remova ou substitua este usuário da assessoria de todos os municípios antes de alterar o papel para liderança.',
+      'Remova ou substitua este usuário da assessoria de municípios, dobradinhas ou lideranças antes de alterar o papel para liderança.',
       409,
     )
   }
@@ -89,10 +117,136 @@ const preventSelfServicePrivilegedFields: CollectionBeforeChangeHook<
 
   if (String(req.user.id) !== String(originalDoc.id)) return data
 
-  for (const field of ['role', 'name', 'email', 'username', 'phone'] as const) {
+  for (const field of ['role', 'name', 'email', 'username', 'phone', 'contact'] as const) {
     if (field in data) delete data[field]
   }
 
+  return data
+}
+/**
+ * Resolves the `Contact` ficha for an account that has none yet: by phone
+ * (find-or-create, same dedupe policy as the supporter flows) or a fresh
+ * name-only ficha when there is no phone. Multiple accounts may share one
+ * ficha — a person with two roles (liderança + assessora) keeps two accounts
+ * but ONE ficha, which is exactly the C100 dedupe.
+ */
+const resolveContactForAccount = async ({
+  payload,
+  req,
+  name,
+  email,
+  phone,
+}: {
+  payload: Payload
+  req: PayloadRequest
+  name: string
+  email?: string | null
+  phone?: string | null
+}): Promise<number> => {
+  const { contactID } = await findOrCreateContactByPhone({
+    payload,
+    req,
+    phone: typeof phone === 'string' && phone.length > 0 ? phone : null,
+    name,
+    email: email && !isPlanilhaPlaceholderEmail(email) ? email : null,
+  })
+  return contactID
+}
+
+/**
+ * C99 — every staff account points at ONE normalized `Contact` ficha, without
+ * asking for the person's data twice (admin UI and the inline advisor flows
+ * only collect account fields). An explicit `data.contact` (different from the
+ * linked ficha) always wins — the hook only fills the gap. On updates of a
+ * linked account, identity changes (name/e-mail/phone) are synced one-way
+ * account → ficha so the C100 list reads fresh data; a phone conflict fails
+ * the operation fail-closed with the ficha's standard message.
+ *
+ * Runs AFTER `preventSelfServicePrivilegedFields` on purpose: the strip
+ * deletes the merged identity fields (including `contact`) for self-service,
+ * so by the time this hook sees them they look "explicitly different" — which
+ * is what keeps self-service edits from ever writing the ficha.
+ */
+const ensureCampaignUserContactIdentity: CollectionBeforeChangeHook<CampaignUserDocument> = async ({
+  data,
+  operation,
+  originalDoc,
+  req,
+}) => {
+  if (!data) return data
+
+  // Unauthenticated updates are the password-reset token flow
+  // (`payload.forgotPassword` runs its `update` with `overrideAccess` and no
+  // `req.user`): it must never create or rewrite a LGPD-relevant `Contact`
+  // row, and a ficha phone conflict must not be able to block password
+  // recovery. Every real identity write is authenticated (admin REST token or
+  // a server action passing `user`); the invite redemption passes `contact`
+  // explicitly, so skipping the hook there changes nothing.
+  if (!req.user && operation === 'update') return data
+
+  // Payload's field `beforeValidate` merges the original document into the
+  // incoming data, so "explicitly provided" is "different from the linked
+  // ficha", never "key present".
+  if (operation === 'create') {
+    if (data.contact !== undefined) return data
+    data.contact = await resolveContactForAccount({
+      payload: req.payload,
+      req,
+      name: data.name ?? '',
+      email: data.email ?? null,
+      phone: data.phone ?? null,
+    })
+    return data
+  }
+
+  if (data.contact !== originalDoc?.contact) return data
+
+  const linkedContactID = relationshipId(originalDoc?.contact)
+
+  if (linkedContactID !== null) {
+    const contactData: { name?: string; email?: string | null; phone?: string } = {}
+
+    if (data.name !== undefined && data.name !== originalDoc?.name) {
+      contactData.name = data.name
+    }
+    if (data.email !== undefined && data.email !== originalDoc?.email) {
+      if (data.email === null || !isPlanilhaPlaceholderEmail(data.email)) {
+        contactData.email = data.email
+      }
+    }
+    // Clearing the account's phone never clears the ficha's: the ficha's
+    // phone is the person's dedupe key across every join (supporter,
+    // leadership, dobradinha), and the account edit is not a ficha edit.
+    if (
+      typeof data.phone === 'string' &&
+      data.phone.length > 0 &&
+      data.phone !== originalDoc?.phone
+    ) {
+      contactData.phone = data.phone
+    }
+
+    if (Object.keys(contactData).length === 0) return data
+
+    await req.payload.update({
+      collection: 'contact',
+      id: linkedContactID,
+      data: contactData,
+      depth: 0,
+      // Intentional admin bypass: the account operation is already authorized;
+      // the ficha phone uniqueness is enforced by the Contact's own hook.
+      overrideAccess: true,
+      req,
+    })
+    return data
+  }
+
+  data.contact = await resolveContactForAccount({
+    payload: req.payload,
+    req,
+    name: data.name ?? originalDoc?.name ?? '',
+    email: data.email ?? originalDoc?.email ?? null,
+    phone: data.phone ?? originalDoc?.phone ?? null,
+  })
   return data
 }
 
@@ -183,11 +337,27 @@ export const CampaignUser: CollectionConfig = {
     delete: canManageCampaignUsers,
   },
   hooks: {
-    beforeChange: [preventAssignedAdvisorDowngrade, preventSelfServicePrivilegedFields],
+    beforeChange: [
+      preventAssignedAdvisorDowngrade,
+      preventSelfServicePrivilegedFields,
+      ensureCampaignUserContactIdentity,
+    ],
     beforeDelete: [deleteCampaignUserPasskeys, deleteCampaignUserNotifications],
     afterRead: [removePrivateAuthFields],
   },
   fields: [
+    {
+      name: 'contact',
+      type: 'relationship',
+      relationTo: 'contact',
+      label: 'Ficha de contato',
+      index: true,
+      access: {
+        read: canReadCampaignUserIdentity,
+        create: canSetCampaignSystemField,
+        update: canSetCampaignSystemField,
+      },
+    },
     {
       name: 'name',
       type: 'text',

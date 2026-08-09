@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
-import { upsertContactByPhone } from '@/app/(campaign)/campanha/actions/supporter'
 import { SUPPORTER_REGISTRATION_CONSENT_MISSING_MESSAGE } from '@/lib/campaignConsentKeys'
 import { checkboxFormValue, nullableRelationshipFormValue, optionalFormText } from '@/lib/formData'
 import { sanitizeBrazilianPhoneInput } from '@/lib/phone'
@@ -18,13 +17,10 @@ import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campa
 import { requireSupporterRegistrationConsent } from '@/utilities/campaignConsent'
 import { runCampaignFormAction } from '@/utilities/campaignFormActionError'
 import { LEADER_CONTACTS_HOME } from '@/utilities/campaignPageActor'
-import {
-  acquireContactPhoneLocks,
-  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
-} from '@/utilities/contactPhoneInvariant'
+import { findOrCreateContactByPhone } from '@/utilities/contactIdentity'
+import { CONTACT_PHONE_AMBIGUOUS_MESSAGE } from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
-import { POSTGRES_DEDUP_LOCK_MESSAGE } from '@/utilities/postgresTransactionLocks'
 import { isUniqueSupporterConflict } from '@/utilities/supporter/supporterErrors'
 
 export type LeaderSupporterFormState = {
@@ -92,12 +88,7 @@ export const createLeaderSupporterRecord = async (
 
         const registrationConsent = await requireSupporterRegistrationConsent(payload, req)
 
-        if (payload.db.name !== 'postgres') {
-          throw new Error(POSTGRES_DEDUP_LOCK_MESSAGE)
-        }
-
-        await acquireContactPhoneLocks(payload, req, [data.phone])
-        const { contactID, reused } = await upsertContactByPhone({
+        const { contactID, reused } = await findOrCreateContactByPhone({
           payload,
           req,
           phone: data.phone,

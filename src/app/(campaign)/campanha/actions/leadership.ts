@@ -3,14 +3,17 @@
 import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
+import { nextLeadershipAdvisorIdsAfterMembership } from '@/lib/leadershipAdvisorMembership'
 import { nextMunicipalityIdsAfterLeadershipMembership } from '@/lib/leadershipMunicipalityMembership'
 import { nextStateDeputyIdsAfterMembership } from '@/lib/leadershipStateDeputyMembership'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 import {
+  LEADERSHIP_ADVISORS_UNRESTRICTED_MESSAGE,
   LEADERSHIP_DUPLICATE_MESSAGE,
   LEADERSHIP_INVALID_CONTACT_MESSAGE,
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
   LEADERSHIP_STAFF_MESSAGE,
+  leadershipAdvisorMembershipSchema,
   leadershipContactUpdateSchema,
   leadershipCreateSchema,
   leadershipInternalUpdateSchema,
@@ -19,6 +22,7 @@ import {
   leadershipWizardCreateSchema,
   leadershipWizardUpdateSchema,
   municipalityLeadershipCreateSchema,
+  type LeadershipAdvisorMembershipInput,
   type LeadershipContactUpdateInput,
   type LeadershipInternalUpdateInput,
   type LeadershipMunicipalitiesMembershipInput,
@@ -29,12 +33,13 @@ import {
 } from '@/lib/schemas/leadership'
 import type { CampaignUser, Contact } from '@/payload-types'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
-import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
 import {
-  acquireContactPhoneLocks,
-  assertContactPhoneWritable,
-  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
-} from '@/utilities/contactPhoneInvariant'
+  getCampaignActionContext,
+  reloadStaffActor,
+  reloadUnrestrictedActor,
+} from '@/utilities/campaignActionContext'
+import { findOrCreateContactByPhone } from '@/utilities/contactIdentity'
+import { assertContactPhoneWritable } from '@/utilities/contactPhoneInvariant'
 import { loadMunicipalityLeadershipSummaries } from '@/utilities/municipality/municipalityViewModels'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
@@ -92,60 +97,34 @@ const createValidatedLeadershipRecord = async (
       async ({ req }) => {
         const currentActor = await getFreshStaffActor(payload, actor, req)
         await assertMunicipalitiesWithinScope(payload, currentActor, data.municipalities, req)
-        let contactID: number | undefined
-        if (data.phone) {
-          if (payload.db.name !== 'postgres') {
-            throw new Error(POSTGRES_DEDUP_LOCK_MESSAGE)
-          }
-          await acquireContactPhoneLocks(payload, req, [data.phone])
-          // Intentional admin bypass: staff scope was freshly checked; these internal reads and
-          // writes atomically maintain the normalized Contact ↔ Leadership join.
-          const contacts = await payload.find({
-            collection: 'contact',
-            where: { phone: { equals: data.phone } },
+
+        let city: string | null = null
+        if (data.municipalities.length === 1) {
+          const municipality = await payload.findByID({
+            collection: 'municipality',
+            id: data.municipalities[0]!,
             depth: 0,
-            limit: 2,
-            pagination: false,
+            select: { city: true },
+            // Intentional admin bypass: staff scope was freshly checked; this
+            // read only derives the ficha's default city from the município.
             overrideAccess: true,
             req,
           })
-
-          if (contacts.totalDocs > 1) {
-            throw new Error(CONTACT_PHONE_AMBIGUOUS_MESSAGE)
-          }
-          contactID = contacts.docs[0]?.id
+          city = municipality.city
         }
-        const contactReused = Boolean(contactID)
 
-        if (!contactID) {
-          let city: string | null = null
-          if (data.municipalities.length === 1) {
-            const municipality = await payload.findByID({
-              collection: 'municipality',
-              id: data.municipalities[0]!,
-              depth: 0,
-              select: { city: true },
-              overrideAccess: true,
-              req,
-            })
-            city = municipality.city
-          }
-          const contact = await payload.create({
-            collection: 'contact',
-            data: {
-              name: data.name,
-              phone: data.phone ?? null,
-              email: data.email,
-              gender: data.gender,
-              state: 'BA' as Contact['state'],
-              city,
-            },
-            depth: 0,
-            overrideAccess: true,
-            req,
-          })
-          contactID = contact.id
-        }
+        // Intentional admin bypass: staff scope was freshly checked; the
+        // find-or-create atomically maintains the normalized Contact ↔
+        // Leadership join (same policy as every phone-backed ficha write).
+        const { contactID, reused } = await findOrCreateContactByPhone({
+          payload,
+          req,
+          phone: data.phone ?? null,
+          name: data.name,
+          email: data.email,
+          city: city ?? undefined,
+          gender: data.gender,
+        })
 
         const leadership = await payload.create({
           collection: 'leadership',
@@ -163,7 +142,7 @@ const createValidatedLeadershipRecord = async (
           overrideAccess: true,
           req,
         })
-        return { ...leadership, contactReused }
+        return { ...leadership, contactReused: reused }
       },
       { beginFailureMessage: 'Não foi possível iniciar a transação de cadastro da liderança.' },
     )
@@ -754,4 +733,78 @@ export const setLeadershipMunicipalitiesMembership = async (
     revalidateLeadershipMunicipalityPaths(input.leadershipId, municipalitySlugs)
   }
   return leadership
+}
+
+/**
+ * C99 — one chip toggle on `Leadership.advisors` ("Assessores responsáveis").
+ * Unrestricted staff only (coordinator/candidate), mirror of
+ * `setStateDeputyAdvisorMembershipRecord`: the read and write run under
+ * `overrideAccess` because the `advisors` field's update access is admin-only
+ * in the collection config; the fresh unrestricted actor exists solely to make
+ * the gate assertion, and the `beforeValidate` eligibility hook still runs
+ * under the bypass.
+ */
+export const setLeadershipAdvisorMembershipRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: LeadershipAdvisorMembershipInput,
+) => {
+  const { leadershipId, advisorId, assigned } = leadershipAdvisorMembershipSchema.parse(input)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      await reloadUnrestrictedActor(payload, actor, LEADERSHIP_ADVISORS_UNRESTRICTED_MESSAGE, req)
+
+      await acquireTextAdvisoryLocks(payload, req, [`leadership-advisors:${leadershipId}`])
+
+      const leadership = await payload.findByID({
+        collection: 'leadership',
+        id: leadershipId,
+        depth: 0,
+        select: { advisors: true },
+        // Intentional admin bypass: the unrestricted role was verified above;
+        // the `advisors` field's update access is admin-only in the collection
+        // config (same contract as the dobradinha twin). The `beforeValidate`
+        // eligibility hook still runs under the bypass.
+        overrideAccess: true,
+        req,
+      })
+
+      const currentAdvisorIDs = uniqueRelationshipIds(leadership.advisors)
+      const nextAdvisorIDs = nextLeadershipAdvisorIdsAfterMembership(
+        currentAdvisorIDs,
+        advisorId,
+        assigned,
+      )
+
+      // No-op: nothing to write, and nothing for the caller to revalidate.
+      if (nextAdvisorIDs === null) {
+        return { leadershipID: undefined }
+      }
+
+      await payload.update({
+        collection: 'leadership',
+        id: leadershipId,
+        data: { advisors: nextAdvisorIDs },
+        depth: 0,
+        // Same intentional bypass as the read: the unrestricted role was
+        // verified above, and the eligibility hook still runs under it.
+        overrideAccess: true,
+        req,
+      })
+
+      return { leadershipID: leadershipId }
+    },
+    { beginFailureMessage: 'Não foi possível atualizar os assessores da liderança.' },
+  )
+}
+
+export const setLeadershipAdvisorMembership = async (input: LeadershipAdvisorMembershipInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const { leadershipID } = await setLeadershipAdvisorMembershipRecord(payload, actor, input)
+  // The detail page is the only surface of this relation (C99) — same targeted
+  // revalidate contract as the dobradinha twin.
+  if (leadershipID) revalidatePath(`/campanha/liderancas/${leadershipID}`, 'page')
+  return leadershipID
 }

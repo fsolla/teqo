@@ -26,6 +26,7 @@ export const isSupportStatus = (value: unknown): value is SupportStatus =>
 export const MAX_LEADERSHIP_MUNICIPALITIES = 30
 const MAX_LEADERSHIP_ORGANIZATIONS = 20
 export const MAX_LEADERSHIP_STATE_DEPUTIES = 20
+export const MAX_LEADERSHIP_ADVISORS = 10
 
 export const LEADERSHIP_MUNICIPALITY_FLOOR_MESSAGE =
   'Vincule a liderança a pelo menos um município.'
@@ -34,6 +35,26 @@ export const LEADERSHIP_MUNICIPALITY_CAP_MESSAGE = `Cada liderança aceita no m�
 
 /** Thrown by the chip toggle on both sides of the relation (B31/B36), so both routes allowlist it. */
 export const LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE = `Cada liderança aceita no máximo ${MAX_LEADERSHIP_STATE_DEPUTIES} dobradinhas.`
+
+/** Thrown by the assessor toggle on the leadership detail (C99), same allowlist contract. */
+export const LEADERSHIP_ADVISORS_CAP_MESSAGE = `Cada liderança aceita no máximo ${MAX_LEADERSHIP_ADVISORS} assessores responsáveis.`
+
+export const LEADERSHIP_ADVISORS_UNRESTRICTED_MESSAGE =
+  'Somente a coordenação geral ou o candidato gerencia assessores de lideranças.'
+
+/**
+ * Delta write for the "Assessores responsáveis" section of a liderança (C99) —
+ * one chip toggle on `Leadership.advisors`, the owning document (no batch:
+ * the relation lives on the leadership itself, mirror of
+ * `stateDeputyAdvisorMembershipSchema`).
+ */
+export const leadershipAdvisorMembershipSchema = z.object({
+  leadershipId: positiveRelationshipId,
+  advisorId: positiveRelationshipId,
+  assigned: z.boolean(),
+})
+
+export type LeadershipAdvisorMembershipInput = z.input<typeof leadershipAdvisorMembershipSchema>
 
 /** Thrown by the actions and matched verbatim by every route's `safeMessages`. */
 export const LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE =

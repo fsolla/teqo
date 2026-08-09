@@ -15,7 +15,7 @@ import {
   resolveLeadershipListSort,
   type LeadershipListState,
 } from '@/utilities/leadership/leadershipListUrl'
-import { loadOrganizationNamesByIds } from '@/utilities/loadNamesByIds'
+import { loadCampaignUserNamesByIds, loadOrganizationNamesByIds } from '@/utilities/loadNamesByIds'
 import { loadStateDeputySummaries, type StateDeputySummary } from '@/utilities/stateDeputyData'
 
 export type LeadershipRowViewModel = {
@@ -340,6 +340,8 @@ export type LeadershipDetailViewModel = LeadershipRowViewModel & {
   municipalityIDs: number[]
   organizationIDs: number[]
   stateDeputyIDs: number[]
+  /** Assessores responsáveis (C99) — names resolved for the detail section. */
+  advisors: Array<{ id: number; name: string }>
   notes: string | null
 }
 
@@ -363,6 +365,11 @@ export const loadLeadershipDetail = async (
   const [row] = await toLeadershipRows(payload, [doc])
   if (!row) return null
 
+  const advisorIDs = (doc.advisors ?? [])
+    .map(relationshipId)
+    .filter((id): id is number => id !== null)
+  const advisorNames = await loadCampaignUserNamesByIds(payload, advisorIDs)
+
   return {
     ...row,
     municipalityIDs: (doc.municipalities ?? [])
@@ -372,6 +379,10 @@ export const loadLeadershipDetail = async (
       .map(relationshipId)
       .filter((id): id is number => id !== null),
     stateDeputyIDs: row.stateDeputies.map((summary) => summary.id),
+    advisors: advisorIDs.flatMap((id) => {
+      const name = advisorNames.get(id)
+      return name === undefined ? [] : [{ id, name }]
+    }),
     notes: doc.notes ?? null,
   }
 }

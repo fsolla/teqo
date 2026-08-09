@@ -245,6 +245,12 @@ export const redeemCampaignInviteLoginRecord = async (
         username: data.phone,
         password: data.password,
         ...(data.email !== undefined ? { email: data.email } : {}),
+        // C99 — the account points at the ficha that anchors the leadership:
+        // one person, one ficha, even when the same person also holds a staff
+        // account. Passed explicitly so the identity hook respects this choice
+        // instead of syncing the account's phone into whatever ficha it had
+        // (which would collide with the ficha this flow just updated).
+        contact: originalContact.id,
       }
       const hadAccount = Boolean(account)
       account = account

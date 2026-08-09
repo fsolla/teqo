@@ -3,14 +3,20 @@
 import { revalidatePath } from 'next/cache'
 
 import { leadershipStaffEditSafeMessages } from '@/app/(campaign)/campanha/(app)/liderancas/leadershipStaffEditMessages'
-import { updateLeadershipInternal } from '@/app/(campaign)/campanha/actions/leadership'
+import {
+  setLeadershipAdvisorMembership,
+  updateLeadershipInternal,
+} from '@/app/(campaign)/campanha/actions/leadership'
 import {
   nullableFormText,
   optionalFormText,
   repeatedRelationshipFormValues,
+  requiredFormBoolean,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
 import {
+  LEADERSHIP_ADVISORS_CAP_MESSAGE,
+  LEADERSHIP_ADVISORS_UNRESTRICTED_MESSAGE,
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
   leadershipSupportStatuses,
 } from '@/lib/schemas/leadership'
@@ -21,6 +27,8 @@ import {
 
 const safeMessages = [
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
+  LEADERSHIP_ADVISORS_UNRESTRICTED_MESSAGE,
+  LEADERSHIP_ADVISORS_CAP_MESSAGE,
   ...leadershipStaffEditSafeMessages,
 ] as const
 
@@ -50,4 +58,22 @@ export const updateLeadershipInternalFormAction = async (
     },
     safeMessages,
     genericMessage: 'Não foi possível salvar a ficha. Verifique seu acesso e tente novamente.',
+  })
+
+/** One chip toggle in the "Assessores responsáveis" section (C99). */
+export const setLeadershipAdvisorMembershipFormAction = async (
+  _state: CampaignFormActionState,
+  formData: FormData,
+): Promise<CampaignFormActionState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      await setLeadershipAdvisorMembership({
+        leadershipId: requiredRelationshipFormValue(formData, 'leadershipId'),
+        advisorId: requiredRelationshipFormValue(formData, 'advisorId'),
+        assigned: requiredFormBoolean(formData, 'assigned'),
+      })
+      return { message: 'Assessores atualizados.' }
+    },
+    safeMessages,
+    genericMessage: 'Não foi possível atualizar os assessores. Tente novamente.',
   })

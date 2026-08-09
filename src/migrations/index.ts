@@ -45,6 +45,7 @@ import * as migration_20260806_120000_c14_remodel_activity_agenda from './202608
 import * as migration_20260807_030000_unify_municipality_update from './20260807_030000_unify_municipality_update';
 import * as migration_20260808_134911_add_calendar_feed from './20260808_134911_add_calendar_feed';
 import * as migration_20260808_184113_remodel_activity_responsible from './20260808_184113_remodel_activity_responsible';
+import * as migration_20260809_204728_add_campaign_user_contact_and_leadership_advisors from './20260809_204728_add_campaign_user_contact_and_leadership_advisors';
 
 export const migrations = [
   {
@@ -280,6 +281,11 @@ export const migrations = [
   {
     up: migration_20260808_184113_remodel_activity_responsible.up,
     down: migration_20260808_184113_remodel_activity_responsible.down,
-    name: '20260808_184113_remodel_activity_responsible'
+    name: '20260808_184113_remodel_activity_responsible',
+  },
+  {
+    up: migration_20260809_204728_add_campaign_user_contact_and_leadership_advisors.up,
+    down: migration_20260809_204728_add_campaign_user_contact_and_leadership_advisors.down,
+    name: '20260809_204728_add_campaign_user_contact_and_leadership_advisors'
   },
 ];
