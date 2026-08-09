@@ -1,6 +1,6 @@
 # Impl: C96 — Feed iCal: interseptar escopo do criador no read (defesa em profundidade)
 
-Status: aprovado
+Status: aprovado/executado
 Atualizado em: 2026-08-09
 Issue: #455
 Intenção: docs/plans/c96-ical-feed-intersect-scope-read.md
@@ -60,7 +60,22 @@ flowchart LR
 
 ## Aceite de engenharia
 
-- [ ] Aceite de produto da intenção ainda coberto (advisor fora do escopo → feed não inclui; unrestricted/admin inalterados; sem write; sem migration)
-- [ ] Invariantes AGENTS/engineering-standards (fragmento canônico de escopo; copy pt-BR; identificadores EN; sem `overrideAccess:false` invertido)
-- [ ] Testes int de domínio (advisor no escopo lista; advisor removido não lista; coordinator inalterado)
-- [ ] `pnpm gate:fast` + `pnpm test` + `pnpm build` verdes
+- [x] Aceite de produto da intenção ainda coberto (advisor fora do escopo → feed não inclui; unrestricted/admin inalterados; sem write; sem migration)
+- [x] Invariantes AGENTS/engineering-standards (fragmento canônico de escopo; copy pt-BR; identificadores EN; sem `overrideAccess:false` invertido)
+- [x] Testes int de domínio (advisor no escopo lista; advisor removido não lista; coordinator inalterado)
+- [x] `pnpm gate:fast` + `pnpm test` + `pnpm build` verdes
+
+## Triage de débitos (gate humano aprovado, 2026-08-09)
+
+**Já resolvido no simplify (não reabrir):** S0 — o `filters.push(advisorMunicipalityScopeWhere(...))` duplicado após a branch de filtro foi achatado num único guard standalone (semântica idêntica nos quatro cantos; `calendarFeed.int.spec.ts` 14/14 pós-flatten).
+
+**Explicitamente fora / descartados:**
+
+- **S3 (descartar):** `resolveFeedCreatorAccess` relembra o lookup de advisor (`{ advisors: { equals: creatorId } }`) em vez de reusar `getAdvisorMunicipalityIds` — pré-existente em `main`, 1 call site, e o feed roda sem `req` (shape não reutilizável limpo). Sem Issue.
+- **S4 (NA):** só o teste 2 discrimina o bug; 1 e 3 são guards positivos — estrutura correta do trio.
+- **S5 (descartar):** testes usam `loadFeedActivities`/`resolveFeedCreatorAccess` em vez da rota GET — convenção pré-existente do próprio arquivo; a rota só re-encaixa os dois, sem valor novo.
+
+**Adiados com gatilho:**
+
+- **S1:** `route.ts` `Cache-Control: public, max-age=3600` — após remoção do assessor, o feed pode servir stale por até 1h no edge. Aceite C96 aceita feed vazio; mitigação primária é revogar (404 imediato). Gatilho: reabrir se houver queixa de staleness ou mudança na política de cache do feed.
+- **S2:** `validActivityInput` duplicado em 3 specs (calendarFeed agora é o 3º; assinaturas divergentes entre `homeSearchActivities`/`campaignActivity`). Gatilho: promover um helper compartilhado quando um 4º spec precisar do mesmo cabeçalho.
