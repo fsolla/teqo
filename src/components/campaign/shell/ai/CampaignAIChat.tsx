@@ -1,6 +1,6 @@
 'use client'
 
-import { Bot, Send, User } from 'lucide-react'
+import { Bot, Mic, Send, Square, User } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -13,11 +13,15 @@ import { Spinner } from '@/components/ui/Spinner'
 import { cn } from '@/lib/utils'
 
 import { useAISidebar } from '@/components/campaign/shell/ai/CampaignAISidebarContext'
+import { useMicTranscript } from '@/components/campaign/shell/ai/useMicTranscript'
 
 export const CampaignAIChat = ({ className }: { className?: string }) => {
   const ctx = useAISidebar()
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  const mic = useMicTranscript()
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const messages = useMemo(() => ctx?.messages ?? [], [ctx])
 
@@ -25,6 +29,14 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // A completed transcript becomes an editable draft in the input — never an
+  // auto-sent message (voices mishear proper nouns; the person reviews first).
+  useEffect(() => {
+    if (!mic.transcript) return
+    setInput(mic.transcript)
+    textareaRef.current?.focus()
+  }, [mic.transcript])
 
   if (!ctx) return null
 
@@ -37,6 +49,10 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
     sendMessage({ text: input })
     setInput('')
   }
+
+  const isRecording = mic.status === 'recording'
+  const isTranscribing = mic.status === 'transcribing'
+  const micDisabled = busy || isTranscribing
 
   return (
     <div className={cn('grid min-h-0 grid-rows-[1fr_auto]', className)}>
@@ -127,6 +143,7 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
         <form onSubmit={handleSubmit}>
           <InputGroup className="h-auto min-h-10">
             <textarea
+              ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -135,11 +152,29 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
                   handleSubmit(e)
                 }
               }}
-              placeholder="Pergunte para a Sollinha..."
+              placeholder={isRecording ? 'Ouvindo...' : 'Pergunte para a Sollinha...'}
               disabled={busy}
               rows={1}
               className="min-h-0 flex-1 resize-none border-0 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground disabled:opacity-50"
             />
+            <InputGroupButton
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={isRecording ? 'Parar gravação' : 'Falar pergunta (voz)'}
+              aria-pressed={isRecording}
+              disabled={micDisabled}
+              onClick={() => (isRecording ? mic.stop() : void mic.start())}
+            >
+              {isTranscribing ? (
+                <Spinner className="size-4" />
+              ) : isRecording ? (
+                <Square className="size-4 fill-current" />
+              ) : (
+                <Mic className="size-4" />
+              )}
+              <span className="sr-only">{isRecording ? 'Parar gravação' : 'Falar'}</span>
+            </InputGroupButton>
             <InputGroupButton
               type="submit"
               variant="default"
@@ -151,11 +186,42 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
             </InputGroupButton>
           </InputGroup>
         </form>
-        <Marker className="mt-2">
-          <MarkerContent>
-            Sollinha pode cometer erros. Verifique informações importantes.
-          </MarkerContent>
-        </Marker>
+        <div className="mt-2">
+          {isRecording && (
+            <Marker variant="default">
+              <MarkerContent>
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    className="size-1.5 animate-pulse rounded-full bg-destructive"
+                    aria-hidden
+                  />
+                  Ouvindo... {mic.elapsed}s — toque no quadrado para finalizar.
+                </span>
+              </MarkerContent>
+            </Marker>
+          )}
+          {mic.status === 'error' && mic.errorMessage && (
+            <Marker variant="default">
+              <MarkerContent>
+                {mic.errorMessage}{' '}
+                <button
+                  type="button"
+                  className="underline underline-offset-2"
+                  onClick={mic.dismissError}
+                >
+                  Dispensar
+                </button>
+              </MarkerContent>
+            </Marker>
+          )}
+          {!isRecording && mic.status !== 'error' && (
+            <Marker>
+              <MarkerContent>
+                Sollinha pode cometer erros. Verifique informações importantes.
+              </MarkerContent>
+            </Marker>
+          )}
+        </div>
       </div>
     </div>
   )

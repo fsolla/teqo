@@ -13,6 +13,10 @@ const store = new Map<number, RateLimitWindow>()
 const MAX_MESSAGES = 50
 const WINDOW_MS = 15 * 60 * 1000 // 15 minutes
 
+/** Shared message returned by every rate-limited AI surface (chat send, voice transcribe). */
+export const RATE_LIMIT_EXCEEDED_MESSAGE =
+  'Você atingiu o limite de mensagens. Aguarde alguns minutos e tente novamente.'
+
 /** Cleans up expired windows. Called on every check to prevent memory leaks. */
 const cleanup = (now: number) => {
   for (const [userId, window] of store) {
