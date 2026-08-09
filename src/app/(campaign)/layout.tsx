@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import React from 'react'
 
+import { CampaignIosViewportHeal } from '@/components/campaign/shell/CampaignIosViewportHeal'
 import { RegisterServiceWorker } from '@/components/campaign/shell/RegisterServiceWorker'
 import { CAMPAIGN_PWA_MANIFEST_PATH, CAMPAIGN_PWA_THEME_COLOR } from '@/utilities/campaignPwa'
 
@@ -44,6 +45,7 @@ export default function CampanhaRootLayout({ children }: { children: React.React
       <body className="bg-background bg-none text-foreground antialiased">
         {children}
         <RegisterServiceWorker />
+        <CampaignIosViewportHeal />
       </body>
     </html>
   )
