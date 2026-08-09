@@ -107,6 +107,14 @@ const buildFeedWhere = (
         ? feed.filterMunicipality
         : feed.filterMunicipality.id
     filters.push({ municipality: { equals: municipalityId } })
+    // Defense in depth (C96): an advisor's feed is intersected with the
+    // municipality ids the creator currently administers, so a feed pinned to a
+    // municipality the advisor was removed from stops serving it — the creator's
+    // read scope is re-derived on every request (resolveFeedCreatorAccess), never
+    // trusted from write time. `null` = coordinator/candidate/admin (unrestricted).
+    if (accessibleMunicipalityIds) {
+      filters.push(advisorMunicipalityScopeWhere('municipality', accessibleMunicipalityIds))
+    }
   } else if (accessibleMunicipalityIds) {
     filters.push(advisorMunicipalityScopeWhere('municipality', accessibleMunicipalityIds))
   }
