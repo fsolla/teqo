@@ -65,3 +65,53 @@ export const worktreeEnvironment = ({ branch, code, takenSlots = new Set() }) =>
     testDatabase: testDatabaseForSlot(slot),
   }
 }
+
+/**
+ * Line arrays for `.env.local` (dev) and `.env.test.local` (test) of a
+ * provisioned worktree. `NEXT_PUBLIC_SITE_URL` and `PLAYWRIGHT_BASE_URL` must
+ * point BOTH files at the SAME slot port — the parity is what keeps a parallel
+ * e2e run in another worktree from falling back to port 3000 (OPS20: they had
+ * drifted — the dev file carried PLAYWRIGHT_BASE_URL, the test file didn't, and
+ * playwright.config.ts only reads `.env.test.local`). Building both from one
+ * `url` makes the drift structurally impossible.
+ *
+ * @param {{ branch: string, issueLabel?: string, generatedBy: string, env: { slot: number, devPort: number, devDatabase: string, testDatabase: string }, payloadSecret: string, copiedLines?: string[] }} options
+ * @returns {{ dev: string[], test: string[] }}
+ */
+export const worktreeEnvFileContents = ({
+  branch,
+  issueLabel = '',
+  generatedBy,
+  env,
+  payloadSecret,
+  copiedLines = [],
+}) => {
+  // Both DATABASE_URLs derive from the same slot as the port (module contract).
+  const devUrl = `postgresql://teqo:teqo@localhost:5432/${env.devDatabase}`
+  const testUrl = `postgresql://teqo:teqo@localhost:5432/${env.testDatabase}`
+  const url = `http://localhost:${env.devPort}`
+  const header = [
+    GENERATED_ENV_MARKER,
+    `# branch ${branch}${issueLabel} · slot ${env.slot} — ${generatedBy}`,
+  ]
+  return {
+    dev: [
+      ...header,
+      `DATABASE_URL=${devUrl}`,
+      `PORT=${env.devPort}`,
+      `NEXT_PUBLIC_SITE_URL=${url}`,
+      `PLAYWRIGHT_BASE_URL=${url}`,
+      `PAYLOAD_SECRET=${payloadSecret}`,
+      ...copiedLines,
+      '',
+    ],
+    test: [
+      ...header,
+      '# Lido DEPOIS de .env.test (vitest.setup.ts / playwright.config.ts) — suites isoladas.',
+      `DATABASE_URL=${testUrl}`,
+      `NEXT_PUBLIC_SITE_URL=${url}`,
+      `PLAYWRIGHT_BASE_URL=${url}`,
+      '',
+    ],
+  }
+}
