@@ -29,11 +29,7 @@ type CampaignUpdatesFiltersProps = {
   isStaff: boolean
 }
 
-export const CampaignUpdatesFilters = ({
-  state,
-  facets,
-  isStaff,
-}: CampaignUpdatesFiltersProps) => {
+export const CampaignUpdatesFilters = ({ state, facets, isStaff }: CampaignUpdatesFiltersProps) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
     toHref: (next) => buildCampaignUpdatesFeedHref(next, 1),
@@ -107,37 +103,37 @@ export const CampaignUpdatesFilters = ({
       >
         <CampaignListOmnibox
           id="campaign-updates-omnibox"
-        label="Filtrar atualizações"
-        placeholder="Digite para filtrar (município, polaridade, autor…)"
-        chips={chips}
-        suggestions={suggestions}
-        query={query}
-        onQueryChange={setQuery}
-        isPending={isPending}
-        onSelectSuggestion={(suggestionId) => {
-          runAction(applyCampaignUpdatesFeedSuggestion({ state, suggestionId }))
-        }}
-        onCommitQuery={(text) => {
-          runAction(applyCampaignUpdatesFeedSuggestion({ state, suggestionId: `q:${text}` }))
-        }}
-        onRemoveChip={(chipId) => {
-          runAction(removeCampaignUpdatesFeedChip({ state, chipId }))
-        }}
-        onClearAll={() => {
-          runAction(clearCampaignUpdatesFeedFilters())
-        }}
-        trailing={
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11 shrink-0 gap-2"
-            onClick={() => setCreateOpen(true)}
-          >
-            <Plus aria-hidden="true" />
-            Nova atualização
-          </Button>
-        }
-      />
+          label="Filtrar atualizações"
+          placeholder="Digite para filtrar (município, polaridade, autor…)"
+          chips={chips}
+          suggestions={suggestions}
+          query={query}
+          onQueryChange={setQuery}
+          isPending={isPending}
+          onSelectSuggestion={(suggestionId) => {
+            runAction(applyCampaignUpdatesFeedSuggestion({ state, suggestionId }))
+          }}
+          onCommitQuery={(text) => {
+            runAction(applyCampaignUpdatesFeedSuggestion({ state, suggestionId: `q:${text}` }))
+          }}
+          onRemoveChip={(chipId) => {
+            runAction(removeCampaignUpdatesFeedChip({ state, chipId }))
+          }}
+          onClearAll={() => {
+            runAction(clearCampaignUpdatesFeedFilters())
+          }}
+          trailing={
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11 shrink-0 gap-2"
+              onClick={() => setCreateOpen(true)}
+            >
+              <Plus aria-hidden="true" />
+              Nova atualização
+            </Button>
+          }
+        />
       </form>
       <CampaignUpdatesCreateModal
         open={createOpen}

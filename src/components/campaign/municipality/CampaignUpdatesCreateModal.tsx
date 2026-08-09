@@ -9,18 +9,13 @@ import { StrictCombobox } from '@/components/campaign/shared/StrictCombobox'
 import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerTitle,
-} from '@/components/ui/Drawer'
+import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from '@/components/ui/Drawer'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/Spinner'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
-import type { CampaignUpdatesFeedFacets } from '@/utilities/municipality/campaignUpdatesFeedData'
 import { fieldError } from '@/utilities/campaignFormFields'
+import type { CampaignUpdatesFeedFacets } from '@/utilities/municipality/campaignUpdatesFeedData'
 
 type CampaignUpdatesCreateModalProps = {
   open: boolean

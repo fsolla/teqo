@@ -26,6 +26,5 @@ export const createCampaignUpdatesFormAction = async (
       revalidatePath('/campanha/atualizacoes')
       return { message: 'Atualização registrada com sucesso.' }
     },
-    genericMessage:
-      'Não foi possível registrar a atualização. Verifique o município e seu acesso.',
+    genericMessage: 'Não foi possível registrar a atualização. Verifique o município e seu acesso.',
   })

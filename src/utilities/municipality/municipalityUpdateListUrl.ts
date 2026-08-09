@@ -54,14 +54,7 @@ export type CampaignUpdatesFeedState = {
   authors?: number[]
 }
 
-const campaignUpdatesFeedParamNames = [
-  'q',
-  'slug',
-  'polarity',
-  'urgent',
-  'author',
-  'page',
-] as const
+const campaignUpdatesFeedParamNames = ['q', 'slug', 'polarity', 'urgent', 'author', 'page'] as const
 
 const campaignUpdatesFeedParamNameSet = new Set<string>(campaignUpdatesFeedParamNames)
 

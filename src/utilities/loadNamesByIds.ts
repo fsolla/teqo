@@ -55,10 +55,7 @@ export const loadCampaignUserDisplayByIds = async (
     overrideAccess: true,
   })
   return new Map(
-    result.docs.map((doc) => [
-      doc.id,
-      { name: doc.name, avatarUrl: mediaDocumentUrl(doc.avatar) },
-    ]),
+    result.docs.map((doc) => [doc.id, { name: doc.name, avatarUrl: mediaDocumentUrl(doc.avatar) }]),
   )
 }
 

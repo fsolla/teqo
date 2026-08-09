@@ -229,12 +229,13 @@ export const removeCampaignUpdatesFeedChip = ({
   if (chipId.startsWith('slug:')) {
     const slug = chipId.slice(5)
     const slugs = (state.slugs ?? []).filter((entry) => entry !== slug)
-    return { kind: 'url', state: withPageReset({ ...state, slugs: slugs.length ? slugs : undefined }) }
+    return {
+      kind: 'url',
+      state: withPageReset({ ...state, slugs: slugs.length ? slugs : undefined }),
+    }
   }
   if (chipId.startsWith('polarity:')) {
-    const polarities = (state.polarities ?? []).filter(
-      (entry) => entry !== chipId.slice(9),
-    )
+    const polarities = (state.polarities ?? []).filter((entry) => entry !== chipId.slice(9))
     return {
       kind: 'url',
       state: withPageReset({

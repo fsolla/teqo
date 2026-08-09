@@ -99,7 +99,11 @@ export const loadCampaignUpdatesFeed = async (
       urgent: Boolean(doc.urgent),
       adversarySignal: Boolean(doc.adversarySignal),
       createdAt: doc.createdAt,
-      author: { id: authorID, name: author?.name ?? 'Usuário', avatarUrl: author?.avatarUrl ?? null },
+      author: {
+        id: authorID,
+        name: author?.name ?? 'Usuário',
+        avatarUrl: author?.avatarUrl ?? null,
+      },
       municipality: municipality
         ? { id: municipalityID, name: municipality.name, slug: municipality.slug }
         : { id: municipalityID, name: 'Município', slug: '' },

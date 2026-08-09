@@ -91,9 +91,7 @@ describe('campaign updates feed data (C89)', () => {
     expect(result.cards[0]?.body).toBe('Visita no meu município')
 
     const facets = await loadCampaignUpdatesFeedFacets(payload, advisor)
-    expect(facets.municipalities.map((municipality) => municipality.slug)).toEqual([
-      assigned.slug,
-    ])
+    expect(facets.municipalities.map((municipality) => municipality.slug)).toEqual([assigned.slug])
     expect(facets.authorOptions.map((option) => option.label)).toContain(coordinator.name)
     expect(facets.authorOptions.map((option) => option.label)).not.toContain(otherAdvisor.name)
   })

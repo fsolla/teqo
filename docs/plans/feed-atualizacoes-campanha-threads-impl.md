@@ -113,8 +113,8 @@ estadual — leitura relativa à carteira (restrição da intenção). Sem % abs
 ## Fases verificáveis
 
 1. **Tracer / pure (server):** `municipalityUpdateListUrl` + `municipalityUpdateOmnibox`
-   + unit specs (canonicalização, "todas polaridades→ausente", page clamp,
-   chips/sugestões/apply/remove) — `pnpm gate:fast`.
+   - unit specs (canonicalização, "todas polaridades→ausente", page clamp,
+     chips/sugestões/apply/remove) — `pnpm gate:fast`.
 2. **Loader + view model:** `campaignUpdatesFeedData` +
    `loadCampaignUserDisplayByIds`; verificação por int spec leve do loader
    (carteira de advisor) se existir precedente análogo — senão unit puro.

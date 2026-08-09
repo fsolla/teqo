@@ -4,11 +4,11 @@ import { getPayload } from 'payload'
 
 import { CampaignUpdatesFeed } from '@/components/campaign/municipality/CampaignUpdatesFeed'
 import { CampaignUpdatesFilters } from '@/components/campaign/municipality/CampaignUpdatesFilters'
+import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
   CampaignListPendingBoundary,
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
-import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
