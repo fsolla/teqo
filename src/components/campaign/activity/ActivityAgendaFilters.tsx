@@ -117,7 +117,7 @@ export const ActivityAgendaFilters = ({
             asChild
             variant="outline"
             size="icon"
-            className="min-w-11"
+            className="min-h-11 min-w-11"
             aria-label="Planejar giro"
             title="Planejar giro"
           >
@@ -128,7 +128,7 @@ export const ActivityAgendaFilters = ({
           <Button
             asChild
             size="icon"
-            className="min-w-11"
+            className="min-h-11 min-w-11"
             aria-label="Nova atividade"
             title="Nova atividade"
           >

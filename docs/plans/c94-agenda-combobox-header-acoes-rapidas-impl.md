@@ -1,6 +1,6 @@
 # Impl: C94 — Agenda: filtro combobox único, header compacto (ícones) e ações no FAB mobile
 
-Status: rascunho
+Status: em execução (aprovado pelo humano em 2026-08-09)
 Atualizado em: 2026-08-09
 Issue: #438
 Intenção: docs/plans/c94-agenda-combobox-header-acoes-rapidas.md
@@ -76,14 +76,18 @@ flowchart LR
 - **C92/C93**: o ícone reflete apenas o estado habilitado/desabilitado; "gerar feed sem filtros" é a C93 (fora).
 - **Não mudar o compose de giro nem o overlay inline (C91).**
 
-## Riscos e mitigação
+## Divergências executadas (vs. hipótese da intenção)
 
-- **`useSearchParams` no layout** — evitado (slot por contexto; o header não lê URL). Não introduz Suspense.
-- **Flash de registro do header** — `SetCampaignHeaderAction` usa `useLayoutEffect` (padrão do título); botão aparece ~1 frame após mount; aceitável nas rotas `/campanha/agenda` (nas demais o slot fica vazio → sem poluição).
-- **Contexto `openCalendarFeed` undefined antes do mount** — o drawer só abre por gesto humano, bem depois do efeito; `import-calendar` é incluído sempre na surface `list` e abre o sheet mesmo sem filtro (dialog explica), então não há tile morta.
-- **Colidir com C95 (Semana ▾ no header)** — registro chaveado por `id`; C94 usa `calendar-feed`, C95 usará outra chave; ordem fixa no header.
-- **Regressão e2e** — a única e2e (linhas 120-122) troca selects por interação omnibox; ajustar junto da fase 1.
-- **Branch atrás de main (4 commits, C92/B171)** — rebase em `origin/main` no início da execução (skill `rebase-on-main`).
+- `AgendaFeedChrome` (client, montado na página) é o ponte único: registra o botão do header (`SetCampaignHeaderAction id="calendar-feed"`), injeta `openCalendarFeed` no `CampaignQuickActionContext` e **dona do único `<CalendarFeedDialog>`** (Dialog/sheet responsivo) — o botão do header e a ação do FAB chamam o mesmo `open()` (sem contexto novo de diálogo no layout).
+- O **overlay do FAB fecha ao disparar uma ação dialog** (`onActionClick` no `CampaignQuickActionsOverlay`) — senão o sheet da agenda abriria por cima do drawer aberto.
+- `playwright.config.ts` ganhou `webServer.timeout = 240s` **local-only** (`CI ? undefined`) — a máquina compartilhada (load 60+ de worktrees paralelos) estourava o boot de 60s em `pnpm dev`.
+
+## Riscos e mitigação (executados)
+
+- **Header** `[actions][sino][IA]` conforme o gate; sem `useSearchParams` no layout.
+- E2E agenda: a interação omnibox usa `fill` (reabre o popover) em vez de `click` num input já focado; assert final de URL com wait do chip + `timeout: 20s`.
+- `codebaseConventions` — `activityAgendaOmnibox.ts` registrado no pin de `src/utilities`.
+- Os testes de slot do calendário (`cria inline`, `Mais detalhes`) são **frágeis de timing de `gridcell.nth(1)`** e flakam sob load alto também no commit base (verificado via worktree descartável de `e3f6d3f5`) — ambientais, não desta entrega; em load ~30 a suíte agenda passou 3/3.
 
 ## Aceite de engenharia
 

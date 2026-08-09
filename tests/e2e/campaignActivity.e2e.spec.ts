@@ -119,19 +119,19 @@ test.describe('Agenda — calendário operacional', () => {
 
     const omniboxInput = page.getByRole('combobox', { name: 'Filtrar agenda' })
 
-    await omniboxInput.click()
     await omniboxInput.fill(municipality.name!)
     await page.getByRole('option', { name: municipality.name, exact: true }).click()
 
-    await omniboxInput.click()
     await omniboxInput.fill('Comício')
     await page.getByRole('option', { name: 'Comício', exact: true }).click()
 
-    await omniboxInput.click()
+    await omniboxInput.fill('Deputado')
     await page.getByRole('option', { name: 'Deputado presente', exact: true }).click()
+    await expect(page.locator('button[aria-label="Remover Deputado presente"]')).toBeVisible()
 
     await expect(page).toHaveURL(
       `${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}&deputyPresent=1&tag=Com%C3%ADcio`,
+      { timeout: 20_000 },
     )
     await expect(page.getByText(title, { exact: true })).toBeVisible()
 
