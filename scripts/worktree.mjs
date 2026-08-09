@@ -239,6 +239,9 @@ const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpo
   const testDatabase = env.testDatabase
   await ensureDatabases([devDatabase, testDatabase])
 
+  const devUrl = `postgresql://teqo:teqo@localhost:5432/${devDatabase}`
+  const testUrl = `postgresql://teqo:teqo@localhost:5432/${testDatabase}`
+
   const mainEnv = readMainEnv(mainRoot)
   const payloadSecret = mainEnv.PAYLOAD_SECRET ?? randomBytes(24).toString('hex')
   const copy = (key) => (mainEnv[key] ? [`${key}=${mainEnv[key]}`] : [])
