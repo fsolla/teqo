@@ -11,6 +11,7 @@ import { buildCampaignLinks } from '@/utilities/ai/tools/buildCampaignLinks'
 import { calculate } from '@/utilities/ai/tools/calculate'
 import { getDobradinhas } from '@/utilities/ai/tools/getDobradinhas'
 import { getLeaderships } from '@/utilities/ai/tools/getLeaderships'
+import { getLeadingMunicipalities } from '@/utilities/ai/tools/getLeadingMunicipalities'
 import { getMunicipalityOverview } from '@/utilities/ai/tools/getMunicipalityOverview'
 import { getMunicipalityVotes } from '@/utilities/ai/tools/getMunicipalityVotes'
 import { getOrganizations } from '@/utilities/ai/tools/getOrganizations'
@@ -22,6 +23,7 @@ export const buildAITools = (ctx: AIToolContext) => ({
   buildCampaignLinks: buildCampaignLinks(ctx),
   getMunicipalityVotes: getMunicipalityVotes(ctx),
   getTopDeputies: getTopDeputies(ctx),
+  getLeadingMunicipalities: getLeadingMunicipalities(ctx),
   getDobradinhas: getDobradinhas(ctx),
   getMunicipalityOverview: getMunicipalityOverview(ctx),
   getLeaderships: getLeaderships(ctx),

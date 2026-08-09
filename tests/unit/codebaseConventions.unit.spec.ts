@@ -49,9 +49,12 @@ describe('server-only boundary in src/utilities', () => {
       // P3-K widened the module set: value-imports of next/cache, next/server
       // and next/headers are equally server-bound (municipalityRevalidation and
       // campaignJsonMutationRoute were invisible to the Payload-only sweep).
+      // B177 widened it again: @payloadcms/db-postgres is the raw-SQL adapter
+      // used by request-path aggregates (getLeadingMunicipalities) and must be
+      // server-bound too.
       const importsServerValues = [
         ...source.matchAll(
-          /^import\s+([^'"]+?)\s+from\s+['"](payload|@payload-config|next\/cache|next\/server|next\/headers)['"]/gm,
+          /^import\s+([^'"]+?)\s+from\s+['"](payload|@payload-config|next\/cache|next\/server|next\/headers|@payloadcms\/db-postgres(?:\/drizzle)?)['"]/gm,
         ),
       ].some(([, clause]) => !isTypeOnlyClause(clause!))
 
