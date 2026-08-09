@@ -205,6 +205,10 @@ describe('campaign JSON mutation route convention', () => {
       'src/app/(campaign)/campanha/api/ai-chat/route.ts',
       'streaming AI endpoint (ReadableStream, not JSON) — cookie-authenticated via campaign-token, origin-checked by cookie path',
     ],
+    [
+      'src/app/(campaign)/campanha/api/ai-transcribe/route.ts',
+      'multipart STT endpoint (audio FormData, not JSON) — sibling of ai-chat, cookie-authenticated via campaign-token + explicit same-origin check',
+    ],
   ])
 
   it('builds every POST route under src/app with campaignJsonMutationRoute', () => {
