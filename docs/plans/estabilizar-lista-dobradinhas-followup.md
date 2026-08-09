@@ -1,7 +1,7 @@
 # B170 — Follow-up B169: contrato do colapso de chips + shift único no load SSR
 
-Status: rascunho
-Atualizado em: 2026-08-08
+Status: aprovado
+Atualizado em: 2026-08-09
 Issue: #441
 Priority: P2
 Model: composer-2.5
@@ -40,4 +40,4 @@ Follow-up do B169 (#425, entregue). Duas lacunas registradas na triage de débit
 
 ## Questões em aberto
 
-- O shift único do load (0,13–0,26) é aceitável em produção? Se sim, F2 vira só o teste de contrato e o shift documentado no CHANGELOG (com medição). Validar com medição no browser; sem evidência de impacto, F2 é defer.
+- ~~O shift único do load (0,13–0,26) é aceitável em produção? Se sim, F2 vira só o teste de contrato e o shift documentado no CHANGELOG (com medição). Validar com medição no browser; sem evidência de impacto, F2 é defer.~~ **RESOLVIDO (2026-08-09):** medido no worktree (`[0.139, 0.043, 0.257]`, únicos, pré-hidratação, fontes do shell — nenhuma célula de chips; ordenação client-side = zero shifts). Sem evidência de regressão material → **F2 deferido e documentado** no CHANGELOG. Eliminar exigiria estimativa de largura (rejeitada) ou mudança de layout (anti-goal).
