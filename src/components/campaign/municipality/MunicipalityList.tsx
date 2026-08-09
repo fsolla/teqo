@@ -169,10 +169,14 @@ type MunicipalityColumn = CampaignTableColumn<MunicipalityListViewModel> & {
 
 const responsiveColumnClassName = {
   advisors: 'hidden @min-[54rem]/municipality-list:table-cell',
+  trend: 'hidden @min-[60rem]/municipality-list:table-cell',
   leaderships: 'hidden @min-[66rem]/municipality-list:table-cell',
   stateDeputies: 'hidden @min-[72rem]/municipality-list:table-cell',
   goalCoverage: 'hidden @min-[78rem]/municipality-list:table-cell',
 } as const satisfies Partial<Record<MunicipalityTableColumnId, string>>
+
+/** B172 — `actions` only exists below 60rem, while trend's own column is gone. */
+const actionsWidthGateClass = '@min-[60rem]/municipality-list:hidden'
 
 const MunicipalityListSignalTrigger = ({
   lastSignalAt,
@@ -225,6 +229,10 @@ const municipalityListColumns = ({
   const manuallyHidden = isStaffView ? new Set(columnVisibility.hiddenColumnIds) : new Set<string>()
   const trendIsHidden = manuallyHidden.has('trend')
   const signalIsHidden = manuallyHidden.has('lastSignal')
+  // B172 — while the picker still shows trend, the `actions` column is gated
+  // closed by the same 60rem breakpoint that hides trend's own column (one
+  // visible editor per row per width); a manual hide pins the column open.
+  const actionsAlwaysVisible = trendIsHidden || signalIsHidden
 
   const renderTrendControl = (
     municipality: MunicipalityListViewModel,
@@ -499,8 +507,10 @@ const municipalityListColumns = ({
                 sortKey="trend"
                 filterParam="trend"
                 description={municipalityColumnDescriptions.trend}
+                className={responsiveColumnClassName.trend}
               />
             ),
+            cellClassName: responsiveColumnClassName.trend,
             cell: (municipality) => renderTrendCell(municipality, 'adaptive'),
           },
           {
@@ -595,27 +605,42 @@ const municipalityListColumns = ({
             ),
             cell: (municipality) => renderSignalCell(municipality, 'adaptive'),
           },
-          ...(trendIsHidden || signalIsHidden
-            ? ([
-                {
-                  id: 'actions',
-                  label: 'Ações',
-                  mandatory: true,
-                  head: (
-                    <CampaignTableHead align="right">
-                      <span className="sr-only">Ações</span>
-                    </CampaignTableHead>
-                  ),
-                  cellClassName: 'text-right',
-                  cell: (municipality) => (
-                    <div className="flex items-center justify-end gap-1">
-                      {trendIsHidden ? renderTrendCell(municipality, 'compact') : null}
-                      {signalIsHidden ? renderSignalCell(municipality, 'compact') : null}
-                    </div>
-                  ),
-                },
-              ] satisfies Array<MunicipalityColumn>)
-            : []),
+          {
+            // B172 — below 60rem the trend column disappears
+            // (`responsiveColumnClassName.trend`) and the same editor is mounted
+            // here as a compact trigger. The column is always mounted so the
+            // width fallback has a home when the picker shows trend; it is gated
+            // closed above 60rem unless a manual hide pins it open.
+            id: 'actions',
+            label: 'Ações',
+            mandatory: true,
+            head: (
+              <CampaignTableHead
+                align="right"
+                className={actionsAlwaysVisible ? undefined : actionsWidthGateClass}
+              >
+                <span className="sr-only">Ações</span>
+              </CampaignTableHead>
+            ),
+            cellClassName: cn(
+              'text-right',
+              actionsAlwaysVisible ? undefined : actionsWidthGateClass,
+            ),
+            cell: (municipality) => (
+              <div className="flex items-center justify-end gap-1">
+                {/* The compact trend trigger replaces its own column on a manual
+                    hide or only backs it up below 60rem — never both at once. */}
+                {trendIsHidden ? (
+                  renderTrendCell(municipality, 'compact')
+                ) : (
+                  <span className={actionsWidthGateClass}>
+                    {renderTrendCell(municipality, 'compact')}
+                  </span>
+                )}
+                {signalIsHidden ? renderSignalCell(municipality, 'compact') : null}
+              </div>
+            ),
+          },
         ] satisfies Array<MunicipalityColumn>)
       : ([
           {

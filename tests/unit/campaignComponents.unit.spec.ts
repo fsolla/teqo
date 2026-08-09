@@ -768,6 +768,7 @@ describe('campaign visual foundation', () => {
 
       for (const className of [
         'hidden @min-[54rem]/municipality-list:table-cell',
+        'hidden @min-[60rem]/municipality-list:table-cell',
         'hidden @min-[66rem]/municipality-list:table-cell',
         'hidden @min-[72rem]/municipality-list:table-cell',
         'hidden @min-[78rem]/municipality-list:table-cell',
@@ -785,19 +786,36 @@ describe('campaign visual foundation', () => {
     })
 
     it.each([
-      { hidden: [], hasActions: false },
-      { hidden: ['trend'], hasActions: true },
-      { hidden: ['lastSignal'], hasActions: true },
-      { hidden: ['trend', 'lastSignal'], hasActions: true },
-    ])('mounts one trend and signal editor in the table for $hidden', ({ hidden, hasActions }) => {
-      const html = renderResponsiveList(hidden)
-      const tableHtml = html.slice(html.indexOf('<table'), html.indexOf('</table>'))
-      const theadHtml = tableHtml.slice(tableHtml.indexOf('<thead'), tableHtml.indexOf('</thead>'))
+      { hidden: [], trendEditors: 2, actionsGated: true },
+      { hidden: ['trend'], trendEditors: 1, actionsGated: false },
+      { hidden: ['lastSignal'], trendEditors: 2, actionsGated: false },
+      { hidden: ['trend', 'lastSignal'], trendEditors: 1, actionsGated: false },
+    ])(
+      // B172 — the trend editor is mounted once per placement (its own column
+      // above 60rem, the compact backup in Ações below). The backup only
+      // exists while the picker still shows the column, so the total is 2 for
+      // the visible case and 1 for the manual-hide case; the signal editor
+      // never gains a second placement (option A). `actions` is always mounted
+      // for staff and CSS-gated by container width when nothing is hidden.
+      'keeps one signal editor and $trendEditors trend placements for $hidden',
+      ({ hidden, trendEditors, actionsGated }) => {
+        const html = renderResponsiveList(hidden)
+        const tableHtml = html.slice(html.indexOf('<table'), html.indexOf('</table>'))
+        const theadHtml = tableHtml.slice(
+          tableHtml.indexOf('<thead'),
+          tableHtml.indexOf('</thead>'),
+        )
 
-      expect(tableHtml.match(/aria-label="Editar tendência política/g)).toHaveLength(1)
-      expect(tableHtml.match(/aria-label="Registrar atualização em/g)).toHaveLength(1)
-      expect(theadHtml.includes('Ações')).toBe(hasActions)
-    })
+        expect(tableHtml.match(/aria-label="Editar tendência política/g)).toHaveLength(trendEditors)
+        expect(tableHtml.match(/aria-label="Registrar atualização em/g)).toHaveLength(1)
+        expect(theadHtml.includes('Ações')).toBe(true)
+        if (actionsGated) {
+          expect(theadHtml).toContain('@min-[60rem]/municipality-list:hidden')
+        } else {
+          expect(theadHtml).not.toContain('@min-[60rem]/municipality-list:hidden')
+        }
+      },
+    )
 
     it('keeps removed and internal columns out of the municipality picker', () => {
       const columns = municipalityListPickerColumns({
