@@ -269,6 +269,18 @@ body,
   border-radius: var(--radius-md);
 }
 
+/* B183 — Safari iOS auto-zooms any form control whose computed font-size is
+   below 16px when focused, and a standalone PWA does not always restore the
+   scale when the keyboard closes. One unlayered rule for touch phones (coarse
+   pointer, no hover) keeps every campaign input — omnibox, Command search,
+   native selects, textareas — at the 16px threshold in any orientation, while
+   desktop keeps its own size utilities (unlayered beats the utilities layer). */
+@media (pointer: coarse) and (hover: none) {
+  [data-theme='campaign'] :is(input, select, textarea, [contenteditable='true']) {
+    font-size: 1rem;
+  }
+}
+
 /* The public-site base `h1` is centered + display-sized for article heroes.
    Campaign dashboard headings are left-aligned section titles, so undo the
    base centering and text balancing here; each heading keeps its own
