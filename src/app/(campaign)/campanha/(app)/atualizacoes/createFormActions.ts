@@ -9,16 +9,22 @@ import {
 } from '@/utilities/campaignFormActionError'
 import { parseMunicipalityUpdateFormData } from '@/utilities/municipality/municipalityUpdateFormData'
 
-export const createMunicipalityUpdateFormAction = async (
+/**
+ * C89 feed-page create action: the same unified MunicipalityUpdate writer as
+ * the municipality detail form, revalidating only this feed route so the new
+ * card surfaces at the top (no full page reload). The actor's access is the
+ * same `createMunicipalityUpdate` transaction, which enforces `municipality`
+ * scope and strips `adversarySignal` for non-staff.
+ */
+export const createCampaignUpdatesFormAction = async (
   _state: CampaignFormActionState,
   formData: FormData,
 ): Promise<CampaignFormActionState> =>
   runCampaignFormAction({
     execute: async () => {
       await createMunicipalityUpdate(parseMunicipalityUpdateFormData(formData))
-      revalidatePath('/campanha/municipios/[slug]', 'page')
+      revalidatePath('/campanha/atualizacoes')
       return { message: 'Atualização registrada com sucesso.' }
     },
-    genericMessage:
-      'Não foi possível registrar a atualização. Verifique seu acesso e tente novamente.',
+    genericMessage: 'Não foi possível registrar a atualização. Verifique o município e seu acesso.',
   })

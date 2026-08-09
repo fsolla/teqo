@@ -1,5 +1,8 @@
 import { Badge } from '@/components/ui/Badge'
-import { municipalityUpdatePolarityLabels } from '@/lib/schemas/municipalityUpdate'
+import {
+  municipalityUpdatePolarityBadgeVariant,
+  municipalityUpdatePolarityLabels,
+} from '@/lib/schemas/municipalityUpdate'
 import type { MunicipalityUpdateViewModel } from '@/utilities/municipality/municipalityUpdatePageData'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
@@ -8,12 +11,6 @@ const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
 })
 
 const numberFormatter = new Intl.NumberFormat('pt-BR')
-
-const polarityVariant = {
-  boa: 'default',
-  neutra: 'secondary',
-  ruim: 'destructive',
-} as const
 
 export const MunicipalityUpdateFeed = ({ updates }: { updates: MunicipalityUpdateViewModel[] }) => {
   if (!updates.length) {
@@ -29,7 +26,7 @@ export const MunicipalityUpdateFeed = ({ updates }: { updates: MunicipalityUpdat
       {updates.map((update) => (
         <li key={update.id} className="flex flex-col gap-3 rounded-xl border p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={polarityVariant[update.polarity]}>
+            <Badge variant={municipalityUpdatePolarityBadgeVariant[update.polarity]}>
               {municipalityUpdatePolarityLabels[update.polarity]}
             </Badge>
             {update.urgent ? <Badge variant="destructive">Urgente</Badge> : null}

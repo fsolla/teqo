@@ -14,7 +14,6 @@ import {
 import {
   nullableFormText,
   optionalFormText,
-  optionalIntegerFormValue,
   optionalMunicipalitySlugFromForm,
   repeatedRelationshipFormValues,
   requiredFormBoolean,
@@ -29,10 +28,6 @@ import {
   parsePoliticalTrendStatusFormValue,
 } from '@/lib/schemas/municipality'
 import {
-  MUNICIPALITY_UPDATE_POLARITY_REQUIRED_MESSAGE,
-  parseMunicipalityUpdatePolarity,
-} from '@/lib/schemas/municipalityUpdate'
-import {
   STATE_DEPUTY_CONFLICT_MESSAGE,
   STATE_DEPUTY_MUNICIPALITIES_SAFE_MESSAGES,
   STATE_DEPUTY_NAME_REQUIRED_MESSAGE,
@@ -43,6 +38,7 @@ import {
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
 import { revalidateMunicipalityListPaths } from '@/utilities/municipality/municipalityRevalidation'
+import { parseMunicipalityUpdateFormData } from '@/utilities/municipality/municipalityUpdateFormData'
 
 import { municipalityStaffEditSafeMessages } from './municipalityStaffEditMessages'
 
@@ -104,34 +100,13 @@ export const assignMunicipalityAdvisorsFormAction = async (
       'Não foi possível atualizar os assessores. Verifique seu acesso e tente novamente.',
   })
 
-/** Checkbox pairs with hidden "false"; last value wins (same as leadership exclusive). */
-const formBoolean = (formData: FormData, field: string): boolean => {
-  const values = formData.getAll(field)
-  if (values.length === 0) return false
-  return values.at(-1) === 'true'
-}
-
 export const createMunicipalityListUpdateFormAction = async (
   _state: CampaignFormActionState,
   formData: FormData,
 ): Promise<CampaignFormActionState> =>
   runCampaignFormAction({
     execute: async () => {
-      const municipality = requiredRelationshipFormValue(formData, 'municipalityId')
-      const polarity = parseMunicipalityUpdatePolarity(requiredFormText(formData, 'polarity'))
-      if (!polarity) {
-        throw new Error(MUNICIPALITY_UPDATE_POLARITY_REQUIRED_MESSAGE)
-      }
-
-      await createMunicipalityUpdate({
-        municipality,
-        body: requiredFormText(formData, 'body'),
-        polarity,
-        urgent: formBoolean(formData, 'urgent'),
-        activeVolunteers: optionalIntegerFormValue(formData, 'activeVolunteers'),
-        newSupports: optionalIntegerFormValue(formData, 'newSupports'),
-        adversarySignal: formBoolean(formData, 'adversarySignal'),
-      })
+      await createMunicipalityUpdate(parseMunicipalityUpdateFormData(formData))
       revalidateMunicipalityListPaths({ slug: optionalMunicipalitySlugFromForm(formData) })
       return { message: 'Atualização registrada.' }
     },

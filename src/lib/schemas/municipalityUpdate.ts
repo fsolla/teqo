@@ -11,6 +11,16 @@ export const municipalityUpdatePolarityLabels: Record<MunicipalityUpdatePolarity
   ruim: 'Ruim',
 }
 
+/** Polarity → Badge variant, single-sourced for every feed that renders it. */
+export const municipalityUpdatePolarityBadgeVariant: Record<
+  MunicipalityUpdatePolarity,
+  'default' | 'secondary' | 'destructive'
+> = {
+  boa: 'default',
+  neutra: 'secondary',
+  ruim: 'destructive',
+}
+
 export const MUNICIPALITY_UPDATE_POLARITY_REQUIRED_MESSAGE = 'Informe a polaridade da atualização.'
 
 export const MUNICIPALITY_UPDATE_BODY_REQUIRED_MESSAGE = 'Informe o texto da atualização.'

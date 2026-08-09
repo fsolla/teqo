@@ -2,6 +2,8 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { mediaDocumentUrl } from '@/utilities/campaignUserProfile'
+
 /**
  * Display-name resolution by id set (Pass 3 P3-E). The "resolve names for rows
  * the actor already passed row-level access on" pattern used to be re-spelled
@@ -30,6 +32,31 @@ export const loadCampaignUserNamesByIds = async (
     overrideAccess: true,
   })
   return new Map(result.docs.map((doc) => [doc.id, doc.name]))
+}
+
+/**
+ * Campaign user id → `{ name, avatarUrl }` for surfaces that render an author
+ * avatar (C89 updates feed). Same justified admin bypass as
+ * `loadCampaignUserNamesByIds`; the avatar relationship is populated at depth 1
+ * so `mediaDocumentUrl` can resolve the media url.
+ */
+export const loadCampaignUserDisplayByIds = async (
+  payload: Pick<Payload, 'find'>,
+  ids: readonly number[],
+): Promise<Map<number, { name: string; avatarUrl: string | null }>> => {
+  if (ids.length === 0) return new Map()
+  const result = await payload.find({
+    collection: 'campaignUser',
+    where: { id: { in: [...ids] } },
+    depth: 1,
+    limit: 0,
+    pagination: false,
+    select: { name: true, avatar: true },
+    overrideAccess: true,
+  })
+  return new Map(
+    result.docs.map((doc) => [doc.id, { name: doc.name, avatarUrl: mediaDocumentUrl(doc.avatar) }]),
+  )
 }
 
 /** Municipality id → `{ name, slug }` — both travel together on every list/detail label. */
