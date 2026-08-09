@@ -357,4 +357,135 @@ describe('campaign calendar feed domain', () => {
     const activities = await loadFeedActivities(payload, feed, access.municipalityIds)
     expect(activities.map((doc) => doc.id)).toContain(activity.id)
   })
+
+  it('covers every municipality of the coordinator scope in a filterless feed (C93)', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipalityA = await fixtures.getMunicipality()
+    const municipalityB = await fixtures.getMunicipality()
+
+    const activityInA = await createActivityRecord(
+      payload,
+      coordinator,
+      validActivityInput(municipalityA.id, fixtures.value('Atividade A')),
+    )
+    fixtures.own('activity', activityInA.id)
+    const activityInB = await createActivityRecord(
+      payload,
+      coordinator,
+      validActivityInput(municipalityB.id, fixtures.value('Atividade B')),
+    )
+    fixtures.own('activity', activityInB.id)
+
+    const ok = requireOk(
+      await createCalendarFeedLinkRecord(payload, coordinator, { label: 'Agenda completa' }),
+    )
+    fixtures.own('calendarFeed', ok.feedId)
+
+    const feed = await payload.findByID({
+      collection: 'calendarFeed',
+      id: ok.feedId,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(feed.filterMunicipality).toBeFalsy()
+
+    const access = await resolveFeedCreatorAccess(payload, feed)
+    expect(access.accessible).toBe(true)
+    expect(access.municipalityIds).toBeNull()
+
+    const activities = await loadFeedActivities(payload, feed, access.municipalityIds)
+    const ids = activities.map((activity) => activity.id)
+    expect(ids).toContain(activityInA.id)
+    expect(ids).toContain(activityInB.id)
+  })
+
+  it('scopes a filterless feed to every municipality the advisor administers (C93)', async () => {
+    const fixtures = campaignFixtures()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipalityA = await fixtures.getMunicipality()
+    const municipalityB = await fixtures.getMunicipality()
+    const municipalityC = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(municipalityA, [advisor.id])
+    await fixtures.assignMunicipalityAdvisors(municipalityB, [advisor.id])
+
+    const activityInScopeA = await createActivityRecord(
+      payload,
+      coordinator,
+      validActivityInput(municipalityA.id, fixtures.value('Atividade administrada A')),
+    )
+    fixtures.own('activity', activityInScopeA.id)
+    const activityInScopeB = await createActivityRecord(
+      payload,
+      coordinator,
+      validActivityInput(municipalityB.id, fixtures.value('Atividade administrada B')),
+    )
+    fixtures.own('activity', activityInScopeB.id)
+    const activityOutOfScope = await createActivityRecord(
+      payload,
+      coordinator,
+      validActivityInput(municipalityC.id, fixtures.value('Atividade fora do escopo')),
+    )
+    fixtures.own('activity', activityOutOfScope.id)
+
+    const ok = requireOk(
+      await createCalendarFeedLinkRecord(payload, advisor, { label: 'Meu portfólio' }),
+    )
+    fixtures.own('calendarFeed', ok.feedId)
+
+    const feed = await payload.findByID({
+      collection: 'calendarFeed',
+      id: ok.feedId,
+      depth: 0,
+      overrideAccess: true,
+    })
+
+    const access = await resolveFeedCreatorAccess(payload, feed)
+    expect(access.accessible).toBe(true)
+    const advisorMunicipalities = access.municipalityIds as number[]
+    expect(advisorMunicipalities).toHaveLength(2)
+    expect(advisorMunicipalities).toEqual(
+      expect.arrayContaining([municipalityA.id, municipalityB.id]),
+    )
+
+    const activities = await loadFeedActivities(payload, feed, advisorMunicipalities)
+    const ids = activities.map((activity) => activity.id)
+    expect(ids).toContain(activityInScopeA.id)
+    expect(ids).toContain(activityInScopeB.id)
+    expect(ids).not.toContain(activityOutOfScope.id)
+  })
+
+  it('serves an empty filterless feed when the advisor administers no municipality (C93)', async () => {
+    const fixtures = campaignFixtures()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const unadministered = await fixtures.getMunicipality()
+
+    const activity = await createActivityRecord(
+      payload,
+      coordinator,
+      validActivityInput(unadministered.id, fixtures.value('Nunca servida')),
+    )
+    fixtures.own('activity', activity.id)
+
+    const ok = requireOk(
+      await createCalendarFeedLinkRecord(payload, advisor, { label: 'Sem municípios' }),
+    )
+    fixtures.own('calendarFeed', ok.feedId)
+
+    const feed = await payload.findByID({
+      collection: 'calendarFeed',
+      id: ok.feedId,
+      depth: 0,
+      overrideAccess: true,
+    })
+
+    const access = await resolveFeedCreatorAccess(payload, feed)
+    expect(access.accessible).toBe(true)
+    expect(access.municipalityIds).toEqual([])
+
+    const activities = await loadFeedActivities(payload, feed, access.municipalityIds)
+    expect(activities).toHaveLength(0)
+  })
 })
