@@ -81,6 +81,46 @@ test.describe('Mobile bottom nav (B164)', () => {
     await expect(page.locator('[aria-label="Navegação principal"]')).toHaveCount(0)
   })
 
+  test('staff mobile has no sidebar trigger and no nav sheet (C102)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Sem Sheet'),
+    })
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha')
+
+    const topBar = page.locator('[data-slot="campaign-mobile-top-bar"]')
+    await expect(topBar).toBeVisible()
+    await expect(topBar.locator('[data-slot="sidebar-trigger"]')).toHaveCount(0)
+    // The sheet itself is unmounted for staff — no "Sidebar" dialog exists.
+    await expect(page.getByRole('dialog', { name: 'Sidebar' })).toHaveCount(0)
+    // Every destination still arrives from below.
+    await expect(page.locator('[aria-label="Navegação principal"]')).toBeVisible()
+  })
+
+  test('leader keeps the sidebar sheet on mobile (C102)', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const phone = fixtures.phone()
+    const leader = await fixtures.createCampaignUser('leader', {
+      name: fixtures.value('Líder Sheet'),
+      username: phone,
+    })
+    await campaign.login(page, phone, leader.password)
+    await page.goto('/campanha/contatos')
+
+    const topBar = page.locator('[data-slot="campaign-mobile-top-bar"]')
+    const trigger = topBar.locator('[data-slot="sidebar-trigger"]')
+    await expect(trigger).toBeVisible()
+
+    await trigger.click()
+    const sheet = page.getByRole('dialog', { name: 'Sidebar' })
+    await expect(sheet).toBeVisible()
+    await expect(sheet.getByRole('link', { name: 'Meus contatos' })).toBeVisible()
+  })
+
   test('hidden on desktop viewport', async ({ campaign, page }) => {
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator', {

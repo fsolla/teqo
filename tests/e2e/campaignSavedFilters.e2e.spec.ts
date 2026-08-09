@@ -114,4 +114,51 @@ test.describe('Filtros salvos de Municípios', () => {
     await expect(page.getByRole('list', { name: 'Filtros salvos de Municípios' })).toBeVisible()
     await expect(page.getByRole('button', { name: /filtros salvos de Municípios/i })).toHaveCount(0)
   })
+
+  test.describe('C102 — saved filters live in the "Mais" drawer on mobile', () => {
+    test.use({ viewport: { width: 390, height: 844 } })
+
+    test('saves, navigates from and deletes inside the drawer', async ({ campaign, page }) => {
+      test.slow()
+
+      const { fixtures } = campaign
+      const coordinator = await fixtures.createCampaignUser('coordinator', {
+        name: fixtures.value('Coordenadora Drawer Mobile'),
+      })
+      const password = coordinator.password
+      const email = coordinator.email!
+
+      await campaign.login(page, email, password)
+      await page.goto(SAVED_RECORTE)
+      await page.getByRole('button', { name: 'Salvar filtro', exact: true }).click()
+      await page.getByLabel('Nome do filtro').fill(SAVED_NAME)
+      await page.getByRole('button', { name: 'Salvar', exact: true }).click()
+
+      // The mobile staff top bar has no hamburger (C102) — the drawer is the home.
+      const topBar = page.locator('[data-slot="campaign-mobile-top-bar"]')
+      await expect(topBar.locator('[data-slot="sidebar-trigger"]')).toHaveCount(0)
+
+      const bottomNav = page.locator('[aria-label="Navegação principal"]')
+      await bottomNav.getByRole('button', { name: 'Mais' }).click()
+      const drawer = page.locator('[data-slot="drawer-content"]')
+      await expect(drawer).toBeVisible()
+      await expect(drawer.getByText('Filtros salvos de Municípios')).toBeVisible()
+
+      const shortcut = drawer.getByRole('link', { name: SAVED_NAME })
+      await expect(shortcut).toBeVisible()
+      await expect(shortcut).toHaveAttribute('aria-current', 'page')
+
+      // Tapping the row restores the recorte and closes the drawer.
+      await shortcut.click()
+      await expect(page).toHaveURL(SAVED_RECORTE, NAVIGATION)
+      await expect(drawer).toBeHidden()
+
+      // Delete and undo keep working in the drawer.
+      await bottomNav.getByRole('button', { name: 'Mais' }).click()
+      await drawer.getByRole('button', { name: `Apagar o filtro salvo ${SAVED_NAME}` }).click()
+      await expect(drawer.getByRole('link', { name: SAVED_NAME })).toHaveCount(0)
+      await page.getByRole('button', { name: 'Desfazer' }).click()
+      await expect(drawer.getByRole('link', { name: SAVED_NAME })).toBeVisible()
+    })
+  })
 })

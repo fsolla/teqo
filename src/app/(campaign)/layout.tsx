@@ -4,6 +4,7 @@ import React from 'react'
 
 import { CampaignIosViewportHeal } from '@/components/campaign/shell/CampaignIosViewportHeal'
 import { RegisterServiceWorker } from '@/components/campaign/shell/RegisterServiceWorker'
+import { Toaster } from '@/components/ui/Toaster'
 import { CAMPAIGN_PWA_MANIFEST_PATH, CAMPAIGN_PWA_THEME_COLOR } from '@/utilities/campaignPwa'
 
 import '../(frontend)/styles.css'
@@ -44,6 +45,11 @@ export default function CampanhaRootLayout({ children }: { children: React.React
     >
       <body className="bg-background bg-none text-foreground antialiased">
         {children}
+        {/* Outside the (app) shells on purpose: the AI panel's `contain:layout
+            paint` wrapper would trap the toaster's `position: fixed` under the
+            portal z-50 of sheets/drawers, making action toasts (e.g. undo)
+            unclickable while a modal is open (C102). */}
+        <Toaster position="top-center" />
         <RegisterServiceWorker />
         <CampaignIosViewportHeal />
       </body>

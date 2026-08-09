@@ -23,7 +23,6 @@ import { CampaignSidebarViewportDefault } from '@/components/campaign/shell/Camp
 import { CampaignWizardChromeProvider } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { InstallPwaToast } from '@/components/campaign/shell/InstallPwaToast'
 import { SIDEBAR_COOKIE_NAME, SidebarInset, SidebarProvider } from '@/components/ui/Sidebar'
-import { Toaster } from '@/components/ui/Toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { deviceLabelFromUserAgent } from '@/lib/deviceLabel'
@@ -104,7 +103,6 @@ export default async function CampaignAppLayout({ children }: { children: React.
                         <CampaignBottomNav user={campaignUserShellView(user)} />
                       ) : null}
                     </TooltipProvider>
-                    <Toaster position="top-center" />
                     <InstallPwaToast />
                     {biometricEnrollment ? (
                       <BiometricEnrollmentToast {...biometricEnrollment} />
