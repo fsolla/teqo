@@ -204,7 +204,7 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
     await expectNoHorizontalOverflow(container)
   })
 
-  test('keeps Dobradinha restricted even when an advisor has enough room', async ({
+  test('releases the Dobradinhas column to the advisor at full width (B176)', async ({
     campaign,
     page,
   }) => {
@@ -213,7 +213,9 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
     await setContainerWidth(container, 84 * REM_IN_PIXELS + 1)
 
     await expect(container.getByRole('columnheader', { name: /Assessores/ })).toBeVisible()
-    await expect(container.getByRole('columnheader', { name: 'Dobradinha' })).toHaveCount(0)
+    // B176 (2026-08-09): the Dobradinhas column is staff-wide — the advisor
+    // sees it once the container has room, same as the coordinator/candidate.
+    await expect(container.getByRole('columnheader', { name: 'Dobradinha' })).toBeVisible()
     await expectNoHorizontalOverflow(container)
   })
 

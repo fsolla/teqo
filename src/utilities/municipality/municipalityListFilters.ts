@@ -6,7 +6,7 @@
 import { isBahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import { EMPTY_ENGAGEMENT_LEVEL_LABEL, formatEngagementLevelLabel } from '@/lib/engagementLevel'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
-import { truncatedNamesLabel } from '@/utilities/campaignListUrl'
+import { NO_PARTY_FILTER_VALUE, truncatedNamesLabel } from '@/utilities/campaignListUrl'
 import {
   municipalityListCoverageLabels,
   municipalityPriorityLabels,
@@ -16,9 +16,13 @@ import {
 } from '@/utilities/municipality/municipalityLabels'
 import {
   buildMunicipalityListHref,
+  canonicalPartyValues,
+  canonicalRelationshipWithAbsenceValues,
   municipalityListLevelFilterValues,
   municipalityListStateToRawParams,
+  NO_LEADERSHIP_FILTER_VALUE,
   NO_LEVEL_FILTER_VALUE,
+  NO_STATE_DEPUTY_FILTER_VALUE,
   parseMunicipalityListParams,
   serializeCanonicalMunicipalityListSearchParams,
   type MunicipalityListLevelFilterValue,
@@ -151,6 +155,9 @@ export type MunicipalityMultiFilterParam =
   | 'trend'
   | 'class'
   | 'level'
+  | 'stateDeputy'
+  | 'leadership'
+  | 'party'
 
 export const getMunicipalityMultiFilterValues = (
   state: MunicipalityListState,
@@ -161,6 +168,9 @@ export const getMunicipalityMultiFilterValues = (
   if (param === 'trend') return state.trends ?? []
   if (param === 'class') return state.classes ?? []
   if (param === 'level') return state.levels ?? []
+  if (param === 'stateDeputy') return (state.stateDeputies ?? []).map(String)
+  if (param === 'leadership') return (state.leaderships ?? []).map(String)
+  if (param === 'party') return state.parties ?? []
   return (state.advisors ?? []).map(String)
 }
 
@@ -299,6 +309,21 @@ export const buildMunicipalityFilterOptionHref = (
     const levels = toggled.filter(isEngagementLevelFilterValue)
     if (levels.length && levels.length < engagementLevelFilterCount) next.levels = levels
     else delete next.levels
+  } else if (param === 'stateDeputy') {
+    const stateDeputies = canonicalRelationshipWithAbsenceValues(
+      toggled,
+      NO_STATE_DEPUTY_FILTER_VALUE,
+    )
+    if (stateDeputies.length) next.stateDeputies = stateDeputies
+    else delete next.stateDeputies
+  } else if (param === 'leadership') {
+    const leaderships = canonicalRelationshipWithAbsenceValues(toggled, NO_LEADERSHIP_FILTER_VALUE)
+    if (leaderships.length) next.leaderships = leaderships
+    else delete next.leaderships
+  } else if (param === 'party') {
+    const parties = canonicalPartyValues(toggled)
+    if (parties.length) next.parties = parties
+    else delete next.parties
   }
 
   const query = serializeCanonicalMunicipalityListSearchParams(next).toString()
@@ -366,9 +391,55 @@ export const formatMunicipalityActiveFiltersSummary = (
         .join(', ')}`,
     )
   }
+  if (state.stateDeputies?.length) {
+    const count = state.stateDeputies.filter((value) => typeof value === 'number').length
+    const phrase = count === 1 ? '1 dobradinha' : `${count} dobradinhas`
+    parts.push(
+      formatAbsenceAwareSummary(
+        count ? phrase : 'Sem dobradinha',
+        state.stateDeputies.includes(NO_STATE_DEPUTY_FILTER_VALUE),
+        'Sem dobradinha',
+      ),
+    )
+  }
+  if (state.leaderships?.length) {
+    const count = state.leaderships.filter((value) => typeof value === 'number').length
+    const phrase = count === 1 ? '1 liderança' : `${count} lideranças`
+    parts.push(
+      formatAbsenceAwareSummary(
+        count ? phrase : 'Sem liderança',
+        state.leaderships.includes(NO_LEADERSHIP_FILTER_VALUE),
+        'Sem liderança',
+      ),
+    )
+  }
+  if (state.parties?.length) {
+    const named = state.parties.filter((party) => party !== NO_PARTY_FILTER_VALUE)
+    parts.push(
+      formatAbsenceAwareSummary(
+        named.length ? `Partido ${named.join(', ')}` : 'Sem partido',
+        state.parties.includes(NO_PARTY_FILTER_VALUE),
+        'Sem partido',
+      ),
+    )
+  }
   if (state.q) parts.push(`Busca "${state.q}"`)
 
   return parts.length ? parts.join(' · ') : null
+}
+
+/**
+ * B176 — "N dobradinhas" / "Partido PT, PSD" with the selectable absence: when
+ * the sentinel is ALSO selected it rides along as "… + sem X"; an absence-only
+ * selection reads as the bare absence label.
+ */
+const formatAbsenceAwareSummary = (
+  basePhrase: string,
+  hasAbsence: boolean,
+  absenceLabel: string,
+): string => {
+  if (!hasAbsence) return basePhrase
+  return basePhrase === absenceLabel ? basePhrase : `${basePhrase} + ${absenceLabel.toLowerCase()}`
 }
 
 const MAX_MUNICIPALITY_LIST_VISIT_LABEL_LENGTH = 80

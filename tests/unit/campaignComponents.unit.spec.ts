@@ -310,12 +310,14 @@ describe('campaign visual foundation', () => {
     // B155: the Lideranças column chips the linked leaderships by name.
     expect(html).toContain('Lideranças')
     expect(html).toContain('Maria de Jesus')
-    // B22: every one of the 10 visible-by-default staff columns carries a header explanation —
-    // pinned inside `<thead>` itself, since `cellTooltip` (e.g. "Classe") and
-    // the mobile card's own class tooltip (B42) add triggers of their own.
+    // B22 + B176: every one of the 11 visible-by-default staff columns carries
+    // a header explanation — pinned inside `<thead>` itself, since `cellTooltip`
+    // (e.g. "Classe") and the mobile card's own class tooltip (B42) add
+    // triggers of their own. 11 = the 10 staff baseline + Dobradinha, which is
+    // now staff-wide (B176).
     const [, tbodyHtml = ''] = html.split('<tbody')
     const theadHtml = html.slice(html.indexOf('<thead'), html.indexOf('</thead>'))
-    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(10)
+    expect(theadHtml.match(/data-slot="tooltip-trigger"/g)).toHaveLength(11)
 
     // B158: the table is container-driven and clips instead of delegating to a
     // horizontal scroller. Município remains pinned and owns the territory subline.
@@ -393,7 +395,7 @@ describe('campaign visual foundation', () => {
     expect(html).toContain('>—<')
   })
 
-  it('keeps the Dobradinhas column out of the advisor and leader views', () => {
+  it('shows the Dobradinhas column to the advisor and hides it from the leader', () => {
     const municipalities: MunicipalityListViewModel[] = [
       stub<MunicipalityListViewModel>({
         id: 1,
@@ -423,17 +425,19 @@ describe('campaign visual foundation', () => {
       }),
     ]
 
+    // B176 (2026-08-09): the Dobradinhas column is staff-wide — an advisor
+    // sees it (the write is scoped to their portfolio server-side), while
+    // the leader lockdown keeps it off the leader view.
     const advisorHtml = renderWithAppRouter(
       createElement(MunicipalityList, {
         municipalities,
         advisorNamesById: new Map(),
         ...municipalityListDefaultProps,
         isStaffView: true,
-        // Advisor: staff view, but NOT unrestricted — the column must not render.
         isCampaignUnrestricted: false,
       }),
     )
-    expect(advisorHtml).not.toContain('Dobradinhas')
+    expect(advisorHtml).toContain('Dobradinhas')
 
     const leaderHtml = renderWithAppRouter(
       createElement(MunicipalityList, {
@@ -790,7 +794,6 @@ describe('campaign visual foundation', () => {
     it('keeps removed and internal columns out of the municipality picker', () => {
       const columns = municipalityListPickerColumns({
         isStaffView: true,
-        isCampaignUnrestricted: true,
       })
 
       expect(columns.map((column) => column.id)).toEqual([
@@ -840,7 +843,9 @@ describe('campaign visual foundation', () => {
       // The staff `<thead>` already carries 10 header-explanation tooltips
       // (B22), regardless of row data. This baseline isolates the advisors
       // CELL tooltip, the one this test actually exercises.
-      const HEADER_TOOLTIP_COUNT = 10
+      // 11 header explanations: the 10 staff columns + the now staff-wide
+      // Dobradinhas (B176).
+      const HEADER_TOOLTIP_COUNT = 11
       const baseMunicipality = {
         id: 1,
         name: 'Seabra',

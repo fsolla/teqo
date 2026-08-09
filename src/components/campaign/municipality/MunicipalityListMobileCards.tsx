@@ -234,7 +234,9 @@ export const MunicipalityListMobileCards = ({
                   />
                 </dd>
               </div>
-              {isCampaignUnrestricted ? (
+              {/* B176 — staff-wide since 2026-08-09; the write stays scoped to
+                  the actor's administered municípios (B37/B157). */}
+              {isStaffView ? (
                 <div className="col-span-2">
                   <dt className="text-muted-foreground">Dobradinhas</dt>
                   <dd>

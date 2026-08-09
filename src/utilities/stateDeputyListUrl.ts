@@ -10,10 +10,13 @@ import type { Where } from 'payload'
 import {
   allParamValues,
   buildListHref,
+  collapseListWhereOrBranches,
   createSortToggleHref,
   firstValue,
+  NO_PARTY_FILTER_VALUE,
   normalizedText,
   resolveListUrl,
+  splitAbsenceFilterValues,
   strictDecimalInteger,
   type RawSearchParams,
 } from '@/utilities/campaignListUrl'
@@ -22,15 +25,6 @@ export const stateDeputyPageSize = 25
 
 export type StateDeputyListSortKey = 'name' | 'party'
 export type StateDeputyListSortDirection = 'asc' | 'desc'
-
-/**
- * Sentinel for the "Sem partido" filter row — `party` is a free-text optional
- * field (no closed enum to validate a real value against), so this constant
- * is the only reserved token; a dobradinha whose actual party name collided
- * with it would be indistinguishable, an accepted precedent-level risk (the
- * curated field spans a couple dozen Brazilian party acronyms).
- */
-export const NO_PARTY_FILTER_VALUE = 'sem_partido'
 
 export type StateDeputyListState = {
   page: number
@@ -128,14 +122,17 @@ export const buildStateDeputyListWhere = (state: StateDeputyListState): Where =>
   if (state.q) filters.push({ 'contact.name': { contains: state.q } })
 
   if (state.parties?.length) {
-    const namedParties = state.parties.filter((party) => party !== NO_PARTY_FILTER_VALUE)
-    const includesNoParty = state.parties.includes(NO_PARTY_FILTER_VALUE)
+    const { named: namedParties, hasAbsence } = splitAbsenceFilterValues(
+      state.parties,
+      (party) => party === NO_PARTY_FILTER_VALUE,
+    )
     const partyFilters: Where[] = []
     if (namedParties.length) partyFilters.push({ party: { in: namedParties } })
-    if (includesNoParty) partyFilters.push({ party: { exists: false } })
+    if (hasAbsence) partyFilters.push({ party: { exists: false } })
     // Every entry in a non-empty `parties` is named or the sentinel (or both),
     // so `partyFilters` always has at least one member here.
-    filters.push(partyFilters.length > 1 ? { or: partyFilters } : partyFilters[0])
+    const branch = collapseListWhereOrBranches(partyFilters)
+    if (branch) filters.push(branch)
   }
 
   return filters.length ? { and: filters } : {}

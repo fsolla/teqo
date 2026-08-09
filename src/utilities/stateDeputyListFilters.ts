@@ -4,10 +4,9 @@
  * one filterable column exists, so there is no B16+-style href fast path —
  * `stateDeputy` runs in the dozens of rows, not 435.
  */
-import { truncatedNamesLabel } from '@/utilities/campaignListUrl'
+import { NO_PARTY_FILTER_VALUE, truncatedNamesLabel } from '@/utilities/campaignListUrl'
 import {
   buildStateDeputyListHref,
-  NO_PARTY_FILTER_VALUE,
   parseStateDeputyListParams,
   stateDeputyListStateToRawParams,
   type StateDeputyListState,

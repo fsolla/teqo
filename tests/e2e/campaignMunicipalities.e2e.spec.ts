@@ -131,7 +131,9 @@ test.describe('Municípios — jornadas por papel', () => {
 
     // B145: assessoria left the detail hero; it still appears on the dossiê tab.
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}?tab=dossie`)
-    await expect(page.getByText(`Assessoria: ${advisor.name}`)).toBeVisible()
+    // `.nth(0)`: same transient hydration duplicate the "Otimista: 5.000"
+    // assertion pins — the server-composed slot briefly renders twice.
+    await expect(page.getByText(`Assessoria: ${advisor.name}`).nth(0)).toBeVisible()
   })
 
   test('coordinator assigns an advisor from the list combobox with auto-save (B27)', async ({
@@ -355,6 +357,159 @@ test.describe('Municípios — jornadas por papel', () => {
         name: `Remover ${deputyName} (${party})`,
       }),
     ).toBeVisible()
+  })
+
+  test('B176 — filters the list by Dobradinha, Liderança and Partido from the omnibox', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenador Filtros B176'),
+    })
+    const municipalityA = await fixtures.claimMunicipality()
+    const municipalityB = await fixtures.claimMunicipality()
+
+    // A dobradinha linked to municipality A only, with a distinctive party so
+    // the Partido facet cannot collide with other parallel specs.
+    const deputyName = fixtures.value('Deputada B176')
+    const deputyContact = await fixtures.payload.create({
+      collection: 'contact',
+      data: { name: deputyName, state: 'BA' },
+      depth: 0,
+    })
+    const deputy = await fixtures.payload.create({
+      collection: 'stateDeputy',
+      data: { contact: deputyContact.id, party: 'BR176', slug: fixtures.value('deputado') },
+      depth: 0,
+      draft: false,
+    })
+    await fixtures.payload.update({
+      collection: 'municipality',
+      id: municipalityA.id,
+      data: { stateDeputies: [deputy.id] },
+      depth: 0,
+    })
+    fixtures.touchMunicipality(municipalityA.id)
+
+    // A leadership acting on municipality B only.
+    const leadership = await fixtures.createStaffLeadership({
+      namePrefix: 'Liderança B176',
+      municipalities: [municipalityB],
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await showAllMunicipalityColumns(page, campaign.baseURL)
+    await page.goto(`${campaign.baseURL}/campanha/municipios`)
+    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+    await ensureWideMunicipalityList(page)
+
+    const omnibox = page.getByRole('combobox', { name: 'Filtrar municípios' })
+    const listbox = page.getByRole('listbox', { name: 'Filtrar municípios' })
+    const tableRows = municipalityContainer(page).locator('tbody tr')
+    // The omnibox chips live in the search form ABOVE the list container.
+    const removeChip = (label: string) => page.getByRole('button', { name: `Remover ${label}` })
+
+    // Dobradinha by contact name → chip + only municipality A remains.
+    await omnibox.fill(deputyName)
+    await listbox.getByRole('option', { name: new RegExp(`^${deputyName} \\(BR176\\)$`) }).click()
+    await expect(removeChip(`Dobradinha: ${deputyName} (BR176)`)).toBeVisible()
+    await expect(tableRows).toHaveCount(1)
+    await expect(page.getByRole('link', { name: municipalityA.name, exact: true })).toBeVisible()
+
+    // Removing the chip restores the unfiltered 25-row page 1.
+    await removeChip(`Dobradinha: ${deputyName} (BR176)`).click()
+    await expect(removeChip(`Dobradinha: ${deputyName} (BR176)`)).toHaveCount(0)
+
+    // Partido by acronym → the same single municipality (its only dobradinha).
+    await omnibox.fill('BR176')
+    await listbox.getByRole('option', { name: 'BR176', exact: true }).click()
+    await expect(removeChip('Partido: BR176')).toBeVisible()
+    await expect(tableRows).toHaveCount(1)
+    await expect(page.getByRole('link', { name: municipalityA.name, exact: true })).toBeVisible()
+
+    await removeChip('Partido: BR176').click()
+    await expect(removeChip('Partido: BR176')).toHaveCount(0)
+
+    // Liderança by contact name → municipality B only.
+    await omnibox.fill(leadership.contactName)
+    await listbox.getByRole('option', { name: new RegExp(`^${leadership.contactName}$`) }).click()
+    await expect(removeChip(`Liderança: ${leadership.contactName}`)).toBeVisible()
+    await expect(tableRows).toHaveCount(1)
+    await expect(page.getByRole('link', { name: municipalityB.name, exact: true })).toBeVisible()
+  })
+
+  test('B176 — advisor edits Dobradinhas inline within an administered municipality', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const advisor = await fixtures.createCampaignUser('advisor', {
+      name: fixtures.value('Assessor B176'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+    await fixtures.payload.update({
+      collection: 'municipality',
+      id: municipality.id,
+      data: { advisors: [advisor.id] },
+      depth: 0,
+    })
+    fixtures.touchMunicipality(municipality.id)
+
+    // A dobradinha linked to NO municipality — the full staff catalog must
+    // still offer it to the advisor in the cell (gate 2026-08-09).
+    const deputyName = fixtures.value('Deputado Disponível B176')
+    const contact = await fixtures.payload.create({
+      collection: 'contact',
+      data: { name: deputyName, state: 'BA', city: null },
+      depth: 0,
+    })
+    await fixtures.payload.create({
+      collection: 'stateDeputy',
+      data: { contact: contact.id, party: 'PSD', slug: fixtures.value('deputado') },
+      depth: 0,
+      draft: false,
+    })
+
+    await campaign.login(page, advisor.email!, advisor.password)
+    await showAllMunicipalityColumns(page, campaign.baseURL)
+    await page.goto(
+      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
+    )
+    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+    await ensureWideMunicipalityList(page)
+
+    await visibleMunicipalityButton(page, `Editar dobradinhas em ${municipality.name}`).click()
+    const popover = page.locator('[data-slot="popover-content"]')
+    await expect(popover).toBeVisible()
+    const search = popover.getByRole('combobox', { name: 'Buscar dobradinha' })
+    const chip = popover.getByRole('button', { name: `Remover ${deputyName} (PSD)` })
+
+    await expect(async () => {
+      await search.fill(deputyName)
+      // Register the write-waiter before the click: asserting the optimistic
+      // chip alone proves nothing about the database, and a reload racing the
+      // POST would capture the pre-write state (the B32+ auto-save race).
+      const saved = expectPostResponse(page, '/campanha/municipios')
+      await popover.getByRole('option', { name: new RegExp(`^${deputyName} \\(PSD\\)$`) }).click()
+      await expect(chip).toBeVisible({ timeout: 5_000 })
+      await saved
+    }).toPass({ timeout: 25_000 })
+
+    await page.keyboard.press('Escape')
+
+    // Persistence across reload: the server holds the assignment.
+    await page.reload()
+    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+    await ensureWideMunicipalityList(page)
+    await expect(async () => {
+      await visibleMunicipalityButton(page, `Editar dobradinhas em ${municipality.name}`).click()
+      await expect(
+        page.locator('[data-slot="popover-content"]').getByRole('button', {
+          name: `Remover ${deputyName} (PSD)`,
+        }),
+      ).toBeVisible({ timeout: 5_000 })
+    }).toPass({ timeout: 25_000 })
   })
 
   test('coordinator sets trend status and justification with auto-save (B24)', async ({

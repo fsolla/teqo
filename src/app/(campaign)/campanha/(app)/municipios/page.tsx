@@ -95,9 +95,10 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
       // All staff edit the Lideranças column (scoped server-side); the leader
       // never reaches this page (`gate: noLeader`).
       isStaffView ? getEligibleLeadershipOptions(payload, user) : [],
-      // B157 — the Dobradinhas column is coordinator + candidate only; the
-      // catalog serves the avatar-stack display, the tooltip and the search.
-      canMoveEngagementLevel ? loadStateDeputyOptions(payload, user) : [],
+      // B157 + B176 — the Dobradinhas column is now staff-wide (was
+      // coordinator + candidate only); the catalog serves the avatar-stack
+      // display, the tooltip, the search AND the B176 filter options.
+      isStaffView ? loadStateDeputyOptions(payload, user) : [],
     ])
   const advisorNamesById = new Map(advisorSummaries.map((advisor) => [advisor.id, advisor]))
 
@@ -117,19 +118,43 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
       .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR')),
   }
 
+  // B176 — filter options for the new omnibox groups, narrowed by the other
+  // active filters and labeled from the same catalogs the columns use.
+  const stateDeputyByName = new Map(stateDeputyOptions.map((option) => [option.id, option]))
+  const selectedStateDeputyIDs = new Set(
+    (state.stateDeputies ?? []).filter((value): value is number => typeof value === 'number'),
+  )
+  const globalFilterOptions = {
+    stateDeputy: filterFacets.stateDeputyIDs
+      .flatMap((id) => {
+        const option = stateDeputyByName.get(id)
+        if (option) return [{ value: String(id), label: option.name }]
+        return selectedStateDeputyIDs.has(id)
+          ? [{ value: String(id), label: `Dobradinha #${id}` }]
+          : []
+      })
+      .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR')),
+    leadership: filterFacets.leadershipOptions
+      .map((leadership) => ({ value: String(leadership.id), label: leadership.name }))
+      .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR')),
+    party: filterFacets.parties.map((party) => ({ value: party, label: party })),
+  }
+
   const filters = (
     <MunicipalityFilters
       state={state}
       showStaffFilters={isStaffView}
       regionFilterOptions={columnFilterOptions.region}
       advisorFilterOptions={columnFilterOptions.advisor}
+      stateDeputyFilterOptions={globalFilterOptions.stateDeputy}
+      leadershipFilterOptions={globalFilterOptions.leadership}
+      partyFilterOptions={globalFilterOptions.party}
       slugFilterValues={columnFilterOptions.name}
       trailing={
         <CampaignColumnPickerTrailing
           columnVisibility={columnVisibility}
           columns={municipalityListPickerColumns({
             isStaffView,
-            isCampaignUnrestricted: canMoveEngagementLevel,
           })}
         />
       }

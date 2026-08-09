@@ -12,10 +12,10 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import config from '@/payload.config'
 import { loadAdvisorListPageData } from '@/utilities/advisorData'
 import { loadDemandListPageData } from '@/utilities/campaignDemandData'
+import { NO_PARTY_FILTER_VALUE } from '@/utilities/campaignListUrl'
 import { loadLeadershipListPageData } from '@/utilities/leadership/leadershipData'
 import { loadOrganizationListPageData } from '@/utilities/organizationData'
 import { loadStateDeputyDetail, loadStateDeputyListPageData } from '@/utilities/stateDeputyData'
-import { NO_PARTY_FILTER_VALUE } from '@/utilities/stateDeputyListUrl'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 

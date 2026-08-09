@@ -15,6 +15,7 @@ import {
   type VoteEstimateScenario,
 } from '@/lib/voteEstimate'
 import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
+import { NO_PARTY_FILTER_VALUE } from '@/utilities/campaignListUrl'
 import {
   municipalityListCoverageLabels,
   municipalityPriorityLabels,
@@ -31,6 +32,8 @@ import {
 import {
   isDefaultMunicipalityListSort,
   municipalityListSortOptions,
+  NO_LEADERSHIP_FILTER_VALUE,
+  NO_STATE_DEPUTY_FILTER_VALUE,
   resolveMunicipalityListSort,
   type MunicipalityListState,
 } from '@/utilities/municipality/municipalityListUrl'
@@ -56,6 +59,9 @@ const MULTI_PREFIXES: Array<{ prefix: string; param: MunicipalityMultiFilterPara
   { prefix: 'trend:', param: 'trend' },
   { prefix: 'class:', param: 'class' },
   { prefix: 'level:', param: 'level' },
+  { prefix: 'stateDeputy:', param: 'stateDeputy' },
+  { prefix: 'leadership:', param: 'leadership' },
+  { prefix: 'party:', param: 'party' },
 ]
 
 const chipLabel = (dimension: string, value: string): string => `${dimension}: ${value}`
@@ -84,11 +90,15 @@ export const buildMunicipalityOmniboxChips = ({
   scenario,
   showStaffFilters,
   advisorLabelsById,
+  stateDeputyLabelsById,
+  leadershipLabelsById,
 }: {
   state: MunicipalityListState
   scenario: VoteEstimateScenario
   showStaffFilters: boolean
   advisorLabelsById: ReadonlyMap<number, string>
+  stateDeputyLabelsById: ReadonlyMap<number, string>
+  leadershipLabelsById: ReadonlyMap<number, string>
 }): CampaignListOmniboxChip[] => {
   const chips: CampaignListOmniboxChip[] = []
 
@@ -145,6 +155,40 @@ export const buildMunicipalityOmniboxChips = ({
       })
     }
 
+    for (const stateDeputy of state.stateDeputies ?? []) {
+      chips.push({
+        id: `stateDeputy:${stateDeputy}`,
+        label:
+          stateDeputy === NO_STATE_DEPUTY_FILTER_VALUE
+            ? 'Dobradinha: Sem dobradinha'
+            : chipLabel(
+                'Dobradinha',
+                stateDeputyLabelsById.get(stateDeputy) ?? `Dobradinha #${stateDeputy}`,
+              ),
+      })
+    }
+
+    for (const leadership of state.leaderships ?? []) {
+      chips.push({
+        id: `leadership:${leadership}`,
+        label:
+          leadership === NO_LEADERSHIP_FILTER_VALUE
+            ? 'Liderança: Sem liderança'
+            : chipLabel(
+                'Liderança',
+                leadershipLabelsById.get(leadership) ?? `Liderança #${leadership}`,
+              ),
+      })
+    }
+
+    for (const party of state.parties ?? []) {
+      chips.push({
+        id: `party:${party}`,
+        label:
+          party === NO_PARTY_FILTER_VALUE ? 'Partido: Sem partido' : chipLabel('Partido', party),
+      })
+    }
+
     if (scenario !== DEFAULT_VOTE_ESTIMATE_SCENARIO) {
       chips.push({
         id: 'scenario',
@@ -173,11 +217,17 @@ export const buildMunicipalityOmniboxSuggestionSeeds = ({
   regionFilterOptions,
   advisorFilterOptions,
   slugFilterOptions,
+  stateDeputyFilterOptions,
+  leadershipFilterOptions,
+  partyFilterOptions,
 }: {
   showStaffFilters: boolean
   regionFilterOptions: readonly MunicipalityFilterOption[]
   advisorFilterOptions: readonly MunicipalityFilterOption[]
   slugFilterOptions: readonly MunicipalityFilterOption[]
+  stateDeputyFilterOptions: readonly MunicipalityFilterOption[]
+  leadershipFilterOptions: readonly MunicipalityFilterOption[]
+  partyFilterOptions: readonly MunicipalityFilterOption[]
 }): SuggestionSeed[] => {
   const seeds: SuggestionSeed[] = []
 
@@ -228,6 +278,68 @@ export const buildMunicipalityOmniboxSuggestionSeeds = ({
         }),
       )
     }
+
+    for (const option of stateDeputyFilterOptions) {
+      seeds.push(
+        seedOf({
+          id: `stateDeputy:${option.value}`,
+          group: 'Dobradinha',
+          label: option.label,
+          keywords: ['dobradinha', 'deputado', 'deputada'],
+        }),
+      )
+    }
+
+    // "Sem dobradinha" is the triage of this dimension — same static seed as
+    // "Sem nível" (revealed while typing, never `emptyQueryVisible`).
+    seeds.push(
+      seedOf({
+        id: `stateDeputy:${NO_STATE_DEPUTY_FILTER_VALUE}`,
+        group: 'Dobradinha',
+        label: 'Sem dobradinha',
+        keywords: ['sem', 'dobradinha'],
+      }),
+    )
+
+    for (const option of leadershipFilterOptions) {
+      seeds.push(
+        seedOf({
+          id: `leadership:${option.value}`,
+          group: 'Liderança',
+          label: option.label,
+          keywords: ['lideranca', 'lider', 'liderança'],
+        }),
+      )
+    }
+
+    seeds.push(
+      seedOf({
+        id: `leadership:${NO_LEADERSHIP_FILTER_VALUE}`,
+        group: 'Liderança',
+        label: 'Sem liderança',
+        keywords: ['sem', 'lideranca', 'lider', 'liderança'],
+      }),
+    )
+
+    for (const option of partyFilterOptions) {
+      seeds.push(
+        seedOf({
+          id: `party:${option.value}`,
+          group: 'Partido',
+          label: option.label,
+          keywords: ['partido', 'sigla', option.value],
+        }),
+      )
+    }
+
+    seeds.push(
+      seedOf({
+        id: `party:${NO_PARTY_FILTER_VALUE}`,
+        group: 'Partido',
+        label: 'Sem partido',
+        keywords: ['sem', 'partido'],
+      }),
+    )
 
     for (const [value, label] of Object.entries(municipalityListCoverageLabels)) {
       seeds.push(
@@ -339,12 +451,18 @@ export const buildMunicipalityOmniboxSuggestions = ({
   regionFilterOptions,
   advisorFilterOptions,
   slugFilterOptions,
+  stateDeputyFilterOptions,
+  leadershipFilterOptions,
+  partyFilterOptions,
 }: {
   query: string
   showStaffFilters: boolean
   regionFilterOptions: readonly MunicipalityFilterOption[]
   advisorFilterOptions: readonly MunicipalityFilterOption[]
   slugFilterOptions: readonly MunicipalityFilterOption[]
+  stateDeputyFilterOptions: readonly MunicipalityFilterOption[]
+  leadershipFilterOptions: readonly MunicipalityFilterOption[]
+  partyFilterOptions: readonly MunicipalityFilterOption[]
 }): CampaignListOmniboxSuggestion[] =>
   filterMunicipalityOmniboxSuggestions(
     buildMunicipalityOmniboxSuggestionSeeds({
@@ -352,6 +470,9 @@ export const buildMunicipalityOmniboxSuggestions = ({
       regionFilterOptions,
       advisorFilterOptions,
       slugFilterOptions,
+      stateDeputyFilterOptions,
+      leadershipFilterOptions,
+      partyFilterOptions,
     }),
     query,
   )
