@@ -81,7 +81,7 @@ test.describe('B173 — consulta por voz no chat da Sollinha', () => {
     await mockAiChat(page)
     await openChat(page)
 
-    const input = page.getByRole('textbox', { name: 'Pergunte para a Sollinha...' })
+    const input = page.getByRole('textbox', { name: 'Pergunte para o Sollinha...' })
 
     // Tap the mic → the bar enters "Ouvindo..." while we "speak".
     await page.getByRole('button', { name: 'Falar pergunta (voz)' }).click()
@@ -125,7 +125,7 @@ test.describe('B173 — consulta por voz no chat da Sollinha', () => {
     })
 
     // Text chat still works.
-    const input = page.getByRole('textbox', { name: 'Pergunte para a Sollinha...' })
+    const input = page.getByRole('textbox', { name: 'Pergunte para o Sollinha...' })
     await input.fill('Foco no texto')
     await input.press('Enter')
     await expect(page.getByText('Foco no texto')).toBeVisible({ timeout: 20_000 })
