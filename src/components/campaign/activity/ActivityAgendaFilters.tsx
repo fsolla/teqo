@@ -92,9 +92,12 @@ export const ActivityAgendaFilters = ({
 
   const runAction = (action: ActivityAgendaOmniboxAction) => {
     if (action.kind === 'clear') {
+      // C95 — "Limpar" clears the recorte, not the view mode: the view is
+      // screen state alongside the filter, so it survives the clear.
+      const next: ActivityAgendaState = draft.view ? { view: draft.view } : {}
       setQuery('')
-      setDraft({})
-      navigate({})
+      setDraft(next)
+      navigate(next)
       return
     }
     setDraft(action.state)

@@ -36,7 +36,11 @@ import {
   activityStatusLabels,
   type ActivityStatus,
 } from '@/lib/schemas/activity'
-import { activitySlotPrefill, type ActivityAgendaState } from '@/utilities/activityUi'
+import {
+  activityAgendaViewFcId,
+  activitySlotPrefill,
+  type ActivityAgendaState,
+} from '@/utilities/activityUi'
 import type { ActivityAgendaEvent } from '@/utilities/activityViewModels'
 
 import './ActivityAgenda.css'
@@ -140,6 +144,9 @@ export const ActivityAgenda = ({
       narrowRef.current = isNarrow
       setIsNarrow((current) => (current === isNarrow ? current : isNarrow))
       if (previous !== null && isNarrow === previous) return
+      // C95 — an explicit view in the URL wins over the responsive week↔day
+      // fallback; without one the narrow default keeps working as before.
+      if (state.view) return
       const viewType = api.view.type
       if (isNarrow && viewType === 'timeGridWeek') {
         api.changeView('timeGridDay')
@@ -153,7 +160,24 @@ export const ActivityAgenda = ({
     const observer = new ResizeObserver(applyResponsiveView)
     observer.observe(container)
     return () => observer.disconnect()
-  }, [])
+  }, [state.view])
+
+  useEffect(() => {
+    const api = calendarRef.current?.getApi()
+    if (!api) return
+    if (state.view) {
+      const fcId = activityAgendaViewFcId[state.view]
+      if (api.view.type !== fcId) api.changeView(fcId)
+      return
+    }
+    // The URL lost the explicit view (sidebar link, back/forward): return to
+    // the responsive default so the calendar never keeps an orphan view (e.g.
+    // month) the header selector no longer claims.
+    const isNarrow =
+      (containerRef.current?.getBoundingClientRect().width ?? 0) < MOBILE_BREAKPOINT_PX
+    const fallback = isNarrow ? 'timeGridDay' : 'timeGridWeek'
+    if (api.view.type !== fallback) api.changeView(fallback)
+  }, [state.view])
 
   useEffect(() => {
     if (!visibleRange) return
@@ -303,11 +327,10 @@ export const ActivityAgenda = ({
           locale={ptBrLocale}
           timeZone="America/Bahia"
           firstDay={1}
-          initialView="timeGridWeek"
+          initialView={state.view ? activityAgendaViewFcId[state.view] : 'timeGridWeek'}
           headerToolbar={{
             start: 'prev,next today',
             center: 'title',
-            end: 'timeGridWeek,timeGridDay,dayGridMonth,listMonth',
           }}
           height="auto"
           slotMinTime="07:00:00"

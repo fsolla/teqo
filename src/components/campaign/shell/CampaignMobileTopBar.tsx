@@ -1,11 +1,12 @@
 'use client'
 
 import { ArrowLeft, X } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 
 import { useCampaignListTransition } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignWizardNavLink } from '@/components/campaign/shared/CampaignWizardNavLink'
 import { useCampaignHomeSearchChrome } from '@/components/campaign/shell/CampaignHomeSearchChromeContext'
+import { useCampaignHeaderActions } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageChromeDisplay } from '@/components/campaign/shell/CampaignPageChromeDisplay'
 import { useCampaignWizardChrome } from '@/components/campaign/shell/CampaignWizardChromeContext'
 import { Button } from '@/components/ui/button'
@@ -31,6 +32,7 @@ const wizardTitleSkeletonClass = 'mx-auto motion-reduce:animate-none bg-primary-
 export const CampaignMobileTopBar = ({ notificationBell }: { notificationBell?: ReactNode }) => {
   const chrome = useCampaignWizardChrome()
   const homeSearchChrome = useCampaignHomeSearchChrome()
+  const headerActions = useCampaignHeaderActions()
   const { isPending } = useCampaignListTransition()
 
   if (chrome) {
@@ -130,7 +132,12 @@ export const CampaignMobileTopBar = ({ notificationBell }: { notificationBell?: 
         <SidebarTrigger className="text-primary-foreground" />
       )}
       <CampaignPageChromeDisplay layout="mobile" />
-      {notificationBell ? <div className="ml-auto shrink-0">{notificationBell}</div> : null}
+      <div className="ml-auto flex shrink-0 items-center gap-1">
+        {Object.entries(headerActions).map(([id, node]) => (
+          <Fragment key={id}>{node}</Fragment>
+        ))}
+        {notificationBell ?? null}
+      </div>
     </header>
   )
 }

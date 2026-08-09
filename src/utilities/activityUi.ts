@@ -42,13 +42,39 @@ export type ActivityListState = {
 
 type RawSearchParams = CampaignListRawSearchParams
 
+/**
+ * C95 — the agenda view modes behind the header selector. Short URL values map
+ * to FullCalendar view ids via `activityAgendaViewFcId` (deliberately decoupled
+ * from the calendar's internals).
+ */
+export const activityAgendaViews = ['week', 'day', 'month', 'list'] as const
+export type ActivityAgendaView = (typeof activityAgendaViews)[number]
+
+export const activityAgendaViewLabels: Record<ActivityAgendaView, string> = {
+  week: 'Semana',
+  day: 'Dia',
+  month: 'Mês',
+  list: 'Lista',
+}
+
+export const activityAgendaViewFcId: Record<ActivityAgendaView, string> = {
+  week: 'timeGridWeek',
+  day: 'timeGridDay',
+  month: 'dayGridMonth',
+  list: 'listMonth',
+}
+
+const isActivityAgendaView = (value: string | undefined): value is ActivityAgendaView =>
+  activityAgendaViews.includes(value as ActivityAgendaView)
+
 export type ActivityAgendaState = {
   municipality?: number
   deputyPresent?: true
   tag?: string
+  view?: ActivityAgendaView
 }
 
-const activityAgendaParamNames = ['municipality', 'deputyPresent', 'tag'] as const
+const activityAgendaParamNames = ['municipality', 'deputyPresent', 'tag', 'view'] as const
 const activityAgendaParamNameSet = new Set<string>(activityAgendaParamNames)
 
 const activityTag = (value: string | undefined): string | undefined => {
@@ -60,11 +86,14 @@ export const parseActivityAgendaParams = (params: RawSearchParams): ActivityAgen
   const municipality = strictDecimalInteger(firstValue(params.municipality))
   const deputyPresent = firstValue(params.deputyPresent) === '1' ? true : undefined
   const tag = activityTag(firstValue(params.tag))
+  const rawView = firstValue(params.view)
+  const view = isActivityAgendaView(rawView) ? rawView : undefined
 
   return {
     ...(municipality ? { municipality } : {}),
     ...(deputyPresent ? { deputyPresent } : {}),
     ...(tag ? { tag } : {}),
+    ...(view ? { view } : {}),
   }
 }
 
@@ -73,6 +102,7 @@ export const buildActivityAgendaSearchParams = (state: ActivityAgendaState): URL
     municipality: state.municipality === undefined ? undefined : String(state.municipality),
     deputyPresent: state.deputyPresent ? '1' : undefined,
     tag: state.tag,
+    view: state.view,
   })
   const params = new URLSearchParams()
 
@@ -81,6 +111,7 @@ export const buildActivityAgendaSearchParams = (state: ActivityAgendaState): URL
   }
   if (canonicalState.deputyPresent) params.set('deputyPresent', '1')
   if (canonicalState.tag) params.set('tag', canonicalState.tag)
+  if (canonicalState.view) params.set('view', canonicalState.view)
 
   return params
 }
@@ -100,6 +131,7 @@ export const restrictActivityAgendaState = (
     : {}),
   ...(state.deputyPresent ? { deputyPresent: true } : {}),
   ...(state.tag && accessibleTags.has(state.tag) ? { tag: state.tag } : {}),
+  ...(state.view ? { view: state.view } : {}),
 })
 
 export const resolveActivityAgendaUrl = (
@@ -213,6 +245,7 @@ export const parseActivityAgendaReturnHref = (
       municipality: returnUrl.searchParams.get('municipality') ?? undefined,
       deputyPresent: returnUrl.searchParams.get('deputyPresent') ?? undefined,
       tag: returnUrl.searchParams.get('tag') ?? undefined,
+      view: returnUrl.searchParams.get('view') ?? undefined,
     }),
     accessibleMunicipalityIDs,
     accessibleTags,

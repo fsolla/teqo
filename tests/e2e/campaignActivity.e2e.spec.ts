@@ -92,9 +92,11 @@ test.describe('Agenda — calendário operacional', () => {
 
     await expect(campaignPageChrome(page, 'Agenda')).toBeVisible()
     await expect(page.getByText(title, { exact: true })).toBeVisible({ timeout: 15_000 })
-    await expect(page.getByRole('tab', { name: /semana/i })).toBeVisible()
-    await expect(page.getByRole('tab', { name: /mês/i })).toBeVisible()
-    await expect(page.getByRole('tab', { name: /lista/i })).toBeVisible()
+    // C95 — the four view-mode buttons moved out of the FullCalendar toolbar
+    // into the header selector; the calendar toolbar keeps only prev/today/next.
+    await expect(page.getByRole('tab', { name: /semana|mês|lista/i })).toHaveCount(0)
+    const viewSelector = page.getByRole('button', { name: 'Modo de visualização: Semana' })
+    await expect(viewSelector).toBeVisible()
 
     const eventLink = page.getByRole('link', { name: new RegExp(title) })
     const eventBox = await eventLink.boundingBox()
@@ -143,8 +145,20 @@ test.describe('Agenda — calendário operacional', () => {
       .filter({ visible: true })
       .click()
     await page.setViewportSize({ width: 390, height: 844 })
-    await page.getByRole('tab', { name: /lista/i }).click()
+    // C95 — the view-mode control lives in the app top bar on mobile too; the
+    // narrow fallback (no `view` param) shows "Dia" after the resize.
+    const mobileViewSelector = page
+      .getByRole('button', { name: /Modo de visualização/ })
+      .filter({ visible: true })
+    await expect(mobileViewSelector).toHaveAttribute('aria-label', 'Modo de visualização: Dia')
+    await mobileViewSelector.click()
+    await page.getByRole('menuitemradio', { name: 'Lista', exact: true }).click()
+    await expect(page).toHaveURL(/view=list/)
     await expect(page.getByText(title, { exact: true })).toBeVisible()
+
+    // C95 — "Limpar" clears the recorte (filters), never the view mode.
+    await page.getByRole('button', { name: 'Limpar', exact: true }).click()
+    await expect(page).toHaveURL(`${campaign.baseURL}/campanha/agenda?view=list`)
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true)
@@ -167,13 +181,15 @@ test.describe('Agenda — calendário operacional', () => {
     await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}`)
 
     const dayCell = page.getByRole('gridcell').nth(1)
-    await dayCell.scrollIntoViewIfNeeded()
-    // FullCalendar renders the time axis lazily and re-lays out on mount —
-    // wait for both targets to be attached+visible before measuring, or the
-    // bounding boxes race the grid render.
+    // FullCalendar renders the time axis lazily and re-lays out on mount: the
+    // grid first paints empty and re-renders (replacing its gridcells) when the
+    // events land. Wait for the load to finish before interacting, or the
+    // locator's element is replaced mid-action ("Element is not attached").
+    await expect(page.getByText('Carregando compromissos…')).toHaveCount(0, { timeout: 15_000 })
     const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
     await expect(slotLocator).toBeVisible()
     await expect(dayCell).toBeVisible()
+    await dayCell.scrollIntoViewIfNeeded()
     const slotBox = await slotLocator.boundingBox()
     const dayBox = await dayCell.boundingBox()
     if (!slotBox || !dayBox) throw new Error('A grade semanal não expôs o slot esperado.')
@@ -219,10 +235,15 @@ test.describe('Agenda — calendário operacional', () => {
     await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}`)
 
     const dayCell = page.getByRole('gridcell').nth(1)
-    await dayCell.scrollIntoViewIfNeeded()
+    // FullCalendar renders the time axis lazily and re-lays out on mount: the
+    // grid first paints empty and re-renders (replacing its gridcells) when the
+    // events land. Wait for the load to finish before interacting, or the
+    // locator's element is replaced mid-action ("Element is not attached").
+    await expect(page.getByText('Carregando compromissos…')).toHaveCount(0, { timeout: 15_000 })
     const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
     await expect(slotLocator).toBeVisible()
     await expect(dayCell).toBeVisible()
+    await dayCell.scrollIntoViewIfNeeded()
     const slotBox = await slotLocator.boundingBox()
     const dayBox = await dayCell.boundingBox()
     if (!slotBox || !dayBox) throw new Error('A grade semanal não expôs o slot esperado.')
@@ -249,5 +270,71 @@ test.describe('Agenda — calendário operacional', () => {
     expect(endAt).not.toBeNull()
     if (!startAt || !endAt) throw new Error('O formulário não recebeu o intervalo do slot.')
     expect(new Date(endAt).getTime() - new Date(startAt).getTime()).toBe(1_800_000)
+  })
+
+  test('C95 — seletor de vista no header troca o modo, persiste e vence o resize', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/agenda`)
+
+    const viewSelector = page
+      .getByRole('button', { name: /Modo de visualização/ })
+      .filter({ visible: true })
+    await expect(viewSelector).toHaveAttribute('aria-label', 'Modo de visualização: Semana')
+
+    // Desktop: switch to month; the URL gains `view=month` and the calendar
+    // actually renders the month grid (not just the selector label). The
+    // FullCalendar v7 classic theme hashes its view classes, so the stable
+    // signal is the "Hoje" button's aria-label ("Este mês") plus the grid.
+    await viewSelector.click()
+    await page.getByRole('menuitemradio', { name: 'Mês', exact: true }).click()
+    await expect(page).toHaveURL(`${campaign.baseURL}/campanha/agenda?view=month`)
+    await expect(viewSelector).toHaveAttribute('aria-label', 'Modo de visualização: Mês')
+    await expect(page.getByRole('button', { name: 'Este mês' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.locator('[role="grid"]')).toBeVisible()
+
+    // Persists across a reload (screen state lives beside the filter, on the URL).
+    await page.reload()
+    await expect(page).toHaveURL(`${campaign.baseURL}/campanha/agenda?view=month`)
+    await expect(viewSelector).toHaveAttribute('aria-label', 'Modo de visualização: Mês')
+    await expect(page.getByRole('button', { name: 'Este mês' })).toBeVisible({ timeout: 15_000 })
+
+    // The explicit choice wins over the responsive narrow fallback: shrinking
+    // the viewport must NOT push the calendar back to day/week.
+    // B167: a chat that opened by itself on the desktop panel (RRP settle)
+    // migrates to the full-screen mobile drawer and covers the page — close it
+    // first so the top bar selector stays reachable in the a11y tree.
+    await page
+      .getByRole('button', { name: 'Fechar', exact: true })
+      .filter({ visible: true })
+      .click()
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(viewSelector).toHaveAttribute('aria-label', 'Modo de visualização: Mês')
+    await expect(page.getByRole('button', { name: 'Este mês' })).toBeVisible({ timeout: 15_000 })
+
+    // The mobile top bar selector still switches modes. The list view shares
+    // the "Este mês" today label but drops the calendar grid.
+    await viewSelector.click()
+    await page.getByRole('menuitemradio', { name: 'Lista', exact: true }).click()
+    await expect(page).toHaveURL(`${campaign.baseURL}/campanha/agenda?view=list`)
+    await expect(viewSelector).toHaveAttribute('aria-label', 'Modo de visualização: Lista')
+    await expect(page.getByRole('button', { name: 'Este mês' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.locator('[role="grid"]')).toHaveCount(0, { timeout: 15_000 })
+
+    // A navigation that drops the `view` param returns the calendar to the
+    // responsive default instead of keeping an orphan view the selector no
+    // longer claims (sidebar link / back-forward). Still on the 390px
+    // viewport, so the narrow default is day ("Hoje" today label, grid back).
+    await page.goto(`${campaign.baseURL}/campanha/agenda`)
+    await expect(viewSelector).toHaveAttribute('aria-label', 'Modo de visualização: Dia')
+    await expect(page.getByRole('button', { name: 'Hoje', exact: true })).toBeVisible({
+      timeout: 15_000,
+    })
+    await expect(page.locator('[role="grid"]')).toBeVisible()
   })
 })
