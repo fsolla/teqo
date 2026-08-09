@@ -5,6 +5,7 @@ import type { AIToolContext } from '@/lib/ai/types'
 import { ELECTION_YEAR_2022, FEDERAL_DEPUTY_OFFICE } from '@/lib/electionResults'
 import { municipalityCatalogEntriesForCity } from '@/lib/municipalityCatalog'
 import { resolveMunicipalityName } from '@/lib/municipalityNameAliases'
+import { electionDataGate } from '@/utilities/ai/tools/electionDataGate'
 import { municipalityElectionGeographyForSlug } from '@/utilities/municipality/municipalityElectionGeography'
 
 type RankedDeputy = {
@@ -32,6 +33,10 @@ export const getTopDeputies = (ctx: AIToolContext) =>
       limit: z.number().optional().default(5).describe('Number of deputies to return (max 20).'),
     }),
     execute: async ({ municipality, year, limit }) => {
+      // Leader lockdown: municipal election conversations are staff-only.
+      const gate = electionDataGate(ctx)
+      if (gate !== true) return gate
+
       const { payload } = ctx
       const canonical = resolveMunicipalityName(municipality) ?? municipality
       const entries = municipalityCatalogEntriesForCity(canonical)
@@ -63,8 +68,7 @@ export const getTopDeputies = (ctx: AIToolContext) =>
         limit: 0,
         pagination: false,
         select: { candidateNumber: true, candidateName: true, party: true, votes: true },
-        // Bypass: election data is public TSE results; access gated by
-        // the collection-level canReadElectionData guard.
+        // Bypass: public TSE vote rows; access gated by electionDataGate at the tool level.
         overrideAccess: true,
         sort: '-votes',
       })

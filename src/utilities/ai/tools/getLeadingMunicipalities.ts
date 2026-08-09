@@ -20,6 +20,7 @@ import {
   type LeadingMunicipalityRow,
 } from '@/lib/leadingMunicipalities'
 import { municipalityCatalogEntriesForCity } from '@/lib/municipalityCatalog'
+import { electionDataGate } from '@/utilities/ai/tools/electionDataGate'
 import { assertCanReadElectionData } from '@/utilities/campaignAccess'
 import { drizzleResultRows } from '@/utilities/drizzleBulk'
 
@@ -339,11 +340,8 @@ export const getLeadingMunicipalities = (ctx: AIToolContext) =>
     }),
     execute: async ({ candidate, year, topN }) => {
       // Leader lockdown: municipal ranking conversations are staff-only.
-      try {
-        assertCanReadElectionData(ctx.user)
-      } catch {
-        return { error: 'Leitura de dados eleitorais negada.' }
-      }
+      const gate = electionDataGate(ctx)
+      if (gate !== true) return gate
 
       if (!VOTE_YEARS.includes(year)) {
         return {

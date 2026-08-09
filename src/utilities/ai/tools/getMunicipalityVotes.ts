@@ -11,6 +11,7 @@ import {
 } from '@/lib/electionResults'
 import { municipalityCatalogEntriesForCity } from '@/lib/municipalityCatalog'
 import { resolveMunicipalityName } from '@/lib/municipalityNameAliases'
+import { electionDataGate } from '@/utilities/ai/tools/electionDataGate'
 import { municipalityElectionGeographyForSlug } from '@/utilities/municipality/municipalityElectionGeography'
 
 const VOTE_YEARS = [ELECTION_YEAR_2014, ELECTION_YEAR_2018, ELECTION_YEAR_2022] as const
@@ -31,6 +32,10 @@ export const getMunicipalityVotes = (ctx: AIToolContext) =>
       municipality: z.string().describe('Municipality name or slug.'),
     }),
     execute: async ({ municipality }) => {
+      // Leader lockdown: municipal election conversations are staff-only.
+      const gate = electionDataGate(ctx)
+      if (gate !== true) return gate
+
       const { payload } = ctx
 
       // Resolve to catalog entry
@@ -80,9 +85,7 @@ async function queryVotes(
         limit: 0,
         pagination: false,
         select: { votes: true },
-        // Bypass: election data is public TSE results; access gated by
-        // the collection-level canReadElectionData guard. Query scope
-        // was resolved against the authenticated user's municipality.
+        // Bypass: public TSE vote rows; access gated by electionDataGate at the tool level.
         overrideAccess: true,
       }),
       payload.find({
@@ -100,8 +103,7 @@ async function queryVotes(
         limit: 0,
         pagination: false,
         select: { votosValidos: true },
-        // Bypass: election data is public TSE results; access gated by
-        // the collection-level canReadElectionData guard.
+        // Bypass: public TSE tally rows; access gated by electionDataGate at the tool level.
         overrideAccess: true,
       }),
     ])
