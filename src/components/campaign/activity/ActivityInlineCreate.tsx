@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { searchActivityResponsibleOptionsAction } from '@/app/(campaign)/campanha/(app)/atividades/contactSearchActions'
 import { createActivityInline } from '@/app/(campaign)/campanha/actions/activity'
+import { ActivityDateTimeField } from '@/components/campaign/activity/ActivityDateTimeField'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { ResponsibleMultiSelect } from '@/components/campaign/shared/ResponsibleMultiSelect'
 import { StrictCombobox } from '@/components/campaign/shared/StrictCombobox'
@@ -192,14 +193,12 @@ const ActivityInlineCreateForm = ({
       <div className="grid gap-3 sm:grid-cols-2">
         <Field data-invalid={Boolean(errorFor('startAt'))}>
           <FieldLabel htmlFor="inline-startAt">Início *</FieldLabel>
-          <Input
+          <ActivityDateTimeField
             id="inline-startAt"
-            type="datetime-local"
             value={start}
-            onChange={(event) => setStart(event.target.value)}
-            className="min-h-11"
-            aria-invalid={Boolean(errorFor('startAt'))}
-            aria-describedby={errorFor('startAt') ? 'inline-startAt-error' : undefined}
+            onValueChange={setStart}
+            invalid={Boolean(errorFor('startAt'))}
+            errorId={errorFor('startAt') ? 'inline-startAt-error' : undefined}
           />
           {errorFor('startAt') ? (
             <FieldError id="inline-startAt-error">{errorFor('startAt')}</FieldError>
@@ -207,14 +206,12 @@ const ActivityInlineCreateForm = ({
         </Field>
         <Field data-invalid={Boolean(errorFor('endAt'))}>
           <FieldLabel htmlFor="inline-endAt">Término</FieldLabel>
-          <Input
+          <ActivityDateTimeField
             id="inline-endAt"
-            type="datetime-local"
             value={end}
-            onChange={(event) => setEnd(event.target.value)}
-            className="min-h-11"
-            aria-invalid={Boolean(errorFor('endAt'))}
-            aria-describedby={errorFor('endAt') ? 'inline-endAt-error' : undefined}
+            onValueChange={setEnd}
+            invalid={Boolean(errorFor('endAt'))}
+            errorId={errorFor('endAt') ? 'inline-endAt-error' : undefined}
           />
           {errorFor('endAt') ? (
             <FieldError id="inline-endAt-error">{errorFor('endAt')}</FieldError>

@@ -202,23 +202,51 @@ test.describe('Agenda — calendário operacional', () => {
 
     // The click no longer navigates: the inline overlay opens at the slot.
     await expect(page).toHaveURL(new RegExp('/campanha/agenda.*'))
-    const startInput = page.getByLabel('Início *')
-    await expect(startInput).toBeVisible()
-    const [startValue, endValue] = await Promise.all([
-      startInput.inputValue(),
-      page.getByLabel('Término').inputValue(),
+    // C97 — the native datetime-local is gone; the trigger buttons show the
+    // civil 24h label (slot = 14:00–14:30 Bahia, whatever the browser locale).
+    const startTrigger = page.getByLabel('Início *')
+    await expect(startTrigger).toBeVisible()
+    const [startLabel, endLabel] = await Promise.all([
+      startTrigger.textContent(),
+      page.getByLabel('Término').textContent(),
     ])
-    const [startAt, endAt] = [startValue, endValue].map(parseBahiaDateTimeInput)
-    expect(startAt).not.toBeNull()
-    expect(endAt).not.toBeNull()
-    if (!startAt || !endAt) throw new Error('O overlay não recebeu o intervalo do slot.')
-    expect(new Date(endAt).getTime() - new Date(startAt).getTime()).toBe(1_800_000)
+    expect(startLabel).toMatch(/\d{2}\/\d{2}\/\d{4} às 14:00/)
+    expect(endLabel).toMatch(/\d{2}\/\d{2}\/\d{4} às 14:30/)
     await expect(page.getByLabel('Município *')).toHaveValue(municipality.name)
 
     await page.getByLabel('Título *').fill(title)
+
+    // The acceptance center: pick a different time through the shadcn picker
+    // (calendar keeps the day; the step selects change hour/minute) and the
+    // saved event lands at the chosen hour. Both fields move together so the
+    // "Término posterior ao Início" validation stays satisfied. After
+    // selectOption the focus sits in the native select, where Escape never
+    // reaches Radix — re-clicking the selected day moves focus into the
+    // calendar, then Escape closes only the picker (never the overlay).
+    await startTrigger.click()
+    // Scope to the live picker: a just-closed popover lingers in the DOM for
+    // its 100 ms close animation, so a bare combobox query can match twice.
+    const openPicker = () => page.locator('[data-slot="popover-content"][data-state="open"]').last()
+    const hourSelect = openPicker().getByRole('combobox', { name: 'Hora' })
+    await expect(hourSelect).toBeVisible()
+    await hourSelect.selectOption('15')
+    await expect(startTrigger).toHaveText(/\d{2}\/\d{2}\/\d{4} às 15:00/)
+    await openPicker().locator('[data-selected-single="true"]').click()
+    await page.keyboard.press('Escape')
+    await page.getByLabel('Término').click()
+    const endHourSelect = openPicker().getByRole('combobox', { name: 'Hora' })
+    await expect(endHourSelect).toBeVisible()
+    await endHourSelect.selectOption('16')
+    // The minute keeps its prefill (30) — only the hour changed.
+    await expect(page.getByLabel('Término')).toHaveText(/\d{2}\/\d{2}\/\d{4} às 16:30/)
+    await openPicker().locator('[data-selected-single="true"]').click()
+    await page.keyboard.press('Escape')
+
     await page.getByRole('button', { name: 'Salvar' }).click()
 
     await expect(page.getByText(title, { exact: true })).toBeVisible({ timeout: 15_000 })
+    // The saved event landed at the chosen times (24h chip, no meridiem).
+    await expect(page.getByText('15:00 – 16:30', { exact: true })).toBeVisible()
     await expect(page).toHaveURL(new RegExp('/campanha/agenda.*'))
   })
 

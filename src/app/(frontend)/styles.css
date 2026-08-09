@@ -413,6 +413,20 @@ body,
   }
 }
 
+/* MARK: Calendar (shadcn radix-nova) — cell geometry tokens for the day grid.
+   `--cell-size`/`--cell-radius` are consumed by ui/calendar.tsx classNames. */
+.cn-calendar {
+  @apply p-2 [--cell-radius:var(--radius-md)] [--cell-size:--spacing(7)];
+}
+
+.cn-calendar-dropdown-root {
+  @apply border-input has-focus:ring-ring/50 border has-focus:border-ring has-focus:ring-3;
+}
+
+.cn-calendar-caption-label {
+  @apply h-6 pr-1 pl-1.5;
+}
+
 /* E16 — municipality dossier print view: compact A4 typography (one step down
    the DESIGN.md ramp: body text-sm→text-xs, section titles text-base→text-sm),
    sections kept whole across page breaks. Chrome hiding lives in `print:`
@@ -423,7 +437,6 @@ body,
     size: A4;
     margin: 14mm;
   }
-
   html,
   body,
   #app {

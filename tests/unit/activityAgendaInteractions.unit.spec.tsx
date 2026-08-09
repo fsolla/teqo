@@ -144,9 +144,10 @@ describe('ActivityAgenda schedule failures', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Clicar slot' }))
 
-    const startInput = await screen.findByLabelText('Início *')
-    expect((startInput as HTMLInputElement).value).toBe('2026-08-07T13:00')
-    expect((screen.getByLabelText('Término') as HTMLInputElement).value).toBe('2026-08-07T13:30')
+    const startTrigger = await screen.findByLabelText('Início *')
+    // C97 — the overlay trigger is a button showing the civil label, 24h.
+    expect(startTrigger.textContent).toBe('07/08/2026 às 13:00')
+    expect(screen.getByLabelText('Término').textContent).toBe('07/08/2026 às 13:30')
     expect(mocks.routerPush).not.toHaveBeenCalled()
   })
 
