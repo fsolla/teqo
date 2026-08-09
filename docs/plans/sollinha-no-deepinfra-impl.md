@@ -36,6 +36,7 @@ flowchart LR
 ```
 
 **Opções consideradas:**
+
 - **A — `@ai-sdk/deepinfra`** (provider oficial do AI SDK p/ Deep Infra; versão **3.0.20** que está na mesma "ferroviária" que o `ai@7.0.47` instalado — `@ai-sdk/provider@4.0.4` + `@ai-sdk/provider-utils@5.0.18`). Troca de 2 linhas: `deepSeek('deepseek-v4-flash')` → `deepInfra('deepseek-ai/DeepSeek-V4-Flash')`. O provider **lê `DEEPINFRA_API_KEY` do env sozinho** (source confirma `environmentVariableName: "DEEPINFRA_API_KEY"`). Seu default baseURL é `https://api.deepinfra.com/v1` + `/openai/...` = exatamente o endpoint OpenAI-compatível que a documentação da Deep Infra prescreve.
 - **B — `@ai-sdk/openai-compatible` cru** com `baseURL: 'https://api.deepinfra.com/v1/openai'` manual + `loadApiKey` próprio. Funciona, mas reimplementa à mão o que o pacote A já encapsula (nome do provider, env var, headers/user-agent, schema de erro).
 - **C — continuar com `@ai-sdk/deepseek` e só sobrescrever `baseURL`** p/ a Deep Infra. Hacky: provider com nome/contrato "DeepSeek oficial" apontando para outra API; model naming e tratamento de reasoning divergem.
