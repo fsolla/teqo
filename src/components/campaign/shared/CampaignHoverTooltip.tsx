@@ -4,6 +4,8 @@ import type { PointerEvent, ReactElement, ReactNode, Ref } from 'react'
 import { cloneElement, useEffect, useRef, useState } from 'react'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { campaignHoverExplanationClassName } from '@/lib/campaignHoverTooltip'
+import { cn } from '@/lib/utils'
 
 /**
  * Hover/focus explanation with no extra chrome — wraps an existing control,
@@ -44,6 +46,8 @@ type TappableElement = ReactElement<{
 export const CampaignHoverTooltip = ({
   content,
   children,
+  explanationLabel,
+  filterAffordance = false,
   side = 'bottom',
   align = 'center',
   sideOffset = 4,
@@ -51,7 +55,19 @@ export const CampaignHoverTooltip = ({
   disabled = false,
 }: {
   content: ReactNode
-  children: TappableElement
+  children?: TappableElement
+  /**
+   * `CampaignTableHead`'s label, passed as DATA instead of as the `children`
+   * element. React 19.2.4's flight serializer defers an element passed as a
+   * client component's `children` when the enclosing server task crosses its
+   * row budget (MAX_ROW_SIZE) — during SSR the component then receives an
+   * unresolved lazy placeholder instead of the element, and cloning it
+   * produces "Element type is invalid: got undefined". A string/ReactNode
+   * prop is never deferred, so the trigger is rebuilt client-side from it.
+   */
+  explanationLabel?: ReactNode
+  /** `CampaignTableHead`-only: keep the label's min-height when a filter sits beside it. */
+  filterAffordance?: boolean
   side?: 'top' | 'right' | 'bottom' | 'left'
   align?: 'start' | 'center' | 'end'
   sideOffset?: number
@@ -79,17 +95,54 @@ export const CampaignHoverTooltip = ({
     return () => document.removeEventListener('pointerdown', closeIfOutside)
   }, [open])
 
-  if (content === null || content === undefined || content === false) return children
+  if (content === null || content === undefined || content === false) {
+    return explanationLabel !== undefined ? (
+      <span
+        tabIndex={0}
+        className={cn(
+          campaignHoverExplanationClassName,
+          filterAffordance && 'inline-flex min-h-11 items-center',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        )}
+      >
+        {explanationLabel}
+      </span>
+    ) : (
+      children
+    )
+  }
 
-  const trigger = cloneElement(children, {
-    ref: (node: HTMLElement | null) => {
-      triggerRef.current = node
-    },
-    onPointerUp: (event: PointerEvent) => {
-      children.props.onPointerUp?.(event)
-      if (openOnTouch && event.pointerType === 'touch') setOpen((current) => !current)
-    },
-  })
+  // `explanationLabel` callers rebuild the trigger from the data prop; the
+  // shared path clones the caller's element.
+  const trigger =
+    explanationLabel !== undefined ? (
+      <span
+        tabIndex={0}
+        className={cn(
+          campaignHoverExplanationClassName,
+          filterAffordance && 'inline-flex min-h-11 items-center',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        )}
+        ref={(node) => {
+          triggerRef.current = node
+        }}
+        onPointerUp={(event) => {
+          if (openOnTouch && event.pointerType === 'touch') setOpen((current) => !current)
+        }}
+      >
+        {explanationLabel}
+      </span>
+    ) : (
+      cloneElement(children as TappableElement, {
+        ref: (node: HTMLElement | null) => {
+          triggerRef.current = node
+        },
+        onPointerUp: (event: PointerEvent) => {
+          ;(children as TappableElement).props.onPointerUp?.(event)
+          if (openOnTouch && event.pointerType === 'touch') setOpen((current) => !current)
+        },
+      })
+    )
 
   return (
     <Tooltip open={!disabled && open} onOpenChange={(next) => setOpen(disabled ? false : next)}>

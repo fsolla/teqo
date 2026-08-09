@@ -15,10 +15,7 @@ import {
   resolveVisibleColumns,
   type CampaignColumnVisibility,
 } from '@/lib/campaignColumnVisibility'
-import {
-  campaignHoverExplanationClassName,
-  campaignHoverTooltipAlign,
-} from '@/lib/campaignHoverTooltip'
+import { campaignHoverTooltipAlign } from '@/lib/campaignHoverTooltip'
 import { cn } from '@/lib/utils'
 
 /**
@@ -91,18 +88,12 @@ export const CampaignTableHead = ({
   filter?: ReactNode
 }) => {
   const label = description ? (
-    <CampaignHoverTooltip content={description} align={campaignHoverTooltipAlign(align)}>
-      <span
-        tabIndex={0}
-        className={cn(
-          campaignHoverExplanationClassName,
-          filter && 'inline-flex min-h-11 items-center',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        )}
-      >
-        {children}
-      </span>
-    </CampaignHoverTooltip>
+    <CampaignHoverTooltip
+      content={description}
+      align={campaignHoverTooltipAlign(align)}
+      explanationLabel={children}
+      filterAffordance={Boolean(filter)}
+    />
   ) : filter ? (
     <span className="inline-flex min-h-11 items-center">{children}</span>
   ) : (

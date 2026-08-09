@@ -74,11 +74,15 @@ const expectedHeadersAt = (width: number) => {
 
   const headers = ['Município', '2022', '2026', 'Nível', 'Classe']
   if (width >= 54 * REM_IN_PIXELS) headers.push('Assessores')
-  headers.push('Tendência')
+  // B172 — below 60rem the trend column disappears and its compact trigger
+  // moves into Ações; above it, the column shows the full badge and Ações has
+  // nothing to host (it is width-gated closed), so the two swap at 60rem.
+  if (width >= 60 * REM_IN_PIXELS) headers.push('Tendência')
   if (width >= 66 * REM_IN_PIXELS) headers.push('Liderança')
   if (width >= 72 * REM_IN_PIXELS) headers.push('Dobradinha')
   if (width >= 78 * REM_IN_PIXELS) headers.push('Cobertura')
   headers.push('Atualização')
+  if (width < 60 * REM_IN_PIXELS) headers.push('Ações')
   return headers
 }
 
@@ -131,6 +135,15 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
           expect(await visibleTriggerText(trendTrigger)).toBe(
             width >= 60 * REM_IN_PIXELS ? 'Não registrada' : '',
           )
+          // B172 — below 60rem the column is gone and the compact trigger lives
+          // in Ações instead; `getByRole` skips display:none, so exactly one
+          // visible trend editor exists per row at every width.
+          await expect(
+            table
+              .locator('tbody tr')
+              .first()
+              .getByRole('button', { name: /^Editar tendência política/ }),
+          ).toHaveCount(1)
           expect(await visibleTriggerText(signalTrigger)).toBe(
             width >= 84 * REM_IN_PIXELS ? 'Sem sinal' : '',
           )
