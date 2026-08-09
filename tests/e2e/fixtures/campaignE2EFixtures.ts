@@ -29,6 +29,7 @@ type OwnedCollection =
   | 'campaignInvite'
   | 'consent'
   | 'supporter'
+  | 'calendarFeed'
 
 const deletionOrder: OwnedCollection[] = [
   'campaignInvite',
@@ -37,6 +38,7 @@ const deletionOrder: OwnedCollection[] = [
   'allocationDecision',
   'municipalityUpdate',
   'activity',
+  'calendarFeed',
   'leadership',
   'supporter',
   'organization',
@@ -358,6 +360,15 @@ class CampaignE2EOwnership {
         pagination: false,
       })
       for (const supporter of supporters.docs) this.own('supporter', supporter.id)
+    }
+    if (userIDs.length) {
+      const feeds = await this.rootPayload.find({
+        collection: 'calendarFeed',
+        where: { createdBy: { in: userIDs } },
+        depth: 0,
+        pagination: false,
+      })
+      for (const feed of feeds.docs) this.own('calendarFeed', feed.id)
     }
   }
 
