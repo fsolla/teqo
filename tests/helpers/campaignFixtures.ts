@@ -43,6 +43,7 @@ type CampaignCollection =
   | 'contact'
   | 'campaignUser'
   | 'consent'
+  | 'calendarFeed'
 
 type OwnedIDs = Record<CampaignCollection, Set<number>>
 
@@ -126,6 +127,7 @@ const emptyOwnedIDs = (): OwnedIDs => ({
   contact: new Set(),
   campaignUser: new Set(),
   consent: new Set(),
+  calendarFeed: new Set(),
 })
 
 /**
@@ -234,50 +236,59 @@ const purgeMunicipalityResidue = async (
   payload: Payload,
   municipalityID: number,
 ): Promise<void> => {
-  const [pledges, updates, demands, leaderships, supporters, activities] = await Promise.all([
-    payload.find({
-      collection: 'votePledge',
-      where: { municipality: { equals: municipalityID } },
-      depth: 0,
-      pagination: false,
-      select: {},
-    }),
-    payload.find({
-      collection: 'municipalityUpdate',
-      where: { municipality: { equals: municipalityID } },
-      depth: 0,
-      pagination: false,
-      select: {},
-    }),
-    payload.find({
-      collection: 'campaignDemand',
-      where: { municipality: { equals: municipalityID } },
-      depth: 0,
-      pagination: false,
-      select: {},
-    }),
-    payload.find({
-      collection: 'leadership',
-      where: { municipalities: { in: [municipalityID] } },
-      depth: 0,
-      pagination: false,
-      select: {},
-    }),
-    payload.find({
-      collection: 'supporter',
-      where: { municipality: { equals: municipalityID } },
-      depth: 0,
-      pagination: false,
-      select: {},
-    }),
-    payload.find({
-      collection: 'activity',
-      where: { municipality: { equals: municipalityID } },
-      depth: 0,
-      pagination: false,
-      select: {},
-    }),
-  ])
+  const [pledges, updates, demands, leaderships, supporters, activities, feeds] = await Promise.all(
+    [
+      payload.find({
+        collection: 'votePledge',
+        where: { municipality: { equals: municipalityID } },
+        depth: 0,
+        pagination: false,
+        select: {},
+      }),
+      payload.find({
+        collection: 'municipalityUpdate',
+        where: { municipality: { equals: municipalityID } },
+        depth: 0,
+        pagination: false,
+        select: {},
+      }),
+      payload.find({
+        collection: 'campaignDemand',
+        where: { municipality: { equals: municipalityID } },
+        depth: 0,
+        pagination: false,
+        select: {},
+      }),
+      payload.find({
+        collection: 'leadership',
+        where: { municipalities: { in: [municipalityID] } },
+        depth: 0,
+        pagination: false,
+        select: {},
+      }),
+      payload.find({
+        collection: 'supporter',
+        where: { municipality: { equals: municipalityID } },
+        depth: 0,
+        pagination: false,
+        select: {},
+      }),
+      payload.find({
+        collection: 'activity',
+        where: { municipality: { equals: municipalityID } },
+        depth: 0,
+        pagination: false,
+        select: {},
+      }),
+      payload.find({
+        collection: 'calendarFeed',
+        where: { filterMunicipality: { equals: municipalityID } },
+        depth: 0,
+        pagination: false,
+        select: {},
+      }),
+    ],
+  )
 
   // Residue invites reference residue leaderships (FK), so they must be
   // found and deleted before the leaderships — otherwise the leadership
@@ -303,6 +314,7 @@ const purgeMunicipalityResidue = async (
       | 'leadership'
       | 'supporter'
       | 'activity'
+      | 'calendarFeed'
     ids: number[]
   }> = [
     { collection: 'campaignInvite', ids: invites.docs.map((doc) => doc.id) },
@@ -310,6 +322,7 @@ const purgeMunicipalityResidue = async (
     { collection: 'municipalityUpdate', ids: updates.docs.map((doc) => doc.id) },
     { collection: 'campaignDemand', ids: demands.docs.map((doc) => doc.id) },
     { collection: 'activity', ids: activities.docs.map((doc) => doc.id) },
+    { collection: 'calendarFeed', ids: feeds.docs.map((doc) => doc.id) },
     { collection: 'leadership', ids: leadershipIDs },
     { collection: 'supporter', ids: supporters.docs.map((doc) => doc.id) },
   ]
@@ -1131,6 +1144,7 @@ export class CampaignFixtures {
         'organization',
         'stateDeputy',
         'contact',
+        'calendarFeed',
       ] as const) {
         await this.deleteOwned(collection, req)
       }

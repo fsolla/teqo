@@ -5,9 +5,9 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import {
-  createCalendarFeedLinkRecord,
-  listCalendarFeedsRecord,
-  revokeCalendarFeedRecord,
+  createCalendarFeedLink,
+  listCalendarFeeds,
+  revokeCalendarFeed,
 } from '@/app/(campaign)/campanha/actions/calendarFeed'
 import { ActivityAgenda } from '@/components/campaign/activity/ActivityAgenda'
 import { ActivityAgendaFilters } from '@/components/campaign/activity/ActivityAgendaFilters'
@@ -47,7 +47,7 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
   const [municipalityOptions, knownTags, feeds] = await Promise.all([
     loadMunicipalityOptions(payload, user),
     loadAccessibleActivityTags(payload, user),
-    listCalendarFeedsRecord().catch(() => []),
+    listCalendarFeeds().catch(() => []),
   ])
   const state = restrictActivityAgendaState(
     resolvedUrl.state,
@@ -86,7 +86,7 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
           }))}
           onCreateFeed={async (label) => {
             'use server'
-            const result = await createCalendarFeedLinkRecord({
+            const result = await createCalendarFeedLink({
               label,
               filterMunicipality: state.municipality,
               filterDeputyPresent: state.deputyPresent,
@@ -96,7 +96,7 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
           }}
           onRevokeFeed={async (feedId) => {
             'use server'
-            return revokeCalendarFeedRecord(feedId)
+            return revokeCalendarFeed(feedId)
           }}
         />
         <CampaignListResults>

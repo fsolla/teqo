@@ -4,10 +4,12 @@ import {
   canCreateCalendarFeed,
   canDeleteCalendarFeed,
   canReadCalendarFeed,
+  canSetCalendarFeedRevocation,
+  canSetCalendarFeedSecret,
   canSetCalendarFeedSystemField,
   canUpdateCalendarFeed,
 } from '@/utilities/campaignAccess'
-import { systemStampedActorField } from '@/utilities/campaignAuditFields'
+import { stampCampaignCreatedBy, systemStampedActorField } from '@/utilities/campaignAuditFields'
 
 export const CalendarFeed: CollectionConfig = {
   slug: 'calendarFeed',
@@ -32,6 +34,9 @@ export const CalendarFeed: CollectionConfig = {
     update: canUpdateCalendarFeed,
     delete: canDeleteCalendarFeed,
   },
+  hooks: {
+    beforeChange: [stampCampaignCreatedBy],
+  },
   fields: [
     {
       name: 'secretSlug',
@@ -43,7 +48,7 @@ export const CalendarFeed: CollectionConfig = {
         hidden: true,
       },
       access: {
-        create: canSetCalendarFeedSystemField,
+        create: canSetCalendarFeedSecret,
         read: () => false,
         update: canSetCalendarFeedSystemField,
       },
@@ -90,7 +95,7 @@ export const CalendarFeed: CollectionConfig = {
       },
       access: {
         create: canSetCalendarFeedSystemField,
-        update: canSetCalendarFeedSystemField,
+        update: canSetCalendarFeedRevocation,
       },
     },
     systemStampedActorField({ required: true, setAccess: canSetCalendarFeedSystemField }),
