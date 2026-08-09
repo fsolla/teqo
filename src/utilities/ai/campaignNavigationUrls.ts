@@ -15,6 +15,7 @@ import { ACTIVITY_TOUR_COMPOSER_PATH } from '@/lib/campaignQuickActionPaths'
 import type { CampaignRole } from '@/lib/campaignRoles'
 import { isStaffCampaignRole, isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
 import { isMunicipalitySlug } from '@/lib/municipalityCatalog'
+import { isCitySlug } from '@/lib/salvadorCity'
 import { activityStatuses } from '@/lib/schemas/activity'
 import {
   campaignDemandKinds,
@@ -307,7 +308,9 @@ const buildPathForRequest = (
       return { ok: true, path, label }
     }
     case 'municipality': {
-      if (!isMunicipalitySlug(request.slug)) {
+      // B178 — the virtual Salvador city is a canonical navigation destination
+      // (its page resolves); catalog slugs keep their contract.
+      if (!isMunicipalitySlug(request.slug) && !isCitySlug(request.slug)) {
         return {
           ok: false,
           error: `Slug de município inválido: "${request.slug}". Resolva o município com searchEntities antes de montar o link.`,

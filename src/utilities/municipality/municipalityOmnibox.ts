@@ -7,7 +7,7 @@ import {
   type CampaignListOmniboxChip,
   type CampaignListOmniboxSuggestion,
 } from '@/lib/campaignListOmnibox'
-import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
+import { municipalityDisplayNameForSlug } from '@/lib/salvadorCity'
 import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
   VOTE_ESTIMATE_SCENARIOS,
@@ -111,7 +111,7 @@ export const buildMunicipalityOmniboxChips = ({
   for (const slug of state.slugs ?? []) {
     chips.push({
       id: `slug:${slug}`,
-      label: chipLabel('Município', getMunicipalityCatalogEntry(slug)?.name ?? slug),
+      label: chipLabel('Município', municipalityDisplayNameForSlug(slug) ?? slug),
     })
   }
 

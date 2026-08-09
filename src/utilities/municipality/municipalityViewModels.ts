@@ -21,6 +21,7 @@ import { resolveMunicipalityLastSignalAt } from '@/utilities/municipality/munici
 import {
   computeMunicipalityTerritorialClass,
   type MunicipalityTerritorialClass,
+  type MunicipalityTerritorialClassification,
   type TerritorialFactor,
 } from '@/utilities/municipality/municipalityTerritorialClass'
 import type { StateDeputySummary } from '@/utilities/stateDeputyData'
@@ -65,6 +66,8 @@ export type MunicipalityListViewModel = {
   region: string
   ibgeCode: string
   zoneNumber: number | null
+  /** B178 — the Salvador city aggregate row (virtual, read-only; never a DB row). */
+  isCity: boolean
   advisorIDs: number[]
   /** B155 — leadership ids linked to this município (reverse read of `leadership.municipalities`). */
   leadershipIDs: number[]
@@ -102,8 +105,13 @@ export const toMunicipalityListViewModel = (
   goalCoverageByScenario?: Record<VoteEstimateScenario, MunicipalityGoalCoverage>,
   /** B155 — empty for non-staff views; the leader never renders this column. */
   leadershipIDs: number[] = [],
+  /** B178 — the city row carries no operational data and renders read-only cells. */
+  isCity = false,
+  /** B178 — override for the city's AGGREGATE class (the artifact lookup by slug would miss). */
+  territorialClassOverride?: MunicipalityTerritorialClassification,
 ): MunicipalityListViewModel => {
-  const territorialClass = computeMunicipalityTerritorialClass(municipality.slug)
+  const territorialClass =
+    territorialClassOverride ?? computeMunicipalityTerritorialClass(municipality.slug)
 
   return {
     id: municipality.id,
@@ -114,6 +122,7 @@ export const toMunicipalityListViewModel = (
     region: municipality.region,
     ibgeCode: municipality.ibgeCode,
     zoneNumber: municipality.zoneNumber ?? null,
+    isCity,
     advisorIDs: (municipality.advisors ?? [])
       .map(relationshipId)
       .filter((id): id is number => id !== null),

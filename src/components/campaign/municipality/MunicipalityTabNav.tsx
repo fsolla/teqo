@@ -21,10 +21,13 @@ export const MunicipalityTabNav = ({
   activeTab,
   municipalitySlug,
   searchParams,
+  tabs = municipalityDetailTabs,
 }: {
   activeTab: MunicipalityDetailTab
   municipalitySlug: string
   searchParams: MunicipalityDetailSearchParams
+  /** B178 — the city page renders a reduced tab set (its data owners only). */
+  tabs?: readonly MunicipalityDetailTab[]
 }) => (
   <nav
     aria-label="Seções do município"
@@ -34,7 +37,7 @@ export const MunicipalityTabNav = ({
       role="list"
       className="m-0 flex h-full min-w-max list-none items-stretch gap-1 p-0 md:gap-0 lg:gap-1"
     >
-      {municipalityDetailTabs.map((tab) => {
+      {tabs.map((tab) => {
         const isActive = tab === activeTab
         return (
           <li key={tab} className="m-0 h-full p-0">

@@ -6,6 +6,7 @@
 import { isBahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import { EMPTY_ENGAGEMENT_LEVEL_LABEL, formatEngagementLevelLabel } from '@/lib/engagementLevel'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
+import { isCitySlug, municipalityDisplayNameForSlug } from '@/lib/salvadorCity'
 import { NO_PARTY_FILTER_VALUE, truncatedNamesLabel } from '@/utilities/campaignListUrl'
 import {
   municipalityListCoverageLabels,
@@ -47,11 +48,18 @@ export type MunicipalityFilterOption = {
   label: string
 }
 
-/** Catalog labels for a (possibly cross-filtered) slug list. */
+/**
+ * B178 — city-aware catalog labels for a (possibly cross-filtered) slug list:
+ * the virtual city slug resolves through the city descriptor so it never
+ * renders raw.
+ */
 export const municipalityFilterOptionsForSlugs = (
   slugs: readonly string[],
 ): MunicipalityFilterOption[] =>
-  slugs.map((slug) => ({ value: slug, label: getMunicipalityCatalogEntry(slug)?.name ?? slug }))
+  slugs.map((slug) => ({
+    value: slug,
+    label: municipalityDisplayNameForSlug(slug) ?? slug,
+  }))
 
 export type MunicipalityFilterDefinition = {
   param: MunicipalityFilterParam
@@ -287,7 +295,11 @@ export const buildMunicipalityFilterOptionHref = (
     if (regions.length) next.regions = regions
     else delete next.regions
   } else if (param === 'slug') {
-    const slugs = toggled.filter((slug) => getMunicipalityCatalogEntry(slug) !== undefined)
+    // B178 — the city slug toggles like a catalog slug (the row is a common
+    // list entity), even though it is not a catalog unit.
+    const slugs = toggled.filter(
+      (slug) => getMunicipalityCatalogEntry(slug) !== undefined || isCitySlug(slug),
+    )
     if (slugs.length) next.slugs = slugs
     else delete next.slugs
   } else if (param === 'advisor') {
@@ -360,9 +372,7 @@ export const formatMunicipalityActiveFiltersSummary = (
   if (state.priority) parts.push(municipalityPriorityLabels.alta)
   if (state.slugs?.length) {
     parts.push(
-      truncatedNamesLabel(
-        state.slugs.map((slug) => getMunicipalityCatalogEntry(slug)?.name ?? slug),
-      ),
+      truncatedNamesLabel(state.slugs.map((slug) => municipalityDisplayNameForSlug(slug) ?? slug)),
     )
   }
   if (state.regions?.length) parts.push(truncatedNamesLabel([...state.regions]))

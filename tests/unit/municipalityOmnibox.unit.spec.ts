@@ -232,3 +232,19 @@ describe('municipality omnibox (B127)', () => {
     })
   })
 })
+
+describe('municipality omnibox — city slug (B178)', () => {
+  it('labels the city slug chip with the aggregate name, never the raw slug', () => {
+    const chips = buildMunicipalityOmniboxChips({
+      state: parseMunicipalityListParams({ slug: 'salvador' }),
+      scenario: 'central',
+      showStaffFilters: true,
+      advisorLabelsById: new Map(),
+      stateDeputyLabelsById: new Map(),
+      leadershipLabelsById: new Map(),
+    })
+    expect(chips.find((chip) => chip.id === 'slug:salvador')?.label).toBe(
+      'Município: Salvador (cidade)',
+    )
+  })
+})

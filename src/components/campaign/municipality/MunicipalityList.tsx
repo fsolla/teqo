@@ -35,6 +35,7 @@ import {
   MunicipalityStateDeputyRelationCell,
   type MunicipalityStateDeputyCreateAction,
 } from '@/components/campaign/shared/MunicipalityStateDeputyRelationCell'
+import { Badge } from '@/components/ui/Badge'
 import { buttonVariants } from '@/components/ui/button'
 import {
   Empty,
@@ -50,6 +51,7 @@ import {
   type CampaignColumnVisibility,
 } from '@/lib/campaignColumnVisibility'
 import { formatEngagementLevelLabel } from '@/lib/engagementLevel'
+import { SALVADOR_CITY_AGGREGATE_LABEL } from '@/lib/salvadorCity'
 import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import type { StateDeputyRelationOption } from '@/utilities/campaignRelationOptions'
@@ -258,6 +260,28 @@ const municipalityListColumns = ({
     </MunicipalityListUpdateControl>
   )
 
+  // B178 — the city row is read-only: every interactive cell renders its
+  // value (or a dash) without a popover/overlay for a municipality that does
+  // not exist in the database. The trend badge mirrors the control's own
+  // null-status trigger ("Não registrada"), the class cell keeps its real
+  // aggregate class and the goal-coverage cell its honest empty state.
+  const cityDash = <span className="text-muted-foreground">—</span>
+
+  const renderTrendCell = (
+    municipality: MunicipalityListViewModel,
+    triggerPresentation: 'compact' | 'adaptive',
+  ) =>
+    municipality.isCity ? (
+      <Badge variant="outline">Não registrada</Badge>
+    ) : (
+      renderTrendControl(municipality, triggerPresentation)
+    )
+
+  const renderSignalCell = (
+    municipality: MunicipalityListViewModel,
+    triggerPresentation: 'compact' | 'adaptive',
+  ) => (municipality.isCity ? cityDash : renderSignalControl(municipality, triggerPresentation))
+
   return [
     {
       id: 'name',
@@ -287,14 +311,22 @@ const municipalityListColumns = ({
             >
               {municipality.name}
             </Link>
-            {municipality.priority === 'alta' && isStaffView ? (
+            {municipality.isCity ? (
+              <span className="mt-[5px] shrink-0">
+                <Badge variant="secondary">Cidade</Badge>
+              </span>
+            ) : municipality.priority === 'alta' && isStaffView ? (
               <span className="mt-[5px] shrink-0">
                 <MunicipalityPriorityIndicator />
               </span>
             ) : null}
           </div>
           <span className="block truncate text-xs text-muted-foreground">
-            <TerritoryLink region={municipality.region} compact />
+            {municipality.isCity ? (
+              SALVADOR_CITY_AGGREGATE_LABEL
+            ) : (
+              <TerritoryLink region={municipality.region} compact />
+            )}
           </span>
         </div>
       ),
@@ -339,13 +371,17 @@ const municipalityListColumns = ({
             cellClassName: 'relative overflow-visible align-middle text-center tabular-nums',
             cell: (municipality) => (
               <div className="flex min-h-11 items-center justify-center">
-                <MunicipalityListExpectedVotesControl
-                  municipalityID={municipality.id}
-                  municipalityName={municipality.name}
-                  expectedVotes={municipality.expectedVotes}
-                  pledgeCoverage={toMunicipalityPledgeCoverageView(municipality.pledges)}
-                  variant="popover"
-                />
+                {municipality.isCity ? (
+                  cityDash
+                ) : (
+                  <MunicipalityListExpectedVotesControl
+                    municipalityID={municipality.id}
+                    municipalityName={municipality.name}
+                    expectedVotes={municipality.expectedVotes}
+                    pledgeCoverage={toMunicipalityPledgeCoverageView(municipality.pledges)}
+                    variant="popover"
+                  />
+                )}
               </div>
             ),
           },
@@ -363,7 +399,9 @@ const municipalityListColumns = ({
               />
             ),
             cell: (municipality) =>
-              canMoveEngagementLevel ? (
+              municipality.isCity ? (
+                cityDash
+              ) : canMoveEngagementLevel ? (
                 <MunicipalityListLevelControl
                   municipalityID={municipality.id}
                   municipalityName={municipality.name}
@@ -424,7 +462,9 @@ const municipalityListColumns = ({
             ),
             cellClassName: responsiveColumnClassName.advisors,
             cell: (municipality) =>
-              isCoordinator ? (
+              municipality.isCity ? (
+                cityDash
+              ) : isCoordinator ? (
                 <MunicipalityListAdvisorsControl
                   municipalityID={municipality.id}
                   municipalityName={municipality.name}
@@ -459,7 +499,7 @@ const municipalityListColumns = ({
                 description={municipalityColumnDescriptions.trend}
               />
             ),
-            cell: (municipality) => renderTrendControl(municipality, 'adaptive'),
+            cell: (municipality) => renderTrendCell(municipality, 'adaptive'),
           },
           {
             id: 'leaderships',
@@ -473,16 +513,19 @@ const municipalityListColumns = ({
               </CampaignTableHead>
             ),
             cellClassName: responsiveColumnClassName.leaderships,
-            cell: (municipality) => (
-              <MunicipalityListLeadershipsControl
-                municipalityID={municipality.id}
-                municipalityName={municipality.name}
-                currentLeadershipIDs={municipality.leadershipIDs}
-                leadershipNamesById={leadershipNamesById}
-                options={leadershipOptions}
-                variant="popover"
-              />
-            ),
+            cell: (municipality) =>
+              municipality.isCity ? (
+                cityDash
+              ) : (
+                <MunicipalityListLeadershipsControl
+                  municipalityID={municipality.id}
+                  municipalityName={municipality.name}
+                  currentLeadershipIDs={municipality.leadershipIDs}
+                  leadershipNamesById={leadershipNamesById}
+                  options={leadershipOptions}
+                  variant="popover"
+                />
+              ),
           },
           {
             // B176 — staff-wide since 2026-08-09: the edit is scoped to the
@@ -502,17 +545,20 @@ const municipalityListColumns = ({
               responsiveColumnClassName.stateDeputies,
               'max-w-56 whitespace-normal',
             ),
-            cell: (municipality) => (
-              <MunicipalityStateDeputyRelationCell
-                municipalityId={municipality.id}
-                municipalityName={municipality.name}
-                stateDeputyIDs={municipality.stateDeputyIDs}
-                options={stateDeputyOptions}
-                commitAction={stateDeputyCommitAction}
-                createAction={stateDeputyCreateAction}
-                editorVariant="popover"
-              />
-            ),
+            cell: (municipality) =>
+              municipality.isCity ? (
+                cityDash
+              ) : (
+                <MunicipalityStateDeputyRelationCell
+                  municipalityId={municipality.id}
+                  municipalityName={municipality.name}
+                  stateDeputyIDs={municipality.stateDeputyIDs}
+                  options={stateDeputyOptions}
+                  commitAction={stateDeputyCommitAction}
+                  createAction={stateDeputyCreateAction}
+                  editorVariant="popover"
+                />
+              ),
           },
 
           {
@@ -545,7 +591,7 @@ const municipalityListColumns = ({
                 {municipalityColumnLabels.lastSignal}
               </MunicipalitySortableHead>
             ),
-            cell: (municipality) => renderSignalControl(municipality, 'adaptive'),
+            cell: (municipality) => renderSignalCell(municipality, 'adaptive'),
           },
           ...(trendIsHidden || signalIsHidden
             ? ([
@@ -561,8 +607,8 @@ const municipalityListColumns = ({
                   cellClassName: 'text-right',
                   cell: (municipality) => (
                     <div className="flex items-center justify-end gap-1">
-                      {trendIsHidden ? renderTrendControl(municipality, 'compact') : null}
-                      {signalIsHidden ? renderSignalControl(municipality, 'compact') : null}
+                      {trendIsHidden ? renderTrendCell(municipality, 'compact') : null}
+                      {signalIsHidden ? renderSignalCell(municipality, 'compact') : null}
                     </div>
                   ),
                 },

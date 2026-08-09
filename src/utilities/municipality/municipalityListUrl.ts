@@ -9,6 +9,7 @@ import type { Where } from 'payload'
 import { type BahiaIdentityTerritory } from '@/lib/bahiaTerritories'
 import { engagementLevels, type EngagementLevel } from '@/lib/engagementLevel'
 import { isMunicipalitySlug } from '@/lib/municipalityCatalog'
+import { isCitySlug } from '@/lib/salvadorCity'
 import {
   allParamValues,
   buildListHref,
@@ -303,11 +304,19 @@ export const formatMunicipalityListSortSummary = (
 
 const parseRegionsParam = parseTerritoryRegionsParam
 
+/**
+ * B178 — the municipality list also accepts the virtual city slug (`salvador`):
+ * the city row participates in the slug filter like a normal entity. Deliberately
+ * list-scoped: `isMunicipalitySlug` (the global catalog) stays untouched.
+ */
+const isMunicipalityOrCitySlug = (value: string): boolean =>
+  isMunicipalitySlug(value) || isCitySlug(value)
+
 const parseSlugsParam = (raw: string | string[] | undefined): string[] => {
   const slugs: string[] = []
   const seen = new Set<string>()
   for (const token of allParamValues(raw)) {
-    if (!isMunicipalitySlug(token) || seen.has(token)) continue
+    if (!isMunicipalityOrCitySlug(token) || seen.has(token)) continue
     seen.add(token)
     slugs.push(token)
   }

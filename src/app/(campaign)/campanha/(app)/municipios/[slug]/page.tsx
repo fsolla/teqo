@@ -9,8 +9,10 @@ import { MunicipalityTabNav } from '@/components/campaign/municipality/Municipal
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
+import { isCitySlug, salvadorCity } from '@/lib/salvadorCity'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
+  cityMunicipalityDetailTabs,
   resolveMunicipalityDetailTab,
   type MunicipalityDetailSearchParams,
 } from '@/utilities/municipality/municipalityDetailTabUi'
@@ -22,6 +24,7 @@ import {
 } from '@/utilities/municipality/municipalityPageData'
 import { loadAdvisorSummaries } from '@/utilities/municipality/municipalityViewModels'
 
+import { CityDemandsTab, CityOverviewTab } from './CityDetailSections'
 import {
   DossierTab,
   ElectionsTab,
@@ -31,8 +34,13 @@ import {
   UpdatesTab,
 } from './MunicipalityDetailTabs'
 
+const CITY_PAGE_SUBTITLE = 'Metropolitano de Salvador · ZE 1–19 · capital (agregado das 19 zonas)'
+
 export async function generateMetadata({ params }: MunicipalityDetailPageProps) {
   const { slug } = await params
+  if (isCitySlug(slug)) {
+    return campaignPageMetadata({ title: salvadorCity.name, subtitle: CITY_PAGE_SUBTITLE })
+  }
   const payload = await getPayload({ config })
   const user = await requireCampaignPageActor({ gate: 'noLeader' })
 
@@ -62,6 +70,44 @@ export default async function MunicipalityDetailPage({
     requireCampaignPageActor({ gate: 'noLeader' }),
     getPayload({ config }),
   ])
+
+  // B178 — the virtual Salvador city has no DB document: the page is a
+  // read-only aggregate over the 19 zones, with its own reduced tab set.
+  if (isCitySlug(slug)) {
+    const resolvedTab = resolveMunicipalityDetailTab(rawSearchParams)
+    const cityTab = cityMunicipalityDetailTabs.includes(resolvedTab) ? resolvedTab : 'overview'
+    return (
+      <CampaignPageShell>
+        <SetCampaignPageChrome
+          chrome={{ title: salvadorCity.name, subtitle: CITY_PAGE_SUBTITLE }}
+        />
+        <MunicipalityTabNav
+          activeTab={cityTab}
+          municipalitySlug={salvadorCity.slug}
+          searchParams={rawSearchParams}
+          tabs={cityMunicipalityDetailTabs}
+        />
+        {cityTab === 'overview' ? <CityOverviewTab payload={payload} user={user} /> : null}
+        {cityTab === 'elections' ? (
+          <Suspense fallback={<MunicipalityTabFallback />}>
+            <ElectionsTab
+              slug={salvadorCity.slug}
+              rawSearchParams={rawSearchParams}
+              payloadUser={{ payload, user }}
+            />
+          </Suspense>
+        ) : null}
+        {cityTab === 'demands' ? <CityDemandsTab /> : null}
+        <RecentVisitTracker
+          entry={{
+            href: `/campanha/municipios/${salvadorCity.slug}`,
+            label: salvadorCity.name,
+            kind: 'municipality',
+          }}
+        />
+      </CampaignPageShell>
+    )
+  }
 
   let context
   try {
