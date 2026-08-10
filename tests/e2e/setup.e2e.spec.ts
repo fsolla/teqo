@@ -3,7 +3,22 @@ import { expect, test } from '@playwright/test'
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
 
 test('prewarms shared Next route bundles sequentially', async ({ request }) => {
-  test.slow()
+  // 26 route modules compiled cold, each up to ~60 s under parallel-worktree
+  // load (measured 2026-08-10, load ~50: /campanha/contatos took 57 s), plus a
+  // one-shot retry per GET for the dev-server abort class below. On CI the
+  // production build answers warm in seconds, so the budget never bites there.
+  test.setTimeout(420_000)
+  // A cold compile can make Next dev abort an in-flight request (socket hang
+  // up, measured on the original list under load) — the route compiles anyway,
+  // so a single retry lands warm. The assertion runs on the retry only;
+  // a second failure is a real regression (broken/404 route).
+  const prewarmGet = async (path: string) => {
+    const first = await request.get(`${baseURL}${path}`).catch(() => undefined)
+    if (first?.ok()) return first
+    const retry = await request.get(`${baseURL}${path}`).catch(() => undefined)
+    expect(retry?.ok(), `Failed to prewarm ${path}`).toBe(true)
+    return retry
+  }
   for (const path of [
     '/campanha/login',
     '/campanha',
@@ -11,18 +26,35 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
     '/campanha/municipios',
     '/campanha/territorios',
     '/campanha/municipios/e2e-prewarm',
-    '/campanha/contatos',
+    // The only edit route specs navigate (grep-verified 2026-08-10): compiling
+    // it cold mid-test aborted the :78 goto with ERR_ABORTED (dev full-reload).
+    '/campanha/municipios/e2e-prewarm/editar',
     '/campanha/perfil',
     '/campanha/demandas',
+    '/campanha/demandas/nova',
+    // The demand-create form redirects to /campanha/demandas/<slug>; the detail
+    // module is a goto-less redirect target, so it needs its own prewarm entry
+    // (same class as /editar: cold compile mid-test aborts the redirect).
+    '/campanha/demandas/e2e-prewarm',
     '/campanha/liderancas',
+    '/campanha/contatos',
     '/campanha/conceitos',
     '/campanha/acoes/atualizar-votos',
+    '/campanha/acoes/atualizar-lideranca',
     '/campanha/acoes/mudar-tendencia',
+    '/campanha/acoes/registrar-atualizacao',
+    '/campanha/agenda',
+    '/campanha/atividades/nova',
+    '/campanha/atualizacoes',
+    '/campanha/offline',
+    // PWA artifacts every authenticated page fetches on load — a cold compile
+    // here mid-suite full-page-reloads connected clients (ERR_ABORTED class).
+    '/campanha/manifest.webmanifest',
+    '/campanha/sw.js',
     '/campanha/convite/e2e-prewarm',
     '/',
   ]) {
-    const response = await request.get(`${baseURL}${path}`)
-    expect(response.ok(), `Failed to prewarm ${path}`).toBe(true)
+    await prewarmGet(path)
   }
 
   // POST-only API route handlers (auto-save popovers): Next dev compiles a
@@ -38,12 +70,18 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
     '/campanha/municipios/pledge-declared-votes',
     '/campanha/municipios/pledge-estimated-votes',
     '/campanha/municipios/political-trend',
+    '/campanha/municipios/next-steps',
     '/campanha/liderancas/support-status',
+    '/campanha/home-search',
+    // The Sollinha chat mounts on every authenticated page: its transport and
+    // the PWA registration hit these on first load/session-restore — cold
+    // compiles mid-suite are the ERR_ABORTED class (measured on :78 /editar).
+    '/campanha/api/ai-chat',
+    '/campanha/api/ai-transcribe',
     '/campanha/webauthn/login-options',
     '/campanha/webauthn/login',
     '/campanha/webauthn/register-options',
     '/campanha/webauthn/register',
-    '/campanha/home-search',
   ]) {
     await request.post(`${baseURL}${path}`, { data: {} }).catch(() => undefined)
   }

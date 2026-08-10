@@ -621,13 +621,34 @@ export const campaignFixture: CampaignE2EFixtureValue = async ({}, runFixture) =
       login: async (page, identifier, password) => {
         await page.context().clearCookies()
         await page.goto(`${baseURL}/campanha/login`)
-        await page.getByLabel('E-mail ou celular').fill(identifier)
-        await page.getByLabel('Senha').fill(password)
-        // `exact`: the login screen also offers "Entrar com digital ou Face
-        // ID" (B40) whenever the device has a platform authenticator — which
-        // any spec adding a virtual one does.
-        await page.getByRole('button', { name: 'Entrar', exact: true }).click()
-        await page.waitForURL(`${baseURL}/campanha`)
+        // Dev-mode resilience (OPS30): Next dev compiles a route on its first
+        // hit, and that compile can full-page-reload a connected client —
+        // aborting the login POST before it lands (the mechanism documented
+        // in setup.e2e.spec.ts). A budget-only wait cannot recover an aborted
+        // submit, so on a navigation timeout we re-submit ONCE: the action is
+        // warm by then. The short grace wait before re-submitting keeps the
+        // retry idempotent when the first navigation landed just past the
+        // wait (re-filling on the dashboard would throw a bogus error). A
+        // second failure surfaces — wrong credentials fail both attempts.
+        const submitLogin = async () => {
+          await page.getByLabel('E-mail ou celular').fill(identifier)
+          await page.getByLabel('Senha').fill(password)
+          // `exact`: the login screen also offers "Entrar com digital ou Face
+          // ID" (B40) whenever the device has a platform authenticator — which
+          // any spec adding a virtual one does.
+          await page.getByRole('button', { name: 'Entrar', exact: true }).click()
+        }
+        await submitLogin()
+        try {
+          await page.waitForURL(`${baseURL}/campanha`)
+        } catch {
+          try {
+            await page.waitForURL(`${baseURL}/campanha`, { timeout: 5_000 })
+          } catch {
+            await submitLogin()
+            await page.waitForURL(`${baseURL}/campanha`)
+          }
+        }
       },
       payload: fixtures.payload,
       sessionFor: async (context, user) => {
