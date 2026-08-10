@@ -9,11 +9,11 @@ import {
 } from 'ai'
 import { getPayload } from 'payload'
 
+import { splitSollinhaFollowUpBlock } from '@/lib/sollinhaFollowUpSuggestions'
 import { checkRateLimit } from '@/utilities/ai/rateLimit'
 import { AI_SYSTEM_PROMPT } from '@/utilities/ai/systemPrompt'
 import { buildAITools } from '@/utilities/ai/tools'
 import { getCampaignUserRaw } from '@/utilities/campaignAuth'
-import { splitSollinhaFollowUpBlock } from '@/lib/sollinhaFollowUpSuggestions'
 
 export const maxDuration = 60
 

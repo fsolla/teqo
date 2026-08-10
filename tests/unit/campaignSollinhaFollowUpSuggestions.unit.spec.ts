@@ -74,10 +74,7 @@ describe('splitSollinhaFollowUpBlock', () => {
 
   it('deduplicates repeated items', () => {
     const text = `Resposta.\n\n${marker}\n- Mesma pergunta?\n- Mesma pergunta?\n- Outra?`
-    expect(splitSollinhaFollowUpBlock(text).suggestions).toEqual([
-      'Mesma pergunta?',
-      'Outra?',
-    ])
+    expect(splitSollinhaFollowUpBlock(text).suggestions).toEqual(['Mesma pergunta?', 'Outra?'])
   })
 
   it('handles CRLF line endings', () => {
@@ -93,7 +90,9 @@ describe('splitSollinhaFollowUpBlock', () => {
   it('uses the LAST occurrence of the marker when the model repeats it', () => {
     const text = `Resposta.\n\n${marker}\n- Antigas?\n- Também antigas?\n\nMais corpo.\n\n${marker}\n- Novas?\n- Atuais?`
     const { body, suggestions } = splitSollinhaFollowUpBlock(text)
-    expect(body).toBe('Resposta.\n\n**Sugestões de continuação:**\n- Antigas?\n- Também antigas?\n\nMais corpo.')
+    expect(body).toBe(
+      'Resposta.\n\n**Sugestões de continuação:**\n- Antigas?\n- Também antigas?\n\nMais corpo.',
+    )
     expect(suggestions).toEqual(['Novas?', 'Atuais?'])
   })
 

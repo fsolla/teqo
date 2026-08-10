@@ -27,8 +27,11 @@ const THIRD_RESPONSE = `Os dados de 2026 ainda não existem.`
 
 const lastUserText = (body: unknown): string | null => {
   const messages =
-    (body as { messages?: Array<{ role?: string; parts?: Array<{ type?: string; text?: string }> }> })
-      ?.messages ?? []
+    (
+      body as {
+        messages?: Array<{ role?: string; parts?: Array<{ type?: string; text?: string }> }>
+      }
+    )?.messages ?? []
   for (const message of [...messages].reverse()) {
     if (message.role !== 'user') continue
     for (const part of message.parts ?? []) {
@@ -42,10 +45,11 @@ const mockAiChat = (page: Page) =>
   page.route('**/campanha/api/ai-chat', async (route) => {
     const raw = route.request().postData() ?? ''
     const userText = lastUserText(JSON.parse(raw || '{}'))
-    const response =
-      userText?.includes('Ilhéus') ? FIRST_RESPONSE
-      : userText?.includes('Salvador em 2022?') ? SECOND_RESPONSE
-      : THIRD_RESPONSE
+    const response = userText?.includes('Ilhéus')
+      ? FIRST_RESPONSE
+      : userText?.includes('Salvador em 2022?')
+        ? SECOND_RESPONSE
+        : THIRD_RESPONSE
     await route.fulfill({
       status: 200,
       headers: { 'Content-Type': 'text/event-stream' },
@@ -157,16 +161,18 @@ test.describe('B192 — follow-ups sugeridos após cada resposta do Sollinha', (
     await page.getByRole('button', { name: 'Sollinha — Assistente virtual' }).click()
     await expect(drawer).toBeVisible({ timeout: 20_000 })
 
-    await askViaInput(page, 'Quantos votos tivemos em Ilhéus em 2022?', 'Em 2022, o Solla teve 12.345 votos em Ilhéus.')
+    await askViaInput(
+      page,
+      'Quantos votos tivemos em Ilhéus em 2022?',
+      'Em 2022, o Solla teve 12.345 votos em Ilhéus.',
+    )
     await expect(page.getByText('Em 2022, o Solla teve 12.345 votos em Ilhéus.')).toBeVisible({
       timeout: 20_000,
     })
 
     await expect(chipButton(page, 'Quantos votos tivemos em Salvador em 2022?')).toBeVisible()
     await expect(chipButton(page, 'Quem foi o deputado mais votado em Barreiras?')).toBeVisible()
-    await expect(
-      chipButton(page, 'Como está o município de Vitória da Conquista?'),
-    ).toHaveCount(0)
+    await expect(chipButton(page, 'Como está o município de Vitória da Conquista?')).toHaveCount(0)
     await expect(page.getByText('Sugestões de continuação')).toHaveCount(0)
   })
 

@@ -18,8 +18,8 @@ import { cn } from '@/lib/utils'
 import { useAISidebar } from '@/components/campaign/shell/ai/CampaignAISidebarContext'
 import { ChatChipGroup } from '@/components/campaign/shell/ai/ChatChipGroup'
 import { useMicTranscript } from '@/components/campaign/shell/ai/useMicTranscript'
-import { getSollinhaOpeningQuestions } from '@/lib/sollinhaOpeningQuestions'
 import { splitSollinhaFollowUpBlock } from '@/lib/sollinhaFollowUpSuggestions'
+import { getSollinhaOpeningQuestions } from '@/lib/sollinhaOpeningQuestions'
 
 /**
  * B187+B188 — links in the assistant's markdown must look like links: brand
@@ -221,9 +221,7 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
         {(showOpeningChips || showFollowUpChips) && (
           <ChatChipGroup
             questions={
-              showOpeningChips
-                ? openingQuestions
-                : followUpSuggestions.map((text) => ({ text }))
+              showOpeningChips ? openingQuestions : followUpSuggestions.map((text) => ({ text }))
             }
             onPick={({ text }) => {
               if (busy) return
