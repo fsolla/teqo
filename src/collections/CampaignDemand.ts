@@ -29,6 +29,7 @@ import {
   isCampaignUnrestricted,
 } from '@/utilities/campaignAccess'
 import { systemStampedActorField } from '@/utilities/campaignAuditFields'
+import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 
 const DEMAND_KIND_OPTIONS = campaignDemandKinds.map((value) => ({
   value,
@@ -50,6 +51,62 @@ const setCanonicalDemandSlug: CollectionBeforeValidateHook = ({ data, operation,
   data.title = title
   data.slug = operation === 'create' ? slug : originalDoc?.slug
   return data
+}
+
+const MAX_DEMAND_SLUG_ATTEMPTS = 20
+
+/**
+ * With AI-derived titles (B195), equal titles across municipalities become
+ * likely, and the `unique` slug constraint must not turn that into a failed
+ * create — a demand creation can never fail over its title. Suffixes the
+ * candidate slug (`-2`, `-3`, …) against existing rows; runs after
+ * `setCanonicalDemandSlug` so `data.slug` is already the canonical candidate.
+ *
+ * Opt-in via `req.context.campaignDemandUniqueSlug` (set by the form-created
+ * record action): direct creates — the activity demand drafts (C90) and the
+ * admin UI — keep the strict constraint, which the activity rollback contract
+ * pins. Fail closed like `skipContactPhoneInvariant`: only honored inside an
+ * active transaction. A text advisory lock on the base slug serializes
+ * concurrent creates of the same derived title, so the probe cannot race the
+ * insert.
+ */
+const ensureUniqueDemandSlug: CollectionBeforeValidateHook = async ({ data, operation, req }) => {
+  if (!data || operation !== 'create' || !data.slug) return data
+
+  if (req.context?.campaignDemandUniqueSlug === true) {
+    if (req.transactionID == null) {
+      throw new APIError('campaignDemandUniqueSlug exige uma transação ativa.', 500)
+    }
+  } else {
+    return data
+  }
+
+  const baseSlug = data.slug
+  await acquireTextAdvisoryLocks(req.payload, req, [`campaign-demand-slug:${baseSlug}`])
+
+  // One probe for the whole candidate window instead of one query per attempt.
+  const candidates = Array.from({ length: MAX_DEMAND_SLUG_ATTEMPTS }, (_, index) =>
+    index === 0 ? baseSlug : `${baseSlug}-${index + 1}`,
+  )
+  // Intentional admin bypass: the slug-existence probe must see every demand
+  // row, including ones the creating staff cannot yet read.
+  const existing = await req.payload.find({
+    collection: 'campaignDemand',
+    where: { slug: { in: candidates } },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    overrideAccess: true,
+    req,
+  })
+  const existingSlugs = new Set(existing.docs.map((doc) => doc.slug))
+  for (const candidate of candidates) {
+    if (!existingSlugs.has(candidate)) {
+      data.slug = candidate
+      return data
+    }
+  }
+  throw new APIError('Não foi possível gerar um endereço único para a demanda.', 409)
 }
 
 const isDemandStatus = (value: unknown): value is CampaignDemandStatus =>
@@ -197,7 +254,11 @@ export const CampaignDemand: CollectionConfig = {
     delete: canDeleteCampaignDemand,
   },
   hooks: {
-    beforeValidate: [setCanonicalDemandSlug, validateDemandActivityMunicipality],
+    beforeValidate: [
+      setCanonicalDemandSlug,
+      ensureUniqueDemandSlug,
+      validateDemandActivityMunicipality,
+    ],
     beforeChange: [enforceDemandWorkflow],
   },
   fields: [

@@ -32,7 +32,9 @@ export const WIZARD_VOTES_SAVED_MESSAGE = 'Votos estimados atualizados.' as cons
 
 export const WIZARD_VOTES_FINAL_CTA_LABEL = 'Salvar estimativas →' as const
 
-const WIZARD_NEXT_STEP_GENERIC_PLACEHOLDER = 'Próximo passo deste fluxo em breve.' as const
+export const WIZARD_DEMAND_SAVED_MESSAGE = 'Demanda aberta.' as const
+
+export const WIZARD_DEMAND_PENDING_ARIA = 'Abrindo demanda.' as const
 
 export const wizardNextStepTitle = (actionSlug: string): string => {
   if (actionSlug === CAMPAIGN_WIZARD_ACTION_SLUGS['update-votes']) {
@@ -40,9 +42,6 @@ export const wizardNextStepTitle = (actionSlug: string): string => {
   }
   return 'Continuar'
 }
-
-export const wizardNextStepPlaceholder = (_actionSlug: string): string =>
-  WIZARD_NEXT_STEP_GENERIC_PLACEHOLDER
 
 export const WIZARD_LEADERSHIP_GRID_TITLE = 'Quem coordena por aqui?' as const
 

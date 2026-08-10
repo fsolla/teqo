@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { allDayRangeValid } from '@/lib/activityAllDay'
 import { relationshipId } from '@/lib/relationship'
-import { campaignDemandCreateSchema } from '@/lib/schemas/campaignDemandInput'
+import { CAMPAIGN_DEMAND_BODY_MAX_LENGTH, campaignDemandKinds } from '@/lib/schemas/campaignDemand'
 import {
   positiveRelationshipId,
   trimmedNullableText,
@@ -51,10 +51,15 @@ export const MAX_ACTIVITY_DEMAND_DRAFTS = 20
 /** C90 — cap for the polymorphic multi-value `responsible` field. */
 export const MAX_ACTIVITY_RESPONSIBLES = 20
 
-const activityDemandDraftSchema = campaignDemandCreateSchema.pick({
-  title: true,
-  kind: true,
-  description: true,
+/**
+ * Draft demand born with an activity (C90). Kept as the legacy title + free
+ * text shape: the activity vertical is out of B195 scope, and its draft
+ * titles are staff-curated short names, not AI-derived ones.
+ */
+const activityDemandDraftSchema = z.object({
+  title: z.string().trim().min(2).max(160),
+  kind: z.enum(campaignDemandKinds),
+  description: trimmedOptionalText(CAMPAIGN_DEMAND_BODY_MAX_LENGTH),
 })
 
 export const activityDemandDraftsSchema = z

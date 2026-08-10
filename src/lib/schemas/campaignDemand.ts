@@ -24,6 +24,25 @@ export const campaignDemandKindLabels: Record<CampaignDemandKind, string> = {
   outro: 'Outro',
 }
 
+/**
+ * Shared demand-form copy (B195 single free-text field): used by the wizard
+ * step and the `/demandas/nova` form so the two cadastros never diverge.
+ */
+export const CAMPAIGN_DEMAND_BODY_LABEL = 'O que você precisa?' as const
+export const CAMPAIGN_DEMAND_BODY_DESCRIPTION =
+  'Descreva o que você precisa, com o quê e os detalhes.' as const
+export const CAMPAIGN_DEMAND_BODY_PLACEHOLDER =
+  'Ex.: 500 santinhos para a feira de sábado; transporte para o comício; diária da equipe…' as const
+export const CAMPAIGN_DEMAND_BODY_MAX_LENGTH = 4000 as const
+export const CAMPAIGN_DEMAND_KIND_LABEL = 'Tipo' as const
+export const CAMPAIGN_DEMAND_ACTIVITY_LABEL = 'Atividade relacionada' as const
+export const CAMPAIGN_DEMAND_ACTIVITY_DESCRIPTION =
+  'Opcional. Busque atividades do município selecionado.' as const
+export const CAMPAIGN_DEMAND_ACTIVITY_EMPTY_LABEL = 'Nenhuma atividade' as const
+export const CAMPAIGN_DEMAND_ACTIVITY_DIALOG_DESCRIPTION =
+  'Busque atividades do município selecionado por título.' as const
+export const CAMPAIGN_DEMAND_SUBMIT_LABEL = 'Abrir demanda' as const
+
 export const campaignDemandStatuses = [
   'aberta',
   'em_analise',
@@ -72,6 +91,8 @@ export const CAMPAIGN_DEMAND_ESCALATED_DECISION_MESSAGE =
   'Demandas escaladas são decididas pelo Coordenador Geral ou Candidato.'
 export const CAMPAIGN_DEMAND_COST_STAFF_MESSAGE =
   'Somente a coordenação, a assessoria e o candidato registram custos.'
+export const CAMPAIGN_DEMAND_EDIT_STAFF_MESSAGE =
+  'Somente a coordenação, a assessoria e o candidato editam demandas.'
 export const CAMPAIGN_DEMAND_RECEIPT_STAFF_MESSAGE =
   'Somente a coordenação e a assessoria anexam comprovantes.'
 export const CAMPAIGN_DEMAND_RECEIPT_TYPE_MESSAGE = 'Envie uma imagem (JPEG, PNG, WebP) ou PDF.'

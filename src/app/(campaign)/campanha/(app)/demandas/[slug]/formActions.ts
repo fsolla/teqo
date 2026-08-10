@@ -6,6 +6,7 @@ import {
   attachCampaignDemandReceiptRecord,
   setCampaignDemandCost,
   transitionCampaignDemand,
+  updateCampaignDemand,
 } from '@/app/(campaign)/campanha/actions/demand'
 import {
   FormDataBoundaryError,
@@ -15,6 +16,7 @@ import {
 } from '@/lib/formData'
 import {
   CAMPAIGN_DEMAND_COST_STAFF_MESSAGE,
+  CAMPAIGN_DEMAND_EDIT_STAFF_MESSAGE,
   CAMPAIGN_DEMAND_INVALID_STATUS_MESSAGE,
   CAMPAIGN_DEMAND_RECEIPT_SAFE_MESSAGES,
   CAMPAIGN_DEMAND_TRANSITION_SAFE_MESSAGES,
@@ -52,6 +54,23 @@ export const transitionDemandFormAction = async (
     },
     safeMessages: transitionSafeMessages,
     genericMessage: 'Não foi possível mover a demanda. Verifique seu acesso e tente novamente.',
+  })
+
+export const updateDemandFormAction = async (
+  _state: CampaignFormActionState,
+  formData: FormData,
+): Promise<CampaignFormActionState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      await updateCampaignDemand({
+        id: requiredRelationshipFormValue(formData, 'demandId'),
+        description: requiredFormText(formData, 'description'),
+      })
+      revalidatePath('/campanha/demandas/[slug]', 'page')
+      return { message: 'Descrição atualizada.' }
+    },
+    safeMessages: [CAMPAIGN_DEMAND_EDIT_STAFF_MESSAGE],
+    genericMessage: 'Não foi possível editar a demanda. Tente novamente.',
   })
 
 export const setDemandCostFormAction = async (

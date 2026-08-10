@@ -7,7 +7,10 @@ import { toast } from 'sonner'
  * The success→toast effect every form-action consumer spelled by hand (P3-G,
  * ×7): fires once per state change, then runs the caller's follow-up (form
  * reset, `router.refresh()`, navigation) through a ref so a re-rendered
- * callback never re-fires the toast.
+ * callback never re-fires the toast. Depends on the state object's identity:
+ * `useActionState` hands back a fresh object per submission, so a second save
+ * with the same message (e.g. the inline demand-description editor) still
+ * fires — an object identity the message/status fields cannot express.
  */
 export const useCampaignFormSuccessToast = (
   state: { status?: string; message?: string },
@@ -22,7 +25,5 @@ export const useCampaignFormSuccessToast = (
     if (state.status !== 'success') return
     toast.success(state.message)
     onSuccessRef.current?.()
-    // `state.message` is part of the change the toast reports — both belong
-    // to the firing condition, like the seven hand-written effects it replaces.
-  }, [state.message, state.status])
+  }, [state])
 }
