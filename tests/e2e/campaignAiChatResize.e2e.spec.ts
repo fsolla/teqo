@@ -135,6 +135,11 @@ test.describe('B167 — chat Sollinha migra entre painel e drawer ao redimension
     const user = await campaign.fixtures.createCampaignUser('coordinator', {
       name: campaign.fixtures.value('Chat Resize Coordenador'),
     })
+    // Mobile from the start (B188): a desktop login auto-opens the chat (the
+    // settle below) and persists `open: true` for the tab — a later reload at
+    // mobile would then legitimately restore the open drawer, which is not
+    // what a *fresh* mobile visit looks like.
+    await page.setViewportSize({ width: 500, height: 800 })
     await campaign.login(page, user.email!, user.password)
 
     // Carga direto em mobile: sem drawer espontâneo, só o FAB.

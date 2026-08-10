@@ -1,6 +1,7 @@
 'use client'
 
 import { Bot, Mic, Send, Square, User } from 'lucide-react'
+import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -14,6 +15,33 @@ import { cn } from '@/lib/utils'
 
 import { useAISidebar } from '@/components/campaign/shell/ai/CampaignAISidebarContext'
 import { useMicTranscript } from '@/components/campaign/shell/ai/useMicTranscript'
+
+/**
+ * B188: app-internal destinations — the B162 link catalog only ever emits
+ * `/campanha…` paths — navigate through `next/link`, so following a Sollinha
+ * link keeps the layout (and the conversation) mounted instead of reloading
+ * the page. Anything else keeps the plain anchor's default behavior.
+ */
+const APP_INTERNAL_LINK = /^\/campanha(?:\/|$)/
+
+const MarkdownLink = ({
+  href,
+  children,
+  ...props
+}: React.AnchorHTMLAttributes<HTMLAnchorElement> & { node?: unknown }) => {
+  if (typeof href === 'string' && APP_INTERNAL_LINK.test(href)) {
+    return (
+      <Link href={href} {...props}>
+        {children}
+      </Link>
+    )
+  }
+  return (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  )
+}
 
 export const CampaignAIChat = ({ className }: { className?: string }) => {
   const ctx = useAISidebar()
@@ -99,7 +127,12 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
                               key={index}
                               className="prose prose-sm max-w-none dark:prose-invert [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_h1]:font-semibold [&_h2]:font-semibold [&_table]:text-xs [&_th]:text-xs [&_td]:text-xs [&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-1"
                             >
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{part.text}</ReactMarkdown>
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{ a: MarkdownLink }}
+                              >
+                                {part.text}
+                              </ReactMarkdown>
                             </div>
                           )
                         }

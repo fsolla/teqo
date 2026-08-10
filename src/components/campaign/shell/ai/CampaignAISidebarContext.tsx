@@ -16,6 +16,7 @@ import {
 import type { PanelImperativeHandle } from 'react-resizable-panels'
 
 import { useIsMobileMeasured } from '@/hooks/use-mobile'
+import { readSollinhaChatSession, writeSollinhaChatSession } from '@/lib/sollinhaChatSession'
 
 type AISidebarContextValue = {
   /** The chat is showing — single source of truth across panel (desktop) and drawer (mobile). */
@@ -48,6 +49,33 @@ export const CampaignAISidebarProvider = ({
     id: 'campaign-sollinha',
     transport: useMemo(() => new DefaultChatTransport({ api: '/campanha/api/ai-chat' }), []),
   })
+  // `setMessages` is a stable `useCallback` over the chat instance — safe as
+  // the single dependency of the mount-only restore effect.
+  const { messages, setMessages, status } = chat
+
+  // B188: restore the conversation and the open state from the tab's
+  // `sessionStorage` after mount — never during SSR, where restored messages
+  // would diverge from the server-rendered chat on the hydration frame.
+  // `sessionRestored` gates the persist effect so the mount commit (empty
+  // pre-restore values) cannot overwrite a stored session.
+  const [sessionRestored, setSessionRestored] = useState(false)
+  useEffect(() => {
+    const session = readSollinhaChatSession()
+    if (session) {
+      setMessages(session.messages)
+      setOpen(session.open)
+    }
+    setSessionRestored(true)
+  }, [setMessages])
+
+  // B188: persist the conversation only once the chat has settled — writing
+  // during streaming would freeze a half-received message in the session
+  // (a reload mid-stream loses only that in-flight turn). `open` changes made
+  // mid-stream are picked up by the settle that follows.
+  useEffect(() => {
+    if (!sessionRestored || status !== 'ready') return
+    writeSollinhaChatSession(messages, open)
+  }, [sessionRestored, status, messages, open])
 
   // The chat has two surfaces keyed by viewport — the desktop panel and the
   // mobile drawer — and both derive from the SAME `open` flag. Crossing the
