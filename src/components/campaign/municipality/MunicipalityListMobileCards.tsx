@@ -87,7 +87,12 @@ export const MunicipalityListMobileCards = ({
 }: MunicipalityListMobileCardsProps) => (
   <div
     data-view="mobile-cards"
-    className="flex flex-col gap-4 @min-[48rem]/municipality-list:hidden"
+    // B184 — borderless, edge-to-edge cards below `md`: no page breathing room
+    // (`-mx-4` bleeds past the scrollport's mobile `p-4`), one horizontal line
+    // between cards (`border-b`), nothing between the last card and the footer.
+    // The `md:` variants restore the framed desktop look for the narrow-desktop
+    // window that still sees this tree (container < 48rem).
+    className="flex flex-col gap-0 -mx-4 md:mx-0 md:gap-4 @min-[48rem]/municipality-list:hidden"
   >
     {municipalities.length === 0 ? emptySlot : null}
     {municipalities.map((municipality) => {
@@ -101,14 +106,14 @@ export const MunicipalityListMobileCards = ({
       return (
         <article
           key={municipality.id}
-          className="relative flex flex-col gap-3 rounded-xl border p-4"
+          className="relative flex flex-col gap-3 rounded-none border-b p-4 last:border-b-0 md:rounded-xl md:border md:last:border-b"
         >
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-col gap-1">
               <h3 className="flex items-center gap-1.5 font-medium">
                 <Link
                   href={`/campanha/municipios/${municipality.slug}`}
-                  className="rounded-md after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="rounded-md after:absolute after:inset-0 after:rounded-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:after:rounded-xl"
                 >
                   {municipality.name}
                 </Link>

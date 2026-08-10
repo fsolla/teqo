@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
+import { cn } from '@/lib/utils'
 import {
   buildMunicipalitySavedFilterHref,
   formatMunicipalityActiveFiltersSummary,
@@ -24,6 +25,14 @@ import {
 type SaveMunicipalityFilterControlProps = {
   /** The APPLIED state — a search still inside the debounce window is not in the URL yet. */
   state: MunicipalityListState
+  /**
+   * B184 — trigger shape: `panel` is the filter-bar button with text label
+   * (desktop); `icon` is the icon-only header button (mobile top bar). The
+   * naming popover is identical in both.
+   */
+  presentation?: 'panel' | 'icon'
+  /** Extra classes for the trigger button (e.g. viewport gating, header colors). */
+  className?: string
 }
 
 /**
@@ -34,7 +43,11 @@ type SaveMunicipalityFilterControlProps = {
  * that need a note — and it keeps this control out of the auto-save machine the
  * quick-edit cells share.
  */
-export const SaveMunicipalityFilterControl = ({ state }: SaveMunicipalityFilterControlProps) => {
+export const SaveMunicipalityFilterControl = ({
+  state,
+  presentation = 'panel',
+  className,
+}: SaveMunicipalityFilterControlProps) => {
   const savedFilters = useMunicipalitySavedFilters()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
@@ -81,20 +94,31 @@ export const SaveMunicipalityFilterControl = ({ state }: SaveMunicipalityFilterC
     toast.success(existing ? 'Nome atualizado.' : 'Filtro salvo em Municípios, na navegação.')
   }
 
+  const renameLabel = existing ? `Renomear o filtro salvo ${existing.name}` : undefined
+  const iconLabel = presentation === 'icon' ? (renameLabel ?? 'Salvar filtro') : undefined
+
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           type="button"
           variant="ghost"
-          className="min-h-11 shrink-0 md:self-end"
+          size={presentation === 'icon' ? 'icon' : undefined}
+          className={cn(
+            'shrink-0',
+            presentation === 'panel' && 'min-h-11 md:self-end',
+            presentation === 'icon' && 'size-11',
+            className,
+          )}
           // SC 2.5.3: an accessible name has to CONTAIN the visible label, or
           // "clique em Salvar filtro" matches nothing by voice. The rename case
           // may add the target's name because it keeps the visible word first.
-          aria-label={existing ? `Renomear o filtro salvo ${existing.name}` : undefined}
+          // The icon presentation has no visible text, so the name is always
+          // the aria-label.
+          aria-label={presentation === 'icon' ? iconLabel : renameLabel}
         >
           <BookmarkPlusIcon aria-hidden="true" />
-          {existing ? 'Renomear' : 'Salvar filtro'}
+          {presentation === 'panel' ? (existing ? 'Renomear' : 'Salvar filtro') : null}
         </Button>
       </PopoverTrigger>
       {/* Radix gives the content `role="dialog"` and no name of its own. */}

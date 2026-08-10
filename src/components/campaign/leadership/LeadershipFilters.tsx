@@ -2,7 +2,10 @@
 
 import { useMemo, useState, type ReactNode } from 'react'
 
-import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
+import {
+  CampaignListOmnibox,
+  campaignListOmniboxFormClassName,
+} from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import {
   buildLeadershipFilterHref,
@@ -109,6 +112,7 @@ export const LeadershipFilters = ({
   return (
     <form
       role="search"
+      className={campaignListOmniboxFormClassName}
       onSubmit={(event) => {
         event.preventDefault()
       }}
