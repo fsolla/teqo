@@ -1,0 +1,52 @@
+/* C106 — the updates feed's mobile filter strip. Same recipe as the agenda's
+   .activity-agenda-filter-strip (C101): the wrapper's containing block must
+   start flush under the app bar, otherwise the sticky clamp pins it 1rem
+   lower. The app scroll container's top padding is therefore zeroed on this
+   page (scoped via :has), so the page shell — and with it the strip's
+   containing block — starts at the top bar's bottom edge. The bottom border
+   is the requested single line separating the strip from the feed below.
+   The omnibox field loses its box (border + shadow) but keeps the
+   focus-within ring for keyboard users. */
+@media (max-width: 767px) {
+  [data-slot='campaign-content-scroll']:has(.campaign-updates-filter-strip) {
+    padding-top: 0;
+  }
+
+  .campaign-updates-filter-strip {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    margin-inline: -1rem;
+    margin-bottom: -2rem;
+    background: var(--background);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .campaign-updates-filter-strip label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .campaign-updates-filter-strip [data-slot='campaign-omnibox-field'] {
+    border: 0;
+    box-shadow: none;
+  }
+
+  /* The feed's global base `ul` rule (my-6 ml-6 list-disc [&>li]:mt-2) leaks
+     from the public editorial styles into the campaign app — the updates feed
+     is the only campaign list that uses a `ul`. The utilities on the element
+     already zero its margins; here the cards lose their desktop border/radius
+     and get the single horizontal line between them (edge-to-edge). */
+  .campaign-updates-feed-list > li {
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+  }
+}

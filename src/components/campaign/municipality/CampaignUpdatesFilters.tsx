@@ -6,9 +6,11 @@ import { useMemo, useState } from 'react'
 import { CampaignUpdatesCreateModal } from '@/components/campaign/municipality/CampaignUpdatesCreateModal'
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
+import { SetCampaignHeaderAction } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { Button } from '@/components/ui/button'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import type { CampaignUpdatesFeedFacets } from '@/utilities/municipality/campaignUpdatesFeedData'
+
 import {
   buildCampaignUpdatesFeedHref,
   type CampaignUpdatesFeedState,
@@ -22,6 +24,7 @@ import {
   removeCampaignUpdatesFeedChip,
   type CampaignUpdatesFeedOmniboxAction,
 } from '@/utilities/municipality/municipalityUpdateOmnibox'
+import './CampaignUpdatesFeed.css'
 
 type CampaignUpdatesFiltersProps = {
   state: CampaignUpdatesFeedState
@@ -95,46 +98,64 @@ export const CampaignUpdatesFilters = ({ state, facets, isStaff }: CampaignUpdat
 
   return (
     <>
-      <form
-        role="search"
-        onSubmit={(event) => {
-          event.preventDefault()
-        }}
-      >
-        <CampaignListOmnibox
-          id="campaign-updates-omnibox"
-          label="Filtrar atualizações"
-          placeholder="Digite para filtrar (município, polaridade, autor…)"
-          chips={chips}
-          suggestions={suggestions}
-          query={query}
-          onQueryChange={setQuery}
-          isPending={isPending}
-          onSelectSuggestion={(suggestionId) => {
-            runAction(applyCampaignUpdatesFeedSuggestion({ state, suggestionId }))
+      <div className="campaign-updates-filter-strip">
+        <form
+          role="search"
+          onSubmit={(event) => {
+            event.preventDefault()
           }}
-          onCommitQuery={(text) => {
-            runAction(applyCampaignUpdatesFeedSuggestion({ state, suggestionId: `q:${text}` }))
-          }}
-          onRemoveChip={(chipId) => {
-            runAction(removeCampaignUpdatesFeedChip({ state, chipId }))
-          }}
-          onClearAll={() => {
-            runAction(clearCampaignUpdatesFeedFilters())
-          }}
-          trailing={
-            <Button
-              type="button"
-              variant="outline"
-              className="min-h-11 shrink-0 gap-2"
-              onClick={() => setCreateOpen(true)}
-            >
-              <Plus aria-hidden="true" />
-              Nova atualização
-            </Button>
-          }
-        />
-      </form>
+        >
+          <CampaignListOmnibox
+            id="campaign-updates-omnibox"
+            label="Filtrar atualizações"
+            placeholder="Digite para filtrar (município, polaridade, autor…)"
+            chips={chips}
+            suggestions={suggestions}
+            query={query}
+            onQueryChange={setQuery}
+            isPending={isPending}
+            onSelectSuggestion={(suggestionId) => {
+              runAction(applyCampaignUpdatesFeedSuggestion({ state, suggestionId }))
+            }}
+            onCommitQuery={(text) => {
+              runAction(applyCampaignUpdatesFeedSuggestion({ state, suggestionId: `q:${text}` }))
+            }}
+            onRemoveChip={(chipId) => {
+              runAction(removeCampaignUpdatesFeedChip({ state, chipId }))
+            }}
+            onClearAll={() => {
+              runAction(clearCampaignUpdatesFeedFilters())
+            }}
+            trailing={
+              <Button
+                type="button"
+                variant="outline"
+                className="hidden min-h-11 shrink-0 gap-2 md:inline-flex"
+                onClick={() => setCreateOpen(true)}
+              >
+                <Plus aria-hidden="true" />
+                Nova atualização
+              </Button>
+            }
+          />
+        </form>
+      </div>
+      {/* C106 — mobile: the create action moves to the app header (icon); the
+          same modal opens, only the trigger changes. CSS-gated by viewport
+          (md:hidden), so desktop keeps the text button beside the omnibox. */}
+      <SetCampaignHeaderAction id="campaign-updates-create">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-11 shrink-0 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground md:hidden"
+          aria-label="Nova atualização"
+          title="Nova atualização"
+          onClick={() => setCreateOpen(true)}
+        >
+          <Plus className="size-5" aria-hidden="true" />
+        </Button>
+      </SetCampaignHeaderAction>
       <CampaignUpdatesCreateModal
         open={createOpen}
         onOpenChange={setCreateOpen}

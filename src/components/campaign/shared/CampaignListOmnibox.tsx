@@ -170,6 +170,7 @@ export const CampaignListOmnibox = ({
         >
           <PopoverAnchor asChild>
             <div
+              data-slot="campaign-omnibox-field"
               className={cn(
                 'flex min-h-11 w-full flex-wrap items-center gap-1.5 rounded-lg border border-input bg-transparent px-2 py-1.5 shadow-xs',
                 'focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50',
