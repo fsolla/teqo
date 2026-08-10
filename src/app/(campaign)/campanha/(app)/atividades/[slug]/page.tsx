@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
-import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
+import { formatActivityWhenLabel } from '@/utilities/activityViewModels'
 
 import { getActivityDetailPageData } from '@/utilities/activityDetailPageData'
 import {
@@ -115,7 +115,9 @@ export default async function ActivityDetailPage({
             </Badge>
           ))}
           <span className="text-muted-foreground">
-            {view.startAt ? formatBahiaDateTimeLabel(view.startAt) : 'Data a definir'}
+            {view.startAt
+              ? formatActivityWhenLabel(view.startAt, { allDay: view.allDay, endAt: view.endAt })
+              : 'Data a definir'}
           </span>
         </div>
         <div className="flex flex-wrap gap-2">
