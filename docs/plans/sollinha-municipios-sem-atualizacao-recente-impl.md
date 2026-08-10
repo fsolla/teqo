@@ -6,6 +6,18 @@ Issue: #526
 Intenção: docs/plans/sollinha-municipios-sem-atualizacao-recente.md
 Appetite restante: ~0,5–1 dia eng (herdado); sem migration / Consent / collection / UI nova
 
+## Registro de execução (2026-08-10)
+
+- **Entrega:** `getMunicipalitiesWithoutUpdate` nova (`src/utilities/ai/tools/getMunicipalitiesWithoutUpdate.ts`) + resolver compartilhado `aiToolScope.ts` + loader de nomes compartilhado `aiToolQueries.ts` + registro no `index.ts` + seção no system prompt; 15 unit tests (`tests/unit/municipalitiesWithoutUpdateTool.unit.spec.ts`). Gate humano 2026-08-10 aprovou o plano sem alterações; sanity local provou o contrato `lastUpdateAt` ↔ hooks (create → coluna = createdAt; delete → null).
+- **Divergência da hipótese da intenção (aprovada no gate):** fonte de recência = `municipality.lastUpdateAt` derivado (não agregar `municipalityUpdate` na tool); Salvador por ZE com resumo via prompt (não modo de agrupamento na tool).
+- **/simplify (3 reviewers paralelos) — fixes aplicados:**
+  - **Colisão de merge com B186 (em voo):** as duas branches extraíram o mesmo resolver com nomes de tipo diferentes. B189 alinhou os nomes aos da B186 (`AIToolScope`/`AIToolScopeKind`/`AIToolScopeMunicipality`, helper interno `resolveMunicipalities`) — o merge da B186 (segundo) fica trivial. Função exportada `resolveAIToolScope` já coincidia.
+  - `loadNamesByIds` (B185) e `loadAdvisorNames` (B189) fundidos em `aiToolQueries.ts` (`loadAIToolNamesByIds`, 2 call sites — don't twin).
+  - Guard fail-closed de escopo vazio: assessor pedindo território fora do portfólio devolve shape vazio escopado sem leitura de municípios (precedente B186) + teste novo (find chamado 1×).
+  - `sortStale` sem `?? 0` (partição garante ISO; `!` documentado) — type honesty.
+  - Prompt: exemplo de Salvador com limiar estrito ("há mais de 30 dias"); `index.ts` na ordem alfabética da família.
+  - **Deferidos (≤3 / polish, sem Issue):** cast `Array<number | string>` espelhando o shape de doc da B185; `ScopeMunicipality` privada (exportar quebraria knip); zod `.default(30)` + default no destructure (um para o pipeline, outro para execute direto).
+
 ## Leitura da intenção
 
 - **Outcome:** o Sollinha responde "quais municípios estão sem atualização há mais de X dias" no **escopo do usuário** (coordenador = estado; assessor = portfólio; leader = deny fail-closed), com contagem total, um item por município com "há N dias" (ou "nunca atualizado" no topo, estagnação máxima), limiar declarado na resposta ("sem atualização há 30+ dias") e ajustável por pergunta; refinável por região/cidade; agrupável por assessor quando pedido; links de navegação para o detalhe de cada município (B162).
