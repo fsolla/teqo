@@ -38,6 +38,8 @@ jobs:
       test_mode: ${{ steps.classify.outputs.test_mode }}
       e2e_mode: ${{ steps.classify.outputs.e2e_mode }}
       e2e_specs: ${{ steps.classify.outputs.e2e_specs }}
+      e2e_matrix: ${{ steps.classify.outputs.e2e_matrix }}
+      e2e_shards: ${{ steps.classify.outputs.e2e_shards }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -60,6 +62,11 @@ jobs:
           echo "test_mode=$(echo "$result" | jq -r .test.mode)" >> "$GITHUB_OUTPUT"
           echo "e2e_mode=$(echo "$result" | jq -r .e2e.mode)" >> "$GITHUB_OUTPUT"
           echo "e2e_specs=$(echo "$result" | jq -r '[.e2e.specs[] | "tests/e2e/" + . + ".e2e.spec.ts"] | join(" ")')" >> "$GITHUB_OUTPUT"
+          # OPS34: full runs split across shards (one runner per shard); selected
+          # stays on a single runner (a second build for a handful of specs is
+          # waste). Single source: e2eShardConfig in scripts/lib/test-affected-core.mjs.
+          echo "e2e_matrix=$(echo "$result" | jq -c .e2e_shards.matrix)" >> "$GITHUB_OUTPUT"
+          echo "e2e_shards=$(echo "$result" | jq -r .e2e_shards.total)" >> "$GITHUB_OUTPUT"
       - name: Cancel workflow on failure
         if: failure()
         uses: ./.github/actions/cancel-workflow-on-failure
@@ -287,6 +294,15 @@ jobs:
       && (needs.knip.result == 'success' || needs.knip.result == 'skipped')
       && (needs.cycles.result == 'success' || needs.cycles.result == 'skipped')
       && (needs.unit.result == 'success' || needs.unit.result == 'skipped')
+    # OPS34: full mode splits across 2 runners (matrix from the scope job);
+    # selected mode stays on one. fail-fast: false keeps both shards' logs.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJson(needs.scope.outputs.e2e_matrix) }}
+    env:
+      # Explicit CI workers; the local default stays 2 (playwright.config.ts).
+      PLAYWRIGHT_WORKERS: 2
     services:
       postgres:
         image: postgres:17-alpine
@@ -320,9 +336,11 @@ jobs:
         env:
           NEXT_DIST_DIR: .next/e2e
 
-      - name: E2E tests (full suite)
+      - name: E2E tests (full suite, shard ${{ matrix.shard }})
         if: needs.scope.outputs.e2e_mode == 'full'
-        run: pnpm test:e2e
+        # No `--` separator: pnpm would forward it verbatim to playwright and
+        # the flag would be parsed as a file pattern ("No tests found").
+        run: pnpm test:e2e --shard=${{ matrix.shard }}/${{ needs.scope.outputs.e2e_shards }}
 
       - name: E2E tests (manifest-selected specs)
         if: needs.scope.outputs.e2e_mode == 'selected'

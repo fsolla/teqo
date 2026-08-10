@@ -6,6 +6,7 @@ import {
   classifyBuildScope,
   classifyStaticScope,
   classifyTestScope,
+  e2eShardConfig,
   HIGH_RISK_EXACT,
   HIGH_RISK_PREFIXES,
   selectE2eSpecs,
@@ -113,5 +114,16 @@ describe('selectE2eSpecs (OPS5)', () => {
   it('skips e2e for diffs with no src/e2e changes', () => {
     const result = selectE2eSpecs([changed('docs/AGENT-OPS.md')], manifest)
     expect(result).toMatchObject({ mode: 'none', specs: [], unmapped: [] })
+  })
+})
+
+describe('e2eShardConfig (OPS34)', () => {
+  it('splits the full suite across 2 shards', () => {
+    expect(e2eShardConfig('full')).toEqual({ matrix: [1, 2], total: 2 })
+  })
+
+  it('keeps selected and skipped runs on a single runner', () => {
+    expect(e2eShardConfig('selected')).toEqual({ matrix: [1], total: 1 })
+    expect(e2eShardConfig('none')).toEqual({ matrix: [1], total: 1 })
   })
 })

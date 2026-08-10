@@ -111,6 +111,19 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    # Main always runs the full suite: split it across 2 runners (OPS34), each
+    # building its own `.next/e2e` (measured 2026-08-10: build 172s + tests
+    # 196s + ~54s fixed → ≈ 5.5 min per shard vs 435s serial). `fail-fast:
+    # false` so one shard's failure keeps the other's diagnostics. Keep the
+    # [1, 2] / 2 literal in sync with `e2eShardConfig` in
+    # scripts/lib/test-affected-core.mjs (ci-pr reads it via the scope job).
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    env:
+      # Explicit CI workers; the local default stays 2 (playwright.config.ts).
+      PLAYWRIGHT_WORKERS: 2
     services:
       postgres:
         image: postgres:17-alpine
@@ -141,8 +154,10 @@ jobs:
         run: pnpm build
         env:
           NEXT_DIST_DIR: .next/e2e
-      - name: E2E tests (full suite)
-        run: pnpm test:e2e
+      - name: E2E tests (full suite, shard ${{ matrix.shard }})
+        # No `--` separator: pnpm would forward it verbatim to playwright and
+        # the flag would be parsed as a file pattern ("No tests found").
+        run: pnpm test:e2e --shard=${{ matrix.shard }}/2
       - name: Cancel workflow on failure
         if: failure()
         uses: ./.github/actions/cancel-workflow-on-failure
