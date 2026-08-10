@@ -22,6 +22,7 @@ type StrictComboboxProps = {
   onInvalid?: () => void
   error?: string
   placeholder?: string
+  /** Extra classes for the input group (e.g. label-less list rows). */
   className?: string
 }
 
