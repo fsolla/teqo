@@ -12,13 +12,16 @@
 import type { CampaignRole } from '@/lib/campaignRoles'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 
-export type SollinhaOpeningQuestion = {
-  /** The exact text sent as the user message when the chip is picked. */
+/**
+ * A text chip in the chat's quick-question slot (B191 opening catalog, B192
+ * follow-ups) — the exact text sent as the user message when picked.
+ */
+export type SollinhaChatChip = {
   text: string
 }
 
 /** Staff (coordinator/advisor/candidate): 4 chips on wide surfaces, 3 on mobile. */
-const STAFF_OPENING_QUESTIONS: readonly SollinhaOpeningQuestion[] = [
+const STAFF_OPENING_QUESTIONS: readonly SollinhaChatChip[] = [
   { text: 'Quem foi o deputado mais votado em Feira de Santana?' },
   { text: 'Quantos votos tivemos em Ilhéus em 2022?' },
   { text: 'Quais dobradinhas temos em Salvador?' },
@@ -26,7 +29,7 @@ const STAFF_OPENING_QUESTIONS: readonly SollinhaOpeningQuestion[] = [
 ]
 
 /** Leader: 3 chips, all answerable by the leader-facing toolset today. */
-const LEADER_OPENING_QUESTIONS: readonly SollinhaOpeningQuestion[] = [
+const LEADER_OPENING_QUESTIONS: readonly SollinhaChatChip[] = [
   { text: 'O que você sabe fazer?' },
   { text: 'Me manda o link dos meus contatos' },
   { text: 'Me manda o link do meu perfil' },
@@ -42,7 +45,7 @@ const MOBILE_LIMIT = 3
 export const getSollinhaOpeningQuestions = (
   role: CampaignRole,
   isMobile: boolean,
-): readonly SollinhaOpeningQuestion[] => {
+): readonly SollinhaChatChip[] => {
   const catalog = isStaffCampaignRole(role) ? STAFF_OPENING_QUESTIONS : LEADER_OPENING_QUESTIONS
   return isMobile ? catalog.slice(0, MOBILE_LIMIT) : catalog
 }

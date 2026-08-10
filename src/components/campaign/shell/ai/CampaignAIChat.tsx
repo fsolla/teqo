@@ -19,6 +19,7 @@ import { useAISidebar } from '@/components/campaign/shell/ai/CampaignAISidebarCo
 import { ChatChipGroup } from '@/components/campaign/shell/ai/ChatChipGroup'
 import { useMicTranscript } from '@/components/campaign/shell/ai/useMicTranscript'
 import { getSollinhaOpeningQuestions } from '@/lib/sollinhaOpeningQuestions'
+import { splitSollinhaFollowUpBlock } from '@/lib/sollinhaFollowUpSuggestions'
 
 /**
  * B187+B188 — links in the assistant's markdown must look like links: brand
@@ -31,6 +32,9 @@ import { getSollinhaOpeningQuestions } from '@/lib/sollinhaOpeningQuestions'
  * instead of reloading the page. Anything else keeps the plain anchor.
  */
 const APP_INTERNAL_LINK = /^\/campanha(?:\/|$)/
+
+/** B192 — narrower drawer surface: fewer follow-up chips than on desktop. */
+const FOLLOW_UP_MOBILE_LIMIT = 2
 
 const markdownComponents: Components = {
   a: ({ node: _node, href, children, ...rest }) => {
@@ -59,6 +63,26 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const messages = useMemo(() => ctx?.messages ?? [], [ctx])
+
+  // B192 — follow-up suggestions of the LATEST assistant message (the final
+  // response of the turn — older answers never feed the slot). Derived before
+  // the `ctx` early return so the hooks stay unconditional; only rendered once
+  // the chat is idle (during streaming the input is locked, so dead chips
+  // would confuse; the new ones appear the moment the answer lands).
+  const latestAssistantSuggestionText = useMemo(() => {
+    if (ctx?.status !== 'ready' || messages.length === 0) return null
+    const lastAssistant = [...messages].reverse().find((message) => message.role === 'assistant')
+    return lastAssistant?.parts.filter((part) => part.type === 'text').at(-1)?.text ?? null
+  }, [messages, ctx?.status])
+
+  const followUpSuggestions = useMemo(() => {
+    if (!latestAssistantSuggestionText) return []
+    const { suggestions } = splitSollinhaFollowUpBlock(latestAssistantSuggestionText)
+    // Viewport cap mirrors the opening catalog: fewer chips on narrow surfaces.
+    return suggestions.slice(0, ctx?.isMobile ? FOLLOW_UP_MOBILE_LIMIT : suggestions.length)
+  }, [latestAssistantSuggestionText, ctx?.isMobile])
+
+  const showFollowUpChips = followUpSuggestions.length > 0
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -135,6 +159,11 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
                               </span>
                             )
                           }
+                          // B192 — the follow-up block is a format directive
+                          // for the chip slot, never chat content: strip it
+                          // BEFORE markdown/link rendering so it never shows
+                          // as prose (fail-closed: no marker → unchanged).
+                          const { body } = splitSollinhaFollowUpBlock(part.text)
                           return (
                             <div
                               key={index}
@@ -144,7 +173,7 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
                                 remarkPlugins={[remarkGfm]}
                                 components={markdownComponents}
                               >
-                                {part.text}
+                                {body}
                               </ReactMarkdown>
                             </div>
                           )
@@ -186,9 +215,16 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
 
       {/* Input area */}
       <div className="shrink-0 border-t border-border px-3 py-3">
-        {showOpeningChips && (
+        {/* B191+B192 — one chip slot above the input, fed by two sources: the
+            curated opening catalog while the conversation is empty, and the
+            follow-ups extracted from the latest answer afterwards. */}
+        {(showOpeningChips || showFollowUpChips) && (
           <ChatChipGroup
-            questions={openingQuestions}
+            questions={
+              showOpeningChips
+                ? openingQuestions
+                : followUpSuggestions.map((text) => ({ text }))
+            }
             onPick={({ text }) => {
               if (busy) return
               sendMessage({ text })
