@@ -9,6 +9,9 @@ import { stub } from '../helpers/stub'
 
 const denied = { error: 'Leitura de prioridades de municípios negada.' }
 
+const nowMs = Date.now()
+const daysAgo = (days: number): string => new Date(nowMs - days * 86_400_000).toISOString()
+
 type FindMock = ReturnType<typeof vi.fn>
 
 const findResult = (docs: unknown[]) => ({ docs })
@@ -44,7 +47,7 @@ const municipalityDoc = (overrides: Record<string, unknown>) => ({
 
 const updateDoc = (overrides: Record<string, unknown>) => ({
   municipality: 10,
-  createdAt: '2026-08-08T12:00:00.000Z',
+  createdAt: daysAgo(2),
   polarity: 'ruim',
   urgent: false,
   adversarySignal: false,
@@ -91,6 +94,9 @@ describe('getMunicipalityPriorities gate (B186)', () => {
     const result = (await execute(scriptedPayload(find), advisor)({})) as Record<string, unknown>
     expect(result.total).toBe(0)
     expect(result.escopoRestrito).toBe(true)
+    const munCall = find.mock.calls[0]![0] as { user: unknown; overrideAccess: boolean }
+    expect(munCall.overrideAccess).toBe(false)
+    expect(munCall.user).toBe(advisor)
   })
 })
 
@@ -104,15 +110,13 @@ describe('getMunicipalityPriorities reads (B186)', () => {
           id: 11,
           name: 'Brejões',
           slug: 'brejoes',
-          lastUpdateAt: '2026-06-01T12:00:00.000Z',
+          lastUpdateAt: daysAgo(70),
         }),
       ]),
     )
     find.mockResolvedValueOnce(findResult([updateDoc({ municipality: 10 })]))
     find.mockResolvedValueOnce(
-      findResult([
-        { municipality: 11, declaredVotes: 300, declaredAt: '2026-07-01T12:00:00.000Z' },
-      ]),
+      findResult([{ municipality: 11, declaredVotes: 300, declaredAt: daysAgo(40) }]),
     )
 
     const result = (await execute(scriptedPayload(find))({})) as {
@@ -133,10 +137,9 @@ describe('getMunicipalityPriorities reads (B186)', () => {
     expect(updateCall.where.and).toHaveLength(2)
     expect(updateCall.where.and[0]).toEqual({ municipality: { in: [10, 11] } })
     expect(updateCall.where.and[1]).toEqual({
-      createdAt: { greater_than: expect.any(String) } as unknown,
+      createdAt: { greater_than_equal: expect.any(String) } as unknown,
     })
     expect(updateCall.overrideAccess).toBe(false)
-    expect(updateCall.sort).toBe('-createdAt')
 
     const pledgeCall = find.mock.calls[2]![0] as { collection: string; where: unknown }
     expect(pledgeCall.collection).toBe('votePledge')
@@ -155,13 +158,14 @@ describe('getMunicipalityPriorities reads (B186)', () => {
     })
     expect(first.evidencia).toContain('prefeito fechou com o adversário')
     expect(first.ultimaAtualizacao).toBeNull()
+    expect(first.ultimoSinalAtrasDias).toBe(2)
   })
 
   it('escopo região resolve antes das leituras e estreita o where', async () => {
     const find = vi.fn()
     const doc = municipalityDoc({
       id: 10,
-      lastUpdateAt: '2026-08-08T12:00:00.000Z',
+      lastUpdateAt: daysAgo(2),
       engagementLevel: 'n2',
     })
     find.mockResolvedValueOnce(findResult([doc]))
@@ -211,8 +215,8 @@ describe('getMunicipalityPriorities reads (B186)', () => {
     const find = vi.fn()
     find.mockResolvedValueOnce(
       findResult([
-        municipalityDoc({ id: 1, name: 'A', slug: 'a', lastUpdateAt: '2026-06-01T12:00:00.000Z' }),
-        municipalityDoc({ id: 2, name: 'B', slug: 'b', lastUpdateAt: '2026-06-02T12:00:00.000Z' }),
+        municipalityDoc({ id: 1, name: 'A', slug: 'a', lastUpdateAt: daysAgo(70) }),
+        municipalityDoc({ id: 2, name: 'B', slug: 'b', lastUpdateAt: daysAgo(69) }),
       ]),
     )
     find.mockResolvedValueOnce(findResult([]))
@@ -233,9 +237,7 @@ describe('getMunicipalityPriorities reads (B186)', () => {
 
   it('passa motivo, ordenação e janela custom ao ranking', async () => {
     const find = vi.fn()
-    find.mockResolvedValueOnce(
-      findResult([municipalityDoc({ id: 1, lastUpdateAt: '2026-06-01T12:00:00.000Z' })]),
-    )
+    find.mockResolvedValueOnce(findResult([municipalityDoc({ id: 1, lastUpdateAt: daysAgo(70) })]))
     find.mockResolvedValueOnce(findResult([]))
     find.mockResolvedValueOnce(findResult([]))
 
@@ -256,8 +258,8 @@ describe('getMunicipalityPriorities reads (B186)', () => {
     expect(result.criterio).toContain('60 dias')
     expect(result.prioridades).toHaveLength(1)
     const updateCall = find.mock.calls[1]![0] as { where: { and: unknown[] } }
-    const createdAtClause = updateCall.where.and[1] as { createdAt: { greater_than: string } }
-    const cutoffMs = new Date(createdAtClause.createdAt.greater_than).getTime()
+    const createdAtClause = updateCall.where.and[1] as { createdAt: { greater_than_equal: string } }
+    const cutoffMs = new Date(createdAtClause.createdAt.greater_than_equal).getTime()
     const expectedCutoffMs = Date.now() - 60 * 86_400_000
     expect(Math.abs(cutoffMs - expectedCutoffMs)).toBeLessThan(5_000)
   })
@@ -270,7 +272,7 @@ describe('getMunicipalityPriorities reads (B186)', () => {
           id: 10,
           engagementLevel: 'n1',
           expectedVotes: null,
-          lastUpdateAt: '2026-08-08T12:00:00.000Z',
+          lastUpdateAt: daysAgo(2),
         }),
       ]),
     )

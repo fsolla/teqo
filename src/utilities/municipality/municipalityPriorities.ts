@@ -37,7 +37,7 @@ export const PRIORITY_POTENTIAL_TOP_N = 5
 /** Longest update excerpt carried into an evidence line. */
 const PRIORITY_UPDATE_EXCERPT_MAX_LENGTH = 200
 
-export type MunicipalityPriorityReason = 'sinal_desfavoravel' | 'estagnacao' | 'potencial'
+type MunicipalityPriorityReason = 'sinal_desfavoravel' | 'estagnacao' | 'potencial'
 
 export type PriorityMunicipalityInput = {
   id: number
@@ -81,11 +81,11 @@ export type MunicipalityPriorityItem = {
 }
 
 export type MunicipalityPriorityRankOptions = {
-  janelaDias: number
+  windowDays: number
   /** Narrow the ranking to one reason ("só as sem atualização"). */
-  motivo?: MunicipalityPriorityReason
+  reason?: MunicipalityPriorityReason
   /** Default gravity (sinal > estagnação > potencial); potential re-sorts all. */
-  ordenarPor?: 'gravidade' | 'potencial'
+  sortBy?: 'gravidade' | 'potencial'
   /** One clock read for the whole ranking — tests pin `agora`. */
   agora?: Date
 }
@@ -140,7 +140,7 @@ const evaluateMunicipality = (
   lastPledgeAt: string | null,
   decisiveUpdate: PriorityUpdateSignalInput | null,
   now: Date,
-  janelaDias: number,
+  windowDays: number,
 ): EvaluatedMunicipality => {
   const lastSignalAgeDays = municipalitySignalAgeInDays(
     resolveMunicipalityLastSignalAt(input.lastUpdateAt, lastPledgeAt),
@@ -164,7 +164,7 @@ const evaluateMunicipality = (
     ) {
       bucket = 'sinal_desfavoravel'
     }
-  } else if (lastSignalAgeDays === null || lastSignalAgeDays >= janelaDias) {
+  } else if (lastSignalAgeDays === null || lastSignalAgeDays >= windowDays) {
     bucket = 'estagnacao'
   }
 
@@ -230,6 +230,12 @@ const buildEvidence = (evaluated: EvaluatedMunicipality): string => {
 
 const priorityRank: Record<'alta' | 'normal', number> = { alta: 0, normal: 1 }
 
+const bucketRank: Record<MunicipalityPriorityReason, number> = {
+  sinal_desfavoravel: 0,
+  estagnacao: 1,
+  potencial: 2,
+}
+
 const byName = (left: PriorityMunicipalityInput, right: PriorityMunicipalityInput): number =>
   left.name.localeCompare(right.name, 'pt-BR')
 
@@ -240,11 +246,6 @@ const tiebreak = (left: EvaluatedMunicipality, right: EvaluatedMunicipality): nu
 }
 
 const byGravity = (left: EvaluatedMunicipality, right: EvaluatedMunicipality): number => {
-  const bucketRank: Record<MunicipalityPriorityReason, number> = {
-    sinal_desfavoravel: 0,
-    estagnacao: 1,
-    potencial: 2,
-  }
   const byBucket =
     bucketRank[left.bucket as MunicipalityPriorityReason] -
     bucketRank[right.bucket as MunicipalityPriorityReason]
@@ -259,12 +260,13 @@ const byGravity = (left: EvaluatedMunicipality, right: EvaluatedMunicipality): n
     return tiebreak(left, right)
   }
   if (left.bucket === 'estagnacao') {
-    // Coldest first; never-signaled (+Infinity) outranks every date.
-    const byAge =
-      (right.lastSignalAgeDays ?? Number.POSITIVE_INFINITY) -
-      (left.lastSignalAgeDays ?? Number.POSITIVE_INFINITY)
-    if (byAge !== 0) return byAge
-    return tiebreak(left, right)
+    // Coldest first; never-signaled (+Infinity) outranks every date. The
+    // explicit equality check keeps two never-signaled rows from comparing
+    // Infinity - Infinity (NaN), which would silently skip the tiebreak.
+    const leftAge = left.lastSignalAgeDays ?? Number.POSITIVE_INFINITY
+    const rightAge = right.lastSignalAgeDays ?? Number.POSITIVE_INFINITY
+    if (leftAge === rightAge) return tiebreak(left, right)
+    return rightAge - leftAge
   }
   if (left.bucket === 'potencial') {
     const byPotential = (right.potential ?? 0) - (left.potential ?? 0)
@@ -290,7 +292,11 @@ const toItem = (evaluated: EvaluatedMunicipality): MunicipalityPriorityItem => (
   evidencia: buildEvidence(evaluated),
   prioridade: evaluated.input.priority,
   nivelEngajamento: engagementLevelLabel(evaluated.input.engagementLevel),
-  ultimoSinalAtrasDias: evaluated.lastSignalAgeDays,
+  // When a decisive update placed the item, its age IS the item's signal age
+  // (E9 would hide it behind a null lastUpdateAt on stale rows).
+  ultimoSinalAtrasDias: evaluated.decisiveUpdate
+    ? evaluated.decisiveUpdateAgeDays
+    : evaluated.lastSignalAgeDays,
   ultimaAtualizacao: evaluated.input.lastUpdateAt,
   potencialEstimado: evaluated.potential,
   fontePotencial: evaluated.potentialSource,
@@ -309,7 +315,7 @@ export const rankMunicipalityPriorities = (
   options: MunicipalityPriorityRankOptions,
 ): MunicipalityPriorityItem[] => {
   const now = options.agora ?? new Date()
-  const cutoff = now.getTime() - options.janelaDias * DAY_MS
+  const cutoff = now.getTime() - options.windowDays * DAY_MS
 
   const updatesByMunicipality = new Map<number, PriorityUpdateSignalInput[]>()
   for (const update of updates) {
@@ -330,7 +336,7 @@ export const rankMunicipalityPriorities = (
       lastPledgeAtById.get(input.id) ?? null,
       decisiveByMunicipality.get(input.id) ?? null,
       now,
-      options.janelaDias,
+      options.windowDays,
     ),
   )
 
@@ -351,13 +357,13 @@ export const rankMunicipalityPriorities = (
     }
   }
 
-  const sortBy = options.ordenarPor === 'potencial' ? byPotential : byGravity
+  const sortBy = options.sortBy === 'potencial' ? byPotential : byGravity
   const ranked = evaluated
     .filter((entry) => entry.bucket !== 'nada' && entry.bucket !== 'excluido')
     .sort(sortBy)
 
-  if (options.motivo) {
-    const reason = options.motivo
+  if (options.reason) {
+    const reason = options.reason
     return ranked.filter((entry) => entry.bucket === reason).map(toItem)
   }
 

@@ -7,8 +7,9 @@ import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 import { loadAIToolNamesByIds } from '@/utilities/ai/tools/aiToolQueries'
 import {
+  AI_TOOL_NARROW_SCOPE_HINT,
   resolveAIToolScope,
-  type AIToolScope as ResolvedScope,
+  type AIToolScope,
 } from '@/utilities/ai/tools/aiToolScope'
 import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
 
@@ -16,7 +17,6 @@ const DENIED_MESSAGE = 'Leitura de dados de lideranças negada.'
 const PENDING_CRITERION =
   'Status "A abordar" ou "Em disputa"; ou "Engajado" sem compromisso de votos no escopo consultado.'
 const EMPTY_MUNICIPALITIES_CRITERION = 'Municípios do escopo sem nenhuma liderança vinculada.'
-const NARROW_SCOPE_HINT = 'Estreite o escopo (território, cidade ou município) para ver o restante.'
 const PENDING_SUPPORT_STATUSES = ['a_abordar', 'em_disputa', 'engajado'] as const
 
 type PendingLeadershipDoc = {
@@ -92,7 +92,7 @@ export const getPendingLeaderships = (ctx: AIToolContext) =>
 
 const listPendingLeaderships = async (
   ctx: AIToolContext,
-  scope: ResolvedScope,
+  scope: AIToolScope,
   semAssessor: boolean,
   limit: number,
 ) => {
@@ -206,13 +206,13 @@ const listPendingLeaderships = async (
     total,
     liderancas,
     truncado,
-    ...(truncado ? { dica: NARROW_SCOPE_HINT } : {}),
+    ...(truncado ? { dica: AI_TOOL_NARROW_SCOPE_HINT } : {}),
   }
 }
 
 const listMunicipalitiesWithoutLeadership = async (
   ctx: AIToolContext,
-  scope: ResolvedScope,
+  scope: AIToolScope,
   limit: number,
 ) => {
   const { payload } = ctx
@@ -276,7 +276,7 @@ const listMunicipalitiesWithoutLeadership = async (
       cidade: doc.city,
     })),
     truncado,
-    ...(truncado ? { dica: NARROW_SCOPE_HINT } : {}),
+    ...(truncado ? { dica: AI_TOOL_NARROW_SCOPE_HINT } : {}),
   }
 }
 

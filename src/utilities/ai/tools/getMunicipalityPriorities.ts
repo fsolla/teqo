@@ -5,19 +5,17 @@ import type { AIToolContext } from '@/lib/ai/types'
 import { getMunicipalityFederalBaseline } from '@/lib/bahiaElectionAggregates'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { DAY_MS } from '@/lib/text'
-import { resolveAIToolScope } from '@/utilities/ai/tools/aiToolScope'
+import { AI_TOOL_NARROW_SCOPE_HINT, resolveAIToolScope } from '@/utilities/ai/tools/aiToolScope'
 import { type PoliticalTrendStatus } from '@/utilities/municipality/municipalityLabels'
 import {
   PRIORITY_STALE_SIGNAL_DAYS,
   rankMunicipalityPriorities,
-  type MunicipalityPriorityReason,
   type PriorityMunicipalityInput,
   type PriorityUpdateSignalInput,
 } from '@/utilities/municipality/municipalityPriorities'
 import { aggregatePledgesByMunicipality } from '@/utilities/votePledgeData'
 
 const DENIED_MESSAGE = 'Leitura de prioridades de municípios negada.'
-const NARROW_SCOPE_HINT = 'Estreite o escopo (território, cidade ou município) para ver o restante.'
 
 const buildCriterion = (janelaDias: number): string =>
   `Prioridades por gravidade: (1) sinal desfavorável recente (última atualização ruim, urgente ou com alerta de adversário na janela de ${janelaDias} dias); ` +
@@ -114,24 +112,23 @@ export const getMunicipalityPriorities = (ctx: AIToolContext) =>
       const scopeIDs = resolved.municipalityIDs
       // The AI SDK applies the zod defaults before execute in the real route;
       // the ?? guards keep direct calls (unit tests, future callers) sane.
-      const janelaDias = days ?? PRIORITY_STALE_SIGNAL_DAYS
+      const windowDays = days ?? PRIORITY_STALE_SIGNAL_DAYS
       const safeLimit = limit ?? 10
-      const now = Date.now()
+      const now = new Date()
 
-      const emptyResponse = () => ({
+      const baseResponse = {
         escopo: { tipo: resolved.kind, nome: resolved.name },
         escopoRestrito: ctx.user.role === 'advisor',
-        criterio: buildCriterion(janelaDias),
-        janelaDias,
+        criterio: buildCriterion(windowDays),
+        janelaDias: windowDays,
         motivoAplicado: reason ?? null,
-        total: 0,
-        prioridades: [],
-        truncado: false,
-      })
+      }
 
       // Scoped to nothing (advisor asking outside the portfolio): fail closed
       // before the municipality read — never an existence lie, no wasted trips.
-      if (scopeIDs !== null && scopeIDs.length === 0) return emptyResponse()
+      if (scopeIDs !== null && scopeIDs.length === 0) {
+        return { ...baseResponse, total: 0, prioridades: [], truncado: false }
+      }
 
       const municipalities = await ctx.payload.find({
         collection: 'municipality',
@@ -147,7 +144,7 @@ export const getMunicipalityPriorities = (ctx: AIToolContext) =>
           region: true,
           priority: true,
           engagementLevel: true,
-          expectedVotes: true,
+          expectedVotes: { central: true },
           lastUpdateAt: true,
           politicalTrend: { status: true },
         },
@@ -167,7 +164,13 @@ export const getMunicipalityPriorities = (ctx: AIToolContext) =>
                 and: [
                   { municipality: { in: ids } },
                   {
-                    createdAt: { greater_than: new Date(now - janelaDias * DAY_MS).toISOString() },
+                    // Same boundary as the pure module: an update exactly
+                    // `windowDays` old is still decisive.
+                    createdAt: {
+                      greater_than_equal: new Date(
+                        now.getTime() - windowDays * DAY_MS,
+                      ).toISOString(),
+                    },
                   },
                 ],
               },
@@ -182,7 +185,6 @@ export const getMunicipalityPriorities = (ctx: AIToolContext) =>
                 adversarySignal: true,
                 body: true,
               },
-              sort: '-createdAt',
               overrideAccess: false,
               user: ctx.user,
             }),
@@ -226,9 +228,10 @@ export const getMunicipalityPriorities = (ctx: AIToolContext) =>
       )
 
       const ranked = rankMunicipalityPriorities(inputs, lastPledgeAtById, signals, {
-        janelaDias,
-        motivo: reason as MunicipalityPriorityReason | undefined,
-        ordenarPor: sortBy,
+        windowDays,
+        reason,
+        sortBy,
+        agora: now,
       })
 
       const total = ranked.length
@@ -236,15 +239,11 @@ export const getMunicipalityPriorities = (ctx: AIToolContext) =>
       const truncado = total > top.length
 
       return {
-        escopo: { tipo: resolved.kind, nome: resolved.name },
-        escopoRestrito: ctx.user.role === 'advisor',
-        criterio: buildCriterion(janelaDias),
-        janelaDias,
-        motivoAplicado: reason ?? null,
+        ...baseResponse,
         total,
         prioridades: top,
         truncado,
-        ...(truncado ? { dica: NARROW_SCOPE_HINT } : {}),
+        ...(truncado ? { dica: AI_TOOL_NARROW_SCOPE_HINT } : {}),
       }
     },
   })

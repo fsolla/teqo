@@ -56,9 +56,9 @@ const rank = (
     options.lastPledgeAtById ?? new Map(),
     options.updates ?? [],
     {
-      janelaDias: options.janelaDias ?? 30,
-      motivo: options.motivo,
-      ordenarPor: options.ordenarPor,
+      windowDays: options.janelaDias ?? 30,
+      reason: options.motivo,
+      sortBy: options.ordenarPor,
       agora: NOW,
     },
   )
@@ -406,5 +406,75 @@ describe('rankMunicipalityPriorities options (B186)', () => {
 
     const result2 = rank([mun({ id: 2, lastUpdateAt: daysAgo(40) })], { janelaDias: 30 })
     expect(result2[0]!.motivo).toBe('estagnacao')
+  })
+
+  it('fronteira exata da janela: atualização com exatamente 30 dias ainda é decisiva', () => {
+    const result = rank([mun({ id: 1, lastUpdateAt: daysAgo(30) })], {
+      updates: [update(1, daysAgo(30))],
+    })
+
+    expect(result[0]!.motivo).toBe('sinal_desfavoravel')
+
+    const result2 = rank([mun({ id: 2, lastUpdateAt: daysAgo(31) })], {
+      updates: [update(2, daysAgo(31))],
+    })
+    expect(result2[0]!.motivo).toBe('estagnacao')
+  })
+
+  it('estagnação: sinal com exatamente 30 dias está no limite (>= janela)', () => {
+    const result = rank([mun({ id: 1, lastUpdateAt: daysAgo(30) })])
+    expect(result[0]!.motivo).toBe('estagnacao')
+  })
+})
+
+describe('rankMunicipalityPriorities tiebreaks (B186)', () => {
+  it('dois municípios nunca-sinal: prioridade alta primeiro, depois nome (Infinity não vira NaN)', () => {
+    const result = rank([
+      mun({ id: 1, name: 'Abreu e Lima', slug: 'a', priority: 'normal' }),
+      mun({ id: 2, name: 'Belmonte', slug: 'b', priority: 'alta' }),
+      mun({ id: 3, name: 'Cairu', slug: 'c', priority: 'normal' }),
+    ])
+
+    expect(result.map((item) => item.id)).toEqual([2, 1, 3])
+  })
+
+  it('candidatos empatados em potencial ordenam por nome', () => {
+    const result = rank([
+      mun({
+        id: 1,
+        name: 'Zé Ninguém',
+        slug: 'z',
+        lastUpdateAt: daysAgo(2),
+        engagementLevel: 'n0',
+        expectedVotesCentral: 50000,
+      }),
+      mun({
+        id: 2,
+        name: 'Alfa',
+        slug: 'a',
+        lastUpdateAt: daysAgo(2),
+        engagementLevel: 'n0',
+        expectedVotesCentral: 50000,
+      }),
+      mun({
+        id: 3,
+        name: 'Beta',
+        slug: 'b',
+        lastUpdateAt: daysAgo(2),
+        engagementLevel: 'n0',
+        expectedVotesCentral: 90000,
+      }),
+    ])
+
+    expect(result.map((item) => item.id)).toEqual([3, 2, 1])
+  })
+
+  it('exclusão vence a estagnação: atualização boa recente com pledge antigo fica fora', () => {
+    const result = rank([mun({ id: 1, lastUpdateAt: daysAgo(2) })], {
+      lastPledgeAtById: new Map([[1, daysAgo(40)]]),
+      updates: [update(1, daysAgo(2), { polarity: 'boa' })],
+    })
+
+    expect(result).toHaveLength(0)
   })
 })
