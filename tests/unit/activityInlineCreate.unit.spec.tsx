@@ -42,12 +42,14 @@ const renderOverlay = ({
   draft = DRAFT,
   agendaState = {},
   isNarrow = false,
+  knownTags = [],
   onCreated = vi.fn(),
   onClose = vi.fn(),
 }: {
   draft?: ActivityInlineCreateDraft | null
   agendaState?: ActivityAgendaState
   isNarrow?: boolean
+  knownTags?: string[]
   onCreated?: () => void
   onClose?: () => void
 } = {}) =>
@@ -57,6 +59,7 @@ const renderOverlay = ({
       isNarrow={isNarrow}
       agendaState={agendaState}
       municipalityOptions={MUNICIPALITIES}
+      knownTags={knownTags}
       onClose={onClose}
       onCreated={onCreated}
     />,
@@ -189,6 +192,85 @@ describe('ActivityInlineCreate — overlay de criação inline', () => {
     expect(link.getAttribute('href')).toBe(
       '/campanha/atividades/nova?startAt=2026-08-07T16%3A00%3A00.000Z&endAt=2026-08-07T16%3A30%3A00.000Z&municipality=12&title=Caf%C3%A9+com+apoiadores&returnTo=%2Fcampanha%2Fagenda%3Fmunicipality%3D12',
     )
+  })
+
+  it('adiciona tags por Enter e as envia ao salvar (C105)', async () => {
+    const onCreated = vi.fn()
+    mocks.createInline.mockResolvedValue({ ok: true })
+    renderOverlay({ agendaState: { municipality: 12 }, onCreated })
+
+    const tagInput = screen.getByPlaceholderText('Ex.: comício, imprensa…')
+    fireEvent.change(tagInput, { target: { value: 'Panfletagem' } })
+    fireEvent.keyDown(tagInput, { key: 'Enter' })
+    expect(screen.getByLabelText('Remover tag Panfletagem')).toBeTruthy()
+
+    fireEvent.change(screen.getByLabelText('Título *'), {
+      target: { value: 'Panfletagem no centro' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
+
+    await waitFor(() => expect(mocks.createInline).toHaveBeenCalledTimes(1))
+    expect(mocks.createInline).toHaveBeenCalledWith({
+      title: 'Panfletagem no centro',
+      municipality: 12,
+      startAt: '2026-08-07T16:00:00.000Z',
+      endAt: '2026-08-07T16:30:00.000Z',
+      tags: ['Panfletagem'],
+    })
+    expect(onCreated).toHaveBeenCalledTimes(1)
+  })
+
+  it('deduplica tags e permite remover um chip antes de salvar (C105)', async () => {
+    const onCreated = vi.fn()
+    mocks.createInline.mockResolvedValue({ ok: true })
+    renderOverlay({ agendaState: { municipality: 12 }, onCreated })
+
+    const tagInput = screen.getByPlaceholderText('Ex.: comício, imprensa…')
+    for (const tag of ['Comício', 'Comício', 'Caminhada']) {
+      fireEvent.change(tagInput, { target: { value: tag } })
+      fireEvent.keyDown(tagInput, { key: 'Enter' })
+    }
+    expect(screen.getByLabelText('Remover tag Comício')).toBeTruthy()
+    expect(screen.getByLabelText('Remover tag Caminhada')).toBeTruthy()
+
+    fireEvent.click(screen.getByLabelText('Remover tag Comício'))
+    fireEvent.change(screen.getByLabelText('Título *'), {
+      target: { value: 'Comício na feira' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
+
+    await waitFor(() => expect(mocks.createInline).toHaveBeenCalledTimes(1))
+    expect(mocks.createInline).toHaveBeenCalledWith({
+      title: 'Comício na feira',
+      municipality: 12,
+      startAt: '2026-08-07T16:00:00.000Z',
+      endAt: '2026-08-07T16:30:00.000Z',
+      tags: ['Caminhada'],
+    })
+  })
+
+  it('oferece as tags já usadas como sugestões e as carrega no href de detalhes (C105)', () => {
+    renderOverlay({
+      agendaState: { municipality: 12 },
+      knownTags: ['Comício', 'Imprensa'],
+    })
+
+    // The overlay renders inside a popover portal, so the datalist lives on
+    // document.body, not in the container returned by render; the suggestion
+    // values are `value` attributes, not option text.
+    const datalist = document.querySelector('datalist')
+    const suggestionValues = [...(datalist?.querySelectorAll('option') ?? [])].map((option) =>
+      option.getAttribute('value'),
+    )
+    expect(suggestionValues).toContain('Comício')
+    expect(suggestionValues).toContain('Imprensa')
+
+    const tagInput = screen.getByPlaceholderText('Ex.: comício, imprensa…')
+    fireEvent.change(tagInput, { target: { value: 'Panfletagem' } })
+    fireEvent.keyDown(tagInput, { key: 'Enter' })
+
+    const link = screen.getByRole('link', { name: 'Mais detalhes' })
+    expect(link.getAttribute('href')).toContain('&tags=Panfletagem')
   })
 
   it('não renderiza nada sem um rascunho de slot', () => {

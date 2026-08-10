@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { searchActivityResponsibleOptionsAction } from '@/app/(campaign)/campanha/(app)/atividades/contactSearchActions'
 import { createActivityInline } from '@/app/(campaign)/campanha/actions/activity'
 import { ActivityDateTimeField } from '@/components/campaign/activity/ActivityDateTimeField'
+import { ActivityTagInput } from '@/components/campaign/activity/ActivityTagInput'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { ResponsibleMultiSelect } from '@/components/campaign/shared/ResponsibleMultiSelect'
 import { StrictCombobox } from '@/components/campaign/shared/StrictCombobox'
@@ -50,6 +51,7 @@ type ActivityInlineCreateProps = {
   isNarrow: boolean
   agendaState: ActivityAgendaState
   municipalityOptions: RelationOption[]
+  knownTags?: string[]
   onClose: () => void
   onCreated: () => void
 }
@@ -57,17 +59,29 @@ type ActivityInlineCreateProps = {
 const inlineMunicipalityOptions = (options: RelationOption[]): StrictComboboxOption[] =>
   options.map((option) => ({ value: String(option.id), label: option.name }))
 
-const parseInlineResponsibles = (
-  raw: FormDataEntryValue | null,
-): ActivityCreateInput['responsible'] => {
-  if (typeof raw !== 'string') return undefined
-  let parsed: unknown
+/**
+ * Bounded JSON-array read for the inline sheet's `responsiblesJson` hidden
+ * input: same 4 KB cap as the full form's `boundedJsonFormValue`, fail-closed
+ * on malformed or oversized payloads (the component generates the JSON, so a
+ * violation means tampering, not user input).
+ */
+const INLINE_JSON_MAX_BYTES = 4_000
+
+const parseInlineJsonArray = (raw: FormDataEntryValue | null): unknown[] | undefined => {
+  if (typeof raw !== 'string' || raw.length > INLINE_JSON_MAX_BYTES) return undefined
   try {
-    parsed = JSON.parse(raw)
+    const parsed: unknown = JSON.parse(raw)
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : undefined
   } catch {
     return undefined
   }
-  if (!Array.isArray(parsed) || parsed.length === 0) return undefined
+}
+
+const parseInlineResponsibles = (
+  raw: FormDataEntryValue | null,
+): ActivityCreateInput['responsible'] => {
+  const parsed = parseInlineJsonArray(raw)
+  if (!parsed) return undefined
 
   const entries: Array<{
     relationTo: 'campaignUser' | 'leadership' | 'stateDeputy'
@@ -85,18 +99,21 @@ const ActivityInlineCreateForm = ({
   endAt,
   agendaState,
   municipalityOptions,
+  knownTags,
   onCreated,
 }: {
   startAt: string
   endAt: string
   agendaState: ActivityAgendaState
   municipalityOptions: RelationOption[]
+  knownTags?: string[]
   onCreated: () => void
 }) => {
   const [title, setTitle] = useState('')
   const [start, setStart] = useState(formatIsoAsBahiaDateTimeInput(startAt))
   const [end, setEnd] = useState(formatIsoAsBahiaDateTimeInput(endAt))
   const [locality, setLocality] = useState('')
+  const [tags, setTags] = useState<string[]>([])
   const preselectedMunicipalityId =
     agendaState.municipality &&
     municipalityOptions.some((option) => option.id === agendaState.municipality)
@@ -109,11 +126,15 @@ const ActivityInlineCreateForm = ({
 
   const errorFor = (name: string) => fieldErrors[name]?.[0]
 
+  // C105 — the href mirrors the LIVE state (times edited in the sheet, typed
+  // tags), not the slot draft, so "Mais detalhes" carries everything the user
+  // actually filled.
   const moreDetailsHref = buildActivityCreateHref(agendaState, {
-    startAt,
-    endAt,
+    startAt: parseBahiaDateTimeInput(start) ?? undefined,
+    endAt: end ? (parseBahiaDateTimeInput(end) ?? undefined) : undefined,
     municipalityId: municipalityValue ? Number(municipalityValue) : undefined,
     title: title.trim() || undefined,
+    tags: tags.length > 0 ? tags : undefined,
   })
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -152,6 +173,9 @@ const ActivityInlineCreateForm = ({
         ...(endIso ? { endAt: endIso } : {}),
         ...(locality.trim() ? { locality: locality.trim() } : {}),
         ...(responsible ? { responsible } : {}),
+        // C105 — the tags mirror state (every chip mutation fires `onChange`),
+        // so the payload reads the same source the "Mais detalhes" href uses.
+        ...(tags.length > 0 ? { tags } : {}),
       })
       if (result.ok) {
         onCreated()
@@ -245,6 +269,11 @@ const ActivityInlineCreateForm = ({
         />
       </Field>
 
+      <Field>
+        <FieldLabel>Tags</FieldLabel>
+        <ActivityTagInput knownTags={knownTags} onChange={setTags} />
+      </Field>
+
       <ResponsibleMultiSelect
         name="responsiblesJson"
         label="Responsáveis"
@@ -275,6 +304,7 @@ export const ActivityInlineCreate = ({
   isNarrow,
   agendaState,
   municipalityOptions,
+  knownTags,
   onClose,
   onCreated,
 }: ActivityInlineCreateProps) => {
@@ -286,6 +316,7 @@ export const ActivityInlineCreate = ({
       endAt={draft.endAt}
       agendaState={agendaState}
       municipalityOptions={municipalityOptions}
+      knownTags={knownTags}
       onCreated={onCreated}
     />
   )
@@ -313,7 +344,18 @@ export const ActivityInlineCreate = ({
       >
         <PopoverAnchor />
       </div>
-      <PopoverContent align="start" sideOffset={8} className="w-96 p-4">
+      {/* C105 — the tags field made the sheet taller. The height is capped at
+          the space Radix computed for the current placement
+          (`--radix-popper-available-height`, set by its `size` middleware):
+          the sheet always fits the viewport on its placed side and scrolls
+          internally instead of clipping fields off-screen (a static cap is
+          not enough — Radix runs shift before flip, so an overflowing
+          popover can end up with its top fields out of view). */}
+      <PopoverContent
+        align="start"
+        sideOffset={8}
+        className="max-h-(--radix-popper-available-height) w-96 overflow-y-auto p-4"
+      >
         {form}
       </PopoverContent>
     </Popover>

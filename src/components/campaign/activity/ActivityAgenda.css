@@ -90,7 +90,8 @@
 }
 
 .activity-agenda-event-time,
-.activity-agenda-event-location {
+.activity-agenda-event-location,
+.activity-agenda-event-tags {
   overflow: hidden;
   font-size: 0.6875rem;
   opacity: 0.82;
@@ -202,7 +203,8 @@
     flex-direction: column;
   }
 
-  .activity-agenda-event-location {
+  .activity-agenda-event-location,
+  .activity-agenda-event-tags {
     display: none;
   }
 }
