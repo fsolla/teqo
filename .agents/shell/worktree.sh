@@ -27,6 +27,11 @@
 #                            já existir), sem bag o próximo plans/plan-issue-<n>
 #                            sequencial; cd para dentro dele por padrão; --stay não
 #                            troca
+#   worktree new [bag] [--stay]   cria um worktree NEUTRO (sem função pré-definida)
+#                            DIFERENTE a cada chamada: com bag, branch work/<bag>
+#                            (sufixo -2/-3 se o nome já existir), sem bag o próximo
+#                            work/<n> sequencial; cd para dentro dele por padrão;
+#                            --stay não troca
 #   worktree kill [--force]  destrói o worktree atual e cd para o main por padrão
 #
 # `--go` explícito continua aceito como no-op (era o antigo padrão).
