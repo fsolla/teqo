@@ -6,6 +6,7 @@ import { CampaignListPagination } from '@/components/campaign/shared/CampaignLis
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { formatAllDayRangeLabel } from '@/lib/activityAllDay'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import { campaignDemandKindLabels, campaignDemandStatusLabels } from '@/lib/schemas/campaignDemand'
 import type { getActivityDetailPageData } from '@/utilities/activityDetailPageData'
@@ -65,11 +66,23 @@ export const ActivityOverviewTab = ({
             </div>
             <div>
               <dt className="text-muted-foreground">Início</dt>
-              <dd>{view.startAt ? formatBahiaDateTimeLabel(view.startAt) : 'A definir'}</dd>
+              <dd>
+                {view.startAt
+                  ? view.allDay
+                    ? formatAllDayRangeLabel(view.startAt)
+                    : formatBahiaDateTimeLabel(view.startAt)
+                  : 'A definir'}
+              </dd>
             </div>
             <div>
               <dt className="text-muted-foreground">Término</dt>
-              <dd>{view.endAt ? formatBahiaDateTimeLabel(view.endAt) : '—'}</dd>
+              <dd>
+                {view.endAt
+                  ? view.allDay
+                    ? formatAllDayRangeLabel(view.endAt)
+                    : formatBahiaDateTimeLabel(view.endAt)
+                  : '—'}
+              </dd>
             </div>
             <div className="sm:col-span-2">
               <dt className="text-muted-foreground">Tags</dt>

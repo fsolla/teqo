@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { allDayStartInstant, isCivilDate } from '@/lib/activityAllDay'
 import { parseBahiaDateTimeInput } from '@/lib/campaignTime'
 import {
   boundedJsonFormValue,
@@ -34,9 +35,19 @@ type ParsedActivityTask = {
   done?: boolean
 }
 
-const parseDateTimeFormField = (formData: FormData, field: string): string | undefined => {
+const parseScheduleFormField = (
+  formData: FormData,
+  field: string,
+  allDay: boolean,
+): string | undefined => {
   const value = optionalFormText(formData, field)
   if (!value) return undefined
+  if (allDay) {
+    // C104 — with the toggle on the inputs are date-only civil values; the
+    // stored instants come from the all-day convention (00:00 Bahia).
+    if (!isCivilDate(value)) throw new FormDataBoundaryError(field, 'Data inválida.')
+    return allDayStartInstant(value)
+  }
   const iso = parseBahiaDateTimeInput(value)
   if (!iso) throw new FormDataBoundaryError(field, 'Data e horários inválidos.')
   return iso
@@ -151,14 +162,16 @@ const parseResponsiblesFormData = (formData: FormData): ParsedResponsible[] => {
 }
 
 const parseSharedActivityFormData = (formData: FormData) => {
+  const allDay = checkboxFormValue(formData, 'allDay')
   return {
     title: optionalFormText(formData, 'title') ?? '',
     tags: parseTagsFormData(formData),
     status: optionalFormText(formData, 'status') as (typeof activityStatuses)[number] | undefined,
     description: optionalFormText(formData, 'description'),
     deputyPresent: checkboxFormValue(formData, 'deputyPresent'),
-    startAt: parseDateTimeFormField(formData, 'startAt'),
-    endAt: parseDateTimeFormField(formData, 'endAt'),
+    allDay,
+    startAt: parseScheduleFormField(formData, 'startAt', allDay),
+    endAt: parseScheduleFormField(formData, 'endAt', allDay),
     municipality: requiredRelationshipFormValue(formData, 'municipality'),
     locality: optionalFormText(formData, 'locality'),
     organizations: repeatedRelationshipFormValues(formData, 'organizations'),

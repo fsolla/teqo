@@ -1,5 +1,6 @@
 import type { Where } from 'payload'
 
+import { allDayStartInstant } from '@/lib/activityAllDay'
 import { CAMPAIGN_AGENDA_HOME } from '@/lib/campaignPaths'
 import {
   formatBahiaCivilDate,
@@ -282,6 +283,8 @@ export type ActivityCreatePrefill = {
   municipalityId?: number
   title?: string
   tags?: string[]
+  /** C104 — the sheet opened the toggle; startAt/endAt are civil dates. */
+  allDay?: boolean
 }
 
 export const buildActivityCreateHref = (
@@ -289,8 +292,14 @@ export const buildActivityCreateHref = (
   prefill: Partial<ActivityCreatePrefill> = {},
 ): string => {
   const params = new URLSearchParams()
-  if (prefill.startAt) params.set('startAt', prefill.startAt)
-  if (prefill.endAt) params.set('endAt', prefill.endAt)
+  if (prefill.allDay) {
+    params.set('allDay', '1')
+    if (prefill.startAt) params.set('startAt', prefill.startAt.slice(0, 10))
+    if (prefill.endAt) params.set('endAt', prefill.endAt.slice(0, 10))
+  } else {
+    if (prefill.startAt) params.set('startAt', prefill.startAt)
+    if (prefill.endAt) params.set('endAt', prefill.endAt)
+  }
   const municipalityId = prefill.municipalityId ?? agendaState.municipality
   if (municipalityId) params.set('municipality', String(municipalityId))
   if (prefill.title) params.set('title', prefill.title)
@@ -385,9 +394,17 @@ export const parseActivityCreatePrefill = (
   params: RawSearchParams,
   accessibleMunicipalityIDs: ReadonlySet<number>,
 ): ActivityCreatePrefill => {
-  const startAt = normalizedIsoInstant(firstValue(params.startAt))
-  const rawEndAt = normalizedIsoInstant(firstValue(params.endAt))
-  const endAt = startAt && rawEndAt && new Date(rawEndAt) > new Date(startAt) ? rawEndAt : undefined
+  const rawAllDay = firstValue(params.allDay)
+  const allDay = rawAllDay === '1'
+  const startAt = allDay
+    ? civilDatePrefillInstant(firstValue(params.startAt))
+    : normalizedIsoInstant(firstValue(params.startAt))
+  const rawEndAt = firstValue(params.endAt)
+  const endAt = allDay
+    ? civilDatePrefillInstant(rawEndAt, startAt)
+    : startAt && rawEndAt && new Date(rawEndAt) > new Date(startAt)
+      ? normalizedIsoInstant(rawEndAt)
+      : undefined
   const rawMunicipality = strictDecimalInteger(firstValue(params.municipality))
   const municipalityId =
     rawMunicipality && accessibleMunicipalityIDs.has(rawMunicipality) ? rawMunicipality : undefined
@@ -397,12 +414,23 @@ export const parseActivityCreatePrefill = (
   const tags = parseActivityPrefillTags(params.tags)
 
   return {
+    ...(allDay ? { allDay } : {}),
     ...(startAt ? { startAt } : {}),
     ...(endAt ? { endAt } : {}),
     ...(municipalityId ? { municipalityId } : {}),
     ...(trimmedTitle ? { title: trimmedTitle } : {}),
     ...(tags ? { tags } : {}),
   }
+}
+
+const civilDatePrefillInstant = (
+  value: string | undefined,
+  startAt?: string,
+): string | undefined => {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined
+  const instant = allDayStartInstant(value)
+  if (startAt && instant < startAt) return undefined
+  return instant
 }
 
 const activityListParamNames = ['q', 'tab', 'tag', 'status', 'municipality', 'page'] as const

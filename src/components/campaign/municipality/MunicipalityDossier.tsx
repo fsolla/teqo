@@ -6,6 +6,7 @@ import { MunicipalityBaselineCard } from '@/components/campaign/municipality/Mun
 import { MunicipalityStrategyCard } from '@/components/campaign/municipality/MunicipalityStrategyCard'
 import { MunicipalityUpdateFeed } from '@/components/campaign/municipality/MunicipalityUpdateFeed'
 import { Badge } from '@/components/ui/Badge'
+import { formatAllDayRangeLabel } from '@/lib/activityAllDay'
 import type { MunicipalityAgeBandKey } from '@/lib/bahiaMunicipalityDemographics'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import { formatElectionNumber } from '@/lib/electionFormat'
@@ -86,7 +87,11 @@ const ActivityListItem = ({ activity }: { activity: ActivityListViewModel }) => 
       {activity.deputyPresent ? <Badge>Deputado presente</Badge> : null}
     </div>
     <p className="text-xs text-muted-foreground">
-      {activity.startAt ? formatBahiaDateTimeLabel(activity.startAt) : 'Sem data definida'}
+      {activity.startAt
+        ? activity.allDay
+          ? formatAllDayRangeLabel(activity.startAt, activity.endAt)
+          : formatBahiaDateTimeLabel(activity.startAt)
+        : 'Sem data definida'}
       {activity.locality ? ` · ${activity.locality}` : ''}
     </p>
   </li>

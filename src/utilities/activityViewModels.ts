@@ -1,3 +1,4 @@
+import { formatAllDayRangeLabel } from '@/lib/activityAllDay'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import { isPopulatedRelationship, populatedContactName, relationshipId } from '@/lib/relationship'
 import {
@@ -85,14 +86,21 @@ const mapActivityResponsibles = (
   }))
 }
 
-export const formatActivityWhenLabel = (startAt: string | null | undefined): string =>
-  startAt ? formatBahiaDateTimeLabel(startAt) : 'Data a definir'
+export const formatActivityWhenLabel = (
+  startAt: string | null | undefined,
+  options: { allDay?: boolean | null; endAt?: string | null } = {},
+): string => {
+  if (!startAt) return 'Data a definir'
+  if (options.allDay) return formatAllDayRangeLabel(startAt, options.endAt)
+  return formatBahiaDateTimeLabel(startAt)
+}
 
 export const formatActivityHomeSearchSecondary = (
   municipalityName: string | null,
   startAt: string | null | undefined,
+  options: { allDay?: boolean | null; endAt?: string | null } = {},
 ): string => {
-  const whenLabel = formatActivityWhenLabel(startAt)
+  const whenLabel = formatActivityWhenLabel(startAt, options)
   if (!municipalityName) return whenLabel
   return `${municipalityName} · ${whenLabel}`
 }
@@ -112,6 +120,7 @@ export const activityAgendaSelect = {
   tags: true,
   status: true,
   deputyPresent: true,
+  allDay: true,
   startAt: true,
   endAt: true,
   municipality: true,
@@ -132,6 +141,7 @@ export type ActivityAgendaEvent = {
   tags: string[]
   status: Activity['status']
   deputyPresent: boolean
+  allDay: boolean
   startAt: string
   endAt: string | null
   municipality: ActivityMunicipalitySummary | null
@@ -155,6 +165,7 @@ export const toActivityAgendaEvent = (
     tags: activity.tags ?? [],
     status: activity.status,
     deputyPresent,
+    allDay: Boolean(activity.allDay),
     startAt: activity.startAt,
     endAt: activity.endAt ?? null,
     municipality: activityMunicipalitySummary(activity.municipality),
@@ -170,6 +181,7 @@ export type ActivityListViewModel = {
   tags: string[]
   status: Activity['status']
   deputyPresent: boolean
+  allDay: boolean
   startAt: string | null
   endAt: string | null
   municipalityName: string | null
@@ -193,6 +205,7 @@ export const toActivityListViewModel = (activity: Activity): ActivityListViewMod
     tags: activity.tags ?? [],
     status: activity.status,
     deputyPresent: Boolean(activity.deputyPresent),
+    allDay: Boolean(activity.allDay),
     startAt: activity.startAt ?? null,
     endAt: activity.endAt ?? null,
     municipalityName,
@@ -213,6 +226,7 @@ export const activityFormSelect = {
   status: true,
   description: true,
   deputyPresent: true,
+  allDay: true,
   startAt: true,
   endAt: true,
   municipality: true,
@@ -238,6 +252,7 @@ export type ActivityFormViewModel = {
   status: Activity['status']
   description: string | null
   deputyPresent: boolean
+  allDay: boolean
   startAt: string | null
   endAt: string | null
   municipalityId: number | null
@@ -258,6 +273,7 @@ export const toActivityFormViewModel = (activity: Activity): ActivityFormViewMod
   status: activity.status,
   description: activity.description ?? null,
   deputyPresent: Boolean(activity.deputyPresent),
+  allDay: Boolean(activity.allDay),
   startAt: activity.startAt ?? null,
   endAt: activity.endAt ?? null,
   municipalityId: relationshipId(activity.municipality),
@@ -286,6 +302,7 @@ const activityDetailContextSelect = {
   status: true,
   description: true,
   deputyPresent: true,
+  allDay: true,
   startAt: true,
   endAt: true,
   municipality: true,
@@ -351,6 +368,7 @@ export type ActivityDetailViewModel = {
   status: Activity['status']
   description: string | null
   deputyPresent: boolean
+  allDay: boolean
   startAt: string | null
   endAt: string | null
   municipality: ActivityMunicipalitySummary | null
@@ -418,6 +436,7 @@ export const toActivityDetailViewModel = (
     status: activity.status,
     description: activity.description ?? null,
     deputyPresent: Boolean(activity.deputyPresent),
+    allDay: Boolean(activity.allDay),
     startAt: activity.startAt ?? null,
     endAt: activity.endAt ?? null,
     municipality,

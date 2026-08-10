@@ -14,6 +14,7 @@ import {
   loadActivityAgendaEventsRecord,
   rescheduleActivityRecord,
 } from '@/app/(campaign)/campanha/actions/activity'
+import { allDayEndInstant, allDayStartInstant } from '@/lib/activityAllDay'
 import { relationshipId } from '@/lib/relationship'
 import {
   ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE,
@@ -483,6 +484,133 @@ describe('activity domain', () => {
     ).rejects.toThrow('O horário de término deve ser posterior ao de início.')
   })
 
+  it('creates a multi-day all-day commitment with day-boundary instants (C104)', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+
+    const startAt = allDayStartInstant('2026-08-10')
+    const endAt = allDayEndInstant('2026-08-12')
+
+    const activity = await createActivityRecord(payload, coordinator, {
+      title: fixtures.value('Giro de três dias'),
+      tags: ['Giro'],
+      status: 'confirmado',
+      allDay: true,
+      startAt,
+      endAt,
+      municipality: municipality.id,
+    })
+
+    expect(activity.allDay).toBe(true)
+    expect(activity.startAt).toBe(startAt)
+    expect(activity.endAt).toBe(endAt)
+
+    const events = await loadActivityAgendaEventsRecord(payload, coordinator, {
+      rangeStart: '2026-08-09T03:00:00.000Z',
+      rangeEnd: '2026-08-14T03:00:00.000Z',
+    })
+    const event = events.find((candidate) => candidate.id === activity.id)
+    expect(event?.allDay).toBe(true)
+    expect(event?.startAt).toBe(startAt)
+    expect(event?.endAt).toBe(endAt)
+  })
+
+  it('accepts a single-day all-day range with equal instants (C104)', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+    const startAt = allDayStartInstant('2026-08-10')
+
+    const activity = await createActivityRecord(payload, coordinator, {
+      title: fixtures.value('Dia inteiro único'),
+      status: 'confirmado',
+      allDay: true,
+      startAt,
+      endAt: startAt,
+      municipality: municipality.id,
+    })
+
+    expect(activity.allDay).toBe(true)
+    expect(activity.endAt).toBe(startAt)
+  })
+
+  it('rejects an all-day range whose end precedes the start in the collection hook (C104)', async () => {
+    const fixtures = campaignFixtures()
+    const municipality = await fixtures.getMunicipality()
+
+    await expect(
+      payload.create({
+        collection: 'activity',
+        data: stub<ActivityCreateData>({
+          ...validActivityInput(municipality.id),
+          title: fixtures.value('Todo o dia invertido'),
+          allDay: true,
+          startAt: allDayStartInstant('2026-08-12'),
+          endAt: allDayStartInstant('2026-08-10'),
+        }),
+        overrideAccess: true,
+      }),
+    ).rejects.toThrow('A data de término deve ser igual ou posterior à de início.')
+  })
+
+  it('reschedules an all-day commitment keeping the day granularity (C104)', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+    const activity = await payload.create({
+      collection: 'activity',
+      data: stub<ActivityCreateData>({
+        ...validActivityInput(municipality.id),
+        title: fixtures.value('Todo o dia remarcável'),
+        allDay: true,
+        startAt: allDayStartInstant('2026-08-10'),
+        endAt: allDayEndInstant('2026-08-12'),
+      }),
+      overrideAccess: true,
+    })
+    fixtures.own('activity', activity.id)
+
+    const nextStart = allDayStartInstant('2026-08-20')
+    const nextEnd = allDayEndInstant('2026-08-20')
+    const updated = await rescheduleActivityRecord(payload, coordinator, {
+      id: activity.id,
+      allDay: true,
+      startAt: nextStart,
+      endAt: nextEnd,
+    })
+
+    expect(updated.allDay).toBe(true)
+    expect(updated.startAt).toBe(nextStart)
+    expect(updated.endAt).toBe(nextEnd)
+
+    await expect(
+      rescheduleActivityRecord(payload, coordinator, {
+        id: activity.id,
+        allDay: true,
+        startAt: allDayStartInstant('2026-08-25'),
+        endAt: allDayStartInstant('2026-08-24'),
+      }),
+    ).rejects.toThrow()
+  })
+
+  it('parses date-only form values into all-day instants (C104)', () => {
+    const formData = new FormData()
+    formData.set('title', 'Caminhada no centro')
+    formData.set('status', 'confirmado')
+    formData.set('allDay', 'on')
+    formData.set('municipality', '1')
+    formData.set('startAt', '2026-08-10')
+    formData.set('endAt', '2026-08-12')
+    formData.set('tagsJson', '[]')
+    formData.set('demandsJson', '[]')
+
+    const parsed = parseActivityCreateFormData(formData)
+    expect(parsed.allDay).toBe(true)
+    expect(parsed.startAt).toBe(allDayStartInstant('2026-08-10'))
+    expect(parsed.endAt).toBe(allDayEndInstant('2026-08-12'))
+  })
+
   it('loads only accessible events matching the agenda range and filters', async () => {
     const fixtures = campaignFixtures()
     const advisor = await fixtures.createCampaignUser('advisor')
@@ -554,6 +682,7 @@ describe('activity domain', () => {
     const nextStart = new Date(Date.now() + 172_800_000).toISOString()
 
     const updated = await rescheduleActivityRecord(payload, advisor, {
+      allDay: false,
       id: activity.id,
       startAt: nextStart,
       endAt: null,
@@ -572,6 +701,7 @@ describe('activity domain', () => {
 
     await expect(
       rescheduleActivityRecord(payload, advisor, {
+        allDay: false,
         id: activity.id,
         startAt: new Date(Date.now() + 259_200_000).toISOString(),
         endAt: null,
@@ -609,6 +739,7 @@ describe('activity domain', () => {
     ] as const) {
       const nextStart = new Date(Date.now() + offset).toISOString()
       const updated = await rescheduleActivityRecord(payload, actor, {
+        allDay: false,
         id: activity.id,
         startAt: nextStart,
         endAt: null,

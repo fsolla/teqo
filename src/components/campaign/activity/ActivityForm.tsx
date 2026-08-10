@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 
 import { ActivityDemandFields } from '@/components/campaign/activity/ActivityDemandFields'
 import { ActivityTagInput } from '@/components/campaign/activity/ActivityTagInput'
@@ -70,6 +70,20 @@ const ActivityFormFields = ({
   const initialStartAt = activity?.startAt ?? initialValues?.startAt
   const initialEndAt = activity?.endAt ?? initialValues?.endAt
   const initialMunicipalityId = activity?.municipalityId ?? initialValues?.municipalityId
+  const [allDay, setAllDay] = useState(activity?.allDay ?? initialValues?.allDay ?? false)
+  // C104 — controlled so switching the toggle keeps the date the staff typed:
+  // the date input reads/preserves the date part, the datetime input the
+  // whole civil value; on submit the parser branches on the allDay checkbox.
+  const [startAt, setStartAt] = useState(
+    initialStartAt ? formatIsoAsBahiaDateTimeInput(initialStartAt) : '',
+  )
+  const [endAt, setEndAt] = useState(
+    initialEndAt ? formatIsoAsBahiaDateTimeInput(initialEndAt) : '',
+  )
+  const startDateOnly = startAt.slice(0, 10)
+  const endDateOnly = endAt.slice(0, 10)
+  const setStartDate = (date: string) => setStartAt(`${date}T${startAt.slice(11) || '00:00'}`)
+  const setEndDate = (date: string) => setEndAt(`${date}T${endAt.slice(11) || '00:00'}`)
 
   return (
     <FieldGroup>
@@ -139,38 +153,79 @@ const ActivityFormFields = ({
           <CardTitle>Data e horário</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field data-invalid={Boolean(errorFor('startAt'))}>
-              <FieldLabel htmlFor="startAt">Início *</FieldLabel>
-              <Input
-                id="startAt"
-                name="startAt"
-                type="datetime-local"
-                defaultValue={initialStartAt ? formatIsoAsBahiaDateTimeInput(initialStartAt) : ''}
-                required
-                className="min-h-11"
-                aria-invalid={Boolean(errorFor('startAt'))}
-                aria-describedby={errorFor('startAt') ? 'startAt-error' : undefined}
-              />
-              {errorFor('startAt') ? (
-                <FieldError id="startAt-error">{errorFor('startAt')}</FieldError>
-              ) : null}
-            </Field>
-            <Field data-invalid={Boolean(errorFor('endAt'))}>
-              <FieldLabel htmlFor="endAt">Término</FieldLabel>
-              <Input
-                id="endAt"
-                name="endAt"
-                type="datetime-local"
-                defaultValue={initialEndAt ? formatIsoAsBahiaDateTimeInput(initialEndAt) : ''}
-                className="min-h-11"
-                aria-invalid={Boolean(errorFor('endAt'))}
-                aria-describedby={errorFor('endAt') ? 'endAt-error' : undefined}
-              />
-              {errorFor('endAt') ? (
-                <FieldError id="endAt-error">{errorFor('endAt')}</FieldError>
-              ) : null}
-            </Field>
+          <div className="flex flex-col gap-4">
+            <FieldLabel>
+              <Field orientation="horizontal" className="min-h-11 rounded-lg border p-3">
+                <Checkbox
+                  name="allDay"
+                  checked={allDay}
+                  onCheckedChange={(next) => setAllDay(Boolean(next))}
+                />
+                <span>Todo o dia</span>
+              </Field>
+            </FieldLabel>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field data-invalid={Boolean(errorFor('startAt'))}>
+                <FieldLabel htmlFor="startAt">Início *</FieldLabel>
+                {allDay ? (
+                  <Input
+                    id="startAt"
+                    name="startAt"
+                    type="date"
+                    value={startDateOnly}
+                    onChange={(event) => setStartDate(event.target.value)}
+                    required
+                    className="min-h-11"
+                    aria-invalid={Boolean(errorFor('startAt'))}
+                    aria-describedby={errorFor('startAt') ? 'startAt-error' : undefined}
+                  />
+                ) : (
+                  <Input
+                    id="startAt"
+                    name="startAt"
+                    type="datetime-local"
+                    value={startAt}
+                    onChange={(event) => setStartAt(event.target.value)}
+                    required
+                    className="min-h-11"
+                    aria-invalid={Boolean(errorFor('startAt'))}
+                    aria-describedby={errorFor('startAt') ? 'startAt-error' : undefined}
+                  />
+                )}
+                {errorFor('startAt') ? (
+                  <FieldError id="startAt-error">{errorFor('startAt')}</FieldError>
+                ) : null}
+              </Field>
+              <Field data-invalid={Boolean(errorFor('endAt'))}>
+                <FieldLabel htmlFor="endAt">Término</FieldLabel>
+                {allDay ? (
+                  <Input
+                    id="endAt"
+                    name="endAt"
+                    type="date"
+                    value={endDateOnly}
+                    onChange={(event) => setEndDate(event.target.value)}
+                    className="min-h-11"
+                    aria-invalid={Boolean(errorFor('endAt'))}
+                    aria-describedby={errorFor('endAt') ? 'endAt-error' : undefined}
+                  />
+                ) : (
+                  <Input
+                    id="endAt"
+                    name="endAt"
+                    type="datetime-local"
+                    value={endAt}
+                    onChange={(event) => setEndAt(event.target.value)}
+                    className="min-h-11"
+                    aria-invalid={Boolean(errorFor('endAt'))}
+                    aria-describedby={errorFor('endAt') ? 'endAt-error' : undefined}
+                  />
+                )}
+                {errorFor('endAt') ? (
+                  <FieldError id="endAt-error">{errorFor('endAt')}</FieldError>
+                ) : null}
+              </Field>
+            </div>
           </div>
         </CardContent>
       </Card>

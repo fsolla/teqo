@@ -59,6 +59,45 @@ describe('generateICalFeed', () => {
     expect(result).not.toContain('evento-cancelado')
   })
 
+  it('exports all-day commitments as date values with the exclusive end (C104)', () => {
+    const activities = [
+      {
+        id: 2,
+        slug: 'giro-interior',
+        title: 'Giro no interior',
+        status: 'confirmado' as const,
+        allDay: true,
+        startAt: '2026-08-10T03:00:00.000Z',
+        endAt: '2026-08-12T03:00:00.000Z',
+        municipality: 2,
+        tags: ['giro'],
+        deputyPresent: true,
+        updatedAt: '2026-08-01T10:00:00.000Z',
+        createdAt: '2026-08-01T10:00:00.000Z',
+      },
+      {
+        id: 3,
+        slug: 'dia-inteiro-avulso',
+        title: 'Dia inteiro avulso',
+        status: 'confirmado' as const,
+        allDay: true,
+        startAt: '2026-08-20T03:00:00.000Z',
+        endAt: '2026-08-20T03:00:00.000Z',
+        municipality: 1,
+        updatedAt: '2026-08-01T10:00:00.000Z',
+        createdAt: '2026-08-01T10:00:00.000Z',
+      },
+    ] as unknown as Parameters<typeof generateICalFeed>[0]
+
+    const result = generateICalFeed(activities, 'Test', municipalityNames)
+
+    expect(result).toContain('DTSTART;VALUE=DATE:20260810')
+    expect(result).toContain('DTEND;VALUE=DATE:20260813')
+    expect(result).toContain('DTSTART;VALUE=DATE:20260820')
+    expect(result).toContain('DTEND;VALUE=DATE:20260821')
+    expect(result).not.toContain('DTSTART:20260810')
+  })
+
   it('escapes special characters in text fields', () => {
     const activities = [
       {

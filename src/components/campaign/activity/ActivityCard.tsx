@@ -30,7 +30,12 @@ export const ActivityCard = ({ activity }: { activity: ActivityListViewModel }) 
     <CardContent className="flex flex-col gap-2">
       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <CalendarIcon aria-hidden="true" className="size-4 shrink-0" />
-        <span>{formatActivityWhenLabel(activity.startAt)}</span>
+        <span>
+          {formatActivityWhenLabel(activity.startAt, {
+            allDay: activity.allDay,
+            endAt: activity.endAt,
+          })}
+        </span>
       </div>
       {activity.locationLabel ? (
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">

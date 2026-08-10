@@ -140,6 +140,18 @@ describe('ActivityAgenda schedule failures', () => {
   // toolbar and the calendar body are what these tests exercise).
   beforeEach(() => {
     stubMatchMedia()
+    // C104 — the toggle (radix Checkbox) measures its indicator via
+    // react-use-size, which needs ResizeObserver — same stub the
+    // inline-create spec uses. Stubbed per test because the afterEach below
+    // restores every stubGlobal.
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    )
   })
 
   afterEach(() => {

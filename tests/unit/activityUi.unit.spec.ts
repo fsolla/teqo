@@ -441,6 +441,78 @@ describe('activity create prefill', () => {
       tags: ['válida'],
     })
   })
+
+  it('carries the all-day choice as civil dates into the creation URL (C104)', () => {
+    expect(
+      buildActivityCreateHref(
+        { municipality: 12 },
+        {
+          allDay: true,
+          startAt: '2026-08-10',
+          endAt: '2026-08-12',
+          municipalityId: 12,
+        },
+      ),
+    ).toBe(
+      '/campanha/atividades/nova?allDay=1&startAt=2026-08-10&endAt=2026-08-12&municipality=12&returnTo=%2Fcampanha%2Fagenda%3Fmunicipality%3D12',
+    )
+  })
+
+  it('parses an all-day prefill into day-boundary instants', () => {
+    expect(
+      parseActivityCreatePrefill(
+        {
+          allDay: '1',
+          startAt: '2026-08-10',
+          endAt: '2026-08-12',
+          municipality: '12',
+        },
+        new Set([12]),
+      ),
+    ).toEqual({
+      allDay: true,
+      startAt: '2026-08-10T03:00:00.000Z',
+      endAt: '2026-08-12T03:00:00.000Z',
+      municipalityId: 12,
+    })
+  })
+
+  it('allows a single-day all-day prefill (end equals start)', () => {
+    expect(
+      parseActivityCreatePrefill(
+        {
+          allDay: '1',
+          startAt: '2026-08-10',
+          endAt: '2026-08-10',
+        },
+        new Set(),
+      ),
+    ).toEqual({
+      allDay: true,
+      startAt: '2026-08-10T03:00:00.000Z',
+      endAt: '2026-08-10T03:00:00.000Z',
+    })
+  })
+
+  it('drops an inverted all-day end and malformed all-day dates', () => {
+    expect(
+      parseActivityCreatePrefill(
+        {
+          allDay: '1',
+          startAt: '2026-08-12',
+          endAt: '2026-08-10',
+        },
+        new Set(),
+      ),
+    ).toEqual({ allDay: true, startAt: '2026-08-12T03:00:00.000Z' })
+    expect(
+      parseActivityCreatePrefill(
+        { allDay: '1', startAt: '10/08/2026', endAt: '2026-08-10' },
+        new Set(),
+      ),
+    ).toEqual({ allDay: true, endAt: '2026-08-10T03:00:00.000Z' })
+    expect(parseActivityCreatePrefill({ allDay: '0' }, new Set())).toEqual({})
+  })
 })
 
 describe('activity slot prefill (C91)', () => {

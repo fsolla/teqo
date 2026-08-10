@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { allDayCivilDateOf, allDayExclusiveEndDate } from '@/lib/activityAllDay'
 import type { Activity, CalendarFeed } from '@/payload-types'
 import { advisorMunicipalityScopeWhere } from '@/utilities/access/shared'
 import type { Payload, Where } from 'payload'
@@ -49,16 +50,22 @@ export const generateICalFeed = (
     const dtStart = formatICalDate(activity.startAt)
     const dtEnd = activity.endAt ? formatICalDate(activity.endAt) : dtStart
 
+    // C104 — all-day commitments export as date-only values (VALUE=DATE) with
+    // the exclusive end (day after the last day), the iCal all-day convention.
+    const allDay = Boolean(activity.allDay)
+    const dtStartLine = allDay
+      ? `DTSTART;VALUE=DATE:${formatICalDate(allDayCivilDateOf(activity.startAt))}`
+      : `DTSTART:${dtStart}`
+    const dtEndLine = allDay
+      ? `DTEND;VALUE=DATE:${formatICalDate(allDayExclusiveEndDate(activity.endAt ?? activity.startAt))}`
+      : `DTEND:${activity.endAt ? dtEnd : dtStart}`
+
     const summary = municipalityName ? `[${municipalityName}] ${activity.title}` : activity.title
 
     lines.push('BEGIN:VEVENT')
     lines.push(`UID:${activity.slug}@teqo.jorgesolla.com.br`)
-    lines.push(`DTSTART:${dtStart}`)
-    if (activity.endAt) {
-      lines.push(`DTEND:${dtEnd}`)
-    } else {
-      lines.push(`DTEND:${dtStart}`)
-    }
+    lines.push(dtStartLine)
+    lines.push(dtEndLine)
     lines.push(`SUMMARY:${escapeICalText(summary)}`)
     lines.push(`DESCRIPTION:${buildActivityDescription(activity, municipalityName)}`)
     lines.push(`DTSTAMP:${formatICalDate(activity.updatedAt || activity.createdAt)}`)
