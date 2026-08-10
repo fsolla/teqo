@@ -17,6 +17,7 @@ const ctxFor = (user: CampaignUser, payload: Payload): AIToolContext => ({ user,
 
 const leader = stub<CampaignUser>({ collection: 'campaignUser', role: 'leader' })
 const coordinator = stub<CampaignUser>({ collection: 'campaignUser', role: 'coordinator' })
+const advisor = stub<CampaignUser>({ collection: 'campaignUser', role: 'advisor' })
 
 const scriptedPayload = (find: FindMock): Payload =>
   stub<Payload>({ find: find as Payload['find'] })
@@ -48,6 +49,14 @@ const execute =
 
 const PENDING_STATUS_WHERE = { supportStatus: { in: ['a_abordar', 'em_disputa', 'engajado'] } }
 
+const amargosa = {
+  id: 10,
+  name: 'Amargosa',
+  slug: 'amargosa',
+  city: 'Amargosa',
+  region: 'Vale do Jiquiriçá',
+}
+
 describe('getPendingLeaderships gate (B185)', () => {
   it('denies a leader with the chat-shaped error before any payload query', async () => {
     const payload = untouchablePayload
@@ -61,6 +70,7 @@ describe('getPendingLeaderships gate (B185)', () => {
     expect(result.total).toBe(0)
     expect(result.liderancas).toEqual([])
     expect(result.truncado).toBe(false)
+    expect(result.escopoRestrito).toBe(false)
     expect(result.criterio).toContain('Engajado')
     expect(find).toHaveBeenCalledWith(
       expect.objectContaining({ collection: 'leadership', overrideAccess: false }),
@@ -69,9 +79,9 @@ describe('getPendingLeaderships gate (B185)', () => {
 
   it('lets an advisor pass (RBAC atual via access control, não pelo gate)', async () => {
     const find = vi.fn().mockResolvedValue(findResult([]))
-    const advisor = stub<CampaignUser>({ collection: 'campaignUser', role: 'advisor' })
     const result = (await execute(scriptedPayload(find), advisor)({})) as Record<string, unknown>
     expect(result.total).toBe(0)
+    expect(result.escopoRestrito).toBe(true)
   })
 })
 
@@ -108,29 +118,26 @@ describe('getPendingLeaderships pending criterion (B185)', () => {
     })
     expect(first.ultimaAtualizacao).toBe('2026-08-01T00:00:00.000Z')
 
-    const leadershipCall = find.mock.calls[0]![0] as { where: unknown }
+    const leadershipCall = find.mock.calls[0]![0] as { where: unknown; sort: unknown }
     expect(leadershipCall.where).toEqual({ and: [PENDING_STATUS_WHERE] })
+    expect(leadershipCall.sort).toBe('-updatedAt')
+
+    // Only engaged docs consult the pledge axis; the pledge where carries the
+    // same access options as every other read.
+    const pledgeCall = find.mock.calls[1]![0] as { where: unknown; overrideAccess: boolean }
+    expect(pledgeCall.where).toEqual({ and: [{ leadership: { in: [2, 4] } }] })
+    expect(pledgeCall.overrideAccess).toBe(false)
   })
 
   it('um pledge fora do escopo não satisfaz o eixo do compromisso', async () => {
     const find = vi.fn()
-    find.mockResolvedValueOnce(
-      findResult([
-        {
-          id: 10,
-          name: 'Amargosa',
-          slug: 'amargosa',
-          city: 'Amargosa',
-          region: 'Vale do Jiquiriçá',
-        },
-      ]),
-    )
+    find.mockResolvedValueOnce(findResult([amargosa]))
     find.mockResolvedValueOnce(findResult([leadershipDoc({ id: 7, supportStatus: 'engajado' })]))
     find.mockResolvedValueOnce(findResult([{ leadership: 7 }]))
     find.mockResolvedValue(findResult([]))
 
     const result = (await execute(scriptedPayload(find))({
-      escopo: 'Vale do Jiquiriça',
+      scope: 'Vale do Jiquiriça',
     })) as { liderancas: Array<{ id: number }> }
 
     expect(result.liderancas).toEqual([])
@@ -140,27 +147,40 @@ describe('getPendingLeaderships pending criterion (B185)', () => {
       and: [{ leadership: { in: [7] } }, { municipality: { in: [10] } }],
     })
   })
+
+  it('não consulta pledges quando não há lideranças engajadas no escopo', async () => {
+    const find = vi.fn()
+    find.mockResolvedValueOnce(findResult([leadershipDoc({ id: 1, supportStatus: 'a_abordar' })]))
+    find.mockResolvedValueOnce(findResult([{ id: 101, name: 'Lider A' }]))
+    find.mockResolvedValue(findResult([{ id: 1, name: 'Amargosa', slug: 'amargosa' }]))
+
+    const result = (await execute(scriptedPayload(find))({})) as {
+      liderancas: Array<{ id: number }>
+    }
+
+    expect(result.liderancas).toEqual([
+      {
+        id: 1,
+        municipios: [{ id: 1, nome: 'Amargosa', slug: 'amargosa' }],
+        assessores: [],
+        nome: 'Lider A',
+        status: 'A abordar',
+        ultimaAtualizacao: '2026-08-01T00:00:00.000Z',
+      },
+    ])
+    expect(find).toHaveBeenCalledTimes(3)
+  })
 })
 
 describe('getPendingLeaderships scope resolution (B185)', () => {
   it('resolve território com tolerância a acento ("Vale do Jiquiriça" → região canônica)', async () => {
     const find = vi.fn()
-    find.mockResolvedValueOnce(
-      findResult([
-        {
-          id: 10,
-          name: 'Amargosa',
-          slug: 'amargosa',
-          city: 'Amargosa',
-          region: 'Vale do Jiquiriçá',
-        },
-      ]),
-    )
+    find.mockResolvedValueOnce(findResult([amargosa]))
     find.mockResolvedValueOnce(findResult([leadershipDoc({ id: 7, municipalities: [10] })]))
     find.mockResolvedValue(findResult([]))
 
     const result = (await execute(scriptedPayload(find))({
-      escopo: 'Vale do Jiquiriça',
+      scope: 'Vale do Jiquiriça',
     })) as { escopo: { tipo: string; nome: string }; liderancas: unknown[] }
 
     expect(result.escopo).toEqual({ tipo: 'regiao', nome: 'Vale do Jiquiriçá' })
@@ -173,9 +193,8 @@ describe('getPendingLeaderships scope resolution (B185)', () => {
     expect(result.liderancas).toHaveLength(1)
   })
 
-  it('resolve "Salvador" como cidade agregando as 19 zonas', async () => {
+  it('resolve "Salvador" como cidade agregando as 19 zonas, sem consulta de município', async () => {
     const find = vi.fn()
-    find.mockResolvedValueOnce(findResult([]))
     find.mockResolvedValueOnce(
       findResult([
         {
@@ -198,13 +217,13 @@ describe('getPendingLeaderships scope resolution (B185)', () => {
     find.mockResolvedValue(findResult([]))
 
     const result = (await execute(scriptedPayload(find))({
-      escopo: 'Salvador',
+      scope: 'Salvador',
     })) as { escopo: { tipo: string; nome: string } }
 
     expect(result.escopo).toEqual({ tipo: 'cidade', nome: 'Salvador (cidade)' })
-    const cityCall = find.mock.calls[1]![0] as { where: unknown }
+    const cityCall = find.mock.calls[0]![0] as { where: unknown }
     expect(cityCall.where).toEqual({ city: { equals: 'Salvador' } })
-    const leadershipCall = find.mock.calls[2]![0] as { where: unknown }
+    const leadershipCall = find.mock.calls[1]![0] as { where: unknown }
     expect(leadershipCall.where).toEqual({
       and: [PENDING_STATUS_WHERE, { municipalities: { in: [11, 12] } }],
     })
@@ -227,7 +246,7 @@ describe('getPendingLeaderships scope resolution (B185)', () => {
     find.mockResolvedValue(findResult([]))
 
     const result = (await execute(scriptedPayload(find))({
-      escopo: 'Feira de Santana',
+      scope: 'Feira de Santana',
     })) as { escopo: { tipo: string; nome: string } }
 
     expect(result.escopo).toEqual({ tipo: 'municipio', nome: 'Feira de Santana' })
@@ -236,10 +255,39 @@ describe('getPendingLeaderships scope resolution (B185)', () => {
     })
   })
 
+  it('município real fora do portfólio do assessor devolve lista vazia escopada, sem erro', async () => {
+    const find = vi.fn()
+    find.mockResolvedValueOnce(findResult([]))
+    find.mockResolvedValueOnce(findResult([]))
+    find.mockResolvedValue(findResult([]))
+
+    const result = (await execute(
+      scriptedPayload(find),
+      advisor,
+    )({
+      scope: 'Vale do Jiquiriça',
+    })) as {
+      escopo: { tipo: string; nome: string }
+      escopoRestrito: boolean
+      total: number
+      liderancas: unknown[]
+      error?: string
+    }
+
+    expect(result.error).toBeUndefined()
+    expect(result.escopo).toEqual({ tipo: 'regiao', nome: 'Vale do Jiquiriçá' })
+    expect(result.escopoRestrito).toBe(true)
+    expect(result.total).toBe(0)
+    expect(result.liderancas).toEqual([])
+    expect((find.mock.calls[1]![0] as { where: unknown }).where).toEqual({
+      and: [PENDING_STATUS_WHERE, { municipalities: { in: [] } }],
+    })
+  })
+
   it('escopo desconhecido devolve erro sem consultar lideranças', async () => {
     const find = vi.fn()
     const result = (await execute(scriptedPayload(find))({
-      escopo: 'Lugar Inexistente',
+      scope: 'Lugar Inexistente',
     })) as { error: string }
     expect(result.error).toContain('Escopo não reconhecido')
     expect(find).not.toHaveBeenCalled()
@@ -253,7 +301,7 @@ describe('getPendingLeaderships filtros e modos (B185)', () => {
     find.mockResolvedValue(findResult([]))
 
     const result = (await execute(scriptedPayload(find))({
-      filtro: 'sem_assessor',
+      filter: 'sem_assessor',
     })) as { filtroAplicado: { semAssessor: boolean }; liderancas: unknown[] }
 
     expect(result.filtroAplicado).toEqual({ semAssessor: true })
@@ -289,8 +337,8 @@ describe('getPendingLeaderships filtros e modos (B185)', () => {
     find.mockResolvedValue(findResult([]))
 
     const result = (await execute(scriptedPayload(find))({
-      escopo: 'Vale do Jiquiriça',
-      modo: 'municipios_sem_lideranca',
+      scope: 'Vale do Jiquiriça',
+      mode: 'municipios_sem_lideranca',
     })) as {
       total: number
       criterio: string
@@ -312,17 +360,43 @@ describe('getPendingLeaderships filtros e modos (B185)', () => {
     expect(coveredCall.where).toEqual({ municipalities: { in: [1, 2, 3] } })
   })
 
+  it('modo municipios_sem_lideranca sem escopo consulta todos os municípios do ator', async () => {
+    const find = vi.fn()
+    find.mockResolvedValueOnce(
+      findResult([
+        {
+          id: 1,
+          name: 'Amargosa',
+          slug: 'amargosa',
+          city: 'Amargosa',
+          region: 'Vale do Jiquiriçá',
+        },
+      ]),
+    )
+    find.mockResolvedValueOnce(findResult([{ municipalities: [1] }]))
+    find.mockResolvedValue(findResult([]))
+
+    const result = (await execute(scriptedPayload(find))({
+      mode: 'municipios_sem_lideranca',
+    })) as { total: number }
+
+    expect(result.total).toBe(0)
+    const allCall = find.mock.calls[0]![0] as { collection: string; where: unknown }
+    expect(allCall.collection).toBe('municipality')
+    expect(allCall.where).toEqual({})
+  })
+
   it('rejeita combinar o filtro sem_assessor com o modo de municípios', async () => {
     const find = vi.fn()
     const result = (await execute(scriptedPayload(find))({
-      modo: 'municipios_sem_lideranca',
-      filtro: 'sem_assessor',
+      mode: 'municipios_sem_lideranca',
+      filter: 'sem_assessor',
     })) as { error: string }
     expect(result.error).toContain('só se aplica à lista de lideranças')
     expect(find).not.toHaveBeenCalled()
   })
 
-  it('trunca no limite mantendo o total real', async () => {
+  it('trunca no limite mantendo o total real e devolve a dica de estreitar', async () => {
     const find = vi.fn()
     find.mockResolvedValueOnce(
       findResult([
@@ -338,11 +412,13 @@ describe('getPendingLeaderships filtros e modos (B185)', () => {
     const result = (await execute(scriptedPayload(find))({ limit: 2 })) as {
       total: number
       truncado: boolean
+      dica?: string
       liderancas: unknown[]
     }
 
     expect(result.total).toBe(3)
     expect(result.truncado).toBe(true)
+    expect(result.dica).toContain('Estreite o escopo')
     expect(result.liderancas).toHaveLength(2)
   })
 
@@ -351,7 +427,6 @@ describe('getPendingLeaderships filtros e modos (B185)', () => {
     find.mockResolvedValueOnce(
       findResult([leadershipDoc({ id: 1, advisors: [501, 502], supportStatus: 'em_disputa' })]),
     )
-    find.mockResolvedValueOnce(findResult([]))
     find.mockResolvedValueOnce(findResult([{ id: 101, name: 'Lider A' }]))
     find.mockResolvedValueOnce(findResult([{ id: 1, name: 'Amargosa', slug: 'amargosa' }]))
     find.mockResolvedValueOnce(
@@ -369,8 +444,26 @@ describe('getPendingLeaderships filtros e modos (B185)', () => {
       { id: 501, nome: 'João Assessor' },
       { id: 502, nome: 'Maria Assessora' },
     ])
-    const advisorCall = find.mock.calls[4]![0] as { collection: string; select: unknown }
+    const advisorCall = find.mock.calls[3]![0] as { collection: string; select: unknown }
     expect(advisorCall.collection).toBe('campaignUser')
     expect(advisorCall.select).toEqual({ name: true })
+  })
+
+  it('municípios fora do acesso são omitidos (nunca um id pelado no chip)', async () => {
+    const find = vi.fn()
+    find.mockResolvedValueOnce(
+      findResult([leadershipDoc({ id: 1, municipalities: [1, 99], supportStatus: 'a_abordar' })]),
+    )
+    find.mockResolvedValueOnce(findResult([{ id: 101, name: 'Lider A' }]))
+    find.mockResolvedValueOnce(findResult([{ id: 1, name: 'Amargosa', slug: 'amargosa' }]))
+    find.mockResolvedValue(findResult([]))
+
+    const result = (await execute(scriptedPayload(find))({})) as {
+      liderancas: Array<{ municipios: unknown[] }>
+    }
+
+    expect(result.liderancas[0]!.municipios).toEqual([
+      { id: 1, nome: 'Amargosa', slug: 'amargosa' },
+    ])
   })
 })

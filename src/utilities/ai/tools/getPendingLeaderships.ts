@@ -6,7 +6,7 @@ import type { AIToolContext } from '@/lib/ai/types'
 import { bahiaIdentityTerritories } from '@/lib/bahiaTerritories'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { resolveMunicipalityName } from '@/lib/municipalityNameAliases'
-import { relationshipId } from '@/lib/relationship'
+import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 import { salvadorCity } from '@/lib/salvadorCity'
 import { normalizeSearchPhrase } from '@/lib/wordStartFilter'
 import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
@@ -15,6 +15,7 @@ const DENIED_MESSAGE = 'Leitura de dados de lideranças negada.'
 const PENDING_CRITERION =
   'Status "A abordar" ou "Em disputa"; ou "Engajado" sem compromisso de votos no escopo consultado.'
 const EMPTY_MUNICIPALITIES_CRITERION = 'Municípios do escopo sem nenhuma liderança vinculada.'
+const NARROW_SCOPE_HINT = 'Estreite o escopo (território, cidade ou município) para ver o restante.'
 const PENDING_SUPPORT_STATUSES = ['a_abordar', 'em_disputa', 'engajado'] as const
 
 type ScopeMunicipality = {
@@ -30,6 +31,15 @@ type ResolvedScope = {
   name: string | null
   municipalityIDs: number[] | null
   municipalities: ScopeMunicipality[]
+}
+
+type PendingLeadershipDoc = {
+  id: number
+  contact: number | string | null
+  municipalities: Array<number | string> | null
+  supportStatus: string
+  advisors: Array<number | string> | null
+  updatedAt: string | null
 }
 
 /**
@@ -49,7 +59,7 @@ export const getPendingLeaderships = (ctx: AIToolContext) =>
       '"Quais lideranças estão sem assessor responsável?" or "Quais municípios não têm liderança cadastrada?". ' +
       'The pending criterion is always declared in the response; combine the ids/slugs with buildCampaignLinks.',
     inputSchema: z.object({
-      escopo: z
+      scope: z
         .string()
         .trim()
         .min(1)
@@ -57,11 +67,11 @@ export const getPendingLeaderships = (ctx: AIToolContext) =>
         .describe(
           'Território de identidade, cidade ou município (ex.: "Vale do Jiquiriça", "Salvador", "Feira de Santana"). Omita para usar o escopo de acesso do usuário.',
         ),
-      filtro: z
+      filter: z
         .enum(['sem_assessor'])
         .optional()
         .describe('Restringe a lista de lideranças às que não têm assessor responsável.'),
-      modo: z
+      mode: z
         .enum(['liderancas', 'municipios_sem_lideranca'])
         .optional()
         .default('liderancas')
@@ -77,126 +87,86 @@ export const getPendingLeaderships = (ctx: AIToolContext) =>
         .default(20)
         .describe('Máximo de resultados (default 20, max 50).'),
     }),
-    execute: async ({ escopo, filtro, modo, limit }) => {
+    execute: async ({ scope, filter, mode, limit }) => {
       if (!isStaffCampaignRole(ctx.user.role)) return { error: DENIED_MESSAGE }
 
-      const scope = await resolveScope(ctx, escopo)
-      if ('error' in scope) return scope
+      const resolved = await resolveScope(ctx, scope)
+      if ('error' in resolved) return resolved
 
-      if (modo === 'municipios_sem_lideranca') {
-        if (filtro) {
+      if (mode === 'municipios_sem_lideranca') {
+        if (filter) {
           return { error: 'O filtro "sem assessor" só se aplica à lista de lideranças.' }
         }
-        return listMunicipalitiesWithoutLeadership(ctx, scope, limit)
+        return listMunicipalitiesWithoutLeadership(ctx, resolved, limit)
       }
 
-      return listPendingLeaderships(ctx, scope, filtro === 'sem_assessor', limit)
+      return listPendingLeaderships(ctx, resolved, filter === 'sem_assessor', limit)
     },
   })
 
+/**
+ * Resolve the requested scope into its municipality set through the actor's
+ * own access (an advisor asking outside the portfolio gets the empty scoped
+ * set — never an existence lie). The generic error stays reserved for names
+ * that match nothing at all.
+ */
 const resolveScope = async (
   ctx: AIToolContext,
-  escopo: string | undefined,
+  scope: string | undefined,
 ): Promise<ResolvedScope | { error: string }> => {
-  if (!escopo) {
+  if (!scope) {
     return { kind: 'todos', name: null, municipalityIDs: null, municipalities: [] }
   }
 
-  const canonicalMunicipality = resolveMunicipalityName(escopo)
-  if (canonicalMunicipality) {
-    const result = await ctx.payload.find({
-      collection: 'municipality',
-      where: { name: { equals: canonicalMunicipality } },
-      depth: 0,
-      limit: 1,
-      pagination: false,
-      select: { id: true, name: true, slug: true, city: true, region: true },
-      overrideAccess: false,
-      user: ctx.user,
-    })
-    const doc = result.docs[0]
-    if (doc) {
-      return {
-        kind: 'municipio',
-        name: doc.name,
-        municipalityIDs: [doc.id],
-        municipalities: [
-          {
-            id: doc.id,
-            name: doc.name,
-            slug: doc.slug,
-            city: doc.city ?? null,
-            region: doc.region ?? null,
-          },
-        ],
-      }
-    }
+  // Salvador first: the virtual city is a first-class scope (19 ZE juntas) and
+  // the catalog has no row literally named "Salvador" — the municipality query
+  // would be a guaranteed-miss round trip.
+  if (normalizeSearchPhrase(scope) === normalizeSearchPhrase(salvadorCity.city)) {
+    const resolved = await resolveMunicipalities(ctx, { city: { equals: salvadorCity.city } })
+    return { kind: 'cidade', name: salvadorCity.name, ...resolved }
   }
 
-  if (normalizeSearchPhrase(escopo) === normalizeSearchPhrase(salvadorCity.city)) {
-    const result = await ctx.payload.find({
-      collection: 'municipality',
-      where: { city: { equals: salvadorCity.city } },
-      depth: 0,
-      limit: 0,
-      pagination: false,
-      select: { id: true, name: true, slug: true, city: true, region: true },
-      overrideAccess: false,
-      user: ctx.user,
-    })
-    const municipalities = result.docs.map((doc) => ({
-      id: doc.id,
-      name: doc.name,
-      slug: doc.slug,
-      city: doc.city ?? null,
-      region: doc.region ?? null,
-    }))
-    if (municipalities.length === 0) {
-      return { error: `Nenhuma zona eleitoral encontrada para "${escopo}".` }
-    }
-    return {
-      kind: 'cidade',
-      name: salvadorCity.name,
-      municipalityIDs: municipalities.map((m) => m.id),
-      municipalities,
-    }
+  const canonicalMunicipality = resolveMunicipalityName(scope)
+  if (canonicalMunicipality) {
+    const resolved = await resolveMunicipalities(ctx, { name: { equals: canonicalMunicipality } })
+    return { kind: 'municipio', name: canonicalMunicipality, ...resolved }
   }
 
   const territory = bahiaIdentityTerritories.find(
-    (name) => normalizeSearchPhrase(name) === normalizeSearchPhrase(escopo),
+    (name) => normalizeSearchPhrase(name) === normalizeSearchPhrase(scope),
   )
   if (territory) {
-    const result = await ctx.payload.find({
-      collection: 'municipality',
-      where: { region: { equals: territory } },
-      depth: 0,
-      limit: 0,
-      pagination: false,
-      select: { id: true, name: true, slug: true, city: true, region: true },
-      overrideAccess: false,
-      user: ctx.user,
-    })
-    const municipalities = result.docs.map((doc) => ({
-      id: doc.id,
-      name: doc.name,
-      slug: doc.slug,
-      city: doc.city ?? null,
-      region: doc.region ?? null,
-    }))
-    if (municipalities.length === 0) {
-      return { error: `Nenhum município encontrado no território "${territory}".` }
-    }
-    return {
-      kind: 'regiao',
-      name: territory,
-      municipalityIDs: municipalities.map((m) => m.id),
-      municipalities,
-    }
+    const resolved = await resolveMunicipalities(ctx, { region: { equals: territory } })
+    return { kind: 'regiao', name: territory, ...resolved }
   }
 
   return {
-    error: `Escopo não reconhecido: "${escopo}". Use um município, "Salvador" ou um território de identidade da Bahia.`,
+    error: `Escopo não reconhecido: "${scope}". Use um município, "Salvador" ou um território de identidade da Bahia.`,
   }
+}
+
+const resolveMunicipalities = async (
+  ctx: AIToolContext,
+  where: Where,
+): Promise<{ municipalityIDs: number[]; municipalities: ScopeMunicipality[] }> => {
+  const result = await ctx.payload.find({
+    collection: 'municipality',
+    where,
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { id: true, name: true, slug: true, city: true, region: true },
+    overrideAccess: false,
+    user: ctx.user,
+  })
+  const municipalities = result.docs.map((doc) => ({
+    id: doc.id,
+    name: doc.name,
+    slug: doc.slug,
+    city: doc.city ?? null,
+    region: doc.region ?? null,
+  }))
+  return { municipalityIDs: municipalities.map((m) => m.id), municipalities }
 }
 
 const listPendingLeaderships = async (
@@ -231,23 +201,18 @@ const listPendingLeaderships = async (
     user: ctx.user,
   })
 
-  const docs = leaderships.docs as unknown as Array<{
-    id: number
-    contact: number | string | null
-    municipalities: Array<number | string> | null
-    supportStatus: string
-    advisors: Array<number | string> | null
-    updatedAt: string | null
-  }>
+  const docs = leaderships.docs as unknown as PendingLeadershipDoc[]
 
-  const leadershipIDs = docs.map((doc) => doc.id)
+  // Only engaged leaderships consult the pledge axis — a_abordar/em_disputa
+  // are pending regardless, so their pledges are never fetched.
+  const engagedIDs = docs.filter((doc) => doc.supportStatus === 'engajado').map((doc) => doc.id)
 
-  const pledgeAndClauses: Where[] = [{ leadership: { in: leadershipIDs } }]
-  if (scope.municipalityIDs) {
-    pledgeAndClauses.push({ municipality: { in: scope.municipalityIDs } })
-  }
   const pledgedLeadershipIDs = new Set<number>()
-  if (leadershipIDs.length > 0) {
+  if (engagedIDs.length > 0) {
+    const pledgeAndClauses: Where[] = [{ leadership: { in: engagedIDs } }]
+    if (scope.municipalityIDs) {
+      pledgeAndClauses.push({ municipality: { in: scope.municipalityIDs } })
+    }
     const pledges = await payload.find({
       collection: 'votePledge',
       where: { and: pledgeAndClauses },
@@ -273,9 +238,9 @@ const listPendingLeaderships = async (
   const total = pending.length
   const top = pending.slice(0, limit)
 
-  const contactIDs = uniqueIDs(top.flatMap((doc) => [doc.contact]))
-  const municipalityIDs = uniqueIDs(top.flatMap((doc) => doc.municipalities ?? []))
-  const advisorIDs = uniqueIDs(top.flatMap((doc) => doc.advisors ?? []))
+  const contactIDs = uniqueRelationshipIds(top.flatMap((doc) => [doc.contact]))
+  const municipalityIDs = uniqueRelationshipIds(top.flatMap((doc) => doc.municipalities ?? []))
+  const advisorIDs = uniqueRelationshipIds(top.flatMap((doc) => doc.advisors ?? []))
 
   const [contactNames, municipalityNames, advisorNames] = await Promise.all([
     loadNamesByIds(ctx, 'contact', contactIDs),
@@ -285,35 +250,42 @@ const listPendingLeaderships = async (
 
   const liderancas = top.map((doc) => {
     const contactID = relationshipId(doc.contact)
-    const municipalities = (doc.municipalities ?? [])
-      .map(relationshipId)
-      .filter((id): id is number => id !== null)
-    const advisors = (doc.advisors ?? [])
-      .map(relationshipId)
-      .filter((id): id is number => id !== null)
-    return {
-      id: doc.id,
-      nome: contactNames.get(contactID ?? -1) ?? 'Sem nome',
-      municipios: municipalities.map((id) => ({
+    // Unresolved names mean out-of-access links (advisor portfolio): the chip
+    // is dropped instead of leaking a bare id — same policy as the UI.
+    const municipios = uniqueRelationshipIds(doc.municipalities)
+      .map((id) => ({
         id,
         nome: municipalityNames.get(id)?.name ?? null,
         slug: municipalityNames.get(id)?.slug ?? null,
-      })),
+      }))
+      .filter((m) => m.nome !== null)
+    const assessores = uniqueRelationshipIds(doc.advisors).map((id) => ({
+      id,
+      nome: advisorNames.get(id) ?? null,
+    }))
+    return {
+      id: doc.id,
+      nome: contactNames.get(contactID ?? -1) ?? 'Sem nome',
+      municipios,
       status:
         supportStatusLabels[doc.supportStatus as keyof typeof supportStatusLabels] ??
         doc.supportStatus,
-      assessores: advisors.map((id) => ({ id, nome: advisorNames.get(id) ?? null })),
+      assessores,
       ultimaAtualizacao: doc.updatedAt ?? null,
     }
   })
 
+  const truncado = total > top.length
+
   return {
     escopo: { tipo: scope.kind, nome: scope.name },
+    escopoRestrito: ctx.user.role === 'advisor',
     criterio: PENDING_CRITERION,
     filtroAplicado: { semAssessor: semAssessor },
     total,
     liderancas,
-    truncado: total > top.length,
+    truncado,
+    ...(truncado ? { dica: NARROW_SCOPE_HINT } : {}),
   }
 }
 
@@ -360,19 +332,19 @@ const listMunicipalitiesWithoutLeadership = async (
 
   const coveredIDs = new Set<number>()
   for (const doc of covered.docs) {
-    for (const id of (Array.isArray(doc.municipalities) ? doc.municipalities : []).map(
-      relationshipId,
-    )) {
-      if (id !== null) coveredIDs.add(id)
+    for (const id of uniqueRelationshipIds(doc.municipalities)) {
+      coveredIDs.add(id)
     }
   }
 
   const missing = scopeDocs.filter((doc) => !coveredIDs.has(doc.id))
   const total = missing.length
   const shown = missing.slice(0, limit)
+  const truncado = total > shown.length
 
   return {
     escopo: { tipo: scope.kind, nome: scope.name },
+    escopoRestrito: ctx.user.role === 'advisor',
     criterio: EMPTY_MUNICIPALITIES_CRITERION,
     total,
     municipios: shown.map((doc) => ({
@@ -382,17 +354,9 @@ const listMunicipalitiesWithoutLeadership = async (
       regiao: doc.region,
       cidade: doc.city,
     })),
-    truncado: total > shown.length,
+    truncado,
+    ...(truncado ? { dica: NARROW_SCOPE_HINT } : {}),
   }
-}
-
-const uniqueIDs = (values: Array<number | string | null>): number[] => {
-  const ids: number[] = []
-  for (const value of values) {
-    const id = relationshipId(value)
-    if (id !== null && !ids.includes(id)) ids.push(id)
-  }
-  return ids
 }
 
 const loadNamesByIds = async (
