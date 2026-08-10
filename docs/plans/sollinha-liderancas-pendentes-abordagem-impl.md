@@ -6,6 +6,27 @@ Issue: #524
 Intenção: docs/plans/sollinha-liderancas-pendentes-abordagem.md
 Appetite restante: ~1 dia eng (herdado); sem migration / Consent / collection / UI nova
 
+## Registro de execução (2026-08-10)
+
+- **Entrega:** `getPendingLeaderships` nova (`src/utilities/ai/tools/getPendingLeaderships.ts`) + registro no `index.ts` + seção no system prompt; 18 unit tests (`tests/unit/pendingLeadershipsTool.unit.spec.ts`); allowlist P3-D justificada. Mergeado via PR #547 (Closes #524); Issue fechada `done/in-prod`.
+- **Divergência da hipótese da intenção:** nenhuma nos aceites. O corte de `negativo` (fora do critério declarado) foi apresentado no gate humano e aprovado. Implementado como previsto: critério default fixo com eixo do compromisso = presença de `votePledge` no escopo; recência/`declaredAt` deixada para a B186.
+- **Pós-merge, revisão /simplify (3 reviewers paralelos) — fixes aplicados em PR de follow-up:**
+  - Escopo efetivo para assessor: município/território/cidade real **fora do portfólio** devolve lista vazia escopada (antes: erro "não reconhecido" — mentira de existência); resposta agora declara `escopoRestrito: true` para advisor (o plano prometia "a resposta declara o escopo efetivo" e o teste do shape vazio — ambos faltavam).
+  - Chips de município fora do acesso: removidos (antes `{ id, nome: null }` vazava o vínculo — mesma política da UI `MunicipalityPortfolioCell`).
+  - `uniqueIDs` local substituído pelo canônico `uniqueRelationshipIds` (regra "edit the owner, don't twin").
+  - Chaves do input zod em inglês (`scope`/`filter`/`mode` — convenção de identificadores; valores continuam pt como dados).
+  - Salvador: ramo da cidade antes do ramo de município (elimina o round-trip garantido de miss).
+  - Query de pledges restrita às lideranças `engajado` (a_abordar/em_disputa nunca consultam o eixo) + guard de skip.
+  - `dica` de estreitar escopo quando `truncado` + linha no prompt sobre `escopoRestrito`/`truncado`.
+  - Tipo nomeado `PendingLeadershipDoc` no lugar do cast inline.
+- **`exists: false` em hasMany `advisors`:** verificação obrigatória do plano executada **ao vivo** durante a revisão (reviewer 3, contra a DB local do worktree com linhas reais): o id-set do SQL bate com o filtro JS. Não pinado em int test (tools são unit-stubbed); risco residual zero observado.
+- **Débitos deferidos (triage da revisão, sem Issue):**
+  - Eixo do compromisso binário por liderança (não por liderança×município): liderança engajada com pledge em 1 de 3 municípios do escopo aparece/não aparece conforme o recorte da pergunta; o critério declarado torna isso transparente. **Gatilho:** se a família B185/B186/B189 precisar de granularidade por município, adicionar flags `semCompromisso` por município na resposta.
+  - `getLeaderships.SUPPORT_LABELS` (duplicata privada de `supportStatusLabels`): **gatilho:** próxima edição de `getLeaderships`.
+  - Mensagem "Escopo não reconhecido" para ZE individual ("Salvador ZE 3"): aceitável (intenção só promete nível cidade), texto permanece.
+  - `loadNamesByIds` ao lado dos helpers P3-E (justificado: os P3-E usam `overrideAccess: true`; aqui o acesso do ator deve valer). Polish.
+  - **Perda no main (fora desta entrega):** o merge do C104 (PR #537) removeu do `docs/CHANGELOG-AGENTS.md` as entradas B183 e C102 — restauração é decisão de outra Issue (registrada no comentário da #524).
+
 ## Leitura da intenção
 
 - **Outcome:** uma tool nova do Sollinha responde "quais lideranças ainda precisam ser abordadas" por território de identidade, cidade (Salvador = 19 ZE) ou município — com o **critério de pendência declarado na resposta**, responsáveis (assessores) à vista, links de navegação via `buildCampaignLinks`, RBAC atual (assessor = portfólio; leader = deny fail-closed), filtro "sem assessor" (C3) e modo "municípios sem liderança" (C4).
