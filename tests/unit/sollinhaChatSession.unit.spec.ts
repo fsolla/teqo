@@ -56,6 +56,32 @@ describe('sollinhaChatSession storage', () => {
     expect(session?.open).toBe(true)
   })
 
+  it('round-trips the open origin and defaults to settle without one', () => {
+    writeSollinhaChatSession([], true, 'user')
+    expect(readSollinhaChatSession()?.openBy).toBe('user')
+    writeSollinhaChatSession([], true, 'settle')
+    expect(readSollinhaChatSession()?.openBy).toBe('settle')
+    // No origin passed — a write without intent must never restore a drawer.
+    writeSollinhaChatSession([], true)
+    expect(readSollinhaChatSession()?.openBy).toBe('settle')
+  })
+
+  it('rejects an invalid open origin (fail-closed)', () => {
+    window.sessionStorage.setItem(
+      SOLLINHA_CHAT_SESSION_STORAGE_KEY,
+      JSON.stringify({ version: 1, messages: [], open: true, openBy: 'system' }),
+    )
+    expect(readSollinhaChatSession()).toBeNull()
+  })
+
+  it('still reads legacy sessions without an open origin', () => {
+    window.sessionStorage.setItem(
+      SOLLINHA_CHAT_SESSION_STORAGE_KEY,
+      JSON.stringify({ version: 1, messages: [], open: true }),
+    )
+    expect(readSollinhaChatSession()?.openBy).toBeUndefined()
+  })
+
   it('prunes to the message-count guardrail keeping the newest', () => {
     const messages = Array.from({ length: SOLLINHA_CHAT_MAX_MESSAGES + 5 }, (_, index) =>
       makeMessage(String(index), index % 2 === 0 ? 'user' : 'assistant'),

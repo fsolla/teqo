@@ -145,9 +145,9 @@ test.describe('B167 — chat Sollinha migra entre painel e drawer ao redimension
       name: campaign.fixtures.value('Chat Resize Coordenador'),
     })
     // Mobile from the start (B188): a desktop login auto-opens the chat (the
-    // settle below) and persists `open: true` for the tab — a later reload at
-    // mobile would then legitimately restore the open drawer, which is not
-    // what a *fresh* mobile visit looks like.
+    // settle below); OPS22 makes that settle-originated `open: true` never
+    // restore on a mobile page of the same tab, and here the login itself
+    // happens at mobile width — so no drawer, only the FAB.
     await page.setViewportSize({ width: 500, height: 800 })
     await campaign.login(page, user.email!, user.password)
 
