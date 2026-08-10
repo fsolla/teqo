@@ -13,7 +13,7 @@
  *                              `--stay` suprime a linha `cd`; `--go` explícito
  *                              continua aceito como no-op (era o antigo padrão).
  *                              Chamado do terminal interativo (com
- *                              `WORKTREE_TERMINAL=1`, que só a função shell
+ *                              `TEQO_WORKTREE_TERMINAL=1`, que só a função shell
  *                              seta), imprime também a diretiva `launch
  *                              opencode <dir> --model deepseek/deepseek-v4-flash
  *                              --auto --prompt /work-issue` ANTES do `cd` — a
@@ -87,11 +87,17 @@ const WORKTREES_ROOT = join(homedir(), '.cursor', 'worktrees', 'teqo')
 
 /**
  * True when the interactive terminal shell function (`.agents/shell/worktree.sh`)
- * calls us: it sets `WORKTREE_TERMINAL=1` and executes the `launch` directive
- * we print. Without the marker (the `/worktree` opencode command, automation)
- * the launch line is never printed — no nested TUI.
+ * calls us: it sets `TEQO_WORKTREE_TERMINAL=1` and executes the `launch`
+ * directive we print. Without the marker (the `/worktree` opencode command,
+ * automation) the launch line is never printed — no nested TUI.
  */
-const isTerminal = process.env[WORKTREE_TERMINAL_ENV] === '1'
+const terminalShell = process.env[WORKTREE_TERMINAL_ENV] === '1'
+
+/** Print the `launch` directive (only exists from the terminal shell); the `cd` line stays last. */
+const printLaunchDirective = ({ dir, purpose }) => {
+  const line = opencodeLaunchDirective({ dir, purpose, terminal: terminalShell })
+  if (line) console.log(line)
+}
 
 /** Fixed compose project so `db:start`/provisioning always target ONE container. */
 const SHARED_COMPOSE_PROJECT = 'teqo'
@@ -362,8 +368,7 @@ const cmdNext = async (stay, skipMigrate) => {
   console.log(`  banco test: postgresql://teqo:teqo@localhost:5432/${env.testDatabase}`)
 
   if (!stay) {
-    const launch = opencodeLaunchDirective({ dir, purpose: 'next', terminal: isTerminal })
-    if (launch) console.log(launch)
+    printLaunchDirective({ dir, purpose: 'next' })
     console.log(`cd ${dir}`)
   }
 }
@@ -437,8 +442,7 @@ const cmdPlan = async (stay, skipMigrate, bag) => {
   console.log(`  banco test: postgresql://teqo:teqo@localhost:5432/${env.testDatabase}`)
 
   if (!stay) {
-    const launch = opencodeLaunchDirective({ dir, purpose: 'plan', terminal: isTerminal })
-    if (launch) console.log(launch)
+    printLaunchDirective({ dir, purpose: 'plan' })
     console.log(`cd ${dir}`)
   }
 }
@@ -536,7 +540,7 @@ if (!subcommand) {
   console.log('    ambiente isolado: porta de dev + bancos próprios (determinístico do branch);')
   console.log('    por padrão imprime `cd <dir>` no fim (quem aplica o cd: opencode command, ou a')
   console.log(
-    '    função `worktree()` de .agents/shell/worktree.sh); no terminal (WORKTREE_TERMINAL=1)',
+    '    função `worktree()` de .agents/shell/worktree.sh); no terminal (TEQO_WORKTREE_TERMINAL=1)',
   )
   console.log('    imprime também a diretiva `launch opencode …` (OPS26: abre o TUI com')
   console.log('    deepseek/deepseek-v4-flash + auto + /work-issue enviado); --stay suprime cd e')

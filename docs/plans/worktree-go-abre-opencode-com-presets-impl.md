@@ -16,7 +16,7 @@ Appetite restante: ~0,5–1 dia eng (herdado; cabe folgado)
 
 ```mermaid
 flowchart LR
-  S[worktree.sh função worktree] -->|WORKTREE_TERMINAL=1 + args| N[node scripts/worktree.mjs]
+  S[worktree.sh função worktree] -->|TEQO_WORKTREE_TERMINAL=1 + args| N[node scripts/worktree.mjs]
   N -->|print| CD["launch opencode <dir> --model … --auto [--prompt /work-issue]<br/>cd <dir>"]
   S -->|sed 's/^launch //p'| L[executa launch sem exec<br/>foreground, TUI assume o terminal]
   S -->|sed 's/^cd //p'| D[cd <dir> primeiro]
@@ -25,15 +25,15 @@ flowchart LR
   C -->|aplica| D2[cd <dir>]
 ```
 
-**Opções consideradas:** A (marcador de env `WORKTREE_TERMINAL=1` — linha `launch` só quando marcado) | B (script sempre imprime `launch`; cada chamador decide o que executar) | C (flag `--launch` no argv)
+**Opções consideradas:** A (marcador de env `TEQO_WORKTREE_TERMINAL=1` — linha `launch` só quando marcado) | B (script sempre imprime `launch`; cada chamador decide o que executar) | C (flag `--launch` no argv)
 **Recomendação:** A — o aceite #3 exige que o launch **não aconteça** quando o script roda sem marcador (o `/worktree` do opencode, automação): o marcador é o que separa as duas superfícies; a superfície opencode nunca recebe a linha, então seu texto não precisa ensinar a ignorá-la.
 **Rejeitadas:** B — inverte o aceite (a linha sairia para o `/worktree` também; o comando precisaria aprender a descartá-la, e automação futura ingênua executaria TUI aninhado); C — o shell repassa `"$@"` intacto; uma flag extra exigiria strip antes do repasse e poderia vazar para a superfície opencode.
 
 ### Componentes / mudanças
 
-- **`opencodeLaunchDirective`** (`scripts/lib/worktree.mjs`): função pura `({ dir, purpose, terminal }) → string | null` — devolve `null` sem marcador; linha `launch opencode <dir> --model <model> --auto` + `--prompt /work-issue` só para `purpose: 'next'` (plan **sem** prompt — fallback acordado). Constantes exportadas no lib (fonte única, unit-testável): `OPENCODE_PRESET_MODEL = 'deepseek/deepseek-v4-flash'`, `OPENCODE_SKILL_COMMAND_BY_PURPOSE = { next: '/work-issue', plan: null }`, `WORKTREE_TERMINAL_ENV = 'WORKTREE_TERMINAL'`. Invariante documentada: dir é sempre `<root sem espaço>/<branch slugificado>` — sem espaços, word-splitting seguro.
+- **`opencodeLaunchDirective`** (`scripts/lib/worktree.mjs`): função pura `({ dir, purpose, terminal }) → string | null` — devolve `null` sem marcador; linha `launch opencode <dir> --model <model> --auto` + `--prompt /work-issue` só para `purpose: 'next'` (plan **sem** prompt — fallback acordado). Constantes exportadas no lib (fonte única, unit-testável): `OPENCODE_PRESET_MODEL = 'deepseek/deepseek-v4-flash'`, `OPENCODE_SKILL_COMMAND_BY_PURPOSE = { next: '/work-issue', plan: null }`, `WORKTREE_TERMINAL_ENV = 'TEQO_WORKTREE_TERMINAL'`. Invariante documentada: dir é sempre `<root sem espaço>/<branch slugificado>` — sem espaços, word-splitting seguro.
 - **`scripts/worktree.mjs`**: lê `process.env[WORKTREE_TERMINAL_ENV] === '1'`; em `cmdNext`/`cmdPlan`, no bloco `!stay`, imprime a linha `launch …` **antes** do `cd <dir>` (a linha `cd` continua sendo a **última** — contrato OPS24 preservado para todos os consumidores). Header do script + bloco de uso ganham uma linha sobre o launch.
-- **`.agents/shell/worktree.sh`**: chama `WORKTREE_TERMINAL=1 node …`; depois do cd aplicado, extrai a última linha `launch …` (mesmo padrão sed do cd) e executa word-split (`$launch`, sem `eval` — formato fixo gerado pelo script, sem globs) **sem `exec`** (aceite #5: ao sair do TUI, volta ao shell no worktree); falha do launch (ex.: `opencode` ausente) imprime aviso e o worktree segue utilizável.
+- **`.agents/shell/worktree.sh`**: chama `TEQO_WORKTREE_TERMINAL=1 node …`; depois do cd aplicado, extrai a última linha `launch …` (mesmo padrão sed do cd) e executa word-split (`$launch`, sem `eval` — formato fixo gerado pelo script, sem globs) **sem `exec`** (aceite #5: ao sair do TUI, volta ao shell no worktree); falha do launch (ex.: `opencode` ausente) imprime aviso e o worktree segue utilizável.
 - **Migration:** sem migration (nenhuma mudança de schema/dados).
 - **Access / Consent:** N/A (CLI de dev).
 - **UI:** Impeccable A — N/A (sem UI de produto; TUI de terceiros).
@@ -51,7 +51,7 @@ cd /home/<user>/.cursor/worktrees/teqo/OPS26-x
 ## Fases verificáveis
 
 1. **Derivação pura** — lib (`opencodeLaunchDirective` + constantes) + unit tests novos em `tests/unit/worktree.unit.spec.ts` (next → prompt presente; plan → sem prompt; terminal=false → null; constantes pinadas). Quota: pequena.
-2. **Script + shell** — `cmdNext`/`cmdPlan` imprimem a diretiva; função shell aplica marcador, cd e launch; textos (header/uso do script, header do .sh). Verificação manual: `WORKTREE_TERMINAL=1 node scripts/worktree.mjs …` (output shape) e simulação do parse sed com saída sintética (sem criar worktree/DBs reais).
+2. **Script + shell** — `cmdNext`/`cmdPlan` imprimem a diretiva; função shell aplica marcador, cd e launch; textos (header/uso do script, header do .sh). Verificação manual: `TEQO_WORKTREE_TERMINAL=1 node scripts/worktree.mjs …` (output shape) e simulação do parse sed com saída sintética (sem criar worktree/DBs reais).
 3. **Docs** — AGENTS.md (parágrafo Per-worktree), `.opencode/commands/worktree.md` (nota: comando nunca lança TUI), `.agents/skills/worktree-next-issue/SKILL.md` (linha default-go), `docs/CHANGELOG-AGENTS.md` (entrada única, padrão das entregas).
 4. **Gates** — `pnpm gate:fast` na iteração; `pnpm push` na entrega (gate:ci + push).
 

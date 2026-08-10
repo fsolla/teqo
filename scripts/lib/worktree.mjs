@@ -17,7 +17,7 @@ import { slugify } from '../../src/lib/slug.ts'
 export const PLAN_BRANCH_PREFIX = 'plans/plan-issue'
 
 /** Env var the interactive-terminal `worktree()` function sets to request the opencode launch. */
-export const WORKTREE_TERMINAL_ENV = 'WORKTREE_TERMINAL'
+export const WORKTREE_TERMINAL_ENV = 'TEQO_WORKTREE_TERMINAL'
 
 /** Preset model for the opencode launch — change the preset by editing this constant. */
 export const OPENCODE_PRESET_MODEL = 'deepseek/deepseek-v4-flash'
@@ -118,7 +118,7 @@ export const planBranchName = ({ bag = '', taken = new Set() }) => {
  */
 export const opencodeLaunchDirective = ({ dir, purpose, terminal = false }) => {
   if (!terminal) return null
-  const prompt = OPENCODE_SKILL_COMMAND_BY_PURPOSE[purpose] ?? null
+  const prompt = OPENCODE_SKILL_COMMAND_BY_PURPOSE[purpose]
   const args = [dir, '--model', OPENCODE_PRESET_MODEL, '--auto']
   if (prompt) args.push('--prompt', prompt)
   return `launch opencode ${args.join(' ')}`

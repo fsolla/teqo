@@ -30,7 +30,7 @@ flowchart LR
 **Rejeitadas:**
 
 - **B — inverter só na função shell** (shell decide aplicar por default e passa `--stay` ao script): deixaria o opencode command e consumidores diretos do script com a semântica velha; a superfície `/worktree` também precisa do default-go. Rejeitada por inconsistência.
-- **C — detectar "terminal vs opencode" no script** (ex.: env `WORKTREE_TERMINAL`): anti-goal explícito da intenção; o contrato continua sendo "script imprime `cd`; quem aplica decide". Rejeitada.
+- **C — detectar "terminal vs opencode" no script** (ex.: env `WORKTREE_TERMINAL`): anti-goal explícito da intenção; o contrato continua sendo "script imprime `cd`; quem aplica decide". Rejeitada. _(Reavaliado na OPS26: o marcador `TEQO_WORKTREE_TERMINAL` foi adotado lá para a diretiva `launch` — só a função shell marca, e a superfície `/worktree` nunca recebe a linha.)_
 - **D — `kill --stay`** (ficar no cwd morto): anti-goal de produto (é exatamente o bug que se corrige). Rejeitada — `kill` com `--stay` morre com mensagem clara.
 
 ### Componentes / mudanças

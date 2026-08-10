@@ -12,10 +12,10 @@
 # `next` com `/work-issue` já enviado, `plan` sem prompt (autocomplete completa
 # `/plan-`). Sem `exec` de propósito: ao sair do opencode, o terminal volta ao
 # shell dentro do worktree. Presets são constantes em scripts/lib/worktree.mjs;
-# o marcador WORKTREE_TERMINAL=1 é o que separa esta superfície da do comando
+# o marcador TEQO_WORKTREE_TERMINAL=1 é o que separa esta superfície da do comando
 # `/worktree` do opencode (que nunca lança TUI). `--stay` suprime cd e launch.
 #
-# Instalação (uma linha no profile):
+# Instalação (uma linha no profile; requer bash ou zsh — usa BASH_SOURCE, arrays e here-strings):
 #   source <repo>/.agents/shell/worktree.sh
 #
 # Uso (terminal interativo):
@@ -46,7 +46,7 @@ worktree() {
   done
 
   local out
-  out="$(WORKTREE_TERMINAL=1 node "$root/scripts/worktree.mjs" "$@")" || return $?
+  out="$(TEQO_WORKTREE_TERMINAL=1 node "$root/scripts/worktree.mjs" "$@")" || return $?
   printf '%s\n' "$out"
 
   if [ "$stay" -eq 1 ]; then
@@ -63,15 +63,15 @@ worktree() {
     return 1
   fi
 
-  # Diretiva `launch` (só existe quando WORKTREE_TERMINAL=1 e sem --stay): o
-  # script a gera a partir de constantes + dir slugificado (sem espaços), então
-  # o split por IFS abaixo é intencional e seguro — nunca eval. Falha do launch
+  # Diretiva `launch` (só existe quando TEQO_WORKTREE_TERMINAL=1 e sem --stay): o
+  # script a gera a partir de constantes + dir slugificado (sem espaços), então o
+  # split por IFS=' ' abaixo é intencional e seguro — nunca eval. Falha do launch
   # (ex.: opencode fora do PATH) só avisa: o worktree já está pronto e utilizável.
   local launch
   launch="$(printf '%s\n' "$out" | sed -n 's/^launch //p' | tail -n 1)"
   if [ -n "$launch" ]; then
     local -a launch_args
-    read -r -a launch_args <<< "$launch"
+    IFS=' ' read -r -a launch_args <<< "$launch"
     "${launch_args[@]}" || printf 'worktree: launch do opencode falhou (código %s) — o worktree segue pronto em %s.\n' "$?" "$PWD" >&2
   fi
 }
