@@ -26,6 +26,7 @@ describe('classifyTestScope (OPS5)', () => {
       'pnpm-lock.yaml',
       'src/collections/Post.ts',
       'scripts/lib/seed-minimal-manifest.mjs',
+      'scripts/worktree.mjs',
       'scripts/lib/test-affected-core.mjs',
       'tests/helpers/campaignFixtures.ts',
       'tests/unit/ciSkipInvariants.unit.spec.ts',

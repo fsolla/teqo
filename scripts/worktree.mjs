@@ -28,8 +28,12 @@
  *                              deterministicamente do branch (ver
  *                              scripts/lib/worktree-env.mjs), para agentes em
  *                              paralelo não disputarem porta 3000 nem o
- *                              `teqo_test` compartilhado. `--no-migrate` pula a
- *                              aplicação das migrations nos bancos novos.
+ *                              `teqo_test` compartilhado. Migrations E seed
+ *                              mínimo (`db:seed:minimal`, OPS28) são aplicados
+ *                              aos dois bancos — paridade com a CI, que roda
+ *                              `migrate → seed:minimal` antes do e2e.
+ *                              `--no-migrate` pula migrations E o seed (que
+ *                              depende do catálogo migrado).
  *   pnpm worktree plan [bag] [--stay] [--no-migrate]
  *                              cria um worktree de PLANEJAMENTO novo para rodar
  *                              a skill /plan-issue sem ocupar o main — cada
@@ -59,6 +63,8 @@
  *                              `--prompt` (apenas conversar, nenhuma skill).
  *                              `--stay` suprime a linha `cd` e a diretiva;
  *                              `--go` explícito continua aceito como no-op.
+ *                              Migrations E seed mínimo nos dois bancos, como
+ *                              o `next`/`plan` (OPS28).
  *   pnpm worktree kill [--force]   destrói o worktree em que o shell atual está
  *                              (recusa worktree sujo sem `--force`) e remove os
  *                              bancos gerados do worktree (best-effort); por
@@ -240,6 +246,24 @@ const runMigrate = (dir, databaseUrl, payloadSecret) => {
   })
 }
 
+/**
+ * Runs the minimal synthetic seed on a provisioned database — the same
+ * `pnpm db:seed:minimal` CI runs after `pnpm migrate`, so a worktree's dev and
+ * test databases carry the same content CI's e2e asserts on (OPS28: worktrees
+ * were migrate-only and the e2e diverged). Idempotent (upsert by stable key)
+ * and guarded by the seed's own `assertLocalDatabase` — it never touches a
+ * non-local database. Skipped alongside migrations by `--no-migrate`, since the
+ * seed requires the migrated municipality catalog.
+ */
+const runSeedMinimal = (dir, databaseUrl, payloadSecret) => {
+  console.log(`[worktree] ▶ seed mínimo em ${databaseUrl} (paridade com a CI)…`)
+  execFileSync('pnpm', ['db:seed:minimal'], {
+    cwd: dir,
+    env: { ...process.env, DATABASE_URL: databaseUrl, PAYLOAD_SECRET: payloadSecret },
+    stdio: 'inherit',
+  })
+}
+
 /** Cursor Cloud / no-Docker fallback: shared teqo + teqo_test, no port override. */
 const writeFallbackEnv = (dir, branch) => {
   const devEnv = [
@@ -259,13 +283,12 @@ const writeFallbackEnv = (dir, branch) => {
   writeFileSync(join(dir, '.env.local'), devEnv)
   writeFileSync(join(dir, '.env.test.local'), testEnv)
 }
-
 /**
  * Deterministic per-worktree environment: shared container + own databases +
- * own dev-server port + env files + migrations. Skips everything when a
- * manual `.env.local`/`.env.test.local` (no marker) exists — never clobbers.
- * `purpose` labels the env comment (`next` | `plan` | `new`); `issue` is optional and
- * fills the `issue #N` part of the comment only when present.
+ * own dev-server port + env files + migrations + minimal seed. Skips everything
+ * when a manual `.env.local`/`.env.test.local` (no marker) exists — never
+ * clobbers. `purpose` labels the env comment (`next` | `plan` | `new`); `issue`
+ * is optional and fills the `issue #N` part of the comment only when present.
  */
 const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpose = 'next' }) => {
   const manual =
@@ -281,12 +304,33 @@ const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpo
     return
   }
 
+  const mainEnv = readMainEnv(mainRoot)
+  const payloadSecret = mainEnv.PAYLOAD_SECRET ?? randomBytes(24).toString('hex')
+
   try {
     dockerComposeUp(dir)
   } catch (error) {
     console.warn('[worktree] Docker indisponível — usando o banco compartilhado (teqo/teqo_test).')
     console.warn(`[worktree] (${error.message.split('\n')[0]})`)
     writeFallbackEnv(dir, branch)
+    // OPS28 — parity with CI even on the degraded shared databases: migrate +
+    // seed the shared teqo/teqo_test so a Cloud worktree's e2e runs against the
+    // same content CI asserts on. Both are idempotent and local-only, though
+    // two CONCURRENT fallback provisionings can race the migrate/upserts — the
+    // loser dies loudly and a re-run converges (degraded mode; not lock-guarded).
+    if (!skipMigrate) {
+      console.warn(
+        '[worktree] atenção: o seed re-pina campaignGoals e 5 municípios no teqo/teqo_test ' +
+          'compartilhados (valores ajustados manualmente no banco compartilhado serão sobrescritos).',
+      )
+      ensureWorktreeDeps(dir)
+      runMigrate(dir, 'postgresql://teqo:teqo@localhost:5432/teqo', payloadSecret)
+      runSeedMinimal(dir, 'postgresql://teqo:teqo@localhost:5432/teqo', payloadSecret)
+      runMigrate(dir, 'postgresql://teqo:teqo@localhost:5432/teqo_test', payloadSecret)
+      runSeedMinimal(dir, 'postgresql://teqo:teqo@localhost:5432/teqo_test', payloadSecret)
+    } else {
+      console.log('[worktree] --no-migrate: migrations e seed mínimo ficam para depois.')
+    }
     return
   }
 
@@ -297,8 +341,6 @@ const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpo
   const devUrl = `postgresql://teqo:teqo@localhost:5432/${devDatabase}`
   const testUrl = `postgresql://teqo:teqo@localhost:5432/${testDatabase}`
 
-  const mainEnv = readMainEnv(mainRoot)
-  const payloadSecret = mainEnv.PAYLOAD_SECRET ?? randomBytes(24).toString('hex')
   const copy = (key) => (mainEnv[key] ? [`${key}=${mainEnv[key]}`] : [])
 
   const issueLabel = issue ? ` · issue #${issue.number}` : ''
@@ -327,12 +369,14 @@ const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpo
   console.log('[worktree] .env.test.local escrito.')
 
   if (skipMigrate) {
-    console.log('[worktree] --no-migrate: migrations ficam para depois (pnpm migrate).')
+    console.log('[worktree] --no-migrate: migrations e seed mínimo ficam para depois.')
     return
   }
   ensureWorktreeDeps(dir)
   runMigrate(dir, devUrl, payloadSecret)
+  runSeedMinimal(dir, devUrl, payloadSecret)
   runMigrate(dir, testUrl, payloadSecret)
+  runSeedMinimal(dir, testUrl, payloadSecret)
 }
 
 const cmdNext = async (stay, skipMigrate) => {
@@ -604,7 +648,10 @@ if (!subcommand) {
   )
   console.log('    imprime também a diretiva `launch opencode …` (OPS26: abre o TUI com')
   console.log('    deepseek/deepseek-v4-flash + auto + /work-issue enviado); --stay suprime cd e')
-  console.log('    launch; --go explícito continua aceito como no-op; --no-migrate pula migrations')
+  console.log(
+    '    launch; --go explícito continua aceito como no-op; --no-migrate pula migrations e o',
+  )
+  console.log('    seed mínimo (db:seed:minimal) nos bancos novos (OPS28: paridade com a CI)')
   console.log(`\n  plan [bag] [--stay] [--no-migrate]`)
   console.log(
     '    cria um worktree de planejamento DIFERENTE a cada invocação (sessões /plan-issue',
