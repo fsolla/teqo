@@ -11,7 +11,7 @@ disable-model-invocation: true
 
 # Agent work-issue (autônomo)
 
-Conduz **uma** Issue já claimada do plano de implementação ao merge em `main`. É o contrato dos workers do **agent pool** e a base de execução de `work-issue` (versão humana só adiciona claim + pausa).
+Conduz **uma** Issue já claimada do plano de implementação ao merge em `main`. É o contrato dos workers do **agent pool** (Cursor Cloud, autônomo). O fluxo humano supervisionado é `work-issue` — skill própria, com gate humano no impl plan e contexto de Issue vindo da sessão.
 
 **Proibido:** DB de prod / `ALLOW_REMOTE_DB`; merge sem CI green; editar outras Issues `in-progress`; pular `/simplify`; entregar Draft ou sem auto-merge.
 
@@ -24,14 +24,14 @@ Conduz **uma** Issue já claimada do plano de implementação ao merge em `main`
 | ----- | ----- |
 | `plan-issue` | Intenção (já feita) |
 | **`agent-work-issue` (esta)** | Impl plan → execução → simplify → débitos → PR |
-| `work-issue` | Igual, mas claim + **confirmação humana** do impl plan |
+| `work-issue` | Humano: Issue já claimada → impl plan → **pausa humana** → execução → simplify → débitos → PR |
 
 ## Checklist
 
 ```
 - [ ] 0. Prep: `pnpm i` se preciso; Cloud → §Prep Cloud (sem Docker)
 - [ ] 1. Sessão: rename_chat + open_resource na intenção
-- [ ] 2. Modelo (best effort) vs `model:` da Issue
+- [ ] 2. Modelo: spawn do pool já fixou (`model:` da Issue) — sem comparação
 - [ ] 3. Plan mode → plano de implementação (`*-impl.md`)
 - [ ] 4. Executar o impl plan (schema/server → UI → gates)
 - [ ] 5. /simplify → fixes; capture-review-debts (modo autônomo)
@@ -50,18 +50,17 @@ Não use `pnpm db:start`. Postgres via `.cursor/environment.json`. `gate:fast` /
 
 ## Passo 1 — Sessão (Issue já claimada)
 
-**Não** rode `pnpm agent:claim` — o pool (ou o humano via `work-issue`) já claimou.
+**Não** rode `pnpm agent:claim` — o pool (ou o claim pré-sessão do humano — hoje `pnpm agent:claim` manual; OPS33 via `worktree next`) já claimou.
 
 1. `rename_chat` → `#<N> <id> — <título>` (padrão canônico; truncar só o título).
 2. `open_resource` no plano de intenção (`docs/plans/<slug>.md`).
 
 ## Passo 2 — Modelo
 
-Compare `model:` da Issue com a sessão (`model-selection`):
+O spawn do pool já fixou o modelo (`model:` da Issue — ver `model-selection`); não há comparação assimétrica a fazer:
 
-- Sessão mais fraca → informa e segue
-- Sessão mais forte → informa; em autonomia do pool, **segue** (o spawn já fixou o modelo)
-- Ausente → trate como `composer-2.5`
+- Fallback do pool (slug inválido → `composer-2.5`) pode deixar a sessão **mais fraca** que o declarado → informa e segue
+- Ausente → o pool spawna no default `composer-2.5`; segue
 
 ## Passo 3 — Plano de implementação (Plan mode)
 
@@ -75,32 +74,18 @@ Compare `model:` da Issue com a sessão (`model-selection`):
 
 ## Passo 4 — Executar
 
-`SwitchMode` → `agent` se ainda estiver em plan. Ordem:
+`SwitchMode` → `agent` se ainda estiver em plan. Siga a mecânica de
+[`../work-issue/execution-pipeline.md`](../work-issue/execution-pipeline.md)
+(executar → simplify → fechar em main), com os deltas do ator pool:
 
-1. **Schema/server** — migrations (`payload-migrations`), utilities, actions, testes de domínio. Invariantes do engineering-brief.
-2. **UI** — se Impeccable B/C/D: shape → craft → critique → polish (harden/optimize só sob gatilho). Tokens `data-theme='campaign'`; shells existentes.
-3. **Gates** — `pnpm gate:fast` na iteração; entrega com `pnpm push` (não `git push` nu).
-
-Tracer bullet cedo se o item for grande. Inclua o `*-impl.md` no commit da entrega.
-
-## Passo 5 — `/simplify` + débitos
-
-1. Rode o comando `/simplify` completo (3 reviewers paralelos via Task, read-only) no diff da sessão.
-2. Aplique fixes pontuais que preservem comportamento.
-3. Rode `capture-review-debts` em **modo autônomo**:
-   - Colha e pontue como a skill manda
-   - **Sem** gate humano: registre só `expensive_lock` com score ≥4 (Issues novas com `depends: [<id-pai>]` se necessário)
-   - Score ≤3 / cheap_polish / defer_trigger → defer com gatilho no `*-impl.md` ou descarte — **não** polua a fila
-   - Nunca edite a Issue `in-progress` atual para absorver débitos
-
-## Passo 6 — Fechar em main
-
-1. Branch `agent/<id>-<slug>` (worktrees Cursor podem já ter criado).
-2. **`pnpm push -u origin HEAD`**
-3. PR **Ready** (nunca draft): `gh pr create --base main` com `Closes #<N>` — ou Cloud `ManagePullRequest` com `draft: false`
-4. `gh pr merge --auto --merge` imediatamente
-5. `gh pr checks <PR> --watch --required` (`checks` + `migration-lock`; ignore Vercel Git)
-6. CI flipa `done`/`in-prod` no merge. Comente na Issue o desfecho em uma linha.
+- **Branch:** `agent/<id>-<slug>` (worktrees Cursor podem já ter criado).
+- **UI:** shape → craft → critique → polish (harden/optimize só sob gatilho).
+- **`capture-review-debts`:** **autônomo** — só `expensive_lock` com score ≥4
+  (Issues novas com `depends: [<id-pai>]` se necessário); score ≤3 /
+  cheap_polish / defer_trigger → defer com gatilho no `*-impl.md` ou descarte —
+  **não** polua a fila.
+- **Cloud:** PR via `ManagePullRequest` com `draft: false`; Prep Cloud no
+  Passo 0.
 
 ## Resumo final
 

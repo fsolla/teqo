@@ -42,7 +42,7 @@ rascunho local (Issue: —)
 | Skill | Papel |
 | ----- | ----- |
 | **`plan-issue` (esta)** | Intenção humana: o quê / para quem / por quê / outcome. Direção suave no codebase. **Proibido** travar schema, signatures, migrations, abstrações ou “Abordagem” de engenharia. |
-| **`work-issue`** | Humano supervisiona: claim → plano de **implementação** (Plan mode) → **pausa** para confirmação → executa. |
+| **`work-issue`** | Humano supervisiona: Issue já claimada (claim fora da skill) → plano de **implementação** (Plan mode) → **pausa** para confirmação → executa. |
 | **`agent-work-issue`** | Pool / autonomia: Issue já claimada → plano de implementação → executa sem pausa → `/simplify` → `capture-review-debts` → PR Ready + auto-merge. |
 
 Aqui **não** se implementa código de produto, **não** se escreve plano de implementação, **não** se roda Impeccable craft/critique/polish. O canvas de rascunho UI/UX é artefato do **gate de intenção**, não entrega de app.

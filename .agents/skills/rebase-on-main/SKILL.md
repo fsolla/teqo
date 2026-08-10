@@ -183,7 +183,7 @@ Opcional e leve (se o rebase tocou schema/types): `pnpm exec tsc --noEmit` nos a
 3. Quantos commits rebased / se no-op
 4. Conflitos resolvidos — rebase e/ou stash pop (paths + uma linha de racional cada) **ou** “nenhum”
 5. Se abortou: por quê + o que precisa de decisão
-6. Próximo passo natural: `capture-review-debts` (se ainda não rodou) e o fechamento da sessão no Passo 6 de `work-issue` (PR `--base stage` + CI até o merge)
+6. Próximo passo natural: `capture-review-debts` (se ainda não rodou) e o fechamento da sessão no Passo 6 de `work-issue` (PR `--base main` + CI até o merge)
 
 ## Anti-padrões
 

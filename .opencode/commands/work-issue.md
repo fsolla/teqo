@@ -1,5 +1,5 @@
 ---
-description: Executa uma Issue claimada de ponta a ponta com supervisão humana (claim → plano de implementação → pausa → execução → simplify → PR)
+description: Executa uma Issue já claimada de ponta a ponta com supervisão humana (plano de implementação → pausa → execução → simplify → débitos → PR)
 model: deepseek/deepseek-v4-flash
 ---
 
