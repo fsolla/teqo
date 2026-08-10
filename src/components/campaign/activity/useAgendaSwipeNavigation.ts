@@ -74,6 +74,17 @@ const AGENDA_SWIPE_EXIT_MS = 180
 
 type AgendaSwipeDirection = 'next' | 'prev'
 
+/** C110 — the grid's displacement is clamped to the claimed direction: it
+ * never crosses its starting point, and the release threshold reads this
+ * clamped position (the finger may have reversed past the origin — the grid
+ * did not move). */
+const clampDisplacement = (dx: number, direction: AgendaSwipeDirection): number =>
+  direction === 'next' ? Math.min(dx, 0) : Math.max(dx, 0)
+
+/** Swipe-vs-scroll discriminator: the vertical component dominates the drag. */
+const isVerticalDrag = (dx: number, dy: number): boolean =>
+  Math.abs(dx) < Math.abs(dy) * AGENDA_SWIPE_DOMINANCE
+
 type AgendaSwipeGesture = {
   pointerId: number
   startX: number
@@ -150,10 +161,10 @@ export const useAgendaSwipeNavigation = ({
   /** C110 — the live transform: follows the finger, clamped to the claimed
    * direction (the grid never crosses its starting point). */
   const applyTransform = useCallback(
-    (dx: number, direction: AgendaSwipeDirection | null) => {
+    (dx: number, direction: AgendaSwipeDirection) => {
       const container = containerRef.current
       if (!container) return
-      const clamped = direction === 'next' ? Math.min(dx, 0) : Math.max(dx, 0)
+      const clamped = clampDisplacement(dx, direction)
       container.style.transform = clamped === 0 ? '' : `translateX(${clamped}px)`
     },
     [containerRef],
@@ -247,10 +258,7 @@ export const useAgendaSwipeNavigation = ({
       const dx = touch.clientX - gesture.startX
       const dy = touch.clientY - gesture.startY
       if (gesture.direction === null) {
-        if (
-          Math.abs(dx) > AGENDA_SWIPE_CLAIM_PX &&
-          Math.abs(dx) > Math.abs(dy) * AGENDA_SWIPE_DOMINANCE
-        ) {
+        if (Math.abs(dx) > AGENDA_SWIPE_CLAIM_PX && !isVerticalDrag(dx, dy)) {
           // Clearly horizontal: keep the browser from claiming the gesture
           // for panning (which would pointercancel the stream before the
           // threshold) AND suppress the dateClick a sub-threshold flick would
@@ -268,6 +276,8 @@ export const useAgendaSwipeNavigation = ({
       // preventDefault because its commit ended the gesture within a move or
       // two; the release decision keeps the gesture alive through many.)
       event.preventDefault()
+      gesture.lastDx = dx
+      gesture.lastDy = dy
       applyTransform(dx, gesture.direction)
     },
     [applyTransform, claimGesture],
@@ -289,14 +299,14 @@ export const useAgendaSwipeNavigation = ({
       gesture.lastDy = dy
 
       if (gesture.direction === null) {
-        if (Math.abs(dx) < Math.abs(dy) * AGENDA_SWIPE_DOMINANCE) {
+        if (isVerticalDrag(dx, dy)) {
           // Vertical drag (scrolling the timeline, rescheduling): never claim.
           gestureRef.current = null
         }
         return
       }
 
-      if (Math.abs(dx) < Math.abs(dy) * AGENDA_SWIPE_DOMINANCE) {
+      if (isVerticalDrag(dx, dy)) {
         // C110 — a claimed gesture turned vertical (scroll takeover): abandon,
         // snap back, close the preview. The browser is scrolling now — the
         // grid must not stay displaced.
@@ -329,20 +339,16 @@ export const useAgendaSwipeNavigation = ({
       if (gesture.direction !== null) {
         const dx = gesture.lastDx
         const dy = gesture.lastDy
-        const displaced = gesture.direction === 'next' ? Math.min(dx, 0) : Math.max(dx, 0)
-        if (
-          Math.abs(displaced) >= AGENDA_SWIPE_THRESHOLD_PX &&
-          Math.abs(dx) >= Math.abs(dy) * AGENDA_SWIPE_DOMINANCE
-        ) {
-          settleTransform()
-          onSwipePreviewEndRef.current?.()
+        const displaced = clampDisplacement(dx, gesture.direction)
+        if (Math.abs(displaced) >= AGENDA_SWIPE_THRESHOLD_PX && !isVerticalDrag(dx, dy)) {
+          endWithoutCommit()
           onSwipeRef.current(gesture.direction)
           return
         }
         endWithoutCommit()
       }
     },
-    [endWithoutCommit, settleTransform],
+    [endWithoutCommit],
   )
 
   useEffect(() => {

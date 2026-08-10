@@ -43,48 +43,39 @@ const openMonthView = async (page: Page) => {
  * `/campanha`. Paced, it stays a drag the agenda consumes via its
  * non-passive touchmove preventDefault, while still finishing far below
  * FullCalendar's 650ms long-press (which would start a reschedule).
+ *
+ * C110 — `inspectAfterMove` pauses the gesture mid-drag (after the 12px
+ * claim) so a test can observe the live preview before the release decides.
  */
+const dispatchTouchDrag = async (
+  cdp: CDPSession,
+  box: { x: number; y: number; width: number; height: number },
+  fromRatio: number,
+  toRatio: number,
+  {
+    moveDelayMs = 25,
+    inspectAfterMove,
+  }: { moveDelayMs?: number; inspectAfterMove?: () => Promise<void> } = {},
+) => {
+  const y = Math.round(box.y + box.height * 0.5)
+  const x0 = Math.round(box.x + box.width * fromRatio)
+  const x1 = Math.round(box.x + box.width * toRatio)
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y }] })
+  for (let i = 1; i <= 5; i += 1) {
+    const x = Math.round(x0 + ((x1 - x0) * i) / 5)
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y }] })
+    await new Promise((resolve) => setTimeout(resolve, moveDelayMs))
+    if (i === 2) await inspectAfterMove?.()
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+}
+
 const touchSwipe = async (
   cdp: CDPSession,
   box: { x: number; y: number; width: number; height: number },
   fromRatio: number,
   toRatio: number,
-) => {
-  const y = Math.round(box.y + box.height * 0.5)
-  const x0 = Math.round(box.x + box.width * fromRatio)
-  const x1 = Math.round(box.x + box.width * toRatio)
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y }] })
-  for (let i = 1; i <= 5; i += 1) {
-    const x = Math.round(x0 + ((x1 - x0) * i) / 5)
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y }] })
-    await new Promise((resolve) => setTimeout(resolve, 25))
-  }
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-}
-
-/**
- * C110 — like `touchSwipe`, but pauses mid-gesture (after the 12px claim) for
- * `inspect` to observe the live preview before the release decides.
- */
-const touchDragWithInspection = async (
-  cdp: CDPSession,
-  box: { x: number; y: number; width: number; height: number },
-  fromRatio: number,
-  toRatio: number,
-  inspect: () => Promise<void>,
-) => {
-  const y = Math.round(box.y + box.height * 0.5)
-  const x0 = Math.round(box.x + box.width * fromRatio)
-  const x1 = Math.round(box.x + box.width * toRatio)
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y }] })
-  for (let i = 1; i <= 5; i += 1) {
-    const x = Math.round(x0 + ((x1 - x0) * i) / 5)
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y }] })
-    await new Promise((resolve) => setTimeout(resolve, 40))
-    if (i === 2) await inspect()
-  }
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-}
+) => dispatchTouchDrag(cdp, box, fromRatio, toRatio)
 
 const agendaSwipePreview = (page: Page) => page.locator('.activity-agenda-swipe-preview')
 
@@ -93,26 +84,43 @@ const tapAt = async (cdp: CDPSession, x: number, y: number) => {
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
 }
 
-const seedTodayActivity = async (campaign: CampaignE2EFixture, page: Page): Promise<string> => {
+/**
+ * Seeds agenda activities and logs the coordinator in. `rows` maps a civil
+ * date + hour to an activity title; `fixtures.value` keeps titles/slugs
+ * unique per test run — literal titles would collide on the unique slug
+ * between consecutive tests of this spec.
+ */
+const seedAgendaActivities = async (
+  campaign: CampaignE2EFixture,
+  page: Page,
+  rows: Array<[civilDate: string, hour: string, title: string]>,
+): Promise<void> => {
   const { fixtures } = campaign
   const coordinator = await fixtures.createCampaignUser('coordinator')
   const municipality = await fixtures.claimMunicipality()
-  const civilDate = formatBahiaCivilDate(new Date())
-  const startAt = parseBahiaDateTimeInput(`${civilDate}T10:00`)
-  if (!startAt) throw new Error('Falha ao montar horário da fixture de agenda.')
 
-  await fixtures.payload.create({
-    collection: 'activity',
-    data: hookFilledCreateData<'activity'>({
-      title: fixtures.value('Compromisso mobile nativo'),
-      tags: ['Comício'],
-      status: 'confirmado',
-      startAt,
-      municipality: municipality.id,
-    }),
-    depth: 0,
-  })
+  for (const [civilDate, hour, rawTitle] of rows) {
+    const startAt = parseBahiaDateTimeInput(`${civilDate}T${hour}`)
+    if (!startAt) throw new Error('Falha ao montar horário da fixture de agenda.')
+    await fixtures.payload.create({
+      collection: 'activity',
+      data: hookFilledCreateData<'activity'>({
+        title: fixtures.value(rawTitle),
+        tags: ['Comício'],
+        status: 'confirmado',
+        startAt,
+        municipality: municipality.id,
+      }),
+      depth: 0,
+    })
+  }
+
   await campaign.login(page, coordinator.email!, coordinator.password)
+}
+
+const seedTodayActivity = async (campaign: CampaignE2EFixture, page: Page): Promise<string> => {
+  const civilDate = formatBahiaCivilDate(new Date())
+  await seedAgendaActivities(campaign, page, [[civilDate, '10:00', 'Compromisso mobile nativo']])
   return civilDate
 }
 
@@ -381,32 +389,12 @@ test.describe('C110 — feedback visual do arrasto (reveal do adjacente + commit
     campaign: CampaignE2EFixture,
     page: Page,
   ): Promise<{ today: string; tomorrow: string }> => {
-    const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator')
-    const municipality = await fixtures.claimMunicipality()
     const today = formatBahiaCivilDate(new Date())
     const tomorrow = civilDatePlusDays(today, 1)
-
-    for (const [civilDate, hour, title] of [
+    await seedAgendaActivities(campaign, page, [
       [today, '10:00', 'Compromisso mobile hoje'],
       [tomorrow, '11:00', 'Compromisso mobile amanhã'],
-    ] as const) {
-      const startAt = parseBahiaDateTimeInput(`${civilDate}T${hour}`)
-      if (!startAt) throw new Error('Falha ao montar horário da fixture de agenda.')
-      await fixtures.payload.create({
-        collection: 'activity',
-        data: hookFilledCreateData<'activity'>({
-          title,
-          tags: ['Comício'],
-          status: 'confirmado',
-          startAt,
-          municipality: municipality.id,
-        }),
-        depth: 0,
-      })
-    }
-
-    await campaign.login(page, coordinator.email!, coordinator.password)
+    ])
     return { today, tomorrow }
   }
 
@@ -429,22 +417,26 @@ test.describe('C110 — feedback visual do arrasto (reveal do adjacente + commit
     // A meio do gesto (após o claim de 12px): o grid acompanhou o dedo e o
     // painel do período adjacente está revelado na borda — chevron, rótulo do
     // período seguinte e os eventos do adjacente entrando conforme carregam.
-    await touchDragWithInspection(cdp, agendaBox, 0.8, 0.3, async () => {
-      const preview = agendaSwipePreview(page)
-      await expect(preview).toBeVisible()
-      await expect(preview.locator('svg.activity-agenda-swipe-chevron')).toBeVisible()
-      await expect(preview.locator('.activity-agenda-swipe-label')).toHaveText(dayLabelFor(tomorrow))
-      await expect
-        .poll(
-          () => preview.locator('.activity-agenda-swipe-event').count(),
-          { timeout: 15_000 },
+    await dispatchTouchDrag(cdp, agendaBox, 0.8, 0.3, {
+      moveDelayMs: 40,
+      inspectAfterMove: async () => {
+        const preview = agendaSwipePreview(page)
+        await expect(preview).toBeVisible()
+        await expect(preview.locator('svg.activity-agenda-swipe-chevron')).toBeVisible()
+        await expect(preview.locator('.activity-agenda-swipe-label')).toHaveText(
+          dayLabelFor(tomorrow),
         )
-        .toBeGreaterThan(0)
-      // O grid deslocado: o transform vivo acompanhou o dedo.
-      const transform = await page.evaluate(
-        () => getComputedStyle(document.querySelector('.activity-agenda')!).transform,
-      )
-      expect(transform).not.toBe('none')
+        await expect
+          .poll(() => preview.locator('.activity-agenda-swipe-event').count(), {
+            timeout: 15_000,
+          })
+          .toBeGreaterThan(0)
+        // O grid deslocado: o transform vivo acompanhou o dedo.
+        const transform = await page.evaluate(
+          () => getComputedStyle(document.querySelector('.activity-agenda')!).transform,
+        )
+        expect(transform).not.toBe('none')
+      },
     })
 
     // Soltou acima do limiar: o período adjacente assume a tela e o preview some.
@@ -461,7 +453,7 @@ test.describe('C110 — feedback visual do arrasto (reveal do adjacente + commit
     campaign,
     page,
   }) => {
-    const { today } = await seedTodayAndTomorrowActivities(campaign, page)
+    const { today, tomorrow } = await seedTodayAndTomorrowActivities(campaign, page)
 
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto(`${campaign.baseURL}/campanha/agenda`)
@@ -475,12 +467,15 @@ test.describe('C110 — feedback visual do arrasto (reveal do adjacente + commit
 
     // Arrasto de ~47px (0.9 → 0.78 em 390px): cruza o claim de 12px — o
     // preview abre — mas o soltar fica abaixo dos 48px do limiar.
-    await touchDragWithInspection(cdp, agendaBox, 0.9, 0.78, async () => {
-      const preview = agendaSwipePreview(page)
-      await expect(preview).toBeVisible()
-      await expect(preview.locator('.activity-agenda-swipe-label')).toHaveText(
-        dayLabelFor(civilDatePlusDays(today, 1)),
-      )
+    await dispatchTouchDrag(cdp, agendaBox, 0.9, 0.78, {
+      moveDelayMs: 40,
+      inspectAfterMove: async () => {
+        const preview = agendaSwipePreview(page)
+        await expect(preview).toBeVisible()
+        await expect(preview.locator('.activity-agenda-swipe-label')).toHaveText(
+          dayLabelFor(tomorrow),
+        )
+      },
     })
 
     // Snap-back: o título não muda e o grid voltou ao repouso.

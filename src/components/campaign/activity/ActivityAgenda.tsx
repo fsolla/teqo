@@ -403,7 +403,6 @@ export const ActivityAgenda = ({
   const handleSwipePreviewEnd = useCallback(() => {
     swipePreviewKeyRef.current = null
     setSwipePreview(null)
-    setSwipePreviewEvents([])
   }, [])
 
   useEffect(() => {
@@ -596,6 +595,8 @@ export const ActivityAgenda = ({
           headingLevel={2}
         />
 
+        {/* `visibleRange &&` narrows the type for the preview's `view` prop
+            (the memo already guarantees it is non-null). */}
         {swipePreview && visibleRange && adjacentPreviewRange ? (
           <ActivityAgendaSwipePreview
             view={visibleRange.view}

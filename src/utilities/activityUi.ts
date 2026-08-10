@@ -111,35 +111,34 @@ export const activityAgendaAdjacentPeriod = (
   range: { start: string; end: string; anchorDate: string },
   direction: 'next' | 'prev',
 ): { start: string; end: string; anchorDate: string } | null => {
-  const shiftDays = direction === 'next' ? 1 : -1
-  const shiftMonths = direction === 'next' ? 1 : -1
+  const shift = direction === 'next' ? 1 : -1
 
   const shiftRangeByDays = (days: number) => {
     const start = new Date(range.start)
     const end = new Date(range.end)
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null
-    const shiftedStart = new Date(start.getTime() + days * 86_400_000).toISOString()
+    const shiftedStart = new Date(start.getTime() + days * 86_400_000)
     return {
-      start: shiftedStart,
+      start: shiftedStart.toISOString(),
       end: new Date(end.getTime() + days * 86_400_000).toISOString(),
-      anchorDate: formatBahiaCivilDate(new Date(start.getTime() + days * 86_400_000)),
+      anchorDate: formatBahiaCivilDate(shiftedStart),
     }
   }
 
   if (view === 'day' || view === 'week') {
-    return shiftRangeByDays(shiftDays * (view === 'day' ? 1 : 7))
+    return shiftRangeByDays(shift * (view === 'day' ? 1 : 7))
   }
 
-  const anchor = civilDateAnchor(range.anchorDate)
+  const anchor = civilDateParts(range.anchorDate)
   if (!anchor || anchor.day !== 1) return null
 
-  const shiftedAnchorParts = shiftCivilMonth(anchor.year, anchor.month, shiftMonths)
+  const shiftedAnchorParts = shiftCivilMonth(anchor.year, anchor.month, shift)
   const shiftedAnchor = `${shiftedAnchorParts.year}-${pad(shiftedAnchorParts.month)}-01`
   if (view === 'list') {
     const nextMonth = shiftCivilMonth(shiftedAnchorParts.year, shiftedAnchorParts.month, 1)
     return {
-      start: civilInstantAtBahia(shiftedAnchor),
-      end: civilInstantAtBahia(`${nextMonth.year}-${pad(nextMonth.month)}-01`),
+      start: allDayStartInstant(shiftedAnchor),
+      end: allDayStartInstant(`${nextMonth.year}-${pad(nextMonth.month)}-01`),
       anchorDate: shiftedAnchor,
     }
   }
@@ -148,41 +147,13 @@ export const activityAgendaAdjacentPeriod = (
   // and spans at most 6 weeks.
   const start = subtractBahiaCivilDays(shiftedAnchor, mondayOffsetOf(shiftedAnchor))
   return {
-    start: civilInstantAtBahia(start),
-    end: civilInstantAtBahia(subtractBahiaCivilDays(start, -42)),
+    start: allDayStartInstant(start),
+    end: allDayStartInstant(subtractBahiaCivilDays(start, -42)),
     anchorDate: shiftedAnchor,
   }
 }
 
-/**
- * Midnight of a Bahia civil date as a UTC instant. Bahia is fixed at UTC-3
- * (no DST since 2019), so the explicit `-03:00` offset is stable — the same
- * convention FullCalendar's own range strings use.
- */
-const civilInstantAtBahia = (civilDate: string): string =>
-  new Date(`${civilDate}T00:00:00-03:00`).toISOString()
-
 const pad = (value: number): string => String(value).padStart(2, '0')
-
-/** Full civil-date anchor (`aaaa-mm-dd`) with day/month/year — the runtime
- * passes `formatBahiaCivilDate(getDate())`, so the year is always present. */
-const civilDateAnchor = (
-  civilDate: string,
-): { year: number; month: number; day: number } | null => {
-  const [year, month, day] = civilDate.split('-').map(Number)
-  if (
-    !Number.isInteger(year) ||
-    !Number.isInteger(month) ||
-    !Number.isInteger(day) ||
-    month < 1 ||
-    month > 12 ||
-    day < 1 ||
-    day > 31
-  ) {
-    return null
-  }
-  return { year, month, day }
-}
 
 const shiftCivilMonth = (
   year: number,
@@ -200,7 +171,7 @@ const mondayOffsetOf = (civilDate: string): number => {
   return (weekday + 6) % 7
 }
 
-const civilDateParts = (civilDate: string): { day: number; month: number } | null => {
+const civilDateParts = (civilDate: string): { year: number; month: number; day: number } | null => {
   const [year, month, day] = civilDate.split('-').map(Number)
   if (
     !Number.isInteger(year) ||
@@ -213,7 +184,7 @@ const civilDateParts = (civilDate: string): { day: number; month: number } | nul
   ) {
     return null
   }
-  return { day, month }
+  return { year, month, day }
 }
 
 const civilDateLabel = (civilDate: string): string | null => {

@@ -23,6 +23,7 @@ import type { ActivityAgendaEvent } from '@/utilities/activityViewModels'
  */
 const SLOT_START_MINUTES = 7 * 60
 const SLOT_END_MINUTES = 22 * 60
+const SLOT_SPAN_MINUTES = SLOT_END_MINUTES - SLOT_START_MINUTES
 const MAX_PREVIEW_EVENTS = 6
 
 const weekInitials = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'] as const
@@ -38,11 +39,8 @@ const timedTopPercent = (startAt: string): number => {
   const match = /T(\d{2}):(\d{2})/.exec(civil)
   if (!match) return 0
   const minutes = Number(match[1]) * 60 + Number(match[2])
-  const clamped = Math.min(
-    Math.max(minutes - SLOT_START_MINUTES, 0),
-    SLOT_END_MINUTES - SLOT_START_MINUTES,
-  )
-  return (clamped / (SLOT_END_MINUTES - SLOT_START_MINUTES)) * 100
+  const clamped = Math.min(Math.max(minutes - SLOT_START_MINUTES, 0), SLOT_SPAN_MINUTES)
+  return (clamped / SLOT_SPAN_MINUTES) * 100
 }
 
 const monthCellPosition = (
@@ -86,7 +84,8 @@ export const ActivityAgendaSwipePreview = ({
 
         {/* C110 — the abstract grid frame; the list view has no columns to
             suggest, so it degrades to chevron + label + event rows (the
-            accepted degradation of the intention). */}
+            accepted degradation of the intention). The day view keeps just
+            the time bands — a single-day header would mislabel the columns. */}
         {view !== 'list' ? (
           <div className="activity-agenda-swipe-frame" data-view={view}>
             {view === 'week' ? (

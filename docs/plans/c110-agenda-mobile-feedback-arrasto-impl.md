@@ -77,3 +77,9 @@ flowchart LR
 - [ ] Aceite de produto da intenção ainda coberto (grid segue o dedo; adjacente revelado com chevron + label + quadro; eventos assíncronos no preview; snap-back < 48 px; commit ≥ 48 px com transição suave; reduced-motion instantâneo; desktop, tap C91 e long-press C15 intactos; vista de dia sem create pós-arrasto)
 - [ ] Invariantes AGENTS/engineering-standards (sem migration/sem prod/sem Consent novo; copy pt-BR / identificadores em inglês; hook dono do gesto com contrato unit-testado; sem twin de componentes)
 - [ ] Testes de domínio: unit do helper adjacente + label parity; unit do hook (contrato novo); e2e mobile (snap-back, preview mid-drag com eventos, commit) + existentes verdes; gate:fast e gate:push verdes
+
+## Débitos deferidos (pós-/simplify; nenhum com score ≥4 — nada virou Issue)
+
+- **Dots do mês ancorados no content box, não no frame do grid** (o painel posiciona os dots contra o bloco cheio do preview — chevron/label inclusos — e o frame é um skeleton independente). Polimento visual dentro da aproximação aceita pelo aceite; gatilho de revisita: se o mês ganhar mais uso no mobile ou a crítica de produto apontar o desalinhamento.
+- **Gradiente de colunas duplicado no CSS** (base do frame + camada do mês) — custom property traria mais indireção que as ~5 linhas; descartado.
+- **Chevron segue o canvas do gate (aponta para o lado revelado)** — se a leitura "direção da mudança" do aceite prevalecer na prática, é flip de 1 linha (ChevronLeft/Right) no `ActivityAgendaSwipePreview`.

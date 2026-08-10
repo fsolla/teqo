@@ -95,11 +95,6 @@
   padding: 0.625rem;
 }
 
-.activity-agenda-swipe-preview--next .activity-agenda-swipe-preview-content {
-  align-items: flex-start;
-  text-align: left;
-}
-
 .activity-agenda-swipe-preview--prev .activity-agenda-swipe-preview-content {
   align-items: flex-end;
   text-align: right;
@@ -135,8 +130,6 @@
     var(--border) calc(14.285% - 1px),
     var(--border) 14.285%
   );
-  background-size: 100% 100%;
-  position: relative;
 }
 
 .activity-agenda-swipe-frame[data-view='day'] {
@@ -189,21 +182,22 @@
    accept's async path): bars by time proportion for day/week, dots per date
    for month, rows for the list. Approximate on purpose — the commit renders
    the real grid. */
-.activity-agenda-swipe-event {
+.activity-agenda-swipe-event,
+.activity-agenda-swipe-dot {
   position: absolute;
-  left: 0;
-  width: 62%;
-  height: 0.3125rem;
   border-radius: 0.1875rem;
   background: color-mix(in oklab, var(--primary) 72%, transparent);
 }
 
+.activity-agenda-swipe-event {
+  left: 0;
+  width: 62%;
+  height: 0.3125rem;
+}
+
 .activity-agenda-swipe-dot {
-  position: absolute;
   width: 9%;
   height: 0.375rem;
-  border-radius: 0.1875rem;
-  background: color-mix(in oklab, var(--primary) 72%, transparent);
 }
 
 .activity-agenda-swipe-list-row {

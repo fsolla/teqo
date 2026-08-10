@@ -51,8 +51,7 @@ const Harness = ({
   if (onReady) onReady(suppressDateClickRef)
   return createElement('div', { ref: containerRef, 'data-testid': 'agenda' })
 }
-const agendaOf = (container: HTMLElement): HTMLElement =>
-  container.firstElementChild as HTMLElement
+const agendaOf = (container: HTMLElement): HTMLElement => container.firstElementChild as HTMLElement
 
 /** Dispatches a cancellable touchmove and returns the event for assertion. */
 const touchMoveAt = (agenda: HTMLElement, x: number, y: number): Event => {
