@@ -121,6 +121,15 @@ export const E2E_AFFECTED_MANIFEST = [
       'campaignSollinhaWidth',
     ],
   },
+  {
+    prefixes: [
+      `${CAMPAIGN_APP}/pessoas`,
+      'src/components/campaign/people',
+      'src/utilities/people',
+      'src/utilities/campaignSavedFilterStore',
+    ],
+    specs: ['campaignPeople'],
+  },
   // Domains without a dedicated e2e family still wake campaign home smoke so
   // the affected classifier cannot return mode=none on an unmapped domain dir.
   {

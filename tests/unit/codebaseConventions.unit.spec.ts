@@ -420,6 +420,9 @@ describe('src/utilities top-level is pinned', () => {
     'campaignInviteRepository.ts',
     'campaignJsonMutationRoute.ts',
     'campaignListUrl.ts',
+    // C100 — shared storage primitive behind the B18 saved-filters stores
+    // (municipality + people): pure client-side factory, no Payload/Next.
+    'campaignSavedFilterStore.ts',
     'campaignPageActor.ts',
     'campaignPasswordReset.ts',
     'campaignPwa.ts',
@@ -549,6 +552,10 @@ describe('advisor scope fragment comes from access/shared.ts', () => {
     'src/utilities/leadership/leadershipData.ts',
     'src/utilities/leadership/leadershipListUrl.ts',
     'src/utilities/municipality/municipalityTriggers.ts',
+    // C100 — the people list filters the leadership SOURCE by municipality ids
+    // at query level (the same distinct form as `leadershipListUrl.ts`); the
+    // actor scope is enforced by the merge, never by this where.
+    'src/utilities/people/peopleListUrl.ts',
     // B155 — the municipality list surface reads `leadership.municipalities`
     // by reverse batch; same distinct form as `leadershipData.ts` above.
     'src/utilities/municipality/municipalityViewModels.ts',

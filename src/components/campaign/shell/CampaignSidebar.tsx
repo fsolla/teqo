@@ -7,6 +7,7 @@ import { useState, type FormEvent, type ReactNode } from 'react'
 import { LogOutIcon } from 'lucide-react'
 
 import { logoutCampaign } from '@/app/(campaign)/campanha/actions/auth'
+import { PeopleNavSavedFilters } from '@/components/campaign/people/PeopleNavSavedFilters'
 import { CampaignUserAvatar } from '@/components/campaign/shared/CampaignUserAvatar'
 import { MunicipalityNavSavedFilters } from '@/components/campaign/shell/MunicipalityNavSavedFilters'
 import {
@@ -14,6 +15,7 @@ import {
   getCampaignSecondaryNav,
   isCampaignNavActive,
   MUNICIPALITY_NAV_HREF,
+  PEOPLE_NAV_HREF,
   type CampaignNavItem,
 } from '@/components/campaign/shell/nav'
 import { Button } from '@/components/ui/button'
@@ -35,6 +37,7 @@ import { clearCampaignPwaCaches } from '@/utilities/campaignPwaClient'
 import type { CampaignUserShellView } from '@/utilities/campaignUserProfile'
 import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
 import { clearMunicipalitySavedFilters } from '@/utilities/municipality/municipalitySavedFilters'
+import { clearPeopleSavedFilters } from '@/utilities/people/peopleSavedFilters'
 import { clearRecentVisits } from '@/utilities/recentVisits'
 
 export type CampaignSidebarUser = CampaignUserShellView
@@ -84,6 +87,7 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
     clearRecentVisits()
     clearLastActedMunicipality()
     clearMunicipalitySavedFilters()
+    clearPeopleSavedFilters()
     await clearCampaignPwaCaches()
     // logoutCampaign redirects — no need to reset the pending flag on success.
     await logoutCampaign()
@@ -104,6 +108,9 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
                 >
                   {item.href === MUNICIPALITY_NAV_HREF ? (
                     <MunicipalityNavSavedFilters onNavigate={closeMobileSidebar} />
+                  ) : null}
+                  {item.href === PEOPLE_NAV_HREF ? (
+                    <PeopleNavSavedFilters onNavigate={closeMobileSidebar} />
                   ) : null}
                 </CampaignSidebarLink>
               ))}

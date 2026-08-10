@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
 
 import { logoutCampaign } from '@/app/(campaign)/campanha/actions/auth'
+import { PeopleNavSavedFilters } from '@/components/campaign/people/PeopleNavSavedFilters'
 import { MunicipalityNavSavedFilters } from '@/components/campaign/shell/MunicipalityNavSavedFilters'
 import {
   getCampaignBottomNav,
@@ -28,6 +29,7 @@ import { cn } from '@/lib/utils'
 import { clearCampaignPwaCaches } from '@/utilities/campaignPwaClient'
 import { type CampaignUserShellView } from '@/utilities/campaignUserProfile'
 import { clearMunicipalitySavedFilters } from '@/utilities/municipality/municipalitySavedFilters'
+import { clearPeopleSavedFilters } from '@/utilities/people/peopleSavedFilters'
 import { clearRecentVisits } from '@/utilities/recentVisits'
 
 export const CampaignBottomNav = ({ user }: { user: CampaignUserShellView }) => {
@@ -44,6 +46,7 @@ export const CampaignBottomNav = ({ user }: { user: CampaignUserShellView }) => 
     clearRecentVisits()
     clearLastActedMunicipality()
     clearMunicipalitySavedFilters()
+    clearPeopleSavedFilters()
     await clearCampaignPwaCaches()
     await logoutCampaign()
   }
@@ -144,6 +147,7 @@ export const CampaignBottomNav = ({ user }: { user: CampaignUserShellView }) => 
               variant="overflow"
               onNavigate={() => setOverflowOpen(false)}
             />
+            <PeopleNavSavedFilters variant="overflow" onNavigate={() => setOverflowOpen(false)} />
           </div>
 
           <DrawerFooter>
