@@ -2,14 +2,16 @@
  * `pnpm worktree` — worktree management determinístico em torno da fila de
  * claim do projeto (mesma fila de `agent:claim` / agent pool).
  *
- *   pnpm worktree next [--go] [--no-migrate]
+ *   pnpm worktree next [--stay] [--no-migrate]
  *                              cria worktree a partir de origin/main para a
  *                              próxima Issue claimável; branch `<code>-<slug>`.
- *                              Com `--go`, imprime `cd <dir>` no fim — node
+ *                              Por padrão imprime `cd <dir>` no fim — node
  *                              não muda o cwd do shell pai; o shell chamador
  *                              aplica (opencode/CDP usa o opencode command;
  *                              terminal interativo: função `worktree()` em
  *                              `.agents/shell/worktree.sh`, sourced no profile).
+ *                              `--stay` suprime a linha `cd`; `--go` explícito
+ *                              continua aceito como no-op (era o antigo padrão).
  *                              Também PROVISIONA o ambiente isolado do worktree:
  *                              porta do dev server + bancos próprios derivados
  *                              deterministicamente do branch (ver
@@ -17,7 +19,7 @@
  *                              paralelo não disputarem porta 3000 nem o
  *                              `teqo_test` compartilhado. `--no-migrate` pula a
  *                              aplicação das migrations nos bancos novos.
- *   pnpm worktree plan [bag] [--go] [--no-migrate]
+ *   pnpm worktree plan [bag] [--stay] [--no-migrate]
  *                              cria um worktree de PLANEJAMENTO novo para rodar
  *                              a skill /plan-issue sem ocupar o main — cada
  *                              invocação cria UM DIFERENTE, para sessões de
@@ -30,7 +32,11 @@
  *                              Mesmo provisionamento isolado do `next`.
  *   pnpm worktree kill [--force]   destrói o worktree em que o shell atual está
  *                              (recusa worktree sujo sem `--force`) e remove os
- *                              bancos gerados do worktree (best-effort)
+ *                              bancos gerados do worktree (best-effort); por
+ *                              padrão termina imprimindo `cd <main>` para o
+ *                              shell voltar ao worktree principal — o cwd nunca
+ *                              fica num diretório destruído (não aceita
+ *                              `--stay`; `--go` é no-op)
  *
  * Read-only no GitHub: `next` NUNCA claima (claim = `pnpm agent:claim`).
  * Dir raiz: `~/.cursor/worktrees/teqo/` (mesma casa dos worktrees do Cursor).
@@ -280,7 +286,7 @@ const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpo
   runMigrate(dir, testUrl, payloadSecret)
 }
 
-const cmdNext = async (go, skipMigrate) => {
+const cmdNext = async (stay, skipMigrate) => {
   const pick = nextClaimableIssue()
   if (!pick) {
     die('Fila vazia — nada `ready` desbloqueado. Rode `pnpm agent:status` para ver a fila.')
@@ -326,7 +332,7 @@ const cmdNext = async (go, skipMigrate) => {
   console.log(`  banco dev:  postgresql://teqo:teqo@localhost:5432/${env.devDatabase}`)
   console.log(`  banco test: postgresql://teqo:teqo@localhost:5432/${env.testDatabase}`)
 
-  if (go) console.log(`cd ${dir}`)
+  if (!stay) console.log(`cd ${dir}`)
 }
 
 /**
@@ -340,7 +346,7 @@ const cmdNext = async (go, skipMigrate) => {
  * worktree — parallel `/plan-issue` sessions never share one. Same isolated
  * env provisioning as `next`.
  */
-const cmdPlan = async (go, skipMigrate, bag) => {
+const cmdPlan = async (stay, skipMigrate, bag) => {
   git(['fetch', 'origin'])
 
   const entries = parseWorktreeList(git(['worktree', 'list', '--porcelain']))
@@ -397,7 +403,7 @@ const cmdPlan = async (go, skipMigrate, bag) => {
   console.log(`  banco dev:  postgresql://teqo:teqo@localhost:5432/${env.devDatabase}`)
   console.log(`  banco test: postgresql://teqo:teqo@localhost:5432/${env.testDatabase}`)
 
-  if (go) console.log(`cd ${dir}`)
+  if (!stay) console.log(`cd ${dir}`)
 }
 
 /** Generated database names referenced by a worktree's own env files. */
@@ -475,9 +481,10 @@ const cmdKill = async (force) => {
 
   console.log(`Worktree destruído: ${top}`)
   console.log(`  branch removido: ${branch ?? '(detached — nada a remover)'}`)
-  console.log(`Volte ao main: cd ${mainRoot}`)
 
   await dropWorktreeDatabases(databaseNames)
+
+  console.log(`cd ${mainRoot}`)
 }
 
 const { flags, positional } = parseArgs(process.argv.slice(2), new Set())
@@ -485,31 +492,33 @@ const subcommand = positional[0]
 
 if (!subcommand) {
   console.log(
-    'Uso: pnpm worktree next [--go] [--no-migrate] | plan [bag] [--go] [--no-migrate] | kill [--force]',
+    'Uso: pnpm worktree next [--stay] [--no-migrate] | plan [bag] [--stay] [--no-migrate] | kill [--force]',
   )
-  console.log('  next [--go] [--no-migrate]')
+  console.log('  next [--stay] [--no-migrate]')
   console.log('    cria worktree da próxima Issue claimável (branch <code>-<slug>) e provisiona o')
   console.log('    ambiente isolado: porta de dev + bancos próprios (determinístico do branch);')
-  console.log('    com --go imprime `cd <dir>` no fim (quem aplica o cd: opencode command, ou a')
-  console.log('    função `worktree()` de .agents/shell/worktree.sh); --no-migrate pula migrations')
-  console.log(`\n  plan [bag] [--go] [--no-migrate]`)
+  console.log('    por padrão imprime `cd <dir>` no fim (quem aplica o cd: opencode command, ou a')
+  console.log('    função `worktree()` de .agents/shell/worktree.sh); --stay suprime o cd; --go')
+  console.log('    explícito continua aceito como no-op; --no-migrate pula migrations')
+  console.log(`\n  plan [bag] [--stay] [--no-migrate]`)
   console.log(
     '    cria um worktree de planejamento DIFERENTE a cada invocação (sessões /plan-issue',
   )
   console.log('    paralelas): com bag, branch plans/plan-issue-<bag> (sufixo -2/-3 se o nome já')
   console.log('    existir); sem bag, o próximo plans/plan-issue-<n> sequencial livre; o prefixo')
   console.log('    minúsculo plans/… nunca colide com o branch <code>-<slug> de `next`')
-  console.log('  kill [--force]  destrói o worktree em que você está (recusa sujo sem --force) e')
-  console.log('                  remove os bancos gerados do worktree (best-effort)')
+  console.log('  kill [--force]  destrói o worktree em que você está (recusa sujo sem --force),')
+  console.log('                  remove os bancos gerados do worktree (best-effort) e imprime')
+  console.log('                  `cd <main>` no fim — o shell sempre volta ao worktree principal')
   process.exit(1)
 }
 
 try {
-  if (subcommand === 'next') await cmdNext(Boolean(flags.go), Boolean(flags['no-migrate']))
+  if (subcommand === 'next') await cmdNext(Boolean(flags.stay), Boolean(flags['no-migrate']))
   else if (subcommand === 'plan')
-    await cmdPlan(Boolean(flags.go), Boolean(flags['no-migrate']), positional[1])
+    await cmdPlan(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1])
   else if (subcommand === 'kill') {
-    if (flags.go) die('`--go` só faz sentido com `next`.')
+    if (flags.stay) die('`--stay` não se aplica a `kill` — ele sempre volta ao main.')
     await cmdKill(Boolean(flags.force))
   } else die(`subcomando desconhecido: ${subcommand} (esperado: next | plan | kill)`)
 } catch (error) {
