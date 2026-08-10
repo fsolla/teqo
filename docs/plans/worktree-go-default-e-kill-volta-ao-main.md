@@ -65,7 +65,7 @@ Hoje `pnpm worktree next` / `plan` só aplicam o `cd` com `--go` explícito — 
 
 - GitHub Issue #569
 - `scripts/worktree.mjs:444-481` — `cmdKill` já imprime "Volte ao main: cd ${mainRoot}"; nada aplica
-- `scripts/worktree.mjs:329` e `400` — `if (go) console.log(\`cd ${dir}\`)` em `next`/`plan`
+- `scripts/worktree.mjs:329` e `400` — `if (go) console.log(\`cd ${dir}\`)`em`next`/`plan`
 - `.agents/shell/worktree.sh:36-39` — cd só quando `--go` presente
 - `.opencode/commands/worktree.md` — instrui o agente a aplicar o `cd` quando `--go`
 - `AGENTS.md` seção "Per-worktree environments" — documenta `worktree next [--go]` etc.
