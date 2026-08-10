@@ -34,12 +34,12 @@ import { useAgendaSwipeNavigation } from '@/components/campaign/activity/useAgen
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { Button } from '@/components/ui/button'
 import { useIsMobileMeasured } from '@/hooks/use-mobile'
-import { formatBahiaCivilDate } from '@/lib/campaignTime'
 import {
   allDayEndInstantFromExclusive,
   allDayExclusiveEndDate,
   allDayStartInstant,
 } from '@/lib/activityAllDay'
+import { formatBahiaCivilDate } from '@/lib/campaignTime'
 import {
   ACTIVITY_RESCHEDULE_FAILED_MESSAGE,
   activityStatusLabels,
