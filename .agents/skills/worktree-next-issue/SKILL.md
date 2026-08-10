@@ -19,8 +19,8 @@ Prepara o ambiente git para a próxima Issue da fila de claim, **sem** tocá-la 
 A lógica determinística (fila → código+slug → branch → worktree) vive em **`scripts/worktree.mjs`** — fonte única, coberta por `tests/unit/worktree.unit.spec.ts`. Não a reescreva à mão aqui.
 
 ```bash
-pnpm worktree next [--go] [--no-migrate]  # cria worktree de origin/main + provisiona o ambiente
-pnpm worktree plan [bag] [--go] [--no-migrate]  # worktree de PLANEJAMENTO (/plan-issue): um DIFERENTE por invocação
+pnpm worktree next [--stay] [--no-migrate]  # cria worktree de origin/main + provisiona o ambiente
+pnpm worktree plan [bag] [--stay] [--no-migrate]  # worktree de PLANEJAMENTO (/plan-issue): um DIFERENTE por invocação
 pnpm worktree kill [--force]              # destrói o worktree atual + remove seus bancos gerados
 ```
 
@@ -28,7 +28,7 @@ No opencode, isso é o comando **`/worktree next`** / **`/worktree kill`** (`.op
 
 `plan` é o primo do `next`: worktree de **planejamento** para rodar a skill `/plan-issue` sem ocupar o main. **Cada invocação cria um DIFERENTE** (sessões paralelas): com `bag` opcional → branch `plans/plan-issue-<bag>` (sufixo `-2`/`-3` se o nome já estiver vivo); sem `bag` → próximo sequencial `plans/plan-issue-<n>` livre. Não é nomeado por Issue nenhuma — proposital, para um `next` posterior da próxima Issue nunca colidir em branch nem em slot (prefixo minúsculo `plans/…` vs branch `<Code>-<slug>` sempre uppercase-led). O fluxo desta skill (fila → próxima Issue → implementação) é só `next`.
 
-No terminal interativo, para `--go` trocar de diretório de verdade, use a função `worktree()` de **`.agents/shell/worktree.sh`** (uma linha de `source` no profile): o script imprime `cd <dir>` e a função o aplica no shell que te chamou — node não consegue mudar o cwd do shell pai.
+**Default-go:** `next` e `plan` imprimem `cd <dir>` na última linha **por padrão**; `--stay` suprime; `--go` explícito continua aceito como no-op. No terminal interativo, use a função `worktree()` de **`.agents/shell/worktree.sh`** (uma linha de `source` no profile) para o `cd` ser aplicado de verdade no shell que te chamou — node não consegue mudar o cwd do shell pai. `kill` também imprime `cd <main>` no fim (a sessão nunca fica num diretório destruído).
 
 ## Fluxo quando invocado como skill (agentes que não têm opencode)
 
