@@ -50,6 +50,7 @@ import {
 import {
   buildMunicipalityListHref,
   municipalityListLevelFilterValues,
+  NO_STATE_DEPUTY_FILTER_VALUE,
   type MunicipalityListLevelFilterValue,
 } from '@/utilities/municipality/municipalityListUrl'
 import type { MunicipalityTerritorialClass } from '@/utilities/municipality/municipalityTerritorialClass'
@@ -148,6 +149,8 @@ export type CampaignNavigationLinkRequest =
       trends?: PoliticalTrendStatus[]
       classes?: MunicipalityTerritorialClass[]
       levels?: MunicipalityListLevelFilterValue[]
+      /** B190 — dobradinha ids to filter by, plus the "Sem dobradinha" sentinel. */
+      stateDeputies?: Array<number | typeof NO_STATE_DEPUTY_FILTER_VALUE>
     })
   | (BaseLinkFields & {
       destination: 'leadershipList'
@@ -411,6 +414,11 @@ const buildPathForRequest = (
       const levels = request.levels?.filter((level): level is MunicipalityListLevelFilterValue =>
         municipalityLevelFilterSet.has(level),
       )
+      const stateDeputies = request.stateDeputies?.filter((value) =>
+        typeof value === 'number'
+          ? positiveInt(value, 'stateDeputy') !== null
+          : value === NO_STATE_DEPUTY_FILTER_VALUE,
+      )
       const path = buildMunicipalityListHref(
         {
           page: 1,
@@ -423,6 +431,7 @@ const buildPathForRequest = (
           ...(trends?.length ? { trends } : {}),
           ...(classes?.length ? { classes } : {}),
           ...(levels?.length ? { levels } : {}),
+          ...(stateDeputies?.length ? { stateDeputies } : {}),
         },
         1,
       )

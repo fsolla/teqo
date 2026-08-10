@@ -74,6 +74,31 @@ describe('campaignNavigationUrls', () => {
     }
   })
 
+  it('builds the "Sem dobradinha" municipality list filter (B190)', () => {
+    const outcome = buildCampaignNavigationLink(coordinator.role, {
+      destination: 'municipalityList',
+      stateDeputies: ['sem_dobradinha', 7],
+      label: 'Municípios sem dobradinha',
+    })
+    expect(outcome.ok).toBe(true)
+    if (outcome.ok) {
+      // Literal URL — canonical relationship params: ids asc, sentinel last.
+      expect(outcome.path).toBe('/campanha/municipios?stateDeputy=7&stateDeputy=sem_dobradinha')
+      expect(outcome.label).toBe('Municípios sem dobradinha')
+    }
+  })
+
+  it('drops invalid stateDeputy filter values instead of failing the link', () => {
+    const outcome = buildCampaignNavigationLink(coordinator.role, {
+      destination: 'municipalityList',
+      stateDeputies: ['sem_dobradinha', -3],
+    })
+    expect(outcome.ok).toBe(true)
+    if (outcome.ok) {
+      expect(outcome.path).toBe('/campanha/municipios?stateDeputy=sem_dobradinha')
+    }
+  })
+
   it('blocks staff destinations for leaders', () => {
     const outcome = buildCampaignNavigationLink(leader.role, {
       destination: 'municipality',

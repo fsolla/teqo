@@ -16,7 +16,10 @@ import { activityTabs } from '@/utilities/activityUi'
 import type { CampaignNavigationLinkRequest } from '@/utilities/ai/campaignNavigationUrls'
 import { buildCampaignNavigationLinks } from '@/utilities/ai/campaignNavigationUrls'
 import { politicalTrendLabels } from '@/utilities/municipality/municipalityLabels'
-import { municipalityListLevelFilterValues } from '@/utilities/municipality/municipalityListUrl'
+import {
+  municipalityListLevelFilterValues,
+  NO_STATE_DEPUTY_FILTER_VALUE,
+} from '@/utilities/municipality/municipalityListUrl'
 
 const labelSchema = z
   .string()
@@ -122,6 +125,12 @@ const linkRequestSchema = z.discriminatedUnion('destination', [
     trends: z.array(z.enum(politicalTrendKeys)).optional(),
     classes: z.array(z.enum(TERRITORIAL_CLASSES)).optional(),
     levels: z.array(z.enum(municipalityListLevelFilterValues as [string, ...string[]])).optional(),
+    stateDeputies: z
+      .array(z.union([z.number().int().positive(), z.literal(NO_STATE_DEPUTY_FILTER_VALUE)]))
+      .optional()
+      .describe(
+        'Dobradinha ids to filter the list by, or the sentinel "sem_dobradinha" for municipalities without any dobradinha.',
+      ),
     label: labelSchema,
   }),
   z.object({
