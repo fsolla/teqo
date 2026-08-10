@@ -29,7 +29,7 @@ O Sollinha foi pensado para trabalhar **em colaboração** com o usuário, mas h
 ## Objetivo e aceite
 
 - Clicar num link do Sollinha navega **sem recarregar a página** (navegação por cliente do app), e a conversa continua presente ao reabrir o chat.
-- Recarregar a página na mesma aba restaura a conversa (mensagens e estado em andamento).
+- Recarregar a página na mesma aba restaura a conversa (mensagens e estado em andamento). _Nota de impl (B188): a recarga no meio de uma resposta perde apenas aquele turno em voo — o storage só guarda o último estado settle; o chat recomeça `ready` e o usuário repete a pergunta._
 - Fechar a aba apaga tudo; outra aba inicia sem histórico.
 - Nada é gravado no servidor/banco; nada cruza abas ou dispositivos.
 - Se o chat estava aberto ao recarregar, ele volta aberto na mesma superfície (painel/drawer conforme o viewport).

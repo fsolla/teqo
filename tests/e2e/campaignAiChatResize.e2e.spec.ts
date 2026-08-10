@@ -5,14 +5,23 @@ import { expect, test } from './fixtures/campaignE2EFixtures.js'
 /**
  * Mock the AI endpoint with a minimal SSE stream so sending a message neither
  * needs a DeepSeek API key nor hits the real rate limiter — the user message is
- * still recorded client-side, which is all these assertions need.
+ * still recorded client-side, which is all these assertions need. The chunks
+ * follow the SDK v7 UI-message-stream wire format (start / text-start /
+ * text-delta / text-end / finish): a bare legacy `{"type":"text"}` chunk fails
+ * the client schema and leaves the chat stuck in an error status.
  */
 const mockAiChat = (page: Page) =>
   page.route('**/campanha/api/ai-chat', async (route) => {
     await route.fulfill({
       status: 200,
       headers: { 'Content-Type': 'text/event-stream' },
-      body: 'data: {"type":"text","text":"Resposta mockada da Sollinha."}\n\n',
+      body: [
+        'data: {"type":"start"}\n\n',
+        'data: {"type":"text-start","id":"t1"}\n\n',
+        'data: {"type":"text-delta","id":"t1","delta":"Resposta mockada da Sollinha."}\n\n',
+        'data: {"type":"text-end","id":"t1"}\n\n',
+        'data: {"type":"finish","finishReason":"stop"}\n\n',
+      ].join(''),
     })
   })
 
@@ -135,10 +144,14 @@ test.describe('B167 — chat Sollinha migra entre painel e drawer ao redimension
     const user = await campaign.fixtures.createCampaignUser('coordinator', {
       name: campaign.fixtures.value('Chat Resize Coordenador'),
     })
+    // Mobile from the start (B188): a desktop login auto-opens the chat (the
+    // settle below) and persists `open: true` for the tab — a later reload at
+    // mobile would then legitimately restore the open drawer, which is not
+    // what a *fresh* mobile visit looks like.
+    await page.setViewportSize({ width: 500, height: 800 })
     await campaign.login(page, user.email!, user.password)
 
     // Carga direto em mobile: sem drawer espontâneo, só o FAB.
-    await page.setViewportSize({ width: 500, height: 800 })
     await page.goto('/campanha')
     await expect(page.getByRole('dialog', { name: 'Sollinha — Assistente virtual' })).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Sollinha — Assistente virtual' })).toBeVisible({
