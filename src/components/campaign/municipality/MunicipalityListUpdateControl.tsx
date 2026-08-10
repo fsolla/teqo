@@ -12,6 +12,7 @@ import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCam
 import { Button } from '@/components/ui/button'
 import { DrawerCloseButton } from '@/components/ui/Drawer'
 import { Spinner } from '@/components/ui/Spinner'
+import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import {
   formatMunicipalitySignalAgeLabel,
@@ -77,6 +78,7 @@ export const MunicipalityListUpdateControl = ({
       statusMessage={isPending ? 'Registrando atualização…' : ''}
       triggerClassName="min-w-11 text-left"
       contentClassName="w-80"
+      sheetBodyClassName={isSheet ? 'px-0 pt-0' : undefined}
       trigger={children}
       footer={
         isSheet && open ? (
@@ -91,7 +93,7 @@ export const MunicipalityListUpdateControl = ({
         key={formKey}
         id={formId}
         action={submitAction}
-        className="flex flex-col gap-3"
+        className={cn('flex flex-col', !isSheet && 'gap-3')}
         aria-busy={isPending || undefined}
       >
         <input type="hidden" name="municipalityId" value={municipalityID} />
@@ -100,8 +102,13 @@ export const MunicipalityListUpdateControl = ({
           idPrefix={idPrefix}
           fieldErrors={state.fieldErrors}
           isStaff={isStaff}
+          layout={isSheet ? 'list' : 'labeled'}
         />
-        {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}
+        {state.status !== 'success' && state.message ? (
+          <div className={cn(isSheet && 'px-4 pt-3')}>
+            <CampaignFormActionMessage state={state} />
+          </div>
+        ) : null}
         {isSheet ? null : submitButton}
       </form>
     </CampaignCellEditOverlay>

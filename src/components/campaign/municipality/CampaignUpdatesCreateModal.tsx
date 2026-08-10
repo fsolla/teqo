@@ -14,6 +14,7 @@ import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui
 import { Spinner } from '@/components/ui/Spinner'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
+import { cn } from '@/lib/utils'
 import { fieldError } from '@/utilities/campaignFormFields'
 import type { CampaignUpdatesFeedFacets } from '@/utilities/municipality/campaignUpdatesFeedData'
 
@@ -70,41 +71,78 @@ export const CampaignUpdatesCreateModal = ({
 
   const municipalityError = fieldError(state.fieldErrors, 'municipalityId')
 
+  // Mobile sheet: list-style form — no visible labels/borders, full-bleed
+  // divider rows, descriptive placeholders (C107). The label stays for the
+  // accessible name; the sheet auto-sizes to the content with its ceiling at
+  // the top of the screen (`max-h-dvh`), scrolling internally only when the
+  // content outgrows the viewport (e.g. open keyboard). Desktop keeps the
+  // labeled dialog chrome.
   const createForm = (
-    <form action={submitAction} className="flex flex-col gap-4">
+    <form action={submitAction} className={cn('flex flex-col', !isMobile && 'gap-4')}>
       <input type="hidden" name="municipalityId" value={municipalityId} />
-      <Field>
-        <FieldLabel htmlFor={MUNICIPALITY_COMBOBOX_ID}>Município</FieldLabel>
-        <FieldDescription>
-          O registro fica vinculado a um município da sua carteira.
-        </FieldDescription>
-        <StrictCombobox
-          id={MUNICIPALITY_COMBOBOX_ID}
-          options={options}
-          value={municipalityId}
-          onValueChange={setMunicipalityId}
-          error={municipalityError}
-        />
-        {municipalityError ? (
-          <FieldError id={`${MUNICIPALITY_COMBOBOX_ID}-error`}>{municipalityError}</FieldError>
-        ) : null}
-      </Field>
+      {isMobile ? (
+        <>
+          <div className="px-4 py-1">
+            <FieldLabel htmlFor={MUNICIPALITY_COMBOBOX_ID} className="sr-only">
+              Município
+            </FieldLabel>
+            <StrictCombobox
+              id={MUNICIPALITY_COMBOBOX_ID}
+              options={options}
+              value={municipalityId}
+              onValueChange={setMunicipalityId}
+              error={municipalityError}
+              placeholder="Adicionar município"
+              className="min-h-11 w-full rounded-none border-0 bg-transparent shadow-none dark:bg-transparent"
+            />
+            {municipalityError ? (
+              <FieldError id={`${MUNICIPALITY_COMBOBOX_ID}-error`}>{municipalityError}</FieldError>
+            ) : null}
+          </div>
+          <div className="border-t border-border" />
+        </>
+      ) : (
+        <Field>
+          <FieldLabel htmlFor={MUNICIPALITY_COMBOBOX_ID}>Município</FieldLabel>
+          <FieldDescription>
+            O registro fica vinculado a um município da sua carteira.
+          </FieldDescription>
+          <StrictCombobox
+            id={MUNICIPALITY_COMBOBOX_ID}
+            options={options}
+            value={municipalityId}
+            onValueChange={setMunicipalityId}
+            error={municipalityError}
+          />
+          {municipalityError ? (
+            <FieldError id={`${MUNICIPALITY_COMBOBOX_ID}-error`}>{municipalityError}</FieldError>
+          ) : null}
+        </Field>
+      )}
 
       <MunicipalityUpdateFields
         idPrefix="campaign-updates-create"
         fieldErrors={state.fieldErrors}
         isStaff={isStaff}
+        layout={isMobile ? 'list' : 'labeled'}
       />
 
-      {state.status !== 'success' ? (
-        <CampaignFormActionMessage
-          state={state}
-          errorTitle="Não foi possível registrar"
-          successFallbackMessage="Atualização registrada."
-        />
+      {state.status !== 'success' && state.message ? (
+        <div className={cn(isMobile && 'border-t border-border px-4 pt-3')}>
+          <CampaignFormActionMessage
+            state={state}
+            errorTitle="Não foi possível registrar"
+            successFallbackMessage="Atualização registrada."
+          />
+        </div>
       ) : null}
 
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <div
+        className={cn(
+          'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end',
+          isMobile && 'border-t border-border px-4 pt-4 pb-1',
+        )}
+      >
         <Button
           type="button"
           variant="outline"
@@ -125,12 +163,12 @@ export const CampaignUpdatesCreateModal = ({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange} showSwipeHandle>
-        <DrawerContent className="max-h-[90dvh] border-t border-border bg-background text-foreground">
-          <DrawerTitle className="mb-3 text-base font-medium">Nova atualização</DrawerTitle>
+        <DrawerContent className="max-h-dvh border-t border-border bg-background text-foreground">
+          <DrawerTitle className="sr-only">Nova atualização</DrawerTitle>
           <DrawerDescription className="sr-only">
             Registre um novo fato de campo em um município
           </DrawerDescription>
-          <div className="flex flex-col overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
+          <div className="flex flex-col overflow-y-auto pb-[max(1rem,env(safe-area-inset-bottom))]">
             {createForm}
           </div>
         </DrawerContent>
