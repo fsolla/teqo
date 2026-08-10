@@ -30,9 +30,33 @@ export type CampaignListOmniboxProps = {
 }
 
 /**
+ * B184 — the mobile sticky bar. Applied by every list to its own `<form
+ * role="search">`: below `md` the filter region is a borderless bar glued to
+ * the app top bar (the scrollport is `CampaignContentScroll`, whose sibling
+ * the top bar is), with a separating line and an edge-to-edge bleed past the
+ * scrollport's mobile `p-4`. `md:` restores the framed static desktop look.
+ *
+ * Sticky lives on the FORM on purpose: a sticky element can never escape its
+ * containing block (its parent), and the form is the only wrapper whose parent
+ * is the full-height `CampaignPageShell` — a sticky input column inside the
+ * short omnibox row would only "stick" for its own height and then scroll away.
+ */
+export const campaignListOmniboxFormClassName =
+  'sticky top-0 z-20 -mx-4 border-b border-border bg-background px-4 py-2 ' +
+  'md:static md:z-auto md:mx-0 md:border-b-0 md:bg-transparent md:px-0 md:py-0'
+
+/**
  * Shared list omnibox chassis (B127): chips inside the field, caret to the
  * right, grouped suggestions from the domain adapter. Navigation / URL policy
  * stay in the caller.
+ *
+ * Mobile standard (B184, 2026-08-09): below `md` the field is borderless,
+ * sticky under the app top bar with a separating line, the label hides (the
+ * input carries it as `aria-label`), the text "Limpar" is replaced by a
+ * circular X inside the field, and the trailing cluster — empty below `md`
+ * (every list gates its mobile-visible trailing elsewhere, e.g. header
+ * actions) — stays out of the sticky region. Desktop keeps the framed look
+ * unchanged via `md:` variants.
  *
  * Keyboard contract mirrors RelationChipCell (ARIA combobox by hand): arrows
  * move the active option, Enter picks it, Escape closes. cmdk is not used —
@@ -61,6 +85,8 @@ export const CampaignListOmnibox = ({
   const [open, setOpen] = useState(false)
   const [activeChipId, setActiveChipId] = useState<string | null>(null)
   const [activeIndex, setActiveIndex] = useState(0)
+  /** B184 — increments on every clear so the live region re-announces. */
+  const [clearAnnounceCount, setClearAnnounceCount] = useState(0)
 
   const hasChips = chips.length > 0
   const showSuggestions = open && suggestions.length > 0
@@ -158,8 +184,12 @@ export const CampaignListOmnibox = ({
       data-pending={isPending}
       aria-busy={isPending}
     >
+      {/* The sticky bar lives on the caller's `<form>` (campaignListOmniboxFormClassName). */}
       <div className="min-w-0 flex-1">
-        <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-foreground">
+        <label
+          htmlFor={id}
+          className="mb-1.5 block text-sm font-medium text-foreground hidden md:block"
+        >
           {label}
         </label>
         <Popover
@@ -171,7 +201,10 @@ export const CampaignListOmnibox = ({
           <PopoverAnchor asChild>
             <div
               className={cn(
-                'flex min-h-11 w-full flex-wrap items-center gap-1.5 rounded-lg border border-input bg-transparent px-2 py-1.5 shadow-xs',
+                // B184: below `md` the field is a borderless sticky bar; the
+                // `md:` variants restore the framed desktop look.
+                'flex min-h-11 w-full flex-wrap items-center gap-1.5 rounded-lg border-0 bg-transparent px-2 py-1.5 shadow-none',
+                'md:border md:border-input md:shadow-xs',
                 'focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50',
               )}
               onMouseDown={(event) => {
@@ -206,6 +239,10 @@ export const CampaignListOmnibox = ({
                 ref={inputRef}
                 id={id}
                 role="combobox"
+                // B184: below `md` the visual label is hidden; the accessible
+                // name must not ride on it, so the input carries it directly
+                // (identical to the label's own text on every viewport).
+                aria-label={label}
                 aria-expanded={showSuggestions}
                 aria-controls={showSuggestions ? listboxId : undefined}
                 aria-activedescendant={activeOptionId}
@@ -224,6 +261,40 @@ export const CampaignListOmnibox = ({
                 onKeyDown={onKeyDown}
                 className="min-h-8 min-w-[8rem] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
+              {onClearAll ? (
+                // B184: the mobile replacement for the text "Limpar" — a
+                // circular X at the field's right edge. Rendered whenever the
+                // caller clears, so the field's width never jumps at the
+                // empty↔typed boundary; `invisible` keeps it out of the a11y
+                // tree and the pointer until there is something to clear
+                // (chips OR a typed search).
+                <button
+                  type="button"
+                  aria-label="Limpar"
+                  className={cn(
+                    'inline-flex size-11 shrink-0 items-center justify-center rounded-full',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    'md:hidden',
+                    !(hasChips || query.length > 0) && 'invisible pointer-events-none',
+                  )}
+                  onClick={() => {
+                    onClearAll()
+                    setActiveChipId(null)
+                    setClearAnnounceCount((count) => count + 1)
+                    // Refocus the field so the next keystroke keeps typing —
+                    // then close the popover: the focus event itself reopens
+                    // it, and a stale suggestion list over the results is
+                    // worse than an empty field (measured intercepting clicks
+                    // in the agenda e2e).
+                    inputRef.current?.focus()
+                    setOpen(false)
+                  }}
+                >
+                  <span className="flex size-7 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted-foreground/20 hover:text-foreground">
+                    <XIcon className="size-4" aria-hidden />
+                  </span>
+                </button>
+              ) : null}
             </div>
           </PopoverAnchor>
           <PopoverContent
@@ -276,12 +347,25 @@ export const CampaignListOmnibox = ({
             Atualizando resultados…
           </p>
         ) : null}
+        {clearAnnounceCount > 0 ? (
+          // B184 — clearing only a typed search never navigates (the URL is
+          // already bare), so the pending region above stays silent; the keyed
+          // remount re-announces the clear for screen readers.
+          <p key={clearAnnounceCount} className="sr-only" aria-live="polite">
+            Busca e filtros limpos.
+          </p>
+        ) : null}
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center gap-2 md:pt-7">
         {trailing}
         {onClearAll && hasChips ? (
-          <Button type="button" variant="ghost" className="min-h-11 shrink-0" onClick={onClearAll}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="min-h-11 hidden shrink-0 md:inline-flex"
+            onClick={onClearAll}
+          >
             Limpar
           </Button>
         ) : null}

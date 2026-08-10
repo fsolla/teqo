@@ -4,7 +4,10 @@ import { Fragment, useMemo, useState, type ReactNode } from 'react'
 
 import { useMunicipalityEstimateScenarioOptional } from '@/components/campaign/municipality/MunicipalityEstimateScenarioContext'
 import { SaveMunicipalityFilterControl } from '@/components/campaign/municipality/SaveMunicipalityFilterControl'
-import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
+import {
+  CampaignListOmnibox,
+  campaignListOmniboxFormClassName,
+} from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO } from '@/lib/voteEstimate'
 import {
@@ -156,6 +159,7 @@ export const MunicipalityFilters = ({
   return (
     <form
       role="search"
+      className={campaignListOmniboxFormClassName}
       onSubmit={(event) => {
         event.preventDefault()
       }}
@@ -187,7 +191,13 @@ export const MunicipalityFilters = ({
           // municipios render (and fails the e2e console guard). Keyed array
           // children keep the two controls side by side without the warning.
           <Fragment key="column-picker">{trailing}</Fragment>,
-          <SaveMunicipalityFilterControl key="save-filter" state={state} />,
+          // B184 — on mobile the save control lives in the app header (icon
+          // button), so the filter-bar copy is desktop-only.
+          <SaveMunicipalityFilterControl
+            key="save-filter"
+            state={state}
+            className="hidden md:inline-flex"
+          />,
         ]}
       />
     </form>

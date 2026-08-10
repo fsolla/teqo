@@ -14,10 +14,14 @@ import {
   municipalityListPickerColumns,
 } from '@/components/campaign/municipality/MunicipalityList'
 import { MunicipalityListPageChrome } from '@/components/campaign/municipality/MunicipalityListPageChrome'
+import { SaveMunicipalityFilterControl } from '@/components/campaign/municipality/SaveMunicipalityFilterControl'
 import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
+import { campaignMobileHeaderIconClassName } from '@/components/campaign/shell/CampaignMobileTopBar'
+import { SetCampaignHeaderAction } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import { cn } from '@/lib/utils'
 import {
   isCampaignCoordinator,
   isCampaignStaff,
@@ -215,6 +219,18 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
   return (
     <CampaignPageShell>
       <MunicipalityListPageChrome />
+      {/*
+        B184 — on mobile the save-recorte control anchors in the app top bar
+        (icon button, md:hidden), reusing the C94/C95 header-action slot; the
+        naming popover is the same component the filter bar renders on desktop.
+      */}
+      <SetCampaignHeaderAction id="municipality-save-filter">
+        <SaveMunicipalityFilterControl
+          presentation="icon"
+          state={state}
+          className={cn('md:hidden', campaignMobileHeaderIconClassName)}
+        />
+      </SetCampaignHeaderAction>
       {main}
       {listVisitLabel ? (
         <RecentVisitTracker

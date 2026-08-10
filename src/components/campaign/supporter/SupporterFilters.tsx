@@ -2,7 +2,10 @@
 
 import { useMemo, useState, type ReactNode } from 'react'
 
-import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
+import {
+  CampaignListOmnibox,
+  campaignListOmniboxFormClassName,
+} from '@/components/campaign/shared/CampaignListOmnibox'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import {
@@ -86,6 +89,7 @@ export const SupporterFilters = ({
   return (
     <form
       role="search"
+      className={campaignListOmniboxFormClassName}
       onSubmit={(event) => {
         event.preventDefault()
       }}

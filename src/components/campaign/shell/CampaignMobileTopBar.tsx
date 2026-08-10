@@ -33,6 +33,15 @@ const wizardDismissButtonClass =
 
 const wizardTitleSkeletonClass = 'mx-auto motion-reduce:animate-none bg-primary-foreground/20'
 
+/**
+ * Shared look for icon controls registered into the app top bar's right
+ * cluster (C94/C95 slot) — the same white-on-primary treatment the wizard
+ * buttons and the notification bell use. Consumers compose `md:` overrides on
+ * top (e.g. the bell switches to muted on desktop).
+ */
+export const campaignMobileHeaderIconClassName =
+  'text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground'
+
 export const CampaignMobileTopBar = ({ notificationBell }: { notificationBell?: ReactNode }) => {
   const chrome = useCampaignWizardChrome()
   const homeSearchChrome = useCampaignHomeSearchChrome()

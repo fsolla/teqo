@@ -801,6 +801,93 @@ test.describe('Municípios — cards no celular (B42)', () => {
 })
 
 /**
+ * B184 (2026-08-09): on the phone the list-filter chrome is borderless and
+ * sticky under the top bar (the shared omnibox standard), the text "Limpar" is
+ * replaced by a circular X inside the field (chips OR a typed search), the
+ * save-recorte control anchors in the app top bar, and the municipality cards
+ * are edge-to-edge with a single separator line between them.
+ */
+test.describe('Municípios — filtro e cards sem moldura no celular (B184)', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('omnibox borderless/sticky, X clears chips and search, save in the top bar, cards edge-to-edge', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora B184'),
+    })
+    const password = coordinator.password
+
+    await campaign.login(page, coordinator.email!, password)
+    await page.goto(`${campaign.baseURL}/campanha/municipios`)
+
+    // The mobile standard hides the field label; the input keeps its name via
+    // aria-label, and the filter form is a borderless sticky bar.
+    await expect(page.getByText('Filtrar municípios', { exact: true })).toBeHidden()
+    const omniboxInput = page.getByRole('combobox', { name: 'Filtrar municípios' })
+    const field = omniboxInput.locator('..')
+    const filterForm = omniboxInput.locator('xpath=ancestor::form[1]')
+    await expect(field).toHaveCSS('border-top-width', '0px')
+    await expect(filterForm).toHaveCSS('position', 'sticky')
+    await expect(filterForm).toHaveCSS('border-bottom-width', '1px')
+
+    // No filters, no search → no clear affordance at all.
+    await expect(page.getByRole('button', { name: 'Limpar', exact: true })).toHaveCount(0)
+
+    // A typed search alone shows the X; clicking it clears the draft, keeps
+    // the focus in the field and does not reopen the suggestion popover (the
+    // contract that broke the agenda e2e before the `setOpen(false)`).
+    await omniboxInput.fill('Feira de Santana')
+    const clearX = page.getByRole('button', { name: 'Limpar', exact: true })
+    await expect(clearX).toBeVisible()
+    await clearX.click()
+    await expect(omniboxInput).toHaveValue('')
+    await expect(omniboxInput).toBeFocused()
+    await expect(omniboxInput).toHaveAttribute('aria-expanded', 'false')
+    await expect(clearX).toHaveCount(0)
+
+    // Active chips also show the X, and clicking it drops the whole recorte.
+    await page.goto(`${campaign.baseURL}/campanha/municipios?region=Recôncavo`)
+    await expect(page.getByRole('button', { name: 'Remover Território: Recôncavo' })).toBeVisible()
+    await expect(clearX).toBeVisible()
+    await clearX.click()
+    await expect(page).toHaveURL(`${campaign.baseURL}/campanha/municipios`)
+
+    // The save-recorte control anchors in the app top bar on mobile — absent
+    // without a recorte; with one, the same naming popover saves and flips the
+    // icon's accessible name to the rename contract (SC 2.5.3).
+    const topBar = page.locator('[data-slot="campaign-mobile-top-bar"]')
+    const headerSave = topBar.getByRole('button', { name: 'Salvar filtro', exact: true })
+    await expect(headerSave).toHaveCount(0)
+    await page.goto(`${campaign.baseURL}/campanha/municipios?region=Recôncavo`)
+    await expect(headerSave).toBeVisible()
+    await headerSave.click()
+    await page.getByLabel('Nome do filtro').fill('Recorte B184')
+    await page.getByRole('button', { name: 'Salvar', exact: true }).click()
+    await expect(
+      topBar.getByRole('button', { name: 'Renomear o filtro salvo Recorte B184' }),
+    ).toBeVisible()
+
+    // Cards are edge-to-edge with one horizontal line between them and none
+    // after the last one.
+    const cards = page.locator('[data-view="mobile-cards"] article')
+    await expect(cards.first()).toHaveCSS('border-top-width', '0px')
+    await expect(cards.first()).toHaveCSS('border-left-width', '0px')
+    await expect(cards.first()).toHaveCSS('border-bottom-width', '1px')
+    await expect(cards.last()).toHaveCSS('border-bottom-width', '0px')
+
+    // The desktop frame is untouched: back to a wide viewport the field has
+    // its border again, the label is visible and the text "Limpar" returns.
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await expect(page.getByText('Filtrar municípios', { exact: true })).toBeVisible()
+    await expect(field).toHaveCSS('border-top-width', '1px')
+    await expect(page.getByRole('button', { name: 'Limpar', exact: true })).toBeVisible()
+  })
+})
+
+/**
  * B126: FAB quick-actions overlay — no persistent drawer; opens on demand.
  */
 test.describe('Municípios — FAB ações rápidas mobile (B126)', () => {

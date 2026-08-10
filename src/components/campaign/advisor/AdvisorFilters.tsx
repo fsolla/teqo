@@ -2,7 +2,10 @@
 
 import { useMemo, useState } from 'react'
 
-import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
+import {
+  CampaignListOmnibox,
+  campaignListOmniboxFormClassName,
+} from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import type { AdvisorFilterOption } from '@/utilities/advisor/advisorListFilters'
 import { advisorListHrefForPage, type AdvisorListState } from '@/utilities/advisor/advisorListUrl'
@@ -65,6 +68,7 @@ export const AdvisorFilters = ({
   return (
     <form
       role="search"
+      className={campaignListOmniboxFormClassName}
       onSubmit={(event) => {
         event.preventDefault()
       }}

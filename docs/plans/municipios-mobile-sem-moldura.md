@@ -10,6 +10,8 @@ Canvas UI: `/home/fsolla/.cursor/projects/home-fsolla-cursor-worktrees-teqo-plan
 Appetite: ~0,5–1 dia eng; um encaixe em lista existente
 Responsável: —
 
+> **Escopo ampliado (decisão do produto, 2026-08-09):** o look sem moldura/sticky do filtro vira o **padrão mobile do chassis `CampaignListOmnibox` — todas as listas `/campanha`** (11 call sites), não só municípios. Cards edge-to-edge e "Salvar filtro" no header continuam municípios-only (as outras listas não têm árvore de cards B42 nem saved filters). Desktop permanece inalterado em todas as listas.
+
 ## Intenção
 
 No celular, a lista de municípios acumula chrome que rouba espaço da fila: a label "Filtrar
@@ -25,7 +27,7 @@ como icon button.
 - **Persona / contexto:** assessor ou coordenador no celular, varrendo a fila de municípios entre visitas; uma mão, atenção curta.
 - **Job principal:** filtrar e rolar a fila sem lutar com moldura, mantendo o filtro sempre à mão.
 - **Fluxo desejado:** abre `/campanha/municipios` no celular → vê o filtro limpo, sem label, preso sob a barra superior → limpa tudo com o X circular dentro do input (só aparece quando há o que limpar) → salva o recorte pelo icon no header → rola a fila de cards contínuos (só uma linha separando cada um) → o filtro permanece visível o tempo todo → toca num card e abre o detalhe.
-- **Anti-goals de produto:** não virar redesenho geral do shell; não mudar o comportamento de filtragem (chips continuam dentro da omnibox); não alterar desktop; não tocar nas outras listas.
+- **Anti-goals de produto:** não virar redesenho geral do shell; não mudar o comportamento de filtragem (chips continuam dentro da omnibox); não alterar desktop; cards edge-to-edge e salvar no header não vazam para as outras listas.
 
 ### Esboço de fluxo (B)
 
@@ -34,13 +36,13 @@ Ver Canvas UI (rascunho side-by-side "Hoje × Depois"). Jornada textual:
 
 ## Objetivo e aceite
 
-- No mobile, a label "Filtrar municípios" não é exibida na lista de municípios.
-- O filtro é visualmente sem moldura (sem caixa/borda), fica **sempre visível** enquanto o usuário rola os cards, e uma linha horizontal o separa do feed abaixo.
-- Os chips de filtro ativo continuam **dentro da omnibox**, com o mesmo comportamento de hoje.
-- O "Limpar" (botão de texto atual) sai do mobile; no lugar, um **X circular dentro do input, junto à borda direita**, que limpa os filtros — aparece só quando há o que limpar (filtros ativos ou busca digitada).
-- O "Salvar filtro" atual sai da região do filtro; no mobile ele vira **icon button no header** (o popover de nomear/renomear continua o mesmo).
-- Os cards de município no mobile ficam sem borda nem arredondamento, edge-to-edge (sem respiro lateral da página na região da lista), com uma única linha horizontal separando um card do outro.
-- Desktop da lista e as demais listas `/campanha` ficam inalteradas.
+- No mobile, a label do filtro (ex.: "Filtrar municípios") não é exibida — **em todas as listas** (padrão do chassis).
+- O filtro é visualmente sem moldura (sem caixa/borda), fica **sempre visível** enquanto o usuário rola os cards/linhas, e uma linha horizontal o separa do feed abaixo — **em todas as listas** (padrão do chassis).
+- Os chips de filtro ativo continuam **dentro da omnibox**, com o mesmo comportamento de hoje — todas as listas.
+- O "Limpar" (botão de texto atual) sai do mobile; no lugar, um **X circular dentro do input, junto à borda direita**, que limpa os filtros — aparece só quando há o que limpar (filtros ativos ou busca digitada) — todas as listas.
+- O "Salvar filtro" atual sai da região do filtro; no mobile ele vira **icon button no header** (o popover de nomear/renomear continua o mesmo) — **municípios apenas**.
+- Os cards de município no mobile ficam sem borda nem arredondamento, edge-to-edge (sem respiro lateral da página na região da lista), com uma única linha horizontal separando um card do outro — **municípios apenas** (única lista com cards mobile).
+- Desktop de todas as listas fica inalterado.
 
 ## Dados (intenção)
 
@@ -49,9 +51,9 @@ Ver Canvas UI (rascunho side-by-side "Hoje × Depois"). Jornada textual:
 
 ## Direção no codebase (hipótese)
 
-- **Áreas prováveis:** `src/components/campaign/municipality/MunicipalityFilters.tsx` (label/placeholder do filtro e onde as ações nascem), `src/components/campaign/municipality/SaveMunicipalityFilterControl.tsx` (popover de salvar — só muda o ancoradouro/trigger no mobile), `src/components/campaign/municipality/MunicipalityListMobileCards.tsx` (cards `rounded-xl border`), `src/app/(campaign)/campanha/(app)/municipios/page.tsx` + `CampaignPageShell` (padding/respiro da região), `src/components/campaign/shell/CampaignMobileTopBar.tsx` (header — destino do icon de salvar).
+- **Áreas prováveis:** `src/components/campaign/shared/CampaignListOmnibox.tsx` (label/placeholder do filtro e onde as ações nascem — o chassis compartilhado B127 agora é o **dono do padrão**: todos os 11 `*Filters` herdam), `src/components/campaign/municipality/SaveMunicipalityFilterControl.tsx` (popover de salvar — só muda o ancoradouro/trigger no mobile), `src/components/campaign/municipality/MunicipalityListMobileCards.tsx` (cards `rounded-xl border`), `src/app/(campaign)/campanha/(app)/municipios/page.tsx` (registro do icon no header via `SetCampaignHeaderAction`, slot C94/C95).
 - **Precedente a olhar:** `docs/plans/polimento-mobile-lista-municipios.md` (B42, mobile já entregue), Issues B120 (filtro combobox mobile) e B127 (chassis da omnibox).
-- **Risco de acoplamento:** o filtro é o chassis compartilhado `CampaignListOmnibox` (B127) usado por várias listas — a intenção é escopada ao **mobile de municípios**; o executor escolhe como escopar (prop/variant ou estilo local), mas o comportamento das outras listas não pode mudar.
+- **Risco de acoplamento:** o filtro é o chassis compartilhado `CampaignListOmnibox` (B127) usado por várias listas — o padrão mobile é **intencionalmente** no chassis (decisão de produto), e o desktop é preservado por variantes `md:`; cards/salvar no header ficam escopados a municípios.
 
 ## Dependências
 
@@ -59,23 +61,23 @@ Ver Canvas UI (rascunho side-by-side "Hoje × Depois"). Jornada textual:
 
 ## Fora de escopo
 
-- Desktop da lista de municípios (sem mudança).
-- Demais listas `/campanha` (apoiadores, lideranças, atividades, demandas…).
+- Desktop de todas as listas (sem mudança).
+- Cards edge-to-edge e "Salvar filtro" no header fora de municípios (outras listas não têm cards B42 nem saved filters).
 - Novos filtros, ordenação ou mudança de dados nos cards.
 - Redesign do shell/top bar.
 
 ## Rabbit holes de produto
 
-- **"Já que é sem moldura, melhora as outras listas também."** Explosão de superfície e review. **Corte neste item:** só `/campanha/municipios` mobile; as demais ficam para pedido próprio se aprovado.
+- **"Já que é sem moldura, melhora as outras listas também."** ~~Explosão de superfície e review.~~ **Decidido (2026-08-09):** o look bare/sticky **é** o padrão do chassis para todas as listas no mobile — por isso a mudança mora no chassis e não no estilo local de municípios. O que fica cortado: cards edge-to-edge e salvar no header nas outras listas.
 - **"Sticky é oportunidade de redesenhar o filtro."** Nova interação sem pedido. **Corte:** mantém chips (dentro da omnibox), sugestões e o fluxo de salvar (só muda o ancoradouro); só muda presença visual, posição fixa e os dois controles de ação.
 - **"Edge-to-edge é todo o app."** Redesign de shell. **Corte:** só a região da lista mobile.
 
 ## Questões em aberto (produto)
 
-- **Remover a label só no mobile ou em todas as resoluções?** **Opções:** A) mobile-only (desktop mantém label); B) remover em tudo. **Recomendação:** A — o pedido é mobile e no desktop a label ajuda descoberta sem custo de espaço. _(assumido — validar com produto)_
-- **Cards edge-to-edge até a borda física da tela, ou só até o padding da página?** **Opções:** A) até a borda da tela (sem padding lateral na região da lista); B) mantém o padding atual, só troca borda por linha. **Recomendação:** A — "seamlessly edge-to-edge" é explícito no pedido. _(assumido — validar)_
-- **O X circular de limpar aparece quando?** **Opções:** A) só com filtros ativos (chips) ou busca digitada — padrão de clear input; B) sempre visível. **Recomendação:** A — segue a mesma regra do "Limpar" de hoje (que só existe quando há o que limpar) e não polui o estado vazio. _(decidido no gate — chips sempre dentro da omnibox)_
-- **O icon de salvar filtro no header aparece quando?** **Opções:** A) só quando há recorte ativo para salvar (mesma regra do controle atual, que se omite sem filtros aplicados); B) sempre visível. **Recomendação:** A — o controle atual já se esconde sem recorte; o header ganha o mesmo gate, senão o icon não faria nada. _(assumido — validar)_
+- **Remover a label só no mobile ou em todas as resoluções?** **Decidido:** A — mobile-only; no desktop a label ajuda descoberta sem custo de espaço. Aplica-se ao padrão do chassis (todas as listas).
+- **Cards edge-to-edge até a borda física da tela, ou só até o padding da página?** **Decidido:** A — até a borda da tela ("seamlessly edge-to-edge" é explícito no pedido), via sangria do `p-4` do scrollport.
+- **O X circular de limpar aparece quando?** **Decidido:** A — só com filtros ativos (chips) ou busca digitada — padrão de clear input; segue a mesma regra do "Limpar" de hoje ampliada à busca digitada.
+- **O icon de salvar filtro no header aparece quando?** **Decidido:** A — só quando há recorte ativo para salvar (o controle já se omite sem recorte; o header ganha o mesmo gate).
 - **Região sticky do filtro:** chips e busca formam a região que gruda sob a barra (confirmado no gate — chips continuam dentro da omnibox). O picker de colunas segue onde está hoje, fora da região sticky.
 
 ## Referências

@@ -4,10 +4,16 @@ import { Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { CampaignUpdatesCreateModal } from '@/components/campaign/municipality/CampaignUpdatesCreateModal'
-import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
+import {
+  CampaignListOmnibox,
+  campaignListOmniboxFormClassName,
+} from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
+import { campaignMobileHeaderIconClassName } from '@/components/campaign/shell/CampaignMobileTopBar'
+import { SetCampaignHeaderAction } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { Button } from '@/components/ui/button'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
+import { cn } from '@/lib/utils'
 import type { CampaignUpdatesFeedFacets } from '@/utilities/municipality/campaignUpdatesFeedData'
 import {
   buildCampaignUpdatesFeedHref,
@@ -97,6 +103,7 @@ export const CampaignUpdatesFilters = ({ state, facets, isStaff }: CampaignUpdat
     <>
       <form
         role="search"
+        className={campaignListOmniboxFormClassName}
         onSubmit={(event) => {
           event.preventDefault()
         }}
@@ -123,10 +130,13 @@ export const CampaignUpdatesFilters = ({ state, facets, isStaff }: CampaignUpdat
             runAction(clearCampaignUpdatesFeedFilters())
           }}
           trailing={
+            // B184 — on mobile the create action anchors in the app top bar
+            // (icon button) so the sticky filter bar stays a field-only strip;
+            // the desktop copy keeps the labeled button beside the omnibox.
             <Button
               type="button"
               variant="outline"
-              className="min-h-11 shrink-0 gap-2"
+              className="min-h-11 hidden shrink-0 gap-2 md:inline-flex"
               onClick={() => setCreateOpen(true)}
             >
               <Plus aria-hidden="true" />
@@ -135,6 +145,18 @@ export const CampaignUpdatesFilters = ({ state, facets, isStaff }: CampaignUpdat
           }
         />
       </form>
+      <SetCampaignHeaderAction id="campaign-updates-new">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={cn('size-11 md:hidden', campaignMobileHeaderIconClassName)}
+          aria-label="Nova atualização"
+          onClick={() => setCreateOpen(true)}
+        >
+          <Plus className="size-5" aria-hidden />
+        </Button>
+      </SetCampaignHeaderAction>
       <CampaignUpdatesCreateModal
         open={createOpen}
         onOpenChange={setCreateOpen}
