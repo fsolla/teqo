@@ -8,14 +8,13 @@ import { headers } from 'next/headers'
 import { getPayload } from 'payload'
 
 import {
-  CAMPAIGN_NOTIFICATION_MARK_ALL_READ_ERROR_MESSAGE,
+  CAMPAIGN_NOTIFICATION_LOAD_ERROR_MESSAGE,
   CAMPAIGN_NOTIFICATION_THROW_SAFE_MESSAGES,
   CAMPAIGN_PUSH_CONSENT_REQUIRED_MESSAGE,
   CAMPAIGN_PUSH_SUBSCRIBE_ERROR_MESSAGE,
   CAMPAIGN_PUSH_SUBSCRIPTION_INVALID_MESSAGE,
   CAMPAIGN_PUSH_UNSUBSCRIBE_ERROR_MESSAGE,
 } from '@/lib/campaignNotificationCopy'
-import type { NotificationListItem } from '@/lib/notificationContract'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { requireCampaignPushConsent } from '@/utilities/campaignConsent'
 import {
@@ -25,6 +24,7 @@ import {
 import {
   countUnreadNotifications,
   loadNotificationList,
+  markAllNotificationsRead,
 } from '@/utilities/notification/notificationList'
 import { getCampaignVapidPublicKey } from '@/utilities/notification/sendCampaignPush'
 
@@ -51,50 +51,33 @@ export const loadNotificationBellData = async (): Promise<NotificationBellData |
   }
 }
 
-export const listCampaignNotifications = async (): Promise<NotificationListItem[]> => {
-  const user = await getCampaignUser()
-  if (!user) return []
-
-  const payload = await getPayload({ config })
-  return loadNotificationList(payload, user)
-}
-
-export const markAllCampaignNotificationsRead = async () =>
+/**
+ * The bell's open action (C108): loads the panel list AND marks everything
+ * unread as read in one round trip — opening the panel is the read gesture,
+ * so the badge zeroes without a separate click. List and mark run
+ * concurrently; the panel no longer reads per-item `readAt`, so the race is
+ * invisible to the UI (the badge is driven by `markedCount`, not the list).
+ */
+export const openCampaignNotifications = async () =>
   runCampaignFormAction({
     execute: async () => {
       const user = await getCampaignUser()
       if (!user) throw new Error(CAMPAIGN_AUTH_REQUIRED_MESSAGE)
 
       const payload = await getPayload({ config })
-      const unread = await payload.find({
-        collection: 'notification',
-        where: {
-          and: [{ recipient: { equals: user.id } }, { readAt: { exists: false } }],
-        },
-        depth: 0,
-        limit: 200,
-        pagination: false,
-        overrideAccess: true,
-      })
+      const [items, markedCount] = await Promise.all([
+        loadNotificationList(payload, user),
+        markAllNotificationsRead(payload, user),
+      ])
 
-      const readAt = new Date().toISOString()
-      await Promise.all(
-        unread.docs.map((doc) =>
-          payload.update({
-            collection: 'notification',
-            id: doc.id,
-            data: { readAt },
-            depth: 0,
-            overrideAccess: true,
-          }),
-        ),
-      )
+      if (markedCount > 0) {
+        revalidatePath('/campanha', 'layout')
+      }
 
-      revalidatePath('/campanha', 'layout')
-      return { message: 'Todas as notificações foram marcadas como lidas.' }
+      return { items, markedCount, message: 'Notificações atualizadas.' }
     },
-    safeMessages: CAMPAIGN_NOTIFICATION_SAFE_MESSAGES,
-    genericMessage: CAMPAIGN_NOTIFICATION_MARK_ALL_READ_ERROR_MESSAGE,
+    safeMessages: [CAMPAIGN_AUTH_REQUIRED_MESSAGE],
+    genericMessage: CAMPAIGN_NOTIFICATION_LOAD_ERROR_MESSAGE,
   })
 
 type PushSubscribeInput = {

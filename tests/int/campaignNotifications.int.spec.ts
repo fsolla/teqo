@@ -7,6 +7,7 @@ import config from '@/payload.config'
 import {
   countUnreadNotifications,
   loadNotificationList,
+  markAllNotificationsRead,
 } from '@/utilities/notification/notificationList'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
@@ -108,6 +109,72 @@ describe('notification access', () => {
     ])
     await expect(countUnreadNotifications(payload, owner)).resolves.toBe(1)
     await expect(countUnreadNotifications(payload, other)).resolves.toBe(1)
+  })
+
+  it("marks only the actor's own unread notifications as read (C108)", async () => {
+    const fixtures = campaignFixtures()
+    const [owner, other] = await Promise.all([
+      fixtures.createCampaignUser('advisor'),
+      fixtures.createCampaignUser('advisor'),
+    ])
+
+    const ownUnread = await payload.create({
+      collection: 'notification',
+      data: {
+        recipient: owner.id,
+        type: 'municipality_update',
+        payload: { title: 'Própria — não lida', detail: 'Detalhe', href: '/campanha' },
+      },
+      overrideAccess: true,
+    })
+    const ownAlreadyRead = await payload.create({
+      collection: 'notification',
+      data: {
+        recipient: owner.id,
+        type: 'new_supporter',
+        payload: { title: 'Própria — já lida', detail: 'Detalhe', href: '/campanha' },
+        readAt: new Date().toISOString(),
+      },
+      overrideAccess: true,
+    })
+    const otherUnread = await payload.create({
+      collection: 'notification',
+      data: {
+        recipient: other.id,
+        type: 'invite_accepted',
+        payload: { title: 'Alheia — não lida', detail: 'Detalhe', href: '/campanha' },
+      },
+      overrideAccess: true,
+    })
+
+    const markedCount = await markAllNotificationsRead(payload, owner)
+
+    expect(markedCount).toBe(1)
+    const ownAfter = await payload.findByID({
+      collection: 'notification',
+      id: ownUnread.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(ownAfter.readAt).not.toBeNull()
+    const readOwn = await payload.findByID({
+      collection: 'notification',
+      id: ownAlreadyRead.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(readOwn.readAt).not.toBeNull()
+    const untouched = await payload.findByID({
+      collection: 'notification',
+      id: otherUnread.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(untouched.readAt).toBeNull()
+
+    // Idempotent: a second pass touches nothing.
+    await expect(markAllNotificationsRead(payload, owner)).resolves.toBe(0)
+    await expect(countUnreadNotifications(payload, owner)).resolves.toBe(0)
   })
 })
 

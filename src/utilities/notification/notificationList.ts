@@ -9,8 +9,6 @@ import type {
 } from '@/lib/notificationContract'
 import type { CampaignUser, Notification } from '@/payload-types'
 
-export type { NotificationListItem } from '@/lib/notificationContract'
-
 const isNotificationPayload = (value: unknown): value is NotificationPayload => {
   if (!value || typeof value !== 'object') return false
   const record = value as Record<string, unknown>
@@ -28,7 +26,6 @@ const toNotificationListItem = (doc: Notification): NotificationListItem | null 
     id: doc.id,
     type: doc.type as NotificationType,
     payload: doc.payload,
-    readAt: doc.readAt ?? null,
     createdAt: doc.createdAt,
   }
 }
@@ -72,4 +69,50 @@ export const loadNotificationList = async (
   return result.docs
     .map((doc) => toNotificationListItem(doc))
     .filter((item): item is NotificationListItem => item !== null)
+}
+
+const UNREAD_MARK_BATCH_LIMIT = 200
+
+/**
+ * Marks the actor's unread notifications as read and returns how many were
+ * touched. Batched at `UNREAD_MARK_BATCH_LIMIT` rows — an inbox beyond that
+ * keeps unread leftovers that re-pop the badge on the next server render
+ * (pathological; the same cap the panel button used before C108). Writes go
+ * through the admin bypass on purpose, the same way the panel actions do:
+ * `notification.update` access is staff/admin-only (`canWriteNotifications`),
+ * and the caller (a server action) has already verified the actor from the
+ * session — this helper only ever targets `recipient: user.id`, so no other
+ * inbox can be touched through it. Idempotent: a second pass marks nothing.
+ */
+export const markAllNotificationsRead = async (
+  payload: Payload,
+  user: CampaignUser,
+): Promise<number> => {
+  const unread = await payload.find({
+    collection: 'notification',
+    where: {
+      and: [{ recipient: { equals: user.id } }, { readAt: { exists: false } }],
+    },
+    depth: 0,
+    limit: UNREAD_MARK_BATCH_LIMIT,
+    pagination: false,
+    overrideAccess: true,
+  })
+
+  if (unread.docs.length === 0) return 0
+
+  const readAt = new Date().toISOString()
+  await Promise.all(
+    unread.docs.map((doc) =>
+      payload.update({
+        collection: 'notification',
+        id: doc.id,
+        data: { readAt },
+        depth: 0,
+        overrideAccess: true,
+      }),
+    ),
+  )
+
+  return unread.docs.length
 }

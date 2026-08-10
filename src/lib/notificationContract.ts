@@ -23,7 +23,6 @@ export type NotificationListItem = {
   id: number
   type: NotificationType
   payload: NotificationPayload
-  readAt: string | null
   createdAt: string
 }
 
