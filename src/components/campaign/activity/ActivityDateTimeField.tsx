@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover
 import {
   floorToMinuteStep,
   formatBahiaCivilDate,
+  formatBahiaCivilDateLabel,
   formatBahiaCivilDateTimeLabel,
   hourOptions,
   minuteOptionsForStep,
@@ -37,6 +38,9 @@ import { cn } from '@/lib/utils'
  * C103 — on narrow viewports the picker opens as a nested bottom sheet
  * (calendar + hour/minute fully on screen, "Pronto" applies and closes),
  * keeping the desktop popover untouched.
+ *
+ * C104 — `timeVisible={false}` is the all-day mode: the trigger formats only
+ * the date and the picker renders just the calendar (no time selects).
  */
 export const ActivityDateTimeField = ({
   id,
@@ -47,6 +51,7 @@ export const ActivityDateTimeField = ({
   isNarrow = false,
   label,
   required = false,
+  timeVisible = true,
 }: {
   id: string
   value: string
@@ -60,6 +65,8 @@ export const ActivityDateTimeField = ({
   label?: string
   /** Marks the required fields with a visible asterisk on the narrow trigger. */
   required?: boolean
+  /** When false, hide the time selects and label the trigger with the date only. */
+  timeVisible?: boolean
 }) => {
   const [open, setOpen] = useState(false)
   const civil = floorToMinuteStep(value)
@@ -96,7 +103,9 @@ export const ActivityDateTimeField = ({
           'border-destructive ring-3 ring-destructive/20 focus-visible:border-destructive focus-visible:ring-destructive/20',
       )}
     >
-      <span className="truncate">{formatBahiaCivilDateTimeLabel(civil)}</span>
+      <span className="truncate">
+        {timeVisible ? formatBahiaCivilDateTimeLabel(civil) : formatBahiaCivilDateLabel(civil)}
+      </span>
       {isNarrow && required ? (
         <span aria-hidden="true" className="font-semibold text-destructive">
           *
@@ -122,38 +131,40 @@ export const ActivityDateTimeField = ({
           className="w-full p-2"
         />
       ) : null}
-      <div className="flex flex-col gap-3 border-t p-3">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground select-none">Hora</span>
-            <NativeSelect
-              aria-label="Hora"
-              value={hour}
-              onChange={(event) => setHour(event.target.value)}
-            >
-              {hourOptions.map((option) => (
-                <NativeSelectOption key={option} value={option}>
-                  {option}h
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground select-none">Minuto</span>
-            <NativeSelect
-              aria-label="Minuto"
-              value={minute}
-              onChange={(event) => setMinute(event.target.value)}
-            >
-              {minuteOptionsForStep().map((option) => (
-                <NativeSelectOption key={option} value={option}>
-                  {option}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
+      {timeVisible ? (
+        <div className="flex flex-col gap-3 border-t p-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-muted-foreground select-none">Hora</span>
+              <NativeSelect
+                aria-label="Hora"
+                value={hour}
+                onChange={(event) => setHour(event.target.value)}
+              >
+                {hourOptions.map((option) => (
+                  <NativeSelectOption key={option} value={option}>
+                    {option}h
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-muted-foreground select-none">Minuto</span>
+              <NativeSelect
+                aria-label="Minuto"
+                value={minute}
+                onChange={(event) => setMinute(event.target.value)}
+              >
+                {minuteOptionsForStep().map((option) => (
+                  <NativeSelectOption key={option} value={option}>
+                    {option}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
     </>
   )
 

@@ -13,6 +13,7 @@ import { ResponsibleMultiSelect } from '@/components/campaign/shared/Responsible
 import { StrictCombobox } from '@/components/campaign/shared/StrictCombobox'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/Checkbox'
 import {
   Drawer,
   DrawerContent,
@@ -24,6 +25,7 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/Popover'
 import { Spinner } from '@/components/ui/Spinner'
+import { allDayEndInstant, allDayRangeValid, allDayStartInstant } from '@/lib/activityAllDay'
 import {
   formatBahiaDateTimeLabel,
   formatIsoAsBahiaDateTimeInput,
@@ -113,6 +115,8 @@ type InlineDateTimeFieldProps = {
   invalid: boolean
   error?: string
   required?: boolean
+  /** C104 — false hides the time selects (all-day mode). */
+  timeVisible?: boolean
 }
 
 const InlineDateTimeField = ({
@@ -124,6 +128,7 @@ const InlineDateTimeField = ({
   invalid,
   error,
   required = false,
+  timeVisible = true,
 }: InlineDateTimeFieldProps) => (
   <Field data-invalid={invalid}>
     <FieldLabel htmlFor={id} className={sheet ? 'sr-only' : undefined}>
@@ -141,6 +146,7 @@ const InlineDateTimeField = ({
       isNarrow={sheet}
       label={label}
       required={required}
+      timeVisible={timeVisible}
     />
     {error ? <FieldError id={`${id}-error`}>{error}</FieldError> : null}
   </Field>
@@ -167,6 +173,7 @@ const ActivityInlineCreateForm = ({
   const [title, setTitle] = useState('')
   const [start, setStart] = useState(formatIsoAsBahiaDateTimeInput(startAt))
   const [end, setEnd] = useState(formatIsoAsBahiaDateTimeInput(endAt))
+  const [allDay, setAllDay] = useState(false)
   const [locality, setLocality] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const preselectedMunicipalityId =
@@ -181,12 +188,19 @@ const ActivityInlineCreateForm = ({
 
   const errorFor = (name: string) => fieldErrors[name]?.[0]
 
+  const allDayStartDate = start.slice(0, 10)
+  const allDayEndDate = end ? end.slice(0, 10) : allDayStartDate
+
   // C105 — the href mirrors the LIVE state (times edited in the sheet, typed
   // tags), not the slot draft, so "Mais detalhes" carries everything the user
   // actually filled.
   const moreDetailsHref = buildActivityCreateHref(agendaState, {
-    startAt: parseBahiaDateTimeInput(start) ?? undefined,
-    endAt: end ? (parseBahiaDateTimeInput(end) ?? undefined) : undefined,
+    ...(allDay
+      ? { allDay: true, startAt: allDayStartDate, endAt: allDayEndDate }
+      : {
+          startAt: parseBahiaDateTimeInput(start) ?? undefined,
+          endAt: end ? (parseBahiaDateTimeInput(end) ?? undefined) : undefined,
+        }),
     municipalityId: municipalityValue ? Number(municipalityValue) : undefined,
     title: title.trim() || undefined,
     tags: tags.length > 0 ? tags : undefined,
@@ -207,9 +221,17 @@ const ActivityInlineCreateForm = ({
       nextFieldErrors.title = ['Informe um título com ao menos 2 caracteres.']
     }
     if (!municipalityId) nextFieldErrors.municipality = ['Informe o município.']
-    if (!startIso) nextFieldErrors.startAt = ['Informe a data e horário de início do compromisso.']
-    if (startIso && endIso && new Date(endIso) <= new Date(startIso)) {
-      nextFieldErrors.endAt = ['O horário de término deve ser posterior ao de início.']
+    if (allDay) {
+      if (!startIso) nextFieldErrors.startAt = ['Informe a data de início do compromisso.']
+      if (startIso && endIso && !allDayRangeValid(startIso, endIso)) {
+        nextFieldErrors.endAt = ['A data de término deve ser igual ou posterior à de início.']
+      }
+    } else {
+      if (!startIso)
+        nextFieldErrors.startAt = ['Informe a data e horário de início do compromisso.']
+      if (startIso && endIso && new Date(endIso) <= new Date(startIso)) {
+        nextFieldErrors.endAt = ['O horário de término deve ser posterior ao de início.']
+      }
     }
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors)
@@ -224,8 +246,16 @@ const ActivityInlineCreateForm = ({
       const result = await createActivityInline({
         title: trimmedTitle,
         municipality: municipalityId,
-        startAt: startIso as string,
-        ...(endIso ? { endAt: endIso } : {}),
+        ...(allDay
+          ? {
+              allDay: true,
+              startAt: allDayStartInstant(allDayStartDate),
+              ...(end ? { endAt: allDayEndInstant(allDayEndDate) } : {}),
+            }
+          : {
+              startAt: startIso as string,
+              ...(endIso ? { endAt: endIso } : {}),
+            }),
         ...(locality.trim() ? { locality: locality.trim() } : {}),
         ...(responsible ? { responsible } : {}),
         // C105 — the tags mirror state (every chip mutation fires `onChange`),
@@ -259,6 +289,7 @@ const ActivityInlineCreateForm = ({
         invalid={Boolean(errorFor('startAt'))}
         error={errorFor('startAt')}
         required
+        timeVisible={!allDay}
       />
       <InlineDateTimeField
         sheet={sheet}
@@ -268,6 +299,7 @@ const ActivityInlineCreateForm = ({
         onValueChange={setEnd}
         invalid={Boolean(errorFor('endAt'))}
         error={errorFor('endAt')}
+        timeVisible={!allDay}
       />
     </>
   )
@@ -305,6 +337,21 @@ const ActivityInlineCreateForm = ({
             {errorFor('title') ? (
               <FieldError id="inline-title-error">{errorFor('title')}</FieldError>
             ) : null}
+          </Field>
+
+          {/* C104 — all-day toggle: hides the time part of Início/Término. */}
+          <Field
+            orientation="horizontal"
+            className={
+              sheet ? 'min-h-11 gap-2 rounded-none border-0 px-0' : 'min-h-11 rounded-lg border p-3'
+            }
+          >
+            <Checkbox
+              checked={allDay}
+              onCheckedChange={(next) => setAllDay(Boolean(next))}
+              aria-label="Todo o dia"
+            />
+            <span>Todo o dia</span>
           </Field>
 
           {sheet ? (
