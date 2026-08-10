@@ -6,8 +6,9 @@ import {
   resolveCampaignPwaBuildId,
 } from '@/utilities/campaignPwa'
 
-// Built once per deploy; build id in the script body still invalidates SW updates.
-export const dynamic = 'force-static'
+// Runtime env only: CLI `--prebuilt` builds have no VERCEL_* build-time envs
+// (prod served `campanha-dev`); `VERCEL_DEPLOYMENT_ID` exists at runtime.
+export const dynamic = 'force-dynamic'
 
 export function GET(): NextResponse {
   const script = buildCampaignServiceWorkerScript(resolveCampaignPwaBuildId())
