@@ -633,8 +633,7 @@ export const campaignFixture: CampaignE2EFixtureValue = async ({}, runFixture) =
         // crisp wait error, not a generic test timeout. A second failure
         // surfaces — wrong credentials fail both attempts.
         const dashboardURL = `${baseURL}/campanha`
-        const onDashboard = (url: string) =>
-          url === dashboardURL || url === `${dashboardURL}/`
+        const onDashboard = (url: string) => url === dashboardURL || url === `${dashboardURL}/`
         const submitLogin = async () => {
           await page.getByLabel('E-mail ou celular').fill(identifier)
           await page.getByLabel('Senha').fill(password)
@@ -653,9 +652,7 @@ export const campaignFixture: CampaignE2EFixtureValue = async ({}, runFixture) =
             const current = page.url()
             if (onDashboard(current)) return
             if (!current.startsWith(`${baseURL}/campanha/login`)) {
-              throw new Error(
-                `Login retry aborted: page left the login screen (${current}).`,
-              )
+              throw new Error(`Login retry aborted: page left the login screen (${current}).`)
             }
             await submitLogin()
             await page.waitForURL(dashboardURL, { timeout: 30_000 })
