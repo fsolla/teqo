@@ -163,7 +163,11 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26)', () =>
   it('pins the preset constants — changing the model is editing a constant', () => {
     expect(OPENCODE_PRESET_MODEL).toBe('deepseek/deepseek-v4-flash')
     expect(WORKTREE_TERMINAL_ENV).toBe('TEQO_WORKTREE_TERMINAL')
-    expect(OPENCODE_SKILL_COMMAND_BY_PURPOSE).toEqual({ next: '/work-issue', plan: null, new: null })
+    expect(OPENCODE_SKILL_COMMAND_BY_PURPOSE).toEqual({
+      next: '/work-issue',
+      plan: null,
+      new: null,
+    })
   })
 
   it('an unknown purpose degrades to a prompt-less launch (fail-safe direction)', () => {
