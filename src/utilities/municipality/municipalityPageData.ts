@@ -58,6 +58,7 @@ import {
   territorialClassSortWeight,
   type MunicipalityTerritorialClassification,
 } from '@/utilities/municipality/municipalityTerritorialClass'
+import { loadMunicipalityLastUpdates } from '@/utilities/municipality/municipalityUpdatePageData'
 import {
   loadMunicipalityLeadershipSummaries,
   municipalityListSelect,
@@ -603,13 +604,22 @@ export const loadMunicipalityListPageBundle = async (
   // B155 — the leaderships of the visible page only (staff surfaces; the
   // leader view already returned above). One reverse batch: ids per município
   // for the rows, contact names for the chips.
-  const leadershipBundle = isStaff
-    ? await loadMunicipalityLeadershipSummaries(
-        payload,
-        user,
-        pageDocs.map((municipality) => municipality.id),
-      )
-    : null
+  const [leadershipBundle, lastUpdatesByMunicipalityID] = await Promise.all([
+    isStaff
+      ? loadMunicipalityLeadershipSummaries(
+          payload,
+          user,
+          pageDocs.map((municipality) => municipality.id),
+        )
+      : null,
+    isStaff
+      ? loadMunicipalityLastUpdates(
+          payload,
+          user,
+          pageDocs.map((d) => d.id),
+        )
+      : new Map(),
+  ])
 
   return {
     municipalities: pageDocs.map((municipality) => {
@@ -622,6 +632,7 @@ export const loadMunicipalityListPageBundle = async (
         leadershipBundle?.leadershipIDsByMunicipality.get(municipality.id) ?? [],
         isCity,
         isCity ? classBySlug?.get(SALVADOR_CITY_SLUG) : undefined,
+        lastUpdatesByMunicipalityID.get(municipality.id) ?? null,
       )
     }),
     totalDocs,

@@ -90,17 +90,23 @@ export const TerritorialClassCardReadout = ({
   municipality,
 }: {
   municipality: MunicipalityListViewModel
-}) => (
-  <CampaignHoverTooltip
-    content={
-      municipality.territorialClass === 'sem_base'
-        ? null
-        : formatTerritorialClassWhy(municipality.territorialClassFactors)
-    }
-    align="start"
-  >
-    <span className="relative inline-flex items-center">
-      <TerritorialClassReadout municipality={municipality} />
-    </span>
-  </CampaignHoverTooltip>
-)
+}) => {
+  // `sem_base` has no reason to explain: the wrapper stays UNpositioned, so a
+  // tap on the dash falls through to the município link (tap-through
+  // contract) instead of intercepting it with a dead tooltip target.
+  const positioned = municipality.territorialClass !== 'sem_base'
+  return (
+    <CampaignHoverTooltip
+      content={
+        municipality.territorialClass === 'sem_base'
+          ? null
+          : formatTerritorialClassWhy(municipality.territorialClassFactors)
+      }
+      align="start"
+    >
+      <span className={cn('inline-flex items-center', positioned && 'relative')}>
+        <TerritorialClassReadout municipality={municipality} />
+      </span>
+    </CampaignHoverTooltip>
+  )
+}

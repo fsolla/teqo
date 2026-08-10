@@ -29,7 +29,17 @@ export type MunicipalityRelationMutationResult =
     }
   | { status: 'error'; message: string }
 
-type MunicipalityRelationEditorProps = {
+/**
+ * B193 — the closed-display override the dense mobile card passes through the
+ * relation wrappers (Advisors/Lideranças/Dobradinhas) to this editor.
+ */
+export type MunicipalityRelationTriggerProps = {
+  trigger?: (entries: MunicipalityRelationEntry[], emptyState: ReactNode) => ReactNode
+  /** B193 — dense card trigger styling override (no min-height/hover pill). */
+  triggerClassName?: string
+}
+
+type MunicipalityRelationEditorProps = MunicipalityRelationTriggerProps & {
   municipalityName: string
   currentIDs: number[]
   knownEntries?: MunicipalityRelationEntry[]
@@ -76,6 +86,8 @@ export const MunicipalityRelationEditor = ({
   onToggle,
   onCreate,
   onCreated,
+  trigger,
+  triggerClassName,
 }: MunicipalityRelationEditorProps) => {
   const [open, setOpen] = useState(false)
   const [selectedIDs, setSelectedIDs] = useState(currentIDs)
@@ -270,10 +282,15 @@ export const MunicipalityRelationEditor = ({
       triggerBusy={isPending}
       statusMessage={statusMessage}
       tooltipContent={tooltipContent}
+      triggerClassName={triggerClassName}
       contentClassName="w-80 p-0"
       sheetBodyClassName="px-0 pt-2"
       trigger={
-        <MunicipalityRelationAvatarStack entries={selectedEntries} emptyState={emptyState} />
+        trigger ? (
+          trigger(selectedEntries, emptyState)
+        ) : (
+          <MunicipalityRelationAvatarStack entries={selectedEntries} emptyState={emptyState} />
+        )
       }
     >
       <div className={cn('relative flex shrink-0 flex-col gap-2 px-4 pb-0', !isSheet && 'pt-3')}>

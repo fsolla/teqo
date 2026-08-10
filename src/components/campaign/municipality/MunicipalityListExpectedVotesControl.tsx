@@ -17,12 +17,14 @@ import { Spinner } from '@/components/ui/Spinner'
 import { formatElectionNumber } from '@/lib/electionFormat'
 import {
   DEFAULT_VOTE_ESTIMATE_SCENARIO,
+  VOTE_ESTIMATE_SCENARIOS,
   voteEstimateScenarioLabels,
   voteEstimatesEqual,
   type VoteEstimateScenario,
   type VoteEstimateScenarioViewModel,
 } from '@/lib/voteEstimate'
 import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
+import type { ReactNode } from 'react'
 
 const AUTOSAVE_MS = 600
 
@@ -39,6 +41,18 @@ type MunicipalityListExpectedVotesControlProps = {
   municipalityID: number
   expectedVotes: VoteEstimateScenarioViewModel
   pledgeCoverage: MunicipalityPledgeCoverageView | null
+  /**
+   * B193 — replaces the internal votes display trigger (e.g. the dense mobile
+   * card's scenario strip). Receives the LIVE autosave value and the active
+   * scenario, so the strip reflects an in-flight edit; the `aria-label` below
+   * still names the reading.
+   */
+  trigger?: (
+    value: VoteEstimateScenarioViewModel,
+    activeScenario: VoteEstimateScenario,
+  ) => ReactNode
+  /** B193 — dense card styling override (same slot as the sibling controls). */
+  triggerClassName?: string
 } & (
   | { variant: 'popover'; municipalityName?: string }
   | { variant: 'sheet'; municipalityName: string }
@@ -50,6 +64,8 @@ export const MunicipalityListExpectedVotesControl = ({
   expectedVotes,
   pledgeCoverage,
   variant,
+  trigger,
+  triggerClassName,
 }: MunicipalityListExpectedVotesControlProps) => {
   const scenarioContext = useMunicipalityEstimateScenarioOptional()
   const activeScenario = scenarioContext?.scenario ?? DEFAULT_VOTE_ESTIMATE_SCENARIO
@@ -67,13 +83,19 @@ export const MunicipalityListExpectedVotesControl = ({
 
   // An `aria-label` replaces the trigger's content, and the content here is the
   // number itself — so the label has to carry it, and name the scenario it
-  // belongs to (the picker can disagree with the column's sort, E9).
-  const activeValue = value[activeScenario]
+  // belongs to (the picker can disagree with the column's sort, E9). All three
+  // scenarios ride along: the strip shows the whole interval (B193), so the
+  // announcement must too.
+  const scenarioSummary = VOTE_ESTIMATE_SCENARIOS.map((scenario) => {
+    const scenarioValue = value[scenario]
+    return `${voteEstimateScenarioLabels[scenario]}: ${
+      scenarioValue == null ? 'sem estimativa' : formatElectionNumber(scenarioValue)
+    }`
+  }).join('; ')
   const triggerLabel = [
     'Editar votos estimados',
     municipalityName ? ` em ${municipalityName}` : '',
-    ` — ${voteEstimateScenarioLabels[activeScenario]}: `,
-    activeValue == null ? 'sem estimativa' : formatElectionNumber(activeValue),
+    ` — ${scenarioSummary}`,
   ].join('')
 
   return (
@@ -86,20 +108,24 @@ export const MunicipalityListExpectedVotesControl = ({
       triggerLabel={triggerLabel}
       triggerBusy={isPending}
       statusMessage={statusMessage}
-      triggerClassName="group flex w-full items-center justify-center"
+      triggerClassName={triggerClassName ?? 'group flex w-full items-center justify-center'}
       align="center"
       contentClassName="w-[15.5rem] p-3"
       preventPopoverAutoFocus
       trigger={
-        <StaffMunicipalityVotesDisplay
-          expectedVotes={value}
-          pledgeCoverage={pledgeCoverage}
-          activeScenario={activeScenario}
-          layout="compact"
-          align="center"
-          suppressHoverPreview={open}
-          valueClassName="font-medium tabular-nums"
-        />
+        trigger ? (
+          trigger(value, activeScenario)
+        ) : (
+          <StaffMunicipalityVotesDisplay
+            expectedVotes={value}
+            pledgeCoverage={pledgeCoverage}
+            activeScenario={activeScenario}
+            layout="compact"
+            align="center"
+            suppressHoverPreview={open}
+            valueClassName="font-medium tabular-nums"
+          />
+        )
       }
     >
       <div className="relative flex flex-col gap-2.5">

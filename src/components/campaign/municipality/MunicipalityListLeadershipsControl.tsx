@@ -7,6 +7,7 @@ import type { MunicipalityRelationEntry } from '@/components/campaign/shared/Mun
 import {
   MunicipalityRelationEditor,
   type MunicipalityRelationMutationResult,
+  type MunicipalityRelationTriggerProps,
 } from '@/components/campaign/shared/MunicipalityRelationEditor'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import type {
@@ -17,7 +18,7 @@ import type {
 const LEADERSHIPS_ENDPOINT = '/campanha/municipios/leaderships'
 const SAVE_ERROR_MESSAGE = 'Não foi possível atualizar as lideranças. Tente novamente.'
 
-type MunicipalityListLeadershipsControlProps = {
+type MunicipalityListLeadershipsControlProps = MunicipalityRelationTriggerProps & {
   municipalityID: number
   municipalityName: string
   currentLeadershipIDs: number[]
@@ -38,6 +39,8 @@ export const MunicipalityListLeadershipsControl = ({
   leadershipNamesById,
   options,
   variant,
+  trigger,
+  triggerClassName,
 }: MunicipalityListLeadershipsControlProps) => {
   const createBridge = useMunicipalityLeadershipCreate()
   const createdOptions = createBridge?.createdOptions ?? []
@@ -96,6 +99,8 @@ export const MunicipalityListLeadershipsControl = ({
         }`
       }
       emptyState={<span className="text-sm text-muted-foreground">Nenhuma</span>}
+      trigger={trigger}
+      triggerClassName={triggerClassName}
       createLabel={(name) => `Criar liderança “${name}”`}
       onToggle={toggle}
       onCreate={create}

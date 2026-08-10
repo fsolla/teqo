@@ -8,6 +8,7 @@ import type { MunicipalityRelationEntry } from '@/components/campaign/shared/Mun
 import {
   MunicipalityRelationEditor,
   type MunicipalityRelationMutationResult,
+  type MunicipalityRelationTriggerProps,
 } from '@/components/campaign/shared/MunicipalityRelationEditor'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import type {
@@ -18,7 +19,7 @@ import type {
 const ADVISORS_ENDPOINT = '/campanha/municipios/advisors'
 const SAVE_ERROR_MESSAGE = 'Não foi possível atualizar os assessores. Tente novamente.'
 
-type MunicipalityListAdvisorsControlProps = {
+type MunicipalityListAdvisorsControlProps = MunicipalityRelationTriggerProps & {
   municipalityID: number
   municipalityName: string
   currentAdvisorIDs: number[]
@@ -41,6 +42,8 @@ export const MunicipalityListAdvisorsControl = ({
   advisorNamesById,
   options,
   variant,
+  trigger,
+  triggerClassName,
 }: MunicipalityListAdvisorsControlProps) => {
   const createBridge = useMunicipalityAdvisorCreate()
   const createdOptions = createBridge?.createdOptions ?? []
@@ -106,6 +109,8 @@ export const MunicipalityListAdvisorsControl = ({
         }`
       }
       emptyState={<MissingAdvisorBadge isPriority={isPriority} />}
+      trigger={trigger}
+      triggerClassName={triggerClassName}
       createLabel={(name) => `Criar assessor “${name}”`}
       createMaxLength={160}
       onToggle={toggle}

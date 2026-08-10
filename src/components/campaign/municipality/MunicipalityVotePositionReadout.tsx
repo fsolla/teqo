@@ -11,16 +11,23 @@ export type MunicipalityVotePositionReadoutLayout = 'table' | 'card' | 'search'
 export const MunicipalityVotePositionReadout = ({
   position,
   layout,
+  className,
 }: {
   position: MunicipalityVoteRankEntry
   layout: MunicipalityVotePositionReadoutLayout
+  /** B193 — the dense mobile card header right-aligns the card layout. */
+  className?: string
 }) => {
   const share = formatVoteSharePercent(position.share)
   const rank = formatPlacementOrdinal(position.rank)
+  // B193 — the dense card reads "colocação · votos" per the wireframe; the
+  // table keeps "votos · colocação" (desktop untouched by B193).
   const metaLine =
     layout === 'search'
       ? formatElectionNumber(position.votes)
-      : `${formatElectionNumber(position.votes)} · ${rank}`
+      : layout === 'card'
+        ? `${rank} · ${formatElectionNumber(position.votes)}`
+        : `${formatElectionNumber(position.votes)} · ${rank}`
   const ariaLabel = `${share} da votação estadual, ${formatElectionNumber(position.votes)} votos, ${rank} de ${formatElectionNumber(position.totalUnits)}`
 
   return (
@@ -28,6 +35,7 @@ export const MunicipalityVotePositionReadout = ({
       className={cn(
         'flex flex-col gap-0.5 tabular-nums',
         layout === 'table' || layout === 'search' ? 'items-end text-right' : 'text-sm',
+        className,
       )}
       aria-label={ariaLabel}
     >

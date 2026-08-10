@@ -24,6 +24,7 @@ import {
   type MunicipalityTerritorialClassification,
   type TerritorialFactor,
 } from '@/utilities/municipality/municipalityTerritorialClass'
+import type { MunicipalityUpdateViewModel } from '@/utilities/municipality/municipalityUpdatePageData'
 import type { StateDeputySummary } from '@/utilities/stateDeputyData'
 import type { MunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
 import { createEmptyMunicipalityPledgeAggregate } from '@/utilities/votePledgeViews'
@@ -81,6 +82,13 @@ export type MunicipalityListViewModel = {
    * ordering.
    */
   lastSignalAt: string | null
+  /**
+   * B193 — the LAST municipality update (body, polarity, author), for the
+   * mobile card's expandable footer; `null` when nothing was ever recorded
+   * (the footer becomes a direct register CTA). Staff-only — the leader never
+   * reaches the list page.
+   */
+  lastUpdate: MunicipalityUpdateViewModel | null
   expectedVotes: VoteEstimateScenarioViewModel
   politicalTrendStatus: PoliticalTrendStatus | null
   politicalTrendNote: string | null
@@ -109,6 +117,8 @@ export const toMunicipalityListViewModel = (
   isCity = false,
   /** B178 — override for the city's AGGREGATE class (the artifact lookup by slug would miss). */
   territorialClassOverride?: MunicipalityTerritorialClassification,
+  /** B193 — the last municipality update for the mobile card footer (staff-only). */
+  lastUpdate: MunicipalityUpdateViewModel | null = null,
 ): MunicipalityListViewModel => {
   const territorialClass =
     territorialClassOverride ?? computeMunicipalityTerritorialClass(municipality.slug)
@@ -136,6 +146,7 @@ export const toMunicipalityListViewModel = (
       municipality.lastUpdateAt ?? null,
       pledges?.lastPledgeAt ?? null,
     ),
+    lastUpdate,
     expectedVotes: toVoteEstimateScenarioViewModel(municipality.expectedVotes),
     politicalTrendStatus: municipality.politicalTrend?.status ?? null,
     politicalTrendNote: municipality.politicalTrend?.note ?? null,

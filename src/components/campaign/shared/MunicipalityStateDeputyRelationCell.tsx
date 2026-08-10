@@ -6,13 +6,14 @@ import type { MunicipalityRelationEntry } from '@/components/campaign/shared/Mun
 import {
   MunicipalityRelationEditor,
   type MunicipalityRelationMutationResult,
+  type MunicipalityRelationTriggerProps,
 } from '@/components/campaign/shared/MunicipalityRelationEditor'
 import { stateDeputyDisplayName } from '@/lib/stateDeputyNameParty'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { firstFormActionMessage } from '@/utilities/campaignFormFields'
 import type { StateDeputyRelationOption } from '@/utilities/campaignRelationOptions'
 
-type MunicipalityStateDeputyRelationCellProps = {
+type MunicipalityStateDeputyRelationCellProps = MunicipalityRelationTriggerProps & {
   municipalityId: number
   municipalityName: string
   stateDeputyIDs: number[]
@@ -64,6 +65,8 @@ export const MunicipalityStateDeputyRelationCell = ({
   commitAction,
   createAction,
   editorVariant,
+  trigger,
+  triggerClassName,
 }: MunicipalityStateDeputyRelationCellProps) => {
   const toggle = async (
     stateDeputyID: number,
@@ -122,6 +125,8 @@ export const MunicipalityStateDeputyRelationCell = ({
         }`
       }
       emptyState={<span className="text-sm text-muted-foreground">—</span>}
+      trigger={trigger}
+      triggerClassName={triggerClassName}
       createLabel={(name) => `Criar dobradinha “${name}”`}
       createMaxLength={120}
       sortSelected={false}

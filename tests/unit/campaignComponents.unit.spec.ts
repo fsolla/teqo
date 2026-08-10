@@ -80,6 +80,7 @@ const responsiveMunicipality = stub<MunicipalityListViewModel>({
   priority: 'normal',
   lastUpdateAt: null,
   lastSignalAt: null,
+  lastUpdate: null,
   expectedVotes: toVoteEstimateScenarioViewModel(null),
   politicalTrendStatus: null,
   politicalTrendNote: null,
@@ -221,6 +222,7 @@ describe('campaign visual foundation', () => {
         priority: 'alta',
         lastUpdateAt: null,
         lastSignalAt: null,
+        lastUpdate: null,
         expectedVotes: { pessimistic: null, central: 1500, optimistic: null },
         politicalTrendStatus: 'favoravel',
         politicalTrendNote: null,
@@ -267,6 +269,7 @@ describe('campaign visual foundation', () => {
         priority: 'normal',
         lastUpdateAt: null,
         lastSignalAt: null,
+        lastUpdate: null,
         expectedVotes: toVoteEstimateScenarioViewModel(null),
         politicalTrendStatus: null,
         politicalTrendNote: null,
@@ -361,6 +364,7 @@ describe('campaign visual foundation', () => {
       leadershipIDs: [],
       lastUpdateAt: null,
       lastSignalAt: null,
+      lastUpdate: null,
       expectedVotes: toVoteEstimateScenarioViewModel(null),
       politicalTrendStatus: null,
       politicalTrendNote: null,
@@ -421,6 +425,7 @@ describe('campaign visual foundation', () => {
         stateDeputyIDs: [],
         lastUpdateAt: null,
         lastSignalAt: null,
+        lastUpdate: null,
         expectedVotes: toVoteEstimateScenarioViewModel(null),
         politicalTrendStatus: null,
         politicalTrendNote: null,
@@ -553,6 +558,21 @@ describe('campaign visual foundation', () => {
             priority: 'alta',
             lastUpdateAt: staleSignal,
             lastSignalAt: staleSignal,
+            // B193 — the mobile card footer's "Última atualização" age comes
+            // from the LAST UPDATE (not the pledge-merged frescor): a stale
+            // update paints the footer cold, and the register CTA lives inside
+            // the collapsed expansion.
+            lastUpdate: {
+              id: 99,
+              authorName: 'Maria',
+              createdAt: staleSignal,
+              body: 'Visita ao comitê da região.',
+              polarity: 'boa',
+              urgent: false,
+              activeVolunteers: null,
+              newSupports: null,
+              adversarySignal: false,
+            },
             expectedVotes: toVoteEstimateScenarioViewModel(null),
             politicalTrendStatus: null,
             politicalTrendNote: null,
@@ -575,9 +595,16 @@ describe('campaign visual foundation', () => {
     // "Sem assessor" still appears in the Assessores column (the avatar stack's
     // empty state); the status badge is what escalates to "Sem responsável".
     expect(html).toContain('Sem responsável')
-    expect(html).toContain(`há ${staleDays} dias`)
+    // The mobile footer's age is the last UPDATE's age (B193): the update is
+    // 40 days old, so the footer reads "há 40 dias" and paints cold — and the
+    // expansion stays collapsed (the update body is not in the DOM).
+    expect(html).toContain('Última atualização há 40 dias')
+    // The cold class is applied ONLY on the mobile footer (the desktop column
+    // uses `data-signal="cold"` on the readout's own span), so this pins the
+    // footer's cold paint without relying on the desktop tree.
+    expect(html).toContain('text-estimate-pending-foreground')
+    expect(html).not.toContain('Visita ao comitê da região.')
     expect(html).toContain('data-signal="cold"')
-    expect(html).toContain('Última atualização')
   })
 
   it('reads "Sem sinal" when nothing was ever recorded for the município', () => {
@@ -600,6 +627,7 @@ describe('campaign visual foundation', () => {
             priority: 'normal',
             lastUpdateAt: null,
             lastSignalAt: null,
+            lastUpdate: null,
             expectedVotes: toVoteEstimateScenarioViewModel(null),
             politicalTrendStatus: null,
             politicalTrendNote: null,
@@ -644,6 +672,7 @@ describe('campaign visual foundation', () => {
             priority: 'normal',
             lastUpdateAt: null,
             lastSignalAt: null,
+            lastUpdate: null,
             expectedVotes: toVoteEstimateScenarioViewModel(null),
             politicalTrendStatus: null,
             politicalTrendNote: null,
@@ -694,6 +723,7 @@ describe('campaign visual foundation', () => {
             priority: 'alta',
             lastUpdateAt: null,
             lastSignalAt: null,
+            lastUpdate: null,
             expectedVotes: toVoteEstimateScenarioViewModel(null),
             politicalTrendStatus: null,
             politicalTrendNote: null,
@@ -892,6 +922,7 @@ describe('campaign visual foundation', () => {
         priority: 'normal' as const,
         lastUpdateAt: null,
         lastSignalAt: null,
+        lastUpdate: null,
         expectedVotes: toVoteEstimateScenarioViewModel(null),
         politicalTrendStatus: null,
         politicalTrendNote: null,

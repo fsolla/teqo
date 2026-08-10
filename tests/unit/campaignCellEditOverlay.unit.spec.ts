@@ -89,7 +89,9 @@ const overlayCases: OverlayCase[] = [
   },
   {
     name: 'votos estimados',
-    triggerLabel: `Editar votos estimados em ${MUNICIPALITY_NAME} — Média: 1.200`,
+    // B193 — the votes trigger announces the whole interval (the strip shows
+    // all three scenarios), not just the active one.
+    triggerLabel: `Editar votos estimados em ${MUNICIPALITY_NAME} — Pessimista: sem estimativa; Média: 1.200; Otimista: sem estimativa`,
     drawerTitle: 'Editar votos estimados',
     element: (variant) =>
       createElement(MunicipalityListExpectedVotesControl, {
