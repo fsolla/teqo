@@ -41,9 +41,9 @@
  *                              deles (branch nem slot) colide com um `next`
  *                              posterior (prefixo minúsculo `plans/…`).
  *                              Mesmo provisionamento isolado do `next`; no
- *                              terminal, mesma diretiva `launch` — porém SEM
- *                              `--prompt` (a CLI do opencode não tem pre-fill
- *                              sem submit; `/plan-` + autocomplete do TUI).
+ *                              terminal, mesma diretiva `launch` — com
+ *                              `--prompt /plan-issue` já enviado (OPS31: o TUI
+ *                              abre no fluxo de planejamento, sem digitação).
  *   pnpm worktree new [bag] [--stay] [--no-migrate]
  *                              cria um worktree NEUTRO novo — sem função
  *                              pré-definida (explorar ideia, conversar, ou
@@ -614,7 +614,9 @@ if (!subcommand) {
   console.log(
     '    minúsculo plans/… nunca colide com o branch <code>-<slug> de `next`; no terminal,',
   )
-  console.log('    mesma diretiva `launch` porém sem --prompt (autocomplete completa /plan-)')
+  console.log(
+    '    mesma diretiva `launch` com --prompt /plan-issue enviado (abre no fluxo de planejamento, sem digitação)',
+  )
   console.log(`\n  new [bag] [--stay] [--no-migrate]`)
   console.log('    cria um worktree NEUTRO (sem função pré-definida) DIFERENTE a cada invocação:')
   console.log('    com bag, branch work/<bag> (sufixo -2/-3 se o nome já existir); sem bag, o')

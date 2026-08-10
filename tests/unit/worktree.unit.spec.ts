@@ -148,9 +148,9 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26)', () =>
     )
   })
 
-  it('plan launches with the same presets but NO prompt (no prefill-without-submit)', () => {
+  it('plan launches with the same presets and /plan-issue sent (OPS31)', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true })).toBe(
-      `launch opencode ${dir} --model deepseek/deepseek-v4-flash --auto`,
+      `launch opencode ${dir} --model deepseek/deepseek-v4-flash --auto --prompt /plan-issue`,
     )
   })
 
@@ -165,7 +165,7 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26)', () =>
     expect(WORKTREE_TERMINAL_ENV).toBe('TEQO_WORKTREE_TERMINAL')
     expect(OPENCODE_SKILL_COMMAND_BY_PURPOSE).toEqual({
       next: '/work-issue',
-      plan: null,
+      plan: '/plan-issue',
       new: null,
     })
   })
