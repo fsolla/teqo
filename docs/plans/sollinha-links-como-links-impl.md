@@ -64,12 +64,12 @@ flowchart LR
 
 ## Riscos e mitigação
 
-| Risco                                           | Mitigação                                                                                                                              |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Renderer `a` quebra props do react-markdown v10 | Descartar `node` do spread; renderer devolve `<a {...props}>` — os testes e2e provam render real                                       |
-| Conflito com B188 (mesmo render de mensagens) | B188 já está em main (renderer `next/link` para `/campanha…`); o renderer deste item **compõe** em vez de substituir: interno → `next/link` preservado, externo → `target/_blank`, resto → âncora pura |
-| Contraste da cor primária no bubble `secondary` | `#c51414` sobre `#f5f5f4` ≈ 4,6:1 (AA texto normal); hover não muda a cor, engrossa o sublinhado                                       |
-| Classes `[&_a]` vazam para mensagens do usuário | Escopo é só o div do markdown das respostas do assistente (usuário renderiza `span` puro)                                              |
+| Risco                                           | Mitigação                                                                                                                                                                                              |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Renderer `a` quebra props do react-markdown v10 | Descartar `node` do spread; renderer devolve `<a {...props}>` — os testes e2e provam render real                                                                                                       |
+| Conflito com B188 (mesmo render de mensagens)   | B188 já está em main (renderer `next/link` para `/campanha…`); o renderer deste item **compõe** em vez de substituir: interno → `next/link` preservado, externo → `target/_blank`, resto → âncora pura |
+| Contraste da cor primária no bubble `secondary` | `#c51414` sobre `#f5f5f4` ≈ 4,6:1 (AA texto normal); hover não muda a cor, engrossa o sublinhado                                                                                                       |
+| Classes `[&_a]` vazam para mensagens do usuário | Escopo é só o div do markdown das respostas do assistente (usuário renderiza `span` puro)                                                                                                              |
 
 ## Débitos deferidos (capture-review-debts, gate humano 2026-08-10)
 
