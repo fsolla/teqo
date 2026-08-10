@@ -1068,6 +1068,17 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator', {
       name: fixtures.value('Coordenador B126'),
     })
+    // The suggest region only renders with curated hits for unrestricted
+    // roles (B68), so pin one `alta` municipality — deterministic in any
+    // environment, not only where the projection was imported (OPS29).
+    const municipality = await fixtures.claimMunicipality()
+    await fixtures.payload.update({
+      collection: 'municipality',
+      id: municipality.id,
+      data: { priority: 'alta' },
+      depth: 0,
+    })
+    fixtures.touchMunicipality(municipality.id)
 
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
@@ -1076,6 +1087,12 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
     await page.getByRole('button', { name: 'Ações rápidas' }).click()
     const overlay = page.locator('#CampaignQuickActionsOverlay')
     await expect(overlay).toBeVisible()
+    // The Drawer/Dialog slides in (~450ms); `toBeVisible` fires mid-flight and
+    // focusing the input during the entrance animation can drop the focus
+    // (and with it the suggest POST). Same settle wait as the B136 sibling.
+    await overlay.evaluate(async (el) => {
+      await Promise.all(el.getAnimations().map((animation) => animation.finished))
+    })
 
     const registerSignal = overlay.getByRole('link', { name: 'Registrar atualização' })
     await expect(registerSignal).toBeVisible()
@@ -1093,5 +1110,43 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
 
     // Overlay scopes search suggest — list page has no E11 SuggestionsPanel.
     await expect(overlay.getByRole('region', { name: 'Sugestões' })).toBeVisible()
+  })
+
+  test('overlay search without curated suggestions shows the honest empty state (OPS29)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    // Advisor with no administered municipality: the suggest scope is the
+    // portfolio (empty), so the empty state is deterministic even if a
+    // parallel worker pins an `alta` municipality (B126 sibling) — the
+    // unrestricted coordinator case stays covered by the unit shell tests.
+    const advisor = await fixtures.createCampaignUser('advisor', {
+      name: fixtures.value('Assessor OPS29'),
+    })
+
+    await campaign.login(page, advisor.email!, advisor.password)
+    await page.goto(`${campaign.baseURL}/campanha/municipios`)
+    await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Ações rápidas' }).click()
+    const overlay = page.locator('#CampaignQuickActionsOverlay')
+    await expect(overlay).toBeVisible()
+
+    const search = overlay.getByLabel('Buscar na campanha')
+    const suggestResponse = page.waitForResponse(
+      (resp) =>
+        resp.url().includes('/campanha/home-search') &&
+        resp.request().method() === 'POST' &&
+        resp.request().postDataJSON()?.mode === 'suggest',
+    )
+    await search.focus()
+    await suggestResponse
+
+    // The advisor has no portfolio yet (OPS29) — the suggest region must say
+    // so instead of rendering blank.
+    const results = overlay.getByRole('region', { name: 'Resultados da busca' })
+    await expect(results).toContainText('Nenhuma sugestão ainda', { timeout: 10000 })
+    await expect(overlay.getByRole('region', { name: 'Sugestões' })).toHaveCount(0)
   })
 })

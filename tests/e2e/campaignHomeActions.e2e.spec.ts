@@ -103,6 +103,29 @@ test.describe('Início — busca global (B47)', () => {
     await group.locator(`a[href$="/campanha/municipios/${municipality.slug}"]`).click()
     await page.waitForURL(new RegExp(`^https?://[^/]+/campanha/municipios/${municipality.slug}$`))
   })
+
+  test('staff focused search without curated suggestions shows the honest empty state (OPS29)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    // Advisor with no administered municipality: the suggest scope is the
+    // portfolio (empty), so the empty state is deterministic even if a
+    // parallel worker pins an `alta` municipality elsewhere (B126 sibling).
+    const advisor = await fixtures.createCampaignUser('advisor', {
+      name: fixtures.value('Assessora OPS29'),
+    })
+
+    await campaign.login(page, advisor.email!, advisor.password)
+    // Início renders the suggest payload server-side (initialSuggest), so this
+    // also covers the SSR path — no POST needed for the empty state (OPS29).
+    const search = page.getByLabel('Buscar na campanha')
+    await search.focus()
+
+    const results = page.getByRole('region', { name: 'Resultados da busca' })
+    await expect(results).toContainText('Nenhuma sugestão ainda', { timeout: 10000 })
+    await expect(results.getByRole('region', { name: 'Sugestões' })).toHaveCount(0)
+  })
 })
 
 test.describe('Início — catálogo de ações (B45)', () => {

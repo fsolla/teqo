@@ -6,6 +6,7 @@ import { useHomeSearch } from '@/components/campaign/dashboard/HomeSearchContext
 import { useHomeSearchResults } from '@/components/campaign/dashboard/HomeSearchResultsContext'
 import { HomeSearchSuggestSkeleton } from '@/components/campaign/dashboard/HomeSearchSuggestSkeleton'
 import { homeSearchHasAnyHits } from '@/lib/campaignHomeSearchHits'
+import { HOME_SEARCH_SUGGEST_EMPTY_MESSAGE } from '@/lib/campaignHomeSearchMessages'
 
 export const HomeSearchResultsShell = ({ children }: { children: ReactNode }) => {
   const { query } = useHomeSearch()
@@ -14,11 +15,12 @@ export const HomeSearchResultsShell = ({ children }: { children: ReactNode }) =>
   const hasRenderableHits = results.status === 'success' && homeSearchHasAnyHits(results.data)
   const showSkeleton = isFetching && !hasRenderableHits && results.status !== 'error'
 
-  const showEmpty =
-    query.isActive &&
-    resultKind === 'search' &&
-    results.status === 'success' &&
-    !homeSearchHasAnyHits(results.data)
+  const showEmpty = query.isActive && resultKind === 'search' && !hasRenderableHits
+
+  // `isFetching` keeps the message out of the debounce/skeleton window: while
+  // the user starts typing from an empty suggest, the skeleton covers the
+  // transition and the stale empty payload must not also speak (OPS29).
+  const showSuggestEmpty = resultKind === 'suggest' && !hasRenderableHits && !isFetching
 
   return (
     <>
@@ -30,6 +32,9 @@ export const HomeSearchResultsShell = ({ children }: { children: ReactNode }) =>
         </p>
       ) : null}
       {showEmpty ? <p className="text-sm text-muted-foreground">Nenhum resultado.</p> : null}
+      {showSuggestEmpty ? (
+        <p className="text-sm text-muted-foreground">{HOME_SEARCH_SUGGEST_EMPTY_MESSAGE}</p>
+      ) : null}
     </>
   )
 }
