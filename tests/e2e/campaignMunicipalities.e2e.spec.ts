@@ -595,7 +595,7 @@ test.describe('Municípios — jornadas por papel', () => {
     await signalForm
       .getByRole('textbox', { name: 'Texto' })
       .fill('Liderança local reportou visita adversária na feira.')
-    await signalForm.getByLabel('Polaridade').selectOption('ruim')
+    await signalForm.getByLabel('Polaridade').getByRole('radio', { name: 'Ruim' }).click()
     await signalForm.getByLabel('Sinalizar adversário').check()
     await Promise.all([
       expectPostResponse(page, '/campanha/municipios'),

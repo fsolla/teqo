@@ -10,6 +10,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from '@/components/ui/combobox'
+import { cn } from '@/lib/utils'
 import { matchesAtWordStart, normalizeSearchPhrase } from '@/lib/wordStartFilter'
 import type { StrictComboboxOption } from '@/utilities/territory/territoryComboboxOptions'
 
@@ -20,6 +21,8 @@ type StrictComboboxProps = {
   onValueChange: (value: string) => void
   onInvalid?: () => void
   error?: string
+  placeholder?: string
+  className?: string
 }
 
 export const StrictCombobox = ({
@@ -29,6 +32,8 @@ export const StrictCombobox = ({
   onValueChange,
   onInvalid,
   error,
+  placeholder,
+  className,
 }: StrictComboboxProps) => {
   const selected = options.find((option) => option.value === value) ?? null
   const [inputValue, setInputValue] = useState(selected?.label ?? '')
@@ -55,7 +60,8 @@ export const StrictCombobox = ({
         autoComplete="off"
         autoCorrect="off"
         spellCheck={false}
-        className="min-h-11 rounded-[6px]"
+        placeholder={placeholder}
+        className={cn('min-h-11 rounded-[6px]', className)}
         showClear={Boolean(value)}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}

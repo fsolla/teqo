@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { createElement, type ReactElement } from 'react'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -318,9 +318,11 @@ describe('campaign cell edit overlay', () => {
     )
 
     const dialog = await screen.findByRole('dialog')
-    // The select is `required`: an invalid form never fires submit, and the
-    // case would pass for the wrong reason.
-    fireEvent.change(screen.getByLabelText('Polaridade'), { target: { value: 'boa' } })
+    // The polarity toggle (C107) is `single` with `neutra` as default; the
+    // sheet renders the list layout, so the label is visually hidden but the
+    // group keeps its accessible name. Switching the value keeps the form
+    // valid and exercises the control before submit.
+    fireEvent.click(within(screen.getByLabelText('Polaridade')).getByRole('radio', { name: 'Boa' }))
     fireEvent.change(screen.getByLabelText('Texto'), {
       target: { value: 'Atualização registrada no campo.' },
     })
