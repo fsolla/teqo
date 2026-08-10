@@ -19,11 +19,30 @@ const mobileHeaderTitle = (page: Page): Locator =>
   page.locator('[data-slot="campaign-mobile-top-bar"] [data-slot="campaign-page-chrome-title"]')
 
 /**
+ * C95 — troca a vista para Mês pelo seletor do header (menu no popover).
+ * Compartilhado pelos testes que navegam o mês com swipe ou teclado.
+ */
+const openMonthView = async (page: Page) => {
+  const viewSelector = page
+    .getByRole('button', { name: /Modo de visualização/ })
+    .filter({ visible: true })
+  await viewSelector.click()
+  await page.getByRole('menuitemradio', { name: 'Mês', exact: true }).click()
+}
+
+/**
  * Horizontal swipe via the CDP touch pipeline (the same input path a real
  * device takes — the only way to exercise touch gestures in Playwright).
  * The swipe stays at the vertical middle of the calendar, clear of fixture
- * events (which sit at 10:00), and completes far below FullCalendar's 650ms
- * long-press, so it is a navigation, not a reschedule.
+ * events (which sit at 10:00).
+ *
+ * The 5 moves are paced (~25ms apart, ~125ms total): a burst without gaps is
+ * classified by Chromium's gesture recognizer as a FLICK, and a dominant
+ * horizontal flick is a browser navigation gesture (back/forward history),
+ * not a page drag — intermittently it took the "back to today" swipe to
+ * `/campanha`. Paced, it stays a drag the agenda consumes via its
+ * non-passive touchmove preventDefault, while still finishing far below
+ * FullCalendar's 650ms long-press (which would start a reschedule).
  */
 const touchSwipe = async (
   cdp: CDPSession,
@@ -38,6 +57,7 @@ const touchSwipe = async (
   for (let i = 1; i <= 5; i += 1) {
     const x = Math.round(x0 + ((x1 - x0) * i) / 5)
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y }] })
+    await new Promise((resolve) => setTimeout(resolve, 25))
   }
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
 }
@@ -91,6 +111,10 @@ test.describe('C101 — agenda mobile com cara de app nativo', () => {
     await expect(page.getByRole('button', { name: 'Dia Anterior' })).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Próximo Dia' })).toHaveCount(0)
 
+    // C101-ux — o tap no título tem affordance visual: o glyph (aria-hidden)
+    // sinaliza o controle sem depender do tooltip hover-only.
+    await expect(mobileHeaderTitle(page).locator('svg')).toBeVisible()
+
     // Navegação por arrasto: esquerda → dia seguinte; direita → volta. O
     // swipe direito começa longe da borda esquerda (x=0.4): um gesto que
     // nasça na borda é do Chrome (histórico), não da agenda.
@@ -124,11 +148,7 @@ test.describe('C101 — agenda mobile com cara de app nativo', () => {
 
     // Contexto por vista: mês → nome do mês; swipe no mês → mês seguinte;
     // lista → "Agenda".
-    const viewSelector = page
-      .getByRole('button', { name: /Modo de visualização/ })
-      .filter({ visible: true })
-    await viewSelector.click()
-    await page.getByRole('menuitemradio', { name: 'Mês', exact: true }).click()
+    await openMonthView(page)
     const monthIndex = Number(civilDate.slice(5, 7)) - 1
     await expect(campaignPageChrome(page, ptBrMonthNames[monthIndex] ?? '')).toBeVisible({
       timeout: 15_000,
@@ -137,6 +157,9 @@ test.describe('C101 — agenda mobile com cara de app nativo', () => {
     await expect(campaignPageChrome(page, ptBrMonthNames[(monthIndex + 1) % 12] ?? '')).toBeVisible(
       { timeout: 15_000 },
     )
+    const viewSelector = page
+      .getByRole('button', { name: /Modo de visualização/ })
+      .filter({ visible: true })
     await viewSelector.click()
     await page.getByRole('menuitemradio', { name: 'Lista', exact: true }).click()
     await expect(campaignPageChrome(page, 'Agenda')).toBeVisible({ timeout: 15_000 })
@@ -267,5 +290,60 @@ test.describe('C101 — agenda mobile com cara de app nativo', () => {
     expect(Math.abs(geometry!.stripBottom - geometry!.calendarTop)).toBeLessThanOrEqual(1)
     expect(geometry!.stripWidth).toBe(geometry!.windowWidth)
     expect(geometry!.sticky).toBe('sticky')
+  })
+
+  test('teclado navega períodos com ArrowLeft/ArrowRight (região focável no mobile)', async ({
+    campaign,
+    page,
+  }) => {
+    const civilDate = await seedTodayActivity(campaign, page)
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`${campaign.baseURL}/campanha/agenda`)
+
+    // Espera a medição mobile assentar (o label do período só existe com o
+    // chrome mobile) antes de focar a região de teclado.
+    const todayLabel = dayLabelFor(civilDate)
+    await expect(campaignPageChrome(page, todayLabel)).toBeVisible({ timeout: 15_000 })
+
+    // C101-ux — o container do calendário é a região de teclado do mobile
+    // (a toolbar — e seus controles de teclado — sumiu): focável, com label
+    // próprio, mesmo quando o período não tem eventos focáveis.
+    const region = page.locator('.activity-agenda').first()
+    await expect(region).toHaveAttribute('role', 'group')
+    await expect(region).toHaveAttribute('aria-label', /setas mudam o período/)
+    await region.focus()
+    await expect(region).toBeFocused()
+
+    // ArrowRight → período seguinte; ArrowLeft → período anterior (mesma
+    // semântica do swipe: direita avança).
+    const nextCivil = civilDatePlusDays(civilDate, 1)
+    await page.keyboard.press('ArrowRight')
+    await expect(campaignPageChrome(page, dayLabelFor(nextCivil))).toBeVisible({
+      timeout: 15_000,
+    })
+    await page.keyboard.press('ArrowLeft')
+    await expect(campaignPageChrome(page, todayLabel)).toBeVisible({ timeout: 15_000 })
+
+    // O foco permanece na região após navegar (a restauração do foco quando
+    // um nó do grid é destruído é pinada no unit do hook; aqui o contrato é
+    // que o teclado continua na região depois da troca).
+    await expect(region).toBeFocused()
+
+    // Mês: setas navegam meses conforme a vista (mesmo contrato de foco).
+    await openMonthView(page)
+    const monthIndex = Number(civilDate.slice(5, 7)) - 1
+    await expect(campaignPageChrome(page, ptBrMonthNames[monthIndex] ?? '')).toBeVisible({
+      timeout: 15_000,
+    })
+    await region.focus()
+    await page.keyboard.press('ArrowRight')
+    await expect(campaignPageChrome(page, ptBrMonthNames[(monthIndex + 1) % 12] ?? '')).toBeVisible(
+      { timeout: 15_000 },
+    )
+    await expect(region).toBeFocused()
+
+    // Setas não criam inline create (o dateClick não dispara por teclado).
+    await expect(page.getByRole('dialog')).toHaveCount(0)
   })
 })

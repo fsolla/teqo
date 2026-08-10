@@ -189,6 +189,16 @@
     font-size: 0.75rem;
   }
 
+  /* C101-ux — the calendar container is a keyboard region on phones (it takes
+     tabIndex because the toolbar is hidden): a visible focus indication is
+     required. The ring stays INSIDE the card (negative offset) because the
+     edge-to-edge shell clips with `overflow: hidden` — a positive-offset
+     ring would be cut at the screen edge. */
+  .activity-agenda:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+  }
+
   .activity-agenda h2 {
     font-size: 0.9375rem;
   }

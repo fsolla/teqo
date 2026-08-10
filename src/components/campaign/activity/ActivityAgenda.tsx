@@ -30,6 +30,7 @@ import {
   type ActivityInlineCreateDraft,
 } from '@/components/campaign/activity/ActivityInlineCreate'
 import { AgendaPeriodChrome } from '@/components/campaign/activity/AgendaPeriodChrome'
+import { useAgendaKeyboardNavigation } from '@/components/campaign/activity/useAgendaKeyboardNavigation'
 import { useAgendaSwipeNavigation } from '@/components/campaign/activity/useAgendaSwipeNavigation'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { Button } from '@/components/ui/button'
@@ -297,18 +298,28 @@ export const ActivityAgenda = ({
     draggingEventRef.current = false
   }, [])
 
-  const handleSwipeNavigation = useCallback((direction: 'next' | 'prev') => {
+  // C101-ux — the calendar container is a keyboard region on phones: the
+  // FullCalendar toolbar (its native keyboard controls) is hidden there, so
+  // ArrowLeft/ArrowRight navigate periods with the same semantics as the
+  // swipe gesture (right moves forward).
+  const handlePeriodNavigation = useCallback((direction: 'next' | 'prev') => {
     const api = calendarRef.current?.getApi()
     if (!api) return
     if (direction === 'next') api.next()
     else api.prev()
   }, [])
 
+  const { handleKeyDown } = useAgendaKeyboardNavigation({
+    containerRef,
+    enabled: isMobile,
+    onNavigate: handlePeriodNavigation,
+  })
+
   const { suppressDateClickRef } = useAgendaSwipeNavigation({
     containerRef,
     enabled: isMobile,
     blockRef: draggingEventRef,
-    onSwipe: handleSwipeNavigation,
+    onSwipe: handlePeriodNavigation,
   })
 
   const handleDateClick = useCallback(
@@ -424,7 +435,21 @@ export const ActivityAgenda = ({
 
       <AgendaPeriodChrome label={isMobile ? periodLabel : null} onToday={handleToday} />
 
-      <div className="activity-agenda" aria-busy={isLoading || savingCount > 0} ref={containerRef}>
+      <div
+        className="activity-agenda"
+        aria-busy={isLoading || savingCount > 0}
+        // C101-ux — mobile-only keyboard region: the toolbar (and its native
+        // keyboard controls) is hidden on phones, so the container itself
+        // takes tabIndex and the arrow keys navigate periods. Desktop keeps
+        // the toolbar as its keyboard interface — the role/label are gated
+        // too, so the desktop a11y tree does not claim a behavior the
+        // desktop lacks.
+        tabIndex={isMobile ? 0 : undefined}
+        role={isMobile ? 'group' : undefined}
+        aria-label={isMobile ? 'Calendário de atividades — setas mudam o período' : undefined}
+        onKeyDown={handleKeyDown}
+        ref={containerRef}
+      >
         <FullCalendar
           ref={calendarRef}
           plugins={[themePlugin, timeGridPlugin, dayGridPlugin, listPlugin, interactionPlugin]}

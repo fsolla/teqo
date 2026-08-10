@@ -32,9 +32,15 @@ export const CampaignPageChromeText = ({
           data-slot="campaign-page-chrome-title"
           title={chrome.onTitleClick.hint}
           onClick={chrome.onTitleClick.action}
-          className="block max-w-full truncate text-left text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex min-w-0 max-w-full items-center gap-1.5 text-left text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          {chrome.title}
+          <span className="block min-w-0 truncate">{chrome.title}</span>
+          {chrome.onTitleClick.icon ? (
+            <chrome.onTitleClick.icon
+              className="size-3.5 shrink-0 text-current"
+              aria-hidden="true"
+            />
+          ) : null}
         </button>
       ) : (
         <span
