@@ -94,8 +94,8 @@ describe('CampaignNotificationBell (C108 — read on open, clean panel, desktop 
     fireEvent.click(screen.getByRole('button', { name: '2 notificações não lidas' }))
 
     const dialog = await screen.findByRole('dialog', { name: 'Notificações' })
-    expect(within(dialog).getByText('Nova atualização — Salvador ZE 01')).toBeTruthy()
-    expect(within(dialog).getByText('Convite aceito — Maria Souza')).toBeTruthy()
+    expect(await within(dialog).findByText('Nova atualização — Salvador ZE 01')).toBeTruthy()
+    expect(await within(dialog).findByText('Convite aceito — Maria Souza')).toBeTruthy()
     expect(openAction).toHaveBeenCalledTimes(1)
 
     // Badge zeroes as soon as the open action lands — no extra click. The bell
@@ -159,7 +159,7 @@ describe('CampaignNotificationBell (C108 — mobile bottom sheet)', () => {
     fireEvent.click(screen.getByRole('button', { name: '2 notificações não lidas' }))
 
     const sheet = await screen.findByRole('dialog', { name: 'Notificações' })
-    expect(within(sheet).getByText('Nova atualização — Salvador ZE 01')).toBeTruthy()
+    expect(await within(sheet).findByText('Nova atualização — Salvador ZE 01')).toBeTruthy()
     expect(within(sheet).queryByRole('button', { name: 'Marcar todas como lidas' })).toBeNull()
     expect(within(sheet).queryAllByRole('heading')).toHaveLength(1)
   })
