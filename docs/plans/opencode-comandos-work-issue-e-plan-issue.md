@@ -27,7 +27,7 @@ Toda sessão de trabalho no repo começa invocando `/work-issue` (executar uma I
 - O template instrui o agente a carregar a skill pelo nome exato e seguir o fluxo dela ponta a ponta, sem reescrever o conteúdo.
 - `$ARGUMENTS` é repassado (ex.: `/plan-issue <lote>`).
 - Cada comando leva `model: deepseek/deepseek-v4-flash` no frontmatter — sessão manual já abre no modelo de preferência (ver questão em aberto).
-- Abertura automática a partir de `worktree next/plan` (OPS26) usa estes comandos como primeira mensagem.
+- Abertura automática a partir de `worktree next/plan` (OPS26) usa estes comandos como primeira mensagem — `next` envia `/work-issue`; `plan` abre sem prompt (fallback acordado na OPS26: a CLI do opencode não tem pre-fill sem submit).
 
 ## Dados (intenção)
 

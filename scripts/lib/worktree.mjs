@@ -16,6 +16,22 @@ import { slugify } from '../../src/lib/slug.ts'
  */
 export const PLAN_BRANCH_PREFIX = 'plans/plan-issue'
 
+/** Env var the interactive-terminal `worktree()` function sets to request the opencode launch. */
+export const WORKTREE_TERMINAL_ENV = 'TEQO_WORKTREE_TERMINAL'
+
+/** Preset model for the opencode launch — change the preset by editing this constant. */
+export const OPENCODE_PRESET_MODEL = 'deepseek/deepseek-v4-flash'
+
+/**
+ * Skill command sent as the launch's initial message per purpose. `next`
+ * sends `/work-issue` (the OPS25 command executes the full cycle); `plan`
+ * sends nothing — the opencode CLI's `--prompt` always auto-submits, there is
+ * no prefill-without-submit flag, and the TUI autocomplete completes `/plan-`
+ * instead (gap registered for the opencode repo). Switch `plan` to
+ * `/plan-issue` here if the CLI ever gains prefill-without-submit.
+ */
+export const OPENCODE_SKILL_COMMAND_BY_PURPOSE = { next: '/work-issue', plan: null }
+
 /** Total branch-name budget for plan branches — mirrors `branchNameForIssue`. */
 const PLAN_BRANCH_MAX_LENGTH = 60
 
@@ -88,4 +104,22 @@ export const planBranchName = ({ bag = '', taken = new Set() }) => {
     const candidate = `${PLAN_BRANCH_PREFIX}-${slug.slice(0, keep)}${suffix}`
     if (!taken.has(candidate)) return candidate
   }
+}
+
+/**
+ * Launch directive for the opencode TUI, printed by `worktree next`/`plan`
+ * right before the `cd <dir>` line when called from the interactive terminal
+ * (`WORKTREE_TERMINAL=1`): `launch opencode <dir> --model <preset> --auto
+ * [--prompt <command>]`. The shell function (`.agents/shell/worktree.sh`)
+ * applies the `cd` first, then word-splits and executes this line — the dir
+ * is always `<root without spaces>/<slugified branch>`, so the line never
+ * needs quoting. Returns `null` outside the terminal so the `/worktree`
+ * opencode command never launches a nested TUI.
+ */
+export const opencodeLaunchDirective = ({ dir, purpose, terminal = false }) => {
+  if (!terminal) return null
+  const prompt = OPENCODE_SKILL_COMMAND_BY_PURPOSE[purpose]
+  const args = [dir, '--model', OPENCODE_PRESET_MODEL, '--auto']
+  if (prompt) args.push('--prompt', prompt)
+  return `launch opencode ${args.join(' ')}`
 }
