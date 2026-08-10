@@ -3,7 +3,10 @@
 import { describe, expect, it } from 'vitest'
 
 import { GET as getManifest } from '@/app/(campaign)/campanha/manifest.webmanifest/route'
-import { GET as getServiceWorker } from '@/app/(campaign)/campanha/sw.js/route'
+import {
+  GET as getServiceWorker,
+  dynamic as serviceWorkerDynamic,
+} from '@/app/(campaign)/campanha/sw.js/route'
 import {
   buildCampaignServiceWorkerScript,
   CAMPAIGN_CACHE_PREFIX,
@@ -69,12 +72,7 @@ describe('campaign PWA route handlers', () => {
     expect(body).toContain('isRscRequest')
   })
 
-  it('serves the service worker dynamically so the deploy-scoped build id resolves at runtime', async () => {
-    const route = await import('@/app/(campaign)/campanha/sw.js/route')
-
-    // D6: CLI `--prebuilt` deploys lack the build-time Vercel envs that a
-    // force-static prerender would read; runtime VERCEL_DEPLOYMENT_ID is
-    // guaranteed on Vercel, so the cache name must not be frozen at build.
-    expect(route.dynamic).toBe('force-dynamic')
+  it('serves the service worker dynamically so the deploy-scoped build id resolves at runtime', () => {
+    expect(serviceWorkerDynamic).toBe('force-dynamic')
   })
 })

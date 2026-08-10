@@ -19,7 +19,7 @@
  */
 import { Client } from 'pg'
 
-import { dieWithLabel, loadCliEnv } from './lib/cli.mjs'
+import { dieWithLabel, loadCliEnv, LOCAL_HOSTS } from './lib/cli.mjs'
 
 const die = dieWithLabel('check:push-chain')
 
@@ -34,9 +34,19 @@ if (!PROD_DATABASE_URL) {
   )
 }
 
-const siteArg = process.argv.find((arg) => arg.startsWith('--site='))
-const site = siteArg?.slice('--site='.length) || 'https://pt.jorgesolla.com.br'
-const siteOrigin = new URL(site).origin
+// Foot-gun guard: this script reports PRODUCTION facts; a local URL would
+// produce verdicts about the wrong data that look like prod.
+if (LOCAL_HOSTS.has(new URL(PROD_DATABASE_URL).hostname)) {
+  die(`PROD_DATABASE_URL points at a local host ("${new URL(PROD_DATABASE_URL).hostname}").`)
+}
+
+let site
+try {
+  const siteArg = process.argv.find((arg) => arg.startsWith('--site='))
+  site = new URL(siteArg?.slice('--site='.length) || 'https://pt.jorgesolla.com.br').origin
+} catch {
+  die('--site=<url> deve ser uma URL válida (ex.: https://pt.jorgesolla.com.br).')
+}
 
 const results = []
 const report = (name, ok, detail) => {
@@ -49,13 +59,15 @@ const fetchWithTimeout = async (url) => {
   return { response, body: await response.text() }
 }
 
-console.log(`[check:push-chain] Site: ${siteOrigin}`)
+console.log(`[check:push-chain] Site: ${site}`)
 
 // --- Elo 1: service worker served with a deploy-scoped build id ---------------
+// `campanha-dev` = CAMPAIGN_CACHE_PREFIX ('campanha-') + fallback 'dev' of
+// resolveCampaignPwaBuildId frozen at build time (the D6 defect).
 try {
-  const { response, body } = await fetchWithTimeout(`${siteOrigin}/campanha/sw.js`)
+  const { response, body } = await fetchWithTimeout(`${site}/campanha/sw.js`)
   const cacheName = body.match(/CACHE_NAME\s*=\s*"([^"]+)"/)?.[1] ?? null
-  const frozenBuild = cacheName === 'campanha-dev' || cacheName === 'campanha-dev"'
+  const frozenBuild = cacheName === 'campanha-dev'
   report(
     'SW servido',
     response.ok && cacheName !== null && !frozenBuild,
@@ -64,10 +76,12 @@ try {
       : `HTTP ${response.status}`,
   )
 } catch (error) {
-  report('SW servido', false, `falha ao buscar ${siteOrigin}/campanha/sw.js: ${error.message}`)
+  report('SW servido', false, `falha ao buscar ${site}/campanha/sw.js: ${error.message}`)
 }
 
 // --- Elo 2: VAPID envs (server + public) --------------------------------------
+// Proves the DIAGNOSTIC environment, not the deployment — source them from
+// `vercel env pull --environment=production` to mirror the deployed server.
 const vapidServer = process.env.VAPID_PUBLIC_KEY?.trim()
 const vapidPrivate = process.env.VAPID_PRIVATE_KEY?.trim()
 const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim()
@@ -77,7 +91,7 @@ const missingEnvs = [
   !vapidPublic && 'NEXT_PUBLIC_VAPID_PUBLIC_KEY',
 ].filter(Boolean)
 report(
-  'Envs VAPID',
+  'Envs VAPID (ambiente de diagnóstico)',
   missingEnvs.length === 0,
   missingEnvs.length === 0
     ? 'VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY / NEXT_PUBLIC_VAPID_PUBLIC_KEY presentes'
@@ -85,23 +99,17 @@ report(
 )
 
 // --- Elos 3–5: DB (read-only) -------------------------------------------------
-// Neon URLs carry `sslmode=require`; hand TLS explicitly so pg-connection-string
-// does not emit its v8 deprecation warning for that mode.
-const hadSslMode = /sslmode=require/.test(PROD_DATABASE_URL)
-const connectionString = hadSslMode
-  ? PROD_DATABASE_URL.replace(/sslmode=require/, '').replace(/[?&]$/, '')
-  : PROD_DATABASE_URL
-const client = new Client({
-  connectionString,
-  ...(hadSslMode ? { ssl: { rejectUnauthorized: false } } : {}),
-})
+// Neon URLs carry `sslmode=require`; upgrade it to verify-full so pg keeps
+// certificate verification without its v8 warning for `require` aliases.
+const connectionString = PROD_DATABASE_URL.replace('sslmode=require', 'sslmode=verify-full')
+const client = new Client({ connectionString })
 
 try {
   await client.connect()
   await client.query('SET default_transaction_read_only = on')
   await client.query('SET statement_timeout = 15000')
 
-  // Elo 3: consent published
+  // Elo 3: consent published — stable key lives in src/lib/campaignConsentKeys.ts
   const consent = await client.query(
     `SELECT key, updated_at FROM consent WHERE key = 'campanha-notificacoes-push' LIMIT 1`,
   )
