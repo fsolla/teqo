@@ -14,7 +14,9 @@ import { Spinner } from '@/components/ui/Spinner'
 import { cn } from '@/lib/utils'
 
 import { useAISidebar } from '@/components/campaign/shell/ai/CampaignAISidebarContext'
+import { ChatChipGroup } from '@/components/campaign/shell/ai/ChatChipGroup'
 import { useMicTranscript } from '@/components/campaign/shell/ai/useMicTranscript'
+import { getSollinhaOpeningQuestions } from '@/lib/sollinhaOpeningQuestions'
 
 /**
  * B188: app-internal destinations — the B162 link catalog only ever emits
@@ -69,7 +71,7 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
 
   if (!ctx) return null
 
-  const { sendMessage, status } = ctx
+  const { sendMessage, status, role, isMobile } = ctx
   const busy = status !== 'ready'
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -82,6 +84,12 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
   const isRecording = mic.status === 'recording'
   const isTranscribing = mic.status === 'transcribing'
   const micDisabled = busy || isTranscribing
+
+  // B191 — the empty conversation offers curated opening questions as chips
+  // above the input. They disappear on the first send because `messages` grows
+  // past zero (the slot renders only while empty).
+  const showOpeningChips = messages.length === 0 && status === 'ready'
+  const openingQuestions = getSollinhaOpeningQuestions(role, isMobile)
 
   return (
     <div className={cn('grid min-h-0 grid-rows-[1fr_auto]', className)}>
@@ -174,6 +182,16 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
 
       {/* Input area */}
       <div className="shrink-0 border-t border-border px-3 py-3">
+        {showOpeningChips && (
+          <ChatChipGroup
+            questions={openingQuestions}
+            onPick={({ text }) => {
+              if (busy) return
+              sendMessage({ text })
+            }}
+            className="mb-2"
+          />
+        )}
         <form onSubmit={handleSubmit}>
           <InputGroup className="h-auto min-h-10">
             <textarea

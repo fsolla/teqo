@@ -9,6 +9,7 @@ import {
   type PanelImperativeHandle,
 } from 'react-resizable-panels'
 
+import type { CampaignRole } from '@/lib/campaignRoles'
 import {
   CHAT_MIN_PX,
   getSavedChatWidthPx,
@@ -28,11 +29,17 @@ import {
 const CHAT_DEFAULT_PCT = '25'
 const MAIN_MIN_PCT = '35'
 
-export const CampaignAISidebarShell = ({ children }: { children: ReactNode }) => {
+export const CampaignAISidebarShell = ({
+  role,
+  children,
+}: {
+  role: CampaignRole
+  children: ReactNode
+}) => {
   const panelRef = usePanelRef()
 
   return (
-    <CampaignAISidebarProvider panelRef={panelRef}>
+    <CampaignAISidebarProvider role={role} panelRef={panelRef}>
       <CampaignAIFab />
       <AISidebarSurfaces panelRef={panelRef}>{children}</AISidebarSurfaces>
     </CampaignAISidebarProvider>

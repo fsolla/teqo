@@ -16,6 +16,7 @@ import {
 import type { PanelImperativeHandle } from 'react-resizable-panels'
 
 import { useIsMobileMeasured } from '@/hooks/use-mobile'
+import type { CampaignRole } from '@/lib/campaignRoles'
 import { readSollinhaChatSession, writeSollinhaChatSession } from '@/lib/sollinhaChatSession'
 
 type AISidebarContextValue = {
@@ -24,6 +25,8 @@ type AISidebarContextValue = {
   isMobile: boolean
   /** The first matchMedia measurement has landed (false during the hydration frame). */
   measured: boolean
+  /** Authenticated campaign role — drives the opening-chip curation (B191). */
+  role: CampaignRole
   messages: UIMessage[]
   status: ChatStatus
   sendMessage: AbstractChat<UIMessage>['sendMessage']
@@ -36,9 +39,11 @@ type AISidebarContextValue = {
 const AISidebarContext = createContext<AISidebarContextValue | null>(null)
 
 export const CampaignAISidebarProvider = ({
+  role,
   panelRef,
   children,
 }: {
+  role: CampaignRole
   panelRef: MutableRefObject<PanelImperativeHandle | null>
   children: ReactNode
 }) => {
@@ -105,13 +110,14 @@ export const CampaignAISidebarProvider = ({
       open,
       isMobile,
       measured,
+      role,
       messages,
       status,
       sendMessage: chat.sendMessage,
       setOpen,
       toggle,
     }),
-    [open, isMobile, measured, messages, status, chat.sendMessage, setOpen, toggle],
+    [open, isMobile, measured, role, messages, status, chat.sendMessage, setOpen, toggle],
   )
 
   return <AISidebarContext.Provider value={value}>{children}</AISidebarContext.Provider>

@@ -74,7 +74,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
       <CampaignSidebarViewportDefault hasSidebarCookie={hasSidebarCookie} />
       <CampaignSidebar user={campaignUserShellView(user)} />
       <SidebarInset className="h-svh min-h-0 overflow-hidden print:h-auto print:overflow-visible">
-        <CampaignAISidebarShell>
+        <CampaignAISidebarShell role={user.role}>
           <CampaignPageChromeProvider role={user.role}>
             <CampaignWizardChromeProvider>
               <CampaignHomeSearchChromeProvider>
