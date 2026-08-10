@@ -13,23 +13,16 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
 
 import {
-  listCampaignNotifications,
-  markAllCampaignNotificationsRead,
+  openCampaignNotifications,
   type NotificationBellData,
 } from '@/app/(campaign)/campanha/actions/notifications'
 import { Button } from '@/components/ui/button'
-import {
-  Drawer,
-  DrawerCloseButton,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/Drawer'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from '@/components/ui/Drawer'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { CAMPAIGN_NOTIFICATION_LOAD_ERROR_MESSAGE } from '@/lib/campaignNotificationCopy'
 import type { NotificationListItem } from '@/lib/notificationContract'
 import { notificationTypeLabels, type NotificationType } from '@/lib/notificationContract'
-import { cn } from '@/lib/utils'
 import { formatRelativeAge } from '@/utilities/formatRelativeAge'
 
 const notificationIcons: Record<NotificationType, LucideIcon> = {
@@ -41,11 +34,18 @@ const notificationIcons: Record<NotificationType, LucideIcon> = {
 
 type CampaignNotificationBellProps = NotificationBellData
 
+/**
+ * The notification bell (C108): opening the panel loads the list AND marks
+ * everything as read in one server call — the open gesture is the read
+ * gesture, so the badge zeroes without a separate button. Desktop renders a
+ * centered Dialog (X + click-outside close), mobile a bottom sheet.
+ */
 export const CampaignNotificationBell = ({
   unreadCount: initialUnreadCount,
   vapidPublicKey: _vapidPublicKey,
 }: CampaignNotificationBellProps) => {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(initialUnreadCount)
   const [items, setItems] = useState<NotificationListItem[]>([])
@@ -57,39 +57,30 @@ export const CampaignNotificationBell = ({
     setUnreadCount(initialUnreadCount)
   }, [initialUnreadCount])
 
-  const loadItems = useCallback(() => {
+  const loadPanel = useCallback(() => {
     startTransition(async () => {
       setLoadError(null)
-      try {
-        const nextItems = await listCampaignNotifications()
-        setItems(nextItems)
-        setUnreadCount(nextItems.filter((item) => !item.readAt).length)
-      } catch {
-        setLoadError('Não foi possível carregar as notificações.')
+      const result = await openCampaignNotifications()
+      if ('status' in result && result.status === 'success') {
+        setItems(result.items)
+        setUnreadCount(0)
+        if (result.markedCount > 0) {
+          // Re-sync the sibling bell instance rendered by the other header.
+          // (A cross-tab mark racing between this render and the open action
+          // yields markedCount 0 and a stale sibling badge until the next
+          // navigation — narrow, self-healing, not worth a refresh per open.)
+          router.refresh()
+        }
+      } else {
+        setLoadError(result.message ?? CAMPAIGN_NOTIFICATION_LOAD_ERROR_MESSAGE)
       }
     })
-  }, [])
+  }, [router])
 
   useEffect(() => {
     if (!open) return
-    loadItems()
-  }, [open, loadItems])
-
-  const handleMarkAllRead = () => {
-    startTransition(async () => {
-      const result = await markAllCampaignNotificationsRead()
-      if ('status' in result && result.status === 'success') {
-        setItems((current) =>
-          current.map((item) => ({
-            ...item,
-            readAt: item.readAt ?? new Date().toISOString(),
-          })),
-        )
-        setUnreadCount(0)
-        router.refresh()
-      }
-    })
-  }
+    loadPanel()
+  }, [open, loadPanel])
 
   const unreadLabel =
     unreadCount === 0
@@ -97,6 +88,71 @@ export const CampaignNotificationBell = ({
       : unreadCount === 1
         ? '1 notificação não lida'
         : `${unreadCount} notificações não lidas`
+
+  const panelItems = (
+    <>
+      {loadError ? (
+        <p role="alert" className="text-sm text-destructive">
+          {loadError}
+        </p>
+      ) : null}
+
+      {isPending && items.length === 0 ? (
+        <>
+          <div className="flex gap-3 rounded-lg border p-3" aria-hidden>
+            <span className="mt-0.5 size-9 shrink-0 animate-pulse rounded-full bg-muted" />
+            <span className="min-w-0 flex-1 space-y-2">
+              <span className="block h-4 w-3/4 animate-pulse rounded bg-muted" />
+              <span className="block h-3 w-1/2 animate-pulse rounded bg-muted" />
+            </span>
+          </div>
+          <div className="flex gap-3 rounded-lg border p-3" aria-hidden>
+            <span className="mt-0.5 size-9 shrink-0 animate-pulse rounded-full bg-muted" />
+            <span className="min-w-0 flex-1 space-y-2">
+              <span className="block h-4 w-3/4 animate-pulse rounded bg-muted" />
+              <span className="block h-3 w-1/2 animate-pulse rounded bg-muted" />
+            </span>
+          </div>
+        </>
+      ) : null}
+
+      {!loadError && items.length === 0 && !isPending ? (
+        <p className="py-8 text-center text-sm text-muted-foreground">
+          Nenhuma notificação por aqui.
+        </p>
+      ) : null}
+
+      {items.map((item) => {
+        const Icon = notificationIcons[item.type]
+
+        return (
+          <Link
+            key={item.id}
+            href={item.payload.href}
+            onClick={() => setOpen(false)}
+            className="flex gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">
+              <Icon className="size-4 text-muted-foreground" aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium leading-snug">{item.payload.title}</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                {item.payload.detail}
+              </span>
+              <span className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                <span>{notificationTypeLabels[item.type]}</span>
+                <span aria-hidden>·</span>
+                <time dateTime={item.createdAt}>
+                  {formatRelativeAge(new Date(item.createdAt).getTime(), nowMs)}
+                </time>
+              </span>
+            </span>
+          </Link>
+        )
+      })}
+    </>
+  )
 
   return (
     <>
@@ -118,83 +174,30 @@ export const CampaignNotificationBell = ({
         ) : null}
       </Button>
 
-      <Drawer open={open} onOpenChange={setOpen} showSwipeHandle>
-        <DrawerContent className="max-h-[85vh]">
-          <DrawerHeader className="text-left">
-            <DrawerTitle>Notificações</DrawerTitle>
-            <DrawerDescription>
-              {unreadCount > 0
-                ? `${unreadCount} não ${unreadCount === 1 ? 'lida' : 'lidas'}`
-                : 'Tudo em dia'}
-            </DrawerDescription>
-          </DrawerHeader>
-
-          <div
-            className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 pb-2"
-            aria-busy={isPending}
-          >
-            {loadError ? <p className="text-sm text-destructive">{loadError}</p> : null}
-
-            {!loadError && items.length === 0 && !isPending ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                Nenhuma notificação por aqui.
-              </p>
-            ) : null}
-
-            {items.map((item) => {
-              const Icon = notificationIcons[item.type]
-              const isUnread = !item.readAt
-
-              return (
-                <Link
-                  key={item.id}
-                  href={item.payload.href}
-                  onClick={() => setOpen(false)}
-                  className={cn(
-                    'flex gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50',
-                    isUnread && 'border-primary/30 bg-primary/5',
-                  )}
-                >
-                  <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-muted">
-                    <Icon className="size-4 text-muted-foreground" aria-hidden />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium leading-snug">
-                      {item.payload.title}
-                    </span>
-                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                      {item.payload.detail}
-                    </span>
-                    <span className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{notificationTypeLabels[item.type]}</span>
-                      <span aria-hidden>·</span>
-                      <time dateTime={item.createdAt}>
-                        {formatRelativeAge(new Date(item.createdAt).getTime(), nowMs)}
-                      </time>
-                      {isUnread ? (
-                        <span className="ml-auto size-2 rounded-full bg-primary" aria-hidden />
-                      ) : null}
-                    </span>
-                  </span>
-                </Link>
-              )
-            })}
-          </div>
-
-          <DrawerFooter className="border-t">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              disabled={isPending || unreadCount === 0}
-              onClick={handleMarkAllRead}
+      {isMobile ? (
+        <Drawer open={open} onOpenChange={setOpen} showSwipeHandle>
+          <DrawerContent className="max-h-[85dvh]">
+            <DrawerTitle className="sr-only">Notificações</DrawerTitle>
+            <DrawerDescription className="sr-only">Avisos da campanha para você</DrawerDescription>
+            <div
+              className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+              aria-busy={isPending}
             >
-              Marcar todas como lidas
-            </Button>
-            <DrawerCloseButton className="w-full">Fechar</DrawerCloseButton>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+              {panelItems}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-h-[85dvh] w-[calc(100vw-2rem)] max-w-md overflow-y-auto p-4 sm:p-6">
+            <DialogTitle className="sr-only">Notificações</DialogTitle>
+            <DialogDescription className="sr-only">Avisos da campanha para você</DialogDescription>
+            <div className="flex flex-col gap-2" aria-busy={isPending}>
+              {panelItems}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   )
 }

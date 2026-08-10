@@ -5,8 +5,7 @@ export const CAMPAIGN_PUSH_CONSENT_REQUIRED_MESSAGE =
 
 export const CAMPAIGN_PUSH_SUBSCRIPTION_INVALID_MESSAGE = 'Dados de inscrição push inválidos.'
 
-export const CAMPAIGN_NOTIFICATION_MARK_ALL_READ_ERROR_MESSAGE =
-  'Não foi possível marcar as notificações como lidas.'
+export const CAMPAIGN_NOTIFICATION_LOAD_ERROR_MESSAGE = 'Não foi possível carregar as notificações.'
 
 export const CAMPAIGN_PUSH_SUBSCRIBE_ERROR_MESSAGE = 'Não foi possível ativar os avisos push.'
 
