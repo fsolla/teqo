@@ -323,14 +323,19 @@ describe('campaign visual foundation', () => {
 
     // B158: the table is container-driven and clips instead of delegating to a
     // horizontal scroller. Município remains pinned and owns the territory subline.
+    // D7: `clip` (paired with `overflow-y: visible`) creates NO scroll container,
+    // which is what lets the declared sticky `<th>` resolve against the shell
+    // scroller and actually engage.
     expect(html).toContain('data-container="municipality-list"')
     expect(html).toContain('@container/municipality-list')
     expect(html).toContain('@min-[48rem]/municipality-list:block')
     expect(html).toContain('@min-[48rem]/municipality-list:hidden')
     expect(html).toContain('data-slot="table-container"')
-    expect(html).toContain('supports-[container-type:inline-size]:overflow-x-hidden')
-    // overflow-x-auto is the fallback for browsers without container queries;
-    // the test above still proves the container-query path takes precedence.
+    expect(html).toContain('supports-[container-type:inline-size]:overflow-x-clip')
+    // overflow-x-auto remains the fallback for browsers without container
+    // queries; which branch actually wins at runtime is pinned by the E2E
+    // computed-style guard (campaignTableStickyHeader) and by
+    // expectNoHorizontalOverflow in the responsive-columns spec.
     expect(html).toContain('overflow-x-auto')
     expect(theadHtml).toContain('Município')
     expect(tbodyHtml).toContain('Seabra')
