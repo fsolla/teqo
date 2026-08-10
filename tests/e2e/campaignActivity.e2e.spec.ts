@@ -445,23 +445,17 @@ test.describe('Atividades — agenda mobile (C103)', () => {
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}`)
 
-    const dayCell = page.getByRole('gridcell').nth(1)
     // FullCalendar renders the grid lazily and re-lays out on mount: wait for
     // the load to finish before interacting (same pattern as the desktop test).
     await expect(page.getByText('Carregando compromissos…')).toHaveCount(0, { timeout: 15_000 })
     const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
     await expect(slotLocator).toBeVisible()
-    await expect(dayCell).toBeVisible()
-    await dayCell.scrollIntoViewIfNeeded()
-    const slotBox = await slotLocator.boundingBox()
-    const dayBox = await dayCell.boundingBox()
-    if (!slotBox || !dayBox) throw new Error('A grade diária não expôs o slot esperado.')
-    await dayCell.click({
-      position: {
-        x: dayBox.width / 2,
-        y: slotBox.y - dayBox.y + slotBox.height / 2,
-      },
-    })
+    // Click the time slot itself — C104's all-day lane sits above the timed
+    // grid, so the old day-cell nth() offset no longer lands on the slot.
+    // `force` bypasses the timed-row content overlay; the FullCalendar grid
+    // still receives the click and resolves the 14:00 date from the position.
+    await slotLocator.scrollIntoViewIfNeeded()
+    await slotLocator.click({ force: true })
 
     // C103 — the sheet opens from the TOP, hugging the usable viewport edge.
     const sheet = page.getByRole('dialog', { name: /Nova atividade/ })
