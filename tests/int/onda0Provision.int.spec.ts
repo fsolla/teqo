@@ -19,7 +19,9 @@ import {
   CAMPAIGN_INVITE_CONSENT_LEASE_KEY,
   SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
   SUPPORTER_VOTE_INTENTION_CONSENT_LEASE_KEY,
+  restoreConsentRows,
   withSharedTestDatabaseLease,
+  type ConsentSnapshot,
 } from '../helpers/testDatabaseLease'
 
 let payload: Payload
@@ -38,9 +40,19 @@ describe('Onda 0 provision (integration)', () => {
   })
 
   it('upserts consent keys and publishes privacy-policy idempotently', async () => {
-    // Shared leases on every stable consent key: parallel spec files exercise
-    // "consent missing" fail-closed paths by deleting these rows under an
-    // EXCLUSIVE lease — without the shared leases this test races that window.
+    // Shared leases on the stable keys other spec files exercise: the
+    // provision UPSERTS the shared rows and the spec below REMOVES them, so
+    // the writes must never interleave a parallel file's reads of the same
+    // rows (D9 flake). SHARED — not exclusive — because this spec only
+    // touches the four canonical keys and an exclusive holder here widened
+    // the consent-lease deadlock surface with the invite-domain writers
+    // (cascade under parallel load). The missing-consent fail-closed paths in
+    // other files now serialize their own windows under the lease, and the
+    // down-test below restores the removed rows with their original ids, so
+    // the shared rows are never observed absent or re-created with a new id.
+    // (The fourth Onda0 key, campanha-notificacoes-push, has no lease
+    // constant because no spec file writes it today; the down-test below
+    // still restores it.)
     await withSharedTestDatabaseLease(payload, CAMPAIGN_INVITE_CONSENT_LEASE_KEY, () =>
       withSharedTestDatabaseLease(payload, SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY, () =>
         withSharedTestDatabaseLease(
@@ -81,7 +93,7 @@ describe('Onda 0 provision (integration)', () => {
             await provisionOnda0ConsentAndPrivacyDb(db)
 
             const consentRows = await db.execute(sql`
-              SELECT "key"
+              SELECT "id", "key", "text", "updated_at", "created_at"
               FROM "consent"
               WHERE "key" IN (${sql.join(
                 ONDA0_CONSENT_KEY_LIST.map((key) => sql`${key}`),
@@ -119,6 +131,16 @@ describe('Onda 0 provision (integration)', () => {
               LIMIT 1
             `)
             expect(privacyAfterDown.rows[0]?.published).toBe(false)
+
+            // The down-migration must stay a no-op for parallel spec files:
+            // restoring the removed rows with their ORIGINAL ids (inside the
+            // exclusive lease, invisible to them) keeps the stable keys
+            // present with unchanged ids, so no other file's restore assertion
+            // can observe the absence (D9 flake).
+            await restoreConsentRows(
+              (query) => db.execute(query),
+              consentRows.rows as ConsentSnapshot[],
+            )
           },
         ),
       ),

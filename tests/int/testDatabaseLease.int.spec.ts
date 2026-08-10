@@ -3,18 +3,20 @@
 import { getPayload, type Payload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
+import type { Consent } from '@/payload-types'
 import config from '@/payload.config'
 import {
   acquireSharedTestDatabaseLease,
   acquireTestDatabaseLease,
   CAMPAIGN_INVITE_CONSENT_LEASE_KEY,
-  ensureInviteConsent,
+  ensureLeasedConsent,
   startTestDatabaseLeaseAcquisition,
   waitForAdvisoryLockWaiter,
   withInviteConsent,
   withMissingInviteConsentFixture,
   withMutableConsentFixture,
   withSharedTestDatabaseLease,
+  type TestDatabaseLease,
 } from '../helpers/testDatabaseLease'
 
 let payload: Payload
@@ -144,26 +146,79 @@ describe('test database lease', () => {
   })
 
   it('creates a missing configured consent only once under concurrent ensures', async () => {
-    await withMissingInviteConsentFixture(payload, async () => {
-      const ensured = await Promise.all([
-        ensureInviteConsent(payload),
-        ensureInviteConsent(payload),
-        ensureInviteConsent(payload),
-      ])
-      const configured = await withSharedTestDatabaseLease(
-        payload,
-        CAMPAIGN_INVITE_CONSENT_LEASE_KEY,
-        () =>
+    // Private key/lease: this test deliberately exercises ensure-then-create
+    // racing the missing window, so its window stays unleased
+    // (serializeWindow: false — the ensures lease themselves). Running the
+    // race on a private key keeps the stable invite row untouched: an
+    // unleased window on a shared key would let other files' fixtures observe
+    // the committed-absent state and delete the row out from under them.
+    const raceKey = `ensure-race-${Date.now()}-${Math.random()}`
+    const raceLeaseKey = `ensure-race-lease-${Date.now()}-${Math.random()}`
+    await withMissingInviteConsentFixture(
+      payload,
+      async () => {
+        const ensured = await Promise.all([
+          ensureLeasedConsent(payload, { consentKey: raceKey, leaseKey: raceLeaseKey }),
+          ensureLeasedConsent(payload, { consentKey: raceKey, leaseKey: raceLeaseKey }),
+          ensureLeasedConsent(payload, { consentKey: raceKey, leaseKey: raceLeaseKey }),
+        ])
+        const configured = await withSharedTestDatabaseLease(payload, raceLeaseKey, () =>
           payload.find({
             collection: 'consent',
-            where: { key: { equals: 'lideranca-autopreenchimento' } },
+            where: { key: { equals: raceKey } },
             depth: 0,
             limit: 10,
           }),
-      )
+        )
 
-      expect(new Set(ensured.map((document) => document.id))).toHaveLength(1)
-      expect(configured.docs).toHaveLength(1)
+        expect(new Set(ensured.map((document) => document.id))).toHaveLength(1)
+        expect(configured.docs).toHaveLength(1)
+      },
+      { consentKey: raceKey, leaseKey: raceLeaseKey, serializeWindow: false },
+    )
+  })
+
+  it('blocks other consent users while the missing-consent operation window is open', async () => {
+    const before = await withInviteConsent(payload, async (consent) => consent)
+
+    let writerAcquisition: Promise<TestDatabaseLease> | undefined
+    try {
+      await withMissingInviteConsentFixture(payload, async () => {
+        let writerEntered = false
+        const pendingWriter = startTestDatabaseLeaseAcquisition(
+          payload,
+          CAMPAIGN_INVITE_CONSENT_LEASE_KEY,
+        )
+        writerAcquisition = pendingWriter.acquisition.then((lease) => {
+          writerEntered = true
+          return lease
+        })
+        const writerPID = await pendingWriter.backendPID
+
+        const waiting = await waitForAdvisoryLockWaiter(payload, {
+          key: `test:${CAMPAIGN_INVITE_CONSENT_LEASE_KEY}`,
+          mode: 'ExclusiveLock',
+          waiterPID: writerPID,
+        })
+        expectExactWaiter(waiting, writerPID, 'ExclusiveLock')
+        expect(writerEntered).toBe(false)
+      })
+    } finally {
+      // Release the waiter lease even when an assertion above fails, so the
+      // pending acquisition never blocks parallel spec files until teardown.
+      if (writerAcquisition) {
+        const writer = await writerAcquisition
+        await writer.release()
+      }
+    }
+
+    const after = await withInviteConsent(payload, async (consent) => consent)
+    // id+key only: a concurrent legitimate writer (e.g. the Onda0 provision)
+    // may update the row's text between these reads — the window's contract is
+    // that no exclusive writer interleaves, not that the text is frozen.
+    expect(after).toMatchObject({
+      id: before.id,
+      key: before.key,
     })
   })
 
@@ -181,9 +236,13 @@ describe('test database lease', () => {
   })
 
   it('restores the exact configured consent after deletion and recreation', async () => {
-    const before = await withInviteConsent(payload, async (consent) => consent)
-
+    // The reference is the fixture's own snapshot (the configured consent the
+    // callback receives), not a separate read: a concurrent legitimate writer
+    // (e.g. the Onda0 provision) may update the row's text between reads, and
+    // the restore faithfully reproduces whatever the snapshot captured.
+    let before: Consent | undefined
     await withMutableConsentFixture(payload, async (consent) => {
+      before = consent
       await payload.delete({ collection: 'consent', id: consent.id })
       await payload.create({
         collection: 'consent',
@@ -214,6 +273,7 @@ describe('test database lease', () => {
     })
 
     const after = await withInviteConsent(payload, async (consent) => consent)
+    if (!before) throw new Error('The mutable consent fixture must have provided a snapshot.')
     expect(after).toMatchObject({
       id: before.id,
       key: before.key,
@@ -234,9 +294,16 @@ describe('test database lease', () => {
         }),
     )
     const callbackFailure = new Error('intentional callback assertion failure')
+    // The reference is the fixture's own snapshot (what the callback received),
+    // not the `before` read: a concurrent legitimate writer (e.g. the Onda0
+    // provision) may update the row's text between reads, and the restore
+    // faithfully reproduces whatever the snapshot captured. `before` still
+    // pins the existence state (restored vs created-then-deleted).
+    let snapshot: Consent | undefined
 
     await expect(
       withMutableConsentFixture(payload, async (consent) => {
+        snapshot = consent
         await payload.update({
           collection: 'consent',
           id: consent.id,
@@ -278,14 +345,14 @@ describe('test database lease', () => {
           limit: 1,
         }),
     )
-    if (before.docs[0]) {
+    expect(after.docs).toHaveLength(before.docs.length)
+    if (after.docs[0]) {
+      if (!snapshot) throw new Error('The mutable consent fixture must have provided a snapshot.')
       expect(after.docs[0]).toMatchObject({
-        id: before.docs[0].id,
-        key: before.docs[0].key,
-        text: before.docs[0].text,
+        id: snapshot.id,
+        key: snapshot.key,
+        text: snapshot.text,
       })
-    } else {
-      expect(after.docs).toHaveLength(0)
     }
 
     const subsequent = await acquireTestDatabaseLease(payload, CAMPAIGN_INVITE_CONSENT_LEASE_KEY)
@@ -295,6 +362,11 @@ describe('test database lease', () => {
   it('aggregates callback and restore lease acquisition failures in original order', async () => {
     const callbackFailure = new Error('intentional callback failure')
     const restoreAcquisitionFailure = new Error('intentional restore acquisition failure')
+    // Private key: this fault skips the restore, so the committed-absent state
+    // would leak for the rest of the run on a shared key (id churn in every
+    // other file). A private key keeps the leak invisible.
+    const faultKey = `restore-fault-${Date.now()}-${Math.random()}`
+    const faultLeaseKey = `restore-fault-lease-${Date.now()}-${Math.random()}`
 
     const failure = await withMissingInviteConsentFixture(
       payload,
@@ -302,6 +374,8 @@ describe('test database lease', () => {
         throw callbackFailure
       },
       {
+        consentKey: faultKey,
+        leaseKey: faultLeaseKey,
         beforeRestoreLeaseAcquire: async () => {
           throw restoreAcquisitionFailure
         },
@@ -357,10 +431,12 @@ describe('test database lease', () => {
     expect(failure).toBeInstanceOf(AggregateError)
     expect((failure as AggregateError).errors).toEqual([releaseFailure, rollbackFailure])
     const after = await withInviteConsent(payload, async (consent) => consent)
+    // The rollback preserves the exact row; the text is not part of the
+    // contract here (no restore ran, and a concurrent legitimate writer such
+    // as the Onda0 provision may update it between reads).
     expect(after).toMatchObject({
       id: before.id,
       key: before.key,
-      text: before.text,
     })
 
     const subsequent = await acquireTestDatabaseLease(payload, CAMPAIGN_INVITE_CONSENT_LEASE_KEY)

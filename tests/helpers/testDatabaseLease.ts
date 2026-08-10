@@ -14,6 +14,16 @@ export type MissingInviteConsentFixtureFaults = {
   beforeSnapshotSetup?: () => Promise<void>
   consentKey?: string
   leaseKey?: string
+  /**
+   * When true (default), the operation window runs under the exclusive lease:
+   * parallel spec files can never observe the committed-absent state, so their
+   * ensure-then-read helpers cannot create an ephemeral row that the restore
+   * deletes out from under them (D9 flake). Set to false only when the
+   * operation deliberately exercises concurrent consent writers during the
+   * window (see the "creates a missing configured consent only once under
+   * concurrent ensures" test).
+   */
+  serializeWindow?: boolean
 }
 
 type LeaseTransaction = {
@@ -42,12 +52,40 @@ export type WaitingAdvisoryLock = {
   virtualTransaction: string
 }
 
-type ConsentSnapshot = {
+export type ConsentSnapshot = {
   id: number
   key: string | null
   text: Consent['text']
   updated_at: Date
   created_at: Date
+}
+
+/**
+ * Restores consent rows captured before a fixture deleted them, keeping their
+ * original ids so parallel spec files never observe the rows absent or with a
+ * new id (D9 flake). Shared by the consent fixtures and the Onda0 down test.
+ */
+export const restoreConsentRows = async (
+  execute: (query: ReturnType<typeof sql>) => Promise<unknown>,
+  rows: readonly ConsentSnapshot[],
+): Promise<void> => {
+  for (const row of rows) {
+    await execute(sql`
+      INSERT INTO "consent" ("id", "key", "text", "updated_at", "created_at")
+      VALUES (
+        ${row.id},
+        ${row.key},
+        ${row.text},
+        ${row.updated_at},
+        ${row.created_at}
+      )
+      ON CONFLICT ("id") DO UPDATE SET
+        "key" = EXCLUDED."key",
+        "text" = EXCLUDED."text",
+        "updated_at" = EXCLUDED."updated_at",
+        "created_at" = EXCLUDED."created_at"
+    `)
+  }
 }
 
 export const CAMPAIGN_INVITE_CONSENT_LEASE_KEY = 'campaign-invite-consent'
@@ -321,12 +359,14 @@ export const acquireSharedTestDatabaseLease = async (
   leaseKey: string,
 ): Promise<TestDatabaseLease> => beginTestDatabaseLease(payload, leaseKey, 'shared')
 
-const withTestDatabaseLease = async <Result>(
+const withDatabaseLease = async <Result>(
   payload: Payload,
   leaseKey: string,
+  acquire: (payload: Payload, leaseKey: string) => Promise<TestDatabaseLease>,
+  failureMessage: string,
   operation: () => Promise<Result>,
 ): Promise<Result> => {
-  const lease = await acquireTestDatabaseLease(payload, leaseKey)
+  const lease = await acquire(payload, leaseKey)
   let operationError: unknown
   try {
     return await operation()
@@ -338,44 +378,38 @@ const withTestDatabaseLease = async <Result>(
       await lease.release()
     } catch (releaseError) {
       if (operationError !== undefined) {
-        throw combineErrors(
-          operationError,
-          releaseError,
-          'The leased operation and database lease release both failed.',
-        )
+        throw combineErrors(operationError, releaseError, failureMessage)
       }
       throw releaseError
     }
   }
 }
 
+const withTestDatabaseLease = async <Result>(
+  payload: Payload,
+  leaseKey: string,
+  operation: () => Promise<Result>,
+): Promise<Result> =>
+  withDatabaseLease(
+    payload,
+    leaseKey,
+    acquireTestDatabaseLease,
+    'The leased operation and database lease release both failed.',
+    operation,
+  )
+
 export const withSharedTestDatabaseLease = async <Result>(
   payload: Payload,
   leaseKey: string,
   operation: () => Promise<Result>,
-): Promise<Result> => {
-  const lease = await acquireSharedTestDatabaseLease(payload, leaseKey)
-  let operationError: unknown
-  try {
-    return await operation()
-  } catch (error) {
-    operationError = error
-    throw error
-  } finally {
-    try {
-      await lease.release()
-    } catch (releaseError) {
-      if (operationError !== undefined) {
-        throw combineErrors(
-          operationError,
-          releaseError,
-          'The shared leased operation and database lease release both failed.',
-        )
-      }
-      throw releaseError
-    }
-  }
-}
+): Promise<Result> =>
+  withDatabaseLease(
+    payload,
+    leaseKey,
+    acquireSharedTestDatabaseLease,
+    'The shared leased operation and database lease release both failed.',
+    operation,
+  )
 
 export const ensureLeasedConsent = async (
   payload: Payload,
@@ -386,6 +420,7 @@ export const ensureLeasedConsent = async (
       collection: 'consent',
       where: { key: { equals: consentKey } },
       limit: 1,
+      sort: 'id',
       depth: 0,
     })
     if (existing.docs[0]) return existing.docs[0]
@@ -416,6 +451,7 @@ export const withLeasedConsent = async <Result>(
         collection: 'consent',
         where: { key: { equals: consentKey } },
         limit: 1,
+        sort: 'id',
         depth: 0,
       })
       if (!configured.docs[0]) {
@@ -441,12 +477,6 @@ export const withLeasedConsent = async <Result>(
   }
 }
 
-export const ensureInviteConsent = async (payload: Payload): Promise<Consent> =>
-  ensureLeasedConsent(payload, {
-    consentKey: CAMPAIGN_INVITE_CONSENT_KEY,
-    leaseKey: CAMPAIGN_INVITE_CONSENT_LEASE_KEY,
-  })
-
 export const withInviteConsent = async <Result>(
   payload: Payload,
   operation: (consent: Consent) => Promise<Result>,
@@ -464,6 +494,7 @@ export const withMissingInviteConsentFixture = async <Result>(
 ): Promise<Result> => {
   const consentKey = faults.consentKey ?? CAMPAIGN_INVITE_CONSENT_KEY
   const leaseKey = faults.leaseKey ?? CAMPAIGN_INVITE_CONSENT_LEASE_KEY
+  const serializeWindow = faults.serializeWindow ?? true
   const setupLease = await beginTestDatabaseLease(payload, leaseKey)
   let snapshot: ConsentSnapshot | undefined
   let setupError: unknown
@@ -474,6 +505,7 @@ export const withMissingInviteConsentFixture = async <Result>(
         SELECT "id", "key", "text", "updated_at", "created_at"
         FROM "consent"
         WHERE "key" = ${consentKey}
+        ORDER BY "id"
         LIMIT 1
       `),
     )[0]
@@ -513,6 +545,44 @@ export const withMissingInviteConsentFixture = async <Result>(
   }
   if (setupError !== undefined) throw setupError
 
+  // Serialize the operation window under a SHARED lease (same precedent as
+  // onda0Provision's leases on the stable keys): parallel spec files must
+  // never observe the committed-absent state, or their ensure-then-read
+  // helpers create an ephemeral row that this restore deletes out from under
+  // them. Shared is enough — the ephemeral-row creators (ensures and other
+  // fixtures) are all EXCLUSIVE holders, which a shared window blocks without
+  // stalling the harmless shared readers behind it (the 15s test budget
+  // stayed tight under load with an exclusive window).
+  // `serializeWindow: false` keeps the unleased window for operations that
+  // deliberately exercise concurrent consent writers. NOTE: with the window
+  // leased, the operation must NOT acquire the same lease itself (e.g. via
+  // ensureLeasedConsent on the same key) — that would self-deadlock.
+  const windowLease = serializeWindow
+    ? await beginTestDatabaseLease(payload, leaseKey, 'shared')
+    : undefined
+
+  // Close the gap between the setup's committed delete and this acquisition:
+  // a writer that queued during the setup (advisory locks grant FIFO) can
+  // re-create the row here, which would break the fail-closed operation and
+  // make the restore delete a live row. Re-verify committed state while we
+  // hold the window lease and delete again if needed.
+  if (windowLease) {
+    const recreated = await payload.find({
+      collection: 'consent',
+      where: { key: { equals: consentKey } },
+      limit: 1,
+      sort: 'id',
+      depth: 0,
+    })
+    if (recreated.docs[0]) {
+      await payload.delete({
+        collection: 'consent',
+        where: { key: { equals: consentKey } },
+        depth: 0,
+      })
+    }
+  }
+
   let result: Result | undefined
   let operationError: unknown
   try {
@@ -525,29 +595,26 @@ export const withMissingInviteConsentFixture = async <Result>(
   let restoreLease: Awaited<ReturnType<typeof beginTestDatabaseLease>> | undefined
   try {
     await faults.beforeRestoreLeaseAcquire?.()
-    restoreLease = await beginTestDatabaseLease(payload, leaseKey)
+    restoreLease = windowLease ?? (await beginTestDatabaseLease(payload, leaseKey))
   } catch (error) {
     cleanupError = error
+    if (windowLease && !restoreLease) {
+      try {
+        await windowLease.rollback()
+      } catch (rollbackError) {
+        cleanupError = addFailure(
+          cleanupError,
+          rollbackError,
+          'The missing consent fixture restore acquisition and window lease rollback both failed.',
+        )
+      }
+    }
   }
   if (restoreLease) {
     try {
       await restoreLease.transaction.execute(sql`DELETE FROM "consent" WHERE "key" = ${consentKey}`)
       if (snapshot) {
-        await restoreLease.transaction.execute(sql`
-          INSERT INTO "consent" ("id", "key", "text", "updated_at", "created_at")
-          VALUES (
-            ${snapshot.id},
-            ${snapshot.key},
-            ${snapshot.text},
-            ${snapshot.updated_at},
-            ${snapshot.created_at}
-          )
-          ON CONFLICT ("id") DO UPDATE SET
-            "key" = EXCLUDED."key",
-            "text" = EXCLUDED."text",
-            "updated_at" = EXCLUDED."updated_at",
-            "created_at" = EXCLUDED."created_at"
-        `)
+        await restoreConsentRows((query) => restoreLease.transaction.execute(query), [snapshot])
       }
     } catch (error) {
       cleanupError = error
@@ -591,6 +658,7 @@ export const withMutableConsentFixture = async <Result>(
         SELECT "id", "key", "text", "updated_at", "created_at"
         FROM "consent"
         WHERE "key" = ${CAMPAIGN_INVITE_CONSENT_KEY}
+        ORDER BY "id"
         LIMIT 1
       `),
     )[0]
@@ -622,21 +690,7 @@ export const withMutableConsentFixture = async <Result>(
           WHERE "key" = ${CAMPAIGN_INVITE_CONSENT_KEY}
             AND "id" <> ${snapshot.id}
         `)
-        await lease.transaction.execute(sql`
-          INSERT INTO "consent" ("id", "key", "text", "updated_at", "created_at")
-          VALUES (
-            ${snapshot.id},
-            ${snapshot.key},
-            ${snapshot.text},
-            ${snapshot.updated_at},
-            ${snapshot.created_at}
-          )
-          ON CONFLICT ("id") DO UPDATE SET
-            "key" = EXCLUDED."key",
-            "text" = EXCLUDED."text",
-            "updated_at" = EXCLUDED."updated_at",
-            "created_at" = EXCLUDED."created_at"
-        `)
+        await restoreConsentRows((query) => lease.transaction.execute(query), [snapshot])
       } else if (createdConsentID !== undefined) {
         await lease.transaction.execute(sql`
           DELETE FROM "consent"
