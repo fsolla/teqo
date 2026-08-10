@@ -845,9 +845,12 @@ test.describe('Municípios — cards no celular (B42)', () => {
 
     // The toast is intentionally transient; the persisted freshness label is
     // the stable success contract and must arrive after the server response.
-    await expect(
-      card.getByRole('button', { name: `Registrar atualização em ${municipality.name} — hoje` }),
-    ).toBeVisible()
+    // B193 — once the município HAS an update, the card footer becomes the
+    // expandable "Última atualização" row (the register CTA lives inside the
+    // expansion), so the freshness contract is asserted on the footer itself.
+    const updateFooter = card.getByRole('button', { name: /^Última atualização/ })
+    await expect(updateFooter).toContainText('hoje')
+    await updateFooter.click()
 
     // Reopen: the chrome is rebuilt fresh, and the custom footer comes back.
     await card.getByRole('button', { name: /^Registrar atualização em/ }).click()
