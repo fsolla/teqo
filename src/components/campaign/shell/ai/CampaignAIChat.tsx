@@ -26,6 +26,7 @@ const APP_INTERNAL_LINK = /^\/campanha(?:\/|$)/
 
 const MarkdownLink = ({
   href,
+  node: _node,
   children,
   ...props
 }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { node?: unknown }) => {

@@ -33,7 +33,8 @@ const isUIMessage = (value: unknown): value is UIMessage => {
     typeof value.id === 'string' &&
     typeof value.role === 'string' &&
     MESSAGE_ROLES.has(value.role) &&
-    Array.isArray(value.parts)
+    Array.isArray(value.parts) &&
+    value.parts.every((part) => isRecord(part) && typeof part.type === 'string')
   )
 }
 
@@ -61,9 +62,11 @@ export const readSollinhaChatSession = (): SollinhaChatSession | null => {
 }
 
 /**
- * Drops oldest messages until the count and byte guardrails hold. Tool outputs
- * are kept intact: `convertToModelMessages` turns complete tool parts back into
- * `tool-call` + `tool-result` model messages, so the model keeps the full
+ * Drops oldest messages until the count and byte guardrails hold, then ensures
+ * the head is a user message: `convertToModelMessages` (server) rejects a
+ * conversation that starts with an assistant turn, and pruning from the front
+ * can leave one. Tool outputs are kept intact: complete tool parts turn back
+ * into `tool-call` + `tool-result` model messages, so the model keeps the full
  * context when the restored conversation continues.
  */
 export const pruneSollinhaChatMessages = (messages: UIMessage[]): UIMessage[] => {
@@ -73,6 +76,9 @@ export const pruneSollinhaChatMessages = (messages: UIMessage[]): UIMessage[] =>
   }
   while (pruned.length > 0) {
     if (JSON.stringify(pruned).length <= SOLLINHA_CHAT_MAX_BYTES) break
+    pruned = pruned.slice(1)
+  }
+  while (pruned.length > 1 && pruned[0]?.role !== 'user') {
     pruned = pruned.slice(1)
   }
   return pruned

@@ -61,9 +61,25 @@ describe('sollinhaChatSession storage', () => {
       makeMessage(String(index), index % 2 === 0 ? 'user' : 'assistant'),
     )
     const pruned = pruneSollinhaChatMessages(messages)
-    expect(pruned).toHaveLength(SOLLINHA_CHAT_MAX_MESSAGES)
-    expect(pruned[0]?.id).toBe('5')
+    // Dropping the 5 oldest turns leaves an assistant head (id "5"); the head
+    // rule then drops it too, so the conversation still opens with a question.
+    expect(pruned).toHaveLength(SOLLINHA_CHAT_MAX_MESSAGES - 1)
+    expect(pruned[0]?.id).toBe('6')
+    expect(pruned[0]?.role).toBe('user')
     expect(pruned.at(-1)?.id).toBe(String(SOLLINHA_CHAT_MAX_MESSAGES + 4))
+  })
+
+  it('drops leading assistant turns after pruning so the model history opens with a question', () => {
+    const messages = [
+      makeMessage('0', 'assistant'),
+      makeMessage('1', 'user'),
+      makeMessage('2', 'assistant'),
+    ]
+    const pruned = pruneSollinhaChatMessages(messages)
+    expect(pruned).toHaveLength(2)
+    expect(pruned[0]?.role).toBe('user')
+    // A single assistant message survives (a user turn would be invented).
+    expect(pruneSollinhaChatMessages([makeMessage('0', 'assistant')])).toHaveLength(1)
   })
 
   it('prunes to the byte guardrail dropping the oldest until it fits', () => {
@@ -83,8 +99,9 @@ describe('sollinhaChatSession storage', () => {
     )
     writeSollinhaChatSession(messages, false)
     const session = readSollinhaChatSession()
-    expect(session?.messages).toHaveLength(SOLLINHA_CHAT_MAX_MESSAGES)
-    expect(session?.messages[0]?.id).toBe('5')
+    expect(session?.messages).toHaveLength(SOLLINHA_CHAT_MAX_MESSAGES - 1)
+    expect(session?.messages[0]?.id).toBe('6')
+    expect(session?.messages[0]?.role).toBe('user')
     expect(session?.open).toBe(false)
   })
 
