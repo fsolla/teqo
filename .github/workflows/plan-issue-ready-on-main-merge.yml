@@ -33,8 +33,12 @@ jobs:
       PR_BODY: ${{ github.event.pull_request.body }}
     steps:
       - uses: actions/checkout@v5
+      # Script is plain Node (gh CLI, stdlib) — no pnpm. Disable
+      # package-manager-cache: setup-node@v5 defaults to true and looks for
+      # pnpm (packageManager in package.json) before pnpm/action-setup.
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+          package-manager-cache: false
       - name: Promote Related #N awaiting plan → ready
         run: node scripts/agent-promote-related-on-merge.mjs --pr "$PR_NUMBER"
