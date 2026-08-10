@@ -45,6 +45,178 @@
      event drag it preventDefaults window touchmoves (its touchScrollAllowed
      cancellation), which stops the browser's pan claim. */
   touch-action: pan-y;
+  /* C110 — the adjacent-period preview is positioned against the grid's own
+     edge (left:100% / right:100% of this container), which only works with a
+     containing block here. */
+  position: relative;
+}
+
+/* C110 — the live drag: the grid is directly manipulated by the finger (the
+   transform is imperative, written by the swipe hook — no React state at
+   60fps) and the release settles it with a short exit slide (commit) or the
+   snap-back. */
+.activity-agenda.activity-agenda-swipe-dragging {
+  will-change: transform;
+}
+
+.activity-agenda.activity-agenda-swipe-exit {
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* C110 — the adjacent-period reveal: a child of the transformed grid
+   container, glued to the seam. It rides the same transform as the grid (it
+   is a child), so the strip that opens at the grid's leading edge shows the
+   preview's seam edge — no dx bookkeeping in JS. */
+.activity-agenda-swipe-preview {
+  position: absolute;
+  inset-block: 0;
+  width: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.activity-agenda-swipe-preview--next {
+  left: 100%;
+  border-left: 1px solid var(--border);
+}
+
+.activity-agenda-swipe-preview--prev {
+  right: 100%;
+  border-right: 1px solid var(--border);
+}
+
+.activity-agenda-swipe-preview-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.625rem;
+}
+
+.activity-agenda-swipe-preview--next .activity-agenda-swipe-preview-content {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.activity-agenda-swipe-preview--prev .activity-agenda-swipe-preview-content {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.activity-agenda-swipe-chevron {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--muted-foreground);
+}
+
+.activity-agenda-swipe-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+/* The abstract grid frame ("quadro do grid"): a week/day header plus faint
+   column/time bands. Not a second FullCalendar — deliberately a skeleton. */
+.activity-agenda-swipe-frame {
+  width: 100%;
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  overflow: hidden;
+  opacity: 0.55;
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(14.285% - 1px),
+    var(--border) calc(14.285% - 1px),
+    var(--border) 14.285%
+  );
+  background-size: 100% 100%;
+  position: relative;
+}
+
+.activity-agenda-swipe-frame[data-view='day'] {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(20% - 1px),
+    var(--border) calc(20% - 1px),
+    var(--border) 20%
+  );
+}
+
+.activity-agenda-swipe-frame[data-view='month'] {
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(14.285% - 1px),
+      var(--border) calc(14.285% - 1px),
+      var(--border) 14.285%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(16.66% - 1px),
+      var(--border) calc(16.66% - 1px),
+      var(--border) 16.66%
+    );
+}
+
+.activity-agenda-swipe-frame-head {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.activity-agenda-swipe-frame-head span {
+  flex: 1;
+  padding: 0.1875rem 0;
+  text-align: center;
+  font-size: 0.5625rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+
+.activity-agenda-swipe-frame-head span + span {
+  border-left: 1px solid var(--border);
+}
+
+/* C110 — the adjacent period's events enter the preview as they load (the
+   accept's async path): bars by time proportion for day/week, dots per date
+   for month, rows for the list. Approximate on purpose — the commit renders
+   the real grid. */
+.activity-agenda-swipe-event {
+  position: absolute;
+  left: 0;
+  width: 62%;
+  height: 0.3125rem;
+  border-radius: 0.1875rem;
+  background: color-mix(in oklab, var(--primary) 72%, transparent);
+}
+
+.activity-agenda-swipe-dot {
+  position: absolute;
+  width: 9%;
+  height: 0.375rem;
+  border-radius: 0.1875rem;
+  background: color-mix(in oklab, var(--primary) 72%, transparent);
+}
+
+.activity-agenda-swipe-list-row {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  padding: 0.3125rem 0.375rem;
+  border-radius: 0.25rem;
+  background: color-mix(in oklab, var(--foreground) 7%, transparent);
+  font-size: 0.625rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .activity-agenda button {
@@ -220,6 +392,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .activity-agenda,
   .activity-agenda *,
   .activity-agenda *::before,
   .activity-agenda *::after {

@@ -94,6 +94,112 @@ const ptBrMonthNames = [
   'Dezembro',
 ] as const
 
+/**
+ * C110 — the period the swipe preview reveals, mirroring FullCalendar's own
+ * navigation arithmetic so the preview label (derived from this range via
+ * `activityAgendaPeriodLabel`) matches the header title after the commit:
+ * day shifts ±1 day, week ±7 days (Bahia has no DST, so instant ± 86.400.000 ms
+ * is an exact civil day), month/list shift the anchor (a civil date of the
+ * month's 1st) by one month. The month range spans the Monday on or before the
+ * 1st through 6 full weeks (42 days — within the agenda's 45-day request cap,
+ * which is all the adjacent fetch needs); the label only reads the anchor.
+ * Returns null when the range cannot be derived (same fail-closed contract as
+ * `activityAgendaPeriodLabel`).
+ */
+export const activityAgendaAdjacentPeriod = (
+  view: ActivityAgendaView,
+  range: { start: string; end: string; anchorDate: string },
+  direction: 'next' | 'prev',
+): { start: string; end: string; anchorDate: string } | null => {
+  const shiftDays = direction === 'next' ? 1 : -1
+  const shiftMonths = direction === 'next' ? 1 : -1
+
+  const shiftRangeByDays = (days: number) => {
+    const start = new Date(range.start)
+    const end = new Date(range.end)
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null
+    const shiftedStart = new Date(start.getTime() + days * 86_400_000).toISOString()
+    return {
+      start: shiftedStart,
+      end: new Date(end.getTime() + days * 86_400_000).toISOString(),
+      anchorDate: formatBahiaCivilDate(new Date(start.getTime() + days * 86_400_000)),
+    }
+  }
+
+  if (view === 'day' || view === 'week') {
+    return shiftRangeByDays(shiftDays * (view === 'day' ? 1 : 7))
+  }
+
+  const anchor = civilDateAnchor(range.anchorDate)
+  if (!anchor || anchor.day !== 1) return null
+
+  const shiftedAnchorParts = shiftCivilMonth(anchor.year, anchor.month, shiftMonths)
+  const shiftedAnchor = `${shiftedAnchorParts.year}-${pad(shiftedAnchorParts.month)}-01`
+  if (view === 'list') {
+    const nextMonth = shiftCivilMonth(shiftedAnchorParts.year, shiftedAnchorParts.month, 1)
+    return {
+      start: civilInstantAtBahia(shiftedAnchor),
+      end: civilInstantAtBahia(`${nextMonth.year}-${pad(nextMonth.month)}-01`),
+      anchorDate: shiftedAnchor,
+    }
+  }
+
+  // month — the grid starts on the Monday (firstDay=1) on or before the 1st
+  // and spans at most 6 weeks.
+  const start = subtractBahiaCivilDays(shiftedAnchor, mondayOffsetOf(shiftedAnchor))
+  return {
+    start: civilInstantAtBahia(start),
+    end: civilInstantAtBahia(subtractBahiaCivilDays(start, -42)),
+    anchorDate: shiftedAnchor,
+  }
+}
+
+/**
+ * Midnight of a Bahia civil date as a UTC instant. Bahia is fixed at UTC-3
+ * (no DST since 2019), so the explicit `-03:00` offset is stable — the same
+ * convention FullCalendar's own range strings use.
+ */
+const civilInstantAtBahia = (civilDate: string): string =>
+  new Date(`${civilDate}T00:00:00-03:00`).toISOString()
+
+const pad = (value: number): string => String(value).padStart(2, '0')
+
+/** Full civil-date anchor (`aaaa-mm-dd`) with day/month/year — the runtime
+ * passes `formatBahiaCivilDate(getDate())`, so the year is always present. */
+const civilDateAnchor = (
+  civilDate: string,
+): { year: number; month: number; day: number } | null => {
+  const [year, month, day] = civilDate.split('-').map(Number)
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31
+  ) {
+    return null
+  }
+  return { year, month, day }
+}
+
+const shiftCivilMonth = (
+  year: number,
+  month: number,
+  months: number,
+): { year: number; month: number } => {
+  const absolute = year * 12 + (month - 1) + months
+  return { year: Math.floor(absolute / 12), month: (absolute % 12) + 1 }
+}
+
+/** Weekday of a civil date counted from Monday (0 = Monday … 6 = Sunday). */
+const mondayOffsetOf = (civilDate: string): number => {
+  const [year, month, day] = civilDate.split('-').map(Number)
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay()
+  return (weekday + 6) % 7
+}
+
 const civilDateParts = (civilDate: string): { day: number; month: number } | null => {
   const [year, month, day] = civilDate.split('-').map(Number)
   if (
