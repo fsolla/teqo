@@ -125,6 +125,24 @@ export const subscribeCampaignPush = async (input: PushSubscribeInput) =>
         throw new Error(CAMPAIGN_PUSH_SUBSCRIPTION_INVALID_MESSAGE)
       }
 
+      // Idempotent subscribe (D6): the browser returns the SAME subscription when
+      // the device is already registered, and `endpoint` is unique — a second
+      // create would throw and show a false failure with the device already active.
+      const existing = await payload.find({
+        collection: 'pushSubscription',
+        where: {
+          and: [{ user: { equals: user.id } }, { endpoint: { equals: endpoint } }],
+        },
+        depth: 0,
+        limit: 1,
+        pagination: false,
+        overrideAccess: true,
+      })
+
+      if (existing.docs.length > 0) {
+        return { message: 'Avisos push já estavam ativados neste dispositivo.' }
+      }
+
       await payload.create({
         collection: 'pushSubscription',
         data: {
