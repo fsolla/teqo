@@ -2,27 +2,38 @@
  * `pnpm worktree` — worktree management determinístico em torno da fila de
  * claim do projeto (mesma fila de `agent:claim` / agent pool).
  *
- *   pnpm worktree next [--stay] [--no-migrate]
- *                              cria worktree a partir de origin/main para a
- *                              próxima Issue claimável; branch `<code>-<slug>`.
+ *   pnpm worktree next [--issue N] [--stay] [--no-migrate]
+ *                              claima a próxima Issue claimável ANTES de criar
+ *                              o worktree a partir de origin/main (mesma fila
+ *                              e lock otimista de `pnpm agent:claim`; claim
+ *                              falhou → motivo e saída SEM worktree órfão);
+ *                              branch `<code>-<slug>`.
+ *                              `--issue N` claima a Issue direcionada (`ready`)
+ *                              ou REABRE uma já claimada (`in-progress` — sem
+ *                              re-claim; worktree reutilizado/criado e launch
+ *                              na hora). O texto de saída avisa "já claimada —
+ *                              não rodar `pnpm agent:claim`".
  *                              Por padrão imprime `cd <dir>` no fim — node
  *                              não muda o cwd do shell pai; o shell chamador
  *                              aplica (opencode/CDP usa o opencode command;
  *                              terminal interativo: função `worktree()` em
  *                              `.agents/shell/worktree.sh`, sourced no profile).
- *                              `--stay` suprime a linha `cd`; `--go` explícito
- *                              continua aceito como no-op (era o antigo padrão).
+ *                              `--stay` suprime a linha `cd` (o claim ainda
+ *                              acontece); `--go` explícito continua aceito como
+ *                              no-op (era o antigo padrão).
  *                              Chamado do terminal interativo (com
  *                              `TEQO_WORKTREE_TERMINAL=1`, que só a função shell
  *                              seta), imprime também a diretiva `launch
  *                              opencode <dir> --model deepseek/deepseek-v4-flash
- *                              --auto --prompt /work-issue` ANTES do `cd` — a
- *                              função shell executa o cd e então a linha, e o
- *                              TUI do opencode abre no worktree com `/work-issue`
- *                              já enviado (OPS26). Presets em
- *                              scripts/lib/worktree.mjs. Sem o marcador (comando
- *                              `/worktree` do opencode), a diretiva não é
- *                              impressa — nunca abre TUI aninhado.
+ *                              --auto --prompt "/work-issue --issue <N>"` ANTES
+ *                              do `cd` — a função shell executa o cd e então a
+ *                              linha, e o TUI do opencode abre no worktree com
+ *                              `/work-issue --issue <N>` já enviado (OPS26 +
+ *                              OPS33: o launch entrega a Issue claimada ao
+ *                              agente; a skill lê o resto do GitHub). Presets
+ *                              em scripts/lib/worktree.mjs. Sem o marcador
+ *                              (comando `/worktree` do opencode), a diretiva
+ *                              não é impressa — nunca abre TUI aninhado.
  *                              Também PROVISIONA o ambiente isolado do worktree:
  *                              porta do dev server + bancos próprios derivados
  *                              deterministicamente do branch (ver
@@ -73,7 +84,10 @@
  *                              fica num diretório destruído (não aceita
  *                              `--stay`; `--go` é no-op)
  *
- * Read-only no GitHub: `next` NUNCA claima (claim = `pnpm agent:claim`).
+ * Read-only no GitHub? NÃO — desde o OPS33 `next` CLAIMA: claim determinístico
+ * antes do worktree (mesma fila/ordem e lock otimista do `pnpm agent:claim`;
+ * `--issue N` claim direcionado ou reabre sessão já claimada). `plan`/`new`/
+ * `kill` não tocam Issues. O claim do pool (supervisor coordenado) é intacto.
  * Dir raiz: `~/.cursor/worktrees/teqo/` (mesma casa dos worktrees do Cursor).
  */
 
@@ -86,7 +100,17 @@ import { join, resolve } from 'node:path'
 import { parse as parseEnv } from 'dotenv'
 import pg from 'pg'
 
-import { dieAgent, nextClaimableIssue, parseArgs } from './lib/agent-github.mjs'
+import {
+  claimBriefLines,
+  claimIssue,
+  claimQueueEntry,
+  claimTargetVerdict,
+  dieAgent,
+  ghJson,
+  issuesById,
+  nextClaimableIssue,
+  parseArgs,
+} from './lib/agent-github.mjs'
 import {
   DEV_PORT_BASE,
   GENERATED_ENV_MARKER,
@@ -114,8 +138,8 @@ const WORKTREES_ROOT = join(homedir(), '.cursor', 'worktrees', 'teqo')
 const terminalShell = process.env[WORKTREE_TERMINAL_ENV] === '1'
 
 /** Print the `launch` directive (only exists from the terminal shell); the `cd` line stays last. */
-const printLaunchDirective = ({ dir, purpose }) => {
-  const line = opencodeLaunchDirective({ dir, purpose, terminal: terminalShell })
+const printLaunchDirective = ({ dir, purpose, issueNumber }) => {
+  const line = opencodeLaunchDirective({ dir, purpose, terminal: terminalShell, issueNumber })
   if (line) console.log(line)
 }
 
@@ -379,54 +403,130 @@ const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpo
   runSeedMinimal(dir, testUrl, payloadSecret)
 }
 
-const cmdNext = async (stay, skipMigrate) => {
+/**
+ * Pick determinístico do `next` — READ-ONLY no GitHub: `--issue <N>` escolhe a
+ * Issue direcionada (via `claimTargetVerdict`: `ready` → claim, `in-progress` →
+ * reopen sem re-claim), sem a flag escolhe a próxima da fila (mesmo pick/ordem
+ * do `pnpm agent:claim`). O claim em si acontece só em `cmdNext`, DEPOIS da
+ * derivação/validação do branch — uma Issue sem frontmatter id (ou branch
+ * inválido) morre antes do flip de labels, nunca deixando claim órfão.
+ */
+const pickNextIssue = ({ requestedIssueNumber, die }) => {
+  if (requestedIssueNumber !== null) {
+    const raw = String(requestedIssueNumber)
+    const number = Number(raw)
+    if (!Number.isInteger(number) || number <= 0) {
+      die(`--issue inválido: ${raw}`)
+    }
+    const target = ghJson([
+      'issue',
+      'view',
+      raw,
+      '--json',
+      'number,title,body,labels,createdAt,state',
+    ])
+    const verdict = claimTargetVerdict(target)
+    if (verdict.kind === 'error') die(verdict.message)
+    const entry = claimQueueEntry(target, issuesById())
+    if (verdict.kind === 'reopen') {
+      // Sessão já claimada — reabrir não re-claima (reopen é sobre a sessão,
+      // nunca sobre a fila: deps atuais não importam).
+      return { entry, reopened: true, directed: true }
+    }
+    if (entry.blockedBy.length > 0) {
+      die(`Issue #${number} não é claimável (bloqueada por ${entry.blockedBy.join(', ')}).`)
+    }
+    return { entry, reopened: false, directed: true }
+  }
+
   const pick = nextClaimableIssue()
   if (!pick) {
     die('Fila vazia — nada `ready` desbloqueado. Rode `pnpm agent:status` para ver a fila.')
   }
+  return { entry: pick, reopened: false, directed: false }
+}
 
-  const issue = pick.issue
-  const branch = branchNameForIssue({ ...issue, meta: pick.meta })
+const cmdNext = async (stay, skipMigrate, requestedIssueNumber) => {
+  const { entry, reopened, directed } = pickNextIssue({ requestedIssueNumber, die })
+
+  const issue = entry.issue
+  const branch = branchNameForIssue({ ...issue, meta: entry.meta })
   if (git(['check-ref-format', '--allow-onelevel', branch], { okIfFails: true }) === null) {
     die(`Branch derivado inválido para refname: ${branch}`)
   }
   const dir = join(WORKTREES_ROOT, branch)
 
-  console.log(`Próxima da fila: #${issue.number} ${issue.title}`)
+  // O claim flips labels — só depois da derivação do branch provar que a Issue
+  // tem tudo para virar worktree.
+  if (!reopened) claimIssue(entry, die)
+  const claimedIssueNumber = reopened ? null : issue.number
 
-  git(['fetch', 'origin'])
+  const headline = reopened
+    ? 'Sessão já claimada — reabrindo (sem re-claim)'
+    : directed
+      ? 'Claimado (direcionado — `--issue`)'
+      : 'Claimado da fila'
+  console.log(`\n${headline}: #${issue.number} ${issue.title}`)
+  for (const line of claimBriefLines(entry)) console.log(line)
 
-  const entries = parseWorktreeList(git(['worktree', 'list', '--porcelain']))
-  if (entries.some((entry) => resolve(entry.path) === resolve(dir))) {
-    console.log(`Worktree já existe em ${dir} — reutilizando, sem duplicar.`)
-  } else {
-    const branchExists =
-      git(['show-ref', '--verify', '--quiet', `refs/heads/${branch}`], { okIfFails: true }) !== null
-    const flag = branchExists ? '-B' : '-b'
-    git(['worktree', 'add', flag, branch, dir, 'origin/main'])
+  try {
+    git(['fetch', 'origin'])
 
-    console.log('Worktree criado:')
-    console.log(`  branch: ${branch}`)
-    console.log(`  path:   ${dir}`)
-    console.log('  origem: origin/main')
-    console.log('Issue NÃO claimada — claim continua sendo `pnpm agent:claim`.')
+    const entries = parseWorktreeList(git(['worktree', 'list', '--porcelain']))
+    if (entries.some((entry) => resolve(entry.path) === resolve(dir))) {
+      console.log(`Worktree já existe em ${dir} — reutilizando, sem duplicar.`)
+    } else {
+      const branchExists =
+        git(['show-ref', '--verify', '--quiet', `refs/heads/${branch}`], {
+          okIfFails: true,
+        }) !== null
+      if (branchExists) {
+        // Reopen com worktree removido à mão: `-B` resetaria commits de sessão.
+        const ahead = git(['log', '--oneline', `origin/main..${branch}`], { okIfFails: true })
+        if (ahead) {
+          die(
+            `Branch ${branch} tem commits fora de origin/main e o worktree não existe — reabrir com -B descartaria esses commits. Rode \`git branch -D ${branch}\` (sessão encerrada) ou resolva antes.`,
+          )
+        }
+      }
+      const flag = branchExists ? '-B' : '-b'
+      git(['worktree', 'add', flag, branch, dir, 'origin/main'])
+
+      console.log('Worktree criado:')
+      console.log(`  branch: ${branch}`)
+      console.log(`  path:   ${dir}`)
+      console.log('  origem: origin/main')
+    }
+    console.log(
+      reopened
+        ? 'Issue já claimada (sessão reaberta) — NÃO rodar `pnpm agent:claim` (o claim é parte do `worktree next`).'
+        : 'Issue claimada por este comando — NÃO rodar `pnpm agent:claim` (o claim é parte do `worktree next`).',
+    )
+
+    const mainRoot = entries[0]?.path
+    const env = worktreeEnvironment({
+      branch,
+      code: entry.meta.id,
+      takenSlots: readLiveSlots(entries, dir),
+    })
+    await provision({ dir, branch, issue, env, skipMigrate, mainRoot })
+
+    console.log(`\nAmbiente isolado do worktree (slot ${env.slot}):`)
+    console.log(`  dev server: http://localhost:${env.devPort}   (pnpm dev)`)
+    console.log(`  banco dev:  postgresql://teqo:teqo@localhost:5432/${env.devDatabase}`)
+    console.log(`  banco test: postgresql://teqo:teqo@localhost:5432/${env.testDatabase}`)
+  } catch (error) {
+    if (claimedIssueNumber !== null) {
+      console.error(
+        `\n[worktree] Issue #${claimedIssueNumber} ficou claimada (o worktree não foi concluído) — ` +
+          `reabra quando quiser: \`pnpm worktree next --issue ${claimedIssueNumber}\`.\n`,
+      )
+    }
+    throw error
   }
 
-  const mainRoot = entries[0]?.path
-  const env = worktreeEnvironment({
-    branch,
-    code: pick.meta.id,
-    takenSlots: readLiveSlots(entries, dir),
-  })
-  await provision({ dir, branch, issue, env, skipMigrate, mainRoot })
-
-  console.log(`\nAmbiente isolado do worktree (slot ${env.slot}):`)
-  console.log(`  dev server: http://localhost:${env.devPort}   (pnpm dev)`)
-  console.log(`  banco dev:  postgresql://teqo:teqo@localhost:5432/${env.devDatabase}`)
-  console.log(`  banco test: postgresql://teqo:teqo@localhost:5432/${env.testDatabase}`)
-
   if (!stay) {
-    printLaunchDirective({ dir, purpose: 'next' })
+    printLaunchDirective({ dir, purpose: 'next', issueNumber: issue.number })
     console.log(`cd ${dir}`)
   }
 }
@@ -632,25 +732,26 @@ const cmdKill = async (force) => {
   console.log(`cd ${mainRoot}`)
 }
 
-const { flags, positional } = parseArgs(process.argv.slice(2), new Set())
+const { flags, positional } = parseArgs(process.argv.slice(2), new Set(['issue']))
 const subcommand = positional[0]
 
 if (!subcommand) {
   console.log(
-    'Uso: pnpm worktree next [--stay] [--no-migrate] | plan [bag] [--stay] [--no-migrate] | new [bag] [--stay] [--no-migrate] | kill [--force]',
+    'Uso: pnpm worktree next [--issue N] [--stay] [--no-migrate] | plan [bag] [--stay] [--no-migrate] | new [bag] [--stay] [--no-migrate] | kill [--force]',
   )
-  console.log('  next [--stay] [--no-migrate]')
-  console.log('    cria worktree da próxima Issue claimável (branch <code>-<slug>) e provisiona o')
-  console.log('    ambiente isolado: porta de dev + bancos próprios (determinístico do branch);')
-  console.log('    por padrão imprime `cd <dir>` no fim (quem aplica o cd: opencode command, ou a')
-  console.log(
-    '    função `worktree()` de .agents/shell/worktree.sh); no terminal (TEQO_WORKTREE_TERMINAL=1)',
-  )
-  console.log('    imprime também a diretiva `launch opencode …` (OPS26: abre o TUI com')
-  console.log('    deepseek/deepseek-v4-flash + auto + /work-issue enviado); --stay suprime cd e')
-  console.log(
-    '    launch; --go explícito continua aceito como no-op; --no-migrate pula migrations e o',
-  )
+  console.log('  next [--issue N] [--stay] [--no-migrate]')
+  console.log('    CLAIMA a próxima Issue claimável (mesma fila/ordem e lock otimista do')
+  console.log('    `pnpm agent:claim`) e cria o worktree dela (branch <code>-<slug>),')
+  console.log('    provisionando o ambiente isolado: porta de dev + bancos próprios;')
+  console.log('    claim falhou → motivo e saída sem worktree. `--issue N` claima a Issue')
+  console.log('    direcionada (`ready`) ou REABRE uma já claimada (`in-progress`, sem')
+  console.log('    re-claim). Por padrão imprime `cd <dir>` no fim (quem aplica o cd:')
+  console.log('    opencode command, ou a função `worktree()` de .agents/shell/worktree.sh);')
+  console.log('    no terminal (TEQO_WORKTREE_TERMINAL=1) imprime também a diretiva')
+  console.log('    `launch opencode … --prompt "/work-issue --issue <N>"` (OPS26+OPS33:')
+  console.log('    abre o TUI com deepseek/deepseek-v4-flash + auto + a Issue claimada já')
+  console.log('    informada); --stay suprime cd e launch (o claim ainda acontece); --go')
+  console.log('    explícito continua aceito como no-op; --no-migrate pula migrations e o')
   console.log('    seed mínimo (db:seed:minimal) nos bancos novos (OPS28: paridade com a CI)')
   console.log(`\n  plan [bag] [--stay] [--no-migrate]`)
   console.log(
@@ -677,8 +778,15 @@ if (!subcommand) {
 }
 
 try {
-  if (subcommand === 'next') await cmdNext(Boolean(flags.stay), Boolean(flags['no-migrate']))
-  else if (subcommand === 'plan')
+  if (subcommand === 'next') {
+    if ('issue' in flags && flags.issue === undefined) {
+      die('`--issue` requer um número (ex.: `--issue 595`).')
+    }
+    if (positional.length > 1) {
+      die('`next` não aceita argumento posicional — use `--issue <N>` para direcionar a Issue.')
+    }
+    await cmdNext(Boolean(flags.stay), Boolean(flags['no-migrate']), flags.issue ?? null)
+  } else if (subcommand === 'plan')
     await cmdPlan(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1])
   else if (subcommand === 'new')
     await cmdNew(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1])

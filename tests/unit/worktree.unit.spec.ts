@@ -134,28 +134,48 @@ describe('planBranchName (per-invocation planning worktrees)', () => {
   })
 })
 
-describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26)', () => {
+describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33)', () => {
   const dir = '/home/fsolla/.cursor/worktrees/teqo/OPS26-foo'
 
   it('returns null outside the terminal — the /worktree command never launches a TUI', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'next' })).toBeNull()
     expect(opencodeLaunchDirective({ dir, purpose: 'plan', terminal: false })).toBeNull()
+    expect(
+      opencodeLaunchDirective({ dir, purpose: 'next', terminal: false, issueNumber: 595 }),
+    ).toBeNull()
   })
 
-  it('next launches with the preset model, --auto and the /work-issue command sent', () => {
+  it('next launches with the preset model, --auto and the /work-issue command sent (value always quoted)', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'next', terminal: true })).toBe(
-      `launch opencode ${dir} --model deepseek/deepseek-v4-flash --auto --prompt /work-issue`,
+      `launch opencode ${dir} --model deepseek/deepseek-v4-flash --auto --prompt "/work-issue"`,
     )
   })
 
-  it('plan launches with the same presets and /plan-issue sent (OPS31)', () => {
+  it('next with an issueNumber sends /work-issue --issue <N> with the value quoted (spaces)', () => {
+    expect(
+      opencodeLaunchDirective({ dir, purpose: 'next', terminal: true, issueNumber: 595 }),
+    ).toBe(
+      `launch opencode ${dir} --model deepseek/deepseek-v4-flash --auto --prompt "/work-issue --issue 595"`,
+    )
+  })
+
+  it('plan launches with the same presets and /plan-issue sent (OPS31, value quoted)', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true })).toBe(
-      `launch opencode ${dir} --model deepseek/deepseek-v4-flash --auto --prompt /plan-issue`,
+      `launch opencode ${dir} --model deepseek/deepseek-v4-flash --auto --prompt "/plan-issue"`,
     )
   })
 
   it('new launches prompt-less too — "apenas conversar", no skill sent', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'new', terminal: true })).toBe(
+      `launch opencode ${dir} --model deepseek/deepseek-v4-flash --auto`,
+    )
+  })
+
+  it('plan/new ignore the issueNumber — only next carries the claimed issue', () => {
+    expect(opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true, issueNumber: 7 })).toBe(
+      `launch opencode ${dir} --model deepseek/deepseek-v4-flash --auto --prompt "/plan-issue"`,
+    )
+    expect(opencodeLaunchDirective({ dir, purpose: 'new', terminal: true, issueNumber: 7 })).toBe(
       `launch opencode ${dir} --model deepseek/deepseek-v4-flash --auto`,
     )
   })

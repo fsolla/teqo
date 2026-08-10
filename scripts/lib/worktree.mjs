@@ -24,12 +24,15 @@ export const OPENCODE_PRESET_MODEL = 'deepseek/deepseek-v4-flash'
 
 /**
  * Skill command sent as the launch's initial message per purpose. `next`
- * sends `/work-issue` (the OPS25 command executes the full cycle), `plan`
- * sends `/plan-issue` (OPS31 — auto-submit is the real need of the flow) and
- * `new` sends nothing ("apenas conversar", no skill at all). The opencode
- * CLI's `--prompt` always auto-submits, there is no prefill-without-submit
- * flag; prefill stays an upstream-only feature request (proposition
- * annotated), not a Teqo fallback.
+/**
+ * Skill command sent as the launch's initial message per purpose. `next`
+ * sends `/work-issue` (the OPS25 command executes the full cycle; the OPS33
+ * launch appends `--issue <N>` — the claimed issue — via
+ * `opencodeLaunchDirective`); `plan` sends `/plan-issue` (OPS31 — auto-submit
+ * is the real need of the flow) and `new` sends nothing ("apenas conversar",
+ * no skill at all). The opencode CLI's `--prompt` always auto-submits, there
+ * is no prefill-without-submit flag; prefill stays an upstream-only feature
+ * request (proposition annotated), not a Teqo fallback.
  */
 export const OPENCODE_SKILL_COMMAND_BY_PURPOSE = {
   next: '/work-issue',
@@ -123,17 +126,28 @@ const namespaceBranchName = ({ prefix, bag = '', taken = new Set(), fallback }) 
  * Launch directive for the opencode TUI, printed by `worktree next`/`plan`
  * right before the `cd <dir>` line when called from the interactive terminal
  * (`WORKTREE_TERMINAL=1`): `launch opencode <dir> --model <preset> --auto
- * [--prompt <command>]`. The shell function (`.agents/shell/worktree.sh`)
- * applies the `cd` first, then word-splits and executes this line — the dir
- * is always `<root without spaces>/<slugified branch>`, so the line never
- * needs quoting. Returns `null` outside the terminal so the `/worktree`
- * opencode command never launches a nested TUI.
+ * [--prompt "<command>"]`. The shell function (`.agents/shell/worktree.sh`)
+ * applies the `cd` first, then tokenizes and executes this line (xargs —
+ * quote-aware, never eval) — the dir is always `<root without spaces>/<slugified
+ * branch>`, so the line never needs quoting for the path. `next` with an
+ * `issueNumber` sends `/work-issue --issue <N>` (OPS33: the launch delivers the
+ * claimed issue to the agent; the skill reads the rest from GitHub), the prompt
+ * value is quoted in the line because it now carries a space. Returns `null`
+ * outside the terminal so the `/worktree` opencode command never launches a
+ * nested TUI.
+ * @param {{ dir: string, purpose: string, terminal?: boolean, issueNumber?: number | null }} options
  */
-export const opencodeLaunchDirective = ({ dir, purpose, terminal = false }) => {
+export const opencodeLaunchDirective = ({ dir, purpose, terminal = false, issueNumber = null }) => {
   if (!terminal) return null
   const prompt = OPENCODE_SKILL_COMMAND_BY_PURPOSE[purpose]
   const args = [dir, '--model', OPENCODE_PRESET_MODEL, '--auto']
-  if (prompt) args.push('--prompt', prompt)
+  if (prompt) {
+    // The issue suffix belongs to `next` alone — `plan`/`new` never carry a
+    // claimed issue (fail-safe: a stray issueNumber must not break /plan-issue).
+    const value = purpose === 'next' && issueNumber ? `${prompt} --issue ${issueNumber}` : prompt
+    // JSON.stringify quotes the value — the directive carries spaces now.
+    args.push('--prompt', JSON.stringify(value))
+  }
   return `launch opencode ${args.join(' ')}`
 }
 
