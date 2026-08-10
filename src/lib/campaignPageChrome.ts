@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react'
 import type { Metadata } from 'next'
 
 import { CAMPAIGN_HOME, CAMPAIGN_UPDATES_HREF, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
@@ -14,8 +15,11 @@ export type CampaignPageChrome = {
    * phones. Only client-rendered overrides set it — the catalog never does.
    * The `hint` is the page's own copy (rendered as the button tooltip), so
    * the shared chrome does not hardcode agenda wording.
+   * C101-ux — the optional `icon` is the page's own affordance glyph for the
+   * tap (rendered trailing the title, aria-hidden), for the same reason the
+   * copy is page-owned: the shared chrome stays generic.
    */
-  onTitleClick?: { action: () => void; hint: string }
+  onTitleClick?: { action: () => void; hint: string; icon?: LucideIcon }
 }
 
 type CampaignRole = CampaignUser['role']

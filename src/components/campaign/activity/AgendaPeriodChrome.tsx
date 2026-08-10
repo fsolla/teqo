@@ -1,5 +1,6 @@
 'use client'
 
+import { RotateCcw } from 'lucide-react'
 import { useMemo } from 'react'
 
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
@@ -11,6 +12,8 @@ import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageC
  * tapping it returns to today (the "Hoje" toolbar button is hidden on
  * phones). Desktop never mounts this — the agenda only renders it when the
  * mobile top bar is the visible chrome.
+ * C101-ux — the tap affordance: the RotateCcw glyph (aria-hidden in the
+ * shared chrome) signals the title is tappable without a hover-only tooltip.
  */
 export const AgendaPeriodChrome = ({
   label,
@@ -21,7 +24,12 @@ export const AgendaPeriodChrome = ({
 }) => {
   const chrome = useMemo(
     () =>
-      label ? { title: label, onTitleClick: { action: onToday, hint: 'Voltar para hoje' } } : null,
+      label
+        ? {
+            title: label,
+            onTitleClick: { action: onToday, hint: 'Voltar para hoje', icon: RotateCcw },
+          }
+        : null,
     [label, onToday],
   )
 
