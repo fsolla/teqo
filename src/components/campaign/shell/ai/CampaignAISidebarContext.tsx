@@ -19,8 +19,8 @@ import { useIsMobileMeasured } from '@/hooks/use-mobile'
 import type { CampaignRole } from '@/lib/campaignRoles'
 import {
   readSollinhaChatSession,
-  type SollinhaChatSessionOpenOrigin,
   writeSollinhaChatSession,
+  type SollinhaChatSessionOpenOrigin,
 } from '@/lib/sollinhaChatSession'
 
 type AISidebarContextValue = {
