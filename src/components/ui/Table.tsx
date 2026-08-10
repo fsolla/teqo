@@ -8,8 +8,11 @@ const Table = ({
   ...props
 }: React.ComponentProps<'table'> & {
   /** Override the scroll container (default already includes `overflow-x-auto`).
-   *  Sticky-left columns keep that default; `overflow-x-visible` only when a
-   *  sticky header must resolve against the page scroller instead of this box. */
+   *  Sticky-left columns keep that default. A sticky header must resolve
+   *  against the page scroller instead of this box, which requires the box NOT
+   *  to be a scroll container at all — use `overflow-x-clip` (clip pairs with
+   *  `overflow-y: visible` without promoting it to `auto`), as the sticky
+   *  campaign lists (D7) do. Never use `overflow-x-visible` here. */
   containerClassName?: string
 }) => (
   <div

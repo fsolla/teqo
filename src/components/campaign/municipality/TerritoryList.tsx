@@ -76,7 +76,7 @@ export const TerritoryList = ({
       <CampaignTable
         caption={`${sortSummary}. Comparação dos Territórios de Identidade. Leitura regional; a alocação é decidida por município.`}
         className="overflow-visible"
-        containerClassName="overflow-x-auto supports-[container-type:inline-size]:overflow-x-hidden"
+        containerClassName="overflow-x-auto supports-[container-type:inline-size]:overflow-x-clip"
         headerClassName="[&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-background [&_th]:shadow-[inset_0_-1px_0_var(--border)] [&_th:first-child]:rounded-tl-xl [&_th:last-child]:rounded-tr-xl [&_tr]:border-b-0"
         columns={territoryListColumns({ state, regionOptions, references })}
         columnVisibility={columnVisibility}
