@@ -16,10 +16,21 @@ export const SOLLINHA_CHAT_MAX_MESSAGES = 50
 /** Byte guardrail (serialized JSON) — oldest messages are dropped at write time. */
 export const SOLLINHA_CHAT_MAX_BYTES = 256 * 1024
 
+/**
+ * How the session's `open` came to be true (OPS22): `'user'` when the person
+ * toggled the chat (FAB / header button / drawer swipe), `'settle'` when the
+ * desktop panel reconcile (B167) opened it. The settle is layout truth, not
+ * intent — a settle-originated `open: true` must never restore the mobile
+ * drawer "by itself". Sessions written before this field (B188) carry no
+ * value and are treated as `'settle'` (fail-closed).
+ */
+export type SollinhaChatSessionOpenOrigin = 'user' | 'settle'
+
 export type SollinhaChatSession = {
   version: typeof SOLLINHA_CHAT_SESSION_VERSION
   messages: UIMessage[]
   open: boolean
+  openBy?: SollinhaChatSessionOpenOrigin
 }
 
 const MESSAGE_ROLES = new Set(['system', 'user', 'assistant'])
@@ -45,7 +56,8 @@ const isSollinhaChatSession = (value: unknown): value is SollinhaChatSession => 
     value.version === SOLLINHA_CHAT_SESSION_VERSION &&
     Array.isArray(value.messages) &&
     value.messages.every(isUIMessage) &&
-    typeof value.open === 'boolean'
+    typeof value.open === 'boolean' &&
+    (value.openBy === undefined || value.openBy === 'user' || value.openBy === 'settle')
   )
 }
 
@@ -84,13 +96,22 @@ export const pruneSollinhaChatMessages = (messages: UIMessage[]): UIMessage[] =>
   return pruned
 }
 
-/** Writes the pruned session. Fail-open: storage failures never break the chat. */
-export const writeSollinhaChatSession = (messages: UIMessage[], open: boolean): void => {
+/**
+ * Writes the pruned session. Fail-open: storage failures never break the chat.
+ * `openBy` defaults to `'settle'` — a write without intent information must
+ * not restore the mobile drawer (OPS22).
+ */
+export const writeSollinhaChatSession = (
+  messages: UIMessage[],
+  open: boolean,
+  openBy: SollinhaChatSessionOpenOrigin = 'settle',
+): void => {
   if (typeof window === 'undefined') return
   const session: SollinhaChatSession = {
     version: SOLLINHA_CHAT_SESSION_VERSION,
     messages: pruneSollinhaChatMessages(messages),
     open,
+    openBy,
   }
   try {
     window.sessionStorage.setItem(SOLLINHA_CHAT_SESSION_STORAGE_KEY, JSON.stringify(session))

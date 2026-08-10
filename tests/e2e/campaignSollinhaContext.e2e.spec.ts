@@ -149,4 +149,29 @@ test.describe('B188 — contexto da conversa persiste na sessão da janela/tab',
       timeout: 20_000,
     })
   })
+
+  test('settle do desktop não vaza chat aberto para a visita mobile da mesma aba (OPS22)', async ({
+    page,
+    campaign,
+  }) => {
+    const user = await campaign.fixtures.createCampaignUser('coordinator', {
+      name: campaign.fixtures.value('Contexto Janela Coordenador'),
+    })
+    // Desktop login: the B167 settle opens the chat and the persist effect
+    // writes `open: true` (settle-originated) for the tab.
+    await campaign.login(page, user.email!, user.password)
+    await expect.poll(async () => (await storedSession(page))?.open).toBe(true)
+
+    // A mobile page in the SAME tab must not restore that settle-originated
+    // open: the drawer would cover the content and aria-hide it (the OPS22
+    // regression that turned the agenda-mobile e2e red). The chat stays
+    // reachable through its button.
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/campanha/agenda')
+
+    await expect(page.getByRole('dialog', { name: 'Sollinha — Assistente virtual' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Sollinha — Assistente virtual' })).toBeVisible({
+      timeout: 20_000,
+    })
+  })
 })
