@@ -24,6 +24,10 @@ const seedUpdates = async (
   const { fixtures } = campaign
   const coordinator = await fixtures.createCampaignUser('coordinator')
   const municipality = await fixtures.claimMunicipality()
+  // Explicitly increasing timestamps: rows created back-to-back can share the
+  // same Postgres `now()` (transaction-scoped), which makes the feed's
+  // `sort: -createdAt` unstable and the "#8 on top" assertion flaky.
+  const base = Date.now()
   for (let i = 0; i < 8; i += 1) {
     await fixtures.payload.create({
       collection: 'municipalityUpdate',
@@ -32,6 +36,7 @@ const seedUpdates = async (
         author: coordinator.id,
         polarity: i % 2 === 0 ? 'boa' : 'ruim',
         body: `Fato de campo C106 #${i + 1} em ${municipality.name}`,
+        createdAt: new Date(base + (i + 1) * 1000).toISOString(),
       },
       depth: 0,
     })

@@ -981,11 +981,11 @@ test.describe('Municípios — card denso mobile (B193)', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
-    // `?q=` matches name PREFIXES ("São Félix" also returns "São Félix do
-    // Coribe"), so the card is anchored on the municipality's own name.
+    // `?q=` matches name PREFIXES ("Coribe" also returns "São Félix do
+    // Coribe"), so the card is anchored on the municipality's own name link.
     const card = page
       .locator('[data-view="mobile-cards"] article')
-      .filter({ hasText: municipality.name })
+      .filter({ has: page.getByRole('link', { name: municipality.name, exact: true }) })
       .first()
     await expect(card).toBeVisible()
 
@@ -1022,11 +1022,11 @@ test.describe('Municípios — card denso mobile (B193)', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
-    // `?q=` matches name PREFIXES ("São Félix" also returns "São Félix do
-    // Coribe"), so the card is anchored on the municipality's own name.
+    // `?q=` matches name PREFIXES ("Coribe" also returns "São Félix do
+    // Coribe"), so the card is anchored on the municipality's own name link.
     const card = page
       .locator('[data-view="mobile-cards"] article')
-      .filter({ hasText: municipality.name })
+      .filter({ has: page.getByRole('link', { name: municipality.name, exact: true }) })
       .first()
     await expect(card).toBeVisible()
 
@@ -1056,11 +1056,11 @@ test.describe('Municípios — card denso mobile (B193)', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
-    // `?q=` matches name PREFIXES ("São Félix" also returns "São Félix do
-    // Coribe"), so the card is anchored on the municipality's own name.
+    // `?q=` matches name PREFIXES ("Coribe" also returns "São Félix do
+    // Coribe"), so the card is anchored on the municipality's own name link.
     const card = page
       .locator('[data-view="mobile-cards"] article')
-      .filter({ hasText: municipality.name })
+      .filter({ has: page.getByRole('link', { name: municipality.name, exact: true }) })
       .first()
     await expect(card).toBeVisible()
 
@@ -1094,10 +1094,10 @@ test.describe('Municípios — card denso mobile (B193)', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(withUpdate.name)}`,
     )
-    // `?q=` matches name prefixes — anchor on the municipality's own name.
+    // `?q=` matches name prefixes — anchor on the municipality's own name link.
     const card = page
       .locator('[data-view="mobile-cards"] article')
-      .filter({ hasText: withUpdate.name })
+      .filter({ has: page.getByRole('link', { name: withUpdate.name, exact: true }) })
       .first()
     await expect(card).toBeVisible()
 
@@ -1124,7 +1124,7 @@ test.describe('Municípios — card denso mobile (B193)', () => {
     await page.goto(`${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(empty.name)}`)
     const emptyCard = page
       .locator('[data-view="mobile-cards"] article')
-      .filter({ hasText: empty.name })
+      .filter({ has: page.getByRole('link', { name: empty.name, exact: true }) })
       .first()
     await expect(emptyCard).toBeVisible()
     await expect(emptyCard.getByRole('button', { name: /Última atualização/ })).toHaveCount(0)
