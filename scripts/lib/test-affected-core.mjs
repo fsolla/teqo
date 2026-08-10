@@ -22,6 +22,7 @@ export const HIGH_RISK_EXACT = new Set([
   'src/payload.config.ts',
   'scripts/seed-minimal.mjs',
   'scripts/lib/seed-minimal-manifest.mjs',
+  'scripts/worktree.mjs',
   'scripts/lib/test-affected-core.mjs',
   'scripts/lib/e2e-affected-manifest.mjs',
   'scripts/test-affected.mjs',
