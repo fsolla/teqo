@@ -94,7 +94,84 @@ const ptBrMonthNames = [
   'Dezembro',
 ] as const
 
-const civilDateParts = (civilDate: string): { day: number; month: number } | null => {
+/**
+ * C110 — the period the swipe preview reveals, mirroring FullCalendar's own
+ * navigation arithmetic so the preview label (derived from this range via
+ * `activityAgendaPeriodLabel`) matches the header title after the commit:
+ * day shifts ±1 day, week ±7 days (Bahia has no DST, so instant ± 86.400.000 ms
+ * is an exact civil day), month/list shift the anchor (a civil date of the
+ * month's 1st) by one month. The month range spans the Monday on or before the
+ * 1st through 6 full weeks (42 days — within the agenda's 45-day request cap,
+ * which is all the adjacent fetch needs); the label only reads the anchor.
+ * Returns null when the range cannot be derived (same fail-closed contract as
+ * `activityAgendaPeriodLabel`).
+ */
+export const activityAgendaAdjacentPeriod = (
+  view: ActivityAgendaView,
+  range: { start: string; end: string; anchorDate: string },
+  direction: 'next' | 'prev',
+): { start: string; end: string; anchorDate: string } | null => {
+  const shift = direction === 'next' ? 1 : -1
+
+  const shiftRangeByDays = (days: number) => {
+    const start = new Date(range.start)
+    const end = new Date(range.end)
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null
+    const shiftedStart = new Date(start.getTime() + days * 86_400_000)
+    return {
+      start: shiftedStart.toISOString(),
+      end: new Date(end.getTime() + days * 86_400_000).toISOString(),
+      anchorDate: formatBahiaCivilDate(shiftedStart),
+    }
+  }
+
+  if (view === 'day' || view === 'week') {
+    return shiftRangeByDays(shift * (view === 'day' ? 1 : 7))
+  }
+
+  const anchor = civilDateParts(range.anchorDate)
+  if (!anchor || anchor.day !== 1) return null
+
+  const shiftedAnchorParts = shiftCivilMonth(anchor.year, anchor.month, shift)
+  const shiftedAnchor = `${shiftedAnchorParts.year}-${pad(shiftedAnchorParts.month)}-01`
+  if (view === 'list') {
+    const nextMonth = shiftCivilMonth(shiftedAnchorParts.year, shiftedAnchorParts.month, 1)
+    return {
+      start: allDayStartInstant(shiftedAnchor),
+      end: allDayStartInstant(`${nextMonth.year}-${pad(nextMonth.month)}-01`),
+      anchorDate: shiftedAnchor,
+    }
+  }
+
+  // month — the grid starts on the Monday (firstDay=1) on or before the 1st
+  // and spans at most 6 weeks.
+  const start = subtractBahiaCivilDays(shiftedAnchor, mondayOffsetOf(shiftedAnchor))
+  return {
+    start: allDayStartInstant(start),
+    end: allDayStartInstant(subtractBahiaCivilDays(start, -42)),
+    anchorDate: shiftedAnchor,
+  }
+}
+
+const pad = (value: number): string => String(value).padStart(2, '0')
+
+const shiftCivilMonth = (
+  year: number,
+  month: number,
+  months: number,
+): { year: number; month: number } => {
+  const absolute = year * 12 + (month - 1) + months
+  return { year: Math.floor(absolute / 12), month: (absolute % 12) + 1 }
+}
+
+/** Weekday of a civil date counted from Monday (0 = Monday … 6 = Sunday). */
+const mondayOffsetOf = (civilDate: string): number => {
+  const [year, month, day] = civilDate.split('-').map(Number)
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay()
+  return (weekday + 6) % 7
+}
+
+const civilDateParts = (civilDate: string): { year: number; month: number; day: number } | null => {
   const [year, month, day] = civilDate.split('-').map(Number)
   if (
     !Number.isInteger(year) ||
@@ -107,7 +184,7 @@ const civilDateParts = (civilDate: string): { day: number; month: number } | nul
   ) {
     return null
   }
-  return { day, month }
+  return { year, month, day }
 }
 
 const civilDateLabel = (civilDate: string): string | null => {

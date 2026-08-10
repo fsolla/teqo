@@ -26,6 +26,10 @@ import {
   rescheduleActivity,
 } from '@/app/(campaign)/campanha/actions/activity'
 import {
+  ActivityAgendaSwipePreview,
+  type ActivityAgendaAdjacentRange,
+} from '@/components/campaign/activity/ActivityAgendaSwipePreview'
+import {
   ActivityInlineCreate,
   type ActivityInlineCreateDraft,
 } from '@/components/campaign/activity/ActivityInlineCreate'
@@ -47,6 +51,7 @@ import {
   type ActivityStatus,
 } from '@/lib/schemas/activity'
 import {
+  activityAgendaAdjacentPeriod,
   activityAgendaPeriodLabel,
   activityAgendaViewFcId,
   activityAgendaViewFromFcId,
@@ -176,6 +181,12 @@ export const ActivityAgenda = ({
   const [loadError, setLoadError] = useState<string | null>(null)
   const [isNarrow, setIsNarrow] = useState(false)
   const [createDraft, setCreateDraft] = useState<ActivityInlineCreateDraft | null>(null)
+  // C110 — the adjacent-period reveal: which side is open and the events that
+  // load (async, during the drag) for that period.
+  const [swipePreview, setSwipePreview] = useState<{ direction: 'next' | 'prev' } | null>(null)
+  const [swipePreviewEvents, setSwipePreviewEvents] = useState<ActivityAgendaEvent[]>([])
+  const swipePreviewKeyRef = useRef<string | null>(null)
+  const adjacentEventsCacheRef = useRef(new Map<string, ActivityAgendaEvent[]>())
 
   // C101 — the mobile behaviors key on the WINDOW (<768, the app top bar's
   // own `md:hidden` breakpoint), not on the calendar container: a desktop
@@ -302,6 +313,13 @@ export const ActivityAgenda = ({
     )
   }, [visibleRange])
 
+  // C110 — the adjacent range the open preview reveals (pure derivation from
+  // the visible range; null when the preview has no range to show).
+  const adjacentPreviewRange = useMemo<ActivityAgendaAdjacentRange | null>(() => {
+    if (!swipePreview || !visibleRange) return null
+    return activityAgendaAdjacentPeriod(visibleRange.view, visibleRange, swipePreview.direction)
+  }, [swipePreview, visibleRange])
+
   const handleToday = useCallback(() => {
     const api = calendarRef.current?.getApi()
     if (!api) return
@@ -344,11 +362,62 @@ export const ActivityAgenda = ({
     onNavigate: handlePeriodNavigation,
   })
 
+  // C110 — the preview opens at the 12px claim with the direction locked; the
+  // adjacent period's events load asynchronously (never blocking the gesture)
+  // with a per-visible-range cache so flicking back and forth does not refetch.
+  const handleSwipePreviewStart = useCallback(
+    (direction: 'next' | 'prev') => {
+      if (!visibleRange) return
+      const adjacent = activityAgendaAdjacentPeriod(visibleRange.view, visibleRange, direction)
+      if (!adjacent) return
+      const key = `${direction}:${visibleRange.start}|${visibleRange.end}`
+      swipePreviewKeyRef.current = key
+      setSwipePreview({ direction })
+      const cached = adjacentEventsCacheRef.current.get(key)
+      if (cached) {
+        setSwipePreviewEvents(cached)
+        return
+      }
+      setSwipePreviewEvents([])
+      void loadActivityAgendaEvents({
+        ...state,
+        rangeStart: adjacent.start,
+        rangeEnd: adjacent.end,
+      })
+        .then((loadedEvents) => {
+          // C110 — only the ACTIVE preview may consume the result: a fetch from
+          // a previous gesture resolving late must not populate a preview for
+          // the other side (or after the preview already closed).
+          if (swipePreviewKeyRef.current !== key) return
+          adjacentEventsCacheRef.current.set(key, loadedEvents)
+          setSwipePreviewEvents(loadedEvents)
+        })
+        .catch(() => {
+          // C110 — the preview degrades to the empty frame; the commit still
+          // loads the real grid through the normal datesSet path.
+        })
+    },
+    [state, visibleRange],
+  )
+
+  const handleSwipePreviewEnd = useCallback(() => {
+    swipePreviewKeyRef.current = null
+    setSwipePreview(null)
+  }, [])
+
+  useEffect(() => {
+    // C110 — a commit/today invalidates the cache: its entries describe the
+    // previous visible range.
+    adjacentEventsCacheRef.current.clear()
+  }, [visibleRange])
+
   const { suppressDateClickRef } = useAgendaSwipeNavigation({
     containerRef,
     enabled: isMobile,
     blockRef: draggingEventRef,
     onSwipe: handlePeriodNavigation,
+    onSwipePreviewStart: handleSwipePreviewStart,
+    onSwipePreviewEnd: handleSwipePreviewEnd,
   })
 
   const handleDateClick = useCallback(
@@ -525,6 +594,17 @@ export const ActivityAgenda = ({
           noEventsText="Nenhum compromisso nesta janela"
           headingLevel={2}
         />
+
+        {/* `visibleRange &&` narrows the type for the preview's `view` prop
+            (the memo already guarantees it is non-null). */}
+        {swipePreview && visibleRange && adjacentPreviewRange ? (
+          <ActivityAgendaSwipePreview
+            view={visibleRange.view}
+            direction={swipePreview.direction}
+            range={adjacentPreviewRange}
+            events={swipePreviewEvents}
+          />
+        ) : null}
       </div>
 
       <ActivityInlineCreate
