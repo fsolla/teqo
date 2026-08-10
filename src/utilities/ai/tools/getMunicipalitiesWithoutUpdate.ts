@@ -5,7 +5,8 @@ import { z } from 'zod'
 import type { AIToolContext } from '@/lib/ai/types'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
-import { resolveAIToolScope, type AIToolResolvedScope } from '@/utilities/ai/tools/aiToolScope'
+import { loadAIToolNamesByIds } from '@/utilities/ai/tools/aiToolQueries'
+import { resolveAIToolScope, type AIToolScope } from '@/utilities/ai/tools/aiToolScope'
 import { municipalitySignalAgeInDays } from '@/utilities/municipality/municipalitySignal'
 
 const DENIED_MESSAGE = 'Leitura de municípios negada.'
@@ -79,6 +80,20 @@ export const getMunicipalitiesWithoutUpdate = (ctx: AIToolContext) =>
       const resolved = await resolveAIToolScope(ctx, scope)
       if ('error' in resolved) return resolved
 
+      // An advisor asking for a territory outside the portfolio gets the empty
+      // scoped set — never an existence lie, and no wasted municipality read.
+      if (resolved.municipalityIDs !== null && resolved.municipalityIDs.length === 0) {
+        return {
+          escopo: { tipo: resolved.kind, nome: resolved.name },
+          escopoRestrito: ctx.user.role === 'advisor',
+          limiarDias: days,
+          criterio: buildCriterion(days),
+          total: 0,
+          nuncaAtualizados: 0,
+          municipios: [],
+        }
+      }
+
       const docs = await loadScopeMunicipalities(ctx, resolved)
       const items = docs
         .map(buildCoverageItem)
@@ -90,7 +105,7 @@ export const getMunicipalitiesWithoutUpdate = (ctx: AIToolContext) =>
       const advisorIDs = uniqueRelationshipIds(
         municipios.flatMap((item) => item.assessores.map((a) => a.id)),
       )
-      const advisorNames = await loadAdvisorNames(ctx, advisorIDs)
+      const advisorNames = await loadAIToolNamesByIds(ctx, 'campaignUser', advisorIDs)
       for (const item of municipios) {
         item.assessores = item.assessores.map((advisor) => ({
           id: advisor.id,
@@ -102,7 +117,7 @@ export const getMunicipalitiesWithoutUpdate = (ctx: AIToolContext) =>
         escopo: { tipo: resolved.kind, nome: resolved.name },
         escopoRestrito: ctx.user.role === 'advisor',
         limiarDias: days,
-        criterio: `Municípios sem atualização de acompanhamento há mais de ${days} dias (última atualização registrada); nunca atualizados contam como estagnação máxima.`,
+        criterio: buildCriterion(days),
         total: municipios.length,
         nuncaAtualizados: neverUpdated.length,
         municipios,
@@ -110,9 +125,12 @@ export const getMunicipalitiesWithoutUpdate = (ctx: AIToolContext) =>
     },
   })
 
+const buildCriterion = (days: number): string =>
+  `Municípios sem atualização de acompanhamento há mais de ${days} dias (última atualização registrada); nunca atualizados contam como estagnação máxima.`
+
 const loadScopeMunicipalities = async (
   ctx: AIToolContext,
-  scope: AIToolResolvedScope,
+  scope: AIToolScope,
 ): Promise<ScopedMunicipality[]> => {
   const where: Where = scope.municipalityIDs ? { id: { in: scope.municipalityIDs } } : {}
   const result = await ctx.payload.find({
@@ -179,28 +197,10 @@ const sortNeverUpdated = (items: CoverageItem[]): CoverageItem[] => [...items].s
 
 const sortStale = (items: CoverageItem[]): CoverageItem[] =>
   [...items].sort((left, right) => {
-    const leftAt = new Date(left.ultimaAtualizacao ?? 0).getTime()
-    const rightAt = new Date(right.ultimaAtualizacao ?? 0).getTime()
+    // The stale partition never contains never-updated items, so the ISO
+    // timestamp is always present here.
+    const leftAt = new Date(left.ultimaAtualizacao!).getTime()
+    const rightAt = new Date(right.ultimaAtualizacao!).getTime()
     if (leftAt !== rightAt) return leftAt - rightAt
     return byName(left, right)
   })
-
-const loadAdvisorNames = async (
-  ctx: AIToolContext,
-  ids: number[],
-): Promise<Map<number, string>> => {
-  const names = new Map<number, string>()
-  if (ids.length === 0) return names
-  const result = await ctx.payload.find({
-    collection: 'campaignUser',
-    where: { id: { in: ids } },
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    select: { name: true },
-    overrideAccess: false,
-    user: ctx.user,
-  })
-  for (const doc of result.docs) names.set(doc.id, doc.name)
-  return names
-}

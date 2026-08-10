@@ -5,7 +5,11 @@ import { z } from 'zod'
 import type { AIToolContext } from '@/lib/ai/types'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
-import { resolveAIToolScope, type AIToolResolvedScope } from '@/utilities/ai/tools/aiToolScope'
+import { loadAIToolNamesByIds } from '@/utilities/ai/tools/aiToolQueries'
+import {
+  resolveAIToolScope,
+  type AIToolScope as ResolvedScope,
+} from '@/utilities/ai/tools/aiToolScope'
 import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
 
 const DENIED_MESSAGE = 'Leitura de dados de lideranças negada.'
@@ -14,8 +18,6 @@ const PENDING_CRITERION =
 const EMPTY_MUNICIPALITIES_CRITERION = 'Municípios do escopo sem nenhuma liderança vinculada.'
 const NARROW_SCOPE_HINT = 'Estreite o escopo (território, cidade ou município) para ver o restante.'
 const PENDING_SUPPORT_STATUSES = ['a_abordar', 'em_disputa', 'engajado'] as const
-
-type ResolvedScope = AIToolResolvedScope
 
 type PendingLeadershipDoc = {
   id: number
@@ -162,9 +164,9 @@ const listPendingLeaderships = async (
   const advisorIDs = uniqueRelationshipIds(top.flatMap((doc) => doc.advisors ?? []))
 
   const [contactNames, municipalityNames, advisorNames] = await Promise.all([
-    loadNamesByIds(ctx, 'contact', contactIDs),
+    loadAIToolNamesByIds(ctx, 'contact', contactIDs),
     loadMunicipalityNamesByIds(ctx, municipalityIDs),
-    loadNamesByIds(ctx, 'campaignUser', advisorIDs),
+    loadAIToolNamesByIds(ctx, 'campaignUser', advisorIDs),
   ])
 
   const liderancas = top.map((doc) => {
@@ -276,27 +278,6 @@ const listMunicipalitiesWithoutLeadership = async (
     truncado,
     ...(truncado ? { dica: NARROW_SCOPE_HINT } : {}),
   }
-}
-
-const loadNamesByIds = async (
-  ctx: AIToolContext,
-  collection: 'contact' | 'campaignUser',
-  ids: number[],
-): Promise<Map<number, string>> => {
-  const names = new Map<number, string>()
-  if (ids.length === 0) return names
-  const result = await ctx.payload.find({
-    collection,
-    where: { id: { in: ids } },
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    select: { name: true },
-    overrideAccess: false,
-    user: ctx.user,
-  })
-  for (const doc of result.docs) names.set(doc.id, doc.name)
-  return names
 }
 
 const loadMunicipalityNamesByIds = async (

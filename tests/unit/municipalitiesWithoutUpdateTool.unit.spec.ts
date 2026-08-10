@@ -212,6 +212,19 @@ describe('getMunicipalitiesWithoutUpdate scope resolution (B189)', () => {
     expect(find).not.toHaveBeenCalled()
   })
 
+  it('fails closed with the empty scoped set for an advisor asking outside the portfolio (no municipality read)', async () => {
+    const find = vi.fn().mockResolvedValue(findResult([]))
+    const result = await run(find, { scope: 'Vale do Jiquiriça' }, advisor)
+    expect(result.total).toBe(0)
+    expect(result.nuncaAtualizados).toBe(0)
+    expect(result.municipios).toEqual([])
+    expect(result.escopoRestrito).toBe(true)
+    expect(find).toHaveBeenCalledTimes(1)
+    expect(find).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { region: { equals: 'Vale do Jiquiriçá' } } }),
+    )
+  })
+
   it('filters the scope query by municipality ids when a scope resolved them', async () => {
     const find = vi.fn()
     find.mockResolvedValueOnce(findResult([municipalityDoc({ id: 1 }), municipalityDoc({ id: 2 })]))
