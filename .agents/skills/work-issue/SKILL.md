@@ -1,80 +1,106 @@
 ---
 name: work-issue
 description: >-
-  Versão humana de agent-work-issue: claim de uma Issue, Plan mode com plano
-  de implementação deliberado a partir da intenção, pausa para confirmação
-  humana, depois execução → /simplify → capture-review-debts → PR Ready em
-  main com auto-merge. Use quando o usuário pedir /work-issue, quiser
-  supervisionar a abordagem de engenharia, ou trabalhar uma Issue com gate
-  humano antes do código.
+  Executa uma Issue já claimada de ponta a ponta com supervisão humana:
+  o contexto da sessão identifica a Issue (sem claim), Plan mode com plano
+  de implementação, pausa para confirmação humana, depois execução →
+  /simplify → capture-review-debts com gate → PR Ready em main com
+  auto-merge. Use quando o usuário pedir /work-issue, quiser supervisionar
+  a abordagem de engenharia, ou trabalhar uma Issue com gate humano antes
+  do código.
 disable-model-invocation: true
 ---
 
 # Work-issue (humano supervisiona)
 
-Mesmo pipeline de [`agent-work-issue`](../agent-work-issue/SKILL.md), com duas diferenças:
+Fluxo próprio do humano na sua máquina, com a sessão aberta no worktree da
+Issue. A sessão **já nasce no contrato**: Issue claimada, worktree correto,
+branch correta, modelo fixo do ambiente — o claim é feito **fora da skill**
+(hoje: `pnpm agent:claim` manual antes da sessão; OPS33: o `worktree next`
+claima). A skill assume isso e vai direto ao trabalho — **nenhum passo de
+claim/ambiente/modelo** (só a validação de contexto do Passo 1).
 
-1. **Você claima** a Issue (`pnpm agent:claim`).
-2. **Pausa após o plano de implementação** até o humano confirmar — só então executa.
+O pool tem a skill irmã `agent-work-issue` (workers Cursor Cloud, autônoma) —
+não é base nem filha desta. Os materiais compartilhados vivem aqui como
+referência: `engineering-brief.md`, `implementation-template.md`,
+`decision-quality.md`, `execution-pipeline.md` (mecânica de execução →
+fechamento, com deltas por ator).
 
-**Proibido:** DB de prod; merge sem CI green; editar outras Issues `in-progress`; pular a pausa do impl plan; Draft / sem auto-merge.
+**Proibido:** DB de prod; merge sem CI green; editar outras Issues `in-progress`;
+pular a pausa do impl plan; Draft / sem auto-merge.
 
 ## Checklist
 
 ```
 - [ ] 0. Prep: `pnpm i` se preciso
-- [ ] 1. Claim: pnpm agent:claim (ou -- --issue <N>)
-- [ ] 1b. rename_chat + open_resource (intenção)
-- [ ] 2. Verificação de modelo (assimétrica — pausa se sessão mais forte)
-- [ ] 3. Plan mode → escrever `*-impl.md` → **PARAR e confirmar com o humano**
-- [ ] 4. Após “ok”: executar como agent-work-issue Passos 4–6
+- [ ] 1. Contexto: Issue do prompt/`$ARGUMENTS` da sessão (ausente → UMA pergunta com validação; nunca claim)
+- [ ] 2. Abrir o plano de intenção do body da Issue (`Plano: docs/plans/...`; sem link → body é spec)
+- [ ] 3. Plan mode → escrever `docs/plans/<slug>-impl.md` → **PARAR e confirmar com o humano**
+- [ ] 4. Após “ok”: Passo 4 (execução → /simplify → débitos com gate → PR, via `execution-pipeline.md`)
 ```
 
-## Passo 0–1 — Prep e claim
+## Passo 1 — Contexto da sessão
 
-```bash
-pnpm i
-pnpm agent:claim            # topo da fila
-pnpm agent:claim -- --issue <N>
-```
+A Issue chega no prompt/`$ARGUMENTS` do `/work-issue` (`--issue <N>` ou o número —
+contrato OPS33; chamada manual: passar o número). Sempre consulte o GitHub para o
+resto (fonte única é a Issue, nunca um brief duplicado).
 
-O brief do stdout é o contrato de **produto** (id, prio, model, link da intenção). Claim = `ready → in-progress`.
+- **Presente** → valide o básico (`gh issue view <N>`: existe, `OPEN`, label
+  `in-progress` — confirma que o claim foi feito fora da skill) e use.
+- **Ausente** → **uma** pergunta ao humano ("Qual Issue?"), valide o número
+  informado com a mesma checagem e siga.
+- **Checagem falhou** (não existe / não `OPEN` / sem `in-progress`) → a Issue
+  não está claimada: **pare e peça ao humano** para claimar fora da skill
+  (`pnpm agent:claim --issue <N>`; no pós-OPS33, o `worktree next` já claima).
+  Nunca siga com Issue não claimada, nunca claim na sessão.
+- **Nunca rode `pnpm agent:claim`** — claim é contrato do ambiente (worktree
+  next / script), não da skill.
+- **Modelo: não verifique.** `model:` da Issue é metadata consultiva (o pool
+  spawna nele; o claim brief o imprime). A sessão da máquina do humano é sempre
+  o modelo fixo do ambiente (DeepSeek V4 Flash).
 
-### Rename + abrir intenção
+## Passo 2 — Intenção
 
-Padrão: `#<N> <id> — <título>` via `cursor-app-control` `rename_chat`.  
-Abra o plano de intenção com `open_resource` (`file:///…/docs/plans/<slug>.md`).
-
-## Passo 2 — Modelo
-
-Regra assimétrica (`model-selection`):
-
-- Sessão **mais fraca** que `model:` → informa e segue
-- Sessão **mais forte** → **informa e pausa** (“pedir X, está em Y — seguir?”)
-- Ausente → aplique model-selection e registre na Issue
+O path do plano de intenção vem do **body da Issue** (`Plano: [docs/plans/<slug>.md]` —
+mesmo contrato de `extractPlanPath` do prompt do pool). Sem plano linkado → o body
+é a spec. Abra e leia.
 
 ## Passo 3 — Plano de implementação + GATE humano
 
-Siga o **Passo 3** de `agent-work-issue` (Plan mode, engineering-brief, decision-quality, `docs/plans/<slug>-impl.md`).
+Plan mode: `SwitchMode` → `plan` (deliberar engenharia a partir da intenção).
 
-Depois de gravar o impl plan:
+1. Leia `engineering-brief.md` e aplique skills/princípios sob demanda.
+2. Explore o código o bastante para **reavaliar** a "Direção no codebase" da
+   intenção — você **deve** escolher a melhor abordagem maintainable, mesmo que
+   difira da hipótese do plano de intenção, desde que o **aceite de produto** se
+   mantenha.
+3. Escreva `docs/plans/<slug>-impl.md` via `implementation-template.md`.
+   Qualidade: `decision-quality.md` ≥4/5.
+4. Apresente no chat: abordagem recomendada, opções rejeitadas, fases, riscos,
+   o que diverge da hipótese de direção da intenção.
+5. **Pare.** Não escreva código de feature até confirmação explícita ("ok",
+   "pode executar", "aprovado", …).
+6. Se o humano pedir mudança de abordagem → revise o `*-impl.md` e reapresente.
+7. Confirmação → marque Status `aprovado` no impl plan → `SwitchMode` `agent` →
+   continue.
 
-1. Apresente no chat: abordagem recomendada, opções rejeitadas, fases, riscos, o que diverge da hipótese de direção da intenção.
-2. **Pare.** Não escreva código de feature até confirmação explícita (“ok”, “pode executar”, “aprovado”, …).
-3. Se o humano pedir mudança de abordagem → revise o `*-impl.md` e reapresente.
-4. Confirmação → marque Status `aprovado` no impl plan → `SwitchMode` `agent` → continue.
+Divergência material de produto (aceite/persona/lockdown da intenção não cabem):
+pare e **pergunte ao humano** — ele decide entre item sucessor ou `blocked`;
+nunca invente produto novo.
 
-## Passos 4–6 — Execução
+## Passo 4 — Executar
 
-Idênticos a `agent-work-issue`:
+`SwitchMode` → `agent` se ainda estiver em plan. Siga a mecânica de
+[`execution-pipeline.md`](execution-pipeline.md) (executar → simplify →
+fechar em main), com os deltas do ator humano:
 
-- Executar fases (schema/server → UI → gates)
-- `/simplify` completo + fixes
-- `capture-review-debts` **com** gate humano (Passo 5 daquela skill) — não use o modo autônomo do pool
-- `pnpm push` → PR Ready `--base main` + `Closes #N` → auto-merge → `gh pr checks --watch --required`
-
-Detalhes, Prep Cloud, invariantes e templates: leia [`agent-work-issue/SKILL.md`](../agent-work-issue/SKILL.md) e os arquivos em `.agents/skills/work-issue/` (`engineering-brief.md`, `implementation-template.md`, `decision-quality.md`).
+- **Branch:** `<Code>-<slug>` do worktree — nunca crie branch nova na sessão.
+- **UI:** shape → craft → critique → polish.
+- **`capture-review-debts`:** **com gate humano** — colha e pontue como a
+  skill manda, apresente ao humano antes de registrar (Issues novas com
+  `depends` no pai se necessário).
 
 ## Resumo final
 
-Issue claimada · sessão renomeada · intenção aberta · modelo · **impl plan confirmado pelo humano** · execução · simplify/débitos · PR + merge.
+Issue (contexto da sessão) · impl plan (abordagem + rejeitadas + divergências da
+hipótese) · simplify + débitos registrados/deferidos · PR + estado do merge.

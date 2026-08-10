@@ -47,7 +47,7 @@ export const buildPoolWorkerPrompt = ({ issueNumber, issueTitle, issueId, planPa
     '- Tratar o plano de intenção como contrato de engenharia — ele é intenção; o `*-impl.md` é a engenharia.',
     '',
     modelSlug
-      ? `Modelo declarado da Issue: \`${modelSlug}\` — você foi spawnado nele (ou no fallback documentado pelo pool); a verificação assimétrica de work-issue não se aplica.`
+      ? `Modelo declarado da Issue: \`${modelSlug}\` — você foi spawnado nele (ou no fallback documentado pelo pool); o spawn do pool já fixa o modelo.`
       : 'A Issue não declara `model:` — você foi spawnado no default do pool (composer-2.5).',
     '',
     `Ao terminar — merge concluído ou falha terminal — comente na Issue #${issueNumber} o desfecho em uma linha e encerre.`,

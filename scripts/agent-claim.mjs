@@ -104,11 +104,11 @@ console.log(`  id: ${issueId ?? '(none)'}  priority: ${pick.priority}`)
 console.log(`  rename_chat: ${sessionTitle.slice(0, 200)}`)
 if (pick.meta.model) {
   console.log(
-    `  model: ${pick.meta.model} (propriedade da Issue — verificar, não recalcular; ver skill model-selection)`,
+    `  model: ${pick.meta.model} (metadata consultiva — o work-issue não verifica modelo; o pool spawna nele; ver skill model-selection)`,
   )
 } else {
   console.log(
-    '  model: ausente — aplicar model-selection uma vez e registrar na Issue (gh issue edit)',
+    '  model: ausente — registrar slug único na Issue (gh issue edit; ver skill model-selection)',
   )
 }
 if (pick.satisfiedWithoutIssue.length > 0) {
@@ -120,6 +120,6 @@ console.log(`  url: https://github.com/fsolla/teqo/issues/${pick.issue.number}`)
 console.log('\n--- spec ---\n')
 console.log(rest.trim() || '(empty body — see linked plan)')
 console.log(
-  '\n[agent:claim] Fluxo: rename_chat (cursor-app-control) → implementar → gate:fast → pnpm push -u origin HEAD → gh pr create --base main (Closes #' +
-    `${pick.issue.number}) → PARAR. Promote stage→main é automático após CI stage green.`,
+  '\n[agent:claim] Fluxo: claim feito fora da sessão → abra a sessão de trabalho no worktree (skill `work-issue`, humano; no pool, o prompt do worker aponta `agent-work-issue`) → gates → PR Ready --base main (Closes #' +
+    `${pick.issue.number}) → auto-merge.`,
 )
