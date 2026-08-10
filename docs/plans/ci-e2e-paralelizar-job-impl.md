@@ -64,7 +64,9 @@ build + artefato `.next/e2e` compartilhado · C) 3 shards já de início
 **Recomendação:** **A com 2 shards** — porque a medição real decide: por shard
 = 54 s (fixo) + 172 s (build) + ~98 s (196/2) ≈ **324 s ≈ 5,4 min**; e com a
 cadeia removida os testes encolhem mais (~120–150 s full → ~75 s por shard),
-chegando a ~5 min. O caminho crítico do pipeline (max entre e2e/build/int)
+chegando a ~5 min. **Medido pós-merge (run 31418206512): 326 s (shard 1) /
+369 s (shard 2, com retry da flake conhecida) — dentro do aceite "≤ ~6 min"
+e do gatilho de revisão de 6,5 min.** O caminho crítico do pipeline (max entre e2e/build/int)
 passa de 435 s para ~300–330 s.
 **Rejeitadas:** **B** porque os shards só podem começar depois do build
 terminar: wall = build 172 + upload + download + teste/2 ≫ A (a transferência
@@ -93,8 +95,10 @@ por shard passar de ~6,5 min ou a distribuição de testes ficar desbalanceada.
   helper acima).
 - **`.github/workflows/ci.yml`**: job `e2e` vira matrix `shard: [1, 2]`
   (`fail-fast: false`; comentário apontando o single-source em
-  test-affected-core); step de teste vira `pnpm test:e2e -- --shard=${{ matrix.shard }}/2`;
-  env de job `PLAYWRIGHT_WORKERS: 2` explícito (aceite #4).
+  test-affected-core); step de teste vira `pnpm test:e2e --shard=${{ matrix.shard }}/2`
+  — **sem** o separador `--`: pnpm repassa o `--` literal ao playwright e a
+  flag viraria file pattern ("No tests found"); env de job
+  `PLAYWRIGHT_WORKERS: 2` explícito (aceite #4).
 - **`.github/workflows/ci-pr.yml`**: job `scope` emite `e2e_matrix` +
   `e2e_shards`; job `e2e` usa `strategy.matrix.shard: ${{ fromJson(...) }}`
   (full → `[1,2]`, selected → `[1]` — selected continua num runner só: pagar
@@ -159,8 +163,9 @@ produto (campaign/frontend/admin) roda em main e PR full, intacta.
 
 ## Aceite de engenharia
 
-- [x] Aceite de produto da intenção ainda coberto (mapa: wall ≤ ~6 min ✓,
-      suite completa em main/PR-full ✓, dev intocado ✓, workers explícitos ✓,
+- [x] Aceite de produto da intenção ainda coberto (mapa: wall ≤ ~6 min ✓ —
+      medido 326/369 s pós-merge, ver linha de medição acima; suite completa
+      em main/PR-full ✓, dev intocado ✓, workers explícitos ✓,
       flakes: mesma carga por run)
 - [x] Invariantes AGENTS/engineering-standards (sem migration, sem access,
       sem UI; gate:fast + gate de CI no fechamento)

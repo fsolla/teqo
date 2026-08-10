@@ -34,6 +34,9 @@ try {
       build: { mode: 'build', reason: full.reason },
       test: { ...full },
       e2e: { mode: 'full', specs: [], reason: full.reason, unmapped: [] },
+      // The scope job always reads e2e_shards.matrix/total — keep the fallback
+      // total (ci-pr.yml's fromJson must never receive a null/empty matrix).
+      e2e_shards: e2eShardConfig('full'),
     }),
   )
   process.exit(0)
