@@ -104,6 +104,23 @@ export const E2E_AFFECTED_MANIFEST = [
     ],
     specs: ['campaign-pwa', 'campaignWizardChrome', 'campaignBottomNav', 'campaignMunicipalities'],
   },
+  // Sollinha AI surfaces (B162+): the shell prefix above wakes the shell
+  // smoke, but the chat domain needs its own specs — the session/panel
+  // behavior lives in these files (OPS22 surfaced the gap).
+  {
+    prefixes: [
+      'src/components/campaign/shell/ai',
+      'src/lib/sollinhaChatSession',
+      `${CAMPAIGN_APP}/api/ai-chat`,
+    ],
+    specs: [
+      'campaignSollinhaContext',
+      'campaignAiChatResize',
+      'campaignAiLinks',
+      'campaignAiChatOpeningChips',
+      'campaignSollinhaWidth',
+    ],
+  },
   // Domains without a dedicated e2e family still wake campaign home smoke so
   // the affected classifier cannot return mode=none on an unmapped domain dir.
   {
