@@ -516,7 +516,7 @@ export const expectCampaignBiometricsReady = async (page: Page): Promise<void> =
   }).toPass({ timeout: 15_000 })
 }
 
-type CampaignE2EFixture = {
+export type CampaignE2EFixture = {
   baseURL: string
   fixtures: CampaignE2EOwnership
   login: (page: Page, identifier: string, password: string) => Promise<void>

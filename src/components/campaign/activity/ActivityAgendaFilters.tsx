@@ -105,51 +105,53 @@ export const ActivityAgendaFilters = ({
   }
 
   return (
-    <CampaignListOmnibox
-      id="agenda-omnibox"
-      label="Filtrar agenda"
-      placeholder="Filtrar por município, tag, deputado presente…"
-      chips={chips}
-      suggestions={suggestions}
-      query={query}
-      onQueryChange={setQuery}
-      isPending={isPending}
-      onSelectSuggestion={(suggestionId) => {
-        runAction(applyActivityAgendaOmniboxSuggestion({ state: draft, suggestionId }))
-      }}
-      onRemoveChip={(chipId) => {
-        runAction(removeActivityAgendaOmniboxChip({ state: draft, chipId }))
-      }}
-      onClearAll={() => {
-        runAction(clearActivityAgendaOmnibox())
-      }}
-      trailing={
-        <div className="hidden items-center gap-2 md:flex">
-          <Button
-            asChild
-            variant="outline"
-            size="icon"
-            className="min-h-11 min-w-11"
-            aria-label="Planejar giro"
-            title="Planejar giro"
-          >
-            <Link href={ACTIVITY_TOUR_COMPOSER_PATH}>
-              <MapPinnedIcon className="size-5" aria-hidden />
-            </Link>
-          </Button>
-          <Button
-            asChild
-            size="icon"
-            className="min-h-11 min-w-11"
-            aria-label="Nova atividade"
-            title="Nova atividade"
-          >
-            <Link href={buildActivityCreateHref(state)}>
-              <PlusIcon className="size-5" aria-hidden />
-            </Link>
-          </Button>
-        </div>
-      }
-    />
+    <div className="activity-agenda-filter-strip">
+      <CampaignListOmnibox
+        id="agenda-omnibox"
+        label="Filtrar agenda"
+        placeholder="Filtrar por município, tag, deputado presente…"
+        chips={chips}
+        suggestions={suggestions}
+        query={query}
+        onQueryChange={setQuery}
+        isPending={isPending}
+        onSelectSuggestion={(suggestionId) => {
+          runAction(applyActivityAgendaOmniboxSuggestion({ state: draft, suggestionId }))
+        }}
+        onRemoveChip={(chipId) => {
+          runAction(removeActivityAgendaOmniboxChip({ state: draft, chipId }))
+        }}
+        onClearAll={() => {
+          runAction(clearActivityAgendaOmnibox())
+        }}
+        trailing={
+          <div className="hidden items-center gap-2 md:flex">
+            <Button
+              asChild
+              variant="outline"
+              size="icon"
+              className="min-h-11 min-w-11"
+              aria-label="Planejar giro"
+              title="Planejar giro"
+            >
+              <Link href={ACTIVITY_TOUR_COMPOSER_PATH}>
+                <MapPinnedIcon className="size-5" aria-hidden />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="icon"
+              className="min-h-11 min-w-11"
+              aria-label="Nova atividade"
+              title="Nova atividade"
+            >
+              <Link href={buildActivityCreateHref(state)}>
+                <PlusIcon className="size-5" aria-hidden />
+              </Link>
+            </Button>
+          </div>
+        }
+      />
+    </div>
   )
 }

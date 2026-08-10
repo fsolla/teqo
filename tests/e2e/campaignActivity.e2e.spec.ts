@@ -1,6 +1,7 @@
 import { formatBahiaCivilDate, parseBahiaDateTimeInput } from '../../src/lib/campaignTime.js'
 import { hookFilledCreateData } from '../../src/utilities/hookFilledData.js'
 import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures.js'
+import { dayLabelFor, ptBrMonthNames } from './helpers/agendaPeriodLabels.js'
 
 test.describe('Atividades — registro-fundação', () => {
   test.setTimeout(90_000)
@@ -344,26 +345,38 @@ test.describe('Agenda — calendário operacional', () => {
       .click()
     await page.setViewportSize({ width: 390, height: 844 })
     await expect(viewSelector).toHaveAttribute('aria-label', 'Modo de visualização: Mês')
-    await expect(page.getByRole('button', { name: 'Este mês' })).toBeVisible({ timeout: 15_000 })
+    // C101 — the mobile calendar drops the FullCalendar toolbar: the period
+    // context lives in the app header instead (the current month's name).
+    await expect(page.getByRole('button', { name: 'Este mês' })).toHaveCount(0, {
+      timeout: 15_000,
+    })
+    const todayCivil = formatBahiaCivilDate(new Date())
+    const monthLabel = ptBrMonthNames[Number(todayCivil.slice(5, 7)) - 1] ?? ''
+    await expect(campaignPageChrome(page, monthLabel)).toBeVisible()
 
-    // The mobile top bar selector still switches modes. The list view shares
-    // the "Este mês" today label but drops the calendar grid.
+    // The mobile top bar selector still switches modes. The list view drops
+    // the calendar grid and the header goes back to the plain "Agenda" (the
+    // dates live in the list body).
     await viewSelector.click()
     await page.getByRole('menuitemradio', { name: 'Lista', exact: true }).click()
     await expect(page).toHaveURL(`${campaign.baseURL}/campanha/agenda?view=list`)
     await expect(viewSelector).toHaveAttribute('aria-label', 'Modo de visualização: Lista')
-    await expect(page.getByRole('button', { name: 'Este mês' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('button', { name: 'Este mês' })).toHaveCount(0, {
+      timeout: 15_000,
+    })
+    await expect(campaignPageChrome(page, 'Agenda')).toBeVisible()
     await expect(page.getByRole('grid')).toHaveCount(0, { timeout: 15_000 })
 
     // A navigation that drops the `view` param returns the calendar to the
     // responsive default instead of keeping an orphan view the selector no
     // longer claims (sidebar link / back-forward). Still on the 390px
-    // viewport, so the narrow default is day ("Hoje" today label, grid back).
+    // viewport, so the narrow default is day (grid back, no toolbar: the
+    // header shows today's period instead of a "Hoje" button).
     await page.goto(`${campaign.baseURL}/campanha/agenda`)
     await expect(viewSelector).toHaveAttribute('aria-label', 'Modo de visualização: Dia')
-    await expect(page.getByRole('button', { name: 'Hoje', exact: true })).toBeVisible({
-      timeout: 15_000,
-    })
+    const todayLabel = dayLabelFor(formatBahiaCivilDate(new Date()))
+    await expect(campaignPageChrome(page, todayLabel)).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('button', { name: 'Hoje', exact: true })).toHaveCount(0)
     await expect(page.getByRole('grid').first()).toBeVisible()
   })
 })

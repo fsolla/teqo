@@ -1,7 +1,11 @@
 import type { Where } from 'payload'
 
 import { CAMPAIGN_AGENDA_HOME } from '@/lib/campaignPaths'
-import { parseBahiaDateTimeInput } from '@/lib/campaignTime'
+import {
+  formatBahiaCivilDate,
+  parseBahiaDateTimeInput,
+  subtractBahiaCivilDays,
+} from '@/lib/campaignTime'
 import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/contactSearchQuery'
 import {
   activityStatuses,
@@ -62,6 +66,100 @@ export const activityAgendaViewFcId: Record<ActivityAgendaView, string> = {
   day: 'timeGridDay',
   month: 'dayGridMonth',
   list: 'listMonth',
+}
+
+/**
+ * Inverse of `activityAgendaViewFcId`: the FullCalendar view id reported by
+ * `datesSet` back to the agenda's own view vocabulary.
+ */
+export const activityAgendaViewFromFcId = (fcId: string): ActivityAgendaView | null => {
+  const match = activityAgendaViews.find((view) => activityAgendaViewFcId[view] === fcId)
+  return match ?? null
+}
+
+const ptBrMonthNames = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
+] as const
+
+const civilDateParts = (civilDate: string): { day: number; month: number } | null => {
+  const [year, month, day] = civilDate.split('-').map(Number)
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31
+  ) {
+    return null
+  }
+  return { day, month }
+}
+
+const civilDateLabel = (civilDate: string): string | null => {
+  const parts = civilDateParts(civilDate)
+  if (!parts) return null
+  return `${parts.day} ${ptBrMonthNames[parts.month - 1]}`
+}
+
+/**
+ * C101 — the period context the mobile app header shows while the calendar
+ * navigates: day → "9 Agosto"; week → "3–9 Agosto" (visible Mon–Sun, months
+ * spelled out when the range crosses one: "28 Julho – 3 Agosto"); month →
+ * "Agosto"; list → "Agenda" (the dates live in the list body). The month
+ * label uses the view's current date, NOT the grid range start: the month
+ * grid's visible range begins on the leading Sunday of the previous month.
+ * Returns null when the range cannot be read, so the header falls back to
+ * the catalog title instead of inventing a label.
+ */
+export const activityAgendaPeriodLabel = (
+  view: ActivityAgendaView,
+  startStr: string,
+  endStr: string,
+  currentDateStr: string,
+): string | null => {
+  if (view === 'list') return 'Agenda'
+
+  const civilDateOf = (value: string): string | null => {
+    const date = new Date(value)
+    return Number.isNaN(date.getTime()) ? null : formatBahiaCivilDate(date)
+  }
+
+  const start = civilDateOf(startStr)
+  const end = civilDateOf(endStr)
+  const startParts = start ? civilDateParts(start) : null
+  const endParts = end ? civilDateParts(end) : null
+  if (!start || !end || !startParts || !endParts) return null
+
+  if (view === 'day') return civilDateLabel(start)
+
+  // The anchor is ALREADY a Bahia civil date (`formatBahiaCivilDate` output,
+  // no timezone) — parsing it as an instant would re-derive it from UTC
+  // midnight and shift it back a day (2026-09-01 → 31 Agosto in Bahia).
+  const currentParts = civilDateParts(currentDateStr)
+  if (view === 'month') {
+    if (!currentParts) return null
+    return ptBrMonthNames[currentParts.month - 1]
+  }
+
+  const weekEnd = civilDateParts(subtractBahiaCivilDays(end, 1))
+  if (!weekEnd) return null
+  if (weekEnd.month === startParts.month) {
+    return `${startParts.day}–${weekEnd.day} ${ptBrMonthNames[startParts.month - 1]}`
+  }
+  return `${startParts.day} ${ptBrMonthNames[startParts.month - 1]} – ${weekEnd.day} ${ptBrMonthNames[weekEnd.month - 1]}`
 }
 
 const isActivityAgendaView = (value: string | undefined): value is ActivityAgendaView =>

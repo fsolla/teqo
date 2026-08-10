@@ -18,7 +18,7 @@ import themePlugin from '@fullcalendar/react/themes/classic'
 import '@fullcalendar/react/themes/classic/theme.css'
 import timeGridPlugin from '@fullcalendar/react/timegrid'
 import { UserRoundCheckIcon } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
@@ -29,17 +29,24 @@ import {
   ActivityInlineCreate,
   type ActivityInlineCreateDraft,
 } from '@/components/campaign/activity/ActivityInlineCreate'
+import { AgendaPeriodChrome } from '@/components/campaign/activity/AgendaPeriodChrome'
+import { useAgendaSwipeNavigation } from '@/components/campaign/activity/useAgendaSwipeNavigation'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { Button } from '@/components/ui/button'
+import { useIsMobileMeasured } from '@/hooks/use-mobile'
+import { formatBahiaCivilDate } from '@/lib/campaignTime'
 import {
   ACTIVITY_RESCHEDULE_FAILED_MESSAGE,
   activityStatusLabels,
   type ActivityStatus,
 } from '@/lib/schemas/activity'
 import {
+  activityAgendaPeriodLabel,
   activityAgendaViewFcId,
+  activityAgendaViewFromFcId,
   activitySlotPrefill,
   type ActivityAgendaState,
+  type ActivityAgendaView,
 } from '@/utilities/activityUi'
 import type { ActivityAgendaEvent } from '@/utilities/activityViewModels'
 
@@ -62,6 +69,15 @@ const eventColors: Record<ActivityStatus, { color: string; contrastColor: string
 }
 
 const MOBILE_BREAKPOINT_PX = 640
+
+/**
+ * C101 — the desktop chrome the FullCalendar toolbar keeps: title + prev/next
+ * + today. Mobile replaces it with the app header (period title + swipe).
+ */
+const desktopToolbarConfig = { start: 'prev,next today', center: 'title' } as const
+
+/** C101 — the fixed scroll anchor the day view opens at ("hoje é fixa em 08:00"). */
+const AGENDA_DAY_SCROLL_TIME = '08:00:00'
 
 const toEventInput = (event: ActivityAgendaEvent): EventInput => ({
   id: String(event.id),
@@ -116,7 +132,13 @@ export const ActivityAgenda = ({
   const narrowRef = useRef<boolean | null>(null)
   const mountedRef = useRef(false)
   const pendingEventIDs = useRef(new Set<string>())
-  const [visibleRange, setVisibleRange] = useState<{ start: string; end: string } | null>(null)
+  const draggingEventRef = useRef(false)
+  const [visibleRange, setVisibleRange] = useState<{
+    start: string
+    end: string
+    anchorDate: string
+    view: ActivityAgendaView
+  } | null>(null)
   const [events, setEvents] = useState<EventInput[]>([])
   const [reloadCount, setReloadCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -124,6 +146,13 @@ export const ActivityAgenda = ({
   const [loadError, setLoadError] = useState<string | null>(null)
   const [isNarrow, setIsNarrow] = useState(false)
   const [createDraft, setCreateDraft] = useState<ActivityInlineCreateDraft | null>(null)
+
+  // C101 — the mobile behaviors key on the WINDOW (<768, the app top bar's
+  // own `md:hidden` breakpoint), not on the calendar container: a desktop
+  // window with a narrow content pane (768–800 with the sidebar open) keeps
+  // the desktop chrome. The container-based `isNarrow` keeps deciding the
+  // responsive day/week fallback, as before C101.
+  const { isMobile } = useIsMobileMeasured()
 
   useEffect(() => {
     mountedRef.current = true
@@ -210,13 +239,102 @@ export const ActivityAgenda = ({
     }
   }, [reloadCount, state, visibleRange])
 
-  const handleDatesSet = useCallback(({ startStr, endStr }: DatesSetInfo) => {
+  const handleDatesSet = useCallback(({ startStr, endStr, view }: DatesSetInfo) => {
+    const nextView = activityAgendaViewFromFcId(view.type)
+    if (!nextView) return
+    // The month grid's visible range starts on the leading Sunday of the
+    // previous month — the period label anchors on the calendar's current
+    // date (the 1st of the displayed month), which is what the title must
+    // claim. Civil date (not the ISO instant): the anchor is only the
+    // day/month of the label, and instants near midnight Bahia must not
+    // churn the range identity.
+    const anchorDate = formatBahiaCivilDate(view.calendar.getDate())
     setVisibleRange((current) =>
-      current?.start === startStr && current.end === endStr
+      current?.start === startStr &&
+      current.end === endStr &&
+      current.view === nextView &&
+      current.anchorDate === anchorDate
         ? current
-        : { start: startStr, end: endStr },
+        : { start: startStr, end: endStr, anchorDate, view: nextView },
     )
   }, [])
+
+  // C101 — the mobile header period context: derived from the range the
+  // calendar actually shows (so it follows swipe navigation and view changes),
+  // rendered only when the mobile top bar is the visible chrome.
+  const periodLabel = useMemo(() => {
+    if (!visibleRange) return null
+    return activityAgendaPeriodLabel(
+      visibleRange.view,
+      visibleRange.start,
+      visibleRange.end,
+      visibleRange.anchorDate,
+    )
+  }, [visibleRange])
+
+  const handleToday = useCallback(() => {
+    const api = calendarRef.current?.getApi()
+    if (!api) return
+    api.today()
+    // C101 rabbit-hole cut: re-center on the way back to today (the day view
+    // opens at 08:00), but never fight the user's scroll on day changes.
+    api.scrollToTime(AGENDA_DAY_SCROLL_TIME)
+  }, [])
+
+  const handleEventDragStart = useCallback(() => {
+    draggingEventRef.current = true
+  }, [])
+
+  const handleEventDragStop = useCallback(() => {
+    draggingEventRef.current = false
+  }, [])
+
+  const handleEventResizeStart = useCallback(() => {
+    draggingEventRef.current = true
+  }, [])
+
+  const handleEventResizeStop = useCallback(() => {
+    draggingEventRef.current = false
+  }, [])
+
+  const handleSwipeNavigation = useCallback((direction: 'next' | 'prev') => {
+    const api = calendarRef.current?.getApi()
+    if (!api) return
+    if (direction === 'next') api.next()
+    else api.prev()
+  }, [])
+
+  const { suppressDateClickRef } = useAgendaSwipeNavigation({
+    containerRef,
+    enabled: isMobile,
+    blockRef: draggingEventRef,
+    onSwipe: handleSwipeNavigation,
+  })
+
+  const handleDateClick = useCallback(
+    (info: DateClickInfo) => {
+      // C101 — a consumed swipe ends with FullCalendar's dateClick in the day
+      // view (single column: the hit never leaves the starting slot). The
+      // navigation already happened — swallow the click so it does not open
+      // the inline create.
+      if (suppressDateClickRef.current) return
+
+      const prefill = activitySlotPrefill(info)
+      if (!prefill) return
+
+      const jsEvent = info.jsEvent as MouseEvent | undefined
+      const hasPoint = typeof jsEvent?.clientX === 'number' && typeof jsEvent?.clientY === 'number'
+      const anchor = hasPoint
+        ? { x: (jsEvent as MouseEvent).clientX, y: (jsEvent as MouseEvent).clientY }
+        : (() => {
+            const rect = containerRef.current?.getBoundingClientRect()
+            return rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null
+          })()
+
+      setCreateDraft({ ...prefill, anchor })
+    },
+    [suppressDateClickRef],
+  )
 
   const persistSchedule = useCallback(
     async ({
@@ -277,22 +395,6 @@ export const ActivityAgenda = ({
     [persistSchedule],
   )
 
-  const handleDateClick = useCallback((info: DateClickInfo) => {
-    const prefill = activitySlotPrefill(info)
-    if (!prefill) return
-
-    const jsEvent = info.jsEvent as MouseEvent | undefined
-    const hasPoint = typeof jsEvent?.clientX === 'number' && typeof jsEvent?.clientY === 'number'
-    const anchor = hasPoint
-      ? { x: (jsEvent as MouseEvent).clientX, y: (jsEvent as MouseEvent).clientY }
-      : (() => {
-          const rect = containerRef.current?.getBoundingClientRect()
-          return rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null
-        })()
-
-    setCreateDraft({ ...prefill, anchor })
-  }, [])
-
   return (
     <section className="activity-agenda-shell" aria-label="Calendário de atividades">
       <div className="sr-only" aria-live="polite">
@@ -320,6 +422,8 @@ export const ActivityAgenda = ({
         </div>
       ) : null}
 
+      <AgendaPeriodChrome label={isMobile ? periodLabel : null} onToday={handleToday} />
+
       <div className="activity-agenda" aria-busy={isLoading || savingCount > 0} ref={containerRef}>
         <FullCalendar
           ref={calendarRef}
@@ -328,14 +432,12 @@ export const ActivityAgenda = ({
           timeZone="America/Bahia"
           firstDay={1}
           initialView={state.view ? activityAgendaViewFcId[state.view] : 'timeGridWeek'}
-          headerToolbar={{
-            start: 'prev,next today',
-            center: 'title',
-          }}
-          height="auto"
+          headerToolbar={isMobile ? false : desktopToolbarConfig}
+          height={isMobile ? '100%' : 'auto'}
+          scrollTimeReset={!isMobile}
           slotMinTime="07:00:00"
           slotMaxTime="22:00:00"
-          scrollTime="08:00:00"
+          scrollTime={AGENDA_DAY_SCROLL_TIME}
           nowIndicator
           allDaySlot={false}
           dayMaxEvents
@@ -347,6 +449,10 @@ export const ActivityAgenda = ({
           dateClick={handleDateClick}
           eventDrop={handleScheduleChange}
           eventResize={handleScheduleChange}
+          eventDragStart={handleEventDragStart}
+          eventDragStop={handleEventDragStop}
+          eventResizeStart={handleEventResizeStart}
+          eventResizeStop={handleEventResizeStop}
           noEventsText="Nenhum compromisso nesta janela"
           headingLevel={2}
         />

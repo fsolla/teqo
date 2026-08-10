@@ -26,9 +26,24 @@ export const CampaignPageChromeText = ({
 
   return (
     <div data-slot="campaign-page-chrome" className={cn('min-w-0 flex-1 leading-tight', className)}>
-      <span data-slot="campaign-page-chrome-title" className="block truncate text-sm font-semibold">
-        {chrome.title}
-      </span>
+      {chrome.onTitleClick ? (
+        <button
+          type="button"
+          data-slot="campaign-page-chrome-title"
+          title={chrome.onTitleClick.hint}
+          onClick={chrome.onTitleClick.action}
+          className="block max-w-full truncate text-left text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {chrome.title}
+        </button>
+      ) : (
+        <span
+          data-slot="campaign-page-chrome-title"
+          className="block truncate text-sm font-semibold"
+        >
+          {chrome.title}
+        </span>
+      )}
       {chrome.subtitle ? (
         <span className="block truncate text-xs text-primary-foreground/80">{chrome.subtitle}</span>
       ) : null}
