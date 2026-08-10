@@ -36,7 +36,7 @@ O coordenador/assessor pergunta "Quais devem ser minhas prioridades neste moment
 
 - **Vou apresentar dados?** Sim — ranking com justificativa, como superfície deste item (no chat).
 - **Decisões desbloqueadas:** coordenador decide onde investir a próxima ação de campo; assessor decide o que tratar primeiro no seu escopo.
-- **Forma:** *adiada ao plano de implementação*. Restrições de produto: leitura relativa/local ao escopo do usuário (nunca % estadual absoluto); lista ranqueada com motivo, não score nu; "uma classe nunca vem sem o porquê" (mesma regra do mapa).
+- **Forma:** _adiada ao plano de implementação_. Restrições de produto: leitura relativa/local ao escopo do usuário (nunca % estadual absoluto); lista ranqueada com motivo, não score nu; "uma classe nunca vem sem o porquê" (mesma regra do mapa).
 
 ## Direção no codebase (hipótese)
 

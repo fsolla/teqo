@@ -39,7 +39,7 @@ O Sollinha hoje responde perguntas de leitura **por entidade** ("quais lideranç
 
 - **Vou apresentar dados?** Sim — listas de lideranças com recência/status, como superfície deste item (no chat).
 - **Decisões desbloqueadas:** coordenador decide em qual território atacar a seguir; assessor decide quais lideranças do seu escopo abordar primeiro; coordenador direciona assessores pelas listas agrupadas por responsável.
-- **Forma:** *adiada ao plano de implementação*. Restrições de produto: leitura relativa/local (território ou escopo do usuário), nunca % estadual; lista, não mapa; o critério de pendência **sempre** visível na resposta.
+- **Forma:** _adiada ao plano de implementação_. Restrições de produto: leitura relativa/local (território ou escopo do usuário), nunca % estadual; lista, não mapa; o critério de pendência **sempre** visível na resposta.
 
 ## Direção no codebase (hipótese)
 

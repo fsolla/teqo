@@ -36,7 +36,7 @@ O pedido original de gestão cobre três domínios — municípios, lideranças 
 
 - **Vou apresentar dados?** Sim — lista de cobertura de parcerias, como superfície deste item (no chat).
 - **Decisões desbloqueadas:** coordenador decide onde buscar/formalizar dobradinha; assessor identifica parceria faltando no seu território.
-- **Forma:** *adiada ao plano de implementação*. Restrições de produto: lista exaustiva com contagem (cobertura, não top N); leitura relativa ao escopo do usuário; sem % estadual.
+- **Forma:** _adiada ao plano de implementação_. Restrições de produto: lista exaustiva com contagem (cobertura, não top N); leitura relativa ao escopo do usuário; sem % estadual.
 
 ## Direção no codebase (hipótese)
 

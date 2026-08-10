@@ -37,7 +37,7 @@ O registro de acompanhamento é tão importante quanto a ação em campo: um mun
 
 - **Vou apresentar dados?** Sim — lista de cobertura com recência, como superfície deste item (no chat).
 - **Decisões desbloqueadas:** coordenador decide cobrar o assessor do município/região; assessor decide reativar o registro de um município esquecido.
-- **Forma:** *adiada ao plano de implementação*. Restrições de produto: lista exaustiva com contagem (não top N — cobertura é "tudo além do limiar"), ordenação pelo mais velho primeiro; limiar e definição sempre visíveis na resposta.
+- **Forma:** _adiada ao plano de implementação_. Restrições de produto: lista exaustiva com contagem (não top N — cobertura é "tudo além do limiar"), ordenação pelo mais velho primeiro; limiar e definição sempre visíveis na resposta.
 
 ## Direção no codebase (hipótese)
 
