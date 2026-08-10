@@ -35,6 +35,11 @@ import { useAgendaSwipeNavigation } from '@/components/campaign/activity/useAgen
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { Button } from '@/components/ui/button'
 import { useIsMobileMeasured } from '@/hooks/use-mobile'
+import {
+  allDayEndInstantFromExclusive,
+  allDayExclusiveEndDate,
+  allDayStartInstant,
+} from '@/lib/activityAllDay'
 import { formatBahiaCivilDate } from '@/lib/campaignTime'
 import {
   ACTIVITY_RESCHEDULE_FAILED_MESSAGE,
@@ -84,9 +89,13 @@ const AGENDA_DAY_SCROLL_TIME = '08:00:00'
 const toEventInput = (event: ActivityAgendaEvent): EventInput => ({
   id: String(event.id),
   title: event.title,
-  start: event.startAt,
-  end: event.endAt ?? undefined,
-  allDay: false,
+  // C104 — all-day events use the date parts: start as-is (first day), end as
+  // the exclusive day after the last stored day (FullCalendar's convention).
+  start: event.allDay ? event.startAt.slice(0, 10) : event.startAt,
+  end: event.allDay
+    ? allDayExclusiveEndDate(event.endAt ?? event.startAt)
+    : (event.endAt ?? undefined),
+  allDay: event.allDay,
   url: event.href,
   startEditable: event.canReschedule,
   durationEditable: event.canReschedule,
@@ -370,11 +379,13 @@ export const ActivityAgenda = ({
   const persistSchedule = useCallback(
     async ({
       id,
+      allDay,
       startAt,
       endAt,
       revert,
     }: {
       id: string
+      allDay: boolean
       startAt: string
       endAt: string | null
       revert: () => void
@@ -387,7 +398,7 @@ export const ActivityAgenda = ({
       pendingEventIDs.current.add(id)
       setSavingCount((count) => count + 1)
       try {
-        const result = await rescheduleActivity({ id: Number(id), startAt, endAt })
+        const result = await rescheduleActivity({ id: Number(id), allDay, startAt, endAt })
         if (!mountedRef.current) return
 
         if (!result.ok) {
@@ -416,12 +427,24 @@ export const ActivityAgenda = ({
 
   const handleScheduleChange = useCallback(
     (info: EventDropInfo | EventResizeDoneInfo) => {
-      void persistSchedule({
-        id: info.event.id,
-        startAt: info.event.startStr,
-        endAt: info.event.endStr || null,
-        revert: info.revert,
-      })
+      // C104 — the all-day lane exists now; dragging an event between the lane
+      // and the time grid would flip its allDay flag. Converting a commitment
+      // by dragging is out of scope, so such drops are rejected.
+      if ('oldEvent' in info && info.event.allDay !== info.oldEvent.allDay) {
+        info.revert()
+        toast.error(
+          'Não é possível transformar um compromisso em dia inteiro (ou vice-versa) arrastando-o. Edite pelo formulário.',
+        )
+        return
+      }
+      const allDay = info.event.allDay
+      const startAt = allDay ? allDayStartInstant(info.event.startStr) : info.event.startStr
+      const endAt = allDay
+        ? allDayEndInstantFromExclusive(
+            info.event.endStr || allDayExclusiveEndDate(allDayStartInstant(info.event.startStr)),
+          )
+        : info.event.endStr || null
+      void persistSchedule({ id: info.event.id, allDay, startAt, endAt, revert: info.revert })
     },
     [persistSchedule],
   )
@@ -484,7 +507,8 @@ export const ActivityAgenda = ({
           slotMaxTime="22:00:00"
           scrollTime={AGENDA_DAY_SCROLL_TIME}
           nowIndicator
-          allDaySlot={false}
+          // C104 — the all-day lane carries full-day commitments at the top of
+          // the day/week views (Google Calendar behavior the mesa expects).
           dayMaxEvents
           editable={!isLoading && savingCount === 0}
           eventLongPressDelay={650}

@@ -13,6 +13,7 @@ import { ResponsibleMultiSelect } from '@/components/campaign/shared/Responsible
 import { StrictCombobox } from '@/components/campaign/shared/StrictCombobox'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/Checkbox'
 import {
   Drawer,
   DrawerContent,
@@ -24,6 +25,7 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/Popover'
 import { Spinner } from '@/components/ui/Spinner'
+import { allDayEndInstant, allDayRangeValid, allDayStartInstant } from '@/lib/activityAllDay'
 import {
   formatBahiaDateTimeLabel,
   formatIsoAsBahiaDateTimeInput,
@@ -112,6 +114,7 @@ const ActivityInlineCreateForm = ({
   const [title, setTitle] = useState('')
   const [start, setStart] = useState(formatIsoAsBahiaDateTimeInput(startAt))
   const [end, setEnd] = useState(formatIsoAsBahiaDateTimeInput(endAt))
+  const [allDay, setAllDay] = useState(false)
   const [locality, setLocality] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const preselectedMunicipalityId =
@@ -126,12 +129,19 @@ const ActivityInlineCreateForm = ({
 
   const errorFor = (name: string) => fieldErrors[name]?.[0]
 
+  const allDayStartDate = start.slice(0, 10)
+  const allDayEndDate = end ? end.slice(0, 10) : allDayStartDate
+
   // C105 — the href mirrors the LIVE state (times edited in the sheet, typed
   // tags), not the slot draft, so "Mais detalhes" carries everything the user
   // actually filled.
   const moreDetailsHref = buildActivityCreateHref(agendaState, {
-    startAt: parseBahiaDateTimeInput(start) ?? undefined,
-    endAt: end ? (parseBahiaDateTimeInput(end) ?? undefined) : undefined,
+    ...(allDay
+      ? { allDay: true, startAt: allDayStartDate, endAt: allDayEndDate }
+      : {
+          startAt: parseBahiaDateTimeInput(start) ?? undefined,
+          endAt: end ? (parseBahiaDateTimeInput(end) ?? undefined) : undefined,
+        }),
     municipalityId: municipalityValue ? Number(municipalityValue) : undefined,
     title: title.trim() || undefined,
     tags: tags.length > 0 ? tags : undefined,
@@ -152,9 +162,17 @@ const ActivityInlineCreateForm = ({
       nextFieldErrors.title = ['Informe um título com ao menos 2 caracteres.']
     }
     if (!municipalityId) nextFieldErrors.municipality = ['Informe o município.']
-    if (!startIso) nextFieldErrors.startAt = ['Informe a data e horário de início do compromisso.']
-    if (startIso && endIso && new Date(endIso) <= new Date(startIso)) {
-      nextFieldErrors.endAt = ['O horário de término deve ser posterior ao de início.']
+    if (allDay) {
+      if (!startIso) nextFieldErrors.startAt = ['Informe a data de início do compromisso.']
+      if (startIso && endIso && !allDayRangeValid(startIso, endIso)) {
+        nextFieldErrors.endAt = ['A data de término deve ser igual ou posterior à de início.']
+      }
+    } else {
+      if (!startIso)
+        nextFieldErrors.startAt = ['Informe a data e horário de início do compromisso.']
+      if (startIso && endIso && new Date(endIso) <= new Date(startIso)) {
+        nextFieldErrors.endAt = ['O horário de término deve ser posterior ao de início.']
+      }
     }
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors)
@@ -169,8 +187,16 @@ const ActivityInlineCreateForm = ({
       const result = await createActivityInline({
         title: trimmedTitle,
         municipality: municipalityId,
-        startAt: startIso as string,
-        ...(endIso ? { endAt: endIso } : {}),
+        ...(allDay
+          ? {
+              allDay: true,
+              startAt: allDayStartInstant(allDayStartDate),
+              ...(end ? { endAt: allDayEndInstant(allDayEndDate) } : {}),
+            }
+          : {
+              startAt: startIso as string,
+              ...(endIso ? { endAt: endIso } : {}),
+            }),
         ...(locality.trim() ? { locality: locality.trim() } : {}),
         ...(responsible ? { responsible } : {}),
         // C105 — the tags mirror state (every chip mutation fires `onChange`),
@@ -214,6 +240,17 @@ const ActivityInlineCreateForm = ({
         ) : null}
       </Field>
 
+      <Field>
+        <Field orientation="horizontal" className="min-h-11 rounded-lg border p-3">
+          <Checkbox
+            checked={allDay}
+            onCheckedChange={(next) => setAllDay(Boolean(next))}
+            aria-label="Todo o dia"
+          />
+          <span>Todo o dia</span>
+        </Field>
+      </Field>
+
       <div className="grid gap-3 sm:grid-cols-2">
         <Field data-invalid={Boolean(errorFor('startAt'))}>
           <FieldLabel htmlFor="inline-startAt">Início *</FieldLabel>
@@ -223,6 +260,7 @@ const ActivityInlineCreateForm = ({
             onValueChange={setStart}
             invalid={Boolean(errorFor('startAt'))}
             errorId={errorFor('startAt') ? 'inline-startAt-error' : undefined}
+            timeVisible={!allDay}
           />
           {errorFor('startAt') ? (
             <FieldError id="inline-startAt-error">{errorFor('startAt')}</FieldError>
@@ -236,6 +274,7 @@ const ActivityInlineCreateForm = ({
             onValueChange={setEnd}
             invalid={Boolean(errorFor('endAt'))}
             errorId={errorFor('endAt') ? 'inline-endAt-error' : undefined}
+            timeVisible={!allDay}
           />
           {errorFor('endAt') ? (
             <FieldError id="inline-endAt-error">{errorFor('endAt')}</FieldError>

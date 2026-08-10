@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover
 import {
   floorToMinuteStep,
   formatBahiaCivilDate,
+  formatBahiaCivilDateLabel,
   formatBahiaCivilDateTimeLabel,
   hourOptions,
   minuteOptionsForStep,
@@ -25,6 +26,11 @@ import { cn } from '@/lib/utils'
  * 00–23 / 00–45, so no browser locale or Intl hour cycle can inject AM/PM.
  * The parent renders the surrounding Field/FieldError; this component is the
  * control itself (trigger + popover with calendar and step selects).
+ *
+ * C104 — `timeVisible={false}` is the all-day mode: the trigger formats only
+ * the date and the popover renders just the calendar (no time selects); the
+ * value contract stays the same civil string, so the date part is the
+ * all-day day and the time part is ignored on submit.
  */
 export const ActivityDateTimeField = ({
   id,
@@ -32,6 +38,7 @@ export const ActivityDateTimeField = ({
   onValueChange,
   invalid = false,
   errorId,
+  timeVisible = true,
 }: {
   id: string
   value: string
@@ -39,6 +46,8 @@ export const ActivityDateTimeField = ({
   invalid?: boolean
   /** FieldError id to announce on focus — parity with the input it replaces. */
   errorId?: string
+  /** When false, hide the time selects and label the trigger with the date only. */
+  timeVisible?: boolean
 }) => {
   const civil = floorToMinuteStep(value)
   const datePart = civil.slice(0, 10)
@@ -71,7 +80,9 @@ export const ActivityDateTimeField = ({
               'border-destructive ring-3 ring-destructive/20 focus-visible:border-destructive focus-visible:ring-destructive/20',
           )}
         >
-          <span className="truncate">{formatBahiaCivilDateTimeLabel(civil)}</span>
+          <span className="truncate">
+            {timeVisible ? formatBahiaCivilDateTimeLabel(civil) : formatBahiaCivilDateLabel(civil)}
+          </span>
           <CalendarIcon
             data-icon="inline-end"
             aria-hidden="true"
@@ -93,38 +104,42 @@ export const ActivityDateTimeField = ({
             className="w-full p-2"
           />
         ) : null}
-        <div className="flex flex-col gap-3 border-t p-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground select-none">Hora</span>
-              <NativeSelect
-                aria-label="Hora"
-                value={hour}
-                onChange={(event) => setHour(event.target.value)}
-              >
-                {hourOptions.map((option) => (
-                  <NativeSelectOption key={option} value={option}>
-                    {option}h
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground select-none">Minuto</span>
-              <NativeSelect
-                aria-label="Minuto"
-                value={minute}
-                onChange={(event) => setMinute(event.target.value)}
-              >
-                {minuteOptionsForStep().map((option) => (
-                  <NativeSelectOption key={option} value={option}>
-                    {option}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
+        {timeVisible ? (
+          <div className="flex flex-col gap-3 border-t p-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-muted-foreground select-none">Hora</span>
+                <NativeSelect
+                  aria-label="Hora"
+                  value={hour}
+                  onChange={(event) => setHour(event.target.value)}
+                >
+                  {hourOptions.map((option) => (
+                    <NativeSelectOption key={option} value={option}>
+                      {option}h
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-muted-foreground select-none">
+                  Minuto
+                </span>
+                <NativeSelect
+                  aria-label="Minuto"
+                  value={minute}
+                  onChange={(event) => setMinute(event.target.value)}
+                >
+                  {minuteOptionsForStep().map((option) => (
+                    <NativeSelectOption key={option} value={option}>
+                      {option}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </div>
             </div>
           </div>
-        </div>
+        ) : null}
       </PopoverContent>
     </Popover>
   )

@@ -5,6 +5,7 @@ import type {
 } from 'payload'
 import { APIError } from 'payload'
 
+import { allDayRangeValid } from '@/lib/activityAllDay'
 import { relationshipId } from '@/lib/relationship'
 import {
   ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE,
@@ -46,6 +47,7 @@ const activityStaffFieldSnapshot = (doc: Record<string, unknown>) => ({
   tags: Array.isArray(doc.tags) ? [...doc.tags].sort() : [],
   status: doc.status ?? null,
   description: trimmedText(doc.description),
+  allDay: Boolean(doc.allDay),
   startAt: doc.startAt ?? null,
   endAt: doc.endAt ?? null,
   municipality: relationshipId(doc.municipality),
@@ -96,16 +98,29 @@ const validateActivitySchedule: CollectionBeforeValidateHook = ({
   const nextData = operation === 'update' ? { ...originalDoc, ...data } : data
   const startAt = nextData.startAt ?? null
   const endAt = nextData.endAt ?? null
+  const allDay = Boolean(nextData.allDay)
 
   // C14: startAt is always required (no more rascunho without date).
   if (!startAt) {
-    throw new APIError('Informe a data e horário de início do compromisso.', 400)
+    throw new APIError(
+      allDay
+        ? 'Informe a data de início do compromisso.'
+        : 'Informe a data e horário de início do compromisso.',
+      400,
+    )
   }
 
   if (startAt && endAt) {
     const start = new Date(startAt as string)
     const end = new Date(endAt as string)
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || !(start < end)) {
+    const valid = !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())
+    if (allDay) {
+      // C104 — all-day is day granularity: end date may equal the start date
+      // (single day), never precede it.
+      if (valid && !allDayRangeValid(startAt as string, endAt as string)) {
+        throw new APIError('A data de término deve ser igual ou posterior à de início.', 400)
+      }
+    } else if (!valid || !(start < end)) {
       throw new APIError('O horário de término deve ser posterior ao de início.', 400)
     }
   }
@@ -453,6 +468,21 @@ export const Activity: CollectionConfig = {
       index: true,
       admin: {
         description: 'Marque quando o deputado Jorge Solla estiver presente na atividade.',
+      },
+    },
+    {
+      // C104 — all-day commitments (one or several whole days) keep the date
+      // granularity the toggle promised: when true, startAt is the first day
+      // at 00:00 America/Bahia and endAt the last day at 00:00 (inclusive end;
+      // single-day events have startAt === endAt). Conversions to the
+      // exclusive end FullCalendar/iCal expect live in lib/activityAllDay.ts.
+      name: 'allDay',
+      type: 'checkbox',
+      label: 'Todo o dia',
+      defaultValue: false,
+      index: true,
+      admin: {
+        description: 'Compromisso que ocupa um ou mais dias inteiros, sem horário.',
       },
     },
     {

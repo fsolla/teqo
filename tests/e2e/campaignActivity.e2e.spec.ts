@@ -181,25 +181,19 @@ test.describe('Agenda — calendário operacional', () => {
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}`)
 
-    const dayCell = page.getByRole('gridcell').nth(1)
+    const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
     // FullCalendar renders the time axis lazily and re-lays out on mount: the
     // grid first paints empty and re-renders (replacing its gridcells) when the
     // events land. Wait for the load to finish before interacting, or the
     // locator's element is replaced mid-action ("Element is not attached").
     await expect(page.getByText('Carregando compromissos…')).toHaveCount(0, { timeout: 15_000 })
-    const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
     await expect(slotLocator).toBeVisible()
-    await expect(dayCell).toBeVisible()
-    await dayCell.scrollIntoViewIfNeeded()
-    const slotBox = await slotLocator.boundingBox()
-    const dayBox = await dayCell.boundingBox()
-    if (!slotBox || !dayBox) throw new Error('A grade semanal não expôs o slot esperado.')
-    await dayCell.click({
-      position: {
-        x: dayBox.width / 2,
-        y: slotBox.y - dayBox.y + slotBox.height / 2,
-      },
-    })
+    // C104 — with the all-day lane enabled, the v7 classic theme paints the
+    // all-day day fills over the time grid; real clicks still land on the slot
+    // (FullCalendar resolves by data-time), but Playwright's actionability
+    // check refuses them, so the click is forced on the slot lane itself.
+    await slotLocator.scrollIntoViewIfNeeded()
+    await slotLocator.click({ force: true })
 
     // The click no longer navigates: the inline overlay opens at the slot.
     await expect(page).toHaveURL(new RegExp('/campanha/agenda.*'))
@@ -251,6 +245,66 @@ test.describe('Agenda — calendário operacional', () => {
     await expect(page).toHaveURL(new RegExp('/campanha/agenda.*'))
   })
 
+  test('cria compromisso "Todo o dia" no slot, sem horário e com faixa no calendário (C104)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.claimMunicipality()
+    const title = fixtures.value('Giro de dia inteiro')
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}`)
+
+    await expect(page.getByText('Carregando compromissos…')).toHaveCount(0, { timeout: 15_000 })
+    const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
+    await expect(slotLocator).toBeVisible()
+    // C104 — with the all-day lane enabled, the v7 classic theme paints the
+    // all-day day fills over the time grid; real clicks still land on the slot
+    // (FullCalendar resolves by data-time), but Playwright's actionability
+    // check refuses them, so the click is forced on the slot lane itself.
+    await slotLocator.scrollIntoViewIfNeeded()
+    await slotLocator.click({ force: true })
+
+    const startTrigger = page.getByLabel('Início *')
+    await expect(startTrigger).toBeVisible()
+    await expect(startTrigger).toHaveText(/\d{2}\/\d{2}\/\d{4} às 14:00/)
+
+    // C104 — toggling "Todo o dia" hides the times: both triggers show only
+    // the civil date, and the picker no longer offers Hora/Minuto selects.
+    await page.getByLabel('Todo o dia').click()
+    await expect(startTrigger).toHaveText(/^\d{2}\/\d{2}\/\d{4}$/)
+    await expect(page.getByLabel('Término')).toHaveText(/^\d{2}\/\d{2}\/\d{4}$/)
+    await startTrigger.click()
+    await expect(
+      page.locator('[data-slot="popover-content"][data-state="open"]').last().getByRole('combobox'),
+    ).toHaveCount(0)
+    await page.keyboard.press('Escape')
+
+    // Multi-day: the end picker lands on a later day of the same month.
+    await page.getByLabel('Término').click()
+    const endPicker = page.locator('[data-slot="popover-content"][data-state="open"]').last()
+    await endPicker.getByRole('button', { name: /17 de agosto de 2026/ }).click()
+    await page.keyboard.press('Escape')
+    await expect(page.getByLabel('Término')).toHaveText(/17\/08\/2026/)
+
+    await page.getByLabel('Título *').fill(title)
+    await page.getByRole('button', { name: 'Salvar' }).click()
+
+    // The band lands without a time chip: the all-day event carries no
+    // "14:00 – 14:30" text (the timed events render it; allDay:true does not).
+    await expect(page.getByText(title, { exact: true })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText(/\d{2}:\d{2} – \d{2}:\d{2}/)).toHaveCount(0)
+    await expect(page).toHaveURL(new RegExp('/campanha/agenda.*'))
+
+    // The detail page preserves the all-day choice: date-only labels.
+    await page.getByText(title, { exact: true }).first().click()
+    await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+$/)
+    await expect(page.getByText(/^\d{2}\/\d{2}\/\d{4}$/).first()).toBeVisible()
+    await expect(page.getByText(/\d{2}\/\d{2}\/\d{4} às /)).toHaveCount(0)
+  })
+
   test('"Mais detalhes" pré-preenche o formulário completo com o rascunho', async ({
     campaign,
     page,
@@ -263,25 +317,19 @@ test.describe('Agenda — calendário operacional', () => {
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}`)
 
-    const dayCell = page.getByRole('gridcell').nth(1)
+    const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
     // FullCalendar renders the time axis lazily and re-lays out on mount: the
     // grid first paints empty and re-renders (replacing its gridcells) when the
     // events land. Wait for the load to finish before interacting, or the
     // locator's element is replaced mid-action ("Element is not attached").
     await expect(page.getByText('Carregando compromissos…')).toHaveCount(0, { timeout: 15_000 })
-    const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
     await expect(slotLocator).toBeVisible()
-    await expect(dayCell).toBeVisible()
-    await dayCell.scrollIntoViewIfNeeded()
-    const slotBox = await slotLocator.boundingBox()
-    const dayBox = await dayCell.boundingBox()
-    if (!slotBox || !dayBox) throw new Error('A grade semanal não expôs o slot esperado.')
-    await dayCell.click({
-      position: {
-        x: dayBox.width / 2,
-        y: slotBox.y - dayBox.y + slotBox.height / 2,
-      },
-    })
+    // C104 — with the all-day lane enabled, the v7 classic theme paints the
+    // all-day day fills over the time grid; real clicks still land on the slot
+    // (FullCalendar resolves by data-time), but Playwright's actionability
+    // check refuses them, so the click is forced on the slot lane itself.
+    await slotLocator.scrollIntoViewIfNeeded()
+    await slotLocator.click({ force: true })
 
     await expect(page.getByLabel('Título *')).toBeVisible()
     await page.getByLabel('Título *').fill(title)

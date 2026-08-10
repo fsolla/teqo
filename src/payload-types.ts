@@ -744,6 +744,10 @@ export interface Activity {
    * Marque quando o deputado Jorge Solla estiver presente na atividade.
    */
   deputyPresent?: boolean | null;
+  /**
+   * Compromisso que ocupa um ou mais dias inteiros, sem horário.
+   */
+  allDay?: boolean | null;
   startAt?: string | null;
   endAt?: string | null;
   municipality: number | Municipality;
@@ -1799,6 +1803,7 @@ export interface ActivitySelect<T extends boolean = true> {
   status?: T;
   description?: T;
   deputyPresent?: T;
+  allDay?: T;
   startAt?: T;
   endAt?: T;
   municipality?: T;

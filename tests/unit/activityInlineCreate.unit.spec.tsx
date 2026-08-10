@@ -285,4 +285,93 @@ describe('ActivityInlineCreate — overlay de criação inline', () => {
     expect(screen.getByLabelText('Início *').textContent).toBe('07/08/2026 às 13:00')
     expect(screen.getByRole('button', { name: 'Salvar' })).toBeTruthy()
   })
+
+  it('alterna "Todo o dia" e esconde os seletores de horário (C104)', () => {
+    renderOverlay({ agendaState: { municipality: 12 } })
+
+    fireEvent.click(screen.getByLabelText('Todo o dia'))
+
+    expect(screen.getByLabelText('Início *').textContent).toBe('07/08/2026')
+    expect(screen.getByLabelText('Término').textContent).toBe('07/08/2026')
+
+    fireEvent.click(screen.getByLabelText('Início *'))
+    const dialogs = screen.getAllByRole('dialog')
+    const picker = within(dialogs[dialogs.length - 1])
+    expect(picker.queryByRole('combobox', { name: 'Hora' })).toBeNull()
+    expect(picker.queryByRole('combobox', { name: 'Minuto' })).toBeNull()
+
+    fireEvent.click(screen.getByLabelText('Todo o dia'))
+    expect(screen.getByLabelText('Início *').textContent).toBe('07/08/2026 às 13:00')
+  })
+
+  it('salva dia inteiro com instantes de meia-noite baiana (C104)', async () => {
+    const onCreated = vi.fn()
+    mocks.createInline.mockResolvedValue({ ok: true })
+    renderOverlay({ agendaState: { municipality: 12 }, onCreated })
+
+    fireEvent.change(screen.getByLabelText('Título *'), {
+      target: { value: 'Café com apoiadores' },
+    })
+    fireEvent.click(screen.getByLabelText('Todo o dia'))
+
+    fireEvent.click(screen.getByLabelText('Início *'))
+    const dialogs = screen.getAllByRole('dialog')
+    const startPicker = within(dialogs[dialogs.length - 1])
+    fireEvent.click(startPicker.getByRole('button', { name: /15 de agosto de 2026/ }))
+
+    fireEvent.click(screen.getByLabelText('Término'))
+    const endPicker = within(
+      screen.getAllByRole('dialog')[screen.getAllByRole('dialog').length - 1],
+    )
+    fireEvent.click(endPicker.getByRole('button', { name: /17 de agosto de 2026/ }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
+
+    await waitFor(() => expect(mocks.createInline).toHaveBeenCalledTimes(1))
+    expect(mocks.createInline).toHaveBeenCalledWith({
+      title: 'Café com apoiadores',
+      municipality: 12,
+      allDay: true,
+      startAt: '2026-08-15T03:00:00.000Z',
+      endAt: '2026-08-17T03:00:00.000Z',
+    })
+    expect(onCreated).toHaveBeenCalledTimes(1)
+  })
+
+  it('bloqueia dia inteiro com término anterior ao início (C104)', async () => {
+    mocks.createInline.mockResolvedValue({ ok: true })
+    renderOverlay({ agendaState: { municipality: 12 } })
+
+    fireEvent.change(screen.getByLabelText('Título *'), {
+      target: { value: 'Café com apoiadores' },
+    })
+    fireEvent.click(screen.getByLabelText('Todo o dia'))
+
+    fireEvent.click(screen.getByLabelText('Início *'))
+    const startPicker = within(screen.getAllByRole('dialog').at(-1) as HTMLElement)
+    fireEvent.click(startPicker.getByRole('button', { name: /15 de agosto de 2026/ }))
+
+    fireEvent.click(screen.getByLabelText('Término'))
+    const endPicker = within(screen.getAllByRole('dialog').at(-1) as HTMLElement)
+    fireEvent.click(endPicker.getByRole('button', { name: /10 de agosto de 2026/ }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('A data de término deve ser igual ou posterior à de início.'),
+      ).toBeTruthy(),
+    )
+    expect(mocks.createInline).not.toHaveBeenCalled()
+  })
+
+  it('passa "Todo o dia" e as datas para "Mais detalhes" (C104)', () => {
+    renderOverlay({ agendaState: { municipality: 12 } })
+
+    fireEvent.click(screen.getByLabelText('Todo o dia'))
+    const link = screen.getByRole('link', { name: 'Mais detalhes' })
+    expect(link.getAttribute('href')).toBe(
+      '/campanha/atividades/nova?allDay=1&startAt=2026-08-07&endAt=2026-08-07&municipality=12&returnTo=%2Fcampanha%2Fagenda%3Fmunicipality%3D12',
+    )
+  })
 })

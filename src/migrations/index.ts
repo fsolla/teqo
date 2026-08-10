@@ -46,6 +46,7 @@ import * as migration_20260807_030000_unify_municipality_update from './20260807
 import * as migration_20260808_134911_add_calendar_feed from './20260808_134911_add_calendar_feed';
 import * as migration_20260808_184113_remodel_activity_responsible from './20260808_184113_remodel_activity_responsible';
 import * as migration_20260809_204728_add_campaign_user_contact_and_leadership_advisors from './20260809_204728_add_campaign_user_contact_and_leadership_advisors';
+import * as migration_20260810_010844_add_activity_all_day from './20260810_010844_add_activity_all_day';
 
 export const migrations = [
   {
@@ -286,6 +287,11 @@ export const migrations = [
   {
     up: migration_20260809_204728_add_campaign_user_contact_and_leadership_advisors.up,
     down: migration_20260809_204728_add_campaign_user_contact_and_leadership_advisors.down,
-    name: '20260809_204728_add_campaign_user_contact_and_leadership_advisors'
+    name: '20260809_204728_add_campaign_user_contact_and_leadership_advisors',
+  },
+  {
+    up: migration_20260810_010844_add_activity_all_day.up,
+    down: migration_20260810_010844_add_activity_all_day.down,
+    name: '20260810_010844_add_activity_all_day',
   },
 ];

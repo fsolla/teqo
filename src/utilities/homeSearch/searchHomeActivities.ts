@@ -46,7 +46,9 @@ export const searchHomeActivities = async (
       id: true,
       title: true,
       slug: true,
+      allDay: true,
       startAt: true,
+      endAt: true,
       municipality: true,
     },
     user,
@@ -76,7 +78,10 @@ export const searchHomeActivities = async (
         id: doc.id,
         slug: doc.slug,
         title: doc.title,
-        secondary: formatActivityHomeSearchSecondary(municipalityName, doc.startAt),
+        secondary: formatActivityHomeSearchSecondary(municipalityName, doc.startAt, {
+          allDay: doc.allDay,
+          endAt: doc.endAt,
+        }),
       },
     })
   }

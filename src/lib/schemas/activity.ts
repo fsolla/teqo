@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { allDayRangeValid } from '@/lib/activityAllDay'
 import { relationshipId } from '@/lib/relationship'
 import { campaignDemandCreateSchema } from '@/lib/schemas/campaignDemandInput'
 import {
@@ -125,6 +126,7 @@ const activityFieldsSchema = z.object({
   status: z.enum(activityStatuses).optional(),
   description: trimmedOptionalText(4000),
   deputyPresent: z.boolean().optional(),
+  allDay: z.boolean().optional(),
   startAt: z.string().datetime().optional().nullable(),
   endAt: z.string().datetime().optional().nullable(),
   municipality: positiveRelationshipId,
@@ -137,6 +139,7 @@ const activityFieldsSchema = z.object({
 const validateSchedule = (
   data: {
     status?: ActivityStatus | null
+    allDay?: boolean | null
     startAt?: string | null
     endAt?: string | null
   },
@@ -146,7 +149,9 @@ const validateSchedule = (
   if (requireStart && !data.startAt) {
     context.addIssue({
       code: 'custom',
-      message: 'Informe a data e horário de início do compromisso.',
+      message: data.allDay
+        ? 'Informe a data de início do compromisso.'
+        : 'Informe a data e horário de início do compromisso.',
       path: ['startAt'],
     })
   }
@@ -154,7 +159,18 @@ const validateSchedule = (
   if (data.startAt && data.endAt) {
     const start = new Date(data.startAt)
     const end = new Date(data.endAt)
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || !(start < end)) {
+    const valid = !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())
+    if (valid && data.allDay) {
+      // C104 — all-day ranges are day granularity: the end date may equal the
+      // start date (single-day commitment), never precede it.
+      if (!allDayRangeValid(data.startAt, data.endAt)) {
+        context.addIssue({
+          code: 'custom',
+          message: 'A data de término deve ser igual ou posterior à de início.',
+          path: ['endAt'],
+        })
+      }
+    } else if (!valid || !(start < end)) {
       context.addIssue({
         code: 'custom',
         message: 'O horário de término deve ser posterior ao de início.',
@@ -197,10 +213,32 @@ export const activityAgendaRequestSchema = z
 export const activityRescheduleSchema = z
   .object({
     id: positiveRelationshipId,
+    // C104 — the agenda knows the event's all-day state; the client converts
+    // FullCalendar's exclusive end into the stored inclusive convention and
+    // sends ready instants. allDay only relaxes the ordering rule here.
+    allDay: z.boolean(),
     startAt: isoInstantSchema,
     endAt: isoInstantSchema.nullable(),
   })
   .superRefine((data, context) => {
+    if (data.allDay) {
+      if (!data.endAt) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Informe a data de término do compromisso de dia inteiro.',
+          path: ['endAt'],
+        })
+        return
+      }
+      if (!allDayRangeValid(data.startAt, data.endAt)) {
+        context.addIssue({
+          code: 'custom',
+          message: 'A data de término deve ser igual ou posterior à de início.',
+          path: ['endAt'],
+        })
+      }
+      return
+    }
     validateSchedule(data, context, true)
   })
   .transform((data) => ({

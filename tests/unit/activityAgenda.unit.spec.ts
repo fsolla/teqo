@@ -59,11 +59,13 @@ describe('activity reschedule input', () => {
     expect(
       activityRescheduleSchema.parse({
         id: 7,
+        allDay: false,
         startAt: '2026-08-07T10:00:00-03:00',
         endAt: null,
       }),
     ).toEqual({
       id: 7,
+      allDay: false,
       startAt: '2026-08-07T13:00:00.000Z',
       endAt: null,
     })
@@ -73,8 +75,47 @@ describe('activity reschedule input', () => {
     expect(
       activityRescheduleSchema.safeParse({
         id: 7,
+        allDay: false,
         startAt: '2026-08-07T13:00:00.000Z',
         endAt: '2026-08-07T12:59:00.000Z',
+      }).success,
+    ).toBe(false)
+  })
+
+  it('accepts a single-day all-day range (end equals start)', () => {
+    expect(
+      activityRescheduleSchema.parse({
+        id: 7,
+        allDay: true,
+        startAt: '2026-08-10T03:00:00.000Z',
+        endAt: '2026-08-10T03:00:00.000Z',
+      }),
+    ).toEqual({
+      id: 7,
+      allDay: true,
+      startAt: '2026-08-10T03:00:00.000Z',
+      endAt: '2026-08-10T03:00:00.000Z',
+    })
+  })
+
+  it('rejects an all-day range whose end precedes the start', () => {
+    expect(
+      activityRescheduleSchema.safeParse({
+        id: 7,
+        allDay: true,
+        startAt: '2026-08-12T03:00:00.000Z',
+        endAt: '2026-08-10T03:00:00.000Z',
+      }).success,
+    ).toBe(false)
+  })
+
+  it('requires an end for all-day events', () => {
+    expect(
+      activityRescheduleSchema.safeParse({
+        id: 7,
+        allDay: true,
+        startAt: '2026-08-10T03:00:00.000Z',
+        endAt: null,
       }).success,
     ).toBe(false)
   })
@@ -120,12 +161,32 @@ describe('activity agenda event view model', () => {
       tags: ['Caminhada'],
       status: 'confirmado',
       deputyPresent: false,
+      allDay: false,
       startAt: '2026-08-07T13:00:00.000Z',
       endAt: null,
       municipality: { id: 12, name: 'Ilhéus', slug: 'ilheus' },
       locality: 'Centro histórico',
       canReschedule: true,
     })
+  })
+
+  it('carries the all-day flag for full-day commitments', () => {
+    expect(
+      toActivityAgendaEvent(
+        stub<Activity>({
+          id: 9,
+          title: 'Giro no interior',
+          slug: 'giro-no-interior',
+          tags: [],
+          status: 'confirmado',
+          allDay: true,
+          startAt: '2026-08-10T03:00:00.000Z',
+          endAt: '2026-08-12T03:00:00.000Z',
+          municipality: stub<Municipality>({ id: 12, name: 'Ilhéus', slug: 'ilheus' }),
+        }),
+        user('advisor'),
+      ).allDay,
+    ).toBe(true)
   })
 
   it('marks a deputy commitment read-only for an advisor', () => {

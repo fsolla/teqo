@@ -191,3 +191,14 @@ export const formatBahiaCivilDateTimeLabel = (civil: string): string => {
   const [, year, month, day, hour, minute] = match
   return `${day}/${month}/${year} às ${hour}:${minute}`
 }
+
+/**
+ * Date-only pt-BR label of a civil datetime input value (`dd/mm/aaaa`) —
+ * the C104 all-day mode of the date+time picker, same string arithmetic.
+ */
+export const formatBahiaCivilDateLabel = (civil: string): string => {
+  const match = bahiaDateTimeInputPattern.exec(civil)
+  if (!match) return civil.slice(0, 10)
+  const [, year, month, day] = match
+  return `${day}/${month}/${year}`
+}
