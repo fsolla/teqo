@@ -96,7 +96,18 @@ N/A — C99 não apresenta dados; habilita o dedupe da C100 (um vínculo, não u
 
 ## Aceite de engenharia
 
-- [ ] Aceite de produto da intenção ainda coberto (vínculo conta→ficha; assessores responsáveis na liderança; auth intacta; sem backfill)
-- [ ] Invariantes AGENTS/engineering-standards (transações + `req.transactionID`; overrideAccess justificado; líderes não leem `estimatedVotes` — não tocado; identificadores em inglês / labels pt-BR)
-- [ ] Testes de domínio previstos (int de `contactIdentity` + membership de assessores da liderança + extensão dos specs de advisor/access)
-- [ ] Migration aditiva commitada + `generate:types` + importmap se preciso; gates completos (`tsc`, `lint`, `format:check`, `knip`, `check:cycles`, unit+int, build)
+- [x] Aceite de produto da intenção ainda coberto (vínculo conta→ficha; assessores responsáveis na liderança; auth intacta; sem backfill)
+- [x] Invariantes AGENTS/engineering-standards (transações + `req.transactionID`; overrideAccess justificado; líderes não leem `estimatedVotes` — não tocado; identificadores em inglês / labels pt-BR)
+- [x] Testes de domínio previstos (int de `contactIdentity` + membership de assessores da liderança + extensão dos specs de advisor/access)
+- [x] Migration aditiva commitada + `generate:types` + importmap se preciso; gates completos (`tsc`, `lint`, `format:check`, `knip`, `check:cycles`, unit+int, build)
+
+## Adiado com gatilho (triage pós-merge, 2026-08-09)
+
+- **S6 — ficha órfã em creates name-only concorrentes (sem lock no bare path):** registrar lock ou dedupe quando houver o primeiro caso real de concorrência no bare path (staff/admin-only hoje — probabilidade baixa).
+- **S9 — lista de lideranças não carrega `advisors`:** o detail expõe; a coluna "Assessorado" da C100 (#495, já dependente) precisará do view-model de lista com o campo — resolver na execução da C100.
+
+## Explicitamente fora (triage pós-merge, 2026-08-09)
+
+- S7 — unlink explícito é transitório (próxima edição re-vincula por phone): comportamento intencional do plano ("vínculo por criação/edição"), documentado no hook; descartado.
+- S8 — create com contact explícito + phone divergente: escolha explícita do admin; descartado.
+- S12 — drift de mensagem non-postgres: postgres-only na prática; descartado.
