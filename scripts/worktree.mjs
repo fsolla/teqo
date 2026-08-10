@@ -416,7 +416,14 @@ const buildTakenBranchNames = () => {
  * and prints the `cd <dir>` line by default (`--stay` suppresses). Every
  * invocation creates a DIFFERENT worktree — parallel sessions never share one.
  */
-const cmdNamespaceBranch = async ({ stay, skipMigrate, purpose, noun, sessionLabel, branchName }) => {
+const cmdNamespaceBranch = async ({
+  stay,
+  skipMigrate,
+  purpose,
+  noun,
+  sessionLabel,
+  branchName,
+}) => {
   git(['fetch', 'origin'])
 
   const entries = parseWorktreeList(git(['worktree', 'list', '--porcelain']))
