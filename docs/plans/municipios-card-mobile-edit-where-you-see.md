@@ -68,12 +68,12 @@ label nenhum. Wireframe do usuário (Penpot, 2026-08-10): composição nova, tok
 
 - **Áreas prováveis:** `src/components/campaign/municipality/MunicipalityListMobileCards.tsx` (card atual, grid de labels), `MunicipalityListMobileSection.tsx` (host do sheet compartilhado), `src/components/campaign/municipality/` (controles com variante `sheet` já existentes: votos estimados em 3 cenários, nível, tendência, assessores, lideranças, dobradinhas), `MunicipalityAdvisorAvatarStack.tsx` (padrão de pilha de avatares), faixa de cenários em `src/components/campaign/votePledge/` (marcador de cenário ativo já existe), card de atualização do feed em `MunicipalityUpdateFeed.tsx` / `CampaignUpdatesFeed.tsx` (C89/C106/C107).
 - **Precedente a olhar:** `polimento-mobile-lista-municipios.md` (B42, entregue — cards mobile com sheets), `municipios-mobile-sem-moldura.md` (B184, em andamento — moldura do card), planos `municipio-v2-*` (detalhe, não a lista).
-- **Risco de acoplamento:** a fiação de sheets apoia no host compartilhado de bottom sheet da lista (hoje com defect conhecido — ver Dependências); assimetria staff/leader e regra B13 são guardrails.
+- **Risco de acoplamento:** a fiação de sheets apoia no host compartilhado de bottom sheet da lista (C109 foi investigado e descartado como não-reproduzível — ver Dependências); assimetria staff/leader e regra B13 são guardrails.
 
 ## Dependências
 
 - **B184** (#514, in-progress) — moldura do card (edge-to-edge, separador de linha); o wireframe já assume esse frame. Suave: se B184 não tiver mergeado, este item carrega a moldura junto.
-- **C109** (#540, blocked) — bottom sheet de edição rápida da lista quebra ao abrir; este item re-fia as mesmas sheets. **Dependência confirmada no gate:** C109 resolvido antes; o plano faltante do C109 é débito do fluxo de agentes (file-miss) a corrigir à parte.
+- ~~**C109** (#540) — bottom sheet de edição rápida da lista quebra ao abrir~~ **descartado em 2026-08-10**: investigação em main não reproduziu (nenhum `DialogClose` no caminho de sheets — base-ui `Drawer`; e2e mobile abre o Drawer e passa no CI; maquinaria inalterada desde B42/miss-52) e o plano apontado nunca foi commitado (file-miss). Dependência removida; este item re-fia as mesmas sheets em estado saudável.
 
 ## Fora de escopo
 
@@ -92,7 +92,7 @@ label nenhum. Wireframe do usuário (Penpot, 2026-08-10): composição nova, tok
 
 Fechadas no gate (2026-08-10):
 
-- **C109 como dependência** — B193 depende do C109; o plano faltante do C109 é débito do fluxo de agentes (file-miss) a corrigir à parte.
+- **C109 como dependência** — C109 (#540) foi descartado como não-reproduzível (2026-08-10); a dependência saiu de `depends` e o plano do C109 nunca existiu (file-miss do fluxo de agentes).
 - **Chip de classe sem razão no card** — só o rótulo; razão via tooltip/sheet (flexiona B13 para este card).
 - **Expansão inclui CTA "Registrar avaliação"** abrindo a sheet existente.
 - **Sem atualização → CTA direto de registrar** (sem chevron/expansão).
