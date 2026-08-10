@@ -186,7 +186,7 @@ export const CampaignCellEditOverlay = ({
     sharedSheet.openSheet({
       title,
       description,
-      hasCustomFooter: Boolean(footer),
+      footer,
       sheetBodyClassName,
       onOpenChange,
     })
@@ -195,8 +195,7 @@ export const CampaignCellEditOverlay = ({
   if (variant === 'sheet' && sharedSheet) {
     const showPortals = open && sharedSheet.isActiveSheet(onOpenChange)
     const bodyTarget = showPortals ? sharedSheet.bodyPortalRef.current : null
-    const footerTarget = showPortals ? sharedSheet.footerPortalRef.current : null
-    // portalRevision keeps this render in sync after the drawer mounts its targets.
+    // portalRevision keeps this render in sync after the drawer mounts its target.
     void sharedSheet.portalRevision
 
     return (
@@ -204,7 +203,6 @@ export const CampaignCellEditOverlay = ({
         {triggerButton}
         {liveRegion}
         {showPortals && bodyTarget ? createPortal(children, bodyTarget) : null}
-        {showPortals && footerTarget && footer ? createPortal(footer, footerTarget) : null}
       </>
     )
   }

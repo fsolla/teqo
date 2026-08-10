@@ -798,6 +798,74 @@ test.describe('Municípios — cards no celular (B42)', () => {
     await expect(page).toHaveURL(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
     await expect(campaignPageChrome(page, municipality.name)).toBeVisible()
   })
+
+  /**
+   * C109: the custom-footer sheets ("Registrar atualização" here, the same
+   * mechanism as E14's "Registrar movimento") used to portal their footer from
+   * the cell into the shared Drawer. `createPortal` keeps the source context,
+   * which has no `Drawer.Root`, so base-ui's `DialogClose` threw and the sheet
+   * never rendered. The footer must open, submit, and close inside the shared
+   * Drawer.
+   */
+  test('opens the update quick-edit sheet, registers, and closes via Cancelar (C109)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora C109'),
+    })
+    const password = coordinator.password
+    const municipality = await fixtures.claimMunicipality()
+
+    await campaign.login(page, coordinator.email!, password)
+    const listURL = `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`
+    await page.goto(listURL)
+
+    const card = page.locator('[data-view="mobile-cards"] article').first()
+    await expect(card).toBeVisible()
+    await card.getByRole('button', { name: /^Registrar atualização em/ }).click()
+
+    // The sheet's primary action lives in the custom footer — the two buttons
+    // the phone thumb expects, rendered inside the shared Drawer.
+    const sheet = page.getByRole('dialog', { name: 'Registrar atualização' })
+    await expect(sheet).toBeVisible()
+    await expect(
+      sheet.getByRole('button', { name: 'Registrar atualização', exact: true }),
+    ).toBeVisible()
+    await expect(sheet.getByRole('button', { name: 'Cancelar' })).toBeVisible()
+    await expect(page).toHaveURL(listURL)
+
+    await sheet
+      .getByRole('textbox', { name: 'Texto' })
+      .fill('Sinal registrado pelo sheet mobile do card.')
+    await sheet.getByLabel('Polaridade').getByRole('radio', { name: 'Boa' }).click()
+    await Promise.all([
+      expectPostResponse(page, '/campanha/municipios'),
+      sheet.getByRole('button', { name: 'Registrar atualização', exact: true }).click(),
+    ])
+
+    // The toast is intentionally transient; the persisted freshness label is
+    // the stable success contract and must arrive after the server response.
+    await expect(
+      card.getByRole('button', { name: `Registrar atualização em ${municipality.name} — hoje` }),
+    ).toBeVisible()
+
+    // Reopen: the chrome is rebuilt fresh, and the custom footer comes back.
+    await card.getByRole('button', { name: /^Registrar atualização em/ }).click()
+    await expect(sheet).toBeVisible()
+    await sheet.getByRole('button', { name: 'Cancelar' }).click()
+    await expect(sheet).toBeHidden()
+
+    // E14's level sheet is the same custom-footer mechanism — the other caller
+    // that shares the crash. It must open and close without one too.
+    await card.getByRole('button', { name: /^Nível de envolvimento de/ }).click()
+    const levelSheet = page.getByRole('dialog', { name: 'Registrar nível de envolvimento' })
+    await expect(levelSheet).toBeVisible()
+    await expect(levelSheet.getByRole('button', { name: 'Registrar movimento' })).toBeVisible()
+    await levelSheet.getByRole('button', { name: 'Cancelar' }).click()
+    await expect(levelSheet).toBeHidden()
+  })
 })
 
 /**
