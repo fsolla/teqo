@@ -105,6 +105,22 @@ describe('selectE2eSpecs (OPS5)', () => {
     expect(result.specs).toContain('campaignAuth')
   })
 
+  it('skips deleted e2e specs (they cannot run)', () => {
+    const result = selectE2eSpecs(
+      [{ path: 'tests/e2e/campaignTerritories.e2e.spec.ts', status: 'D' }],
+      manifest,
+    )
+    expect(result).toMatchObject({ mode: 'none', specs: [], unmapped: [] })
+  })
+
+  it('still maps deleted src files through the manifest', () => {
+    const result = selectE2eSpecs(
+      [{ path: 'src/components/campaign/municipality/MunicipalityTable.tsx', status: 'D' }],
+      manifest,
+    )
+    expect(result).toMatchObject({ mode: 'selected', specs: ['campaignMunicipalities'] })
+  })
+
   it('runs the full suite on high-risk paths', () => {
     expect(selectE2eSpecs([changed('tests/e2e/fixtures/auth.ts')], manifest).mode).toBe('full')
     expect(selectE2eSpecs([changed('src/migrations/x.ts')], manifest).mode).toBe('full')

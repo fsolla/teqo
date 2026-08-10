@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 
 import { sql } from '@payloadcms/db-postgres'
-import type { Page } from '@playwright/test'
+import type { Fixtures, Page } from '@playwright/test'
 import { getPayload, type CollectionSlug, type Payload, type PayloadRequest } from 'payload'
 
 import { municipalityCatalog } from '../../../src/lib/municipalityCatalog.js'
@@ -531,57 +531,67 @@ type CampaignE2ETestFixtures = {
   campaign: CampaignE2EFixture
 }
 
-export const test = base.extend<CampaignE2ETestFixtures>({
-  campaign: async ({}, runFixture) => {
-    assertTestDatabase(process.env.DATABASE_URL)
-    const payload = await getPayload({ config })
-    const fixtures = new CampaignE2EOwnership(payload)
-    const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? defaultBaseURL
+/**
+ * The shared campaign ownership fixture (in-process Payload, auto-owned rows,
+ * municipality claims, transactional cleanup). Exported so the browser suite
+ * (`campaignE2EFixtures.ts`) and the browserless HTTP suite
+ * (`campaignHttpTest.ts`) both extend from the same definition — never twin it.
+ */
+type CampaignE2EFixtureValue = Fixtures<CampaignE2ETestFixtures>['campaign']
 
-    let testFailure: unknown
+export const campaignFixture: CampaignE2EFixtureValue = async ({}, runFixture) => {
+  assertTestDatabase(process.env.DATABASE_URL)
+  const payload = await getPayload({ config })
+  const fixtures = new CampaignE2EOwnership(payload)
+  const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? defaultBaseURL
+
+  let testFailure: unknown
+  try {
+    await runFixture({
+      baseURL,
+      fixtures,
+      login: async (page, identifier, password) => {
+        await page.context().clearCookies()
+        await page.goto(`${baseURL}/campanha/login`)
+        await page.getByLabel('E-mail ou celular').fill(identifier)
+        await page.getByLabel('Senha').fill(password)
+        // `exact`: the login screen also offers "Entrar com digital ou Face
+        // ID" (B40) whenever the device has a platform authenticator — which
+        // any spec adding a virtual one does.
+        await page.getByRole('button', { name: 'Entrar', exact: true }).click()
+        await page.waitForURL(`${baseURL}/campanha`)
+      },
+      payload: fixtures.payload,
+      transaction: (operation) =>
+        withPayloadTransaction(payload, ({ req }) => operation(fixtures.payload, req)),
+      withInviteConsent,
+    })
+  } catch (error) {
+    testFailure = error
+    throw error
+  } finally {
+    let cleanupFailure: unknown
     try {
-      await runFixture({
-        baseURL,
-        fixtures,
-        login: async (page, identifier, password) => {
-          await page.context().clearCookies()
-          await page.goto(`${baseURL}/campanha/login`)
-          await page.getByLabel('E-mail ou celular').fill(identifier)
-          await page.getByLabel('Senha').fill(password)
-          // `exact`: the login screen also offers "Entrar com digital ou Face
-          // ID" (B40) whenever the device has a platform authenticator — which
-          // any spec adding a virtual one does.
-          await page.getByRole('button', { name: 'Entrar', exact: true }).click()
-          await page.waitForURL(`${baseURL}/campanha`)
-        },
-        payload: fixtures.payload,
-        transaction: (operation) =>
-          withPayloadTransaction(payload, ({ req }) => operation(fixtures.payload, req)),
-        withInviteConsent,
-      })
+      assertTestDatabase(process.env.DATABASE_URL)
+      await fixtures.cleanup()
+      await fixtures.expectNoOwnedRows()
     } catch (error) {
-      testFailure = error
-      throw error
-    } finally {
-      let cleanupFailure: unknown
-      try {
-        assertTestDatabase(process.env.DATABASE_URL)
-        await fixtures.cleanup()
-        await fixtures.expectNoOwnedRows()
-      } catch (error) {
-        cleanupFailure = error
-      }
-      if (cleanupFailure !== undefined) {
-        if (testFailure !== undefined) {
-          throw new AggregateError(
-            [testFailure, cleanupFailure],
-            'Campaign E2E test and ownership cleanup both failed.',
-          )
-        }
-        throw cleanupFailure
-      }
+      cleanupFailure = error
     }
-  },
+    if (cleanupFailure !== undefined) {
+      if (testFailure !== undefined) {
+        throw new AggregateError(
+          [testFailure, cleanupFailure],
+          'Campaign E2E test and ownership cleanup both failed.',
+        )
+      }
+      throw cleanupFailure
+    }
+  }
+}
+
+export const test = base.extend<CampaignE2ETestFixtures>({
+  campaign: campaignFixture,
 })
 
 export const campaignPageChrome = (page: Page, title: string | RegExp) =>

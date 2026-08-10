@@ -203,7 +203,10 @@ export function selectE2eSpecs(files, manifest) {
   }
   const specs = new Set()
   const unmapped = []
-  for (const { path } of files) {
+  for (const { path, status } of files) {
+    // A deleted spec file cannot run — selecting it would make CI fail with
+    // "No tests found" (the stale-manifest variant of a spec rename).
+    if (status === 'D' && E2E_SPEC_PATTERN.test(path)) continue
     if (E2E_SPEC_PATTERN.test(path)) {
       specs.add(path.slice('tests/e2e/'.length, -'.e2e.spec.ts'.length))
       continue
