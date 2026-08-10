@@ -94,7 +94,8 @@ test.describe('C101 — agenda mobile com cara de app nativo', () => {
     // Navegação por arrasto: esquerda → dia seguinte; direita → volta. O
     // swipe direito começa longe da borda esquerda (x=0.4): um gesto que
     // nasça na borda é do Chrome (histórico), não da agenda.
-    const agendaBox = await page.locator('.activity-agenda').boundingBox()
+    // `.first()`: FC mantém grids de vista antigos no DOM durante transições.
+    const agendaBox = await page.locator('.activity-agenda').first().boundingBox()
     if (!agendaBox) throw new Error('Calendário não expôs área para o gesto de navegação.')
     const nextCivil = civilDatePlusDays(civilDate, 1)
     await touchSwipe(cdp, agendaBox, 0.8, 0.2)
@@ -160,18 +161,21 @@ test.describe('C101 — agenda mobile com cara de app nativo', () => {
 
     // C101 — o grid de dia vira um scroller próprio (height fixa no mobile):
     // abre ancorado em 08:00 ("hoje é fixa em 08:00")...
+    // `.first()`: FC mantém grids de vista antigos no DOM durante transições.
     await expect
       .poll(
         () =>
           page.evaluate(() => {
-            const scroller = [...document.querySelectorAll('.activity-agenda *')].find((el) => {
-              const style = getComputedStyle(el)
-              return (
-                (style.overflowY === 'auto' || style.overflowY === 'scroll') &&
-                el.scrollHeight > el.clientHeight &&
-                el.querySelector('[role="rowheader"]')
-              )
-            })
+            const scroller = [...document.querySelector('.activity-agenda')!.querySelectorAll('*')].find(
+              (el) => {
+                const style = getComputedStyle(el)
+                return (
+                  (style.overflowY === 'auto' || style.overflowY === 'scroll') &&
+                  el.scrollHeight > el.clientHeight &&
+                  el.querySelector('[role="rowheader"]')
+                )
+              },
+            )
             return scroller ? scroller.scrollTop : null
           }),
         { timeout: 15_000 },
@@ -183,7 +187,7 @@ test.describe('C101 — agenda mobile com cara de app nativo', () => {
     const colHeaderText = `${weekdayOf(civilDate)} ${Number(civilDate.slice(8, 10))}`
     const headerTop = () =>
       page.evaluate((text) => {
-        const cell = [...document.querySelectorAll('.activity-agenda [role="columnheader"]')].find(
+        const cell = [...document.querySelector('.activity-agenda')!.querySelectorAll('[role="columnheader"]')].find(
           (el) => el.textContent?.includes(text),
         )
         return cell ? Math.round(cell.getBoundingClientRect().top) : null
@@ -193,14 +197,16 @@ test.describe('C101 — agenda mobile com cara de app nativo', () => {
     expect(headerBefore).not.toBeNull()
 
     const scrolledTo = await page.evaluate(() => {
-      const scroller = [...document.querySelectorAll('.activity-agenda *')].find((el) => {
-        const style = getComputedStyle(el)
-        return (
-          (style.overflowY === 'auto' || style.overflowY === 'scroll') &&
-          el.scrollHeight > el.clientHeight &&
-          el.querySelector('[role="rowheader"]')
-        )
-      })
+      const scroller = [...document.querySelector('.activity-agenda')!.querySelectorAll('*')].find(
+        (el) => {
+          const style = getComputedStyle(el)
+          return (
+            (style.overflowY === 'auto' || style.overflowY === 'scroll') &&
+            el.scrollHeight > el.clientHeight &&
+            el.querySelector('[role="rowheader"]')
+          )
+        },
+      )
       if (!scroller) return false
       scroller.scrollTop = 300
       return scroller.scrollTop
