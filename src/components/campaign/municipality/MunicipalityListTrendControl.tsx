@@ -1,7 +1,7 @@
 'use client'
 
 import { CircleHelpIcon, MinusIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import type {
   MunicipalityListPoliticalTrendResponse,
@@ -47,6 +47,13 @@ type MunicipalityListTrendControlProps = {
   trendNote: string | null
   variant: CampaignCellEditOverlayVariant
   triggerPresentation?: 'full' | 'compact' | 'adaptive'
+  /**
+   * B193 — replaces the internal trend badge trigger (e.g. the dense mobile
+   * card's "Tendência" chip). Receives the LIVE autosave trend.
+   */
+  trigger?: (trend: MunicipalityListSavedPoliticalTrend) => ReactNode
+  /** B193 — dense card chip styling override (shorter, pill-shaped). */
+  triggerClassName?: string
 }
 
 const politicalTrendIcon = {
@@ -62,6 +69,8 @@ export const MunicipalityListTrendControl = ({
   trendNote,
   variant,
   triggerPresentation = 'full',
+  trigger,
+  triggerClassName,
 }: MunicipalityListTrendControlProps) => {
   const { open, onOpenChange, value, change, flush, isPending, errorMessage, statusMessage } =
     useCampaignCellAutosave<
@@ -105,17 +114,18 @@ export const MunicipalityListTrendControl = ({
       <TrendIcon className="size-4" aria-hidden="true" />
     </Badge>
   )
-  const trigger =
-    triggerPresentation === 'full' ? (
-      fullTrigger
-    ) : triggerPresentation === 'compact' ? (
-      compactTrigger
-    ) : (
-      <>
-        <span className="@min-[60rem]/municipality-list:hidden">{compactTrigger}</span>
-        <span className="hidden @min-[60rem]/municipality-list:inline-flex">{fullTrigger}</span>
-      </>
-    )
+  const triggerNode = trigger ? (
+    trigger(value)
+  ) : triggerPresentation === 'full' ? (
+    fullTrigger
+  ) : triggerPresentation === 'compact' ? (
+    compactTrigger
+  ) : (
+    <>
+      <span className="@min-[60rem]/municipality-list:hidden">{compactTrigger}</span>
+      <span className="hidden @min-[60rem]/municipality-list:inline-flex">{fullTrigger}</span>
+    </>
+  )
 
   return (
     <CampaignCellEditOverlay
@@ -130,12 +140,14 @@ export const MunicipalityListTrendControl = ({
       // `MunicipalityListUpdateControl`'s.
       triggerLabel={`Editar tendência política em ${municipalityName} — ${trendLabel}`}
       triggerBusy={isPending}
-      triggerClassName={triggerPresentation === 'full' ? undefined : 'min-w-11'}
+      triggerClassName={
+        triggerClassName ?? (triggerPresentation === 'full' ? undefined : 'min-w-11')
+      }
       statusMessage={statusMessage}
       tooltipContent={hasNote ? <p className="whitespace-pre-wrap">{value.note}</p> : null}
       contentClassName="w-72 p-3"
       preventPopoverAutoFocus
-      trigger={trigger}
+      trigger={triggerNode}
     >
       <div className="relative flex flex-col gap-3">
         {isPending ? (

@@ -13,6 +13,7 @@ import type {
   EligibleLeadershipOption,
   MunicipalityLeadershipSummary,
 } from '@/utilities/municipality/municipalityViewModels'
+import type { ReactNode } from 'react'
 
 const LEADERSHIPS_ENDPOINT = '/campanha/municipios/leaderships'
 const SAVE_ERROR_MESSAGE = 'Não foi possível atualizar as lideranças. Tente novamente.'
@@ -24,6 +25,10 @@ type MunicipalityListLeadershipsControlProps = {
   leadershipNamesById: ReadonlyMap<number, MunicipalityLeadershipSummary>
   options: EligibleLeadershipOption[]
   variant: CampaignCellEditOverlayVariant
+  /** B193 — dense mobile card trigger (labelled wrapping stack). */
+  trigger?: (entries: MunicipalityRelationEntry[], emptyState: ReactNode) => ReactNode
+  /** B193 — dense card trigger styling override. */
+  triggerClassName?: string
 }
 
 const entryOf = (option: { id: number; name: string }): MunicipalityRelationEntry => ({
@@ -38,6 +43,8 @@ export const MunicipalityListLeadershipsControl = ({
   leadershipNamesById,
   options,
   variant,
+  trigger,
+  triggerClassName,
 }: MunicipalityListLeadershipsControlProps) => {
   const createBridge = useMunicipalityLeadershipCreate()
   const createdOptions = createBridge?.createdOptions ?? []
@@ -96,6 +103,8 @@ export const MunicipalityListLeadershipsControl = ({
         }`
       }
       emptyState={<span className="text-sm text-muted-foreground">Nenhuma</span>}
+      trigger={trigger}
+      triggerClassName={triggerClassName}
       createLabel={(name) => `Criar liderança “${name}”`}
       onToggle={toggle}
       onCreate={create}

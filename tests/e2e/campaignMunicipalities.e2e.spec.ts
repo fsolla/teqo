@@ -786,15 +786,13 @@ test.describe('Municípios — cards no celular (B42)', () => {
 
     // Anywhere outside a control is the município's own link: the click lands on
     // the stretched `after:inset-0` overlay, which belongs to the card heading.
-    // The tap goes on a field LABEL inside the metrics grid on purpose — the
-    // first version of this card positioned each grid cell instead of each
-    // control, which lifted the labels and their padding above the overlay and
-    // made half the card a tap that neither edited nor navigated.
+    // B193 recomposed the card and every label became a trigger, so the tap goes
+    // on the card's top-left padding corner — the one area no control covers.
     // `force`: Playwright's hit-target check retries forever here precisely
     // BECAUSE the stretched overlay intercepts the pointer — which is the
-    // behavior under test. Force dispatches the tap at the label's point, the
-    // overlay receives it (as a user's finger would), and the card navigates.
-    await card.getByText('Tendência', { exact: true }).click({ force: true })
+    // behavior under test. Force dispatches the tap at that point, the overlay
+    // receives it (as a user's finger would), and the card navigates.
+    await card.click({ position: { x: 6, y: 6 }, force: true })
     await expect(page).toHaveURL(`${campaign.baseURL}/campanha/municipios/${municipality.slug}`)
     await expect(campaignPageChrome(page, municipality.name)).toBeVisible()
   })
@@ -952,6 +950,160 @@ test.describe('Municípios — filtro e cards sem moldura no celular (B184)', ()
     await expect(page.getByText('Filtrar municípios', { exact: true })).toBeVisible()
     await expect(field).toHaveCSS('border-top-width', '1px')
     await expect(page.getByRole('button', { name: 'Limpar', exact: true })).toBeVisible()
+  })
+})
+
+/**
+ * B193 (2026-08-10): the mobile card is a dense composition — scenario bar
+ * with the active marker, chips (classe/tendência/nível), three labelled
+ * avatar groups — where every data point is its own bottom-sheet trigger
+ * (edit-where-you-see), the priority município gets a right accent border,
+ * and the "Última atualização" footer expands to reveal the last update card
+ * (or becomes a direct register CTA when nothing was ever recorded).
+ */
+test.describe('Municípios — card denso mobile (B193)', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('scenario bar opens the estimate sheet and reflects saved values', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora B193'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(
+      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
+    )
+    const card = page.locator('[data-view="mobile-cards"] article').first()
+    await expect(card).toBeVisible()
+
+    await card.getByRole('button', { name: /Editar votos estimados/ }).click()
+    const drawer = page.getByRole('dialog', { name: 'Editar votos estimados' })
+    await expect(drawer).toBeVisible()
+
+    await drawer.getByLabel('Pessimista', { exact: true }).fill('7500')
+    await drawer.getByLabel('Média', { exact: true }).fill('8000')
+    await drawer.getByLabel('Otimista', { exact: true }).fill('10000')
+    // The autosave announces "Salvando…" through the trigger's own live region
+    // (next to the button, outside the drawer); closing flushes the save.
+    await drawer.getByRole('button', { name: 'Fechar' }).click()
+    await expect(drawer).toBeHidden()
+
+    // The strip is the live autosave value: the card shows all three
+    // scenarios after the save echoed back.
+    await expect(card.getByText('7.500')).toBeVisible()
+    await expect(card.getByText('8.000')).toBeVisible()
+    await expect(card.getByText('10.000')).toBeVisible()
+    await expect(page).toHaveURL(
+      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
+    )
+  })
+
+  test('the Nível chip (label included) opens the level sheet', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora B193 Nível'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(
+      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
+    )
+    const card = page.locator('[data-view="mobile-cards"] article').first()
+    await expect(card).toBeVisible()
+
+    await card.getByText('Nível', { exact: true }).click()
+    const drawer = page.getByRole('dialog', { name: 'Registrar nível de envolvimento' })
+    await expect(drawer).toBeVisible()
+    await expect(drawer.getByText(municipality.name, { exact: true })).toBeVisible()
+    await expect(page).toHaveURL(
+      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
+    )
+  })
+
+  test('priority município gets the right accent border (B193)', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora B193 Prio'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+    await fixtures.payload.update({
+      collection: 'municipality',
+      id: municipality.id,
+      data: { priority: 'alta' },
+      depth: 0,
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(
+      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
+    )
+    const card = page.locator('[data-view="mobile-cards"] article').first()
+    await expect(card).toBeVisible()
+
+    await expect(card).toHaveCSS('border-right-width', '6px')
+    await expect(card).toHaveCSS('border-right-color', 'rgb(197, 20, 20)')
+  })
+
+  test('footer expands to the last update card and offers register; empty footer is a direct CTA', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora B193 Upd'),
+    })
+    const withUpdate = await fixtures.claimMunicipality()
+    await fixtures.payload.create({
+      collection: 'municipalityUpdate',
+      data: {
+        municipality: withUpdate.id,
+        author: coordinator.id,
+        polarity: 'boa',
+        body: `Fato de campo B193 em ${withUpdate.name}`,
+      },
+      depth: 0,
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(
+      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(withUpdate.name)}`,
+    )
+    const card = page.locator('[data-view="mobile-cards"] article').first()
+    await expect(card).toBeVisible()
+
+    // The footer button expands the card bottom and reveals the last update
+    // card (no surface change) plus the register CTA.
+    const footer = card.getByRole('button', { name: /Última atualização/ })
+    await expect(footer).toHaveAttribute('aria-expanded', 'false')
+    await footer.click()
+    await expect(footer).toHaveAttribute('aria-expanded', 'true')
+    await expect(card.getByText(`Fato de campo B193 em ${withUpdate.name}`)).toBeVisible()
+    await expect(card.getByText('Boa', { exact: true })).toBeVisible()
+
+    const registerCta = card.getByRole('button', { name: /Registrar atualização em/ })
+    await registerCta.click()
+    const drawer = page.getByRole('dialog', { name: 'Registrar atualização' })
+    await expect(drawer).toBeVisible()
+    await expect(drawer.getByText(withUpdate.name, { exact: true })).toBeVisible()
+    await drawer.getByRole('button', { name: 'Cancelar' }).click()
+    await expect(drawer).toBeHidden()
+
+    // A município with no update at all has no expandable footer: the footer
+    // IS the register CTA, without chevron or expansion.
+    const empty = await fixtures.claimMunicipality()
+    await page.goto(`${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(empty.name)}`)
+    const emptyCard = page.locator('[data-view="mobile-cards"] article').first()
+    await expect(emptyCard).toBeVisible()
+    await expect(emptyCard.getByRole('button', { name: /Última atualização/ })).toHaveCount(0)
+    const emptyCta = emptyCard.getByRole('button', { name: /Registrar atualização em/ })
+    await emptyCta.click()
+    await expect(page.getByRole('dialog', { name: 'Registrar atualização' })).toBeVisible()
   })
 })
 

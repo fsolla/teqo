@@ -102,3 +102,70 @@ export const loadMunicipalityUpdatesPreview = async (
     0,
     3,
   )
+
+/**
+ * B193 — the LAST update per listed municipality, for the mobile card's
+ * expandable footer. One batch over the visible page ids: docs arrive sorted
+ * by `-createdAt`, so the first row per municipality is the latest. The read
+ * runs with `overrideAccess: false`, so `canReadMunicipalityUpdate` scopes it
+ * to the actor's portfolio exactly like the C89 feed loader.
+ */
+export const loadMunicipalityLastUpdates = async (
+  payload: Payload,
+  user: CampaignUser,
+  municipalityIDs: readonly number[],
+): Promise<ReadonlyMap<number, MunicipalityUpdateViewModel>> => {
+  const ids = [...new Set(municipalityIDs)]
+  if (ids.length === 0) return new Map()
+
+  const result = await payload.find({
+    collection: 'municipalityUpdate',
+    where: { municipality: { in: ids } },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    sort: '-createdAt',
+    select: {
+      municipality: true,
+      author: true,
+      polarity: true,
+      urgent: true,
+      activeVolunteers: true,
+      newSupports: true,
+      adversarySignal: true,
+      body: true,
+      createdAt: true,
+    },
+    user,
+    overrideAccess: false,
+  })
+
+  const authorIDs = [
+    ...new Set(
+      result.docs
+        .map((update) => relationshipId((update as MunicipalityUpdate).author))
+        .filter((id): id is number => id !== null),
+    ),
+  ]
+  const authorNameById = await loadCampaignUserNamesByIds(payload, authorIDs)
+
+  const lastByMunicipality = new Map<number, MunicipalityUpdateViewModel>()
+  for (const update of result.docs as MunicipalityUpdate[]) {
+    const municipalityID = relationshipId(update.municipality)
+    if (municipalityID === null || lastByMunicipality.has(municipalityID)) continue
+    const polarity = update.polarity as MunicipalityUpdatePolarity | undefined
+    lastByMunicipality.set(municipalityID, {
+      id: update.id,
+      authorName: authorNameById.get(relationshipId(update.author) ?? -1) ?? 'Usuário',
+      createdAt: update.createdAt,
+      body: update.body ?? null,
+      polarity: polarity && municipalityUpdatePolarities.includes(polarity) ? polarity : 'neutra',
+      urgent: Boolean(update.urgent),
+      activeVolunteers: update.activeVolunteers ?? null,
+      newSupports: update.newSupports ?? null,
+      adversarySignal: Boolean(update.adversarySignal),
+    })
+  }
+
+  return lastByMunicipality
+}

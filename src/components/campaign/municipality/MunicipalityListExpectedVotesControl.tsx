@@ -23,6 +23,7 @@ import {
   type VoteEstimateScenarioViewModel,
 } from '@/lib/voteEstimate'
 import type { MunicipalityPledgeCoverageView } from '@/utilities/votePledgeViews'
+import type { ReactNode } from 'react'
 
 const AUTOSAVE_MS = 600
 
@@ -39,6 +40,16 @@ type MunicipalityListExpectedVotesControlProps = {
   municipalityID: number
   expectedVotes: VoteEstimateScenarioViewModel
   pledgeCoverage: MunicipalityPledgeCoverageView | null
+  /**
+   * B193 — replaces the internal votes display trigger (e.g. the dense mobile
+   * card's scenario strip). Receives the LIVE autosave value and the active
+   * scenario, so the strip reflects an in-flight edit; the `aria-label` below
+   * still names the reading.
+   */
+  trigger?: (
+    value: VoteEstimateScenarioViewModel,
+    activeScenario: VoteEstimateScenario,
+  ) => ReactNode
 } & (
   | { variant: 'popover'; municipalityName?: string }
   | { variant: 'sheet'; municipalityName: string }
@@ -50,6 +61,7 @@ export const MunicipalityListExpectedVotesControl = ({
   expectedVotes,
   pledgeCoverage,
   variant,
+  trigger,
 }: MunicipalityListExpectedVotesControlProps) => {
   const scenarioContext = useMunicipalityEstimateScenarioOptional()
   const activeScenario = scenarioContext?.scenario ?? DEFAULT_VOTE_ESTIMATE_SCENARIO
@@ -91,15 +103,19 @@ export const MunicipalityListExpectedVotesControl = ({
       contentClassName="w-[15.5rem] p-3"
       preventPopoverAutoFocus
       trigger={
-        <StaffMunicipalityVotesDisplay
-          expectedVotes={value}
-          pledgeCoverage={pledgeCoverage}
-          activeScenario={activeScenario}
-          layout="compact"
-          align="center"
-          suppressHoverPreview={open}
-          valueClassName="font-medium tabular-nums"
-        />
+        trigger ? (
+          trigger(value, activeScenario)
+        ) : (
+          <StaffMunicipalityVotesDisplay
+            expectedVotes={value}
+            pledgeCoverage={pledgeCoverage}
+            activeScenario={activeScenario}
+            layout="compact"
+            align="center"
+            suppressHoverPreview={open}
+            valueClassName="font-medium tabular-nums"
+          />
+        )
       }
     >
       <div className="relative flex flex-col gap-2.5">

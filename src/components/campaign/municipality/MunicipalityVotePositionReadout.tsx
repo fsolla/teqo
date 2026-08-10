@@ -11,9 +11,12 @@ export type MunicipalityVotePositionReadoutLayout = 'table' | 'card' | 'search'
 export const MunicipalityVotePositionReadout = ({
   position,
   layout,
+  className,
 }: {
   position: MunicipalityVoteRankEntry
   layout: MunicipalityVotePositionReadoutLayout
+  /** B193 — the dense mobile card header right-aligns the card layout. */
+  className?: string
 }) => {
   const share = formatVoteSharePercent(position.share)
   const rank = formatPlacementOrdinal(position.rank)
@@ -28,6 +31,7 @@ export const MunicipalityVotePositionReadout = ({
       className={cn(
         'flex flex-col gap-0.5 tabular-nums',
         layout === 'table' || layout === 'search' ? 'items-end text-right' : 'text-sm',
+        className,
       )}
       aria-label={ariaLabel}
     >

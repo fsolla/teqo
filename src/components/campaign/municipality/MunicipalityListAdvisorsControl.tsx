@@ -14,6 +14,7 @@ import type {
   EligibleAdvisorOption,
   MunicipalityAdvisorSummary,
 } from '@/utilities/municipality/municipalityViewModels'
+import type { ReactNode } from 'react'
 
 const ADVISORS_ENDPOINT = '/campanha/municipios/advisors'
 const SAVE_ERROR_MESSAGE = 'Não foi possível atualizar os assessores. Tente novamente.'
@@ -26,6 +27,10 @@ type MunicipalityListAdvisorsControlProps = {
   advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>
   options: EligibleAdvisorOption[]
   variant: CampaignCellEditOverlayVariant
+  /** B193 — dense mobile card trigger (labelled wrapping stack). */
+  trigger?: (entries: MunicipalityRelationEntry[], emptyState: ReactNode) => ReactNode
+  /** B193 — dense card trigger styling override. */
+  triggerClassName?: string
 }
 
 const entryOf = (option: { id: number; name: string }): MunicipalityRelationEntry => ({
@@ -41,6 +46,8 @@ export const MunicipalityListAdvisorsControl = ({
   advisorNamesById,
   options,
   variant,
+  trigger,
+  triggerClassName,
 }: MunicipalityListAdvisorsControlProps) => {
   const createBridge = useMunicipalityAdvisorCreate()
   const createdOptions = createBridge?.createdOptions ?? []
@@ -106,6 +113,8 @@ export const MunicipalityListAdvisorsControl = ({
         }`
       }
       emptyState={<MissingAdvisorBadge isPriority={isPriority} />}
+      trigger={trigger}
+      triggerClassName={triggerClassName}
       createLabel={(name) => `Criar assessor “${name}”`}
       createMaxLength={160}
       onToggle={toggle}

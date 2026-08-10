@@ -44,6 +44,16 @@ type MunicipalityRelationEditorProps = {
   createErrorMessage?: string
   triggerLabel: (entries: MunicipalityRelationEntry[]) => string
   emptyState: ReactNode
+  /**
+   * B193 — replaces the default avatar-stack trigger (e.g. the dense mobile
+   * card's labelled, wrapping stack). Same pattern as `RelationChipCell`'s
+   * `trigger` render prop: the overlay machinery stays, only the closed
+   * display changes. Receives the relation's own `emptyState` so the custom
+   * trigger can render the same absence affordance the default stack would.
+   */
+  trigger?: (entries: MunicipalityRelationEntry[], emptyState: ReactNode) => ReactNode
+  /** B193 — dense card trigger styling override (no min-height/hover pill). */
+  triggerClassName?: string
   createLabel: (name: string) => string
   createMaxLength?: number
   sortSelected?: boolean
@@ -76,6 +86,8 @@ export const MunicipalityRelationEditor = ({
   onToggle,
   onCreate,
   onCreated,
+  trigger,
+  triggerClassName,
 }: MunicipalityRelationEditorProps) => {
   const [open, setOpen] = useState(false)
   const [selectedIDs, setSelectedIDs] = useState(currentIDs)
@@ -270,10 +282,15 @@ export const MunicipalityRelationEditor = ({
       triggerBusy={isPending}
       statusMessage={statusMessage}
       tooltipContent={tooltipContent}
+      triggerClassName={triggerClassName}
       contentClassName="w-80 p-0"
       sheetBodyClassName="px-0 pt-2"
       trigger={
-        <MunicipalityRelationAvatarStack entries={selectedEntries} emptyState={emptyState} />
+        trigger ? (
+          trigger(selectedEntries, emptyState)
+        ) : (
+          <MunicipalityRelationAvatarStack entries={selectedEntries} emptyState={emptyState} />
+        )
       }
     >
       <div className={cn('relative flex shrink-0 flex-col gap-2 px-4 pb-0', !isSheet && 'pt-3')}>

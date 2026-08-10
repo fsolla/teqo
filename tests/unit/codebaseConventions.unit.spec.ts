@@ -552,6 +552,10 @@ describe('advisor scope fragment comes from access/shared.ts', () => {
     // B155 — the municipality list surface reads `leadership.municipalities`
     // by reverse batch; same distinct form as `leadershipData.ts` above.
     'src/utilities/municipality/municipalityViewModels.ts',
+    // B193 — the mobile card footer batches the LAST update per listed
+    // municipality (a domain filter over the visible page ids); the actor
+    // scope still comes from `overrideAccess: false` + `user`.
+    'src/utilities/municipality/municipalityUpdatePageData.ts',
     'src/utilities/visit/visitPlannerData.ts',
     'src/utilities/votePledgeData.ts',
     // B178 — the city overview batches activities across the 19 Salvador zone

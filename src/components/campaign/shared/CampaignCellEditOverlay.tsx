@@ -109,6 +109,8 @@ export const CampaignCellEditOverlay = ({
 }: CampaignCellEditOverlayProps) => {
   const sharedSheet = useCampaignListSheet()
   const wasOpenRef = useRef(open)
+  /** C109 — the shared drawer session this control opened (see the host). */
+  const sessionIdRef = useRef<number | null>(null)
 
   // Miss #52: without the provider every opened cell keeps its own Drawer
   // root. The fallback below stays for prod resilience, but in dev the
@@ -179,23 +181,45 @@ export const CampaignCellEditOverlay = ({
     wasOpenRef.current = open
 
     if (!open) {
-      if (wasOpen) sharedSheet.dismissSheet(onOpenChange)
+      if (wasOpen && sessionIdRef.current !== null) {
+        sharedSheet.dismissSheet(sessionIdRef.current, onOpenChange)
+        sessionIdRef.current = null
+      }
       return
     }
 
-    sharedSheet.openSheet({
-      title,
-      description,
-      footer,
-      sheetBodyClassName,
-      onOpenChange,
-    })
+    // Only the false→true transition opens a session: the controls' callbacks
+    // are recreated per render (autosave `onOpenChange`, level `handleOpenChange`),
+    // and calling `openSheet` on every re-render made the host dismiss the
+    // session it just started (C109 — "sheet quebra ao abrir").
+    if (!wasOpen) {
+      sessionIdRef.current = sharedSheet.openSheet({
+        title,
+        description,
+        hasCustomFooter: Boolean(footer),
+        sheetBodyClassName,
+        onOpenChange,
+      })
+    }
   }, [variant, sharedSheet, open, title, description, footer, sheetBodyClassName, onOpenChange])
 
+  // C109 — the custom footer is REGISTERED here and rendered by the host
+  // INSIDE the Drawer's React tree; a portal would keep the Dialog context
+  // away from its `DialogClose`. Re-registers on every change (spinner,
+  // label) while the session stays active; a stale session's call is a no-op
+  // in the host.
+  useLayoutEffect(() => {
+    if (variant !== 'sheet' || !sharedSheet) return
+    const sessionId = sessionIdRef.current
+    if (sessionId === null) return
+    sharedSheet.setFooterContent(sessionId, open ? (footer ?? null) : null)
+  }, [variant, sharedSheet, open, footer])
+
   if (variant === 'sheet' && sharedSheet) {
-    const showPortals = open && sharedSheet.isActiveSheet(onOpenChange)
+    const showPortals =
+      open && sessionIdRef.current !== null && sharedSheet.isActiveSheet(sessionIdRef.current)
     const bodyTarget = showPortals ? sharedSheet.bodyPortalRef.current : null
-    // portalRevision keeps this render in sync after the drawer mounts its target.
+    // portalRevision keeps this render in sync after the drawer mounts its targets.
     void sharedSheet.portalRevision
 
     return (

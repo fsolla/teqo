@@ -50,10 +50,13 @@ export const MunicipalityAdvisorAvatarStack = ({
   advisors,
   isPriority,
   maxVisible = 3,
+  wrap = false,
 }: {
   advisors: MunicipalityAdvisorAvatarEntry[]
   isPriority: boolean
   maxVisible?: number
+  /** B193 — dense mobile card mode: every advisor gets an avatar, rows wrap. */
+  wrap?: boolean
 }) => {
   if (!advisors.length) return <MissingAdvisorBadge isPriority={isPriority} />
 
@@ -62,6 +65,7 @@ export const MunicipalityAdvisorAvatarStack = ({
       entries={advisors.map((advisor) => ({ id: advisor.id, label: advisor.name }))}
       emptyState={null}
       maxVisible={maxVisible}
+      wrap={wrap}
     />
   )
 }

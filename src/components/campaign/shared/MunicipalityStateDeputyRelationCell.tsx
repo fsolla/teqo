@@ -11,6 +11,7 @@ import { stateDeputyDisplayName } from '@/lib/stateDeputyNameParty'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { firstFormActionMessage } from '@/utilities/campaignFormFields'
 import type { StateDeputyRelationOption } from '@/utilities/campaignRelationOptions'
+import type { ReactNode } from 'react'
 
 type MunicipalityStateDeputyRelationCellProps = {
   municipalityId: number
@@ -23,6 +24,10 @@ type MunicipalityStateDeputyRelationCellProps = {
   ) => Promise<CampaignFormActionState>
   createAction: MunicipalityStateDeputyCreateAction
   editorVariant: CampaignCellEditOverlayVariant
+  /** B193 — dense mobile card trigger (labelled wrapping stack). */
+  trigger?: (entries: MunicipalityRelationEntry[], emptyState: ReactNode) => ReactNode
+  /** B193 — dense card trigger styling override. */
+  triggerClassName?: string
 }
 
 export type MunicipalityStateDeputyCreateAction = (
@@ -64,6 +69,8 @@ export const MunicipalityStateDeputyRelationCell = ({
   commitAction,
   createAction,
   editorVariant,
+  trigger,
+  triggerClassName,
 }: MunicipalityStateDeputyRelationCellProps) => {
   const toggle = async (
     stateDeputyID: number,
@@ -122,6 +129,8 @@ export const MunicipalityStateDeputyRelationCell = ({
         }`
       }
       emptyState={<span className="text-sm text-muted-foreground">—</span>}
+      trigger={trigger}
+      triggerClassName={triggerClassName}
       createLabel={(name) => `Criar dobradinha “${name}”`}
       createMaxLength={120}
       sortSelected={false}

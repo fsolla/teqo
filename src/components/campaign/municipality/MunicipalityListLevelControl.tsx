@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import type { MunicipalityListEngagementLevelResponse } from '@/app/(campaign)/campanha/(app)/municipios/engagement-level/types'
 import { MunicipalityLevelBadge } from '@/components/campaign/municipality/MunicipalityLevelBadge'
@@ -41,6 +41,13 @@ type MunicipalityListLevelControlProps = {
   levelNote: string | null
   levelChangedAt: string | null
   variant: CampaignCellEditOverlayVariant
+  /**
+   * B193 — replaces the internal level badge trigger (e.g. the dense mobile
+   * card's "Nível" chip). Receives the LIVE saved level/note.
+   */
+  trigger?: (level: EngagementLevel | null, note: string | null) => ReactNode
+  /** B193 — dense card chip styling override (shorter, pill-shaped). */
+  triggerClassName?: string
 }
 
 /**
@@ -56,6 +63,8 @@ export const MunicipalityListLevelControl = ({
   levelNote,
   levelChangedAt,
   variant,
+  trigger,
+  triggerClassName,
 }: MunicipalityListLevelControlProps) => {
   const [open, setOpen] = useState(false)
   // Not the route's success payload: that one always names a level, and a row
@@ -246,11 +255,14 @@ export const MunicipalityListLevelControl = ({
       }
       contentClassName="w-80 p-3"
       preventPopoverAutoFocus
+      triggerClassName={triggerClassName}
       trigger={
         // The sheet has no hover to carry the rest, so the trigger spells the
         // level out there. In the table, absence follows the shared cell pattern
         // (`—`) while the button's aria-label still announces "Sem nível".
-        currentLevel || isSheet ? (
+        trigger ? (
+          trigger(currentLevel, currentNote)
+        ) : currentLevel || isSheet ? (
           <MunicipalityLevelBadge
             level={currentLevel}
             note={isSheet ? currentNote : null}
