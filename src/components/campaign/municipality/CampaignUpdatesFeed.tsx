@@ -15,7 +15,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
 })
 
 const CampaignUpdatesFeedItem = ({ card }: { card: CampaignUpdatesFeedCard }) => (
-  <li className="flex gap-3 rounded-xl border p-4">
+  <li className="flex gap-3 rounded-none border-b border-border p-4 last:border-b-0 md:rounded-xl md:border md:last:border-b">
     <CampaignUserAvatar
       name={card.author.name}
       avatarUrl={card.author.avatarUrl}
@@ -48,13 +48,13 @@ export const CampaignUpdatesFeed = ({ cards }: { cards: CampaignUpdatesFeedCard[
       <CampaignListEmptyState
         icon={Inbox}
         title="Nenhuma atualização encontrada"
-        description="Ajuste o filtro ou registre um novo fato com o botão “+ Nova atualização”."
+        description="Ajuste o filtro ou registre um novo fato de campo."
       />
     )
   }
 
   return (
-    <ul className="flex flex-col gap-4">
+    <ul className="-mx-4 my-0 flex list-none flex-col [&>li]:mt-0 md:mx-0 md:gap-4">
       {cards.map((card) => (
         <CampaignUpdatesFeedItem key={card.id} card={card} />
       ))}
