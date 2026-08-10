@@ -14,11 +14,11 @@ Appetite restante: herdado (ops ~30min + passos de validação)
 
 ## Diagnóstico (evidência, 2026-08-10)
 
-| Elo | Estado | Evidência |
-| --- | ------ | --------- |
-| 1. Env `REVALIDATE_SECRET` (Vercel prod) | **AUSENTE** | `vercel env ls production` (projeto `solla/jorgesolla`, link em `/home/fsolla/Code/teqo/.vercel`): não listada |
-| 2. Endpoint prod | **500** | `curl -X POST https://pt.jorgesolla.com.br/api/revalidate -H "x-revalidate-secret: <errado>"` → `HTTP 500` (corpo: `REVALIDATE_SECRET is not configured` — route.ts:54-58) |
-| 3. Comportamento esperado pós-fix | 401/200 | secret errado → `401`; secret certo → `200 { revalidated: true }` |
+| Elo                                      | Estado      | Evidência                                                                                                                                                                  |
+| ---------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Env `REVALIDATE_SECRET` (Vercel prod) | **AUSENTE** | `vercel env ls production` (projeto `solla/jorgesolla`, link em `/home/fsolla/Code/teqo/.vercel`): não listada                                                             |
+| 2. Endpoint prod                         | **500**     | `curl -X POST https://pt.jorgesolla.com.br/api/revalidate -H "x-revalidate-secret: <errado>"` → `HTTP 500` (corpo: `REVALIDATE_SECRET is not configured` — route.ts:54-58) |
+| 3. Comportamento esperado pós-fix        | 401/200     | secret errado → `401`; secret certo → `200 { revalidated: true }`                                                                                                          |
 
 ## Abordagem recomendada
 
