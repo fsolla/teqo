@@ -8,7 +8,7 @@ import type { UIMessage } from 'ai'
 
 export const SOLLINHA_CHAT_SESSION_STORAGE_KEY = 'teqo:campaign:sollinha-chat-session'
 
-export const SOLLINHA_CHAT_SESSION_VERSION = 1
+const SOLLINHA_CHAT_SESSION_VERSION = 1
 
 /** Count guardrail — oldest messages are dropped at write time, no UI warning. */
 export const SOLLINHA_CHAT_MAX_MESSAGES = 50
