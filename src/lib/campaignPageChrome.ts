@@ -45,6 +45,9 @@ export const campaignPageChromeCatalog = {
   dobradinhas: {
     title: 'Dobradinhas',
   },
+  pessoas: {
+    title: 'Pessoas',
+  },
   dobradinhasNova: {
     title: 'Nova dobradinha',
   },
@@ -177,6 +180,10 @@ const pathRules: PathRule[] = [
   {
     match: (pathname) => pathname === '/campanha/agenda',
     resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.agenda),
+  },
+  {
+    match: (pathname) => pathname === '/campanha/pessoas',
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.pessoas),
   },
   {
     match: (pathname) => pathname === '/campanha/atividades/nova',

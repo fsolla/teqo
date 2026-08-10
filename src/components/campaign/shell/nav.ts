@@ -2,6 +2,7 @@ import {
   BellIcon,
   BookOpenIcon,
   CalendarDaysIcon,
+  ContactIcon,
   EllipsisVerticalIcon,
   HandshakeIcon,
   HomeIcon,
@@ -38,6 +39,12 @@ export type CampaignNavItem = {
  */
 export const MUNICIPALITY_NAV_HREF = '/campanha/municipios'
 
+/**
+ * Named because the sidebar has to recognize this item to hang the C100 saved
+ * filters under it — same contract as `MUNICIPALITY_NAV_HREF`.
+ */
+export const PEOPLE_NAV_HREF = '/campanha/pessoas'
+
 const staffNav: CampaignNavItem[] = [
   { title: 'Início', href: '/campanha', icon: HomeIcon },
   { title: 'Quadro', href: '/campanha/quadro', icon: LayoutDashboardIcon },
@@ -46,6 +53,7 @@ const staffNav: CampaignNavItem[] = [
   { title: 'Lideranças', href: '/campanha/liderancas', icon: HandshakeIcon },
   { title: 'Organizações', href: '/campanha/organizacoes', icon: LandmarkIcon },
   { title: 'Dobradinhas', href: '/campanha/dobradinhas', icon: Users2Icon },
+  { title: 'Pessoas', href: PEOPLE_NAV_HREF, icon: ContactIcon },
   { title: 'Agenda', href: CAMPAIGN_AGENDA_HOME, icon: CalendarDaysIcon },
   { title: 'Demandas', href: '/campanha/demandas', icon: InboxIcon },
   { title: 'Apoiadores', href: '/campanha/apoiadores', icon: UsersIcon },

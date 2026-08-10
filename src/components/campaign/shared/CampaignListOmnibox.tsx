@@ -27,6 +27,13 @@ export type CampaignListOmniboxProps = {
   isPending?: boolean
   /** Domain controls beside the bar (e.g. save bookmark). */
   trailing?: ReactNode
+  /**
+   * C100: below `md` the trailing cluster (column picker, save bookmark) is
+   * hidden — B184 already owns the mobile bar chrome (borderless field,
+   * circle-X clear), and the page registers its own header controls instead.
+   * `md:` restores the trailing cluster beside the framed desktop field.
+   */
+  edgeToEdge?: boolean
 }
 
 /**
@@ -76,6 +83,7 @@ export const CampaignListOmnibox = ({
   onClearAll,
   isPending = false,
   trailing,
+  edgeToEdge = false,
 }: CampaignListOmniboxProps) => {
   const reactId = useId()
   const id = idProp ?? `campaign-list-omnibox-${reactId}`
@@ -357,7 +365,12 @@ export const CampaignListOmnibox = ({
         ) : null}
       </div>
 
-      <div className="flex shrink-0 flex-wrap items-center gap-2 md:pt-7">
+      <div
+        className={cn(
+          'flex shrink-0 flex-wrap items-center gap-2 md:pt-7',
+          edgeToEdge && 'hidden md:flex',
+        )}
+      >
         {trailing}
         {onClearAll && hasChips ? (
           <Button

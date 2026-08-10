@@ -25,6 +25,7 @@ const CAMPAIGN_LIST_IDS = [
   'demandas',
   'apoiadores',
   'territorios',
+  'pessoas',
 ] as const
 
 export type CampaignListId = (typeof CAMPAIGN_LIST_IDS)[number]
