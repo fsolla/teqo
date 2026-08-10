@@ -68,7 +68,7 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/components/campaign/tour',
       'src/utilities/territory',
     ],
-    specs: ['campaignTerritories'],
+    specs: ['campaignTerritoriesHttp'],
   },
   {
     prefixes: [`${CAMPAIGN_APP}/conceitos`],
