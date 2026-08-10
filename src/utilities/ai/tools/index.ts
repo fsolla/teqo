@@ -12,6 +12,7 @@ import { calculate } from '@/utilities/ai/tools/calculate'
 import { getDobradinhas } from '@/utilities/ai/tools/getDobradinhas'
 import { getLeaderships } from '@/utilities/ai/tools/getLeaderships'
 import { getLeadingMunicipalities } from '@/utilities/ai/tools/getLeadingMunicipalities'
+import { getMunicipalitiesWithoutUpdate } from '@/utilities/ai/tools/getMunicipalitiesWithoutUpdate'
 import { getMunicipalityOverview } from '@/utilities/ai/tools/getMunicipalityOverview'
 import { getMunicipalityVotes } from '@/utilities/ai/tools/getMunicipalityVotes'
 import { getOrganizations } from '@/utilities/ai/tools/getOrganizations'
@@ -30,6 +31,7 @@ export const buildAITools = (ctx: AIToolContext) => ({
   getMunicipalityOverview: getMunicipalityOverview(ctx),
   getLeaderships: getLeaderships(ctx),
   getPendingLeaderships: getPendingLeaderships(ctx),
+  getMunicipalitiesWithoutUpdate: getMunicipalitiesWithoutUpdate(ctx),
   getOrganizations: getOrganizations(ctx),
   getPartnershipCoverage: getPartnershipCoverage(ctx),
   searchEntities: searchEntities(ctx),
