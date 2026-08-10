@@ -166,16 +166,16 @@ test.describe('C101 — agenda mobile com cara de app nativo', () => {
       .poll(
         () =>
           page.evaluate(() => {
-            const scroller = [...document.querySelector('.activity-agenda')!.querySelectorAll('*')].find(
-              (el) => {
-                const style = getComputedStyle(el)
-                return (
-                  (style.overflowY === 'auto' || style.overflowY === 'scroll') &&
-                  el.scrollHeight > el.clientHeight &&
-                  el.querySelector('[role="rowheader"]')
-                )
-              },
-            )
+            const scroller = [
+              ...document.querySelector('.activity-agenda')!.querySelectorAll('*'),
+            ].find((el) => {
+              const style = getComputedStyle(el)
+              return (
+                (style.overflowY === 'auto' || style.overflowY === 'scroll') &&
+                el.scrollHeight > el.clientHeight &&
+                el.querySelector('[role="rowheader"]')
+              )
+            })
             return scroller ? scroller.scrollTop : null
           }),
         { timeout: 15_000 },
@@ -187,9 +187,9 @@ test.describe('C101 — agenda mobile com cara de app nativo', () => {
     const colHeaderText = `${weekdayOf(civilDate)} ${Number(civilDate.slice(8, 10))}`
     const headerTop = () =>
       page.evaluate((text) => {
-        const cell = [...document.querySelector('.activity-agenda')!.querySelectorAll('[role="columnheader"]')].find(
-          (el) => el.textContent?.includes(text),
-        )
+        const cell = [
+          ...document.querySelector('.activity-agenda')!.querySelectorAll('[role="columnheader"]'),
+        ].find((el) => el.textContent?.includes(text))
         return cell ? Math.round(cell.getBoundingClientRect().top) : null
       }, colHeaderText)
 
