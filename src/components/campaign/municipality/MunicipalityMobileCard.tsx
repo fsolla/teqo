@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronDownIcon } from 'lucide-react'
+import { ChevronDownIcon, CircleAlertIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useState, type ReactNode } from 'react'
 
@@ -87,7 +87,12 @@ const chipTriggerClassName = 'min-h-8 rounded-full px-2.5'
 /** Ghost trigger styling for the read-only relation groups (no hover pill). */
 const relationTriggerClassName = 'min-h-0 rounded-md bg-transparent px-0 hover:bg-transparent'
 
-const chipLabel = 'text-xs font-medium text-muted-foreground'
+const ChipLabel = ({ children }: { children: ReactNode }) => (
+  <span className="text-xs font-medium text-muted-foreground">{children}</span>
+)
+
+/** Read-only city rows render a plain dash everywhere a control would sit. */
+const CityDash = () => <span className="text-muted-foreground">—</span>
 
 const RelationGroupTrigger = ({
   label,
@@ -99,8 +104,23 @@ const RelationGroupTrigger = ({
   emptyState: ReactNode
 }) => (
   <div className="flex w-full min-w-0 flex-col gap-1.5">
-    <span className={chipLabel}>{label}</span>
+    <ChipLabel>{label}</ChipLabel>
     <MunicipalityRelationAvatarStack entries={entries} emptyState={emptyState} wrap />
+  </div>
+)
+
+/**
+ * One third of the avatar row: the label + the relation control (or the
+ * read-only display) for a single association type.
+ */
+const RelationGroup = ({ label, children }: { label: string; children: ReactNode }) => (
+  <div className="min-w-0 flex-1">
+    {children ?? (
+      <div className="flex w-full flex-col gap-1.5">
+        <ChipLabel>{label}</ChipLabel>
+        <CityDash />
+      </div>
+    )}
   </div>
 )
 
@@ -226,7 +246,10 @@ export const MunicipalityMobileCard = ({
           <div className="flex flex-wrap items-center gap-1.5">
             <TerritorialClassCardReadout municipality={municipality} />
             {isCity ? (
-              <Badge variant="outline">Não registrada</Badge>
+              <span className="inline-flex items-center gap-1.5">
+                <ChipLabel>Tendência</ChipLabel>
+                <Badge variant="outline">Não registrada</Badge>
+              </span>
             ) : (
               <MunicipalityListTrendControl
                 municipalityID={municipality.id}
@@ -237,7 +260,7 @@ export const MunicipalityMobileCard = ({
                 triggerClassName={chipTriggerClassName}
                 trigger={(trend) => (
                   <>
-                    <span className={chipLabel}>Tendência</span>
+                    <ChipLabel>Tendência</ChipLabel>
                     <Badge
                       variant={trend.status ? politicalTrendBadgeVariant[trend.status] : 'outline'}
                     >
@@ -260,14 +283,14 @@ export const MunicipalityMobileCard = ({
                 triggerClassName={chipTriggerClassName}
                 trigger={(level, note) => (
                   <>
-                    <span className={chipLabel}>Nível</span>
+                    <ChipLabel>Nível</ChipLabel>
                     <MunicipalityLevelBadge level={level} note={note} layout="table" />
                   </>
                 )}
               />
             ) : (
               <span className="inline-flex items-center gap-1.5">
-                <span className={chipLabel}>Nível</span>
+                <ChipLabel>Nível</ChipLabel>
                 <MunicipalityLevelBadge
                   level={municipality.engagementLevel}
                   note={municipality.levelNote}
@@ -278,10 +301,8 @@ export const MunicipalityMobileCard = ({
           </div>
 
           <div className="flex flex-wrap items-start gap-3">
-            <div className="min-w-0 flex-1">
-              {isCity ? (
-                <span className="text-muted-foreground">—</span>
-              ) : isCoordinator ? (
+            <RelationGroup label="Assessores">
+              {isCity ? null : isCoordinator ? (
                 <MunicipalityListAdvisorsControl
                   municipalityID={municipality.id}
                   municipalityName={municipality.name}
@@ -301,7 +322,7 @@ export const MunicipalityMobileCard = ({
                 />
               ) : (
                 <div className="flex w-full flex-col gap-1.5">
-                  <span className={chipLabel}>Assessores</span>
+                  <ChipLabel>Assessores</ChipLabel>
                   <MunicipalityAdvisorAvatarStack
                     advisors={advisors}
                     isPriority={isPriority}
@@ -309,11 +330,9 @@ export const MunicipalityMobileCard = ({
                   />
                 </div>
               )}
-            </div>
-            <div className="min-w-0 flex-1">
-              {isCity ? (
-                <span className="text-muted-foreground">—</span>
-              ) : (
+            </RelationGroup>
+            <RelationGroup label="Lideranças">
+              {isCity ? null : (
                 <MunicipalityListLeadershipsControl
                   municipalityID={municipality.id}
                   municipalityName={municipality.name}
@@ -331,11 +350,9 @@ export const MunicipalityMobileCard = ({
                   triggerClassName={relationTriggerClassName}
                 />
               )}
-            </div>
-            <div className="min-w-0 flex-1">
-              {isCity ? (
-                <span className="text-muted-foreground">—</span>
-              ) : (
+            </RelationGroup>
+            <RelationGroup label="Dobradinhas">
+              {isCity ? null : (
                 <MunicipalityStateDeputyRelationCell
                   municipalityId={municipality.id}
                   municipalityName={municipality.name}
@@ -354,11 +371,11 @@ export const MunicipalityMobileCard = ({
                   triggerClassName={relationTriggerClassName}
                 />
               )}
-            </div>
+            </RelationGroup>
           </div>
 
           {isCity ? (
-            <span className="text-sm text-muted-foreground">—</span>
+            <CityDash />
           ) : update ? (
             <>
               <button
@@ -369,12 +386,15 @@ export const MunicipalityMobileCard = ({
               >
                 <span
                   className={cn(
-                    'tabular-nums',
+                    'inline-flex items-center gap-1 tabular-nums',
                     updateIsCold
                       ? 'font-medium text-estimate-pending-foreground'
                       : 'text-muted-foreground',
                   )}
                 >
+                  {updateIsCold ? (
+                    <CircleAlertIcon className="size-3.5 shrink-0" aria-hidden="true" />
+                  ) : null}
                   Última atualização {formatMunicipalitySignalAgeLabel(updateAge)}
                 </span>
                 <ChevronDownIcon

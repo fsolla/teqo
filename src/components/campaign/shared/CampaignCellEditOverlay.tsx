@@ -111,6 +111,26 @@ export const CampaignCellEditOverlay = ({
   const wasOpenRef = useRef(open)
   /** C109 — the shared drawer session this control opened (see the host). */
   const sessionIdRef = useRef<number | null>(null)
+  // Latest values for the mount-only cleanup below (never stale, no deps).
+  const sharedSheetRef = useRef(sharedSheet)
+  sharedSheetRef.current = sharedSheet
+  const onOpenChangeRef = useRef(onOpenChange)
+  onOpenChangeRef.current = onOpenChange
+
+  // The control may unmount with its session open (a filter collapse behind
+  // the modal): dismiss the host so no orphan drawer keeps a frozen chrome
+  // and a dead body. The host's session guard makes the call a no-op when
+  // another control already took over.
+  useEffect(
+    () => () => {
+      const sheet = sharedSheetRef.current
+      const sessionId = sessionIdRef.current
+      if (sessionId !== null && sheet) {
+        sheet.dismissSheet(sessionId, onOpenChangeRef.current)
+      }
+    },
+    [],
+  )
 
   // Miss #52: without the provider every opened cell keeps its own Drawer
   // root. The fallback below stays for prod resilience, but in dev the
@@ -191,7 +211,10 @@ export const CampaignCellEditOverlay = ({
     // Only the false→true transition opens a session: the controls' callbacks
     // are recreated per render (autosave `onOpenChange`, level `handleOpenChange`),
     // and calling `openSheet` on every re-render made the host dismiss the
-    // session it just started (C109 — "sheet quebra ao abrir").
+    // session it just started (C109 — "sheet quebra ao abrir"). Consequence:
+    // `title`/`description`/`hasCustomFooter` are frozen while the drawer is
+    // open — every caller passes static chrome, and the live parts (footer
+    // buttons/spinner) flow through `setFooterContent` below.
     if (!wasOpen) {
       sessionIdRef.current = sharedSheet.openSheet({
         title,

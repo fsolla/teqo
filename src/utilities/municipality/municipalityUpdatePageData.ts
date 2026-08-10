@@ -38,6 +38,39 @@ export const parseMunicipalityUpdateFeedParams = (
   return { page }
 }
 
+/** One doc → view-model mapping, shared by the feed and the list batch (B193). */
+const toMunicipalityUpdateViewModel = (
+  update: MunicipalityUpdate,
+  authorNameById: ReadonlyMap<number, string>,
+): MunicipalityUpdateViewModel => {
+  const polarity = update.polarity as MunicipalityUpdatePolarity | undefined
+  return {
+    id: update.id,
+    authorName: authorNameById.get(relationshipId(update.author) ?? -1) ?? 'Usuário',
+    createdAt: update.createdAt,
+    body: update.body ?? null,
+    polarity: polarity && municipalityUpdatePolarities.includes(polarity) ? polarity : 'neutra',
+    urgent: Boolean(update.urgent),
+    activeVolunteers: update.activeVolunteers ?? null,
+    newSupports: update.newSupports ?? null,
+    adversarySignal: Boolean(update.adversarySignal),
+  }
+}
+
+const loadUpdateAuthorNames = async (
+  payload: Payload,
+  updates: MunicipalityUpdate[],
+): Promise<ReadonlyMap<number, string>> => {
+  const authorIDs = [
+    ...new Set(
+      updates
+        .map((update) => relationshipId(update.author))
+        .filter((id): id is number => id !== null),
+    ),
+  ]
+  return loadCampaignUserNamesByIds(payload, authorIDs)
+}
+
 export const loadMunicipalityUpdatesFeed = async (
   payload: Payload,
   user: CampaignUser,
@@ -62,31 +95,11 @@ export const loadMunicipalityUpdatesFeed = async (
     overrideAccess: false,
   })
 
-  const authorIDs = [
-    ...new Set(
-      result.docs
-        .map((update) => relationshipId((update as MunicipalityUpdate).author))
-        .filter((id): id is number => id !== null),
-    ),
-  ]
-  const authorNameById = await loadCampaignUserNamesByIds(payload, authorIDs)
+  const docs = result.docs as MunicipalityUpdate[]
+  const authorNameById = await loadUpdateAuthorNames(payload, docs)
 
   return {
-    updates: result.docs.map((update) => {
-      const doc = update as MunicipalityUpdate
-      const polarity = doc.polarity as MunicipalityUpdatePolarity | undefined
-      return {
-        id: doc.id,
-        authorName: authorNameById.get(relationshipId(doc.author) ?? -1) ?? 'Usuário',
-        createdAt: doc.createdAt,
-        body: doc.body ?? null,
-        polarity: polarity && municipalityUpdatePolarities.includes(polarity) ? polarity : 'neutra',
-        urgent: Boolean(doc.urgent),
-        activeVolunteers: doc.activeVolunteers ?? null,
-        newSupports: doc.newSupports ?? null,
-        adversarySignal: Boolean(doc.adversarySignal),
-      }
-    }),
+    updates: docs.map((update) => toMunicipalityUpdateViewModel(update, authorNameById)),
     totalDocs: result.totalDocs,
     totalPages: result.totalPages,
     page: result.page ?? state.page,
@@ -140,31 +153,13 @@ export const loadMunicipalityLastUpdates = async (
     overrideAccess: false,
   })
 
-  const authorIDs = [
-    ...new Set(
-      result.docs
-        .map((update) => relationshipId((update as MunicipalityUpdate).author))
-        .filter((id): id is number => id !== null),
-    ),
-  ]
-  const authorNameById = await loadCampaignUserNamesByIds(payload, authorIDs)
+  const authorNameById = await loadUpdateAuthorNames(payload, result.docs as MunicipalityUpdate[])
 
   const lastByMunicipality = new Map<number, MunicipalityUpdateViewModel>()
   for (const update of result.docs as MunicipalityUpdate[]) {
     const municipalityID = relationshipId(update.municipality)
     if (municipalityID === null || lastByMunicipality.has(municipalityID)) continue
-    const polarity = update.polarity as MunicipalityUpdatePolarity | undefined
-    lastByMunicipality.set(municipalityID, {
-      id: update.id,
-      authorName: authorNameById.get(relationshipId(update.author) ?? -1) ?? 'Usuário',
-      createdAt: update.createdAt,
-      body: update.body ?? null,
-      polarity: polarity && municipalityUpdatePolarities.includes(polarity) ? polarity : 'neutra',
-      urgent: Boolean(update.urgent),
-      activeVolunteers: update.activeVolunteers ?? null,
-      newSupports: update.newSupports ?? null,
-      adversarySignal: Boolean(update.adversarySignal),
-    })
+    lastByMunicipality.set(municipalityID, toMunicipalityUpdateViewModel(update, authorNameById))
   }
 
   return lastByMunicipality

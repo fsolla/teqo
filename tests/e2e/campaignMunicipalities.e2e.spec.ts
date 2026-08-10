@@ -888,6 +888,9 @@ test.describe('Municípios — filtro e cards sem moldura no celular (B184)', ()
 
     await campaign.login(page, coordinator.email!, password)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
+    // C106 — dynamic pages stream a transient hidden `#S:*` copy of the shell;
+    // strict-mode locators below would match BOTH copies while it settles.
+    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
 
     // The mobile standard hides the field label; the input keeps its name via
     // aria-label, and the filter form is a borderless sticky bar.
@@ -978,7 +981,12 @@ test.describe('Municípios — card denso mobile (B193)', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
-    const card = page.locator('[data-view="mobile-cards"] article').first()
+    // `?q=` matches name PREFIXES ("São Félix" also returns "São Félix do
+    // Coribe"), so the card is anchored on the municipality's own name.
+    const card = page
+      .locator('[data-view="mobile-cards"] article')
+      .filter({ hasText: municipality.name })
+      .first()
     await expect(card).toBeVisible()
 
     await card.getByRole('button', { name: /Editar votos estimados/ }).click()
@@ -1014,7 +1022,12 @@ test.describe('Municípios — card denso mobile (B193)', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
-    const card = page.locator('[data-view="mobile-cards"] article').first()
+    // `?q=` matches name PREFIXES ("São Félix" also returns "São Félix do
+    // Coribe"), so the card is anchored on the municipality's own name.
+    const card = page
+      .locator('[data-view="mobile-cards"] article')
+      .filter({ hasText: municipality.name })
+      .first()
     await expect(card).toBeVisible()
 
     await card.getByText('Nível', { exact: true }).click()
@@ -1043,11 +1056,18 @@ test.describe('Municípios — card denso mobile (B193)', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
-    const card = page.locator('[data-view="mobile-cards"] article').first()
+    // `?q=` matches name PREFIXES ("São Félix" also returns "São Félix do
+    // Coribe"), so the card is anchored on the municipality's own name.
+    const card = page
+      .locator('[data-view="mobile-cards"] article')
+      .filter({ hasText: municipality.name })
+      .first()
     await expect(card).toBeVisible()
 
     await expect(card).toHaveCSS('border-right-width', '6px')
-    await expect(card).toHaveCSS('border-right-color', 'rgb(197, 20, 20)')
+    // The accent color is a token contract, not a literal: assert the utility
+    // class that paints it (`border-r-primary`) instead of the resolved color.
+    await expect(card).toHaveClass(/border-r-primary/)
   })
 
   test('footer expands to the last update card and offers register; empty footer is a direct CTA', async ({
@@ -1074,7 +1094,11 @@ test.describe('Municípios — card denso mobile (B193)', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(withUpdate.name)}`,
     )
-    const card = page.locator('[data-view="mobile-cards"] article').first()
+    // `?q=` matches name prefixes — anchor on the municipality's own name.
+    const card = page
+      .locator('[data-view="mobile-cards"] article')
+      .filter({ hasText: withUpdate.name })
+      .first()
     await expect(card).toBeVisible()
 
     // The footer button expands the card bottom and reveals the last update
@@ -1098,7 +1122,10 @@ test.describe('Municípios — card denso mobile (B193)', () => {
     // IS the register CTA, without chevron or expansion.
     const empty = await fixtures.claimMunicipality()
     await page.goto(`${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(empty.name)}`)
-    const emptyCard = page.locator('[data-view="mobile-cards"] article').first()
+    const emptyCard = page
+      .locator('[data-view="mobile-cards"] article')
+      .filter({ hasText: empty.name })
+      .first()
     await expect(emptyCard).toBeVisible()
     await expect(emptyCard.getByRole('button', { name: /Última atualização/ })).toHaveCount(0)
     const emptyCta = emptyCard.getByRole('button', { name: /Registrar atualização em/ })

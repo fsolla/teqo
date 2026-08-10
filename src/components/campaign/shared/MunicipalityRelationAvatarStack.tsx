@@ -18,7 +18,6 @@ export const MunicipalityRelationAvatarStack = ({
   emptyState,
   maxVisible = 3,
   wrap = false,
-  avatarClassName,
 }: {
   entries: MunicipalityRelationEntry[]
   emptyState: ReactNode
@@ -28,7 +27,6 @@ export const MunicipalityRelationAvatarStack = ({
    * row wraps to the available width instead of overlapping in a fixed stack.
    */
   wrap?: boolean
-  avatarClassName?: string
 }) => {
   if (entries.length === 0) return emptyState
 
@@ -40,13 +38,11 @@ export const MunicipalityRelationAvatarStack = ({
         {visible.map((entry) => (
           <Avatar
             key={entry.id}
-            className={cn(
-              'size-8 border-2 border-background',
-              wrap && 'size-7 border-0',
-              avatarClassName,
-            )}
+            className={cn('size-8 border-2 border-background', wrap && 'size-7 border-0')}
           >
-            <AvatarFallback>
+            {/* The full names ride in the sr-only span below (or the trigger's
+                aria-label); initials alone would be announced twice. */}
+            <AvatarFallback aria-hidden="true">
               {campaignUserInitials(entry.initialsLabel ?? entry.label)}
             </AvatarFallback>
           </Avatar>

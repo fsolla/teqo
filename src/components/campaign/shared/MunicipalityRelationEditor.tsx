@@ -29,7 +29,17 @@ export type MunicipalityRelationMutationResult =
     }
   | { status: 'error'; message: string }
 
-type MunicipalityRelationEditorProps = {
+/**
+ * B193 — the closed-display override the dense mobile card passes through the
+ * relation wrappers (Advisors/Lideranças/Dobradinhas) to this editor.
+ */
+export type MunicipalityRelationTriggerProps = {
+  trigger?: (entries: MunicipalityRelationEntry[], emptyState: ReactNode) => ReactNode
+  /** B193 — dense card trigger styling override (no min-height/hover pill). */
+  triggerClassName?: string
+}
+
+type MunicipalityRelationEditorProps = MunicipalityRelationTriggerProps & {
   municipalityName: string
   currentIDs: number[]
   knownEntries?: MunicipalityRelationEntry[]
@@ -44,16 +54,6 @@ type MunicipalityRelationEditorProps = {
   createErrorMessage?: string
   triggerLabel: (entries: MunicipalityRelationEntry[]) => string
   emptyState: ReactNode
-  /**
-   * B193 — replaces the default avatar-stack trigger (e.g. the dense mobile
-   * card's labelled, wrapping stack). Same pattern as `RelationChipCell`'s
-   * `trigger` render prop: the overlay machinery stays, only the closed
-   * display changes. Receives the relation's own `emptyState` so the custom
-   * trigger can render the same absence affordance the default stack would.
-   */
-  trigger?: (entries: MunicipalityRelationEntry[], emptyState: ReactNode) => ReactNode
-  /** B193 — dense card trigger styling override (no min-height/hover pill). */
-  triggerClassName?: string
   createLabel: (name: string) => string
   createMaxLength?: number
   sortSelected?: boolean

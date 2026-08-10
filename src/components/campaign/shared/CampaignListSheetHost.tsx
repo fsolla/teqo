@@ -126,9 +126,12 @@ export const CampaignListSheetProvider = ({ children }: { children: ReactNode })
   )
 
   const registerFooter = useCallback((sessionId: number, footer: ReactNode | null) => {
-    if (activeSessionRef.current !== sessionId) return
+    if (activeSessionRef.current !== sessionId || !openRef.current) return
     setFooterContent(footer)
   }, [])
+
+  const openRef = useRef(open)
+  openRef.current = open
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
@@ -137,7 +140,10 @@ export const CampaignListSheetProvider = ({ children }: { children: ReactNode })
       const onOpenChange = activeOnOpenChangeRef.current
       if (sessionId === null || !onOpenChange) {
         setOpen(false)
+        activeSessionRef.current = null
+        activeOnOpenChangeRef.current = null
         setChrome(null)
+        setFooterContent(null)
         return
       }
       dismissSheet(sessionId, onOpenChange)

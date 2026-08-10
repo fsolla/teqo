@@ -8,18 +8,18 @@ import type { MunicipalityRelationEntry } from '@/components/campaign/shared/Mun
 import {
   MunicipalityRelationEditor,
   type MunicipalityRelationMutationResult,
+  type MunicipalityRelationTriggerProps,
 } from '@/components/campaign/shared/MunicipalityRelationEditor'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import type {
   EligibleAdvisorOption,
   MunicipalityAdvisorSummary,
 } from '@/utilities/municipality/municipalityViewModels'
-import type { ReactNode } from 'react'
 
 const ADVISORS_ENDPOINT = '/campanha/municipios/advisors'
 const SAVE_ERROR_MESSAGE = 'Não foi possível atualizar os assessores. Tente novamente.'
 
-type MunicipalityListAdvisorsControlProps = {
+type MunicipalityListAdvisorsControlProps = MunicipalityRelationTriggerProps & {
   municipalityID: number
   municipalityName: string
   currentAdvisorIDs: number[]
@@ -27,10 +27,6 @@ type MunicipalityListAdvisorsControlProps = {
   advisorNamesById: ReadonlyMap<number, MunicipalityAdvisorSummary>
   options: EligibleAdvisorOption[]
   variant: CampaignCellEditOverlayVariant
-  /** B193 — dense mobile card trigger (labelled wrapping stack). */
-  trigger?: (entries: MunicipalityRelationEntry[], emptyState: ReactNode) => ReactNode
-  /** B193 — dense card trigger styling override. */
-  triggerClassName?: string
 }
 
 const entryOf = (option: { id: number; name: string }): MunicipalityRelationEntry => ({

@@ -20,10 +20,14 @@ export const MunicipalityVotePositionReadout = ({
 }) => {
   const share = formatVoteSharePercent(position.share)
   const rank = formatPlacementOrdinal(position.rank)
+  // B193 — the dense card reads "colocação · votos" per the wireframe; the
+  // table keeps "votos · colocação" (desktop untouched by B193).
   const metaLine =
     layout === 'search'
       ? formatElectionNumber(position.votes)
-      : `${formatElectionNumber(position.votes)} · ${rank}`
+      : layout === 'card'
+        ? `${rank} · ${formatElectionNumber(position.votes)}`
+        : `${formatElectionNumber(position.votes)} · ${rank}`
   const ariaLabel = `${share} da votação estadual, ${formatElectionNumber(position.votes)} votos, ${rank} de ${formatElectionNumber(position.totalUnits)}`
 
   return (

@@ -7,28 +7,24 @@ import type { MunicipalityRelationEntry } from '@/components/campaign/shared/Mun
 import {
   MunicipalityRelationEditor,
   type MunicipalityRelationMutationResult,
+  type MunicipalityRelationTriggerProps,
 } from '@/components/campaign/shared/MunicipalityRelationEditor'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import type {
   EligibleLeadershipOption,
   MunicipalityLeadershipSummary,
 } from '@/utilities/municipality/municipalityViewModels'
-import type { ReactNode } from 'react'
 
 const LEADERSHIPS_ENDPOINT = '/campanha/municipios/leaderships'
 const SAVE_ERROR_MESSAGE = 'Não foi possível atualizar as lideranças. Tente novamente.'
 
-type MunicipalityListLeadershipsControlProps = {
+type MunicipalityListLeadershipsControlProps = MunicipalityRelationTriggerProps & {
   municipalityID: number
   municipalityName: string
   currentLeadershipIDs: number[]
   leadershipNamesById: ReadonlyMap<number, MunicipalityLeadershipSummary>
   options: EligibleLeadershipOption[]
   variant: CampaignCellEditOverlayVariant
-  /** B193 — dense mobile card trigger (labelled wrapping stack). */
-  trigger?: (entries: MunicipalityRelationEntry[], emptyState: ReactNode) => ReactNode
-  /** B193 — dense card trigger styling override. */
-  triggerClassName?: string
 }
 
 const entryOf = (option: { id: number; name: string }): MunicipalityRelationEntry => ({

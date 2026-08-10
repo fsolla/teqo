@@ -6,14 +6,14 @@ import type { MunicipalityRelationEntry } from '@/components/campaign/shared/Mun
 import {
   MunicipalityRelationEditor,
   type MunicipalityRelationMutationResult,
+  type MunicipalityRelationTriggerProps,
 } from '@/components/campaign/shared/MunicipalityRelationEditor'
 import { stateDeputyDisplayName } from '@/lib/stateDeputyNameParty'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { firstFormActionMessage } from '@/utilities/campaignFormFields'
 import type { StateDeputyRelationOption } from '@/utilities/campaignRelationOptions'
-import type { ReactNode } from 'react'
 
-type MunicipalityStateDeputyRelationCellProps = {
+type MunicipalityStateDeputyRelationCellProps = MunicipalityRelationTriggerProps & {
   municipalityId: number
   municipalityName: string
   stateDeputyIDs: number[]
@@ -24,10 +24,6 @@ type MunicipalityStateDeputyRelationCellProps = {
   ) => Promise<CampaignFormActionState>
   createAction: MunicipalityStateDeputyCreateAction
   editorVariant: CampaignCellEditOverlayVariant
-  /** B193 — dense mobile card trigger (labelled wrapping stack). */
-  trigger?: (entries: MunicipalityRelationEntry[], emptyState: ReactNode) => ReactNode
-  /** B193 — dense card trigger styling override. */
-  triggerClassName?: string
 }
 
 export type MunicipalityStateDeputyCreateAction = (

@@ -599,6 +599,10 @@ describe('campaign visual foundation', () => {
     // 40 days old, so the footer reads "há 40 dias" and paints cold — and the
     // expansion stays collapsed (the update body is not in the DOM).
     expect(html).toContain('Última atualização há 40 dias')
+    // The cold class is applied ONLY on the mobile footer (the desktop column
+    // uses `data-signal="cold"` on the readout's own span), so this pins the
+    // footer's cold paint without relying on the desktop tree.
+    expect(html).toContain('text-estimate-pending-foreground')
     expect(html).not.toContain('Visita ao comitê da região.')
     expect(html).toContain('data-signal="cold"')
   })
