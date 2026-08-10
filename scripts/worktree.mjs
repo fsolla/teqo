@@ -111,6 +111,7 @@ import {
   nextClaimableIssue,
   parseArgs,
 } from './lib/agent-github.mjs'
+import { startSharedPostgres } from './lib/db-start.mjs'
 import {
   DEV_PORT_BASE,
   GENERATED_ENV_MARKER,
@@ -143,8 +144,6 @@ const printLaunchDirective = ({ dir, purpose, issueNumber }) => {
   if (line) console.log(line)
 }
 
-/** Fixed compose project so `db:start`/provisioning always target ONE container. */
-const SHARED_COMPOSE_PROJECT = 'teqo'
 /** Maintenance database on the shared local container — only ever localhost. */
 const MAINTENANCE_DATABASE_URL = 'postgresql://teqo:teqo@localhost:5432/postgres'
 
@@ -219,15 +218,6 @@ const envFileIsGenerated = (dir, name) => {
   } catch {
     return false
   }
-}
-
-/** Start (or reuse) the ONE shared Postgres container from any worktree dir. */
-const dockerComposeUp = (dir) => {
-  execFileSync(
-    'docker',
-    ['compose', '-p', SHARED_COMPOSE_PROJECT, 'up', '-d', '--wait', 'postgres'],
-    { cwd: dir, stdio: 'inherit' },
-  )
 }
 
 /** `CREATE DATABASE` for each missing generated name on the shared container. */
@@ -332,7 +322,8 @@ const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpo
   const payloadSecret = mainEnv.PAYLOAD_SECRET ?? randomBytes(24).toString('hex')
 
   try {
-    dockerComposeUp(dir)
+    // Start (or reuse) the ONE shared Postgres container from any worktree dir.
+    await startSharedPostgres({ cwd: dir })
   } catch (error) {
     console.warn('[worktree] Docker indisponível — usando o banco compartilhado (teqo/teqo_test).')
     console.warn(`[worktree] (${error.message.split('\n')[0]})`)
