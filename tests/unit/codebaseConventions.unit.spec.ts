@@ -558,6 +558,11 @@ describe('advisor scope fragment comes from access/shared.ts', () => {
     // ids (a domain filter over a known set, not an actor access scope); the
     // single-id form the dossier uses goes through `buildActivityListWhere`.
     'src/app/(campaign)/campanha/(app)/municipios/[slug]/CityDetailSections.tsx',
+    // B185 — the chat tool filters leaderships/pledges by a scope resolved to
+    // a set of municipality ids (territory/city/municipality), a domain filter
+    // over a known set — the actor scope still comes from access control
+    // (overrideAccess: false + user).
+    'src/utilities/ai/tools/getPendingLeaderships.ts',
   ])
 
   it('keeps the scope fragment out of re-spellings', () => {
