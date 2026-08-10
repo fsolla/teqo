@@ -6,6 +6,7 @@ priority: P3
 model: composer-2.5
 model-local: deepseek-v4-flash-high
 ---
+
 Plano: [`docs/plans/test-database-lease-consent-flake.md`](docs/plans/test-database-lease-consent-flake.md)
 
 # Flake: consent restore do `testDatabaseLease` sob carga (race de fixtures paralelas)
