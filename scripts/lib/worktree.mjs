@@ -24,14 +24,18 @@ export const OPENCODE_PRESET_MODEL = 'deepseek/deepseek-v4-flash'
 
 /**
  * Skill command sent as the launch's initial message per purpose. `next`
- * sends `/work-issue` (the OPS25 command executes the full cycle); `plan`
- * and `new` send nothing — the opencode CLI's `--prompt` always auto-submits,
- * there is no prefill-without-submit flag, and the TUI autocomplete completes
- * `/plan-` instead (`new` is just "apenas conversar", no skill at all; gap
- * registered for the opencode repo). Switch `plan` to `/plan-issue` here if
- * the CLI ever gains prefill-without-submit.
+ * sends `/work-issue` (the OPS25 command executes the full cycle), `plan`
+ * sends `/plan-issue` (OPS31 — auto-submit is the real need of the flow) and
+ * `new` sends nothing ("apenas conversar", no skill at all). The opencode
+ * CLI's `--prompt` always auto-submits, there is no prefill-without-submit
+ * flag; prefill stays an upstream-only feature request (proposition
+ * annotated), not a Teqo fallback.
  */
-export const OPENCODE_SKILL_COMMAND_BY_PURPOSE = { next: '/work-issue', plan: null, new: null }
+export const OPENCODE_SKILL_COMMAND_BY_PURPOSE = {
+  next: '/work-issue',
+  plan: '/plan-issue',
+  new: null,
+}
 
 /**
  * Prefix of every neutral-worktree branch (`pnpm worktree new`). Lowercase-led

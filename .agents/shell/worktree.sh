@@ -9,8 +9,8 @@
 # No terminal (esta função), o script também imprime a diretiva `launch
 # opencode <dir> --model deepseek/deepseek-v4-flash --auto [--prompt …]` (OPS26):
 # a função executa o cd e então a linha, e o TUI do opencode abre no worktree —
-# `next` com `/work-issue` já enviado, `plan` sem prompt (autocomplete completa
-# `/plan-`). Sem `exec` de propósito: ao sair do opencode, o terminal volta ao
+# `next` com `/work-issue` já enviado, `plan` com `/plan-issue` já enviado
+# (OPS31). Sem `exec` de propósito: ao sair do opencode, o terminal volta ao
 # shell dentro do worktree. Presets são constantes em scripts/lib/worktree.mjs;
 # o marcador TEQO_WORKTREE_TERMINAL=1 é o que separa esta superfície da do comando
 # `/worktree` do opencode (que nunca lança TUI). `--stay` suprime cd e launch.
