@@ -57,6 +57,7 @@ type AgendaEventProps = {
   deputyPresent: boolean
   municipalityName: string | null
   locality: string | null
+  tags: string[]
 }
 
 const eventColors: Record<ActivityStatus, { color: string; contrastColor: string }> = {
@@ -95,12 +96,28 @@ const toEventInput = (event: ActivityAgendaEvent): EventInput => ({
     deputyPresent: event.deputyPresent,
     municipalityName: event.municipality?.name ?? null,
     locality: event.locality,
+    tags: event.tags,
   } satisfies AgendaEventProps,
 })
 
-const renderEventContent = ({ event, timeText }: EventDisplayInfo) => {
+/**
+ * C105 — the tag row is a light label, not a badge: tag has no visual
+ * identity (the active filter is the highlight). Two tags plus a "+N" cap
+ * the row so a dense slot never floods.
+ */
+export const tagsLabel = (tags: readonly string[]): string | null => {
+  if (tags.length === 0) return null
+  const shown = tags.slice(0, 2)
+  const overflow = tags.length - shown.length
+  const label = shown.map((tag) => `#${tag}`).join(' ')
+  return overflow > 0 ? `${label} +${overflow}` : label
+}
+
+const renderEventContent = ({ event, timeText, view }: EventDisplayInfo) => {
   const props = event.extendedProps as AgendaEventProps
   const location = [props.municipalityName, props.locality].filter(Boolean).join(' · ')
+  // The tag row only renders outside the dense month grid.
+  const tags = view.type.startsWith('dayGrid') ? null : tagsLabel(props.tags)
 
   return (
     <div className="activity-agenda-event-content">
@@ -115,6 +132,7 @@ const renderEventContent = ({ event, timeText }: EventDisplayInfo) => {
       </div>
       <span className="activity-agenda-event-title">{event.title}</span>
       {location ? <span className="activity-agenda-event-location">{location}</span> : null}
+      {tags ? <span className="activity-agenda-event-tags">{tags}</span> : null}
       <span className="activity-agenda-event-status">{activityStatusLabels[props.status]}</span>
     </div>
   )
@@ -123,9 +141,11 @@ const renderEventContent = ({ event, timeText }: EventDisplayInfo) => {
 export const ActivityAgenda = ({
   state,
   municipalityOptions = [],
+  knownTags,
 }: {
   state: ActivityAgendaState
   municipalityOptions?: RelationOption[]
+  knownTags?: string[]
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const calendarRef = useRef<CalendarRef>(null)
@@ -463,6 +483,7 @@ export const ActivityAgenda = ({
         isNarrow={isNarrow}
         agendaState={state}
         municipalityOptions={municipalityOptions}
+        knownTags={knownTags}
         onClose={() => setCreateDraft(null)}
         onCreated={() => {
           setCreateDraft(null)

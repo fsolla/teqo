@@ -408,6 +408,39 @@ describe('activity create prefill', () => {
     })
     expect(parseActivityCreatePrefill({ title: 'a'.repeat(200) }, new Set())).toEqual({})
   })
+
+  it('carries inline tags into the creation URL as repeated params (C105)', () => {
+    expect(
+      buildActivityCreateHref(
+        { municipality: 12 },
+        {
+          startAt: '2026-08-07T13:00:00.000Z',
+          municipalityId: 12,
+          title: 'Panfletagem',
+          tags: ['Panfletagem', 'Caminhada, café'],
+        },
+      ),
+    ).toBe(
+      '/campanha/atividades/nova?startAt=2026-08-07T13%3A00%3A00.000Z&municipality=12&title=Panfletagem&tags=Panfletagem&tags=Caminhada%2C+caf%C3%A9&returnTo=%2Fcampanha%2Fagenda%3Fmunicipality%3D12',
+    )
+  })
+
+  it('round-trips inline tags through the create prefill (C105)', () => {
+    expect(
+      parseActivityCreatePrefill(
+        { tags: [' Panfletagem ', 'Caminhada, café', 'Panfletagem'] },
+        new Set(),
+      ),
+    ).toEqual({ tags: ['Panfletagem', 'Caminhada, café'] })
+  })
+
+  it('drops oversized and out-of-bound tags from the prefill (C105)', () => {
+    const oversized = 'a'.repeat(81)
+    expect(parseActivityCreatePrefill({ tags: [oversized, '  '] }, new Set())).toEqual({})
+    expect(parseActivityCreatePrefill({ tags: ['válida', oversized] }, new Set())).toEqual({
+      tags: ['válida'],
+    })
+  })
 })
 
 describe('activity slot prefill (C91)', () => {

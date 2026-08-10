@@ -10,6 +10,7 @@ import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/co
 import {
   activityStatuses,
   MAX_ACTIVITY_TAG_LENGTH,
+  MAX_ACTIVITY_TAGS,
   type ActivityStatus,
 } from '@/lib/schemas/activity'
 import {
@@ -280,6 +281,7 @@ export type ActivityCreatePrefill = {
   endAt?: string
   municipalityId?: number
   title?: string
+  tags?: string[]
 }
 
 export const buildActivityCreateHref = (
@@ -292,6 +294,9 @@ export const buildActivityCreateHref = (
   const municipalityId = prefill.municipalityId ?? agendaState.municipality
   if (municipalityId) params.set('municipality', String(municipalityId))
   if (prefill.title) params.set('title', prefill.title)
+  // C105 — repeated `tags` params: a free-form tag may contain a comma, so a
+  // comma-joined single value would corrupt the boundary between tags.
+  for (const tag of prefill.tags ?? []) params.append('tags', tag)
   params.set('returnTo', buildActivityAgendaHref(agendaState))
   return `/campanha/atividades/nova?${params.toString()}`
 }
@@ -359,6 +364,23 @@ const normalizedIsoInstant = (value: string | undefined): string | undefined => 
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString()
 }
 
+/**
+ * C105 — bounded prefill tags: repeated `tags` params, trimmed, deduped,
+ * capped at the same limits the create schema enforces. Anything out of bounds
+ * is dropped (same drop semantics as the agenda filter's `activityTag`),
+ * never rejected — a prefill is a convenience, not a contract.
+ */
+const parseActivityPrefillTags = (value: string | string[] | undefined): string[] | undefined => {
+  if (value === undefined) return undefined
+  const tags: string[] = []
+  for (const entry of Array.isArray(value) ? value : [value]) {
+    if (tags.length >= MAX_ACTIVITY_TAGS) break
+    const tag = activityTag(entry)
+    if (tag && !tags.includes(tag)) tags.push(tag)
+  }
+  return tags.length > 0 ? tags : undefined
+}
+
 export const parseActivityCreatePrefill = (
   params: RawSearchParams,
   accessibleMunicipalityIDs: ReadonlySet<number>,
@@ -372,12 +394,14 @@ export const parseActivityCreatePrefill = (
 
   const title = normalizedText(firstValue(params.title))
   const trimmedTitle = title && title.length <= 160 ? title : undefined
+  const tags = parseActivityPrefillTags(params.tags)
 
   return {
     ...(startAt ? { startAt } : {}),
     ...(endAt ? { endAt } : {}),
     ...(municipalityId ? { municipalityId } : {}),
     ...(trimmedTitle ? { title: trimmedTitle } : {}),
+    ...(tags ? { tags } : {}),
   }
 }
 

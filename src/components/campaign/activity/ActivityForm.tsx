@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState, useState } from 'react'
+import { useActionState } from 'react'
 
 import { ActivityDemandFields } from '@/components/campaign/activity/ActivityDemandFields'
+import { ActivityTagInput } from '@/components/campaign/activity/ActivityTagInput'
 import { ActivityTaskFields } from '@/components/campaign/activity/ActivityTaskFields'
 import type { ContactComboboxOption } from '@/components/campaign/shared/ContactCombobox'
 import {
@@ -18,13 +19,12 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/Checkbox'
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { formatIsoAsBahiaDateTimeInput } from '@/lib/campaignTime'
-import { MAX_ACTIVITY_TAG_LENGTH, MAX_ACTIVITY_TAGS } from '@/lib/schemas/activity'
 import type { ActivityCreatePrefill } from '@/utilities/activityUi'
 import type { ActivityFormViewModel } from '@/utilities/activityViewModels'
 import { fieldError } from '@/utilities/campaignFormFields'
@@ -52,88 +52,6 @@ export type ActivityFormFieldsProps = {
   searchResponsibles: (query: string) => Promise<ResponsibleOption[]>
   /** Tags already used across activities, for autocomplete. */
   knownTags?: string[]
-}
-
-const TagInput = ({
-  initialTags = [],
-  knownTags = [],
-  error,
-}: {
-  initialTags?: string[]
-  knownTags?: string[]
-  error?: string
-}) => {
-  const [tags, setTags] = useState<string[]>(initialTags)
-  const [input, setInput] = useState('')
-
-  const datalistId = 'activity-tags-datalist'
-
-  const addTag = (raw: string) => {
-    const trimmed = raw.trim().slice(0, MAX_ACTIVITY_TAG_LENGTH)
-    if (!trimmed) return
-    if (tags.includes(trimmed)) return
-    if (tags.length >= MAX_ACTIVITY_TAGS) return
-    setTags((current) => [...current, trimmed])
-    setInput('')
-  }
-
-  const removeTag = (tag: string) => {
-    setTags((current) => current.filter((entry) => entry !== tag))
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2">
-        {tags.map((tag) => (
-          <span
-            key={tag}
-            className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-xs"
-          >
-            {tag}
-            <button
-              type="button"
-              onClick={() => removeTag(tag)}
-              className="rounded-sm opacity-70 hover:opacity-100"
-              aria-label={`Remover tag ${tag}`}
-            >
-              ×
-            </button>
-          </span>
-        ))}
-        {tags.length < MAX_ACTIVITY_TAGS ? (
-          <Input
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ',') {
-                event.preventDefault()
-                addTag(input)
-              } else if (event.key === 'Backspace' && !input && tags.length > 0) {
-                setTags((current) => current.slice(0, -1))
-              }
-            }}
-            onBlur={() => addTag(input)}
-            placeholder={tags.length === 0 ? 'Ex.: comício, imprensa…' : 'Adicionar tag…'}
-            className="min-h-9 flex-1"
-            list={datalistId}
-            maxLength={MAX_ACTIVITY_TAG_LENGTH}
-          />
-        ) : null}
-        <datalist id={datalistId}>
-          {knownTags
-            .filter((tag) => !tags.includes(tag))
-            .map((tag) => (
-              <option key={tag} value={tag} />
-            ))}
-        </datalist>
-      </div>
-      <input type="hidden" name="tagsJson" value={JSON.stringify(tags)} />
-      <FieldDescription>
-        Classificação livre do compromisso. Digite e pressione Enter ou vírgula para adicionar.
-      </FieldDescription>
-      {error ? <FieldError>{error}</FieldError> : null}
-    </div>
-  )
 }
 
 const ActivityFormFields = ({
@@ -184,8 +102,8 @@ const ActivityFormFields = ({
 
             <Field data-invalid={Boolean(errorFor('tagsJson'))}>
               <FieldLabel>Tags</FieldLabel>
-              <TagInput
-                initialTags={activity?.tags ?? []}
+              <ActivityTagInput
+                initialTags={initialValues?.tags ?? activity?.tags ?? []}
                 knownTags={knownTags}
                 error={errorFor('tagsJson')}
               />

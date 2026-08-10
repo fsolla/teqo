@@ -107,7 +107,7 @@ vi.mock('@fullcalendar/react', () => {
   return { default: CalendarMock }
 })
 
-import { ActivityAgenda } from '@/components/campaign/activity/ActivityAgenda'
+import { ActivityAgenda, tagsLabel } from '@/components/campaign/activity/ActivityAgenda'
 import { CampaignPageChromeProvider } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { stubMatchMedia } from '../helpers/matchMedia'
 
@@ -117,6 +117,22 @@ const renderAgenda = (props: { state?: object } = {}) =>
       <ActivityAgenda state={props.state ?? {}} />
     </CampaignPageChromeProvider>,
   )
+
+describe('tagsLabel (C105)', () => {
+  it('returns null without tags', () => {
+    expect(tagsLabel([])).toBeNull()
+  })
+
+  it('prefixes tags with # and joins them', () => {
+    expect(tagsLabel(['Caminhada'])).toBe('#Caminhada')
+    expect(tagsLabel(['Caminhada', 'Imprensa'])).toBe('#Caminhada #Imprensa')
+  })
+
+  it('caps the row at two tags with a +N overflow', () => {
+    expect(tagsLabel(['A', 'B', 'C'])).toBe('#A #B +1')
+    expect(tagsLabel(['A', 'B', 'C', 'D'])).toBe('#A #B +2')
+  })
+})
 
 describe('ActivityAgenda schedule failures', () => {
   // C101 — ActivityAgenda reads the viewport signal (useIsMobileMeasured);

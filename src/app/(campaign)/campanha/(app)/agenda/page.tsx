@@ -87,7 +87,11 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
           knownTags={knownTags}
         />
         <CampaignListResults>
-          <ActivityAgenda state={state} municipalityOptions={municipalityOptions} />
+          <ActivityAgenda
+            state={state}
+            municipalityOptions={municipalityOptions}
+            knownTags={knownTags}
+          />
         </CampaignListResults>
       </CampaignListPendingBoundary>
     </CampaignPageShell>
