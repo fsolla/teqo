@@ -20,11 +20,17 @@ export const ActivityTagInput = ({
   knownTags = [],
   error,
   onChange,
+  compact = false,
+  placeholder,
 }: {
   initialTags?: string[]
   knownTags?: string[]
   error?: string
   onChange?: (tags: string[]) => void
+  /** Label-less list-row variant (C103 mobile sheet): borderless input, no description. */
+  compact?: boolean
+  /** Input placeholder override (defaults to the C105 copy). */
+  placeholder?: string
 }) => {
   const [tags, setTags] = useState<string[]>(initialTags)
   const [input, setInput] = useState('')
@@ -88,8 +94,14 @@ export const ActivityTagInput = ({
               }
             }}
             onBlur={() => addTag(input)}
-            placeholder={tags.length === 0 ? 'Ex.: comício, imprensa…' : 'Adicionar tag…'}
-            className="min-h-9 flex-1"
+            placeholder={
+              placeholder ?? (tags.length === 0 ? 'Ex.: comício, imprensa…' : 'Adicionar tag…')
+            }
+            className={
+              compact
+                ? 'min-h-11 flex-1 rounded-none border-0 bg-transparent px-0 focus-visible:ring-2 focus-visible:ring-primary/30'
+                : 'min-h-9 flex-1'
+            }
             list={datalistId}
             maxLength={MAX_ACTIVITY_TAG_LENGTH}
             aria-label="Adicionar tag"
@@ -104,9 +116,11 @@ export const ActivityTagInput = ({
         </datalist>
       </div>
       <input type="hidden" name="tagsJson" value={JSON.stringify(tags)} />
-      <FieldDescription>
-        Classificação livre do compromisso. Digite e pressione Enter ou vírgula para adicionar.
-      </FieldDescription>
+      {compact ? null : (
+        <FieldDescription>
+          Classificação livre do compromisso. Digite e pressione Enter ou vírgula para adicionar.
+        </FieldDescription>
+      )}
       {error ? <FieldError>{error}</FieldError> : null}
     </div>
   )

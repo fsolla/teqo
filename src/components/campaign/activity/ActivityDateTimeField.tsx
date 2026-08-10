@@ -1,16 +1,23 @@
 'use client'
 
 import { CalendarIcon } from 'lucide-react'
+import { useState } from 'react'
 import { ptBR } from 'react-day-picker/locale'
 
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/Calendar'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/Drawer'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
 import {
   floorToMinuteStep,
   formatBahiaCivilDate,
-  formatBahiaCivilDateLabel,
   formatBahiaCivilDateTimeLabel,
   hourOptions,
   minuteOptionsForStep,
@@ -27,10 +34,9 @@ import { cn } from '@/lib/utils'
  * The parent renders the surrounding Field/FieldError; this component is the
  * control itself (trigger + popover with calendar and step selects).
  *
- * C104 — `timeVisible={false}` is the all-day mode: the trigger formats only
- * the date and the popover renders just the calendar (no time selects); the
- * value contract stays the same civil string, so the date part is the
- * all-day day and the time part is ignored on submit.
+ * C103 — on narrow viewports the picker opens as a nested bottom sheet
+ * (calendar + hour/minute fully on screen, "Pronto" applies and closes),
+ * keeping the desktop popover untouched.
  */
 export const ActivityDateTimeField = ({
   id,
@@ -38,7 +44,9 @@ export const ActivityDateTimeField = ({
   onValueChange,
   invalid = false,
   errorId,
-  timeVisible = true,
+  isNarrow = false,
+  label,
+  required = false,
 }: {
   id: string
   value: string
@@ -46,9 +54,14 @@ export const ActivityDateTimeField = ({
   invalid?: boolean
   /** FieldError id to announce on focus — parity with the input it replaces. */
   errorId?: string
-  /** When false, hide the time selects and label the trigger with the date only. */
-  timeVisible?: boolean
+  /** Renders the picker as a nested bottom sheet instead of a popover. */
+  isNarrow?: boolean
+  /** Field name used in the sheet header (e.g. "Início"). */
+  label?: string
+  /** Marks the required fields with a visible asterisk on the narrow trigger. */
+  required?: boolean
 }) => {
+  const [open, setOpen] = useState(false)
   const civil = floorToMinuteStep(value)
   const datePart = civil.slice(0, 10)
   const timePart = civil.slice(11)
@@ -65,81 +78,119 @@ export const ActivityDateTimeField = ({
 
   const selectedInstant = parseBahiaDateTimeInput(`${datePart}T12:00`)
 
+  const trigger = (
+    <Button
+      id={id}
+      type="button"
+      variant="outline"
+      aria-invalid={invalid}
+      aria-describedby={errorId}
+      aria-haspopup="dialog"
+      aria-expanded={isNarrow ? open : undefined}
+      onClick={isNarrow ? () => setOpen(true) : undefined}
+      className={cn(
+        'min-h-11 w-full justify-between rounded-full border-(--field-border) bg-(--field-background) px-4 text-base text-(--field-foreground) hover:bg-(--field-background) hover:text-(--field-foreground) data-[state=open]:border-primary focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/30 md:text-sm',
+        isNarrow &&
+          'rounded-none border-0 bg-transparent px-0 hover:bg-transparent focus-visible:ring-2 focus-visible:ring-primary/30',
+        invalid &&
+          'border-destructive ring-3 ring-destructive/20 focus-visible:border-destructive focus-visible:ring-destructive/20',
+      )}
+    >
+      <span className="truncate">{formatBahiaCivilDateTimeLabel(civil)}</span>
+      {isNarrow && required ? (
+        <span aria-hidden="true" className="font-semibold text-destructive">
+          *
+        </span>
+      ) : null}
+      <CalendarIcon
+        data-icon="inline-end"
+        aria-hidden="true"
+        className="size-4 text-(--field-icon)"
+      />
+    </Button>
+  )
+
+  const pickerContent = (
+    <>
+      {selectedInstant ? (
+        <Calendar
+          mode="single"
+          locale={ptBR}
+          timeZone="America/Bahia"
+          selected={new Date(selectedInstant)}
+          onSelect={setDate}
+          className="w-full p-2"
+        />
+      ) : null}
+      <div className="flex flex-col gap-3 border-t p-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground select-none">Hora</span>
+            <NativeSelect
+              aria-label="Hora"
+              value={hour}
+              onChange={(event) => setHour(event.target.value)}
+            >
+              {hourOptions.map((option) => (
+                <NativeSelectOption key={option} value={option}>
+                  {option}h
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground select-none">Minuto</span>
+            <NativeSelect
+              aria-label="Minuto"
+              value={minute}
+              onChange={(event) => setMinute(event.target.value)}
+            >
+              {minuteOptionsForStep().map((option) => (
+                <NativeSelectOption key={option} value={option}>
+                  {option}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+
+  if (isNarrow) {
+    return (
+      <>
+        {trigger}
+        <Drawer open={open} onOpenChange={setOpen} showSwipeHandle>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>
+                {label ? `${label} — ` : ''}
+                {selectedInstant ? formatBahiaCivilDate(new Date(selectedInstant)) : datePart}
+              </DrawerTitle>
+            </DrawerHeader>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-2">
+              {pickerContent}
+            </div>
+            <DrawerFooter className="border-t">
+              <Button type="button" className="min-h-11 w-full" onClick={() => setOpen(false)}>
+                Pronto
+              </Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+      </>
+    )
+  }
+
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          id={id}
-          type="button"
-          variant="outline"
-          aria-invalid={invalid}
-          aria-describedby={errorId}
-          className={cn(
-            'min-h-11 w-full justify-between rounded-full border-(--field-border) bg-(--field-background) px-4 text-base text-(--field-foreground) hover:bg-(--field-background) hover:text-(--field-foreground) data-[state=open]:border-primary focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/30 md:text-sm',
-            invalid &&
-              'border-destructive ring-3 ring-destructive/20 focus-visible:border-destructive focus-visible:ring-destructive/20',
-          )}
-        >
-          <span className="truncate">
-            {timeVisible ? formatBahiaCivilDateTimeLabel(civil) : formatBahiaCivilDateLabel(civil)}
-          </span>
-          <CalendarIcon
-            data-icon="inline-end"
-            aria-hidden="true"
-            className="size-4 text-(--field-icon)"
-          />
-        </Button>
-      </PopoverTrigger>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
         align="start"
         className="max-h-[22rem] w-80 overflow-y-auto p-0 overscroll-contain"
       >
-        {selectedInstant ? (
-          <Calendar
-            mode="single"
-            locale={ptBR}
-            timeZone="America/Bahia"
-            selected={new Date(selectedInstant)}
-            onSelect={setDate}
-            className="w-full p-2"
-          />
-        ) : null}
-        {timeVisible ? (
-          <div className="flex flex-col gap-3 border-t p-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-muted-foreground select-none">Hora</span>
-                <NativeSelect
-                  aria-label="Hora"
-                  value={hour}
-                  onChange={(event) => setHour(event.target.value)}
-                >
-                  {hourOptions.map((option) => (
-                    <NativeSelectOption key={option} value={option}>
-                      {option}h
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-muted-foreground select-none">
-                  Minuto
-                </span>
-                <NativeSelect
-                  aria-label="Minuto"
-                  value={minute}
-                  onChange={(event) => setMinute(event.target.value)}
-                >
-                  {minuteOptionsForStep().map((option) => (
-                    <NativeSelectOption key={option} value={option}>
-                      {option}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
-              </div>
-            </div>
-          </div>
-        ) : null}
+        {pickerContent}
       </PopoverContent>
     </Popover>
   )

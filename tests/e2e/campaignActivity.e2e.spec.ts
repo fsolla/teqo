@@ -428,3 +428,68 @@ test.describe('Agenda — calendário operacional', () => {
     await expect(page.getByRole('grid').first()).toBeVisible()
   })
 })
+
+test.describe('Atividades — agenda mobile (C103)', () => {
+  test.setTimeout(90_000)
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('cria compromisso inline pelo sheet do topo, rodapé fixo e seletor em bottom sheet', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.claimMunicipality()
+    const title = fixtures.value('Café mobile na agenda')
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}`)
+
+    const dayCell = page.getByRole('gridcell').nth(1)
+    // FullCalendar renders the grid lazily and re-lays out on mount: wait for
+    // the load to finish before interacting (same pattern as the desktop test).
+    await expect(page.getByText('Carregando compromissos…')).toHaveCount(0, { timeout: 15_000 })
+    const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
+    await expect(slotLocator).toBeVisible()
+    await expect(dayCell).toBeVisible()
+    await dayCell.scrollIntoViewIfNeeded()
+    const slotBox = await slotLocator.boundingBox()
+    const dayBox = await dayCell.boundingBox()
+    if (!slotBox || !dayBox) throw new Error('A grade diária não expôs o slot esperado.')
+    await dayCell.click({
+      position: {
+        x: dayBox.width / 2,
+        y: slotBox.y - dayBox.y + slotBox.height / 2,
+      },
+    })
+
+    // C103 — the sheet opens from the TOP, hugging the usable viewport edge.
+    const sheet = page.getByRole('dialog', { name: /Nova atividade/ })
+    await expect(sheet).toBeVisible()
+    const sheetBox = await sheet.boundingBox()
+    if (!sheetBox) throw new Error('O sheet não expôs bounding box.')
+    expect(sheetBox.y).toBeLessThanOrEqual(1)
+
+    // Label-less form: the placeholder gives context, the sr-only label keeps
+    // the field addressable and accessible.
+    await page.getByLabel('Título *').fill(title)
+    await expect(page.getByLabel('Município *')).toHaveValue(municipality.name)
+
+    // The footer is FIXED: "Salvar" is visible without scrolling on a small
+    // viewport — the acceptance center of C103.
+    await expect(page.getByRole('button', { name: 'Salvar' })).toBeVisible()
+
+    // Date/time opens as a nested bottom sheet (no popover) with "Pronto".
+    await page.getByLabel('Início *').click()
+    const picker = page.getByRole('dialog', { name: /Início —/ })
+    await expect(picker).toBeVisible()
+    await expect(picker.getByRole('combobox', { name: 'Hora' })).toBeVisible()
+    await picker.getByRole('button', { name: 'Pronto' }).click()
+    await expect(picker).toBeHidden()
+
+    await page.getByRole('button', { name: 'Salvar' }).click()
+    await expect(page.getByText(title, { exact: true })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('14:00 – 14:30', { exact: true })).toBeVisible()
+    await expect(page).toHaveURL(new RegExp('/campanha/agenda.*'))
+  })
+})

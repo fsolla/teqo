@@ -20,6 +20,7 @@ import {
   MAX_ACTIVITY_RESPONSIBLES,
   type ActivityResponsibleCollection,
 } from '@/lib/schemas/activity'
+import { cn } from '@/lib/utils'
 
 export type ResponsibleOption = {
   relationTo: ActivityResponsibleCollection
@@ -35,6 +36,12 @@ type ResponsibleMultiSelectProps = {
   value?: ResponsibleOption[]
   error?: string
   description?: string
+  /** Extra classes for the field label (e.g. `sr-only` on label-less sheets). */
+  labelClassName?: string
+  /** Trigger text while empty (replaces the "Nenhum" fallback). */
+  emptyText?: string
+  /** Extra classes for the trigger button (e.g. borderless list rows). */
+  triggerClassName?: string
   search: (query: string) => Promise<ResponsibleOption[]>
 }
 
@@ -49,6 +56,9 @@ export const ResponsibleMultiSelect = ({
   value = [],
   error,
   description,
+  labelClassName,
+  emptyText,
+  triggerClassName,
   search,
 }: ResponsibleMultiSelectProps) => {
   // Initial-only (like RelationMultiSelect's initialSelectedIDs): on the create
@@ -124,12 +134,12 @@ export const ResponsibleMultiSelect = ({
 
   const selectedLabel =
     selected.length === 0
-      ? 'Nenhum'
+      ? (emptyText ?? 'Nenhum')
       : `${selected.length} ${selected.length === 1 ? 'responsável' : 'responsáveis'}`
 
   return (
     <Field>
-      <FieldLabel>{label}</FieldLabel>
+      <FieldLabel className={labelClassName}>{label}</FieldLabel>
       <input
         type="hidden"
         name={name}
@@ -158,7 +168,7 @@ export const ResponsibleMultiSelect = ({
       <Button
         type="button"
         variant="outline"
-        className="min-h-11 w-full justify-between font-normal"
+        className={cn('min-h-11 w-full justify-between font-normal', triggerClassName)}
         aria-label={`${label}: ${selectedLabel}`}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${name}-error` : undefined}
