@@ -12,6 +12,17 @@
  *                              `.agents/shell/worktree.sh`, sourced no profile).
  *                              `--stay` suprime a linha `cd`; `--go` explícito
  *                              continua aceito como no-op (era o antigo padrão).
+ *                              Chamado do terminal interativo (com
+ *                              `WORKTREE_TERMINAL=1`, que só a função shell
+ *                              seta), imprime também a diretiva `launch
+ *                              opencode <dir> --model deepseek/deepseek-v4-flash
+ *                              --auto --prompt /work-issue` ANTES do `cd` — a
+ *                              função shell executa o cd e então a linha, e o
+ *                              TUI do opencode abre no worktree com `/work-issue`
+ *                              já enviado (OPS26). Presets em
+ *                              scripts/lib/worktree.mjs. Sem o marcador (comando
+ *                              `/worktree` do opencode), a diretiva não é
+ *                              impressa — nunca abre TUI aninhado.
  *                              Também PROVISIONA o ambiente isolado do worktree:
  *                              porta do dev server + bancos próprios derivados
  *                              deterministicamente do branch (ver
@@ -29,7 +40,12 @@
  *                              sequencial `plans/plan-issue-<n>` livre. Nenhum
  *                              deles (branch nem slot) colide com um `next`
  *                              posterior (prefixo minúsculo `plans/…`).
- *                              Mesmo provisionamento isolado do `next`.
+ *                              Mesmo provisionamento isolado do `next`; no
+ *                              terminal, mesma diretiva `launch` — porém SEM
+ *                              `--prompt` (a CLI do opencode não tem pre-fill
+ *                              sem submit; `/plan-` + autocomplete do TUI).
+ *                              `--stay` suprime a linha `cd`; `--go` explícito
+ *                              continua aceito como no-op (era o antigo padrão).
  *   pnpm worktree kill [--force]   destrói o worktree em que o shell atual está
  *                              (recusa worktree sujo sem `--force`) e remove os
  *                              bancos gerados do worktree (best-effort); por
@@ -59,10 +75,23 @@ import {
   worktreeEnvFileContents,
   worktreeEnvironment,
 } from './lib/worktree-env.mjs'
-import { branchNameForIssue, planBranchName } from './lib/worktree.mjs'
+import {
+  branchNameForIssue,
+  opencodeLaunchDirective,
+  planBranchName,
+  WORKTREE_TERMINAL_ENV,
+} from './lib/worktree.mjs'
 
 const die = dieAgent('worktree')
 const WORKTREES_ROOT = join(homedir(), '.cursor', 'worktrees', 'teqo')
+
+/**
+ * True when the interactive terminal shell function (`.agents/shell/worktree.sh`)
+ * calls us: it sets `WORKTREE_TERMINAL=1` and executes the `launch` directive
+ * we print. Without the marker (the `/worktree` opencode command, automation)
+ * the launch line is never printed — no nested TUI.
+ */
+const isTerminal = process.env[WORKTREE_TERMINAL_ENV] === '1'
 
 /** Fixed compose project so `db:start`/provisioning always target ONE container. */
 const SHARED_COMPOSE_PROJECT = 'teqo'
@@ -332,7 +361,11 @@ const cmdNext = async (stay, skipMigrate) => {
   console.log(`  banco dev:  postgresql://teqo:teqo@localhost:5432/${env.devDatabase}`)
   console.log(`  banco test: postgresql://teqo:teqo@localhost:5432/${env.testDatabase}`)
 
-  if (!stay) console.log(`cd ${dir}`)
+  if (!stay) {
+    const launch = opencodeLaunchDirective({ dir, purpose: 'next', terminal: isTerminal })
+    if (launch) console.log(launch)
+    console.log(`cd ${dir}`)
+  }
 }
 
 /**
@@ -403,7 +436,11 @@ const cmdPlan = async (stay, skipMigrate, bag) => {
   console.log(`  banco dev:  postgresql://teqo:teqo@localhost:5432/${env.devDatabase}`)
   console.log(`  banco test: postgresql://teqo:teqo@localhost:5432/${env.testDatabase}`)
 
-  if (!stay) console.log(`cd ${dir}`)
+  if (!stay) {
+    const launch = opencodeLaunchDirective({ dir, purpose: 'plan', terminal: isTerminal })
+    if (launch) console.log(launch)
+    console.log(`cd ${dir}`)
+  }
 }
 
 /** Generated database names referenced by a worktree's own env files. */
@@ -498,15 +535,22 @@ if (!subcommand) {
   console.log('    cria worktree da próxima Issue claimável (branch <code>-<slug>) e provisiona o')
   console.log('    ambiente isolado: porta de dev + bancos próprios (determinístico do branch);')
   console.log('    por padrão imprime `cd <dir>` no fim (quem aplica o cd: opencode command, ou a')
-  console.log('    função `worktree()` de .agents/shell/worktree.sh); --stay suprime o cd; --go')
-  console.log('    explícito continua aceito como no-op; --no-migrate pula migrations')
+  console.log(
+    '    função `worktree()` de .agents/shell/worktree.sh); no terminal (WORKTREE_TERMINAL=1)',
+  )
+  console.log('    imprime também a diretiva `launch opencode …` (OPS26: abre o TUI com')
+  console.log('    deepseek/deepseek-v4-flash + auto + /work-issue enviado); --stay suprime cd e')
+  console.log('    launch; --go explícito continua aceito como no-op; --no-migrate pula migrations')
   console.log(`\n  plan [bag] [--stay] [--no-migrate]`)
   console.log(
     '    cria um worktree de planejamento DIFERENTE a cada invocação (sessões /plan-issue',
   )
   console.log('    paralelas): com bag, branch plans/plan-issue-<bag> (sufixo -2/-3 se o nome já')
   console.log('    existir); sem bag, o próximo plans/plan-issue-<n> sequencial livre; o prefixo')
-  console.log('    minúsculo plans/… nunca colide com o branch <code>-<slug> de `next`')
+  console.log(
+    '    minúsculo plans/… nunca colide com o branch <code>-<slug> de `next`; no terminal,',
+  )
+  console.log('    mesma diretiva `launch` porém sem --prompt (autocomplete completa /plan-)')
   console.log('  kill [--force]  destrói o worktree em que você está (recusa sujo sem --force),')
   console.log('                  remove os bancos gerados do worktree (best-effort) e imprime')
   console.log('                  `cd <main>` no fim — o shell sempre volta ao worktree principal')

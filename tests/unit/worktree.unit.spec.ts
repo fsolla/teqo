@@ -16,8 +16,12 @@ import {
 import {
   branchNameForIssue,
   issueCodeAndSubject,
+  OPENCODE_PRESET_MODEL,
+  OPENCODE_SKILL_COMMAND_BY_PURPOSE,
+  opencodeLaunchDirective,
   PLAN_BRANCH_PREFIX,
   planBranchName,
+  WORKTREE_TERMINAL_ENV,
 } from '../../scripts/lib/worktree.mjs'
 
 type TestIssue = {
@@ -125,6 +129,33 @@ describe('planBranchName (per-invocation planning worktrees)', () => {
 
   it('a numeric bag shares the sequential namespace (uniform)', () => {
     expect(planBranchName({ bag: '3' })).toBe('plans/plan-issue-3')
+  })
+})
+
+describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26)', () => {
+  const dir = '/home/fsolla/.cursor/worktrees/teqo/OPS26-foo'
+
+  it('returns null outside the terminal — the /worktree command never launches a TUI', () => {
+    expect(opencodeLaunchDirective({ dir, purpose: 'next' })).toBeNull()
+    expect(opencodeLaunchDirective({ dir, purpose: 'plan', terminal: false })).toBeNull()
+  })
+
+  it('next launches with the preset model, --auto and the /work-issue command sent', () => {
+    expect(opencodeLaunchDirective({ dir, purpose: 'next', terminal: true })).toBe(
+      `launch opencode ${dir} --model deepseek/deepseek-v4-flash --auto --prompt /work-issue`,
+    )
+  })
+
+  it('plan launches with the same presets but NO prompt (no prefill-without-submit)', () => {
+    expect(opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true })).toBe(
+      `launch opencode ${dir} --model deepseek/deepseek-v4-flash --auto`,
+    )
+  })
+
+  it('pins the preset constants — changing the model is editing a constant', () => {
+    expect(OPENCODE_PRESET_MODEL).toBe('deepseek/deepseek-v4-flash')
+    expect(WORKTREE_TERMINAL_ENV).toBe('WORKTREE_TERMINAL')
+    expect(OPENCODE_SKILL_COMMAND_BY_PURPOSE).toEqual({ next: '/work-issue', plan: null })
   })
 })
 
