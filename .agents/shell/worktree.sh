@@ -7,10 +7,12 @@
 # shell que o chamou.
 #
 # No terminal (esta função), o script também imprime a diretiva `launch
-# opencode <dir> --model deepseek/deepseek-v4-flash --auto [--prompt …]` (OPS26):
-# a função executa o cd e então a linha, e o TUI do opencode abre no worktree —
-# `next` com `/work-issue` já enviado, `plan` com `/plan-issue` já enviado
-# (OPS31). Sem `exec` de propósito: ao sair do opencode, o terminal volta ao
+# opencode <dir> --model deepseek/deepseek-v4-flash --auto [--prompt "…"]` (OPS26):
+# a função executa o cd e então a linha (tokenizada por xargs — honra as aspas
+# do prompt, nunca eval), e o TUI do opencode abre no worktree — `next` com
+# `/work-issue --issue <N>` já enviado (OPS33: a Issue claimada vai no prompt),
+# `plan` com `/plan-issue` já enviado (OPS31), `new` sem prompt (apenas
+# conversar). Sem `exec` de propósito: ao sair do opencode, o terminal volta ao
 # shell dentro do worktree. Presets são constantes em scripts/lib/worktree.mjs;
 # o marcador TEQO_WORKTREE_TERMINAL=1 é o que separa esta superfície da do comando
 # `/worktree` do opencode (que nunca lança TUI). `--stay` suprime cd e launch.
@@ -19,8 +21,11 @@
 #   source <repo>/.agents/shell/worktree.sh
 #
 # Uso (terminal interativo):
-#   worktree next [--stay]   cria/reutiliza o worktree da próxima Issue claimável
-#                            e cd para dentro dele por padrão; --stay não troca
+#   worktree next [--issue N] [--stay]
+#                            CLAIMA a próxima Issue claimável e cria/reutiliza o
+#                            worktree dela, cd para dentro por padrão; --issue N
+#                            claima a Issue direcionada ou reabre a já claimada
+#                            (sem re-claim); --stay não troca
 #   worktree plan [bag] [--stay]   cria um worktree de planejamento do /plan-issue
 #                            DIFERENTE a cada chamada (sessões paralelas): com bag,
 #                            branch plans/plan-issue-<bag> (sufixo -2/-3 se o nome
@@ -35,7 +40,8 @@
 #   worktree kill [--force]  destrói o worktree atual e cd para o main por padrão
 #
 # `--go` explícito continua aceito como no-op (era o antigo padrão).
-# Read-only no GitHub — claim continua sendo `pnpm agent:claim`.
+# Claim determinístico: `next` claima antes de criar o worktree (mesma fila e
+# lock de `pnpm agent:claim`); `plan`/`new`/`kill` não tocam Issues.
 
 worktree() {
   local src="${BASH_SOURCE[0]:-$0}"
@@ -69,14 +75,19 @@ worktree() {
   fi
 
   # Diretiva `launch` (só existe quando TEQO_WORKTREE_TERMINAL=1 e sem --stay): o
-  # script a gera a partir de constantes + dir slugificado (sem espaços), então o
-  # split por IFS=' ' abaixo é intencional e seguro — nunca eval. Falha do launch
-  # (ex.: opencode fora do PATH) só avisa: o worktree já está pronto e utilizável.
+  # script a gera a partir de constantes + dir slugificado (sem espaços), e desde
+  # o OPS33 o valor do `--prompt` carrega espaço e vem CITADO (`"/work-issue
+  # --issue <N>"`) — o split por IFS=' ' não honra aspas, então a tokenização usa
+  # xargs (processa aspas duplas como um shell, NÃO é eval; o conteúdo é 100%
+  # gerado por constantes + número, sem input livre). Falha do launch (ex.:
+  # opencode fora do PATH) só avisa: o worktree já está pronto e utilizável.
   local launch
   launch="$(printf '%s\n' "$out" | sed -n 's/^launch //p' | tail -n 1)"
   if [ -n "$launch" ]; then
     local -a launch_args
-    IFS=' ' read -r -a launch_args <<< "$launch"
+    while IFS= read -r token; do
+      launch_args+=("$token")
+    done < <(printf '%s\n' "$launch" | xargs -n 1 printf '%s\n')
     "${launch_args[@]}" || printf 'worktree: launch do opencode falhou (código %s) — o worktree segue pronto em %s.\n' "$?" "$PWD" >&2
   fi
 }

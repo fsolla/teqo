@@ -34,18 +34,19 @@ main → ci.yml full suite → vercel deploy --prod (se verde) → requeue se HE
 
 ## Comandos
 
-| Comando                                                                                                       | Faz                                                                        |
-| ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `pnpm agent:claim [-- --dry-run]`                                                                             | Fila ready+unblocked por prio → `in-progress` + brief                      |
-| `pnpm agent:register -- --id X --title T [--prio P1] [--depends A,B] [--plan docs/plans/x.md] [--model slug]` | Cria Issue (`--plan` ⇒ `blocked` até `agent:ready`; sem plano ⇒ `ready`)   |
-| `pnpm agent:ready -- --issue N[,N…]`                                                                          | Pós-merge do plano: `blocked`→`ready` (só Issues com link `docs/plans/`)   |
-| `pnpm agent:status`                                                                                           | Overview / fila / mermaid                                                  |
-| `pnpm agent:prioritize -- <issue> <P0..P3>`                                                                   | Troca `prio:*`                                                             |
-| `pnpm agent:file-miss -- --title ...`                                                                         | Issue `kind:agent-miss`                                                    |
-| `pnpm agent:pool -- status\|tick --dry-run\|doctor`                                                           | Pool Cloud; start/stop via `gh workflow run agent-pool.yml`                |
-| `pnpm push [-- -u origin HEAD …]`                                                                             | Canônico: ensure-deps + gate:push + push                                   |
-| `pnpm configure:branch-protection [-- --dry-run]`                                                             | Proteção de `main`: `checks` + `migration-lock`, `strict=false`, 0 reviews |
-| `pnpm db:seed:minimal`                                                                                        | DB mínimo sintético                                                        |
+| Comando                                                                                                       | Faz                                                                          |
+| ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `pnpm agent:claim [-- --dry-run]`                                                                             | Fila ready+unblocked por prio → `in-progress` + brief                        |
+| `pnpm worktree next [--issue N] [--stay]`                                                                     | Claim determinístico (mesma fila/lock do claim) → worktree + provisionamento |
+| `pnpm agent:register -- --id X --title T [--prio P1] [--depends A,B] [--plan docs/plans/x.md] [--model slug]` | Cria Issue (`--plan` ⇒ `blocked` até `agent:ready`; sem plano ⇒ `ready`)     |
+| `pnpm agent:ready -- --issue N[,N…]`                                                                          | Pós-merge do plano: `blocked`→`ready` (só Issues com link `docs/plans/`)     |
+| `pnpm agent:status`                                                                                           | Overview / fila / mermaid                                                    |
+| `pnpm agent:prioritize -- <issue> <P0..P3>`                                                                   | Troca `prio:*`                                                               |
+| `pnpm agent:file-miss -- --title ...`                                                                         | Issue `kind:agent-miss`                                                      |
+| `pnpm agent:pool -- status\|tick --dry-run\|doctor`                                                           | Pool Cloud; start/stop via `gh workflow run agent-pool.yml`                  |
+| `pnpm push [-- -u origin HEAD …]`                                                                             | Canônico: ensure-deps + gate:push + push                                     |
+| `pnpm configure:branch-protection [-- --dry-run]`                                                             | Proteção de `main`: `checks` + `migration-lock`, `strict=false`, 0 reviews   |
+| `pnpm db:seed:minimal`                                                                                        | DB mínimo sintético                                                          |
 
 Labels: `ready|in-progress|blocked|done|in-prod`, `prio:*`, `kind:*`, `needs:*`.
 

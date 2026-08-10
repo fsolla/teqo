@@ -2,7 +2,11 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { buildClaimQueue } from '../../scripts/lib/agent-github.mjs'
+import {
+  buildClaimQueue,
+  claimQueueEntry,
+  claimTargetVerdict,
+} from '../../scripts/lib/agent-github.mjs'
 import {
   buildPoolQueue,
   isAutonomousClaimable,
@@ -175,5 +179,70 @@ describe('buildClaimQueue parity (shared with agent:claim)', () => {
     const free = issue({ number: 2, body: fm(['B1']) })
     const queue = buildClaimQueue([blocked, free], byId)
     expect(queue.map((item) => item.issue.number)).toEqual([2])
+  })
+})
+
+describe('claimQueueEntry (single-issue shape for `worktree next --issue` reopen)', () => {
+  const byId = new Map<string, TestIssue>([
+    ['B1', issue({ number: 101, state: 'CLOSED', labels: [{ name: 'done' }] })],
+    ['B2', issue({ number: 102, labels: [{ name: 'in-progress' }] })],
+  ])
+  const fm = (depends: string[]) => `---\nid: BX\ndepends: [${depends.join(', ')}]\n---\nspec`
+
+  it('derives the same entry shape as buildClaimQueue for one issue', () => {
+    const target = issue({ number: 7, body: fm(['B1']), labels: [{ name: 'in-progress' }] })
+    const entry = claimQueueEntry(target, byId)
+    expect(entry.issue.number).toBe(7)
+    expect(entry.meta).toEqual({ id: 'BX', depends: ['B1'] })
+    expect(entry.priority).toBe('prio:P2')
+    expect(entry.satisfiedWithoutIssue).toEqual([])
+    expect(entry.blockedBy).toEqual([])
+  })
+
+  it('does NOT re-filter by deps — reopening is about the session, not the queue', () => {
+    const target = issue({ number: 7, body: fm(['B2']) })
+    const entry = claimQueueEntry(target, byId)
+    expect(entry.blockedBy).toEqual(['B2'])
+  })
+
+  it('defaults the priority from the prio label, like the queue does', () => {
+    const target = issue({
+      number: 7,
+      labels: [{ name: 'in-progress' }, { name: 'prio:P0' }],
+    })
+    expect(claimQueueEntry(target, byId).priority).toBe('prio:P0')
+  })
+
+  it('surfaces satisfied deps without an issue (brief deps line)', () => {
+    const target = issue({ number: 8, body: fm(['B9']) })
+    expect(claimQueueEntry(target, byId).satisfiedWithoutIssue).toEqual(['B9'])
+  })
+})
+
+describe('claimTargetVerdict (`worktree next --issue` target decision)', () => {
+  it('reopens an in-progress issue — no claim', () => {
+    expect(claimTargetVerdict(issue({ labels: [{ name: 'in-progress' }] }))).toEqual({
+      kind: 'reopen',
+    })
+  })
+
+  it('claims a ready issue', () => {
+    expect(claimTargetVerdict(issue({ labels: [{ name: 'ready' }] }))).toEqual({ kind: 'claim' })
+  })
+
+  it('rejects a closed issue', () => {
+    const verdict = claimTargetVerdict(issue({ state: 'CLOSED', labels: [{ name: 'ready' }] }))
+    expect(verdict).toEqual({ kind: 'error', message: expect.stringContaining('não está aberta') })
+  })
+
+  it('rejects an issue with neither ready nor in-progress', () => {
+    const verdict = claimTargetVerdict(issue({ labels: [{ name: 'blocked' }] }))
+    expect(verdict).toEqual({ kind: 'error', message: expect.stringContaining('não é claimável') })
+  })
+
+  it('in-progress wins over a stale ready double label (reopen, not re-claim)', () => {
+    expect(
+      claimTargetVerdict(issue({ labels: [{ name: 'ready' }, { name: 'in-progress' }] })),
+    ).toEqual({ kind: 'reopen' })
   })
 })
