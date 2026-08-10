@@ -3,6 +3,7 @@
 import { Bot, Mic, Send, Square, User } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { Components } from 'react-markdown'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -11,6 +12,7 @@ import { InputGroup, InputGroupButton } from '@/components/ui/input-group'
 import { Marker, MarkerContent } from '@/components/ui/marker'
 import { Message, MessageAvatar, MessageContent } from '@/components/ui/message'
 import { Spinner } from '@/components/ui/Spinner'
+import { externalLinkTarget } from '@/lib/ai/markdownLinks'
 import { cn } from '@/lib/utils'
 
 import { useAISidebar } from '@/components/campaign/shell/ai/CampaignAISidebarContext'
@@ -19,31 +21,33 @@ import { useMicTranscript } from '@/components/campaign/shell/ai/useMicTranscrip
 import { getSollinhaOpeningQuestions } from '@/lib/sollinhaOpeningQuestions'
 
 /**
- * B188: app-internal destinations — the B162 link catalog only ever emits
- * `/campanha…` paths — navigate through `next/link`, so following a Sollinha
- * link keeps the layout (and the conversation) mounted instead of reloading
- * the page. Anything else keeps the plain anchor's default behavior.
+ * B187+B188 — links in the assistant's markdown must look like links: brand
+ * primary color + always-visible underline, hover thickens the underline and
+ * keyboard focus shows a ring (BubbleContent's own `[button,a]:focus-visible:*`
+ * only applies when the bubble content ITSELF is the anchor). External http(s)
+ * links open in a new tab; app-internal destinations — the B162 link catalog
+ * only ever emits `/campanha…` paths — navigate through `next/link` (B188), so
+ * following a Sollinha link keeps the layout (and the conversation) mounted
+ * instead of reloading the page. Anything else keeps the plain anchor.
  */
 const APP_INTERNAL_LINK = /^\/campanha(?:\/|$)/
 
-const MarkdownLink = ({
-  href,
-  node: _node,
-  children,
-  ...props
-}: React.AnchorHTMLAttributes<HTMLAnchorElement> & { node?: unknown }) => {
-  if (typeof href === 'string' && APP_INTERNAL_LINK.test(href)) {
+const markdownComponents: Components = {
+  a: ({ node: _node, href, children, ...rest }) => {
+    const external = typeof href === 'string' ? externalLinkTarget(href) : null
+    if (typeof href === 'string' && APP_INTERNAL_LINK.test(href)) {
+      return (
+        <Link href={href} {...rest}>
+          {children}
+        </Link>
+      )
+    }
     return (
-      <Link href={href} {...props}>
+      <a href={href} {...rest} {...external}>
         {children}
-      </Link>
+      </a>
     )
-  }
-  return (
-    <a href={href} {...props}>
-      {children}
-    </a>
-  )
+  },
 }
 
 export const CampaignAIChat = ({ className }: { className?: string }) => {
@@ -134,11 +138,11 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
                           return (
                             <div
                               key={index}
-                              className="prose prose-sm max-w-none dark:prose-invert [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_h1]:font-semibold [&_h2]:font-semibold [&_table]:text-xs [&_th]:text-xs [&_td]:text-xs [&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-1"
+                              className="prose prose-sm max-w-none dark:prose-invert [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_h1]:font-semibold [&_h2]:font-semibold [&_table]:text-xs [&_th]:text-xs [&_td]:text-xs [&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-1 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:decoration-2 [&_a]:focus-visible:outline-none [&_a]:focus-visible:ring-2 [&_a]:focus-visible:ring-ring"
                             >
                               <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
-                                components={{ a: MarkdownLink }}
+                                components={markdownComponents}
                               >
                                 {part.text}
                               </ReactMarkdown>
