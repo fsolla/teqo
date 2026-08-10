@@ -563,6 +563,9 @@ describe('advisor scope fragment comes from access/shared.ts', () => {
     // over a known set — the actor scope still comes from access control
     // (overrideAccess: false + user).
     'src/utilities/ai/tools/getPendingLeaderships.ts',
+    // B186 — same distinct form as B185: the priority tool reads the in-window
+    // updates of a scope already resolved (or access-narrowed) by the actor.
+    'src/utilities/ai/tools/getMunicipalityPriorities.ts',
   ])
 
   it('keeps the scope fragment out of re-spellings', () => {

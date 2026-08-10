@@ -33,6 +33,10 @@ export type AIToolScope = {
   municipalities: AIToolScopeMunicipality[]
 }
 
+/** Truncation hint shared by every scope-based tool ("estreite o escopo"). */
+export const AI_TOOL_NARROW_SCOPE_HINT =
+  'Estreite o escopo (território, cidade ou município) para ver o restante.'
+
 /**
  * Resolve the requested scope into its municipality set through the actor's
  * own access (an advisor asking outside the portfolio gets the empty scoped
