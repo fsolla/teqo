@@ -1,5 +1,9 @@
 // @vitest-environment node
 
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -125,5 +129,12 @@ describe('e2eShardConfig (OPS34)', () => {
   it('keeps selected and skipped runs on a single runner', () => {
     expect(e2eShardConfig('selected')).toEqual({ matrix: [1], total: 1 })
     expect(e2eShardConfig('none')).toEqual({ matrix: [1], total: 1 })
+  })
+
+  it('pins the ci.yml matrix literal against the single source', () => {
+    const repoRoot = join(fileURLToPath(new URL('.', import.meta.url)), '../..')
+    const workflow = readFileSync(join(repoRoot, '.github/workflows/ci.yml'), 'utf8')
+    const { matrix } = e2eShardConfig('full')
+    expect(workflow).toContain(`shard: [${matrix.join(', ')}]`)
   })
 })

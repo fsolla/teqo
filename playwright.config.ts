@@ -36,6 +36,9 @@ if (!Number.isInteger(workers) || workers < 2) {
  * the ~30-file campaign family. Prod mode therefore drops the setup project and
  * the dependencies so all families run in parallel; CI shards the suite across
  * runners instead (ci.yml / ci-pr.yml pass `--shard`). Dev mode is unchanged.
+ * Note the chain is an ordering guarantee for dev cold compiles, not a data
+ * dependency: specs are self-contained in both modes (fixtures + advisory
+ * locks), so dropping it in prod cannot reorder shared fixtures.
  */
 const isProdMode = Boolean(process.env.CI) || process.env.E2E_PROD === '1'
 
@@ -131,8 +134,10 @@ export default defineConfig({
     reuseExistingServer: false,
     url: baseURL,
     // Local-only tolerance for parallel-worktree load (machine load ~60); CI
-    // boots the production build and keeps the usual 60s budget.
-    timeout: isProdMode ? undefined : 240_000,
+    // boots the production build and keeps the usual 60s budget. Keyed on CI
+    // alone (not `isProdMode`) on purpose: a local `E2E_PROD=1` run keeps the
+    // 240s budget — prod-mode here is a local mirror, not a real CI runner.
+    timeout: process.env.CI ? undefined : 240_000,
     /* Force the isolated test database into the server process. */
     env: {
       DATABASE_URL: process.env.DATABASE_URL as string,
