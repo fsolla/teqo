@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createElement, useEffect } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   loadEvents: vi.fn(),
@@ -44,7 +44,11 @@ type ScheduleMutationInfo = {
 }
 
 type CalendarProps = {
-  datesSet: (info: { startStr: string; endStr: string }) => void
+  datesSet: (info: {
+    startStr: string
+    endStr: string
+    view: { type: string; calendar: { getDate: () => Date } }
+  }) => void
   eventDrop: (info: ScheduleMutationInfo) => void
   eventResize: (info: ScheduleMutationInfo) => void
   dateClick: (info: DateClickInfo) => void
@@ -57,6 +61,10 @@ vi.mock('@fullcalendar/react', () => {
       datesSet({
         startStr: '2026-08-03T03:00:00.000Z',
         endStr: '2026-08-10T03:00:00.000Z',
+        view: {
+          type: 'timeGridWeek',
+          calendar: { getDate: () => new Date('2026-08-03T03:00:00.000Z') },
+        },
       })
     }, [datesSet])
 
@@ -100,17 +108,34 @@ vi.mock('@fullcalendar/react', () => {
 })
 
 import { ActivityAgenda } from '@/components/campaign/activity/ActivityAgenda'
+import { CampaignPageChromeProvider } from '@/components/campaign/shell/CampaignPageChromeContext'
+import { stubMatchMedia } from '../helpers/matchMedia'
+
+const renderAgenda = (props: { state?: object } = {}) =>
+  render(
+    <CampaignPageChromeProvider role="coordinator">
+      <ActivityAgenda state={props.state ?? {}} />
+    </CampaignPageChromeProvider>,
+  )
 
 describe('ActivityAgenda schedule failures', () => {
+  // C101 — ActivityAgenda reads the viewport signal (useIsMobileMeasured);
+  // jsdom has no matchMedia, so the harness pins the desktop layout (the
+  // toolbar and the calendar body are what these tests exercise).
+  beforeEach(() => {
+    stubMatchMedia()
+  })
+
   afterEach(() => {
     cleanup()
     vi.clearAllMocks()
+    vi.unstubAllGlobals()
   })
 
   it('reverts a transport failure and releases the event for another attempt', async () => {
     mocks.loadEvents.mockResolvedValue([])
     mocks.reschedule.mockRejectedValue(new Error('transport failed'))
-    render(<ActivityAgenda state={{}} />)
+    renderAgenda()
 
     await waitFor(() => expect(mocks.loadEvents).toHaveBeenCalled())
     fireEvent.click(screen.getByRole('button', { name: 'Mover' }))
@@ -126,7 +151,7 @@ describe('ActivityAgenda schedule failures', () => {
   it('reverts a refused resize with the safe server message', async () => {
     mocks.loadEvents.mockResolvedValue([])
     mocks.reschedule.mockResolvedValue({ ok: false, message: 'Remarcação recusada.' })
-    render(<ActivityAgenda state={{}} />)
+    renderAgenda()
 
     await waitFor(() => expect(mocks.loadEvents).toHaveBeenCalled())
     fireEvent.click(screen.getByRole('button', { name: 'Redimensionar' }))
@@ -137,7 +162,7 @@ describe('ActivityAgenda schedule failures', () => {
 
   it('abre a criação inline no clique de um slot vazio, sem navegar', async () => {
     mocks.loadEvents.mockResolvedValue([])
-    render(<ActivityAgenda state={{}} />)
+    renderAgenda()
 
     await waitFor(() => expect(mocks.loadEvents).toHaveBeenCalled())
     expect(mocks.routerPush).not.toHaveBeenCalled()
@@ -153,7 +178,7 @@ describe('ActivityAgenda schedule failures', () => {
 
   it('não exibe o aviso de janela vazia nem o botão de criação acima do calendário', async () => {
     mocks.loadEvents.mockResolvedValue([])
-    render(<ActivityAgenda state={{}} />)
+    renderAgenda()
 
     await waitFor(() => expect(mocks.loadEvents).toHaveBeenCalled())
 

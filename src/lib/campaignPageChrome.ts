@@ -7,6 +7,15 @@ import type { CampaignUser } from '@/payload-types'
 export type CampaignPageChrome = {
   title: string
   subtitle?: string
+  /**
+   * C101 — page-owned action on the app-header title (mobile layout only).
+   * The agenda uses it to make the period label the "return to today"
+   * control, since the FullCalendar "Hoje" toolbar button is hidden on
+   * phones. Only client-rendered overrides set it — the catalog never does.
+   * The `hint` is the page's own copy (rendered as the button tooltip), so
+   * the shared chrome does not hardcode agenda wording.
+   */
+  onTitleClick?: { action: () => void; hint: string }
 }
 
 type CampaignRole = CampaignUser['role']

@@ -37,6 +37,14 @@
 
   padding: 1rem;
   font-size: 0.875rem;
+  /* C101 — the horizontal swipe (navigation) must see pointermove events:
+     without a touch-action the browser claims any touch drag for panning and
+     fires pointercancel at the first move, killing the gesture before the
+     threshold. pan-y keeps vertical scrolling native while horizontal
+     movements stay with the page. FullCalendar's own drags survive: during an
+     event drag it preventDefaults window touchmoves (its touchScrollAllowed
+     cancellation), which stops the browser's pan claim. */
+  touch-action: pan-y;
 }
 
 .activity-agenda button {
@@ -121,6 +129,47 @@
   text-decoration: line-through;
 }
 
+/* C101 — the agenda's filter strip. The wrapper class lives in
+   ActivityAgendaFilters (agenda-only); the shared omnibox keeps its desktop
+   look everywhere else. Mobile: edge-to-edge, label visually hidden (still
+   the combobox's accessible name), sticky under the app top bar and flush
+   against the calendar card.
+   Sticky geometry: the wrapper's containing block must start flush under the
+   app bar, otherwise the sticky clamp pins it 1rem lower. The app scroll
+   container's top padding is therefore zeroed on the agenda page (scoped via
+   `:has`), so the page shell — and with it the strip's containing block —
+   starts at the top bar's bottom edge. */
+.activity-agenda-filter-strip {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  [data-slot='campaign-content-scroll']:has(.activity-agenda-filter-strip) {
+    padding-top: 0;
+  }
+
+  .activity-agenda-filter-strip {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    margin-inline: -1rem;
+    margin-bottom: -1.5rem;
+    background: var(--background);
+  }
+
+  .activity-agenda-filter-strip label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
 @media (max-width: 767px) {
   .activity-agenda-shell {
     /* Edge-to-edge on phones: break out of the p-4 scroll padding and drop
@@ -131,6 +180,11 @@
   }
 
   .activity-agenda {
+    /* C101 — the day/week/month grid becomes a self-contained scroller on
+       phones (FullCalendar `height="100%"`), so the day header stays fixed
+       while the hours scroll and `scrollTime`/`scrollToTime` can anchor the
+       current hour. Budget: top bar + strip + bottom nav + page padding. */
+    height: calc(100svh - 12rem);
     padding: 0.5rem 0;
     font-size: 0.75rem;
   }
