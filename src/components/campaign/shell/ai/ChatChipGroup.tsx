@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 
-import type { SollinhaOpeningQuestion } from '@/lib/sollinhaOpeningQuestions'
+import type { SollinhaChatChip } from '@/lib/sollinhaOpeningQuestions'
 
 /**
  * Presentational chip group for the chat's quick-question slot (B191). Renders
@@ -14,8 +14,8 @@ export const ChatChipGroup = ({
   onPick,
   className,
 }: {
-  questions: readonly SollinhaOpeningQuestion[]
-  onPick: (question: SollinhaOpeningQuestion) => void
+  questions: readonly SollinhaChatChip[]
+  onPick: (question: SollinhaChatChip) => void
   className?: string
 }) => {
   if (questions.length === 0) return null
