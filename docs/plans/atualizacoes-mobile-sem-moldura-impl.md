@@ -17,45 +17,33 @@ Appetite restante: herdado (~0,5–1 dia eng; um encaixe em página existente)
 ```mermaid
 flowchart LR
   P[atualizacoes/page.tsx] --> F[CampaignUpdatesFilters]
-  F --> S[.campaign-updates-filter-strip<br/>wrapper do form]
-  S --> O[CampaignListOmnibox<br/>data-slot hook no campo]
+  F --> S[form + campaignListOmniboxFormClassName<br/>padrão B184 compartilhado]
+  S --> O[CampaignListOmnibox<br/>campo borderless < md]
   F --> H[SetCampaignHeaderAction<br/>icon + md:hidden]
   F --> M[CampaignUpdatesCreateModal<br/>inalterado]
-  P --> L[CampaignUpdatesFeed<br/>cards edge-to-edge]
-  S -. CSS novo .-> C[CampaignUpdatesFeed.css<br/>media query mobile]
+  P --> L[CampaignUpdatesFeed<br/>cards edge-to-edge B184]
 ```
 
 **Opções consideradas:** A) CSS escopado de página + hook `data-slot` no chassis (padrão C101); B) prop `variant="frameless"` no `CampaignListOmnibox`; C) chassis sem moldura global.
-**Recomendação:** A — o padrão do app em `main` é CSS de página (C101 `activity-agenda-filter-strip`); zero risco para as outras listas (aceite exige); o toque no chassis é 1 linha sem mudança de comportamento, reutilizável pelo B184.
-**Rejeitadas:** B — duplica a decisão visual em cada lista (cada uma teria que lembrar do prop) e diverge do mecanismo que o C101 já estabeleceu; C — muda o mobile das outras listas, viola o aceite.
+**Recomendação (revisada na execução):** **C** — o irmão B184/C107 chegou a `main` **antes** do merge deste item e estabeleceu o mecanismo canônico: `campaignListOmniboxFormClassName` (form sticky/edge-to-edge/borderless < md, `md:` restaura desktop) + campo do chassis borderless < md + `campaignMobileHeaderIconClassName` + "Limpar" como X circular no input — usado por municípios, atividades, demandas, assessores, agenda. Seguir o padrão compartilhado (edit the owner, don't twin): o filtro de atualizações usa a classe do form do C107 (já em `main` via conflito), o icon do header usa os tokens compartilhados; **C106 entrega só o que o irmão não cobriu**: cards edge-to-edge com linha (padrão B184 de cards) + copy do empty state + e2e.
+**Rejeitadas:** A — viraria um twin do padrão que o B184 acabou de estabelecer (CSS de página + data-slot não existem mais no chassis); B — duplica decisão de visual por lista.
 
 ### Componentes / mudanças
 
-- **`CampaignListOmnibox`** (`src/components/campaign/shared/CampaignListOmnibox.tsx`): adicionar `data-slot="campaign-omnibox-field"` ao div da caixa do campo (hook estável para o CSS de página; sem mudança de comportamento).
-- **`CampaignUpdatesFeed.css`** (novo, `src/components/campaign/municipality/`): media query `max-width: 767px` —
-  - `[data-slot='campaign-content-scroll']:has(.campaign-updates-filter-strip) { padding-top: 0 }` (receita C101 — sem isso o clamp do sticky pinaria 1rem abaixo da top bar);
-  - `.campaign-updates-filter-strip`: `position: sticky; top: 0; z-index: 20; margin-inline: -1rem; margin-bottom: -2rem; background: var(--background); border-bottom: 1px solid var(--border)` (a linha = separador do feed; `-2rem` compensa o `gap-8` do shell — **não** mexemos no gap do shell para desktop ficar intacto; o C101 usou gap-6+`-1.5rem`, aqui a página mantém o default);
-  - label do omnibox → visually hidden (sr-only mantido no a11y tree);
-  - `.campaign-omnibox-field`: `border: none; box-shadow: none` (mantém `focus-within:ring` — a11y);
-  - lista/cards do feed: edge-to-edge + sem moldura (ver item abaixo).
-- **`CampaignUpdatesFilters`** (`src/components/campaign/municipality/CampaignUpdatesFilters.tsx`):
-  - import do CSS;
-  - form envolvido por `<div className="campaign-updates-filter-strip">`;
-  - `SetCampaignHeaderAction id="campaign-updates-create"` com `Button variant="ghost" size="icon"` `className="size-11 shrink-0 md:hidden"` + estilo do mobile top bar (`text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground`), `aria-label="Nova atualização"`, `onClick={() => setCreateOpen(true)}` — o modal fica onde está (estado `createOpen` continua aqui);
-  - trailing "Nova atualização" atual: `className="... hidden md:inline-flex"` (desktop-only).
+- **`CampaignUpdatesFilters`** (`src/components/campaign/municipality/CampaignUpdatesFilters.tsx`): **zero mudanças locais** — a versão do C107 (já em `main`) aplica `campaignListOmniboxFormClassName` no form e registra o icon no header via `SetCampaignHeaderAction id="campaign-updates-new"` com `campaignMobileHeaderIconClassName`; o modal C89 fica onde está.
 - **`CampaignUpdatesFeed`** (`src/components/campaign/municipality/CampaignUpdatesFeed.tsx`):
-  - ul: `-mx-4 flex flex-col divide-y divide-border md:mx-0 md:gap-4 md:divide-y-0` (edge-to-edge mobile, linha entre cards; desktop = gap de hoje);
-  - li: `rounded-none border-0 p-4 md:rounded-xl md:border` (desktop idêntico a hoje);
+  - ul: `-mx-4 my-0 flex list-none flex-col [&>li]:mt-0 md:mx-0 md:gap-4` (edge-to-edge mobile; `my-0 list-none [&>li]:mt-0` neutralizam o leak do `@layer base` editorial `ul { my-6 ml-6 list-disc [&>li]:mt-2 }` — o feed é a única lista campaign em `<ul>`);
+  - li: `rounded-none border-b border-border last:border-b-0 p-4 md:rounded-xl md:border md:last:border-b` (padrão exato dos cards do B184 em `MunicipalityListMobileCards`);
   - empty state: copy única "Ajuste o filtro ou registre um novo fato de campo." (descreve a ação, funciona nas duas resoluções).
-- **Migration:** nenhuma. **Access/Consent:** nenhum. **UI:** Impeccable B — shape→craft direto, critique no gate; reusa slot de header action (C94/C95), chassis B127, `CampaignListResults`.
+- **Migration:** nenhuma. **Access/Consent:** nenhum. **UI:** Impeccable B — shape→craft direto, critique no gate; reusa slot de header action (C94/C95), chassis B127, padrão de cards B184, `CampaignListResults`.
 
 ### Decisões de engenharia
 
-1. **Mecanismo mobile sem moldura:** A) CSS de página + hook `data-slot` (padrão C101) | B) prop no chassis | C) chassis global sem moldura. **→ A** (razões acima).
+1. **Mecanismo mobile sem moldura:** A) CSS de página + hook `data-slot` (padrão C101) | B) prop no chassis | C) **padrão compartilhado B184/C107 já em `main`** (form class + chassis borderless + tokens de header). **→ C (revisado)** — o irmão chegou primeiro; adotar o owner em vez de criar twin.
 2. **Trigger de criar no mobile:** A) `SetCampaignHeaderAction` + `md:hidden` (CSS-only) | B) gate JS `useIsMobile()` | C) FAB/quick action (padrão agenda). **→ A** — reusa o slot C94/C95; gate de resolução é CSS puro (sem flash de hidratação); o pedido é explicitamente "icon no header", não FAB.
 3. **Copy do empty state:** A) copy única sem referência a botão | B) copy mobile-aware. **→ A** — recomendação da própria intenção; descreve a ação em vez do trigger.
-4. **"Limpar" no mobile:** permanece como está (a intenção não pede o X circular do B184). O strip = o form inteiro, então "Limpar" fica na região sticky junto do filtro — coerente com "o filtro permanece visível o tempo todo".
-5. **Shell gap:** manter `gap-8` da página (não seguir o `gap-6` do C101) e compensar com `margin-bottom: -2rem` no strip — honra "desktop inalterado".
+4. **"Limpar" no mobile:** o padrão B184 do chassis já trocou o texto por X circular dentro do campo (mecanismo compartilhado — fora do escopo deste item, herdado do padrão).
+5. **Shell gap / sticky:** resolvido pelo próprio `campaignListOmniboxFormClassName` (`sticky top-0 z-20 -mx-4 border-b bg-background px-4 py-2` + `md:static ...`), sem mudança no shell.
 
 ### Dados → forma
 
@@ -84,6 +72,7 @@ N/A — item de acabamento visual; nenhum dado/KPI/mapa muda.
 
 ## Achados da execução (registrados)
 
+- **O irmão B184/C107 chegou a `main` antes do merge deste item** e tornou o mecanismo canônico: `campaignListOmniboxFormClassName` + campo borderless < md no chassis + `campaignMobileHeaderIconClassName` + X circular de limpar. A hipótese original (CSS de página no padrão C101) viraria um twin — a execução adotou o padrão compartilhado (edit the owner). O conflito de rebase em `CampaignUpdatesFilters.tsx` foi resolvido mantendo a versão do irmão.
 - **Leak da base `ul` editorial no campaign:** `@layer base` do styles.css aplica `my-6 ml-6 list-disc [&>li]:mt-2` a todo `ul` — o feed de atualizações é a única lista campaign em `<ul>`, então o leak só aparecia aqui (margem esquerda de 24px + 8px por li). O feed agora neutraliza na própria lista (`my-0 list-none [&>li]:mt-0`); o `[data-theme='campaign'] p { margin-top: 0 }` já era o precedente desse patch pontual. Efeito colateral no desktop: feed alinhado ao filtro (o indent de 24px era artefato do leak, não desenho).
 - **Artefato transitório de streaming (`#S:0` hidden):** páginas dinâmicas (searchParams awaitado) podem exibir temporariamente uma cópia hidden da página durante o stream; some sozinho (~1–5s). Não é regressão (existe só no build de produção, pré-existente no padrão de streaming). Os e2e esperam o stream assentar antes de assertar (`settleStream`).
 

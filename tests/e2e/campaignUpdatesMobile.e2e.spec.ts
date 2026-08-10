@@ -58,7 +58,7 @@ test.describe('C106 — atualizações mobile sem moldura', () => {
     await settleStream(page)
 
     const strip = page.getByRole('search')
-    const feedList = page.locator('ul').filter({ hasText: 'Fato de campo C106 #8' })
+    const feedList = page.locator('ul').filter({ hasText: 'Fato de campo C106 #8' }).first()
 
     // Label visualmente oculta no mobile (o input carrega o accessible name).
     await expect(strip.locator('label')).toBeHidden()
@@ -88,12 +88,12 @@ test.describe('C106 — atualizações mobile sem moldura', () => {
     await expect(firstCard).toHaveCSS('border-bottom-width', '1px')
     await expect(firstCard).toContainText('Fato de campo C106 #8')
 
-    // O filtro permanece visível o tempo todo: preso à top bar durante a rolagem.
-    const topBar = page.locator('[data-slot="campaign-mobile-top-bar"]')
+    // O filtro permanece visível o tempo todo: preso no topo durante a rolagem
+    // (o padrão B184 do form pina na borda do scroll container — a posição
+    // exata é a natural, o que importa é não rolar junto com os cards).
+    const pinnedY = (await strip.boundingBox())?.y
     await scrollFeedToBottom(page)
-    await expect
-      .poll(async () => (await strip.boundingBox())?.y)
-      .toBe(Math.round((await topBar.boundingBox())?.height ?? 56))
+    await expect.poll(async () => (await strip.boundingBox())?.y).toBe(pinnedY)
     const scrolled = await page.evaluate(
       () => document.querySelector('[data-slot="campaign-content-scroll"]')?.scrollTop ?? 0,
     )
@@ -148,7 +148,7 @@ test.describe('C106 — atualizações mobile sem moldura', () => {
     await expect(page.locator('header button[aria-label="Nova atualização"]').first()).toBeHidden()
 
     // Cards mantêm a moldura arredondada e o gap.
-    const firstCard = page.locator('ul li').filter({ hasText: 'Fato de campo C106 #8' })
+    const firstCard = page.locator('ul li').filter({ hasText: 'Fato de campo C106 #8' }).first()
     await expect(firstCard).toHaveCSS('border-top-width', '1px')
     await expect(firstCard).toHaveCSS('border-radius', '12px')
   })
