@@ -9,6 +9,7 @@ import { MunicipalityListLevelControl } from '@/components/campaign/municipality
 import { MunicipalityListTrendControl } from '@/components/campaign/municipality/MunicipalityListTrendControl'
 import { MunicipalityListUpdateControl } from '@/components/campaign/municipality/MunicipalityListUpdateControl'
 import type { CampaignCellEditOverlayVariant } from '@/components/campaign/shared/CampaignCellEditOverlay'
+import { CampaignListSheetProvider } from '@/components/campaign/shared/CampaignListSheetHost'
 import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
@@ -336,6 +337,148 @@ describe('campaign cell edit overlay', () => {
     fireEvent.click(submit as HTMLButtonElement)
 
     await waitFor(() => expect(formAction).toHaveBeenCalledTimes(1))
+  })
+
+  /**
+   * C109. The cases above render each cell WITHOUT the provider — they exercise
+   * the per-cell Drawer fallback, which never hit the crash. On the real mobile
+   * list a `CampaignListSheetProvider` wraps the cards, the overlay publishes
+   * into its single Drawer, and the custom footer used to be portaled from the
+   * cell: `createPortal` keeps the SOURCE tree's React context, so the
+   * `DrawerCloseButton` inside the footer resolved `useDialogRootContext()`
+   * as undefined and the sheet never rendered. These cases pin the shared path:
+   * the footer must render INSIDE the host's Drawer (context present), close
+   * via "Cancelar", and come back fresh on a reopen.
+   */
+  describe('shared sheet host path (B42 provider)', () => {
+    it('opens the signal sheet with its custom footer inside the shared Drawer, and Cancelar closes it', async () => {
+      render(
+        createElement(
+          CampaignListSheetProvider,
+          null,
+          // `createElement`'s typing puts a required `children` in props, so
+          // the rest-argument form this rule prefers does not type-check here.
+          // eslint-disable-next-line react/no-children-prop
+          createElement(MunicipalityListUpdateControl, {
+            municipalityID: 1,
+            municipalitySlug: 'feira-de-santana',
+            municipalityName: MUNICIPALITY_NAME,
+            lastSignalAt: null,
+            variant: 'sheet',
+            formAction: async () => ({}),
+            isStaff: true,
+            children: createElement('span', null, 'Sem sinal'),
+          }),
+        ),
+      )
+
+      fireEvent.click(
+        screen.getByRole('button', {
+          name: `Registrar atualização em ${MUNICIPALITY_NAME} — Sem sinal`,
+        }),
+      )
+
+      const dialog = await screen.findByRole('dialog')
+      const footer = dialog.querySelector('[data-slot="drawer-footer"]')
+      // The custom footer replaces the default "Fechar" — the two buttons the
+      // phone thumb expects, rendered in the host's Drawer context.
+      expect(footer?.textContent).toContain('Registrar atualização')
+      expect(footer?.textContent).toContain('Cancelar')
+      expect(footer?.textContent).not.toContain('Fechar')
+
+      fireEvent.click(within(footer as HTMLElement).getByRole('button', { name: 'Cancelar' }))
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    })
+
+    /**
+     * F5 across the provider path: the form body is portaled into the shared
+     * Drawer and the submit button lives in the host-rendered footer — the
+     * standard `form` attribute has to reach across that boundary for the
+     * association to survive. The fallback-path twin above pins the same
+     * contract in the per-cell Drawer.
+     */
+    it('submits the signal form from the custom footer across the shared Drawer', async () => {
+      const formAction = vi.fn(async () => ({}))
+
+      render(
+        createElement(
+          CampaignListSheetProvider,
+          null,
+          // eslint-disable-next-line react/no-children-prop
+          createElement(MunicipalityListUpdateControl, {
+            municipalityID: 1,
+            municipalitySlug: 'feira-de-santana',
+            municipalityName: MUNICIPALITY_NAME,
+            lastSignalAt: null,
+            variant: 'sheet',
+            formAction,
+            isStaff: true,
+            children: createElement('span', null, 'Sem sinal'),
+          }),
+        ),
+      )
+
+      fireEvent.click(
+        screen.getByRole('button', {
+          name: `Registrar atualização em ${MUNICIPALITY_NAME} — Sem sinal`,
+        }),
+      )
+
+      const dialog = await screen.findByRole('dialog')
+      fireEvent.click(
+        within(screen.getByLabelText('Polaridade')).getByRole('radio', { name: 'Boa' }),
+      )
+      fireEvent.change(screen.getByLabelText('Texto'), {
+        target: { value: 'Atualização registrada no campo.' },
+      })
+
+      const submit = dialog.querySelector<HTMLButtonElement>('[data-slot="drawer-footer"] button')
+      expect(submit?.textContent).toContain('Registrar atualização')
+      expect(submit?.getAttribute('form')).toBe(
+        dialog.querySelector('form')?.getAttribute('id') ?? null,
+      )
+
+      fireEvent.click(submit as HTMLButtonElement)
+
+      await waitFor(() => expect(formAction).toHaveBeenCalledTimes(1))
+    })
+
+    it('opens the engagement-level sheet, closes, and reopens with a fresh custom footer', async () => {
+      render(
+        createElement(
+          CampaignListSheetProvider,
+          null,
+          createElement(MunicipalityListLevelControl, {
+            municipalityID: 1,
+            municipalityName: MUNICIPALITY_NAME,
+            level: 'n3',
+            levelNote: 'Rede montada e giro agendado',
+            levelChangedAt: '2026-07-01T12:00:00.000Z',
+            variant: 'sheet',
+          }),
+        ),
+      )
+
+      const trigger = screen.getByRole('button', {
+        name: `Nível de envolvimento de ${MUNICIPALITY_NAME}: N3 · Rede + agenda`,
+      })
+
+      fireEvent.click(trigger)
+      let dialog = await screen.findByRole('dialog')
+      let footer = dialog.querySelector('[data-slot="drawer-footer"]')
+      expect(footer?.textContent).toContain('Registrar movimento')
+      expect(footer?.textContent).toContain('Cancelar')
+      expect(footer?.textContent).not.toContain('Fechar')
+
+      fireEvent.click(within(footer as HTMLElement).getByRole('button', { name: 'Cancelar' }))
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+
+      // Reopening mounts a fresh chrome — the custom footer must come back.
+      fireEvent.click(trigger)
+      dialog = await screen.findByRole('dialog')
+      footer = dialog.querySelector('[data-slot="drawer-footer"]')
+      expect(footer?.textContent).toContain('Registrar movimento')
+    })
   })
 
   /**
