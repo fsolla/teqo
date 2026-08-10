@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test'
 
 import { SUPPORTER_REGISTRATION_CONSENT_KEY } from '../../src/lib/campaignConsentKeys.js'
+import { fallbackDemandTitle } from '../../src/lib/demandTitle.js'
 import {
   ensureLeasedConsent,
   SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
@@ -726,13 +727,15 @@ test.describe('Municípios — jornadas por papel', () => {
     })
     fixtures.touchMunicipality(municipality.id)
 
-    const demandTitle = fixtures.value('Carro de som')
+    // B195: single free-text field; the title is derived server-side (fallback
+    // truncation without a DEEPSEEK_API_KEY in the e2e app).
+    const demandText = fixtures.value('Carro de som: precisamos para a caminhada de sábado.')
+    const demandTitle = fallbackDemandTitle(demandText)
 
     await campaign.login(page, advisor.email!, password)
     await page.goto(`${campaign.baseURL}/campanha/demandas/nova`)
-    await page.getByLabel('O que você precisa?').fill(demandTitle)
     await page.getByLabel('Município').selectOption({ label: municipality.name })
-    await page.getByLabel('Detalhe a necessidade').fill('Precisamos para a caminhada de sábado.')
+    await page.getByLabel('O que você precisa?').fill(demandText)
     await page.getByRole('button', { name: 'Abrir demanda' }).click()
     await expect(campaignPageChrome(page, demandTitle)).toBeVisible()
     await expect(page.getByRole('button', { name: 'Aprovar' })).toBeVisible()

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { DemandDescriptionEditor } from '@/components/campaign/demand/DemandDescriptionEditor'
 import { DemandWorkflowCard } from '@/components/campaign/demand/DemandWorkflowCard'
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
@@ -22,6 +23,7 @@ import {
   attachDemandReceiptFormAction,
   setDemandCostFormAction,
   transitionDemandFormAction,
+  updateDemandFormAction,
 } from './formActions'
 
 export async function generateMetadata({ params }: DemandDetailPageProps) {
@@ -116,11 +118,11 @@ export default async function DemandDetailPage({ params }: DemandDetailPageProps
         {dateTimeFormatter.format(new Date(demand.createdAt))}
       </p>
 
-      {demand.description ? (
-        <section aria-label="Descrição da demanda" className="rounded-xl border p-4">
-          <p className="whitespace-pre-wrap text-sm">{demand.description}</p>
-        </section>
-      ) : null}
+      <DemandDescriptionEditor
+        demandId={demand.id}
+        initialDescription={demand.description ?? ''}
+        formAction={updateDemandFormAction}
+      />
 
       {demand.decisionNote && (demand.status === 'aprovada' || demand.status === 'rejeitada') ? (
         <section aria-label="Decisão" className="rounded-xl border p-4">

@@ -188,6 +188,7 @@ type WizardStepKind =
   | 'update-body'
   | 'leadership-grid'
   | 'leadership-form'
+  | 'register-demand'
 
 type WizardPreviousHrefInput = {
   actionSlug: string

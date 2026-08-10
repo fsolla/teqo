@@ -6,7 +6,7 @@ import { WizardTrendNoteStep } from '@/components/campaign/municipality/WizardTr
 import { WizardUpdateBodyStep } from '@/components/campaign/municipality/WizardUpdateBodyStep'
 import { WizardExpectedVotesStep } from '@/components/campaign/shared/WizardExpectedVotesStep'
 import { WizardMunicipalitySearchStep } from '@/components/campaign/shared/WizardMunicipalitySearchStep'
-import { WizardMunicipalitySelectedStub } from '@/components/campaign/shared/WizardMunicipalitySelectedStub'
+import { WizardRegisterDemandStep } from '@/components/campaign/shared/WizardRegisterDemandStep'
 import {
   CAMPAIGN_WIZARD_ACTION_SLUGS,
   hasWizardScenarioParam,
@@ -78,7 +78,12 @@ export default async function CampaignActionWizardPage({
   }
 
   const needsPoliticalTrend = slug === CAMPAIGN_WIZARD_ACTION_SLUGS['change-trend']
-  const user = await requireCampaignPageActor()
+  // Demands are staff-only (A5): gate before the municipality scope loads,
+  // so a leader gets the standard contacts-home redirect (B43) instead of a
+  // 403/404 — deterministic in dev and production alike.
+  const user = await requireCampaignPageActor(
+    slug === CAMPAIGN_WIZARD_ACTION_SLUGS['register-demand'] ? { gate: 'staff' } : undefined,
+  )
   const payload = await getPayload({ config: await config })
   const { municipalities } = await loadMunicipalityScope(
     payload,
@@ -186,11 +191,17 @@ export default async function CampaignActionWizardPage({
     )
   }
 
-  return (
-    <WizardMunicipalitySelectedStub
-      actionSlug={slug}
-      municipalityName={municipality.name}
-      returnPath={returnPath}
-    />
-  )
+  if (slug === CAMPAIGN_WIZARD_ACTION_SLUGS['register-demand']) {
+    return (
+      <WizardRegisterDemandStep
+        actionSlug={slug}
+        municipalityId={municipality.id}
+        municipalityName={municipality.name}
+        municipalitySlug={municipality.slug}
+        returnPath={returnPath}
+      />
+    )
+  }
+
+  notFound()
 }

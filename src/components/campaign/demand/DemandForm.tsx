@@ -7,11 +7,23 @@ import { CampaignFormActionMessage } from '@/components/campaign/shared/Campaign
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { Button } from '@/components/ui/button'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
-import { campaignDemandKindLabels, campaignDemandKinds } from '@/lib/schemas/campaignDemand'
+import {
+  CAMPAIGN_DEMAND_ACTIVITY_DESCRIPTION,
+  CAMPAIGN_DEMAND_ACTIVITY_DIALOG_DESCRIPTION,
+  CAMPAIGN_DEMAND_ACTIVITY_EMPTY_LABEL,
+  CAMPAIGN_DEMAND_ACTIVITY_LABEL,
+  CAMPAIGN_DEMAND_BODY_DESCRIPTION,
+  CAMPAIGN_DEMAND_BODY_LABEL,
+  CAMPAIGN_DEMAND_BODY_MAX_LENGTH,
+  CAMPAIGN_DEMAND_BODY_PLACEHOLDER,
+  CAMPAIGN_DEMAND_KIND_LABEL,
+  CAMPAIGN_DEMAND_SUBMIT_LABEL,
+  campaignDemandKindLabels,
+  campaignDemandKinds,
+} from '@/lib/schemas/campaignDemand'
 import type { ActivityRelationOption } from '@/utilities/activityRelationOptions'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
@@ -56,28 +68,14 @@ export const DemandForm = ({
   )
 
   const activityFieldDescription = parsedMunicipalityId
-    ? 'Opcional. Busque atividades do município selecionado.'
+    ? CAMPAIGN_DEMAND_ACTIVITY_DESCRIPTION
     : 'Opcional. Escolha o município antes de vincular uma atividade.'
 
   return (
     <form action={submitAction} className="flex max-w-2xl flex-col gap-4">
-      <Field>
-        <FieldLabel htmlFor="demand-title">O que você precisa?</FieldLabel>
-        <Input
-          id="demand-title"
-          name="title"
-          required
-          minLength={2}
-          maxLength={160}
-          className="min-h-11"
-        />
-        {fieldError(state.fieldErrors, 'title') ? (
-          <FieldError>{fieldError(state.fieldErrors, 'title')}</FieldError>
-        ) : null}
-      </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field>
-          <FieldLabel htmlFor="demand-kind">Tipo</FieldLabel>
+          <FieldLabel htmlFor="demand-kind">{CAMPAIGN_DEMAND_KIND_LABEL}</FieldLabel>
           <NativeSelect
             id="demand-kind"
             name="kind"
@@ -119,14 +117,14 @@ export const DemandForm = ({
         </Field>
       </div>
       <Field>
-        <FieldLabel htmlFor="demand-activity">Atividade relacionada</FieldLabel>
+        <FieldLabel>{CAMPAIGN_DEMAND_ACTIVITY_LABEL}</FieldLabel>
         {parsedMunicipalityId ? (
           <AsyncSearchCombobox
             name="activityId"
-            label="Atividade relacionada"
+            label={CAMPAIGN_DEMAND_ACTIVITY_LABEL}
             value={activity}
-            emptyOptionLabel="Nenhuma atividade"
-            dialogDescription="Busque atividades do município selecionado por título."
+            emptyOptionLabel={CAMPAIGN_DEMAND_ACTIVITY_EMPTY_LABEL}
+            dialogDescription={CAMPAIGN_DEMAND_ACTIVITY_DIALOG_DESCRIPTION}
             isQueryReady={activityQueryReady}
             queryTooShortMessage="Selecione o município para buscar atividades."
             search={searchActivitiesForMunicipality}
@@ -148,8 +146,18 @@ export const DemandForm = ({
         ) : null}
       </Field>
       <Field>
-        <FieldLabel htmlFor="demand-description">Detalhe a necessidade</FieldLabel>
-        <Textarea id="demand-description" name="description" rows={4} maxLength={4000} />
+        <FieldLabel htmlFor="demand-description">{CAMPAIGN_DEMAND_BODY_LABEL}</FieldLabel>
+        <FieldDescription>{CAMPAIGN_DEMAND_BODY_DESCRIPTION}</FieldDescription>
+        <Textarea
+          id="demand-description"
+          name="description"
+          rows={5}
+          minLength={2}
+          maxLength={CAMPAIGN_DEMAND_BODY_MAX_LENGTH}
+          required
+          placeholder={CAMPAIGN_DEMAND_BODY_PLACEHOLDER}
+          className="min-h-28"
+        />
         {fieldError(state.fieldErrors, 'description') ? (
           <FieldError>{fieldError(state.fieldErrors, 'description')}</FieldError>
         ) : null}
@@ -158,7 +166,7 @@ export const DemandForm = ({
       {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}
       <Button type="submit" disabled={isPending} className="min-h-11 self-start">
         {isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
-        Abrir demanda
+        {CAMPAIGN_DEMAND_SUBMIT_LABEL}
       </Button>
     </form>
   )

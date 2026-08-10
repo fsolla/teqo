@@ -2,8 +2,11 @@
 
 import type { Payload } from 'payload'
 
+import { fallbackDemandTitle } from '@/lib/demandTitle'
+import type { CampaignDemandKind } from '@/lib/schemas/campaignDemand'
 import {
   CAMPAIGN_DEMAND_COST_STAFF_MESSAGE,
+  CAMPAIGN_DEMAND_EDIT_STAFF_MESSAGE,
   CAMPAIGN_DEMAND_RECEIPT_EMPTY_MESSAGE,
   CAMPAIGN_DEMAND_RECEIPT_SIZE_MESSAGE,
   CAMPAIGN_DEMAND_RECEIPT_STAFF_MESSAGE,
@@ -14,11 +17,14 @@ import {
   campaignDemandCostSchema,
   campaignDemandCreateSchema,
   campaignDemandTransitionSchema,
+  campaignDemandUpdateSchema,
   type CampaignDemandCostInput,
   type CampaignDemandCreateInput,
   type CampaignDemandTransitionInput,
+  type CampaignDemandUpdateInput,
 } from '@/lib/schemas/campaignDemandInput'
 import type { CampaignUser } from '@/payload-types'
+import { deriveDemandTitle } from '@/utilities/ai/campaignDemandTitle'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import {
   getCampaignActionContext,
@@ -35,24 +41,85 @@ export const createCampaignDemandRecord = async (
   input: CampaignDemandCreateInput,
 ) => {
   const data = campaignDemandCreateSchema.parse(input)
+  // AI call BEFORE the transaction opens: a slow model never holds the
+  // transaction or its advisory locks, and creating never fails on the AI
+  // (missing key / timeout / unusable output → truncated-title fallback).
+  const title =
+    (await deriveDemandTitle(data.description, data.kind)) ?? fallbackDemandTitle(data.description)
 
   return withPayloadTransaction(
     payload,
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
 
-      // Access create rule validates municipality scope per role; the collection hook
-      // links a leader's own leadership and enforces the initial status.
+      // Opt in to slug uniquification for form-created demands: the AI-derived
+      // title may collide across municipalities and a duplicate must not fail
+      // the create (the hook honors the flag only inside this transaction).
       return payload.create({
         collection: 'campaignDemand',
-        data: hookFilledCreateData<'campaignDemand'>(data),
+        data: hookFilledCreateData<'campaignDemand'>({ ...data, title }),
+        depth: 0,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+        context: { campaignDemandUniqueSlug: true },
+      })
+    },
+    { beginFailureMessage: 'Não foi possível iniciar o registro da demanda.' },
+  )
+}
+
+export const updateCampaignDemandRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: CampaignDemandUpdateInput,
+) => {
+  const { id, description } = campaignDemandUpdateSchema.parse(input)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await reloadCampaignActor(payload, actor, req)
+      if (!isCampaignStaff(currentActor)) {
+        throw new Error(CAMPAIGN_DEMAND_EDIT_STAFF_MESSAGE)
+      }
+
+      // Access-scoped read (staff see only their municipalities). The AI call
+      // stays before the advisory lock, so the lock is never held open by it.
+      const demand = await payload.findByID({
+        collection: 'campaignDemand',
+        id,
+        depth: 0,
+        select: { title: true, kind: true, description: true },
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+
+      // Re-derive the title only when the free text actually changed; on AI
+      // failure the previous title is kept (fallback by truncation is a
+      // create-only policy). The slug is preserved by the collection hook.
+      const derived =
+        (demand.description ?? '') === description
+          ? null
+          : await deriveDemandTitle(description, demand.kind as CampaignDemandKind)
+
+      await acquireTextAdvisoryLocks(payload, req, [`campaign-demand:${id}`])
+
+      return payload.update({
+        collection: 'campaignDemand',
+        id,
+        data: {
+          description,
+          ...(derived ? { title: derived } : {}),
+        },
         depth: 0,
         user: currentActor,
         overrideAccess: false,
         req,
       })
     },
-    { beginFailureMessage: 'Não foi possível iniciar o registro da demanda.' },
+    { beginFailureMessage: 'Não foi possível iniciar a edição da demanda.' },
   )
 }
 
@@ -192,6 +259,11 @@ export const attachCampaignDemandReceiptRecord = async (
 export const createCampaignDemand = async (input: CampaignDemandCreateInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return createCampaignDemandRecord(payload, actor, input)
+}
+
+export const updateCampaignDemand = async (input: CampaignDemandUpdateInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return updateCampaignDemandRecord(payload, actor, input)
 }
 
 export const transitionCampaignDemand = async (input: CampaignDemandTransitionInput) => {

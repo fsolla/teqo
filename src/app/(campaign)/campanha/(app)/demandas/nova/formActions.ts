@@ -2,34 +2,17 @@
 
 import { createCampaignDemand } from '@/app/(campaign)/campanha/actions/demand'
 import {
-  nullableRelationshipFormValue,
-  optionalFormText,
-  requiredFormText,
-  requiredRelationshipFormValue,
-} from '@/lib/formData'
-import { campaignDemandKinds, type CampaignDemandKind } from '@/lib/schemas/campaignDemand'
-import {
   runCampaignRedirectFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
+import { parseCampaignDemandCreateFormData } from '@/utilities/demand/campaignDemandFormData'
 
 export const createDemandFormAction = async (
   _state: CampaignFormActionState,
   formData: FormData,
 ): Promise<CampaignFormActionState> =>
   runCampaignRedirectFormAction({
-    execute: () => {
-      const rawKind = requiredFormText(formData, 'kind')
-      return createCampaignDemand({
-        title: requiredFormText(formData, 'title'),
-        kind: campaignDemandKinds.includes(rawKind as CampaignDemandKind)
-          ? (rawKind as CampaignDemandKind)
-          : 'outro',
-        description: optionalFormText(formData, 'description'),
-        municipality: requiredRelationshipFormValue(formData, 'municipalityId'),
-        activity: nullableRelationshipFormValue(formData, 'activityId') ?? undefined,
-      })
-    },
+    execute: () => createCampaignDemand(parseCampaignDemandCreateFormData(formData)),
     redirectTo: (demand) => `/campanha/demandas/${demand.slug}`,
     genericMessage: 'Não foi possível abrir a demanda. Verifique os dados e tente novamente.',
   })
