@@ -32,14 +32,14 @@ flowchart LR
 
 ### Componentes / mudanças
 
-- **`tests/e2e/setup.e2e.spec.ts`**: lista GET ganha `/campanha/municipios/e2e-prewarm/editar` + os módulos de rota faltantes do audit (ver Fases 1). Lista POST inalterada. Comentário do mecanismo já existe — sem novas cerimônias.
+- **`tests/e2e/setup.e2e.spec.ts`**: lista GET ganha `/campanha/municipios/e2e-prewarm/editar` + os módulos de rota faltantes do audit (ver Fases 1) + os ajustes pós-gate (POSTs novos, PWA/chat, `/campanha/pessoas`). `prewarmGet` com retry-único e budget explícito (ver ajustes pós-gate).
 - **`tests/e2e/fixtures/campaignE2EFixtures.ts`** (`campaign.login`, ~546–555): extrai `submitLogin` (fill+click); primeira `waitForURL` no budget padrão; no timeout, se `page.url()` já é `/campanha` → sucesso (idempotência contra double-submit); senão re-fill + re-click + segunda `waitForURL`; segunda falha sobe naturalmente (credencial errada falha duas vezes — retry não mascara defeito real). Comentário documentando o mecanismo do compile-frio.
 
 ### Ajustes pós-gate (evidência de execução, 2026-08-10 — mesma sessão)
 
 Sob carga real de worktrees paralelas (load ~50, 16 núcleos — gate do OPS22 rodando em paralelo), a evidência mostrou que **o próprio setup original falhava** (`socket hang up` no 2º GET — a classe de abort do dev server atinge o prewarm quando o compile frio aborta a conexão em voo; reproduzido com a lista original via stash). Dois ajustes no escopo aprovado:
 
-1. **`setup.e2e.spec.ts` — `prewarmGet` com retry-único por GET** (a falha aborta a conexão, mas o compile acontece; o retry cai quente; a asserção `ok()` roda no retry — segunda falha é regressão real). Substituiu `test.slow()` (180 s) por `test.setTimeout(420_000)`: 23 módulos × até ~60 s de compile frio sob carga (medido: `/campanha/contatos` = 57 s) + headroom do retry; no CI (build de produção quente) termina em segundos, o budget não morde.
+1. **`setup.e2e.spec.ts` — `prewarmGet` com retry-único por GET** (a falha aborta a conexão, mas o compile acontece; o retry cai quente; a asserção `ok()` roda no retry — segunda falha é regressão real). Substituiu `test.slow()` (180 s) por `test.setTimeout(420_000)`: 27 módulos, total medido ~3–6 min de compile frio sob carga (medido: `/campanha/contatos` = 57 s a load ~50) + headroom do retry; no CI (build de produção quente) termina em segundos, o budget não morde.
 2. **`campaign.login` — guard de idempotência refinado**: o check `page.url().startsWith(baseURL/campanha)` casava também `/campanha/login` (prefixo) — trocado por grace-wait de 5 s do destino exato antes do re-submit (cobre a navegação que caiu logo após o timeout do 1º wait; re-fill no dashboard seria erro falso).
 3. **Prewarm de alvos de redirect + suggest** (a classe compile-frio não é só `page.goto`): o submit "Abrir demanda" redireciona para `/campanha/demandas/[slug]` — módulo fora da lista (audit de goto não vê redirects) → adicionado `e2e-prewarm`; e o suggest do overlay FAB POSTa `/campanha/home-search` — fora da lista POST → adicionado.
 4. **Refator mínimo do spec `campaignMunicipalities` (evidência de execução)**: três testes falhavam deterministicamente em dev — todos da classe de abort do compile-frio no cliente:
@@ -50,9 +50,18 @@ Sob carga real de worktrees paralelas (load ~50, 16 núcleos — gate do OPS22 r
 
 ### Evidência (2026-08-10, máquina compartilhada com 4–5 worktrees ativos, load 5–70)
 
-- **Aceite — `campaignMunicipalities` 17/17 ×3 consecutivos em dev a 2 workers** (runs 16:00–16:03, load 5–18; incl. `:78` e `:518`). Runs sob load 40–70 continuam caindo por starvation de CPU (renders RSC > 60 s) — classe fora do escopo (não é compile-frio); a evidência foi coletada nas janelas quietas.
+- **Aceite — `campaignMunicipalities` 22/22 (arquivo atual, incl. B193 ×4 + OPS29) ×3 consecutivos em dev a 2 workers** (runs 16:28–16:39, load 5–17; incl. `:78` e `:518`; as 3 runs verdes anteriores com 17 testes foram absorvidas pelo rebase que trouxe B193/OPS29 do main — re-prova com o arquivo atual). Runs sob load 40–70 continuam caindo por starvation de CPU (renders RSC > 60 s) — classe fora do escopo (não é compile-frio); a evidência foi coletada nas janelas quietas.
 - **P4-L — `campaignLeaderships` 3/3 em dev a 2 workers (load 4–10) + 1/1 com `E2E_PROD=1`** (build local em `.next/e2e`; 1.6 s/1.9 s). TECH-DEBT row 59 fechado com a evidência; TESTING.md caveat atualizado.
-- **Setup**: prewarm completo (26 GETs + 16 POSTs) passando em dev e prod; retry-único absorveu aborts reais (socket hang up sob load).
+- **Setup**: prewarm completo (27 GETs + 16 POSTs) passando em dev e prod; retry-único absorveu aborts reais (socket hang up sob load).
+
+### Ajustes do /simplify (3 revisores read-only, 2026-08-10 — 0 P1, P2/P3 aplicados)
+
+- `/campanha/pessoas` (campaignPeople) entrou no prewarm GET — o audit por grep de goto tinha passado batido (audit refeito por grep completo).
+- `prewarmGet` loga o status do 1º hit quando o retry salva (rastro do masking residual).
+- Login: sub-budgets explícitos somando <60 s (15+5+30) — antes o 2º wait nunca completava dentro do test timeout e credencial errada morria de "Test timeout" genérico; retry agora bifurca pela URL real (dashboard → return; fora do login → throw com a URL; login → re-submit) — o re-submit cego contra página que saiu do login falhava com fill na dashboard.
+- B24: locator reusa `visibleMunicipalityButton` (escapeRegExp + fronteira — nomes com prefixo compartilhado, 23/435) e `ensureWideMunicipalityList` re-rodado após o reload (padrão do irmão dobradinhas).
+- `:713`: o retry cego do submit criaria duplicata que o UNIQUE do `campaignDemand.slug` refuta — o retry agora consulta por título e navega direto ao detail quando o 1º POST já criou (redirect perdido).
+- `:1063`: `waitForResponse` com timeout curto (5 s) — sem ele o budget do toPass queimava no wait e o erro apontava a classe errada.
 - **`docs/TECH-DEBT.md`** (row 59, P4-L): status `open — Pass 4…` → `closed <data> (evidência: spec B34 ×3 dev 2 workers + 1× E2E_PROD=1 verdes, <data>)` — só após a evidência coletada.
 - **`docs/TESTING.md`** (linha 15): caveat "chip-cell spec currently fails deterministically under `pnpm dev`" vira referência ao fechamento (o ledger é a fonte; doc não pode contradizer o ledger fechado).
 - **`docs/plans/hardening-e2e-dev-compile-frio-impl.md`**: este arquivo (commitado na entrega).

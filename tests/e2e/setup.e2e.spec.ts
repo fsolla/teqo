@@ -3,10 +3,11 @@ import { expect, test } from '@playwright/test'
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
 
 test('prewarms shared Next route bundles sequentially', async ({ request }) => {
-  // 26 route modules compiled cold, each up to ~60 s under parallel-worktree
-  // load (measured 2026-08-10, load ~50: /campanha/contatos took 57 s), plus a
-  // one-shot retry per GET for the dev-server abort class below. On CI the
-  // production build answers warm in seconds, so the budget never bites there.
+  // 27 route modules compiled cold; measured ~3-6 min total under
+  // parallel-worktree load (load ~50, 2026-08-10: /campanha/contatos alone
+  // took 57 s), plus a one-shot retry per GET for the dev-server abort class
+  // below. On CI the production build answers warm in seconds, so the budget
+  // never bites there.
   test.setTimeout(420_000)
   // A cold compile can make Next dev abort an in-flight request (socket hang
   // up, measured on the original list under load) — the route compiles anyway,
@@ -15,6 +16,9 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
   const prewarmGet = async (path: string) => {
     const first = await request.get(`${baseURL}${path}`).catch(() => undefined)
     if (first?.ok()) return first
+    if (first) {
+      console.info(`[prewarm] first attempt ${path} answered ${first.status()} — retrying once`)
+    }
     const retry = await request.get(`${baseURL}${path}`).catch(() => undefined)
     expect(retry?.ok(), `Failed to prewarm ${path}`).toBe(true)
     return retry
@@ -47,6 +51,7 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
     '/campanha/atividades/nova',
     '/campanha/atualizacoes',
     '/campanha/offline',
+    '/campanha/pessoas',
     // PWA artifacts every authenticated page fetches on load — a cold compile
     // here mid-suite full-page-reloads connected clients (ERR_ABORTED class).
     '/campanha/manifest.webmanifest',

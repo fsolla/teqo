@@ -626,10 +626,15 @@ export const campaignFixture: CampaignE2EFixtureValue = async ({}, runFixture) =
         // aborting the login POST before it lands (the mechanism documented
         // in setup.e2e.spec.ts). A budget-only wait cannot recover an aborted
         // submit, so on a navigation timeout we re-submit ONCE: the action is
-        // warm by then. The short grace wait before re-submitting keeps the
-        // retry idempotent when the first navigation landed just past the
-        // wait (re-filling on the dashboard would throw a bogus error). A
-        // second failure surfaces — wrong credentials fail both attempts.
+        // warm by then. The grace wait absorbs a navigation that landed just
+        // past the first wait, and the URL branch refuses a blind re-submit
+        // against a page that left the login screen. Sub-budgets sum below
+        // the 60 s test timeout, so a real credential failure surfaces as a
+        // crisp wait error, not a generic test timeout. A second failure
+        // surfaces — wrong credentials fail both attempts.
+        const dashboardURL = `${baseURL}/campanha`
+        const onDashboard = (url: string) =>
+          url === dashboardURL || url === `${dashboardURL}/`
         const submitLogin = async () => {
           await page.getByLabel('E-mail ou celular').fill(identifier)
           await page.getByLabel('Senha').fill(password)
@@ -640,13 +645,20 @@ export const campaignFixture: CampaignE2EFixtureValue = async ({}, runFixture) =
         }
         await submitLogin()
         try {
-          await page.waitForURL(`${baseURL}/campanha`)
+          await page.waitForURL(dashboardURL, { timeout: 15_000 })
         } catch {
           try {
-            await page.waitForURL(`${baseURL}/campanha`, { timeout: 5_000 })
+            await page.waitForURL(dashboardURL, { timeout: 5_000 })
           } catch {
+            const current = page.url()
+            if (onDashboard(current)) return
+            if (!current.startsWith(`${baseURL}/campanha/login`)) {
+              throw new Error(
+                `Login retry aborted: page left the login screen (${current}).`,
+              )
+            }
             await submitLogin()
-            await page.waitForURL(`${baseURL}/campanha`)
+            await page.waitForURL(dashboardURL, { timeout: 30_000 })
           }
         }
       },
