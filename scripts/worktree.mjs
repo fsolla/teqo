@@ -44,8 +44,21 @@
  *                              terminal, mesma diretiva `launch` — porém SEM
  *                              `--prompt` (a CLI do opencode não tem pre-fill
  *                              sem submit; `/plan-` + autocomplete do TUI).
- *                              `--stay` suprime a linha `cd`; `--go` explícito
- *                              continua aceito como no-op (era o antigo padrão).
+ *   pnpm worktree new [bag] [--stay] [--no-migrate]
+ *                              cria um worktree NEUTRO novo — sem função
+ *                              pré-definida (explorar ideia, conversar, ou
+ *                              planejar sem registrar nada): cada invocação
+ *                              cria UM DIFERENTE; com `bag`, branch
+ *                              `work/<bag>` (e `-2`, `-3`, … se o nome já
+ *                              estiver vivo); sem `bag`, o próximo sequencial
+ *                              `work/<n>` livre. Prefixo minúsculo `work/…` —
+ *                              nunca colide com `<code>-<slug>` de `next` nem
+ *                              com `plans/plan-issue-…` de `plan`.
+ *                              Mesmo provisionamento isolado do `next`/`plan`;
+ *                              no terminal, mesma diretiva `launch` — SEM
+ *                              `--prompt` (apenas conversar, nenhuma skill).
+ *                              `--stay` suprime a linha `cd` e a diretiva;
+ *                              `--go` explícito continua aceito como no-op.
  *   pnpm worktree kill [--force]   destrói o worktree em que o shell atual está
  *                              (recusa worktree sujo sem `--force`) e remove os
  *                              bancos gerados do worktree (best-effort); por
@@ -79,6 +92,7 @@ import {
   branchNameForIssue,
   opencodeLaunchDirective,
   planBranchName,
+  workBranchName,
   WORKTREE_TERMINAL_ENV,
 } from './lib/worktree.mjs'
 
@@ -250,7 +264,7 @@ const writeFallbackEnv = (dir, branch) => {
  * Deterministic per-worktree environment: shared container + own databases +
  * own dev-server port + env files + migrations. Skips everything when a
  * manual `.env.local`/`.env.test.local` (no marker) exists — never clobbers.
- * `purpose` labels the env comment (`next` | `plan`); `issue` is optional and
+ * `purpose` labels the env comment (`next` | `plan` | `new`); `issue` is optional and
  * fills the `issue #N` part of the comment only when present.
  */
 const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpose = 'next' }) => {
@@ -373,22 +387,8 @@ const cmdNext = async (stay, skipMigrate) => {
   }
 }
 
-/**
- * `plan` — a `/plan-issue` planning worktree. Deliberately NOT tied to the
- * claim queue and NOT named after any Issue: the branch is derived either from
- * an optional `bag` slug (`plans/plan-issue-<bag>`, suffixed `-2`, `-3`, … on
- * collision) or from the next free sequential `plans/plan-issue-<n>`, so a
- * later `pnpm worktree next` for the next claimable Issue never collides with
- * it (branch name nor slot — each plan env registers its hashed slot via the
- * marker and `next` bumps around it). Every invocation creates a DIFFERENT
- * worktree — parallel `/plan-issue` sessions never share one. Same isolated
- * env provisioning as `next`.
- */
-const cmdPlan = async (stay, skipMigrate, bag) => {
-  git(['fetch', 'origin'])
-
-  const entries = parseWorktreeList(git(['worktree', 'list', '--porcelain']))
-
+/** Branch short-names already alive — local refs plus origin (shortened). */
+const buildTakenBranchNames = () => {
   const taken = new Set()
   for (const scope of [
     (
@@ -406,24 +406,45 @@ const cmdPlan = async (stay, skipMigrate, bag) => {
   ]) {
     for (const name of scope) if (name) taken.add(name)
   }
+  return taken
+}
 
-  const branch = planBranchName({ bag, taken })
+/**
+ * Shared runner for namespace worktrees NOT tied to the claim queue (`plan`
+ * and `new`): fetches origin, picks a FRESH branch in the namespace (via
+ * `branchName`), provisions the same isolated env as `next` (with `purpose`)
+ * and prints the `cd <dir>` line by default (`--stay` suppresses). Every
+ * invocation creates a DIFFERENT worktree — parallel sessions never share one.
+ */
+const cmdNamespaceBranch = async ({
+  stay,
+  skipMigrate,
+  purpose,
+  noun,
+  sessionLabel,
+  branchName,
+}) => {
+  git(['fetch', 'origin'])
+
+  const entries = parseWorktreeList(git(['worktree', 'list', '--porcelain']))
+  const taken = buildTakenBranchNames()
+
+  const branch = branchName(taken)
   if (git(['check-ref-format', '--allow-onelevel', branch], { okIfFails: true }) === null) {
-    die(`Branch plan inválido para refname: ${branch}`)
+    die(`Branch ${purpose} inválido para refname: ${branch}`)
   }
   const dir = join(WORKTREES_ROOT, branch)
 
   if (entries.some((entry) => resolve(entry.path) === resolve(dir))) {
     die(
-      `Já existe um worktree de planejamento em ${dir} (branch ${branch} não detectado nos refs). Rode \`pnpm worktree kill\` de dentro dele.`,
+      `Já existe um worktree ${noun} em ${dir} (branch ${branch} não detectado nos refs). Rode \`pnpm worktree kill\` de dentro dele.`,
     )
   }
 
-  const label = bag && bag.trim() ? `lote "${bag}"` : 'sequencial'
   git(['worktree', 'add', '-b', branch, dir, 'origin/main'])
 
-  console.log('Worktree de planejamento criado:')
-  console.log(`  sessão: ${label}`)
+  console.log(`Worktree ${noun} criado:`)
+  console.log(`  sessão: ${sessionLabel}`)
   console.log(`  branch: ${branch}`)
   console.log(`  path:   ${dir}`)
   console.log('  origem: origin/main')
@@ -434,18 +455,57 @@ const cmdPlan = async (stay, skipMigrate, bag) => {
     code: null,
     takenSlots: readLiveSlots(entries, dir),
   })
-  await provision({ dir, branch, env, skipMigrate, mainRoot, purpose: 'plan' })
+  await provision({ dir, branch, env, skipMigrate, mainRoot, purpose })
 
-  console.log(`\nAmbiente isolado do worktree de planejamento (slot ${env.slot}):`)
+  console.log(`\nAmbiente isolado do worktree ${noun} (slot ${env.slot}):`)
   console.log(`  dev server: http://localhost:${env.devPort}   (pnpm dev)`)
   console.log(`  banco dev:  postgresql://teqo:teqo@localhost:5432/${env.devDatabase}`)
   console.log(`  banco test: postgresql://teqo:teqo@localhost:5432/${env.testDatabase}`)
 
   if (!stay) {
-    printLaunchDirective({ dir, purpose: 'plan' })
+    printLaunchDirective({ dir, purpose })
     console.log(`cd ${dir}`)
   }
 }
+
+/**
+ * `plan` — a `/plan-issue` planning worktree. Deliberately NOT tied to the
+ * claim queue and NOT named after any Issue: the branch is derived either from
+ * an optional `bag` slug (`plans/plan-issue-<bag>`, suffixed `-2`, `-3`, … on
+ * collision) or from the next free sequential `plans/plan-issue-<n>`, so a
+ * later `pnpm worktree next` for the next claimable Issue never collides with
+ * it (branch name nor slot — each plan env registers its hashed slot via the
+ * marker and `next` bumps around it). Same isolated env provisioning as
+ * `next`.
+ */
+const cmdPlan = async (stay, skipMigrate, bag) =>
+  cmdNamespaceBranch({
+    stay,
+    skipMigrate,
+    purpose: 'plan',
+    noun: 'de planejamento',
+    sessionLabel: bag && bag.trim() ? `lote "${bag}"` : 'sequencial',
+    branchName: (taken) => planBranchName({ bag, taken }),
+  })
+
+/**
+ * `new` — a NEUTRAL worktree with no pre-defined function (explore an idea,
+ * chat, or plan without registering anything). Deliberately NOT tied to the
+ * claim queue nor to `/plan-issue`: with `bag`, branch `work/<bag>` (suffixed
+ * `-2`, `-3`, … on collision); without, the next free sequential `work/<n>`.
+ * The lowercase `work/…` prefix can never collide with a `next` branch
+ * (uppercase-led `<code>-<slug>`) nor with a `plan` branch (`plans/…`), in
+ * branch name or slot space. Same isolated env provisioning as `plan`.
+ */
+const cmdNew = async (stay, skipMigrate, bag) =>
+  cmdNamespaceBranch({
+    stay,
+    skipMigrate,
+    purpose: 'new',
+    noun: 'neutro',
+    sessionLabel: bag && bag.trim() ? `bag "${bag}"` : 'sequencial',
+    branchName: (taken) => workBranchName({ bag, taken }),
+  })
 
 /** Generated database names referenced by a worktree's own env files. */
 const worktreeDatabaseNamesOf = (dir) => {
@@ -533,7 +593,7 @@ const subcommand = positional[0]
 
 if (!subcommand) {
   console.log(
-    'Uso: pnpm worktree next [--stay] [--no-migrate] | plan [bag] [--stay] [--no-migrate] | kill [--force]',
+    'Uso: pnpm worktree next [--stay] [--no-migrate] | plan [bag] [--stay] [--no-migrate] | new [bag] [--stay] [--no-migrate] | kill [--force]',
   )
   console.log('  next [--stay] [--no-migrate]')
   console.log('    cria worktree da próxima Issue claimável (branch <code>-<slug>) e provisiona o')
@@ -555,6 +615,12 @@ if (!subcommand) {
     '    minúsculo plans/… nunca colide com o branch <code>-<slug> de `next`; no terminal,',
   )
   console.log('    mesma diretiva `launch` porém sem --prompt (autocomplete completa /plan-)')
+  console.log(`\n  new [bag] [--stay] [--no-migrate]`)
+  console.log('    cria um worktree NEUTRO (sem função pré-definida) DIFERENTE a cada invocação:')
+  console.log('    com bag, branch work/<bag> (sufixo -2/-3 se o nome já existir); sem bag, o')
+  console.log('    próximo work/<n> sequencial livre; o prefixo minúsculo work/… nunca colide com')
+  console.log('    o branch <code>-<slug> de `next` nem com plans/plan-issue-… de `plan`; no')
+  console.log('    terminal, mesma diretiva `launch` porém sem --prompt (apenas conversar)')
   console.log('  kill [--force]  destrói o worktree em que você está (recusa sujo sem --force),')
   console.log('                  remove os bancos gerados do worktree (best-effort) e imprime')
   console.log('                  `cd <main>` no fim — o shell sempre volta ao worktree principal')
@@ -565,10 +631,12 @@ try {
   if (subcommand === 'next') await cmdNext(Boolean(flags.stay), Boolean(flags['no-migrate']))
   else if (subcommand === 'plan')
     await cmdPlan(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1])
+  else if (subcommand === 'new')
+    await cmdNew(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1])
   else if (subcommand === 'kill') {
     if (flags.stay) die('`--stay` não se aplica a `kill` — ele sempre volta ao main.')
     await cmdKill(Boolean(flags.force))
-  } else die(`subcomando desconhecido: ${subcommand} (esperado: next | plan | kill)`)
+  } else die(`subcomando desconhecido: ${subcommand} (esperado: next | plan | new | kill)`)
 } catch (error) {
   if (error?.stderr) die(error.stderr.toString().trim())
   die(error?.message ?? String(error))

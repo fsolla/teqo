@@ -25,15 +25,23 @@ export const OPENCODE_PRESET_MODEL = 'deepseek/deepseek-v4-flash'
 /**
  * Skill command sent as the launch's initial message per purpose. `next`
  * sends `/work-issue` (the OPS25 command executes the full cycle); `plan`
- * sends nothing — the opencode CLI's `--prompt` always auto-submits, there is
- * no prefill-without-submit flag, and the TUI autocomplete completes `/plan-`
- * instead (gap registered for the opencode repo). Switch `plan` to
- * `/plan-issue` here if the CLI ever gains prefill-without-submit.
+ * and `new` send nothing — the opencode CLI's `--prompt` always auto-submits,
+ * there is no prefill-without-submit flag, and the TUI autocomplete completes
+ * `/plan-` instead (`new` is just "apenas conversar", no skill at all; gap
+ * registered for the opencode repo). Switch `plan` to `/plan-issue` here if
+ * the CLI ever gains prefill-without-submit.
  */
-export const OPENCODE_SKILL_COMMAND_BY_PURPOSE = { next: '/work-issue', plan: null }
+export const OPENCODE_SKILL_COMMAND_BY_PURPOSE = { next: '/work-issue', plan: null, new: null }
 
-/** Total branch-name budget for plan branches — mirrors `branchNameForIssue`. */
-const PLAN_BRANCH_MAX_LENGTH = 60
+/**
+ * Prefix of every neutral-worktree branch (`pnpm worktree new`). Lowercase-led
+ * `work/…` — structurally disjoint from `next`'s uppercase-led `<Code>-<slug>`
+ * and from `plan`'s `plans/plan-issue-…`, in branch name and slot space alike.
+ */
+export const WORK_BRANCH_PREFIX = 'work'
+
+/** Total branch-name budget — mirrors `branchNameForIssue` (60). */
+const NAMESPACE_BRANCH_MAX_LENGTH = 60
 
 /** Strip the leading `<code> — ` (or any dash variant) off a title. */
 const stripCodePrefix = (title, code) => {
@@ -71,37 +79,38 @@ export const branchNameForIssue = (issue, maxLength = 60) => {
 }
 
 /**
- * Branch for a `/plan-issue` planning worktree. Every invocation must land on
- * a DIFFERENT branch so parallel planning sessions coexist:
- *  - `bag` given → `plans/plan-issue-<bag-slug>`; if that name is already
- *    taken, `plans/plan-issue-<bag-slug>-2`, `-3`, …
- *  - no `bag` → the next free sequential `plans/plan-issue-1`, `-2`, `-3`, …
- * `taken` = branch short-names already alive (local refs + origin); when a
- * name is free it is reused only as a name-free slot — the branch is created
- * fresh from `origin/main` each time. The lowercase `plans/…` prefix cannot
- * collide with `next`'s uppercase-led `<Code>-<slug>` branches.
+ * Shared branch naming for namespace worktrees NOT tied to the claim queue
+ * (`plan`, `new`). Every invocation must land on a DIFFERENT branch so
+ * parallel sessions coexist:
+ *  - `bag` given → `<prefix><slug>`; if that name is already taken,
+ *    `<prefix><slug>-2`, `-3`, …
+ *  - no `bag` → the next free sequential `<prefix>1`, `<prefix>2`, …
+ * `prefix` carries the namespace AND its separator (`plans/plan-issue-` for
+ * plan, `work/` for new), so the sequential and bag forms share one spelling
+ * per namespace. `taken` = branch short-names already alive (local refs +
+ * origin); when a name is free it is reused only as a name-free slot — the
+ * branch is created fresh from `origin/main` each time. Both namespaces are
+ * lowercase-led, so neither can collide with `next`'s uppercase-led
+ * `<Code>-<slug>` branches.
  */
-export const planBranchName = ({ bag = '', taken = new Set() }) => {
+const namespaceBranchName = ({ prefix, bag = '', taken = new Set(), fallback }) => {
   const hasBag = typeof bag === 'string' && bag.trim().length > 0
 
   if (!hasBag) {
     for (let n = 1; ; n += 1) {
-      const candidate = `${PLAN_BRANCH_PREFIX}-${n}`
+      const candidate = `${prefix}${n}`
       if (!taken.has(candidate)) return candidate
     }
   }
 
-  const slug = slugify(bag) || 'plano'
-  const base = `${PLAN_BRANCH_PREFIX}-${slug.slice(
-    0,
-    PLAN_BRANCH_MAX_LENGTH - PLAN_BRANCH_PREFIX.length - 1,
-  )}`
+  const slug = slugify(bag) || fallback
+  const base = `${prefix}${slug.slice(0, NAMESPACE_BRANCH_MAX_LENGTH - prefix.length)}`
   if (!taken.has(base)) return base
 
   for (let n = 2; ; n += 1) {
     const suffix = `-${n}`
-    const keep = Math.max(1, PLAN_BRANCH_MAX_LENGTH - PLAN_BRANCH_PREFIX.length - 1 - suffix.length)
-    const candidate = `${PLAN_BRANCH_PREFIX}-${slug.slice(0, keep)}${suffix}`
+    const keep = Math.max(1, NAMESPACE_BRANCH_MAX_LENGTH - prefix.length - suffix.length)
+    const candidate = `${prefix}${slug.slice(0, keep)}${suffix}`
     if (!taken.has(candidate)) return candidate
   }
 }
@@ -123,3 +132,17 @@ export const opencodeLaunchDirective = ({ dir, purpose, terminal = false }) => {
   if (prompt) args.push('--prompt', prompt)
   return `launch opencode ${args.join(' ')}`
 }
+
+/**
+ * Branch for a `/plan-issue` planning worktree — see `namespaceBranchName`
+ * (namespace `plans/plan-issue-…`, fallback label `plano`).
+ */
+export const planBranchName = ({ bag = '', taken = new Set() }) =>
+  namespaceBranchName({ prefix: `${PLAN_BRANCH_PREFIX}-`, bag, taken, fallback: 'plano' })
+
+/**
+ * Branch for a neutral worktree (`pnpm worktree new`) — see
+ * `namespaceBranchName` (namespace `work/…`, fallback label `work`).
+ */
+export const workBranchName = ({ bag = '', taken = new Set() }) =>
+  namespaceBranchName({ prefix: `${WORK_BRANCH_PREFIX}/`, bag, taken, fallback: 'work' })

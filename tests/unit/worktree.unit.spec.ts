@@ -21,6 +21,8 @@ import {
   opencodeLaunchDirective,
   PLAN_BRANCH_PREFIX,
   planBranchName,
+  WORK_BRANCH_PREFIX,
+  workBranchName,
   WORKTREE_TERMINAL_ENV,
 } from '../../scripts/lib/worktree.mjs'
 
@@ -152,15 +154,99 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26)', () =>
     )
   })
 
+  it('new launches prompt-less too — "apenas conversar", no skill sent', () => {
+    expect(opencodeLaunchDirective({ dir, purpose: 'new', terminal: true })).toBe(
+      `launch opencode ${dir} --model deepseek/deepseek-v4-flash --auto`,
+    )
+  })
+
   it('pins the preset constants — changing the model is editing a constant', () => {
     expect(OPENCODE_PRESET_MODEL).toBe('deepseek/deepseek-v4-flash')
     expect(WORKTREE_TERMINAL_ENV).toBe('TEQO_WORKTREE_TERMINAL')
-    expect(OPENCODE_SKILL_COMMAND_BY_PURPOSE).toEqual({ next: '/work-issue', plan: null })
+    expect(OPENCODE_SKILL_COMMAND_BY_PURPOSE).toEqual({
+      next: '/work-issue',
+      plan: null,
+      new: null,
+    })
   })
 
   it('an unknown purpose degrades to a prompt-less launch (fail-safe direction)', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'bogus', terminal: true })).toBe(
       `launch opencode ${dir} --model deepseek/deepseek-v4-flash --auto`,
+    )
+  })
+})
+
+describe('workBranchName (per-invocation neutral worktrees)', () => {
+  it('no bag → first free sequential work/<n>', () => {
+    expect(workBranchName({})).toBe('work/1')
+    expect(workBranchName({ bag: '' })).toBe('work/1')
+    expect(workBranchName({ bag: '   ' })).toBe('work/1')
+  })
+
+  it('no bag → skips taken sequential names (parallel sessions)', () => {
+    const taken = new Set(['work/1', 'work/2'])
+    expect(workBranchName({ taken })).toBe('work/3')
+  })
+
+  it('named bag → work/<slug> when free', () => {
+    expect(workBranchName({ bag: 'Ideia solta' })).toBe('work/ideia-solta')
+  })
+
+  it('named bag whose name is taken → suffixed -2, -3, …', () => {
+    const taken = new Set(['work/ideia'])
+    expect(workBranchName({ bag: 'ideia', taken })).toBe('work/ideia-2')
+
+    taken.add('work/ideia-2')
+    expect(workBranchName({ bag: 'ideia', taken })).toBe('work/ideia-3')
+  })
+
+  it('each invocation returns a different branch for the same bag (live name)', () => {
+    const first = workBranchName({ bag: 'teste' })
+    expect(workBranchName({ bag: 'teste', taken: new Set([first]) })).toBe('work/teste-2')
+  })
+
+  it('never collides with a `next` branch nor with a `plan` branch', () => {
+    const taken = new Set(['C15-fullcalendar-em-campanha-agenda', 'plans/plan-issue-agenda'])
+    expect(WORK_BRANCH_PREFIX).toBe('work')
+    expect(`${WORK_BRANCH_PREFIX}/`).not.toMatch(/^[A-Z][A-Za-z0-9]*-/)
+    for (const bag of ['agenda', 'municipios', 'C15']) {
+      const branch = workBranchName({ bag, taken })
+      expect(branch).toMatch(/^work\//)
+      expect(branch).not.toMatch(/^[A-Z][A-Za-z0-9]*-/)
+      expect(branch).not.toMatch(/^plans\//)
+    }
+  })
+
+  it('a numeric bag shares the sequential namespace (uniform)', () => {
+    expect(workBranchName({ bag: '3' })).toBe('work/3')
+  })
+
+  it('unslugifiable bag falls back to the namespace label', () => {
+    expect(workBranchName({ bag: '!!!' })).toBe('work/work')
+  })
+
+  it('truncates long slugs within the branch budget', () => {
+    const branch = workBranchName({ bag: 'palavra '.repeat(20).trim() })
+    expect(branch.startsWith('work/')).toBe(true)
+    expect(branch.length).toBeLessThanOrEqual(60)
+    expect(branch).toBe(`work/${'palavra-'.repeat(6)}palavra`)
+  })
+
+  it('keeps the -2 suffix inside the branch budget when the base is taken', () => {
+    const bag = 'palavra '.repeat(20).trim()
+    const base = workBranchName({ bag })
+    expect(base.length).toBe(60)
+    const suffixed = workBranchName({ bag, taken: new Set([base]) })
+    expect(suffixed.length).toBe(60)
+    expect(suffixed.endsWith('-2')).toBe(true)
+    expect(suffixed).toBe(`work/${'palavra-'.repeat(6)}palav-2`)
+  })
+
+  it('planBranchName keeps its own namespace contract untouched', () => {
+    expect(planBranchName({})).toBe('plans/plan-issue-1')
+    expect(planBranchName({ bag: 'agenda', taken: new Set(['plans/plan-issue-agenda']) })).toBe(
+      'plans/plan-issue-agenda-2',
     )
   })
 })
