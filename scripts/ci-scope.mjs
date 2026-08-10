@@ -13,6 +13,7 @@ import {
   classifyBuildScope,
   classifyStaticScope,
   classifyTestScope,
+  e2eShardConfig,
   selectE2eSpecs,
 } from './lib/test-affected-core.mjs'
 
@@ -63,5 +64,6 @@ console.log(
     build: classifyBuildScope(files),
     test: classifyTestScope(files),
     e2e,
+    e2e_shards: e2eShardConfig(e2e.mode),
   }),
 )

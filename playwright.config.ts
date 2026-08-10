@@ -27,6 +27,17 @@ const workers = workersOverride === undefined ? 2 : Number(workersOverride)
 if (!Number.isInteger(workers) || workers < 2) {
   throw new Error('PLAYWRIGHT_WORKERS must be an integer of at least 2.')
 }
+/*
+ * Prod mode (CI or E2E_PROD=1) serves the PRODUCTION build, where no dev-mode
+ * compile exists. The `setup` project (route prewarm) and the project chain
+ * (setup → campaign → frontend → admin) exist to stabilize dev-mode cold
+ * compiles; against a production build they are pure cost — measured 2026-08-10
+ * (OPS34): the 25 prewarm requests plus the 4-test frontend/admin tail behind
+ * the ~30-file campaign family. Prod mode therefore drops the setup project and
+ * the dependencies so all families run in parallel; CI shards the suite across
+ * runners instead (ci.yml / ci-pr.yml pass `--shard`). Dev mode is unchanged.
+ */
+const isProdMode = Boolean(process.env.CI) || process.env.E2E_PROD === '1'
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -67,27 +78,37 @@ export default defineConfig({
     timeout: 10_000,
   },
   projects: [
-    {
-      name: 'setup',
-      testMatch: /setup\.e2e\.spec\.ts/,
-      use: { ...devices['Desktop Chrome'], channel: 'chromium' },
-    },
+    /*
+     * `setup` prewarms shared Next route bundles against the dev server's cold
+     * compile cache. In prod mode there is no compile to prewarm and the whole
+     * chain is pure cost (see `isProdMode` above), so the setup project only
+     * exists in dev; an unmatched spec file is simply not collected.
+     */
+    ...(isProdMode
+      ? []
+      : [
+          {
+            name: 'setup',
+            testMatch: /setup\.e2e\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'], channel: 'chromium' },
+          },
+        ]),
     {
       name: 'campaign',
       testMatch: /campaign.*\.e2e\.spec\.ts/,
-      dependencies: ['setup'],
+      dependencies: isProdMode ? [] : ['setup'],
       use: { ...devices['Desktop Chrome'], channel: 'chromium' },
     },
     {
       name: 'frontend',
       testMatch: /frontend\.e2e\.spec\.ts/,
-      dependencies: ['campaign'],
+      dependencies: isProdMode ? [] : ['campaign'],
       use: { ...devices['Desktop Chrome'], channel: 'chromium' },
     },
     {
       name: 'admin',
       testMatch: /admin\.e2e\.spec\.ts/,
-      dependencies: ['frontend'],
+      dependencies: isProdMode ? [] : ['frontend'],
       fullyParallel: false,
       use: { ...devices['Desktop Chrome'], channel: 'chromium' },
     },
@@ -102,7 +123,7 @@ export default defineConfig({
      * (CampaignListSheetProvider, 2026-07-30). Locally `pnpm dev` stays the
      * default: no build wait and hot reload while writing specs.
      */
-    command: process.env.CI || process.env.E2E_PROD === '1' ? 'pnpm start' : 'pnpm dev',
+    command: isProdMode ? 'pnpm start' : 'pnpm dev',
     /*
      * Never reuse a dev server a developer may already have running against the
      * production database — always start a fresh one bound to the test DB.
@@ -111,7 +132,7 @@ export default defineConfig({
     url: baseURL,
     // Local-only tolerance for parallel-worktree load (machine load ~60); CI
     // boots the production build and keeps the usual 60s budget.
-    timeout: process.env.CI ? undefined : 240_000,
+    timeout: isProdMode ? undefined : 240_000,
     /* Force the isolated test database into the server process. */
     env: {
       DATABASE_URL: process.env.DATABASE_URL as string,
