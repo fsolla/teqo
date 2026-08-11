@@ -88,6 +88,41 @@ export const restoreConsentRows = async (
   }
 }
 
+/**
+ * Keys the consent fixtures rename the canonical stable row to while a test
+ * exercises the fail-closed "key absent" state. A run aborted between the
+ * rename commit and the fixture restore leaves the canonical key absent and an
+ * orphan row holding one of these names; without a purge, the next run
+ * snapshots the key as absent, creates a fresh row, and the same rename then
+ * hits the UNIQUE `consent_key_idx` — the pollution is self-sustaining (D10 F1).
+ */
+const ORPHANED_CONSENT_RENAME_KEYS = [
+  'temporarily-renamed-consent',
+  'chave-renomeada',
+  'chave-temporariamente-ausente',
+] as const
+
+/**
+ * Deletes orphaned consent rows left by an aborted run: the explicit temporary
+ * rename keys. MUST be called while holding the lease key's EXCLUSIVE lease.
+ * The 3 names are produced by NO live test anymore (the fail-closed rename
+ * tests vacate the canonical row to PRIVATE keys, D10 review finding P1-1), so
+ * a row carrying one of them is guaranteed orphaned — the only producer left
+ * is the self-heal repro's own plant, which runs under this key's exclusive
+ * lease immediately before the healing fixture.
+ */
+export const purgeOrphanedConsentRenames = async (
+  execute: (query: ReturnType<typeof sql>) => Promise<unknown>,
+): Promise<void> => {
+  await execute(sql`
+    DELETE FROM "consent"
+    WHERE "key" IN (${sql.join(
+      ORPHANED_CONSENT_RENAME_KEYS.map((key) => sql`${key}`),
+      sql`, `,
+    )})
+  `)
+}
+
 export const CAMPAIGN_INVITE_CONSENT_LEASE_KEY = 'campaign-invite-consent'
 export const SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY = 'supporter-registration-consent'
 export const SUPPORTER_VOTE_INTENTION_CONSENT_LEASE_KEY = 'supporter-vote-intention-consent'
@@ -104,7 +139,7 @@ export type LeasedConsentFixture = {
   consentKey: string
   leaseKey: string
 }
-const fixtureConsentText: Consent['text'] = {
+export const fixtureConsentText: Consent['text'] = {
   root: {
     type: 'root',
     children: [
@@ -385,7 +420,7 @@ const withDatabaseLease = async <Result>(
   }
 }
 
-const withTestDatabaseLease = async <Result>(
+export const withExclusiveTestDatabaseLease = async <Result>(
   payload: Payload,
   leaseKey: string,
   operation: () => Promise<Result>,
@@ -394,7 +429,7 @@ const withTestDatabaseLease = async <Result>(
     payload,
     leaseKey,
     acquireTestDatabaseLease,
-    'The leased operation and database lease release both failed.',
+    'The exclusive leased operation and database lease release both failed.',
     operation,
   )
 
@@ -415,7 +450,13 @@ export const ensureLeasedConsent = async (
   payload: Payload,
   { consentKey, leaseKey }: LeasedConsentFixture,
 ): Promise<Consent> =>
-  withTestDatabaseLease(payload, leaseKey, async () => {
+  withExclusiveTestDatabaseLease(payload, leaseKey, async () => {
+    // D10 F1: a run aborted mid-rename leaves an orphan row holding a
+    // temporary name and the canonical key absent; the purge clears it so the
+    // ensure below can recreate the canonical row without the next rename
+    // hitting the UNIQUE constraint. Autocommit is safe: we hold the
+    // exclusive lease, so no live renamer can be mid-flight.
+    await purgeOrphanedConsentRenames((query) => payload.db.drizzle.execute(query))
     const existing = await payload.find({
       collection: 'consent',
       where: { key: { equals: consentKey } },
@@ -440,6 +481,17 @@ export const withLeasedConsent = async <Result>(
   { consentKey, leaseKey }: LeasedConsentFixture,
   operation: (consent: Consent) => Promise<Result>,
 ): Promise<Result> => {
+  // D10 F2 (measurement-driven): the operation holds the SHARED consent lease.
+  // Holding exclusive across the operation serialized every writer on the key
+  // into a 17-waiter queue and a 15s cascade under 6 workers; running the
+  // operation UNLEASED let a parallel fixture's created-row cleanup delete the
+  // canonical row out from under a consumer (FK violation). Shared is the
+  // stable middle: consumers never serialize against each other (their writes
+  // touch disjoint per-test rows, so no lock-order cycle is constructible —
+  // every advisory holder acquires at most one lease at a time, and Onda0
+  // acquires its three keys in a fixed order) and the exclusive
+  // missing-consent window blocks every consumer while the canonical key is
+  // absent, so no consumer observes the transient state.
   for (;;) {
     await ensureLeasedConsent(payload, { consentKey, leaseKey })
     const lease = await beginTestDatabaseLease(payload, leaseKey, 'shared')
@@ -500,6 +552,13 @@ export const withMissingInviteConsentFixture = async <Result>(
   let setupError: unknown
   try {
     await faults.beforeSnapshotSetup?.()
+    // D10 F1: clear orphaned renames left by an aborted run BEFORE snapshotting
+    // (we hold the exclusive setup lease, so no live renamer exists). The
+    // DELETE runs in autocommit, NOT in the lease transaction: an uncommitted
+    // delete would keep its row lock and the fixture's own operation would
+    // self-deadlock when it re-uses the purged key (observed on the first D10
+    // implementation).
+    await purgeOrphanedConsentRenames((query) => payload.db.drizzle.execute(query))
     snapshot = rowsFrom<ConsentSnapshot>(
       await setupLease.transaction.execute(sql`
         SELECT "id", "key", "text", "updated_at", "created_at"
@@ -545,21 +604,23 @@ export const withMissingInviteConsentFixture = async <Result>(
   }
   if (setupError !== undefined) throw setupError
 
-  // Serialize the operation window under a SHARED lease (same precedent as
-  // onda0Provision's leases on the stable keys): parallel spec files must
-  // never observe the committed-absent state, or their ensure-then-read
-  // helpers create an ephemeral row that this restore deletes out from under
-  // them. Shared is enough — the ephemeral-row creators (ensures and other
-  // fixtures) are all EXCLUSIVE holders, which a shared window blocks without
-  // stalling the harmless shared readers behind it (the 15s test budget
-  // stayed tight under load with an exclusive window).
+  // Serialize the operation window under an EXCLUSIVE lease (D10 F2,
+  // measurement-driven change from D9's shared window): every consumer of the
+  // key — the shared `withLeasedConsent` holders AND the exclusive fixtures —
+  // is blocked while the canonical key is committed-absent, so no consumer can
+  // observe the transient absence or read/reference a row the restore deletes
+  // out from under it (baseline load runs flaked 3/4 with exactly this class:
+  // 'Consentimento ainda não configurado' in redeem tests and
+  // `consent_id` FK violations). The window is short (a fail-closed action or
+  // a no-op), so the queueing behind it is bounded — the D9-era 15s budget
+  // blowout happened with the Onda0 provision holding EXCLUSIVE for
+  // multi-second writes; since D10 the provision holds exclusive too, but
+  // only for ~500ms of short upserts.
   // `serializeWindow: false` keeps the unleased window for operations that
   // deliberately exercise concurrent consent writers. NOTE: with the window
   // leased, the operation must NOT acquire the same lease itself (e.g. via
   // ensureLeasedConsent on the same key) — that would self-deadlock.
-  const windowLease = serializeWindow
-    ? await beginTestDatabaseLease(payload, leaseKey, 'shared')
-    : undefined
+  const windowLease = serializeWindow ? await beginTestDatabaseLease(payload, leaseKey) : undefined
 
   // Close the gap between the setup's committed delete and this acquisition:
   // a writer that queued during the setup (advisory locks grant FIFO) can
@@ -653,6 +714,12 @@ export const withMutableConsentFixture = async <Result>(
   let operationError: unknown
 
   try {
+    // D10 F1: clear orphaned renames left by an aborted run BEFORE snapshotting
+    // (we hold the exclusive lease, so no live renamer exists). Autocommit,
+    // never inside the lease transaction — an uncommitted delete would keep
+    // its row lock and the fixture's own operation would self-deadlock when it
+    // re-uses the purged key.
+    await purgeOrphanedConsentRenames((query) => payload.db.drizzle.execute(query))
     snapshot = rowsFrom<ConsentSnapshot>(
       await lease.transaction.execute(sql`
         SELECT "id", "key", "text", "updated_at", "created_at"

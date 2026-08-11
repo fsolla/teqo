@@ -1611,7 +1611,7 @@ describe('campaign invite domain', () => {
       await payload.update({
         collection: 'consent',
         id: consent.id,
-        data: { key: 'chave-renomeada' },
+        data: { key: `consent-vacated-${consent.id}` },
       })
 
       await expect(
@@ -1675,7 +1675,7 @@ describe('campaign invite domain', () => {
       await payload.update({
         collection: 'consent',
         id: consent.id,
-        data: { key: 'chave-temporariamente-ausente' },
+        data: { key: `consent-vacated-${consent.id}` },
       })
       const submission = {
         token: invite.token,

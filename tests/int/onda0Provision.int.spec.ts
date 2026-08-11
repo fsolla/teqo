@@ -20,6 +20,7 @@ import {
   SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
   SUPPORTER_VOTE_INTENTION_CONSENT_LEASE_KEY,
   restoreConsentRows,
+  withExclusiveTestDatabaseLease,
   withSharedTestDatabaseLease,
   type ConsentSnapshot,
 } from '../helpers/testDatabaseLease'
@@ -40,22 +41,18 @@ describe('Onda 0 provision (integration)', () => {
   })
 
   it('upserts consent keys and publishes privacy-policy idempotently', async () => {
-    // Shared leases on the stable keys other spec files exercise: the
-    // provision UPSERTS the shared rows and the spec below REMOVES them, so
-    // the writes must never interleave a parallel file's reads of the same
-    // rows (D9 flake). SHARED — not exclusive — because this spec only
-    // touches the four canonical keys and an exclusive holder here widened
-    // the consent-lease deadlock surface with the invite-domain writers
-    // (cascade under parallel load). The missing-consent fail-closed paths in
-    // other files now serialize their own windows under the lease, and the
-    // down-test below restores the removed rows with their original ids, so
-    // the shared rows are never observed absent or re-created with a new id.
-    // (The fourth Onda0 key, campanha-notificacoes-push, has no lease
-    // constant because no spec file writes it today; the down-test below
-    // still restores it.)
-    await withSharedTestDatabaseLease(payload, CAMPAIGN_INVITE_CONSENT_LEASE_KEY, () =>
-      withSharedTestDatabaseLease(payload, SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY, () =>
-        withSharedTestDatabaseLease(
+    // EXCLUSIVE leases on the stable keys other spec files exercise (D10 F2):
+    // the provision REWRITES the shared rows' texts, and a consumer that reads
+    // the canonical consent between two of those writes would assert against a
+    // text that changed under it (observed: campaignInviteUi's preview
+    // `requiresConsent`/`consentData` mismatch). Exclusive serializes every
+    // consumer for the ~500ms of the provision — bounded, unlike the pre-D10
+    // cascade where the ONDA0 exclusive sat behind a queue of EXCLUSIVE
+    // writers. The down-test below restores the removed rows with their
+    // original ids atomically, so the shared rows are never observed absent.
+    await withExclusiveTestDatabaseLease(payload, CAMPAIGN_INVITE_CONSENT_LEASE_KEY, () =>
+      withExclusiveTestDatabaseLease(payload, SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY, () =>
+        withExclusiveTestDatabaseLease(
           payload,
           SUPPORTER_VOTE_INTENTION_CONSENT_LEASE_KEY,
           async () => {
@@ -113,34 +110,54 @@ describe('Onda 0 provision (integration)', () => {
             expect(privacyRows.rows[0]?.published).toBe(true)
             expect(privacyRows.rows[0]?.body).toBeTruthy()
 
-            await removeOnda0ConsentAndPrivacyDb(db)
+            // The down-migration must stay invisible to parallel spec files:
+            // delete + count + restore run in ONE transaction, so no consumer
+            // ever observes the stable keys committed-absent or re-created
+            // with a new id (D10 F2 — the non-atomic version flaked load runs
+            // with `consent_id` FK violations and fail-closed reads).
+            const transactionID = await payload.db.beginTransaction()
+            if (transactionID === null) {
+              throw new Error('Expected a PostgreSQL transaction for the Onda0 down.')
+            }
+            const transactionDb = payload.db.sessions?.[String(transactionID)]?.db as
+              | typeof db
+              | undefined
+            if (!transactionDb) {
+              await payload.db.rollbackTransaction(transactionID).catch(() => undefined)
+              throw new Error('The Onda0 down transaction session is unavailable.')
+            }
+            try {
+              await removeOnda0ConsentAndPrivacyDb(transactionDb)
 
-            const consentAfterDown = await db.execute(sql`
-              SELECT count(*)::integer AS count
-              FROM "consent"
-              WHERE "key" IN (${sql.join(
-                ONDA0_CONSENT_KEY_LIST.map((key) => sql`${key}`),
-                sql`, `,
-              )})
-            `)
-            expect(consentAfterDown.rows[0]?.count).toBe(0)
+              const consentAfterDown = await transactionDb.execute(sql`
+                SELECT count(*)::integer AS count
+                FROM "consent"
+                WHERE "key" IN (${sql.join(
+                  ONDA0_CONSENT_KEY_LIST.map((key) => sql`${key}`),
+                  sql`, `,
+                )})
+              `)
+              expect(consentAfterDown.rows[0]?.count).toBe(0)
 
-            const privacyAfterDown = await db.execute(sql`
-              SELECT "published"
-              FROM "privacy_policy"
-              LIMIT 1
-            `)
-            expect(privacyAfterDown.rows[0]?.published).toBe(false)
+              const privacyAfterDown = await transactionDb.execute(sql`
+                SELECT "published"
+                FROM "privacy_policy"
+                LIMIT 1
+              `)
+              expect(privacyAfterDown.rows[0]?.published).toBe(false)
 
-            // The down-migration must stay a no-op for parallel spec files:
-            // restoring the removed rows with their ORIGINAL ids (inside the
-            // exclusive lease, invisible to them) keeps the stable keys
-            // present with unchanged ids, so no other file's restore assertion
-            // can observe the absence (D9 flake).
-            await restoreConsentRows(
-              (query) => db.execute(query),
-              consentRows.rows as ConsentSnapshot[],
-            )
+              // Restore the removed rows with their ORIGINAL ids inside the
+              // same transaction — the commit publishes delete+restore as one
+              // atomic state change.
+              await restoreConsentRows(
+                (query) => transactionDb.execute(query),
+                consentRows.rows as ConsentSnapshot[],
+              )
+              await payload.db.commitTransaction(transactionID)
+            } catch (error) {
+              await payload.db.rollbackTransaction(transactionID).catch(() => undefined)
+              throw error
+            }
           },
         ),
       ),
