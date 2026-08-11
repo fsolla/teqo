@@ -28,9 +28,15 @@ export const submitWhatsapp = async (input: WhatsAppFormInput) => {
   }
 
   try {
+    const { phone, ...contactFields } = contactInput
     const contact = await payload.create({
       collection: 'contact',
-      data: contactInput,
+      data: {
+        ...contactFields,
+        // The public forms keep a single phone input; the ficha stores the
+        // phones array with that number as primary (C112).
+        phones: phone ? [{ value: phone }] : [],
+      },
       req: { transactionID },
     })
 

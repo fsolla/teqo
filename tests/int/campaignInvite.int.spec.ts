@@ -194,7 +194,6 @@ const createInviteLeadershipGraph = async (
 ) => {
   const contact = await campaignFixtures().createContact({
     name: campaignFixtures().value('Liderança convite'),
-    phone: campaignFixtures().phone(),
   })
   const leadership = await campaignFixtures().createLeadership({
     contact,
@@ -960,7 +959,7 @@ describe('campaign invite domain', () => {
       })
       expect(updatedContact).toMatchObject({
         name: 'Maria Confirmada',
-        phone: submission.phone,
+        phones: expect.arrayContaining([expect.objectContaining({ value: submission.phone })]),
         email: 'confirmada@example.com',
         gender: 'feminino',
       })
@@ -1063,10 +1062,14 @@ describe('campaign invite domain', () => {
 
       await expect(
         payload.findByID({ collection: 'contact', id: target.contact.id, depth: 0 }),
-      ).resolves.toMatchObject({ phone: owner.contact.phone })
+      ).resolves.toMatchObject({
+        phones: expect.arrayContaining([expect.objectContaining({ value: owner.contact.phone })]),
+      })
       await expect(
         payload.findByID({ collection: 'contact', id: owner.contact.id, depth: 0 }),
-      ).resolves.toMatchObject({ phone: owner.contact.phone })
+      ).resolves.toMatchObject({
+        phones: expect.arrayContaining([expect.objectContaining({ value: owner.contact.phone })]),
+      })
     },
   )
 
@@ -1114,7 +1117,11 @@ describe('campaign invite domain', () => {
           payload.findByID({ collection: 'contact', id, depth: 0 }),
         ),
       )
-      expect(contacts.every(({ phone }) => phone === targetPhone)).toBe(true)
+      expect(
+        contacts.every((contact) =>
+          (contact.phones ?? []).some((entry) => entry.value === targetPhone),
+        ),
+      ).toBe(true)
     },
   )
 
@@ -1156,8 +1163,12 @@ describe('campaign invite domain', () => {
         payload.findByID({ collection: 'contact', id: first.contact.id, depth: 0 }),
         payload.findByID({ collection: 'contact', id: second.contact.id, depth: 0 }),
       ])
-      expect(firstContact.phone).toBe(second.contact.phone)
-      expect(secondContact.phone).toBe(first.contact.phone)
+      expect(firstContact.phones?.map((entry) => entry.value)).toEqual(
+        expect.arrayContaining([second.contact.phone]),
+      )
+      expect(secondContact.phones?.map((entry) => entry.value)).toEqual(
+        expect.arrayContaining([first.contact.phone]),
+      )
     },
   )
 

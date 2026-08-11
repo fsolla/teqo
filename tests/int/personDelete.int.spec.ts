@@ -130,7 +130,8 @@ describe('C100 — apagar pessoa (manifest + cascata)', () => {
         overrideAccess: true,
       })
       expect(remaining.name).toBe('Titular removido')
-      expect(remaining.phone).toMatch(/^999\d{8}$/)
+      expect(remaining.phones?.[0]?.value).toMatch(/^999\d{8}$/)
+      expect(remaining.phones).toHaveLength(1)
       expect(remaining.email).toBeNull()
       expect(remaining.city).toBeNull()
     } finally {

@@ -217,7 +217,7 @@ describe('campaign integration fixtures', () => {
       collection: 'contact',
       data: {
         name: fixtures.value('Contato criado pelo servidor E2E'),
-        phone: fixtures.phone(),
+        phones: [{ value: fixtures.phone() }],
         state: 'BA',
         city: 'Salvador',
       },
@@ -276,14 +276,14 @@ describe('campaign integration fixtures', () => {
   const findOrCreateSentinelContact = async (name: string, phone: string) => {
     const existing = await payload.find({
       collection: 'contact',
-      where: { phone: { equals: phone } },
+      where: { 'phones.value': { equals: phone } },
       depth: 0,
       limit: 1,
     })
     if (existing.docs[0]) return existing.docs[0]
     return payload.create({
       collection: 'contact',
-      data: { name, phone, state: 'BA', city: 'Salvador' },
+      data: { name, phones: [{ value: phone }], state: 'BA', city: 'Salvador' },
       depth: 0,
     })
   }

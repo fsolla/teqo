@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { primaryPhoneOf } from '@/lib/phone'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 import { isSupportStatus, type SupportStatus } from '@/lib/schemas/leadership'
 import type { CampaignUser, Contact, Leadership, StateDeputy } from '@/payload-types'
@@ -293,7 +294,7 @@ const contactSummary = (contact: Contact | number | null | undefined): ContactSu
     return {
       id: contact.id,
       name: contact.name ?? 'Contato',
-      phone: contact.phone ?? null,
+      phone: primaryPhoneOf(contact.phones),
       email: contact.email ?? null,
       city: contact.city ?? null,
     }

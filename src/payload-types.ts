@@ -298,7 +298,12 @@ export interface Contact {
   id: number;
   name: string;
   email?: string | null;
-  phone?: string | null;
+  phones?:
+    | {
+        value?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   gender?: ('feminino' | 'masculino' | 'outro' | 'nao_informado') | null;
   state:
     | 'AC'
@@ -1977,7 +1982,12 @@ export interface PetitionSelect<T extends boolean = true> {
 export interface ContactSelect<T extends boolean = true> {
   name?: T;
   email?: T;
-  phone?: T;
+  phones?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
   gender?: T;
   state?: T;
   city?: T;

@@ -3,6 +3,7 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import { CREATE_CAMPAIGN_INVITE_MISSING_CONSENT_MESSAGE } from '@/lib/campaignInviteClient'
+import { primaryPhoneOf } from '@/lib/phone'
 import { requireRelationshipId } from '@/lib/relationship'
 import { campaignInviteCreateSchema, type CampaignInviteCreateInput } from '@/lib/schemas/invite'
 import type { CampaignUser } from '@/payload-types'
@@ -78,14 +79,15 @@ export const createCampaignInviteForActor = async (
         overrideAccess: true,
         req,
       })
-      if (!contact.phone) {
+      const primaryPhone = primaryPhoneOf(contact.phones)
+      if (!primaryPhone) {
         throw new Error('Cadastre o celular da liderança antes de gerar o convite.')
       }
       const inviteUrl = `${inviteBaseURL}/campanha/convite/${generated.token}`
       return {
         inviteUrl,
         whatsappUrl: buildCampaignInviteWhatsAppLink({
-          phone: contact.phone,
+          phone: primaryPhone,
           recipientName: contact.name,
           senderName: currentActor.name,
           inviteUrl,

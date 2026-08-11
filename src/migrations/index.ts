@@ -47,6 +47,7 @@ import * as migration_20260808_134911_add_calendar_feed from './20260808_134911_
 import * as migration_20260808_184113_remodel_activity_responsible from './20260808_184113_remodel_activity_responsible';
 import * as migration_20260809_204728_add_campaign_user_contact_and_leadership_advisors from './20260809_204728_add_campaign_user_contact_and_leadership_advisors';
 import * as migration_20260810_010844_add_activity_all_day from './20260810_010844_add_activity_all_day';
+import * as migration_20260811_111828_add_contact_phones_array from './20260811_111828_add_contact_phones_array';
 
 export const migrations = [
   {
@@ -293,5 +294,10 @@ export const migrations = [
     up: migration_20260810_010844_add_activity_all_day.up,
     down: migration_20260810_010844_add_activity_all_day.down,
     name: '20260810_010844_add_activity_all_day',
+  },
+  {
+    up: migration_20260811_111828_add_contact_phones_array.up,
+    down: migration_20260811_111828_add_contact_phones_array.down,
+    name: '20260811_111828_add_contact_phones_array'
   },
 ];

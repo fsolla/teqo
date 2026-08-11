@@ -4,8 +4,12 @@ import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
 import { SUPPORTER_REGISTRATION_CONSENT_MISSING_MESSAGE } from '@/lib/campaignConsentKeys'
-import { checkboxFormValue, nullableRelationshipFormValue, optionalFormText } from '@/lib/formData'
-import { sanitizeBrazilianPhoneInput } from '@/lib/phone'
+import {
+  checkboxFormValue,
+  nullableRelationshipFormValue,
+  optionalFormText,
+  repeatedPhoneFormValues,
+} from '@/lib/formData'
 import {
   LEADER_SUPPORTER_ONLY_MESSAGE,
   leaderSupporterCreateSchema,
@@ -32,7 +36,7 @@ export type LeaderSupporterFormState = {
 
 type LeaderSupporterFormValues = {
   name?: string
-  phone?: string
+  phones?: string[]
   city?: string
   municipality?: string
 }
@@ -89,7 +93,7 @@ export const createLeaderSupporterRecord = async (
         const { contactID, reused } = await findOrCreateContactByPhone({
           payload,
           req,
-          phone: data.phone,
+          phones: data.phones,
           name: data.name,
           city: data.city,
         })
@@ -133,18 +137,17 @@ export const createLeaderSupporterFormAction = async (
 ): Promise<LeaderSupporterFormState> => {
   const values: LeaderSupporterFormValues = {
     name: optionalFormText(formData, 'name'),
-    phone: optionalFormText(formData, 'phone'),
+    phones: repeatedPhoneFormValues(formData, 'phones'),
     city: optionalFormText(formData, 'city'),
     municipality: optionalFormText(formData, 'municipality'),
   }
 
   return runCampaignFormAction({
     execute: async () => {
-      const phone = sanitizeBrazilianPhoneInput(values.phone ?? '')
       const municipality = nullableRelationshipFormValue(formData, 'municipality')
       const input = leaderSupporterCreateSchema.parse({
         name: values.name ?? '',
-        phone,
+        phones: values.phones ?? [],
         city: values.city,
         municipality,
         consentAccepted: checkboxFormValue(formData, 'consentAccepted') ? true : undefined,

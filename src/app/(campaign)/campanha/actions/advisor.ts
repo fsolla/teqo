@@ -23,6 +23,7 @@ import {
   type AdvisorPasswordResetInput,
   type AdvisorProfileUpdateInput,
 } from '@/lib/schemas/advisor'
+import { contactPhonesSchema } from '@/lib/schemas/contact'
 import type { CampaignUser } from '@/payload-types'
 import {
   getCampaignActionContext,
@@ -161,6 +162,29 @@ export const updateAdvisorProfile = async (input: AdvisorProfileUpdateInput) => 
   const updated = await updateAdvisorProfileRecord(payload, actor, input)
   revalidateAdvisorPaths(updated.id)
   return updated
+}
+
+/**
+ * C112 — write the advisor's ficha (Contact) phone list. The advisor page is
+ * unrestricted-staff gated; the ficha is the person's record, distinct from
+ * the account's single channel phone.
+ */
+export const updateAdvisorContactFicha = async (input: { contactId: number; phones: string[] }) => {
+  const { payload, actor } = await getCampaignActionContext()
+  await reloadUnrestrictedActor(payload, actor, ADVISOR_UNRESTRICTED_MESSAGE)
+  // Same zod gate as the other ficha editors: valid mobiles, no duplicates.
+  const parsed = contactPhonesSchema.parse(input.phones)
+
+  await payload.update({
+    collection: 'contact',
+    id: input.contactId,
+    data: { phones: parsed.map((value) => ({ value })) },
+    depth: 0,
+    // Intentional admin bypass: the unrestricted route gate above established
+    // staff scope; the ficha is the advisor's own normalized Contact.
+    overrideAccess: true,
+  })
+  revalidatePath('/campanha/assessores', 'page')
 }
 
 export const setAdvisorMunicipalitiesBatchRecord = async (

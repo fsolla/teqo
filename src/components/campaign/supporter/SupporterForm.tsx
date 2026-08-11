@@ -5,10 +5,10 @@ import { useActionState, useState } from 'react'
 
 import type { SupporterFormState } from '@/app/(campaign)/campanha/(app)/apoiadores/novo/formActions'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
+import { PhonesFieldEditor } from '@/components/campaign/shared/PhonesFieldEditor'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { StrictCombobox } from '@/components/campaign/shared/StrictCombobox'
 import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
-import { FormattedInput } from '@/components/FormattedInput'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
@@ -24,7 +24,6 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/ToggleGroup'
-import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/lib/phone'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
 import { errorProps as buildErrorProps, fieldError } from '@/utilities/campaignFormFields'
 import { supporterVoteIntentionLabels } from '@/utilities/supporter/supporterUi'
@@ -118,7 +117,6 @@ export const SupporterForm = ({
   })
 
   const nameField = errorProps(state.fieldErrors, 'name')
-  const phoneField = errorProps(state.fieldErrors, 'phone')
   const emailField = errorProps(state.fieldErrors, 'email')
   const cityField = errorProps(state.fieldErrors, 'city')
   const municipalityField = errorProps(state.fieldErrors, 'municipality')
@@ -140,7 +138,6 @@ export const SupporterForm = ({
           <Input
             id="supporter-name"
             name="name"
-            required
             minLength={2}
             defaultValue={values?.name}
             autoComplete="name"
@@ -153,25 +150,12 @@ export const SupporterForm = ({
           ) : null}
         </Field>
 
-        <Field data-invalid={phoneField.invalid}>
-          <FieldLabel htmlFor="supporter-phone">Celular *</FieldLabel>
-          <FormattedInput
-            id="supporter-phone"
-            name="phone"
-            required
-            inputMode="tel"
-            autoComplete="tel"
-            defaultValue={values?.phone ? formatBrazilianPhoneInput(values.phone) : ''}
-            format={formatBrazilianPhoneInput}
-            sanitize={sanitizeBrazilianPhoneInput}
-            aria-invalid={phoneField.invalid}
-            aria-describedby={phoneField.describedBy}
-            className="min-h-11 rounded-[6px]"
-          />
-          {phoneField.error ? (
-            <FieldError id="supporter-phone-error">{phoneField.error}</FieldError>
-          ) : null}
-        </Field>
+        <PhonesFieldEditor
+          name="phones"
+          minRows={1}
+          label="Celulares (o primeiro é o principal)"
+          error={fieldError(state.fieldErrors, 'phones')}
+        />
 
         <Field data-invalid={emailField.invalid}>
           <FieldLabel htmlFor="supporter-email">E-mail</FieldLabel>

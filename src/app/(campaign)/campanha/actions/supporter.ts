@@ -1,8 +1,10 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
-import { requireRelationshipId } from '@/lib/relationship'
+import { relationshipId, requireRelationshipId } from '@/lib/relationship'
+import { contactFieldUpdateSchema, type ContactFieldUpdateInput } from '@/lib/schemas/contact'
 import {
   SUPPORTER_DUPLICATE_MESSAGE,
   SUPPORTER_STAFF_MESSAGE,
@@ -36,6 +38,8 @@ const getFreshStaffActor = (
   actor: CampaignUser,
   req?: PayloadTransactionRequest,
 ): Promise<CampaignUser> => reloadStaffActor(payload, actor, SUPPORTER_STAFF_MESSAGE, req)
+
+const INVALID_FIELD_MESSAGE = 'Campo inválido.'
 
 const assertMunicipalityManagement = async (
   payload: Payload,
@@ -92,7 +96,7 @@ const createValidatedSupporter = async (payload: Payload, actor: CampaignUser, i
         const { contactID, reused } = await findOrCreateContactByPhone({
           payload,
           req,
-          phone: data.phone,
+          phones: data.phones,
           name: data.name,
           email: data.email,
           city: data.city,
@@ -181,6 +185,54 @@ export const setSupporterVoteIntentionRecord = async (
 export const setSupporterVoteIntention = async (input: unknown) => {
   const { payload, actor } = await getCampaignActionContext()
   return setSupporterVoteIntentionRecord(payload, actor, input)
+}
+
+/**
+ * C112 — the supporter ficha's phone list editor. Staff only (same supporter
+ * access gate as every supporter write); only the `phones` branch of the
+ * shared per-field schema is honored.
+ */
+export const updateSupporterContactRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: ContactFieldUpdateInput,
+) => {
+  const data = contactFieldUpdateSchema.parse(input)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await getFreshStaffActor(payload, actor, req)
+      const supporter = await assertCanManageSupporter(payload, currentActor, data.id, req)
+
+      const contactID = relationshipId(supporter.contact)
+      if (contactID === null) throw new Error(SUPPORTER_STAFF_MESSAGE)
+
+      if (data.field !== 'phones') {
+        throw new Error(INVALID_FIELD_MESSAGE)
+      }
+
+      // bypass: the supporter row access above established staff scope.
+      await payload.update({
+        collection: 'contact',
+        id: contactID,
+        data: { phones: data.phones.map((value) => ({ value })) },
+        depth: 0,
+        overrideAccess: true,
+        req,
+      })
+
+      return supporter
+    },
+    { beginFailureMessage: 'Não foi possível atualizar o contato do apoiador.' },
+  )
+}
+
+export const updateSupporterContact = async (input: ContactFieldUpdateInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const supporter = await updateSupporterContactRecord(payload, actor, input)
+  revalidatePath(`/campanha/apoiadores/${supporter.id}`, 'page')
+  return supporter
 }
 
 // ---------------------------------------------------------------------------
@@ -275,7 +327,9 @@ const anonymizeContact = async (
     data: {
       name: 'Titular removido',
       email: null,
-      phone: tombstonePhone,
+      // The tombstone REPLACES every number — the remaining phones are the
+      // person's PII and must not survive the anonymization (C112).
+      phones: [{ value: tombstonePhone }],
       gender: null,
       city: null,
       postalCode: null,

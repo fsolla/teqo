@@ -1,3 +1,4 @@
+import { primaryPhoneOf } from '@/lib/phone'
 import { isPopulatedRelationship } from '@/lib/relationship'
 import type { Contact, Petition } from '@/payload-types'
 import type { ToCSVFunction } from '@payloadcms/plugin-import-export/types'
@@ -27,7 +28,7 @@ export const signatureContactToCSV: ToCSVFunction = ({ value, row }) => {
 
   row.contact_name = value.name
   row.contact_email = value.email ?? ''
-  row.contact_phone = value.phone ?? ''
+  row.contact_phone = primaryPhoneOf(value.phones) ?? ''
   row.contact_state = value.state ?? ''
   row.contact_city = value.city ?? ''
   return undefined

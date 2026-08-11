@@ -152,7 +152,7 @@ describe('B155 — lideranças na lista de municípios (leitura reversa + opçõ
       depth: 0,
       overrideAccess: true,
     })
-    expect(contact.phone).toBeNull()
+    expect(contact.phones).toEqual([])
 
     const { leadershipIDsByMunicipality, summariesById } =
       await loadMunicipalityLeadershipSummaries(payload, coordinator, [municipality.id])
@@ -170,13 +170,13 @@ describe('B155 — lideranças na lista de municípios (leitura reversa + opçõ
     const first = await createLeadershipRecord(payload, coordinator, {
       municipalities: [municipality.id],
       name: 'Nome Original',
-      phone,
+      phones: [phone],
     })
     await expect(
       createLeadershipRecord(payload, coordinator, {
         municipalities: [municipality.id],
         name: 'Outro Nome',
-        phone,
+        phones: [phone],
       }),
     ).rejects.toThrow('Esta pessoa já está cadastrada como liderança')
 

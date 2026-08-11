@@ -29,7 +29,6 @@ const createEngagedPhoneAccessGraph = async (
 ) => {
   const contact = await fixtures.createContact({
     name: fixtures.value('Contato telefone'),
-    phone: fixtures.phone(),
   })
   return fixtures.createLeadership({
     contact,

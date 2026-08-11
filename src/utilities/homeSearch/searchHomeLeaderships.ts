@@ -14,6 +14,7 @@ import {
   compareHomeSearchNameRelevance,
   normalizeHomeSearchName,
 } from '@/lib/homeSearchMunicipalityMatch'
+import { primaryPhoneOf } from '@/lib/phone'
 import { populatedContactName } from '@/lib/relationship'
 import { matchesNormalizedAtWordStart } from '@/lib/wordStartFilter'
 import type { CampaignUser, Leadership } from '@/payload-types'
@@ -21,9 +22,9 @@ import { truncatedNamesLabel } from '@/utilities/campaignListUrl'
 import { buildLeadershipListWhere } from '@/utilities/leadership/leadershipListUrl'
 
 const populatedContactPhone = (contact: unknown): string | null => {
-  if (typeof contact !== 'object' || contact === null || !('phone' in contact)) return null
-  const { phone } = contact
-  return typeof phone === 'string' && phone.length > 0 ? phone : null
+  if (typeof contact !== 'object' || contact === null || !('phones' in contact)) return null
+  const phones = (contact as { phones?: unknown }).phones
+  return Array.isArray(phones) ? primaryPhoneOf(phones as { value?: string | null }[]) : null
 }
 
 const municipalityNamesFromLeadership = (doc: Leadership): string[] => {

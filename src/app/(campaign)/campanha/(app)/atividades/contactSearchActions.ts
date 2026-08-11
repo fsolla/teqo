@@ -5,6 +5,7 @@ import { getPayload } from 'payload'
 
 import type { ContactComboboxOption } from '@/components/campaign/shared/ContactCombobox'
 import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/contactSearchQuery'
+import { primaryPhoneOf } from '@/lib/phone'
 import {
   searchActivityResponsibleOptions,
   type ActivityResponsibleSearchOption,
@@ -28,18 +29,22 @@ export const searchActivityContactOptions = async (
   const result = await payload.find({
     collection: 'contact',
     where: {
-      or: [{ name: { contains: trimmed } }, { phone: { contains: digits || trimmed } }],
+      or: [{ name: { contains: trimmed } }, { 'phones.value': { contains: digits || trimmed } }],
     },
     depth: 0,
     limit: CONTACT_OPTION_LIMIT,
     page: 1,
     sort: 'name',
-    select: { name: true, phone: true },
+    select: { name: true, phones: { value: true } },
     user,
     overrideAccess: false,
   })
 
-  return result.docs.map(({ id, name, phone }) => ({ id, name, phone: phone ?? null }))
+  return result.docs.map(({ id, name, phones }) => ({
+    id,
+    name,
+    phone: primaryPhoneOf(phones),
+  }))
 }
 
 export const searchActivityResponsibleOptionsAction = async (

@@ -10,9 +10,15 @@ import { redirect } from 'next/navigation'
 import {
   removeSupporterData,
   setSupporterVoteIntention,
+  updateSupporterContact,
 } from '@/app/(campaign)/campanha/actions/supporter'
 import { SUPPORTER_VOTE_INTENTION_CONSENT_MISSING_MESSAGE } from '@/lib/campaignConsentKeys'
-import { checkboxFormValue, requiredRelationshipFormValue } from '@/lib/formData'
+import {
+  checkboxFormValue,
+  repeatedPhoneFormValues,
+  requiredRelationshipFormValue,
+} from '@/lib/formData'
+import { BRAZILIAN_PHONE_DUPLICATE_MESSAGE, BRAZILIAN_PHONE_INVALID_MESSAGE } from '@/lib/phone'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
 import {
   SUPPORTER_STAFF_MESSAGE,
@@ -21,6 +27,8 @@ import {
 } from '@/lib/schemas/supporter'
 import {
   mapCampaignFormActionError,
+  runCampaignFormAction,
+  type CampaignFormActionState,
   type CampaignFormErrorState,
 } from '@/utilities/campaignFormActionError'
 import { firstFormActionMessage } from '@/utilities/campaignFormFields'
@@ -39,6 +47,12 @@ export type SupporterRemoveFormState = {
 const safeVoteIntentionMessages = [
   SUPPORTER_VOTE_INTENTION_CONSENT_MISSING_MESSAGE,
   SUPPORTER_STAFF_MESSAGE,
+] as const
+
+const safeContactMessages = [
+  SUPPORTER_STAFF_MESSAGE,
+  BRAZILIAN_PHONE_INVALID_MESSAGE,
+  BRAZILIAN_PHONE_DUPLICATE_MESSAGE,
 ] as const
 
 const toMessageOnlyState = (mapped: CampaignFormErrorState<unknown>): { message?: string } => {
@@ -98,3 +112,20 @@ export const removeSupporterDataFormAction = async (
     )
   }
 }
+
+export const updateSupporterContactFormAction = async (
+  _state: CampaignFormActionState,
+  formData: FormData,
+): Promise<CampaignFormActionState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      await updateSupporterContact({
+        id: requiredRelationshipFormValue(formData, 'supporterId'),
+        field: 'phones',
+        phones: repeatedPhoneFormValues(formData, 'phones'),
+      })
+      return { message: 'Telefones atualizados.' }
+    },
+    safeMessages: safeContactMessages,
+    genericMessage: 'Não foi possível salvar os telefones.',
+  })

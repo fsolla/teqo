@@ -185,7 +185,7 @@ class CampaignE2EOwnership {
       collection: 'contact',
       data: {
         name: contactName,
-        phone: this.phone(),
+        phones: [{ value: this.phone() }],
         state: 'BA',
         city: municipalities[0]?.name ?? 'Salvador',
       },
