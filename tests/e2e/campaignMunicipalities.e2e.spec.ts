@@ -10,9 +10,14 @@ import {
 import {
   campaignPageChrome,
   checkRadixWhenHydrated,
+  createCampaignOwnership,
   expect,
   expectPostResponse,
+  mintCampaignSession,
+  seedCampaignSession,
   test,
+  type CampaignE2EOwnership,
+  type CampaignSessionUser,
 } from './fixtures/campaignE2EFixtures.js'
 import {
   assertThreeColumnActionGrid,
@@ -59,6 +64,36 @@ const ensureWideMunicipalityList = async (page: Page) => {
 }
 
 /**
+ * OPS36 — one shared staff session per worker (see the sibling comment in
+ * campaignHomeActions.e2e.spec.ts): a coordinator is created once and every
+ * test's fresh context receives its `campaign-token` cookie in `beforeEach`.
+ * Advisors are never shared (their portfolio must stay empty/fresh — OPS29,
+ * B176), and the mixed advisor→leader journey below keeps the browser logins.
+ * The group rows are cleaned up in `afterAll`.
+ */
+let sharedFixtures: CampaignE2EOwnership
+let sharedCoordinator: CampaignSessionUser
+let coordinatorToken: string
+
+test.beforeAll(async () => {
+  sharedFixtures = await createCampaignOwnership()
+  sharedCoordinator = await sharedFixtures.createCampaignUser('coordinator', {
+    name: sharedFixtures.value('Coordenadora Compartilhada'),
+  })
+  coordinatorToken = await mintCampaignSession(sharedFixtures.payload, sharedCoordinator)
+})
+
+test.beforeEach(async ({ campaign, context }) => {
+  await seedCampaignSession(context, campaign.baseURL, coordinatorToken)
+})
+
+test.afterAll(async () => {
+  if (!sharedFixtures) return
+  await sharedFixtures.cleanup()
+  await sharedFixtures.expectNoOwnedRows()
+})
+
+/**
  * Core municipality-model journeys per role: coordinator strategy editing, advisor
  * scoping, staff declare/estimate privacy boundary, leader lockdown, and staff-only
  * demand workflow.
@@ -82,23 +117,18 @@ test.describe('Municípios — jornadas por papel', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
-    const password = coordinator.password
     const advisor = await fixtures.createCampaignUser('advisor', {
       name: fixtures.value('Assessor Regional'),
     })
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, password)
     await showAllMunicipalityColumns(page, campaign.baseURL)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
     // B127: primary filter entry is the omnibox; default sort is no longer a
     // free-standing "Ordenado por …" line (only a non-default sort chip).
-    await expect(page.getByLabel('Filtrar municípios')).toBeVisible()
+    await expect(page.getByLabel('Filtrar municípios').first()).toBeVisible()
     await expect(
       page.getByRole('columnheader', { name: /Ordenar por Frescor do sinal/ }),
     ).toBeVisible()
@@ -146,16 +176,11 @@ test.describe('Municípios — jornadas por papel', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenador Combobox'),
-    })
-    const password = coordinator.password
     const advisor = await fixtures.createCampaignUser('advisor', {
       name: fixtures.value('Assessora Combobox'),
     })
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, password)
     await showAllMunicipalityColumns(page, campaign.baseURL)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
@@ -223,16 +248,11 @@ test.describe('Municípios — jornadas por papel', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenador Inline'),
-    })
-    const password = coordinator.password
     const municipality = await fixtures.claimMunicipality()
     // Unique per run (uuid + counter), so no eligible account matches it — the
     // combobox must offer the create option, not an existing advisor.
     const newAdvisorName = fixtures.value('Novo Assessor')
 
-    await campaign.login(page, coordinator.email!, password)
     await showAllMunicipalityColumns(page, campaign.baseURL)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
@@ -296,17 +316,12 @@ test.describe('Municípios — jornadas por papel', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenador Dobradinhas'),
-    })
-    const password = coordinator.password
     const municipality = await fixtures.claimMunicipality()
     // Unique per run (uuid + counter), so no catalog entry matches it — the
     // combobox must offer the create option, not an existing dobradinha.
     const deputyName = fixtures.value('Deputado Novo')
     const party = 'PCdoB'
 
-    await campaign.login(page, coordinator.email!, password)
     await showAllMunicipalityColumns(page, campaign.baseURL)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
@@ -369,9 +384,6 @@ test.describe('Municípios — jornadas por papel', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenador Filtros B176'),
-    })
     const municipalityA = await fixtures.claimMunicipality()
     const municipalityB = await fixtures.claimMunicipality()
 
@@ -403,7 +415,6 @@ test.describe('Municípios — jornadas por papel', () => {
       municipalities: [municipalityB],
     })
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await showAllMunicipalityColumns(page, campaign.baseURL)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
@@ -446,6 +457,7 @@ test.describe('Municípios — jornadas por papel', () => {
 
   test('B176 — advisor edits Dobradinhas inline within an administered municipality', async ({
     campaign,
+    context,
     page,
   }) => {
     const { fixtures } = campaign
@@ -476,7 +488,7 @@ test.describe('Municípios — jornadas por papel', () => {
       draft: false,
     })
 
-    await campaign.login(page, advisor.email!, advisor.password)
+    await campaign.sessionFor(context, advisor)
     await showAllMunicipalityColumns(page, campaign.baseURL)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
@@ -522,14 +534,9 @@ test.describe('Municípios — jornadas por papel', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenador Tendência'),
-    })
-    const password = coordinator.password
     const municipality = await fixtures.claimMunicipality()
     const note = fixtures.value('Vereador confirmou apoio local')
 
-    await campaign.login(page, coordinator.email!, password)
     await showAllMunicipalityColumns(page, campaign.baseURL)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
@@ -566,13 +573,8 @@ test.describe('Municípios — jornadas por papel', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenador Sinal'),
-    })
-    const password = coordinator.password
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, password)
     await showAllMunicipalityColumns(page, campaign.baseURL)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
@@ -712,14 +714,13 @@ test.describe('Municípios — jornadas por papel', () => {
     expect(leadership.id).toBeGreaterThan(0)
   })
 
-  test('advisor opens a demand and decides it', async ({ campaign, page }) => {
+  test('advisor opens a demand and decides it', async ({ campaign, context, page }) => {
     const { fixtures } = campaign
     const municipality = await fixtures.claimMunicipality()
 
     const advisor = await fixtures.createCampaignUser('advisor', {
       name: fixtures.value('Assessor Demandas'),
     })
-    const password = advisor.password
     await campaign.payload.update({
       collection: 'municipality',
       id: municipality.id,
@@ -733,7 +734,7 @@ test.describe('Municípios — jornadas por papel', () => {
     const demandText = fixtures.value('Carro de som: precisamos para a caminhada de sábado.')
     const demandTitle = fallbackDemandTitle(demandText)
 
-    await campaign.login(page, advisor.email!, password)
+    await campaign.sessionFor(context, advisor)
     await page.goto(`${campaign.baseURL}/campanha/demandas/nova`)
     await page.getByLabel('Município').selectOption({ label: municipality.name })
     await page.getByLabel('O que você precisa?').fill(demandText)
@@ -764,13 +765,8 @@ test.describe('Municípios — cards no celular (B42)', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenador Mobile'),
-    })
-    const password = coordinator.password
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, password)
     const listURL = `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`
     await page.goto(listURL)
 
@@ -778,7 +774,17 @@ test.describe('Municípios — cards no celular (B42)', () => {
     await expect(card).toBeVisible()
     await expect(page.getByRole('link', { name: 'Abrir município' })).toHaveCount(0)
 
-    await card.getByRole('button', { name: 'Editar tendência política' }).click()
+    // Client-side Drawer state — a pre-hydration click is a silent no-op (the
+    // B13/B17 flake class; with the shared-session seed the card is often the
+    // worker's first load), so deliver the tap through a retry loop.
+    await expect(async () => {
+      await card.getByRole('button', { name: 'Editar tendência política' }).click({
+        timeout: 1_000,
+      })
+      await expect(page.getByRole('dialog', { name: 'Editar tendência' })).toBeVisible({
+        timeout: 5_000,
+      })
+    }).toPass({ timeout: 15_000 })
     // B126 FAB overlay is closed by default; scope to the trend dialog.
     const drawer = page.getByRole('dialog', { name: 'Editar tendência' })
     await expect(drawer).toBeVisible()
@@ -814,19 +820,23 @@ test.describe('Municípios — cards no celular (B42)', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora C109'),
-    })
-    const password = coordinator.password
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, password)
     const listURL = `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`
     await page.goto(listURL)
 
     const card = page.locator('[data-view="mobile-cards"] article').first()
     await expect(card).toBeVisible()
-    await card.getByRole('button', { name: /^Registrar atualização em/ }).click()
+    // Pre-hydration click guard (B13/B17 class) — see the sibling comment in
+    // the B42 trend Drawer test.
+    await expect(async () => {
+      await card.getByRole('button', { name: /^Registrar atualização em/ }).click({
+        timeout: 1_000,
+      })
+      await expect(page.getByRole('dialog', { name: 'Registrar atualização' })).toBeVisible({
+        timeout: 5_000,
+      })
+    }).toPass({ timeout: 15_000 })
 
     // The sheet's primary action lives in the custom footer — the two buttons
     // the phone thumb expects, rendered inside the shared Drawer.
@@ -887,13 +897,6 @@ test.describe('Municípios — filtro e cards sem moldura no celular (B184)', ()
     campaign,
     page,
   }) => {
-    const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora B184'),
-    })
-    const password = coordinator.password
-
-    await campaign.login(page, coordinator.email!, password)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
     // C106 — dynamic pages stream a transient hidden `#S:*` copy of the shell;
     // strict-mode locators below would match BOTH copies while it settles.
@@ -979,12 +982,8 @@ test.describe('Municípios — card denso mobile (B193)', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora B193'),
-    })
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
@@ -996,7 +995,15 @@ test.describe('Municípios — card denso mobile (B193)', () => {
       .first()
     await expect(card).toBeVisible()
 
-    await card.getByRole('button', { name: /Editar votos estimados/ }).click()
+    // Pre-hydration click guard (B13/B17 class) — the sheet is client-side
+    // state and the card is often the worker's first load with the seeded
+    // session.
+    await expect(async () => {
+      await card.getByRole('button', { name: /Editar votos estimados/ }).click({ timeout: 1_000 })
+      await expect(page.getByRole('dialog', { name: 'Editar votos estimados' })).toBeVisible({
+        timeout: 5_000,
+      })
+    }).toPass({ timeout: 15_000 })
     const drawer = page.getByRole('dialog', { name: 'Editar votos estimados' })
     await expect(drawer).toBeVisible()
 
@@ -1020,12 +1027,8 @@ test.describe('Municípios — card denso mobile (B193)', () => {
 
   test('the Nível chip (label included) opens the level sheet', async ({ campaign, page }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora B193 Nível'),
-    })
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
@@ -1048,9 +1051,6 @@ test.describe('Municípios — card denso mobile (B193)', () => {
 
   test('priority município gets the right accent border (B193)', async ({ campaign, page }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora B193 Prio'),
-    })
     const municipality = await fixtures.claimMunicipality()
     await fixtures.payload.update({
       collection: 'municipality',
@@ -1059,7 +1059,6 @@ test.describe('Municípios — card denso mobile (B193)', () => {
       depth: 0,
     })
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
@@ -1082,22 +1081,18 @@ test.describe('Municípios — card denso mobile (B193)', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora B193 Upd'),
-    })
     const withUpdate = await fixtures.claimMunicipality()
     await fixtures.payload.create({
       collection: 'municipalityUpdate',
       data: {
         municipality: withUpdate.id,
-        author: coordinator.id,
+        author: sharedCoordinator.id,
         polarity: 'boa',
         body: `Fato de campo B193 em ${withUpdate.name}`,
       },
       depth: 0,
     })
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(withUpdate.name)}`,
     )
@@ -1365,12 +1360,8 @@ test.describe('Municípios — FAB ações rápidas mobile (B126)', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenador FAB'),
-    })
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
@@ -1380,7 +1371,12 @@ test.describe('Municípios — FAB ações rápidas mobile (B126)', () => {
     await expect(fab).toBeVisible()
     await expect(page.getByLabel('Buscar na campanha')).toHaveCount(0)
 
-    await fab.click()
+    // Client-side overlay state — pre-hydration click guard (B13/B17 class);
+    // with the seeded session the list is often the worker's first load.
+    await expect(async () => {
+      await fab.click({ timeout: 1_000 })
+      await expect(page.locator('#CampaignQuickActionsOverlay')).toBeVisible({ timeout: 5_000 })
+    }).toPass({ timeout: 15_000 })
     const overlay = page.locator('#CampaignQuickActionsOverlay')
     await expect(overlay).toBeVisible()
 
@@ -1425,16 +1421,15 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
   ] as const
 
   test('overlay actions use a 3×2 grid at mobile width (B136)', async ({ campaign, page }) => {
-    const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenador B136'),
-    })
-
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
-    await page.getByRole('button', { name: 'Ações rápidas' }).click()
+    // Pre-hydration click guard (B13/B17 class) — same contract as the FAB
+    // on-load sibling.
+    await expect(async () => {
+      await page.getByRole('button', { name: 'Ações rápidas' }).click({ timeout: 1_000 })
+      await expect(page.locator('#CampaignQuickActionsOverlay')).toBeVisible({ timeout: 5_000 })
+    }).toPass({ timeout: 15_000 })
     const overlay = page.locator('#CampaignQuickActionsOverlay')
     await expect(overlay).toBeVisible()
     // The Drawer slides in over ~450ms (`duration-450`); `toBeVisible` fires
@@ -1464,9 +1459,6 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenador B126'),
-    })
     // The suggest region only renders with curated hits for unrestricted
     // roles (B68), so pin one `alta` municipality — deterministic in any
     // environment, not only where the projection was imported (OPS29).
@@ -1479,11 +1471,15 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
     })
     fixtures.touchMunicipality(municipality.id)
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
-    await page.getByRole('button', { name: 'Ações rápidas' }).click()
+    // Pre-hydration click guard (B13/B17 class) — same contract as the FAB
+    // on-load sibling.
+    await expect(async () => {
+      await page.getByRole('button', { name: 'Ações rápidas' }).click({ timeout: 1_000 })
+      await expect(page.locator('#CampaignQuickActionsOverlay')).toBeVisible({ timeout: 5_000 })
+    }).toPass({ timeout: 15_000 })
     const overlay = page.locator('#CampaignQuickActionsOverlay')
     await expect(overlay).toBeVisible()
     // The Drawer/Dialog slides in (~450ms); `toBeVisible` fires mid-flight and
@@ -1513,6 +1509,7 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
 
   test('overlay search without curated suggestions shows the honest empty state (OPS29)', async ({
     campaign,
+    context,
     page,
   }) => {
     const { fixtures } = campaign
@@ -1524,11 +1521,16 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
       name: fixtures.value('Assessor OPS29'),
     })
 
-    await campaign.login(page, advisor.email!, advisor.password)
+    await campaign.sessionFor(context, advisor)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
 
-    await page.getByRole('button', { name: 'Ações rápidas' }).click()
+    // Pre-hydration click guard (B13/B17 class) — same contract as the FAB
+    // on-load sibling.
+    await expect(async () => {
+      await page.getByRole('button', { name: 'Ações rápidas' }).click({ timeout: 1_000 })
+      await expect(page.locator('#CampaignQuickActionsOverlay')).toBeVisible({ timeout: 5_000 })
+    }).toPass({ timeout: 15_000 })
     const overlay = page.locator('#CampaignQuickActionsOverlay')
     await expect(overlay).toBeVisible()
 
