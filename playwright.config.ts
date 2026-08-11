@@ -2,7 +2,10 @@ import { defineConfig, devices } from '@playwright/test'
 import { config as loadEnv } from 'dotenv'
 
 import { assertTestDatabase } from './tests/helpers/assertTestDatabase'
-import { GOOGLE_CALENDAR_TEST_KEY } from './tests/helpers/googleCalendarTestKey'
+import {
+  GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV_NAME,
+  GOOGLE_CALENDAR_TEST_KEY,
+} from './tests/helpers/googleCalendarTestKey'
 
 /**
  * e2e tests boot a real dev server that seeds/deletes records, so they must run
@@ -150,7 +153,7 @@ export default defineConfig({
        * sync pass the hooks/auto-retry run fails fast WITHOUT network — the
        * e2e states stay deterministic (see `googleCalendarTestKey.ts`).
        */
-      GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY: GOOGLE_CALENDAR_TEST_KEY,
+      [GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV_NAME]: GOOGLE_CALENDAR_TEST_KEY,
       // Fixed dist dir: Next dev appends `<distDir>/types/**/*.ts` to
       // tsconfig.json's include with an EXACT-string check, so per-process
       // names polluted tsconfig with one entry per run. A prior Playwright
