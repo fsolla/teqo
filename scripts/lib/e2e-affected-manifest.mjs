@@ -114,6 +114,7 @@ export const E2E_AFFECTED_MANIFEST = [
     prefixes: [
       'src/components/campaign/shell/ai',
       'src/lib/sollinhaChatSession',
+      'src/lib/ai/markdownLinks',
       `${CAMPAIGN_APP}/api/ai-chat`,
     ],
     specs: [
