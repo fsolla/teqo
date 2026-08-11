@@ -270,4 +270,3 @@ test.describe('Pessoas — lista unificada', () => {
     await expect(page.getByRole('row', { name: new RegExp(twoCities.contactName) })).toBeHidden()
   })
 })
-})
