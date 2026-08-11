@@ -11,6 +11,7 @@ import {
 } from '@/components/campaign/shared/RelationChipCell'
 import {
   buildMunicipalityPortfolioChips,
+  expandMunicipalityPortfolioChips,
   scopedPortfolioIndex,
   searchMunicipalityPortfolio,
   type MunicipalityPortfolioChip,
@@ -26,7 +27,7 @@ const hitDescription = (hit: MunicipalityPortfolioSearchHit): string => {
 }
 
 const toRelationChip = (chip: MunicipalityPortfolioChip): RelationChip =>
-  chip.kind === 'territory'
+  chip.kind === 'territory' || chip.kind === 'city'
     ? {
         key: chip.key,
         label: chip.label,
@@ -76,6 +77,16 @@ type MunicipalityPortfolioCellProps = {
   ) => Promise<CampaignFormActionState>
   drawerTitle: string
   updateErrorMessage: string
+  /** C116 quiet cell — see `RelationChipCell.quiet`. */
+  quiet?: boolean
+  /** C116 expanded batch keys (territory / zone-city) — see `expandMunicipalityPortfolioChips`. */
+  expandedKeys?: ReadonlySet<string>
+  /** C116 — click on a collapsed batch chip (key like `territory:Irecê`), for the wrapper to expand it. */
+  onChipClick?: (chipKey: string) => void
+  /** C116 — "+N" overflow label — see `RelationChipCell.overflowToggleLabel`. */
+  overflowToggleLabel?: (hiddenCount: number) => string
+  /** C116 — read-only chips (actor may see the relation but not edit it). */
+  readOnly?: boolean
 }
 
 /**
@@ -97,6 +108,11 @@ export const MunicipalityPortfolioCell = ({
   commitAction,
   drawerTitle,
   updateErrorMessage,
+  quiet = false,
+  expandedKeys,
+  onChipClick,
+  overflowToggleLabel,
+  readOnly = false,
 }: MunicipalityPortfolioCellProps) => {
   /**
    * `addableIds` also hides: an advisor's `canUpdateMunicipality` is scoped to
@@ -124,8 +140,15 @@ export const MunicipalityPortfolioCell = ({
   )
 
   const buildChips = useCallback(
-    (ids: number[]) => buildMunicipalityPortfolioChips(ids, municipalityIndex).map(toRelationChip),
-    [municipalityIndex],
+    (ids: number[]) => {
+      const base = buildMunicipalityPortfolioChips(ids, municipalityIndex)
+      return (
+        expandedKeys
+          ? expandMunicipalityPortfolioChips(base, expandedKeys, municipalityIndex)
+          : base
+      ).map(toRelationChip)
+    },
+    [municipalityIndex, expandedKeys],
   )
 
   const searchHits = useCallback(
@@ -178,6 +201,10 @@ export const MunicipalityPortfolioCell = ({
       triggerLabel={`Editar municípios de ${ownerName}`}
       updateErrorMessage={updateErrorMessage}
       copy={copy}
+      quiet={quiet}
+      overflowToggleLabel={overflowToggleLabel}
+      onChipClick={onChipClick ? (chip) => onChipClick(chip.key) : undefined}
+      readOnly={readOnly}
     />
   )
 }

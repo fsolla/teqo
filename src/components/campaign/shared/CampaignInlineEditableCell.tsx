@@ -20,7 +20,7 @@ import type { CampaignFormActionState } from '@/utilities/campaignFormActionErro
 
 const SAVE_DEBOUNCE_MS = 500
 
-export type CampaignInlineEditableField = 'name' | 'email' | 'phone' | 'party'
+export type CampaignInlineEditableField = 'name' | 'email' | 'phone' | 'party' | 'city'
 
 type CampaignInlineEditableCellProps = {
   recordId: number
@@ -36,6 +36,15 @@ type CampaignInlineEditableCellProps = {
   editTrigger?: 'pencil' | 'cell'
   readBehavior?: 'text' | 'copy'
   saveOnChange?: boolean
+  /**
+   * C116 — "edit where you see": the input is ALWAYS mounted, borderless and
+   * tintless (no edit state, no label/border/background change). Saves on
+   * blur/Enter, Escape discards, empty shows a "—" placeholder. With `href` +
+   * `field === 'name'` the value renders as a LINK above the invisible input —
+   * the draft lives in the link's text, so clicking the link navigates and
+   * typing edits in the same place (mechanism locked at the C116 gate).
+   */
+  permanent?: boolean
   className?: string
 }
 
@@ -44,6 +53,17 @@ const inputTypeForField = (field: CampaignInlineEditableField): 'text' | 'email'
   if (field === 'phone') return 'tel'
   return 'text'
 }
+
+/** The discreet keyboard-focus indicator of the permanent mode (a11y guardrail). */
+const permanentFocusClassName =
+  'rounded-sm focus-visible:ring-1 focus-visible:ring-ring/50 focus-visible:outline-none'
+
+/**
+ * Permanent cells display the phone already formatted — the raw 11 digits stay
+ * on the server, so the draft and the save baseline share the display.
+ */
+const displayDraftFor = (field: CampaignInlineEditableField, raw: string): string =>
+  field === 'phone' && raw ? formatBrazilianPhoneInput(raw) : raw
 
 export const CampaignInlineEditableCell = ({
   recordId,
@@ -56,6 +76,7 @@ export const CampaignInlineEditableCell = ({
   editTrigger = 'pencil',
   readBehavior = 'text',
   saveOnChange = true,
+  permanent = false,
   className,
 }: CampaignInlineEditableCellProps) => {
   const router = useRouter()
@@ -73,8 +94,9 @@ export const CampaignInlineEditableCell = ({
   useEffect(() => {
     if (inputRef.current && document.activeElement === inputRef.current) return
     const next = value ?? ''
-    setDraft(next)
-    lastSaved.current = next.trim()
+    const display = displayDraftFor(field, next)
+    setDraft(display)
+    lastSaved.current = display.trim()
   }, [field, recordId, value])
 
   useEffect(() => {
@@ -174,6 +196,85 @@ export const CampaignInlineEditableCell = ({
     if (event.key !== 'Enter' && event.key !== ' ') return
     event.preventDefault()
     startEditing()
+  }
+
+  /**
+   * C116 — "edit where you see": input always mounted, no edit state. The
+   * name-link cell renders the LINK above an invisible input (the draft lives
+   * in the link's text, the input value is never the display — locked
+   * mechanism); every other field is a borderless input that reads as text.
+   */
+  if (permanent) {
+    const isNameLink = href !== undefined && field === 'name'
+    const inputClassName = cn(
+      isNameLink
+        ? 'absolute inset-0 z-0 h-full w-full cursor-text border-transparent bg-transparent px-1 text-transparent caret-transparent shadow-none'
+        : 'min-h-10 w-full border-transparent bg-transparent px-1 shadow-none',
+      permanentFocusClassName,
+    )
+    return (
+      <div className={cn('relative min-w-0 w-full', isNameLink && 'min-h-10', className)}>
+        {isNameLink ? (
+          <Link
+            href={href}
+            // `w-auto`: the link spans ONLY its text, so the rest of the cell
+            // stays the input's clickable area (click on the text navigates,
+            // click beside it edits — the locked C116 mechanism).
+            className="relative z-10 inline-flex min-h-10 max-w-full items-center font-medium text-primary underline-offset-4 hover:underline"
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <span className="truncate">{draft || value || ''}</span>
+          </Link>
+        ) : null}
+        <Input
+          ref={inputRef}
+          type={inputTypeForField(field)}
+          value={draft}
+          placeholder={isNameLink ? undefined : '—'}
+          aria-label={label}
+          aria-busy={isPending}
+          className={inputClassName}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.preventDefault()
+              setDraft(displayDraftFor(field, value ?? ''))
+              setErrorMessage(null)
+              setShowSavedFeedback(false)
+              // Blur saves the reverted draft — a no-op the equality check catches.
+              event.currentTarget.blur()
+              return
+            }
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              event.currentTarget.blur()
+            }
+          }}
+          {...(field === 'phone' ? { inputMode: 'numeric' as const } : {})}
+        />
+        {isPending ? (
+          <Spinner
+            className="pointer-events-none absolute top-1/2 right-2 z-20 size-3.5 -translate-y-1/2"
+            aria-label={`Salvando ${label.toLowerCase()}`}
+          />
+        ) : null}
+        {showSavedFeedback ? (
+          <span
+            role="status"
+            aria-live="polite"
+            className="absolute top-1/2 right-2 z-20 -translate-y-1/2 bg-background/90 px-1 text-xs text-muted-foreground"
+          >
+            Salvo.
+          </span>
+        ) : null}
+        {errorMessage ? (
+          <p role="alert" className="mt-1 text-xs text-destructive">
+            {errorMessage}
+          </p>
+        ) : null}
+      </div>
+    )
   }
 
   if (isEditing) {

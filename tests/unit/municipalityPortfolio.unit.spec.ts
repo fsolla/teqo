@@ -5,6 +5,7 @@ import { municipalityCatalog } from '@/lib/municipalityCatalog'
 import {
   buildMunicipalityPortfolioChips,
   catalogEntriesForTseZone,
+  expandMunicipalityPortfolioChips,
   searchMunicipalityPortfolio,
   type MunicipalityPortfolioIndexEntry,
 } from '@/lib/municipalityPortfolio'
@@ -45,6 +46,73 @@ describe('municipalityPortfolio', () => {
         slug: one!.slug,
       },
     ])
+  })
+
+  it('collapses the complete Salvador zone set into one "Salvador (N)" chip', () => {
+    const index = buildIndex()
+    const salvadorZones = slugsForCities(['Salvador'])
+    const assignedIds = index
+      .filter((entry) => salvadorZones.has(entry.slug))
+      .map((entry) => entry.id)
+
+    const chips = buildMunicipalityPortfolioChips(assignedIds, index)
+    expect(chips).toHaveLength(1)
+    expect(chips[0]).toMatchObject({ kind: 'city', label: 'Salvador' })
+    expect(chips[0]?.kind === 'city' ? chips[0].municipalityIds.length : 0).toBe(19)
+  })
+
+  it('keeps a partial Salvador zone set as municipality chips (never the city chip)', () => {
+    const index = buildIndex()
+    const salvadorZones = slugsForCities(['Salvador'])
+    const one = index.find((entry) => salvadorZones.has(entry.slug))
+    expect(one).toBeTruthy()
+    const chips = buildMunicipalityPortfolioChips([one!.id], index)
+    expect(chips).toHaveLength(1)
+    expect(chips[0]).toMatchObject({ kind: 'municipality', municipalityId: one!.id })
+  })
+
+  it('expands a collapsed territory chip into its member municipality chips', () => {
+    const index = buildIndex()
+    const irece = slugsForCities(citiesForTerritory('Irecê'))
+    const assignedIds = index.filter((entry) => irece.has(entry.slug)).map((entry) => entry.id)
+    const collapsed = buildMunicipalityPortfolioChips(assignedIds, index)
+    expect(collapsed).toHaveLength(1)
+    expect(collapsed[0]?.kind).toBe('territory')
+
+    const expanded = expandMunicipalityPortfolioChips(
+      collapsed,
+      new Set(['territory:Irecê']),
+      index,
+    )
+    expect(expanded).toHaveLength(assignedIds.length)
+    const municipalityChips = expanded.filter((chip) => chip.kind === 'municipality')
+    expect(municipalityChips).toHaveLength(expanded.length)
+    expect(new Set(municipalityChips.map((chip) => chip.municipalityId))).toEqual(
+      new Set(assignedIds),
+    )
+  })
+
+  it('expands the Salvador city chip into its 19 zone municipality chips', () => {
+    const index = buildIndex()
+    const salvadorZones = slugsForCities(['Salvador'])
+    const assignedIds = index
+      .filter((entry) => salvadorZones.has(entry.slug))
+      .map((entry) => entry.id)
+    const collapsed = buildMunicipalityPortfolioChips(assignedIds, index)
+
+    const expanded = expandMunicipalityPortfolioChips(collapsed, new Set(['city:Salvador']), index)
+    expect(expanded).toHaveLength(19)
+    expect(expanded.every((chip) => chip.kind === 'municipality')).toBe(true)
+  })
+
+  it('leaves non-expanded chips untouched', () => {
+    const index = buildIndex()
+    const irece = slugsForCities(citiesForTerritory('Irecê'))
+    const assignedIds = index.filter((entry) => irece.has(entry.slug)).map((entry) => entry.id)
+    const collapsed = buildMunicipalityPortfolioChips(assignedIds, index)
+
+    const unchanged = expandMunicipalityPortfolioChips(collapsed, new Set(['city:Salvador']), index)
+    expect(unchanged).toEqual(collapsed)
   })
 
   it('drops an id the index does not know (no name, no link to render)', () => {

@@ -4,6 +4,7 @@ import {
   getMunicipalityCatalogEntry,
   municipalityCatalog,
   municipalityCatalogEntriesForCity,
+  ZONE_MUNICIPALITY_CITIES,
   type MunicipalityCatalogEntry,
 } from '@/lib/municipalityCatalog'
 import { matchesNormalizedAtWordStart, normalizeSearchPhrase } from '@/lib/wordStartFilter'
@@ -31,6 +32,7 @@ export type ResolvedPortfolioEntry = {
   id: number
   slug: string
   name: string
+  city: string
   region: BahiaIdentityTerritory
 }
 
@@ -40,6 +42,14 @@ export type MunicipalityPortfolioChip =
       key: string
       label: string
       territory: BahiaIdentityTerritory
+      municipalityIds: number[]
+    }
+  | {
+      /** A zone-city (Salvador) with ALL of its zones assigned — "Salvador (19)". */
+      kind: 'city'
+      key: string
+      label: string
+      city: string
       municipalityIds: number[]
     }
   | {
@@ -97,6 +107,7 @@ type PortfolioIndexDerivations = {
   byId: Map<number, ResolvedPortfolioEntry>
   idBySlug: Map<string, number>
   idsByTerritory: Map<BahiaIdentityTerritory, number[]>
+  idsByCity: Map<string, number[]>
   normalizedNames: Map<number, string>
 }
 
@@ -123,6 +134,7 @@ const portfolioIndexDerivations = (
     byId: new Map(),
     idBySlug: new Map(),
     idsByTerritory: new Map(),
+    idsByCity: new Map(),
     normalizedNames: new Map(),
   }
   for (const entry of index) {
@@ -137,6 +149,7 @@ const portfolioIndexDerivations = (
       id: entry.id,
       slug: entry.slug,
       name: catalogEntry.name,
+      city: catalogEntry.city,
       region: catalogEntry.region,
     }
     derived.byId.set(resolved.id, resolved)
@@ -145,6 +158,9 @@ const portfolioIndexDerivations = (
     const territoryIds = derived.idsByTerritory.get(resolved.region)
     if (territoryIds) territoryIds.push(resolved.id)
     else derived.idsByTerritory.set(resolved.region, [resolved.id])
+    const cityIds = derived.idsByCity.get(resolved.city)
+    if (cityIds) cityIds.push(resolved.id)
+    else derived.idsByCity.set(resolved.city, [resolved.id])
   }
 
   derivationsByIndex.set(index, derived)
@@ -208,7 +224,11 @@ const municipalityIdsForTseZone = (zoneNumber: number, idBySlug: Map<string, num
 }
 
 /**
- * Collapse complete territory memberships into a single territory chip.
+ * Collapse complete territory memberships into a single territory chip, and a
+ * complete zone-city (all of Salvador's 19 zones) into one "Salvador (N)" chip.
+ * The city group is checked FIRST: the zones share the city's territory, so
+ * without it the complete set would collapse into the territory chip
+ * ("Metropolitano de Salvador (19)") instead of the intended "Salvador (19)".
  *
  * Labels and slugs come from `index` — the complete catalog by construction — so
  * an id it does not know cannot be rendered (no name, no link) and is dropped
@@ -218,9 +238,26 @@ export const buildMunicipalityPortfolioChips = (
   assignedMunicipalityIds: readonly number[],
   index: readonly MunicipalityPortfolioIndexEntry[],
 ): MunicipalityPortfolioChip[] => {
-  const { byId, idsByTerritory } = portfolioIndexDerivations(index)
+  const { byId, idsByTerritory, idsByCity } = portfolioIndexDerivations(index)
   const remaining = new Set(assignedMunicipalityIds)
   const chips: MunicipalityPortfolioChip[] = []
+
+  for (const city of ZONE_MUNICIPALITY_CITIES) {
+    const cityIds = idsByCity.get(city)
+    if (!cityIds || cityIds.length === 0) continue
+    // A zone-city group never fits in fewer ids than it has (19 for Salvador).
+    if (cityIds.length > remaining.size) continue
+    if (!cityIds.every((id) => remaining.has(id))) continue
+
+    chips.push({
+      kind: 'city',
+      key: `city:${city}`,
+      label: city,
+      city,
+      municipalityIds: [...cityIds],
+    })
+    for (const id of cityIds) remaining.delete(id)
+  }
 
   for (const territory of bahiaIdentityTerritories) {
     const territoryIds = idsByTerritory.get(territory)
@@ -364,4 +401,36 @@ export const searchMunicipalityPortfolio = (
   }
 
   return hits
+}
+
+/**
+ * Replace expanded batch chips (territory / zone-city) with their member
+ * municipality chips, in place, keeping every other chip untouched. Pure
+ * presentation: nothing here writes — the members are real municipalities, so
+ * they carry the slug for the detail link and their own `ids` for removal.
+ */
+export const expandMunicipalityPortfolioChips = (
+  chips: readonly MunicipalityPortfolioChip[],
+  expandedKeys: ReadonlySet<string>,
+  index: readonly MunicipalityPortfolioIndexEntry[],
+): MunicipalityPortfolioChip[] => {
+  if (expandedKeys.size === 0) return [...chips]
+  const { byId } = portfolioIndexDerivations(index)
+  return chips.flatMap((chip) => {
+    if (!expandedKeys.has(chip.key)) return [chip]
+    if (chip.kind !== 'territory' && chip.kind !== 'city') return [chip]
+    const members: MunicipalityPortfolioChip[] = []
+    for (const id of chip.municipalityIds) {
+      const entry = byId.get(id)
+      if (!entry) continue
+      members.push({
+        kind: 'municipality',
+        key: `municipality:${id}`,
+        label: entry.name,
+        municipalityId: id,
+        slug: entry.slug,
+      })
+    }
+    return members
+  })
 }

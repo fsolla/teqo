@@ -62,6 +62,8 @@ export type PeopleRowViewModel = {
   capacityMunicipalityIDs: number[]
   /** Union of leadership + dobradinha advisors, names resolved (Assessorado). */
   assessoradoNames: string[]
+  /** Union of leadership + dobradinha advisors as id+name pairs (Assessorado chips, C116). */
+  assessorados: Array<{ id: number; name: string }>
 }
 
 /** Merge intermediate: the ids the loader resolves into `assessoradoNames`. */
@@ -146,6 +148,7 @@ export const mergePeopleSources = (sources: PeopleMergeSources): MergedPerson[] 
       staff: [],
       assessoraMunicipalityIDs: [],
       capacityMunicipalityIDs: [],
+      assessorados: [],
     }
     byContact.set(contactID, person)
     return person
@@ -444,13 +447,11 @@ export const loadPeopleListPageData = async (
   const advisorNames = await loadCampaignUserNamesByIds(payload, [...advisorIDs])
 
   const rows: PeopleRowViewModel[] = pageRows.map((person) => {
-    const assessoradoNames = [
-      ...new Set(
-        [...person.leadershipAdvisorIDs, ...person.deputyAdvisorIDs]
-          .map((id) => advisorNames.get(id))
-          .filter((name): name is string => name !== undefined),
-      ),
-    ].sort((left, right) => left.localeCompare(right, 'pt-BR'))
+    const advisorIDs = [...new Set([...person.leadershipAdvisorIDs, ...person.deputyAdvisorIDs])]
+    const assessorados = advisorIDs
+      .map((id) => ({ id, name: advisorNames.get(id) }))
+      .filter((pair): pair is { id: number; name: string } => pair.name !== undefined)
+      .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
     return {
       contactID: person.contactID,
       name: person.name,
@@ -467,7 +468,8 @@ export const loadPeopleListPageData = async (
       staff: person.staff,
       assessoraMunicipalityIDs: person.assessoraMunicipalityIDs,
       capacityMunicipalityIDs: person.capacityMunicipalityIDs,
-      assessoradoNames,
+      assessoradoNames: assessorados.map((pair) => pair.name),
+      assessorados,
     }
   })
 
