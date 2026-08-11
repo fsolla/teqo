@@ -15,6 +15,7 @@ import {
 } from '@/utilities/drizzleBulk'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { getPostgresTransactionDatabase } from '@/utilities/postgresTransactionLocks'
+import { SUPPORTER_IMPORT_SHARED_PHONE_MESSAGE } from '@/utilities/supporter/supporterImport'
 
 export type SupporterImportBulkRow = {
   telefone: string
@@ -132,9 +133,10 @@ const asContactID = (row: Record<string, unknown>): number | null => {
  * caller's Payload transaction. Phone advisory locks MUST already be held for
  * every phone in `rows` (the caller acquires them before invoking this helper).
  *
- * Contacts are inserted via drizzle (bypassing the Contact phone-invariant hook,
- * which is safe because the locks guarantee uniqueness within the txn). The
- * supporter insert uses `ON CONFLICT DO NOTHING` on the unique
+ * Contacts are inserted via drizzle (bypassing the Contact collection hooks,
+ * which is safe because the phone locks serialize this flow and the shared-
+ * phone abort below proves each phone still resolves to at most one ficha).
+ * The supporter insert uses `ON CONFLICT DO NOTHING` on the unique
  * `(contact_id, municipality_id)` index as a last-resort guard against races.
  *
  * All reads (existing contacts, existing supporters) and the ID recovery for
@@ -178,7 +180,15 @@ export const bulkInsertSupporterImport = async (args: {
     )
     for (const row of existingContactRows) {
       const parsed = asPhoneKeyedRow(row)
-      if (parsed) contactIdByPhone.set(parsed.phone, parsed.id)
+      if (!parsed) continue
+      // C111 — the phone is not unique. The preview flags shared phones, but
+      // the base can change between preview and confirm; with the phone
+      // advisory locks held, a second ficha here is a real ambiguity, so the
+      // import aborts fail-closed instead of silently picking a ficha.
+      if (contactIdByPhone.has(parsed.phone)) {
+        throw new Error(SUPPORTER_IMPORT_SHARED_PHONE_MESSAGE)
+      }
+      contactIdByPhone.set(parsed.phone, parsed.id)
     }
   }
 

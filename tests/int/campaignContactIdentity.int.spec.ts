@@ -6,10 +6,6 @@ import { getPayload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import config from '@/payload.config'
-import {
-  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
-  CONTACT_PHONE_CONFLICT_MESSAGE,
-} from '@/utilities/contactPhoneInvariant'
 
 import { installCampaignFixtures, relationId } from '../helpers/campaignFixtures'
 
@@ -181,24 +177,22 @@ describe('campaignUser → Contact identity (C99)', () => {
     expect(contact).toMatchObject({ name: 'Nome Atualizado', phone: nextPhone })
   })
 
-  it('fails the update fail-closed when the new phone belongs to another ficha', async () => {
+  it('shares the phone with another ficha when the account phone is updated (C111)', async () => {
     const fixtures = campaignFixtures()
     const actor = await fixtures.createCampaignUser('coordinator')
     const user = await fixtures.createCampaignUser('advisor', { phone: fixtures.phone() })
     const other = await fixtures.createContact()
 
-    await expect(
-      payload.update({
-        collection: 'campaignUser',
-        id: user.id,
-        data: { phone: other.phone },
-        depth: 0,
-        user: actor,
-        overrideAccess: true,
-      }),
-    ).rejects.toThrow(CONTACT_PHONE_CONFLICT_MESSAGE)
+    await payload.update({
+      collection: 'campaignUser',
+      id: user.id,
+      data: { phone: other.phone },
+      depth: 0,
+      user: actor,
+      overrideAccess: true,
+    })
 
-    // The failed update must not have half-applied.
+    // The account's own ficha now carries the other ficha's phone; both remain.
     const account = await fichaOf(user.id)
     const contact = await payload.findByID({
       collection: 'contact',
@@ -206,7 +200,17 @@ describe('campaignUser → Contact identity (C99)', () => {
       depth: 0,
       overrideAccess: true,
     })
-    expect(contact.phone).toBe(user.phone)
+    expect(contact.phone).toBe(other.phone)
+
+    const othersWithPhone = await payload.find({
+      collection: 'contact',
+      where: { phone: { equals: other.phone } },
+      depth: 0,
+      limit: 2,
+      pagination: false,
+      overrideAccess: true,
+    })
+    expect(othersWithPhone.totalDocs).toBe(2)
   })
 
   it('links a previously unlinked account by phone on update', async () => {
@@ -237,22 +241,41 @@ describe('campaignUser → Contact identity (C99)', () => {
     expect(relationId(updated.contact)).not.toBeNull()
   })
 
-  it('fails closed on two fichas sharing the phone', async () => {
+  it('creates a fresh ficha when the phone already belongs to two fichas (C111)', async () => {
     const fixtures = campaignFixtures()
     const phone = fixtures.phone()
-    // The collection hook forbids duplicates, so the ambiguous state is planted
-    // directly (the same legacy-data shape `findOrCreateContactByPhone` guards).
+    // Two people sharing one phone is a legitimate C111 state; it is planted
+    // directly because the collection hook no longer enforces uniqueness.
     await payload.db.drizzle.execute(
       sql.raw(`
       INSERT INTO "contact" ("name", "email", "phone", "state", "city")
-      VALUES ('${fixtures.value('Ambíguo A')}', '', '${phone}', 'BA', ''),
-             ('${fixtures.value('Ambíguo B')}', '', '${phone}', 'BA', '')
+      VALUES ('${fixtures.value('Compartilhado A')}', '', '${phone}', 'BA', ''),
+             ('${fixtures.value('Compartilhado B')}', '', '${phone}', 'BA', '')
     `),
     )
 
-    await expect(fixtures.createCampaignUser('advisor', { phone })).rejects.toThrow(
-      CONTACT_PHONE_AMBIGUOUS_MESSAGE,
-    )
+    const user = await fixtures.createCampaignUser('advisor', { phone })
+    const account = await fichaOf(user.id)
+    const contact = await payload.findByID({
+      collection: 'contact',
+      id: relationId(account.contact) as number,
+      depth: 0,
+      overrideAccess: true,
+    })
+    // The identity of the person being created is the fresh ficha — never a
+    // guess among the existing ones.
+    expect(contact.name).toBe(user.name)
+    expect(contact.phone).toBe(phone)
+
+    const allWithPhone = await payload.find({
+      collection: 'contact',
+      where: { phone: { equals: phone } },
+      depth: 0,
+      limit: 0,
+      pagination: false,
+      overrideAccess: true,
+    })
+    expect(allWithPhone.totalDocs).toBe(3)
   })
 
   it('lets the admin unlink explicitly without auto-relinking', async () => {

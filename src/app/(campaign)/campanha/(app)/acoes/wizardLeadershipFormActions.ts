@@ -16,17 +16,11 @@ import {
   runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
-import {
-  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
-  CONTACT_PHONE_CONFLICT_MESSAGE,
-} from '@/utilities/contactPhoneInvariant'
 
 const safeMessages = [
   LEADERSHIP_DUPLICATE_MESSAGE,
   LEADERSHIP_INVALID_CONTACT_MESSAGE,
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
-  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
-  CONTACT_PHONE_CONFLICT_MESSAGE,
   ...leadershipStaffEditSafeMessages,
 ] as const
 

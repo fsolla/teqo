@@ -1,8 +1,16 @@
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
 
+/**
+ * C111 — a CSV phone that already belongs to two or more fichas cannot be
+ * matched to a person; the row is flagged for manual resolution instead.
+ */
+export const SUPPORTER_IMPORT_SHARED_PHONE_MESSAGE =
+  'Este celular pertence a mais de um contato na base. Remova a linha do arquivo ou resolva a duplicidade antes de continuar.'
+
 type SupporterImportRowStatus =
   | 'ok'
   | 'duplicado_pelo_telefone'
+  | 'telefone_compartilhado'
   | 'telefone_invalido'
   | 'municipio_nao_reconhecido'
   | 'nome_invalido'

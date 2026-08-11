@@ -434,7 +434,7 @@ describe('src/utilities top-level is pinned', () => {
     'campaignUserProfile.ts',
     'consentContentHash.ts',
     'contactIdentity.ts',
-    'contactPhoneInvariant.ts',
+    'contactPhoneLocks.ts',
     'dashboardPriorityMunicipalities.ts',
     'detailTabUi.ts',
     'documentReads.ts',

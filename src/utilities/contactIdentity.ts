@@ -3,10 +3,7 @@ import 'server-only'
 import type { Payload, PayloadRequest } from 'payload'
 
 import type { Contact } from '@/payload-types'
-import {
-  acquireContactPhoneLocks,
-  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
-} from '@/utilities/contactPhoneInvariant'
+import { acquireContactPhoneLocks } from '@/utilities/contactPhoneLocks'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 
 type ContactIdentityRequest = PayloadTransactionRequest | PayloadRequest
@@ -14,11 +11,15 @@ type ContactIdentityRequest = PayloadTransactionRequest | PayloadRequest
 /**
  * Find-or-create the normalized `Contact` ficha for a person, inside the
  * caller's transaction. With a phone, the advisory lock is acquired HERE and
- * an existing ficha with that phone is reused (ambiguous phone fails
- * closed) — the same critical section the supporter flows used to build
- * around `upsertContactByPhone`. Without a phone, a fresh name-only ficha is
- * created. Every "cria ou vincula a ficha" path shares one owner for the
- * "BA default + ambiguous-phone fail-closed" policy.
+ * an existing ficha with that phone is reused — but only when the phone is
+ * unambiguous (exactly one ficha): that is the phone-matching dedupe C6/C99
+ * keeps for re-imports and re-registration of the SAME person. When the phone
+ * already belongs to TWO OR MORE fichas there is no person the phone can
+ * identify — C111 — so a fresh ficha is created (the identity of the person
+ * being created is the ficha just written; never a guess among the existing
+ * ones). Without a phone, a fresh name-only ficha is created. Every "cria ou
+ * vincula a ficha" path shares one owner for the "BA default + shared-phone"
+ * policy.
  *
  * Callers must already be inside an active Payload transaction (the advisory
  * lock requires it) and authorized to own the write (staff creation flows run
@@ -51,19 +52,14 @@ export const findOrCreateContactByPhone = async ({
       depth: 0,
       limit: 2,
       pagination: false,
-      // Intentional admin bypass: the phone invariant must see every ficha,
+      // Intentional admin bypass: the phone match must see every ficha,
       // including ones outside the actor's campaign scope.
       overrideAccess: true,
       req,
     })
 
-    if (contacts.totalDocs > 1) {
-      throw new Error(CONTACT_PHONE_AMBIGUOUS_MESSAGE)
-    }
-
-    const existing = contacts.docs[0]
-    if (existing) {
-      return { contactID: existing.id, reused: true }
+    if (contacts.totalDocs === 1) {
+      return { contactID: contacts.docs[0]!.id, reused: true }
     }
   }
 
@@ -79,12 +75,6 @@ export const findOrCreateContactByPhone = async ({
     },
     depth: 0,
     overrideAccess: true,
-    // With a phone, the advisory lock is held for this transaction and the
-    // find above already proved the phone is free — the Contact
-    // phone-invariant hook can skip its redundant lock+availability check
-    // (same contract as the C6 bulk-import path, fail-closed on a missing
-    // transaction). Without a phone there is no uniqueness to enforce.
-    ...(phone ? { context: { skipContactPhoneInvariant: true as const } } : {}),
     req,
   })
 

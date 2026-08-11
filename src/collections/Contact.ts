@@ -2,53 +2,9 @@ import { CitiesByState } from '@/lib/cities'
 import { BRAZILIAN_PHONE_INVALID_MESSAGE, normalizeBrazilianPhone } from '@/lib/phone'
 import { trimmedText } from '@/lib/text'
 import { canManageContacts, canReadContacts } from '@/utilities/campaignAccess'
-import {
-  acquireContactPhoneLocks,
-  assertContactPhoneAvailable,
-} from '@/utilities/contactPhoneInvariant'
 import { assertStateDeputyNameAvailable } from '@/utilities/stateDeputy/nameInvariant'
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
-
-const enforceUniqueContactPhone: CollectionBeforeChangeHook = async ({
-  data,
-  operation,
-  originalDoc,
-  req,
-}) => {
-  // Opt-out for callers that have already acquired the phone advisory locks in the
-  // SAME Payload transaction (e.g. bulk import). Fail closed: the flag is only
-  // honored inside an active transaction — without one the xact-level advisory
-  // lock cannot be held, so we run the full check regardless of the caller's claim.
-  if (req.context?.skipContactPhoneInvariant === true) {
-    if (req.transactionID == null) {
-      throw new APIError(
-        'skipContactPhoneInvariant exige uma transação ativa com os locks de telefone já adquiridos.',
-        500,
-      )
-    }
-    return data
-  }
-
-  const phone = String(data.phone ?? originalDoc?.phone ?? '')
-  // Phone-less contacts (e.g. name-only leadership imports) have no uniqueness to enforce.
-  if (!phone) return data
-  const oldPhone =
-    operation === 'update' && typeof originalDoc?.phone === 'string' ? originalDoc.phone : undefined
-
-  await acquireContactPhoneLocks(
-    req.payload,
-    req,
-    oldPhone === undefined ? [phone] : [oldPhone, phone],
-  )
-  await assertContactPhoneAvailable(
-    req.payload,
-    req,
-    phone,
-    operation === 'update' ? Number(originalDoc?.id) : undefined,
-  )
-  return data
-}
 
 const enforceStateDeputyName: CollectionBeforeChangeHook = async ({
   data,
@@ -125,7 +81,7 @@ export const Contact: CollectionConfig = {
         return data
       },
     ],
-    beforeChange: [enforceUniqueContactPhone, enforceStateDeputyName],
+    beforeChange: [enforceStateDeputyName],
   },
   fields: [
     {

@@ -36,7 +36,6 @@ import {
   runStaffEntityMutation,
   type StaffEntityPolicy,
 } from '@/utilities/campaignEntityActions'
-import { assertContactPhoneWritable } from '@/utilities/contactPhoneInvariant'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
 import { revalidateMunicipalityListPaths } from '@/utilities/municipality/municipalityRevalidation'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
@@ -184,7 +183,6 @@ export const updateStateDeputyContactRecord = async (
         contactData.email = data.email ?? null
       } else if (data.field === 'phone') {
         if (data.phone) {
-          await assertContactPhoneWritable(payload, req, contactID, data.phone)
           contactData.phone = data.phone
         } else {
           contactData.phone = null

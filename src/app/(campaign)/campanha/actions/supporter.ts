@@ -19,7 +19,7 @@ import {
   type ConsentDescriptor,
 } from '@/utilities/campaignConsent'
 import { findOrCreateContactByPhone } from '@/utilities/contactIdentity'
-import { acquireContactPhoneLocks } from '@/utilities/contactPhoneInvariant'
+import { acquireContactPhoneLocks } from '@/utilities/contactPhoneLocks'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { isUniqueSupporterConflict } from '@/utilities/supporter/supporterErrors'

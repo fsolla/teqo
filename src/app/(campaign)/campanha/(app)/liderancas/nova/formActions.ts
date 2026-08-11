@@ -12,13 +12,11 @@ import {
   runCampaignRedirectFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
-import { CONTACT_PHONE_AMBIGUOUS_MESSAGE } from '@/utilities/contactPhoneInvariant'
 
 const safeMessages = [
   LEADERSHIP_DUPLICATE_MESSAGE,
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
   ...leadershipStaffEditSafeMessages,
-  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
 ] as const
 
 export const createLeadershipFormAction = async (
