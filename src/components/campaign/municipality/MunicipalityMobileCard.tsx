@@ -81,14 +81,33 @@ type MunicipalityMobileCardProps = {
   signalFormAction: MunicipalityStaffFormAction
 }
 
-/** Dense chip trigger styling shared by the Tendência/Nível chips (B193). */
-const chipTriggerClassName = 'min-h-8 rounded-full px-2.5'
+/**
+ * B196 — dense chip trigger styling shared by the Tendência/Nível chips:
+ * the whole label+value block is the tap target, label above the pill
+ * (gate B). `hover:bg-transparent` kills the base trigger's hover pill —
+ * the block reads as label+value, not a button. `min-h-11` keeps the touch
+ * target the plan's own `min-h-0` would have cut.
+ */
+const chipTriggerClassName =
+  'flex min-h-11 flex-col items-start justify-center gap-0.5 rounded-md px-1 hover:bg-transparent'
 
-/** Ghost trigger styling for the read-only relation groups (no hover pill). */
-const relationTriggerClassName = 'min-h-0 rounded-md bg-transparent px-0 hover:bg-transparent'
+/** Ghost trigger styling for the read-only relation groups (no hover pill).
+ * `w-full` keeps the avatar overlap row constrained to the group's flex-1
+ * box — without it the inline-block button grows with the avatars' min-content
+ * and the stack spills into the neighbouring group (B196). */
+const relationTriggerClassName =
+  'min-h-0 w-full rounded-md bg-transparent px-0 hover:bg-transparent'
 
 const ChipLabel = ({ children }: { children: ReactNode }) => (
   <span className="text-xs font-medium text-muted-foreground">{children}</span>
+)
+
+/** B196 (gate B) — one chip block: label above the value pill. */
+const ChipBlock = ({ label, children }: { label: string; children: ReactNode }) => (
+  <div className="flex flex-col gap-0.5">
+    <ChipLabel>{label}</ChipLabel>
+    {children}
+  </div>
 )
 
 /** Read-only city rows render a plain dash everywhere a control would sit. */
@@ -105,7 +124,7 @@ const RelationGroupTrigger = ({
 }) => (
   <div className="flex w-full min-w-0 flex-col gap-1.5">
     <ChipLabel>{label}</ChipLabel>
-    <MunicipalityRelationAvatarStack entries={entries} emptyState={emptyState} wrap />
+    <MunicipalityRelationAvatarStack entries={entries} emptyState={emptyState} overlapRow />
   </div>
 )
 
@@ -180,13 +199,16 @@ export const MunicipalityMobileCard = ({
   return (
     <article
       className={cn(
-        'relative flex flex-col gap-3 rounded-none border-b p-4 last:border-b-0 md:rounded-xl md:border md:last:border-b',
+        // B196 — denser vertical rhythm: gap-2.5 between blocks and py-3
+        // (the horizontal p-4 keeps the B184 edge-to-edge bleed). Touch
+        // targets (min-h-11 controls) are untouched.
+        'relative flex flex-col gap-2.5 rounded-none border-b px-4 py-3 last:border-b-0 md:rounded-xl md:border md:last:border-b',
         isPriority && !isCity && 'border-r-[6px] border-r-primary',
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
-          <h3 className="flex items-center gap-1.5 font-medium">
+          <h3 className="flex items-center gap-1.5 text-lg leading-tight font-medium">
             <Link
               href={`/campanha/municipios/${municipality.slug}`}
               className="rounded-md after:absolute after:inset-0 after:rounded-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:after:rounded-xl"
@@ -243,13 +265,16 @@ export const MunicipalityMobileCard = ({
             />
           ) : null}
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            <TerritorialClassCardReadout municipality={municipality} />
+          {/* B196 (gate B) — every chip is a label-above-value block; the row
+              accepts 1–2 lines, but no chip ever breaks in the middle. */}
+          <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
+            <ChipBlock label="Classe">
+              <TerritorialClassCardReadout municipality={municipality} />
+            </ChipBlock>
             {isCity ? (
-              <span className="inline-flex items-center gap-1.5">
-                <ChipLabel>Tendência</ChipLabel>
+              <ChipBlock label="Tendência">
                 <Badge variant="outline">Não registrada</Badge>
-              </span>
+              </ChipBlock>
             ) : (
               <MunicipalityListTrendControl
                 municipalityID={municipality.id}
@@ -259,19 +284,20 @@ export const MunicipalityMobileCard = ({
                 variant="sheet"
                 triggerClassName={chipTriggerClassName}
                 trigger={(trend) => (
-                  <>
-                    <ChipLabel>Tendência</ChipLabel>
+                  <ChipBlock label="Tendência">
                     <Badge
                       variant={trend.status ? politicalTrendBadgeVariant[trend.status] : 'outline'}
                     >
                       {trend.status ? politicalTrendLabels[trend.status] : 'Não registrada'}
                     </Badge>
-                  </>
+                  </ChipBlock>
                 )}
               />
             )}
             {isCity ? (
-              <span className="text-muted-foreground">—</span>
+              <ChipBlock label="Nível">
+                <CityDash />
+              </ChipBlock>
             ) : canMoveEngagementLevel ? (
               <MunicipalityListLevelControl
                 municipalityID={municipality.id}
@@ -282,21 +308,19 @@ export const MunicipalityMobileCard = ({
                 variant="sheet"
                 triggerClassName={chipTriggerClassName}
                 trigger={(level, note) => (
-                  <>
-                    <ChipLabel>Nível</ChipLabel>
+                  <ChipBlock label="Nível">
                     <MunicipalityLevelBadge level={level} note={note} layout="table" />
-                  </>
+                  </ChipBlock>
                 )}
               />
             ) : (
-              <span className="inline-flex items-center gap-1.5">
-                <ChipLabel>Nível</ChipLabel>
+              <ChipBlock label="Nível">
                 <MunicipalityLevelBadge
                   level={municipality.engagementLevel}
                   note={municipality.levelNote}
                   layout="table"
                 />
-              </span>
+              </ChipBlock>
             )}
           </div>
 
@@ -326,7 +350,7 @@ export const MunicipalityMobileCard = ({
                   <MunicipalityAdvisorAvatarStack
                     advisors={advisors}
                     isPriority={isPriority}
-                    wrap
+                    overlapRow
                   />
                 </div>
               )}

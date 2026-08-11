@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test'
 
 import { SUPPORTER_REGISTRATION_CONSENT_KEY } from '../../src/lib/campaignConsentKeys.js'
 import { fallbackDemandTitle } from '../../src/lib/demandTitle.js'
+import { hookFilledCreateData } from '../../src/utilities/hookFilledData.js'
 import {
   ensureLeasedConsent,
   SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
@@ -1137,6 +1138,219 @@ test.describe('Municípios — card denso mobile (B193)', () => {
     const emptyCta = emptyCard.getByRole('button', { name: /Registrar atualização em/ })
     await emptyCta.click()
     await expect(page.getByRole('dialog', { name: 'Registrar atualização' })).toBeVisible()
+  })
+})
+
+/**
+ * B196 (2026-08-10): the mobile list bar is a chassis standard for every
+ * list — glued to the app top bar with no gap (the sticky's containing block
+ * starts at the scrollport top via `:has()`), dense (~40px total, no focus
+ * ring below `md`), and the mobile card reads denser: 18px name with the
+ * territory glued, label-above chips (Classe/Tendência/Nível — gate B), and
+ * one overlapping avatar row per relation group (no wrap, no cap, no "…").
+ */
+test.describe('Municípios — barra colada e card denso (B196)', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  const mobileTopBar = (page: Page) => page.locator('[data-slot="campaign-mobile-top-bar"]')
+  const contentScroll = (page: Page) => page.locator('[data-slot="campaign-content-scroll"]')
+  const headerBottom = async (topBar: ReturnType<typeof mobileTopBar>) =>
+    (await topBar.boundingBox())!.y + (await topBar.boundingBox())!.height
+  // `?q=` matches name PREFIXES, so every card is anchored on the
+  // municipality's own name link.
+  const cardFor = (page: Page, name: string) =>
+    page
+      .locator('[data-view="mobile-cards"] article')
+      .filter({ has: page.getByRole('link', { name, exact: true }) })
+      .first()
+
+  test('bar is glued to the header, ~40px tall, no focus ring, nothing passes above on scroll', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora B196 Barra'),
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/municipios`)
+    // C106 — dynamic pages stream a transient hidden `#S:*` copy of the shell.
+    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+
+    const topBar = mobileTopBar(page)
+    const omniboxInput = page.getByRole('combobox', { name: 'Filtrar municípios' })
+    const form = omniboxInput.locator('xpath=ancestor::form[1]')
+    const field = omniboxInput.locator('..')
+    await expect(form).toBeVisible()
+
+    // Glued: no gap between the app top bar and the filter bar.
+    await expect.poll(async () => (await form.boundingBox())!.y).toBe(await headerBottom(topBar))
+
+    // Dense: the whole bar stays around 40px (32px field + py + border).
+    await expect.poll(async () => (await form.boundingBox())!.height).toBeLessThanOrEqual(44)
+
+    // No focus ring: the field gains no shadow/border color on focus.
+    const shadowBefore = await field.evaluate((el) => getComputedStyle(el).boxShadow)
+    await omniboxInput.focus()
+    await expect
+      .poll(() => field.evaluate((el) => getComputedStyle(el).boxShadow))
+      .toBe(shadowBefore)
+
+    // Scroll: the bar stays glued to the header — cards roll UNDER the
+    // opaque bar, never above it.
+    await contentScroll(page).evaluate((el) => el.scrollTo(0, el.scrollHeight))
+    await expect.poll(async () => (await form.boundingBox())!.y).toBe(await headerBottom(topBar))
+    await expect.poll(async () => (await form.boundingBox())!.height).toBeLessThanOrEqual(44)
+  })
+
+  test('name is 18px with the territory glued; Classe/Tendência/Nível chips are label-above blocks', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora B196 Card'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(
+      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
+    )
+    const card = cardFor(page, municipality.name)
+    await expect(card).toBeVisible()
+
+    // Smaller name (18px) with the territory glued right below it.
+    const heading = card.getByRole('heading', { level: 3 })
+    await expect(heading).toHaveCSS('font-size', '18px')
+    const headingBox = (await heading.boundingBox())!
+    const territory = card.locator('h3 + p')
+    const territoryBox = (await territory.boundingBox())!
+    expect(territoryBox.y - headingBox.y - headingBox.height).toBeLessThanOrEqual(6)
+
+    // Every chip is a label-above block: the value renders below the label
+    // (gate B). "Classe" debuts as a label; Tendência/Nível keep theirs.
+    for (const label of ['Classe', 'Tendência', 'Nível']) {
+      const chipLabel = card.getByText(label, { exact: true })
+      await expect(chipLabel).toBeVisible()
+      const labelY = (await chipLabel.boundingBox())!.y
+      const valueY = (await chipLabel.locator('xpath=following-sibling::*[1]').boundingBox())!.y
+      expect(valueY).toBeGreaterThan(labelY)
+    }
+  })
+
+  test('relation groups: one row per group, overlap grows with the count', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora B196 Avatares'),
+    })
+    const fiveAdvisors = await Promise.all(
+      Array.from({ length: 5 }, (_, i) =>
+        fixtures.createCampaignUser('advisor', {
+          name: fixtures.value(`Assessora B196 ${i + 1}`),
+        }),
+      ),
+    )
+    const twoAdvisors = await Promise.all(
+      Array.from({ length: 2 }, (_, i) =>
+        fixtures.createCampaignUser('advisor', {
+          name: fixtures.value(`Assessora B196 dois ${i + 1}`),
+        }),
+      ),
+    )
+    const crowded = await fixtures.claimMunicipality()
+    const sparse = await fixtures.claimMunicipality()
+    await fixtures.payload.update({
+      collection: 'municipality',
+      id: crowded.id,
+      data: { advisors: fiveAdvisors.map((advisor) => advisor.id) },
+      depth: 0,
+    })
+    await fixtures.payload.update({
+      collection: 'municipality',
+      id: sparse.id,
+      data: { advisors: twoAdvisors.map((advisor) => advisor.id) },
+      depth: 0,
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+
+    // Five advisors: all on ONE row, each covering the start of the next —
+    // the overlap is proportional to the count (no wrap, no cap, no "…").
+    await page.goto(`${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(crowded.name)}`)
+    const crowdedCard = cardFor(page, crowded.name)
+    await expect(crowdedCard).toBeVisible()
+    const crowdedRow = crowdedCard.locator('[data-view="relation-avatars"]').first()
+    await expect(crowdedRow.locator('.size-7')).toHaveCount(5)
+    const crowdedBoxes = await crowdedRow
+      .locator('.size-7')
+      .evaluateAll((avatars) => avatars.map((a) => a.getBoundingClientRect()))
+    expect(new Set(crowdedBoxes.map((box) => Math.round(box.y))).size).toBe(1)
+    for (let i = 1; i < crowdedBoxes.length; i++) {
+      expect(crowdedBoxes[i]!.x).toBeLessThan(crowdedBoxes[i - 1]!.x + crowdedBoxes[i - 1]!.width)
+    }
+
+    // Two advisors: same single row, no overlap (few entries keep apart).
+    await page.goto(`${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(sparse.name)}`)
+    const sparseCard = cardFor(page, sparse.name)
+    await expect(sparseCard).toBeVisible()
+    const sparseRow = sparseCard.locator('[data-view="relation-avatars"]').first()
+    await expect(sparseRow.locator('.size-7')).toHaveCount(2)
+    const sparseBoxes = await sparseRow
+      .locator('.size-7')
+      .evaluateAll((avatars) => avatars.map((a) => a.getBoundingClientRect()))
+    expect(new Set(sparseBoxes.map((box) => Math.round(box.y))).size).toBe(1)
+    expect(sparseBoxes[1]!.x).toBeGreaterThanOrEqual(sparseBoxes[0]!.x + sparseBoxes[0]!.width)
+  })
+
+  test('chassis elsewhere: the actions row keeps its breathing room and the bar glues on scroll (atividades)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora B196 Ativ'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+    // Enough rows to make the scrollport scrollable once the top bar takes over.
+    for (let i = 0; i < 5; i++) {
+      await fixtures.payload.create({
+        collection: 'activity',
+        data: hookFilledCreateData<'activity'>({
+          title: `Atividade B196 ${fixtures.value('x')}`,
+          status: 'confirmado',
+          startAt: '2026-09-01T13:00:00.000Z',
+          municipality: municipality.id,
+          responsible: [{ relationTo: 'campaignUser', value: coordinator.id }],
+        }),
+        depth: 0,
+      })
+    }
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/atividades`)
+
+    const topBar = mobileTopBar(page)
+    const omniboxInput = page.getByRole('combobox', { name: 'Filtrar atividades' })
+    const form = omniboxInput.locator('xpath=ancestor::form[1]')
+    await expect(form).toBeVisible()
+
+    // On load the actions row (criar/planejar) breathes ABOVE the bar — the
+    // bar is not glued yet; it glues once the row scrolls away.
+    const headerBottomValue = await headerBottom(topBar)
+    expect((await form.boundingBox())!.y).toBeGreaterThan(headerBottomValue)
+
+    // The scrollport must actually scroll for the sticky to engage.
+    const scrollport = contentScroll(page)
+    await expect
+      .poll(() => scrollport.evaluate((el) => el.scrollHeight - el.clientHeight))
+      .toBeGreaterThan(0)
+    await scrollport.evaluate((el) => el.scrollTo(0, el.scrollHeight))
+    await expect.poll(async () => (await form.boundingBox())!.y).toBe(headerBottomValue)
   })
 })
 

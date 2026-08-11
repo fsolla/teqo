@@ -57,7 +57,7 @@ export default async function ActivityListPage({ searchParams }: ActivityListPag
   return (
     <CampaignPageShell>
       {canCreate ? (
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2 pt-4 md:pt-0">
           <Button asChild variant="outline" className="min-h-11">
             <Link href={TOUR_COMPOSER_PATH}>
               <MapPinnedIcon data-icon="inline-start" aria-hidden="true" />
