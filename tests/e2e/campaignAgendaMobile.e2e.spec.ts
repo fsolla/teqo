@@ -449,6 +449,43 @@ test.describe('C110 — feedback visual do arrasto (reveal do adjacente + commit
     await expect(page.getByRole('dialog')).toHaveCount(0)
   })
 
+  test('o arrasto para o período anterior também revela o quadro do grid (prev, C110+)', async ({
+    campaign,
+    page,
+  }) => {
+    const { today } = await seedTodayAndTomorrowActivities(campaign, page)
+    const yesterday = civilDatePlusDays(today, -1)
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`${campaign.baseURL}/campanha/agenda`)
+
+    const todayLabel = dayLabelFor(today)
+    await expect(campaignPageChrome(page, todayLabel)).toBeVisible({ timeout: 15_000 })
+
+    const cdp = await page.context().newCDPSession(page)
+    const agendaBox = await page.locator('.activity-agenda').first().boundingBox()
+    if (!agendaBox) throw new Error('Calendário não expôs área para o gesto de navegação.')
+
+    // C110+ — pinha o direction `prev`: o content do preview alinha no fim
+    // (flex-end) e o scene precisa de largura explícita para não colapsar.
+    await dispatchTouchDrag(cdp, agendaBox, 0.3, 0.8, {
+      moveDelayMs: 40,
+      inspectAfterMove: async () => {
+        const preview = agendaSwipePreview(page)
+        await expect(preview).toBeVisible()
+        await expect(preview.locator('.activity-agenda-swipe-frame')).toBeVisible()
+        await expect(preview.locator('.activity-agenda-swipe-label')).toHaveText(
+          dayLabelFor(yesterday),
+        )
+      },
+    })
+
+    await expect(campaignPageChrome(page, dayLabelFor(yesterday))).toBeVisible({
+      timeout: 15_000,
+    })
+    await expect(agendaSwipePreview(page)).toHaveCount(0)
+  })
+
   test('soltar abaixo do limiar volta ao período atual (snap-back) sem navegar', async ({
     campaign,
     page,

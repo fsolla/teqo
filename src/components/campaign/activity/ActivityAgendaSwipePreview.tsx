@@ -82,52 +82,55 @@ export const ActivityAgendaSwipePreview = ({
         )}
         {label ? <span className="activity-agenda-swipe-label">{label}</span> : null}
 
-        {/* C110 — the abstract grid frame; the list view has no columns to
-            suggest, so it degrades to chevron + label + event rows (the
-            accepted degradation of the intention). The day view keeps just
-            the time bands — a single-day header would mislabel the columns. */}
+        {/* C110+ — the positioned indicators (dots/bars) anchor to the frame's
+            own box: they live in the same `.activity-agenda-swipe-scene`
+            wrapper as the skeleton, so their percentages resolve against the
+            frame, not the whole content block (chevron/label included). The
+            list view has no frame, so its rows stay in the content flow. */}
         {view !== 'list' ? (
-          <div className="activity-agenda-swipe-frame" data-view={view}>
-            {view === 'week' ? (
-              <div className="activity-agenda-swipe-frame-head">
-                {weekInitials.map((initial) => (
-                  <span key={initial}>{initial}</span>
-                ))}
-              </div>
-            ) : null}
+          <div className="activity-agenda-swipe-scene">
+            <div className="activity-agenda-swipe-frame" data-view={view}>
+              {view === 'week' ? (
+                <div className="activity-agenda-swipe-frame-head">
+                  {weekInitials.map((initial) => (
+                    <span key={initial}>{initial}</span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            {visibleEvents.map((event) => {
+              if (view === 'month') {
+                const cell = monthCellPosition(range.start, event.startAt)
+                if (!cell) return null
+                return (
+                  <span
+                    key={event.id}
+                    className="activity-agenda-swipe-dot"
+                    style={{
+                      left: `${cell.column * (100 / 7)}%`,
+                      top: `${cell.row * (100 / 6)}%`,
+                    }}
+                  />
+                )
+              }
+              return (
+                <span
+                  key={event.id}
+                  className="activity-agenda-swipe-event"
+                  style={
+                    event.allDay ? { top: '2%' } : { top: `${timedTopPercent(event.startAt)}%` }
+                  }
+                />
+              )
+            })}
           </div>
-        ) : null}
-
-        {visibleEvents.map((event) => {
-          if (view === 'month') {
-            const cell = monthCellPosition(range.start, event.startAt)
-            if (!cell) return null
-            return (
-              <span
-                key={event.id}
-                className="activity-agenda-swipe-dot"
-                style={{
-                  left: `${cell.column * (100 / 7)}%`,
-                  top: `${cell.row * (100 / 6)}%`,
-                }}
-              />
-            )
-          }
-          if (view === 'list') {
-            return (
-              <span key={event.id} className="activity-agenda-swipe-list-row">
-                {event.title}
-              </span>
-            )
-          }
-          return (
-            <span
-              key={event.id}
-              className="activity-agenda-swipe-event"
-              style={event.allDay ? { top: '2%' } : { top: `${timedTopPercent(event.startAt)}%` }}
-            />
-          )
-        })}
+        ) : (
+          visibleEvents.map((event) => (
+            <span key={event.id} className="activity-agenda-swipe-list-row">
+              {event.title}
+            </span>
+          ))
+        )}
       </div>
     </div>
   )
