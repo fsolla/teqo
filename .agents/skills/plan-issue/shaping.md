@@ -53,6 +53,6 @@ Armadilhas se alguém “só completar” o desejo humano:
 4. Direção no codebase é hipótese (não contrato técnico)?
 5. Zero decisões duras de engenharia no plano?
 
-Se o item muda UI: canvas de rascunho no gate ([ui-draft-canvas.md](ui-draft-canvas.md)) antes de registrar — não conta como “engenharia no plano”; é validação visual da intenção.
+Se o item muda UI: rascunho HTML+Tailwind no gate ([ui-draft-html.md](ui-draft-html.md)) antes de registrar — não conta como “engenharia no plano”; é validação visual da intenção.
 
 &lt;4 → corrigir antes de gravar / registrar Issue.
