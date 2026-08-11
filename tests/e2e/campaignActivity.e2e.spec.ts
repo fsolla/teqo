@@ -49,7 +49,9 @@ test.describe('Atividades — registro-fundação', () => {
 
     await page.getByRole('link', { name: 'Adicionar demanda' }).click()
     await expect(page.locator('input[name="activityId"]')).toHaveValue(/\d+/)
-    await expect(page.getByLabel('Atividade relacionada')).toContainText(activityTitle)
+    // `.first()`: transient RSC-pending duplication also copies the combobox
+    // trigger (same strict-mode flake as cd469857; observed on loaded machines).
+    await expect(page.getByLabel('Atividade relacionada').first()).toContainText(activityTitle)
     await expect(page.getByLabel('Município')).toHaveValue(String(municipality.id))
 
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}?tab=updates`)
