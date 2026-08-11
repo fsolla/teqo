@@ -37,6 +37,36 @@ export const isRemoteDbOverrideSet = () =>
   process.env[ALLOW_REMOTE_DB_FLAG] === 'true' || process.env[ALLOW_REMOTE_DB_FLAG] === '1'
 
 /**
+ * Port for `next dev` (OPS40). Next's CLI resolves its port via commander's
+ * `.env('PORT')` BEFORE `@next/env` loads `.env.local`, so a `PORT` written by
+ * the worktree provisioner was silently ignored and every `pnpm dev` bound
+ * 3000. `loadCliEnv()` has already merged real env > `.env.local` > `.env`
+ * (override:false) into `process.env`, so reading `env.PORT` gives exactly the
+ * precedence the repo wants: real env (Playwright's webServer) wins, then the
+ * worktree's file, then no port at all (Next's 3000 default + allowRetry).
+ * Returns null when absent (caller omits `-p`); throws fail-closed on a
+ * non-empty invalid value (PORT=abc must not silently fall back to 3000).
+ *
+ * @param {Record<string, string | undefined>} [env]
+ */
+export const resolveDevPort = (env = process.env) => {
+  const raw = (env.PORT ?? '').trim()
+  if (raw === '') return null
+  const port = Number(raw)
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`PORT inválida: ${JSON.stringify(raw)} (esperado 1..65535)`)
+  }
+  return port
+}
+
+/**
+ * `next dev` argv for a resolved port. The port MUST go as a CLI flag — the
+ * env-file value never reaches commander's `env('PORT')`. A null port omits
+ * `-p`, keeping Next's default 3000 and its "retry a free port" behavior.
+ */
+export const nextDevArgs = (port) => (port === null ? ['dev'] : ['dev', '-p', String(port)])
+
+/**
  * download → cache → sha256 with provenance logging. `ext` picks the cache
  * filename; when it is 'json' the parsed body rides along. `expectedSha256`
  * fails hard on mismatch (provenance-pinned sources, e.g. TSE zips).
