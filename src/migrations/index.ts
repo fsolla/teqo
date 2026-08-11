@@ -48,6 +48,7 @@ import * as migration_20260808_184113_remodel_activity_responsible from './20260
 import * as migration_20260809_204728_add_campaign_user_contact_and_leadership_advisors from './20260809_204728_add_campaign_user_contact_and_leadership_advisors';
 import * as migration_20260810_010844_add_activity_all_day from './20260810_010844_add_activity_all_day';
 import * as migration_20260811_111828_add_contact_phones_array from './20260811_111828_add_contact_phones_array';
+import * as migration_20260811_133332_add_google_calendar_sync from './20260811_133332_add_google_calendar_sync';
 
 export const migrations = [
   {
@@ -298,6 +299,11 @@ export const migrations = [
   {
     up: migration_20260811_111828_add_contact_phones_array.up,
     down: migration_20260811_111828_add_contact_phones_array.down,
-    name: '20260811_111828_add_contact_phones_array'
+    name: '20260811_111828_add_contact_phones_array',
+  },
+  {
+    up: migration_20260811_133332_add_google_calendar_sync.up,
+    down: migration_20260811_133332_add_google_calendar_sync.down,
+    name: '20260811_133332_add_google_calendar_sync',
   },
 ];

@@ -3,6 +3,7 @@ import 'server-only'
 import { createHash } from 'node:crypto'
 
 import { allDayCivilDateOf, allDayExclusiveEndDate } from '@/lib/activityAllDay'
+import { buildActivityDescriptionParts } from '@/lib/activityDescription'
 import type { Activity, CalendarFeed } from '@/payload-types'
 import { advisorMunicipalityScopeWhere } from '@/utilities/access/shared'
 import type { Payload, Where } from 'payload'
@@ -24,15 +25,9 @@ const escapeICalText = (value: string): string =>
 const formatICalDate = (isoString: string): string =>
   isoString.replace(/[-:]/g, '').replace(/\.\d{3}/, '')
 
-const buildActivityDescription = (activity: Activity, municipalityName?: string): string => {
-  const parts: string[] = []
-  if (municipalityName) parts.push(`Município: ${municipalityName}`)
-  if (activity.locality) parts.push(`Local: ${activity.locality}`)
-  if (activity.tags?.length) parts.push(`Tags: ${activity.tags.join(', ')}`)
-  if (activity.deputyPresent) parts.push('Deputado presente')
-  if (activity.status === 'cancelado') parts.push('CANCELADO')
-  return parts.join('\\n')
-}
+const buildActivityDescription = (activity: Activity, municipalityName?: string): string =>
+  // iCal escapes newlines as literal `\n` (backslash + n).
+  buildActivityDescriptionParts(activity, municipalityName).join('\\n')
 
 export const generateICalFeed = (
   activities: Activity[],
@@ -144,7 +139,8 @@ export const buildICalFeedResponse = (
   })
 }
 
-const buildFeedDateRange = (): { rangeStart: string; rangeEnd: string } => {
+/** The shared activity window (past lookback + future lookahead) of the feed and the Google mirror. */
+export const buildActivityWindowRange = (): { rangeStart: string; rangeEnd: string } => {
   const now = new Date()
   const rangeStart = new Date(now)
   rangeStart.setDate(rangeStart.getDate() - FEED_LOOKBACK_DAYS)
@@ -157,24 +153,32 @@ const buildFeedDateRange = (): { rangeStart: string; rangeEnd: string } => {
   }
 }
 
+/**
+ * The activity window (past lookback + future lookahead) and its base where
+ * clauses — shared by the iCal feed and the C114 Google mirror so both
+ * surfaces keep the SAME horizon by definition. The feed adds its per-feed
+ * filters (municipality/deputy/tag + advisor scope) on top.
+ */
+export const buildActivityWindowWhereClauses = (rangeStart: string, rangeEnd: string): Where[] => [
+  { startAt: { less_than: rangeEnd } },
+  {
+    or: [
+      { endAt: { greater_than: rangeStart } },
+      {
+        and: [{ endAt: { exists: false } }, { startAt: { greater_than_equal: rangeStart } }],
+      },
+    ],
+  },
+  { status: { not_equals: 'cancelado' } },
+]
+
 const buildFeedWhere = (
   feed: CalendarFeed,
   rangeStart: string,
   rangeEnd: string,
   accessibleMunicipalityIds: number[] | null,
 ): Where => {
-  const filters: Where[] = [
-    { startAt: { less_than: rangeEnd } },
-    {
-      or: [
-        { endAt: { greater_than: rangeStart } },
-        {
-          and: [{ endAt: { exists: false } }, { startAt: { greater_than_equal: rangeStart } }],
-        },
-      ],
-    },
-    { status: { not_equals: 'cancelado' } },
-  ]
+  const filters: Where[] = buildActivityWindowWhereClauses(rangeStart, rangeEnd)
 
   if (feed.filterMunicipality) {
     const municipalityId =
@@ -208,7 +212,7 @@ export const loadFeedActivities = async (
   feed: CalendarFeed,
   accessibleMunicipalityIds: number[] | null,
 ): Promise<Activity[]> => {
-  const { rangeStart, rangeEnd } = buildFeedDateRange()
+  const { rangeStart, rangeEnd } = buildActivityWindowRange()
   const where = buildFeedWhere(feed, rangeStart, rangeEnd, accessibleMunicipalityIds)
 
   // Intentional admin bypass: access is already enforced at the feed level
