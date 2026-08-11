@@ -78,12 +78,22 @@ export const CampaignAISidebarProvider = ({
   const restoredSessionRef = useRef(false)
   const sessionReadRef = useRef(false)
   const restoredOpenByRef = useRef<SollinhaChatSessionOpenOrigin>('settle')
+  // B199: the snapshot of the last settle-complete messages — the ONLY
+  // content an `open` write made mid-stream may persist (writing live
+  // messages would freeze a half-received turn in the session).
+  const settledMessagesRef = useRef<UIMessage[]>([])
+  // B199: the `open` value of the last write by either persist effect — lets
+  // the mid-stream effect skip status transitions that leave `open` untouched.
+  const lastWrittenOpenRef = useRef(open)
   useEffect(() => {
     if (sessionReadRef.current || !measured) return
     sessionReadRef.current = true
     const session = readSollinhaChatSession()
     if (session) {
       setMessages(session.messages)
+      // B199: the mid-stream `open` write must never clobber a restored
+      // conversation with an empty snapshot — seed it from the restore itself.
+      settledMessagesRef.current = session.messages
       const openBy = session.openBy ?? 'settle'
       restoredOpenByRef.current = openBy
       if (session.open && (openBy === 'user' || !isMobile)) setOpen(true)
@@ -107,18 +117,34 @@ export const CampaignAISidebarProvider = ({
 
   // B188: persist the conversation only once the chat has settled — writing
   // during streaming would freeze a half-received message in the session
-  // (a reload mid-stream loses only that in-flight turn). `open` changes made
-  // mid-stream are picked up by the settle that follows. Empty state is still
+  // (a reload mid-stream loses only that in-flight turn). Empty state is still
   // written: closing an empty chat must overwrite a stored `open: true`,
   // otherwise a reload would reopen a drawer the user just closed. The
   // persisted `openBy` tells the next page whether the open was the user's
   // (restore it anywhere) or the desktop settle's (desktop-only, OPS22).
+  const openByForWrite = (): SollinhaChatSessionOpenOrigin =>
+    userToggledOpenRef.current || restoredOpenByRef.current === 'user' ? 'user' : 'settle'
   useEffect(() => {
     if (!sessionRestored || status !== 'ready') return
-    const openBy =
-      userToggledOpenRef.current || restoredOpenByRef.current === 'user' ? 'user' : 'settle'
-    writeSollinhaChatSession(messages, open, openBy)
+    settledMessagesRef.current = messages
+    lastWrittenOpenRef.current = open
+    writeSollinhaChatSession(messages, open, openByForWrite())
   }, [sessionRestored, status, messages, open])
+
+  // B199: persist `open` without waiting for the settle — closing the drawer
+  // mid-stream must reach the storage immediately, or a reload would restore
+  // the stale `open: true` and resurrect the drawer. Messages stay at the last
+  // settle-complete snapshot until the next settle (in the abort path the
+  // snapshot IS the terminal content — the documented B188 cut). Skipping
+  // `ready` avoids a duplicate write of the settle effect above, and the
+  // `lastWrittenOpenRef` guard skips plain status transitions that leave
+  // `open` untouched. Deliberately no `messages` dep: never persist a live
+  // stream, only the open flag over the snapshot.
+  useEffect(() => {
+    if (!sessionRestored || status === 'ready' || lastWrittenOpenRef.current === open) return
+    lastWrittenOpenRef.current = open
+    writeSollinhaChatSession(settledMessagesRef.current, open, openByForWrite())
+  }, [sessionRestored, status, open])
 
   // The chat has two surfaces keyed by viewport — the desktop panel and the
   // mobile drawer — and both derive from the SAME `open` flag. Crossing the
