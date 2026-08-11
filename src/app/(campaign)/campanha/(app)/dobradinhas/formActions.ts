@@ -9,6 +9,7 @@ import {
 } from '@/app/(campaign)/campanha/actions/stateDeputy'
 import {
   nullableFormText,
+  repeatedPhoneFormValues,
   repeatedRelationshipFormValues,
   requiredFormBoolean,
   requiredFormText,
@@ -68,6 +69,12 @@ export const updateStateDeputyContactFormAction = async (
           id,
           field: 'phone',
           phone: nullableFormText(formData, 'phone'),
+        })
+      } else if (field === 'phones') {
+        await updateStateDeputyContact({
+          id,
+          field: 'phones',
+          phones: repeatedPhoneFormValues(formData, 'phones'),
         })
       } else {
         throw new Error(STATE_DEPUTY_INVALID_FIELD_MESSAGE)

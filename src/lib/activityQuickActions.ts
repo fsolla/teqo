@@ -1,4 +1,12 @@
-import { Calendar, ClipboardList, ListChecks, MapPinned, Pencil, Plus } from 'lucide-react'
+import {
+  Calendar,
+  CalendarCog,
+  ClipboardList,
+  ListChecks,
+  MapPinned,
+  Pencil,
+  Plus,
+} from 'lucide-react'
 
 import {
   CAMPAIGN_WIZARD_ACTION_SLUGS,
@@ -39,6 +47,17 @@ const listQuickActions = (context: CampaignQuickActionContext): readonly Campaig
           icon: Calendar,
           description: 'Gerar link para sincronizar a agenda com o Google Calendar',
           onAction: context.openCalendarFeed,
+        },
+      ]
+    : []),
+  ...(context.openGoogleCalendarSync
+    ? [
+        {
+          id: 'google-calendar-mirror',
+          label: 'Agenda da Campanha',
+          icon: CalendarCog,
+          description: 'Espelhar a agenda oficial no Google Calendar da campanha',
+          onAction: context.openGoogleCalendarSync,
         },
       ]
     : []),

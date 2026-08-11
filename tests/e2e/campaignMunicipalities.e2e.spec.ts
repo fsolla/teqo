@@ -644,7 +644,7 @@ test.describe('Municípios — jornadas por papel', () => {
       collection: 'contact',
       data: {
         name: fixtures.value('Contato Liderança'),
-        phone: leaderPhone,
+        phones: [{ value: leaderPhone }],
         state: 'BA',
         city: administered.name,
       },
@@ -705,7 +705,7 @@ test.describe('Municípios — jornadas por papel', () => {
     const supporterName = fixtures.value('Apoiador Liderança')
     const supporterPhone = fixtures.phone()
     await page.getByLabel('Nome *').fill(supporterName)
-    await page.getByLabel('Celular *').fill(supporterPhone)
+    await page.getByRole('textbox', { name: 'Celular 1' }).fill(supporterPhone)
     // Radix checkbox: a pre-hydration click is a silent no-op (B13/B17 flake).
     await checkRadixWhenHydrated(page, 'A pessoa autorizou o cadastro *')
     await page.getByRole('button', { name: 'Cadastrar contato' }).click()

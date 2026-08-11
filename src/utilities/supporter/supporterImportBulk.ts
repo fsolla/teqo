@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { randomUUID } from 'node:crypto'
+
 import { sql } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 
@@ -43,6 +45,7 @@ type DrizzleTx = {
 }
 
 const CONTACT_TABLE = 'contact'
+const CONTACT_PHONES_TABLE = 'contact_phones'
 const SUPPORTER_TABLE = 'supporter'
 
 /**
@@ -68,13 +71,15 @@ const SUPPORTER_COLUMNS = [
   'updatedAt',
 ] as const
 
+/** The `Contact.phones` join table (C112): order = priority, value = the number. */
+const CONTACT_PHONES_COLUMNS = ['_order', '_parentID', 'value'] as const
+
 const buildContactRows = (
   rows: SupporterImportBulkRow[],
   now: string,
 ): Array<Record<string, unknown>> =>
   rows.map((row) => ({
     name: row.nome,
-    phone: row.telefone,
     email: null,
     state: 'BA',
     city: row.municipio ?? null,
@@ -128,6 +133,12 @@ const asContactID = (row: Record<string, unknown>): number | null => {
   return Number.isSafeInteger(parsed) ? parsed : null
 }
 
+const asCreatedContactID = (row: Record<string, unknown>): number | null => {
+  const value = row.id
+  const parsed = typeof value === 'number' ? value : Number(value)
+  return Number.isSafeInteger(parsed) ? parsed : null
+}
+
 /**
  * Bulk-insert contacts and municipality-less supporters for a CSV import inside the
  * caller's Payload transaction. Phone advisory locks MUST already be held for
@@ -159,8 +170,10 @@ export const bulkInsertSupporterImport = async (args: {
 
   const tables = getDrizzleTables(payload)
   const contactTable = requireTable(tables, CONTACT_TABLE)
+  const contactPhonesTable = requireTable(tables, CONTACT_PHONES_TABLE)
   const supporterTable = requireTable(tables, SUPPORTER_TABLE)
   assertDrizzleColumns(supporterTable, SUPPORTER_TABLE, SUPPORTER_COLUMNS)
+  assertDrizzleColumns(contactPhonesTable, CONTACT_PHONES_TABLE, CONTACT_PHONES_COLUMNS)
 
   const database = await getPostgresTransactionDatabase(payload, req)
   const tx = database as unknown as DrizzleTx
@@ -172,10 +185,12 @@ export const bulkInsertSupporterImport = async (args: {
   for (const phoneBatch of chunk(phones, INSERT_CHUNK_SIZE)) {
     const existingContactRows = drizzleResultRows(
       await tx.execute(
-        sql`SELECT "id", "phone" FROM "contact" WHERE "phone" IN (${sql.join(
-          phoneBatch.map((phone) => sql`${phone}`),
-          sql`, `,
-        )})`,
+        sql`SELECT "contact"."id" AS "id", "contact_phones"."value" AS "phone" FROM "contact"
+          JOIN "contact_phones" ON "contact_phones"."_parent_id" = "contact"."id"
+          WHERE "contact_phones"."value" IN (${sql.join(
+            phoneBatch.map((phone) => sql`${phone}`),
+            sql`, `,
+          )})`,
       ),
     )
     for (const row of existingContactRows) {
@@ -205,9 +220,18 @@ export const bulkInsertSupporterImport = async (args: {
     const newRows = [...newContactByPhone.values()]
     for (const batch of chunk(newRows, INSERT_CHUNK_SIZE)) {
       const created = await tx.insert(contactTable).values(buildContactRows(batch, now)).returning()
-      for (const row of created) {
-        const inserted = asPhoneKeyedRow(row)
-        if (inserted) contactIdByPhone.set(inserted.phone, inserted.id)
+      // The phones join-table rows follow the inserted contacts: each new
+      // ficha starts with its CSV number as the single (primary) phone.
+      const phoneRows: Array<Record<string, unknown>> = []
+      created.forEach((row, index) => {
+        const insertedID = asCreatedContactID(row)
+        const telefone = batch[index]?.telefone
+        if (insertedID === null || !telefone) return
+        contactIdByPhone.set(telefone, insertedID)
+        phoneRows.push({ id: randomUUID(), _parentID: insertedID, _order: 0, value: telefone })
+      })
+      if (phoneRows.length > 0) {
+        await tx.insert(contactPhonesTable).values(phoneRows)
       }
     }
   }

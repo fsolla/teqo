@@ -29,6 +29,7 @@ import {
   eligibleCampaignStaffWhere,
 } from '@/utilities/campaignAccess'
 import { systemStampedActorField } from '@/utilities/campaignAuditFields'
+import { activityGoogleCalendarSyncHook } from '@/utilities/googleCalendarSyncHooks'
 
 const isActivityMutationShortcut = (context: Record<string, unknown> | undefined) =>
   context?.mutationKind === 'taskToggle' || context?.mutationKind === 'appendUpdate'
@@ -404,7 +405,11 @@ export const Activity: CollectionConfig = {
         await notifyActivityNeedsAttention(req, doc)
         return doc
       },
+      // C114: pushes the official calendar mirror to Google (best-effort —
+      // never throws into the write path; failures land in `paused`).
+      activityGoogleCalendarSyncHook,
     ],
+    afterDelete: [activityGoogleCalendarSyncHook],
   },
   fields: [
     {

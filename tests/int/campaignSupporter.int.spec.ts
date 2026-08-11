@@ -74,7 +74,7 @@ describe('campaign supporter domain', () => {
     expect(
       supporterCreateSchema.safeParse({
         name: 'Maria Silva',
-        phone: '71999990000',
+        phones: ['71999990000'],
         consentAccepted: true,
       }).success,
     ).toBe(true)
@@ -82,14 +82,14 @@ describe('campaign supporter domain', () => {
     expect(
       supporterCreateSchema.safeParse({
         name: 'Maria Silva',
-        phone: '71999990000',
+        phones: ['71999990000'],
       }).success,
     ).toBe(false)
 
     expect(
       supporterCreateSchema.safeParse({
         name: 'Maria Silva',
-        phone: 'invalid',
+        phones: ['invalid'],
         consentAccepted: true,
       }).success,
     ).toBe(false)
@@ -105,7 +105,7 @@ describe('campaign supporter domain', () => {
         await expect(
           createSupporterRecord(payload, coordinator, {
             name: fixtures.value('Apoiador'),
-            phone: fixtures.phone(),
+            phones: [fixtures.phone()],
             consentAccepted: true,
           }),
         ).rejects.toThrow(/Consentimento de cadastro de apoiador ainda não configurado/)
@@ -126,7 +126,7 @@ describe('campaign supporter domain', () => {
 
     const created = await createSupporterRecord(payload, coordinator, {
       name: fixtures.value('Apoiador'),
-      phone,
+      phones: [phone],
       city: 'Salvador',
       consentAccepted: true,
     })
@@ -146,7 +146,7 @@ describe('campaign supporter domain', () => {
     await expect(
       createSupporterRecord(payload, coordinator, {
         name: contact.name,
-        phone: contact.phone,
+        phones: [contact.phone],
         municipality: municipality.id,
         consentAccepted: true,
       }),
@@ -164,7 +164,7 @@ describe('campaign supporter domain', () => {
     await expect(
       createSupporterRecord(payload, advisor, {
         name: fixtures.value('Apoiador'),
-        phone: fixtures.phone(),
+        phones: [fixtures.phone()],
         consentAccepted: true,
       }),
     ).rejects.toThrow(/sem município/)
@@ -172,7 +172,7 @@ describe('campaign supporter domain', () => {
     await expect(
       createSupporterRecord(payload, advisor, {
         name: fixtures.value('Apoiador'),
-        phone: fixtures.phone(),
+        phones: [fixtures.phone()],
         municipality: otherMunicipality.id,
         consentAccepted: true,
       }),
@@ -180,7 +180,7 @@ describe('campaign supporter domain', () => {
 
     const created = await createSupporterRecord(payload, advisor, {
       name: fixtures.value('Apoiador'),
-      phone: fixtures.phone(),
+      phones: [fixtures.phone()],
       municipality: municipality.id,
       consentAccepted: true,
     })
@@ -247,7 +247,7 @@ describe('campaign supporter domain', () => {
     const advisor = await fixtures.createCampaignUser('advisor')
     const phoneOk = fixtures.phone()
     const phoneDup = fixtures.phone()
-    const existing = await fixtures.createContact({ phone: phoneDup })
+    const existing = await fixtures.createContact({ phones: [{ value: phoneDup }] })
     await fixtures.createSupporter({
       contact: existing.id,
       createdBy: coordinator.id,
@@ -288,7 +288,7 @@ describe('campaign supporter domain', () => {
 
     const contact = await payload.find({
       collection: 'contact',
-      where: { phone: { equals: phoneOk } },
+      where: { 'phones.value': { equals: phoneOk } },
       depth: 0,
       limit: 1,
       overrideAccess: true,
@@ -312,8 +312,8 @@ describe('campaign supporter domain', () => {
     await ensureSupporterConsents()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const sharedPhone = fixtures.phone()
-    await fixtures.createContact({ name: 'Comitê Central', phone: sharedPhone })
-    await fixtures.createContact({ name: 'Ana', phone: sharedPhone })
+    await fixtures.createContact({ name: 'Comitê Central', phones: [{ value: sharedPhone }] })
+    await fixtures.createContact({ name: 'Ana', phones: [{ value: sharedPhone }] })
 
     const csv = [
       'nome,telefone,municipio,intencao',
@@ -341,7 +341,7 @@ describe('campaign supporter domain', () => {
     await ensureSupporterConsents()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const phone = fixtures.phone()
-    await fixtures.createContact({ phone })
+    await fixtures.createContact({ phones: [{ value: phone }] })
 
     const csv = `nome,telefone,municipio,intencao\nAna Silva,${phone},Salvador,certo`
     const preview = await previewSupporterImportText(payload, coordinator, csv)
@@ -349,7 +349,7 @@ describe('campaign supporter domain', () => {
 
     // Simulate the race: between preview and confirm another ficha claims the
     // same phone. The confirm holds the phone locks and must fail closed.
-    await fixtures.createContact({ name: 'Segunda Ficha', phone })
+    await fixtures.createContact({ name: 'Segunda Ficha', phones: [{ value: phone }] })
 
     await expect(
       confirmSupporterImportRecord(payload, coordinator, {
@@ -394,7 +394,7 @@ describe('campaign supporter domain', () => {
     })
     const contact = await payload.find({
       collection: 'contact',
-      where: { phone: { equals: phoneOk } },
+      where: { 'phones.value': { equals: phoneOk } },
       depth: 0,
       limit: 1,
       overrideAccess: true,
@@ -417,7 +417,7 @@ describe('campaign supporter domain', () => {
     const phone = fixtures.phone()
     const created = await createSupporterRecord(payload, coordinator, {
       name: fixtures.value('Apoiador'),
-      phone,
+      phones: [phone],
       consentAccepted: true,
     })
     const contactID = relationId(created.contact)
@@ -434,7 +434,7 @@ describe('campaign supporter domain', () => {
       depth: 0,
     })
     expect(contact.name).toBe('Titular removido')
-    expect(contact.phone).not.toBe(phone)
+    expect(contact.phones?.map((entry) => entry.value)).not.toContain(phone)
   })
 
   it('aggregates supporter overview KPIs in a single SQL query for the coordinator', async () => {

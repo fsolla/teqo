@@ -1,5 +1,6 @@
 import { formatAllDayRangeLabel } from '@/lib/activityAllDay'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
+import { primaryPhoneOf } from '@/lib/phone'
 import { isPopulatedRelationship, populatedContactName, relationshipId } from '@/lib/relationship'
 import {
   activityResponsibleTypeLabels,
@@ -287,7 +288,7 @@ export const toActivityFormViewModel = (activity: Activity): ActivityFormViewMod
       ? {
           id: task.responsible.id,
           name: task.responsible.name,
-          phone: task.responsible.phone ?? null,
+          phone: primaryPhoneOf(task.responsible.phones),
         }
       : null,
     due: task.due ?? null,

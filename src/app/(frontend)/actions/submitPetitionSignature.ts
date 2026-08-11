@@ -37,9 +37,15 @@ export const submitPetitionSignature = async ({
   }
 
   try {
+    const { phone, ...contactFields } = data
     const contact = await payload.create({
       collection: 'contact',
-      data,
+      data: {
+        ...contactFields,
+        // The public forms keep a single phone input; the ficha stores the
+        // phones array with that number as primary (C112).
+        phones: phone ? [{ value: phone }] : [],
+      },
       req: { transactionID },
     })
 

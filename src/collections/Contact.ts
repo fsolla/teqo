@@ -1,10 +1,62 @@
 import { CitiesByState } from '@/lib/cities'
-import { BRAZILIAN_PHONE_INVALID_MESSAGE, normalizeBrazilianPhone } from '@/lib/phone'
+import {
+  BRAZILIAN_PHONE_DUPLICATE_MESSAGE,
+  BRAZILIAN_PHONE_INVALID_MESSAGE,
+  normalizeBrazilianPhone,
+} from '@/lib/phone'
 import { trimmedText } from '@/lib/text'
 import { canManageContacts, canReadContacts } from '@/utilities/campaignAccess'
 import { assertStateDeputyNameAvailable } from '@/utilities/stateDeputy/nameInvariant'
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import { APIError } from 'payload'
+
+type ContactPhoneValue = { value: string }
+
+/**
+ * Normalizes the ficha's phone list: each entry is a valid Brazilian mobile
+ * (11 digits, `^[1-9]{2}9\d{8}$`), empty entries are dropped, and the same
+ * number cannot be stored twice in the same ficha (the person already has it;
+ * sharing a number BETWEEN fichas stays allowed — C111). `undefined` (admin
+ * untouched) passes through; `null`/`''` collapse to an empty list.
+ */
+const normalizeContactPhones = (data: unknown): ContactPhoneValue[] => {
+  const phones = Array.isArray(data) ? data : []
+  const seen = new Set<string>()
+  const normalized: ContactPhoneValue[] = []
+
+  for (const entry of phones) {
+    if (entry === null || entry === undefined) continue
+    const raw =
+      typeof entry === 'object' && 'value' in (entry as Record<string, unknown>)
+        ? (entry as Record<string, unknown>).value
+        : entry
+
+    if (raw === null || raw === undefined || raw === '') continue
+
+    const input = String(raw)
+    let value: string | null
+    if (/^\d{11}$/.test(input)) {
+      if (/^[1-9]{2}9\d{8}$/.test(input)) {
+        value = input
+      } else {
+        throw new APIError(BRAZILIAN_PHONE_INVALID_MESSAGE, 400)
+      }
+    } else {
+      value = normalizeBrazilianPhone(input)
+      if (!value) {
+        throw new APIError(BRAZILIAN_PHONE_INVALID_MESSAGE, 400)
+      }
+    }
+
+    if (seen.has(value)) {
+      throw new APIError(BRAZILIAN_PHONE_DUPLICATE_MESSAGE, 400)
+    }
+    seen.add(value)
+    normalized.push({ value })
+  }
+
+  return normalized
+}
 
 const enforceStateDeputyName: CollectionBeforeChangeHook = async ({
   data,
@@ -57,27 +109,14 @@ export const Contact: CollectionConfig = {
   hooks: {
     beforeValidate: [
       ({ data }) => {
-        if (!data || data.phone === undefined) return data
+        if (!data || data.phones === undefined) return data
 
-        if (data.phone === null || data.phone === '') {
-          data.phone = null
+        if (data.phones === null || data.phones === '') {
+          data.phones = []
           return data
         }
 
-        const input = String(data.phone)
-        if (/^\d{11}$/.test(input)) {
-          if (!/^[1-9]{2}9\d{8}$/.test(input)) {
-            throw new APIError(BRAZILIAN_PHONE_INVALID_MESSAGE, 400)
-          }
-          return data
-        }
-
-        const phone = normalizeBrazilianPhone(input)
-        if (!phone) {
-          throw new APIError(BRAZILIAN_PHONE_INVALID_MESSAGE, 400)
-        }
-
-        data.phone = phone
+        data.phones = normalizeContactPhones(data.phones)
         return data
       },
     ],
@@ -99,15 +138,22 @@ export const Contact: CollectionConfig = {
       required: false,
     },
     {
-      name: 'phone',
-      type: 'text',
-      label: 'Celular',
-      minLength: 11,
-      maxLength: 11,
+      name: 'phones',
+      type: 'array',
+      label: 'Telefones',
       // Optional at the collection level so name-only records (e.g. leaderships imported
       // from the projection sheet) can exist; UI flows still require it via zod schemas.
       required: false,
-      index: true,
+      fields: [
+        {
+          name: 'value',
+          type: 'text',
+          label: 'Celular',
+          minLength: 11,
+          maxLength: 11,
+          index: true,
+        },
+      ],
     },
     {
       name: 'gender',

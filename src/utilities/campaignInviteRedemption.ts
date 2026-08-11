@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { primaryPhoneOf, reorderWithPrimaryPhone } from '@/lib/phone'
 import { relationshipId, requireRelationshipId } from '@/lib/relationship'
 import {
   campaignInviteAutofillSchema,
@@ -9,7 +10,7 @@ import {
   type CampaignInviteAutofillInput,
   type CampaignInviteLoginInput,
 } from '@/lib/schemas/invite'
-import type { CampaignUser } from '@/payload-types'
+import type { CampaignUser, Contact } from '@/payload-types'
 import { requireLeadershipConsent, resolveInviteConsent } from '@/utilities/campaignConsent'
 import {
   acquireCampaignInviteAccountLocks,
@@ -32,9 +33,12 @@ type ProfileInput = {
   gender?: 'feminino' | 'masculino' | 'outro' | 'nao_informado' | null
 }
 
-const profileContactData = (data: ProfileInput) => ({
+const profileContactData = (data: ProfileInput, originalPhones: Contact['phones']) => ({
   name: data.name,
-  phone: data.phone,
+  // The typed phone becomes the PRIMARY of the anchored ficha; every number
+  // the ficha already had is kept (an earlier occurrence of the typed phone
+  // moves, never duplicates) — the person's other numbers survive the invite.
+  phones: reorderWithPrimaryPhone(originalPhones, data.phone).map((value) => ({ value })),
   ...(data.email !== undefined ? { email: data.email } : {}),
   ...(data.gender !== undefined ? { gender: data.gender } : {}),
 })
@@ -123,7 +127,9 @@ export const redeemCampaignInviteAutofillRecord = async (
         payload,
         req,
         contactPhoneLockKeys(
-          [originalContact.phone, data.phone].filter((phone): phone is string => Boolean(phone)),
+          [primaryPhoneOf(originalContact.phones), data.phone].filter((phone): phone is string =>
+            Boolean(phone),
+          ),
         ),
       )
       // C111 — the phone is a contact channel, not a unique person identity:
@@ -132,7 +138,7 @@ export const redeemCampaignInviteAutofillRecord = async (
       await payload.update({
         collection: 'contact',
         id: contactID,
-        data: profileContactData(data),
+        data: profileContactData(data, originalContact.phones),
         depth: 0,
         overrideAccess: true,
         req,
@@ -194,7 +200,9 @@ export const redeemCampaignInviteLoginRecord = async (
       let account = await findReusableLeadershipAccount(payload, req, leadership)
       await acquireCampaignInviteAccountLocks(payload, req, [
         ...contactPhoneLockKeys(
-          [originalContact.phone, data.phone].filter((phone): phone is string => Boolean(phone)),
+          [primaryPhoneOf(originalContact.phones), data.phone].filter((phone): phone is string =>
+            Boolean(phone),
+          ),
         ),
         ...(account?.username ? [`account-username:${account.username}`] : []),
         `account-username:${data.phone}`,
@@ -224,7 +232,7 @@ export const redeemCampaignInviteLoginRecord = async (
       await payload.update({
         collection: 'contact',
         id: originalContact.id,
-        data: profileContactData(data),
+        data: profileContactData(data, originalContact.phones),
         depth: 0,
         overrideAccess: true,
         req,

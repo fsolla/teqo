@@ -229,7 +229,7 @@ describe('StateDeputy contact fields (B163)', () => {
     expect(updated.contact).toMatchObject({
       name: correctedName,
       email: 'corrigido@example.com',
-      phone,
+      phones: expect.arrayContaining([expect.objectContaining({ value: phone })]),
     })
   })
 
@@ -240,7 +240,7 @@ describe('StateDeputy contact fields (B163)', () => {
       name: `${fixtures.value('Dobradinha')} Principal`,
     })
     const takenPhone = fixtures.phone()
-    await fixtures.createContact({ phone: takenPhone })
+    await fixtures.createContact({ phones: [{ value: takenPhone }] })
 
     const updated = await updateStateDeputyContactRecord(payload, coordinator, {
       id: stateDeputy.id,
@@ -254,11 +254,11 @@ describe('StateDeputy contact fields (B163)', () => {
       depth: 0,
       overrideAccess: true,
     })
-    expect(contact.phone).toBe(takenPhone)
+    expect(contact.phones?.[0]?.value).toBe(takenPhone)
 
     const withPhone = await payload.find({
       collection: 'contact',
-      where: { phone: { equals: takenPhone } },
+      where: { 'phones.value': { equals: takenPhone } },
       depth: 0,
       limit: 2,
       pagination: false,

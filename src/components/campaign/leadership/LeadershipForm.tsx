@@ -3,6 +3,7 @@
 import { useActionState } from 'react'
 
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
+import { PhonesFieldEditor } from '@/components/campaign/shared/PhonesFieldEditor'
 import {
   RelationMultiSelect,
   type RelationOption,
@@ -46,7 +47,6 @@ export const LeadershipForm = ({
         <Input
           id="leadership-name"
           name="name"
-          required
           minLength={2}
           maxLength={120}
           className="min-h-11"
@@ -56,20 +56,12 @@ export const LeadershipForm = ({
         ) : null}
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field>
-          <FieldLabel htmlFor="leadership-phone">Celular (com DDD)</FieldLabel>
-          <Input
-            id="leadership-phone"
-            name="phone"
-            type="tel"
-            required
-            autoComplete="tel-national"
-            className="min-h-11"
-          />
-          {fieldError(state.fieldErrors, 'phone') ? (
-            <FieldError>{fieldError(state.fieldErrors, 'phone')}</FieldError>
-          ) : null}
-        </Field>
+        <PhonesFieldEditor
+          name="phones"
+          minRows={1}
+          label="Celulares (o primeiro é o principal)"
+          error={fieldError(state.fieldErrors, 'phones')}
+        />
         <Field>
           <FieldLabel htmlFor="leadership-email">E-mail (opcional)</FieldLabel>
           <Input id="leadership-email" name="email" type="email" className="min-h-11" />

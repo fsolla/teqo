@@ -62,7 +62,9 @@ type EditorUserInput = {
 }
 type ConsentInput = Partial<Pick<Consent, 'key' | 'text'>>
 type ContactInput = Partial<
-  Pick<Contact, 'name' | 'email' | 'phone' | 'gender' | 'state' | 'city' | 'postalCode'>
+  Pick<Contact, 'name' | 'email' | 'gender' | 'state' | 'city' | 'postalCode'> & {
+    phones: Array<{ value: string }>
+  }
 >
 type LeadershipInput = Partial<
   Pick<
@@ -233,8 +235,9 @@ const nextAllocatedMunicipalityIndex = async (
  * Delete campaign rows attached to a freshly claimed municipality. The allocator
  * guarantees no OTHER live test owns this municipality, so anything found here is
  * residue from an aborted previous run that would poison count assertions.
+ * Also deletes the CONTACT rows those residue supporters orphaned (D10 F1).
  */
-const purgeMunicipalityResidue = async (
+export const purgeMunicipalityResidue = async (
   payload: Payload,
   municipalityID: number,
 ): Promise<void> => {
@@ -273,7 +276,6 @@ const purgeMunicipalityResidue = async (
         where: { municipality: { equals: municipalityID } },
         depth: 0,
         pagination: false,
-        select: {},
       }),
       payload.find({
         collection: 'activity',
@@ -335,6 +337,63 @@ const purgeMunicipalityResidue = async (
       where: { id: { in: ids } },
       depth: 0,
     })
+  }
+
+  // D10 F1: an aborted run leaves residue supporters AND their contact rows.
+  // The supporters are gone above; delete the contacts they orphaned (no other
+  // join references them) so the residue stops accumulating — same reference
+  // rule as the production `removeSupporterData` flow, reimplemented here so
+  // the fixture never runs production code under test.
+  const residueContactIDs = [
+    ...new Set(
+      supporters.docs.map((doc) => relationId(doc.contact)).filter((id) => id !== undefined),
+    ),
+  ]
+  if (residueContactIDs.length > 0) {
+    const [leadershipRefs, signatureRefs, subscriptionRefs, supporterRefs] = await Promise.all([
+      payload.find({
+        collection: 'leadership',
+        where: { contact: { in: residueContactIDs } },
+        depth: 0,
+        pagination: false,
+      }),
+      payload.find({
+        collection: 'signature',
+        where: { contact: { in: residueContactIDs } },
+        depth: 0,
+        pagination: false,
+      }),
+      payload.find({
+        collection: 'subscription',
+        where: { contact: { in: residueContactIDs } },
+        depth: 0,
+        pagination: false,
+      }),
+      payload.find({
+        collection: 'supporter',
+        where: { contact: { in: residueContactIDs } },
+        depth: 0,
+        pagination: false,
+      }),
+    ])
+    const referenced = new Set<number>()
+    for (const doc of [
+      ...leadershipRefs.docs,
+      ...signatureRefs.docs,
+      ...subscriptionRefs.docs,
+      ...supporterRefs.docs,
+    ]) {
+      const contactID = relationId(doc.contact)
+      if (contactID !== undefined) referenced.add(contactID)
+    }
+    const orphanContactIDs = residueContactIDs.filter((id) => !referenced.has(id))
+    if (orphanContactIDs.length > 0) {
+      await payload.delete({
+        collection: 'contact',
+        where: { id: { in: orphanContactIDs } },
+        depth: 0,
+      })
+    }
   }
 }
 
@@ -544,7 +603,7 @@ export class CampaignFixtures {
           or: [
             { name: { contains: this.runID } },
             { email: { contains: this.runID } },
-            { phone: { contains: this.runID } },
+            { 'phones.value': { contains: this.runID } },
           ],
         },
         depth: 0,
@@ -656,11 +715,12 @@ export class CampaignFixtures {
   }
 
   async createContact(input: ContactInput = {}): Promise<Contact & { phone: string }> {
+    const phone = input.phones?.[0]?.value ?? this.phone()
     const contact = await this.rootPayload.create({
       collection: 'contact',
       data: {
         name: this.value('Contato'),
-        phone: this.phone(),
+        phones: [{ value: phone }],
         state: 'BA',
         city: 'Salvador',
         ...input,
@@ -668,12 +728,13 @@ export class CampaignFixtures {
       depth: 0,
     })
     this.own('contact', contact)
-    // Contact.phone is optional at the collection level (name-only imports), but
-    // every fixture contact carries one — narrow so specs can rely on it.
-    if (typeof contact.phone !== 'string') {
+    // The fixture contract is "one primary phone": every fixture contact carries
+    // one — narrow so specs can rely on it (C112 keeps the array under the hood).
+    const primary = contact.phones?.[0]?.value
+    if (typeof primary !== 'string') {
       throw new Error('Fixture contacts must always carry a phone.')
     }
-    return { ...contact, phone: contact.phone }
+    return { ...contact, phone: primary }
   }
 
   /** Assign advisors to a seeded municipality (tracked for reset on cleanup). */
@@ -888,7 +949,7 @@ export class CampaignFixtures {
         for (const contact of contacts.docs) {
           if (
             this.owned.contact.has(contact.id) ||
-            this.hasMarker(contact.name, contact.email, contact.phone)
+            this.hasMarker(contact.name, contact.email, contact.phones?.[0]?.value ?? null)
           ) {
             this.own('contact', contact)
           }

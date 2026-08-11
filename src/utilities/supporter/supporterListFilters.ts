@@ -40,9 +40,10 @@ const buildPayloadSearchWhere = (terms: SupporterSearchTerms): Where => {
   ]
 
   if (terms.normalizedPhone) {
-    searchFilters.push({ 'contact.phone': { equals: terms.normalizedPhone } })
+    // Matches ANY of the ficha's numbers (C112).
+    searchFilters.push({ 'contact.phones.value': { equals: terms.normalizedPhone } })
   } else if (terms.phoneDigits) {
-    searchFilters.push({ 'contact.phone': { contains: terms.phoneDigits } })
+    searchFilters.push({ 'contact.phones.value': { contains: terms.phoneDigits } })
   }
 
   return { or: searchFilters }

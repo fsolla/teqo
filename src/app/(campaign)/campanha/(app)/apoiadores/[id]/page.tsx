@@ -4,8 +4,12 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { setSupporterVoteIntentionFormAction } from '@/app/(campaign)/campanha/(app)/apoiadores/[id]/formActions'
+import {
+  setSupporterVoteIntentionFormAction,
+  updateSupporterContactFormAction,
+} from '@/app/(campaign)/campanha/(app)/apoiadores/[id]/formActions'
 import { ConsentText } from '@/components/campaign/shared/ConsentText'
+import { PhonesFieldEditor } from '@/components/campaign/shared/PhonesFieldEditor'
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { RemoveSupporterDataButton } from '@/components/campaign/supporter/RemoveSupporterDataButton'
 import { SupporterShareKit } from '@/components/campaign/supporter/SupporterShareKit'
@@ -112,7 +116,15 @@ export default async function SupporterDetailPage({ params }: SupporterDetailPag
           <CardTitle className="text-base">Dados de contato</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm">
-          <p className="tabular-nums">{supporter.phoneDisplay || '—'}</p>
+          <PhonesFieldEditor
+            defaultValues={supporter.phones}
+            label="Celulares"
+            saveAction={updateSupporterContactFormAction}
+            recordId={supporter.id}
+            recordIdField="supporterId"
+            saveLabel="Salvar"
+            cancelLabel="Cancelar"
+          />
           {supporter.email ? <p>{supporter.email}</p> : null}
           <p>
             {supporter.municipalityName ? (

@@ -47,7 +47,7 @@ describe('campaignUser → Contact identity (C99)', () => {
     })
     expect(contact).toMatchObject({
       name: 'Maria Assessora',
-      phone: user.phone,
+      phones: [{ value: user.phone }],
       state: 'BA',
     })
   })
@@ -84,7 +84,7 @@ describe('campaignUser → Contact identity (C99)', () => {
       depth: 0,
       overrideAccess: true,
     })
-    expect(contact).toMatchObject({ name: 'Sem Telefone', phone: null, state: 'BA' })
+    expect(contact).toMatchObject({ name: 'Sem Telefone', phones: [], state: 'BA' })
   })
 
   it('never copies placeholder e-mails to the ficha', async () => {
@@ -174,7 +174,10 @@ describe('campaignUser → Contact identity (C99)', () => {
       depth: 0,
       overrideAccess: true,
     })
-    expect(contact).toMatchObject({ name: 'Nome Atualizado', phone: nextPhone })
+    expect(contact).toMatchObject({
+      name: 'Nome Atualizado',
+      phones: expect.arrayContaining([expect.objectContaining({ value: nextPhone })]),
+    })
   })
 
   it('shares the phone with another ficha when the account phone is updated (C111)', async () => {
@@ -200,11 +203,13 @@ describe('campaignUser → Contact identity (C99)', () => {
       depth: 0,
       overrideAccess: true,
     })
-    expect(contact.phone).toBe(other.phone)
+    expect(contact.phones?.map((entry) => entry.value)).toEqual(
+      expect.arrayContaining([user.phone, other.phone]),
+    )
 
     const othersWithPhone = await payload.find({
       collection: 'contact',
-      where: { phone: { equals: other.phone } },
+      where: { 'phones.value': { equals: other.phone } },
       depth: 0,
       limit: 2,
       pagination: false,
@@ -244,13 +249,22 @@ describe('campaignUser → Contact identity (C99)', () => {
   it('creates a fresh ficha when the phone already belongs to two fichas (C111)', async () => {
     const fixtures = campaignFixtures()
     const phone = fixtures.phone()
+    const sharedNameA = fixtures.value('Compartilhado A')
+    const sharedNameB = fixtures.value('Compartilhado B')
     // Two people sharing one phone is a legitimate C111 state; it is planted
     // directly because the collection hook no longer enforces uniqueness.
     await payload.db.drizzle.execute(
       sql.raw(`
-      INSERT INTO "contact" ("name", "email", "phone", "state", "city")
-      VALUES ('${fixtures.value('Compartilhado A')}', '', '${phone}', 'BA', ''),
-             ('${fixtures.value('Compartilhado B')}', '', '${phone}', 'BA', '')
+      INSERT INTO "contact" ("name", "state", "city")
+      VALUES ('${sharedNameA}', 'BA', ''),
+             ('${sharedNameB}', 'BA', '')
+    `),
+    )
+    await payload.db.drizzle.execute(
+      sql.raw(`
+      INSERT INTO "contact_phones" ("id", "_parent_id", "_order", "value")
+      SELECT gen_random_uuid()::text, "id", 0, '${phone}' FROM "contact" WHERE "name" IN (
+        '${sharedNameA}', '${sharedNameB}')
     `),
     )
 
@@ -265,11 +279,11 @@ describe('campaignUser → Contact identity (C99)', () => {
     // The identity of the person being created is the fresh ficha — never a
     // guess among the existing ones.
     expect(contact.name).toBe(user.name)
-    expect(contact.phone).toBe(phone)
+    expect(contact.phones?.[0]?.value).toBe(phone)
 
     const allWithPhone = await payload.find({
       collection: 'contact',
-      where: { phone: { equals: phone } },
+      where: { 'phones.value': { equals: phone } },
       depth: 0,
       limit: 0,
       pagination: false,
@@ -323,7 +337,7 @@ describe('campaignUser → Contact identity (C99)', () => {
 
     const contacts = await payload.find({
       collection: 'contact',
-      where: { phone: { equals: phone } },
+      where: { 'phones.value': { equals: phone } },
       depth: 0,
       limit: 1,
       pagination: false,
@@ -353,7 +367,7 @@ describe('campaignUser → Contact identity (C99)', () => {
       depth: 0,
       overrideAccess: true,
     })
-    expect(contact.phone).toBe(user.phone)
+    expect(contact.phones?.[0]?.value).toBe(user.phone)
   })
 
   it('does not rewrite the ficha on a non-identity update (username)', async () => {
@@ -377,7 +391,7 @@ describe('campaignUser → Contact identity (C99)', () => {
       depth: 0,
       overrideAccess: true,
     })
-    expect(contact).toMatchObject({ name: user.name, phone: user.phone })
+    expect(contact).toMatchObject({ name: user.name, phones: [{ value: user.phone }] })
   })
 
   it('swaps a placeholder e-mail for the real one on the ficha in update', async () => {

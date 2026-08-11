@@ -1,13 +1,13 @@
 ---
 name: work-issue
 description: >-
-  Executa uma Issue já claimada de ponta a ponta com supervisão humana:
-  o contexto da sessão identifica a Issue (sem claim), Plan mode com plano
-  de implementação, pausa para confirmação humana, depois execução →
-  /simplify → capture-review-debts com gate → PR Ready em main com
-  auto-merge. Use quando o usuário pedir /work-issue, quiser supervisionar
-  a abordagem de engenharia, ou trabalhar uma Issue com gate humano antes
-  do código.
+  Executa uma Issue já claimada de ponta a ponta com supervisão humana no
+  plano: o contexto da sessão identifica a Issue (sem claim), Plan mode com
+  plano de implementação, pausa para confirmação humana, depois execução →
+  /simplify → capture-review-debts autônomo (o agente decide o que registrar
+  e o que descartar) → PR Ready em main com auto-merge. Use quando o usuário
+  pedir /work-issue, quiser supervisionar a abordagem de engenharia, ou
+  trabalhar uma Issue com gate humano antes do código.
 disable-model-invocation: true
 ---
 
@@ -36,7 +36,7 @@ pular a pausa do impl plan; Draft / sem auto-merge.
 - [ ] 1. Contexto: Issue do prompt/`$ARGUMENTS` da sessão (ausente → UMA pergunta com validação; nunca claim)
 - [ ] 2. Abrir o plano de intenção do body da Issue (`Plano: docs/plans/...`; sem link → body é spec)
 - [ ] 3. Plan mode → escrever `docs/plans/<slug>-impl.md` → **PARAR e confirmar com o humano**
-- [ ] 4. Após “ok”: Passo 4 (execução → /simplify → débitos com gate → PR, via `execution-pipeline.md`)
+- [ ] 4. Após “ok”: Passo 4 (execução → /simplify → débitos autônomos → PR, via `execution-pipeline.md`)
 ```
 
 ## Passo 1 — Contexto da sessão
@@ -96,9 +96,11 @@ fechar em main), com os deltas do ator humano:
 
 - **Branch:** `<Code>-<slug>` do worktree — nunca crie branch nova na sessão.
 - **UI:** shape → craft → critique → polish.
-- **`capture-review-debts`:** **com gate humano** — colha e pontue como a
-  skill manda, apresente ao humano antes de registrar (Issues novas com
-  `depends` no pai se necessário).
+- **`capture-review-debts`:** **autônomo** — colha, dedupe, pontue e **decida
+  você mesmo o destino** (registrar/absorver/deferir/descartar) pela triage
+  da própria skill, **sem pausa para o humano**; registre via
+  `agent:register` / `agent:file-miss` (Issues novas com `depends` no pai se
+  necessário) e resuma o que registrou vs descartou no fechamento.
 
 ## Resumo final
 

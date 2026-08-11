@@ -10,15 +10,15 @@ import {
 } from '@/lib/schemas/supporter'
 
 describe('supporter schemas', () => {
-  it('normalizes phone and optional BA municipality', () => {
+  it('normalizes phones and optional BA municipality', () => {
     const parsed = supporterCreateSchema.parse({
       name: 'Maria da Silva',
-      phone: '+55 (71) 98888-7777',
+      phones: ['+55 (71) 98888-7777'],
       city: 'salvador',
       consentAccepted: true,
     })
 
-    expect(parsed.phone).toBe('71988887777')
+    expect(parsed.phones).toEqual(['71988887777'])
     expect(parsed.city).toBe('Salvador')
     expect(resolveBahiaMunicipality('feira de santana')).toBe('Feira de Santana')
     expect(resolveBahiaMunicipality('Nowhere')).toBeNull()
@@ -28,7 +28,7 @@ describe('supporter schemas', () => {
     expect(
       supporterCreateSchema.safeParse({
         name: 'Maria Silva',
-        phone: '71988887777',
+        phones: ['71988887777'],
         voteIntention: 'certo',
         consentAccepted: true,
       }).success,
@@ -37,7 +37,7 @@ describe('supporter schemas', () => {
     expect(
       supporterCreateSchema.safeParse({
         name: 'Maria Silva',
-        phone: '71988887777',
+        phones: ['71988887777'],
         voteIntention: 'certo',
         consentAccepted: true,
         voteIntentionConsentAccepted: true,

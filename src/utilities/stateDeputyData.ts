@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { phoneValuesOf, primaryPhoneOf } from '@/lib/phone'
 import { populatedContactName, relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 import type { CampaignUser, StateDeputy } from '@/payload-types'
 import { NO_PARTY_FILTER_VALUE } from '@/utilities/campaignListUrl'
@@ -40,7 +41,7 @@ const stateDeputyContactSummary = (
       id: contact.id,
       name: contact.name,
       email: contact.email ?? null,
-      phone: contact.phone ?? null,
+      phone: primaryPhoneOf(contact.phones),
     }
   }
 
@@ -240,6 +241,8 @@ export type StateDeputySummary = {
 export type StateDeputyDetailViewModel = StateDeputySummary & {
   email: string | null
   phone: string | null
+  /** Every number of the ficha, order = priority (C112) — primary first. */
+  phones: string[]
   notes: string | null
   municipalities: Array<{ id: number; name: string; slug: string }>
   leaderships: Array<{ id: number; name: string }>
@@ -300,8 +303,12 @@ export const loadStateDeputyDetail = async (
     loadCampaignUserSummaries(payload, user, uniqueRelationshipIds(stateDeputy.advisors)),
   ])
 
+  const contactSummary = stateDeputyContactSummary(stateDeputy.contact)
+  const contact = stateDeputy.contact
+
   return {
-    ...stateDeputyContactSummary(stateDeputy.contact),
+    ...contactSummary,
+    phones: phoneValuesOf(typeof contact === 'object' && contact !== null ? contact.phones : null),
     id: stateDeputy.id,
     slug: stateDeputy.slug,
     party: stateDeputy.party ?? null,

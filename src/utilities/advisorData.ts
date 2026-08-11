@@ -2,6 +2,9 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import type { Contact } from '@/payload-types'
+
+import { phoneValuesOf } from '@/lib/phone'
 import { relationshipId } from '@/lib/relationship'
 import {
   advisorListHrefForPage,
@@ -35,6 +38,10 @@ export type AdvisorRowViewModel = AdvisorAccountViewModel & {
 
 /** The detail page renders real names and links, so it keeps the labels. */
 export type AdvisorDetailViewModel = AdvisorAccountViewModel & {
+  /** The advisor's normalized ficha (C99) — target of the ficha phones editor. */
+  contactID: number | null
+  /** Every number of the ficha, order = priority (C112) — primary first. */
+  fichaPhones: string[]
   municipalities: AdvisorMunicipalityViewModel[]
 }
 
@@ -222,6 +229,7 @@ export const loadAdvisorDetail = async (
     email?: string | null
     phone?: string | null
     role: string
+    contact?: number | Contact | null
   }
   try {
     // Intentional admin bypass — same rationale as `loadAdvisorListPageData`.
@@ -229,7 +237,7 @@ export const loadAdvisorDetail = async (
       collection: 'campaignUser',
       id: advisorId,
       depth: 0,
-      select: { name: true, email: true, phone: true, role: true },
+      select: { name: true, email: true, phone: true, role: true, contact: true },
       overrideAccess: true,
     })
   } catch {
@@ -238,12 +246,30 @@ export const loadAdvisorDetail = async (
 
   if (advisor.role !== 'advisor') return null
 
+  const contactID = typeof advisor.contact === 'number' ? advisor.contact : null
+  const fichaPhones =
+    contactID === null
+      ? []
+      : await payload
+          .findByID({
+            collection: 'contact',
+            id: contactID,
+            depth: 0,
+            select: { phones: { value: true } },
+            // Intentional admin bypass: same staff-scoped read rationale.
+            overrideAccess: true,
+          })
+          .then((contact) => phoneValuesOf(contact.phones))
+          .catch(() => [])
+
   const municipalitiesByAdvisor = await municipalitiesByAdvisorIds(payload, [advisor.id])
   return {
     id: advisor.id,
     name: advisor.name,
     email: advisor.email ?? null,
     phone: advisor.phone ?? null,
+    contactID,
+    fichaPhones,
     municipalities: municipalitiesByAdvisor.get(advisor.id) ?? [],
   }
 }

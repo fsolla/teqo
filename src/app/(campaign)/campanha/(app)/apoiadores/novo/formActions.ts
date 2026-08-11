@@ -7,8 +7,12 @@ import {
   SUPPORTER_REGISTRATION_CONSENT_MISSING_MESSAGE,
   SUPPORTER_VOTE_INTENTION_CONSENT_MISSING_MESSAGE,
 } from '@/lib/campaignConsentKeys'
-import { checkboxFormValue, nullableRelationshipFormValue, optionalFormText } from '@/lib/formData'
-import { sanitizeBrazilianPhoneInput } from '@/lib/phone'
+import {
+  checkboxFormValue,
+  nullableRelationshipFormValue,
+  optionalFormText,
+  repeatedPhoneFormValues,
+} from '@/lib/formData'
 import {
   SUPPORTER_DUPLICATE_MESSAGE,
   SUPPORTER_STAFF_MESSAGE,
@@ -28,7 +32,7 @@ export type SupporterFormState = {
 
 type SupporterFormValues = {
   name?: string
-  phone?: string
+  phones?: string[]
   email?: string
   city?: string
   municipality?: string
@@ -50,7 +54,7 @@ export const createSupporterFormAction = async (
   // Parsed before the ladder (non-throwing readers) so failures echo them back.
   const values: SupporterFormValues = {
     name: optionalFormText(formData, 'name'),
-    phone: optionalFormText(formData, 'phone'),
+    phones: repeatedPhoneFormValues(formData, 'phones'),
     email: optionalFormText(formData, 'email'),
     city: optionalFormText(formData, 'city'),
     municipality: optionalFormText(formData, 'municipality'),
@@ -59,13 +63,12 @@ export const createSupporterFormAction = async (
 
   return runCampaignFormAction({
     execute: async () => {
-      const phone = sanitizeBrazilianPhoneInput(values.phone ?? '')
       const voteIntention = values.voteIntention?.trim() || undefined
 
       const municipality = nullableRelationshipFormValue(formData, 'municipality')
       const input = supporterCreateSchema.parse({
         name: values.name ?? '',
-        phone,
+        phones: values.phones ?? [],
         email: values.email,
         city: values.city,
         ...(municipality ? { municipality } : {}),

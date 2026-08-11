@@ -4,6 +4,9 @@ const BRAZILIAN_MOBILE_PHONE_LENGTH = 11
 /** One refusal copy for the URL builder, the zod primitive and the Contact hook — rewording in one layer only would give the same refusal two phrasings. */
 export const BRAZILIAN_PHONE_INVALID_MESSAGE = 'Celular brasileiro inválido.'
 
+/** A ficha may not hold the same number twice (the person already has it); sharing a number BETWEEN fichas stays allowed (C111). */
+export const BRAZILIAN_PHONE_DUPLICATE_MESSAGE = 'Telefone repetido na ficha.'
+
 export const sanitizeBrazilianPhoneInput = (value: string): string => {
   const digits = value.replace(/\D/g, '')
   const domesticDigits =
@@ -60,4 +63,36 @@ export const buildWhatsAppUrl = (phone: string, message?: string): string => {
 export const whatsAppHrefForPhone = (phone: string | null): string | null => {
   if (!phone || !normalizeBrazilianPhone(phone)) return null
   return buildWhatsAppUrl(phone)
+}
+
+/**
+ * The person's primary phone from the `Contact.phones` array: order is
+ * priority (first = primary), so the row/list/WhatsApp/convite readers all go
+ * through this single translation and never touch the array shape.
+ */
+export const primaryPhoneOf = (
+  phones: ReadonlyArray<{ value?: string | null }> | null | undefined,
+): string | null => phones?.[0]?.value || null
+
+/** Every number of the ficha in priority order, empties dropped. */
+export const phoneValuesOf = (
+  phones: ReadonlyArray<{ value?: string | null }> | null | undefined,
+): string[] =>
+  (phones ?? []).map((entry) => entry.value).filter((value): value is string => Boolean(value))
+
+/**
+ * Edit the primary phone preserving the rest: the next primary goes first
+ * (any earlier occurrence removed — the number the person already had moves,
+ * never duplicates), and an empty `primary` removes the current first number
+ * so the rest shifts up.
+ */
+export const reorderWithPrimaryPhone = (
+  phones: ReadonlyArray<{ value?: string | null }> | null | undefined,
+  primary: string | null,
+): string[] => {
+  const current = (phones ?? [])
+    .map((entry) => entry.value)
+    .filter((value): value is string => Boolean(value))
+  const rest = current.filter((phone) => phone !== primary)
+  return primary ? [primary, ...rest] : current.slice(1)
 }

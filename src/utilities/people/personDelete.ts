@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { primaryPhoneOf } from '@/lib/phone'
 import { relationshipId } from '@/lib/relationship'
 import {
   PERSON_DELETE_FORBIDDEN_MESSAGE,
@@ -153,7 +154,9 @@ const anonymizeContact = async (
     data: {
       name: 'Titular removido',
       email: null,
-      phone: tombstonePhone,
+      // The tombstone REPLACES every number — the remaining phones are the
+      // person's PII and must not survive the anonymization (C112).
+      phones: [{ value: tombstonePhone }],
       gender: null,
       city: null,
       postalCode: null,
@@ -300,7 +303,7 @@ export const loadPersonDeleteManifest = async (
     contact: {
       id: contact.id,
       name: contact.name ?? 'Contato',
-      phone: contact.phone ?? null,
+      phone: primaryPhoneOf(contact.phones),
       email: contact.email ?? null,
     },
     leaderships: leadershipRows,
