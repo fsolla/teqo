@@ -1,10 +1,18 @@
 # Impl: OPS38 — Changelog-AGENTS truncado em main (restaurar do histórico)
 
-Status: aprovado (gate humano 2026-08-10)
-Atualizado em: 2026-08-10
+Status: aprovado (gate humano 2026-08-10; segunda passada 2026-08-11)
+Atualizado em: 2026-08-11
 Issue: #629
 Intenção: body da Issue (sem plano linkado — body é a spec)
 Appetite restante: ~0,25 dia eng (docs-only; exploração já consumida, execução é minutos)
+
+## Segunda passada (2026-08-11) — re-truncamento parcial no squash do PR #646
+
+O PR #646 (primeira restauração) foi squash-merged sobre um main que **avançou** com 4 merges em voo que tocavam o CHANGELOG — push (#634, `e75148f3`), OPS37 (#624, `e86331fe`), OPS35+ (#638, `02a33f1b`), B197 (#639, `419ba39e`). O GitHub squash resolveu o conflito do arquivo **reproduzindo o mesmo defeito da Issue**: o topo do arquivo ficou com as 8 entradas pós-base (B197, OPS35+, push, OPS37, D9, B195, OPS33, OPS35) **fora da ordem canônica de merge** e o **header do arquivo sumiu** (título + descrição + `---`).
+
+- **Verificação pós-merge:** 128 entradas presentes (120 base + 8), todas byte-idênticas às fontes (md5), base intacta (diff de entradas OPS28→fim = vazio) — mas header: 0 e ordem do topo: Push, OPS37, OPS35+, B197, D9, B195, OPS33, OPS35 (errada; B197 é a mais nova).
+- **Correção desta passada:** reconstruir o arquivo = header da base boa (`0b520fdb`) + 8 entradas na **ordem canônica de merge** (mais nova primeiro: B197 → OPS35+ → Push → OPS37 → D9 → B195 → OPS33 → OPS35) + base intacta (OPS28 em diante). Verificação: `git diff 0b520fdb` = **+8 entradas, −0**; 128 entradas; md5 das 8 vs fontes OK; `format:check` OK; `gate:fast` OK.
+- **Aprendizado (reforça a regra da Issue):** squash-merge de branch que reescreve um arquivo sobre um main que avançou também clobbera — conferir o arquivo no main **depois** do merge, não só no PR.
 
 ## Leitura da intenção
 
