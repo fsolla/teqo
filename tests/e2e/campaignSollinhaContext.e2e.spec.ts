@@ -4,6 +4,9 @@ import { expect, test } from './fixtures/campaignE2EFixtures.js'
 
 const SESSION_KEY = 'teqo:campaign:sollinha-chat-session'
 
+const DEFAULT_REPLY = 'Resposta mockada com [Municípios](/campanha/municipios).'
+const EXTERNAL_REPLY = 'Resposta mockada com [portal da saúde](https://www.saude.ba.gov.br/).'
+
 /**
  * Mock the AI endpoint with a minimal SSE stream so sending a message neither
  * needs a DeepSeek API key nor hits the real rate limiter. The chunks follow
@@ -12,7 +15,7 @@ const SESSION_KEY = 'teqo:campaign:sollinha-chat-session'
  * schema and the chat would never settle. The reply carries a markdown link so
  * the "navigate without reload" path has a real anchor.
  */
-const mockAiChat = (page: Page) =>
+const mockAiChat = (page: Page, reply: string = DEFAULT_REPLY) =>
   page.route('**/campanha/api/ai-chat', async (route) => {
     await route.fulfill({
       status: 200,
@@ -20,7 +23,7 @@ const mockAiChat = (page: Page) =>
       body: [
         'data: {"type":"start"}\n\n',
         'data: {"type":"text-start","id":"t1"}\n\n',
-        'data: {"type":"text-delta","id":"t1","delta":"Resposta mockada com [Municípios](/campanha/municipios)."}\n\n',
+        `data: {"type":"text-delta","id":"t1","delta":${JSON.stringify(reply)}}\n\n`,
         'data: {"type":"text-end","id":"t1"}\n\n',
         'data: {"type":"finish","finishReason":"stop"}\n\n',
       ].join(''),
@@ -42,6 +45,14 @@ const waitForChatSettled = async (page: Page) => {
   await expect(
     page.getByRole('button', { name: 'Falar pergunta (voz)' }).filter({ visible: true }),
   ).toBeEnabled({ timeout: 20_000 })
+}
+
+/** Opens the mobile drawer and waits for it to cover the page. */
+const openMobileDrawer = async (page: Page) => {
+  const drawer = page.getByRole('dialog', { name: 'Sollinha — Assistente virtual' })
+  await page.getByRole('button', { name: 'Sollinha — Assistente virtual' }).click()
+  await expect(drawer).toBeVisible({ timeout: 20_000 })
+  return drawer
 }
 
 /** Raw stored session, or null when nothing (valid) is in the tab's storage. */
@@ -173,5 +184,77 @@ test.describe('B188 — contexto da conversa persiste na sessão da janela/tab',
     await expect(page.getByRole('button', { name: 'Sollinha — Assistente virtual' })).toBeVisible({
       timeout: 20_000,
     })
+  })
+})
+
+test.describe('B198 — link de resposta fecha o drawer mobile ao navegar no mesmo tab', () => {
+  test.beforeEach(async ({ page }) => {
+    test.slow()
+    await mockAiChat(page)
+  })
+
+  test('link interno: drawer fecha no toque e a navegação segue no mesmo tab', async ({
+    page,
+    campaign,
+  }) => {
+    const user = await campaign.fixtures.createCampaignUser('coordinator', {
+      name: campaign.fixtures.value('Drawer Link Interno'),
+    })
+    await page.setViewportSize({ width: 500, height: 800 })
+    await campaign.login(page, user.email!, user.password)
+    await page.goto('/campanha')
+
+    const drawer = await openMobileDrawer(page)
+
+    await openChatAndSend(page)
+    await waitForChatSettled(page)
+
+    // A full browser navigation fires `load`; client-side routing does not.
+    let loadEvents = 0
+    page.on('load', () => {
+      loadEvents += 1
+    })
+
+    await drawer.getByRole('link', { name: 'Municípios' }).click()
+    await expect(page).toHaveURL(/\/campanha\/municipios/)
+    await expect(drawer).toHaveCount(0)
+    expect(loadEvents).toBe(0)
+
+    // The navigation-originated close persists `open: false` — a reload never
+    // reopens the drawer on its own.
+    await page.reload()
+    await expect(drawer).toHaveCount(0)
+  })
+
+  test('link externo: abre em nova aba e o drawer permanece aberto', async ({ page, campaign }) => {
+    // Last-registered route wins (LIFO) — overrides the beforeEach mock.
+    await mockAiChat(page, EXTERNAL_REPLY)
+    // The popup would hit the real site; fulfill it so CI stays deterministic.
+    await page
+      .context()
+      .route('**://saude.ba.gov.br/**', (route) =>
+        route.fulfill({ status: 200, contentType: 'text/html', body: '<title>ok</title>' }),
+      )
+
+    const user = await campaign.fixtures.createCampaignUser('coordinator', {
+      name: campaign.fixtures.value('Drawer Link Externo'),
+    })
+    await page.setViewportSize({ width: 500, height: 800 })
+    await campaign.login(page, user.email!, user.password)
+    await page.goto('/campanha')
+
+    const drawer = await openMobileDrawer(page)
+
+    await openChatAndSend(page)
+    await waitForChatSettled(page)
+
+    const popupPromise = page.waitForEvent('popup')
+    await drawer.getByRole('link', { name: 'portal da saúde' }).click()
+    const popup = await popupPromise
+    await popup.waitForLoadState('domcontentloaded')
+    await popup.close()
+
+    // The origin tab keeps the conversation reachable — the drawer stays.
+    await expect(drawer).toBeVisible()
   })
 })
