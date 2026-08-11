@@ -136,16 +136,21 @@ const peopleColumns = ({
     id: 'contact',
     label: 'Contato',
     cellClassName: 'whitespace-normal',
-    cell: (row) => (
-      <span className="flex flex-col">
-        {row.phone ? (
-          <span className="font-medium tabular-nums">{formatBrazilianPhoneInput(row.phone)}</span>
-        ) : null}
-        <span className={row.phone ? 'text-xs text-muted-foreground' : undefined}>
-          {row.email ?? '—'}
-        </span>
-      </span>
-    ),
+    cell: (row) =>
+      row.phone ? (
+        <span className="font-medium tabular-nums">{formatBrazilianPhoneInput(row.phone)}</span>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      ),
+  },
+  {
+    // B197 — the email left the "Contato" cell (which now carries only the
+    // phone) and became its own column, hidden by default. The mobile cards
+    // still show it as the no-phone fallback, untouched.
+    id: 'email',
+    label: 'E-mail',
+    cellClassName: 'max-w-56 whitespace-normal',
+    cell: (row) => (row.email ? row.email : <span className="text-muted-foreground">—</span>),
   },
   {
     id: 'assessora',

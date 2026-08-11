@@ -26,9 +26,16 @@ export const advisorEntriesFromIds = (
  * overview's coluna da vergonha uses to count them. Non-priority ones keep the
  * softer pending tone: they are a gap, not a fire. It stands in for the advisor
  * names, so it only ever states an absence.
+ *
+ * B196: inside the mobile card's ~110px relation group the pill must wrap
+ * (`whitespace-normal`, no fixed height) instead of clipping mid-letter —
+ * on the wide desktop cell it still renders on a single line.
  */
 export const MissingAdvisorBadge = ({ isPriority }: { isPriority: boolean }) => (
-  <Badge variant={isPriority ? 'destructive' : 'estimate-pending'}>
+  <Badge
+    variant={isPriority ? 'destructive' : 'estimate-pending'}
+    className="h-auto min-h-5 whitespace-normal text-center"
+  >
     <CircleAlertIcon data-icon="inline-start" aria-hidden="true" />
     {isPriority ? 'Sem responsável' : municipalityListCoverageLabels.sem_assessor}
   </Badge>
@@ -49,14 +56,12 @@ export const formatAdvisorNamesTooltip = (
 export const MunicipalityAdvisorAvatarStack = ({
   advisors,
   isPriority,
-  maxVisible = 3,
-  wrap = false,
+  overlapRow = false,
 }: {
   advisors: MunicipalityAdvisorAvatarEntry[]
   isPriority: boolean
-  maxVisible?: number
-  /** B193 — dense mobile card mode: every advisor gets an avatar, rows wrap. */
-  wrap?: boolean
+  /** B196 — dense mobile card mode: every advisor gets an avatar in one overlapping row. */
+  overlapRow?: boolean
 }) => {
   if (!advisors.length) return <MissingAdvisorBadge isPriority={isPriority} />
 
@@ -64,8 +69,7 @@ export const MunicipalityAdvisorAvatarStack = ({
     <MunicipalityRelationAvatarStack
       entries={advisors.map((advisor) => ({ id: advisor.id, label: advisor.name }))}
       emptyState={null}
-      maxVisible={maxVisible}
-      wrap={wrap}
+      overlapRow={overlapRow}
     />
   )
 }

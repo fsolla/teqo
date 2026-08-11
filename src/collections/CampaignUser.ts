@@ -159,8 +159,9 @@ const resolveContactForAccount = async ({
  * only collect account fields). An explicit `data.contact` (different from the
  * linked ficha) always wins — the hook only fills the gap. On updates of a
  * linked account, identity changes (name/e-mail/phone) are synced one-way
- * account → ficha so the C100 list reads fresh data; a phone conflict fails
- * the operation fail-closed with the ficha's standard message.
+ * account → ficha so the C100 list reads fresh data; a phone already used by
+ * another ficha is shared, not rejected (C111 — the phone is a contact
+ * channel; the account's `username` keeps the login key unique).
  *
  * Runs AFTER `preventSelfServicePrivilegedFields` on purpose: the strip
  * deletes the merged identity fields (including `contact`) for self-service,
@@ -233,7 +234,8 @@ const ensureCampaignUserContactIdentity: CollectionBeforeChangeHook<CampaignUser
       data: contactData,
       depth: 0,
       // Intentional admin bypass: the account operation is already authorized;
-      // the ficha phone uniqueness is enforced by the Contact's own hook.
+      // the ficha write is scoped by the account link and may share the phone
+      // with other fichas (C111).
       overrideAccess: true,
       req,
     })
@@ -280,6 +282,28 @@ const deleteCampaignUserNotifications: CollectionBeforeDeleteHook = async ({ id,
   await req.payload.delete({
     collection: 'pushSubscription',
     where: { user: { equals: id } },
+    overrideAccess: true,
+    req,
+  })
+}
+
+/**
+ * Staged CSV-import batches authored by the deleted account must go BEFORE the
+ * account: `supporter_import_batch.actor_id` is NOT NULL with an `ON DELETE
+ * set null` FK (C6 schema drift — the column and the FK action disagree), so
+ * without this the delete fails with a not-null violation whenever the account
+ * left an unconsumed batch (10-minute window, no sweep). Same pattern as the
+ * passkey/notification cascade above; `deletePersonRecord` spells the same
+ * cleanup by hand.
+ */
+const deleteCampaignUserImportBatches: CollectionBeforeDeleteHook = async ({ id, req }) => {
+  await req.payload.delete({
+    collection: 'supporterImportBatch',
+    where: { actor: { equals: id } },
+    depth: 0,
+    // Intentional bypass: the account deletion itself is the authorization;
+    // the batches are transient staging rows owned by the deleted account
+    // (same cascade contract as the passkey/notification deletes above).
     overrideAccess: true,
     req,
   })
@@ -342,7 +366,11 @@ export const CampaignUser: CollectionConfig = {
       preventSelfServicePrivilegedFields,
       ensureCampaignUserContactIdentity,
     ],
-    beforeDelete: [deleteCampaignUserPasskeys, deleteCampaignUserNotifications],
+    beforeDelete: [
+      deleteCampaignUserPasskeys,
+      deleteCampaignUserNotifications,
+      deleteCampaignUserImportBatches,
+    ],
     afterRead: [removePrivateAuthFields],
   },
   fields: [

@@ -427,11 +427,14 @@ describe('src/utilities top-level is pinned', () => {
     'campaignPasswordReset.ts',
     'campaignPwa.ts',
     'campaignPwaClient.ts',
+    // Push ceremony shared by the profile card and the opt-in toast (D6):
+    // client-only (localStorage + SW + server action), no Payload/Next.
+    'campaignPushClient.ts',
     'campaignRelationOptions.ts',
     'campaignUserProfile.ts',
     'consentContentHash.ts',
     'contactIdentity.ts',
-    'contactPhoneInvariant.ts',
+    'contactPhoneLocks.ts',
     'dashboardPriorityMunicipalities.ts',
     'detailTabUi.ts',
     'documentReads.ts',

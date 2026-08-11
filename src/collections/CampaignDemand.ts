@@ -65,7 +65,7 @@ const MAX_DEMAND_SLUG_ATTEMPTS = 20
  * Opt-in via `req.context.campaignDemandUniqueSlug` (set by the form-created
  * record action): direct creates — the activity demand drafts (C90) and the
  * admin UI — keep the strict constraint, which the activity rollback contract
- * pins. Fail closed like `skipContactPhoneInvariant`: only honored inside an
+ * pins. Fail closed like the C6 bulk-import opt-outs: only honored inside an
  * active transaction. A text advisory lock on the base slug serializes
  * concurrent creates of the same derived title, so the probe cannot race the
  * insert.

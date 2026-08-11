@@ -1038,7 +1038,7 @@ describe('campaign invite domain', () => {
   )
 
   itWithInviteConsent(
-    'rejects duplicate phone takeover, rolls back consumption, and permits a safe retry',
+    'shares a phone with another ficha on autofill and keeps the invite consumed (C111)',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
@@ -1050,6 +1050,8 @@ describe('campaign invite domain', () => {
         kind: 'autopreenchimento',
       })
 
+      // C111 — the ficha the invite anchors is known; the typed phone may
+      // legitimately match another ficha's, and the write shares it.
       await expect(
         actions.redeemCampaignInviteAutofill({
           token: invite.token,
@@ -1057,23 +1059,19 @@ describe('campaign invite domain', () => {
           phone: owner.contact.phone,
           consentAccepted: true,
         }),
-      ).rejects.toThrow('Convite inválido ou expirado')
+      ).resolves.toEqual({ ok: true })
+
       await expect(
         payload.findByID({ collection: 'contact', id: target.contact.id, depth: 0 }),
-      ).resolves.toMatchObject({ phone: target.contact.phone })
+      ).resolves.toMatchObject({ phone: owner.contact.phone })
       await expect(
-        actions.redeemCampaignInviteAutofill({
-          token: invite.token,
-          name: target.contact.name,
-          phone: target.contact.phone,
-          consentAccepted: true,
-        }),
-      ).resolves.toEqual({ ok: true })
+        payload.findByID({ collection: 'contact', id: owner.contact.id, depth: 0 }),
+      ).resolves.toMatchObject({ phone: owner.contact.phone })
     },
   )
 
   itWithInviteConsent(
-    'serializes concurrent phone changes to one target and preserves the rejected invite',
+    'lets two concurrent autofills share one phone and consumes both invites (C111)',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
@@ -1108,27 +1106,20 @@ describe('campaign invite domain', () => {
       const results = await Promise.allSettled(
         submissions.map((submission) => actions.redeemCampaignInviteAutofill(submission)),
       )
-      expect(results.filter(({ status }) => status === 'fulfilled')).toHaveLength(1)
-      expect(results.filter(({ status }) => status === 'rejected')).toHaveLength(1)
+      // C111 — the phone is a contact channel: both invites may share it.
+      expect(results.filter(({ status }) => status === 'fulfilled')).toHaveLength(2)
 
       const contacts = await Promise.all(
         [first.contact.id, second.contact.id].map((id) =>
           payload.findByID({ collection: 'contact', id, depth: 0 }),
         ),
       )
-      expect(contacts.filter(({ phone }) => phone === targetPhone)).toHaveLength(1)
-      const rejectedIndex = contacts.findIndex(({ phone }) => phone !== targetPhone)
-      await expect(
-        actions.redeemCampaignInviteAutofill({
-          ...submissions[rejectedIndex]!,
-          phone: contacts[rejectedIndex]!.phone!,
-        }),
-      ).resolves.toEqual({ ok: true })
+      expect(contacts.every(({ phone }) => phone === targetPhone)).toBe(true)
     },
   )
 
   itWithInviteConsent(
-    'orders old and new phone locks so opposite invite swaps finish without deadlock',
+    'completes opposite phone swaps without deadlock and shares the numbers (C111)',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
@@ -1158,7 +1149,15 @@ describe('campaign invite domain', () => {
           consentAccepted: true,
         }),
       ])
-      expect(results.every(({ status }) => status === 'rejected')).toBe(true)
+      // Both write the other's number (shared channel) — the ordered locks
+      // keep the swap deadlock-free instead of serializing exclusivity.
+      expect(results.every(({ status }) => status === 'fulfilled')).toBe(true)
+      const [firstContact, secondContact] = await Promise.all([
+        payload.findByID({ collection: 'contact', id: first.contact.id, depth: 0 }),
+        payload.findByID({ collection: 'contact', id: second.contact.id, depth: 0 }),
+      ])
+      expect(firstContact.phone).toBe(second.contact.phone)
+      expect(secondContact.phone).toBe(first.contact.phone)
     },
   )
 

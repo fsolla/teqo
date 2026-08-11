@@ -2,46 +2,28 @@
 
 import { useState, useTransition } from 'react'
 
-import {
-  subscribeCampaignPush,
-  unsubscribeCampaignPush,
-} from '@/app/(campaign)/campanha/actions/notifications'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Field, FieldContent, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/Spinner'
-import { CAMPAIGN_PWA_SW_PATH } from '@/utilities/campaignPwa'
+import {
+  CAMPAIGN_PUSH_CONSENT_UNCONFIGURED_MESSAGE,
+  CAMPAIGN_PUSH_ENV_MISSING_MESSAGE,
+  CAMPAIGN_PUSH_UNSUPPORTED_MESSAGE,
+} from '@/lib/campaignNotificationCopy'
+import {
+  activateCampaignPushOnDevice,
+  deactivateCampaignPushOnDevice,
+  isIosSafari,
+  isStandaloneDisplay,
+  supportsCampaignPush,
+} from '@/utilities/campaignPushClient'
 
 type CampaignPushNotificationsCardProps = {
   pushConsentConfigured: boolean
   vapidPublicKey: string | null
-}
-
-const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
-  const raw = window.atob(base64)
-  const output = new Uint8Array(raw.length)
-  for (let index = 0; index < raw.length; index += 1) {
-    output[index] = raw.charCodeAt(index)
-  }
-  return output
-}
-
-const isIosSafari = (): boolean => {
-  const ua = navigator.userAgent
-  const isIos =
-    /iPad|iPhone|iPod/.test(ua) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-  return isIos && /WebKit/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua)
-}
-
-const isStandaloneDisplay = (): boolean => {
-  const standaloneMedia = window.matchMedia('(display-mode: standalone)').matches
-  const iosStandalone = Boolean((navigator as Navigator & { standalone?: boolean }).standalone)
-  return standaloneMedia || iosStandalone
 }
 
 export const CampaignPushNotificationsCard = ({
@@ -54,97 +36,61 @@ export const CampaignPushNotificationsCard = ({
   const [isPending, startTransition] = useTransition()
 
   const handleEnable = () => {
+    setMessage(null)
+    setError(null)
+
+    // Synchronous guards first, then `requestPermission` INSIDE the click
+    // gesture: a permission request arriving outside the gesture (e.g. after a
+    // `startTransition` async boundary) is auto-denied by Chrome without ever
+    // showing the native prompt — the "Permissão de notificação negada" no-op.
+    if (!pushConsentConfigured) {
+      setError(CAMPAIGN_PUSH_CONSENT_UNCONFIGURED_MESSAGE)
+      return
+    }
+    if (!vapidPublicKey) {
+      setError(CAMPAIGN_PUSH_ENV_MISSING_MESSAGE)
+      return
+    }
+    if (!consentAccepted) {
+      setError('Aceite o consentimento para ativar os avisos push.')
+      return
+    }
+    if (isIosSafari() && !isStandaloneDisplay()) {
+      setError('No iPhone, instale o app na tela inicial antes de ativar os avisos push.')
+      return
+    }
+    if (!supportsCampaignPush()) {
+      setError(CAMPAIGN_PUSH_UNSUPPORTED_MESSAGE)
+      return
+    }
+
+    const permissionRequest = Notification.requestPermission()
+
     startTransition(async () => {
-      setMessage(null)
-      setError(null)
+      const permission = await permissionRequest
+      const result = await activateCampaignPushOnDevice({
+        pushConsentConfigured,
+        vapidPublicKey,
+        permission,
+      })
 
-      if (!pushConsentConfigured) {
-        setError('Consentimento de push ainda não configurado no admin.')
-        return
-      }
-      if (!vapidPublicKey) {
-        setError('Push ainda não está disponível neste ambiente.')
-        return
-      }
-      if (!consentAccepted) {
-        setError('Aceite o consentimento para ativar os avisos push.')
-        return
-      }
-      if (isIosSafari() && !isStandaloneDisplay()) {
-        setError('No iPhone, instale o app na tela inicial antes de ativar os avisos push.')
-        return
-      }
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        setError('Este navegador não suporta notificações push.')
-        return
-      }
-
-      try {
-        const permission = await Notification.requestPermission()
-        if (permission !== 'granted') {
-          setError('Permissão de notificação negada.')
-          return
-        }
-
-        const registration = await navigator.serviceWorker.register(CAMPAIGN_PWA_SW_PATH, {
-          scope: '/campanha',
-        })
-        await navigator.serviceWorker.ready
-
-        const subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
-        })
-        const json = subscription.toJSON()
-        if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
-          setError('Não foi possível registrar este dispositivo para push.')
-          return
-        }
-
-        const result = await subscribeCampaignPush({
-          endpoint: json.endpoint,
-          p256dh: json.keys.p256dh,
-          auth: json.keys.auth,
-          expirationTime: subscription.expirationTime,
-          consentAccepted: true,
-        })
-
-        if ('status' in result && result.status === 'success') {
-          setMessage(result.message)
-        } else if ('message' in result && result.message) {
-          setError(result.message)
-        } else {
-          setError('Não foi possível ativar os avisos push.')
-        }
-      } catch {
-        setError('Não foi possível ativar os avisos push neste dispositivo.')
+      if (result.status === 'success') {
+        setMessage(result.message)
+      } else {
+        setError(result.message)
       }
     })
   }
 
   const handleDisable = () => {
+    setMessage(null)
+    setError(null)
     startTransition(async () => {
-      setMessage(null)
-      setError(null)
-      try {
-        const registration = await navigator.serviceWorker.getRegistration(CAMPAIGN_PWA_SW_PATH)
-        const subscription = await registration?.pushManager.getSubscription()
-        if (!subscription) {
-          setMessage('Nenhuma inscrição push ativa neste dispositivo.')
-          return
-        }
-        const endpoint = subscription.endpoint
-        await subscription.unsubscribe()
-        const result = await unsubscribeCampaignPush(endpoint)
-        if ('status' in result && result.status === 'success') {
-          setMessage(result.message)
-        } else if ('message' in result && result.message) {
-          setError(result.message)
-        } else {
-          setError('Não foi possível desativar os avisos push.')
-        }
-      } catch {
-        setError('Não foi possível desativar os avisos push.')
+      const result = await deactivateCampaignPushOnDevice()
+      if (result.status === 'success') {
+        setMessage(result.message)
+      } else {
+        setError(result.message)
       }
     })
   }

@@ -26,6 +26,9 @@ const CAMPAIGN_LIST_IDS = [
   'apoiadores',
   'territorios',
   'pessoas',
+  // B197 — the advisors surface is a hand-rolled client table (no
+  // `CampaignTable`), but it joined the picker with the same cookie key.
+  'assessores',
 ] as const
 
 export type CampaignListId = (typeof CAMPAIGN_LIST_IDS)[number]
@@ -72,6 +75,14 @@ const DEFAULT_HIDDEN_COLUMN_IDS: Partial<Record<CampaignListId, readonly string[
   // B175 — Cobertura is the deepest rung (P3) and only shows when the actor
   // opts in from the picker, mirroring the municipios precedent.
   territorios: ['cobertura'],
+  // B197 — the person lists open without the email column; the channel of the
+  // day is phone/WhatsApp. Anyone can re-enable it from the picker, and a
+  // device with an existing choice keeps it (stored wins over default).
+  liderancas: ['email'],
+  dobradinhas: ['email'],
+  pessoas: ['email'],
+  apoiadores: ['email'],
+  assessores: ['email'],
 }
 
 const isCampaignListId = (value: string): value is CampaignListId =>

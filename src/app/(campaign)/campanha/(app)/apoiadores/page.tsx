@@ -84,7 +84,7 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
 
   return (
     <CampaignPageShell>
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+      <div className="flex flex-col gap-2 pt-4 sm:flex-row sm:justify-end md:pt-0">
         {isCampaignCoordinator(user) ? (
           <Button asChild variant="outline" className="min-h-11">
             <Link href="/campanha/apoiadores/importar">

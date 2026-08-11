@@ -323,7 +323,7 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
 
   return (
     <CampaignPageShell>
-      <div className="flex justify-end">
+      <div className="flex justify-end pt-4 md:pt-0">
         <Button asChild className="min-h-11">
           <Link href="/campanha/dobradinhas/nova">
             <PlusIcon data-icon="inline-start" aria-hidden="true" />

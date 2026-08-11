@@ -109,7 +109,7 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
 
   return (
     <CampaignPageShell>
-      <div className="flex justify-end">
+      <div className="flex justify-end pt-4 md:pt-0">
         <Button asChild className="min-h-11">
           <Link href="/campanha/demandas/nova">
             <PlusIcon data-icon="inline-start" aria-hidden="true" />

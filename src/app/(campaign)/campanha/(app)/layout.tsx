@@ -17,6 +17,10 @@ import { CampaignHomeSearchChromeProvider } from '@/components/campaign/shell/Ca
 import { CampaignMobileTopBar } from '@/components/campaign/shell/CampaignMobileTopBar'
 import { CampaignNotificationBellSlot } from '@/components/campaign/shell/CampaignNotificationBellSlot'
 import { CampaignPageChromeProvider } from '@/components/campaign/shell/CampaignPageChromeContext'
+import {
+  CampaignPushOptInToast,
+  type CampaignPushOptInOffer,
+} from '@/components/campaign/shell/CampaignPushOptInToast'
 import { CampaignQuickActionContextProvider } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { CampaignSidebar } from '@/components/campaign/shell/CampaignSidebar'
 import { CampaignSidebarViewportDefault } from '@/components/campaign/shell/CampaignSidebarViewportDefault'
@@ -27,7 +31,9 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { deviceLabelFromUserAgent } from '@/lib/deviceLabel'
 import { getCampaignUserWithAvatar } from '@/utilities/campaignAuth'
+import { getCampaignPushConsent } from '@/utilities/campaignConsent'
 import { campaignUserShellView } from '@/utilities/campaignUserProfile'
+import { getCampaignVapidPublicKey } from '@/utilities/notification/sendCampaignPush'
 import { loadCampaignPasskeys } from '@/utilities/webauthn/campaignWebAuthnCeremony'
 import { resolveCampaignWebAuthnRelyingParty } from '@/utilities/webauthn/campaignWebAuthnConfig'
 
@@ -49,18 +55,29 @@ export default async function CampaignAppLayout({ children }: { children: React.
   // ceremony. Whether THIS device is already enrolled is a question only the
   // browser can answer, so the island finishes the decision.
   const relyingParty = await resolveCampaignWebAuthnRelyingParty()
+  const isStaff = isStaffCampaignRole(user.role)
   let biometricEnrollment: BiometricEnrollmentOffer | null = null
-  if (relyingParty) {
+  let pushOptIn: CampaignPushOptInOffer | null = null
+  if (relyingParty || isStaff) {
     const payload = await getPayload({ config })
-    const [passkeys, requestHeaders] = await Promise.all([
-      loadCampaignPasskeys(payload, user.id),
+    const [passkeys, requestHeaders, pushConsent] = await Promise.all([
+      relyingParty ? loadCampaignPasskeys(payload, user.id) : Promise.resolve([]),
       headers(),
+      isStaff ? getCampaignPushConsent(payload) : Promise.resolve(null),
     ])
-    biometricEnrollment = {
-      // Only the emptiness crosses the boundary: the device labels have no
-      // business in the RSC payload of every page.
-      hasEnrolledPasskeys: passkeys.length > 0,
-      suggestedDeviceLabel: deviceLabelFromUserAgent(requestHeaders.get('user-agent')),
+    if (relyingParty) {
+      biometricEnrollment = {
+        // Only the emptiness crosses the boundary: the device labels have no
+        // business in the RSC payload of every page.
+        hasEnrolledPasskeys: passkeys.length > 0,
+        suggestedDeviceLabel: deviceLabelFromUserAgent(requestHeaders.get('user-agent')),
+      }
+    }
+    if (isStaff) {
+      pushOptIn = {
+        pushConsentConfigured: pushConsent !== null,
+        vapidPublicKey: getCampaignVapidPublicKey(),
+      }
     }
   }
 
@@ -104,6 +121,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
                       ) : null}
                     </TooltipProvider>
                     <InstallPwaToast />
+                    {pushOptIn ? <CampaignPushOptInToast {...pushOptIn} /> : null}
                     {biometricEnrollment ? (
                       <BiometricEnrollmentToast {...biometricEnrollment} />
                     ) : null}

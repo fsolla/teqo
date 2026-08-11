@@ -24,10 +24,6 @@ import {
   runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
-import {
-  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
-  CONTACT_PHONE_CONFLICT_MESSAGE,
-} from '@/utilities/contactPhoneInvariant'
 
 const INVALID_FIELD_MESSAGE = 'Campo inválido.'
 
@@ -38,8 +34,6 @@ const safeMessages = [
   LEADERSHIP_MUNICIPALITY_FLOOR_MESSAGE,
   LEADERSHIP_MUNICIPALITY_CAP_MESSAGE,
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
-  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
-  CONTACT_PHONE_CONFLICT_MESSAGE,
   INVALID_FIELD_MESSAGE,
 ] as const
 

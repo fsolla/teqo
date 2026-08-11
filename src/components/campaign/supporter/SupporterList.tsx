@@ -103,6 +103,14 @@ const supporterColumns: Array<CampaignTableColumn<SupporterListItemViewModel>> =
     cell: (supporter) => supporter.city ?? '—',
   },
   {
+    // B197 — born hidden by default; the picker can turn it on. The mobile
+    // card keeps no email (unchanged surface).
+    id: 'email',
+    label: 'E-mail',
+    cellClassName: 'max-w-56 whitespace-normal',
+    cell: (supporter) => (supporter.email ? supporter.email : '—'),
+  },
+  {
     id: 'municipality',
     label: 'Município',
     cellClassName: 'max-w-48 whitespace-normal',
