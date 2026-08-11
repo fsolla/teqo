@@ -4,7 +4,11 @@ import type { Payload } from 'payload'
 
 import { primaryPhoneOf } from '@/lib/phone'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
-import { isSupportStatus, type SupportStatus } from '@/lib/schemas/leadership'
+import {
+  isSupportStatus,
+  leadershipSupportStatuses,
+  type SupportStatus,
+} from '@/lib/schemas/leadership'
 import type { CampaignUser, Contact, Leadership, StateDeputy } from '@/payload-types'
 import { municipalityIdsByAdvisorIds } from '@/utilities/advisorData'
 import { getAdvisorMunicipalityIds, isCampaignStaff } from '@/utilities/campaignAccess'
@@ -275,9 +279,7 @@ export const peopleFilterFacetsFromRows = (
 }
 
 const leadershipStatusesInOrder = (statuses: ReadonlySet<SupportStatus>): SupportStatus[] =>
-  (['engajado', 'a_abordar', 'em_disputa', 'negativo'] as const).filter((status) =>
-    statuses.has(status),
-  )
+  leadershipSupportStatuses.filter((status) => statuses.has(status))
 
 const EMPTY_FACETS: PeopleListFilterFacets = { municipalityIDs: [], statuses: [] }
 

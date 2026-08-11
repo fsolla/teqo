@@ -3,13 +3,7 @@ import type { Where } from 'payload'
 import { z } from 'zod'
 
 import type { AIToolContext } from '@/lib/ai/types'
-
-const SUPPORT_LABELS: Record<string, string> = {
-  engajado: 'Engajado',
-  a_abordar: 'A abordar',
-  em_disputa: 'Em disputa',
-  negativo: 'Negativo',
-}
+import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
 
 export const getLeaderships = (ctx: AIToolContext) =>
   tool({
@@ -67,7 +61,8 @@ export const getLeaderships = (ctx: AIToolContext) =>
           organizacoes: organizations.map((o) => o.name),
           apoioExclusivo: doc.exclusive === true,
           status:
-            SUPPORT_LABELS[(doc.supportStatus as string) ?? ''] ?? (doc.supportStatus as string),
+            supportStatusLabels[doc.supportStatus as keyof typeof supportStatusLabels] ??
+            (doc.supportStatus as string),
           observacoes: (doc.notes as string) ?? null,
         }
       })

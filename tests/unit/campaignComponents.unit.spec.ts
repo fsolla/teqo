@@ -188,6 +188,7 @@ describe('campaign visual foundation', () => {
     ['engajado', 'Engajado'],
     ['a_abordar', 'A abordar'],
     ['em_disputa', 'Em disputa'],
+    ['lembranca', 'Lembrança'],
     ['negativo', 'Negativo'],
   ] as const)('renders the %s support status with text and semantic state', (status, label) => {
     const html = renderToStaticMarkup(createElement(SupportStatusBadge, { status }))

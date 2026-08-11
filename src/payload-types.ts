@@ -590,7 +590,7 @@ export interface Leadership {
   stateDeputies?: (number | StateDeputy)[] | null;
   advisors?: (number | CampaignUser)[] | null;
   exclusive?: boolean | null;
-  supportStatus: 'engajado' | 'a_abordar' | 'em_disputa' | 'negativo';
+  supportStatus: 'engajado' | 'a_abordar' | 'em_disputa' | 'lembranca' | 'negativo';
   user?: (number | null) | CampaignUser;
   consent?: (number | null) | Consent;
   consentContentHash?: string | null;

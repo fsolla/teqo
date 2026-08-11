@@ -24,6 +24,8 @@ const badgeVariants = cva(
           'bg-support-to-approach text-support-to-approach-foreground [a]:hover:bg-support-to-approach/80',
         'support-disputed':
           'bg-support-disputed text-support-disputed-foreground [a]:hover:bg-support-disputed/80',
+        'support-remembered':
+          'bg-support-remembered text-support-remembered-foreground [a]:hover:bg-support-remembered/80',
         'support-negative':
           'bg-support-negative text-support-negative-foreground [a]:hover:bg-support-negative/80',
         'estimate-confirmed':

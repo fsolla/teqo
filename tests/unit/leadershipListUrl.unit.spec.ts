@@ -63,7 +63,7 @@ describe('leadership list URL contract', () => {
   it('canonicalizes selecting every status member to the absent filter (B18)', () => {
     expect(
       parseLeadershipListParams({
-        status: ['engajado', 'a_abordar', 'em_disputa', 'negativo'],
+        status: ['engajado', 'a_abordar', 'em_disputa', 'lembranca', 'negativo'],
       }),
     ).toEqual({ page: 1 })
   })
