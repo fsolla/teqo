@@ -72,12 +72,20 @@ const setCanonicalActivitySlug: CollectionBeforeValidateHook = ({
 }) => {
   if (isActivityMutationShortcut(context)) return data
   if (!data) return data
+  const isGoogleCalendarWrite = context?.mutationKind === 'googleCalendarSync'
   const title = trimmedText(data.title ?? originalDoc?.title)
   const slug = slugify(title)
   if (!slug) {
     throw new APIError('Informe um título com letras ou números.', 400)
   }
-  if (operation === 'update' && data.title !== undefined && title !== originalDoc?.title) {
+  // C115 — the Google direction edits titles by product decision (D9); the
+  // canonical slug stays frozen so public URLs never break.
+  if (
+    operation === 'update' &&
+    !isGoogleCalendarWrite &&
+    data.title !== undefined &&
+    title !== originalDoc?.title
+  ) {
     throw new APIError('O título da atividade não pode ser alterado após a criação.', 409)
   }
   data.title = title

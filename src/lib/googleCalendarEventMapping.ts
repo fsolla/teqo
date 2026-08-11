@@ -154,9 +154,14 @@ export type GoogleRemoteEvent = {
   summary?: string
   description?: string
   location?: string
+  status?: string
+  updated?: string
   start?: { dateTime?: string; date?: string; timeZone?: string }
   end?: { dateTime?: string; date?: string; timeZone?: string }
 }
+
+/** Google's own event lifecycle status — `cancelled` is the trash signal. */
+export const GOOGLE_EVENT_STATUS_CANCELLED = 'cancelled'
 
 const startEndInstantEquals = (
   remote: { dateTime?: string; date?: string } | undefined,

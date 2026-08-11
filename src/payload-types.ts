@@ -909,6 +909,20 @@ export interface GoogleCalendarSync {
   lastSuccessAt?: string | null;
   lastErrorAt?: string | null;
   lastError?: string | null;
+  pushChannelId?: string | null;
+  pushChannelResourceId?: string | null;
+  pushChannelExpiresAt?: string | null;
+  pushChannelSecret?: string | null;
+  pushChannelError?: string | null;
+  lastSeenEventIds?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1894,6 +1908,12 @@ export interface GoogleCalendarSyncSelect<T extends boolean = true> {
   lastSuccessAt?: T;
   lastErrorAt?: T;
   lastError?: T;
+  pushChannelId?: T;
+  pushChannelResourceId?: T;
+  pushChannelExpiresAt?: T;
+  pushChannelSecret?: T;
+  pushChannelError?: T;
+  lastSeenEventIds?: T;
   updatedAt?: T;
   createdAt?: T;
 }

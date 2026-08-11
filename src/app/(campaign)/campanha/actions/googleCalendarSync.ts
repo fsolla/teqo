@@ -36,6 +36,8 @@ const failure = (message: string): GoogleCalendarSyncActionResult => ({
   lastSuccessAt: null,
   lastErrorAt: null,
   lastError: null,
+  pushChannelExpiresAt: null,
+  pushChannelError: null,
   addLink: null,
 })
 

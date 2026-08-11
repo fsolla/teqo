@@ -33,7 +33,14 @@ const config = (overrides: Record<string, unknown> = {}) =>
     ...overrides,
   }) as unknown as GoogleCalendarSyncDoc
 
-const settledOutcome = { status: 'synced' as const, created: 0, updated: 0, deleted: 0, at: '' }
+const settledOutcome = {
+  status: 'synced' as const,
+  created: 0,
+  updated: 0,
+  deleted: 0,
+  reverseEdits: 0,
+  at: '',
+}
 
 describe('activityGoogleCalendarSyncHook wiring', () => {
   beforeEach(() => {
