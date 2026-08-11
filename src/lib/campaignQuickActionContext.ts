@@ -16,6 +16,8 @@ export type CampaignQuickActionContext = {
    * crossed server→client.
    */
   openCalendarFeed?: () => void
+  /** C114 — opens the Google Calendar mirror dialog (same bridge as above). */
+  openGoogleCalendarSync?: () => void
 }
 
 export const emptyCampaignQuickActionContext = (): CampaignQuickActionContext => ({})

@@ -87,6 +87,7 @@ export interface Config {
     municipalityUpdate: MunicipalityUpdate;
     activity: Activity;
     calendarFeed: CalendarFeed;
+    googleCalendarSync: GoogleCalendarSync;
     electionTally: ElectionTally;
     electionCandidateVote: ElectionCandidateVote;
     electionCandidate: ElectionCandidate;
@@ -127,6 +128,7 @@ export interface Config {
     municipalityUpdate: MunicipalityUpdateSelect<false> | MunicipalityUpdateSelect<true>;
     activity: ActivitySelect<false> | ActivitySelect<true>;
     calendarFeed: CalendarFeedSelect<false> | CalendarFeedSelect<true>;
+    googleCalendarSync: GoogleCalendarSyncSelect<false> | GoogleCalendarSyncSelect<true>;
     electionTally: ElectionTallySelect<false> | ElectionTallySelect<true>;
     electionCandidateVote: ElectionCandidateVoteSelect<false> | ElectionCandidateVoteSelect<true>;
     electionCandidate: ElectionCandidateSelect<false> | ElectionCandidateSelect<true>;
@@ -891,6 +893,27 @@ export interface CalendarFeed {
   createdAt: string;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "googleCalendarSync".
+ */
+export interface GoogleCalendarSync {
+  id: number;
+  /**
+   * O calendarId do calendário "Agenda da Campanha" na conta Google da campanha (ex.: c_…@group.calendar.google.com). O calendário precisa estar público no link e a service account com permissão de edição.
+   */
+  calendarId?: string | null;
+  /**
+   * Enquanto preenchido, o Teqo não escreve no Google.
+   */
+  disabledAt?: string | null;
+  lastSyncedAt?: string | null;
+  lastSuccessAt?: string | null;
+  lastErrorAt?: string | null;
+  lastError?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Totais oficiais TSE por município e zona (dado público).
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1358,6 +1381,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'calendarFeed';
         value: number | CalendarFeed;
+      } | null)
+    | ({
+        relationTo: 'googleCalendarSync';
+        value: number | GoogleCalendarSync;
       } | null)
     | ({
         relationTo: 'electionTally';
@@ -1855,6 +1882,20 @@ export interface CalendarFeedSelect<T extends boolean = true> {
   filterTag?: T;
   revokedAt?: T;
   createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "googleCalendarSync_select".
+ */
+export interface GoogleCalendarSyncSelect<T extends boolean = true> {
+  calendarId?: T;
+  disabledAt?: T;
+  lastSyncedAt?: T;
+  lastSuccessAt?: T;
+  lastErrorAt?: T;
+  lastError?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2423,6 +2464,7 @@ export interface TaskCreateCollectionExport {
       | 'municipalityUpdate'
       | 'activity'
       | 'calendarFeed'
+      | 'googleCalendarSync'
       | 'electionTally'
       | 'electionCandidateVote'
       | 'electionCandidate'
