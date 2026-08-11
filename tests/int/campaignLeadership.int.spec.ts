@@ -434,7 +434,7 @@ describe('campaign leadership domain', () => {
     const created = await createLeadershipRecord(payload, coordinator, {
       municipalities: [municipality.id],
       name: 'Liderança Lembrança',
-      phone: campaignFixtures().phone(),
+      phones: [campaignFixtures().phone()],
       supportStatus: 'lembranca',
     })
 
