@@ -802,6 +802,7 @@ export interface Activity {
   resultMedia?: (number | Media)[] | null;
   resultRecordedBy?: (number | null) | CampaignUser;
   resultRecordedAt?: string | null;
+  lastMirroredChangeAt?: string | null;
   createdBy?: (number | null) | CampaignUser;
   updatedAt: string;
   createdAt: string;
@@ -1878,6 +1879,7 @@ export interface ActivitySelect<T extends boolean = true> {
   resultMedia?: T;
   resultRecordedBy?: T;
   resultRecordedAt?: T;
+  lastMirroredChangeAt?: T;
   createdBy?: T;
   updatedAt?: T;
   createdAt?: T;

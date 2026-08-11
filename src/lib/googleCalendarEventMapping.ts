@@ -179,6 +179,12 @@ const startEndInstantEquals = (
 }
 
 /**
+ * Same instant comparison, exported for the engine's editable-fields check
+ * (C115 reverse direction) — single implementation of the compare.
+ */
+export { startEndInstantEquals as googleStartEndInstantEquals }
+
+/**
  * True when the remote event already carries exactly what we would write —
  * the decision rule that makes repeated reconciliation passes converge
  * without touching Google (no update churn, no modified-date spam).

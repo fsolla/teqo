@@ -4,6 +4,7 @@ import {
   canCreateGoogleCalendarSync,
   canDeleteGoogleCalendarSync,
   canReadGoogleCalendarSync,
+  canReadGoogleCalendarSyncIdentityField,
   canSetGoogleCalendarSyncConfigField,
   canSetGoogleCalendarSyncDisabled,
   canSetGoogleCalendarSyncSystemField,
@@ -27,7 +28,13 @@ export const GoogleCalendarSync: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'calendarId',
-    defaultColumns: ['calendarId', 'lastSyncedAt', 'lastSuccessAt', 'lastError'],
+    defaultColumns: [
+      'calendarId',
+      'lastSyncedAt',
+      'lastSuccessAt',
+      'lastError',
+      'pushChannelExpiresAt',
+    ],
   },
   access: {
     create: canCreateGoogleCalendarSync,
@@ -114,6 +121,7 @@ export const GoogleCalendarSync: CollectionConfig = {
       admin: { readOnly: true },
       access: {
         create: canSetGoogleCalendarSyncSystemField,
+        read: canReadGoogleCalendarSyncIdentityField,
         update: canSetGoogleCalendarSyncSystemField,
       },
     },
@@ -124,6 +132,7 @@ export const GoogleCalendarSync: CollectionConfig = {
       admin: { readOnly: true },
       access: {
         create: canSetGoogleCalendarSyncSystemField,
+        read: canReadGoogleCalendarSyncIdentityField,
         update: canSetGoogleCalendarSyncSystemField,
       },
     },
@@ -144,6 +153,7 @@ export const GoogleCalendarSync: CollectionConfig = {
       admin: { readOnly: true },
       access: {
         create: canSetGoogleCalendarSyncSystemField,
+        read: canReadGoogleCalendarSyncIdentityField,
         update: canSetGoogleCalendarSyncSystemField,
       },
     },

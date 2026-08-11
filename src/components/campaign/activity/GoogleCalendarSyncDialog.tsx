@@ -164,7 +164,7 @@ export const GoogleCalendarSyncDialog = ({
       {state.pushChannelExpiresAt ? (
         <p className="mt-2 text-xs text-muted-foreground">
           Notificações ativas até {formatBahiaDateTimeLabel(state.pushChannelExpiresAt)} — renovadas
-          automaticamente.
+          automaticamente a cada sincronização.
         </p>
       ) : null}
       {state.pushChannelError ? (

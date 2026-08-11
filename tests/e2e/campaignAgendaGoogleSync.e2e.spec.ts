@@ -287,4 +287,72 @@ test.describe('Agenda — sincronização Google (C114/C122)', () => {
       }
     })
   })
+
+  test('o webhook aceita uma entrega válida e trata os estados do recurso (C115)', async ({
+    campaign,
+    request,
+  }) => {
+    const { fixtures } = campaign
+    const secret = 'c'.repeat(32)
+    const channelId = 'channel-e2e'
+    const resourceId = 'resource-e2e'
+
+    await fixtures.payload.create({
+      collection: 'googleCalendarSync',
+      data: {
+        calendarId: 'c_campanha_e2e@group.calendar.google.com',
+        pushChannelId: channelId,
+        pushChannelResourceId: resourceId,
+        pushChannelSecret: secret,
+      },
+      depth: 0,
+      overrideAccess: true,
+    })
+
+    const url = `${campaign.baseURL}/campanha/agenda/google-webhook/${secret}`
+    const headers = {
+      'x-goog-channel-id': channelId,
+      'x-goog-resource-id': resourceId,
+      'x-goog-channel-token': secret,
+    }
+
+    try {
+      // `sync` — channel-creation ping: acknowledged, nothing recorded.
+      const syncPing = await request.post(url, {
+        headers: { ...headers, 'x-goog-resource-state': 'sync' },
+      })
+      expect(syncPing.status()).toBe(200)
+
+      // A valid change ping: acknowledged and the reconciliation runs (no
+      // credential env in the test runtime → the engine no-ops as
+      // `not-configured`; the 200 contract is what matters — Google must not
+      // retry a delivery whose pass failed).
+      const changePing = await request.post(url, {
+        headers: { ...headers, 'x-goog-resource-state': 'exists' },
+      })
+      expect(changePing.status()).toBe(200)
+
+      // `not_exists` — the watched calendar is gone: still 200 (no retry
+      // storm), and the staff-visible error state records WHY.
+      const gonePing = await request.post(url, {
+        headers: { ...headers, 'x-goog-resource-state': 'not_exists' },
+      })
+      expect(gonePing.status()).toBe(200)
+
+      const doc = await fixtures.payload.find({
+        collection: 'googleCalendarSync',
+        depth: 0,
+        limit: 1,
+        pagination: false,
+        overrideAccess: true,
+      })
+      expect(doc.docs[0]?.lastError).toContain('não existe mais')
+    } finally {
+      await fixtures.payload.delete({
+        collection: 'googleCalendarSync',
+        where: { pushChannelId: { equals: channelId } },
+        overrideAccess: true,
+      })
+    }
+  })
 })

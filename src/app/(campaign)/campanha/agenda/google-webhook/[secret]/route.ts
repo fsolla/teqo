@@ -43,6 +43,19 @@ export const GET = async (): Promise<Response> => notFoundResponse()
 export const POST = async (request: Request, context: RouteContext): Promise<Response> => {
   const { secret } = await context.params
 
+  // Cheap pre-filter BEFORE Payload bootstrap: every valid delivery carries
+  // the three channel headers and a ≥32-char URL secret — scanner noise is
+  // rejected without paying for a Payload init + DB read per hit. The full
+  // constant-time validation below still runs (defense in depth).
+  if (
+    secret.length < 32 ||
+    !request.headers.get('x-goog-channel-id') ||
+    !request.headers.get('x-goog-resource-id') ||
+    !request.headers.get('x-goog-channel-token')
+  ) {
+    return notFoundResponse()
+  }
+
   const payload = await getPayload({ config })
 
   // Intentional admin bypass: the endpoint is unauthenticated by design
