@@ -8,6 +8,7 @@ import { LeadershipInviteRowAction } from '@/components/campaign/invite/Leadersh
 import { DeletePersonButton } from '@/components/campaign/people/DeletePersonButton'
 import { PeopleFilters } from '@/components/campaign/people/PeopleFilters'
 import { PeopleListPageChrome } from '@/components/campaign/people/PeopleListPageChrome'
+import { PeopleSortableHead } from '@/components/campaign/people/PeopleSortableHead'
 import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
@@ -49,7 +50,11 @@ import {
   clearPeopleListFilters,
   type PeopleFilterOption,
 } from '@/utilities/people/peopleListFilters'
-import { buildPeopleListHref, resolvePeopleListUrl } from '@/utilities/people/peopleListUrl'
+import {
+  buildPeopleListHref,
+  resolvePeopleListUrl,
+  type PeopleListState,
+} from '@/utilities/people/peopleListUrl'
 
 export const metadata = campaignPageMetadataFromCatalog('pessoas')
 
@@ -57,7 +62,15 @@ type PeoplePageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-const PeopleListEmptyState = ({ hasFilters, scoped }: { hasFilters: boolean; scoped: boolean }) => (
+const PeopleListEmptyState = ({
+  hasFilters,
+  scoped,
+  state,
+}: {
+  hasFilters: boolean
+  scoped: boolean
+  state: PeopleListState
+}) => (
   <Empty className="min-h-56">
     <EmptyHeader>
       <EmptyMedia variant="icon">
@@ -72,7 +85,7 @@ const PeopleListEmptyState = ({ hasFilters, scoped }: { hasFilters: boolean; sco
     {hasFilters ? (
       <EmptyContent>
         <CampaignTransitionAnchor
-          href={buildPeopleFilterHref(clearPeopleListFilters())}
+          href={buildPeopleFilterHref(clearPeopleListFilters(state))}
           replace
           scroll={false}
           className={cn(buttonVariants({ variant: 'outline' }), 'min-h-11')}
@@ -115,9 +128,11 @@ const PeopleMunicipalityCell = ({
 }
 
 const peopleColumns = ({
+  state,
   municipalityIndex,
   canDelete,
 }: {
+  state: PeopleListState
   municipalityIndex: ReadonlyMap<number, ResolvedPortfolioEntry>
   canDelete: boolean
 }): Array<CampaignTableColumn<PeopleRowViewModel>> => [
@@ -125,6 +140,7 @@ const peopleColumns = ({
     id: 'name',
     label: 'Nome',
     mandatory: true,
+    head: <PeopleSortableHead state={state} sortKey="name" />,
     cell: (row) => (
       <span className="font-medium">
         {row.name}
@@ -136,6 +152,7 @@ const peopleColumns = ({
     id: 'contact',
     label: 'Contato',
     cellClassName: 'whitespace-normal',
+    head: <PeopleSortableHead state={state} sortKey="contact" />,
     cell: (row) =>
       row.phone ? (
         <span className="font-medium tabular-nums">{formatBrazilianPhoneInput(row.phone)}</span>
@@ -146,7 +163,8 @@ const peopleColumns = ({
   {
     // B197 — the email left the "Contato" cell (which now carries only the
     // phone) and became its own column, hidden by default. The mobile cards
-    // still show it as the no-phone fallback, untouched.
+    // still show it as the no-phone fallback, untouched. C117 keeps it out of
+    // the sort keys on purpose: no ordering by hidden columns.
     id: 'email',
     label: 'E-mail',
     cellClassName: 'max-w-56 whitespace-normal',
@@ -156,6 +174,7 @@ const peopleColumns = ({
     id: 'assessora',
     label: 'Assessora',
     cellClassName: 'max-w-56 whitespace-normal',
+    head: <PeopleSortableHead state={state} sortKey="assessora" />,
     cell: (row) => (
       <PeopleMunicipalityCell ids={row.assessoraMunicipalityIDs} index={municipalityIndex} />
     ),
@@ -164,6 +183,7 @@ const peopleColumns = ({
     id: 'lidera',
     label: 'Lidera',
     cellClassName: 'max-w-56 whitespace-normal',
+    head: <PeopleSortableHead state={state} sortKey="lidera" />,
     cell: (row) => (
       <PeopleMunicipalityCell ids={row.leadershipMunicipalityIDs} index={municipalityIndex} />
     ),
@@ -172,6 +192,7 @@ const peopleColumns = ({
     id: 'aliada',
     label: 'Aliada em',
     cellClassName: 'max-w-56 whitespace-normal',
+    head: <PeopleSortableHead state={state} sortKey="aliada" />,
     cell: (row) => (
       <PeopleMunicipalityCell ids={row.deputyMunicipalityIDs} index={municipalityIndex} />
     ),
@@ -180,11 +201,13 @@ const peopleColumns = ({
     id: 'assessorado',
     label: 'Assessorado',
     cellClassName: 'max-w-56 whitespace-normal text-muted-foreground',
+    head: <PeopleSortableHead state={state} sortKey="assessorado" />,
     cell: (row) => row.assessoradoNames.join(', ') || '—',
   },
   {
     id: 'base',
     label: 'Base',
+    head: <PeopleSortableHead state={state} sortKey="base" />,
     cell: (row) => row.city ?? '—',
   },
   {
@@ -356,9 +379,13 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
     .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'))
 
   const canDelete = isUnrestrictedCampaignRole(user.role)
-  const columns = peopleColumns({ municipalityIndex: resolvedIndex, canDelete })
+  const columns = peopleColumns({ state, municipalityIndex: resolvedIndex, canDelete })
   const hasFilters = Boolean(
-    state.q || state.capacities?.length || state.municipalities?.length || state.statuses?.length,
+    state.q ||
+    state.capacities?.length ||
+    state.municipalities?.length ||
+    state.statuses?.length ||
+    state.ausencias?.length,
   )
 
   return (
@@ -382,7 +409,11 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
             municipalityIndex={resolvedIndex}
             canDelete={canDelete}
             empty={
-              <PeopleListEmptyState hasFilters={hasFilters} scoped={user.role === 'advisor'} />
+              <PeopleListEmptyState
+                hasFilters={hasFilters}
+                scoped={user.role === 'advisor'}
+                state={state}
+              />
             }
           />
           <CampaignTable
@@ -393,7 +424,11 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
             rows={listData.rows}
             rowKey={(row) => row.contactID}
             empty={
-              <PeopleListEmptyState hasFilters={hasFilters} scoped={user.role === 'advisor'} />
+              <PeopleListEmptyState
+                hasFilters={hasFilters}
+                scoped={user.role === 'advisor'}
+                state={state}
+              />
             }
           />
           {listData.rows.length ? (

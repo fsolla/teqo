@@ -13,6 +13,9 @@ import {
   buildPeopleLeadershipSourceWhere,
   buildPeopleStaffSourceWhere,
   peoplePageSize,
+  resolvePeopleListSort,
+  type PeopleListSortDirection,
+  type PeopleListSortKey,
   type PeopleListState,
 } from '@/utilities/people/peopleListUrl'
 import { municipalityIdsByStateDeputyIds } from '@/utilities/stateDeputyData'
@@ -225,7 +228,9 @@ export const scopePeopleRows = (
 /**
  * In-memory list filters (C100): capacities OR within the facet (same as every
  * other list facet), municipalities intersect any capacity, statuses only
- * match leadership rows. `q` already ran at the source level.
+ * match leadership rows. `q` already ran at the source level. C117 absence
+ * facets are OR within the facet: a row matches when it satisfies ANY selected
+ * absence ("Sem assessor" OR "Sem base" OR "Sem contato").
  */
 export const filterPeopleRows = (
   rows: readonly MergedPerson[],
@@ -247,8 +252,72 @@ export const filterPeopleRows = (
     if (state.statuses?.length) {
       if (row.supportStatus === null || !state.statuses.includes(row.supportStatus)) return false
     }
+    if (state.ausencias?.length) {
+      const wanted = new Set(state.ausencias)
+      const hasAdvisor = row.leadershipAdvisorIDs.length > 0 || row.deputyAdvisorIDs.length > 0
+      const matches =
+        (wanted.has('sem_assessor') && !hasAdvisor) ||
+        (wanted.has('sem_base') && row.city === null) ||
+        (wanted.has('sem_contato') && row.phone === null)
+      if (!matches) return false
+    }
     return true
   })
+
+const mergedPersonAdvisorCount = (person: MergedPerson): number =>
+  new Set([...person.leadershipAdvisorIDs, ...person.deputyAdvisorIDs]).size
+
+/**
+ * C117 — global sort over the FILTERED set (never the page), applied before
+ * pagination. Keys are exactly the visible-by-default columns; municipality
+ * columns sort by their count ("quem tem mais rede?"), text columns by value.
+ * Nulls ("Sem…") always land last (B15 precedent), ties break by name, then
+ * contact id — the same order the list opened with. The advisor-count map is
+ * precomputed once so the comparator never allocates per comparison.
+ */
+export const sortPeopleRows = (
+  rows: readonly MergedPerson[],
+  sort: PeopleListSortKey,
+  dir: PeopleListSortDirection,
+): MergedPerson[] => {
+  const direction = dir === 'asc' ? 1 : -1
+  const advisorCounts = new Map(
+    rows.map((person) => [person.contactID, mergedPersonAdvisorCount(person)] as const),
+  )
+  const sortValue = (person: MergedPerson): string | number | null => {
+    switch (sort) {
+      case 'name':
+        return person.name
+      case 'contact':
+        return person.phone
+      case 'base':
+        return person.city
+      case 'assessora':
+        return person.assessoraMunicipalityIDs.length || null
+      case 'lidera':
+        return person.leadershipMunicipalityIDs.length || null
+      case 'aliada':
+        return person.deputyMunicipalityIDs.length || null
+      case 'assessorado':
+        return advisorCounts.get(person.contactID) || null
+    }
+  }
+  const byNameThenId = (left: MergedPerson, right: MergedPerson): number =>
+    left.name.localeCompare(right.name, 'pt-BR') || left.contactID - right.contactID
+  const byValue = (left: string | number, right: string | number): number =>
+    typeof left === 'string'
+      ? left.localeCompare(right as string, 'pt-BR')
+      : left - (right as number)
+
+  return [...rows].sort((left, right) => {
+    const leftValue = sortValue(left)
+    const rightValue = sortValue(right)
+    if (leftValue === null && rightValue === null) return byNameThenId(left, right)
+    if (leftValue === null) return 1
+    if (rightValue === null) return -1
+    return byValue(leftValue, rightValue) * direction || byNameThenId(left, right)
+  })
+}
 
 export type PeopleListFilterFacets = {
   /** Municipality ids present across the scoped rows (selected values unioned in). */
@@ -426,10 +495,8 @@ export const loadPeopleListPageData = async (
   const scoped = scopePeopleRows(merged, accessibleMunicipalityIds)
   const filterFacets = peopleFilterFacetsFromRows(scoped, state)
   const filtered = filterPeopleRows(scoped, state)
-  const sorted = [...filtered].sort(
-    (left, right) =>
-      left.name.localeCompare(right.name, 'pt-BR') || left.contactID - right.contactID,
-  )
+  const { sort: sortKey, dir: sortDir } = resolvePeopleListSort(state)
+  const sorted = sortPeopleRows(filtered, sortKey, sortDir)
 
   const totalDocs = sorted.length
   const totalPages = Math.ceil(totalDocs / peoplePageSize)

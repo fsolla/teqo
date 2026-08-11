@@ -5,6 +5,7 @@ import {
   mergePeopleSources,
   peopleFilterFacetsFromRows,
   scopePeopleRows,
+  sortPeopleRows,
   type MergedPerson,
   type PeopleMergeSources,
 } from '@/utilities/people/peopleData'
@@ -211,6 +212,74 @@ describe('filterPeopleRows', () => {
       filterPeopleRows(rows, { page: 1, statuses: ['engajado'] }).map((row) => row.contactID),
     ).toEqual([100])
     expect(filterPeopleRows(rows, { page: 1, statuses: ['negativo'] })).toEqual([])
+  })
+
+  it('filters absence with OR semantics within the facet (C117)', () => {
+    expect(
+      filterPeopleRows(rows, { page: 1, ausencias: ['sem_contato'] })
+        .map((row) => row.contactID)
+        .sort(),
+    ).toEqual([101, 102, 103])
+    expect(
+      filterPeopleRows(rows, { page: 1, ausencias: ['sem_base'] })
+        .map((row) => row.contactID)
+        .sort(),
+    ).toEqual([102, 103])
+    expect(
+      filterPeopleRows(rows, { page: 1, ausencias: ['sem_assessor'] })
+        .map((row) => row.contactID)
+        .sort(),
+    ).toEqual([102, 103])
+    expect(
+      filterPeopleRows(rows, { page: 1, ausencias: ['sem_contato', 'sem_base'] })
+        .map((row) => row.contactID)
+        .sort(),
+    ).toEqual([101, 102, 103])
+  })
+
+  it('combines absence facets with the other filters (AND across facets)', () => {
+    expect(
+      filterPeopleRows(rows, { page: 1, capacities: ['assessora'], ausencias: ['sem_base'] }).map(
+        (row) => row.contactID,
+      ),
+    ).toEqual([103])
+    expect(
+      filterPeopleRows(rows, { page: 1, statuses: ['engajado'], ausencias: ['sem_contato'] }),
+    ).toEqual([])
+  })
+})
+
+describe('sortPeopleRows (C117)', () => {
+  const rows = mergePeopleSources(source)
+  const ids = (sorted: readonly MergedPerson[]) => sorted.map((row) => row.contactID)
+
+  it('sorts by name asc by default contract, desc inverts', () => {
+    expect(ids(sortPeopleRows(rows, 'name', 'asc'))).toEqual([101, 102, 103, 100])
+    expect(ids(sortPeopleRows(rows, 'name', 'desc'))).toEqual([100, 103, 102, 101])
+  })
+
+  it('sorts text columns with nulls always last', () => {
+    expect(ids(sortPeopleRows(rows, 'contact', 'asc'))).toEqual([100, 101, 102, 103])
+    expect(ids(sortPeopleRows(rows, 'base', 'asc'))).toEqual([101, 100, 102, 103])
+    expect(ids(sortPeopleRows(rows, 'base', 'desc'))).toEqual([100, 101, 102, 103])
+  })
+
+  it('sorts municipality columns by count, ties and nulls breaking by name', () => {
+    expect(ids(sortPeopleRows(rows, 'assessora', 'desc'))).toEqual([100, 103, 101, 102])
+    expect(ids(sortPeopleRows(rows, 'lidera', 'desc'))).toEqual([100, 101, 102, 103])
+    expect(ids(sortPeopleRows(rows, 'aliada', 'desc'))).toEqual([101, 102, 103, 100])
+    expect(ids(sortPeopleRows(rows, 'assessora', 'asc'))).toEqual([103, 100, 101, 102])
+  })
+
+  it('sorts assessorado by the union advisor count without resolving names', () => {
+    expect(ids(sortPeopleRows(rows, 'assessorado', 'desc'))).toEqual([101, 100, 102, 103])
+    expect(ids(sortPeopleRows(rows, 'assessorado', 'asc'))).toEqual([100, 101, 102, 103])
+  })
+
+  it('does not mutate the input rows', () => {
+    const before = ids(rows)
+    sortPeopleRows(rows, 'lidera', 'desc')
+    expect(ids(rows)).toEqual(before)
   })
 })
 

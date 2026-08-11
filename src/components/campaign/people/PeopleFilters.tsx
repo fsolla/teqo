@@ -103,7 +103,7 @@ export const PeopleFilters = ({
             runAction(removePeopleOmniboxChip({ state, chipId }))
           }}
           onClearAll={() => {
-            runAction(clearPeopleOmnibox())
+            runAction(clearPeopleOmnibox(state))
           }}
           trailing={
             <>
