@@ -241,7 +241,6 @@ type ActivityFormTaskViewModel = {
   id: string | null
   title: string
   responsible: { id: number; name: string; phone: string | null } | null
-  due: string | null
   done: boolean
 }
 
@@ -291,7 +290,6 @@ export const toActivityFormViewModel = (activity: Activity): ActivityFormViewMod
           phone: primaryPhoneOf(task.responsible.phones),
         }
       : null,
-    due: task.due ?? null,
     done: Boolean(task.done),
   })),
 })
@@ -343,7 +341,6 @@ export type ActivityTaskViewModel = {
   title: string
   responsibleId: number | null
   responsibleName: string | null
-  due: string | null
   done: boolean
   doneAt: string | null
 }
@@ -392,7 +389,6 @@ const mapActivityTasks = (activity: Activity): ActivityTaskViewModel[] =>
     title: task.title,
     responsibleId: relationshipId(task.responsible),
     responsibleName: relationshipName(task.responsible),
-    due: task.due ?? null,
     done: Boolean(task.done),
     doneAt: task.doneAt ?? null,
   }))

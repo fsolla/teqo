@@ -10,13 +10,11 @@ import {
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { formatIsoAsBahiaDateTimeInput } from '@/lib/campaignTime'
 
 export type ActivityTaskFieldValue = {
   key: string
   title: string
   responsible: ContactComboboxOption | null
-  due: string
   done: boolean
 }
 
@@ -25,7 +23,6 @@ type ActivityTaskFieldsProps = {
     id: string | null
     title: string
     responsible: ContactComboboxOption | null
-    due: string | null
     done: boolean
   }>
   searchContacts: (query: string) => Promise<ContactComboboxOption[]>
@@ -45,7 +42,6 @@ const serializeTasks = (tasks: ActivityTaskFieldValue[]) =>
       .map((task) => ({
         title: task.title.trim(),
         ...(task.responsible ? { responsible: task.responsible.id } : {}),
-        ...(task.due ? { due: task.due } : {}),
         done: task.done,
       })),
   )
@@ -61,7 +57,6 @@ export const ActivityTaskFields = ({
       key: task.id ?? nextTaskKey(),
       title: task.title,
       responsible: task.responsible,
-      due: task.due ? formatIsoAsBahiaDateTimeInput(task.due) : '',
       done: task.done,
     })),
   )
@@ -73,7 +68,7 @@ export const ActivityTaskFields = ({
   const addTask = () => {
     setTasks((current) => [
       ...current,
-      { key: nextTaskKey(), title: '', responsible: null, due: '', done: false },
+      { key: nextTaskKey(), title: '', responsible: null, done: false },
     ])
   }
 
@@ -91,7 +86,7 @@ export const ActivityTaskFields = ({
             key={task.key}
             className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-start"
           >
-            <div className="grid flex-1 gap-3 sm:grid-cols-[2fr_1fr_1fr]">
+            <div className="grid flex-1 gap-3 sm:grid-cols-[2fr_1fr]">
               <Input
                 aria-label={`Título da tarefa ${index + 1}`}
                 placeholder="Título da tarefa"
@@ -105,13 +100,6 @@ export const ActivityTaskFields = ({
                 current={task.responsible}
                 search={searchContacts}
                 onChange={(contact) => updateTask(task.key, { responsible: contact })}
-              />
-              <Input
-                aria-label={`Prazo da tarefa ${index + 1}`}
-                type="datetime-local"
-                value={task.due}
-                className="min-h-11"
-                onChange={(event) => updateTask(task.key, { due: event.target.value })}
               />
             </div>
             <Button

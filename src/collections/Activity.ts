@@ -357,8 +357,7 @@ const deriveActivityFields: CollectionBeforeChangeHook = ({
           const taskRecord = task as Record<string, unknown>
           if (
             trimmedText(taskRecord.title) !== trimmedText(previousTask.title) ||
-            relationshipId(taskRecord.responsible) !== relationshipId(previousTask.responsible) ||
-            (taskRecord.due ?? null) !== (previousTask.due ?? null)
+            relationshipId(taskRecord.responsible) !== relationshipId(previousTask.responsible)
           ) {
             throw new APIError('Lideranças só podem marcar tarefas como concluídas.', 403)
           }
@@ -570,16 +569,6 @@ export const Activity: CollectionConfig = {
           type: 'relationship',
           relationTo: 'contact',
           label: 'Responsável',
-        },
-        {
-          name: 'due',
-          type: 'date',
-          label: 'Prazo',
-          admin: {
-            date: {
-              pickerAppearance: 'dayAndTime',
-            },
-          },
         },
         {
           name: 'done',

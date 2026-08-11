@@ -31,7 +31,6 @@ import { MAX_TOUR_NAME_LENGTH, TOUR_EMPTY_MESSAGE } from '@/utilities/visit/visi
 type ParsedActivityTask = {
   title: string
   responsible?: number
-  due?: string
   done?: boolean
 }
 
@@ -78,17 +77,11 @@ const parseTasksFormData = (formData: FormData): ParsedActivityTask[] => {
       record.responsible > 0
         ? record.responsible
         : undefined
-    const dueRaw = typeof record.due === 'string' ? record.due : undefined
-    const due = dueRaw ? (parseBahiaDateTimeInput(dueRaw) ?? undefined) : undefined
-    if (dueRaw && !due) {
-      throw new FormDataBoundaryError('tasksJson', `Prazo inválido na tarefa ${index + 1}.`)
-    }
     const done = typeof record.done === 'boolean' ? record.done : undefined
 
     return {
       title,
       ...(responsible ? { responsible } : {}),
-      ...(due ? { due } : {}),
       ...(done !== undefined ? { done } : {}),
     }
   })

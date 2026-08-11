@@ -780,7 +780,6 @@ export interface Activity {
     | {
         title: string;
         responsible?: (number | null) | Contact;
-        due?: string | null;
         done?: boolean | null;
         doneAt?: string | null;
         id?: string | null;
@@ -1847,7 +1846,6 @@ export interface ActivitySelect<T extends boolean = true> {
     | {
         title?: T;
         responsible?: T;
-        due?: T;
         done?: T;
         doneAt?: T;
         id?: T;
