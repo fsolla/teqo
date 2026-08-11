@@ -35,7 +35,9 @@ test.describe('Wizard "Registrar pedido" (A5/B195)', () => {
     // free-text field comes straight after Tipo and Atividade.
     await expect(page.getByRole('heading', { name: 'Registrar pedido' })).toHaveCount(0)
     await expect(page.getByLabel(CAMPAIGN_DEMAND_KIND_LABEL)).toBeVisible()
-    await expect(page.getByLabel(CAMPAIGN_DEMAND_ACTIVITY_LABEL)).toBeVisible()
+    // `.first()`: transient RSC-pending duplication also copies the combobox
+    // trigger (same strict-mode flake as cd469857; observed on loaded machines).
+    await expect(page.getByLabel(CAMPAIGN_DEMAND_ACTIVITY_LABEL).first()).toBeVisible()
     await expect(page.getByLabel(CAMPAIGN_DEMAND_BODY_LABEL)).toBeVisible()
     await expect(page.locator('input[name="title"]')).toHaveCount(0)
     await expect(page.locator('select[name="municipalityId"]')).toHaveCount(0)
