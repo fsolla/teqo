@@ -36,6 +36,7 @@ type OwnedCollection =
   | 'consent'
   | 'supporter'
   | 'calendarFeed'
+  | 'googleCalendarSync'
 
 const deletionOrder: OwnedCollection[] = [
   'campaignInvite',
@@ -45,6 +46,7 @@ const deletionOrder: OwnedCollection[] = [
   'municipalityUpdate',
   'activity',
   'calendarFeed',
+  'googleCalendarSync',
   'leadership',
   'supporter',
   'organization',
