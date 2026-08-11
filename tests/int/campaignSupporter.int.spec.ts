@@ -10,12 +10,19 @@ import {
   removeSupporterDataRecord,
   setSupporterVoteIntentionRecord,
 } from '@/app/(campaign)/campanha/actions/supporter'
-import { supporterCreateSchema } from '@/lib/schemas/supporter'
+import {
+  SUPPORTER_IMPORT_BATCH_EMPTY_MESSAGE,
+  supporterCreateSchema,
+} from '@/lib/schemas/supporter'
 import config from '@/payload.config'
 import {
   SUPPORTER_REGISTRATION_CONSENT_KEY,
   SUPPORTER_VOTE_INTENTION_CONSENT_KEY,
 } from '@/utilities/campaignConsent'
+import {
+  isPreviewErrorRow,
+  SUPPORTER_IMPORT_SHARED_PHONE_MESSAGE,
+} from '@/utilities/supporter/supporterImport'
 import {
   loadSupporterListOverviewData,
   loadSupportersPageData,
@@ -298,6 +305,58 @@ describe('campaign supporter domain', () => {
     })
     expect(created.totalDocs).toBe(1)
     fixtures.own('supporter', created.docs[0]!.id)
+  })
+
+  it('flags a CSV phone shared by two fichas for manual resolution (C111)', async () => {
+    const fixtures = campaignFixtures()
+    await ensureSupporterConsents()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const sharedPhone = fixtures.phone()
+    await fixtures.createContact({ name: 'Comitê Central', phone: sharedPhone })
+    await fixtures.createContact({ name: 'Ana', phone: sharedPhone })
+
+    const csv = [
+      'nome,telefone,municipio,intencao',
+      `Maria Souza,${sharedPhone},Salvador,certo`,
+    ].join('\n')
+
+    const preview = await previewSupporterImportText(payload, coordinator, csv)
+    const row = preview.sampleRows[0]
+    expect(row).toBeDefined()
+    expect(row.status).toBe('telefone_compartilhado')
+    expect(isPreviewErrorRow(row)).toBe(true)
+
+    // The shared-phone row never reaches the staged ok set: confirming an
+    // all-flagged batch fails closed instead of importing a guessed ficha.
+    await expect(
+      confirmSupporterImportRecord(payload, coordinator, {
+        operatorAttested: true,
+        importToken: preview.importToken,
+      }),
+    ).rejects.toThrow(SUPPORTER_IMPORT_BATCH_EMPTY_MESSAGE)
+  })
+
+  it('aborts the confirm fail-closed when the base gains a second ficha for an ok phone (C111)', async () => {
+    const fixtures = campaignFixtures()
+    await ensureSupporterConsents()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const phone = fixtures.phone()
+    await fixtures.createContact({ phone })
+
+    const csv = `nome,telefone,municipio,intencao\nAna Silva,${phone},Salvador,certo`
+    const preview = await previewSupporterImportText(payload, coordinator, csv)
+    expect(preview.counts.ok).toBe(1)
+
+    // Simulate the race: between preview and confirm another ficha claims the
+    // same phone. The confirm holds the phone locks and must fail closed.
+    await fixtures.createContact({ name: 'Segunda Ficha', phone })
+
+    await expect(
+      confirmSupporterImportRecord(payload, coordinator, {
+        operatorAttested: true,
+        importToken: preview.importToken,
+      }),
+    ).rejects.toThrow(SUPPORTER_IMPORT_SHARED_PHONE_MESSAGE)
   })
 
   it('rejects a tampered import token and a token issued to another actor', async () => {

@@ -30,10 +30,6 @@ import {
   runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
-import {
-  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
-  CONTACT_PHONE_CONFLICT_MESSAGE,
-} from '@/utilities/contactPhoneInvariant'
 
 const safeMessages = [LEADERSHIP_STAFF_MESSAGE, LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE] as const
 
@@ -41,8 +37,6 @@ const stateDeputyContactSafeMessages = [
   STATE_DEPUTY_STAFF_MESSAGE,
   STATE_DEPUTY_CONFLICT_MESSAGE,
   STATE_DEPUTY_INVALID_CONTACT_MESSAGE,
-  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
-  CONTACT_PHONE_CONFLICT_MESSAGE,
 ] as const
 
 const stateDeputyPartySafeMessages = [STATE_DEPUTY_STAFF_MESSAGE] as const

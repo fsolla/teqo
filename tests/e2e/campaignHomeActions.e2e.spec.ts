@@ -74,8 +74,8 @@ test.describe('Início — busca global (B47)', () => {
 
   test('staff focused search hides action strip on input focus (B66)', async ({ page }) => {
     await page.goto('/campanha')
-    const actionsChrome = page.locator('[data-slot="home-actions-chrome"]')
-    await expect(page.getByLabel('Ações rápidas')).toBeVisible()
+    const actionsChrome = page.locator('[data-slot="home-actions-chrome"]').first()
+    await expect(page.getByLabel('Ações rápidas').first()).toBeVisible()
 
     await page.getByLabel('Buscar na campanha').focus()
     await expect(actionsChrome).toHaveAttribute('data-retracted', 'true', { timeout: 5000 })
@@ -86,8 +86,8 @@ test.describe('Início — busca global (B47)', () => {
 
   test('staff typing in search keeps action strip hidden after debounce', async ({ page }) => {
     await page.goto('/campanha')
-    const actionsChrome = page.locator('[data-slot="home-actions-chrome"]')
-    await expect(page.getByLabel('Ações rápidas')).toBeVisible()
+    const actionsChrome = page.locator('[data-slot="home-actions-chrome"]').first()
+    await expect(page.getByLabel('Ações rápidas').first()).toBeVisible()
 
     await page.getByLabel('Buscar na campanha').fill('ca')
     await expect(actionsChrome).toHaveAttribute('data-retracted', 'true', { timeout: 5000 })
@@ -152,7 +152,7 @@ test.describe('Início — catálogo de ações (B45)', () => {
     page,
   }) => {
     await page.goto('/campanha')
-    const actionsRegion = page.getByLabel('Ações rápidas')
+    const actionsRegion = page.getByLabel('Ações rápidas').first()
     await expect(actionsRegion).toBeVisible()
 
     for (const label of staffActionLabels) {
@@ -190,7 +190,7 @@ test.describe('Início — catálogo de ações (B45)', () => {
   }) => {
     await seedCampaignSession(context, campaign.baseURL, leaderToken)
     await page.goto('/campanha')
-    await expect(page.getByLabel('Ações rápidas')).toBeVisible()
+    await expect(page.getByLabel('Ações rápidas').first()).toBeVisible()
 
     await expect(
       page.getByRole('button', { name: 'Cadastrar apoiador', exact: true }),

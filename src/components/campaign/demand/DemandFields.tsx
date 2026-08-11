@@ -1,0 +1,175 @@
+'use client'
+
+import { AsyncSearchCombobox } from '@/components/campaign/shared/AsyncSearchCombobox'
+import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
+import { Button } from '@/components/ui/button'
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  CAMPAIGN_DEMAND_ACTIVITY_DESCRIPTION,
+  CAMPAIGN_DEMAND_ACTIVITY_DIALOG_DESCRIPTION,
+  CAMPAIGN_DEMAND_ACTIVITY_EMPTY_LABEL,
+  CAMPAIGN_DEMAND_ACTIVITY_LABEL,
+  CAMPAIGN_DEMAND_BODY_DESCRIPTION,
+  CAMPAIGN_DEMAND_BODY_LABEL,
+  CAMPAIGN_DEMAND_BODY_MAX_LENGTH,
+  CAMPAIGN_DEMAND_BODY_PLACEHOLDER,
+  CAMPAIGN_DEMAND_KIND_LABEL,
+  campaignDemandKindLabels,
+  campaignDemandKinds,
+} from '@/lib/schemas/campaignDemand'
+import { cn } from '@/lib/utils'
+import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
+import { fieldError } from '@/utilities/campaignFormFields'
+
+export type DemandActivityValue = { id: number; label: string }
+
+type DemandFieldsProps = {
+  idPrefix: string
+  disabled?: boolean
+  state: CampaignFormActionState
+  activity: DemandActivityValue | null
+  onActivityChange: (value: DemandActivityValue | null) => void
+  searchActivities: (query: string) => Promise<DemandActivityValue[]>
+  /** Present on `/demandas/nova`: the municipality selector gates the activity search. */
+  municipality?: {
+    options: RelationOption[]
+    value: string
+    onValueChange: (value: string) => void
+  }
+}
+
+/**
+ * Shared demand-create fields (D11): Tipo, Atividade and the single free-text
+ * description, used by the wizard final step (fixed municipality, stacked) and
+ * by `DemandForm` (selectable municipality, two-column grid).
+ */
+export const DemandFields = ({
+  idPrefix,
+  disabled,
+  state,
+  activity,
+  onActivityChange,
+  searchActivities,
+  municipality,
+}: DemandFieldsProps) => {
+  const municipalityReady = municipality ? municipality.value !== '' : true
+
+  const activityField = (
+    <Field>
+      <FieldLabel>{CAMPAIGN_DEMAND_ACTIVITY_LABEL}</FieldLabel>
+      {municipality && !municipalityReady ? (
+        <Button
+          type="button"
+          variant="outline"
+          disabled
+          className="min-h-11 w-full justify-between font-normal opacity-70"
+        >
+          Selecione o município primeiro…
+        </Button>
+      ) : (
+        <AsyncSearchCombobox
+          name="activityId"
+          label={CAMPAIGN_DEMAND_ACTIVITY_LABEL}
+          value={activity}
+          emptyOptionLabel={CAMPAIGN_DEMAND_ACTIVITY_EMPTY_LABEL}
+          dialogDescription={CAMPAIGN_DEMAND_ACTIVITY_DIALOG_DESCRIPTION}
+          isQueryReady={municipality ? () => municipalityReady : undefined}
+          queryTooShortMessage={
+            municipality ? 'Selecione o município para buscar atividades.' : undefined
+          }
+          search={searchActivities}
+          onChange={onActivityChange}
+        />
+      )}
+      <FieldDescription>
+        {municipality && !municipalityReady
+          ? 'Opcional. Escolha o município antes de vincular uma atividade.'
+          : CAMPAIGN_DEMAND_ACTIVITY_DESCRIPTION}
+      </FieldDescription>
+      {fieldError(state.fieldErrors, 'activity') ? (
+        <FieldError>{fieldError(state.fieldErrors, 'activity')}</FieldError>
+      ) : null}
+    </Field>
+  )
+
+  const kindField = (
+    <Field>
+      <FieldLabel htmlFor={`${idPrefix}-kind`}>{CAMPAIGN_DEMAND_KIND_LABEL}</FieldLabel>
+      <NativeSelect
+        id={`${idPrefix}-kind`}
+        name="kind"
+        defaultValue="material"
+        required
+        disabled={disabled}
+        className={cn('min-h-11 w-full', !municipality && 'sm:w-56')}
+      >
+        {campaignDemandKinds.map((kind) => (
+          <NativeSelectOption key={kind} value={kind}>
+            {campaignDemandKindLabels[kind]}
+          </NativeSelectOption>
+        ))}
+      </NativeSelect>
+    </Field>
+  )
+
+  return (
+    <>
+      {municipality ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {kindField}
+          <Field>
+            <FieldLabel htmlFor={`${idPrefix}-municipality`}>Município</FieldLabel>
+            <NativeSelect
+              id={`${idPrefix}-municipality`}
+              name="municipalityId"
+              required
+              value={municipality.value}
+              onChange={(event) => {
+                municipality.onValueChange(event.target.value)
+                onActivityChange(null)
+              }}
+              className="min-h-11 w-full"
+            >
+              <NativeSelectOption value="" disabled>
+                Selecione o município…
+              </NativeSelectOption>
+              {municipality.options.map((option) => (
+                <NativeSelectOption key={option.id} value={String(option.id)}>
+                  {option.name}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+            {fieldError(state.fieldErrors, 'municipality') ? (
+              <FieldError>{fieldError(state.fieldErrors, 'municipality')}</FieldError>
+            ) : null}
+          </Field>
+        </div>
+      ) : (
+        kindField
+      )}
+
+      {activityField}
+
+      <Field>
+        <FieldLabel htmlFor={`${idPrefix}-description`}>{CAMPAIGN_DEMAND_BODY_LABEL}</FieldLabel>
+        <FieldDescription>{CAMPAIGN_DEMAND_BODY_DESCRIPTION}</FieldDescription>
+        <Textarea
+          id={`${idPrefix}-description`}
+          name="description"
+          rows={5}
+          minLength={2}
+          maxLength={CAMPAIGN_DEMAND_BODY_MAX_LENGTH}
+          required
+          disabled={disabled}
+          placeholder={CAMPAIGN_DEMAND_BODY_PLACEHOLDER}
+          className="min-h-28"
+        />
+        {fieldError(state.fieldErrors, 'description') ? (
+          <FieldError>{fieldError(state.fieldErrors, 'description')}</FieldError>
+        ) : null}
+      </Field>
+    </>
+  )
+}

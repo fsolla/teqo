@@ -19,10 +19,7 @@ import {
   INVALID_CAMPAIGN_INVITE_MESSAGE,
   requireCampaignInvitePostgres,
 } from '@/utilities/campaignInviteRepository'
-import {
-  assertContactPhoneAvailable,
-  contactPhoneLockKeys,
-} from '@/utilities/contactPhoneInvariant'
+import { contactPhoneLockKeys } from '@/utilities/contactPhoneLocks'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 
@@ -129,13 +126,9 @@ export const redeemCampaignInviteAutofillRecord = async (
           [originalContact.phone, data.phone].filter((phone): phone is string => Boolean(phone)),
         ),
       )
-      await assertContactPhoneAvailable(
-        payload,
-        req,
-        data.phone,
-        contactID,
-        INVALID_CAMPAIGN_INVITE_MESSAGE,
-      )
+      // C111 — the phone is a contact channel, not a unique person identity:
+      // the ficha this invite anchors is known (leadership.contact), so the
+      // typed number may legitimately match another ficha's.
       await payload.update({
         collection: 'contact',
         id: contactID,
@@ -207,13 +200,10 @@ export const redeemCampaignInviteLoginRecord = async (
         `account-username:${data.phone}`,
         ...(account ? [`invite-redemption-user:${account.id}`] : []),
       ])
-      await assertContactPhoneAvailable(
-        payload,
-        req,
-        data.phone,
-        originalContact.id,
-        INVALID_CAMPAIGN_INVITE_MESSAGE,
-      )
+      // C111 — the ficha this invite anchors is known; the typed phone may be
+      // shared with another ficha. The account side stays fail-closed below:
+      // `username` is the login key and remains DB-unique, so the second
+      // person with the same number uses e-mail (product recommendation A).
       const accounts = await payload.find({
         collection: 'campaignUser',
         where: { username: { equals: data.phone } },

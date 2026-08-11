@@ -10,10 +10,10 @@ import {
   type MunicipalityListExpectedVotesResponse,
 } from '@/app/(campaign)/campanha/(app)/municipios/expected-votes/types'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
+import { WizardStepFormChrome } from '@/components/campaign/shared/WizardStepFormChrome'
 import { VoteEstimateScenarioInputs } from '@/components/campaign/votePledge/VoteEstimateScenarioInputs'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
-import { Spinner } from '@/components/ui/Spinner'
 import { wizardPreviousHref, wizardReturnHref } from '@/lib/campaignActionRoutes'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
@@ -128,10 +128,12 @@ export const WizardExpectedVotesStep = ({
       municipalityLabel={municipalityName}
       contentFocus="none"
     >
-      <div
-        className="flex flex-col gap-6"
-        aria-busy={isPending}
-        data-pending={isPending ? '' : undefined}
+      <WizardStepFormChrome
+        onCtaClick={handleConfirm}
+        isPending={isPending}
+        pendingAnnouncement="Salvando votos estimados."
+        ctaLabel={WIZARD_VOTES_FINAL_CTA_LABEL}
+        ctaClassName="w-full"
       >
         <VoteEstimateScenarioInputs
           fieldPrefix="expectedVotes"
@@ -172,27 +174,7 @@ export const WizardExpectedVotesStep = ({
             <AlertDescription className="text-sm">{saveError}</AlertDescription>
           </Alert>
         ) : null}
-
-        <div aria-live="polite" className="sr-only">
-          {isPending ? 'Salvando votos estimados.' : null}
-        </div>
-
-        <Button
-          type="button"
-          className="min-h-11 w-full"
-          disabled={isPending}
-          onClick={handleConfirm}
-        >
-          {isPending ? (
-            <>
-              <Spinner className="size-4" aria-hidden />
-              Salvando…
-            </>
-          ) : (
-            WIZARD_VOTES_FINAL_CTA_LABEL
-          )}
-        </Button>
-      </div>
+      </WizardStepFormChrome>
     </CampaignWizardShell>
   )
 }

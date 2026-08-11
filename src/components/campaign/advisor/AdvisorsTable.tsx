@@ -34,6 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
+import type { CampaignColumnVisibility } from '@/lib/campaignColumnVisibility'
 import { campaignInlineInputClassName } from '@/lib/campaignInlineInput'
 import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
 import {
@@ -57,6 +58,8 @@ type AdvisorsTableProps = {
   rows: AdvisorRowViewModel[]
   municipalityIndex: MunicipalityPortfolioIndexEntry[]
   hasQuery: boolean
+  /** B197 — hidden column ids from the `campaign_columns` cookie (server truth). */
+  columnVisibility: CampaignColumnVisibility
   updateProfileAction: (
     state: CampaignFormActionState,
     formData: FormData,
@@ -92,6 +95,7 @@ export const AdvisorsTable = ({
   rows,
   municipalityIndex,
   hasQuery,
+  columnVisibility,
   updateProfileAction,
   municipalitiesAction,
   createAction,
@@ -102,6 +106,12 @@ export const AdvisorsTable = ({
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<DraftAdvisor | null>(null)
   const [isCreating, startCreate] = useTransition()
+
+  // B197 — email starts hidden on this list (cookie default); the picker
+  // writes the cookie and the server re-renders with a fresh value. The
+  // create-draft row below is the ONE exception: email is required to create
+  // an advisor, so its input renders even while the column is hidden.
+  const emailHidden = columnVisibility.hiddenColumnIds.includes('email')
 
   const refresh = () => router.refresh()
 
@@ -211,7 +221,7 @@ export const AdvisorsTable = ({
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[20%]">Nome</TableHead>
-                  <TableHead className="w-[24%]">E-mail</TableHead>
+                  {!emailHidden ? <TableHead className="w-[24%]">E-mail</TableHead> : null}
                   <TableHead className="w-[14%]">Celular</TableHead>
                   <TableHead>Municípios</TableHead>
                   <TableHead className="w-28 text-right">
@@ -340,22 +350,24 @@ export const AdvisorsTable = ({
                           </Link>
                         )}
                       </TableCell>
-                      <TableCell>
-                        {editing ? (
-                          <AdvisorDebouncedTextCell
-                            advisorId={row.id}
-                            field="email"
-                            type="email"
-                            defaultValue={row.email ?? ''}
-                            placeholder="E-mail"
-                            ariaLabel={`E-mail de ${row.name}`}
-                            placeholderEmailFallback={row.email}
-                            formAction={updateProfileAction}
-                          />
-                        ) : (
-                          <CampaignCopyableCell value={emailShown} label="E-mail" />
-                        )}
-                      </TableCell>
+                      {!emailHidden ? (
+                        <TableCell>
+                          {editing ? (
+                            <AdvisorDebouncedTextCell
+                              advisorId={row.id}
+                              field="email"
+                              type="email"
+                              defaultValue={row.email ?? ''}
+                              placeholder="E-mail"
+                              ariaLabel={`E-mail de ${row.name}`}
+                              placeholderEmailFallback={row.email}
+                              formAction={updateProfileAction}
+                            />
+                          ) : (
+                            <CampaignCopyableCell value={emailShown} label="E-mail" />
+                          )}
+                        </TableCell>
+                      ) : null}
                       <TableCell>
                         {editing ? (
                           <AdvisorDebouncedTextCell

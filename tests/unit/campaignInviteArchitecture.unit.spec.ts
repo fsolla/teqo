@@ -40,7 +40,11 @@ describe('campaign invite module boundaries', () => {
     expect(creation).not.toContain('@payloadcms/db-postgres')
 
     expect(redemption).toContain('resolveInviteConsent')
-    expect(redemption).toContain('assertContactPhoneAvailable')
+    // C111 — the invite may write a phone shared with another ficha, but the
+    // account side stays fail-closed: the username is the login key (DB-unique)
+    // and the "more than one account" guard must survive.
+    expect(redemption).toContain('contactPhoneLockKeys')
+    expect(redemption).toContain('Existe mais de uma conta para este celular.')
     expect(redemption).toContain("role: 'leader'")
     expect(redemption).not.toContain('@payloadcms/db-postgres')
   })

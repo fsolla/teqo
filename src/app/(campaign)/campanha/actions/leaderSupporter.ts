@@ -18,7 +18,6 @@ import { requireSupporterRegistrationConsent } from '@/utilities/campaignConsent
 import { runCampaignFormAction } from '@/utilities/campaignFormActionError'
 import { LEADER_CONTACTS_HOME } from '@/utilities/campaignPageActor'
 import { findOrCreateContactByPhone } from '@/utilities/contactIdentity'
-import { CONTACT_PHONE_AMBIGUOUS_MESSAGE } from '@/utilities/contactPhoneInvariant'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { isUniqueSupporterConflict } from '@/utilities/supporter/supporterErrors'
@@ -43,7 +42,6 @@ const MUNICIPALITY_OUT_OF_SCOPE_MESSAGE =
 
 const safeActionMessages = [
   SUPPORTER_DUPLICATE_MESSAGE,
-  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
   LEADER_SUPPORTER_ONLY_MESSAGE,
   SUPPORTER_REGISTRATION_CONSENT_MISSING_MESSAGE,
   MUNICIPALITY_OUT_OF_SCOPE_MESSAGE,

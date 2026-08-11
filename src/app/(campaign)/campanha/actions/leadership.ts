@@ -39,7 +39,6 @@ import {
   reloadUnrestrictedActor,
 } from '@/utilities/campaignActionContext'
 import { findOrCreateContactByPhone } from '@/utilities/contactIdentity'
-import { assertContactPhoneWritable } from '@/utilities/contactPhoneInvariant'
 import { loadMunicipalityLeadershipSummaries } from '@/utilities/municipality/municipalityViewModels'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
@@ -263,7 +262,6 @@ export const updateLeadershipContactRecord = async (
         contactData.email = data.email ?? null
       } else if (data.field === 'phone') {
         if (data.phone) {
-          await assertContactPhoneWritable(payload, req, contactID, data.phone)
           contactData.phone = data.phone
         } else {
           contactData.phone = null
@@ -331,8 +329,6 @@ const updateLeadershipWizardRecord = async (
       if (contactID === null) {
         throw new Error(LEADERSHIP_INVALID_CONTACT_MESSAGE)
       }
-
-      await assertContactPhoneWritable(payload, req, contactID, data.phone)
 
       // bypass: contact write is staff-scoped via leadership access check above.
       await payload.update({
