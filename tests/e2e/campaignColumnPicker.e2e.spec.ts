@@ -111,3 +111,73 @@ test.describe('Seletor de colunas', () => {
     await expect(mandatory).toBeDisabled()
   })
 })
+
+test.describe('E-mail oculto por padrão nas listas de pessoas (B197)', () => {
+  test('lideranças nasce sem a coluna de e-mail; o picker religa e a escolha persiste', async ({
+    campaign,
+    page,
+  }) => {
+    test.slow()
+    await page.setViewportSize({ width: 1800, height: 900 })
+
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora B197'),
+    })
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha/liderancas')
+
+    // A fresh device starts with the default: email hidden, picker saying so.
+    const emailHeader = page.getByRole('columnheader', { name: 'E-mail', exact: true })
+    await expect(emailHeader).toHaveCount(0)
+    const picker = page.getByRole('button', { name: /Mostrar ou ocultar colunas/ })
+    await expect(picker).toBeVisible()
+    await expect(page.getByRole('button', { name: /1 oculta/ })).toBeVisible()
+
+    // Re-enabling paints the column and the choice survives a reload.
+    await picker.click()
+    await page.getByRole('checkbox', { name: 'E-mail', exact: true }).click()
+    await page.keyboard.press('Escape')
+    await expect(emailHeader).toBeVisible(REFRESH)
+    await page.reload()
+    await expect(emailHeader).toBeVisible(REFRESH)
+  })
+
+  test('assessores ganha o picker com o e-mail oculto; o draft de criação mantém o input', async ({
+    campaign,
+    page,
+  }) => {
+    test.slow()
+    await page.setViewportSize({ width: 1800, height: 900 })
+
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora B197 Assessores'),
+    })
+    const advisorName = fixtures.value('Assessor B197')
+    await fixtures.createCampaignUser('advisor', { name: advisorName })
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha/assessores')
+
+    // The row renders without the email column; the picker is there and says 1 hidden.
+    await expect(page.getByRole('link', { name: advisorName, exact: true })).toBeVisible()
+    const emailHeader = page.getByRole('columnheader', { name: 'E-mail', exact: true })
+    await expect(emailHeader).toHaveCount(0)
+    const picker = page.getByRole('button', { name: /Mostrar ou ocultar colunas/ })
+    await expect(picker).toBeVisible()
+    await expect(page.getByRole('button', { name: /1 oculta/ })).toBeVisible()
+
+    // The create-draft row keeps its email input while the column is hidden
+    // (email is required to create an advisor).
+    await page.getByRole('button', { name: 'Novo assessor', exact: true }).click()
+    await expect(page.getByLabel('E-mail do novo assessor')).toBeVisible()
+
+    // Re-enabling paints the column and the choice survives a reload.
+    await picker.click()
+    await page.getByRole('checkbox', { name: 'E-mail', exact: true }).click()
+    await page.keyboard.press('Escape')
+    await expect(emailHeader).toBeVisible(REFRESH)
+    await page.reload()
+    await expect(emailHeader).toBeVisible(REFRESH)
+  })
+})

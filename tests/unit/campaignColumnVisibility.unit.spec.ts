@@ -32,7 +32,7 @@ describe('parseCampaignHiddenColumns', () => {
   })
 
   it('drops unknown lists and column ids that are not identifiers', () => {
-    expect(parseCampaignHiddenColumns('assessores:email|municipios:kind')).toEqual({
+    expect(parseCampaignHiddenColumns('desconhecida:email|municipios:kind')).toEqual({
       municipios: ['kind'],
     })
     expect(parseCampaignHiddenColumns('municipios:kind~<script>~trend')).toEqual({
@@ -76,8 +76,8 @@ describe('resolveCampaignColumnVisibility', () => {
   })
 
   it('keeps the existing empty default for every other list', () => {
-    expect(resolveCampaignColumnVisibility('liderancas', {})).toEqual({
-      listId: 'liderancas',
+    expect(resolveCampaignColumnVisibility('organizacoes', {})).toEqual({
+      listId: 'organizacoes',
       hiddenColumnIds: [],
     })
   })
@@ -90,6 +90,34 @@ describe('resolveCampaignColumnVisibility', () => {
     expect(resolveCampaignColumnVisibility('territorios', { territorios: [] })).toEqual({
       listId: 'territorios',
       hiddenColumnIds: [],
+    })
+  })
+
+  it('hides the email column by default on every person list (B197)', () => {
+    for (const listId of [
+      'liderancas',
+      'dobradinhas',
+      'pessoas',
+      'apoiadores',
+      'assessores',
+    ] as const) {
+      expect(resolveCampaignColumnVisibility(listId, {})).toEqual({
+        listId,
+        hiddenColumnIds: ['email'],
+      })
+    }
+  })
+
+  it('keeps a stored choice on a person list winning over the email default (B197)', () => {
+    expect(resolveCampaignColumnVisibility('liderancas', { liderancas: [] })).toEqual({
+      listId: 'liderancas',
+      hiddenColumnIds: [],
+    })
+    expect(
+      resolveCampaignColumnVisibility('assessores', { assessores: ['email', 'phone'] }),
+    ).toEqual({
+      listId: 'assessores',
+      hiddenColumnIds: ['email', 'phone'],
     })
   })
 })
