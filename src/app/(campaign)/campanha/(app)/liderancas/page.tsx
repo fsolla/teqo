@@ -417,7 +417,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
 
   return (
     <CampaignPageShell>
-      <div className="flex justify-end">
+      <div className="flex justify-end pt-4 md:pt-0">
         <Button asChild className="min-h-11">
           <Link href="/campanha/liderancas/nova">
             <PlusIcon data-icon="inline-start" aria-hidden="true" />
