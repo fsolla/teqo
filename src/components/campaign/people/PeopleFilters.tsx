@@ -88,7 +88,6 @@ export const PeopleFilters = ({
           id="people-omnibox"
           label="Filtrar pessoas"
           placeholder="Buscar pessoa…"
-          edgeToEdge
           chips={chips}
           suggestions={suggestions}
           query={query}
@@ -119,9 +118,9 @@ export const PeopleFilters = ({
         />
       </form>
       {/* C100 mobile spec: "Salvar filtro" lives in the app header as an icon
-          button; the trailing instance is desktop-only (the edge-to-edge
-          omnibox hides its trailing cluster below `md`). Both instances share
-          the same store, and only one is visible per breakpoint. */}
+          button; the trailing cluster is desktop-only below `md` (the omnibox
+          hides its container below the breakpoint). Both instances share the
+          same store, and only one is visible per breakpoint. */}
       <SetCampaignHeaderAction id="save-people-filter">
         <SavePeopleFilterControl
           state={state}

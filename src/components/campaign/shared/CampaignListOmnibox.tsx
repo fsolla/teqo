@@ -27,13 +27,6 @@ export type CampaignListOmniboxProps = {
   isPending?: boolean
   /** Domain controls beside the bar (e.g. save bookmark). */
   trailing?: ReactNode
-  /**
-   * C100: below `md` the trailing cluster (column picker, save bookmark) is
-   * hidden — B184 already owns the mobile bar chrome (borderless field,
-   * circle-X clear), and the page registers its own header controls instead.
-   * `md:` restores the trailing cluster beside the framed desktop field.
-   */
-  edgeToEdge?: boolean
 }
 
 /**
@@ -47,9 +40,15 @@ export type CampaignListOmniboxProps = {
  * containing block (its parent), and the form is the only wrapper whose parent
  * is the full-height `CampaignPageShell` — a sticky input column inside the
  * short omnibox row would only "stick" for its own height and then scroll away.
+ *
+ * `campaign-list-omnibox-form` is the stable marker `CampaignContentScroll`
+ * matches (`:has()`) to drop its mobile top padding — only a page hosting the
+ * list bar loses the `p-4` top gap, so the sticky's containing block starts at
+ * the scrollport top and the bar glues to the header (B196). Without it the
+ * sticky clamps 16px below the header and cards roll visibly through the gap.
  */
 export const campaignListOmniboxFormClassName =
-  'sticky top-0 z-20 -mx-4 border-b border-border bg-background px-4 py-2 ' +
+  'campaign-list-omnibox-form sticky top-0 z-20 -mx-4 border-b border-border bg-background px-4 py-1 ' +
   'md:static md:z-auto md:mx-0 md:border-b-0 md:bg-transparent md:px-0 md:py-0'
 
 /**
@@ -83,7 +82,6 @@ export const CampaignListOmnibox = ({
   onClearAll,
   isPending = false,
   trailing,
-  edgeToEdge = false,
 }: CampaignListOmniboxProps) => {
   const reactId = useId()
   const id = idProp ?? `campaign-list-omnibox-${reactId}`
@@ -209,11 +207,14 @@ export const CampaignListOmnibox = ({
           <PopoverAnchor asChild>
             <div
               className={cn(
-                // B184: below `md` the field is a borderless sticky bar; the
-                // `md:` variants restore the framed desktop look.
-                'flex min-h-11 w-full flex-wrap items-center gap-1.5 rounded-lg border-0 bg-transparent px-2 py-1.5 shadow-none',
-                'md:border md:border-input md:shadow-xs',
-                'focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50',
+                // B184/B196: below `md` the field is a borderless dense bar
+                // (min-h-8, no inner vertical padding → bar ≈ 40px total)
+                // with NO focus ring — the caret is the focus indicator; the
+                // `md:` variants restore the framed desktop field with its
+                // ring/colored border as the focus affordance.
+                'flex min-h-8 w-full flex-wrap items-center gap-1.5 rounded-lg border-0 bg-transparent px-2 py-0 shadow-none',
+                'md:min-h-11 md:border md:border-input md:py-1.5 md:shadow-xs',
+                'md:focus-within:border-ring md:focus-within:ring-3 md:focus-within:ring-ring/50',
               )}
               onMouseDown={(event) => {
                 if (event.target === event.currentTarget) inputRef.current?.focus()
@@ -280,7 +281,9 @@ export const CampaignListOmnibox = ({
                   type="button"
                   aria-label="Limpar"
                   className={cn(
-                    'inline-flex size-11 shrink-0 items-center justify-center rounded-full',
+                    // B196 — size-8 keeps the bar at ~40px total; the field
+                    // itself is the real touch target (the X lives inside it).
+                    'inline-flex size-8 shrink-0 items-center justify-center rounded-full',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     'md:hidden',
                     !(hasChips || query.length > 0) && 'invisible pointer-events-none',
@@ -298,8 +301,8 @@ export const CampaignListOmnibox = ({
                     setOpen(false)
                   }}
                 >
-                  <span className="flex size-7 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted-foreground/20 hover:text-foreground">
-                    <XIcon className="size-4" aria-hidden />
+                  <span className="flex size-6 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted-foreground/20 hover:text-foreground">
+                    <XIcon className="size-3.5" aria-hidden />
                   </span>
                 </button>
               ) : null}
@@ -365,12 +368,11 @@ export const CampaignListOmnibox = ({
         ) : null}
       </div>
 
-      <div
-        className={cn(
-          'flex shrink-0 flex-wrap items-center gap-2 md:pt-7',
-          edgeToEdge && 'hidden md:flex',
-        )}
-      >
+      {/* C100 — the trailing cluster is desktop-only: below `md` the page
+          registers its own header controls, so the cluster never joins the
+          mobile sticky bar (an empty container would also inflate its height
+          — B196 keeps the bar ≈ 40px). */}
+      <div className="hidden shrink-0 flex-wrap items-center gap-2 md:flex md:pt-7">
         {trailing}
         {onClearAll && hasChips ? (
           <Button
