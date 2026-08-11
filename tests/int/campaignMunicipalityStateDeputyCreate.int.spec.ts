@@ -11,9 +11,8 @@ import {
 } from '@/app/(campaign)/campanha/actions/stateDeputy'
 import { STATE_DEPUTY_CONFLICT_MESSAGE } from '@/lib/schemas/stateDeputy'
 import config from '@/payload.config'
-import { CONTACT_PHONE_CONFLICT_MESSAGE } from '@/utilities/contactPhoneInvariant'
 
-import { installCampaignFixtures, relationIds } from '../helpers/campaignFixtures'
+import { installCampaignFixtures, relationId, relationIds } from '../helpers/campaignFixtures'
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
@@ -234,7 +233,7 @@ describe('StateDeputy contact fields (B163)', () => {
     })
   })
 
-  it('rejects a phone already owned by another Contact', async () => {
+  it('shares a phone with another Contact (C111)', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const stateDeputy = await fixtures.createStateDeputy({
@@ -243,13 +242,29 @@ describe('StateDeputy contact fields (B163)', () => {
     const takenPhone = fixtures.phone()
     await fixtures.createContact({ phone: takenPhone })
 
-    await expect(
-      updateStateDeputyContactRecord(payload, coordinator, {
-        id: stateDeputy.id,
-        field: 'phone',
-        phone: takenPhone,
-      }),
-    ).rejects.toThrow(CONTACT_PHONE_CONFLICT_MESSAGE)
+    const updated = await updateStateDeputyContactRecord(payload, coordinator, {
+      id: stateDeputy.id,
+      field: 'phone',
+      phone: takenPhone,
+    })
+
+    const contact = await payload.findByID({
+      collection: 'contact',
+      id: relationId(updated.contact) as number,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(contact.phone).toBe(takenPhone)
+
+    const withPhone = await payload.find({
+      collection: 'contact',
+      where: { phone: { equals: takenPhone } },
+      depth: 0,
+      limit: 2,
+      pagination: false,
+      overrideAccess: true,
+    })
+    expect(withPhone.totalDocs).toBe(2)
   })
 
   it('rejects renaming a dobradinha to another dobradinha name', async () => {

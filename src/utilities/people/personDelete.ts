@@ -9,7 +9,7 @@ import {
 } from '@/lib/schemas/personDelete'
 import type { CampaignUser, Contact, Leadership, StateDeputy } from '@/payload-types'
 import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
-import { acquireContactPhoneLocks } from '@/utilities/contactPhoneInvariant'
+import { acquireContactPhoneLocks } from '@/utilities/contactPhoneLocks'
 import {
   withPayloadTransaction,
   type PayloadTransactionRequest,

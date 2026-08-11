@@ -38,6 +38,7 @@ import { supporterVoteIntentionLabels } from '@/utilities/supporter/supporterUi'
 const importStatusLabels: Record<SupporterImportPreviewRow['status'], string> = {
   ok: 'Pronto',
   duplicado_pelo_telefone: 'Duplicado (telefone)',
+  telefone_compartilhado: 'Telefone compartilhado (resolver)',
   telefone_invalido: 'Telefone inválido',
   municipio_nao_reconhecido: 'Município não reconhecido',
   nome_invalido: 'Nome inválido',

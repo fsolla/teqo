@@ -44,6 +44,7 @@ type CampaignCollection =
   | 'campaignUser'
   | 'consent'
   | 'calendarFeed'
+  | 'supporterImportBatch'
 
 type OwnedIDs = Record<CampaignCollection, Set<number>>
 
@@ -128,6 +129,7 @@ const emptyOwnedIDs = (): OwnedIDs => ({
   campaignUser: new Set(),
   consent: new Set(),
   calendarFeed: new Set(),
+  supporterImportBatch: new Set(),
 })
 
 /**
@@ -938,6 +940,13 @@ export class CampaignFixtures {
     }
 
     if (userIDs.length > 0) {
+      const importBatches = await this.rootPayload.find({
+        collection: 'supporterImportBatch',
+        where: { actor: { in: userIDs } },
+        depth: 0,
+        pagination: false,
+      })
+      for (const batch of importBatches.docs) this.own('supporterImportBatch', batch.id)
       const [updates, notifications, pushSubscriptions] = await Promise.all([
         this.rootPayload.find({
           collection: 'municipalityUpdate',
@@ -1149,7 +1158,12 @@ export class CampaignFixtures {
         await this.deleteOwned(collection, req)
       }
       await this.deleteNotificationOwned(req)
-      for (const collection of ['campaignUser', 'consent', 'users'] as const) {
+      for (const collection of [
+        'supporterImportBatch',
+        'campaignUser',
+        'consent',
+        'users',
+      ] as const) {
         await this.deleteOwned(collection, req)
       }
       await this.resetTouchedMunicipalities(req)

@@ -4,10 +4,7 @@ import { getPayload, type Payload } from 'payload'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import config from '@/payload.config'
-import {
-  CONTACT_PHONE_CONFLICT_MESSAGE,
-  contactPhoneLockKeys,
-} from '@/utilities/contactPhoneInvariant'
+import { contactPhoneLockKeys } from '@/utilities/contactPhoneLocks'
 import {
   acquireTextAdvisoryLocks,
   getPostgresTransactionDatabase,
@@ -67,7 +64,6 @@ describe('PostgreSQL transaction advisory locks', () => {
       'contact-phone:71999990001',
       'contact-phone:71999990002',
     ])
-    expect(CONTACT_PHONE_CONFLICT_MESSAGE).toBe('Já existe outro contato com este celular.')
   })
 
   it('uses only the exact Payload transaction session and fails closed without it', async () => {

@@ -15,7 +15,6 @@ import { Leadership } from '@/collections/Leadership'
 import { contactSchema } from '@/lib/schemas/contact'
 import { leadershipCreateSchema, leadershipInternalUpdateSchema } from '@/lib/schemas/leadership'
 import config from '@/payload.config'
-import { CONTACT_PHONE_CONFLICT_MESSAGE } from '@/utilities/contactPhoneInvariant'
 import {
   getTestTransactionBackendPID,
   waitForAdvisoryLockWaiter,
@@ -282,7 +281,7 @@ describe('campaign leadership domain', () => {
     expect(leaderships.docs).toHaveLength(1)
   })
 
-  it('rejects a duplicate Contact write before leadership dedupe can become ambiguous', async () => {
+  it('allows a second Contact with the same phone and creates a fresh ficha on leadership create (C111)', async () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
     const municipality = await campaignFixtures().getMunicipality()
     const phone = campaignFixtures().phone()
@@ -292,13 +291,15 @@ describe('campaign leadership domain', () => {
       data: { name: 'Primeiro Contato', phone, state: 'BA', city: 'Salvador' },
     })
 
-    await expect(
-      payload.create({
-        collection: 'contact',
-        data: { name: 'Segundo Contato', phone, state: 'BA', city: 'Salvador' },
-      }),
-    ).rejects.toThrow('Já existe outro contato com este celular')
+    // C111 — the phone is a contact channel, not a unique identity.
+    await payload.create({
+      collection: 'contact',
+      data: { name: 'Segundo Contato', phone, state: 'BA', city: 'Salvador' },
+    })
 
+    // Two fichas already share the phone, so the leadership create cannot
+    // match a person — the identity of the person being created is a fresh
+    // ficha, never a guess among the existing ones.
     await expect(
       createLeadershipRecord(payload, coordinator, {
         municipalities: [municipality.id],
@@ -306,7 +307,7 @@ describe('campaign leadership domain', () => {
         phone,
         supportStatus: 'engajado',
       }),
-    ).resolves.toMatchObject({ contactReused: true })
+    ).resolves.toMatchObject({ contactReused: false })
   })
 
   it('enforces the unique contact relationship at the database', async () => {
@@ -695,7 +696,7 @@ describe('campaign leadership domain', () => {
     expect(contact.phone).toBe(newPhone)
   })
 
-  it('rejects leadership contact phone that belongs to another person', async () => {
+  it('shares a leadership contact phone with another person (C111)', async () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
@@ -708,13 +709,29 @@ describe('campaign leadership domain', () => {
       supportStatus: 'engajado',
     })
 
-    await expect(
-      updateLeadershipContactRecord(payload, coordinator, {
-        id: leadership.id,
-        field: 'phone',
-        phone: takenPhone,
-      }),
-    ).rejects.toThrow(CONTACT_PHONE_CONFLICT_MESSAGE)
+    const updated = await updateLeadershipContactRecord(payload, coordinator, {
+      id: leadership.id,
+      field: 'phone',
+      phone: takenPhone,
+    })
+
+    const contact = await payload.findByID({
+      collection: 'contact',
+      id: relationId(updated.contact) as number,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(contact.phone).toBe(takenPhone)
+
+    const withPhone = await payload.find({
+      collection: 'contact',
+      where: { phone: { equals: takenPhone } },
+      depth: 0,
+      limit: 2,
+      pagination: false,
+      overrideAccess: true,
+    })
+    expect(withPhone.totalDocs).toBe(2)
   })
 
   it('denies leadership contact edits outside advisor municipality scope', async () => {

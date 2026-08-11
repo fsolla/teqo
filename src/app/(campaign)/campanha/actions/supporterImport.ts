@@ -21,7 +21,7 @@ import {
   requireSupporterRegistrationConsent,
   requireSupporterVoteIntentionConsent,
 } from '@/utilities/campaignConsent'
-import { acquireContactPhoneLocks } from '@/utilities/contactPhoneInvariant'
+import { acquireContactPhoneLocks } from '@/utilities/contactPhoneLocks'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import { POSTGRES_DEDUP_LOCK_MESSAGE } from '@/utilities/postgresTransactionLocks'
@@ -226,39 +226,56 @@ export const previewSupporterImportText = async (
       collection: 'contact',
       where: { phone: { in: candidatePhones } },
       depth: 0,
-      limit: candidatePhones.length,
+      // No LIMIT: a phone can now legitimately match many fichas (C111), so a
+      // finite limit would silently miss a shared phone past the cutoff and
+      // the preview would promise rows the confirm then aborts.
+      limit: 0,
       pagination: false,
       select: { phone: true },
       overrideAccess: true,
     })
-    const contactByPhone = new Map(contacts.docs.map((doc) => [doc.phone, doc.id] as const))
+    // C111 — the phone is not unique: a CSV phone resolving to two or more
+    // fichas cannot be matched to a person, so every row with that phone is
+    // flagged for manual resolution (never a silent "last one wins").
+    const contactByPhone = new Map<string, number>()
+    const sharedPhones = new Set<string>()
+    for (const doc of contacts.docs) {
+      if (!doc.phone) continue
+      if (contactByPhone.has(doc.phone)) {
+        sharedPhones.add(doc.phone)
+        continue
+      }
+      contactByPhone.set(doc.phone, doc.id)
+    }
     const contactIDs = [...contactByPhone.values()]
 
-    if (contactIDs.length > 0) {
-      const existingSupporters = await payload.find({
-        collection: 'supporter',
-        where: {
-          and: [{ contact: { in: contactIDs } }, { municipality: { exists: false } }],
-        },
-        depth: 0,
-        limit: contactIDs.length,
-        pagination: false,
-        select: { contact: true },
-        overrideAccess: true,
-      })
-      const supporterContactIDs = new Set(
-        existingSupporters.docs
-          .map((doc) => relationshipId(doc.contact))
-          .filter((id): id is number => id !== null),
-      )
+    const existingSupporters = await payload.find({
+      collection: 'supporter',
+      where: {
+        and: [{ contact: { in: contactIDs } }, { municipality: { exists: false } }],
+      },
+      depth: 0,
+      limit: contactIDs.length,
+      pagination: false,
+      select: { contact: true },
+      overrideAccess: true,
+    })
+    const supporterContactIDs = new Set(
+      existingSupporters.docs
+        .map((doc) => relationshipId(doc.contact))
+        .filter((id): id is number => id !== null),
+    )
 
-      for (let index = 0; index < rows.length; index += 1) {
-        const row = rows[index]
-        if (!row || !isSupporterImportOkRow(row)) continue
-        const contactID = contactByPhone.get(row.normalizedPhone)
-        if (contactID && supporterContactIDs.has(contactID)) {
-          rows[index] = { ...row, status: 'duplicado_pelo_telefone' }
-        }
+    for (let index = 0; index < rows.length; index += 1) {
+      const row = rows[index]
+      if (!row || !isSupporterImportOkRow(row)) continue
+      if (sharedPhones.has(row.normalizedPhone)) {
+        rows[index] = { ...row, status: 'telefone_compartilhado' }
+        continue
+      }
+      const contactID = contactByPhone.get(row.normalizedPhone)
+      if (contactID && supporterContactIDs.has(contactID)) {
+        rows[index] = { ...row, status: 'duplicado_pelo_telefone' }
       }
     }
   }

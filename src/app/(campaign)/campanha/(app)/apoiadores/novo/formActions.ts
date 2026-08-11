@@ -16,7 +16,6 @@ import {
   supporterCreateSchema,
 } from '@/lib/schemas/supporter'
 import { runCampaignFormAction } from '@/utilities/campaignFormActionError'
-import { CONTACT_PHONE_AMBIGUOUS_MESSAGE } from '@/utilities/contactPhoneInvariant'
 
 export type SupporterFormState = {
   status?: 'success'
@@ -38,7 +37,6 @@ type SupporterFormValues = {
 
 const safeActionMessages = [
   SUPPORTER_DUPLICATE_MESSAGE,
-  CONTACT_PHONE_AMBIGUOUS_MESSAGE,
   SUPPORTER_STAFF_MESSAGE,
   SUPPORTER_UNSCOPED_COORDINATOR_MESSAGE,
   SUPPORTER_REGISTRATION_CONSENT_MISSING_MESSAGE,
