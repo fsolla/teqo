@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { createHash } from 'node:crypto'
+
 import { allDayCivilDateOf, allDayExclusiveEndDate } from '@/lib/activityAllDay'
 import type { Activity, CalendarFeed } from '@/payload-types'
 import { advisorMunicipalityScopeWhere } from '@/utilities/access/shared'
@@ -8,6 +10,13 @@ import type { Payload, Where } from 'payload'
 const CALENDAR_NAME = 'Agenda Teqo'
 const FEED_LOOKBACK_DAYS = 90
 const FEED_LOOKAHEAD_DAYS = 365
+
+// C113: the feed must never be the link that holds stale content — any shared
+// cache (CDN, subscriber proxies) may store the response but MUST revalidate
+// before reuse (`no-cache`). `X-PUBLISHED-TTL` is the iCal freshness hint
+// (RFC 7986; emitted in the VCALENDAR body — Google publishes it as PT1H).
+const FEED_CACHE_CONTROL = 'public, no-cache'
+const FEED_PUBLISHED_TTL = 'PT1H'
 
 const escapeICalText = (value: string): string =>
   value.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;')
@@ -37,6 +46,7 @@ export const generateICalFeed = (
     `X-WR-CALNAME:${escapeICalText(feedLabel || CALENDAR_NAME)}`,
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
+    `X-PUBLISHED-TTL:${FEED_PUBLISHED_TTL}`,
   ]
 
   for (const activity of activities) {
@@ -74,6 +84,64 @@ export const generateICalFeed = (
 
   lines.push('END:VCALENDAR')
   return lines.join('\r\n')
+}
+
+const computeFeedLastModified = (activities: Activity[], feedUpdatedAt?: string): string => {
+  const timestamps = [
+    ...activities.flatMap((activity) =>
+      [activity.updatedAt, activity.createdAt].filter((value): value is string => Boolean(value)),
+    ),
+    ...(feedUpdatedAt ? [feedUpdatedAt] : []),
+  ]
+  const latest = timestamps.length
+    ? timestamps.reduce((max, value) => (value > max ? value : max))
+    : new Date().toISOString()
+  return new Date(latest).toUTCString()
+}
+
+// C113: the response contract of the live feed. The ETag (strong, from the
+// body hash) is the authoritative validator and the ONLY 304 trigger —
+// `If-Modified-Since` alone never answers 304, because deleting an activity
+// removes its row and would leave `Last-Modified` stale (a date-based 304
+// could hide the removed event). The body hash always changes with content.
+export const buildICalFeedResponse = (
+  icalContent: string,
+  activities: Activity[],
+  feed: Pick<CalendarFeed, 'updatedAt'>,
+  request: Request,
+): Response => {
+  const etag = `"${createHash('sha256').update(icalContent).digest('hex')}"`
+  const lastModified = computeFeedLastModified(activities, feed.updatedAt)
+
+  const ifNoneMatch = request.headers.get('if-none-match')
+  const matchesEtag =
+    ifNoneMatch === '*' ||
+    (ifNoneMatch
+      ?.split(',')
+      .map((value) => value.trim().replace(/^W\//, ''))
+      .includes(etag) ??
+      false)
+
+  if (matchesEtag) {
+    return new Response(null, {
+      status: 304,
+      headers: {
+        'Cache-Control': FEED_CACHE_CONTROL,
+        ETag: etag,
+        'Last-Modified': lastModified,
+      },
+    })
+  }
+
+  return new Response(icalContent, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/calendar; charset=utf-8',
+      'Cache-Control': FEED_CACHE_CONTROL,
+      ETag: etag,
+      'Last-Modified': lastModified,
+    },
+  })
 }
 
 const buildFeedDateRange = (): { rangeStart: string; rangeEnd: string } => {

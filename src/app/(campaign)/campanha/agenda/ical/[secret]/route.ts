@@ -2,6 +2,7 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 
 import {
+  buildICalFeedResponse,
   generateICalFeed,
   loadFeedActivities,
   loadMunicipalityNames,
@@ -12,13 +13,25 @@ type RouteContext = {
   params: Promise<{ secret: string }>
 }
 
+// C113: the feed must always render against the live database (a feed whose
+// value is "new commitments appear without re-subscribing"). Explicit marker
+// per repo convention — every dynamic campaign route declares it, and it pins
+// the intent against any future default flip in Next's route caching.
+export const dynamic = 'force-dynamic'
+
 const notFoundResponse = () =>
   new Response('Feed não encontrado.', {
     status: 404,
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    // C113: a revoked/unknown feed must never become a heuristically cacheable
+    // 404 in a shared cache — `no-store` keeps the fail-closed revocation
+    // contract from eroding at the CDN layer.
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-store',
+    },
   })
 
-export const GET = async (_request: Request, context: RouteContext): Promise<Response> => {
+export const GET = async (request: Request, context: RouteContext): Promise<Response> => {
   const { secret } = await context.params
 
   if (!secret || secret.length < 32) {
@@ -64,13 +77,7 @@ export const GET = async (_request: Request, context: RouteContext): Promise<Res
 
     const icalContent = generateICalFeed(activities, feed.label, municipalityNames)
 
-    return new Response(icalContent, {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/calendar; charset=utf-8',
-        'Cache-Control': 'public, max-age=3600',
-      },
-    })
+    return buildICalFeedResponse(icalContent, activities, feed, request)
   } catch {
     return notFoundResponse()
   }
