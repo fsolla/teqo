@@ -81,6 +81,11 @@ export const contactFieldUpdateSchema = z.discriminatedUnion('field', [
     field: z.literal('phones'),
     phones: contactPhonesSchema,
   }),
+  z.object({
+    id: positiveRelationshipId,
+    field: z.literal('city'),
+    city: z.string().trim().min(2, 'Cidade inválida').max(100, 'Cidade muito longa'),
+  }),
 ])
 
 export type ContactFieldUpdateInput = z.input<typeof contactFieldUpdateSchema>
