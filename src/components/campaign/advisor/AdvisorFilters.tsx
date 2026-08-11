@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 import {
   CampaignListOmnibox,
@@ -22,9 +22,11 @@ import {
 export const AdvisorFilters = ({
   state,
   municipalityFilterOptions,
+  trailing,
 }: {
   state: AdvisorListState
   municipalityFilterOptions: AdvisorFilterOption[]
+  trailing?: ReactNode
 }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
@@ -94,6 +96,7 @@ export const AdvisorFilters = ({
         onClearAll={() => {
           runAction(clearAdvisorOmnibox(state))
         }}
+        trailing={trailing}
       />
     </form>
   )

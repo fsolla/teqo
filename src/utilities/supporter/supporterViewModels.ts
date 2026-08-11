@@ -9,6 +9,7 @@ export type SupporterListItemViewModel = {
   id: number
   name: string
   phone: string
+  email: string | null
   city: string | null
   municipalityName: string | null
   municipalitySlug: string | null
@@ -57,6 +58,7 @@ export const toSupporterListItemViewModel = (
     id: supporter.id,
     name: contact?.name ?? 'Contato sem nome',
     phone: contact?.phone ?? '',
+    email: contact?.email ?? null,
     city: contact?.city ?? null,
     municipalityName: municipality?.name ?? null,
     municipalitySlug: municipality?.slug ?? null,
