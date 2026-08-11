@@ -24,6 +24,7 @@ import {
   isDefaultPeopleListSort,
   peopleAbsenceLabels,
   peopleListSortOptions,
+  peopleListSortPrimaryOptions,
   resolvePeopleListSort,
   type PeopleListState,
 } from '@/utilities/people/peopleListUrl'
@@ -138,21 +139,35 @@ export const buildPeopleOmniboxSuggestionSeeds = ({
           id: `ausencia:${option.value}`,
           group: 'Ausência',
           label: option.label,
-          keywords: ['sem', 'ausencia', 'faltando', 'faltante', 'vazio'],
+          keywords: [
+            'sem',
+            'ausencia',
+            'faltando',
+            'faltante',
+            'vazio',
+            'incompleto',
+            'incompleta',
+          ],
         },
         { emptyQueryVisible: true },
       ),
     )
   }
 
-  for (const option of peopleListSortOptions) {
+  // C125 — primary-direction seeds only, visible on an empty query: on mobile
+  // the sortable headers do not exist (cards), so the omnibox group is the
+  // whole discoverability surface for the 7 keys (and 7 < the shared 8/group cap).
+  for (const option of peopleListSortPrimaryOptions) {
     seeds.push(
-      createOmniboxSuggestionSeed({
-        id: `sort:${option.key}|${option.dir}`,
-        group: 'Ordenação',
-        label: option.label,
-        keywords: ['ordenar', 'ordenacao', 'ordem', 'sort'],
-      }),
+      createOmniboxSuggestionSeed(
+        {
+          id: `sort:${option.key}|${option.dir}`,
+          group: 'Ordenação',
+          label: option.label,
+          keywords: ['ordenar', 'ordenacao', 'ordem', 'sort'],
+        },
+        { emptyQueryVisible: true },
+      ),
     )
   }
 

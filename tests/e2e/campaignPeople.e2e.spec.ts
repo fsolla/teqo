@@ -268,5 +268,80 @@ test.describe('Pessoas — lista unificada', () => {
     await expect(page.getByText('Ausência: Sem contato')).toBeVisible()
     await expect(page.getByRole('row', { name: new RegExp(noPhoneName) })).toBeVisible()
     await expect(page.getByRole('row', { name: new RegExp(twoCities.contactName) })).toBeHidden()
+
+    // C125 — the third absence click no longer collapses the facet: with the
+    // umbrella value in the enum, "all three" is 3 of 4 members, so B18 keeps
+    // the chips and the union ("any absence") stays applied.
+    await omnibox.fill('sem base')
+    await page.getByRole('option', { name: 'Sem base', exact: true }).click()
+    await expect(page).toHaveURL(
+      /q=C117&ausencia=sem_contato&ausencia=sem_base&sort=lidera&dir=asc$/,
+    )
+    await expect(page.getByText('Ausência: Sem base')).toBeVisible()
+
+    await omnibox.fill('sem assessor')
+    await page.getByRole('option', { name: 'Sem assessor', exact: true }).click()
+    await expect(page).toHaveURL(
+      /q=C117&ausencia=sem_contato&ausencia=sem_base&ausencia=sem_assessor&sort=lidera&dir=asc$/,
+    )
+    await expect(page.getByText('Ausência: Sem contato')).toBeVisible()
+    await expect(page.getByText('Ausência: Sem base')).toBeVisible()
+    await expect(page.getByText('Ausência: Sem assessor')).toBeVisible()
+    await expect(page.getByRole('row', { name: new RegExp(noPhoneName) })).toBeVisible()
+    // The union widened: the staff leaderships have no advisors, so they match
+    // `sem_assessor` — the row hidden by `sem_contato` alone is back in.
+    await expect(page.getByRole('row', { name: new RegExp(twoCities.contactName) })).toBeVisible()
+  })
+
+  test('mobile discovers ordering in the omnibox and applies a sort (C125)', async ({
+    campaign,
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Mobile C125'),
+    })
+    const first = await fixtures.claimMunicipality()
+    const second = await fixtures.claimMunicipality()
+    const oneCity = await fixtures.createStaffLeadership({
+      namePrefix: 'C125 Mobile Uma',
+      municipalities: [first],
+    })
+    const twoCities = await fixtures.createStaffLeadership({
+      namePrefix: 'C125 Mobile Duas',
+      municipalities: [first, second],
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha/pessoas')
+
+    // Narrow the recorte to this spec's rows, so the card order is ours.
+    const omnibox = page.getByRole('combobox', { name: 'Filtrar pessoas' })
+    await omnibox.fill('C125 Mobile')
+    await omnibox.press('Enter')
+    await expect(page).toHaveURL(/q=C125/)
+
+    // The Ordenação group is discoverable on focus with an empty query —
+    // mobile cards have no sortable headers, the omnibox is the whole surface.
+    await omnibox.click()
+    await expect(page.getByRole('group', { name: 'Ordenação' })).toBeVisible()
+    await page.getByRole('option', { name: 'Lidera (maior → menor)', exact: true }).click()
+    await expect(page).toHaveURL(/q=C125.*&sort=lidera$/)
+    await expect(page.getByText('Ordenação: Lidera (maior → menor)')).toBeVisible()
+
+    // The mobile cards follow the sort: most municipalities first.
+    const cards = page.locator('[data-view="mobile-cards"] li')
+    const indexOfCard = async (name: string) => {
+      const texts = await cards.allTextContents()
+      return texts.findIndex((text) => text.includes(name))
+    }
+    await expect(cards.filter({ hasText: twoCities.contactName })).toBeVisible()
+    await expect(cards.filter({ hasText: oneCity.contactName })).toBeVisible()
+    const twoCitiesIndex = await indexOfCard(twoCities.contactName)
+    const oneCityIndex = await indexOfCard(oneCity.contactName)
+    expect(twoCitiesIndex).toBeGreaterThanOrEqual(0)
+    expect(oneCityIndex).toBeGreaterThanOrEqual(0)
+    expect(twoCitiesIndex).toBeLessThan(oneCityIndex)
   })
 })

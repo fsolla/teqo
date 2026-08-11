@@ -6,7 +6,9 @@ import {
   buildPeopleListHref,
   buildPeopleSortHref,
   buildPeopleStaffSourceWhere,
+  defaultPeopleListSortDir,
   parsePeopleListParams,
+  peopleListSortPrimaryOptions,
   resolvePeopleListUrl,
   serializeCanonicalPeopleListSearchParams,
 } from '@/utilities/people/peopleListUrl'
@@ -70,9 +72,27 @@ describe('people list URL contract', () => {
       parsePeopleListParams({ ausencia: ['sem_base', 'sem_assessor', 'sem_base', 'nada'] }),
     ).toEqual({ page: 1, ausencias: ['sem_base', 'sem_assessor'] })
     expect(parsePeopleListParams({ ausencia: 'sem_e_mail' })).toEqual({ page: 1 })
+    expect(parsePeopleListParams({ ausencia: 'qualquer_ausencia' })).toEqual({
+      page: 1,
+      ausencias: ['qualquer_ausencia'],
+    })
+    // C125 — the three specifics are 3 of 4 members, so they no longer
+    // collapse: the "mark all three" interaction keeps its chips and means
+    // "any absence" (the same result set as `qualquer_ausencia`).
     expect(
       parsePeopleListParams({ ausencia: ['sem_assessor', 'sem_base', 'sem_contato'] }),
-    ).toEqual({ page: 1 })
+    ).toEqual({ page: 1, ausencias: ['sem_assessor', 'sem_base', 'sem_contato'] })
+    // C125 — the umbrella absorbs the specifics (one canonical "any absence"
+    // chip), so neither the redundant combo nor selecting all four members can
+    // fire B18's generic collapse and wipe the facet mid-interaction.
+    expect(
+      parsePeopleListParams({ ausencia: ['qualquer_ausencia', 'sem_contato', 'sem_base'] }),
+    ).toEqual({ page: 1, ausencias: ['qualquer_ausencia'] })
+    expect(
+      parsePeopleListParams({
+        ausencia: ['sem_assessor', 'sem_base', 'sem_contato', 'qualquer_ausencia'],
+      }),
+    ).toEqual({ page: 1, ausencias: ['qualquer_ausencia'] })
   })
 
   it('canonicalizes selecting every status member to the absent filter (C119)', () => {
@@ -103,6 +123,13 @@ describe('people list URL contract', () => {
         ausencias: ['sem_base', 'sem_contato'],
       }).toString(),
     ).toBe('ausencia=sem_base&ausencia=sem_contato')
+
+    expect(
+      serializeCanonicalPeopleListSearchParams({
+        page: 1,
+        ausencias: ['qualquer_ausencia'],
+      }).toString(),
+    ).toBe('ausencia=qualquer_ausencia')
 
     expect(
       serializeCanonicalPeopleListSearchParams({ page: 1, sort: 'name', dir: 'asc' }).toString(),
@@ -166,6 +193,22 @@ describe('people list URL contract', () => {
     expect(buildPeopleSortHref({ page: 1, sort: 'lidera', dir: 'desc' }, 'name')).toBe(
       '/campanha/pessoas',
     )
+  })
+
+  it('derives the omnibox primary sort options: one per key, in its default direction', () => {
+    expect(peopleListSortPrimaryOptions).toHaveLength(7)
+    expect(peopleListSortPrimaryOptions.map((option) => option.key)).toEqual([
+      'name',
+      'contact',
+      'assessora',
+      'lidera',
+      'aliada',
+      'assessorado',
+      'base',
+    ])
+    for (const option of peopleListSortPrimaryOptions) {
+      expect(option.dir).toBe(defaultPeopleListSortDir(option.key))
+    }
   })
 
   it('clamps an out-of-range page to totalPages', () => {
