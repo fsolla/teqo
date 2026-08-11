@@ -124,7 +124,10 @@ Mostre ao usuário **antes** de editar docs:
 
 Inclua baldes **já_resolvido**, **descartar** e **defer** com uma linha de racional/gatilho cada (transparência > silêncio).
 
-**Pare e confirme** — exceto em **modo autônomo** (`agent-work-issue` / pool): aí aplique a seção Modo autônomo abaixo e pule o AskQuestion. Só avance ao Passo 6 com aprovação explícita (humano) ou com as regras do modo autônomo. Sem isso = não cria Issue nem toca `docs/plans/`.
+**Pare e confirme** — exceto em **modo autônomo** (`work-issue` pós-plano /
+`agent-work-issue` / pool): aí aplique a seção Modo autônomo abaixo e pule o
+AskQuestion. Só avance ao Passo 6 com aprovação explícita (humano) ou com as
+regras do modo autônomo. Sem isso = não cria Issue nem toca `docs/plans/`.
 
 ## Passo 6 — Registrar via `agent:register` / `agent:file-miss`
 
@@ -143,14 +146,21 @@ Não implemente as fases aqui. Execução é via `work-issue` / `agent-work-issu
 
 **Próximo no fluxo de entrega:** após a triage (confirmada ou modo autônomo), o fechamento segue o Passo 6 de `agent-work-issue` / `work-issue` (`pnpm push` → PR `--base main` com `Closes #N` → auto-merge → CI).
 
-## Modo autônomo (`agent-work-issue` / pool)
+## Modo autônomo (`work-issue` pós-plano / `agent-work-issue` / pool)
 
 Quando não há humano no gate (Passo 5):
 
 1. Faça colheita, dedup, score e tipo como de costume.
-2. **Registre** só itens `expensive_lock` com score ≥4 (Issue nova + `depends` no pai se preciso; plano curto se score ≥3 eng).
-3. Todo o resto → **defer** (gatilho no `*-impl.md` / Explicitamente fora) ou **descartar** — não abra AskQuestion.
-4. Resuma no comentário/fechamento o que registrou vs deferiu.
+2. **`work-issue`** (humano presente só no plano): decida o destino pela
+   triage completa (Passos 3–4) — registre o que a triage manda (score ≥3
+   registrar, expensive_lock com piso 4–5), absorva em plano existente,
+   defira com gatilho ou descarte o resto — **sem abrir AskQuestion**.
+3. **Pool (`agent-work-issue`):** registre só itens `expensive_lock` com
+   score ≥4 (Issue nova + `depends` no pai se preciso; plano curto se
+   score ≥3 eng).
+4. Todo o resto → **defer** (gatilho no `*-impl.md` / Explicitamente fora)
+   ou **descartar** — não abra AskQuestion.
+5. Resuma no comentário/fechamento o que registrou vs deferiu vs descartou.
 
 ## Anti-padrões (baseline)
 
@@ -162,7 +172,7 @@ Quando não há humano no gate (Passo 5):
 | "Junto DRY e UX num FD+"                 | Quebra o precedente FD+/FD2; tipos separados                          |
 | "DRY com 1 call site vira escala-dry"    | defer_trigger + gatilho; não registrar epic YAGNI                     |
 | "Não li o plano existente"               | Grep primeiro; absorver > duplicar                                    |
-| "Registro sem perguntar"                 | Passo 5 é gate; docs de produto não são scratchpad                    |
+| "Registro sem perguntar"                 | Passo 5 é gate (humano-gated); em modo autônomo o agente decide e registra    |
 | "Corto access/LGPD do lote por tempo"    | expensive_lock nunca é cortável por appetite                          |
 
 ## Resumo ao usuário
