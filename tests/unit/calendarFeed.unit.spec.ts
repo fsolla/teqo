@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { generateICalFeed } from '@/utilities/calendarFeed'
+import { buildICalFeedResponse, generateICalFeed } from '@/utilities/calendarFeed'
 
 describe('generateICalFeed', () => {
   const municipalityNames = new Map([
@@ -37,6 +37,7 @@ describe('generateICalFeed', () => {
     expect(result).toContain('DTSTART:20260815T190000Z')
     expect(result).toContain('DTEND:20260815T220000Z')
     expect(result).toContain('X-WR-CALNAME:Agenda do Candidato')
+    expect(result).toContain('X-PUBLISHED-TTL:PT1H')
   })
 
   it('excludes cancelled activities', () => {
@@ -155,5 +156,115 @@ describe('generateICalFeed', () => {
 
     expect(result).toContain('DTSTART:20260815T190000Z')
     expect(result).toContain('DTEND:20260815T190000Z')
+  })
+})
+
+describe('buildICalFeedResponse (C113)', () => {
+  const activities = [
+    {
+      id: 1,
+      slug: 'comicio-salvador',
+      title: 'Comício em Salvador',
+      status: 'confirmado' as const,
+      startAt: '2026-08-15T19:00:00.000Z',
+      endAt: '2026-08-15T22:00:00.000Z',
+      municipality: 1,
+      locality: 'Centro',
+      tags: ['comício', 'campanha'],
+      deputyPresent: true,
+      updatedAt: '2026-08-01T10:00:00.000Z',
+      createdAt: '2026-08-01T09:00:00.000Z',
+    },
+  ] as unknown as Parameters<typeof generateICalFeed>[0]
+
+  const icalContent = generateICalFeed(
+    activities,
+    'Agenda do Candidato',
+    new Map([[1, 'Salvador']]),
+  )
+  const feed = { updatedAt: '2026-08-02T08:00:00.000Z' }
+
+  const requestWith = (headers: Record<string, string>) =>
+    new Request('https://example.test/campanha/agenda/ical/secret', { headers })
+
+  it('serves the feed with a freshness contract: no-cache, ETag and Last-Modified', async () => {
+    const response = buildICalFeedResponse(icalContent, activities, feed, requestWith({}))
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Content-Type')).toContain('text/calendar')
+    expect(response.headers.get('Cache-Control')).toBe('public, no-cache')
+    expect(response.headers.get('ETag')).toMatch(/^"[0-9a-f]{64}"$/)
+    expect(response.headers.get('Last-Modified')).toBe('Sun, 02 Aug 2026 08:00:00 GMT')
+    expect(await response.text()).toBe(icalContent)
+  })
+
+  it('keeps the ETag stable for identical content and changes it with the body', () => {
+    const first = buildICalFeedResponse(icalContent, activities, feed, requestWith({}))
+    const second = buildICalFeedResponse(icalContent, activities, feed, requestWith({}))
+
+    expect(first.headers.get('ETag')).toBe(second.headers.get('ETag'))
+
+    const edited = buildICalFeedResponse(
+      icalContent.replace('Comício em Salvador', 'Comício em Salvador (novo local)'),
+      activities,
+      feed,
+      requestWith({}),
+    )
+    expect(edited.headers.get('ETag')).not.toBe(first.headers.get('ETag'))
+  })
+
+  it('answers 304 without a body when If-None-Match matches the current ETag', async () => {
+    const fresh = buildICalFeedResponse(icalContent, activities, feed, requestWith({}))
+    const etag = fresh.headers.get('ETag')!
+
+    const revalidated = buildICalFeedResponse(
+      icalContent,
+      activities,
+      feed,
+      requestWith({ 'if-none-match': etag }),
+    )
+
+    expect(revalidated.status).toBe(304)
+    expect(revalidated.headers.get('ETag')).toBe(etag)
+    expect(revalidated.headers.get('Cache-Control')).toBe('public, no-cache')
+    expect(await revalidated.text()).toBe('')
+  })
+
+  it('answers 304 for wildcard and multi-value If-None-Match lists, weak or strong', () => {
+    const etag = buildICalFeedResponse(icalContent, activities, feed, requestWith({})).headers.get(
+      'ETag',
+    )!
+
+    for (const header of ['*', `"stale-1", ${etag}`, `W/${etag}`]) {
+      const revalidated = buildICalFeedResponse(
+        icalContent,
+        activities,
+        feed,
+        requestWith({ 'if-none-match': header }),
+      )
+      expect(revalidated.status, header).toBe(304)
+    }
+  })
+
+  it('answers 200 when If-None-Match carries a stale ETag', () => {
+    const revalidated = buildICalFeedResponse(
+      icalContent,
+      activities,
+      feed,
+      requestWith({ 'if-none-match': '"stale-etag"' }),
+    )
+
+    expect(revalidated.status).toBe(200)
+  })
+
+  it('never answers 304 to If-Modified-Since alone (deletion blind spot)', () => {
+    const response = buildICalFeedResponse(
+      icalContent,
+      activities,
+      feed,
+      requestWith({ 'if-modified-since': 'Mon, 03 Aug 2026 08:00:00 GMT' }),
+    )
+
+    expect(response.status).toBe(200)
   })
 })

@@ -488,4 +488,101 @@ describe('campaign calendar feed domain', () => {
     const activities = await loadFeedActivities(payload, feed, access.municipalityIds)
     expect(activities).toHaveLength(0)
   })
+
+  it('serves a live feed over two GETs with fresh validators (C113)', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const municipality = await campaignFixtures().getMunicipality()
+
+    const route = await import('@/app/(campaign)/campanha/agenda/ical/[secret]/route')
+    expect(route.dynamic).toBe('force-dynamic')
+
+    const titleA = campaignFixtures().value('Comício vivo')
+    const titleB = campaignFixtures().value('Caminhada viva')
+    const activityA = await createActivityRecord(
+      payload,
+      coordinator,
+      validActivityInput(relationId(municipality), titleA),
+    )
+    campaignFixtures().own('activity', activityA.id)
+
+    const ok = requireOk(
+      await createCalendarFeedLinkRecord(payload, coordinator, { label: 'Feed vivo' }),
+    )
+    campaignFixtures().own('calendarFeed', ok.feedId)
+    const secret = ok.feedUrl.match(/\/campanha\/agenda\/ical\/([0-9a-f-]{36})$/)![1]
+
+    const feedUrl = `http://localhost/campanha/agenda/ical/${secret}`
+    const getFeed = (headers: Record<string, string> = {}) =>
+      route.GET(new Request(feedUrl, { headers }), { params: Promise.resolve({ secret }) })
+
+    const first = await getFeed()
+    expect(first.status).toBe(200)
+    expect(first.headers.get('Cache-Control')).toBe('public, no-cache')
+    expect(first.headers.get('ETag')).toMatch(/^"[0-9a-f]{64}"$/)
+    expect(first.headers.get('Last-Modified')).toMatch(/ GMT$/)
+    const firstBody = await first.text()
+    expect(firstBody).toContain(titleA)
+    expect(firstBody).not.toContain(titleB)
+    expect(firstBody).toContain('X-PUBLISHED-TTL:PT1H')
+    const firstEtag = first.headers.get('ETag')!
+
+    const activityB = await createActivityRecord(payload, coordinator, {
+      ...validActivityInput(relationId(municipality), titleB),
+      // An hour after activity A, so the DTSTART proof is unique to B.
+      startAt: new Date(Date.now() + 86_400_000 + 3_600_000).toISOString(),
+    })
+    campaignFixtures().own('activity', activityB.id)
+
+    // A commitment created after the first fetch shows up on the second GET,
+    // with a changed validator — the C113 acceptance.
+    const second = await getFeed()
+    expect(second.status).toBe(200)
+    const secondBody = await second.text()
+    expect(secondBody).toContain(titleA)
+    expect(secondBody).toContain(titleB)
+    expect(second.headers.get('ETag')).not.toBe(firstEtag)
+
+    // Schedule edits reflect on the next GET (the title is immutable by
+    // design — the canonical slug — so the proof is the DTSTART change).
+    const icalDateTimeOf = (iso: string) => iso.replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+    const originalStart = activityB.startAt!
+    const editedStart = new Date(Date.now() + 86_400_000 + 7_200_000).toISOString()
+    await payload.update({
+      collection: 'activity',
+      id: activityB.id,
+      data: { startAt: editedStart },
+      depth: 0,
+      user: coordinator,
+      overrideAccess: false,
+    })
+    const edited = await getFeed()
+    const editedBody = await edited.text()
+    expect(editedBody).toContain(`DTSTART:${icalDateTimeOf(editedStart)}`)
+    expect(editedBody).not.toContain(`DTSTART:${icalDateTimeOf(originalStart)}`)
+
+    // A subscriber holding the FIRST validator gets a full fresh 200, never a
+    // stale 304 — the freeze story of C113.
+    const staleRevalidation = await getFeed({ 'if-none-match': firstEtag })
+    expect(staleRevalidation.status).toBe(200)
+    expect(await staleRevalidation.text()).toContain(`DTSTART:${icalDateTimeOf(editedStart)}`)
+
+    // Cancellation removes the event without leaving a ghost.
+    await payload.update({
+      collection: 'activity',
+      id: activityB.id,
+      data: { status: 'cancelado' },
+      depth: 0,
+      user: coordinator,
+      overrideAccess: false,
+    })
+    const cancelled = await getFeed()
+    const cancelledBody = await cancelled.text()
+    expect(cancelledBody).not.toContain(titleB)
+    expect(cancelledBody).toContain(titleA)
+
+    // A conditional GET with the current validator revalidates cheaply.
+    const revalidated = await getFeed({ 'if-none-match': cancelled.headers.get('ETag')! })
+    expect(revalidated.status).toBe(304)
+    expect(await revalidated.text()).toBe('')
+  })
 })
