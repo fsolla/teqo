@@ -11,6 +11,7 @@ import {
   loadGoogleCalendarSyncConfig,
   readGoogleCalendarSyncView,
   runCampaignCalendarSync,
+  type CampaignCalendarSyncOptions,
 } from '@/utilities/googleCalendarSync'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
 
@@ -99,17 +100,23 @@ describe('campaign Google calendar sync engine (C114)', () => {
   }
 
   /**
-   * The mirror is the WHOLE staff scope (espelho cheio) — parallel spec files
-   * create activities on the same test DB while this file runs, so the
-   * engine's absolute created/updated/deleted counts are not deterministic
-   * here. The assertions are therefore scoped to this spec's own activities
-   * via their deterministic event ids, which IS the engine's contract.
+   * Runs a sync pass scoped to THIS spec's fixture (`C114%` titles). The int
+   * suite runs files in parallel against one shared database and other specs
+   * create activities inside the mirror window — a full-scope pass would count
+   * them and flake the global assertions (C126). Production callers omit the
+   * scope and keep the espelho cheio.
    */
-  const ourEvent = (store: GoogleRemoteEvent[], activityId: number) =>
-    store.find((event) => event.id === googleEventIdForActivity(activityId))
-
-  const ourEvents = (store: GoogleRemoteEvent[], activityId: number) =>
-    store.filter((event) => event.id === googleEventIdForActivity(activityId))
+  const runSync = (
+    client: GoogleCalendarClient,
+    reason: CampaignCalendarSyncOptions['reason'] = 'manual',
+  ) =>
+    withGoogleCalendarTestCredential(() =>
+      runCampaignCalendarSync(payload, {
+        reason,
+        client,
+        activityWhere: { title: { like: 'C114%' } },
+      }),
+    )
 
   it('creates the full mirror on the first pass (timed + all-day, municipality summary)', async () => {
     const municipality = await campaignFixtures().getMunicipality()
@@ -128,18 +135,19 @@ describe('campaign Google calendar sync engine (C114)', () => {
     const store: GoogleRemoteEvent[] = []
     const client = createStubClient(store)
 
-    const outcome = await withGoogleCalendarTestCredential(() =>
-      runCampaignCalendarSync(payload, { reason: 'manual', client }),
-    )
+    const outcome = await runSync(client)
 
     expect(outcome.status).toBe('synced')
+    expect(outcome.created).toBe(2)
+    expect(outcome.updated).toBe(0)
+    expect(outcome.deleted).toBe(0)
 
-    const timedEvent = ourEvent(store, timed.id)
+    const timedEvent = store.find((event) => event.id === googleEventIdForActivity(timed.id))
     expect(timedEvent?.summary).toBe(`[${municipality.name}] ${timed.title}`)
     expect(timedEvent?.location).toBe('Centro')
     expect(timedEvent?.start).toEqual({ dateTime: expect.stringMatching(/-03:00$/) })
 
-    const allDayEvent = ourEvent(store, allDay.id)
+    const allDayEvent = store.find((event) => event.id === googleEventIdForActivity(allDay.id))
     expect(allDayEvent?.start).toEqual({ date: allDayCivilDateOf(allDayStartAt) })
     expect(allDayEvent?.end).toEqual({ date: allDayExclusiveEndDate(allDayEndAt) })
 
@@ -148,27 +156,81 @@ describe('campaign Google calendar sync engine (C114)', () => {
     expect(doc?.lastError).toBeNull()
   })
 
-  it('converges: a second pass with no changes touches nothing', async () => {
+  it('mirrors only the fixture scope — a foreign in-window activity stays out (C126)', async () => {
     const activity = await createActivity()
+    // A row "from another spec": inside the mirror window but outside the
+    // C114 fixture scope. The int suite runs files in parallel against one
+    // shared database, so such rows exist at arbitrary times — the mirror
+    // must not count them (the C126 race).
+    const foreign = await createActivity({
+      title: `C126 alheia ${crypto.randomUUID().slice(0, 8)}`,
+    })
     await createConfig(calendarA)
     const store: GoogleRemoteEvent[] = []
     const client = createStubClient(store)
 
-    const first = await withGoogleCalendarTestCredential(() =>
-      runCampaignCalendarSync(payload, { reason: 'manual', client }),
-    )
-    expect(first.status).toBe('synced')
-    expect(ourEvent(store, activity.id)).toBeTruthy()
-    const contentAfterFirstPass = JSON.stringify(ourEvent(store, activity.id))
+    try {
+      const outcome = await runSync(client)
+      expect(outcome.created).toBe(1)
+      expect(store).toHaveLength(1)
+      expect(store.find((event) => event.id === googleEventIdForActivity(activity.id))).toBeTruthy()
+      expect(
+        store.find((event) => event.id === googleEventIdForActivity(foreign.id)),
+      ).toBeUndefined()
+    } finally {
+      // The afterEach only cleans `C114%` titles — never leak the foreign
+      // row into other specs (the exact bug this pin guards against). The
+      // fixture proxy also auto-owns it, but the explicit delete keeps the
+      // guarantee visible here.
+      if (foreign) {
+        await payload.delete({ collection: 'activity', id: foreign.id, overrideAccess: true })
+      }
+    }
+  })
 
-    const second = await withGoogleCalendarTestCredential(() =>
-      runCampaignCalendarSync(payload, { reason: 'manual', client }),
-    )
-    expect(second.status).toBe('synced')
-    // Idempotence, scoped to our activity: still exactly one event with the
-    // same content — no re-create, no update, no delete.
-    expect(ourEvents(store, activity.id)).toHaveLength(1)
-    expect(JSON.stringify(ourEvent(store, activity.id))).toBe(contentAfterFirstPass)
+  it('the delete guard honors the scope: an out-of-scope alive event is removed (C126)', async () => {
+    await createActivity()
+    // Alive and inside the mirror window, but outside the C114 fixture
+    // scope. A scoped mirror is authoritative for its scope — its teqo
+    // events are reconciled even when the delete-guard's full-scope view
+    // would have kept them.
+    const foreign = await createActivity({
+      title: `C126 alheia ${crypto.randomUUID().slice(0, 8)}`,
+    })
+    await createConfig(calendarA)
+    const store: GoogleRemoteEvent[] = [
+      {
+        id: googleEventIdForActivity(foreign.id),
+        summary: 'Evento alheio',
+        start: { dateTime: new Date(Date.now() + 86_400_000).toISOString() },
+      },
+    ]
+    const client = createStubClient(store)
+
+    try {
+      const outcome = await runSync(client)
+      expect(outcome.deleted).toBe(1)
+      // The in-scope activity is still mirrored on the same pass.
+      expect(outcome.created).toBe(1)
+      expect(store.some((event) => event.id === googleEventIdForActivity(foreign.id))).toBe(false)
+    } finally {
+      if (foreign) {
+        await payload.delete({ collection: 'activity', id: foreign.id, overrideAccess: true })
+      }
+    }
+  })
+
+  it('converges: a second pass with no changes touches nothing', async () => {
+    await createActivity()
+    await createConfig(calendarA)
+    const store: GoogleRemoteEvent[] = []
+    const client = createStubClient(store)
+
+    const first = await runSync(client)
+    expect(first.created).toBe(1)
+
+    const second = await runSync(client)
+    expect(second).toMatchObject({ created: 0, updated: 0, deleted: 0, status: 'synced' })
   })
 
   it('updates only the drifted event and ignores foreign calendar events', async () => {
@@ -178,9 +240,7 @@ describe('campaign Google calendar sync engine (C114)', () => {
       { id: 'foreign-manual-event', summary: 'Mantido pela conta da campanha' },
     ]
     const client = createStubClient(store)
-    await withGoogleCalendarTestCredential(() =>
-      runCampaignCalendarSync(payload, { reason: 'manual', client }),
-    )
+    await runSync(client)
 
     // Title is immutable after creation (canonical slug rule) — drift a
     // mutable mirrored field instead (locality is in the mirror surface).
@@ -192,12 +252,13 @@ describe('campaign Google calendar sync engine (C114)', () => {
       overrideAccess: true,
     })
 
-    const outcome = await withGoogleCalendarTestCredential(() =>
-      runCampaignCalendarSync(payload, { reason: 'manual', client }),
-    )
-    expect(outcome.status).toBe('synced')
+    const outcome = await runSync(client)
+    expect(outcome.updated).toBe(1)
+    expect(outcome.deleted).toBe(0)
     expect(store.find((event) => event.id === 'foreign-manual-event')).toBeTruthy()
-    expect(ourEvent(store, activity.id)?.location).toBe('Centro (atualizado)')
+    expect(
+      store.find((event) => event.id === googleEventIdForActivity(activity.id))?.location,
+    ).toBe('Centro (atualizado)')
   })
 
   it('canceled activities leave Google: their events are deleted, none created', async () => {
@@ -205,10 +266,8 @@ describe('campaign Google calendar sync engine (C114)', () => {
     await createConfig(calendarA)
     const store: GoogleRemoteEvent[] = []
     const client = createStubClient(store)
-    await withGoogleCalendarTestCredential(() =>
-      runCampaignCalendarSync(payload, { reason: 'manual', client }),
-    )
-    expect(ourEvent(store, activity.id)).toBeTruthy()
+    await runSync(client)
+    expect(store).toHaveLength(1)
 
     await payload.update({
       collection: 'activity',
@@ -218,11 +277,9 @@ describe('campaign Google calendar sync engine (C114)', () => {
       overrideAccess: true,
     })
 
-    const outcome = await withGoogleCalendarTestCredential(() =>
-      runCampaignCalendarSync(payload, { reason: 'manual', client }),
-    )
-    expect(outcome.status).toBe('synced')
-    expect(ourEvent(store, activity.id)).toBeUndefined()
+    const outcome = await runSync(client)
+    expect(outcome.deleted).toBe(1)
+    expect(store).toHaveLength(0)
   })
 
   it('hard-deleted activities leave no ghost in Google', async () => {
@@ -230,39 +287,33 @@ describe('campaign Google calendar sync engine (C114)', () => {
     await createConfig(calendarA)
     const store: GoogleRemoteEvent[] = []
     const client = createStubClient(store)
-    await withGoogleCalendarTestCredential(() =>
-      runCampaignCalendarSync(payload, { reason: 'manual', client }),
-    )
-    expect(ourEvent(store, activity.id)).toBeTruthy()
+    await runSync(client)
+    expect(store).toHaveLength(1)
 
     await payload.delete({ collection: 'activity', id: activity.id, overrideAccess: true })
 
-    const outcome = await withGoogleCalendarTestCredential(() =>
-      runCampaignCalendarSync(payload, { reason: 'manual', client }),
-    )
-    expect(outcome.status).toBe('synced')
-    expect(ourEvent(store, activity.id)).toBeUndefined()
+    const outcome = await runSync(client)
+    expect(outcome.deleted).toBe(1)
+    expect(store).toHaveLength(0)
   })
 
   it('activities outside the window never reach Google', async () => {
     // C127: now + 400 days — far beyond the ~90-day push window, but never
     // hardcoded (a fixed far date would ENTER the window as it approaches).
-    const activity = await createActivity({
+    await createActivity({
       startAt: new Date(Date.now() + 400 * 86_400_000).toISOString(),
     })
     await createConfig(calendarA)
     const store: GoogleRemoteEvent[] = []
     const client = createStubClient(store)
 
-    const outcome = await withGoogleCalendarTestCredential(() =>
-      runCampaignCalendarSync(payload, { reason: 'manual', client }),
-    )
-    expect(outcome.status).toBe('synced')
-    expect(ourEvent(store, activity.id)).toBeUndefined()
+    const outcome = await runSync(client)
+    expect(outcome.created).toBe(0)
+    expect(store).toHaveLength(0)
   })
 
   it('failures land in paused and the next success recovers to synced', async () => {
-    const activity = await createActivity()
+    await createActivity()
     await createConfig(calendarA)
 
     const failingClient: GoogleCalendarClient = {
@@ -271,9 +322,7 @@ describe('campaign Google calendar sync engine (C114)', () => {
         throw new Error('Google fora do ar (simulado)')
       },
     }
-    const failed = await withGoogleCalendarTestCredential(() =>
-      runCampaignCalendarSync(payload, { reason: 'manual', client: failingClient }),
-    )
+    const failed = await runSync(failingClient)
     expect(failed.status).toBe('paused')
 
     const doc = await loadGoogleCalendarSyncConfig(payload)
@@ -287,11 +336,9 @@ describe('campaign Google calendar sync engine (C114)', () => {
     expect(failedView.status).toBe('paused')
 
     const store: GoogleRemoteEvent[] = []
-    const recovered = await withGoogleCalendarTestCredential(() =>
-      runCampaignCalendarSync(payload, { reason: 'manual', client: createStubClient(store) }),
-    )
+    const recovered = await runSync(createStubClient(store))
     expect(recovered.status).toBe('synced')
-    expect(ourEvent(store, activity.id)).toBeTruthy()
+    expect(recovered.created).toBe(1)
     const recoveredView = await withGoogleCalendarTestCredential(() =>
       readGoogleCalendarSyncView(payload),
     )
@@ -309,20 +356,18 @@ describe('campaign Google calendar sync engine (C114)', () => {
     expect(store).toHaveLength(0)
 
     await createConfig(calendarA)
-    // Config present but env key absent (outside withCredential).
+    // Config present but env key absent (outside the credential helper).
     const withoutKey = await runCampaignCalendarSync(payload, { reason: 'manual', client })
     expect(withoutKey.status).toBe('not-configured')
     expect(store).toHaveLength(0)
   })
 
   it('changing the calendarId reconciles into the new calendar (D7 engine side)', async () => {
-    const activity = await createActivity()
+    await createActivity()
     await createConfig(calendarA)
     const storeA: GoogleRemoteEvent[] = []
-    await withGoogleCalendarTestCredential(() =>
-      runCampaignCalendarSync(payload, { reason: 'manual', client: createStubClient(storeA) }),
-    )
-    expect(ourEvent(storeA, activity.id)).toBeTruthy()
+    await runSync(createStubClient(storeA))
+    expect(storeA).toHaveLength(1)
 
     const config = await loadGoogleCalendarSyncConfig(payload)
     await payload.update({
@@ -334,15 +379,10 @@ describe('campaign Google calendar sync engine (C114)', () => {
     })
 
     const storeB: GoogleRemoteEvent[] = []
-    const outcome = await withGoogleCalendarTestCredential(() =>
-      runCampaignCalendarSync(payload, {
-        reason: 'config-change',
-        client: createStubClient(storeB),
-      }),
-    )
-    expect(outcome.status).toBe('synced')
-    expect(ourEvent(storeB, activity.id)).toBeTruthy()
+    const outcome = await runSync(createStubClient(storeB), 'config-change')
+    expect(outcome.created).toBe(1)
+    expect(storeB).toHaveLength(1)
     // The abandoned calendar keeps its last mirror (documented, no retro-cleanup).
-    expect(ourEvent(storeA, activity.id)).toBeTruthy()
+    expect(storeA).toHaveLength(1)
   })
 })
