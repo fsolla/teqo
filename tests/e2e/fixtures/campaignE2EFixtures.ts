@@ -183,7 +183,7 @@ export class CampaignE2EOwnership {
   }: {
     namePrefix: string
     municipalities: { id: number; name: string }[]
-    supportStatus?: 'a_abordar' | 'em_disputa' | 'engajado' | 'negativo'
+    supportStatus?: 'a_abordar' | 'em_disputa' | 'lembranca' | 'engajado' | 'negativo'
     user?: number
   }): Promise<{ contactName: string; contactId: number; leadershipId: number }> {
     const contactName = this.value(namePrefix)

@@ -50,6 +50,14 @@ describe('people list URL contract', () => {
     ).toEqual({ page: 1, municipalities: [12, 3], statuses: ['engajado', 'em_disputa'] })
   })
 
+  it('canonicalizes selecting every status member to the absent filter (C119)', () => {
+    expect(
+      parsePeopleListParams({
+        status: ['engajado', 'a_abordar', 'em_disputa', 'lembranca', 'negativo'],
+      }),
+    ).toEqual({ page: 1 })
+  })
+
   it('serializes canonical params in stable order and omits defaults', () => {
     const params = serializeCanonicalPeopleListSearchParams({
       page: 1,

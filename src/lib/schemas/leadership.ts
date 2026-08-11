@@ -14,6 +14,7 @@ export const leadershipSupportStatuses = [
   'engajado',
   'a_abordar',
   'em_disputa',
+  'lembranca',
   'negativo',
 ] as const
 

@@ -86,7 +86,7 @@ describe('getPendingLeaderships gate (B185)', () => {
 })
 
 describe('getPendingLeaderships pending criterion (B185)', () => {
-  it('lists a_abordar/em_disputa e engajado sem pledge; exclui engajado com pledge e qualquer negativo', async () => {
+  it('lists a_abordar/em_disputa e engajado sem pledge; exclui engajado com pledge, qualquer negativo e qualquer lembranca (C119)', async () => {
     const find = vi.fn()
     find.mockResolvedValueOnce(
       findResult([
@@ -95,6 +95,7 @@ describe('getPendingLeaderships pending criterion (B185)', () => {
         leadershipDoc({ id: 3, supportStatus: 'em_disputa' }),
         leadershipDoc({ id: 4, supportStatus: 'engajado' }),
         leadershipDoc({ id: 5, supportStatus: 'negativo' }),
+        leadershipDoc({ id: 6, supportStatus: 'lembranca' }),
       ]),
     )
     find.mockResolvedValueOnce(findResult([{ leadership: 2 }]))

@@ -10,6 +10,7 @@ const statusPresentation = {
   engajado: { variant: 'support-engaged' },
   a_abordar: { variant: 'support-to-approach' },
   em_disputa: { variant: 'support-disputed' },
+  lembranca: { variant: 'support-remembered' },
   negativo: { variant: 'support-negative' },
 } as const
 

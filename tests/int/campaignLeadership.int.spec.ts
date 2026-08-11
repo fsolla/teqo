@@ -427,6 +427,27 @@ describe('campaign leadership domain', () => {
     ).rejects.toThrow()
   })
 
+  it('persists the "lembranca" support status through create and internal update (C119)', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const municipality = await campaignFixtures().getMunicipality()
+
+    const created = await createLeadershipRecord(payload, coordinator, {
+      municipalities: [municipality.id],
+      name: 'Liderança Lembrança',
+      phones: [campaignFixtures().phone()],
+      supportStatus: 'lembranca',
+    })
+
+    const doc = await payload.findByID({ collection: 'leadership', id: created.id, depth: 0 })
+    expect(doc.supportStatus).toBe('lembranca')
+
+    const updated = await updateLeadershipInternalRecord(payload, coordinator, {
+      id: created.id,
+      supportStatus: 'lembranca',
+    })
+    expect(updated.supportStatus).toBe('lembranca')
+  })
+
   it('denies leadership creation to leader accounts', async () => {
     const leader = await campaignFixtures().createCampaignUser('leader')
     const municipality = await campaignFixtures().getMunicipality()
