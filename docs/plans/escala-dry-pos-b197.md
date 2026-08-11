@@ -1,6 +1,6 @@
 # Escala e DRY pós-B197 (picker de colunas de assessores)
 
-Status: pendente (capture-review-debts pós-B197, gate humano confirmado)
+Status: concluído (Issue #642, impl aprovado e executado 2026-08-11)
 Atualizado em: 2026-08-11
 Item do roadmap: fill-in **B197+** pós-[#627](https://github.com/fsolla/teqo/issues/627)
 Impeccable: A — sem superfície UI nova (DRY/estrutura)

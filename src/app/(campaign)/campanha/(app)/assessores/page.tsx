@@ -3,7 +3,7 @@ import config from '@payload-config'
 import { getPayload } from 'payload'
 
 import { AdvisorFilters } from '@/components/campaign/advisor/AdvisorFilters'
-import { AdvisorsTable } from '@/components/campaign/advisor/AdvisorsTable'
+import { AdvisorsTable, advisorPickerColumns } from '@/components/campaign/advisor/AdvisorsTable'
 import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import {
@@ -11,10 +11,6 @@ import {
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import {
-  toCampaignColumnPickerColumns,
-  type CampaignColumnPickerColumn,
-} from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import { hasAdvisorListActiveFilters } from '@/utilities/advisor/advisorListFilters'
@@ -39,17 +35,6 @@ export const metadata = campaignPageMetadataFromCatalog('assessores')
 type AdvisorsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
-
-// B197 — labels mirror the `<th>` copy of `AdvisorsTable`; the table's own
-// columns are hand-rolled (not `CampaignTableColumn`), so the picker menu is
-// spelled out here instead of derived.
-const advisorPickerColumns: readonly CampaignColumnPickerColumn[] = [
-  { id: 'name', label: 'Nome', mandatory: true },
-  { id: 'email', label: 'E-mail' },
-  { id: 'phone', label: 'Celular' },
-  { id: 'municipalities', label: 'Municípios' },
-  { id: 'actions', label: 'Ações' },
-]
 
 export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) {
   const rawSearchParams = await searchParams
@@ -82,7 +67,7 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
           trailing={
             <CampaignColumnPickerTrailing
               columnVisibility={columnVisibility}
-              columns={toCampaignColumnPickerColumns(advisorPickerColumns)}
+              columns={advisorPickerColumns}
             />
           }
         />
