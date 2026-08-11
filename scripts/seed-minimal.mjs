@@ -199,8 +199,12 @@ try {
   for (const entry of MINIMAL_LEADERSHIPS) {
     const contact = await upsert(
       'contact',
-      { phone: { equals: entry.contactPhone } },
-      { name: entry.contactName, phone: entry.contactPhone, state: 'BA' },
+      { 'phones.value': { equals: entry.contactPhone } },
+      {
+        name: entry.contactName,
+        phones: [{ value: entry.contactPhone }],
+        state: 'BA',
+      },
       `contact ${entry.contactPhone}`,
     )
     const consent = consentIdByKey.get(entry.consentKey)
@@ -226,8 +230,12 @@ try {
   for (const entry of MINIMAL_SUPPORTERS) {
     const contact = await upsert(
       'contact',
-      { phone: { equals: entry.contactPhone } },
-      { name: entry.contactName, phone: entry.contactPhone, state: 'BA' },
+      { 'phones.value': { equals: entry.contactPhone } },
+      {
+        name: entry.contactName,
+        phones: [{ value: entry.contactPhone }],
+        state: 'BA',
+      },
       `contact ${entry.contactPhone}`,
     )
     const municipalityID = await municipalityIdBySlug(entry.municipalitySlug)

@@ -8,6 +8,7 @@ import {
 } from '@/app/(campaign)/campanha/actions/leadership'
 import {
   nullableFormText,
+  repeatedPhoneFormValues,
   repeatedRelationshipFormValues,
   requiredFormBoolean,
   requiredFormText,
@@ -64,6 +65,12 @@ export const updateLeadershipContactFormAction = async (
           id,
           field: 'phone',
           phone: nullableFormText(formData, 'phone'),
+        })
+      } else if (field === 'phones') {
+        await updateLeadershipContact({
+          id,
+          field: 'phones',
+          phones: repeatedPhoneFormValues(formData, 'phones'),
         })
       } else {
         throw new Error(INVALID_FIELD_MESSAGE)

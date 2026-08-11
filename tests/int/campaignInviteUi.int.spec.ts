@@ -126,7 +126,7 @@ const createPublicInviteScenario = async (
     collection: 'contact',
     data: {
       name: 'Maria da Conceição',
-      phone: campaignFixtures().phone(),
+      phones: [{ value: campaignFixtures().phone() }],
       email: 'maria@example.com',
       state: 'BA',
       city: 'Salvador',
@@ -216,7 +216,7 @@ describe('campaign invite UI contracts', () => {
         kind: 'autopreenchimento',
         profile: {
           name: fixture.contact.name,
-          phone: fixture.contact.phone,
+          phone: fixture.contact.phones?.[0]?.value ?? '',
           email: fixture.contact.email,
           gender: fixture.contact.gender,
         },
@@ -354,7 +354,7 @@ describe('campaign invite UI contracts', () => {
       const fixture = await createPublicInviteScenario('login')
       const formData = new FormData()
       formData.set('name', fixture.contact.name)
-      formData.set('phone', fixture.contact.phone!)
+      formData.set('phone', fixture.contact.phones?.[0]?.value ?? '')
       formData.set('email', fixture.contact.email ?? '')
       formData.set('password', 'senha-segura')
       formData.set('passwordConfirmation', 'senha-diferente')
@@ -377,7 +377,7 @@ describe('campaign invite UI contracts', () => {
     const fixture = await createPublicInviteScenario('login')
     const formData = new FormData()
     formData.set('name', fixture.contact.name)
-    formData.set('phone', fixture.contact.phone!)
+    formData.set('phone', fixture.contact.phones?.[0]?.value ?? '')
     formData.set('email', fixture.contact.email ?? '')
     formData.set('password', ' senha-segura ')
     formData.set('passwordConfirmation', 'senha-segura')
@@ -401,7 +401,7 @@ describe('campaign invite UI contracts', () => {
       const fixture = await createPublicInviteScenario('autopreenchimento')
       const formData = new FormData()
       formData.set('name', 'Maria Atualizada')
-      formData.set('phone', fixture.contact.phone!)
+      formData.set('phone', fixture.contact.phones?.[0]?.value ?? '')
       formData.set('email', fixture.contact.email ?? '')
       formData.set('gender', 'feminino')
       formData.set('consentAccepted', 'on')

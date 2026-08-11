@@ -62,7 +62,9 @@ type EditorUserInput = {
 }
 type ConsentInput = Partial<Pick<Consent, 'key' | 'text'>>
 type ContactInput = Partial<
-  Pick<Contact, 'name' | 'email' | 'phone' | 'gender' | 'state' | 'city' | 'postalCode'>
+  Pick<Contact, 'name' | 'email' | 'gender' | 'state' | 'city' | 'postalCode'> & {
+    phones: Array<{ value: string }>
+  }
 >
 type LeadershipInput = Partial<
   Pick<
@@ -601,7 +603,7 @@ export class CampaignFixtures {
           or: [
             { name: { contains: this.runID } },
             { email: { contains: this.runID } },
-            { phone: { contains: this.runID } },
+            { 'phones.value': { contains: this.runID } },
           ],
         },
         depth: 0,
@@ -713,11 +715,12 @@ export class CampaignFixtures {
   }
 
   async createContact(input: ContactInput = {}): Promise<Contact & { phone: string }> {
+    const phone = input.phones?.[0]?.value ?? this.phone()
     const contact = await this.rootPayload.create({
       collection: 'contact',
       data: {
         name: this.value('Contato'),
-        phone: this.phone(),
+        phones: [{ value: phone }],
         state: 'BA',
         city: 'Salvador',
         ...input,
@@ -725,12 +728,13 @@ export class CampaignFixtures {
       depth: 0,
     })
     this.own('contact', contact)
-    // Contact.phone is optional at the collection level (name-only imports), but
-    // every fixture contact carries one — narrow so specs can rely on it.
-    if (typeof contact.phone !== 'string') {
+    // The fixture contract is "one primary phone": every fixture contact carries
+    // one — narrow so specs can rely on it (C112 keeps the array under the hood).
+    const primary = contact.phones?.[0]?.value
+    if (typeof primary !== 'string') {
       throw new Error('Fixture contacts must always carry a phone.')
     }
-    return { ...contact, phone: contact.phone }
+    return { ...contact, phone: primary }
   }
 
   /** Assign advisors to a seeded municipality (tracked for reset on cleanup). */
@@ -945,7 +949,7 @@ export class CampaignFixtures {
         for (const contact of contacts.docs) {
           if (
             this.owned.contact.has(contact.id) ||
-            this.hasMarker(contact.name, contact.email, contact.phone)
+            this.hasMarker(contact.name, contact.email, contact.phones?.[0]?.value ?? null)
           ) {
             this.own('contact', contact)
           }

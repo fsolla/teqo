@@ -25,14 +25,14 @@ const contactPhoneHook = Contact.hooks?.beforeValidate?.[0]
 
 type ContactPhoneHookArgs = Parameters<NonNullable<typeof contactPhoneHook>>[0]
 
-const runContactPhoneHook = async (phone: string) => {
+const runContactPhoneHook = async (phones: unknown) => {
   if (typeof contactPhoneHook !== 'function') {
     throw new Error('Expected Contact.beforeValidate phone hook.')
   }
 
-  const data = { phone }
+  const data: { phones?: unknown } = { phones }
   await contactPhoneHook(stub<ContactPhoneHookArgs>({ data }))
-  return data.phone
+  return data.phones
 }
 
 describe('Contact phone normalization boundary', () => {
@@ -44,21 +44,35 @@ describe('Contact phone normalization boundary', () => {
     const parsed = leadershipCreateSchema.parse({
       municipalities: [1],
       name: 'Liderança normalizada',
-      phone: '+55 (71) 99999-1234',
+      phones: ['+55 (71) 99999-1234'],
     })
 
-    expect(parsed.phone).toBe('71999991234')
-    expect(await runContactPhoneHook(parsed.phone)).toBe('71999991234')
+    expect(parsed.phones).toEqual(['71999991234'])
+    expect(await runContactPhoneHook([{ value: parsed.phones[0] }])).toEqual([
+      { value: '71999991234' },
+    ])
     expect(phoneMocks.normalizeBrazilianPhone).toHaveBeenCalledTimes(1)
   })
 
   it('normalizes a formatted phone sent directly to the Contact API boundary', async () => {
-    expect(await runContactPhoneHook('+55 (71) 99999-1234')).toBe('71999991234')
+    expect(await runContactPhoneHook([{ value: '+55 (71) 99999-1234' }])).toEqual([
+      { value: '71999991234' },
+    ])
     expect(phoneMocks.normalizeBrazilianPhone).toHaveBeenCalledTimes(1)
   })
 
   it('rejects an invalid canonical-length direct API phone without re-normalizing it', async () => {
-    await expect(runContactPhoneHook('00000000000')).rejects.toThrow('Celular brasileiro inválido.')
+    await expect(runContactPhoneHook([{ value: '00000000000' }])).rejects.toThrow(
+      'Celular brasileiro inválido.',
+    )
     expect(phoneMocks.normalizeBrazilianPhone).not.toHaveBeenCalled()
+  })
+
+  it('drops empty entries and rejects a duplicate within the same ficha', async () => {
+    expect(await runContactPhoneHook([{ value: '' }, { value: null }])).toEqual([])
+
+    await expect(
+      runContactPhoneHook([{ value: '71999991234' }, { value: '71999991234' }]),
+    ).rejects.toThrow('Telefone repetido na ficha.')
   })
 })

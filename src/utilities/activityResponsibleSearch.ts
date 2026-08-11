@@ -96,7 +96,7 @@ const searchStateDeputyResponsibles = async (
     where: {
       or: [
         { 'contact.name': { contains: trimmed } },
-        { 'contact.phone': { contains: digits || trimmed } },
+        { 'contact.phones.value': { contains: digits || trimmed } },
       ],
     },
     depth: 1,

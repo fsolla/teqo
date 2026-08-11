@@ -5,7 +5,12 @@ import {
   createLeadershipWizard,
   updateLeadershipWizard,
 } from '@/app/(campaign)/campanha/actions/leadership'
-import { optionalFormText, requiredFormText, requiredRelationshipFormValue } from '@/lib/formData'
+import {
+  optionalFormText,
+  repeatedPhoneFormValues,
+  requiredFormText,
+  requiredRelationshipFormValue,
+} from '@/lib/formData'
 import {
   LEADERSHIP_DUPLICATE_MESSAGE,
   LEADERSHIP_INVALID_CONTACT_MESSAGE,
@@ -37,7 +42,7 @@ const parseSupportStatus = (formData: FormData) => {
 
 const wizardFieldsFromForm = (formData: FormData) => ({
   name: requiredFormText(formData, 'name'),
-  phone: requiredFormText(formData, 'phone'),
+  phones: repeatedPhoneFormValues(formData, 'phones'),
   email: optionalFormText(formData, 'email'),
   exclusive: parseExclusive(formData),
   supportStatus: parseSupportStatus(formData),

@@ -6,6 +6,7 @@ import { getPayload } from 'payload'
 
 import { AdvisorDebouncedTextCell } from '@/components/campaign/advisor/AdvisorDebouncedTextCell'
 import { AdvisorPasswordResetButton } from '@/components/campaign/advisor/AdvisorPasswordResetButton'
+import { PhonesFieldEditor } from '@/components/campaign/shared/PhonesFieldEditor'
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
@@ -14,7 +15,11 @@ import { formatBrazilianPhoneInput } from '@/lib/phone'
 import { isPlanilhaPlaceholderEmail } from '@/lib/schemas/advisor'
 import { loadAdvisorDetail } from '@/utilities/advisorData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { sendAdvisorPasswordResetFormAction, updateAdvisorProfileFormAction } from '../formActions'
+import {
+  sendAdvisorPasswordResetFormAction,
+  updateAdvisorContactFormAction,
+  updateAdvisorProfileFormAction,
+} from '../formActions'
 
 export async function generateMetadata({ params }: AdvisorDetailPageProps) {
   const { id: rawId } = await params
@@ -112,6 +117,29 @@ export default async function AdvisorDetailPage({ params }: AdvisorDetailPagePro
           </ul>
         ) : (
           <p className="text-sm text-muted-foreground">Nenhum município atribuído.</p>
+        )}
+      </section>
+
+      <section
+        aria-labelledby="advisor-contact-title"
+        className="flex flex-col gap-2 rounded-xl border p-4"
+      >
+        <h2 id="advisor-contact-title" className="text-base font-medium">
+          Telefones da pessoa
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Todos os números da ficha — o primeiro é o principal (listas, WhatsApp e convites).
+        </p>
+        {advisor.contactID !== null ? (
+          <PhonesFieldEditor
+            defaultValues={advisor.fichaPhones}
+            label="Telefones"
+            saveAction={updateAdvisorContactFormAction}
+            recordId={advisor.contactID}
+            recordIdField="contactId"
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">Ficha de contato ainda não vinculada.</p>
         )}
       </section>
 

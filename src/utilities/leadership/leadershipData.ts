@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { phoneValuesOf, primaryPhoneOf } from '@/lib/phone'
 import { relationshipId } from '@/lib/relationship'
 import type { SupportStatus } from '@/lib/schemas/leadership'
 import { isSupportStatus } from '@/lib/schemas/leadership'
@@ -42,16 +43,23 @@ export type LeadershipRowViewModel = {
 
 const contactSummary = (
   contact: Leadership['contact'],
-): { id: number; name: string; phone: string | null; email: string | null } => {
+): {
+  id: number
+  name: string
+  phone: string | null
+  phones: { value: string }[]
+  email: string | null
+} => {
   if (typeof contact === 'object' && contact !== null) {
     return {
       id: contact.id,
       name: contact.name ?? 'Contato',
-      phone: contact.phone ?? null,
+      phone: primaryPhoneOf(contact.phones),
+      phones: phoneValuesOf(contact.phones).map((value) => ({ value })),
       email: contact.email ?? null,
     }
   }
-  return { id: Number(contact), name: 'Contato', phone: null, email: null }
+  return { id: Number(contact), name: 'Contato', phone: null, phones: [], email: null }
 }
 
 const findMunicipalityLeadershipDocs = async (
@@ -78,6 +86,9 @@ const toWizardLeadershipTile = (doc: Leadership): WizardLeadershipTileViewModel 
   return {
     id: doc.id,
     name: contact.name,
+    phones: (contact.phones ?? [])
+      .map((entry) => entry.value)
+      .filter((value): value is string => Boolean(value)),
     phone: contact.phone,
     email: contact.email,
     supportStatus: isSupportStatus(doc.supportStatus) ? doc.supportStatus : null,
@@ -337,6 +348,8 @@ export const loadLeadershipListPageData = async (
 }
 
 export type LeadershipDetailViewModel = LeadershipRowViewModel & {
+  /** Every number of the ficha, order = priority (C112). */
+  phones: string[]
   municipalityIDs: number[]
   organizationIDs: number[]
   stateDeputyIDs: number[]
@@ -372,6 +385,9 @@ export const loadLeadershipDetail = async (
 
   return {
     ...row,
+    phones: phoneValuesOf(
+      doc.contact && typeof doc.contact === 'object' ? doc.contact.phones : null,
+    ),
     municipalityIDs: (doc.municipalities ?? [])
       .map(relationshipId)
       .filter((id): id is number => id !== null),

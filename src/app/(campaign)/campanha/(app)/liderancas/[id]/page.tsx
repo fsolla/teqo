@@ -97,7 +97,7 @@ export default async function LeadershipDetailPage({ params }: LeadershipDetailP
         leadershipId={leadership.id}
         name={leadership.name}
         email={leadership.email}
-        phone={leadership.phone}
+        phones={leadership.phones}
       />
       {leadership.stateDeputies.length > 0 ? (
         <StateDeputyChips deputies={leadership.stateDeputies} />

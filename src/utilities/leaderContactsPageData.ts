@@ -3,6 +3,7 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
+import { primaryPhoneOf } from '@/lib/phone'
 import type { CampaignUser, Contact, Municipality } from '@/payload-types'
 import { getEngagedLeaderMunicipalityIds } from '@/utilities/campaignAccess'
 import { getSupporterRegistrationConsent } from '@/utilities/campaignConsent'
@@ -36,7 +37,7 @@ const toLeaderContactListItem = (supporter: {
   return {
     id: supporter.id,
     name: typeof contact === 'object' && contact ? contact.name : 'Contato',
-    phone: typeof contact === 'object' && contact ? (contact.phone ?? null) : null,
+    phone: typeof contact === 'object' && contact ? primaryPhoneOf(contact.phones) : null,
     city: typeof contact === 'object' && contact ? (contact.city ?? null) : null,
     municipalityName: typeof municipality === 'object' && municipality ? municipality.name : null,
     createdAt: supporter.createdAt,

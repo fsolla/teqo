@@ -26,7 +26,7 @@ describe('signatureExport', () => {
           id: 1,
           name: 'Maria Silva',
           email: 'maria@example.com',
-          phone: '71999990000',
+          phones: [{ value: '71999990000' }],
           state: 'BA',
           city: 'Salvador',
         }),
@@ -44,7 +44,7 @@ describe('signatureExport', () => {
         id: 2,
         name: 'João Souza',
         email: null,
-        phone: '71988887777',
+        phones: [{ value: '71988887777' }],
         state: 'BA',
         city: 'Feira de Santana',
       })

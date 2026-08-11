@@ -20,9 +20,14 @@ const buildSqlSearchCondition = (terms: SupporterSearchTerms): ReturnType<typeof
   ]
 
   if (terms.normalizedPhone) {
-    searchTerms.push(sql`"contact"."phone" = ${terms.normalizedPhone}`)
+    // Matches ANY of the ficha's numbers (C112) — EXISTS over the join table.
+    searchTerms.push(
+      sql`EXISTS (SELECT 1 FROM "contact_phones" WHERE "contact_phones"."_parent_id" = "contact"."id" AND "contact_phones"."value" = ${terms.normalizedPhone})`,
+    )
   } else if (terms.phoneDigits) {
-    searchTerms.push(sql`"contact"."phone" ILIKE ${`%${terms.phoneDigits}%`}`)
+    searchTerms.push(
+      sql`EXISTS (SELECT 1 FROM "contact_phones" WHERE "contact_phones"."_parent_id" = "contact"."id" AND "contact_phones"."value" ILIKE ${`%${terms.phoneDigits}%`})`,
+    )
   }
 
   return sql`(${sql.join(searchTerms, sql` OR `)})`

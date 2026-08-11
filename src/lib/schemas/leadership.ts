@@ -1,8 +1,7 @@
 import { z } from 'zod'
 
-import { contactFieldUpdateSchema } from '@/lib/schemas/contact'
+import { contactFieldUpdateSchema, contactPhonesSchema } from '@/lib/schemas/contact'
 import {
-  brazilianMobile,
   optionalPersistedEmail,
   positiveRelationshipId,
   trimmedNullableText,
@@ -91,7 +90,7 @@ export const leadershipCreateSchema = z.object({
   organizations: organizationsArraySchema.optional(),
   stateDeputies: stateDeputiesArraySchema.optional(),
   name: z.string().trim().min(2).max(120),
-  phone: brazilianMobile,
+  phones: contactPhonesSchema.min(1, 'Informe ao menos um celular.'),
   email: optionalPersistedEmail,
   gender: z.enum(leadershipGenders).optional(),
   exclusive: z.boolean().default(true),
@@ -113,7 +112,7 @@ export type LeadershipInternalUpdateInput = z.input<typeof leadershipInternalUpd
 
 const leadershipWizardFieldsSchema = z.object({
   name: z.string().trim().min(2).max(120),
-  phone: brazilianMobile,
+  phones: contactPhonesSchema.min(1, 'Informe ao menos um celular.'),
   email: optionalPersistedEmail,
   exclusive: z.boolean().default(true),
   supportStatus: z.enum(leadershipSupportStatuses).default('a_abordar'),

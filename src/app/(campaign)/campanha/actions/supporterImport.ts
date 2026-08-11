@@ -224,28 +224,35 @@ export const previewSupporterImportText = async (
   if (candidatePhones.length > 0) {
     const contacts = await payload.find({
       collection: 'contact',
-      where: { phone: { in: candidatePhones } },
+      where: { 'phones.value': { in: candidatePhones } },
       depth: 0,
       // No LIMIT: a phone can now legitimately match many fichas (C111), so a
       // finite limit would silently miss a shared phone past the cutoff and
       // the preview would promise rows the confirm then aborts.
       limit: 0,
       pagination: false,
-      select: { phone: true },
+      select: { phones: { value: true } },
       overrideAccess: true,
     })
     // C111 — the phone is not unique: a CSV phone resolving to two or more
     // fichas cannot be matched to a person, so every row with that phone is
-    // flagged for manual resolution (never a silent "last one wins").
+    // flagged for manual resolution (never a silent "last one wins"). Keyed by
+    // the CSV phone ITSELF, not the ficha's primary: the JOIN matched any
+    // position, so a number carried as secondary by two fichas must be shared
+    // here — exactly what the confirm's fail-closed check will abort on.
+    const candidatePhoneSet = new Set(candidatePhones)
     const contactByPhone = new Map<string, number>()
     const sharedPhones = new Set<string>()
     for (const doc of contacts.docs) {
-      if (!doc.phone) continue
-      if (contactByPhone.has(doc.phone)) {
-        sharedPhones.add(doc.phone)
-        continue
+      for (const entry of doc.phones ?? []) {
+        const phone = entry.value
+        if (!phone || !candidatePhoneSet.has(phone)) continue
+        if (contactByPhone.has(phone)) {
+          sharedPhones.add(phone)
+          continue
+        }
+        contactByPhone.set(phone, doc.id)
       }
-      contactByPhone.set(doc.phone, doc.id)
     }
     const contactIDs = [...contactByPhone.values()]
 

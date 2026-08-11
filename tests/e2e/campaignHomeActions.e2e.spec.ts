@@ -357,7 +357,7 @@ test.describe('Wizard — atualizar liderança (B70)', () => {
     }).toPass({ timeout: 15_000 })
 
     await page.getByLabel('Nome').fill(`Liderança B70 ${suffix}`)
-    await page.getByLabel('Celular').fill(`719${suffix}`)
+    await page.getByRole('textbox', { name: 'Celular 1' }).fill(`719${suffix}`)
     await page.getByRole('button', { name: 'Salvar' }).click()
 
     await expect(page.getByRole('heading', { name: 'Quem coordena por aqui?' })).toBeVisible({

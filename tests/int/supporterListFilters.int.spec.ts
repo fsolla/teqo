@@ -46,7 +46,7 @@ describe('supporterListFilters', () => {
           or: [
             { 'contact.name': { contains: '(71) 98888-7777' } },
             { 'contact.city': { contains: '(71) 98888-7777' } },
-            { 'contact.phone': { equals: '71988887777' } },
+            { 'contact.phones.value': { equals: '71988887777' } },
           ],
         },
       ],

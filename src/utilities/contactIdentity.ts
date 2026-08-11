@@ -10,16 +10,19 @@ type ContactIdentityRequest = PayloadTransactionRequest | PayloadRequest
 
 /**
  * Find-or-create the normalized `Contact` ficha for a person, inside the
- * caller's transaction. With a phone, the advisory lock is acquired HERE and
- * an existing ficha with that phone is reused — but only when the phone is
- * unambiguous (exactly one ficha): that is the phone-matching dedupe C6/C99
- * keeps for re-imports and re-registration of the SAME person. When the phone
- * already belongs to TWO OR MORE fichas there is no person the phone can
- * identify — C111 — so a fresh ficha is created (the identity of the person
- * being created is the ficha just written; never a guess among the existing
- * ones). Without a phone, a fresh name-only ficha is created. Every "cria ou
- * vincula a ficha" path shares one owner for the "BA default + shared-phone"
- * policy.
+ * caller's transaction. With phones, the advisory locks are acquired HERE for
+ * every typed number and an existing ficha that already carries the PRIMARY
+ * (first) phone is reused — but only when that phone is unambiguous (exactly
+ * one ficha): that is the phone-matching dedupe C6/C99 keeps for re-imports
+ * and re-registration of the SAME person. When the primary phone already
+ * belongs to TWO OR MORE fichas there is no person the phone can identify —
+ * C111 — so a fresh ficha is created (the identity of the person being
+ * created is the ficha just written; never a guess among the existing ones).
+ * The remaining typed numbers follow the ficha wherever it lands: they fill
+ * the fresh ficha, or are appended (only the ones it lacks, at the END — a
+ * re-registration never reorders the mesa's priority). Without phones, a
+ * fresh name-only ficha is created. Every "cria ou vincula a ficha" path
+ * shares one owner for the "BA default + shared-phone" policy.
  *
  * Callers must already be inside an active Payload transaction (the advisory
  * lock requires it) and authorized to own the write (staff creation flows run
@@ -29,7 +32,7 @@ type ContactIdentityRequest = PayloadTransactionRequest | PayloadRequest
 export const findOrCreateContactByPhone = async ({
   payload,
   req,
-  phone,
+  phones,
   name,
   email,
   city,
@@ -37,18 +40,22 @@ export const findOrCreateContactByPhone = async ({
 }: {
   payload: Payload
   req: ContactIdentityRequest
-  phone: string | null
+  phones: string[]
   name: string
   email?: string | null
   city?: string | null
   gender?: Contact['gender'] | null
 }): Promise<{ contactID: number; reused: boolean }> => {
-  if (phone) {
-    await acquireContactPhoneLocks(payload, req, [phone])
+  const primary = phones[0] ?? null
+
+  if (primary) {
+    await acquireContactPhoneLocks(payload, req, phones)
 
     const contacts = await payload.find({
       collection: 'contact',
-      where: { phone: { equals: phone } },
+      // Matches ANY of the ficha's phones — the primary typed here is the
+      // dedupe key, but it may sit at any position of the existing ficha.
+      where: { 'phones.value': { equals: primary } },
       depth: 0,
       limit: 2,
       pagination: false,
@@ -59,7 +66,24 @@ export const findOrCreateContactByPhone = async ({
     })
 
     if (contacts.totalDocs === 1) {
-      return { contactID: contacts.docs[0]!.id, reused: true }
+      const existing = contacts.docs[0]!
+      const existingPhones = (existing.phones ?? [])
+        .map((entry) => entry.value)
+        .filter((value): value is string => Boolean(value))
+      const missing = phones.filter((phone) => !existingPhones.includes(phone))
+      if (missing.length > 0) {
+        await payload.update({
+          collection: 'contact',
+          id: existing.id,
+          data: {
+            phones: [...existingPhones, ...missing].map((value) => ({ value })),
+          },
+          depth: 0,
+          overrideAccess: true,
+          req,
+        })
+      }
+      return { contactID: existing.id, reused: true }
     }
   }
 
@@ -67,7 +91,7 @@ export const findOrCreateContactByPhone = async ({
     collection: 'contact',
     data: {
       name,
-      phone,
+      phones: phones.map((value) => ({ value })),
       email: email ?? null,
       state: 'BA' as Contact['state'],
       city: city ?? null,

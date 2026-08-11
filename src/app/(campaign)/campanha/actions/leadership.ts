@@ -6,6 +6,7 @@ import type { Payload } from 'payload'
 import { nextLeadershipAdvisorIdsAfterMembership } from '@/lib/leadershipAdvisorMembership'
 import { nextMunicipalityIdsAfterLeadershipMembership } from '@/lib/leadershipMunicipalityMembership'
 import { nextStateDeputyIdsAfterMembership } from '@/lib/leadershipStateDeputyMembership'
+import { reorderWithPrimaryPhone } from '@/lib/phone'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 import {
   LEADERSHIP_ADVISORS_UNRESTRICTED_MESSAGE,
@@ -81,8 +82,8 @@ const isUniqueLeadershipConflict = (error: unknown): boolean => {
 }
 
 type LeadershipCreateData = ReturnType<typeof leadershipCreateSchema.parse>
-type ValidatedLeadershipCreateData = Omit<LeadershipCreateData, 'phone'> & {
-  phone?: string | null
+type ValidatedLeadershipCreateData = Omit<LeadershipCreateData, 'phones'> & {
+  phones?: string[]
 }
 
 const createValidatedLeadershipRecord = async (
@@ -118,7 +119,7 @@ const createValidatedLeadershipRecord = async (
         const { contactID, reused } = await findOrCreateContactByPhone({
           payload,
           req,
-          phone: data.phone ?? null,
+          phones: data.phones ?? [],
           name: data.name,
           email: data.email,
           city: city ?? undefined,
@@ -254,18 +255,25 @@ export const updateLeadershipContactRecord = async (
         throw new Error(LEADERSHIP_INVALID_CONTACT_MESSAGE)
       }
 
-      const contactData: Partial<Pick<Contact, 'name' | 'phone' | 'email'>> = {}
+      const contactData: Partial<Pick<Contact, 'name' | 'email'>> & {
+        phones?: { value: string }[]
+      } = {}
 
       if (data.field === 'name') {
         contactData.name = data.name
       } else if (data.field === 'email') {
         contactData.email = data.email ?? null
       } else if (data.field === 'phone') {
-        if (data.phone) {
-          contactData.phone = data.phone
-        } else {
-          contactData.phone = null
-        }
+        // Inline cell edit = set the PRIMARY phone, keeping the rest of the
+        // list untouched: the new number goes first (an earlier occurrence
+        // moves, never duplicates) and clearing removes the primary.
+        const contact = current.contact
+        contactData.phones = reorderWithPrimaryPhone(
+          typeof contact === 'object' && contact !== null ? contact.phones : null,
+          data.phone,
+        ).map((value) => ({ value }))
+      } else if (data.field === 'phones') {
+        contactData.phones = data.phones.map((value) => ({ value }))
       }
 
       // bypass: contact write is staff-scoped via leadership access check above.
@@ -336,7 +344,7 @@ const updateLeadershipWizardRecord = async (
         id: contactID,
         data: {
           name: data.name,
-          phone: data.phone,
+          phones: data.phones.map((value) => ({ value })),
           email: data.email,
         },
         depth: 0,
@@ -370,7 +378,7 @@ const createLeadershipWizardRecord = async (
   const data = leadershipWizardCreateSchema.parse(input)
   return createValidatedLeadershipRecord(payload, actor, {
     name: data.name,
-    phone: data.phone,
+    phones: data.phones,
     email: data.email,
     municipalities: [data.municipalityId],
     exclusive: data.exclusive,
@@ -415,7 +423,7 @@ export const createMunicipalityLeadershipRecord = async (
   const data = municipalityLeadershipCreateSchema.parse(input)
   const leadership = await createValidatedLeadershipRecord(payload, actor, {
     name: data.name,
-    phone: null,
+    phones: [],
     municipalities: [data.municipalityId],
     email: undefined,
     exclusive: true,

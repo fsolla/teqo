@@ -37,7 +37,7 @@ const createFormData = (municipalityIds: number[], name: string, phone: string) 
   for (const municipalityId of municipalityIds)
     formData.append('municipalities', String(municipalityId))
   formData.set('name', name)
-  formData.set('phone', phone)
+  formData.append('phones', phone)
   formData.set('supportStatus', 'engajado')
   return formData
 }
@@ -82,7 +82,7 @@ describe('campaign leadership exported form actions', () => {
 
     const contacts = await payload.find({
       collection: 'contact',
-      where: { phone: { equals: phone } },
+      where: { 'phones.value': { equals: phone } },
       limit: 2,
       depth: 0,
     })
@@ -114,14 +114,14 @@ describe('campaign leadership exported form actions', () => {
 
     const contacts = await payload.find({
       collection: 'contact',
-      where: { phone: { equals: phone } },
+      where: { 'phones.value': { equals: phone } },
       limit: 2,
       depth: 0,
     })
     expect(contacts.totalDocs).toBe(1)
     expect(contacts.docs[0]).toMatchObject({
       name: 'Francisco',
-      phone,
+      phones: [{ value: phone }],
     })
     const leaderships = await payload.find({
       collection: 'leadership',
@@ -145,7 +145,7 @@ describe('campaign leadership exported form actions', () => {
     const formData = new FormData()
     formData.append('municipalities', String(municipality.id))
     formData.set('name', 'Liderança mínima')
-    formData.set('phone', phone)
+    formData.append('phones', phone)
     authState.user = coordinator
 
     await expectRedirectTo(createLeadershipFormAction({}, formData), '/campanha/liderancas/')
@@ -153,14 +153,14 @@ describe('campaign leadership exported form actions', () => {
     const contact = (
       await payload.find({
         collection: 'contact',
-        where: { phone: { equals: phone } },
+        where: { 'phones.value': { equals: phone } },
         limit: 1,
         depth: 0,
       })
     ).docs[0]!
     expect(contact).toMatchObject({
       name: 'Liderança mínima',
-      phone,
+      phones: [{ value: phone }],
       email: null,
       gender: null,
     })
@@ -188,7 +188,7 @@ describe('campaign leadership exported form actions', () => {
     await createLeadershipRecord(payload, coordinator, {
       municipalities: [municipality.id],
       name: 'Pessoa já cadastrada',
-      phone,
+      phones: [phone],
       supportStatus: 'engajado',
     })
 
@@ -207,7 +207,7 @@ describe('campaign leadership exported form actions', () => {
     const created = await createLeadershipRecord(payload, coordinator, {
       municipalities: [municipality.id],
       name: 'Liderança com campos internos',
-      phone: campaignFixtures().phone(),
+      phones: [campaignFixtures().phone()],
       exclusive: true,
       notes: 'Nota para limpar',
     })
@@ -234,14 +234,14 @@ describe('campaign leadership exported form actions', () => {
     const defaulted = await createLeadershipRecord(payload, coordinator, {
       municipalities: [municipality.id],
       name: 'Liderança exclusiva default',
-      phone: campaignFixtures().phone(),
+      phones: [campaignFixtures().phone()],
     })
     expect(defaulted.exclusive).toBe(true)
 
     const divided = await createLeadershipRecord(payload, coordinator, {
       municipalities: [municipality.id],
       name: 'Liderança dividida',
-      phone: campaignFixtures().phone(),
+      phones: [campaignFixtures().phone()],
       exclusive: false,
     })
     expect(divided.exclusive).toBe(false)
@@ -258,7 +258,7 @@ describe('campaign leadership exported form actions', () => {
     const otherLeadership = await createLeadershipRecord(payload, coordinator, {
       municipalities: [other.id],
       name: 'Liderança fora do escopo',
-      phone: campaignFixtures().phone(),
+      phones: [campaignFixtures().phone()],
       supportStatus: 'engajado',
     })
     authState.user = advisor
@@ -288,7 +288,7 @@ describe('campaign leadership exported form actions', () => {
     const existing = await createLeadershipRecord(payload, coordinator, {
       municipalities: [municipality.id],
       name: 'Registro protegido',
-      phone: campaignFixtures().phone(),
+      phones: [campaignFixtures().phone()],
       supportStatus: 'engajado',
     })
     authState.user = leaderAccount

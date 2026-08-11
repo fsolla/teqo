@@ -337,7 +337,7 @@ describe('leader supporter creation scope', () => {
     const supporter = await withSupporterRegistrationConsent(() =>
       createLeaderSupporterRecord(payload, leaderAccount, {
         name: fixtures.value('Apoiador'),
-        phone: fixtures.phone(),
+        phones: [fixtures.phone()],
         city: 'Salvador',
         municipality: linked.id,
         consentAccepted: true,
@@ -367,7 +367,7 @@ describe('leader supporter creation scope', () => {
       withSupporterRegistrationConsent(() =>
         createLeaderSupporterRecord(payload, leaderAccount, {
           name: fixtures.value('Apoiador'),
-          phone: fixtures.phone(),
+          phones: [fixtures.phone()],
           city: 'Salvador',
           municipality: outside.id,
           consentAccepted: true,
@@ -384,7 +384,7 @@ describe('leader supporter creation scope', () => {
     await expect(
       createLeaderSupporterRecord(payload, advisor, {
         name: fixtures.value('Apoiador'),
-        phone: fixtures.phone(),
+        phones: [fixtures.phone()],
         city: 'Salvador',
         municipality: municipality.id,
         consentAccepted: true,

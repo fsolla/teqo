@@ -69,7 +69,7 @@ export default async function StateDeputyDetailPage({ params }: StateDeputyDetai
         stateDeputyId={stateDeputy.id}
         name={stateDeputy.name}
         email={stateDeputy.email}
-        phone={stateDeputy.phone}
+        phones={stateDeputy.phones}
       />
       {stateDeputy.notes ? (
         <p className="whitespace-pre-wrap text-sm text-muted-foreground">{stateDeputy.notes}</p>

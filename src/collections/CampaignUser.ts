@@ -146,7 +146,7 @@ const resolveContactForAccount = async ({
   const { contactID } = await findOrCreateContactByPhone({
     payload,
     req,
-    phone: typeof phone === 'string' && phone.length > 0 ? phone : null,
+    phones: typeof phone === 'string' && phone.length > 0 ? [phone] : [],
     name,
     email: email && !isPlanilhaPlaceholderEmail(email) ? email : null,
   })
@@ -205,7 +205,11 @@ const ensureCampaignUserContactIdentity: CollectionBeforeChangeHook<CampaignUser
   const linkedContactID = relationshipId(originalDoc?.contact)
 
   if (linkedContactID !== null) {
-    const contactData: { name?: string; email?: string | null; phone?: string } = {}
+    const contactData: {
+      name?: string
+      email?: string | null
+      phones?: { value: string }[]
+    } = {}
 
     if (data.name !== undefined && data.name !== originalDoc?.name) {
       contactData.name = data.name
@@ -216,14 +220,32 @@ const ensureCampaignUserContactIdentity: CollectionBeforeChangeHook<CampaignUser
       }
     }
     // Clearing the account's phone never clears the ficha's: the ficha's
-    // phone is the person's dedupe key across every join (supporter,
+    // phones are the person's dedupe keys across every join (supporter,
     // leadership, dobradinha), and the account edit is not a ficha edit.
+    // A changed account phone is APPENDED when the ficha lacks it (never
+    // reordering the mesa's priority, never removing the previous number);
+    // creation still seeds it as the primary via find-or-create.
     if (
       typeof data.phone === 'string' &&
       data.phone.length > 0 &&
       data.phone !== originalDoc?.phone
     ) {
-      contactData.phone = data.phone
+      const contact = await req.payload.findByID({
+        collection: 'contact',
+        id: linkedContactID,
+        depth: 0,
+        select: { phones: { value: true } },
+        // Intentional admin bypass: same account-scoped policy as the ficha
+        // write below — the read only derives the append target.
+        overrideAccess: true,
+        req,
+      })
+      const existingPhones = (contact.phones ?? [])
+        .map((entry) => entry.value)
+        .filter((value): value is string => Boolean(value))
+      if (!existingPhones.includes(data.phone)) {
+        contactData.phones = [...existingPhones, data.phone].map((value) => ({ value }))
+      }
     }
 
     if (Object.keys(contactData).length === 0) return data

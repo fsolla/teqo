@@ -2,19 +2,21 @@
 
 import { updateStateDeputyContactFormAction } from '@/app/(campaign)/campanha/(app)/dobradinhas/formActions'
 import { CampaignInlineEditableCell } from '@/components/campaign/shared/CampaignInlineEditableCell'
+import { PhonesFieldEditor } from '@/components/campaign/shared/PhonesFieldEditor'
 
 type StateDeputyContactSectionProps = {
   stateDeputyId: number
   name: string
   email: string | null
-  phone: string | null
+  /** Every number of the ficha, order = priority (C112) — primary first. */
+  phones: string[]
 }
 
 export const StateDeputyContactSection = ({
   stateDeputyId,
   name,
   email,
-  phone,
+  phones,
 }: StateDeputyContactSectionProps) => (
   <section aria-labelledby="state-deputy-contact-title" className="flex flex-col gap-3">
     <h2 id="state-deputy-contact-title" className="text-base font-medium">
@@ -31,6 +33,7 @@ export const StateDeputyContactSection = ({
             value={name}
             label="Nome"
             formAction={updateStateDeputyContactFormAction}
+            href={`/campanha/dobradinhas/${stateDeputyId}`}
           />
         </dd>
       </div>
@@ -44,19 +47,21 @@ export const StateDeputyContactSection = ({
             value={email}
             label="E-mail"
             formAction={updateStateDeputyContactFormAction}
+            readBehavior="copy"
           />
         </dd>
       </div>
       <div className="flex flex-col gap-1">
-        <dt className="text-sm text-muted-foreground">Telefone</dt>
+        <dt className="text-sm text-muted-foreground">
+          Telefones <span className="font-normal">(o primeiro é o principal)</span>
+        </dt>
         <dd>
-          <CampaignInlineEditableCell
+          <PhonesFieldEditor
+            defaultValues={phones}
+            label="Telefones"
+            saveAction={updateStateDeputyContactFormAction}
             recordId={stateDeputyId}
             recordIdField="stateDeputyId"
-            field="phone"
-            value={phone}
-            label="Telefone"
-            formAction={updateStateDeputyContactFormAction}
           />
         </dd>
       </div>
