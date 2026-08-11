@@ -7,11 +7,10 @@ import { createMunicipalityUpdateFormAction } from '@/app/(campaign)/campanha/(a
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
 import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
-import { Button } from '@/components/ui/button'
+import { WizardStepFormChrome } from '@/components/campaign/shared/WizardStepFormChrome'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
-import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { wizardPreviousHref, wizardReturnHref } from '@/lib/campaignActionRoutes'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
@@ -60,11 +59,11 @@ export const WizardUpdateBodyStep = ({
       municipalityLabel={municipalityName}
       contentFocus="none"
     >
-      <form
+      <WizardStepFormChrome
         action={submitAction}
-        className="flex flex-col gap-6"
-        aria-busy={isPending || undefined}
-        data-pending={isPending ? '' : undefined}
+        isPending={isPending}
+        pendingAnnouncement="Salvando atualização."
+        ctaLabel={WIZARD_UPDATE_SAVE_LABEL}
       >
         <input type="hidden" name="municipalityId" value={municipalityId} />
         <input type="hidden" name="municipalitySlug" value={municipalitySlug} />
@@ -143,24 +142,7 @@ export const WizardUpdateBodyStep = ({
         )}
 
         {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}
-
-        <div className="flex justify-end">
-          <Button type="submit" disabled={isPending} className="min-h-11 min-w-[7rem]">
-            {isPending ? (
-              <>
-                <Spinner data-icon="inline-start" aria-hidden="true" />
-                Salvando…
-              </>
-            ) : (
-              WIZARD_UPDATE_SAVE_LABEL
-            )}
-          </Button>
-        </div>
-
-        <div aria-live="polite" className="sr-only">
-          {isPending ? 'Salvando atualização.' : null}
-        </div>
-      </form>
+      </WizardStepFormChrome>
     </CampaignWizardShell>
   )
 }
