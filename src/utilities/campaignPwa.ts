@@ -5,6 +5,7 @@ export const CAMPAIGN_PWA_THEME_COLOR = '#c51414'
 const CAMPAIGN_PWA_BACKGROUND_COLOR = '#ffffff'
 export const CAMPAIGN_CACHE_PREFIX = 'campanha-'
 export const CAMPAIGN_PWA_INSTALL_TOAST_KEY = 'pwa-install-toast-dismissed'
+export const CAMPAIGN_PUSH_OPT_IN_DISMISSED_KEY = 'campaign-push-opt-in-dismissed'
 export const CAMPAIGN_PWA_CLEAR_CACHES_MESSAGE = 'clear-campaign-caches' as const
 
 const MANIFEST_ICONS = [
