@@ -11,7 +11,7 @@ Appetite: ~2–2,5 dias eng; um outcome verificável — candidato remarca um co
 
 ## Intenção
 
-Com o espelho do C114, o Teqo escreve no Google — mas a agenda só é *oficial* de verdade quando o caminho inverso existe: o candidato (e pessoas escolhidas) editam o compromisso na própria agenda do Google — remarcar horário, mudar título, cancelar — e isso volta para o Teqo e propaga para todo mundo que segue, com notificação. O Google Calendar vira um segundo ponto de entrada da agenda da campanha, não só um espelho. Sem isso, quem decide continuaria preso ao Teqo ou ficaria com a agenda divergente.
+Com o espelho do C114, o Teqo escreve no Google — mas a agenda só é _oficial_ de verdade quando o caminho inverso existe: o candidato (e pessoas escolhidas) editam o compromisso na própria agenda do Google — remarcar horário, mudar título, cancelar — e isso volta para o Teqo e propaga para todo mundo que segue, com notificação. O Google Calendar vira um segundo ponto de entrada da agenda da campanha, não só um espelho. Sem isso, quem decide continuaria preso ao Teqo ou ficaria com a agenda divergente.
 
 ## Persona e fluxo
 
@@ -40,7 +40,7 @@ Com o espelho do C114, o Teqo escreve no Google — mas a agenda só é *oficial
 
 - **Vou apresentar dados?** Não — sincronização de eventos; a "forma" é o evento do Google Calendar.
 - **Decisões desbloqueadas:** nenhuma leitura nova no Teqo.
-- **Forma:** *adiada*.
+- **Forma:** _adiada_.
 
 ## Direção no codebase (hipótese)
 
@@ -77,7 +77,7 @@ Com o espelho do C114, o Teqo escreve no Google — mas a agenda só é *oficial
 - Direção inversa Google → Teqo só para **editar/remarcar/cancelar atividades existentes** (sem criação em v1).
 - Regra de conflito automática (nunca tela manual em v1).
 - Acessos do Teqo (incluindo leader lockdown) valem também para o que vem do Google.
-- **Teqo permanece a fonte de verdade do domínio:** o Google é superfície de edição (horário/título/cancelamento) + projeção — nunca autoritativo. O evento no Google carrega vínculo com a atividade; a edição vinda de lá *vira* edição no Teqo e o Teqo **reescreve o evento a partir do próprio estado** (idempotente, corrigindo campos estruturais que o Google tentar mudar). Se o Google desligar, a agenda do Teqo fica intacta; se o Teqo desligar, o calendário é um snapshot congelado.
+- **Teqo permanece a fonte de verdade do domínio:** o Google é superfície de edição (horário/título/cancelamento) + projeção — nunca autoritativo. O evento no Google carrega vínculo com a atividade; a edição vinda de lá _vira_ edição no Teqo e o Teqo **reescreve o evento a partir do próprio estado** (idempotente, corrigindo campos estruturais que o Google tentar mudar). Se o Google desligar, a agenda do Teqo fica intacta; se o Teqo desligar, o calendário é um snapshot congelado.
 
 ## Referências
 

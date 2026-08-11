@@ -11,7 +11,7 @@ Appetite: ~2 dias eng; um outcome verificável — a equipe vê a agenda da camp
 
 ## Intenção
 
-O "link de import" (C16) entrega um espelho que o Google re-busca em cadência própria (horas de atraso, sem notificação — o defeito C113 é só a ponta). Isso não sustenta a agenda *oficial* da campanha: a equipe e o candidato vivem no Google Calendar do celular. Com a API oficial do Google, o Teqo pode **escrever** os compromissos num calendário compartilhado da campanha: criar/remarcar/cancelar em Teqo aparece nos calendários de quem segue em minutos, e o Google cuida dos avisos — conforme as configurações de notificação de cada pessoa que segue, exatamente o que o pedido assume ("if their personal calendar is set to notify"). O Teqo continua a fonte da verdade.
+O "link de import" (C16) entrega um espelho que o Google re-busca em cadência própria (horas de atraso, sem notificação — o defeito C113 é só a ponta). Isso não sustenta a agenda _oficial_ da campanha: a equipe e o candidato vivem no Google Calendar do celular. Com a API oficial do Google, o Teqo pode **escrever** os compromissos num calendário compartilhado da campanha: criar/remarcar/cancelar em Teqo aparece nos calendários de quem segue em minutos, e o Google cuida dos avisos — conforme as configurações de notificação de cada pessoa que segue, exatamente o que o pedido assume ("if their personal calendar is set to notify"). O Teqo continua a fonte da verdade.
 
 ## Persona e fluxo
 
@@ -20,7 +20,7 @@ O "link de import" (C16) entrega um espelho que o Google re-busca em cadência p
 - **Fluxo desejado:** coordenador ativa a "Agenda da Campanha" no Google (uma vez, na agenda do Teqo) → a equipe adiciona o calendário pelo link (um clique) → criar/remarcar/cancelar em Teqo reflete no Google em minutos → quem segue recebe aviso conforme as próprias configurações de notificação; núcleo (candidato/coordenação) pode receber aviso garantido como participante.
 - **Anti-goals de produto:** não é bidirecional (Google não volta — é C115); não substitui o link de import iCal (fica para quem não usa Google e para recortes filtrados); não é obrigar OAuth por pessoa (o modelo é calendário compartilhado, não escrever no calendário pessoal de cada um); Teqo continua SoT.
 
-**Por que não OAuth por pessoa (decisão de produto, não tecnicismo):** escrever no calendário pessoal de cada staff via OAuth individual não gera notificação (o Google não avisa eventos no próprio calendário — aviso vem de ser participante), cria N cópias divergentes (remarcou um, o resto fica velho — o oposto de agenda oficial), custa N consentimentos/tokens/revogações (app não-verificado do Google expira token em dias) e quebra o RBAC do Teqo (o Google não conhece escopo por município nem leader lockdown; num calendário compartilhado, o access do Teqo vale). OAuth por pessoa só teria valor futuro na direção de *leitura* (ver agenda pessoal p/ conflito de horário) — item separado.
+**Por que não OAuth por pessoa (decisão de produto, não tecnicismo):** escrever no calendário pessoal de cada staff via OAuth individual não gera notificação (o Google não avisa eventos no próprio calendário — aviso vem de ser participante), cria N cópias divergentes (remarcou um, o resto fica velho — o oposto de agenda oficial), custa N consentimentos/tokens/revogações (app não-verificado do Google expira token em dias) e quebra o RBAC do Teqo (o Google não conhece escopo por município nem leader lockdown; num calendário compartilhado, o access do Teqo vale). OAuth por pessoa só teria valor futuro na direção de _leitura_ (ver agenda pessoal p/ conflito de horário) — item separado.
 
 ### Esboço de fluxo (B)
 
@@ -44,7 +44,7 @@ O "link de import" (C16) entrega um espelho que o Google re-busca em cadência p
 
 - **Vou apresentar dados?** Não — a agenda é exportada para o calendário Google; a "forma" do evento é a do Google Calendar, decisão de apresentação do Google.
 - **Decisões desbloqueadas:** nenhuma decisão de leitura no Teqo (o espelho é saída).
-- **Forma:** *adiada* — aqui só a restrição de produto "sem PII além do necessário no evento".
+- **Forma:** _adiada_ — aqui só a restrição de produto "sem PII além do necessário no evento".
 
 ## Direção no codebase (hipótese)
 
