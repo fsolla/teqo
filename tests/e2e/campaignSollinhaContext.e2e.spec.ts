@@ -8,29 +8,71 @@ const DEFAULT_REPLY = 'Resposta mockada com [Municípios](/campanha/municipios).
 const EXTERNAL_REPLY = 'Resposta mockada com [portal da saúde](https://www.saude.ba.gov.br/).'
 
 /**
+ * The SSE body the mocks reply with. Chunks follow the SDK v7 UI-message-stream
+ * wire format (start / text-start / text-delta / text-end / finish) — a bare
+ * legacy `{"type":"text"}` chunk fails the client schema and the chat would
+ * never settle.
+ */
+const streamBody = (reply: string) =>
+  [
+    'data: {"type":"start"}\n\n',
+    'data: {"type":"text-start","id":"t1"}\n\n',
+    `data: {"type":"text-delta","id":"t1","delta":${JSON.stringify(reply)}}\n\n`,
+    'data: {"type":"text-end","id":"t1"}\n\n',
+    'data: {"type":"finish","finishReason":"stop"}\n\n',
+  ].join('')
+
+/**
  * Mock the AI endpoint with a minimal SSE stream so sending a message neither
- * needs a DeepSeek API key nor hits the real rate limiter. The chunks follow
- * the SDK v7 UI-message-stream wire format (start / text-start / text-delta /
- * text-end / finish) — a bare legacy `{"type":"text"}` chunk fails the client
- * schema and the chat would never settle. The reply carries a markdown link so
- * the "navigate without reload" path has a real anchor.
+ * needs a DeepSeek API key nor hits the real rate limiter. The reply carries a
+ * markdown link so the "navigate without reload" path has a real anchor.
  */
 const mockAiChat = (page: Page, reply: string = DEFAULT_REPLY) =>
   page.route('**/campanha/api/ai-chat', async (route) => {
     await route.fulfill({
       status: 200,
       headers: { 'Content-Type': 'text/event-stream' },
-      body: [
-        'data: {"type":"start"}\n\n',
-        'data: {"type":"text-start","id":"t1"}\n\n',
-        `data: {"type":"text-delta","id":"t1","delta":${JSON.stringify(reply)}}\n\n`,
-        'data: {"type":"text-end","id":"t1"}\n\n',
-        'data: {"type":"finish","finishReason":"stop"}\n\n',
-      ].join(''),
+      body: streamBody(reply),
     })
   })
 
+/**
+ * Mock whose FIRST request replies immediately and every later request hangs
+ * until the test calls `release()` — a deterministic window in which the chat
+ * is still busy (`status !== 'ready'`) with a reply blocked, with no stream
+ * timing to race against.
+ */
+const gatedMockAiChat = (page: Page) => {
+  let resolveGate: (() => void) | undefined
+  const gate = new Promise<void>((resolve) => {
+    resolveGate = resolve
+  })
+  let requests = 0
+  void page.route('**/campanha/api/ai-chat', async (route) => {
+    const index = requests
+    requests += 1
+    if (index >= 1) await gate
+    try {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream' },
+        body: streamBody(DEFAULT_REPLY),
+      })
+    } catch {
+      // An early failure may end the test before `release()` — fulfilling on a
+      // closed page rejects, and the test's own error is the signal to read.
+    }
+  })
+  return {
+    release: () => {
+      resolveGate?.()
+    },
+    requests: () => requests,
+  }
+}
+
 const MESSAGE = 'Mensagem que sobrevive ao reload'
+const SECOND_MESSAGE = 'Segunda pergunta'
 
 const openChatAndSend = async (page: Page) => {
   await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
@@ -256,5 +298,72 @@ test.describe('B198 — link de resposta fecha o drawer mobile ao navegar no mes
 
     // The origin tab keeps the conversation reachable — the drawer stays.
     await expect(drawer).toBeVisible()
+  })
+})
+
+test.describe('B199 — fechar o drawer durante streaming persiste fechado no reload', () => {
+  test.beforeEach(async ({ page }) => {
+    test.slow()
+    await mockAiChat(page)
+  })
+
+  test('fechar mid-stream grava open:false e o reload não reabre o drawer', async ({
+    page,
+    campaign,
+  }) => {
+    // Last-registered route wins (LIFO) — overrides the beforeEach mock. The
+    // first exchange replies immediately; the second stays blocked until
+    // `release()`, so the close provably lands while the chat is busy.
+    const gated = gatedMockAiChat(page)
+
+    const user = await campaign.fixtures.createCampaignUser('coordinator', {
+      name: campaign.fixtures.value('Fechar Mid-Stream'),
+    })
+    await page.setViewportSize({ width: 500, height: 800 })
+    await campaign.login(page, user.email!, user.password)
+    await page.goto('/campanha')
+
+    const drawer = await openMobileDrawer(page)
+
+    await openChatAndSend(page)
+    await waitForChatSettled(page)
+    // The stale `open: true` the bug would leave orphaned in the storage.
+    await expect.poll(async () => (await storedSession(page))?.open).toBe(true)
+
+    // Second exchange — the gated reply keeps the chat busy (status !== 'ready').
+    const input = page.getByRole('textbox', { name: 'Pergunte para o Sollinha...' })
+    await input.fill(SECOND_MESSAGE)
+    await input.press('Enter')
+    await expect(page.getByText(SECOND_MESSAGE)).toBeVisible({ timeout: 20_000 })
+    await expect(
+      page.getByRole('button', { name: 'Falar pergunta (voz)' }).filter({ visible: true }),
+    ).toBeDisabled({ timeout: 20_000 })
+
+    // Close while the reply is still blocked: the persist must not wait for
+    // the settle, or a reload would restore the stale `open: true`.
+    await drawer.getByRole('button', { name: 'Fechar' }).click()
+    await expect(drawer).toHaveCount(0)
+    await expect.poll(async () => (await storedSession(page))?.open).toBe(false)
+
+    // Let the reply land: the settle still persists the whole conversation.
+    gated.release()
+    await expect.poll(async () => (await storedSession(page))?.messages?.length).toBe(4)
+    // Both exchanges went through the gated route — the LIFO override worked.
+    expect(gated.requests()).toBe(2)
+
+    // Reload: no ghost drawer, conversation restored.
+    await page.reload()
+    await expect(page.getByRole('dialog', { name: 'Sollinha — Assistente virtual' })).toHaveCount(0)
+    // The FAB is SSR'd; a click that lands before hydration is a silent no-op
+    // (B13/B17 class) — retry until the drawer actually opens.
+    const fab = page.getByRole('button', { name: 'Sollinha — Assistente virtual' })
+    await expect(async () => {
+      await fab.click({ timeout: 1_000 })
+      await expect(page.getByRole('dialog', { name: 'Sollinha — Assistente virtual' })).toBeVisible(
+        { timeout: 1_000 },
+      )
+    }).toPass({ timeout: 15_000 })
+    await expect(page.getByText(MESSAGE)).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByText(SECOND_MESSAGE)).toBeVisible()
   })
 })
