@@ -172,6 +172,17 @@ test.describe('E-mail oculto por padrão nas listas de pessoas (B197)', () => {
     await page.getByRole('button', { name: 'Novo assessor', exact: true }).click()
     await expect(page.getByLabel('E-mail do novo assessor')).toBeVisible()
 
+    // B197+ — the table body only conditions the email column, so every other
+    // column is mandatory in the single source: their checkboxes are locked.
+    await picker.click()
+    const nameCheckbox = page.getByRole('checkbox', { name: 'Nome sempre visível' })
+    await expect(nameCheckbox).toBeChecked()
+    await expect(nameCheckbox).toBeDisabled()
+    const phoneCheckbox = page.getByRole('checkbox', { name: 'Celular sempre visível' })
+    await expect(phoneCheckbox).toBeChecked()
+    await expect(phoneCheckbox).toBeDisabled()
+    await page.keyboard.press('Escape')
+
     // Re-enabling paints the column and the choice survives a reload.
     await picker.click()
     await page.getByRole('checkbox', { name: 'E-mail', exact: true }).click()

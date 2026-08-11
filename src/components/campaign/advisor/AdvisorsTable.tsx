@@ -34,7 +34,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
-import type { CampaignColumnVisibility } from '@/lib/campaignColumnVisibility'
+import {
+  resolveVisibleColumns,
+  toCampaignColumnPickerColumns,
+  type CampaignColumnVisibility,
+} from '@/lib/campaignColumnVisibility'
 import { campaignInlineInputClassName } from '@/lib/campaignInlineInput'
 import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
 import {
@@ -53,6 +57,37 @@ type DraftAdvisor = {
   phone: string
   municipalityIds: number[]
 }
+
+// B197+ — single source for the `<th>`s and the picker menu: a column added
+// here appears in both, and `resolveVisibleColumns` keeps the cookie filtering
+// honest (a `mandatory` column is never dropped). Only what the body renders
+// conditionally is hideable: the cells are hand-wired per column id (draft row
+// AND data row), so `email` is the sole non-mandatory column — the others must
+// stay mandatory or a hidden id would drop the header under a 5-cell body.
+type AdvisorTableColumn = {
+  id: string
+  label: string
+  mandatory?: boolean
+  headerClassName?: string
+  /** Renders the label visually-hidden — the icon-only actions column. */
+  visuallyHiddenLabel?: boolean
+}
+
+const advisorTableColumns: readonly AdvisorTableColumn[] = [
+  { id: 'name', label: 'Nome', mandatory: true, headerClassName: 'w-[20%]' },
+  { id: 'email', label: 'E-mail', headerClassName: 'w-[24%]' },
+  { id: 'phone', label: 'Celular', mandatory: true, headerClassName: 'w-[14%]' },
+  { id: 'municipalities', label: 'Municípios', mandatory: true },
+  {
+    id: 'actions',
+    label: 'Ações',
+    mandatory: true,
+    headerClassName: 'w-28 text-right',
+    visuallyHiddenLabel: true,
+  },
+]
+
+export const advisorPickerColumns = toCampaignColumnPickerColumns(advisorTableColumns)
 
 type AdvisorsTableProps = {
   rows: AdvisorRowViewModel[]
@@ -108,10 +143,15 @@ export const AdvisorsTable = ({
   const [isCreating, startCreate] = useTransition()
 
   // B197 — email starts hidden on this list (cookie default); the picker
-  // writes the cookie and the server re-renders with a fresh value. The
-  // create-draft row below is the ONE exception: email is required to create
-  // an advisor, so its input renders even while the column is hidden.
-  const emailHidden = columnVisibility.hiddenColumnIds.includes('email')
+  // writes the cookie and the server re-renders with a fresh value. B197+:
+  // the visible set is what the `<th>`s render, so this exception below can
+  // never disagree with the header. The create-draft row is the ONE exception:
+  // email is required to create an advisor, so its input renders always.
+  const visibleColumns = resolveVisibleColumns(
+    advisorTableColumns,
+    columnVisibility.hiddenColumnIds,
+  )
+  const emailHidden = !visibleColumns.some((column) => column.id === 'email')
 
   const refresh = () => router.refresh()
 
@@ -220,13 +260,15 @@ export const AdvisorsTable = ({
             <Table className="min-w-[56rem] table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[20%]">Nome</TableHead>
-                  {!emailHidden ? <TableHead className="w-[24%]">E-mail</TableHead> : null}
-                  <TableHead className="w-[14%]">Celular</TableHead>
-                  <TableHead>Municípios</TableHead>
-                  <TableHead className="w-28 text-right">
-                    <span className="sr-only">Ações</span>
-                  </TableHead>
+                  {visibleColumns.map((column) => (
+                    <TableHead key={column.id} className={column.headerClassName}>
+                      {column.visuallyHiddenLabel ? (
+                        <span className="sr-only">{column.label}</span>
+                      ) : (
+                        column.label
+                      )}
+                    </TableHead>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
