@@ -79,7 +79,7 @@ export type MergedPerson = Omit<PeopleRowViewModel, 'assessoradoNames'> & {
   deputyAdvisorIDs: number[]
 }
 
-type PeopleLeadershipSource = {
+export type PeopleLeadershipSource = {
   id: number
   contactID: number
   name: string
@@ -92,7 +92,7 @@ type PeopleLeadershipSource = {
   advisorIDs: number[]
 }
 
-type PeopleDeputySource = {
+export type PeopleDeputySource = {
   id: number
   contactID: number
   name: string
@@ -104,7 +104,7 @@ type PeopleDeputySource = {
   advisorIDs: number[]
 }
 
-type PeopleStaffSource = {
+export type PeopleStaffSource = {
   id: number
   contactID: number
   name: string
@@ -123,6 +123,96 @@ export type PeopleMergeSources = {
 
 const sortedDistinct = (values: Iterable<number>): number[] =>
   [...new Set(values)].sort((left, right) => left - right)
+
+/**
+ * Doc → source mappers shared by the list and the person detail (C118): the
+ * capacity definition must never diverge between the two surfaces, so the
+ * transforms (and the role filter of the staff source) live here once.
+ */
+export const toPeopleLeadershipSource = (doc: Leadership): PeopleLeadershipSource => {
+  const contact = contactSummary(doc.contact)
+  return {
+    id: doc.id,
+    contactID: contact.id,
+    name: contact.name,
+    phone: contact.phone,
+    email: contact.email,
+    city: contact.city,
+    municipalityIDs: uniqueRelationshipIds(doc.municipalities),
+    supportStatus: isSupportStatus(doc.supportStatus) ? doc.supportStatus : null,
+    hasAppAccess: relationshipId(doc.user) !== null,
+    advisorIDs: uniqueRelationshipIds(doc.advisors),
+  }
+}
+
+export const toPeopleDeputySource = (
+  doc: StateDeputy,
+  municipalityIdsByDeputy: ReadonlyMap<number, number[]>,
+): PeopleDeputySource => {
+  const contact = contactSummary(doc.contact)
+  return {
+    id: doc.id,
+    contactID: contact.id,
+    name: contact.name,
+    phone: contact.phone,
+    email: contact.email,
+    city: contact.city,
+    party: doc.party ?? null,
+    municipalityIDs: municipalityIdsByDeputy.get(doc.id) ?? [],
+    advisorIDs: uniqueRelationshipIds(doc.advisors),
+  }
+}
+
+export const toPeopleStaffSource = (
+  doc: CampaignUser,
+  municipalityIdsByStaff: ReadonlyMap<number, number[]>,
+): PeopleStaffSource => {
+  const contact = contactSummary(doc.contact)
+  return {
+    id: doc.id,
+    contactID: contact.id,
+    name: contact.name,
+    phone: contact.phone,
+    email: contact.email,
+    city: contact.city,
+    role: doc.role,
+    municipalityIDs: municipalityIdsByStaff.get(doc.id) ?? [],
+  }
+}
+
+/** Dedupe + pt-BR sort of the assessed-by advisors (the Assessorado capacity). */
+export const resolveAssessorados = (
+  advisorIDs: readonly number[],
+  namesById: ReadonlyMap<number, string>,
+): Array<{ id: number; name: string }> =>
+  [...new Set(advisorIDs)]
+    .map((id) => ({ id, name: namesById.get(id) }))
+    .filter((pair): pair is { id: number; name: string } => pair.name !== undefined)
+    .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
+
+/** Merged person → list/detail row: same fields, no accidental drift. */
+export const toPeopleRowViewModel = (
+  person: MergedPerson,
+  assessorados: ReadonlyArray<{ id: number; name: string }>,
+): PeopleRowViewModel => ({
+  contactID: person.contactID,
+  name: person.name,
+  phone: person.phone,
+  email: person.email,
+  city: person.city,
+  party: person.party,
+  leadershipID: person.leadershipID,
+  leadershipMunicipalityIDs: person.leadershipMunicipalityIDs,
+  supportStatus: person.supportStatus,
+  hasAppAccess: person.hasAppAccess,
+  deputyID: person.deputyID,
+  deputyMunicipalityIDs: person.deputyMunicipalityIDs,
+  staff: person.staff,
+  assessoraMunicipalityIDs: person.assessoraMunicipalityIDs,
+  capacityMunicipalityIDs: person.capacityMunicipalityIDs,
+  assessoradoNames: assessorados.map((pair) => pair.name),
+  assessorados: [...assessorados],
+})
 
 /**
  * One row per `contactID`. The ficha fields come from the first source that
@@ -449,51 +539,16 @@ export const loadPeopleListPageData = async (
   ])
 
   const leaderships: PeopleLeadershipSource[] = (leadershipResult.docs as Leadership[]).map(
-    (doc) => {
-      const contact = contactSummary(doc.contact)
-      return {
-        id: doc.id,
-        contactID: contact.id,
-        name: contact.name,
-        phone: contact.phone,
-        email: contact.email,
-        city: contact.city,
-        municipalityIDs: uniqueRelationshipIds(doc.municipalities),
-        supportStatus: isSupportStatus(doc.supportStatus) ? doc.supportStatus : null,
-        hasAppAccess: relationshipId(doc.user) !== null,
-        advisorIDs: uniqueRelationshipIds(doc.advisors),
-      }
-    },
+    toPeopleLeadershipSource,
   )
 
-  const deputies: PeopleDeputySource[] = (deputyResult.docs as StateDeputy[]).map((doc) => {
-    const contact = contactSummary(doc.contact)
-    return {
-      id: doc.id,
-      contactID: contact.id,
-      name: contact.name,
-      phone: contact.phone,
-      email: contact.email,
-      city: contact.city,
-      party: doc.party ?? null,
-      municipalityIDs: deputyMunicipalityIdsByDeputy.get(doc.id) ?? [],
-      advisorIDs: uniqueRelationshipIds(doc.advisors),
-    }
-  })
+  const deputies: PeopleDeputySource[] = (deputyResult.docs as StateDeputy[]).map((doc) =>
+    toPeopleDeputySource(doc, deputyMunicipalityIdsByDeputy),
+  )
 
-  const staff: PeopleStaffSource[] = (staffResult.docs as CampaignUser[]).map((doc) => {
-    const contact = contactSummary(doc.contact)
-    return {
-      id: doc.id,
-      contactID: contact.id,
-      name: contact.name,
-      phone: contact.phone,
-      email: contact.email,
-      city: contact.city,
-      role: doc.role,
-      municipalityIDs: staffMunicipalityIdsByStaff.get(doc.id) ?? [],
-    }
-  })
+  const staff: PeopleStaffSource[] = (staffResult.docs as CampaignUser[]).map((doc) =>
+    toPeopleStaffSource(doc, staffMunicipalityIdsByStaff),
+  )
 
   const merged = mergePeopleSources({ leaderships, deputies, staff })
   const accessibleMunicipalityIds =
@@ -515,32 +570,15 @@ export const loadPeopleListPageData = async (
   }
   const advisorNames = await loadCampaignUserNamesByIds(payload, [...advisorIDs])
 
-  const rows: PeopleRowViewModel[] = pageRows.map((person) => {
-    const advisorIDs = [...new Set([...person.leadershipAdvisorIDs, ...person.deputyAdvisorIDs])]
-    const assessorados = advisorIDs
-      .map((id) => ({ id, name: advisorNames.get(id) }))
-      .filter((pair): pair is { id: number; name: string } => pair.name !== undefined)
-      .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
-    return {
-      contactID: person.contactID,
-      name: person.name,
-      phone: person.phone,
-      email: person.email,
-      city: person.city,
-      party: person.party,
-      leadershipID: person.leadershipID,
-      leadershipMunicipalityIDs: person.leadershipMunicipalityIDs,
-      supportStatus: person.supportStatus,
-      hasAppAccess: person.hasAppAccess,
-      deputyID: person.deputyID,
-      deputyMunicipalityIDs: person.deputyMunicipalityIDs,
-      staff: person.staff,
-      assessoraMunicipalityIDs: person.assessoraMunicipalityIDs,
-      capacityMunicipalityIDs: person.capacityMunicipalityIDs,
-      assessoradoNames: assessorados.map((pair) => pair.name),
-      assessorados,
-    }
-  })
+  const rows: PeopleRowViewModel[] = pageRows.map((person) =>
+    toPeopleRowViewModel(
+      person,
+      resolveAssessorados(
+        [...person.leadershipAdvisorIDs, ...person.deputyAdvisorIDs],
+        advisorNames,
+      ),
+    ),
+  )
 
   return { rows, totalDocs, totalPages, filterFacets }
 }

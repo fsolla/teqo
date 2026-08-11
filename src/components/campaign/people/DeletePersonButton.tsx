@@ -31,6 +31,12 @@ import type { PersonDeleteManifest } from '@/utilities/people/personDelete'
 type DeletePersonButtonProps = {
   personName: string
   contactId: number
+  /**
+   * Where to go after the destructive cascade succeeds. The people list keeps
+   * the default (`router.refresh()`); detail pages that show the person
+   * navigate away — the ficha no longer exists.
+   */
+  deletedHref?: string
 }
 
 type ManifestState =
@@ -59,7 +65,11 @@ const mapDeleteError = (error: unknown): string => {
  * person protected; the ficha is deleted or anonymized (LGPD tombstone)
  * depending on public joins.
  */
-export const DeletePersonButton = ({ personName, contactId }: DeletePersonButtonProps) => {
+export const DeletePersonButton = ({
+  personName,
+  contactId,
+  deletedHref,
+}: DeletePersonButtonProps) => {
   const router = useRouter()
   const [manifest, setManifest] = useState<ManifestState>({ kind: 'idle' })
   const [deleting, setDeleting] = useState(false)
@@ -98,7 +108,11 @@ export const DeletePersonButton = ({ personName, contactId }: DeletePersonButton
             ? 'Pessoa apagada. A ficha foi anonimizada porque ainda é referenciada por participações públicas.'
             : 'Pessoa apagada.',
       )
-      router.refresh()
+      if (deletedHref) {
+        router.push(deletedHref)
+      } else {
+        router.refresh()
+      }
     } catch (error) {
       setDeleteError(mapDeleteError(error))
     } finally {

@@ -179,9 +179,7 @@ const peopleColumns = ({
           value={row.name}
           label="Nome"
           formAction={updatePersonContactFormAction}
-          {...(row.leadershipID !== null
-            ? { href: `/campanha/liderancas/${row.leadershipID}` }
-            : {})}
+          href={`/campanha/pessoas/${row.contactID}`}
           permanent
         />
         {row.party ? <span className="shrink-0 text-muted-foreground">({row.party})</span> : null}
