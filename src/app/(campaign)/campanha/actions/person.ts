@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import { toggleMunicipalityAdvisorMembership } from '@/app/(campaign)/campanha/actions/municipality'
 import { nextLeadershipAdvisorIdsAfterMembership } from '@/lib/leadershipAdvisorMembership'
+import { reorderWithPrimaryPhone } from '@/lib/phone'
 import { uniqueRelationshipIds } from '@/lib/relationship'
 import { contactFieldUpdateSchema, type ContactFieldUpdateInput } from '@/lib/schemas/contact'
 import {
@@ -123,13 +124,32 @@ export const updatePersonContactRecord = async (
 
       await assertPersonContactEditable(payload, currentActor, data.id, req)
 
-      const contactData: Partial<Pick<Contact, 'name' | 'phone' | 'email' | 'city'>> = {}
+      const contactData: Partial<Pick<Contact, 'name' | 'email' | 'city'>> & {
+        phones?: { value: string }[]
+      } = {}
       if (data.field === 'name') {
         contactData.name = data.name
       } else if (data.field === 'email') {
         contactData.email = data.email ?? null
       } else if (data.field === 'phone') {
-        contactData.phone = data.phone
+        // Inline cell edit = set the PRIMARY phone, keeping the rest of the
+        // list untouched (C112 shape — same contract as the leadership and
+        // dobradinha siblings): the new number goes first, clearing removes
+        // the primary and the rest shifts up.
+        const current = await payload.findByID({
+          collection: 'contact',
+          id: data.id,
+          depth: 0,
+          select: { phones: true },
+          // Intentional bypass: the scope check above established the actor's
+          // right over the person's ficha; this read only resolves the current
+          // primary-phone list to reorder.
+          overrideAccess: true,
+          req,
+        })
+        contactData.phones = reorderWithPrimaryPhone(current.phones, data.phone).map((value) => ({
+          value,
+        }))
       } else if (data.field === 'city') {
         contactData.city = data.city
       }

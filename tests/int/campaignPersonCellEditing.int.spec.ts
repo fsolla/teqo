@@ -9,6 +9,7 @@ import {
   setPersonAssessoraMembershipRecord,
   updatePersonContactRecord,
 } from '@/app/(campaign)/campanha/actions/person'
+import { primaryPhoneOf } from '@/lib/phone'
 import { uniqueRelationshipIds } from '@/lib/relationship'
 import {
   PERSON_ADVISORS_UNRESTRICTED_MESSAGE,
@@ -67,7 +68,8 @@ describe('C116 — cell edits of the people list', () => {
       })
       expect(updated.name).toBe('Maria Nova da Silva')
       expect(updated.city).toBe('Salvador')
-      expect(updated.phone).toBe('71999998888')
+      // C112 shape: the cell edit set the PRIMARY phone, the ficha list carries it first.
+      expect(primaryPhoneOf(updated.phones)).toBe('71999998888')
     })
 
     it('lets an advisor edit a person anchored in his carteira', async () => {
