@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — Municípios mobile: encaixes dos cards (pós-B196)</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-5xl p-8">
+      <p class="text-sm text-zinc-400">
+        Coordenação/assessoria no celular varrendo /campanha/municipios — densidade dos cards, alinhamento das labels e
+        comportamento dos avatares. Cenas mobile 390px (sucessor de B196).
+      </p>
+
+      <!-- ============ CENA: ATUAL (referência) ============ -->
+      <h2 class="mt-8 text-sm font-semibold uppercase tracking-wide text-zinc-500">Atual (referência — 390px)</h2>
+      <section data-shot="atual" class="mt-4 w-[390px] overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
+        <!-- header do app (56px) + barra de filtro 40px colada -->
+        <div class="flex h-14 items-center justify-between border-b border-zinc-800 bg-zinc-900 px-4">
+          <p class="text-sm font-semibold">Municípios</p>
+          <span class="flex size-9 items-center justify-center rounded-full bg-zinc-800 text-xs text-zinc-300">SR</span>
+        </div>
+        <div class="flex items-center gap-1.5 border-b border-zinc-800 px-4 py-1">
+          <div class="flex min-h-8 flex-1 items-center gap-1.5 rounded-lg px-2">
+            <input
+              class="min-h-8 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-zinc-500"
+              placeholder="Digite para filtrar (município, território, cenário…)"
+            />
+            <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs text-zinc-400">✕</span>
+          </div>
+        </div>
+
+        <!-- CARD 1 — gaps grandes + 2 avatares "um em cada canto" + avatares centrados -->
+        <article class="flex flex-col gap-2.5 border-b border-zinc-800 px-4 py-3">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex min-w-0 flex-col gap-0.5">
+              <h3 class="text-lg leading-tight font-medium">Abaré</h3>
+              <p class="text-sm text-zinc-400">Território de Identidade Chapada Diamantina · ZE 45</p>
+            </div>
+            <div class="shrink-0 text-right">
+              <p class="text-sm font-medium">12,4%</p>
+              <p class="text-xs text-zinc-500">4º</p>
+            </div>
+          </div>
+
+          <div class="flex w-full items-center rounded-md bg-zinc-900 p-2">
+            <div class="grid flex-1 grid-cols-3 gap-1">
+              <span class="rounded bg-zinc-800 px-2 py-1 text-center text-[11px] text-zinc-400">Pessimista</span>
+              <span class="rounded border border-emerald-400/40 bg-zinc-800 px-2 py-1 text-center text-[11px] text-zinc-200">Central</span>
+              <span class="rounded bg-zinc-800 px-2 py-1 text-center text-[11px] text-zinc-400">Otimista</span>
+            </div>
+            <span class="ml-2 h-4 w-px bg-zinc-700"></span>
+            <span class="ml-2 text-[11px] text-zinc-400">15.000</span>
+          </div>
+
+          <div class="flex flex-wrap items-start gap-x-3 gap-y-2">
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs font-medium text-zinc-500">Classe</span>
+              <span class="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-200">Reduto 8,2×</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs font-medium text-zinc-500">Tendência</span>
+              <span class="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-200">Alta</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs font-medium text-zinc-500">Nível</span>
+              <span class="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-200">N2</span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-start gap-3">
+            <div class="min-w-0 flex-1">
+              <div class="flex w-full flex-col gap-1.5">
+                <span class="text-xs font-medium text-zinc-500">Assessores</span>
+                <div class="flex w-full min-w-0 items-center overflow-hidden">
+                  <div class="flex min-w-0 flex-1 justify-center">
+                    <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-900 bg-zinc-700 text-[11px]">JM</span>
+                  </div>
+                  <div class="flex min-w-0 flex-1 justify-center">
+                    <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-900 bg-zinc-700 text-[11px]">AP</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex w-full flex-col gap-1.5">
+                <span class="text-xs font-medium text-zinc-500">Lideranças</span>
+                <div class="flex w-full min-w-0 items-center overflow-hidden">
+                  <div class="flex min-w-0 flex-1 justify-center">
+                    <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-900 bg-zinc-700 text-[11px]">CR</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex w-full flex-col gap-1.5">
+                <span class="text-xs font-medium text-zinc-500">Dobradinhas</span>
+                <div class="flex w-full min-w-0 items-center overflow-hidden">
+                  <div class="flex min-w-0 flex-1 justify-center">
+                    <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-900 bg-zinc-700 text-[11px]">RS</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex min-h-11 items-center justify-end gap-1.5 text-sm text-zinc-500">
+            Última atualização há 2 dias
+            <span class="text-xs">▾</span>
+          </div>
+        </article>
+
+        <!-- CARD 2 — 5 avatares: pontas cortadas pelo overflow-hidden -->
+        <article class="flex flex-col gap-2.5 px-4 py-3">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex min-w-0 flex-col gap-0.5">
+              <h3 class="text-lg leading-tight font-medium">Adustina</h3>
+              <p class="text-sm text-zinc-400">Território de Identidade Nordeste · ZE 62</p>
+            </div>
+            <div class="shrink-0 text-right">
+              <p class="text-sm font-medium">7,1%</p>
+              <p class="text-xs text-zinc-500">18º</p>
+            </div>
+          </div>
+
+          <div class="flex w-full items-center rounded-md bg-zinc-900 p-2">
+            <div class="grid flex-1 grid-cols-3 gap-1">
+              <span class="rounded bg-zinc-800 px-2 py-1 text-center text-[11px] text-zinc-400">Pessimista</span>
+              <span class="rounded border border-emerald-400/40 bg-zinc-800 px-2 py-1 text-center text-[11px] text-zinc-200">Central</span>
+              <span class="rounded bg-zinc-800 px-2 py-1 text-center text-[11px] text-zinc-400">Otimista</span>
+            </div>
+            <span class="ml-2 h-4 w-px bg-zinc-700"></span>
+            <span class="ml-2 text-[11px] text-zinc-400">9.800</span>
+          </div>
+
+          <div class="flex flex-wrap items-start gap-x-3 gap-y-2">
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs font-medium text-zinc-500">Classe</span>
+              <span class="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-200">Solo 1,1×</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs font-medium text-zinc-500">Tendência</span>
+              <span class="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-200">Em disputa</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs font-medium text-zinc-500">Nível</span>
+              <span class="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-200">N3</span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-start gap-3">
+            <div class="min-w-0 flex-1">
+              <div class="flex w-full flex-col gap-1.5">
+                <span class="text-xs font-medium text-zinc-500">Assessores</span>
+                <div class="flex w-full min-w-0 items-center overflow-hidden">
+                  <div class="flex min-w-0 flex-1 justify-center">
+                    <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-900 bg-zinc-700 text-[11px]">JM</span>
+                  </div>
+                  <div class="flex min-w-0 flex-1 justify-center">
+                    <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-900 bg-zinc-700 text-[11px]">AP</span>
+                  </div>
+                  <div class="flex min-w-0 flex-1 justify-center">
+                    <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-900 bg-zinc-700 text-[11px]">CR</span>
+                  </div>
+                  <div class="flex min-w-0 flex-1 justify-center">
+                    <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-900 bg-zinc-700 text-[11px]">LS</span>
+                  </div>
+                  <div class="flex min-w-0 flex-1 justify-center">
+                    <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-900 bg-zinc-700 text-[11px]">RS</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex w-full flex-col gap-1.5">
+                <span class="text-xs font-medium text-zinc-500">Lideranças</span>
+                <div class="flex w-full min-w-0 items-center overflow-hidden">
+                  <div class="flex min-w-0 flex-1 justify-center">
+                    <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-900 bg-zinc-700 text-[11px]">FT</span>
+                  </div>
+                  <div class="flex min-w-0 flex-1 justify-center">
+                    <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-900 bg-zinc-700 text-[11px]">DA</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex w-full flex-col gap-1.5">
+                <span class="text-xs font-medium text-zinc-500">Dobradinhas</span>
+                <span class="text-sm text-zinc-500">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex min-h-11 items-center justify-end gap-1.5 text-sm text-zinc-500">
+            Última atualização há 1 dia
+            <span class="text-xs">▾</span>
+          </div>
+        </article>
+      </section>
+
+      <!-- ============ CENA: PROPOSTO ============ -->
+      <h2 class="mt-10 text-sm font-semibold uppercase tracking-wide text-zinc-500">Proposto (390px)</h2>
+      <section data-shot="proposto" class="mt-4 w-[390px] overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
+        <!-- header + barra de filtro mais alta (≈48px), sem pb → 1º card colado -->
+        <div class="flex h-14 items-center justify-between border-b border-zinc-800 bg-zinc-900 px-4">
+          <p class="text-sm font-semibold">Municípios</p>
+          <span class="flex size-9 items-center justify-center rounded-full bg-zinc-800 text-xs text-zinc-300">SR</span>
+        </div>
+        <div class="flex items-center gap-1.5 border-b border-zinc-800 px-4 pt-1 pb-0">
+          <div class="flex min-h-10 flex-1 items-center gap-1.5 rounded-lg px-2">
+            <input
+              class="min-h-10 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-zinc-500"
+              placeholder="Digite para filtrar (município, território, cenário…)"
+            />
+            <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs text-zinc-400">✕</span>
+          </div>
+        </div>
+
+        <!-- CARD 1 — nome/território colados, ritmo vertical enxuto, labels+valores à esquerda, avatares sobrepostos à esquerda -->
+        <article class="flex flex-col gap-2 border-b border-zinc-800 px-4 py-3">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex min-w-0 flex-col gap-0">
+              <h3 class="text-lg leading-tight font-medium">Abaré</h3>
+              <p class="text-sm leading-tight text-zinc-400">Território de Identidade Chapada Diamantina · ZE 45</p>
+            </div>
+            <div class="shrink-0 text-right">
+              <p class="text-sm font-medium">12,4%</p>
+              <p class="text-xs text-zinc-500">4º</p>
+            </div>
+          </div>
+
+          <div class="flex w-full items-center rounded-md bg-zinc-900 p-2">
+            <div class="grid flex-1 grid-cols-3 gap-1">
+              <span class="rounded bg-zinc-800 px-2 py-1 text-center text-[11px] text-zinc-400">Pessimista</span>
+              <span class="rounded border border-emerald-400/40 bg-zinc-800 px-2 py-1 text-center text-[11px] text-zinc-200">Central</span>
+              <span class="rounded bg-zinc-800 px-2 py-1 text-center text-[11px] text-zinc-400">Otimista</span>
+            </div>
+            <span class="ml-2 h-4 w-px bg-zinc-700"></span>
+            <span class="ml-2 text-[11px] text-zinc-400">15.000</span>
+          </div>
+
+          <div class="flex flex-wrap items-start gap-x-3 gap-y-1.5">
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs font-medium text-zinc-500">Classe</span>
+              <span class="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-200">Reduto 8,2×</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs font-medium text-zinc-500">Tendência</span>
+              <span class="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-200">Alta</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs font-medium text-zinc-500">Nível</span>
+              <span class="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-200">N2</span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-start gap-3">
+            <div class="min-w-0 flex-1">
+              <div class="flex w-full flex-col gap-1">
+                <span class="text-xs font-medium text-zinc-500">Assessores</span>
+                <div class="flex w-full min-w-0 items-center">
+                  <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">JM</span>
+                  <span class="-ml-2 flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">AP</span>
+                </div>
+              </div>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex w-full flex-col gap-1">
+                <span class="text-xs font-medium text-zinc-500">Lideranças</span>
+                <div class="flex w-full min-w-0 items-center">
+                  <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">CR</span>
+                </div>
+              </div>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex w-full flex-col gap-1">
+                <span class="text-xs font-medium text-zinc-500">Dobradinhas</span>
+                <div class="flex w-full min-w-0 items-center">
+                  <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">RS</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex min-h-11 items-center justify-end gap-1.5 text-sm text-zinc-500">
+            Última atualização há 2 dias
+            <span class="text-xs">▾</span>
+          </div>
+        </article>
+
+        <!-- CARD 2 — 5 e 6 avatares: todos visíveis, sobreposição cresce, nada cortado -->
+        <article class="flex flex-col gap-2 border-b border-zinc-800 px-4 py-3">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex min-w-0 flex-col gap-0">
+              <h3 class="text-lg leading-tight font-medium">Adustina</h3>
+              <p class="text-sm leading-tight text-zinc-400">Território de Identidade Nordeste · ZE 62</p>
+            </div>
+            <div class="shrink-0 text-right">
+              <p class="text-sm font-medium">7,1%</p>
+              <p class="text-xs text-zinc-500">18º</p>
+            </div>
+          </div>
+
+          <div class="flex w-full items-center rounded-md bg-zinc-900 p-2">
+            <div class="grid flex-1 grid-cols-3 gap-1">
+              <span class="rounded bg-zinc-800 px-2 py-1 text-center text-[11px] text-zinc-400">Pessimista</span>
+              <span class="rounded border border-emerald-400/40 bg-zinc-800 px-2 py-1 text-center text-[11px] text-zinc-200">Central</span>
+              <span class="rounded bg-zinc-800 px-2 py-1 text-center text-[11px] text-zinc-400">Otimista</span>
+            </div>
+            <span class="ml-2 h-4 w-px bg-zinc-700"></span>
+            <span class="ml-2 text-[11px] text-zinc-400">9.800</span>
+          </div>
+
+          <div class="flex flex-wrap items-start gap-x-3 gap-y-1.5">
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs font-medium text-zinc-500">Classe</span>
+              <span class="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-200">Solo 1,1×</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs font-medium text-zinc-500">Tendência</span>
+              <span class="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-200">Em disputa</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs font-medium text-zinc-500">Nível</span>
+              <span class="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-200">N3</span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-start gap-3">
+            <div class="min-w-0 flex-1">
+              <div class="flex w-full flex-col gap-1">
+                <span class="text-xs font-medium text-zinc-500">Assessores</span>
+                <div class="flex w-full min-w-0 items-center">
+                  <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">JM</span>
+                  <span class="-ml-2 flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">AP</span>
+                  <span class="-ml-2 flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">CR</span>
+                  <span class="-ml-2 flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">LS</span>
+                  <span class="-ml-2 flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">RS</span>
+                </div>
+              </div>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex w-full flex-col gap-1">
+                <span class="text-xs font-medium text-zinc-500">Lideranças</span>
+                <div class="flex w-full min-w-0 items-center">
+                  <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">FT</span>
+                  <span class="-ml-2 flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">DA</span>
+                  <span class="-ml-3 flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">MB</span>
+                  <span class="-ml-3 flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">TC</span>
+                  <span class="-ml-3 flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">VL</span>
+                  <span class="-ml-3 flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">PN</span>
+                </div>
+              </div>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex w-full flex-col gap-1">
+                <span class="text-xs font-medium text-zinc-500">Dobradinhas</span>
+                <div class="flex w-full min-w-0 items-center">
+                  <span class="flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">RS</span>
+                  <span class="-ml-2 flex size-7 shrink-0 items-center justify-center rounded-full border border-zinc-950 bg-zinc-700 text-[11px]">TB</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex min-h-11 items-center justify-end gap-1.5 text-sm text-zinc-500">
+            Última atualização há 1 dia
+            <span class="text-xs">▾</span>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
