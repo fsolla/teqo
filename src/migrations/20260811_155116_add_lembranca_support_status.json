@@ -6654,6 +6654,136 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.google_calendar_sync": {
+      "name": "google_calendar_sync",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "calendar_id": {
+          "name": "calendar_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "disabled_at": {
+          "name": "disabled_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_synced_at": {
+          "name": "last_synced_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_success_at": {
+          "name": "last_success_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error_at": {
+          "name": "last_error_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "google_calendar_sync_calendar_id_idx": {
+          "name": "google_calendar_sync_calendar_id_idx",
+          "columns": [
+            {
+              "expression": "calendar_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "google_calendar_sync_disabled_at_idx": {
+          "name": "google_calendar_sync_disabled_at_idx",
+          "columns": [
+            {
+              "expression": "disabled_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "google_calendar_sync_updated_at_idx": {
+          "name": "google_calendar_sync_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "google_calendar_sync_created_at_idx": {
+          "name": "google_calendar_sync_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.election_tally": {
       "name": "election_tally",
       "schema": "",
@@ -10776,6 +10906,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "google_calendar_sync_id": {
+          "name": "google_calendar_sync_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "election_tally_id": {
           "name": "election_tally_id",
           "type": "integer",
@@ -11164,6 +11300,21 @@
           "columns": [
             {
               "expression": "calendar_feed_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_google_calendar_sync_id_idx": {
+          "name": "payload_locked_documents_rels_google_calendar_sync_id_idx",
+          "columns": [
+            {
+              "expression": "google_calendar_sync_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -11594,6 +11745,19 @@
           "tableTo": "calendar_feed",
           "columnsFrom": [
             "calendar_feed_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_google_calendar_sync_fk": {
+          "name": "payload_locked_documents_rels_google_calendar_sync_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "google_calendar_sync",
+          "columnsFrom": [
+            "google_calendar_sync_id"
           ],
           "columnsTo": [
             "id"
@@ -13333,6 +13497,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "17d89cfa-69b8-4d52-af52-dc4c24d017a5",
+  "id": "994374af-56a6-42f7-a4c2-907da32cbe60",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }
