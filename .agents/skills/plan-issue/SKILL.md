@@ -4,10 +4,10 @@ description: >-
   Transforma ideias humanas em Issues GitHub + planos de intenção em
   docs/plans/ (persona, fluxo, objetivo, direção suave no código — sem
   decisões duras de engenharia). Se o item muda UI, apresenta no gate um
-  Cursor canvas com rascunho visual UI/UX. Divide o pedido nas menores
-  tarefas que ainda fazem sentido. Use quando o usuário pedir /plan-issue,
-  planejar features, fatiar um pedido em Issues, ou registrar trabalho novo
-  na fila.
+  rascunho visual HTML+Tailwind (PNG embutido no plano de intenção). Divide
+  o pedido nas menores tarefas que ainda fazem sentido. Use quando o usuário
+  pedir /plan-issue, planejar features, fatiar um pedido em Issues, ou
+  registrar trabalho novo na fila.
 disable-model-invocation: true
 ---
 
@@ -35,7 +35,7 @@ rascunho local (Issue: —)
 4. **Promote só depois do plano em `main`.** Nunca flipar para `ready` com o PR ainda aberto — isso recria a race de claim. Caminhos: (A) `pnpm agent:ready -- --issue N` no fim do Passo 6 após merge; (B) Action determinística no merge que lê `Related #N` (OPS18). Ambos idempotentes.
 5. **Planos de Issues `in-progress` / `done` / `in-prod` são imutáveis.** Não editar `docs/plans/<slug>.md` nem o body de intenção dessas Issues. Refino → **plano + Issue novos** (sucessor; `depends` no pai se fizer sentido). Enquanto a Issue ainda é só `blocked`/`ready` (sem claim), editar o mesmo plano ainda é barato.
 
-**Canvas UI (obrigatório se muda UI):** itens com superfície Impeccable **B / C / D** (ou qualquer mudança do que o usuário vê/toca) devem ter um **Cursor canvas** de rascunho UI/UX no gate — ver [ui-draft-canvas.md](ui-draft-canvas.md). Classe A / sem UI → sem canvas.
+**Rascunho UI (obrigatório se muda UI):** itens com superfície Impeccable **B / C / D** (ou qualquer mudança do que o usuário vê/toca) devem ter um **rascunho HTML+Tailwind** (renderizado em PNG e commitado em `docs/plans/`) no gate — ver [ui-draft-html.md](ui-draft-html.md). Classe A / sem UI → sem rascunho.
 
 ## Divisão com as skills de execução
 
@@ -45,7 +45,7 @@ rascunho local (Issue: —)
 | **`work-issue`** | Humano supervisiona: Issue já claimada (claim fora da skill) → plano de **implementação** (Plan mode) → **pausa** para confirmação → executa. |
 | **`agent-work-issue`** | Pool / autonomia: Issue já claimada → plano de implementação → executa sem pausa → `/simplify` → `capture-review-debts` → PR Ready + auto-merge. |
 
-Aqui **não** se implementa código de produto, **não** se escreve plano de implementação, **não** se roda Impeccable craft/critique/polish. O canvas de rascunho UI/UX é artefato do **gate de intenção**, não entrega de app.
+Aqui **não** se implementa código de produto, **não** se escreve plano de implementação, **não** se roda Impeccable craft/critique/polish. O rascunho UI/UX (HTML+Tailwind) é artefato do **gate de intenção**, não entrega de app.
 
 **Shaping (não tour):** aplique [shaping.md](shaping.md) em silêncio — appetite, fatia mínima útil, rabbit holes de produto, self-score ≥4 antes de gravar.
 
@@ -58,7 +58,7 @@ Aqui **não** se implementa código de produto, **não** se escreve plano de imp
 - [ ] 2. Reserva de IDs de uma vez por trilha (roadmap legacy + issuesById())
 - [ ] 3. Por item (ordem topológica): classificar → fatiar → explorar só o suficiente → intenção completa
 - [ ] 4. Sugestão de modelo × effort via model-selection (uma linha por item)
-- [ ] 5. GATE: overview do lote + canvas UI/UX (se muda UI) + esboços de fluxo → confirmar/iterar (PARAR aqui até o humano confirmar; sem Issue/PR)
+- [ ] 5. GATE: overview do lote + rascunho UI/UX (se muda UI) + esboços de fluxo → confirmar/iterar (PARAR aqui até o humano confirmar; sem Issue/PR)
 - [ ] 6. Registro: `agent:register` (`--plan` → `blocked`) → PR `Related #N` → merge → `pnpm agent:ready`
 ```
 
@@ -92,10 +92,10 @@ Ordem topológica (dependente cita ID do dependido). Por item:
 | Decisão de NÃO fazer | Comentário/doc, não Issue |
 
 2. **Explorar o código o mínimo** — só para apontar **direção** (rotas/pastas/domínios prováveis) e evitar duplicar algo já entregue. Não inventar signatures, collections novas como decisão travada, nem diagramas de componentes.
-3. **Superfície UI (A–D)** como dica para quem for executar — não semear brief Impeccable completo. Classe **B/C/D** (ou qualquer mudança de UI): criar **Cursor canvas** de rascunho UI/UX ([ui-draft-canvas.md](ui-draft-canvas.md) + skill `canvas`) **antes do gate**; ASCII no plano fica opcional. Classe **A** / sem UI: sem canvas.
+3. **Superfície UI (A–D)** como dica para quem for executar — não semear brief Impeccable completo. Classe **B/C/D** (ou qualquer mudança de UI): criar **rascunho HTML+Tailwind** ([ui-draft-html.md](ui-draft-html.md)) **antes do gate**, renderizar o PNG (`pnpm ui-draft:render`) e embutir no plano; ASCII no plano fica opcional. Classe **A** / sem UI: sem rascunho.
 4. **Dados (intenção)** ou `Dados: N/A`.
 5. **Posicionamento:** `P0..P3`, `depends`, appetite, janela eleitoral se relevante, `serializes` se tocar recurso compartilhado (ex. migrations) — sem detalhar a migration.
-6. **Plano de intenção** em `docs/plans/<slug>.md` via [intention-template.md](intention-template.md), com campo **Canvas UI** preenchido (path do `.canvas.tsx` ou `N/A`). Self-score ≥4/5 ([shaping.md](shaping.md)).
+6. **Plano de intenção** em `docs/plans/<slug>.md` via [intention-template.md](intention-template.md), com campo **Rascunho UI** preenchido (path do `.html` + PNGs embutidos, ou `N/A`). Self-score ≥4/5 ([shaping.md](shaping.md)).
 
 ### O que é proibido no plano de intenção
 
@@ -113,7 +113,7 @@ Ordem topológica (dependente cita ID do dependido). Por item:
 - Appetite e fora de escopo (produto)
 - **Direção provável no codebase** (pastas/rotas/domínios — hipotética, revisável)
 - Questões em aberto com **Opções + Recomendação de produto** (não de engenharia)
-- **Se muda UI:** canvas de rascunho UI/UX no gate ([ui-draft-canvas.md](ui-draft-canvas.md)) + link no plano
+- **Se muda UI:** rascunho UI/UX (HTML+Tailwind → PNG) no gate ([ui-draft-html.md](ui-draft-html.md)) + PNG embutido no plano
 
 ## Passo 4 — Modelo × effort
 
@@ -128,11 +128,11 @@ Skill `model-selection`. Registre no cabeçalho (`Model:`) e no gate.
 Antes de criar Issues **ou** abrir PR de planos:
 
 - Overview: ID, título, prio, depends, appetite, modelo, link do plano local
-- **Para cada item que muda UI:** link markdown absoluto do canvas `plan-<id>-ui-draft.canvas.tsx` (abrir ao lado do chat) — este é o rascunho visual a validar
-- Esboço textual de fluxo só se ajudar; não substitui o canvas quando há UI
+- **Para cada item que muda UI:** mostre as imagens do rascunho (PNGs embutidos no plano) + link do `.html` fonte — este é o rascunho visual a validar
+- Esboço textual de fluxo só se ajudar; não substitui o rascunho quando há UI
 - Perguntas acumuladas numa rodada, recomendação de produto primeiro
 
-**Pare e espere.** Itere (incluindo o canvas, se houver UI) até confirmação explícita do lote (não basta um “ok” solto durante a edição). Só então Passo 6.
+**Pare e espere.** Itere (incluindo o rascunho — HTML → re-render do PNG, se houver UI) até confirmação explícita do lote (não basta um “ok” solto durante a edição). Só então Passo 6.
 
 ## Passo 6 — Registro (não claimável até plano em `main`)
 

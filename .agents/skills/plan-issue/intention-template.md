@@ -13,7 +13,7 @@ Issue: #<N> (após `pnpm agent:register`; senão "—")
 Priority: <P0 | P1 | P2 | P3>
 Model: <slug model-selection>
 Impeccable: <A | B | C | D> — <N/A sem UI | encaixe em tela X | fluxo novo em Y>
-Canvas UI: <N/A — sem UI | path absoluto do plan-<id>-ui-draft.canvas.tsx>
+Rascunho UI: <N/A — sem UI | docs/plans/<slug>-ui-draft.html + PNG embutido abaixo>
 Appetite: <ex.: ~0,5–1 dia eng; um outcome verificável>
 Responsável: —
 
@@ -30,12 +30,20 @@ Responsável: —
 
 ### Esboço de fluxo (B/C/D)
 
-<!-- Opcional se houver Canvas UI. ASCII de jornada (backup textual), não layout de implementação.
-     Omitir se A / sem UI. O artefato obrigatório do gate para UI é o Cursor canvas — ver ui-draft-canvas.md. -->
+<!-- Opcional se houver Rascunho UI. ASCII de jornada (backup textual), não layout de implementação.
+     Omitir se A / sem UI. O artefato obrigatório do gate para UI é o PNG do rascunho HTML+Tailwind — ver ui-draft-html.md. -->
 
 \```text
 [início] → … → [outcome]
 \```
+
+### Rascunho UI (B/C/D)
+
+<!-- Obrigatório se houver UI: PNG(s) renderizado(s) de docs/plans/<slug>-ui-draft.html
+     (pnpm ui-draft:render) — este é o rascunho visual a validar no gate.
+     Omitir se A / sem UI. O HTML é a fonte iterável; o PNG é o registro do aceite. -->
+
+![Rascunho UI — <rótulo da cena>](<slug>-ui-draft-<rótulo>.png)
 
 ## Objetivo e aceite
 
@@ -79,7 +87,7 @@ Responsável: —
 ## Referências
 
 - GitHub Issue #<N>
-- Canvas UI (gate): <link/path do `.canvas.tsx` ou N/A>
+- Rascunho UI (gate): <link do `.html` + PNGs embutidos acima | N/A>
 - <arquivos/rotas úteis para o executor abrir primeiro — como pista, não contrato>
 - `AGENTS.md` / `docs/ARCHITECTURE.md` — só se o item toca convenção já travada no repo
 ````
@@ -87,7 +95,7 @@ Responsável: —
 Notas:
 
 - Alvo: ~60–100 linhas. Mais que isso costuma significar engenharia vazando para a intenção.
-- Classe **A:** `Impeccable: A — N/A`; `Canvas UI: N/A`; omita esboço de fluxo.
-- Classe **B/C/D:** canvas obrigatório no gate ([ui-draft-canvas.md](ui-draft-canvas.md)); leia a skill `canvas` ao escrever o `.canvas.tsx`.
+- Classe **A:** `Impeccable: A — N/A`; `Rascunho UI: N/A`; omita esboço de fluxo.
+- Classe **B/C/D:** rascunho HTML+Tailwind obrigatório no gate ([ui-draft-html.md](ui-draft-html.md)); renderize com `pnpm ui-draft:render` e embuta o PNG no plano.
 - Não rode `/impeccable` aqui.
 - Self-score shaping ≥4/5 antes de gravar.
