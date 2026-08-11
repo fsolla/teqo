@@ -87,6 +87,9 @@ describe('banned campaign terminology', () => {
         'src/lib/projectionSheetParse.ts',
         // Fixture entry deliberately exercises legacy visits written pre-rename.
         'tests/unit/recentVisits.unit.spec.ts',
+        // English prose ("one row in practice") trips the accent-tolerant
+        // /pra[çc]/ — genuine code comment, not the retired term.
+        'src/collections/GoogleCalendarSync.ts',
       ],
     },
     {
@@ -400,6 +403,13 @@ describe('src/utilities top-level is pinned', () => {
     'campaignAccess.ts',
     'campaignActionContext.ts',
     'campaignAuditFields.ts',
+    // C114 — Google Calendar mirror: thin Calendar API v3 transport (jose+fetch).
+    'googleCalendarClient.ts',
+    // C114 — Google Calendar mirror: reconciliation engine + hook guards.
+    'googleCalendarSync.ts',
+    // C114 — Google Calendar mirror: activity/config hooks (separate module so
+    // the engine is mockable at the import boundary in tests).
+    'googleCalendarSyncHooks.ts',
     'campaignAuth.ts',
     'campaignBiometricsPrompt.ts',
     'campaignColumnVisibilityCookie.ts',

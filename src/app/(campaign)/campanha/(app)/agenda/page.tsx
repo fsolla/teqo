@@ -7,9 +7,15 @@ import {
   listCalendarFeeds,
   revokeCalendarFeed,
 } from '@/app/(campaign)/campanha/actions/calendarFeed'
+import {
+  getGoogleCalendarSyncState,
+  runGoogleCalendarSyncNow,
+  setGoogleCalendarSyncDisabled,
+} from '@/app/(campaign)/campanha/actions/googleCalendarSync'
 import { ActivityAgenda } from '@/components/campaign/activity/ActivityAgenda'
 import { ActivityAgendaFilters } from '@/components/campaign/activity/ActivityAgendaFilters'
 import { AgendaFeedChrome } from '@/components/campaign/activity/AgendaFeedChrome'
+import { AgendaGoogleSyncChrome } from '@/components/campaign/activity/AgendaGoogleSyncChrome'
 import { AgendaViewChrome } from '@/components/campaign/activity/AgendaViewChrome'
 import {
   CampaignListPendingBoundary,
@@ -41,10 +47,11 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
     requireCampaignPageActor({ gate: 'staff' }),
     getPayload({ config }),
   ])
-  const [municipalityOptions, knownTags, feeds] = await Promise.all([
+  const [municipalityOptions, knownTags, feeds, googleSyncState] = await Promise.all([
     loadMunicipalityOptions(payload, user),
     loadAccessibleActivityTags(payload, user),
     listCalendarFeeds().catch(() => []),
+    getGoogleCalendarSyncState(),
   ])
   const state = restrictActivityAgendaState(
     resolvedUrl.state,
@@ -77,6 +84,18 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
         onRevokeFeed={async (feedId) => {
           'use server'
           return revokeCalendarFeed(feedId)
+        }}
+      />
+      {/* C114: pill Google no header (após o link de import) + FAB mobile. */}
+      <AgendaGoogleSyncChrome
+        initialState={googleSyncState}
+        onSyncNow={async () => {
+          'use server'
+          return runGoogleCalendarSyncNow()
+        }}
+        onSetDisabled={async (disabled) => {
+          'use server'
+          return setGoogleCalendarSyncDisabled(disabled)
         }}
       />
 

@@ -12,7 +12,11 @@ import { InputGroup, InputGroupButton } from '@/components/ui/input-group'
 import { Marker, MarkerContent } from '@/components/ui/marker'
 import { Message, MessageAvatar, MessageContent } from '@/components/ui/message'
 import { Spinner } from '@/components/ui/Spinner'
-import { externalLinkTarget } from '@/lib/ai/markdownLinks'
+import {
+  externalLinkTarget,
+  isCampaignInternalLink,
+  shouldCloseDrawerOnLinkClick,
+} from '@/lib/ai/markdownLinks'
 import { cn } from '@/lib/utils'
 
 import { useAISidebar } from '@/components/campaign/shell/ai/CampaignAISidebarContext'
@@ -30,34 +34,51 @@ import { getSollinhaOpeningQuestions } from '@/lib/sollinhaOpeningQuestions'
  * only ever emits `/campanha…` paths — navigate through `next/link` (B188), so
  * following a Sollinha link keeps the layout (and the conversation) mounted
  * instead of reloading the page. Anything else keeps the plain anchor.
+ * B198 — on mobile the same-tab internal navigation closes the drawer in the
+ * touch, so the destination is visible on arrival; external and new-tab
+ * navigations leave the drawer open for the origin tab's conversation.
  */
-const APP_INTERNAL_LINK = /^\/campanha(?:\/|$)/
 
 /** B192 — narrower drawer surface: fewer follow-up chips than on desktop. */
 const FOLLOW_UP_MOBILE_LIMIT = 2
-
-const markdownComponents: Components = {
-  a: ({ node: _node, href, children, ...rest }) => {
-    const external = typeof href === 'string' ? externalLinkTarget(href) : null
-    if (typeof href === 'string' && APP_INTERNAL_LINK.test(href)) {
-      return (
-        <Link href={href} {...rest}>
-          {children}
-        </Link>
-      )
-    }
-    return (
-      <a href={href} {...rest} {...external}>
-        {children}
-      </a>
-    )
-  },
-}
 
 export const CampaignAIChat = ({ className }: { className?: string }) => {
   const ctx = useAISidebar()
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  // B198 — the markdown link renderer needs the context (viewport + close),
+  // so the module-level components object moved in here: same shape as before,
+  // plus the mobile same-tab navigation closing the drawer on touch. The memo
+  // keeps the renderer identity stable across message renders; it recomputes
+  // only on a breakpoint crossing (`isMobileViewport`) or context churn.
+  const isMobileViewport = ctx?.isMobile ?? false
+  const closeChat = ctx?.setOpen
+  const markdownComponents = useMemo<Components>(() => {
+    return {
+      a: ({ node: _node, href, children, ...rest }) => {
+        const external = typeof href === 'string' ? externalLinkTarget(href) : null
+        if (typeof href === 'string' && isCampaignInternalLink(href)) {
+          return (
+            <Link
+              href={href}
+              {...rest}
+              onClick={(e) => {
+                if (shouldCloseDrawerOnLinkClick(href, isMobileViewport, e)) closeChat?.(false)
+              }}
+            >
+              {children}
+            </Link>
+          )
+        }
+        return (
+          <a href={href} {...rest} {...external}>
+            {children}
+          </a>
+        )
+      },
+    }
+  }, [isMobileViewport, closeChat])
 
   const mic = useMicTranscript()
   const textareaRef = useRef<HTMLTextAreaElement>(null)

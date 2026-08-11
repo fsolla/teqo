@@ -7,6 +7,7 @@ import {
   updateLeadershipWizardFormAction,
 } from '@/app/(campaign)/campanha/(app)/acoes/wizardLeadershipFormActions'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
+import { PhonesFieldEditor } from '@/components/campaign/shared/PhonesFieldEditor'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -66,7 +67,6 @@ export const WizardLeadershipForm = ({
           ref={nameRef}
           id="wizard-leadership-name"
           name="name"
-          required
           minLength={2}
           maxLength={120}
           defaultValue={leadership?.name ?? ''}
@@ -78,21 +78,13 @@ export const WizardLeadershipForm = ({
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field>
-          <FieldLabel htmlFor="wizard-leadership-phone">Celular</FieldLabel>
-          <Input
-            id="wizard-leadership-phone"
-            name="phone"
-            type="tel"
-            required
-            autoComplete="tel-national"
-            defaultValue={leadership?.phone ?? ''}
-            className="min-h-11"
-          />
-          {fieldError(state.fieldErrors, 'phone') ? (
-            <FieldError>{fieldError(state.fieldErrors, 'phone')}</FieldError>
-          ) : null}
-        </Field>
+        <PhonesFieldEditor
+          name="phones"
+          minRows={1}
+          label="Celulares (o primeiro é o principal)"
+          defaultValues={leadership?.phones ?? []}
+          error={fieldError(state.fieldErrors, 'phones')}
+        />
         <Field>
           <FieldLabel htmlFor="wizard-leadership-email">E-mail</FieldLabel>
           <Input

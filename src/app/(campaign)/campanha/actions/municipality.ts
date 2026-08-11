@@ -32,7 +32,7 @@ import {
   type MunicipalityStrategyUpdateInput,
 } from '@/lib/schemas/municipality'
 import { normalizeVoteEstimateOnSave, toVoteEstimateScenarioViewModel } from '@/lib/voteEstimate'
-import type { CampaignUser } from '@/payload-types'
+import type { CampaignUser, Municipality } from '@/payload-types'
 import {
   getCampaignActionContext,
   reloadStaffActor,
@@ -290,6 +290,52 @@ export const assignMunicipalityAdvisors = async (input: MunicipalityAdvisorsAssi
  * revalidate — the list's facet/sort by advisor reconciles on next navigation,
  * same choice as the votos estimados popover.
  */
+/**
+ * One municipality↔advisor toggle under the caller's transaction: advisory
+ * lock, read-modify-write. Returns the updated document, or `null` for a no-op
+ * (the delta does not change the list). The unrestricted-role gate is the
+ * CALLER's job — `setMunicipalityAdvisorMembershipRecord` asserts it for a
+ * single toggle, and the C116 person-cell action asserts it once for a whole
+ * batch. Reads/writes run under a justified bypass: the `advisors` field is
+ * admin-only by field access, and the `validateMunicipalityAdvisors`
+ * beforeValidate hook still runs under the bypass and re-checks eligibility.
+ */
+export const toggleMunicipalityAdvisorMembership = async (
+  payload: Payload,
+  req: PayloadTransactionRequest,
+  municipalityId: number,
+  advisorId: number,
+  assigned: boolean,
+): Promise<Municipality | null> => {
+  await acquireTextAdvisoryLocks(payload, req, [`municipality-advisors:${municipalityId}`])
+
+  // Intentional bypass: the unrestricted-role gate is the caller's job (see
+  // the doc above); the `advisors` field is admin-only by field access, and
+  // the `validateMunicipalityAdvisors` beforeValidate hook still runs.
+  const current = await payload.findByID({
+    collection: 'municipality',
+    id: municipalityId,
+    depth: 0,
+    select: { advisors: true },
+    overrideAccess: true,
+    req,
+  })
+
+  const currentAdvisorIDs = uniqueRelationshipIds(current.advisors)
+  const nextAdvisorIDs = nextAdvisorIdsAfterMembership(currentAdvisorIDs, advisorId, assigned)
+  if (nextAdvisorIDs === null) return null
+
+  // Same intentional bypass as the read above: the gate ran in the caller.
+  return payload.update({
+    collection: 'municipality',
+    id: municipalityId,
+    data: { advisors: nextAdvisorIDs },
+    depth: 0,
+    overrideAccess: true,
+    req,
+  })
+}
+
 export const setMunicipalityAdvisorMembershipRecord = async (
   payload: Payload,
   actor: CampaignUser,
@@ -307,29 +353,21 @@ export const setMunicipalityAdvisorMembershipRecord = async (
         req,
       )
 
-      await acquireTextAdvisoryLocks(payload, req, [`municipality-advisors:${municipality}`])
+      const toggled = await toggleMunicipalityAdvisorMembership(
+        payload,
+        req,
+        municipality,
+        advisor,
+        assigned,
+      )
+      if (toggled !== null) return toggled
 
-      const current = await payload.findByID({
+      // No-op: nothing to write — the caller still expects the current doc.
+      return payload.findByID({
         collection: 'municipality',
         id: municipality,
         depth: 0,
         select: { advisors: true },
-        overrideAccess: true,
-        req,
-      })
-
-      const currentAdvisorIDs = uniqueRelationshipIds(current.advisors)
-      const nextAdvisorIDs = nextAdvisorIdsAfterMembership(currentAdvisorIDs, advisor, assigned)
-      if (nextAdvisorIDs === null) return current
-
-      // Intentional admin bypass: unrestricted role was freshly verified above;
-      // the advisors field is admin-only by field access, and eligibility is
-      // reconfirmed by the `validateMunicipalityAdvisors` beforeValidate hook.
-      return payload.update({
-        collection: 'municipality',
-        id: municipality,
-        data: { advisors: nextAdvisorIDs },
-        depth: 0,
         overrideAccess: true,
         req,
       })

@@ -8,6 +8,7 @@ export const supportStatusLabels: Record<SupportStatus, string> = {
   engajado: 'Engajado',
   a_abordar: 'A abordar',
   em_disputa: 'Em disputa',
+  lembranca: 'Lembrança',
   negativo: 'Negativo',
 }
 

@@ -1,4 +1,5 @@
 import { CitiesByState } from '@/lib/cities'
+import { BRAZILIAN_PHONE_DUPLICATE_MESSAGE } from '@/lib/phone'
 import { z } from 'zod'
 
 import {
@@ -44,6 +45,20 @@ const nullableContactPhone = contactPhoneInput.transform((value) =>
   value === '' || value === undefined ? null : value,
 )
 
+/**
+ * The ficha's phone list: valid mobiles, never the same number twice within
+ * the SAME person (C112 — the mesa blocks it at the form); sharing a number
+ * BETWEEN persons stays free (C111). Order = priority (first = primary).
+ */
+export const contactPhonesSchema = z.array(brazilianMobile).superRefine((phones, context) => {
+  if (new Set(phones).size !== phones.length) {
+    context.addIssue({
+      code: 'custom',
+      message: BRAZILIAN_PHONE_DUPLICATE_MESSAGE,
+    })
+  }
+})
+
 /** Per-field Contact write shared by campaign person joins. */
 export const contactFieldUpdateSchema = z.discriminatedUnion('field', [
   z.object({
@@ -60,6 +75,16 @@ export const contactFieldUpdateSchema = z.discriminatedUnion('field', [
     id: positiveRelationshipId,
     field: z.literal('phone'),
     phone: nullableContactPhone,
+  }),
+  z.object({
+    id: positiveRelationshipId,
+    field: z.literal('phones'),
+    phones: contactPhonesSchema,
+  }),
+  z.object({
+    id: positiveRelationshipId,
+    field: z.literal('city'),
+    city: z.string().trim().min(2, 'Cidade inválida').max(100, 'Cidade muito longa'),
   }),
 ])
 

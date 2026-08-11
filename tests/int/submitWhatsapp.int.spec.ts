@@ -70,7 +70,7 @@ describe('submitWhatsapp (consent by stable key)', () => {
 
     const contacts = await payload.find({
       collection: 'contact',
-      where: { phone: { equals: phone } },
+      where: { 'phones.value': { equals: phone } },
       depth: 0,
       limit: 1,
       pagination: false,

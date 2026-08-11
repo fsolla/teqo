@@ -2,19 +2,21 @@
 
 import { updateLeadershipContactFormAction } from '@/app/(campaign)/campanha/(app)/liderancas/formActions'
 import { CampaignInlineEditableCell } from '@/components/campaign/shared/CampaignInlineEditableCell'
+import { PhonesFieldEditor } from '@/components/campaign/shared/PhonesFieldEditor'
 
 type LeadershipContactSectionProps = {
   leadershipId: number
   name: string
   email: string | null
-  phone: string | null
+  /** Every number of the ficha, order = priority (C112) — primary first. */
+  phones: string[]
 }
 
 export const LeadershipContactSection = ({
   leadershipId,
   name,
   email,
-  phone,
+  phones,
 }: LeadershipContactSectionProps) => (
   <section aria-labelledby="leadership-contact-title" className="flex flex-col gap-3">
     <h2 id="leadership-contact-title" className="text-base font-medium">
@@ -50,16 +52,16 @@ export const LeadershipContactSection = ({
         </dd>
       </div>
       <div className="flex flex-col gap-1">
-        <dt className="text-sm text-muted-foreground">Celular</dt>
+        <dt className="text-sm text-muted-foreground">
+          Celulares <span className="font-normal">(o primeiro é o principal)</span>
+        </dt>
         <dd>
-          <CampaignInlineEditableCell
+          <PhonesFieldEditor
+            defaultValues={phones}
+            label="Celulares"
+            saveAction={updateLeadershipContactFormAction}
             recordId={leadershipId}
             recordIdField="leadershipId"
-            field="phone"
-            value={phone}
-            label="Celular"
-            formAction={updateLeadershipContactFormAction}
-            readBehavior="copy"
           />
         </dd>
       </div>

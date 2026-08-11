@@ -8,10 +8,10 @@ import {
   type LeaderSupporterFormState,
 } from '@/app/(campaign)/campanha/actions/leaderSupporter'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
+import { PhonesFieldEditor } from '@/components/campaign/shared/PhonesFieldEditor'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { StrictCombobox } from '@/components/campaign/shared/StrictCombobox'
 import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
-import { FormattedInput } from '@/components/FormattedInput'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
@@ -26,7 +26,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Spinner } from '@/components/ui/Spinner'
-import { formatBrazilianPhoneInput, sanitizeBrazilianPhoneInput } from '@/lib/phone'
 import { errorProps as buildErrorProps, fieldError } from '@/utilities/campaignFormFields'
 import { municipalityComboboxOptions } from '@/utilities/territory/territoryComboboxOptions'
 
@@ -55,7 +54,6 @@ export const LeaderContactForm = ({
 
   useCampaignFormSuccessToast(state)
 
-  const phoneField = errorProps(state.fieldErrors, 'phone')
   const nameField = errorProps(state.fieldErrors, 'name')
   const cityField = errorProps(state.fieldErrors, 'city')
   const municipalityField = errorProps(state.fieldErrors, 'municipality')
@@ -88,33 +86,19 @@ export const LeaderContactForm = ({
         ) : null}
 
         <FieldGroup>
-          <Field data-invalid={phoneField.invalid}>
-            <FieldLabel htmlFor="leader-contact-phone">Celular *</FieldLabel>
-            <FormattedInput
-              id="leader-contact-phone"
-              name="phone"
-              required
-              inputMode="tel"
-              autoComplete="tel"
-              autoFocus
-              defaultValue={values?.phone ? formatBrazilianPhoneInput(values.phone) : ''}
-              format={formatBrazilianPhoneInput}
-              sanitize={sanitizeBrazilianPhoneInput}
-              aria-invalid={phoneField.invalid}
-              aria-describedby={phoneField.describedBy}
-              className="min-h-11 rounded-[6px]"
-            />
-            {phoneField.error ? (
-              <FieldError id="leader-contact-phone-error">{phoneField.error}</FieldError>
-            ) : null}
-          </Field>
+          <PhonesFieldEditor
+            name="phones"
+            minRows={1}
+            label="Celulares (o primeiro é o principal) *"
+            defaultValues={values?.phones ?? []}
+            error={state.fieldErrors?.phones}
+          />
 
           <Field data-invalid={nameField.invalid}>
             <FieldLabel htmlFor="leader-contact-name">Nome *</FieldLabel>
             <Input
               id="leader-contact-name"
               name="name"
-              required
               minLength={2}
               defaultValue={values?.name}
               autoComplete="name"
@@ -148,7 +132,6 @@ export const LeaderContactForm = ({
               <NativeSelect
                 id="leader-contact-municipality"
                 name="municipality"
-                required
                 defaultValue={values?.municipality ?? ''}
                 className="w-full **:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-[6px]"
               >
@@ -193,7 +176,6 @@ export const LeaderContactForm = ({
                 id="leader-contact-consent"
                 name="consentAccepted"
                 value="true"
-                required
                 aria-invalid={Boolean(consentError)}
                 aria-describedby={consentError ? 'leader-contact-consent-error' : undefined}
               />

@@ -146,6 +146,7 @@ export const Leadership: CollectionConfig = {
         { label: 'Engajado', value: 'engajado' },
         { label: 'A abordar', value: 'a_abordar' },
         { label: 'Em disputa', value: 'em_disputa' },
+        { label: 'Lembrança', value: 'lembranca' },
         { label: 'Negativo', value: 'negativo' },
       ],
     },

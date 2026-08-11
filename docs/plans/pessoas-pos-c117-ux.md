@@ -14,7 +14,7 @@ Responsável: —
 Dois achados P2 do /simplify da entrega C117 (#656), mesma superfície (omnibox de pessoas):
 
 1. **Descoberta de ordenação no mobile (S12).** No mobile os headers sortáveis não existem (cards), e o grupo "Ordenação" só aparece digitando keyword; ao digitar o genérico "ordenar", o cap de 8 por grupo (`campaignListOmnibox.ts`) corta em `Nome/Contato/Assessora/Lidera`, escondendo `Aliada em`, `Assessorado` e `Base` — o usuário mobile não descobre que pode ordenar por essas colunas.
-2. **Facet de ausência "completo" (S14).** Marcar a 3ª ausência zera o facet inteiro (contrato B18 "selecionar todos = todas" = ausente): a consulta "quem está sem *algum* dado" (fichas incompletas) é inexpressível — o terceiro clique faz os três chips sumirem no meio da interação.
+2. **Facet de ausência "completo" (S14).** Marcar a 3ª ausência zera o facet inteiro (contrato B18 "selecionar todos = todas" = ausente): a consulta "quem está sem _algum_ dado" (fichas incompletas) é inexpressível — o terceiro clique faz os três chips sumirem no meio da interação.
 
 ## Fases (ordem de ROI)
 

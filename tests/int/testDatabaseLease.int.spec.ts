@@ -10,6 +10,8 @@ import {
   acquireTestDatabaseLease,
   CAMPAIGN_INVITE_CONSENT_LEASE_KEY,
   ensureLeasedConsent,
+  fixtureConsentText,
+  purgeOrphanedConsentRenames,
   startTestDatabaseLeaseAcquisition,
   waitForAdvisoryLockWaiter,
   withInviteConsent,
@@ -182,6 +184,7 @@ describe('test database lease', () => {
     const before = await withInviteConsent(payload, async (consent) => consent)
 
     let writerAcquisition: Promise<TestDatabaseLease> | undefined
+    let readerAcquisition: Promise<TestDatabaseLease> | undefined
     try {
       await withMissingInviteConsentFixture(payload, async () => {
         let writerEntered = false
@@ -202,13 +205,43 @@ describe('test database lease', () => {
         })
         expectExactWaiter(waiting, writerPID, 'ExclusiveLock')
         expect(writerEntered).toBe(false)
+
+        // D10 F2: the window is EXCLUSIVE, so even a SHARED consumer queues
+        // while the canonical key is committed-absent — no consumer can
+        // observe the transient absence (baseline load runs flaked 3/4 with
+        // consumers reading the absent key or referencing a row the restore
+        // deleted out from under them). The reader is NOT awaited here: it
+        // only unblocks when this window releases, which is after the
+        // operation returns.
+        let readerEntered = false
+        const pendingReader = startTestDatabaseLeaseAcquisition(
+          payload,
+          CAMPAIGN_INVITE_CONSENT_LEASE_KEY,
+          'shared',
+        )
+        readerAcquisition = pendingReader.acquisition.then((lease) => {
+          readerEntered = true
+          return lease
+        })
+        const readerPID = await pendingReader.backendPID
+        const readerWaiting = await waitForAdvisoryLockWaiter(payload, {
+          key: `test:${CAMPAIGN_INVITE_CONSENT_LEASE_KEY}`,
+          mode: 'ShareLock',
+          waiterPID: readerPID,
+        })
+        expectExactWaiter(readerWaiting, readerPID, 'ShareLock')
+        expect(readerEntered).toBe(false)
       })
     } finally {
-      // Release the waiter lease even when an assertion above fails, so the
-      // pending acquisition never blocks parallel spec files until teardown.
+      // Release the waiter leases even when an assertion above fails, so the
+      // pending acquisitions never block parallel spec files until teardown.
       if (writerAcquisition) {
         const writer = await writerAcquisition
         await writer.release()
+      }
+      if (readerAcquisition) {
+        const reader = await readerAcquisition
+        await reader.release()
       }
     }
 
@@ -472,5 +505,177 @@ describe('test database lease', () => {
 
     const subsequent = await acquireTestDatabaseLease(payload, leaseKey)
     await subsequent.release()
+  })
+
+  it('purges orphaned consent renames left by an aborted run on ensure', async () => {
+    // D10 F1: every consent fixture must clear the rename shapes an aborted
+    // run can leave behind before snapshotting, or the next run's rename hits
+    // the UNIQUE constraint. Legitimate rows (the private key below) survive.
+    const privateKey = `purge-ensure-${Date.now()}-${Math.random()}`
+    const privateLeaseKey = `purge-ensure-lease-${Date.now()}-${Math.random()}`
+    const legitKey = `purge-legit-${Date.now()}-${Math.random()}`
+    const orphanIDs: number[] = []
+    let legitID = 0
+    // The orphans are planted under the key's EXCLUSIVE lease: the rename
+    // keys are LIVE inside other spec files' fixtures, and an unleased
+    // create could hit their UNIQUE constraint mid-rename (D10 F2 load
+    // measurement). The lease start also purges any leftover from a previous
+    // failed run of this very test, so the plant never collides with it.
+    const plantLease = await acquireTestDatabaseLease(payload, privateLeaseKey)
+    try {
+      await purgeOrphanedConsentRenames((query) => payload.db.drizzle.execute(query))
+      for (const key of [
+        'temporarily-renamed-consent',
+        'chave-renomeada',
+        'chave-temporariamente-ausente',
+      ]) {
+        const orphan = await payload.create({
+          collection: 'consent',
+          data: { key, text: fixtureConsentText },
+          depth: 0,
+        })
+        orphanIDs.push(orphan.id)
+      }
+      const legit = await payload.create({
+        collection: 'consent',
+        data: { key: legitKey, text: fixtureConsentText },
+        depth: 0,
+      })
+      legitID = legit.id
+    } finally {
+      await plantLease.release()
+    }
+
+    try {
+      const configured = await ensureLeasedConsent(payload, {
+        consentKey: privateKey,
+        leaseKey: privateLeaseKey,
+      })
+      expect(configured.key).toBe(privateKey)
+
+      for (const orphanID of orphanIDs) {
+        const orphan = await payload.find({
+          collection: 'consent',
+          where: { id: { equals: orphanID } },
+          depth: 0,
+          limit: 1,
+        })
+        expect(orphan.docs).toHaveLength(0)
+      }
+      expect(
+        await payload.findByID({ collection: 'consent', id: legitID, depth: 0 }),
+      ).toMatchObject({ key: legitKey })
+    } finally {
+      // Cleanup runs even on failure — a failed run of this very test must
+      // not leave the orphans it planted behind (self-healing tests).
+      for (const orphanID of orphanIDs) {
+        await payload
+          .delete({ collection: 'consent', id: orphanID, depth: 0 })
+          .catch(() => undefined)
+      }
+      if (legitID > 0) {
+        await payload
+          .delete({ collection: 'consent', id: legitID, depth: 0 })
+          .catch(() => undefined)
+      }
+    }
+  })
+
+  it('purges orphaned renames during the missing-consent fixture setup', async () => {
+    const privateKey = `purge-missing-${Date.now()}-${Math.random()}`
+    const privateLeaseKey = `purge-missing-lease-${Date.now()}-${Math.random()}`
+    // Planted under the exclusive lease (the rename keys are live inside
+    // other spec files' fixtures — an unleased create could hit their UNIQUE
+    // constraint mid-rename). The lease start also purges any leftover from
+    // a previous failed run of this very test.
+    const plantLease = await acquireTestDatabaseLease(payload, privateLeaseKey)
+    let orphanID = 0
+    try {
+      await purgeOrphanedConsentRenames((query) => payload.db.drizzle.execute(query))
+      orphanID = (
+        await payload.create({
+          collection: 'consent',
+          data: { key: 'chave-temporariamente-ausente', text: fixtureConsentText },
+          depth: 0,
+        })
+      ).id
+    } finally {
+      await plantLease.release()
+    }
+
+    await withMissingInviteConsentFixture(payload, async () => undefined, {
+      consentKey: privateKey,
+      leaseKey: privateLeaseKey,
+    })
+
+    try {
+      const orphan = await payload.find({
+        collection: 'consent',
+        where: { id: { equals: orphanID } },
+        depth: 0,
+        limit: 1,
+      })
+      expect(orphan.docs).toHaveLength(0)
+    } finally {
+      // A failed run of this very test must not leave its plant behind.
+      await payload.delete({ collection: 'consent', id: orphanID, depth: 0 }).catch(() => undefined)
+    }
+  })
+
+  it('self-heals the canonical invite consent after an aborted rename on the next fixture run', async () => {
+    // The exact residue an aborted run leaves: the canonical row committed
+    // with a temporary key and the snapshot lost. The plant holds the
+    // exclusive lease so parallel spec files never observe the state; the
+    // fixture's own purge then heals it — the in-fixture rename must succeed
+    // instead of hitting the UNIQUE `consent_key_idx`. The lease start also
+    // purges any leftover from a previous failed run of this very test.
+    const plantLease = await acquireTestDatabaseLease(payload, CAMPAIGN_INVITE_CONSENT_LEASE_KEY)
+    try {
+      await purgeOrphanedConsentRenames((query) => payload.db.drizzle.execute(query))
+      const canonical = await payload.find({
+        collection: 'consent',
+        where: { key: { equals: 'lideranca-autopreenchimento' } },
+        limit: 1,
+        sort: 'id',
+        depth: 0,
+      })
+      if (!canonical.docs[0]) {
+        throw new Error(
+          'The canonical invite consent row must exist before the aborted-rename repro.',
+        )
+      }
+      await payload.update({
+        collection: 'consent',
+        id: canonical.docs[0].id,
+        data: { key: 'chave-renomeada' },
+        depth: 0,
+      })
+    } finally {
+      await plantLease.release()
+    }
+
+    let renamedDuringFixture = false
+    await withMutableConsentFixture(payload, async (consent) => {
+      // Without the F1 purge this rename throws "Valor deve ser único".
+      await payload.update({
+        collection: 'consent',
+        id: consent.id,
+        data: { key: 'chave-renomeada' },
+        depth: 0,
+      })
+      renamedDuringFixture = true
+    })
+    expect(renamedDuringFixture).toBe(true)
+
+    // Second run proves the run following the healed one stays clean.
+    await withMutableConsentFixture(payload, async () => undefined)
+
+    const orphans = await payload.find({
+      collection: 'consent',
+      where: { key: { equals: 'chave-renomeada' } },
+      depth: 0,
+      pagination: false,
+    })
+    expect(orphans.totalDocs).toBe(0)
   })
 })

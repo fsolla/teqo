@@ -4,10 +4,12 @@ import {
   createAdvisor,
   sendAdvisorPasswordReset,
   setAdvisorMunicipalitiesBatch,
+  updateAdvisorContactFicha,
   updateAdvisorProfile,
 } from '@/app/(campaign)/campanha/actions/advisor'
 import {
   nullableFormText,
+  repeatedPhoneFormValues,
   repeatedRelationshipFormValues,
   requiredFormBoolean,
   requiredFormText,
@@ -86,6 +88,26 @@ export const sendAdvisorPasswordResetFormAction = async (
     },
     safeMessages: advisorSafeMessages,
     genericMessage: 'Não foi possível enviar o link de redefinição de senha.',
+  })
+
+/**
+ * C112 — the advisor's ficha (Contact) phone list. The account keeps its own
+ * single channel phone ("Conta"); this editor targets the person's ficha.
+ */
+export const updateAdvisorContactFormAction = async (
+  _state: CampaignFormActionState,
+  formData: FormData,
+): Promise<CampaignFormActionState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      await updateAdvisorContactFicha({
+        contactId: requiredRelationshipFormValue(formData, 'contactId'),
+        phones: repeatedPhoneFormValues(formData, 'phones'),
+      })
+      return { message: 'Telefones atualizados.' }
+    },
+    safeMessages: advisorSafeMessages,
+    genericMessage: 'Não foi possível salvar os telefones.',
   })
 
 export const createAdvisorFormAction = async (

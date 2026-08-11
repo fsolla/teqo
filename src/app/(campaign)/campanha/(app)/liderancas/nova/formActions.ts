@@ -2,7 +2,12 @@
 
 import { leadershipStaffEditSafeMessages } from '@/app/(campaign)/campanha/(app)/liderancas/leadershipStaffEditMessages'
 import { createLeadership } from '@/app/(campaign)/campanha/actions/leadership'
-import { optionalFormText, repeatedRelationshipFormValues, requiredFormText } from '@/lib/formData'
+import {
+  optionalFormText,
+  repeatedPhoneFormValues,
+  repeatedRelationshipFormValues,
+  requiredFormText,
+} from '@/lib/formData'
 import {
   LEADERSHIP_DUPLICATE_MESSAGE,
   LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE,
@@ -33,7 +38,7 @@ export const createLeadershipFormAction = async (
 
       return createLeadership({
         name: requiredFormText(formData, 'name'),
-        phone: requiredFormText(formData, 'phone'),
+        phones: repeatedPhoneFormValues(formData, 'phones'),
         email: optionalFormText(formData, 'email'),
         municipalities: repeatedRelationshipFormValues(formData, 'municipalities'),
         organizations: repeatedRelationshipFormValues(formData, 'organizations'),

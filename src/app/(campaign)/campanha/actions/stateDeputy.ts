@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import type { Payload } from 'payload'
 
 import { nextStateDeputyIdsAfterMunicipalityMembership } from '@/lib/municipalityStateDeputyMembership'
+import { reorderWithPrimaryPhone } from '@/lib/phone'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 import { contactFieldUpdateSchema, type ContactFieldUpdateInput } from '@/lib/schemas/contact'
 import {
@@ -69,7 +70,7 @@ const createStateDeputyWithContact = async (
     data: {
       name: data.name,
       email: null,
-      phone: null,
+      phones: [],
       state: 'BA' as Contact['state'],
       city: null,
     },
@@ -165,7 +166,7 @@ export const updateStateDeputyContactRecord = async (
       const current = await payload.findByID({
         collection: 'stateDeputy',
         id: data.id,
-        depth: 0,
+        depth: 1,
         select: { contact: true },
         user: currentActor,
         overrideAccess: false,
@@ -175,18 +176,24 @@ export const updateStateDeputyContactRecord = async (
       const contactID = relationshipId(current.contact)
       if (contactID === null) throw new Error(STATE_DEPUTY_INVALID_CONTACT_MESSAGE)
 
-      const contactData: Partial<Pick<Contact, 'name' | 'phone' | 'email'>> = {}
+      const contactData: Partial<Pick<Contact, 'name' | 'email'>> & {
+        phones?: { value: string }[]
+      } = {}
       if (data.field === 'name') {
         await assertStateDeputyNameAvailable(payload, req, data.name, data.id)
         contactData.name = data.name
       } else if (data.field === 'email') {
         contactData.email = data.email ?? null
       } else if (data.field === 'phone') {
-        if (data.phone) {
-          contactData.phone = data.phone
-        } else {
-          contactData.phone = null
-        }
+        // Inline cell edit = set the PRIMARY phone, keeping the rest of the
+        // list untouched (see the leadership sibling).
+        const contact = current.contact
+        contactData.phones = reorderWithPrimaryPhone(
+          typeof contact === 'object' && contact !== null ? contact.phones : null,
+          data.phone,
+        ).map((value) => ({ value }))
+      } else if (data.field === 'phones') {
+        contactData.phones = data.phones.map((value) => ({ value }))
       }
 
       // Bypass: the StateDeputy row access above established staff scope.

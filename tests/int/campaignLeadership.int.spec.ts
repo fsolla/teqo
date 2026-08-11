@@ -44,7 +44,7 @@ describe('campaign leadership domain', () => {
     expect(Contact.fields).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'email', required: false }),
-        expect.objectContaining({ name: 'phone', index: true }),
+        expect.objectContaining({ name: 'phones', type: 'array' }),
         expect.objectContaining({ name: 'gender', type: 'select' }),
       ]),
     )
@@ -63,14 +63,14 @@ describe('campaign leadership domain', () => {
     const parsed = leadershipCreateSchema.parse({
       municipalities: [1, 1, 2],
       name: 'Maria da Silva',
-      phone: '+55 (71) 99999-0000',
+      phones: ['+55 (71) 99999-0000'],
       supportStatus: 'engajado',
       createdBy: 999,
       user: 999,
       consent: 999,
     })
 
-    expect(parsed.phone).toBe('71999990000')
+    expect(parsed.phones).toEqual(['71999990000'])
     expect(parsed.municipalities).toEqual([1, 2])
     expect(Object.hasOwn(parsed, 'createdBy')).toBe(false)
     expect(Object.hasOwn(parsed, 'user')).toBe(false)
@@ -79,7 +79,7 @@ describe('campaign leadership domain', () => {
       leadershipCreateSchema.parse({
         municipalities: [],
         name: 'Sem município',
-        phone: '71999990000',
+        phones: ['71999990000'],
       }),
     ).toThrow()
     const update = leadershipInternalUpdateSchema.parse({
@@ -124,7 +124,7 @@ describe('campaign leadership domain', () => {
     const first = await createLeadershipRecord(payload, coordinator, {
       municipalities: [firstMunicipality.id],
       name: 'Maria de Jesus',
-      phone: `+55 ${phone}`,
+      phones: [`+55 ${phone}`],
       email: '',
       gender: 'feminino',
       supportStatus: 'engajado',
@@ -135,7 +135,7 @@ describe('campaign leadership domain', () => {
 
     const contacts = await payload.find({
       collection: 'contact',
-      where: { phone: { equals: phone } },
+      where: { 'phones.value': { equals: phone } },
       pagination: false,
       depth: 0,
     })
@@ -149,7 +149,7 @@ describe('campaign leadership domain', () => {
       createLeadershipRecord(payload, coordinator, {
         municipalities: [secondMunicipality.id],
         name: 'Nome que não sobrescreve contato existente',
-        phone,
+        phones: [phone],
         supportStatus: 'a_abordar',
       }),
     ).rejects.toThrow(DUPLICATE_LEADERSHIP_MESSAGE)
@@ -159,12 +159,15 @@ describe('campaign leadership domain', () => {
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
     const municipality = await campaignFixtures().getMunicipality()
     const phone = campaignFixtures().phone()
-    const contact = await campaignFixtures().createContact({ name: 'Contato Existente', phone })
+    const contact = await campaignFixtures().createContact({
+      name: 'Contato Existente',
+      phones: [{ value: phone }],
+    })
 
     const created = await createLeadershipRecord(payload, coordinator, {
       municipalities: [municipality.id],
       name: 'Nome que não sobrescreve contato existente',
-      phone: `+55 ${phone}`,
+      phones: [`+55 ${phone}`],
       supportStatus: 'engajado',
     })
 
@@ -209,7 +212,7 @@ describe('campaign leadership domain', () => {
     const first = createLeadershipRecord(payload, coordinator, {
       municipalities: [firstMunicipality.id],
       name: 'Contato Concorrente',
-      phone,
+      phones: [phone],
       supportStatus: 'engajado',
     })
     await firstReadReached
@@ -230,7 +233,7 @@ describe('campaign leadership domain', () => {
     const second = createLeadershipRecord(payload, coordinator, {
       municipalities: [secondMunicipality.id],
       name: 'Contato Concorrente Duplicado',
-      phone: `+55 ${phone}`,
+      phones: [`+55 ${phone}`],
       supportStatus: 'a_abordar',
     })
 
@@ -267,7 +270,7 @@ describe('campaign leadership domain', () => {
 
     const contacts = await payload.find({
       collection: 'contact',
-      where: { phone: { equals: phone } },
+      where: { 'phones.value': { equals: phone } },
       pagination: false,
       depth: 0,
     })
@@ -288,13 +291,13 @@ describe('campaign leadership domain', () => {
 
     await payload.create({
       collection: 'contact',
-      data: { name: 'Primeiro Contato', phone, state: 'BA', city: 'Salvador' },
+      data: { name: 'Primeiro Contato', phones: [{ value: phone }], state: 'BA', city: 'Salvador' },
     })
 
     // C111 — the phone is a contact channel, not a unique identity.
     await payload.create({
       collection: 'contact',
-      data: { name: 'Segundo Contato', phone, state: 'BA', city: 'Salvador' },
+      data: { name: 'Segundo Contato', phones: [{ value: phone }], state: 'BA', city: 'Salvador' },
     })
 
     // Two fichas already share the phone, so the leadership create cannot
@@ -304,7 +307,7 @@ describe('campaign leadership domain', () => {
       createLeadershipRecord(payload, coordinator, {
         municipalities: [municipality.id],
         name: 'Contato Reutilizado',
-        phone,
+        phones: [phone],
         supportStatus: 'engajado',
       }),
     ).resolves.toMatchObject({ contactReused: false })
@@ -345,14 +348,14 @@ describe('campaign leadership domain', () => {
     const ownLeadership = await createLeadershipRecord(payload, advisor, {
       municipalities: [assigned.id],
       name: 'Liderança do município',
-      phone: campaignFixtures().phone(),
+      phones: [campaignFixtures().phone()],
       supportStatus: 'engajado',
       notes: 'Avaliação interna',
     })
     await createLeadershipRecord(payload, coordinator, {
       municipalities: [other.id],
       name: 'Liderança Alheia',
-      phone: campaignFixtures().phone(),
+      phones: [campaignFixtures().phone()],
       supportStatus: 'engajado',
     })
 
@@ -376,7 +379,7 @@ describe('campaign leadership domain', () => {
       createLeadershipRecord(payload, advisor, {
         municipalities: [other.id],
         name: 'Cadastro Fora do Escopo',
-        phone: campaignFixtures().phone(),
+        phones: [campaignFixtures().phone()],
         supportStatus: 'engajado',
       }),
     ).rejects.toThrow(OUT_OF_SCOPE_MUNICIPALITY_MESSAGE)
@@ -392,7 +395,7 @@ describe('campaign leadership domain', () => {
     const own = await createLeadershipRecord(payload, advisor, {
       municipalities: [assigned.id],
       name: 'Ação Permitida',
-      phone: campaignFixtures().phone(),
+      phones: [campaignFixtures().phone()],
       supportStatus: 'engajado',
     })
 
@@ -413,7 +416,7 @@ describe('campaign leadership domain', () => {
     const otherLeadership = await createLeadershipRecord(payload, coordinator, {
       municipalities: [other.id],
       name: 'Outra Liderança',
-      phone: campaignFixtures().phone(),
+      phones: [campaignFixtures().phone()],
       supportStatus: 'engajado',
     })
     await expect(
@@ -424,6 +427,27 @@ describe('campaign leadership domain', () => {
     ).rejects.toThrow()
   })
 
+  it('persists the "lembranca" support status through create and internal update (C119)', async () => {
+    const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+    const municipality = await campaignFixtures().getMunicipality()
+
+    const created = await createLeadershipRecord(payload, coordinator, {
+      municipalities: [municipality.id],
+      name: 'Liderança Lembrança',
+      phones: [campaignFixtures().phone()],
+      supportStatus: 'lembranca',
+    })
+
+    const doc = await payload.findByID({ collection: 'leadership', id: created.id, depth: 0 })
+    expect(doc.supportStatus).toBe('lembranca')
+
+    const updated = await updateLeadershipInternalRecord(payload, coordinator, {
+      id: created.id,
+      supportStatus: 'lembranca',
+    })
+    expect(updated.supportStatus).toBe('lembranca')
+  })
+
   it('denies leadership creation to leader accounts', async () => {
     const leader = await campaignFixtures().createCampaignUser('leader')
     const municipality = await campaignFixtures().getMunicipality()
@@ -432,7 +456,7 @@ describe('campaign leadership domain', () => {
       createLeadershipRecord(payload, leader, {
         municipalities: [municipality.id],
         name: 'Criação por liderança',
-        phone: campaignFixtures().phone(),
+        phones: [campaignFixtures().phone()],
         supportStatus: 'engajado',
       }),
     ).rejects.toThrow('Somente a coordenação e a assessoria podem gerenciar lideranças.')
@@ -473,7 +497,7 @@ describe('campaign leadership domain', () => {
       createLeadershipRecord(payload, coordinator, {
         municipalities: [municipality.id],
         name: 'Contato que Deve Reverter',
-        phone,
+        phones: [phone],
         supportStatus: 'engajado',
       }),
     ).rejects.toThrow('falha forçada após contato')
@@ -482,7 +506,7 @@ describe('campaign leadership domain', () => {
     const [contacts, leaderships] = await Promise.all([
       payload.find({
         collection: 'contact',
-        where: { phone: { equals: phone } },
+        where: { 'phones.value': { equals: phone } },
         depth: 0,
         pagination: false,
       }),
@@ -602,7 +626,7 @@ describe('campaign leadership domain', () => {
     const created = await createLeadershipRecord(payload, coordinator, {
       municipalities: [municipality.id],
       name: 'Registro Permanente',
-      phone: campaignFixtures().phone(),
+      phones: [campaignFixtures().phone()],
       supportStatus: 'a_abordar',
     })
 
@@ -663,7 +687,7 @@ describe('campaign leadership domain', () => {
     const created = await createLeadershipRecord(payload, coordinator, {
       municipalities: [municipality.id],
       name: 'Nome Original',
-      phone,
+      phones: [phone],
       email: 'original@example.com',
       supportStatus: 'engajado',
     })
@@ -693,7 +717,7 @@ describe('campaign leadership domain', () => {
     })
     expect(contact.name).toBe('Nome Corrigido')
     expect(contact.email).toBe('corrigido@example.com')
-    expect(contact.phone).toBe(newPhone)
+    expect(contact.phones?.[0]?.value).toBe(newPhone)
   })
 
   it('shares a leadership contact phone with another person (C111)', async () => {
@@ -701,11 +725,11 @@ describe('campaign leadership domain', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
     const takenPhone = fixtures.phone()
-    await fixtures.createContact({ phone: takenPhone })
+    await fixtures.createContact({ phones: [{ value: takenPhone }] })
     const leadership = await createLeadershipRecord(payload, coordinator, {
       municipalities: [municipality.id],
       name: 'Liderança Sem Conflito',
-      phone: fixtures.phone(),
+      phones: [fixtures.phone()],
       supportStatus: 'engajado',
     })
 
@@ -721,11 +745,11 @@ describe('campaign leadership domain', () => {
       depth: 0,
       overrideAccess: true,
     })
-    expect(contact.phone).toBe(takenPhone)
+    expect(contact.phones?.[0]?.value).toBe(takenPhone)
 
     const withPhone = await payload.find({
       collection: 'contact',
-      where: { phone: { equals: takenPhone } },
+      where: { 'phones.value': { equals: takenPhone } },
       depth: 0,
       limit: 2,
       pagination: false,
@@ -744,7 +768,7 @@ describe('campaign leadership domain', () => {
     const leadership = await createLeadershipRecord(payload, coordinator, {
       municipalities: [away.id],
       name: 'Fora da Carteira',
-      phone: fixtures.phone(),
+      phones: [fixtures.phone()],
       supportStatus: 'engajado',
     })
 

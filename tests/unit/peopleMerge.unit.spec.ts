@@ -290,4 +290,26 @@ describe('peopleFilterFacetsFromRows', () => {
     expect(facets.municipalityIDs).toEqual([1, 3, 4, 5, 6, 99])
     expect(facets.statuses).toEqual(['engajado'])
   })
+
+  it('keeps every leadership status present in the rows, in canonical selector order (C119)', () => {
+    const withAllStatuses: PeopleMergeSources = {
+      ...source,
+      leaderships: (['engajado', 'a_abordar', 'em_disputa', 'lembranca', 'negativo'] as const).map(
+        (supportStatus, index) => ({
+          ...source.leaderships[0]!,
+          id: 10 + index,
+          contactID: 100 + index,
+          supportStatus,
+        }),
+      ),
+    }
+    const facets = peopleFilterFacetsFromRows(mergePeopleSources(withAllStatuses), { page: 1 })
+    expect(facets.statuses).toEqual([
+      'engajado',
+      'a_abordar',
+      'em_disputa',
+      'lembranca',
+      'negativo',
+    ])
+  })
 })

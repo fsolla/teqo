@@ -5,7 +5,11 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import type { Consent } from '@/payload-types'
 import config from '@/payload.config'
-import { createCampaignFixtures, withCampaignFixtures } from '../helpers/campaignFixtures'
+import {
+  createCampaignFixtures,
+  purgeMunicipalityResidue,
+  withCampaignFixtures,
+} from '../helpers/campaignFixtures'
 import { withInviteConsent, withMutableConsentFixture } from '../helpers/testDatabaseLease'
 
 let payload: Payload
@@ -40,7 +44,8 @@ const exists = async (
     | 'votePledge'
     | 'campaignDemand'
     | 'organization'
-    | 'municipalityUpdate',
+    | 'municipalityUpdate'
+    | 'supporter',
   id: number,
 ): Promise<boolean> => {
   const result = await payload.find({
@@ -217,7 +222,7 @@ describe('campaign integration fixtures', () => {
       collection: 'contact',
       data: {
         name: fixtures.value('Contato criado pelo servidor E2E'),
-        phone: fixtures.phone(),
+        phones: [{ value: fixtures.phone() }],
         state: 'BA',
         city: 'Salvador',
       },
@@ -248,10 +253,15 @@ describe('campaign integration fixtures', () => {
     let consentID = 0
 
     await withMutableConsentFixture(payload, async (configuredConsent) => {
+      // The vacating rename uses a PRIVATE key, deliberately OUTSIDE the
+      // orphan-rename purge list: the canonical row is shared with parallel
+      // spec files and any key the purge recognizes could be deleted by a
+      // concurrent fixture's cleanup mid-operation (D10 F2 measurement).
+      const vacatedKey = `owned-consent-vacated-${configuredConsent.id}`
       await payload.update({
         collection: 'consent',
         id: configuredConsent.id,
-        data: { key: `temporarily-unkeyed-${configuredConsent.id}` },
+        data: { key: vacatedKey },
         depth: 0,
       })
       await withCampaignFixtures(payload, async (fixtures) => {
@@ -276,14 +286,14 @@ describe('campaign integration fixtures', () => {
   const findOrCreateSentinelContact = async (name: string, phone: string) => {
     const existing = await payload.find({
       collection: 'contact',
-      where: { phone: { equals: phone } },
+      where: { 'phones.value': { equals: phone } },
       depth: 0,
       limit: 1,
     })
     if (existing.docs[0]) return existing.docs[0]
     return payload.create({
       collection: 'contact',
-      data: { name, phone, state: 'BA', city: 'Salvador' },
+      data: { name, phones: [{ value: phone }], state: 'BA', city: 'Salvador' },
       depth: 0,
     })
   }
@@ -396,5 +406,43 @@ describe('campaign integration fixtures', () => {
       depth: 0,
     })
     expect(persistedMunicipality.advisors ?? []).toEqual([])
+  })
+
+  it('purges residue supporters and the contacts they orphaned on a municipality claim', async () => {
+    // D10 F1: an aborted run leaves supporters AND their contact rows on the
+    // claimed municipality. The purge must delete the orphaned contacts (no
+    // other join references them) while preserving contacts that a live
+    // leadership outside the purged municipality still references.
+    const fixtures = createCampaignFixtures(payload)
+    try {
+      const municipality = await fixtures.getMunicipality()
+      const coordinator = await fixtures.createCampaignUser('coordinator')
+      const orphanContact = await fixtures.createContact()
+      const residueSupporter = await fixtures.createSupporter({
+        contact: orphanContact,
+        municipality,
+        createdBy: coordinator,
+      })
+      const preservedContact = await fixtures.createContact()
+      await fixtures.createSupporter({
+        contact: preservedContact,
+        municipality,
+        createdBy: coordinator,
+      })
+      const otherMunicipality = await fixtures.getMunicipality()
+      await fixtures.createLeadership({
+        contact: preservedContact,
+        municipalities: [otherMunicipality.id],
+        createdBy: coordinator,
+      })
+
+      await purgeMunicipalityResidue(payload, municipality.id)
+
+      expect(await exists('supporter', residueSupporter.id)).toBe(false)
+      expect(await exists('contact', orphanContact.id)).toBe(false)
+      expect(await exists('contact', preservedContact.id)).toBe(true)
+    } finally {
+      await fixtures.cleanup()
+    }
   })
 })

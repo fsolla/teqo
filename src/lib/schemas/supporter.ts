@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
 import { resolveMunicipalityName } from '@/lib/municipalityNameAliases'
+import { contactPhonesSchema } from '@/lib/schemas/contact'
 import {
-  brazilianMobile,
   optionalPersistedEmail,
   positiveRelationshipId,
   trimmedNullableText,
@@ -70,7 +70,7 @@ const optionalBahiaCity = z
 export const supporterCreateSchema = z
   .object({
     name: z.string().trim().min(2).max(120),
-    phone: brazilianMobile,
+    phones: contactPhonesSchema.min(1, 'Informe ao menos um celular.'),
     email: optionalPersistedEmail,
     city: optionalBahiaCity,
     municipality: positiveRelationshipId.optional(),
@@ -108,7 +108,7 @@ export const supporterImportConfirmSchema = z.object({
 
 export const leaderSupporterCreateSchema = z.object({
   name: z.string().trim().min(2).max(120),
-  phone: brazilianMobile,
+  phones: contactPhonesSchema.min(1, 'Informe ao menos um celular.'),
   city: optionalBahiaCity,
   municipality: positiveRelationshipId,
   consentAccepted: z.literal(true, {

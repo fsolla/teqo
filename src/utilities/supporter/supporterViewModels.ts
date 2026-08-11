@@ -1,5 +1,5 @@
 import { territoryForCity } from '@/lib/bahiaTerritories'
-import { formatBrazilianPhoneInput } from '@/lib/phone'
+import { formatBrazilianPhoneInput, phoneValuesOf, primaryPhoneOf } from '@/lib/phone'
 import { isPopulatedRelationship } from '@/lib/relationship'
 import type { SupporterVoteIntention } from '@/lib/schemas/supporter'
 import type { CampaignUser, Contact, Municipality, Supporter } from '@/payload-types'
@@ -27,6 +27,8 @@ export type SupporterDetailViewModel = {
   name: string
   phone: string
   phoneDisplay: string
+  /** Every number of the person, order = priority (primary first). */
+  phones: string[]
   email: string | null
   city: string | null
   territory: string | null
@@ -57,7 +59,7 @@ export const toSupporterListItemViewModel = (
   return {
     id: supporter.id,
     name: contact?.name ?? 'Contato sem nome',
-    phone: contact?.phone ?? '',
+    phone: primaryPhoneOf(contact?.phones) ?? '',
     email: contact?.email ?? null,
     city: contact?.city ?? null,
     municipalityName: municipality?.name ?? null,
@@ -73,13 +75,15 @@ export const toSupporterDetailViewModel = (supporter: Supporter): SupporterDetai
     ? supporter.createdBy
     : null
   const city = contact?.city ?? null
-  const phone = contact?.phone ?? ''
+  const phones = phoneValuesOf(contact?.phones)
+  const phone = phones[0] ?? ''
 
   return {
     id: supporter.id,
     name: contact?.name ?? 'Contato sem nome',
     phone,
     phoneDisplay: phone ? formatBrazilianPhoneInput(phone) : '',
+    phones,
     email: contact?.email ?? null,
     city,
     territory: city ? (territoryForCity(city) ?? null) : null,

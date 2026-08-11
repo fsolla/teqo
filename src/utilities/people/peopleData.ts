@@ -2,8 +2,13 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { primaryPhoneOf } from '@/lib/phone'
 import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
-import { isSupportStatus, type SupportStatus } from '@/lib/schemas/leadership'
+import {
+  isSupportStatus,
+  leadershipSupportStatuses,
+  type SupportStatus,
+} from '@/lib/schemas/leadership'
 import type { CampaignUser, Contact, Leadership, StateDeputy } from '@/payload-types'
 import { municipalityIdsByAdvisorIds } from '@/utilities/advisorData'
 import { getAdvisorMunicipalityIds, isCampaignStaff } from '@/utilities/campaignAccess'
@@ -64,6 +69,8 @@ export type PeopleRowViewModel = {
   capacityMunicipalityIDs: number[]
   /** Union of leadership + dobradinha advisors, names resolved (Assessorado). */
   assessoradoNames: string[]
+  /** Union of leadership + dobradinha advisors as id+name pairs (Assessorado chips, C116). */
+  assessorados: Array<{ id: number; name: string }>
 }
 
 /** Merge intermediate: the ids the loader resolves into `assessoradoNames`. */
@@ -148,6 +155,7 @@ export const mergePeopleSources = (sources: PeopleMergeSources): MergedPerson[] 
       staff: [],
       assessoraMunicipalityIDs: [],
       capacityMunicipalityIDs: [],
+      assessorados: [],
     }
     byContact.set(contactID, person)
     return person
@@ -343,9 +351,7 @@ export const peopleFilterFacetsFromRows = (
 }
 
 const leadershipStatusesInOrder = (statuses: ReadonlySet<SupportStatus>): SupportStatus[] =>
-  (['engajado', 'a_abordar', 'em_disputa', 'negativo'] as const).filter((status) =>
-    statuses.has(status),
-  )
+  leadershipSupportStatuses.filter((status) => statuses.has(status))
 
 const EMPTY_FACETS: PeopleListFilterFacets = { municipalityIDs: [], statuses: [] }
 
@@ -362,7 +368,7 @@ const contactSummary = (contact: Contact | number | null | undefined): ContactSu
     return {
       id: contact.id,
       name: contact.name ?? 'Contato',
-      phone: contact.phone ?? null,
+      phone: primaryPhoneOf(contact.phones),
       email: contact.email ?? null,
       city: contact.city ?? null,
     }
@@ -510,13 +516,11 @@ export const loadPeopleListPageData = async (
   const advisorNames = await loadCampaignUserNamesByIds(payload, [...advisorIDs])
 
   const rows: PeopleRowViewModel[] = pageRows.map((person) => {
-    const assessoradoNames = [
-      ...new Set(
-        [...person.leadershipAdvisorIDs, ...person.deputyAdvisorIDs]
-          .map((id) => advisorNames.get(id))
-          .filter((name): name is string => name !== undefined),
-      ),
-    ].sort((left, right) => left.localeCompare(right, 'pt-BR'))
+    const advisorIDs = [...new Set([...person.leadershipAdvisorIDs, ...person.deputyAdvisorIDs])]
+    const assessorados = advisorIDs
+      .map((id) => ({ id, name: advisorNames.get(id) }))
+      .filter((pair): pair is { id: number; name: string } => pair.name !== undefined)
+      .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
     return {
       contactID: person.contactID,
       name: person.name,
@@ -533,7 +537,8 @@ export const loadPeopleListPageData = async (
       staff: person.staff,
       assessoraMunicipalityIDs: person.assessoraMunicipalityIDs,
       capacityMunicipalityIDs: person.capacityMunicipalityIDs,
-      assessoradoNames,
+      assessoradoNames: assessorados.map((pair) => pair.name),
+      assessorados,
     }
   })
 

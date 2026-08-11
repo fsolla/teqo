@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { primaryPhoneOf } from '@/lib/phone'
 import { relationshipId } from '@/lib/relationship'
 import type { Consent } from '@/payload-types'
 import { getLeadershipConsent } from '@/utilities/campaignConsent'
@@ -73,7 +74,7 @@ export const getCampaignInvitePageData = async (
         depth: 0,
         select: {
           name: true,
-          phone: true,
+          phones: { value: true },
           email: true,
           gender: true,
         },
@@ -89,7 +90,7 @@ export const getCampaignInvitePageData = async (
       kind: invite.kind,
       profile: {
         name: contact.name,
-        phone: contact.phone ?? '',
+        phone: primaryPhoneOf(contact.phones) ?? '',
         email: contact.email ?? null,
         gender: contact.gender ?? null,
       },
