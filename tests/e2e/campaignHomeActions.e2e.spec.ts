@@ -1,7 +1,15 @@
 import type { Page } from '@playwright/test'
 
 import { WIZARD_MUNICIPALITY_STEP_TITLE } from '../../src/lib/campaignWizardCopy.js'
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import {
+  createCampaignOwnership,
+  expect,
+  mintCampaignSession,
+  seedCampaignSession,
+  test,
+  type CampaignE2EOwnership,
+  type CampaignSessionUser,
+} from './fixtures/campaignE2EFixtures.js'
 import {
   assertThreeColumnActionGrid,
   collectActionBoundingBoxes,
@@ -16,37 +24,56 @@ const staffActionLabels = [
   'Ver esquecidos',
 ] as const
 
-test.describe('Início — busca global (B47)', () => {
-  test('staff sees campaign search on home', async ({ campaign, page }) => {
-    const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
+/**
+ * OPS36 — one shared staff session per worker: the coordinator is created once
+ * (and its token minted once via `payload.login`), every test's fresh context
+ * receives the `campaign-token` cookie in `beforeEach`, and the group rows are
+ * cleaned up in `afterAll`. Tests that exercise another role override the
+ * cookie with their own seed. Assertions are unchanged — only the login
+ * round trip was removed from the journeys.
+ */
+let sharedFixtures: CampaignE2EOwnership
+let sharedCoordinator: CampaignSessionUser
+let coordinatorToken: string
+let sharedLeader: CampaignSessionUser
+let leaderToken: string
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
+test.beforeAll(async () => {
+  sharedFixtures = await createCampaignOwnership()
+  sharedCoordinator = await sharedFixtures.createCampaignUser('coordinator', {
+    name: sharedFixtures.value('Coordenadora Compartilhada'),
+  })
+  coordinatorToken = await mintCampaignSession(sharedFixtures.payload, sharedCoordinator)
+  sharedLeader = await sharedFixtures.createCampaignUser('leader', {
+    name: sharedFixtures.value('Liderança Compartilhada'),
+  })
+  leaderToken = await mintCampaignSession(sharedFixtures.payload, sharedLeader)
+})
+
+test.beforeEach(async ({ campaign, context }) => {
+  await seedCampaignSession(context, campaign.baseURL, coordinatorToken)
+})
+
+test.afterAll(async () => {
+  if (!sharedFixtures) return
+  await sharedFixtures.cleanup()
+  await sharedFixtures.expectNoOwnedRows()
+})
+
+test.describe('Início — busca global (B47)', () => {
+  test('staff sees campaign search on home', async ({ page }) => {
+    await page.goto('/campanha')
     await expect(page.getByLabel('Buscar na campanha')).toBeVisible()
   })
 
-  test('leader does not see campaign search on home', async ({ campaign, page }) => {
-    const { fixtures } = campaign
-    const leader = await fixtures.createCampaignUser('leader', {
-      name: fixtures.value('Liderança'),
-    })
-
-    await campaign.login(page, leader.email!, leader.password)
+  test('leader does not see campaign search on home', async ({ campaign, context, page }) => {
+    await seedCampaignSession(context, campaign.baseURL, leaderToken)
+    await page.goto('/campanha')
     await expect(page.getByLabel('Buscar na campanha')).toHaveCount(0)
   })
 
-  test('staff focused search hides action strip on input focus (B66)', async ({
-    campaign,
-    page,
-  }) => {
-    const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
-
-    await campaign.login(page, coordinator.email!, coordinator.password)
+  test('staff focused search hides action strip on input focus (B66)', async ({ page }) => {
+    await page.goto('/campanha')
     const actionsChrome = page.locator('[data-slot="home-actions-chrome"]')
     await expect(page.getByLabel('Ações rápidas')).toBeVisible()
 
@@ -57,16 +84,8 @@ test.describe('Início — busca global (B47)', () => {
     await expect(actionsChrome).not.toHaveAttribute('data-retracted', 'true', { timeout: 5000 })
   })
 
-  test('staff typing in search keeps action strip hidden after debounce', async ({
-    campaign,
-    page,
-  }) => {
-    const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
-
-    await campaign.login(page, coordinator.email!, coordinator.password)
+  test('staff typing in search keeps action strip hidden after debounce', async ({ page }) => {
+    await page.goto('/campanha')
     const actionsChrome = page.locator('[data-slot="home-actions-chrome"]')
     await expect(page.getByLabel('Ações rápidas')).toBeVisible()
 
@@ -83,14 +102,11 @@ test.describe('Início — busca global (B47)', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
     // Claimed, never hardcoded: parallel specs sharing one seeded municipality
     // raced each other's mutations on it (miss #73).
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha')
     const search = page.getByLabel('Buscar na campanha')
     await search.fill(municipality.name)
 
@@ -106,6 +122,7 @@ test.describe('Início — busca global (B47)', () => {
 
   test('staff focused search without curated suggestions shows the honest empty state (OPS29)', async ({
     campaign,
+    context,
     page,
   }) => {
     const { fixtures } = campaign
@@ -115,10 +132,10 @@ test.describe('Início — busca global (B47)', () => {
     const advisor = await fixtures.createCampaignUser('advisor', {
       name: fixtures.value('Assessora OPS29'),
     })
-
-    await campaign.login(page, advisor.email!, advisor.password)
+    await campaign.sessionFor(context, advisor)
     // Início renders the suggest payload server-side (initialSuggest), so this
     // also covers the SSR path — no POST needed for the empty state (OPS29).
+    await page.goto('/campanha')
     const search = page.getByLabel('Buscar na campanha')
     await search.focus()
 
@@ -132,15 +149,9 @@ test.describe('Início — catálogo de ações (B45)', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
   test('staff sees six home actions and can open municipalities without coverage', async ({
-    campaign,
     page,
   }) => {
-    const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
-
-    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha')
     const actionsRegion = page.getByLabel('Ações rápidas')
     await expect(actionsRegion).toBeVisible()
 
@@ -172,13 +183,13 @@ test.describe('Início — catálogo de ações (B45)', () => {
     expect(url.searchParams.get('sort')).toBe('votos')
   })
 
-  test('leader sees two home actions and can open contacts', async ({ campaign, page }) => {
-    const { fixtures } = campaign
-    const leader = await fixtures.createCampaignUser('leader', {
-      name: fixtures.value('Liderança'),
-    })
-
-    await campaign.login(page, leader.email!, leader.password)
+  test('leader sees two home actions and can open contacts', async ({
+    campaign,
+    context,
+    page,
+  }) => {
+    await seedCampaignSession(context, campaign.baseURL, leaderToken)
+    await page.goto('/campanha')
     await expect(page.getByLabel('Ações rápidas')).toBeVisible()
 
     await expect(
@@ -200,12 +211,8 @@ test.describe('Wizard — busca município (B60)', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto('/campanha/acoes/atualizar-votos')
     await expect(page.getByLabel('Buscar município')).toBeVisible()
     await expect(page.getByRole('region', { name: WIZARD_MUNICIPALITY_STEP_TITLE })).toBeVisible()
@@ -241,12 +248,8 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`/campanha/acoes/atualizar-votos?municipio=${municipality.slug}`)
 
     const step = wizardVoteStep(page)
@@ -272,12 +275,8 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(
       `/campanha/acoes/atualizar-votos?municipio=${municipality.slug}&from=${encodeURIComponent(`/campanha/municipios/${municipality.slug}`)}`,
     )
@@ -298,12 +297,8 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`/campanha/acoes/atualizar-votos?municipio=${municipality.slug}`)
 
     await expect(page.getByRole('heading', { name: 'Ajustar votos estimados' })).toBeVisible({
@@ -321,12 +316,8 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
 
   test('legacy cenario param redirects to canonical URL', async ({ campaign, page }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(
       `/campanha/acoes/atualizar-votos?municipio=${municipality.slug}&cenario=pessimistic`,
     )
@@ -345,21 +336,25 @@ test.describe('Wizard — ajuste de votos (B61 / B77)', () => {
 test.describe('Wizard — atualizar liderança (B70)', () => {
   test('create leadership, save, and return to origin (B168)', async ({ campaign, page }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
     const municipality = await fixtures.claimMunicipality()
     const suffix = Date.now().toString().slice(-8).padStart(8, '0')
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`/campanha/acoes/atualizar-lideranca?municipio=${municipality.slug}`)
 
     await expect(page.getByRole('heading', { name: 'Quem coordena por aqui?' })).toBeVisible({
       timeout: 15000,
     })
 
-    await page.getByRole('button', { name: 'Adicionar liderança' }).click()
-    await expect(page.getByRole('heading', { name: 'Nova liderança' })).toBeVisible()
+    // The add tile flips client-side state (`setMode`), so a click that lands
+    // before hydration is a silent no-op (the B13/B17 flake class) — with the
+    // shared-session seed the wizard page is often the worker's first load, so
+    // the retry loop guards the transition instead of the login flow's timing.
+    await expect(async () => {
+      await page.getByRole('button', { name: 'Adicionar liderança' }).click({ timeout: 1_000 })
+      await expect(page.getByRole('heading', { name: 'Nova liderança' })).toBeVisible({
+        timeout: 5_000,
+      })
+    }).toPass({ timeout: 15_000 })
 
     await page.getByLabel('Nome').fill(`Liderança B70 ${suffix}`)
     await page.getByLabel('Celular').fill(`719${suffix}`)
@@ -382,13 +377,9 @@ test.describe('Wizard — registrar atualização (C87)', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
 
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`/campanha/acoes/registrar-atualizacao?municipio=${municipality.slug}`)
 
     await expect(page.getByRole('heading', { name: 'Registrar atualização' })).toBeVisible({
@@ -411,12 +402,8 @@ test.describe('Wizard — registrar atualização (C87)', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`/campanha/acoes/registrar-atualizacao?municipio=${municipality.slug}`)
 
     await expect(page.getByRole('heading', { name: 'Registrar atualização' })).toBeVisible({
@@ -431,12 +418,8 @@ test.describe('Wizard — registrar atualização (C87)', () => {
 
   test('stale entry param is ignored — never a skip link (B168)', async ({ campaign, page }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(
       `/campanha/acoes/registrar-atualizacao?municipio=${municipality.slug}&entry=update-votes`,
     )
@@ -454,12 +437,8 @@ test.describe('Wizard — mudar tendência (B97 / B168)', () => {
     page,
   }) => {
     const { fixtures } = campaign
-    const coordinator = await fixtures.createCampaignUser('coordinator', {
-      name: fixtures.value('Coordenadora Geral'),
-    })
     const municipality = await fixtures.claimMunicipality()
 
-    await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`/campanha/acoes/mudar-tendencia?municipio=${municipality.slug}`)
 
     await expect(page.getByRole('heading', { name: /Tendência/ })).toBeVisible({

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 
 import { sql } from '@payloadcms/db-postgres'
-import type { Fixtures, Page } from '@playwright/test'
+import type { BrowserContext, Fixtures, Page } from '@playwright/test'
 import { getPayload, type CollectionSlug, type Payload, type PayloadRequest } from 'payload'
 
 import { municipalityCatalog } from '../../../src/lib/municipalityCatalog.js'
@@ -13,6 +13,12 @@ import { withInviteConsent } from '../../helpers/testDatabaseLease.js'
 import { test as base, expect } from './e2eTest.js'
 
 const defaultBaseURL = 'http://localhost:3000'
+
+/**
+ * The campaign session cookie name is owned by `src/utilities/campaignAuth.ts`
+ * (CAMPAIGN_TOKEN_COOKIE) — the seeded cookie below must match it.
+ */
+const CAMPAIGN_TOKEN_COOKIE = 'campaign-token'
 type TransactionRequest = Pick<PayloadRequest, 'transactionID'>
 type OwnedCollection =
   | 'users'
@@ -62,7 +68,7 @@ const deletionOrder: OwnedCollection[] = [
  * through the proxy: use `ensureLeasedConsent` (testDatabaseLease.ts) so cleanup
  * cannot rob a parallel spec of the shared row.
  */
-class CampaignE2EOwnership {
+export class CampaignE2EOwnership {
   readonly payload: Payload
   readonly runID = randomUUID()
   private counter = 0
@@ -516,11 +522,71 @@ export const expectCampaignBiometricsReady = async (page: Page): Promise<void> =
   }).toPass({ timeout: 15_000 })
 }
 
+export type CampaignSessionUser = CampaignUser & { password: string }
+
+/**
+ * OPS36 — session seeding. The shared-session journeys skip the browser login
+ * round trip: `mintCampaignSession` goes through `payload.login` (the same
+ * Local API path the real login action uses, so the session row and JWT are
+ * exactly what the app validates) and `seedCampaignSession` injects the
+ * resulting `campaign-token` cookie into a test context. The cookie mirrors
+ * `campaignCookieOptions` in `src/utilities/campaignAuth.ts` (path `/campanha`,
+ * httpOnly, sameSite lax; no `secure` on the http test origin).
+ */
+export const mintCampaignSession = async (
+  payload: Payload,
+  user: CampaignSessionUser,
+): Promise<string> => {
+  if (!user.email) {
+    throw new Error('Campaign session seeding requires a user with an email.')
+  }
+  const { token } = await payload.login({
+    collection: 'campaignUser',
+    data: { email: user.email, password: user.password },
+    depth: 0,
+  })
+  if (!token) {
+    throw new Error('Campaign session seeding failed to obtain a session token.')
+  }
+  return token
+}
+
+export const seedCampaignSession = async (
+  context: BrowserContext,
+  baseURL: string,
+  token: string,
+): Promise<void> => {
+  // `addCookies` accepts either `url` or `domain`+`path`, never both — and the
+  // campaign cookie must live on `/campanha`, so the domain/path pair is used.
+  await context.addCookies([
+    {
+      name: CAMPAIGN_TOKEN_COOKIE,
+      value: token,
+      domain: new URL(baseURL).hostname,
+      path: '/campanha',
+      httpOnly: true,
+      sameSite: 'Lax',
+    },
+  ])
+}
+
+/**
+ * One ownership instance (own `runID`, own cleanup) wrapping the memoized
+ * in-process Payload — the describe-level counterpart of the per-test
+ * `campaign` fixture, for users shared across a journey group.
+ */
+export const createCampaignOwnership = async (): Promise<CampaignE2EOwnership> => {
+  assertTestDatabase(process.env.DATABASE_URL)
+  const payload = await getPayload({ config })
+  return new CampaignE2EOwnership(payload)
+}
+
 export type CampaignE2EFixture = {
   baseURL: string
   fixtures: CampaignE2EOwnership
   login: (page: Page, identifier: string, password: string) => Promise<void>
   payload: Payload
+  sessionFor: (context: BrowserContext, user: CampaignSessionUser) => Promise<void>
   transaction: <Result>(
     operation: (payload: Payload, req: TransactionRequest) => Promise<Result>,
   ) => Promise<Result>
@@ -562,6 +628,10 @@ export const campaignFixture: CampaignE2EFixtureValue = async ({}, runFixture) =
         await page.waitForURL(`${baseURL}/campanha`)
       },
       payload: fixtures.payload,
+      sessionFor: async (context, user) => {
+        const token = await mintCampaignSession(payload, user)
+        await seedCampaignSession(context, baseURL, token)
+      },
       transaction: (operation) =>
         withPayloadTransaction(payload, ({ req }) => operation(fixtures.payload, req)),
       withInviteConsent,
