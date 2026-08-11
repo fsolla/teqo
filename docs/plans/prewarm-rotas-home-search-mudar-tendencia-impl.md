@@ -80,4 +80,4 @@ em `tests/unit/testAffected.unit.spec.ts`.
 - [x] Aceite de produto da intenção ainda coberto
 - [x] Invariantes AGENTS/engineering-standards (nenhum código runtime tocado)
 - [x] Testes de domínio previstos (unit/int): 2 unit novos no classificador
-  (`testAffected.unit.spec.ts`); runtime intocado
+      (`testAffected.unit.spec.ts`); runtime intocado
