@@ -11,14 +11,22 @@ import { supportStatusLabels } from '@/utilities/leadership/leadershipLabels'
 import { peopleCapacityLabels } from '@/utilities/people/peopleLabels'
 import {
   clearPeopleListFilters,
+  peopleAbsenceFilterOptions,
   peopleCapacityFilterOptions,
   peopleStatusFilterOptions,
+  togglePeopleAbsenceFilter,
   togglePeopleCapacityFilter,
   togglePeopleMunicipalityFilter,
   togglePeopleStatusFilter,
   type PeopleFilterOption,
 } from '@/utilities/people/peopleListFilters'
-import type { PeopleListState } from '@/utilities/people/peopleListUrl'
+import {
+  isDefaultPeopleListSort,
+  peopleAbsenceLabels,
+  peopleListSortOptions,
+  resolvePeopleListSort,
+  type PeopleListState,
+} from '@/utilities/people/peopleListUrl'
 
 export type PeopleOmniboxAction =
   | { kind: 'url'; state: PeopleListState }
@@ -56,6 +64,22 @@ export const buildPeopleOmniboxChips = ({
 
   for (const status of state.statuses ?? []) {
     chips.push({ id: `status:${status}`, label: chipLabel('Apoio', supportStatusLabels[status]) })
+  }
+
+  for (const ausencia of state.ausencias ?? []) {
+    chips.push({
+      id: `ausencia:${ausencia}`,
+      label: chipLabel('Ausência', peopleAbsenceLabels[ausencia]),
+    })
+  }
+
+  if (!isDefaultPeopleListSort(state)) {
+    const { sort, dir } = resolvePeopleListSort(state)
+    const option = peopleListSortOptions.find((entry) => entry.key === sort && entry.dir === dir)
+    chips.push({
+      id: 'sort',
+      label: chipLabel('Ordenação', option?.label ?? `${sort} ${dir}`),
+    })
   }
 
   return chips
@@ -107,6 +131,31 @@ export const buildPeopleOmniboxSuggestionSeeds = ({
     )
   }
 
+  for (const option of peopleAbsenceFilterOptions) {
+    seeds.push(
+      createOmniboxSuggestionSeed(
+        {
+          id: `ausencia:${option.value}`,
+          group: 'Ausência',
+          label: option.label,
+          keywords: ['sem', 'ausencia', 'faltando', 'faltante', 'vazio'],
+        },
+        { emptyQueryVisible: true },
+      ),
+    )
+  }
+
+  for (const option of peopleListSortOptions) {
+    seeds.push(
+      createOmniboxSuggestionSeed({
+        id: `sort:${option.key}|${option.dir}`,
+        group: 'Ordenação',
+        label: option.label,
+        keywords: ['ordenar', 'ordenacao', 'ordem', 'sort'],
+      }),
+    )
+  }
+
   return seeds
 }
 
@@ -139,6 +188,22 @@ export const applyPeopleOmniboxSuggestion = ({
     return { kind: 'url', state: togglePeopleStatusFilter(state, suggestionId.slice(7)) }
   }
 
+  if (suggestionId.startsWith('ausencia:')) {
+    return { kind: 'url', state: togglePeopleAbsenceFilter(state, suggestionId.slice(9)) }
+  }
+
+  if (suggestionId.startsWith('sort:')) {
+    const raw = suggestionId.slice(5)
+    const [key, dir] = raw.split('|')
+    const option = peopleListSortOptions.find((entry) => entry.key === key && entry.dir === dir)
+    if (!option) return { kind: 'url', state }
+    const next = { ...state, page: 1, sort: option.key, dir: option.dir }
+    if (isDefaultPeopleListSort(next)) {
+      return { kind: 'url', state: { ...state, page: 1, sort: undefined, dir: undefined } }
+    }
+    return { kind: 'url', state: next }
+  }
+
   return { kind: 'url', state }
 }
 
@@ -163,10 +228,18 @@ export const removePeopleOmniboxChip = ({
     return { kind: 'url', state: togglePeopleStatusFilter(state, chipId.slice(7)) }
   }
 
+  if (chipId.startsWith('ausencia:')) {
+    return { kind: 'url', state: togglePeopleAbsenceFilter(state, chipId.slice(9)) }
+  }
+
+  if (chipId === 'sort') {
+    return { kind: 'url', state: { ...state, page: 1, sort: undefined, dir: undefined } }
+  }
+
   return { kind: 'url', state }
 }
 
-export const clearPeopleOmnibox = (): PeopleOmniboxAction => ({
+export const clearPeopleOmnibox = (state: PeopleListState): PeopleOmniboxAction => ({
   kind: 'clear',
-  state: clearPeopleListFilters(),
+  state: clearPeopleListFilters(state),
 })

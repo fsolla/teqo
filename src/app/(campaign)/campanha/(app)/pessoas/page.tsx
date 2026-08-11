@@ -10,6 +10,7 @@ import { PeopleAssessoradoCell } from '@/components/campaign/people/PeopleAssess
 import { PeopleFilters } from '@/components/campaign/people/PeopleFilters'
 import { PeopleListPageChrome } from '@/components/campaign/people/PeopleListPageChrome'
 import { PeopleMunicipalityCell } from '@/components/campaign/people/PeopleMunicipalityCell'
+import { PeopleSortableHead } from '@/components/campaign/people/PeopleSortableHead'
 import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
 import { CampaignInlineEditableCell } from '@/components/campaign/shared/CampaignInlineEditableCell'
@@ -59,7 +60,11 @@ import {
   clearPeopleListFilters,
   type PeopleFilterOption,
 } from '@/utilities/people/peopleListFilters'
-import { buildPeopleListHref, resolvePeopleListUrl } from '@/utilities/people/peopleListUrl'
+import {
+  buildPeopleListHref,
+  resolvePeopleListUrl,
+  type PeopleListState,
+} from '@/utilities/people/peopleListUrl'
 
 import {
   setPersonAssessoraFormAction,
@@ -75,7 +80,15 @@ type PeoplePageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-const PeopleListEmptyState = ({ hasFilters, scoped }: { hasFilters: boolean; scoped: boolean }) => (
+const PeopleListEmptyState = ({
+  hasFilters,
+  scoped,
+  state,
+}: {
+  hasFilters: boolean
+  scoped: boolean
+  state: PeopleListState
+}) => (
   <Empty className="min-h-56">
     <EmptyHeader>
       <EmptyMedia variant="icon">
@@ -90,7 +103,7 @@ const PeopleListEmptyState = ({ hasFilters, scoped }: { hasFilters: boolean; sco
     {hasFilters ? (
       <EmptyContent>
         <CampaignTransitionAnchor
-          href={buildPeopleFilterHref(clearPeopleListFilters())}
+          href={buildPeopleFilterHref(clearPeopleListFilters(state))}
           replace
           scroll={false}
           className={cn(buttonVariants({ variant: 'outline' }), 'min-h-11')}
@@ -140,11 +153,13 @@ const buildPeopleEditability = (
 }
 
 const peopleColumns = ({
+  state,
   municipalityIndex,
   canDelete,
   editability,
   advisorOptions,
 }: {
+  state: PeopleListState
   municipalityIndex: readonly MunicipalityPortfolioIndexEntry[]
   canDelete: boolean
   editability: PeopleEditability
@@ -154,6 +169,7 @@ const peopleColumns = ({
     id: 'name',
     label: 'Nome',
     mandatory: true,
+    head: <PeopleSortableHead state={state} sortKey="name" />,
     cell: (row) => (
       <div className="flex min-w-0 items-baseline gap-1">
         <CampaignInlineEditableCell
@@ -176,6 +192,7 @@ const peopleColumns = ({
     id: 'contact',
     label: 'Contato',
     cellClassName: 'whitespace-normal',
+    head: <PeopleSortableHead state={state} sortKey="contact" />,
     cell: (row) => (
       <CampaignInlineEditableCell
         recordId={row.contactID}
@@ -211,6 +228,7 @@ const peopleColumns = ({
     id: 'assessora',
     label: 'Assessora',
     cellClassName: 'max-w-56 whitespace-normal',
+    head: <PeopleSortableHead state={state} sortKey="assessora" />,
     cell: (row) => (
       <PeopleMunicipalityCell
         ownerId={editability.canEditAssessora(row) ? (row.staff[0]?.id ?? null) : null}
@@ -228,6 +246,7 @@ const peopleColumns = ({
     id: 'lidera',
     label: 'Lidera',
     cellClassName: 'max-w-56 whitespace-normal',
+    head: <PeopleSortableHead state={state} sortKey="lidera" />,
     cell: (row) => (
       <PeopleMunicipalityCell
         ownerId={row.leadershipID}
@@ -247,6 +266,7 @@ const peopleColumns = ({
     id: 'aliada',
     label: 'Aliada em',
     cellClassName: 'max-w-56 whitespace-normal',
+    head: <PeopleSortableHead state={state} sortKey="aliada" />,
     cell: (row) => (
       <PeopleMunicipalityCell
         ownerId={row.deputyID}
@@ -265,6 +285,7 @@ const peopleColumns = ({
     id: 'assessorado',
     label: 'Assessorado',
     cellClassName: 'max-w-56 whitespace-normal text-muted-foreground',
+    head: <PeopleSortableHead state={state} sortKey="assessorado" />,
     cell: (row) => (
       <PeopleAssessoradoCell
         ownerId={row.contactID}
@@ -279,6 +300,7 @@ const peopleColumns = ({
   {
     id: 'base',
     label: 'Base',
+    head: <PeopleSortableHead state={state} sortKey="base" />,
     cell: (row) => (
       <CampaignInlineEditableCell
         recordId={row.contactID}
@@ -513,13 +535,18 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
     : []
   const canDelete = isUnrestrictedCampaignRole(user.role)
   const columns = peopleColumns({
+    state,
     municipalityIndex,
     canDelete,
     editability,
     advisorOptions,
   })
   const hasFilters = Boolean(
-    state.q || state.capacities?.length || state.municipalities?.length || state.statuses?.length,
+    state.q ||
+    state.capacities?.length ||
+    state.municipalities?.length ||
+    state.statuses?.length ||
+    state.ausencias?.length,
   )
 
   return (
@@ -543,7 +570,11 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
             municipalityIndex={resolvedIndex}
             canDelete={canDelete}
             empty={
-              <PeopleListEmptyState hasFilters={hasFilters} scoped={user.role === 'advisor'} />
+              <PeopleListEmptyState
+                hasFilters={hasFilters}
+                scoped={user.role === 'advisor'}
+                state={state}
+              />
             }
           />
           {/* One shared Drawer for every chip-cell sheet on coarse pointers
@@ -557,7 +588,11 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
               rows={listData.rows}
               rowKey={(row) => row.contactID}
               empty={
-                <PeopleListEmptyState hasFilters={hasFilters} scoped={user.role === 'advisor'} />
+                <PeopleListEmptyState
+                  hasFilters={hasFilters}
+                  scoped={user.role === 'advisor'}
+                  state={state}
+                />
               }
             />
           </CampaignListSheetProvider>

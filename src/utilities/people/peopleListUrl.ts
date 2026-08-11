@@ -1,7 +1,9 @@
 /**
- * People list URL contract (C100): state, param parse/canonicalize, source-level
- * Payload `where`s and hrefs. Own module, same shape as `leadershipListUrl` —
- * no sort in v1: the merged list is name-ordered by construction.
+ * People list URL contract (C100, C117): state, param parse/canonicalize,
+ * source-level Payload `where`s and hrefs. Own module, same shape as
+ * `leadershipListUrl`. Sort (`sort`/`dir`) and absence filters (`ausencia`)
+ * are C117; the sort is applied in memory over the filtered merge
+ * (`peopleData.ts`), never pushed to a source where.
  *
  * The three source-level wheres only cover what a single domain collection can
  * express (`q` everywhere, `statuses`/`municipalities` on leadership). Capacity
@@ -14,6 +16,7 @@ import { leadershipSupportStatuses, type SupportStatus } from '@/lib/schemas/lea
 import {
   allParamValues,
   buildListHref,
+  createSortToggleHref,
   firstValue,
   normalizedText,
   parseExhaustiveEnumParam,
@@ -25,21 +28,101 @@ import { PEOPLE_CAPACITIES, type PeopleCapacity } from '@/utilities/people/peopl
 
 export const peoplePageSize = 25
 
+export type PeopleListSortKey =
+  | 'name'
+  | 'contact'
+  | 'assessora'
+  | 'lidera'
+  | 'aliada'
+  | 'assessorado'
+  | 'base'
+
+export type PeopleListSortDirection = 'asc' | 'desc'
+
+/**
+ * C117 — absence facets ("Sem assessor", "Sem base", "Sem contato"). Each
+ * value is a pure absence predicate over the merged row; the facet is OR
+ * within itself (same semantics as every multi-select facet) and AND with the
+ * other filters.
+ */
+export const PEOPLE_ABSENCES = ['sem_assessor', 'sem_base', 'sem_contato'] as const
+export type PeopleAbsence = (typeof PEOPLE_ABSENCES)[number]
+
+export const peopleAbsenceLabels: Record<PeopleAbsence, string> = {
+  sem_assessor: 'Sem assessor',
+  sem_base: 'Sem base',
+  sem_contato: 'Sem contato',
+}
+
 export type PeopleListState = {
   page: number
   q?: string
   capacities?: PeopleCapacity[]
   municipalities?: number[]
   statuses?: SupportStatus[]
+  ausencias?: PeopleAbsence[]
+  sort?: PeopleListSortKey
+  dir?: PeopleListSortDirection
 }
 
 export type PeopleListSearchParams = RawSearchParams
 
-const peopleListParamNames = ['q', 'capacity', 'municipality', 'status', 'page'] as const
+const peopleListParamNames = [
+  'q',
+  'capacity',
+  'municipality',
+  'status',
+  'ausencia',
+  'sort',
+  'dir',
+  'page',
+] as const
 const peopleListParamNameSet = new Set<string>(peopleListParamNames)
 
 const peopleCapacitySet = new Set<string>(PEOPLE_CAPACITIES)
 const supportStatusSet = new Set<string>(leadershipSupportStatuses)
+
+/**
+ * Sort keys are exactly the columns visible by default (C117 anti-goal: no
+ * ordering by hidden columns — `email` is hidden since B197). Derived from the
+ * label record so a new key is one line here.
+ */
+export const peopleListSortLabels: Record<PeopleListSortKey, string> = {
+  name: 'Nome',
+  contact: 'Contato',
+  assessora: 'Assessora',
+  lidera: 'Lidera',
+  aliada: 'Aliada em',
+  assessorado: 'Assessorado',
+  base: 'Base',
+}
+
+const peopleListSortKeySet = new Set<string>(Object.keys(peopleListSortLabels))
+const peopleListSortDirSet = new Set<PeopleListSortDirection>(['asc', 'desc'])
+const peopleAbsenceSet = new Set<string>(PEOPLE_ABSENCES)
+
+/** Categorical/textual keys open A–Z; count keys open on the biggest first. */
+const peopleSortKeysWithDescDefault = new Set<PeopleListSortKey>([
+  'assessora',
+  'lidera',
+  'aliada',
+  'assessorado',
+])
+
+export const defaultPeopleListSortDir = (key: PeopleListSortKey): PeopleListSortDirection =>
+  peopleSortKeysWithDescDefault.has(key) ? 'desc' : 'asc'
+
+export const resolvePeopleListSort = (
+  state: PeopleListState,
+): { sort: PeopleListSortKey; dir: PeopleListSortDirection } => {
+  const sort = state.sort ?? 'name'
+  return { sort, dir: state.dir ?? defaultPeopleListSortDir(sort) }
+}
+
+export const isDefaultPeopleListSort = (state: PeopleListState): boolean => {
+  const { sort, dir } = resolvePeopleListSort(state)
+  return sort === 'name' && dir === defaultPeopleListSortDir('name')
+}
 
 export const parsePeopleListParams = (params: PeopleListSearchParams): PeopleListState => {
   const rawPage = strictDecimalInteger(firstValue(params.page))
@@ -49,6 +132,15 @@ export const parsePeopleListParams = (params: PeopleListSearchParams): PeopleLis
     .map((token) => strictDecimalInteger(token))
     .filter((id): id is number => typeof id === 'number' && id > 0)
   const statuses = parseExhaustiveEnumParam<SupportStatus>(params.status, supportStatusSet)
+  const ausencias = parseExhaustiveEnumParam<PeopleAbsence>(params.ausencia, peopleAbsenceSet)
+  const rawSort = firstValue(params.sort)
+  const sort =
+    rawSort && peopleListSortKeySet.has(rawSort) ? (rawSort as PeopleListSortKey) : undefined
+  const rawDir = firstValue(params.dir)
+  const dir =
+    rawDir && peopleListSortDirSet.has(rawDir as PeopleListSortDirection)
+      ? (rawDir as PeopleListSortDirection)
+      : undefined
 
   return {
     page: rawPage ?? 1,
@@ -56,6 +148,9 @@ export const parsePeopleListParams = (params: PeopleListSearchParams): PeopleLis
     ...(capacities.length ? { capacities } : {}),
     ...(municipalities.length ? { municipalities } : {}),
     ...(statuses.length ? { statuses } : {}),
+    ...(ausencias.length ? { ausencias } : {}),
+    ...(sort ? { sort } : {}),
+    ...(dir ? { dir } : {}),
   }
 }
 
@@ -68,6 +163,9 @@ export const peopleListStateToRawParams = (
   capacity: state.capacities,
   municipality: state.municipalities?.map(String),
   status: state.statuses,
+  ausencia: state.ausencias,
+  sort: state.sort,
+  dir: state.dir,
 })
 
 /** Expects already-canonical state (from parse or a rule-preserving toggle). */
@@ -81,6 +179,12 @@ export const serializeCanonicalPeopleListSearchParams = (
     params.append('municipality', String(municipality))
   }
   for (const status of canonicalState.statuses ?? []) params.append('status', status)
+  for (const ausencia of canonicalState.ausencias ?? []) params.append('ausencia', ausencia)
+  if (!isDefaultPeopleListSort(canonicalState)) {
+    const { sort, dir } = resolvePeopleListSort(canonicalState)
+    params.set('sort', sort)
+    if (dir !== defaultPeopleListSortDir(sort)) params.set('dir', dir)
+  }
   if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
   return params
 }
@@ -92,6 +196,26 @@ const buildPeopleListSearchParams = (state: PeopleListState, page = state.page):
 
 export const buildPeopleListHref = (state: PeopleListState, page: number): string =>
   buildListHref(state, buildPeopleListSearchParams, '/campanha/pessoas', page)
+
+export const buildPeopleSortHref = createSortToggleHref<PeopleListState, PeopleListSortKey>({
+  resolveCurrentSort: resolvePeopleListSort,
+  defaultDir: defaultPeopleListSortDir,
+  buildHref: (state) => buildPeopleListHref(state, 1),
+})
+
+const peopleSortOptionLabel = (key: PeopleListSortKey, dir: PeopleListSortDirection): string => {
+  const label = peopleListSortLabels[key]
+  if (key === 'name' || key === 'contact' || key === 'base') {
+    return `${label} (${dir === 'asc' ? 'A–Z' : 'Z–A'})`
+  }
+  return `${label} (${dir === 'asc' ? 'menor → maior' : 'maior → menor'})`
+}
+
+export const peopleListSortOptions = (
+  Object.keys(peopleListSortLabels) as PeopleListSortKey[]
+).flatMap((key) =>
+  (['asc', 'desc'] as const).map((dir) => ({ key, dir, label: peopleSortOptionLabel(key, dir) })),
+)
 
 export const resolvePeopleListUrl = (
   params: PeopleListSearchParams,

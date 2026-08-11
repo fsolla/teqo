@@ -4,6 +4,7 @@ import {
   buildPeopleDeputySourceWhere,
   buildPeopleLeadershipSourceWhere,
   buildPeopleListHref,
+  buildPeopleSortHref,
   buildPeopleStaffSourceWhere,
   parsePeopleListParams,
   resolvePeopleListUrl,
@@ -50,6 +51,30 @@ describe('people list URL contract', () => {
     ).toEqual({ page: 1, municipalities: [12, 3], statuses: ['engajado', 'em_disputa'] })
   })
 
+  it('parses known sort keys and directions, dropping anything else', () => {
+    expect(parsePeopleListParams({ sort: 'lidera', dir: 'asc' })).toEqual({
+      page: 1,
+      sort: 'lidera',
+      dir: 'asc',
+    })
+    expect(parsePeopleListParams({ sort: 'email', dir: 'up' })).toEqual({ page: 1 })
+    expect(parsePeopleListParams({ sort: 'name' })).toEqual({ page: 1, sort: 'name' })
+  })
+
+  it('parses absence facets with OR values, dropping unknown and canonicalizing "todas"', () => {
+    expect(parsePeopleListParams({ ausencia: 'sem_contato' })).toEqual({
+      page: 1,
+      ausencias: ['sem_contato'],
+    })
+    expect(
+      parsePeopleListParams({ ausencia: ['sem_base', 'sem_assessor', 'sem_base', 'nada'] }),
+    ).toEqual({ page: 1, ausencias: ['sem_base', 'sem_assessor'] })
+    expect(parsePeopleListParams({ ausencia: 'sem_e_mail' })).toEqual({ page: 1 })
+    expect(
+      parsePeopleListParams({ ausencia: ['sem_assessor', 'sem_base', 'sem_contato'] }),
+    ).toEqual({ page: 1 })
+  })
+
   it('canonicalizes selecting every status member to the absent filter (C119)', () => {
     expect(
       parsePeopleListParams({
@@ -71,6 +96,27 @@ describe('people list URL contract', () => {
     )
   })
 
+  it('serializes absence and sort params, omitting the default sort', () => {
+    expect(
+      serializeCanonicalPeopleListSearchParams({
+        page: 1,
+        ausencias: ['sem_base', 'sem_contato'],
+      }).toString(),
+    ).toBe('ausencia=sem_base&ausencia=sem_contato')
+
+    expect(
+      serializeCanonicalPeopleListSearchParams({ page: 1, sort: 'name', dir: 'asc' }).toString(),
+    ).toBe('')
+
+    expect(
+      serializeCanonicalPeopleListSearchParams({ page: 1, sort: 'lidera', dir: 'desc' }).toString(),
+    ).toBe('sort=lidera')
+
+    expect(
+      serializeCanonicalPeopleListSearchParams({ page: 1, sort: 'base', dir: 'desc' }).toString(),
+    ).toBe('sort=base&dir=desc')
+  })
+
   it('builds hrefs through the canonical serializer and drops page 1', () => {
     expect(buildPeopleListHref({ page: 1, capacities: ['dobradinha'] }, 1)).toBe(
       '/campanha/pessoas?capacity=dobradinha',
@@ -84,8 +130,42 @@ describe('people list URL contract', () => {
     expect(resolved.href).toBe('/campanha/pessoas?q=ana')
     expect(resolved.redirectHref).toBeUndefined()
 
-    const unsupported = resolvePeopleListUrl({ q: 'ana', sort: 'name' })
+    const unsupported = resolvePeopleListUrl({ q: 'ana', sort: 'email' })
     expect(unsupported.redirectHref).toBe('/campanha/pessoas?q=ana')
+  })
+
+  it('canonicalizes a default sort away and keeps a non-default one', () => {
+    const defaulted = resolvePeopleListUrl({ q: 'ana', sort: 'name' })
+    expect(defaulted.state).toEqual({ page: 1, q: 'ana', sort: 'name' })
+    expect(defaulted.redirectHref).toBe('/campanha/pessoas?q=ana')
+
+    const kept = resolvePeopleListUrl({ sort: 'lidera', dir: 'desc' })
+    expect(kept.redirectHref).toBe('/campanha/pessoas?sort=lidera')
+    expect(kept.href).toBe('/campanha/pessoas?sort=lidera')
+
+    const explicitDir = resolvePeopleListUrl({ sort: 'base', dir: 'desc' })
+    expect(explicitDir.href).toBe('/campanha/pessoas?sort=base&dir=desc')
+
+    // A bare dir resolves against the default key and canonicalizes without a loop.
+    const bareDir = resolvePeopleListUrl({ dir: 'desc' })
+    expect(bareDir.state).toEqual({ page: 1, dir: 'desc' })
+    expect(bareDir.redirectHref).toBe('/campanha/pessoas?sort=name&dir=desc')
+  })
+
+  it('builds sort-toggle hrefs: flips the active key, applies the new key default, resets to page 1', () => {
+    expect(buildPeopleSortHref({ page: 1 }, 'lidera')).toBe('/campanha/pessoas?sort=lidera')
+    expect(buildPeopleSortHref({ page: 1, sort: 'lidera', dir: 'desc' }, 'lidera')).toBe(
+      '/campanha/pessoas?sort=lidera&dir=asc',
+    )
+    expect(buildPeopleSortHref({ page: 1, sort: 'lidera', dir: 'desc' }, 'base')).toBe(
+      '/campanha/pessoas?sort=base',
+    )
+    expect(buildPeopleSortHref({ page: 3, sort: 'lidera', dir: 'desc' }, 'base')).toBe(
+      '/campanha/pessoas?sort=base',
+    )
+    expect(buildPeopleSortHref({ page: 1, sort: 'lidera', dir: 'desc' }, 'name')).toBe(
+      '/campanha/pessoas',
+    )
   })
 
   it('clamps an out-of-range page to totalPages', () => {

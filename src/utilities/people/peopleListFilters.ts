@@ -10,6 +10,8 @@ import { PEOPLE_CAPACITIES, peopleCapacityLabels } from '@/utilities/people/peop
 import {
   buildPeopleListHref,
   parsePeopleListParams,
+  PEOPLE_ABSENCES,
+  peopleAbsenceLabels,
   peopleListStateToRawParams,
   type PeopleListState,
 } from '@/utilities/people/peopleListUrl'
@@ -19,7 +21,7 @@ export type PeopleFilterOption = {
   label: string
 }
 
-type PeopleMultiFilterParam = 'capacity' | 'municipality' | 'status'
+type PeopleMultiFilterParam = 'capacity' | 'municipality' | 'status' | 'ausencia'
 
 export const peopleCapacityFilterOptions: PeopleFilterOption[] = PEOPLE_CAPACITIES.map((value) => ({
   value,
@@ -29,6 +31,11 @@ export const peopleCapacityFilterOptions: PeopleFilterOption[] = PEOPLE_CAPACITI
 export const peopleStatusFilterOptions: PeopleFilterOption[] = leadershipSupportStatuses.map(
   (value) => ({ value, label: supportStatusLabels[value] }),
 )
+
+export const peopleAbsenceFilterOptions: PeopleFilterOption[] = PEOPLE_ABSENCES.map((value) => ({
+  value,
+  label: peopleAbsenceLabels[value],
+}))
 
 /**
  * Writes the RAW param and lets `parsePeopleListParams` validate, so no branch
@@ -50,6 +57,7 @@ const getPeopleMultiFilterValues = (
 ): string[] => {
   if (param === 'capacity') return state.capacities ?? []
   if (param === 'status') return state.statuses ?? []
+  if (param === 'ausencia') return state.ausencias ?? []
   return (state.municipalities ?? []).map(String)
 }
 
@@ -90,8 +98,20 @@ export const togglePeopleStatusFilter = (
   return togglePeopleMultiFilterValue(state, 'status', value)
 }
 
-/** Drop every filter and the search. */
-export const clearPeopleListFilters = (): PeopleListState => ({ page: 1 })
+export const togglePeopleAbsenceFilter = (
+  state: PeopleListState,
+  value: string,
+): PeopleListState => {
+  if (!PEOPLE_ABSENCES.some((absence) => absence === value)) return state
+  return togglePeopleMultiFilterValue(state, 'ausencia', value)
+}
+
+/** Drop every filter and the search; keep the ordering (municipios precedent). */
+export const clearPeopleListFilters = (state: PeopleListState): PeopleListState => ({
+  page: 1,
+  sort: state.sort,
+  dir: state.dir,
+})
 
 export const buildPeopleFilterHref = (next: PeopleListState): string => buildPeopleListHref(next, 1)
 
@@ -124,6 +144,9 @@ export const formatPeopleActiveFiltersSummary = (
   }
   if (state.statuses?.length) {
     parts.push(truncatedNamesLabel(state.statuses.map((status) => supportStatusLabels[status])))
+  }
+  if (state.ausencias?.length) {
+    parts.push(truncatedNamesLabel(state.ausencias.map((absence) => peopleAbsenceLabels[absence])))
   }
   if (state.q) parts.push(`Busca "${state.q}"`)
   return parts.length ? parts.join(' · ') : null
