@@ -17,6 +17,7 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
     '/campanha/liderancas',
     '/campanha/conceitos',
     '/campanha/acoes/atualizar-votos',
+    '/campanha/acoes/mudar-tendencia',
     '/campanha/convite/e2e-prewarm',
     '/',
   ]) {
@@ -42,6 +43,7 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
     '/campanha/webauthn/login',
     '/campanha/webauthn/register-options',
     '/campanha/webauthn/register',
+    '/campanha/home-search',
   ]) {
     await request.post(`${baseURL}${path}`, { data: {} }).catch(() => undefined)
   }

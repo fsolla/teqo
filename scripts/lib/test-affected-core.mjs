@@ -232,6 +232,20 @@ export function selectE2eSpecs(files, manifest) {
       unmapped,
     }
   }
+  // The `setup` spec is dev-mode-only: the setup project is dropped under
+  // CI/prod (playwright.config.ts), so a selection containing ONLY it would
+  // run `playwright test -- tests/e2e/setup.e2e.spec.ts` against zero projects
+  // and fail with "No tests found" (OPS39 — first setup-only PR hit it). In a
+  // mixed set the spec is harmless (it just matches no project), so only the
+  // setup-only case drops out.
+  if (specs.size === 1 && specs.has('setup')) {
+    return {
+      mode: 'none',
+      specs: [],
+      reason: 'setup spec is dev-mode-only; prod-mode e2e cannot run it',
+      unmapped,
+    }
+  }
   return {
     mode: 'selected',
     specs: [...specs].sort(),
