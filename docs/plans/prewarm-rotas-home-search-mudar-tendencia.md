@@ -1,7 +1,7 @@
 # Prewarm e2e: rotas que o setup spec não cobre flakeiam sob carga em dev
 
-Status: rascunho
-Atualizado em: 2026-08-10
+Status: registrada (Issue #645, `depends: OPS30`)
+Atualizado em: 2026-08-11
 Priority: P3
 Appetite: ~1 hora eng (duas linhas no setup + medição)
 
