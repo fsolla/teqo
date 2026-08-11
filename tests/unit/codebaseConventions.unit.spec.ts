@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, relative, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -733,5 +734,32 @@ describe('public site metadata global access', () => {
     }
 
     expect(offenders, 'import and call resolveSiteMetadata from @/utilities/seo').toEqual([])
+  })
+})
+
+describe('no conflict markers in committed files', () => {
+  // A real git conflict was committed to AGENTS.md twice: the OPS33 commit
+  // carried `<<<<<<< HEAD` plus a mangled `> > > > > > >` closer (the
+  // `=======` was deleted in the same bad resolution), and OPS37 inherited
+  // the state. The scan reads tracked paths from the index and greps the
+  // working tree, so a bad resolution fails here before it is ever pushed.
+  // The `(?:> ){7}` form is the exact corrupted closer that shipped; a
+  // genuine 7-deep nested blockquote would need a deliberate allowlist.
+  const conflictMarker = /^\s*<<<<<<<(?:\s|$)|^\s*>>>>>>>(?:\s|$)|^\s*(?:> ){7}/m
+
+  it('keeps conflict markers out of tracked files', () => {
+    const offenders: string[] = []
+
+    for (const file of execSync('git ls-files', { encoding: 'utf8' }).split('\n')) {
+      if (!file) continue
+      const lines = readFileSync(resolve(repoRoot, file), 'utf8').split('\n')
+      for (const [index, line] of lines.entries()) {
+        if (conflictMarker.test(line)) offenders.push(`${file}:${index + 1}`)
+      }
+    }
+
+    expect(offenders, 'resolve the conflict before committing; never commit marker lines').toEqual(
+      [],
+    )
   })
 })
