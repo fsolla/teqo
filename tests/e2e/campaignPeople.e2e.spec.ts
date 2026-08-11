@@ -39,6 +39,27 @@ test.describe('Pessoas — lista unificada', () => {
     await expect(page.getByRole('row', { name: new RegExp(contactName) })).toBeVisible()
   })
 
+  test('the name link in the list opens the person detail (C118 entry point)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.claimMunicipality()
+    const { contactId, contactName } = await fixtures.createStaffLeadership({
+      namePrefix: 'Nome Link Detalhe',
+      municipalities: [municipality],
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha/pessoas')
+
+    await page.getByRole('link', { name: contactName, exact: true }).click()
+    await expect(page).toHaveURL(new RegExp(`/campanha/pessoas/${contactId}$`))
+    await expect(campaignPageChrome(page, 'Pessoa')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Liderança' })).toBeVisible()
+  })
+
   test('leader cannot open the people page', async ({ campaign, page }) => {
     const { fixtures } = campaign
     const phone = fixtures.phone()
@@ -52,6 +73,125 @@ test.describe('Pessoas — lista unificada', () => {
 
     await expect(page).toHaveURL(/\/campanha\/contatos/)
     await expect(page.getByRole('heading', { name: 'Contatos' })).toBeVisible()
+  })
+
+  test('leader cannot open the person detail route', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const phone = fixtures.phone()
+    const leader = await fixtures.createCampaignUser('leader', {
+      name: fixtures.value('Liderança Detalhe Sem Acesso'),
+      username: phone,
+    })
+
+    await campaign.login(page, phone, leader.password)
+    await page.goto('/campanha/pessoas/99999')
+
+    await expect(page).toHaveURL(/\/campanha\/contatos/)
+    await expect(page.getByRole('heading', { name: 'Contatos' })).toBeVisible()
+  })
+
+  test('coordinator opens the person detail and sees the sections of her capacities', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.claimMunicipality()
+
+    const { contactId, contactName, leadershipId } = await fixtures.createStaffLeadership({
+      namePrefix: 'Liderança Detalhe',
+      municipalities: [municipality],
+      supportStatus: 'engajado',
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`/campanha/pessoas/${contactId}`)
+
+    await expect(page).toHaveURL(new RegExp(`/campanha/pessoas/${contactId}$`))
+    await expect(campaignPageChrome(page, 'Pessoa')).toBeVisible()
+    await expect(
+      page
+        .locator('[data-slot="campaign-page-chrome"]')
+        .filter({ visible: true })
+        .getByText(contactName),
+    ).toBeVisible()
+
+    // Sections mounted by capacity: a leadership-only person shows Ficha +
+    // Liderança, never an empty Dobradinha block.
+    await expect(page.getByRole('heading', { name: 'Ficha' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Liderança' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Dobradinha' })).not.toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Assessorado' })).not.toBeVisible()
+
+    // The leadership section links to the rich existing detail (v1 coexistence).
+    await expect(page.getByRole('link', { name: 'Abrir detalhe de liderança' })).toHaveAttribute(
+      'href',
+      `/campanha/liderancas/${leadershipId}`,
+    )
+    await expect(
+      page.getByRole('region', { name: 'Liderança' }).getByText('Engajado'),
+    ).toBeVisible()
+
+    // Actions: WhatsApp (phone exists) + delete (coordinator); invite for leaders.
+    await expect(page.getByRole('link', { name: 'Enviar WhatsApp' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Convidar/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: `Apagar pessoa ${contactName}` })).toBeVisible()
+  })
+
+  test('coordinator sees dobradinha and apoiador sections only for a person who has them', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const deputyMunicipality = await fixtures.claimMunicipality()
+    const supporterMunicipality = await fixtures.claimMunicipality()
+
+    const contact = await fixtures.payload.create({
+      collection: 'contact',
+      data: {
+        name: fixtures.value('Dobradinha Detalhe'),
+        phones: [{ value: fixtures.phone() }],
+        state: 'BA',
+        city: 'Salvador',
+      },
+      depth: 0,
+    })
+    const deputy = await fixtures.payload.create({
+      collection: 'stateDeputy',
+      data: { contact: contact.id, party: 'PCdoB', slug: fixtures.value('dobradinha-detalhe') },
+      depth: 0,
+    })
+    await fixtures.payload.update({
+      collection: 'municipality',
+      id: deputyMunicipality.id,
+      data: { stateDeputies: [deputy.id] },
+      depth: 0,
+      overrideAccess: true,
+    })
+    fixtures.touchMunicipality(deputyMunicipality.id)
+    await fixtures.payload.create({
+      collection: 'supporter',
+      data: {
+        contact: contact.id,
+        municipality: supporterMunicipality.id,
+        source: 'evento',
+        voteIntention: 'certo',
+      },
+      depth: 0,
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`/campanha/pessoas/${contact.id}`)
+
+    await expect(page.getByRole('heading', { name: 'Ficha' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Dobradinha' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Apoiador' })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Dobradinha' }).getByText('PCdoB')).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Apoiador' }).getByText('Certo')).toBeVisible()
+    // No leadership capacity → no leadership block, no invite.
+    await expect(page.getByRole('heading', { name: 'Liderança' })).not.toBeVisible()
+    await expect(page.getByRole('button', { name: /Convidar/ })).not.toBeVisible()
   })
 
   test('staff sorts by a column header and filters absence via the omnibox (C117)', async ({
@@ -129,4 +269,5 @@ test.describe('Pessoas — lista unificada', () => {
     await expect(page.getByRole('row', { name: new RegExp(noPhoneName) })).toBeVisible()
     await expect(page.getByRole('row', { name: new RegExp(twoCities.contactName) })).toBeHidden()
   })
+})
 })
