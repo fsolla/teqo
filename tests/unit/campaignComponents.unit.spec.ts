@@ -185,17 +185,21 @@ describe('campaign visual foundation', () => {
   })
 
   it.each([
-    ['engajado', 'Engajado'],
-    ['a_abordar', 'A abordar'],
-    ['em_disputa', 'Em disputa'],
-    ['lembranca', 'Lembrança'],
-    ['negativo', 'Negativo'],
-  ] as const)('renders the %s support status with text and semantic state', (status, label) => {
-    const html = renderToStaticMarkup(createElement(SupportStatusBadge, { status }))
+    ['engajado', 'Engajado', 'support-engaged'],
+    ['a_abordar', 'A abordar', 'support-to-approach'],
+    ['em_disputa', 'Em disputa', 'support-disputed'],
+    ['lembranca', 'Lembrança', 'support-remembered'],
+    ['negativo', 'Negativo', 'support-negative'],
+  ] as const)(
+    'renders the %s support status with text, semantic state and variant',
+    (status, label, variant) => {
+      const html = renderToStaticMarkup(createElement(SupportStatusBadge, { status }))
 
-    expect(html).toContain(label)
-    expect(html).toContain(`data-support-status="${status}"`)
-  })
+      expect(html).toContain(label)
+      expect(html).toContain(`data-support-status="${status}"`)
+      expect(html).toContain(`data-variant="${variant}"`)
+    },
+  )
 
   it('qualifies TSE zones instead of showing an ambiguous number', () => {
     const html = renderToStaticMarkup(createElement(TseZoneBadge, { zoneNumber: 12 }))
