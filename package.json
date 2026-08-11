@@ -22,7 +22,7 @@
   "type": "module",
   "scripts": {
     "build": "cross-env NODE_OPTIONS=\"--no-deprecation --conditions=react-server\" payload migrate && cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
-    "db:start": "docker compose -p teqo up -d --wait postgres",
+    "db:start": "node scripts/db-start.mjs",
     "db:stop": "docker compose -p teqo down",
     "db:doctor": "node scripts/db-doctor.mjs",
     "db:pull": "node scripts/db-pull.mjs",
