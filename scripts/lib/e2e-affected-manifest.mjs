@@ -67,8 +67,11 @@ export const E2E_AFFECTED_MANIFEST = [
       `${CAMPAIGN_APP}/territorios`,
       'src/components/campaign/tour',
       'src/utilities/territory',
+      // OPS35+ — the network-column rungs live in this file; a rung regression
+      // must wake the CSS-visibility browser pin, not only the municipios specs.
+      'src/components/campaign/municipality/TerritoryListColumns',
     ],
-    specs: ['campaignTerritoriesHttp'],
+    specs: ['campaignTerritoriesHttp', 'campaignTerritoriesColumns'],
   },
   {
     prefixes: [`${CAMPAIGN_APP}/conceitos`],
