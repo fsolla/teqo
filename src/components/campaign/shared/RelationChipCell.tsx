@@ -166,6 +166,27 @@ type RelationChipCellProps = {
    * see the relation but not edit it (staff viewing `StateDeputy.advisors`).
    */
   readOnly?: boolean
+
+  // C116 quiet/expand surface ─────────────────────────────────────────────────
+  /**
+   * Transparent cell (C116 "edit where you see"): no hover/focus background
+   * tint — the cell looks like plain text. Keyboard focus keeps a discreet
+   * indicator on the search input only (accessibility guardrail), never a box
+   * or tint around the cell.
+   */
+  quiet?: boolean
+  /**
+   * C116 — click on a link-less (batch) chip fires this instead of nothing,
+   * letting a wrapper expand the batch into its member chips in place. Chips
+   * WITH a link keep navigating. Only the inline row editor is wired: the
+   * coarse Drawer keeps its list with the permanent remove buttons.
+   */
+  onChipClick?: (chip: RelationChip) => void
+  /**
+   * C116 — replaces the overflow toggle's collapsed label ("Ver mais…") with a
+   * "+N" chip label (e.g. "+3"), keeping the B170 measure/collapse contract.
+   */
+  overflowToggleLabel?: (hiddenCount: number) => string
 }
 
 /**
@@ -203,6 +224,9 @@ export const RelationChipCell = ({
   createLabel,
   createErrorMessage = updateErrorMessage,
   readOnly = false,
+  quiet = false,
+  onChipClick,
+  overflowToggleLabel,
 }: RelationChipCellProps) => {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
@@ -351,6 +375,18 @@ export const RelationChipCell = ({
         }
       : null
   const listOptions = createHit ? [...hits, createHit] : hits
+
+  /**
+   * C116 — the "typed text IS the match" rule: a suggestion whose normalized
+   * label exactly equals the query (e.g. "Feira de Santana"). Space or Enter
+   * then commits THAT suggestion instead of the ARIA pre-selected first hit —
+   * without it, "Salvador" + Enter would silently add "Salvador — ZE 1" while
+   * every zone matches at word start. The create option can never be the exact
+   * match (it only exists when there are no hits).
+   */
+  const exactMatchOption = listOptions.find(
+    (option) => normalizeSearchPhrase(option.label) === normalizeSearchPhrase(trimmedQuery),
+  )
 
   const optionsKey = listOptions.map((option) => option.key).join('|')
   useEffect(() => {
@@ -626,10 +662,10 @@ export const RelationChipCell = ({
       setActiveIndex(event.key === 'Home' ? 0 : listOptions.length - 1)
       return
     }
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' || (event.key === ' ' && exactMatchOption)) {
       if (listOptions.length === 0) return
       event.preventDefault()
-      pickOption(activeIndex)
+      pickOption(exactMatchOption ? listOptions.indexOf(exactMatchOption) : activeIndex)
       return
     }
     if (event.key === 'Escape') {
@@ -677,6 +713,16 @@ export const RelationChipCell = ({
           : ''
 
   /**
+   * C116 — the collapsed overflow toggle may render as a "+N" chip instead of
+   * the "Ver mais…" link. `visibleChipCount === null` means the first
+   * measurement is still in flight, when the toggle is invisible anyway.
+   */
+  const collapsedOverflowLabel =
+    !showAllChips && overflowToggleLabel && visibleChipCount !== null
+      ? overflowToggleLabel(chips.length - visibleChipCount)
+      : null
+
+  /**
    * Mounted while measuring so its width is reserved on the last line, but kept
    * out of the tab order and the accessibility tree until the overflow it
    * announces is known. On a coarse pointer the cell-wide Drawer trigger sits
@@ -691,7 +737,10 @@ export const RelationChipCell = ({
         aria-hidden={measuring || undefined}
         className={cn(
           // `min-h-6`: 24px is the SC 2.5.8 target floor for a text button.
-          'inline-flex min-h-6 items-center px-1 text-xs font-medium text-primary underline-offset-4 hover:underline',
+          'inline-flex min-h-6 items-center',
+          collapsedOverflowLabel
+            ? 'rounded-md border border-input px-1.5 text-xs font-normal text-muted-foreground tabular-nums hover:bg-muted/60'
+            : 'px-1 text-xs font-medium text-primary underline-offset-4 hover:underline',
           measuring && 'invisible pointer-events-none',
         )}
         onClick={(event) => {
@@ -705,7 +754,7 @@ export const RelationChipCell = ({
           }
         }}
       >
-        {showAllChips ? 'Ver menos' : 'Ver mais…'}
+        {showAllChips ? 'Ver menos' : (collapsedOverflowLabel ?? 'Ver mais…')}
       </button>
     ) : null
 
@@ -743,6 +792,22 @@ export const RelationChipCell = ({
             <Link href={chip.href} className="truncate underline-offset-4 hover:underline">
               {chipBody(chip)}
             </Link>
+          </Badge>
+        ) : onChipClick ? (
+          /* C116 — a link-less batch chip becomes a button: the wrapper
+             expands/collapses it in place. `stopPropagation` keeps the cell
+             click (focus + suggestions) out of the way. */
+          <Badge variant="secondary" className="max-w-full font-normal" asChild>
+            <button
+              type="button"
+              className="cursor-pointer truncate underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={(event) => {
+                event.stopPropagation()
+                onChipClick(chip)
+              }}
+            >
+              {chipBody(chip)}
+            </button>
           </Badge>
         ) : (
           <Badge variant="secondary" className="max-w-full gap-1 font-normal">
@@ -953,7 +1018,12 @@ export const RelationChipCell = ({
       // "nothing happened" until the next navigation proves otherwise.
       aria-busy={isPending || undefined}
       // Same box in both pointer modes so nothing reflows when the row is touched.
-      className="relative min-w-56 rounded-md border border-transparent p-1 outline-none pointer-fine:hover:bg-muted/40 pointer-fine:focus-within:bg-muted/40"
+      className={cn(
+        'relative min-w-56 rounded-md border border-transparent p-1 outline-none',
+        // C116 quiet: no tint at all — the cell reads as plain text (the locked
+        // paradigm); keyboard focus keeps only the input's discreet ring.
+        !quiet && 'pointer-fine:hover:bg-muted/40 pointer-fine:focus-within:bg-muted/40',
+      )}
       // Reached only on a fine pointer: the coarse overlay below covers the cell
       // and stops the click, so the pointer policy stays in the media queries.
       onClick={(event) => {
@@ -1018,7 +1088,12 @@ export const RelationChipCell = ({
                 onKeyDown={onSearchKeyDown}
                 placeholder={chips.length ? 'Adicionar…' : copy.searchPlaceholder}
                 aria-label={copy.searchLabel}
-                className="hidden min-h-8 min-w-32 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground pointer-fine:block"
+                className={cn(
+                  'hidden min-h-8 min-w-32 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground pointer-fine:block',
+                  // C116 quiet: the ONLY focus indicator — a discreet ring on
+                  // the input itself, never a box or tint around the cell.
+                  quiet && 'rounded-sm focus-visible:ring-1 focus-visible:ring-ring/50',
+                )}
               />
             )}
           </div>

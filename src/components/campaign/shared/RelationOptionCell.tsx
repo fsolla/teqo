@@ -44,6 +44,10 @@ type RelationOptionCellProps = {
   measureOverflow?: boolean
   /** Read-only rendering (B156): linked chips, no search/remove/Drawer affordances. */
   readOnly?: boolean
+  /** C116 quiet cell — see `RelationChipCell.quiet`. */
+  quiet?: boolean
+  /** C116 — "+N" overflow label — see `RelationChipCell.overflowToggleLabel`. */
+  overflowToggleLabel?: (hiddenCount: number) => string
 }
 
 const itemLabel = (item: RelationCellItem): string =>
@@ -91,6 +95,8 @@ export const RelationOptionCell = ({
   updateErrorMessage,
   measureOverflow = true,
   readOnly = false,
+  quiet = false,
+  overflowToggleLabel,
 }: RelationOptionCellProps) => {
   const itemById = useMemo(() => new Map(items.map((item) => [item.id, item])), [items])
   // Additions resolve through `options` (the addable catalog), same asymmetry
@@ -149,6 +155,8 @@ export const RelationOptionCell = ({
       copy={copy}
       measureOverflow={measureOverflow}
       readOnly={readOnly}
+      quiet={quiet}
+      overflowToggleLabel={overflowToggleLabel}
     />
   )
 }

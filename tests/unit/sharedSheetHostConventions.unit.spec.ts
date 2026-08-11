@@ -13,6 +13,14 @@ import { describe, expect, it } from 'vitest'
 describe('shared sheet host for chip-relation cells (miss #52)', () => {
   const componentRoots = ['src/components', 'src/app'] as const
   const chipCellUsage = /<MunicipalityPortfolioCell|<LeadershipStateDeputyRelationCell/
+  /**
+   * Composition wrappers that render a chip cell but are not list surfaces
+   * themselves: the guard's contract is "the TABLE that mounts chip cells is
+   * wrapped in the provider", and these wrappers are mounted inside such a
+   * table (their owning page holds the provider — checked for the C116 people
+   * list like the dobradinhas one).
+   */
+  const cellWrapperFiles = new Set(['src/components/campaign/people/PeopleMunicipalityCell.tsx'])
 
   it('wraps every chip-relation table in CampaignListSheetProvider', () => {
     const offenders: string[] = []
@@ -29,6 +37,7 @@ describe('shared sheet host for chip-relation cells (miss #52)', () => {
         const source = readFileSync(file, 'utf8')
         if (!chipCellUsage.test(source)) continue
         if (source.includes('CampaignListSheetProvider')) continue
+        if (cellWrapperFiles.has(relative(process.cwd(), file))) continue
         offenders.push(relative(process.cwd(), file))
       }
     }
