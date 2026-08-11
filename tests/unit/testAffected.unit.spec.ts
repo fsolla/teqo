@@ -136,6 +136,22 @@ describe('selectE2eSpecs (OPS5)', () => {
     const result = selectE2eSpecs([changed('docs/AGENT-OPS.md')], manifest)
     expect(result).toMatchObject({ mode: 'none', specs: [], unmapped: [] })
   })
+
+  it('drops a setup-only selection (setup runs only in dev mode, OPS39)', () => {
+    const result = selectE2eSpecs([changed('tests/e2e/setup.e2e.spec.ts')], manifest)
+    expect(result).toMatchObject({ mode: 'none', specs: [], unmapped: [] })
+    expect(result.reason).toContain('dev-mode-only')
+  })
+
+  it('keeps setup in a mixed selection (it matches no project, harmless)', () => {
+    const result = selectE2eSpecs(
+      [changed('tests/e2e/setup.e2e.spec.ts'), changed('src/app/(payload)/api/x.ts')],
+      manifest,
+    )
+    expect(result.mode).toBe('selected')
+    expect(result.specs).toContain('setup')
+    expect(result.specs).toContain('admin')
+  })
 })
 
 describe('e2eShardConfig (OPS34)', () => {

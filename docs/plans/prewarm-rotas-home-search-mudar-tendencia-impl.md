@@ -64,8 +64,20 @@ webServer `waitOn` prewarm
 - Medição sob load ≥40 é cara: mitigação — verificação local direcionada
   (workers ≥2, setup primeiro), sem CI novo.
 
+## Desvio da intenção (aprovado 2026-08-11)
+
+A intenção dizia "sem mudança de asserções ou de CI", mas o gate:ci falhou com
+"No tests found" — **falha pré-existente do classificador** (OPS39 é a primeira
+PR setup-only): o `setup` só existe em dev mode (projeto dropado sob `CI=1`,
+playwright.config.ts OPS34), e `selectE2eSpecs` o selecionava sozinho para o
+e2e prod-mode. Fix no dono (`scripts/lib/test-affected-core.mjs`): seleção
+contendo **apenas** `setup` → `mode: 'none'` (spec dev-only; sets mistos seguem
+inalterados — o spec simplesmente não casa projeto). 2 testes de unidade novos
+em `tests/unit/testAffected.unit.spec.ts`.
+
 ## Aceite de engenharia
 
 - [x] Aceite de produto da intenção ainda coberto
 - [x] Invariantes AGENTS/engineering-standards (nenhum código runtime tocado)
-- [x] Testes de domínio previstos (unit/int): não se aplica — mudança só em spec e2e
+- [x] Testes de domínio previstos (unit/int): 2 unit novos no classificador
+  (`testAffected.unit.spec.ts`); runtime intocado
