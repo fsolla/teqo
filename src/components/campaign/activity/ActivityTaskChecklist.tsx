@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 
 import { toggleActivityTaskAction } from '@/app/(campaign)/campanha/(app)/atividades/[slug]/taskActions'
 import { Checkbox } from '@/components/ui/Checkbox'
-import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
 import type { ActivityTaskViewModel } from '@/utilities/activityViewModels'
 
 type ActivityTaskChecklistProps = {
@@ -53,18 +52,15 @@ export const ActivityTaskChecklist = ({ activityId, tasks }: ActivityTaskCheckli
             aria-label={`Marcar tarefa "${task.title}" como ${task.done ? 'pendente' : 'concluída'}`}
             className="mt-0.5"
           />
-          <div className="flex flex-1 flex-col gap-0.5">
-            <span className={task.done ? 'line-through text-muted-foreground' : undefined}>
+          <div className="min-w-0 flex-1 flex-col gap-0.5">
+            <span
+              className={`break-words ${task.done ? 'line-through text-muted-foreground' : ''}`}
+            >
               {task.title}
             </span>
-            <span className="text-xs text-muted-foreground">
-              {[
-                task.responsibleName ? `Resp: ${task.responsibleName}` : null,
-                task.due ? `Prazo: ${formatBahiaDateTimeLabel(task.due)}` : null,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-            </span>
+            {task.responsibleName ? (
+              <span className="text-xs text-muted-foreground">Resp: {task.responsibleName}</span>
+            ) : null}
           </div>
         </li>
       ))}

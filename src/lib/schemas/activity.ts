@@ -71,7 +71,6 @@ export type ActivityDemandDraft = z.input<typeof activityDemandDraftSchema>
 const taskSchema = z.object({
   title: z.string().trim().min(1).max(200),
   responsible: positiveRelationshipId.optional(),
-  due: z.string().datetime().optional().nullable(),
   done: z.boolean().optional(),
 })
 

@@ -50,6 +50,7 @@ import * as migration_20260810_010844_add_activity_all_day from './20260810_0108
 import * as migration_20260811_111828_add_contact_phones_array from './20260811_111828_add_contact_phones_array';
 import * as migration_20260811_133332_add_google_calendar_sync from './20260811_133332_add_google_calendar_sync';
 import * as migration_20260811_155116_add_lembranca_support_status from './20260811_155116_add_lembranca_support_status';
+import * as migration_20260811_183016_drop_activity_task_due from './20260811_183016_drop_activity_task_due';
 
 export const migrations = [
   {
@@ -311,5 +312,10 @@ export const migrations = [
     up: migration_20260811_155116_add_lembranca_support_status.up,
     down: migration_20260811_155116_add_lembranca_support_status.down,
     name: '20260811_155116_add_lembranca_support_status',
+  },
+  {
+    up: migration_20260811_183016_drop_activity_task_due.up,
+    down: migration_20260811_183016_drop_activity_task_due.down,
+    name: '20260811_183016_drop_activity_task_due'
   },
 ];
