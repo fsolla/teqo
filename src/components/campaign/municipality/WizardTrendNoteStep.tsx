@@ -7,8 +7,8 @@ import { setMunicipalityPoliticalTrendFormAction } from '@/app/(campaign)/campan
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
 import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
+import { WizardStepFormChrome } from '@/components/campaign/shared/WizardStepFormChrome'
 import { Button } from '@/components/ui/button'
-import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { wizardPreviousHref, wizardReturnHref } from '@/lib/campaignActionRoutes'
 import { recordLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
@@ -62,11 +62,23 @@ export const WizardTrendNoteStep = ({
       municipalityLabel={municipalityName}
       contentFocus="none"
     >
-      <form
+      <WizardStepFormChrome
         action={submitAction}
-        className="flex flex-col gap-6"
-        aria-busy={isPending || undefined}
-        data-pending={isPending ? '' : undefined}
+        isPending={isPending}
+        pendingAnnouncement="Salvando tendência."
+        ctaLabel={WIZARD_TREND_SAVE_LABEL}
+        leadingSubmit={
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isPending || note.length === 0}
+            className="min-h-11"
+            onClick={() => setNote('')}
+          >
+            {WIZARD_TREND_CLEAR_LABEL}
+          </Button>
+        }
+        submitBarClassName="flex-wrap gap-3"
       >
         <input type="hidden" name="municipalityId" value={municipalityId} />
         <input type="hidden" name="municipalitySlug" value={municipalitySlug} />
@@ -91,33 +103,7 @@ export const WizardTrendNoteStep = ({
         </div>
 
         {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}
-
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={isPending || note.length === 0}
-            className="min-h-11"
-            onClick={() => setNote('')}
-          >
-            {WIZARD_TREND_CLEAR_LABEL}
-          </Button>
-          <Button type="submit" disabled={isPending} className="min-h-11 min-w-[7rem]">
-            {isPending ? (
-              <>
-                <Spinner data-icon="inline-start" aria-hidden="true" />
-                Salvando…
-              </>
-            ) : (
-              WIZARD_TREND_SAVE_LABEL
-            )}
-          </Button>
-        </div>
-
-        <div aria-live="polite" className="sr-only">
-          {isPending ? 'Salvando tendência.' : null}
-        </div>
-      </form>
+      </WizardStepFormChrome>
     </CampaignWizardShell>
   )
 }
