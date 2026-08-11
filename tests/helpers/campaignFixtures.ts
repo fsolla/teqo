@@ -233,8 +233,9 @@ const nextAllocatedMunicipalityIndex = async (
  * Delete campaign rows attached to a freshly claimed municipality. The allocator
  * guarantees no OTHER live test owns this municipality, so anything found here is
  * residue from an aborted previous run that would poison count assertions.
+ * Also deletes the CONTACT rows those residue supporters orphaned (D10 F1).
  */
-const purgeMunicipalityResidue = async (
+export const purgeMunicipalityResidue = async (
   payload: Payload,
   municipalityID: number,
 ): Promise<void> => {
@@ -273,7 +274,6 @@ const purgeMunicipalityResidue = async (
         where: { municipality: { equals: municipalityID } },
         depth: 0,
         pagination: false,
-        select: {},
       }),
       payload.find({
         collection: 'activity',
@@ -335,6 +335,63 @@ const purgeMunicipalityResidue = async (
       where: { id: { in: ids } },
       depth: 0,
     })
+  }
+
+  // D10 F1: an aborted run leaves residue supporters AND their contact rows.
+  // The supporters are gone above; delete the contacts they orphaned (no other
+  // join references them) so the residue stops accumulating — same reference
+  // rule as the production `removeSupporterData` flow, reimplemented here so
+  // the fixture never runs production code under test.
+  const residueContactIDs = [
+    ...new Set(
+      supporters.docs.map((doc) => relationId(doc.contact)).filter((id) => id !== undefined),
+    ),
+  ]
+  if (residueContactIDs.length > 0) {
+    const [leadershipRefs, signatureRefs, subscriptionRefs, supporterRefs] = await Promise.all([
+      payload.find({
+        collection: 'leadership',
+        where: { contact: { in: residueContactIDs } },
+        depth: 0,
+        pagination: false,
+      }),
+      payload.find({
+        collection: 'signature',
+        where: { contact: { in: residueContactIDs } },
+        depth: 0,
+        pagination: false,
+      }),
+      payload.find({
+        collection: 'subscription',
+        where: { contact: { in: residueContactIDs } },
+        depth: 0,
+        pagination: false,
+      }),
+      payload.find({
+        collection: 'supporter',
+        where: { contact: { in: residueContactIDs } },
+        depth: 0,
+        pagination: false,
+      }),
+    ])
+    const referenced = new Set<number>()
+    for (const doc of [
+      ...leadershipRefs.docs,
+      ...signatureRefs.docs,
+      ...subscriptionRefs.docs,
+      ...supporterRefs.docs,
+    ]) {
+      const contactID = relationId(doc.contact)
+      if (contactID !== undefined) referenced.add(contactID)
+    }
+    const orphanContactIDs = residueContactIDs.filter((id) => !referenced.has(id))
+    if (orphanContactIDs.length > 0) {
+      await payload.delete({
+        collection: 'contact',
+        where: { id: { in: orphanContactIDs } },
+        depth: 0,
+      })
+    }
   }
 }
 
