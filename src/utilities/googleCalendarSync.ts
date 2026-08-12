@@ -398,7 +398,13 @@ const cancelActivityFromGoogle = async (
   req: PayloadRequest | undefined,
   activity: Activity,
 ): Promise<void> => {
-  await applyGoogleReverseActivityPatch(payload, req, activity, { status: 'cancelado' }, buildGoogleReverseCancelBody())
+  await applyGoogleReverseActivityPatch(
+    payload,
+    req,
+    activity,
+    { status: 'cancelado' },
+    buildGoogleReverseCancelBody(),
+  )
 }
 
 /**

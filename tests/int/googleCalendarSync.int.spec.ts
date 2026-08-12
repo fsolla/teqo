@@ -3,7 +3,12 @@
 import { getPayload, type Payload } from 'payload'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 
-import { allDayCivilDateOf, allDayExclusiveEndDate } from '@/lib/activityAllDay'
+import {
+  allDayCivilDateOf,
+  allDayEndInstantFromExclusive,
+  allDayExclusiveEndDate,
+  allDayStartInstant,
+} from '@/lib/activityAllDay'
 import { googleEventIdForActivity } from '@/lib/googleCalendarEventMapping'
 import config from '@/payload.config'
 import type { GoogleCalendarClient, GoogleRemoteEvent } from '@/utilities/googleCalendarClient'
@@ -431,7 +436,9 @@ describe('campaign Google calendar sync engine (C114)', () => {
       replaceEvent(store, eventId, {
         summary: `[${municipality.name}] ${renamedTitle}`,
         start: { dateTime: formatBahiaDateTime(newStart.toISOString()) },
-        end: { dateTime: formatBahiaDateTime(new Date(newStart.getTime() + 3_600_000).toISOString()) },
+        end: {
+          dateTime: formatBahiaDateTime(new Date(newStart.getTime() + 3_600_000).toISOString()),
+        },
         updated: new Date(Date.now() + 60_000).toISOString(),
       })
 
@@ -472,9 +479,9 @@ describe('campaign Google calendar sync engine (C114)', () => {
 
       const reloaded = await reloadActivity(activity.id)
       expect(reloaded.title).not.toBe('Editado antes do Teqo')
-      expect(store.find((entry) => entry.id === googleEventIdForActivity(activity.id))?.summary).toBe(
-        `[${municipality.name}] ${activity.title}`,
-      )
+      expect(
+        store.find((entry) => entry.id === googleEventIdForActivity(activity.id))?.summary,
+      ).toBe(`[${municipality.name}] ${activity.title}`)
     })
 
     it('a cancelled event in Google cancels the confirmado activity, then the trash is cleaned', async () => {
@@ -623,7 +630,10 @@ describe('campaign Google calendar sync engine (C114)', () => {
       await createActivity()
       await createConfig(calendarA)
       const store: GoogleRemoteEvent[] = []
-      const watched: Array<{ calendarId: string; channel: { id: string; token: string; address: string } }> = []
+      const watched: Array<{
+        calendarId: string
+        channel: { id: string; token: string; address: string }
+      }> = []
       const stopped: Array<{ id: string; resourceId: string }> = []
       const client: GoogleCalendarClient = {
         ...createStubClient(store),
@@ -699,11 +709,12 @@ describe('campaign Google calendar sync engine (C114)', () => {
 
       // C127: dates derived from now — hardcoded instants would leave the
       // sync window and break the assertion deterministically after ~90 days.
+      // The expected instants come from the SAME lib the engine maps through
+      // (`activityAllDay`) — no manual timezone arithmetic in the test.
       const startCivil = allDayCivilDateOf(new Date(Date.now() + 2 * 86_400_000).toISOString())
       const endExclusive = allDayCivilDateOf(new Date(Date.now() + 4 * 86_400_000).toISOString())
-      const expectedStartAt = new Date(Date.now() + 2 * 86_400_000)
-      expectedStartAt.setUTCHours(3, 0, 0, 0)
-      const expectedEndAt = new Date(expectedStartAt.getTime() + 2 * 86_400_000)
+      const expectedStartAt = allDayStartInstant(startCivil)
+      const expectedEndAt = allDayEndInstantFromExclusive(endExclusive)
 
       replaceEvent(store, googleEventIdForActivity(activity.id), {
         start: { date: startCivil },
@@ -716,8 +727,8 @@ describe('campaign Google calendar sync engine (C114)', () => {
 
       const reloaded = await reloadActivity(activity.id)
       expect(reloaded.allDay).toBe(true)
-      expect(new Date(reloaded.startAt!).getTime()).toBe(expectedStartAt.getTime())
-      expect(new Date(reloaded.endAt!).getTime()).toBe(expectedEndAt.getTime())
+      expect(reloaded.startAt).toBe(expectedStartAt)
+      expect(reloaded.endAt).toBe(expectedEndAt)
       expect((reloaded.updates ?? []).at(-1)?.body).toContain('remarcada')
 
       // Converges — the forward does not flip allDay back.
