@@ -217,7 +217,10 @@ export const CampaignListOmnibox = ({
                 'md:focus-within:border-ring md:focus-within:ring-3 md:focus-within:ring-ring/50',
               )}
               onMouseDown={(event) => {
-                if (event.target === event.currentTarget) inputRef.current?.focus()
+                if (event.target === event.currentTarget) {
+                  inputRef.current?.focus()
+                  setOpen(true)
+                }
               }}
             >
               {chips.map((chip) => (
@@ -267,6 +270,11 @@ export const CampaignListOmnibox = ({
                   setOpen(true)
                 }}
                 onFocus={() => setOpen(true)}
+                // C125 — a click on an already-focused input (e.g. right after
+                // committing a search with Enter) fires no focus event, which
+                // left the popover closed on mobile until a keystroke: the
+                // mousedown always fires, so this is the reliable reopen path.
+                onMouseDown={() => setOpen(true)}
                 onKeyDown={onKeyDown}
                 className="min-h-8 min-w-[8rem] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />

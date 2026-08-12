@@ -43,15 +43,24 @@ export type PeopleListSortDirection = 'asc' | 'desc'
  * C117 — absence facets ("Sem assessor", "Sem base", "Sem contato"). Each
  * value is a pure absence predicate over the merged row; the facet is OR
  * within itself (same semantics as every multi-select facet) and AND with the
- * other filters.
+ * other filters. C125 — `qualquer_ausencia` is the umbrella value: the union
+ * of the three predicates, so "fichas incompletas" is a single chip instead of
+ * the three-specific combination collapsing under B18 (with 4 members,
+ * selecting the 3 specifics no longer equals "all members").
  */
-export const PEOPLE_ABSENCES = ['sem_assessor', 'sem_base', 'sem_contato'] as const
+export const PEOPLE_ABSENCES = [
+  'sem_assessor',
+  'sem_base',
+  'sem_contato',
+  'qualquer_ausencia',
+] as const
 export type PeopleAbsence = (typeof PEOPLE_ABSENCES)[number]
 
 export const peopleAbsenceLabels: Record<PeopleAbsence, string> = {
   sem_assessor: 'Sem assessor',
   sem_base: 'Sem base',
   sem_contato: 'Sem contato',
+  qualquer_ausencia: 'Qualquer ausência',
 }
 
 export type PeopleListState = {
@@ -101,6 +110,23 @@ const peopleListSortKeySet = new Set<string>(Object.keys(peopleListSortLabels))
 const peopleListSortDirSet = new Set<PeopleListSortDirection>(['asc', 'desc'])
 const peopleAbsenceSet = new Set<string>(PEOPLE_ABSENCES)
 
+/**
+ * C125 — ausência parse with the umbrella absorbing the specifics. This facet
+ * deliberately does NOT use `parseExhaustiveEnumParam`: once
+ * `qualquer_ausencia` exists, selecting every member is NOT the same filter as
+ * selecting none (the umbrella means "any absence"), so the generic B18
+ * collapse would fire on the 4th click — the exact "chips vanish" bug this
+ * issue fixes, one click further. The umbrella subsumes the three specifics
+ * (one canonical "any absence" chip) while the 3-specific combination stays
+ * compositional (each chip individually removable).
+ */
+const parsePeopleAbsenceParam = (raw: string | string[] | undefined): PeopleAbsence[] => {
+  const values = allParamValues(raw).filter((token): token is PeopleAbsence =>
+    peopleAbsenceSet.has(token),
+  )
+  return values.includes('qualquer_ausencia') ? ['qualquer_ausencia'] : values
+}
+
 /** Categorical/textual keys open A–Z; count keys open on the biggest first. */
 const peopleSortKeysWithDescDefault = new Set<PeopleListSortKey>([
   'assessora',
@@ -132,7 +158,7 @@ export const parsePeopleListParams = (params: PeopleListSearchParams): PeopleLis
     .map((token) => strictDecimalInteger(token))
     .filter((id): id is number => typeof id === 'number' && id > 0)
   const statuses = parseExhaustiveEnumParam<SupportStatus>(params.status, supportStatusSet)
-  const ausencias = parseExhaustiveEnumParam<PeopleAbsence>(params.ausencia, peopleAbsenceSet)
+  const ausencias = parsePeopleAbsenceParam(params.ausencia)
   const rawSort = firstValue(params.sort)
   const sort =
     rawSort && peopleListSortKeySet.has(rawSort) ? (rawSort as PeopleListSortKey) : undefined
@@ -215,6 +241,17 @@ export const peopleListSortOptions = (
   Object.keys(peopleListSortLabels) as PeopleListSortKey[]
 ).flatMap((key) =>
   (['asc', 'desc'] as const).map((dir) => ({ key, dir, label: peopleSortOptionLabel(key, dir) })),
+)
+
+/**
+ * C125 — the omnibox sort catalog: ONE option per key, in the key's default
+ * direction. Mobile has no sortable headers, and the shared omnibox cap (8 per
+ * group) cuts the 14-key×dir catalog before `aliada`/`assessorado`/`base`;
+ * the primary direction is the intended reading (rankings biggest first, text
+ * A–Z), and desktop headers keep flipping to the secondary one.
+ */
+export const peopleListSortPrimaryOptions = peopleListSortOptions.filter(
+  ({ key, dir }) => dir === defaultPeopleListSortDir(key),
 )
 
 export const resolvePeopleListUrl = (

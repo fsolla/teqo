@@ -237,6 +237,39 @@ describe('filterPeopleRows', () => {
     ).toEqual([101, 102, 103])
   })
 
+  it('filters "qualquer ausência" as the exact union of the three predicates (C125)', () => {
+    expect(
+      filterPeopleRows(rows, { page: 1, ausencias: ['qualquer_ausencia'] })
+        .map((row) => row.contactID)
+        .sort(),
+    ).toEqual([101, 102, 103])
+    expect(
+      filterPeopleRows(rows, {
+        page: 1,
+        ausencias: ['qualquer_ausencia', 'sem_contato'],
+      })
+        .map((row) => row.contactID)
+        .sort(),
+    ).toEqual([101, 102, 103])
+  })
+
+  it('combines "qualquer ausência" with the other filters (AND across facets)', () => {
+    expect(
+      filterPeopleRows(rows, {
+        page: 1,
+        municipalities: [5],
+        ausencias: ['qualquer_ausencia'],
+      }).map((row) => row.contactID),
+    ).toEqual([101])
+    expect(
+      filterPeopleRows(rows, {
+        page: 1,
+        statuses: ['engajado'],
+        ausencias: ['qualquer_ausencia'],
+      }),
+    ).toEqual([])
+  })
+
   it('combines absence facets with the other filters (AND across facets)', () => {
     expect(
       filterPeopleRows(rows, { page: 1, capacities: ['assessora'], ausencias: ['sem_base'] }).map(

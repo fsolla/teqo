@@ -353,10 +353,16 @@ export const filterPeopleRows = (
     if (state.ausencias?.length) {
       const wanted = new Set(state.ausencias)
       const hasAdvisor = row.leadershipAdvisorIDs.length > 0 || row.deputyAdvisorIDs.length > 0
+      const semAssessor = !hasAdvisor
+      const semBase = row.city === null
+      const semContato = row.phone === null
       const matches =
-        (wanted.has('sem_assessor') && !hasAdvisor) ||
-        (wanted.has('sem_base') && row.city === null) ||
-        (wanted.has('sem_contato') && row.phone === null)
+        (wanted.has('sem_assessor') && semAssessor) ||
+        (wanted.has('sem_base') && semBase) ||
+        (wanted.has('sem_contato') && semContato) ||
+        // C125 — "Qualquer ausência": the exact union of the three predicates,
+        // one chip for "fichas incompletas" (same OR-within-facet semantics).
+        (wanted.has('qualquer_ausencia') && (semAssessor || semBase || semContato))
       if (!matches) return false
     }
     return true
