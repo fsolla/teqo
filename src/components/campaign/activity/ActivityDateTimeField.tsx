@@ -19,7 +19,6 @@ import {
   floorToMinuteStep,
   formatBahiaCivilDate,
   formatBahiaCivilDateLabel,
-  formatBahiaCivilDateTimeLabel,
   hourOptions,
   minuteOptionsForStep,
   parseBahiaDateTimeInput,
@@ -27,20 +26,18 @@ import {
 import { cn } from '@/lib/utils'
 
 /**
- * C97 — shadcn day + time picker for the agenda quick create. The value
- * contract is the civil `YYYY-MM-DDTHH:mm` string the old `datetime-local`
- * used, so parse/validation on submit is untouched. 24h by construction:
- * the trigger formats the civil string directly and the selects list
- * 00–23 / 00–45, so no browser locale or Intl hour cycle can inject AM/PM.
- * The parent renders the surrounding Field/FieldError; this component is the
- * control itself (trigger + popover with calendar and step selects).
+ * C97/C123 — the date+time control for the agenda overlay. C123 split it: the
+ * day part is a calendar trigger (popover on desktop, nested bottom sheet on
+ * mobile) and the Hora/Minuto selects render INLINE beside it, always visible
+ * — nothing hides below the calendar anymore. The value contract stays the
+ * civil `YYYY-MM-DDTHH:mm` string, so parse/validation on submit is untouched.
+ * 24h by construction: the trigger formats the civil date directly and the
+ * selects list 00–23 / 00–45, so no browser locale or Intl hour cycle can
+ * inject AM/PM. The parent renders the surrounding Field/FieldError; this
+ * component is the control itself.
  *
- * C103 — on narrow viewports the picker opens as a nested bottom sheet
- * (calendar + hour/minute fully on screen, "Pronto" applies and closes),
- * keeping the desktop popover untouched.
- *
- * C104 — `timeVisible={false}` is the all-day mode: the trigger formats only
- * the date and the picker renders just the calendar (no time selects).
+ * C104 — `timeVisible={false}` is the all-day mode: only the date trigger
+ * renders, the time selects disappear.
  */
 export const ActivityDateTimeField = ({
   id,
@@ -59,19 +56,21 @@ export const ActivityDateTimeField = ({
   invalid?: boolean
   /** FieldError id to announce on focus — parity with the input it replaces. */
   errorId?: string
-  /** Renders the picker as a nested bottom sheet instead of a popover. */
+  /** Renders the calendar picker as a nested bottom sheet instead of a popover. */
   isNarrow?: boolean
-  /** Field name used in the sheet header (e.g. "Início"). */
+  /** Field name used in the sheet header and the time-select a11y labels (e.g. "Início"). */
   label?: string
   /** Marks the required fields with a visible asterisk on the narrow trigger. */
   required?: boolean
-  /** When false, hide the time selects and label the trigger with the date only. */
+  /** When false, hide the time selects (all-day mode). */
   timeVisible?: boolean
 }) => {
   const [open, setOpen] = useState(false)
   const civil = floorToMinuteStep(value)
   const datePart = civil.slice(0, 10)
-  const timePart = civil.slice(11)
+  // A draft without a startAt (tour drafts) renders the controls empty: the
+  // selects default to 00:00 and picking a date seeds the time part.
+  const timePart = civil ? civil.slice(11) : '00:00'
   const hour = timePart.slice(0, 2)
   const minute = timePart.slice(3, 5)
 
@@ -80,12 +79,22 @@ export const ActivityDateTimeField = ({
     onValueChange(`${formatBahiaCivilDate(date)}T${timePart}`)
   }
 
-  const setHour = (next: string) => onValueChange(`${datePart}T${next}:${minute}`)
-  const setMinute = (next: string) => onValueChange(`${datePart}T${hour}:${next}`)
+  // Time edits are a no-op until a date exists: a draft without a startAt
+  // (tour drafts) must not emit a corrupt civil string like `T09:00`.
+  const setHour = (next: string) => {
+    if (!datePart) return
+    onValueChange(`${datePart}T${next}:${minute}`)
+  }
+  const setMinute = (next: string) => {
+    if (!datePart) return
+    onValueChange(`${datePart}T${hour}:${next}`)
+  }
 
-  const selectedInstant = parseBahiaDateTimeInput(`${datePart}T12:00`)
+  const selectedInstant = parseBahiaDateTimeInput(
+    `${datePart || formatBahiaCivilDate(new Date())}T12:00`,
+  )
 
-  const trigger = (
+  const dateTrigger = (
     <Button
       id={id}
       type="button"
@@ -104,7 +113,7 @@ export const ActivityDateTimeField = ({
       )}
     >
       <span className="truncate">
-        {timeVisible ? formatBahiaCivilDateTimeLabel(civil) : formatBahiaCivilDateLabel(civil)}
+        {civil ? formatBahiaCivilDateLabel(civil) : 'Selecionar data'}
       </span>
       {isNarrow && required ? (
         <span aria-hidden="true" className="font-semibold text-destructive">
@@ -119,90 +128,92 @@ export const ActivityDateTimeField = ({
     </Button>
   )
 
-  const pickerContent = (
-    <>
-      {selectedInstant ? (
-        <Calendar
-          mode="single"
-          locale={ptBR}
-          timeZone="America/Bahia"
-          selected={new Date(selectedInstant)}
-          onSelect={setDate}
-          className="w-full p-2"
-        />
-      ) : null}
-      {timeVisible ? (
-        <div className="flex flex-col gap-3 border-t p-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground select-none">Hora</span>
-              <NativeSelect
-                aria-label="Hora"
-                value={hour}
-                onChange={(event) => setHour(event.target.value)}
-              >
-                {hourOptions.map((option) => (
-                  <NativeSelectOption key={option} value={option}>
-                    {option}h
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground select-none">Minuto</span>
-              <NativeSelect
-                aria-label="Minuto"
-                value={minute}
-                onChange={(event) => setMinute(event.target.value)}
-              >
-                {minuteOptionsForStep().map((option) => (
-                  <NativeSelectOption key={option} value={option}>
-                    {option}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </>
-  )
+  const calendarContent = selectedInstant ? (
+    <Calendar
+      mode="single"
+      locale={ptBR}
+      timeZone="America/Bahia"
+      selected={new Date(selectedInstant)}
+      onSelect={setDate}
+      className="w-full p-2"
+    />
+  ) : null
 
-  if (isNarrow) {
-    return (
-      <>
-        {trigger}
-        <Drawer open={open} onOpenChange={setOpen} showSwipeHandle>
-          <DrawerContent>
-            <DrawerHeader>
-              <DrawerTitle>
-                {label ? `${label} — ` : ''}
-                {selectedInstant ? formatBahiaCivilDate(new Date(selectedInstant)) : datePart}
-              </DrawerTitle>
-            </DrawerHeader>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-2">
-              {pickerContent}
-            </div>
-            <DrawerFooter className="border-t">
-              <Button type="button" className="min-h-11 w-full" onClick={() => setOpen(false)}>
-                Pronto
-              </Button>
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
-      </>
-    )
-  }
+  const timeSelects = timeVisible ? (
+    <div
+      className={cn('flex min-w-0 gap-1.5', isNarrow ? 'shrink-0' : 'shrink-0 sm:gap-2')}
+      role="group"
+      aria-label={`Horário de ${label ?? 'início'}`}
+    >
+      {(
+        [
+          ['Hora', hour, setHour],
+          ['Minuto', minute, setMinute],
+        ] as const
+      ).map(([part, value, onChange]) => (
+        <div key={part} className={cn('flex flex-col gap-1', isNarrow ? 'w-16' : 'w-20')}>
+          {!isNarrow ? (
+            <span className="text-xs font-medium text-muted-foreground select-none">{part}</span>
+          ) : null}
+          <NativeSelect
+            aria-label={`${part} de ${label ?? 'início'}`}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            className={cn(
+              'w-full **:data-[slot=native-select]:min-h-11',
+              isNarrow &&
+                '**:data-[slot=native-select]:min-h-11 **:data-[slot=native-select]:rounded-none **:data-[slot=native-select]:border-0 **:data-[slot=native-select]:bg-transparent **:data-[slot=native-select]:px-1',
+            )}
+          >
+            {(part === 'Hora' ? hourOptions : minuteOptionsForStep()).map((option) => (
+              <NativeSelectOption key={option} value={option}>
+                {part === 'Hora' ? `${option}h` : option}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </div>
+      ))}
+    </div>
+  ) : null
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="max-h-[22rem] w-80 overflow-y-auto p-0 overscroll-contain"
-      >
-        {pickerContent}
-      </PopoverContent>
-    </Popover>
+    <div className={cn('flex w-full items-start gap-1.5 sm:gap-2', isNarrow && 'min-h-11')}>
+      <div className="min-w-0 flex-1">
+        {isNarrow ? (
+          <>
+            {dateTrigger}
+            <Drawer open={open} onOpenChange={setOpen} showSwipeHandle>
+              <DrawerContent>
+                <DrawerHeader>
+                  <DrawerTitle>
+                    {label ? `${label} — ` : ''}
+                    {selectedInstant ? formatBahiaCivilDate(new Date(selectedInstant)) : datePart}
+                  </DrawerTitle>
+                </DrawerHeader>
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-2">
+                  {calendarContent}
+                </div>
+                <DrawerFooter className="border-t">
+                  <Button type="button" className="min-h-11 w-full" onClick={() => setOpen(false)}>
+                    Pronto
+                  </Button>
+                </DrawerFooter>
+              </DrawerContent>
+            </Drawer>
+          </>
+        ) : (
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>{dateTrigger}</PopoverTrigger>
+            <PopoverContent
+              align="start"
+              className="max-h-[22rem] w-80 overflow-y-auto p-0 overscroll-contain"
+            >
+              {calendarContent}
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
+      {timeSelects}
+    </div>
   )
 }

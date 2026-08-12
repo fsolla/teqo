@@ -57,9 +57,6 @@ export const campaignPageChromeCatalog = {
   agenda: {
     title: 'Agenda',
   },
-  atividadesNova: {
-    title: 'Nova atividade',
-  },
   atividadesGiros: {
     title: 'Planejar giro',
   },
@@ -186,16 +183,8 @@ const pathRules: PathRule[] = [
     resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.pessoas),
   },
   {
-    match: (pathname) => pathname === '/campanha/atividades/nova',
-    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.atividadesNova),
-  },
-  {
     match: (pathname) => pathname === '/campanha/atividades/giros',
     resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.atividadesGiros),
-  },
-  {
-    match: (pathname) => /^\/campanha\/atividades\/[^/]+\/editar$/.test(pathname),
-    resolve: () => null,
   },
   {
     match: (pathname) => /^\/campanha\/atividades\/[^/]+$/.test(pathname),

@@ -16,7 +16,6 @@ import {
 import { homeActionsForRole, toHomeActionButtonProps } from '@/lib/campaignHomeActions'
 import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContext'
 import {
-  ACTIVITY_NEW_PATH,
   ACTIVITY_TOUR_COMPOSER_PATH,
   type ActivityQuickActionSurface,
 } from '@/lib/campaignQuickActionPaths'
@@ -32,13 +31,21 @@ const WIZARD_ACTION_IDS: readonly CampaignWizardActionId[] = [
 ]
 
 const listQuickActions = (context: CampaignQuickActionContext): readonly CampaignQuickAction[] => [
-  {
-    id: 'new-activity',
-    label: 'Nova atividade',
-    icon: Plus,
-    description: 'Criar caminhada, comício, panfletagem ou outra ação de campanha',
-    href: ACTIVITY_NEW_PATH,
-  },
+  // C123 — the create surface is the agenda overlay; the FAB opens it via the
+  // page-bridged context (same pattern as openCalendarFeed/openGoogleCalendarSync).
+  // Conditional like the dialog neighbors: while the bridge is not registered
+  // yet (initial load), the entry must not render as a dead button.
+  ...(context.openActivityCreate
+    ? [
+        {
+          id: 'new-activity',
+          label: 'Nova atividade',
+          icon: Plus,
+          description: 'Criar caminhada, comício, panfletagem ou outra ação de campanha',
+          onAction: context.openActivityCreate,
+        },
+      ]
+    : []),
   ...(context.openCalendarFeed
     ? [
         {
@@ -93,16 +100,25 @@ const wizardActionsWithMunicipalityPrefill = (
   })
 }
 
-const detailVerticalQuickActions = (activitySlug: string): readonly CampaignQuickAction[] => {
+const detailVerticalQuickActions = (
+  activitySlug: string,
+  context: CampaignQuickActionContext,
+): readonly CampaignQuickAction[] => {
   const base = `/campanha/atividades/${activitySlug}`
   const actions: CampaignQuickAction[] = [
-    {
-      id: 'edit-activity',
-      label: 'Editar',
-      icon: Pencil,
-      description: 'Abrir o formulário completo da atividade',
-      href: `${base}/editar`,
-    },
+    // C123 — set by the detail page bridge (opens the edit overlay). Conditional
+    // like the list entry: no dead "Editar" while the bridge is not registered.
+    ...(context.openActivityEdit
+      ? [
+          {
+            id: 'edit-activity',
+            label: 'Editar',
+            icon: Pencil,
+            description: 'Abrir o formulário completo da atividade',
+            onAction: context.openActivityEdit,
+          },
+        ]
+      : []),
     {
       id: 'activity-tasks',
       label: 'Tarefas',
@@ -138,7 +154,7 @@ export const resolveActivityQuickActions = (
   const municipalitySlug = context.municipalitySlug
   const returnPath = pathname ?? `/campanha/atividades/${activitySlug}`
 
-  const detailActions = detailVerticalQuickActions(activitySlug)
+  const detailActions = detailVerticalQuickActions(activitySlug, context)
 
   if (!municipalitySlug) {
     return detailActions

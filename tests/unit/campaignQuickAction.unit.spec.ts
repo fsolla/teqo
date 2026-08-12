@@ -28,7 +28,6 @@ import {
 import {
   ACTIVITY_DETAIL_ROOT_PATH,
   ACTIVITY_LIST_PATH,
-  ACTIVITY_NEW_PATH,
   ACTIVITY_TOUR_COMPOSER_PATH,
   ORGANIZATIONS_LIST_PATH,
   ORGANIZATION_NEW_PATH,
@@ -116,7 +115,7 @@ describe('campaignQuickActionPaths (activities)', () => {
   })
 
   it('ignores nova, giros and nested edit routes', () => {
-    expect(parseActivityQuickActionSurface(ACTIVITY_NEW_PATH)).toBeNull()
+    expect(parseActivityQuickActionSurface('/campanha/atividades/nova')).toBeNull()
     expect(parseActivityQuickActionSurface(ACTIVITY_TOUR_COMPOSER_PATH)).toBeNull()
     expect(parseActivityQuickActionSurface('/campanha/atividades/foo/editar')).toBeNull()
   })
@@ -190,9 +189,20 @@ describe('organizationQuickActions (B88)', () => {
 describe('activityQuickActions (B84)', () => {
   it('lists vertical verbs on the activity list', () => {
     const actions = resolveActivityQuickActions({ kind: 'list' }, 'coordinator', {})
+    // C123 — "Nova atividade" opens the agenda overlay via the page-bridged
+    // context; without a bridge the entry is omitted (never a dead /nova href).
+    expect(actions.map((action) => action.id)).toEqual(['plan-tour'])
+    expect(actions[0]?.href).toBe(ACTIVITY_TOUR_COMPOSER_PATH)
+  })
+
+  it('bridges "Nova atividade" to the overlay when the context is registered', () => {
+    const openActivityCreate = () => undefined
+    const actions = resolveActivityQuickActions({ kind: 'list' }, 'coordinator', {
+      openActivityCreate,
+    })
     expect(actions.map((action) => action.id)).toEqual(['new-activity', 'plan-tour'])
-    expect(actions[0]?.href).toBe(ACTIVITY_NEW_PATH)
-    expect(actions[1]?.href).toBe(ACTIVITY_TOUR_COMPOSER_PATH)
+    expect(actions[0]?.href).toBeUndefined()
+    expect(actions[0]?.onAction).toBe(openActivityCreate)
   })
 
   it('prefills wizards and detail shortcuts on activity detail', () => {
@@ -208,12 +218,23 @@ describe('activityQuickActions (B84)', () => {
         .find((action) => action.id === 'update-votes')
         ?.href?.includes('municipio=feira-de-santana'),
     ).toBe(true)
-    expect(actions.find((action) => action.id === 'edit-activity')?.href).toBe(
-      '/campanha/atividades/comicio-feira/editar',
-    )
+    // C123 — "Editar" is bridged by the detail page; without the bridge it is
+    // omitted, never a dead /editar href.
+    expect(actions.find((action) => action.id === 'edit-activity')).toBeUndefined()
     expect(actions.find((action) => action.id === 'activity-tasks')?.href).toBe(
       '/campanha/atividades/comicio-feira?tab=tasks',
     )
+  })
+
+  it('bridges "Editar" to the overlay when the context is registered', () => {
+    const openActivityEdit = () => undefined
+    const actions = resolveActivityQuickActions(
+      { kind: 'detail', activitySlug: 'panfletagem' },
+      'advisor',
+      { activitySlug: 'panfletagem', openActivityEdit },
+    )
+    expect(actions.find((action) => action.id === 'edit-activity')?.href).toBeUndefined()
+    expect(actions.find((action) => action.id === 'edit-activity')?.onAction).toBe(openActivityEdit)
   })
 
   it('omits wizard prefills without municipality context', () => {
@@ -224,11 +245,7 @@ describe('activityQuickActions (B84)', () => {
     )
 
     expect(actions.some((action) => action.id === 'register-demand')).toBe(false)
-    expect(actions.map((action) => action.id)).toEqual([
-      'edit-activity',
-      'activity-tasks',
-      'activity-updates',
-    ])
+    expect(actions.map((action) => action.id)).toEqual(['activity-tasks', 'activity-updates'])
   })
 })
 
@@ -318,7 +335,13 @@ describe('campaignQuickActionRegistry', () => {
   })
 
   it('delegates activity routes to the B84 catalog', () => {
-    const actions = resolveQuickActionsForPath(ACTIVITY_LIST_PATH, 'coordinator', {})
+    // C123 — "Nova atividade" only appears once the agenda bridge registers.
+    expect(
+      resolveQuickActionsForPath(ACTIVITY_LIST_PATH, 'coordinator', {}).map((action) => action.id),
+    ).toEqual(['plan-tour'])
+    const actions = resolveQuickActionsForPath(ACTIVITY_LIST_PATH, 'coordinator', {
+      openActivityCreate: () => undefined,
+    })
     expect(actions.map((action) => action.id)).toEqual(['new-activity', 'plan-tour'])
   })
 

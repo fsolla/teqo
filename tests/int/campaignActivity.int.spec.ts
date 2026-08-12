@@ -12,6 +12,7 @@ import {
   createActivityRecord,
   createTourDraftActivitiesRecord,
   loadActivityAgendaEventsRecord,
+  loadActivityEditDraftRecord,
   rescheduleActivityRecord,
 } from '@/app/(campaign)/campanha/actions/activity'
 import { allDayEndInstant, allDayStartInstant } from '@/lib/activityAllDay'
@@ -374,6 +375,34 @@ describe('activity domain', () => {
     // The polymorphic `responsible` object-notation equals is the exact leg
     // that keeps the advisor's right when the municipality scope does not.
     expect(result.docs.map((doc) => doc.id)).toEqual([visibleByResponsibility.id])
+  })
+
+  it('loads the edit draft only inside the actor scope (C123 overlay)', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const otherAdvisor = await fixtures.createCampaignUser('advisor')
+    const municipality = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(municipality, [advisor])
+
+    const inScope = await createActivityRecord(payload, coordinator, {
+      ...validActivityInput(municipality.id),
+      title: fixtures.value('No portfólio do assessor'),
+    })
+    fixtures.own('activity', inScope.id)
+    const outOfScope = await createActivityRecord(payload, coordinator, {
+      ...validActivityInput((await fixtures.getMunicipality()).id),
+      title: fixtures.value('Fora do portfólio do assessor'),
+    })
+    fixtures.own('activity', outOfScope.id)
+
+    const advisorDraft = await loadActivityEditDraftRecord(payload, advisor, inScope.id)
+    expect(advisorDraft.id).toBe(inScope.id)
+    expect(advisorDraft.title).toBe(inScope.title)
+    expect(advisorDraft.municipalityId).toBe(municipality.id)
+
+    await expect(loadActivityEditDraftRecord(payload, otherAdvisor, inScope.id)).rejects.toThrow()
+    await expect(loadActivityEditDraftRecord(payload, advisor, outOfScope.id)).rejects.toThrow()
   })
 
   it('lets a responsible advisor re-save an activity whose leadership they cannot read (C90 existence validation)', async () => {

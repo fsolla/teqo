@@ -3,6 +3,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type Dispatch,
@@ -37,4 +38,25 @@ export const useCampaignQuickActionContext = (): CampaignQuickActionContextValue
     throw new Error('CampaignQuickActionContextProvider is required')
   }
   return value
+}
+
+type CampaignBridgedQuickActionKey =
+  | 'openCalendarFeed'
+  | 'openGoogleCalendarSync'
+  | 'openActivityCreate'
+  | 'openActivityEdit'
+
+/**
+ * Registers a dialog-style quick action into the shared context while the
+ * owning surface is mounted (precedent C94/C114, reused by C123 hosts). The
+ * same key is unregistered on unmount so the FAB never fires a stale closure.
+ */
+export const useBridgedQuickAction = (key: CampaignBridgedQuickActionKey, open: () => void) => {
+  const { setContext } = useCampaignQuickActionContext()
+  useEffect(() => {
+    setContext((current) => ({ ...current, [key]: open }))
+    return () => {
+      setContext((current) => ({ ...current, [key]: undefined }))
+    }
+  }, [setContext, key, open])
 }

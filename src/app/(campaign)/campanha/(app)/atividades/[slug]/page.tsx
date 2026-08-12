@@ -1,9 +1,10 @@
 import config from '@payload-config'
-import { PencilIcon, PlusIcon } from 'lucide-react'
+import { PlusIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { ActivityEditOverlayHost } from '@/components/campaign/activity/ActivityEditOverlayHost'
 import {
   CancelActivityDialog,
   MarkActivityRealizedDialog,
@@ -19,7 +20,12 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
+import { loadAccessibleActivityTags } from '@/utilities/activityPageData'
 import { formatActivityWhenLabel } from '@/utilities/activityViewModels'
+import {
+  loadMunicipalityOptions,
+  loadOrganizationOptions,
+} from '@/utilities/campaignRelationOptions'
 
 import { getActivityDetailPageData } from '@/utilities/activityDetailPageData'
 import {
@@ -90,6 +96,12 @@ export default async function ActivityDetailPage({
   const canonicalTabRedirect = getActivityDetailTabRedirect(view.slug, query)
   if (canonicalTabRedirect) redirect(canonicalTabRedirect)
 
+  const [municipalityOptions, organizationOptions, knownTags] = await Promise.all([
+    loadMunicipalityOptions(payload, user),
+    loadOrganizationOptions(payload, user),
+    loadAccessibleActivityTags(payload, user),
+  ])
+
   const isStaff = isCampaignStaff(user)
   const canManageLifecycle = isStaff && view.status !== 'realizado' && view.status !== 'cancelado'
   const chromeSubtitle = view.locationLabel || view.municipality?.name
@@ -101,6 +113,8 @@ export default async function ActivityDetailPage({
           chromeSubtitle ? { title: view.title, subtitle: chromeSubtitle } : { title: view.title }
         }
       />
+      {/* C123 — must stay ABOVE ActivityEditOverlayHost: the bridge replaces
+          the whole context, the host merges `openActivityEdit` on top. */}
       <CampaignQuickActionContextBridge
         activitySlug={view.slug}
         municipalitySlug={view.municipality?.slug}
@@ -122,12 +136,12 @@ export default async function ActivityDetailPage({
         </div>
         <div className="flex flex-wrap gap-2">
           {isStaff ? (
-            <Button asChild variant="outline" className="min-h-11">
-              <Link href={`/campanha/atividades/${view.slug}/editar`}>
-                <PencilIcon data-icon="inline-start" aria-hidden="true" />
-                Editar
-              </Link>
-            </Button>
+            <ActivityEditOverlayHost
+              activityId={view.id}
+              municipalityOptions={municipalityOptions}
+              organizationOptions={organizationOptions}
+              knownTags={knownTags}
+            />
           ) : null}
           <Button asChild variant="outline" className="min-h-11">
             <Link href={`/campanha/atividades/${view.slug}?tab=updates&newUpdate=1`}>

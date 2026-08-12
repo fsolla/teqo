@@ -6,8 +6,6 @@ export const ACTIVITY_LIST_PATH = CAMPAIGN_AGENDA_HOME
 
 export const ACTIVITY_DETAIL_ROOT_PATH = '/campanha/atividades' as const
 
-export const ACTIVITY_NEW_PATH = `${ACTIVITY_DETAIL_ROOT_PATH}/nova` as const
-
 export const ACTIVITY_TOUR_COMPOSER_PATH = `${ACTIVITY_DETAIL_ROOT_PATH}/giros` as const
 
 export const ORGANIZATIONS_LIST_PATH = '/campanha/organizacoes' as const

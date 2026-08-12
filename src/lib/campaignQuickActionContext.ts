@@ -18,6 +18,13 @@ export type CampaignQuickActionContext = {
   openCalendarFeed?: () => void
   /** C114 — opens the Google Calendar mirror dialog (same bridge as above). */
   openGoogleCalendarSync?: () => void
+  /**
+   * C123 — opens the agenda's create overlay (bridged by the agenda and the
+   * activities list page, which host the overlay).
+   */
+  openActivityCreate?: () => void
+  /** C123 — opens the agenda's edit overlay for the current activity (bridged by the detail page). */
+  openActivityEdit?: () => void
 }
 
 export const emptyCampaignQuickActionContext = (): CampaignQuickActionContext => ({})

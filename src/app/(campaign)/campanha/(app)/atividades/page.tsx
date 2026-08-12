@@ -3,11 +3,12 @@ import {
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
 import config from '@payload-config'
-import { MapPinnedIcon, PlusIcon, SearchXIcon } from 'lucide-react'
+import { MapPinnedIcon, SearchXIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { ActivityCreateOverlayHost } from '@/components/campaign/activity/ActivityCreateOverlayHost'
 import { ActivityFilters } from '@/components/campaign/activity/ActivityFilters'
 import { ActivityList } from '@/components/campaign/activity/ActivityList'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
@@ -16,7 +17,7 @@ import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell
 import { Button } from '@/components/ui/button'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import type { Activity } from '@/payload-types'
-import { loadActivityListPageData } from '@/utilities/activityPageData'
+import { loadAccessibleActivityTags, loadActivityListPageData } from '@/utilities/activityPageData'
 import {
   buildActivityFiltersKey,
   buildActivityListHref,
@@ -25,7 +26,10 @@ import {
 import { toActivityListViewModel } from '@/utilities/activityViewModels'
 import { isCampaignStaff } from '@/utilities/campaignAccess'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
+import {
+  loadMunicipalityOptions,
+  loadOrganizationOptions,
+} from '@/utilities/campaignRelationOptions'
 import { TOUR_COMPOSER_PATH } from '@/utilities/visit/visitPlannerUrl'
 
 export const metadata = campaignPageMetadataFromCatalog('atividades')
@@ -45,10 +49,13 @@ export default async function ActivityListPage({ searchParams }: ActivityListPag
   ])
 
   const now = new Date()
-  const [{ result, state }, municipalityOptions] = await Promise.all([
-    loadActivityListPageData(payload, user, rawSearchParams, now),
-    loadMunicipalityOptions(payload, user),
-  ])
+  const [{ result, state }, municipalityOptions, organizationOptions, knownTags] =
+    await Promise.all([
+      loadActivityListPageData(payload, user, rawSearchParams, now),
+      loadMunicipalityOptions(payload, user),
+      loadOrganizationOptions(payload, user),
+      loadAccessibleActivityTags(payload, user),
+    ])
   const resolvedUrl = resolveActivityListUrl(rawSearchParams, result.totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
 
@@ -64,12 +71,12 @@ export default async function ActivityListPage({ searchParams }: ActivityListPag
               Planejar giro
             </Link>
           </Button>
-          <Button asChild className="min-h-11">
-            <Link href="/campanha/atividades/nova">
-              <PlusIcon data-icon="inline-start" aria-hidden="true" />
-              Nova atividade
-            </Link>
-          </Button>
+          <ActivityCreateOverlayHost
+            municipalityId={state.municipality}
+            municipalityOptions={municipalityOptions}
+            organizationOptions={organizationOptions}
+            knownTags={knownTags}
+          />
         </div>
       ) : null}
 

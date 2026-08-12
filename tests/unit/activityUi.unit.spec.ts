@@ -4,19 +4,17 @@ import {
   activityAgendaViewFcId,
   activityAgendaViewLabels,
   activityAgendaViews,
+  activityDefaultCreatePrefill,
   activitySlotPrefill,
   activityTabs,
   buildActivityAgendaHref,
   buildActivityAgendaSearchParams,
   buildActivityAgendaWhere,
-  buildActivityCreateHref,
   buildActivityFiltersKey,
   buildActivityListHref,
   buildActivityListSearchParams,
   buildActivityListWhere,
   parseActivityAgendaParams,
-  parseActivityAgendaReturnHref,
-  parseActivityCreatePrefill,
   parseActivityListParams,
   resolveActivityAgendaUrl,
   resolveActivityListUrl,
@@ -261,19 +259,6 @@ describe('activity agenda view modes (C95)', () => {
       restrictActivityAgendaState({ tag: 'Fora', view: 'list' }, new Set(), new Set()),
     ).toEqual({ view: 'list' })
   })
-
-  it('round-trips the view through the create return href', () => {
-    expect(
-      parseActivityAgendaReturnHref(
-        '/campanha/agenda?municipality=12&view=month',
-        new Set([12]),
-        new Set(),
-      ),
-    ).toBe('/campanha/agenda?municipality=12&view=month')
-    expect(parseActivityAgendaReturnHref('/campanha/agenda?view=bogus', new Set(), new Set())).toBe(
-      '/campanha/agenda',
-    )
-  })
 })
 
 describe('buildActivityAgendaWhere', () => {
@@ -306,215 +291,6 @@ describe('buildActivityAgendaWhere', () => {
   })
 })
 
-describe('activity create prefill', () => {
-  it('carries the canonical agenda return URL into creation', () => {
-    expect(
-      buildActivityCreateHref(
-        { municipality: 12, deputyPresent: true, tag: 'Comício' },
-        {
-          startAt: '2026-08-07T13:00:00.000Z',
-          endAt: '2026-08-07T14:00:00.000Z',
-        },
-      ),
-    ).toBe(
-      '/campanha/atividades/nova?startAt=2026-08-07T13%3A00%3A00.000Z&endAt=2026-08-07T14%3A00%3A00.000Z&municipality=12&returnTo=%2Fcampanha%2Fagenda%3Fmunicipality%3D12%26deputyPresent%3D1%26tag%3DCom%25C3%25ADcio',
-    )
-  })
-
-  it('accepts only accessible canonical agenda return URLs', () => {
-    expect(
-      parseActivityAgendaReturnHref(
-        '/campanha/agenda?municipality=12&deputyPresent=1&tag=Com%C3%ADcio',
-        new Set([12]),
-        new Set(['Comício']),
-      ),
-    ).toBe('/campanha/agenda?municipality=12&deputyPresent=1&tag=Com%C3%ADcio')
-    expect(
-      parseActivityAgendaReturnHref(
-        'https://example.com/campanha/agenda?municipality=12',
-        new Set([12]),
-        new Set(),
-      ),
-    ).toBe('/campanha/agenda')
-  })
-
-  it('normalizes a valid slot and accepts only an accessible municipality', () => {
-    expect(
-      parseActivityCreatePrefill(
-        {
-          startAt: '2026-08-07T10:00:00-03:00',
-          endAt: '2026-08-07T11:00:00-03:00',
-          municipality: '12',
-        },
-        new Set([12]),
-      ),
-    ).toEqual({
-      startAt: '2026-08-07T13:00:00.000Z',
-      endAt: '2026-08-07T14:00:00.000Z',
-      municipalityId: 12,
-    })
-  })
-
-  it('drops an invalid slot and an out-of-scope municipality', () => {
-    expect(
-      parseActivityCreatePrefill(
-        {
-          startAt: 'sexta de manhã',
-          endAt: '2026-08-07T11:00:00-03:00',
-          municipality: '99',
-        },
-        new Set([12]),
-      ),
-    ).toEqual({})
-  })
-
-  it('keeps a valid start but drops an inverted end', () => {
-    expect(
-      parseActivityCreatePrefill(
-        {
-          startAt: '2026-08-07T10:00:00-03:00',
-          endAt: '2026-08-07T09:00:00-03:00',
-        },
-        new Set(),
-      ),
-    ).toEqual({ startAt: '2026-08-07T13:00:00.000Z' })
-  })
-
-  it('carries the inline title into the creation URL (C91)', () => {
-    expect(
-      buildActivityCreateHref(
-        { tag: 'Comício' },
-        {
-          startAt: '2026-08-07T13:00:00.000Z',
-          endAt: '2026-08-07T13:30:00.000Z',
-          municipalityId: 3,
-          title: 'Café com apoiadores',
-        },
-      ),
-    ).toBe(
-      '/campanha/atividades/nova?startAt=2026-08-07T13%3A00%3A00.000Z&endAt=2026-08-07T13%3A30%3A00.000Z&municipality=3&title=Caf%C3%A9+com+apoiadores&returnTo=%2Fcampanha%2Fagenda%3Ftag%3DCom%25C3%25ADcio',
-    )
-  })
-
-  it('prefers the inline municipality over the agenda filter', () => {
-    expect(buildActivityCreateHref({ municipality: 12 }, { municipalityId: 3 })).toBe(
-      '/campanha/atividades/nova?municipality=3&returnTo=%2Fcampanha%2Fagenda%3Fmunicipality%3D12',
-    )
-  })
-
-  it('parses a bounded inline title and drops an oversized one', () => {
-    expect(parseActivityCreatePrefill({ title: '  Café com apoiadores  ' }, new Set())).toEqual({
-      title: 'Café com apoiadores',
-    })
-    expect(parseActivityCreatePrefill({ title: 'a'.repeat(200) }, new Set())).toEqual({})
-  })
-
-  it('carries inline tags into the creation URL as repeated params (C105)', () => {
-    expect(
-      buildActivityCreateHref(
-        { municipality: 12 },
-        {
-          startAt: '2026-08-07T13:00:00.000Z',
-          municipalityId: 12,
-          title: 'Panfletagem',
-          tags: ['Panfletagem', 'Caminhada, café'],
-        },
-      ),
-    ).toBe(
-      '/campanha/atividades/nova?startAt=2026-08-07T13%3A00%3A00.000Z&municipality=12&title=Panfletagem&tags=Panfletagem&tags=Caminhada%2C+caf%C3%A9&returnTo=%2Fcampanha%2Fagenda%3Fmunicipality%3D12',
-    )
-  })
-
-  it('round-trips inline tags through the create prefill (C105)', () => {
-    expect(
-      parseActivityCreatePrefill(
-        { tags: [' Panfletagem ', 'Caminhada, café', 'Panfletagem'] },
-        new Set(),
-      ),
-    ).toEqual({ tags: ['Panfletagem', 'Caminhada, café'] })
-  })
-
-  it('drops oversized and out-of-bound tags from the prefill (C105)', () => {
-    const oversized = 'a'.repeat(81)
-    expect(parseActivityCreatePrefill({ tags: [oversized, '  '] }, new Set())).toEqual({})
-    expect(parseActivityCreatePrefill({ tags: ['válida', oversized] }, new Set())).toEqual({
-      tags: ['válida'],
-    })
-  })
-
-  it('carries the all-day choice as civil dates into the creation URL (C104)', () => {
-    expect(
-      buildActivityCreateHref(
-        { municipality: 12 },
-        {
-          allDay: true,
-          startAt: '2026-08-10',
-          endAt: '2026-08-12',
-          municipalityId: 12,
-        },
-      ),
-    ).toBe(
-      '/campanha/atividades/nova?allDay=1&startAt=2026-08-10&endAt=2026-08-12&municipality=12&returnTo=%2Fcampanha%2Fagenda%3Fmunicipality%3D12',
-    )
-  })
-
-  it('parses an all-day prefill into day-boundary instants', () => {
-    expect(
-      parseActivityCreatePrefill(
-        {
-          allDay: '1',
-          startAt: '2026-08-10',
-          endAt: '2026-08-12',
-          municipality: '12',
-        },
-        new Set([12]),
-      ),
-    ).toEqual({
-      allDay: true,
-      startAt: '2026-08-10T03:00:00.000Z',
-      endAt: '2026-08-12T03:00:00.000Z',
-      municipalityId: 12,
-    })
-  })
-
-  it('allows a single-day all-day prefill (end equals start)', () => {
-    expect(
-      parseActivityCreatePrefill(
-        {
-          allDay: '1',
-          startAt: '2026-08-10',
-          endAt: '2026-08-10',
-        },
-        new Set(),
-      ),
-    ).toEqual({
-      allDay: true,
-      startAt: '2026-08-10T03:00:00.000Z',
-      endAt: '2026-08-10T03:00:00.000Z',
-    })
-  })
-
-  it('drops an inverted all-day end and malformed all-day dates', () => {
-    expect(
-      parseActivityCreatePrefill(
-        {
-          allDay: '1',
-          startAt: '2026-08-12',
-          endAt: '2026-08-10',
-        },
-        new Set(),
-      ),
-    ).toEqual({ allDay: true, startAt: '2026-08-12T03:00:00.000Z' })
-    expect(
-      parseActivityCreatePrefill(
-        { allDay: '1', startAt: '10/08/2026', endAt: '2026-08-10' },
-        new Set(),
-      ),
-    ).toEqual({ allDay: true, endAt: '2026-08-10T03:00:00.000Z' })
-    expect(parseActivityCreatePrefill({ allDay: '0' }, new Set())).toEqual({})
-  })
-})
-
 describe('activity slot prefill (C91)', () => {
   it('uses the snapped slot interval for time grids', () => {
     expect(activitySlotPrefill({ allDay: false, dateStr: '2026-08-07T13:00:00-03:00' })).toEqual({
@@ -533,5 +309,12 @@ describe('activity slot prefill (C91)', () => {
   it('returns null for an unparseable date', () => {
     expect(activitySlotPrefill({ allDay: false, dateStr: 'não é uma data' })).toBeNull()
     expect(activitySlotPrefill({ allDay: true, dateStr: 'não é uma data' })).toBeNull()
+  })
+
+  it('defaults to today 09:00–10:00 for overlay hosts without a slot (C123)', () => {
+    expect(activityDefaultCreatePrefill(new Date('2026-08-11T18:00:00.000Z'))).toEqual({
+      startAt: '2026-08-11T12:00:00.000Z',
+      endAt: '2026-08-11T13:00:00.000Z',
+    })
   })
 })

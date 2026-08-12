@@ -4,6 +4,7 @@ import FullCalendar, {
   type CalendarRef,
   type DateClickInfo,
   type DatesSetInfo,
+  type EventClickInfo,
   type EventDisplayInfo,
   type EventDropInfo,
   type EventInput,
@@ -30,13 +31,14 @@ import {
   type ActivityAgendaAdjacentRange,
 } from '@/components/campaign/activity/ActivityAgendaSwipePreview'
 import {
-  ActivityInlineCreate,
-  type ActivityInlineCreateDraft,
-} from '@/components/campaign/activity/ActivityInlineCreate'
+  ActivityOverlay,
+  type ActivityOverlayRequest,
+} from '@/components/campaign/activity/ActivityOverlay'
 import { AgendaPeriodChrome } from '@/components/campaign/activity/AgendaPeriodChrome'
 import { useAgendaKeyboardNavigation } from '@/components/campaign/activity/useAgendaKeyboardNavigation'
 import { useAgendaSwipeNavigation } from '@/components/campaign/activity/useAgendaSwipeNavigation'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
+import { useBridgedQuickAction } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { Button } from '@/components/ui/button'
 import { useIsMobileMeasured } from '@/hooks/use-mobile'
 import {
@@ -55,6 +57,7 @@ import {
   activityAgendaPeriodLabel,
   activityAgendaViewFcId,
   activityAgendaViewFromFcId,
+  activityDefaultCreatePrefill,
   activitySlotPrefill,
   type ActivityAgendaState,
   type ActivityAgendaView,
@@ -156,10 +159,12 @@ const renderEventContent = ({ event, timeText, view }: EventDisplayInfo) => {
 export const ActivityAgenda = ({
   state,
   municipalityOptions = [],
+  organizationOptions = [],
   knownTags,
 }: {
   state: ActivityAgendaState
   municipalityOptions?: RelationOption[]
+  organizationOptions?: RelationOption[]
   knownTags?: string[]
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -180,7 +185,7 @@ export const ActivityAgenda = ({
   const [savingCount, setSavingCount] = useState(0)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [isNarrow, setIsNarrow] = useState(false)
-  const [createDraft, setCreateDraft] = useState<ActivityInlineCreateDraft | null>(null)
+  const [overlayRequest, setOverlayRequest] = useState<ActivityOverlayRequest | null>(null)
   // C110 — the adjacent-period reveal: which side is open and the events that
   // load (async, during the drag) for that period.
   const [swipePreview, setSwipePreview] = useState<{ direction: 'next' | 'prev' } | null>(null)
@@ -425,25 +430,39 @@ export const ActivityAgenda = ({
       // C101 — a consumed swipe ends with FullCalendar's dateClick in the day
       // view (single column: the hit never leaves the starting slot). The
       // navigation already happened — swallow the click so it does not open
-      // the inline create.
+      // the create overlay.
       if (suppressDateClickRef.current) return
 
       const prefill = activitySlotPrefill(info)
       if (!prefill) return
 
-      const jsEvent = info.jsEvent as MouseEvent | undefined
-      const hasPoint = typeof jsEvent?.clientX === 'number' && typeof jsEvent?.clientY === 'number'
-      const anchor = hasPoint
-        ? { x: (jsEvent as MouseEvent).clientX, y: (jsEvent as MouseEvent).clientY }
-        : (() => {
-            const rect = containerRef.current?.getBoundingClientRect()
-            return rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null
-          })()
-
-      setCreateDraft({ ...prefill, anchor })
+      // C123 — the click opens the modal overlay (desktop) / top drawer
+      // (mobile) with the slot's window; there is no anchored popover anymore.
+      setOverlayRequest({ kind: 'create', ...prefill })
     },
     [suppressDateClickRef],
   )
+
+  // C123 — clicking an event opens the EDIT overlay (Google Calendar style);
+  // the event keeps its `url` so middle-click / open-in-new-tab still reaches
+  // the detail page, and the overlay itself links to it ("Ver detalhes").
+  const handleEventClick = useCallback((info: EventClickInfo) => {
+    info.jsEvent.preventDefault()
+    const id = Number(info.event.id)
+    if (!Number.isInteger(id)) return
+    setOverlayRequest({ kind: 'edit', activityId: id })
+  }, [])
+
+  // C123 — the FAB quick action "Nova atividade" and the filter strip's
+  // "+" open the same create overlay with the default window (today 09:00,
+  // the historical all-day slot fallback).
+  const openDefaultCreate = useCallback(() => {
+    const prefill = activityDefaultCreatePrefill()
+    if (!prefill) return
+    setOverlayRequest({ kind: 'create', ...prefill })
+  }, [])
+
+  useBridgedQuickAction('openActivityCreate', openDefaultCreate)
 
   const persistSchedule = useCallback(
     async ({
@@ -585,6 +604,7 @@ export const ActivityAgenda = ({
           datesSet={handleDatesSet}
           eventContent={renderEventContent}
           dateClick={handleDateClick}
+          eventClick={handleEventClick}
           eventDrop={handleScheduleChange}
           eventResize={handleScheduleChange}
           eventDragStart={handleEventDragStart}
@@ -607,15 +627,16 @@ export const ActivityAgenda = ({
         ) : null}
       </div>
 
-      <ActivityInlineCreate
-        draft={createDraft}
+      <ActivityOverlay
+        request={overlayRequest}
         isNarrow={isNarrow}
         agendaState={state}
         municipalityOptions={municipalityOptions}
+        organizationOptions={organizationOptions}
         knownTags={knownTags}
-        onClose={() => setCreateDraft(null)}
-        onCreated={() => {
-          setCreateDraft(null)
+        onClose={() => setOverlayRequest(null)}
+        onSaved={() => {
+          setOverlayRequest(null)
           setReloadCount((count) => count + 1)
         }}
       />

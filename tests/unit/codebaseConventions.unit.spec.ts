@@ -151,12 +151,8 @@ describe('campaign formActions convention', () => {
   // signal — presence of the mapper is. A file that truly cannot use the wrappers
   // gets an allowlist entry documenting why:
   const allowlist = new Map<string, string>([
-    // Custom unique-violation → fieldErrors + async duplicate-title fallback
-    // that links to the existing activity — policy the wrappers don't grow for.
-    [
-      'src/app/(campaign)/campanha/(app)/atividades/formActions.ts',
-      'unique-violation fieldErrors + async duplicate-title fallback',
-    ],
+    // C123 — the activities form pages died with the overlay; the mapper moved
+    // to `src/utilities/activityOverlayErrors.ts` (module, not a route ladder).
     // Flattens field errors into message-only states for inline detail controls.
     [
       'src/app/(campaign)/campanha/(app)/apoiadores/[id]/formActions.ts',
@@ -395,7 +391,7 @@ describe('src/utilities top-level is pinned', () => {
     'activityDetailTabUi.ts',
     'activityAgendaOmnibox.ts',
     'activityFormData.ts',
-    'activityInlineErrors.ts',
+    'activityOverlayErrors.ts',
     'activityOmnibox.ts',
     'activityLeadershipOptions.ts',
     'activityPageData.ts',

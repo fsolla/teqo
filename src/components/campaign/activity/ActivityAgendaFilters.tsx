@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { CampaignListOmnibox } from '@/components/campaign/shared/CampaignListOmnibox'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
+import { useCampaignQuickActionContext } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { Button } from '@/components/ui/button'
 import { ACTIVITY_TOUR_COMPOSER_PATH } from '@/lib/campaignQuickActionPaths'
 import {
@@ -18,11 +19,7 @@ import {
   removeActivityAgendaOmniboxChip,
   type ActivityAgendaOmniboxAction,
 } from '@/utilities/activityAgendaOmnibox'
-import {
-  buildActivityAgendaHref,
-  buildActivityCreateHref,
-  type ActivityAgendaState,
-} from '@/utilities/activityUi'
+import { buildActivityAgendaHref, type ActivityAgendaState } from '@/utilities/activityUi'
 
 type ActivityAgendaFiltersProps = {
   state: ActivityAgendaState
@@ -49,6 +46,7 @@ export const ActivityAgendaFilters = ({
     state,
     toHref: buildActivityAgendaHref,
   })
+  const { context } = useCampaignQuickActionContext()
   const [draft, setDraft] = useState(state)
   const [query, setQuery] = useState('')
 
@@ -139,15 +137,14 @@ export const ActivityAgendaFilters = ({
               </Link>
             </Button>
             <Button
-              asChild
+              type="button"
               size="icon"
               className="min-h-11 min-w-11"
               aria-label="Nova atividade"
               title="Nova atividade"
+              onClick={() => context.openActivityCreate?.()}
             >
-              <Link href={buildActivityCreateHref(state)}>
-                <PlusIcon className="size-5" aria-hidden />
-              </Link>
+              <PlusIcon className="size-5" aria-hidden />
             </Button>
           </div>
         }

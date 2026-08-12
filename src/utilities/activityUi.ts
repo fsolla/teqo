@@ -11,7 +11,6 @@ import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/co
 import {
   activityStatuses,
   MAX_ACTIVITY_TAG_LENGTH,
-  MAX_ACTIVITY_TAGS,
   type ActivityStatus,
 } from '@/lib/schemas/activity'
 import {
@@ -354,39 +353,6 @@ export const buildActivityAgendaWhere = (
   return { and: filters }
 }
 
-export type ActivityCreatePrefill = {
-  startAt?: string
-  endAt?: string
-  municipalityId?: number
-  title?: string
-  tags?: string[]
-  /** C104 — the sheet opened the toggle; startAt/endAt are civil dates. */
-  allDay?: boolean
-}
-
-export const buildActivityCreateHref = (
-  agendaState: ActivityAgendaState,
-  prefill: Partial<ActivityCreatePrefill> = {},
-): string => {
-  const params = new URLSearchParams()
-  if (prefill.allDay) {
-    params.set('allDay', '1')
-    if (prefill.startAt) params.set('startAt', prefill.startAt.slice(0, 10))
-    if (prefill.endAt) params.set('endAt', prefill.endAt.slice(0, 10))
-  } else {
-    if (prefill.startAt) params.set('startAt', prefill.startAt)
-    if (prefill.endAt) params.set('endAt', prefill.endAt)
-  }
-  const municipalityId = prefill.municipalityId ?? agendaState.municipality
-  if (municipalityId) params.set('municipality', String(municipalityId))
-  if (prefill.title) params.set('title', prefill.title)
-  // C105 — repeated `tags` params: a free-form tag may contain a comma, so a
-  // comma-joined single value would corrupt the boundary between tags.
-  for (const tag of prefill.tags ?? []) params.append('tags', tag)
-  params.set('returnTo', buildActivityAgendaHref(agendaState))
-  return `/campanha/atividades/nova?${params.toString()}`
-}
-
 /**
  * C91 — the inline create overlay prefills the slot the staff clicked. The
  * FullCalendar `dateClick` already snaps the click to a slot boundary, so for
@@ -410,105 +376,15 @@ export const activitySlotPrefill = (info: {
   }
 }
 
-export const parseActivityAgendaReturnHref = (
-  value: string | string[] | undefined,
-  accessibleMunicipalityIDs: ReadonlySet<number>,
-  accessibleTags: ReadonlySet<string>,
-): string => {
-  const raw = firstValue(value)
-  if (!raw) return CAMPAIGN_AGENDA_HOME
-
-  const base = new URL('https://campaign.invalid')
-  let returnUrl: URL
-  try {
-    returnUrl = new URL(raw, base)
-  } catch {
-    return CAMPAIGN_AGENDA_HOME
-  }
-  if (returnUrl.origin !== base.origin || returnUrl.pathname !== CAMPAIGN_AGENDA_HOME) {
-    return CAMPAIGN_AGENDA_HOME
-  }
-
-  const state = restrictActivityAgendaState(
-    parseActivityAgendaParams({
-      municipality: returnUrl.searchParams.get('municipality') ?? undefined,
-      deputyPresent: returnUrl.searchParams.get('deputyPresent') ?? undefined,
-      tag: returnUrl.searchParams.get('tag') ?? undefined,
-      view: returnUrl.searchParams.get('view') ?? undefined,
-    }),
-    accessibleMunicipalityIDs,
-    accessibleTags,
-  )
-  return buildActivityAgendaHref(state)
-}
-
-const isoInstantPattern = /^\d{4}-\d{2}-\d{2}T.+(?:Z|[+-]\d{2}:\d{2})$/
-
-const normalizedIsoInstant = (value: string | undefined): string | undefined => {
-  if (!value || !isoInstantPattern.test(value)) return undefined
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? undefined : date.toISOString()
-}
-
 /**
- * C105 — bounded prefill tags: repeated `tags` params, trimmed, deduped,
- * capped at the same limits the create schema enforces. Anything out of bounds
- * is dropped (same drop semantics as the agenda filter's `activityTag`),
- * never rejected — a prefill is a convenience, not a contract.
+ * C123 — the default create window for overlay hosts with no slot clicked
+ * (FAB "Nova atividade", list-page button): today 09:00–10:00, the same
+ * historical all-day-slot fallback `activitySlotPrefill` uses.
  */
-const parseActivityPrefillTags = (value: string | string[] | undefined): string[] | undefined => {
-  if (value === undefined) return undefined
-  const tags: string[] = []
-  for (const entry of Array.isArray(value) ? value : [value]) {
-    if (tags.length >= MAX_ACTIVITY_TAGS) break
-    const tag = activityTag(entry)
-    if (tag && !tags.includes(tag)) tags.push(tag)
-  }
-  return tags.length > 0 ? tags : undefined
-}
-
-export const parseActivityCreatePrefill = (
-  params: RawSearchParams,
-  accessibleMunicipalityIDs: ReadonlySet<number>,
-): ActivityCreatePrefill => {
-  const rawAllDay = firstValue(params.allDay)
-  const allDay = rawAllDay === '1'
-  const startAt = allDay
-    ? civilDatePrefillInstant(firstValue(params.startAt))
-    : normalizedIsoInstant(firstValue(params.startAt))
-  const rawEndAt = firstValue(params.endAt)
-  const endAt = allDay
-    ? civilDatePrefillInstant(rawEndAt, startAt)
-    : startAt && rawEndAt && new Date(rawEndAt) > new Date(startAt)
-      ? normalizedIsoInstant(rawEndAt)
-      : undefined
-  const rawMunicipality = strictDecimalInteger(firstValue(params.municipality))
-  const municipalityId =
-    rawMunicipality && accessibleMunicipalityIDs.has(rawMunicipality) ? rawMunicipality : undefined
-
-  const title = normalizedText(firstValue(params.title))
-  const trimmedTitle = title && title.length <= 160 ? title : undefined
-  const tags = parseActivityPrefillTags(params.tags)
-
-  return {
-    ...(allDay ? { allDay } : {}),
-    ...(startAt ? { startAt } : {}),
-    ...(endAt ? { endAt } : {}),
-    ...(municipalityId ? { municipalityId } : {}),
-    ...(trimmedTitle ? { title: trimmedTitle } : {}),
-    ...(tags ? { tags } : {}),
-  }
-}
-
-const civilDatePrefillInstant = (
-  value: string | undefined,
-  startAt?: string,
-): string | undefined => {
-  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined
-  const instant = allDayStartInstant(value)
-  if (startAt && instant < startAt) return undefined
-  return instant
-}
+export const activityDefaultCreatePrefill = (
+  now = new Date(),
+): { startAt: string; endAt: string } | null =>
+  activitySlotPrefill({ allDay: true, dateStr: formatBahiaCivilDate(now) })
 
 const activityListParamNames = ['q', 'tab', 'tag', 'status', 'municipality', 'page'] as const
 
