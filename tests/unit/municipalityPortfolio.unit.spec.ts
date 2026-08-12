@@ -139,4 +139,47 @@ describe('municipalityPortfolio', () => {
     const zoneHits = searchMunicipalityPortfolio('ZE 3', index, new Set())
     expect(zoneHits.some((hit) => hit.kind === 'zone' && hit.zoneNumber === 3)).toBe(true)
   })
+
+  it('offers Salvador as one aggregate hit with all 19 zones, first in the list', () => {
+    const index = buildIndex()
+    const hits = searchMunicipalityPortfolio('salvador', index, new Set())
+
+    expect(hits[0]).toMatchObject({ kind: 'city', key: 'city:Salvador', label: 'Salvador' })
+    expect(hits[0]?.kind === 'city' ? hits[0].municipalityIds : []).toHaveLength(19)
+  })
+
+  it('the Salvador aggregate omits already-assigned zones', () => {
+    const index = buildIndex()
+    const salvadorSlugs = slugsForCities(['Salvador'])
+    const salvadorIds = index
+      .filter((entry) => salvadorSlugs.has(entry.slug))
+      .map((entry) => entry.id)
+    const assigned = new Set(salvadorIds.slice(0, 5))
+
+    const hits = searchMunicipalityPortfolio('salvador', index, assigned)
+    expect(hits[0]?.kind).toBe('city')
+    expect(hits[0]?.kind === 'city' ? hits[0].municipalityIds : []).toHaveLength(14)
+  })
+
+  it('suppresses the aggregate when the whole city is not in the addable scope', () => {
+    const index = buildIndex()
+    const salvadorSlugs = slugsForCities(['Salvador'])
+    const threeZones = index.filter((entry) => salvadorSlugs.has(entry.slug)).slice(0, 3)
+    expect(threeZones).toHaveLength(3)
+
+    const hits = searchMunicipalityPortfolio('salvador', threeZones, new Set())
+    expect(hits.some((hit) => hit.kind === 'city')).toBe(false)
+    expect(hits.filter((hit) => hit.kind === 'municipality')).toHaveLength(3)
+  })
+
+  it('offers no aggregate when every zone is already assigned (the chip takes over)', () => {
+    const index = buildIndex()
+    const salvadorSlugs = slugsForCities(['Salvador'])
+    const salvadorIds = index
+      .filter((entry) => salvadorSlugs.has(entry.slug))
+      .map((entry) => entry.id)
+
+    const hits = searchMunicipalityPortfolio('salvador', index, new Set(salvadorIds))
+    expect(hits.some((hit) => hit.kind === 'city')).toBe(false)
+  })
 })

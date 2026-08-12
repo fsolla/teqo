@@ -22,6 +22,7 @@ import type { CampaignFormActionState } from '@/utilities/campaignFormActionErro
 
 const hitDescription = (hit: MunicipalityPortfolioSearchHit): string => {
   if (hit.kind === 'municipality') return 'Município'
+  if (hit.kind === 'city') return 'Todas as zonas'
   if (hit.kind === 'territory') return `Território · ${hit.count} municípios`
   return `Zona eleitoral · ${hit.count} municípios`
 }

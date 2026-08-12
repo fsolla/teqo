@@ -1,4 +1,9 @@
-import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures.js'
+import {
+  campaignPageChrome,
+  expect,
+  expectPostResponse,
+  test,
+} from './fixtures/campaignE2EFixtures.js'
 
 /**
  * C100 — the unified people list: staff lands on `/campanha/pessoas`, sees the
@@ -343,5 +348,70 @@ test.describe('Pessoas — lista unificada', () => {
     expect(twoCitiesIndex).toBeGreaterThanOrEqual(0)
     expect(oneCityIndex).toBeGreaterThanOrEqual(0)
     expect(twoCitiesIndex).toBeLessThan(oneCityIndex)
+  })
+
+  test('the Lidera cell offers Salvador as one aggregate and saves all 19 zones (C131)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const linked = await fixtures.claimMunicipality()
+    const { contactName, leadershipId } = await fixtures.createStaffLeadership({
+      namePrefix: 'Salvador Agregado',
+      municipalities: [linked],
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/pessoas?q=${encodeURIComponent(contactName)}`)
+    await expect(campaignPageChrome(page, 'Pessoas')).toBeVisible()
+
+    // A leadership-only row has a single editable capacity cell, so the Lidera
+    // search input is the row's only combobox.
+    const row = page.getByRole('row', { name: new RegExp(contactName) })
+    const search = row.getByRole('combobox', {
+      name: 'Buscar município, território de identidade ou zona eleitoral',
+    })
+    await search.fill('salvador')
+
+    // The aggregate is its own option — label "Salvador", description
+    // "Todas as zonas" — ahead of the 19 individual zone hits.
+    const aggregate = page
+      .getByRole('option')
+      .filter({ has: page.getByText('Salvador', { exact: true }) })
+    await expect(aggregate).toBeVisible()
+    await expect(aggregate.getByText('Todas as zonas')).toBeVisible()
+
+    const persisted = () => expectPostResponse(page, '/campanha/pessoas')
+    await Promise.all([persisted(), aggregate.click()])
+
+    // All 19 zones collapse into the existing "Salvador (19)" chip, removable
+    // in one tap — one POST carried the whole batch.
+    await expect(
+      page.getByRole('button', { name: 'Remover Salvador — 19 municípios' }),
+    ).toBeVisible()
+
+    const zoneSlugs = Array.from({ length: 19 }, (_, index) => `salvador-ze-${index + 1}`)
+    const zoneRows = await campaign.payload.find({
+      collection: 'municipality',
+      where: { slug: { in: zoneSlugs } },
+      depth: 0,
+      limit: 0,
+      pagination: false,
+    })
+    expect(zoneRows.docs).toHaveLength(19)
+    const zoneIds = zoneRows.docs.map((zone) => zone.id)
+
+    const stored = await campaign.payload.findByID({
+      collection: 'leadership',
+      id: leadershipId,
+      depth: 0,
+    })
+    // `claimMunicipality` may have handed out one of Salvador's own zones — the
+    // aggregate still completes the city, so the set is the zones (19 or 20).
+    const linkedIsZone = linked.slug.startsWith('salvador-ze-')
+    expect(stored.municipalities).toHaveLength(linkedIsZone ? 19 : 20)
+    for (const zoneId of zoneIds) expect(stored.municipalities).toContain(zoneId)
+    expect(stored.municipalities).toContain(linked.id)
   })
 })
