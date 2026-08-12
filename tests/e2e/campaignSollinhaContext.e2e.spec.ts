@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { expect, test, waitForRouterSettled } from './fixtures/campaignE2EFixtures.js'
 
 const SESSION_KEY = 'teqo:campaign:sollinha-chat-session'
 
@@ -76,6 +76,8 @@ const SECOND_MESSAGE = 'Segunda pergunta'
 
 const openChatAndSend = async (page: Page) => {
   await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
+  // OPS42 — dev-only settle before interacting (see `waitForRouterSettled`).
+  await waitForRouterSettled(page)
   const input = page.getByRole('textbox', { name: 'Pergunte para o Sollinha...' })
   await input.fill(MESSAGE)
   await input.press('Enter')
@@ -92,6 +94,9 @@ const waitForChatSettled = async (page: Page) => {
 /** Opens the mobile drawer and waits for it to cover the page. */
 const openMobileDrawer = async (page: Page) => {
   const drawer = page.getByRole('dialog', { name: 'Sollinha — Assistente virtual' })
+  // OPS42 — the trigger is part of the layout that dev-mode router churn can
+  // remount after load; a click in that window is a silent no-op (dev-only).
+  await waitForRouterSettled(page)
   await page.getByRole('button', { name: 'Sollinha — Assistente virtual' }).click()
   await expect(drawer).toBeVisible({ timeout: 20_000 })
   return drawer
@@ -166,10 +171,7 @@ test.describe('B188 — contexto da conversa persiste na sessão da janela/tab',
     await page.goto('/campanha')
 
     await expect(page.getByRole('dialog', { name: 'Sollinha — Assistente virtual' })).toHaveCount(0)
-    await page.getByRole('button', { name: 'Sollinha — Assistente virtual' }).click()
-    await expect(page.getByRole('dialog', { name: 'Sollinha — Assistente virtual' })).toBeVisible({
-      timeout: 20_000,
-    })
+    await openMobileDrawer(page)
     // The open flag must have been persisted before reload.
     await expect.poll(async () => (await storedSession(page))?.open).toBe(true)
 

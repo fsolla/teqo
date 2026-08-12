@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 
 import { sql } from '@payloadcms/db-postgres'
-import type { BrowserContext, Fixtures, Page } from '@playwright/test'
+import type { BrowserContext, Fixtures, Frame, Page } from '@playwright/test'
 import { getPayload, type CollectionSlug, type Payload, type PayloadRequest } from 'payload'
 
 import { municipalityCatalog } from '../../../src/lib/municipalityCatalog.js'
@@ -506,6 +506,39 @@ export const checkRadixWhenHydrated = async (page: Page, label: string) => {
 }
 
 /**
+ * OPS42 — waits out a pending dev-mode router navigation before the test
+ * interacts. Next dev's hydration/router churn can commit a layout remount
+ * (new chat provider, new textarea with `defaultValue=''`) ~150–500 ms AFTER
+ * the page load — measured 2026-08-11 under load — so a fill/Enter landing in
+ * that window is silently lost. The commit is preceded by a `framenavigated`
+ * (a bare `history.replaceState`, no request), so the helper returns only
+ * after a quiet window with no framenav. Dev-only: production builds have no
+ * dev compile churn, and CI runs the prod build — the wait is a no-op there.
+ * Fail-soft on timeout: a router that never quiesces (HMR churn under extreme
+ * load) must not mask a real app failure — the next assertion carries it.
+ */
+export const waitForRouterSettled = async (page: Page): Promise<void> => {
+  const quietWindowMs = 500
+  const timeoutMs = 15_000
+  if (process.env.CI || process.env.E2E_PROD === '1') return
+  let lastNavigationAt = Date.now()
+  const onNavigation = (frame: Frame) => {
+    if (frame !== page.mainFrame()) return
+    lastNavigationAt = Date.now()
+  }
+  page.on('framenavigated', onNavigation)
+  try {
+    await expect(async () => {
+      expect(Date.now() - lastNavigationAt).toBeGreaterThan(quietWindowMs)
+    }).toPass({ timeout: timeoutMs })
+  } catch {
+    console.warn('waitForRouterSettled: router did not quiet down in time — proceeding.')
+  } finally {
+    page.off('framenavigated', onNavigation)
+  }
+}
+
+/**
  * Miss #53: the app's biometrics probe is ONE-SHOT per island mount
  * (`useCampaignBiometricsAvailable`) — if
  * `isUserVerifyingPlatformAuthenticatorAvailable()` resolves before the CDP
@@ -658,6 +691,11 @@ export const campaignFixture: CampaignE2EFixtureValue = async ({}, runFixture) =
             await page.waitForURL(dashboardURL, { timeout: 30_000 })
           }
         }
+        // OPS42 — dev-only quiescence: when the URL change lands before the
+        // redirect's RSC payload commits (observed under load), the layout can
+        // remount right after login — wait for the router to quiet down
+        // before the test interacts (no-op in prod; see `waitForRouterSettled`).
+        await waitForRouterSettled(page)
       },
       payload: fixtures.payload,
       sessionFor: async (context, user) => {

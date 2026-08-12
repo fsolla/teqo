@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { expect, test, waitForRouterSettled } from './fixtures/campaignE2EFixtures.js'
 
 /**
  * Mock the AI endpoint with SDK v7 UI-message-stream SSE chunks (start /
@@ -79,6 +79,10 @@ const pickChip = async (page: Page, text: string) => {
 }
 
 const askViaInput = async (page: Page, text: string, expected: string) => {
+  // OPS42 — dev-mode router churn can remount the chat after load; only
+  // interact once no framenav is pending (dev-only no-op). The retry below is
+  // the expensive fallback the settle avoids.
+  await waitForRouterSettled(page)
   const input = page.getByPlaceholder('Pergunte para o Sollinha...')
   // Dev-mode defense (same as campaignAiLinks): a first-hit route compile can
   // trigger a full-page reload that wipes the draft — re-send until the answer
@@ -158,6 +162,8 @@ test.describe('B192 — follow-ups sugeridos após cada resposta do Sollinha', (
     await page.goto('/campanha')
 
     const drawer = page.getByRole('dialog', { name: 'Sollinha — Assistente virtual' })
+    // OPS42 — dev-only settle before the click (see `waitForRouterSettled`).
+    await waitForRouterSettled(page)
     await page.getByRole('button', { name: 'Sollinha — Assistente virtual' }).click()
     await expect(drawer).toBeVisible({ timeout: 20_000 })
 

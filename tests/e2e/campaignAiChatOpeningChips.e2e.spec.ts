@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { expect, test, waitForRouterSettled } from './fixtures/campaignE2EFixtures.js'
 
 /**
  * Mock the AI endpoint with a minimal SSE stream so sending a chip neither
@@ -91,6 +91,8 @@ test.describe('B191 — ações rápidas de abertura no chat Sollinha (chips de 
     await page.goto('/campanha')
 
     const drawer = page.getByRole('dialog', { name: 'Sollinha — Assistente virtual' })
+    // OPS42 — dev-only settle before the click (see `waitForRouterSettled`).
+    await waitForRouterSettled(page)
     await page.getByRole('button', { name: 'Sollinha — Assistente virtual' }).click()
     await expect(drawer).toBeVisible({ timeout: 20_000 })
     await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
