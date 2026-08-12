@@ -27,10 +27,12 @@ import {
 export const PeopleFilters = ({
   state,
   municipalityFilterOptions,
+  partyFilterOptions,
   trailing,
 }: {
   state: PeopleListState
   municipalityFilterOptions: PeopleFilterOption[]
+  partyFilterOptions: PeopleFilterOption[]
   trailing?: ReactNode
 }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
@@ -57,8 +59,8 @@ export const PeopleFilters = ({
   )
 
   const suggestionSeeds = useMemo(
-    () => buildPeopleOmniboxSuggestionSeeds({ municipalityFilterOptions }),
-    [municipalityFilterOptions],
+    () => buildPeopleOmniboxSuggestionSeeds({ municipalityFilterOptions, partyFilterOptions }),
+    [municipalityFilterOptions, partyFilterOptions],
   )
 
   const suggestions = useMemo(

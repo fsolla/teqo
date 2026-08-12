@@ -108,6 +108,8 @@ type MunicipalityPortfolioCellProps = {
     assigned: boolean
     currentIds: number[]
   }) => Promise<boolean | 'destructive'>
+  /** C130 — closed-cell width floor — see `RelationChipCell.minWidthClassName`. */
+  minWidthClassName?: string
 }
 
 /**
@@ -137,6 +139,7 @@ export const MunicipalityPortfolioCell = ({
   extraFormFields,
   commitWithNullOwner = false,
   commitGuard,
+  minWidthClassName,
 }: MunicipalityPortfolioCellProps) => {
   /**
    * `addableIds` also hides: an advisor's `canUpdateMunicipality` is scoped to
@@ -234,6 +237,7 @@ export const MunicipalityPortfolioCell = ({
       readOnly={readOnly}
       commitWithNullOwner={commitWithNullOwner}
       commitGuard={commitGuard}
+      minWidthClassName={minWidthClassName}
     />
   )
 }

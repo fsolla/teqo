@@ -176,7 +176,7 @@ export const updatePersonContactRecord = async (
 
       await assertPersonContactEditable(payload, currentActor, data.id, req)
 
-      const contactData: Partial<Pick<Contact, 'name' | 'email' | 'city'>> & {
+      const contactData: Partial<Pick<Contact, 'name' | 'email'>> & {
         phones?: { value: string }[]
       } = {}
       if (data.field === 'name') {
@@ -202,8 +202,6 @@ export const updatePersonContactRecord = async (
         contactData.phones = reorderWithPrimaryPhone(current.phones, data.phone).map((value) => ({
           value,
         }))
-      } else if (data.field === 'city') {
-        contactData.city = data.city
       }
 
       // Bypass: the scope check above established the actor's right over the

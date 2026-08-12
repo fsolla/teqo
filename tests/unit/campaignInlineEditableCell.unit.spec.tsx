@@ -155,4 +155,46 @@ describe('CampaignInlineEditableCell (B163)', () => {
     expect(screen.queryByRole('textbox', { name: 'Partido' })).toBeNull()
     expect(router.refresh).toHaveBeenCalled()
   })
+
+  it('permanent name cell: focus swaps to the caret input and Escape discards without saving (C130)', () => {
+    const formAction = vi.fn(
+      async (
+        _state: CampaignFormActionState,
+        _formData: FormData,
+      ): Promise<CampaignFormActionState> => ({
+        status: 'success',
+        message: 'Salvo.',
+      }),
+    )
+
+    render(
+      <CampaignInlineEditableCell
+        recordId={7}
+        recordIdField="contactId"
+        field="name"
+        value="Ana Bastos"
+        label="Nome"
+        href="/campanha/pessoas/7"
+        formAction={formAction}
+        permanent
+      />,
+    )
+
+    const link = screen.getByRole('link', { name: 'Ana Bastos' })
+    const input = screen.getByRole('textbox', { name: 'Nome' }) as HTMLInputElement
+
+    // Focus steps the link out of the way so the input's real caret shows.
+    fireEvent.focus(input)
+    expect(link.className).toContain('opacity-0')
+
+    fireEvent.change(input, { target: { value: 'Ana Bastos Discard' } })
+    fireEvent.keyDown(input, { key: 'Escape' })
+    fireEvent.blur(input)
+
+    // Escape reverts the draft and never persists it (the blur after Escape
+    // used to save the stale draft from the keydown closure — C130 fix).
+    expect(input.value).toBe('Ana Bastos')
+    expect(formAction).not.toHaveBeenCalled()
+    expect(link.className).not.toContain('opacity-0')
+  })
 })

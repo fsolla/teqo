@@ -36,6 +36,7 @@ export type PeopleListSortKey =
   | 'aliada'
   | 'assessorado'
   | 'base'
+  | 'party'
 
 export type PeopleListSortDirection = 'asc' | 'desc'
 
@@ -70,6 +71,7 @@ export type PeopleListState = {
   municipalities?: number[]
   statuses?: SupportStatus[]
   ausencias?: PeopleAbsence[]
+  parties?: string[]
   sort?: PeopleListSortKey
   dir?: PeopleListSortDirection
 }
@@ -82,6 +84,7 @@ const peopleListParamNames = [
   'municipality',
   'status',
   'ausencia',
+  'party',
   'sort',
   'dir',
   'page',
@@ -92,8 +95,11 @@ const peopleCapacitySet = new Set<string>(PEOPLE_CAPACITIES)
 const supportStatusSet = new Set<string>(leadershipSupportStatuses)
 
 /**
- * Sort keys are exactly the columns visible by default (C117 anti-goal: no
- * ordering by hidden columns — `email` is hidden since B197). Derived from the
+ * Sort keys: the columns visible by default, PLUS `base` and `party` —
+ * invisible C130 keys kept because the gate decided both sortings stay
+ * useful without a column (city sorts under the name; party sorts the
+ * inline `(party)` suffix). `email` stays excluded as before (C117
+ * anti-goal: no ordering by a toggleable hidden column). Derived from the
  * label record so a new key is one line here.
  */
 export const peopleListSortLabels: Record<PeopleListSortKey, string> = {
@@ -101,9 +107,10 @@ export const peopleListSortLabels: Record<PeopleListSortKey, string> = {
   contact: 'Contato',
   assessora: 'Assessora',
   lidera: 'Lidera',
-  aliada: 'Aliada em',
+  aliada: 'Dobra em',
   assessorado: 'Assessorado',
   base: 'Base',
+  party: 'Partido',
 }
 
 const peopleListSortKeySet = new Set<string>(Object.keys(peopleListSortLabels))
@@ -159,6 +166,11 @@ export const parsePeopleListParams = (params: PeopleListSearchParams): PeopleLis
     .filter((id): id is number => typeof id === 'number' && id > 0)
   const statuses = parseExhaustiveEnumParam<SupportStatus>(params.status, supportStatusSet)
   const ausencias = parsePeopleAbsenceParam(params.ausencia)
+  // C130 — the party facet is DATA-DRIVEN (free text on `stateDeputy.party`,
+  // maxLength 32), so values are validated structurally, never against an
+  // enum — the municipalities facet precedent. `allParamValues` already
+  // trims, dedupes and drops empties.
+  const parties = allParamValues(params.party).filter((token) => token.length <= 32)
   const rawSort = firstValue(params.sort)
   const sort =
     rawSort && peopleListSortKeySet.has(rawSort) ? (rawSort as PeopleListSortKey) : undefined
@@ -175,6 +187,7 @@ export const parsePeopleListParams = (params: PeopleListSearchParams): PeopleLis
     ...(municipalities.length ? { municipalities } : {}),
     ...(statuses.length ? { statuses } : {}),
     ...(ausencias.length ? { ausencias } : {}),
+    ...(parties.length ? { parties } : {}),
     ...(sort ? { sort } : {}),
     ...(dir ? { dir } : {}),
   }
@@ -190,6 +203,7 @@ export const peopleListStateToRawParams = (
   municipality: state.municipalities?.map(String),
   status: state.statuses,
   ausencia: state.ausencias,
+  party: state.parties,
   sort: state.sort,
   dir: state.dir,
 })
@@ -206,6 +220,7 @@ export const serializeCanonicalPeopleListSearchParams = (
   }
   for (const status of canonicalState.statuses ?? []) params.append('status', status)
   for (const ausencia of canonicalState.ausencias ?? []) params.append('ausencia', ausencia)
+  for (const party of canonicalState.parties ?? []) params.append('party', party)
   if (!isDefaultPeopleListSort(canonicalState)) {
     const { sort, dir } = resolvePeopleListSort(canonicalState)
     params.set('sort', sort)
@@ -231,7 +246,7 @@ export const buildPeopleSortHref = createSortToggleHref<PeopleListState, PeopleL
 
 const peopleSortOptionLabel = (key: PeopleListSortKey, dir: PeopleListSortDirection): string => {
   const label = peopleListSortLabels[key]
-  if (key === 'name' || key === 'contact' || key === 'base') {
+  if (key === 'name' || key === 'contact' || key === 'base' || key === 'party') {
     return `${label} (${dir === 'asc' ? 'A–Z' : 'Z–A'})`
   }
   return `${label} (${dir === 'asc' ? 'menor → maior' : 'maior → menor'})`

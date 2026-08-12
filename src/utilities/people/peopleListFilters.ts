@@ -21,7 +21,7 @@ export type PeopleFilterOption = {
   label: string
 }
 
-type PeopleMultiFilterParam = 'capacity' | 'municipality' | 'status' | 'ausencia'
+type PeopleMultiFilterParam = 'capacity' | 'municipality' | 'status' | 'ausencia' | 'party'
 
 export const peopleCapacityFilterOptions: PeopleFilterOption[] = PEOPLE_CAPACITIES.map((value) => ({
   value,
@@ -58,6 +58,7 @@ const getPeopleMultiFilterValues = (
   if (param === 'capacity') return state.capacities ?? []
   if (param === 'status') return state.statuses ?? []
   if (param === 'ausencia') return state.ausencias ?? []
+  if (param === 'party') return state.parties ?? []
   return (state.municipalities ?? []).map(String)
 }
 
@@ -106,6 +107,17 @@ export const togglePeopleAbsenceFilter = (
   return togglePeopleMultiFilterValue(state, 'ausencia', value)
 }
 
+/**
+ * C130 — party is FREE TEXT on `stateDeputy.party` (maxLength 32), so the
+ * toggle validates structurally (non-empty, ≤ 32 chars) and lets
+ * `parsePeopleListParams` dedupe — the municipalities facet precedent.
+ */
+export const togglePeoplePartyFilter = (state: PeopleListState, value: string): PeopleListState => {
+  const normalized = value.trim()
+  if (!normalized || normalized.length > 32) return state
+  return togglePeopleMultiFilterValue(state, 'party', normalized)
+}
+
 /** Drop every filter and the search; keep the ordering (municipios precedent). */
 export const clearPeopleListFilters = (state: PeopleListState): PeopleListState => ({
   page: 1,
@@ -147,6 +159,9 @@ export const formatPeopleActiveFiltersSummary = (
   }
   if (state.ausencias?.length) {
     parts.push(truncatedNamesLabel(state.ausencias.map((absence) => peopleAbsenceLabels[absence])))
+  }
+  if (state.parties?.length) {
+    parts.push(truncatedNamesLabel(state.parties))
   }
   if (state.q) parts.push(`Busca "${state.q}"`)
   return parts.length ? parts.join(' · ') : null

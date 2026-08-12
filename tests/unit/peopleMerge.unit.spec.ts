@@ -223,6 +223,16 @@ describe('filterPeopleRows', () => {
     expect(filterPeopleRows(rows, { page: 1, statuses: ['negativo'] })).toEqual([])
   })
 
+  it('filters by party (dobradinha free text) with OR semantics, dropping rows without one (C130)', () => {
+    expect(
+      filterPeopleRows(rows, { page: 1, parties: ['PCdoB'] }).map((row) => row.contactID),
+    ).toEqual([101])
+    expect(
+      filterPeopleRows(rows, { page: 1, parties: ['PCdoB', 'PT'] }).map((row) => row.contactID),
+    ).toEqual([101])
+    expect(filterPeopleRows(rows, { page: 1, parties: ['PT'] })).toEqual([])
+  })
+
   it('filters absence with OR semantics within the facet (C117)', () => {
     expect(
       filterPeopleRows(rows, { page: 1, ausencias: ['sem_contato'] })
@@ -306,6 +316,11 @@ describe('sortPeopleRows (C117)', () => {
     expect(ids(sortPeopleRows(rows, 'base', 'desc'))).toEqual([100, 101, 102, 103])
   })
 
+  it('sorts by party with nulls (people without dobradinha) always last (C130)', () => {
+    expect(ids(sortPeopleRows(rows, 'party', 'asc'))).toEqual([101, 102, 103, 100])
+    expect(ids(sortPeopleRows(rows, 'party', 'desc'))).toEqual([101, 102, 103, 100])
+  })
+
   it('sorts municipality columns by count, ties and nulls breaking by name', () => {
     expect(ids(sortPeopleRows(rows, 'assessora', 'desc'))).toEqual([100, 103, 101, 102])
     expect(ids(sortPeopleRows(rows, 'lidera', 'desc'))).toEqual([100, 101, 102, 103])
@@ -325,30 +340,39 @@ describe('sortPeopleRows (C117)', () => {
   })
 })
 
-describe('peopleNameSubline (C129)', () => {
-  it('returns the ballot name when the dobradinha has one', () => {
+describe('peopleNameSubline (C129 + C130)', () => {
+  it('returns the ballot name when the dobradinha has one (legenda overrides base)', () => {
     const ana = byContact(mergePeopleSources(source), 101)
     expect(peopleNameSubline(ana)).toBe('Ana do Povo')
   })
 
-  it('returns null when the dobradinha has no ballot name (nothing changes in the line)', () => {
+  it('falls back to the base city when the dobradinha has no ballot name (C130)', () => {
     const withoutBallotName = mergePeopleSources({
       ...source,
       deputies: [{ ...source.deputies[0]!, ballotName: null }],
     })
     const ana = byContact(withoutBallotName, 101)
-    expect(peopleNameSubline(ana)).toBeNull()
+    expect(peopleNameSubline(ana)).toBe('Camaçari')
     const maria = byContact(mergePeopleSources(source), 100)
-    expect(peopleNameSubline(maria)).toBeNull()
+    expect(peopleNameSubline(maria)).toBe('Feira de Santana')
   })
 
-  it('skips a ballot name identical to the real name (redundant duplicate line)', () => {
+  it('returns null when neither ballot name nor city is present', () => {
+    const withoutSubline = mergePeopleSources({
+      ...source,
+      deputies: [{ ...source.deputies[0]!, ballotName: null, city: null }],
+    })
+    const ana = byContact(withoutSubline, 101)
+    expect(peopleNameSubline(ana)).toBeNull()
+  })
+
+  it('skips a ballot name identical to the real name (redundant duplicate line), falling back to base', () => {
     const withIdenticalBallotName = mergePeopleSources({
       ...source,
       deputies: [{ ...source.deputies[0]!, ballotName: 'Ana Lima' }],
     })
     const ana = byContact(withIdenticalBallotName, 101)
-    expect(peopleNameSubline(ana)).toBeNull()
+    expect(peopleNameSubline(ana)).toBe('Camaçari')
   })
 })
 
@@ -358,6 +382,12 @@ describe('peopleFilterFacetsFromRows', () => {
     const facets = peopleFilterFacetsFromRows(rows, { page: 1, municipalities: [99] })
     expect(facets.municipalityIDs).toEqual([1, 3, 4, 5, 6, 99])
     expect(facets.statuses).toEqual(['engajado'])
+  })
+
+  it('unions the dobradinha parties with the selected values, sorted pt-BR (C130)', () => {
+    const rows = mergePeopleSources(source)
+    const facets = peopleFilterFacetsFromRows(rows, { page: 1, parties: ['XYZ'] })
+    expect(facets.parties).toEqual(['PCdoB', 'XYZ'])
   })
 
   it('keeps every leadership status present in the rows, in canonical selector order (C119)', () => {

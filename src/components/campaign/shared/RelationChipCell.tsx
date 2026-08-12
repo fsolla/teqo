@@ -212,6 +212,13 @@ type RelationChipCellProps = {
     assigned: boolean
     currentIds: number[]
   }) => Promise<boolean | 'destructive'>
+  /**
+   * C130 — the closed-cell width floor. Default `min-w-56` keeps the editing
+   * box stable on the other lists; a list whose municipality columns must
+   * shrink when empty (people table) passes a smaller floor so the width
+   * follows the chips instead of the floor.
+   */
+  minWidthClassName?: string
 }
 
 /**
@@ -254,6 +261,7 @@ export const RelationChipCell = ({
   overflowToggleLabel,
   commitWithNullOwner = false,
   commitGuard,
+  minWidthClassName = 'min-w-56',
 }: RelationChipCellProps) => {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
@@ -1027,7 +1035,11 @@ export const RelationChipCell = ({
   // mobile cards — same gesture contract as the advisors column (B27/B154).
   if (isTriggerMode) {
     return (
-      <div ref={rootRef} aria-busy={isPending || undefined} className="relative min-w-56">
+      <div
+        ref={rootRef}
+        aria-busy={isPending || undefined}
+        className={cn('relative', minWidthClassName)}
+      >
         <CampaignCellEditOverlay
           variant={editorVariant}
           open={editorOpen}
@@ -1067,7 +1079,8 @@ export const RelationChipCell = ({
       aria-busy={isPending || undefined}
       // Same box in both pointer modes so nothing reflows when the row is touched.
       className={cn(
-        'relative min-w-56 rounded-md border border-transparent p-1 outline-none',
+        'relative rounded-md border border-transparent p-1 outline-none',
+        minWidthClassName,
         // C116 quiet: no tint at all — the cell reads as plain text (the locked
         // paradigm); keyboard focus keeps only the input's discreet ring.
         !quiet && 'pointer-fine:hover:bg-muted/40 pointer-fine:focus-within:bg-muted/40',
@@ -1136,6 +1149,13 @@ export const RelationChipCell = ({
                 onKeyDown={onSearchKeyDown}
                 placeholder={chips.length ? 'Adicionar…' : copy.searchPlaceholder}
                 aria-label={copy.searchLabel}
+                // `size={1}` (C130): an input's intrinsic width follows its
+                // `size` attribute (~20ch by default), and in table auto layout
+                // that intrinsic is what the empty column stretches to. With
+                // the wrapper's `minWidthClassName` lowered on the people
+                // table, size=1 lets the column follow the chips (min-w-32 on
+                // this input keeps the typing box wide enough).
+                size={1}
                 className={cn(
                   'hidden min-h-8 min-w-32 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground pointer-fine:block',
                   // C116 quiet: the ONLY focus indicator — a discreet ring on

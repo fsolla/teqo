@@ -34,6 +34,8 @@ type PeopleMunicipalityCellProps = {
   addableIds?: ReadonlySet<number>
   /** Read-only chips (actor may see the relation but not edit it). */
   readOnly?: boolean
+  /** C130 — closed-cell width floor so empty columns stay narrow. */
+  minWidthClassName?: string
   commitAction: (
     state: CampaignFormActionState,
     formData: FormData,
@@ -48,7 +50,7 @@ const mapManifestError = (error: unknown): string => {
 }
 
 /**
- * C116/C128 — the people-list municipality columns (Assessora, Lidera, Aliada
+ * C116/C128 — the people-list municipality columns (Assessora, Lidera, Dobra
  * em): the shared `MunicipalityPortfolioCell` in its `quiet` form (transparent,
  * always-input paradigm) plus the batch-chip expansion state — clicking a
  * territory / "Salvador (19)" chip expands it into its member municipalities
@@ -71,6 +73,7 @@ export const PeopleMunicipalityCell = ({
   municipalityIndex,
   addableIds,
   readOnly = false,
+  minWidthClassName,
   commitAction,
   drawerTitle,
   updateErrorMessage,
@@ -220,6 +223,7 @@ export const PeopleMunicipalityCell = ({
         extraFormFields={extraFormFields}
         commitWithNullOwner
         commitGuard={exitMode ? commitGuard : undefined}
+        minWidthClassName={minWidthClassName}
       />
       {exitRequest ? (
         <PeopleCapacityExitDialog

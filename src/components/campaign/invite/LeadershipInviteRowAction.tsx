@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
 import { Spinner } from '@/components/ui/Spinner'
 import { mapCreateCampaignInviteError } from '@/lib/campaignInviteClient'
+import { cn } from '@/lib/utils'
 
 type LeadershipInviteRowActionProps = {
   leadershipID: number
@@ -66,7 +67,10 @@ export const LeadershipInviteRowAction = ({
           type="button"
           variant="ghost"
           size="icon"
-          className="size-10"
+          // C130 — `pointer-events-none` when disabled: Chromium excludes
+          // disabled form controls from pointer hit-testing, so the row's
+          // tooltip wrapper span would never receive the hover otherwise.
+          className={cn('size-10', !hasValidPhone && 'pointer-events-none')}
           disabled={!hasValidPhone}
           aria-label={inviteAriaLabel}
           aria-expanded={open}

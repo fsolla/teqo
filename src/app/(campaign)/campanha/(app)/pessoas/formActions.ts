@@ -94,12 +94,6 @@ export const updatePersonContactFormAction = async (
           field: 'phone',
           phone: nullableFormText(formData, 'phone'),
         })
-      } else if (field === 'city') {
-        await updatePersonContact({
-          id: contactId,
-          field: 'city',
-          city: requiredFormText(formData, 'city'),
-        })
       } else {
         throw new Error(PERSON_CELL_NOT_IN_SCOPE_MESSAGE)
       }
@@ -170,7 +164,7 @@ export const setPersonLeadershipMunicipalitiesFormAction = async (
     genericMessage: 'Não foi possível atualizar os municípios. Tente novamente.',
   })
 
-/** Aliada em column (C128) — person-centric lifecycle: creates/removes the dobradinha. */
+/** Dobra em column (C128) — person-centric lifecycle: creates/removes the dobradinha. */
 export const setPersonStateDeputyMunicipalitiesFormAction = async (
   _state: CampaignFormActionState,
   formData: FormData,
