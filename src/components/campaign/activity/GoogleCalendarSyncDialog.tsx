@@ -152,6 +152,30 @@ export const GoogleCalendarSyncDialog = ({
     </div>
   )
 
+  const reverseEditBlock = (
+    <div className="rounded-lg bg-muted p-4 text-sm">
+      <p className="mb-1 font-medium">Edições pelo Google</p>
+      <p className="text-muted-foreground">
+        Quem tem permissão de edição no calendário pode remarcar, renomear ou cancelar o compromisso
+        direto no Google — a mudança volta para a atividade do Teqo automaticamente e fica
+        registrada nas atualizações. Título e horário seguem editáveis por lá; os demais campos só
+        mudam pelo Teqo.
+      </p>
+      {state.pushChannelExpiresAt ? (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Notificações ativas até {formatBahiaDateTimeLabel(state.pushChannelExpiresAt)} — renovadas
+          automaticamente a cada sincronização.
+        </p>
+      ) : null}
+      {state.pushChannelError ? (
+        <p className="mt-2 text-xs text-amber-700">
+          Notificações de mudanças feitas no Google indisponíveis: {state.pushChannelError}. O Teqo
+          continua detectando as mudanças ao sincronizar.
+        </p>
+      ) : null}
+    </div>
+  )
+
   const syncButton = (
     <Button type="button" onClick={handleSyncNow} disabled={isBusy}>
       <RefreshCwIcon className={`mr-2 h-4 w-4 ${isBusy ? 'animate-spin' : ''}`} />
@@ -222,6 +246,7 @@ export const GoogleCalendarSyncDialog = ({
 
         {linkBlock}
         {instructions}
+        {reverseEditBlock}
 
         {actionError && <p className="text-sm text-red-600">{actionError}</p>}
 
@@ -253,7 +278,7 @@ export const GoogleCalendarSyncDialog = ({
   }
 
   const description =
-    'Compromissos do Teqo refletem no calendário Google compartilhado em minutos. Quem segue recebe aviso conforme as próprias configurações.'
+    'Compromissos do Teqo refletem no calendário Google compartilhado em minutos, e edições feitas nele voltam para o Teqo. Quem segue recebe aviso conforme as próprias configurações.'
 
   const handleOpenChange = (next: boolean) => {
     if (!next) resetTransientState()

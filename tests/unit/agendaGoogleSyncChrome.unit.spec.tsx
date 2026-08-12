@@ -29,6 +29,8 @@ const stateFor = (status: GoogleCalendarSyncStatus): GoogleCalendarSyncActionRes
   lastSuccessAt: status === 'synced' ? '2026-08-11T10:00:00.000Z' : null,
   lastErrorAt: status === 'paused' ? '2026-08-11T10:05:00.000Z' : null,
   lastError: status === 'paused' ? 'Google fora do ar (simulado)' : null,
+  pushChannelExpiresAt: null,
+  pushChannelError: null,
   addLink: status === 'not-configured' ? null : 'https://calendar.google.com/calendar/r?cid=webcal',
 })
 

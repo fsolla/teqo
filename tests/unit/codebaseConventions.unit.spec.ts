@@ -216,6 +216,10 @@ describe('campaign JSON mutation route convention', () => {
       'src/app/(campaign)/campanha/api/ai-transcribe/route.ts',
       'multipart STT endpoint (audio FormData, not JSON) — sibling of ai-chat, cookie-authenticated via campaign-token + explicit same-origin check',
     ],
+    [
+      'src/app/(campaign)/campanha/agenda/google-webhook/[secret]/route.ts',
+      'Google Calendar push delivery (empty body, not JSON) — public by design, authenticated by URL secret + X-Goog channel headers (never a campaign cookie)',
+    ],
   ])
 
   it('builds every POST route under src/app with campaignJsonMutationRoute', () => {

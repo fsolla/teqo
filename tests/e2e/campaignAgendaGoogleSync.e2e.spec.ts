@@ -185,15 +185,178 @@ test.describe('Agenda — sincronização Google (C114/C122)', () => {
       await campaign.login(page, coordinator.email!, coordinator.password)
       await page.goto(`${campaign.baseURL}/campanha/agenda`)
 
-      await expect(campaignPageChrome(page, 'Agenda')).toBeVisible()
+      // C101: no mobile o título da top bar vira o rótulo do período assim que
+      // o calendário settle ("12 Agosto") — a asserção de página carregada é
+      // o próprio FAB, o sujeito do teste.
+      const fab = page.getByRole('button', { name: 'Ações rápidas' })
+      await expect(fab).toBeVisible({ timeout: 15_000 })
 
       // Sem doc seedado + chave fake presente → estado not-configured.
-      await page.getByRole('button', { name: 'Ações rápidas' }).click()
+      await fab.click()
       await page.getByRole('button', { name: 'Agenda da Campanha' }).click()
 
       const sheet = syncDialog(page)
       await expect(sheet).toBeVisible({ timeout: 15_000 })
       await expect(sheet.getByText('Ainda não configurado')).toBeVisible()
     })
+  })
+
+  test.describe('webhook público (C115)', () => {
+    test('falha fechado sem canal configurado', async ({ campaign, request }) => {
+      const baseURL = campaign.baseURL
+      const wrongSecret = 'a'.repeat(32)
+      const validSecret = 'b'.repeat(32)
+
+      // Unknown URL secret → 404, com ou sem headers de canal.
+      const unknown = await request.post(
+        `${baseURL}/campanha/agenda/google-webhook/${wrongSecret}`,
+        {
+          headers: {
+            'x-goog-channel-id': 'channel-x',
+            'x-goog-resource-id': 'resource-x',
+            'x-goog-channel-token': validSecret,
+          },
+        },
+      )
+      expect(unknown.status()).toBe(404)
+
+      // Short secret (below the 32-char contract) → 404.
+      const short = await request.post(`${baseURL}/campanha/agenda/google-webhook/short`)
+      expect(short.status()).toBe(404)
+
+      // GET is not a delivery method → 404.
+      const get = await request.get(`${baseURL}/campanha/agenda/google-webhook/${validSecret}`)
+      expect(get.status()).toBe(404)
+    })
+
+    test('aceita uma entrega válida e trata os estados do recurso', async ({
+      campaign,
+      request,
+    }) => {
+      const { fixtures } = campaign
+      const secret = 'c'.repeat(32)
+      const channelId = 'channel-e2e-c115'
+      const resourceId = 'resource-e2e-c115'
+
+      await seedSyncConfig(fixtures, {
+        pushChannelId: channelId,
+        pushChannelResourceId: resourceId,
+        pushChannelSecret: secret,
+      })
+
+      const url = `${campaign.baseURL}/campanha/agenda/google-webhook/${secret}`
+      const headers = {
+        'x-goog-channel-id': channelId,
+        'x-goog-resource-id': resourceId,
+        'x-goog-channel-token': secret,
+      }
+
+      try {
+        // `sync` — channel-creation ping: acknowledged, nothing recorded.
+        const syncPing = await request.post(url, {
+          headers: { ...headers, 'x-goog-resource-state': 'sync' },
+        })
+        expect(syncPing.status()).toBe(200)
+
+        // A valid change ping: acknowledged and the reconciliation runs — the
+        // fake credential makes the pass fail fast locally, but the 200
+        // contract is the point: Google must not retry a delivery whose pass
+        // failed (the local auto-retry paths recover).
+        const changePing = await request.post(url, {
+          headers: { ...headers, 'x-goog-resource-state': 'exists' },
+        })
+        expect(changePing.status()).toBe(200)
+
+        // `not_exists` — the watched calendar is gone: still 200 (no retry
+        // storm), and the staff-visible error state records WHY.
+        const gonePing = await request.post(url, {
+          headers: { ...headers, 'x-goog-resource-state': 'not_exists' },
+        })
+        expect(gonePing.status()).toBe(200)
+
+        const doc = await fixtures.payload.find({
+          collection: 'googleCalendarSync',
+          depth: 0,
+          limit: 1,
+          pagination: false,
+          overrideAccess: true,
+        })
+        expect(doc.docs[0]?.lastError).toContain('não existe mais')
+      } finally {
+        await fixtures.payload.delete({
+          collection: 'googleCalendarSync',
+          where: { pushChannelId: { equals: channelId } },
+          overrideAccess: true,
+        })
+      }
+    })
+  })
+
+  test('o webhook aceita uma entrega válida e trata os estados do recurso (C115)', async ({
+    campaign,
+    request,
+  }) => {
+    const { fixtures } = campaign
+    const secret = 'c'.repeat(32)
+    const channelId = 'channel-e2e'
+    const resourceId = 'resource-e2e'
+
+    await fixtures.payload.create({
+      collection: 'googleCalendarSync',
+      data: {
+        calendarId: 'c_campanha_e2e@group.calendar.google.com',
+        pushChannelId: channelId,
+        pushChannelResourceId: resourceId,
+        pushChannelSecret: secret,
+      },
+      depth: 0,
+      overrideAccess: true,
+    })
+
+    const url = `${campaign.baseURL}/campanha/agenda/google-webhook/${secret}`
+    const headers = {
+      'x-goog-channel-id': channelId,
+      'x-goog-resource-id': resourceId,
+      'x-goog-channel-token': secret,
+    }
+
+    try {
+      // `sync` — channel-creation ping: acknowledged, nothing recorded.
+      const syncPing = await request.post(url, {
+        headers: { ...headers, 'x-goog-resource-state': 'sync' },
+      })
+      expect(syncPing.status()).toBe(200)
+
+      // A valid change ping: acknowledged and the reconciliation runs (no
+      // credential env in the test runtime → the engine no-ops as
+      // `not-configured`; the 200 contract is what matters — Google must not
+      // retry a delivery whose pass failed).
+      const changePing = await request.post(url, {
+        headers: { ...headers, 'x-goog-resource-state': 'exists' },
+      })
+      expect(changePing.status()).toBe(200)
+
+      // `not_exists` — the watched calendar is gone: still 200 (no retry
+      // storm), and the staff-visible error state records WHY.
+      const gonePing = await request.post(url, {
+        headers: { ...headers, 'x-goog-resource-state': 'not_exists' },
+      })
+      expect(gonePing.status()).toBe(200)
+
+      const doc = await fixtures.payload.find({
+        collection: 'googleCalendarSync',
+        depth: 0,
+        limit: 1,
+        pagination: false,
+        overrideAccess: true,
+      })
+      expect(doc.docs[0]?.lastError).toContain('não existe mais')
+    } finally {
+      await fixtures.payload.delete({
+        collection: 'googleCalendarSync',
+        where: { pushChannelId: { equals: channelId } },
+        overrideAccess: true,
+      })
+    }
   })
 })

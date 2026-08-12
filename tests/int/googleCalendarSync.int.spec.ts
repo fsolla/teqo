@@ -3,7 +3,12 @@
 import { getPayload, type Payload } from 'payload'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 
-import { allDayCivilDateOf, allDayExclusiveEndDate } from '@/lib/activityAllDay'
+import {
+  allDayCivilDateOf,
+  allDayEndInstantFromExclusive,
+  allDayExclusiveEndDate,
+  allDayStartInstant,
+} from '@/lib/activityAllDay'
 import { googleEventIdForActivity } from '@/lib/googleCalendarEventMapping'
 import config from '@/payload.config'
 import type { GoogleCalendarClient, GoogleRemoteEvent } from '@/utilities/googleCalendarClient'
@@ -44,6 +49,12 @@ const createStubClient = (store: GoogleRemoteEvent[] = []): GoogleCalendarClient
     const index = store.findIndex((entry) => entry.id === eventId)
     if (index >= 0) store.splice(index, 1)
   },
+  watchEvents: async () => ({
+    id: 'watch-' + crypto.randomUUID(),
+    resourceId: 'resource-' + crypto.randomUUID(),
+    expiration: Date.now() + 30 * 24 * 60 * 60 * 1000,
+  }),
+  stopChannel: async () => {},
 })
 
 const calendarA = 'c_campanha_a@group.calendar.google.com'
@@ -384,5 +395,413 @@ describe('campaign Google calendar sync engine (C114)', () => {
     expect(storeB).toHaveLength(1)
     // The abandoned calendar keeps its last mirror (documented, no retro-cleanup).
     expect(storeA).toHaveLength(1)
+  })
+
+  describe('bidirectional reconciliation (C115)', () => {
+    /** UTC ISO → the `-03:00` dateTime shape the Calendar API echoes. */
+    const formatBahiaDateTime = (iso: string): string =>
+      `${new Date(new Date(iso).getTime() - 3 * 3_600_000).toISOString().slice(0, 19)}-03:00`
+
+    const replaceEvent = (
+      store: GoogleRemoteEvent[],
+      eventId: string,
+      patch: Partial<GoogleRemoteEvent>,
+    ) => {
+      const index = store.findIndex((entry) => entry.id === eventId)
+      store[index] = { ...store[index], ...patch }
+    }
+
+    const reloadActivity = async (id: number) =>
+      payload.findByID({
+        collection: 'activity',
+        id,
+        depth: 0,
+        overrideAccess: true,
+      })
+
+    it('a newer Google edit applies title and schedule back with an audit record, then converges', async () => {
+      const municipality = await campaignFixtures().getMunicipality()
+      const activity = await createActivity({ municipality: municipality.id })
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const client = createStubClient(store)
+      await runSync(client)
+
+      // The renamed title keeps the `C114 ` cleanup prefix so the file's
+      // afterEach can still reach this activity.
+      const renamedTitle = `C114 ${crypto.randomUUID().slice(0, 8)} (renomeada no Google)`
+      const eventId = googleEventIdForActivity(activity.id)
+      const originalStart = new Date(store.find((entry) => entry.id === eventId)!.start!.dateTime!)
+      const newStart = new Date(originalStart.getTime() + 3_600_000)
+      replaceEvent(store, eventId, {
+        summary: `[${municipality.name}] ${renamedTitle}`,
+        start: { dateTime: formatBahiaDateTime(newStart.toISOString()) },
+        end: {
+          dateTime: formatBahiaDateTime(new Date(newStart.getTime() + 3_600_000).toISOString()),
+        },
+        updated: new Date(Date.now() + 60_000).toISOString(),
+      })
+
+      const outcome = await runSync(client)
+      expect(outcome.reverseEdits).toBe(1)
+      expect(outcome.updated).toBe(0)
+
+      const reloaded = await reloadActivity(activity.id)
+      expect(reloaded.title).toBe(renamedTitle)
+      expect(reloaded.slug).toBe(activity.slug)
+      expect(new Date(reloaded.startAt!).getTime()).toBe(newStart.getTime())
+      const record = (reloaded.updates ?? []).at(-1)
+      expect(record?.body).toContain('Google Calendar:')
+      expect(record?.author).toBeNull()
+
+      // Converges: the next pass touches nothing (no loop).
+      const again = await runSync(client)
+      expect(again).toMatchObject({ updated: 0, deleted: 0, reverseEdits: 0 })
+      expect(store).toHaveLength(1)
+    })
+
+    it('an older Google edit loses the clock rule — the Teqo re-asserts', async () => {
+      const municipality = await campaignFixtures().getMunicipality()
+      const activity = await createActivity({ municipality: municipality.id })
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const client = createStubClient(store)
+      await runSync(client)
+
+      replaceEvent(store, googleEventIdForActivity(activity.id), {
+        summary: `[${municipality.name}] Editado antes do Teqo`,
+        updated: new Date(Date.now() - 60_000).toISOString(),
+      })
+
+      const outcome = await runSync(client)
+      expect(outcome.updated).toBe(1)
+      expect(outcome.reverseEdits).toBe(0)
+
+      const reloaded = await reloadActivity(activity.id)
+      expect(reloaded.title).not.toBe('Editado antes do Teqo')
+      expect(
+        store.find((entry) => entry.id === googleEventIdForActivity(activity.id))?.summary,
+      ).toBe(`[${municipality.name}] ${activity.title}`)
+    })
+
+    it('a cancelled event in Google cancels the confirmado activity, then the trash is cleaned', async () => {
+      const activity = await createActivity()
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const client = createStubClient(store)
+      await runSync(client)
+
+      // The cancel carries Google's own `updated` clock (newer than the
+      // activity's last mirrored change) — otherwise the clock rule would
+      // treat it as a stale cancel and clean the trash instead.
+      replaceEvent(store, googleEventIdForActivity(activity.id), {
+        status: 'cancelled',
+        updated: new Date(Date.now() + 60_000).toISOString(),
+      })
+
+      const outcome = await runSync(client)
+      expect(outcome.reverseEdits).toBe(1)
+      const reloaded = await reloadActivity(activity.id)
+      expect(reloaded.status).toBe('cancelado')
+      expect((reloaded.updates ?? []).at(-1)?.body).toContain('Google Calendar: cancelada')
+
+      // The trashed event leaves Google on the next pass (Teqo SoT).
+      const cleanup = await runSync(client)
+      expect(cleanup.deleted).toBe(1)
+      expect(store).toHaveLength(0)
+    })
+
+    it('a permanently removed event cancels the activity (snapshot rule)', async () => {
+      const activity = await createActivity()
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const client = createStubClient(store)
+      await runSync(client)
+      expect(store).toHaveLength(1)
+
+      store.splice(0, 1)
+
+      const outcome = await runSync(client)
+      expect(outcome.reverseEdits).toBe(1)
+      expect((await reloadActivity(activity.id)).status).toBe('cancelado')
+    })
+
+    it('a failed creation is never "seen" — the next pass creates instead of cancelling', async () => {
+      const activity = await createActivity()
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const flakyClient: GoogleCalendarClient = {
+        ...createStubClient(store),
+        insertEvent: async () => {
+          throw new Error('falha simulada na criação')
+        },
+      }
+
+      const failed = await runSync(flakyClient)
+      expect(failed.status).toBe('paused')
+
+      const recovered = await runSync(createStubClient(store))
+      expect(recovered.created).toBe(1)
+      expect(recovered.reverseEdits).toBe(0)
+      expect((await reloadActivity(activity.id)).status).toBe('confirmado')
+    })
+
+    it('switching calendars re-creates the mirror without cancelling, and re-watches the channel', async () => {
+      const activity = await createActivity()
+      await createConfig(calendarA)
+      const storeA: GoogleRemoteEvent[] = []
+      const watched: string[] = []
+      const stopped: Array<{ id: string; resourceId: string }> = []
+      const client: GoogleCalendarClient = {
+        ...createStubClient(storeA),
+        watchEvents: async (calendarId) => {
+          watched.push(calendarId)
+          return {
+            id: 'watch-' + watched.length,
+            resourceId: 'resource-' + watched.length,
+            expiration: Date.now() + 30 * 86_400_000,
+          }
+        },
+        stopChannel: async (channel) => {
+          stopped.push(channel)
+        },
+      }
+      await runSync(client)
+      expect(watched).toEqual([calendarA])
+      expect(storeA).toHaveLength(1)
+
+      const config = await loadGoogleCalendarSyncConfig(payload)
+      await payload.update({
+        collection: 'googleCalendarSync',
+        id: config!.id,
+        data: { calendarId: calendarB },
+        depth: 0,
+        overrideAccess: true,
+      })
+      storeA.length = 0
+
+      const outcome = await runSync(client, 'config-change')
+      expect(outcome.created).toBe(1)
+      expect(outcome.reverseEdits).toBe(0)
+      expect(storeA).toHaveLength(1)
+      expect((await reloadActivity(activity.id)).status).toBe('confirmado')
+      // Channel re-created for the new calendar; the old one stopped.
+      expect(watched).toEqual([calendarA, calendarB])
+      expect(stopped).toEqual([{ id: 'watch-1', resourceId: 'resource-1' }])
+    })
+
+    it('a newer Google edit never touches realizado history', async () => {
+      const municipality = await campaignFixtures().getMunicipality()
+      const activity = await createActivity({ municipality: municipality.id, status: 'realizado' })
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const client = createStubClient(store)
+      await runSync(client)
+
+      replaceEvent(store, googleEventIdForActivity(activity.id), {
+        summary: `[${municipality.name}] Editado depois`,
+        updated: new Date(Date.now() + 60_000).toISOString(),
+      })
+
+      const outcome = await runSync(client)
+      expect(outcome.updated).toBe(1)
+      expect(outcome.reverseEdits).toBe(0)
+      expect((await reloadActivity(activity.id)).status).toBe('realizado')
+    })
+
+    it('a description-only drift is Teqo-owned: forward re-asserts without a reverse record', async () => {
+      const activity = await createActivity()
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const client = createStubClient(store)
+      await runSync(client)
+
+      replaceEvent(store, googleEventIdForActivity(activity.id), {
+        description: 'descrição adulterada no Google',
+      })
+
+      const outcome = await runSync(client)
+      expect(outcome.updated).toBe(1)
+      expect(outcome.reverseEdits).toBe(0)
+      expect((await reloadActivity(activity.id)).updates ?? []).toHaveLength(0)
+    })
+
+    it('ensures a push channel on the first pass and renews before expiry with a fresh id', async () => {
+      await createActivity()
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const watched: Array<{
+        calendarId: string
+        channel: { id: string; token: string; address: string }
+      }> = []
+      const stopped: Array<{ id: string; resourceId: string }> = []
+      const client: GoogleCalendarClient = {
+        ...createStubClient(store),
+        watchEvents: async (calendarId, channel) => {
+          watched.push({ calendarId, channel })
+          return {
+            id: 'watch-' + watched.length,
+            resourceId: 'resource-' + watched.length,
+            expiration: Date.now() + 30 * 86_400_000,
+          }
+        },
+        stopChannel: async (channel) => {
+          stopped.push(channel)
+        },
+      }
+      await runSync(client)
+
+      let doc = await loadGoogleCalendarSyncConfig(payload)
+      expect(watched).toHaveLength(1)
+      expect(watched[0].channel.address).toContain('/campanha/agenda/google-webhook/')
+      expect(watched[0].channel.token).toBe(doc?.pushChannelSecret)
+      expect(doc?.pushChannelId).toBe('watch-1')
+      expect(doc?.pushChannelSecret).toHaveLength(43)
+      expect(doc?.pushChannelError).toBeNull()
+
+      // Expiring soon → renewal with a NEW unique id + stop of the old
+      // channel; the URL secret ROTATES per channel (a leaked URL self-heals
+      // on the next renewal).
+      await payload.update({
+        collection: 'googleCalendarSync',
+        id: doc!.id,
+        data: { pushChannelExpiresAt: new Date(Date.now() + 60_000).toISOString() },
+        depth: 0,
+        overrideAccess: true,
+      })
+      await runSync(client)
+
+      doc = await loadGoogleCalendarSyncConfig(payload)
+      expect(watched).toHaveLength(2)
+      expect(stopped).toEqual([{ id: 'watch-1', resourceId: 'resource-1' }])
+      expect(doc?.pushChannelId).toBe('watch-2')
+      expect(doc?.pushChannelSecret).toBe(watched[1].channel.token)
+      expect(doc?.pushChannelSecret).not.toBe(watched[0].channel.token)
+    })
+
+    it('a channel failure is recorded but never pauses the mirror', async () => {
+      await createActivity()
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const client: GoogleCalendarClient = {
+        ...createStubClient(store),
+        watchEvents: async () => {
+          throw new Error('watch indisponível (simulado)')
+        },
+      }
+
+      const outcome = await runSync(client)
+      expect(outcome.status).toBe('synced')
+      expect(outcome.created).toBe(1)
+
+      const doc = await loadGoogleCalendarSyncConfig(payload)
+      expect(doc?.pushChannelError).toContain('watch indisponível')
+      expect(doc?.pushChannelId).toBeNull()
+    })
+
+    it('a newer all-day Google edit round-trips through the reverse path', async () => {
+      const municipality = await campaignFixtures().getMunicipality()
+      const activity = await createActivity({ municipality: municipality.id })
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const client = createStubClient(store)
+      await runSync(client)
+
+      // C127: dates derived from now — hardcoded instants would leave the
+      // sync window and break the assertion deterministically after ~90 days.
+      // The expected instants come from the SAME lib the engine maps through
+      // (`activityAllDay`) — no manual timezone arithmetic in the test.
+      const startCivil = allDayCivilDateOf(new Date(Date.now() + 2 * 86_400_000).toISOString())
+      const endExclusive = allDayCivilDateOf(new Date(Date.now() + 4 * 86_400_000).toISOString())
+      const expectedStartAt = allDayStartInstant(startCivil)
+      const expectedEndAt = allDayEndInstantFromExclusive(endExclusive)
+
+      replaceEvent(store, googleEventIdForActivity(activity.id), {
+        start: { date: startCivil },
+        end: { date: endExclusive },
+        updated: new Date(Date.now() + 60_000).toISOString(),
+      })
+
+      const outcome = await runSync(client)
+      expect(outcome.reverseEdits).toBe(1)
+
+      const reloaded = await reloadActivity(activity.id)
+      expect(reloaded.allDay).toBe(true)
+      expect(reloaded.startAt).toBe(expectedStartAt)
+      expect(reloaded.endAt).toBe(expectedEndAt)
+      expect((reloaded.updates ?? []).at(-1)?.body).toContain('remarcada')
+
+      // Converges — the forward does not flip allDay back.
+      const again = await runSync(client)
+      expect(again).toMatchObject({ updated: 0, deleted: 0, reverseEdits: 0 })
+      expect(store).toHaveLength(1)
+    })
+
+    it('a pending newer Google edit survives a task toggle (clock baseline = lastMirroredChangeAt)', async () => {
+      const municipality = await campaignFixtures().getMunicipality()
+      const activity = await createActivity({ municipality: municipality.id })
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const client = createStubClient(store)
+      await runSync(client)
+
+      // Google edit lands (newer than the last mirrored change)…
+      const googleTitle = `C114 ${crypto.randomUUID().slice(0, 8)} (título do Google)`
+      replaceEvent(store, googleEventIdForActivity(activity.id), {
+        summary: `[${municipality.name}] ${googleTitle}`,
+        updated: new Date(Date.now() + 60_000).toISOString(),
+      })
+      // …and a task toggle bumps `updatedAt` BEFORE the pass runs (it never
+      // reaches the mirror — no pass, no stamp).
+      await payload.update({
+        collection: 'activity',
+        id: activity.id,
+        data: { tasks: [{ title: 'Convidar a rádio', done: true }] },
+        depth: 0,
+        overrideAccess: true,
+      })
+
+      const outcome = await runSync(client)
+      expect(outcome.reverseEdits).toBe(1)
+      expect((await reloadActivity(activity.id)).title).toBe(googleTitle)
+    })
+
+    it('a staff reopen after a Google cancel is not re-cancelled', async () => {
+      const activity = await createActivity()
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const client = createStubClient(store)
+      await runSync(client)
+
+      // 1) user cancels in Google — the cancel beats the 2s clock tolerance
+      // (anchored on the last mirrored change), so the activity is cancelled.
+      const stampedAt = (await reloadActivity(activity.id)).lastMirroredChangeAt!
+      replaceEvent(store, googleEventIdForActivity(activity.id), {
+        status: 'cancelled',
+        updated: new Date(new Date(stampedAt).getTime() + 5_000).toISOString(),
+      })
+      let outcome = await runSync(client)
+      expect(outcome.reverseEdits).toBe(1)
+      expect((await reloadActivity(activity.id)).status).toBe('cancelado')
+
+      // 2) staff reopens the activity AFTER the cancel instant — the next
+      // pass must NOT re-cancel: the trashed event is cleaned instead.
+      await new Promise((resolve) => setTimeout(resolve, 3_500))
+      await payload.update({
+        collection: 'activity',
+        id: activity.id,
+        data: { status: 'confirmado' },
+        depth: 0,
+        overrideAccess: true,
+      })
+      outcome = await runSync(client)
+      expect(outcome.reverseEdits).toBe(0)
+      expect(outcome.deleted).toBe(1)
+
+      // 3) …and a fresh event is created for the reopened commitment.
+      outcome = await runSync(client)
+      expect(outcome.created).toBe(1)
+      expect((await reloadActivity(activity.id)).status).toBe('confirmado')
+    })
   })
 })

@@ -5,6 +5,8 @@ import type {
 } from 'payload'
 import { APIError } from 'payload'
 
+import type { Activity as ActivityRecord } from '@/payload-types'
+
 import { allDayRangeValid } from '@/lib/activityAllDay'
 import { relationshipId } from '@/lib/relationship'
 import {
@@ -29,6 +31,7 @@ import {
   eligibleCampaignStaffWhere,
 } from '@/utilities/campaignAccess'
 import { systemStampedActorField } from '@/utilities/campaignAuditFields'
+import { shouldSyncActivityOperation } from '@/utilities/googleCalendarSync'
 import { activityGoogleCalendarSyncHook } from '@/utilities/googleCalendarSyncHooks'
 
 const isActivityMutationShortcut = (context: Record<string, unknown> | undefined) =>
@@ -72,12 +75,20 @@ const setCanonicalActivitySlug: CollectionBeforeValidateHook = ({
 }) => {
   if (isActivityMutationShortcut(context)) return data
   if (!data) return data
+  const isGoogleCalendarWrite = context?.mutationKind === 'googleCalendarSync'
   const title = trimmedText(data.title ?? originalDoc?.title)
   const slug = slugify(title)
   if (!slug) {
     throw new APIError('Informe um título com letras ou números.', 400)
   }
-  if (operation === 'update' && data.title !== undefined && title !== originalDoc?.title) {
+  // C115 — the Google direction edits titles by product decision (D9); the
+  // canonical slug stays frozen so public URLs never break.
+  if (
+    operation === 'update' &&
+    !isGoogleCalendarWrite &&
+    data.title !== undefined &&
+    title !== originalDoc?.title
+  ) {
     throw new APIError('O título da atividade não pode ser alterado após a criação.', 409)
   }
   data.title = title
@@ -366,6 +377,20 @@ const deriveActivityFields: CollectionBeforeChangeHook = ({
         throw new APIError('Lideranças não podem adicionar ou remover tarefas.', 403)
       }
     }
+  }
+
+  // C115 — the clock rule baseline: stamped only when a mirrored field
+  // actually changed (task toggles/updates/result records never stamp, so a
+  // pending newer Google edit is not silenced by an unrelated `updatedAt`).
+  if (
+    operation === 'create' ||
+    shouldSyncActivityOperation({
+      operation: 'update',
+      doc: { ...originalDoc, ...data } as ActivityRecord,
+      previousDoc: originalDoc,
+    })
+  ) {
+    data.lastMirroredChangeAt = new Date().toISOString()
   }
 
   return data
@@ -703,6 +728,22 @@ export const Activity: CollectionConfig = {
       name: 'resultRecordedAt',
       type: 'date',
       label: 'Resultado registrado em',
+      admin: {
+        readOnly: true,
+      },
+      access: {
+        create: canSetActivitySystemField,
+        update: canSetActivitySystemField,
+      },
+    },
+    {
+      // C115 — last time a field the Google mirror reflects changed in the
+      // Teqo. The conflict clock rule compares the Google event's `updated`
+      // against this, not `updatedAt` (task toggles, updates and result
+      // records bump `updatedAt` without ever reaching the mirror).
+      name: 'lastMirroredChangeAt',
+      type: 'date',
+      label: 'Última mudança espelhada',
       admin: {
         readOnly: true,
       },

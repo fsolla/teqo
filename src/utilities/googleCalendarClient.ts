@@ -52,6 +52,20 @@ export type GoogleCalendarClient = {
   insertEvent: (calendarId: string, event: GoogleRemoteEvent) => Promise<void>
   updateEvent: (calendarId: string, eventId: string, event: GoogleRemoteEvent) => Promise<void>
   deleteEvent: (calendarId: string, eventId: string) => Promise<void>
+  /** C115 — push channel for the Google→Teqo direction (events.watch). */
+  watchEvents: (
+    calendarId: string,
+    channel: { id: string; address: string; token: string; ttlSeconds: number },
+  ) => Promise<GoogleWatchChannel>
+  /** C115 — stops a push channel (channels.stop); used on renewal/calendar change. */
+  stopChannel: (channel: { id: string; resourceId: string }) => Promise<void>
+}
+
+/** The `api#channel` the watch response returns. */
+type GoogleWatchChannel = {
+  id: string
+  resourceId: string
+  expiration: number | null
 }
 
 export type FetchLike = typeof fetch
@@ -160,6 +174,10 @@ export const createGoogleCalendarClient = (
         timeMax: range.timeMax,
         maxResults: String(MAX_LIST_PAGE_SIZE),
         singleEvents: 'true',
+        // C115 — cancelled (trashed) events are the "user cancelled this
+        // commitment" signal the reverse direction acts on; without it a
+        // deletion in Google would be invisible to the reconciliation.
+        showDeleted: 'true',
       })
       if (pageToken) params.set('pageToken', pageToken)
 
@@ -202,5 +220,45 @@ export const createGoogleCalendarClient = (
     await apiFetch(eventsUrl(calendarId, eventId), { method: 'DELETE' })
   }
 
-  return { listEvents, insertEvent, updateEvent, deleteEvent }
+  const watchEvents: GoogleCalendarClient['watchEvents'] = async (calendarId, channel) => {
+    const response = await apiFetch(`${eventsUrl(calendarId)}/watch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: channel.id,
+        type: 'web_hook',
+        address: channel.address,
+        token: channel.token,
+        params: { ttl: String(channel.ttlSeconds) },
+      }),
+    })
+    const body = (await response.json()) as {
+      id?: string
+      resourceId?: string
+      expiration?: number | null
+    }
+    if (!body.id || !body.resourceId) {
+      throw new GoogleCalendarApiError('O Google não devolveu um canal de notificação válido.', 502)
+    }
+    return {
+      id: body.id,
+      resourceId: body.resourceId,
+      expiration: body.expiration ?? null,
+    }
+  }
+
+  const stopChannel: GoogleCalendarClient['stopChannel'] = async ({ id, resourceId }) => {
+    try {
+      await apiFetch(`${GOOGLE_CALENDAR_API_BASE}/channels/stop`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, resourceId }),
+      })
+    } catch (error) {
+      // Already stopped / unknown channel is the desired end state (404).
+      if (!(error instanceof GoogleCalendarApiError && error.status === 404)) throw error
+    }
+  }
+
+  return { listEvents, insertEvent, updateEvent, deleteEvent, watchEvents, stopChannel }
 }

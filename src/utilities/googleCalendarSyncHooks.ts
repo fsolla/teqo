@@ -35,6 +35,10 @@ export const activityGoogleCalendarSyncHook = async ({
   req: PayloadRequest
 }): Promise<unknown> => {
   try {
+    // C115 — the reverse direction's own write must not re-enter the engine:
+    // the pass that applied the Google edit is still running; a nested pass
+    // would only re-list and converge (content equality) at double cost.
+    if (req.context?.mutationKind === 'googleCalendarSync') return doc
     const resolvedOperation = operation ?? 'delete'
     if (shouldSyncActivityOperation({ operation: resolvedOperation, doc, previousDoc })) {
       await runCampaignCalendarSync(req.payload, { reason: resolvedOperation, req })

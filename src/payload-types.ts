@@ -802,6 +802,7 @@ export interface Activity {
   resultMedia?: (number | Media)[] | null;
   resultRecordedBy?: (number | null) | CampaignUser;
   resultRecordedAt?: string | null;
+  lastMirroredChangeAt?: string | null;
   createdBy?: (number | null) | CampaignUser;
   updatedAt: string;
   createdAt: string;
@@ -909,6 +910,20 @@ export interface GoogleCalendarSync {
   lastSuccessAt?: string | null;
   lastErrorAt?: string | null;
   lastError?: string | null;
+  pushChannelId?: string | null;
+  pushChannelResourceId?: string | null;
+  pushChannelExpiresAt?: string | null;
+  pushChannelSecret?: string | null;
+  pushChannelError?: string | null;
+  lastSeenEventIds?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1864,6 +1879,7 @@ export interface ActivitySelect<T extends boolean = true> {
   resultMedia?: T;
   resultRecordedBy?: T;
   resultRecordedAt?: T;
+  lastMirroredChangeAt?: T;
   createdBy?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1894,6 +1910,12 @@ export interface GoogleCalendarSyncSelect<T extends boolean = true> {
   lastSuccessAt?: T;
   lastErrorAt?: T;
   lastError?: T;
+  pushChannelId?: T;
+  pushChannelResourceId?: T;
+  pushChannelExpiresAt?: T;
+  pushChannelSecret?: T;
+  pushChannelError?: T;
+  lastSeenEventIds?: T;
   updatedAt?: T;
   createdAt?: T;
 }

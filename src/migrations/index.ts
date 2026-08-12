@@ -51,6 +51,8 @@ import * as migration_20260811_111828_add_contact_phones_array from './20260811_
 import * as migration_20260811_133332_add_google_calendar_sync from './20260811_133332_add_google_calendar_sync';
 import * as migration_20260811_155116_add_lembranca_support_status from './20260811_155116_add_lembranca_support_status';
 import * as migration_20260811_183016_drop_activity_task_due from './20260811_183016_drop_activity_task_due';
+import * as migration_20260811_205157_add_google_calendar_push_channel from './20260811_205157_add_google_calendar_push_channel';
+import * as migration_20260811_213648_add_activity_last_mirrored_change_at from './20260811_213648_add_activity_last_mirrored_change_at';
 
 export const migrations = [
   {
@@ -316,6 +318,16 @@ export const migrations = [
   {
     up: migration_20260811_183016_drop_activity_task_due.up,
     down: migration_20260811_183016_drop_activity_task_due.down,
-    name: '20260811_183016_drop_activity_task_due'
+    name: '20260811_183016_drop_activity_task_due',
+  },
+  {
+    up: migration_20260811_205157_add_google_calendar_push_channel.up,
+    down: migration_20260811_205157_add_google_calendar_push_channel.down,
+    name: '20260811_205157_add_google_calendar_push_channel',
+  },
+  {
+    up: migration_20260811_213648_add_activity_last_mirrored_change_at.up,
+    down: migration_20260811_213648_add_activity_last_mirrored_change_at.down,
+    name: '20260811_213648_add_activity_last_mirrored_change_at',
   },
 ];

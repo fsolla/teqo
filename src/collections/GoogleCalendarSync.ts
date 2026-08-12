@@ -4,6 +4,7 @@ import {
   canCreateGoogleCalendarSync,
   canDeleteGoogleCalendarSync,
   canReadGoogleCalendarSync,
+  canReadGoogleCalendarSyncIdentityField,
   canSetGoogleCalendarSyncConfigField,
   canSetGoogleCalendarSyncDisabled,
   canSetGoogleCalendarSyncSystemField,
@@ -27,7 +28,13 @@ export const GoogleCalendarSync: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'calendarId',
-    defaultColumns: ['calendarId', 'lastSyncedAt', 'lastSuccessAt', 'lastError'],
+    defaultColumns: [
+      'calendarId',
+      'lastSyncedAt',
+      'lastSuccessAt',
+      'lastError',
+      'pushChannelExpiresAt',
+    ],
   },
   access: {
     create: canCreateGoogleCalendarSync,
@@ -101,6 +108,69 @@ export const GoogleCalendarSync: CollectionConfig = {
       name: 'lastError',
       type: 'textarea',
       label: 'Mensagem do último erro',
+      admin: { readOnly: true },
+      access: {
+        create: canSetGoogleCalendarSyncSystemField,
+        update: canSetGoogleCalendarSyncSystemField,
+      },
+    },
+    {
+      name: 'pushChannelId',
+      type: 'text',
+      label: 'ID do canal de notificação (Google)',
+      admin: { readOnly: true },
+      access: {
+        create: canSetGoogleCalendarSyncSystemField,
+        read: canReadGoogleCalendarSyncIdentityField,
+        update: canSetGoogleCalendarSyncSystemField,
+      },
+    },
+    {
+      name: 'pushChannelResourceId',
+      type: 'text',
+      label: 'Resource ID do canal (Google)',
+      admin: { readOnly: true },
+      access: {
+        create: canSetGoogleCalendarSyncSystemField,
+        read: canReadGoogleCalendarSyncIdentityField,
+        update: canSetGoogleCalendarSyncSystemField,
+      },
+    },
+    {
+      name: 'pushChannelExpiresAt',
+      type: 'date',
+      label: 'Canal de notificação expira em',
+      admin: { readOnly: true },
+      access: {
+        create: canSetGoogleCalendarSyncSystemField,
+        update: canSetGoogleCalendarSyncSystemField,
+      },
+    },
+    {
+      name: 'pushChannelSecret',
+      type: 'text',
+      label: 'Segredo do webhook (URL)',
+      admin: { readOnly: true },
+      access: {
+        create: canSetGoogleCalendarSyncSystemField,
+        read: canReadGoogleCalendarSyncIdentityField,
+        update: canSetGoogleCalendarSyncSystemField,
+      },
+    },
+    {
+      name: 'pushChannelError',
+      type: 'textarea',
+      label: 'Erro do canal de notificação',
+      admin: { readOnly: true },
+      access: {
+        create: canSetGoogleCalendarSyncSystemField,
+        update: canSetGoogleCalendarSyncSystemField,
+      },
+    },
+    {
+      name: 'lastSeenEventIds',
+      type: 'json',
+      label: 'Eventos vistos na última sincronização',
       admin: { readOnly: true },
       access: {
         create: canSetGoogleCalendarSyncSystemField,

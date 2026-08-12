@@ -154,9 +154,14 @@ export type GoogleRemoteEvent = {
   summary?: string
   description?: string
   location?: string
+  status?: string
+  updated?: string
   start?: { dateTime?: string; date?: string; timeZone?: string }
   end?: { dateTime?: string; date?: string; timeZone?: string }
 }
+
+/** Google's own event lifecycle status — `cancelled` is the trash signal. */
+export const GOOGLE_EVENT_STATUS_CANCELLED = 'cancelled'
 
 const startEndInstantEquals = (
   remote: { dateTime?: string; date?: string } | undefined,
@@ -172,6 +177,12 @@ const startEndInstantEquals = (
   }
   return remote.date === wanted.date
 }
+
+/**
+ * Same instant comparison, exported for the engine's editable-fields check
+ * (C115 reverse direction) — single implementation of the compare.
+ */
+export { startEndInstantEquals as googleStartEndInstantEquals }
 
 /**
  * True when the remote event already carries exactly what we would write —
