@@ -3,7 +3,7 @@
 Completed 2026-08-01. Branch `stage` and GitHub Environment `stage` are deleted. Production deploys only from `ci.yml` after the full verifier is green.
 
 - [x] Code PR opened (main-only cutover) — merged to `main`
-- [x] `pnpm configure:branch-protection` applied on `main` (required: `checks` + `migration-lock`, `strict=false`, 0 reviews)
+- [x] `pnpm configure:branch-protection` applied on `main` (required: `checks` (+ `migration-lock` until 2026-08-12), `strict=false`, 0 reviews)
 - [x] No open PRs targeting `stage` at cutover time
 - [x] Repo secrets present (`VERCEL_*`, `POOL_GITHUB_TOKEN`)
 - [x] `VERCEL_ORG_ID` / `VERCEL_PROJECT_ID` synced from local `.vercel/project.json` (`vercel link`)

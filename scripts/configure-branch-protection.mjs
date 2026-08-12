@@ -4,8 +4,9 @@
  *   pnpm configure:branch-protection           # apply
  *   pnpm configure:branch-protection -- --dry-run
  *
- * main: required checks `checks` + `migration-lock`, strict=false, 0 reviews.
- * Feature PRs auto-merge when those contexts are green.
+ * main: required checks `checks`, strict=false, 0 reviews.
+ * Feature PRs auto-merge when that context is green.
+ * (migration-lock removed 2026-08-12 — see ci-pr.yml header.)
  */
 
 import { execFileSync } from 'node:child_process'
@@ -40,7 +41,7 @@ console.log(`[configure:branch-protection] repo ${repo}${dryRun ? ' (dry-run)' :
 ghApiJson('PUT', `repos/${repo}/branches/main/protection`, {
   required_status_checks: {
     strict: false,
-    contexts: ['checks', 'migration-lock'],
+    contexts: ['checks'],
   },
   enforce_admins: false,
   required_pull_request_reviews: {
@@ -51,6 +52,4 @@ ghApiJson('PUT', `repos/${repo}/branches/main/protection`, {
   allow_deletions: false,
 })
 
-console.log(
-  '[configure:branch-protection] done (main: checks + migration-lock, strict=false, 0 reviews).',
-)
+console.log('[configure:branch-protection] done (main: checks, strict=false, 0 reviews).')

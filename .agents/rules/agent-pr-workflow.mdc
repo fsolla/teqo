@@ -61,7 +61,8 @@ Do not wait for human approval on normal deliveries. Auto-merge fires when **req
 Branch protection on `main` requires only:
 
 - `checks` (GitHub Actions rollup from `ci-pr.yml`)
-- `migration-lock`
+
+(`migration-lock` removed 2026-08-12 — the CI validates migration chains via migrate + int on every PR/main.)
 
 **Vercel preview is NOT a merge gate.** Production deploy is Actions-gated (`ci.yml` → `vercel deploy --prod` after full suite green). Do not block on Vercel Git status.
 

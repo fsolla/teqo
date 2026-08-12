@@ -32,8 +32,7 @@ entrega.
 2. **`pnpm push -u origin HEAD`**
 3. PR **Ready** (nunca draft): `gh pr create --base main` com `Closes #<N>`
 4. `gh pr merge --auto --merge` imediatamente
-5. `gh pr checks <PR> --watch --required` (`checks` + `migration-lock`; ignore
-   Vercel Git)
+5. `gh pr checks <PR> --watch --required` (`checks`; ignore Vercel Git)
 6. CI flipa `done`/`in-prod` no merge. Comente na Issue o desfecho em uma linha.
 
 ## Deltas por ator
