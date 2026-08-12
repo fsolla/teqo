@@ -385,14 +385,21 @@ describe('activity domain', () => {
     const municipality = await fixtures.getMunicipality()
     await fixtures.assignMunicipalityAdvisors(municipality, [advisor])
 
+    // Far-future startAt: this spec is about read scoping, not the agenda
+    // window — and keeping the rows OUTSIDE the Google sync engine's
+    // 90/365-day scan window avoids feeding the C126 parallel-flake class.
+    const farFuture = new Date(Date.now() + 400 * 86_400_000).toISOString()
+
     const inScope = await createActivityRecord(payload, coordinator, {
       ...validActivityInput(municipality.id),
       title: fixtures.value('No portfólio do assessor'),
+      startAt: farFuture,
     })
     fixtures.own('activity', inScope.id)
     const outOfScope = await createActivityRecord(payload, coordinator, {
       ...validActivityInput((await fixtures.getMunicipality()).id),
       title: fixtures.value('Fora do portfólio do assessor'),
+      startAt: farFuture,
     })
     fixtures.own('activity', outOfScope.id)
 
