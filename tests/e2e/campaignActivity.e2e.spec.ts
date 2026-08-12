@@ -3,10 +3,37 @@ import { hookFilledCreateData } from '../../src/utilities/hookFilledData.js'
 import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures.js'
 import { dayLabelFor, ptBrMonthNames } from './helpers/agendaPeriodLabels.js'
 
+/**
+ * Agenda prologue shared by every journey in this file: opens the agenda
+ * filtered to one município, waits for the window load to land (FullCalendar
+ * renders the grid lazily and re-lays out on mount — the grid first paints
+ * empty and re-renders, replacing its gridcells, when the events land) and
+ * clicks the 14:00 slot. `force` bypasses the C104 all-day lane, which paints
+ * day fills over the time grid: real clicks still land on the slot
+ * (FullCalendar resolves by data-time), but Playwright's actionability check
+ * refuses them.
+ */
+const openAgendaSlot = async ({
+  campaign,
+  page,
+  municipalityId,
+}: {
+  campaign: { baseURL: string }
+  page: import('@playwright/test').Page
+  municipalityId: number
+}) => {
+  await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipalityId}`)
+  await expect(page.getByText('Carregando compromissos…')).toHaveCount(0, { timeout: 15_000 })
+  const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
+  await expect(slotLocator).toBeVisible()
+  await slotLocator.scrollIntoViewIfNeeded()
+  await slotLocator.click({ force: true })
+}
+
 test.describe('Atividades — registro-fundação', () => {
   test.setTimeout(90_000)
 
-  test('cria compromisso com demandas vinculadas e exibe os sinais no município', async ({
+  test('cria compromisso com demandas vinculadas pelo overlay e exibe os sinais no município', async ({
     campaign,
     page,
   }) => {
@@ -21,11 +48,15 @@ test.describe('Atividades — registro-fundação', () => {
     const materialDemand = fixtures.value('Material de rua')
 
     await campaign.login(page, coordinator.email!, password)
-    await page.goto(`${campaign.baseURL}/campanha/atividades/nova`)
+    // C123 — the agenda overlay is the only create surface; /nova is gone.
+    await openAgendaSlot({ campaign, page, municipalityId: municipality.id })
 
+    // The central modal (desktop) hosts every section of the old full form.
+    const modal = page.getByRole('dialog', { name: 'Nova atividade' })
+    await expect(modal).toBeVisible()
     await page.getByLabel('Título *').fill(activityTitle)
-    await page.getByLabel('Início *').fill('2026-08-15T10:00')
-    await page.getByLabel('Município *').selectOption(String(municipality.id))
+    // The municipality filter prefills the field; the times come from the slot.
+    await expect(page.getByLabel('Município *')).toHaveValue(municipality.name)
 
     // C90 — the unified polymorphic selector replaces the old Contact
     // responsável + assessores/liderança fields.
@@ -39,8 +70,20 @@ test.describe('Atividades — registro-fundação', () => {
     await page.getByLabel('Título da demanda 2').fill(materialDemand)
     await page.getByLabel('Tipo da demanda 2').selectOption('material')
 
-    await page.getByRole('button', { name: 'Criar atividade' }).click()
-    await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+$/)
+    await page.getByRole('button', { name: 'Salvar', exact: true }).click()
+
+    // Save never navigates: the event lands in the calendar and the URL stays.
+    await expect(page.getByText(activityTitle, { exact: true })).toBeVisible({ timeout: 15_000 })
+    await expect(page).toHaveURL(new RegExp('/campanha/agenda.*'))
+
+    // Clicking the event opens the edit overlay; the detail stays reachable
+    // through the overlay's own "Ver detalhes" link.
+    await page.getByText(activityTitle, { exact: true }).first().click()
+    const editModal = page.getByRole('dialog', { name: 'Editar atividade' })
+    await expect(editModal).toBeVisible()
+    await expect(editModal.getByLabel('Título *')).toBeVisible({ timeout: 30_000 })
+    await editModal.getByRole('link', { name: 'Ver detalhes' }).click()
+    await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+$/, { timeout: 30_000 })
     await expect(campaignPageChrome(page, activityTitle)).toBeVisible({
       timeout: 15_000,
     })
@@ -166,8 +209,16 @@ test.describe('Agenda — calendário operacional', () => {
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true)
 
+    // C123 — clicking the event opens the edit overlay; the detail is reached
+    // through the overlay's own link.
     await page.getByText(title, { exact: true }).click()
-    await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+(?:\?tab=overview)?$/)
+    const editModal = page.getByRole('dialog', { name: 'Editar atividade' })
+    await expect(editModal).toBeVisible()
+    await expect(editModal.getByLabel('Título *')).toBeVisible({ timeout: 30_000 })
+    await editModal.getByRole('link', { name: 'Ver detalhes' }).click()
+    await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+(?:\?tab=overview)?$/, {
+      timeout: 30_000,
+    })
     await expect(campaignPageChrome(page, title)).toBeVisible()
   })
 
@@ -181,65 +232,38 @@ test.describe('Agenda — calendário operacional', () => {
     const title = fixtures.value('Café inline na agenda')
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}`)
+    await openAgendaSlot({ campaign, page, municipalityId: municipality.id })
 
-    const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
-    // FullCalendar renders the time axis lazily and re-lays out on mount: the
-    // grid first paints empty and re-renders (replacing its gridcells) when the
-    // events land. Wait for the load to finish before interacting, or the
-    // locator's element is replaced mid-action ("Element is not attached").
-    await expect(page.getByText('Carregando compromissos…')).toHaveCount(0, { timeout: 15_000 })
-    await expect(slotLocator).toBeVisible()
-    // C104 — with the all-day lane enabled, the v7 classic theme paints the
-    // all-day day fills over the time grid; real clicks still land on the slot
-    // (FullCalendar resolves by data-time), but Playwright's actionability
-    // check refuses them, so the click is forced on the slot lane itself.
-    await slotLocator.scrollIntoViewIfNeeded()
-    await slotLocator.click({ force: true })
-
-    // The click no longer navigates: the inline overlay opens at the slot.
+    // The click no longer navigates: the central modal opens with the slot's
+    // date and the split controls (date trigger + inline hour/minute).
     await expect(page).toHaveURL(new RegExp('/campanha/agenda.*'))
-    // C97 — the native datetime-local is gone; the trigger buttons show the
-    // civil 24h label (slot = 14:00–14:30 Bahia, whatever the browser locale).
     const startTrigger = page.getByLabel('Início *')
     await expect(startTrigger).toBeVisible()
     const [startLabel, endLabel] = await Promise.all([
       startTrigger.textContent(),
-      page.getByLabel('Término').textContent(),
+      page.getByRole('button', { name: 'Término', exact: true }).textContent(),
     ])
-    expect(startLabel).toMatch(/\d{2}\/\d{2}\/\d{4} às 14:00/)
-    expect(endLabel).toMatch(/\d{2}\/\d{2}\/\d{4} às 14:30/)
+    expect(startLabel).toMatch(/\d{2}\/\d{2}\/\d{4}/)
+    expect(endLabel).toMatch(/\d{2}\/\d{2}\/\d{4}/)
     await expect(page.getByLabel('Município *')).toHaveValue(municipality.name)
+    // C123 — the time selects are INLINE, visible without opening anything.
+    await expect(page.getByLabel('Hora de Início')).toHaveValue('14')
+    await expect(page.getByLabel('Minuto de Início')).toHaveValue('00')
+    await expect(page.getByLabel('Hora de Término')).toHaveValue('14')
+    await expect(page.getByLabel('Minuto de Término')).toHaveValue('30')
 
     await page.getByLabel('Título *').fill(title)
 
-    // The acceptance center: pick a different time through the shadcn picker
-    // (calendar keeps the day; the step selects change hour/minute) and the
-    // saved event lands at the chosen hour. Both fields move together so the
-    // "Término posterior ao Início" validation stays satisfied. After
-    // selectOption the focus sits in the native select, where Escape never
-    // reaches Radix — re-clicking the selected day moves focus into the
-    // calendar, then Escape closes only the picker (never the overlay).
-    await startTrigger.click()
-    // Scope to the live picker: a just-closed popover lingers in the DOM for
-    // its 100 ms close animation, so a bare combobox query can match twice.
-    const openPicker = () => page.locator('[data-slot="popover-content"][data-state="open"]').last()
-    const hourSelect = openPicker().getByRole('combobox', { name: 'Hora' })
-    await expect(hourSelect).toBeVisible()
-    await hourSelect.selectOption('15')
-    await expect(startTrigger).toHaveText(/\d{2}\/\d{2}\/\d{4} às 15:00/)
-    await openPicker().locator('[data-selected-single="true"]').click()
-    await page.keyboard.press('Escape')
-    await page.getByLabel('Término').click()
-    const endHourSelect = openPicker().getByRole('combobox', { name: 'Hora' })
-    await expect(endHourSelect).toBeVisible()
-    await endHourSelect.selectOption('16')
+    // The acceptance center: pick a different time through the inline selects
+    // and the saved event lands at the chosen hour. Both fields move together
+    // so the "Término posterior ao Início" validation stays satisfied.
+    await page.getByLabel('Hora de Início').selectOption('15')
+    await expect(page.getByLabel('Hora de Início')).toHaveValue('15')
+    await page.getByLabel('Hora de Término').selectOption('16')
     // The minute keeps its prefill (30) — only the hour changed.
-    await expect(page.getByLabel('Término')).toHaveText(/\d{2}\/\d{2}\/\d{4} às 16:30/)
-    await openPicker().locator('[data-selected-single="true"]').click()
-    await page.keyboard.press('Escape')
+    await expect(page.getByLabel('Minuto de Término')).toHaveValue('30')
 
-    await page.getByRole('button', { name: 'Salvar' }).click()
+    await page.getByRole('button', { name: 'Salvar', exact: true }).click()
 
     await expect(page.getByText(title, { exact: true })).toBeVisible({ timeout: 15_000 })
     // The saved event landed at the chosen times (24h chip, no meridiem).
@@ -257,27 +281,24 @@ test.describe('Agenda — calendário operacional', () => {
     const title = fixtures.value('Giro de dia inteiro')
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}`)
-
-    await expect(page.getByText('Carregando compromissos…')).toHaveCount(0, { timeout: 15_000 })
-    const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
-    await expect(slotLocator).toBeVisible()
-    // C104 — with the all-day lane enabled, the v7 classic theme paints the
-    // all-day day fills over the time grid; real clicks still land on the slot
-    // (FullCalendar resolves by data-time), but Playwright's actionability
-    // check refuses them, so the click is forced on the slot lane itself.
-    await slotLocator.scrollIntoViewIfNeeded()
-    await slotLocator.click({ force: true })
+    await openAgendaSlot({ campaign, page, municipalityId: municipality.id })
 
     const startTrigger = page.getByLabel('Início *')
     await expect(startTrigger).toBeVisible()
-    await expect(startTrigger).toHaveText(/\d{2}\/\d{2}\/\d{4} às 14:00/)
+    await expect(startTrigger).toHaveText(/\d{2}\/\d{2}\/\d{4}/)
+    // C123 — the time selects are inline; the slot window shows in them.
+    await expect(page.getByLabel('Hora de Início')).toHaveValue('14')
+    await expect(page.getByLabel('Minuto de Início')).toHaveValue('00')
 
     // C104 — toggling "Todo o dia" hides the times: both triggers show only
-    // the civil date, and the picker no longer offers Hora/Minuto selects.
+    // the civil date, the inline selects disappear and the picker no longer
+    // offers Hora/Minuto selects.
     await page.getByLabel('Todo o dia').click()
     await expect(startTrigger).toHaveText(/^\d{2}\/\d{2}\/\d{4}$/)
-    await expect(page.getByLabel('Término')).toHaveText(/^\d{2}\/\d{2}\/\d{4}$/)
+    await expect(page.getByRole('button', { name: 'Término', exact: true })).toHaveText(
+      /^\d{2}\/\d{2}\/\d{4}$/,
+    )
+    await expect(page.getByLabel('Hora de Início')).toHaveCount(0)
     await startTrigger.click()
     await expect(
       page.locator('[data-slot="popover-content"][data-state="open"]').last().getByRole('combobox'),
@@ -285,14 +306,16 @@ test.describe('Agenda — calendário operacional', () => {
     await page.keyboard.press('Escape')
 
     // Multi-day: the end picker lands on a later day of the same month.
-    await page.getByLabel('Término').click()
+    await page.getByRole('button', { name: 'Término', exact: true }).click()
     const endPicker = page.locator('[data-slot="popover-content"][data-state="open"]').last()
     await endPicker.getByRole('button', { name: /17 de agosto de 2026/ }).click()
     await page.keyboard.press('Escape')
-    await expect(page.getByLabel('Término')).toHaveText(/17\/08\/2026/)
+    await expect(page.getByRole('button', { name: 'Término', exact: true })).toHaveText(
+      /17\/08\/2026/,
+    )
 
     await page.getByLabel('Título *').fill(title)
-    await page.getByRole('button', { name: 'Salvar' }).click()
+    await page.getByRole('button', { name: 'Salvar', exact: true }).click()
 
     // The band lands without a time chip: the all-day event carries no
     // "14:00 – 14:30" text (the timed events render it; allDay:true does not).
@@ -300,55 +323,71 @@ test.describe('Agenda — calendário operacional', () => {
     await expect(page.getByText(/\d{2}:\d{2} – \d{2}:\d{2}/)).toHaveCount(0)
     await expect(page).toHaveURL(new RegExp('/campanha/agenda.*'))
 
-    // The detail page preserves the all-day choice: date-only labels.
+    // C123 — clicking the event opens the edit overlay (no navigation); the
+    // detail page stays reachable through the overlay link and preserves the
+    // all-day choice: date-only labels.
     await page.getByText(title, { exact: true }).first().click()
-    await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+$/)
+    const editModal = page.getByRole('dialog', { name: 'Editar atividade' })
+    await expect(editModal).toBeVisible()
+    await expect(editModal.getByLabel('Título *')).toBeVisible({ timeout: 30_000 })
+    await editModal.getByRole('link', { name: 'Ver detalhes' }).click()
+    await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+$/, { timeout: 30_000 })
     await expect(page.getByText(/^\d{2}\/\d{2}\/\d{4}$/).first()).toBeVisible()
     await expect(page.getByText(/\d{2}\/\d{2}\/\d{4} às /)).toHaveCount(0)
   })
 
-  test('"Mais detalhes" pré-preenche o formulário completo com o rascunho', async ({
+  test('edita o compromisso pelo overlay no clique do evento, sem navegar (C123)', async ({
     campaign,
     page,
   }) => {
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.claimMunicipality()
-    const title = fixtures.value('Detalhes inline da agenda')
+    const title = fixtures.value('Compromisso editado no overlay')
+    const newLocality = fixtures.value('Nova sede do comitê')
 
     await campaign.login(page, coordinator.email!, coordinator.password)
-    await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}`)
+    await openAgendaSlot({ campaign, page, municipalityId: municipality.id })
 
-    const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
-    // FullCalendar renders the time axis lazily and re-lays out on mount: the
-    // grid first paints empty and re-renders (replacing its gridcells) when the
-    // events land. Wait for the load to finish before interacting, or the
-    // locator's element is replaced mid-action ("Element is not attached").
-    await expect(page.getByText('Carregando compromissos…')).toHaveCount(0, { timeout: 15_000 })
-    await expect(slotLocator).toBeVisible()
-    // C104 — with the all-day lane enabled, the v7 classic theme paints the
-    // all-day day fills over the time grid; real clicks still land on the slot
-    // (FullCalendar resolves by data-time), but Playwright's actionability
-    // check refuses them, so the click is forced on the slot lane itself.
-    await slotLocator.scrollIntoViewIfNeeded()
-    await slotLocator.click({ force: true })
-
-    await expect(page.getByLabel('Título *')).toBeVisible()
+    // Create first through the same overlay.
+    await expect(page.getByRole('dialog', { name: 'Nova atividade' })).toBeVisible()
     await page.getByLabel('Título *').fill(title)
-    await page.getByRole('link', { name: 'Mais detalhes' }).click()
+    await page.getByRole('button', { name: 'Salvar', exact: true }).click()
+    await expect(page.getByText(title, { exact: true })).toBeVisible({ timeout: 15_000 })
 
-    await expect(page).toHaveURL(/\/campanha\/atividades\/nova\?startAt=/)
-    await expect(page.getByLabel('Título *')).toHaveValue(title)
-    await expect(page.getByLabel('Município *')).toHaveValue(String(municipality.id))
-    const [startValue, endValue] = await Promise.all([
-      page.getByLabel('Início *').inputValue(),
-      page.getByLabel('Término').inputValue(),
-    ])
-    const [startAt, endAt] = [startValue, endValue].map(parseBahiaDateTimeInput)
-    expect(startAt).not.toBeNull()
-    expect(endAt).not.toBeNull()
-    if (!startAt || !endAt) throw new Error('O formulário não recebeu o intervalo do slot.')
-    expect(new Date(endAt).getTime() - new Date(startAt).getTime()).toBe(1_800_000)
+    // Clicking the event opens the EDIT overlay prefilled with the saved
+    // values — no navigation, no /editar page.
+    await page.getByText(title, { exact: true }).first().click()
+    const editModal = page.getByRole('dialog', { name: 'Editar atividade' })
+    await expect(editModal).toBeVisible()
+    await expect(page).toHaveURL(new RegExp('/campanha/agenda.*'))
+    await expect(editModal.getByLabel('Título *')).toHaveValue(title, { timeout: 30_000 })
+    await expect(editModal.getByLabel('Município *')).toHaveValue(municipality.name)
+    await expect(editModal.getByLabel('Hora de Início')).toHaveValue('14')
+    await expect(editModal.getByLabel('Minuto de Término')).toHaveValue('30')
+    // C123 — the edit overlay carries the id the old /editar page lost (C14
+    // regression): saving must actually persist.
+    await editModal.getByLabel('Hora de Término').selectOption('15')
+    await editModal.getByLabel('Local (opcional)').fill(newLocality)
+    await editModal.getByRole('button', { name: 'Salvar alterações' }).click()
+
+    // Save closes the overlay, never navigates; the calendar reflects the edit.
+    await expect(page.getByRole('dialog', { name: 'Editar atividade' })).toBeHidden()
+    await expect(page).toHaveURL(new RegExp('/campanha/agenda.*'))
+    await expect(page.getByText('14:00 – 15:30', { exact: true })).toBeVisible({
+      timeout: 15_000,
+    })
+    await expect(page.getByText('14:00 – 14:30', { exact: true })).toHaveCount(0)
+
+    // The detail page reflects the persisted edit.
+    await page.getByText(title, { exact: true }).first().click()
+    const detailModal = page.getByRole('dialog', { name: 'Editar atividade' })
+    await expect(detailModal.getByLabel('Título *')).toBeVisible({ timeout: 30_000 })
+    await detailModal.getByRole('link', { name: 'Ver detalhes' }).click()
+    await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+$/, { timeout: 30_000 })
+    // The location shows in the overview's own <dd> (exact); the chrome
+    // subtitle carries "município · local" as one string.
+    await expect(page.getByText(newLocality, { exact: true })).toBeVisible()
   })
 
   test('C95 — seletor de vista no header troca o modo, persiste e vence o resize', async ({
@@ -447,17 +486,7 @@ test.describe('Atividades — agenda mobile (C103)', () => {
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipality.id}`)
 
-    // FullCalendar renders the grid lazily and re-lays out on mount: wait for
-    // the load to finish before interacting (same pattern as the desktop test).
-    await expect(page.getByText('Carregando compromissos…')).toHaveCount(0, { timeout: 15_000 })
-    const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
-    await expect(slotLocator).toBeVisible()
-    // Click the time slot itself — C104's all-day lane sits above the timed
-    // grid, so the old day-cell nth() offset no longer lands on the slot.
-    // `force` bypasses the timed-row content overlay; the FullCalendar grid
-    // still receives the click and resolves the 14:00 date from the position.
-    await slotLocator.scrollIntoViewIfNeeded()
-    await slotLocator.click({ force: true })
+    await openAgendaSlot({ campaign, page, municipalityId: municipality.id })
 
     // C103 — the sheet opens from the TOP, hugging the usable viewport edge.
     const sheet = page.getByRole('dialog', { name: /Nova atividade/ })
@@ -475,11 +504,15 @@ test.describe('Atividades — agenda mobile (C103)', () => {
     // viewport — the acceptance center of C103.
     await expect(page.getByRole('button', { name: 'Salvar' })).toBeVisible()
 
-    // Date/time opens as a nested bottom sheet (no popover) with "Pronto".
-    await page.getByLabel('Início *').click()
+    // C123 — the time selects are INLINE in the sheet row (no nested sheet for
+    // the time); the calendar still opens as a nested bottom sheet with
+    // "Pronto" when the date trigger is tapped.
+    await expect(page.getByLabel('Hora de Início')).toHaveValue('14')
+    await expect(page.getByLabel('Minuto de Início')).toHaveValue('00')
+    await page.getByRole('button', { name: 'Início *', exact: true }).click()
     const picker = page.getByRole('dialog', { name: /Início —/ })
     await expect(picker).toBeVisible()
-    await expect(picker.getByRole('combobox', { name: 'Hora' })).toBeVisible()
+    await expect(picker.getByRole('button', { name: 'Pronto' })).toBeVisible()
     await picker.getByRole('button', { name: 'Pronto' }).click()
     await expect(picker).toBeHidden()
 

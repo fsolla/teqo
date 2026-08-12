@@ -1,7 +1,7 @@
 'use client'
 
 import { CalendarIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import {
   CalendarFeedDialog,
@@ -9,7 +9,7 @@ import {
   type CreateCalendarFeedResult,
 } from '@/components/campaign/activity/CalendarFeedDialog'
 import { SetCampaignHeaderAction } from '@/components/campaign/shell/CampaignPageChromeContext'
-import { useCampaignQuickActionContext } from '@/components/campaign/shell/CampaignQuickActionContext'
+import { useBridgedQuickAction } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { Button } from '@/components/ui/button'
 
 type AgendaFeedChromeProps = {
@@ -25,16 +25,10 @@ type AgendaFeedChromeProps = {
  * dialog instance.
  */
 export const AgendaFeedChrome = ({ feeds, onCreateFeed, onRevokeFeed }: AgendaFeedChromeProps) => {
-  const { setContext } = useCampaignQuickActionContext()
   const [open, setOpen] = useState(false)
   const openFeed = useCallback(() => setOpen(true), [])
 
-  useEffect(() => {
-    setContext((current) => ({ ...current, openCalendarFeed: openFeed }))
-    return () => {
-      setContext((current) => ({ ...current, openCalendarFeed: undefined }))
-    }
-  }, [setContext, openFeed])
+  useBridgedQuickAction('openCalendarFeed', openFeed)
 
   const headerButton = useMemo(
     () => (

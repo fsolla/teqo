@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { GoogleCalendarSyncActionResult } from '@/app/(campaign)/campanha/actions/googleCalendarSync'
 import { GoogleCalendarSyncDialog } from '@/components/campaign/activity/GoogleCalendarSyncDialog'
 import { SetCampaignHeaderAction } from '@/components/campaign/shell/CampaignPageChromeContext'
-import { useCampaignQuickActionContext } from '@/components/campaign/shell/CampaignQuickActionContext'
+import { useBridgedQuickAction } from '@/components/campaign/shell/CampaignQuickActionContext'
 import type { GoogleCalendarSyncStatus } from '@/utilities/googleCalendarSync'
 
 type AgendaGoogleSyncChromeProps = {
@@ -51,19 +51,13 @@ export const AgendaGoogleSyncChrome = ({
   onSyncNow,
   onSetDisabled,
 }: AgendaGoogleSyncChromeProps) => {
-  const { setContext } = useCampaignQuickActionContext()
   const [open, setOpen] = useState(false)
   const [state, setState] = useState(initialState)
   const autoRetriedRef = useRef(false)
 
   const openSync = useCallback(() => setOpen(true), [])
 
-  useEffect(() => {
-    setContext((current) => ({ ...current, openGoogleCalendarSync: openSync }))
-    return () => {
-      setContext((current) => ({ ...current, openGoogleCalendarSync: undefined }))
-    }
-  }, [setContext, openSync])
+  useBridgedQuickAction('openGoogleCalendarSync', openSync)
 
   // "Re-tenta sem ação manual": a paused mirror tries once when the agenda
   // page loads (the staff is operating — the natural retry moment).

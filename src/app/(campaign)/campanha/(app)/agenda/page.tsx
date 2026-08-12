@@ -30,7 +30,10 @@ import {
   restrictActivityAgendaState,
 } from '@/utilities/activityUi'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
+import {
+  loadMunicipalityOptions,
+  loadOrganizationOptions,
+} from '@/utilities/campaignRelationOptions'
 
 export const metadata = campaignPageMetadataFromCatalog('agenda')
 
@@ -47,12 +50,14 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
     requireCampaignPageActor({ gate: 'staff' }),
     getPayload({ config }),
   ])
-  const [municipalityOptions, knownTags, feeds, googleSyncState] = await Promise.all([
-    loadMunicipalityOptions(payload, user),
-    loadAccessibleActivityTags(payload, user),
-    listCalendarFeeds().catch(() => []),
-    getGoogleCalendarSyncState(),
-  ])
+  const [municipalityOptions, organizationOptions, knownTags, feeds, googleSyncState] =
+    await Promise.all([
+      loadMunicipalityOptions(payload, user),
+      loadOrganizationOptions(payload, user),
+      loadAccessibleActivityTags(payload, user),
+      listCalendarFeeds().catch(() => []),
+      getGoogleCalendarSyncState(),
+    ])
   const state = restrictActivityAgendaState(
     resolvedUrl.state,
     new Set(municipalityOptions.map((option) => option.id)),
@@ -109,6 +114,7 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
           <ActivityAgenda
             state={state}
             municipalityOptions={municipalityOptions}
+            organizationOptions={organizationOptions}
             knownTags={knownTags}
           />
         </CampaignListResults>

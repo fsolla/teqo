@@ -23,9 +23,14 @@ import {
   type ActivityUpdateInput,
 } from '@/lib/schemas/activity'
 import type { Activity, CampaignUser } from '@/payload-types'
-import type { ParsedTourDraftFormData } from '@/utilities/activityFormData'
-import { mapActivityInlineCreateError } from '@/utilities/activityInlineErrors'
+import {
+  parseActivityCreateFormData,
+  parseActivityUpdateFormData,
+  type ParsedTourDraftFormData,
+} from '@/utilities/activityFormData'
+import { mapActivityOverlayError } from '@/utilities/activityOverlayErrors'
 import { loadActivityAgendaEventsData } from '@/utilities/activityPageData'
+import { activityFormSelect, toActivityFormViewModel } from '@/utilities/activityViewModels'
 import { canCampaignUserRescheduleActivity, isCampaignStaff } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
@@ -434,14 +439,6 @@ const registerActivityResult = async (
   )
 }
 
-export const createActivity = async (
-  input: ActivityCreateInput,
-  demandDrafts: ActivityDemandDraft[] = [],
-) => {
-  const { payload, actor } = await getCampaignActionContext()
-  return createActivityRecord(payload, actor, input, demandDrafts)
-}
-
 export const loadActivityAgendaEvents = async (input: ActivityAgendaRequest) => {
   const { payload, actor } = await getCampaignActionContext()
   return loadActivityAgendaEventsRecord(payload, actor, input)
@@ -465,34 +462,65 @@ export const rescheduleActivity = async (
   }
 }
 
-export type ActivityInlineCreateResult =
+export type ActivityOverlayResult =
   | { ok: true }
   | { ok: false; message: string; fieldErrors?: Record<string, string[]> }
 
 /**
- * C91 — server surface for the agenda's inline quick create. Goes through the
- * same `createActivityRecord` (one transaction, `overrideAccess: false` with
- * the actor, the advisor's portfolio scope inherited from the full form) but
- * returns a result instead of throwing, so the overlay can stay open on a
- * failure — same `{ ok }` contract as `rescheduleActivity`.
+ * C123 — server surface for the agenda's single create/edit overlay. Both
+ * actions reuse the full-form FormData parsers (`parseActivity*FormData`) and
+ * the transactional `*Record` writes (`overrideAccess: false` with the actor,
+ * the advisor's portfolio scope inherited from the full form), returning a
+ * result instead of throwing so the overlay stays open on a failure — same
+ * `{ ok }` contract the old inline quick create established.
  */
-export const createActivityInline = async (
-  input: ActivityCreateInput,
-): Promise<ActivityInlineCreateResult> => {
+export const createActivityOverlay = async (formData: FormData): Promise<ActivityOverlayResult> => {
   try {
-    await createActivity(input)
+    const { demands, ...activityInput } = parseActivityCreateFormData(formData)
+    const { payload, actor } = await getCampaignActionContext()
+    await createActivityRecord(payload, actor, activityInput, demands)
     return { ok: true }
   } catch (error) {
-    return { ok: false, ...mapActivityInlineCreateError(error) }
+    return { ok: false, ...mapActivityOverlayError(error) }
   }
 }
 
-export const updateActivity = async (
-  input: ActivityUpdateInput,
-  demandDrafts: ActivityDemandDraft[] = [],
+export const updateActivityOverlay = async (formData: FormData): Promise<ActivityOverlayResult> => {
+  try {
+    const { demands, ...activityInput } = parseActivityUpdateFormData(formData)
+    const { payload, actor } = await getCampaignActionContext()
+    await updateActivityRecord(payload, actor, activityInput, demands)
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, ...mapActivityOverlayError(error) }
+  }
+}
+
+/**
+ * C123 — edit-mode data for the overlay: the full form view model of one
+ * activity, read through the same access the detail page uses (`overrideAccess:
+ * false` with the actor), so an advisor can only edit activities in their scope.
+ */
+export const loadActivityEditDraftRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  activityId: number,
 ) => {
+  const currentActor = await reloadCampaignActor(payload, actor)
+  const activity = await payload.findByID({
+    collection: 'activity',
+    id: activityId,
+    depth: 1,
+    select: activityFormSelect,
+    user: currentActor,
+    overrideAccess: false,
+  })
+  return toActivityFormViewModel(activity as Activity)
+}
+
+export const loadActivityEditDraft = async (activityId: number) => {
   const { payload, actor } = await getCampaignActionContext()
-  return updateActivityRecord(payload, actor, input, demandDrafts)
+  return loadActivityEditDraftRecord(payload, actor, activityId)
 }
 
 export const cancelActivity = async (id: number) => {

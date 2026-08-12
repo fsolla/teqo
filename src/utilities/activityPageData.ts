@@ -13,11 +13,9 @@ import {
 } from '@/utilities/activityUi'
 import {
   activityAgendaSelect,
-  activityFormSelect,
   activityListSelect,
   getActivityDetailSelect,
   toActivityAgendaEvent,
-  toActivityFormViewModel,
 } from '@/utilities/activityViewModels'
 import { createEntityNotFoundError } from '@/utilities/entityNotFound'
 
@@ -100,7 +98,7 @@ const loadAccessibleActivityBySlug = async (
   payload: Pick<Payload, 'find'>,
   user: CampaignUser,
   activitySlug: string,
-  select: ReturnType<typeof getActivityDetailSelect> | typeof activityFormSelect,
+  select: ReturnType<typeof getActivityDetailSelect>,
   depth: number,
 ): Promise<Activity> => {
   const result = await payload.find({
@@ -138,12 +136,3 @@ export const resolveAccessibleActivityContext = async (
     document,
   }
 }
-
-export const getActivityEditPageData = async (
-  payload: Payload,
-  user: CampaignUser,
-  activitySlug: string,
-) =>
-  toActivityFormViewModel(
-    await loadAccessibleActivityBySlug(payload, user, activitySlug, activityFormSelect, 1),
-  )
