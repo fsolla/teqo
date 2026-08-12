@@ -333,6 +333,61 @@ export type PersonDeleteResult = {
 }
 
 /**
+ * Deletes ONE staff account with everything that would block the row: invites
+ * the account CREATED for other leaderships, authored municipality updates,
+ * calendar feeds and import batches all carry NOT NULL FKs with `ON DELETE set
+ * null` — they must go BEFORE the account itself. Per-id so
+ * `CampaignUser.beforeDelete` (passkeys + notifications) runs. The advisor
+ * join tables (`municipality_rels`, `activity_rels`, `leadership_rels`,
+ * `state_deputy_rels`) cascade on `campaign_user_id` on their own.
+ *
+ * Shared by the person cascade and the C128 "fim de assessoria" (last
+ * Assessora municipality removed) — the account lifecycle must never diverge
+ * between the two surfaces.
+ */
+export const deleteCampaignUserAccount = async (
+  payload: PersonDeletePayload,
+  req: PayloadTransactionRequest,
+  accountID: number,
+): Promise<void> => {
+  await payload.delete({
+    collection: 'campaignInvite',
+    where: { createdBy: { equals: accountID } },
+    depth: 0,
+    overrideAccess: true,
+    req,
+  })
+  await payload.delete({
+    collection: 'municipalityUpdate',
+    where: { author: { equals: accountID } },
+    depth: 0,
+    overrideAccess: true,
+    req,
+  })
+  await payload.delete({
+    collection: 'calendarFeed',
+    where: { createdBy: { equals: accountID } },
+    depth: 0,
+    overrideAccess: true,
+    req,
+  })
+  await payload.delete({
+    collection: 'supporterImportBatch',
+    where: { actor: { equals: accountID } },
+    depth: 0,
+    overrideAccess: true,
+    req,
+  })
+  await payload.delete({
+    collection: 'campaignUser',
+    id: accountID,
+    depth: 0,
+    overrideAccess: true,
+    req,
+  })
+}
+
+/**
  * The destructive cascade, one transaction, one advisory lock per person.
  * Re-enumerates inside the transaction (the manifest is a preview, never the
  * authority) and aborts on a coordinator/candidate account.
@@ -393,37 +448,14 @@ export const deletePersonRecord = async (
       })
     }
     if (accountIDs.length > 0) {
-      // Invites the deleted accounts CREATED for other leaderships, authored
-      // municipality updates and calendar feeds all carry NOT NULL FKs with
-      // `ON DELETE set null` — they must go before the accounts themselves.
-      await payload.delete({
-        collection: 'campaignInvite',
-        where: { createdBy: { in: accountIDs } },
-        depth: 0,
-        overrideAccess: true,
-        req,
-      })
-      await payload.delete({
-        collection: 'municipalityUpdate',
-        where: { author: { in: accountIDs } },
-        depth: 0,
-        overrideAccess: true,
-        req,
-      })
-      await payload.delete({
-        collection: 'calendarFeed',
-        where: { createdBy: { in: accountIDs } },
-        depth: 0,
-        overrideAccess: true,
-        req,
-      })
-      await payload.delete({
-        collection: 'supporterImportBatch',
-        where: { actor: { in: accountIDs } },
-        depth: 0,
-        overrideAccess: true,
-        req,
-      })
+      // Per-id so `CampaignUser.beforeDelete` (passkeys + notifications) runs
+      // for every account — bulk `where` deletes would skip the hooks. The
+      // helper also removes the NOT NULL authored rows (invites created by the
+      // account, municipality updates, calendar feeds, import batches) before
+      // the account row itself.
+      for (const accountID of accountIDs) {
+        await deleteCampaignUserAccount(payload, req, accountID)
+      }
     }
     if (supporterCount > 0) {
       await payload.delete({
@@ -462,18 +494,6 @@ export const deletePersonRecord = async (
           req,
         })
       }
-    }
-
-    // Per-id so `CampaignUser.beforeDelete` (passkeys + notifications) runs for
-    // every account — bulk `where` deletes would skip the hooks.
-    for (const accountID of accountIDs) {
-      await payload.delete({
-        collection: 'campaignUser',
-        id: accountID,
-        depth: 0,
-        overrideAccess: true,
-        req,
-      })
     }
 
     let contactDeleted = false

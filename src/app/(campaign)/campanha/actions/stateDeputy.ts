@@ -9,7 +9,6 @@ import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 import { contactFieldUpdateSchema, type ContactFieldUpdateInput } from '@/lib/schemas/contact'
 import {
   STATE_DEPUTY_ADVISORS_UNRESTRICTED_MESSAGE,
-  STATE_DEPUTY_CONFLICT_MESSAGE,
   STATE_DEPUTY_INVALID_CONTACT_MESSAGE,
   STATE_DEPUTY_STAFF_MESSAGE,
   municipalityStateDeputyCreateSchema,
@@ -34,22 +33,16 @@ import {
   reloadStaffActor,
   reloadUnrestrictedActor,
 } from '@/utilities/campaignActionContext'
-import {
-  mapStaffEntityConflict,
-  runStaffEntityMutation,
-  type StaffEntityPolicy,
-} from '@/utilities/campaignEntityActions'
+import { mapStaffEntityConflict, runStaffEntityMutation } from '@/utilities/campaignEntityActions'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
 import { revalidateMunicipalityListPaths } from '@/utilities/municipality/municipalityRevalidation'
-import { withPayloadTransaction } from '@/utilities/payloadTransaction'
+import {
+  withPayloadTransaction,
+  type PayloadTransactionRequest,
+} from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 import { assertStateDeputyNameAvailable } from '@/utilities/stateDeputy/nameInvariant'
-
-const stateDeputyPolicy: StaffEntityPolicy = {
-  staffMessage: STATE_DEPUTY_STAFF_MESSAGE,
-  conflictPattern: /state_deputy_(contact|slug)|duplicate key/i,
-  conflictMessage: STATE_DEPUTY_CONFLICT_MESSAGE,
-}
+import { stateDeputyPolicy } from '@/utilities/stateDeputyConflict'
 
 type StateDeputyCreationData = {
   name: string
@@ -375,6 +368,76 @@ export const setStateDeputyAdvisorMembership = async (input: StateDeputyAdvisorM
   return stateDeputyID
 }
 
+/**
+ * C128 — the B37 municipalities batch core, transaction-agnostic: toggles a
+ * dobradinha on `municipality.stateDeputies` for a set of municipalities and
+ * returns the changed slugs. Shared by `/campanha/dobradinhas` (B37) and the
+ * person lifecycle (`setPersonStateDeputyMunicipalitiesRecord`) so the two
+ * surfaces can never disagree on the batch contract. The caller must hold the
+ * fresh staff actor; the per-municipality advisory locks live here.
+ */
+export const applyStateDeputyMunicipalitiesBatch = async (
+  payload: Payload,
+  currentActor: CampaignUser,
+  req: PayloadTransactionRequest,
+  stateDeputyId: number,
+  municipalityIds: readonly number[],
+  assigned: boolean,
+): Promise<{ slugs: string[] }> => {
+  // Already deduped by the schema's `.transform`; sorted only so a batch applies
+  // and reports in a stable order — `acquireTextAdvisoryLocks` sorts its own keys,
+  // so the deadlock-avoidance ordering does not depend on this line.
+  const uniqueMunicipalityIds = [...municipalityIds].sort((left, right) => left - right)
+
+  await acquireTextAdvisoryLocks(
+    payload,
+    req,
+    uniqueMunicipalityIds.map((id) => `municipality-state-deputies:${id}`),
+  )
+
+  // Every município actually changed, not just the last one — same bug
+  // class the B34 twin fixed: a território chip can touch up to 435
+  // municípios in one call, and revalidating only the last would leave
+  // the rest of the detail pages stale.
+  const changedSlugs: string[] = []
+
+  for (const municipalityId of uniqueMunicipalityIds) {
+    // Row + field access verify the município is in the actor's scope
+    // (`canUpdateMunicipality` for advisors, `canManageCampaignStaffField`
+    // for the field) — an out-of-scope município throws here.
+    const municipality = await payload.findByID({
+      collection: 'municipality',
+      id: municipalityId,
+      depth: 0,
+      select: { stateDeputies: true, slug: true },
+      user: currentActor,
+      overrideAccess: false,
+      req,
+    })
+
+    const currentStateDeputyIDs = uniqueRelationshipIds(municipality.stateDeputies)
+    const nextStateDeputyIDs = nextStateDeputyIdsAfterMunicipalityMembership(
+      currentStateDeputyIDs,
+      stateDeputyId,
+      assigned,
+    )
+    if (nextStateDeputyIDs === null) continue
+
+    await payload.update({
+      collection: 'municipality',
+      id: municipalityId,
+      data: { stateDeputies: nextStateDeputyIDs },
+      depth: 0,
+      user: currentActor,
+      overrideAccess: false,
+      req,
+    })
+    if (typeof municipality.slug === 'string') changedSlugs.push(municipality.slug)
+  }
+
+  return { slugs: changedSlugs }
+}
+
 export const setStateDeputyMunicipalitiesBatchRecord = async (
   payload: Payload,
   actor: CampaignUser,
@@ -382,65 +445,24 @@ export const setStateDeputyMunicipalitiesBatchRecord = async (
 ) => {
   const { stateDeputyId, municipalityIds, assigned } =
     stateDeputyMunicipalitiesBatchSchema.parse(input)
-  // Already deduped by the schema's `.transform`; sorted only so a batch applies
-  // and reports in a stable order — `acquireTextAdvisoryLocks` sorts its own keys,
-  // so the deadlock-avoidance ordering does not depend on this line.
-  const uniqueMunicipalityIds = [...municipalityIds].sort((left, right) => left - right)
 
   return withPayloadTransaction(
     payload,
     async ({ req }) => {
       const currentActor = await reloadStaffActor(payload, actor, STATE_DEPUTY_STAFF_MESSAGE, req)
 
-      await acquireTextAdvisoryLocks(
+      const result = await applyStateDeputyMunicipalitiesBatch(
         payload,
+        currentActor,
         req,
-        uniqueMunicipalityIds.map((id) => `municipality-state-deputies:${id}`),
+        stateDeputyId,
+        municipalityIds,
+        assigned,
       )
 
-      // Every município actually changed, not just the last one — same bug
-      // class the B34 twin fixed: a território chip can touch up to 435
-      // municípios in one call, and revalidating only the last would leave
-      // the rest of the detail pages stale.
-      const changedSlugs: string[] = []
-
-      for (const municipalityId of uniqueMunicipalityIds) {
-        // Row + field access verify the município is in the actor's scope
-        // (`canUpdateMunicipality` for advisors, `canManageCampaignStaffField`
-        // for the field) — an out-of-scope município throws here.
-        const municipality = await payload.findByID({
-          collection: 'municipality',
-          id: municipalityId,
-          depth: 0,
-          select: { stateDeputies: true, slug: true },
-          user: currentActor,
-          overrideAccess: false,
-          req,
-        })
-
-        const currentStateDeputyIDs = uniqueRelationshipIds(municipality.stateDeputies)
-        const nextStateDeputyIDs = nextStateDeputyIdsAfterMunicipalityMembership(
-          currentStateDeputyIDs,
-          stateDeputyId,
-          assigned,
-        )
-        if (nextStateDeputyIDs === null) continue
-
-        await payload.update({
-          collection: 'municipality',
-          id: municipalityId,
-          data: { stateDeputies: nextStateDeputyIDs },
-          depth: 0,
-          user: currentActor,
-          overrideAccess: false,
-          req,
-        })
-        if (typeof municipality.slug === 'string') changedSlugs.push(municipality.slug)
-      }
-
       return {
-        stateDeputyID: changedSlugs.length > 0 ? stateDeputyId : undefined,
-        slugs: changedSlugs,
+        stateDeputyID: result.slugs.length > 0 ? stateDeputyId : undefined,
+        slugs: result.slugs,
       }
     },
     { beginFailureMessage: 'Não foi possível atualizar os municípios da dobradinha.' },
