@@ -48,8 +48,13 @@ export type CampaignListOmniboxProps = {
  * sticky clamps 16px below the header and cards roll visibly through the gap.
  */
 export const campaignListOmniboxFormClassName =
-  'campaign-list-omnibox-form sticky top-0 z-20 -mx-4 border-b border-border bg-background px-4 py-1 ' +
-  'md:static md:z-auto md:mx-0 md:border-b-0 md:bg-transparent md:px-0 md:py-0'
+  'campaign-list-omnibox-form sticky top-0 z-20 -mx-4 border-b border-border bg-background px-4 pt-1 pb-0 ' +
+  // B200 — below `md` the form is a direct child of the shell column
+  // (`gap-8`), which is what left a 32px vão between the bar and the first
+  // card; the negative bottom margin cancels that one gap so the first card
+  // starts glued to the bar, while every other shell section keeps its rhythm.
+  'max-md:-mb-8 ' +
+  'md:static md:z-auto md:mx-0 md:border-b-0 md:bg-transparent md:px-0 md:py-0 md:mb-0'
 
 /**
  * Shared list omnibox chassis (B127): chips inside the field, caret to the
@@ -207,12 +212,12 @@ export const CampaignListOmnibox = ({
           <PopoverAnchor asChild>
             <div
               className={cn(
-                // B184/B196: below `md` the field is a borderless dense bar
-                // (min-h-8, no inner vertical padding → bar ≈ 40px total)
+                // B184/B196/B200: below `md` the field is a borderless dense
+                // bar (min-h-10, no inner vertical padding → bar ≈ 45px total)
                 // with NO focus ring — the caret is the focus indicator; the
                 // `md:` variants restore the framed desktop field with its
                 // ring/colored border as the focus affordance.
-                'flex min-h-8 w-full flex-wrap items-center gap-1.5 rounded-lg border-0 bg-transparent px-2 py-0 shadow-none',
+                'flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-lg border-0 bg-transparent px-2 py-0 shadow-none',
                 'md:min-h-11 md:border md:border-input md:py-1.5 md:shadow-xs',
                 'md:focus-within:border-ring md:focus-within:ring-3 md:focus-within:ring-ring/50',
               )}
@@ -276,7 +281,7 @@ export const CampaignListOmnibox = ({
                 // mousedown always fires, so this is the reliable reopen path.
                 onMouseDown={() => setOpen(true)}
                 onKeyDown={onKeyDown}
-                className="min-h-8 min-w-[8rem] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                className="min-h-10 min-w-[8rem] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
               {onClearAll ? (
                 // B184: the mobile replacement for the text "Limpar" — a
@@ -289,9 +294,10 @@ export const CampaignListOmnibox = ({
                   type="button"
                   aria-label="Limpar"
                   className={cn(
-                    // B196 — size-8 keeps the bar at ~40px total; the field
-                    // itself is the real touch target (the X lives inside it).
-                    'inline-flex size-8 shrink-0 items-center justify-center rounded-full',
+                    // B196/B200 — size-9 with the taller field keeps the bar
+                    // at ~45px total; the field itself is the real touch
+                    // target (the X lives inside it).
+                    'inline-flex size-9 shrink-0 items-center justify-center rounded-full',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     'md:hidden',
                     !(hasChips || query.length > 0) && 'invisible pointer-events-none',
@@ -379,7 +385,7 @@ export const CampaignListOmnibox = ({
       {/* C100 — the trailing cluster is desktop-only: below `md` the page
           registers its own header controls, so the cluster never joins the
           mobile sticky bar (an empty container would also inflate its height
-          — B196 keeps the bar ≈ 40px). */}
+          — B200 keeps the bar ≈ 45px). */}
       <div className="hidden shrink-0 flex-wrap items-center gap-2 md:flex md:pt-7">
         {trailing}
         {onClearAll && hasChips ? (

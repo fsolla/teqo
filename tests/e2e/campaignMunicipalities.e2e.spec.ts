@@ -1200,7 +1200,7 @@ test.describe('Municípios — barra colada e card denso (B196)', () => {
       .filter({ has: page.getByRole('link', { name, exact: true }) })
       .first()
 
-  test('bar is glued to the header, ~40px tall, no focus ring, nothing passes above on scroll', async ({
+  test('bar is glued to the header, ~45px tall, no focus ring, nothing passes above on scroll', async ({
     campaign,
     page,
   }) => {
@@ -1219,12 +1219,27 @@ test.describe('Municípios — barra colada e card denso (B196)', () => {
     const form = omniboxInput.locator('xpath=ancestor::form[1]')
     const field = omniboxInput.locator('..')
     await expect(form).toBeVisible()
+    // The bar's own `pt-1` applying proves the stylesheet reached the page —
+    // before that the form renders unstyled and measures ~79px (visible label).
+    await expect(form).toHaveCSS('padding-top', '4px')
 
     // Glued: no gap between the app top bar and the filter bar.
-    await expect.poll(async () => (await form.boundingBox())!.y).toBe(await headerBottom(topBar))
+    await expect
+      .poll(async () => (await form.boundingBox())!.y, { timeout: 30_000 })
+      .toBe(await headerBottom(topBar))
 
-    // Dense: the whole bar stays around 40px (32px field + py + border).
-    await expect.poll(async () => (await form.boundingBox())!.height).toBeLessThanOrEqual(44)
+    // Taller (B200): the whole bar sits between 44 and 48px (40px field +
+    // pt-1 + border) — up from the B196 ~40px, without the B184 field height.
+    // One poll asserts the whole band so both bounds read the same frame.
+    await expect
+      .poll(
+        async () => {
+          const height = (await form.boundingBox())!.height
+          return height >= 44 && height <= 48
+        },
+        { timeout: 30_000 },
+      )
+      .toBe(true)
 
     // No focus ring: the field gains no shadow/border color on focus.
     const shadowBefore = await field.evaluate((el) => getComputedStyle(el).boxShadow)
@@ -1233,11 +1248,32 @@ test.describe('Municípios — barra colada e card denso (B196)', () => {
       .poll(() => field.evaluate((el) => getComputedStyle(el).boxShadow))
       .toBe(shadowBefore)
 
+    // First card glued to the bar: no vão between the bar's bottom edge and
+    // the first card's top edge (B200 — the form's `-mb-8` cancels the shell
+    // column's gap-8; `pb-0` only removes the 4px padding remnant). Bounded
+    // on both sides so the card can't tuck UNDER the opaque bar either.
+    const firstCard = page.locator('[data-view="mobile-cards"] article').first()
+    await expect(firstCard).toBeVisible()
+    const formBottom = (await form.boundingBox())!.y + (await form.boundingBox())!.height
+    await expect
+      .poll(
+        async () => {
+          const y = (await firstCard.boundingBox())!.y
+          return Math.abs(y - formBottom) <= 1
+        },
+        { timeout: 30_000 },
+      )
+      .toBe(true)
+
     // Scroll: the bar stays glued to the header — cards roll UNDER the
     // opaque bar, never above it.
     await contentScroll(page).evaluate((el) => el.scrollTo(0, el.scrollHeight))
-    await expect.poll(async () => (await form.boundingBox())!.y).toBe(await headerBottom(topBar))
-    await expect.poll(async () => (await form.boundingBox())!.height).toBeLessThanOrEqual(44)
+    await expect
+      .poll(async () => (await form.boundingBox())!.y, { timeout: 30_000 })
+      .toBe(await headerBottom(topBar))
+    await expect
+      .poll(async () => (await form.boundingBox())!.height, { timeout: 30_000 })
+      .toBeLessThanOrEqual(48)
   })
 
   test('name is 18px with the territory glued; Classe/Tendência/Nível chips are label-above blocks', async ({
@@ -1254,24 +1290,37 @@ test.describe('Municípios — barra colada e card denso (B196)', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
+    // C106 — dynamic pages stream a transient hidden `#S:*` copy of the shell;
+    // geometry assertions must wait it out or they measure the stream copy.
+    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
     const card = cardFor(page, municipality.name)
     await expect(card).toBeVisible()
 
     // Smaller name (18px) with the territory glued right below it.
     const heading = card.getByRole('heading', { level: 3 })
     await expect(heading).toHaveCSS('font-size', '18px')
-    const headingBox = (await heading.boundingBox())!
-    const territory = card.locator('h3 + p')
-    const territoryBox = (await territory.boundingBox())!
-    expect(territoryBox.y - headingBox.y - headingBox.height).toBeLessThanOrEqual(6)
+    const headerGap = await card.evaluate((el) => {
+      const headingBox = el.querySelector('h3')!.getBoundingClientRect()
+      const territoryBox = el.querySelector('h3 + p')!.getBoundingClientRect()
+      return territoryBox.y - headingBox.y - headingBox.height
+    })
+    expect(headerGap).toBeLessThanOrEqual(6)
 
     // Every chip is a label-above block: the value renders below the label
     // (gate B). "Classe" debuts as a label; Tendência/Nível keep theirs.
+    // All three pairs are read in ONE layout snapshot (the dev server may
+    // reload a page mid-test under parallel workers, which would otherwise
+    // straddle two layouts).
     for (const label of ['Classe', 'Tendência', 'Nível']) {
       const chipLabel = card.getByText(label, { exact: true })
       await expect(chipLabel).toBeVisible()
-      const labelY = (await chipLabel.boundingBox())!.y
-      const valueY = (await chipLabel.locator('xpath=following-sibling::*[1]').boundingBox())!.y
+      const { labelY, valueY } = await chipLabel.evaluate((el) => {
+        const sibling = el.nextElementSibling
+        return {
+          labelY: el.getBoundingClientRect().y,
+          valueY: sibling?.getBoundingClientRect().y ?? 0,
+        }
+      })
       expect(valueY).toBeGreaterThan(labelY)
     }
   })
@@ -1318,29 +1367,88 @@ test.describe('Municípios — barra colada e card denso (B196)', () => {
     // Five advisors: all on ONE row, each covering the start of the next —
     // the overlap is proportional to the count (no wrap, no cap, no "…").
     await page.goto(`${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(crowded.name)}`)
+    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
     const crowdedCard = cardFor(page, crowded.name)
     await expect(crowdedCard).toBeVisible()
+    // The completion footer proves the filtered list finished streaming — the
+    // `S:` settle alone can pass while the list still re-renders (measured:
+    // a mid-stream card can report a transient narrow layout).
+    await expect(page.getByText('1 município encontrado')).toBeVisible()
     const crowdedRow = crowdedCard.locator('[data-view="relation-avatars"]').first()
     await expect(crowdedRow.locator('.size-7')).toHaveCount(5)
-    const crowdedBoxes = await crowdedRow
-      .locator('.size-7')
-      .evaluateAll((avatars) => avatars.map((a) => a.getBoundingClientRect()))
-    expect(new Set(crowdedBoxes.map((box) => Math.round(box.y))).size).toBe(1)
-    for (let i = 1; i < crowdedBoxes.length; i++) {
-      expect(crowdedBoxes[i]!.x).toBeLessThan(crowdedBoxes[i - 1]!.x + crowdedBoxes[i - 1]!.width)
-    }
+    // ONE layout snapshot per read, polled until the settled layout satisfies
+    // the whole contract: a mid-stream card can transiently report a narrow
+    // cell layout (measured) that no single geometry assertion should pin.
+    await expect
+      .poll(
+        async () => {
+          const geometry = await crowdedRow.evaluate((row) => {
+            // Coordinator path: row → flex-col group → trigger button → flex-1
+            // cell (the advisor fallback renders the stack without the button).
+            const groupColumn = row.parentElement!
+            const cell = groupColumn.parentElement!.parentElement!
+            const nextGroup = cell.nextElementSibling
+            return {
+              labelX: groupColumn.querySelector('span')!.getBoundingClientRect().x,
+              nextGroupX: nextGroup
+                ? nextGroup.getBoundingClientRect().x
+                : Number.POSITIVE_INFINITY,
+              boxes: [...row.querySelectorAll('.size-7')].map((avatar) => {
+                const box = avatar.getBoundingClientRect()
+                return { x: box.x, width: box.width, y: box.y }
+              }),
+            }
+          })
+          // Same single row.
+          if (new Set(geometry.boxes.map((box) => Math.round(box.y))).size !== 1) return false
+          // The pile reads as a stack: each covers the next, and each avatar
+          // keeps a visible sliver (8px ≤ distance ≤ 20px = overlap 8..20).
+          for (let i = 1; i < geometry.boxes.length; i++) {
+            const distance = geometry.boxes[i]!.x - geometry.boxes[i - 1]!.x
+            if (distance < 8 || distance > 20) return false
+          }
+          // B200 — anchored LEFT: the first avatar starts at the label's axis.
+          if (Math.abs(geometry.boxes[0]!.x - geometry.labelX) > 2) return false
+          // Nothing clipped, nothing invades the neighbour: the last avatar
+          // ends before the next group's box (the old flex-1 row clipped it).
+          const last = geometry.boxes[geometry.boxes.length - 1]!
+          return last.x + last.width <= geometry.nextGroupX + 0.5
+        },
+        { timeout: 30_000 },
+      )
+      .toBe(true)
 
-    // Two advisors: same single row, no overlap (few entries keep apart).
+    // Two advisors: same single row, a slight deliberate overlap — a pile at
+    // the left, not one avatar in each corner (B200).
     await page.goto(`${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(sparse.name)}`)
+    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
     const sparseCard = cardFor(page, sparse.name)
     await expect(sparseCard).toBeVisible()
+    await expect(page.getByText('1 município encontrado')).toBeVisible()
     const sparseRow = sparseCard.locator('[data-view="relation-avatars"]').first()
     await expect(sparseRow.locator('.size-7')).toHaveCount(2)
-    const sparseBoxes = await sparseRow
-      .locator('.size-7')
-      .evaluateAll((avatars) => avatars.map((a) => a.getBoundingClientRect()))
-    expect(new Set(sparseBoxes.map((box) => Math.round(box.y))).size).toBe(1)
-    expect(sparseBoxes[1]!.x).toBeGreaterThanOrEqual(sparseBoxes[0]!.x + sparseBoxes[0]!.width)
+    await expect
+      .poll(
+        async () => {
+          const geometry = await sparseRow.evaluate((row) => {
+            const groupColumn = row.parentElement!
+            return {
+              labelX: groupColumn.querySelector('span')!.getBoundingClientRect().x,
+              boxes: [...row.querySelectorAll('.size-7')].map((avatar) => {
+                const box = avatar.getBoundingClientRect()
+                return { x: box.x, width: box.width, y: box.y }
+              }),
+            }
+          })
+          return (
+            new Set(geometry.boxes.map((box) => Math.round(box.y))).size === 1 &&
+            geometry.boxes[1]!.x < geometry.boxes[0]!.x + geometry.boxes[0]!.width &&
+            Math.abs(geometry.boxes[0]!.x - geometry.labelX) <= 2
+          )
+        },
+        { timeout: 30_000 },
+      )
+      .toBe(true)
   })
 
   test('chassis elsewhere: the actions row keeps its breathing room and the bar glues on scroll (atividades)', async ({
@@ -1387,6 +1495,171 @@ test.describe('Municípios — barra colada e card denso (B196)', () => {
       .toBeGreaterThan(0)
     await scrollport.evaluate((el) => el.scrollTo(0, el.scrollHeight))
     await expect.poll(async () => (await form.boundingBox())!.y).toBe(headerBottomValue)
+  })
+})
+
+test.describe('Municípios — encaixes dos cards (B200)', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  const cardFor = (page: Page, name: string) =>
+    page
+      .locator('[data-view="mobile-cards"] article')
+      .filter({ has: page.getByRole('link', { name, exact: true }) })
+      .first()
+
+  test('bar taller (44–48px), first card glued, labels and values on the same left axis', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora B200 Cards'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(
+      `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
+    )
+    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    // The bar's own `pt-1` applying proves the stylesheet reached the page —
+    // before that the form renders unstyled and measures ~79px (visible label).
+    const form = page
+      .getByRole('combobox', { name: 'Filtrar municípios' })
+      .locator('xpath=ancestor::form[1]')
+    await expect(form).toHaveCSS('padding-top', '4px')
+
+    // The filter bar is visibly taller than the B196 ~40px bar.
+    await expect
+      .poll(async () => (await form.boundingBox())!.height, { timeout: 30_000 })
+      .toBeGreaterThanOrEqual(44)
+    await expect
+      .poll(async () => (await form.boundingBox())!.height, { timeout: 30_000 })
+      .toBeLessThanOrEqual(48)
+
+    // First card starts glued to the bar: no vão between them.
+    const card = cardFor(page, municipality.name)
+    await expect(card).toBeVisible()
+    const formBox = (await form.boundingBox())!
+    await expect
+      .poll(async () => (await card.boundingBox())!.y, { timeout: 30_000 })
+      .toBeLessThanOrEqual(formBox.y + formBox.height + 1)
+
+    // Territory glued to the name: B200 tightens the B196 ≤6px to ≤2px.
+    const headerGap = await card.evaluate((el) => {
+      const headingBox = el.querySelector('h3')!.getBoundingClientRect()
+      const territoryBox = el.querySelector('h3 + p')!.getBoundingClientRect()
+      return territoryBox.y - headingBox.y - headingBox.height
+    })
+    expect(headerGap).toBeLessThanOrEqual(2)
+
+    // Every chip label and its value start on the same left axis (single
+    // layout snapshot per pair — see the B196 note on dev reloads).
+    for (const label of ['Classe', 'Tendência', 'Nível']) {
+      const chipLabel = card.getByText(label, { exact: true })
+      const { labelX, valueX } = await chipLabel.evaluate((el) => {
+        const sibling = el.nextElementSibling
+        return {
+          labelX: el.getBoundingClientRect().x,
+          valueX: sibling?.getBoundingClientRect().x ?? 0,
+        }
+      })
+      expect(Math.abs(valueX - labelX)).toBeLessThanOrEqual(1)
+    }
+
+    // Relation groups: label and value (avatar pile or empty-state badge)
+    // share the same left axis.
+    for (const label of ['Assessores', 'Lideranças', 'Dobradinhas']) {
+      const groupLabel = card.getByText(label, { exact: true })
+      await expect(groupLabel).toBeVisible()
+      const { labelX, valueX } = await groupLabel.evaluate((el) => {
+        const sibling = el.nextElementSibling
+        return {
+          labelX: el.getBoundingClientRect().x,
+          valueX: sibling?.getBoundingClientRect().x ?? 0,
+        }
+      })
+      expect(Math.abs(valueX - labelX)).toBeLessThanOrEqual(2)
+    }
+  })
+
+  test('avatars: 5–6 all visible in the pile, nothing clipped, nothing invades the neighbour', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora B200 Pilha'),
+    })
+    const sixAdvisors = await Promise.all(
+      Array.from({ length: 6 }, (_, i) =>
+        fixtures.createCampaignUser('advisor', {
+          name: fixtures.value(`Assessora B200 seis ${i + 1}`),
+        }),
+      ),
+    )
+    const crowded = await fixtures.claimMunicipality()
+    await fixtures.payload.update({
+      collection: 'municipality',
+      id: crowded.id,
+      data: { advisors: sixAdvisors.map((advisor) => advisor.id) },
+      depth: 0,
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(crowded.name)}`)
+    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    const card = cardFor(page, crowded.name)
+    await expect(card).toBeVisible()
+    // The completion footer proves the filtered list finished streaming — the
+    // `S:` settle alone can pass while the list still re-renders (measured:
+    // a mid-stream card can report a transient narrow layout).
+    await expect(page.getByText('1 município encontrado')).toBeVisible()
+    const row = card.locator('[data-view="relation-avatars"]').first()
+    const avatars = row.locator('.size-7')
+    await expect(avatars).toHaveCount(6)
+
+    // ONE layout snapshot per read, polled until the settled layout satisfies
+    // the whole contract: a mid-stream card can transiently report a narrow
+    // cell layout (measured) that no single geometry assertion should pin.
+    await expect
+      .poll(
+        async () => {
+          const geometry = await row.evaluate((el) => {
+            // Coordinator path: row → flex-col group → trigger button → flex-1
+            // cell (the advisor fallback renders the stack without the button).
+            const groupColumn = el.parentElement!
+            const cell = groupColumn.parentElement!.parentElement!
+            const nextGroup = cell.nextElementSibling
+            return {
+              labelX: groupColumn.querySelector('span')!.getBoundingClientRect().x,
+              nextGroupX: nextGroup
+                ? nextGroup.getBoundingClientRect().x
+                : Number.POSITIVE_INFINITY,
+              boxes: [...el.querySelectorAll('.size-7')].map((avatar) => {
+                const box = avatar.getBoundingClientRect()
+                return { x: box.x, width: box.width, y: box.y }
+              }),
+            }
+          })
+          // Same single row.
+          if (new Set(geometry.boxes.map((box) => Math.round(box.y))).size !== 1) return false
+          // The pile reads as a stack: each covers the next, and each avatar
+          // keeps a visible sliver (8px ≤ distance ≤ 20px = overlap 8..20).
+          for (let i = 1; i < geometry.boxes.length; i++) {
+            const distance = geometry.boxes[i]!.x - geometry.boxes[i - 1]!.x
+            if (distance < 8 || distance > 20) return false
+          }
+          // Anchored LEFT: the first avatar starts at the label's axis.
+          if (Math.abs(geometry.boxes[0]!.x - geometry.labelX) > 2) return false
+          // Nothing clipped, nothing invades the neighbour: the last avatar
+          // ends before the next group's box.
+          const last = geometry.boxes[geometry.boxes.length - 1]!
+          return last.x + last.width <= geometry.nextGroupX + 0.5
+        },
+        { timeout: 30_000 },
+      )
+      .toBe(true)
   })
 })
 
