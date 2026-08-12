@@ -368,10 +368,12 @@ test.describe('Pessoas — lista unificada', () => {
     await page.goto(`${campaign.baseURL}/campanha/pessoas?q=${encodeURIComponent(contactName)}`)
     await expect(campaignPageChrome(page, 'Pessoas')).toBeVisible()
 
-    // A leadership-only row has a single editable capacity cell, so the Lidera
-    // search input is the row's only combobox.
+    // C128 made every empty capacity cell editable, so a leadership-only row
+    // now shows one combobox per capacity — scope to the Lidera cell (4th td;
+    // the hidden-by-default E-mail column renders no td, B197).
     const row = page.getByRole('row', { name: new RegExp(contactName) })
-    const search = row.getByRole('combobox', {
+    const lideraCell = row.locator('td').nth(3)
+    const search = lideraCell.getByRole('combobox', {
       name: 'Buscar município, território de identidade ou zona eleitoral',
     })
     await search.fill('salvador')
