@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — Pessoas mobile: feed e cards edge-to-edge com edição por bottom drawer e faixa de status</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-5xl p-8">
+      <p class="max-w-xl text-sm text-zinc-400">
+        Mesa (staff) no celular: o feed de pessoas em /campanha/pessoas é edge-to-edge, o primeiro
+        card cola no omnibox (chips dentro do campo), cada linha/campo do card abre um bottom drawer
+        para editar (tap em chip/label/telefone/nome), tocar no vazio do card abre a ficha, e uma
+        faixa vertical à direita sinaliza o status de liderança. Chips com fundo branco e borda =
+        pessoa; chips com fundo cinza = município; a linha Assessora pode ter os dois. Cenas: feed
+        com os estados de status, drawer de linha (municípios), drawer de texto (nome).
+      </p>
+
+      <section data-shot="feed" class="mt-6">
+        <p class="mb-2 text-xs text-zinc-500">Cena mobile — feed (390px)</p>
+        <div class="w-[390px] border border-zinc-700 bg-zinc-100 text-zinc-900">
+          <div class="sticky top-0 z-10 border-b border-zinc-300 bg-zinc-100 px-3 pt-3 pb-1">
+            <div class="flex min-h-9 flex-wrap items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2 py-1">
+              <span class="rounded-full border border-zinc-400 bg-white px-2 py-0.5 text-xs text-zinc-600">
+                Capacidade: Liderança ✕
+              </span>
+              <span class="rounded-full border border-zinc-400 bg-white px-2 py-0.5 text-xs text-zinc-600">
+                Apoio: Engajado ✕
+              </span>
+              <span class="text-sm text-zinc-400">Buscar pessoa…</span>
+            </div>
+          </div>
+
+          <ul class="flex flex-col">
+            <!-- Engajado: faixa vermelha sólida -->
+            <li class="relative border-b border-zinc-300 bg-white px-4 py-3">
+              <span class="absolute top-0 right-0 h-full w-1.5 bg-red-600" aria-hidden="true"></span>
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="truncate text-xl font-semibold leading-tight">Nome da Pessoa</p>
+                  <p class="truncate text-sm text-zinc-500">Cidade Base</p>
+                </div>
+                <div class="flex shrink-0 flex-col items-end gap-1">
+                  <span class="flex gap-2 text-zinc-500">
+                    <span aria-hidden="true">▢</span><span aria-hidden="true">◌</span><span aria-hidden="true">✕</span>
+                  </span>
+                  <p class="text-sm text-zinc-500">(00) 00000-0000</p>
+                </div>
+              </div>
+              <div class="mt-2 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Assessorado por</span>
+                <span class="rounded border border-zinc-400 bg-white px-1.5 py-0.5 text-xs font-semibold text-zinc-600">
+                  Assessor Exemplo
+                </span>
+              </div>
+              <div class="mt-1 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Assessora</span>
+                <span class="flex flex-wrap gap-1">
+                  <span class="rounded border border-zinc-400 bg-white px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Pessoa Assessorada</span>
+                  <span class="rounded border border-zinc-400 bg-white px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Outra Pessoa</span>
+                  <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município A</span>
+                  <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">+2</span>
+                </span>
+              </div>
+              <div class="mt-1 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Lidera</span>
+                <span class="flex flex-wrap gap-1">
+                  <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município B</span>
+                  <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município C</span>
+                </span>
+              </div>
+              <div class="mt-1 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Dobra em</span>
+                <span class="flex flex-wrap gap-1">
+                  <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município D</span>
+                  <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município E</span>
+                  <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">+11</span>
+                </span>
+              </div>
+            </li>
+
+            <!-- Lembrança: faixa vermelha 50% -->
+            <li class="relative border-b border-zinc-300 bg-white px-4 py-3">
+              <span class="absolute top-0 right-0 h-full w-1.5 bg-red-300" aria-hidden="true"></span>
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="truncate text-xl font-semibold leading-tight">Outra Pessoa</p>
+                  <p class="truncate text-sm text-zinc-500">Nome de Legenda (PT)</p>
+                </div>
+                <div class="flex shrink-0 flex-col items-end gap-1">
+                  <span class="flex gap-2 text-zinc-500">
+                    <span aria-hidden="true">▢</span><span aria-hidden="true">◌</span><span aria-hidden="true">✕</span>
+                  </span>
+                  <p class="text-sm text-zinc-500">(00) 00000-0000</p>
+                </div>
+              </div>
+              <div class="mt-2 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Assessorado por</span>
+                <span class="rounded border border-zinc-400 bg-white px-1.5 py-0.5 text-xs font-semibold text-zinc-600">
+                  Assessor Exemplo
+                </span>
+              </div>
+              <div class="mt-1 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Assessora</span>
+                <span class="flex flex-wrap gap-1">
+                  <span class="rounded border border-zinc-400 bg-white px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Pessoa Assessorada</span>
+                  <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município A</span>
+                </span>
+              </div>
+              <div class="mt-1 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Lidera</span>
+                <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município B</span>
+              </div>
+              <div class="mt-1 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Dobra em</span>
+                <span class="flex flex-wrap gap-1">
+                  <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município C</span>
+                  <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município D</span>
+                </span>
+              </div>
+            </li>
+
+            <!-- A abordar: sem faixa; linhas vazias ficam visíveis -->
+            <li class="relative border-b border-zinc-300 bg-white px-4 py-3">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="truncate text-xl font-semibold leading-tight">Pessoa a Abordar</p>
+                  <p class="truncate text-sm text-zinc-500">Cidade Base</p>
+                </div>
+                <div class="flex shrink-0 flex-col items-end gap-1">
+                  <span class="flex gap-2 text-zinc-500">
+                    <span aria-hidden="true">▢</span><span aria-hidden="true">◌</span><span aria-hidden="true">✕</span>
+                  </span>
+                  <p class="text-sm text-zinc-500">(00) 00000-0000</p>
+                </div>
+              </div>
+              <div class="mt-2 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Assessorado por</span>
+                <span class="flex flex-wrap gap-1"></span>
+              </div>
+              <div class="mt-1 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Assessora</span>
+                <span class="flex flex-wrap gap-1"></span>
+              </div>
+              <div class="mt-1 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Lidera</span>
+                <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município B</span>
+              </div>
+              <div class="mt-1 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Dobra em</span>
+                <span class="flex flex-wrap gap-1"></span>
+              </div>
+            </li>
+
+            <!-- Sem liderança: sem faixa -->
+            <li class="relative border-b border-zinc-300 bg-white px-4 py-3">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="truncate text-xl font-semibold leading-tight">Pessoa Sem Liderança</p>
+                  <p class="truncate text-sm text-zinc-500">Cidade Base</p>
+                </div>
+                <div class="flex shrink-0 flex-col items-end gap-1">
+                  <span class="flex gap-2 text-zinc-500">
+                    <span aria-hidden="true">▢</span><span aria-hidden="true">◌</span><span aria-hidden="true">✕</span>
+                  </span>
+                  <p class="text-sm text-zinc-500">(00) 00000-0000</p>
+                </div>
+              </div>
+              <div class="mt-2 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Assessorado por</span>
+                <span class="flex flex-wrap gap-1"></span>
+              </div>
+              <div class="mt-1 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Assessora</span>
+                <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município A</span>
+              </div>
+              <div class="mt-1 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Lidera</span>
+                <span class="flex flex-wrap gap-1"></span>
+              </div>
+              <div class="mt-1 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Dobra em</span>
+                <span class="flex flex-wrap gap-1"></span>
+              </div>
+            </li>
+
+            <!-- Negativo: sem faixa, card com estilo disabled (ainda interativo) -->
+            <li class="relative border-b border-zinc-300 bg-white px-4 py-3 opacity-60">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="truncate text-xl font-semibold leading-tight">Pessoa Negativa</p>
+                  <p class="truncate text-sm text-zinc-500">Cidade Base</p>
+                </div>
+                <div class="flex shrink-0 flex-col items-end gap-1">
+                  <span class="flex gap-2 text-zinc-500">
+                    <span aria-hidden="true">▢</span><span aria-hidden="true">◌</span><span aria-hidden="true">✕</span>
+                  </span>
+                  <p class="text-sm text-zinc-500">(00) 00000-0000</p>
+                </div>
+              </div>
+              <div class="mt-2 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Assessorado por</span>
+                <span class="flex flex-wrap gap-1"></span>
+              </div>
+              <div class="mt-1 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Assessora</span>
+                <span class="flex flex-wrap gap-1"></span>
+              </div>
+              <div class="mt-1 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Lidera</span>
+                <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município B</span>
+              </div>
+              <div class="mt-1 flex items-center gap-2">
+                <span class="w-24 shrink-0 text-[10px] text-zinc-400">Dobra em</span>
+                <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município C</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section data-shot="sheet-municipios" class="mt-6">
+        <p class="mb-2 text-xs text-zinc-500">Cena mobile — drawer de linha (municípios de Dobra em) aberto sobre o feed</p>
+        <div class="relative w-[390px] border border-zinc-700 bg-zinc-100 text-zinc-900">
+          <div class="sticky top-0 z-10 border-b border-zinc-300 bg-zinc-100 px-3 pt-3 pb-1">
+            <div class="flex min-h-9 flex-wrap items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2 py-1">
+              <span class="rounded-full border border-zinc-400 bg-white px-2 py-0.5 text-xs text-zinc-600">
+                Apoio: Engajado ✕
+              </span>
+              <span class="text-sm text-zinc-400">Buscar pessoa…</span>
+            </div>
+          </div>
+          <div class="px-4 py-3">
+            <p class="truncate text-xl font-semibold leading-tight">Nome da Pessoa</p>
+            <p class="truncate text-sm text-zinc-500">Cidade Base</p>
+            <div class="mt-2 flex items-center gap-2">
+              <span class="w-24 shrink-0 text-[10px] text-zinc-400">Lidera</span>
+              <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município B</span>
+            </div>
+          </div>
+          <div class="absolute inset-0 bg-zinc-900/40"></div>
+          <div class="absolute inset-x-0 bottom-0 rounded-t-xl border-t border-zinc-300 bg-white">
+            <div class="mx-auto mt-2 h-1 w-10 rounded-full bg-zinc-300"></div>
+            <div class="border-b border-zinc-200 px-4 pt-3 pb-3">
+              <p class="text-base font-semibold">Municípios da dobradinha</p>
+              <p class="text-sm text-zinc-500">Nome da Pessoa</p>
+            </div>
+            <div class="max-h-64 overflow-y-auto px-4 pt-3 pb-2">
+              <div class="flex flex-col gap-1">
+                <div class="flex min-h-11 items-center justify-between gap-2 rounded-md border border-zinc-300 px-2">
+                  <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município D</span>
+                  <span class="text-sm text-zinc-500">✕</span>
+                </div>
+                <div class="flex min-h-11 items-center justify-between gap-2 rounded-md border border-zinc-300 px-2">
+                  <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município E</span>
+                  <span class="text-sm text-zinc-500">✕</span>
+                </div>
+              </div>
+              <div class="mt-2 flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-3 py-2">
+                <span class="text-sm text-zinc-400">Buscar município, território ou ZE…</span>
+              </div>
+              <p class="py-2 text-sm text-zinc-400">Sugestões de municípios</p>
+              <div class="flex flex-col gap-1">
+                <div class="flex items-start gap-2 rounded-md px-2 py-2 text-sm">
+                  <span class="font-medium text-zinc-700">Território Exemplo</span>
+                  <span class="ml-auto text-xs text-zinc-400">Território · 8 municípios</span>
+                </div>
+                <div class="flex items-start gap-2 rounded-md bg-zinc-100 px-2 py-2 text-sm">
+                  <span class="font-medium text-zinc-700">Município Exemplo</span>
+                  <span class="ml-auto text-xs text-zinc-400">Município</span>
+                </div>
+              </div>
+            </div>
+            <div class="border-t border-zinc-200 px-4 py-3">
+              <div class="flex h-11 items-center justify-center rounded-md border border-zinc-300 text-sm font-medium text-zinc-700">
+                Fechar
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section data-shot="sheet-assessora" class="mt-6">
+        <p class="mb-2 text-xs text-zinc-500">Cena mobile — drawer unificado da linha Assessora (um input busca pessoas e municípios)</p>
+        <div class="relative w-[390px] border border-zinc-700 bg-zinc-100 text-zinc-900">
+          <div class="sticky top-0 z-10 border-b border-zinc-300 bg-zinc-100 px-3 pt-3 pb-1">
+            <div class="flex min-h-9 flex-wrap items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2 py-1">
+              <span class="text-sm text-zinc-400">Buscar pessoa…</span>
+            </div>
+          </div>
+          <div class="px-4 py-3">
+            <p class="truncate text-xl font-semibold leading-tight">Nome da Pessoa</p>
+            <p class="truncate text-sm text-zinc-500">Cidade Base</p>
+            <div class="mt-2 flex items-center gap-2">
+              <span class="w-24 shrink-0 text-[10px] text-zinc-400">Assessora</span>
+              <span class="flex flex-wrap gap-1">
+                <span class="rounded border border-zinc-400 bg-white px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Pessoa Assessorada</span>
+                <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município A</span>
+              </span>
+            </div>
+          </div>
+          <div class="absolute inset-0 bg-zinc-900/40"></div>
+          <div class="absolute inset-x-0 bottom-0 rounded-t-xl border-t border-zinc-300 bg-white">
+            <div class="mx-auto mt-2 h-1 w-10 rounded-full bg-zinc-300"></div>
+            <div class="border-b border-zinc-200 px-4 pt-3 pb-3">
+              <p class="text-base font-semibold">Assessora</p>
+              <p class="text-sm text-zinc-500">Nome da Pessoa</p>
+            </div>
+            <div class="max-h-64 overflow-y-auto px-4 pt-3 pb-2">
+              <div class="flex flex-col gap-1">
+                <div class="flex min-h-11 items-center justify-between gap-2 rounded-md border border-zinc-300 px-2">
+                  <span class="rounded border border-zinc-400 bg-white px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Pessoa Assessorada</span>
+                  <span class="text-sm text-zinc-500">✕</span>
+                </div>
+                <div class="flex min-h-11 items-center justify-between gap-2 rounded-md border border-zinc-300 px-2">
+                  <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs font-semibold text-zinc-600">Município A</span>
+                  <span class="text-sm text-zinc-500">✕</span>
+                </div>
+              </div>
+              <div class="mt-2 flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-3 py-2">
+                <span class="text-sm text-zinc-400">Buscar pessoa ou município…</span>
+              </div>
+              <p class="py-2 text-sm text-zinc-400">Sugestões de pessoas e municípios</p>
+              <div class="flex flex-col gap-1">
+                <div class="flex items-start gap-2 rounded-md bg-zinc-100 px-2 py-2 text-sm">
+                  <span class="font-medium text-zinc-700">Pessoa Exemplo</span>
+                  <span class="ml-auto text-xs text-zinc-400">Pessoa</span>
+                </div>
+                <div class="flex items-start gap-2 rounded-md px-2 py-2 text-sm">
+                  <span class="font-medium text-zinc-700">Município Exemplo</span>
+                  <span class="ml-auto text-xs text-zinc-400">Município</span>
+                </div>
+                <div class="flex items-start gap-2 rounded-md px-2 py-2 text-sm">
+                  <span class="font-medium text-zinc-700">Território Exemplo</span>
+                  <span class="ml-auto text-xs text-zinc-400">Território · 8 municípios</span>
+                </div>
+              </div>
+            </div>
+            <div class="border-t border-zinc-200 px-4 py-3">
+              <div class="flex h-11 items-center justify-center rounded-md border border-zinc-300 text-sm font-medium text-zinc-700">
+                Fechar
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section data-shot="sheet-nome" class="mt-6">
+        <p class="mb-2 text-xs text-zinc-500">Cena mobile — drawer de texto (edição de nome) aberto sobre o feed</p>
+        <div class="relative w-[390px] border border-zinc-700 bg-zinc-100 text-zinc-900">
+          <div class="sticky top-0 z-10 border-b border-zinc-300 bg-zinc-100 px-3 pt-3 pb-1">
+            <div class="flex min-h-9 flex-wrap items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2 py-1">
+              <span class="text-sm text-zinc-400">Buscar pessoa…</span>
+            </div>
+          </div>
+          <div class="px-4 py-3">
+            <p class="truncate text-xl font-semibold leading-tight">Nome da Pessoa</p>
+            <p class="truncate text-sm text-zinc-500">Cidade Base</p>
+          </div>
+          <div class="absolute inset-0 bg-zinc-900/40"></div>
+          <div class="absolute inset-x-0 bottom-0 rounded-t-xl border-t border-zinc-300 bg-white">
+            <div class="mx-auto mt-2 h-1 w-10 rounded-full bg-zinc-300"></div>
+            <div class="border-b border-zinc-200 px-4 pt-3 pb-3">
+              <p class="text-base font-semibold">Editar nome</p>
+              <p class="text-sm text-zinc-500">Nome da Pessoa</p>
+            </div>
+            <div class="px-4 pt-4 pb-2">
+              <div class="flex min-h-11 items-center rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-700">
+                Nome da Pessoa
+                <span class="ml-auto h-4 w-px animate-pulse bg-zinc-400"></span>
+              </div>
+              <p class="mt-1 text-xs text-zinc-500">Salvo automaticamente ou Salvar ao final.</p>
+            </div>
+            <div class="border-t border-zinc-200 px-4 py-3">
+              <div class="flex h-11 items-center justify-center rounded-md bg-red-600 text-sm font-semibold text-white">
+                Salvar
+              </div>
+              <div class="mt-2 flex h-11 items-center justify-center rounded-md border border-zinc-300 text-sm font-medium text-zinc-700">
+                Fechar
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
