@@ -14,12 +14,14 @@ import {
   STATE_DEPUTY_STAFF_MESSAGE,
   municipalityStateDeputyCreateSchema,
   stateDeputyAdvisorMembershipSchema,
+  stateDeputyBallotNameUpdateSchema,
   stateDeputyCreateSchema,
   stateDeputyMunicipalitiesBatchSchema,
   stateDeputyPartyUpdateSchema,
   stateDeputyUpdateSchema,
   type MunicipalityStateDeputyCreateInput,
   type StateDeputyAdvisorMembershipInput,
+  type StateDeputyBallotNameUpdateInput,
   type StateDeputyCreateInput,
   type StateDeputyMunicipalitiesBatchInput,
   type StateDeputyPartyUpdateInput,
@@ -52,6 +54,7 @@ const stateDeputyPolicy: StaffEntityPolicy = {
 type StateDeputyCreationData = {
   name: string
   party?: string | null
+  ballotName?: string | null
   notes?: string | null
 }
 
@@ -85,6 +88,7 @@ const createStateDeputyWithContact = async (
     data: hookFilledCreateData<'stateDeputy'>({
       contact: contact.id,
       ...(data.party === undefined ? {} : { party: data.party }),
+      ...(data.ballotName === undefined ? {} : { ballotName: data.ballotName }),
       ...(data.notes === undefined ? {} : { notes: data.notes }),
     }),
     depth: 0,
@@ -145,6 +149,25 @@ export const updateStateDeputyPartyRecord = async (
       collection: 'stateDeputy',
       id,
       data: { party },
+      depth: 0,
+      user: currentActor,
+      overrideAccess: false,
+    }),
+  )
+}
+
+/** C129 — inline "Nome de legenda" edit, same single-field shape as the party twin. */
+export const updateStateDeputyBallotNameRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: StateDeputyBallotNameUpdateInput,
+) => {
+  const { id, ballotName } = stateDeputyBallotNameUpdateSchema.parse(input)
+  return runStaffEntityMutation(payload, actor, stateDeputyPolicy, (currentActor) =>
+    payload.update({
+      collection: 'stateDeputy',
+      id,
+      data: { ballotName },
       depth: 0,
       user: currentActor,
       overrideAccess: false,
@@ -235,6 +258,13 @@ export const updateStateDeputy = async (input: StateDeputyUpdateInput) => {
 export const updateStateDeputyParty = async (input: StateDeputyPartyUpdateInput) => {
   const { payload, actor } = await getCampaignActionContext()
   const updated = await updateStateDeputyPartyRecord(payload, actor, input)
+  revalidateStateDeputyPaths(updated.id)
+  return updated
+}
+
+export const updateStateDeputyBallotName = async (input: StateDeputyBallotNameUpdateInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const updated = await updateStateDeputyBallotNameRecord(payload, actor, input)
   revalidateStateDeputyPaths(updated.id)
   return updated
 }

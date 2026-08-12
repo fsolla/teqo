@@ -79,7 +79,10 @@ const DEFAULT_HIDDEN_COLUMN_IDS: Partial<Record<CampaignListId, readonly string[
   // day is phone/WhatsApp. Anyone can re-enable it from the picker, and a
   // device with an existing choice keeps it (stored wins over default).
   liderancas: ['email'],
-  dobradinhas: ['email'],
+  // C129 — the "Nome de legenda" column starts hidden: the subline under the
+  // name is the always-on display, and the column is the opt-in edit surface
+  // (same email-column precedent: display carries the day, editing stays reachable).
+  dobradinhas: ['email', 'ballotName'],
   pessoas: ['email'],
   apoiadores: ['email'],
   assessores: ['email'],

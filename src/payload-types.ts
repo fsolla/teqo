@@ -508,6 +508,10 @@ export interface StateDeputy {
   contact: number | Contact;
   slug: string;
   party?: string | null;
+  /**
+   * Como o nome da dobradinha deve aparecer na urna (ex.: apelido ou abreviação).
+   */
+  ballotName?: string | null;
   notes?: string | null;
   advisors?: (number | CampaignUser)[] | null;
   createdBy?: (number | null) | CampaignUser;
@@ -1714,6 +1718,7 @@ export interface StateDeputySelect<T extends boolean = true> {
   contact?: T;
   slug?: T;
   party?: T;
+  ballotName?: T;
   notes?: T;
   advisors?: T;
   createdBy?: T;

@@ -4,6 +4,7 @@ import {
   filterPeopleRows,
   mergePeopleSources,
   peopleFilterFacetsFromRows,
+  peopleNameSubline,
   scopePeopleRows,
   sortPeopleRows,
   type MergedPerson,
@@ -34,6 +35,7 @@ const source: PeopleMergeSources = {
       email: 'ana@example.com',
       city: 'Camaçari',
       party: 'PCdoB',
+      ballotName: 'Ana do Povo',
       municipalityIDs: [5],
       advisorIDs: [22, 23],
     },
@@ -104,6 +106,13 @@ describe('mergePeopleSources (C100)', () => {
     expect(ana.deputyID).toBe(20)
     expect(ana.deputyMunicipalityIDs).toEqual([5])
     expect(ana.capacityMunicipalityIDs).toEqual([5])
+  })
+
+  it('carries the ballot name from the dobradinha (C129)', () => {
+    const ana = byContact(mergePeopleSources(source), 101)
+    expect(ana.ballotName).toBe('Ana do Povo')
+    const maria = byContact(mergePeopleSources(source), 100)
+    expect(maria.ballotName).toBeNull()
   })
 
   it('keeps a staff account with an EMPTY carteira as a capacity (gate 2026-08-09)', () => {
@@ -313,6 +322,33 @@ describe('sortPeopleRows (C117)', () => {
     const before = ids(rows)
     sortPeopleRows(rows, 'lidera', 'desc')
     expect(ids(rows)).toEqual(before)
+  })
+})
+
+describe('peopleNameSubline (C129)', () => {
+  it('returns the ballot name when the dobradinha has one', () => {
+    const ana = byContact(mergePeopleSources(source), 101)
+    expect(peopleNameSubline(ana)).toBe('Ana do Povo')
+  })
+
+  it('returns null when the dobradinha has no ballot name (nothing changes in the line)', () => {
+    const withoutBallotName = mergePeopleSources({
+      ...source,
+      deputies: [{ ...source.deputies[0]!, ballotName: null }],
+    })
+    const ana = byContact(withoutBallotName, 101)
+    expect(peopleNameSubline(ana)).toBeNull()
+    const maria = byContact(mergePeopleSources(source), 100)
+    expect(peopleNameSubline(maria)).toBeNull()
+  })
+
+  it('skips a ballot name identical to the real name (redundant duplicate line)', () => {
+    const withIdenticalBallotName = mergePeopleSources({
+      ...source,
+      deputies: [{ ...source.deputies[0]!, ballotName: 'Ana Lima' }],
+    })
+    const ana = byContact(withIdenticalBallotName, 101)
+    expect(peopleNameSubline(ana)).toBeNull()
   })
 })
 

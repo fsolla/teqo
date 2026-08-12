@@ -68,6 +68,7 @@ export default async function StateDeputyDetailPage({ params }: StateDeputyDetai
       <StateDeputyContactSection
         stateDeputyId={stateDeputy.id}
         name={stateDeputy.name}
+        ballotName={stateDeputy.ballotName}
         email={stateDeputy.email}
         phones={stateDeputy.phones}
       />
@@ -182,6 +183,7 @@ export default async function StateDeputyDetailPage({ params }: StateDeputyDetai
           initial={{
             id: stateDeputy.id,
             party: stateDeputy.party,
+            ballotName: stateDeputy.ballotName,
             notes: stateDeputy.notes,
           }}
         />

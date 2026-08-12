@@ -135,6 +135,19 @@ export const StateDeputy: CollectionConfig = {
       index: true,
     },
     {
+      // C129 — the ballot name ("nome de legenda") the campaign will use on the
+      // urna. Optional identity text, never a search/sort/facet key: the real
+      // name stays the person's key everywhere. No index — nothing queries it.
+      name: 'ballotName',
+      type: 'text',
+      label: 'Nome de legenda',
+      maxLength: 30,
+      admin: {
+        description:
+          'Como o nome da dobradinha deve aparecer na urna (ex.: apelido ou abreviação).',
+      },
+    },
+    {
       name: 'notes',
       type: 'textarea',
       label: 'Observações',

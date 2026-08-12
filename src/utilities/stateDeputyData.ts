@@ -27,6 +27,8 @@ export type StateDeputyRowViewModel = {
   phone: string | null
   slug: string
   party: string | null
+  /** C129 — the "nome de legenda" (ballot name), shown discreet under the name. */
+  ballotName: string | null
   municipalityIDs: number[]
   leaderships: NamedRelationSummary[]
   /** B156 — the staff responsible for this dobradinha, names resolved. */
@@ -147,7 +149,7 @@ export const loadStateDeputyListPageData = async (
       limit: stateDeputyPageSize,
       page: state.page,
       sort: resolveStateDeputyListPayloadSort(sort, dir),
-      select: { contact: true, slug: true, party: true, advisors: true },
+      select: { contact: true, slug: true, party: true, ballotName: true, advisors: true },
       user,
       overrideAccess: false,
     }),
@@ -221,6 +223,7 @@ export const loadStateDeputyListPageData = async (
       id: doc.id,
       slug: doc.slug,
       party: doc.party ?? null,
+      ballotName: doc.ballotName ?? null,
       municipalityIDs: municipalityIDsByDeputy.get(doc.id) ?? [],
       leaderships: leadershipsByDeputy.get(doc.id) ?? [],
       advisors: advisorsByDeputy.get(doc.id) ?? [],
@@ -241,6 +244,8 @@ export type StateDeputySummary = {
 export type StateDeputyDetailViewModel = StateDeputySummary & {
   email: string | null
   phone: string | null
+  /** C129 — the "nome de legenda" (ballot name), shown discreet under the name. */
+  ballotName: string | null
   /** Every number of the ficha, order = priority (C112) — primary first. */
   phones: string[]
   notes: string | null
@@ -312,6 +317,7 @@ export const loadStateDeputyDetail = async (
     id: stateDeputy.id,
     slug: stateDeputy.slug,
     party: stateDeputy.party ?? null,
+    ballotName: stateDeputy.ballotName ?? null,
     notes: stateDeputy.notes ?? null,
     municipalities: municipalities.docs.map((municipality) => ({
       id: municipality.id,

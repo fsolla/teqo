@@ -4,6 +4,7 @@ import { setLeadershipStateDeputyMembership } from '@/app/(campaign)/campanha/ac
 import {
   setStateDeputyAdvisorMembership,
   setStateDeputyMunicipalitiesBatch,
+  updateStateDeputyBallotName,
   updateStateDeputyContact,
   updateStateDeputyParty,
 } from '@/app/(campaign)/campanha/actions/stateDeputy'
@@ -41,6 +42,9 @@ const stateDeputyContactSafeMessages = [
 ] as const
 
 const stateDeputyPartySafeMessages = [STATE_DEPUTY_STAFF_MESSAGE] as const
+
+/** The party and ballotName inline cells share the same refusal vocabulary. */
+const stateDeputyInlineFieldSafeMessages = stateDeputyPartySafeMessages
 
 /** Per-field Contact edit for B163 (lista + ficha). */
 export const updateStateDeputyContactFormAction = async (
@@ -101,6 +105,24 @@ export const updateStateDeputyPartyFormAction = async (
     },
     safeMessages: stateDeputyPartySafeMessages,
     genericMessage: 'Não foi possível salvar o partido. Verifique os dados e tente novamente.',
+  })
+
+/** Inline "Nome de legenda" edit for C129 (lista de dobradinhas, B163 machinery). */
+export const updateStateDeputyBallotNameFormAction = async (
+  _state: CampaignFormActionState,
+  formData: FormData,
+): Promise<CampaignFormActionState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      await updateStateDeputyBallotName({
+        id: requiredRelationshipFormValue(formData, 'stateDeputyId'),
+        ballotName: nullableFormText(formData, 'ballotName'),
+      })
+      return { message: 'Salvo.' }
+    },
+    safeMessages: stateDeputyInlineFieldSafeMessages,
+    genericMessage:
+      'Não foi possível salvar o nome de legenda. Verifique os dados e tente novamente.',
   })
 
 /** One chip toggle in the "Lideranças" column of `/campanha/dobradinhas` (B36). */

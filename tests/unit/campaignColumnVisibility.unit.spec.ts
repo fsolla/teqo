@@ -94,18 +94,19 @@ describe('resolveCampaignColumnVisibility', () => {
   })
 
   it('hides the email column by default on every person list (B197)', () => {
-    for (const listId of [
-      'liderancas',
-      'dobradinhas',
-      'pessoas',
-      'apoiadores',
-      'assessores',
-    ] as const) {
+    for (const listId of ['liderancas', 'pessoas', 'apoiadores', 'assessores'] as const) {
       expect(resolveCampaignColumnVisibility(listId, {})).toEqual({
         listId,
         hiddenColumnIds: ['email'],
       })
     }
+  })
+
+  it('hides the Nome de legenda column by default on dobradinhas too (C129)', () => {
+    expect(resolveCampaignColumnVisibility('dobradinhas', {})).toEqual({
+      listId: 'dobradinhas',
+      hiddenColumnIds: ['email', 'ballotName'],
+    })
   })
 
   it('keeps a stored choice on a person list winning over the email default (B197)', () => {

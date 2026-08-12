@@ -20,6 +20,7 @@ export const createStateDeputyFormAction = async (
       createStateDeputy({
         name: requiredFormText(formData, 'name'),
         party: optionalFormText(formData, 'party'),
+        ballotName: optionalFormText(formData, 'ballotName'),
         notes: optionalFormText(formData, 'notes'),
       }),
     redirectTo: (stateDeputy) => `/campanha/dobradinhas/${stateDeputy.id}`,

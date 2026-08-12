@@ -29,6 +29,7 @@ export const updateStateDeputyFormAction = async (
       await updateStateDeputy({
         id: requiredRelationshipFormValue(formData, 'stateDeputyId'),
         party: nullableFormText(formData, 'party'),
+        ballotName: nullableFormText(formData, 'ballotName'),
         notes: nullableFormText(formData, 'notes'),
       })
       revalidatePath('/campanha/dobradinhas/[id]', 'page')

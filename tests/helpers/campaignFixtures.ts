@@ -97,7 +97,9 @@ type VotePledgeInput = Partial<
 type OrganizationInput = Partial<
   Pick<Organization, 'name' | 'slug' | 'kind' | 'notes' | 'municipalities'>
 >
-type StateDeputyInput = Partial<Pick<StateDeputy, 'contact' | 'slug' | 'party' | 'notes'>> & {
+type StateDeputyInput = Partial<
+  Pick<StateDeputy, 'contact' | 'slug' | 'party' | 'ballotName' | 'notes'>
+> & {
   name?: string
 }
 type CampaignDemandInput = Partial<

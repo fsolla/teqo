@@ -21,6 +21,7 @@ import {
   CampaignTransitionAnchor,
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignListSheetProvider } from '@/components/campaign/shared/CampaignListSheetHost'
+import { CampaignNameSubline } from '@/components/campaign/shared/CampaignNameSubline'
 import {
   CampaignTable,
   CampaignTableHead,
@@ -54,7 +55,11 @@ import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibili
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadEligibleAdvisorOptions } from '@/utilities/campaignRelationOptions'
 import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
-import { loadPeopleListPageData, type PeopleRowViewModel } from '@/utilities/people/peopleData'
+import {
+  loadPeopleListPageData,
+  peopleNameSubline,
+  type PeopleRowViewModel,
+} from '@/utilities/people/peopleData'
 import {
   buildPeopleFilterHref,
   clearPeopleListFilters,
@@ -170,21 +175,29 @@ const peopleColumns = ({
     label: 'Nome',
     mandatory: true,
     head: <PeopleSortableHead state={state} sortKey="name" />,
-    cell: (row) => (
-      <div className="flex min-w-0 items-baseline gap-1">
-        <CampaignInlineEditableCell
-          recordId={row.contactID}
-          recordIdField="contactId"
-          field="name"
-          value={row.name}
-          label="Nome"
-          formAction={updatePersonContactFormAction}
-          href={`/campanha/pessoas/${row.contactID}`}
-          permanent
-        />
-        {row.party ? <span className="shrink-0 text-muted-foreground">({row.party})</span> : null}
-      </div>
-    ),
+    cell: (row) => {
+      const subline = peopleNameSubline(row)
+      return (
+        <div className="flex min-w-0 flex-col">
+          <div className="flex min-w-0 items-baseline gap-1">
+            <CampaignInlineEditableCell
+              recordId={row.contactID}
+              recordIdField="contactId"
+              field="name"
+              value={row.name}
+              label="Nome"
+              formAction={updatePersonContactFormAction}
+              href={`/campanha/pessoas/${row.contactID}`}
+              permanent
+            />
+            {row.party ? (
+              <span className="shrink-0 text-muted-foreground">({row.party})</span>
+            ) : null}
+          </div>
+          <CampaignNameSubline value={subline} srLabel="Nome de legenda" />
+        </div>
+      )
+    },
   },
   {
     id: 'contact',

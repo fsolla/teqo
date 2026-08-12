@@ -13,6 +13,7 @@ import {
   CampaignTransitionAnchor,
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignListSheetProvider } from '@/components/campaign/shared/CampaignListSheetHost'
+import { CampaignNameSubline } from '@/components/campaign/shared/CampaignNameSubline'
 import {
   CampaignTable,
   CampaignTableHead,
@@ -70,6 +71,7 @@ import {
   setLeadershipStateDeputyMembershipFormAction,
   setStateDeputyAdvisorMembershipFormAction,
   setStateDeputyMunicipalitiesFormAction,
+  updateStateDeputyBallotNameFormAction,
   updateStateDeputyContactFormAction,
   updateStateDeputyPartyFormAction,
 } from './formActions'
@@ -121,17 +123,27 @@ const stateDeputyColumns = (
     mandatory: true,
     head: <StateDeputySortableHead state={state} sortKey="name" />,
     cell: (row) => (
-      <CampaignInlineEditableCell
-        recordId={row.id}
-        recordIdField="stateDeputyId"
-        field="name"
-        value={row.name}
-        label="Nome"
-        formAction={updateStateDeputyContactFormAction}
-        href={`/campanha/dobradinhas/${row.id}`}
-        editTrigger="cell"
-        saveOnChange={false}
-      />
+      <div className="flex min-w-0 flex-col">
+        <CampaignInlineEditableCell
+          recordId={row.id}
+          recordIdField="stateDeputyId"
+          field="name"
+          value={row.name}
+          label="Nome"
+          formAction={updateStateDeputyContactFormAction}
+          href={`/campanha/dobradinhas/${row.id}`}
+          editTrigger="cell"
+          saveOnChange={false}
+        />
+        {/* C129 — the ballot name sits OUTSIDE the name cell's click-to-edit
+            region (sibling, not child), so clicking it never opens the name
+            editor. A legenda identical to the real name is skipped (same
+            policy as `peopleNameSubline`). */}
+        <CampaignNameSubline
+          value={row.ballotName !== row.name ? row.ballotName : null}
+          srLabel="Nome de legenda"
+        />
+      </div>
     ),
   },
   {
@@ -154,6 +166,26 @@ const stateDeputyColumns = (
         value={row.party}
         label="Partido"
         formAction={updateStateDeputyPartyFormAction}
+        editTrigger="cell"
+        saveOnChange={false}
+      />
+    ),
+  },
+  {
+    // C129 — the "Nome de legenda" column, hidden by default (email precedent):
+    // the subline under the name is the always-on display; the column is where
+    // the mesa edits it (B163 machinery, same as Partido).
+    id: 'ballotName',
+    label: 'Nome de legenda',
+    cellClassName: 'min-w-32',
+    cell: (row) => (
+      <CampaignInlineEditableCell
+        recordId={row.id}
+        recordIdField="stateDeputyId"
+        field="ballotName"
+        value={row.ballotName}
+        label="Nome de legenda"
+        formAction={updateStateDeputyBallotNameFormAction}
         editTrigger="cell"
         saveOnChange={false}
       />
