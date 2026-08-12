@@ -32,18 +32,18 @@ Agentes paralelos resolvem conflitos de merge e re-rodam CI de PR repetidamente,
 
 ## Evidência — mapa de contenção (últimos 300 commits)
 
-| Arquivo | Commits/300 | Classe | Por que é quente | Rastro de incidentes |
-|---|---|---|---|---|
-| `docs/CHANGELOG-AGENTS.md` | **63** | C1 — Processo (prepend obrigatório, anchor único) | Toda entrega escreve no topo | OPS38 (#629: 120 entradas perdidas; correção re-clobberada no #649), D8 (#557: B183/C102), `fab834fc` "re-added after second rebase conflict", merges `merge: main into … (CHANGELOG …)` |
-| `AGENTS.md` | 12 | C3 — Doc vivo (OPS) | Bullets compartilhados | OPS41 (#689: marcadores de conflito commitados) — guardrail anti-reincidência já criado |
-| `tests/unit/codebaseConventions.unit.spec.ts` | 9 | C2 — Registry append-only | Guard de vocabulário | — |
-| `src/migrations/index.ts` | 8 | C4 — Serializado por política | migration-lock (≤1 PR) | — (política cobre) |
-| `tests/e2e/fixtures/campaignE2EFixtures.ts` | 7 | C2 — Registry e2e | Fixture compartilhada | — |
-| `src/utilities/ai/systemPrompt.ts` | 7 | C3 — Doc vivo (IA) | Prompt do Sollinha | — |
-| `src/payload-types.ts` | 6 | C4 — Serializado | Gerado; migration-lock | — (política cobre) |
-| `package.json` / `pnpm-lock.yaml` | 6+2 | C5 — Infra | Deps | — (raro, blast alto) |
-| `.agents/shell/worktree.sh`, `.opencode/commands/*`, skills | 5–6 | C3 — Doc vivo (OPS) | Ferramenta worktree | — |
-| `src/utilities/ai/tools/index.ts` | 5 | C2 — Registry append-only | Tools do Sollinha | — |
+| Arquivo                                                     | Commits/300 | Classe                                            | Por que é quente             | Rastro de incidentes                                                                                                                                                                     |
+| ----------------------------------------------------------- | ----------- | ------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/CHANGELOG-AGENTS.md`                                  | **63**      | C1 — Processo (prepend obrigatório, anchor único) | Toda entrega escreve no topo | OPS38 (#629: 120 entradas perdidas; correção re-clobberada no #649), D8 (#557: B183/C102), `fab834fc` "re-added after second rebase conflict", merges `merge: main into … (CHANGELOG …)` |
+| `AGENTS.md`                                                 | 12          | C3 — Doc vivo (OPS)                               | Bullets compartilhados       | OPS41 (#689: marcadores de conflito commitados) — guardrail anti-reincidência já criado                                                                                                  |
+| `tests/unit/codebaseConventions.unit.spec.ts`               | 9           | C2 — Registry append-only                         | Guard de vocabulário         | —                                                                                                                                                                                        |
+| `src/migrations/index.ts`                                   | 8           | C4 — Serializado por política                     | migration-lock (≤1 PR)       | — (política cobre)                                                                                                                                                                       |
+| `tests/e2e/fixtures/campaignE2EFixtures.ts`                 | 7           | C2 — Registry e2e                                 | Fixture compartilhada        | —                                                                                                                                                                                        |
+| `src/utilities/ai/systemPrompt.ts`                          | 7           | C3 — Doc vivo (IA)                                | Prompt do Sollinha           | —                                                                                                                                                                                        |
+| `src/payload-types.ts`                                      | 6           | C4 — Serializado                                  | Gerado; migration-lock       | — (política cobre)                                                                                                                                                                       |
+| `package.json` / `pnpm-lock.yaml`                           | 6+2         | C5 — Infra                                        | Deps                         | — (raro, blast alto)                                                                                                                                                                     |
+| `.agents/shell/worktree.sh`, `.opencode/commands/*`, skills | 5–6         | C3 — Doc vivo (OPS)                               | Ferramenta worktree          | —                                                                                                                                                                                        |
+| `src/utilities/ai/tools/index.ts`                           | 5           | C2 — Registry append-only                         | Tools do Sollinha            | —                                                                                                                                                                                        |
 
 **Leitura:** conflito em `docs/plans/*` ≈ zero (arquivo por Issue — o padrão que funciona). Contenção = (entregas obrigadas a tocar o arquivo) × (mesmo anchor de edição). O pior dano não é o atrito — é o **clobber silencioso** (merge-commit contra snapshot antigo faz entradas sumirem do main).
 
