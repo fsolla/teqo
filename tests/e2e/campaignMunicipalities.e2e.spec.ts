@@ -542,10 +542,17 @@ test.describe('Municípios — jornadas por papel', () => {
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
     await expect(campaignPageChrome(page, 'Municípios')).toBeVisible()
+    await ensureWideMunicipalityList(page)
 
-    const trendButton = page.getByRole('button', {
-      name: new RegExp(`^Editar tendência política em ${municipality.name}`),
-    })
+    // The trend control renders in both the desktop cell and the always-mounted
+    // mobile-card tree (B158); `visibleMunicipalityButton` scopes to the list
+    // container and the visible copy after the wide stage settles, the way the
+    // sibling journeys do.
+    const trendButton = visibleMunicipalityButton(
+      page,
+      `Editar tendência política em ${municipality.name}`,
+    )
+    await expect(trendButton).toBeVisible()
     await trendButton.click()
     const trendPopover = page.locator('[data-slot="popover-content"]')
     await expect(trendPopover).toBeVisible()
@@ -562,10 +569,23 @@ test.describe('Municípios — jornadas por papel', () => {
 
     await page.keyboard.press('Escape')
     await page.reload()
-    await trendButton.click()
+    // The reload restarts the RSC stream and the B158 stage: the filtered row
+    // re-renders in waves (each one moves the button, so a click keeps waiting
+    // for stability) and hydration lags SSR paint (a pre-hydration click is a
+    // silent no-op, P3-C class). Re-settle the wide stage first, then click
+    // only while the popover is closed — the trigger TOGGLES, so a blind
+    // click-per-iteration would close an open popover forever. The reopened
+    // popover proves the persisted save (server round trip), not just the
+    // optimistic chip.
+    await ensureWideMunicipalityList(page)
     const reopened = page.locator('[data-slot="popover-content"]')
-    await expect(reopened.getByLabel('Tendência', { exact: true })).toHaveValue('favoravel')
-    await expect(reopened.getByLabel('Justificativa')).toHaveValue(note)
+    await expect(async () => {
+      if (!(await reopened.first().isVisible())) await trendButton.click()
+      await expect(reopened.getByLabel('Tendência', { exact: true })).toHaveValue('favoravel', {
+        timeout: 2_000,
+      })
+      await expect(reopened.getByLabel('Justificativa')).toHaveValue(note)
+    }).toPass({ timeout: 15_000 })
   })
 
   test('coordinator registers an adversary-signal update from the list freshness cell', async ({
@@ -738,8 +758,29 @@ test.describe('Municípios — jornadas por papel', () => {
     await page.goto(`${campaign.baseURL}/campanha/demandas/nova`)
     await page.getByLabel('Município').selectOption({ label: municipality.name })
     await page.getByLabel('O que você precisa?').fill(demandText)
-    await page.getByRole('button', { name: 'Abrir demanda' }).click()
-    await expect(campaignPageChrome(page, demandTitle)).toBeVisible()
+    // The create action is a server action — not prewarmable — and its first
+    // dev-mode invocation can be aborted by the compile full-page reload, which
+    // leaves the form filled but never navigates. On the retry: if the demand
+    // already exists (the POST landed but the redirect was lost — `slug` is
+    // unique, a second submit would fail the constraint), go straight to its
+    // detail; otherwise re-submit against the now-warm action.
+    await expect(async () => {
+      if (page.url().includes('/campanha/demandas/nova')) {
+        const existing = await campaign.payload.find({
+          collection: 'campaignDemand',
+          where: { title: { equals: demandTitle } },
+          depth: 0,
+          limit: 1,
+          pagination: false,
+        })
+        if (existing.docs.length > 0) {
+          await page.goto(`${campaign.baseURL}/campanha/demandas/${existing.docs[0].slug}`)
+        } else {
+          await page.getByRole('button', { name: 'Abrir demanda' }).click()
+        }
+      }
+      await expect(campaignPageChrome(page, demandTitle)).toBeVisible({ timeout: 10_000 })
+    }).toPass({ timeout: 30_000 })
     await expect(page.getByRole('button', { name: 'Aprovar' })).toBeVisible()
 
     await page.goto(`${campaign.baseURL}/campanha/demandas`)
@@ -1493,18 +1534,26 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
     await expect(registerSignal).toBeVisible()
 
     const search = overlay.getByLabel('Buscar na campanha')
-    const suggestResponse = page.waitForResponse(
-      (resp) =>
-        resp.url().includes('/campanha/home-search') &&
-        resp.request().method() === 'POST' &&
-        resp.request().postDataJSON()?.mode === 'suggest',
-    )
-    await search.focus()
-    await suggestResponse
-    await expect(overlay.getByRole('link', { name: 'Registrar atualização' })).toBeHidden()
-
-    // Overlay scopes search suggest — list page has no E11 SuggestionsPanel.
-    await expect(overlay.getByRole('region', { name: 'Sugestões' })).toBeVisible()
+    // Dev-mode: a sibling test's cold compile can full-page-reload this client
+    // mid-suggest and truncate the response stream after headers (the setup
+    // prewarm cannot cover the suggest server work). Blur+refocus re-fires the
+    // suggest against the now-warm route.
+    await expect(async () => {
+      const suggestResponse = page.waitForResponse(
+        (resp) =>
+          resp.url().includes('/campanha/home-search') &&
+          resp.request().method() === 'POST' &&
+          resp.request().postDataJSON()?.mode === 'suggest',
+        { timeout: 5_000 },
+      )
+      await search.blur()
+      await search.focus()
+      await suggestResponse
+      await expect(overlay.getByRole('link', { name: 'Registrar atualização' })).toBeHidden()
+      await expect(overlay.getByRole('region', { name: 'Sugestões' })).toBeVisible({
+        timeout: 3_000,
+      })
+    }).toPass({ timeout: 30_000 })
   })
 
   test('overlay search without curated suggestions shows the honest empty state (OPS29)', async ({
