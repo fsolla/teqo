@@ -138,6 +138,26 @@ describe('C100 — lista unificada de pessoas (merge por Contact)', () => {
     expect(names).not.toContain('João do Brejo')
   })
 
+  it('filters by party and exposes the party facet from the recorte (C130)', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const municipality = await fixtures.getMunicipality()
+    const deputyContact = await fixtures.createContact({ name: 'Deputada do Partido' })
+    await fixtures.createStateDeputy({ contact: deputyContact, party: 'PSOL' })
+    const noDeputyContact = await fixtures.createContact({ name: 'Sem Dobradinha' })
+    await fixtures.createLeadership({ contact: noDeputyContact, municipalities: [municipality] })
+
+    const all = await loadPeopleListPageData(payload, coordinator, { page: 1 })
+    expect(all.filterFacets.parties).toContain('PSOL')
+
+    const filtered = await loadPeopleListPageData(payload, coordinator, {
+      page: 1,
+      parties: ['PSOL'],
+    })
+    expect(filtered.rows.map((row) => row.contactID)).toContain(relationId(deputyContact))
+    expect(filtered.rows.some((row) => row.contactID === relationId(noDeputyContact))).toBe(false)
+  })
+
   it('returns empty data for a leader (lockdown)', async () => {
     const fixtures = campaignFixtures()
     const leader = await fixtures.createCampaignUser('leader')

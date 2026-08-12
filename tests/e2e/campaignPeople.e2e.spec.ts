@@ -46,6 +46,41 @@ test.describe('Pessoas — lista unificada', () => {
     await expect(page.getByRole('row', { name: new RegExp(contactName) })).toBeVisible()
   })
 
+  test('the desktop table reads C130: Dobra em, city under the name, party filter', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora C130'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+    const { contactName } = await fixtures.createStaffLeadership({
+      namePrefix: 'C130 Liderança',
+      municipalities: [municipality],
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha/pessoas')
+
+    // Renamed column, base column gone (the city now lives under the name).
+    await expect(page.getByRole('columnheader', { name: /Dobra em/ })).toBeVisible()
+    await expect(page.getByRole('columnheader', { name: /Base/ })).not.toBeVisible()
+    const nameCell = page
+      .getByRole('row', { name: new RegExp(contactName) })
+      .getByRole('cell')
+      .first()
+    await expect(nameCell).toContainText(municipality.name)
+
+    // The seeded dobradinha's party filters the recorte (omnibox facet is
+    // unit-tested; here the canonical URL drives the server-side filter and
+    // the chip renders from state).
+    await page.goto('/campanha/pessoas?party=PT')
+    await expect(page.getByRole('row', { name: /Seed Deputada Estadual/ })).toBeVisible()
+    await expect(page.getByRole('row', { name: new RegExp(contactName) })).not.toBeVisible()
+    await expect(page.getByText('Partido: PT').first()).toBeVisible()
+  })
+
   test('the name link in the list opens the person detail (C118 entry point)', async ({
     campaign,
     page,

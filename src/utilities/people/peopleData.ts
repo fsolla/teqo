@@ -76,23 +76,22 @@ export type PeopleRowViewModel = {
 }
 
 /**
- * C129 — the Name-cell subline of `/campanha/pessoas`: the dobradinha's
- * "nome de legenda" (ballot name), discreet under the real name, when present.
- * A ballot name identical to the real name is redundant noise — it reads as a
- * duplicated line, so it is skipped (a mesa registering the full name as urn
- * name is plausible data entry).
- *
- * C130 extends this with the base fallback — the FINAL shared rule for the
- * second line is `ballotName ?? city` (legenda overrides base), the two plans
- * (`pessoas-nome-de-legenda-dobradinha.md` / `pessoas-tabela-desktop-ajustes.md`)
- * pin it, and this function is the single seam: C130 changes one expression
- * here (and its unit spec), never markup. Until C130 lands, this branch keeps
- * the accept "sem nome de legenda, nada muda na linha" — null when absent.
+ * The Name-cell subline of `/campanha/pessoas`: the dobradinha's "nome de
+ * legenda" (ballot name), discreet under the real name, when present — else
+ * the contact's base city (C130), so the second line always has a value when
+ * there is one to show. A ballot name identical to the real name is redundant
+ * noise — it reads as a duplicated line, so it is skipped (a mesa registering
+ * the full name as urn name is plausible data entry). FINAL shared rule:
+ * `ballotName ?? city` (legenda overrides base), pinned by the two plans
+ * (`pessoas-nome-de-legenda-dobradinha.md` / `pessoas-tabela-desktop-ajustes.md`);
+ * this function is the single seam between the line and its sources.
  */
 export const peopleNameSubline = (
-  person: Pick<MergedPerson, 'name' | 'ballotName'>,
-): string | null =>
-  person.ballotName && person.ballotName !== person.name ? person.ballotName : null
+  person: Pick<MergedPerson, 'name' | 'ballotName' | 'city'>,
+): string | null => {
+  if (person.ballotName && person.ballotName !== person.name) return person.ballotName
+  return person.city ?? null
+}
 
 /** The merge intermediate carries every field the list/detail row needs. */
 export type MergedPerson = Omit<PeopleRowViewModel, 'assessoradoNames'> & {
@@ -376,6 +375,9 @@ export const filterPeopleRows = (
     if (state.statuses?.length) {
       if (row.supportStatus === null || !state.statuses.includes(row.supportStatus)) return false
     }
+    if (state.parties?.length) {
+      if (row.party === null || !state.parties.includes(row.party)) return false
+    }
     if (state.ausencias?.length) {
       const wanted = new Set(state.ausencias)
       const hasAdvisor = row.leadershipAdvisorIDs.length > 0 || row.deputyAdvisorIDs.length > 0
@@ -399,11 +401,13 @@ const mergedPersonAdvisorCount = (person: MergedPerson): number =>
 
 /**
  * C117 — global sort over the FILTERED set (never the page), applied before
- * pagination. Keys are exactly the visible-by-default columns; municipality
- * columns sort by their count ("quem tem mais rede?"), text columns by value.
- * Nulls ("Sem…") always land last (B15 precedent), ties break by name, then
- * contact id — the same order the list opened with. The advisor-count map is
- * precomputed once so the comparator never allocates per comparison.
+ * pagination. Keys are the visible-by-default columns plus the invisible
+ * C130 keys `base`/`party` (gate: both sortings stay useful without a
+ * column); municipality columns sort by their count ("quem tem mais rede?"),
+ * text columns by value. Nulls ("Sem…") always land last (B15 precedent),
+ * ties break by name, then contact id — the same order the list opened with.
+ * The advisor-count map is precomputed once so the comparator never
+ * allocates per comparison.
  */
 export const sortPeopleRows = (
   rows: readonly MergedPerson[],
@@ -422,6 +426,8 @@ export const sortPeopleRows = (
         return person.phone
       case 'base':
         return person.city
+      case 'party':
+        return person.party
       case 'assessora':
         return person.assessoraMunicipalityIDs.length || null
       case 'lidera':
@@ -454,6 +460,8 @@ export type PeopleListFilterFacets = {
   municipalityIDs: number[]
   /** Leadership statuses present across the scoped rows (selected values unioned in). */
   statuses: SupportStatus[]
+  /** Dobradinha parties present across the scoped rows (selected values unioned in). */
+  parties: string[]
 }
 
 export const peopleFilterFacetsFromRows = (
@@ -462,20 +470,23 @@ export const peopleFilterFacetsFromRows = (
 ): PeopleListFilterFacets => {
   const municipalities = new Set<number>(state.municipalities ?? [])
   const statuses = new Set<SupportStatus>(state.statuses ?? [])
+  const parties = new Set<string>(state.parties ?? [])
   for (const row of rows) {
     for (const id of row.capacityMunicipalityIDs) municipalities.add(id)
     if (row.supportStatus !== null) statuses.add(row.supportStatus)
+    if (row.party !== null) parties.add(row.party)
   }
   return {
     municipalityIDs: [...municipalities].sort((left, right) => left - right),
     statuses: leadershipStatusesInOrder(statuses),
+    parties: [...parties].sort((left, right) => left.localeCompare(right, 'pt-BR')),
   }
 }
 
 const leadershipStatusesInOrder = (statuses: ReadonlySet<SupportStatus>): SupportStatus[] =>
   leadershipSupportStatuses.filter((status) => statuses.has(status))
 
-const EMPTY_FACETS: PeopleListFilterFacets = { municipalityIDs: [], statuses: [] }
+const EMPTY_FACETS: PeopleListFilterFacets = { municipalityIDs: [], statuses: [], parties: [] }
 
 type ContactSummary = {
   id: number

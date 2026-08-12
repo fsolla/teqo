@@ -20,13 +20,7 @@ import type { CampaignFormActionState } from '@/utilities/campaignFormActionErro
 
 const SAVE_DEBOUNCE_MS = 500
 
-export type CampaignInlineEditableField =
-  | 'name'
-  | 'email'
-  | 'phone'
-  | 'party'
-  | 'ballotName'
-  | 'city'
+export type CampaignInlineEditableField = 'name' | 'email' | 'phone' | 'party' | 'ballotName'
 
 type CampaignInlineEditableCellProps = {
   recordId: number
@@ -91,11 +85,19 @@ export const CampaignInlineEditableCell = ({
   const [isPending, setIsPending] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [showSavedFeedback, setShowSavedFeedback] = useState(false)
+  const [focused, setFocused] = useState(false)
   const lastSaved = useRef((value ?? '').trim())
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const savedFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const requestId = useRef(0)
   const inputRef = useRef<HTMLInputElement>(null)
+  /**
+   * C130 — Escape must DISCARD, not save. `setDraft` cannot run before the
+   * synchronous `blur()` that follows it, so the blur's save would read the
+   * STALE draft from this render's closure and persist the discarded text —
+   * the flag makes the next blur a no-op revert instead.
+   */
+  const pendingDiscardRef = useRef(false)
 
   useEffect(() => {
     if (inputRef.current && document.activeElement === inputRef.current) return
@@ -182,9 +184,17 @@ export const CampaignInlineEditableCell = ({
   }
 
   const handleBlur = () => {
+    setFocused(false)
     if (timerRef.current) {
       clearTimeout(timerRef.current)
       timerRef.current = null
+    }
+    if (pendingDiscardRef.current) {
+      pendingDiscardRef.current = false
+      setDraft(displayDraftFor(field, value ?? ''))
+      setErrorMessage(null)
+      setShowSavedFeedback(false)
+      return
     }
     save(draft)
   }
@@ -209,12 +219,26 @@ export const CampaignInlineEditableCell = ({
    * name-link cell renders the LINK above an invisible input (the draft lives
    * in the link's text, the input value is never the display — locked
    * mechanism); every other field is a borderless input that reads as text.
+   *
+   * C130 — while the name-link input is FOCUSED the roles swap: the link
+   * steps out of the way (`opacity-0 pointer-events-none`) and the input
+   * becomes the display with a real caret, so typing shows the caret exactly
+   * where the text is (same element, no overlay misalignment — a z-order swap
+   * would drift on names long enough to scroll the input internally).
    */
   if (permanent) {
     const isNameLink = href !== undefined && field === 'name'
     const inputClassName = cn(
       isNameLink
-        ? 'absolute inset-0 z-0 h-full w-full cursor-text border-transparent bg-transparent px-1 text-transparent caret-transparent shadow-none'
+        ? cn(
+            // `z-0` while unfocused keeps the link (z-10) the click target —
+            // the locked C116 mechanism; `z-20` while focused steps the input
+            // above the faded link so the caret shows and clicks edit.
+            'absolute inset-0 h-full w-full cursor-text border-transparent bg-transparent px-0 shadow-none',
+            focused
+              ? 'z-20 font-medium text-primary caret-foreground'
+              : 'z-0 text-transparent caret-transparent',
+          )
         : 'min-h-10 w-full border-transparent bg-transparent px-1 shadow-none',
       permanentFocusClassName,
     )
@@ -225,8 +249,17 @@ export const CampaignInlineEditableCell = ({
             href={href}
             // `w-auto`: the link spans ONLY its text, so the rest of the cell
             // stays the input's clickable area (click on the text navigates,
-            // click beside it edits — the locked C116 mechanism).
-            className="relative z-10 inline-flex min-h-10 max-w-full items-center font-medium text-primary underline-offset-4 hover:underline"
+            // click beside it edits — the locked C116 mechanism). C130:
+            // focused cells fade the link so clicks land in the input (caret
+            // placement) instead of navigating mid-edit.
+            className={cn(
+              'relative z-10 inline-flex min-h-10 max-w-full items-center font-medium text-primary underline-offset-4 hover:underline',
+              // C130 — while the input owns focus the link steps out of the
+              // way AND out of the tab order (a faded link must not be
+              // reachable via Shift+Tab).
+              focused && 'pointer-events-none opacity-0',
+            )}
+            tabIndex={focused ? -1 : undefined}
             onKeyDown={(event) => event.stopPropagation()}
           >
             <span className="truncate">{draft || value || ''}</span>
@@ -241,14 +274,25 @@ export const CampaignInlineEditableCell = ({
           aria-busy={isPending}
           className={inputClassName}
           onChange={handleChange}
+          onFocus={(event) => {
+            setFocused(true)
+            // C130 — select only in the name-link cell: a click on the phone
+            // or email must be able to place the caret mid-value, and
+            // selecting there would make one stray keystroke replace the
+            // whole number.
+            if (isNameLink) event.currentTarget.select()
+          }}
           onBlur={handleBlur}
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
               event.preventDefault()
-              setDraft(displayDraftFor(field, value ?? ''))
-              setErrorMessage(null)
-              setShowSavedFeedback(false)
-              // Blur saves the reverted draft — a no-op the equality check catches.
+              // Discard: the next blur reverts without saving (see
+              // `pendingDiscardRef` — blur would otherwise persist the stale
+              // draft from this render's closure). Bumping the request id also
+              // mutes a debounce save that already left the client.
+              pendingDiscardRef.current = true
+              requestId.current += 1
+              setIsPending(false)
               event.currentTarget.blur()
               return
             }
@@ -269,7 +313,7 @@ export const CampaignInlineEditableCell = ({
           <span
             role="status"
             aria-live="polite"
-            className="absolute top-1/2 right-2 z-20 -translate-y-1/2 bg-background/90 px-1 text-xs text-muted-foreground"
+            className="pointer-events-none absolute top-1/2 right-2 z-20 -translate-y-1/2 bg-background/90 px-1 text-xs text-muted-foreground"
           >
             Salvo.
           </span>

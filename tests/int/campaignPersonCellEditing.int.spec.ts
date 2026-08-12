@@ -41,7 +41,7 @@ describe('C116 — cell edits of the people list', () => {
   })
 
   describe('updatePersonContactRecord', () => {
-    it('lets a coordinator edit name/email/city of a leadership-anchored person', async () => {
+    it('lets a coordinator edit name/phone of a leadership-anchored person', async () => {
       const fixtures = campaignFixtures()
       const actor = await fixtures.createCampaignUser('coordinator')
       const municipality = await fixtures.getMunicipality()
@@ -52,11 +52,6 @@ describe('C116 — cell edits of the people list', () => {
         id: contact.id,
         field: 'name',
         name: 'Maria Nova da Silva',
-      })
-      await updatePersonContactRecord(payload, actor, {
-        id: contact.id,
-        field: 'city',
-        city: 'Salvador',
       })
       await updatePersonContactRecord(payload, actor, {
         id: contact.id,
@@ -71,7 +66,6 @@ describe('C116 — cell edits of the people list', () => {
         overrideAccess: true,
       })
       expect(updated.name).toBe('Maria Nova da Silva')
-      expect(updated.city).toBe('Salvador')
       // C112 shape: the cell edit set the PRIMARY phone, the ficha list carries it first.
       expect(primaryPhoneOf(updated.phones)).toBe('71999998888')
     })

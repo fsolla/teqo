@@ -61,6 +61,7 @@ describe('people list URL contract', () => {
     })
     expect(parsePeopleListParams({ sort: 'email', dir: 'up' })).toEqual({ page: 1 })
     expect(parsePeopleListParams({ sort: 'name' })).toEqual({ page: 1, sort: 'name' })
+    expect(parsePeopleListParams({ sort: 'party' })).toEqual({ page: 1, sort: 'party' })
   })
 
   it('parses absence facets with OR values, dropping unknown and canonicalizing "todas"', () => {
@@ -95,6 +96,19 @@ describe('people list URL contract', () => {
     ).toEqual({ page: 1, ausencias: ['qualquer_ausencia'] })
   })
 
+  it('parses party facets as trimmed, deduped free text up to the field max length (C130)', () => {
+    expect(parsePeopleListParams({ party: 'PT' })).toEqual({ page: 1, parties: ['PT'] })
+    expect(parsePeopleListParams({ party: ['PT', 'pt', 'PT'] })).toEqual({
+      page: 1,
+      parties: ['PT', 'pt'],
+    })
+    expect(parsePeopleListParams({ party: ['  PC do B ', '', 'x'.repeat(33), 'PSOL'] })).toEqual({
+      page: 1,
+      parties: ['PC do B', 'PSOL'],
+    })
+    expect(parsePeopleListParams({ party: '   ' })).toEqual({ page: 1 })
+  })
+
   it('canonicalizes selecting every status member to the absent filter (C119)', () => {
     expect(
       parsePeopleListParams({
@@ -110,9 +124,10 @@ describe('people list URL contract', () => {
       capacities: ['lideranca'],
       municipalities: [3, 12],
       statuses: ['engajado'],
+      parties: ['PT', 'PC do B'],
     })
     expect(params.toString()).toBe(
-      'q=ana&capacity=lideranca&municipality=3&municipality=12&status=engajado',
+      'q=ana&capacity=lideranca&municipality=3&municipality=12&status=engajado&party=PT&party=PC+do+B',
     )
   })
 
@@ -187,6 +202,7 @@ describe('people list URL contract', () => {
     expect(buildPeopleSortHref({ page: 1, sort: 'lidera', dir: 'desc' }, 'base')).toBe(
       '/campanha/pessoas?sort=base',
     )
+    expect(buildPeopleSortHref({ page: 1 }, 'party')).toBe('/campanha/pessoas?sort=party')
     expect(buildPeopleSortHref({ page: 3, sort: 'lidera', dir: 'desc' }, 'base')).toBe(
       '/campanha/pessoas?sort=base',
     )
@@ -196,7 +212,7 @@ describe('people list URL contract', () => {
   })
 
   it('derives the omnibox primary sort options: one per key, in its default direction', () => {
-    expect(peopleListSortPrimaryOptions).toHaveLength(7)
+    expect(peopleListSortPrimaryOptions).toHaveLength(8)
     expect(peopleListSortPrimaryOptions.map((option) => option.key)).toEqual([
       'name',
       'contact',
@@ -205,6 +221,7 @@ describe('people list URL contract', () => {
       'aliada',
       'assessorado',
       'base',
+      'party',
     ])
     for (const option of peopleListSortPrimaryOptions) {
       expect(option.dir).toBe(defaultPeopleListSortDir(option.key))

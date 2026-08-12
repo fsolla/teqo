@@ -17,6 +17,7 @@ import {
   togglePeopleAbsenceFilter,
   togglePeopleCapacityFilter,
   togglePeopleMunicipalityFilter,
+  togglePeoplePartyFilter,
   togglePeopleStatusFilter,
   type PeopleFilterOption,
 } from '@/utilities/people/peopleListFilters'
@@ -74,6 +75,10 @@ export const buildPeopleOmniboxChips = ({
     })
   }
 
+  for (const party of state.parties ?? []) {
+    chips.push({ id: `party:${party}`, label: chipLabel('Partido', party) })
+  }
+
   if (!isDefaultPeopleListSort(state)) {
     const { sort, dir } = resolvePeopleListSort(state)
     const option = peopleListSortOptions.find((entry) => entry.key === sort && entry.dir === dir)
@@ -88,8 +93,10 @@ export const buildPeopleOmniboxChips = ({
 
 export const buildPeopleOmniboxSuggestionSeeds = ({
   municipalityFilterOptions,
+  partyFilterOptions,
 }: {
   municipalityFilterOptions: readonly PeopleFilterOption[]
+  partyFilterOptions: readonly PeopleFilterOption[]
 }) => {
   const seeds = []
 
@@ -154,6 +161,20 @@ export const buildPeopleOmniboxSuggestionSeeds = ({
     )
   }
 
+  for (const option of partyFilterOptions) {
+    seeds.push(
+      createOmniboxSuggestionSeed(
+        {
+          id: `party:${option.value}`,
+          group: 'Partido',
+          label: option.label,
+          keywords: ['partido', 'sigla'],
+        },
+        { emptyQueryVisible: true },
+      ),
+    )
+  }
+
   // C125 — primary-direction seeds only, visible on an empty query: on mobile
   // the sortable headers do not exist (cards), so the omnibox group is the
   // whole discoverability surface for the 7 keys (and 7 < the shared 8/group cap).
@@ -207,6 +228,10 @@ export const applyPeopleOmniboxSuggestion = ({
     return { kind: 'url', state: togglePeopleAbsenceFilter(state, suggestionId.slice(9)) }
   }
 
+  if (suggestionId.startsWith('party:')) {
+    return { kind: 'url', state: togglePeoplePartyFilter(state, suggestionId.slice(6)) }
+  }
+
   if (suggestionId.startsWith('sort:')) {
     const raw = suggestionId.slice(5)
     const [key, dir] = raw.split('|')
@@ -245,6 +270,10 @@ export const removePeopleOmniboxChip = ({
 
   if (chipId.startsWith('ausencia:')) {
     return { kind: 'url', state: togglePeopleAbsenceFilter(state, chipId.slice(9)) }
+  }
+
+  if (chipId.startsWith('party:')) {
+    return { kind: 'url', state: togglePeoplePartyFilter(state, chipId.slice(6)) }
   }
 
   if (chipId === 'sort') {

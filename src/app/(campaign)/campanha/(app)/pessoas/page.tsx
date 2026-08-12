@@ -122,7 +122,7 @@ const PeopleListEmptyState = ({
 
 /**
  * C116/C128 editability matrix by actor. The advisor rule mirrors each owner
- * collection's access: Lidera/Aliada em follow
+ * collection's access: Lidera/Dobra em follow
  * `canManageLeadership`/`canReadStateDeputy` (the row's own municipalities
  * must cross the carteira — the row may be visible via another capacity), and
  * C128 opens the cells for people WITHOUT the capacity yet (the first
@@ -179,9 +179,12 @@ const peopleColumns = ({
     id: 'name',
     label: 'Nome',
     mandatory: true,
+    cellClassName: 'max-w-72',
     head: <PeopleSortableHead state={state} sortKey="name" />,
     cell: (row) => {
       const subline = peopleNameSubline(row)
+      const sublineLabel =
+        row.ballotName && row.ballotName !== row.name ? 'Nome de legenda' : 'Base'
       return (
         <div className="flex min-w-0 flex-col">
           <div className="flex min-w-0 items-baseline gap-1">
@@ -199,7 +202,7 @@ const peopleColumns = ({
               <span className="shrink-0 text-muted-foreground">({row.party})</span>
             ) : null}
           </div>
-          <CampaignNameSubline value={subline} srLabel="Nome de legenda" />
+          <CampaignNameSubline value={subline} srLabel={sublineLabel} />
         </div>
       )
     },
@@ -207,7 +210,7 @@ const peopleColumns = ({
   {
     id: 'contact',
     label: 'Contato',
-    cellClassName: 'whitespace-normal',
+    cellClassName: 'min-w-40',
     head: <PeopleSortableHead state={state} sortKey="contact" />,
     cell: (row) => (
       <CampaignInlineEditableCell
@@ -257,6 +260,7 @@ const peopleColumns = ({
         drawerTitle="Municípios assessorados"
         updateErrorMessage="Não foi possível atualizar a carteira. Tente novamente."
         readOnly={!editability.canEditAssessora(row)}
+        minWidthClassName="min-w-32"
       />
     ),
   },
@@ -278,12 +282,13 @@ const peopleColumns = ({
         drawerTitle="Municípios liderados"
         updateErrorMessage="Não foi possível atualizar os municípios. Tente novamente."
         readOnly={!editability.canEditLidera(row)}
+        minWidthClassName="min-w-32"
       />
     ),
   },
   {
     id: 'aliada',
-    label: 'Aliada em',
+    label: 'Dobra em',
     cellClassName: 'max-w-56 whitespace-normal',
     head: <PeopleSortableHead state={state} sortKey="aliada" />,
     cell: (row) => (
@@ -299,6 +304,7 @@ const peopleColumns = ({
         drawerTitle="Municípios da dobradinha"
         updateErrorMessage="Não foi possível atualizar os municípios. Tente novamente."
         readOnly={!editability.canEditAliada(row)}
+        minWidthClassName="min-w-32"
       />
     ),
   },
@@ -319,22 +325,6 @@ const peopleColumns = ({
     ),
   },
   {
-    id: 'base',
-    label: 'Base',
-    head: <PeopleSortableHead state={state} sortKey="base" />,
-    cell: (row) => (
-      <CampaignInlineEditableCell
-        recordId={row.contactID}
-        recordIdField="contactId"
-        field="city"
-        value={row.city}
-        label="Base"
-        formAction={updatePersonContactFormAction}
-        permanent
-      />
-    ),
-  },
-  {
     id: 'actions',
     label: 'Ações',
     head: (
@@ -348,12 +338,18 @@ const peopleColumns = ({
       return (
         <div className="inline-flex items-center justify-end gap-1">
           {row.leadershipID !== null ? (
-            <CampaignHoverTooltip content="Convidar">
-              <LeadershipInviteRowAction
-                leadershipID={row.leadershipID}
-                name={row.name}
-                hasValidPhone={whatsAppHref !== null}
-              />
+            // C130 — the span wrapper keeps the hover tooltip reachable when
+            // the button is disabled (disabled buttons swallow pointer events).
+            <CampaignHoverTooltip
+              content={whatsAppHref !== null ? 'Convidar' : 'Convidar indisponível — sem celular'}
+            >
+              <span>
+                <LeadershipInviteRowAction
+                  leadershipID={row.leadershipID}
+                  name={row.name}
+                  hasValidPhone={whatsAppHref !== null}
+                />
+              </span>
             </CampaignHoverTooltip>
           ) : null}
           {whatsAppHref ? (
@@ -370,20 +366,34 @@ const peopleColumns = ({
               </Button>
             </CampaignHoverTooltip>
           ) : (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-10"
-              disabled
-              aria-label={`WhatsApp indisponível — ${row.name} sem celular`}
-            >
-              <MessageCircleIcon className="size-4" aria-hidden="true" />
-            </Button>
+            <CampaignHoverTooltip content="WhatsApp indisponível — sem celular">
+              {/* C130 — `pointer-events-none` on the DISABLED button: Chromium
+                  excludes disabled form controls from pointer hit-testing, so
+                  the hover would otherwise never reach this span (the tooltip
+                  trigger). The span keeps the aria-label button semantics. */}
+              <span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-10 pointer-events-none"
+                  disabled
+                  aria-label={`WhatsApp indisponível — ${row.name} sem celular`}
+                >
+                  <MessageCircleIcon className="size-4" aria-hidden="true" />
+                </Button>
+              </span>
+            </CampaignHoverTooltip>
           )}
           {canDelete ? (
             <CampaignHoverTooltip content="Apagar">
-              <DeletePersonButton personName={row.name} contactId={row.contactID} />
+              {/* C130 — span wrapper: `DeletePersonButton` is a component and
+                  does not forward the tooltip trigger's ref/pointer props, so
+                  the hover would never reach the trigger (same reason as the
+                  disabled buttons above). */}
+              <span>
+                <DeletePersonButton personName={row.name} contactId={row.contactID} />
+              </span>
             </CampaignHoverTooltip>
           ) : null}
         </div>
@@ -412,7 +422,7 @@ const PeopleMobileCards = ({
         const capacities: Array<{ label: string; ids: readonly number[] }> = [
           { label: 'Assessora', ids: row.assessoraMunicipalityIDs },
           { label: 'Lidera', ids: row.leadershipMunicipalityIDs },
-          { label: 'Aliada em', ids: row.deputyMunicipalityIDs },
+          { label: 'Dobra em', ids: row.deputyMunicipalityIDs },
         ]
         return (
           <li key={row.contactID} className="flex flex-col gap-2 py-4">
@@ -543,6 +553,12 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
     .filter((option): option is PeopleFilterOption => option !== null)
     .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'))
 
+  // C130 — party facet from the dobradinhas present in the actor's recorte.
+  const partyFilterOptions: PeopleFilterOption[] = listData.filterFacets.parties.map((party) => ({
+    value: party,
+    label: party,
+  }))
+
   const advisorOptions = editability.canEditAssessorado
     ? (await loadEligibleAdvisorOptions(payload, user)).map((option) => ({
         id: option.id,
@@ -567,7 +583,8 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
     state.capacities?.length ||
     state.municipalities?.length ||
     state.statuses?.length ||
-    state.ausencias?.length,
+    state.ausencias?.length ||
+    state.parties?.length,
   )
 
   return (
@@ -577,6 +594,7 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
         <PeopleFilters
           state={state}
           municipalityFilterOptions={municipalityFilterOptions}
+          partyFilterOptions={partyFilterOptions}
           trailing={
             <CampaignColumnPickerTrailing
               columnVisibility={columnVisibility}
