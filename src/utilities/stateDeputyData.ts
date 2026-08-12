@@ -27,6 +27,8 @@ export type StateDeputyRowViewModel = {
   phone: string | null
   slug: string
   party: string | null
+  /** C129 — the "nome de legenda" (ballot name), shown discreet under the name. */
+  ballotName: string | null
   municipalityIDs: number[]
   leaderships: NamedRelationSummary[]
   /** B156 — the staff responsible for this dobradinha, names resolved. */
@@ -147,7 +149,7 @@ export const loadStateDeputyListPageData = async (
       limit: stateDeputyPageSize,
       page: state.page,
       sort: resolveStateDeputyListPayloadSort(sort, dir),
-      select: { contact: true, slug: true, party: true, advisors: true },
+      select: { contact: true, slug: true, party: true, ballotName: true, advisors: true },
       user,
       overrideAccess: false,
     }),
@@ -221,6 +223,7 @@ export const loadStateDeputyListPageData = async (
       id: doc.id,
       slug: doc.slug,
       party: doc.party ?? null,
+      ballotName: doc.ballotName ?? null,
       municipalityIDs: municipalityIDsByDeputy.get(doc.id) ?? [],
       leaderships: leadershipsByDeputy.get(doc.id) ?? [],
       advisors: advisorsByDeputy.get(doc.id) ?? [],
@@ -236,6 +239,8 @@ export type StateDeputySummary = {
   name: string
   slug: string
   party: string | null
+  /** C129 — the "nome de legenda" (ballot name), shown discreet under the name. */
+  ballotName: string | null
 }
 
 export type StateDeputyDetailViewModel = StateDeputySummary & {
@@ -312,6 +317,7 @@ export const loadStateDeputyDetail = async (
     id: stateDeputy.id,
     slug: stateDeputy.slug,
     party: stateDeputy.party ?? null,
+    ballotName: stateDeputy.ballotName ?? null,
     notes: stateDeputy.notes ?? null,
     municipalities: municipalities.docs.map((municipality) => ({
       id: municipality.id,
@@ -339,7 +345,7 @@ export const loadStateDeputySummaries = async (
     limit: 0,
     pagination: false,
     sort: 'contact.name',
-    select: { contact: true, slug: true, party: true },
+    select: { contact: true, slug: true, party: true, ballotName: true },
     // Intentional admin bypass: id lookups for the home-search card, no
     // actor-scoping possible or needed (B52 precedent).
     overrideAccess: true,
@@ -353,6 +359,7 @@ export const loadStateDeputySummaries = async (
         name: stateDeputyContactSummary(doc.contact).name,
         slug: doc.slug,
         party: doc.party ?? null,
+        ballotName: doc.ballotName ?? null,
       },
     ]),
   )

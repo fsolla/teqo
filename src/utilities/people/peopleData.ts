@@ -56,6 +56,8 @@ export type PeopleRowViewModel = {
   city: string | null
   /** `stateDeputy.party` — the one party source (at most one dobradinha per ficha). */
   party: string | null
+  /** C129 — `stateDeputy.ballotName`, the "nome de legenda" for the urna. */
+  ballotName: string | null
   leadershipID: number | null
   leadershipMunicipalityIDs: number[]
   supportStatus: SupportStatus | null
@@ -73,7 +75,21 @@ export type PeopleRowViewModel = {
   assessorados: Array<{ id: number; name: string }>
 }
 
-/** Merge intermediate: the ids the loader resolves into `assessoradoNames`. */
+/**
+ * C129 — the Name-cell subline of `/campanha/pessoas`: the dobradinha's
+ * "nome de legenda" (ballot name), discreet under the real name, when present.
+ *
+ * C130 extends this with the base fallback — the FINAL shared rule for the
+ * second line is `ballotName ?? city` (legenda overrides base), the two plans
+ * (`pessoas-nome-de-legenda-dobradinha.md` / `pessoas-tabela-desktop-ajustes.md`)
+ * pin it, and this function is the single seam: C130 changes one expression
+ * here (and its unit spec), never markup. Until C130 lands, this branch keeps
+ * the accept "sem nome de legenda, nada muda na linha" — null when absent.
+ */
+export const peopleNameSubline = (person: MergedPerson | PeopleRowViewModel): string | null =>
+  person.ballotName
+
+/** The merge intermediate carries every field the list/detail row needs. */
 export type MergedPerson = Omit<PeopleRowViewModel, 'assessoradoNames'> & {
   leadershipAdvisorIDs: number[]
   deputyAdvisorIDs: number[]
@@ -100,6 +116,7 @@ export type PeopleDeputySource = {
   email: string | null
   city: string | null
   party: string | null
+  ballotName: string | null
   municipalityIDs: number[]
   advisorIDs: number[]
 }
@@ -158,6 +175,7 @@ export const toPeopleDeputySource = (
     email: contact.email,
     city: contact.city,
     party: doc.party ?? null,
+    ballotName: doc.ballotName ?? null,
     municipalityIDs: municipalityIdsByDeputy.get(doc.id) ?? [],
     advisorIDs: uniqueRelationshipIds(doc.advisors),
   }
@@ -201,6 +219,7 @@ export const toPeopleRowViewModel = (
   email: person.email,
   city: person.city,
   party: person.party,
+  ballotName: person.ballotName,
   leadershipID: person.leadershipID,
   leadershipMunicipalityIDs: person.leadershipMunicipalityIDs,
   supportStatus: person.supportStatus,
@@ -234,6 +253,7 @@ export const mergePeopleSources = (sources: PeopleMergeSources): MergedPerson[] 
       email: null,
       city: null,
       party: null,
+      ballotName: null,
       leadershipID: null,
       leadershipMunicipalityIDs: [],
       supportStatus: null,
@@ -273,6 +293,7 @@ export const mergePeopleSources = (sources: PeopleMergeSources): MergedPerson[] 
       person.city = deputy.city
     }
     person.party = deputy.party
+    person.ballotName = deputy.ballotName
     person.deputyID = deputy.id
     person.deputyMunicipalityIDs = [...deputy.municipalityIDs]
     person.deputyAdvisorIDs = [...deputy.advisorIDs]
@@ -515,7 +536,7 @@ export const loadPeopleListPageData = async (
       depth: 1,
       limit: 0,
       pagination: false,
-      select: { contact: true, slug: true, party: true, advisors: true },
+      select: { contact: true, slug: true, party: true, ballotName: true, advisors: true },
       user,
       overrideAccess: false,
     }),

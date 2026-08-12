@@ -8,6 +8,8 @@ type StateDeputyContactSectionProps = {
   stateDeputyId: number
   name: string
   email: string | null
+  /** C129 — the "nome de legenda" (ballot name), discreet under the name. */
+  ballotName: string | null
   /** Every number of the ficha, order = priority (C112) — primary first. */
   phones: string[]
 }
@@ -15,6 +17,7 @@ type StateDeputyContactSectionProps = {
 export const StateDeputyContactSection = ({
   stateDeputyId,
   name,
+  ballotName,
   email,
   phones,
 }: StateDeputyContactSectionProps) => (
@@ -26,15 +29,20 @@ export const StateDeputyContactSection = ({
       <div className="flex flex-col gap-1">
         <dt className="text-sm text-muted-foreground">Nome</dt>
         <dd>
-          <CampaignInlineEditableCell
-            recordId={stateDeputyId}
-            recordIdField="stateDeputyId"
-            field="name"
-            value={name}
-            label="Nome"
-            formAction={updateStateDeputyContactFormAction}
-            href={`/campanha/dobradinhas/${stateDeputyId}`}
-          />
+          <div className="flex min-w-0 flex-col">
+            <CampaignInlineEditableCell
+              recordId={stateDeputyId}
+              recordIdField="stateDeputyId"
+              field="name"
+              value={name}
+              label="Nome"
+              formAction={updateStateDeputyContactFormAction}
+              href={`/campanha/dobradinhas/${stateDeputyId}`}
+            />
+            {ballotName ? (
+              <span className="truncate text-xs text-muted-foreground">{ballotName}</span>
+            ) : null}
+          </div>
         </dd>
       </div>
       <div className="flex flex-col gap-1">

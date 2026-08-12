@@ -14,18 +14,26 @@ import { parseStateDeputyNameParty } from '@/lib/stateDeputyNameParty'
 export const stateDeputyCreateSchema = z.object({
   name: z.string().trim().min(2).max(120),
   party: trimmedOptionalText(32),
+  ballotName: trimmedOptionalText(30),
   notes: trimmedOptionalText(4000),
 })
 
 export const stateDeputyUpdateSchema = z.object({
   id: positiveRelationshipId,
   party: trimmedNullableText(32),
+  ballotName: trimmedNullableText(30),
   notes: trimmedNullableText(4000),
 })
 
 export const stateDeputyPartyUpdateSchema = z.object({
   id: positiveRelationshipId,
   party: trimmedNullableText(32),
+})
+
+/** C129 — delta write for the "Nome de legenda" column of `/campanha/dobradinhas`. */
+export const stateDeputyBallotNameUpdateSchema = z.object({
+  id: positiveRelationshipId,
+  ballotName: trimmedNullableText(30),
 })
 
 export const STATE_DEPUTY_INVALID_CONTACT_MESSAGE = 'Contato da dobradinha inválido.'
@@ -128,6 +136,7 @@ export const STATE_DEPUTY_ADVISOR_SAFE_MESSAGES = [
 export type StateDeputyCreateInput = z.input<typeof stateDeputyCreateSchema>
 export type StateDeputyUpdateInput = z.input<typeof stateDeputyUpdateSchema>
 export type StateDeputyPartyUpdateInput = z.input<typeof stateDeputyPartyUpdateSchema>
+export type StateDeputyBallotNameUpdateInput = z.input<typeof stateDeputyBallotNameUpdateSchema>
 export type StateDeputyMunicipalitiesBatchInput = z.input<
   typeof stateDeputyMunicipalitiesBatchSchema
 >

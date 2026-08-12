@@ -19,6 +19,7 @@ type StateDeputyFormProps = {
   initial?: {
     id: number
     party: string | null
+    ballotName: string | null
     notes: string | null
   }
   initialName?: string
@@ -57,6 +58,17 @@ export const StateDeputyForm = ({ formAction, initial, initialName }: StateDeput
           defaultValue={initial?.party ?? undefined}
           className="min-h-11"
           placeholder="Ex.: PT"
+        />
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="state-deputy-ballot-name">Nome de legenda</FieldLabel>
+        <Input
+          id="state-deputy-ballot-name"
+          name="ballotName"
+          maxLength={30}
+          defaultValue={initial?.ballotName ?? undefined}
+          className="min-h-11"
+          placeholder="Ex.: Sollinha"
         />
       </Field>
       <Field>
