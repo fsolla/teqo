@@ -98,7 +98,7 @@ Issues nascidas de `plan-issue` com `--plan` **não** entram como `ready`: ficam
 - **Falha terminal** (run ERROR/CANCELLED/EXPIRED ou fim sem PR): tick comenta, move a Issue para `blocked` e arquiva o agente. **Triage humana**: ler o run em cursor.com/agents, decidir — re-`ready` manual se transitório (o circuit breaker recusa a 3ª tentativa automática), corrigir a spec se sistêmico.
 - **Worker travado**: archive em cursor.com/agents → o próximo tick reconcilia como falha documentada.
 - **Duplicata**: impossível em condições normais (alocador único + lock otimista + `agentId` idempotente); o tick cancela runs extras se alguém spawnar manualmente.
-- **`needs:migration`/`serializes:[migrations]`**: o tick não spawna enquanto houver PR aberto tocando schema (`migration-lock`) — re-avalia a cada tick.
+- **`needs:migration`/`serializes:[migrations]`**: o tick não spawna enquanto houver PR aberto tocando schema (predicado `countOpenSchemaPrs` em `agent-pool-github.mjs`) — re-avalia a cada tick.
 - **Audit solitário**: `pause` antes, `resume` depois (a skill `engineering-audit` lembra).
 
 ## Smoke remoto (aceite — rodar na primeira ativação)

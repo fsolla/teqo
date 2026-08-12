@@ -2,7 +2,7 @@
 /**
  * Local mirror of `.github/workflows/ci-pr.yml` (serial): phase-1 cheap checks,
  * then phase-2 expensive (int/build/e2e). Skips align with `scripts/ci-scope.mjs`
- * (`origin/main` by default). `migration-lock` is GitHub-only.
+ * (`origin/main` by default).
  *
  * Preflight checks only `teqo_test` (ci-pr never touches the dev DB). Escape
  * during pipeline cutover: `git push --no-verify` (documented in AGENT-OPS).

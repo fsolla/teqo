@@ -5,9 +5,10 @@
  * The pool consumes the SAME queue as `agent:claim` (buildClaimQueue) and then
  * applies stricter, fail-closed predicates: anything that needs a human
  * (`requirements-changed`, `needs:consent`, `blocked`) is out, migration-touching
- * issues yield to the migration-lock while a schema PR is open, and an issue
- * the pool already failed twice stays out (circuit breaker — enforced per
- * candidate at claim time, where the comments are already being read).
+ * issues wait while a schema PR is open (pool-level serialization — the CI
+ * migration-lock was removed 2026-08-12), and an issue the pool already failed
+ * twice stays out (circuit breaker — enforced per candidate at claim time,
+ * where the comments are already being read).
  */
 
 import { labelNames } from './agent-github.mjs'

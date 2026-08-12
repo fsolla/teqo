@@ -2,8 +2,12 @@
 #   Phase 1 (cheap, no Postgres): lint, format, typecheck, knip, cycles, unit
 #   Phase 2 (expensive, Postgres; needs phase 1 green/skipped): int, build, e2e
 # Job-level skips come from the `scope` classifier (scripts/ci-scope.mjs). A
-# phase-1 failure skips phase 2 via `needs` + explicit if. `migration-lock`
-# stays parallel to phase 1 (cheap, independent).
+# phase-1 failure skips phase 2 via `needs` + explicit if.
+#
+# Schema migrations are NOT serialized across PRs (migration-lock removed
+# 2026-08-12): a stale chain is caught by `pnpm migrate` + `test:int` on every
+# PR and on main (ci.yml), incl. campaignMigrationReconciliation — the check's
+# hard fail deadlocked every open schema PR the moment two coexisted.
 #
 # High-risk diffs (schema, lockfile, classifiers — see
 # scripts/lib/test-affected-core.mjs) force full unit/int/e2e. Push to main
@@ -365,28 +369,6 @@ jobs:
         if: failure()
         uses: ./.github/actions/cancel-workflow-on-failure
 
-  migration-lock:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v5
-      - name: Count open PRs touching schema files
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          count=$(gh pr list --state open --limit 100 --json number,files \
-            --jq '[.[] | select(.files != null and ([.files[].path | test("^(src/migrations/|src/payload-types.ts$|payload-types.ts$)")] | any))] | length')
-          echo "Open schema-touching PRs: $count"
-          if [ "$count" -gt 1 ]; then
-            echo "::error::More than one open PR touches src/migrations/ or payload-types.ts. Merge or close the other first."
-            exit 1
-          fi
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
-
   checks:
     name: checks
     runs-on: ubuntu-latest
@@ -401,7 +383,6 @@ jobs:
       - int
       - build
       - e2e
-      - migration-lock
       - plans-only-closes
     if: always()
     steps:

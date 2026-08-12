@@ -30,7 +30,7 @@ main → ci.yml full suite → vercel deploy --prod (se verde) → requeue se HE
 ### Bypass de CI (cutover / transição)
 
 - **Local:** se `gate:push` ainda espelha pipeline antigo e bloqueia push legítimo da PR que o muda → `git push --no-verify` permitido como escape de transição (não WIP permanente). Documentado aqui; após o cutover, entregas passam no CI novo sem bypass.
-- **Cutover humano:** pode relaxar temporary required checks se o flip de proteção travar merges; reverter para `checks` + `migration-lock` em `main` assim que o CI novo estiver verde.
+- **Cutover humano:** pode relaxar temporary required checks se o flip de proteção travar merges; reverter para `checks` em `main` assim que o CI novo estiver verde.
 
 ## Comandos
 
@@ -45,7 +45,7 @@ main → ci.yml full suite → vercel deploy --prod (se verde) → requeue se HE
 | `pnpm agent:file-miss -- --title ...`                                                                         | Issue `kind:agent-miss`                                                      |
 | `pnpm agent:pool -- status\|tick --dry-run\|doctor`                                                           | Pool Cloud; start/stop via `gh workflow run agent-pool.yml`                  |
 | `pnpm push [-- -u origin HEAD …]`                                                                             | Canônico: ensure-deps + gate:push + push                                     |
-| `pnpm configure:branch-protection [-- --dry-run]`                                                             | Proteção de `main`: `checks` + `migration-lock`, `strict=false`, 0 reviews   |
+| `pnpm configure:branch-protection [-- --dry-run]`                                                             | Proteção de `main`: `checks`, `strict=false`, 0 reviews                      |
 | `pnpm db:seed:minimal`                                                                                        | DB mínimo sintético                                                          |
 
 Labels: `ready|in-progress|blocked|done|in-prod`, `prio:*`, `kind:*`, `needs:*`.
@@ -55,7 +55,7 @@ Labels: `ready|in-progress|blocked|done|in-prod`, `prio:*`, `kind:*`, `needs:*`.
 ## Contrato de PR
 
 1. Schema → atualizar `db:seed:minimal` no mesmo PR (`needs:migration`).
-2. ≤1 PR aberto tocando migrations / `payload-types.ts` (`migration-lock`).
+2. Migrations NÃO são serializadas entre PRs: o CI (migrate + int, incl. `campaignMigrationReconciliation`) valida a cadeia em todo PR e na main; rebase antes de `migrate:create` continua obrigatório.
 3. Ready + auto-merge: `gh pr create --base main` → `gh pr merge --auto --merge`; `gh pr checks --watch --required` (Vercel Git não é gate).
 
 ## CI por alvo

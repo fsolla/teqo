@@ -72,8 +72,8 @@ export const prClosingIssue = (prs, issueNumber) =>
   prs.find((pr) => new RegExp(`(?:closes|fixes) #${issueNumber}\\b`, 'i').test(pr.body ?? '')) ??
   null
 
-// Same path predicate as the ci-pr.yml migration-lock job (single source of
-// truth for "schema-touching PR").
+// Path predicate for "schema-touching PR" — the pool serializes migration
+// spawns while one is open (the CI migration-lock was removed 2026-08-12).
 const SCHEMA_PR_PATH = /^(src\/migrations\/|src\/payload-types\.ts$|payload-types\.ts$)/
 
 export const countOpenSchemaPrs = () =>
