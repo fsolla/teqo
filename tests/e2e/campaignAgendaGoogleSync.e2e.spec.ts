@@ -185,10 +185,14 @@ test.describe('Agenda — sincronização Google (C114/C122)', () => {
       await campaign.login(page, coordinator.email!, coordinator.password)
       await page.goto(`${campaign.baseURL}/campanha/agenda`)
 
-      await expect(campaignPageChrome(page, 'Agenda')).toBeVisible()
+      // C101: no mobile o título da top bar vira o rótulo do período assim que
+      // o calendário settle ("12 Agosto") — a asserção de página carregada é
+      // o próprio FAB, o sujeito do teste.
+      const fab = page.getByRole('button', { name: 'Ações rápidas' })
+      await expect(fab).toBeVisible({ timeout: 15_000 })
 
       // Sem doc seedado + chave fake presente → estado not-configured.
-      await page.getByRole('button', { name: 'Ações rápidas' }).click()
+      await fab.click()
       await page.getByRole('button', { name: 'Agenda da Campanha' }).click()
 
       const sheet = syncDialog(page)
