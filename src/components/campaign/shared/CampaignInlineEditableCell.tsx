@@ -20,12 +20,7 @@ import type { CampaignFormActionState } from '@/utilities/campaignFormActionErro
 
 const SAVE_DEBOUNCE_MS = 500
 
-export type CampaignInlineEditableField =
-  | 'name'
-  | 'email'
-  | 'phone'
-  | 'party'
-  | 'ballotName'
+export type CampaignInlineEditableField = 'name' | 'email' | 'phone' | 'party' | 'ballotName'
 
 type CampaignInlineEditableCellProps = {
   recordId: number
