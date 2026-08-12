@@ -273,6 +273,54 @@ describe('C116 — cell edits of the people list', () => {
       expect(result.accountId).toBeNull()
     })
 
+    it('cascades authored rows when the account dies on the last municipality', async () => {
+      const fixtures = campaignFixtures()
+      const actor = await fixtures.createCampaignUser('coordinator')
+      const contact = await fixtures.createContact()
+      const account = await fixtures.createCampaignUser('advisor', { phone: contact.phone })
+      const only = await fixtures.getMunicipality()
+      await fixtures.assignMunicipalityAdvisors(only, [account])
+      const leadership = await fixtures.createLeadership({
+        contact: await fixtures.createContact(),
+        municipalities: [only],
+      })
+      await fixtures.createInvite({ leadership, createdBy: account })
+      await fixtures.createMunicipalityUpdate({ municipality: only, author: account })
+
+      await setPersonAssessoraMembershipRecord(payload, actor, {
+        contactId: contact.id,
+        municipalityIds: [only.id],
+        assigned: false,
+      })
+
+      const remaining = await payload.find({
+        collection: 'campaignUser',
+        where: { id: { equals: account.id } },
+        depth: 0,
+        pagination: false,
+        overrideAccess: true,
+      })
+      expect(remaining.docs).toHaveLength(0)
+      // The NOT NULL authored rows went down with the account (same order as
+      // the person cascade).
+      const invites = await payload.find({
+        collection: 'campaignInvite',
+        where: { createdBy: { equals: account.id } },
+        depth: 0,
+        pagination: false,
+        overrideAccess: true,
+      })
+      expect(invites.docs).toHaveLength(0)
+      const updates = await payload.find({
+        collection: 'municipalityUpdate',
+        where: { author: { equals: account.id } },
+        depth: 0,
+        pagination: false,
+        overrideAccess: true,
+      })
+      expect(updates.docs).toHaveLength(0)
+    })
+
     it('refuses a person with more than one staff account', async () => {
       const fixtures = campaignFixtures()
       const actor = await fixtures.createCampaignUser('coordinator')
@@ -473,6 +521,48 @@ describe('C116 — cell edits of the people list', () => {
         assigned: true,
       })
       expect(result.leadershipID).toBeNull()
+    })
+
+    it('re-creates the leadership when the undo toast re-adds after the exit', async () => {
+      const fixtures = campaignFixtures()
+      const actor = await fixtures.createCampaignUser('coordinator')
+      const contact = await fixtures.createContact()
+      const municipality = await fixtures.getMunicipality()
+      const leadership = await fixtures.createLeadership({
+        contact,
+        municipalities: [municipality],
+      })
+
+      await setPersonLeadershipMunicipalitiesRecord(payload, actor, {
+        contactId: contact.id,
+        municipalityIds: [municipality.id],
+        assigned: false,
+      })
+      const gone = await payload.find({
+        collection: 'leadership',
+        where: { id: { equals: leadership.id } },
+        depth: 0,
+        pagination: false,
+        overrideAccess: true,
+      })
+      expect(gone.docs).toHaveLength(0)
+
+      // The undo path re-adds (`assigned=true`) — the lifecycle must bring the
+      // entity back (fresh, empty).
+      await setPersonLeadershipMunicipalitiesRecord(payload, actor, {
+        contactId: contact.id,
+        municipalityIds: [municipality.id],
+        assigned: true,
+      })
+      const reborn = await payload.find({
+        collection: 'leadership',
+        where: { contact: { equals: contact.id } },
+        depth: 0,
+        pagination: false,
+        overrideAccess: true,
+      })
+      expect(reborn.docs).toHaveLength(1)
+      expect(uniqueRelationshipIds(reborn.docs[0].municipalities)).toContain(municipality.id)
     })
   })
 

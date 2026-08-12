@@ -39,7 +39,7 @@ import {
 } from '@/lib/schemas/personDelete'
 import { nextStateDeputyAdvisorIdsAfterMembership } from '@/lib/stateDeputyAdvisorMembership'
 import type { CampaignUser, Contact, Leadership, StateDeputy } from '@/payload-types'
-import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
+import { getAdvisorMunicipalityIds, isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import {
   getCampaignActionContext,
   reloadStaffActor,
@@ -255,6 +255,14 @@ export const setPersonAssessoraMembershipRecord = async (
     async ({ req }) => {
       await reloadUnrestrictedActor(payload, actor, PERSON_ASSESSORA_UNRESTRICTED_MESSAGE, req)
 
+      // Serializes every Assessora write of the SAME person: the destructive
+      // exit (last municipality) decides "did the carteira empty?" from an
+      // enumeration, and two concurrent removals of distinct chips would each
+      // see a non-empty remainder and leave a zombie account with an empty
+      // carteira — invisible to the lifecycle. The lock makes the
+      // enumerate→decide→toggle/delete sequence atomic per person.
+      await acquireTextAdvisoryLocks(payload, req, [`person-assessora:${contactId}`])
+
       const accounts = await payload.find({
         collection: 'campaignUser',
         where: { contact: { equals: contactId } },
@@ -319,19 +327,9 @@ export const setPersonAssessoraMembershipRecord = async (
       // empty the carteira deletes the account (with its authored rows and
       // assessorado links) — the confirmation dialog listed the manifest.
       if (!assigned) {
-        const current = await payload.find({
-          collection: 'municipality',
-          where: { advisors: { contains: accountId } },
-          depth: 0,
-          limit: 0,
-          pagination: false,
-          // Intentional bypass: the unrestricted gate above is the
-          // authorization; this read only enumerates the current carteira
-          // (docs always carry their id).
-          overrideAccess: true,
-          req,
-        })
-        const currentMunicipalityIDs = current.docs.map((doc) => doc.id)
+        // Canonical "advisors contains account" lookup, same helper the
+        // advisor scope uses everywhere else.
+        const currentMunicipalityIDs = await getAdvisorMunicipalityIds(payload, accountId, req)
         const next = currentMunicipalityIDs.filter((id) => !municipalityIds.includes(id))
         if (next.length === 0) {
           const slugs = await municipalitySlugsOf(payload, req, currentMunicipalityIDs)
@@ -524,6 +522,11 @@ export const setPersonStateDeputyMunicipalitiesRecord = async (
     async ({ req }) => {
       const currentActor = await reloadStaffActor(payload, actor, PERSON_CELL_STAFF_MESSAGE, req)
 
+      // Same per-person serialization as the Assessora lifecycle: the
+      // destructive exit (last municipality) decides from an enumeration, and
+      // concurrent removals of distinct chips would leave a zombie dobradinha.
+      await acquireTextAdvisoryLocks(payload, req, [`person-state-deputy:${contactId}`])
+
       const deputies = await payload.find({
         collection: 'stateDeputy',
         where: { contact: { equals: contactId } },
@@ -629,18 +632,27 @@ export const setPersonStateDeputyMunicipalities = async (
   revalidatePath('/campanha/dobradinhas', 'page')
   if (stateDeputyID !== null) revalidatePath(`/campanha/dobradinhas/${stateDeputyID}`, 'page')
   for (const slug of slugs) revalidatePath(`/campanha/municipios/${slug}`, 'page')
+  // Same surface as the B37 twin: the list and the B147 v2 render the
+  // dobradinha chips per município.
+  revalidateMunicipalityListPaths({ scope: 'list' })
 }
 
 /**
  * C128 — read-only preview for the destructive-exit confirmation dialog
  * (`PeopleCapacityExitDialog`): what the exit removes, verbatim. The same
  * scope guards the exit write runs inside its transaction — the dialog can
- * never describe a destruction the write would refuse.
+ * never describe a destruction the write would refuse. The actor is reloaded
+ * fresh (same discipline as every record function): a downgraded or removed
+ * role must not read the manifest the write would refuse.
  */
 export const getPersonCapacityExitManifestAction = async (input: unknown) => {
   const data = personCapacityExitSchema.parse(input)
   const { payload, actor } = await getCampaignActionContext()
-  return loadPersonCapacityExitManifest(payload, actor, data)
+  const currentActor =
+    data.capacity === 'account'
+      ? await reloadUnrestrictedActor(payload, actor, PERSON_ASSESSORA_UNRESTRICTED_MESSAGE)
+      : await reloadStaffActor(payload, actor, PERSON_CELL_STAFF_MESSAGE)
+  return loadPersonCapacityExitManifest(payload, currentActor, data)
 }
 
 /**

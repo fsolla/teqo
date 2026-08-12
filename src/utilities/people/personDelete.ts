@@ -448,40 +448,14 @@ export const deletePersonRecord = async (
       })
     }
     if (accountIDs.length > 0) {
-      // Invites the deleted accounts CREATED for other leaderships, authored
-      // municipality updates and calendar feeds all carry NOT NULL FKs with
-      // `ON DELETE set null` — they must go before the accounts themselves.
-      // `deleteCampaignUserAccount` runs the same clean-up per account (the
-      // C128 "fim de assessoria" sibling); batch-then-loop here kept both
-      // paths honest by NOT hand-spelling the order twice.
-      await payload.delete({
-        collection: 'campaignInvite',
-        where: { createdBy: { in: accountIDs } },
-        depth: 0,
-        overrideAccess: true,
-        req,
-      })
-      await payload.delete({
-        collection: 'municipalityUpdate',
-        where: { author: { in: accountIDs } },
-        depth: 0,
-        overrideAccess: true,
-        req,
-      })
-      await payload.delete({
-        collection: 'calendarFeed',
-        where: { createdBy: { in: accountIDs } },
-        depth: 0,
-        overrideAccess: true,
-        req,
-      })
-      await payload.delete({
-        collection: 'supporterImportBatch',
-        where: { actor: { in: accountIDs } },
-        depth: 0,
-        overrideAccess: true,
-        req,
-      })
+      // Per-id so `CampaignUser.beforeDelete` (passkeys + notifications) runs
+      // for every account — bulk `where` deletes would skip the hooks. The
+      // helper also removes the NOT NULL authored rows (invites created by the
+      // account, municipality updates, calendar feeds, import batches) before
+      // the account row itself.
+      for (const accountID of accountIDs) {
+        await deleteCampaignUserAccount(payload, req, accountID)
+      }
     }
     if (supporterCount > 0) {
       await payload.delete({
@@ -520,12 +494,6 @@ export const deletePersonRecord = async (
           req,
         })
       }
-    }
-
-    // Per-id so `CampaignUser.beforeDelete` (passkeys + notifications) runs for
-    // every account — bulk `where` deletes would skip the hooks.
-    for (const accountID of accountIDs) {
-      await deleteCampaignUserAccount(payload, req, accountID)
     }
 
     let contactDeleted = false

@@ -200,14 +200,18 @@ type RelationChipCellProps = {
    * C128 — destructive-exit guard: called on removals (and additions) BEFORE
    * the optimistic apply, same point as the floor/cap refusals. Return `false`
    * to abort the commit without touching the chip state (the wrapper opens its
-   * confirmation dialog). `currentIds` is the optimistic-aware effective set,
-   * so the wrapper can decide "does this removal empty the relation?".
+   * confirmation dialog), `true` to proceed, or `'destructive'` when the
+   * wrapper confirmed a destructive exit — the caller then suppresses the
+   * batch-removal undo toast, whose "Desfazer" would only re-create the
+   * destroyed entity empty (votes/account are gone). `currentIds` is the
+   * optimistic-aware effective set, so the wrapper can decide "does this
+   * removal empty the relation?".
    */
   commitGuard?: (delta: {
     changedIds: number[]
     assigned: boolean
     currentIds: number[]
-  }) => Promise<boolean>
+  }) => Promise<boolean | 'destructive'>
 }
 
 /**
@@ -520,7 +524,7 @@ export const RelationChipCell = ({
    * the same burst — or an "Desfazer" pressed after a later add — would otherwise
    * each compute from the set their own render captured and drop the other's work.
    */
-  const commit = (changedIds: number[], assigned: boolean) => {
+  const commit = (changedIds: number[], assigned: boolean, suppressUndoToast = false) => {
     if (changedIds.length === 0) return
 
     if (draft) {
@@ -548,8 +552,11 @@ export const RelationChipCell = ({
         setFeedback({ kind: 'saved' })
         // A batch removal drops several links in one tap, and the row it left
         // behind carries no trace of what was there. Single removals are one
-        // search away from being restored and get no toast.
-        if (!assigned && changedIds.length > 1) {
+        // search away from being restored and get no toast. C128: a
+        // destructive exit (the wrapper's guard confirmed the entity dies)
+        // suppresses the toast — "Desfazer" would only re-create the destroyed
+        // entity empty.
+        if (!assigned && changedIds.length > 1 && !suppressUndoToast) {
           toast.success(copy.removedMessage(changedIds.length), {
             action: { label: 'Desfazer', onClick: () => commit(changedIds, true) },
           })
@@ -568,15 +575,19 @@ export const RelationChipCell = ({
   /**
    * C128 — the destructive-exit guard runs here, BEFORE the optimistic apply
    * (same point as the floor/cap refusals): a `false` aborts with no state
-   * touched — the wrapper's confirmation dialog decides. The undo-toast path
-   * calls `commit` directly and never passes the guard (re-adding can never
-   * empty a relation).
+   * touched — the wrapper's confirmation dialog decides. A `'destructive'`
+   * verdict suppresses the batch-removal undo toast below (re-adding would
+   * only re-create the destroyed entity empty — votes/account are gone). The
+   * undo-toast path calls `commit` directly and never passes the guard
+   * (re-adding can never empty a relation).
    */
   const guardedCommit = async (changedIds: number[], assigned: boolean) => {
-    if (commitGuard && !(await commitGuard({ changedIds, assigned, currentIds: effectiveIds }))) {
-      return
+    let verdict: boolean | 'destructive' = true
+    if (commitGuard) {
+      verdict = await commitGuard({ changedIds, assigned, currentIds: effectiveIds })
+      if (verdict === false) return
     }
-    commit(changedIds, assigned)
+    commit(changedIds, assigned, verdict === 'destructive')
   }
 
   /** The relation's floor, refused here so the server never has to say no. */

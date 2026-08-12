@@ -107,7 +107,7 @@ type MunicipalityPortfolioCellProps = {
     changedIds: number[]
     assigned: boolean
     currentIds: number[]
-  }) => Promise<boolean>
+  }) => Promise<boolean | 'destructive'>
 }
 
 /**

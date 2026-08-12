@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { getPersonCapacityExitManifestAction } from '@/app/(campaign)/campanha/actions/person'
@@ -32,8 +32,6 @@ type PeopleMunicipalityCellProps = {
   municipalityIndex: readonly MunicipalityPortfolioIndexEntry[]
   /** Ids the actor may ADD (administered carteira for an advisor). */
   addableIds?: ReadonlySet<number>
-  /** Floor the relation enforces server-side — 1 for `leadership.municipalities`. */
-  minItems?: number
   /** Read-only chips (actor may see the relation but not edit it). */
   readOnly?: boolean
   commitAction: (
@@ -72,7 +70,6 @@ export const PeopleMunicipalityCell = ({
   municipalityIds,
   municipalityIndex,
   addableIds,
-  minItems,
   readOnly = false,
   commitAction,
   drawerTitle,
@@ -85,6 +82,23 @@ export const PeopleMunicipalityCell = ({
   /** The pending destructive exit: the dialog is up, the commit waits for it. */
   const [exitRequest, setExitRequest] = useState<PersonCapacityExitManifest | null>(null)
   const exitResolverRef = useRef<((confirmed: boolean) => void) | null>(null)
+  /** A manifest round-trip in flight — a second guard must not orphan the first. */
+  const manifestPendingRef = useRef(false)
+
+  /** Stable identity for the FormData extra-field map (memoized per contact). */
+  const extraFormFields = useMemo(() => ({ contactId }), [contactId])
+
+  /**
+   * Unmounting with the dialog open must settle the pending guard (resolve
+   * `false` — nothing was confirmed, nothing commits) instead of leaving the
+   * promise orphaned and the gesture silently lost.
+   */
+  useEffect(() => {
+    return () => {
+      exitResolverRef.current?.(false)
+      exitResolverRef.current = null
+    }
+  }, [])
 
   const toggleExpand = useCallback((chipKey: string) => {
     setExpandedKeys((current) => {
@@ -126,10 +140,16 @@ export const PeopleMunicipalityCell = ({
    * the optimistic apply: a removal that empties the relation pauses the
    * commit and (for account/leadership) asks the manifest-backed dialog.
    * Fail-closed: a manifest error aborts the commit — nothing is ever deleted
-   * without an explicit confirmation.
+   * without an explicit confirmation. Returns `'destructive'` when the dialog
+   * confirmed the exit, so the shared cell suppresses the batch-removal undo
+   * toast — its "Desfazer" would only re-create the destroyed entity empty.
    */
   const commitGuard = useCallback(
-    async (delta: { changedIds: number[]; assigned: boolean; currentIds: number[] }) => {
+    async (delta: {
+      changedIds: number[]
+      assigned: boolean
+      currentIds: number[]
+    }): Promise<boolean | 'destructive'> => {
       if (!exitMode || delta.assigned) return true
       const remaining = delta.currentIds.filter((id) => !delta.changedIds.includes(id))
       if (remaining.length > 0) return true
@@ -138,9 +158,12 @@ export const PeopleMunicipalityCell = ({
       // the cleanup is automatic (intention rabbit hole), no dialog.
       if (exitMode === 'stateDeputy') return true
 
-      // A second guard while one dialog is already pending is refused: the
-      // pending commit must resolve first.
-      if (exitResolverRef.current) return false
+      // A second guard while a dialog is pending OR a manifest round-trip is
+      // in flight is refused: the pending commit must resolve first (two
+      // concurrent guards would overwrite each other's resolver and orphan
+      // the first commit silently).
+      if (exitResolverRef.current || manifestPendingRef.current) return false
+      manifestPendingRef.current = true
 
       let manifest: PersonCapacityExitManifest | null
       try {
@@ -151,6 +174,8 @@ export const PeopleMunicipalityCell = ({
       } catch (error) {
         toast.error(mapManifestError(error))
         return false
+      } finally {
+        manifestPendingRef.current = false
       }
       // Nothing to destroy (no entity) — the server no-ops the removal.
       if (manifest === null) return true
@@ -161,10 +186,11 @@ export const PeopleMunicipalityCell = ({
         if (manifest.declaredVoteCount === 0 && manifest.inviteCount === 0) return true
       }
 
-      return new Promise<boolean>((resolve) => {
+      const confirmed = await new Promise<boolean>((resolve) => {
         exitResolverRef.current = resolve
         setExitRequest(manifest)
       })
+      return confirmed ? 'destructive' : false
     },
     [exitMode, contactId],
   )
@@ -183,7 +209,6 @@ export const PeopleMunicipalityCell = ({
         municipalityIds={municipalityIds}
         municipalityIndex={municipalityIndex}
         addableIds={addableIds}
-        minItems={minItems}
         commitAction={commitAction}
         drawerTitle={drawerTitle}
         updateErrorMessage={updateErrorMessage}
@@ -192,7 +217,7 @@ export const PeopleMunicipalityCell = ({
         onChipClick={toggleExpand}
         overflowToggleLabel={(count) => `+${count}`}
         readOnly={readOnly}
-        extraFormFields={{ contactId }}
+        extraFormFields={extraFormFields}
         commitWithNullOwner
         commitGuard={exitMode ? commitGuard : undefined}
       />
