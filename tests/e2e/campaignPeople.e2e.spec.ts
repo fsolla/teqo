@@ -5,6 +5,8 @@ import {
   test,
 } from './fixtures/campaignE2EFixtures.js'
 
+import type { CampaignUser } from '../../src/payload-types.js'
+
 /**
  * C100 — the unified people list: staff lands on `/campanha/pessoas`, sees the
  * merged person row, and the route stays locked for leaders.
@@ -413,5 +415,194 @@ test.describe('Pessoas — lista unificada', () => {
     expect(stored.municipalities).toHaveLength(linkedIsZone ? 19 : 20)
     for (const zoneId of zoneIds) expect(stored.municipalities).toContain(zoneId)
     expect(stored.municipalities).toContain(linked.id)
+  })
+
+  test('coordinator gives a person the first leadership municipality and ends it through the dialog (C128)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora C128'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+
+    // The person anchors on the list through a dobradinha — no leadership yet.
+    const contactName = fixtures.value('Ciclo Liderança')
+    const contact = await fixtures.payload.create({
+      collection: 'contact',
+      data: {
+        name: contactName,
+        phones: [{ value: fixtures.phone() }],
+        state: 'BA',
+        city: 'Salvador',
+      },
+      depth: 0,
+    })
+    const deputy = await fixtures.payload.create({
+      collection: 'stateDeputy',
+      data: { contact: contact.id, slug: fixtures.value('ciclo-lideranca') },
+      depth: 0,
+    })
+    await fixtures.payload.update({
+      collection: 'municipality',
+      id: municipality.id,
+      data: { stateDeputies: [deputy.id] },
+      depth: 0,
+      overrideAccess: true,
+    })
+    fixtures.touchMunicipality(municipality.id)
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha/pessoas')
+
+    const omnibox = page.getByRole('combobox', { name: 'Filtrar pessoas' })
+    await omnibox.fill(contactName)
+    await omnibox.press('Enter')
+    const row = page.getByRole('row', { name: new RegExp(contactName) })
+    await expect(row).toBeVisible()
+
+    // First municipality in "Lidera" → the leadership is born.
+    // The hidden-by-default E-mail column renders no td (B197) — Lidera is the 4th cell.
+    const lideraCell = row.locator('td').nth(3)
+    await lideraCell
+      .getByRole('combobox', {
+        name: 'Buscar município, território de identidade ou zona eleitoral',
+      })
+      .fill(municipality.name)
+    await page
+      .getByRole('option', {
+        name: new RegExp(`^${municipality.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s|$)`),
+      })
+      .click()
+    // Scoped to the Lidera cell: the dobradinha anchor may share the município.
+    await expect(lideraCell.getByText(municipality.name)).toBeVisible()
+
+    let leadershipId: number | null = null
+    await expect
+      .poll(async () => {
+        const leaderships = await fixtures.payload.find({
+          collection: 'leadership',
+          where: { contact: { equals: contact.id } },
+          depth: 0,
+          pagination: false,
+        })
+        leadershipId = leaderships.docs[0]?.id ?? null
+        return leaderships.docs.length
+      })
+      .toBe(1)
+
+    // A declared vote makes the exit destructive.
+    await fixtures.payload.create({
+      collection: 'votePledge',
+      data: { leadership: leadershipId!, municipality: municipality.id, declaredVotes: 250 },
+      depth: 0,
+    })
+
+    // Remove the last municipality → the destructive dialog lists the vote.
+    await page.reload()
+    await expect(row).toBeVisible()
+    await lideraCell.getByRole('button', { name: `Remover ${municipality.name}` }).click()
+    await expect(page.getByRole('heading', { name: 'Encerrar liderança' })).toBeVisible()
+    await expect(page.getByText('250 votos declarados')).toBeVisible()
+    await page.getByRole('button', { name: 'Encerrar liderança' }).click()
+
+    // The leadership (with its pledge) is gone; the dobradinha keeps the row.
+    await expect
+      .poll(async () => {
+        const remaining = await fixtures.payload.find({
+          collection: 'leadership',
+          where: { id: { equals: leadershipId! } },
+          depth: 0,
+          pagination: false,
+        })
+        return remaining.docs.length
+      })
+      .toBe(0)
+    const pledges = await fixtures.payload.find({
+      collection: 'votePledge',
+      where: { leadership: { equals: leadershipId! } },
+      depth: 0,
+      pagination: false,
+    })
+    expect(pledges.docs).toHaveLength(0)
+    await expect(row).toBeVisible()
+  })
+
+  test('the Assessora cell creates the staff account on the first municipality (C128)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Assessora C128'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+
+    // The person anchors on the list through a dobradinha — no staff account.
+    const contactName = fixtures.value('Ciclo Assessora')
+    const contact = await fixtures.payload.create({
+      collection: 'contact',
+      data: {
+        name: contactName,
+        phones: [{ value: fixtures.phone() }],
+        state: 'BA',
+        city: 'Salvador',
+      },
+      depth: 0,
+    })
+    const deputy = await fixtures.payload.create({
+      collection: 'stateDeputy',
+      data: { contact: contact.id, slug: fixtures.value('ciclo-assessora') },
+      depth: 0,
+    })
+    await fixtures.payload.update({
+      collection: 'municipality',
+      id: municipality.id,
+      data: { stateDeputies: [deputy.id] },
+      depth: 0,
+      overrideAccess: true,
+    })
+    fixtures.touchMunicipality(municipality.id)
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto('/campanha/pessoas')
+
+    const omnibox = page.getByRole('combobox', { name: 'Filtrar pessoas' })
+    await omnibox.fill(contactName)
+    await omnibox.press('Enter')
+    const row = page.getByRole('row', { name: new RegExp(contactName) })
+    await expect(row).toBeVisible()
+
+    // First municipality in "Assessora" → the staff account is born (C116
+    // regression: the cell commit used to fail on a missing `contactId`).
+    // The hidden-by-default E-mail column renders no td (B197) — Assessora is the 3rd cell.
+    const assessoraCell = row.locator('td').nth(2)
+    await assessoraCell
+      .getByRole('combobox', {
+        name: 'Buscar município, território de identidade ou zona eleitoral',
+      })
+      .fill(municipality.name)
+    await page
+      .getByRole('option', {
+        name: new RegExp(`^${municipality.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s|$)`),
+      })
+      .click()
+
+    let createdAccount: CampaignUser | undefined
+    await expect
+      .poll(async () => {
+        const accounts = await fixtures.payload.find({
+          collection: 'campaignUser',
+          where: { contact: { equals: contact.id } },
+          depth: 0,
+          pagination: false,
+        })
+        createdAccount = accounts.docs[0]
+        return accounts.docs.length
+      })
+      .toBe(1)
+    expect(createdAccount!.role).toBe('advisor')
+    expect(createdAccount!.email ?? '').toMatch(/@criado\.invalid$/)
   })
 })

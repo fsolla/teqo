@@ -88,6 +88,26 @@ type MunicipalityPortfolioCellProps = {
   overflowToggleLabel?: (hiddenCount: number) => string
   /** C116 — read-only chips (actor may see the relation but not edit it). */
   readOnly?: boolean
+  /**
+   * C128 — extra static fields appended to every commit FormData (e.g.
+   * `contactId` for the person-centric people-list actions).
+   */
+  extraFormFields?: Record<string, string | number>
+  /**
+   * C128 — commit even with a `null` owner: the people-list cells keep the
+   * null owner while the entity does not exist yet, and the server-side person
+   * action creates it. See `RelationChipCell.commitWithNullOwner`.
+   */
+  commitWithNullOwner?: boolean
+  /**
+   * C128 — destructive-exit guard before the optimistic apply. See
+   * `RelationChipCell.commitGuard`.
+   */
+  commitGuard?: (delta: {
+    changedIds: number[]
+    assigned: boolean
+    currentIds: number[]
+  }) => Promise<boolean>
 }
 
 /**
@@ -114,6 +134,9 @@ export const MunicipalityPortfolioCell = ({
   onChipClick,
   overflowToggleLabel,
   readOnly = false,
+  extraFormFields,
+  commitWithNullOwner = false,
+  commitGuard,
 }: MunicipalityPortfolioCellProps) => {
   /**
    * `addableIds` also hides: an advisor's `canUpdateMunicipality` is scoped to
@@ -162,11 +185,14 @@ export const MunicipalityPortfolioCell = ({
     (changedIds: number[], assigned: boolean) => {
       const formData = new FormData()
       formData.set('ownerId', String(ownerId))
+      for (const [name, value] of Object.entries(extraFormFields ?? {})) {
+        formData.set(name, String(value))
+      }
       formData.set('assigned', assigned ? 'true' : 'false')
       for (const id of changedIds) formData.append('municipalityIds', String(id))
       return formData
     },
-    [ownerId],
+    [ownerId, extraFormFields],
   )
 
   const copy = useMemo<RelationChipCellCopy>(
@@ -206,6 +232,8 @@ export const MunicipalityPortfolioCell = ({
       overflowToggleLabel={overflowToggleLabel}
       onChipClick={onChipClick ? (chip) => onChipClick(chip.key) : undefined}
       readOnly={readOnly}
+      commitWithNullOwner={commitWithNullOwner}
+      commitGuard={commitGuard}
     />
   )
 }

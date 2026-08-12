@@ -11,10 +11,8 @@ import {
 } from '@/lib/engagementLevel'
 import { nextAdvisorIdsAfterMembership } from '@/lib/municipalityAdvisorMembership'
 import { uniqueRelationshipIds } from '@/lib/relationship'
-import { stubCampaignUserEmailFor } from '@/lib/schemas/advisor'
 import {
   MUNICIPALITY_ADVISOR_MEMBERSHIP_UNRESTRICTED_MESSAGE,
-  MUNICIPALITY_ADVISOR_STUB_EMAIL_MESSAGE,
   MUNICIPALITY_ENGAGEMENT_LEVEL_UNRESTRICTED_MESSAGE,
   municipalityAdvisorCreateSchema,
   municipalityAdvisorMembershipSchema,
@@ -38,6 +36,7 @@ import {
   reloadStaffActor,
   reloadUnrestrictedActor,
 } from '@/utilities/campaignActionContext'
+import { nextFreeStubCampaignEmail } from '@/utilities/campaignStubEmail'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
@@ -413,6 +412,7 @@ export const createMunicipalityAdvisorRecord = async (
       await acquireTextAdvisoryLocks(payload, req, [`municipality-advisors:${municipality}`])
 
       const email = await nextFreeStubCampaignEmail(payload, req, name)
+
       // Same auth-create contract as `createAdvisorRecord` (B19): the create
       // access (`canManageCampaignUsers`) re-checks the unrestricted role
       // through the `user` threaded into this transaction's `req`.
@@ -473,34 +473,4 @@ export const createMunicipalityAdvisorRecord = async (
 export const createMunicipalityAdvisor = async (input: MunicipalityAdvisorCreateInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return createMunicipalityAdvisorRecord(payload, actor, input)
-}
-
-/**
- * Next free `<slug>@criado.invalid` stub: bounded exact-match probes on the
- * unique `email` index (no LIKE semantics). Collisions only happen when two
- * names slugify identically, so the first probe usually succeeds. The read
- * bypasses access control on purpose: the transaction already verified the
- * unrestricted role, and the probe only looks at placeholder e-mails.
- */
-const nextFreeStubCampaignEmail = async (
-  payload: Payload,
-  req: PayloadTransactionRequest,
-  name: string,
-): Promise<string> => {
-  for (let occurrence = 1; occurrence <= 50; occurrence += 1) {
-    const candidate = stubCampaignUserEmailFor(name, occurrence)
-    const existing = await payload.find({
-      collection: 'campaignUser',
-      where: { email: { equals: candidate } },
-      depth: 0,
-      limit: 1,
-      select: { email: true },
-      // Intentional admin bypass: unrestricted role verified above in the
-      // transaction; the probe only reads placeholder e-mails.
-      overrideAccess: true,
-      req,
-    })
-    if (existing.totalDocs === 0) return candidate
-  }
-  throw new Error(MUNICIPALITY_ADVISOR_STUB_EMAIL_MESSAGE)
 }

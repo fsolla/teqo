@@ -121,15 +121,17 @@ const PeopleListEmptyState = ({
 )
 
 /**
- * C116 editability matrix by actor. The advisor rule mirrors each owner
+ * C116/C128 editability matrix by actor. The advisor rule mirrors each owner
  * collection's access: Lidera/Aliada em follow
  * `canManageLeadership`/`canReadStateDeputy` (the row's own municipalities
- * must cross the carteira — the row may be visible via another capacity);
- * Assessora and Assessorado are unrestricted-only
- * (`canAssignMunicipalityAdvisors` / B156), and Assessora needs exactly ONE
- * staff account for the batch write to have a target. The ficha text cells
- * stay always-editable and the server enforces the scope ("you edit what you
- * see") with a per-cell error.
+ * must cross the carteira — the row may be visible via another capacity), and
+ * C128 opens the cells for people WITHOUT the capacity yet (the first
+ * municipality creates the entity; the advisor's `addableIds` keeps additions
+ * inside his carteira). Assessora and Assessorado are unrestricted-only
+ * (`canAssignMunicipalityAdvisors` / B156), and Assessora needs at most ONE
+ * staff account for the batch write to have a target (zero = the C128
+ * create). The ficha text cells stay always-editable and the server enforces
+ * the scope ("you edit what you see") with a per-cell error.
  */
 type PeopleEditability = {
   administered: ReadonlySet<number> | null
@@ -148,11 +150,14 @@ const buildPeopleEditability = (
     administered !== null && ids.some((id) => administered.has(id))
   return {
     administered,
+    // C128: a person without the capacity yet is editable (the first
+    // municipality creates the entity); with one, the row's own municipalities
+    // must cross the carteira (the chips outside it do not render anyway).
     canEditLidera: (row) =>
-      row.leadershipID !== null && (unrestricted || inCarteira(row.leadershipMunicipalityIDs)),
+      unrestricted || row.leadershipID === null || inCarteira(row.leadershipMunicipalityIDs),
     canEditAliada: (row) =>
-      row.deputyID !== null && (unrestricted || inCarteira(row.deputyMunicipalityIDs)),
-    canEditAssessora: (row) => unrestricted && row.staff.length === 1,
+      unrestricted || row.deputyID === null || inCarteira(row.deputyMunicipalityIDs),
+    canEditAssessora: (row) => unrestricted && row.staff.length <= 1,
     canEditAssessorado: unrestricted,
   }
 }
@@ -244,6 +249,8 @@ const peopleColumns = ({
       <PeopleMunicipalityCell
         ownerId={editability.canEditAssessora(row) ? (row.staff[0]?.id ?? null) : null}
         ownerName={row.name}
+        contactId={row.contactID}
+        exitMode="account"
         municipalityIds={row.assessoraMunicipalityIDs}
         municipalityIndex={municipalityIndex}
         commitAction={setPersonAssessoraFormAction}
@@ -262,10 +269,11 @@ const peopleColumns = ({
       <PeopleMunicipalityCell
         ownerId={row.leadershipID}
         ownerName={row.name}
+        contactId={row.contactID}
+        exitMode="leadership"
         municipalityIds={row.leadershipMunicipalityIDs}
         municipalityIndex={municipalityIndex}
         {...(editability.administered ? { addableIds: editability.administered } : {})}
-        minItems={1}
         commitAction={setPersonLeadershipMunicipalitiesFormAction}
         drawerTitle="Municípios liderados"
         updateErrorMessage="Não foi possível atualizar os municípios. Tente novamente."
@@ -282,6 +290,8 @@ const peopleColumns = ({
       <PeopleMunicipalityCell
         ownerId={row.deputyID}
         ownerName={row.name}
+        contactId={row.contactID}
+        exitMode="stateDeputy"
         municipalityIds={row.deputyMunicipalityIDs}
         municipalityIndex={municipalityIndex}
         {...(editability.administered ? { addableIds: editability.administered } : {})}

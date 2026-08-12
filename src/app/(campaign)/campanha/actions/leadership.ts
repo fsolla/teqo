@@ -32,7 +32,7 @@ import {
   type LeadershipWizardUpdateInput,
   type MunicipalityLeadershipCreateInput,
 } from '@/lib/schemas/leadership'
-import type { CampaignUser, Contact } from '@/payload-types'
+import type { CampaignUser, Contact, Leadership } from '@/payload-types'
 import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
 import {
   getCampaignActionContext,
@@ -70,16 +70,7 @@ const assertMunicipalitiesWithinScope = async (
   }
 }
 
-const isUniqueLeadershipConflict = (error: unknown): boolean => {
-  const message = error instanceof Error ? error.message : String(error)
-  if (/leadership_contact|duplicate key/i.test(message)) {
-    return true
-  }
-
-  if (!(error instanceof Error) || error.name !== 'ValidationError') return false
-
-  return /contact(?:_id)?/i.test(JSON.stringify(error))
-}
+import { isUniqueLeadershipConflict } from '@/utilities/leadershipConflict'
 
 type LeadershipCreateData = ReturnType<typeof leadershipCreateSchema.parse>
 type ValidatedLeadershipCreateData = Omit<LeadershipCreateData, 'phones'> & {
@@ -648,6 +639,66 @@ const revalidateLeadershipMunicipalityPaths = (
 }
 
 /**
+ * C128 — the B34 municipalities delta core, transaction-agnostic: given the
+ * leadership's CURRENT municipalities (read under the caller's advisory lock),
+ * computes the membership change, scope-checks the added ids and writes it.
+ * Shared by the `/campanha/liderancas` chip cell (B34) and the person
+ * lifecycle (`setPersonLeadershipMunicipalitiesRecord`) so the two surfaces
+ * can never disagree on the delta contract.
+ */
+export const applyLeadershipMunicipalitiesDelta = async (
+  payload: Payload,
+  currentActor: CampaignUser,
+  req: PayloadTransactionRequest,
+  leadershipId: number,
+  currentMunicipalityIDs: readonly number[],
+  municipalityIds: readonly number[],
+  assigned: boolean,
+): Promise<{ leadership: Leadership | null; slugs: string[] }> => {
+  const change = nextMunicipalityIdsAfterLeadershipMembership(
+    currentMunicipalityIDs,
+    municipalityIds,
+    assigned,
+  )
+
+  // No-op: nothing to write, and nothing for the caller to revalidate.
+  if (change === null) {
+    return { leadership: null, slugs: [] }
+  }
+
+  // Only the ids the write actually adds: an advisor must stay able to drop a
+  // link outside their scope, and re-deriving `added` here could disagree.
+  if (change.added.length > 0) {
+    await assertMunicipalitiesWithinScope(payload, currentActor, change.added, req)
+  }
+
+  // Intentional admin bypass: only used to resolve the slugs of the touched
+  // municipalities for a targeted revalidate; existence is otherwise
+  // enforced by Payload's relationship validation on `update`.
+  const touched = await payload.find({
+    collection: 'municipality',
+    where: { id: { in: change.changed } },
+    depth: 0,
+    pagination: false,
+    select: { slug: true },
+    overrideAccess: true,
+    req,
+  })
+
+  const updated = await payload.update({
+    collection: 'leadership',
+    id: leadershipId,
+    data: { municipalities: change.next },
+    depth: 0,
+    user: currentActor,
+    overrideAccess: false,
+    req,
+  })
+
+  return { leadership: updated, slugs: touched.docs.map((doc) => doc.slug) }
+}
+
+/**
  * Delta write for the "Municípios" column of `/campanha/liderancas` (B34) —
  * adds or removes a set of municipalities (one chip, or a whole território/ZE)
  * on `leadership.municipalities`.
@@ -677,47 +728,20 @@ export const setLeadershipMunicipalitiesMembershipRecord = async (
         'municipalities',
       )
 
-      const change = nextMunicipalityIdsAfterLeadershipMembership(
+      const delta = await applyLeadershipMunicipalitiesDelta(
+        payload,
+        currentActor,
+        req,
+        leadershipId,
         uniqueRelationshipIds(current.municipalities),
         municipalityIds,
         assigned,
       )
 
-      // No-op: nothing to write, and nothing for the caller to revalidate.
-      if (change === null) {
-        return { leadership: current, municipalitySlugs: [] }
+      return {
+        leadership: delta.leadership ?? current,
+        municipalitySlugs: delta.slugs,
       }
-
-      // Only the ids the write actually adds: an advisor must stay able to drop a
-      // link outside their scope, and re-deriving `added` here could disagree.
-      if (change.added.length > 0) {
-        await assertMunicipalitiesWithinScope(payload, currentActor, change.added, req)
-      }
-
-      // Intentional admin bypass: only used to resolve the slugs of the touched
-      // municipalities for a targeted revalidate; existence is otherwise
-      // enforced by Payload's relationship validation on `update`.
-      const touched = await payload.find({
-        collection: 'municipality',
-        where: { id: { in: change.changed } },
-        depth: 0,
-        pagination: false,
-        select: { slug: true },
-        overrideAccess: true,
-        req,
-      })
-
-      const updated = await payload.update({
-        collection: 'leadership',
-        id: leadershipId,
-        data: { municipalities: change.next },
-        depth: 0,
-        user: currentActor,
-        overrideAccess: false,
-        req,
-      })
-
-      return { leadership: updated, municipalitySlugs: touched.docs.map((doc) => doc.slug) }
     },
     { beginFailureMessage: 'Não foi possível atualizar os municípios da liderança.' },
   )

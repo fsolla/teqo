@@ -415,6 +415,10 @@ describe('src/utilities top-level is pinned', () => {
     'campaignBiometricsPrompt.ts',
     'campaignColumnVisibilityCookie.ts',
     'campaignConsent.ts',
+    // C128 — stub `<slug>@criado.invalid` e-mail probe for staff accounts
+    // created without usable credentials; shared by the B154 município create
+    // and the person lifecycle Assessora create.
+    'campaignStubEmail.ts',
     'campaignDashboardData.ts',
     'campaignVoteSummarySnapshot.ts',
     'campaignDemandData.ts',
@@ -459,6 +463,10 @@ describe('src/utilities top-level is pinned', () => {
     'formatRelativeAge.ts',
     'globalReads.ts',
     'globals.ts',
+    // C128 — leadership identity-conflict matcher; shared by the B34 create
+    // path and the person lifecycle create (a plain const cannot leave the
+    // 'use server' action module).
+    'leadershipConflict.ts',
     'hookFilledData.ts',
     'leaderContactsPageData.ts',
     'loadNamesByIds.ts',
@@ -472,6 +480,10 @@ describe('src/utilities top-level is pinned', () => {
     'sameOriginRequest.ts',
     'seo.ts',
     'signatureExport.ts',
+    // C128 — dobradinha identity-conflict policy; shared by the B157 create
+    // path and the person lifecycle create (same 'use server' export rule as
+    // `leadershipConflict.ts`).
+    'stateDeputyConflict.ts',
     'stateDeputyData.ts',
     'stateDeputyListFilters.ts',
     'stateDeputyListUrl.ts',

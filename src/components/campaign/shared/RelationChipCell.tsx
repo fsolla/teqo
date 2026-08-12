@@ -187,6 +187,27 @@ type RelationChipCellProps = {
    * "+N" chip label (e.g. "+3"), keeping the B170 measure/collapse contract.
    */
   overflowToggleLabel?: (hiddenCount: number) => string
+
+  // C128 — the person lifecycle surface ───────────────────────────────────────
+  /**
+   * C128 — commit even when `ownerId` is `null`. The shared cells treat a null
+   * owner as "draft row, nothing to write"; the people-list cells keep the
+   * null owner on purpose (the entity does not exist yet) and the server-side
+   * person actions resolve/create the entity by `contactId` from the FormData.
+   */
+  commitWithNullOwner?: boolean
+  /**
+   * C128 — destructive-exit guard: called on removals (and additions) BEFORE
+   * the optimistic apply, same point as the floor/cap refusals. Return `false`
+   * to abort the commit without touching the chip state (the wrapper opens its
+   * confirmation dialog). `currentIds` is the optimistic-aware effective set,
+   * so the wrapper can decide "does this removal empty the relation?".
+   */
+  commitGuard?: (delta: {
+    changedIds: number[]
+    assigned: boolean
+    currentIds: number[]
+  }) => Promise<boolean>
 }
 
 /**
@@ -227,6 +248,8 @@ export const RelationChipCell = ({
   quiet = false,
   onChipClick,
   overflowToggleLabel,
+  commitWithNullOwner = false,
+  commitGuard,
 }: RelationChipCellProps) => {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
@@ -515,7 +538,7 @@ export const RelationChipCell = ({
     setFeedback(null)
 
     if (draft) return
-    if (ownerId === null) return
+    if (ownerId === null && !commitWithNullOwner) return
 
     const formData = buildFormData(changedIds, assigned)
 
@@ -540,6 +563,20 @@ export const RelationChipCell = ({
       setFeedback({ kind: 'error', message })
       toast.error(message)
     })
+  }
+
+  /**
+   * C128 — the destructive-exit guard runs here, BEFORE the optimistic apply
+   * (same point as the floor/cap refusals): a `false` aborts with no state
+   * touched — the wrapper's confirmation dialog decides. The undo-toast path
+   * calls `commit` directly and never passes the guard (re-adding can never
+   * empty a relation).
+   */
+  const guardedCommit = async (changedIds: number[], assigned: boolean) => {
+    if (commitGuard && !(await commitGuard({ changedIds, assigned, currentIds: effectiveIds }))) {
+      return
+    }
+    commit(changedIds, assigned)
   }
 
   /** The relation's floor, refused here so the server never has to say no. */
@@ -570,7 +607,7 @@ export const RelationChipCell = ({
       toast.error(`${floorReason}.`)
       return
     }
-    commit(chip.ids, false)
+    void guardedCommit(chip.ids, false)
   }
 
   const pickHit = (hit: RelationSearchHit) => {
@@ -579,7 +616,7 @@ export const RelationChipCell = ({
       toast.error(capReason)
       return
     }
-    commit(hit.ids, true)
+    void guardedCommit(hit.ids, true)
   }
 
   /**
