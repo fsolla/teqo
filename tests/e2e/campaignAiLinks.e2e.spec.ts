@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { expect, test, waitForRouterSettled } from './fixtures/campaignE2EFixtures.js'
 
 /**
  * B187 — links in the Sollinha's markdown answers must look like links: brand
@@ -34,6 +34,8 @@ const mockAiChat = (page: Page) =>
 
 const openChatAndSend = async (page: Page) => {
   await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
+  // OPS42 — dev-only settle before interacting (see `waitForRouterSettled`).
+  await waitForRouterSettled(page)
   const input = page.getByRole('textbox', { name: 'Pergunte para o Sollinha...' })
   // Dev-mode defense: a first-hit route compile can trigger a full-page reload
   // that wipes the just-typed draft mid-test (production/CI never does), so

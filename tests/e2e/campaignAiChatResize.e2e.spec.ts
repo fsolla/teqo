@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { expect, test, waitForRouterSettled } from './fixtures/campaignE2EFixtures.js'
 
 /**
  * Mock the AI endpoint with a minimal SSE stream so sending a message neither
@@ -29,6 +29,8 @@ const MESSAGE = 'Mensagem que migra entre as superficies'
 
 const openChatAndSend = async (page: Page) => {
   await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
+  // OPS42 — dev-only settle before interacting (see `waitForRouterSettled`).
+  await waitForRouterSettled(page)
   const input = page.getByRole('textbox', { name: 'Pergunte para o Sollinha...' })
   await input.fill(MESSAGE)
   await input.press('Enter')
@@ -121,6 +123,8 @@ test.describe('B167 — chat Sollinha migra entre painel e drawer ao redimension
     await page.goto('/campanha')
 
     // Desktop opens the chat at load (as before); close it so it is "fechado".
+    // OPS42 — dev-only settle before the click (see `waitForRouterSettled`).
+    await waitForRouterSettled(page)
     await page
       .getByRole('button', { name: 'Fechar', exact: true })
       .filter({ visible: true })

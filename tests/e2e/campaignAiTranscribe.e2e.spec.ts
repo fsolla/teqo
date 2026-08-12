@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { expect, test, waitForRouterSettled } from './fixtures/campaignE2EFixtures.js'
 
 /**
  * B173 — voice transcription for the Sollinha chat.
@@ -58,6 +58,8 @@ const mockAiChat = (page: Page) =>
 
 const openChat = async (page: Page) => {
   await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
+  // OPS42 — dev-only settle before interacting (see `waitForRouterSettled`).
+  await waitForRouterSettled(page)
 }
 
 test.describe('B173 — consulta por voz no chat da Sollinha', () => {
