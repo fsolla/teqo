@@ -239,13 +239,13 @@ export type StateDeputySummary = {
   name: string
   slug: string
   party: string | null
-  /** C129 — the "nome de legenda" (ballot name), shown discreet under the name. */
-  ballotName: string | null
 }
 
 export type StateDeputyDetailViewModel = StateDeputySummary & {
   email: string | null
   phone: string | null
+  /** C129 — the "nome de legenda" (ballot name), shown discreet under the name. */
+  ballotName: string | null
   /** Every number of the ficha, order = priority (C112) — primary first. */
   phones: string[]
   notes: string | null
@@ -345,7 +345,7 @@ export const loadStateDeputySummaries = async (
     limit: 0,
     pagination: false,
     sort: 'contact.name',
-    select: { contact: true, slug: true, party: true, ballotName: true },
+    select: { contact: true, slug: true, party: true },
     // Intentional admin bypass: id lookups for the home-search card, no
     // actor-scoping possible or needed (B52 precedent).
     overrideAccess: true,
@@ -359,7 +359,6 @@ export const loadStateDeputySummaries = async (
         name: stateDeputyContactSummary(doc.contact).name,
         slug: doc.slug,
         party: doc.party ?? null,
-        ballotName: doc.ballotName ?? null,
       },
     ]),
   )

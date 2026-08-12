@@ -21,6 +21,7 @@ import {
   CampaignTransitionAnchor,
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignListSheetProvider } from '@/components/campaign/shared/CampaignListSheetHost'
+import { CampaignNameSubline } from '@/components/campaign/shared/CampaignNameSubline'
 import {
   CampaignTable,
   CampaignTableHead,
@@ -193,9 +194,7 @@ const peopleColumns = ({
               <span className="shrink-0 text-muted-foreground">({row.party})</span>
             ) : null}
           </div>
-          {subline ? (
-            <span className="truncate text-xs text-muted-foreground">{subline}</span>
-          ) : null}
+          <CampaignNameSubline value={subline} srLabel="Nome de legenda" />
         </div>
       )
     },

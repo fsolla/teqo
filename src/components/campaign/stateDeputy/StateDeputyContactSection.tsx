@@ -2,6 +2,7 @@
 
 import { updateStateDeputyContactFormAction } from '@/app/(campaign)/campanha/(app)/dobradinhas/formActions'
 import { CampaignInlineEditableCell } from '@/components/campaign/shared/CampaignInlineEditableCell'
+import { CampaignNameSubline } from '@/components/campaign/shared/CampaignNameSubline'
 import { PhonesFieldEditor } from '@/components/campaign/shared/PhonesFieldEditor'
 
 type StateDeputyContactSectionProps = {
@@ -39,8 +40,8 @@ export const StateDeputyContactSection = ({
               formAction={updateStateDeputyContactFormAction}
               href={`/campanha/dobradinhas/${stateDeputyId}`}
             />
-            {ballotName ? (
-              <span className="truncate text-xs text-muted-foreground">{ballotName}</span>
+            {ballotName !== name ? (
+              <CampaignNameSubline value={ballotName} srLabel="Nome de legenda" />
             ) : null}
           </div>
         </dd>

@@ -55,6 +55,15 @@ describe('updateStateDeputyBallotNameRecord (C129)', () => {
     })
 
     expect(updated.ballotName).toBeNull()
+
+    const reloaded = await payload.findByID({
+      collection: 'stateDeputy',
+      id: stateDeputy.id,
+      depth: 0,
+      select: { ballotName: true },
+      overrideAccess: true,
+    })
+    expect(reloaded.ballotName).toBeNull()
   })
 
   it('lets an advisor edit the ballot name of a dobradinha (staff scope, no carteira gate)', async () => {
@@ -68,6 +77,15 @@ describe('updateStateDeputyBallotNameRecord (C129)', () => {
     })
 
     expect(updated.ballotName).toBe('Apelido da Mesa')
+
+    const reloaded = await payload.findByID({
+      collection: 'stateDeputy',
+      id: stateDeputy.id,
+      depth: 0,
+      select: { ballotName: true },
+      overrideAccess: true,
+    })
+    expect(reloaded.ballotName).toBe('Apelido da Mesa')
   })
 
   it('refuses a leader (staff gate)', async () => {

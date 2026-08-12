@@ -43,7 +43,8 @@ const stateDeputyContactSafeMessages = [
 
 const stateDeputyPartySafeMessages = [STATE_DEPUTY_STAFF_MESSAGE] as const
 
-const stateDeputyBallotNameSafeMessages = [STATE_DEPUTY_STAFF_MESSAGE] as const
+/** The party and ballotName inline cells share the same refusal vocabulary. */
+const stateDeputyInlineFieldSafeMessages = stateDeputyPartySafeMessages
 
 /** Per-field Contact edit for B163 (lista + ficha). */
 export const updateStateDeputyContactFormAction = async (
@@ -119,7 +120,7 @@ export const updateStateDeputyBallotNameFormAction = async (
       })
       return { message: 'Salvo.' }
     },
-    safeMessages: stateDeputyBallotNameSafeMessages,
+    safeMessages: stateDeputyInlineFieldSafeMessages,
     genericMessage:
       'Não foi possível salvar o nome de legenda. Verifique os dados e tente novamente.',
   })

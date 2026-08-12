@@ -78,6 +78,9 @@ export type PeopleRowViewModel = {
 /**
  * C129 — the Name-cell subline of `/campanha/pessoas`: the dobradinha's
  * "nome de legenda" (ballot name), discreet under the real name, when present.
+ * A ballot name identical to the real name is redundant noise — it reads as a
+ * duplicated line, so it is skipped (a mesa registering the full name as urn
+ * name is plausible data entry).
  *
  * C130 extends this with the base fallback — the FINAL shared rule for the
  * second line is `ballotName ?? city` (legenda overrides base), the two plans
@@ -86,8 +89,10 @@ export type PeopleRowViewModel = {
  * here (and its unit spec), never markup. Until C130 lands, this branch keeps
  * the accept "sem nome de legenda, nada muda na linha" — null when absent.
  */
-export const peopleNameSubline = (person: MergedPerson | PeopleRowViewModel): string | null =>
-  person.ballotName
+export const peopleNameSubline = (
+  person: Pick<MergedPerson, 'name' | 'ballotName'>,
+): string | null =>
+  person.ballotName && person.ballotName !== person.name ? person.ballotName : null
 
 /** The merge intermediate carries every field the list/detail row needs. */
 export type MergedPerson = Omit<PeopleRowViewModel, 'assessoradoNames'> & {

@@ -341,6 +341,15 @@ describe('peopleNameSubline (C129)', () => {
     const maria = byContact(mergePeopleSources(source), 100)
     expect(peopleNameSubline(maria)).toBeNull()
   })
+
+  it('skips a ballot name identical to the real name (redundant duplicate line)', () => {
+    const withIdenticalBallotName = mergePeopleSources({
+      ...source,
+      deputies: [{ ...source.deputies[0]!, ballotName: 'Ana Lima' }],
+    })
+    const ana = byContact(withIdenticalBallotName, 101)
+    expect(peopleNameSubline(ana)).toBeNull()
+  })
 })
 
 describe('peopleFilterFacetsFromRows', () => {

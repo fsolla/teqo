@@ -91,7 +91,7 @@ export const loadPersonDetail = async (
       depth: 1,
       limit: 0,
       pagination: false,
-      select: { contact: true, slug: true, party: true, advisors: true },
+      select: { contact: true, slug: true, party: true, ballotName: true, advisors: true },
       user,
       overrideAccess: false,
     }),

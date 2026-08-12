@@ -13,6 +13,7 @@ import {
   CampaignTransitionAnchor,
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignListSheetProvider } from '@/components/campaign/shared/CampaignListSheetHost'
+import { CampaignNameSubline } from '@/components/campaign/shared/CampaignNameSubline'
 import {
   CampaignTable,
   CampaignTableHead,
@@ -136,10 +137,12 @@ const stateDeputyColumns = (
         />
         {/* C129 — the ballot name sits OUTSIDE the name cell's click-to-edit
             region (sibling, not child), so clicking it never opens the name
-            editor. */}
-        {row.ballotName ? (
-          <span className="truncate text-xs text-muted-foreground">{row.ballotName}</span>
-        ) : null}
+            editor. A legenda identical to the real name is skipped (same
+            policy as `peopleNameSubline`). */}
+        <CampaignNameSubline
+          value={row.ballotName !== row.name ? row.ballotName : null}
+          srLabel="Nome de legenda"
+        />
       </div>
     ),
   },
