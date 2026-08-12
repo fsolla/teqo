@@ -1,7 +1,7 @@
 import 'server-only'
 
 import type { Activity, GoogleCalendarSync as GoogleCalendarSyncDoc } from '@/payload-types'
-import type { Payload, PayloadRequest } from 'payload'
+import type { Payload, PayloadRequest, Where } from 'payload'
 
 import {
   activityMunicipalityIdOf,
@@ -176,10 +176,13 @@ export const readGoogleCalendarSyncView = async (
  * advisor intersection — a coordinator-managed calendar, unlike per-feed
  * creator scopes. Canceled activities are excluded from the PUSH set (their
  * events get deleted); the window is the feed's own (shared contract).
+ * `activityWhere` narrows the mirrored set (e.g. a scoped mirror or test
+ * isolation) — production callers omit it and keep the full scope.
  */
 const loadSyncActivities = async (
   payload: Payload,
-  req?: PayloadRequest,
+  req: PayloadRequest | undefined,
+  activityWhere?: Where,
 ): Promise<{ activities: Activity[]; municipalityNames: Map<number, string> }> => {
   const { rangeStart, rangeEnd } = buildActivityWindowRange()
 
@@ -189,7 +192,12 @@ const loadSyncActivities = async (
     limit: 0,
     pagination: false,
     sort: 'startAt',
-    where: { and: buildActivityWindowWhereClauses(rangeStart, rangeEnd) },
+    where: {
+      and: [
+        ...buildActivityWindowWhereClauses(rangeStart, rangeEnd),
+        ...(activityWhere ? [activityWhere] : []),
+      ],
+    },
     // Intentional admin bypass: the official mirror is the whole campaign
     // agenda (espelho cheio) — the collection access already gates writers.
     overrideAccess: true,
@@ -221,6 +229,7 @@ const loadAliveActivityIds = async (
   req: PayloadRequest | undefined,
   timeMin: string,
   timeMax: string,
+  activityWhere?: Where,
 ): Promise<Set<number>> => {
   const result = await payload.find({
     collection: 'activity',
@@ -239,6 +248,7 @@ const loadAliveActivityIds = async (
           ],
         },
         { status: { not_equals: 'cancelado' } },
+        ...(activityWhere ? [activityWhere] : []),
       ],
     },
     // Intentional admin bypass: same espelho-cheio rationale as above.
@@ -288,9 +298,10 @@ const runSyncPass = async (
   req: PayloadRequest | undefined,
   client: GoogleCalendarClient,
   calendarId: string,
+  activityWhere?: Where,
 ): Promise<SyncCounts> => {
   const { rangeStart, rangeEnd } = buildActivityWindowRange()
-  const { activities, municipalityNames } = await loadSyncActivities(payload, req)
+  const { activities, municipalityNames } = await loadSyncActivities(payload, req, activityWhere)
   const listWindow = buildListWindow(rangeStart, rangeEnd)
   const remoteEvents = await client.listEvents(calendarId, listWindow)
   const aliveActivityIds = await loadAliveActivityIds(
@@ -298,6 +309,7 @@ const runSyncPass = async (
     req,
     listWindow.timeMin,
     listWindow.timeMax,
+    activityWhere,
   )
 
   const wantedById = new Map<number, Activity>()
@@ -383,6 +395,13 @@ export type CampaignCalendarSyncOptions = {
   reason: 'create' | 'update' | 'delete' | 'config-change' | 'manual'
   client?: GoogleCalendarClient
   req?: PayloadRequest
+  /**
+   * Narrows the mirrored activity set (push + delete-guard). Production
+   * callers omit it — the official mirror is the full staff scope. Exists
+   * for scoped mirrors and test isolation (e.g. a spec that must not see
+   * activities other parallel specs create in the same database).
+   */
+  activityWhere?: Where
 }
 
 export const runCampaignCalendarSync = async (
@@ -412,7 +431,13 @@ export const runCampaignCalendarSync = async (
   const client = options.client ?? createGoogleCalendarClient(credentials)
 
   try {
-    const counts = await runSyncPass(payload, options.req, client, config.calendarId)
+    const counts = await runSyncPass(
+      payload,
+      options.req,
+      client,
+      config.calendarId,
+      options.activityWhere,
+    )
     await recordSyncState(payload, options.req, { lastSyncedAt: at, lastSuccessAt: at })
     return { status: 'synced', ...counts, at }
   } catch (error) {
