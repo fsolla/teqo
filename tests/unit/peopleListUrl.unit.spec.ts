@@ -212,7 +212,7 @@ describe('people list URL contract', () => {
   })
 
   it('derives the omnibox primary sort options: one per key, in its default direction', () => {
-    expect(peopleListSortPrimaryOptions).toHaveLength(7)
+    expect(peopleListSortPrimaryOptions).toHaveLength(8)
     expect(peopleListSortPrimaryOptions.map((option) => option.key)).toEqual([
       'name',
       'contact',
@@ -221,6 +221,7 @@ describe('people list URL contract', () => {
       'aliada',
       'assessorado',
       'base',
+      'party',
     ])
     for (const option of peopleListSortPrimaryOptions) {
       expect(option.dir).toBe(defaultPeopleListSortDir(option.key))

@@ -9,7 +9,10 @@ import {
   removePeopleOmniboxChip,
 } from '@/utilities/people/peopleOmnibox'
 
-const seeds = buildPeopleOmniboxSuggestionSeeds({ municipalityFilterOptions: [] })
+const seeds = buildPeopleOmniboxSuggestionSeeds({
+  municipalityFilterOptions: [],
+  partyFilterOptions: [],
+})
 
 const sortSeedsIn = (query: string) =>
   filterPeopleOmniboxSuggestions(seeds, query).filter((entry) => entry.group === 'Ordenação')
@@ -25,19 +28,20 @@ describe('people omnibox — sort discovery (C125)', () => {
       'sort:aliada|desc',
       'sort:assessorado|desc',
       'sort:base|asc',
+      'sort:party|asc',
     ])
-    expect(suggestions.map((entry) => entry.label)).toContain('Aliada em (maior → menor)')
+    expect(suggestions.map((entry) => entry.label)).toContain('Dobra em (maior → menor)')
     expect(suggestions.map((entry) => entry.label)).toContain('Base (A–Z)')
   })
 
   it('shows the Ordenação group on an empty query (mobile discovery)', () => {
     const suggestions = filterPeopleOmniboxSuggestions(seeds, '')
     expect(suggestions.some((entry) => entry.group === 'Ordenação')).toBe(true)
-    expect(sortSeedsIn('')).toHaveLength(7)
+    expect(sortSeedsIn('')).toHaveLength(8)
   })
 
-  it('matches a sort column by its label, e.g. "aliada"', () => {
-    const suggestions = sortSeedsIn('aliada')
+  it('matches a sort column by its label, e.g. "dobra"', () => {
+    const suggestions = sortSeedsIn('dobra')
     expect(suggestions.map((entry) => entry.id)).toEqual(['sort:aliada|desc'])
   })
 
