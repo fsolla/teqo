@@ -76,6 +76,13 @@ export type MunicipalityPortfolioSearchHit =
       count: number
     }
   | {
+      /** A zone-city (Salvador) offered as one aggregate — "Salvador" adds every unassigned zone. */
+      kind: 'city'
+      key: string
+      label: string
+      municipalityIds: number[]
+    }
+  | {
       kind: 'zone'
       key: string
       label: string
@@ -320,6 +327,23 @@ const NORMALIZED_TERRITORIES: readonly { territory: BahiaIdentityTerritory; norm
     normalized: normalizeSearchPhrase(territory),
   }))
 
+/**
+ * The aggregate "Salvador" search option, derived from the catalog: one entry per
+ * zone-city, with the number of zone entries the catalog defines for it. A zone
+ * count is what the aggregate's scope gate compares against, so a future
+ * zone-city is covered by this table without new code.
+ */
+const NORMALIZED_ZONE_CITIES: readonly {
+  city: string
+  normalized: string
+  zoneCount: number
+}[] = ZONE_MUNICIPALITY_CITIES.map((city) => ({
+  city,
+  normalized: normalizeSearchPhrase(city),
+  zoneCount: municipalityCatalogEntriesForCity(city).filter((entry) => entry.kind === 'zona')
+    .length,
+}))
+
 const queryLooksLikeZone = (normalizedQuery: string): number | null => {
   const match = normalizedQuery.match(/^(?:ze|zona)?\s*(\d{1,3})$/)
   if (!match) return null
@@ -339,9 +363,32 @@ export const searchMunicipalityPortfolio = (
   // Normalize the query ONCE: it used to be re-normalized inside the matcher for
   // each of ~660 candidates (435 names + 27 TI + up to 199 ZE labels).
   const normalizedQuery = normalizeSearchPhrase(trimmed)
-  const { byId, idBySlug, idsByTerritory, normalizedNames } = portfolioIndexDerivations(index)
+  const { byId, idBySlug, idsByTerritory, idsByCity, normalizedNames } =
+    portfolioIndexDerivations(index)
   const hits: MunicipalityPortfolioSearchHit[] = []
   const zoneFromQuery = queryLooksLikeZone(normalizedQuery)
+
+  // The aggregate zone-city hit comes FIRST: its label ("Salvador") is the exact
+  // match for the query that reaches it, and the 19 individual zone hits would
+  // crowd it out of the `limit` if the municipality loop ran first.
+  for (const { city, normalized, zoneCount } of NORMALIZED_ZONE_CITIES) {
+    if (!matchesNormalizedAtWordStart(normalized, normalizedQuery)) continue
+    const cityIds = idsByCity.get(city)
+    // Scope gate: the aggregate's description says "Todas as zonas", so it is
+    // only offered when the actor may add every zone of the city — staff, or an
+    // advisor whose carteira covers the whole city. A partial scope keeps the
+    // individual zone hits, which never lie.
+    if (!cityIds || cityIds.length !== zoneCount) continue
+    const unassigned = cityIds.filter((id) => !alreadyAssignedIds.has(id))
+    if (unassigned.length === 0) continue
+    hits.push({
+      kind: 'city',
+      key: `city:${city}`,
+      label: city,
+      municipalityIds: unassigned,
+    })
+    if (hits.length >= limit) return hits
+  }
 
   // `byId` is built in index order, so the suggestions stay alphabetical for the
   // same reason the index is — and an entry the catalog cannot name is not here.

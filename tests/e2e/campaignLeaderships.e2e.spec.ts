@@ -68,6 +68,9 @@ test.describe('campaign leaderships list', () => {
 
     const linked = await fixtures.claimMunicipality()
     const added = await fixtures.claimMunicipality()
+    // C131 — even a Salvador-zone query ("Salvador — ZE N") only surfaces the
+    // exact zone hit: the aggregate matches word-start PREFIX queries of
+    // "salvador", never a query longer than the label. No guard needed.
     const keyboardQuery = await fixtures.claimMunicipality()
     const { contactName, leadershipId } = await fixtures.createStaffLeadership({
       namePrefix: 'Liderança Municípios',

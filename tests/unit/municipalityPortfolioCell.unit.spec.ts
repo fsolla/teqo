@@ -41,12 +41,12 @@ const INDEX: MunicipalityPortfolioIndexEntry[] = [
 const TERRITORY_IDS = INDEX.slice(0, TERRITORY_SLUGS.length).map((entry) => entry.id)
 const ILHEUS_ID = 90
 
-const cell = (municipalityIds: number[]) =>
+const cell = (municipalityIds: number[], index: MunicipalityPortfolioIndexEntry[] = INDEX) =>
   createElement(MunicipalityPortfolioCell, {
     ownerId: 7,
     ownerName: 'Maria Souza',
     municipalityIds,
-    municipalityIndex: INDEX,
+    municipalityIndex: index,
     commitAction: async () => ({ status: 'success' as const }),
     drawerTitle: 'Editar municípios',
     updateErrorMessage: 'Não foi possível atualizar os municípios.',
@@ -105,5 +105,33 @@ describe('município portfolio cell — optimistic baseline', () => {
 
     await waitFor(() => expect(screen.getByText(TERRITORY)).toBeTruthy())
     expect(screen.getByText('Ilhéus')).toBeTruthy()
+  })
+})
+
+describe('município portfolio cell — Salvador aggregate suggestion (C131)', () => {
+  // The default INDEX has no Salvador zones, so this test builds its own: the 19
+  // zone entries (the aggregate's search target) plus Ilhéus, so a non-matching
+  // sibling proves the suggestion is scoped to the query.
+  const SALVADOR_INDEX: MunicipalityPortfolioIndexEntry[] = [
+    ...municipalityCatalog
+      .filter((entry) => entry.city === 'Salvador')
+      .map((entry, position) => ({ id: position + 1, slug: entry.slug })),
+    { id: 90, slug: 'ilheus' },
+  ]
+
+  it('offers "Salvador — Todas as zonas" as the first suggestion for "salvador"', async () => {
+    render(cell([], SALVADOR_INDEX))
+
+    fireEvent.change(
+      screen.getByRole('combobox', {
+        name: 'Buscar município, território de identidade ou zona eleitoral',
+      }),
+      { target: { value: 'salvador' } },
+    )
+
+    const options = await screen.findAllByRole('option')
+    const first = options[0]
+    expect(first?.textContent).toContain('Salvador')
+    expect(first?.textContent).toContain('Todas as zonas')
   })
 })
