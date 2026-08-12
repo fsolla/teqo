@@ -122,7 +122,7 @@ const RelationGroupTrigger = ({
   entries: MunicipalityRelationEntry[]
   emptyState: ReactNode
 }) => (
-  <div className="flex w-full min-w-0 flex-col gap-1.5">
+  <div className="flex w-full min-w-0 flex-col gap-1">
     <ChipLabel>{label}</ChipLabel>
     <MunicipalityRelationAvatarStack entries={entries} emptyState={emptyState} overlapRow />
   </div>
@@ -135,7 +135,7 @@ const RelationGroupTrigger = ({
 const RelationGroup = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className="min-w-0 flex-1">
     {children ?? (
-      <div className="flex w-full flex-col gap-1.5">
+      <div className="flex w-full flex-col gap-1">
         <ChipLabel>{label}</ChipLabel>
         <CityDash />
       </div>
@@ -199,15 +199,15 @@ export const MunicipalityMobileCard = ({
   return (
     <article
       className={cn(
-        // B196 — denser vertical rhythm: gap-2.5 between blocks and py-3
+        // B196/B200 — denser vertical rhythm: gap-2 between blocks and py-3
         // (the horizontal p-4 keeps the B184 edge-to-edge bleed). Touch
         // targets (min-h-11 controls) are untouched.
-        'relative flex flex-col gap-2.5 rounded-none border-b px-4 py-3 last:border-b-0 md:rounded-xl md:border md:last:border-b',
+        'relative flex flex-col gap-2 rounded-none border-b px-4 py-3 last:border-b-0 md:rounded-xl md:border md:last:border-b',
         isPriority && !isCity && 'border-r-[6px] border-r-primary',
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 flex-col gap-0.5">
+        <div className="flex min-w-0 flex-col gap-0">
           <h3 className="flex items-center gap-1.5 text-lg leading-tight font-medium">
             <Link
               href={`/campanha/municipios/${municipality.slug}`}
@@ -217,7 +217,7 @@ export const MunicipalityMobileCard = ({
             </Link>
             {isCity ? <Badge variant="secondary">Cidade</Badge> : null}
           </h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm leading-tight text-muted-foreground">
             {isCity ? (
               <>
                 {SALVADOR_CITY_AGGREGATE_LABEL} · {region}
@@ -267,7 +267,7 @@ export const MunicipalityMobileCard = ({
 
           {/* B196 (gate B) — every chip is a label-above-value block; the row
               accepts 1–2 lines, but no chip ever breaks in the middle. */}
-          <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
+          <div className="flex flex-wrap items-start gap-x-3 gap-y-1.5">
             <ChipBlock label="Classe">
               <TerritorialClassCardReadout municipality={municipality} />
             </ChipBlock>
@@ -345,7 +345,7 @@ export const MunicipalityMobileCard = ({
                   triggerClassName={relationTriggerClassName}
                 />
               ) : (
-                <div className="flex w-full flex-col gap-1.5">
+                <div className="flex w-full flex-col gap-1">
                   <ChipLabel>Assessores</ChipLabel>
                   <MunicipalityAdvisorAvatarStack
                     advisors={advisors}

@@ -2,7 +2,11 @@ import type { ComponentProps, ReactNode } from 'react'
 
 import { cn } from '@/lib/utils'
 
-const campaignPageShellClassName = 'mx-auto flex w-full max-w-screen-2xl flex-col gap-8'
+const campaignPageShellClassName =
+  // B200 — the mobile filter bar (campaignListOmniboxFormClassName) cancels
+  // exactly this gap-8 with `max-md:-mb-8` so the first list card glues to
+  // the bar; change the gap here and that cancellation goes stale.
+  'mx-auto flex w-full max-w-screen-2xl flex-col gap-8'
 
 export const campaignPrioritySurfaceClassName =
   'shadow-[0_4px_24px_rgb(28_25_23/0.08)] ring-1 ring-foreground/10'
