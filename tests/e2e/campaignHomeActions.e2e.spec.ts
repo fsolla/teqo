@@ -198,7 +198,7 @@ test.describe('Início — catálogo de ações (B45)', () => {
     await expect(page.getByRole('link', { name: 'Ver meus contatos', exact: true })).toBeVisible()
 
     await page.getByRole('link', { name: 'Ver meus contatos', exact: true }).click()
-    await page.waitForURL(/\/campanha\/contatos/)
+    await page.waitForURL(/\/campanha\/meus-contatos/)
     await expect(page.getByRole('heading', { name: /Meus contatos/ })).toBeVisible()
   })
 })

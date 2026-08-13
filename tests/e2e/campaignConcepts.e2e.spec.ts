@@ -64,7 +64,7 @@ test.describe('Conceitos de inteligência', () => {
 
     await page.goto('/campanha/conceitos')
 
-    await expect(page).toHaveURL(/\/campanha\/contatos\/?$/)
+    await expect(page).toHaveURL(/\/campanha\/meus-contatos\/?$/)
     await expect(campaignPageChrome(page, 'Conceitos de inteligência')).toHaveCount(0)
   })
 })
