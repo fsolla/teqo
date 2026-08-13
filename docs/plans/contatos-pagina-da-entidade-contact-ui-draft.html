@@ -11,7 +11,7 @@
       <p class="text-sm text-zinc-400">
         Mesa (coordenação/assessores) na lista de Contatos — atualizar ficha e contatar pessoas.
         Cenas: desktop 1280px (lista + linha nova) e mobile 390px (cards + sheet de edição). Acento
-        único = CTA primário (vermelho do app). Chips dentro do input; células = inputs.
+        único = CTA primário (vermelho do app). Inputs sem borda — "somem" na célula.
       </p>
 
       <!-- ============ CENA: DESKTOP ============ -->
@@ -106,7 +106,7 @@
           </div>
         </div>
 
-        <!-- tabela: Nome, Gênero, Telefone, Email, Cidade, Estado, Ações -->
+        <!-- tabela: Nome, Gênero, Telefone, Email, Cidade, Estado, CEP, Ações -->
         <div class="overflow-x-auto bg-white">
           <table class="w-full text-left text-sm">
             <thead>
@@ -117,6 +117,7 @@
                 <th class="px-4 py-2 font-medium">E-mail</th>
                 <th class="px-4 py-2 font-medium">Cidade</th>
                 <th class="px-4 py-2 font-medium">Estado</th>
+                <th class="px-4 py-2 font-medium">CEP</th>
                 <th class="px-4 py-2 text-right font-medium">Ações</th>
               </tr>
             </thead>
@@ -125,38 +126,44 @@
               <tr class="bg-white">
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                     value="Maria dos Santos"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                     value="Feminino"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                     value="(71) 99999-0001"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                     value="maria@email.com"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                     value="Salvador"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                     value="BA"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
+                    value="40000-000"
                   />
                 </td>
                 <td class="px-4 py-2">
@@ -180,44 +187,50 @@
               <tr class="bg-white">
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                     value="João Pereira"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                     value="Masculino"
                   />
                 </td>
                 <td class="px-4 py-2">
-                  <div class="flex flex-col gap-1">
+                  <div class="flex flex-col gap-0.5">
                     <input
-                      class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                      class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                       value="(75) 98888-0002"
                     />
                     <input
-                      class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                      class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                       value="(75) 97777-0009"
                     />
                   </div>
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-dashed border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-400 outline-none"
-                    value="Sem e-mail"
+                    class="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
+                    placeholder="Sem e-mail"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                     value="Feira de Santana"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                     value="BA"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
+                    value="44000-000"
                   />
                 </td>
                 <td class="px-4 py-2">
@@ -237,42 +250,48 @@
                   </div>
                 </td>
               </tr>
-              <!-- linha 3: linkada a liderança + dobradinha, sem telefone -->
+              <!-- linha 3: sem telefone -->
               <tr class="bg-white">
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                     value="Ana Lima"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                     value="Não binário"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-dashed border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-400 outline-none"
-                    value="Sem telefone"
+                    class="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
+                    placeholder="Sem telefone"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                     value="ana@email.com"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                     value="Salvador"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
                     value="BA"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full bg-transparent text-sm text-zinc-900 outline-none"
+                    value="40000-000"
                   />
                 </td>
                 <td class="px-4 py-2">
@@ -337,46 +356,53 @@
                 <th class="px-4 py-2 font-medium">E-mail</th>
                 <th class="px-4 py-2 font-medium">Cidade</th>
                 <th class="px-4 py-2 font-medium">Estado</th>
+                <th class="px-4 py-2 font-medium">CEP</th>
                 <th class="px-4 py-2 text-right font-medium">Ações</th>
               </tr>
             </thead>
             <tbody>
-              <!-- linha nova em rascunho -->
+              <!-- linha nova em rascunho: inputs invisíveis, célula destacada -->
               <tr class="border-b-2 border-red-600 bg-red-50">
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-red-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
                     placeholder="Nome"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-red-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
                     placeholder="Gênero"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-red-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
                     placeholder="(71) 9…"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-red-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
                     placeholder="email@…"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-red-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
                     placeholder="Cidade"
                   />
                 </td>
                 <td class="px-4 py-2">
                   <input
-                    class="w-full rounded-md border border-red-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    class="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
                     placeholder="UF"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
+                    placeholder="CEP"
                   />
                 </td>
                 <td class="px-4 py-2">
@@ -401,6 +427,7 @@
                 <td class="px-4 py-2.5 text-zinc-700">maria@email.com</td>
                 <td class="px-4 py-2.5 text-zinc-700">Salvador</td>
                 <td class="px-4 py-2.5 text-zinc-700">BA</td>
+                <td class="px-4 py-2.5 text-zinc-700">40000-000</td>
                 <td class="px-4 py-2.5">
                   <div class="flex justify-end gap-1">
                     <span
@@ -469,6 +496,9 @@
                 <span class="flex size-9 items-center justify-center rounded-lg bg-zinc-100 text-xs"
                   >✉</span
                 >
+                <span class="flex size-9 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                  >🗑</span
+                >
               </div>
             </div>
             <div class="flex flex-wrap gap-1.5 text-xs">
@@ -489,6 +519,9 @@
                 <span
                   class="flex size-9 items-center justify-center rounded-lg bg-zinc-100 text-xs text-zinc-300"
                   >✉</span
+                >
+                <span class="flex size-9 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                  >🗑</span
                 >
               </div>
             </div>
@@ -512,6 +545,9 @@
                 >
                 <span class="flex size-9 items-center justify-center rounded-lg bg-zinc-100 text-xs"
                   >✉</span
+                >
+                <span class="flex size-9 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                  >🗑</span
                 >
               </div>
             </div>
@@ -554,45 +590,53 @@
             <div class="h-4 w-1/2 rounded bg-zinc-300"></div>
           </div>
         </div>
-        <!-- sheet -->
+        <!-- sheet: inputs sem moldura, divisórias full-bleed -->
         <div class="rounded-t-2xl border-t border-zinc-300 bg-white px-4 pb-4 pt-3">
           <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-zinc-300"></div>
           <p class="mb-3 text-sm font-semibold">Editar contato</p>
-          <div class="flex flex-col gap-2.5">
+          <div class="flex flex-col">
             <input
-              class="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none"
+              class="w-full border-b border-zinc-200 bg-transparent px-0 py-2.5 text-sm outline-none"
               value="Maria dos Santos"
             />
             <input
-              class="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none"
+              class="w-full border-b border-zinc-200 bg-transparent px-0 py-2.5 text-sm outline-none"
               value="Feminino"
             />
             <input
-              class="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none"
+              class="w-full border-b border-zinc-200 bg-transparent px-0 py-2.5 text-sm outline-none"
               value="(71) 99999-0001"
             />
-            <p class="text-xs font-medium text-zinc-500">+ Adicionar telefone</p>
+            <p class="py-1.5 text-xs font-medium text-zinc-500">+ Adicionar telefone</p>
             <input
-              class="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none"
+              class="w-full border-b border-zinc-200 bg-transparent px-0 py-2.5 text-sm outline-none"
               value="maria@email.com"
             />
-            <div class="grid grid-cols-2 gap-2">
+            <input
+              class="w-full border-b border-zinc-200 bg-transparent px-0 py-2.5 text-sm outline-none"
+              value="Salvador"
+            />
+            <div class="flex items-center gap-2">
               <input
-                class="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none"
-                value="Salvador"
-              />
-              <input
-                class="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none"
+                class="w-full border-b border-zinc-200 bg-transparent px-0 py-2.5 text-sm outline-none"
                 value="BA"
               />
+              <input
+                class="w-full border-b border-zinc-200 bg-transparent px-0 py-2.5 text-sm outline-none"
+                value="40000-000"
+                placeholder="CEP"
+              />
             </div>
-            <input
-              class="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none"
-              value="40000-000"
-              placeholder="CEP"
-            />
           </div>
-          <div class="mt-4 flex gap-2">
+          <button
+            class="mt-4 flex h-10 w-full items-center justify-center gap-1 rounded-lg border border-red-600 text-sm font-medium text-red-600"
+          >
+            Apagar contato
+          </button>
+          <p class="mt-1.5 text-center text-xs text-zinc-400">
+            Alerta confirma o contato e as entidades linkadas
+          </p>
+          <div class="mt-3 flex gap-2">
             <button
               class="flex h-10 flex-1 items-center justify-center rounded-lg border border-zinc-300 text-sm font-medium text-zinc-600"
             >
