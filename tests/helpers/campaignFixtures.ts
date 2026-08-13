@@ -174,7 +174,6 @@ const defaultConsentText = (text: string): Consent['text'] => ({
 // `campaignResidue.ts` (vitest-free — the e2e fixture imports it inside the
 // Playwright process) and are re-exported here for the existing importers.
 export { purgeMunicipalityResidue, relationId, relationIds } from './campaignResidue'
-export type { RelationshipValue } from './campaignResidue'
 
 const bulkErrors = (result: unknown): unknown[] => {
   if (

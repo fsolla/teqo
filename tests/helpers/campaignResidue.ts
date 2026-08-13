@@ -10,7 +10,7 @@ import type { Payload } from 'payload'
  * `@vitest/expect` — OPS45/CI 2026-08-13).
  */
 
-export type RelationshipValue = number | { id: number }
+type RelationshipValue = number | { id: number }
 
 /**
  * Id of a relationship field at any depth.
