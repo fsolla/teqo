@@ -109,7 +109,7 @@ export const Supporter: CollectionConfig = {
         { label: 'Certo', value: 'certo' },
         { label: 'Tende a certo', value: 'tende_a_certo' },
         { label: 'Indeciso', value: 'indeciso' },
-        { label: 'Outro', value: 'outro' },
+        { label: 'Não binário', value: 'outro' },
       ],
     },
     {

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import type { Contact } from '@/payload-types'
+
 import {
   contactFilterFacetsFromRows,
   filterContactRows,
@@ -56,7 +58,7 @@ describe('toContactRowViewModel', () => {
       state: 'BA',
       city: 'Camaçari',
       postalCode: '42800-000',
-    } as never)
+    } as unknown as Contact)
     expect(view).toEqual({
       contactID: 7,
       name: '  Maria  ',
@@ -80,7 +82,7 @@ describe('toContactRowViewModel', () => {
       state: 'BAHIA',
       city: null,
       postalCode: null,
-    } as never)
+    } as unknown as Contact)
     expect(view).toEqual({
       contactID: 8,
       name: 'Sem Dados',

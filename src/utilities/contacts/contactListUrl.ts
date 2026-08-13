@@ -36,7 +36,6 @@ export const contactGenderLabels: Record<ContactGender, string> = {
   outro: 'Não binário',
   nao_informado: 'Não informado',
 }
-
 export const CONTACT_ABSENCES = ['sem_telefone', 'sem_email'] as const
 export type ContactAbsence = (typeof CONTACT_ABSENCES)[number]
 

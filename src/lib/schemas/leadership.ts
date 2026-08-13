@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { contactFieldUpdateSchema, contactPhonesSchema } from '@/lib/schemas/contact'
+import { personGenders } from '@/lib/schemas/personGenders'
 import {
   optionalPersistedEmail,
   positiveRelationshipId,
@@ -8,7 +9,7 @@ import {
   trimmedOptionalText,
 } from '@/lib/schemas/primitives'
 
-export const leadershipGenders = ['feminino', 'masculino', 'outro', 'nao_informado'] as const
+export const leadershipGenders = personGenders
 
 export const leadershipSupportStatuses = [
   'engajado',

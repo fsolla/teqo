@@ -2,10 +2,8 @@ import 'server-only'
 
 import type { Payload, PayloadRequest } from 'payload'
 
+import { CONTACT_NAME_CONFLICT_MESSAGE } from '@/lib/schemas/contact'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
-
-export const CONTACT_NAME_CONFLICT_MESSAGE =
-  'Já existe um contato com este nome — confira a lista antes de salvar.'
 
 type ContactNameRequest = Pick<PayloadRequest, 'transactionID'>
 
