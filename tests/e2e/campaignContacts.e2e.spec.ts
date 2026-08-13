@@ -186,9 +186,7 @@ test.describe('Contatos — página da entidade Contact', () => {
     await persisted
     await expect(dialog).toBeHidden()
 
-    const card = page
-      .locator('[data-view="mobile-cards"] li')
-      .filter({ hasText: contactName })
+    const card = page.locator('[data-view="mobile-cards"] li').filter({ hasText: contactName })
     await expect(card).toBeVisible()
     await expect(card).toContainText('BA')
 
@@ -216,7 +214,12 @@ test.describe('Contatos — página da entidade Contact', () => {
     const targetName = uiName(fixtures, 'Ficha Editada')
     const target = await fixtures.payload.create({
       collection: 'contact',
-      data: { name: targetName, phones: [{ value: fixtures.phone() }], state: 'BA', city: 'Salvador' },
+      data: {
+        name: targetName,
+        phones: [{ value: fixtures.phone() }],
+        state: 'BA',
+        city: 'Salvador',
+      },
       depth: 0,
     })
     // The conflict target: a letters-only name that already exists.
@@ -260,7 +263,11 @@ test.describe('Contatos — página da entidade Contact', () => {
     const card = page.locator('[data-view="mobile-cards"] li').filter({ hasText: targetName })
     await expect(card).toContainText('Feira de Santana · BA')
 
-    const stored = await fixtures.payload.findByID({ collection: 'contact', id: target.id, depth: 0 })
+    const stored = await fixtures.payload.findByID({
+      collection: 'contact',
+      id: target.id,
+      depth: 0,
+    })
     expect(stored.city).toBe('Feira de Santana')
     expect(stored.name).toBe(targetName)
   })
