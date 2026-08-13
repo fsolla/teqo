@@ -12,7 +12,7 @@ import {
 export type StateKey = keyof typeof CitiesByState
 
 /** Gender enum shared with the leadership collection (same values, C139). */
-export const contactGenders = personGenders
+const contactGenders = personGenders
 
 const contactNameSchema = z
   .string()
@@ -121,6 +121,21 @@ export const contactFieldUpdateSchema = z.discriminatedUnion('field', [
     id: positiveRelationshipId,
     field: z.literal('phones'),
     phones: contactPhonesSchema,
+  }),
+  // C139 — the select cells commit the ficha's own enum fields: gender (the
+  // shared person enum) and state (a UF of the cities catalog).
+  z.object({
+    id: positiveRelationshipId,
+    field: z.literal('gender'),
+    gender: z.enum(contactGenders),
+  }),
+  z.object({
+    id: positiveRelationshipId,
+    field: z.literal('state'),
+    state: z.custom<StateKey>(
+      (value) => typeof value === 'string' && value in CitiesByState,
+      'Estado inválido',
+    ),
   }),
   // C139 — the contacts page edits the ficha's own fields in place: city and
   // CEP are free text on the Contact collection itself (no person-join

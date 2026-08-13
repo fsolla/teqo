@@ -52,7 +52,7 @@ const assertContactRowEditable = async (
   if (visible.docs.length === 0) throw new Error(CONTACT_CELL_NOT_IN_SCOPE_MESSAGE)
 }
 
-export const createContactRecord = async (
+const createContactRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: ContactCreateInput,
@@ -96,7 +96,7 @@ export const createContact = async (input: unknown) => {
 
 const contactFieldData = (
   data: ContactFieldUpdateInput,
-): Partial<Pick<Contact, 'name' | 'email' | 'city' | 'postalCode'>> & {
+): Partial<Pick<Contact, 'name' | 'email' | 'city' | 'postalCode' | 'gender' | 'state'>> & {
   phones?: { value: string }[]
 } => {
   switch (data.field) {
@@ -109,6 +109,10 @@ const contactFieldData = (
     case 'postalCode':
       // The schema transforms '' → undefined: clearing the CEP stores null.
       return { postalCode: data.postalCode ?? null }
+    case 'gender':
+      return { gender: data.gender }
+    case 'state':
+      return { state: data.state }
     case 'phones':
       return { phones: data.phones.map((value) => ({ value })) }
     case 'phone':
@@ -118,7 +122,7 @@ const contactFieldData = (
   }
 }
 
-export const updateContactFieldRecord = async (
+const updateContactFieldRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: ContactFieldUpdateInput,

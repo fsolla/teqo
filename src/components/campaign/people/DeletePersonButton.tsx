@@ -37,6 +37,12 @@ type DeletePersonButtonProps = {
    * navigate away — the ficha no longer exists.
    */
   deletedHref?: string
+  /**
+   * C139 — the contacts page reuses the C100 dialog with its own vocabulary
+   * ("contato" ficha instead of "pessoa"); the manifest and the cascade are
+   * the same (the delete contract is contactId-based).
+   */
+  vocabulary?: 'pessoa' | 'contato'
 }
 
 type ManifestState =
@@ -45,17 +51,23 @@ type ManifestState =
   | { kind: 'ready'; manifest: PersonDeleteManifest }
   | { kind: 'error'; message: string }
 
-const mapManifestError = (error: unknown): string => {
+const mapManifestError = (error: unknown, vocabulary: 'pessoa' | 'contato'): string => {
   const message = error instanceof Error ? error.message : ''
-  if (message === PERSON_DELETE_NOT_FOUND_MESSAGE) return 'Pessoa não encontrada.'
+  if (message === PERSON_DELETE_NOT_FOUND_MESSAGE) {
+    return vocabulary === 'contato' ? 'Contato não encontrado.' : 'Pessoa não encontrada.'
+  }
   return 'Não foi possível carregar o que será apagado. Tente de novo.'
 }
 
-const mapDeleteError = (error: unknown): string => {
+const mapDeleteError = (error: unknown, vocabulary: 'pessoa' | 'contato'): string => {
   const message = error instanceof Error ? error.message : ''
   if (message === PERSON_DELETE_PROTECTED_ACCOUNT_MESSAGE) return message
-  if (message === PERSON_DELETE_NOT_FOUND_MESSAGE) return 'Pessoa não encontrada.'
-  return 'Não foi possível apagar a pessoa. Tente de novo.'
+  if (message === PERSON_DELETE_NOT_FOUND_MESSAGE) {
+    return vocabulary === 'contato' ? 'Contato não encontrado.' : 'Pessoa não encontrada.'
+  }
+  return vocabulary === 'contato'
+    ? 'Não foi possível apagar o contato. Tente de novo.'
+    : 'Não foi possível apagar a pessoa. Tente de novo.'
 }
 
 /**
@@ -69,6 +81,7 @@ export const DeletePersonButton = ({
   personName,
   contactId,
   deletedHref,
+  vocabulary = 'pessoa',
 }: DeletePersonButtonProps) => {
   const router = useRouter()
   const [manifest, setManifest] = useState<ManifestState>({ kind: 'idle' })
@@ -87,11 +100,11 @@ export const DeletePersonButton = ({
           ? { kind: 'ready', manifest: next }
           : {
               kind: 'error',
-              message: mapManifestError(new Error(PERSON_DELETE_NOT_FOUND_MESSAGE)),
+              message: mapManifestError(new Error(PERSON_DELETE_NOT_FOUND_MESSAGE), vocabulary),
             },
       )
     } catch (error) {
-      setManifest({ kind: 'error', message: mapManifestError(error) })
+      setManifest({ kind: 'error', message: mapManifestError(error, vocabulary) })
     }
   }
 
@@ -101,12 +114,13 @@ export const DeletePersonButton = ({
     setDeleteError('')
     try {
       const result = await deletePersonAction({ contactId })
+      const deletedCopy = vocabulary === 'contato' ? 'Contato apagado.' : 'Pessoa apagada.'
       toast.success(
         result.contactDeleted
-          ? 'Pessoa apagada.'
+          ? deletedCopy
           : result.contactAnonymized
-            ? 'Pessoa apagada. A ficha foi anonimizada porque ainda é referenciada por participações públicas.'
-            : 'Pessoa apagada.',
+            ? `${deletedCopy} A ficha foi anonimizada porque ainda é referenciada por participações públicas.`
+            : deletedCopy,
       )
       if (deletedHref) {
         router.push(deletedHref)
@@ -114,7 +128,7 @@ export const DeletePersonButton = ({
         router.refresh()
       }
     } catch (error) {
-      setDeleteError(mapDeleteError(error))
+      setDeleteError(mapDeleteError(error, vocabulary))
     } finally {
       setDeleting(false)
     }
@@ -129,14 +143,14 @@ export const DeletePersonButton = ({
           variant="ghost"
           size="icon"
           className="size-10 text-destructive hover:text-destructive"
-          aria-label={`Apagar pessoa ${personName}`}
+          aria-label={`Apagar ${vocabulary} ${personName}`}
         >
           <Trash2Icon className="size-4" aria-hidden />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Apagar pessoa</AlertDialogTitle>
+          <AlertDialogTitle>Apagar {vocabulary}</AlertDialogTitle>
           <AlertDialogDescription>
             Esta ação não pode ser desfeita. Serão removidos todos os vínculos de{' '}
             <span className="font-medium text-foreground">{personName}</span> com a campanha.

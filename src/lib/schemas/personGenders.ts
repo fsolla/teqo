@@ -5,5 +5,3 @@
  * would be a module cycle.
  */
 export const personGenders = ['feminino', 'masculino', 'outro', 'nao_informado'] as const
-
-export type PersonGender = (typeof personGenders)[number]

@@ -83,7 +83,7 @@ export const toContactRowViewModel = (doc: Contact): ContactRowViewModel => ({
  * the result is intersected with the readable contact ids, so a link never
  * widens the list.
  */
-export const loadContactVinculos = async (
+const loadContactVinculos = async (
   payload: Payload,
   user: CampaignUser,
   readableContactIDs: ReadonlySet<number>,

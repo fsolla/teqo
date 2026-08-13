@@ -29,6 +29,9 @@ const CAMPAIGN_LIST_IDS = [
   // B197 — the advisors surface is a hand-rolled client table (no
   // `CampaignTable`), but it joined the picker with the same cookie key.
   'assessores',
+  // C139 — the contacts page (staff) joins the picker with the same key
+  // contract; the ficha fields are the columns.
+  'contatos',
 ] as const
 
 export type CampaignListId = (typeof CAMPAIGN_LIST_IDS)[number]
@@ -86,6 +89,9 @@ const DEFAULT_HIDDEN_COLUMN_IDS: Partial<Record<CampaignListId, readonly string[
   pessoas: ['email'],
   apoiadores: ['email'],
   assessores: ['email'],
+  // C139 — CEP is the least-read ficha field; anyone can re-enable it from
+  // the picker (stored wins over default).
+  contatos: ['postalCode'],
 }
 
 const isCampaignListId = (value: string): value is CampaignListId =>
