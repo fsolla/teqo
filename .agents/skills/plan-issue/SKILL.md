@@ -94,7 +94,7 @@ Ordem topológica (dependente cita ID do dependido). Por item:
 2. **Explorar o código o mínimo** — só para apontar **direção** (rotas/pastas/domínios prováveis) e evitar duplicar algo já entregue. Não inventar signatures, collections novas como decisão travada, nem diagramas de componentes.
 3. **Superfície UI (A–D)** como dica para quem for executar — não semear brief Impeccable completo. Classe **B/C/D** (ou qualquer mudança de UI): criar **rascunho HTML+Tailwind** ([ui-draft-html.md](ui-draft-html.md)) **antes do gate**, renderizar o PNG (`pnpm ui-draft:render`) e embutir no plano; ASCII no plano fica opcional. Classe **A** / sem UI: sem rascunho.
 4. **Dados (intenção)** ou `Dados: N/A`.
-5. **Posicionamento:** `P0..P3`, `depends`, appetite, janela eleitoral se relevante, `serializes` se tocar recurso compartilhado (ex. migrations) — sem detalhar a migration.
+5. **Posicionamento:** `P0..P3`, `depends`, appetite, janela eleitoral se relevante, `serializes` se tocar recurso compartilhado — nomeie o registro exato (ex. `serializes: 'docs/plans/'`, `serializes: 'docs/changelog/'` — migrations **não** serializam, AGENT-OPS). Sem detalhar a migration.
 6. **Plano de intenção** em `docs/plans/<slug>.md` via [intention-template.md](intention-template.md), com campo **Rascunho UI** preenchido (path do `.html` + PNGs embutidos, ou `N/A`). Self-score ≥4/5 ([shaping.md](shaping.md)).
 
 ### O que é proibido no plano de intenção
@@ -150,7 +150,7 @@ Sem `--plan`: nasce `ready` (use `--blocked` só se quiser não-claimável sem p
 
 2. Atualize `Issue: #N` (e status) no plano local.
 3. Commit + **`pnpm push`** + PR **Ready** `--base main` com **`Related #N`** (nunca `Closes #N` em PR só de `docs/plans/` — `plans-only-closes`).
-4. Auto-merge (`gh pr merge --auto --merge`); espere o merge em `main`.
+4. Auto-merge (`gh pr merge --auto --rebase`); espere o merge em `main`.
 5. **Promote** com o script (idempotente se já `ready`; só Issues `blocked` + link `docs/plans/`, sem gates humanos `needs:*` nem `in-progress`/`done`/`in-prod`):
 
 ```bash

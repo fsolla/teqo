@@ -25,10 +25,11 @@ describe('buildPoolWorkerPrompt', () => {
     expect(prompt).toContain('plano de intenção como contrato de engenharia')
   })
 
-  it('pins the PR contract: base main, Closes #N, auto-merge, CI watch', () => {
+  it('pins the PR contract: base main, Closes #N, changelog entry, rebase auto-merge, CI watch', () => {
     expect(prompt).toContain('gh pr create --base main')
     expect(prompt).toContain('Closes #42')
-    expect(prompt).toContain('gh pr merge --auto --merge')
+    expect(prompt).toContain('changelog:build')
+    expect(prompt).toContain('gh pr merge --auto --rebase')
     expect(prompt).toContain('gh pr checks <PR> --watch')
   })
 

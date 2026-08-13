@@ -20,7 +20,7 @@ main → ci.yml full suite → vercel deploy --prod (se verde) → requeue se HE
 
 **Skills:** `plan-issue` (intenção + Issues) → `work-issue` (humano: Issue já claimada → impl plan → confirmação → execução) ou `agent-work-issue` (pool: já claimada → impl plan → execução sem pausa) → `/simplify` → `capture-review-debts` → PR `--base main` → `project-status`. `docs/roadmap.md` = legado congelado; fonte canônica = GitHub Issues.
 
-- **Agente faz sozinho:** claim (pool-supervisor no pool; humano via `pnpm agent:claim` fora da sessão — OPS33: `worktree next` claima) → implementa → **`pnpm push`** → PR **Ready** (nunca draft) com `Closes #N` → `gh pr merge --auto --merge` → `gh pr checks --watch --required`. Regra always-on: `.agents/rules/agent-pr-workflow.mdc`. Em Cursor Cloud: `ManagePullRequest` com `draft: false`, depois armar auto-merge via `gh pr merge --auto --merge` (o default draft da tool **não** vale neste repo).
+- **Agente faz sozinho:** claim (pool-supervisor no pool; humano via `pnpm agent:claim` fora da sessão — OPS33: `worktree next` claima) → implementa → **`pnpm push`** → PR **Ready** (nunca draft) com `Closes #N` → `gh pr merge --auto --rebase` → `gh pr checks --watch --required`. Regra always-on: `.agents/rules/agent-pr-workflow.mdc`. Em Cursor Cloud: `ManagePullRequest` com `draft: false`, depois armar auto-merge via `gh pr merge --auto --rebase` (o default draft da tool **não** vale neste repo).
 - **Só humano:** secrets Vercel (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`), `POOL_GITHUB_TOKEN`, `pnpm configure:branch-protection`, editar envs Neon/Vercel.
 
 ### Dono do PR, dono do CI
@@ -56,7 +56,16 @@ Labels: `ready|in-progress|blocked|done|in-prod`, `prio:*`, `kind:*`, `needs:*`.
 
 1. Schema → atualizar `db:seed:minimal` no mesmo PR (`needs:migration`).
 2. Migrations NÃO são serializadas entre PRs: o CI (migrate + int, incl. `campaignMigrationReconciliation`) valida a cadeia em todo PR e na main; rebase antes de `migrate:create` continua obrigatório.
-3. Ready + auto-merge: `gh pr create --base main` → `gh pr merge --auto --merge`; `gh pr checks --watch --required` (Vercel Git não é gate).
+3. Ready + auto-merge: `gh pr create --base main` → `gh pr merge --auto --rebase`; `gh pr checks --watch --required` (Vercel Git não é gate). **Merge é por rebase** (nunca merge commit): preserva a linha histórica limpa do `main` e é o modo que o CI guarda contra conflitos latentes.
+4. **Changelog da entrega (OPS44):** toda entrega escreve `docs/changelog/<data>-<id>.md` (ex. `2026-08-13-ops44.md`) e roda `pnpm changelog:build` antes do push — o agregado `docs/CHANGELOG-AGENTS.md` é **insert-only** (nunca remove/reescreve entradas; entradas históricas não são migradas). Guard de CI `docs-guards`: (a) agregado é append-only (multiset sobre blobs — perda de linha falha); (b) `docs/changelog/` é additions-only (M/D falham); (c) agregado está up to date com `docs/changelog/` (`changelog:check`); (d) nenhum marcador de conflito em diffs de markdown (docs/, AGENTS.md, .agents/ — cobre PRs docs-only, onde a suíte unit não roda). Restauração legítima (header muda, restauração estilo D8) escapa escrevendo **`changelog-rewrite: <motivo>` como linha própria** no body do PR — definição canônica aqui; o texto do checkbox do PR template nunca ativa (linha-ancorado). A própria troca `--merge` → `--rebase` deste doc usou o escape — header do agregado mudou.
+
+## Registries compartilhados (serialização por arquivo, não por PR)
+
+Arquivos de "lista" que N agentes escrevem em paralelo (changelog, plans, migrações, catalog) conflitam por construção: cada escrita reescreve o arquivo inteiro. Regras:
+
+- **Cada entrega escreve UM arquivo por registro** (`docs/changelog/<data>-<id>.md`, `docs/plans/<slug>.md`, migration com nome único, etc.) — o arquivo comum é **derivado** (build/CI) ou **só-leitura por PR** (guard).
+- **`serializes` no plano de intenção** nomeia o registro exato que a Issue toca (ex. `serializes: 'docs/plans/'`), para o executor agendar com clareza — é dica de ordem, não lock (rebase continua obrigatório).
+- O rebase (Contrato de PR item 3) é o mecanismo real de conciliação: conflitos de append resolvem com `git checkout --ours/--theirs` por lado.
 
 ## CI por alvo
 
@@ -66,7 +75,7 @@ Labels: `ready|in-progress|blocked|done|in-prod`, `prio:*`, `kind:*`, `needs:*`.
 | `ci.yml`                             | push / dispatch `main`                 | service Postgres    | Full sempre; fail-fast cancela o run no 1º job vermelho → `deploy` (`vercel deploy --prod`) → `requeue` se HEAD andou |
 | `issue-done-on-main-merge.yml`       | PR merged → `main`                     | —                   | `Closes`/`Fixes` → `done` + `in-prod`                                                                                 |
 | `plan-issue-ready-on-main-merge.yml` | PR merged → `main`                     | —                   | `Related #N` aguardando plano → `ready` (OPS18; soft-skip)                                                            |
-| `agent-pr-ready-automerge.yml`       | PR `cursor/*` → `main` (open/sync/…)   | —                   | Draft→Ready + `gh pr merge --auto --merge` (safety net; audit incluso)                                                |
+| `agent-pr-ready-automerge.yml`       | PR `cursor/*` → `main` (open/sync/…)   | —                   | Draft→Ready + `gh pr merge --auto --rebase` (safety net; audit incluso)                                               |
 | `agent-pool.yml`                     | schedule / PR closed `main` / dispatch | —                   | Supervisor do pool (`POOL_GITHUB_TOKEN`)                                                                              |
 
 Action runtimes: `actions/checkout@v5`, `actions/setup-node@v5`, `pnpm/action-setup@v6` e `styfle/cancel-workflow-action@0.13.1` usam Node 24 nativo — sem `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`.

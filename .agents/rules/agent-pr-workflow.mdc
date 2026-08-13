@@ -29,7 +29,7 @@ EOF
 When the environment says to use `ManagePullRequest` instead of `gh pr create`:
 
 - **`draft: false`** (or omit only if the tool’s default is Ready — today Cloud defaults to draft, so **always pass `draft: false`**).
-- Right after create (or on `update_pr` if you opened draft by mistake): mark Ready if still draft, then enable auto-merge with `gh pr merge --auto --merge <url|number>` (write allowed for this step — same as `agent-pr-workflow`; do not leave the PR waiting on a human).
+- Right after create (or on `update_pr` if you opened draft by mistake): mark Ready if still draft, then enable auto-merge with `gh pr merge --auto --rebase <url|number>` (write allowed for this step — same as `agent-pr-workflow`; do not leave the PR waiting on a human).
 - Never end a turn with an open agent PR left as **Draft** or without **auto-merge** armed — inclui PRs do `engineering-audit` (artefatos e remediações).
 
 ## Push (determinístico)
@@ -51,7 +51,7 @@ git push --no-verify # WIP / cutover escape — CI repete tudo; ver AGENT-OPS
 Right after the PR exists and is **Ready**:
 
 ```bash
-gh pr merge --auto --merge
+gh pr merge --auto --rebase
 ```
 
 Do not wait for human approval on normal deliveries. Auto-merge fires when **required** checks pass.
@@ -84,4 +84,4 @@ There is no stage→main promote. Merging to `main` is the delivery; `ci.yml` ve
 
 ## Safety net (GitHub Action)
 
-`agent-pr-ready-automerge.yml` — PRs `cursor/*` → `main`: se Draft → `gh pr ready`; sempre arma `gh pr merge --auto --merge`. Cobre o caso em que o agente (ou o default draft do Cloud) esqueceu. Não há opt-out por skill (audit incluído).
+`agent-pr-ready-automerge.yml` — PRs `cursor/*` → `main`: se Draft → `gh pr ready`; sempre arma `gh pr merge --auto --rebase`. Cobre o caso em que o agente (ou o default draft do Cloud) esqueceu. Não há opt-out por skill (audit incluído).

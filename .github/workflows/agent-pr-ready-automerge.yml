@@ -1,6 +1,6 @@
 # Safety net: agent PRs (cursor/* → main) must be Ready + auto-merge.
 # Covers Cloud ManagePullRequest defaulting to draft and agents that forget
-# `gh pr merge --auto --merge`. No skill opt-out (engineering-audit included).
+# `gh pr merge --auto --rebase`. No skill opt-out (engineering-audit included).
 name: Agent PR Ready + auto-merge
 
 on:
@@ -34,11 +34,11 @@ jobs:
             echo "PR #$PR_NUMBER already Ready"
           fi
           # Arm auto-merge (idempotent when already enabled; fails only on hard blocks).
-          if gh pr merge --auto --merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY"; then
+          if gh pr merge --auto --rebase "$PR_NUMBER" --repo "$GITHUB_REPOSITORY"; then
             echo "Auto-merge armed for PR #$PR_NUMBER"
           else
             # Already merged / already armed / race — succeed only if request exists or merged.
             armed="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json autoMergeRequest,state --jq '(.autoMergeRequest != null) or (.state == "MERGED")')"
-            echo "gh pr merge --auto exited non-zero; armed_or_merged=$armed"
+            echo "gh pr merge --auto --rebase exited non-zero; armed_or_merged=$armed"
             [ "$armed" = "true" ]
           fi
