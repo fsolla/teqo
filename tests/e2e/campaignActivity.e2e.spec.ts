@@ -1,7 +1,7 @@
 import { formatBahiaCivilDate, parseBahiaDateTimeInput } from '../../src/lib/campaignTime.js'
 import { hookFilledCreateData } from '../../src/utilities/hookFilledData.js'
 import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures.js'
-import { dayLabelFor, ptBrMonthNames } from './helpers/agendaPeriodLabels.js'
+import { civilDatePlusDays, dayLabelFor, ptBrMonthNames } from './helpers/agendaPeriodLabels.js'
 
 /**
  * Agenda prologue shared by every journey in this file: opens the agenda
@@ -83,7 +83,9 @@ test.describe('Atividades — registro-fundação', () => {
     await expect(editModal).toBeVisible()
     await expect(editModal.getByLabel('Título *')).toBeVisible({ timeout: 30_000 })
     await editModal.getByRole('link', { name: 'Ver detalhes' }).click()
-    await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+$/, { timeout: 30_000 })
+    await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+(?:\?tab=overview)?$/, {
+      timeout: 30_000,
+    })
     await expect(campaignPageChrome(page, activityTitle)).toBeVisible({
       timeout: 15_000,
     })
@@ -305,13 +307,23 @@ test.describe('Agenda — calendário operacional', () => {
     ).toHaveCount(0)
     await page.keyboard.press('Escape')
 
-    // Multi-day: the end picker lands on a later day of the same month.
+    // Multi-day: the end picker lands on a later day, always +1 from today:
+    // the target stays inside the picker's visible grid (an inside day, or
+    // day 1 of the next month as an outside day) — no hardcoded dates (C134).
+    // The button label is date-fns pt-BR "PPPP" ("sexta-feira, 14 de agosto
+    // de 2026"): day without leading zero, month in lowercase — the string
+    // name matcher is case-insensitive, the day number is not.
+    const [endYear, endMonth, endDay] = civilDatePlusDays(
+      formatBahiaCivilDate(new Date()),
+      1,
+    ).split('-')
+    const endDayLabel = `${Number(endDay)} de ${ptBrMonthNames[Number(endMonth) - 1]} de ${endYear}`
     await page.getByRole('button', { name: 'Término', exact: true }).click()
     const endPicker = page.locator('[data-slot="popover-content"][data-state="open"]').last()
-    await endPicker.getByRole('button', { name: /17 de agosto de 2026/ }).click()
+    await endPicker.getByRole('button', { name: endDayLabel }).click()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('button', { name: 'Término', exact: true })).toHaveText(
-      /17\/08\/2026/,
+      new RegExp(`${endDay}/${endMonth}/${endYear}`),
     )
 
     await page.getByLabel('Título *').fill(title)
@@ -331,7 +343,9 @@ test.describe('Agenda — calendário operacional', () => {
     await expect(editModal).toBeVisible()
     await expect(editModal.getByLabel('Título *')).toBeVisible({ timeout: 30_000 })
     await editModal.getByRole('link', { name: 'Ver detalhes' }).click()
-    await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+$/, { timeout: 30_000 })
+    await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+(?:\?tab=overview)?$/, {
+      timeout: 30_000,
+    })
     await expect(page.getByText(/^\d{2}\/\d{2}\/\d{4}$/).first()).toBeVisible()
     await expect(page.getByText(/\d{2}\/\d{2}\/\d{4} às /)).toHaveCount(0)
   })
@@ -384,7 +398,9 @@ test.describe('Agenda — calendário operacional', () => {
     const detailModal = page.getByRole('dialog', { name: 'Editar atividade' })
     await expect(detailModal.getByLabel('Título *')).toBeVisible({ timeout: 30_000 })
     await detailModal.getByRole('link', { name: 'Ver detalhes' }).click()
-    await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+$/, { timeout: 30_000 })
+    await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+(?:\?tab=overview)?$/, {
+      timeout: 30_000,
+    })
     // The location shows in the overview's own <dd> (exact); the chrome
     // subtitle carries "município · local" as one string.
     await expect(page.getByText(newLocality, { exact: true })).toBeVisible()
