@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — Contatos: página da entidade Contact</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-5xl p-8">
+      <p class="text-sm text-zinc-400">
+        Mesa (coordenação/assessores) na lista de Contatos — atualizar ficha e contatar pessoas.
+        Cenas: desktop 1280px (lista + linha nova) e mobile 390px (cards + sheet de edição). Acento
+        único = CTA primário (vermelho do app). Chips dentro do input; células = inputs.
+      </p>
+
+      <!-- ============ CENA: DESKTOP ============ -->
+      <h2 class="mt-8 text-sm font-semibold uppercase tracking-wide text-zinc-500">
+        Desktop — /campanha/contatos (1280px)
+      </h2>
+      <section
+        data-shot="desktop"
+        class="mt-4 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-100 text-zinc-900"
+      >
+        <!-- app header -->
+        <div class="flex h-14 items-center justify-between border-b border-zinc-300 bg-white px-4">
+          <div class="flex items-baseline gap-2">
+            <p class="text-sm font-semibold">Contatos</p>
+            <p class="text-xs text-zinc-500">
+              Fichas da campanha — atualize dados e fale com as pessoas
+            </p>
+          </div>
+          <span
+            class="flex size-9 items-center justify-center rounded-full bg-zinc-200 text-xs text-zinc-600"
+            >SR</span
+          >
+        </div>
+
+        <!-- omnibox: chips DENTRO do input -->
+        <div class="border-b border-zinc-300 bg-white px-4 py-2">
+          <div class="flex items-center gap-1.5">
+            <div
+              class="flex min-h-9 flex-1 items-center gap-1 rounded-lg border border-zinc-300 px-2"
+            >
+              <span class="text-xs text-zinc-400">⌕</span>
+              <span
+                class="flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-100"
+              >
+                Gênero: Feminino <span class="text-zinc-400">✕</span>
+              </span>
+              <span
+                class="flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-100"
+              >
+                Estado: BA <span class="text-zinc-400">✕</span>
+              </span>
+              <span
+                class="flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-100"
+              >
+                Sem e-mail <span class="text-zinc-400">✕</span>
+              </span>
+              <input
+                class="min-h-8 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-zinc-500"
+                placeholder="Buscar contato — nome, e-mail ou telefone…"
+              />
+              <span
+                class="flex size-8 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-xs text-zinc-500"
+                >✕</span
+              >
+            </div>
+            <button
+              class="flex h-9 shrink-0 items-center gap-1 rounded-lg bg-red-600 px-3 text-xs font-medium text-white"
+            >
+              + Criar contato
+            </button>
+            <button
+              class="flex h-9 shrink-0 items-center gap-1 rounded-lg bg-zinc-900 px-3 text-xs font-medium text-zinc-100"
+            >
+              Colunas
+            </button>
+          </div>
+          <!-- sugestões (dropdown aberto) -->
+          <div class="mt-2 rounded-lg border border-zinc-300 bg-white p-1 shadow-sm">
+            <p class="flex items-center gap-1 px-2 py-1.5 text-xs text-zinc-600">
+              ⌕ Buscar: “maria”
+            </p>
+            <p class="flex items-center gap-1 px-2 py-1.5 text-xs text-zinc-600">Lideranças: Sim</p>
+            <p class="flex items-center gap-1 px-2 py-1.5 text-xs text-zinc-600">
+              Dobradinhas: Sim
+            </p>
+            <p class="flex items-center gap-1 px-2 py-1.5 text-xs text-zinc-600">Assessores: Sim</p>
+            <p class="flex items-center gap-1 px-2 py-1.5 text-xs text-zinc-600">Equipe: Sim</p>
+            <p class="flex items-center gap-1 px-2 py-1.5 text-xs text-zinc-600">
+              Gênero: Masculino
+            </p>
+            <p class="flex items-center gap-1 px-2 py-1.5 text-xs text-zinc-600">
+              Gênero: Não binário
+            </p>
+            <p class="flex items-center gap-1 px-2 py-1.5 text-xs text-zinc-600">
+              Gênero: Não informado
+            </p>
+            <p class="flex items-center gap-1 px-2 py-1.5 text-xs text-zinc-600">
+              Cidade: Salvador
+            </p>
+            <p class="flex items-center gap-1 px-2 py-1.5 text-xs text-zinc-600">Sem telefone</p>
+            <p class="flex items-center gap-1 px-2 py-1.5 text-xs text-zinc-600">Ordenar: Cidade</p>
+          </div>
+        </div>
+
+        <!-- tabela: Nome, Gênero, Telefone, Email, Cidade, Estado, Ações -->
+        <div class="overflow-x-auto bg-white">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="border-b border-zinc-300 text-xs uppercase tracking-wide text-zinc-500">
+                <th class="px-4 py-2 font-medium">Nome</th>
+                <th class="px-4 py-2 font-medium">Gênero</th>
+                <th class="px-4 py-2 font-medium">Telefone</th>
+                <th class="px-4 py-2 font-medium">E-mail</th>
+                <th class="px-4 py-2 font-medium">Cidade</th>
+                <th class="px-4 py-2 font-medium">Estado</th>
+                <th class="px-4 py-2 text-right font-medium">Ações</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-200">
+              <!-- linha 1: telefone único -->
+              <tr class="bg-white">
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    value="Maria dos Santos"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    value="Feminino"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    value="(71) 99999-0001"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    value="maria@email.com"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    value="Salvador"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    value="BA"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <div class="flex justify-end gap-1">
+                    <span
+                      class="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                      >✆</span
+                    >
+                    <span
+                      class="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                      >✉</span
+                    >
+                    <span
+                      class="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                      >🗑</span
+                    >
+                  </div>
+                </td>
+              </tr>
+              <!-- linha 2: dois telefones empilhados, sem e-mail -->
+              <tr class="bg-white">
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    value="João Pereira"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    value="Masculino"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <div class="flex flex-col gap-1">
+                    <input
+                      class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                      value="(75) 98888-0002"
+                    />
+                    <input
+                      class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                      value="(75) 97777-0009"
+                    />
+                  </div>
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-dashed border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-400 outline-none"
+                    value="Sem e-mail"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    value="Feira de Santana"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    value="BA"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <div class="flex justify-end gap-1">
+                    <span
+                      class="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                      >✆</span
+                    >
+                    <span
+                      class="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-xs text-zinc-300"
+                      >✉</span
+                    >
+                    <span
+                      class="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                      >🗑</span
+                    >
+                  </div>
+                </td>
+              </tr>
+              <!-- linha 3: linkada a liderança + dobradinha, sem telefone -->
+              <tr class="bg-white">
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    value="Ana Lima"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    value="Não binário"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-dashed border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-400 outline-none"
+                    value="Sem telefone"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    value="ana@email.com"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    value="Salvador"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    value="BA"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <div class="flex justify-end gap-1">
+                    <span
+                      class="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-xs text-zinc-300"
+                      >✆</span
+                    >
+                    <span
+                      class="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                      >✉</span
+                    >
+                    <span
+                      class="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                      >🗑</span
+                    >
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div
+            class="flex items-center justify-between border-t border-zinc-300 px-4 py-2 text-xs text-zinc-500"
+          >
+            <span>Mostrando 3 de 435 contatos</span>
+            <span>‹ 1 · 2 · 3 ›</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CENA: DESKTOP — linha nova ============ -->
+      <h2 class="mt-8 text-sm font-semibold uppercase tracking-wide text-zinc-500">
+        Desktop — linha nova (após “+ Criar contato”)
+      </h2>
+      <section
+        data-shot="desktop-novo"
+        class="mt-4 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-100 text-zinc-900"
+      >
+        <div class="flex h-14 items-center justify-between border-b border-zinc-300 bg-white px-4">
+          <p class="text-sm font-semibold">Contatos</p>
+          <span
+            class="flex size-9 items-center justify-center rounded-full bg-zinc-200 text-xs text-zinc-600"
+            >SR</span
+          >
+        </div>
+        <div class="border-b border-zinc-300 bg-white px-4 py-2">
+          <div class="flex min-h-9 items-center gap-1 rounded-lg border border-zinc-300 px-2">
+            <span class="text-xs text-zinc-400">⌕</span>
+            <input
+              class="min-h-8 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-zinc-500"
+              placeholder="Buscar contato…"
+            />
+          </div>
+        </div>
+        <div class="overflow-x-auto bg-white">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="border-b border-zinc-300 text-xs uppercase tracking-wide text-zinc-500">
+                <th class="px-4 py-2 font-medium">Nome</th>
+                <th class="px-4 py-2 font-medium">Gênero</th>
+                <th class="px-4 py-2 font-medium">Telefone</th>
+                <th class="px-4 py-2 font-medium">E-mail</th>
+                <th class="px-4 py-2 font-medium">Cidade</th>
+                <th class="px-4 py-2 font-medium">Estado</th>
+                <th class="px-4 py-2 text-right font-medium">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- linha nova em rascunho -->
+              <tr class="border-b-2 border-red-600 bg-red-50">
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-red-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    placeholder="Nome"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-red-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    placeholder="Gênero"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-red-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    placeholder="(71) 9…"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-red-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    placeholder="email@…"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-red-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    placeholder="Cidade"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <input
+                    class="w-full rounded-md border border-red-300 bg-white px-2 py-1.5 text-sm outline-none"
+                    placeholder="UF"
+                  />
+                </td>
+                <td class="px-4 py-2">
+                  <div class="flex justify-end gap-1">
+                    <button
+                      class="flex h-8 items-center rounded-lg bg-zinc-900 px-3 text-xs font-medium text-zinc-100"
+                    >
+                      Salvar
+                    </button>
+                    <button
+                      class="flex h-8 items-center rounded-lg border border-zinc-300 px-3 text-xs font-medium text-zinc-600"
+                    >
+                      Descartar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr class="bg-white">
+                <td class="px-4 py-2.5 font-medium">Maria dos Santos</td>
+                <td class="px-4 py-2.5 text-zinc-700">Feminino</td>
+                <td class="px-4 py-2.5 text-zinc-700">(71) 99999-0001</td>
+                <td class="px-4 py-2.5 text-zinc-700">maria@email.com</td>
+                <td class="px-4 py-2.5 text-zinc-700">Salvador</td>
+                <td class="px-4 py-2.5 text-zinc-700">BA</td>
+                <td class="px-4 py-2.5">
+                  <div class="flex justify-end gap-1">
+                    <span
+                      class="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                      >✆</span
+                    >
+                    <span
+                      class="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                      >✉</span
+                    >
+                    <span
+                      class="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                      >🗑</span
+                    >
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ CENA: MOBILE ============ -->
+      <h2 class="mt-8 text-sm font-semibold uppercase tracking-wide text-zinc-500">
+        Mobile — cards (390px, omnibox edge-to-edge sem borda)
+      </h2>
+      <section
+        data-shot="mobile"
+        class="mt-4 w-[390px] overflow-hidden rounded-xl border border-zinc-800 bg-zinc-100 text-zinc-900"
+      >
+        <!-- app header -->
+        <div class="flex h-14 items-center justify-between border-b border-zinc-300 bg-white px-4">
+          <p class="text-sm font-semibold">Contatos</p>
+          <span
+            class="flex size-9 items-center justify-center rounded-full bg-zinc-200 text-xs text-zinc-600"
+            >SR</span
+          >
+        </div>
+        <!-- omnibox sem moldura, edge-to-edge -->
+        <div class="border-b border-zinc-300 bg-white px-3 py-1.5">
+          <div class="flex min-h-9 items-center gap-1">
+            <span class="text-xs text-zinc-400">⌕</span>
+            <span
+              class="flex items-center gap-1 rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-100"
+            >
+              Gênero: Feminino <span class="text-zinc-400">✕</span>
+            </span>
+            <input
+              class="min-h-9 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-zinc-500"
+              placeholder="Buscar contato…"
+            />
+          </div>
+        </div>
+        <!-- cards -->
+        <ul class="flex flex-col divide-y divide-zinc-300 bg-zinc-100">
+          <li class="flex flex-col gap-2 bg-white px-4 py-3">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <p class="font-medium">Maria dos Santos</p>
+                <p class="truncate text-xs text-zinc-500">(71) 99999-0001</p>
+              </div>
+              <div class="flex shrink-0 items-center gap-1">
+                <span class="flex size-9 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                  >✆</span
+                >
+                <span class="flex size-9 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                  >✉</span
+                >
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-1.5 text-xs">
+              <span class="rounded-full bg-zinc-200 px-2 py-0.5 text-zinc-700">Feminino</span>
+              <span class="rounded-full bg-zinc-200 px-2 py-0.5 text-zinc-700">Salvador · BA</span>
+            </div>
+          </li>
+          <li class="flex flex-col gap-2 bg-white px-4 py-3">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <p class="font-medium">João Pereira</p>
+                <p class="truncate text-xs text-zinc-500">(75) 98888-0002</p>
+              </div>
+              <div class="flex shrink-0 items-center gap-1">
+                <span class="flex size-9 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                  >✆</span
+                >
+                <span
+                  class="flex size-9 items-center justify-center rounded-lg bg-zinc-100 text-xs text-zinc-300"
+                  >✉</span
+                >
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-1.5 text-xs">
+              <span class="rounded-full bg-zinc-200 px-2 py-0.5 text-zinc-700">Masculino</span>
+              <span class="rounded-full bg-zinc-200 px-2 py-0.5 text-zinc-700"
+                >Feira de Santana · BA</span
+              >
+            </div>
+          </li>
+          <li class="flex flex-col gap-2 bg-white px-4 py-3">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <p class="font-medium">Ana Lima</p>
+                <p class="truncate text-xs text-zinc-500">ana@email.com</p>
+              </div>
+              <div class="flex shrink-0 items-center gap-1">
+                <span
+                  class="flex size-9 items-center justify-center rounded-lg bg-zinc-100 text-xs text-zinc-300"
+                  >✆</span
+                >
+                <span class="flex size-9 items-center justify-center rounded-lg bg-zinc-100 text-xs"
+                  >✉</span
+                >
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-1.5 text-xs">
+              <span class="rounded-full bg-zinc-200 px-2 py-0.5 text-zinc-700">Não binário</span>
+              <span class="rounded-full bg-zinc-200 px-2 py-0.5 text-zinc-700">Salvador · BA</span>
+            </div>
+          </li>
+        </ul>
+        <!-- FAB de criação (substitui o de ações rápidas; FAB de IA permanece) -->
+        <div class="relative h-20 bg-zinc-100">
+          <div
+            class="absolute bottom-4 right-4 flex size-14 items-center justify-center rounded-full bg-red-600 text-2xl text-white"
+          >
+            +
+          </div>
+          <div
+            class="absolute bottom-4 right-20 flex size-14 items-center justify-center rounded-full bg-zinc-900 text-xs text-zinc-100"
+          >
+            IA
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CENA: MOBILE — sheet de edição ============ -->
+      <h2 class="mt-8 text-sm font-semibold uppercase tracking-wide text-zinc-500">
+        Mobile — bottom sheet de edição (toque no card)
+      </h2>
+      <section
+        data-shot="mobile-edicao"
+        class="mt-4 w-[390px] overflow-hidden rounded-xl border border-zinc-800 bg-zinc-100 text-zinc-900"
+      >
+        <!-- lista desfocada atrás (representação) -->
+        <div class="h-24 bg-zinc-100 opacity-40">
+          <div class="flex h-14 items-center border-b border-zinc-300 bg-white px-4">
+            <p class="text-sm font-semibold">Contatos</p>
+          </div>
+          <div class="flex flex-col gap-1.5 px-4 pt-2">
+            <div class="h-5 w-2/3 rounded bg-zinc-300"></div>
+            <div class="h-4 w-1/2 rounded bg-zinc-300"></div>
+          </div>
+        </div>
+        <!-- sheet -->
+        <div class="rounded-t-2xl border-t border-zinc-300 bg-white px-4 pb-4 pt-3">
+          <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-zinc-300"></div>
+          <p class="mb-3 text-sm font-semibold">Editar contato</p>
+          <div class="flex flex-col gap-2.5">
+            <input
+              class="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none"
+              value="Maria dos Santos"
+            />
+            <input
+              class="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none"
+              value="Feminino"
+            />
+            <input
+              class="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none"
+              value="(71) 99999-0001"
+            />
+            <p class="text-xs font-medium text-zinc-500">+ Adicionar telefone</p>
+            <input
+              class="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none"
+              value="maria@email.com"
+            />
+            <div class="grid grid-cols-2 gap-2">
+              <input
+                class="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none"
+                value="Salvador"
+              />
+              <input
+                class="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none"
+                value="BA"
+              />
+            </div>
+            <input
+              class="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none"
+              value="40000-000"
+              placeholder="CEP"
+            />
+          </div>
+          <div class="mt-4 flex gap-2">
+            <button
+              class="flex h-10 flex-1 items-center justify-center rounded-lg border border-zinc-300 text-sm font-medium text-zinc-600"
+            >
+              Cancelar
+            </button>
+            <button
+              class="flex h-10 flex-1 items-center justify-center rounded-lg bg-red-600 text-sm font-medium text-white"
+            >
+              Salvar
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
