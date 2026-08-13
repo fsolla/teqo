@@ -8,6 +8,8 @@ import config from '@/payload.config'
 import {
   createCampaignFixtures,
   purgeMunicipalityResidue,
+  relationId,
+  relationIds,
   withCampaignFixtures,
 } from '../helpers/campaignFixtures'
 import { withInviteConsent, withMutableConsentFixture } from '../helpers/testDatabaseLease'
@@ -441,6 +443,95 @@ describe('campaign integration fixtures', () => {
       expect(await exists('supporter', residueSupporter.id)).toBe(false)
       expect(await exists('contact', orphanContact.id)).toBe(false)
       expect(await exists('contact', preservedContact.id)).toBe(true)
+    } finally {
+      await fixtures.cleanup()
+    }
+  })
+
+  it('purges residue dobradinhas and their orphaned fichas on a municipality claim', async () => {
+    // OPS45: a crashed run leaves deputies linked through the claimed
+    // municipality's `stateDeputies`. The purge must delete the deputies and
+    // the fichas only a residue deputy referenced, clear the field, and
+    // preserve fichas that a live join still references.
+    const fixtures = createCampaignFixtures(payload)
+    try {
+      const municipality = await fixtures.getMunicipality()
+      const orphanDeputy = await fixtures.createStateDeputy()
+      const preservedContact = await fixtures.createContact()
+      const otherMunicipality = await fixtures.getMunicipality()
+      await fixtures.createLeadership({
+        contact: preservedContact,
+        municipalities: [otherMunicipality.id],
+      })
+      const preservedDeputy = await fixtures.createStateDeputy({ contact: preservedContact })
+      await payload.update({
+        collection: 'municipality',
+        id: municipality.id,
+        data: { stateDeputies: [orphanDeputy.id, preservedDeputy.id] },
+        depth: 0,
+        overrideAccess: true,
+      })
+
+      await purgeMunicipalityResidue(payload, municipality.id)
+
+      const deputyExists = async (id: number): Promise<boolean> => {
+        const result = await payload.find({
+          collection: 'stateDeputy',
+          where: { id: { equals: id } },
+          depth: 0,
+          limit: 1,
+          overrideAccess: true,
+        })
+        return result.docs.length === 1
+      }
+      expect(await deputyExists(orphanDeputy.id)).toBe(false)
+      expect(await deputyExists(preservedDeputy.id)).toBe(false)
+      expect(await exists('contact', relationId(orphanDeputy.contact))).toBe(false)
+      expect(await exists('contact', preservedContact.id)).toBe(true)
+      const persistedMunicipality = await payload.findByID({
+        collection: 'municipality',
+        id: municipality.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+      expect(relationIds(persistedMunicipality.stateDeputies ?? [])).toEqual([])
+    } finally {
+      await fixtures.cleanup()
+    }
+  })
+
+  it('purges a shared ficha only after every joiner is gone (supporter + dobradinha)', async () => {
+    // OPS45 — the residue shape that crashed the purge: ONE ficha shared by a
+    // dobradinha (linked to municipality A) and a supporter (on municipality
+    // B), no account in between. The supporter purge must not delete the
+    // ficha while the deputy still references it (`stateDeputy.contact` is
+    // ON DELETE RESTRICT — deleting would throw), and the later claim of A
+    // must finish the job.
+    const fixtures = createCampaignFixtures(payload)
+    try {
+      const deputyMunicipality = await fixtures.getMunicipality()
+      const sharedContact = await fixtures.createContact()
+      const deputy = await fixtures.createStateDeputy({ contact: sharedContact })
+      await payload.update({
+        collection: 'municipality',
+        id: deputyMunicipality.id,
+        data: { stateDeputies: [deputy.id] },
+        depth: 0,
+        overrideAccess: true,
+      })
+
+      const supporterMunicipality = await fixtures.getMunicipality()
+      const supporter = await fixtures.createSupporter({
+        contact: sharedContact,
+        municipality: supporterMunicipality,
+      })
+
+      await purgeMunicipalityResidue(payload, supporterMunicipality.id)
+      expect(await exists('supporter', supporter.id)).toBe(false)
+      expect(await exists('contact', sharedContact.id)).toBe(true)
+
+      await purgeMunicipalityResidue(payload, deputyMunicipality.id)
+      expect(await exists('contact', sharedContact.id)).toBe(false)
     } finally {
       await fixtures.cleanup()
     }

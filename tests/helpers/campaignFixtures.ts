@@ -234,10 +234,88 @@ const nextAllocatedMunicipalityIndex = async (
 }
 
 /**
+ * D10 F1 / OPS45: delete CONTACT rows an aborted run orphaned (no other join
+ * references them). Production `removeSupporterData` only anonymizes, so its
+ * reference rule is a subset of what a DELETE needs: every join that can hold
+ * a ficha must be checked — leadership/signature/subscription/supporter, the
+ * C99 account link (`campaignUser.contact`) and the `stateDeputy` FK
+ * (`ON DELETE RESTRICT`, so an unchecked deputy would make the delete throw).
+ * Reimplemented here so the fixture never runs production code under test.
+ */
+const deleteOrphanedResidueContacts = async (
+  payload: Payload,
+  contactIDs: Array<number | undefined>,
+): Promise<void> => {
+  const uniqueIDs = [...new Set(contactIDs.filter((id): id is number => id !== undefined))]
+  if (uniqueIDs.length === 0) return
+  const [leadershipRefs, signatureRefs, subscriptionRefs, supporterRefs, accountRefs, deputyRefs] =
+    await Promise.all([
+      payload.find({
+        collection: 'leadership',
+        where: { contact: { in: uniqueIDs } },
+        depth: 0,
+        pagination: false,
+      }),
+      payload.find({
+        collection: 'signature',
+        where: { contact: { in: uniqueIDs } },
+        depth: 0,
+        pagination: false,
+      }),
+      payload.find({
+        collection: 'subscription',
+        where: { contact: { in: uniqueIDs } },
+        depth: 0,
+        pagination: false,
+      }),
+      payload.find({
+        collection: 'supporter',
+        where: { contact: { in: uniqueIDs } },
+        depth: 0,
+        pagination: false,
+      }),
+      payload.find({
+        collection: 'campaignUser',
+        where: { contact: { in: uniqueIDs } },
+        depth: 0,
+        pagination: false,
+      }),
+      payload.find({
+        collection: 'stateDeputy',
+        where: { contact: { in: uniqueIDs } },
+        depth: 0,
+        pagination: false,
+      }),
+    ])
+  const referenced = new Set<number>()
+  for (const doc of [
+    ...leadershipRefs.docs,
+    ...signatureRefs.docs,
+    ...subscriptionRefs.docs,
+    ...supporterRefs.docs,
+    ...accountRefs.docs,
+    ...deputyRefs.docs,
+  ]) {
+    const contactID = relationId(doc.contact)
+    if (contactID !== undefined) referenced.add(contactID)
+  }
+  const orphanContactIDs = uniqueIDs.filter((id) => !referenced.has(id))
+  if (orphanContactIDs.length > 0) {
+    await payload.delete({
+      collection: 'contact',
+      where: { id: { in: orphanContactIDs } },
+      depth: 0,
+    })
+  }
+}
+
+/**
  * Delete campaign rows attached to a freshly claimed municipality. The allocator
  * guarantees no OTHER live test owns this municipality, so anything found here is
  * residue from an aborted previous run that would poison count assertions.
- * Also deletes the CONTACT rows those residue supporters orphaned (D10 F1).
+ * Also deletes the CONTACT rows those residue supporters orphaned (D10 F1) and
+ * the dobradinha residue (OPS45): deputies linked through
+ * `municipality.stateDeputies`, their orphaned fichas, and the field itself.
  */
 export const purgeMunicipalityResidue = async (
   payload: Payload,
@@ -343,59 +421,50 @@ export const purgeMunicipalityResidue = async (
 
   // D10 F1: an aborted run leaves residue supporters AND their contact rows.
   // The supporters are gone above; delete the contacts they orphaned (no other
-  // join references them) so the residue stops accumulating — same reference
-  // rule as the production `removeSupporterData` flow, reimplemented here so
-  // the fixture never runs production code under test.
-  const residueContactIDs = [
-    ...new Set(
-      supporters.docs.map((doc) => relationId(doc.contact)).filter((id) => id !== undefined),
-    ),
-  ]
-  if (residueContactIDs.length > 0) {
-    const [leadershipRefs, signatureRefs, subscriptionRefs, supporterRefs] = await Promise.all([
-      payload.find({
-        collection: 'leadership',
-        where: { contact: { in: residueContactIDs } },
-        depth: 0,
-        pagination: false,
-      }),
-      payload.find({
-        collection: 'signature',
-        where: { contact: { in: residueContactIDs } },
-        depth: 0,
-        pagination: false,
-      }),
-      payload.find({
-        collection: 'subscription',
-        where: { contact: { in: residueContactIDs } },
-        depth: 0,
-        pagination: false,
-      }),
-      payload.find({
-        collection: 'supporter',
-        where: { contact: { in: residueContactIDs } },
-        depth: 0,
-        pagination: false,
-      }),
-    ])
-    const referenced = new Set<number>()
-    for (const doc of [
-      ...leadershipRefs.docs,
-      ...signatureRefs.docs,
-      ...subscriptionRefs.docs,
-      ...supporterRefs.docs,
-    ]) {
-      const contactID = relationId(doc.contact)
-      if (contactID !== undefined) referenced.add(contactID)
-    }
-    const orphanContactIDs = residueContactIDs.filter((id) => !referenced.has(id))
-    if (orphanContactIDs.length > 0) {
-      await payload.delete({
-        collection: 'contact',
-        where: { id: { in: orphanContactIDs } },
-        depth: 0,
-      })
-    }
+  // join references them) so the residue stops accumulating.
+  await deleteOrphanedResidueContacts(
+    payload,
+    supporters.docs.map((doc) => relationId(doc.contact)),
+  )
+
+  // OPS45 — dobradinha residue: deputies linked through the freshly claimed
+  // municipality's `stateDeputies` belong to the crashed run that claimed it
+  // (the allocator contract rules out a live owner). Delete the deputies,
+  // the fichas they orphaned, and clear the field so a later claim starts
+  // clean. The deputy contacts are captured BEFORE the delete.
+  const claimed = await payload.findByID({
+    collection: 'municipality',
+    id: municipalityID,
+    depth: 0,
+    select: { stateDeputies: true },
+    overrideAccess: true,
+  })
+  const residueDeputyIDs = relationIds(claimed?.stateDeputies ?? [])
+  if (residueDeputyIDs.length > 0) {
+    const deputies = await payload.find({
+      collection: 'stateDeputy',
+      where: { id: { in: residueDeputyIDs } },
+      depth: 0,
+      pagination: false,
+      select: { contact: true },
+      overrideAccess: true,
+    })
+    await payload.delete({
+      collection: 'stateDeputy',
+      where: { id: { in: residueDeputyIDs } },
+      depth: 0,
+    })
+    await deleteOrphanedResidueContacts(
+      payload,
+      deputies.docs.map((doc) => relationId(doc.contact)),
+    )
+    await payload.update({
+      collection: 'municipality',
+      id: municipalityID,
+      data: { stateDeputies: [] },
+      depth: 0,
+      overrideAccess: true,
+    })
   }
 }
 
