@@ -25,25 +25,25 @@ O padrão que deu certo — **toda entidade de pessoa tem uma ficha `Contact`** 
 
 ## Decisões de produto (travadas com o humano em 2026-08-13)
 
-- **A página é da ficha `Contact`, pura.** Colunas desktop, nesta ordem: **Nome, Gênero, Telefone, E-mail, Cidade, Estado** (CEP fica dado da ficha, editável no mobile sheet, sem coluna). Sem coluna de vínculos — foi o que matou a página de Pessoas.
+- **A página é da ficha `Contact`, pura.** Colunas desktop, nesta ordem: **Nome, Gênero, Telefone, E-mail, Cidade, Estado, CEP**. Sem coluna de vínculos — foi o que matou a página de Pessoas.
 - **Gênero (vocabulário de produto):** Masculino, Feminino, **Não binário**, Não informado — facet e edição usam exatamente esses 4 valores.
 - **Busca geral cobre telefone.** O `q` da omnibox casa nome, e-mail e **qualquer** telefone da ficha (multi-telefone, C112) — absorve o gatilho de C121 ("tenho um número na mão, acho a pessoa").
 - **Filtros por propriedade da ficha:** gênero, estado, cidade, ausências ("sem telefone", "sem e-mail"). **Filtros de vínculo** (só facet, nunca coluna): **Lideranças, Dobradinhas, Assessores, Equipe** (nome pt-BR que cobre assessores/coordenadores/candidato — "Equipe" assumido; facet booleano "Sim" para cada vínculo).
 - **Ordenação:** pelas colunas relevantes (nome default, cidade, estado, e-mail) — padrão C117 (header sortable + omnibox). Sem ordenação por telefone.
-- **Edição onde se vê (desktop):** **as células de dados são inputs** — salva no blur ou Enter; multi-telefones empilhados um sobre o outro na célula. Mobile: toque no card abre **bottom sheet com todos os campos** editáveis (nome, gênero, telefones + adicionar, e-mail, cidade, estado, CEP). Mesmo padrão de escopo do `updatePersonContact` (assessor só edita ficha da carteira dele).
+- **Edição onde se vê (desktop):** **as células de dados são inputs sem moldura** — sem borda, sem fundo, sem destaque; "somem" na célula e só mostram o valor (salva no blur ou Enter); placeholder discreto quando vazio ("Sem telefone"/"Sem e-mail"); multi-telefones empilhados um sobre o outro na célula. Mobile: toque no card abre **bottom sheet com todos os campos** editáveis (nome, gênero, telefones + adicionar, e-mail, cidade, estado, CEP), inputs full-bleed com divisórias. Mesmo padrão de escopo do `updatePersonContact` (assessor só edita ficha da carteira dele).
 - **Criação de contato:** desktop botão **"+ Criar contato" ao lado de "Colunas"** → linha vazia no topo com ações **Descartar/Salvar**; mobile **FAB de criação** (substitui o FAB de ações rápidas nesta rota; FAB de IA permanece) → bottom sheet de criação.
 - **Ações por linha:** **Mensagem no WhatsApp** (`wa.me`, só com telefone — `whatsAppHrefForPhone`), **Enviar e-mail** (`mailto`, só com e-mail), **Apagar contato** — com **alerta de confirmação que lista o contato e todas as entidades linkadas a ele** (liderança, dobradinha, assessor, apoiador, conta de acesso…) que serão removidas.
 - **Escopo de acesso = `canReadContacts` existente:** assessor vê só fichas da carteira (via lideranças/dobradinhas/apoiadores do escopo); coordenador/candidato veem tudo. **Leader não acessa** (lockdown — a ferramenta "Meus contatos" do leader fica intocada).
 - **Nenhuma migration.** `Contact` já existe; nada no schema muda.
-- **Mobile: cards mostram só o telefone principal; "Cidade · Estado"** (nessa ordem); **sem rótulo "Sem e-mail"** — o que não existe simplesmente não aparece. **Omnibox sem bordas, edge-to-edge.**
+- **Mobile: cards mostram só o telefone principal; "Cidade · Estado"** (nessa ordem); **sem rótulo "Sem e-mail"** — o que não existe simplesmente não aparece. **Omnibox sem bordas, edge-to-edge.** **Apagar contato presente no mobile:** no card (ícone junto de WhatsApp/e-mail) e no sheet de edição (botão "Apagar contato" em vermelho) — sempre com o alerta de confirmação listando entidades linkadas.
 
 ## Objetivo e aceite
 
 - `/campanha/contatos` lista as fichas que o ator pode ler, com **tabela no desktop e cards no mobile** (mesmo chassis das listas atuais).
 - Omnibox com facet por propriedade (gênero com os 4 valores, estado, cidade, ausências) + vínculos (Lideranças/Dobradinhas/Assessores/Equipe) + busca geral por nome/e-mail/qualquer telefone + ordenação (nome/cidade/estado/e-mail). **Chips do filtro dentro do input.**
-- Edição where-you-see: desktop células são inputs (salva no blur/Enter), telefones múltiplos empilhados; mobile sheet com todos os campos, CEP incluso. Escopo do ator respeitado.
+- Edição where-you-see: desktop células são inputs **sem moldura** (somem na célula; salva no blur/Enter), telefones múltiplos empilhados; mobile sheet com todos os campos, CEP incluso. Escopo do ator respeitado.
 - Criação: desktop "+ Criar contato" ao lado de "Colunas" (linha vazia + Descartar/Salvar); mobile FAB (no lugar do de ações rápidas, IA permanece) → bottom sheet.
-- Ações por linha: WhatsApp (só com telefone), e-mail (só com e-mail), Apagar contato com alerta listando as entidades linkadas.
+- Ações por linha: WhatsApp (só com telefone), e-mail (só com e-mail), Apagar contato com alerta listando as entidades linkadas — **no desktop e no mobile** (card + sheet de edição).
 - Mobile: card mostra só telefone principal; "Cidade · Estado"; sem "Sem e-mail"; omnibox edge-to-edge sem bordas.
 - Leader não acessa a rota; "Meus contatos" do leader intacta.
 - Nenhuma rota pública muda; nenhuma migration; `/campanha/pessoas` continua no ar como referência.
@@ -93,7 +93,7 @@ _Resolvidas no gate 2026-08-13:_ rota = **A** (leader tool move para `/campanha/
 
 ## Rascunho UI (gate)
 
-Desktop — tabela (Nome, Gênero, Telefone, E-mail, Cidade, Estado), células = inputs, chips dentro do input, "+ Criar contato" ao lado de "Colunas":
+Desktop — tabela (Nome, Gênero, Telefone, E-mail, Cidade, Estado, CEP), células = inputs sem moldura, chips dentro do input, "+ Criar contato" ao lado de "Colunas":
 
 ![Rascunho UI — desktop](contatos-pagina-da-entidade-contact-ui-draft-desktop.png)
 
@@ -101,10 +101,10 @@ Desktop — linha nova após "+ Criar contato" (Descartar/Salvar):
 
 ![Rascunho UI — desktop, linha nova](contatos-pagina-da-entidade-contact-ui-draft-desktop-novo.png)
 
-Mobile — cards edge-to-edge, omnibox sem borda, só telefone principal, "Cidade · Estado", FAB de criação (IA permanece):
+Mobile — cards edge-to-edge, omnibox sem borda, só telefone principal, "Cidade · Estado", Apagar no card, FAB de criação (IA permanece):
 
 ![Rascunho UI — mobile](contatos-pagina-da-entidade-contact-ui-draft-mobile.png)
 
-Mobile — bottom sheet de edição (toque no card):
+Mobile — bottom sheet de edição (toque no card; Apagar contato no rodapé):
 
 ![Rascunho UI — mobile, sheet de edição](contatos-pagina-da-entidade-contact-ui-draft-mobile-edicao.png)
