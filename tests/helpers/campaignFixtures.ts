@@ -21,6 +21,7 @@ import type {
   VotePledge,
 } from '@/payload-types'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
+import { purgeMunicipalityResidue, relationId, relationIds } from './campaignResidue'
 
 /**
  * Campaign fixtures for the Município model. Municipalities are SEEDED reference rows
@@ -169,25 +170,10 @@ const defaultConsentText = (text: string): Consent['text'] => ({
   },
 })
 
-type RelationshipValue = number | { id: number }
-
-/**
- * Id of a relationship field at any depth.
- *
- * Specs use this instead of `relationshipId` from `src/utilities/relationship`
- * so an assertion never runs through the production helper it is checking, and
- * instead of `uniqueRelationshipIds`, which dedups — hiding a duplicated link.
- */
-export function relationId(value: RelationshipValue): number
-export function relationId(value: RelationshipValue | null | undefined): number | undefined
-export function relationId(value: RelationshipValue | null | undefined): number | undefined {
-  if (value === null || value === undefined) return undefined
-  return typeof value === 'number' ? value : value.id
-}
-
-/** Order-preserving, non-deduping ids of a `hasMany` relationship field. */
-export const relationIds = (values: readonly RelationshipValue[] | null | undefined): number[] =>
-  (values ?? []).map((value) => relationId(value))
+// `relationId`/`relationIds`/`purgeMunicipalityResidue` live in
+// `campaignResidue.ts` (vitest-free — the e2e fixture imports it inside the
+// Playwright process) and are re-exported here for the existing importers.
+export { purgeMunicipalityResidue, relationId, relationIds } from './campaignResidue'
 
 const bulkErrors = (result: unknown): unknown[] => {
   if (
@@ -231,172 +217,6 @@ const nextAllocatedMunicipalityIndex = async (
   )
   const value = Number((result.rows[0] as { value: string | number }).value)
   return value % catalogSize
-}
-
-/**
- * Delete campaign rows attached to a freshly claimed municipality. The allocator
- * guarantees no OTHER live test owns this municipality, so anything found here is
- * residue from an aborted previous run that would poison count assertions.
- * Also deletes the CONTACT rows those residue supporters orphaned (D10 F1).
- */
-export const purgeMunicipalityResidue = async (
-  payload: Payload,
-  municipalityID: number,
-): Promise<void> => {
-  const [pledges, updates, demands, leaderships, supporters, activities, feeds] = await Promise.all(
-    [
-      payload.find({
-        collection: 'votePledge',
-        where: { municipality: { equals: municipalityID } },
-        depth: 0,
-        pagination: false,
-        select: {},
-      }),
-      payload.find({
-        collection: 'municipalityUpdate',
-        where: { municipality: { equals: municipalityID } },
-        depth: 0,
-        pagination: false,
-        select: {},
-      }),
-      payload.find({
-        collection: 'campaignDemand',
-        where: { municipality: { equals: municipalityID } },
-        depth: 0,
-        pagination: false,
-        select: {},
-      }),
-      payload.find({
-        collection: 'leadership',
-        where: { municipalities: { in: [municipalityID] } },
-        depth: 0,
-        pagination: false,
-        select: {},
-      }),
-      payload.find({
-        collection: 'supporter',
-        where: { municipality: { equals: municipalityID } },
-        depth: 0,
-        pagination: false,
-      }),
-      payload.find({
-        collection: 'activity',
-        where: { municipality: { equals: municipalityID } },
-        depth: 0,
-        pagination: false,
-        select: {},
-      }),
-      payload.find({
-        collection: 'calendarFeed',
-        where: { filterMunicipality: { equals: municipalityID } },
-        depth: 0,
-        pagination: false,
-        select: {},
-      }),
-    ],
-  )
-
-  // Residue invites reference residue leaderships (FK), so they must be
-  // found and deleted before the leaderships — otherwise the leadership
-  // delete aborts and the residue poisons every later claim of this municipality.
-  const leadershipIDs = leaderships.docs.map((doc) => doc.id)
-  const invites =
-    leadershipIDs.length > 0
-      ? await payload.find({
-          collection: 'campaignInvite',
-          where: { leadership: { in: leadershipIDs } },
-          depth: 0,
-          pagination: false,
-          select: {},
-        })
-      : { docs: [] }
-
-  const deletions: Array<{
-    collection:
-      | 'campaignInvite'
-      | 'votePledge'
-      | 'municipalityUpdate'
-      | 'campaignDemand'
-      | 'leadership'
-      | 'supporter'
-      | 'activity'
-      | 'calendarFeed'
-    ids: number[]
-  }> = [
-    { collection: 'campaignInvite', ids: invites.docs.map((doc) => doc.id) },
-    { collection: 'votePledge', ids: pledges.docs.map((doc) => doc.id) },
-    { collection: 'municipalityUpdate', ids: updates.docs.map((doc) => doc.id) },
-    { collection: 'campaignDemand', ids: demands.docs.map((doc) => doc.id) },
-    { collection: 'activity', ids: activities.docs.map((doc) => doc.id) },
-    { collection: 'calendarFeed', ids: feeds.docs.map((doc) => doc.id) },
-    { collection: 'leadership', ids: leadershipIDs },
-    { collection: 'supporter', ids: supporters.docs.map((doc) => doc.id) },
-  ]
-  for (const { collection, ids } of deletions) {
-    if (ids.length === 0) continue
-    await payload.delete({
-      collection,
-      where: { id: { in: ids } },
-      depth: 0,
-    })
-  }
-
-  // D10 F1: an aborted run leaves residue supporters AND their contact rows.
-  // The supporters are gone above; delete the contacts they orphaned (no other
-  // join references them) so the residue stops accumulating — same reference
-  // rule as the production `removeSupporterData` flow, reimplemented here so
-  // the fixture never runs production code under test.
-  const residueContactIDs = [
-    ...new Set(
-      supporters.docs.map((doc) => relationId(doc.contact)).filter((id) => id !== undefined),
-    ),
-  ]
-  if (residueContactIDs.length > 0) {
-    const [leadershipRefs, signatureRefs, subscriptionRefs, supporterRefs] = await Promise.all([
-      payload.find({
-        collection: 'leadership',
-        where: { contact: { in: residueContactIDs } },
-        depth: 0,
-        pagination: false,
-      }),
-      payload.find({
-        collection: 'signature',
-        where: { contact: { in: residueContactIDs } },
-        depth: 0,
-        pagination: false,
-      }),
-      payload.find({
-        collection: 'subscription',
-        where: { contact: { in: residueContactIDs } },
-        depth: 0,
-        pagination: false,
-      }),
-      payload.find({
-        collection: 'supporter',
-        where: { contact: { in: residueContactIDs } },
-        depth: 0,
-        pagination: false,
-      }),
-    ])
-    const referenced = new Set<number>()
-    for (const doc of [
-      ...leadershipRefs.docs,
-      ...signatureRefs.docs,
-      ...subscriptionRefs.docs,
-      ...supporterRefs.docs,
-    ]) {
-      const contactID = relationId(doc.contact)
-      if (contactID !== undefined) referenced.add(contactID)
-    }
-    const orphanContactIDs = residueContactIDs.filter((id) => !referenced.has(id))
-    if (orphanContactIDs.length > 0) {
-      await payload.delete({
-        collection: 'contact',
-        where: { id: { in: orphanContactIDs } },
-        depth: 0,
-      })
-    }
-  }
 }
 
 export class CampaignFixtures {

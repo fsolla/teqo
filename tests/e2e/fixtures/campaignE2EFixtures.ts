@@ -9,6 +9,7 @@ import type { CampaignUser } from '../../../src/payload-types.js'
 import config from '../../../src/payload.config.js'
 import { withPayloadTransaction } from '../../../src/utilities/payloadTransaction.js'
 import { assertTestDatabase } from '../../helpers/assertTestDatabase.js'
+import { purgeMunicipalityResidue } from '../../helpers/campaignResidue.js'
 import { withInviteConsent } from '../../helpers/testDatabaseLease.js'
 import { test as base, expect } from './e2eTest.js'
 
@@ -156,6 +157,11 @@ export class CampaignE2EOwnership {
     const municipality = found.docs[0]
     if (!municipality)
       throw new Error(`Seeded municipality "${slug}" not found — run migrations first.`)
+    // OPS45 — a crashed e2e run (worker killed before the cleanup `finally`)
+    // leaves rows behind; purge them on the fresh claim, mirroring the int
+    // `getMunicipality` contract. Safe by the allocator: no live run owns
+    // this municipality.
+    await purgeMunicipalityResidue(this.rootPayload, municipality.id)
     this.touchedMunicipalities.add(municipality.id)
     // The catalog name, not the row's: since B34+ the chips label from
     // `municipalityCatalog`, so a row an int spec renamed and left behind would

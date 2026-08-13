@@ -52,7 +52,11 @@ describe('C100 — apagar pessoa (manifest + cascata)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
 
-    const contact = await fixtures.createContact({ name: 'Maria de Jesus' })
+    // OPS45 — the dobradinha name is a GLOBAL invariant
+    // (`assertStateDeputyNameAvailable`): a fixed name would collide with any
+    // residue row a crashed run left behind, so it must be unique per run.
+    const contactName = fixtures.personName('Maria de Jesus')
+    const contact = await fixtures.createContact({ name: contactName })
     const leadership = await fixtures.createLeadership({ contact, municipalities: [municipality] })
     await fixtures.createVotePledge({ leadership, municipality })
     const advisor = await fixtures.createCampaignUser('advisor', { phone: contact.phone })
@@ -63,7 +67,7 @@ describe('C100 — apagar pessoa (manifest + cascata)', () => {
     const manifest = await loadPersonDeleteManifest(payload, contact.id)
 
     expect(manifest).not.toBeNull()
-    expect(manifest?.contact.name).toBe('Maria de Jesus')
+    expect(manifest?.contact.name).toBe(contactName)
     expect(manifest?.leaderships).toHaveLength(1)
     expect(manifest?.leaderships[0]?.municipalityNames).toContain(municipality.name)
     expect(manifest?.stateDeputies).toHaveLength(1)
@@ -80,7 +84,7 @@ describe('C100 — apagar pessoa (manifest + cascata)', () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
-    const contact = await fixtures.createContact({ name: 'João do Brejo' })
+    const contact = await fixtures.createContact({ name: fixtures.personName('João do Brejo') })
     const leadership = await fixtures.createLeadership({ contact, municipalities: [municipality] })
     await fixtures.createVotePledge({ leadership, municipality })
     await fixtures.createStateDeputy({ contact, party: 'PCdoB' })
@@ -106,7 +110,7 @@ describe('C100 — apagar pessoa (manifest + cascata)', () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
-    const contact = await fixtures.createContact({ name: 'Ana Lima' })
+    const contact = await fixtures.createContact({ name: fixtures.personName('Ana Lima') })
     await fixtures.createLeadership({ contact, municipalities: [municipality] })
     const consent = await fixtures.createConsent()
     const subscription = await payload.create({
@@ -148,7 +152,7 @@ describe('C100 — apagar pessoa (manifest + cascata)', () => {
     const fixtures = campaignFixtures()
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.getMunicipality()
-    const contact = await fixtures.createContact({ name: 'Protegida' })
+    const contact = await fixtures.createContact({ name: fixtures.personName('Protegida') })
     await fixtures.createLeadership({ contact, municipalities: [municipality] })
     await fixtures.createCampaignUser('coordinator', { phone: contact.phone })
 
@@ -165,7 +169,7 @@ describe('C100 — apagar pessoa (manifest + cascata)', () => {
     const fixtures = campaignFixtures()
     const advisor = await fixtures.createCampaignUser('advisor')
     const municipality = await fixtures.getMunicipality()
-    const contact = await fixtures.createContact({ name: 'Alguém' })
+    const contact = await fixtures.createContact({ name: fixtures.personName('Alguém') })
     await fixtures.createLeadership({ contact, municipalities: [municipality] })
 
     await expect(deletePersonRecord(payload, advisor, contact.id)).rejects.toThrow(
