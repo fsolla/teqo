@@ -323,7 +323,7 @@ test.describe('Agenda — calendário operacional', () => {
     await endPicker.getByRole('button', { name: endDayLabel }).click()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('button', { name: 'Término', exact: true })).toHaveText(
-      new RegExp(`${endDay}/${endMonth}/${endYear}`),
+      `${endDay}/${endMonth}/${endYear}`,
     )
 
     await page.getByLabel('Título *').fill(title)
