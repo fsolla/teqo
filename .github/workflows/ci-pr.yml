@@ -353,6 +353,28 @@ jobs:
         if: failure()
         uses: ./.github/actions/cancel-workflow-on-failure
 
+  docs-guards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Changelog is append-only
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/check-changelog-append-only.mjs
+      - name: Aggregate is up to date with docs/changelog
+        run: node scripts/build-changelog.mjs --check
+      - name: No conflict markers in markdown diffs
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: node scripts/check-docs-conflict-markers.mjs
+      - name: Cancel workflow on failure
+        if: failure()
+        uses: ./.github/actions/cancel-workflow-on-failure
+
   plans-only-closes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -383,6 +405,7 @@ jobs:
       - int
       - build
       - e2e
+      - docs-guards
       - plans-only-closes
     if: always()
     steps:

@@ -53,6 +53,8 @@
     "gate:push": "pnpm gate:ci",
     "push": "node scripts/git-push.mjs",
     "check:cycles": "madge --circular --extensions ts,tsx --ts-config tsconfig.json src",
+    "changelog:build": "node scripts/build-changelog.mjs",
+    "changelog:check": "node scripts/build-changelog.mjs --check",
     "generate:importmap": "cross-env NODE_OPTIONS=\"--no-deprecation --conditions=react-server\" payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=\"--no-deprecation --conditions=react-server\" payload generate:types",
     "migrate": "cross-env NODE_OPTIONS=\"--no-deprecation --conditions=react-server\" payload migrate",

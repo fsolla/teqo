@@ -10,6 +10,8 @@ import {
   legacyFrameworkExportIgnores,
 } from '../../eslint-legacy-ignores.mjs'
 
+import { CONFLICT_MARKER_RE } from '../../scripts/lib/conflictMarkers.mjs'
+
 // Programmatic guards for conventions that used to be enforced only by prose
 // (codebase-map.mdc / docs/ARCHITECTURE.md) and drifted during Pass 2.
 
@@ -755,9 +757,11 @@ describe('no conflict markers in committed files', () => {
   // `=======` was deleted in the same bad resolution), and OPS37 inherited
   // the state. The scan reads tracked paths from the index and greps the
   // working tree, so a bad resolution fails here before it is ever pushed.
-  // The `(?:> ){7}` form is the exact corrupted closer that shipped; a
-  // genuine 7-deep nested blockquote would need a deliberate allowlist.
-  const conflictMarker = /^\s*<<<<<<<(?:\s|$)|^\s*>>>>>>>(?:\s|$)|^\s*(?:> ){7}/m
+  // The regex lives in scripts/lib/conflictMarkers.mjs (OPS44 extraction) —
+  // the CI docs guard shares it. The `(?:> ){7}` form is the exact corrupted
+  // closer that shipped; a genuine 7-deep nested blockquote would need a
+  // deliberate allowlist.
+  const conflictMarker = CONFLICT_MARKER_RE
 
   it('keeps conflict markers out of tracked files', () => {
     const offenders: string[] = []

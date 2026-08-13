@@ -29,11 +29,16 @@ entrega.
 ## Fechar em main
 
 1. Branch do ator (ver deltas) — nunca crie branch nova fora dela.
-2. **`pnpm push -u origin HEAD`**
-3. PR **Ready** (nunca draft): `gh pr create --base main` com `Closes #<N>`
-4. `gh pr merge --auto --merge` imediatamente
-5. `gh pr checks <PR> --watch --required` (`checks`; ignore Vercel Git)
-6. CI flipa `done`/`in-prod` no merge. Comente na Issue o desfecho em uma linha.
+2. **Changelog da entrega (OPS44):** escreva `docs/changelog/<data>-<id>.md`
+   (ex. `2026-08-13-ops44.md`) — uma entrada curta no formato do agregado —
+   e rode `pnpm changelog:build` para regenerar `docs/CHANGELOG-AGENTS.md`
+   (insert-only: entradas históricas nunca mudam; o diff será só a entrada
+   nova + o agregado). Rode `pnpm changelog:check` para confirmar.
+3. **`pnpm push -u origin HEAD`**
+4. PR **Ready** (nunca draft): `gh pr create --base main` com `Closes #<N>`
+5. `gh pr merge --auto --rebase` imediatamente
+6. `gh pr checks <PR> --watch --required` (`checks`; ignore Vercel Git)
+7. CI flipa `done`/`in-prod` no merge. Comente na Issue o desfecho em uma linha.
 
 ## Deltas por ator
 
