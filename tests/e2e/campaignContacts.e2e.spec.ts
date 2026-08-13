@@ -116,6 +116,15 @@ test.describe('Contatos — página da entidade Contact', () => {
     })
     expect(stored.docs).toHaveLength(1)
     expect(stored.docs[0]!.phones?.[0]?.value).toBe(phone)
+
+    // The row was created THROUGH the UI, so the ownership proxy never tracked
+    // it (and its letters-only name does not carry the runID, so discovery
+    // cannot find it) — delete it explicitly or every run leaks a contact.
+    await fixtures.payload.delete({
+      collection: 'contact',
+      where: { name: { equals: contactName } },
+      depth: 0,
+    })
   })
 
   test('a duplicate name shows the safe conflict message in the create row', async ({
@@ -201,6 +210,14 @@ test.describe('Contatos — página da entidade Contact', () => {
     await expect(
       card.getByRole('link', { name: `Enviar WhatsApp para ${contactName}` }),
     ).toHaveAttribute('href', `https://wa.me/55${phone}`)
+
+    // UI-created (see the desktop create-row test): delete explicitly so the
+    // ownership discovery (runID in name) is not the only net.
+    await fixtures.payload.delete({
+      collection: 'contact',
+      where: { name: { equals: contactName } },
+      depth: 0,
+    })
   })
 
   test('mobile: the edit sheet keeps values on conflict and saves the ficha atomically', async ({
