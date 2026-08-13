@@ -153,3 +153,39 @@ export const contactFieldUpdateSchema = z.discriminatedUnion('field', [
 ])
 
 export type ContactFieldUpdateInput = z.input<typeof contactFieldUpdateSchema>
+
+const contactGenderFieldSchema = z
+  .union([z.enum(contactGenders), z.literal('')])
+  .transform((value) => (value === '' ? undefined : value))
+  .optional()
+
+const contactCityFieldSchema = z
+  .string()
+  .trim()
+  .transform((value) => (value === '' ? undefined : value))
+  .refine((value) => value === undefined || (value.length >= 3 && value.length <= 100), {
+    message: 'Cidade inválida',
+  })
+  .optional()
+
+/**
+ * C139 — the mobile edit sheet is a SINGLE atomic write (plan decision F):
+ * the whole ficha in one schema, with the same gate/scope/name invariant as
+ * the per-field ladder; an empty email/CEP/city clears the column (null),
+ * an empty gender clears the enum.
+ */
+export const contactFullUpdateSchema = z.object({
+  id: positiveRelationshipId,
+  name: contactNameSchema,
+  email: optionalPersistedEmail,
+  phones: contactPhonesSchema.optional(),
+  gender: contactGenderFieldSchema,
+  state: z.custom<StateKey>(
+    (value) => typeof value === 'string' && value in CitiesByState,
+    'Estado inválido',
+  ),
+  city: contactCityFieldSchema,
+  postalCode: contactPostalCodeSchema,
+})
+
+export type ContactFullUpdateInput = z.input<typeof contactFullUpdateSchema>

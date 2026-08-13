@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useActionState, useEffect, useRef, useState } from 'react'
+import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 
 import { useContactCreate } from '@/components/campaign/contacts/ContactCreateState'
@@ -60,13 +60,22 @@ export const ContactCreateRow = ({ formAction }: ContactCreateRowProps) => {
 
   if (!open) return null
 
+  // C139 — manual dispatch (no `action={submitAction}`): React 19 resets
+  // uncontrolled fields after any settled form action, wiping the typed name
+  // on a validation/conflict error — the row stays open, so the wipe showed.
+  // `startTransition` keeps `isPending` correct for the imperative dispatch.
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => submitAction(new FormData(event.currentTarget)))
+  }
+
   return (
     <form
       ref={formRef}
-      action={submitAction}
+      onSubmit={handleSubmit}
       data-view="contact-create-row"
       aria-busy={isPending}
-      className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3"
+      className="hidden rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3 md:block"
     >
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex min-w-40 flex-1 flex-col gap-1.5">

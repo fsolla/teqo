@@ -2,11 +2,12 @@ import config from '@payload-config'
 import { MessageCircleIcon, SearchXIcon } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
-import type { ReactNode } from 'react'
 
+import { ContactCreateFab } from '@/components/campaign/contacts/ContactCreateFab'
 import { ContactCreateRow } from '@/components/campaign/contacts/ContactCreateRow'
 import { ContactCreateProvider } from '@/components/campaign/contacts/ContactCreateState'
 import { ContactFilters } from '@/components/campaign/contacts/ContactFilters'
+import { ContactMobileList } from '@/components/campaign/contacts/ContactMobileList'
 import { ContactPhonesCell } from '@/components/campaign/contacts/ContactPhonesCell'
 import { ContactSelectCell } from '@/components/campaign/contacts/ContactSelectCell'
 import { ContactSortableHead } from '@/components/campaign/contacts/ContactSortableHead'
@@ -20,6 +21,7 @@ import {
   CampaignListResults,
   CampaignTransitionAnchor,
 } from '@/components/campaign/shared/CampaignListPending'
+import { CampaignListSheetProvider } from '@/components/campaign/shared/CampaignListSheetHost'
 import {
   CampaignTable,
   CampaignTableHead,
@@ -38,7 +40,7 @@ import {
 import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { CitiesByState } from '@/lib/cities'
-import { formatBrazilianPhoneInput, whatsAppHrefForPhone } from '@/lib/phone'
+import { whatsAppHrefForPhone } from '@/lib/phone'
 import { cn } from '@/lib/utils'
 import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
@@ -279,62 +281,6 @@ const contactsColumns = ({
   },
 ]
 
-/** Fase 4 interim mobile list — replaced by the cards/sheets in Fase 5. */
-const ContactsMobileList = ({
-  rows,
-  canDelete,
-  empty,
-}: {
-  rows: readonly ContactRowViewModel[]
-  canDelete: boolean
-  empty: ReactNode
-}) => (
-  <ul data-view="mobile-list" className="flex flex-col divide-y md:hidden">
-    {rows.length === 0 ? (
-      <li className="py-4">{empty}</li>
-    ) : (
-      rows.map((row) => {
-        const whatsAppHref = whatsAppHrefForPhone(row.phones[0] ?? null)
-        return (
-          <li key={row.contactID} className="flex items-center justify-between gap-2 py-3">
-            <div className="min-w-0">
-              <p className="truncate font-medium">{row.name}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {row.phones[0]
-                  ? formatBrazilianPhoneInput(row.phones[0])
-                  : row.email
-                    ? row.email
-                    : 'Sem contato registrado'}
-              </p>
-            </div>
-            <div className="flex shrink-0 items-center gap-0.5">
-              {whatsAppHref ? (
-                <Button asChild variant="ghost" size="icon" className="size-10">
-                  <a
-                    href={whatsAppHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`Enviar WhatsApp para ${row.name}`}
-                  >
-                    <MessageCircleIcon className="size-4" aria-hidden="true" />
-                  </a>
-                </Button>
-              ) : null}
-              {canDelete ? (
-                <DeletePersonButton
-                  personName={row.name}
-                  contactId={row.contactID}
-                  vocabulary="contato"
-                />
-              ) : null}
-            </div>
-          </li>
-        )
-      })
-    )}
-  </ul>
-)
-
 export default async function ContactsPage({ searchParams }: ContactsPageProps) {
   const rawSearchParams = await searchParams
   const canonicalUrl = resolveContactListUrl(rawSearchParams)
@@ -373,46 +319,49 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
   return (
     <CampaignPageShell>
       <ContactCreateProvider>
-        <CampaignListPendingBoundary>
-          <ContactFilters
-            state={state}
-            cityFilterOptions={cityFilterOptions}
-            trailing={
-              <CampaignColumnPickerTrailing
-                columnVisibility={columnVisibility}
-                columns={toCampaignColumnPickerColumns(columns)}
-              />
-            }
-          />
+        <CampaignListSheetProvider>
+          <CampaignListPendingBoundary>
+            <ContactFilters
+              state={state}
+              cityFilterOptions={cityFilterOptions}
+              trailing={
+                <CampaignColumnPickerTrailing
+                  columnVisibility={columnVisibility}
+                  columns={toCampaignColumnPickerColumns(columns)}
+                />
+              }
+            />
 
-          <CampaignListResults>
-            <ContactsMobileList
-              rows={listData.rows}
-              canDelete={canDelete}
-              empty={<ContactsListEmptyState hasFilters={hasFilters} state={state} />}
-            />
-            <ContactCreateRow formAction={createContactFormAction} />
-            <CampaignTable
-              className="hidden md:block"
-              caption="Uma linha por ficha de contato da campanha. Edite direto na célula; o telefone principal é o primeiro da lista."
-              columns={columns}
-              columnVisibility={columnVisibility}
-              rows={listData.rows}
-              rowKey={(row) => row.contactID}
-              empty={<ContactsListEmptyState hasFilters={hasFilters} state={state} />}
-            />
-            {listData.rows.length ? (
-              <CampaignListFooter
-                totalDocs={listData.totalDocs}
-                singular="contato"
-                plural="contatos"
-                page={state.page}
-                totalPages={listData.totalPages}
-                hrefForPage={(page) => buildContactListHref(state, page)}
+            <CampaignListResults>
+              <ContactMobileList
+                rows={listData.rows}
+                canDelete={canDelete}
+                empty={<ContactsListEmptyState hasFilters={hasFilters} state={state} />}
               />
-            ) : null}
-          </CampaignListResults>
-        </CampaignListPendingBoundary>
+              <ContactCreateRow formAction={createContactFormAction} />
+              <CampaignTable
+                className="hidden md:block"
+                caption="Uma linha por ficha de contato da campanha. Edite direto na célula; o telefone principal é o primeiro da lista."
+                columns={columns}
+                columnVisibility={columnVisibility}
+                rows={listData.rows}
+                rowKey={(row) => row.contactID}
+                empty={<ContactsListEmptyState hasFilters={hasFilters} state={state} />}
+              />
+              {listData.rows.length ? (
+                <CampaignListFooter
+                  totalDocs={listData.totalDocs}
+                  singular="contato"
+                  plural="contatos"
+                  page={state.page}
+                  totalPages={listData.totalPages}
+                  hrefForPage={(page) => buildContactListHref(state, page)}
+                />
+              ) : null}
+            </CampaignListResults>
+          </CampaignListPendingBoundary>
+          <ContactCreateFab />
+        </CampaignListSheetProvider>
       </ContactCreateProvider>
     </CampaignPageShell>
   )

@@ -1,6 +1,10 @@
 'use server'
 
-import { createContact, updateContactField } from '@/app/(campaign)/campanha/actions/contact'
+import {
+  createContact,
+  updateContactField,
+  updateContactFull,
+} from '@/app/(campaign)/campanha/actions/contact'
 import {
   nullableFormText,
   repeatedPhoneFormValues,
@@ -89,11 +93,17 @@ export const createContactFormAction = async (
 ): Promise<CampaignFormActionState> =>
   runCampaignFormAction({
     execute: async () => {
-      const phone = nullableFormText(formData, 'phone')
+      // The desktop row sends one `phone`; the mobile sheet sends the
+      // repeatable `phones` list (PhonesFieldEditor) — the row wins when both
+      // are present, but the two forms never send both.
+      const singlePhone = nullableFormText(formData, 'phone')
+      const phonesList = repeatedPhoneFormValues(formData, 'phones')
+      const phones = phonesList.length > 0 ? phonesList : singlePhone ? [singlePhone] : []
       const result = await createContact({
         name: requiredFormText(formData, 'name'),
         email: nullableFormText(formData, 'email') ?? undefined,
-        phones: phone ? [phone] : [],
+        phones,
+        gender: nullableFormText(formData, 'gender') ?? undefined,
         state: requiredFormText(formData, 'state'),
         city: nullableFormText(formData, 'city') ?? undefined,
         postalCode: nullableFormText(formData, 'postalCode') ?? undefined,
@@ -102,4 +112,27 @@ export const createContactFormAction = async (
     },
     safeMessages: [CONTACT_NAME_CONFLICT_MESSAGE],
     genericMessage: 'Não foi possível criar o contato. Verifique os dados e tente novamente.',
+  })
+
+/** The mobile edit sheet's single atomic ficha write (plan decision F). */
+export const updateContactFullFormAction = async (
+  _state: CampaignFormActionState,
+  formData: FormData,
+): Promise<CampaignFormActionState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      await updateContactFull({
+        id: requiredRelationshipFormValue(formData, 'id'),
+        name: requiredFormText(formData, 'name'),
+        email: nullableFormText(formData, 'email') ?? undefined,
+        phones: repeatedPhoneFormValues(formData, 'phones'),
+        gender: nullableFormText(formData, 'gender') ?? undefined,
+        state: requiredFormText(formData, 'state'),
+        city: nullableFormText(formData, 'city') ?? undefined,
+        postalCode: nullableFormText(formData, 'postalCode') ?? undefined,
+      })
+      return { message: 'Salvo.' }
+    },
+    safeMessages: contactCellSafeMessages,
+    genericMessage: 'Não foi possível salvar. Verifique os dados e tente novamente.',
   })

@@ -9,8 +9,10 @@ import {
   CONTACT_CREATE_STAFF_MESSAGE,
   contactCreateSchema,
   contactFieldUpdateSchema,
+  contactFullUpdateSchema,
   type ContactCreateInput,
   type ContactFieldUpdateInput,
+  type ContactFullUpdateInput,
 } from '@/lib/schemas/contact'
 import type { CampaignUser, Contact } from '@/payload-types'
 import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
@@ -170,5 +172,49 @@ const updateContactFieldRecord = async (
 export const updateContactField = async (input: unknown) => {
   const { payload, actor } = await getCampaignActionContext()
   await updateContactFieldRecord(payload, actor, input as ContactFieldUpdateInput)
+  revalidatePath('/campanha/contatos', 'page')
+}
+
+/**
+ * C139 — the mobile sheet's single atomic ficha write (plan decision F): one
+ * transaction, same gate ("edita o que vê") and same name invariant as the
+ * per-field ladder; every column is written from the form (empties clear).
+ */
+const updateContactFullRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: ContactFullUpdateInput,
+): Promise<void> => {
+  const data = contactFullUpdateSchema.parse(input)
+
+  return withPayloadTransaction(payload, async ({ req }) => {
+    const currentActor = await reloadStaffActor(payload, actor, CONTACT_CELL_STAFF_MESSAGE, req)
+
+    await assertContactRowEditable(payload, currentActor, data.id, req)
+    await assertContactNameAvailable(payload, req, data.name, data.id)
+
+    // Intentional bypass: same gate as the per-field write above.
+    await payload.update({
+      collection: 'contact',
+      id: data.id,
+      data: {
+        name: data.name,
+        email: data.email ?? null,
+        phones: (data.phones ?? []).map((value) => ({ value })),
+        gender: data.gender ?? null,
+        state: data.state,
+        city: data.city ?? null,
+        postalCode: data.postalCode ?? null,
+      },
+      depth: 0,
+      overrideAccess: true,
+      req,
+    })
+  })
+}
+
+export const updateContactFull = async (input: unknown) => {
+  const { payload, actor } = await getCampaignActionContext()
+  await updateContactFullRecord(payload, actor, input as ContactFullUpdateInput)
   revalidatePath('/campanha/contatos', 'page')
 }
