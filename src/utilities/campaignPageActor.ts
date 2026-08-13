@@ -22,9 +22,9 @@ export const CAMPAIGN_STAFF_QUADRO_PATH = '/campanha/quadro'
  * `return null` — a blank screen — instead of redirecting to login). Gates:
  *
  * - (none)         → any authenticated campaign user;
- * - 'staff'        → non-staff (leader) goes to `/campanha/contatos` (B43);
+ * - 'staff'        → non-staff (leader) goes to `/campanha/meus-contatos` (B43, C139);
  * - 'unrestricted' → non-coordinator/candidate goes to `/campanha`;
- * - 'noLeader'     → leader goes to `/campanha/contatos` (B43).
+ * - 'noLeader'     → leader goes to `/campanha/meus-contatos` (B43, C139).
  *
  * A custom `redirectTo` overrides the gate's default target. The convention
  * guard in `codebaseConventions.unit.spec.ts` fails the build on a

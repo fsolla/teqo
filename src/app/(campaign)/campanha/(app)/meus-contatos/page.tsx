@@ -10,9 +10,9 @@ import { loadLeaderContactsPageData } from '@/utilities/leaderContactsPageData'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = campaignPageMetadataFromCatalog('contatos')
+export const metadata = campaignPageMetadataFromCatalog('meusContatos')
 
-export default async function CampaignContatosPage() {
+export default async function CampaignMeusContatosPage() {
   const [payload, user] = await Promise.all([getPayload({ config }), requireCampaignPageActor()])
 
   if (!isCampaignLeader(user)) {

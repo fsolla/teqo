@@ -102,7 +102,7 @@ test.describe('Mobile bottom nav (B164)', () => {
 
   test('leader does not see the bottom nav', async ({ campaign, context, page }) => {
     await seedCampaignSession(context, campaign.baseURL, leaderToken)
-    await page.goto('/campanha/contatos')
+    await page.goto('/campanha/meus-contatos')
 
     await expect(page.locator('[aria-label="Navegação principal"]')).toHaveCount(0)
   })
@@ -121,7 +121,7 @@ test.describe('Mobile bottom nav (B164)', () => {
 
   test('leader keeps the sidebar sheet on mobile (C102)', async ({ campaign, context, page }) => {
     await seedCampaignSession(context, campaign.baseURL, leaderToken)
-    await page.goto('/campanha/contatos')
+    await page.goto('/campanha/meus-contatos')
 
     const topBar = page.locator('[data-slot="campaign-mobile-top-bar"]')
     const trigger = topBar.locator('[data-slot="sidebar-trigger"]')

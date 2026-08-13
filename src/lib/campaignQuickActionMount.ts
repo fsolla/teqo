@@ -1,6 +1,6 @@
 import { CAMPAIGN_ACTIONS_HOME } from '@/lib/campaignActionRoutes'
 import { isAdvisorsPath } from '@/lib/campaignAdvisorQuickActions'
-import { CAMPAIGN_HOME, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
+import { CAMPAIGN_CONTACTS_HOME, CAMPAIGN_HOME, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
 import { isActivityTourComposerPath, isListPath } from '@/lib/campaignQuickActionPaths'
 import {
   isStaffCampaignRole,
@@ -17,6 +17,11 @@ export const isCampaignActionsPath = (pathname: string): boolean =>
 export const isLeaderContactsPath = (pathname: string): boolean =>
   pathname === LEADER_CONTACTS_HOME || pathname.startsWith(`${LEADER_CONTACTS_HOME}/`)
 
+/** C139 — the staff contacts page owns a create FAB of its own, so the
+ * quick-actions drawer stays out of it. */
+export const isContactsPath = (pathname: string): boolean =>
+  pathname === CAMPAIGN_CONTACTS_HOME || pathname.startsWith(`${CAMPAIGN_CONTACTS_HOME}/`)
+
 /**
  * Whether the quick-actions FAB should mount on this navigation (all viewports).
  */
@@ -26,6 +31,7 @@ export const shouldMountQuickActionsFab = (pathname: string, role: CampaignRole)
   // B84: E13 compositor already exposes primary CTAs — skip competing drawer chrome.
   if (isActivityTourComposerPath(pathname)) return false
   if (role === 'leader') return isLeaderContactsPath(pathname)
+  if (isContactsPath(pathname)) return false
   if (isAdvisorsPath(pathname)) return isUnrestrictedCampaignRole(role)
   return isStaffCampaignRole(role)
 }

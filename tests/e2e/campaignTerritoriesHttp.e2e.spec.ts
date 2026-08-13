@@ -144,14 +144,14 @@ test.describe('Territórios de Identidade (HTTP)', () => {
     expect([200, 307, 308]).toContain(direct.status())
     if (direct.status() === 200) {
       expect(await direct.text()).toContain(
-        'http-equiv="refresh" content="1;url=/campanha/contatos"',
+        'http-equiv="refresh" content="1;url=/campanha/meus-contatos"',
       )
     } else {
-      expect(direct.headers()['location']).toMatch(/\/campanha\/contatos$/)
+      expect(direct.headers()['location']).toMatch(/\/campanha\/meus-contatos$/)
     }
 
     // The leader home renders no way in.
-    const home = await request.get('/campanha/contatos')
+    const home = await request.get('/campanha/meus-contatos')
     expect(home.status()).toBe(200)
     expect(await home.text()).not.toContain('href="/campanha/territorios"')
   })

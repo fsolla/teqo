@@ -11,7 +11,12 @@ export const CAMPAIGN_SUPPORTERS_HOME = '/campanha/apoiadores' as const
 
 export const CAMPAIGN_AGENDA_HOME = '/campanha/agenda' as const
 
-export const LEADER_CONTACTS_HOME = '/campanha/contatos' as const
+/** Staff page for the `Contact` ficha (C139). */
+export const CAMPAIGN_CONTACTS_HOME = '/campanha/contatos' as const
+
+/** Leader's own supporter contact tool (B43) — moved here by C139 so staff
+ * and leader no longer share the `/campanha/contatos` route. */
+export const LEADER_CONTACTS_HOME = '/campanha/meus-contatos' as const
 
 export const CAMPAIGN_PROFILE_HOME = '/campanha/perfil' as const
 

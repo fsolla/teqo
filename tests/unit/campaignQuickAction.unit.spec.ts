@@ -22,6 +22,7 @@ import {
 import {
   isCampaignActionsPath,
   isCampaignHomePath,
+  isContactsPath,
   isLeaderContactsPath,
   shouldMountQuickActionsFab,
 } from '@/lib/campaignQuickActionMount'
@@ -54,13 +55,21 @@ describe('campaignQuickActionMount', () => {
     expect(isCampaignActionsPath('/campanha/municipios')).toBe(false)
   })
 
-  it('matches leader contacts subtree', () => {
-    expect(isLeaderContactsPath('/campanha/contatos')).toBe(true)
-    expect(isLeaderContactsPath('/campanha/contatos/novo')).toBe(true)
+  it('matches leader contacts subtree (C139 — moved to meus-contatos)', () => {
+    expect(isLeaderContactsPath('/campanha/meus-contatos')).toBe(true)
+    expect(isLeaderContactsPath('/campanha/meus-contatos/novo')).toBe(true)
+    expect(isLeaderContactsPath('/campanha/contatos')).toBe(false)
     expect(isLeaderContactsPath('/campanha')).toBe(false)
   })
 
-  it('mounts for staff outside Início and acoes', () => {
+  it('matches the staff contacts page (C139)', () => {
+    expect(isContactsPath('/campanha/contatos')).toBe(true)
+    expect(isContactsPath('/campanha/contatos/')).toBe(true)
+    expect(isContactsPath('/campanha/meus-contatos')).toBe(false)
+    expect(isContactsPath('/campanha')).toBe(false)
+  })
+
+  it('mounts for staff outside Início, acoes and the contacts page', () => {
     expect(shouldMountQuickActionsFab('/campanha/municipios', 'coordinator')).toBe(true)
     expect(shouldMountQuickActionsFab('/campanha/territorios', 'coordinator')).toBe(true)
     expect(shouldMountQuickActionsFab('/campanha/demandas', 'coordinator')).toBe(true)
@@ -71,12 +80,15 @@ describe('campaignQuickActionMount', () => {
     expect(shouldMountQuickActionsFab('/campanha/acoes/registrar-atualizacao', 'advisor')).toBe(
       false,
     )
+    expect(shouldMountQuickActionsFab('/campanha/contatos', 'coordinator')).toBe(false)
+    expect(shouldMountQuickActionsFab('/campanha/contatos', 'advisor')).toBe(false)
   })
 
   it('mounts for leader only on contacts', () => {
-    expect(shouldMountQuickActionsFab('/campanha/contatos', 'leader')).toBe(true)
+    expect(shouldMountQuickActionsFab('/campanha/meus-contatos', 'leader')).toBe(true)
     expect(shouldMountQuickActionsFab('/campanha/municipios', 'leader')).toBe(false)
     expect(shouldMountQuickActionsFab('/campanha/apoiadores', 'leader')).toBe(false)
+    expect(shouldMountQuickActionsFab('/campanha/contatos', 'leader')).toBe(false)
   })
 
   it('skips the E13 tour composer (B84)', () => {

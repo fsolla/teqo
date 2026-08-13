@@ -164,6 +164,7 @@ export const E2E_AFFECTED_MANIFEST = [
       `${CAMPAIGN_APP}/apoiadores`,
       `${CAMPAIGN_APP}/assessores`,
       `${CAMPAIGN_APP}/atualizacoes`,
+      `${CAMPAIGN_APP}/meus-contatos`,
       `${CAMPAIGN_APP}/contatos`,
       `${CAMPAIGN_APP}/demandas`,
       `${CAMPAIGN_APP}/dobradinhas`,
