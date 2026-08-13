@@ -85,7 +85,7 @@ test.describe('Wizard "Registrar pedido" (A5/B195)', () => {
     await page
       .goto(`${campaign.baseURL}/campanha/acoes/registrar-pedido?municipio=${municipality.slug}`)
       .catch(() => {})
-    await expect(page).toHaveURL(`${campaign.baseURL}/campanha/contatos`)
+    await expect(page).toHaveURL(`${campaign.baseURL}/campanha/meus-contatos`)
     await expect(page.getByLabel(CAMPAIGN_DEMAND_BODY_LABEL)).toHaveCount(0)
   })
 })

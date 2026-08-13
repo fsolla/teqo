@@ -162,7 +162,7 @@ export const Contact: CollectionConfig = {
       options: [
         { label: 'Feminino', value: 'feminino' },
         { label: 'Masculino', value: 'masculino' },
-        { label: 'Outro', value: 'outro' },
+        { label: 'Não binário', value: 'outro' },
         { label: 'Não informado', value: 'nao_informado' },
       ],
     },

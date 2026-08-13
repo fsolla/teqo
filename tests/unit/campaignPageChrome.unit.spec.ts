@@ -54,6 +54,18 @@ describe('campaignPageChrome', () => {
 
   it('builds tab metadata from catalog', () => {
     expect(campaignPageMetadataFromCatalog('contatos').title).toBe('Contatos')
+    expect(campaignPageMetadataFromCatalog('meusContatos').title).toBe('Meus contatos')
     expect(campaignPageMetadata(null).title).toBe('Início')
+  })
+
+  it('separates staff contatos from the leader meus-contatos (C139)', () => {
+    expect(resolveCampaignPageChrome('/campanha/contatos', 'coordinator')).toEqual({
+      title: 'Contatos',
+      subtitle: 'Fichas da campanha — atualize dados e fale com as pessoas.',
+    })
+    expect(resolveCampaignPageChrome('/campanha/meus-contatos', 'leader')).toEqual({
+      title: 'Meus contatos',
+      subtitle: 'Cadastre apoiadores pelo celular. Só você vê os contatos que criou aqui.',
+    })
   })
 })

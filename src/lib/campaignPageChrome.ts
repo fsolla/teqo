@@ -1,7 +1,12 @@
 import type { LucideIcon } from 'lucide-react'
 import type { Metadata } from 'next'
 
-import { CAMPAIGN_HOME, CAMPAIGN_UPDATES_HREF, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
+import {
+  CAMPAIGN_CONTACTS_HOME,
+  CAMPAIGN_HOME,
+  CAMPAIGN_UPDATES_HREF,
+  LEADER_CONTACTS_HOME,
+} from '@/lib/campaignPaths'
 import { normalizePathname } from '@/lib/campaignQuickActionPaths'
 import type { CampaignUser } from '@/payload-types'
 
@@ -98,6 +103,10 @@ export const campaignPageChromeCatalog = {
   },
   contatos: {
     title: 'Contatos',
+    subtitle: 'Fichas da campanha — atualize dados e fale com as pessoas.',
+  },
+  meusContatos: {
+    title: 'Meus contatos',
     subtitle: 'Cadastre apoiadores pelo celular. Só você vê os contatos que criou aqui.',
   },
   perfil: {
@@ -251,8 +260,12 @@ const pathRules: PathRule[] = [
     resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.atualizacoes),
   },
   {
-    match: (pathname) => pathname === LEADER_CONTACTS_HOME,
+    match: (pathname) => pathname === CAMPAIGN_CONTACTS_HOME,
     resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.contatos),
+  },
+  {
+    match: (pathname) => pathname === LEADER_CONTACTS_HOME,
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.meusContatos),
   },
   {
     match: (pathname) => pathname === '/campanha/perfil',

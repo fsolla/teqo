@@ -41,6 +41,9 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
     // (same class as /editar: cold compile mid-test aborts the redirect).
     '/campanha/demandas/e2e-prewarm',
     '/campanha/liderancas',
+    // C139 — both contact surfaces: the leader tool (meus-contatos, which the
+    // lockdown redirects land on) and the new staff ficha page (contatos).
+    '/campanha/meus-contatos',
     '/campanha/contatos',
     '/campanha/conceitos',
     '/campanha/acoes/atualizar-votos',

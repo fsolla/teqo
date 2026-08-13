@@ -710,17 +710,17 @@ test.describe('Municípios — jornadas por papel', () => {
     await expect(page.getByText('Média: 90')).toBeVisible()
 
     // Leader home is the blank Início (B43); the contact tool lives at
-    // /campanha/contatos and municipalities redirect there.
+    // /campanha/meus-contatos (C139) and municipalities redirect there.
     // Each `createCampaignUser` call mints its own password — the advisor's
     // `password` variable above does NOT unlock the leader account.
     await campaign.login(page, leaderPhone, leaderAccount.password)
-    await page.goto(`${campaign.baseURL}/campanha/contatos`)
-    await expect(campaignPageChrome(page, 'Contatos')).toBeVisible()
+    await page.goto(`${campaign.baseURL}/campanha/meus-contatos`)
+    await expect(campaignPageChrome(page, 'Meus contatos')).toBeVisible()
 
     // The leader redirect aborts `goto`'s load event (ERR_ABORTED); the
     // redirect itself is the assertion, and `toHaveURL` retries onto it.
     await page.goto(`${campaign.baseURL}/campanha/municipios`).catch(() => {})
-    await expect(page).toHaveURL(`${campaign.baseURL}/campanha/contatos`)
+    await expect(page).toHaveURL(`${campaign.baseURL}/campanha/meus-contatos`)
 
     const supporterName = fixtures.value('Apoiador Liderança')
     const supporterPhone = fixtures.phone()

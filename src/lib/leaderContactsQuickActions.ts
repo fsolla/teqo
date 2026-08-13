@@ -7,7 +7,7 @@ import type { CampaignQuickActionContext } from '@/lib/campaignQuickActionContex
 import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
 import type { CampaignRole } from '@/lib/campaignRoles'
 
-/** In-page anchors on `/campanha/contatos` — hash navigation from the B89 drawer. */
+/** In-page anchors on `/campanha/meus-contatos` — hash navigation from the B89 drawer. */
 export const LEADER_CONTACT_FORM_HASH = '#leader-contact-form' as const
 export const LEADER_CONTACTS_LIST_HASH = '#leader-contacts-list' as const
 

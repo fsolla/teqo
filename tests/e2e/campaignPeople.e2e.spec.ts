@@ -113,8 +113,8 @@ test.describe('Pessoas — lista unificada', () => {
     await campaign.login(page, phone, leader.password)
     await page.goto('/campanha/pessoas')
 
-    await expect(page).toHaveURL(/\/campanha\/contatos/)
-    await expect(page.getByRole('heading', { name: 'Contatos' })).toBeVisible()
+    await expect(page).toHaveURL(/\/campanha\/meus-contatos/)
+    await expect(page.getByRole('heading', { name: 'Meus contatos' })).toBeVisible()
   })
 
   test('leader cannot open the person detail route', async ({ campaign, page }) => {
@@ -128,8 +128,8 @@ test.describe('Pessoas — lista unificada', () => {
     await campaign.login(page, phone, leader.password)
     await page.goto('/campanha/pessoas/99999')
 
-    await expect(page).toHaveURL(/\/campanha\/contatos/)
-    await expect(page.getByRole('heading', { name: 'Contatos' })).toBeVisible()
+    await expect(page).toHaveURL(/\/campanha\/meus-contatos/)
+    await expect(page.getByRole('heading', { name: 'Meus contatos' })).toBeVisible()
   })
 
   test('coordinator opens the person detail and sees the sections of her capacities', async ({

@@ -20,7 +20,17 @@ import type { CampaignFormActionState } from '@/utilities/campaignFormActionErro
 
 const SAVE_DEBOUNCE_MS = 500
 
-export type CampaignInlineEditableField = 'name' | 'email' | 'phone' | 'party' | 'ballotName'
+// C139 — the contacts page adds the ficha's own text cells: `city` and
+// `postalCode` (same blur-save contract; the placeholder prop lets the cell
+// spell the empty state, e.g. "Sem cidade").
+export type CampaignInlineEditableField =
+  | 'name'
+  | 'email'
+  | 'phone'
+  | 'party'
+  | 'ballotName'
+  | 'city'
+  | 'postalCode'
 
 type CampaignInlineEditableCellProps = {
   recordId: number
@@ -45,6 +55,12 @@ type CampaignInlineEditableCellProps = {
    * typing edits in the same place (mechanism locked at the C116 gate).
    */
   permanent?: boolean
+  /**
+   * C139 — the empty-state placeholder of the permanent input (default '—').
+   * Cells pass their own copy (e.g. 'Sem cidade') — the ficha's absence is a
+   * state worth spelling, not a dash.
+   */
+  placeholder?: string
   className?: string
 }
 
@@ -77,6 +93,7 @@ export const CampaignInlineEditableCell = ({
   readBehavior = 'text',
   saveOnChange = true,
   permanent = false,
+  placeholder,
   className,
 }: CampaignInlineEditableCellProps) => {
   const router = useRouter()
@@ -269,7 +286,7 @@ export const CampaignInlineEditableCell = ({
           ref={inputRef}
           type={inputTypeForField(field)}
           value={draft}
-          placeholder={isNameLink ? undefined : '—'}
+          placeholder={isNameLink ? undefined : (placeholder ?? '—')}
           aria-label={label}
           aria-busy={isPending}
           className={inputClassName}

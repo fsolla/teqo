@@ -3,6 +3,7 @@ import {
   BookOpenIcon,
   CalendarDaysIcon,
   ContactIcon,
+  ContactRoundIcon,
   EllipsisVerticalIcon,
   HandshakeIcon,
   HomeIcon,
@@ -19,6 +20,7 @@ import {
 
 import {
   CAMPAIGN_AGENDA_HOME,
+  CAMPAIGN_CONTACTS_HOME,
   CAMPAIGN_UPDATES_HREF,
   LEADER_CONTACTS_HOME,
 } from '@/lib/campaignPaths'
@@ -54,6 +56,7 @@ const staffNav: CampaignNavItem[] = [
   { title: 'Organizações', href: '/campanha/organizacoes', icon: LandmarkIcon },
   { title: 'Dobradinhas', href: '/campanha/dobradinhas', icon: Users2Icon },
   { title: 'Pessoas', href: PEOPLE_NAV_HREF, icon: ContactIcon },
+  { title: 'Contatos', href: CAMPAIGN_CONTACTS_HOME, icon: ContactRoundIcon },
   { title: 'Agenda', href: CAMPAIGN_AGENDA_HOME, icon: CalendarDaysIcon },
   { title: 'Demandas', href: '/campanha/demandas', icon: InboxIcon },
   { title: 'Apoiadores', href: '/campanha/apoiadores', icon: UsersIcon },

@@ -134,6 +134,14 @@ export const E2E_AFFECTED_MANIFEST = [
     ],
     specs: ['campaignPeople'],
   },
+  {
+    prefixes: [
+      `${CAMPAIGN_APP}/contatos`,
+      'src/components/campaign/contacts',
+      'src/utilities/contacts',
+    ],
+    specs: ['campaignContacts'],
+  },
   // Domains without a dedicated e2e family still wake campaign home smoke so
   // the affected classifier cannot return mode=none on an unmapped domain dir.
   {
@@ -164,7 +172,7 @@ export const E2E_AFFECTED_MANIFEST = [
       `${CAMPAIGN_APP}/apoiadores`,
       `${CAMPAIGN_APP}/assessores`,
       `${CAMPAIGN_APP}/atualizacoes`,
-      `${CAMPAIGN_APP}/contatos`,
+      `${CAMPAIGN_APP}/meus-contatos`,
       `${CAMPAIGN_APP}/demandas`,
       `${CAMPAIGN_APP}/dobradinhas`,
       `${CAMPAIGN_APP}/organizacoes`,
