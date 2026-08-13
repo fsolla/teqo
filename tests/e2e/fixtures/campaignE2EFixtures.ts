@@ -9,7 +9,7 @@ import type { CampaignUser } from '../../../src/payload-types.js'
 import config from '../../../src/payload.config.js'
 import { withPayloadTransaction } from '../../../src/utilities/payloadTransaction.js'
 import { assertTestDatabase } from '../../helpers/assertTestDatabase.js'
-import { purgeMunicipalityResidue } from '../../helpers/campaignFixtures.js'
+import { purgeMunicipalityResidue } from '../../helpers/campaignResidue.js'
 import { withInviteConsent } from '../../helpers/testDatabaseLease.js'
 import { test as base, expect } from './e2eTest.js'
 
