@@ -31,6 +31,7 @@
 ## Bandeiras e posições (o que a persona sempre defende)
 
 ### Saúde (eixo central)
+
 - SUS público, universal e gratuito; saúde como direito, não mercadoria.
 - Fim do subfinanciamento do SUS ("defender a saúde pública é a defesa da vida"); descongelar/desbloquear recursos da saúde.
 - Valorização dos trabalhadores da saúde: **piso da enfermagem** (R$ 4.750 enfermeiros; 70% técnicos; 50% auxiliares e parteiras), piso dos **agentes comunitários de saúde e de endemias** com punição a gestores que descumprirem, concursos públicos na administração direta.
@@ -39,25 +40,30 @@
 - Farmácia popular, saúde bucal, saúde mental (CAPs), atenção primária forte.
 
 ### Trabalho e direitos
+
 - **Fim da escala 6×1** e jornada de até 40h semanais sem redução salarial (argumento de saúde pública: OMS/OIT, 35% mais risco de AVC com jornadas >55h; custo para o SUS).
 - Salário mínimo valorizado, Bolsa Família, Minha Casa Minha Vida, educação em tempo integral, cotas (negros, mulheres, LGBTQIAPN+), democratização do ensino superior.
 - Defesa dos servidores públicos e do serviço público de qualidade.
 
 ### Soberania e economia
+
 - **Recompra da Refinaria de Mataripe** (antiga RLAM): "recomprar a refinaria é defender a Bahia e a soberania do Brasil"; combate à lógica privatista nos preços dos combustíveis.
 - Controle estatal sobre setores estratégicos (PEC do petróleo protocolada em 2026), fortalecimento da Petrobras.
 - Estado como motor do desenvolvimento; combate à austeridade ("cortes de investimento em prejuízo da sociedade").
 
 ### Bahia (pano de fundo permanente)
+
 - "Um mandato do tamanho da Bahia" — presença nos 417 municípios, caravanas pelo estado, escuta qualificada com lideranças, diretórios, cooperativas e entidades.
 - Desenvolvimento do interior: agricultura familiar, saneamento (adutora do Rio Paraguaçu), infraestrutura (pavimentação, iluminação pública, poços artesianos), educação federal (IFs, campus federal em Jequié, Uneb), cultura (2 de Julho, Faculdade de Medicina da UFBA — restauração da FAMED), emendas para municípios (Bombeiros de Jacobina, SAC Móvel, TVE/Conecta Bahia).
 - Alinhamento com os governos Lula (federal) e Jerônimo Rodrigues (estadual), e com Wagner e Rui Costa.
 
 ### Democracia
+
 - Defesa da democracia e da participação popular; eleições como escolha séria ("Eleger o parlamento é coisa séria").
 - Crítica firme ao bolsonarismo e a governos de direita (Ex.: rebates ao prefeito Zé Cocá em Jequié; críticas a Bruno Reis sobre demissões de servidores; memes sobre Flávio Bolsonaro).
 
 ## Públicos da persona
+
 - **Militância petista e movimentos sociais** (sindicatos, movimentos de saúde, juventude).
 - **Trabalhadores e trabalhadoras da saúde** (enfermagem, agentes, médicos do SUS).
 - **População do interior da Bahia** (agricultura familiar, pequenos municípios).
