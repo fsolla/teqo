@@ -161,6 +161,111 @@ body,
   --ring: #c51414;
 }
 
+/* Paleta da página de campanha 2026 (home pública jorgesolla1313).
+   Extraída da geometria do rascunho Penpot (15/08/2026): vermelho #a21c1c,
+   amarelo #ffe607, problema #47130e, bandeiras #ebe9e9, cards #f9faff.
+   Aplicado via data-theme="campaign-site" no layout da home. */
+[data-theme='campaign-site'] {
+  --background: #ffffff;
+  --foreground: #000000;
+  --pt-red: #a21c1c;
+  --pt-red-dark: #47130e;
+  --pt-yellow: #ffe607;
+  --pt-yellow-ink: #000000;
+  --campaign-cream: #fff8f2;
+  --campaign-ink: #000000;
+  --campaign-muted: #6c615e;
+  --campaign-surface: #f9faff;
+  --campaign-band: #ebe9e9;
+  --campaign-line: rgb(0 0 0 / 12%);
+  --campaign-content-inset: 20px;
+}
+
+/* Penpot uses two lockups from the official campaign identity: the wide mark
+   on phones and the stacked mark on desktop. The PNG canvases are square and
+   mostly transparent, so keep their exact board geometry instead of sizing by
+   visible ink bounds. */
+.campaign-home-logo {
+  top: -123px;
+  left: 19px;
+  width: 356px;
+  height: 356px;
+  background-image: url('/Prancheta%206@3x.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+@media (min-width: 64rem) {
+  .campaign-home-logo {
+    top: 55px;
+    left: 47px;
+    width: 197px;
+    height: 150px;
+    background-image: url('/Prancheta%203@3x.png');
+    background-position: -43px -67px;
+    background-size: 283px 284px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme='campaign-site'] [data-carousel-track] {
+    scroll-behavior: auto;
+  }
+}
+
+/* Full-bleed carousel viewport with content-aligned first cards. The scroller
+   reaches both browser edges; only its initial item follows the page gutter. */
+[data-theme='campaign-site'] [data-carousel] {
+  --campaign-carousel-inset: var(--campaign-content-inset);
+}
+
+[data-theme='campaign-site'] [data-carousel-track],
+[data-theme='campaign-site'] [data-carousel-chips] {
+  padding-left: var(--campaign-carousel-inset);
+  padding-right: var(--campaign-carousel-inset);
+}
+
+[data-theme='campaign-site'] [data-carousel-track] {
+  scroll-padding-left: var(--campaign-carousel-inset);
+}
+
+.campaign-action-feedback {
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 120ms ease-out,
+    background-color 180ms ease-out,
+    filter 180ms ease-out;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .campaign-action-feedback:hover {
+    transform: scale(1.05);
+  }
+}
+
+.campaign-action-feedback:active {
+  opacity: 0.8;
+  transform: scale(0.99);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .campaign-action-feedback {
+    transition: none;
+  }
+
+  .campaign-action-feedback:hover,
+  .campaign-action-feedback:active {
+    transform: none;
+  }
+}
+
+@media (min-width: 64rem) {
+  [data-theme='campaign-site'] {
+    --campaign-content-inset: max(180px, calc((100vw - 1152px) / 2 + 32px));
+  }
+}
+
 [data-theme='petition'] {
   --background: #fff8f2;
   --foreground: #2c2522;

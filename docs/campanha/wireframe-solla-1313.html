@@ -1,0 +1,1519 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wireframe — Campanha Jorge Solla 1313 (Deputado Federal, PT-BA)</title>
+    <!--
+  ============================================================================
+  WIREFRAME — jorgesolla1313.com.br (rascunho para revisão)
+  Diretor de design e conversão · Campanha Jorge Solla 2026
+
+  Objetivo único da página: CAPTAR APOIADOR (nome + WhatsApp + cidade).
+  Fase da campanha em 15/08/2026: reta final (eleição 04/10/2026, ~50 dias).
+  Por isso o CTA primário é cadastro de apoiador/WhatsApp — doação é canal
+  secundário (link para apoiar.me/jorgesolla, homologado TSE).
+
+  REGRAS APLICADAS AQUI (ver pesquisa no chat):
+  - UM CTA primário por página, repetido no hero e no final (nunca dois de
+    peso igual acima da dobra).
+  - Formulário mínimo: nome + WhatsApp + cidade (coleta progressiva; cada
+    campo acima de 3 derruba conversão).
+  - WhatsApp com mensagem pré-configurada (wa.me) = maior conversão em site
+    político brasileiro. O botão amarelo é o CTA primário.
+  - Mobile-first: uma coluna, alvos de toque ≥ 44px, fonte ≥ 16px nos inputs.
+  - Prova social com números verificados (Câmara, 13/08/2026) — "sem fonte,
+    não publica". Depoimentos e fotos marcados como NEEDS ASSET (nunca
+    inventar).
+  - Urgência ética: só a contagem regressiva real da eleição.
+  - LGPD: consentimento explícito (checkbox) + link de privacidade visível.
+    Nunca pedir CPF/endereço no primeiro formulário.
+  - Identificação eleitoral obrigatória: número 1313, federação, CNPJ.
+
+  SEÇÕES (IA da página):
+  1. Header fixo (logo + 1313 + CTA âncora)
+  2. Hero (quem é + cargo + número + frase de crença + CTA WhatsApp)
+  3. Prova social numérica (3 números verificados)
+  4. O problema (o que está em jogo no Congresso)
+  5. Bandeiras (6 cards, cada uma vira página própria para SEO/AEO; sem
+     link "ler proposta" — decisão do cliente)
+  6. Quem é Jorge Solla (linha do tempo com etiquetas de esfera:
+     município → estado → União — o diferencial de gestão nas três esferas)
+     + formação e militância
+  7. Acompanhe de perto (board de conteúdo real: Instagram + YouTube,
+     bento 1 grande + 4 pequenos — prova de atividade, meio de funil)
+  8. Depoimentos reais (NEEDS ASSET)
+  9. CTA final + formulário apoiador + doação secundária
+  10. Rodapé (identificação da campanha, redes, privacidade)
+
+  Variantes de hero (A ativa; B e C documentadas no fim do arquivo).
+  ============================================================================
+-->
+    <style>
+      /* ---- Tokens (alinhados ao design system do Teqo) ---- */
+      :root {
+        --pt-red: #c51414; /* primary do tema editorial (vermelho PT) */
+        --pt-red-dark: #ae1603; /* header brand do site atual */
+        --pt-yellow: #ffcf2e; /* CTA — contraste forte sobre vermelho */
+        --ink: #201b1a;
+        --paper: #f6f4f3;
+        --card: #ffffff;
+        --muted: #6c615e;
+        --line: rgb(32 27 26 / 12%);
+        --white: #ffffff;
+        --radius: 0.875rem;
+        --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--font);
+        color: var(--ink);
+        background: var(--paper);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      img {
+        max-width: 100%;
+        display: block;
+      }
+
+      .wrap {
+        max-width: 72rem;
+        margin: 0 auto;
+        padding: 0 1.25rem;
+      }
+
+      /* ---- Wireframe markers: deixam explícito o que é placeholder ---- */
+      .ph {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        background: repeating-linear-gradient(45deg, #f3edeb 0 12px, #ece4e1 12px 24px);
+        border: 2px dashed #c9b8b2;
+        color: #8a7670;
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 1rem;
+        border-radius: var(--radius);
+      }
+      .needs-asset {
+        background: #fef3c7;
+        border-color: #d9a406;
+        color: #7a5b00;
+      }
+
+      /* ---- Header ---- */
+      .header {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: var(--pt-red-dark);
+        color: #fff8f2;
+        box-shadow: 0 2px 12px rgb(0 0 0 / 25%);
+      }
+      .header-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.7rem 1.25rem;
+        max-width: 72rem;
+        margin: 0 auto;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 800;
+      }
+      .brand .logo-ph {
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+      }
+      .brand .num {
+        font-size: 1.35rem;
+        letter-spacing: 0.02em;
+        background: var(--pt-yellow);
+        color: #332300;
+        padding: 0.15rem 0.55rem;
+        border-radius: 8px;
+        font-weight: 900;
+      }
+      .header-cta {
+        background: var(--pt-yellow);
+        color: #332300;
+        font-weight: 800;
+        font-size: 0.95rem;
+        padding: 0.6rem 1.1rem;
+        border-radius: 10px;
+        text-decoration: none;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .header-cta small {
+        font-weight: 600;
+        opacity: 0.75;
+        display: block;
+        font-size: 0.68rem;
+        line-height: 1;
+      }
+      .header-cta span {
+        display: block;
+        line-height: 1.2;
+      }
+
+      /* ---- Hero ---- */
+      .hero {
+        background: linear-gradient(180deg, var(--pt-red-dark) 0%, var(--pt-red) 100%);
+        color: #fff8f2;
+        padding: 3rem 0 2.5rem;
+      }
+      .hero-grid {
+        display: grid;
+        gap: 2rem;
+        align-items: center;
+      }
+      @media (min-width: 900px) {
+        .hero-grid {
+          grid-template-columns: 1.15fr 0.85fr;
+        }
+      }
+      .hero .kick {
+        display: inline-block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: rgb(255 255 255 / 14%);
+        border: 1px solid rgb(255 255 255 / 22%);
+        padding: 0.35rem 0.8rem;
+        border-radius: 999px;
+        margin-bottom: 1rem;
+      }
+      .hero h1 {
+        font-size: clamp(1.9rem, 5vw, 3.2rem);
+        font-weight: 900;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+        text-wrap: balance;
+      }
+      .hero h1 .n {
+        color: var(--pt-yellow);
+      }
+      .hero .sub {
+        margin-top: 1rem;
+        font-size: clamp(1rem, 2.4vw, 1.2rem);
+        color: rgb(255 248 242 / 88%);
+        max-width: 34rem;
+        text-wrap: pretty;
+      }
+      .hero .cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        margin-top: 1.6rem;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 52px;
+        padding: 0.75rem 1.4rem;
+        border-radius: 12px;
+        font-weight: 800;
+        font-size: 1.02rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        text-align: center;
+      }
+      .btn-whatsapp {
+        background: var(--pt-yellow);
+        color: #332300;
+      }
+      .btn-whatsapp small {
+        font-weight: 600;
+        opacity: 0.72;
+        font-size: 0.75rem;
+        display: block;
+        line-height: 1.15;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: #fff8f2;
+        border: 2px solid rgb(255 255 255 / 45%);
+        min-height: 52px;
+      }
+      .hero .micro-proof {
+        margin-top: 1.4rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1.4rem;
+        font-size: 0.85rem;
+        color: rgb(255 248 242 / 80%);
+      }
+      .hero .micro-proof b {
+        color: #fff8f2;
+      }
+      .hero-foto {
+        border-radius: 1.25rem;
+        box-shadow: 0 24px 48px rgb(90 0 0 / 40%);
+        aspect-ratio: 4/5;
+      }
+      .hero-badge-num {
+        position: absolute;
+        bottom: 1rem;
+        left: 1rem;
+        background: var(--pt-yellow);
+        color: #332300;
+        font-weight: 900;
+        font-size: 1.6rem;
+        padding: 0.3rem 0.9rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgb(0 0 0 / 30%);
+      }
+      .hero-foto-wrap {
+        position: relative;
+      }
+
+      /* ---- Contagem regressiva (urgência ética: data real da eleição) ---- */
+      .countdown {
+        background: #8f0f0f;
+        color: #fff8f2;
+        text-align: center;
+        padding: 0.7rem 1rem;
+        font-weight: 700;
+        font-size: 0.95rem;
+      }
+      .countdown b {
+        color: var(--pt-yellow);
+      }
+
+      /* ---- Prova social numérica ---- */
+      .proof {
+        background: var(--card);
+        border-bottom: 1px solid var(--line);
+      }
+      .proof-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+        padding: 1.6rem 0;
+      }
+      .proof-item {
+        text-align: center;
+        padding: 0.4rem;
+      }
+      .proof-item .n {
+        font-size: clamp(1.6rem, 4vw, 2.4rem);
+        font-weight: 900;
+        color: var(--pt-red);
+        line-height: 1.1;
+      }
+      .proof-item .l {
+        font-size: 0.82rem;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .proof-item .src {
+        font-size: 0.68rem;
+        color: var(--muted);
+        opacity: 0.8;
+      }
+
+      /* ---- Seções base ---- */
+      section.block {
+        padding: 3.2rem 0;
+      }
+      .eyebrow {
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--pt-red);
+        margin-bottom: 0.6rem;
+      }
+      .h2 {
+        font-size: clamp(1.5rem, 3.6vw, 2.2rem);
+        font-weight: 900;
+        letter-spacing: -0.01em;
+        text-wrap: balance;
+      }
+      .h2 + p.lead {
+        margin-top: 0.8rem;
+        color: var(--muted);
+        font-size: 1.05rem;
+        max-width: 40rem;
+        text-wrap: pretty;
+      }
+
+      /* ---- Problema ---- */
+      .problem {
+        background: #2b0f0e;
+        color: #fdeeea;
+      }
+      .problem .h2 {
+        color: #fff8f2;
+      }
+      .problem .h2 em {
+        color: var(--pt-yellow);
+        font-style: normal;
+      }
+      .problem-grid {
+        display: grid;
+        gap: 1rem;
+        margin-top: 1.8rem;
+      }
+      @media (min-width: 720px) {
+        .problem-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      .problem-card {
+        background: rgb(255 255 255 / 7%);
+        border: 1px solid rgb(255 255 255 / 14%);
+        border-radius: var(--radius);
+        padding: 1.3rem;
+      }
+      .problem-card h3 {
+        font-size: 1.02rem;
+        margin-bottom: 0.45rem;
+      }
+      .problem-card p {
+        font-size: 0.9rem;
+        color: rgb(253 238 234 / 78%);
+        line-height: 1.55;
+      }
+
+      /* ---- Propostas ---- */
+      .props-grid {
+        display: grid;
+        gap: 1rem;
+        margin-top: 1.8rem;
+      }
+      @media (min-width: 640px) {
+        .props-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (min-width: 960px) {
+        .props-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      .prop-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 1.4rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+      .prop-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgb(32 27 26 / 10%);
+      }
+      .prop-card .tag {
+        align-self: flex-start;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--pt-red);
+        background: #fdecec;
+        border-radius: 999px;
+        padding: 0.25rem 0.65rem;
+      }
+      .prop-card h3 {
+        font-size: 1.08rem;
+        line-height: 1.3;
+      }
+      .prop-card p {
+        font-size: 0.9rem;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+      .prop-card a.more {
+        margin-top: auto;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--pt-red);
+        text-decoration: none;
+      }
+      .prop-card a.more:hover {
+        text-decoration: underline;
+      }
+
+      /* ---- Trajetória ("Quem é") ---- */
+      .timeline {
+        margin-top: 1.8rem;
+        display: grid;
+        gap: 0.9rem;
+      }
+      .tl-item {
+        display: grid;
+        gap: 0.3rem 1rem;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-left: 5px solid var(--pt-red);
+        border-radius: 0 var(--radius) var(--radius) 0;
+        padding: 1.1rem 1.3rem;
+      }
+      .tl-item .when {
+        font-weight: 800;
+        color: var(--pt-red);
+        font-size: 0.85rem;
+        letter-spacing: 0.03em;
+      }
+      .tl-item .what {
+        font-weight: 800;
+        font-size: 1.02rem;
+      }
+      .tl-item .why {
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      /* ---- Etiqueta de esfera (linha do tempo "Quem é") ---- */
+      .tl-item .sphere {
+        align-self: flex-start;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--pt-red-dark);
+        background: #fdecec;
+        border-radius: 999px;
+        padding: 0.2rem 0.6rem;
+      }
+
+      /* ---- Formação e militância ---- */
+      .bio-grid {
+        display: grid;
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+      @media (min-width: 720px) {
+        .bio-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      .bio-card {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 1.3rem;
+      }
+      .bio-card h3 {
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--pt-red);
+        margin-bottom: 0.5rem;
+      }
+      .bio-card p {
+        font-size: 0.92rem;
+        color: var(--ink);
+        line-height: 1.6;
+      }
+      .bio-card .src {
+        font-size: 0.68rem;
+        color: var(--muted);
+        margin-top: 0.5rem;
+      }
+
+      /* ---- Board de conteúdo (IG + YouTube) ---- */
+      .board-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+      .board-follow {
+        display: flex;
+        gap: 1.1rem;
+        font-size: 0.88rem;
+        font-weight: 700;
+      }
+      .board-follow a {
+        color: var(--pt-red);
+        text-decoration: none;
+      }
+      .board-follow a:hover {
+        text-decoration: underline;
+      }
+      .board-grid {
+        display: grid;
+        gap: 1rem;
+        margin-top: 1.6rem;
+      }
+      @media (min-width: 720px) {
+        .board-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .board-large {
+          grid-column: span 2;
+        }
+      }
+      @media (min-width: 960px) {
+        .board-grid {
+          grid-template-columns: repeat(4, 1fr);
+        }
+        .board-large {
+          grid-column: span 2;
+          grid-row: span 2;
+        }
+      }
+      .board-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 0.7rem;
+        text-decoration: none;
+        color: inherit;
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+      .board-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgb(32 27 26 / 10%);
+      }
+      .board-media {
+        border-radius: calc(var(--radius) - 4px);
+        overflow: hidden;
+      }
+      .board-media.yt {
+        aspect-ratio: 16/9;
+      }
+      .board-media.ig {
+        aspect-ratio: 1/1;
+      }
+      .board-large .board-media {
+        aspect-ratio: 16/9;
+      }
+      .board-badge {
+        position: absolute;
+        top: 1.1rem;
+        left: 1.1rem;
+        font-size: 0.66rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        color: #fff;
+      }
+      .board-badge.yt {
+        background: #cc0000;
+      }
+      .board-badge.ig {
+        background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+      }
+      .board-card h3 {
+        font-size: 0.95rem;
+        line-height: 1.35;
+        font-weight: 800;
+      }
+      .board-card p {
+        font-size: 0.8rem;
+        color: var(--muted);
+        line-height: 1.5;
+        margin: 0;
+      }
+      .board-meta {
+        font-size: 0.72rem;
+        color: var(--muted);
+      }
+      .board-large h3 {
+        font-size: 1.15rem;
+      }
+      .board-large p {
+        font-size: 0.9rem;
+      }
+
+      /* ---- Depoimentos ---- */
+      .testi-grid {
+        display: grid;
+        gap: 1rem;
+        margin-top: 1.8rem;
+      }
+      @media (min-width: 720px) {
+        .testi-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      .testi-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 1.4rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+      }
+      .testi-card blockquote {
+        font-size: 0.95rem;
+        color: var(--ink);
+        line-height: 1.6;
+      }
+      .testi-card figcaption {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+      }
+      .testi-card .avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 999px;
+        flex-shrink: 0;
+      }
+      .testi-card .name {
+        font-weight: 800;
+        font-size: 0.9rem;
+      }
+      .testi-card .city {
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+
+      /* ---- CTA final + formulário ---- */
+      .cta-final {
+        background: linear-gradient(180deg, var(--pt-red-dark), var(--pt-red));
+        color: #fff8f2;
+      }
+      .cta-grid {
+        display: grid;
+        gap: 2rem;
+      }
+      @media (min-width: 900px) {
+        .cta-grid {
+          grid-template-columns: 1fr 1fr;
+          align-items: start;
+        }
+      }
+      .cta-final .h2 {
+        color: #fff8f2;
+      }
+      .cta-final .lead {
+        color: rgb(255 248 242 / 85%);
+      }
+      .cta-final ul {
+        margin-top: 1.2rem;
+        list-style: none;
+        display: grid;
+        gap: 0.6rem;
+        font-size: 0.95rem;
+        color: rgb(255 248 242 / 88%);
+      }
+      .form-card {
+        background: var(--card);
+        color: var(--ink);
+        border-radius: 1.25rem;
+        padding: 1.6rem;
+        box-shadow: 0 20px 40px rgb(90 0 0 / 35%);
+      }
+      .form-card h3 {
+        font-size: 1.15rem;
+        font-weight: 900;
+      }
+      .form-card > p {
+        font-size: 0.88rem;
+        color: var(--muted);
+        margin-top: 0.3rem;
+      }
+      .field {
+        margin-top: 1rem;
+      }
+      .field label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+      }
+      .field input,
+      .field select {
+        width: 100%;
+        min-height: 48px;
+        font-size: 16px; /* ≥16px: evita zoom no iOS */
+        padding: 0.65rem 0.9rem;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--white);
+        font-family: inherit;
+        color: var(--ink);
+      }
+      .field input:focus,
+      .field select:focus {
+        outline: 3px solid rgb(197 20 20 / 25%);
+        border-color: var(--pt-red);
+      }
+      .consent {
+        display: flex;
+        gap: 0.6rem;
+        align-items: flex-start;
+        margin-top: 1rem;
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+      .consent input {
+        width: 20px;
+        height: 20px;
+        min-height: 20px;
+        margin-top: 0.1rem;
+        accent-color: var(--pt-red);
+      }
+      .consent a {
+        color: var(--pt-red);
+      }
+      .form-submit {
+        width: 100%;
+        margin-top: 1.1rem;
+        background: var(--pt-red);
+        color: var(--white);
+        font-size: 1.05rem;
+        font-weight: 900;
+        min-height: 54px;
+      }
+      .form-note {
+        font-size: 0.72rem;
+        color: var(--muted);
+        text-align: center;
+        margin-top: 0.7rem;
+      }
+      .donate-box {
+        margin-top: 1.4rem;
+        border-top: 1px dashed rgb(255 255 255 / 30%);
+        padding-top: 1.2rem;
+      }
+      .donate-box .t {
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: rgb(255 248 242 / 90%);
+      }
+      .donate-box p {
+        font-size: 0.78rem;
+        color: rgb(255 248 242 / 65%);
+        margin: 0.25rem 0 0.7rem;
+      }
+      .btn-donate {
+        background: rgb(255 255 255 / 12%);
+        color: #fff8f2;
+        border: 2px solid rgb(255 255 255 / 40%);
+        min-height: 48px;
+        font-size: 0.95rem;
+      }
+
+      /* ---- Rodapé ---- */
+      .footer {
+        background: #180a09;
+        color: rgb(255 248 242 / 75%);
+        font-size: 0.82rem;
+        padding: 2.4rem 0;
+      }
+      .footer .wrap {
+        display: grid;
+        gap: 1.2rem;
+      }
+      @media (min-width: 720px) {
+        .footer .wrap {
+          grid-template-columns: 2fr 1fr 1fr;
+        }
+      }
+      .footer h4 {
+        color: #fff8f2;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+      }
+      .footer ul {
+        list-style: none;
+        display: grid;
+        gap: 0.3rem;
+      }
+      .footer a {
+        color: rgb(255 248 242 / 75%);
+      }
+      .footer .legal {
+        border-top: 1px solid rgb(255 255 255 / 12%);
+        margin-top: 1.6rem;
+        padding-top: 1.1rem;
+        font-size: 0.72rem;
+        color: rgb(255 248 242 / 55%);
+        line-height: 1.55;
+      }
+
+      /* ---- Anotações de revisão (ocultas no navegador) ---- */
+      .notes {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ============================ 1. HEADER ============================ -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="brand">
+          <!-- NEEDS ASSET: logo oficial da campanha (SVG/PNG) -->
+          <div class="ph logo-ph needs-asset">LOGO</div>
+          <span class="num">1313</span>
+        </div>
+        <!-- Único CTA do header: ancora para o formulário de apoiador.
+         Doação NÃO compete aqui (decisão de fase: captar apoio > doar). -->
+        <a class="header-cta" href="#apoiar">
+          <span>Quero apoiar<small>é rápido, 30 segundos</small></span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Urgência ética: contagem regressiva real (eleição: 04/10/2026).
+     Implementação: relógio client-side com data fixa; nunca data falsa. -->
+    <div class="countdown">
+      Faltam <b>50 dias</b> para a eleição. Seu voto no <b>1313</b> é o voto da Bahia inteira.
+    </div>
+
+    <!-- ============================ 2. HERO ============================ -->
+    <!-- VARIANTE A (ativa): foto grande + frase de crença + CTA WhatsApp.
+     CTA primário: wa.me com mensagem pré-configurada (maior conversão em
+     site político BR). Botão secundário âncora (propostas) só abaixo. -->
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <span class="kick">Deputado Federal · PT-BA · Federação Brasil da Esperança</span>
+          <h1>Jorge Solla <span class="n">1313</span><br />Um mandato do tamanho da Bahia.</h1>
+          <p class="sub">
+            Médico sanitarista. Criou o SAMU 192 e o Brasil Sorridente. Já comandou a saúde em
+            Vitória da Conquista, na Bahia e no Brasil. Leva o mandato aos 417 municípios, da saúde
+            à educação.
+          </p>
+          <div class="cta-row">
+            <a
+              class="btn btn-whatsapp"
+              href="https://wa.me/5571999999999?text=Oi!%20Quero%20apoiar%20a%20campanha%20do%20Jorge%20Solla%201313.%20Sou%20de%20%5BCIDADE%5D."
+            >
+              <span>Quero apoiar no WhatsApp<small>mensagem já pronta — é só enviar</small></span>
+            </a>
+            <a class="btn btn-ghost" href="#bandeiras">Conhecer bandeiras</a>
+          </div>
+          <div class="micro-proof">
+            <span><b>3º mandato</b> como deputado federal</span>
+            <span><b>Mais votado</b> do PT-BA em 2022</span>
+            <span><b>DIAP</b> · entre os 40 melhores da Câmara</span>
+          </div>
+        </div>
+        <div class="hero-foto-wrap">
+          <!-- NEEDS ASSET: retrato real do candidato (foto humana, sem banco de imagens).
+           Orientação 4:5; olhar para o texto; braços cruzados ou mão no queixo. -->
+          <div class="ph hero-foto needs-asset">FOTO DO CANDIDATO<br />NEEDS ASSET</div>
+          <div class="hero-badge-num">1313</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 3. PROVA SOCIAL ============================ -->
+    <!-- Números verificados na Câmara (API Dados Abertos + SitaqWeb, 13/08/2026).
+     "Sem fonte, não publica" — estes têm fonte. O contador de apoiadores
+     (se usado) deve vir do banco real, nunca ser inventado. -->
+    <section class="proof">
+      <div class="wrap proof-grid">
+        <div class="proof-item">
+          <div class="n">3.333</div>
+          <div class="l">proposições apresentadas</div>
+          <div class="src">fonte: Câmara dos Deputados</div>
+        </div>
+        <div class="proof-item">
+          <div class="n">1.031</div>
+          <div class="l">discursos em Plenário</div>
+          <div class="src">fonte: SitaqWeb/Câmara</div>
+        </div>
+        <div class="proof-item">
+          <div class="n">3º</div>
+          <div class="l">mandato de deputado federal</div>
+          <div class="src">eleito e reeleito desde 2014</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 4. O PROBLEMA ============================ -->
+    <section class="block problem">
+      <div class="wrap">
+        <div class="eyebrow" style="color: var(--pt-yellow)">Por que essa eleição importa</div>
+        <h2 class="h2">
+          Eleger deputado é coisa séria. <em>O Congresso tem nas mãos vidas reais e o SUS.</em>
+        </h2>
+        <p class="lead" style="color: rgb(253 238 234 / 78%)">
+          Quem paga a conta da saúde é o povo. É no Congresso que se define o orçamento do SUS, o
+          piso da enfermagem, a recompra de Mataripe e o fim da escala 6×1. Reeleger Lula não basta:
+          é preciso eleger uma bancada aliada.
+        </p>
+        <div class="problem-grid">
+          <div class="problem-card">
+            <h3>Por um SUS com recursos!</h3>
+            <p>
+              O SUS é o sistema de saúde de todo brasileiro: faz muito com pouco. Com Lula, a saúde
+              voltou a receber mais recursos: Nova PAC de R$ 30,5 bilhões e Mais Médicos retomado.
+              Mas o teto de gastos da direita ainda trava o orçamento. É no Congresso que a luta se
+              decide. O 1313 é o voto que decide essa luta no Congresso.
+            </p>
+          </div>
+          <div class="problem-card">
+            <h3>Pelo fim da escala 6x1!</h3>
+            <p>
+              Escala 6×1 e jornadas longas aumentam o risco de AVC e infarto. Quem absorve essa
+              conta é o SUS. Descanso é saúde pública. A bancada de Lula derrotou a direita na
+              Câmara: o fim da 6×1 avançou. Mas a briga continua no Senado, onde a direita tenta
+              modificar o texto. Houve quem quisesse adiar a vigência em 10 anos. No dia 4 de
+              outubro, o 1313 é o seu sim ao descanso.
+            </p>
+          </div>
+          <div class="problem-card">
+            <h3>Pela recompra de Mataripe!</h3>
+            <p>
+              A Refinaria de Mataripe foi vendida no governo Bolsonaro e segue nas mãos de
+              estrangeiros. O mandato luta pela recompra. Com Lula e Jerônimo, a Bahia voltou a
+              andar para a frente; mas recomprar Mataripe exige bancada forte no Congresso.
+              Recomprar Mataripe é votar 1313: devolver à Bahia o que é seu.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 5. BANDEIRAS ============================ -->
+    <!-- Cada card pode virar uma página própria de bandeira (SEO/AEO: "fim da
+     escala 6x1", "saúde na Bahia", "recompra de Mataripe" são buscas reais).
+     Sem link "ler proposta" (decisão do cliente) — a página é de conversão. -->
+    <section class="block" id="bandeiras">
+      <div class="wrap">
+        <div class="eyebrow">Nossa caminhada</div>
+        <h2 class="h2">Do lado de quem mais precisa, sempre</h2>
+        <p class="lead">
+          Não é promessa de palanque, é a experiência de quem já fez na gestão do SUS, do Ministério
+          da Saúde e da saúde da Bahia. Sempre do lado do trabalhador.
+        </p>
+
+        <div class="props-grid">
+          <article class="prop-card">
+            <span class="tag">Saúde</span>
+            <h3>Defender o SUS e valorizar quem cuida</h3>
+            <p>
+              Saúde é direito, não mercadoria. Fim do subfinanciamento, piso da enfermagem e dos
+              agentes pagos, concursos públicos, vacinação e ciência.
+            </p>
+          </article>
+          <article class="prop-card">
+            <span class="tag">Trabalho</span>
+            <h3>Fim da escala 6×1 e jornada de 40h</h3>
+            <p>
+              Sem redução de salário. Jornada longa é questão de saúde pública: quem trabalha demais
+              adoece. O SUS paga a conta.
+            </p>
+          </article>
+          <article class="prop-card">
+            <span class="tag">Bahia</span>
+            <h3>Recomprar a Refinaria de Mataripe</h3>
+            <p>
+              Recomprar a refinaria é defender a Bahia e a soberania do Brasil. Preço justo de
+              combustível é política de saúde e de renda.
+            </p>
+          </article>
+          <article class="prop-card">
+            <span class="tag">Educação</span>
+            <h3>Educação em tempo integral e federais no interior</h3>
+            <p>
+              IFs, campus federal, escola de tempo integral: o interior não pode ficar para trás no
+              conhecimento.
+            </p>
+          </article>
+          <article class="prop-card">
+            <span class="tag">Renda</span>
+            <h3>Salário mínimo forte, emprego e moradia</h3>
+            <p>
+              Valorização do mínimo, Bolsa Família, Minha Casa Minha Vida e agricultura familiar
+              como motor do interior.
+            </p>
+          </article>
+          <article class="prop-card">
+            <span class="tag">Democracia</span>
+            <h3>Defesa intransigente da democracia</h3>
+            <p>
+              Participação popular, instituições fortes e combate à desinformação. Eleger o
+              parlamento é coisa séria.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 6. QUEM É JORGE SOLLA ============================ -->
+    <section
+      class="block"
+      style="
+        background: var(--card);
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      "
+    >
+      <div class="wrap">
+        <div class="eyebrow">Quem é Jorge Solla</div>
+        <h2 class="h2">Médico, gestor, deputado. Uma vida pública a serviço da Bahia</h2>
+        <!-- Diferencial explícito: gestão nas três esferas. O lead afirma a tese;
+         a linha do tempo (com etiquetas de esfera) é a prova. -->
+        <p class="lead">
+          Município, estado e União: ele já esteve no comando da saúde nas três esferas de governo.
+          A trajetória abaixo é a prova.
+        </p>
+
+        <div class="timeline">
+          <div class="tl-item">
+            <span class="sphere">Município</span>
+            <div class="when">1999–2002 · Vitória da Conquista</div>
+            <div class="what">Secretário Municipal de Saúde</div>
+            <div class="why">
+              Saúde da Família de 7% para 40% da população, agentes comunitários em quase 100% e a
+              experiência embrionária do SAMU.
+            </div>
+          </div>
+          <div class="tl-item">
+            <span class="sphere">União</span>
+            <div class="when">2003–2005 · Ministério da Saúde</div>
+            <div class="what">Secretário de Atenção à Saúde</div>
+            <div class="why">
+              Criou o SAMU 192, o Brasil Sorridente e ampliou o Saúde da Família para 46% do país.
+            </div>
+          </div>
+          <div class="tl-item">
+            <span class="sphere">Estado</span>
+            <div class="when">2007–2014 · Bahia</div>
+            <div class="what">Secretário de Saúde do Estado</div>
+            <div class="why">
+              5 hospitais, 18 UPAs 24h, 1.400 novos leitos, UTI triplicada e SAMU para 10 milhões de
+              baianos.
+            </div>
+          </div>
+          <div class="tl-item">
+            <span class="sphere">Parlamento</span>
+            <div class="when">2015–hoje · Câmara dos Deputados</div>
+            <div class="what">Deputado federal · 3º mandato</div>
+            <div class="why">
+              Relator do piso dos agentes de saúde, relator da renovação do Mais Médicos, vice-líder
+              da Federação Brasil da Esperança, DIAP "Cabeças do Congresso".
+            </div>
+          </div>
+        </div>
+
+        <!-- Formação + militância: fala com o público profissional (trabalhadores
+         da saúde) e com a base petista. Títulos VERIFICADOS nas fontes do
+         mandato. "Professor da UFBA" e "doutorado sanduíche em Durham" NÃO
+         estão confirmados nas fontes atuais — verificar com assessoria antes
+         de publicar (ver notas no fim do arquivo). -->
+        <div class="bio-grid">
+          <div class="bio-card">
+            <h3>Formação</h3>
+            <p>
+              Médico pela UFBA, mestre em Saúde Coletiva (UFBA) e doutor em Clínica Médica (UFRJ).
+              Pesquisador do Instituto de Saúde Coletiva da UFBA.
+            </p>
+            <p class="src">fonte: perfil oficial e currículo do mandato</p>
+          </div>
+          <div class="bio-card">
+            <h3>Militância</h3>
+            <p>
+              Militante do SUS. Um dos fundadores do PT na Bahia, filiado desde 1980. São 46 anos de
+              partido e de luta ao lado do povo.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 7. ACOMPANHE DE PERTO (IG + YT) ============================ -->
+    <!-- Board de conteúdo real — prova de atividade (meio de funil). NUNCA acima
+     da dobra: o hero mantém o CTA único. Cards linkam direto às plataformas;
+     sem botões competindo com o CTA primário.
+
+     TÉCNICA HONESTA (ver notas no fim):
+     - Clique: abre DIRETO na plataforma (decidido; sem lightbox).
+     - YouTube: automático via Data API v3 (API key + channel ID no admin),
+       server-side, cache ISR + revalidate periódico. Thumbnails do CDN (leves).
+       Sem iframe no carregamento.
+     - Instagram: AUTOMÁTICO via Instagram Graph API (conta Business/Creator
+       vinculada a página do Facebook + app Meta for Developers + token
+       long-lived com refresh). Config no admin (global do Payload). NUNCA o
+       script de embed pesado do Instagram no load (derruba o LCP no mobile).
+     - Fail-closed: se a API falhar, manter o último snapshot em cache — a
+       página nunca quebra. IG fica desligado até o setup da Meta concluir. -->
+    <section
+      class="block"
+      style="
+        background: var(--card);
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      "
+    >
+      <div class="wrap">
+        <div class="board-head">
+          <div>
+            <div class="eyebrow">Acompanhe de perto</div>
+            <h2 class="h2" style="font-size: clamp(1.4rem, 3.2vw, 1.9rem)">
+              A caminhada, em tempo real
+            </h2>
+            <p class="lead" style="margin-top: 0.5rem">
+              Bastidores, caravanas e as lutas do mandato: direto das redes, sem filtro.
+            </p>
+          </div>
+          <div class="board-follow">
+            <a href="https://instagram.com/depjorgesolla" target="_blank" rel="noopener"
+              >Seguir no Instagram →</a
+            >
+            <a href="https://youtube.com/@JorgeSollaDep" target="_blank" rel="noopener"
+              >YouTube →</a
+            >
+          </div>
+        </div>
+
+        <div class="board-grid">
+          <!-- Item grande: último vídeo do YouTube (API) -->
+          <a
+            class="board-card board-large"
+            href="https://youtube.com/@JorgeSollaDep"
+            target="_blank"
+            rel="noopener"
+          >
+            <div class="board-media yt ph needs-asset">
+              VÍDEO YT · 16:9<br />NEEDS ASSET (último da API)
+            </div>
+            <span class="board-badge yt">YouTube</span>
+            <div>
+              <h3>Título do vídeo mais recente — vem da API (NEEDS ASSET)</h3>
+              <p>Descrição curta ou legenda do vídeo, quando houver.</p>
+              <span class="board-meta">há 2 dias · 12,4 mil visualizações</span>
+            </div>
+          </a>
+
+          <!-- 4 itens pequenos: 2 YouTube + 2 Instagram -->
+          <a
+            class="board-card"
+            href="https://youtube.com/@JorgeSollaDep"
+            target="_blank"
+            rel="noopener"
+          >
+            <div class="board-media yt ph needs-asset">YT 16:9</div>
+            <span class="board-badge yt">YouTube</span>
+            <div>
+              <h3>Título do 2º vídeo (NEEDS ASSET)</h3>
+              <span class="board-meta">há 5 dias · 8,1 mil views</span>
+            </div>
+          </a>
+
+          <a
+            class="board-card"
+            href="https://youtube.com/@JorgeSollaDep"
+            target="_blank"
+            rel="noopener"
+          >
+            <div class="board-media yt ph needs-asset">YT 16:9</div>
+            <span class="board-badge yt">YouTube</span>
+            <div>
+              <h3>Título do 3º vídeo (NEEDS ASSET)</h3>
+              <span class="board-meta">há 1 semana · 5,6 mil views</span>
+            </div>
+          </a>
+
+          <a
+            class="board-card"
+            href="https://instagram.com/depjorgesolla"
+            target="_blank"
+            rel="noopener"
+          >
+            <div class="board-media ig ph needs-asset">IG 1:1</div>
+            <span class="board-badge ig">Instagram</span>
+            <div>
+              <h3>Legenda do post recente (NEEDS ASSET — vem da API)</h3>
+              <span class="board-meta">há 3 dias</span>
+            </div>
+          </a>
+
+          <a
+            class="board-card"
+            href="https://instagram.com/depjorgesolla"
+            target="_blank"
+            rel="noopener"
+          >
+            <div class="board-media ig ph needs-asset">IG 1:1</div>
+            <span class="board-badge ig">Instagram</span>
+            <div>
+              <h3>Legenda do post recente (NEEDS ASSET — vem da API)</h3>
+              <span class="board-meta">há 6 dias</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 8. DEPOIMENTOS ============================ -->
+    <!-- REGRA: depoimentos sempre reais, com nome completo e cidade. Nunca
+     inventar. Coletar com a assessoria (áudios de WhatsApp de lideranças). -->
+    <section class="block">
+      <div class="wrap">
+        <div class="eyebrow">Quem conhece, confia</div>
+        <h2 class="h2">A Bahia inteira na caminhada</h2>
+
+        <div class="testi-grid">
+          <figure class="testi-card">
+            <blockquote>
+              “Trabalho com saúde há 20 anos e nunca vi deputado tão presente. Ele conhece o
+              hospital por dentro.”
+            </blockquote>
+            <figcaption>
+              <div class="ph avatar needs-asset">FOTO</div>
+              <div>
+                <div class="name">NEEDS ASSET · nome real</div>
+                <div class="city">Enfermeira · Vitória da Conquista</div>
+              </div>
+            </figcaption>
+          </figure>
+          <figure class="testi-card">
+            <blockquote>
+              “Quando precisamos de emenda para o posto de saúde, o mandato atendeu. E voltou depois
+              para ver se ficou pronto.”
+            </blockquote>
+            <figcaption>
+              <div class="ph avatar needs-asset">FOTO</div>
+              <div>
+                <div class="name">NEEDS ASSET · nome real</div>
+                <div class="city">Liderança comunitária · Jequié</div>
+              </div>
+            </figcaption>
+          </figure>
+          <figure class="testi-card">
+            <blockquote>
+              “Acompanho o Solla desde a luta contra a privatização. Gente de palavra, do lado do
+              povo há 40 anos.”
+            </blockquote>
+            <figcaption>
+              <div class="ph avatar needs-asset">FOTO</div>
+              <div>
+                <div class="name">NEEDS ASSET · nome real</div>
+                <div class="city">Sindicalista · Salvador</div>
+              </div>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 9. CTA FINAL + FORMULÁRIO ============================ -->
+    <!-- Formulário mínimo (3 campos: nome, WhatsApp, cidade) — coleta progressiva.
+     LGPD: checkbox de consentimento explícito + link de privacidade.
+     Nunca CPF/endereço aqui. Doação é SECUNDÁRIA (abaixo, link QueroApoiar). -->
+    <section class="block cta-final" id="apoiar">
+      <div class="wrap cta-grid">
+        <div>
+          <div class="eyebrow" style="color: var(--pt-yellow)">Participe</div>
+          <h2 class="h2">A campanha se constrói com você</h2>
+          <p class="lead">
+            Cadastre-se e receba no WhatsApp as notícias da caminhada, os eventos na sua cidade e
+            como ajudar a eleger uma bancada que defende a Bahia.
+          </p>
+          <ul>
+            <li>Conteúdo direto, sem spam — cancele quando quiser</li>
+            <li>Agenda de eventos na sua região</li>
+            <li>Avisos de mobilização e do dia da eleição</li>
+          </ul>
+        </div>
+
+        <div class="form-card">
+          <h3>Quero apoiar Jorge Solla 1313</h3>
+          <p>Preencha e clique em apoiar. Leva menos de 30 segundos.</p>
+
+          <form action="#" method="post">
+            <div class="field">
+              <label for="nome">Nome</label>
+              <input
+                id="nome"
+                name="nome"
+                type="text"
+                autocomplete="name"
+                placeholder="Seu nome completo"
+                required
+              />
+            </div>
+            <div class="field">
+              <label for="whatsapp">WhatsApp</label>
+              <input
+                id="whatsapp"
+                name="whatsapp"
+                type="tel"
+                inputmode="tel"
+                autocomplete="tel"
+                placeholder="(71) 99999-9999"
+                required
+              />
+            </div>
+            <div class="field">
+              <label for="cidade">Cidade</label>
+              <!-- select com as 417 cidades da Bahia + Salvador por zona (dados já
+               existem no Teqo: src/lib/cities.ts / municipalityCatalog.ts) -->
+              <select id="cidade" name="cidade" required>
+                <option value="">Escolha sua cidade</option>
+                <option>Salvador</option>
+                <option>Vitória da Conquista</option>
+                <option>Jequié</option>
+                <option>Feira de Santana</option>
+                <option>Ilhéus</option>
+                <option>… (417 municípios, via catálogo oficial)</option>
+              </select>
+            </div>
+
+            <label class="consent">
+              <input type="checkbox" name="consent" required />
+              <span>
+                Autorizo o recebimento de comunicações da campanha Jorge Solla 1313 pelo WhatsApp.
+                Li e aceito a
+                <a href="/privacidade">Política de Privacidade</a> (LGPD).
+              </span>
+            </label>
+
+            <button class="btn form-submit" type="submit">Quero apoiar</button>
+            <p class="form-note">Seus dados são usados só para comunicação da campanha.</p>
+          </form>
+
+          <div class="donate-box">
+            <div class="t">Quer contribuir financeiramente?</div>
+            <p>Doação é opcional e feita na plataforma oficial homologada pelo TSE.</p>
+            <a
+              class="btn btn-donate"
+              href="https://apoiar.me/jorgesolla"
+              target="_blank"
+              rel="noopener"
+            >
+              Contribuir com a campanha →
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ 10. RODAPÉ ============================ -->
+    <footer class="footer">
+      <div class="wrap">
+        <div>
+          <h4>Jorge Solla 1313</h4>
+          <p>Deputado Federal · PT · Bahia<br />Um mandato do tamanho da Bahia.</p>
+        </div>
+        <div>
+          <h4>Navegue</h4>
+          <ul>
+            <li><a href="#bandeiras">Bandeiras</a></li>
+            <li><a href="#apoiar">Quero apoiar</a></li>
+            <li><a href="https://apoiar.me/jorgesolla">Contribuir</a></li>
+            <li><a href="/privacidade">Privacidade</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Redes</h4>
+          <ul>
+            <li>
+              <a href="https://instagram.com/depjorgesolla" target="_blank" rel="noopener"
+                >Instagram</a
+              >
+            </li>
+            <li>
+              <a href="https://youtube.com/@JorgeSollaDep" target="_blank" rel="noopener"
+                >YouTube</a
+              >
+            </li>
+            <li>
+              <a href="https://facebook.com/depjorgesolla" target="_blank" rel="noopener"
+                >Facebook</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div class="legal" style="grid-column: 1 / -1">
+          <!-- NEEDS ASSET: CNPJ oficial da campanha + nome do candidato completo
+           + cargo + federação. Identificação eleitoral é obrigatória (TSE). -->
+          Jorge José Santos Pereira Solla · Candidato a Deputado Federal · Nº 1313 · Federação
+          Brasil da Esperança (PT/PCdoB/PV) · CNPJ: <b>NEEDS ASSET (CNPJ da campanha)</b> ·
+          Propaganda eleitoral gratuita. Site de campanha — conteúdo sob responsabilidade do
+          candidato. Eleições 2026 · 1º turno: 04/10/2026.
+        </div>
+      </div>
+    </footer>
+
+    <!-- ======================================================================
+     VARIANTES DE HERO (doutrina: gerar 2–3 variantes e comparar antes de
+     decidir; teste A/B de uma variável por vez, 7–14 dias de medição).
+
+     VARIANTE A (ativa) — "Rosto + frase de crença + WhatsApp":
+       Foto grande do candidato, título curto com número em destaque, CTA
+       WhatsApp com mensagem pré-configurada. Melhor para tráfego de rede
+       social e WhatsApp (quem chega já simpatiza; precisa agir rápido).
+
+     VARIANTE B — "Gestão como prova" (foco em eleitor indeciso/racional):
+       Trocar o sub pelo mini-cartão de feitos: "Criou o SAMU 192 · 5 hospitais
+       · 18 UPAs · 1.400 leitos · DIAP Cabeças do Congresso". Título:
+       "Quem já cuidou da saúde da Bahia sabe como defender a Bahia em Brasília."
+       CTA primário continua WhatsApp. Indicada para tráfego de busca
+       (Google Ads / SEO) — eleitor pesquisando "melhor deputado federal BA".
+
+     VARIANTE C — "O que está em jogo" (foco em mobilização/medo da perda):
+       Título de urgência: "Tem gente em Brasília querendo acabar com o SUS.
+       A Bahia responde: Jorge Solla 1313." Barra de contagem regressiva mais
+       alta, CTA duplo (WhatsApp + "ver como votar"). Indicada para última
+       quinzena (20/09+), quando a decisão vira voto. Atenção: manter tom
+       factual — combate com fatos, nunca desinformação.
+
+     Recomendação: A/B testar A vs B nas primeiras 2 semanas de campanha
+     oficial; ativar C na reta final.
+     ====================================================================== -->
+
+    <!-- Notas de decisão para a revisão humana (remover antes de implementar) -->
+    <div class="notes">
+      DECISÕES PENDENTES (rotear): - Número de WhatsApp oficial da campanha (placeholder
+      5571999999999) → assessoria - CNPJ da campanha para o rodapé → advogado eleitoral -
+      Depoimentos reais (3, com nome+cidade+foto) → assessoria - Foto hero 4:5 + foto de apoio
+      (multidão/caravana) → produção - Definir se contador de apoiadores será exibido (fonte: banco
+      real) → coordenação - Confirmar se "50 dias" é exato na data de publicação → ajustar com data
+      fixa - VERIFICAR com assessoria: doutorado sanduíche em Durham (Reino Unido) — não consta nas
+      fontes atuais do mandato (doutorado = UFRJ, 2009). Se confirmado, adicionar à seção Formação.
+      - VERIFICAR com assessoria: título de "professor da UFBA" — fonte atual diz "pesquisador do
+      Instituto de Saúde Coletiva da UFBA". Usar a versão confirmada. - BOARD IG+YT (técnica —
+      DECIDIDO): abrir direto na plataforma (sem lightbox). YouTube automático via Data API v3
+      (server-side, ISR cache, thumbnails CDN, sem iframe no load). Instagram AUTOMÁTICO via
+      Instagram Graph API (conta Business/Creator + página do Facebook + app Meta for Developers +
+      instagram_basic + token long-lived com refresh automático). Config no admin — global do
+      Payload "SocialFeedSettings": YouTube API key, channel ID, IG access token, IG user ID, máx.
+      itens, toggle por plataforma, "pausar feed" (kill switch, não é curadoria). Fail-closed: API
+      falhou/token expirou → mantém último snapshot em cache; nunca quebrar a página. IG só liga
+      depois do setup da Meta (review leva dias — sequenciar go-live). - BOARD IG+YT (conteúdo —
+      pendente de assessoria): automático expõe TUDO que a conta postar. Se @depjorgesolla seguir
+      postando conteúdo de mandato no período eleitoral, o board mistura as duas naturezas no site
+      de campanha. Decidir: aceitar o mix, filtrar por tag/hashtag, ou usar conta de campanha.
+    </div>
+  </body>
+</html>

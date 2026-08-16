@@ -62,6 +62,8 @@ next-env.d.ts
 /data/geometries/
 # IBGE demographics download cache (pnpm build:demographics)
 /data/demographics/
+# AI fill masters (pnpm images:fill — regenerable drafts, never commit)
+/data/ai-fill/
 
 # Local-only sensitive material (agents may read; never commit content)
 /private/**
@@ -76,3 +78,12 @@ next-env.d.ts
 *.m4a
 *.mp3
 *.webm
+
+# opencode secrets (Penpot MCP token, etc.)
+.opencode/secrets/
+
+# Design review screenshots (regenerable via Playwright, never commit)
+/*.png
+
+# Proprietary design font files kept only in the local workspace
+/public/arial-mt/
