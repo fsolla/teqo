@@ -85,15 +85,15 @@ export default async function HomePage() {
         <section
           aria-label="Experiência e atuação parlamentar"
           data-home-section="proof"
-          className="flex h-[88px] justify-center bg-white lg:h-[148px]"
+          className="campaign-proof flex justify-center bg-white"
         >
-          <ul className="m-0 grid h-full w-[calc(100%_-_22px)] max-w-[712px] list-none grid-cols-3 items-center gap-[23px] p-0 lg:grid-cols-[147px_178px_183px] lg:items-start lg:justify-between lg:gap-0 lg:pt-[23px]">
+          <ul className="campaign-proof-list m-0 grid h-full w-[calc(100%_-_22px)] max-w-[712px] list-none grid-cols-3 p-0">
             {proofItems.map((item) => (
               <li key={item.value} className="m-0 text-center">
-                <strong className="block font-[family-name:var(--font-exo2)] text-[24px] leading-none font-black text-(--pt-red) lg:text-[36px] lg:leading-[1.1]">
+                <strong className="campaign-proof-value block font-[family-name:var(--font-exo2)] leading-none font-black text-(--pt-red)">
                   {item.value}
                 </strong>
-                <span className="mt-1 block text-[10px] leading-[1.08] font-medium text-[#242124] lg:text-[18px] lg:leading-[1.25]">
+                <span className="campaign-proof-label mt-1 block font-medium text-[#242124]">
                   {item.label}
                 </span>
               </li>
@@ -104,30 +104,30 @@ export default async function HomePage() {
         <section
           aria-labelledby="problem-title"
           data-home-section="problem"
-          className="relative h-[730px] bg-(--pt-red-dark) text-white lg:h-[659px]"
+          className="campaign-problem relative bg-(--pt-red-dark) text-white"
         >
           <div className="relative h-full w-full">
-            <p className="absolute top-[35px] left-5 m-0 font-[family-name:var(--font-exo2)] text-[10px] leading-3 font-black tracking-[0.1em] text-(--pt-yellow) uppercase lg:left-[var(--campaign-content-inset)] lg:text-[12px] lg:leading-[15px]">
+            <p className="campaign-section-eyebrow campaign-problem-eyebrow absolute m-0 font-[family-name:var(--font-exo2)] font-black tracking-[0.1em] text-(--pt-yellow) uppercase">
               Por que essa eleição importa
             </p>
             <h2
               id="problem-title"
               aria-label="Eleger deputado é coisa séria. O Congresso tem nas mãos vidas reais e o SUS"
-              className="absolute top-[59px] left-5 m-0 w-[331px] border-0 p-0 text-[22px] leading-[1.08] font-black tracking-[-0.02em] text-balance lg:top-[66px] lg:left-[var(--campaign-content-inset)] lg:w-[616px] lg:text-[24px] lg:leading-[1.06]"
+              className="campaign-section-title campaign-problem-title absolute m-0 border-0 p-0 font-black tracking-[-0.02em] text-balance"
             >
               <span className="block">Eleger deputado é coisa séria</span>
               <span className="block text-(--pt-yellow)">
                 O Congresso tem nas mãos vidas reais e o SUS
               </span>
             </h2>
-            <p className="absolute top-[146px] left-5 m-0 w-[327px] font-[family-name:var(--font-exo2)] text-[14px] leading-[1.2] text-white/85 lg:top-[127px] lg:left-[var(--campaign-content-inset)] lg:w-[716px] lg:text-[16px]">
+            <p className="campaign-section-copy campaign-problem-copy absolute m-0 font-[family-name:var(--font-exo2)] leading-[1.2] text-white/85">
               É no Congresso que se define o orçamento do SUS, o piso da enfermagem, a recompra de
               Mataripe e o fim da escala 6×1.{' '}
               <strong className="font-extrabold text-white">
                 Reeleger Lula não basta: é preciso eleger uma bancada aliada.
               </strong>
             </p>
-            <div className="absolute top-[245px] right-0 left-0 lg:top-[191px]">
+            <div className="campaign-problem-carousel absolute right-0 left-0">
               <CampaignCarousel
                 ariaLabel="Bandeiras que tornam esta eleição decisiva"
                 items={problemItems}
@@ -141,25 +141,25 @@ export default async function HomePage() {
           id="bandeiras"
           aria-labelledby="flags-title"
           data-home-section="flags"
-          className="relative h-[400px] scroll-mt-4 bg-(--campaign-band) text-black lg:h-[368px]"
+          className="campaign-flags relative scroll-mt-4 bg-(--campaign-band) text-black"
         >
           <div className="relative h-full w-full">
-            <p className="absolute top-[37px] left-5 m-0 font-[family-name:var(--font-exo2)] text-[10px] leading-3 font-black tracking-[0.1em] text-(--pt-red) uppercase lg:top-[33px] lg:left-[var(--campaign-content-inset)] lg:text-[12px] lg:leading-[15px]">
+            <p className="campaign-section-eyebrow campaign-flags-eyebrow absolute m-0 font-[family-name:var(--font-exo2)] font-black tracking-[0.1em] text-(--pt-red) uppercase">
               Nossa caminhada
             </p>
             <h2
               id="flags-title"
               aria-label="Junto com o trabalhador e do lado de quem mais precisa, sempre."
-              className="absolute top-[66px] left-5 m-0 w-[331px] border-0 p-0 text-[22px] leading-[1.08] font-black tracking-[-0.02em] text-balance lg:top-[62px] lg:left-[var(--campaign-content-inset)] lg:w-[664px] lg:text-[24px] lg:leading-[1.06]"
+              className="campaign-section-title campaign-flags-title absolute m-0 border-0 p-0 font-black tracking-[-0.02em] text-balance"
             >
               <span className="block">Junto com o trabalhador e</span>
               <span className="block text-(--pt-red)">do lado de quem mais precisa, sempre.</span>
             </h2>
-            <p className="absolute top-[149px] left-5 m-0 w-[327px] font-sans text-[14px] leading-[1.2] text-black/80 lg:top-[130px] lg:left-[var(--campaign-content-inset)] lg:w-[730px] lg:text-[16px]">
+            <p className="campaign-section-copy campaign-flags-copy absolute m-0 font-sans leading-[1.2] text-black/80">
               Não é promessa de palanque, é a experiência de quem já fez na gestão do SUS, do
               Ministério da Saúde e da saúde da Bahia.
             </p>
-            <div className="absolute top-[215px] right-0 left-0 lg:top-[184px]">
+            <div className="campaign-flags-carousel absolute right-0 left-0">
               <CampaignCarousel
                 ariaLabel="Bandeiras da campanha"
                 items={flagItems}

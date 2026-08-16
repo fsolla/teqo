@@ -178,33 +178,561 @@ body,
   --campaign-surface: #f9faff;
   --campaign-band: #ebe9e9;
   --campaign-line: rgb(0 0 0 / 12%);
-  --campaign-content-inset: 20px;
+  --campaign-content-inset: clamp(20px, calc(25.36vw - 79.64px), 180px);
 }
 
-/* Penpot uses two lockups from the official campaign identity: the wide mark
-   on phones and the stacked mark on desktop. The PNG canvases are square and
-   mostly transparent, so keep their exact board geometry instead of sizing by
-   visible ink bounds. */
+/* Campaign home geometry is interpolated between the approved Penpot boards.
+   Copy stays in normal flow so browser text-spacing preferences can expand the
+   hero; only the photographic composition is positioned absolutely. */
+.campaign-hero {
+  --campaign-hero-height: max(
+    clamp(745px, calc(933.42px - 47.95vw), 780px),
+    clamp(745px, calc(41.6vw + 581.51px), 901px)
+  );
+  min-height: var(--campaign-hero-height);
+  height: auto;
+}
+
+.campaign-hero-stage {
+  max-width: 1920px;
+  min-height: var(--campaign-hero-height);
+  height: auto;
+}
+
+/* Penpot uses the wide official lockup on phones/tablets. Its PNG canvas is
+   square and mostly transparent, so the element follows the board geometry. */
 .campaign-home-logo {
-  top: -123px;
-  left: 19px;
-  width: 356px;
-  height: 356px;
+  --campaign-logo-size: clamp(356px, calc(38.93vw + 203px), 502px);
+  top: clamp(-166px, calc(-11.47vw - 77.92px), -123px);
+  left: clamp(0px, calc(33.6vw - 113.05px), 145px);
+  width: var(--campaign-logo-size);
+  height: var(--campaign-logo-size);
   background-image: url('/Prancheta%206%403x.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
 }
 
+.campaign-hero-portrait {
+  top: clamp(53px, calc(9.33vw + 16.32px), 88px);
+  left: calc(50% - 211px + clamp(8.5px, calc(3.07vw - 3.55px), 20px));
+  width: 422px;
+  height: auto;
+  aspect-ratio: 422 / 469;
+}
+
+.campaign-hero-portrait-image {
+  top: -3.63%;
+  left: 0.24%;
+  width: 106.4%;
+}
+
+.campaign-hero-ally {
+  z-index: 0;
+  width: 177px;
+  height: auto;
+}
+
+.campaign-hero-ally--rui {
+  top: clamp(144px, calc(9.33vw + 107.32px), 179px);
+  left: calc(50% - 218.5px + clamp(0px, calc(3.07vw - 12.05px), 11.5px));
+}
+
+.campaign-hero-ally--wagner {
+  top: clamp(148px, calc(9.33vw + 111.32px), 183px);
+  left: calc(50% - 265.5px + clamp(0px, calc(3.07vw - 12.05px), 11.5px));
+}
+
+.campaign-hero-ally--jeronimo {
+  top: clamp(140px, calc(9.33vw + 103.32px), 175px);
+  left: calc(50% + 27.5px + clamp(0px, calc(3.07vw - 12.05px), 11.5px));
+}
+
+.campaign-hero-ally--lula {
+  top: clamp(179px, calc(9.33vw + 142.32px), 214px);
+  left: calc(50% + 65.5px + clamp(0px, calc(3.07vw - 12.05px), 11.5px));
+  z-index: 2;
+  width: 216px;
+}
+
+.campaign-hero-overlay {
+  top: clamp(300px, calc(9.33vw + 263.32px), 335px);
+  left: 50%;
+  width: 100vw;
+  height: 245px;
+  transform: translateX(-50%);
+}
+
+.campaign-hero-content {
+  min-height: var(--campaign-hero-height);
+  padding-top: clamp(462px, calc(9.33vw + 425.32px), 497px);
+  padding-bottom: clamp(14px, calc(28.34px - 1.87vw), 21px);
+}
+
+.campaign-hero-title {
+  width: min(100%, clamp(392px, calc(38.67vw + 240.04px), 537px));
+  margin-right: auto;
+  margin-left: auto;
+  text-align: center;
+  font-size: clamp(32px, calc(4.27vw + 15.23px), 48px);
+}
+
+.campaign-hero-copy {
+  width: min(calc(100% - 40px), clamp(327px, calc(24.8vw + 229.54px), 420px));
+  margin-top: clamp(13px, calc(4.59vw - 4.73px), 30.5px);
+  margin-left: clamp(20px, calc(31.2vw - 98.62px), 141px);
+  font-size: clamp(14px, calc(1.07vw + 9.81px), 18px);
+}
+
+.campaign-hero-actions {
+  width: max-content;
+  margin-top: clamp(16px, calc(6.85vw - 5.92px), 31px);
+  margin-right: clamp(18px, calc(52.27vw - 187.43px), 214px);
+  margin-left: auto;
+  gap: clamp(10px, calc(3.73vw - 4.67px), 24px);
+}
+
+.campaign-hero-action {
+  min-height: clamp(44px, calc(4.27vw + 27.23px), 60px);
+  height: auto;
+  font-size: clamp(17px, calc(0.27vw + 15.95px), 18px);
+}
+
+.campaign-hero-action--secondary {
+  width: clamp(145px, calc(3.47vw + 131.38px), 158px);
+}
+
+.campaign-hero-action--primary {
+  width: clamp(112px, calc(12.27vw + 63.79px), 158px);
+}
+
+.campaign-hero-action-detail,
+.campaign-hero-action-long {
+  display: none;
+}
+
+.campaign-hero-accolades {
+  width: max-content;
+  margin-top: clamp(16px, calc(6.13vw - 8.09px), 39px);
+  margin-right: clamp(18px, calc(5.07vw - 1.91px), 37px);
+  margin-left: auto;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+  font-size: clamp(10px, calc(0.53vw + 7.9px), 12px);
+  line-height: 1.2;
+}
+
+.campaign-hero-accolade-secondary {
+  display: none;
+}
+
+.campaign-proof {
+  height: clamp(88px, calc(9.33vw + 51.32px), 123px);
+}
+
+.campaign-proof-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 23px;
+}
+
+.campaign-proof-value {
+  font-size: clamp(24px, calc(3.2vw + 11.42px), 36px);
+}
+
+.campaign-proof-label {
+  font-size: clamp(10px, calc(2.13vw + 1.62px), 18px);
+  line-height: 1.15;
+}
+
+.campaign-problem {
+  height: clamp(659px, calc(774.22px - 11.25vw), 730px);
+}
+
+.campaign-flags {
+  height: clamp(368px, calc(419.93px - 5.08vw), 400px);
+}
+
+.campaign-section-eyebrow,
+.campaign-section-title,
+.campaign-section-copy {
+  left: var(--campaign-content-inset);
+}
+
+.campaign-section-eyebrow {
+  font-size: clamp(10px, calc(0.32vw + 8.75px), 12px);
+  line-height: 1.25;
+}
+
+.campaign-section-title {
+  font-size: clamp(22px, calc(0.32vw + 20.75px), 24px);
+  line-height: 1.07;
+}
+
+.campaign-section-copy {
+  font-size: clamp(14px, calc(0.32vw + 12.75px), 16px);
+}
+
+.campaign-problem-eyebrow {
+  top: 35px;
+}
+
+.campaign-problem-title {
+  top: clamp(59px, calc(1.11vw + 54.64px), 66px);
+  width: min(
+    calc(100% - var(--campaign-content-inset) - var(--campaign-content-inset)),
+    clamp(331px, calc(45.17vw + 153.49px), 616px)
+  );
+}
+
+.campaign-problem-copy {
+  top: clamp(127px, calc(157.83px - 3.01vw), 146px);
+  width: min(
+    calc(100% - var(--campaign-content-inset) - 20px),
+    clamp(327px, calc(61.65vw + 84.72px), 716px)
+  );
+}
+
+.campaign-problem-carousel {
+  top: clamp(191px, calc(278.63px - 8.56vw), 245px);
+}
+
+.campaign-flags-eyebrow {
+  top: clamp(33px, calc(39.49px - 0.63vw), 37px);
+}
+
+.campaign-flags-title {
+  top: clamp(62px, calc(68.49px - 0.63vw), 66px);
+  width: min(
+    calc(100% - var(--campaign-content-inset) - var(--campaign-content-inset)),
+    clamp(331px, calc(52.77vw + 123.6px), 664px)
+  );
+}
+
+.campaign-flags-copy {
+  top: clamp(130px, calc(160.83px - 3.01vw), 149px);
+  width: min(
+    calc(100% - var(--campaign-content-inset) - 20px),
+    clamp(327px, calc(63.87vw + 76px), 730px)
+  );
+}
+
+.campaign-flags-carousel {
+  top: clamp(215px, calc(285px - 17.81vw), 228px);
+}
+
+[data-theme='campaign-site'] [data-carousel='problem'] [data-carousel-track] {
+  gap: clamp(10px, calc(1.74vw + 3.16px), 21px);
+}
+
+[data-theme='campaign-site'] [data-carousel='flags'] [data-carousel-track] {
+  gap: clamp(10px, calc(0.63vw + 7.51px), 14px);
+}
+
+[data-theme='campaign-site'] [data-carousel-chips] {
+  gap: clamp(6px, calc(0.16vw + 5.37px), 7px);
+}
+
+@media (min-width: 24.5625rem) {
+  .campaign-flags-carousel {
+    top: clamp(184px, calc(234.31px - 4.91vw), 215px);
+  }
+}
+
+@media (min-width: 40rem) {
+  .campaign-hero-action-detail,
+  .campaign-hero-action-long {
+    display: block;
+  }
+
+  .campaign-hero-action-short {
+    display: none;
+  }
+}
+
 @media (min-width: 64rem) {
+  [data-theme='campaign-site'] {
+    --campaign-desktop-portrait-width: clamp(465px, calc(26.45vw + 194.15px), 702px);
+    --campaign-desktop-portrait-height: clamp(517px, calc(29.41vw + 215.84px), 781px);
+    --campaign-desktop-hero-height: max(
+      var(--campaign-desktop-portrait-height),
+      clamp(477px, min(clamp(543px, 52.8vw, 1014px), calc(-16.79vw + 108.01dvh + 26.8px)), 871px)
+    );
+    --campaign-proof-min-height: clamp(124px, calc(244px - 9.38vw), 148px);
+    --campaign-proof-max-height: clamp(148px, calc(6.81vw + 78.3px), 209px);
+  }
+
+  .campaign-hero {
+    --campaign-hero-height: var(--campaign-desktop-hero-height);
+  }
+
   .campaign-home-logo {
-    top: 55px;
-    left: 47px;
-    width: 197px;
-    height: 150px;
+    top: clamp(55px, calc(15.23vw - 101px), 94px);
+    left: clamp(47px, calc(6.64vw - 21px), 64px);
+    width: clamp(197px, calc(23.44vw - 43px), 257px);
+    height: clamp(150px, calc(17.97vw - 34px), 196px);
+    transform: none;
     background-image: url('/Prancheta%203%403x.png');
-    background-position: -43px -67px;
-    background-size: 283px 284px;
+    background-position: clamp(-56.75px, calc(-5.37vw + 12px), -43px)
+      clamp(-87.55px, calc(-8.03vw + 15.2px), -67px);
+    background-size: 143.65% 189.3%;
+  }
+
+  .campaign-hero-portrait {
+    top: auto;
+    bottom: 0;
+    left: clamp(153px, calc(33.59vw - 191px), 239px);
+    width: var(--campaign-desktop-portrait-width);
+    aspect-ratio: 465 / 517;
+  }
+
+  .campaign-hero-portrait-image {
+    top: -3.67%;
+    left: 0.25%;
+    width: 106.45%;
+  }
+
+  .campaign-hero-ally {
+    top: auto;
+    bottom: var(--campaign-ally-bottom, 0px);
+    width: clamp(177px, calc(6.14vw + 93.16px), 211px);
+  }
+
+  .campaign-hero-ally--rui {
+    left: clamp(-27px, calc(37.89vw - 415px), 70px);
+    --campaign-ally-bottom: clamp(67px, calc(102px - 2.73vw), 74px);
+  }
+
+  .campaign-hero-ally--wagner {
+    left: clamp(-75px, calc(37.89vw - 463px), 22px);
+    --campaign-ally-bottom: 0px;
+    z-index: 1;
+  }
+
+  .campaign-hero-ally--jeronimo {
+    left: clamp(63px, calc(31.25vw - 257px), 143px);
+    --campaign-ally-bottom: clamp(49px, calc(1.56vw + 33px), 53px);
+    z-index: 1;
+  }
+
+  .campaign-hero-ally--lula {
+    left: clamp(-8px, calc(37.89vw - 396px), 89px);
+    width: clamp(238px, calc(8.3vw + 124.6px), 284px);
+    --campaign-ally-bottom: 0px;
+  }
+
+  .campaign-hero-overlay {
+    display: none;
+  }
+
+  .campaign-hero-content {
+    --campaign-hero-content-right: clamp(47px, calc(40.23vw - 365px), 150px);
+    padding-top: clamp(106px, calc(8.2vw + 22px), 127px);
+    padding-bottom: 11px;
+  }
+
+  .campaign-hero-title {
+    width: 392px;
+    margin-right: var(--campaign-hero-content-right);
+    margin-left: auto;
+    text-align: right;
+    font-size: 36px;
+    line-height: 1.2;
+  }
+
+  .campaign-hero-copy {
+    width: 418px;
+    margin-top: 19.6px;
+    margin-right: var(--campaign-hero-content-right);
+    margin-left: auto;
+    text-align: right;
+    font-size: 18px;
+  }
+
+  .campaign-hero-actions {
+    margin-top: 29px;
+    margin-right: var(--campaign-hero-content-right);
+    margin-left: auto;
+    gap: 24px;
+  }
+
+  .campaign-hero-action {
+    width: 158px;
+    min-height: 60px;
+    height: auto;
+    font-size: 18px;
+  }
+
+  .campaign-hero-action-detail,
+  .campaign-hero-action-long,
+  .campaign-hero-accolade-secondary {
+    display: block;
+  }
+
+  .campaign-hero-action-short {
+    display: none;
+  }
+
+  .campaign-hero-accolades {
+    margin-top: clamp(64px, calc(169px - 8.2vw), 85px);
+    margin-right: 0;
+    margin-left: 559px;
+    align-items: flex-start;
+    gap: 8px;
+    text-align: left;
+    font-size: 12px;
+    line-height: 15px;
+  }
+
+  .campaign-proof {
+    height: clamp(
+      var(--campaign-proof-min-height),
+      calc(100dvh - var(--campaign-desktop-hero-height)),
+      var(--campaign-proof-max-height)
+    );
+  }
+
+  .campaign-proof-list {
+    grid-template-columns: 147px 178px 183px;
+    align-items: start;
+    justify-content: space-between;
+    gap: 0;
+    padding-top: clamp(17px, calc(47px - 2.34vw), 23px);
+  }
+
+  .campaign-proof-value {
+    font-size: 36px;
+    line-height: 1.1;
+  }
+
+  .campaign-proof-label {
+    font-size: 18px;
+    line-height: 1.25;
+  }
+}
+
+@media (min-width: 80rem) {
+  .campaign-hero-portrait {
+    left: clamp(239px, calc(100vw - 1041px), 325px);
+  }
+
+  .campaign-home-logo {
+    top: clamp(45px, calc(823.3px - 56.98vw), 94px);
+    left: clamp(64px, calc(8.14vw - 40.19px), 71px);
+    width: clamp(257px, calc(43.02vw - 293.7px), 294px);
+    height: clamp(196px, calc(32.56vw - 220.74px), 224px);
+    background-position: clamp(-64.92px, calc(64.85px - 9.5vw), -56.75px)
+      clamp(-100.05px, calc(98.5px - 14.54vw), -87.55px);
+  }
+
+  .campaign-hero-ally--rui {
+    left: clamp(70px, calc(83.72vw - 1001.63px), 142px);
+    --campaign-ally-bottom: clamp(64px, calc(111.65px - 3.49vw), 67px);
+  }
+
+  .campaign-hero-ally--wagner {
+    left: clamp(22px, calc(87.21vw - 1094.28px), 97px);
+    --campaign-ally-bottom: 0px;
+  }
+
+  .campaign-hero-ally--jeronimo {
+    left: clamp(143px, calc(93.02vw - 1047.7px), 223px);
+    --campaign-ally-bottom: clamp(49px, calc(112.53px - 4.65vw), 53px);
+  }
+
+  .campaign-hero-ally--lula {
+    left: clamp(89px, calc(87.21vw - 1027.28px), 164px);
+    --campaign-ally-bottom: 0px;
+  }
+
+  .campaign-hero-content {
+    --campaign-hero-content-right: clamp(150px, calc(72.09vw - 772.8px), 212px);
+    padding-top: clamp(106px, calc(439.56px - 24.42vw), 127px);
+  }
+
+  .campaign-hero-accolades {
+    margin-top: clamp(64px, calc(122.09vw - 1498.8px), 169px);
+    margin-left: clamp(559px, calc(186.05vw - 1822.4px), 719px);
+  }
+
+  .campaign-proof-list {
+    padding-top: clamp(17px, calc(19.77vw - 236.02px), 34px);
+  }
+}
+
+@media (min-width: 85.375rem) {
+  .campaign-hero-portrait {
+    left: clamp(325px, calc(35.92vw - 165.7px), 524px);
+  }
+
+  .campaign-home-logo {
+    top: clamp(45px, calc(7.4vw - 56.1px), 86px);
+    left: clamp(71px, calc(22.38vw - 234.8px), 195px);
+    width: clamp(294px, calc(16.43vw + 69.6px), 385px);
+    height: clamp(224px, calc(12.64vw + 51.4px), 294px);
+    background-position: clamp(-85px, calc(-3.63vw - 15.35px), -64.92px)
+      clamp(-131px, calc(-5.6vw - 23.6px), -100.05px);
+  }
+
+  .campaign-hero-ally--rui {
+    left: clamp(142px, calc(30.51vw - 274.7px), 311px);
+    --campaign-ally-bottom: clamp(64px, calc(2.17vw + 34.4px), 76px);
+  }
+
+  .campaign-hero-ally--wagner {
+    left: clamp(97px, calc(28.88vw - 297.5px), 257px);
+    --campaign-ally-bottom: 0px;
+  }
+
+  .campaign-hero-ally--jeronimo {
+    left: clamp(223px, calc(35.56vw - 262.8px), 420px);
+    --campaign-ally-bottom: clamp(49px, calc(1.44vw + 29.27px), 57px);
+  }
+
+  .campaign-hero-ally--lula {
+    left: clamp(164px, calc(32.31vw - 277.4px), 343px);
+    --campaign-ally-bottom: 0px;
+  }
+
+  .campaign-hero-content {
+    --campaign-hero-content-right: clamp(212px, calc(1.44vw + 192.27px), 220px);
+    padding-top: clamp(106px, calc(15.16vw - 101.1px), 190px);
+    padding-bottom: clamp(7px, calc(24.32px - 0.9vw), 12px);
+  }
+
+  .campaign-hero-title {
+    width: clamp(392px, calc(38.81vw - 138.1px), 607px);
+    font-size: clamp(36px, calc(2.17vw + 6.41px), 48px);
+  }
+
+  .campaign-hero-copy {
+    width: clamp(418px, calc(26.71vw + 53.05px), 566px);
+    margin-top: clamp(19.6px, calc(3.83vw - 32.68px), 40.8px);
+    font-size: clamp(18px, calc(1.08vw + 3.2px), 24px);
+  }
+
+  .campaign-hero-actions {
+    margin-top: clamp(29px, calc(6.68vw - 62.23px), 66px);
+    gap: clamp(24px, calc(0.36vw + 19.07px), 26px);
+  }
+
+  .campaign-hero-action {
+    width: clamp(158px, calc(2.89vw + 118.55px), 174px);
+    min-height: clamp(60px, calc(1.08vw + 45.2px), 66px);
+    height: auto;
+    font-size: clamp(18px, calc(0.36vw + 13.07px), 20px);
+  }
+
+  .campaign-hero-accolades {
+    margin-top: clamp(169px, calc(5.87vw + 88.76px), 201.5px);
+    margin-left: clamp(719px, calc(73.83vw - 289.5px), 1128px);
+    font-size: clamp(11px, calc(0.36vw + 7.07px), 14px);
+    line-height: 1.2;
+  }
+
+  .campaign-proof-list {
+    padding-top: clamp(30px, calc(1.08vw + 19.2px), 40px);
   }
 }
 
