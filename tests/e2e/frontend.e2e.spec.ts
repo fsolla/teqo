@@ -76,6 +76,7 @@ test.describe('Frontend', () => {
   }) => {
     await page.setViewportSize({ width: 320, height: 568 })
     await page.goto('/')
+    await expect(page).toHaveURL(/\/$/)
 
     const hero = page.locator('[data-home-section="hero"]')
     const subtitleBox = await hero.locator('p').first().boundingBox()
