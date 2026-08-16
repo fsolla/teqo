@@ -77,6 +77,9 @@ describe('ciSkipInvariants', () => {
 
   it('keeps local e2e build artifacts outside the development dist directory', () => {
     for (const file of [
+      '.gitignore',
+      '.prettierignore',
+      'eslint.config.mjs',
       'playwright.config.ts',
       'scripts/gate-ci.mjs',
       'scripts/run-e2e-affected.mjs',
