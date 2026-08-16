@@ -154,12 +154,9 @@ export default defineConfig({
        * e2e states stay deterministic (see `googleCalendarTestKey.ts`).
        */
       [GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV_NAME]: GOOGLE_CALENDAR_TEST_KEY,
-      // Fixed dist dir: Next dev appends `<distDir>/types/**/*.ts` to
-      // tsconfig.json's include with an EXACT-string check, so per-process
-      // names polluted tsconfig with one entry per run. A prior Playwright
-      // process tearing down late can, rarely, delete files of the next run's
-      // server — if a boot flakes, rerun (dev-only trade-off).
-      NEXT_DIST_DIR: '.next/e2e',
+      // Keep e2e artifacts outside `.next`: a concurrent development server
+      // owns that entire directory and may clear nested production bundles.
+      NEXT_DIST_DIR: process.env.NEXT_DIST_DIR ?? '.next-e2e',
       PAYLOAD_SECRET: process.env.PAYLOAD_SECRET ?? 'test-only-secret-not-used-in-production',
       NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? baseURL,
     },

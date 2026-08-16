@@ -75,6 +75,19 @@ describe('ciSkipInvariants', () => {
     expect(CANONICAL_E2E_SPEC_SUFFIX).toBe('.e2e.spec.ts')
   })
 
+  it('keeps local e2e build artifacts outside the development dist directory', () => {
+    for (const file of [
+      'playwright.config.ts',
+      'scripts/gate-ci.mjs',
+      'scripts/run-e2e-affected.mjs',
+      'tsconfig.json',
+    ]) {
+      const source = readFileSync(join(repoRoot, file), 'utf8')
+      expect(source, file).not.toContain('.next/e2e')
+      expect(source, file).toContain('.next-e2e')
+    }
+  })
+
   it('skip classifiers and invariant specs are high-risk (force full suite)', () => {
     for (const path of [
       'scripts/lib/test-affected-core.mjs',

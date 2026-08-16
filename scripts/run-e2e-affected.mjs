@@ -3,7 +3,7 @@
  * run-e2e-affected — local mirror of the CI (PR) e2e job:
  *   1. `e2e-affected.mjs` picks full vs manifest-selected vs skip (same base ref).
  *   2. migrate + db:seed:minimal when anything would run.
- *   3. optional production build into `.next/e2e` when `E2E_PROD=1`.
+ *   3. optional production build into `.next-e2e` when `E2E_PROD=1`.
  *   4. `pnpm test:e2e` (set `CI=1` and `E2E_PROD=1` together for prod mode).
  *
  * Extra Playwright args after `--` are forwarded (e.g. a single spec while debugging).
@@ -48,7 +48,7 @@ const run = (command, args, env = {}) => {
 run('pnpm', ['migrate'])
 run('pnpm', ['db:seed:minimal'])
 if (process.env.E2E_PROD === '1') {
-  run('pnpm', ['build'], { NEXT_DIST_DIR: '.next/e2e' })
+  run('pnpm', ['build'], { NEXT_DIST_DIR: '.next-e2e' })
 }
 
 const playwrightArgs = ['test:e2e']

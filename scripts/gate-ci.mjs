@@ -149,9 +149,9 @@ const main = async () => {
     run('playwright install chromium', 'pnpm', ['exec', 'playwright', 'install', 'chromium'])
     run('e2e migrate', 'pnpm', ['migrate'], dbEnv)
     run('e2e seed:minimal', 'pnpm', ['db:seed:minimal'], dbEnv)
-    run('e2e build', 'pnpm', ['build'], { ...dbEnv, NEXT_DIST_DIR: '.next/e2e' })
+    run('e2e build', 'pnpm', ['build'], { ...dbEnv, NEXT_DIST_DIR: '.next-e2e' })
 
-    const e2eEnv = { ...dbEnv, E2E_PROD: '1', CI: '1', NEXT_DIST_DIR: '.next/e2e' }
+    const e2eEnv = { ...dbEnv, E2E_PROD: '1', CI: '1', NEXT_DIST_DIR: '.next-e2e' }
     if (scope.e2e.mode === 'full') {
       run('test:e2e (full)', 'pnpm', ['test:e2e'], e2eEnv)
     } else {
