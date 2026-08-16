@@ -50,6 +50,7 @@ antiga) — **não mexa nela**.
 ## 4. O que montar (as 4 seções do Penpot + rodapé)
 
 ### 4.1 Hero
+
 - Fundo vermelho `#a21c1c`. **Sem header separado** — a logo branca vive DENTRO
   do hero (topo esquerdo). **Sem barra fixa**.
 - Desktop: **foto à esquerda** (retrato JOA00162) + **colagem de 4 aliados**
@@ -62,10 +63,12 @@ antiga) — **não mexa nela**.
 - Micro-provas: `DIAP entre os 40 melhores da Câmara` · `Mais votado do PT-BA em 2022`.
 
 ### 4.2 Prova social
+
 - 3 números grandes centralizados, vermelho: `3.333 proposições apresentadas`,
   `1.031 discursos em Plenário`, `3º mandato de deputado federal`.
 
 ### 4.3 O problema
+
 - Fundo `#47130e`. Eyebrow amarelo `POR QUE ESSA ELEIÇÃO IMPORTA`.
 - H2: `Eleger deputado é coisa séria` / `O Congresso tem nas mãos vidas reais e o SUS` (2ª linha amarela).
 - Lead: `É no Congresso que se define o orçamento do SUS, o piso da enfermagem, a recompra de Mataripe e o fim da escala 6×1. Reeleger Lula não basta: é preciso eleger uma bancada aliada.`
@@ -80,6 +83,7 @@ antiga) — **não mexa nela**.
   3. `Pra defender os baianos` / foto `52396285023_561ffc0ff6_o.avif` / `A Refinaria de Mataripe foi vendida no governo Bolsonaro e segue nas mãos de estrangeiros. Com Lula e Jerônimo, a Bahia voltou a andar pra frente; mas recomprar Mataripe exige bancada forte no Congresso. Votar 1313 é devolver à Bahia o que é seu.`
 
 ### 4.4 Bandeiras
+
 - Fundo `#ebe9e9`. Eyebrow vermelho `NOSSA CAMINHADA`.
 - H2: `Junto com o trabalhador e do lado de quem mais precisa, sempre.`
 - Lead: `Não é promessa de palanque, é a experiência de quem já fez na gestão do SUS, do Ministério da Saúde e da saúde da Bahia.`
@@ -98,6 +102,7 @@ antiga) — **não mexa nela**.
   6. `Defesa intransigente da democracia` / `Participação popular, instituições fortes e combate à desinformação. Eleger o parlamento é coisa séria.`
 
 ### 4.5 Rodapé
+
 - Use o `CampaignFooter` existente ou o rodapé do wireframe: identificação
   eleitoral (nome, nº 1313, Federação PT/PCdoB/PV, **CNPJ 68.430.467/0001-05**,
   eleições 04/10/2026), navegação, redes.
