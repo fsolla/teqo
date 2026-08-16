@@ -5,6 +5,7 @@ const allowedImageHost = process.env.NEXT_PUBLIC_SITE_URL || 'https://jorgesolla
 
 const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
+  ...(process.env.NEXT_OUTPUT_STANDALONE === '1' ? { output: 'standalone' } : {}),
   images: {
     remotePatterns: [new URL(`${allowedImageHost}/**`)],
   },
