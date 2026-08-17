@@ -1,6 +1,7 @@
 # Build outputs and tool caches
 .next/
 .next-e2e/
+.pnpm-store/
 out/
 build/
 playwright-report/
