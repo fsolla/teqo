@@ -1,7 +1,7 @@
 # Migrar o banco de produção do Neon para o Postgres do homeserver
 
-Status: registrado
-Atualizado em: 2026-08-16
+Status: concluído
+Atualizado em: 2026-08-17
 Issue: #2
 Priority: P1
 Model: cursor-grok-4.5-high
@@ -65,6 +65,28 @@ cutover de hospedagem, que é outro lote).
 
 - **Banco de destino: novo (`teqo_prod`) ou reusar `teqo_1313`?** **Opções:** A) novo banco dedicado | B) reusar o existente. **Recomendação:** A — o `teqo_1313` serve o site da campanha 1313 (vida própria); misturar complica rollback e privacidade. _(assumido — validar)_
 - **Janela de manutenção?** **Opções:** A) congelar escrita durante o dump | B) dump com leitura consistente em produção aberta. **Recomendação:** A para simplicidade (apetite pequeno; campanha interna tolera minutos de leitura na janela). _(assumido — validar)_
+
+## Desfecho (2026-08-17)
+
+**Resolvido como B — restore no `teqo_1313` preparado**, divergência deliberada da hipótese A,
+validada na execução: o `teqo_1313` foi criado em 16/08 exatamente para esta migração (role
+própria, cadeia completa de 56 migrations, **zero conteúdo** verificado) e o `teqo-1313.env`
+do homeserver **já aponta para ele** — restaurar = a produção "aparece" no container sem
+nenhuma mudança de config; o argumento "o banco do 1313 tem vida própria" não se sustenta
+(o site 1313 É a produção deste repo). Impl: [`ops51-db-neon-para-homeserver-impl.md`](ops51-db-neon-para-homeserver-impl.md).
+
+Execução: dump `pg_dump -Fc` do Neon feito **no homeserver** (`/srv/hdd/backups/teqo-neon-pre-migracao/teqo-neon-full-20260817-204800.dump`, sha256 `f12196f2…`, Neon PG 17.10) → restore como role `teqo_1313` (`--no-owner --no-privileges`) → contagens por tabela idênticas ao Neon (1919 contatos, 39 posts, 1487 assinaturas, 1484 subscrições, 35 campaign_users, 392 lideranças, 2 pledges, 435 municípios, 6 atividades), sequences restauradas no topo, objetos com dono `teqo_1313`, `payload migrate` no-op (56 = 56). Smoke: `/`, artigo, `/campanha/login`, `/admin`, revalidate (`posts` + `global_privacy-policy`), WebAuthn `login-options`, barreira 307 sem sessão — verdes; smoke de browser (login, biometria, convites) validado manualmente pelo dev em `jorgesolla1313.com.br`.
+
+**Rollback (Neon intacto — nunca escrito, só lido):** re-apontar `DATABASE_URL` do
+`~/stack/teqo-1313.env` para a URL do Neon (mesmo valor de `NEON_DATABASE_URL` em
+`~/stack/.env`) + `docker compose up -d teqo-1313` no homeserver; snapshot de segurança do
+estado pré-restore em `/srv/hdd/backups/teqo-neon-pre-migracao/teqo_1313-pre-restore-*.dump`.
+
+**Achado registrado (débito → OPS52):** as 40 rows de `media` têm URLs relativas
+(`/api/media/file/…`) e os arquivos não existem em lugar nenhum (workstation, homeserver,
+imagem — `.dockerignore` exclui `media/`) — capas dos posts dão **500 no homeserver e 404 no
+próprio Vercel/produção atual**: estado pré-existente, a migração manteve paridade (sem
+regressão). Recuperação dos arquivos + storage real é escopo do OPS52.
 
 ## Referências
 

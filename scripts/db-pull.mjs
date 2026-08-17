@@ -14,8 +14,9 @@
  * Usage:
  *   PROD_DATABASE_URL=postgres://... pnpm db:pull
  *
- * PROD_DATABASE_URL should be the UNPOOLED Neon connection string (the
- * DATABASE_URL_UNPOOLED value in .env.local).
+ * PROD_DATABASE_URL should be the production connection string of the app
+ * (today: the homeserver Postgres, `teqo_1313` — the value of `DATABASE_URL`
+ * in `~/stack/teqo-1313.env` on the homeserver).
  */
 import { execFileSync } from 'node:child_process'
 import { dieWithLabel, LOCAL_HOSTS } from './lib/cli.mjs'
@@ -31,8 +32,9 @@ const die = dieWithLabel('db:pull')
 if (!prodUrl) {
   die(
     'PROD_DATABASE_URL is not set.\n' +
-      'Run it with your UNPOOLED Neon URL (DATABASE_URL_UNPOOLED in .env.local):\n' +
-      '  PROD_DATABASE_URL="postgres://...neon.tech/neondb?sslmode=require" pnpm db:pull',
+      'Run it with the production connection string (today: homeserver `teqo_1313`, the\n' +
+      '  `DATABASE_URL` of `~/stack/teqo-1313.env` on the homeserver):\n' +
+      '  PROD_DATABASE_URL="postgresql://teqo_1313:...@postgres:5432/teqo_1313" pnpm db:pull',
   )
 }
 
