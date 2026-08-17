@@ -1,4 +1,4 @@
-name: Spike — service postgres em porta própria
+name: Spike — service postgres via gateway do bridge
 
 on:
   push:
@@ -22,21 +22,17 @@ jobs:
           --health-timeout 5s
           --health-retries 12
     steps:
-      - name: Probe aliases v2
+      - name: Probe gateway
         run: |
           set -uo pipefail
-          for target in postgres:5432 localhost:5433 127.0.0.1:5433; do
-            host="${target%:*}"
-            port="${target#*:}"
-            if (echo > /dev/tcp/"$host"/"$port") 2>/dev/null; then
-              echo "REACHABLE: $target"
-            else
-              echo "unreachable: $target"
+          GW=$(ip route | awk '/default/ {print $3; exit}')
+          echo "gateway=$GW"
+          for i in $(seq 1 15); do
+            if (echo > /dev/tcp/"$GW"/5433) 2>/dev/null; then
+              echo "REACHABLE: gateway:$GW:5433"
+              exit 0
             fi
+            sleep 2
           done
-          if (echo > /dev/tcp/postgres/5432) 2>/dev/null; then
-            echo "FINAL: postgres:5432 OK"
-          else
-            echo "FINAL: nada alcançável"
-            exit 1
-          fi
+          echo "FINAL: gateway $GW:5433 unreachable"
+          exit 1
