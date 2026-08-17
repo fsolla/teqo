@@ -351,7 +351,9 @@ jobs:
         if: needs.scope.outputs.e2e_mode == 'full' || matrix.shard == 1
         run: pnpm build
         env:
-          NEXT_DIST_DIR: .next/e2e
+          # Same dir the Playwright webServer serves (playwright.config.ts
+          # falls back to '.next-e2e'; gate-ci.mjs builds there too).
+          NEXT_DIST_DIR: .next-e2e
 
       - name: E2E tests (full suite, shard ${{ matrix.shard }})
         if: needs.scope.outputs.e2e_mode == 'full'

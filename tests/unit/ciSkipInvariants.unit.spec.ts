@@ -77,6 +77,8 @@ describe('ciSkipInvariants', () => {
 
   it('keeps local e2e build artifacts outside the development dist directory', () => {
     for (const file of [
+      '.forgejo/workflows/ci.yml',
+      '.forgejo/workflows/ci-pr.yml',
       '.gitignore',
       '.prettierignore',
       'eslint.config.mjs',
