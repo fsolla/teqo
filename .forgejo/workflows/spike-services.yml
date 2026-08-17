@@ -23,16 +23,10 @@ jobs:
           --health-retries 12
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-      - name: Node version
-        run: node --version
       - name: Probe gateway
         run: |
           set -uo pipefail
-          GW=$(awk '$2 == "00000000" {split($3, h, ""); ip=""; for (i=1; i<=8; i+=2) ip=ip strtonum("0x" h[i] h[i+1]) (i<8 ? "." : ""); print ip; exit}' /proc/net/route)
+          GW=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
           echo "gateway=$GW"
           for i in $(seq 1 15); do
             if (echo > /dev/tcp/"$GW"/5433) 2>/dev/null; then
