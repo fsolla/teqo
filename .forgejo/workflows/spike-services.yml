@@ -22,15 +22,21 @@ jobs:
           --health-timeout 5s
           --health-retries 12
     steps:
-      - name: Probe TCP localhost:5433
+      - name: Probe aliases
         run: |
-          set -euo pipefail
-          for i in $(seq 1 20); do
-            if (echo > /dev/tcp/localhost/5433) 2>/dev/null; then
-              echo "CONNECTED to localhost:5433"
-              exit 0
+          set -uo pipefail
+          for target in postgres:5432 localhost:5433 127.0.0.1:5433; do
+            host="${target%:*}"
+            port="${target#*:}"
+            if (echo > /dev/tcp/"$host"/"$port") 2>/dev/null; then
+              echo "REACHABLE: $target"
+            else
+              echo "unreachable: $target"
             fi
-            sleep 2
           done
-          echo "FAILED to reach localhost:5433"
-          exit 1
+          if (echo > /dev/tcp/postgres/5432) 2>/dev/null; then
+            echo "FINAL: postgres:5432 OK"
+          else
+            echo "FINAL: nada alcançável"
+            exit 1
+          fi
