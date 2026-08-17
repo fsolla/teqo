@@ -1,4 +1,4 @@
-name: Spike — forgejo-runner v13: node24 actions + gateway
+name: Spike — forgejo-runner v13 node24 actions + gateway
 
 on:
   push:
