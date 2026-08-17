@@ -7,6 +7,7 @@
  * any of these re-spelled outside this module.
  */
 import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
@@ -30,6 +31,44 @@ export const loadCliEnv = () => {
 
 /** Local database hosts — including the docker-compose service name. THE one list. */
 export const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1', 'postgres'])
+
+/**
+ * Gateway of the default route, read from /proc/net/route (Linux). The
+ * self-hosted Forgejo runner publishes each job's `services:` Postgres on the
+ * bridge gateway IP (192.168.x.1 — differs per job), so a job reaches it via
+ * that IP instead of localhost. The same octet order the ci-pr.yml awk
+ * produces (the /proc fields are little-endian). Returns null when there is
+ * no default route or the file is unreadable (macOS/Windows dev boxes).
+ */
+export const defaultGatewayHost = () => {
+  try {
+    const routes = readFileSync('/proc/net/route', 'utf8').split('\n')
+    for (const line of routes) {
+      const fields = line.trim().split(/\s+/)
+      if (fields[1] !== '00000000') continue
+      const hex = fields[2] ?? ''
+      if (hex === '00000000' || hex.length < 8) return null
+      const octets = [
+        parseInt(hex.slice(6, 8), 16),
+        parseInt(hex.slice(4, 6), 16),
+        parseInt(hex.slice(2, 4), 16),
+        parseInt(hex.slice(0, 2), 16),
+      ]
+      const isRfc1918 =
+        octets[0] === 10 ||
+        (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) ||
+        (octets[0] === 192 && octets[1] === 168)
+      if (!isRfc1918) return null
+      return octets.join('.')
+    }
+  } catch {
+    // /proc/net/route is Linux-only; fall through to the static list.
+  }
+  return null
+}
+
+const gatewayHost = defaultGatewayHost()
+if (gatewayHost) LOCAL_HOSTS.add(gatewayHost)
 
 export const ALLOW_REMOTE_DB_FLAG = 'ALLOW_REMOTE_DB'
 
