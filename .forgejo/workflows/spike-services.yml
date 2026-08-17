@@ -1,4 +1,4 @@
-name: Spike — service postgres via gateway do bridge
+name: Spike — forgejo-runner v13: node24 actions + gateway
 
 on:
   push:
@@ -22,6 +22,13 @@ jobs:
           --health-timeout 5s
           --health-retries 12
     steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Node version
+        run: node --version
       - name: Probe gateway
         run: |
           set -uo pipefail
