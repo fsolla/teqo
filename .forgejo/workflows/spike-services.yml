@@ -22,7 +22,7 @@ jobs:
           --health-timeout 5s
           --health-retries 12
     steps:
-      - name: Probe aliases
+      - name: Probe aliases v2
         run: |
           set -uo pipefail
           for target in postgres:5432 localhost:5433 127.0.0.1:5433; do
