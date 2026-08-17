@@ -46,6 +46,12 @@ jobs:
   int:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      # Self-hosted runner has 8 CPUs; vitest forks ≈ CPUs and each fork holds
+      # a Payload pool (max 10) → overflows the service Postgres' 100 clients
+      # ("too many clients already"). 4 forks stay well under. GitHub's 2–4
+      # vCPU runners keep the CPU-relative default (no env).
+      VITEST_MAX_WORKERS: 4
     services:
       postgres:
         image: postgres:17-alpine
@@ -73,6 +79,10 @@ jobs:
           set -euo pipefail
           DB_HOST=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
           echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:5433/teqo_test" >> "$GITHUB_ENV"
+          # vitest re-loads .env.test over the process env, so the service URL
+          # must win through the .env.test.local layer (same mechanism
+          # `pnpm worktree next` uses). OPS50.
+          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:5433/teqo_test" > .env.test.local
       - run: pnpm migrate
       - run: pnpm db:seed:minimal
       - run: pnpm test:int
@@ -163,6 +173,10 @@ jobs:
           DB_HOST=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
           DB_PORT=${{ matrix.shard == 1 && '5435' || '5436' }}
           echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:${DB_PORT}/teqo_test" >> "$GITHUB_ENV"
+          # playwright re-loads .env.test over the process env, so the service
+          # URL must win through the .env.test.local layer (same mechanism
+          # `pnpm worktree next` uses). OPS50.
+          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:${DB_PORT}/teqo_test" > .env.test.local
       - run: pnpm migrate
       - run: pnpm db:seed:minimal
       - name: Build for e2e
