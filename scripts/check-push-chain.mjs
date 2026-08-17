@@ -29,8 +29,9 @@ const PROD_DATABASE_URL = process.env.PROD_DATABASE_URL
 if (!PROD_DATABASE_URL) {
   die(
     'PROD_DATABASE_URL is not set.\n' +
-      'Run it with your UNPOOLED Neon URL (DATABASE_URL_UNPOOLED from `vercel env pull`):\n' +
-      '  PROD_DATABASE_URL="postgres://...neon.tech/neondb?sslmode=require" pnpm db:check:push-chain',
+      'Run it with the production connection string (today: homeserver `teqo_1313`, the\n' +
+      '  `DATABASE_URL` of `~/stack/teqo-1313.env` on the homeserver):\n' +
+      '  PROD_DATABASE_URL="postgresql://teqo_1313:...@postgres:5432/teqo_1313" pnpm db:check:push-chain',
   )
 }
 
