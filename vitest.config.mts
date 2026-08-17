@@ -10,8 +10,16 @@ import { defineConfig } from 'vitest/config'
 // 160 clients → "too many clients already"). Do NOT set a literal
 // `maxWorkers: 8` on CI: Vitest treats that as "use up to 8" even on 2–4
 // vCPU runners, which starves shared advisory leases (invite/consent) and
-// times out at 15s. Leave CI on Vitest's CPU-relative default.
-const maxWorkers = process.env.CI ? undefined : Math.min(8, os.availableParallelism())
+// times out at 15s. Leave CI on Vitest's CPU-relative default — except on
+// self-hosted high-core runners (Forgejo homeserver: 8 CPUs → 8 forks ×
+// pool-10 already overflows the service Postgres' 100 clients), where the
+// workflow pins VITEST_MAX_WORKERS=4 (the "too many clients" failure mode
+// landed there in CI run 180).
+const maxWorkers = process.env.VITEST_MAX_WORKERS
+  ? Number(process.env.VITEST_MAX_WORKERS)
+  : process.env.CI
+    ? undefined
+    : Math.min(8, os.availableParallelism())
 
 export default defineConfig({
   resolve: {

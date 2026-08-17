@@ -179,6 +179,12 @@ jobs:
       && (needs.knip.result == 'success' || needs.knip.result == 'skipped')
       && (needs.cycles.result == 'success' || needs.cycles.result == 'skipped')
       && (needs.unit.result == 'success' || needs.unit.result == 'skipped')
+    env:
+      # Self-hosted runner has 8 CPUs; vitest forks ≈ CPUs and each fork holds
+      # a Payload pool (max 10) → overflows the service Postgres' 100 clients
+      # ("too many clients already", CI run 180). 4 forks stay well under.
+      # GitHub's 2–4 vCPU runners keep the CPU-relative default (no env).
+      VITEST_MAX_WORKERS: 4
     services:
       postgres:
         image: postgres:17-alpine
@@ -281,12 +287,16 @@ jobs:
       && (needs.knip.result == 'success' || needs.knip.result == 'skipped')
       && (needs.cycles.result == 'success' || needs.cycles.result == 'skipped')
       && (needs.unit.result == 'success' || needs.unit.result == 'skipped')
-    # OPS34: full mode splits across 2 runners (matrix from the scope job);
-    # selected mode stays on one. fail-fast: false keeps both shards' logs.
+    # OPS34: full mode splits across 2 runners; selected mode stays on shard 1
+    # (shard 2 skips build+test via step `if`). Static [1, 2] — Forgejo 1.22
+    # does not pass job results into matrix expansion, so fromJson(needs.*)
+    # yields an empty shard. Keep the literal in sync with e2eShardConfig in
+    # scripts/lib/test-affected-core.mjs (ci.yml pins the same [1, 2] / 2).
+    # fail-fast: false keeps both shards' logs.
     strategy:
       fail-fast: false
       matrix:
-        shard: ${{ fromJson(needs.scope.outputs.e2e_matrix) }}
+        shard: [1, 2]
     env:
       # Explicit CI workers; the local default stays 2 (playwright.config.ts).
       PLAYWRIGHT_WORKERS: 2
@@ -336,6 +346,9 @@ jobs:
       - run: pnpm migrate
       - run: pnpm db:seed:minimal
       - name: Build for e2e
+        # Selected mode only needs shard 1 (a second build for a handful of
+        # specs is waste).
+        if: needs.scope.outputs.e2e_mode == 'full' || matrix.shard == 1
         run: pnpm build
         env:
           NEXT_DIST_DIR: .next/e2e
@@ -347,7 +360,8 @@ jobs:
         run: pnpm test:e2e --shard=${{ matrix.shard }}/${{ needs.scope.outputs.e2e_shards }}
 
       - name: E2E tests (manifest-selected specs)
-        if: needs.scope.outputs.e2e_mode == 'selected'
+        # Selected specs run once, on shard 1; shard 2 skips (no test step).
+        if: needs.scope.outputs.e2e_mode == 'selected' && matrix.shard == 1
         run: pnpm test:e2e -- ${{ needs.scope.outputs.e2e_specs }}
 
   docs-guards:
