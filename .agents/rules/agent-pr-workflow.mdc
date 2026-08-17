@@ -64,7 +64,7 @@ Branch protection on `main` requires only:
 
 (`migration-lock` removed 2026-08-12 — the CI validates migration chains via migrate + int on every PR/main.)
 
-**Vercel preview is NOT a merge gate.** Production deploy is Actions-gated (`ci.yml` → `vercel deploy --prod` after full suite green). Do not block on Vercel Git status.
+**There is no deploy from CI.** The `ci.yml` verifier on `main` runs the full suite and stops (production is self-hosted on the homeserver — `jorgesolla1313.com.br` — deployed via an ops runbook outside this repo). Do not add a Vercel/Git-integration deploy gate.
 
 When watching CI:
 
@@ -74,13 +74,9 @@ gh pr checks <PR> --watch --required
 
 Use `--required` — without it, `--watch` also waits for Vercel.
 
-## Agent branches skip Vercel builds
-
-All branches skip Vercel Git builds via `scripts/vercel-ignore-build.sh` (deploys only from the main verifier Action).
-
 ## Promote
 
-There is no stage→main promote. Merging to `main` is the delivery; `ci.yml` verifies and deploys.
+There is no stage→main promote. Merging to `main` is the delivery; `ci.yml` verifies the full suite and production deploys from the homeserver runbook.
 
 ## Safety net (GitHub Action)
 

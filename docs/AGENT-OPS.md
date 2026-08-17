@@ -15,7 +15,7 @@ Agentes **nunca** recebem `DATABASE_URL` de prod e nunca setam `ALLOW_REMOTE_DB`
 
 ```text
 claim → feature branch → PR --base main → CI PR green (cascade + skips) → auto-merge em main
-main → ci.yml full suite → vercel deploy --prod (se verde) → requeue se HEAD andou
+main → ci.yml full suite (verificador puro; sem deploy — produção é self-hosted no homeserver, runbook fora do repo)
 ```
 
 **Skills:** `plan-issue` (intenção + Issues) → `work-issue` (humano: Issue já claimada → impl plan → confirmação → execução) ou `agent-work-issue` (pool: já claimada → impl plan → execução sem pausa) → `/simplify` → `capture-review-debts` → PR `--base main` → `project-status`. `docs/roadmap.md` = legado congelado; fonte canônica = GitHub Issues.
@@ -69,14 +69,14 @@ Arquivos de "lista" que N agentes escrevem em paralelo (changelog, plans, migra�
 
 ## CI por alvo
 
-| Workflow                             | Trigger                                | Banco               | Passos                                                                                                                |
-| ------------------------------------ | -------------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `ci-pr.yml`                          | PR → `main`                            | service Postgres 17 | Fase 1 barata → fase 2 cara; skips via `ci-scope.mjs`; fail-fast cancela o run no 1º job vermelho; rollup `checks`    |
-| `ci.yml`                             | push / dispatch `main`                 | service Postgres    | Full sempre; fail-fast cancela o run no 1º job vermelho → `deploy` (`vercel deploy --prod`) → `requeue` se HEAD andou |
-| `issue-done-on-main-merge.yml`       | PR merged → `main`                     | —                   | `Closes`/`Fixes` → `done` + `in-prod`                                                                                 |
-| `plan-issue-ready-on-main-merge.yml` | PR merged → `main`                     | —                   | `Related #N` aguardando plano → `ready` (OPS18; soft-skip)                                                            |
-| `agent-pr-ready-automerge.yml`       | PR `cursor/*` → `main` (open/sync/…)   | —                   | Draft→Ready + `gh pr merge --auto --rebase` (safety net; audit incluso)                                               |
-| `agent-pool.yml`                     | schedule / PR closed `main` / dispatch | —                   | Supervisor do pool (`POOL_GITHUB_TOKEN`)                                                                              |
+| Workflow                             | Trigger                                | Banco               | Passos                                                                                                                    |
+| ------------------------------------ | -------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `ci-pr.yml`                          | PR → `main`                            | service Postgres 17 | Fase 1 barata → fase 2 cara; skips via `ci-scope.mjs`; fail-fast cancela o run no 1º job vermelho; rollup `checks`        |
+| `ci.yml`                             | push / dispatch `main`                 | service Postgres    | Full sempre; fail-fast cancela o run no 1º job vermelho; rollup `checks`; sem deploy (produção self-hosted no homeserver) |
+| `issue-done-on-main-merge.yml`       | PR merged → `main`                     | —                   | `Closes`/`Fixes` → `done` + `in-prod`                                                                                     |
+| `plan-issue-ready-on-main-merge.yml` | PR merged → `main`                     | —                   | `Related #N` aguardando plano → `ready` (OPS18; soft-skip)                                                                |
+| `agent-pr-ready-automerge.yml`       | PR `cursor/*` → `main` (open/sync/…)   | —                   | Draft→Ready + `gh pr merge --auto --rebase` (safety net; audit incluso)                                                   |
+| `agent-pool.yml`                     | schedule / PR closed `main` / dispatch | —                   | Supervisor do pool (`POOL_GITHUB_TOKEN`)                                                                                  |
 
 Action runtimes: `actions/checkout@v5`, `actions/setup-node@v5`, `pnpm/action-setup@v6` e `styfle/cancel-workflow-action@0.13.1` usam Node 24 nativo — sem `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`.
 
@@ -86,18 +86,11 @@ Fast gate: `pnpm gate:fast`. Push: `pnpm push`.
 
 | Secret              | Uso                                                                                  |
 | ------------------- | ------------------------------------------------------------------------------------ |
-| `VERCEL_TOKEN`      | Deploy gated em `ci.yml`                                                             |
-| `VERCEL_ORG_ID`     | idem                                                                                 |
-| `VERCEL_PROJECT_ID` | idem                                                                                 |
+| `FORGEJO_API_TOKEN` | Supervisor do pool e scripts Forgejo (`forgejo-api.mjs`)                             |
+| `CURSOR_API_KEY`    | Supervisor do pool (Cursor Cloud)                                                    |
 | `POOL_GITHUB_TOKEN` | PAT `actions:write` + `issues:write` (variables do pool; `GITHUB_TOKEN` costuma 403) |
 
-Vercel Git builds: `scripts/vercel-ignore-build.sh` skipeia **todas** as branches (incl. `main`) — prod só via Action.
-
-**Dois toggles distintos no dashboard Vercel (não confundir):**
-
-1. **Git / Branch tracking — não disparar build em push** — o que queremos OFF (já pinado em `vercel.json` `git.deploymentEnabled: false` + ignore script). Desligar “automatic deploy from main” no dashboard é o mesmo eixo — **não** confunda com o item 2.
-2. **Auto-assign Custom Production Domains** (Environments → Production → Branch Tracking) — deve ficar **ON**. Se OFF, `vercel deploy --prod` no Actions cria um deployment "staged" que só recebe `*.vercel.app` e **não** move `pt.jorgesolla.com.br`.
-3. **Domains → `pt.jorgesolla.com.br` → Git Branch** — deve ficar **vazio** (Production). Domínio com Git Branch só auto-alia via Git Integration; com Git deploy OFF + CLI `--prod`, o host fica preso no Current antigo. O step pós-deploy `scripts/vercel-ensure-production-alias.mjs` reativa auto-assign, **limpa gitBranch**, faz `promote` + `POST /v2/deployments/{id}/aliases` + `vercel alias set`, e **não** confia no campo `alias` de `GET /v13` (pode listar o hostname de produção sem o domínio estar nesse deployment). Emergência sem rebuild: workflow `Vercel promote production`.
+Sem deploy Vercel: o job `deploy`, `vercel-promote.yml`, os scripts de Vercel e `vercel.json` foram removidos no OPS50 — produção é self-hosted no homeserver (`jorgesolla1313.com.br`), deploy via runbook de infra fora deste repo.
 
 ## Cursor Cloud
 
