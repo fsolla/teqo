@@ -43,6 +43,11 @@
  *                              mínimo (`db:seed:minimal`, OPS28) são aplicados
  *                              aos dois bancos — paridade com a CI, que roda
  *                              `migrate → seed:minimal` antes do e2e.
+ *                              Também copia do worktree principal os secretos
+ *                              gitignored de `.opencode/secrets/` (ex.
+ *                              `penpot-token` do MCP Penpot) — git não leva
+ *                              ignored files para o worktree e o opencode se
+ *                              recusa a abrir com `{file:…}` pendurado.
  *                              `--no-migrate` pula migrations E o seed (que
  *                              depende do catálogo migrado).
  *   pnpm worktree plan [bag] [--stay] [--no-migrate]
@@ -93,7 +98,15 @@
 
 import { execFileSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -220,6 +233,28 @@ const envFileIsGenerated = (dir, name) => {
   }
 }
 
+/**
+ * Copies the main repo's gitignored `.opencode/secrets/*` into the worktree —
+ * e.g. `penpot-token`, referenced by the root `opencode.json` MCP config via
+ * `{file:…}`. Git worktrees don't carry ignored files, and opencode refuses to
+ * start with a dangling `{file:…}` reference ("bad file reference"), so the
+ * TUI launch directive would fail inside a fresh worktree. Never overwrites an
+ * existing worktree file (a manual copy wins).
+ */
+const copyOpendevSecrets = (mainRoot, dir) => {
+  const sourceDir = join(mainRoot, '.opencode', 'secrets')
+  if (!existsSync(sourceDir)) return
+  const targetDir = join(dir, '.opencode', 'secrets')
+  mkdirSync(targetDir, { recursive: true })
+  for (const name of readdirSync(sourceDir)) {
+    const source = join(sourceDir, name)
+    const target = join(targetDir, name)
+    if (!statSync(source).isFile() || existsSync(target)) continue
+    copyFileSync(source, target)
+    console.log(`[worktree] .opencode/secrets/${name} copiado do worktree principal.`)
+  }
+}
+
 /** `CREATE DATABASE` for each missing generated name on the shared container. */
 const ensureDatabases = async (names) => {
   const client = new pg.Client({
@@ -305,6 +340,10 @@ const writeFallbackEnv = (dir, branch) => {
  * is optional and fills the `issue #N` part of the comment only when present.
  */
 const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpose = 'next' }) => {
+  // Secreto gitignored que o opencode.json do worktree referencia (`{file:…}`)
+  // — sem ele o opencode se recusa a abrir; a cópia vale para todos os caminhos.
+  copyOpendevSecrets(mainRoot, dir)
+
   const manual =
     (existsSync(join(dir, '.env.local')) && !envFileIsGenerated(dir, '.env.local')) ||
     (existsSync(join(dir, '.env.test.local')) && !envFileIsGenerated(dir, '.env.test.local'))
