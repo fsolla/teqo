@@ -11,7 +11,10 @@ import { civilDatePlusDays, dayLabelFor, ptBrMonthNames } from './helpers/agenda
  * clicks the 14:00 slot. `force` bypasses the C104 all-day lane, which paints
  * day fills over the time grid: real clicks still land on the slot
  * (FullCalendar resolves by data-time), but Playwright's actionability check
- * refuses them.
+ * refuses them. The click targets TODAY's column: the time row is a single
+ * element spanning the whole week, so a centered click lands on the middle
+ * column (Thursday), and C104's end date (today + 1) would fall before the
+ * start on Mondays and Tuesdays.
  */
 const openAgendaSlot = async ({
   campaign,
@@ -27,7 +30,19 @@ const openAgendaSlot = async ({
   const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
   await expect(slotLocator).toBeVisible()
   await slotLocator.scrollIntoViewIfNeeded()
-  await slotLocator.click({ force: true })
+  const slotBox = await slotLocator.boundingBox()
+  const todayBox = await page
+    .locator(`[data-date="${formatBahiaCivilDate(new Date())}"]`)
+    .last()
+    .boundingBox()
+  if (!slotBox || !todayBox) throw new Error('agenda grid boxes unavailable')
+  await slotLocator.click({
+    position: {
+      x: todayBox.x - slotBox.x + todayBox.width / 2,
+      y: slotBox.height / 2,
+    },
+    force: true,
+  })
 }
 
 test.describe('Atividades — registro-fundação', () => {
