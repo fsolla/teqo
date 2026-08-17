@@ -9,7 +9,8 @@
  *     [--body "contexto..."] [--kind agent-miss|defect]
  */
 
-import { dieAgent, gh, parseArgs } from './lib/agent-github.mjs'
+import { dieAgent, parseArgs } from './lib/agent-forgejo.mjs'
+import { forgejoApi as api } from './lib/forgejo-api.mjs'
 
 const die = dieAgent('file-miss')
 const { flags } = parseArgs(process.argv.slice(2), new Set(['title', 'body', 'kind']))
@@ -27,17 +28,12 @@ const body = [
   '_Registrado por `pnpm agent:file-miss`. Harvest: avaliar guardrail programático (teste de convenção, ESLint, check de CI) e registrar em `docs/GUARDRAILS.md`._',
 ].join('\n')
 
-const url = gh([
-  'issue',
-  'create',
-  '--title',
-  flags.title,
-  '--body',
+const created = await api.createIssue({
+  title: flags.title,
   body,
-  '--label',
-  `kind:${kind}`,
-  '--label',
-  'prio:P2',
-])
+})
+const url = `https://git.solla.dev/fsolla/teqo/issues/${created.number}`
+
+await api.setLabels(created.number, { add: [`kind:${kind}`, 'prio:P2'] })
 
 console.log(`[agent:file-miss] filed ${url}`)

@@ -10,29 +10,20 @@
 
 import {
   dieAgent,
-  ghJson,
   issuesById,
   labelNames,
   parseFrontmatter,
   priorityRank,
-} from './lib/agent-github.mjs'
+} from './lib/agent-forgejo.mjs'
+import { forgejoApi as api } from './lib/forgejo-api.mjs'
 
 const die = dieAgent('status')
 
 let issues
 try {
-  issues = ghJson([
-    'issue',
-    'list',
-    '--state',
-    'all',
-    '--limit',
-    '500',
-    '--json',
-    'number,title,body,state,labels,createdAt',
-  ])
+  issues = await api.listIssues({ state: 'all', limit: 200 })
 } catch (error) {
-  die(`gh issue list failed: ${error.message}`)
+  die(`Forgejo issue list failed: ${error.message}`)
 }
 
 const rows = issues
@@ -123,7 +114,7 @@ if (recentDone.length > 0) {
 // --- Fila atual (mesma ordem do agent:claim --dry-run) ------------------------
 
 console.log('\n## Fila atual (ordem do agent:claim)\n')
-const byId = issuesById()
+const byId = await issuesById()
 const queue = open
   .filter((row) => row.state === 'ready')
   .map((row) => ({

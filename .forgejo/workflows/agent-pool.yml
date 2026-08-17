@@ -8,9 +8,12 @@
 #
 # Secrets:
 #   CURSOR_API_KEY — Cursor Cloud Agents API key
-#   POOL_GITHUB_TOKEN — PAT with actions:write + issues:write (required to read/
-#     write repo Actions variables; default GITHUB_TOKEN often 403s — mirror of
-#     the old PROMOTE_GITHUB_TOKEN pattern)
+#   FORGEJO_API_TOKEN — optional PAT; the native GITHUB_TOKEN (full repo
+#     access) covers issue/label/contents ops inside Forgejo Actions
+#
+# Forgejo port (OPS50): no `concurrency:`/`permissions:` blocks; pool state
+# lives in pool-state.json on the `pool-state` branch (variables API is
+# GET-only here), read/written by scripts/lib/agent-pool-forgejo.mjs.
 name: Agent pool supervisor
 
 on:
@@ -37,16 +40,6 @@ on:
         required: false
         type: string
 
-concurrency:
-  group: agent-pool
-  cancel-in-progress: false
-
-permissions:
-  actions: write
-  contents: read
-  issues: write
-  pull-requests: read
-
 jobs:
   tick:
     runs-on: ubuntu-latest
@@ -62,7 +55,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: agent:pool workflow
         env:
-          GH_TOKEN: ${{ secrets.POOL_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          FORGEJO_API_TOKEN: ${{ secrets.FORGEJO_API_TOKEN }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           ACTION: ${{ inputs.action }}
           MAX_SLOTS: ${{ inputs.maxSlots }}

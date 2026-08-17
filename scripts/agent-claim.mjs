@@ -19,31 +19,19 @@ import {
   claimBriefLines,
   claimIssue,
   dieAgent,
-  ghJson,
   issuesById,
   parseArgs,
-} from './lib/agent-github.mjs'
+} from './lib/agent-forgejo.mjs'
+import { forgejoApi as api } from './lib/forgejo-api.mjs'
 
 const die = dieAgent('claim')
 const { flags } = parseArgs(process.argv.slice(2), new Set(['issue']))
 
-const openReady = ghJson([
-  'issue',
-  'list',
-  '--state',
-  'open',
-  '--label',
-  'ready',
-  '--limit',
-  '200',
-  // Include `state` for parity with the pool queue (isAutonomousClaimable).
-  '--json',
-  'number,title,body,labels,createdAt,state',
-])
+const openReady = await api.listIssues({ state: 'open', labels: 'ready', limit: 200 })
 
-// Queue builder lives in agent-github.mjs (shared with the agent pool —
+// Queue builder lives in agent-forgejo.mjs (shared with the agent pool —
 // identical ordering/filtering, pinned by agentPoolEligibility.unit.spec.ts).
-const queue = buildClaimQueue(openReady, issuesById())
+const queue = buildClaimQueue(openReady, await issuesById())
 
 if (flags['dry-run'] || flags['dryrun']) {
   console.log(`[agent:claim] ${queue.length} unblocked ready issue(s):`)
@@ -67,7 +55,7 @@ if (!pick) {
 }
 
 // Optimistic lock: re-read right before flipping (shared with `worktree next`).
-claimIssue(pick, die)
+await claimIssue(pick, die)
 
 console.log(`\n[agent:claim] Claimed #${pick.issue.number} — ${pick.issue.title}`)
 for (const line of claimBriefLines(pick)) console.log(line)

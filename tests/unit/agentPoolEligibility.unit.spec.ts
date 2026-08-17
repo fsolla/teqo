@@ -6,7 +6,7 @@ import {
   buildClaimQueue,
   claimQueueEntry,
   claimTargetVerdict,
-} from '../../scripts/lib/agent-github.mjs'
+} from '../../scripts/lib/agent-forgejo.mjs'
 import {
   buildPoolQueue,
   isAutonomousClaimable,

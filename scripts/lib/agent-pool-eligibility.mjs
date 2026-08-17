@@ -11,7 +11,7 @@
  * where the comments are already being read).
  */
 
-import { labelNames } from './agent-github.mjs'
+import { labelNames } from './agent-forgejo.mjs'
 
 export const POOL_CIRCUIT_BREAKER_FAILURES = 2
 
@@ -19,7 +19,7 @@ const EXCLUDED_STATE_LABELS = ['in-progress', 'blocked', 'done', 'in-prod']
 export const HUMAN_GATE_LABELS = ['requirements-changed', 'needs:consent']
 
 /**
- * @param {ReturnType<import('./agent-github.mjs').buildClaimQueue>[number]} entry queue entry from buildClaimQueue
+ * @param {ReturnType<import('./agent-forgejo.mjs').buildClaimQueue>[number]} entry queue entry from buildClaimQueue
  * @param {Object} [options]
  * @param {boolean} [options.migrationBusy]
  * @param {number} [options.poolFailureCount]
@@ -56,7 +56,7 @@ export const issueHasPlanLink = (issue) => /docs\/plans\//.test(issue?.body ?? '
  * Splits the claim queue into pool-eligible entries (order preserved — the
  * claim order IS the spawn order) and exclusions with their reason.
  *
- * @param {ReturnType<import('./agent-github.mjs').buildClaimQueue>} claimQueue
+ * @param {ReturnType<import('./agent-forgejo.mjs').buildClaimQueue>} claimQueue
  * @param {Object} [options]
  * @param {boolean} [options.migrationBusy]
  * @param {Map<number, number>} [options.failureCountsByIssue]

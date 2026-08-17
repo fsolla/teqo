@@ -1,0 +1,34 @@
+# Safety net: agent PRs (cursor/* → main) must be Ready + auto-merge.
+# Covers Cloud ManagePullRequest defaulting to draft and agents that forget
+# to arm the merge. No skill opt-out (engineering-audit included).
+#
+# Forgejo port (OPS50): Forgejo's API has no auto-merge scheduling, so the
+# workflow runs scripts/forgejo-pr-automerge.mjs (plain Node): marks draft →
+# ready, waits for the commit statuses (the branch-protection `checks` gate),
+# then merges by rebase. Same semantics as `gh pr merge --auto --rebase`,
+# implemented as poll + merge. GitHub's cancel-workflow-on-failure action was
+# dropped (no GITHUB_RUN_ID plumbing on Forgejo).
+name: Agent PR Ready + auto-merge
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, converted_to_draft]
+    branches: [main]
+
+jobs:
+  ready-automerge:
+    if: >-
+      github.event.pull_request.state == 'open' &&
+      startsWith(github.event.pull_request.head.ref, 'cursor/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      # Script is plain Node (stdlib) — no pnpm. Disable package-manager-cache:
+      # setup-node@v5 defaults to true and looks for pnpm before pnpm/action-setup.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Mark Ready and merge when checks pass
+        run: node scripts/forgejo-pr-automerge.mjs --pr "${{ github.event.pull_request.number }}"

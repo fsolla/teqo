@@ -22,12 +22,10 @@ import { appendFileSync } from 'node:fs'
 import {
   buildClaimQueue,
   dieAgent,
-  gh,
-  ghJson,
   issuesById,
   labelNames,
   parseArgs,
-} from './lib/agent-github.mjs'
+} from './lib/agent-forgejo.mjs'
 
 import {
   archiveCursorAgent,
@@ -52,7 +50,7 @@ import {
   readPoolVariables,
   rollbackPoolClaim,
   writePoolVariable,
-} from './lib/agent-pool-github.mjs'
+} from './lib/agent-pool-forgejo.mjs'
 import { resolvePoolModel } from './lib/agent-pool-models.mjs'
 import { buildPoolWorkerPrompt, extractPlanPath } from './lib/agent-pool-prompt.mjs'
 import {
@@ -66,8 +64,9 @@ import {
   POOL_VARIABLE_NAMES,
   reconcilePoolClaims,
 } from './lib/agent-pool-state.mjs'
+import { forgejoApi as api } from './lib/forgejo-api.mjs'
 
-const REPO_URL = 'https://github.com/fsolla/teqo'
+const REPO_URL = 'https://git.solla.dev/fsolla/teqo'
 const POOL_BASE_REF = 'main'
 
 const die = dieAgent('pool')
@@ -94,22 +93,10 @@ const flushSummary = (title) => {
   }
 }
 
-const loadClaimQueue = () =>
+const loadClaimQueue = async () =>
   buildClaimQueue(
-    ghJson([
-      'issue',
-      'list',
-      '--state',
-      'open',
-      '--label',
-      'ready',
-      '--limit',
-      '200',
-      // `state` is required: isAutonomousClaimable rejects missing/non-OPEN as not-open.
-      '--json',
-      'number,title,body,labels,createdAt,state',
-    ]),
-    issuesById(),
+    await api.listIssues({ state: 'open', labels: 'ready', limit: 200 }),
+    await issuesById(),
   )
 
 /**
@@ -123,11 +110,11 @@ const loadClaimQueue = () =>
  * dry-run only reads.
  */
 const derivePoolClaims = async ({ live }) => {
-  const openPrs = listOpenPrs()
+  const openPrs = await listOpenPrs()
   const hasKey = Boolean(process.env.CURSOR_API_KEY)
   const claims = []
-  for (const issue of listInProgressIssues()) {
-    const events = parsePoolEvents(listIssueComments(issue.number))
+  for (const issue of await listInProgressIssues()) {
+    const events = parsePoolEvents(await listIssueComments(issue.number))
     if (!events.some((event) => event.event === 'claim')) continue
 
     if (!events.some((event) => event.event === 'spawn') && hasKey) {
@@ -144,7 +131,7 @@ const derivePoolClaims = async ({ live }) => {
             }
             events.push(spawn)
             if (live) {
-              commentPoolEvent(
+              await commentPoolEvent(
                 issue.number,
                 spawn,
                 `Worker do pool (recuperado pelo tick): ${agent.url}`,
@@ -201,7 +188,7 @@ const describeClaim = ({ issue, classification }) => {
 }
 
 const runStatus = async () => {
-  const config = parsePoolConfig(readPoolVariables({ strict: false }))
+  const config = parsePoolConfig(await readPoolVariables({ strict: false }))
   log(
     `pool: ${config.enabled ? 'LIGADO' : 'desligado'}${config.paused ? ' (pausado — audit solitário)' : ''}` +
       ` maxSlots=${config.maxSlots}` +
@@ -224,8 +211,8 @@ const runStatus = async () => {
   }
 
   try {
-    const migrationBusy = countOpenSchemaPrs() > 0
-    const { eligible, excluded } = buildPoolQueue(loadClaimQueue(), { migrationBusy })
+    const migrationBusy = (await countOpenSchemaPrs()) > 0
+    const { eligible, excluded } = buildPoolQueue(await loadClaimQueue(), { migrationBusy })
     log(
       `\nfila elegível: ${eligible.length}${migrationBusy ? ' (migration-busy: PR de schema aberto)' : ''}`,
     )
@@ -267,7 +254,7 @@ const spawnPoolWorker = async ({ entry, workerUuid, models }) => {
       repos: [{ url: REPO_URL, startingRef: POOL_BASE_REF }],
       autoCreatePR: false,
     })
-    commentPoolEvent(
+    await commentPoolEvent(
       entry.issue.number,
       { event: 'spawn', agentId: agent.id, runId: run.id, url: agent.url },
       `Worker do pool em execução: ${agent.url}`,
@@ -279,7 +266,7 @@ const spawnPoolWorker = async ({ entry, workerUuid, models }) => {
   } catch (error) {
     if (error instanceof CursorApiError && error.status === 409) {
       const existing = await getCursorAgent(agentId)
-      commentPoolEvent(
+      await commentPoolEvent(
         entry.issue.number,
         {
           event: 'spawn',
@@ -292,8 +279,8 @@ const spawnPoolWorker = async ({ entry, workerUuid, models }) => {
       log(`  spawn #${entry.issue.number} já existia (409) — recuperado: ${existing.url}`)
       return
     }
-    rollbackPoolClaim(entry.issue.number, `spawn falhou (${error.message})`)
-    commentPoolEvent(
+    await rollbackPoolClaim(entry.issue.number, `spawn falhou (${error.message})`)
+    await commentPoolEvent(
       entry.issue.number,
       { event: 'failure', reason: 'spawn-error' },
       'Pool-supervisor: spawn falhou — claim revertido para `ready`.',
@@ -304,7 +291,7 @@ const spawnPoolWorker = async ({ entry, workerUuid, models }) => {
 
 const runTick = async ({ dryRun }) => {
   summary(`- modo: **${dryRun ? 'dry-run' : 'LIVE'}**`)
-  const config = parsePoolConfig(readPoolVariables({ strict: !dryRun }))
+  const config = parsePoolConfig(await readPoolVariables({ strict: !dryRun }))
   log(
     `tick (${dryRun ? 'dry-run' : 'LIVE'}) — enabled=${config.enabled} paused=${config.paused} maxSlots=${config.maxSlots}`,
   )
@@ -334,7 +321,7 @@ const runTick = async ({ dryRun }) => {
       summary(`- falha #${claim.issue.number} (${reason}) → blocked + archive`)
       continue
     }
-    commentPoolEvent(
+    await commentPoolEvent(
       claim.issue.number,
       { event: 'failure', reason, agentId: claim.classification?.agentId ?? null },
       `Pool-supervisor: falha terminal do worker (${reason}) — a Issue vai a \`blocked\` para triagem humana (ver runs em cursor.com/agents).`,
@@ -356,8 +343,8 @@ const runTick = async ({ dryRun }) => {
   }
 
   const active = reconciliation.active
-  const migrationBusy = countOpenSchemaPrs() > 0
-  const { eligible, excluded } = buildPoolQueue(loadClaimQueue(), { migrationBusy })
+  const migrationBusy = (await countOpenSchemaPrs()) > 0
+  const { eligible, excluded } = buildPoolQueue(await loadClaimQueue(), { migrationBusy })
   const plan = computeSpawnPlan({
     eligible,
     activeCount: active.length,
@@ -393,7 +380,7 @@ const runTick = async ({ dryRun }) => {
         summary(`- skip #${entry.issue.number} (${verdict.reason})`)
         continue
       }
-      const claim = claimIssueForPool(entry.issue.number, { tickIso })
+      const claim = await claimIssueForPool(entry.issue.number, { tickIso })
       if (!claim.ok) {
         log(`  #${entry.issue.number} claim perdido (${claim.reason}) — próxima da fila.`)
         continue
@@ -413,7 +400,7 @@ const runTick = async ({ dryRun }) => {
     if (dryRun) {
       log('fila drenada e zero ativos — o tick live desligaria o pool (POOL_ENABLED=false).')
     } else {
-      writePoolVariable(POOL_VARIABLE_NAMES.enabled, 'false')
+      await writePoolVariable(POOL_VARIABLE_NAMES.enabled, 'false')
       log('fila drenada e zero ativos — pool desligado automaticamente (POOL_ENABLED=false).')
       summary('- **fila drenada — pool desligado automaticamente**')
     }
@@ -426,29 +413,29 @@ const runWorkflow = async ({ action, actor, maxSlots }) => {
   const now = new Date().toISOString()
   switch (action) {
     case 'start': {
-      writePoolVariable(POOL_VARIABLE_NAMES.enabled, 'true')
-      writePoolVariable(POOL_VARIABLE_NAMES.startedAt, now)
-      writePoolVariable(POOL_VARIABLE_NAMES.startedBy, actor || 'desconhecido')
-      writePoolVariable(POOL_VARIABLE_NAMES.paused, 'false')
-      if (maxSlots) writePoolVariable(POOL_VARIABLE_NAMES.maxSlots, String(maxSlots))
+      await writePoolVariable(POOL_VARIABLE_NAMES.enabled, 'true')
+      await writePoolVariable(POOL_VARIABLE_NAMES.startedAt, now)
+      await writePoolVariable(POOL_VARIABLE_NAMES.startedBy, actor || 'desconhecido')
+      await writePoolVariable(POOL_VARIABLE_NAMES.paused, 'false')
+      if (maxSlots) await writePoolVariable(POOL_VARIABLE_NAMES.maxSlots, String(maxSlots))
       log(`pool ligado por ${actor ?? '?'} (${now})`)
       await runTick({ dryRun: false })
       return
     }
     case 'stop':
-      writePoolVariable(POOL_VARIABLE_NAMES.enabled, 'false')
+      await writePoolVariable(POOL_VARIABLE_NAMES.enabled, 'false')
       log('pool desligado — sem novos spawns; ativos drenam até o merge.')
       summary(`- **stop** por ${actor ?? '?'} (${now}) — sem novos spawns`)
       flushSummary('agent:pool stop')
       return
     case 'pause':
-      writePoolVariable(POOL_VARIABLE_NAMES.paused, 'true')
+      await writePoolVariable(POOL_VARIABLE_NAMES.paused, 'true')
       log('pool pausado (audit solitário) — sem novos spawns.')
       summary(`- **pause** por ${actor ?? '?'} (${now})`)
       flushSummary('agent:pool pause')
       return
     case 'resume':
-      writePoolVariable(POOL_VARIABLE_NAMES.paused, 'false')
+      await writePoolVariable(POOL_VARIABLE_NAMES.paused, 'false')
       log('pool retomado.')
       await runTick({ dryRun: false })
       return
@@ -464,35 +451,29 @@ const runWorkflow = async ({ action, actor, maxSlots }) => {
 }
 
 /** Human-facing wrapper: dispatch the workflow (canonical channel stays remote). */
-const dispatchWorkflow = (action) => {
-  const args = ['workflow', 'run', 'agent-pool.yml', '-f', `action=${action}`]
-  if (flags.ref) args.push('--ref', flags.ref)
-  if (action === 'start' && flags['max-slots']) args.push('-f', `maxSlots=${flags['max-slots']}`)
-  gh(args)
+const dispatchWorkflow = async (action) => {
+  const inputs = { action }
+  if (action === 'start' && flags['max-slots']) inputs.maxSlots = String(flags['max-slots'])
+  await api.workflowDispatch('agent-pool.yml', { ref: flags.ref ?? 'main', inputs })
   log(
-    `workflow_dispatch enviado (action=${action}). Acompanhe: gh run list --workflow agent-pool.yml --limit 3`,
+    `workflow_dispatch enviado (action=${action}). Acompanhe: ${REPO_URL}/actions?workflow=agent-pool.yml`,
   )
 }
 
 const runDoctor = async () => {
   log('doctor — pré-requisitos do pool')
-  try {
-    gh(['auth', 'status'])
-    log('  gh auth: OK')
-  } catch {
-    log('  gh auth: FALHOU (rode `gh auth login`)')
+  if (process.env.FORGEJO_API_TOKEN || process.env.GITHUB_TOKEN) {
+    log('  token Forgejo: OK (FORGEJO_API_TOKEN ou GITHUB_TOKEN nativo do Actions)')
+  } else {
+    log('  token Forgejo: AUSENTE (defina FORGEJO_API_TOKEN)')
   }
   if (process.env.POOL_GITHUB_TOKEN) {
-    log('  POOL_GITHUB_TOKEN: presente no env (usará este token para variables)')
-  } else if (process.env.GH_TOKEN || process.env.GITHUB_TOKEN) {
     log(
-      '  POOL_GITHUB_TOKEN: ausente — usando GH_TOKEN/GITHUB_TOKEN (GHA: configure o secret POOL_GITHUB_TOKEN se variables der 403)',
+      '  POOL_GITHUB_TOKEN: legado presente no env — ignorar (o pool não usa mais variáveis do GitHub)',
     )
-  } else {
-    log('  POOL_GITHUB_TOKEN / GH_TOKEN: ausente')
   }
   try {
-    const vars = readPoolVariables()
+    const vars = await readPoolVariables()
     log(`  repo variables: OK (${Object.keys(vars).length} lidas)`)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

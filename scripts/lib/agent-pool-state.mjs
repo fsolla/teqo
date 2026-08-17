@@ -1,7 +1,7 @@
 /**
  * Pure pool-state helpers for the agent pool supervisor
  * (docs/plans/agent-pool-orchestrator.md §2). No IO — the gh wrappers live in
- * agent-pool-github.mjs and the Cursor REST client in agent-pool-cursor.mjs.
+ * agent-pool-forgejo.mjs and the Cursor REST client in agent-pool-cursor.mjs.
  *
  * State model: scalar config lives in GitHub repo variables; the dynamic view
  * (who is active) is DERIVED from two sources of truth — pool-worker event

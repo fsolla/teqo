@@ -166,7 +166,7 @@ describe('e2eShardConfig (OPS34)', () => {
 
   it('pins the ci.yml matrix literal against the single source', () => {
     const repoRoot = join(fileURLToPath(new URL('.', import.meta.url)), '../..')
-    const workflow = readFileSync(join(repoRoot, '.github/workflows/ci.yml'), 'utf8')
+    const workflow = readFileSync(join(repoRoot, '.forgejo/workflows/ci.yml'), 'utf8')
     const { matrix } = e2eShardConfig('full')
     expect(workflow).toContain(`shard: [${matrix.join(', ')}]`)
   })

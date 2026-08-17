@@ -1,0 +1,23 @@
+# Main merge flips claimed issues to done + in-prod.
+# Forgejo port (OPS50): the gh loop became scripts/forgejo-issue-transition.mjs
+# (plain Node, reads the PR body from the API itself).
+name: Main merge flips claimed issues to done + in-prod
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  issue-done:
+    if: github.event.pull_request.base.ref == 'main' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      # Script is plain Node (stdlib) — no pnpm. Disable package-manager-cache:
+      # setup-node@v5 defaults to true and looks for pnpm before pnpm/action-setup.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Flip Closes/Fixes #N issues to done and in-prod
+        run: node scripts/forgejo-issue-transition.mjs --pr "${{ github.event.pull_request.number }}"

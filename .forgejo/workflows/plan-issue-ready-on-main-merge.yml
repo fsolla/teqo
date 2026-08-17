@@ -4,17 +4,13 @@
 #
 # Does NOT run on open PRs — only after merge — so the claim race stays closed.
 # Job is gated on Related # in the body so non-plan merges skip checkout/Node.
+# Forgejo port (OPS50): script reads the PR via the Forgejo API (plain Node).
 name: Promote plan-issue Related on main merge
 
 on:
   pull_request:
     types: [closed]
     branches: [main]
-
-permissions:
-  issues: write
-  pull-requests: read
-  contents: read
 
 jobs:
   plan-issue-ready:
@@ -27,13 +23,9 @@ jobs:
       )
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      PR_NUMBER: ${{ github.event.pull_request.number }}
-      PR_BODY: ${{ github.event.pull_request.body }}
     steps:
       - uses: actions/checkout@v5
-      # Script is plain Node (gh CLI, stdlib) — no pnpm. Disable
+      # Script is plain Node (stdlib) — no pnpm. Disable
       # package-manager-cache: setup-node@v5 defaults to true and looks for
       # pnpm (packageManager in package.json) before pnpm/action-setup.
       - uses: actions/setup-node@v5
@@ -41,4 +33,4 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - name: Promote Related #N awaiting plan → ready
-        run: node scripts/agent-promote-related-on-merge.mjs --pr "$PR_NUMBER"
+        run: node scripts/agent-promote-related-on-merge.mjs --pr "${{ github.event.pull_request.number }}"

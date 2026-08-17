@@ -8,18 +8,18 @@
 
 import {
   dieAgent,
-  ghJson,
   labelNames,
   nextClaimableIssue,
   parseArgs,
   parseFrontmatter,
   priorityRank,
-} from './lib/agent-github.mjs'
+} from './lib/agent-forgejo.mjs'
+import { forgejoApi as api } from './lib/forgejo-api.mjs'
 
 const die = dieAgent('issue')
 
-const cmdNext = () => {
-  const pick = nextClaimableIssue()
+const cmdNext = async () => {
+  const pick = await nextClaimableIssue()
   if (!pick) {
     die('Fila vazia — nada `ready` desbloqueado. Rode `pnpm issue all` para a overview.')
   }
@@ -35,22 +35,13 @@ const cmdNext = () => {
   if (satisfiedWithoutIssue.length > 0) {
     console.log(`deps satisfeitas (roadmap, sem Issue): ${satisfiedWithoutIssue.join(', ')}`)
   }
-  console.log(`url: https://github.com/fsolla/teqo/issues/${issue.number}`)
+  console.log(`url: https://git.solla.dev/fsolla/teqo/issues/${issue.number}`)
 }
 
 const count = (map, key) => map.set(key, (map.get(key) ?? 0) + 1)
 
-const cmdAll = () => {
-  const issues = ghJson([
-    'issue',
-    'list',
-    '--state',
-    'open',
-    '--limit',
-    '200',
-    '--json',
-    'number,title,body,labels,createdAt,state',
-  ])
+const cmdAll = async () => {
+  const issues = await api.listIssues({ state: 'open', limit: 200 })
 
   const rows = []
   for (const issue of issues) {
@@ -107,8 +98,8 @@ if (!subcommand) {
 }
 
 try {
-  if (subcommand === 'next') cmdNext()
-  else if (subcommand === 'all') cmdAll()
+  if (subcommand === 'next') await cmdNext()
+  else if (subcommand === 'all') await cmdAll()
   else die(`subcomando desconhecido: ${subcommand} (esperado: next | all)`)
 } catch (error) {
   if (error?.stderr) die(error.stderr.toString().trim())

@@ -2,6 +2,16 @@
 # When green, deploys production via `vercel deploy --prod` (Vercel Git builds
 # are ignored — see scripts/vercel-ignore-build.sh). If HEAD moved while this
 # run was in flight, `requeue` dispatches another run for the new tip.
+#
+# Forgejo port (OPS50): Postgres services publish to per-job HOST ports on the
+# runner machine (act/forgejo runner semantics — the canonical 5432 is the
+# workstation's own dev database), and jobs reach them through the bridge
+# gateway: DB_HOST = gateway IP from /proc/net/route. No `permissions:`
+# (Forgejo issues one native GITHUB_TOKEN) and no `concurrency:` (unsupported).
+# `gh workflow run` requeues became `node scripts/forgejo-dispatch.mjs`.
+# The GitHub fail-fast action was dropped (Forgejo has no cancel-run plumbing);
+# job timeouts cover that role.
+
 name: CI
 
 on:
@@ -9,16 +19,7 @@ on:
     branches: [main]
   workflow_dispatch:
 
-concurrency:
-  group: main-verify
-  cancel-in-progress: false
-
-permissions:
-  contents: read
-  actions: write
-
 env:
-  DATABASE_URL: postgresql://teqo:teqo@localhost:5432/teqo_test
   PAYLOAD_SECRET: test-only-secret-not-used-in-production
   NEXT_PUBLIC_SITE_URL: http://localhost:3000
 
@@ -41,9 +42,6 @@ jobs:
       - run: pnpm knip
       - run: pnpm check:cycles
       - run: pnpm test:unit
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   int:
     runs-on: ubuntu-latest
@@ -56,7 +54,7 @@ jobs:
           POSTGRES_PASSWORD: teqo
           POSTGRES_DB: teqo_test
         ports:
-          - 5432:5432
+          - 5433:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -70,12 +68,14 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Prepare database URL (service via bridge gateway)
+        run: |
+          set -euo pipefail
+          DB_HOST=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
+          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:5433/teqo_test" >> "$GITHUB_ENV"
       - run: pnpm migrate
       - run: pnpm db:seed:minimal
       - run: pnpm test:int
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   build:
     runs-on: ubuntu-latest
@@ -88,7 +88,7 @@ jobs:
           POSTGRES_PASSWORD: teqo
           POSTGRES_DB: teqo_test
         ports:
-          - 5432:5432
+          - 5434:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -102,16 +102,18 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build (against the local service database)
+      - name: Prepare database URL (service via bridge gateway)
+        run: |
+          set -euo pipefail
+          DB_HOST=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
+          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:5434/teqo_test" >> "$GITHUB_ENV"
+      - name: Build (against the service database)
         run: pnpm build
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    # Main always runs the full suite: split it across 2 runners (OPS34), each
+    # Main always runs the full suite: split it across 2 jobs (OPS34), each
     # building its own `.next/e2e` (measured 2026-08-10: build 172s + tests
     # 196s + ~54s fixed → ≈ 5.5 min per shard vs 435s serial). `fail-fast:
     # false` so one shard's failure keeps the other's diagnostics. Keep the
@@ -132,7 +134,7 @@ jobs:
           POSTGRES_PASSWORD: teqo
           POSTGRES_DB: teqo_test
         ports:
-          - 5432:5432
+          - ${{ matrix.shard == 1 && '5435' || '5436' }}:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -146,8 +148,21 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
       - name: Install Playwright chromium
         run: pnpm exec playwright install --with-deps chromium
+      - name: Prepare database URL (service via bridge gateway)
+        run: |
+          set -euo pipefail
+          DB_HOST=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
+          DB_PORT=${{ matrix.shard == 1 && '5435' || '5436' }}
+          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:${DB_PORT}/teqo_test" >> "$GITHUB_ENV"
       - run: pnpm migrate
       - run: pnpm db:seed:minimal
       - name: Build for e2e
@@ -158,9 +173,6 @@ jobs:
         # No `--` separator: pnpm would forward it verbatim to playwright and
         # the flag would be parsed as a file pattern ("No tests found").
         run: pnpm test:e2e --shard=${{ matrix.shard }}/2
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   checks:
     name: checks
@@ -289,17 +301,12 @@ jobs:
     needs: [checks, deploy]
     if: always()
     timeout-minutes: 40
-    permissions:
-      actions: write
-      contents: read
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Re-dispatch if main advanced or deploy deferred
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
           DEPLOY_RESULT: ${{ needs.deploy.result }}
           DEPLOY_COOLDOWN: ${{ needs.deploy.outputs.cooldown }}
           DEPLOY_WAIT_SECONDS: ${{ needs.deploy.outputs.wait_seconds }}
@@ -309,7 +316,7 @@ jobs:
           tip=$(git rev-parse origin/main)
           if [ "$tip" != "$GITHUB_SHA" ]; then
             echo "origin/main moved to $tip (verified $GITHUB_SHA) — requeue ci.yml"
-            gh workflow run ci.yml --ref main
+            node scripts/forgejo-dispatch.mjs ci.yml main
             exit 0
           fi
           if [ "${DEPLOY_RESULT:-}" != "success" ]; then
@@ -327,7 +334,7 @@ jobs:
             else
               echo "Cooldown elapsed for $GITHUB_SHA — requeue ci.yml"
             fi
-            gh workflow run ci.yml --ref main
+            node scripts/forgejo-dispatch.mjs ci.yml main
             exit 0
           fi
           echo "HEAD still $GITHUB_SHA — idle"

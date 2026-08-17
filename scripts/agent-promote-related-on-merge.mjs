@@ -9,11 +9,12 @@
  *   node scripts/agent-promote-related-on-merge.mjs --pr 123
  *   PR_BODY='Related #296' node scripts/agent-promote-related-on-merge.mjs --pr 123
  *
- * Env: GH_TOKEN (Actions); optional PR_BODY skips `gh pr view` (Actions event).
+ * Env: GITHUB_TOKEN (Forgejo Actions) / FORGEJO_API_TOKEN; optional PR_BODY skips the PR read.
  */
 
-import { dieAgent, gh, ghJson, parseArgs, setLabels } from './lib/agent-github.mjs'
+import { dieAgent, parseArgs, setLabels } from './lib/agent-forgejo.mjs'
 import { canPromotePlanIssue, parseRelatedIssueNumbers } from './lib/agent-plan-lifecycle.mjs'
+import { forgejoApi as api } from './lib/forgejo-api.mjs'
 
 const die = dieAgent('promote-related')
 const { flags } = parseArgs(process.argv.slice(2), new Set(['pr']))
@@ -25,9 +26,7 @@ if (!flags.pr || !/^\d+$/.test(String(flags.pr))) {
 const prNumber = Number(flags.pr)
 const bodyFromEnv = process.env.PR_BODY
 const body =
-  typeof bodyFromEnv === 'string'
-    ? bodyFromEnv
-    : ghJson(['pr', 'view', String(prNumber), '--json', 'body']).body
+  typeof bodyFromEnv === 'string' ? bodyFromEnv : (await api.getPullRequest(prNumber)).body
 const numbers = parseRelatedIssueNumbers(body)
 
 if (numbers.length === 0) {
@@ -42,7 +41,7 @@ console.log(
 for (const number of numbers) {
   let issue
   try {
-    issue = ghJson(['issue', 'view', String(number), '--json', 'number,title,body,state,labels'])
+    issue = await api.getIssue(number)
   } catch (error) {
     console.log(
       `[agent:promote-related] #${number}: skip (issue view failed: ${
@@ -63,14 +62,11 @@ for (const number of numbers) {
   }
 
   try {
-    setLabels(number, { add: ['ready'], remove: ['blocked'] })
-    gh([
-      'issue',
-      'comment',
-      String(number),
-      '--body',
+    await setLabels(number, { add: ['ready'], remove: ['blocked'] })
+    await api.addComment(
+      number,
       `Promovido a \`ready\` via Action OPS18 — plano de intenção em \`main\` (PR #${prNumber} com \`Related #${number}\`).`,
-    ])
+    )
     console.log(`[agent:promote-related] #${number}: blocked → ready`)
   } catch (error) {
     console.log(

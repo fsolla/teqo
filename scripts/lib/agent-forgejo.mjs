@@ -1,9 +1,10 @@
 /**
  * Shared helpers for the agent ops scripts (`pnpm agent:*`). Everything goes
- * through the authenticated `gh` CLI — agents never get a GitHub token of
- * their own, and these scripts never touch stage/prod database URLs.
+ * through the Forgejo REST API (scripts/lib/forgejo-api.mjs) — agents never
+ * get a token of their own beyond the env, and these scripts never touch
+ * stage/prod database URLs.
  *
- * Issue contract (spec + status + deps in GitHub Issues, per the parallel
+ * Issue contract (spec + status + deps in Forgejo Issues, per the parallel
  * paradigm plan): each trackable issue carries a YAML-ish frontmatter block
  * at the top of the body:
  *
@@ -17,20 +18,13 @@
  * State lives in labels: ready | in-progress | blocked | done (+ in-prod).
  */
 
-import { execFileSync } from 'node:child_process'
-
 import { dieWithLabel } from './cli.mjs'
+import { forgejoApi as api } from './forgejo-api.mjs'
 
 const PRIORITIES = ['P0', 'P1', 'P2', 'P3']
 export const priorityRank = (priority) => PRIORITIES.indexOf(priority)
 
 export const dieAgent = (script) => dieWithLabel(`agent:${script}`)
-
-/** Run gh and return stdout (throws with the gh stderr on failure). */
-export const gh = (args) =>
-  execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }).trim()
-
-export const ghJson = (args) => JSON.parse(gh(args))
 
 export const parseFrontmatter = (body) => {
   const match = /^---\n([\s\S]*?)\n---\n?/.exec(body ?? '')
@@ -61,17 +55,8 @@ export const serializeFrontmatter = (meta, rest) => {
 }
 
 /** All issues (open or closed) that carry a frontmatter `id`, keyed by id. */
-export const issuesById = () => {
-  const issues = ghJson([
-    'issue',
-    'list',
-    '--state',
-    'all',
-    '--limit',
-    '500',
-    '--json',
-    'number,title,body,state,labels',
-  ])
+export const issuesById = async () => {
+  const issues = await api.listIssues({ state: 'all', limit: 200 })
   const byId = new Map()
   for (const issue of issues) {
     const { meta } = parseFrontmatter(issue.body)
@@ -175,14 +160,8 @@ export const claimTargetVerdict = (issue) => {
  * caller so the failure carries the right script label. The pool keeps its own
  * coordinated `claimIssueForPool` — this is the human/CLI lock.
  */
-export const claimIssue = (entry, die) => {
-  const fresh = ghJson([
-    'issue',
-    'view',
-    String(entry.issue.number),
-    '--json',
-    'number,labels,state',
-  ])
+export const claimIssue = async (entry, die) => {
+  const fresh = await api.getIssue(entry.issue.number)
   const freshLabels = labelNames(fresh)
   if (
     fresh.state !== 'OPEN' ||
@@ -197,14 +176,11 @@ export const claimIssue = (entry, die) => {
     )
   }
 
-  setLabels(entry.issue.number, { add: ['in-progress'], remove: ['ready'] })
-  gh([
-    'issue',
-    'comment',
-    String(entry.issue.number),
-    '--body',
+  await setLabels(entry.issue.number, { add: ['in-progress'], remove: ['ready'] })
+  await api.addComment(
+    entry.issue.number,
     `Claimed by agent run at ${new Date().toISOString()}. Lock otimista: outro claim deve falhar e re-rodar \`pnpm agent:claim\`.`,
-  ])
+  )
 }
 
 /**
@@ -229,13 +205,13 @@ export const claimBriefLines = (entry) => {
     `  rename_chat: ${sessionTitle.slice(0, 200)}`,
     entry.meta.model
       ? `  model: ${entry.meta.model} (metadata consultiva — o work-issue não verifica modelo; o pool spawna nele; ver skill model-selection)`
-      : '  model: ausente — registrar slug único na Issue (gh issue edit; ver skill model-selection)',
+      : '  model: ausente — registrar slug único na Issue (ver skill model-selection)',
     ...(entry.satisfiedWithoutIssue.length > 0
       ? [
           `  deps sem issue (roadmap entregue, satisfeitas): ${entry.satisfiedWithoutIssue.join(', ')}`,
         ]
       : []),
-    `  url: https://github.com/fsolla/teqo/issues/${entry.issue.number}`,
+    `  url: https://git.solla.dev/fsolla/teqo/issues/${entry.issue.number}`,
     '',
     '--- spec ---',
     '',
@@ -243,27 +219,13 @@ export const claimBriefLines = (entry) => {
   ]
 }
 
-export const setLabels = (number, { add = [], remove = [] }) => {
-  const args = ['issue', 'edit', String(number)]
-  for (const label of add) args.push('--add-label', label)
-  for (const label of remove) args.push('--remove-label', label)
-  if (add.length + remove.length > 0) gh(args)
-}
+export const setLabels = (number, { add = [], remove = [] }) =>
+  api.setLabels(number, { add, remove })
 
-export const nextClaimableIssue = () => {
-  const openReady = ghJson([
-    'issue',
-    'list',
-    '--state',
-    'open',
-    '--label',
-    'ready',
-    '--limit',
-    '200',
-    '--json',
-    'number,title,body,labels,createdAt,state',
-  ])
-  return buildClaimQueue(openReady, issuesById())[0] ?? null
+export const nextClaimableIssue = async () => {
+  const openReady = await api.listIssues({ state: 'open', labels: 'ready', limit: 200 })
+  const queue = buildClaimQueue(openReady, await issuesById())
+  return queue[0] ?? null
 }
 
 export const parseArgs = (argv, flagsWithValue) => {

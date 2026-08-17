@@ -7,7 +7,7 @@
  * script and pinned by unit tests.
  */
 
-import { labelNames } from './agent-github.mjs'
+import { labelNames } from './agent-forgejo.mjs'
 import { HUMAN_GATE_LABELS, issueHasPlanLink } from './agent-pool-eligibility.mjs'
 
 /**

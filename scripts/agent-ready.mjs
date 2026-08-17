@@ -11,8 +11,9 @@
  * link stay for human triage.
  */
 
-import { dieAgent, gh, ghJson, parseArgs, setLabels } from './lib/agent-github.mjs'
+import { dieAgent, parseArgs, setLabels } from './lib/agent-forgejo.mjs'
 import { canPromotePlanIssue } from './lib/agent-plan-lifecycle.mjs'
+import { forgejoApi as api } from './lib/forgejo-api.mjs'
 
 const die = dieAgent('ready')
 const { flags } = parseArgs(process.argv.slice(2), new Set(['issue']))
@@ -33,13 +34,7 @@ const numbers = String(flags.issue)
 if (numbers.length === 0) die('Usage: pnpm agent:ready -- --issue <N[,N…]>')
 
 for (const number of numbers) {
-  const issue = ghJson([
-    'issue',
-    'view',
-    String(number),
-    '--json',
-    'number,title,body,state,labels',
-  ])
+  const issue = await api.getIssue(number)
   const verdict = canPromotePlanIssue(issue)
   if (!verdict.ok) {
     if (verdict.reason === 'already-ready') {
@@ -49,13 +44,10 @@ for (const number of numbers) {
     die(`#${number} cannot mark ready (${verdict.reason}).`)
   }
 
-  setLabels(number, { add: ['ready'], remove: ['blocked'] })
-  gh([
-    'issue',
-    'comment',
-    String(number),
-    '--body',
+  await setLabels(number, { add: ['ready'], remove: ['blocked'] })
+  await api.addComment(
+    number,
     'Promovido a `ready`: plano de intenção em `main` (ciclo OPS17 — `pnpm agent:ready`).',
-  ])
+  )
   console.log(`[agent:ready] #${number} blocked → ready`)
 }

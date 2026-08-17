@@ -12,23 +12,19 @@
 # High-risk diffs (schema, lockfile, classifiers — see
 # scripts/lib/test-affected-core.mjs) force full unit/int/e2e. Push to main
 # always runs the full suite in ci.yml (no affected skips).
+#
+# Forgejo port (OPS50): no `concurrency:`/`permissions:` (unsupported /
+# native token); Postgres services publish per-job ports (5433 int, 5434
+# build, 5435/5436 e2e shards) and jobs reach them through the bridge gateway
+# (DB_HOST from /proc/net/route). The GitHub fail-fast action was dropped
+# (Forgejo has no cancel-run plumbing); job timeouts cover that role.
 name: CI (PR)
 
 on:
   pull_request:
     branches: [main]
 
-concurrency:
-  group: ci-pr-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
-  actions: write
-  pull-requests: read
-
 env:
-  DATABASE_URL: postgresql://teqo:teqo@localhost:5432/teqo_test
   PAYLOAD_SECRET: test-only-secret-not-used-in-production
   NEXT_PUBLIC_SITE_URL: http://localhost:3000
 
@@ -71,9 +67,6 @@ jobs:
           # waste). Single source: e2eShardConfig in scripts/lib/test-affected-core.mjs.
           echo "e2e_matrix=$(echo "$result" | jq -c .e2e_shards.matrix)" >> "$GITHUB_OUTPUT"
           echo "e2e_shards=$(echo "$result" | jq -r .e2e_shards.total)" >> "$GITHUB_OUTPUT"
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   lint:
     runs-on: ubuntu-latest
@@ -89,9 +82,6 @@ jobs:
       - name: Check test file locations
         run: node scripts/check-test-locations.mjs
       - run: pnpm lint
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   format:
     runs-on: ubuntu-latest
@@ -105,9 +95,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   typecheck:
     runs-on: ubuntu-latest
@@ -123,9 +110,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   knip:
     runs-on: ubuntu-latest
@@ -141,9 +125,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm knip
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   cycles:
     runs-on: ubuntu-latest
@@ -159,9 +140,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check:cycles
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   unit:
     runs-on: ubuntu-latest
@@ -186,9 +164,6 @@ jobs:
       - name: Unit tests (changed since PR base)
         if: needs.scope.outputs.test_mode == 'changed'
         run: pnpm test:unit -- --changed origin/${{ github.base_ref }} --passWithNoTests
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   int:
     runs-on: ubuntu-latest
@@ -212,7 +187,7 @@ jobs:
           POSTGRES_PASSWORD: teqo
           POSTGRES_DB: teqo_test
         ports:
-          - 5432:5432
+          - 5433:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -228,6 +203,11 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Prepare database URL (service via bridge gateway)
+        run: |
+          set -euo pipefail
+          DB_HOST=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
+          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:5433/teqo_test" >> "$GITHUB_ENV"
       - run: pnpm migrate
       - run: pnpm db:seed:minimal
 
@@ -238,9 +218,6 @@ jobs:
       - name: Integration tests (changed since PR base)
         if: needs.scope.outputs.test_mode == 'changed'
         run: pnpm test:int -- --changed origin/${{ github.base_ref }} --passWithNoTests
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   build:
     runs-on: ubuntu-latest
@@ -264,7 +241,7 @@ jobs:
           POSTGRES_PASSWORD: teqo
           POSTGRES_DB: teqo_test
         ports:
-          - 5432:5432
+          - 5434:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -278,11 +255,13 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Prepare database URL (service via bridge gateway)
+        run: |
+          set -euo pipefail
+          DB_HOST=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
+          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:5434/teqo_test" >> "$GITHUB_ENV"
       - name: Build (against the local service database)
         run: pnpm build
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   e2e:
     runs-on: ubuntu-latest
@@ -315,7 +294,7 @@ jobs:
           POSTGRES_PASSWORD: teqo
           POSTGRES_DB: teqo_test
         ports:
-          - 5432:5432
+          - ${{ matrix.shard == 1 && '5435' || '5436' }}:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -331,8 +310,21 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
       - name: Install Playwright chromium
         run: pnpm exec playwright install --with-deps chromium
+      - name: Prepare database URL (service via bridge gateway)
+        run: |
+          set -euo pipefail
+          DB_HOST=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
+          DB_PORT=${{ matrix.shard == 1 && '5435' || '5436' }}
+          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:${DB_PORT}/teqo_test" >> "$GITHUB_ENV"
       - run: pnpm migrate
       - run: pnpm db:seed:minimal
       - name: Build for e2e
@@ -349,9 +341,6 @@ jobs:
       - name: E2E tests (manifest-selected specs)
         if: needs.scope.outputs.e2e_mode == 'selected'
         run: pnpm test:e2e -- ${{ needs.scope.outputs.e2e_specs }}
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   docs-guards:
     runs-on: ubuntu-latest
@@ -371,9 +360,6 @@ jobs:
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
         run: node scripts/check-docs-conflict-markers.mjs
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   plans-only-closes:
     runs-on: ubuntu-latest
@@ -387,9 +373,6 @@ jobs:
           GITHUB_BASE_REF: ${{ github.base_ref }}
           PR_BODY: ${{ github.event.pull_request.body }}
         run: node scripts/check-plans-only-pr-closes.mjs
-      - name: Cancel workflow on failure
-        if: failure()
-        uses: ./.github/actions/cancel-workflow-on-failure
 
   checks:
     name: checks

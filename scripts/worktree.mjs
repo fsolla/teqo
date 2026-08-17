@@ -106,12 +106,12 @@ import {
   claimQueueEntry,
   claimTargetVerdict,
   dieAgent,
-  ghJson,
   issuesById,
   nextClaimableIssue,
   parseArgs,
-} from './lib/agent-github.mjs'
+} from './lib/agent-forgejo.mjs'
 import { startSharedPostgres } from './lib/db-start.mjs'
+import { forgejoApi as api } from './lib/forgejo-api.mjs'
 import {
   DEV_PORT_BASE,
   GENERATED_ENV_MARKER,
@@ -402,23 +402,17 @@ const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpo
  * derivação/validação do branch — uma Issue sem frontmatter id (ou branch
  * inválido) morre antes do flip de labels, nunca deixando claim órfão.
  */
-const pickNextIssue = ({ requestedIssueNumber, die }) => {
+const pickNextIssue = async ({ requestedIssueNumber, die }) => {
   if (requestedIssueNumber !== null) {
     const raw = String(requestedIssueNumber)
     const number = Number(raw)
     if (!Number.isInteger(number) || number <= 0) {
       die(`--issue inválido: ${raw}`)
     }
-    const target = ghJson([
-      'issue',
-      'view',
-      raw,
-      '--json',
-      'number,title,body,labels,createdAt,state',
-    ])
+    const target = await api.getIssue(number)
     const verdict = claimTargetVerdict(target)
     if (verdict.kind === 'error') die(verdict.message)
-    const entry = claimQueueEntry(target, issuesById())
+    const entry = claimQueueEntry(target, await issuesById())
     if (verdict.kind === 'reopen') {
       // Sessão já claimada — reabrir não re-claima (reopen é sobre a sessão,
       // nunca sobre a fila: deps atuais não importam).
@@ -430,7 +424,7 @@ const pickNextIssue = ({ requestedIssueNumber, die }) => {
     return { entry, reopened: false, directed: true }
   }
 
-  const pick = nextClaimableIssue()
+  const pick = await nextClaimableIssue()
   if (!pick) {
     die('Fila vazia — nada `ready` desbloqueado. Rode `pnpm agent:status` para ver a fila.')
   }
@@ -438,7 +432,7 @@ const pickNextIssue = ({ requestedIssueNumber, die }) => {
 }
 
 const cmdNext = async (stay, skipMigrate, requestedIssueNumber) => {
-  const { entry, reopened, directed } = pickNextIssue({ requestedIssueNumber, die })
+  const { entry, reopened, directed } = await pickNextIssue({ requestedIssueNumber, die })
 
   const issue = entry.issue
   const branch = branchNameForIssue({ ...issue, meta: entry.meta })
@@ -449,7 +443,7 @@ const cmdNext = async (stay, skipMigrate, requestedIssueNumber) => {
 
   // O claim flips labels — só depois da derivação do branch provar que a Issue
   // tem tudo para virar worktree.
-  if (!reopened) claimIssue(entry, die)
+  if (!reopened) await claimIssue(entry, die)
   const claimedIssueNumber = reopened ? null : issue.number
 
   const headline = reopened

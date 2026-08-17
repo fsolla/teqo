@@ -10,8 +10,9 @@
  * and `pnpm agent:ready` promotes them).
  */
 
-import { dieAgent, gh, issuesById, parseArgs, serializeFrontmatter } from './lib/agent-github.mjs'
+import { dieAgent, issuesById, parseArgs, serializeFrontmatter } from './lib/agent-forgejo.mjs'
 import { resolveRegisterStateLabel } from './lib/agent-plan-lifecycle.mjs'
+import { forgejoApi as api } from './lib/forgejo-api.mjs'
 
 const die = dieAgent('register')
 const { flags } = parseArgs(
@@ -32,7 +33,7 @@ const depends = (flags.depends ?? '')
   .map((v) => v.trim())
   .filter(Boolean)
 
-const existing = issuesById().get(flags.id)
+const existing = (await issuesById()).get(flags.id)
 if (existing)
   die(`An issue with id ${flags.id} already exists: #${existing.number} — ${existing.title}`)
 
@@ -63,15 +64,12 @@ const labels = [
     .filter(Boolean),
 ]
 
-const url = gh([
-  'issue',
-  'create',
-  '--title',
-  `${flags.id} — ${flags.title}`,
-  '--body',
+const created = await api.createIssue({
+  title: `${flags.id} — ${flags.title}`,
   body,
-  ...labels.flatMap((label) => ['--label', label]),
-])
+})
+await api.setLabels(created.number, { add: labels })
+const url = `https://git.solla.dev/fsolla/teqo/issues/${created.number}`
 
 const hint =
   stateLabel === 'blocked' && flags.plan && !flags.blocked
