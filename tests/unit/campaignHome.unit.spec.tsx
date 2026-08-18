@@ -15,6 +15,14 @@ vi.mock('next/image', () => ({
   ),
 }))
 
+// The content section is an async server component that reads posts through
+// the Payload DB; the unit env has no database and an async child suspends the
+// whole tree under testing-library. Its empty/full behavior is covered by e2e
+// (frontend.e2e.spec.ts), so the home skeleton tests render it away.
+vi.mock('@/components/CampaignContentSection', () => ({
+  CampaignContentSection: () => null,
+}))
+
 afterEach(cleanup)
 
 describe('Campaign home', () => {

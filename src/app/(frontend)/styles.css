@@ -430,6 +430,15 @@ body,
   gap: clamp(10px, calc(0.63vw + 7.51px), 14px);
 }
 
+/* The content board carousel is not full-bleed: it lives inside the section
+   gutter, so the shared track inset (--campaign-carousel-inset) must not
+   re-pad it or its slides stop filling the viewport. */
+[data-theme='campaign-site'] [data-carousel='contents'] [data-carousel-track] {
+  padding-left: 0;
+  padding-right: 0;
+  scroll-padding-left: 0;
+}
+
 [data-theme='campaign-site'] [data-carousel-chips] {
   gap: clamp(6px, calc(0.16vw + 5.37px), 7px);
 }
