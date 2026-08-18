@@ -7,7 +7,7 @@ Uma página. Norte: simplicidade (só GitHub + Cursor), agente entrega em `main`
 | Ambiente                                    | Conteúdo                                                     | Quem usa                         |
 | ------------------------------------------- | ------------------------------------------------------------ | -------------------------------- |
 | **Mínimo** (`teqo_test` local / service CI) | schema migrado + `pnpm db:seed:minimal` (sintético, sem PII) | agentes, Cursor Cloud, CI        |
-| **Prod** (Neon prod)                        | real                                                         | deploy Vercel gated por `ci.yml` |
+| **Prod** (`teqo_1313`, homeserver)          | real                                                         | job `deploy` do `ci.yml` (OPS53) |
 
 Agentes **nunca** recebem `DATABASE_URL` de prod e nunca setam `ALLOW_REMOTE_DB`. Não há mais smoke Neon `stage` / `ALLOW_STAGE_TEST_DB` / `ci-stage.yml`.
 
@@ -15,7 +15,7 @@ Agentes **nunca** recebem `DATABASE_URL` de prod e nunca setam `ALLOW_REMOTE_DB`
 
 ```text
 claim → feature branch → PR --base main → CI PR green (cascade + skips) → auto-merge em main
-main → ci.yml full suite (verificador puro; sem deploy — produção é self-hosted no homeserver, runbook fora do repo)
+main → ci.yml full suite verde → job `deploy` (homeserver, OPS53 — merge em main == site atualizado)
 ```
 
 **Skills:** `plan-issue` (intenção + Issues) → `work-issue` (humano: Issue já claimada → impl plan → confirmação → execução) ou `agent-work-issue` (pool: já claimada → impl plan → execução sem pausa) → `/simplify` → `capture-review-debts` → PR `--base main` → `project-status`. `docs/roadmap.md` = legado congelado; fonte canônica = GitHub Issues.
@@ -69,14 +69,14 @@ Arquivos de "lista" que N agentes escrevem em paralelo (changelog, plans, migra�
 
 ## CI por alvo
 
-| Workflow                             | Trigger                                | Banco               | Passos                                                                                                                    |
-| ------------------------------------ | -------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `ci-pr.yml`                          | PR → `main`                            | service Postgres 17 | Fase 1 barata → fase 2 cara; skips via `ci-scope.mjs`; fail-fast cancela o run no 1º job vermelho; rollup `checks`        |
-| `ci.yml`                             | push / dispatch `main`                 | service Postgres    | Full sempre; fail-fast cancela o run no 1º job vermelho; rollup `checks`; sem deploy (produção self-hosted no homeserver) |
-| `issue-done-on-main-merge.yml`       | PR merged → `main`                     | —                   | `Closes`/`Fixes` → `done` + `in-prod`                                                                                     |
-| `plan-issue-ready-on-main-merge.yml` | PR merged → `main`                     | —                   | `Related #N` aguardando plano → `ready` (OPS18; soft-skip)                                                                |
-| `agent-pr-ready-automerge.yml`       | PR `cursor/*` → `main` (open/sync/…)   | —                   | Draft→Ready + `gh pr merge --auto --rebase` (safety net; audit incluso)                                                   |
-| `agent-pool.yml`                     | schedule / PR closed `main` / dispatch | —                   | Supervisor do pool (`POOL_GITHUB_TOKEN`)                                                                                  |
+| Workflow                             | Trigger                                | Banco               | Passos                                                                                                                                                                   |
+| ------------------------------------ | -------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ci-pr.yml`                          | PR → `main`                            | service Postgres 17 | Fase 1 barata → fase 2 cara; skips via `ci-scope.mjs`; fail-fast cancela o run no 1º job vermelho; rollup `checks`                                                       |
+| `ci.yml`                             | push / dispatch `main`                 | service Postgres    | Full sempre; fail-fast cancela o run no 1º job vermelho; rollup `checks`; job `deploy` (runs-on `host`) publica no homeserver via `scripts/deploy-homeserver.sh` (OPS53) |
+| `issue-done-on-main-merge.yml`       | PR merged → `main`                     | —                   | `Closes`/`Fixes` → `done` + `in-prod`                                                                                                                                    |
+| `plan-issue-ready-on-main-merge.yml` | PR merged → `main`                     | —                   | `Related #N` aguardando plano → `ready` (OPS18; soft-skip)                                                                                                               |
+| `agent-pr-ready-automerge.yml`       | PR `cursor/*` → `main` (open/sync/…)   | —                   | Draft→Ready + `gh pr merge --auto --rebase` (safety net; audit incluso)                                                                                                  |
+| `agent-pool.yml`                     | schedule / PR closed `main` / dispatch | —                   | Supervisor do pool (`POOL_GITHUB_TOKEN`)                                                                                                                                 |
 
 Action runtimes: `actions/checkout@v5`, `actions/setup-node@v5`, `pnpm/action-setup@v6` e `styfle/cancel-workflow-action@0.13.1` usam Node 24 nativo — sem `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`.
 
@@ -90,7 +90,7 @@ Fast gate: `pnpm gate:fast`. Push: `pnpm push`.
 | `CURSOR_API_KEY`    | Supervisor do pool (Cursor Cloud)                                                    |
 | `POOL_GITHUB_TOKEN` | PAT `actions:write` + `issues:write` (variables do pool; `GITHUB_TOKEN` costuma 403) |
 
-Sem deploy Vercel: o job `deploy`, `vercel-promote.yml`, os scripts de Vercel e `vercel.json` foram removidos no OPS50 — produção é self-hosted no homeserver (`jorgesolla1313.com.br`), deploy via runbook de infra fora deste repo.
+Deploy (OPS53): o job `deploy` do `ci.yml` roda no host do runner (workstation) e streama `scripts/deploy-homeserver.sh` para o homeserver via SSH — build no homeserver (secrets de `~/stack/teqo-1313.env`), registry `localhost:5000`, migrate pelo serviço de maintenance `teqo-1313-migrate` antes do rollout, smoke pós-deploy. Nenhum secret novo no Forgejo. Runbook (rollback, falhas conhecidas): `docs/ops/teqo-1313-deploy.md`. O deploy Vercel (`vercel-promote.yml`, scripts, `vercel.json`) foi removido no OPS50.
 
 ## Cursor Cloud
 

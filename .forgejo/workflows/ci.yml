@@ -1,6 +1,9 @@
 # Post-merge verifier on `main`: always the FULL suite (no affected skips).
-# No deploy step: production is self-hosted on the homeserver
-# (jorgesolla1313.com.br), deployed outside this pipeline.
+# When the suite is green, the `deploy` job publishes teqo-1313 on the
+# homeserver (OPS53): it streams scripts/deploy-homeserver.sh to the homeserver
+# over SSH; the remote script builds the standalone image at the pushed SHA,
+# pushes it to the local registry (localhost:5000), applies pending migrations
+# through the compose maintenance service and rolls the container out.
 #
 # Forgejo port (OPS50): Postgres services publish to per-job HOST ports on the
 # runner machine (act/forgejo runner semantics — the canonical 5432 is the
@@ -204,3 +207,22 @@ jobs:
             to_entries
             | all(.value.result == "success" or .value.result == "skipped")
           '
+
+  deploy:
+    name: deploy homeserver (teqo-1313)
+    # OPS53. Runs directly on the runner HOST (not a job container): the
+    # deploy needs the workstation's SSH key to reach the homeserver
+    # (`ssh homeserver`) and streams the whole remote build/migrate/rollout
+    # to this job's logs. Deliberately wired ONLY here — push to main +
+    # workflow_dispatch — never in ci-pr.yml: a host job is code execution as
+    # `fsolla` on the workstation, and main only ever moves through a merged
+    # PR whose full suite was already green.
+    needs: [checks]
+    runs-on: host
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - name: Deploy teqo-1313 on the homeserver
+        run: |
+          set -euo pipefail
+          ssh homeserver "bash -s -- $GITHUB_SHA" < scripts/deploy-homeserver.sh
