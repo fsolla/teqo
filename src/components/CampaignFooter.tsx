@@ -19,7 +19,7 @@ export const CampaignFooter = () => (
         <p className="m-0 text-[rgb(255_248_242/75%)]">
           Deputado Federal · PT · Bahia
           <br />
-          Um mandato do tamanho da Bahia.
+          Mais saúde mais futuro.
         </p>
       </div>
       <div>

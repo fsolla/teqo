@@ -34,7 +34,7 @@ test.describe('Frontend', () => {
 
     const heading = page.getByRole('heading', {
       level: 1,
-      name: 'UM MANDATO DO TAMANHO DA BAHIA',
+      name: 'MAIS SAÚDE MAIS FUTURO',
     })
 
     await expect(heading).toBeVisible()

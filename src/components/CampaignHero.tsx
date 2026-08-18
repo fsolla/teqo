@@ -85,11 +85,11 @@ export const CampaignHero = () => (
       <div className="campaign-hero-content relative z-30">
         <h1
           id="campaign-title"
-          aria-label="UM MANDATO DO TAMANHO DA BAHIA"
+          aria-label="MAIS SAÚDE MAIS FUTURO"
           className="campaign-hero-title m-0 border-0 p-0 font-[family-name:var(--font-exo2)] leading-[1.12] tracking-[-0.02em] text-balance uppercase"
         >
-          <span className="block font-medium">Um mandato do</span>
-          <span className="block font-black">tamanho da Bahia</span>
+          <span className="block font-medium">Mais saúde</span>
+          <span className="block font-black">Mais futuro</span>
         </h1>
 
         <p className="campaign-hero-copy m-0 text-left font-sans leading-[1.2] uppercase">
