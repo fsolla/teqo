@@ -17,6 +17,11 @@
  *     (resolveS3StorageEnv throws on a partial config) — recovery is a
  *     production-bucket operation, never local storage; --verify skips storage
  *     entirely (it only HEADs public URLs).
+ *   - Reconcile writes objects, so it additionally requires the explicit
+ *     intent flag MEDIA_RECOVER_CONFIRM=1 (OPS52-media-guard): the S3_* envs
+ *     alone must never arm a write — a worktree with a prod-credentials copy
+ *     running reconcile against local rows would write the prod bucket.
+ *     --dry-run/--verify stay guard-free: they never write.
  *   - Refuses a non-local DATABASE_URL unless ALLOW_REMOTE_DB=true is set
  *     explicitly, and echoes the target (DB host, endpoint, bucket, verify
  *     origin) before any write.
@@ -29,7 +34,9 @@
  * Modes:
  *   pnpm media:recover                reconcile — plan + upload every
  *                                     recoverable cover (PutObject overwrites,
- *                                     idempotent by filename)
+ *                                     idempotent by filename); requires
+ *                                     MEDIA_RECOVER_CONFIRM=1 (explicit
+ *                                     write-intent guard)
  *   pnpm media:recover --dry-run      plan only — resolve covers + headObject
  *                                     each key (present/missing), zero writes
  *   pnpm media:recover --verify       acceptance check — HEAD every filename
@@ -44,7 +51,7 @@ import { NodeHttpHandler } from '@smithy/node-http-handler'
 import { getPayload } from 'payload'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
-import { dieWithLabel, loadCliEnv } from './lib/cli.mjs'
+import { dieWithLabel, isTruthyEnv, loadCliEnv } from './lib/cli.mjs'
 import {
   fetchArticlesFromWordPress,
   resolveCoverDownloadUrl,
@@ -58,6 +65,8 @@ loadCliEnv()
 
 const die = dieWithLabel('media:recover')
 
+const RECOVER_CONFIRM_FLAG = 'MEDIA_RECOVER_CONFIRM'
+
 const PROD_PUBLIC_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL || 'https://jorgesolla1313.com.br'
 
 const args = new Set(process.argv.slice(2))
@@ -66,6 +75,14 @@ if (unknown.length > 0) die(`argumento desconhecido: ${unknown.join(', ')}`)
 if (args.size > 1)
   die('modos são mutuamente exclusivos: use apenas um de --dry-run / --verify (ou nenhum).')
 const mode = args.has('--dry-run') ? 'dry-run' : args.has('--verify') ? 'verify' : 'reconcile'
+
+if (mode === 'reconcile' && !isTruthyEnv(process.env[RECOVER_CONFIRM_FLAG])) {
+  die(
+    'modo reconcile ESCREVE objetos no bucket — exige confirmação explícita de intenção.\n' +
+      `  Re-rodar com: ${RECOVER_CONFIRM_FLAG}=1 pnpm media:recover\n` +
+      '  (ou use --dry-run para planejar sem escrever; --verify só HEADs URLs públicas).',
+  )
+}
 
 assertLocalDatabase(
   'media:recover',

@@ -95,7 +95,9 @@ contratos de guard diferentes no mesmo script; o seed é local-first por design)
   `slugFromFilename(filename)` (remove a última extensão) e a resolução
   `resolveCoverSource(article)` (`article.coverUrl || inlineCoverUrl(...)`).
   Unit-testados (padrão dos módulos de `scripts/lib`).
-- **`scripts/recover-media.mjs`** (novo): fluxo —
+- **`scripts/recover-media.mjs`** (novo): fluxo — _(desde OPS52-media-guard,
+  #37, o reconcile também exige `MEDIA_RECOVER_CONFIRM=1` antes de qualquer
+  passo abaixo — ver `docs/plans/ops52-media-guard-impl.md`)_
   1. `loadCliEnv` + `assertLocalDatabase('media:recover', hint do runbook)` +
      `resolveS3StorageEnv(process.env)` (reuso de `src/utilities/mediaStorage.ts`;
      aborta se `enabled: false` — recuperação é operação de prod, nunca storage
@@ -199,9 +201,11 @@ Ordem das próximas execuções (pós-merge, humano):
    segundos. Se TODAS as rows derem `erro` (timeout/ECONNREFUSED), o container
    não alcança o Garage — repetir o diagnóstico do estado acima (firewall +
    extra_hosts + endpoint) antes de recuperar.
-3. **Recuperar:**
+3. **Recuperar** (o reconcile escreve no bucket — guard de intenção explícita
+   OPS52-media-guard exige `MEDIA_RECOVER_CONFIRM=1`; sem ela o script recusa
+   com a mensagem e o comando correto):
    ```bash
-   ALLOW_REMOTE_DB=true pnpm media:recover
+   MEDIA_RECOVER_CONFIRM=1 ALLOW_REMOTE_DB=true pnpm media:recover
    ```
    Esperado: 40 uploads (`PutObject` key = filename; idempotente por overwrite),
    exceções reais (sem cover / download 404) listadas no relatório — conferir

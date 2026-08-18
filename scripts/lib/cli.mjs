@@ -72,8 +72,14 @@ if (gatewayHost) LOCAL_HOSTS.add(gatewayHost)
 
 export const ALLOW_REMOTE_DB_FLAG = 'ALLOW_REMOTE_DB'
 
-export const isRemoteDbOverrideSet = () =>
-  process.env[ALLOW_REMOTE_DB_FLAG] === 'true' || process.env[ALLOW_REMOTE_DB_FLAG] === '1'
+/**
+ * Truthy intent-flag check (the one spelling of the `true`/`1` semantics).
+ * Deliberately exact: no trim, no case-folding — `TRUE` or `yes` stay refused
+ * (relaxing a guard is a product decision, not a refactor byproduct).
+ */
+export const isTruthyEnv = (value) => value === 'true' || value === '1'
+
+export const isRemoteDbOverrideSet = () => isTruthyEnv(process.env[ALLOW_REMOTE_DB_FLAG])
 
 /**
  * Port for `next dev` (OPS40). Next's CLI resolves its port via commander's
