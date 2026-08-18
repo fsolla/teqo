@@ -49,7 +49,11 @@ export const CampaignContentSection = async () => {
   const [featured, ...rest] = cards
 
   return (
-    <section aria-labelledby="contents-title" data-home-section="contents" className="bg-white">
+    <section
+      aria-labelledby="contents-title"
+      data-home-section="contents"
+      className="border-y border-(--campaign-line) bg-(--campaign-band)"
+    >
       <div className="mx-auto w-full max-w-[1160px] px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>

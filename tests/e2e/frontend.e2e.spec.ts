@@ -631,6 +631,16 @@ test.describe('Campaign home content section', () => {
       await expect(firstCard.locator('h3')).toHaveText('E2e Artigo em destaque')
       await expect(firstCard.locator('span').last()).toContainText(categoryName)
 
+      // S5 — the section must read as a zone of its own: a banded background
+      // with a top hairline against the white proof strip, and white cards
+      // that pop against the band. Exact computed values pin the tokens
+      // (`--campaign-band` #ebe9e9, `--campaign-line` rgb(0 0 0 / 12%)) so a
+      // broken or removed token cannot silently pass.
+      await expect(section).toHaveCSS('background-color', 'rgb(235, 233, 233)')
+      await expect(section).toHaveCSS('border-top-width', '1px')
+      await expect(section).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0.12)')
+      await expect(firstCard).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+
       await featured.click()
       await expect(page).toHaveURL(new RegExp(`${featuredHref}$`))
       await page.goBack()
