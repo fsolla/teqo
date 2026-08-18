@@ -70,9 +70,10 @@ PROD_DATABASE_URL="<unpooled Neon URL>" pnpm db:pull
 pnpm db:seed:posts
 ```
 
-- `scripts/seed-posts.mjs` fetches ~39 articles **live** from jorgesolla.com.br (WordPress REST API, HTML-crawl fallback) and imports them into `post`/`tag`/`media` as published `noticia` posts, converting the WP HTML body to Payload Lexical and uploading covers to Vercel Blob.
+- `scripts/seed-posts.mjs` fetches ~43 articles **live** from jorgesolla.com.br (WordPress REST API, HTML-crawl fallback) and imports them into `post`/`tag`/`media` as published `noticia` posts, converting the WP HTML body to Payload Lexical and uploading covers through the configured media storage (Garage S3 when the `S3_*` envs are set — the adapter overwrites the deterministic `<slug>.<ext>` key natively; local disk otherwise).
 - Same safety guard as `pnpm dev`: it refuses a non-local `DATABASE_URL` unless `ALLOW_REMOTE_DB=true`.
-- **Idempotent by slug** — re-running skips existing posts and reuses tags/media, so it never duplicates. Because the Vercel Blob store is shared across environments, it deletes any orphan blob under the deterministic `<slug>.<ext>` key before uploading, so it stays re-runnable.
+- **Idempotent by slug** — re-running skips existing posts and reuses tags/media, so it never duplicates.
+- **Bucket-write guard (OPS60):** with the `S3_*` envs set (e.g. a worktree with the main repo's prod-credentials copy), the sync requires explicit write intent — `SEED_MEDIA_CONFIRM=1` — and refuses with exit 1 before any write without it; `--dry-run` stays flag-free (it never writes).
 - **Post-seed revalidation (required for prod):** the seed writes from a CLI process outside the deployed runtime, so it does **not** bust production's frozen `posts` cache. After seeding prod content — or after ANY direct-DB write — bust it:
 
   ```bash

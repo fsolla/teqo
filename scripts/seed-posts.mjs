@@ -10,6 +10,13 @@
  * Safety model (mirrors scripts/guard-dev-db.mjs and scripts/db-pull.mjs):
  *   - This script WRITES (creates posts/tags/media). It refuses to run against
  *     a non-local DATABASE_URL unless ALLOW_REMOTE_DB=true is set explicitly.
+ *   - When the S3_* envs are set (Garage bucket), the sync writes the cover
+ *     media objects to that bucket — so sync additionally requires the
+ *     explicit intent flag SEED_MEDIA_CONFIRM=1 (OPS60, OPS52-media-guard
+ *     parity): the S3_* envs alone must never arm a write, since a worktree
+ *     with a prod-credentials copy running sync against a local DB would
+ *     write covers to the prod bucket. --dry-run stays guard-free: it never
+ *     writes.
  *   - Idempotent: re-running looks up posts/tags/media by slug/filename and
  *     skips (or reuses) what already exists, so it never duplicates.
  *
@@ -24,11 +31,13 @@
  *   pnpm db:seed:posts --dry-run   (plan-only: fetches + resolves covers and
  *                                   reports what WOULD be created — no writes)
  *   (against a remote DB, on purpose:)  ALLOW_REMOTE_DB=true pnpm db:seed:posts
+ *   (against the S3 bucket of the S3_* envs, on purpose:)
+ *       SEED_MEDIA_CONFIRM=1 [ALLOW_REMOTE_DB=true] pnpm db:seed:posts
  */
 import { convertHTMLToLexical, editorConfigFactory } from '@payloadcms/richtext-lexical'
 import { JSDOM } from 'jsdom'
 import { getPayload } from 'payload'
-import { dieWithLabel, loadCliEnv } from './lib/cli.mjs'
+import { dieWithLabel, isTruthyEnv, loadCliEnv } from './lib/cli.mjs'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
 
@@ -39,6 +48,8 @@ import {
   resolveCoverSource,
   stripHtml,
 } from './lib/wpArticles.mjs'
+
+import { resolveS3StorageEnv } from '../src/utilities/mediaStorage.ts'
 
 /** @import { Article } from './lib/wpArticles.mjs' */
 
@@ -54,6 +65,27 @@ const args = new Set(process.argv.slice(2))
 const unknown = [...args].filter((a) => a !== '--dry-run')
 if (unknown.length > 0) die(`argumento desconhecido: ${unknown.join(', ')}`)
 const dryRun = args.has('--dry-run')
+
+/**
+ * Write-intent guard (OPS60, OPS52-media-guard parity): the sync writes media
+ * objects to the S3 bucket configured by the S3_* envs (when set) — the S3_*
+ * envs alone must never arm that write, because a worktree with a
+ * prod-credentials copy (worktree-env.mjs copies S3_* all-or-nothing) running
+ * sync against a local DB would write covers to the prod bucket. Fires before
+ * assertLocalDatabase / getPayload (zero DB, zero network). --dry-run stays
+ * guard-free: it never writes.
+ */
+const SEED_MEDIA_CONFIRM_FLAG = 'SEED_MEDIA_CONFIRM'
+
+const storage = resolveS3StorageEnv(process.env)
+
+if (!dryRun && storage.enabled && !isTruthyEnv(process.env[SEED_MEDIA_CONFIRM_FLAG])) {
+  die(
+    'o sync ESCREVE media no bucket S3 das envs S3_* — exige confirmação explícita de intenção.\n' +
+      `  Re-rodar com: ${SEED_MEDIA_CONFIRM_FLAG}=1 pnpm db:seed:posts\n` +
+      '  (ou use --dry-run para planejar sem escrever).',
+  )
+}
 
 /** Host do DATABASE_URL para o echo do alvo — die limpo se a URL for inválida. */
 const echoTargetHost = () => {
@@ -404,11 +436,13 @@ async function main() {
       '  2. set DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo in .env.local',
   )
 
-  console.log(
-    `\n[seed:posts] Alvo da execução:\n` +
-      `  DB     : ${echoTargetHost()}\n` +
-      `  Modo   : ${dryRun ? 'dry-run (plan-only — nenhuma escrita)' : 'sync (create-only)'}\n`,
-  )
+  const targetSummary = [
+    `Alvo da execução:`,
+    `  DB     : ${echoTargetHost()}`,
+    ...(storage.enabled ? [`  Bucket : ${storage.bucket}`, `  Endpoint: ${storage.endpoint}`] : []),
+    `  Modo   : ${dryRun ? 'dry-run (plan-only — nenhuma escrita)' : 'sync (create-only)'}`,
+  ].join('\n')
+  console.log(`\n[seed:posts] ${targetSummary}`)
 
   const payload = await getPayload({ config })
   const editorConfig = await editorConfigFactory.default({ config: payload.config })
