@@ -481,11 +481,28 @@ test.describe('Campaign home content section', () => {
     return doc
   }
 
-  // ISR serves the stale page once while it regenerates after a revalidateTag
-  // (slower under the parallel suite). A warm-up GET triggers that
-  // regeneration so the navigation that follows always lands on fresh HTML.
-  const warmHome = async (request: APIRequestContext) => {
-    await request.get(`${baseURL}/`).catch(() => undefined)
+  // ISR serves the stale page while it regenerates after a revalidateTag
+  // (slower under the parallel suite), and a navigation that lands on it never
+  // refreshes its DOM. Poll the server HTML positively until it converges to
+  // the expected section state; the navigation that follows then always lands
+  // on the fresh page.
+  const waitForHomeSectionState = async (
+    request: APIRequestContext,
+    expected: 'present' | 'absent',
+    attempts = 12,
+  ) => {
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      const response = await request.get(`${baseURL}/`).catch(() => undefined)
+      if (response?.ok()) {
+        const html = await response.text()
+        const present = html.includes('data-home-section="contents"')
+        if (present === (expected === 'present')) return
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1_000))
+    }
+    throw new Error(
+      `A home não convergiu para o estado "${expected}" da seção de conteúdos após ${attempts}s.`,
+    )
   }
 
   test('hides the content section while no articles are visible', async ({ page, request }) => {
@@ -497,7 +514,7 @@ test.describe('Campaign home content section', () => {
         headers: { 'x-revalidate-secret': revalidateSecret },
       })
       .catch(() => undefined)
-    await warmHome(request)
+    await waitForHomeSectionState(request, 'absent')
 
     await page.goto('/')
     await expect(page).toHaveURL(/\/$/)
@@ -574,8 +591,8 @@ test.describe('Campaign home content section', () => {
     try {
       await page.setViewportSize({ width: 1280, height: 900 })
       // The create hooks revalidated the `posts` tag in the server process;
-      // warm the home so the navigation lands on the regenerated page.
-      await warmHome(request)
+      // wait until the regenerated page actually shows the section.
+      await waitForHomeSectionState(request, 'present')
       await page.goto('/')
       const section = page.locator('[data-home-section="contents"]')
       await expect(section).toBeVisible()
@@ -663,7 +680,7 @@ test.describe('Campaign home content section', () => {
 
         // Converge the persisted dev cache back to the empty state so the
         // next run starts deterministic (fail-closed on delete, too).
-        await warmHome(request)
+        await waitForHomeSectionState(request, 'absent')
         await page.setViewportSize({ width: 1280, height: 900 })
         await page.goto('/')
         await expect(page.locator('[data-home-section="contents"]')).toHaveCount(0)
