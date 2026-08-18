@@ -5,6 +5,11 @@
  * The PR body comes from the API (Forgejo's PR webhook payload is not relied
  * on), so the workflow only needs the PR number.
  *
+ * OPS61: a failed flip exits 1 — the flip is the whole purpose of this
+ * workflow, and the 403 era proved that a swallowed error ends the job
+ * "success" while the status labels lie. Sibling issues are still attempted
+ * (the loop does not abort), but the job goes red so the breakage is visible.
+ *
  *   node scripts/forgejo-issue-transition.mjs --pr <N>
  */
 
@@ -51,6 +56,7 @@ if (numbers.length === 0) {
   process.exit(0)
 }
 
+let flipFailed = false
 for (const number of numbers) {
   try {
     await api.setLabels(number, { add: ['done', 'in-prod'], remove: ['in-progress'] })
@@ -60,8 +66,15 @@ for (const number of numbers) {
     )
     console.log(`[forgejo-issue-transition] #${number}: done + in-prod`)
   } catch (error) {
-    console.log(
-      `[forgejo-issue-transition] #${number}: skip (${error instanceof Error ? error.message : error})`,
+    flipFailed = true
+    console.error(
+      `[forgejo-issue-transition] #${number}: FLIP FALHOU — ${error instanceof Error ? error.message : error}`,
     )
   }
+}
+if (flipFailed) {
+  console.error(
+    `[forgejo-issue-transition] PR #${prNumber}: ${numbers.length} Issue(s) citada(s), pelo menos 1 flip falhou — os labels de status podem estar mentindo.`,
+  )
+  process.exit(1)
 }

@@ -67,6 +67,10 @@ try {
     merged,
     pr: after,
   } = await api.autoMerge(prNumber, {
+    // OPS61: the wait now covers the whole CI (PR) cascade (the `checks`
+    // rollup only posts after every ci-pr job), so the 30 min default was too
+    // tight under load — e2e shards + int + build run before the rollup.
+    timeoutMs: 45 * 60 * 1000,
     log: (line) => console.log(`[forgejo-pr-automerge] ${line}`),
   })
   if (merged) {

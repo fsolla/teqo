@@ -30,23 +30,23 @@ main → ci.yml full suite verde → job `deploy` (homeserver, OPS53 — merge e
 ### Bypass de CI (cutover / transição)
 
 - **Local:** se `gate:push` ainda espelha pipeline antigo e bloqueia push legítimo da PR que o muda → `git push --no-verify` permitido como escape de transição (não WIP permanente). Documentado aqui; após o cutover, entregas passam no CI novo sem bypass.
-- **Cutover humano:** pode relaxar temporary required checks se o flip de proteção travar merges; reverter para `checks` em `main` assim que o CI novo estiver verde.
+- **Cutover humano:** pode relaxar temporary required checks se o flip de proteção travar merges; reverter para `CI (PR) / checks` em `main` assim que o CI novo estiver verde.
 
 ## Comandos
 
-| Comando                                                                                                       | Faz                                                                          |
-| ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `pnpm agent:claim [-- --dry-run]`                                                                             | Fila ready+unblocked por prio → `in-progress` + brief                        |
-| `pnpm worktree next [--issue N] [--stay]`                                                                     | Claim determinístico (mesma fila/lock do claim) → worktree + provisionamento |
-| `pnpm agent:register -- --id X --title T [--prio P1] [--depends A,B] [--plan docs/plans/x.md] [--model slug]` | Cria Issue (`--plan` ⇒ `blocked` até `agent:ready`; sem plano ⇒ `ready`)     |
-| `pnpm agent:ready -- --issue N[,N…]`                                                                          | Pós-merge do plano: `blocked`→`ready` (só Issues com link `docs/plans/`)     |
-| `pnpm agent:status`                                                                                           | Overview / fila / mermaid                                                    |
-| `pnpm agent:prioritize -- <issue> <P0..P3>`                                                                   | Troca `prio:*`                                                               |
-| `pnpm agent:file-miss -- --title ...`                                                                         | Issue `kind:agent-miss`                                                      |
-| `pnpm agent:pool -- status\|tick --dry-run\|doctor`                                                           | Pool Cloud; start/stop via `gh workflow run agent-pool.yml`                  |
-| `pnpm push [-- -u origin HEAD …]`                                                                             | Canônico: ensure-deps + gate:push + push                                     |
-| `pnpm configure:branch-protection [-- --dry-run]`                                                             | Proteção de `main`: `checks`, `strict=false`, 0 reviews                      |
-| `pnpm db:seed:minimal`                                                                                        | DB mínimo sintético                                                          |
+| Comando                                                                                                       | Faz                                                                                                               |
+| ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `pnpm agent:claim [-- --dry-run]`                                                                             | Fila ready+unblocked por prio → `in-progress` + brief                                                             |
+| `pnpm worktree next [--issue N] [--stay]`                                                                     | Claim determinístico (mesma fila/lock do claim) → worktree + provisionamento                                      |
+| `pnpm agent:register -- --id X --title T [--prio P1] [--depends A,B] [--plan docs/plans/x.md] [--model slug]` | Cria Issue (`--plan` ⇒ `blocked` até `agent:ready`; sem plano ⇒ `ready`)                                          |
+| `pnpm agent:ready -- --issue N[,N…]`                                                                          | Pós-merge do plano: `blocked`→`ready` (só Issues com link `docs/plans/`)                                          |
+| `pnpm agent:status`                                                                                           | Overview / fila / mermaid                                                                                         |
+| `pnpm agent:prioritize -- <issue> <P0..P3>`                                                                   | Troca `prio:*`                                                                                                    |
+| `pnpm agent:file-miss -- --title ...`                                                                         | Issue `kind:agent-miss`                                                                                           |
+| `pnpm agent:pool -- status\|tick --dry-run\|doctor`                                                           | Pool Cloud; start/stop via `gh workflow run agent-pool.yml`                                                       |
+| `pnpm push [-- -u origin HEAD …]`                                                                             | Canônico: ensure-deps + gate:push + push                                                                          |
+| `pnpm configure:branch-protection [-- --dry-run]`                                                             | Proteção de `main`: required status check `CI (PR) / checks` (rollup do ci-pr; idempotente — cria/atualiza/no-op) |
+| `pnpm db:seed:minimal`                                                                                        | DB mínimo sintético                                                                                               |
 
 Labels: `ready|in-progress|blocked|done|in-prod`, `prio:*`, `kind:*`, `needs:*`.
 
@@ -73,8 +73,8 @@ Arquivos de "lista" que N agentes escrevem em paralelo (changelog, plans, migra�
 | ------------------------------------ | -------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `ci-pr.yml`                          | PR → `main`                            | service Postgres 17 | Fase 1 barata → fase 2 cara; skips via `ci-scope.mjs`; fail-fast cancela o run no 1º job vermelho; rollup `checks`                                                       |
 | `ci.yml`                             | push / dispatch `main`                 | service Postgres    | Full sempre; fail-fast cancela o run no 1º job vermelho; rollup `checks`; job `deploy` (runs-on `host`) publica no homeserver via `scripts/deploy-homeserver.sh` (OPS53) |
-| `issue-done-on-main-merge.yml`       | PR merged → `main`                     | —                   | `Closes`/`Fixes` → `done` + `in-prod`                                                                                                                                    |
-| `plan-issue-ready-on-main-merge.yml` | PR merged → `main`                     | —                   | `Related #N` aguardando plano → `ready` (OPS18; soft-skip)                                                                                                               |
+| `issue-done-on-main-merge.yml`       | PR merged → `main` (same-repo)         | —                   | `Closes`/`Fixes` → `done` + `in-prod` (PAT `FORGEJO_API_TOKEN`; `GITHUB_TOKEN` 403 em Issues)                                                                            |
+| `plan-issue-ready-on-main-merge.yml` | PR merged → `main` (same-repo)         | —                   | `Related #N` aguardando plano → `ready` (OPS18; soft-skip; mesmo PAT)                                                                                                    |
 | `agent-pr-ready-automerge.yml`       | PR same-repo → `main` (open/sync/…)    | —                   | Safety net via `forgejo-pr-automerge.mjs` (plain Node): espera checks e mergea por rebase; draft `cursor/*` → Ready; draft não-`cursor/*` = veto, skip                   |
 | `agent-pool.yml`                     | schedule / PR closed `main` / dispatch | —                   | Supervisor do pool (`POOL_GITHUB_TOKEN`)                                                                                                                                 |
 
@@ -84,11 +84,13 @@ Fast gate: `pnpm gate:fast`. Push: `pnpm push`.
 
 ### Secrets (humano, uma vez)
 
-| Secret              | Uso                                                                                  |
-| ------------------- | ------------------------------------------------------------------------------------ |
-| `FORGEJO_API_TOKEN` | Supervisor do pool e scripts Forgejo (`forgejo-api.mjs`)                             |
-| `CURSOR_API_KEY`    | Supervisor do pool (Cursor Cloud)                                                    |
-| `POOL_GITHUB_TOKEN` | PAT `actions:write` + `issues:write` (variables do pool; `GITHUB_TOKEN` costuma 403) |
+| Secret              | Uso                                                                                                                                                                         |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FORGEJO_API_TOKEN` | Supervisor do pool e scripts Forgejo (`forgejo-api.mjs`); também nos workflows pós-merge (`issue-done`, `plan-issue-ready`) — o `GITHUB_TOKEN` nativo 403 em Issues (OPS61) |
+| `CURSOR_API_KEY`    | Supervisor do pool (Cursor Cloud)                                                                                                                                           |
+| `POOL_GITHUB_TOKEN` | PAT `actions:write` + `issues:write` (variables do pool; `GITHUB_TOKEN` costuma 403)                                                                                        |
+
+Branch protection de `main` (aplicada em 2026-08-18, OPS61): required status check `CI (PR) / checks` (o rollup do `ci-pr.yml` — único contexto que cobre a cascata inteira), `strict=false`, 0 reviews. O `waitForChecks` do safety net espera esse mesmo rollup antes de mergear — a regra no servidor é a defesa final (o Forgejo bloqueia o merge POST com 405 se o contexto exigido não estiver verde). Reaplicar/consertar drift: `pnpm configure:branch-protection` (idempotente).
 
 Deploy (OPS53): o job `deploy` do `ci.yml` roda no host do runner (workstation) e streama `scripts/deploy-homeserver.sh` para o homeserver via SSH — build no homeserver (secrets de `~/stack/teqo-1313.env`), registry `localhost:5000`, migrate pelo serviço de maintenance `teqo-1313-migrate` antes do rollout, smoke pós-deploy. Nenhum secret novo no Forgejo. Runbook (rollback, falhas conhecidas): `docs/ops/teqo-1313-deploy.md`. O deploy Vercel (`vercel-promote.yml`, scripts, `vercel.json`) foi removido no OPS50.
 

@@ -31,7 +31,10 @@ jobs:
       github.event.pull_request.state == 'open' &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    # OPS61: the CLI now waits for the full CI (PR) cascade (the `checks`
+    # rollup posts only after every ci-pr job, incl. e2e shards) — 55 min keeps
+    # 10 min of slack over the CLI's 45 min timeout.
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v5
       # Script is plain Node (stdlib) — no pnpm. Disable package-manager-cache:

@@ -10,7 +10,7 @@
 > 2. Ele implementa, roda o fast gate (`lint + typecheck + unit`) e abre **PR para `main`** — sozinho.
 > 3. CI verde → o PR mergeia em `main` automaticamente; o verificador `ci.yml` roda a suíte completa.
 > 4. Suíte verde → Action dispara `vercel deploy --prod` (Vercel Git builds estão desligados).
-> 5. Secrets humanos (uma vez): `VERCEL_*`, `POOL_GITHUB_TOKEN`; `pnpm configure:branch-protection`.
+> 5. Secrets humanos (uma vez): `FORGEJO_API_TOKEN`, `CURSOR_API_KEY`, `POOL_GITHUB_TOKEN`; `pnpm configure:branch-protection` (main: required `CI (PR) / checks`).
 >
 > Comandos: `pnpm agent:claim | agent:register | agent:prioritize | agent:file-miss | agent:pool` e `pnpm db:seed:minimal`.
 > Labels: estado `ready|in-progress|blocked|done|in-prod`, `prio:P0..P3`, `kind:*`, `needs:migration|consent`, `requirements-changed`.

@@ -269,21 +269,51 @@ export const createApi = ({ base, token, repository, fetchImpl } = {}) => {
         body: { ...payload, branch_name: branch },
       }),
 
+    /** GET /api/v1/repos/{owner}/{repo}/branch_protections — normalized rules. */
+    listBranchProtections: async () => {
+      const rules = await request(`/repos/${owner}/${name}/branch_protections`)
+      return (Array.isArray(rules) ? rules : []).map((rule) => ({
+        rule_name: rule.rule_name ?? '',
+        branch_name: rule.branch_name ?? '',
+        enable_status_check: Boolean(rule.enable_status_check),
+        status_check_contexts: rule.status_check_contexts ?? [],
+        enable_push: Boolean(rule.enable_push),
+        required_approvals: rule.required_approvals ?? 0,
+        dismiss_stale_approvals: Boolean(rule.dismiss_stale_approvals),
+      }))
+    },
+
+    /** PATCH /api/v1/repos/{owner}/{repo}/branch_protections/{name} — updates an existing rule. */
+    editBranchProtection: (name, payload) =>
+      request(`/repos/${owner}/${name}/branch_protections/${name}`, {
+        method: 'PATCH',
+        body: payload,
+      }),
+
     /**
      * All required statuses on the PR head are success (or a failure exists),
      * and Forgejo finished computing mergeability. Returns the last PR read.
      * A draft PR stops the wait (converted mid-run): the caller decides what
      * "no merge" means — the CLI skips non-`cursor/*` drafts (OPS57 veto).
+     *
+     * OPS61 rollup gate: the CI (PR) cascade's aggregate job (`checks`, the
+     * `if: always()` rollup over every ci-pr job) must have POSTED and be
+     * success. Job statuses are posted as jobs finish, so a snapshot with zero
+     * pending can still miss jobs that were not scheduled yet — that race
+     * merged PR #52 with the CI red. The rollup only exists once the whole
+     * cascade settled (it `needs` every job), so its absence keeps the wait
+     * going. `mergeable === false` is only trusted after the cascade settled —
+     * while jobs still run (or the branch-protection rule blocks), Forgejo may
+     * report false without meaning "conflict".
      */
     waitForChecks: async (number, { timeoutMs = 30 * 60 * 1000, pollMs = 15000, log } = {}) => {
       const started = Date.now()
       for (;;) {
         const pr = await api.getPullRequest(number)
         if (!pr || pr.state !== 'OPEN' || pr.merged || pr.isDraft) return pr
-        if (pr.mergeable === false) {
-          throw new Error(`PR #${number} não mergeável (conflito?) — resolver manualmente.`)
-        }
         const statuses = await api.listCommitStatuses(pr.head.sha)
+        const rollup = statuses.find((entry) => entry.context.startsWith('CI (PR) / checks'))
+        const cascadeSettled = Boolean(rollup && rollup.state === 'success')
         const failed = statuses.filter(
           (entry) => entry.state === 'failure' || entry.state === 'error',
         )
@@ -292,15 +322,18 @@ export const createApi = ({ base, token, repository, fetchImpl } = {}) => {
           const names = failed.map((entry) => entry.context).join(', ')
           throw new Error(`Checks falharam no PR #${number}: ${names}`)
         }
-        if (statuses.length > 0 && pending.length === 0 && pr.mergeable === true) return pr
+        if (pr.mergeable === false && cascadeSettled) {
+          throw new Error(`PR #${number} não mergeável (conflito?) — resolver manualmente.`)
+        }
+        if (cascadeSettled && pending.length === 0 && pr.mergeable === true) return pr
         if (Date.now() - started > timeoutMs) {
           throw new Error(`Timeout esperando checks do PR #${number}.`)
         }
         if (log)
           log(
-            `[pr#${number}] ${statuses.length} status, ${pending.length} pendente, mergeable=${
-              pr.mergeable ?? 'computando'
-            } — aguardando…`,
+            `[pr#${number}] ${statuses.length} status, ${pending.length} pendente, rollup=${
+              rollup ? rollup.state : 'ausente'
+            }, mergeable=${pr.mergeable ?? 'computando'} — aguardando…`,
           )
         await new Promise((resolve) => setTimeout(resolve, pollMs))
       }

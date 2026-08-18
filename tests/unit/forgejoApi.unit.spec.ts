@@ -165,7 +165,10 @@ describe('forgejo-api', () => {
         const statuses =
           poll < 2
             ? [{ context: 'CI / static', status: 'pending' }]
-            : [{ context: 'CI / static', status: 'success' }]
+            : [
+                { context: 'CI / static', status: 'success' },
+                { context: 'CI (PR) / checks (pull_request)', status: 'success' },
+              ]
         return ok({ statuses })
       },
     })
@@ -191,7 +194,12 @@ describe('forgejo-api', () => {
             head: { ref: 'x', sha: 'abc' },
           })
         }
-        return ok({ statuses: [{ context: 'CI / static', status: 'success' }] })
+        return ok({
+          statuses: [
+            { context: 'CI / static', status: 'success' },
+            { context: 'CI (PR) / checks (pull_request)', status: 'success' },
+          ],
+        })
       },
     })
 
@@ -214,7 +222,12 @@ describe('forgejo-api', () => {
             head: { ref: 'x', sha: 'abc' },
           })
         }
-        return ok({ statuses: [{ context: 'CI / static', status: 'success' }] })
+        return ok({
+          statuses: [
+            { context: 'CI / static', status: 'success' },
+            { context: 'CI (PR) / checks (pull_request)', status: 'success' },
+          ],
+        })
       },
     })
 
@@ -252,6 +265,102 @@ describe('forgejo-api', () => {
     expect(pr.isDraft).toBe(true)
   })
 
+  it('waitForChecks keeps polling while the CI (PR) checks rollup has not posted (OPS61 race)', async () => {
+    let statusPoll = 0
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/pulls/')) {
+          return ok({
+            number: 4,
+            state: 'open',
+            merged: false,
+            mergeable: true,
+            head: { ref: 'x', sha: 'abc' },
+          })
+        }
+        statusPoll += 1
+        // First snapshots: every POSTED status is green — but jobs that were
+        // not scheduled yet (docs-guards/unit/checks) posted nothing. The
+        // rollup is the only context that exists once the WHOLE cascade
+        // settled; without the gate this snapshot looks green and merges red
+        // (the PR #52 incident).
+        const statuses =
+          statusPoll < 3
+            ? [{ context: 'CI / static', status: 'success' }]
+            : [
+                { context: 'CI / static', status: 'success' },
+                { context: 'CI (PR) / checks (pull_request)', status: 'success' },
+              ]
+        return ok({ statuses })
+      },
+    })
+
+    const pr = await api.waitForChecks(4, { pollMs: 1 })
+
+    expect(pr).toBeTruthy()
+    expect(statusPoll).toBe(3)
+  })
+
+  it('waitForChecks throws when the CI (PR) checks rollup reports failure', async () => {
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/pulls/')) {
+          return ok({
+            number: 4,
+            state: 'open',
+            merged: false,
+            mergeable: true,
+            head: { ref: 'x', sha: 'abc' },
+          })
+        }
+        return ok({
+          statuses: [
+            { context: 'CI / static', status: 'success' },
+            { context: 'CI (PR) / checks (pull_request)', status: 'failure' },
+          ],
+        })
+      },
+    })
+
+    await expect(api.waitForChecks(4, { pollMs: 1 })).rejects.toThrow(/Checks falharam/)
+  })
+
+  it('waitForChecks does not treat mergeable=false as conflict before the rollup settles (OPS61)', async () => {
+    let poll = 0
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/pulls/')) {
+          poll += 1
+          const settled = poll >= 3
+          return ok({
+            number: 4,
+            state: 'open',
+            merged: false,
+            mergeable: settled ? true : false,
+            head: { ref: 'x', sha: 'abc' },
+          })
+        }
+        return ok({
+          statuses:
+            poll < 3
+              ? [{ context: 'CI / static', status: 'success' }]
+              : [
+                  { context: 'CI / static', status: 'success' },
+                  { context: 'CI (PR) / checks (pull_request)', status: 'success' },
+                ],
+        })
+      },
+    })
+
+    const pr = await api.waitForChecks(4, { pollMs: 1 })
+
+    expect(poll).toBe(3)
+    expect(pr.mergeable).toBe(true)
+  })
+
   it('autoMerge verifies the merge by re-reading the PR (POST answers 200 + empty body)', async () => {
     const calls: string[] = []
     let poll = 0
@@ -271,7 +380,12 @@ describe('forgejo-api', () => {
             head: { ref: 'x', sha: 'abc' },
           })
         }
-        return ok({ statuses: [{ context: 'CI / static', status: 'success' }] })
+        return ok({
+          statuses: [
+            { context: 'CI / static', status: 'success' },
+            { context: 'CI (PR) / checks (pull_request)', status: 'success' },
+          ],
+        })
       },
     })
 
@@ -305,7 +419,12 @@ describe('forgejo-api', () => {
             head: { ref: 'x', sha: 'abc' },
           })
         }
-        return ok({ statuses: [{ context: 'CI / static', status: 'success' }] })
+        return ok({
+          statuses: [
+            { context: 'CI / static', status: 'success' },
+            { context: 'CI (PR) / checks (pull_request)', status: 'success' },
+          ],
+        })
       },
     })
 
@@ -330,7 +449,12 @@ describe('forgejo-api', () => {
             head: { ref: 'x', sha: 'abc' },
           })
         }
-        return ok({ statuses: [{ context: 'CI / static', status: 'success' }] })
+        return ok({
+          statuses: [
+            { context: 'CI / static', status: 'success' },
+            { context: 'CI (PR) / checks (pull_request)', status: 'success' },
+          ],
+        })
       },
     })
 

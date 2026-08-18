@@ -56,11 +56,13 @@ gh pr merge --auto --rebase
 
 Do not wait for human approval on normal deliveries. Auto-merge fires when **required** checks pass.
 
-## Required checks vs Vercel
+## Required checks
 
-Branch protection on `main` requires only:
+Branch protection on `main` (applied 2026-08-18, OPS61) requires only:
 
-- `checks` (GitHub Actions rollup from `ci-pr.yml`)
+- `CI (PR) / checks` — the ci-pr cascade rollup (the only context that covers
+  every ci-pr job; on the server the rule matches it as a glob,
+  `CI (PR) / checks*`)
 
 (`migration-lock` removed 2026-08-12 — the CI validates migration chains via migrate + int on every PR/main.)
 
@@ -83,7 +85,11 @@ There is no stage→main promote. Merging to `main` is the delivery; `ci.yml` ve
 `agent-pr-ready-automerge.yml` — PRs same-repo → `main` (todas as branches).
 O workflow roda `scripts/forgejo-pr-automerge.mjs` (plain Node, zero-dep): se
 draft `cursor/*` → marca Ready; espera os checks e mergea por rebase (o
-equivalente Forgejo do `gh pr merge --auto --rebase`). Cobre o caso em que o
+equivalente Forgejo do `gh pr merge --auto --rebase`). O wait exige o rollup
+`CI (PR) / checks` POSTADO e verde (OPS61) — statuses de jobs ainda não
+agendados não podem parecer verde — e a regra de branch protection no servidor
+bloqueia o merge POST (405) enquanto o contexto exigido não estiver satisfeito.
+Cobre o caso em que o
 agente (ou o default draft do Cloud) esqueceu e PRs humanas/worktree com merge
 falho silencioso (incidente OPS52). **Draft de branch não-`cursor/*` nunca é
 tocado** — o draft é o veto do ator (skip do CLI). Não há opt-out por skill
