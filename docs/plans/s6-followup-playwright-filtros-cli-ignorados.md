@@ -1,37 +1,35 @@
-# Impl: S6-FOLLOWUP — CLI Playwright ignora `--grep` e filtros posicionais; `test:e2e:affected` roda a suíte completa
+# Impl: S6-FOLLOWUP — CLI Playwright 1.58.2 ignora `-g` e posicionais sem `--`; `test:e2e:affected` roda a suíte completa
 
 Status: registrado
 Atualizado em: 2026-08-18
-Issue: #(a criar — S6-FOLLOWUP, depends S6)
+Issue: #58 (S6-FOLLOWUP, depends S6)
 Priority: P2
 Appetite: ~0,5 dia
 
-## Problema
+## Problema (evidência empírica, binário do repo `playwright@1.58.2`)
 
-O binário `playwright` 1.58.2 instalado no repo ignora **`--grep`/`-g` e filtros posicionais de arquivo**:
+| Invocação                                                             | Resultado                                                                                        |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `playwright test --config=X frontend -g "grade"`                      | **164 testes** (filtros ignorados)                                                               |
+| `playwright test --config=X a.spec.ts` (repro mínimo)                 | **todos** os testes rodam (posicional ignorado)                                                  |
+| `playwright test --config=X --grep alpha` (repro)                     | **todos** os testes rodam (grep ignorado)                                                        |
+| `playwright test --config=X -- tests/e2e/frontend.e2e.spec.ts`        | **11 testes** (filtro funciona!) — gate:ci usa esta forma                                        |
+| `pnpm test:e2e:affected -- tests/e2e/campaignHomeActions.e2e.spec.ts` | **173 testes** — `run-e2e-affected.mjs` passa os paths SEM `--` → suíte completa silenciosamente |
 
-- `pnpm test:e2e frontend -g "static grids on desktop"` → roda 164 testes (a suíte toda), não 2.
-- Reproduzido com config mínima no mesmo binário (`--grep alpha` roda o teste `beta`; posicional `a.spec.ts` idem).
-- `--list frontend` lista todos os projetos; `--project=frontend --no-deps` **funciona** (único filtro que respeita).
+Padrão: (1) posicionais só filtram quando precedidos de `--`; (2) a presença de `-g`/`--grep` quebra a filtragem inteira (até o posicional companheiro); (3) `--list` não respeita nenhum filtro. Reproduzido em config mínima com o mesmo binário (não é do repo).
 
-## Consequência
+## Correção
 
-`pnpm test:e2e:affected` (`scripts/run-e2e-affected.mjs`) passa paths completos (`tests/e2e/<name>.e2e.spec.ts`) como posicionais → hoje roda a **suíte completa silenciosamente** em vez dos specs afetados. CI não é afetado (usa `--shard`, caminho diferente). Iteração local depende de `--project=<família> --no-deps`.
-
-## Correção proposta (a validar no gate)
-
-1. **Diagnóstico da causa**: inspecionar por que `cliGrep`/`cliArgs` não chegam ao runner (o código em `lib/program.js`/`loadUtils.js` está correto — hipótese: parsing do commander consumindo os args, ou bug do build 1.58.2). Verificar se há fix upstream (changelog/issue do Playwright) e se um pin/bump resolve.
-2. **Fixo mínimo no repo** (independente do diagnóstico):
-   - `run-e2e-affected.mjs` deixa de depender de posicional: família → `--project=<família>` (mapa spec→projeto), `--no-deps` quando o gate não precisa da cadeia; ou gera o comando por arquivo se um mecanismo alternativo funcionar (`--test-list` investigado: também não filtrou no repro — descartado sem fix do binário).
-   - Documentar no AGENTS.md/playwright.config.ts o contorno `--project=X --no-deps` para iteração local.
-3. **Teste**: unit do `run-e2e-affected` (invocation args) + smoke manual do comando gerado (contagem de testes).
+1. **`scripts/run-e2e-affected.mjs`** (fix determinístico): inserir `--` antes dos paths — `playwrightArgs.push('--', ...specs)`. Verificação: contagem de testes do comando gerado (unit do invocation args + smoke `--list`-less com contagem).
+2. **`-g`**: investigar causa no commander/playwright (upgrade/pin pode resolver — verificar changelog upstream 1.58.x/1.59); enquanto isso, documentar em `playwright.config.ts`/AGENTS.md: título-filtro → `--project=<família> --no-deps` (único mecanismo que respeita filtro hoje).
+3. **`--list`**: pino de expectativa nos docs (lista sem filtros é ruído).
 
 ## Não escopo
 
-- Não mudar os specs nem o CI (`--shard` funciona).
-- Não trocar o runner (Playwright é o framework do repo).
+- Não mudar specs, CI (`--shard` funciona) nem trocar de runner.
+- Não tocar o `gate:ci` (já usa a forma `--` que funciona).
 
 ## Aceite
 
-- `pnpm test:e2e:affected` roda só os specs afetados (contagem verificável).
-- Comando de iteração local documentado.
+- `pnpm test:e2e:affected` roda só os specs afetados (contagem verificada).
+- Comandos de iteração documentados; se `-g` seguir quebrado após investigação, workaround registrado.
