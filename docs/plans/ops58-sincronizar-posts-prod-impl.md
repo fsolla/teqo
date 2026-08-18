@@ -61,7 +61,7 @@ Appetite restante: herdado (~0,5 dia — execução no homeserver + runbook)
 ```mermaid
 flowchart LR
   A[seed-posts.mjs<br/>+ CLASSIFICATION 4 slugs] -->|pnpm db:seed:posts --dry-run| B[pre-flight prod<br/>plano sem escrita]
-  B -->|ok| C[ALLOW_REMOTE_DB=true<br/>pnpm db:seed:posts] --> D[posts novos + capas<br/>Garage S3 prod]
+  B -->|ok| C[SEED_MEDIA_CONFIRM=1 ALLOW_REMOTE_DB=true<br/>pnpm db:seed:posts] --> D[posts novos + capas<br/>Garage S3 prod]
   D -->|POST /api/revalidate?tag=posts| E[bust cache posts]
   E -->|media:recover --verify + curl páginas| F[aceite público]
 ```
@@ -157,7 +157,9 @@ em gate de conteúdo — a intenção quer o sync desbloqueado).
    ```
    Esperado: echo do alvo (`DB: 127.0.0.1:5433`), relatório com os 4 slugs
    novos a criar (`would-create … (cover: url)` — URL presente; o download/upload
-   só acontece no sync), slugs existentes a pular, sem escrita. Se o dry-run
+   só acontece no sync), slugs existentes a pular, sem escrita. (O dry-run não
+   escreve — segue sem a flag `SEED_MEDIA_CONFIRM` do sync, mesmo com as `S3_*`
+   exportadas.) Se o dry-run
    falhar com ECONNREFUSED/ENOTFOUND: conferir o proxy (`docker ps | grep
 teqo-1313-build-proxy` — o deploy script o cria idempotentemente; se
    ausente, re-dispatchar o deploy ou rodar o trecho que o cria em
@@ -165,11 +167,14 @@ teqo-1313-build-proxy` — o deploy script o cria idempotentemente; se
    (primeira execução do runbook).
 3. **Sincronizar:**
    ```bash
-   ALLOW_REMOTE_DB=true pnpm db:seed:posts
+   SEED_MEDIA_CONFIRM=1 ALLOW_REMOTE_DB=true pnpm db:seed:posts
    ```
    Esperado: `Posts created : 4` (os novos), `Posts skipped : 39` (ou o número
    real de já existentes), capas baixadas e uploadadas para o Garage de prod
-   (`S3_ENDPOINT` já reescrito no passo 2). Se o WP ganhar slugs novos entre o
+   (`S3_ENDPOINT` já reescrito no passo 2). **Nota (OPS60):** o sync escreve
+   media no bucket das envs `S3_*` — o guard `SEED_MEDIA_CONFIRM=1` é
+   obrigatório (fail-closed; sem ele o seed recusa com exit 1 antes de
+   qualquer escrita). Se o WP ganhar slugs novos entre o
    pre-flight e aqui, eles entram como `politica` com warning — registrar na
    Issue e classificar (admin ou follow-up).
 4. **Bust de cache:**
