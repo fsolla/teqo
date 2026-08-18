@@ -45,11 +45,18 @@ describe('Campaign home', () => {
   it('usa exatamente as seis bandeiras aprovadas', async () => {
     render(await HomePage())
 
-    expect(screen.getByText('Defender o SUS e valorizar quem cuida')).toBeTruthy()
-    expect(screen.getByText('Fim da escala 6×1 e jornada de 40h')).toBeTruthy()
-    expect(screen.getByText('Educação em tempo integral e federais no interior')).toBeTruthy()
-    expect(screen.getByText('Recomprar a Refinaria de Mataripe')).toBeTruthy()
-    expect(screen.getByText('Salário mínimo forte, emprego e moradia')).toBeTruthy()
-    expect(screen.getByText('Defesa intransigente da democracia')).toBeTruthy()
+    // S6: cada bandeira aparece em duas renderizações irmãs (grade desktop e
+    // carrossel mobile); o teste garante que as duas seguem a mesma copy.
+    const expectedTitles = [
+      'Defender o SUS e valorizar quem cuida',
+      'Fim da escala 6×1 e jornada de 40h',
+      'Educação em tempo integral e federais no interior',
+      'Recomprar a Refinaria de Mataripe',
+      'Salário mínimo forte, emprego e moradia',
+      'Defesa intransigente da democracia',
+    ]
+    for (const title of expectedTitles) {
+      expect(screen.getAllByText(title)).toHaveLength(2)
+    }
   })
 })

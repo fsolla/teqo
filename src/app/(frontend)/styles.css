@@ -460,7 +460,18 @@ body,
   }
 }
 
+/* Desktop grid recalibration (S6): the flags section grows so both grid rows
+   of content-height cards fit with breathing room. Fluid clamp between the
+   measured anchors: ~520px at 1024px (narrow columns, 3-line card bodies) →
+   ~418px from ~1385px up (columns saturate at the content max width).
+   `overflow: hidden` keeps text-zoom growth (≥125%) inside the band instead
+   of painting the cards over the footer. */
 @media (min-width: 64rem) {
+  .campaign-flags {
+    height: clamp(418px, calc(807.7px - 28.13vw), 520px);
+    overflow: hidden;
+  }
+
   [data-theme='campaign-site'] {
     --campaign-desktop-portrait-width: clamp(465px, calc(26.45vw + 194.15px), 702px);
     --campaign-desktop-portrait-height: clamp(517px, calc(29.41vw + 215.84px), 781px);

@@ -1,6 +1,7 @@
 'use client'
 
-import Image from 'next/image'
+import { CampaignFlagCard } from '@/components/CampaignFlagCard'
+import { CampaignProblemCard } from '@/components/CampaignProblemCard'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 const AUTO_ADVANCE_MS = 4_000
@@ -83,6 +84,9 @@ export const CampaignCarousel = ({ ariaLabel, items, variant }: CampaignCarousel
 
   useEffect(() => {
     if (prefersReducedMotion || temporarilyPaused || items.length < 2) return
+    // S6: on desktop the carousel lives inside an `lg:hidden` wrapper — its
+    // auto-advance chain must not keep re-rendering a display:none subtree.
+    if (trackRef.current && window.getComputedStyle(trackRef.current).display === 'none') return
 
     const timer = window.setTimeout(() => {
       scrollToItem((activeIndex + 1) % items.length)
@@ -142,7 +146,7 @@ export const CampaignCarousel = ({ ariaLabel, items, variant }: CampaignCarousel
           <div
             aria-label="Escolher bandeira"
             data-carousel-chips
-            className="scrollbar-hide absolute -top-2.5 right-0 left-0 flex h-11 items-center gap-1.5 overflow-x-auto pr-2 lg:gap-[7px]"
+            className="scrollbar-hide absolute -top-2.5 right-0 left-0 flex h-11 items-center gap-1.5 overflow-x-auto pr-2"
           >
             {items.map((item, index) => {
               const isActive = index === activeIndex
@@ -176,7 +180,7 @@ export const CampaignCarousel = ({ ariaLabel, items, variant }: CampaignCarousel
         onScroll={syncActiveItem}
         data-carousel-track
         className={`scrollbar-hide m-0 flex list-none snap-x snap-mandatory overflow-x-auto scroll-smooth p-0 ${
-          variant === 'problem' ? 'gap-2.5 lg:gap-[21px]' : 'mt-5 gap-2.5 lg:gap-[14px]'
+          variant === 'problem' ? 'gap-2.5' : 'mt-5 gap-2.5'
         }`}
       >
         {items.map((item, index) => (
@@ -187,45 +191,14 @@ export const CampaignCarousel = ({ ariaLabel, items, variant }: CampaignCarousel
             aria-current={index === activeIndex ? 'true' : undefined}
             className={`m-0 shrink-0 snap-start ${
               variant === 'problem'
-                ? 'h-[437px] w-[calc(100vw_-_38px)] max-w-[355px] lg:w-[355px]'
-                : 'h-[100px] w-[calc(100vw_-_66px)] max-w-[327px] lg:w-[327px]'
+                ? 'h-[437px] w-[calc(100vw_-_38px)] max-w-[355px]'
+                : 'h-[100px] w-[calc(100vw_-_66px)] max-w-[327px]'
             }`}
           >
             {variant === 'problem' ? (
-              <article className="relative h-full overflow-hidden rounded-[10px] bg-[#2a0b08] font-[family-name:var(--font-arimo)] text-white">
-                {item.image && item.imageFrame ? (
-                  <Image
-                    src={item.image}
-                    alt={item.imageAlt ?? ''}
-                    width={item.imageFrame.width}
-                    height={item.imageFrame.height}
-                    sizes="(max-width: 393px) 137vw, 485px"
-                    className={item.imageFrame.className}
-                  />
-                ) : item.image ? (
-                  <Image
-                    src={item.image}
-                    alt={item.imageAlt ?? ''}
-                    fill
-                    sizes="355px"
-                    className="object-cover object-center"
-                  />
-                ) : null}
-                <div className="absolute inset-0 bg-[linear-gradient(to_top,#2a0b08_0%,rgba(42,11,8,0.96)_23%,rgba(42,11,8,0.68)_34%,transparent_62%)]" />
-                <div className="absolute right-3.5 bottom-3.5 left-3.5">
-                  <h3 className="m-0 border-0 p-0 text-[15px] leading-tight font-bold tracking-normal">
-                    {item.title}
-                  </h3>
-                  <p className="m-0 mt-1 text-[12px] leading-[1.16] text-white/90">{item.body}</p>
-                </div>
-              </article>
+              <CampaignProblemCard item={item} />
             ) : (
-              <article className="h-full rounded-[10px] bg-(--campaign-surface) px-3.5 py-2.5 font-[family-name:var(--font-arimo)] text-black">
-                <h3 className="m-0 border-0 p-0 text-[14px] leading-[1.12] font-bold tracking-normal">
-                  {item.title}
-                </h3>
-                <p className="m-0 mt-1 text-[12px] leading-[1.18] text-[#6f6f73]">{item.body}</p>
-              </article>
+              <CampaignFlagCard item={item} />
             )}
           </li>
         ))}

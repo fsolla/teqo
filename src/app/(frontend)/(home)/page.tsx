@@ -1,7 +1,37 @@
 import { CampaignCarousel, type CampaignCarouselItem } from '@/components/CampaignCarousel'
 import { CampaignContentSection } from '@/components/CampaignContentSection'
+import { CampaignFlagCard } from '@/components/CampaignFlagCard'
 import { CampaignFooter } from '@/components/CampaignFooter'
 import { CampaignHero } from '@/components/CampaignHero'
+import { CampaignProblemCard } from '@/components/CampaignProblemCard'
+import type { ReactNode } from 'react'
+
+/**
+ * S6 — desktop sibling of the mobile carousel: the same cards as a static
+ * grid (3 columns), visible only from the `lg` breakpoint the carousel
+ * geometry used to interpolate at. Kept here with the sections it serves.
+ */
+const CampaignCardGrid = ({
+  gridKey,
+  ariaLabel,
+  gapClassName,
+  children,
+}: {
+  gridKey: 'problem' | 'flags'
+  ariaLabel: string
+  gapClassName: string
+  children: ReactNode
+}) => (
+  <div className="hidden px-(--campaign-content-inset) lg:block">
+    <ol
+      data-grid={gridKey}
+      aria-label={ariaLabel}
+      className={`m-0 grid list-none grid-cols-3 p-0 ${gapClassName}`}
+    >
+      {children}
+    </ol>
+  </div>
+)
 
 const problemItems: CampaignCarouselItem[] = [
   {
@@ -131,11 +161,24 @@ export default async function HomePage() {
               </strong>
             </p>
             <div className="campaign-problem-carousel absolute right-0 left-0">
-              <CampaignCarousel
+              <CampaignCardGrid
+                gridKey="problem"
                 ariaLabel="Bandeiras que tornam esta eleição decisiva"
-                items={problemItems}
-                variant="problem"
-              />
+                gapClassName="gap-[21px]"
+              >
+                {problemItems.map((item) => (
+                  <li key={item.id} className="m-0 h-[437px]">
+                    <CampaignProblemCard item={item} />
+                  </li>
+                ))}
+              </CampaignCardGrid>
+              <div className="lg:hidden">
+                <CampaignCarousel
+                  ariaLabel="Bandeiras que tornam esta eleição decisiva"
+                  items={problemItems}
+                  variant="problem"
+                />
+              </div>
             </div>
           </div>
         </section>
@@ -163,11 +206,24 @@ export default async function HomePage() {
               Ministério da Saúde e da saúde da Bahia.
             </p>
             <div className="campaign-flags-carousel absolute right-0 left-0">
-              <CampaignCarousel
+              <CampaignCardGrid
+                gridKey="flags"
                 ariaLabel="Bandeiras da campanha"
-                items={flagItems}
-                variant="flags"
-              />
+                gapClassName="gap-[14px]"
+              >
+                {flagItems.map((item) => (
+                  <li key={item.id} className="m-0">
+                    <CampaignFlagCard item={item} size="spacious" />
+                  </li>
+                ))}
+              </CampaignCardGrid>
+              <div className="lg:hidden">
+                <CampaignCarousel
+                  ariaLabel="Bandeiras da campanha"
+                  items={flagItems}
+                  variant="flags"
+                />
+              </div>
             </div>
           </div>
         </section>

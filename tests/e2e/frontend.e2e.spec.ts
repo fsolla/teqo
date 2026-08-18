@@ -351,8 +351,92 @@ test.describe('Frontend', () => {
     }
   })
 
-  test('auto-advances and keeps carousel controls synchronized', async ({ page }) => {
+  test('shows the campaign message sections as static grids on desktop', async ({ page }) => {
     await page.goto('/')
+
+    const problemGrid = page.locator('[data-home-section="problem"] [data-grid="problem"]')
+    await expect(problemGrid).toBeVisible()
+    await expect(problemGrid.getByRole('listitem')).toHaveCount(3)
+    const problemBoxes = await problemGrid
+      .getByRole('listitem')
+      .evaluateAll((items) => items.map((item) => item.getBoundingClientRect()))
+    expect(new Set(problemBoxes.map((box) => Math.round(box.y))).size).toBe(1)
+    expect(new Set(problemBoxes.map((box) => Math.round(box.x))).size).toBe(3)
+    expect(problemBoxes.every((box) => box.width > 0 && box.height > 0)).toBe(true)
+
+    const flagsGrid = page.locator('[data-home-section="flags"] [data-grid="flags"]')
+    await expect(flagsGrid).toBeVisible()
+    await expect(flagsGrid.getByRole('listitem')).toHaveCount(6)
+    const flagsBoxes = await flagsGrid
+      .getByRole('listitem')
+      .evaluateAll((items) => items.map((item) => item.getBoundingClientRect()))
+    expect(new Set(flagsBoxes.map((box) => Math.round(box.x))).size).toBe(3)
+    expect(new Set(flagsBoxes.map((box) => Math.round(box.y))).size).toBe(2)
+
+    // No carousel chrome on desktop: regions and chips are display:none (out
+    // of the a11y tree) and the hidden carousel never starts its auto-advance
+    // chain, so no aria-current state exists anywhere in the grids.
+    await expect(
+      page.getByRole('region', { name: 'Bandeiras que tornam esta eleição decisiva' }),
+    ).toHaveCount(0)
+    await expect(page.getByRole('region', { name: 'Bandeiras da campanha' })).toHaveCount(0)
+    await expect(page.locator('[data-carousel-chips]')).toBeHidden()
+    await expect(problemGrid.locator('[aria-current]')).toHaveCount(0)
+    await expect(flagsGrid.locator('[aria-current]')).toHaveCount(0)
+
+    // The grids stay inside their sections with breathing room at every
+    // desktop width, no card is clipped (no hidden scroll) and nothing
+    // overflows the page horizontally. Fonts settle first: the flags cards
+    // are content-height, so a fallback-font measurement could differ from
+    // the real layout.
+    await page.evaluate(() => document.fonts.ready)
+    for (const width of [1024, 1280, 1440, 1920]) {
+      await page.setViewportSize({ width, height: 900 })
+      const spacing = await page.evaluate(() => {
+        const section = (selector: string) => {
+          const element = document.querySelector<HTMLElement>(selector)
+          if (!element) throw new Error(`Seção ausente: ${selector}`)
+          return element.getBoundingClientRect()
+        }
+        const gridBottom = (selector: string) => {
+          const grid = document.querySelector<HTMLElement>(selector)
+          if (!grid) throw new Error(`Grade ausente: ${selector}`)
+          const cards = Array.from(grid.querySelectorAll<HTMLElement>('li'))
+          return Math.max(...cards.map((card) => card.getBoundingClientRect().bottom))
+        }
+        const gridClipped = (selector: string) => {
+          const grid = document.querySelector<HTMLElement>(selector)
+          if (!grid) throw new Error(`Grade ausente: ${selector}`)
+          return grid.scrollHeight - grid.clientHeight
+        }
+        const problem = section('[data-home-section="problem"]')
+        const flags = section('[data-home-section="flags"]')
+        const scrollContainer = document.querySelector<HTMLElement>('[data-theme="campaign-site"]')
+        return {
+          problemBottomGap:
+            problem.bottom - gridBottom('[data-home-section="problem"] [data-grid]'),
+          flagsBottomGap: flags.bottom - gridBottom('[data-home-section="flags"] [data-grid]'),
+          problemClipped: gridClipped('[data-home-section="problem"] [data-grid]'),
+          flagsClipped: gridClipped('[data-home-section="flags"] [data-grid]'),
+          horizontalOverflow: scrollContainer
+            ? scrollContainer.scrollWidth - scrollContainer.clientWidth
+            : 0,
+        }
+      })
+      expect(spacing.problemBottomGap).toBeGreaterThanOrEqual(24)
+      expect(spacing.flagsBottomGap).toBeGreaterThanOrEqual(24)
+      expect(spacing.problemClipped).toBeLessThanOrEqual(1)
+      expect(spacing.flagsClipped).toBeLessThanOrEqual(1)
+      expect(spacing.horizontalOverflow).toBeLessThanOrEqual(1)
+    }
+  })
+
+  test('keeps carousel auto-advance and chips on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/')
+
+    await expect(page.locator('[data-home-section="problem"] [data-grid]')).toBeHidden()
+    await expect(page.locator('[data-home-section="flags"] [data-grid]')).toBeHidden()
 
     const problemCarousel = page.getByRole('region', {
       name: 'Bandeiras que tornam esta eleição decisiva',
