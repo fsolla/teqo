@@ -472,6 +472,9 @@ describe('src/utilities top-level is pinned', () => {
     'hookFilledData.ts',
     'leaderContactsPageData.ts',
     'loadNamesByIds.ts',
+    // OPS52 — media storage env resolution; shared by payload.config.ts
+    // (fail-closed S3/Garage switch) and its unit spec.
+    'mediaStorage.ts',
     'onda0Provision.ts',
     'organizationData.ts',
     'payloadTransaction.ts',

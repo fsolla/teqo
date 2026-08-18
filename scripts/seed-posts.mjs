@@ -24,7 +24,6 @@
  *   (against a remote DB, on purpose:)  ALLOW_REMOTE_DB=true pnpm db:seed:posts
  */
 import { convertHTMLToLexical, editorConfigFactory } from '@payloadcms/richtext-lexical'
-import { del as blobDel } from '@vercel/blob'
 import { JSDOM } from 'jsdom'
 import { getPayload } from 'payload'
 import { dieWithLabel, loadCliEnv } from './lib/cli.mjs'
@@ -381,23 +380,12 @@ async function ensureCoverMedia(payload, { slug, coverUrl, alt }) {
 
   const buffer = Buffer.from(await res.arrayBuffer())
 
-  // The Vercel Blob store is SHARED across environments, and the storage plugin
-  // (@payloadcms/storage-vercel-blob) calls `put()` without `allowOverwrite` and
-  // exposes no option to enable it. So a blob left behind under this deterministic
-  // key (`<slug>.<ext>`) by an earlier run in another environment would make the
-  // upload throw "This blob already exists". We have no DB media row for it here
-  // (checked above), so it's an orphan — delete it first so the upload is
-  // deterministic and this seed stays re-runnable. `del` is idempotent (no-op
-  // when the blob is absent).
-  const blobToken = process.env.BLOB_READ_WRITE_TOKEN
-  if (blobToken) {
-    try {
-      await blobDel(filename, { token: blobToken })
-    } catch (err) {
-      console.warn(`[seed:posts]   blob pre-delete skipped for ${filename}: ${err.message}`)
-    }
-  }
-
+  // The upload goes through the configured media storage plugin: Garage S3
+  // when the S3_* envs are set (OPS52), local disk otherwise. The S3 adapter
+  // overwrites the deterministic key (`<slug>.<ext>`) natively, so no
+  // pre-delete is needed — unlike Vercel Blob, whose `put()` refused
+  // overwrites and forced the cleanup dance this script used to do. The
+  // DB-side idempotency (lookup by filename above) is unchanged.
   const media = await payload.create({
     collection: 'media',
     data: { alt: alt || slug },

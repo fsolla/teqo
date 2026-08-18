@@ -9,6 +9,7 @@ import {
   hashSlotOf,
   isGeneratedDatabaseName,
   numericSlotOfCode,
+  s3EnvCopiedLines,
   testDatabaseForSlot,
   worktreeEnvFileContents,
   worktreeEnvironment,
@@ -350,6 +351,36 @@ describe('worktreeEnvironment (per-worktree ports and databases)', () => {
   })
 })
 
+describe('s3EnvCopiedLines (OPS52 media storage, all-or-nothing)', () => {
+  const full = () => ({
+    S3_BUCKET: 'teqo-media',
+    S3_ENDPOINT: 'http://100.119.220.31:3900',
+    S3_ACCESS_KEY_ID: 'AK-test',
+    S3_SECRET_ACCESS_KEY: 'secret',
+  })
+
+  it('copies all five S3_* lines when the four required keys are present', () => {
+    expect(s3EnvCopiedLines({ ...full(), S3_REGION: 'garage' })).toEqual([
+      'S3_BUCKET=teqo-media',
+      'S3_ENDPOINT=http://100.119.220.31:3900',
+      'S3_ACCESS_KEY_ID=AK-test',
+      'S3_SECRET_ACCESS_KEY=secret',
+      'S3_REGION=garage',
+    ])
+  })
+
+  it('copies nothing when no S3_* key is set (local storage fallback)', () => {
+    expect(s3EnvCopiedLines({ DATABASE_URL: 'x' })).toEqual([])
+  })
+
+  it('copies nothing on a partial set — a partial config would abort the boot', () => {
+    const partial: Record<string, string> = { ...full() }
+    delete partial.S3_SECRET_ACCESS_KEY
+    expect(s3EnvCopiedLines(partial)).toEqual([])
+    expect(s3EnvCopiedLines({ ...full(), S3_BUCKET: '' })).toEqual([])
+  })
+})
+
 describe('worktreeEnvFileContents (dev/test env parity)', () => {
   const env = worktreeEnvironment({ branch: 'C15-fullcalendar', code: 'C15' })
   const lines = worktreeEnvFileContents({
@@ -358,7 +389,11 @@ describe('worktreeEnvFileContents (dev/test env parity)', () => {
     generatedBy: 'gerado por pnpm worktree next',
     env,
     payloadSecret: 'secret',
-    copiedLines: ['BLOB_READ_WRITE_TOKEN=blob', 'VAPID_PRIVATE_KEY=key'],
+    copiedLines: [
+      'S3_BUCKET=teqo-media',
+      'S3_ENDPOINT=http://100.119.220.31:3900',
+      'VAPID_PRIVATE_KEY=key',
+    ],
   })
   const dev = lines.dev.join('\n')
   const test = lines.test.join('\n')
@@ -386,11 +421,12 @@ describe('worktreeEnvFileContents (dev/test env parity)', () => {
     )
     expect(dev).toContain(`PORT=${devPortForSlot(env.slot)}`)
     expect(dev).toContain('PAYLOAD_SECRET=secret')
-    expect(dev).toContain('BLOB_READ_WRITE_TOKEN=blob')
+    expect(dev).toContain('S3_BUCKET=teqo-media')
+    expect(dev).toContain('S3_ENDPOINT=http://100.119.220.31:3900')
     expect(dev).toContain('VAPID_PRIVATE_KEY=key')
     expect(test).not.toContain('PAYLOAD_SECRET')
     expect(test).not.toContain('PORT=')
-    expect(test).not.toContain('BLOB_READ_WRITE_TOKEN')
+    expect(test).not.toContain('S3_BUCKET')
     expect(test).not.toContain('VAPID_PRIVATE_KEY')
   })
 

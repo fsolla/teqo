@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url'
 
 import { resendAdapter } from '@payloadcms/email-resend'
 import { importExportPlugin } from '@payloadcms/plugin-import-export'
-import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
+import { s3Storage } from '@payloadcms/storage-s3'
 import { pt } from 'payload/i18n/pt'
 import { Activity } from './collections/Activity'
 import { AllocationDecision } from './collections/AllocationDecision'
@@ -46,9 +46,12 @@ import { Metadata } from './globals/Metadata'
 import { PrivacyPolicy } from './globals/PrivacyPolicy'
 import { SiteSettings } from './globals/SiteSettings'
 import { isPayloadAdmin } from './utilities/campaignAccess'
+import { resolveS3StorageEnv } from './utilities/mediaStorage'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
+const mediaStorage = resolveS3StorageEnv(process.env)
 
 const campaignEmailFromAddress =
   process.env.CAMPAIGN_EMAIL_FROM?.trim() || 'campanha@jorgesolla.com.br'
@@ -144,12 +147,28 @@ export default buildConfig({
     apiKey: process.env.RESEND_API_KEY || '',
   }),
   plugins: [
-    vercelBlobStorage({
-      collections: {
-        media: true,
-      },
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-    }),
+    // Media storage (OPS52): Garage S3 when the S3_* envs are set, local disk
+    // otherwise; a partial S3 config throws at boot (see mediaStorage.ts). The
+    // bucket stays private — Payload proxies files through /media/file.
+    ...(mediaStorage.enabled
+      ? [
+          s3Storage({
+            collections: {
+              media: true,
+            },
+            bucket: mediaStorage.bucket,
+            config: {
+              credentials: {
+                accessKeyId: mediaStorage.accessKeyId,
+                secretAccessKey: mediaStorage.secretAccessKey,
+              },
+              region: mediaStorage.region,
+              endpoint: mediaStorage.endpoint,
+              forcePathStyle: true,
+            },
+          }),
+        ]
+      : []),
     importExportPlugin({
       collections: [adminCsvExportCollection('signature'), adminCsvExportCollection('contact')],
       overrideExportCollection: withImportExportAdminAccess,

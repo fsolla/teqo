@@ -15,7 +15,6 @@ bash "${SCRIPT_DIR}/ensure-postgres.sh"
 if [ ! -f .env ]; then
   sed \
     -e 's/YOUR_SECRET_HERE/cursor-cloud-local-secret/' \
-    -e 's/YOUR_BLOB_TOKEN_HERE/vercel_blob_rw_cloud01_localplaceholder01/' \
     .env.example > .env
   echo "[cloud-setup] wrote .env from .env.example (local-only values)"
 fi

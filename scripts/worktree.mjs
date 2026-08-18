@@ -129,6 +129,7 @@ import {
   DEV_PORT_BASE,
   GENERATED_ENV_MARKER,
   isGeneratedDatabaseName,
+  s3EnvCopiedLines,
   worktreeEnvFileContents,
   worktreeEnvironment,
 } from './lib/worktree-env.mjs'
@@ -407,7 +408,8 @@ const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpo
     env,
     payloadSecret,
     copiedLines: [
-      ...copy('BLOB_READ_WRITE_TOKEN'),
+      // Media storage (OPS52): all-or-nothing (see s3EnvCopiedLines).
+      ...s3EnvCopiedLines(mainEnv),
       ...copy('NEXT_PUBLIC_VAPID_PUBLIC_KEY'),
       ...copy('VAPID_PUBLIC_KEY'),
       ...copy('VAPID_PRIVATE_KEY'),
