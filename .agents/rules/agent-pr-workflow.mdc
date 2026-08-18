@@ -58,6 +58,16 @@ Branch protection on `main` (applied 2026-08-18, OPS61) requires only:
   every ci-pr job; on the server the rule matches it as a glob,
   `CI (PR) / checks*`)
 
+OPS64: the rollup is structurally honest since OPS62 — ci-pr.yml is a SINGLE
+sequential job (`checks`), so its own status IS the cascade verdict (no
+matrix, no shards, no parent aggregation to lie). The historical bug (Forgejo
+9.0.3 reporting the LAST matrix shard's result as the parent's in `needs`,
+posting `checks` SUCCESS with an e2e shard red — runs 604/607/610) is gone by
+construction; the `needs.<job>.results` array of GitHub does not exist in this
+runner, so any future matrix must NOT aggregate via `needs`. The safety-net
+CLI pins the defense: it never trusts the rollup alone (scans individual
+statuses; run-607 scenario unit-tested in `forgejoApi.unit.spec.ts`).
+
 (`migration-lock` removed 2026-08-12 — the CI validates migration chains via migrate + int on every PR/main.)
 
 **There is no deploy from PR CI.** The `ci.yml` verifier on `main` runs the full suite in its fixed 30-minute window and, on a production change, the `deploy` job publishes to the homeserver (`jorgesolla1313.com.br`, self-hosted) — migrations applied before the rollout. Do not add a Vercel/Git-integration deploy gate.
@@ -79,7 +89,10 @@ equivalente Forgejo do auto-merge — sem `gh`). O wait exige o rollup
 `CI (PR) / checks` POSTADO e verde (OPS61) — o único contexto que só existe
 quando a cascata inteira do ci-pr assentou (jobs ainda não agendados não
 postam status; o próprio status do job do safety net é `pending` durante o run
-e **nunca** entra no veredito). A regra de branch protection no servidor
+e **nunca** entra no veredito). O CLI nunca confia no rollup sozinho: varre
+todos os statuses individuais e falha em qualquer `failure`/`error` — um shard
+de e2e vermelho bloqueia o merge mesmo com o rollup verde (OPS64; run 607).
+A regra de branch protection no servidor
 bloqueia o merge POST (405) enquanto o contexto exigido não estiver satisfeito
 — inclusive merges manuais via API: foi um merge manual que colocou a PR #52
 em main com o CI vermelho (o CLI nunca mergeou sozinho antes do OPS61; todo

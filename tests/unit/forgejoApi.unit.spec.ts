@@ -332,6 +332,38 @@ describe('forgejo-api', () => {
     await expect(api.waitForChecks(4, { pollMs: 1 })).rejects.toThrow(/Checks falharam/)
   })
 
+  it('waitForChecks throws when a matrix shard is red even if the rollup is green (run 607, OPS64)', async () => {
+    // Forgejo reports the LAST shard's result as the matrix parent result, so
+    // the ci-pr `checks` rollup job can post SUCCESS with e2e (1) red (runs
+    // 604/607/610). The CLI must NEVER trust the rollup alone: it scans the
+    // individual shard statuses (`CI (PR) / e2e (1)` = failure) and refuses to
+    // merge — this is what kept PR #55 out of main red in run 607.
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/pulls/')) {
+          return ok({
+            number: 55,
+            state: 'open',
+            merged: false,
+            mergeable: true,
+            head: { ref: 'OPS59-x', sha: 'abc' },
+          })
+        }
+        return ok({
+          statuses: [
+            { context: 'CI / static', status: 'success' },
+            { context: 'CI (PR) / e2e (1) (pull_request)', status: 'failure' },
+            { context: 'CI (PR) / e2e (2) (pull_request)', status: 'success' },
+            { context: 'CI (PR) / checks (pull_request)', status: 'success' },
+          ],
+        })
+      },
+    })
+
+    await expect(api.waitForChecks(55, { pollMs: 1 })).rejects.toThrow(/Checks falharam/)
+  })
+
   it('waitForChecks ignores the safety-net own status, pending for the whole run (OPS61 finding)', async () => {
     let statusPoll = 0
     const api = createApi({
