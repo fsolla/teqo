@@ -4,6 +4,10 @@
  * then phase-2 expensive (int/build). e2e is NOT part of the local mirror
  * (OPS59): it runs once, in CI (PR job `e2e` → `checks`; main `ci.yml` e2e →
  * `checks` → `deploy`). Local optional feedback: `pnpm test:e2e:affected`.
+ * Docs guards (OPS63): the `docs-guards` checks (changelog append-only,
+ * aggregate sync, conflict markers) also run here — cheap git diffs, same
+ * scripts the CI job runs (the `changelog-rewrite:` escape stays CI-only,
+ * PR body).
  * Skips align with `scripts/ci-scope.mjs` (`origin/main` by default).
  *
  * Preflight checks only `teqo_test` (ci-pr never touches the dev DB). Escape
@@ -81,6 +85,11 @@ const main = async () => {
   run('lint', 'pnpm', ['lint'])
   run('format:check', 'pnpm', ['format:check'])
 
+  // --- Docs guards (OPS63): same checks as the CI `docs-guards` job ---
+  run('docs-guards (changelog append-only)', 'node', ['scripts/check-changelog-append-only.mjs'])
+  run('docs-guards (aggregate sync)', 'node', ['scripts/build-changelog.mjs', '--check'])
+  run('docs-guards (conflict markers)', 'node', ['scripts/check-docs-conflict-markers.mjs'])
+
   if (scope.code.mode === 'none') {
     console.log('\n[gate:ci] ⊘ typecheck/knip/cycles skipped (no code surface)')
   } else {
@@ -149,7 +158,9 @@ const main = async () => {
     console.log(`\n[gate:ci] ▶ e2e: runs in CI (job e2e, ${specs}) — not in this gate (OPS59)`)
   }
 
-  console.log('\n[gate:ci] ✓ all checks passed (ci-pr mirror without e2e — e2e verified in CI)')
+  console.log(
+    '\n[gate:ci] ✓ all checks passed (ci-pr mirror: docs guards local — OPS63; e2e verified in CI)',
+  )
 }
 
 await main()

@@ -37,7 +37,7 @@ When the environment says to use `ManagePullRequest` instead of `gh pr create`:
 **Use `pnpm push`, never bare `git push`.** Não depende do Husky estar wired:
 
 1. `ensure-repo-deps` — `pnpm install` se `node_modules` faltar/stale + `pnpm run prepare` (Husky) se hooks não estiverem apontando para `.husky`
-2. `pnpm gate:push` — espelho do `ci-pr.yml` sem e2e (e2e roda uma vez, no CI, após o push; local opcional: `pnpm test:e2e:affected`)
+2. `pnpm gate:push` — espelho do `ci-pr.yml` sem e2e (e2e roda uma vez, no CI, após o push; local opcional: `pnpm test:e2e:affected`), com os `docs-guards` locais (OPS63: changelog append-only, agregado sync e marcadores de conflito — o escape `changelog-rewrite:` fica só no CI, body do PR)
 3. `git push --no-verify` — só porque o gate já rodou no passo 2 (não é escape hatch)
 
 ```bash
