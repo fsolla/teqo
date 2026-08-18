@@ -25,7 +25,7 @@ describe('formatRelativePostDate', () => {
     expect(formatRelativePostDate('2026-08-17T11:55:00Z')).toBe('há 5 minutos')
     expect(formatRelativePostDate('2026-08-17T10:30:00Z')).toBe('há 1 hora')
     expect(formatRelativePostDate('2026-08-17T08:00:00Z')).toBe('há 4 horas')
-    expect(formatRelativePostDate('2026-08-15T12:00:00Z')).toBe('há 2 dias')
+    expect(formatRelativePostDate('2026-08-16T12:00:00Z')).toBe('há 1 dia')
   })
 
   it('floors partial units so 1h59m reads as "há 1 hora"', () => {
@@ -33,8 +33,10 @@ describe('formatRelativePostDate', () => {
     expect(formatRelativePostDate('2026-08-17T10:01:00Z')).toBe('há 1 hora')
   })
 
-  it('falls back to the long absolute date past 30 days', () => {
+  it('falls back to the long absolute date past 48 hours', () => {
     vi.setSystemTime(new Date('2026-08-17T12:00:00Z'))
+    expect(formatRelativePostDate('2026-08-16T12:00:00Z')).toBe('há 1 dia')
+    expect(formatRelativePostDate('2026-08-15T12:00:00Z')).toBe('15 de agosto de 2026')
     expect(formatRelativePostDate('2026-07-17T12:00:00Z')).toBe('17 de julho de 2026')
   })
 })
