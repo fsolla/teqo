@@ -101,6 +101,7 @@ describe('ciSkipInvariants', () => {
       'scripts/lib/plansOnlyClosesGuard.mjs',
       'scripts/test-affected.mjs',
       'scripts/e2e-affected.mjs',
+      'scripts/run-e2e-affected.mjs',
       'tests/unit/ciSkipInvariants.unit.spec.ts',
       'tests/unit/testAffected.unit.spec.ts',
     ]) {

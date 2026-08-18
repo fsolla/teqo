@@ -94,6 +94,20 @@ export default defineConfig({
      */
     timeout: 10_000,
   },
+  /*
+   * CLI filtering in dev mode (S6-FOLLOWUP, 2026-08-18): positional test paths
+   * ARE parsed and matched per file, but the project dependency chain below
+   * (setup -> campaign -> frontend -> admin, dev mode only) makes the runner
+   * drag ALL files of every dependency project into a selected run
+   * (buildProjectsClosure) — filtering to one frontend spec runs the whole
+   * campaign family. Prod mode (CI / E2E_PROD=1) has no dependencies, so the
+   * filter works as-is (the CI selected job relies on this). Local recipes:
+   *   pnpm test:e2e --no-deps -- tests/e2e/campaignHomeActions.e2e.spec.ts
+   *   pnpm test:e2e --no-deps --project=campaign
+   * -g/--grep and --list DO work (title/file filters); pair them with
+   * --no-deps/--project for deterministic runs. `pnpm test:e2e:affected`
+   * generates the --no-deps form automatically.
+   */
   projects: [
     /*
      * `setup` prewarms shared Next route bundles against the dev server's cold

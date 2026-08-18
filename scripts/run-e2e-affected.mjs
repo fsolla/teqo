@@ -6,7 +6,15 @@
  *   3. optional production build into `.next-e2e` when `E2E_PROD=1`.
  *   4. `pnpm test:e2e` (set `CI=1` and `E2E_PROD=1` together for prod mode).
  *
- * Extra Playwright args after `--` are forwarded (e.g. a single spec while debugging).
+ * Extra Playwright args are forwarded verbatim (e.g. a single spec while
+ * debugging): pnpm consumes the first `--` separator, so the script only ever
+ * strips a leading `--` left by direct `node scripts/...` invocations
+ * (S6-FOLLOWUP). Flag values like `-g grade` pass through untouched.
+ *
+ * Filtered runs get `--no-deps` (S6-FOLLOWUP): in dev mode the project
+ * dependency chain drags every dependency project's files into a selected run
+ * via buildProjectsClosure; --no-deps disables that closure. Full runs keep
+ * the dev chain (OPS34 prewarm ordering).
  *
  *   GITHUB_BASE_REF=stage node scripts/run-e2e-affected.mjs
  *   pnpm test:e2e:affected -- tests/e2e/campaignHomeActions.e2e.spec.ts
@@ -15,10 +23,11 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { buildPlaywrightE2eArgs, parsePassthroughArgs } from './lib/playwright-e2e-args.mjs'
+
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
-const passthroughIndex = process.argv.indexOf('--')
-const passthroughArgs = passthroughIndex === -1 ? [] : process.argv.slice(passthroughIndex + 1)
+const passthroughArgs = parsePassthroughArgs(process.argv)
 
 const scopeRaw = execFileSync('node', ['scripts/e2e-affected.mjs'], {
   cwd: repoRoot,
@@ -51,13 +60,11 @@ if (process.env.E2E_PROD === '1') {
   run('pnpm', ['build'], { NEXT_DIST_DIR: '.next-e2e' })
 }
 
-const playwrightArgs = ['test:e2e']
-if (scope.mode === 'selected' && scope.specs.length > 0) {
-  for (const name of scope.specs) {
-    playwrightArgs.push(`tests/e2e/${name}.e2e.spec.ts`)
-  }
-}
-playwrightArgs.push(...passthroughArgs)
+const playwrightArgs = buildPlaywrightE2eArgs({
+  scopeSpecPaths:
+    scope.mode === 'selected' ? scope.specs.map((name) => `tests/e2e/${name}.e2e.spec.ts`) : [],
+  passthroughArgs,
+})
 
 run('pnpm', playwrightArgs, {
   ...(process.env.E2E_PROD === '1' ? { CI: '1', E2E_PROD: '1' } : {}),
