@@ -166,8 +166,24 @@ contratos de guard diferentes no mesmo script; o seed é local-first por design)
 
 ## Runbook de execução em produção (pós-merge, humano)
 
-Ordem obrigatória — o pre-flight separa "arquivo faltando" (esta Issue) de
-"container prod sem rota ao Garage" (infra, sucessor OPS):
+> **Estado 2026-08-18 (executado):** 38/40 objetos restaurados e servindo 200 em
+> `/api/media/file/...`; exceções sem fonte: `fim-escala-6x1.jpg` e
+> `jorgesolla.jpg` (404 honesto — rows manuais, não referenciadas por posts).
+> **E3 resolvido na raiz:** o container prod não alcançava o Garage — o
+> firewall do host derrubava TODA a sub-rede do docker (gateway, LAN e tailnet:
+> tudo bloqueado — o `headObject` pendurava e a rota de media dava timeout).
+> Fix aplicado no homeserver (reversível):
+>
+> 1. `sudo ufw allow from 10.0.11.0/24 to any port 3900 proto tcp` (INPUT)
+> 2. `sudo ufw route allow from 10.0.11.0/24 to any port 3900 proto tcp` (FWD)
+> 3. `extra_hosts: ["host.docker.internal:host-gateway"]` nos serviços
+>    `teqo-1313` e `teqo-1313-migrate` do `~/stack/docker-compose.yml`
+>    (sobrevive aos deploys — o OPS53 edita o compose in-place; backup
+>    `docker-compose.yml.pre-ops52-media-hostgateway`)
+> 4. `S3_ENDPOINT=http://host.docker.internal:3900` no `~/stack/teqo-1313.env`
+>    (o tailnet IP continua sendo o endpoint da workstation)
+
+Ordem das próximas execuções (pós-merge, humano):
 
 1. **Deploy do merge em `main`** (CI OPS53) — o script e a lib chegam ao
    homeserver com a imagem do SHA.
@@ -181,12 +197,8 @@ Ordem obrigatória — o pre-flight separa "arquivo faltando" (esta Issue) de
    ```
    Esperado: `headObject` de cada filename responde `presente`/`ausente` em
    segundos. Se TODAS as rows derem `erro` (timeout/ECONNREFUSED), o container
-   não alcança o Garage — diagnosticar antes de recuperar:
-   ```bash
-   docker compose exec teqo-1313 node -e "fetch('http://100.119.220.31:3900/').catch(e=>{console.error('SEM ROTA ao Garage:', e.message); process.exit(1)}).then(()=>console.log('Garage alcançável'))"
-   ```
-   (o `.env.local` do worktree NUNCA recebe as credenciais de prod — rodar
-   sempre no homeserver).
+   não alcança o Garage — repetir o diagnóstico do estado acima (firewall +
+   extra_hosts + endpoint) antes de recuperar.
 3. **Recuperar:**
    ```bash
    ALLOW_REMOTE_DB=true pnpm media:recover
@@ -198,13 +210,14 @@ Ordem obrigatória — o pre-flight separa "arquivo faltando" (esta Issue) de
    ```bash
    ALLOW_REMOTE_DB=true pnpm media:recover --verify
    ```
-   Esperado: `40/40 filenames respondendo 200 em https://jorgesolla1313.com.br`
-   — é o aceite da Issue. Se persistir pendurando (erro/timeout) com objetos no
-   bucket → confirmar container→Garage (passo 2) e abrir sucessor OPS de infra.
+   Esperado: `38/40 filenames respondendo 200 em https://jorgesolla1313.com.br`
+   (as 2 exceções seguem 404 — aceite da Issue contempla o registro honesto).
+   Se persistir pendurando (erro/timeout) com objetos no bucket → confirmar
+   container→Garage (passo 2) — agora a causa raiz conhecida é firewall.
 5. **Check visual:** home de campanha (seção "Acompanhe de perto") e 1–2
    páginas de artigo com capa; console do navegador sem erro de imagem.
-6. **Exceções:** o 1 artigo sem cover no WP (43→42 resolvem) e a 40ª row órfã
-   se não resolver → reportar na Issue #10; o card degrada para a banda cinza
+6. **Exceções:** `fim-escala-6x1.jpg` e `jorgesolla.jpg` (rows manuais sem
+   fonte no WP) → reportar na Issue #10; o card degrada para a banda cinza
    existente (sem placeholder, sem placeholder "em breve").
 
 ## Rabbit holes / Não escopo (engenharia)
