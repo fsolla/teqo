@@ -11,6 +11,14 @@
 # then merges by rebase. Same semantics as `gh pr merge --auto --rebase`,
 # implemented as poll + merge. GitHub's cancel-workflow-on-failure action was
 # dropped (no GITHUB_RUN_ID plumbing on Forgejo).
+#
+# OPS61: the job injects FORGEJO_API_TOKEN. The merge POST performs a git push
+# of the rebased branch to main; Forgejo's pre-receive hook rejects that push
+# when the caller's user has no repo write — and the native GITHUB_TOKEN acts
+# as the Actions system user (no write, and the same 403 that broke issue
+# label flips). Every pre-OPS61 "auto-merge" that ended success had actually
+# found the PR already merged manually; the CLI's own merge attempts died on
+# 409 "User permission denied for writing".
 name: PR Ready + auto-merge
 
 on:
@@ -35,6 +43,8 @@ jobs:
     # rollup posts only after every ci-pr job, incl. e2e shards) — 55 min keeps
     # 10 min of slack over the CLI's 45 min timeout.
     timeout-minutes: 55
+    env:
+      FORGEJO_API_TOKEN: ${{ secrets.FORGEJO_API_TOKEN }}
     steps:
       - uses: actions/checkout@v5
       # Script is plain Node (stdlib) — no pnpm. Disable package-manager-cache:

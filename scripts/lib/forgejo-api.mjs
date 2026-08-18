@@ -308,10 +308,14 @@ export const createApi = ({ base, token, repository, fetchImpl } = {}) => {
      * gate the verdict. Live finding (PR #67): the pre-OPS61
      * `pending.length === 0` gate was unsatisfiable for that reason, so the
      * CLI never auto-merged anything — every Forgejo merge so far was manual
-     * (`merged_by` the owner), which is also what PR #52's red-CI merge was
-     * (manual, not a waitForChecks race). The branch-protection rule on the
-     * server is the real gate for manual merges too: the merge POST is
-     * rejected (405) while the required context is not green.
+     * (`merged_by` the owner). The other pre-OPS61 blocker was the token: the
+     * merge POST pushes to main, and Forgejo's pre-receive hook rejects the
+     * push when the caller's user has no repo write — the native GITHUB_TOKEN
+     * acts as the Actions system user, so the CLI's own merge attempts died
+     * on 409 "User permission denied for writing" (the job must run with
+     * FORGEJO_API_TOKEN). The branch-protection rule on the server gates
+     * manual merges too: the merge POST is rejected (405) while the required
+     * context is not green.
      *
      * `mergeable === false` is only trusted after the cascade settled — while
      * jobs still run (or the branch-protection rule blocks), Forgejo may
