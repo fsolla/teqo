@@ -16,11 +16,10 @@
 # PR and on main (ci.yml), incl. campaignMigrationReconciliation — the check's
 # hard fail deadlocked every open schema PR the moment two coexisted.
 #
-# Forgejo port (OPS50): Postgres services publish per-port on the runner
-# machine and steps reach them through the bridge gateway (DB_HOST from
-# /proc/net/route). Host ports derive from the run id (OPS62 X1) so concurrent
-# runs never collide; two isolated services — int and build+e2e — keep e2e
-# from inheriting int fixture residue (same isolation the former jobs had).
+# Forgejo port (OPS50): Postgres services live on the job network and are
+# reached by NAME (postgres-int / postgres-build on 5432) — no host publish,
+# so concurrent runs never collide on host ports (OPS62 X1). Two isolated
+# services keep e2e from inheriting int fixture residue.
 name: CI (PR)
 
 on:
@@ -36,19 +35,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 50
     services:
-      # Host ports derive from the run id (OPS62 X1): the single job holds
-      # both services for the whole run, and concurrent runs on the shared
-      # runner would collide on fixed ports ("port is already allocated") —
-      # a ~1% residual collision when two runs share run_id % 100 is loud,
-      # harmless and fixed by the next push.
+      # Services are reached by NAME on the job network (no host publish —
+      # OPS62 X1): concurrent runs never collide on host ports, which the
+      # single long-lived job would hold for the whole run. Two isolated
+      # services — int and build+e2e — keep e2e from inheriting int fixture
+      # residue (same isolation the former jobs had). Forgejo 9 does not
+      # expand expressions in `services.ports`, so a per-run port scheme was
+      # dropped in favour of the job-network DNS.
       postgres-int:
         image: postgres:17-alpine
         env:
           POSTGRES_USER: teqo
           POSTGRES_PASSWORD: teqo
           POSTGRES_DB: teqo_test
-        ports:
-          - ${{ 5433 + (github.run_id % 100) }}:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -60,8 +59,6 @@ jobs:
           POSTGRES_USER: teqo
           POSTGRES_PASSWORD: teqo
           POSTGRES_DB: teqo_test
-        ports:
-          - ${{ 5533 + (github.run_id % 100) }}:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -133,16 +130,14 @@ jobs:
       - name: Unit tests (changed since PR base)
         if: steps.scope.outputs.test_mode == 'changed'
         run: pnpm test:unit -- --changed origin/${{ github.base_ref }} --passWithNoTests
-      - name: Prepare database URL (int service via bridge gateway)
+      - name: Prepare database URL (int service)
         run: |
           set -euo pipefail
-          DB_HOST=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
-          DB_PORT=${{ 5433 + (github.run_id % 100) }}
-          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:${DB_PORT}/teqo_test" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-int:5432/teqo_test" >> "$GITHUB_ENV"
           # vitest re-loads .env.test over the process env, so the service URL
           # must win through the .env.test.local layer (same mechanism
           # `pnpm worktree next` uses). OPS50.
-          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:${DB_PORT}/teqo_test" > .env.test.local
+          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-int:5432/teqo_test" > .env.test.local
       - name: Migrate (int database)
         run: pnpm migrate
       - name: Seed minimal (int database)
@@ -163,14 +158,12 @@ jobs:
           VITEST_MAX_WORKERS: 4
         run: pnpm test:int -- --changed origin/${{ github.base_ref }} --passWithNoTests
 
-      - name: Prepare database URL (build/e2e service via bridge gateway)
+      - name: Prepare database URL (build/e2e service)
         if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
         run: |
           set -euo pipefail
-          DB_HOST=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
-          DB_PORT=${{ 5533 + (github.run_id % 100) }}
-          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:${DB_PORT}/teqo_test" >> "$GITHUB_ENV"
-          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:${DB_PORT}/teqo_test" > .env.test.local
+          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-build:5432/teqo_test" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-build:5432/teqo_test" > .env.test.local
       - name: Migrate (build/e2e database)
         if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
         run: pnpm migrate

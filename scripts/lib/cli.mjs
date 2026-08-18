@@ -29,8 +29,21 @@ export const loadCliEnv = () => {
   loadEnv({ path: '.env' })
 }
 
-/** Local database hosts — including the docker-compose service name. THE one list. */
-export const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1', 'postgres'])
+/**
+ * Local database hosts — docker-compose service name, the job-network service
+ * names of the self-hosted Forgejo runner (OPS62 X1: services are reached by
+ * name, no host publish), and the bridge gateway (OPS50: legacy per-port
+ * publish kept in the allowlist). THE one list.
+ */
+export const LOCAL_HOSTS = new Set([
+  'localhost',
+  '127.0.0.1',
+  '0.0.0.0',
+  '::1',
+  'postgres',
+  'postgres-int',
+  'postgres-build',
+])
 
 /**
  * Gateway of the default route, read from /proc/net/route (Linux). The

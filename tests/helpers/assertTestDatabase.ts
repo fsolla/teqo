@@ -12,9 +12,10 @@
 /** `teqo_test`, `teqo_wt15_test`, … — the _test suffix is the hard contract. */
 const TEST_DATABASE_NAME = /^teqo(_[a-z0-9]+)?_test$/
 
-// Self-hosted Forgejo runner: the job's postgres service is published on the
-// bridge gateway IP (RFC1918), not localhost. Same source as the CLI guard so
-// both guards admit exactly the same hosts (OPS50).
+// Self-hosted Forgejo runner: services are reached by NAME on the job network
+// (postgres-int / postgres-build, OPS62 X1) or, on the legacy per-port
+// publish, through the bridge gateway IP (RFC1918). Same source as the CLI
+// guard so both guards admit exactly the same hosts (OPS50/OPS62).
 import { defaultGatewayHost } from '../../scripts/lib/cli.mjs'
 
 export function assertTestDatabase(databaseUrl: string | undefined): void {
@@ -33,7 +34,14 @@ export function assertTestDatabase(databaseUrl: string | undefined): void {
   }
 
   const databaseName = decodeURIComponent(parsedUrl.pathname.replace(/^\//, ''))
-  const localHosts = new Set(['localhost', '127.0.0.1', '::1', '[::1]'])
+  const localHosts = new Set([
+    'localhost',
+    '127.0.0.1',
+    '::1',
+    '[::1]',
+    'postgres-int',
+    'postgres-build',
+  ])
   const gateway = defaultGatewayHost()
   if (gateway) localHosts.add(gateway)
 

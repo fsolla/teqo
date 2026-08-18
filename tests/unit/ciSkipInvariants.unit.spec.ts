@@ -112,6 +112,19 @@ describe('ciSkipInvariants', () => {
     expect(main).toMatch(/^    needs: \[checks\]\n/m)
   })
 
+  it('OPS62 X1: services are reached by name on the job network (no host ports)', () => {
+    // Forgejo 9 does not expand expressions in `services.ports` (measured
+    // live: run 730 failed 1s with the literal port string) and a fixed host
+    // port would collide between concurrent runs — the single long-lived job
+    // holds its services for the whole run. Pinned: DNS by name, no ports.
+    for (const file of ['.forgejo/workflows/ci.yml', '.forgejo/workflows/ci-pr.yml']) {
+      const source = readFileSync(join(repoRoot, file), 'utf8')
+      expect(source, file).toContain('@postgres-int:5432/teqo_test')
+      expect(source, file).toContain('@postgres-build:5432/teqo_test')
+      expect(source, file).not.toMatch(/^ {6}ports:\n/m)
+    }
+  })
+
   it('keeps local e2e build artifacts outside the development dist directory', () => {
     for (const file of [
       '.forgejo/workflows/ci.yml',
