@@ -221,6 +221,37 @@ describe('forgejo-api', () => {
     await expect(api.waitForChecks(4, { pollMs: 1 })).rejects.toThrow(/não mergeável/)
   })
 
+  it('waitForChecks stops when the PR is converted to draft mid-wait (OPS57 veto)', async () => {
+    let poll = 0
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url) => {
+        poll += 1
+        if (String(url).includes('/pulls/')) {
+          return ok({
+            number: 4,
+            state: 'open',
+            merged: false,
+            mergeable: true,
+            is_draft: poll >= 3,
+            head: { ref: 'OPS57-x', sha: 'abc' },
+          })
+        }
+        return ok({
+          statuses:
+            poll <= 2
+              ? [{ context: 'CI / static', status: 'pending' }]
+              : [{ context: 'CI / static', status: 'success' }],
+        })
+      },
+    })
+
+    const pr = await api.waitForChecks(4, { pollMs: 1 })
+
+    expect(poll).toBe(3)
+    expect(pr.isDraft).toBe(true)
+  })
+
   it('autoMerge verifies the merge by re-reading the PR (POST answers 200 + empty body)', async () => {
     const calls: string[] = []
     let poll = 0

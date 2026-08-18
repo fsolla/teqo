@@ -20,10 +20,13 @@ on:
 
 jobs:
   ready-automerge:
-    # Same-repo only: a fork PR merged here would push attacker code to main
-    # (and deploy to production). The draft policy lives in the CLI (skips
-    # non-`cursor/*` drafts) so it reads the PR state from the API, not from
-    # webhook payload fields.
+    # Same-repo only. This MUST stay in the `if:` (pre-checkout): for a fork
+    # PR, actions/checkout checks out the fork's head, so a same-repo guard
+    # inside the CLI would already be running the fork's own script — RCE with
+    # the Actions token. Fork PRs are excluded here because the repo is public
+    # and a merged fork PR would deploy attacker code to production. The draft
+    # policy lives in the CLI (skips non-`cursor/*` drafts) because there the
+    # PR state is re-read from the API, not from webhook payload fields.
     if: >-
       github.event.pull_request.state == 'open' &&
       github.event.pull_request.head.repo.full_name == github.repository

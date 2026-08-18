@@ -78,11 +78,13 @@ Use `--required` — without it, `--watch` also waits for Vercel.
 
 There is no stage→main promote. Merging to `main` is the delivery; `ci.yml` verifies the full suite and production deploys from the homeserver runbook.
 
-## Safety net (GitHub Action)
+## Safety net (workflow)
 
-`agent-pr-ready-automerge.yml` — PRs same-repo → `main` (todas as branches):
-se draft `cursor/*` → `gh pr ready`; sempre arma `gh pr merge --auto --rebase`.
-Cobre o caso em que o agente (ou o default draft do Cloud) esqueceu e PRs
-humanas/worktree com merge falho silencioso (incidente OPS52). **Draft de
-branch não-`cursor/*` nunca é tocado** — o draft é o veto do ator (skip do CLI).
-Não há opt-out por skill (audit incluído).
+`agent-pr-ready-automerge.yml` — PRs same-repo → `main` (todas as branches).
+O workflow roda `scripts/forgejo-pr-automerge.mjs` (plain Node, zero-dep): se
+draft `cursor/*` → marca Ready; espera os checks e mergea por rebase (o
+equivalente Forgejo do `gh pr merge --auto --rebase`). Cobre o caso em que o
+agente (ou o default draft do Cloud) esqueceu e PRs humanas/worktree com merge
+falho silencioso (incidente OPS52). **Draft de branch não-`cursor/*` nunca é
+tocado** — o draft é o veto do ator (skip do CLI). Não há opt-out por skill
+(audit incluído).
