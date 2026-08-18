@@ -1,27 +1,53 @@
-# Runbook: deploy do site 1313 no homeserver (OPS53)
+# Runbook: deploy do site 1313 no homeserver (OPS53, janela OPS65)
 
 O deploy de produção é uma etapa do CI (`ci.yml` no Forgejo): mergir em `main`
 com a suite verde publica o site em `jorgesolla1313.com.br` — sem passo manual.
+Merge **com mudança de produção** = site atualizado em ~30 min (janela) + tempo
+da suite/deploy (~15–25 min cada; tipicamente < 1 h no total).
 
 ## Gatilho e fluxo
 
-1. `git push` para `main` (via PR merge) — ou `workflow_dispatch` no `ci.yml`
-   para re-deployar a HEAD de `main` manualmente.
-2. Suite completa verde (static/int/build/e2e/checks).
-3. Job `deploy` (runs-on `host`, na **workstation**) roda
+1. `git push` para `main` (via PR merge) — o `ci.yml` **não dispara mais a cada
+   push**: roda por **janela fixa de 30 min** (`schedule */30`) ou via
+   `workflow_dispatch` (deploy manual, imediato, sempre full suite).
+2. Job `gate` (barato, host, sem pnpm): lê a **revision do container rodando**
+   no homeserver (`docker inspect` → label `org.opencontainers.image.revision`
+   do `teqo-1313` — a fonte de verdade; o compose pode mentir após rollback
+   falho, pois é trocado antes do rollout) e classifica "mudança de produção"
+   com o `.dockerignore` como fonte da verdade (o que não entra na imagem não
+   justifica build novo; `docs/`, `.agents/`, `.env*` viram skip;
+   `scripts/`, `tests/`, `.forgejo/`, `AGENTS.md` contam como produção —
+   conservador, qualquer dúvida roda a suite).
+   - Deployed == HEAD → suite e deploy **skipped**; run verde.
+   - Sem revision conhecida (label ausente, container sem label) → fail-open:
+     suite + deploy rodam na janela (run verde; comportamento conservador).
+   - Gate incapaz de classificar (erro de git/`.dockerignore`) → suite roda e
+     o run fica **vermelho** — nunca blackout silencioso.
+3. Com mudança de produção: suite completa verde (static/int/build/e2e/checks).
+4. Job `deploy` (runs-on `host`, na **workstation**) roda
    `ssh homeserver "bash -s -- <sha>" < scripts/deploy-homeserver.sh`.
-4. O script, no **homeserver**: guarda de HEAD (`main` remoto == SHA do job,
-   senão skip) → `flock` (serializa) → build da imagem standalone + migrator
-   (BuildKit, secrets do `~/stack/teqo-1313.env`, `--network host` com proxy
-   socat `teqo-1313-build-proxy` na `stack_default` para o build alcançar o
-   `postgres` — o proxy é criado idempotentemente pelo script) →
-   push em `localhost:5000` → swap dos tags de imagem no
-   `~/stack/docker-compose.yml` (backup antes) → **migrations**
+   O script é **idempotente**: se o container rodando já tem a revision do SHA
+   (ex.: dispatch duplicado), sai verde "already deployed" sem rebuild.
+5. O script, no **homeserver**: guarda de HEAD (`main` remoto == SHA do job,
+   senão skip) → `flock` (serializa) → guard "already deployed" (revision do
+   container) → build da imagem standalone + migrator (BuildKit, secrets do
+   `~/stack/teqo-1313.env`, `--network host` com proxy socat
+   `teqo-1313-build-proxy` na `stack_default` para o build alcançar o
+   `postgres` — o proxy é criado idempotentemente pelo script) → push em
+   `localhost:5000` → swap dos tags de imagem no `~/stack/docker-compose.yml`
+   (backup antes) → **migrations**
    (`docker compose --profile maintenance run --rm teqo-1313-migrate </dev/null`) →
    `docker compose up -d teqo-1313` → healthcheck → smoke (`/`,
    `/campanha/login`, `/admin`, barreira 307, WebAuthn login-options,
    `api/revalidate` com o secret real).
-5. Falha = job vermelho no commit; nada é publicado pela metade.
+6. Falha = job vermelho no commit; nada é publicado pela metade.
+
+**Primeira janela (verificação ao vivo):** após o merge do OPS65, acompanhe um
+run agendado — confira no log do job `gate` o `deployed_sha` lido do container e
+o veredito da classificação, e que um dispatch manual roda suite + deploy
+(idempotência: segundo dispatch no mesmo SHA sai "already deployed"). Isso
+prova ao vivo a paridade Forgejo de `needs.<gate>.outputs` com gate falho
+(suite roda; deploy pula; run vermelho).
 
 ## Onde roda cada coisa
 
@@ -61,21 +87,27 @@ roda após build+push ok; rollout só após migrate ok).
 
 ## Falhas conhecidas
 
-| Sintoma                                                                       | Causa                                                                                                                                                                                                                                            | Tratamento                                                                                                                                                                                                                     |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Job verde sem deploy ("stale run")                                            | Push mais novo venceu; o deploy antigo saiu da fila                                                                                                                                                                                              | Nada a fazer — o run do SHA novo deploya                                                                                                                                                                                       |
-| Todo job docker quebra com `exec: "node": executable file not found in $PATH` | `runner.envs.PATH` do `~/.forgejo-runner/config.yaml` (workstation) com paths só de host (nvm/bun) — o container perde o node do toolcache (`/opt/acttoolcache`); edição do config exige o toolcache primeiro (ver comentário no próprio config) | Corrigir o PATH no config (toolcache primeiro — ver comentário no próprio arquivo) + `systemctl --user restart forgejo-runner` (incidente 2026-08-17)                                                                          |
-| Deploy para logo após o migrate ("Done." e nada mais, EXIT=0)                 | `docker compose run` anexa stdin por padrão — o container consome o resto do script que vai no pipe do `bash -s`; o bash chega a EOF e termina sem rodar o rollout                                                                               | O script já usa `< /dev/null` no `run --rm` do migrate (não remover); sintoma visto 2026-08-17 no primeiro deploy                                                                                                              |
-| Build falha: `network mode "stack_default" not supported by buildkit`         | BuildKit (drivers docker e docker-container) recusa rede bridge custom no `--network`                                                                                                                                                            | O script builda com `--network host` + proxy socat `teqo-1313-build-proxy` (na `stack_default`, publicado em 127.0.0.1:5433, criado idempotentemente com `restart: unless-stopped`) + `DATABASE_URL` reescrita para o loopback |
-| Build OOM no homeserver                                                       | Laptop 8c/16GB com o stack ativo (~12GB livres medidos)                                                                                                                                                                                          | Re-dispatch; se recorrente, item futuro: build na workstation com túnel                                                                                                                                                        |
-| `checkout@v5` falha no job `host`                                             | Label host do act_runner                                                                                                                                                                                                                         | Fallback: baixar o script direto do Forgejo (`curl -s https://git.solla.dev/fsolla/teqo/raw/branch/main/scripts/deploy-homeserver.sh`)                                                                                         |
-| Migrate falha                                                                 | Drift/erro de schema                                                                                                                                                                                                                             | Job vermelho; site segue no container antigo; corrigir e re-mergear                                                                                                                                                            |
-| Smoke falha pós-up                                                            | Regressão de runtime                                                                                                                                                                                                                             | Rollback automático (restore + `up -d`) + job vermelho; investigar                                                                                                                                                             |
+| Sintoma                                                                       | Causa                                                                                                                                                                                                                                            | Tratamento                                                                                                                                                                                                                                                 |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Job verde sem deploy ("stale run")                                            | Push mais novo venceu; o deploy antigo saiu da fila                                                                                                                                                                                              | Nada a fazer — o run do SHA novo deploya                                                                                                                                                                                                                   |
+| Job verde sem deploy ("already deployed")                                     | O container rodando já tem a revision do SHA do job (ex.: `workflow_dispatch` duplicado da mesma HEAD)                                                                                                                                           | Nada a fazer — o site já roda esse SHA. Forçar rebuild da MESMA HEAD não é suportado via dispatch: edite o tag da imagem no compose (`image: teqo-1313:<sha>-rebuild`) e `docker compose up -d`, ou espere um commit novo                                  |
+| Gate `gate` vermelho (erro de git/`.dockerignore`)                            | SHA deployado ilegível para o git (ex.: história reescrita) ou `.dockerignore` corrompido no checkout                                                                                                                                            | Fail-open: suite roda; deploy pula (nunca deploy às cegas). Corrigir a causa e esperar a próxima janela (auto-cura). Se `ssh homeserver` estiver fora, o gate lê revision vazia e roda tudo (verde) — checar tailnet se a suite roda sem deploy recorrente |
+| Sem revision no container (label ausente no compose)                          | O compose do homeserver não define `org.opencontainers.image.revision` (deploy pré-OPS53 ou edição manual)                                                                                                                                       | Degradação conservadora: toda janela roda suite + rebuild (verde). Corrigir adicionando o label ao serviço `teqo-1313` no compose e re-deployando                                                                                                          |
+| Todo job docker quebra com `exec: "node": executable file not found in $PATH` | `runner.envs.PATH` do `~/.forgejo-runner/config.yaml` (workstation) com paths só de host (nvm/bun) — o container perde o node do toolcache (`/opt/acttoolcache`); edição do config exige o toolcache primeiro (ver comentário no próprio config) | Corrigir o PATH no config (toolcache primeiro — ver comentário no próprio arquivo) + `systemctl --user restart forgejo-runner` (incidente 2026-08-17)                                                                                                      |
+| Deploy para logo após o migrate ("Done." e nada mais, EXIT=0)                 | `docker compose run` anexa stdin por padrão — o container consome o resto do script que vai no pipe do `bash -s`; o bash chega a EOF e termina sem rodar o rollout                                                                               | O script já usa `< /dev/null` no `run --rm` do migrate (não remover); sintoma visto 2026-08-17 no primeiro deploy                                                                                                                                          |
+| Build falha: `network mode "stack_default" not supported by buildkit`         | BuildKit (drivers docker e docker-container) recusa rede bridge custom no `--network`                                                                                                                                                            | O script builda com `--network host` + proxy socat `teqo-1313-build-proxy` (na `stack_default`, publicado em 127.0.0.1:5433, criado idempotentemente com `restart: unless-stopped`) + `DATABASE_URL` reescrita para o loopback                             |
+| Build OOM no homeserver                                                       | Laptop 8c/16GB com o stack ativo (~12GB livres medidos)                                                                                                                                                                                          | Re-dispatch; se recorrente, item futuro: build na workstation com túnel                                                                                                                                                                                    |
+| `checkout@v5` falha no job `host`                                             | Label host do act_runner                                                                                                                                                                                                                         | Fallback: baixar o script direto do Forgejo (`curl -s https://git.solla.dev/fsolla/teqo/raw/branch/main/scripts/deploy-homeserver.sh`)                                                                                                                     |
+| Migrate falha                                                                 | Drift/erro de schema                                                                                                                                                                                                                             | Job vermelho; site segue no container antigo; corrigir e re-mergear                                                                                                                                                                                        |
+| Smoke falha pós-up                                                            | Regressão de runtime                                                                                                                                                                                                                             | Rollback automático (restore + `up -d`) + job vermelho; investigar                                                                                                                                                                                         |
 
 ## Segurança (decisão deliberada)
 
 - O job `deploy` usa `runs-on: host` — executa como `fsolla` na workstation.
-  Está **apenas** no `ci.yml` (push em `main` + dispatch), nunca no `ci-pr.yml`.
+  Está **apenas** no `ci.yml` (janela `*/30` em `main` + dispatch), nunca no
+  `ci-pr.yml`. O job `gate` tem o mesmo perfil e é restrito a
+  `github.ref == 'refs/heads/main'` (dispatch em branch não roda código do
+  branch no host — a suite roda fail-open em containers com secrets de teste).
   `main` só anda por PR mergeado com suite verde. Fork-PRs não disparam
   workflows no Forgejo (default off — verificado).
 - Segredos nunca ecoados: sem `set -x`, senhas via `--password-stdin` /

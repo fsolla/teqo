@@ -52,6 +52,20 @@ if [ "$main_head" != "$SHA" ]; then
   exit 0
 fi
 
+# --- idempotency (OPS65) ------------------------------------------------
+# A 30-min main window can re-deliver a SHA the cluster already runs (e.g. a
+# duplicate workflow_dispatch): rebuilding it is a ~15 min no-op. The truth
+# is the RUNNING container's revision label — the compose file can lie after
+# a failed rollback (it is swapped before the rollout and restored best-
+# effort). A container without the label (or down) counts as "not deployed":
+# the deploy proceeds (safe direction — it rebuilds).
+
+running_rev="$(docker inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' teqo-1313 2>/dev/null || true)"
+if [ -n "$running_rev" ] && [ "$running_rev" = "$SHA" ]; then
+  say "already deployed: teqo-1313 runs $SHA — nothing to do"
+  exit 0
+fi
+
 # --- secrets (sourced locally, never echoed) ----------------------------
 
 set -a

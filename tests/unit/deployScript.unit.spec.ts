@@ -22,6 +22,14 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     expect(script).toContain('stale run')
   })
 
+  it('skips idempotently when the running container already runs the SHA (OPS65)', () => {
+    expect(script).toContain('already deployed')
+    expect(script).toContain('docker inspect')
+    expect(script).toContain('org.opencontainers.image.revision')
+    expect(script).toContain('$running_rev')
+    expect(script).toContain('"$running_rev" = "$SHA"')
+  })
+
   it('builds with BuildKit secrets — prod credentials never enter image layers', () => {
     expect(script).toContain('--secret')
     expect(script).toContain('id=database_url,env=DATABASE_URL')

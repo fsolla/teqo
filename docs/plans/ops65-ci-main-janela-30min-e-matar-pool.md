@@ -1,6 +1,6 @@
 # CI do main em janela de 30 min + matar o agent-pool
 
-Status: rascunho
+Status: entregue
 Atualizado em: 2026-08-18
 Issue: #64
 Priority: P0

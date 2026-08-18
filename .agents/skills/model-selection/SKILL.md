@@ -89,4 +89,4 @@ Bipartir (`{id}-plan` Grok High → `{id}-exec` `kimi-k3-low`) só sob pedido ex
 - **`work-issue`:** **não verifica modelo** — a sessão nasce no modelo fixo do ambiente (máquina do humano: DeepSeek V4 Flash). `model:` da Issue é metadata consultiva (o pool spawna nele; o claim brief o imprime).
 - **`agent-work-issue`:** pool já fixou o modelo no spawn; sessão mais forte → informa e segue.
 - **`plan-issue`:** sugere via esta tabela (slug único completo com effort); bipartição só sob blast radius extremo / pedido explícito.
-- **`agent-pool` smoke:** Composer default; Grok com effort explícito / Kimi K3 Low em Issues de teste bipartidas.
+- ~~`agent-pool` smoke~~ — **dormente (OPS65)**: workflow removido; pool morto.

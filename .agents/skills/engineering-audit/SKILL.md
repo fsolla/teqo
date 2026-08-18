@@ -5,7 +5,7 @@ description: Runs a Pass-style engineering audit of the Teqo codebase — code s
 
 # Engineering Audit (Pass N)
 
-**Audit solitário (não paralelizável):** quando esta skill roda, o desenvolvimento paralelo **pausa** — nenhum outro agente trabalhando no repo. O agente do audit também **executa as remediações P0/P1 na mesma sessão** para trazer o projeto aos trilhos (não só registra); P2/P3 seguem o fluxo normal de ledger. Se o **agent-pool** estiver ligado, pause-o no início do audit (`gh workflow run agent-pool.yml -f action=pause`) e retome ao final (`-f action=resume`); o tick recusa spawn enquanto `POOL_PAUSED=true`. Em **Cursor Cloud** o `gh` do agente é read-only e o pause por dispatch não está disponível — vale o precheck fail-closed da seção "Modo autônomo (Cursor Cloud)".
+**Audit solitário (não paralelizável):** quando esta skill roda, o desenvolvimento paralelo **pausa** — nenhum outro agente trabalhando no repo. O agente do audit também **executa as remediações P0/P1 na mesma sessão** para trazer o projeto aos trilhos (não só registra); P2/P3 seguem o fluxo normal de ledger. O **agent-pool está morto desde OPS65** (workflow removido; scripts/skills dormentes) — nada a pausar.
 
 ## Modo autônomo (Cursor Cloud)
 

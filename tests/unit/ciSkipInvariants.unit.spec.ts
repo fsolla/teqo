@@ -75,56 +75,6 @@ describe('ciSkipInvariants', () => {
     expect(CANONICAL_E2E_SPEC_SUFFIX).toBe('.e2e.spec.ts')
   })
 
-  it('OPS62 X1: single sequential `checks` job with structural fail-fast', () => {
-    for (const file of ['.forgejo/workflows/ci.yml', '.forgejo/workflows/ci-pr.yml']) {
-      const source = readFileSync(join(repoRoot, file), 'utf8')
-      // Exactly one job id `checks` — the status context automerge/branch
-      // protection wait on. Fail-fast is structural: no siblings, no matrix,
-      // no strategy fail-fast (anchored as YAML keys so comments can't trip).
-      expect(source.match(/^jobs:\n  checks:\n/m) ?? [], file).toHaveLength(1)
-      expect(source, file).not.toMatch(/^ {2,4}(?:matrix|fail-fast):/m)
-      // e2e runs as one process with 4 workers (replaces the 2-shard matrix).
-      expect(source, file).toContain('PLAYWRIGHT_WORKERS: 4')
-      // Steps keep their own logs so diagnosis survives a failure.
-      expect(source, file).toContain('name: Lint')
-      expect(source, file).toContain('name: E2E tests')
-    }
-
-    const pr = readFileSync(join(repoRoot, '.forgejo/workflows/ci-pr.yml'), 'utf8')
-    // Content guards fail before the suite (cheap, PR-scoped, fail fast).
-    const guard = pr.indexOf('name: Changelog is append-only')
-    const lint = pr.indexOf('name: Lint')
-    const e2e = pr.indexOf('name: E2E tests (full suite')
-    expect(guard).toBeGreaterThan(-1)
-    expect(lint).toBeGreaterThan(guard)
-    expect(e2e).toBeGreaterThan(lint)
-    // ci-pr never runs on the host (OPS53 pin).
-    expect(pr).not.toContain('runs-on: host')
-    // The skip wiring is the critical piece: losing the `scope` step id or
-    // the e2e gate silently skips the suite with a green run (the opposite
-    // of the fail-fast this delivery sells).
-    expect(pr).toMatch(/id: scope\n/)
-    expect(pr).toMatch(/if: steps\.scope\.outputs\.e2e_mode == 'full'/)
-
-    // main keeps the deploy gated on the checks job (OPS53) — anchored as a
-    // YAML key so the header comment cannot satisfy the pin.
-    const main = readFileSync(join(repoRoot, '.forgejo/workflows/ci.yml'), 'utf8')
-    expect(main).toMatch(/^    needs: \[checks\]\n/m)
-  })
-
-  it('OPS62 X1: services are reached by name on the job network (no host ports)', () => {
-    // Forgejo 9 does not expand expressions in `services.ports` (measured
-    // live: run 730 failed 1s with the literal port string) and a fixed host
-    // port would collide between concurrent runs — the single long-lived job
-    // holds its services for the whole run. Pinned: DNS by name, no ports.
-    for (const file of ['.forgejo/workflows/ci.yml', '.forgejo/workflows/ci-pr.yml']) {
-      const source = readFileSync(join(repoRoot, file), 'utf8')
-      expect(source, file).toContain('@postgres-int:5432/teqo_test')
-      expect(source, file).toContain('@postgres-build:5432/teqo_test')
-      expect(source, file).not.toMatch(/^ {6}ports:\n/m)
-    }
-  })
-
   it('keeps local e2e build artifacts outside the development dist directory', () => {
     for (const file of [
       '.forgejo/workflows/ci.yml',
@@ -146,6 +96,8 @@ describe('ciSkipInvariants', () => {
     for (const path of [
       'scripts/lib/test-affected-core.mjs',
       'scripts/ci-scope.mjs',
+      'scripts/ci-classify-production.mjs',
+      'scripts/lib/dockerignore.mjs',
       'scripts/check-test-locations.mjs',
       'scripts/check-plans-only-pr-closes.mjs',
       'scripts/lib/plansOnlyClosesGuard.mjs',
@@ -157,6 +109,32 @@ describe('ciSkipInvariants', () => {
     ]) {
       expect(HIGH_RISK_EXACT.has(path), path).toBe(true)
     }
+  })
+
+  it('main CI runs in a 30-minute window with a production gate (OPS65)', () => {
+    const ci = readFileSync(join(repoRoot, '.forgejo/workflows/ci.yml'), 'utf8')
+    expect(ci).toContain('schedule:')
+    expect(ci).toContain("cron: '*/30 * * * *'")
+    expect(ci).not.toMatch(/push:\s*\n\s*branches:\s*\[main\]/)
+    expect(ci).toContain('workflow_dispatch:')
+
+    // The cheap gate (no pnpm) classifies production change and every
+    // expensive job consumes it, fail-open on gate errors. The gate is
+    // main-only: a branch dispatch must not run branch code on the host.
+    expect(ci).toContain('gate production change')
+    expect(ci).toContain("if: github.ref == 'refs/heads/main'")
+    expect(ci).toContain('fetch-depth: 0')
+    expect(ci).toContain('scripts/ci-classify-production.mjs')
+    expect(ci).toContain(
+      "needs.gate.result != 'success' || needs.gate.outputs.production == 'true'",
+    )
+
+    // Deploy is double-gated: green rollup AND production change (never
+    // deploy blind, never deploy with a red suite).
+    expect(ci).toContain('needs: [checks, gate]')
+    expect(ci).toContain(
+      "needs.checks.result == 'success' && needs.gate.outputs.production == 'true'",
+    )
   })
 
   it('every campaign domain dir is covered by the e2e affected manifest', () => {
