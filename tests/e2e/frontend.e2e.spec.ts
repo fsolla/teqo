@@ -1,5 +1,6 @@
-import type { Page } from '@playwright/test'
+import type { APIRequestContext, Page } from '@playwright/test'
 
+import { seedTestUser, testUser } from '../helpers/seedUser'
 import { expect, test } from './fixtures/e2eTest'
 
 const swipeLeft = async (
@@ -411,5 +412,250 @@ test.describe('Frontend', () => {
       'aria-current',
       'true',
     )
+  })
+})
+
+/**
+ * S1 — content section on the campaign home. Runs serially: the empty-state
+ * test depends on the suite's default DB (no posts) and must execute before
+ * the full-state test creates posts. Posts/tags are created through the
+ * deployed REST API so the server process runs the real `afterChange` cache
+ * hooks (a Local API call from the runner would throw on `revalidateTag`),
+ * and cleanup busts the `posts` tag through the revalidate endpoint.
+ */
+test.describe('Campaign home content section', () => {
+  test.describe.configure({ mode: 'serial' })
+
+  const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
+  const revalidateSecret = process.env.REVALIDATE_SECRET ?? 'e2e-revalidate-secret'
+  const runSuffix = Date.now()
+  const categoryName = `E2e Conteúdos ${runSuffix}`
+  const categorySlug = `e2e-conteudos-${runSuffix}`
+  const hiddenTagName = `E2e Oculta ${runSuffix}`
+  const hiddenTagSlug = `e2e-oculta-${runSuffix}`
+  const createdPosts: number[] = []
+  const createdTags: number[] = []
+
+  test.beforeAll(async () => {
+    await seedTestUser()
+  })
+
+  const adminHeaders = async (request: APIRequestContext): Promise<Record<string, string>> => {
+    const login = await request.post(`${baseURL}/api/users/login`, {
+      data: { email: testUser.email, password: testUser.password },
+    })
+    expect(login.ok()).toBeTruthy()
+    const { token } = await login.json()
+    return { cookie: `payload-token=${token}` }
+  }
+
+  const createTag = async (
+    request: APIRequestContext,
+    headers: Record<string, string>,
+    name: string,
+    slug: string,
+    hidden = false,
+  ) => {
+    const response = await request.post(`${baseURL}/api/tag`, {
+      headers,
+      data: { name, slug, hidden },
+    })
+    expect(response.ok()).toBeTruthy()
+    const { doc } = await response.json()
+    createdTags.push(doc.id)
+    return doc
+  }
+
+  const createPost = async (
+    request: APIRequestContext,
+    headers: Record<string, string>,
+    data: { title: string; slug: string; type: string; category: number; publishedDate: string },
+  ) => {
+    const response = await request.post(`${baseURL}/api/post`, {
+      headers,
+      data: { ...data, _status: 'published' },
+    })
+    expect(response.ok()).toBeTruthy()
+    const { doc } = await response.json()
+    createdPosts.push(doc.id)
+    return doc
+  }
+
+  test('hides the content section while no articles are visible', async ({ page, request }) => {
+    // The dev server persists its `posts` cache to .next-e2e/cache/fetch-cache
+    // between runs, so an earlier full-state run could leave it populated.
+    // Busting first makes the empty state deterministic on every rerun.
+    await request
+      .post(`${baseURL}/api/revalidate?tag=posts`, {
+        headers: { 'x-revalidate-secret': revalidateSecret },
+      })
+      .catch(() => undefined)
+
+    await page.goto('/')
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.locator('[data-home-section="contents"]')).toHaveCount(0)
+    await expect(page.getByText('A caminhada, em tempo real')).toHaveCount(0)
+
+    const proof = await page.locator('[data-home-section="proof"]').boundingBox()
+    const problem = await page.locator('[data-home-section="problem"]').boundingBox()
+    expect(proof).not.toBeNull()
+    expect(problem).not.toBeNull()
+    expect(problem!.y - (proof!.y + proof!.height)).toBeLessThanOrEqual(1)
+  })
+
+  test('renders the article bento and the one-per-screen mobile carousel', async ({
+    page,
+    request,
+  }) => {
+    await seedTestUser()
+    const headers = await adminHeaders(request)
+
+    const visibleTag = await createTag(request, headers, categoryName, categorySlug)
+    const hiddenTag = await createTag(request, headers, hiddenTagName, hiddenTagSlug, true)
+
+    const now = Date.now()
+    const posts = [
+      {
+        title: 'E2e Artigo em destaque',
+        slug: `e2e-artigo-destaque-${runSuffix}`,
+        type: 'artigo',
+        minutesAgo: 1,
+      },
+      {
+        title: 'E2e Notícia recente',
+        slug: `e2e-noticia-recente-${runSuffix}`,
+        type: 'noticia',
+        minutesAgo: 60 * 26,
+      },
+      {
+        title: 'E2e Campanha em ação',
+        slug: `e2e-campanha-${runSuffix}`,
+        type: 'campanha',
+        minutesAgo: 60 * 50,
+      },
+      {
+        title: 'E2e Notícia do interior',
+        slug: `e2e-noticia-interior-${runSuffix}`,
+        type: 'noticia',
+        minutesAgo: 60 * 74,
+      },
+      {
+        title: 'E2e Evento da agenda',
+        slug: `e2e-evento-${runSuffix}`,
+        type: 'evento',
+        minutesAgo: 60 * 98,
+      },
+      {
+        title: 'E2e Conteúdo oculto',
+        slug: `e2e-oculto-${runSuffix}`,
+        type: 'noticia',
+        minutesAgo: 60 * 122,
+      },
+    ]
+    for (const post of posts) {
+      const isHidden = post.slug.includes('oculto')
+      await createPost(request, headers, {
+        title: post.title,
+        slug: post.slug,
+        type: post.type,
+        category: isHidden ? hiddenTag.id : visibleTag.id,
+        publishedDate: new Date(now - post.minutesAgo * 60_000).toISOString(),
+      })
+    }
+
+    try {
+      await page.setViewportSize({ width: 1280, height: 900 })
+      await page.goto('/')
+      const section = page.locator('[data-home-section="contents"]')
+      await expect(section).toBeVisible()
+
+      await expect(
+        section.getByRole('heading', { name: 'A caminhada, em tempo real' }),
+      ).toBeVisible()
+      await expect(section.getByText('Acompanhe de perto')).toBeVisible()
+      await expect(
+        section.getByText(
+          'Bastidores, caravanas e as lutas do mandato: conteúdo atualizado, direto das redes.',
+        ),
+      ).toBeVisible()
+      await expect(section.getByRole('link', { name: /Ver artigos/ })).toHaveAttribute(
+        'href',
+        '/artigos',
+      )
+
+      const bentoCards = section.locator(
+        'a[href^="/artigo/"], a[href^="/noticia/"], a[href^="/campanha/"], a[href^="/evento/"]',
+      )
+      await expect(bentoCards.filter({ visible: true })).toHaveCount(5)
+      for (const badge of ['Artigo', 'Notícia', 'Campanha', 'Evento']) {
+        await expect(section.getByText(badge, { exact: true }).first()).toBeVisible()
+      }
+      await expect(section.getByText('E2e Artigo em destaque').first()).toBeVisible()
+      await expect(section.getByText('E2e Conteúdo oculto')).toHaveCount(0)
+      await expect(section.getByText('E2e Oculta', { exact: false })).toHaveCount(0)
+
+      const featured = section.getByRole('link', { name: /E2e Artigo em destaque/ })
+      const featuredHref = await featured.getAttribute('href')
+      expect(featuredHref).toBe(`/artigo/${categorySlug}/e2e-artigo-destaque-${runSuffix}`)
+
+      const firstCard = bentoCards.first()
+      await expect(firstCard).toBeVisible()
+      await expect(firstCard.locator('h3')).toHaveText('E2e Artigo em destaque')
+      await expect(firstCard.locator('span').last()).toContainText(categoryName)
+
+      await featured.click()
+      await expect(page).toHaveURL(new RegExp(`${featuredHref}$`))
+      await page.goBack()
+
+      await page.setViewportSize({ width: 390, height: 844 })
+      await page.goto('/')
+      const carousel = page.getByRole('region', { name: 'Artigos recentes' })
+      await expect(carousel).toBeVisible()
+      await expect(carousel.getByText('E2e Conteúdo oculto')).toHaveCount(0)
+
+      const track = carousel.locator('[data-carousel-track]')
+      await track.scrollIntoViewIfNeeded()
+      const trackBox = await track.boundingBox()
+      if (!trackBox) throw new Error('O trilho do carrossel de conteúdo não ficou visível.')
+
+      const slides = await page.evaluate(() =>
+        Array.from(
+          document.querySelectorAll('[data-carousel="contents"] [data-carousel-index]'),
+        ).map((slide) => slide.getBoundingClientRect().width),
+      )
+      expect(slides).toHaveLength(5)
+      expect(slides.every((width) => Math.abs(width - slides[0]) < 1)).toBe(true)
+
+      await swipeLeft(page, trackBox)
+      await expect(carousel.getByText('2 de 5 · deslize para ver os próximos')).toBeVisible()
+
+      await carousel.getByRole('button', { name: 'Ir para o conteúdo 4 de 5' }).click()
+      await expect(carousel.getByText('4 de 5 · deslize para ver os próximos')).toBeVisible()
+    } finally {
+      const headers2 = await adminHeaders(request).catch(() => undefined)
+      if (headers2) {
+        for (const id of createdPosts) {
+          await request
+            .delete(`${baseURL}/api/post/${id}`, { headers: headers2 })
+            .catch(() => undefined)
+        }
+        for (const id of createdTags) {
+          await request
+            .delete(`${baseURL}/api/tag/${id}`, { headers: headers2 })
+            .catch(() => undefined)
+        }
+        await request
+          .post(`${baseURL}/api/revalidate?tag=posts`, {
+            headers: { 'x-revalidate-secret': revalidateSecret },
+          })
+          .catch(() => undefined)
+
+        // Converge the persisted dev cache back to the empty state so the
+        // next run starts deterministic (fail-closed on delete, too).
+        await page.setViewportSize({ width: 1280, height: 900 })
+        await page.goto('/')
+        await expect(page.locator('[data-home-section="contents"]')).toHaveCount(0)
+      }
+    }
   })
 })

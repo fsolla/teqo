@@ -159,6 +159,9 @@ export default defineConfig({
       NEXT_DIST_DIR: process.env.NEXT_DIST_DIR ?? '.next-e2e',
       PAYLOAD_SECRET: process.env.PAYLOAD_SECRET ?? 'test-only-secret-not-used-in-production',
       NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? baseURL,
+      // Lets e2e specs bust the `posts` tag after direct REST deletes (cleanup),
+      // mirroring the documented post-seed runbook against the deployed site.
+      REVALIDATE_SECRET: process.env.REVALIDATE_SECRET ?? 'e2e-revalidate-secret',
     },
   },
 })

@@ -17,6 +17,14 @@ export const POST_TYPE_LABELS: Record<PostType, string> = {
   evento: 'Eventos',
 }
 
+/** Singular labels for per-card badges (e.g. the campaign home content bento). */
+export const POST_TYPE_BADGE_LABELS: Record<PostType, string> = {
+  noticia: 'Notícia',
+  campanha: 'Campanha',
+  artigo: 'Artigo',
+  evento: 'Evento',
+}
+
 export const isPostType = (value: string): value is PostType =>
   (POST_TYPES as readonly string[]).includes(value)
 
@@ -66,6 +74,32 @@ export const getPostCanonicalPath = (post: Post): string | null => {
 export const formatPostDate = (date?: string | null): string | null => {
   if (!date) return null
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(date))
+}
+
+const relativeTimeFormatter = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'always' })
+
+/**
+ * Compact recency label for content cards: "agora", "há 5 min", "há 3 horas",
+ * "há 2 dias" — falling back to the long absolute date past 30 days. Future
+ * dates (scheduled posts) read as "agora" instead of a fake countdown.
+ */
+export const formatRelativePostDate = (date?: string | null): string | null => {
+  if (!date) return null
+  const time = new Date(date).getTime()
+  if (Number.isNaN(time)) return null
+
+  const diffSeconds = Math.floor((time - Date.now()) / 1000)
+  if (diffSeconds > -60) return 'agora'
+
+  const absSeconds = -diffSeconds
+  const minutes = Math.floor(absSeconds / 60)
+  const hours = Math.floor(absSeconds / 3_600)
+  const days = Math.floor(absSeconds / 86_400)
+
+  if (hours < 1) return relativeTimeFormatter.format(-minutes, 'minute')
+  if (days < 1) return relativeTimeFormatter.format(-hours, 'hour')
+  if (days < 30) return relativeTimeFormatter.format(-days, 'day')
+  return formatPostDate(date)
 }
 
 const findPublishedPosts = (depth: number) =>
