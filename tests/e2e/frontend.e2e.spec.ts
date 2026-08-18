@@ -481,6 +481,13 @@ test.describe('Campaign home content section', () => {
     return doc
   }
 
+  // ISR serves the stale page once while it regenerates after a revalidateTag
+  // (slower under the parallel suite). A warm-up GET triggers that
+  // regeneration so the navigation that follows always lands on fresh HTML.
+  const warmHome = async (request: APIRequestContext) => {
+    await request.get(`${baseURL}/`).catch(() => undefined)
+  }
+
   test('hides the content section while no articles are visible', async ({ page, request }) => {
     // The dev server persists its `posts` cache to .next-e2e/cache/fetch-cache
     // between runs, so an earlier full-state run could leave it populated.
@@ -490,6 +497,7 @@ test.describe('Campaign home content section', () => {
         headers: { 'x-revalidate-secret': revalidateSecret },
       })
       .catch(() => undefined)
+    await warmHome(request)
 
     await page.goto('/')
     await expect(page).toHaveURL(/\/$/)
@@ -565,6 +573,9 @@ test.describe('Campaign home content section', () => {
 
     try {
       await page.setViewportSize({ width: 1280, height: 900 })
+      // The create hooks revalidated the `posts` tag in the server process;
+      // warm the home so the navigation lands on the regenerated page.
+      await warmHome(request)
       await page.goto('/')
       const section = page.locator('[data-home-section="contents"]')
       await expect(section).toBeVisible()
@@ -652,6 +663,7 @@ test.describe('Campaign home content section', () => {
 
         // Converge the persisted dev cache back to the empty state so the
         // next run starts deterministic (fail-closed on delete, too).
+        await warmHome(request)
         await page.setViewportSize({ width: 1280, height: 900 })
         await page.goto('/')
         await expect(page.locator('[data-home-section="contents"]')).toHaveCount(0)
