@@ -1,16 +1,11 @@
 // @vitest-environment node
 
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
 import { describe, expect, it } from 'vitest'
 
 import {
   classifyBuildScope,
   classifyStaticScope,
   classifyTestScope,
-  e2eShardConfig,
   HIGH_RISK_EXACT,
   HIGH_RISK_PREFIXES,
   selectE2eSpecs,
@@ -151,23 +146,5 @@ describe('selectE2eSpecs (OPS5)', () => {
     expect(result.mode).toBe('selected')
     expect(result.specs).toContain('setup')
     expect(result.specs).toContain('admin')
-  })
-})
-
-describe('e2eShardConfig (OPS34)', () => {
-  it('splits the full suite across 2 shards', () => {
-    expect(e2eShardConfig('full')).toEqual({ matrix: [1, 2], total: 2 })
-  })
-
-  it('keeps selected and skipped runs on a single runner', () => {
-    expect(e2eShardConfig('selected')).toEqual({ matrix: [1], total: 1 })
-    expect(e2eShardConfig('none')).toEqual({ matrix: [1], total: 1 })
-  })
-
-  it('pins the ci.yml matrix literal against the single source', () => {
-    const repoRoot = join(fileURLToPath(new URL('.', import.meta.url)), '../..')
-    const workflow = readFileSync(join(repoRoot, '.forgejo/workflows/ci.yml'), 'utf8')
-    const { matrix } = e2eShardConfig('full')
-    expect(workflow).toContain(`shard: [${matrix.join(', ')}]`)
   })
 })

@@ -75,6 +75,43 @@ describe('ciSkipInvariants', () => {
     expect(CANONICAL_E2E_SPEC_SUFFIX).toBe('.e2e.spec.ts')
   })
 
+  it('OPS62 X1: single sequential `checks` job with structural fail-fast', () => {
+    for (const file of ['.forgejo/workflows/ci.yml', '.forgejo/workflows/ci-pr.yml']) {
+      const source = readFileSync(join(repoRoot, file), 'utf8')
+      // Exactly one job id `checks` — the status context automerge/branch
+      // protection wait on. Fail-fast is structural: no siblings, no matrix,
+      // no strategy fail-fast (anchored as YAML keys so comments can't trip).
+      expect(source.match(/^jobs:\n  checks:\n/m) ?? [], file).toHaveLength(1)
+      expect(source, file).not.toMatch(/^ {2,4}(?:matrix|fail-fast):/m)
+      // e2e runs as one process with 4 workers (replaces the 2-shard matrix).
+      expect(source, file).toContain('PLAYWRIGHT_WORKERS: 4')
+      // Steps keep their own logs so diagnosis survives a failure.
+      expect(source, file).toContain('name: Lint')
+      expect(source, file).toContain('name: E2E tests')
+    }
+
+    const pr = readFileSync(join(repoRoot, '.forgejo/workflows/ci-pr.yml'), 'utf8')
+    // Content guards fail before the suite (cheap, PR-scoped, fail fast).
+    const guard = pr.indexOf('name: Changelog is append-only')
+    const lint = pr.indexOf('name: Lint')
+    const e2e = pr.indexOf('name: E2E tests (full suite')
+    expect(guard).toBeGreaterThan(-1)
+    expect(lint).toBeGreaterThan(guard)
+    expect(e2e).toBeGreaterThan(lint)
+    // ci-pr never runs on the host (OPS53 pin).
+    expect(pr).not.toContain('runs-on: host')
+    // The skip wiring is the critical piece: losing the `scope` step id or
+    // the e2e gate silently skips the suite with a green run (the opposite
+    // of the fail-fast this delivery sells).
+    expect(pr).toMatch(/id: scope\n/)
+    expect(pr).toMatch(/if: steps\.scope\.outputs\.e2e_mode == 'full'/)
+
+    // main keeps the deploy gated on the checks job (OPS53) — anchored as a
+    // YAML key so the header comment cannot satisfy the pin.
+    const main = readFileSync(join(repoRoot, '.forgejo/workflows/ci.yml'), 'utf8')
+    expect(main).toMatch(/^    needs: \[checks\]\n/m)
+  })
+
   it('keeps local e2e build artifacts outside the development dist directory', () => {
     for (const file of [
       '.forgejo/workflows/ci.yml',

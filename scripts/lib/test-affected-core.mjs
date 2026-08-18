@@ -256,21 +256,6 @@ export function selectE2eSpecs(files, manifest) {
 }
 
 /**
- * CI job-level parallelism for the e2e suite (OPS34). The full run splits
- * across 2 shards (`--shard=N/total`); selected and none stay on a single
- * runner — a second build for a handful of specs is pure waste. Measured
- * 2026-08-10 (ci.yml run 31412425553): build 172s + tests 196s + ~54s fixed,
- * so shard 1 and 2 each land ≈ 5–5.5 min. Revisit at 3 shards if the sharded
- * wall drifts past ~6.5 min or the test split gets lopsided; ci.yml hardcodes
- * the same [1, 2] / 2 literal with a comment pointing back here.
- * @param {'full' | 'selected' | 'none'} mode
- * @returns {{ matrix: number[], total: number }}
- */
-export function e2eShardConfig(mode) {
-  return mode === 'full' ? { matrix: [1, 2], total: 2 } : { matrix: [1], total: 1 }
-}
-
-/**
  * Walk a list of repo-relative paths and return misplaced spec/test files.
  * @param {string[]} paths
  * @returns {string[]}

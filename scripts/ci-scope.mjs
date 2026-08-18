@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * ci-scope — single classifier for PR job-level skips. Prints JSON:
+ * ci-scope — single classifier for PR step-level skips. Prints JSON:
  * { base, code, build, test, e2e } where each of code/build/test/e2e is the
- * classify* / selectE2eSpecs result. Used by the `scope` job in ci-pr.yml.
+ * classify* / selectE2eSpecs result. Used by the `scope` step (id: scope) in
+ * ci-pr.yml — its outputs drive `if:` on the heavy steps.
  *
  * Base ref: $GITHUB_BASE_REF (PR target) or origin/main locally.
  */
@@ -13,7 +14,6 @@ import {
   classifyBuildScope,
   classifyStaticScope,
   classifyTestScope,
-  e2eShardConfig,
   selectE2eSpecs,
 } from './lib/test-affected-core.mjs'
 
@@ -34,9 +34,6 @@ try {
       build: { mode: 'build', reason: full.reason },
       test: { ...full },
       e2e: { mode: 'full', specs: [], reason: full.reason, unmapped: [] },
-      // The scope job always reads e2e_shards.matrix/total — keep the fallback
-      // total (ci-pr.yml's fromJson must never receive a null/empty matrix).
-      e2e_shards: e2eShardConfig('full'),
     }),
   )
   process.exit(0)
@@ -67,6 +64,5 @@ console.log(
     build: classifyBuildScope(files),
     test: classifyTestScope(files),
     e2e,
-    e2e_shards: e2eShardConfig(e2e.mode),
   }),
 )
