@@ -176,6 +176,168 @@ describe('forgejo-api', () => {
     expect(poll).toBe(2)
   })
 
+  it('waitForChecks keeps polling while mergeable is still being computed', async () => {
+    let poll = 0
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/pulls/')) {
+          poll += 1
+          return ok({
+            number: 4,
+            state: 'open',
+            merged: false,
+            mergeable: poll < 2 ? null : true,
+            head: { ref: 'x', sha: 'abc' },
+          })
+        }
+        return ok({ statuses: [{ context: 'CI / static', status: 'success' }] })
+      },
+    })
+
+    const pr = await api.waitForChecks(4, { pollMs: 1 })
+
+    expect(poll).toBe(2)
+    expect(pr.mergeable).toBe(true)
+  })
+
+  it('waitForChecks fails fast when the PR is not mergeable', async () => {
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/pulls/')) {
+          return ok({
+            number: 4,
+            state: 'open',
+            merged: false,
+            mergeable: false,
+            head: { ref: 'x', sha: 'abc' },
+          })
+        }
+        return ok({ statuses: [{ context: 'CI / static', status: 'success' }] })
+      },
+    })
+
+    await expect(api.waitForChecks(4, { pollMs: 1 })).rejects.toThrow(/não mergeável/)
+  })
+
+  it('autoMerge verifies the merge by re-reading the PR (POST answers 200 + empty body)', async () => {
+    const calls: string[] = []
+    let poll = 0
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url, init) => {
+        calls.push(`${init?.method ?? 'GET'} ${url}`)
+        if (String(url).includes('/merge')) return new Response('', { status: 200 })
+        if (String(url).includes('/pulls/')) {
+          poll += 1
+          const merged = poll > 1
+          return ok({
+            number: 27,
+            state: merged ? 'closed' : 'open',
+            merged,
+            mergeable: true,
+            head: { ref: 'x', sha: 'abc' },
+          })
+        }
+        return ok({ statuses: [{ context: 'CI / static', status: 'success' }] })
+      },
+    })
+
+    const result = await api.autoMerge(27, { pollMs: 1 })
+
+    expect(result).toEqual({
+      attempted: true,
+      merged: true,
+      pr: expect.objectContaining({ merged: true }),
+    })
+    expect(calls.filter((call) => call.includes('/merge'))).toHaveLength(1)
+    expect(
+      calls.filter(
+        (call) => call === 'GET https://git.solla.dev/api/v1/repos/fsolla/teqo/pulls/27',
+      ),
+    ).toHaveLength(2)
+  })
+
+  it('autoMerge rethrows when the merge POST fails and the PR stays open', async () => {
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url, _init) => {
+        if (String(url).includes('/merge'))
+          return ok('{"message":"PR not in mergeable state"}', 405)
+        if (String(url).includes('/pulls/')) {
+          return ok({
+            number: 27,
+            state: 'open',
+            merged: false,
+            mergeable: true,
+            head: { ref: 'x', sha: 'abc' },
+          })
+        }
+        return ok({ statuses: [{ context: 'CI / static', status: 'success' }] })
+      },
+    })
+
+    await expect(api.autoMerge(27, { pollMs: 1 })).rejects.toThrow(/405/)
+  })
+
+  it('autoMerge reports merged when a concurrent actor merged after our POST failed', async () => {
+    let poll = 0
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url, _init) => {
+        if (String(url).includes('/merge'))
+          return ok('{"message":"Pull request was already merged"}', 405)
+        if (String(url).includes('/pulls/')) {
+          poll += 1
+          const merged = poll > 1
+          return ok({
+            number: 27,
+            state: merged ? 'closed' : 'open',
+            merged,
+            mergeable: true,
+            head: { ref: 'x', sha: 'abc' },
+          })
+        }
+        return ok({ statuses: [{ context: 'CI / static', status: 'success' }] })
+      },
+    })
+
+    const result = await api.autoMerge(27, { pollMs: 1 })
+
+    expect(result).toEqual({
+      attempted: true,
+      merged: true,
+      pr: expect.objectContaining({ merged: true }),
+    })
+  })
+
+  it('autoMerge is a no-op for an already merged PR (no POST)', async () => {
+    const calls: string[] = []
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url, init) => {
+        calls.push(`${init?.method ?? 'GET'} ${url}`)
+        return ok({
+          number: 4,
+          state: 'closed',
+          merged: true,
+          mergeable: false,
+          head: { ref: 'x', sha: 'abc' },
+        })
+      },
+    })
+
+    const result = await api.autoMerge(4, { pollMs: 1 })
+
+    expect(result).toEqual({
+      attempted: false,
+      merged: true,
+      pr: expect.objectContaining({ merged: true }),
+    })
+    expect(calls.some((call) => call.includes('/merge'))).toBe(false)
+  })
+
   it('getFileContents decodes base64 and updateFile sends sha', async () => {
     const calls: FetchCall[] = []
     const api = createApi({

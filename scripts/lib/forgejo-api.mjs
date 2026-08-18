@@ -269,12 +269,18 @@ export const createApi = ({ base, token, repository, fetchImpl } = {}) => {
         body: { ...payload, branch_name: branch },
       }),
 
-    /** All required statuses on the PR head are success (or a failure exists). */
+    /**
+     * All required statuses on the PR head are success (or a failure exists),
+     * and Forgejo finished computing mergeability. Returns the last PR read.
+     */
     waitForChecks: async (number, { timeoutMs = 30 * 60 * 1000, pollMs = 15000, log } = {}) => {
       const started = Date.now()
       for (;;) {
         const pr = await api.getPullRequest(number)
         if (!pr || pr.state !== 'OPEN' || pr.merged) return pr
+        if (pr.mergeable === false) {
+          throw new Error(`PR #${number} não mergeável (conflito?) — resolver manualmente.`)
+        }
         const statuses = await api.listCommitStatuses(pr.head.sha)
         const failed = statuses.filter(
           (entry) => entry.state === 'failure' || entry.state === 'error',
@@ -284,23 +290,42 @@ export const createApi = ({ base, token, repository, fetchImpl } = {}) => {
           const names = failed.map((entry) => entry.context).join(', ')
           throw new Error(`Checks falharam no PR #${number}: ${names}`)
         }
-        if (statuses.length > 0 && pending.length === 0) return pr
+        if (statuses.length > 0 && pending.length === 0 && pr.mergeable === true) return pr
         if (Date.now() - started > timeoutMs) {
           throw new Error(`Timeout esperando checks do PR #${number}.`)
         }
         if (log)
-          log(`[pr#${number}] ${statuses.length} status, ${pending.length} pendente — aguardando…`)
+          log(
+            `[pr#${number}] ${statuses.length} status, ${pending.length} pendente, mergeable=${
+              pr.mergeable ?? 'computando'
+            } — aguardando…`,
+          )
         await new Promise((resolve) => setTimeout(resolve, pollMs))
       }
     },
 
-    /** Wait for checks then merge by rebase (the `gh pr merge --auto --rebase` equivalent). */
+    /**
+     * Wait for checks then merge by rebase (the `gh pr merge --auto --rebase`
+     * equivalent). The verdict is a RE-READ of the PR, never the merge POST
+     * response: Forgejo 9 answers a successful merge with 200 + empty body, so
+     * response shape alone cannot distinguish "merged" from "still open".
+     *
+     * @returns {Promise<{ attempted: boolean, merged: boolean, pr: object | null }>}
+     */
     autoMerge: async (number, options) => {
       const pr = await api.waitForChecks(number, options)
-      if (pr && !pr.merged && pr.state === 'OPEN') {
-        return api.mergePullRequest(number)
+      if (!pr || pr.merged || pr.state !== 'OPEN') {
+        return { attempted: false, merged: Boolean(pr?.merged), pr }
       }
-      return null
+      try {
+        await api.mergePullRequest(number)
+      } catch (error) {
+        const after = await api.getPullRequest(number)
+        if (!after?.merged && after?.state === 'OPEN') throw error
+        return { attempted: true, merged: Boolean(after?.merged), pr: after }
+      }
+      const after = await api.getPullRequest(number)
+      return { attempted: true, merged: Boolean(after?.merged), pr: after }
     },
   }
 

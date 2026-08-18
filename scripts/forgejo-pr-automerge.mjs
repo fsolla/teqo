@@ -2,7 +2,10 @@
  * Plain-Node CLI (no pnpm) — agent PR safety net: wait for checks and merge by
  * rebase (the Forgejo equivalent of `gh pr merge --auto --rebase`, which the
  * Forgejo API does not offer as a scheduled operation). Idempotent: already
- * merged → no-op success.
+ * merged → no-op success. The verdict comes from re-reading the PR (Forgejo's
+ * merge endpoint answers 200 + empty body on success, so the POST response
+ * alone cannot prove the merge) — "já mergeado" is only printed for a PR the
+ * server actually reports as merged; a failed merge exits 1 loudly.
  *
  *   node scripts/forgejo-pr-automerge.mjs --pr <N>
  */
@@ -45,14 +48,18 @@ try {
   } else {
     console.log(`[forgejo-pr-automerge] PR #${prNumber} já Ready`)
   }
-  const merged = await api.autoMerge(prNumber, {
+  const { attempted, merged } = await api.autoMerge(prNumber, {
     log: (line) => console.log(`[forgejo-pr-automerge] ${line}`),
   })
-  console.log(
-    merged
-      ? `[forgejo-pr-automerge] PR #${prNumber} mergeado (rebase)`
-      : `[forgejo-pr-automerge] PR #${prNumber} já mergeado`,
-  )
+  if (merged) {
+    console.log(
+      attempted
+        ? `[forgejo-pr-automerge] PR #${prNumber} mergeado (rebase)`
+        : `[forgejo-pr-automerge] PR #${prNumber} já mergeado`,
+    )
+  } else {
+    console.log(`[forgejo-pr-automerge] PR #${prNumber} fechado sem merge — skip`)
+  }
 } catch (error) {
   console.error(`[forgejo-pr-automerge] falhou: ${error instanceof Error ? error.message : error}`)
   process.exit(1)
