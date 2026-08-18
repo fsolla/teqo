@@ -10,8 +10,8 @@ RUN apk add --no-cache libc6-compat && corepack enable
 FROM base AS deps
 WORKDIR /app
 
-# Install the pinned package manager and dependency graph.
-COPY package.json pnpm-lock.yaml ./
+# pnpm-workspace.yaml carries onlyBuiltDependencies — pnpm 10 no longer reads the "pnpm" field.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # One-shot image used to apply committed Payload migrations before a release.
