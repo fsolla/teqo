@@ -611,6 +611,16 @@ test.describe('Campaign home content section', () => {
     }
   }
 
+  // The home route is ISR (s-maxage 300, no max-age): Chromium applies a
+  // heuristic cache to such responses and a plain goto may serve the previous
+  // body even after the poll converged (measured on the S2 snapshot tests —
+  // flaky in CI, deterministic in prod-mode local). Navigating with a unique
+  // query param misses every cache entry (HTTP + Next router), so the page
+  // always comes fresh from the server; the app ignores unknown params.
+  const gotoHomeFresh = async (page: Page) => {
+    await page.goto(`/?e2e=${Date.now()}`)
+  }
+
   // ---- S2/S3 — YouTube + Instagram feed: stub + settings helpers ----
 
   // Same derivation as playwright.config.ts: the stubs listen on dev port +
@@ -699,6 +709,7 @@ test.describe('Campaign home content section', () => {
       .catch(() => undefined)
     await waitForHomeSectionState(request, 'absent')
 
+    // Plain URL on purpose: the test also pins the canonical home URL.
     await page.goto('/')
     await expect(page).toHaveURL(/\/$/)
     await expect(page.locator('[data-home-section="contents"]')).toHaveCount(0)
@@ -776,7 +787,7 @@ test.describe('Campaign home content section', () => {
       // The create hooks revalidated the `posts` tag in the server process;
       // wait until the regenerated page actually shows the section.
       await waitForHomeSectionState(request, 'present')
-      await page.goto('/')
+      await gotoHomeFresh(page)
       const section = page.locator('[data-home-section="contents"]')
       await expect(section).toBeVisible()
 
@@ -829,7 +840,7 @@ test.describe('Campaign home content section', () => {
       await page.goBack()
 
       await page.setViewportSize({ width: 390, height: 844 })
-      await page.goto('/')
+      await gotoHomeFresh(page)
       const carousel = page.getByRole('region', { name: 'Conteúdos recentes' })
       await expect(carousel).toBeVisible()
       await expect(carousel.getByText('E2e Conteúdo oculto')).toHaveCount(0)
@@ -881,7 +892,7 @@ test.describe('Campaign home content section', () => {
         // next run starts deterministic (fail-closed on delete, too).
         await waitForHomeSectionState(request, 'absent')
         await page.setViewportSize({ width: 1280, height: 900 })
-        await page.goto('/')
+        await gotoHomeFresh(page)
         await expect(page.locator('[data-home-section="contents"]')).toHaveCount(0)
       }
     }
@@ -923,7 +934,7 @@ test.describe('Campaign home content section', () => {
         ['E2e Vídeo excluído'],
       )
       await page.setViewportSize({ width: 1280, height: 900 })
-      await page.goto('/')
+      await gotoHomeFresh(page)
       const section = page.locator('[data-home-section="contents"]')
       await expect(section).toBeVisible()
 
@@ -953,7 +964,7 @@ test.describe('Campaign home content section', () => {
       await expect(channelLink).toHaveAttribute('target', '_blank')
 
       await page.setViewportSize({ width: 390, height: 844 })
-      await page.goto('/')
+      await gotoHomeFresh(page)
       const carousel = page.getByRole('region', { name: 'Conteúdos recentes' })
       await expect(carousel).toBeVisible()
       await expect(carousel.getByText('1 de 4 · deslize para ver os próximos')).toBeVisible()
@@ -1007,7 +1018,7 @@ test.describe('Campaign home content section', () => {
         ['E2e Artigo fallback', 'YouTube →'],
         ['E2e Vídeo em destaque'],
       )
-      await page.goto('/')
+      await gotoHomeFresh(page)
       const section = page.locator('[data-home-section="contents"]')
       await expect(section).toBeVisible()
       await expect(section.getByRole('link', { name: /E2e Artigo fallback/ })).toBeVisible()
@@ -1041,7 +1052,7 @@ test.describe('Campaign home content section', () => {
     try {
       // Live fetch succeeds and persists the raw snapshot.
       await waitForHomeHTML(request, ['E2e Vídeo em destaque'], ['E2e Vídeo excluído'])
-      await page.goto('/')
+      await gotoHomeFresh(page)
       await expect(page.getByRole('link', { name: /E2e Vídeo em destaque/ }).first()).toBeVisible()
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
@@ -1063,7 +1074,7 @@ test.describe('Campaign home content section', () => {
         ['E2e Vídeo em destaque', 'E2e Vídeo de caravana'],
         ['E2e Vídeo de entrevista'],
       )
-      await page.goto('/')
+      await gotoHomeFresh(page)
       await expect(page.getByRole('link', { name: /E2e Vídeo em destaque/ }).first()).toBeVisible()
       await expect(page.getByRole('link', { name: /E2e Vídeo de caravana/ })).toBeVisible()
       await expect(page.getByText('E2e Vídeo de entrevista')).toHaveCount(0)
@@ -1074,7 +1085,7 @@ test.describe('Campaign home content section', () => {
       await setYouTubeStubState(request, 'ok')
       await updateSocialFeedSettings(request, headers, baseSettings)
       await waitForHomeHTML(request, ['E2e Vídeo de entrevista'], ['E2e Vídeo excluído'])
-      await page.goto('/')
+      await gotoHomeFresh(page)
       await expect(page.getByText('E2e Vídeo de entrevista').first()).toBeVisible()
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
@@ -1130,7 +1141,7 @@ test.describe('Campaign home content section', () => {
         ['E2e Post de grade', 'YouTube →'],
       )
       await page.setViewportSize({ width: 1280, height: 900 })
-      await page.goto('/')
+      await gotoHomeFresh(page)
       const section = page.locator('[data-home-section="contents"]')
       await expect(section).toBeVisible()
 
@@ -1159,7 +1170,7 @@ test.describe('Campaign home content section', () => {
       await expect(profileLink).toHaveAttribute('target', '_blank')
 
       await page.setViewportSize({ width: 390, height: 844 })
-      await page.goto('/')
+      await gotoHomeFresh(page)
       const carousel = page.getByRole('region', { name: 'Conteúdos recentes' })
       await expect(carousel).toBeVisible()
       await expect(carousel.getByText('1 de 4 · deslize para ver os próximos')).toBeVisible()
@@ -1219,7 +1230,7 @@ test.describe('Campaign home content section', () => {
         ['E2e Artigo fallback IG'],
         ['E2e Post do muro', 'Seguir no Instagram'],
       )
-      await page.goto('/')
+      await gotoHomeFresh(page)
       const section = page.locator('[data-home-section="contents"]')
       await expect(section).toBeVisible()
       await expect(section.getByRole('link', { name: /E2e Artigo fallback IG/ })).toBeVisible()
@@ -1257,7 +1268,7 @@ test.describe('Campaign home content section', () => {
     try {
       // Live fetch succeeds and persists the raw snapshot (with the username).
       await waitForHomeHTML(request, ['E2e Post do muro'], ['E2e Post de grade'])
-      await page.goto('/')
+      await gotoHomeFresh(page)
       await expect(page.getByRole('link', { name: /E2e Post do muro/ }).first()).toBeVisible()
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
@@ -1280,7 +1291,7 @@ test.describe('Campaign home content section', () => {
         ['E2e Post do muro', 'E2e Reel da caravana', 'Seguir no Instagram'],
         ['Publicação no Instagram'],
       )
-      await page.goto('/')
+      await gotoHomeFresh(page)
       await expect(page.getByRole('link', { name: /E2e Post do muro/ }).first()).toBeVisible()
       await expect(page.getByText('E2e Reel da caravana').first()).toBeVisible()
       await expect(page.getByText('Publicação no Instagram')).toHaveCount(0)
@@ -1292,7 +1303,7 @@ test.describe('Campaign home content section', () => {
       await setInstagramStubState(request, 'ok')
       await updateSocialFeedSettings(request, headers, baseSettings)
       await waitForHomeHTML(request, ['Publicação no Instagram'], ['E2e Post de grade'])
-      await page.goto('/')
+      await gotoHomeFresh(page)
       await expect(page.getByText('Publicação no Instagram').first()).toBeVisible()
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
@@ -1348,7 +1359,7 @@ test.describe('Campaign home content section', () => {
         ['E2e Artigo kill switch'],
         ['E2e Vídeo em destaque', 'YouTube →', 'E2e Post do muro', 'Seguir no Instagram'],
       )
-      await page.goto('/')
+      await gotoHomeFresh(page)
       const section = page.locator('[data-home-section="contents"]')
       await expect(section).toBeVisible()
       await expect(section.getByRole('link', { name: /E2e Artigo kill switch/ })).toBeVisible()
