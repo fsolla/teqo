@@ -21,9 +21,7 @@ describe('Campaign home', () => {
   it('monta as quatro seções previstas e o rodapé eleitoral', async () => {
     render(await HomePage())
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'UM MANDATO DO TAMANHO DA BAHIA' }),
-    ).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1, name: 'MAIS SAÚDE MAIS FUTURO' })).toBeTruthy()
     expect(screen.getByText('3.333')).toBeTruthy()
     expect(screen.getByText('1.031')).toBeTruthy()
     expect(screen.getByText('3º')).toBeTruthy()

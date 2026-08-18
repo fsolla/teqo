@@ -18,9 +18,7 @@ describe('CampaignHero', () => {
   it('apresenta a candidatura e mantém um único CTA primário', () => {
     render(<CampaignHero />)
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'UM MANDATO DO TAMANHO DA BAHIA' }),
-    ).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1, name: 'MAIS SAÚDE MAIS FUTURO' })).toBeTruthy()
 
     const supportLink = screen.getByRole('link', { name: /Quero apoiar/i })
     expect(supportLink.getAttribute('href')).toBe('https://apoiar.me/jorgesolla')
