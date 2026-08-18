@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — Home de campanha sem carrossel no desktop</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-6xl p-8">
+      <p class="max-w-3xl text-sm text-zinc-400">
+        Visitante da home pública de campanha (jorgesolla1313) em desktop. As seções "Por que essa
+        eleição importa" (3 cards) e "Nossa caminhada" (6 cards) deixam de ser carrossel no desktop:
+        todo o conteúdo fica visível de uma vez. Mobile (~390px) mantém o carrossel atual.
+      </p>
+
+      <!-- ============ CENA: desktop ============ -->
+      <section data-shot="desktop" class="mt-8 rounded-2xl bg-white p-8 text-zinc-900 shadow-xl">
+        <p class="mb-6 text-center text-xs font-bold tracking-widest text-zinc-500 uppercase">
+          Desktop ≥ 1024px — conteúdo inteiro visível, sem carrossel
+        </p>
+
+        <!-- ===== SEÇÃO: Por que essa eleição importa ===== -->
+        <div class="rounded-xl bg-zinc-900 px-8 pt-7 pb-8 text-white">
+          <p class="text-[11px] font-extrabold tracking-[0.14em] text-zinc-400 uppercase">
+            Por que essa eleição importa
+          </p>
+          <h2 class="mt-3 max-w-[616px] text-2xl leading-tight font-extrabold">
+            Eleger deputado é coisa séria<br /><span class="text-zinc-300"
+              >O Congresso tem nas mãos vidas reais e o SUS</span
+            >
+          </h2>
+          <p class="mt-3 max-w-[716px] text-sm leading-relaxed text-zinc-300">
+            É no Congresso que se define o orçamento do SUS, o piso da enfermagem, a recompra de
+            Mataripe e o fim da escala 6×1. Reeleger Lula não basta: é preciso eleger uma bancada
+            aliada.
+          </p>
+
+          <!-- 3 cards lado a lado -->
+          <div class="mt-7 flex gap-[21px]">
+            <!-- card 1 -->
+            <div class="w-[355px] overflow-hidden rounded-[10px] bg-zinc-800">
+              <div
+                class="flex h-[280px] items-center justify-center bg-zinc-600 text-xs font-semibold text-zinc-300"
+              >
+                foto (fundo.avif)
+              </div>
+              <div class="p-4">
+                <h3 class="text-[15px] leading-snug font-bold">Pelo fim da escala 6x1!</h3>
+                <p class="mt-1.5 text-xs leading-relaxed text-zinc-400">
+                  Jornadas longas aumentam o risco de AVC e infarto. Descanso é saúde pública…
+                </p>
+              </div>
+            </div>
+            <!-- card 2 -->
+            <div class="w-[355px] overflow-hidden rounded-[10px] bg-zinc-800">
+              <div
+                class="flex h-[280px] items-center justify-center bg-zinc-600 text-xs font-semibold text-zinc-300"
+              >
+                foto (53569851134_02afc18fb4_o.avif)
+              </div>
+              <div class="p-4">
+                <h3 class="text-[15px] leading-snug font-bold">Pra valorizar o SUS</h3>
+                <p class="mt-1.5 text-xs leading-relaxed text-zinc-400">
+                  O SUS é o sistema de saúde de todo brasileiro. Com Lula, a saúde voltou a receber
+                  recursos…
+                </p>
+              </div>
+            </div>
+            <!-- card 3 -->
+            <div class="w-[355px] overflow-hidden rounded-[10px] bg-zinc-800">
+              <div
+                class="flex h-[280px] items-center justify-center bg-zinc-600 text-xs font-semibold text-zinc-300"
+              >
+                foto (52396285023_561ffc0ff6_o.avif)
+              </div>
+              <div class="p-4">
+                <h3 class="text-[15px] leading-snug font-bold">Pra defender os baianos</h3>
+                <p class="mt-1.5 text-xs leading-relaxed text-zinc-400">
+                  A Refinaria de Mataripe foi vendida no governo Bolsonaro e segue nas mãos de
+                  estrangeiros…
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="h-6" aria-hidden="true"></div>
+
+        <!-- ===== SEÇÃO: Nossa caminhada ===== -->
+        <div class="rounded-xl bg-zinc-100 px-8 pt-7 pb-8 text-zinc-900">
+          <p class="text-[11px] font-extrabold tracking-[0.14em] text-red-700 uppercase">
+            Nossa caminhada
+          </p>
+          <h2 class="mt-3 max-w-[664px] text-2xl leading-tight font-extrabold">
+            Junto com o trabalhador e<br /><span class="text-red-700"
+              >do lado de quem mais precisa, sempre.</span
+            >
+          </h2>
+          <p class="mt-3 max-w-[730px] text-sm leading-relaxed text-zinc-500">
+            Não é promessa de palanque, é a experiência de quem já fez na gestão do SUS, do
+            Ministério da Saúde e da saúde da Bahia.
+          </p>
+
+          <!-- sem chips: grade 3 colunas x 2 linhas -->
+          <div class="mt-7 grid grid-cols-3 gap-[14px]">
+            <div class="rounded-[10px] bg-white p-4">
+              <h3 class="text-sm leading-snug font-bold">Defender o SUS e valorizar quem cuida</h3>
+              <p class="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                Saúde é direito, não mercadoria. Fim do subfinanciamento, piso da enfermagem e dos
+                agentes pagos…
+              </p>
+            </div>
+            <div class="rounded-[10px] bg-white p-4">
+              <h3 class="text-sm leading-snug font-bold">Fim da escala 6×1 e jornada de 40h</h3>
+              <p class="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                Sem redução de salário. Jornada longa é questão de saúde pública: quem trabalha
+                demais adoece…
+              </p>
+            </div>
+            <div class="rounded-[10px] bg-white p-4">
+              <h3 class="text-sm leading-snug font-bold">
+                Educação em tempo integral e federais no interior
+              </h3>
+              <p class="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                IFs, campus federal, escola de tempo integral: o interior não pode ficar para trás…
+              </p>
+            </div>
+            <div class="rounded-[10px] bg-white p-4">
+              <h3 class="text-sm leading-snug font-bold">Recomprar a Refinaria de Mataripe</h3>
+              <p class="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                Recomprar a refinaria é defender a Bahia e a soberania do Brasil. Preço justo de
+                combustível…
+              </p>
+            </div>
+            <div class="rounded-[10px] bg-white p-4">
+              <h3 class="text-sm leading-snug font-bold">Salário mínimo forte, emprego e moradia</h3>
+              <p class="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                Valorização do mínimo, Bolsa Família, Minha Casa Minha Vida e agricultura familiar
+                como motor…
+              </p>
+            </div>
+            <div class="rounded-[10px] bg-white p-4">
+              <h3 class="text-sm leading-snug font-bold">Defesa intransigente da democracia</h3>
+              <p class="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                Participação popular, instituições fortes e combate à desinformação. Eleger o
+                parlamento é coisa séria…
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CENA: mobile (referência — carrossel mantido) ============ -->
+      <section data-shot="mobile" class="mt-8 w-[390px] rounded-2xl bg-zinc-900 p-8 text-white shadow-xl">
+        <p class="mb-6 text-center text-[11px] font-bold tracking-widest text-zinc-500 uppercase">
+          Mobile ~390px — carrossel atual preservado (referência)
+        </p>
+
+        <!-- problema: 1 card por tela + dots -->
+        <div class="rounded-xl bg-zinc-950 p-5">
+          <p class="text-[10px] font-extrabold tracking-[0.14em] text-zinc-400 uppercase">
+            Por que essa eleição importa
+          </p>
+          <h2 class="mt-2 text-lg leading-tight font-extrabold">
+            Eleger deputado é coisa séria<br /><span class="text-zinc-300"
+              >O Congresso tem nas mãos vidas reais e o SUS</span
+            >
+          </h2>
+          <p class="mt-2 text-xs leading-relaxed text-zinc-400">
+            É no Congresso que se define o orçamento do SUS, o piso da enfermagem, a recompra de
+            Mataripe e o fim da escala 6×1…
+          </p>
+          <div class="mt-4 w-[355px] max-w-full overflow-hidden rounded-[10px] bg-zinc-800">
+            <div
+              class="flex h-[240px] items-center justify-center bg-zinc-600 text-xs font-semibold text-zinc-300"
+            >
+              foto (fundo.avif)
+            </div>
+            <div class="p-4">
+              <h3 class="text-[15px] leading-snug font-bold">Pelo fim da escala 6x1!</h3>
+              <p class="mt-1.5 text-xs leading-relaxed text-zinc-400">
+                Jornadas longas aumentam o risco de AVC e infarto…
+              </p>
+            </div>
+          </div>
+          <!-- dots -->
+          <div class="mt-3 flex items-center justify-center gap-1.5" aria-hidden="true">
+            <span class="h-1.5 w-6 rounded-full bg-zinc-300"></span>
+            <span class="h-1.5 w-1.5 rounded-full bg-zinc-600"></span>
+            <span class="h-1.5 w-1.5 rounded-full bg-zinc-600"></span>
+          </div>
+          <p class="mt-2 text-center text-[10px] text-zinc-500">1 de 3 · auto-avanço ~4s</p>
+        </div>
+
+        <div class="h-5" aria-hidden="true"></div>
+
+        <!-- bandeiras: chips + 1 card por tela -->
+        <div class="rounded-xl bg-zinc-100 p-5 text-zinc-900">
+          <p class="text-[10px] font-extrabold tracking-[0.14em] text-red-700 uppercase">
+            Nossa caminhada
+          </p>
+          <h2 class="mt-2 text-lg leading-tight font-extrabold">
+            Junto com o trabalhador e<br /><span class="text-red-700"
+              >do lado de quem mais precisa, sempre.</span
+            >
+          </h2>
+          <p class="mt-2 text-xs leading-relaxed text-zinc-500">
+            Não é promessa de palanque, é a experiência de quem já fez na gestão do SUS…
+          </p>
+          <!-- chips -->
+          <div class="mt-4 flex gap-1.5 overflow-hidden" aria-hidden="true">
+            <span class="rounded-full bg-zinc-800 px-3 py-1.5 text-[10px] font-bold text-white uppercase">
+              Saúde
+            </span>
+            <span class="rounded-full bg-zinc-300 px-3 py-1.5 text-[10px] font-bold text-zinc-500 uppercase">
+              Educação
+            </span>
+            <span class="rounded-full bg-zinc-300 px-3 py-1.5 text-[10px] font-bold text-zinc-500 uppercase">
+              Renda
+            </span>
+            <span class="rounded-full bg-zinc-300 px-3 py-1.5 text-[10px] font-bold text-zinc-500 uppercase">
+              Democracia
+            </span>
+            <span class="rounded-full bg-zinc-300 px-3 py-1.5 text-[10px] font-bold text-zinc-500 uppercase">
+              Bahia
+            </span>
+            <span class="rounded-full bg-zinc-300 px-3 py-1.5 text-[10px] font-bold text-zinc-500 uppercase">
+              Trabalho
+            </span>
+          </div>
+          <div class="mt-3 rounded-[10px] bg-white p-4">
+            <h3 class="text-sm leading-snug font-bold">Defender o SUS e valorizar quem cuida</h3>
+            <p class="mt-1.5 text-xs leading-relaxed text-zinc-500">
+              Saúde é direito, não mercadoria. Fim do subfinanciamento, piso da enfermagem e dos
+              agentes pagos, concursos públicos, vacinação e ciência.
+            </p>
+          </div>
+          <p class="mt-2 text-center text-[10px] text-zinc-500">1 de 6 · deslize para ver as próximas</p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
