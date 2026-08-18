@@ -57,6 +57,7 @@ Dados: N/A — chore de DX/processo; sem métrica de produto. (Ganho: tempo de v
 - **Risco de acoplamento:** cancelar via API exige token com permissão de escrita em actions — contrato de OPS61 diz que o token nativo 403 em API do Forgejo; provável PAT (`POOL_GITHUB_TOKEN` como precedente). Upgrade do Forgejo é infra de produção no homeserver: janela/risco, verificação dos workflows existentes após o upgrade (automerge, pool, deploy).
 
 **Contexto verificado (evidência para o gate):**
+
 - Forgejo deployado: `9.0.3+gitea-1.22.0` — sem API de cancel: `GET/POST /actions/runs/{run}/cancel` e `GET /actions/runs/{run}/jobs` dão 404; só existe `GET /actions/tasks` (status por job do run). A rota web `POST /actions/runs/{run}/cancel` existe mas exige sessão + CSRF (retorna "Invalid CSRF token") — inutilizável de job com token.
 - Forgejo atual (code.forgejo.org) expõe `GET /actions/runs/{run_id}/jobs` + `POST /actions/runs/{run_id}/cancel` → watchdog viável **após upgrade**.
 - Novo push/PR sync **já cancela o run anterior do mesmo workflow** (nativo; observado statuses `cancelled` nos tasks) — não cobre intra-run, mas elimina o desperdício do ciclo consertar→push.
