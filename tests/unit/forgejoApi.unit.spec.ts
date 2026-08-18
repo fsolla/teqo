@@ -265,7 +265,7 @@ describe('forgejo-api', () => {
     expect(pr.isDraft).toBe(true)
   })
 
-  it('waitForChecks keeps polling while the CI (PR) checks rollup has not posted (OPS61 race)', async () => {
+  it('waitForChecks keeps polling while the CI (PR) checks rollup has not posted (OPS61 gate)', async () => {
     let statusPoll = 0
     const api = createApi({
       token: 'tok',
@@ -283,8 +283,8 @@ describe('forgejo-api', () => {
         // First snapshots: every POSTED status is green — but jobs that were
         // not scheduled yet (docs-guards/unit/checks) posted nothing. The
         // rollup is the only context that exists once the WHOLE cascade
-        // settled; without the gate this snapshot looks green and merges red
-        // (the PR #52 incident).
+        // settled; without the gate a snapshot can look green before the
+        // cascade finished.
         const statuses =
           statusPoll < 3
             ? [{ context: 'CI / static', status: 'success' }]
@@ -325,6 +325,44 @@ describe('forgejo-api', () => {
     })
 
     await expect(api.waitForChecks(4, { pollMs: 1 })).rejects.toThrow(/Checks falharam/)
+  })
+
+  it('waitForChecks ignores the safety-net own status, pending for the whole run (OPS61 finding)', async () => {
+    let statusPoll = 0
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url) => {
+        if (String(url).includes('/pulls/')) {
+          return ok({
+            number: 4,
+            state: 'open',
+            merged: false,
+            mergeable: true,
+            head: { ref: 'x', sha: 'abc' },
+          })
+        }
+        statusPoll += 1
+        // Forgejo posts the job's own commit status as pending at job start
+        // and flips it only at the end — the pre-OPS61 `pending.length === 0`
+        // gate was unsatisfiable and no PR was ever merged by the CLI (every
+        // Forgejo merge was manual). The own context must never gate.
+        return ok({
+          statuses: [
+            {
+              context: 'PR Ready + auto-merge / ready-automerge (pull_request)',
+              status: 'pending',
+            },
+            { context: 'CI / static', status: 'success' },
+            { context: 'CI (PR) / checks (pull_request)', status: 'success' },
+          ],
+        })
+      },
+    })
+
+    const pr = await api.waitForChecks(4, { pollMs: 1 })
+
+    expect(pr).toBeTruthy()
+    expect(statusPoll).toBe(1)
   })
 
   it('waitForChecks does not treat mergeable=false as conflict before the rollup settles (OPS61)', async () => {

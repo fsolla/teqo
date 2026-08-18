@@ -86,9 +86,14 @@ There is no stage→main promote. Merging to `main` is the delivery; `ci.yml` ve
 O workflow roda `scripts/forgejo-pr-automerge.mjs` (plain Node, zero-dep): se
 draft `cursor/*` → marca Ready; espera os checks e mergea por rebase (o
 equivalente Forgejo do `gh pr merge --auto --rebase`). O wait exige o rollup
-`CI (PR) / checks` POSTADO e verde (OPS61) — statuses de jobs ainda não
-agendados não podem parecer verde — e a regra de branch protection no servidor
-bloqueia o merge POST (405) enquanto o contexto exigido não estiver satisfeito.
+`CI (PR) / checks` POSTADO e verde (OPS61) — o único contexto que só existe
+quando a cascata inteira do ci-pr assentou (jobs ainda não agendados não
+postam status; o próprio status do job do safety net é `pending` durante o run
+e **nunca** entra no veredito). A regra de branch protection no servidor
+bloqueia o merge POST (405) enquanto o contexto exigido não estiver satisfeito
+— inclusive merges manuais via API: foi um merge manual que colocou a PR #52
+em main com o CI vermelho (o CLI nunca mergeou sozinho antes do OPS61; todo
+merge Forgejo era manual).
 Cobre o caso em que o
 agente (ou o default draft do Cloud) esqueceu e PRs humanas/worktree com merge
 falho silencioso (incidente OPS52). **Draft de branch não-`cursor/*` nunca é

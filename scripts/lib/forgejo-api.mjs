@@ -291,19 +291,30 @@ export const createApi = ({ base, token, repository, fetchImpl } = {}) => {
       }),
 
     /**
-     * All required statuses on the PR head are success (or a failure exists),
-     * and Forgejo finished computing mergeability. Returns the last PR read.
-     * A draft PR stops the wait (converted mid-run): the caller decides what
-     * "no merge" means — the CLI skips non-`cursor/*` drafts (OPS57 veto).
+     * The CI (PR) cascade rollup is green and Forgejo finished computing
+     * mergeability. Returns the last PR read. A draft PR stops the wait
+     * (converted mid-run): the caller decides what "no merge" means — the CLI
+     * skips non-`cursor/*` drafts (OPS57 veto).
      *
      * OPS61 rollup gate: the CI (PR) cascade's aggregate job (`checks`, the
      * `if: always()` rollup over every ci-pr job) must have POSTED and be
      * success. Job statuses are posted as jobs finish, so a snapshot with zero
-     * pending can still miss jobs that were not scheduled yet — that race
-     * merged PR #52 with the CI red. The rollup only exists once the whole
-     * cascade settled (it `needs` every job), so its absence keeps the wait
-     * going. `mergeable === false` is only trusted after the cascade settled —
-     * while jobs still run (or the branch-protection rule blocks), Forgejo may
+     * pending can still miss jobs that were not scheduled yet. The rollup only
+     * exists once the whole cascade settled (it `needs` every job), so its
+     * absence keeps the wait going.
+     *
+     * The safety-net's OWN context (`PR Ready + auto-merge / …`) is posted as
+     * `pending` for the whole run and flips only at the end — it must never
+     * gate the verdict. Live finding (PR #67): the pre-OPS61
+     * `pending.length === 0` gate was unsatisfiable for that reason, so the
+     * CLI never auto-merged anything — every Forgejo merge so far was manual
+     * (`merged_by` the owner), which is also what PR #52's red-CI merge was
+     * (manual, not a waitForChecks race). The branch-protection rule on the
+     * server is the real gate for manual merges too: the merge POST is
+     * rejected (405) while the required context is not green.
+     *
+     * `mergeable === false` is only trusted after the cascade settled — while
+     * jobs still run (or the branch-protection rule blocks), Forgejo may
      * report false without meaning "conflict".
      */
     waitForChecks: async (number, { timeoutMs = 30 * 60 * 1000, pollMs = 15000, log } = {}) => {
@@ -312,12 +323,14 @@ export const createApi = ({ base, token, repository, fetchImpl } = {}) => {
         const pr = await api.getPullRequest(number)
         if (!pr || pr.state !== 'OPEN' || pr.merged || pr.isDraft) return pr
         const statuses = await api.listCommitStatuses(pr.head.sha)
-        const rollup = statuses.find((entry) => entry.context.startsWith('CI (PR) / checks'))
+        const verdicts = statuses.filter(
+          (entry) => !entry.context.startsWith('PR Ready + auto-merge'),
+        )
+        const rollup = verdicts.find((entry) => entry.context.startsWith('CI (PR) / checks'))
         const cascadeSettled = Boolean(rollup && rollup.state === 'success')
-        const failed = statuses.filter(
+        const failed = verdicts.filter(
           (entry) => entry.state === 'failure' || entry.state === 'error',
         )
-        const pending = statuses.filter((entry) => entry.state === 'pending')
         if (failed.length > 0) {
           const names = failed.map((entry) => entry.context).join(', ')
           throw new Error(`Checks falharam no PR #${number}: ${names}`)
@@ -325,13 +338,13 @@ export const createApi = ({ base, token, repository, fetchImpl } = {}) => {
         if (pr.mergeable === false && cascadeSettled) {
           throw new Error(`PR #${number} não mergeável (conflito?) — resolver manualmente.`)
         }
-        if (cascadeSettled && pending.length === 0 && pr.mergeable === true) return pr
+        if (cascadeSettled && pr.mergeable === true) return pr
         if (Date.now() - started > timeoutMs) {
           throw new Error(`Timeout esperando checks do PR #${number}.`)
         }
         if (log)
           log(
-            `[pr#${number}] ${statuses.length} status, ${pending.length} pendente, rollup=${
+            `[pr#${number}] ${verdicts.length} status, rollup=${
               rollup ? rollup.state : 'ausente'
             }, mergeable=${pr.mergeable ?? 'computando'} — aguardando…`,
           )
