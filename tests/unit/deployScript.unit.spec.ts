@@ -28,8 +28,14 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     expect(script).toContain('id=payload_secret,env=PAYLOAD_SECRET')
   })
 
-  it('builds inside the compose network so the static generation reaches the prod DB', () => {
-    expect(script).toContain('--network stack_default')
+  it('reaches the prod DB from the build (loopback proxy on the compose network)', () => {
+    // BuildKit rejects `--network <bridge>`; the build uses --network host and
+    // a socat proxy (on stack_default, published on the host loopback) with a
+    // rewritten DATABASE_URL.
+    expect(script).toContain('--network host')
+    expect(script).toContain('teqo-1313-build-proxy')
+    expect(script).toContain('TCP:postgres:5432')
+    expect(script).toContain('127.0.0.1:5433')
   })
 
   it('applies migrations through the maintenance service before the rollout', () => {
