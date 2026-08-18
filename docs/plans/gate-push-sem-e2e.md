@@ -1,6 +1,6 @@
 # Pre-push sem e2e: e2e roda uma vez, no CI (gate local fica com os outros testes)
 
-Status: rascunho
+Status: entregue (2026-08-18)
 Atualizado em: 2026-08-18
 Issue: #46
 Priority: P2

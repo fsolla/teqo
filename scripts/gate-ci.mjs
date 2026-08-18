@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 /**
- * Local mirror of `.github/workflows/ci-pr.yml` (serial): phase-1 cheap checks,
- * then phase-2 expensive (int/build/e2e). Skips align with `scripts/ci-scope.mjs`
- * (`origin/main` by default).
+ * Local mirror of `.forgejo/workflows/ci-pr.yml` (serial): phase-1 cheap checks,
+ * then phase-2 expensive (int/build). e2e is NOT part of the local mirror
+ * (OPS59): it runs once, in CI (PR job `e2e` → `checks`; main `ci.yml` e2e →
+ * `checks` → `deploy`). Local optional feedback: `pnpm test:e2e:affected`.
+ * Skips align with `scripts/ci-scope.mjs` (`origin/main` by default).
  *
  * Preflight checks only `teqo_test` (ci-pr never touches the dev DB). Escape
  * during pipeline cutover: `git push --no-verify` (documented in AGENT-OPS).
@@ -71,11 +73,8 @@ const main = async () => {
   const scope = readJsonScript('scripts/ci-scope.mjs')
 
   console.log(
-    `[gate:ci] scope base=${scope.base} code=${scope.code.mode} build=${scope.build.mode} test=${scope.test.mode} e2e=${scope.e2e.mode}`,
+    `[gate:ci] scope base=${scope.base} code=${scope.code.mode} build=${scope.build.mode} test=${scope.test.mode} e2e=${scope.e2e.mode} (e2e runs in CI, not in this gate — OPS59)`,
   )
-  if (scope.e2e.unmapped?.length > 0) {
-    console.error(`[gate:ci] e2e unmapped src/ paths:\n  ${scope.e2e.unmapped.join('\n  ')}`)
-  }
 
   // --- Phase 1 (cheap) ---
   run('check-test-locations', 'node', ['scripts/check-test-locations.mjs'])
@@ -105,8 +104,7 @@ const main = async () => {
   }
 
   // --- Phase 2 (expensive) — only when phase 1 would have been green ---
-  const needsDb =
-    scope.test.mode !== 'none' || scope.build.mode !== 'none' || scope.e2e.mode !== 'none'
+  const needsDb = scope.test.mode !== 'none' || scope.build.mode !== 'none'
   if (needsDb) {
     console.log('\n[gate:ci] ▶ preflight (teqo_test)')
     const dbOk = await diagnoseDatabaseTarget({
@@ -144,28 +142,14 @@ const main = async () => {
   }
 
   if (scope.e2e.mode === 'none') {
-    console.log('\n[gate:ci] ⊘ e2e skipped (no e2e blast radius)')
+    console.log('\n[gate:ci] ⊘ e2e: CI will skip (no e2e blast radius)')
   } else {
-    run('playwright install chromium', 'pnpm', ['exec', 'playwright', 'install', 'chromium'])
-    run('e2e migrate', 'pnpm', ['migrate'], dbEnv)
-    run('e2e seed:minimal', 'pnpm', ['db:seed:minimal'], dbEnv)
-    run('e2e build', 'pnpm', ['build'], { ...dbEnv, NEXT_DIST_DIR: '.next-e2e' })
-
-    const e2eEnv = { ...dbEnv, E2E_PROD: '1', CI: '1', NEXT_DIST_DIR: '.next-e2e' }
-    if (scope.e2e.mode === 'full') {
-      run('test:e2e (full)', 'pnpm', ['test:e2e'], e2eEnv)
-    } else {
-      const specPaths = scope.e2e.specs.map((name) => `tests/e2e/${name}.e2e.spec.ts`)
-      run(
-        `test:e2e (selected: ${scope.e2e.specs.join(', ')})`,
-        'pnpm',
-        ['test:e2e', '--', ...specPaths],
-        e2eEnv,
-      )
-    }
+    const specs =
+      scope.e2e.mode === 'full' ? 'full suite' : `selected: ${scope.e2e.specs.join(', ')}`
+    console.log(`\n[gate:ci] ▶ e2e: runs in CI (job e2e, ${specs}) — not in this gate (OPS59)`)
   }
 
-  console.log('\n[gate:ci] ✓ all checks passed (ci-pr mirror, cascade + affected scope)')
+  console.log('\n[gate:ci] ✓ all checks passed (ci-pr mirror without e2e — e2e verified in CI)')
 }
 
 await main()

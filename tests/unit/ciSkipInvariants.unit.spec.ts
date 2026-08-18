@@ -83,7 +83,6 @@ describe('ciSkipInvariants', () => {
       '.prettierignore',
       'eslint.config.mjs',
       'playwright.config.ts',
-      'scripts/gate-ci.mjs',
       'scripts/run-e2e-affected.mjs',
       'tsconfig.json',
     ]) {
