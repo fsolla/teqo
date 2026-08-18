@@ -45,6 +45,7 @@ import { HomePage } from './globals/HomePage'
 import { Metadata } from './globals/Metadata'
 import { PrivacyPolicy } from './globals/PrivacyPolicy'
 import { SiteSettings } from './globals/SiteSettings'
+import { SocialFeedSettings } from './globals/SocialFeedSettings'
 import { isPayloadAdmin } from './utilities/campaignAccess'
 import { resolveS3StorageEnv } from './utilities/mediaStorage'
 
@@ -124,7 +125,7 @@ export default buildConfig({
     Post,
     Tag,
   ],
-  globals: [SiteSettings, HomePage, Metadata, PrivacyPolicy, CampaignGoals],
+  globals: [SiteSettings, HomePage, Metadata, PrivacyPolicy, CampaignGoals, SocialFeedSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

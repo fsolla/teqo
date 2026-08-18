@@ -1,13 +1,13 @@
 'use client'
 
-import { CampaignArticleCard, type CampaignArticleCardData } from '@/components/CampaignArticleCard'
+import { CampaignContentCard, type CampaignContentCardData } from '@/components/CampaignContentCard'
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
 
 const PROGRAMMATIC_SCROLL_LOCK_MS = 700
 
 type CampaignContentCarouselProps = {
   ariaLabel: string
-  items: CampaignArticleCardData[]
+  items: CampaignContentCardData[]
 }
 
 /**
@@ -95,7 +95,7 @@ export const CampaignContentCarousel = ({ ariaLabel, items }: CampaignContentCar
             inert={index !== activeIndex || undefined}
             className="m-0 w-full shrink-0 snap-start"
           >
-            <CampaignArticleCard card={item} />
+            <CampaignContentCard card={item} />
           </li>
         ))}
       </ol>

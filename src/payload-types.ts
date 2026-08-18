@@ -158,6 +158,7 @@ export interface Config {
     metadata: Metadatum;
     'privacy-policy': PrivacyPolicy;
     campaignGoals: CampaignGoal;
+    'social-feed-settings': SocialFeedSetting;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
@@ -165,6 +166,7 @@ export interface Config {
     metadata: MetadataSelect<false> | MetadataSelect<true>;
     'privacy-policy': PrivacyPolicySelect<false> | PrivacyPolicySelect<true>;
     campaignGoals: CampaignGoalsSelect<false> | CampaignGoalsSelect<true>;
+    'social-feed-settings': SocialFeedSettingsSelect<false> | SocialFeedSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -2366,6 +2368,57 @@ export interface CampaignGoal {
   createdAt?: string | null;
 }
 /**
+ * Fonte automática do board "Acompanhe de perto" da home de campanha. Sem chave configurada, os cards da plataforma não aparecem.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "social-feed-settings".
+ */
+export interface SocialFeedSetting {
+  id: number;
+  /**
+   * Desligado, as fontes externas (YouTube, Instagram) somem do board sem mexer nos artigos do site.
+   */
+  enabled?: boolean | null;
+  /**
+   * Desliga só os cards de vídeo do YouTube.
+   */
+  youtubeEnabled?: boolean | null;
+  /**
+   * Chave de API do Google Cloud com a YouTube Data API v3 habilitada. Restrinja por IP se possível.
+   */
+  youtubeApiKey?: string | null;
+  /**
+   * Ex.: UCyqT2nMLnwQn2Bh7mB7y3dA (o canal oficial é @JorgeSollaDep).
+   */
+  youtubeChannelId?: string | null;
+  /**
+   * Quantos vídeos entram no bento (1 grande + os próximos).
+   */
+  youtubeMaxItems?: number | null;
+  /**
+   * Conteúdo marcado para NÃO aparecer no board (vídeo errado, transmissão incompleta, post de grade). O board pula para o próximo elegível.
+   */
+  excludedItems?:
+    | {
+        platform: 'youtube' | 'instagram';
+        itemId: string;
+        reason?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  youtubeFeedSnapshot?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
@@ -2446,6 +2499,29 @@ export interface CampaignGoalsSelect<T extends boolean = true> {
   margin?: T;
   baseYear?: T;
   note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "social-feed-settings_select".
+ */
+export interface SocialFeedSettingsSelect<T extends boolean = true> {
+  enabled?: T;
+  youtubeEnabled?: T;
+  youtubeApiKey?: T;
+  youtubeChannelId?: T;
+  youtubeMaxItems?: T;
+  excludedItems?:
+    | T
+    | {
+        platform?: T;
+        itemId?: T;
+        reason?: T;
+        id?: T;
+      };
+  youtubeFeedSnapshot?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

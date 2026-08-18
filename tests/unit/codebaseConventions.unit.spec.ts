@@ -496,6 +496,11 @@ describe('src/utilities top-level is pinned', () => {
     'voteEstimateScenarioFields.ts',
     'votePledgeData.ts',
     'votePledgeViews.ts',
+    // S2 — YouTube Data API v3 feed of the campaign home content board
+    // (fetch + cache + snapshot + formatters). A sibling of `posts.ts`, not a
+    // domain subfolder: only one external source so far — the Instagram feed
+    // (S3) would earn a `socialFeed/` subfolder instead of a third top-level.
+    'youtubeFeed.ts',
   ])
 
   it('fails the build on an unregistered top-level module', () => {

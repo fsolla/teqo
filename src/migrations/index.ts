@@ -54,6 +54,7 @@ import * as migration_20260811_183016_drop_activity_task_due from './20260811_18
 import * as migration_20260811_205157_add_google_calendar_push_channel from './20260811_205157_add_google_calendar_push_channel';
 import * as migration_20260811_213648_add_activity_last_mirrored_change_at from './20260811_213648_add_activity_last_mirrored_change_at';
 import * as migration_20260811_234822_add_state_deputy_ballot_name from './20260811_234822_add_state_deputy_ballot_name';
+import * as migration_20260818_111748_add_social_feed_settings from './20260818_111748_add_social_feed_settings';
 
 export const migrations = [
   {
@@ -335,5 +336,10 @@ export const migrations = [
     up: migration_20260811_234822_add_state_deputy_ballot_name.up,
     down: migration_20260811_234822_add_state_deputy_ballot_name.down,
     name: '20260811_234822_add_state_deputy_ballot_name',
+  },
+  {
+    up: migration_20260818_111748_add_social_feed_settings.up,
+    down: migration_20260818_111748_add_social_feed_settings.down,
+    name: '20260818_111748_add_social_feed_settings'
   },
 ];

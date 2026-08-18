@@ -6,6 +6,7 @@ import {
   GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV_NAME,
   GOOGLE_CALENDAR_TEST_KEY,
 } from './tests/helpers/googleCalendarTestKey'
+import { youtubeStubUrlFor } from './tests/helpers/youtubeStub'
 
 /**
  * e2e tests boot a real dev server that seeds/deletes records, so they must run
@@ -26,6 +27,15 @@ if (process.env.TEQO_TEST_DATABASE_URL) {
 assertTestDatabase(process.env.DATABASE_URL)
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
 const webServerPort = new URL(baseURL).port || (baseURL.startsWith('https:') ? '443' : '80')
+/*
+ * Port of the YouTube Data API stub the content board (S2) fetches in e2e.
+ * dev ports live in 3100..4099 (worktree slots, capped at 999), so +1000
+ * never collides with another worktree's dev server; CI stays on 4000. The
+ * derivation lives once in `tests/e2e/helpers/youtubeStub.ts` (the spec uses
+ * it to flip the stub state).
+ */
+const youtubeStubUrl = youtubeStubUrlFor(baseURL)
+const youtubeStubPort = new URL(youtubeStubUrl).port
 const workersOverride = process.env.PLAYWRIGHT_WORKERS
 const workers = workersOverride === undefined ? 2 : Number(workersOverride)
 if (!Number.isInteger(workers) || workers < 2) {
@@ -120,48 +130,63 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], channel: 'chromium' },
     },
   ],
-  webServer: {
-    /*
-     * CI and E2E_PROD=1 serve the PRODUCTION build (`pnpm start` after a
-     * `pnpm build` step in the e2e job): dev-mode cold webpack compiles per
-     * route plus dev-server memory restarts made the full suite blow the 30-min
-     * job timeout on CI (measured 2026-07-30). The municipalities-list React
-     * #130 was fixed by sharing one Drawer across the mobile cards
-     * (CampaignListSheetProvider, 2026-07-30). Locally `pnpm dev` stays the
-     * default: no build wait and hot reload while writing specs.
-     */
-    command: isProdMode ? 'pnpm start' : 'pnpm dev',
-    /*
-     * Never reuse a dev server a developer may already have running against the
-     * production database — always start a fresh one bound to the test DB.
-     */
-    reuseExistingServer: false,
-    url: baseURL,
-    // Local-only tolerance for parallel-worktree load (machine load ~60); CI
-    // boots the production build and keeps the usual 60s budget. Keyed on CI
-    // alone (not `isProdMode`) on purpose: a local `E2E_PROD=1` run keeps the
-    // 240s budget — prod-mode here is a local mirror, not a real CI runner.
-    timeout: process.env.CI ? undefined : 240_000,
-    /* Force the isolated test database into the server process. */
-    env: {
-      DATABASE_URL: process.env.DATABASE_URL as string,
-      PORT: webServerPort,
+  webServer: [
+    {
       /*
-       * C122 — the fake service-account key lets the agenda Google mirror
-       * derive real states (synced/disabled/paused) in the server process.
-       * It parses as a credential but fails locally at JWT signing, so any
-       * sync pass the hooks/auto-retry run fails fast WITHOUT network — the
-       * e2e states stay deterministic (see `googleCalendarTestKey.ts`).
+       * CI and E2E_PROD=1 serve the PRODUCTION build (`pnpm start` after a
+       * `pnpm build` step in the e2e job): dev-mode cold webpack compiles per
+       * route plus dev-server memory restarts made the full suite blow the 30-min
+       * job timeout on CI (measured 2026-07-30). The municipalities-list React
+       * #130 was fixed by sharing one Drawer across the mobile cards
+       * (CampaignListSheetProvider, 2026-07-30). Locally `pnpm dev` stays the
+       * default: no build wait and hot reload while writing specs.
        */
-      [GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV_NAME]: GOOGLE_CALENDAR_TEST_KEY,
-      // Keep e2e artifacts outside `.next`: a concurrent development server
-      // owns that entire directory and may clear nested production bundles.
-      NEXT_DIST_DIR: process.env.NEXT_DIST_DIR ?? '.next-e2e',
-      PAYLOAD_SECRET: process.env.PAYLOAD_SECRET ?? 'test-only-secret-not-used-in-production',
-      NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? baseURL,
-      // Lets e2e specs bust the `posts` tag after direct REST deletes (cleanup),
-      // mirroring the documented post-seed runbook against the deployed site.
-      REVALIDATE_SECRET: process.env.REVALIDATE_SECRET ?? 'e2e-revalidate-secret',
+      command: isProdMode ? 'pnpm start' : 'pnpm dev',
+      /*
+       * Never reuse a dev server a developer may already have running against the
+       * production database — always start a fresh one bound to the test DB.
+       */
+      reuseExistingServer: false,
+      url: baseURL,
+      // Local-only tolerance for parallel-worktree load (machine load ~60); CI
+      // boots the production build and keeps the usual 60s budget. Keyed on CI
+      // alone (not `isProdMode`) on purpose: a local `E2E_PROD=1` run keeps the
+      // 240s budget — prod-mode here is a local mirror, not a real CI runner.
+      timeout: process.env.CI ? undefined : 240_000,
+      /* Force the isolated test database into the server process. */
+      env: {
+        DATABASE_URL: process.env.DATABASE_URL as string,
+        PORT: webServerPort,
+        /*
+         * C122 — the fake service-account key lets the agenda Google mirror
+         * derive real states (synced/disabled/paused) in the server process.
+         * It parses as a credential but fails locally at JWT signing, so any
+         * sync pass the hooks/auto-retry run fails fast WITHOUT network — the
+         * e2e states stay deterministic (see `googleCalendarTestKey.ts`).
+         */
+        [GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV_NAME]: GOOGLE_CALENDAR_TEST_KEY,
+        // Keep e2e artifacts outside `.next`: a concurrent development server
+        // owns that entire directory and may clear nested production bundles.
+        NEXT_DIST_DIR: process.env.NEXT_DIST_DIR ?? '.next-e2e',
+        PAYLOAD_SECRET: process.env.PAYLOAD_SECRET ?? 'test-only-secret-not-used-in-production',
+        NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? baseURL,
+        // Lets e2e specs bust the `posts` tag after direct REST deletes (cleanup),
+        // mirroring the documented post-seed runbook against the deployed site.
+        REVALIDATE_SECRET: process.env.REVALIDATE_SECRET ?? 'e2e-revalidate-secret',
+        // The content board (S2) fetches the YouTube Data API through the local
+        // stub below instead of the real network (deterministic fixtures).
+        YOUTUBE_API_BASE_URL: youtubeStubUrl,
+      },
     },
-  },
+    {
+      /* Deterministic YouTube Data API v3 responses for the content board. */
+      command: `node tests/e2e/youtube-stub.mjs`,
+      reuseExistingServer: false,
+      url: `${youtubeStubUrl}/__stub/health`,
+      timeout: 30_000,
+      env: {
+        YOUTUBE_STUB_PORT: String(youtubeStubPort),
+      },
+    },
+  ],
 })

@@ -1,6 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { seedTestUser, testUser } from '../helpers/seedUser'
+import { youtubeStubUrlFor } from '../helpers/youtubeStub'
 import { expect, test } from './fixtures/e2eTest'
 
 const swipeLeft = async (
@@ -436,8 +437,14 @@ test.describe('Campaign home content section', () => {
   const createdPosts: number[] = []
   const createdTags: number[] = []
 
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ request }) => {
     await seedTestUser()
+    // Start every run with the social feed unconfigured so the empty-state
+    // test stays deterministic even when a previous S2 run left settings or a
+    // persisted snapshot behind (same reasoning as the `posts` bust below).
+    const headers = await adminHeaders(request)
+    await resetSocialFeedSettings(request, headers)
+    await bustSocialFeed(request)
   })
 
   const adminHeaders = async (request: APIRequestContext): Promise<Record<string, string>> => {
@@ -484,25 +491,105 @@ test.describe('Campaign home content section', () => {
   // ISR serves the stale page while it regenerates after a revalidateTag
   // (slower under the parallel suite), and a navigation that lands on it never
   // refreshes its DOM. Poll the server HTML positively until it converges to
-  // the expected section state; the navigation that follows then always lands
-  // on the fresh page.
-  const waitForHomeSectionState = async (
+  // the expected substring state (section presence or actual content, e.g.
+  // video titles); the navigation that follows then always lands on the fresh
+  // page. 12 attempts preserves the S1 convergence budget.
+  const waitForHomeHTML = async (
     request: APIRequestContext,
-    expected: 'present' | 'absent',
+    includes: string[],
+    excludes: string[] = [],
     attempts = 12,
   ) => {
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       const response = await request.get(`${baseURL}/`).catch(() => undefined)
       if (response?.ok()) {
         const html = await response.text()
-        const present = html.includes('data-home-section="contents"')
-        if (present === (expected === 'present')) return
+        const allIncluded = includes.every((needle) => html.includes(needle))
+        const anyExcluded = excludes.some((needle) => html.includes(needle))
+        if (allIncluded && !anyExcluded) return
       }
       await new Promise((resolve) => setTimeout(resolve, 1_000))
     }
     throw new Error(
-      `A home não convergiu para o estado "${expected}" da seção de conteúdos após ${attempts}s.`,
+      `A home não convergiu após ${attempts}s (includes: ${includes.join(', ')}, excludes: ${excludes.join(', ')}).`,
     )
+  }
+
+  const waitForHomeSectionState = async (
+    request: APIRequestContext,
+    expected: 'present' | 'absent',
+    attempts = 12,
+  ) => {
+    if (expected === 'present') {
+      await waitForHomeHTML(request, ['data-home-section="contents"'], [], attempts)
+    } else {
+      await waitForHomeHTML(request, [], ['data-home-section="contents"'], attempts)
+    }
+  }
+
+  // ---- S2 — YouTube feed: stub + settings helpers ----
+
+  // Same derivation as playwright.config.ts: the stub listens on dev port + 1000.
+  const youtubeStubUrl = youtubeStubUrlFor(baseURL)
+
+  const setYouTubeStubState = async (request: APIRequestContext, state: 'ok' | 'fail') => {
+    const response = await request.post(`${youtubeStubUrl}/__stub/state`, { data: { state } })
+    expect(response.ok()).toBeTruthy()
+  }
+
+  const updateSocialFeedSettings = async (
+    request: APIRequestContext,
+    headers: Record<string, string>,
+    data: Record<string, unknown>,
+  ) => {
+    const response = await request.post(`${baseURL}/api/globals/social-feed-settings`, {
+      headers,
+      data,
+    })
+    expect(response.ok()).toBeTruthy()
+  }
+
+  // Full unconfigured state: the feed returns null and the S1 behavior is intact.
+  const resetSocialFeedSettings = async (
+    request: APIRequestContext,
+    headers: Record<string, string>,
+  ) => {
+    await updateSocialFeedSettings(request, headers, {
+      enabled: true,
+      youtubeEnabled: true,
+      youtubeApiKey: '',
+      youtubeChannelId: '',
+      youtubeMaxItems: 3,
+      excludedItems: [],
+      youtubeFeedSnapshot: null,
+    })
+  }
+
+  const bustSocialFeed = async (request: APIRequestContext) =>
+    request
+      .post(`${baseURL}/api/revalidate?tag=social-feed`, {
+        headers: { 'x-revalidate-secret': revalidateSecret },
+      })
+      .catch(() => undefined)
+
+  // Best-effort S2 teardown: deletes the created posts/tags, resets the social
+  // feed to the unconfigured state and converges the home back to the empty
+  // section so the serial chain starts deterministic on the next run.
+  const cleanupS2Fixtures = async (request: APIRequestContext, headers: Record<string, string>) => {
+    for (const id of createdPosts) {
+      await request.delete(`${baseURL}/api/post/${id}`, { headers }).catch(() => undefined)
+    }
+    for (const id of createdTags) {
+      await request.delete(`${baseURL}/api/tag/${id}`, { headers }).catch(() => undefined)
+    }
+    await resetSocialFeedSettings(request, headers).catch(() => undefined)
+    await bustSocialFeed(request)
+    await request
+      .post(`${baseURL}/api/revalidate?tag=posts`, {
+        headers: { 'x-revalidate-secret': revalidateSecret },
+      })
+      .catch(() => undefined)
+    await waitForHomeSectionState(request, 'absent').catch(() => undefined)
   }
 
   test('hides the content section while no articles are visible', async ({ page, request }) => {
@@ -647,7 +734,7 @@ test.describe('Campaign home content section', () => {
 
       await page.setViewportSize({ width: 390, height: 844 })
       await page.goto('/')
-      const carousel = page.getByRole('region', { name: 'Artigos recentes' })
+      const carousel = page.getByRole('region', { name: 'Conteúdos recentes' })
       await expect(carousel).toBeVisible()
       await expect(carousel.getByText('E2e Conteúdo oculto')).toHaveCount(0)
 
@@ -674,6 +761,7 @@ test.describe('Campaign home content section', () => {
       // prefetch answered after the deletion would 404 (guard noise). Leaving
       // the page aborts in-flight prefetches and stops new ones.
       await page.goto('about:blank')
+      await expect(page).toHaveURL(/about:blank/)
     } finally {
       const headers2 = await adminHeaders(request).catch(() => undefined)
       if (headers2) {
@@ -700,6 +788,257 @@ test.describe('Campaign home content section', () => {
         await page.goto('/')
         await expect(page.locator('[data-home-section="contents"]')).toHaveCount(0)
       }
+    }
+  })
+
+  test('renders the YouTube feed with exclusions and opens videos on the platform', async ({
+    page,
+    request,
+  }) => {
+    await seedTestUser()
+    const headers = await adminHeaders(request)
+    await setYouTubeStubState(request, 'ok')
+
+    const mixTag = await createTag(request, headers, `E2e Mix ${runSuffix}`, `e2e-mix-${runSuffix}`)
+    await createPost(request, headers, {
+      title: 'E2e Artigo no mix',
+      slug: `e2e-artigo-mix-${runSuffix}`,
+      type: 'artigo',
+      category: mixTag.id,
+      publishedDate: new Date(Date.now() - 60 * 60_000).toISOString(),
+    })
+    // The newest stub video is excluded: the board must skip it and promote the
+    // next eligible one to the featured slot (the acceptance's "pula para o
+    // próximo elegível").
+    await updateSocialFeedSettings(request, headers, {
+      enabled: true,
+      youtubeEnabled: true,
+      youtubeApiKey: 'e2e-youtube-api-key',
+      youtubeChannelId: 'UCe2eTestChannel',
+      youtubeMaxItems: 3,
+      excludedItems: [{ platform: 'youtube', itemId: 'e2e-video-excluido-4' }],
+      youtubeFeedSnapshot: null,
+    })
+
+    try {
+      await waitForHomeHTML(
+        request,
+        ['E2e Vídeo em destaque', 'E2e Artigo no mix'],
+        ['E2e Vídeo excluído'],
+      )
+      await page.setViewportSize({ width: 1280, height: 900 })
+      await page.goto('/')
+      const section = page.locator('[data-home-section="contents"]')
+      await expect(section).toBeVisible()
+
+      const featured = section.getByRole('link', { name: /E2e Vídeo em destaque/ })
+      await expect(featured).toBeVisible()
+      await expect(featured).toHaveAttribute(
+        'href',
+        'https://www.youtube.com/watch?v=e2e-video-destaque-1',
+      )
+      await expect(featured).toHaveAttribute('target', '_blank')
+      await expect(featured).toHaveAttribute('rel', 'noopener noreferrer')
+      await expect(
+        section.getByText('há 30 minutos · 12,4 mil visualizações').first(),
+      ).toBeVisible()
+      await expect(section.getByText('YouTube', { exact: true }).first()).toBeVisible()
+      await expect(section.getByText('E2e Vídeo excluído')).toHaveCount(0)
+
+      await expect(section.getByRole('link', { name: /E2e Artigo no mix/ }).first()).toBeVisible()
+      await expect(section.getByText('há 2 horas · 8,1 mil visualizações').first()).toBeVisible()
+      await expect(section.getByText('987 visualizações').first()).toBeVisible()
+
+      const channelLink = section.getByRole('link', { name: /YouTube →/ })
+      await expect(channelLink).toHaveAttribute(
+        'href',
+        'https://www.youtube.com/channel/UCe2eTestChannel',
+      )
+      await expect(channelLink).toHaveAttribute('target', '_blank')
+
+      await page.setViewportSize({ width: 390, height: 844 })
+      await page.goto('/')
+      const carousel = page.getByRole('region', { name: 'Conteúdos recentes' })
+      await expect(carousel).toBeVisible()
+      await expect(carousel.getByText('1 de 4 · deslize para ver os próximos')).toBeVisible()
+      await expect(carousel.getByText('E2e Vídeo excluído')).toHaveCount(0)
+
+      await page.goto('about:blank')
+      await expect(page).toHaveURL(/about:blank/)
+    } finally {
+      await setYouTubeStubState(request, 'ok')
+      await cleanupS2Fixtures(request, headers)
+    }
+  })
+
+  test('hides YouTube cards and keeps articles when the API fails without a snapshot', async ({
+    page,
+    request,
+  }) => {
+    await seedTestUser()
+    const headers = await adminHeaders(request)
+    await setYouTubeStubState(request, 'fail')
+
+    const fallbackTag = await createTag(
+      request,
+      headers,
+      `E2e Fallback ${runSuffix}`,
+      `e2e-fallback-${runSuffix}`,
+    )
+    await createPost(request, headers, {
+      title: 'E2e Artigo fallback',
+      slug: `e2e-artigo-fallback-${runSuffix}`,
+      type: 'noticia',
+      category: fallbackTag.id,
+      publishedDate: new Date(Date.now() - 2 * 60 * 60_000).toISOString(),
+    })
+    await updateSocialFeedSettings(request, headers, {
+      enabled: true,
+      youtubeEnabled: true,
+      youtubeApiKey: 'e2e-youtube-api-key',
+      youtubeChannelId: 'UCe2eTestChannel',
+      youtubeMaxItems: 3,
+      excludedItems: [],
+      youtubeFeedSnapshot: null,
+    })
+
+    try {
+      // The feed is configured, so the "YouTube →" link stays; without a
+      // snapshot the cards are silently absent and the article carries the
+      // section (page never breaks, no error shown).
+      await waitForHomeHTML(
+        request,
+        ['E2e Artigo fallback', 'YouTube →'],
+        ['E2e Vídeo em destaque'],
+      )
+      await page.goto('/')
+      const section = page.locator('[data-home-section="contents"]')
+      await expect(section).toBeVisible()
+      await expect(section.getByRole('link', { name: /E2e Artigo fallback/ })).toBeVisible()
+      await expect(section.getByText('E2e Vídeo em destaque')).toHaveCount(0)
+      await expect(section.getByText('E2e Vídeo de caravana')).toHaveCount(0)
+      await expect(section.getByRole('link', { name: /YouTube →/ })).toBeVisible()
+
+      await page.goto('about:blank')
+      await expect(page).toHaveURL(/about:blank/)
+    } finally {
+      await setYouTubeStubState(request, 'ok')
+      await cleanupS2Fixtures(request, headers)
+    }
+  })
+
+  test('keeps the last snapshot while the API is down', async ({ page, request }) => {
+    await seedTestUser()
+    const headers = await adminHeaders(request)
+    await setYouTubeStubState(request, 'ok')
+    const baseSettings = {
+      enabled: true,
+      youtubeEnabled: true,
+      youtubeApiKey: 'e2e-youtube-api-key',
+      youtubeChannelId: 'UCe2eTestChannel',
+      youtubeMaxItems: 3,
+      excludedItems: [{ platform: 'youtube', itemId: 'e2e-video-excluido-4' }],
+      youtubeFeedSnapshot: null,
+    }
+    await updateSocialFeedSettings(request, headers, baseSettings)
+
+    try {
+      // Live fetch succeeds and persists the raw snapshot.
+      await waitForHomeHTML(request, ['E2e Vídeo em destaque'], ['E2e Vídeo excluído'])
+      await page.goto('/')
+      await expect(page.getByRole('link', { name: /E2e Vídeo em destaque/ }).first()).toBeVisible()
+      await page.goto('about:blank')
+      await expect(page).toHaveURL(/about:blank/)
+
+      // API down + a settings change: the re-execution must serve the snapshot
+      // re-filtered by the CURRENT exclusions/maxItems (raw snapshot, applied
+      // on read) — maxItems 2 proves the re-run read the new settings. The
+      // snapshot field is OMITTED on purpose: an update merges over the
+      // existing doc (Payload update semantics), so the persisted snapshot
+      // survives the settings edit — exactly the production admin path.
+      await setYouTubeStubState(request, 'fail')
+      const { youtubeFeedSnapshot: _ignored, ...settingsWithoutSnapshot } = baseSettings
+      await updateSocialFeedSettings(request, headers, {
+        ...settingsWithoutSnapshot,
+        youtubeMaxItems: 2,
+      })
+      await waitForHomeHTML(
+        request,
+        ['E2e Vídeo em destaque', 'E2e Vídeo de caravana'],
+        ['E2e Vídeo de entrevista'],
+      )
+      await page.goto('/')
+      await expect(page.getByRole('link', { name: /E2e Vídeo em destaque/ }).first()).toBeVisible()
+      await expect(page.getByRole('link', { name: /E2e Vídeo de caravana/ })).toBeVisible()
+      await expect(page.getByText('E2e Vídeo de entrevista')).toHaveCount(0)
+      await page.goto('about:blank')
+      await expect(page).toHaveURL(/about:blank/)
+
+      // API back: the live feed returns with the original cap.
+      await setYouTubeStubState(request, 'ok')
+      await updateSocialFeedSettings(request, headers, baseSettings)
+      await waitForHomeHTML(request, ['E2e Vídeo de entrevista'], ['E2e Vídeo excluído'])
+      await page.goto('/')
+      await expect(page.getByText('E2e Vídeo de entrevista').first()).toBeVisible()
+      await page.goto('about:blank')
+      await expect(page).toHaveURL(/about:blank/)
+    } finally {
+      await setYouTubeStubState(request, 'ok')
+      await cleanupS2Fixtures(request, headers)
+    }
+  })
+
+  test('the kill switch pauses the external feed without touching articles', async ({
+    page,
+    request,
+  }) => {
+    await seedTestUser()
+    const headers = await adminHeaders(request)
+    await setYouTubeStubState(request, 'ok')
+
+    const killTag = await createTag(
+      request,
+      headers,
+      `E2e Kill ${runSuffix}`,
+      `e2e-kill-${runSuffix}`,
+    )
+    await createPost(request, headers, {
+      title: 'E2e Artigo kill switch',
+      slug: `e2e-artigo-kill-${runSuffix}`,
+      type: 'noticia',
+      category: killTag.id,
+      publishedDate: new Date(Date.now() - 3 * 60 * 60_000).toISOString(),
+    })
+    await updateSocialFeedSettings(request, headers, {
+      enabled: false,
+      youtubeEnabled: true,
+      youtubeApiKey: 'e2e-youtube-api-key',
+      youtubeChannelId: 'UCe2eTestChannel',
+      youtubeMaxItems: 3,
+      excludedItems: [],
+      youtubeFeedSnapshot: null,
+    })
+
+    try {
+      // `enabled: false` pauses the whole external board: no cards AND no
+      // channel link, while the article section lives on.
+      await waitForHomeHTML(
+        request,
+        ['E2e Artigo kill switch'],
+        ['E2e Vídeo em destaque', 'YouTube →'],
+      )
+      await page.goto('/')
+      const section = page.locator('[data-home-section="contents"]')
+      await expect(section).toBeVisible()
+      await expect(section.getByRole('link', { name: /E2e Artigo kill switch/ })).toBeVisible()
+      await expect(section.getByText('E2e Vídeo em destaque')).toHaveCount(0)
+      await expect(section.getByRole('link', { name: /YouTube →/ })).toHaveCount(0)
+
+      await page.goto('about:blank')
+      await expect(page).toHaveURL(/about:blank/)
+    } finally {
+      await setYouTubeStubState(request, 'ok')
+      await cleanupS2Fixtures(request, headers)
     }
   })
 })

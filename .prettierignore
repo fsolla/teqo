@@ -1,6 +1,7 @@
 # Build outputs and tool caches
 .next/
 .next-e2e/
+.next-e2e-check/
 .pnpm-store/
 out/
 build/

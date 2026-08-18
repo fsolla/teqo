@@ -1,4 +1,4 @@
-import { CampaignArticleCard, type CampaignArticleCardData } from '@/components/CampaignArticleCard'
+import { CampaignContentCard, type CampaignContentCardData } from '@/components/CampaignContentCard'
 import { CampaignContentCarousel } from '@/components/CampaignContentCarousel'
 import type { Post } from '@/payload-types'
 import {
@@ -8,41 +8,87 @@ import {
   getVisiblePosts,
   POST_TYPE_BADGE_LABELS,
 } from '@/utilities/posts'
+import { formatYouTubeViews, getYouTubeFeed, type YouTubeVideo } from '@/utilities/youtubeFeed'
 import Link from 'next/link'
 
 const CONTENT_SECTION_LIMIT = 5
 
-const toCardData = (post: Post): CampaignArticleCardData | null => {
+const sectionHeaderLinkClassName =
+  'text-sm font-bold text-(--pt-red) underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-(--pt-red) focus-visible:outline-none'
+
+type DatedCard = {
+  card: CampaignContentCardData
+  date: number
+}
+
+/** 0 sentinel: a missing date sinks the item to the bottom of the recency merge. */
+const dateTimeOf = (value?: string | null): number => {
+  const time = new Date(value ?? '').getTime()
+  return Number.isNaN(time) ? 0 : time
+}
+
+const byRecencyDesc = (a: DatedCard, b: DatedCard): number => b.date - a.date
+
+const toArticleCardData = (post: Post): DatedCard | null => {
   const href = getPostCanonicalPath(post)
   if (!href) return null
 
   const cover =
     typeof post.coverImage === 'object' && post.coverImage !== null ? post.coverImage : null
   const categoryName = getCategoryName(post)
-  const date = formatRelativePostDate(post.publishedDate)
 
   return {
-    id: post.id,
-    href,
-    title: post.title,
-    badgeLabel: POST_TYPE_BADGE_LABELS[post.type],
-    meta: [date, categoryName].filter(Boolean).join(' · '),
-    ...(cover?.url ? { coverUrl: cover.url, coverAlt: cover.alt ?? undefined } : {}),
-    ...(post.subtitle ? { subtitle: post.subtitle } : {}),
+    card: {
+      id: post.id,
+      href,
+      title: post.title,
+      badgeLabel: POST_TYPE_BADGE_LABELS[post.type],
+      meta: [formatRelativePostDate(post.publishedDate), categoryName].filter(Boolean).join(' · '),
+      ...(cover?.url ? { coverUrl: cover.url, coverAlt: cover.alt ?? undefined } : {}),
+      ...(post.subtitle ? { subtitle: post.subtitle } : {}),
+    },
+    date: dateTimeOf(post.publishedDate),
   }
 }
 
+const toVideoCardData = (video: YouTubeVideo): DatedCard => ({
+  card: {
+    id: `yt:${video.id}`,
+    href: `https://www.youtube.com/watch?v=${video.id}`,
+    title: video.title,
+    badgeLabel: 'YouTube',
+    meta: [
+      formatRelativePostDate(video.publishedAt),
+      video.viewCount != null ? `${formatYouTubeViews(video.viewCount)} visualizações` : null,
+    ]
+      .filter(Boolean)
+      .join(' · '),
+    ...(video.thumbnailUrl ? { coverUrl: video.thumbnailUrl, coverAlt: video.title } : {}),
+    external: true,
+  },
+  date: dateTimeOf(video.publishedAt),
+})
+
 /**
- * Campaign home content board (S1 — articles): the 5 most recent visible posts
- * as a 1+4 bento on desktop and a one-per-screen carousel on mobile. Hides
- * entirely when nothing is visible (`isPostVisible` fail-closed — hidden
- * electoral tags never leak).
+ * Campaign home content board: the 5 most recent items across the visible
+ * posts (S1) and the eligible YouTube feed (S2), newest first, as a 1+4 bento
+ * on desktop and a one-per-screen carousel on mobile. Hides entirely when
+ * nothing is visible (`isPostVisible` fail-closed — hidden electoral tags
+ * never leak) and never breaks when the feed API is down (snapshot or no
+ * cards). With the feed unconfigured it degrades to the S1 articles-only
+ * behavior.
  */
 export const CampaignContentSection = async () => {
-  const cards = (await getVisiblePosts())
-    .map(toCardData)
-    .filter((card): card is CampaignArticleCardData => card !== null)
+  const [visiblePosts, feed] = await Promise.all([getVisiblePosts(), getYouTubeFeed()])
+  const articleCards = visiblePosts
+    .map(toArticleCardData)
+    .filter((entry): entry is DatedCard => entry !== null)
+  const videoCards = (feed?.videos ?? []).map(toVideoCardData)
+
+  const cards = [...articleCards, ...videoCards]
+    .sort(byRecencyDesc)
     .slice(0, CONTENT_SECTION_LIMIT)
+    .map(({ card }) => card)
 
   if (!cards.length) return null
 
@@ -70,25 +116,34 @@ export const CampaignContentSection = async () => {
               Bastidores, caravanas e as lutas do mandato: conteúdo atualizado, direto das redes.
             </p>
           </div>
-          <Link
-            href="/artigos"
-            className="text-sm font-bold text-(--pt-red) underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-(--pt-red) focus-visible:outline-none"
-          >
-            Ver artigos →
-          </Link>
+          <div className="flex flex-wrap gap-4">
+            <Link href="/artigos" className={sectionHeaderLinkClassName}>
+              Ver artigos →
+            </Link>
+            {feed ? (
+              <a
+                href={`https://www.youtube.com/channel/${feed.channelId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={sectionHeaderLinkClassName}
+              >
+                YouTube →
+              </a>
+            ) : null}
+          </div>
         </div>
 
         <div className="mt-6 hidden grid-cols-4 gap-4 md:grid">
           <div className="col-span-2 row-span-2">
-            <CampaignArticleCard card={featured} featured />
+            <CampaignContentCard card={featured} featured />
           </div>
           {rest.map((card) => (
-            <CampaignArticleCard key={card.id} card={card} />
+            <CampaignContentCard key={card.id} card={card} />
           ))}
         </div>
 
         <div className="mt-5 md:hidden">
-          <CampaignContentCarousel ariaLabel="Artigos recentes" items={cards} />
+          <CampaignContentCarousel ariaLabel="Conteúdos recentes" items={cards} />
         </div>
       </div>
     </section>
