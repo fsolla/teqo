@@ -51,6 +51,33 @@ export const testDatabaseForSlot = (slot) => `teqo_wt${slot}_test`
 export const isGeneratedDatabaseName = (name) => /^teqo_wt[0-9]+(_test)?$/.test(name ?? '')
 
 /**
+ * Media storage (OPS52) — the four required `S3_*` keys, mirrored from
+ * `resolveS3StorageEnv` in `src/utilities/mediaStorage.ts` (scripts cannot
+ * import the TS module). `S3_REGION` is optional (default `garage`).
+ */
+const S3_WORKTREE_REQUIRED_KEYS = [
+  'S3_BUCKET',
+  'S3_ENDPOINT',
+  'S3_ACCESS_KEY_ID',
+  'S3_SECRET_ACCESS_KEY',
+]
+
+/**
+ * `S3_*` lines to copy into a worktree env — ALL or NOTHING: a partial set
+ * would abort the worktree's boot (fail-closed `resolveS3StorageEnv`), so a
+ * partial main-env copies nothing and the worktree falls back to local disk
+ * storage. The dev is expected to keep the main env's bucket out of
+ * production (`.env.example` contract).
+ *
+ * @param {Record<string, string | undefined>} env
+ * @returns {string[]}
+ */
+export const s3EnvCopiedLines = (env) =>
+  S3_WORKTREE_REQUIRED_KEYS.every((key) => env[key])
+    ? [...S3_WORKTREE_REQUIRED_KEYS, 'S3_REGION'].map((key) => `${key}=${env[key]}`)
+    : []
+
+/**
  * Final environment for a branch. `takenSlots` = slots already claimed by
  * OTHER live worktrees; bumps +1 until free (bounded — live slot sets are
  * tiny). Every value a consumer needs derives from the one final slot.
