@@ -50,7 +50,7 @@ Fonte iterável: [`secao-conteudos-home-ui-draft.html`](secao-conteudos-home-ui-
 
 - **Vou apresentar dados?** Sim, superfície neste item — metadados do post (imagem, legenda, data) vindos da plataforma.
 - **Decisões desbloqueadas:** o visitante decide qual post abrir; nada de métricas inventadas.
-- **Forma:** *adiada ao plano de implementação* — restrição de produto: legenda/data como a plataforma mostra; sem contadores derivados.
+- **Forma:** _adiada ao plano de implementação_ — restrição de produto: legenda/data como a plataforma mostra; sem contadores derivados.
 
 ## Direção no codebase (hipótese)
 

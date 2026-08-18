@@ -50,7 +50,7 @@ Fonte iterável: [`secao-conteudos-home-ui-draft.html`](secao-conteudos-home-ui-
 
 - **Vou apresentar dados?** Sim, superfície neste item — metadados do vídeo (título, thumbnail, data, visualizações) vindos da plataforma.
 - **Decisões desbloqueadas:** o visitante decide qual vídeo assistir (clique); visualizações são fato da plataforma (não inventar).
-- **Forma:** *adiada ao plano de implementação* — restrição de produto: mostrar views como a plataforma mostra (ex. "12,4 mil"), nunca métrica derivada da campanha.
+- **Forma:** _adiada ao plano de implementação_ — restrição de produto: mostrar views como a plataforma mostra (ex. "12,4 mil"), nunca métrica derivada da campanha.
 
 ## Direção no codebase (hipótese)
 

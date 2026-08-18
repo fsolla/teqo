@@ -49,7 +49,7 @@ Fonte iterável: [`secao-conteudos-home-ui-draft.html`](secao-conteudos-home-ui-
 
 - **Vou apresentar dados?** Sim, superfície neste item — mas são **conteúdos** (artigos), não métricas.
 - **Decisões desbloqueadas:** o visitante decide qual artigo ler (clique); nenhum número novo de campanha é inventado aqui.
-- **Forma:** *adiada ao plano de implementação* — restrição de produto: meta = data/categoria do post (já exibidas no site), sem contadores inventados.
+- **Forma:** _adiada ao plano de implementação_ — restrição de produto: meta = data/categoria do post (já exibidas no site), sem contadores inventados.
 
 ## Direção no codebase (hipótese)
 
