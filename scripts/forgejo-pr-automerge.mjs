@@ -46,20 +46,27 @@ try {
     )
     process.exit(0)
   }
+  if (pr.base.ref !== 'main') {
+    console.log(`[forgejo-pr-automerge] PR #${prNumber} base é ${pr.base.ref} (não main) — skip`)
+    process.exit(0)
+  }
   if (pr.isDraft) {
-    if (pr.head.ref.startsWith('cursor/')) {
-      console.log(`[forgejo-pr-automerge] PR #${prNumber} é draft — marcando Ready`)
-      await api.markPullRequestReady(prNumber)
-    } else {
+    if (!pr.head.ref.startsWith('cursor/')) {
       console.log(
-        `[forgejo-pr-automerge] PR #${prNumber} é draft fora de cursor/* — skip (não força PR humano)`,
+        `[forgejo-pr-automerge] PR #${prNumber} é draft fora de cursor/* — skip (veto do ator)`,
       )
       process.exit(0)
     }
+    console.log(`[forgejo-pr-automerge] PR #${prNumber} é draft — marcando Ready`)
+    await api.markPullRequestReady(prNumber)
   } else {
     console.log(`[forgejo-pr-automerge] PR #${prNumber} já Ready`)
   }
-  const { attempted, merged } = await api.autoMerge(prNumber, {
+  const {
+    attempted,
+    merged,
+    pr: after,
+  } = await api.autoMerge(prNumber, {
     log: (line) => console.log(`[forgejo-pr-automerge] ${line}`),
   })
   if (merged) {
@@ -69,7 +76,11 @@ try {
         : `[forgejo-pr-automerge] PR #${prNumber} já mergeado`,
     )
   } else {
-    console.log(`[forgejo-pr-automerge] PR #${prNumber} fechado sem merge — skip`)
+    console.log(
+      after?.state === 'CLOSED'
+        ? `[forgejo-pr-automerge] PR #${prNumber} fechado sem merge — skip`
+        : `[forgejo-pr-automerge] PR #${prNumber} voltou a draft — skip (veto do ator)`,
+    )
   }
 } catch (error) {
   console.error(`[forgejo-pr-automerge] falhou: ${error instanceof Error ? error.message : error}`)

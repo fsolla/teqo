@@ -272,12 +272,14 @@ export const createApi = ({ base, token, repository, fetchImpl } = {}) => {
     /**
      * All required statuses on the PR head are success (or a failure exists),
      * and Forgejo finished computing mergeability. Returns the last PR read.
+     * A draft PR stops the wait (converted mid-run): the caller decides what
+     * "no merge" means — the CLI skips non-`cursor/*` drafts (OPS57 veto).
      */
     waitForChecks: async (number, { timeoutMs = 30 * 60 * 1000, pollMs = 15000, log } = {}) => {
       const started = Date.now()
       for (;;) {
         const pr = await api.getPullRequest(number)
-        if (!pr || pr.state !== 'OPEN' || pr.merged) return pr
+        if (!pr || pr.state !== 'OPEN' || pr.merged || pr.isDraft) return pr
         if (pr.mergeable === false) {
           throw new Error(`PR #${number} não mergeável (conflito?) — resolver manualmente.`)
         }
@@ -314,7 +316,7 @@ export const createApi = ({ base, token, repository, fetchImpl } = {}) => {
      */
     autoMerge: async (number, options) => {
       const pr = await api.waitForChecks(number, options)
-      if (!pr || pr.merged || pr.state !== 'OPEN') {
+      if (!pr || pr.merged || pr.state !== 'OPEN' || pr.isDraft) {
         return { attempted: false, merged: Boolean(pr?.merged), pr }
       }
       try {
