@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — Seção de conteúdos na home de campanha</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-5xl p-8">
+      <p class="text-sm text-zinc-400">
+        Visitante da home pública de campanha (jorgesolla1313). Seção 3 da página: logo após a
+        prova social, imediatamente antes de "Por que essa eleição importa". Card de conteúdo
+        generalizado (Artigo / YouTube / Instagram) — clique leva ao artigo ou à plataforma.
+      </p>
+
+      <!-- ============ CENA: desktop (estado final, 3 fontes) ============ -->
+      <section data-shot="desktop" class="mt-8 rounded-2xl bg-white p-6 text-zinc-900 shadow-xl">
+        <!-- contexto: prova social (barra) -->
+        <div class="flex items-center justify-center gap-10 rounded-xl bg-zinc-100 py-3">
+          <span class="text-sm font-bold text-zinc-400">3.333 proposições</span>
+          <span class="text-sm font-bold text-zinc-400">1.031 discursos</span>
+          <span class="text-sm font-bold text-zinc-400">3º mandato</span>
+        </div>
+
+        <!-- ===== SEÇÃO DE CONTEÚDOS (posição 3) ===== -->
+        <div class="mt-6">
+          <div class="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p class="text-xs font-extrabold tracking-[0.14em] text-zinc-500 uppercase">
+                Acompanhe de perto
+              </p>
+              <h2 class="mt-1 text-2xl font-extrabold text-zinc-900">
+                A caminhada, em tempo real
+              </h2>
+              <p class="mt-1 text-sm text-zinc-500">
+                Bastidores, caravanas e as lutas do mandato: conteúdo atualizado, direto das redes.
+              </p>
+            </div>
+            <div class="flex gap-4 text-sm font-bold">
+              <a href="#" class="text-red-700 underline-offset-4 hover:underline">Ver artigos →</a>
+              <a href="#" class="text-red-700 underline-offset-4 hover:underline">Seguir no Instagram →</a>
+              <a href="#" class="text-red-700 underline-offset-4 hover:underline">YouTube →</a>
+            </div>
+          </div>
+
+          <!-- bento: 1 grande + 4 pequenos -->
+          <div class="mt-5 grid gap-4 md:grid-cols-4">
+            <!-- card grande: artigo destaque -->
+            <a href="#" class="group col-span-2 row-span-2 flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3">
+              <div class="relative aspect-[16/9] overflow-hidden rounded-lg bg-zinc-200">
+                <span class="absolute top-2 left-2 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white uppercase">
+                  Artigo
+                </span>
+                <span class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400">
+                  capa 16:9 (placeholder)
+                </span>
+              </div>
+              <div class="flex flex-1 flex-col gap-1">
+                <h3 class="text-base leading-snug font-extrabold text-zinc-900 group-hover:underline">
+                  Título do artigo em destaque, duas ou três linhas para caber
+                </h3>
+                <p class="text-xs leading-relaxed text-zinc-500">
+                  Resumo curto do artigo quando houver, uma linha de contexto.
+                </p>
+                <span class="mt-auto text-xs text-zinc-400">há 1 dia · categoria</span>
+              </div>
+            </a>
+
+            <!-- pequeno: vídeo YouTube -->
+            <a href="#" class="group flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3">
+              <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+                <span class="absolute top-2 left-2 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white uppercase">
+                  YouTube
+                </span>
+                <span class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400">
+                  thumb 16:9
+                </span>
+              </div>
+              <h3 class="text-sm leading-snug font-extrabold text-zinc-900 group-hover:underline">
+                Título do vídeo recente, até duas linhas
+              </h3>
+              <span class="text-xs text-zinc-400">há 2 dias · 12,4 mil visualizações</span>
+            </a>
+
+            <!-- pequeno: vídeo YouTube -->
+            <a href="#" class="group flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3">
+              <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+                <span class="absolute top-2 left-2 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white uppercase">
+                  YouTube
+                </span>
+                <span class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400">
+                  thumb 16:9
+                </span>
+              </div>
+              <h3 class="text-sm leading-snug font-extrabold text-zinc-900 group-hover:underline">
+                Título do segundo vídeo, até duas linhas
+              </h3>
+              <span class="text-xs text-zinc-400">há 5 dias · 8,1 mil visualizações</span>
+            </a>
+
+            <!-- pequeno: Instagram -->
+            <a href="#" class="group flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3">
+              <div class="relative aspect-square overflow-hidden rounded-lg bg-zinc-200">
+                <span class="absolute top-2 left-2 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white uppercase">
+                  Instagram
+                </span>
+                <span class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400">
+                  post 1:1
+                </span>
+              </div>
+              <h3 class="text-sm leading-snug font-extrabold text-zinc-900 group-hover:underline">
+                Legenda do post recente, até duas linhas
+              </h3>
+              <span class="text-xs text-zinc-400">há 3 dias</span>
+            </a>
+
+            <!-- pequeno: Instagram -->
+            <a href="#" class="group flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3">
+              <div class="relative aspect-square overflow-hidden rounded-lg bg-zinc-200">
+                <span class="absolute top-2 left-2 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white uppercase">
+                  Instagram
+                </span>
+                <span class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400">
+                  post 1:1
+                </span>
+              </div>
+              <h3 class="text-sm leading-snug font-extrabold text-zinc-900 group-hover:underline">
+                Legenda do segundo post, até duas linhas
+              </h3>
+              <span class="text-xs text-zinc-400">há 6 dias</span>
+            </a>
+          </div>
+        </div>
+        <!-- ===== FIM DA SEÇÃO DE CONTEÚDOS ===== -->
+
+        <!-- contexto: "Por que essa eleição importa" (barra) -->
+        <div class="mt-6 rounded-xl bg-zinc-900 px-6 py-5 text-white">
+          <p class="text-xs font-extrabold tracking-[0.14em] text-zinc-400 uppercase">
+            Por que essa eleição importa
+          </p>
+          <p class="mt-1 text-lg font-extrabold">
+            Eleger deputado é coisa séria. O Congresso tem nas mãos vidas reais e o SUS.
+          </p>
+        </div>
+      </section>
+
+      <!-- ============ CENA: mobile (carrossel — 1 conteúdo por tela) ============ -->
+      <section data-shot="mobile" class="mt-8 w-[390px] rounded-2xl bg-white p-4 text-zinc-900 shadow-xl">
+        <!-- contexto: prova social -->
+        <div class="flex items-center justify-center gap-6 rounded-xl bg-zinc-100 py-2.5">
+          <span class="text-xs font-bold text-zinc-400">3.333 proposições</span>
+          <span class="text-xs font-bold text-zinc-400">1.031 discursos</span>
+          <span class="text-xs font-bold text-zinc-400">3º mandato</span>
+        </div>
+
+        <!-- seção -->
+        <div class="mt-5">
+          <p class="text-xs font-extrabold tracking-[0.14em] text-zinc-500 uppercase">
+            Acompanhe de perto
+          </p>
+          <h2 class="mt-1 text-xl font-extrabold text-zinc-900">A caminhada, em tempo real</h2>
+          <p class="mt-1 text-sm text-zinc-500">
+            Bastidores, caravanas e as lutas do mandato: conteúdo atualizado, direto das redes.
+          </p>
+
+          <!-- carrossel: 1 card por tela + dots -->
+          <div class="mt-4 overflow-hidden rounded-xl">
+            <!-- card ativo -->
+            <a href="#" class="group flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3">
+              <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+                <span class="absolute top-2 left-2 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white uppercase">
+                  YouTube
+                </span>
+                <span class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400">
+                  thumb 16:9
+                </span>
+              </div>
+              <h3 class="text-sm leading-snug font-extrabold text-zinc-900 group-hover:underline">
+                Título do vídeo recente, até duas linhas
+              </h3>
+              <span class="text-xs text-zinc-400">há 2 dias · 12,4 mil visualizações</span>
+            </a>
+          </div>
+
+          <!-- dots de navegação -->
+          <div class="mt-3 flex items-center justify-center gap-2" aria-label="Página do carrossel">
+            <span class="h-2 w-2 rounded-full bg-zinc-300"></span>
+            <span class="h-2 w-2 rounded-full bg-zinc-900"></span>
+            <span class="h-2 w-2 rounded-full bg-zinc-300"></span>
+            <span class="h-2 w-2 rounded-full bg-zinc-300"></span>
+            <span class="h-2 w-2 rounded-full bg-zinc-300"></span>
+          </div>
+          <p class="mt-2 text-center text-xs font-semibold text-zinc-500">1 de 5 · deslize para ver os próximos</p>
+        </div>
+      </section>
+
+      <!-- ============ CENA: card com compartilhar (S4 — WhatsApp) ============ -->
+      <section data-shot="compartilhar" class="mt-8 rounded-2xl bg-white p-6 text-zinc-900 shadow-xl">
+        <p class="text-sm font-bold text-zinc-700">
+          Card de conteúdo com botão discreto de compartilhamento (canto do card, sem competir com
+          o CTA primário): abre WhatsApp com mensagem pré-configurada + opção de copiar link.
+        </p>
+        <div class="mt-4 grid max-w-3xl grid-cols-3 gap-4">
+          <div class="group relative flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3">
+            <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+              <span class="absolute top-2 left-2 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white uppercase">
+                YouTube
+              </span>
+              <span class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400">
+                thumb 16:9
+              </span>
+            </div>
+            <h3 class="text-sm leading-snug font-extrabold text-zinc-900">
+              Título do vídeo recente, até duas linhas
+            </h3>
+            <span class="text-xs text-zinc-400">há 2 dias · 12,4 mil visualizações</span>
+            <button
+              type="button"
+              class="absolute top-4 right-4 flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-bold text-zinc-700 shadow"
+              aria-label="Compartilhar"
+            >
+              ↗
+            </button>
+          </div>
+          <div class="group relative flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3">
+            <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+              <span class="absolute top-2 left-2 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white uppercase">
+                Artigo
+              </span>
+              <span class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400">
+                capa 16:9
+              </span>
+            </div>
+            <h3 class="text-sm leading-snug font-extrabold text-zinc-900">
+              Título do artigo, até duas linhas
+            </h3>
+            <span class="text-xs text-zinc-400">há 1 dia · categoria</span>
+            <button
+              type="button"
+              class="absolute top-4 right-4 flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-bold text-zinc-700 shadow"
+              aria-label="Compartilhar"
+            >
+              ↗
+            </button>
+          </div>
+          <div class="flex flex-col justify-center gap-2 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-3">
+            <p class="text-xs font-semibold text-zinc-500">
+              Menu aberto (v1): "Compartilhar no WhatsApp" (mensagem pré-configurada com título +
+              link) e "Copiar link".
+            </p>
+            <div class="rounded-lg border border-zinc-200 bg-white p-2 text-xs font-semibold text-zinc-700">
+              WhatsApp ↗
+            </div>
+            <div class="rounded-lg border border-zinc-200 bg-white p-2 text-xs font-semibold text-zinc-700">
+              Copiar link
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CENA: vazio (fail-closed) ============ -->
+      <section data-shot="vazio" class="mt-8 rounded-2xl bg-white p-6 text-zinc-900 shadow-xl">
+        <p class="text-sm font-bold text-zinc-700">
+          Vazio / fail-closed — nenhuma fonte com conteúdo disponível (artigos invisíveis ou APIs
+          sem snapshot). Recomendação: a seção inteira é ocultada; a página mantém o fluxo
+          Prova → Por que essa eleição importa, sem zona morta.
+        </p>
+        <div class="mt-4 flex items-center justify-center gap-10 rounded-xl bg-zinc-100 py-3">
+          <span class="text-sm font-bold text-zinc-400">3.333 proposições</span>
+          <span class="text-sm font-bold text-zinc-400">1.031 discursos</span>
+          <span class="text-sm font-bold text-zinc-400">3º mandato</span>
+        </div>
+        <div class="mt-4 rounded-xl bg-zinc-900 px-6 py-5 text-white">
+          <p class="text-xs font-extrabold tracking-[0.14em] text-zinc-400 uppercase">
+            Por que essa eleição importa
+          </p>
+          <p class="mt-1 text-lg font-extrabold">
+            Eleger deputado é coisa séria. O Congresso tem nas mãos vidas reais e o SUS.
+          </p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
