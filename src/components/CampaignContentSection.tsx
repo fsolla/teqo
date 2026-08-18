@@ -8,7 +8,12 @@ import {
   getVisiblePosts,
   POST_TYPE_BADGE_LABELS,
 } from '@/utilities/posts'
-import { formatYouTubeViews, getYouTubeFeed, type YouTubeVideo } from '@/utilities/youtubeFeed'
+import { getInstagramFeed, type InstagramPost } from '@/utilities/socialFeed/instagramFeed'
+import {
+  formatYouTubeViews,
+  getYouTubeFeed,
+  type YouTubeVideo,
+} from '@/utilities/socialFeed/youtubeFeed'
 import Link from 'next/link'
 
 const CONTENT_SECTION_LIMIT = 5
@@ -69,23 +74,44 @@ const toVideoCardData = (video: YouTubeVideo): DatedCard => ({
   date: dateTimeOf(video.publishedAt),
 })
 
+const toInstagramCardData = (post: InstagramPost): DatedCard => ({
+  card: {
+    id: `ig:${post.id}`,
+    href: post.permalink,
+    title: post.caption ?? 'Publicação no Instagram',
+    badgeLabel: 'Instagram',
+    meta: formatRelativePostDate(post.timestamp) ?? '',
+    coverAspect: 'square',
+    ...(post.thumbnailUrl
+      ? { coverUrl: post.thumbnailUrl, coverAlt: post.caption ?? 'Publicação no Instagram' }
+      : {}),
+    external: true,
+  },
+  date: dateTimeOf(post.timestamp),
+})
+
 /**
  * Campaign home content board: the 5 most recent items across the visible
- * posts (S1) and the eligible YouTube feed (S2), newest first, as a 1+4 bento
- * on desktop and a one-per-screen carousel on mobile. Hides entirely when
- * nothing is visible (`isPostVisible` fail-closed — hidden electoral tags
- * never leak) and never breaks when the feed API is down (snapshot or no
- * cards). With the feed unconfigured it degrades to the S1 articles-only
- * behavior.
+ * posts (S1), the eligible YouTube feed (S2) and the eligible Instagram feed
+ * (S3), newest first, as a 1+4 bento on desktop and a one-per-screen carousel
+ * on mobile. Hides entirely when nothing is visible (`isPostVisible`
+ * fail-closed — hidden electoral tags never leak) and never breaks when a
+ * feed API is down (snapshot or no cards). With the feeds unconfigured it
+ * degrades to the S1 articles-only behavior.
  */
 export const CampaignContentSection = async () => {
-  const [visiblePosts, feed] = await Promise.all([getVisiblePosts(), getYouTubeFeed()])
+  const [visiblePosts, youtubeFeed, instagramFeed] = await Promise.all([
+    getVisiblePosts(),
+    getYouTubeFeed(),
+    getInstagramFeed(),
+  ])
   const articleCards = visiblePosts
     .map(toArticleCardData)
     .filter((entry): entry is DatedCard => entry !== null)
-  const videoCards = (feed?.videos ?? []).map(toVideoCardData)
+  const videoCards = (youtubeFeed?.videos ?? []).map(toVideoCardData)
+  const instagramCards = (instagramFeed?.posts ?? []).map(toInstagramCardData)
 
-  const cards = [...articleCards, ...videoCards]
+  const cards = [...articleCards, ...videoCards, ...instagramCards]
     .sort(byRecencyDesc)
     .slice(0, CONTENT_SECTION_LIMIT)
     .map(({ card }) => card)
@@ -120,9 +146,19 @@ export const CampaignContentSection = async () => {
             <Link href="/artigos" className={sectionHeaderLinkClassName}>
               Ver artigos →
             </Link>
-            {feed ? (
+            {instagramFeed?.username ? (
               <a
-                href={`https://www.youtube.com/channel/${feed.channelId}`}
+                href={`https://www.instagram.com/${instagramFeed.username}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={sectionHeaderLinkClassName}
+              >
+                Seguir no Instagram →
+              </a>
+            ) : null}
+            {youtubeFeed ? (
+              <a
+                href={`https://www.youtube.com/channel/${youtubeFeed.channelId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={sectionHeaderLinkClassName}

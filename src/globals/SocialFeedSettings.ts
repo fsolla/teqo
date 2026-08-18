@@ -80,6 +80,53 @@ export const SocialFeedSettings: GlobalConfig = {
       },
     },
     {
+      name: 'instagramEnabled',
+      type: 'checkbox',
+      label: 'Instagram ativo',
+      defaultValue: true,
+      admin: {
+        description: 'Desliga só os cards de post do Instagram.',
+      },
+    },
+    {
+      name: 'instagramAccessToken',
+      type: 'text',
+      label: 'Token de acesso (Instagram Graph API)',
+      admin: {
+        description:
+          'Token long-lived da conta Business/Creator vinculada à página do Facebook. Tokens emitidos via Instagram Login são renovados automaticamente; para page tokens, o refresh falha e o token precisa ser trocado aqui manualmente.',
+      },
+    },
+    {
+      name: 'instagramUserId',
+      type: 'text',
+      label: 'ID do usuário (conta Business/Creator)',
+      admin: {
+        description: 'ID numérico da conta de negócios do Instagram.',
+      },
+    },
+    {
+      name: 'instagramMaxItems',
+      type: 'number',
+      label: 'Máximo de posts',
+      defaultValue: 3,
+      min: 1,
+      max: 5,
+      admin: {
+        description: 'Quantos posts entram no bento (1 grande + os próximos).',
+      },
+    },
+    {
+      name: 'instagramExclusionPicker',
+      type: 'ui',
+      label: 'Instagram — posts recentes',
+      admin: {
+        components: {
+          Field: './components/admin/InstagramPostExclusionPicker#InstagramPostExclusionPicker',
+        },
+      },
+    },
+    {
       name: 'excludedItems',
       type: 'array',
       label: 'Itens excluídos',
@@ -126,6 +173,13 @@ export const SocialFeedSettings: GlobalConfig = {
     },
     {
       name: 'youtubeFeedSnapshot',
+      type: 'json',
+      admin: {
+        hidden: true,
+      },
+    },
+    {
+      name: 'instagramFeedSnapshot',
       type: 'json',
       admin: {
         hidden: true,

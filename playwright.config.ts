@@ -6,7 +6,7 @@ import {
   GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV_NAME,
   GOOGLE_CALENDAR_TEST_KEY,
 } from './tests/helpers/googleCalendarTestKey'
-import { youtubeStubUrlFor } from './tests/helpers/youtubeStub'
+import { instagramStubUrlFor, youtubeStubUrlFor } from './tests/helpers/socialStub'
 
 /**
  * e2e tests boot a real dev server that seeds/deletes records, so they must run
@@ -28,14 +28,17 @@ assertTestDatabase(process.env.DATABASE_URL)
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
 const webServerPort = new URL(baseURL).port || (baseURL.startsWith('https:') ? '443' : '80')
 /*
- * Port of the YouTube Data API stub the content board (S2) fetches in e2e.
- * dev ports live in 3100..4099 (worktree slots, capped at 999), so +1000
- * never collides with another worktree's dev server; CI stays on 4000. The
- * derivation lives once in `tests/e2e/helpers/youtubeStub.ts` (the spec uses
- * it to flip the stub state).
+ * Ports of the social-feed stubs the content board fetches in e2e (S2
+ * YouTube, S3 Instagram). dev ports live in 3100..4099 (worktree slots,
+ * capped at 999), so +1000 (YouTube) and +2000 (Instagram) never collide
+ * with another worktree's dev server nor with each other; CI stays on 4000
+ * and 5000. The derivation lives once in `tests/helpers/socialStub.ts` (the
+ * spec uses it to flip the stub states).
  */
 const youtubeStubUrl = youtubeStubUrlFor(baseURL)
 const youtubeStubPort = new URL(youtubeStubUrl).port
+const instagramStubUrl = instagramStubUrlFor(baseURL)
+const instagramStubPort = new URL(instagramStubUrl).port
 const workersOverride = process.env.PLAYWRIGHT_WORKERS
 const workers = workersOverride === undefined ? 2 : Number(workersOverride)
 if (!Number.isInteger(workers) || workers < 2) {
@@ -188,9 +191,11 @@ export default defineConfig({
         // Lets e2e specs bust the `posts` tag after direct REST deletes (cleanup),
         // mirroring the documented post-seed runbook against the deployed site.
         REVALIDATE_SECRET: process.env.REVALIDATE_SECRET ?? 'e2e-revalidate-secret',
-        // The content board (S2) fetches the YouTube Data API through the local
-        // stub below instead of the real network (deterministic fixtures).
+        // The content board (S2/S3) fetches the YouTube Data API and the
+        // Instagram Graph API through the local stubs below instead of the
+        // real network (deterministic fixtures).
         YOUTUBE_API_BASE_URL: youtubeStubUrl,
+        INSTAGRAM_API_BASE_URL: instagramStubUrl,
       },
     },
     {
@@ -201,6 +206,16 @@ export default defineConfig({
       timeout: 30_000,
       env: {
         YOUTUBE_STUB_PORT: String(youtubeStubPort),
+      },
+    },
+    {
+      /* Deterministic Instagram Graph API responses for the content board. */
+      command: `node tests/e2e/instagram-stub.mjs`,
+      reuseExistingServer: false,
+      url: `${instagramStubUrl}/__stub/health`,
+      timeout: 30_000,
+      env: {
+        INSTAGRAM_STUB_PORT: String(instagramStubPort),
       },
     },
   ],

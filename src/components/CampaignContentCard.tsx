@@ -10,6 +10,8 @@ export type CampaignContentCardData = {
   coverUrl?: string
   coverAlt?: string
   subtitle?: string
+  /** Cover ratio: 16:9 for articles/videos, 1:1 for Instagram posts. */
+  coverAspect?: 'video' | 'square'
   /** External target (e.g. a YouTube video): opens in a new tab with noopener. */
   external?: boolean
 }
@@ -33,7 +35,11 @@ const cardClassName = (featured: boolean) =>
 export const CampaignContentCard = ({ card, featured = false }: CampaignContentCardProps) => {
   const inner = (
     <>
-      <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-lg bg-(--campaign-band)">
+      <div
+        className={`relative w-full shrink-0 overflow-hidden rounded-lg bg-(--campaign-band) ${
+          card.coverAspect === 'square' ? 'aspect-square' : 'aspect-video'
+        }`}
+      >
         {card.coverUrl ? (
           <Image
             src={card.coverUrl}

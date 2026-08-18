@@ -10,9 +10,13 @@ const nextConfig = {
     remotePatterns: [
       new URL(`${allowedImageHost}/**`),
       // YouTube video thumbnails (campaign home content board, S2) come from
-      // the platform's CDN — see `src/utilities/youtubeFeed.ts`.
+      // the platform's CDN — see `src/utilities/socialFeed/youtubeFeed.ts`.
       new URL('https://i.ytimg.com/**'),
-      // e2e-only: the YouTube stub (tests/e2e/youtube-stub.mjs) serves the
+      // Instagram media thumbnails (campaign home content board, S3) come from
+      // the Graph API's CDN (hosts vary per region) —
+      // see `src/utilities/socialFeed/instagramFeed.ts`.
+      new URL('https://*.cdninstagram.com/**'),
+      // e2e-only: the YouTube/Instagram stubs (tests/e2e/*-stub.mjs) serve the
       // fixture thumbnails locally so specs never touch the real network.
       { protocol: 'http', hostname: 'localhost', pathname: '/thumbs/**' },
     ],

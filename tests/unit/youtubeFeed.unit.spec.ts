@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { YouTubeVideo } from '@/utilities/youtubeFeed'
+import type { YouTubeVideo } from '@/utilities/socialFeed/youtubeFeed'
 import {
   YOUTUBE_MAX_RESULTS_CAP,
   eligibleYouTubeVideos,
@@ -9,7 +9,7 @@ import {
   parseYouTubeSearchResponse,
   parseYouTubeVideosResponse,
   pickThumbnailUrl,
-} from '@/utilities/youtubeFeed'
+} from '@/utilities/socialFeed/youtubeFeed'
 
 const SEARCH_ITEM = (videoId: string, title: string, publishedAt: string, extra?: object) => ({
   id: { videoId },

@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { seedTestUser, testUser } from '../helpers/seedUser'
-import { youtubeStubUrlFor } from '../helpers/youtubeStub'
+import { instagramStubUrlFor, youtubeStubUrlFor } from '../helpers/socialStub'
 import { expect, test } from './fixtures/e2eTest'
 
 const swipeLeft = async (
@@ -611,13 +611,20 @@ test.describe('Campaign home content section', () => {
     }
   }
 
-  // ---- S2 — YouTube feed: stub + settings helpers ----
+  // ---- S2/S3 — YouTube + Instagram feed: stub + settings helpers ----
 
-  // Same derivation as playwright.config.ts: the stub listens on dev port + 1000.
+  // Same derivation as playwright.config.ts: the stubs listen on dev port +
+  // 1000 (YouTube) and + 2000 (Instagram).
   const youtubeStubUrl = youtubeStubUrlFor(baseURL)
+  const instagramStubUrl = instagramStubUrlFor(baseURL)
 
   const setYouTubeStubState = async (request: APIRequestContext, state: 'ok' | 'fail') => {
     const response = await request.post(`${youtubeStubUrl}/__stub/state`, { data: { state } })
+    expect(response.ok()).toBeTruthy()
+  }
+
+  const setInstagramStubState = async (request: APIRequestContext, state: 'ok' | 'fail') => {
+    const response = await request.post(`${instagramStubUrl}/__stub/state`, { data: { state } })
     expect(response.ok()).toBeTruthy()
   }
 
@@ -633,7 +640,7 @@ test.describe('Campaign home content section', () => {
     expect(response.ok()).toBeTruthy()
   }
 
-  // Full unconfigured state: the feed returns null and the S1 behavior is intact.
+  // Full unconfigured state: both feeds return null and the S1 behavior is intact.
   const resetSocialFeedSettings = async (
     request: APIRequestContext,
     headers: Record<string, string>,
@@ -644,8 +651,13 @@ test.describe('Campaign home content section', () => {
       youtubeApiKey: '',
       youtubeChannelId: '',
       youtubeMaxItems: 3,
+      instagramEnabled: true,
+      instagramAccessToken: '',
+      instagramUserId: '',
+      instagramMaxItems: 3,
       excludedItems: [],
       youtubeFeedSnapshot: null,
+      instagramFeedSnapshot: null,
     })
   }
 
@@ -1072,6 +1084,224 @@ test.describe('Campaign home content section', () => {
     }
   })
 
+  test('renders the Instagram feed with exclusions and opens posts on the platform', async ({
+    page,
+    request,
+  }) => {
+    await seedTestUser()
+    const headers = await adminHeaders(request)
+    await setYouTubeStubState(request, 'ok')
+    await setInstagramStubState(request, 'ok')
+
+    const mixTag = await createTag(
+      request,
+      headers,
+      `E2e Mix IG ${runSuffix}`,
+      `e2e-mix-ig-${runSuffix}`,
+    )
+    await createPost(request, headers, {
+      title: 'E2e Artigo no mix IG',
+      slug: `e2e-artigo-mix-ig-${runSuffix}`,
+      type: 'artigo',
+      category: mixTag.id,
+      publishedDate: new Date(Date.now() - 60 * 60_000).toISOString(),
+    })
+    // The newest stub post is a grid mosaic marked as excluded: the board must
+    // skip it and promote the next eligible one to the featured slot.
+    await updateSocialFeedSettings(request, headers, {
+      enabled: true,
+      youtubeEnabled: true,
+      youtubeApiKey: '',
+      youtubeChannelId: '',
+      youtubeMaxItems: 3,
+      instagramEnabled: true,
+      instagramAccessToken: 'e2e-ig-token',
+      instagramUserId: '17841400000000000',
+      instagramMaxItems: 3,
+      excludedItems: [{ platform: 'instagram', itemId: 'e2e-ig-grade-excluido-5' }],
+      youtubeFeedSnapshot: null,
+      instagramFeedSnapshot: null,
+    })
+
+    try {
+      await waitForHomeHTML(
+        request,
+        ['E2e Post do muro', 'E2e Artigo no mix IG'],
+        ['E2e Post de grade', 'YouTube →'],
+      )
+      await page.setViewportSize({ width: 1280, height: 900 })
+      await page.goto('/')
+      const section = page.locator('[data-home-section="contents"]')
+      await expect(section).toBeVisible()
+
+      const featured = section.getByRole('link', { name: /E2e Post do muro/ })
+      await expect(featured).toBeVisible()
+      await expect(featured).toHaveAttribute('href', 'https://www.instagram.com/p/e2e-ig-muro-1/')
+      await expect(featured).toHaveAttribute('target', '_blank')
+      await expect(featured).toHaveAttribute('rel', 'noopener noreferrer')
+      await expect(section.getByText('Instagram', { exact: true }).first()).toBeVisible()
+      await expect(section.getByText('há 20 minutos').first()).toBeVisible()
+      await expect(section.getByText('E2e Post de grade')).toHaveCount(0)
+
+      // The captionless grid post shows the fallback title (it enters the
+      // board automatically and the assessoria excludes it item by item).
+      await expect(section.getByText('Publicação no Instagram').first()).toBeVisible()
+      // Instagram cards render the 1:1 cover of the approved draft.
+      await expect(featured.locator('.aspect-square').first()).toBeVisible()
+
+      await expect(
+        section.getByRole('link', { name: /E2e Artigo no mix IG/ }).first(),
+      ).toBeVisible()
+      await expect(section.getByText('E2e Reel da caravana').first()).toBeVisible()
+
+      const profileLink = section.getByRole('link', { name: /Seguir no Instagram/ })
+      await expect(profileLink).toHaveAttribute('href', 'https://www.instagram.com/depjorgesolla')
+      await expect(profileLink).toHaveAttribute('target', '_blank')
+
+      await page.setViewportSize({ width: 390, height: 844 })
+      await page.goto('/')
+      const carousel = page.getByRole('region', { name: 'Conteúdos recentes' })
+      await expect(carousel).toBeVisible()
+      await expect(carousel.getByText('1 de 4 · deslize para ver os próximos')).toBeVisible()
+      await expect(carousel.getByText('E2e Post de grade')).toHaveCount(0)
+
+      await page.goto('about:blank')
+      await expect(page).toHaveURL(/about:blank/)
+    } finally {
+      await setInstagramStubState(request, 'ok')
+      await cleanupS2Fixtures(request, headers)
+    }
+  })
+
+  test('hides Instagram cards and keeps articles when the API fails without a snapshot', async ({
+    page,
+    request,
+  }) => {
+    await seedTestUser()
+    const headers = await adminHeaders(request)
+    await setInstagramStubState(request, 'fail')
+
+    const fallbackTag = await createTag(
+      request,
+      headers,
+      `E2e Fallback IG ${runSuffix}`,
+      `e2e-fallback-ig-${runSuffix}`,
+    )
+    await createPost(request, headers, {
+      title: 'E2e Artigo fallback IG',
+      slug: `e2e-artigo-fallback-ig-${runSuffix}`,
+      type: 'noticia',
+      category: fallbackTag.id,
+      publishedDate: new Date(Date.now() - 2 * 60 * 60_000).toISOString(),
+    })
+    await updateSocialFeedSettings(request, headers, {
+      enabled: true,
+      youtubeEnabled: true,
+      youtubeApiKey: '',
+      youtubeChannelId: '',
+      youtubeMaxItems: 3,
+      instagramEnabled: true,
+      instagramAccessToken: 'e2e-ig-token',
+      instagramUserId: '17841400000000000',
+      instagramMaxItems: 3,
+      excludedItems: [],
+      youtubeFeedSnapshot: null,
+      instagramFeedSnapshot: null,
+    })
+
+    try {
+      // Without a snapshot there is no username to build the profile link
+      // from, so the IG cards AND the "Seguir no Instagram →" link stay
+      // silently absent and the article carries the section (page never
+      // breaks, no error shown).
+      await waitForHomeHTML(
+        request,
+        ['E2e Artigo fallback IG'],
+        ['E2e Post do muro', 'Seguir no Instagram'],
+      )
+      await page.goto('/')
+      const section = page.locator('[data-home-section="contents"]')
+      await expect(section).toBeVisible()
+      await expect(section.getByRole('link', { name: /E2e Artigo fallback IG/ })).toBeVisible()
+      await expect(section.getByText('E2e Post do muro')).toHaveCount(0)
+      await expect(section.getByRole('link', { name: /Seguir no Instagram/ })).toHaveCount(0)
+
+      await page.goto('about:blank')
+      await expect(page).toHaveURL(/about:blank/)
+    } finally {
+      await setInstagramStubState(request, 'ok')
+      await cleanupS2Fixtures(request, headers)
+    }
+  })
+
+  test('keeps the last Instagram snapshot while the API is down', async ({ page, request }) => {
+    await seedTestUser()
+    const headers = await adminHeaders(request)
+    await setInstagramStubState(request, 'ok')
+    const baseSettings = {
+      enabled: true,
+      youtubeEnabled: true,
+      youtubeApiKey: '',
+      youtubeChannelId: '',
+      youtubeMaxItems: 3,
+      instagramEnabled: true,
+      instagramAccessToken: 'e2e-ig-token',
+      instagramUserId: '17841400000000000',
+      instagramMaxItems: 3,
+      excludedItems: [{ platform: 'instagram', itemId: 'e2e-ig-grade-excluido-5' }],
+      youtubeFeedSnapshot: null,
+      instagramFeedSnapshot: null,
+    }
+    await updateSocialFeedSettings(request, headers, baseSettings)
+
+    try {
+      // Live fetch succeeds and persists the raw snapshot (with the username).
+      await waitForHomeHTML(request, ['E2e Post do muro'], ['E2e Post de grade'])
+      await page.goto('/')
+      await expect(page.getByRole('link', { name: /E2e Post do muro/ }).first()).toBeVisible()
+      await page.goto('about:blank')
+      await expect(page).toHaveURL(/about:blank/)
+
+      // API down + a settings change: the re-execution must serve the snapshot
+      // re-filtered by the CURRENT exclusions/maxItems (raw snapshot, applied
+      // on read) — maxItems 2 proves the re-run read the new settings, and the
+      // profile link survives because the username came from the snapshot. The
+      // snapshot field is OMITTED on purpose: an update merges over the
+      // existing doc (Payload update semantics), so the persisted snapshot
+      // survives the settings edit — exactly the production admin path.
+      await setInstagramStubState(request, 'fail')
+      const { instagramFeedSnapshot: _ignored, ...settingsWithoutSnapshot } = baseSettings
+      await updateSocialFeedSettings(request, headers, {
+        ...settingsWithoutSnapshot,
+        instagramMaxItems: 2,
+      })
+      await waitForHomeHTML(
+        request,
+        ['E2e Post do muro', 'E2e Reel da caravana', 'Seguir no Instagram'],
+        ['Publicação no Instagram'],
+      )
+      await page.goto('/')
+      await expect(page.getByRole('link', { name: /E2e Post do muro/ }).first()).toBeVisible()
+      await expect(page.getByText('E2e Reel da caravana').first()).toBeVisible()
+      await expect(page.getByText('Publicação no Instagram')).toHaveCount(0)
+      await expect(page.getByRole('link', { name: /Seguir no Instagram/ })).toBeVisible()
+      await page.goto('about:blank')
+      await expect(page).toHaveURL(/about:blank/)
+
+      // API back: the live feed returns with the original cap.
+      await setInstagramStubState(request, 'ok')
+      await updateSocialFeedSettings(request, headers, baseSettings)
+      await waitForHomeHTML(request, ['Publicação no Instagram'], ['E2e Post de grade'])
+      await page.goto('/')
+      await expect(page.getByText('Publicação no Instagram').first()).toBeVisible()
+      await page.goto('about:blank')
+      await expect(page).toHaveURL(/about:blank/)
+    } finally {
+      await setInstagramStubState(request, 'ok')
+      await cleanupS2Fixtures(request, headers)
+    }
+  })
+
   test('the kill switch pauses the external feed without touching articles', async ({
     page,
     request,
@@ -1079,6 +1309,7 @@ test.describe('Campaign home content section', () => {
     await seedTestUser()
     const headers = await adminHeaders(request)
     await setYouTubeStubState(request, 'ok')
+    await setInstagramStubState(request, 'ok')
 
     const killTag = await createTag(
       request,
@@ -1099,17 +1330,23 @@ test.describe('Campaign home content section', () => {
       youtubeApiKey: 'e2e-youtube-api-key',
       youtubeChannelId: 'UCe2eTestChannel',
       youtubeMaxItems: 3,
+      instagramEnabled: true,
+      instagramAccessToken: 'e2e-ig-token',
+      instagramUserId: '17841400000000000',
+      instagramMaxItems: 3,
       excludedItems: [],
       youtubeFeedSnapshot: null,
+      instagramFeedSnapshot: null,
     })
 
     try {
       // `enabled: false` pauses the whole external board: no cards AND no
-      // channel link, while the article section lives on.
+      // platform links (YouTube and Instagram alike), while the article
+      // section lives on.
       await waitForHomeHTML(
         request,
         ['E2e Artigo kill switch'],
-        ['E2e Vídeo em destaque', 'YouTube →'],
+        ['E2e Vídeo em destaque', 'YouTube →', 'E2e Post do muro', 'Seguir no Instagram'],
       )
       await page.goto('/')
       const section = page.locator('[data-home-section="contents"]')
@@ -1117,11 +1354,14 @@ test.describe('Campaign home content section', () => {
       await expect(section.getByRole('link', { name: /E2e Artigo kill switch/ })).toBeVisible()
       await expect(section.getByText('E2e Vídeo em destaque')).toHaveCount(0)
       await expect(section.getByRole('link', { name: /YouTube →/ })).toHaveCount(0)
+      await expect(section.getByText('E2e Post do muro')).toHaveCount(0)
+      await expect(section.getByRole('link', { name: /Seguir no Instagram/ })).toHaveCount(0)
 
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
     } finally {
       await setYouTubeStubState(request, 'ok')
+      await setInstagramStubState(request, 'ok')
       await cleanupS2Fixtures(request, headers)
     }
   })

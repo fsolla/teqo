@@ -2396,6 +2396,22 @@ export interface SocialFeedSetting {
    */
   youtubeMaxItems?: number | null;
   /**
+   * Desliga só os cards de post do Instagram.
+   */
+  instagramEnabled?: boolean | null;
+  /**
+   * Token long-lived da conta Business/Creator vinculada à página do Facebook. Tokens emitidos via Instagram Login são renovados automaticamente; para page tokens, o refresh falha e o token precisa ser trocado aqui manualmente.
+   */
+  instagramAccessToken?: string | null;
+  /**
+   * ID numérico da conta de negócios do Instagram.
+   */
+  instagramUserId?: string | null;
+  /**
+   * Quantos posts entram no bento (1 grande + os próximos).
+   */
+  instagramMaxItems?: number | null;
+  /**
    * Conteúdo marcado para NÃO aparecer no board (vídeo errado, transmissão incompleta, post de grade). O board pula para o próximo elegível.
    */
   excludedItems?:
@@ -2407,6 +2423,15 @@ export interface SocialFeedSetting {
       }[]
     | null;
   youtubeFeedSnapshot?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  instagramFeedSnapshot?:
     | {
         [k: string]: unknown;
       }
@@ -2513,6 +2538,10 @@ export interface SocialFeedSettingsSelect<T extends boolean = true> {
   youtubeApiKey?: T;
   youtubeChannelId?: T;
   youtubeMaxItems?: T;
+  instagramEnabled?: T;
+  instagramAccessToken?: T;
+  instagramUserId?: T;
+  instagramMaxItems?: T;
   excludedItems?:
     | T
     | {
@@ -2522,6 +2551,7 @@ export interface SocialFeedSettingsSelect<T extends boolean = true> {
         id?: T;
       };
   youtubeFeedSnapshot?: T;
+  instagramFeedSnapshot?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
