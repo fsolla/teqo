@@ -77,11 +77,6 @@ const proofItems = [
   { value: '3º', label: 'mandato de deputado federal' },
 ]
 
-// The content section shows relative recency labels ("há 5 minutos"); a
-// static page would freeze them between editorial revalidations. Re-render
-// every 5 minutes (posts list itself stays cached under the `posts` tag).
-export const revalidate = 300
-
 export default async function HomePage() {
   return (
     <>

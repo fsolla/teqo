@@ -79,9 +79,12 @@ export const formatPostDate = (date?: string | null): string | null => {
 const relativeTimeFormatter = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'always' })
 
 /**
- * Compact recency label for content cards: "agora", "há 5 min", "há 3 horas",
- * "há 2 dias" — falling back to the long absolute date past 30 days. Future
- * dates (scheduled posts) read as "agora" instead of a fake countdown.
+ * Compact recency label for content cards: "agora", "há 5 minutos",
+ * "há 3 horas", "há 1 dia" — falling back to the long absolute date past
+ * 48 hours. The home is a static page revalidated only on editorial changes,
+ * so a relative label frozen in the HTML must stay honest: within 48 hours
+ * its drift is bounded, beyond that an absolute date never lies. Future dates
+ * (scheduled posts) read as "agora" instead of a fake countdown.
  */
 export const formatRelativePostDate = (date?: string | null): string | null => {
   if (!date) return null
@@ -98,7 +101,7 @@ export const formatRelativePostDate = (date?: string | null): string | null => {
 
   if (hours < 1) return relativeTimeFormatter.format(-minutes, 'minute')
   if (days < 1) return relativeTimeFormatter.format(-hours, 'hour')
-  if (days < 30) return relativeTimeFormatter.format(-days, 'day')
+  if (days < 2) return relativeTimeFormatter.format(-days, 'day')
   return formatPostDate(date)
 }
 

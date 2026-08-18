@@ -659,6 +659,11 @@ test.describe('Campaign home content section', () => {
 
       await carousel.getByRole('button', { name: 'Ir para o conteúdo 4 de 5' }).click()
       await expect(carousel.getByText('4 de 5 · deslize para ver os próximos')).toBeVisible()
+
+      // Leave the home before deleting: prod prefetches the card links, and a
+      // prefetch answered after the deletion would 404 (guard noise). Leaving
+      // the page aborts in-flight prefetches and stops new ones.
+      await page.goto('about:blank')
     } finally {
       const headers2 = await adminHeaders(request).catch(() => undefined)
       if (headers2) {
