@@ -8,15 +8,16 @@ model: composer-2.5
 
 # OPS63 — Doc-guard também no pre-push (changelog append-only, agregado e marcadores de conflito)
 
-Status: rascunho
+Status: entregue
 Atualizado em: 2026-08-18
 Issue: #60
 Priority: P2
 Model: composer-2.5
 Impeccable: A — N/A (sem superfície UI)
 Rascunho UI: N/A — sem UI
-Appetite: ~0,5 dia eng; um outcome verificável (push local roda os checks de docs)
+Appetite: ~0,5 dia eng; um outcome verificável (push local roda os checks de docs) — entregue em 1 sessão
 Responsável: —
+Impl: [docs/plans/ops63-doc-guard-no-pre-push-impl.md](ops63-doc-guard-no-pre-push-impl.md)
 
 ## Intenção
 
