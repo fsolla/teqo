@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — Separação visual da seção "Acompanhe de perto"</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-5xl p-8">
+      <p class="text-sm text-zinc-400">
+        Visitante da home pública de campanha (jorgesolla1313). Hoje a prova social (faixa de
+        números) e a seção "Acompanhe de perto" têm o MESMO fundo branco e ficam coladas — o
+        objetivo é separar as duas zonas. Cenário 1 (recomendado): a seção de conteúdos ganha uma
+        banda de fundo própria. Cenário 2 (alternativo): borda fina (hairline) sem mudar o fundo.
+        Por baixo, o contexto real: a seção "Por que essa eleição importa" (fundo escuro).
+      </p>
+
+      <!-- ============ CENA 1: desktop — recomendado (banda de fundo) ============ -->
+      <section
+        data-shot="desktop-recomendado"
+        class="mt-8 overflow-hidden rounded-2xl bg-white text-zinc-900 shadow-xl"
+      >
+        <!-- contexto: prova social (branco, igual hoje) -->
+        <div class="flex items-center justify-center gap-10 py-3">
+          <span class="text-sm font-bold text-zinc-400">3.333 proposições</span>
+          <span class="text-sm font-bold text-zinc-400">1.031 discursos</span>
+          <span class="text-sm font-bold text-zinc-400">3º mandato</span>
+        </div>
+
+        <!-- ===== SEÇÃO DE CONTEÚDOS — banda cinza (proposta) ===== -->
+        <div class="border-y border-zinc-300 bg-zinc-100">
+          <div class="px-6 py-8">
+            <div class="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p class="text-xs font-extrabold tracking-[0.14em] text-zinc-500 uppercase">
+                  Acompanhe de perto
+                </p>
+                <h2 class="mt-1 text-2xl font-extrabold text-zinc-900">
+                  A caminhada, em tempo real
+                </h2>
+                <p class="mt-1 text-sm text-zinc-500">
+                  Bastidores, caravanas e as lutas do mandato: conteúdo atualizado, direto das
+                  redes.
+                </p>
+              </div>
+              <div class="text-sm font-bold">
+                <span class="text-zinc-500 underline-offset-4 underline">Ver artigos →</span>
+              </div>
+            </div>
+
+            <!-- bento: 1 grande + 4 pequenos — cards brancos saltam na banda -->
+            <div class="mt-5 grid grid-cols-4 gap-4">
+              <a
+                href="#"
+                class="col-span-2 row-span-2 flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm"
+              >
+                <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+                  <span
+                    class="absolute top-2 left-2 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white uppercase"
+                  >
+                    Artigo
+                  </span>
+                  <span
+                    class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400"
+                  >
+                    capa 16:9 (placeholder)
+                  </span>
+                </div>
+                <div class="flex flex-1 flex-col gap-1">
+                  <h3 class="text-base leading-snug font-extrabold text-zinc-900">
+                    Título do artigo em destaque, duas ou três linhas para caber
+                  </h3>
+                  <p class="text-xs leading-relaxed text-zinc-500">
+                    Resumo curto do artigo quando houver, uma linha de contexto.
+                  </p>
+                  <span class="mt-auto text-xs text-zinc-400">há 1 dia · categoria</span>
+                </div>
+              </a>
+              <a
+                href="#"
+                class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm"
+              >
+                <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+                  <span
+                    class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400"
+                    >capa 16:9</span
+                  >
+                </div>
+                <h3 class="text-sm leading-snug font-extrabold text-zinc-900">
+                  Título do artigo, até duas linhas
+                </h3>
+                <span class="text-xs text-zinc-400">há 2 dias · categoria</span>
+              </a>
+              <a
+                href="#"
+                class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm"
+              >
+                <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+                  <span
+                    class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400"
+                    >capa 16:9</span
+                  >
+                </div>
+                <h3 class="text-sm leading-snug font-extrabold text-zinc-900">
+                  Título do artigo, até duas linhas
+                </h3>
+                <span class="text-xs text-zinc-400">há 5 dias · categoria</span>
+              </a>
+              <a
+                href="#"
+                class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm"
+              >
+                <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+                  <span
+                    class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400"
+                    >capa 16:9</span
+                  >
+                </div>
+                <h3 class="text-sm leading-snug font-extrabold text-zinc-900">
+                  Título do artigo, até duas linhas
+                </h3>
+                <span class="text-xs text-zinc-400">há 6 dias · categoria</span>
+              </a>
+              <a
+                href="#"
+                class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm"
+              >
+                <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+                  <span
+                    class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400"
+                    >capa 16:9</span
+                  >
+                </div>
+                <h3 class="text-sm leading-snug font-extrabold text-zinc-900">
+                  Título do artigo, até duas linhas
+                </h3>
+                <span class="text-xs text-zinc-400">há 3 dias · categoria</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- contexto: "Por que essa eleição importa" (fundo escuro) -->
+        <div class="bg-zinc-900 px-6 py-6 text-white">
+          <p class="text-xs font-extrabold tracking-[0.14em] text-zinc-400 uppercase">
+            Por que essa eleição importa
+          </p>
+          <p class="mt-1 text-lg font-extrabold">
+            Eleger deputado é coisa séria. O Congresso tem nas mãos vidas reais e o SUS.
+          </p>
+        </div>
+      </section>
+
+      <!-- ============ CENA 2: desktop — alternativo (hairline, fundo branco) ============ -->
+      <section
+        data-shot="desktop-alternativo"
+        class="mt-8 overflow-hidden rounded-2xl bg-white text-zinc-900 shadow-xl"
+      >
+        <!-- contexto: prova social (branco, igual hoje) -->
+        <div class="flex items-center justify-center gap-10 py-3">
+          <span class="text-sm font-bold text-zinc-400">3.333 proposições</span>
+          <span class="text-sm font-bold text-zinc-400">1.031 discursos</span>
+          <span class="text-sm font-bold text-zinc-400">3º mandato</span>
+        </div>
+
+        <!-- ===== SEÇÃO DE CONTEÚDOS — branca + hairlines (proposta) ===== -->
+        <div class="border-t border-b border-zinc-300">
+          <div class="px-6 py-8">
+            <div class="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p class="text-xs font-extrabold tracking-[0.14em] text-zinc-500 uppercase">
+                  Acompanhe de perto
+                </p>
+                <h2 class="mt-1 text-2xl font-extrabold text-zinc-900">
+                  A caminhada, em tempo real
+                </h2>
+                <p class="mt-1 text-sm text-zinc-500">
+                  Bastidores, caravanas e as lutas do mandato: conteúdo atualizado, direto das
+                  redes.
+                </p>
+              </div>
+              <div class="text-sm font-bold">
+                <span class="text-zinc-500 underline-offset-4 underline">Ver artigos →</span>
+              </div>
+            </div>
+
+            <!-- bento: 1 grande + 4 pequenos — cards brancos sobre branco (igual hoje) -->
+            <div class="mt-5 grid grid-cols-4 gap-4">
+              <a
+                href="#"
+                class="col-span-2 row-span-2 flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm"
+              >
+                <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+                  <span
+                    class="absolute top-2 left-2 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white uppercase"
+                  >
+                    Artigo
+                  </span>
+                  <span
+                    class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400"
+                  >
+                    capa 16:9 (placeholder)
+                  </span>
+                </div>
+                <div class="flex flex-1 flex-col gap-1">
+                  <h3 class="text-base leading-snug font-extrabold text-zinc-900">
+                    Título do artigo em destaque, duas ou três linhas para caber
+                  </h3>
+                  <p class="text-xs leading-relaxed text-zinc-500">
+                    Resumo curto do artigo quando houver, uma linha de contexto.
+                  </p>
+                  <span class="mt-auto text-xs text-zinc-400">há 1 dia · categoria</span>
+                </div>
+              </a>
+              <a
+                href="#"
+                class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm"
+              >
+                <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+                  <span
+                    class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400"
+                    >capa 16:9</span
+                  >
+                </div>
+                <h3 class="text-sm leading-snug font-extrabold text-zinc-900">
+                  Título do artigo, até duas linhas
+                </h3>
+                <span class="text-xs text-zinc-400">há 2 dias · categoria</span>
+              </a>
+              <a
+                href="#"
+                class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm"
+              >
+                <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+                  <span
+                    class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400"
+                    >capa 16:9</span
+                  >
+                </div>
+                <h3 class="text-sm leading-snug font-extrabold text-zinc-900">
+                  Título do artigo, até duas linhas
+                </h3>
+                <span class="text-xs text-zinc-400">há 5 dias · categoria</span>
+              </a>
+              <a
+                href="#"
+                class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm"
+              >
+                <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+                  <span
+                    class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400"
+                    >capa 16:9</span
+                  >
+                </div>
+                <h3 class="text-sm leading-snug font-extrabold text-zinc-900">
+                  Título do artigo, até duas linhas
+                </h3>
+                <span class="text-xs text-zinc-400">há 6 dias · categoria</span>
+              </a>
+              <a
+                href="#"
+                class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm"
+              >
+                <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+                  <span
+                    class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400"
+                    >capa 16:9</span
+                  >
+                </div>
+                <h3 class="text-sm leading-snug font-extrabold text-zinc-900">
+                  Título do artigo, até duas linhas
+                </h3>
+                <span class="text-xs text-zinc-400">há 3 dias · categoria</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- contexto: "Por que essa eleição importa" (fundo escuro) -->
+        <div class="bg-zinc-900 px-6 py-6 text-white">
+          <p class="text-xs font-extrabold tracking-[0.14em] text-zinc-400 uppercase">
+            Por que essa eleição importa
+          </p>
+          <p class="mt-1 text-lg font-extrabold">
+            Eleger deputado é coisa séria. O Congresso tem nas mãos vidas reais e o SUS.
+          </p>
+        </div>
+      </section>
+
+      <!-- ============ CENA 3: mobile (~390px) — recomendado (banda) ============ -->
+      <section
+        data-shot="mobile-recomendado"
+        class="mt-8 w-[390px] overflow-hidden rounded-2xl bg-white text-zinc-900 shadow-xl"
+      >
+        <!-- contexto: prova social -->
+        <div class="flex items-center justify-center gap-6 py-2.5">
+          <span class="text-xs font-bold text-zinc-400">3.333 proposições</span>
+          <span class="text-xs font-bold text-zinc-400">1.031 discursos</span>
+          <span class="text-xs font-bold text-zinc-400">3º mandato</span>
+        </div>
+
+        <!-- seção de conteúdos — banda -->
+        <div class="border-y border-zinc-300 bg-zinc-100">
+          <div class="px-4 py-6">
+            <p class="text-xs font-extrabold tracking-[0.14em] text-zinc-500 uppercase">
+              Acompanhe de perto
+            </p>
+            <h2 class="mt-1 text-xl font-extrabold text-zinc-900">A caminhada, em tempo real</h2>
+            <p class="mt-1 text-sm text-zinc-500">
+              Bastidores, caravanas e as lutas do mandato: conteúdo atualizado, direto das redes.
+            </p>
+
+            <!-- carrossel: 1 card por tela -->
+            <div class="mt-4 overflow-hidden rounded-xl">
+              <a
+                href="#"
+                class="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm"
+              >
+                <div class="relative aspect-video overflow-hidden rounded-lg bg-zinc-200">
+                  <span
+                    class="absolute top-2 left-2 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-extrabold tracking-wider text-white uppercase"
+                  >
+                    Artigo
+                  </span>
+                  <span
+                    class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-zinc-400"
+                  >
+                    capa 16:9 (placeholder)
+                  </span>
+                </div>
+                <h3 class="text-sm leading-snug font-extrabold text-zinc-900">
+                  Título do artigo recente, até duas linhas
+                </h3>
+                <span class="text-xs text-zinc-400">há 1 dia · categoria</span>
+              </a>
+            </div>
+
+            <!-- dots + contador -->
+            <div
+              class="mt-3 flex items-center justify-center gap-2"
+              aria-label="Página do carrossel"
+            >
+              <span class="h-2 w-2 rounded-full bg-zinc-300"></span>
+              <span class="h-2 w-2 rounded-full bg-zinc-900"></span>
+              <span class="h-2 w-2 rounded-full bg-zinc-300"></span>
+              <span class="h-2 w-2 rounded-full bg-zinc-300"></span>
+              <span class="h-2 w-2 rounded-full bg-zinc-300"></span>
+            </div>
+            <p class="mt-2 text-center text-xs font-semibold text-zinc-500">
+              1 de 5 · deslize para ver os próximos
+            </p>
+          </div>
+        </div>
+
+        <!-- contexto: "Por que essa eleição importa" -->
+        <div class="bg-zinc-900 px-4 py-5 text-white">
+          <p class="text-xs font-extrabold tracking-[0.14em] text-zinc-400 uppercase">
+            Por que essa eleição importa
+          </p>
+          <p class="mt-1 text-base font-extrabold">
+            Eleger deputado é coisa séria. O Congresso tem nas mãos vidas reais e o SUS.
+          </p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
