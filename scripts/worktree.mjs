@@ -141,7 +141,8 @@ import {
 } from './lib/worktree.mjs'
 
 const die = dieAgent('worktree')
-const WORKTREES_ROOT = join(homedir(), '.cursor', 'worktrees', 'teqo')
+const WORKTREES_ROOT =
+  process.env.WORKTREES_ROOT ?? join(homedir(), '.cursor', 'worktrees', 'teqo')
 
 /**
  * True when the interactive terminal shell function (`.agents/shell/worktree.sh`)
