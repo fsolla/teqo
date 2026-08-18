@@ -84,11 +84,30 @@ echo "$REGISTRY_PASSWORD" | docker login localhost:5000 --username "$REGISTRY_US
 
 # --- build --------------------------------------------------------------
 
+# BuildKit rejects a custom bridge network on `--network`, so the build runs
+# with `--network host`; the prod DB (only reachable inside stack_default) is
+# proxied to the host loopback by a one-off socat container on the compose
+# network, and DATABASE_URL is rewritten to that endpoint. The proxy is
+# idempotent and survives reboots (restart: unless-stopped).
+ensure_db_proxy() {
+  if ! docker inspect teqo-1313-build-proxy >/dev/null 2>&1; then
+    docker run -d --name teqo-1313-build-proxy \
+      --network stack_default \
+      --restart unless-stopped \
+      -p 127.0.0.1:5433:5433 \
+      alpine/socat TCP-LISTEN:5433,fork TCP:postgres:5432 >/dev/null
+  fi
+}
+
 build_image() {
   local target="$1" image="$2"
   say "building $target ($image)"
-  DOCKER_BUILDKIT=1 docker build \
-    --network stack_default \
+  ensure_db_proxy
+  # The build's DATABASE_URL points at the loopback proxy; the outer env
+  # keeps the original value and nothing is echoed.
+  local build_db_url="${DATABASE_URL/@postgres:5432/@127.0.0.1:5433}"
+  DATABASE_URL="$build_db_url" DOCKER_BUILDKIT=1 docker build \
+    --network host \
     --build-arg "NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL" \
     --secret "id=database_url,env=DATABASE_URL" \
     --secret "id=payload_secret,env=PAYLOAD_SECRET" \
@@ -134,7 +153,10 @@ trap 'rollback "unexpected failure"' ERR
 
 cd "$STACK_DIR"
 say "applying pending migrations (maintenance service teqo-1313-migrate)"
-docker compose --profile maintenance run --rm teqo-1313-migrate || rollback "migrations failed"
+# `< /dev/null`: `compose run` attaches stdin by default; the container would
+# consume the rest of the script piped into `bash -s` (bash then hits EOF and
+# exits right after the migrate step, skipping the rollout).
+docker compose --profile maintenance run --rm teqo-1313-migrate </dev/null || rollback "migrations failed"
 
 # --- rollout ------------------------------------------------------------
 
