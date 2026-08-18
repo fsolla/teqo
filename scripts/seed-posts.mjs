@@ -21,6 +21,8 @@
  *
  * Usage:
  *   pnpm db:seed:posts
+ *   pnpm db:seed:posts --dry-run   (plan-only: fetches + resolves covers and
+ *                                   reports what WOULD be created — no writes)
  *   (against a remote DB, on purpose:)  ALLOW_REMOTE_DB=true pnpm db:seed:posts
  */
 import { convertHTMLToLexical, editorConfigFactory } from '@payloadcms/richtext-lexical'
@@ -48,12 +50,29 @@ const config = (await import('../src/payload.config.ts')).default
 
 const die = dieWithLabel('seed:posts')
 
+const args = new Set(process.argv.slice(2))
+const unknown = [...args].filter((a) => a !== '--dry-run')
+if (unknown.length > 0) die(`argumento desconhecido: ${unknown.join(', ')}`)
+const dryRun = args.has('--dry-run')
+
+/** Host do DATABASE_URL para o echo do alvo — die limpo se a URL for inválida. */
+const echoTargetHost = () => {
+  try {
+    return new URL(process.env.DATABASE_URL).host
+  } catch {
+    die(`DATABASE_URL não é uma connection string válida: ${process.env.DATABASE_URL || '(vazia)'}`)
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Taxonomy (Section 7): the categories + control tag, and the per-article map.
 // Keys are the WordPress slugs of the live articles. Every post gets exactly
 // one required `category`; `tags` is optional (currently only `eleitoral`).
 // The `eleitoral` tag marks pre-candidacy / campaign / PGP / party-event
 // content so Francisco can hide it all with one toggle in the electoral period.
+// Criterion: content tied to a campaign event or candidacy (convenções,
+// plenárias, caravanas, filiações, PGP) gets `eleitoral`; political
+// rebuttals/position-taking without a campaign event stay plain `politica`.
 // ---------------------------------------------------------------------------
 
 const TAXONOMY_TAGS = [
@@ -117,6 +136,21 @@ const CLASSIFICATION = {
 
   // Politics (with electoral control where applicable)
   'programa-de-governo-participativo-reune-multidao-em-periperi': {
+    category: 'politica',
+    tags: ['eleitoral'],
+  },
+  'bruno-reis-foi-covarde-detonou-solla-ao-rebater-o-prefeito-sobre-saude-de-salvador': {
+    category: 'politica',
+  },
+  'chapada-diamantina-recebe-caravana-liderada-pelo-deputado-jorge-solla': {
+    category: 'politica',
+    tags: ['eleitoral'],
+  },
+  'lula-reforca-o-time-de-jeronimo-wagner-rui-e-jorge-solla-na-convencao-estadual-do-pt': {
+    category: 'politica',
+    tags: ['eleitoral'],
+  },
+  'o-pt-tem-que-disputar-o-programa-de-governo-conclamou-jorge-solla-em-plenaria': {
     category: 'politica',
     tags: ['eleitoral'],
   },
@@ -370,6 +404,12 @@ async function main() {
       '  2. set DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo in .env.local',
   )
 
+  console.log(
+    `\n[seed:posts] Alvo da execução:\n` +
+      `  DB     : ${echoTargetHost()}\n` +
+      `  Modo   : ${dryRun ? 'dry-run (plan-only — nenhuma escrita)' : 'sync (create-only)'}\n`,
+  )
+
   const payload = await getPayload({ config })
   const editorConfig = await editorConfigFactory.default({ config: payload.config })
 
@@ -379,6 +419,7 @@ async function main() {
   console.log('[seed:posts] Ensuring taxonomy tags...')
   const tagIdBySlug = {}
   let tagsCreated = 0
+  let tagsToCreate = 0
   for (const tag of TAXONOMY_TAGS) {
     const found = await payload.find({
       collection: 'tag',
@@ -390,6 +431,10 @@ async function main() {
       tagIdBySlug[tag.slug] = found.docs[0].id
       continue
     }
+    if (dryRun) {
+      tagsToCreate += 1
+      continue
+    }
     const created = await payload.create({
       collection: 'tag',
       data: { name: tag.name, slug: tag.slug, hidden: false },
@@ -397,7 +442,11 @@ async function main() {
     tagIdBySlug[tag.slug] = created.id
     tagsCreated += 1
   }
-  console.log(`[seed:posts]   ${tagsCreated} tag(s) created, ${TAXONOMY_TAGS.length} total.`)
+  console.log(
+    dryRun
+      ? `[seed:posts]   ${tagsToCreate} tag(s) to create, ${TAXONOMY_TAGS.length} total.`
+      : `[seed:posts]   ${tagsCreated} tag(s) created, ${TAXONOMY_TAGS.length} total.`,
+  )
 
   // 2. Live fetch (REST API primary, HTML crawl fallback).
   console.log('[seed:posts] Fetching articles from jorgesolla.com.br (WP REST API)...')
@@ -417,6 +466,7 @@ async function main() {
   // 3. Upsert each article.
   let postsCreated = 0
   let postsSkipped = 0
+  let postsToCreate = 0
   let mediaCreated = 0
   const unmapped = []
 
@@ -429,6 +479,7 @@ async function main() {
     const tagSlugs = mapping?.tags || []
     const categoryId = tagIdBySlug[categorySlug]
     const tagIds = tagSlugs.map((s) => tagIdBySlug[s]).filter(Boolean)
+    const categoryLabel = `[${categorySlug}${tagSlugs.length ? ' | ' + tagSlugs.join(',') : ''}]`
 
     const existing = await payload.find({
       collection: 'post',
@@ -438,6 +489,15 @@ async function main() {
     })
     if (existing.docs.length > 0) {
       postsSkipped += 1
+      continue
+    }
+
+    if (dryRun) {
+      const cover = resolveCoverSource(article)
+      postsToCreate += 1
+      console.log(
+        `[seed:posts]   would-create ${slug} ${categoryLabel} (cover: ${cover ? 'url' : 'sem-cover'})`,
+      )
       continue
     }
 
@@ -466,18 +526,27 @@ async function main() {
       },
     })
     postsCreated += 1
-    console.log(
-      `[seed:posts]   + ${slug} [${categorySlug}${tagSlugs.length ? ' | ' + tagSlugs.join(',') : ''}]`,
-    )
+    console.log(`[seed:posts]   + ${slug} ${categoryLabel}`)
   }
 
   // 4. Report.
+  const summaryLines = [
+    `Articles fetched : ${articles.length}`,
+    ...(dryRun
+      ? [
+          `Posts to create : ${postsToCreate}`,
+          `Posts skipped    : ${postsSkipped} (already existed)`,
+          `Tags to create   : ${tagsToCreate}`,
+        ]
+      : [
+          `Posts created    : ${postsCreated}`,
+          `Posts skipped    : ${postsSkipped} (already existed)`,
+          `Media created    : ${mediaCreated}`,
+          `Tags created     : ${tagsCreated} (of ${TAXONOMY_TAGS.length})`,
+        ]),
+  ]
   console.log('\n[seed:posts] ==================== SUMMARY ====================')
-  console.log(`[seed:posts] Articles fetched : ${articles.length}`)
-  console.log(`[seed:posts] Posts created    : ${postsCreated}`)
-  console.log(`[seed:posts] Posts skipped    : ${postsSkipped} (already existed)`)
-  console.log(`[seed:posts] Media created    : ${mediaCreated}`)
-  console.log(`[seed:posts] Tags created     : ${tagsCreated} (of ${TAXONOMY_TAGS.length})`)
+  for (const line of summaryLines) console.log(`[seed:posts] ${line}`)
   if (unmapped.length > 0) {
     console.warn(
       `\n[seed:posts] WARNING: ${unmapped.length} live slug(s) not in the taxonomy map ` +
