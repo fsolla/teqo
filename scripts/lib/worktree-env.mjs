@@ -55,7 +55,7 @@ export const isGeneratedDatabaseName = (name) => /^teqo_wt[0-9]+(_test)?$/.test(
  * `resolveS3StorageEnv` in `src/utilities/mediaStorage.ts` (scripts cannot
  * import the TS module). `S3_REGION` is optional (default `garage`).
  */
-export const S3_WORKTREE_REQUIRED_KEYS = [
+const S3_WORKTREE_REQUIRED_KEYS = [
   'S3_BUCKET',
   'S3_ENDPOINT',
   'S3_ACCESS_KEY_ID',
