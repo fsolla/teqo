@@ -30,6 +30,7 @@
     "db:seed:tse": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-tse-results.mjs",
     "db:seed:consent": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-consent.mjs",
     "db:seed:projecao": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/import-projecao.mjs",
+    "media:recover": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/recover-media.mjs",
     "db:seed:minimal": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-minimal.mjs",
     "db:check:push-chain": "node scripts/check-push-chain.mjs",
     "agent:claim": "node scripts/agent-claim.mjs",
@@ -135,8 +136,10 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.1112.0",
     "@eslint/eslintrc": "^3.3.6",
     "@playwright/test": "1.58.2",
+    "@smithy/node-http-handler": "^4.11.2",
     "@tailwindcss/postcss": "^4.1.18",
     "@testing-library/react": "16.3.0",
     "@types/geojson": "^7946.0.16",

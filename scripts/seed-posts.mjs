@@ -30,6 +30,16 @@ import { dieWithLabel, loadCliEnv } from './lib/cli.mjs'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
 
+import {
+  WP_BASE_URL as BASE_URL,
+  WP_USER_AGENT as USER_AGENT,
+  fetchArticlesFromWordPress,
+  resolveCoverSource,
+  stripHtml,
+} from './lib/wpArticles.mjs'
+
+/** @import { Article } from './lib/wpArticles.mjs' */
+
 // Mirror Next.js precedence (.env.local wins over .env) without clobbering a
 // DATABASE_URL already set in the real environment.
 loadCliEnv()
@@ -162,55 +172,9 @@ const CLASSIFICATION = {
 }
 
 // ---------------------------------------------------------------------------
-// Live fetch — WordPress REST API (primary)
+// Live fetch — WordPress REST API (primary; implementation in
+// scripts/lib/wpArticles.mjs — shared with the media-recovery tool)
 // ---------------------------------------------------------------------------
-
-const BASE_URL = 'https://jorgesolla.com.br'
-const USER_AGENT = 'teqo-content-migration-bot/1.0 (+https://jorgesolla.com.br)'
-
-const stripHtml = (html) =>
-  new JSDOM(`<!DOCTYPE html><body>${html || ''}</body>`).window.document.body.textContent
-    .replace(/\s+/g, ' ')
-    .trim()
-
-/** Normalized article shape used by both the REST and HTML strategies. */
-/** @typedef {{ slug: string, title: string, date: string|null, html: string, coverUrl: string|null, coverAlt: string|null }} Article */
-
-async function fetchViaRestApi() {
-  /** @type {Article[]} */
-  const articles = []
-  let page = 1
-  let totalPages = 1
-
-  do {
-    const url = `${BASE_URL}/wp-json/wp/v2/posts?per_page=100&page=${page}&_embed`
-    const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } })
-    if (!res.ok) throw new Error(`REST API returned ${res.status} for page ${page}`)
-
-    if (page === 1) {
-      totalPages = Number(res.headers.get('x-wp-totalpages') || '1') || 1
-    }
-
-    const data = await res.json()
-    if (!Array.isArray(data) || data.length === 0) break
-
-    for (const item of data) {
-      const embeddedMedia = item?._embedded?.['wp:featuredmedia']?.[0]
-      articles.push({
-        slug: item.slug,
-        title: stripHtml(item?.title?.rendered) || item.slug,
-        date: item.date || null,
-        html: item?.content?.rendered || '',
-        coverUrl: embeddedMedia?.source_url || null,
-        coverAlt: embeddedMedia?.alt_text || null,
-      })
-    }
-
-    page += 1
-  } while (page <= totalPages)
-
-  return articles
-}
 
 // ---------------------------------------------------------------------------
 // Live fetch — HTML category-archive crawl (fallback)
@@ -306,9 +270,9 @@ function processContent(article) {
     if (el.textContent.replace(/\u00a0/g, ' ').trim() === '') el.remove()
   }
 
-  // Cover: prefer the REST featured media; else the first inline image.
-  const firstImg = root.querySelector('img')
-  const coverUrl = article.coverUrl || firstImg?.getAttribute('src') || null
+  // Cover: prefer the REST featured media; else the first inline image
+  // (shared resolution — scripts/lib/wpArticles.mjs).
+  const coverUrl = resolveCoverSource(article)
 
   // Subtitle (dek): this site places the dek as a first <p> immediately followed
   // by the cover-image figure. Only treat the first paragraph as the subtitle
@@ -439,7 +403,7 @@ async function main() {
   console.log('[seed:posts] Fetching articles from jorgesolla.com.br (WP REST API)...')
   let articles = []
   try {
-    articles = await fetchViaRestApi()
+    articles = await fetchArticlesFromWordPress()
     console.log(`[seed:posts]   REST API returned ${articles.length} article(s).`)
   } catch (err) {
     console.warn(`[seed:posts]   REST API failed (${err.message}). Falling back to HTML crawl...`)

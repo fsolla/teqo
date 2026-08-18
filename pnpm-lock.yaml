@@ -159,12 +159,18 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
+      '@aws-sdk/client-s3':
+        specifier: ^3.1112.0
+        version: 3.1112.0
       '@eslint/eslintrc':
         specifier: ^3.3.6
         version: 3.3.6
       '@playwright/test':
         specifier: 1.58.2
         version: 1.58.2
+      '@smithy/node-http-handler':
+        specifier: ^4.11.2
+        version: 4.11.2
       '@tailwindcss/postcss':
         specifier: ^4.1.18
         version: 4.1.18
