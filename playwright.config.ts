@@ -48,8 +48,9 @@ if (!Number.isInteger(workers) || workers < 2) {
  * compiles; against a production build they are pure cost — measured 2026-08-10
  * (OPS34): the 25 prewarm requests plus the 4-test frontend/admin tail behind
  * the ~30-file campaign family. Prod mode therefore drops the setup project and
- * the dependencies so all families run in parallel; CI shards the suite across
- * runners instead (ci.yml / ci-pr.yml pass `--shard`). Dev mode is unchanged.
+ * the dependencies so all families run in parallel; CI runs the suite in one
+ * process with `PLAYWRIGHT_WORKERS` (ci.yml / ci-pr.yml, OPS62 X1). Dev mode
+ * is unchanged.
  * Note the chain is an ordering guarantee for dev cold compiles, not a data
  * dependency: specs are self-contained in both modes (fixtures + advisory
  * locks), so dropping it in prod cannot reorder shared fixtures.

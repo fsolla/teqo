@@ -1,23 +1,26 @@
-# PR gate: feature → main. Two-phase cascade:
-#   Phase 1 (cheap, no Postgres): lint, format, typecheck, knip, cycles, unit
-#   Phase 2 (expensive, Postgres; needs phase 1 green/skipped): int, build, e2e
-# Job-level skips come from the `scope` classifier (scripts/ci-scope.mjs). A
-# phase-1 failure skips phase 2 via `needs` + explicit if.
+# PR gate: feature → main. SINGLE sequential job (OPS62, X1): one container,
+# one checkout, one pnpm install, one runner slot. Fail-fast is STRUCTURAL —
+# a failed step skips every step after it, the job fails, the run fails and
+# the slot is released immediately. No cancel-run API (Forgejo 9.0.3 has
+# none), no watchdog job, no upgrades: with one job there are no siblings to
+# cancel. Steps keep their own logs, so diagnosis is intact after a failure.
+# The job id `checks` preserves the `CI (PR) / checks` status context the
+# automerger waitForChecks and branch protection rely on (OPS61).
+#
+# Job-level skips come from the `scope` classifier (scripts/ci-scope.mjs) run
+# as a step; its outputs drive `if:` on the heavy steps (same modes as the
+# former per-job cascade: none/changed/full).
 #
 # Schema migrations are NOT serialized across PRs (migration-lock removed
 # 2026-08-12): a stale chain is caught by `pnpm migrate` + `test:int` on every
 # PR and on main (ci.yml), incl. campaignMigrationReconciliation — the check's
 # hard fail deadlocked every open schema PR the moment two coexisted.
 #
-# High-risk diffs (schema, lockfile, classifiers — see
-# scripts/lib/test-affected-core.mjs) force full unit/int/e2e. Push to main
-# always runs the full suite in ci.yml (no affected skips).
-#
-# Forgejo port (OPS50): no `concurrency:`/`permissions:` (unsupported /
-# native token); Postgres services publish per-job ports (5433 int, 5434
-# build, 5435/5436 e2e shards) and jobs reach them through the bridge gateway
-# (DB_HOST from /proc/net/route). The GitHub fail-fast action was dropped
-# (Forgejo has no cancel-run plumbing); job timeouts cover that role.
+# Forgejo port (OPS50): Postgres services publish per-port on the runner
+# machine and steps reach them through the bridge gateway (DB_HOST from
+# /proc/net/route). Host ports derive from the run id (OPS62 X1) so concurrent
+# runs never collide; two isolated services — int and build+e2e — keep e2e
+# from inheriting int fixture residue (same isolation the former jobs had).
 name: CI (PR)
 
 on:
@@ -29,17 +32,41 @@ env:
   NEXT_PUBLIC_SITE_URL: http://localhost:3000
 
 jobs:
-  scope:
+  checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      code_mode: ${{ steps.classify.outputs.code_mode }}
-      build_mode: ${{ steps.classify.outputs.build_mode }}
-      test_mode: ${{ steps.classify.outputs.test_mode }}
-      e2e_mode: ${{ steps.classify.outputs.e2e_mode }}
-      e2e_specs: ${{ steps.classify.outputs.e2e_specs }}
-      e2e_matrix: ${{ steps.classify.outputs.e2e_matrix }}
-      e2e_shards: ${{ steps.classify.outputs.e2e_shards }}
+    timeout-minutes: 50
+    services:
+      # Host ports derive from the run id (OPS62 X1): the single job holds
+      # both services for the whole run, and concurrent runs on the shared
+      # runner would collide on fixed ports ("port is already allocated") —
+      # a ~1% residual collision when two runs share run_id % 100 is loud,
+      # harmless and fixed by the next push.
+      postgres-int:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: teqo
+          POSTGRES_PASSWORD: teqo
+          POSTGRES_DB: teqo_test
+        ports:
+          - ${{ 5433 + (github.run_id % 100) }}:5432
+        options: >-
+          --health-cmd "pg_isready -U teqo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      postgres-build:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: teqo
+          POSTGRES_PASSWORD: teqo
+          POSTGRES_DB: teqo_test
+        ports:
+          - ${{ 5533 + (github.run_id % 100) }}:5432
+        options: >-
+          --health-cmd "pg_isready -U teqo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
     steps:
       - uses: actions/checkout@v5
         with:
@@ -50,11 +77,13 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+
       - name: Classify PR blast radius
-        id: classify
+        id: scope
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
         run: |
+          set -euo pipefail
           result=$(node scripts/ci-scope.mjs)
           echo "scope: $(echo "$result" | jq -c '{code:.code.mode,build:.build.mode,test:.test.mode,e2e:.e2e.mode,reason:{code:.code.reason,build:.build.reason,test:.test.reason,e2e:.e2e.reason}}')"
           echo "code_mode=$(echo "$result" | jq -r .code.mode)" >> "$GITHUB_OUTPUT"
@@ -62,317 +91,9 @@ jobs:
           echo "test_mode=$(echo "$result" | jq -r .test.mode)" >> "$GITHUB_OUTPUT"
           echo "e2e_mode=$(echo "$result" | jq -r .e2e.mode)" >> "$GITHUB_OUTPUT"
           echo "e2e_specs=$(echo "$result" | jq -r '[.e2e.specs[] | "tests/e2e/" + . + ".e2e.spec.ts"] | join(" ")')" >> "$GITHUB_OUTPUT"
-          # OPS34: full runs split across shards (one runner per shard); selected
-          # stays on a single runner (a second build for a handful of specs is
-          # waste). Single source: e2eShardConfig in scripts/lib/test-affected-core.mjs.
-          echo "e2e_matrix=$(echo "$result" | jq -c .e2e_shards.matrix)" >> "$GITHUB_OUTPUT"
-          echo "e2e_shards=$(echo "$result" | jq -r .e2e_shards.total)" >> "$GITHUB_OUTPUT"
 
-  lint:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Check test file locations
-        run: node scripts/check-test-locations.mjs
-      - run: pnpm lint
-
-  format:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm format:check
-
-  typecheck:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [scope]
-    if: needs.scope.outputs.code_mode != 'none'
-    steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-
-  knip:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [scope]
-    if: needs.scope.outputs.code_mode != 'none'
-    steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm knip
-
-  cycles:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [scope]
-    if: needs.scope.outputs.code_mode != 'none'
-    steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm check:cycles
-
-  unit:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: [scope]
-    if: needs.scope.outputs.test_mode != 'none'
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-
-      - name: Unit tests (full suite)
-        if: needs.scope.outputs.test_mode == 'full'
-        run: pnpm test:unit
-
-      - name: Unit tests (changed since PR base)
-        if: needs.scope.outputs.test_mode == 'changed'
-        run: pnpm test:unit -- --changed origin/${{ github.base_ref }} --passWithNoTests
-
-  int:
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    needs: [scope, lint, format, typecheck, knip, cycles, unit]
-    if: |
-      always()
-      && !cancelled()
-      && needs.scope.outputs.test_mode != 'none'
-      && needs.lint.result == 'success'
-      && needs.format.result == 'success'
-      && (needs.typecheck.result == 'success' || needs.typecheck.result == 'skipped')
-      && (needs.knip.result == 'success' || needs.knip.result == 'skipped')
-      && (needs.cycles.result == 'success' || needs.cycles.result == 'skipped')
-      && (needs.unit.result == 'success' || needs.unit.result == 'skipped')
-    env:
-      # Self-hosted runner has 8 CPUs; vitest forks ≈ CPUs and each fork holds
-      # a Payload pool (max 10) → overflows the service Postgres' 100 clients
-      # ("too many clients already", CI run 180). 4 forks stay well under.
-      # GitHub's 2–4 vCPU runners keep the CPU-relative default (no env).
-      VITEST_MAX_WORKERS: 4
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: teqo
-          POSTGRES_PASSWORD: teqo
-          POSTGRES_DB: teqo_test
-        ports:
-          - 5433:5432
-        options: >-
-          --health-cmd "pg_isready -U teqo"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 12
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Prepare database URL (service via bridge gateway)
-        run: |
-          set -euo pipefail
-          DB_HOST=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
-          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:5433/teqo_test" >> "$GITHUB_ENV"
-          # vitest/playwright re-load .env.test over the process env, so the
-          # service URL must win through the .env.test.local layer (same
-          # mechanism `pnpm worktree next` uses). OPS50.
-          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:5433/teqo_test" > .env.test.local
-      - run: pnpm migrate
-      - run: pnpm db:seed:minimal
-
-      - name: Integration tests (full suite)
-        if: needs.scope.outputs.test_mode == 'full'
-        run: pnpm test:int
-
-      - name: Integration tests (changed since PR base)
-        if: needs.scope.outputs.test_mode == 'changed'
-        run: pnpm test:int -- --changed origin/${{ github.base_ref }} --passWithNoTests
-
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    needs: [scope, lint, format, typecheck, knip, cycles, unit]
-    if: |
-      always()
-      && !cancelled()
-      && needs.scope.outputs.build_mode != 'none'
-      && needs.lint.result == 'success'
-      && needs.format.result == 'success'
-      && (needs.typecheck.result == 'success' || needs.typecheck.result == 'skipped')
-      && (needs.knip.result == 'success' || needs.knip.result == 'skipped')
-      && (needs.cycles.result == 'success' || needs.cycles.result == 'skipped')
-      && (needs.unit.result == 'success' || needs.unit.result == 'skipped')
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: teqo
-          POSTGRES_PASSWORD: teqo
-          POSTGRES_DB: teqo_test
-        ports:
-          - 5434:5432
-        options: >-
-          --health-cmd "pg_isready -U teqo"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 12
-    steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Prepare database URL (service via bridge gateway)
-        run: |
-          set -euo pipefail
-          DB_HOST=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
-          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:5434/teqo_test" >> "$GITHUB_ENV"
-      - name: Build (against the local service database)
-        run: pnpm build
-
-  e2e:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    needs: [scope, lint, format, typecheck, knip, cycles, unit]
-    if: |
-      always()
-      && !cancelled()
-      && needs.scope.outputs.e2e_mode != 'none'
-      && needs.lint.result == 'success'
-      && needs.format.result == 'success'
-      && (needs.typecheck.result == 'success' || needs.typecheck.result == 'skipped')
-      && (needs.knip.result == 'success' || needs.knip.result == 'skipped')
-      && (needs.cycles.result == 'success' || needs.cycles.result == 'skipped')
-      && (needs.unit.result == 'success' || needs.unit.result == 'skipped')
-    # OPS34: full mode splits across 2 runners; selected mode stays on shard 1
-    # (shard 2 skips build+test via step `if`). Static [1, 2] — Forgejo 1.22
-    # does not pass job results into matrix expansion, so fromJson(needs.*)
-    # yields an empty shard. Keep the literal in sync with e2eShardConfig in
-    # scripts/lib/test-affected-core.mjs (ci.yml pins the same [1, 2] / 2).
-    # fail-fast: false keeps both shards' logs.
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2]
-    env:
-      # Explicit CI workers; the local default stays 2 (playwright.config.ts).
-      PLAYWRIGHT_WORKERS: 2
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: teqo
-          POSTGRES_PASSWORD: teqo
-          POSTGRES_DB: teqo_test
-        ports:
-          - ${{ matrix.shard == 1 && '5435' || '5436' }}:5432
-        options: >-
-          --health-cmd "pg_isready -U teqo"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 12
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-      - name: Install Playwright chromium
-        run: pnpm exec playwright install --with-deps chromium
-      - name: Prepare database URL (service via bridge gateway)
-        run: |
-          set -euo pipefail
-          DB_HOST=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
-          DB_PORT=${{ matrix.shard == 1 && '5435' || '5436' }}
-          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:${DB_PORT}/teqo_test" >> "$GITHUB_ENV"
-          # vitest/playwright re-load .env.test over the process env, so the
-          # service URL must win through the .env.test.local layer (same
-          # mechanism `pnpm worktree next` uses). OPS50.
-          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:${DB_PORT}/teqo_test" > .env.test.local
-      - run: pnpm migrate
-      - run: pnpm db:seed:minimal
-      - name: Build for e2e
-        # Selected mode only needs shard 1 (a second build for a handful of
-        # specs is waste).
-        if: needs.scope.outputs.e2e_mode == 'full' || matrix.shard == 1
-        run: pnpm build
-        env:
-          # Same dir the Playwright webServer serves (playwright.config.ts
-          # falls back to '.next-e2e'; gate-ci.mjs builds there too).
-          NEXT_DIST_DIR: .next-e2e
-
-      - name: E2E tests (full suite, shard ${{ matrix.shard }})
-        if: needs.scope.outputs.e2e_mode == 'full'
-        # No `--` separator: pnpm would forward it verbatim to playwright and
-        # the flag would be parsed as a file pattern ("No tests found").
-        run: pnpm test:e2e --shard=${{ matrix.shard }}/${{ needs.scope.outputs.e2e_shards }}
-
-      - name: E2E tests (manifest-selected specs)
-        # Selected specs run once, on shard 1; shard 2 skips (no test step).
-        if: needs.scope.outputs.e2e_mode == 'selected' && matrix.shard == 1
-        run: pnpm test:e2e -- ${{ needs.scope.outputs.e2e_specs }}
-
-  docs-guards:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
+      # Content guards are PR-scoped and cheap — run them before the suite so
+      # a guard failure fails fast instead of after 20 minutes of tests.
       - name: Changelog is append-only
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
@@ -384,44 +105,112 @@ jobs:
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
         run: node scripts/check-docs-conflict-markers.mjs
-
-  plans-only-closes:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
       - name: Block Closes/Fixes/Resolves on plans-only PRs
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
           PR_BODY: ${{ github.event.pull_request.body }}
         run: node scripts/check-plans-only-pr-closes.mjs
 
-  checks:
-    name: checks
-    runs-on: ubuntu-latest
-    needs:
-      - scope
-      - lint
-      - format
-      - typecheck
-      - knip
-      - cycles
-      - unit
-      - int
-      - build
-      - e2e
-      - docs-guards
-      - plans-only-closes
-    if: always()
-    steps:
-      - name: All cascade checks green
-        env:
-          NEEDS: ${{ toJSON(needs) }}
+      - name: Check test file locations
+        run: node scripts/check-test-locations.mjs
+      - name: Lint
+        run: pnpm lint
+      - name: Format check
+        run: pnpm format:check
+      - name: Typecheck
+        if: steps.scope.outputs.code_mode != 'none'
+        run: pnpm typecheck
+      - name: Knip
+        if: steps.scope.outputs.code_mode != 'none'
+        run: pnpm knip
+      - name: Check cycles
+        if: steps.scope.outputs.code_mode != 'none'
+        run: pnpm check:cycles
+
+      - name: Unit tests (full suite)
+        if: steps.scope.outputs.test_mode == 'full'
+        run: pnpm test:unit
+      - name: Unit tests (changed since PR base)
+        if: steps.scope.outputs.test_mode == 'changed'
+        run: pnpm test:unit -- --changed origin/${{ github.base_ref }} --passWithNoTests
+      - name: Prepare database URL (int service via bridge gateway)
         run: |
           set -euo pipefail
-          echo "$NEEDS" | jq -e '
-            to_entries
-            | all(.value.result == "success" or .value.result == "skipped")
-          '
+          DB_HOST=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
+          DB_PORT=${{ 5433 + (github.run_id % 100) }}
+          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:${DB_PORT}/teqo_test" >> "$GITHUB_ENV"
+          # vitest re-loads .env.test over the process env, so the service URL
+          # must win through the .env.test.local layer (same mechanism
+          # `pnpm worktree next` uses). OPS50.
+          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:${DB_PORT}/teqo_test" > .env.test.local
+      - name: Migrate (int database)
+        run: pnpm migrate
+      - name: Seed minimal (int database)
+        run: pnpm db:seed:minimal
+
+      - name: Integration tests (full suite)
+        if: steps.scope.outputs.test_mode == 'full'
+        env:
+          # Self-hosted runner has 8 CPUs; vitest forks ≈ CPUs and each fork
+          # holds a Payload pool (max 10) → overflows the service Postgres' 100
+          # clients ("too many clients already", CI run 180). 4 forks stay
+          # well under. The unit step above stays CPU-relative (no DB).
+          VITEST_MAX_WORKERS: 4
+        run: pnpm test:int
+      - name: Integration tests (changed since PR base)
+        if: steps.scope.outputs.test_mode == 'changed'
+        env:
+          VITEST_MAX_WORKERS: 4
+        run: pnpm test:int -- --changed origin/${{ github.base_ref }} --passWithNoTests
+
+      - name: Prepare database URL (build/e2e service via bridge gateway)
+        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
+        run: |
+          set -euo pipefail
+          DB_HOST=$(awk '$2 == "00000000" {a=$3; print strtonum("0x" substr(a,7,2)) "." strtonum("0x" substr(a,5,2)) "." strtonum("0x" substr(a,3,2)) "." strtonum("0x" substr(a,1,2)); exit}' /proc/net/route)
+          DB_PORT=${{ 5533 + (github.run_id % 100) }}
+          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:${DB_PORT}/teqo_test" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://teqo:teqo@${DB_HOST}:${DB_PORT}/teqo_test" > .env.test.local
+      - name: Migrate (build/e2e database)
+        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
+        run: pnpm migrate
+      - name: Seed minimal (build/e2e database)
+        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
+        run: pnpm db:seed:minimal
+
+      - name: Build (against the local service database)
+        if: steps.scope.outputs.build_mode != 'none'
+        run: pnpm build
+
+      - name: Cache Playwright browsers
+        if: steps.scope.outputs.e2e_mode != 'none'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+      - name: Install Playwright chromium
+        if: steps.scope.outputs.e2e_mode != 'none'
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Build for e2e
+        # Selected mode needs the build too (the Playwright webServer serves
+        # .next-e2e; the fallback `.next-e2e` dir is what gate-ci.mjs builds).
+        if: steps.scope.outputs.e2e_mode != 'none'
+        run: pnpm build
+        env:
+          NEXT_DIST_DIR: .next-e2e
+      - name: E2E tests (full suite, single job, 4 workers)
+        if: steps.scope.outputs.e2e_mode == 'full'
+        # Explicit CI workers; the local default stays 2 (playwright.config.ts).
+        # 4 workers in one process replace the former 2 shards × 2 workers.
+        # No `--` separator: pnpm would forward it verbatim to playwright and
+        # the flag would be parsed as a file pattern ("No tests found").
+        env:
+          PLAYWRIGHT_WORKERS: 4
+        run: pnpm test:e2e
+      - name: E2E tests (manifest-selected specs)
+        if: steps.scope.outputs.e2e_mode == 'selected'
+        env:
+          PLAYWRIGHT_WORKERS: 4
+        run: pnpm test:e2e -- ${{ steps.scope.outputs.e2e_specs }}
