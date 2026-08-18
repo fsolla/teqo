@@ -1,11 +1,15 @@
 /**
- * Plain-Node CLI (no pnpm) — agent PR safety net: wait for checks and merge by
+ * Plain-Node CLI (no pnpm) — PR safety net: wait for checks and merge by
  * rebase (the Forgejo equivalent of `gh pr merge --auto --rebase`, which the
  * Forgejo API does not offer as a scheduled operation). Idempotent: already
  * merged → no-op success. The verdict comes from re-reading the PR (Forgejo's
  * merge endpoint answers 200 + empty body on success, so the POST response
  * alone cannot prove the merge) — "já mergeado" is only printed for a PR the
  * server actually reports as merged; a failed merge exits 1 loudly.
+ *
+ * Draft policy (OPS57): only `cursor/*` heads get marked ready. A draft from
+ * any other branch is the actor's veto — the CLI skips it (exit 0) so the
+ * workflow never forces a human/plans PR to ready.
  *
  *   node scripts/forgejo-pr-automerge.mjs --pr <N>
  */
@@ -43,8 +47,15 @@ try {
     process.exit(0)
   }
   if (pr.isDraft) {
-    console.log(`[forgejo-pr-automerge] PR #${prNumber} é draft — marcando Ready`)
-    await api.markPullRequestReady(prNumber)
+    if (pr.head.ref.startsWith('cursor/')) {
+      console.log(`[forgejo-pr-automerge] PR #${prNumber} é draft — marcando Ready`)
+      await api.markPullRequestReady(prNumber)
+    } else {
+      console.log(
+        `[forgejo-pr-automerge] PR #${prNumber} é draft fora de cursor/* — skip (não força PR humano)`,
+      )
+      process.exit(0)
+    }
   } else {
     console.log(`[forgejo-pr-automerge] PR #${prNumber} já Ready`)
   }

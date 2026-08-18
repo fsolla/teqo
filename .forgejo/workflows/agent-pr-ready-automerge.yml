@@ -1,6 +1,9 @@
-# Safety net: agent PRs (cursor/* → main) must be Ready + auto-merge.
-# Covers Cloud ManagePullRequest defaulting to draft and agents that forget
-# to arm the merge. No skill opt-out (engineering-audit included).
+# Safety net: every same-repo PR to main must be Ready + auto-merge.
+# Covers Cloud ManagePullRequest defaulting to draft, agents that forget to
+# arm the merge, and human/worktree PRs (the OPS52 incident was a human PR
+# whose merge failed silently). Draft PRs from non-`cursor/*` branches are
+# never touched — the draft flag is the actor's veto (the CLI skips them).
+# Fork PRs are excluded (the repo is public; a merged fork PR would deploy).
 #
 # Forgejo port (OPS50): Forgejo's API has no auto-merge scheduling, so the
 # workflow runs scripts/forgejo-pr-automerge.mjs (plain Node): marks draft →
@@ -8,7 +11,7 @@
 # then merges by rebase. Same semantics as `gh pr merge --auto --rebase`,
 # implemented as poll + merge. GitHub's cancel-workflow-on-failure action was
 # dropped (no GITHUB_RUN_ID plumbing on Forgejo).
-name: Agent PR Ready + auto-merge
+name: PR Ready + auto-merge
 
 on:
   pull_request:
@@ -17,9 +20,13 @@ on:
 
 jobs:
   ready-automerge:
+    # Same-repo only: a fork PR merged here would push attacker code to main
+    # (and deploy to production). The draft policy lives in the CLI (skips
+    # non-`cursor/*` drafts) so it reads the PR state from the API, not from
+    # webhook payload fields.
     if: >-
       github.event.pull_request.state == 'open' &&
-      startsWith(github.event.pull_request.head.ref, 'cursor/')
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:

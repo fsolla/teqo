@@ -80,4 +80,9 @@ There is no stage→main promote. Merging to `main` is the delivery; `ci.yml` ve
 
 ## Safety net (GitHub Action)
 
-`agent-pr-ready-automerge.yml` — PRs `cursor/*` → `main`: se Draft → `gh pr ready`; sempre arma `gh pr merge --auto --rebase`. Cobre o caso em que o agente (ou o default draft do Cloud) esqueceu. Não há opt-out por skill (audit incluído).
+`agent-pr-ready-automerge.yml` — PRs same-repo → `main` (todas as branches):
+se draft `cursor/*` → `gh pr ready`; sempre arma `gh pr merge --auto --rebase`.
+Cobre o caso em que o agente (ou o default draft do Cloud) esqueceu e PRs
+humanas/worktree com merge falho silencioso (incidente OPS52). **Draft de
+branch não-`cursor/*` nunca é tocado** — o draft é o veto do ator (skip do CLI).
+Não há opt-out por skill (audit incluído).
