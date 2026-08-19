@@ -35,6 +35,9 @@ jobs:
     timeout-minutes: 5
     env:
       FORGEJO_API_TOKEN: ${{ secrets.FORGEJO_API_TOKEN }}
+      # Explicit base: in the GitHub Actions env, GITHUB_SERVER_URL points at
+      # github.com and forgejo-api.mjs would resolve the wrong base (410).
+      FORGEJO_API_URL: https://git.solla.dev/api/v1
       PR_BODY: ${{ github.event.pull_request.body }}
     steps:
       - uses: actions/checkout@v5
