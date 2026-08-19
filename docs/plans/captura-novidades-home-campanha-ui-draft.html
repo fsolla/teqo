@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — Captura de novidades na home de campanha</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-5xl p-8">
+      <p class="text-sm text-zinc-400">
+        Visitante da home de campanha demonstra apoio e deixa o contato para receber comunicações
+        (e-mail ou grupos de WhatsApp) — CTA do hero leva à seção de captura na própria página.
+      </p>
+
+      <section data-shot="desktop" class="mt-6 overflow-hidden rounded-xl border border-zinc-800">
+        <div class="bg-zinc-900 px-10 pt-12 pb-8">
+          <div class="flex gap-8">
+            <div class="flex-1">
+              <div class="h-3 w-24 rounded bg-zinc-700"></div>
+              <div class="mt-4 h-12 w-72 rounded bg-zinc-700"></div>
+              <div class="mt-2 h-12 w-64 rounded bg-zinc-700"></div>
+              <div class="mt-5 space-y-2">
+                <div class="h-2 w-96 rounded bg-zinc-700"></div>
+                <div class="h-2 w-80 rounded bg-zinc-700"></div>
+                <div class="h-2 w-88 rounded bg-zinc-700"></div>
+              </div>
+              <div class="mt-7 flex gap-3">
+                <div
+                  class="inline-flex h-11 items-center justify-center rounded-[10px] bg-red-600 px-5 text-sm font-extrabold text-white"
+                >
+                  Quero apoiar
+                </div>
+                <div
+                  class="inline-flex h-11 items-center justify-center rounded-[10px] border-2 border-zinc-300 px-5 text-sm font-extrabold text-zinc-100"
+                >
+                  Receba novidades
+                </div>
+              </div>
+              <div class="mt-8 flex gap-8">
+                <div class="h-2 w-40 rounded bg-zinc-700"></div>
+                <div class="h-2 w-40 rounded bg-zinc-700"></div>
+              </div>
+            </div>
+            <div class="hidden w-64 shrink-0 lg:block">
+              <div class="h-72 w-48 rounded-lg bg-zinc-700/60"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-zinc-100 px-10 py-12 text-zinc-900">
+          <div class="mx-auto max-w-2xl text-center">
+            <div class="mx-auto h-2 w-28 rounded bg-zinc-400"></div>
+            <div class="mx-auto mt-4 h-8 w-96 rounded bg-zinc-400"></div>
+            <div class="mx-auto mt-3 h-2 w-80 rounded bg-zinc-400"></div>
+            <div class="mx-auto mt-3 h-2 w-72 rounded bg-zinc-400"></div>
+          </div>
+          <div class="mx-auto mt-8 max-w-3xl space-y-4">
+            <div
+              class="h-12 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-500"
+            >
+              Nome completo*
+            </div>
+            <div
+              class="h-12 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-500"
+            >
+              WhatsApp (com DDD)*
+            </div>
+            <div
+              class="h-12 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-500"
+            >
+              E-mail (opcional)
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div
+                class="h-12 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-500"
+              >
+                Estado (opcional)
+              </div>
+              <div
+                class="h-12 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-500"
+              >
+                Cidade (opcional)
+              </div>
+            </div>
+            <div
+              class="h-20 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-500"
+            >
+              Comentário (opcional)
+            </div>
+            <div class="rounded-lg border border-zinc-300 bg-white p-4">
+              <div class="flex items-start gap-3">
+                <div
+                  class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-red-600 bg-red-600 text-xs font-bold text-white"
+                >
+                  ✓
+                </div>
+                <div class="text-sm text-zinc-800">
+                  <strong>Quero fazer parte do time:</strong> receber novidades com frequência, ser
+                  adicionado(a) aos grupos de WhatsApp da campanha e participar das ações.
+                </div>
+              </div>
+              <p class="mt-2 text-xs text-zinc-500">
+                Sem marcar, você recebe apenas comunicações esporádicas da campanha — sem grupos e
+                sem envios frequentes.
+              </p>
+            </div>
+          </div>
+          <div class="mx-auto mt-4 max-w-3xl">
+            <div
+              class="inline-flex h-12 w-full items-center justify-center rounded-lg bg-red-600 text-sm font-extrabold text-white"
+            >
+              QUERO RECEBER NOVIDADES
+            </div>
+          </div>
+          <p class="mx-auto mt-4 max-w-xl text-center text-xs text-zinc-500">
+            Ao enviar, você demonstra apoio à campanha e escolhe como quer acompanhar: comunicações
+            frequentes e grupos de WhatsApp (marcando a opção acima) ou comunicações esporádicas —
+            conforme a Política de Privacidade (LGPD).
+          </p>
+        </div>
+      </section>
+
+      <section
+        data-shot="mobile"
+        class="mt-6 w-[390px] overflow-hidden rounded-xl border border-zinc-800"
+      >
+        <div class="bg-zinc-900 px-5 pt-8 pb-6">
+          <div class="h-3 w-20 rounded bg-zinc-700"></div>
+          <div class="mt-4 h-9 w-56 rounded bg-zinc-700"></div>
+          <div class="mt-2 h-9 w-48 rounded bg-zinc-700"></div>
+          <div class="mt-4 space-y-2">
+            <div class="h-2 w-72 rounded bg-zinc-700"></div>
+            <div class="h-2 w-60 rounded bg-zinc-700"></div>
+          </div>
+          <div class="mt-6 flex flex-col gap-2">
+            <div
+              class="inline-flex h-11 items-center justify-center rounded-[10px] bg-red-600 px-5 text-sm font-extrabold text-white"
+            >
+              Quero apoiar
+            </div>
+            <div
+              class="inline-flex h-11 items-center justify-center rounded-[10px] border-2 border-zinc-300 px-5 text-sm font-extrabold text-zinc-100"
+            >
+              Receba novidades
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-zinc-100 px-5 py-8 text-zinc-900">
+          <div class="mx-auto h-2 w-24 rounded bg-zinc-400"></div>
+          <div class="mx-auto mt-4 h-7 w-72 rounded bg-zinc-400"></div>
+          <div class="mx-auto mt-3 h-2 w-64 rounded bg-zinc-400"></div>
+          <div class="mt-6 space-y-3">
+            <div
+              class="h-12 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-500"
+            >
+              Nome completo*
+            </div>
+            <div
+              class="h-12 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-500"
+            >
+              WhatsApp (com DDD)*
+            </div>
+            <div
+              class="h-12 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-500"
+            >
+              E-mail (opcional)
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div
+                class="h-12 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-500"
+              >
+                Estado (opcional)
+              </div>
+              <div
+                class="h-12 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-500"
+              >
+                Cidade (opcional)
+              </div>
+            </div>
+          </div>
+          <div class="mt-3">
+            <div
+              class="h-20 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-500"
+            >
+              Comentário (opcional)
+            </div>
+          </div>
+          <div class="mt-3 rounded-lg border border-zinc-300 bg-white p-4">
+            <div class="flex items-start gap-3">
+              <div
+                class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border border-red-600 bg-red-600 text-xs font-bold text-white"
+              >
+                ✓
+              </div>
+              <div class="text-sm text-zinc-800">
+                <strong>Quero fazer parte do time:</strong> receber novidades com frequência, ser
+                adicionado(a) aos grupos de WhatsApp da campanha e participar das ações.
+              </div>
+            </div>
+            <p class="mt-2 text-xs text-zinc-500">
+              Sem marcar, você recebe apenas comunicações esporádicas da campanha — sem grupos e sem
+              envios frequentes.
+            </p>
+          </div>
+          <div class="mt-4">
+            <div
+              class="inline-flex h-12 w-full items-center justify-center rounded-lg bg-red-600 text-sm font-extrabold text-white"
+            >
+              QUERO RECEBER NOVIDADES
+            </div>
+          </div>
+          <p class="mx-auto mt-4 max-w-xs text-center text-xs text-zinc-500">
+            Ao enviar, você demonstra apoio à campanha e escolhe como quer acompanhar: comunicações
+            frequentes e grupos de WhatsApp (marcando a opção acima) ou comunicações esporádicas —
+            conforme a Política de Privacidade (LGPD).
+          </p>
+        </div>
+      </section>
+
+      <section data-shot="sucesso" class="mt-6 overflow-hidden rounded-xl border border-zinc-800">
+        <div class="bg-zinc-100 px-10 py-16 text-center text-zinc-900">
+          <div class="mx-auto h-10 w-10 rounded-full border-2 border-zinc-400"></div>
+          <div class="mx-auto mt-5 h-7 w-80 rounded bg-zinc-400"></div>
+          <p class="mx-auto mt-4 max-w-md text-sm text-zinc-600">
+            Você vai receber as novidades da campanha. Enquanto isso, acompanhe as bandeiras da
+            campanha abaixo.
+          </p>
+          <div
+            class="mx-auto mt-6 h-11 w-48 rounded-lg border-2 border-zinc-300 bg-white text-sm font-extrabold text-zinc-700"
+          ></div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
