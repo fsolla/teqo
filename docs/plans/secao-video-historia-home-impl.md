@@ -110,6 +110,19 @@ client'`, precedente `CampaignCarousel`) — copy (eyebrow/título/copy do rascu
 3. **Gates** — `pnpm gate:fast`, `pnpm format:check`, `pnpm exec knip`, `pnpm check:cycles`,
    `pnpm test`, `pnpm build`; e2e no CI; push via `pnpm push`.
 
+## Conflitos de rebase resolvidos (2026-08-19)
+
+- **S9 mergeou em main durante a execução** e inseriu `CampaignNewsletterSection` no mesmo ponto
+  (após bandeiras, antes do footer). Resolução: **história → newsletter → footer** — o funil
+  põe o "ask" (formulário de captura) depois do fechamento emocional; S9 declara "logo acima do
+  rodapé" e S8 "após bandeiras"; ambas as intenções ficam satisfeitas.
+- **Changelog agregado**: conflito insert-only resolvido com `git checkout --theirs` +
+  `pnpm changelog:build` (S8 re-anexado sobre o agregado com S7/S9).
+- Nota de ambiente: o e2e local (dev server) acusa warnings de React keys em
+  `CampaignColumnPicker`/omnibox de assessores (B137/B197, era C139) que o guard falha — são
+  **dev-only** (build de produção do CI não emite warnings de keys), pré-existentes em main e
+  fora do escopo S8.
+
 ## Débitos (capture-review-debts — triage autônoma)
 
 - **Absorvidos nesta entrega:** JSDoc enxuto; e2e sem `toHaveURL` redundante; asserts de
