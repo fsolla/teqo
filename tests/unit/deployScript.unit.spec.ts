@@ -94,7 +94,10 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     // The invariant OPS66 depends on: the migrator image can always be built,
     // even before the new migrations exist in the DB.
     const dockerfile = readFileSync(join(repoRoot, 'Dockerfile'), 'utf8')
-    const migratorStage = dockerfile.slice(dockerfile.indexOf('AS migrator'), dockerfile.indexOf('AS builder'))
+    const migratorStage = dockerfile.slice(
+      dockerfile.indexOf('AS migrator'),
+      dockerfile.indexOf('AS builder'),
+    )
     expect(migratorStage).toContain('CMD ["pnpm", "migrate"]')
     expect(migratorStage).not.toContain('next build')
     const builderStage = dockerfile.slice(dockerfile.indexOf('AS builder'))

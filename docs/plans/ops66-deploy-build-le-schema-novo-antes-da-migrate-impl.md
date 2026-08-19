@@ -28,6 +28,7 @@ flowchart LR
 **Opções consideradas:** A | B | C
 **Recomendação:** A — reordenar o script movendo o migrate para antes do build do runner, mantendo o `compose run teqo-1313-migrate` como caminho canônico (o swap passa a ser feito logo após o build do migrator). É a opção 1 da própria intenção, sem custo adicional (o migrate e o build do migrator já rodavam em todo deploy — só mudam de posição) e sem caminho paralelo ao serviço de maintenance.
 **Rejeitadas:**
+
 - **B — `payload migrate` pré-check dentro do build do runner:** efeito colateral de escrita no banco de prod a partir de um processo de build; contradiz o desenho deliberado do Dockerfile ("migrations run separately through the migrator") e a decisão (B) do OPS53. Qualquer build CI em ambiente errado migraria o banco de prod.
 - **C — `docker run --rm --network stack_default --env-file ~/stack/teqo-1313.env localhost:5000/teqo-1313-migrator:<sha>` antes do build do runner** (o comando manual de recuperação do incidente): evita o swap precoce, mas duplica a definição do serviço de maintenance do compose (envs/networks/labels) e cria caminho paralelo ao serviço canônico que OPS51/53 e o runbook documentam. O swap precoce (A) é inofensivo: nada referencia o tag do runner até o `compose up -d`, que só roda depois do push.
 
