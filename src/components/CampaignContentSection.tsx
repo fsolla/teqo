@@ -48,6 +48,7 @@ const toArticleCardData = (post: Post): DatedCard | null => {
       href,
       title: post.title,
       badgeLabel: POST_TYPE_BADGE_LABELS[post.type],
+      shareKind: 'article' as const,
       meta: [formatRelativePostDate(post.publishedDate), categoryName].filter(Boolean).join(' · '),
       ...(cover?.url ? { coverUrl: cover.url, coverAlt: cover.alt ?? undefined } : {}),
       ...(post.subtitle ? { subtitle: post.subtitle } : {}),
@@ -62,6 +63,7 @@ const toVideoCardData = (video: YouTubeVideo): DatedCard => ({
     href: `https://www.youtube.com/watch?v=${video.id}`,
     title: video.title,
     badgeLabel: 'YouTube',
+    shareKind: 'video' as const,
     meta: [
       formatRelativePostDate(video.publishedAt),
       video.viewCount != null ? `${formatYouTubeViews(video.viewCount)} visualizações` : null,
@@ -80,6 +82,7 @@ const toInstagramCardData = (post: InstagramPost): DatedCard => ({
     href: post.permalink,
     title: post.caption ?? 'Publicação no Instagram',
     badgeLabel: 'Instagram',
+    shareKind: 'instagram' as const,
     meta: formatRelativePostDate(post.timestamp) ?? '',
     coverAspect: 'square',
     ...(post.thumbnailUrl

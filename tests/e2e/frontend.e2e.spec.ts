@@ -1,4 +1,4 @@
-import type { APIRequestContext, Page } from '@playwright/test'
+import type { APIRequestContext, Locator, Page } from '@playwright/test'
 
 import { seedTestUser, testUser } from '../helpers/seedUser'
 import { instagramStubUrlFor, youtubeStubUrlFor } from '../helpers/socialStub'
@@ -1367,6 +1367,158 @@ test.describe('Campaign home content section', () => {
       await expect(section.getByRole('link', { name: /YouTube →/ })).toHaveCount(0)
       await expect(section.getByText('E2e Post do muro')).toHaveCount(0)
       await expect(section.getByRole('link', { name: /Seguir no Instagram/ })).toHaveCount(0)
+
+      await page.goto('about:blank')
+      await expect(page).toHaveURL(/about:blank/)
+    } finally {
+      await setYouTubeStubState(request, 'ok')
+      await setInstagramStubState(request, 'ok')
+      await cleanupS2Fixtures(request, headers)
+    }
+  })
+
+  test('shares every content card on WhatsApp and copies the link (S4)', async ({
+    page,
+    request,
+    context,
+  }) => {
+    await seedTestUser()
+    const headers = await adminHeaders(request)
+    await setYouTubeStubState(request, 'ok')
+    await setInstagramStubState(request, 'ok')
+
+    const shareTagSlug = `e2e-share-${runSuffix}`
+    const shareTag = await createTag(request, headers, `E2e Share ${runSuffix}`, shareTagSlug)
+    const articleTitle = 'E2e Artigo do compartilhar'
+    await createPost(request, headers, {
+      title: articleTitle,
+      slug: `e2e-artigo-compartilhar-${runSuffix}`,
+      type: 'noticia',
+      category: shareTag.id,
+      publishedDate: new Date(Date.now() - 5 * 60_000).toISOString(),
+    })
+    // Both feeds on, no exclusions: the board holds one card of each source
+    // (newest article featured + Instagram/YouTube from the stubs).
+    await updateSocialFeedSettings(request, headers, {
+      enabled: true,
+      youtubeEnabled: true,
+      youtubeApiKey: 'e2e-youtube-api-key',
+      youtubeChannelId: 'UCe2eTestChannel',
+      youtubeMaxItems: 3,
+      instagramEnabled: true,
+      instagramAccessToken: 'e2e-ig-token',
+      instagramUserId: '17841400000000000',
+      instagramMaxItems: 3,
+      excludedItems: [],
+      youtubeFeedSnapshot: null,
+      instagramFeedSnapshot: null,
+    })
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+
+    try {
+      await waitForHomeHTML(request, [articleTitle, 'E2e Vídeo em destaque', 'E2e Post do muro'])
+      await page.setViewportSize({ width: 1280, height: 900 })
+      await gotoHomeFresh(page)
+      const section = page.locator('[data-home-section="contents"]')
+      await expect(section).toBeVisible()
+
+      // Every card of the 1+4 bento (CONTENT_SECTION_LIMIT = 5) carries
+      // exactly one discreet share button.
+      await expect(section.getByRole('button', { name: 'Compartilhar' })).toHaveCount(5)
+      const urlBeforeShare = page.url()
+      const waMessage = async (item: Locator) => {
+        const href = await item.getAttribute('href')
+        expect(href).toBeTruthy()
+        return decodeURIComponent(href!.slice('https://wa.me/?text='.length)).replace(/\+/g, ' ')
+      }
+
+      // Article card (featured): the popover builds the per-source message with
+      // the canonical absolute article link, opened in a new tab with noopener.
+      const articleCard = section.getByRole('link', { name: /E2e Artigo do compartilhar/ })
+      const articleShare = articleCard
+        .locator('xpath=..')
+        .getByRole('button', { name: 'Compartilhar' })
+      await articleShare.click()
+      await expect(page).toHaveURL(urlBeforeShare)
+      const waItem = page.getByRole('link', { name: 'Compartilhar no WhatsApp' })
+      await expect(waItem).toBeVisible()
+      await expect(waItem).toHaveAttribute('target', '_blank')
+      await expect(waItem).toHaveAttribute('rel', 'noopener noreferrer')
+      expect(await waMessage(waItem)).toBe(
+        `Olha isso do Solla: ${articleTitle} — ${baseURL}/noticia/${shareTagSlug}/e2e-artigo-compartilhar-${runSuffix}`,
+      )
+      await page.keyboard.press('Escape')
+      await expect(page.locator('[data-slot="popover-content"]')).toHaveCount(0)
+
+      // Copy link puts the absolute URL in the clipboard and swaps the label.
+      await articleShare.click()
+      await page.getByRole('button', { name: /Copiar link/ }).click()
+      await expect(page.getByRole('button', { name: 'Link copiado' })).toBeVisible()
+      await expect
+        .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+        .toBe(`${baseURL}/noticia/${shareTagSlug}/e2e-artigo-compartilhar-${runSuffix}`)
+      await page.keyboard.press('Escape')
+      await expect(page.locator('[data-slot="popover-content"]')).toHaveCount(0)
+
+      // Outside click also closes the popover.
+      await articleShare.click()
+      await section.getByRole('heading', { name: 'A caminhada, em tempo real' }).click()
+      await expect(page.locator('[data-slot="popover-content"]')).toHaveCount(0)
+
+      // Video card: the platform URL is shared with the video opener.
+      const videoCard = section.getByRole('link', { name: /E2e Vídeo em destaque/ })
+      const videoShare = videoCard.locator('xpath=..').getByRole('button', { name: 'Compartilhar' })
+      await videoShare.click()
+      expect(await waMessage(page.getByRole('link', { name: 'Compartilhar no WhatsApp' }))).toBe(
+        'Olha esse vídeo do Solla: E2e Vídeo em destaque — https://www.youtube.com/watch?v=e2e-video-destaque-1',
+      )
+      await page.keyboard.press('Escape')
+      await expect(page.locator('[data-slot="popover-content"]')).toHaveCount(0)
+
+      // Instagram card: the post opener.
+      const instagramCard = section.getByRole('link', { name: /E2e Post do muro/ })
+      const instagramShare = instagramCard
+        .locator('xpath=..')
+        .getByRole('button', { name: 'Compartilhar' })
+      await instagramShare.click()
+      expect(await waMessage(page.getByRole('link', { name: 'Compartilhar no WhatsApp' }))).toBe(
+        'Olha esse post do Solla: E2e Post do muro — https://www.instagram.com/p/e2e-ig-muro-1/',
+      )
+      await page.keyboard.press('Escape')
+
+      // Mobile: the carousel exposes only the active card's share button, with
+      // a ≥44px touch target around the discreet 28px visual, and the portal
+      // menu stays fully inside the viewport (never clipped by the track).
+      await page.setViewportSize({ width: 390, height: 844 })
+      await gotoHomeFresh(page)
+      const carousel = page.getByRole('region', { name: 'Conteúdos recentes' })
+      await expect(carousel).toBeVisible()
+      // The active (featured) card is the newest item — the article seeded
+      // 5 min ago against the stubs' 20-min-oldest — which pins the identity
+      // of the single exposed share button below.
+      await expect(carousel.getByRole('heading', { name: articleTitle })).toBeVisible()
+      const mobileShare = carousel.getByRole('button', { name: 'Compartilhar' })
+      await expect(mobileShare).toHaveCount(1)
+      await mobileShare.scrollIntoViewIfNeeded()
+      const buttonBox = await mobileShare.boundingBox()
+      expect(buttonBox).not.toBeNull()
+      expect(buttonBox!.width).toBeGreaterThanOrEqual(44)
+      expect(buttonBox!.height).toBeGreaterThanOrEqual(44)
+      const visualBox = await mobileShare.locator('span').first().boundingBox()
+      expect(visualBox).not.toBeNull()
+      expect(Math.abs(visualBox!.width - 28)).toBeLessThanOrEqual(1)
+      expect(Math.abs(visualBox!.height - 28)).toBeLessThanOrEqual(1)
+
+      await mobileShare.click()
+      const mobileWaItem = page.getByRole('link', { name: 'Compartilhar no WhatsApp' })
+      await expect(mobileWaItem).toBeVisible()
+      const mobileWaBox = await mobileWaItem.boundingBox()
+      expect(mobileWaBox).not.toBeNull()
+      expect(mobileWaBox!.x).toBeGreaterThanOrEqual(0)
+      expect(mobileWaBox!.x + mobileWaBox!.width).toBeLessThanOrEqual(390)
+      expect(await waMessage(mobileWaItem)).toBe(
+        `Olha isso do Solla: ${articleTitle} — ${baseURL}/noticia/${shareTagSlug}/e2e-artigo-compartilhar-${runSuffix}`,
+      )
 
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
