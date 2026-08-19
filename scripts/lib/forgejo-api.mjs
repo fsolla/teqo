@@ -8,6 +8,13 @@
  * inside Actions, else `https://git.solla.dev/api/v1`. A browser-ish User-Agent
  * is sent because the instance sits behind Cloudflare.
  *
+ * Retry (OPS67): transient failures retry with exponential backoff — a fetch
+ * that rejects (network-level `fetch failed`, DNS/TCP/reset) retries on ANY
+ * method; a 5xx (502/503/504 — Cloudflare blips) retries on GET only, so the
+ * safety net's long `waitForChecks` poll survives, while write endpoints keep
+ * failing closed instead of risking duplicated side effects. 4xx never
+ * retries. Defaults: 3 retries, base 300 ms ×2, ±20% jitter.
+ *
  * Shapes are normalized to the GitHub-flavored contract the agent scripts and
  * their unit specs already use: `issue.state` ∈ OPEN|CLOSED,
  * `issue.labels = [{ name, color }]`, `createdAt` ISO string.
@@ -16,6 +23,7 @@
 const DEFAULT_BASE_URL = 'https://git.solla.dev/api/v1'
 const DEFAULT_REPOSITORY = 'fsolla/teqo'
 const USER_AGENT = 'teqo-agent-scripts/1.0 (forgejo)'
+const RETRYABLE_STATUSES = new Set([502, 503, 504])
 
 /**
  * @typedef {object} ForgejoApiOptions
@@ -23,12 +31,25 @@ const USER_AGENT = 'teqo-agent-scripts/1.0 (forgejo)'
  * @property {string} [token]
  * @property {string} [repository]
  * @property {(input: string | URL, init?: { method?: string; headers?: Record<string, string>; body?: string }) => Promise<Response>} [fetchImpl]
+ * @property {number} [retries] Additional attempts after the first (total = retries + 1). Default 3.
+ * @property {number} [backoffMs] Base exponential delay. Default 300.
+ * @property {boolean} [jitter] ±20% randomization on each delay. Default true.
+ * @property {(ms: number) => Promise<void>} [sleepImpl] Test seam for the backoff delay.
  */
 
 /**
  * @param {ForgejoApiOptions} [options]
  */
-export const createApi = ({ base, token, repository, fetchImpl } = {}) => {
+export const createApi = ({
+  base,
+  token,
+  repository,
+  fetchImpl,
+  retries = 3,
+  backoffMs = 300,
+  jitter = true,
+  sleepImpl = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+} = {}) => {
   const baseUrl = (
     base ??
     process.env.FORGEJO_API_URL ??
@@ -42,6 +63,22 @@ export const createApi = ({ base, token, repository, fetchImpl } = {}) => {
     DEFAULT_REPOSITORY
   const fetcher = fetchImpl ?? fetch
   const [owner, name] = repo.split('/')
+  if (retries < 0 || backoffMs < 0) {
+    throw new Error(
+      `Retry inválido: retries=${retries}, backoffMs=${backoffMs} — ambos devem ser >= 0`,
+    )
+  }
+  const attemptCount = retries + 1
+
+  const backoffDelay = (attempt) => {
+    const base = backoffMs * 2 ** (attempt - 1)
+    return jitter ? Math.round(base * (0.8 + Math.random() * 0.4)) : base
+  }
+
+  const warnRetry = (path, method, reason, attempt, delay) =>
+    console.warn(
+      `[forgejo-api] ${method} ${path} falhou (tentativa ${attempt}/${attemptCount}): ${reason} — retry em ${delay}ms`,
+    )
 
   const request = async (path, { method = 'GET', body, query } = {}) => {
     const authToken = token ?? process.env.FORGEJO_API_TOKEN ?? process.env.GITHUB_TOKEN
@@ -57,7 +94,8 @@ export const createApi = ({ base, token, repository, fetchImpl } = {}) => {
           .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
           .join('&')
       : ''
-    const response = await fetcher(`${baseUrl}${path}${qs}`, {
+    const url = `${baseUrl}${path}${qs}`
+    const init = {
       method,
       headers: {
         Authorization: `token ${authToken}`,
@@ -65,12 +103,45 @@ export const createApi = ({ base, token, repository, fetchImpl } = {}) => {
         'User-Agent': USER_AGENT,
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-    })
-    const text = await response.text()
-    if (!response.ok) {
-      throw new Error(`Forgejo API ${method} ${path} → ${response.status}: ${text.slice(0, 400)}`)
     }
-    return text ? JSON.parse(text) : null
+    const retryAfter = async (attempt, reason) => {
+      const delay = backoffDelay(attempt)
+      warnRetry(path, method, reason, attempt, delay)
+      await sleepImpl(delay)
+    }
+    for (let attempt = 1; attempt <= attemptCount; attempt += 1) {
+      const isLastAttempt = attempt === attemptCount
+      let response
+      try {
+        response = await fetcher(url, init)
+      } catch (error) {
+        if (isLastAttempt) throw error
+        await retryAfter(attempt, error.message)
+        continue
+      }
+      if (method === 'GET' && !isLastAttempt && RETRYABLE_STATUSES.has(response.status)) {
+        await response.body?.cancel()
+        await retryAfter(attempt, `HTTP ${response.status}`)
+        continue
+      }
+      let text
+      try {
+        text = await response.text()
+      } catch (error) {
+        if (isLastAttempt || method !== 'GET') throw error
+        await retryAfter(attempt, error.message)
+        continue
+      }
+      if (!response.ok) {
+        throw new Error(`Forgejo API ${method} ${path} → ${response.status}: ${text.slice(0, 400)}`)
+      }
+      if (!text) return null
+      try {
+        return JSON.parse(text)
+      } catch {
+        throw new Error(`Forgejo API ${method} ${path}: resposta não-JSON: ${text.slice(0, 80)}`)
+      }
+    }
   }
 
   const normalizeState = (state) => (String(state).toLowerCase() === 'closed' ? 'CLOSED' : 'OPEN')
