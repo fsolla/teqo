@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — Seção de vídeo da história na home de campanha</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-5xl p-8">
+      <p class="text-sm text-zinc-400">
+        Visitante da home pública de campanha (jorgesolla1313). Nova seção com o vídeo de
+        apresentação da história do Dep. Jorge Solla — frame vertical 9:16 (vídeo SOLLA_P2_V1,
+        ~1:40), clique para assistir, controles nativos. Cenas: desktop, mobile e estado de player.
+      </p>
+
+      <!-- ============ CENA: desktop ============ -->
+      <section
+        data-shot="desktop"
+        class="mt-8 overflow-hidden rounded-2xl bg-white p-8 text-zinc-900 shadow-xl"
+      >
+        <div class="flex items-center justify-between gap-12">
+          <div class="max-w-md">
+            <p class="text-xs font-extrabold tracking-[0.14em] text-red-700 uppercase">
+              Nossa história
+            </p>
+            <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-zinc-900">
+              Conheça a trajetória de Jorge Solla
+            </h2>
+            <p class="mt-3 text-sm leading-relaxed text-zinc-500">
+              A história de quem já fez saúde pública na Bahia e no Brasil, em um minuto e meio:
+              da gestão no SUS ao mandato na Câmara.
+            </p>
+            <div class="mt-6 flex items-center gap-3">
+              <a href="#" class="text-sm font-bold text-red-700 underline-offset-4 hover:underline"
+                >Assistir à história</a
+              >
+            </div>
+          </div>
+
+          <!-- frame vertical 9:16 (poster + play) -->
+          <div class="relative w-[300px] shrink-0">
+            <div class="relative aspect-[9/16] overflow-hidden rounded-2xl bg-zinc-300">
+              
+              <div class="absolute right-2 bottom-2 rounded bg-zinc-900/80 px-1.5 py-0.5 text-[11px] font-bold text-white">
+                1:40
+              </div>
+            </div>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div
+                class="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-900 shadow-lg"
+                aria-label="Reproduzir vídeo"
+              >
+                <span class="ml-1 h-0 w-0 border-y-8 border-l-[14px] border-y-transparent border-l-white" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CENA: mobile (~390px) ============ -->
+      <section
+        data-shot="mobile"
+        class="mt-8 w-[390px] overflow-hidden rounded-2xl bg-white p-6 text-zinc-900 shadow-xl"
+      >
+        <p class="text-xs font-extrabold tracking-[0.14em] text-red-700 uppercase">Nossa história</p>
+        <h2 class="mt-2 text-2xl font-extrabold tracking-tight text-zinc-900">
+          Conheça a trajetória de Jorge Solla
+        </h2>
+        <p class="mt-2 text-sm leading-relaxed text-zinc-500">
+          A história de quem já fez saúde pública na Bahia e no Brasil, em um minuto e meio.
+        </p>
+
+        <!-- frame vertical 9:16 full-width -->
+        <div class="relative mt-5">
+          <div class="relative aspect-[9/16] overflow-hidden rounded-2xl bg-zinc-300">
+            
+            <div class="absolute right-2 bottom-2 rounded bg-zinc-900/80 px-1.5 py-0.5 text-[11px] font-bold text-white">
+              1:40
+            </div>
+          </div>
+          <div class="absolute inset-0 flex items-center justify-center">
+            <div
+              class="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 shadow-lg"
+              aria-label="Reproduzir vídeo"
+            >
+              <span class="ml-1 h-0 w-0 border-y-7 border-l-[12px] border-y-transparent border-l-white" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CENA: player (controles nativos visíveis) ============ -->
+      <section
+        data-shot="player"
+        class="mt-8 overflow-hidden rounded-2xl bg-white p-8 text-zinc-900 shadow-xl"
+      >
+        <div class="mx-auto flex max-w-md flex-col items-center">
+          <p class="text-xs font-extrabold tracking-[0.14em] text-red-700 uppercase">
+            Nossa história
+          </p>
+          <h2 class="mt-2 text-center text-2xl font-extrabold tracking-tight text-zinc-900">
+            Conheça a trajetória de Jorge Solla
+          </h2>
+          <div class="relative mt-5 w-[300px]">
+            <div class="relative aspect-[9/16] overflow-hidden rounded-2xl bg-zinc-300">
+              
+            </div>
+            <!-- barra de controles nativa (representação) -->
+            <div class="absolute right-0 bottom-0 left-0 flex items-center gap-2 rounded-b-2xl bg-zinc-900/85 px-3 py-2">
+              <span class="h-3 w-3 rounded bg-white/90" />
+              <span class="h-0.5 flex-1 rounded bg-zinc-600">
+                <span class="block h-0.5 w-1/3 rounded bg-white" />
+              </span>
+              <span class="text-[10px] font-bold text-white">0:31</span>
+              <span class="text-[10px] text-white/60">/ 1:40</span>
+              <span class="h-3 w-3 rounded bg-white/90" />
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
