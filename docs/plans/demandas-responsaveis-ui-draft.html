@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — Demandas: responsáveis explícitos</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-6xl p-8">
+      <p class="text-sm text-zinc-400">
+        Demanda só aparece para candidato/coordenador e para quem está marcado como responsável —
+        nem assessor do município vê fora disso. Cenas: detalhe com seção Responsáveis + editor,
+        formulário de criação com sugestão.
+      </p>
+
+      <!-- Cena 1: detalhe da demanda — visão de coordenador, com responsáveis -->
+      <section data-shot="detalhe" class="mt-6 overflow-hidden rounded-xl border border-zinc-800">
+        <div class="bg-zinc-100 px-8 py-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="rounded bg-zinc-300 px-2 py-0.5 text-xs font-bold text-zinc-800">Material de campanha</span>
+                <span class="rounded bg-zinc-300 px-2 py-0.5 text-xs font-bold text-zinc-800">Em aberto</span>
+              </div>
+              <div class="mt-2 text-lg font-bold text-zinc-900">Cartazes para a caminhada do fim de semana</div>
+              <div class="mt-1 text-sm text-zinc-500">Ilhéus · liderança: Nome da liderança</div>
+            </div>
+          </div>
+
+          <div class="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div class="rounded-lg border border-zinc-200 bg-white p-5">
+              <div class="text-sm font-bold text-zinc-900">Descrição</div>
+              <div class="mt-2 text-sm leading-relaxed text-zinc-600">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+                incididunt ut labore et dolore magna aliqua.
+              </div>
+              <div class="mt-4 flex items-center justify-between border-t border-zinc-100 pt-3">
+                <div class="text-xs text-zinc-500">Custo estimado</div>
+                <div class="text-sm font-bold text-zinc-900">R$ 1.200,00</div>
+              </div>
+              <div class="mt-2 flex items-center justify-between">
+                <div class="text-xs text-zinc-500">Comprovantes</div>
+                <div class="text-sm text-zinc-600">2 anexos</div>
+              </div>
+              <div class="mt-4 flex items-center justify-between border-t border-zinc-100 pt-3">
+                <div class="text-xs text-zinc-500">Visível para</div>
+                <div class="text-sm text-zinc-600">Responsáveis · Candidato · Coordenador</div>
+              </div>
+            </div>
+
+            <div class="rounded-lg border border-zinc-200 bg-white p-5">
+              <div class="flex items-center justify-between">
+                <div class="text-sm font-bold text-zinc-900">Responsáveis pela demanda</div>
+                <div class="text-xs text-zinc-400">Só quem é responsável vê esta demanda</div>
+              </div>
+              <div class="mt-3 flex flex-wrap gap-1.5">
+                <span class="rounded bg-zinc-200 px-2 py-1 text-xs text-zinc-700">Assessora de campo</span>
+                <span class="rounded bg-zinc-200 px-2 py-1 text-xs text-zinc-700">Outro assessor</span>
+                <span class="inline-flex h-6 items-center rounded bg-zinc-100 px-2 text-xs text-zinc-500">+2</span>
+              </div>
+              <div class="mt-3 h-9 w-full rounded-md border border-zinc-300 bg-zinc-50 px-3 text-sm text-zinc-500">Adicionar responsável…</div>
+              <div class="mt-2 text-[11px] text-zinc-500">
+                Criador já entra como responsável automaticamente. Assessores do município aparecem
+                como sugestão, mas só quem for marcado enxerga.
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 rounded-md bg-zinc-100 px-4 py-2 text-xs leading-relaxed text-zinc-600">
+            Assessor do município que não é responsável: a demanda não aparece na lista dele nem abre
+            por URL — mesmo com permissão "Visão Tudo".
+          </div>
+        </div>
+      </section>
+
+      <!-- Cena 2: criação de demanda — campo responsáveis -->
+      <section data-shot="criacao" class="mt-6 overflow-hidden rounded-xl border border-zinc-800">
+        <div class="bg-zinc-100 px-8 py-6">
+          <div class="text-base font-bold text-zinc-900">Nova demanda</div>
+
+          <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div class="space-y-4">
+              <div>
+                <div class="text-xs font-bold text-zinc-700">Título</div>
+                <div class="mt-1 h-9 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-500">Cartazes para a caminhada do fim de semana</div>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-zinc-700">Município</div>
+                <div class="mt-1 flex h-9 w-full items-center justify-between rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-800">
+                  Ilhéus
+                  <span class="text-xs text-zinc-400">▾</span>
+                </div>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-zinc-700">Tipo</div>
+                <div class="mt-1 flex h-9 w-full items-center justify-between rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-800">
+                  Material de campanha
+                  <span class="text-xs text-zinc-400">▾</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-lg border border-zinc-200 bg-white p-4">
+              <div class="text-xs font-bold text-zinc-700">Responsáveis pela demanda</div>
+              <div class="mt-2 flex flex-wrap gap-1.5">
+                <span class="rounded bg-zinc-300 px-2 py-1 text-xs font-bold text-zinc-800">Você (criador)</span>
+                <span class="rounded bg-zinc-200 px-2 py-1 text-xs text-zinc-700">Assessora de campo</span>
+              </div>
+              <div class="mt-3 h-9 w-full rounded-md border border-zinc-300 bg-zinc-50 px-3 text-sm text-zinc-500">Buscar assessor…</div>
+              <div class="mt-2 text-[11px] text-zinc-500">
+                Sugestões: assessores do município. Se ninguém for marcado além de você, só você,
+                candidato e coordenador verão a demanda.
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-5 flex justify-end gap-2">
+            <div class="inline-flex h-9 items-center rounded-lg border border-zinc-300 px-4 text-sm font-bold text-zinc-700">Cancelar</div>
+            <div class="inline-flex h-9 items-center rounded-lg bg-red-600 px-4 text-sm font-extrabold text-white">Criar demanda</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
