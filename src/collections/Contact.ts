@@ -171,7 +171,11 @@ export const Contact: CollectionConfig = {
       type: 'select',
       label: 'Estado',
       options: Object.keys(CitiesByState) as (keyof typeof CitiesByState)[],
-      required: true,
+      // S9 — relaxed so the public campaign capture can store a contact
+      // without a state (optional field in that form). The staff ficha still
+      // requires it via `contactCreateSchema` — precedent `phones` (optional
+      // at the collection, zod-required in the flows).
+      required: false,
     },
     {
       name: 'city',

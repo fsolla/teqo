@@ -179,6 +179,10 @@ body,
   --campaign-band: #ebe9e9;
   --campaign-line: rgb(0 0 0 / 12%);
   --campaign-content-inset: clamp(20px, calc(25.36vw - 79.64px), 180px);
+  /* S9 — the "novidades" capture form sits on the light band, so the field
+     border must be visible against it (the :root default is a white border
+     for the dark WhatsApp page). */
+  --field-border: rgb(0 0 0 / 18%);
 }
 
 /* Campaign home geometry is interpolated between the approved Penpot boards.

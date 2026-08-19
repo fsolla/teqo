@@ -23,10 +23,16 @@ vi.mock('@/components/CampaignContentSection', () => ({
   CampaignContentSection: () => null,
 }))
 
+// The S9 capture form is a client component (radix comboboxes/checkbox) whose
+// interactions are e2e-covered; the unit skeleton only pins the section shell.
+vi.mock('@/components/CampaignNewsletterForm', () => ({
+  CampaignNewsletterCapture: () => null,
+}))
+
 afterEach(cleanup)
 
 describe('Campaign home', () => {
-  it('monta as quatro seções previstas e o rodapé eleitoral', async () => {
+  it('monta as cinco seções previstas e o rodapé eleitoral', async () => {
     render(await HomePage())
 
     expect(screen.getByRole('heading', { level: 1, name: 'MAIS SAÚDE MAIS FUTURO' })).toBeTruthy()
@@ -39,6 +45,7 @@ describe('Campaign home', () => {
         name: /Junto com o trabalhador e do lado de quem mais precisa, sempre/i,
       }),
     ).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /Receba as novidades da campanha/i })).toBeTruthy()
     expect(screen.getByText(/CNPJ: 68\.430\.467\/0001-05/)).toBeTruthy()
   })
 

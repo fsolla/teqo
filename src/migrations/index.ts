@@ -56,6 +56,7 @@ import * as migration_20260811_213648_add_activity_last_mirrored_change_at from 
 import * as migration_20260811_234822_add_state_deputy_ballot_name from './20260811_234822_add_state_deputy_ballot_name';
 import * as migration_20260818_111748_add_social_feed_settings from './20260818_111748_add_social_feed_settings';
 import * as migration_20260818_192948_add_instagram_social_feed_fields from './20260818_192948_add_instagram_social_feed_fields';
+import * as migration_20260819_192605_add_campaign_newsletter_capture from './20260819_192605_add_campaign_newsletter_capture';
 
 export const migrations = [
   {
@@ -346,6 +347,11 @@ export const migrations = [
   {
     up: migration_20260818_192948_add_instagram_social_feed_fields.up,
     down: migration_20260818_192948_add_instagram_social_feed_fields.down,
-    name: '20260818_192948_add_instagram_social_feed_fields'
+    name: '20260818_192948_add_instagram_social_feed_fields',
+  },
+  {
+    up: migration_20260819_192605_add_campaign_newsletter_capture.up,
+    down: migration_20260819_192605_add_campaign_newsletter_capture.down,
+    name: '20260819_192605_add_campaign_newsletter_capture'
   },
 ];
