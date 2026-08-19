@@ -41,7 +41,13 @@ const municipalityDoc = (overrides: Record<string, unknown>) => ({
   ...overrides,
 })
 
-const daysAgo = (days: number): string => new Date(Date.now() - days * DAY_MS).toISOString()
+// Fixture clock anchored once at module load (same pattern as the prioritiesTool
+// spec): per-call Date.now() drifting ≥1 ms between two daysAgo(40) calls made
+// the tie-break pair unequal and flipped the name ordering (OPS62-followup CI
+// flake 2026-08-18). The ordering spec also hoists its tied timestamp so the
+// equality is structural, not just probabilistic.
+const fixtureNowMs = Date.now()
+const daysAgo = (days: number): string => new Date(fixtureNowMs - days * DAY_MS).toISOString()
 
 type ExecutableTool = {
   execute: (args: unknown, options?: unknown) => Promise<unknown>
@@ -135,13 +141,14 @@ describe('getMunicipalitiesWithoutUpdate coverage criterion (B189)', () => {
   })
 
   it('orders never-updated first (by name), then oldest to newest (by name as tie-break)', async () => {
+    const stale40 = daysAgo(40)
     const find = vi
       .fn()
       .mockResolvedValue(
         findResult([
-          municipalityDoc({ id: 1, lastUpdateAt: daysAgo(40), name: 'Beta' }),
+          municipalityDoc({ id: 1, lastUpdateAt: stale40, name: 'Beta' }),
           municipalityDoc({ id: 2, lastUpdateAt: null, name: 'Zulu' }),
-          municipalityDoc({ id: 3, lastUpdateAt: daysAgo(40), name: 'Alpha' }),
+          municipalityDoc({ id: 3, lastUpdateAt: stale40, name: 'Alpha' }),
           municipalityDoc({ id: 4, lastUpdateAt: null, name: 'Mike' }),
           municipalityDoc({ id: 5, lastUpdateAt: daysAgo(32), name: 'Gama' }),
         ]),
