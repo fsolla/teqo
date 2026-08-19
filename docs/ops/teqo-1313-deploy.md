@@ -84,8 +84,10 @@ secrets de integração: `FORGEJO_API_TOKEN` (flips pós-merge) e
    deploy manual de validação.
 
 Rollback do cutover (se o GitHub falhar cedo): religar o runner do Forgejo e
-abrir PRs no Forgejo (os workflows de `.forgejo/workflows/` seguem no repo
-até a Fase 2) — remotes: `git remote set-url origin ssh://git@192.168.15.142:2222/fsolla/teqo.git`.
+abrir PRs no Forgejo a partir do main congelado — os workflows de
+`.forgejo/workflows/` foram removidos na OPS71 Fase 2, mas restauram do git
+history (`git revert` do PR da remoção, ou clone do main congelado do Forgejo)
+— remotes: `git remote set-url origin ssh://git@192.168.15.142:2222/fsolla/teqo.git`.
 
 ## Rollback (do deploy)
 

@@ -4,9 +4,9 @@
  * .github/workflows/agent-pr-ready-automerge.yml with the built-in
  * GITHUB_TOKEN (permissions: contents+pull-requests write).
  *
- * Unlike the Forgejo-era CLI (forgejo-pr-automerge.mjs), there is NO poll
- * loop: `enablePullRequestAutoMerge` is server-side — GitHub only merges when
- * every required check (incl. `CI (PR) / checks`) is green and the PR is
+ * Unlike the Forgejo-era automerger (removed in OPS71 Fase 2), there is NO
+ * poll loop: `enablePullRequestAutoMerge` is server-side — GitHub only merges
+ * when every required check (incl. `CI (PR) / checks`) is green and the PR is
  * mergeable. The OPS64 "never trust the rollup" pin is structural here: a
  * single sequential job posts one honest check-run, and the server enforces
  * it. Draft policy (OPS57) preserved: only `cursor/*` heads are marked

@@ -6,16 +6,16 @@
 
 > **Cheatsheet de operação agentic (humanos)** — o fluxo em 5 linhas:
 >
-> 1. O agente roda `pnpm agent:claim` (ou `pnpm worktree next --issue N`) e pega a próxima Issue `ready` por prioridade (`prio:P0..P3`).
+> 1. O agente roda `pnpm agent:claim` (ou `pnpm worktree next --issue N`) e pega a próxima Issue `ready` por prioridade (`prio:P0..P3`). O **tracker de Issues vive no Forgejo** (`git.solla.dev/fsolla/teqo`); o código/PR/CI vive no **GitHub**.
 > 2. Ele implementa, roda o fast gate (`lint + typecheck + unit`) e `pnpm push -u origin HEAD` — abre a PR para `main` (Ready, `Closes #N`).
-> 3. CI verde → o safety net `agent-pr-ready-automerge.yml` mergea em `main` por rebase; o verificador `ci.yml` do main roda a suíte completa na janela fixa de 30 min.
-> 4. Com mudança de produção → o job `deploy` publica no homeserver (`jorgesolla1313.com.br`, self-hosted) — migrações aplicadas antes do rollout.
-> 5. Secrets humanos (uma vez): `FORGEJO_API_TOKEN` no Forgejo; envs de prod em `~/stack/teqo-1313.env` no homeserver. Branch protection de `main` já aplicada (reaplicar: `pnpm configure:branch-protection`).
+> 3. CI verde (`CI (PR) / checks`) → o safety net `agent-pr-ready-automerge.yml` arma o **auto-merge nativo** (rebase) — o servidor só mergea com o required check verde.
+> 4. Publicar é **manual**: dispatch de `deploy.yml` roda a suíte full (`verify`) e o job `deploy` publica no homeserver (`jorgesolla1313.com.br`, runner self-hosted) — migrações aplicadas antes do rollout. Nada é automático pós-merge.
+> 5. Secrets humanos (uma vez): `FORGEJO_API_TOKEN` no GitHub (flips pós-merge no Forgejo); envs de prod em `~/stack/teqo-1313.env` no homeserver. Branch protection de `main` já aplicada (reaplicar: `pnpm configure:branch-protection`).
 >
 > Comandos: `pnpm agent:claim | agent:register | agent:prioritize | agent:file-miss | worktree next` e `pnpm db:seed:minimal`.
 > Labels: estado `ready|in-progress|blocked|done|in-prod`, `prio:P0..P3`, `kind:*`, `needs:migration|consent`, `requirements-changed`.
-> **Agente faz sozinho:** claim → implementar → PR → main. **Só humano:** envs do homeserver, branch protection, runbook de rollback.
-> Tudo em detalhe: [`docs/AGENT-OPS.md`](docs/AGENT-OPS.md) · CI: `.forgejo/workflows/ci-pr.yml` + `ci.yml`.
+> **Agente faz sozinho:** claim → implementar → PR → main. **Só humano:** deploy (dispatch), envs do homeserver, branch protection, runbook de rollback.
+> Tudo em detalhe: [`docs/AGENT-OPS.md`](docs/AGENT-OPS.md) · CI: `.github/workflows/ci-pr.yml` · Deploy: `.github/workflows/deploy.yml`.
 
 Teqo starts as the official digital platform for **deputado Jorge Solla** and evolves into a **white-label civic engagement platform** for politicians in Brazil.
 

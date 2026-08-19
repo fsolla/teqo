@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Local mirror of `.forgejo/workflows/ci-pr.yml` (serial): phase-1 cheap checks,
+ * Local mirror of `.github/workflows/ci-pr.yml` (serial): phase-1 cheap checks,
  * then phase-2 expensive (int/build). e2e is NOT part of the local mirror
- * (OPS59): it runs once, in CI (PR job `e2e` → `checks`; main `ci.yml` e2e →
- * `checks` → `deploy`). Local optional feedback: `pnpm test:e2e:affected`.
+ * (OPS59): it runs in CI — selected/afetado no PR (`ci-pr.yml` → `checks`)
+ * e full no verify do `deploy.yml`. Local optional feedback: `pnpm test:e2e:affected`.
  * Docs guards (OPS63): the `docs-guards` checks (changelog append-only,
  * aggregate sync, conflict markers) also run here — cheap git diffs, same
  * scripts the CI job runs (the `changelog-rewrite:` escape stays CI-only,
