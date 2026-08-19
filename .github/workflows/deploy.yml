@@ -41,15 +41,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 50
     services:
-      # Services are reached by NAME on the job network (no host publish).
-      # Two isolated services — int and build+e2e — keep e2e from inheriting
-      # int fixture residue.
+      # OPS71 — GitHub hosted: jobs run on the runner VM, so services are
+      # reached at localhost on PUBLISHED host ports (fixed — each run is its
+      # own VM). Two isolated services — int on 5432, build+e2e on 5433 —
+      # keep e2e from inheriting int fixture residue.
       postgres-int:
         image: postgres:17-alpine
         env:
           POSTGRES_USER: teqo
           POSTGRES_PASSWORD: teqo
           POSTGRES_DB: teqo_test
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -61,6 +64,8 @@ jobs:
           POSTGRES_USER: teqo
           POSTGRES_PASSWORD: teqo
           POSTGRES_DB: teqo_test
+        ports:
+          - 5433:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -95,11 +100,11 @@ jobs:
       - name: Prepare database URL (int service)
         run: |
           set -euo pipefail
-          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-int:5432/teqo_test" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test" >> "$GITHUB_ENV"
           # vitest re-loads .env.test over the process env, so the service URL
           # must win through the .env.test.local layer (same mechanism
           # `pnpm worktree next` uses).
-          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-int:5432/teqo_test" > .env.test.local
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test" > .env.test.local
       - name: Migrate (int database)
         run: pnpm migrate
       - name: Seed minimal (int database)
@@ -115,8 +120,8 @@ jobs:
       - name: Prepare database URL (build/e2e service)
         run: |
           set -euo pipefail
-          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-build:5432/teqo_test" >> "$GITHUB_ENV"
-          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-build:5432/teqo_test" > .env.test.local
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" > .env.test.local
       - name: Migrate (build/e2e database)
         run: pnpm migrate
       - name: Seed minimal (build/e2e database)
