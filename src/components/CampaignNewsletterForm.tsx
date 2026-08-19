@@ -52,9 +52,16 @@ const CampaignNewsletterForm = ({ pixelId, onSubmit }: CampaignNewsletterFormPro
       try {
         await submitCampaignNewsletter(input)
         // S10 — exactly one `Lead` per successful capture, never on page load
-        // (petition precedent). `trackMetaLead` no-ops safely without fbq.
+        // (petition precedent). The inner guard keeps a tracking hiccup (e.g.
+        // `crypto.randomUUID` on a non-secure context) from turning an
+        // already-committed capture into the error UI; `trackMetaLead`
+        // no-ops safely without fbq.
         if (pixelId) {
-          trackMetaLead(pixelId, NEWSLETTER_LEAD_CONTENT_NAME, crypto.randomUUID())
+          try {
+            trackMetaLead(pixelId, NEWSLETTER_LEAD_CONTENT_NAME, crypto.randomUUID())
+          } catch {
+            // tracking is invisible to the visitor
+          }
         }
         methods.reset()
         onSubmit()

@@ -1,7 +1,8 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { CAMPAIGN_NEWSLETTER_CONSENT_KEY } from '@/lib/campaignConsentKeys'
-import { seedTestUser, testUser } from '../helpers/seedUser'
+import { adminHeaders } from '../helpers/adminApi'
+import { seedTestUser } from '../helpers/seedUser'
 import { expect, test } from './fixtures/e2eTest'
 
 /**
@@ -21,15 +22,6 @@ test.describe('Campaign home novidades capture', () => {
   const successName = `E2e Novidades ${runSuffix}`
 
   let consentID: number | undefined
-
-  const adminHeaders = async (request: APIRequestContext): Promise<Record<string, string>> => {
-    const login = await request.post(`${baseURL}/api/users/login`, {
-      data: { email: testUser.email, password: testUser.password },
-    })
-    expect(login.ok()).toBeTruthy()
-    const { token } = await login.json()
-    return { cookie: `payload-token=${token}` }
-  }
 
   const createNewsletterConsent = async (
     request: APIRequestContext,
@@ -130,12 +122,12 @@ test.describe('Campaign home novidades capture', () => {
 
   test.beforeAll(async ({ request }) => {
     await seedTestUser()
-    const headers = await adminHeaders(request)
+    const headers = await adminHeaders(request, baseURL)
     await createNewsletterConsent(request, headers)
   })
 
   test.afterAll(async ({ request }) => {
-    const headers = await adminHeaders(request).catch(() => undefined)
+    const headers = await adminHeaders(request, baseURL).catch(() => undefined)
     if (headers) {
       await cleanup(request, headers)
     }
@@ -173,7 +165,7 @@ test.describe('Campaign home novidades capture', () => {
     await expect(flagsLink).toHaveAttribute('href', '#bandeiras')
 
     // The record is visible to the admin with the level choice.
-    const headers = await adminHeaders(request)
+    const headers = await adminHeaders(request, baseURL)
     const contacts = await request.get(
       `${baseURL}/api/contact?where[phones.value][equals]=${successPhone}&limit=1&depth=0`,
       { headers },

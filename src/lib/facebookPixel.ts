@@ -1,5 +1,10 @@
 const FACEBOOK_PIXEL_ID_PATTERN = /^\d{5,20}$/
 
+// Shared admin copy: every surface that takes a Pixel ID must say the same
+// thing — only the numeric ID, never the full snippet (drift would invite XSS).
+export const FACEBOOK_PIXEL_ID_DESCRIPTION =
+  'Cole somente o ID numérico do Events Manager (ex.: 123456789012345), não o snippet HTML completo.'
+
 export function isValidFacebookPixelId(value: string | null | undefined): boolean {
   if (value == null || value === '') return false
   return FACEBOOK_PIXEL_ID_PATTERN.test(value)

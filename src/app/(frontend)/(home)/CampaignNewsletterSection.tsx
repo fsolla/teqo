@@ -9,7 +9,7 @@ import { CampaignNewsletterCapture } from '@/components/CampaignNewsletterForm'
  * S10 — passes the site-level Meta pixel to the form so a successful capture
  * fires exactly one `Lead` (the seam lives in the client form).
  */
-export const CampaignNewsletterSection = ({ pixelId }: { pixelId: string | null }) => (
+export const CampaignNewsletterSection = ({ pixelId }: { pixelId?: string }) => (
   <section
     id="novidades"
     aria-labelledby="novidades-title"
@@ -33,7 +33,7 @@ export const CampaignNewsletterSection = ({ pixelId }: { pixelId: string | null 
         </p>
       </div>
       <div className="mt-8">
-        <CampaignNewsletterCapture pixelId={pixelId ?? undefined} />
+        <CampaignNewsletterCapture pixelId={pixelId} />
       </div>
     </div>
   </section>
