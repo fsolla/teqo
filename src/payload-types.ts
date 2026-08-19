@@ -2278,6 +2278,12 @@ export interface SiteSetting {
         id?: string | null;
       }[]
     | null;
+  tracking?: {
+    /**
+     * Cole somente o ID numérico do Events Manager (ex.: 123456789012345), não o snippet HTML completo.
+     */
+    facebookPixelId?: string | null;
+  };
   _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -2462,6 +2468,11 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         label?: T;
         enabled?: T;
         id?: T;
+      };
+  tracking?:
+    | T
+    | {
+        facebookPixelId?: T;
       };
   _status?: T;
   updatedAt?: T;

@@ -10,13 +10,18 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Field, FieldDescription, FieldError, FieldGroup } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
+import { trackMetaLead } from '@/lib/facebookPixel'
 import { CampaignNewsletterInput, campaignNewsletterSchema } from '@/lib/schemas/campaignNewsletter'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CheckIcon } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { FormProvider, SubmitHandler, useForm, useWatch } from 'react-hook-form'
 
+/** S10 — stable `content_name` for the `Lead` fired on a successful capture. */
+const NEWSLETTER_LEAD_CONTENT_NAME = 'novidades-da-campanha'
+
 interface CampaignNewsletterFormProps {
+  pixelId?: string
   onSubmit: () => void
 }
 
@@ -24,9 +29,9 @@ interface CampaignNewsletterFormProps {
  * S9 — public capture of campaign "novidades" on the home: name + WhatsApp
  * required, email/state/city/comment optional, engagement-level toggle
  * pre-selected ("Quero fazer parte do time"). Success swaps the form for an
- * in-place confirmation (the seam where S10 will fire `Lead`).
+ * in-place confirmation (the seam where S10 fires `Lead`).
  */
-const CampaignNewsletterForm = ({ onSubmit }: CampaignNewsletterFormProps) => {
+const CampaignNewsletterForm = ({ pixelId, onSubmit }: CampaignNewsletterFormProps) => {
   const methods = useForm<CampaignNewsletterInput>({
     resolver: zodResolver(campaignNewsletterSchema),
     defaultValues: {
@@ -46,6 +51,11 @@ const CampaignNewsletterForm = ({ onSubmit }: CampaignNewsletterFormProps) => {
     startTransition(async () => {
       try {
         await submitCampaignNewsletter(input)
+        // S10 — exactly one `Lead` per successful capture, never on page load
+        // (petition precedent). `trackMetaLead` no-ops safely without fbq.
+        if (pixelId) {
+          trackMetaLead(pixelId, NEWSLETTER_LEAD_CONTENT_NAME, crypto.randomUUID())
+        }
         methods.reset()
         onSubmit()
       } catch (error) {
@@ -170,12 +180,12 @@ const CampaignNewsletterSuccess = () => (
 )
 
 /** S9 — wrapper owning the form ↔ success swap on the home section. */
-export const CampaignNewsletterCapture = () => {
+export const CampaignNewsletterCapture = ({ pixelId }: { pixelId?: string }) => {
   const [submitted, setSubmitted] = useState(false)
 
   return submitted ? (
     <CampaignNewsletterSuccess />
   ) : (
-    <CampaignNewsletterForm onSubmit={() => setSubmitted(true)} />
+    <CampaignNewsletterForm pixelId={pixelId} onSubmit={() => setSubmitted(true)} />
   )
 }

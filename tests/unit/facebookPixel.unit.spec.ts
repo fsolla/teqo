@@ -6,6 +6,7 @@ import {
   isValidFacebookPixelId,
   normalizeFacebookPixelId,
   trackMetaLead,
+  validateFacebookPixelId,
 } from '@/lib/facebookPixel'
 
 describe('facebookPixel', () => {
@@ -32,6 +33,24 @@ describe('facebookPixel', () => {
       expect(normalizeFacebookPixelId('')).toBe(null)
       expect(normalizeFacebookPixelId('   ')).toBe(null)
       expect(normalizeFacebookPixelId('abc')).toBe(null)
+    })
+  })
+
+  describe('validateFacebookPixelId', () => {
+    it('accepts empty values (optional field)', () => {
+      expect(validateFacebookPixelId('')).toBe(true)
+      expect(validateFacebookPixelId(null)).toBe(true)
+      expect(validateFacebookPixelId(undefined)).toBe(true)
+    })
+
+    it('accepts numeric IDs between 5 and 20 digits', () => {
+      expect(validateFacebookPixelId('123456789012345')).toBe(true)
+    })
+
+    it('rejects non-numeric and out-of-range values with the admin message', () => {
+      const message = 'Informe somente o ID numérico do Pixel (5 a 20 dígitos), sem HTML ou script.'
+      expect(validateFacebookPixelId('1234')).toBe(message)
+      expect(validateFacebookPixelId('<script>alert(1)</script>')).toBe(message)
     })
   })
 

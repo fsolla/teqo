@@ -57,6 +57,7 @@ import * as migration_20260811_234822_add_state_deputy_ballot_name from './20260
 import * as migration_20260818_111748_add_social_feed_settings from './20260818_111748_add_social_feed_settings';
 import * as migration_20260818_192948_add_instagram_social_feed_fields from './20260818_192948_add_instagram_social_feed_fields';
 import * as migration_20260819_192605_add_campaign_newsletter_capture from './20260819_192605_add_campaign_newsletter_capture';
+import * as migration_20260819_213947_add_site_settings_facebook_pixel_id from './20260819_213947_add_site_settings_facebook_pixel_id';
 
 export const migrations = [
   {
@@ -352,6 +353,11 @@ export const migrations = [
   {
     up: migration_20260819_192605_add_campaign_newsletter_capture.up,
     down: migration_20260819_192605_add_campaign_newsletter_capture.down,
-    name: '20260819_192605_add_campaign_newsletter_capture'
+    name: '20260819_192605_add_campaign_newsletter_capture',
+  },
+  {
+    up: migration_20260819_213947_add_site_settings_facebook_pixel_id.up,
+    down: migration_20260819_213947_add_site_settings_facebook_pixel_id.down,
+    name: '20260819_213947_add_site_settings_facebook_pixel_id'
   },
 ];

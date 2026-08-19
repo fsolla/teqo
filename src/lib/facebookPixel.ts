@@ -12,6 +12,16 @@ export function normalizeFacebookPixelId(value: string | null | undefined): stri
   return isValidFacebookPixelId(trimmed) ? trimmed : null
 }
 
+// Payload field validation shared by every admin surface that takes a Pixel ID
+// (petition + site settings): optional field, digits only when present.
+export function validateFacebookPixelId(value: string | null | undefined): true | string {
+  if (!value) return true
+  if (!normalizeFacebookPixelId(String(value))) {
+    return 'Informe somente o ID numérico do Pixel (5 a 20 dígitos), sem HTML ou script.'
+  }
+  return true
+}
+
 declare global {
   interface Window {
     fbq?: (

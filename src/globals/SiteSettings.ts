@@ -1,3 +1,4 @@
+import { normalizeFacebookPixelId, validateFacebookPixelId } from '@/lib/facebookPixel'
 import { payloadAdminOnly } from '@/utilities/campaignAccess'
 import { revalidateGlobal } from '@/utilities/globals'
 import type { GlobalConfig } from 'payload'
@@ -19,6 +20,14 @@ export const SiteSettings: GlobalConfig = {
     update: payloadAdminOnly,
   },
   hooks: {
+    beforeChange: [
+      ({ data }) => {
+        if (data?.tracking?.facebookPixelId != null) {
+          data.tracking.facebookPixelId = normalizeFacebookPixelId(data.tracking.facebookPixelId)
+        }
+        return data
+      },
+    ],
     afterChange: [revalidate],
   },
   fields: [
@@ -79,6 +88,23 @@ export const SiteSettings: GlobalConfig = {
           name: 'enabled',
           type: 'checkbox',
           label: 'Ativo',
+        },
+      ],
+    },
+    {
+      name: 'tracking',
+      type: 'group',
+      label: 'Rastreamento / Ads',
+      fields: [
+        {
+          name: 'facebookPixelId',
+          type: 'text',
+          label: 'ID do Pixel do Meta (Facebook)',
+          admin: {
+            description:
+              'Cole somente o ID numérico do Events Manager (ex.: 123456789012345), não o snippet HTML completo.',
+          },
+          validate: validateFacebookPixelId,
         },
       ],
     },
