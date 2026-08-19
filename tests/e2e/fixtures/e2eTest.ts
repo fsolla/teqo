@@ -102,6 +102,11 @@ export const test = base.extend<E2EFailureGuardFixtures>({
       page.on('response', onResponse)
       context.on('weberror', onWebError)
 
+      // S8 — the home story-video embed is a YouTube iframe; e2e must stay
+      // hermetic (CI network must never gate a home-page test on the real
+      // player loading — same spirit as the S2/S3 feed stubs).
+      await context.route('https://www.youtube-nocookie.com/**', (route) => route.abort())
+
       await use()
 
       page.off('console', onConsole)
