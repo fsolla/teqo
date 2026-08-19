@@ -840,9 +840,15 @@ test.describe('Campaign home content section', () => {
       // S7 — flat editorial cards: no radius, border or shadow (the white card
       // reads against the band on shape alone), cover edge to edge.
       await expect(firstCard).toHaveCSS('border-radius', '0px')
-      await expect(firstCard).toHaveCSS('border-top-width', '0px')
+      await expect(firstCard).toHaveCSS('border-width', '0px')
       await expect(firstCard).toHaveCSS('box-shadow', 'none')
       await expect(firstCard.locator('.aspect-video')).toHaveCSS('border-radius', '0px')
+      // Edge to edge: the cover spans the full card width (no container padding).
+      const cardBox = await firstCard.boundingBox()
+      const coverBox = await firstCard.locator('.aspect-video').boundingBox()
+      expect(coverBox).not.toBeNull()
+      expect(cardBox).not.toBeNull()
+      expect(Math.abs(coverBox!.width - cardBox!.width)).toBeLessThanOrEqual(1)
 
       await featured.click()
       await expect(page).toHaveURL(new RegExp(`${featuredHref}$`))
