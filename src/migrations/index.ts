@@ -57,6 +57,7 @@ import * as migration_20260811_234822_add_state_deputy_ballot_name from './20260
 import * as migration_20260818_111748_add_social_feed_settings from './20260818_111748_add_social_feed_settings';
 import * as migration_20260818_192948_add_instagram_social_feed_fields from './20260818_192948_add_instagram_social_feed_fields';
 import * as migration_20260819_192605_add_campaign_newsletter_capture from './20260819_192605_add_campaign_newsletter_capture';
+import * as migration_20260819_214755_add_campaign_user_advisor_permission_profile from './20260819_214755_add_campaign_user_advisor_permission_profile';
 import * as migration_20260819_233503_add_campaign_demand_responsibles from './20260819_233503_add_campaign_demand_responsibles';
 import * as migration_20260820_003426_add_instagram_sync_status from './20260820_003426_add_instagram_sync_status';
 
@@ -355,6 +356,11 @@ export const migrations = [
 up: migration_20260819_192605_add_campaign_newsletter_capture.up,
     down: migration_20260819_192605_add_campaign_newsletter_capture.down,
     name: '20260819_192605_add_campaign_newsletter_capture'
+  },
+  {
+    up: migration_20260819_214755_add_campaign_user_advisor_permission_profile.up,
+    down: migration_20260819_214755_add_campaign_user_advisor_permission_profile.down,
+    name: '20260819_214755_add_campaign_user_advisor_permission_profile',
   },
   {
     up: migration_20260819_233503_add_campaign_demand_responsibles.up,

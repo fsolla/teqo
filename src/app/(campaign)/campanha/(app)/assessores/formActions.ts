@@ -5,10 +5,13 @@ import {
   sendAdvisorPasswordReset,
   setAdvisorMunicipalitiesBatch,
   updateAdvisorContactFicha,
+  updateAdvisorPermission,
   updateAdvisorProfile,
 } from '@/app/(campaign)/campanha/actions/advisor'
+import { isAdvisorEditingValue, isAdvisorVisibilityValue } from '@/lib/campaignAdvisorProfile'
 import {
   nullableFormText,
+  optionalFormText,
   repeatedPhoneFormValues,
   repeatedRelationshipFormValues,
   requiredFormBoolean,
@@ -116,10 +119,21 @@ export const createAdvisorFormAction = async (
 ): Promise<CampaignFormActionState & { advisorId?: number }> =>
   runCampaignFormAction({
     execute: async () => {
+      const rawVisibility = optionalFormText(formData, 'visibility')
+      const rawEditing = optionalFormText(formData, 'editing')
+      if (
+        (rawVisibility !== undefined && !isAdvisorVisibilityValue(rawVisibility)) ||
+        (rawEditing !== undefined && !isAdvisorEditingValue(rawEditing))
+      ) {
+        throw new Error(INVALID_FIELD_MESSAGE)
+      }
+
       const created = await createAdvisor({
         name: requiredFormText(formData, 'name'),
         email: requiredFormText(formData, 'email'),
         phone: nullableFormText(formData, 'phone') ?? undefined,
+        visibility: rawVisibility,
+        editing: rawEditing,
       })
 
       const municipalityIds = repeatedRelationshipFormValues(formData, 'municipalityIds')
@@ -135,4 +149,31 @@ export const createAdvisorFormAction = async (
     },
     safeMessages: advisorSafeMessages,
     genericMessage: 'Não foi possível criar o assessor. Verifique os dados e tente novamente.',
+  })
+
+/**
+ * C141 — the advisor permission profile (Visão × Edição), from the list
+ * popover and the detail section.
+ */
+export const updateAdvisorPermissionFormAction = async (
+  _state: CampaignFormActionState,
+  formData: FormData,
+): Promise<CampaignFormActionState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      const rawVisibility = requiredFormText(formData, 'visibility')
+      const rawEditing = requiredFormText(formData, 'editing')
+      if (!isAdvisorVisibilityValue(rawVisibility) || !isAdvisorEditingValue(rawEditing)) {
+        throw new Error(INVALID_FIELD_MESSAGE)
+      }
+
+      await updateAdvisorPermission({
+        id: requiredRelationshipFormValue(formData, 'advisorId'),
+        visibility: rawVisibility,
+        editing: rawEditing,
+      })
+      return { message: 'Permissão atualizada.' }
+    },
+    safeMessages: advisorSafeMessages,
+    genericMessage: 'Não foi possível atualizar a permissão.',
   })

@@ -27,6 +27,8 @@ export const ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE =
   'Apenas o Coordenador Geral ou o Candidato podem remarcar compromisso com deputado presente.'
 export const ACTIVITY_RESCHEDULE_FAILED_MESSAGE =
   'Não foi possível remarcar a atividade. O horário anterior foi mantido.'
+export const ACTIVITY_OUT_OF_SCOPE_MESSAGE =
+  'O município escolhido está fora do seu escopo de edição. Atualize a página e tente novamente.'
 
 /**
  * C14 — tags are free-form labels the mesa invents (comício, imprensa, etc.).

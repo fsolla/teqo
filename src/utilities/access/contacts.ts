@@ -30,7 +30,11 @@ const getAccessibleContactIds = (
         ? {
             and: [{ user: { equals: currentUser.id } }, { supportStatus: { equals: 'engajado' } }],
           }
-        : advisorMunicipalityScopeWhere('municipalities', municipalityIDs)
+        : // C141 — Visão "Tudo" widens the leadership-derived part of the people
+          // list; the supporter-derived part below stays carteira (PII cap).
+          currentUser.role === 'advisor' && currentUser.visibility === 'tudo'
+          ? {}
+          : advisorMunicipalityScopeWhere('municipalities', municipalityIDs)
 
     const find = req.payload.find.bind(req.payload) as unknown as DynamicFind
     const collections = req.payload.collections as Record<string, unknown>
