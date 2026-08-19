@@ -39,18 +39,32 @@ describe('forgejo-api', () => {
   })
 
   it('defaults the base URL to git.solla.dev with the default repo path', async () => {
-    const calls: FetchCall[] = []
-    const api = createApi({
-      token: 'tok',
-      fetchImpl: async (url) => {
-        calls.push({ url: String(url) })
-        return ok([{ number: 1, title: '', body: '', state: 'open', created_at: '', labels: [] }])
-      },
-    })
+    // OPS71: the CI now runs on GitHub Actions, where GITHUB_SERVER_URL is
+    // set (https://github.com) — forgejo-api's env chain would resolve a
+    // different base. Pin the fallback default by isolating the env vars.
+    const savedApi = process.env.FORGEJO_API_URL
+    const savedServer = process.env.GITHUB_SERVER_URL
+    delete process.env.FORGEJO_API_URL
+    delete process.env.GITHUB_SERVER_URL
+    try {
+      const calls: FetchCall[] = []
+      const api = createApi({
+        token: 'tok',
+        fetchImpl: async (url) => {
+          calls.push({ url: String(url) })
+          return ok([{ number: 1, title: '', body: '', state: 'open', created_at: '', labels: [] }])
+        },
+      })
 
-    await api.listIssues()
+      await api.listIssues()
 
-    expect(calls[0].url).toContain('https://git.solla.dev/api/v1/repos/fsolla/teqo/issues?')
+      expect(calls[0].url).toContain('https://git.solla.dev/api/v1/repos/fsolla/teqo/issues?')
+    } finally {
+      if (savedApi) process.env.FORGEJO_API_URL = savedApi
+      else delete process.env.FORGEJO_API_URL
+      if (savedServer) process.env.GITHUB_SERVER_URL = savedServer
+      else delete process.env.GITHUB_SERVER_URL
+    }
   })
 
   it('normalizes state and labels to the gh-flavored contract', async () => {
@@ -100,6 +114,9 @@ describe('forgejo-api', () => {
   it('setLabels removes by id and adds by name', async () => {
     const calls: FetchCall[] = []
     const api = createApi({
+      // OPS71: explicit base — the GitHub Actions CI sets GITHUB_SERVER_URL,
+      // which would change the env-resolved base and break the URL pins.
+      base: 'https://git.solla.dev/api/v1',
       token: 'tok',
       fetchImpl: async (url, init) => {
         calls.push({ url: String(url), method: init?.method, body: init?.body })
@@ -440,6 +457,9 @@ describe('forgejo-api', () => {
     const calls: string[] = []
     let poll = 0
     const api = createApi({
+      // OPS71: explicit base — the GitHub Actions CI sets GITHUB_SERVER_URL,
+      // which would change the env-resolved base and break the URL pins.
+      base: 'https://git.solla.dev/api/v1',
       token: 'tok',
       fetchImpl: async (url, init) => {
         calls.push(`${init?.method ?? 'GET'} ${url}`)
