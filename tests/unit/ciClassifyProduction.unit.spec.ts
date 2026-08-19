@@ -15,6 +15,19 @@ const repoRoot = join(fileURLToPath(new URL('.', import.meta.url)), '../..')
 const cliPath = join(repoRoot, 'scripts/ci-classify-production.mjs')
 const realRules = parseDockerignore(readFileSync(join(repoRoot, '.dockerignore'), 'utf8'))
 
+// OPS71 (fix 2026-08-19): git hooks (husky pre-push) export GIT_DIR/GIT_WORK_TREE
+// — inherited here, they redirect ANY git invocation (scratch repo setup AND
+// the CLI's `git diff`) to the OUTER repo of the worktree where the suite
+// runs, committing into the branch of the cwd worktree (observed: OPS71 and
+// S10 worktrees polluted with the scratch commits). Strip them everywhere.
+const strippedEnv = {
+  ...process.env,
+  GIT_DIR: undefined,
+  GIT_WORK_TREE: undefined,
+  GIT_INDEX_FILE: undefined,
+  GIT_CEILING_DIRECTORIES: undefined,
+}
+
 let fixturesDir: string
 let filesFrom: string
 let gitRepo: string
@@ -24,11 +37,24 @@ beforeAll(() => {
   fixturesDir = mkdtempSync(join(tmpdir(), 'ci-classify-production-'))
   filesFrom = join(fixturesDir, 'changed.txt')
   gitRepo = join(fixturesDir, 'repo')
-  execFileSync('git', ['init', '-q', '-b', 'main', gitRepo])
+  // Hermetic git: every command below targets the scratch repo and ONLY it.
+  // With the env stripped, a stray resolution FAILS the rev-parse assert
+  // below instead of polluting the outer repo.
+  const runGit = (args: string[]) => execFileSync('git', args, { env: strippedEnv })
+  runGit(['init', '-q', '-b', 'main', gitRepo])
+  const topLevel = execFileSync('git', ['-C', gitRepo, 'rev-parse', '--show-toplevel'], {
+    encoding: 'utf8',
+    env: strippedEnv,
+  }).trim()
+  if (topLevel !== gitRepo) {
+    throw new Error(
+      `scratch git repo inesperado: --show-toplevel=${topLevel} (esperado ${gitRepo}) — abortando para não poluir o repo externo`,
+    )
+  }
   writeFileSync(join(gitRepo, '.dockerignore'), 'docs\n')
   writeFileSync(join(gitRepo, 'README.md'), 'a\n')
   const commit = (message: string) =>
-    execFileSync('git', [
+    runGit([
       '-C',
       gitRepo,
       '-c',
@@ -40,24 +66,27 @@ beforeAll(() => {
       '-m',
       message,
     ])
-  execFileSync('git', ['-C', gitRepo, 'add', '-A'])
+  runGit(['-C', gitRepo, 'add', '-A'])
   commit('base')
   const baseSha = execFileSync('git', ['-C', gitRepo, 'rev-parse', 'HEAD'], {
     encoding: 'utf8',
+    env: strippedEnv,
   }).trim()
   execFileSync('mkdir', ['-p', join(gitRepo, 'src'), join(gitRepo, 'docs')])
   writeFileSync(join(gitRepo, 'src', 'a.ts'), 'x\n')
   writeFileSync(join(gitRepo, 'docs', 'x.md'), 'x\n')
-  execFileSync('git', ['-C', gitRepo, 'add', '-A'])
+  runGit(['-C', gitRepo, 'add', '-A'])
   commit('prod change')
   const prodSha = execFileSync('git', ['-C', gitRepo, 'rev-parse', 'HEAD'], {
     encoding: 'utf8',
+    env: strippedEnv,
   }).trim()
   writeFileSync(join(gitRepo, 'docs', 'y.md'), 'x\n')
-  execFileSync('git', ['-C', gitRepo, 'add', '-A'])
+  runGit(['-C', gitRepo, 'add', '-A'])
   commit('docs only')
   const docsSha = execFileSync('git', ['-C', gitRepo, 'rev-parse', 'HEAD'], {
     encoding: 'utf8',
+    env: strippedEnv,
   }).trim()
   fixtureShas = { baseSha, prodSha, docsSha }
 })
@@ -69,7 +98,7 @@ afterAll(() => {
 const fixture = () => fixtureShas
 
 const runCli = (args: string[], options: { cwd?: string } = {}) => {
-  const env = { ...process.env, GITHUB_EVENT_NAME: 'schedule' }
+  const env = { ...strippedEnv, GITHUB_EVENT_NAME: 'schedule' }
   const result = spawnSync('node', [cliPath, ...args], {
     encoding: 'utf8',
     env,
@@ -181,7 +210,7 @@ describe('ci-classify-production CLI (OPS65 gate)', () => {
   })
 
   it('workflow_dispatch always runs the full pipeline', () => {
-    const env = { ...process.env, GITHUB_EVENT_NAME: 'workflow_dispatch' }
+    const env = { ...strippedEnv, GITHUB_EVENT_NAME: 'workflow_dispatch' }
     const result = spawnSync('node', [cliPath, '--files-from', filesFrom], {
       encoding: 'utf8',
       env,
