@@ -46,7 +46,7 @@ test.describe('Frontend', () => {
     )
   })
 
-  test('animates the flags navigation and gives pointer feedback on campaign buttons', async ({
+  test('animates the novidades anchor and gives pointer feedback on campaign buttons', async ({
     page,
   }) => {
     await page.goto('/')
@@ -55,6 +55,7 @@ test.describe('Frontend', () => {
     const secondaryCta = page.locator('[data-cta="secondary"]')
 
     await expect(scrollContainer).toHaveCSS('scroll-behavior', 'smooth')
+    await expect(secondaryCta).toHaveAttribute('href', '#novidades')
     await secondaryCta.hover()
     await expect
       .poll(() => secondaryCta.evaluate((element) => getComputedStyle(element).transform))
@@ -69,8 +70,8 @@ test.describe('Frontend', () => {
     await page.mouse.up()
 
     await secondaryCta.click()
-    await expect(page).toHaveURL(/#bandeiras$/)
-    await expect(page.locator('#bandeiras')).toBeInViewport()
+    await expect(page).toHaveURL(/#novidades$/)
+    await expect(page.locator('#novidades')).toBeInViewport()
   })
 
   test('keeps breathing room between the wrapped hero subtitle and CTAs on iPhone SE', async ({

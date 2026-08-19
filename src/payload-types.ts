@@ -309,34 +309,37 @@ export interface Contact {
       }[]
     | null;
   gender?: ('feminino' | 'masculino' | 'outro' | 'nao_informado') | null;
-  state:
-    | 'AC'
-    | 'AL'
-    | 'AM'
-    | 'AP'
-    | 'BA'
-    | 'CE'
-    | 'DF'
-    | 'ES'
-    | 'GO'
-    | 'MA'
-    | 'MG'
-    | 'MS'
-    | 'MT'
-    | 'PA'
-    | 'PB'
-    | 'PE'
-    | 'PI'
-    | 'PR'
-    | 'RJ'
-    | 'RN'
-    | 'RO'
-    | 'RR'
-    | 'RS'
-    | 'SC'
-    | 'SE'
-    | 'SP'
-    | 'TO';
+  state?:
+    | (
+        | 'AC'
+        | 'AL'
+        | 'AM'
+        | 'AP'
+        | 'BA'
+        | 'CE'
+        | 'DF'
+        | 'ES'
+        | 'GO'
+        | 'MA'
+        | 'MG'
+        | 'MS'
+        | 'MT'
+        | 'PA'
+        | 'PB'
+        | 'PE'
+        | 'PI'
+        | 'PR'
+        | 'RJ'
+        | 'RN'
+        | 'RO'
+        | 'RR'
+        | 'RS'
+        | 'SC'
+        | 'SE'
+        | 'SP'
+        | 'TO'
+      )
+    | null;
   city?: string | null;
   postalCode?: string | null;
   updatedAt: string;
@@ -1079,6 +1082,7 @@ export interface Subscription {
   contact: number | Contact;
   consent: number | Consent;
   comment?: string | null;
+  campaignLevel?: ('time' | 'esporadico') | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2093,6 +2097,7 @@ export interface SubscriptionSelect<T extends boolean = true> {
   contact?: T;
   consent?: T;
   comment?: T;
+  campaignLevel?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -5,9 +5,16 @@ import { FormCombobox, type ComboboxOption } from './FormCombobox'
 
 interface CitySelectProps {
   placeholder?: string
+  /** S9 — the campaign home capture makes the city optional (the select
+   * stays disabled until a state is picked). Defaults to true so the WhatsApp
+   * flow stays as strict as before. */
+  required?: boolean
 }
 
-export const CitySelect = ({ placeholder = 'Selecione uma cidade' }: CitySelectProps) => {
+export const CitySelect = ({
+  placeholder = 'Selecione uma cidade',
+  required = true,
+}: CitySelectProps) => {
   const { control, setValue } = useFormContext()
   const state: keyof typeof CitiesByState | undefined = useWatch({
     control,
@@ -36,7 +43,7 @@ export const CitySelect = ({ placeholder = 'Selecione uma cidade' }: CitySelectP
       placeholder={placeholder}
       minChars={1}
       disabled={!options.length}
-      required
+      required={required}
       emptyMessage="Nenhuma cidade encontrada."
     />
   )
