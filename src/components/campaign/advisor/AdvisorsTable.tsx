@@ -16,6 +16,7 @@ import { toast } from 'sonner'
 
 import { AdvisorDebouncedTextCell } from '@/components/campaign/advisor/AdvisorDebouncedTextCell'
 import { AdvisorPasswordResetButton } from '@/components/campaign/advisor/AdvisorPasswordResetButton'
+import { AdvisorPermissionBadge } from '@/components/campaign/advisor/AdvisorPermissionBadge'
 import {
   CampaignCopyableCell,
   campaignReadCellClassName,
@@ -34,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/Table'
+import type { AdvisorEditing, AdvisorVisibility } from '@/lib/campaignAdvisorProfile'
 import {
   resolveVisibleColumns,
   toCampaignColumnPickerColumns,
@@ -56,6 +58,8 @@ type DraftAdvisor = {
   email: string
   phone: string
   municipalityIds: number[]
+  visibility: AdvisorVisibility
+  editing: AdvisorEditing
 }
 
 // B197+ — single source for the `<th>`s and the picker menu: a column added
@@ -78,6 +82,7 @@ const advisorTableColumns: readonly AdvisorTableColumn[] = [
   { id: 'email', label: 'E-mail', headerClassName: 'w-[24%]' },
   { id: 'phone', label: 'Celular', mandatory: true, headerClassName: 'w-[14%]' },
   { id: 'municipalities', label: 'Municípios', mandatory: true },
+  { id: 'permission', label: 'Permissão', mandatory: true, headerClassName: 'w-48' },
   {
     id: 'actions',
     label: 'Ações',
@@ -111,6 +116,10 @@ type AdvisorsTableProps = {
     state: CampaignFormActionState,
     formData: FormData,
   ) => Promise<CampaignFormActionState>
+  updatePermissionAction: (
+    state: CampaignFormActionState,
+    formData: FormData,
+  ) => Promise<CampaignFormActionState>
   autoCreateDraft?: boolean
 }
 
@@ -119,6 +128,8 @@ const emptyDraft = (): DraftAdvisor => ({
   email: '',
   phone: '',
   municipalityIds: [],
+  visibility: 'carteira',
+  editing: 'carteira',
 })
 
 const displayEmail = (email: string | null): string | null => {
@@ -135,6 +146,7 @@ export const AdvisorsTable = ({
   municipalitiesAction,
   createAction,
   passwordResetAction,
+  updatePermissionAction,
   autoCreateDraft = false,
 }: AdvisorsTableProps) => {
   const router = useRouter()
@@ -192,6 +204,8 @@ export const AdvisorsTable = ({
     const formData = new FormData()
     formData.set('name', draft.name.trim())
     formData.set('email', draft.email.trim())
+    formData.set('visibility', draft.visibility)
+    formData.set('editing', draft.editing)
     if (draft.phone.trim()) formData.set('phone', draft.phone.trim())
     for (const municipalityId of draft.municipalityIds) {
       formData.append('municipalityIds', String(municipalityId))
@@ -333,6 +347,18 @@ export const AdvisorsTable = ({
                         updateErrorMessage="Não foi possível atualizar a carteira."
                       />
                     </TableCell>
+                    <TableCell>
+                      <AdvisorPermissionBadge
+                        visibility={draft.visibility}
+                        editing={draft.editing}
+                        advisorName={draft.name.trim() || 'o novo assessor'}
+                        onDraftChange={(visibility, editing) =>
+                          setDraft((current) =>
+                            current ? { ...current, visibility, editing } : current,
+                          )
+                        }
+                      />
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button
@@ -441,6 +467,15 @@ export const AdvisorsTable = ({
                           commitAction={municipalitiesAction}
                           drawerTitle="Carteira do assessor"
                           updateErrorMessage="Não foi possível atualizar a carteira."
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <AdvisorPermissionBadge
+                          advisorId={row.id}
+                          visibility={row.visibility}
+                          editing={row.editing}
+                          advisorName={row.name}
+                          formAction={updatePermissionAction}
                         />
                       </TableCell>
                       <TableCell className="text-right">

@@ -50,7 +50,10 @@ type CampaignCollection =
 type OwnedIDs = Record<CampaignCollection, Set<number>>
 
 type CampaignUserInput = Partial<
-  Pick<CampaignUser, 'name' | 'role' | 'phone' | 'email' | 'username' | 'password'>
+  Pick<
+    CampaignUser,
+    'name' | 'role' | 'phone' | 'email' | 'username' | 'password' | 'visibility' | 'editing'
+  >
 >
 type AdminUserInput = {
   email?: string

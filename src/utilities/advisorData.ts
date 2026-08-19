@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import type { AdvisorEditing, AdvisorVisibility } from '@/lib/campaignAdvisorProfile'
 import type { Contact } from '@/payload-types'
 
 import { phoneValuesOf } from '@/lib/phone'
@@ -34,6 +35,9 @@ type AdvisorAccountViewModel = {
  */
 export type AdvisorRowViewModel = AdvisorAccountViewModel & {
   municipalityIDs: number[]
+  /** C141 — the advisor permission profile (Visão × Edição). */
+  visibility: AdvisorVisibility
+  editing: AdvisorEditing
 }
 
 /** The detail page renders real names and links, so it keeps the labels. */
@@ -43,6 +47,9 @@ export type AdvisorDetailViewModel = AdvisorAccountViewModel & {
   /** Every number of the ficha, order = priority (C112) — primary first. */
   fichaPhones: string[]
   municipalities: AdvisorMunicipalityViewModel[]
+  /** C141 — the advisor permission profile (Visão × Edição). */
+  visibility: AdvisorVisibility
+  editing: AdvisorEditing
 }
 
 const advisorPageSize = 25
@@ -197,7 +204,7 @@ export const loadAdvisorListPageData = async (
     limit: advisorPageSize,
     page: state.page,
     sort: 'name',
-    select: { name: true, email: true, phone: true, role: true },
+    select: { name: true, email: true, phone: true, role: true, visibility: true, editing: true },
     overrideAccess: true,
   })
 
@@ -211,6 +218,8 @@ export const loadAdvisorListPageData = async (
       email: doc.email ?? null,
       phone: doc.phone ?? null,
       municipalityIDs: municipalityIdsByAdvisor.get(doc.id) ?? [],
+      visibility: doc.visibility ?? 'carteira',
+      editing: doc.editing ?? 'carteira',
     })),
     totalDocs: result.totalDocs,
     totalPages: result.totalPages,
@@ -230,14 +239,24 @@ export const loadAdvisorDetail = async (
     phone?: string | null
     role: string
     contact?: number | Contact | null
+    visibility?: AdvisorVisibility | null
+    editing?: AdvisorEditing | null
   }
   try {
-    // Intentional admin bypass — same rationale as `loadAdvisorListPageData`.
     advisor = await payload.findByID({
       collection: 'campaignUser',
       id: advisorId,
       depth: 0,
-      select: { name: true, email: true, phone: true, role: true, contact: true },
+      select: {
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        contact: true,
+        visibility: true,
+        editing: true,
+      },
+      // Intentional admin bypass — same rationale as `loadAdvisorListPageData`.
       overrideAccess: true,
     })
   } catch {
@@ -271,5 +290,7 @@ export const loadAdvisorDetail = async (
     contactID,
     fichaPhones,
     municipalities: municipalitiesByAdvisor.get(advisor.id) ?? [],
+    visibility: advisor.visibility ?? 'carteira',
+    editing: advisor.editing ?? 'carteira',
   }
 }

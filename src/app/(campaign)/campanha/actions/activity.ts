@@ -4,6 +4,7 @@ import type { Payload } from 'payload'
 
 import {
   ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE,
+  ACTIVITY_OUT_OF_SCOPE_MESSAGE,
   ACTIVITY_RESCHEDULE_FAILED_MESSAGE,
   ACTIVITY_RESULT_REQUIRED_MESSAGE,
   ACTIVITY_RESULT_STAFF_MESSAGE,
@@ -31,7 +32,11 @@ import {
 import { mapActivityOverlayError } from '@/utilities/activityOverlayErrors'
 import { loadActivityAgendaEventsData } from '@/utilities/activityPageData'
 import { activityFormSelect, toActivityFormViewModel } from '@/utilities/activityViewModels'
-import { canCampaignUserRescheduleActivity, isCampaignStaff } from '@/utilities/campaignAccess'
+import {
+  canCampaignUserRescheduleActivity,
+  getWritableMunicipalityIds,
+  isCampaignStaff,
+} from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
@@ -114,6 +119,17 @@ export const createActivityRecord = async (
     payload,
     async ({ req }) => {
       const currentActor = await reloadCampaignActor(payload, actor, req)
+
+      // C141 — `canCreateActivity` is a plain staff boolean (Payload cannot
+      // express a per-município constraint on create), so the individual
+      // create must check the municipality against the WRITE scope itself —
+      // with Visão "Tudo" + Edição "Carteira" the read widens while the
+      // carteira stays the edit boundary (same rule as the giro batch).
+      const writableIDs = await getWritableMunicipalityIds(payload, currentActor, req)
+      if (writableIDs !== null && !writableIDs.includes(raw.municipality)) {
+        throw new Error(ACTIVITY_OUT_OF_SCOPE_MESSAGE)
+      }
+
       const activity = await payload.create({
         collection: 'activity',
         data: hookFilledCreateData<'activity'>(data),
@@ -187,6 +203,15 @@ export const createTourDraftActivitiesRecord = async (
         req,
       })
       if (readable.docs.length !== municipalityIDs.length) {
+        throw new Error(TOUR_OUT_OF_SCOPE_MESSAGE)
+      }
+
+      // C141 — the read above proves the stops EXIST, but the stop set must sit
+      // inside the WRITE scope: with Visão "Tudo" + Edição "Carteira" the read
+      // widens while the carteira stays the edit boundary. `null` = whole
+      // catalog (unrestricted or editing=tudo); `[]` = no writes at all.
+      const writableIDs = await getWritableMunicipalityIds(payload, currentActor, req)
+      if (writableIDs !== null && !municipalityIDs.every((id) => writableIDs.includes(id))) {
         throw new Error(TOUR_OUT_OF_SCOPE_MESSAGE)
       }
 

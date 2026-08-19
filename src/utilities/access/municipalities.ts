@@ -5,12 +5,14 @@
 import type { Access, FieldAccess, Payload, PayloadRequest } from 'payload'
 
 import { relationshipId } from '@/lib/relationship'
+import type { CampaignUser } from '@/payload-types'
 import type {
   CampaignActor,
   CampaignTransactionRequest,
   DynamicFind,
 } from '@/utilities/access/shared'
 import {
+  advisorEditingAccess,
   getFreshCampaignUser,
   isCampaignLeader,
   isCampaignUnrestricted,
@@ -158,6 +160,32 @@ export const getAccessibleMunicipalityIds = (
     return [...new Set(ids)]
   })
 
+/**
+ * C141 — municipality IDs an advisor may WRITE under the Edição axis: `null`
+ * (whole catalog) for unrestricted staff and `editing === 'tudo'`, the carteira
+ * ids for `editing === 'carteira'`, `[]` for `somente_leitura`. Takes the FRESH
+ * user (callers inside transactions already reloaded it) so it works with only
+ * a `{ transactionID }` request, mirroring `getAdvisorMunicipalityIds`. The
+ * tour (giro) batch check uses this because `canCreateActivity` is a plain
+ * staff boolean and cannot express a per-município constraint on create.
+ * Deliberately distinct from `getAccessibleMunicipalityIds` (which stays the
+ * carteira scope): the latter feeds PII surfaces — supporters, account phones,
+ * feeds — that the gate caps on the carteira on BOTH profile axes.
+ */
+export const getWritableMunicipalityIds = async (
+  payload: Pick<Payload, 'find'>,
+  currentUser: CampaignUser,
+  req?: CampaignTransactionRequest,
+): Promise<AccessibleMunicipalityIDs> => {
+  if (isCampaignUnrestricted(currentUser)) return null
+
+  const editingAccess = advisorEditingAccess(currentUser)
+  if (editingAccess === 'none') return []
+  if (editingAccess === 'tudo') return null
+
+  return getAdvisorMunicipalityIds(payload, currentUser.id, req)
+}
+
 /** Municipalities are seeded by migration; nobody creates or deletes them in the app. */
 export const canCreateMunicipality: Access = ({ req }) => isPayloadAdmin(req.user)
 
@@ -168,6 +196,9 @@ export const canReadMunicipality: Access = async ({ req }) => {
   // Editors (and any non-campaign actor) must not see Municípios in /admin.
   if (!currentUser) return false
   if (isCampaignLeader(currentUser)) return false
+  // C141 — Visão "Tudo": the advisor sees the whole catalog (panorama,
+  // cobertura); supporters, demands and feeds keep their own narrower gates.
+  if (currentUser.role === 'advisor' && currentUser.visibility === 'tudo') return true
 
   const ids = await getAccessibleMunicipalityIds(req, currentUser)
   if (ids === null) return true
@@ -185,7 +216,10 @@ export const canUpdateMunicipality: Access = async ({ req }) => {
   const currentUser = await getFreshCampaignUser(req)
   if (!currentUser) return false
   if (isCampaignUnrestricted(currentUser)) return true
-  if (currentUser.role !== 'advisor') return false
+
+  const editingAccess = advisorEditingAccess(currentUser)
+  if (editingAccess === 'none') return false
+  if (editingAccess === 'tudo') return true
 
   return {
     advisors: {

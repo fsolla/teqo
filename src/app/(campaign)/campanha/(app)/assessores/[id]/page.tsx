@@ -6,6 +6,7 @@ import { getPayload } from 'payload'
 
 import { AdvisorDebouncedTextCell } from '@/components/campaign/advisor/AdvisorDebouncedTextCell'
 import { AdvisorPasswordResetButton } from '@/components/campaign/advisor/AdvisorPasswordResetButton'
+import { AdvisorPermissionEditor } from '@/components/campaign/advisor/AdvisorPermissionEditor'
 import { PhonesFieldEditor } from '@/components/campaign/shared/PhonesFieldEditor'
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
@@ -18,6 +19,7 @@ import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   sendAdvisorPasswordResetFormAction,
   updateAdvisorContactFormAction,
+  updateAdvisorPermissionFormAction,
   updateAdvisorProfileFormAction,
 } from '../formActions'
 
@@ -87,6 +89,27 @@ export default async function AdvisorDetailPage({ params }: AdvisorDetailPagePro
             formAction={updateAdvisorProfileFormAction}
           />
         </div>
+      </section>
+
+      <section
+        aria-labelledby="advisor-permission-title"
+        className="flex flex-col gap-3 rounded-xl border p-4"
+      >
+        <div className="flex items-center gap-2">
+          <h2 id="advisor-permission-title" className="text-base font-medium">
+            Permissão da conta
+          </h2>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          O que este assessor vê e o que pode editar nas telas do /campanha.
+        </p>
+        <AdvisorPermissionEditor
+          advisorId={advisor.id}
+          visibility={advisor.visibility}
+          editing={advisor.editing}
+          formAction={updateAdvisorPermissionFormAction}
+          showHeading={false}
+        />
       </section>
 
       <section

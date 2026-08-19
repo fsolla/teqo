@@ -273,6 +273,14 @@ export interface CampaignUser {
   name: string;
   avatar?: (number | null) | Media;
   role: 'coordinator' | 'advisor' | 'candidate' | 'leader';
+  /**
+   * O que o assessor enxerga no /campanha.
+   */
+  visibility?: ('carteira' | 'tudo') | null;
+  /**
+   * O que o assessor pode editar no /campanha.
+   */
+  editing?: ('carteira' | 'tudo' | 'somente_leitura') | null;
   phone?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1538,6 +1546,8 @@ export interface CampaignUserSelect<T extends boolean = true> {
   name?: T;
   avatar?: T;
   role?: T;
+  visibility?: T;
+  editing?: T;
   phone?: T;
   updatedAt?: T;
   createdAt?: T;

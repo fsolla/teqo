@@ -6,6 +6,7 @@
  */
 
 export {
+  advisorEditingAccess,
   canManagePublishedContent,
   eligibleCampaignStaffWhere,
   hasPayloadPanelAccess,
@@ -43,6 +44,7 @@ export {
   getAccessibleMunicipalityIds,
   getAdvisorMunicipalityIds,
   getEngagedLeaderMunicipalityIds,
+  getWritableMunicipalityIds,
 } from '@/utilities/access/municipalities'
 
 export { canManageContacts, canReadContacts } from '@/utilities/access/contacts'
