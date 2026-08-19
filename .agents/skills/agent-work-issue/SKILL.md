@@ -35,7 +35,7 @@ Conduz **uma** Issue já claimada do plano de implementação ao merge em `main`
 - [ ] 3. Plan mode → plano de implementação (`*-impl.md`)
 - [ ] 4. Executar o impl plan (schema/server → UI → gates)
 - [ ] 5. /simplify → fixes; capture-review-debts (modo autônomo)
-- [ ] 6. PR Ready `--base main` + auto-merge + checks --required
+- [ ] 6. PR Ready `--base main` (GitHub) + auto-merge nativo — `pnpm push -u origin HEAD` → `node scripts/github-pr.mjs` (ou `ManagePullRequest` `draft: false` no Cloud)
 ```
 
 ## Passo 0 — Prep
@@ -84,8 +84,9 @@ O spawn do pool já fixou o modelo (`model:` da Issue — ver `model-selection`)
   (Issues novas com `depends: [<id-pai>]` se necessário); score ≤3 /
   cheap_polish / defer_trigger → defer com gatilho no `*-impl.md` ou descarte —
   **não** polua a fila.
-- **Cloud:** PR via `ManagePullRequest` com `draft: false`; Prep Cloud no
-  Passo 0.
+- **Cloud:** PR via `ManagePullRequest` com `draft: false` no **GitHub**
+  (repo/PR agora no GitHub; o tracker de Issues segue no Forgejo — OPS71);
+  Prep Cloud no Passo 0.
 
 ## Resumo final
 

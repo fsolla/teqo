@@ -2,8 +2,12 @@
  * Plain-Node CLI (no pnpm) — on merge to main, flip Issues cited as
  * `Closes #N` / `Fixes #N` in the PR body to `done` + `in-prod` and comment.
  * Replacement for the `gh issue edit/comment` loop of issue-done-on-main-merge.
- * The PR body comes from the API (Forgejo's PR webhook payload is not relied
- * on), so the workflow only needs the PR number.
+ *
+ * OPS71: the PR now lives on GitHub. The workflow passes the PR body via the
+ * `PR_BODY` env (from the GitHub event payload) and the script flips Issues
+ * on the Forgejo tracker by API — no Forgejo PR read when PR_BODY is present.
+ * Without PR_BODY the script falls back to reading the PR from the Forgejo
+ * API (the Forgejo-era workflows stay alive until the OPS71 Fase 2 removal).
  *
  * OPS61: a failed flip exits 1 — the flip is the whole purpose of this
  * workflow, and the 403 era proved that a swallowed error ends the job
@@ -11,6 +15,7 @@
  * (the loop does not abort), but the job goes red so the breakage is visible.
  *
  *   node scripts/forgejo-issue-transition.mjs --pr <N>
+ *   PR_BODY='Closes #97' node scripts/forgejo-issue-transition.mjs --pr <N>
  */
 
 import { createApi } from './lib/forgejo-api.mjs'
@@ -37,7 +42,11 @@ if (!Number.isInteger(prNumber) || prNumber <= 0) {
 }
 
 const api = createApi({})
-const pr = await api.getPullRequest(prNumber)
+const bodyFromEnv = process.env.PR_BODY
+const pr =
+  typeof bodyFromEnv === 'string'
+    ? { merged: true, body: bodyFromEnv }
+    : await api.getPullRequest(prNumber)
 if (!pr) {
   console.error(`[forgejo-issue-transition] PR #${prNumber} não encontrada`)
   process.exit(1)
@@ -62,7 +71,7 @@ for (const number of numbers) {
     await api.setLabels(number, { add: ['done', 'in-prod'], remove: ['in-progress'] })
     await api.addComment(
       number,
-      `Merged em main via PR #${prNumber} — \`done\` + \`in-prod\`. Deploy de produção segue o verificador \`ci.yml\` (gated).`,
+      `Merged em main via PR #${prNumber} — \`done\` + \`in-prod\`. Deploy de produção é manual (workflow_dispatch no GitHub Actions) — ver docs/AGENT-OPS.md.`,
     )
     console.log(`[forgejo-issue-transition] #${number}: done + in-prod`)
   } catch (error) {

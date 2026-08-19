@@ -2,8 +2,11 @@
 #
 # Deploy teqo-1313 to the homeserver (OPS53).
 #
-# Runs ON the homeserver, piped by the CI deploy job:
-#   ssh homeserver "bash -s -- <commit-sha>" < scripts/deploy-homeserver.sh
+# OPS71: runs ON the homeserver via the GitHub self-hosted runner (deploy job
+# of .github/workflows/deploy.yml):
+#   bash scripts/deploy-homeserver.sh <commit-sha>
+# (The Forgejo-era invocation `ssh homeserver "bash -s -- <sha>" < script`
+# is gone — no SSH hop, no workstation involvement.)
 #
 # Flow: HEAD guard (only the current main HEAD deploys) -> flock
 # serialization -> workspace fetch at <sha> -> docker login (local registry)
@@ -17,14 +20,16 @@
 # the running site untouched and the job red.
 #
 # Environment defaults assume the homeserver layout: stack under
-# $HOME/stack, repo cloned from the local Forgejo. Secrets are sourced from
-# the chmod-600 env files and never echoed (no `set -x`, passwords only via
-# --password-stdin / build secrets).
+# $HOME/stack, repo cloned from github.com/fsolla/teqo (public — no
+# credentials; the pre-OPS71 clone pointed at the local Forgejo and is
+# re-pointed idempotently below). Secrets are sourced from the chmod-600 env
+# files and never echoed (no `set -x`, passwords only via --password-stdin /
+# build secrets).
 
 set -euo pipefail
 
 SHA="${1:?usage: deploy-homeserver.sh <commit-sha>}"
-TEQO_REPO_URL="${TEQO_REPO_URL:-http://localhost:3000/fsolla/teqo.git}"
+TEQO_REPO_URL="${TEQO_REPO_URL:-https://github.com/fsolla/teqo.git}"
 STACK_DIR="${STACK_DIR:-$HOME/stack}"
 WORKSPACE_DIR="${WORKSPACE_DIR:-$HOME/teqo-deploy}"
 DEPLOY_LOCK="${DEPLOY_LOCK:-/tmp/teqo-1313-deploy.lock}"
@@ -88,6 +93,14 @@ if [ ! -d "$WORKSPACE_DIR/.git" ]; then
   say "cloning $TEQO_REPO_URL into $WORKSPACE_DIR"
   git clone "$TEQO_REPO_URL" "$WORKSPACE_DIR"
 else
+  # OPS71: the pre-cutover clone pointed at the local Forgejo — re-point
+  # idempotently so the HEAD guard and the fetch compare against the repo
+  # that actually received the merge.
+  current_url="$(git -C "$WORKSPACE_DIR" remote get-url origin 2>/dev/null || true)"
+  if [ -n "$current_url" ] && [ "$current_url" != "$TEQO_REPO_URL" ]; then
+    say "updating workspace origin: $current_url → $TEQO_REPO_URL"
+    git -C "$WORKSPACE_DIR" remote set-url origin "$TEQO_REPO_URL"
+  fi
   git -C "$WORKSPACE_DIR" fetch origin main
 fi
 git -C "$WORKSPACE_DIR" checkout --detach "$SHA" || fatal "checkout of $SHA failed"

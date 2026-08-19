@@ -144,7 +144,7 @@ Para cada lote com destino **registrar** ou **absorver**:
 
 Não implemente as fases aqui. Execução é via `work-issue` / `agent-work-issue`, só se o usuário (ou o pipeline autônomo) seguir.
 
-**Próximo no fluxo de entrega:** após a triage (confirmada ou modo autônomo), o fechamento segue o Passo 6 de `agent-work-issue` / `work-issue` (`pnpm push` → PR `--base main` com `Closes #N` → auto-merge → CI).
+**Próximo no fluxo de entrega:** após a triage (confirmada ou modo autônomo), o fechamento segue o Passo 6 de `agent-work-issue` / `work-issue` (`pnpm push` → PR no GitHub `--base main` com `Closes #N` → auto-merge nativo → CI).
 
 ## Modo autônomo (`work-issue` pós-plano / `agent-work-issue` / pool)
 
