@@ -809,8 +809,10 @@ test.describe('Campaign home content section', () => {
         'a[href^="/artigo/"], a[href^="/noticia/"], a[href^="/campanha/"], a[href^="/evento/"]',
       )
       await expect(bentoCards.filter({ visible: true })).toHaveCount(5)
-      for (const badge of ['Artigo', 'Notícia', 'Campanha', 'Evento']) {
-        await expect(section.getByText(badge, { exact: true }).first()).toBeVisible()
+      // S7 — cards are badge-free: no type chip (site or external source)
+      // anywhere in the section.
+      for (const badge of ['Artigo', 'Notícia', 'Campanha', 'Evento', 'YouTube', 'Instagram']) {
+        await expect(section.getByText(badge, { exact: true })).toHaveCount(0)
       }
       await expect(section.getByText('E2e Artigo em destaque').first()).toBeVisible()
       await expect(section.getByText('E2e Conteúdo oculto')).toHaveCount(0)
@@ -834,6 +836,13 @@ test.describe('Campaign home content section', () => {
       await expect(section).toHaveCSS('border-top-width', '1px')
       await expect(section).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0.12)')
       await expect(firstCard).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+
+      // S7 — flat editorial cards: no radius, border or shadow (the white card
+      // reads against the band on shape alone), cover edge to edge.
+      await expect(firstCard).toHaveCSS('border-radius', '0px')
+      await expect(firstCard).toHaveCSS('border-top-width', '0px')
+      await expect(firstCard).toHaveCSS('box-shadow', 'none')
+      await expect(firstCard.locator('.aspect-video')).toHaveCSS('border-radius', '0px')
 
       await featured.click()
       await expect(page).toHaveURL(new RegExp(`${featuredHref}$`))
@@ -949,7 +958,8 @@ test.describe('Campaign home content section', () => {
       await expect(
         section.getByText('há 30 minutos · 12,4 mil visualizações').first(),
       ).toBeVisible()
-      await expect(section.getByText('YouTube', { exact: true }).first()).toBeVisible()
+      // S7 — no external-source chip on YouTube cards anymore.
+      await expect(section.getByText('YouTube', { exact: true })).toHaveCount(0)
       await expect(section.getByText('E2e Vídeo excluído')).toHaveCount(0)
 
       await expect(section.getByRole('link', { name: /E2e Artigo no mix/ }).first()).toBeVisible()
@@ -1150,7 +1160,8 @@ test.describe('Campaign home content section', () => {
       await expect(featured).toHaveAttribute('href', 'https://www.instagram.com/p/e2e-ig-muro-1/')
       await expect(featured).toHaveAttribute('target', '_blank')
       await expect(featured).toHaveAttribute('rel', 'noopener noreferrer')
-      await expect(section.getByText('Instagram', { exact: true }).first()).toBeVisible()
+      // S7 — no external-source chip on Instagram cards anymore.
+      await expect(section.getByText('Instagram', { exact: true })).toHaveCount(0)
       await expect(section.getByText('há 20 minutos').first()).toBeVisible()
       await expect(section.getByText('E2e Post de grade')).toHaveCount(0)
 

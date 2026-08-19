@@ -17,14 +17,6 @@ export const POST_TYPE_LABELS: Record<PostType, string> = {
   evento: 'Eventos',
 }
 
-/** Singular labels for per-card badges (e.g. the campaign home content bento). */
-export const POST_TYPE_BADGE_LABELS: Record<PostType, string> = {
-  noticia: 'Notícia',
-  campanha: 'Campanha',
-  artigo: 'Artigo',
-  evento: 'Evento',
-}
-
 export const isPostType = (value: string): value is PostType =>
   (POST_TYPES as readonly string[]).includes(value)
 

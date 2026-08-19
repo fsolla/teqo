@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { formatRelativePostDate, POST_TYPE_BADGE_LABELS } from '@/utilities/posts'
+import { formatRelativePostDate } from '@/utilities/posts'
 
 describe('formatRelativePostDate', () => {
   afterEach(() => {
@@ -38,16 +38,5 @@ describe('formatRelativePostDate', () => {
     expect(formatRelativePostDate('2026-08-16T12:00:00Z')).toBe('há 1 dia')
     expect(formatRelativePostDate('2026-08-15T12:00:00Z')).toBe('15 de agosto de 2026')
     expect(formatRelativePostDate('2026-07-17T12:00:00Z')).toBe('17 de julho de 2026')
-  })
-})
-
-describe('POST_TYPE_BADGE_LABELS', () => {
-  it('spells the four types in the singular for card badges', () => {
-    expect(POST_TYPE_BADGE_LABELS).toEqual({
-      noticia: 'Notícia',
-      campanha: 'Campanha',
-      artigo: 'Artigo',
-      evento: 'Evento',
-    })
   })
 })
