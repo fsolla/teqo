@@ -25,10 +25,12 @@
 # a fork PR would burn hosted minutes running arbitrary code. Same guard class
 # as the RCE guard on the post-merge workflows.
 #
-# Postgres services live on the job network and are reached by NAME
-# (postgres-int / postgres-build on 5432) — no host publish, so concurrent
-# runs never collide on host ports. Two isolated services keep e2e from
-# inheriting int fixture residue.
+# Postgres services (OPS71 — GitHub hosted): jobs run directly on the runner
+# VM (NOT inside the job-container network of the Forgejo era), so services
+# are reached at localhost on PUBLISHED host ports. Each hosted run is its own
+# VM, so fixed ports never collide across runs. Two isolated services — int
+# on 5432 and build+e2e on 5433 — keep e2e from inheriting int fixture
+# residue.
 name: CI (PR)
 
 on:
@@ -52,16 +54,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 50
     services:
-      # Services are reached by NAME on the job network (no host publish):
-      # concurrent runs never collide on host ports, which the single
-      # long-lived job would hold for the whole run. Two isolated services —
-      # int and build+e2e — keep e2e from inheriting int fixture residue.
       postgres-int:
         image: postgres:17-alpine
         env:
           POSTGRES_USER: teqo
           POSTGRES_PASSWORD: teqo
           POSTGRES_DB: teqo_test
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -73,6 +73,8 @@ jobs:
           POSTGRES_USER: teqo
           POSTGRES_PASSWORD: teqo
           POSTGRES_DB: teqo_test
+        ports:
+          - 5433:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -147,16 +149,11 @@ jobs:
       - name: Prepare database URL (int service)
         run: |
           set -euo pipefail
-          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-int:5432/teqo_test" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test" >> "$GITHUB_ENV"
           # vitest re-loads .env.test over the process env, so the service URL
           # must win through the .env.test.local layer (same mechanism
-          # `pnpm worktree next` uses). OPS50.
-          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-int:5432/teqo_test" > .env.test.local
-      - name: Debug service DNS (temporary diagnostic)
-        run: |
-          getent hosts postgres-int || echo "getent postgres-int: unresolved"
-          getent hosts postgres-build || echo "getent postgres-build: unresolved"
-          node -e "require('node:dns').lookup('postgres-int', (e, a) => console.log('node lookup postgres-int:', e ? e.code : a))"
+          # `pnpm worktree next` uses).
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test" > .env.test.local
       - name: Migrate (int database)
         run: pnpm migrate
       - name: Seed minimal (int database)
@@ -181,8 +178,8 @@ jobs:
         if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
         run: |
           set -euo pipefail
-          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-build:5432/teqo_test" >> "$GITHUB_ENV"
-          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-build:5432/teqo_test" > .env.test.local
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" > .env.test.local
       - name: Migrate (build/e2e database)
         if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
         run: pnpm migrate
