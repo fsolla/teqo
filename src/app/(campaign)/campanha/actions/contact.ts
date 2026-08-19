@@ -15,13 +15,13 @@ import {
   type ContactFullUpdateInput,
 } from '@/lib/schemas/contact'
 import type { CampaignUser, Contact } from '@/payload-types'
-import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
 import { assertContactNameAvailable } from '@/utilities/contacts/contactNameInvariant'
 import {
   withPayloadTransaction,
   type PayloadTransactionRequest,
 } from '@/utilities/payloadTransaction'
+import { assertPersonContactWritable } from '@/utilities/person/personContactWriteScope'
 import type { Payload } from 'payload'
 
 /**
@@ -33,25 +33,25 @@ import type { Payload } from 'payload'
  * the gate, never standalone.
  */
 
+/**
+ * C141 — the contacts-page cell write gate: the ficha must sit in the actor's
+ * WRITE scope (see `assertPersonContactWritable`). Before C141 this asserted
+ * "you edit what you see" via the READ access, which Visão "Tudo" would have
+ * widened into a statewide PII write for a carteira-editing advisor.
+ */
 const assertContactRowEditable = async (
   payload: Payload,
   actor: CampaignUser,
   contactID: number,
   req: PayloadTransactionRequest,
 ): Promise<void> => {
-  if (isCampaignUnrestricted(actor)) return
-
-  const visible = await payload.find({
-    collection: 'contact',
-    where: { id: { equals: contactID } },
-    depth: 0,
-    limit: 1,
-    pagination: false,
-    user: actor,
-    overrideAccess: false,
+  await assertPersonContactWritable({
+    payload,
+    actor,
+    contactID,
     req,
+    errorMessage: CONTACT_CELL_NOT_IN_SCOPE_MESSAGE,
   })
-  if (visible.docs.length === 0) throw new Error(CONTACT_CELL_NOT_IN_SCOPE_MESSAGE)
 }
 
 const createContactRecord = async (

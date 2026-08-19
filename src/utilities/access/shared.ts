@@ -198,16 +198,58 @@ export const resolveActorScopedRead = async (
 }
 
 /**
+ * C141 — same scoped-read prologue as `resolveActorScopedRead`, but the
+ * advisor's configured Visão profile widens the scope: `tudo` → the whole
+ * catalog. Only NON-sensitive collections use this variant — demands (C143
+ * owns the rule) and supporters (PII cap) keep the carteira-only prologue, so
+ * Visão "Tudo" can never open them.
+ */
+export const resolveProfileScopedRead = async (
+  req: PayloadRequest,
+  scopeField: 'municipality' | 'municipalities',
+  loadAccessibleIds: (
+    req: PayloadRequest,
+    user: CampaignActor,
+  ) => Promise<readonly number[] | null>,
+): Promise<boolean | Where> => {
+  if (isPayloadAdmin(req.user)) return true
+
+  const currentUser = await getFreshCampaignUser(req)
+  if (isCampaignLeader(currentUser)) return false
+  if (isCampaignUnrestricted(currentUser)) return true
+  if (!currentUser || currentUser.role !== 'advisor') return false
+  if (currentUser.visibility === 'tudo') return true
+
+  return advisorMunicipalityScopeWhere(scopeField, await loadAccessibleIds(req, currentUser))
+}
+
+/**
+ * C141 — the advisor's Edição axis as a write-scope decision. `somente_leitura`
+ * → 'none' (no writes anywhere), `tudo` → 'tudo' (writes across the visible
+ * catalog, minus coordination fields), `carteira` → today's portfolio scope.
+ * Callers resolve admin/unrestricted first and keep their own where shape for
+ * the carteira branch; non-advisor actors resolve 'none' here and are handled
+ * by their own branches.
+ */
+export const advisorEditingAccess = (user: CampaignActor): 'none' | 'carteira' | 'tudo' => {
+  if (!isCampaignUser(user) || user.role !== 'advisor') return 'none'
+  if (user.editing === 'somente_leitura') return 'none'
+  if (user.editing === 'tudo') return 'tudo'
+  return 'carteira'
+}
+
+/**
  * The memoized "accessible ids" engine the three scope resolvers share
  * (municipalities, leaderships, contacts). Owns the fresh-user one-liner, the
  * non-campaign → `[]` and unrestricted → `null` conventions, and the per-request
- * memo key; `compute` runs the domain-specific query.
+ * memo key; `compute` runs the domain-specific query and may itself return
+ * `null` (C141 — an advisor with Visão "Tudo" resolves to the whole catalog).
  */
 export const resolveAccessibleIds = async <ID>(
   req: PayloadRequest,
   user: CampaignActor = req.user,
   memoKey: string,
-  compute: (currentUser: CampaignUser) => Promise<ID[]>,
+  compute: (currentUser: CampaignUser) => Promise<ID[] | null>,
 ): Promise<ID[] | null> => {
   const currentUser =
     isCampaignUser(user) && user === req.user ? await getFreshCampaignUser(req, user) : user

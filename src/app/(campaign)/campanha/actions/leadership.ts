@@ -33,7 +33,7 @@ import {
   type MunicipalityLeadershipCreateInput,
 } from '@/lib/schemas/leadership'
 import type { CampaignUser, Contact, Leadership } from '@/payload-types'
-import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
+import { getWritableMunicipalityIds } from '@/utilities/campaignAccess'
 import {
   getCampaignActionContext,
   reloadStaffActor,
@@ -54,7 +54,14 @@ const getFreshStaffActor = (
   req?: PayloadTransactionRequest,
 ): Promise<CampaignUser> => reloadStaffActor(payload, actor, LEADERSHIP_STAFF_MESSAGE, req)
 
-/** Advisors may only link leaderships to municipalities they administer. */
+/**
+ * C141 — advisors may only link leaderships to municipalities in their WRITE
+ * scope (the Edição axis): `tudo` → any municipality, `carteira` → the
+ * administered ones, `somente_leitura` → none. The collection access
+ * (`canCreateLeadership`/`canManageLeadership`) already resolves the same
+ * axis; this assert keeps the server action's per-municipality check honest
+ * (Payload cannot express a per-município constraint on create).
+ */
 const assertMunicipalitiesWithinScope = async (
   payload: Payload,
   actor: CampaignUser,
@@ -63,8 +70,10 @@ const assertMunicipalitiesWithinScope = async (
 ) => {
   if (actor.role !== 'advisor') return
 
-  const administered = new Set(await getAdvisorMunicipalityIds(payload, actor.id, req))
-  const outside = municipalityIDs.filter((id) => !administered.has(id))
+  const writable = await getWritableMunicipalityIds(payload, actor, req)
+  if (writable === null) return
+
+  const outside = municipalityIDs.filter((id) => !writable.includes(id))
   if (outside.length > 0) {
     throw new Error(LEADERSHIP_MUNICIPALITY_SCOPE_MESSAGE)
   }

@@ -27,6 +27,7 @@ import {
   createAdvisorFormAction,
   sendAdvisorPasswordResetFormAction,
   setAdvisorMunicipalitiesFormAction,
+  updateAdvisorPermissionFormAction,
   updateAdvisorProfileFormAction,
 } from './formActions'
 
@@ -82,6 +83,7 @@ export default async function AdvisorsPage({ searchParams }: AdvisorsPageProps) 
             municipalitiesAction={setAdvisorMunicipalitiesFormAction}
             createAction={createAdvisorFormAction}
             passwordResetAction={sendAdvisorPasswordResetFormAction}
+            updatePermissionAction={updateAdvisorPermissionFormAction}
             autoCreateDraft={autoCreateDraft}
           />
 

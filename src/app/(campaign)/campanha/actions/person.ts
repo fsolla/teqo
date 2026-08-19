@@ -39,7 +39,7 @@ import {
 } from '@/lib/schemas/personDelete'
 import { nextStateDeputyAdvisorIdsAfterMembership } from '@/lib/stateDeputyAdvisorMembership'
 import type { CampaignUser, Contact, Leadership, StateDeputy } from '@/payload-types'
-import { getAdvisorMunicipalityIds, isCampaignUnrestricted } from '@/utilities/campaignAccess'
+import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
 import {
   getCampaignActionContext,
   reloadStaffActor,
@@ -63,6 +63,7 @@ import {
   deletePersonRecord,
   loadPersonDeleteManifest,
 } from '@/utilities/people/personDelete'
+import { assertPersonContactWritable } from '@/utilities/person/personContactWriteScope'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 import { assertStateDeputyNameAvailable } from '@/utilities/stateDeputy/nameInvariant'
 import { stateDeputyPolicy } from '@/utilities/stateDeputyConflict'
@@ -120,11 +121,11 @@ export const deletePersonAction = async (input: unknown) => {
 // ---------------------------------------------------------------------------
 
 /**
- * C116 — the cell-edit scope rule for a person's ficha fields: unrestricted
- * actors always pass; an advisor passes only when at least ONE entity of the
- * person (leadership or dobradinha) is readable with his own access — the "you
- * edit what you see" rule, mirroring the row's visibility (a staff-only person
- * is not entity-manageable and therefore not editable by an advisor).
+ * C116 + C141 — the cell-edit scope rule for a person's ficha fields: the
+ * person must sit in the actor's WRITE scope (see `assertPersonContactWritable`).
+ * Unrestricted actors always pass; `somente_leitura` advisors never write a
+ * ficha; carteira advisors edit persons whose leaderships/supporters are in
+ * writable municipalities (dobradinhas keep their staff-wide status quo).
  */
 const assertPersonContactEditable = async (
   payload: Payload,
@@ -132,34 +133,13 @@ const assertPersonContactEditable = async (
   contactID: number,
   req: { transactionID: number | string },
 ): Promise<void> => {
-  if (isCampaignUnrestricted(actor)) return
-
-  const [leaderships, deputies] = await Promise.all([
-    payload.find({
-      collection: 'leadership',
-      where: { contact: { equals: contactID } },
-      depth: 0,
-      limit: 1,
-      pagination: false,
-      user: actor,
-      overrideAccess: false,
-      req,
-    }),
-    payload.find({
-      collection: 'stateDeputy',
-      where: { contact: { equals: contactID } },
-      depth: 0,
-      limit: 1,
-      pagination: false,
-      user: actor,
-      overrideAccess: false,
-      req,
-    }),
-  ])
-
-  if (leaderships.docs.length === 0 && deputies.docs.length === 0) {
-    throw new Error(PERSON_CELL_NOT_IN_SCOPE_MESSAGE)
-  }
+  await assertPersonContactWritable({
+    payload,
+    actor,
+    contactID,
+    req,
+    errorMessage: PERSON_CELL_NOT_IN_SCOPE_MESSAGE,
+  })
 }
 
 export const updatePersonContactRecord = async (

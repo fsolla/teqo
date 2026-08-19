@@ -1,7 +1,15 @@
+import {
+  ADVISOR_EDITING_OPTIONS,
+  ADVISOR_VISIBILITY_OPTIONS,
+  isCoherentAdvisorProfile,
+} from '@/lib/campaignAdvisorProfile'
 import { CAMPAIGN_SESSION_TTL_LONG } from '@/lib/campaignSessionTtl'
 import { normalizeBrazilianPhone } from '@/lib/phone'
 import { relationshipId } from '@/lib/relationship'
-import { isPlanilhaPlaceholderEmail } from '@/lib/schemas/advisor'
+import {
+  ADVISOR_PROFILE_COHERENCE_MESSAGE,
+  isPlanilhaPlaceholderEmail,
+} from '@/lib/schemas/advisor'
 import type { CampaignUser as CampaignUserDocument } from '@/payload-types'
 import {
   canCreateCampaignUserPhone,
@@ -22,6 +30,7 @@ import {
   type CollectionAfterReadHook,
   type CollectionBeforeChangeHook,
   type CollectionBeforeDeleteHook,
+  type CollectionBeforeValidateHook,
   type CollectionConfig,
   type Payload,
   type PayloadRequest,
@@ -117,8 +126,41 @@ const preventSelfServicePrivilegedFields: CollectionBeforeChangeHook<
 
   if (String(req.user.id) !== String(originalDoc.id)) return data
 
-  for (const field of ['role', 'name', 'email', 'username', 'phone', 'contact'] as const) {
+  for (const field of [
+    'role',
+    'name',
+    'email',
+    'username',
+    'phone',
+    'contact',
+    'visibility',
+    'editing',
+  ] as const) {
     if (field in data) delete data[field]
+  }
+
+  return data
+}
+
+/**
+ * C141 — the advisor permission profile must stay coherent: Edição "Tudo"
+ * (edits everything visible) only makes sense with Visão "Tudo". Fail-closed on
+ * the API itself (REST/admin included), not just in the campaign form actions.
+ * Non-advisor roles never consult the profile, so the rule only guards advisors.
+ */
+const enforceCoherentAdvisorProfile: CollectionBeforeValidateHook<CampaignUserDocument> = async ({
+  data,
+  originalDoc,
+}) => {
+  if (!data) return data
+
+  const role = data.role ?? originalDoc?.role
+  if (role !== 'advisor') return data
+
+  const visibility = data.visibility ?? originalDoc?.visibility ?? 'carteira'
+  const editing = data.editing ?? originalDoc?.editing ?? 'carteira'
+  if (!isCoherentAdvisorProfile(visibility, editing)) {
+    throw new APIError(ADVISOR_PROFILE_COHERENCE_MESSAGE, 400)
   }
 
   return data
@@ -383,6 +425,7 @@ export const CampaignUser: CollectionConfig = {
     delete: canManageCampaignUsers,
   },
   hooks: {
+    beforeValidate: [enforceCoherentAdvisorProfile],
     beforeChange: [
       preventAssignedAdvisorDowngrade,
       preventSelfServicePrivilegedFields,
@@ -437,6 +480,36 @@ export const CampaignUser: CollectionConfig = {
         { label: 'Candidato', value: 'candidate' },
         { label: 'Liderança', value: 'leader' },
       ],
+      access: {
+        update: canManageCampaignUserRole,
+      },
+    },
+    {
+      name: 'visibility',
+      type: 'select',
+      label: 'Visão',
+      required: true,
+      defaultValue: 'carteira',
+      admin: {
+        description: 'O que o assessor enxerga no /campanha.',
+        condition: (data) => data.role === 'advisor',
+      },
+      options: ADVISOR_VISIBILITY_OPTIONS.map(({ value, label }) => ({ value, label })),
+      access: {
+        update: canManageCampaignUserRole,
+      },
+    },
+    {
+      name: 'editing',
+      type: 'select',
+      label: 'Edição',
+      required: true,
+      defaultValue: 'carteira',
+      admin: {
+        description: 'O que o assessor pode editar no /campanha.',
+        condition: (data) => data.role === 'advisor',
+      },
+      options: ADVISOR_EDITING_OPTIONS.map(({ value, label }) => ({ value, label })),
       access: {
         update: canManageCampaignUserRole,
       },
