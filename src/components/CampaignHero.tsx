@@ -102,14 +102,14 @@ export const CampaignHero = () => (
 
         <div className="campaign-hero-actions flex items-stretch justify-start">
           <a
-            href="#bandeiras"
-            aria-label="Conhecer bandeiras"
+            href="#novidades"
+            aria-label="Receba novidades da campanha"
             data-cta="secondary"
             className="campaign-action-feedback campaign-hero-action campaign-hero-action--secondary inline-flex min-h-11 flex-col items-center justify-center rounded-[10px] border-2 border-white/55 px-3 text-center font-[family-name:var(--font-exo2)] leading-[1.05] font-extrabold text-white no-underline hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-(--pt-red) focus-visible:outline-none"
           >
-            Conhecer
+            Receba
             <small className="campaign-hero-action-detail text-[12px] leading-none font-semibold">
-              bandeiras
+              novidades
             </small>
           </a>
           <a

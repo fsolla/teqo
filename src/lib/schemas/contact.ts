@@ -14,7 +14,11 @@ export type StateKey = keyof typeof CitiesByState
 /** Gender enum shared with the leadership collection (same values, C139). */
 const contactGenders = personGenders
 
-const contactNameSchema = z
+/**
+ * Full-name rule for people records (required across the public and staff
+ * flows). Exported so sibling schemas reuse it instead of re-declaring.
+ */
+export const contactNameSchema = z
   .string()
   .trim()
   .min(2, 'Nome deve ter pelo menos 2 caracteres')
@@ -23,6 +27,25 @@ const contactNameSchema = z
     /^(?=.* )[\p{L}\p{M}]+(?:[- ][\p{L}\p{M}]+)*$/u,
     'Informe nome e sobrenome. Use apenas letras, no máximo um espaço ou hífen entre termos, e sem espaço no início ou no fim.',
   )
+
+/**
+ * UF-of-the-cities-catalog rule (required). Private: the S9 optional variant
+ * is the only external consumer; the ficha schemas keep their own inline
+ * copies (consolidating them is a follow-up).
+ */
+const contactStateSchema = z.custom<StateKey>(
+  (value) => typeof value === 'string' && value in CitiesByState,
+  'Estado inválido',
+)
+
+/**
+ * Optional-state variant: the public combobox clears to '' (FormCombobox
+ * `onValueChange`), so the union accepts it and collapses ''/undefined.
+ */
+export const optionalContactStateSchema = z
+  .union([contactStateSchema, z.literal('')])
+  .optional()
+  .transform((value) => (value === '' || value === undefined ? undefined : value))
 
 const contactPostalCodeSchema = z
   .string()
@@ -159,7 +182,11 @@ const contactGenderFieldSchema = z
   .transform((value) => (value === '' ? undefined : value))
   .optional()
 
-const contactCityFieldSchema = z
+/**
+ * Optional free-text city (''/undefined collapse). Exported so sibling schemas
+ * reuse the same optional-city rule as the ficha's mobile sheet.
+ */
+export const contactCityFieldSchema = z
   .string()
   .trim()
   .transform((value) => (value === '' ? undefined : value))
