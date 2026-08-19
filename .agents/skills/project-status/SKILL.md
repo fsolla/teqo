@@ -1,11 +1,11 @@
 ---
 name: project-status
-description: Apresenta o estado do projeto Teqo a partir das GitHub Issues rastreáveis — overview (estado/prio/kind), fila atual na ordem do agent:claim com o modelo de cada item, grafo mermaid de dependências, bloqueios com motivo e sugestões de consolidação (merge/break-down). Read-only; NUNCA modifica Issues, em particular nunca toca Issues in-progress. Usar quando o usuário pedir status/visão geral do projeto, "como está o projeto", "qual a fila", "o que está bloqueado", "mostra o grafo", ou perguntar o que dá para consolidar.
+description: Apresenta o estado do projeto Teqo a partir das Issues do Forgejo rastreáveis — overview (estado/prio/kind), fila atual na ordem do agent:claim com o modelo de cada item, grafo mermaid de dependências, bloqueios com motivo e sugestões de consolidação (merge/break-down). Read-only; NUNCA modifica Issues, em particular nunca toca Issues in-progress. Usar quando o usuário pedir status/visão geral do projeto, "como está o projeto", "qual a fila", "o que está bloqueado", "mostra o grafo", ou perguntar o que dá para consolidar.
 ---
 
 # Status do projeto (read-only)
 
-Esta skill apresenta o estado do projeto a partir das GitHub Issues rastreáveis — a fonte canônica de spec/status/deps/prio/modelo. **Read-only por contrato:** nenhuma Issue é criada, editada ou relabelada aqui, e Issues `in-progress` são intocáveis (risco de conflito com o agente que está executando).
+Esta skill apresenta o estado do projeto a partir das Issues do Forgejo rastreáveis — a fonte canônica de spec/status/deps/prio/modelo. **Read-only por contrato:** nenhuma Issue é criada, editada ou relabelada aqui, e Issues `in-progress` são intocáveis (risco de conflito com o agente que está executando).
 
 ## Fluxo
 
@@ -22,6 +22,6 @@ pnpm agent:status
    - **Bloqueios** — cada `blocked` com o motivo (dep aberta, jurídico, `requirements-changed`).
    - **Sugestões de consolidação** — as heurísticas do script (merge por domínio+prio; break-down por gargalo de depends) como **texto para o usuário decidir**. Nunca aplique consolidação aqui: aplicação é manual ou via `plan-issue`/`pnpm agent:register`. Nunca proponha nada sobre Issues `in-progress`.
 
-3. Se o usuário pedir interpretação além da saída (ex.: "o que destrava mais coisa?"), responda a partir do grafo — sem inventar dados que o script não imprimiu; se faltar dado, rode `gh issue view <N>` somente-leitura.
+3. Se o usuário pedir interpretação além da saída (ex.: "o que destrava mais coisa?"), responda a partir do grafo — sem inventar dados que o script não imprimiu; se faltar dado, leia a Issue via API do Forgejo (MCP/`pnpm issue`) somente-leitura.
 
-**NÃO faz:** editar `docs/roadmap.md` (legado congelado), claim, registro, qualquer escrita no GitHub.
+**NÃO faz:** editar `docs/roadmap.md` (legado congelado), claim, registro, qualquer escrita de Issue.

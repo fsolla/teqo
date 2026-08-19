@@ -2,7 +2,7 @@
 name: agent-pool
 description: >-
   Opera e monitora o pool de agentes Cursor Cloud do Teqo (supervisor remoto
-  determinístico em GitHub Actions). Ao invocar: SEMPRE status + fila elegível
+  determinístico em Forgejo Actions). Ao invocar: SEMPRE status + fila elegível
   primeiro; NUNCA liga o pool sem confirmação explícita do usuário. Usar quando
   o usuário pedir /agent-pool, ligar/desligar/pausar o pool, ver status dos
   workers, "pool de agentes", orquestrador, triage de Issue que o pool mandou
@@ -11,7 +11,11 @@ description: >-
 
 # Agent pool — operação do supervisor remoto
 
-O pool mantém até **5 Cursor Cloud Agents** (configurável, máx 12) rodando `agent-work-issue` sobre Issues `ready` elegíveis para autonomia. O supervisor é **determinístico** (não é um agente): workflow **`.github/workflows/agent-pool.yml`** (tick stateless a cada 10 min + a cada merge em `main` + sob dispatch) rodando `scripts/agent-pool.mjs`. Arquitetura e elegibilidade: `docs/plans/agent-pool-orchestrator.md`.
+**DORMENTE (OPS65):** o workflow `agent-pool.yml` foi removido (o tick `*/10`
+custava 144 `pnpm install`/dia na workstation) e o dispatch via CLI falha 404 —
+scripts/skill ficam para histórico e leitura. O que foi:
+
+O pool mantém até **5 Cursor Cloud Agents** (configurável, máx 12) rodando `agent-work-issue` sobre Issues `ready` elegíveis para autonomia. O supervisor é **determinístico** (não é um agente): workflow `.forgejo/workflows/agent-pool.yml` (removido) com tick stateless a cada 10 min + a cada merge em `main` + sob dispatch, rodando `scripts/agent-pool.mjs`. Arquitetura e elegibilidade: `docs/plans/agent-pool-orchestrator.md`.
 
 **O pool NUNCA deploya** — deploy gated fica em `ci.yml` após merge em `main`.
 
@@ -19,7 +23,7 @@ O pool mantém até **5 Cursor Cloud Agents** (configurável, máx 12) rodando `
 
 ## Fluxo obrigatório ao invocar (não pule)
 
-**Nunca** rode `pnpm agent:pool -- start` (nem `gh workflow run … action=start`) no primeiro passo. O default é só leitura.
+**Nunca** rode `pnpm agent:pool -- start` no primeiro passo — e o dispatch do workflow não existe mais (OPS65: `start`/`stop` via CLI falham 404). O default é só leitura.
 
 ```
 - [ ] 1. Pré-check leve: `pnpm agent:pool -- doctor` se for a 1ª vez na sessão / suspeita de secret; senão pode ir direto ao status
@@ -87,7 +91,7 @@ pnpm agent:pool -- resume
 pnpm agent:pool -- status               # leitura local (config, slots, fila, exclusões)
 ```
 
-Os wrappers disparam `gh workflow run agent-pool.yml -f action=…`; acompanhe com `gh run list --workflow agent-pool.yml --limit 3` (o job summary de cada run é a superfície remota de status: slots, spawns, falhas, decisão do tick). Estado escalar vive em repo variables `POOL_*` (Settings → Variables); workers/Issues em voo são derivados — Issues `in-progress` com marcador `pool-worker` nos comentários.
+Os wrappers disparam `workflow_dispatch` em `agent-pool.yml` via API do Forgejo (workflow removido no OPS65 — dispatch falha 404); acompanhe com `pnpm agent:pool -- status` (o job summary de cada run era a superfície remota de status: slots, spawns, falhas, decisão do tick). Estado escalar vive em `pool-state.json` na branch `pool-state`; workers/Issues em voo são derivados — Issues `in-progress` com marcador `pool-worker` nos comentários.
 
 ## Ciclo de vida de uma Issue no pool
 

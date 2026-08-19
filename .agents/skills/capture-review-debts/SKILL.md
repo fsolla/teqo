@@ -1,6 +1,6 @@
 ---
 name: capture-review-debts
-description: Use when the user asks to register leftover /simplify or /impeccable findings as trackable GitHub Issues, harvest session review debts, triage post-simplify or post-critique follow-ups, or says "registra os débitos", "o que ficou do simplify", "coloca como issue o que o critique apontou", "harvest debts".
+description: Use when the user asks to register leftover /simplify or /impeccable findings as trackable Forgejo Issues, harvest session review debts, triage post-simplify or post-critique follow-ups, or says "registra os débitos", "o que ficou do simplify", "coloca como issue o que o critique apontou", "harvest debts".
 ---
 
 # Capturar débitos de /simplify e /impeccable em Issues
@@ -15,7 +15,7 @@ Após um ciclo de entrega, `/simplify` e `/impeccable` deixam achados **maiores 
 
 ```
 - [ ] 1. Colher candidatos da sessão (simplify + impeccable)
-- [ ] 2. Deduplicar contra código, Issues (gh issue list) e planos
+- [ ] 2. Deduplicar contra código, Issues (`pnpm issue all`) e planos
 - [ ] 3. Pontuar importância e classificar destino
 - [ ] 4. Mesclar relacionados (mesmo lote / mesma superfície)
 - [ ] 5. Apresentar tabela de triage e obter confirmação
@@ -50,7 +50,7 @@ Contra o repositório **antes** de pontuar:
 | Check                                                  | Ação se verdadeiro                                              |
 | ------------------------------------------------------ | --------------------------------------------------------------- |
 | Já no diff / código da sessão                          | → balde **já_resolvido** (não reabrir)                          |
-| Já em `docs/plans/*.md` ou numa Issue (grep + `gh issue list`) | → **absorver** no plano existente ou **descartar** como coberto |
+| Já em `docs/plans/*.md` ou numa Issue (grep + `pnpm issue all`) | → **absorver** no plano existente ou **descartar** como coberto |
 | Pré-existente em `main`, fora do escopo da entrega     | → **descartar** deste lote (bug separado só se o usuário pedir) |
 | Intentional em `DESIGN.md` / decisão travada           | → **descartar** (ex.: field-mode mobile documentado)            |
 
