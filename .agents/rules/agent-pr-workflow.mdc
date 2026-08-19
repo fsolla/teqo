@@ -55,7 +55,7 @@ The safety net (`agent-pr-ready-automerge.yml`, abaixo) arms GitHub's **native a
 
 Branch protection on `main` (GitHub, applied at the OPS71 cutover via `pnpm configure:branch-protection`) requires only:
 
-- `CI (PR) / checks` — the ci-pr single-job check-run (OPS62: one sequential job posts one honest verdict; no matrix, no shards, no rollup to lie)
+- `CI (PR) / checks` — the ci-pr single-job check-run (OPS62: one sequential job posts one honest verdict; no matrix, no shards, no rollup to lie). **Literal de match na proteção: `checks`** (o GitHub casa pelo nome do check-run/job — a UI exibe `CI (PR) / checks`; pin ao vivo PR #742).
 
 OPS64 history: the Forgejo runner could report the LAST matrix shard's result as the parent's (runs 604/607/610) — that bug is gone by construction: ci-pr.yml is a SINGLE sequential job, and GitHub's native auto-merge only merges with every required check green (server-side guarantee). The safety-net CLI has no poll path to port.
 
