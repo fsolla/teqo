@@ -4,6 +4,7 @@ import { CampaignFlagCard } from '@/components/CampaignFlagCard'
 import { CampaignFooter } from '@/components/CampaignFooter'
 import { CampaignHero } from '@/components/CampaignHero'
 import { CampaignProblemCard } from '@/components/CampaignProblemCard'
+import { CampaignStorySection } from '@/components/CampaignStorySection'
 import type { ReactNode } from 'react'
 import { CampaignNewsletterSection } from './CampaignNewsletterSection'
 
@@ -229,6 +230,7 @@ export default async function HomePage() {
           </div>
         </section>
 
+        <CampaignStorySection />
         <CampaignNewsletterSection />
       </main>
 

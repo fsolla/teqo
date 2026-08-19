@@ -90,3 +90,6 @@ next-env.d.ts
 
 # Proprietary design font files kept only in the local workspace
 /public/arial-mt/
+
+/data/encode/
+/data/poster-candidates/

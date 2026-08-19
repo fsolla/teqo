@@ -432,6 +432,84 @@ test.describe('Frontend', () => {
     }
   })
 
+  test('shows the story video section after the flags with the YouTube embed', async ({ page }) => {
+    await page.goto('/')
+
+    const story = page.locator('[data-home-section="story"]')
+    await expect(story).toBeVisible()
+
+    // Position: after the flags section, before the footer.
+    const order = await page.evaluate(() => {
+      const top = (selector: string) => {
+        const element = document.querySelector<HTMLElement>(selector)
+        if (!element) throw new Error(`Seção ausente: ${selector}`)
+        return element.getBoundingClientRect().top
+      }
+      return {
+        flagsTop: top('[data-home-section="flags"]'),
+        storyTop: top('[data-home-section="story"]'),
+        footerTop: top('footer'),
+      }
+    })
+    expect(order.storyTop).toBeGreaterThan(order.flagsTop)
+    expect(order.footerTop).toBeGreaterThan(order.storyTop)
+
+    // Draft copy (eyebrow + title).
+    await expect(story.getByText('Nossa história')).toBeVisible()
+    await expect(
+      story.getByRole('heading', { name: 'Conheça a trajetória de Jorge Solla' }),
+    ).toBeVisible()
+
+    // The embed: youtube-nocookie (LGPD), native lazy, fullscreen, a11y title.
+    const embed = story.locator('iframe')
+    await expect(embed).toBeVisible()
+    await expect(embed).toHaveAttribute(
+      'src',
+      /youtube-nocookie\.com\/embed\/i_fbclWWC5o.*playsinline=1/,
+    )
+    await expect(embed).toHaveAttribute('loading', 'lazy')
+    await expect(embed).toHaveAttribute('allow', /autoplay/)
+    await expect(embed).toHaveAttribute('allowfullscreen', '')
+    await expect(embed).toHaveAttribute('title', /trajetória de Jorge Solla/)
+
+    // The header CTA scrolls to the player.
+    await story.getByRole('button', { name: 'Assistir à história' }).click()
+    await expect(embed).toBeInViewport()
+
+    // Desktop scene of the draft: copy column left, frame right, vertically
+    // centered.
+    await page.setViewportSize({ width: 1440, height: 900 })
+    const desktopLayout = await page.evaluate(() => {
+      const storySection = document.querySelector<HTMLElement>('[data-home-section="story"]')
+      if (!storySection) throw new Error('Seção ausente')
+      const copy = storySection.querySelector<HTMLElement>('div.max-w-md')
+      const frame = storySection.querySelector<HTMLElement>('iframe')?.parentElement
+      if (!copy || !frame) throw new Error('Colunas ausentes')
+      const copyBox = copy.getBoundingClientRect()
+      const frameBox = frame.getBoundingClientRect()
+      return {
+        copyRight: Math.round(copyBox.right),
+        frameLeft: Math.round(frameBox.left),
+        centerDelta: Math.round(
+          copyBox.top + copyBox.height / 2 - (frameBox.top + frameBox.height / 2),
+        ),
+      }
+    })
+    expect(desktopLayout.copyRight).toBeLessThan(desktopLayout.frameLeft)
+    expect(Math.abs(desktopLayout.centerDelta)).toBeLessThanOrEqual(2)
+
+    // The frame keeps the 9:16 ratio on mobile without horizontal overflow.
+    await page.setViewportSize({ width: 390, height: 844 })
+    const frame = await embed.boundingBox()
+    expect(frame).not.toBeNull()
+    expect(frame!.height / frame!.width).toBeCloseTo(16 / 9, 1)
+    const overflow = await page.evaluate(() => {
+      const scrollContainer = document.querySelector<HTMLElement>('[data-theme="campaign-site"]')
+      return scrollContainer ? scrollContainer.scrollWidth - scrollContainer.clientWidth : 0
+    })
+    expect(overflow).toBeLessThanOrEqual(1)
+  })
+
   test('keeps carousel auto-advance and chips on mobile', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/')
