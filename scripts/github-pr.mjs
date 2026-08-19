@@ -40,10 +40,10 @@ if (!head || !title) {
 }
 
 let body = flags.body
-if (flags.bodyFile) {
+if (flags['body-file']) {
   try {
     const { readFileSync } = await import('node:fs')
-    body = readFileSync(flags.bodyFile, 'utf8')
+    body = readFileSync(flags['body-file'], 'utf8')
   } catch (error) {
     console.error(`[github-pr] não consegui ler --body-file: ${error.message}`)
     process.exit(1)
