@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createApi } from '../../scripts/lib/forgejo-api.mjs'
 
@@ -75,13 +75,18 @@ describe('forgejo-api', () => {
   })
 
   it('throws with the API error body on non-2xx', async () => {
+    let calls = 0
     const api = createApi({
       token: 'tok',
-      fetchImpl: async () => ok('{"message":"nope"}', 403),
+      fetchImpl: async () => {
+        calls += 1
+        return ok('{"message":"nope"}', 403)
+      },
     })
 
     await expect(api.listIssues()).rejects.toThrow(/403/)
     await expect(api.listIssues()).rejects.toThrow(/nope/)
+    expect(calls).toBe(2)
   })
 
   it('fails closed when no token is available', async () => {
@@ -563,5 +568,256 @@ describe('forgejo-api', () => {
       Buffer.from((calls.at(-1)!.body as { content: string }).content, 'base64').toString(),
     ).toBe('{"a":2}')
     expect((calls.at(-1)!.body as { sha: string }).sha).toBe('shasha')
+  })
+
+  describe('retry with backoff (OPS67)', () => {
+    const issueOk = [{ number: 1, title: '', body: '', state: 'open', created_at: '', labels: [] }]
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    const silentWarn = () => vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const brokenBody = () =>
+      new Response(
+        new ReadableStream({
+          start: (controller) => controller.error(new TypeError('terminated')),
+        }),
+        { status: 200 },
+      )
+
+    it('retries a transient network failure and succeeds', async () => {
+      silentWarn()
+      let calls = 0
+      const sleeps: number[] = []
+      const api = createApi({
+        token: 'tok',
+        retries: 2,
+        backoffMs: 100,
+        jitter: false,
+        sleepImpl: async (ms) => {
+          sleeps.push(ms)
+        },
+        fetchImpl: async () => {
+          calls += 1
+          if (calls === 1) throw new TypeError('fetch failed')
+          return ok(issueOk)
+        },
+      })
+
+      const issues = await api.listIssues()
+
+      expect(calls).toBe(2)
+      expect(sleeps).toEqual([100])
+      expect(issues).toHaveLength(1)
+    })
+
+    it('retries a transient network failure on write methods too', async () => {
+      silentWarn()
+      let calls = 0
+      const api = createApi({
+        token: 'tok',
+        retries: 2,
+        backoffMs: 0,
+        jitter: false,
+        sleepImpl: async () => {},
+        fetchImpl: async () => {
+          calls += 1
+          if (calls === 1) throw new TypeError('fetch failed')
+          return ok(null)
+        },
+      })
+
+      await api.addComment(1, 'x')
+
+      expect(calls).toBe(2)
+    })
+
+    it('retries a GET whose body stream drops mid-read', async () => {
+      silentWarn()
+      let calls = 0
+      const api = createApi({
+        token: 'tok',
+        retries: 2,
+        backoffMs: 0,
+        jitter: false,
+        sleepImpl: async () => {},
+        fetchImpl: async () => {
+          calls += 1
+          return calls === 1 ? brokenBody() : ok(issueOk)
+        },
+      })
+
+      const issues = await api.listIssues()
+
+      expect(calls).toBe(2)
+      expect(issues).toHaveLength(1)
+    })
+
+    it('does not retry a write whose body drops after a status was received', async () => {
+      let calls = 0
+      const api = createApi({
+        token: 'tok',
+        retries: 2,
+        backoffMs: 0,
+        fetchImpl: async () => {
+          calls += 1
+          return calls === 1 ? brokenBody() : ok(null)
+        },
+      })
+
+      await expect(api.addComment(1, 'x')).rejects.toThrow(/terminated/)
+      expect(calls).toBe(1)
+    })
+
+    it('throws after exhausting retries on a persistent network failure', async () => {
+      silentWarn()
+      let calls = 0
+      const api = createApi({
+        token: 'tok',
+        retries: 2,
+        backoffMs: 0,
+        jitter: false,
+        sleepImpl: async () => {},
+        fetchImpl: async () => {
+          calls += 1
+          throw new TypeError('fetch failed')
+        },
+      })
+
+      await expect(api.listIssues()).rejects.toThrow(/fetch failed/)
+      expect(calls).toBe(3)
+    })
+
+    it('honors retries: 0 as a single attempt', async () => {
+      let calls = 0
+      const api = createApi({
+        token: 'tok',
+        retries: 0,
+        fetchImpl: async () => {
+          calls += 1
+          throw new TypeError('fetch failed')
+        },
+      })
+
+      await expect(api.listIssues()).rejects.toThrow(/fetch failed/)
+      expect(calls).toBe(1)
+    })
+
+    it('grows the backoff exponentially between retries', async () => {
+      const warn = silentWarn()
+      let calls = 0
+      const sleeps: number[] = []
+      const api = createApi({
+        token: 'tok',
+        retries: 3,
+        backoffMs: 100,
+        jitter: false,
+        sleepImpl: async (ms) => {
+          sleeps.push(ms)
+        },
+        fetchImpl: async () => {
+          calls += 1
+          throw new TypeError('fetch failed')
+        },
+      })
+
+      await expect(api.listIssues()).rejects.toThrow(/fetch failed/)
+      expect(calls).toBe(4)
+      expect(sleeps).toEqual([100, 200, 400])
+      expect(warn.mock.calls.flat().join(' ')).toContain('tentativa 1/4')
+    })
+
+    it('applies the ±20% jitter around the exponential delay', async () => {
+      silentWarn()
+      vi.spyOn(Math, 'random').mockReturnValue(0.5)
+      const sleeps: number[] = []
+      const api = createApi({
+        token: 'tok',
+        retries: 2,
+        backoffMs: 100,
+        jitter: true,
+        sleepImpl: async (ms) => {
+          sleeps.push(ms)
+        },
+        fetchImpl: async () => {
+          throw new TypeError('fetch failed')
+        },
+      })
+
+      await expect(api.listIssues()).rejects.toThrow(/fetch failed/)
+      expect(sleeps).toEqual([100, 200])
+    })
+
+    it('does not retry 4xx responses', async () => {
+      let calls = 0
+      const api = createApi({
+        token: 'tok',
+        retries: 3,
+        fetchImpl: async () => {
+          calls += 1
+          return ok('{"message":"nope"}', 403)
+        },
+      })
+
+      await expect(api.listIssues()).rejects.toThrow(/403/)
+      expect(calls).toBe(1)
+    })
+
+    it('retries 5xx responses on GET', async () => {
+      silentWarn()
+      let calls = 0
+      const api = createApi({
+        token: 'tok',
+        retries: 2,
+        backoffMs: 0,
+        jitter: false,
+        sleepImpl: async () => {},
+        fetchImpl: async () => {
+          calls += 1
+          return calls === 1 ? ok('{"message":"boom"}', 502) : ok(issueOk)
+        },
+      })
+
+      const issues = await api.listIssues()
+
+      expect(calls).toBe(2)
+      expect(issues).toHaveLength(1)
+    })
+
+    it('throws the API error after exhausting 5xx retries on GET', async () => {
+      silentWarn()
+      let calls = 0
+      const api = createApi({
+        token: 'tok',
+        retries: 2,
+        backoffMs: 0,
+        jitter: false,
+        sleepImpl: async () => {},
+        fetchImpl: async () => {
+          calls += 1
+          return ok('{"message":"boom"}', 503)
+        },
+      })
+
+      await expect(api.listIssues()).rejects.toThrow(/503/)
+      expect(calls).toBe(3)
+    })
+
+    it('does not retry 5xx responses on write methods', async () => {
+      let calls = 0
+      const api = createApi({
+        token: 'tok',
+        retries: 2,
+        fetchImpl: async () => {
+          calls += 1
+          return ok('{"message":"boom"}', 503)
+        },
+      })
+
+      await expect(api.addComment(1, 'x')).rejects.toThrow(/503/)
+      expect(calls).toBe(1)
+    })
   })
 })
