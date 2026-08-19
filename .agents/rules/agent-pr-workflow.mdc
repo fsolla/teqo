@@ -38,7 +38,7 @@ Closes #<N>
 **Use `pnpm push`, never bare `git push`.** Não depende do Husky estar wired:
 
 1. `ensure-repo-deps` — `pnpm install` se `node_modules` faltar/stale + `pnpm run prepare` (Husky) se hooks não estiverem apontando para `.husky`
-2. `pnpm gate:push` — espelho do `ci-pr.yml` sem e2e (e2e roda no CI de PR selected/afetado, e full no `verify` do deploy manual; local opcional: `pnpm test:e2e:affected`), com os `docs-guards` locais (OPS63: changelog append-only, agregado sync e marcadores de conflito — o escape `changelog-rewrite:` fica só no CI, body do PR)
+2. `pnpm gate:push` — espelho do `ci-pr.yml` sem e2e (OPS72: o e2e é passo **explícito da skill** — antes do push rode localmente os e2e que criou + os da mesma superfície, discricionário via `pnpm test:e2e:affected`; o CI de PR roda só o blast radius `selected`, e o full fica no `verify` do deploy manual), com os `docs-guards` locais (OPS63: changelog append-only, agregado sync e marcadores de conflito — o escape `changelog-rewrite:` fica só no CI, body do PR)
 3. `git push --no-verify` — só porque o gate já rodou no passo 2 (não é escape hatch)
 
 ```bash

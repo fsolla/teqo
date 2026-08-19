@@ -12,11 +12,39 @@ Ordem:
    testes de domínio. Invariantes do engineering-brief.
 2. **UI** — se Impeccable B/C/D: shape → craft → critique → polish. Tokens
    `data-theme='campaign'`; shells existentes.
-3. **Gates** — `pnpm gate:fast` na iteração; entrega com `pnpm push` (não
+3. **E2E local afetado (OPS72, discricionário)** — antes do push, rode
+   localmente os e2e que você **criou** + os da **mesma superfície afetada**
+   (você decide quais). Ver §E2E local afetado.
+4. **Gates** — `pnpm gate:fast` na iteração; entrega com `pnpm push` (não
    `git push` nu).
 
 Tracer bullet cedo se o item for grande. Inclua o `*-impl.md` no commit da
 entrega.
+
+## E2E local afetado (OPS72)
+
+Política de e2e: **local = discricionário, CI/PR = blast radius, main = full
+antes do deploy**.
+
+- **O que rodar:** os specs e2e que o diff **criou** (novos `.e2e.spec.ts`) +
+  os da mesma superfície trabalhada (o `E2E_AFFECTED_MANIFEST` mapeia
+  `src/` → specs; a mecânica do CI é a mesma). **É discricionário: você
+  decide quais rodar** — não é um gate mecânico e não está no `gate:push`.
+- **Ferramenta:** `pnpm test:e2e:affected` (espelho local do classifier:
+  modo `none`/`selected`/`full` conforme o diff; roda `migrate` +
+  `db:seed:minimal` antes). Alternativa para specs diretas:
+  `pnpm test:e2e --no-deps -- tests/e2e/<spec>.e2e.spec.ts` (ou
+  `--no-deps --project=<família>`).
+- **CI/PR:** roda só o **blast radius** detectado (`ci-scope.mjs`, modo
+  `selected`) — nunca `full`. Diff high-risk (schema/lockfile/harness)
+  classifica `full` → o PR não roda e2e: o full fica para o `verify` do
+  deploy manual (antes de publicar) e, nesse mesmo diff, o espelho local
+  roda full.
+- **Limitação da #72 (S3-FOLLOWUP):** e2e local com `--no-deps` + projetos
+  paralelos (`--project=a --project=b`) colide no `seedTestUser` (delete +
+  create concorrentes nos `beforeAll` → `ValidationError: email` e falhas
+  fantasma). Use `--workers=1` ou a cadeia padrão de projetos. Só afeta o
+  local — no CI os projetos rodam sequenciais por construção.
 
 ## /simplify + débitos
 
