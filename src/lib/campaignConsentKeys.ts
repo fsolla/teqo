@@ -28,3 +28,13 @@ export const WHATSAPP_SUBSCRIPTION_CONSENT_KEY = 'whatsapp-inscricao'
 export const CAMPAIGN_PUSH_CONSENT_KEY = 'campanha-notificacoes-push'
 export const CAMPAIGN_PUSH_CONSENT_MISSING_MESSAGE =
   'Consentimento de notificações push ainda não configurado.'
+
+/**
+ * S9 — campaign home "novidades" capture (name + WhatsApp, engagement level
+ * toggle). Fail-closed like every public flow: while the admin has not created
+ * the Consent row with this key (jurídico-approved text pending), the form
+ * refuses to record anything.
+ */
+export const CAMPAIGN_NEWSLETTER_CONSENT_KEY = 'campanha-novidades'
+export const CAMPAIGN_NEWSLETTER_CONSENT_MISSING_MESSAGE =
+  'Consentimento de novidades da campanha ainda não configurado.'

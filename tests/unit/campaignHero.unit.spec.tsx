@@ -24,9 +24,11 @@ describe('CampaignHero', () => {
     expect(supportLink.getAttribute('href')).toBe('https://apoiar.me/jorgesolla')
     expect(supportLink.getAttribute('data-cta')).toBe('primary')
 
-    const flagsLink = screen.getByRole('link', { name: /Conhecer bandeiras/i })
-    expect(flagsLink.getAttribute('href')).toBe('#bandeiras')
-    expect(flagsLink.getAttribute('data-cta')).toBe('secondary')
+    // S9 — the secondary CTA is the shortcut to the novidades capture; the
+    // bandeiras stay reachable through the footer link and the success card.
+    const novidadesLink = screen.getByRole('link', { name: /Receba novidades da campanha/i })
+    expect(novidadesLink.getAttribute('href')).toBe('#novidades')
+    expect(novidadesLink.getAttribute('data-cta')).toBe('secondary')
   })
 
   it('expõe as provas e as fotos com nomes acessíveis', () => {

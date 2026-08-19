@@ -4,6 +4,8 @@ import type { Payload } from 'payload'
 
 import {
   CAMPAIGN_INVITE_CONSENT_KEY,
+  CAMPAIGN_NEWSLETTER_CONSENT_KEY,
+  CAMPAIGN_NEWSLETTER_CONSENT_MISSING_MESSAGE,
   CAMPAIGN_PUSH_CONSENT_KEY,
   CAMPAIGN_PUSH_CONSENT_MISSING_MESSAGE,
   SUPPORTER_REGISTRATION_CONSENT_KEY,
@@ -157,3 +159,10 @@ export const requireCampaignPushConsent = (
   message = CAMPAIGN_PUSH_CONSENT_MISSING_MESSAGE,
 ): Promise<ConsentDescriptor> =>
   requireConsentByKey(payload, CAMPAIGN_PUSH_CONSENT_KEY, req, message)
+
+export const requireCampaignNewsletterConsent = (
+  payload: Payload,
+  req?: ConsentRequest,
+  message = CAMPAIGN_NEWSLETTER_CONSENT_MISSING_MESSAGE,
+): Promise<ConsentDescriptor> =>
+  requireConsentByKey(payload, CAMPAIGN_NEWSLETTER_CONSENT_KEY, req, message)

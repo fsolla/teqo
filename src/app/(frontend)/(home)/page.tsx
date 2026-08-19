@@ -5,6 +5,7 @@ import { CampaignFooter } from '@/components/CampaignFooter'
 import { CampaignHero } from '@/components/CampaignHero'
 import { CampaignProblemCard } from '@/components/CampaignProblemCard'
 import type { ReactNode } from 'react'
+import { CampaignNewsletterSection } from './CampaignNewsletterSection'
 
 /**
  * S6 — desktop sibling of the mobile carousel: the same cards as a static
@@ -227,6 +228,8 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+
+        <CampaignNewsletterSection />
       </main>
 
       <CampaignFooter />
