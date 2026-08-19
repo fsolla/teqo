@@ -2,8 +2,10 @@
 /**
  * Local mirror of `.github/workflows/ci-pr.yml` (serial): phase-1 cheap checks,
  * then phase-2 expensive (int/build). e2e is NOT part of the local mirror
- * (OPS59): it runs in CI — selected/afetado no PR (`ci-pr.yml` → `checks`)
- * e full no verify do `deploy.yml`. Local optional feedback: `pnpm test:e2e:affected`.
+* (OPS59 + OPS72): the PR CI runs only the e2e blast radius (mode `selected`,
+ * never `full`), the deploy `verify` job runs the full suite before
+ * publishing, and the local affected run is a skill step (discretionary):
+ * `pnpm test:e2e:affected`.
  * Docs guards (OPS63): the `docs-guards` checks (changelog append-only,
  * aggregate sync, conflict markers) also run here — cheap git diffs, same
  * scripts the CI job runs (the `changelog-rewrite:` escape stays CI-only,
@@ -77,7 +79,7 @@ const main = async () => {
   const scope = readJsonScript('scripts/ci-scope.mjs')
 
   console.log(
-    `[gate:ci] scope base=${scope.base} code=${scope.code.mode} build=${scope.build.mode} test=${scope.test.mode} e2e=${scope.e2e.mode} (e2e runs in CI, not in this gate — OPS59)`,
+    `[gate:ci] scope base=${scope.base} code=${scope.code.mode} build=${scope.build.mode} test=${scope.test.mode} e2e=${scope.e2e.mode} (e2e not in this gate — OPS72; local affected is a skill step)`,
   )
 
   // --- Phase 1 (cheap) ---
@@ -152,14 +154,18 @@ const main = async () => {
 
   if (scope.e2e.mode === 'none') {
     console.log('\n[gate:ci] ⊘ e2e: CI will skip (no e2e blast radius)')
+  } else if (scope.e2e.mode === 'selected') {
+    console.log(
+      `\n[gate:ci] ▶ e2e: CI runs the blast radius (${scope.e2e.specs.join(', ')}) — not in this gate (OPS72); full lives in deploy verify`,
+    )
   } else {
-    const specs =
-      scope.e2e.mode === 'full' ? 'full suite' : `selected: ${scope.e2e.specs.join(', ')}`
-    console.log(`\n[gate:ci] ▶ e2e: runs in CI (job e2e, ${specs}) — not in this gate (OPS59)`)
+    console.log(
+      '\n[gate:ci] ▶ e2e: diff is high-risk (full mode) — no e2e in this PR by design (OPS72); run `pnpm test:e2e:affected` locally; deploy verify runs full before publishing',
+    )
   }
 
   console.log(
-    '\n[gate:ci] ✓ all checks passed (ci-pr mirror: docs guards local — OPS63; e2e verified in CI)',
+    '\n[gate:ci] ✓ all checks passed (ci-pr mirror: docs guards local — OPS63; e2e: local affected is a skill step — OPS72)',
   )
 }
 
