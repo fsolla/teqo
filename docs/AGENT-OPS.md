@@ -1,6 +1,6 @@
 # AGENT-OPS — operação do paradigma de agentes paralelos
 
-Uma página. Norte: simplicidade (só GitHub + Cursor), agente entrega em `main`, deploy de produção só após o verificador full-suite verde.
+Uma página. Norte: simplicidade (só Forgejo + Cursor), agente entrega em `main`, deploy de produção só após o verificador full-suite verde.
 
 ## Ambientes de dados (test ladder — nunca misturar)
 
@@ -9,7 +9,7 @@ Uma página. Norte: simplicidade (só GitHub + Cursor), agente entrega em `main`
 | **Mínimo** (`teqo_test` local / service CI) | schema migrado + `pnpm db:seed:minimal` (sintético, sem PII) | agentes, Cursor Cloud, CI        |
 | **Prod** (`teqo_1313`, homeserver)          | real                                                         | job `deploy` do `ci.yml` (OPS53) |
 
-Agentes **nunca** recebem `DATABASE_URL` de prod e nunca setam `ALLOW_REMOTE_DB`. Não há mais smoke Neon `stage` / `ALLOW_STAGE_TEST_DB` / `ci-stage.yml`.
+Agentes **nunca** recebem `DATABASE_URL` de prod e nunca setam `ALLOW_REMOTE_DB`. Não há mais smoke `stage` / `ALLOW_STAGE_TEST_DB` / `ci-stage.yml`.
 
 ## Fluxo
 
@@ -18,10 +18,10 @@ claim → feature branch → PR --base main → CI PR green (cascade + skips) �
 main → ci.yml (janela de 30 min, OPS65) full suite verde → job `deploy` (homeserver, OPS53 — merge com mudança de produção == site atualizado em ~30 min + suite/deploy)
 ```
 
-**Skills:** `plan-issue` (intenção + Issues) → `work-issue` (humano: Issue já claimada → impl plan → confirmação → execução) ou `agent-work-issue` (pool: já claimada → impl plan → execução sem pausa) → `/simplify` → `capture-review-debts` → PR `--base main` → `project-status`. `docs/roadmap.md` = legado congelado; fonte canônica = GitHub Issues.
+**Skills:** `plan-issue` (intenção + Issues) → `work-issue` (humano: Issue já claimada → impl plan → confirmação → execução) ou `agent-work-issue` (pool: já claimada → impl plan → execução sem pausa) → `/simplify` → `capture-review-debts` → PR `--base main` → `project-status`. `docs/roadmap.md` = legado congelado; fonte canônica = Issues do Forgejo (`git.solla.dev/fsolla/teqo`).
 
-- **Agente faz sozinho:** claim (pool-supervisor no pool; humano via `pnpm agent:claim` fora da sessão — OPS33: `worktree next` claima) → implementa → **`pnpm push`** → PR **Ready** (nunca draft) com `Closes #N` → `gh pr merge --auto --rebase` → `gh pr checks --watch --required`. Regra always-on: `.agents/rules/agent-pr-workflow.mdc`. Em Cursor Cloud: `ManagePullRequest` com `draft: false`, depois armar auto-merge via `gh pr merge --auto --rebase` (o default draft da tool **não** vale neste repo).
-- **Só humano:** secrets Vercel (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`), `POOL_GITHUB_TOKEN`, `pnpm configure:branch-protection`, editar envs Neon/Vercel.
+- **Agente faz sozinho:** claim (pool-supervisor no pool; humano via `pnpm agent:claim` fora da sessão — OPS33: `worktree next` claima) → implementa → **`pnpm push`** → PR via API/MCP **Ready** (nunca draft) com `Closes #N` → o safety net `agent-pr-ready-automerge.yml` espera o rollup `CI (PR) / checks` e mergea por rebase. Regra always-on: `.agents/rules/agent-pr-workflow.mdc`. Em Cursor Cloud: `ManagePullRequest` com `draft: false` (o default draft da tool **não** vale neste repo) — o merge continua pelo safety net.
+- **Só humano:** envs de produção no homeserver (`~/stack/teqo-1313.env`, fora do repo — o deploy as lê via BuildKit secrets), `pnpm configure:branch-protection` (idempotente; reaplicar se o drift voltar), runbook manual/rollback (`docs/ops/teqo-1313-deploy.md`).
 
 ### Dono do PR, dono do CI
 
@@ -56,7 +56,7 @@ Labels: `ready|in-progress|blocked|done|in-prod`, `prio:*`, `kind:*`, `needs:*`.
 
 1. Schema → atualizar `db:seed:minimal` no mesmo PR (`needs:migration`).
 2. Migrations NÃO são serializadas entre PRs: o CI (migrate + int, incl. `campaignMigrationReconciliation`) valida a cadeia em todo PR e na main; rebase antes de `migrate:create` continua obrigatório.
-3. Ready + auto-merge: `gh pr create --base main` → `gh pr merge --auto --rebase`; `gh pr checks --watch --required` (Vercel Git não é gate). **Merge é por rebase** (nunca merge commit): preserva a linha histórica limpa do `main` e é o modo que o CI guarda contra conflitos latentes.
+3. Ready + auto-merge: `pnpm push -u origin HEAD` → PR via API/MCP (Ready, base `main`, `Closes #N`) → o safety net `agent-pr-ready-automerge.yml` (`scripts/forgejo-pr-automerge.mjs`) espera o rollup `CI (PR) / checks` e mergea por rebase — não há `gh` em nenhuma máquina (OPS50), o safety net é quem espera os checks. **Merge é por rebase** (nunca merge commit): preserva a linha histórica limpa do `main` e é o modo que o CI guarda contra conflitos latentes.
 4. **Changelog da entrega (OPS44):** toda entrega escreve `docs/changelog/<data>-<id>.md` (ex. `2026-08-13-ops44.md`) e roda `pnpm changelog:build` antes do push — o agregado `docs/CHANGELOG-AGENTS.md` é **insert-only** (nunca remove/reescreve entradas; entradas históricas não são migradas). Guard de CI `docs-guards`: (a) agregado é append-only (multiset sobre blobs — perda de linha falha); (b) `docs/changelog/` é additions-only (M/D falham); (c) agregado está up to date com `docs/changelog/` (`changelog:check`); (d) nenhum marcador de conflito em diffs de markdown (docs/, AGENTS.md, .agents/ — cobre PRs docs-only, onde a suíte unit não roda). **Desde OPS63 os mesmos três checks rodam também no pre-push local** (`gate:push` → `gate:ci`, fase 1 — mesmos scripts, default `origin/main`). Restauração legítima (header muda, restauração estilo D8) escapa escrevendo **`changelog-rewrite: <motivo>` como linha própria** no body do PR — definição canônica aqui; o texto do checkbox do PR template nunca ativa (linha-ancorado). **O escape é CI-only (body do PR):** no pre-push local a restauração legítima falha com a mesma mensagem do CI — bypass documentado é `git push --no-verify` direto (o CI, com o escape no body, continua sendo a via da restauração). A própria troca `--merge` → `--rebase` deste doc usou o escape — header do agregado mudou.
 
 ## Registries compartilhados (serialização por arquivo, não por PR)
@@ -76,6 +76,7 @@ Arquivos de "lista" que N agentes escrevem em paralelo (changelog, plans, migra�
 | `issue-done-on-main-merge.yml`       | PR merged → `main` (same-repo)      | —                      | `Closes`/`Fixes` → `done` + `in-prod` (PAT `FORGEJO_API_TOKEN`; `GITHUB_TOKEN` 403 em Issues)                                                                                                                                                                                                                                                                                                                                                                                               |
 | `plan-issue-ready-on-main-merge.yml` | PR merged → `main` (same-repo)      | —                      | `Related #N` aguardando plano → `ready` (OPS18; soft-skip; mesmo PAT)                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `agent-pr-ready-automerge.yml`       | PR same-repo → `main` (open/sync/…) | —                      | Safety net via `forgejo-pr-automerge.mjs` (plain Node): espera o rollup `checks` e mergea por rebase com `FORGEJO_API_TOKEN` (o `GITHUB_TOKEN` nativo não tem write no repo — o push do merge é rejeitado com 409); draft `cursor/*` → Ready; draft não-`cursor/*` = veto, skip                                                                                                                                                                                                             |
+| `archive-cursor-agent.yml`           | dispatch manual (ops)               | —                      | Helper: cancela run + arquiva um agente Cursor Cloud (`CURSOR_API_KEY`) — **dormente (OPS65)** como o pool                                                                                                                                                                                                                                                                                                                                                                                  |
 
 `agent-pool.yml` foi **removido no OPS65** (pool dormente; o tick `*/10` custava 144 `pnpm install`/dia na workstation).
 
@@ -85,11 +86,12 @@ Fast gate: `pnpm gate:fast`. Push: `pnpm push`.
 
 ### Secrets (humano, uma vez)
 
-| Secret              | Uso                                                                                                                                                                         |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `FORGEJO_API_TOKEN` | Supervisor do pool e scripts Forgejo (`forgejo-api.mjs`); também nos workflows pós-merge (`issue-done`, `plan-issue-ready`) — o `GITHUB_TOKEN` nativo 403 em Issues (OPS61) |
-| `CURSOR_API_KEY`    | Supervisor do pool (Cursor Cloud)                                                                                                                                           |
-| `POOL_GITHUB_TOKEN` | PAT `actions:write` + `issues:write` (variables do pool; `GITHUB_TOKEN` costuma 403)                                                                                        |
+| Secret              | Uso                                                                                                                                                                                                                 |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FORGEJO_API_TOKEN` | Supervisor do pool e scripts Forgejo (`forgejo-api.mjs`); também nos workflows pós-merge (`issue-done`, `plan-issue-ready`) e no safety net — o `GITHUB_TOKEN` nativo 403 em Issues e não tem write no repo (OPS61) |
+| `CURSOR_API_KEY`    | Supervisor do pool (Cursor Cloud) — **dormente (OPS65)**; só o helper `archive-cursor-agent.yml` a usa hoje                                                                                                         |
+
+`POOL_GITHUB_TOKEN` é **legado** (era da transição GitHub): o `scripts/agent-pool.mjs` o ignora quando presente; não criar no Forgejo. Envs de produção (DB, S3, VAPID, `REVALIDATE_SECRET`, `NEXT_PUBLIC_SITE_URL`) vivem em `~/stack/teqo-1313.env` no homeserver — nunca como secrets do Forgejo.
 
 Branch protection de `main` (aplicada em 2026-08-18, OPS61): required status check `CI (PR) / checks` (o rollup do `ci-pr.yml` — único contexto que cobre a cascata inteira), `strict=false`, 0 reviews. O `waitForChecks` do safety net espera esse mesmo rollup antes de mergear (o próprio status do job é `pending` durante o run e nunca entra no veredito); a regra no servidor é o gate real — o Forgejo bloqueia o merge POST com 405 se o contexto exigido não estiver verde, inclusive merges manuais via API (a PR #52 entrou em main com CI vermelho por merge manual). Reaplicar/consertar drift: `pnpm configure:branch-protection` (idempotente).
 

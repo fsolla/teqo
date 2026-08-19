@@ -35,10 +35,9 @@ entrega.
    (insert-only: entradas históricas nunca mudam; o diff será só a entrada
    nova + o agregado). Rode `pnpm changelog:check` para confirmar.
 3. **`pnpm push -u origin HEAD`**
-4. PR **Ready** (nunca draft): `gh pr create --base main` com `Closes #<N>`
-5. `gh pr merge --auto --rebase` imediatamente
-6. `gh pr checks <PR> --watch --required` (`checks`; ignore Vercel Git)
-7. CI flipa `done`/`in-prod` no merge. Comente na Issue o desfecho em uma linha.
+4. PR via API/MCP (ou `ManagePullRequest` no Cloud) — **Ready** (nunca draft), base `main`, com `Closes #<N>`
+5. O safety net `agent-pr-ready-automerge.yml` espera o rollup `CI (PR) / checks` e mergea por rebase — nada a armar
+6. CI flipa `done`/`in-prod` no merge. Comente na Issue o desfecho em uma linha.
 
 ## Deltas por ator
 

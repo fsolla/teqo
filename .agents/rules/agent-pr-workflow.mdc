@@ -11,13 +11,15 @@ alwaysApply: true
 
 ```bash
 pnpm push -u origin HEAD
-gh pr create --base main --title "<id> — <title>" --body "$(cat <<'EOF'
+```
+
+Depois, abra a PR via API/MCP do opencode (humano) ou `ManagePullRequest` (Cursor Cloud) — **Ready**, base **`main`**, title `<id> — <title>`, body:
+
+```
 ## O que é
 <2–4 linhas>
 
 Closes #<N>
-EOF
-)"
 ```
 
 - **Never** `--draft`. PRs must be **Ready for review** on creation.
@@ -26,11 +28,9 @@ EOF
 
 ### Cursor Cloud / `ManagePullRequest`
 
-When the environment says to use `ManagePullRequest` instead of `gh pr create`:
-
 - **`draft: false`** (or omit only if the tool’s default is Ready — today Cloud defaults to draft, so **always pass `draft: false`**).
-- Right after create (or on `update_pr` if you opened draft by mistake): mark Ready if still draft, then enable auto-merge with `gh pr merge --auto --rebase <url|number>` (write allowed for this step — same as `agent-pr-workflow`; do not leave the PR waiting on a human).
-- Never end a turn with an open agent PR left as **Draft** or without **auto-merge** armed — inclui PRs do `engineering-audit` (artefatos e remediações).
+- Não há auto-merge a armar por PR: o safety net (abaixo) espera o rollup `checks` e mergea sozinho.
+- Never end a turn with an open agent PR left as **Draft** — inclui PRs do `engineering-audit` (artefatos e remediações).
 
 ## Push (determinístico)
 
@@ -48,13 +48,7 @@ git push --no-verify # WIP / cutover escape — CI repete tudo; ver AGENT-OPS
 
 ## Auto-merge immediately
 
-Right after the PR exists and is **Ready**:
-
-```bash
-gh pr merge --auto --rebase
-```
-
-Do not wait for human approval on normal deliveries. Auto-merge fires when **required** checks pass.
+The safety net (`agent-pr-ready-automerge.yml`, abaixo) merges the PR when the required checks pass — there is nothing to arm per PR. Do not wait for human approval on normal deliveries.
 
 ## Required checks
 
@@ -66,26 +60,22 @@ Branch protection on `main` (applied 2026-08-18, OPS61) requires only:
 
 (`migration-lock` removed 2026-08-12 — the CI validates migration chains via migrate + int on every PR/main.)
 
-**There is no deploy from CI.** The `ci.yml` verifier on `main` runs the full suite and stops (production is self-hosted on the homeserver — `jorgesolla1313.com.br` — deployed via an ops runbook outside this repo). Do not add a Vercel/Git-integration deploy gate.
+**There is no deploy from PR CI.** The `ci.yml` verifier on `main` runs the full suite in its fixed 30-minute window and, on a production change, the `deploy` job publishes to the homeserver (`jorgesolla1313.com.br`, self-hosted) — migrations applied before the rollout. Do not add a Vercel/Git-integration deploy gate.
 
-When watching CI:
+When watching CI, use the PR page (or the API) — the safety net is what waits on checks; `gh` does not exist in this repo (OPS50).
 
-```bash
-gh pr checks <PR> --watch --required
-```
-
-Use `--required` — without it, `--watch` also waits for Vercel.
+Use the rollup context `CI (PR) / checks` — without it, you are not covering the cascade.
 
 ## Promote
 
-There is no stage→main promote. Merging to `main` is the delivery; `ci.yml` verifies the full suite and production deploys from the homeserver runbook.
+There is no stage→main promote. Merging to `main` is the delivery; `ci.yml` verifies the full suite and, on a production change, deploys to the homeserver (OPS53/OPS65; runbook: `docs/ops/teqo-1313-deploy.md`).
 
 ## Safety net (workflow)
 
 `agent-pr-ready-automerge.yml` — PRs same-repo → `main` (todas as branches).
 O workflow roda `scripts/forgejo-pr-automerge.mjs` (plain Node, zero-dep): se
 draft `cursor/*` → marca Ready; espera os checks e mergea por rebase (o
-equivalente Forgejo do `gh pr merge --auto --rebase`). O wait exige o rollup
+equivalente Forgejo do auto-merge — sem `gh`). O wait exige o rollup
 `CI (PR) / checks` POSTADO e verde (OPS61) — o único contexto que só existe
 quando a cascata inteira do ci-pr assentou (jobs ainda não agendados não
 postam status; o próprio status do job do safety net é `pending` durante o run

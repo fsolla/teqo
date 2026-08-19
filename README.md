@@ -6,16 +6,16 @@
 
 > **Cheatsheet de operação agentic (humanos)** — o fluxo em 5 linhas:
 >
-> 1. O agente roda `pnpm agent:claim` e pega a próxima Issue `ready` por prioridade (`prio:P0..P3`).
-> 2. Ele implementa, roda o fast gate (`lint + typecheck + unit`) e abre **PR para `main`** — sozinho.
-> 3. CI verde → o PR mergeia em `main` automaticamente; o verificador `ci.yml` roda a suíte completa.
-> 4. Suíte verde → Action dispara `vercel deploy --prod` (Vercel Git builds estão desligados).
-> 5. Secrets humanos (uma vez): `FORGEJO_API_TOKEN`, `CURSOR_API_KEY`, `POOL_GITHUB_TOKEN`; `pnpm configure:branch-protection` (main: required `CI (PR) / checks`).
+> 1. O agente roda `pnpm agent:claim` (ou `pnpm worktree next --issue N`) e pega a próxima Issue `ready` por prioridade (`prio:P0..P3`).
+> 2. Ele implementa, roda o fast gate (`lint + typecheck + unit`) e `pnpm push -u origin HEAD` — abre a PR para `main` (Ready, `Closes #N`).
+> 3. CI verde → o safety net `agent-pr-ready-automerge.yml` mergea em `main` por rebase; o verificador `ci.yml` do main roda a suíte completa na janela fixa de 30 min.
+> 4. Com mudança de produção → o job `deploy` publica no homeserver (`jorgesolla1313.com.br`, self-hosted) — migrações aplicadas antes do rollout.
+> 5. Secrets humanos (uma vez): `FORGEJO_API_TOKEN` no Forgejo; envs de prod em `~/stack/teqo-1313.env` no homeserver. Branch protection de `main` já aplicada (reaplicar: `pnpm configure:branch-protection`).
 >
-> Comandos: `pnpm agent:claim | agent:register | agent:prioritize | agent:file-miss | agent:pool` e `pnpm db:seed:minimal`.
+> Comandos: `pnpm agent:claim | agent:register | agent:prioritize | agent:file-miss | worktree next` e `pnpm db:seed:minimal`.
 > Labels: estado `ready|in-progress|blocked|done|in-prod`, `prio:P0..P3`, `kind:*`, `needs:migration|consent`, `requirements-changed`.
-> **Agente faz sozinho:** claim → implementar → PR → main. **Só humano:** secrets Vercel/pool, branch protection, envs Neon.
-> Tudo em detalhe: [`docs/AGENT-OPS.md`](docs/AGENT-OPS.md) · CI: `.github/workflows/ci-pr.yml` + `ci.yml`.
+> **Agente faz sozinho:** claim → implementar → PR → main. **Só humano:** envs do homeserver, branch protection, runbook de rollback.
+> Tudo em detalhe: [`docs/AGENT-OPS.md`](docs/AGENT-OPS.md) · CI: `.forgejo/workflows/ci-pr.yml` + `ci.yml`.
 
 Teqo starts as the official digital platform for **deputado Jorge Solla** and evolves into a **white-label civic engagement platform** for politicians in Brazil.
 
@@ -35,7 +35,7 @@ Initial delivery focuses on Jorge Solla's public website, editorial CMS, and the
 
 - Public-facing content and updates (news/`post` + `tag` live)
 - Institutional pages and biography (still pending a `Pages` collection)
-- Internal campaign operations: electoral nuclei, leaderships, estimates, updates, WhatsApp invites
+- Internal campaign operations: municípios (435, pré-definidos), leaderships, estimates, updates, WhatsApp invites
 - Editorial operations through Payload CMS
 
 ### Phase 2: White-Label Platform
@@ -49,7 +49,7 @@ Teqo then becomes a configurable base product for other politicians in Brazil:
 
 ## Local Development
 
-> **Production safety:** the production database is a live Neon Postgres holding real citizens' data. Local development and tests run against a **local** Postgres and must never point at production. `pnpm dev` refuses to start against a non-local database, and the test suite refuses any database whose name doesn't end in `_test`.
+> **Production safety:** the production database is a live Postgres on the homeserver (`teqo_1313`) holding real citizens' data. Local development and tests run against a **local** Postgres and must never point at production. `pnpm dev` refuses to start against a non-local database, and the test suite refuses any database whose name doesn't end in `_test`.
 
 ### First-time setup
 
@@ -62,8 +62,8 @@ Teqo then becomes a configurable base product for other politicians in Brazil:
    DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo
    ```
 5. Load a schema + content into the local database — pick one:
-   - **Mirror production content (recommended):** `PROD_DATABASE_URL="<unpooled Neon URL>" pnpm db:pull`
-     Copies production's schema and content into local. It only reads production and **excludes supporter PII** (`contact`/`signature`/`subscription` data).
+   - **Mirror production content (recommended):** `PROD_DATABASE_URL="<prod connection string>" pnpm db:pull`
+     Copies production's schema and content into local. It only reads production and **excludes supporter PII** (`contact`/`signature`/`subscription` data). The prod string is the `DATABASE_URL` of `~/stack/teqo-1313.env` on the homeserver (Postgres `teqo_1313`).
    - **Empty schema from migrations:** `pnpm migrate`
 6. Start the dev server: `pnpm dev`
 7. Open: `http://localhost:3000`
@@ -84,7 +84,7 @@ curl -X POST "https://<prod-domain>/api/revalidate" -H "x-revalidate-secret: $RE
 curl -X POST "https://<prod-domain>/api/revalidate?tag=global_privacy-policy" -H "x-revalidate-secret: $REVALIDATE_SECRET"
 ```
 
-`REVALIDATE_SECRET` must be set in the Vercel production env (see `.env.example`). See the "Posts & Tags" section of `AGENTS.md` for the full model.
+`REVALIDATE_SECRET` must be set in the production env (`~/stack/teqo-1313.env` on the homeserver — see `.env.example`). See the "Posts & Tags" section of `AGENTS.md` for the full model.
 
 ### Database migrations
 
@@ -97,7 +97,7 @@ To change the schema:
 3. Review and commit the generated files in `src/migrations/` (both `.ts` and `.json`, plus `index.ts`).
 4. Apply it locally: `pnpm migrate` (check status anytime with `pnpm migrate:status`).
 
-**Deploying to production:** `pnpm build` runs `payload migrate` before building, so every Vercel deploy automatically applies pending migrations to the production database. Do not run migrations against production by hand.
+**Deploying to production:** merges to `main` with production changes are deployed by the `deploy` job of `ci.yml` (windowed — see `docs/AGENT-OPS.md`); the remote script (`scripts/deploy-homeserver.sh`) builds on the homeserver and applies pending migrations through the compose maintenance service `teqo-1313-migrate` **before** the rollout. Do not run migrations against production by hand. Runbook (rollback, known failures): `docs/ops/teqo-1313-deploy.md`.
 
 ### Running tests
 
@@ -113,7 +113,7 @@ Then run:
 - `pnpm test:e2e` — Playwright (requires the test DB schema and a free port)
 - `pnpm test:all` — unit + integration + E2E
 
-Quality gates (also enforced by CI on the GitHub mirror): `pnpm lint` (zero warnings — `--max-warnings=0`), `pnpm typecheck`, and `pnpm exec knip` (dead files/dependencies fail; delete what your change orphaned). Standards: `.agents/rules/engineering-standards.mdc`.
+Quality gates (also enforced by CI on the Forgejo Actions): `pnpm lint` (zero warnings — `--max-warnings=0`), `pnpm typecheck`, and `pnpm exec knip` (dead files/dependencies fail; delete what your change orphaned). Standards: `.agents/rules/engineering-standards.mdc`.
 
 ## Tech Stack
 
@@ -124,10 +124,10 @@ Quality gates (also enforced by CI on the GitHub mirror): `pnpm lint` (zero warn
 
 ## Campaign (`/campanha`)
 
-Internal campaign tool for electoral nuclei, local leaderships, vote estimates, field updates, and WhatsApp invites. Authenticated separately from `/admin` via the `campaignUser` collection (`geral` / `coordenador` / `lideranca`). Operational status and decisions: [`.agents/rules/projects/nucleos-eleitorais.mdc`](.agents/rules/projects/nucleos-eleitorais.mdc). Conventions and deploy checklist: `AGENTS.md` (“Campaign auth” / “Campaign nuclei MVP”).
+Internal campaign tool for municípios (435 pré-definidos), local leaderships, vote estimates, field updates, and WhatsApp invites. Authenticated separately from `/admin` via the `campaignUser` collection (`coordinator` / `advisor` / `leader` / `candidate`). Operational status and decisions: [`.agents/rules/projects/nucleos-eleitorais.mdc`](.agents/rules/projects/nucleos-eleitorais.mdc). Conventions and deploy checklist: `AGENTS.md` (“Campaign auth” / “Campaign Municípios model”).
 
 **Production blocker:** do not load real leadership data or enable invites until counsel-approved `Consent.key = 'lideranca-autopreenchimento'` exists. Absolute invite URLs require `NEXT_PUBLIC_SITE_URL` as an exact HTTPS DNS origin in production.
 
 ## Roadmap
 
-Backlog and future plans live as tracked [GitHub Issues](https://github.com/fsolla/teqo/issues) (spec + deps + prio + model per issue; flow skills: `plan-issue` → `work-issue` → `project-status`; `docs/roadmap.md` is a frozen legacy stub).
+Backlog and future plans live as tracked [Forgejo Issues](https://git.solla.dev/fsolla/teqo/issues) (spec + deps + prio + model per issue; flow skills: `plan-issue` → `work-issue` → `project-status`; `docs/roadmap.md` is a frozen legacy stub).
