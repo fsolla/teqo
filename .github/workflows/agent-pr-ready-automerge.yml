@@ -49,4 +49,9 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - name: Mark Ready and arm auto-merge
+        env:
+          # Explicit `github.token` — the built-in GITHUB_TOKEN env is not
+          # guaranteed to be injected on every event path; passing it via the
+          # documented context is the robust form.
+          GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/github-pr-automerge.mjs --pr "${{ github.event.pull_request.number }}"
