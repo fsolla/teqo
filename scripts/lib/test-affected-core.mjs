@@ -29,8 +29,6 @@ export const HIGH_RISK_EXACT = new Set([
   'scripts/e2e-affected.mjs',
   'scripts/run-e2e-affected.mjs',
   'scripts/ci-scope.mjs',
-  'scripts/ci-classify-production.mjs',
-  'scripts/lib/dockerignore.mjs',
   'scripts/check-test-locations.mjs',
   'scripts/check-plans-only-pr-closes.mjs',
   'scripts/lib/plansOnlyClosesGuard.mjs',

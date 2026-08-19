@@ -6,8 +6,8 @@
 # veto (the CLI skips them). Fork PRs are excluded (the repo is public; a
 # merged fork PR would deploy) — same RCE-guard class as the other workflows.
 #
-# GitHub's NATIVE auto-merge replaces the Forgejo-era poll CLI
-# (forgejo-pr-automerge.mjs): `enablePullRequestAutoMerge` (GraphQL, REBASE —
+# GitHub's NATIVE auto-merge replaces the Forgejo-era poll CLI (removed in
+# OPS71 Fase 2): `enablePullRequestAutoMerge` (GraphQL, REBASE —
 # the repo's canonical merge style) is server-side — GitHub only merges when
 # every required check (the `CI (PR) / checks` rollup of ci-pr.yml, OPS62) is
 # green and the PR is mergeable. The OPS64 "rollup can lie" defense is
