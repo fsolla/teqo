@@ -152,6 +152,11 @@ jobs:
           # must win through the .env.test.local layer (same mechanism
           # `pnpm worktree next` uses). OPS50.
           echo "DATABASE_URL=postgresql://teqo:teqo@postgres-int:5432/teqo_test" > .env.test.local
+      - name: Debug service DNS (temporary diagnostic)
+        run: |
+          getent hosts postgres-int || echo "getent postgres-int: unresolved"
+          getent hosts postgres-build || echo "getent postgres-build: unresolved"
+          node -e "require('node:dns').lookup('postgres-int', (e, a) => console.log('node lookup postgres-int:', e ? e.code : a))"
       - name: Migrate (int database)
         run: pnpm migrate
       - name: Seed minimal (int database)
