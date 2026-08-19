@@ -70,8 +70,10 @@ secrets de integração: `FORGEJO_API_TOKEN` (flips pós-merge) e
 3. PAT local: criar token GitHub com escopo `repo` e exportar `GITHUB_TOKEN`
    (para `node scripts/github-pr.mjs` e `pnpm configure:branch-protection`).
 4. `GITHUB_TOKEN=… pnpm configure:branch-protection` — required check
-   `CI (PR) / checks`, 0 reviews, `enforce_admins: true`. **Antes do primeiro
-   push** (senão o PR mergearia sem required check).
+   `CI (PR) / checks` (literal de match: `checks` — o GitHub casa pelo nome do
+   check-run; a UI exibe workflow/job; pin PR #742), 0 reviews,
+   `enforce_admins: true`. **Antes do primeiro push** (senão o PR mergearia
+   sem required check).
 5. **Desligar o runner do Forgejo** na workstation (ex.:
    `systemctl --user stop forgejo-runner`) — após o primeiro PR GitHub
    validado; para o schedule do `ci.yml` antigo.

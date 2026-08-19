@@ -32,7 +32,7 @@ describe('github branch-protection rule planning (OPS71)', () => {
   it('plans update when the required check context drifts', () => {
     const drift = {
       ...compliant,
-      required_status_checks: { strict: false, contexts: ['CI (PR) / checks (pull_request)'] },
+      required_status_checks: { strict: false, contexts: ['CI (PR) / checks'] },
     }
     expect(planBranchProtectionRule(drift).action).toBe('update')
   })
@@ -77,12 +77,12 @@ describe('github branch-protection rule planning (OPS71)', () => {
     expect(ruleMatches(existing)).toBe(true)
   })
 
-  it('the desired rule names exactly the check-run a single `checks` job posts', () => {
-    // GitHub check-run naming: <workflow name> / <job name>. The ci-pr.yml
-    // workflow is named `CI (PR)` and its single job is `checks` (OPS62) —
-    // the required check literal must match that exact check-run.
+  it('the desired rule uses the check-run literal GitHub matches (job name, live pin)', () => {
+    // Verified on PR #742 (OPS71): required-check matching uses the CHECK-RUN
+    // name (`checks`), not the UI display `CI (PR) / checks` — the
+    // workflow-prefixed literal never matches and leaves the PR blocked.
     const check = DESIRED_RULE.required_status_checks.checks[0]
-    expect(check.context).toBe('CI (PR) / checks')
+    expect(check.context).toBe('checks')
     expect(DESIRED_RULE.required_status_checks.checks).toHaveLength(1)
   })
 })

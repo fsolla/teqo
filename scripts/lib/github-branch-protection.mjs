@@ -1,18 +1,25 @@
 /**
  * Pure decision for the GitHub `main` branch protection rule (OPS71).
  *
- * The desired rule is the repo contract: main requires the `CI (PR) / checks`
- * check-run (the ci-pr single-job cascade — OPS62) as the only status check
- * (strict=false, 0 reviews) and `enforce_admins: true` so even repo admins
- * cannot merge with a red required check (the rule-based protection of the
- * Forgejo era applied to everyone — preserved).
+ * The desired rule is the repo contract: main requires the ci-pr cascade
+ * check-run (OPS62) as the only status check (strict=false, 0 reviews) and
+ * `enforce_admins: true` so even repo admins cannot merge with a red required
+ * check (the rule-based protection of the Forgejo era applied to everyone —
+ * preserved).
  *
  * The auto-merge safety net never merges on red CI by construction (GitHub's
  * server-side guarantee), but the branch protection rule is the final defense
  * against every other merge path (manual API merges included).
+ *
+ * Context literal (verified live on PR #742, 2026-08-19): GitHub's
+ * required-check matching uses the CHECK-RUN NAME — the bare JOB name
+ * (`checks`), NOT the UI display `<workflow name> / <job name>`
+ * (`CI (PR) / checks`). The latter never matches and leaves the PR
+ * mergeable_state "blocked" forever. The UI still shows
+ * `CI (PR) / checks`; the rule literal is `checks`.
  */
 
-export const REQUIRED_CHECK_CONTEXT = 'CI (PR) / checks'
+export const REQUIRED_CHECK_CONTEXT = 'checks'
 
 /**
  * GitHub PUT /branches/{branch}/protection replace-semantics payload. Only
