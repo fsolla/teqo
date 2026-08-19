@@ -15,7 +15,6 @@ Entregue e mergeado em `main`. Desvios de execução em relação a este plano:
 - **Encoding do `text` é `+` para espaço** (URLSearchParams do builder canônico) — válido para o WhatsApp; os decodes de teste fazem `replace(/\+/g, ' ')`.
 - **Débito deferido:** dedupe do blob de 15 campos do `updateSocialFeedSettings` (5 cópias no describe do e2e) — quando os testes S2/S3 forem tocados de novo.
 
-
 ## Leitura da intenção
 
 - **Outcome:** todo card de conteúdo da home (Artigo/YouTube/Instagram — seção S1+S2+S3 entregue) ganha um botão discreto de compartilhar que abre `wa.me` com mensagem pronta por fonte + "Copiar link", sem competir com o CTA do card, sem coletar nada.
