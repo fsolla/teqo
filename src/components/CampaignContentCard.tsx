@@ -7,7 +7,6 @@ export type CampaignContentCardData = {
   id: string | number
   href: string
   title: string
-  badgeLabel: string
   meta: string
   /** Source of the content — drives the WhatsApp share message template. */
   shareKind: ContentShareKind
@@ -25,10 +24,8 @@ type CampaignContentCardProps = {
   featured?: boolean
 }
 
-const cardClassName = (featured: boolean) =>
-  `flex h-full flex-col rounded-xl border border-(--campaign-line) bg-white p-3 shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--pt-red) ${
-    featured ? 'gap-3' : 'gap-2'
-  }`
+const cardClassName =
+  'flex h-full flex-col bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--pt-red)'
 
 /**
  * Presentational content card for the campaign home content bento/carousel —
@@ -43,7 +40,7 @@ export const CampaignContentCard = ({ card, featured = false }: CampaignContentC
   const inner = (
     <>
       <div
-        className={`relative w-full shrink-0 overflow-hidden rounded-lg bg-(--campaign-band) ${
+        className={`relative w-full shrink-0 overflow-hidden bg-(--campaign-band) ${
           card.coverAspect === 'square' ? 'aspect-square' : 'aspect-video'
         }`}
       >
@@ -56,11 +53,8 @@ export const CampaignContentCard = ({ card, featured = false }: CampaignContentC
             className="object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
           />
         ) : null}
-        <span className="absolute top-2 left-2 rounded-full bg-(--pt-red-dark) px-2 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase">
-          {card.badgeLabel}
-        </span>
       </div>
-      <div className="flex flex-1 flex-col gap-1">
+      <div className="flex flex-1 flex-col gap-1 p-3">
         <h3
           className={`leading-snug font-bold text-(--campaign-ink) group-hover:underline ${
             featured ? 'text-base' : 'text-sm'
@@ -79,16 +73,11 @@ export const CampaignContentCard = ({ card, featured = false }: CampaignContentC
   return (
     <div className="group relative h-full">
       {card.external ? (
-        <a
-          href={card.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cardClassName(featured)}
-        >
+        <a href={card.href} target="_blank" rel="noopener noreferrer" className={cardClassName}>
           {inner}
         </a>
       ) : (
-        <Link href={card.href} className={cardClassName(featured)}>
+        <Link href={card.href} className={cardClassName}>
           {inner}
         </Link>
       )}

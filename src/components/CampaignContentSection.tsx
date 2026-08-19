@@ -6,7 +6,6 @@ import {
   getCategoryName,
   getPostCanonicalPath,
   getVisiblePosts,
-  POST_TYPE_BADGE_LABELS,
 } from '@/utilities/posts'
 import { getInstagramFeed, type InstagramPost } from '@/utilities/socialFeed/instagramFeed'
 import {
@@ -47,7 +46,6 @@ const toArticleCardData = (post: Post): DatedCard | null => {
       id: post.id,
       href,
       title: post.title,
-      badgeLabel: POST_TYPE_BADGE_LABELS[post.type],
       shareKind: 'article' as const,
       meta: [formatRelativePostDate(post.publishedDate), categoryName].filter(Boolean).join(' · '),
       ...(cover?.url ? { coverUrl: cover.url, coverAlt: cover.alt ?? undefined } : {}),
@@ -62,7 +60,6 @@ const toVideoCardData = (video: YouTubeVideo): DatedCard => ({
     id: `yt:${video.id}`,
     href: `https://www.youtube.com/watch?v=${video.id}`,
     title: video.title,
-    badgeLabel: 'YouTube',
     shareKind: 'video' as const,
     meta: [
       formatRelativePostDate(video.publishedAt),
@@ -81,7 +78,6 @@ const toInstagramCardData = (post: InstagramPost): DatedCard => ({
     id: `ig:${post.id}`,
     href: post.permalink,
     title: post.caption ?? 'Publicação no Instagram',
-    badgeLabel: 'Instagram',
     shareKind: 'instagram' as const,
     meta: formatRelativePostDate(post.timestamp) ?? '',
     coverAspect: 'square',
