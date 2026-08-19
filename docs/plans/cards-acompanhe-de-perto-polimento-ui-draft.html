@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — Cards da seção "Acompanhe de perto": sem raio, imagem de borda a borda, chip removido</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-6xl p-8">
+    <p class="text-sm text-zinc-400">
+      Visitante da home pública de campanha (jorgesolla1313) — cards da seção "Acompanhe de
+      perto" propostos: sem cantos arredondados, imagem de borda a borda no card, texto com
+      respiro interno, chip removido de todos os cards (posts do site e origens externas).
+      Cenário 1: desktop. Cenário 2: mobile ~390px.
+    </p>
+
+      <section data-shot="desktop" class="mt-8 border-y border-zinc-800 bg-zinc-200">
+        <div class="mx-auto w-full max-w-[1160px] px-5 py-10 sm:px-8 lg:px-10">
+          <div class="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.1em] text-red-700">
+                Acompanhe de perto
+              </p>
+              <h2 class="mt-1 text-2xl font-black tracking-tight text-zinc-900">
+                A caminhada, em tempo real
+              </h2>
+              <p class="mt-1 text-sm text-zinc-600">
+                Bastidores, caravanas e as lutas do mandato: conteúdo atualizado, direto das redes.
+              </p>
+            </div>
+            <div class="flex gap-4 text-sm font-bold text-red-700 underline-offset-4">
+              <span>Ver artigos →</span>
+              <span>Seguir no Instagram →</span>
+              <span>YouTube →</span>
+            </div>
+          </div>
+
+          <div class="mt-6 grid grid-cols-4 gap-4">
+            <div class="col-span-2 row-span-2">
+              <article class="flex h-full flex-col border border-zinc-400 bg-white shadow-sm">
+                <div class="relative aspect-video w-full shrink-0 bg-zinc-300"></div>
+                <div class="flex flex-1 flex-col gap-1 p-3">
+                  <h3 class="text-base font-bold leading-snug text-zinc-900">
+                    Caravana do Jorge chega ao interior com mutirão de saúde
+                  </h3>
+                  <p class="text-xs leading-relaxed text-zinc-600">
+                    Equipe percorreu quatro municípios e levou atendimento, roda de conversa e a
+                    defesa da retomada do programa.
+                  </p>
+                  <span class="mt-auto text-xs text-zinc-600">há 2 horas · Saúde</span>
+                </div>
+              </article>
+            </div>
+
+            <article class="flex h-full flex-col border border-zinc-400 bg-white shadow-sm">
+              <div class="relative aspect-video w-full shrink-0 bg-zinc-300"></div>
+              <div class="flex flex-1 flex-col gap-1 p-3">
+                <h3 class="text-sm font-bold leading-snug text-zinc-900">
+                  Plenária em Feira de Santana debate a reforma tributária
+                </h3>
+                <span class="mt-auto text-xs text-zinc-600">há 5 horas · Eleitoral</span>
+              </div>
+            </article>
+
+            <article class="flex h-full flex-col border border-zinc-400 bg-white shadow-sm">
+              <div class="relative aspect-video w-full shrink-0 bg-zinc-300"></div>
+              <div class="flex flex-1 flex-col gap-1 p-3">
+                <h3 class="text-sm font-bold leading-snug text-zinc-900">
+                  Jorge em visita à fábrica de remédios no Polo Petroquímico
+                </h3>
+                <span class="mt-auto text-xs text-zinc-600">há 1 dia · Mandato</span>
+              </div>
+            </article>
+
+            <article class="flex h-full flex-col border border-zinc-400 bg-white shadow-sm">
+              <div class="relative aspect-video w-full shrink-0 bg-zinc-300"></div>
+              <div class="flex flex-1 flex-col gap-1 p-3">
+                <h3 class="text-sm font-bold leading-snug text-zinc-900">
+                  Direto da caminhada: o povo no centro do projeto
+                </h3>
+                <span class="mt-auto text-xs text-zinc-600">há 1 dia · 12 mil visualizações</span>
+              </div>
+            </article>
+
+            <article class="flex h-full flex-col border border-zinc-400 bg-white shadow-sm">
+              <div class="relative aspect-square w-full shrink-0 bg-zinc-300"></div>
+              <div class="flex flex-1 flex-col gap-1 p-3">
+                <h3 class="text-sm font-bold leading-snug text-zinc-900">
+                  Mutirão de castração gratuita reúne famílias no bairro
+                </h3>
+                <span class="mt-auto text-xs text-zinc-600">há 2 dias</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section data-shot="mobile" class="mt-8 w-[390px] border-y border-zinc-800 bg-zinc-200">
+        <div class="px-5 py-8">
+          <p class="text-xs font-black uppercase tracking-[0.1em] text-red-700">
+            Acompanhe de perto
+          </p>
+          <h2 class="mt-1 text-xl font-black tracking-tight text-zinc-900">
+            A caminhada, em tempo real
+          </h2>
+          <p class="mt-1 text-sm text-zinc-600">
+            Bastidores, caravanas e as lutas do mandato: conteúdo atualizado, direto das redes.
+          </p>
+
+          <div class="mt-5">
+            <article class="flex h-full flex-col border border-zinc-400 bg-white shadow-sm">
+              <div class="relative aspect-video w-full shrink-0 bg-zinc-300"></div>
+              <div class="flex flex-1 flex-col gap-1 p-3">
+                <h3 class="text-sm font-bold leading-snug text-zinc-900">
+                  Direto da caminhada: o povo no centro do projeto
+                </h3>
+                <p class="text-xs leading-relaxed text-zinc-600">
+                  Do comício em Salvador aos mutirões no interior, o dia a dia da campanha em
+                  vídeo, direto do canal.
+                </p>
+                <span class="mt-auto text-xs text-zinc-600">há 1 dia · 12 mil visualizações</span>
+              </div>
+            </article>
+            <div class="mt-3 flex items-center justify-center gap-2">
+              <span class="h-2 w-2 rounded-full bg-red-700"></span>
+              <span class="h-2 w-2 rounded-full bg-zinc-500"></span>
+              <span class="h-2 w-2 rounded-full bg-zinc-500"></span>
+              <span class="h-2 w-2 rounded-full bg-zinc-500"></span>
+              <span class="h-2 w-2 rounded-full bg-zinc-500"></span>
+            </div>
+            <p class="mt-2 text-center text-xs font-semibold text-zinc-600">
+              1 de 5 · deslize para ver os próximos
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
