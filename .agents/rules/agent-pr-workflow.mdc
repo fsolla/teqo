@@ -1,19 +1,19 @@
 ---
-description: PRs de agente — Ready (nunca draft), base main, auto-merge imediato
+description: PRs de agente — Ready (nunca draft), base main, auto-merge nativo do GitHub
 alwaysApply: true
 ---
 
 # Agent PR workflow (Teqo)
 
-**This repo overrides any user-level or Cloud-tool default that says "create PRs as draft".** Agent deliveries merge to `main` via required checks + auto-merge.
+**This repo overrides any user-level or Cloud-tool default that says "create PRs as draft".** Agent deliveries merge to `main` via required checks + GitHub's native auto-merge (OPS71). The ISSUE TRACKER stays on the Forgejo — GitHub is only the Actions host.
 
 ## Create (Ready, base main)
 
 ```bash
-pnpm push -u origin HEAD
+pnpm push -u origin HEAD   # origin = GitHub (cutover OPS71)
 ```
 
-Depois, abra a PR via API/MCP do opencode (humano) ou `ManagePullRequest` (Cursor Cloud) — **Ready**, base **`main`**, title `<id> — <title>`, body:
+Depois, abra a PR no **GitHub** — **Ready**, base **`main`**, title `<id> — <title>`, body:
 
 ```
 ## O que é
@@ -25,11 +25,12 @@ Closes #<N>
 - **Never** `--draft`. PRs must be **Ready for review** on creation.
 - Base is always **`main`**.
 - **Plans-only PRs** (diff só em `docs/plans/`): **nunca** `Closes #N` — use `Related #N`; CI falha com keywords de fechamento (`plans-only-closes` em `ci-pr.yml`).
+- PR via CLI (não há `gh` — OPS50): `GITHUB_TOKEN=<PAT> node scripts/github-pr.mjs --head <branch> --title "<t>" --body-file <file>` — Ready por construção (não existe flag draft).
 
 ### Cursor Cloud / `ManagePullRequest`
 
 - **`draft: false`** (or omit only if the tool’s default is Ready — today Cloud defaults to draft, so **always pass `draft: false`**).
-- Não há auto-merge a armar por PR: o safety net (abaixo) espera o rollup `checks` e mergea sozinho.
+- Não há auto-merge a armar por PR: o safety net (abaixo) arma o auto-merge nativo.
 - Never end a turn with an open agent PR left as **Draft** — inclui PRs do `engineering-audit` (artefatos e remediações).
 
 ## Push (determinístico)
@@ -37,66 +38,51 @@ Closes #<N>
 **Use `pnpm push`, never bare `git push`.** Não depende do Husky estar wired:
 
 1. `ensure-repo-deps` — `pnpm install` se `node_modules` faltar/stale + `pnpm run prepare` (Husky) se hooks não estiverem apontando para `.husky`
-2. `pnpm gate:push` — espelho do `ci-pr.yml` sem e2e (e2e roda uma vez, no CI, após o push; local opcional: `pnpm test:e2e:affected`), com os `docs-guards` locais (OPS63: changelog append-only, agregado sync e marcadores de conflito — o escape `changelog-rewrite:` fica só no CI, body do PR)
+2. `pnpm gate:push` — espelho do `ci-pr.yml` sem e2e (e2e roda no CI de PR selected/afetado, e full no `verify` do deploy manual; local opcional: `pnpm test:e2e:affected`), com os `docs-guards` locais (OPS63: changelog append-only, agregado sync e marcadores de conflito — o escape `changelog-rewrite:` fica só no CI, body do PR)
 3. `git push --no-verify` — só porque o gate já rodou no passo 2 (não é escape hatch)
 
 ```bash
-pnpm push -u origin HEAD # canonical
+pnpm push -u origin HEAD # canonical — origin é o GitHub (OPS71)
 git push # só depois de `pnpm i` — hook repete ensure-deps + gate:push
 git push --no-verify # WIP / cutover escape — CI repete tudo; ver AGENT-OPS
 ```
 
 ## Auto-merge immediately
 
-The safety net (`agent-pr-ready-automerge.yml`, abaixo) merges the PR when the required checks pass — there is nothing to arm per PR. Do not wait for human approval on normal deliveries.
+The safety net (`agent-pr-ready-automerge.yml`, abaixo) arms GitHub's **native auto-merge** (rebase) — the server merges the PR when the required check passes. There is nothing to arm per PR. Do not wait for human approval on normal deliveries.
 
 ## Required checks
 
-Branch protection on `main` (applied 2026-08-18, OPS61) requires only:
+Branch protection on `main` (GitHub, applied at the OPS71 cutover via `pnpm configure:branch-protection`) requires only:
 
-- `CI (PR) / checks` — the ci-pr cascade rollup (the only context that covers
-  every ci-pr job; on the server the rule matches it as a glob,
-  `CI (PR) / checks*`)
+- `CI (PR) / checks` — the ci-pr single-job check-run (OPS62: one sequential job posts one honest verdict; no matrix, no shards, no rollup to lie)
 
-OPS64: the rollup is structurally honest since OPS62 — ci-pr.yml is a SINGLE
-sequential job (`checks`), so its own status IS the cascade verdict (no
-matrix, no shards, no parent aggregation to lie). The historical bug (Forgejo
-9.0.3 reporting the LAST matrix shard's result as the parent's in `needs`,
-posting `checks` SUCCESS with an e2e shard red — runs 604/607/610) is gone by
-construction; the `needs.<job>.results` array of GitHub does not exist in this
-runner, so any future matrix must NOT aggregate via `needs`. The safety-net
-CLI pins the defense: it never trusts the rollup alone (scans individual
-statuses; run-607 scenario unit-tested in `forgejoApi.unit.spec.ts`).
+OPS64 history: the Forgejo runner could report the LAST matrix shard's result as the parent's (runs 604/607/610) — that bug is gone by construction: ci-pr.yml is a SINGLE sequential job, and GitHub's native auto-merge only merges with every required check green (server-side guarantee). The safety-net CLI has no poll path to port.
 
-(`migration-lock` removed 2026-08-12 — the CI validates migration chains via migrate + int on every PR/main.)
+(`migration-lock` removed 2026-08-12 — the CI validates migration chains via migrate + int on every PR.)
 
-**There is no deploy from PR CI.** The `ci.yml` verifier on `main` runs the full suite in its fixed 30-minute window and, on a production change, the `deploy` job publishes to the homeserver (`jorgesolla1313.com.br`, self-hosted) — migrations applied before the rollout. Do not add a Vercel/Git-integration deploy gate.
+**There is no deploy from PR CI.** Publishing is a **manual `workflow_dispatch`** (`.github/workflows/deploy.yml`): `verify` runs the full suite (hosted) and only then the `deploy` job (self-hosted runner on the homeserver) publishes `jorgesolla1313.com.br` — migrations applied before the rollout. Do not add a Vercel/Git-integration deploy gate.
 
-When watching CI, use the PR page (or the API) — the safety net is what waits on checks; `gh` does not exist in this repo (OPS50).
+When watching CI, use the PR page (or the API) — the safety net arms the server-side auto-merge; `gh` does not exist in this repo (OPS50).
 
-Use the rollup context `CI (PR) / checks` — without it, you are not covering the cascade.
+Use the required check `CI (PR) / checks` — without it, you are not covering the cascade.
 
 ## Promote
 
-There is no stage→main promote. Merging to `main` is the delivery; `ci.yml` verifies the full suite and, on a production change, deploys to the homeserver (OPS53/OPS65; runbook: `docs/ops/teqo-1313-deploy.md`).
+There is no stage→main promote. Merging to `main` is the delivery; publishing is a deliberate manual dispatch with full verification (runbook: `docs/ops/teqo-1313-deploy.md`).
 
 ## Safety net (workflow)
 
 `agent-pr-ready-automerge.yml` — PRs same-repo → `main` (todas as branches).
-O workflow roda `scripts/forgejo-pr-automerge.mjs` (plain Node, zero-dep): se
-draft `cursor/*` → marca Ready; espera os checks e mergea por rebase (o
-equivalente Forgejo do auto-merge — sem `gh`). O wait exige o rollup
-`CI (PR) / checks` POSTADO e verde (OPS61) — o único contexto que só existe
-quando a cascata inteira do ci-pr assentou (jobs ainda não agendados não
-postam status; o próprio status do job do safety net é `pending` durante o run
-e **nunca** entra no veredito). O CLI nunca confia no rollup sozinho: varre
-todos os statuses individuais e falha em qualquer `failure`/`error` — um shard
-de e2e vermelho bloqueia o merge mesmo com o rollup verde (OPS64; run 607).
-A regra de branch protection no servidor
-bloqueia o merge POST (405) enquanto o contexto exigido não estiver satisfeito
-— inclusive merges manuais via API: foi um merge manual que colocou a PR #52
-em main com o CI vermelho (o CLI nunca mergeou sozinho antes do OPS61; todo
-merge Forgejo era manual).
+O workflow roda `scripts/github-pr-automerge.mjs` (plain Node, zero-dep,
+REST+GraphQL): se draft `cursor/*` → marca Ready (PATCH `draft: false`); arm
+`enablePullRequestAutoMerge` (GraphQL, mergeMethod REBASE) no `node_id` do PR
+— o **servidor** espera o required check `CI (PR) / checks` POSTADO e verde
+antes de mergear; o próprio check-run do safety net fica `pending` durante o
+run e não interfere. A regra de branch protection no servidor
+(`enforce_admins: true`) bloqueia qualquer caminho de merge — inclusive API
+manual — enquanto o required check não estiver satisfeito (foi um merge
+manual que colocou a PR #52 em main com o CI vermelho na era Forgejo).
 Cobre o caso em que o
 agente (ou o default draft do Cloud) esqueceu e PRs humanas/worktree com merge
 falho silencioso (incidente OPS52). **Draft de branch não-`cursor/*` nunca é

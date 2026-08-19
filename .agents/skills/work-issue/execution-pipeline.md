@@ -34,10 +34,15 @@ entrega.
    e rode `pnpm changelog:build` para regenerar `docs/CHANGELOG-AGENTS.md`
    (insert-only: entradas históricas nunca mudam; o diff será só a entrada
    nova + o agregado). Rode `pnpm changelog:check` para confirmar.
-3. **`pnpm push -u origin HEAD`**
-4. PR via API/MCP (ou `ManagePullRequest` no Cloud) — **Ready** (nunca draft), base `main`, com `Closes #<N>`
-5. O safety net `agent-pr-ready-automerge.yml` espera o rollup `CI (PR) / checks` e mergea por rebase — nada a armar
-6. CI flipa `done`/`in-prod` no merge. Comente na Issue o desfecho em uma linha.
+3. **`pnpm push -u origin HEAD`** — origin é o **GitHub** (OPS71; o tracker de
+   Issues continua no Forgejo por API).
+4. PR no **GitHub** via `GITHUB_TOKEN=<PAT> node scripts/github-pr.mjs --head <branch> --title "<id> — <título>" --body-file <arquivo>` — **Ready** (nunca draft; o script não tem flag draft), base `main`, body com `Closes #<N>` (ou `Related #N` em plans-only). Em Cursor Cloud: `ManagePullRequest` com `draft: false`.
+5. O safety net `agent-pr-ready-automerge.yml` arma o **auto-merge nativo do
+   GitHub** (`enablePullRequestAutoMerge`, rebase) — o servidor mergea quando
+   o required check `CI (PR) / checks` fica verde; nada a armar.
+6. No merge, o workflow `issue-done-on-main-merge.yml` flipa `done`/`in-prod`
+   **no Forgejo** (lê o body do PR via API do GitHub, escreve no tracker por
+   `FORGEJO_API_TOKEN`). Comente na Issue o desfecho em uma linha.
 
 ## Deltas por ator
 

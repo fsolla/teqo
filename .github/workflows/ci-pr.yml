@@ -1,0 +1,223 @@
+# PR gate: feature → main (OPS71 — GitHub Actions). SINGLE sequential job
+# (OPS62, X1): one container, one checkout, one pnpm install, one runner slot.
+# Fail-fast is STRUCTURAL — a failed step skips every step after it, the job
+# fails and the run fails. GitHub-native `concurrency` cancels the in-flight
+# run when the PR gets a new push (the Forgejo era had no cancel API; here it
+# is free and matches the OPS62 "one slot per PR" spirit).
+#
+# The job id `checks` preserves the `CI (PR) / checks` check-run that the
+# branch protection rule and the native auto-merge rely on (OPS71): GitHub
+# names it <workflow name> / <job name> — keep both literals frozen. GitHub's
+# auto-merge is server-side: it only merges with every required check green,
+# so the OPS64 "rollup can lie" defense is structural here (single job posts
+# one honest check-run; no matrix, no shards).
+#
+# Job-level skips come from the `scope` classifier (scripts/ci-scope.mjs) run
+# as a step; its outputs drive `if:` on the heavy steps (same modes as the
+# Forgejo cascade: none/changed/full). e2e policy: selected (affected) specs
+# on PRs — OPS72 tunes the local-affected flow afterwards.
+#
+# Schema migrations are NOT serialized across PRs (migration-lock removed
+# 2026-08-12): a stale chain is caught by `pnpm migrate` + `test:int` on every
+# PR, incl. campaignMigrationReconciliation.
+#
+# Fork-PRs are excluded at job level (`if:` same-repo): the repo is public and
+# a fork PR would burn hosted minutes running arbitrary code. Same guard class
+# as the RCE guard on the post-merge workflows.
+#
+# Postgres services live on the job network and are reached by NAME
+# (postgres-int / postgres-build on 5432) — no host publish, so concurrent
+# runs never collide on host ports. Two isolated services keep e2e from
+# inheriting int fixture residue.
+name: CI (PR)
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-pr-${{ github.head_ref }}
+  cancel-in-progress: true
+
+env:
+  PAYLOAD_SECRET: test-only-secret-not-used-in-production
+  NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
+jobs:
+  checks:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    services:
+      # Services are reached by NAME on the job network (no host publish):
+      # concurrent runs never collide on host ports, which the single
+      # long-lived job would hold for the whole run. Two isolated services —
+      # int and build+e2e — keep e2e from inheriting int fixture residue.
+      postgres-int:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: teqo
+          POSTGRES_PASSWORD: teqo
+          POSTGRES_DB: teqo_test
+        options: >-
+          --health-cmd "pg_isready -U teqo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      postgres-build:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: teqo
+          POSTGRES_PASSWORD: teqo
+          POSTGRES_DB: teqo_test
+        options: >-
+          --health-cmd "pg_isready -U teqo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Classify PR blast radius
+        id: scope
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          result=$(node scripts/ci-scope.mjs)
+          echo "scope: $(echo "$result" | jq -c '{code:.code.mode,build:.build.mode,test:.test.mode,e2e:.e2e.mode,reason:{code:.code.reason,build:.build.reason,test:.test.reason,e2e:.e2e.reason}}')"
+          echo "code_mode=$(echo "$result" | jq -r .code.mode)" >> "$GITHUB_OUTPUT"
+          echo "build_mode=$(echo "$result" | jq -r .build.mode)" >> "$GITHUB_OUTPUT"
+          echo "test_mode=$(echo "$result" | jq -r .test.mode)" >> "$GITHUB_OUTPUT"
+          echo "e2e_mode=$(echo "$result" | jq -r .e2e.mode)" >> "$GITHUB_OUTPUT"
+          echo "e2e_specs=$(echo "$result" | jq -r '[.e2e.specs[] | "tests/e2e/" + . + ".e2e.spec.ts"] | join(" ")')" >> "$GITHUB_OUTPUT"
+
+      # Content guards are PR-scoped and cheap — run them before the suite so
+      # a guard failure fails fast instead of after 20 minutes of tests.
+      - name: Changelog is append-only
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/check-changelog-append-only.mjs
+      - name: Aggregate is up to date with docs/changelog
+        run: node scripts/build-changelog.mjs --check
+      - name: No conflict markers in markdown diffs
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: node scripts/check-docs-conflict-markers.mjs
+      - name: Block Closes/Fixes/Resolves on plans-only PRs
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/check-plans-only-pr-closes.mjs
+
+      - name: Check test file locations
+        run: node scripts/check-test-locations.mjs
+      - name: Lint
+        run: pnpm lint
+      - name: Format check
+        run: pnpm format:check
+      - name: Typecheck
+        if: steps.scope.outputs.code_mode != 'none'
+        run: pnpm typecheck
+      - name: Knip
+        if: steps.scope.outputs.code_mode != 'none'
+        run: pnpm knip
+      - name: Check cycles
+        if: steps.scope.outputs.code_mode != 'none'
+        run: pnpm check:cycles
+
+      - name: Unit tests (full suite)
+        if: steps.scope.outputs.test_mode == 'full'
+        run: pnpm test:unit
+      - name: Unit tests (changed since PR base)
+        if: steps.scope.outputs.test_mode == 'changed'
+        run: pnpm test:unit -- --changed origin/${{ github.base_ref }} --passWithNoTests
+      - name: Prepare database URL (int service)
+        run: |
+          set -euo pipefail
+          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-int:5432/teqo_test" >> "$GITHUB_ENV"
+          # vitest re-loads .env.test over the process env, so the service URL
+          # must win through the .env.test.local layer (same mechanism
+          # `pnpm worktree next` uses). OPS50.
+          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-int:5432/teqo_test" > .env.test.local
+      - name: Migrate (int database)
+        run: pnpm migrate
+      - name: Seed minimal (int database)
+        run: pnpm db:seed:minimal
+
+      - name: Integration tests (full suite)
+        if: steps.scope.outputs.test_mode == 'full'
+        env:
+          # vitest forks ≈ CPUs and each fork holds a Payload pool (max 10) →
+          # overflows the service Postgres' 100 clients ("too many clients
+          # already"). 4 forks stay well under. The unit step above stays
+          # CPU-relative (no DB).
+          VITEST_MAX_WORKERS: 4
+        run: pnpm test:int
+      - name: Integration tests (changed since PR base)
+        if: steps.scope.outputs.test_mode == 'changed'
+        env:
+          VITEST_MAX_WORKERS: 4
+        run: pnpm test:int -- --changed origin/${{ github.base_ref }} --passWithNoTests
+
+      - name: Prepare database URL (build/e2e service)
+        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
+        run: |
+          set -euo pipefail
+          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-build:5432/teqo_test" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-build:5432/teqo_test" > .env.test.local
+      - name: Migrate (build/e2e database)
+        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
+        run: pnpm migrate
+      - name: Seed minimal (build/e2e database)
+        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
+        run: pnpm db:seed:minimal
+
+      - name: Build (against the local service database)
+        if: steps.scope.outputs.build_mode != 'none'
+        run: pnpm build
+
+      - name: Cache Playwright browsers
+        if: steps.scope.outputs.e2e_mode != 'none'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+      - name: Install Playwright chromium
+        if: steps.scope.outputs.e2e_mode != 'none'
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Build for e2e
+        # Selected mode needs the build too (the Playwright webServer serves
+        # .next-e2e; the fallback `.next-e2e` dir is what gate-ci.mjs builds).
+        if: steps.scope.outputs.e2e_mode != 'none'
+        run: pnpm build
+        env:
+          NEXT_DIST_DIR: .next-e2e
+      - name: E2E tests (full suite, single job, 4 workers)
+        if: steps.scope.outputs.e2e_mode == 'full'
+        # Explicit CI workers; the local default stays 2 (playwright.config.ts).
+        # 4 workers in one process replace the former 2 shards × 2 workers.
+        # No `--` separator: pnpm would forward it verbatim to playwright and
+        # the flag would be parsed as a file pattern ("No tests found").
+        env:
+          PLAYWRIGHT_WORKERS: 4
+        run: pnpm test:e2e
+      - name: E2E tests (manifest-selected specs)
+        if: steps.scope.outputs.e2e_mode == 'selected'
+        env:
+          PLAYWRIGHT_WORKERS: 4
+        run: pnpm test:e2e -- ${{ steps.scope.outputs.e2e_specs }}

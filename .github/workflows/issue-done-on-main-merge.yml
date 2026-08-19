@@ -1,0 +1,34 @@
+# Main merge flips claimed issues to done + in-prod.
+# OPS71: the PR lives on GitHub; the ISSUES stay on the Forgejo tracker. The
+# job passes the PR body via PR_BODY (GitHub event payload) and
+# scripts/forgejo-issue-transition.mjs flips labels/comments on the Forgejo
+# API with the FORGEJO_API_TOKEN PAT (the built-in GITHUB_TOKEN cannot touch
+# Forgejo issues — OPS61). The fork guard is the same class as
+# agent-pr-ready-automerge.yml: on a merged fork PR the checkout pulls the
+# fork's own script, which would run with the repo PAT (RCE).
+name: Main merge flips claimed issues to done + in-prod
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+
+jobs:
+  issue-done:
+    if: github.event.pull_request.base.ref == 'main' && github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      FORGEJO_API_TOKEN: ${{ secrets.FORGEJO_API_TOKEN }}
+      PR_BODY: ${{ github.event.pull_request.body }}
+    steps:
+      - uses: actions/checkout@v5
+      # Script is plain Node (stdlib) — no pnpm. Disable package-manager-cache:
+      # setup-node@v5 defaults to true and looks for pnpm before pnpm/action-setup.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Flip Closes/Fixes #N issues to done and in-prod
+        run: node scripts/forgejo-issue-transition.mjs --pr "${{ github.event.pull_request.number }}"
