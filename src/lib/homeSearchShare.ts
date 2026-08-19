@@ -1,13 +1,10 @@
+import { buildWhatsAppTextShareUrl } from '@/lib/phone'
+
 /** Share payload for a home-search hit — title plus canonical detail URL. */
 export const buildHomeSearchShareText = (title: string, absoluteUrl: string): string =>
   `${title}\n${absoluteUrl}`
 
-/** `wa.me` share link with pre-filled text (no recipient phone). */
-export const buildWhatsAppTextShareUrl = (message: string): string => {
-  const url = new URL('https://wa.me/')
-  url.searchParams.set('text', message)
-  return url.toString()
-}
+export { buildWhatsAppTextShareUrl }
 
 const canUseNativeWebShare = (): boolean =>
   typeof window !== 'undefined' &&

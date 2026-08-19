@@ -1,3 +1,5 @@
+import { ContentShareButton } from '@/components/ContentShareButton'
+import type { ContentShareKind } from '@/lib/contentShare'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -7,6 +9,8 @@ export type CampaignContentCardData = {
   title: string
   badgeLabel: string
   meta: string
+  /** Source of the content — drives the WhatsApp share message template. */
+  shareKind: ContentShareKind
   coverUrl?: string
   coverAlt?: string
   subtitle?: string
@@ -22,7 +26,7 @@ type CampaignContentCardProps = {
 }
 
 const cardClassName = (featured: boolean) =>
-  `group flex h-full flex-col rounded-xl border border-(--campaign-line) bg-white p-3 shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--pt-red) ${
+  `flex h-full flex-col rounded-xl border border-(--campaign-line) bg-white p-3 shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--pt-red) ${
     featured ? 'gap-3' : 'gap-2'
   }`
 
@@ -30,7 +34,10 @@ const cardClassName = (featured: boolean) =>
  * Presentational content card for the campaign home content bento/carousel —
  * one spelling for every source (article, YouTube, Instagram in S3). Internal
  * targets use `Link`; external ones open on the platform in a new tab with
- * `noopener` (no inline player, per the approved wireframe).
+ * `noopener` (no inline player, per the approved wireframe). The card body is
+ * one anchor; the S4 share control lives as an absolutely positioned sibling
+ * (a button inside the anchor would be invalid interactive nesting), on a
+ * wrapper that also owns the hover `group` so the cover zoom keeps working.
  */
 export const CampaignContentCard = ({ card, featured = false }: CampaignContentCardProps) => {
   const inner = (
@@ -69,18 +76,23 @@ export const CampaignContentCard = ({ card, featured = false }: CampaignContentC
     </>
   )
 
-  return card.external ? (
-    <a
-      href={card.href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={cardClassName(featured)}
-    >
-      {inner}
-    </a>
-  ) : (
-    <Link href={card.href} className={cardClassName(featured)}>
-      {inner}
-    </Link>
+  return (
+    <div className="group relative h-full">
+      {card.external ? (
+        <a
+          href={card.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cardClassName(featured)}
+        >
+          {inner}
+        </a>
+      ) : (
+        <Link href={card.href} className={cardClassName(featured)}>
+          {inner}
+        </Link>
+      )}
+      <ContentShareButton kind={card.shareKind} title={card.title} href={card.href} />
+    </div>
   )
 }

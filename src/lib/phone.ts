@@ -59,6 +59,13 @@ export const buildWhatsAppUrl = (phone: string, message?: string): string => {
   return url.toString()
 }
 
+/** `wa.me` share link with pre-filled text but no recipient — the sender's own WhatsApp picks the chat (PetitionSuccessDialog precedent). */
+export const buildWhatsAppTextShareUrl = (message: string): string => {
+  const url = new URL('https://wa.me/')
+  url.searchParams.set('text', message)
+  return url.toString()
+}
+
 /** `wa.me` href for a row's phone, or `null` when it doesn't normalize — the shared guard behind every per-row WhatsApp button in the campaign lists. */
 export const whatsAppHrefForPhone = (phone: string | null): string | null => {
   if (!phone || !normalizeBrazilianPhone(phone)) return null
