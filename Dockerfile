@@ -32,7 +32,9 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Static generation reads Payload data. BuildKit mounts keep credentials out of
-# layers and image history; migrations run separately through the migrator.
+# layers and image history; migrations run separately through the migrator —
+# the deploy script applies them BEFORE this build (OPS66: static routes read
+# the new schema, so the build must see a migrated DB).
 RUN --mount=type=secret,id=database_url,env=DATABASE_URL \
   --mount=type=secret,id=payload_secret,env=PAYLOAD_SECRET \
   NEXT_OUTPUT_STANDALONE=1 \

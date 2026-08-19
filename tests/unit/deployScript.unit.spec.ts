@@ -46,14 +46,27 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     expect(script).toContain('127.0.0.1:5433')
   })
 
-  it('applies migrations through the maintenance service before the rollout', () => {
+  it('applies migrations BEFORE the runner build — static generation reads the new schema (OPS66)', () => {
+    // OPS66: a migration that creates a table a static route reads used to
+    // deadlock the deploy (runner build failed -> migrate never ran -> build
+    // failed again). The migrator stage never runs `next build`, so it must
+    // build first; the compose swap feeds the new migrator image to the
+    // maintenance service; then migrate runs; only then the runner builds
+    // against the migrated DB.
+    const migratorBuildIndex = script.indexOf('build_image migrator')
+    const swapIndex = script.indexOf('compose swap')
+    const migrateIndex = script.indexOf('teqo-1313-migrate')
+    const runnerBuildIndex = script.indexOf('build_image runner')
     // The rollback helper also contains a `compose up -d` (before the migrate
     // step); the REAL rollout is the last occurrence.
-    const migrateIndex = script.indexOf('teqo-1313-migrate')
     const upIndex = script.lastIndexOf('docker compose up -d teqo-1313')
-    expect(migrateIndex).toBeGreaterThan(-1)
-    expect(upIndex).toBeGreaterThan(-1)
-    expect(migrateIndex).toBeLessThan(upIndex)
+    for (const i of [migratorBuildIndex, swapIndex, migrateIndex, runnerBuildIndex, upIndex]) {
+      expect(i).toBeGreaterThan(-1)
+    }
+    expect(migratorBuildIndex).toBeLessThan(swapIndex)
+    expect(swapIndex).toBeLessThan(migrateIndex)
+    expect(migrateIndex).toBeLessThan(runnerBuildIndex)
+    expect(runnerBuildIndex).toBeLessThan(upIndex)
   })
 
   it('smokes the deployed surface with the prod revalidate secret', () => {
@@ -75,5 +88,16 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     // Registry password goes to docker via stdin — never stdout, never argv.
     expect(script).toContain('echo "$REGISTRY_PASSWORD" | docker login')
     expect(script).not.toContain('--password "$REGISTRY_PASSWORD"')
+  })
+
+  it('Dockerfile: the migrator stage never runs `next build` (it builds against the old schema)', () => {
+    // The invariant OPS66 depends on: the migrator image can always be built,
+    // even before the new migrations exist in the DB.
+    const dockerfile = readFileSync(join(repoRoot, 'Dockerfile'), 'utf8')
+    const migratorStage = dockerfile.slice(dockerfile.indexOf('AS migrator'), dockerfile.indexOf('AS builder'))
+    expect(migratorStage).toContain('CMD ["pnpm", "migrate"]')
+    expect(migratorStage).not.toContain('next build')
+    const builderStage = dockerfile.slice(dockerfile.indexOf('AS builder'))
+    expect(builderStage).toContain('next build')
   })
 })

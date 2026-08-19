@@ -7,12 +7,14 @@
 #
 # Flow: HEAD guard (only the current main HEAD deploys) -> flock
 # serialization -> workspace fetch at <sha> -> docker login (local registry)
-# -> build of the runner + migrator stages (BuildKit secrets, compose
-# network) -> push to localhost:5000 -> compose image-tag swap (with backup)
-# -> migrate via the maintenance service (BEFORE the rollout) -> compose up
-# -> healthcheck wait -> smoke. Any failure after the swap rolls back to the
-# previous compose + image; failures before it leave the running site
-# untouched and the job red.
+# -> build of the MIGRATOR stage (it never runs `next build`, so it builds
+# even against the old schema) -> push/tag of the migrator -> compose
+# image-tag swap (with backup) -> migrate via the maintenance service
+# (BEFORE the runner build — static generation reads the NEW schema, OPS66)
+# -> build of the runner stage (BuildKit secrets, compose network) ->
+# push/tag -> compose up -> healthcheck wait -> smoke. Any failure after the
+# swap rolls back to the previous compose + image; failures before it leave
+# the running site untouched and the job red.
 #
 # Environment defaults assume the homeserver layout: stack under
 # $HOME/stack, repo cloned from the local Forgejo. Secrets are sourced from
@@ -130,15 +132,14 @@ build_image() {
 }
 
 cd "$WORKSPACE_DIR"
-build_image runner "localhost:5000/teqo-1313:$SHA"
+
+# The migrator stage never runs `next build`, so it builds fine against the
+# OLD schema — unlike the runner, whose static generation reads Payload data
+# and therefore needs the migrations applied first (OPS66).
 build_image migrator "localhost:5000/teqo-1313-migrator:$SHA"
 
-say "pushing images to localhost:5000"
-docker push "localhost:5000/teqo-1313:$SHA"
-docker push "localhost:5000/teqo-1313-migrator:$SHA"
-
 # The compose references bare `teqo-1313:<sha>` tags with pull_policy: never.
-docker tag "localhost:5000/teqo-1313:$SHA" "teqo-1313:$SHA"
+docker push "localhost:5000/teqo-1313-migrator:$SHA"
 docker tag "localhost:5000/teqo-1313-migrator:$SHA" "teqo-1313-migrator:$SHA"
 
 # --- compose swap (backup first; failures from here roll back) ----------
@@ -163,7 +164,12 @@ rollback() {
 }
 trap 'rollback "unexpected failure"' ERR
 
-# --- migrate (before the rollout) ---------------------------------------
+# --- migrate (BEFORE the runner build — OPS66) --------------------------
+# The runner build statically generates pages that read Payload data; a
+# migration that creates a table a static route reads would otherwise
+# deadlock the deploy (build fails -> migrate never runs -> build fails...).
+# The migrator image above is already swapped into the compose, so this
+# maintenance service runs the migrations of the NEW sha against prod.
 
 cd "$STACK_DIR"
 say "applying pending migrations (maintenance service teqo-1313-migrate)"
@@ -172,8 +178,17 @@ say "applying pending migrations (maintenance service teqo-1313-migrate)"
 # exits right after the migrate step, skipping the rollout).
 docker compose --profile maintenance run --rm teqo-1313-migrate </dev/null || rollback "migrations failed"
 
+# --- runner build (against the migrated schema) --------------------------
+
+cd "$WORKSPACE_DIR"
+say "building runner"
+build_image runner "localhost:5000/teqo-1313:$SHA"
+docker push "localhost:5000/teqo-1313:$SHA"
+docker tag "localhost:5000/teqo-1313:$SHA" "teqo-1313:$SHA"
+
 # --- rollout ------------------------------------------------------------
 
+cd "$STACK_DIR"
 say "rolling out teqo-1313"
 docker compose up -d teqo-1313 || rollback "compose up failed"
 

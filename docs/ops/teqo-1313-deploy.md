@@ -30,16 +30,19 @@ da suite/deploy (~15–25 min cada; tipicamente < 1 h no total).
    (ex.: dispatch duplicado), sai verde "already deployed" sem rebuild.
 5. O script, no **homeserver**: guarda de HEAD (`main` remoto == SHA do job,
    senão skip) → `flock` (serializa) → guard "already deployed" (revision do
-   container) → build da imagem standalone + migrator (BuildKit, secrets do
-   `~/stack/teqo-1313.env`, `--network host` com proxy socat
-   `teqo-1313-build-proxy` na `stack_default` para o build alcançar o
-   `postgres` — o proxy é criado idempotentemente pelo script) → push em
-   `localhost:5000` → swap dos tags de imagem no `~/stack/docker-compose.yml`
-   (backup antes) → **migrations**
-   (`docker compose --profile maintenance run --rm teqo-1313-migrate </dev/null`) →
-   `docker compose up -d teqo-1313` → healthcheck → smoke (`/`,
-   `/campanha/login`, `/admin`, barreira 307, WebAuthn login-options,
-   `api/revalidate` com o secret real).
+   container) → **build do migrator** (o estágio migrator não roda `next
+   build` — builda mesmo contra o schema antigo; BuildKit, secrets do
+   `~/stack/teqo-1313.env`) → push/tag do migrator em `localhost:5000` →
+   swap dos tags de imagem no `~/stack/docker-compose.yml` (backup antes) →
+   **migrations**
+   (`docker compose --profile maintenance run --rm teqo-1313-migrate </dev/null`,
+   já com a imagem do SHA novo) → **build do runner** (contra o banco JÁ
+   migrado — o `next build` da geração estática lê o schema novo, OPS66;
+   `--network host` com proxy socat `teqo-1313-build-proxy` na `stack_default`
+   para alcançar o `postgres`; o proxy é criado idempotentemente pelo script)
+   → push/tag do runner → `docker compose up -d teqo-1313` → healthcheck →
+   smoke (`/`, `/campanha/login`, `/admin`, barreira 307, WebAuthn
+   login-options, `api/revalidate` com o secret real).
 6. Falha = job vermelho no commit; nada é publicado pela metade.
 
 **Primeira janela (verificação ao vivo):** após o merge do OPS65, acompanhe um
@@ -83,7 +86,11 @@ docker compose up -d teqo-1313
 **Caveat:** uma migration de schema aplicada no passo de migrate **não** é
 desfeita pelo rollback (Payload é append-only). Código velho sobre schema novo
 pode se comportar mal — o caminho primário minimiza essa janela (migrate só
-roda após build+push ok; rollout só após migrate ok).
+roda após migrator build+push+swap ok; rollout só após runner build ok). Desde
+o OPS66 o migrate roda **antes** do build do runner (o build precisa do schema
+novo): um build do runner que falhe depois do migrate deixa o banco à frente
+do código — migrations são append-only e revisadas antes do deploy (checklist);
+a correção se re-mergeia e a próxima janela completa o deploy.
 
 ## Falhas conhecidas
 
@@ -96,7 +103,8 @@ roda após build+push ok; rollout só após migrate ok).
 | Todo job docker quebra com `exec: "node": executable file not found in $PATH` | `runner.envs.PATH` do `~/.forgejo-runner/config.yaml` (workstation) com paths só de host (nvm/bun) — o container perde o node do toolcache (`/opt/acttoolcache`); edição do config exige o toolcache primeiro (ver comentário no próprio config) | Corrigir o PATH no config (toolcache primeiro — ver comentário no próprio arquivo) + `systemctl --user restart forgejo-runner` (incidente 2026-08-17)                                                                                                      |
 | Deploy para logo após o migrate ("Done." e nada mais, EXIT=0)                 | `docker compose run` anexa stdin por padrão — o container consome o resto do script que vai no pipe do `bash -s`; o bash chega a EOF e termina sem rodar o rollout                                                                               | O script já usa `< /dev/null` no `run --rm` do migrate (não remover); sintoma visto 2026-08-17 no primeiro deploy                                                                                                                                          |
 | Build falha: `network mode "stack_default" not supported by buildkit`         | BuildKit (drivers docker e docker-container) recusa rede bridge custom no `--network`                                                                                                                                                            | O script builda com `--network host` + proxy socat `teqo-1313-build-proxy` (na `stack_default`, publicado em 127.0.0.1:5433, criado idempotentemente com `restart: unless-stopped`) + `DATABASE_URL` reescrita para o loopback                             |
-| Build OOM no homeserver                                                       | Laptop 8c/16GB com o stack ativo (~12GB livres medidos)                                                                                                                                                                                          | Re-dispatch; se recorrente, item futuro: build na workstation com túnel                                                                                                                                                                                    |
+| Build OOM no homeserver                                                       | Laptop 8c/16GB com o stack ativo (~12GB livres medidos)                                                                                                                                                          | Re-dispatch; se recorrente, item futuro: build na workstation com túnel                                                                                                                                                                                    |
+| Build do runner falha: `relation "..." does not exist` no `next build`        | Migration nova criou tabela lida em geração estática. Pré-OPS66 a ordem era build→migrate e o deploy morria aqui para sempre (incidente 2026-08-18, S2)                                                            | Pós-OPS66 não deve ocorrer: migrate roda antes do build do runner. Se reaparecer, confira no log se o passo migrate rodou; recovery manual: `docker build --target migrator` + `docker run --rm --network stack_default --env-file ~/stack/teqo-1313.env localhost:5000/teqo-1313-migrator:<sha>` e re-dispatch do workflow |
 | `checkout@v5` falha no job `host`                                             | Label host do act_runner                                                                                                                                                                                                                         | Fallback: baixar o script direto do Forgejo (`curl -s https://git.solla.dev/fsolla/teqo/raw/branch/main/scripts/deploy-homeserver.sh`)                                                                                                                     |
 | Migrate falha                                                                 | Drift/erro de schema                                                                                                                                                                                                                             | Job vermelho; site segue no container antigo; corrigir e re-mergear                                                                                                                                                                                        |
 | Smoke falha pós-up                                                            | Regressão de runtime                                                                                                                                                                                                                             | Rollback automático (restore + `up -d`) + job vermelho; investigar                                                                                                                                                                                         |
