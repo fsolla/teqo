@@ -16,11 +16,13 @@ import {
   advisorCreateSchema,
   advisorMunicipalitiesBatchSchema,
   advisorPasswordResetSchema,
+  advisorPermissionUpdateSchema,
   advisorProfileUpdateSchema,
   isPlanilhaPlaceholderEmail,
   type AdvisorCreateInput,
   type AdvisorMunicipalitiesBatchInput,
   type AdvisorPasswordResetInput,
+  type AdvisorPermissionUpdateInput,
   type AdvisorProfileUpdateInput,
 } from '@/lib/schemas/advisor'
 import { contactPhonesSchema } from '@/lib/schemas/contact'
@@ -105,6 +107,8 @@ export const createAdvisorRecord = async (
         email: data.email,
         role: 'advisor',
         password: randomBytes(24).toString('base64url'),
+        visibility: data.visibility,
+        editing: data.editing,
         ...(data.phone !== undefined ? { phone: data.phone } : {}),
       }),
       depth: 0,
@@ -264,6 +268,38 @@ export const setAdvisorMunicipalitiesBatch = async (input: AdvisorMunicipalities
     revalidateAdvisorDetailPath(input.advisorId)
   }
   return result
+}
+
+/**
+ * C141 — set the advisor's permission profile (Visão × Edição). The coherence
+ * rule (Edição "Tudo" ⇒ Visão "Tudo") is enforced by the zod schema AND the
+ * collection's `enforceCoherentAdvisorProfile` beforeValidate hook; the field
+ * update access (`canManageCampaignUserRole`) re-checks the unrestricted role.
+ */
+export const updateAdvisorPermissionRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: AdvisorPermissionUpdateInput,
+) => {
+  const { id, visibility, editing } = advisorPermissionUpdateSchema.parse(input)
+  const currentActor = await reloadUnrestrictedActor(payload, actor, ADVISOR_UNRESTRICTED_MESSAGE)
+  await assertTargetAdvisor(payload, id, currentActor.id)
+
+  return payload.update({
+    collection: 'campaignUser',
+    id,
+    data: { visibility, editing },
+    depth: 0,
+    user: currentActor,
+    overrideAccess: false,
+  })
+}
+
+export const updateAdvisorPermission = async (input: AdvisorPermissionUpdateInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  const updated = await updateAdvisorPermissionRecord(payload, actor, input)
+  revalidateAdvisorPaths(updated.id)
+  return updated
 }
 
 export const sendAdvisorPasswordResetRecord = async (

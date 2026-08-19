@@ -8,12 +8,13 @@ import { relationshipId } from '@/lib/relationship'
 import { getAccessibleMunicipalityIds } from '@/utilities/access/municipalities'
 import type { CampaignActor, DynamicFind } from '@/utilities/access/shared'
 import {
+  advisorEditingAccess,
   advisorMunicipalityScopeWhere,
   getFreshCampaignUser,
   isCampaignUnrestricted,
   isPayloadAdmin,
   resolveAccessibleIds,
-  resolveActorScopedRead,
+  resolveProfileScopedRead,
 } from '@/utilities/access/shared'
 
 type LeadershipID = number
@@ -28,7 +29,7 @@ const municipalityIDsFromData = (value: unknown): number[] =>
   (Array.isArray(value) ? value : []).map(relationshipId).filter((id): id is number => id !== null)
 
 export const canReadLeadership: Access = ({ req }) =>
-  resolveActorScopedRead(req, 'municipalities', getAccessibleMunicipalityIds)
+  resolveProfileScopedRead(req, 'municipalities', getAccessibleMunicipalityIds)
 
 export const canCreateLeadership: Access = async ({ data, req }) => {
   if (isPayloadAdmin(req.user)) return true
@@ -37,8 +38,12 @@ export const canCreateLeadership: Access = async ({ data, req }) => {
   if (isCampaignUnrestricted(currentUser)) return true
   if (currentUser?.role !== 'advisor') return false
 
+  const editingAccess = advisorEditingAccess(currentUser)
+  if (editingAccess === 'none') return false
+
   const requestedMunicipalityIDs = municipalityIDsFromData(data?.municipalities)
   if (requestedMunicipalityIDs.length === 0) return false
+  if (editingAccess === 'tudo') return true
 
   const accessibleMunicipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
   if (accessibleMunicipalityIDs === null) return true
@@ -53,6 +58,10 @@ export const canManageLeadership: Access = async ({ req }) => {
   if (isCampaignUnrestricted(currentUser)) return true
   if (currentUser?.role !== 'advisor') return false
 
+  const editingAccess = advisorEditingAccess(currentUser)
+  if (editingAccess === 'none') return false
+  if (editingAccess === 'tudo') return true
+
   return advisorMunicipalityScopeWhere(
     'municipalities',
     await getAccessibleMunicipalityIds(req, currentUser),
@@ -62,9 +71,10 @@ export const canManageLeadership: Access = async ({ req }) => {
 export const canDeleteLeadership: Access = ({ req }) => isPayloadAdmin(req.user)
 
 /**
- * Returns null for unrestricted roles, otherwise the leadership IDs
- * in the actor's scope: own engaged record for a leader, leaderships linked to
- * administered municipalities for an advisor.
+ * Returns null for unrestricted roles and for advisors with Visão "Tudo"
+ * (C141 — the whole leadership catalog), otherwise the leadership IDs in the
+ * actor's scope: own engaged record for a leader, leaderships linked to
+ * administered municipalities for a carteira advisor.
  */
 export const getAccessibleLeadershipIds = (
   req: PayloadRequest,
@@ -73,9 +83,11 @@ export const getAccessibleLeadershipIds = (
   resolveAccessibleIds(req, user, ACCESSIBLE_LEADERSHIP_IDS_MEMO_KEY, async (currentUser) => {
     const collections = req.payload.collections as Record<string, unknown>
     const find = req.payload.find.bind(req.payload) as unknown as DynamicFind
-    let ids: LeadershipID[] = []
+    let ids: LeadershipID[] | null = []
 
     if (currentUser.role === 'advisor' && collections.leadership) {
+      if (currentUser.visibility === 'tudo') return null
+
       const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
       const result = await find({
         collection: 'leadership',
@@ -93,5 +105,5 @@ export const getAccessibleLeadershipIds = (
         .filter((id): id is number => id !== null)
     }
 
-    return [...new Set(ids)]
+    return [...new Set(ids ?? [])]
   })

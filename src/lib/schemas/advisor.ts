@@ -1,6 +1,11 @@
 import { z } from 'zod'
 
 import {
+  ADVISOR_EDITING_VALUES,
+  ADVISOR_VISIBILITY_VALUES,
+  isCoherentAdvisorProfile,
+} from '@/lib/campaignAdvisorProfile'
+import {
   MAX_MUNICIPALITIES_PER_BATCH,
   MUNICIPALITY_ADVISORS_CAP_MESSAGE,
 } from '@/lib/schemas/municipality'
@@ -66,6 +71,8 @@ export const ADVISOR_ROLE_REQUIRED_MESSAGE =
   'Só é possível gerenciar contas com papel de Assessor nesta tela.'
 export const ADVISOR_SELF_ACCOUNT_MESSAGE = 'Use Meu perfil para alterar a própria conta.'
 
+export const ADVISOR_PROFILE_COHERENCE_MESSAGE = 'Edição "Tudo" exige Visão "Tudo".'
+
 export const ADVISOR_ACTION_SAFE_MESSAGES = [
   ADVISOR_UNRESTRICTED_MESSAGE,
   ADVISOR_EMAIL_CONFLICT_MESSAGE,
@@ -73,13 +80,36 @@ export const ADVISOR_ACTION_SAFE_MESSAGES = [
   ADVISOR_ROLE_REQUIRED_MESSAGE,
   ADVISOR_SELF_ACCOUNT_MESSAGE,
   MUNICIPALITY_ADVISORS_CAP_MESSAGE,
+  ADVISOR_PROFILE_COHERENCE_MESSAGE,
 ] as const
+
+/**
+ * C141 — the advisor permission profile (Visão × Edição). Values come from the
+ * single vocabulary in `campaignAdvisorProfile.ts`; the incoherent combination
+ * (Edição "Tudo" without Visão "Tudo") is rejected here AND by the collection's
+ * `enforceCoherentAdvisorProfile` beforeValidate hook (REST/admin included).
+ */
+const advisorVisibilitySchema = z.enum(ADVISOR_VISIBILITY_VALUES)
+
+const advisorEditingSchema = z.enum(ADVISOR_EDITING_VALUES)
 
 export const advisorCreateSchema = z.object({
   name: advisorNameSchema,
   email: z.email('E-mail inválido.'),
   phone: optionalAdvisorPhone,
+  visibility: advisorVisibilitySchema.default('carteira'),
+  editing: advisorEditingSchema.default('carteira'),
 })
+
+export const advisorPermissionUpdateSchema = z
+  .object({
+    id: positiveRelationshipId,
+    visibility: advisorVisibilitySchema,
+    editing: advisorEditingSchema,
+  })
+  .refine((value) => isCoherentAdvisorProfile(value.visibility, value.editing), {
+    message: ADVISOR_PROFILE_COHERENCE_MESSAGE,
+  })
 
 export const advisorProfileUpdateSchema = z
   .object({
@@ -112,3 +142,4 @@ export type AdvisorCreateInput = z.input<typeof advisorCreateSchema>
 export type AdvisorProfileUpdateInput = z.input<typeof advisorProfileUpdateSchema>
 export type AdvisorMunicipalitiesBatchInput = z.input<typeof advisorMunicipalitiesBatchSchema>
 export type AdvisorPasswordResetInput = z.input<typeof advisorPasswordResetSchema>
+export type AdvisorPermissionUpdateInput = z.input<typeof advisorPermissionUpdateSchema>
