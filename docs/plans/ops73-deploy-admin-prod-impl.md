@@ -1,6 +1,6 @@
 # Impl: Admin do Payload segue em branco em produção — re-home S8/S9 no GitHub + fix importMap + deploy + verificação
 
-Status: aprovado
+Status: entregue (deploy `dba75ff8` em prod + verificação pós-deploy completa)
 Atualizado em: 2026-08-20
 Issue: #114
 Intenção: docs/plans/ops73-deploy-admin-prod.md
