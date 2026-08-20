@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   CURSOR_HEAD_PREFIX,
+  automergeArmingToken,
   decideAutomergeAction,
   isCursorHead,
 } from '../../scripts/lib/github-pr-flow.mjs'
@@ -74,5 +75,22 @@ describe('github-pr-flow automerge decision (OPS71)', () => {
       decideAutomergeAction(pr({ draft: true, head: { ref: 'cursor/x', sha: 'a' } })).action,
     ]
     expect(actions).toEqual(['enable-auto-merge', 'mark-ready'])
+  })
+
+  it('automergeArmingToken accepts a non-empty AUTOMERGE_PAT (OPS71-FLIP)', () => {
+    expect(automergeArmingToken({ AUTOMERGE_PAT: 'ghp_abc' })).toEqual({
+      ok: true,
+      token: 'ghp_abc',
+    })
+  })
+
+  it('automergeArmingToken fails closed without the PAT — never falls back to the run token', () => {
+    const verdict = automergeArmingToken({})
+    expect(verdict.ok).toBe(false)
+    expect(verdict.ok === false && verdict.reason).toContain('AUTOMERGE_PAT')
+  })
+
+  it('automergeArmingToken treats an empty-string PAT as missing', () => {
+    expect(automergeArmingToken({ AUTOMERGE_PAT: '' }).ok).toBe(false)
   })
 })

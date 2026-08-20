@@ -15,6 +15,27 @@ export const CURSOR_HEAD_PREFIX = 'cursor/'
 export const isCursorHead = (ref) => typeof ref === 'string' && ref.startsWith(CURSOR_HEAD_PREFIX)
 
 /**
+ * OPS71-FLIP: the auto-merge MUST be armed with a real user PAT. Arming with
+ * the built-in GITHUB_TOKEN makes the merge happen as `github-actions[bot]`,
+ * and GitHub's anti-recursion never creates workflow runs for events
+ * triggered by GITHUB_TOKEN actions — the post-merge `closed` flips would
+ * silently never run (live finding PR #746). Fail-closed: no token → ok:false;
+ * the CLI exits 1 instead of falling back to the run token.
+ *
+ * @param {{ AUTOMERGE_PAT?: string }} [env]
+ * @returns {{ ok: true, token: string } | { ok: false, reason: string }}
+ */
+export const automergeArmingToken = (env = process.env) => {
+  const token = env.AUTOMERGE_PAT
+  if (typeof token === 'string' && token.length > 0) return { ok: true, token }
+  return {
+    ok: false,
+    reason:
+      'AUTOMERGE_PAT ausente — sem ele o merge aconteceria como github-actions[bot] e o evento closed não criaria runs (flips pós-merge silenciosos). Defina o secret AUTOMERGE_PAT no GitHub (PAT do fsolla, escopos pull-requests: write + contents: write no repo) — ver docs/AGENT-OPS.md.',
+  }
+}
+
+/**
  * @param {object|null} pr - normalized PR from github-api (or null)
  * @returns {{ action: 'skip' | 'mark-ready' | 'enable-auto-merge', reason: string }}
  */

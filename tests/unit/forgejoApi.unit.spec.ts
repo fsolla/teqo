@@ -137,6 +137,28 @@ describe('forgejo-api', () => {
     expect(JSON.parse(calls[2].body as string)).toEqual({ labels: ['ready'] })
   })
 
+  it('closeIssue PATCHes state=closed (OPS71-FLIP: the GitHub PR merge no longer closes the Forgejo issue)', async () => {
+    const calls: FetchCall[] = []
+    const api = createApi({
+      base: 'https://git.solla.dev/api/v1',
+      token: 'tok',
+      fetchImpl: async (url, init) => {
+        calls.push({ url: String(url), method: init?.method, body: init?.body })
+        return ok(null)
+      },
+    })
+
+    await api.closeIssue(9)
+
+    expect(calls).toEqual([
+      {
+        url: 'https://git.solla.dev/api/v1/repos/fsolla/teqo/issues/9',
+        method: 'PATCH',
+        body: JSON.stringify({ state: 'closed' }),
+      },
+    ])
+  })
+
   it('workflowDispatch posts inputs and ref', async () => {
     const calls: FetchCall[] = []
     const api = createApi({
@@ -870,6 +892,70 @@ describe('forgejo-api', () => {
 
       await expect(api.addComment(1, 'x')).rejects.toThrow(/503/)
       expect(calls).toBe(1)
+    })
+
+    it('retries a 410 on GET (proxy answered — origin untouched)', async () => {
+      silentWarn()
+      let calls = 0
+      const api = createApi({
+        token: 'tok',
+        retries: 2,
+        backoffMs: 0,
+        jitter: false,
+        sleepImpl: async () => {},
+        fetchImpl: async () => {
+          calls += 1
+          return calls === 1 ? ok('<html>410 Gone</html>', 410) : ok(issueOk)
+        },
+      })
+
+      const issues = await api.listIssues()
+
+      expect(calls).toBe(2)
+      expect(issues).toHaveLength(1)
+    })
+
+    it('retries a 410 on write methods too (nginx answered before the origin — no duplicated side effect)', async () => {
+      silentWarn()
+      let calls = 0
+      const api = createApi({
+        token: 'tok',
+        retries: 2,
+        backoffMs: 0,
+        jitter: false,
+        sleepImpl: async () => {},
+        fetchImpl: async () => {
+          calls += 1
+          return calls === 1 ? ok('<html>410 Gone</html>', 410) : ok(null)
+        },
+      })
+
+      await api.addComment(1, 'x')
+
+      expect(calls).toBe(2)
+    })
+
+    it('throws a compact proxy marker after exhausting 410 retries (nginx html not swallowed raw)', async () => {
+      silentWarn()
+      let calls = 0
+      const api = createApi({
+        token: 'tok',
+        retries: 1,
+        backoffMs: 0,
+        jitter: false,
+        sleepImpl: async () => {},
+        fetchImpl: async () => {
+          calls += 1
+          return ok('<html>\n<head><title>410 Gone</title></head>\n<body>gone</body></html>', 410)
+        },
+      })
+
+      const error = await api.addComment(1, 'x').catch((e: unknown) => e)
+
+      expect((error as Error).message).toMatch(/410/)
+      expect((error as Error).message).toMatch(/corpo não-JSON \(proxy\/nginx/)
+      expect((error as Error).message).toMatch(/410 Gone/)
+      expect(calls).toBe(2)
     })
   })
 })
