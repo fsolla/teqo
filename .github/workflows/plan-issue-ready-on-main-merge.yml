@@ -62,9 +62,9 @@ jobs:
         id: pr
         run: |
           PR="${{ inputs.pr }}"
-          MERGED="$(gh pr view "$PR" --json merged -q .merged)"
-          if [ "$MERGED" != "true" ]; then
-            echo "PR #$PR não mergeada — skip"
+          STATE="$(gh pr view "$PR" --json state -q .state)"
+          if [ "$STATE" != "MERGED" ]; then
+            echo "PR #$PR não mergeada (state=$STATE) — skip"
             exit 0
           fi
           BASE="$(gh pr view "$PR" --json baseRefName -q .baseRefName)"
