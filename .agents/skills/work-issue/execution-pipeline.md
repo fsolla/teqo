@@ -44,7 +44,9 @@ antes do deploy**.
   paralelos (`--project=a --project=b`) colide no `seedTestUser` (delete +
   create concorrentes nos `beforeAll` → `ValidationError: email` e falhas
   fantasma). Use `--workers=1` ou a cadeia padrão de projetos. Só afeta o
-  local — no CI os projetos rodam sequenciais por construção.
+  local: no CI/prod mode a cadeia de deps dos projects é descartada (as
+  famílias rodam em paralelo) e os runs selecionados filtram por arquivo —
+  quase sempre uma família — então o seed não colide.
 
 ## /simplify + débitos
 

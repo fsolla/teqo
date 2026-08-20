@@ -52,7 +52,7 @@ flowchart LR
 2. **Skills** — `execution-pipeline.md` (passo + seção #72), `work-issue/SKILL.md`, `agent-work-issue/SKILL.md`.
 3. **Docs** — `AGENTS.md`, `AGENT-OPS.md`, `agent-pr-workflow.mdc`.
 4. **Changelog** — entrada OPS72 + build + check.
-5. **Gates** — `pnpm gate:fast`; `pnpm format:check`; `pnpm test:unit --changed` (nenhum pin quebra — mensagens de console não são pinadas); e2e local discricionário (este diff não cria specs nem toca superfície e2e — nada a rodar); `pnpm push`; PR Ready `Closes #98`.
+5. **Gates** — `pnpm gate:fast`; `pnpm format:check`; `pnpm test:unit --changed` (nenhum pin quebra — mensagens de console não são pinadas); e2e local afetado: o diff toca `scripts/gate-ci.mjs` (HIGH_RISK) → modo `full` → suíte full rodada (154 passed em dev; 8 flakes de ambiente dev triados — passam em `E2E_PROD=1`, o modo do CI); CI do PR não roda e2e (full por design desta política); `pnpm push`; PR Ready `Closes #98`.
 
 ## Rabbit holes / Não escopo (engenharia)
 

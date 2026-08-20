@@ -100,7 +100,8 @@ fechar em main), com os deltas do ator humano:
   localmente os e2e que você **criou** + os da **mesma superfície afetada** —
   você decide quais (`pnpm test:e2e:affected` ou specs diretas). Não está no
   `gate:push`; ver a seção "E2E local afetado" do `execution-pipeline.md`
-  (incl. a limitação da #72: `--no-deps` + projetos paralelos → `--workers=1`).
+  (incl. a limitação da #72: `--no-deps` + projetos paralelos → `--workers=1`
+  ou a cadeia padrão de projetos).
 - **UI:** shape → craft → critique → polish.
 - **`capture-review-debts`:** **autônomo** — colha, dedupe, pontue e **decida
   você mesmo o destino** (registrar/absorver/deferir/descartar) pela triage

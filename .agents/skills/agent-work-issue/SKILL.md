@@ -83,7 +83,8 @@ O spawn do pool já fixou o modelo (`model:` da Issue — ver `model-selection`)
   (rodar os e2e criados + da mesma superfície — ver `execution-pipeline.md`);
   **worktree com browsers Playwright** → rode; **Cursor Cloud sem browsers** →
   registre a justificativa no fechamento e siga — o CI de PR roda o blast
-  radius (selected) como rede.
+  radius quando o diff classifica `selected`; em diff high-risk (`full`) o PR
+  não roda e2e e a rede final é o `verify` do deploy.
 - **UI:** shape → craft → critique → polish (harden/optimize só sob gatilho).
 - **`capture-review-debts`:** **autônomo** — só `expensive_lock` com score ≥4
   (Issues novas com `depends: [<id-pai>]` se necessário); score ≤3 /

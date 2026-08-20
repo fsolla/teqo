@@ -13,13 +13,13 @@
 # one honest check-run; no matrix, no shards).
 #
 # Job-level skips come from the `scope` classifier (scripts/ci-scope.mjs) run
-# as a step; its outputs drive `if:` on the heavy steps (same modes as the
-# Forgejo cascade: none/changed/full). e2e policy (OPS72): the PR runs ONLY
-# the blast radius — the specs the classifier detected as touched (mode
-# `selected`), never `full`. A high-risk diff (schema/lockfile/test harness)
-# classifies as `full` → the PR simply runs no e2e: the local agent mirror
-# (`pnpm test:e2e:affected`) runs full in that same case, and the deploy
-# `verify` job runs the full suite before publishing.
+# as a step; its outputs drive `if:` on the heavy steps (code/build/test:
+# none/changed/full; e2e: none/selected/full). e2e policy (OPS72): the PR
+# runs ONLY the blast radius — the specs the classifier detected as touched
+# (mode `selected`), never `full`. A high-risk diff (schema/lockfile/test
+# harness) classifies as `full` → the PR simply runs no e2e: the local agent
+# mirror (`pnpm test:e2e:affected`) runs full in that same case, and the
+# deploy `verify` job runs the full suite before publishing.
 #
 # Schema migrations are NOT serialized across PRs (migration-lock removed
 # 2026-08-12): a stale chain is caught by `pnpm migrate` + `test:int` on every
@@ -179,16 +179,16 @@ jobs:
         run: pnpm test:int -- --changed origin/${{ github.base_ref }} --passWithNoTests
 
       - name: Prepare database URL (build/e2e service)
-        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
+        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode == 'selected'
         run: |
           set -euo pipefail
           echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" >> "$GITHUB_ENV"
           echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" > .env.test.local
       - name: Migrate (build/e2e database)
-        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
+        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode == 'selected'
         run: pnpm migrate
       - name: Seed minimal (build/e2e database)
-        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
+        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode == 'selected'
         run: pnpm db:seed:minimal
 
       - name: Build (against the local service database)
@@ -196,7 +196,7 @@ jobs:
         run: pnpm build
 
       - name: Cache Playwright browsers
-        if: steps.scope.outputs.e2e_mode != 'none'
+        if: steps.scope.outputs.e2e_mode == 'selected'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
@@ -204,12 +204,12 @@ jobs:
           restore-keys: |
             playwright-${{ runner.os }}-
       - name: Install Playwright chromium
-        if: steps.scope.outputs.e2e_mode != 'none'
+        if: steps.scope.outputs.e2e_mode == 'selected'
         run: pnpm exec playwright install --with-deps chromium
       - name: Build for e2e
         # Selected mode needs the build too (the Playwright webServer serves
-        # .next-e2e; the fallback `.next-e2e` dir is what gate-ci.mjs builds).
-        if: steps.scope.outputs.e2e_mode != 'none'
+        # the `.next-e2e` production build).
+        if: steps.scope.outputs.e2e_mode == 'selected'
         run: pnpm build
         env:
           NEXT_DIST_DIR: .next-e2e
@@ -221,7 +221,6 @@ jobs:
         # 4 workers in one process replace the former 2 shards × 2 workers.
         env:
           PLAYWRIGHT_WORKERS: 4
-        # No `--` separator before the scope paths: pnpm would forward it
-        # verbatim to playwright and the flag would be parsed as a file
-        # pattern ("No tests found").
+        # The `--` separates pnpm from the scope paths: pnpm consumes it and
+        # playwright receives the bare spec paths (no flag parsing drift).
         run: pnpm test:e2e -- ${{ steps.scope.outputs.e2e_specs }}
