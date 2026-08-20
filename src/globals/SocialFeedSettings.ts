@@ -1,5 +1,10 @@
 import { payloadAdminOnly } from '@/utilities/campaignAccess'
 import { REVALIDATE_SOCIAL_FEED_TAG } from '@/utilities/revalidateRequest'
+import {
+  INSTAGRAM_SYNC_TIMEOUT_MS,
+  instagramCredentialsChanged,
+  syncInstagramFeed,
+} from '@/utilities/socialFeed/instagramSync'
 import { revalidateTag } from 'next/cache'
 import type { GlobalAfterChangeHook, GlobalConfig } from 'payload'
 
@@ -18,13 +23,11 @@ const revalidateFeed = async () => revalidateTag(REVALIDATE_SOCIAL_FEED_TAG)
  * failure is swallowed — the sync's own status IS the result, and a broken
  * sync must never break the save.
  *
- * The sync modules are imported lazily: `payload.config.ts` must not pull
- * the feed module graph (`unstable_cache` at load time) — the config is the
- * one module every int spec imports.
+ * The sync modules must not import `@payload-config` (they do not), so the
+ * static import here closes no cycle: `payload.config → this global →
+ * instagramSync → instagramFeed` ends at `instagramFeed`, which is pure.
  */
 const syncInstagramAfterChange: GlobalAfterChangeHook = async ({ doc, previousDoc, req }) => {
-  const { instagramCredentialsChanged, syncInstagramFeed, INSTAGRAM_SYNC_TIMEOUT_MS } =
-    await import('@/utilities/socialFeed/instagramSync')
   if (!instagramCredentialsChanged(doc, previousDoc)) return
   try {
     // `req` lets the sync write inside this very transaction (same row lock

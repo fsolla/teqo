@@ -7,7 +7,8 @@ import {
   getPostCanonicalPath,
   getVisiblePosts,
 } from '@/utilities/posts'
-import { getInstagramFeed, type InstagramPost } from '@/utilities/socialFeed/instagramFeed'
+import type { InstagramPost } from '@/utilities/socialFeed/instagramFeed'
+import { getInstagramFeed } from '@/utilities/socialFeed/instagramFeedView'
 import {
   formatYouTubeViews,
   getYouTubeFeed,
