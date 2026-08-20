@@ -19,8 +19,16 @@ export const PLAN_BRANCH_PREFIX = 'plans/plan-issue'
 /** Env var the interactive-terminal `worktree()` function sets to request the opencode launch. */
 export const WORKTREE_TERMINAL_ENV = 'TEQO_WORKTREE_TERMINAL'
 
-/** Preset model for the opencode launch — change the preset by editing this constant. */
-export const OPENCODE_PRESET_MODEL = 'deepseek/deepseek-v4-flash'
+/**
+ * Preset model for the opencode launch — change the preset by editing this
+ * constant. Provider `cheapestinference` (Cheapest Inference, global config
+ * in ~/.config/opencode/opencode.jsonc; auth key via `opencode auth login
+ * cheapestinference`). The `max` variant is the default because opencode's
+ * TUI has no `--variant` flag — the per-model variant is persisted in
+ * ~/.local/state/opencode/model.json (`variant["cheapestinference/deepseek-v4-flash"]
+ * = "max"`), applied automatically when the TUI opens with this model.
+ */
+export const OPENCODE_PRESET_MODEL = 'cheapestinference/deepseek-v4-flash'
 
 /**
  * Skill command sent as the launch's initial message per purpose. `next`

@@ -34,7 +34,7 @@ describe('opencode commands couple to their skill by exact name', () => {
       /^description: .+$/m,
     )
     expect(frontmatter![1], 'frontmatter must pin the preference model').toMatch(
-      /^model: deepseek\/deepseek-v4-flash$/m,
+      /^model: cheapestinference\/deepseek-v4-flash$/m,
     )
   })
 })
