@@ -747,6 +747,7 @@ test.describe('Campaign home content section', () => {
       excludedItems: [],
       youtubeFeedSnapshot: null,
       instagramFeedSnapshot: null,
+      instagramSyncStatus: null,
     })
   }
 

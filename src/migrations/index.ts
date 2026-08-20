@@ -58,6 +58,7 @@ import * as migration_20260818_111748_add_social_feed_settings from './20260818_
 import * as migration_20260818_192948_add_instagram_social_feed_fields from './20260818_192948_add_instagram_social_feed_fields';
 import * as migration_20260819_192605_add_campaign_newsletter_capture from './20260819_192605_add_campaign_newsletter_capture';
 import * as migration_20260819_233503_add_campaign_demand_responsibles from './20260819_233503_add_campaign_demand_responsibles';
+import * as migration_20260820_003426_add_instagram_sync_status from './20260820_003426_add_instagram_sync_status';
 
 export const migrations = [
   {
@@ -351,7 +352,7 @@ export const migrations = [
     name: '20260818_192948_add_instagram_social_feed_fields',
   },
   {
-    up: migration_20260819_192605_add_campaign_newsletter_capture.up,
+up: migration_20260819_192605_add_campaign_newsletter_capture.up,
     down: migration_20260819_192605_add_campaign_newsletter_capture.down,
     name: '20260819_192605_add_campaign_newsletter_capture'
   },
@@ -359,5 +360,10 @@ export const migrations = [
     up: migration_20260819_233503_add_campaign_demand_responsibles.up,
     down: migration_20260819_233503_add_campaign_demand_responsibles.down,
     name: '20260819_233503_add_campaign_demand_responsibles'
+  },
+  {
+    up: migration_20260820_003426_add_instagram_sync_status.up,
+    down: migration_20260820_003426_add_instagram_sync_status.down,
+    name: '20260820_003426_add_instagram_sync_status'
   },
 ];

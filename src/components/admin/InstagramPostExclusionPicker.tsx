@@ -67,8 +67,8 @@ export const InstagramPostExclusionPicker: FieldClientComponent = () => {
   if (posts.length === 0) {
     return (
       <p className="text-sm text-zinc-500">
-        Nenhum post recente ainda. Com o token e o ID do usuário configurados, os posts aparecem
-        aqui após a primeira sincronização (a cada 5 minutos).
+        Nenhum post sincronizado. Após uma sincronização bem-sucedida, os últimos posts aparecem
+        aqui para marcar os que não devem ir para a home.
       </p>
     )
   }
