@@ -13,6 +13,7 @@ import {
   type DemandListState,
 } from '@/utilities/demand/demandListUrl'
 import {
+  loadCampaignUserDisplayByIds,
   loadCampaignUserNamesByIds,
   loadLeadershipContactNamesByIds,
   loadMunicipalityLabelsByIds,
@@ -148,6 +149,10 @@ export type DemandDetailViewModel = DemandRowViewModel & {
     authorName: string | null
     createdAt: string | null
   }>
+  /** C143 — explicit responsibles (creator included by the collection hook). */
+  responsibles: Array<{ id: number; name: string; avatarUrl: string | null }>
+  /** C143 — the creator id, for the "(criador)" chip marker on the detail. */
+  createdBy: number | null
   canLeaderEdit: boolean
   activity: { title: string; slug: string } | null
 }
@@ -183,11 +188,21 @@ export const loadDemandDetail = async (
   ]
   const authorNameById = await loadCampaignUserNamesByIds(payload, authorIDs)
 
+  const responsibleIDs = (demand.responsibles ?? [])
+    .map((responsible) => relationshipId(responsible))
+    .filter((id): id is number => id !== null)
+  const responsibleById = await loadCampaignUserDisplayByIds(payload, responsibleIDs)
+
   return {
     ...row,
     description: demand.description ?? null,
     decisionNote: demand.decisionNote ?? null,
     decidedAt: demand.decidedAt ?? null,
+    createdBy: relationshipId(demand.createdBy),
+    responsibles: responsibleIDs.flatMap((id) => {
+      const display = responsibleById.get(id)
+      return display ? [{ id, ...display }] : []
+    }),
     cost: isCampaignStaff(user) ? (demand.cost ?? null) : null,
     receipts: isCampaignStaff(user)
       ? (demand.receipts ?? []).flatMap((receipt) =>

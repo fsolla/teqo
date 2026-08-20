@@ -26,6 +26,7 @@ import {
   canReadCampaignStaffField,
   canSetCampaignSystemField,
   canUpdateCampaignDemand,
+  eligibleCampaignStaffWhere,
   isCampaignUnrestricted,
 } from '@/utilities/campaignAccess'
 import { systemStampedActorField } from '@/utilities/campaignAuditFields'
@@ -40,6 +41,40 @@ const DEMAND_STATUS_OPTIONS = campaignDemandStatuses.map((value) => ({
   value,
   label: campaignDemandStatusLabels[value],
 }))
+
+/**
+ * C143 — responsibles are always eligible staff (coordinator/advisor/candidate).
+ * The picker catalog already filters, but the invariant belongs in the data
+ * path, fail-closed: forged/non-eligible ids (a leader, a deleted account) are
+ * dropped from any create/update. Intentional admin bypass — the hook must SEE
+ * the non-eligible rows to drop them (same precedent as the slug probe).
+ */
+const restrictResponsiblesToStaff: CollectionBeforeValidateHook = async ({ data, req }) => {
+  if (!data) return data
+  const rawResponsibles = data.responsibles
+  if (!Array.isArray(rawResponsibles) || rawResponsibles.length === 0) return data
+
+  const ids = rawResponsibles
+    .map((entry) => relationshipId(entry))
+    .filter((id): id is number => id !== null)
+  if (ids.length === 0) return data
+
+  // Bypass (documented in the hook's comment): the eligibility probe must see
+  // the non-eligible rows (leaders, deleted accounts) to drop them.
+  const eligible = await req.payload.find({
+    collection: 'campaignUser',
+    where: { and: [{ id: { in: ids } }, eligibleCampaignStaffWhere] },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { name: true },
+    overrideAccess: true,
+    req,
+  })
+  const eligibleIDs = new Set(eligible.docs.map((doc) => doc.id))
+  data.responsibles = [...new Set(ids.filter((id) => eligibleIDs.has(id)))]
+  return data
+}
 
 const setCanonicalDemandSlug: CollectionBeforeValidateHook = ({ data, operation, originalDoc }) => {
   if (!data) return data
@@ -127,7 +162,19 @@ const enforceDemandWorkflow: CollectionBeforeChangeHook = async ({
   const actor = req.user?.collection === 'campaignUser' ? req.user : null
 
   if (operation === 'create') {
-    if (actor) data.createdBy = actor.id
+    if (actor) {
+      data.createdBy = actor.id
+
+      // C143 — the creator is always a responsible (explicit-responsible
+      // visibility): union with any client-provided list so a create can
+      // never leave its author outside the demand's own visibility.
+      const existingResponsibles = Array.isArray(data.responsibles)
+        ? data.responsibles
+            .map((entry) => relationshipId(entry))
+            .filter((id): id is number => id !== null)
+        : []
+      data.responsibles = [...new Set([...existingResponsibles, actor.id])]
+    }
 
     const initialStatus = isDemandStatus(data.status) ? data.status : 'aberta'
     data.status = initialStatus
@@ -255,6 +302,7 @@ export const CampaignDemand: CollectionConfig = {
   },
   hooks: {
     beforeValidate: [
+      restrictResponsiblesToStaff,
       setCanonicalDemandSlug,
       ensureUniqueDemandSlug,
       validateDemandActivityMunicipality,
@@ -321,6 +369,19 @@ export const CampaignDemand: CollectionConfig = {
       relationTo: 'leadership',
       label: 'Liderança solicitante',
       index: true,
+    },
+    {
+      name: 'responsibles',
+      type: 'relationship',
+      relationTo: 'campaignUser',
+      label: 'Responsáveis',
+      hasMany: true,
+      index: true,
+      filterOptions: eligibleCampaignStaffWhere,
+      admin: {
+        description:
+          'Só responsáveis, candidato e coordenador veem a demanda. O criador entra automaticamente.',
+      },
     },
     {
       name: 'status',

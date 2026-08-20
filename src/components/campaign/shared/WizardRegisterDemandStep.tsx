@@ -5,6 +5,7 @@ import { useActionState, useCallback, useState } from 'react'
 
 import { createWizardDemandFormAction } from '@/app/(campaign)/campanha/(app)/acoes/formActions'
 import { searchDemandActivityOptions } from '@/app/(campaign)/campanha/(app)/demandas/activitySearchActions'
+import { searchDemandResponsibleOptions } from '@/app/(campaign)/campanha/(app)/demandas/responsibleSearchActions'
 import { DemandFields, type DemandActivityValue } from '@/components/campaign/demand/DemandFields'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { CampaignWizardShell } from '@/components/campaign/shared/CampaignWizardShell'
@@ -21,6 +22,7 @@ type WizardRegisterDemandStepProps = {
   municipalityName: string
   municipalitySlug: string
   returnPath?: string
+  currentUser?: { id: number; name: string } | null
 }
 
 /**
@@ -34,6 +36,7 @@ export const WizardRegisterDemandStep = ({
   municipalityName,
   municipalitySlug,
   returnPath,
+  currentUser = null,
 }: WizardRegisterDemandStepProps) => {
   const router = useRouter()
   const [state, submitAction, isPending] = useActionState(createWizardDemandFormAction, {})
@@ -41,6 +44,10 @@ export const WizardRegisterDemandStep = ({
 
   const searchActivities = useCallback(
     (query: string) => searchDemandActivityOptions(query, municipalityId),
+    [municipalityId],
+  )
+  const searchResponsibles = useCallback(
+    (query: string) => searchDemandResponsibleOptions(query, municipalityId),
     [municipalityId],
   )
 
@@ -79,6 +86,11 @@ export const WizardRegisterDemandStep = ({
           activity={activity}
           onActivityChange={setActivity}
           searchActivities={searchActivities}
+          responsibles={{
+            currentUser,
+            search: searchResponsibles,
+            layout: 'stacked',
+          }}
         />
 
         {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}

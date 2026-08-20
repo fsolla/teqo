@@ -64,7 +64,7 @@ describe('searchHomeDemands (B53)', () => {
     expect(result.some((row) => row.id === demand.id)).toBe(false)
   })
 
-  it('scopes demand hits to the advisor portfolio by municipality', async () => {
+  it('scopes demand hits to explicit responsibles (C143)', async () => {
     const fixtures = campaignFixtures()
     const advisor = await fixtures.createCampaignUser('advisor')
     const coordinator = await fixtures.createCampaignUser('coordinator')
@@ -74,23 +74,30 @@ describe('searchHomeDemands (B53)', () => {
     await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
 
     const scopeToken = fixtures.value('scope-demanda')
-    const inScope = await fixtures.createCampaignDemand({
+    const responsible = await fixtures.createCampaignDemand({
       municipality: administered,
       title: `Material ${scopeToken} ${administered.name}`,
       createdBy: coordinator,
+      responsibles: [advisor.id],
     })
-    const outOfScope = await fixtures.createCampaignDemand({
+    const notResponsible = await fixtures.createCampaignDemand({
+      // Same administered municipality — but no explicit responsibility.
+      municipality: administered,
+      title: `Material ${scopeToken} ${administered.name} fora`,
+      createdBy: coordinator,
+    })
+    const outOfPortfolio = await fixtures.createCampaignDemand({
       municipality: other,
       title: `Material ${scopeToken} ${other.name}`,
       createdBy: coordinator,
     })
 
     const advisorResult = await searchHomeDemands(payload, advisor, scopeToken)
-    expect(advisorResult.map((hit) => hit.id)).toEqual([inScope.id])
+    expect(advisorResult.map((hit) => hit.id)).toEqual([responsible.id])
 
     const coordinatorResult = await searchHomeDemands(payload, coordinator, scopeToken)
     expect(coordinatorResult.map((hit) => hit.id).sort((a, b) => a - b)).toEqual(
-      [inScope.id, outOfScope.id].sort((a, b) => a - b),
+      [responsible.id, notResponsible.id, outOfPortfolio.id].sort((a, b) => a - b),
     )
   })
 
