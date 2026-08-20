@@ -71,9 +71,12 @@ for (const number of numbers) {
     await api.setLabels(number, { add: ['done', 'in-prod'], remove: ['in-progress'] })
     await api.addComment(
       number,
-      `Merged em main via PR #${prNumber} — \`done\` + \`in-prod\`. Deploy de produção é manual (workflow_dispatch no GitHub Actions) — ver docs/AGENT-OPS.md.`,
+      `Merged em main via PR #${prNumber} — \`done\` + \`in-prod\` + Issue fechada. Deploy de produção é manual (workflow_dispatch no GitHub Actions) — ver docs/AGENT-OPS.md.`,
     )
-    console.log(`[forgejo-issue-transition] #${number}: done + in-prod`)
+    // OPS71-FLIP: o PR vive no GitHub e não fecha a Issue no Forgejo como o
+    // merge nativo fazia na era Forgejo — o close é explícito aqui.
+    await api.closeIssue(number)
+    console.log(`[forgejo-issue-transition] #${number}: done + in-prod + fechada`)
   } catch (error) {
     flipFailed = true
     console.error(

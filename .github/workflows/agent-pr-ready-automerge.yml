@@ -54,4 +54,11 @@ jobs:
           # guaranteed to be injected on every event path; passing it via the
           # documented context is the robust form.
           GITHUB_TOKEN: ${{ github.token }}
+          # OPS71-FLIP: arming with the built-in GITHUB_TOKEN makes the merge
+          # happen as github-actions[bot], and GitHub's anti-recursion never
+          # creates workflow runs for events triggered by GITHUB_TOKEN actions
+          # — the post-merge `closed` flips would silently never run (PR #746).
+          # AUTOMERGE_PAT (real user PAT) attributes the merge to a user, so
+          # the `closed` event creates runs again. Fail-closed in the CLI.
+          AUTOMERGE_PAT: ${{ secrets.AUTOMERGE_PAT }}
         run: node scripts/github-pr-automerge.mjs --pr "${{ github.event.pull_request.number }}"
