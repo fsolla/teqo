@@ -2,7 +2,7 @@
 /**
  * Local mirror of `.github/workflows/ci-pr.yml` (serial): phase-1 cheap checks,
  * then phase-2 expensive (int/build). e2e is NOT part of the local mirror
-* (OPS59 + OPS72): the PR CI runs only the e2e blast radius (mode `selected`,
+ * (OPS59 + OPS72): the PR CI runs only the e2e blast radius (mode `selected`,
  * never `full`), the deploy `verify` job runs the full suite before
  * publishing, and the local affected run is a skill step (discretionary):
  * `pnpm test:e2e:affected`.
