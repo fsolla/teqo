@@ -334,4 +334,77 @@ describe('loadInstagramFeed', () => {
     })
     expect(result.username).toBeNull()
   })
+
+  it('throws an InstagramApiError carrying the parsed Graph API error body', async () => {
+    const oauthError = {
+      error: {
+        message: 'Error validating access token: Session has expired',
+        type: 'OAuthException',
+        code: 190,
+      },
+    }
+    const userCall = loadInstagramFeed({
+      ...args,
+      fetchImpl: async (input) =>
+        input.includes('/media') ? fakeResponse({}, false) : fakeResponse(oauthError, false),
+    })
+    await expect(userCall).rejects.toMatchObject({
+      name: 'InstagramApiError',
+      status: undefined,
+      apiMessage: 'Error validating access token: Session has expired',
+      apiType: 'OAuthException',
+    })
+
+    // A refresh rejected with the same OAuth body surfaces the typed error too
+    // (the FB-page-token case: refresh fails → the panel must say why).
+    const refreshRejectCall = loadInstagramFeed({
+      ...args,
+      fetchImpl: async (input) =>
+        input.includes('/refresh_access_token')
+          ? fakeResponse(oauthError, false)
+          : fakeResponse({}, false),
+    })
+    await expect(refreshRejectCall).rejects.toMatchObject({ apiType: 'OAuthException' })
+  })
+
+  it('survives a non-JSON error body (status kept, api message null)', async () => {
+    const errorResponse = {
+      ok: false,
+      status: 502,
+      json: async () => {
+        throw new Error('boom')
+      },
+    } as unknown as Response
+    await expect(
+      loadInstagramFeed({
+        ...args,
+        fetchImpl: async () => errorResponse,
+      }),
+    ).rejects.toMatchObject({
+      name: 'InstagramApiError',
+      status: 502,
+      apiMessage: null,
+      apiType: null,
+    })
+  })
+
+  it('forwards the abort signal to every fetch', async () => {
+    const receivedInits: RequestInit[] = []
+    const fetchImpl = async (input: string, init?: RequestInit): Promise<Response> => {
+      receivedInits.push(init ?? {})
+      if (input.includes('/media')) {
+        return fakeResponse({ data: [MEDIA_ITEM('p')] })
+      }
+      if (input.includes('/refresh_access_token')) {
+        return fakeResponse({ access_token: 't' })
+      }
+      return fakeResponse({ username: 'depjorgesolla' })
+    }
+    const controller = new AbortController()
+    await loadInstagramFeed({ ...args, fetchImpl, signal: controller.signal })
+    expect(receivedInits).toHaveLength(2)
+    for (const init of receivedInits) {
+      expect(init.signal).toBe(controller.signal)
+    }
+  })
 })

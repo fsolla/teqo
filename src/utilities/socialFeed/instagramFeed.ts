@@ -33,11 +33,64 @@ export type LoadInstagramFeedArgs = {
   maxResults: number
   fetchImpl?: (input: string, init?: RequestInit) => Promise<Response>
   baseUrl?: string
+  /** Deadline for the Graph API calls (hook-triggered sync must not hang a save). */
+  signal?: AbortSignal
 }
 
 export type LoadInstagramFeedResult = InstagramFeedResult & {
   /** Present only when the fetch had to refresh the token mid-flight. */
   refreshedAccessToken?: string
+}
+
+/**
+ * API-level failure of the Instagram Graph API: carries the HTTP status and
+ * the parsed `{ error: { message, type } }` body when present, so
+ * `describeInstagramError` can turn it into product language (invalid token
+ * vs wrong user id vs API down) for the admin sync-status panel.
+ */
+export class InstagramApiError extends Error {
+  readonly status: number | undefined
+  readonly apiMessage: string | null
+  readonly apiType: string | null
+
+  constructor(
+    status: number | undefined,
+    apiMessage: string | null,
+    apiType: string | null,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'InstagramApiError'
+    this.status = status
+    this.apiMessage = apiMessage
+    this.apiType = apiType
+  }
+}
+
+const parseApiErrorBody = async (
+  response: Response,
+): Promise<{ message: string | null; type: string | null }> => {
+  try {
+    const body = (await response.json()) as { error?: { message?: unknown; type?: unknown } } | null
+    const error = body?.error
+    if (typeof error !== 'object' || error === null) return { message: null, type: null }
+    return {
+      message: typeof error.message === 'string' && error.message ? error.message : null,
+      type: typeof error.type === 'string' && error.type ? error.type : null,
+    }
+  } catch {
+    return { message: null, type: null }
+  }
+}
+
+const apiErrorFrom = async (response: Response): Promise<InstagramApiError> => {
+  const { message, type } = await parseApiErrorBody(response)
+  return new InstagramApiError(
+    response.status,
+    message,
+    type,
+    `Instagram API falhou com status ${response.status}`,
+  )
 }
 
 const MEDIA_FIELDS = [
@@ -156,12 +209,13 @@ export const loadInstagramFeed = async ({
   maxResults,
   fetchImpl = fetch,
   baseUrl = INSTAGRAM_API_BASE_URL,
+  signal,
 }: LoadInstagramFeedArgs): Promise<LoadInstagramFeedResult> => {
   const attempt = async (token: string): Promise<InstagramFeedResult> => {
     const userParams = new URLSearchParams({ fields: 'username', access_token: token })
-    const userResponse = await fetchImpl(`${baseUrl}/${userId}?${userParams}`)
+    const userResponse = await fetchImpl(`${baseUrl}/${userId}?${userParams}`, { signal })
     if (!userResponse.ok) {
-      throw new Error(`Instagram user falhou com status ${userResponse.status}`)
+      throw await apiErrorFrom(userResponse)
     }
     const userJson = (await jsonFrom(userResponse)) as { username?: unknown }
     const username = typeof userJson.username === 'string' ? userJson.username : null
@@ -171,9 +225,9 @@ export const loadInstagramFeed = async ({
       limit: String(Math.min(Math.max(maxResults, 1), INSTAGRAM_MAX_RESULTS_CAP)),
       access_token: token,
     })
-    const mediaResponse = await fetchImpl(`${baseUrl}/${userId}/media?${mediaParams}`)
+    const mediaResponse = await fetchImpl(`${baseUrl}/${userId}/media?${mediaParams}`, { signal })
     if (!mediaResponse.ok) {
-      throw new Error(`Instagram media falhou com status ${mediaResponse.status}`)
+      throw await apiErrorFrom(mediaResponse)
     }
 
     return { username, posts: parseInstagramMediaResponse(await jsonFrom(mediaResponse)) }
@@ -186,9 +240,11 @@ export const loadInstagramFeed = async ({
       grant_type: 'ig_refresh_token',
       access_token: accessToken,
     })
-    const refreshResponse = await fetchImpl(`${baseUrl}/refresh_access_token?${refreshParams}`)
+    const refreshResponse = await fetchImpl(`${baseUrl}/refresh_access_token?${refreshParams}`, {
+      signal,
+    })
     if (!refreshResponse.ok) {
-      throw new Error(`Instagram token refresh falhou com status ${refreshResponse.status}`)
+      throw await apiErrorFrom(refreshResponse)
     }
     const refreshJson = (await jsonFrom(refreshResponse)) as { access_token?: unknown }
     if (typeof refreshJson.access_token !== 'string' || !refreshJson.access_token) {
@@ -211,32 +267,152 @@ const isInstagramSnapshot = (value: unknown): value is { username?: unknown; pos
   typeof value === 'object' && value !== null
 
 /**
+ * Operational state of the Instagram sync, persisted in the global's
+ * `instagram_sync_status` column and shown by the admin status panel:
+ * `lastSyncAt`/`postCount` are the last SUCCESSFUL sync; `error`/`errorAt`
+ * the last failure. A failure overwrites the success fields on purpose — the
+ * panel shows either state, never both (draft cenas 1/2).
+ */
+export type InstagramSyncStatus = {
+  lastSyncAt?: string
+  postCount?: number
+  error?: string
+  errorAt?: string
+}
+
+export const successInstagramSyncStatus = (postCount: number): InstagramSyncStatus => ({
+  lastSyncAt: new Date().toISOString(),
+  postCount,
+})
+
+export const failedInstagramSyncStatus = (error: string): InstagramSyncStatus => ({
+  error,
+  errorAt: new Date().toISOString(),
+})
+
+const isTokenError = (error: InstagramApiError): boolean =>
+  error.apiType === 'OAuthException' ||
+  /(expired|invalid|revoked|token|session)/i.test(error.apiMessage ?? '')
+
+/**
+ * True when the API message points at a bad user id rather than a bad token.
+ * Requires "user" AND "id" together (or an explicit "object with id ... does
+ * not exist") — a single "user" alone is NOT enough, because real token
+ * rejections read "the user must be logged in" / "the user has changed their
+ * password", and those must stay on the token correction, not the ID one.
+ */
+const isInvalidUserIdMessage = (message: string): boolean =>
+  /(?=.*\buser\b)(?=.*\bid\b)/i.test(message) ||
+  /\bid\b[\s\S]*\b(?:does not exist|cannot find)\b/i.test(message)
+
+const isAbortError = (cause: unknown): boolean =>
+  cause instanceof Error && cause.name === 'AbortError'
+
+/**
+ * Turns a sync failure into product language for the admin status panel: the
+ * assessoria must know WHY the board has no Instagram cards and what to do
+ * (the S3 fail-closed silence is the bug this exists to fix). Token errors
+ * carry the correction — regenerate via Instagram Login, never Facebook
+ * Login (the Graph API refresh endpoint rejects FB-issued page tokens).
+ */
+export const describeInstagramError = (cause: unknown): string => {
+  if (isAbortError(cause)) {
+    return 'A sincronização demorou demais para responder (a API do Instagram não respondeu a tempo). Tente novamente.'
+  }
+  if (cause instanceof InstagramApiError) {
+    if (cause.status === 400 && isInvalidUserIdMessage(cause.apiMessage ?? '')) {
+      return 'O ID do usuário não foi reconhecido pela Graph API. Confira se é o ID numérico da conta Business/Creator.'
+    }
+    if (typeof cause.status === 'number' && cause.status >= 400 && cause.status < 500) {
+      if (isTokenError(cause)) {
+        return 'O token do Instagram foi recusado pela Graph API — está inválido/expirado ou foi emitido via Facebook Login (a Graph API só aceita tokens gerados pelo Instagram Login). Gere um novo token de longa duração pelo Instagram Login e atualize o campo acima.'
+      }
+      return 'A Graph API recusou a solicitação. Confira o token e o ID do usuário configurados.'
+    }
+    return 'A Graph API está indisponível no momento. Tente novamente em alguns minutos.'
+  }
+  if (cause instanceof TypeError) {
+    return 'Não foi possível falar com a API do Instagram (rede indisponível).'
+  }
+  return 'Erro inesperado ao sincronizar o Instagram.'
+}
+
+/**
+ * Database seam for the raw-SQL persists. The default is the pool
+ * (`payload.db.drizzle`); the hook-triggered sync passes the transaction-bound
+ * database (`getPostgresTransactionDatabase`, S11) so the write lands inside
+ * the global save's transaction — writing the same row from a second pool
+ * connection while the save holds its row lock deadlocks on that lock.
+ */
+export type InstagramPersistDatabase = {
+  execute: (query: ReturnType<typeof sql>) => Promise<unknown>
+}
+
+const countAffected = (result: unknown): number | null | undefined =>
+  (result as { rowCount?: number | null } | undefined)?.rowCount
+
+/**
+ * Persists the sync status the same way as the snapshot — deliberately raw
+ * SQL instead of `payload.updateGlobal`: this runs INSIDE `unstable_cache`
+ * during a page render, and Next 15.4 throws when `revalidateTag` (the
+ * global's `afterChange` hook) fires inside a cached function. Same
+ * precondition as the snapshot: at most one `social_feed_settings` row
+ * exists; the INSERT only fires when none does.
+ */
+export const persistInstagramSyncStatus = async (
+  payload: Payload,
+  status: InstagramSyncStatus,
+  database: InstagramPersistDatabase | null = null,
+): Promise<void> => {
+  const db = database ?? payload.db.drizzle
+  const json = JSON.stringify(status)
+  const updated = await db.execute(sql`
+    UPDATE "social_feed_settings"
+    SET "instagram_sync_status" = ${json}::jsonb, "updated_at" = now()
+    WHERE "id" = (SELECT "id" FROM "social_feed_settings" ORDER BY "id" LIMIT 1)
+  `)
+  if (!countAffected(updated)) {
+    await db.execute(sql`
+      INSERT INTO "social_feed_settings" ("instagram_sync_status", "created_at", "updated_at")
+      VALUES (${json}::jsonb, now(), now())
+    `)
+  }
+}
+
+/** True when the Instagram feed is armed to call the Graph API. */
+export const isInstagramFeedConfigured = (settings: SocialFeedSetting): boolean =>
+  settings.enabled !== false &&
+  settings.instagramEnabled !== false &&
+  Boolean(settings.instagramAccessToken) &&
+  Boolean(settings.instagramUserId)
+
+/**
  * Persists the raw feed as the global's snapshot column. Deliberately raw SQL
- * (`payload.db.drizzle`) instead of `payload.updateGlobal`: this runs INSIDE
- * `unstable_cache` during a page render, and Next 15.4 throws when
- * `revalidateTag` (the global's `afterChange` hook) fires inside a cached
- * function. Raw SQL bypasses hooks; the row is created on first write when the
- * admin has not saved the global yet (a serial id is assigned, so no id
- * assumption is made).
+ * instead of `payload.updateGlobal`: this runs INSIDE `unstable_cache` during
+ * a page render, and Next 15.4 throws when `revalidateTag` (the global's
+ * `afterChange` hook) fires inside a cached function. Raw SQL bypasses hooks;
+ * the row is created on first write when the admin has not saved the global
+ * yet (a serial id is assigned, so no id assumption is made).
  *
  * Precondition: at most one `social_feed_settings` row exists. The UPDATE
  * targets the single row and the INSERT only fires when none exists; a
  * concurrent double-insert would need two writers racing the very first write
  * (the row is created by the first admin save or feed render) — accepted.
  */
-const persistInstagramSnapshot = async (
+export const persistInstagramSnapshot = async (
   payload: Payload,
   snapshot: InstagramFeedResult,
+  database: InstagramPersistDatabase | null = null,
 ): Promise<void> => {
-  const database = payload.db.drizzle
+  const db = database ?? payload.db.drizzle
   const json = JSON.stringify(snapshot)
-  const updated = await database.execute(sql`
+  const updated = await db.execute(sql`
     UPDATE "social_feed_settings"
     SET "instagram_feed_snapshot" = ${json}::jsonb, "updated_at" = now()
     WHERE "id" = (SELECT "id" FROM "social_feed_settings" ORDER BY "id" LIMIT 1)
   `)
-  if (!updated?.rowCount) {
-    await database.execute(sql`
+  if (!countAffected(updated)) {
+    await db.execute(sql`
       INSERT INTO "social_feed_settings" ("instagram_feed_snapshot", "created_at", "updated_at")
       VALUES (${json}::jsonb, now(), now())
     `)
@@ -244,8 +420,13 @@ const persistInstagramSnapshot = async (
 }
 
 /** Persists a refreshed token the same way as the snapshot (raw SQL, no hooks). */
-const persistInstagramAccessToken = async (payload: Payload, token: string): Promise<void> => {
-  await payload.db.drizzle.execute(sql`
+export const persistInstagramAccessToken = async (
+  payload: Payload,
+  token: string,
+  database: InstagramPersistDatabase | null = null,
+): Promise<void> => {
+  const db = database ?? payload.db.drizzle
+  await db.execute(sql`
     UPDATE "social_feed_settings"
     SET "instagram_access_token" = ${token}, "updated_at" = now()
     WHERE "id" = (SELECT "id" FROM "social_feed_settings" ORDER BY "id" LIMIT 1)
@@ -256,9 +437,11 @@ const persistInstagramAccessToken = async (payload: Payload, token: string): Pro
  * Cached Instagram feed for the campaign home content board: `null` when the
  * feed is off (kill switch, platform toggle or missing credentials), otherwise
  * the latest eligible posts plus the profile username. A successful fetch
- * persists the RAW list (pre-exclusion) as the global snapshot; a failed fetch
- * falls back to that snapshot with the current exclusions applied — so a new
- * exclusion works even while the API is down, and the page never breaks.
+ * persists the RAW list (pre-exclusion) as the global snapshot AND the sync
+ * status (so the admin panel shows "Sincronizado · há X min · N posts"); a
+ * failed fetch persists the failure status with the product-language reason
+ * and falls back to the snapshot with the current exclusions applied — so a
+ * new exclusion works even while the API is down, and the page never breaks.
  * Busted by the global's `afterChange` (tag `social-feed`); the per-entry
  * `revalidate` keeps new uploads appearing without an admin edit.
  */
@@ -270,12 +453,7 @@ export const getInstagramFeed = unstable_cache(
       depth: 0,
     })
 
-    if (
-      settings.enabled === false ||
-      settings.instagramEnabled === false ||
-      !settings.instagramAccessToken ||
-      !settings.instagramUserId
-    ) {
+    if (!isInstagramFeedConfigured(settings)) {
       return null
     }
 
@@ -284,19 +462,24 @@ export const getInstagramFeed = unstable_cache(
 
     try {
       const result = await loadInstagramFeed({
-        accessToken: settings.instagramAccessToken,
-        userId: settings.instagramUserId,
+        accessToken: settings.instagramAccessToken as string,
+        userId: settings.instagramUserId as string,
         maxResults: Math.min(maxItems + 10, INSTAGRAM_MAX_RESULTS_CAP),
       })
       await persistInstagramSnapshot(payload, { username: result.username, posts: result.posts })
       if (result.refreshedAccessToken) {
         await persistInstagramAccessToken(payload, result.refreshedAccessToken)
       }
+      await persistInstagramSyncStatus(payload, successInstagramSyncStatus(result.posts.length))
       return {
         username: result.username,
         posts: eligibleInstagramPosts(result.posts, excludedIds, maxItems),
       }
-    } catch {
+    } catch (cause) {
+      await persistInstagramSyncStatus(
+        payload,
+        failedInstagramSyncStatus(describeInstagramError(cause)),
+      )
       const snapshot = settings.instagramFeedSnapshot as unknown
       if (!isInstagramSnapshot(snapshot) || !Array.isArray(snapshot.posts)) {
         return { username: null, posts: [] }

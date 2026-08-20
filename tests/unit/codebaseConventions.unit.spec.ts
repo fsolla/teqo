@@ -207,6 +207,10 @@ describe('campaign JSON mutation route convention', () => {
       'server-to-server: authenticated by a secret header, deliberately callable cross-origin',
     ],
     [
+      'src/app/(frontend)/api/social-feed/sync/route.ts',
+      'admin-session authenticated (payload.auth, users collection) + explicit isSameOriginRequest; bodyless action returning the sync status — the campaignJsonMutationRoute envelope is campaign-scoped ({status:error})',
+    ],
+    [
       'src/app/(campaign)/campanha/api/ai-chat/route.ts',
       'streaming AI endpoint (ReadableStream, not JSON) — cookie-authenticated via campaign-token, origin-checked by cookie path',
     ],

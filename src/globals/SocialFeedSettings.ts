@@ -1,13 +1,42 @@
 import { payloadAdminOnly } from '@/utilities/campaignAccess'
 import { REVALIDATE_SOCIAL_FEED_TAG } from '@/utilities/revalidateRequest'
 import { revalidateTag } from 'next/cache'
-import type { GlobalConfig } from 'payload'
+import type { GlobalAfterChangeHook, GlobalConfig } from 'payload'
 
 const slug = 'social-feed-settings'
 
 const YOUTUBE_VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/
 
 const revalidateFeed = async () => revalidateTag(REVALIDATE_SOCIAL_FEED_TAG)
+
+/**
+ * Re-syncs Instagram when a save changes the IG credentials (the primary
+ * flow: the assessoria fills token + ID, saves, and the reload of the global
+ * already shows the sync state WITH the new credentials — the status panel
+ * would otherwise keep showing the last failure of the old token). Awaited
+ * with a bounded deadline so a hanging Graph API never stalls the save; any
+ * failure is swallowed — the sync's own status IS the result, and a broken
+ * sync must never break the save.
+ *
+ * The sync modules are imported lazily: `payload.config.ts` must not pull
+ * the feed module graph (`unstable_cache` at load time) — the config is the
+ * one module every int spec imports.
+ */
+const syncInstagramAfterChange: GlobalAfterChangeHook = async ({ doc, previousDoc, req }) => {
+  const { instagramCredentialsChanged, syncInstagramFeed, INSTAGRAM_SYNC_TIMEOUT_MS } =
+    await import('@/utilities/socialFeed/instagramSync')
+  if (!instagramCredentialsChanged(doc, previousDoc)) return
+  try {
+    // `req` lets the sync write inside this very transaction (same row lock
+    // held by the save) instead of blocking a second pool connection.
+    await syncInstagramFeed(req.payload, {
+      signal: AbortSignal.timeout(INSTAGRAM_SYNC_TIMEOUT_MS),
+      req,
+    })
+  } catch {
+    // the status panel reflects the failure; the save itself stays green
+  }
+}
 
 /**
  * Configuration of the campaign home content board's external feeds (plano-site
@@ -29,7 +58,7 @@ export const SocialFeedSettings: GlobalConfig = {
     update: payloadAdminOnly,
   },
   hooks: {
-    afterChange: [revalidateFeed],
+    afterChange: [revalidateFeed, syncInstagramAfterChange],
   },
   fields: [
     {
@@ -86,6 +115,16 @@ export const SocialFeedSettings: GlobalConfig = {
       defaultValue: true,
       admin: {
         description: 'Desliga só os cards de post do Instagram.',
+      },
+    },
+    {
+      name: 'instagramSyncStatusPanel',
+      type: 'ui',
+      label: 'Instagram — estado da sincronização',
+      admin: {
+        components: {
+          Field: './components/admin/InstagramSyncStatusPanel#InstagramSyncStatusPanel',
+        },
       },
     },
     {
@@ -180,6 +219,13 @@ export const SocialFeedSettings: GlobalConfig = {
     },
     {
       name: 'instagramFeedSnapshot',
+      type: 'json',
+      admin: {
+        hidden: true,
+      },
+    },
+    {
+      name: 'instagramSyncStatus',
       type: 'json',
       admin: {
         hidden: true,

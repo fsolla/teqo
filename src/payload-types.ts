@@ -2450,6 +2450,15 @@ export interface SocialFeedSetting {
     | number
     | boolean
     | null;
+  instagramSyncStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -2562,6 +2571,7 @@ export interface SocialFeedSettingsSelect<T extends boolean = true> {
       };
   youtubeFeedSnapshot?: T;
   instagramFeedSnapshot?: T;
+  instagramSyncStatus?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
