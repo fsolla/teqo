@@ -47,6 +47,7 @@ jobs:
       # Explicit base: in the GitHub Actions env, GITHUB_SERVER_URL points at
       # github.com and forgejo-api.mjs would resolve the wrong base (410).
       FORGEJO_API_URL: https://git.solla.dev/api/v1
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v5
       # Script is plain Node (stdlib) — no pnpm. Disable
