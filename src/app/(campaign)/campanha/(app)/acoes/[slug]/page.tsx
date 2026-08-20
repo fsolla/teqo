@@ -199,6 +199,7 @@ export default async function CampaignActionWizardPage({
         municipalityName={municipality.name}
         municipalitySlug={municipality.slug}
         returnPath={returnPath}
+        currentUser={{ id: user.id, name: user.name }}
       />
     )
   }

@@ -93,6 +93,11 @@ export const CAMPAIGN_DEMAND_COST_STAFF_MESSAGE =
   'Somente a coordenação, a assessoria e o candidato registram custos.'
 export const CAMPAIGN_DEMAND_EDIT_STAFF_MESSAGE =
   'Somente a coordenação, a assessoria e o candidato editam demandas.'
+export const CAMPAIGN_DEMAND_RESPONSIBLES_STAFF_MESSAGE =
+  'Somente quem vê a demanda pode gerenciar os responsáveis.'
+export const CAMPAIGN_DEMAND_RESPONSIBLES_LABEL = 'Responsáveis pela demanda'
+export const CAMPAIGN_DEMAND_RESPONSIBLES_DESCRIPTION =
+  'Sugestões: assessores do município. Se ninguém for marcado além de você, só você, candidato e coordenador verão a demanda.'
 export const CAMPAIGN_DEMAND_RECEIPT_STAFF_MESSAGE =
   'Somente a coordenação e a assessoria anexam comprovantes.'
 export const CAMPAIGN_DEMAND_RECEIPT_TYPE_MESSAGE = 'Envie uma imagem (JPEG, PNG, WebP) ou PDF.'

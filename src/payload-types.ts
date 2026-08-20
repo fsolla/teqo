@@ -717,6 +717,10 @@ export interface CampaignDemand {
   municipality: number | Municipality;
   activity?: (number | null) | Activity;
   leadership?: (number | null) | Leadership;
+  /**
+   * Só responsáveis, candidato e coordenador veem a demanda. O criador entra automaticamente.
+   */
+  responsibles?: (number | CampaignUser)[] | null;
   status: 'aberta' | 'em_analise' | 'escalada' | 'aprovada' | 'rejeitada';
   decisionNote?: string | null;
   decidedBy?: (number | null) | CampaignUser;
@@ -1781,6 +1785,7 @@ export interface CampaignDemandSelect<T extends boolean = true> {
   municipality?: T;
   activity?: T;
   leadership?: T;
+  responsibles?: T;
   status?: T;
   decisionNote?: T;
   decidedBy?: T;

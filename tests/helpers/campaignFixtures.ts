@@ -106,7 +106,14 @@ type StateDeputyInput = Partial<
 type CampaignDemandInput = Partial<
   Pick<
     CampaignDemand,
-    'title' | 'slug' | 'kind' | 'description' | 'status' | 'leadership' | 'createdBy'
+    | 'title'
+    | 'slug'
+    | 'kind'
+    | 'description'
+    | 'status'
+    | 'leadership'
+    | 'createdBy'
+    | 'responsibles'
   >
 > &
   Pick<CampaignDemand, 'municipality'>
@@ -659,6 +666,7 @@ export class CampaignFixtures {
         municipality: relationId(input.municipality),
         ...(input.leadership ? { leadership: relationId(input.leadership) } : {}),
         ...(input.createdBy ? { createdBy: relationId(input.createdBy) } : {}),
+        ...(input.responsibles ? { responsibles: input.responsibles } : {}),
       },
       depth: 0,
     })
