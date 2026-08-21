@@ -1,4 +1,5 @@
 import { resolveActivityQuickActions } from '@/lib/activityQuickActions'
+import type { AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { resolveAdvisorQuickActionsForPath } from '@/lib/campaignAdvisorQuickActions'
 import { resolveStaffHomeQuickActions } from '@/lib/campaignHomeActions'
 import { resolveMunicipalityQuickActionsForPath } from '@/lib/campaignMunicipalityQuickActions'
@@ -38,11 +39,14 @@ const isTerritoriesListPath = (pathname: string): boolean =>
  * Pathname + role + page context → contextual quick actions.
  * Catalogs per vertical land in B80–B90; the B79 chassis renders whatever
  * this helper returns.
+ * C142 — `editingScope` threads through to writers that filter on it
+ * (dobradinhas, territories list, home actions).
  */
 export const resolveQuickActionsForPath = (
   pathname: string,
   role: CampaignRole,
   context: CampaignQuickActionContext,
+  editingScope: AdvisorEditingScope = 'tudo',
 ): readonly CampaignQuickAction[] => {
   if (isLeaderContactsPath(pathname)) {
     return resolveLeaderContactsQuickActions(role, context)
@@ -68,7 +72,12 @@ export const resolveQuickActionsForPath = (
   const municipalityV2Actions = resolveMunicipalityV2QuickActionsForPath(pathname, role, context)
   if (municipalityV2Actions !== null) return municipalityV2Actions
 
-  const municipalityActions = resolveMunicipalityQuickActionsForPath(pathname, role, context)
+  const municipalityActions = resolveMunicipalityQuickActionsForPath(
+    pathname,
+    role,
+    context,
+    editingScope,
+  )
   if (municipalityActions.length > 0) return municipalityActions
 
   const leadershipActions = resolveLeadershipQuickActions(pathname, role, context)
@@ -77,7 +86,7 @@ export const resolveQuickActionsForPath = (
   }
 
   if (matchesDobradinhasQuickActionSurface(pathname)) {
-    return resolveDobradinhasQuickActions(pathname, role)
+    return resolveDobradinhasQuickActions(pathname, role, editingScope)
   }
 
   const advisorActions = resolveAdvisorQuickActionsForPath(pathname, role, context)
@@ -87,7 +96,7 @@ export const resolveQuickActionsForPath = (
   if (supporterActions.length > 0) return supporterActions
 
   if (isTerritoriesListPath(pathname)) {
-    return resolveStaffHomeQuickActions(role, pathname)
+    return resolveStaffHomeQuickActions(role, editingScope, pathname)
   }
 
   const referenceActions = resolveReferenceQuickActionsForPath(pathname, role, context)

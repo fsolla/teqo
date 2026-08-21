@@ -85,8 +85,16 @@ describe('access shared policies (P3-D)', () => {
   })
 
   it('C141 advisorEditingAccess maps the Edição axis to a scope decision', () => {
+    // Coherent stored profiles only: `editing: 'tudo'` requires `visibility: 'tudo'`
+    // (the collection hook rejects the incoherent combination at write).
     const withEditing = (editing: CampaignUser['editing']) =>
-      stub<CampaignUser>({ collection: 'campaignUser', id: 9, role: 'advisor', editing })
+      stub<CampaignUser>({
+        collection: 'campaignUser',
+        id: 9,
+        role: 'advisor',
+        visibility: 'tudo',
+        editing,
+      })
     expect(advisorEditingAccess(withEditing('somente_leitura'))).toBe('none')
     expect(advisorEditingAccess(withEditing('tudo'))).toBe('tudo')
     expect(advisorEditingAccess(withEditing('carteira'))).toBe('carteira')

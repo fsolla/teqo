@@ -41,6 +41,8 @@ const AUTOSAVE_MS = 600
 type MunicipalityV2LocalAccountSectionProps = {
   conta: MunicipalityV2ContaViewModel
   territorialClass: MunicipalityTerritorialClassification
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): the scenario estimates render as static values with no autosave inputs. */
+  readOnly?: boolean
 }
 
 const ConceptHint = ({
@@ -81,6 +83,7 @@ const ConceptHint = ({
 export const MunicipalityV2LocalAccountSection = ({
   conta,
   territorialClass,
+  readOnly = false,
 }: MunicipalityV2LocalAccountSectionProps) => {
   const [activeScenario, setActiveScenario] = useState<VoteEstimateScenario>(
     DEFAULT_VOTE_ESTIMATE_SCENARIO,
@@ -150,15 +153,30 @@ export const MunicipalityV2LocalAccountSection = ({
             aria-label="Salvando votos estimados"
           />
         ) : null}
-        <VoteEstimateScenarioInputs
-          fieldPrefix="expectedVotes"
-          values={value}
-          idPrefix={`municipality-v2-expected-votes-${conta.municipalityID}`}
-          variant="compact"
-          activeScenario={activeScenario}
-          onFocusScenario={setActiveScenario}
-          onValuesChange={(values) => change(values, AUTOSAVE_MS)}
-        />
+        {readOnly ? (
+          <dl className="flex flex-col gap-1.5">
+            {(['pessimistic', 'central', 'optimistic'] as const).map((scenario) => (
+              <div key={scenario} className="flex items-baseline justify-between gap-2 text-sm">
+                <dt className="text-muted-foreground">{voteEstimateScenarioLabels[scenario]}</dt>
+                <dd className="tabular-nums">
+                  {getVoteEstimateForScenario(value, scenario) == null
+                    ? 'sem estimativa'
+                    : formatElectionNumber(getVoteEstimateForScenario(value, scenario)!)}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <VoteEstimateScenarioInputs
+            fieldPrefix="expectedVotes"
+            values={value}
+            idPrefix={`municipality-v2-expected-votes-${conta.municipalityID}`}
+            variant="compact"
+            activeScenario={activeScenario}
+            onFocusScenario={setActiveScenario}
+            onValuesChange={(values) => change(values, AUTOSAVE_MS)}
+          />
+        )}
         <p className="text-xs text-muted-foreground tabular-nums">
           Meta ativa ({scenarioLabel}): {formatElectionNumber(activeCoverage.goal)} (
           {usesMesaEstimate ? 'estimativa da mesa' : 'meta sugerida: votação de 2022 aqui'})

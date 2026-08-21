@@ -10,9 +10,15 @@ import type { ActivityTaskViewModel } from '@/utilities/activityViewModels'
 type ActivityTaskChecklistProps = {
   activityId: number
   tasks: ActivityTaskViewModel[]
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): tasks render with a static done indicator, no toggle. */
+  readOnly?: boolean
 }
 
-export const ActivityTaskChecklist = ({ activityId, tasks }: ActivityTaskChecklistProps) => {
+export const ActivityTaskChecklist = ({
+  activityId,
+  tasks,
+  readOnly = false,
+}: ActivityTaskChecklistProps) => {
   const [isPending, startTransition] = useTransition()
   const [optimisticTasks, setOptimisticDone] = useOptimistic(
     tasks,
@@ -45,13 +51,33 @@ export const ActivityTaskChecklist = ({ activityId, tasks }: ActivityTaskCheckli
           data-done={task.done}
           data-pending={isPending || undefined}
         >
-          <Checkbox
-            checked={task.done}
-            disabled={isPending}
-            onCheckedChange={(checked) => toggle(task.id, checked === true)}
-            aria-label={`Marcar tarefa "${task.title}" como ${task.done ? 'pendente' : 'concluída'}`}
-            className="mt-0.5"
-          />
+          {readOnly ? (
+            <span
+              aria-hidden="true"
+              className={`mt-1.5 inline-flex size-4 shrink-0 items-center justify-center rounded border ${
+                task.done ? 'border-primary bg-primary text-primary-foreground' : 'border-input'
+              }`}
+            >
+              {task.done ? (
+                <svg viewBox="0 0 24 24" className="size-3" fill="none" stroke="currentColor">
+                  <path
+                    d="M20 6 9 17l-5-5"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : null}
+            </span>
+          ) : (
+            <Checkbox
+              checked={task.done}
+              disabled={isPending}
+              onCheckedChange={(checked) => toggle(task.id, checked === true)}
+              aria-label={`Marcar tarefa "${task.title}" como ${task.done ? 'pendente' : 'concluída'}`}
+              className="mt-0.5"
+            />
+          )}
           <div className="min-w-0 flex-1 flex-col gap-0.5">
             <span
               className={`break-words ${task.done ? 'line-through text-muted-foreground' : ''}`}

@@ -32,6 +32,8 @@ type MunicipalityV2EstimatedVotesCellProps = {
   declaredVotes: number | null
   estimatedVotes: VoteEstimateScenarioViewModel
   variant: 'popover' | 'sheet'
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): the estimate renders with no editor overlay. */
+  readOnly?: boolean
 }
 
 type EditableProps = Omit<MunicipalityV2EstimatedVotesCellProps, 'pledgeID'> & {
@@ -44,6 +46,7 @@ const MunicipalityV2EstimatedVotesCellEditable = ({
   declaredVotes,
   estimatedVotes,
   variant,
+  readOnly = false,
 }: EditableProps) => {
   const declared = declaredVotes ?? 0
   const centralEstimate = getVoteEstimateForScenario(estimatedVotes, DEFAULT_VOTE_ESTIMATE_SCENARIO)
@@ -88,6 +91,11 @@ const MunicipalityV2EstimatedVotesCellEditable = ({
     ) : (
       <span className="font-medium tabular-nums">{formatElectionNumber(centralEstimate)}</span>
     )
+
+  // C142 — read-only: the estimate renders with no editor overlay.
+  if (readOnly) {
+    return display
+  }
 
   return (
     <CampaignCellEditOverlay
@@ -138,6 +146,7 @@ export const MunicipalityV2EstimatedVotesCell = ({
   declaredVotes,
   estimatedVotes,
   variant,
+  readOnly = false,
 }: MunicipalityV2EstimatedVotesCellProps) => {
   if (pledgeID === null) {
     return <span className="text-muted-foreground">—</span>
@@ -150,6 +159,7 @@ export const MunicipalityV2EstimatedVotesCell = ({
       declaredVotes={declaredVotes}
       estimatedVotes={estimatedVotes}
       variant={variant}
+      readOnly={readOnly}
     />
   )
 }

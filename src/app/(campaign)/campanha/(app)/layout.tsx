@@ -28,6 +28,7 @@ import { CampaignWizardChromeProvider } from '@/components/campaign/shell/Campai
 import { InstallPwaToast } from '@/components/campaign/shell/InstallPwaToast'
 import { SIDEBAR_COOKIE_NAME, SidebarInset, SidebarProvider } from '@/components/ui/Sidebar'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { advisorEditingScope, type AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { deviceLabelFromUserAgent } from '@/lib/deviceLabel'
 import { getCampaignUserWithAvatar } from '@/utilities/campaignAuth'
@@ -56,6 +57,12 @@ export default async function CampaignAppLayout({ children }: { children: React.
   // browser can answer, so the island finishes the decision.
   const relyingParty = await resolveCampaignWebAuthnRelyingParty()
   const isStaff = isStaffCampaignRole(user.role)
+
+  // C142 — the write scope is resolved once and threaded to the Chrome shell
+  // (FAB mount rule) and to every page via the user prop.
+  const editingScope: AdvisorEditingScope =
+    user.role === 'advisor' ? advisorEditingScope(user.visibility, user.editing) : 'tudo'
+
   let biometricEnrollment: BiometricEnrollmentOffer | null = null
   let pushOptIn: CampaignPushOptInOffer | null = null
   if (relyingParty || isStaff) {
@@ -112,7 +119,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
               */}
                     <TooltipProvider delayDuration={300}>
                       <div className="flex min-h-0 flex-1 flex-col">
-                        <CampaignAppScrollChrome role={user.role}>
+                        <CampaignAppScrollChrome role={user.role} editingScope={editingScope}>
                           {children}
                         </CampaignAppScrollChrome>
                       </div>

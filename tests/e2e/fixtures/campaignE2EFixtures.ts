@@ -114,10 +114,20 @@ export class CampaignE2EOwnership {
    * One campaign account with a deterministic generated password (returned for
    * the UI login) — replaces the ~28 hand-written `payload.create` blocks the
    * specs used to spell out per role. The proxy above auto-owns the row.
+   *
+   * C142 — `visibility` and `editing` fields are passed through so e2e tests
+   * can exercise advisor permission profiles (`somente_leitura`, `tudo`,
+   * `carteira`).
    */
   async createCampaignUser(
     role: CampaignUser['role'],
-    input: { name?: string; email?: string; username?: string } = {},
+    input: {
+      name?: string
+      email?: string
+      username?: string
+      visibility?: CampaignUser['visibility']
+      editing?: CampaignUser['editing']
+    } = {},
   ): Promise<CampaignUser & { password: string }> {
     const password = this.value('password')
     const user = await this.payload.create({

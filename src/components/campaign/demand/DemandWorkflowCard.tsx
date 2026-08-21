@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/Spinner'
 import { Textarea } from '@/components/ui/textarea'
 import {
+  campaignDemandStatusLabels,
   campaignDemandTransitionLabels,
   campaignDemandTransitions,
   type CampaignDemandStatus,
@@ -30,6 +31,8 @@ type DemandWorkflowCardProps = {
   transitionFormAction: FormAction
   costFormAction: FormAction
   receiptFormAction: FormAction
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): the workflow renders as status-only, no transitions/cost/receipt. */
+  readOnly?: boolean
 }
 
 const transitionVariant = (target: CampaignDemandStatus) =>
@@ -44,6 +47,7 @@ export const DemandWorkflowCard = ({
   transitionFormAction,
   costFormAction,
   receiptFormAction,
+  readOnly = false,
 }: DemandWorkflowCardProps) => {
   const [transitionState, submitTransition, transitionPending] = useActionState(
     transitionFormAction,
@@ -58,6 +62,28 @@ export const DemandWorkflowCard = ({
       status !== 'escalada' ||
       (target !== 'aprovada' && target !== 'rejeitada'),
   )
+
+  if (readOnly) {
+    return (
+      <section
+        aria-labelledby="demand-workflow-title"
+        className="flex flex-col gap-6 rounded-xl border p-4"
+      >
+        <div className="flex flex-col gap-1">
+          <h2 id="demand-workflow-title" className="text-base font-medium">
+            Tratar demanda
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            O assessor analisa e decide — ou escala ao Coordenador Geral. Demandas escaladas são
+            decididas somente por ele.
+          </p>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Status: {campaignDemandStatusLabels[status]}
+        </p>
+      </section>
+    )
+  }
 
   return (
     <section

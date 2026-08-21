@@ -61,6 +61,8 @@ type PendingAxis = 'level' | 'trend' | 'update' | null
 type MunicipalityV2StatusStripProps = {
   status: MunicipalityV2StatusViewModel
   signalFormAction: (formData: FormData) => Promise<CampaignFormActionState>
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): nível/tendência/polaridade render as static values with no selects. */
+  readOnly?: boolean
 }
 
 const ConceptTooltip = ({
@@ -105,6 +107,7 @@ const polarityOptions: readonly MunicipalityUpdatePolarity[] = ['boa', 'neutra',
 export const MunicipalityV2StatusStrip = ({
   status,
   signalFormAction,
+  readOnly = false,
 }: MunicipalityV2StatusStripProps) => {
   const router = useRouter()
   const formId = useId()
@@ -321,7 +324,7 @@ export const MunicipalityV2StatusStrip = ({
           <ConceptTooltip conceptId="nivel-de-envolvimento" label="Nível">
             <FieldLabel htmlFor={`${formId}-level`}>Nível</FieldLabel>
           </ConceptTooltip>
-          {status.canMoveEngagementLevel ? (
+          {status.canMoveEngagementLevel && !readOnly ? (
             <NativeSelect
               id={`${formId}-level`}
               className="min-h-11 w-full"
@@ -355,64 +358,76 @@ export const MunicipalityV2StatusStrip = ({
 
         <Field>
           <FieldLabel htmlFor={`${formId}-trend`}>Tendência</FieldLabel>
-          <NativeSelect
-            id={`${formId}-trend`}
-            className="min-h-11 w-full"
-            value={trendStatus ?? ''}
-            aria-busy={isPending && pendingAxis === 'trend' ? true : undefined}
-            onChange={(event) => {
-              const next = parsePoliticalTrendStatusFormValue(event.target.value)
-              if (next === trendStatus) return
-              setDraftTrend(next)
-              setPendingAxis('trend')
-              setErrorMessage(null)
-            }}
-          >
-            <NativeSelectOption value="">Não registrada</NativeSelectOption>
-            {politicalTrendStatuses.map((option) => (
-              <NativeSelectOption key={option} value={option}>
-                {politicalTrendLabels[option]}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
+          {readOnly ? (
+            <p id={`${formId}-trend`} className="flex min-h-11 items-center text-sm">
+              {trendStatus ? politicalTrendLabels[trendStatus] : 'Não registrada'}
+            </p>
+          ) : (
+            <NativeSelect
+              id={`${formId}-trend`}
+              className="min-h-11 w-full"
+              value={trendStatus ?? ''}
+              aria-busy={isPending && pendingAxis === 'trend' ? true : undefined}
+              onChange={(event) => {
+                const next = parsePoliticalTrendStatusFormValue(event.target.value)
+                if (next === trendStatus) return
+                setDraftTrend(next)
+                setPendingAxis('trend')
+                setErrorMessage(null)
+              }}
+            >
+              <NativeSelectOption value="">Não registrada</NativeSelectOption>
+              {politicalTrendStatuses.map((option) => (
+                <NativeSelectOption key={option} value={option}>
+                  {politicalTrendLabels[option]}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          )}
         </Field>
 
         <Field>
           <ConceptTooltip conceptId="pauta-do-silencio" label="Polaridade">
             <FieldLabel htmlFor={`${formId}-update`}>Polaridade</FieldLabel>
           </ConceptTooltip>
-          <NativeSelect
-            id={`${formId}-update`}
-            className="min-h-11 w-full"
-            value={updateSelect.value}
-            aria-busy={isPending && pendingAxis === 'update' ? true : undefined}
-            onChange={(event) => {
-              const raw = event.target.value
-              if (raw === MUNICIPALITY_V2_SIGNAL_COLD_VALUE) {
-                event.target.value = updateSelect.value
-                return
-              }
-              const next = raw as MunicipalityUpdatePolarity
-              if (!next || next === polarity) {
-                event.target.value = updateSelect.value
-                return
-              }
-              setDraftPolarity(next)
-              setPendingAxis('update')
-              setErrorMessage(null)
-            }}
-          >
-            {updateSelect.isCold ? (
-              <NativeSelectOption value={MUNICIPALITY_V2_SIGNAL_COLD_VALUE}>
-                {updateSelect.label}
-              </NativeSelectOption>
-            ) : null}
-            {polarityOptions.map((option) => (
-              <NativeSelectOption key={option} value={option}>
-                {municipalityUpdatePolarityLabels[option]}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
+          {readOnly ? (
+            <p id={`${formId}-update`} className="flex min-h-11 items-center text-sm">
+              {updateSelect.label}
+            </p>
+          ) : (
+            <NativeSelect
+              id={`${formId}-update`}
+              className="min-h-11 w-full"
+              value={updateSelect.value}
+              aria-busy={isPending && pendingAxis === 'update' ? true : undefined}
+              onChange={(event) => {
+                const raw = event.target.value
+                if (raw === MUNICIPALITY_V2_SIGNAL_COLD_VALUE) {
+                  event.target.value = updateSelect.value
+                  return
+                }
+                const next = raw as MunicipalityUpdatePolarity
+                if (!next || next === polarity) {
+                  event.target.value = updateSelect.value
+                  return
+                }
+                setDraftPolarity(next)
+                setPendingAxis('update')
+                setErrorMessage(null)
+              }}
+            >
+              {updateSelect.isCold ? (
+                <NativeSelectOption value={MUNICIPALITY_V2_SIGNAL_COLD_VALUE}>
+                  {updateSelect.label}
+                </NativeSelectOption>
+              ) : null}
+              {polarityOptions.map((option) => (
+                <NativeSelectOption key={option} value={option}>
+                  {municipalityUpdatePolarityLabels[option]}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          )}
         </Field>
 
         <div className="flex flex-col gap-2">

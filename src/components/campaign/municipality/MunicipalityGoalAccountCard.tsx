@@ -93,6 +93,7 @@ export const MunicipalityGoalAccountCard = ({
   potential,
   territorialClass,
   territoryCaptureBenchmark,
+  readOnly = false,
 }: {
   municipalityID: number
   expectedVotes: VoteEstimateScenarioViewModel
@@ -102,6 +103,8 @@ export const MunicipalityGoalAccountCard = ({
   potential: MunicipalityPotential
   territorialClass: MunicipalityTerritorialClassification
   territoryCaptureBenchmark: MunicipalityIntraTerritoryCaptureBenchmark
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`). */
+  readOnly?: boolean
 }) => {
   const usesMesaEstimate = expectedVotes.central != null
   const latestIntraFieldShareYear = Math.max(
@@ -168,6 +171,7 @@ export const MunicipalityGoalAccountCard = ({
           expectedVotes={expectedVotes}
           pledgeCoverage={pledgeCoverage}
           variant="popover"
+          readOnly={readOnly}
         />
         <p className="mt-1 text-xs text-muted-foreground">
           Meta usada na conta: {formatElectionNumber(goalCoverage.goal)} (

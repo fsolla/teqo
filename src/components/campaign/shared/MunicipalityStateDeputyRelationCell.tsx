@@ -24,6 +24,8 @@ type MunicipalityStateDeputyRelationCellProps = MunicipalityRelationTriggerProps
   ) => Promise<CampaignFormActionState>
   createAction: MunicipalityStateDeputyCreateAction
   editorVariant: CampaignCellEditOverlayVariant
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`). */
+  readOnly?: boolean
 }
 
 export type MunicipalityStateDeputyCreateAction = (
@@ -67,6 +69,7 @@ export const MunicipalityStateDeputyRelationCell = ({
   editorVariant,
   trigger,
   triggerClassName,
+  readOnly = false,
 }: MunicipalityStateDeputyRelationCellProps) => {
   const toggle = async (
     stateDeputyID: number,
@@ -130,6 +133,7 @@ export const MunicipalityStateDeputyRelationCell = ({
       createLabel={(name) => `Criar dobradinha “${name}”`}
       createMaxLength={120}
       sortSelected={false}
+      readOnly={readOnly}
       onToggle={toggle}
       onCreate={create}
     />

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useCampaignQuickActionContext } from '@/components/campaign/shell/CampaignQuickActionContext'
 import { CampaignQuickActionsFab } from '@/components/campaign/shell/CampaignQuickActionsFab'
 import { CampaignQuickActionsOverlay } from '@/components/campaign/shell/CampaignQuickActionsOverlay'
+import type { AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { shouldMountQuickActionsFab } from '@/lib/campaignQuickActionMount'
 import { resolveQuickActionsForPath } from '@/lib/campaignQuickActionRegistry'
 import { isStaffCampaignRole, type CampaignRole } from '@/lib/campaignRoles'
@@ -19,12 +20,19 @@ export const CampaignContentScroll = ({ children }: { children: ReactNode }) => 
   </div>
 )
 
-export const CampaignQuickActionsHost = ({ role }: { role: CampaignRole }) => {
+export const CampaignQuickActionsHost = ({
+  role,
+  editingScope = 'tudo',
+}: {
+  role: CampaignRole
+  /** C142 — advisors with `somente_leitura` see no FAB on staff surfaces. */
+  editingScope?: AdvisorEditingScope
+}) => {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const { context } = useCampaignQuickActionContext()
 
-  const mounted = shouldMountQuickActionsFab(pathname, role)
+  const mounted = shouldMountQuickActionsFab(pathname, role, editingScope)
 
   useEffect(() => {
     setOpen(false)
@@ -36,7 +44,7 @@ export const CampaignQuickActionsHost = ({ role }: { role: CampaignRole }) => {
 
   if (!mounted) return null
 
-  const actions = resolveQuickActionsForPath(pathname, role, context)
+  const actions = resolveQuickActionsForPath(pathname, role, context, editingScope)
   const showBottomNav = isStaffCampaignRole(role)
 
   return (
@@ -53,7 +61,10 @@ export const CampaignQuickActionsHost = ({ role }: { role: CampaignRole }) => {
   )
 }
 
-export const useQuickActionsChromeActive = (role: CampaignRole): boolean => {
+export const useQuickActionsChromeActive = (
+  role: CampaignRole,
+  editingScope: AdvisorEditingScope = 'tudo',
+): boolean => {
   const pathname = usePathname()
-  return shouldMountQuickActionsFab(pathname, role)
+  return shouldMountQuickActionsFab(pathname, role, editingScope)
 }

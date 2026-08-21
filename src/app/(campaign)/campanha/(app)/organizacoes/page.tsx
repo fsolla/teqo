@@ -15,6 +15,7 @@ import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/s
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { advisorEditingScope, type AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { organizationKindLabels } from '@/lib/schemas/organization'
@@ -73,6 +74,11 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
     getPayload({ config }),
   ])
 
+  // C142 — the write scope gates the "Nova organização" buttons.
+  const editingScope: AdvisorEditingScope =
+    user.role === 'advisor' ? advisorEditingScope(user.visibility, user.editing) : 'tudo'
+  const canCreate = editingScope !== 'none'
+
   const state = parseOrganizationListParams(rawSearchParams)
   const { rows, totalDocs, totalPages } = await loadOrganizationListPageData(payload, user, state)
   const columnVisibility = await readCampaignColumnVisibility('organizacoes')
@@ -80,12 +86,14 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
   return (
     <CampaignPageShell>
       <div className="flex justify-end pt-4 md:pt-0">
-        <Button asChild className="min-h-11">
-          <Link href="/campanha/organizacoes/nova">
-            <PlusIcon data-icon="inline-start" aria-hidden="true" />
-            Nova organização
-          </Link>
-        </Button>
+        {canCreate ? (
+          <Button asChild className="min-h-11">
+            <Link href="/campanha/organizacoes/nova">
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Nova organização
+            </Link>
+          </Button>
+        ) : null}
       </div>
 
       <CampaignListPendingBoundary>
@@ -111,12 +119,14 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
                 title="Nenhuma organização cadastrada"
                 description="Cadastre sindicatos, associações e movimentos para vincular lideranças e atividades."
               >
-                <Button asChild className="min-h-11">
-                  <Link href="/campanha/organizacoes/nova">
-                    <PlusIcon data-icon="inline-start" aria-hidden="true" />
-                    Nova organização
-                  </Link>
-                </Button>
+                {canCreate ? (
+                  <Button asChild className="min-h-11">
+                    <Link href="/campanha/organizacoes/nova">
+                      <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                      Nova organização
+                    </Link>
+                  </Button>
+                ) : null}
               </CampaignListEmptyState>
             }
           />

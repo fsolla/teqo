@@ -41,6 +41,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
+import { advisorEditingScope, type AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
@@ -92,7 +93,13 @@ type LeadershipsPageProps = {
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR')
 
-const LeadershipListEmptyState = ({ state }: { state: LeadershipListState }) => (
+const LeadershipListEmptyState = ({
+  state,
+  canEditAny = true,
+}: {
+  state: LeadershipListState
+  canEditAny?: boolean
+}) => (
   <Empty className="min-h-56">
     <EmptyHeader>
       <EmptyMedia variant="icon">
@@ -113,12 +120,14 @@ const LeadershipListEmptyState = ({ state }: { state: LeadershipListState }) => 
       >
         Limpar busca e filtros
       </CampaignTransitionAnchor>
-      <Button asChild className="min-h-11">
-        <Link href="/campanha/liderancas/nova">
-          <PlusIcon data-icon="inline-start" aria-hidden="true" />
-          Nova liderança
-        </Link>
-      </Button>
+      {canEditAny ? (
+        <Button asChild className="min-h-11">
+          <Link href="/campanha/liderancas/nova">
+            <PlusIcon data-icon="inline-start" aria-hidden="true" />
+            Nova liderança
+          </Link>
+        </Button>
+      ) : null}
     </EmptyContent>
   </Empty>
 )
@@ -129,6 +138,7 @@ const leadershipColumns = ({
   municipalityIndex,
   municipalityFilterOptions,
   addableMunicipalityIds,
+  canEditAny = true,
   nowMs,
 }: {
   state: LeadershipListState
@@ -137,6 +147,8 @@ const leadershipColumns = ({
   municipalityFilterOptions: LeadershipFilterOption[]
   /** Advisors may only link municipalities they administer; staff: undefined. */
   addableMunicipalityIds?: ReadonlySet<number>
+  /** C142 — false when the advisor has `somente_leitura`: no invite, no per-row edits. */
+  canEditAny?: boolean
   nowMs: number
 }): Array<CampaignTableColumn<LeadershipRowViewModel>> => [
   {
@@ -300,11 +312,13 @@ const leadershipColumns = ({
       const whatsAppHref = whatsAppHrefForPhone(row.phone)
       return (
         <div className="inline-flex items-center justify-end gap-1">
-          <LeadershipInviteRowAction
-            leadershipID={row.id}
-            name={row.name}
-            hasValidPhone={whatsAppHref !== null}
-          />
+          {canEditAny ? (
+            <LeadershipInviteRowAction
+              leadershipID={row.id}
+              name={row.name}
+              hasValidPhone={whatsAppHref !== null}
+            />
+          ) : null}
           {whatsAppHref ? (
             <Button asChild variant="ghost" size="icon" className="size-10">
               <a
@@ -358,6 +372,12 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
     loadMunicipalityPortfolioIndex(),
     user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : null,
   ])
+
+  // C142 — the write scope gates the create button, the invite action, and
+  // per-row editability (municipality/dobradinha chips).
+  const editingScope: AdvisorEditingScope =
+    user.role === 'advisor' ? advisorEditingScope(user.visibility, user.editing) : 'tudo'
+  const canEditAny = editingScope !== 'none'
   const resolvedUrl = resolveLeadershipListUrl(rawSearchParams, totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
   const { state } = resolvedUrl
@@ -411,19 +431,22 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
     })),
     municipalityIndex,
     municipalityFilterOptions,
-    ...(administeredIds ? { addableMunicipalityIds: new Set(administeredIds) } : {}),
+    ...(canEditAny && administeredIds ? { addableMunicipalityIds: new Set(administeredIds) } : {}),
+    canEditAny,
     nowMs: Date.now(),
   })
 
   return (
     <CampaignPageShell>
       <div className="flex justify-end pt-4 md:pt-0">
-        <Button asChild className="min-h-11">
-          <Link href="/campanha/liderancas/nova">
-            <PlusIcon data-icon="inline-start" aria-hidden="true" />
-            Nova liderança
-          </Link>
-        </Button>
+        {canEditAny ? (
+          <Button asChild className="min-h-11">
+            <Link href="/campanha/liderancas/nova">
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Nova liderança
+            </Link>
+          </Button>
+        ) : null}
       </div>
 
       <CampaignListPendingBoundary>
@@ -450,7 +473,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
               columnVisibility={columnVisibility}
               rows={rows}
               rowKey={(row) => row.id}
-              empty={<LeadershipListEmptyState state={state} />}
+              empty={<LeadershipListEmptyState state={state} canEditAny={canEditAny} />}
             />
           </CampaignListSheetProvider>
           {rows.length ? (

@@ -26,6 +26,7 @@ export const SuggestionsPanel = ({
   showMunicipality = false,
   resolveAction,
   emptyState,
+  readOnly = false,
   children,
 }: {
   titleId: string
@@ -35,6 +36,8 @@ export const SuggestionsPanel = ({
   showMunicipality?: boolean
   resolveAction: ComponentProps<typeof SuggestionCard>['resolveAction']
   emptyState: ReactNode
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): cards render without decision actions. */
+  readOnly?: boolean
   /** Dashboard appends the silence strip here. */
   children?: ReactNode
 }) => (
@@ -106,6 +109,7 @@ export const SuggestionsPanel = ({
                 }}
                 showMunicipality={showMunicipality}
                 resolveAction={resolveAction}
+                readOnly={readOnly}
               />
             </li>
           ),

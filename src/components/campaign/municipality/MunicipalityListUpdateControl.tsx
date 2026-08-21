@@ -33,6 +33,8 @@ type MunicipalityListUpdateControlProps = {
   formAction: MunicipalityStaffFormAction
   isStaff: boolean
   children: ReactNode
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): the signal-age display renders with no "Registrar atualização" affordance. */
+  readOnly?: boolean
 }
 
 export const MunicipalityListUpdateControl = ({
@@ -44,6 +46,7 @@ export const MunicipalityListUpdateControl = ({
   formAction,
   isStaff,
   children,
+  readOnly = false,
 }: MunicipalityListUpdateControlProps) => {
   const [open, setOpen] = useState(false)
   const [formKey, setFormKey] = useState(0)
@@ -65,6 +68,12 @@ export const MunicipalityListUpdateControl = ({
       Registrar atualização
     </Button>
   )
+
+  // C142 — read-only: the signal-age display renders with no "Registrar
+  // atualização" affordance (the write control is absent, not disabled).
+  if (readOnly) {
+    return children
+  }
 
   return (
     <CampaignCellEditOverlay

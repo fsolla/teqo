@@ -8,6 +8,7 @@ import { RecentVisitTracker } from '@/components/campaign/dashboard/RecentVisitT
 import { MunicipalityTabNav } from '@/components/campaign/municipality/MunicipalityTabNav'
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { rowEditingAllowed } from '@/lib/campaignAdvisorProfile'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { isCitySlug, salvadorCity } from '@/lib/salvadorCity'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
@@ -21,6 +22,7 @@ import {
   getMunicipalityDetailViewModel,
   MunicipalityNotFoundError,
   resolveAccessibleMunicipalityContext,
+  resolveMunicipalityWriteScope,
 } from '@/utilities/municipality/municipalityPageData'
 import { loadAdvisorSummaries } from '@/utilities/municipality/municipalityViewModels'
 
@@ -122,6 +124,17 @@ export default async function MunicipalityDetailPage({
   const activeTab = resolveMunicipalityDetailTab(rawSearchParams)
   const view = await getMunicipalityDetailViewModel(payload, context, user)
 
+  // C142 — the write scope gates write affordances in the detail tabs
+  // (strategy card, expected-votes account, update form, leadership panel)
+  // and the edit page. An advisor with `somente_leitura` sees everything
+  // as read-only; `carteira` scopes writes to administered municipalities.
+  const writeScope = await resolveMunicipalityWriteScope(payload, user)
+  const canEditRow = rowEditingAllowed(
+    writeScope.editingScope,
+    writeScope.portfolioIDs ? [...writeScope.portfolioIDs] : null,
+    [view.id],
+  )
+
   const advisorSummaries = await loadAdvisorSummaries(payload, user, view.advisorIDs)
 
   return (
@@ -140,7 +153,7 @@ export default async function MunicipalityDetailPage({
       />
 
       {activeTab === 'overview' ? (
-        <OverviewTab view={view} payloadUser={{ payload, user }} />
+        <OverviewTab view={view} payloadUser={{ payload, user }} canEdit={canEditRow} />
       ) : null}
 
       {activeTab === 'dossie' ? (
@@ -169,7 +182,11 @@ export default async function MunicipalityDetailPage({
 
       {activeTab === 'leaderships' ? (
         <Suspense fallback={<MunicipalityTabFallback />}>
-          <LeadershipsTab municipalityID={view.id} payloadUser={{ payload, user }} />
+          <LeadershipsTab
+            municipalityID={view.id}
+            payloadUser={{ payload, user }}
+            readOnly={!canEditRow}
+          />
         </Suspense>
       ) : null}
 
@@ -180,6 +197,7 @@ export default async function MunicipalityDetailPage({
             municipalitySlug={view.slug}
             rawSearchParams={rawSearchParams}
             payloadUser={{ payload, user }}
+            readOnly={!canEditRow}
           />
         </Suspense>
       ) : null}

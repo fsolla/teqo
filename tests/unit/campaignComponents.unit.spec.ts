@@ -62,6 +62,8 @@ const municipalityListDefaultProps = {
   stateDeputyCreateAction: async () => ({}),
   columnFilterOptions: { name: [], region: [], advisor: [] },
   signalFormAction: noopListFormAction,
+  editingScope: 'tudo' as const,
+  portfolioIDs: null,
   state: { page: 1 },
 }
 

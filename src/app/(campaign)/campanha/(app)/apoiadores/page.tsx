@@ -19,6 +19,7 @@ import {
 } from '@/components/campaign/supporter/SupporterList'
 import { SupporterListOverview } from '@/components/campaign/supporter/SupporterListOverview'
 import { Button } from '@/components/ui/button'
+import { advisorEditingScope, type AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { isCampaignCoordinator } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
@@ -41,6 +42,11 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
   const [user, payload] = await Promise.all([requireCampaignPageActor(), getPayload({ config })])
 
   if (!canAccessSupporterArea(user.role)) redirect('/campanha')
+
+  // C142 — the write scope gates the "Novo" and "Importar CSV" buttons.
+  const editingScope: AdvisorEditingScope =
+    user.role === 'advisor' ? advisorEditingScope(user.visibility, user.editing) : 'tudo'
+  const canCreate = editingScope !== 'none'
 
   const rawSearchParams = await searchParams
   const now = new Date()
@@ -85,7 +91,7 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
   return (
     <CampaignPageShell>
       <div className="flex flex-col gap-2 pt-4 sm:flex-row sm:justify-end md:pt-0">
-        {isCampaignCoordinator(user) ? (
+        {isCampaignCoordinator(user) && canCreate ? (
           <Button asChild variant="outline" className="min-h-11">
             <Link href="/campanha/apoiadores/importar">
               <FileUpIcon data-icon="inline-start" aria-hidden="true" />
@@ -93,12 +99,14 @@ export default async function SupportersPage({ searchParams }: SupportersPagePro
             </Link>
           </Button>
         ) : null}
-        <Button asChild className="min-h-11">
-          <Link href="/campanha/apoiadores/novo">
-            <PlusIcon data-icon="inline-start" aria-hidden="true" />
-            Novo
-          </Link>
-        </Button>
+        {canCreate ? (
+          <Button asChild className="min-h-11">
+            <Link href="/campanha/apoiadores/novo">
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Novo
+            </Link>
+          </Button>
+        ) : null}
       </div>
 
       <CampaignListPendingBoundary>

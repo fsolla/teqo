@@ -3,6 +3,7 @@ import 'server-only'
 import type { Payload, Where } from 'payload'
 
 import { bahiaIdentityTerritories } from '@/lib/bahiaTerritories'
+import { advisorEditingScope, type AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { engagementLevelRank } from '@/lib/engagementLevel'
 import { getMunicipalityCatalogEntry, municipalityCatalog } from '@/lib/municipalityCatalog'
 import {
@@ -15,6 +16,7 @@ import { relationshipId } from '@/lib/relationship'
 import { SALVADOR_CITY_SLUG } from '@/lib/salvadorCity'
 import { type VoteEstimateScenario } from '@/lib/voteEstimate'
 import type { CampaignUser, Municipality } from '@/payload-types'
+import { getAdvisorMunicipalityIds } from '@/utilities/access/municipalities'
 import {
   isCampaignLeader,
   isCampaignStaff,
@@ -79,6 +81,33 @@ export const MunicipalityNotFoundError = createEntityNotFoundError(
   'Municipality',
   'Município não encontrado.',
 )
+
+/**
+ * C142 — resolve the UI write-scope for a municipality surface (list row,
+ * detail page). Non-advisors (coordinator/candidate) get full write scope;
+ * advisors derive from their permission profile and portfolio. The result
+ * feeds server→client props so the UI can gate writes without a new provider.
+ */
+export type MunicipalityWriteScope = {
+  editingScope: AdvisorEditingScope
+  /** `null` = the whole catalog is writable; `Set` = only these IDs are writable. */
+  portfolioIDs: ReadonlySet<number> | null
+}
+
+export const resolveMunicipalityWriteScope = async (
+  payload: Payload,
+  user: CampaignUser,
+): Promise<MunicipalityWriteScope> => {
+  if (isCampaignUnrestricted(user)) return { editingScope: 'tudo', portfolioIDs: null }
+
+  const editingScope = advisorEditingScope(user.visibility, user.editing)
+  if (editingScope === 'none') return { editingScope: 'none', portfolioIDs: new Set<number>() }
+  if (editingScope === 'tudo') return { editingScope: 'tudo', portfolioIDs: null }
+
+  // 'carteira': the portfolio is the set of administered municipalities.
+  const ids = await getAdvisorMunicipalityIds(payload, user.id)
+  return { editingScope: 'carteira', portfolioIDs: new Set(ids) }
+}
 
 /** Values still reachable under the OTHER active filters (column-filter options). */
 type MunicipalityListFilterFacets = {

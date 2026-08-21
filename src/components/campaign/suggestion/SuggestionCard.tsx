@@ -48,11 +48,14 @@ export const SuggestionCard = ({
   suggestion,
   showMunicipality = false,
   resolveAction,
+  readOnly = false,
 }: {
   suggestion: SuggestionCardData
   /** Dashboard names the município; the detail card is already inside it. */
   showMunicipality?: boolean
   resolveAction: SuggestionResolveAction
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): the card renders the reading with no decision actions. */
+  readOnly?: boolean
 }) => {
   const pattern = getSuggestionPattern(suggestion.patternId)
   const postponeDays = suggestionPostponeDays(suggestion.triageLevel)
@@ -170,7 +173,7 @@ export const SuggestionCard = ({
         <span className="font-medium">Contraindicação:</span> {pattern.contraindication}
       </p>
 
-      {mode === null ? (
+      {readOnly ? null : mode === null ? (
         <div ref={triggersRef} className="flex flex-wrap gap-2">
           <Button
             variant="outline"
