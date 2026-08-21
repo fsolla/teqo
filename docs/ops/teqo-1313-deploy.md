@@ -135,6 +135,27 @@ a correção se re-mergeia e o próximo deploy completo publica.
 | Migrate falha                                                          | Drift/erro de schema                                                                                                                                    | Job vermelho; site segue no container antigo; corrigir e re-mergear                                                                                                                                                                                                                                                         |
 | Smoke falha pós-up                                                     | Regressão de runtime                                                                                                                                    | Rollback automático (restore + `up -d`) + job vermelho; investigar                                                                                                                                                                                                                                                          |
 
+## Backup passivo no Forgejo (OPS76-FOLLOWUP, 2026-08-21)
+
+O GitHub é a única fonte (main, branches, PRs, CI, tracker). O Forgejo mantém
+um **backup passivo** via **pull mirror nativo**: o repo `teqo-backup` no
+Forgejo (`https://git.solla.dev/fsolla/teqo-backup`) espelha o GitHub
+automaticamente — **não serve push, não recebe PRs, é somente leitura**.
+
+- **Repo:** `fsolla/teqo-backup` no Forgejo (`mirror: true`), criado via
+  `POST /api/v1/repos/migrate` com `clone_addr=https://github.com/fsolla/teqo.git`,
+  `service=github`, `mirror=true`, intervalo **8h** (`mirror_interval`).
+- **Automação:** o próprio Forgejo sincroniza no intervalo (sem workflow).
+  Force sync manual: `POST /api/v1/repos/fsolla/teqo-backup/mirror-sync`
+  (o "Synchronize now" da UI).
+- **Cobertura:** espelha todas as branches (54/54 verificadas) e tags; o
+  histórico do mirror reflete o do GitHub (que é a convergência OPS75 +
+  OPS76). Não espelha issues/PRs/labels (GitHub é o tracker).
+- **Validação:** `git ls-remote` do `teqo-backup` deve retornar o mesmo SHA
+  de `refs/heads/main` do GitHub; conferir em `mirror_updated` o último sync.
+- **O repo `fsolla/teqo` original do Forgejo** fica **congelado** no ponto da
+  convergência (OPS75) — arquivo histórico, sem mais uso.
+
 ## Segurança (decisão deliberada)
 
 - O job `deploy` usa `runs-on: [self-hosted, homeserver]` — executa como o
