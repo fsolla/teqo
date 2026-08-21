@@ -9,12 +9,12 @@
  *   node scripts/agent-promote-related-on-merge.mjs --pr 123
  *   PR_BODY='Related #296' node scripts/agent-promote-related-on-merge.mjs --pr 123
  *
- * Env: GITHUB_TOKEN (Forgejo Actions) / FORGEJO_API_TOKEN; optional PR_BODY skips the PR read.
+ * Env: GITHUB_TOKEN (the tracker lives on GitHub); optional PR_BODY skips the PR read.
  */
 
 import { dieAgent, parseArgs, setLabels } from './lib/agent-forgejo.mjs'
 import { canPromotePlanIssue, parseRelatedIssueNumbers } from './lib/agent-plan-lifecycle.mjs'
-import { forgejoApi as api } from './lib/forgejo-api.mjs'
+import { githubApi as api } from './lib/github-api.mjs'
 
 const die = dieAgent('promote-related')
 const { flags } = parseArgs(process.argv.slice(2), new Set(['pr']))

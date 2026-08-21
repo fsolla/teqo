@@ -3,22 +3,22 @@
  * `Closes #N` / `Fixes #N` in the PR body to `done` + `in-prod` and comment.
  * Replacement for the `gh issue edit/comment` loop of issue-done-on-main-merge.
  *
- * OPS71: the PR now lives on GitHub. The workflow passes the PR body via the
- * `PR_BODY` env (from the GitHub event payload) and the script flips Issues
- * on the Forgejo tracker by API — no Forgejo PR read when PR_BODY is present.
- * Without PR_BODY the script falls back to reading the PR from the Forgejo
- * API (the Forgejo-era workflows stay alive until the OPS71 Fase 2 removal).
+ * OPS76: the PR lives on GitHub and the ISSUE TRACKER is on GitHub too. The
+ * workflow passes the PR body via the `PR_BODY` env (from the GitHub event
+ * payload) and the script flips Issues on the GitHub API (repo GITHUB_TOKEN,
+ * `issues: write`). Without PR_BODY the script falls back to reading the PR
+ * from the GitHub API (the manual `workflow_dispatch` recovery path).
  *
  * OPS61: a failed flip exits 1 — the flip is the whole purpose of this
  * workflow, and the 403 era proved that a swallowed error ends the job
  * "success" while the status labels lie. Sibling issues are still attempted
  * (the loop does not abort), but the job goes red so the breakage is visible.
  *
- *   node scripts/forgejo-issue-transition.mjs --pr <N>
- *   PR_BODY='Closes #97' node scripts/forgejo-issue-transition.mjs --pr <N>
+ *   node scripts/issue-transition-on-merge.mjs --pr <N>
+ *   PR_BODY='Closes #97' node scripts/issue-transition-on-merge.mjs --pr <N>
  */
 
-import { createApi } from './lib/forgejo-api.mjs'
+import { createApi } from './lib/github-api.mjs'
 
 const parseArgs = (argv) => {
   const flags = {}
@@ -73,8 +73,9 @@ for (const number of numbers) {
       number,
       `Merged em main via PR #${prNumber} — \`done\` + \`in-prod\` + Issue fechada. Deploy de produção é manual (workflow_dispatch no GitHub Actions) — ver docs/AGENT-OPS.md.`,
     )
-    // OPS71-FLIP: o PR vive no GitHub e não fecha a Issue no Forgejo como o
-    // merge nativo fazia na era Forgejo — o close é explícito aqui.
+    // OPS76: o PR e a Issue vivem no GitHub; o close nativo por keyword
+    // (`Closes #N`) só acontece para issues AINDA abertas citadas no body —
+    // o flip de labels (done/in-prod/remover in-progress) é explícito aqui.
     await api.closeIssue(number)
     console.log(`[forgejo-issue-transition] #${number}: done + in-prod + fechada`)
   } catch (error) {

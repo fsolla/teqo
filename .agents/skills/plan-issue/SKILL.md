@@ -1,7 +1,7 @@
 ---
 name: plan-issue
 description: >-
-  Transforma ideias humanas em Issues do Forgejo + planos de intenção em
+  Transforma ideias humanas em Issues do GitHub + planos de intenção em
   docs/plans/ (persona, fluxo, objetivo, direção suave no código — sem
   decisões duras de engenharia). Se o item muda UI, apresenta no gate um
   rascunho visual HTML+Tailwind (PNG embutido no plano de intenção). Divide
@@ -13,7 +13,7 @@ disable-model-invocation: true
 
 # Planejar Issues (intenção, não engenharia)
 
-Esta skill transforma ideias soltas em: (1) um **plano de intenção** em `docs/plans/<slug>.md` por item, e (2) uma **Issue rastreável no Forgejo** (`pnpm agent:register`, frontmatter `id/depends/serializes/priority/model`). As Issues do Forgejo (`git.solla.dev/fsolla/teqo`) são a fonte canônica de spec/status/deps/prio/modelo — `docs/roadmap.md` é legado congelado e **nunca** é editado aqui.
+Esta skill transforma ideias soltas em: (1) um **plano de intenção** em `docs/plans/<slug>.md` por item, e (2) uma **Issue rastreável no GitHub** (`pnpm agent:register`, frontmatter `id/depends/serializes/priority/model`). As Issues do GitHub (`github.com/fsolla/teqo/issues`) são a fonte canônica de spec/status/deps/prio/modelo — `docs/roadmap.md` é legado congelado e **nunca** é editado aqui.
 
 ## Ciclo de vida (obrigatório)
 

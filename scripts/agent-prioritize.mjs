@@ -5,7 +5,7 @@
  */
 
 import { dieAgent, labelNames, parseArgs, setLabels } from './lib/agent-forgejo.mjs'
-import { forgejoApi as api } from './lib/forgejo-api.mjs'
+import { githubApi as api } from './lib/github-api.mjs'
 
 const die = dieAgent('prioritize')
 const { positional } = parseArgs(process.argv.slice(2), new Set())

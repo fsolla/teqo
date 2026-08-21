@@ -64,9 +64,9 @@ import {
   POOL_VARIABLE_NAMES,
   reconcilePoolClaims,
 } from './lib/agent-pool-state.mjs'
-import { forgejoApi as api } from './lib/forgejo-api.mjs'
+import { githubApi as api } from './lib/github-api.mjs'
 
-const REPO_URL = 'https://git.solla.dev/fsolla/teqo'
+const REPO_URL = 'https://github.com/fsolla/teqo'
 const POOL_BASE_REF = 'main'
 
 const die = dieAgent('pool')

@@ -1,10 +1,9 @@
 # Safety net OPS18: when a PR merges to main with `Related #N`, promote Issues
 # that are still awaiting their intention plan (`blocked` + docs/plans/ link)
-# to `ready`. Idempotent with `pnpm agent:ready` (agent happy path). OPS71:
-# the PR lives on GitHub, the issues on the Forgejo tracker — the job passes
-# the PR body via PR_BODY and scripts/agent-promote-related-on-merge.mjs flips
-# labels on the Forgejo API (FORGEJO_API_TOKEN; the built-in GITHUB_TOKEN
-# cannot touch Forgejo issues — OPS61).
+# to `ready`. Idempotent with `pnpm agent:ready` (agent happy path). OPS76:
+# the PR and the issues live on GitHub — the job passes the PR body via PR_BODY
+# and scripts/agent-promote-related-on-merge.mjs flips labels on the GitHub API
+# (repo GITHUB_TOKEN, `issues: write`).
 #
 # Does NOT run on open PRs — only after merge — so the claim race stays closed.
 # Job is gated on Related # in the body so non-plan merges skip checkout/Node.
@@ -34,6 +33,7 @@ on:
 permissions:
   contents: read
   pull-requests: read
+  issues: write
 
 jobs:
   plan-issue-ready:
@@ -43,10 +43,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      FORGEJO_API_TOKEN: ${{ secrets.FORGEJO_API_TOKEN }}
-      # Explicit base: in the GitHub Actions env, GITHUB_SERVER_URL points at
-      # github.com and forgejo-api.mjs would resolve the wrong base (410).
-      FORGEJO_API_URL: https://git.solla.dev/api/v1
+      # The github-api.mjs client reads GITHUB_TOKEN; the built-in token has
+      # `issues: write` scoped to this repo (the tracker is on GitHub).
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v5

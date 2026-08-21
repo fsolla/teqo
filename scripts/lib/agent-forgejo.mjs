@@ -19,7 +19,7 @@
  */
 
 import { dieWithLabel } from './cli.mjs'
-import { forgejoApi as api } from './forgejo-api.mjs'
+import { githubApi as api } from './github-api.mjs'
 
 const PRIORITIES = ['P0', 'P1', 'P2', 'P3']
 export const priorityRank = (priority) => PRIORITIES.indexOf(priority)
@@ -211,7 +211,7 @@ export const claimBriefLines = (entry) => {
           `  deps sem issue (roadmap entregue, satisfeitas): ${entry.satisfiedWithoutIssue.join(', ')}`,
         ]
       : []),
-    `  url: https://git.solla.dev/fsolla/teqo/issues/${entry.issue.number}`,
+    `  url: https://github.com/fsolla/teqo/issues/${entry.issue.number}`,
     '',
     '--- spec ---',
     '',

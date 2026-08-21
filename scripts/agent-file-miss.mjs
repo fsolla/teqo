@@ -10,7 +10,7 @@
  */
 
 import { dieAgent, parseArgs } from './lib/agent-forgejo.mjs'
-import { forgejoApi as api } from './lib/forgejo-api.mjs'
+import { githubApi as api } from './lib/github-api.mjs'
 
 const die = dieAgent('file-miss')
 const { flags } = parseArgs(process.argv.slice(2), new Set(['title', 'body', 'kind']))
@@ -32,7 +32,7 @@ const created = await api.createIssue({
   title: flags.title,
   body,
 })
-const url = `https://git.solla.dev/fsolla/teqo/issues/${created.number}`
+const url = `https://github.com/fsolla/teqo/issues/${created.number}`
 
 await api.setLabels(created.number, { add: [`kind:${kind}`, 'prio:P2'] })
 

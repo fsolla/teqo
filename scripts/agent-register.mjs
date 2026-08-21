@@ -12,7 +12,7 @@
 
 import { dieAgent, issuesById, parseArgs, serializeFrontmatter } from './lib/agent-forgejo.mjs'
 import { resolveRegisterStateLabel } from './lib/agent-plan-lifecycle.mjs'
-import { forgejoApi as api } from './lib/forgejo-api.mjs'
+import { githubApi as api } from './lib/github-api.mjs'
 
 const die = dieAgent('register')
 const { flags } = parseArgs(
@@ -69,7 +69,7 @@ const created = await api.createIssue({
   body,
 })
 await api.setLabels(created.number, { add: labels })
-const url = `https://git.solla.dev/fsolla/teqo/issues/${created.number}`
+const url = `https://github.com/fsolla/teqo/issues/${created.number}`
 
 const hint =
   stateLabel === 'blocked' && flags.plan && !flags.blocked
