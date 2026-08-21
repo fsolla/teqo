@@ -18,6 +18,8 @@ export const campaignDemandCreateSchema = z.object({
   activity: positiveRelationshipId.optional(),
   /** Staff may record on behalf of a leadership; leaders get their own. */
   leadership: positiveRelationshipId.optional(),
+  /** C143 — explicit responsibles; the creator is unioned in by the collection hook. */
+  responsibles: z.array(positiveRelationshipId).default([]),
 })
 
 export const campaignDemandUpdateSchema = z.object({
@@ -36,7 +38,14 @@ export const campaignDemandCostSchema = z.object({
   cost: z.number().min(0).max(100_000_000).nullable(),
 })
 
+/** C143 — full-replace of the responsible list (advisory-locked by the action). */
+export const campaignDemandResponsiblesSchema = z.object({
+  id: positiveRelationshipId,
+  responsibles: z.array(positiveRelationshipId).default([]),
+})
+
 export type CampaignDemandCreateInput = z.input<typeof campaignDemandCreateSchema>
 export type CampaignDemandUpdateInput = z.input<typeof campaignDemandUpdateSchema>
 export type CampaignDemandTransitionInput = z.input<typeof campaignDemandTransitionSchema>
 export type CampaignDemandCostInput = z.input<typeof campaignDemandCostSchema>
+export type CampaignDemandResponsiblesInput = z.input<typeof campaignDemandResponsiblesSchema>

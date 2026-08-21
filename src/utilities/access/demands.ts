@@ -2,7 +2,7 @@
 // Campaign demands
 // ---------------------------------------------------------------------------
 
-import type { Access } from 'payload'
+import type { Access, Where } from 'payload'
 
 import { relationshipId } from '@/lib/relationship'
 import { getAccessibleMunicipalityIds } from '@/utilities/access/municipalities'
@@ -12,7 +12,6 @@ import {
   isCampaignLeader,
   isCampaignUnrestricted,
   isPayloadAdmin,
-  resolveActorScopedRead,
 } from '@/utilities/access/shared'
 
 export const canCreateCampaignDemand: Access = async ({ data, req }) => {
@@ -34,8 +33,24 @@ export const canCreateCampaignDemand: Access = async ({ data, req }) => {
   return municipalityIDs?.includes(municipalityID) ?? false
 }
 
-export const canReadCampaignDemand: Access = ({ req }) =>
-  resolveActorScopedRead(req, 'municipality', getAccessibleMunicipalityIds)
+/**
+ * C143 — explicit-responsible visibility, fail-closed. An advisor reads ONLY
+ * demands where they are a listed responsible (the creator is auto-added on
+ * create); a municipality-related advisor who is not responsible sees nothing
+ * — not the list, not the URL, not the search (all reads run the collection
+ * access). Candidate and coordinator (unrestricted) always see everything.
+ */
+export const canReadCampaignDemand: Access = async ({ req }): Promise<boolean | Where> => {
+  if (isPayloadAdmin(req.user)) return true
+
+  const currentUser = await getFreshCampaignUser(req)
+  if (!currentUser || isCampaignLeader(currentUser)) return false
+  if (isCampaignUnrestricted(currentUser)) return true
+
+  if (currentUser.role !== 'advisor') return false
+
+  return { responsibles: { contains: currentUser.id } }
+}
 
 /**
  * C141 — demands stay out of the profile axes (C143 replaces this rule with
@@ -49,7 +64,7 @@ export const canUpdateCampaignDemand: Access = async ({ req }) => {
   if (isCampaignUnrestricted(currentUser)) return true
   if (advisorEditingAccess(currentUser) === 'none') return false
 
-  return resolveActorScopedRead(req, 'municipality', getAccessibleMunicipalityIds)
+  return canReadCampaignDemand({ req })
 }
 
 export const canDeleteCampaignDemand: Access = ({ req }) => isPayloadAdmin(req.user)

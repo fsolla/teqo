@@ -11,15 +11,18 @@ import {
   CAMPAIGN_DEMAND_RECEIPT_SIZE_MESSAGE,
   CAMPAIGN_DEMAND_RECEIPT_STAFF_MESSAGE,
   CAMPAIGN_DEMAND_RECEIPT_TYPE_MESSAGE,
+  CAMPAIGN_DEMAND_RESPONSIBLES_STAFF_MESSAGE,
   CAMPAIGN_DEMAND_TRANSITION_STAFF_MESSAGE,
 } from '@/lib/schemas/campaignDemand'
 import {
   campaignDemandCostSchema,
   campaignDemandCreateSchema,
+  campaignDemandResponsiblesSchema,
   campaignDemandTransitionSchema,
   campaignDemandUpdateSchema,
   type CampaignDemandCostInput,
   type CampaignDemandCreateInput,
+  type CampaignDemandResponsiblesInput,
   type CampaignDemandTransitionInput,
   type CampaignDemandUpdateInput,
 } from '@/lib/schemas/campaignDemandInput'
@@ -84,8 +87,9 @@ export const updateCampaignDemandRecord = async (
         throw new Error(CAMPAIGN_DEMAND_EDIT_STAFF_MESSAGE)
       }
 
-      // Access-scoped read (staff see only their municipalities). The AI call
-      // stays before the advisory lock, so the lock is never held open by it.
+      // Access-scoped read (C143: responsibles + unrestricted see the demand).
+      // The AI call stays before the advisory lock, so the lock is never held
+      // open by it.
       const demand = await payload.findByID({
         collection: 'campaignDemand',
         id,
@@ -256,6 +260,47 @@ export const attachCampaignDemandReceiptRecord = async (
   )
 }
 
+export const setCampaignDemandResponsiblesRecord = async (
+  payload: Payload,
+  actor: CampaignUser,
+  input: CampaignDemandResponsiblesInput,
+) => {
+  const { id, responsibles } = campaignDemandResponsiblesSchema.parse(input)
+
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const currentActor = await reloadCampaignActor(payload, actor, req)
+      if (!isCampaignStaff(currentActor)) {
+        throw new Error(CAMPAIGN_DEMAND_RESPONSIBLES_STAFF_MESSAGE)
+      }
+      await acquireTextAdvisoryLocks(payload, req, [`campaign-demand:${id}`])
+
+      // Access-scoped read (responsibles + unrestricted see it) before the
+      // replace, so an advisor cannot manage a demand they cannot read.
+      await payload.findByID({
+        collection: 'campaignDemand',
+        id,
+        depth: 0,
+        select: { title: true },
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+      return payload.update({
+        collection: 'campaignDemand',
+        id,
+        data: { responsibles: [...new Set(responsibles)] },
+        depth: 0,
+        user: currentActor,
+        overrideAccess: false,
+        req,
+      })
+    },
+    { beginFailureMessage: 'Não foi possível iniciar a atualização dos responsáveis.' },
+  )
+}
+
 export const createCampaignDemand = async (input: CampaignDemandCreateInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return createCampaignDemandRecord(payload, actor, input)
@@ -274,4 +319,9 @@ export const transitionCampaignDemand = async (input: CampaignDemandTransitionIn
 export const setCampaignDemandCost = async (input: CampaignDemandCostInput) => {
   const { payload, actor } = await getCampaignActionContext()
   return setCampaignDemandCostRecord(payload, actor, input)
+}
+
+export const setCampaignDemandResponsibles = async (input: CampaignDemandResponsiblesInput) => {
+  const { payload, actor } = await getCampaignActionContext()
+  return setCampaignDemandResponsiblesRecord(payload, actor, input)
 }

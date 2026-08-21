@@ -52,6 +52,7 @@ export default async function NewDemandPage({ searchParams }: NewDemandPageProps
         municipalityOptions={municipalityOptions}
         initialActivity={initialActivity}
         initialMunicipalityId={initialMunicipalityId}
+        currentUser={{ id: user.id, name: user.name }}
         searchActivities={searchDemandActivityOptions}
         formAction={createDemandFormAction}
       />

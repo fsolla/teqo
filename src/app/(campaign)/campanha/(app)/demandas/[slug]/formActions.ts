@@ -5,12 +5,14 @@ import { revalidatePath } from 'next/cache'
 import {
   attachCampaignDemandReceiptRecord,
   setCampaignDemandCost,
+  setCampaignDemandResponsibles,
   transitionCampaignDemand,
   updateCampaignDemand,
 } from '@/app/(campaign)/campanha/actions/demand'
 import {
   FormDataBoundaryError,
   nullableFormText,
+  repeatedRelationshipFormValues,
   requiredFormText,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
@@ -19,6 +21,7 @@ import {
   CAMPAIGN_DEMAND_EDIT_STAFF_MESSAGE,
   CAMPAIGN_DEMAND_INVALID_STATUS_MESSAGE,
   CAMPAIGN_DEMAND_RECEIPT_SAFE_MESSAGES,
+  CAMPAIGN_DEMAND_RESPONSIBLES_STAFF_MESSAGE,
   CAMPAIGN_DEMAND_TRANSITION_SAFE_MESSAGES,
   campaignDemandStatuses,
   type CampaignDemandStatus,
@@ -98,6 +101,23 @@ export const setDemandCostFormAction = async (
     },
     safeMessages: [CAMPAIGN_DEMAND_COST_STAFF_MESSAGE],
     genericMessage: 'Não foi possível registrar o custo. Tente novamente.',
+  })
+
+export const setDemandResponsiblesFormAction = async (
+  _state: CampaignFormActionState,
+  formData: FormData,
+): Promise<CampaignFormActionState> =>
+  runCampaignFormAction({
+    execute: async () => {
+      await setCampaignDemandResponsibles({
+        id: requiredRelationshipFormValue(formData, 'demandId'),
+        responsibles: repeatedRelationshipFormValues(formData, 'responsibles'),
+      })
+      revalidatePath('/campanha/demandas/[slug]', 'page')
+      return { message: 'Responsáveis atualizados.' }
+    },
+    safeMessages: [CAMPAIGN_DEMAND_RESPONSIBLES_STAFF_MESSAGE],
+    genericMessage: 'Não foi possível atualizar os responsáveis. Tente novamente.',
   })
 
 export const attachDemandReceiptFormAction = async (

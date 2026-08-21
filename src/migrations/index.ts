@@ -59,6 +59,8 @@ import * as migration_20260818_192948_add_instagram_social_feed_fields from './2
 import * as migration_20260819_192605_add_campaign_newsletter_capture from './20260819_192605_add_campaign_newsletter_capture';
 import * as migration_20260819_213947_add_site_settings_facebook_pixel_id from './20260819_213947_add_site_settings_facebook_pixel_id';
 import * as migration_20260819_214755_add_campaign_user_advisor_permission_profile from './20260819_214755_add_campaign_user_advisor_permission_profile';
+import * as migration_20260819_233503_add_campaign_demand_responsibles from './20260819_233503_add_campaign_demand_responsibles';
+import * as migration_20260820_003426_add_instagram_sync_status from './20260820_003426_add_instagram_sync_status';
 
 export const migrations = [
   {
@@ -365,5 +367,15 @@ export const migrations = [
     up: migration_20260819_214755_add_campaign_user_advisor_permission_profile.up,
     down: migration_20260819_214755_add_campaign_user_advisor_permission_profile.down,
     name: '20260819_214755_add_campaign_user_advisor_permission_profile',
+  },
+  {
+    up: migration_20260819_233503_add_campaign_demand_responsibles.up,
+    down: migration_20260819_233503_add_campaign_demand_responsibles.down,
+    name: '20260819_233503_add_campaign_demand_responsibles',
+  },
+  {
+    up: migration_20260820_003426_add_instagram_sync_status.up,
+    down: migration_20260820_003426_add_instagram_sync_status.down,
+    name: '20260820_003426_add_instagram_sync_status',
   },
 ];

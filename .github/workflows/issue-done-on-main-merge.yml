@@ -1,0 +1,80 @@
+# Main merge flips claimed issues to done + in-prod.
+# OPS71: the PR lives on GitHub; the ISSUES stay on the Forgejo tracker. The
+# job passes the PR body via PR_BODY (GitHub event payload) and
+# scripts/forgejo-issue-transition.mjs flips labels/comments and closes the
+# issue on the Forgejo API with the FORGEJO_API_TOKEN PAT (the built-in
+# GITHUB_TOKEN cannot touch Forgejo issues — OPS61). The fork guard is the
+# same class as agent-pr-ready-automerge.yml: on a merged fork PR the checkout
+# pulls the fork's own script, which would run with the repo PAT (RCE).
+#
+# OPS71-FLIP: `workflow_dispatch` is the MANUAL recovery path. The `closed`
+# event does NOT create a run when the merge was performed by
+# github-actions[bot] (auto-merge armed with the built-in GITHUB_TOKEN —
+# GitHub's anti-recursion; live finding PR #746). Dispatch with the PR number:
+# the job fetches the PR via `gh` (same contract: merged + base main +
+# same-repo) and runs the same flip.
+name: Main merge flips claimed issues to done + in-prod
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'PR number (manual recovery when the closed event did not create a run)'
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  issue-done:
+    if: >-
+      (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main' && github.event.pull_request.merged == true && github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'workflow_dispatch' && inputs.pr != '')
+    runs-on: ubuntu-latest
+    env:
+      FORGEJO_API_TOKEN: ${{ secrets.FORGEJO_API_TOKEN }}
+      # Explicit base: in the GitHub Actions env, GITHUB_SERVER_URL points at
+      # github.com and forgejo-api.mjs would resolve the wrong base (410).
+      FORGEJO_API_URL: https://git.solla.dev/api/v1
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+      # Script is plain Node (stdlib) — no pnpm. Disable package-manager-cache:
+      # setup-node@v5 defaults to true and looks for pnpm before pnpm/action-setup.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Fetch PR metadata (manual recovery — bot auto-merges skip the closed event)
+        if: github.event_name == 'workflow_dispatch'
+        id: pr
+        run: |
+          PR="${{ inputs.pr }}"
+          STATE="$(gh pr view "$PR" --json state -q .state)"
+          if [ "$STATE" != "MERGED" ]; then
+            echo "PR #$PR não mergeada (state=$STATE) — skip"
+            exit 0
+          fi
+          BASE="$(gh pr view "$PR" --json baseRefName -q .baseRefName)"
+          REPO="$(gh pr view "$PR" --json headRepository -q .headRepository.nameWithOwner)"
+          if [ "$BASE" != "main" ] || [ "$REPO" != "${{ github.repository }}" ]; then
+            echo "PR #$PR fora do contrato (base=$BASE repo=$REPO — precisa main + same-repo) — skip"
+            exit 0
+          fi
+          BODY="$(gh pr view "$PR" --json body -q .body)"
+          {
+            echo "valid=true"
+            echo "pr_number=$PR"
+            echo "pr_body<<EOF"
+            echo "$BODY"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+      - name: Flip Closes/Fixes #N issues to done and in-prod
+        if: steps.pr.outputs.valid == 'true' || github.event_name == 'pull_request'
+        env:
+          PR_BODY: ${{ steps.pr.outputs.pr_body || github.event.pull_request.body }}
+        run: node scripts/forgejo-issue-transition.mjs --pr "${{ steps.pr.outputs.pr_number || github.event.pull_request.number }}"

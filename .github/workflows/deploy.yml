@@ -1,0 +1,170 @@
+# Manual production deploy (OPS71 — GitHub Actions). `workflow_dispatch`
+# only: there is NO automatic main verifier anymore (ci.yml eliminated in the
+# gate 2026-08-19) — publishing is a deliberate operator act, and this
+# workflow runs the FULL suite (no scope skips, e2e included) before the
+# deploy job touches the homeserver.
+#
+# TWO jobs, same workflow:
+#   verify  — ubuntu-latest (hosted): full cascade (guards for PR contracts are
+#             left out — they gate PRs, not production).
+#   deploy  — needs: [verify], runs-on [self-hosted, homeserver]: the GitHub
+#             self-hosted runner ON the homeserver executes
+#             scripts/deploy-homeserver.sh LOCALLY (no SSH; outbound-only
+#             runner, works behind the Cloudflare tunnel). The hosted job
+#             never reaches the homeserver; the self-hosted job never counts
+#             hosted minutes.
+#
+# The production build CANNOT leave the homeserver (migrate pre-build on the
+# prod DB — OPS66 — and the compose network / local registry localhost:5000),
+# which is exactly why the hosted job only verifies and the self-hosted job
+# only builds + deploys. Deploy is idempotent ("already deployed" guard in
+# deploy-homeserver.sh) and serialized by flock on the homeserver.
+#
+# The `deploy` job fetches the repo from github.com (public) — TEQO_REPO_URL
+# in deploy-homeserver.sh now defaults there; the script's HEAD guard only
+# deploys when the dispatched SHA is main's HEAD (a stale dispatch skips).
+
+name: Deploy (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PAYLOAD_SECRET: test-only-secret-not-used-in-production
+  NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    services:
+      # OPS71 — GitHub hosted: jobs run on the runner VM, so services are
+      # reached at localhost on PUBLISHED host ports (fixed — each run is its
+      # own VM). Two isolated services — int on 5432, build+e2e on 5433 —
+      # keep e2e from inheriting int fixture residue.
+      postgres-int:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: teqo
+          POSTGRES_PASSWORD: teqo
+          POSTGRES_DB: teqo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U teqo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      postgres-build:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: teqo
+          POSTGRES_PASSWORD: teqo
+          POSTGRES_DB: teqo_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U teqo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check test file locations
+        run: node scripts/check-test-locations.mjs
+      - name: Lint
+        run: pnpm lint
+      - name: Format check
+        run: pnpm format:check
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Knip
+        run: pnpm knip
+      - name: Check cycles
+        run: pnpm check:cycles
+      - name: Unit tests (full suite)
+        run: pnpm test:unit
+
+      - name: Prepare database URL (int service)
+        run: |
+          set -euo pipefail
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test" >> "$GITHUB_ENV"
+          # vitest re-loads .env.test over the process env, so the service URL
+          # must win through the .env.test.local layer (same mechanism
+          # `pnpm worktree next` uses).
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test" > .env.test.local
+      - name: Migrate (int database)
+        run: pnpm migrate
+      - name: Seed minimal (int database)
+        run: pnpm db:seed:minimal
+      - name: Integration tests (full suite)
+        env:
+          # vitest forks ≈ CPUs and each fork holds a Payload pool (max 10) →
+          # overflows the service Postgres' 100 clients. 4 forks stay well
+          # under. The unit step above stays CPU-relative (no DB).
+          VITEST_MAX_WORKERS: 4
+        run: pnpm test:int
+
+      - name: Prepare database URL (build/e2e service)
+        run: |
+          set -euo pipefail
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" > .env.test.local
+      - name: Migrate (build/e2e database)
+        run: pnpm migrate
+      - name: Seed minimal (build/e2e database)
+        run: pnpm db:seed:minimal
+      - name: Build (against the service database)
+        run: pnpm build
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+      - name: Install Playwright chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Build for e2e
+        # Same dir the Playwright webServer serves (playwright.config.ts
+        # falls back to '.next-e2e'; gate-ci.mjs builds there too).
+        run: pnpm build
+        env:
+          NEXT_DIST_DIR: .next-e2e
+      - name: E2E tests (full suite, single job, 4 workers)
+        # Explicit CI workers; the local default stays 2 (playwright.config.ts).
+        # No `--` separator: pnpm would forward it verbatim to playwright and
+        # the flag would be parsed as a file pattern ("No tests found").
+        env:
+          PLAYWRIGHT_WORKERS: 4
+        run: pnpm test:e2e
+
+  deploy:
+    name: deploy homeserver (teqo-1313)
+    # OPS53 + OPS71. Runs on the GitHub self-hosted runner ON the homeserver
+    # (labels self-hosted + homeserver): the script executes locally — no SSH
+    # hop, no workstation involvement. Deliberately wired ONLY here (manual
+    # dispatch), never in ci-pr.yml: a self-hosted job is code execution on
+    # the production machine, and only an explicit dispatch with the full
+    # verify suite green can reach it.
+    needs: [verify]
+    if: needs.verify.result == 'success'
+    runs-on: [self-hosted, homeserver]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - name: Deploy teqo-1313 on the homeserver
+        run: bash scripts/deploy-homeserver.sh "$GITHUB_SHA"

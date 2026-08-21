@@ -3,11 +3,14 @@
  * board (S3) fetches the feed server-side, so the Next dev/prod server points
  * `INSTAGRAM_API_BASE_URL` here (see playwright.config.ts) and this process
  * answers `/media`, `/user` and `/refresh_access_token` with a fixed fixture.
- * `POST /__stub/state` with `{ "state": "ok" | "fail" }` makes the API fail
- * (HTTP 500) so specs can exercise the fail-closed/snapshot paths without any
- * network. Thumbnails are served locally from `/thumbs/<id>.jpg` — the
- * sandbox never reaches `scontent.cdninstagram.com`, and next/image would 404
- * (a console error the e2e guard treats as a failure).
+ * `POST /__stub/state` with `{ "state": "ok" | "fail" | "invalid-token" }`
+ * switches the API: `fail` answers HTTP 500 (network/API-down paths), and
+ * `invalid-token` answers 400 with an OAuthException body (the S11 admin
+ * status panel's token-rejected copy) — so specs can exercise the
+ * fail-closed/snapshot paths without any network. Thumbnails are served
+ * locally from `/thumbs/<id>.jpg` — the sandbox never reaches
+ * `scontent.cdninstagram.com`, and next/image would 404 (a console error the
+ * e2e guard treats as a failure).
  */
 import { createServer } from 'node:http'
 
@@ -99,11 +102,24 @@ const server = createServer((req, res) => {
     req.on('end', () => {
       try {
         const parsed = JSON.parse(body)
-        if (parsed.state === 'ok' || parsed.state === 'fail') state = parsed.state
+        if (['ok', 'fail', 'invalid-token'].includes(parsed.state)) state = parsed.state
       } catch {
         // keep the current state
       }
       json(res, 200, { state })
+    })
+    return
+  }
+
+  if (state === 'invalid-token') {
+    // The token-rejected shape the Graph API returns for an invalid/expired
+    // token or one minted via Facebook Login (S11 status panel copy).
+    json(res, 400, {
+      error: {
+        message: 'Error validating access token: Session has expired',
+        type: 'OAuthException',
+        code: 190,
+      },
     })
     return
   }
