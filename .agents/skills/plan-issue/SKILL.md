@@ -1,166 +1,134 @@
 ---
 name: plan-issue
-description: >-
-  Transforma ideias humanas em Issues do GitHub + planos de intenção em
-  docs/plans/ (persona, fluxo, objetivo, direção suave no código — sem
-  decisões duras de engenharia). Se o item muda UI, apresenta no gate um
-  rascunho visual HTML+Tailwind (PNG embutido no plano de intenção). Divide
-  o pedido nas menores tarefas que ainda fazem sentido. Use quando o usuário
-  pedir /plan-issue, planejar features, fatiar um pedido em Issues, ou
-  registrar trabalho novo na fila.
+description: 'Turn human ideas into tracked GitHub Issues with intention plans and UI drafts.'
 disable-model-invocation: true
 ---
 
 # Planejar Issues (intenção, não engenharia)
 
-Esta skill transforma ideias soltas em: (1) um **plano de intenção** em `docs/plans/<slug>.md` por item, e (2) uma **Issue rastreável no GitHub** (`pnpm agent:register`, frontmatter `id/depends/serializes/priority/model`). As Issues do GitHub (`github.com/fsolla/teqo/issues`) são a fonte canônica de spec/status/deps/prio/modelo — `docs/roadmap.md` é legado congelado e **nunca** é editado aqui.
+Transforma ideias soltas em: (1) um **plano de intenção** em `docs/plans/<slug>.md` por item, e (2) uma **Issue rastreável no GitHub** (`pnpm agent:register`, frontmatter `id/depends/serializes/priority/model`).
 
-## Ciclo de vida (obrigatório)
+## Ciclo de vida
 
 ```text
-rascunho local (Issue: —)
-  → GATE (Passo 5) + confirmação explícita do lote
-  → register com --plan → Issue NÃO claimável (blocked; script enforça)
-  → commit + PR dos planos (Related #N, nunca Closes)
-  → merge em main
-  → promote blocked→ready (`pnpm agent:ready` + Action OPS18 — dual, idempotente)
-  → fila / pool
+parse (main agent)
+  → exploration sub-agent (findings per idea)
+  → plan-writing sub-agents (parallel, 1 per idea)
+  → GATE (main agent) + confirmação explícita
+  → register sub-agent → PR → merge → promote
 ```
 
 **Regras duras:**
 
-1. **Nada no Forgejo antes do gate.** Antes da confirmação explícita do Passo 5: proibido `pnpm agent:register`, criar Issue/PR / push de PR de planos. Planos locais (`Issue: —`) ok.
-2. **Confirmação = OK ao overview do lote** (ex. “confirma”, “pode registrar”). “Ok” ambíguo no meio da edição **não** dispara o Passo 6.
-3. **Register com `--plan` não nasce `ready`.** O script aplica `blocked` automaticamente quando `--plan` está presente (`--blocked` explícito ainda vale para chores sem plano). Sem `--plan` (chore body-only / `file-miss`), pode nascer `ready`.
-4. **Promote só depois do plano em `main`.** Nunca flipar para `ready` com o PR ainda aberto — isso recria a race de claim. Caminhos: (A) `pnpm agent:ready -- --issue N` no fim do Passo 6 após merge; (B) Action determinística no merge que lê `Related #N` (OPS18). Ambos idempotentes.
-5. **Planos de Issues `in-progress` / `done` / `in-prod` são imutáveis.** Não editar `docs/plans/<slug>.md` nem o body de intenção dessas Issues. Refino → **plano + Issue novos** (sucessor; `depends` no pai se fizer sentido). Enquanto a Issue ainda é só `blocked`/`ready` (sem claim), editar o mesmo plano ainda é barato.
+1. **Nada no Forgejo antes do gate.** Antes da confirmação: proibido `pnpm agent:register`, criar Issue/PR.
+2. **Register com `--plan` nasce `blocked`.** Promote só depois do plano em `main`.
+3. **Planos de Issues `in-progress`/`done`/`in-prod` são imutáveis.**
+4. **Rascunho UI (obrigatório se muda UI):** HTML+Tailwind commitado no repo. Classe A/sem UI → sem rascunho.
 
-**Rascunho UI (obrigatório se muda UI):** itens com superfície Impeccable **B / C / D** (ou qualquer mudança do que o usuário vê/toca) devem ter um **rascunho HTML+Tailwind** (renderizado em PNG e commitado em `docs/plans/`) no gate — ver [ui-draft-html.md](ui-draft-html.md). Classe A / sem UI → sem rascunho.
+## Decomposição em sub-agentes
 
-## Divisão com as skills de execução
+Cada fase pesada é delegada a um sub-agente com contexto mínimo. O agente principal orquestra.
 
-| Skill | Papel |
-| ----- | ----- |
-| **`plan-issue` (esta)** | Intenção humana: o quê / para quem / por quê / outcome. Direção suave no codebase. **Proibido** travar schema, signatures, migrations, abstrações ou “Abordagem” de engenharia. |
-| **`work-issue`** | Humano supervisiona: Issue já claimada (claim fora da skill) → plano de **implementação** (Plan mode) → **pausa** para confirmação → executa. |
-| **`agent-work-issue`** | Pool / autonomia: Issue já claimada → plano de implementação → executa sem pausa → `/simplify` → `capture-review-debts` → PR Ready + auto-merge. |
+### Sub-agente: Explorador
 
-Aqui **não** se implementa código de produto, **não** se escreve plano de implementação, **não** se roda Impeccable craft/critique/polish. O rascunho UI/UX (HTML+Tailwind) é artefato do **gate de intenção**, não entrega de app.
+**Quando:** Passo 3, para cada batch de ideias.
+**Input:** lista de ideias parseadas + `AGENTS.md` (core) + `codebase-map.mdc`
+**Task:** Para cada ideia, encontrar: arquivos relevantes existentes, sobreposição com trabalho entregue, área provável no codebase. **Não escrever planos nem tomar decisões.**
+**Output:** ≤15 linhas por ideia (achados concisos).
 
-**Shaping (não tour):** aplique [shaping.md](shaping.md) em silêncio — appetite, fatia mínima útil, rabbit holes de produto, self-score ≥4 antes de gravar.
+### Sub-agente: Escritor de plano
 
-**Dados (intenção):** se o item envolve números/KPIs/mapas, aplique [data-presentation.md](data-presentation.md) só até “quem decide o quê com este dado”. A **forma** (chart/mapa/KPI) fica para o plano de implementação.
+**Quando:** Passo 3, paralelo (1 sub-agente por ideia).
+**Input:** UMA ideia + achados do explorador + `intention-template.md` + `shaping.md` (+ `ui-draft-html.md` se UI)
+**Task:** Escrever `docs/plans/<slug>.md` conforme o template. **Não registrar Issues nem criar arquivos — só produzir o conteúdo do plano.**
+**Output:** conteúdo markdown do plano.
+
+### Sub-agente: Registrador
+
+**Quando:** Passo 5, após confirmação do gate.
+**Input:** planos aprovados + IDs reservados
+**Task:** Rodar `pnpm agent:register` para cada plano. Atualizar headers `Issue: #N`. Criar PR `Related #N`.
+**Output:** Issues registradas + links de PR.
 
 ## Checklist
 
 ```
-- [ ] 1. Parse do lote + dedup (intra-lote, Issues existentes, docs/plans, roadmap legacy)
-- [ ] 2. Reserva de IDs de uma vez por trilha (roadmap legacy + issuesById())
-- [ ] 3. Por item (ordem topológica): classificar → fatiar → explorar só o suficiente → intenção completa
-- [ ] 4. Sugestão de modelo × effort via model-selection (uma linha por item)
-- [ ] 5. GATE: overview do lote + rascunho UI/UX (se muda UI) + esboços de fluxo → confirmar/iterar (PARAR aqui até o humano confirmar; sem Issue/PR)
-- [ ] 6. Registro: `agent:register` (`--plan` → `blocked`) → PR `Related #N` → merge → `pnpm agent:ready`
+- [ ] 1. Parse do lote + dedup + carregar camada AGENTS
+- [ ] 2. Reserva de IDs
+- [ ] 3. Dispatch sub-agente explorador → receber findings
+- [ ] 4. Dispatch sub-agentes escritores (paralelo) → receber planos
+- [ ] 5. GATE: overview + rascunho UI (se muda UI) → confirmar
+- [ ] 6. Dispatch sub-agente registrador → PR → merge → promote
 ```
 
 ## Passo 1 — Parse e dedup
 
-1. **Separe os itens.** Entrada pode ser 1 ideia ou N. Se ambíguo, assuma a leitura mais provável e liste — a confirmação vai no gate.
-2. **Fatia mínima útil.** Prefira várias Issues pequenas a um epic. Cada item deve caber num appetite curto e entregar um outcome verificável sozinho. Mesclar só quando separar criaria trabalho inútil (mesmo fluxo, mesma persona, mesma superfície sem valor incremental).
-3. **Dedup intra-lote:** mesclar | absorver (fase de plano existente, sem ID novo) | manter separados com `depends`.
-4. **Dedup contra o existente:** `pnpm issue all` + `issuesById()` + grep em `docs/plans/*.md` e `docs/roadmap.md` (legado).
+1. **Separe os itens.** Entrada pode ser 1 ideia ou N. Se ambíguo, assuma a leitura mais provável.
+2. **Carregar camada AGENTS relevante:** se qualquer item toca `/campanha`, leia `AGENTS-campaign.md`. Se toca site público, leia `AGENTS-public.md`. Se toca deploy/CI, leia `AGENTS-infra.md`.
+3. **Fatia mínima útil.** Prefira várias Issues pequenas a um epic.
+4. **Dedup intra-lote:** mesclar | absorver | manter separados com `depends`.
+5. **Dedup contra o existente:** `pnpm issue all` + `issuesById()` + grep em `docs/plans/*.md`.
    - Já coberto / entregue → apontar e não criar.
-   - Issue **`in-progress` / `done` / `in-prod`:** **não** editar o plano dela — se a intenção mudou, item **sucessor** (plano + Issue novos).
-   - Issue só `blocked` / `ready` (ainda não claimada): pode editar o plano existente (fase de plano) sem ID novo.
-   - Novo → seguir.
+   - Issue `in-progress`/`done`/`in-prod`: não editar — item sucessor se mudou.
+   - Issue `blocked`/`ready` (não claimada): pode editar o plano existente.
 
 ## Passo 2 — Reserva de IDs
 
-Último ID por trilha (A/B/C/D/E) via roadmap legacy + `issuesById()`; distribua **antes** de escrever planos. Fora de trilha: prefixos `O0+`, `FD+`, `RS+`, `OPS+` ou trilha temática mais próxima.
+Último ID por trilha (A/B/C/D/E) via roadmap legacy + `issuesById()`. Distribua antes de escrever planos.
 
-## Passo 3 — Por item: intenção completa
+## Passo 3 — Explorar + escrever planos (sub-agentes)
 
-Ordem topológica (dependente cita ID do dependido). Por item:
+### 3a. Dispatch sub-agente explorador
 
-1. **Tipo**
+Monte o task prompt do explorador com:
+- Lista das ideias parseadas (título + 1-linha de intenção)
+- Referência: `AGENTS.md` (core) + `codebase-map.mdc`
+- Instrução: "Para cada ideia, encontre arquivos relevantes, sobreposição com trabalho entregue, área provável. ≤15 linhas por ideia. Não escreva planos."
 
-| Tipo | Destino |
-| ---- | ------- |
-| Feature `/campanha` ou site com escopo próprio | `kind:feature` + plano de intenção |
-| Chore / débito pequeno | `kind:chore` + plano curto (ou body se trivial) |
-| Défice do fluxo de agentes | `pnpm agent:file-miss` (`kind:agent-miss`) — não aqui |
-| Bloqueio externo (jurídico/LGPD) | `blocked` + `needs:consent`/`needs:migration`; texto no lote jurídico existente |
-| Decisão de NÃO fazer | Comentário/doc, não Issue |
+Aguarde o output. Valide que é conciso e factual.
 
-2. **Explorar o código o mínimo** — só para apontar **direção** (rotas/pastas/domínios prováveis) e evitar duplicar algo já entregue. Não inventar signatures, collections novas como decisão travada, nem diagramas de componentes.
-3. **Superfície UI (A–D)** como dica para quem for executar — não semear brief Impeccable completo. Classe **B/C/D** (ou qualquer mudança de UI): criar **rascunho HTML+Tailwind** ([ui-draft-html.md](ui-draft-html.md)) **antes do gate**, renderizar o PNG (`pnpm ui-draft:render`) e embutir no plano; ASCII no plano fica opcional. Classe **A** / sem UI: sem rascunho.
-4. **Dados (intenção)** ou `Dados: N/A`.
-5. **Posicionamento:** `P0..P3`, `depends`, appetite, janela eleitoral se relevante, `serializes` se tocar recurso compartilhado — nomeie o registro exato (ex. `serializes: 'docs/plans/'`, `serializes: 'docs/changelog/'` — migrations **não** serializam, AGENT-OPS). Sem detalhar a migration.
-6. **Plano de intenção** em `docs/plans/<slug>.md` via [intention-template.md](intention-template.md), com campo **Rascunho UI** preenchido (path do `.html` + PNGs embutidos, ou `N/A`). Self-score ≥4/5 ([shaping.md](shaping.md)).
+### 3b. Classificar e reservar IDs
 
-### O que é proibido no plano de intenção
+Para cada ideia, classifique (feature/chore/bloqueio/não-fazer) e atribua ID.
 
-- Decisões de schema / collection / unicidade / Consent key concreta como “travadas”
-- Assinaturas de funções, nomes de arquivos novos obrigatórios, mermaid de arquitetura de solução
-- “Abordagem proposta” com componentes e migration nomeada
-- Fases de implementação verificáveis com quota de engenharia
-- Forçar o executor a uma única forma técnica
+### 3c. Dispatch sub-agentes escritores (paralelo)
 
-### O que é obrigatório
+Para cada ideia, monte o task prompt do escritor com:
+- **Uma** ideia (título + intenção completa + tipo + ID)
+- Achados do explorador para essa ideia
+- Templates: `intention-template.md`, `shaping.md`
+- Se UI: `ui-draft-html.md`
+- Se dados: `data-presentation.md`
+- Instrução: "Escreva `docs/plans/<slug>.md` conforme o template. Output: conteúdo markdown."
 
-- Intenção do humano (problema/oportunidade)
-- Persona(s) e fluxo desejado (job / outcome)
-- Critérios de aceite em linguagem de produto
-- Appetite e fora de escopo (produto)
-- **Direção provável no codebase** (pastas/rotas/domínios — hipotética, revisável)
-- Questões em aberto com **Opções + Recomendação de produto** (não de engenharia)
-- **Se muda UI:** rascunho UI/UX (HTML+Tailwind → PNG) no gate ([ui-draft-html.md](ui-draft-html.md)) + PNG embutido no plano
+Dispatche todos os escritores em paralelo (Task tool). Cada um retorna o conteúdo do plano.
 
-## Passo 4 — Modelo × effort
+### 3d. Self-score e revisão
 
-Skill `model-selection`. Registre no cabeçalho (`Model:`) e no gate.
+O agente principal:
+1. Valida cada plano contra `shaping.md` (self-score ≥4)
+2. Aplica melhorias se necessário
+3. Cria os arquivos `docs/plans/<slug>.md` no disco
+4. Se UI: cria `docs/plans/<slug>-ui-draft.html` (sub-agente ou inline)
 
-- Default: `composer-2.5`
-- Grok com effort explícito quando discovery/multi-domínio / falha cara de **produto**
-- Não crie par `{id}-plan` / `{id}-exec` por default — o plano de implementação nasce em `work-issue` / `agent-work-issue`. Reserve bipartição só para blast radius extremo (refactor repo-wide) se o humano pedir.
+## Passo 4 — GATE
 
-## Passo 5 — GATE
+Antes de criar Issues:
 
-Antes de criar Issues **ou** abrir PR de planos:
+- Overview: ID, título, prio, depends, appetite, link do plano
+- Para cada item UI: aponte o link do `.html` fonte
+- Perguntas acumuladas, recomendação de produto primeiro
 
-- Overview: ID, título, prio, depends, appetite, modelo, link do plano local
-- **Para cada item que muda UI:** mostre as imagens do rascunho (PNGs embutidos no plano) + link do `.html` fonte — este é o rascunho visual a validar
-- Esboço textual de fluxo só se ajudar; não substitui o rascunho quando há UI
-- Perguntas acumuladas numa rodada, recomendação de produto primeiro
+**Pare e espere.** Itere até confirmação explícita do lote.
 
-**Pare e espere.** Itere (incluindo o rascunho — HTML → re-render do PNG, se houver UI) até confirmação explícita do lote (não basta um “ok” solto durante a edição). Só então Passo 6.
+## Passo 5 — Registro (sub-agente registrador)
 
-## Passo 6 — Registro (não claimável até plano em `main`)
+Após confirmação, dispatche o sub-agente registrador com:
+- Lista de planos aprovados + IDs
+- Instrução: rodar `pnpm agent:register` para cada um, criar PR `Related #N`, aguardar merge, rodar `pnpm agent:ready`
 
-Ordem obrigatória (OPS17):
-
-1. **Register** (com `--model`; com `--plan` o script nasce `blocked` — não precisa `--blocked` extra):
-
-```bash
-pnpm agent:register -- --id <ID> --title "<título>" --prio <P0..P3> \
-  --depends <A,B> --kind <feature|chore|...> --plan docs/plans/<slug>.md \
-  --model <slug>
-```
-
-Sem `--plan`: nasce `ready` (use `--blocked` só se quiser não-claimável sem plano).
-
-2. Atualize `Issue: #N` (e status) no plano local.
-3. Commit + **`pnpm push`** + PR **Ready** `--base main` com **`Related #N`** (nunca `Closes #N` em PR só de `docs/plans/` — `plans-only-closes`).
-4. Auto-merge via safety net (`agent-pr-ready-automerge.yml` — o rollup `CI (PR) / checks` verde mergea por rebase); espere o merge em `main`.
-5. **Promote** com o script (idempotente se já `ready`; só Issues `blocked` + link `docs/plans/`, sem gates humanos `needs:*` nem `in-progress`/`done`/`in-prod`):
-
-```bash
-pnpm agent:ready -- --issue <N[,N…]>
-```
-
-A Action de merge (`plan-issue-ready-on-main-merge.yml`, OPS18) é safety net se este passo falhar — não pule o promote do agente no caminho feliz.
-
-**NÃO faz:** editar `docs/roadmap.md`; implementar código; claim; escrever `*-impl.md`; editar plano de Issue `in-progress`/`done`/`in-prod`; marcar `ready` antes do plano em `main`; registrar/abrir PR antes do gate.
+O agente principal validação o resultado e reporta o resumo.
 
 ## Resumo final
 
-Tabela do lote + mesclados/absorvidos/descartados + decisões de produto assumidas _(validar)_ + o que o gate decidiu + Issues `#N` + PRs de plano.
+Tabela do lote + mesclados/absorvidos/descartados + Issues `#N` + PRs de plano.

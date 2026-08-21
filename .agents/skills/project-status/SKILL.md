@@ -1,6 +1,6 @@
 ---
 name: project-status
-description: Apresenta o estado do projeto Teqo a partir das Issues do GitHub rastreáveis — overview (estado/prio/kind), fila atual na ordem do agent:claim com o modelo de cada item, grafo mermaid de dependências, bloqueios com motivo e sugestões de consolidação (merge/break-down). Read-only; NUNCA modifica Issues, em particular nunca toca Issues in-progress. Usar quando o usuário pedir status/visão geral do projeto, "como está o projeto", "qual a fila", "o que está bloqueado", "mostra o grafo", ou perguntar o que dá para consolidar.
+description: 'Show Teqo project status from trackable GitHub Issues.'
 ---
 
 # Status do projeto (read-only)

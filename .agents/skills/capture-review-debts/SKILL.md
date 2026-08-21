@@ -1,6 +1,6 @@
 ---
 name: capture-review-debts
-description: Use when the user asks to register leftover /simplify or /impeccable findings as trackable GitHub Issues, harvest session review debts, triage post-simplify or post-critique follow-ups, or says "registra os débitos", "o que ficou do simplify", "coloca como issue o que o critique apontou", "harvest debts".
+description: 'Triage simplify/impeccable findings into tracked GitHub Issues.'
 ---
 
 # Capturar débitos de /simplify e /impeccable em Issues
@@ -56,35 +56,12 @@ Contra o repositório **antes** de pontuar:
 
 ## Passo 3 — Pontuar e decidir destino
 
-Para cada candidato restante, atribua **importância** (1–5) com estes âncoras Teqo:
+Aplique [decision-quality.md](../work-issue/decision-quality.md) para:
+- **Score** (1–5) com âncoras de Teqo (feature bloqueada = 5, rename de pureza = 1)
+- **Tipo de decisão:** expensive_lock / cheap_polish / defer_trigger
+- **Destino:** registrar / absorver / descartar / defer / já_resolvido
 
-| Score | Quando                                                                                      |
-| ----- | ------------------------------------------------------------------------------------------- |
-| 5     | Bloqueia feature dependente, hot path em produção, P0/P1 critique aberto, risco access/LGPD |
-| 4     | Perf/DRY com ≥3 call sites ou custo herdado por A5/B3/E4/lista de núcleos                   |
-| 3     | UX P2 acionável (Alex/Casey/Lia), DRY claro 2 call sites, a11y outline                      |
-| 2     | Higiene/naming, polish cosmético, P3 critique                                               |
-| 1     | Preferência de estilo, rename de pureza, micro-otimização sem evidência                     |
-
-**Bump caro de reverter:** access/LGPD/schema/unicidade/hot path → piso de score **4–5**, mesmo que o simplify tenha rotulado como “nice cleanup”.
-
-**Tipo de decisão** (obrigatório — uma coluna na triage):
-
-| Tipo               | Exemplos                                  | Destino típico                                                                                                           |
-| ------------------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **expensive_lock** | access, Consent, uniqueness, write skew   | registrar / absorver (nunca descartar por score baixo artificial)                                                        |
-| **cheap_polish**   | copy, motion, rename, P3                  | descartar ou já_resolvido                                                                                                |
-| **defer_trigger**  | DRY &lt;3 call sites, abstração prematura | **não registrar** como epic — anotar gatilho (`quando 3º bulk path`, `quando B3`) no plano-pai ou em Explicitamente fora |
-
-**Destino** (escolha exatamente um):
-
-| Destino          | Critério                                                                                                              |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **registrar**    | Score ≥3 **e** não coberto **e** tipo ≠ defer_trigger puro; cabe num plano próprio ou lote mesclado                   |
-| **absorver**     | Score ≥3 mas é fase natural de um plano/`escala-dry-pos-*`/UX já existente                                            |
-| **descartar**    | Score ≤2 **ou** rename de pureza **ou** "nice to have" sem dono **ou** skip explícito do simplify **ou** cheap_polish |
-| **defer**        | Tipo defer_trigger: não cria ID novo; registra gatilho no plano-pai / Explicitamente fora                             |
-| **já_resolvido** | Feito no cleanup da sessão                                                                                            |
+**Bump caro de reverter:** access/LGPD/schema/unicidade/hot path → piso de score **4–5**, mesmo que o simplify tenha rotulado como "nice cleanup".
 
 Preferir **defer+gatilho** a **registrar** para DRY prematuro — alinha a YAGNI / deep modules e aos precedentes `escala-dry-pos-*`.
 

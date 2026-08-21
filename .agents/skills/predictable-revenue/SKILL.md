@@ -1,6 +1,6 @@
 ---
 name: predictable-revenue
-description: 'Build a scalable outbound B2B sales machine with specialized roles (SDR, AE, CSM). Use when the user mentions "outbound sales", "Cold Calling 2.0", "cold email sequences", "sales pipeline", "SDR process", "sales development", "build an outbound sales team", or "fill my pipeline". Also trigger when setting up a B2B SaaS sales team from scratch or building a lead-qualification framework to improve close rates. Covers the three lead types (seeds/nets/spears), role specialization, the referral-email method, ANUM qualification, and pipeline math. For offer design, see hundred-million-offers. For persuasion science, see influence-psychology.'
+description: 'Build a scalable outbound B2B sales machine.'
 license: MIT
 metadata:
   author: wondelai

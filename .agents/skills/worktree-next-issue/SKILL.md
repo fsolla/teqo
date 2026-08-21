@@ -1,6 +1,6 @@
 ---
 name: worktree-next-issue
-description: >-
+description: 'Claim the next Issue and provision a deterministic worktree.'
   Claima deterministicamente a próxima Issue da fila (ou a direcionada com
   --issue N), cria o worktree git dela a partir de main com branch legível no
   formato <código>-<slug> (ex. C15-fullcalendar-em-campanha-agenda, slug pt-BR

@@ -1,6 +1,6 @@
 ---
 name: engineering-audit
-description: Runs a Pass-style engineering audit of the Teqo codebase — code smells, drift from documented patterns, and consolidation of near-duplicate components/hooks/functions/modules — producing a findings ledger and a remediation plan (read-only on code during the sweep; sign-off interativo = apresentação prévia; autônomo = PR Ready + auto-merge dos artefatos; remediações P0/P1 e guardrails de agent-miss na mesma sessão). Use when the user asks for an engineering audit, code-smell sweep, architecture drift check, deduplication/consolidation pass, "Pass 3", "auditoria de engenharia", "varredura de code smells", "consolidação de duplicações", or to plan fixes against the repo's highest engineering standards.
+description: 'Run a Pass-style engineering audit of the Teqo codebase.'
 ---
 
 # Engineering Audit (Pass N)

@@ -1,6 +1,6 @@
 ---
 name: clean-code
-description: 'Write readable, maintainable code through disciplined naming, small functions, and clean error handling. Use when the user mentions "clean up this code", "this function is too long", "code smells", "naming conventions", "boy scout rule", "single responsibility", or "unit test quality". Also trigger when reviewing a pull request for readability, untangling a messy function, debating comment styles, or improving error-handling patterns. Covers SRP, comment discipline, formatting, and unit testing. For refactoring techniques, see refactoring-patterns. For architecture and dependency rules, see clean-architecture.'
+description: 'Write readable, maintainable code through naming, small functions, clean error handling.'
 license: MIT
 metadata:
   author: wondelai

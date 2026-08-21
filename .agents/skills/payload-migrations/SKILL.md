@@ -1,6 +1,6 @@
 ---
 name: payload-migrations
-description: Create, apply, and deploy Payload schema migrations for the Teqo project (Postgres, push disabled). Use when changing any collection/global/field config, adding indexes or enums, reconciling schema drift, writing a data migration, or when the user mentions migrations, migrate:create, or applying schema changes to production. Explains how migrations reach the production Neon database on deploy.
+description: 'Create, apply, and deploy Payload schema migrations for Teqo.'
 ---
 
 # Teqo Payload Migrations

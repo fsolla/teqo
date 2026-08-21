@@ -1,6 +1,6 @@
 ---
 name: drive-motivation
-description: 'Design motivation systems using Autonomy, Mastery, and Purpose (AMP) for products and teams. Use when the user mentions "intrinsic motivation", "gamification isnt working", "rewards arent working", "autonomy", "mastery", "purpose-driven", "my team is disengaged", or "how do I motivate people". Also trigger when designing onboarding progression, fixing broken gamification, or building team structures that sustain high performance. Covers why carrot-and-stick fails and how to build progress systems. For habit-forming product loops, see hooked-ux. For retention behavior design, see improve-retention.'
+description: 'Design motivation systems using Autonomy, Mastery, Purpose (AMP).'
 license: MIT
 metadata:
   author: wondelai
