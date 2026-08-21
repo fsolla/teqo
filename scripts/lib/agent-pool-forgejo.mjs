@@ -13,7 +13,7 @@ import { randomUUID } from 'node:crypto'
 
 import { labelNames } from './agent-forgejo.mjs'
 import { formatPoolEvent } from './agent-pool-state.mjs'
-import { forgejoApi as api } from './forgejo-api.mjs'
+import { githubApi as api } from './github-api.mjs'
 
 const POOL_STATE_FILE = 'pool-state.json'
 const POOL_STATE_BRANCH = 'pool-state'

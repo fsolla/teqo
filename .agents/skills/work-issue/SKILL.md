@@ -42,10 +42,11 @@ pular a pausa do impl plan; Draft / sem auto-merge.
 ## Passo 1 — Contexto da sessão
 
 A Issue chega no prompt/`$ARGUMENTS` do `/work-issue` (`--issue <N>` ou o número —
-contrato OPS33; chamada manual: passar o número). Sempre consulte o Forgejo para o
+contrato OPS33; chamada manual: passar o número). Sempre consulte o tracker do GitHub
+(`github.com/fsolla/teqo/issues`, via `pnpm issue` / `scripts/issue.mjs`) para o
 resto (fonte única é a Issue, nunca um brief duplicado).
 
-- **Presente** → valide o básico (issue do Forgejo `git.solla.dev/fsolla/teqo`:
+- **Presente** → valide o básico (issue do GitHub `https://github.com/fsolla/teqo/issues`:
   existe, `OPEN`, label `in-progress` — confirma que o claim foi feito fora da
   skill) e use.
 - **Ausente** → **uma** pergunta ao humano ("Qual Issue?"), valide o número

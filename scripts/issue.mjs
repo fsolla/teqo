@@ -14,7 +14,7 @@ import {
   parseFrontmatter,
   priorityRank,
 } from './lib/agent-forgejo.mjs'
-import { forgejoApi as api } from './lib/forgejo-api.mjs'
+import { githubApi as api } from './lib/github-api.mjs'
 
 const die = dieAgent('issue')
 
@@ -35,7 +35,7 @@ const cmdNext = async () => {
   if (satisfiedWithoutIssue.length > 0) {
     console.log(`deps satisfeitas (roadmap, sem Issue): ${satisfiedWithoutIssue.join(', ')}`)
   }
-  console.log(`url: https://git.solla.dev/fsolla/teqo/issues/${issue.number}`)
+  console.log(`url: https://github.com/fsolla/teqo/issues/${issue.number}`)
 }
 
 const count = (map, key) => map.set(key, (map.get(key) ?? 0) + 1)

@@ -15,7 +15,7 @@ import {
   parseFrontmatter,
   priorityRank,
 } from './lib/agent-forgejo.mjs'
-import { forgejoApi as api } from './lib/forgejo-api.mjs'
+import { githubApi as api } from './lib/github-api.mjs'
 
 const die = dieAgent('status')
 

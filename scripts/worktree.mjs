@@ -124,7 +124,7 @@ import {
   parseArgs,
 } from './lib/agent-forgejo.mjs'
 import { startSharedPostgres } from './lib/db-start.mjs'
-import { forgejoApi as api } from './lib/forgejo-api.mjs'
+import { githubApi as api } from './lib/github-api.mjs'
 import {
   DEV_PORT_BASE,
   GENERATED_ENV_MARKER,

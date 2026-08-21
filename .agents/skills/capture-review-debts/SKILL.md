@@ -1,6 +1,6 @@
 ---
 name: capture-review-debts
-description: Use when the user asks to register leftover /simplify or /impeccable findings as trackable Forgejo Issues, harvest session review debts, triage post-simplify or post-critique follow-ups, or says "registra os débitos", "o que ficou do simplify", "coloca como issue o que o critique apontou", "harvest debts".
+description: Use when the user asks to register leftover /simplify or /impeccable findings as trackable GitHub Issues, harvest session review debts, triage post-simplify or post-critique follow-ups, or says "registra os débitos", "o que ficou do simplify", "coloca como issue o que o critique apontou", "harvest debts".
 ---
 
 # Capturar débitos de /simplify e /impeccable em Issues

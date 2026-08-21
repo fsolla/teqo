@@ -22,7 +22,7 @@ import {
   issuesById,
   parseArgs,
 } from './lib/agent-forgejo.mjs'
-import { forgejoApi as api } from './lib/forgejo-api.mjs'
+import { githubApi as api } from './lib/github-api.mjs'
 
 const die = dieAgent('claim')
 const { flags } = parseArgs(process.argv.slice(2), new Set(['issue']))

@@ -13,7 +13,7 @@
 
 import { dieAgent, parseArgs, setLabels } from './lib/agent-forgejo.mjs'
 import { canPromotePlanIssue } from './lib/agent-plan-lifecycle.mjs'
-import { forgejoApi as api } from './lib/forgejo-api.mjs'
+import { githubApi as api } from './lib/github-api.mjs'
 
 const die = dieAgent('ready')
 const { flags } = parseArgs(process.argv.slice(2), new Set(['issue']))

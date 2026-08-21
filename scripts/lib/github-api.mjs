@@ -180,6 +180,19 @@ export const createApi = ({
     base: { ref: pr.base?.ref ?? '' },
   })
 
+  /** Issue shape normalized to the agent-script contract (same as forgejo-api). */
+  const normalizeIssue = (issue) => ({
+    number: issue.number,
+    title: issue.title,
+    body: issue.body ?? '',
+    state: normalizeState(issue.state),
+    createdAt: issue.created_at,
+    labels: (issue.labels ?? []).map((label) => ({
+      name: label.name,
+      color: label.color ?? '',
+    })),
+  })
+
   const api = {
     /**
      * GET /repos/{owner}/{repo}/pulls/{number} — normalized.
@@ -189,6 +202,153 @@ export const createApi = ({
       const pr = await request(`/repos/${owner}/${name}/pulls/${number}`)
       return pr ? normalizePullRequest(pr) : null
     },
+
+    /** GET /repos/{owner}/{repo}/issues — normalized; `limit` → `per_page`. */
+    listIssues: async ({ state = 'open', labels, limit = 100, page = 1 } = {}) => {
+      const issues = await request(`/repos/${owner}/${name}/issues`, {
+        query: { state, labels, per_page: limit, page },
+      })
+      // GitHub returns PRs in the issues list; filter them out (the Forgejo
+      // `type: issues` query had no GitHub equivalent).
+      return (Array.isArray(issues) ? issues : [])
+        .filter((issue) => !issue.pull_request)
+        .map(normalizeIssue)
+    },
+
+    /** GET /repos/{owner}/{repo}/issues/{number} — normalized. */
+    getIssue: async (number) => {
+      const issue = await request(`/repos/${owner}/${name}/issues/${number}`)
+      return issue ? normalizeIssue(issue) : null
+    },
+
+    /** POST /repos/{owner}/{repo}/issues — creates with title+body. */
+    createIssue: async ({ title, body }) => {
+      const issue = await request(`/repos/${owner}/${name}/issues`, {
+        method: 'POST',
+        body: { title, body },
+      })
+      return normalizeIssue(issue)
+    },
+
+    /** Adds labels by NAME (GitHub labels are repo-level, addressed by name). */
+    addLabels: (number, labels) =>
+      request(`/repos/${owner}/${name}/issues/${number}/labels`, {
+        method: 'POST',
+        body: { labels },
+      }),
+
+    /** Removes labels by NAME (GitHub DELETE is by label name). */
+    removeLabels: async (number, labels) => {
+      for (const label of labels) {
+        await request(
+          `/repos/${owner}/${name}/issues/${number}/labels/${encodeURIComponent(label)}`,
+          {
+            method: 'DELETE',
+          },
+        )
+      }
+    },
+
+    /**
+     * @param {number} number
+     * @param {{ add?: string[], remove?: string[] }} [options]
+     */
+    setLabels: async (number, { add = [], remove = [] } = {}) => {
+      if (remove.length > 0) await api.removeLabels(number, remove)
+      if (add.length > 0) await api.addLabels(number, add)
+    },
+
+    /** POST /issues/{number}/comments — { body }. */
+    addComment: (number, body) =>
+      request(`/repos/${owner}/${name}/issues/${number}/comments`, {
+        method: 'POST',
+        body: { body },
+      }),
+
+    /** PATCH state=closed — closes the issue on the GitHub tracker. */
+    closeIssue: (number) =>
+      request(`/repos/${owner}/${name}/issues/${number}`, {
+        method: 'PATCH',
+        body: { state: 'closed' },
+      }),
+
+    /** GET /issues/{number}/comments — [{ body, user }]. */
+    listIssueComments: async (number) => {
+      const comments = await request(`/repos/${owner}/${name}/issues/${number}/comments`)
+      return (Array.isArray(comments) ? comments : []).map((comment) => ({
+        body: comment.body ?? '',
+        user: comment.user?.login ?? '',
+      }))
+    },
+
+    /** GET /pulls/{number}/files — [{ filename, status }]. */
+    listPullRequestFiles: async (number) => {
+      const files = await request(`/repos/${owner}/${name}/pulls/${number}/files`)
+      return (Array.isArray(files) ? files : []).map((file) => ({
+        filename: file.filename ?? '',
+        status: file.status ?? '',
+      }))
+    },
+
+    /** GET /pulls — normalized, GitHub PATCH uses `draft` not `is_draft`. */
+    listPullRequests: async ({ state = 'open', limit = 100 } = {}) => {
+      const pulls = await request(`/repos/${owner}/${name}/pulls`, {
+        query: { state, per_page: limit },
+      })
+      return (Array.isArray(pulls) ? pulls : []).map(normalizePullRequest)
+    },
+
+    /** POST /actions/workflows/{file}/dispatches — triggers a workflow. */
+    workflowDispatch: (workflowFile, { ref = 'main', inputs = {} } = {}) =>
+      request(`/repos/${owner}/${name}/actions/workflows/${workflowFile}/dispatches`, {
+        method: 'POST',
+        body: { ref, inputs },
+      }),
+
+    /** GET /contents/{path}?ref= — { content, sha } base64-decoded. */
+    getFileContents: async (path, ref = 'main') => {
+      const file = await request(`/repos/${owner}/${name}/contents/${path}`, { query: { ref } })
+      if (!file) return null
+      return {
+        content: Buffer.from(file.content ?? '', 'base64').toString('utf8'),
+        sha: file.sha,
+      }
+    },
+
+    /** PUT /contents/{path} — creates/updates a file on a branch (sha for update). */
+    writeFile: (path, { message, content, branch = 'main', sha } = {}) =>
+      request(`/repos/${owner}/${name}/contents/${path}`, {
+        method: 'PUT',
+        body: {
+          message,
+          content: Buffer.from(content, 'utf8').toString('base64'),
+          branch,
+          ...(sha ? { sha } : {}),
+        },
+      }),
+
+    /** POST /contents/{path} — creates a file on a branch (fails if it exists). */
+    createFile: (path, { message, content, branch = 'main' } = {}) =>
+      request(`/repos/${owner}/${name}/contents/${path}`, {
+        method: 'PUT',
+        body: {
+          message,
+          content: Buffer.from(content, 'utf8').toString('base64'),
+          branch,
+        },
+      }),
+
+    /** PUT /contents/{path} — updates an existing file (sha required). */
+    updateFile: (path, { message, content, branch = 'main', sha } = {}) =>
+      request(`/repos/${owner}/${name}/contents/${path}`, {
+        method: 'PUT',
+        body: {
+          message,
+          content: Buffer.from(content, 'utf8').toString('base64'),
+          branch,
+          sha,
+        },
+      }),
 
     /** PATCH draft:false — marks a draft PR ready for review. */
     markPullRequestReady: (number) =>
@@ -262,3 +422,6 @@ export const createApi = ({
 
   return api
 }
+
+/** Default instance bound to the environment. */
+export const githubApi = createApi({})
