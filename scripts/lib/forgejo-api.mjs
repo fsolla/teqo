@@ -12,8 +12,12 @@
  * that rejects (network-level `fetch failed`, DNS/TCP/reset) retries on ANY
  * method; a 5xx (502/503/504 — Cloudflare blips) retries on GET only, so the
  * safety net's long `waitForChecks` poll survives, while write endpoints keep
- * failing closed instead of risking duplicated side effects. 4xx never
- * retries. Defaults: 3 retries, base 300 ms ×2, ±20% jitter.
+ * failing closed instead of risking duplicated side effects. 410 Gone
+ * (OPS71-FLIP): served by the reverse proxy (nginx/Cloudflare) BEFORE the
+ * request reaches the app — the origin never saw it, so retrying is safe on
+ * ANY method (unlike a 5xx, where the origin may have applied the write).
+ * 4xx never retries (410 is the one documented proxy-level exception).
+ * Defaults: 3 retries, base 300 ms ×2, ±20% jitter.
  *
  * Shapes are normalized to the GitHub-flavored contract the agent scripts and
  * their unit specs already use: `issue.state` ∈ OPEN|CLOSED,
@@ -24,6 +28,10 @@ const DEFAULT_BASE_URL = 'https://git.solla.dev/api/v1'
 const DEFAULT_REPOSITORY = 'fsolla/teqo'
 const USER_AGENT = 'teqo-agent-scripts/1.0 (forgejo)'
 const RETRYABLE_STATUSES = new Set([502, 503, 504])
+// 410 Gone from the reverse proxy (OPS71-FLIP live finding: nginx answered
+// `GET /repos/fsolla/teqo/issues/97/labels` with 410, transient). The origin
+// never received the request — retrying is side-effect-free on ANY method.
+const RETRYABLE_BEFORE_ORIGIN = new Set([410])
 
 /**
  * @typedef {object} ForgejoApiOptions
@@ -124,6 +132,11 @@ export const createApi = ({
         await retryAfter(attempt, `HTTP ${response.status}`)
         continue
       }
+      if (!isLastAttempt && RETRYABLE_BEFORE_ORIGIN.has(response.status)) {
+        await response.body?.cancel()
+        await retryAfter(attempt, `HTTP ${response.status} (proxy — origem intocada)`)
+        continue
+      }
       let text
       try {
         text = await response.text()
@@ -133,7 +146,14 @@ export const createApi = ({
         continue
       }
       if (!response.ok) {
-        throw new Error(`Forgejo API ${method} ${path} → ${response.status}: ${text.slice(0, 400)}`)
+        const isProxyHtml = /^\s*</.test(text)
+        const snippet = isProxyHtml
+          ? `corpo não-JSON (proxy/nginx — HTTP ${response.status}): ${text
+              .replace(/\s+/g, ' ')
+              .trim()
+              .slice(0, 120)}`
+          : text.slice(0, 400)
+        throw new Error(`Forgejo API ${method} ${path} → ${response.status}: ${snippet}`)
       }
       if (!text) return null
       try {
@@ -212,6 +232,18 @@ export const createApi = ({
       request(`/repos/${owner}/${name}/issues/${number}/comments`, {
         method: 'POST',
         body: { body },
+      }),
+
+    /**
+     * PATCH state=closed — closes the issue on the tracker. Forgejo-era: the
+     * merge of the PR closed the issue natively. GitHub-era (OPS71): the PR
+     * lives on GitHub and never touches the Forgejo tracker — the flip must
+     * close explicitly, else every merged issue stays OPEN with done+in-prod.
+     */
+    closeIssue: (number) =>
+      request(`/repos/${owner}/${name}/issues/${number}`, {
+        method: 'PATCH',
+        body: { state: 'closed' },
       }),
 
     listIssueComments: async (number) => {

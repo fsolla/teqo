@@ -36,7 +36,7 @@ pular a pausa do impl plan; Draft / sem auto-merge.
 - [ ] 1. Contexto: Issue do prompt/`$ARGUMENTS` da sessão (ausente → UMA pergunta com validação; nunca claim)
 - [ ] 2. Abrir o plano de intenção do body da Issue (`Plano: docs/plans/...`; sem link → body é spec)
 - [ ] 3. Plan mode → escrever `docs/plans/<slug>-impl.md` → **PARAR e confirmar com o humano**
-- [ ] 4. Após “ok”: Passo 4 (execução → /simplify → débitos autônomos → PR, via `execution-pipeline.md`)
+- [ ] 4. Após “ok”: Passo 4 (execução → e2e local afetado → /simplify → débitos autônomos → PR, via `execution-pipeline.md`)
 ```
 
 ## Passo 1 — Contexto da sessão
@@ -96,6 +96,12 @@ nunca invente produto novo.
 fechar em main), com os deltas do ator humano:
 
 - **Branch:** `<Code>-<slug>` do worktree — nunca crie branch nova na sessão.
+- **E2E local afetado (OPS72, discricionário):** antes do push, rode
+  localmente os e2e que você **criou** + os da **mesma superfície afetada** —
+  você decide quais (`pnpm test:e2e:affected` ou specs diretas). Não está no
+  `gate:push`; ver a seção "E2E local afetado" do `execution-pipeline.md`
+  (incl. a limitação da #72: `--no-deps` + projetos paralelos → `--workers=1`
+  ou a cadeia padrão de projetos).
 - **UI:** shape → craft → critique → polish.
 - **`capture-review-debts`:** **autônomo** — colha, dedupe, pontue e **decida
   você mesmo o destino** (registrar/absorver/deferir/descartar) pela triage

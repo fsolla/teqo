@@ -220,6 +220,32 @@ export class CampaignE2EOwnership {
     return { contactName, contactId: contact.id, leadershipId: leadership.id }
   }
 
+  /**
+   * C143 — demand factory with explicit ownership: the row is registered for
+   * cleanup and the municipality touched (mirror of the int fixture helper).
+   */
+  async createCampaignDemand(input: {
+    municipality: number
+    title: string
+    createdBy?: number
+    responsibles?: number[]
+  }): Promise<{ id: number; slug: string; title: string }> {
+    const demand = await this.payload.create({
+      collection: 'campaignDemand',
+      data: {
+        kind: 'material',
+        slug: this.value('demanda'),
+        status: 'aberta',
+        ...input,
+      },
+      depth: 0,
+      draft: false,
+    })
+    this.own('campaignDemand', demand.id)
+    this.touchMunicipality(input.municipality)
+    return demand
+  }
+
   private isOwnedCollection(collection: CollectionSlug): collection is OwnedCollection {
     return this.owned.has(collection as OwnedCollection)
   }

@@ -1,5 +1,6 @@
 import {
   nullableRelationshipFormValue,
+  repeatedRelationshipFormValues,
   requiredFormText,
   requiredRelationshipFormValue,
 } from '@/lib/formData'
@@ -22,5 +23,6 @@ export const parseCampaignDemandCreateFormData = (
     description: requiredFormText(formData, 'description'),
     municipality: requiredRelationshipFormValue(formData, 'municipalityId'),
     activity: nullableRelationshipFormValue(formData, 'activityId') ?? undefined,
+    responsibles: repeatedRelationshipFormValues(formData, 'responsibles'),
   }
 }

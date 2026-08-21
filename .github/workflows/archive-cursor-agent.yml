@@ -11,6 +11,8 @@ on:
         description: Cursor run id (run-…) optional cancel first
         required: false
         type: string
+permissions:
+  contents: read
 jobs:
   archive:
     runs-on: ubuntu-latest

@@ -2,6 +2,7 @@
 
 import { useActionState, useCallback, useState } from 'react'
 
+import { searchDemandResponsibleOptions } from '@/app/(campaign)/campanha/(app)/demandas/responsibleSearchActions'
 import { DemandFields, type DemandActivityValue } from '@/components/campaign/demand/DemandFields'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
@@ -15,6 +16,7 @@ type DemandFormProps = {
   municipalityOptions: RelationOption[]
   initialActivity?: ActivityRelationOption | null
   initialMunicipalityId?: number
+  currentUser?: { id: number; name: string } | null
   searchActivities: (
     query: string,
     municipalityId: number | null,
@@ -29,6 +31,7 @@ export const DemandForm = ({
   municipalityOptions,
   initialActivity = null,
   initialMunicipalityId,
+  currentUser = null,
   searchActivities,
   formAction,
 }: DemandFormProps) => {
@@ -45,9 +48,13 @@ export const DemandForm = ({
     (query: string) => searchActivities(query, parsedMunicipalityId),
     [parsedMunicipalityId, searchActivities],
   )
+  const searchResponsibles = useCallback(
+    (query: string) => searchDemandResponsibleOptions(query, parsedMunicipalityId),
+    [parsedMunicipalityId],
+  )
 
   return (
-    <form action={submitAction} className="flex max-w-2xl flex-col gap-4">
+    <form action={submitAction} className="flex max-w-3xl flex-col gap-4">
       <DemandFields
         idPrefix="demand"
         state={state}
@@ -58,6 +65,11 @@ export const DemandForm = ({
           options: municipalityOptions,
           value: municipalityId,
           onValueChange: setMunicipalityId,
+        }}
+        responsibles={{
+          currentUser,
+          search: searchResponsibles,
+          layout: 'aside',
         }}
       />
       {state.status !== 'success' ? <CampaignFormActionMessage state={state} /> : null}

@@ -725,6 +725,10 @@ export interface CampaignDemand {
   municipality: number | Municipality;
   activity?: (number | null) | Activity;
   leadership?: (number | null) | Leadership;
+  /**
+   * Só responsáveis, candidato e coordenador veem a demanda. O criador entra automaticamente.
+   */
+  responsibles?: (number | CampaignUser)[] | null;
   status: 'aberta' | 'em_analise' | 'escalada' | 'aprovada' | 'rejeitada';
   decisionNote?: string | null;
   decidedBy?: (number | null) | CampaignUser;
@@ -1791,6 +1795,7 @@ export interface CampaignDemandSelect<T extends boolean = true> {
   municipality?: T;
   activity?: T;
   leadership?: T;
+  responsibles?: T;
   status?: T;
   decisionNote?: T;
   decidedBy?: T;
@@ -2461,6 +2466,15 @@ export interface SocialFeedSetting {
     | number
     | boolean
     | null;
+  instagramSyncStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -2578,6 +2592,7 @@ export interface SocialFeedSettingsSelect<T extends boolean = true> {
       };
   youtubeFeedSnapshot?: T;
   instagramFeedSnapshot?: T;
+  instagramSyncStatus?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

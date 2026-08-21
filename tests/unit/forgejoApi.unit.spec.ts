@@ -39,18 +39,32 @@ describe('forgejo-api', () => {
   })
 
   it('defaults the base URL to git.solla.dev with the default repo path', async () => {
-    const calls: FetchCall[] = []
-    const api = createApi({
-      token: 'tok',
-      fetchImpl: async (url) => {
-        calls.push({ url: String(url) })
-        return ok([{ number: 1, title: '', body: '', state: 'open', created_at: '', labels: [] }])
-      },
-    })
+    // OPS71: the CI now runs on GitHub Actions, where GITHUB_SERVER_URL is
+    // set (https://github.com) — forgejo-api's env chain would resolve a
+    // different base. Pin the fallback default by isolating the env vars.
+    const savedApi = process.env.FORGEJO_API_URL
+    const savedServer = process.env.GITHUB_SERVER_URL
+    delete process.env.FORGEJO_API_URL
+    delete process.env.GITHUB_SERVER_URL
+    try {
+      const calls: FetchCall[] = []
+      const api = createApi({
+        token: 'tok',
+        fetchImpl: async (url) => {
+          calls.push({ url: String(url) })
+          return ok([{ number: 1, title: '', body: '', state: 'open', created_at: '', labels: [] }])
+        },
+      })
 
-    await api.listIssues()
+      await api.listIssues()
 
-    expect(calls[0].url).toContain('https://git.solla.dev/api/v1/repos/fsolla/teqo/issues?')
+      expect(calls[0].url).toContain('https://git.solla.dev/api/v1/repos/fsolla/teqo/issues?')
+    } finally {
+      if (savedApi) process.env.FORGEJO_API_URL = savedApi
+      else delete process.env.FORGEJO_API_URL
+      if (savedServer) process.env.GITHUB_SERVER_URL = savedServer
+      else delete process.env.GITHUB_SERVER_URL
+    }
   })
 
   it('normalizes state and labels to the gh-flavored contract', async () => {
@@ -100,6 +114,9 @@ describe('forgejo-api', () => {
   it('setLabels removes by id and adds by name', async () => {
     const calls: FetchCall[] = []
     const api = createApi({
+      // OPS71: explicit base — the GitHub Actions CI sets GITHUB_SERVER_URL,
+      // which would change the env-resolved base and break the URL pins.
+      base: 'https://git.solla.dev/api/v1',
       token: 'tok',
       fetchImpl: async (url, init) => {
         calls.push({ url: String(url), method: init?.method, body: init?.body })
@@ -118,6 +135,28 @@ describe('forgejo-api', () => {
       ['POST', 'https://git.solla.dev/api/v1/repos/fsolla/teqo/issues/5/labels'],
     ])
     expect(JSON.parse(calls[2].body as string)).toEqual({ labels: ['ready'] })
+  })
+
+  it('closeIssue PATCHes state=closed (OPS71-FLIP: the GitHub PR merge no longer closes the Forgejo issue)', async () => {
+    const calls: FetchCall[] = []
+    const api = createApi({
+      base: 'https://git.solla.dev/api/v1',
+      token: 'tok',
+      fetchImpl: async (url, init) => {
+        calls.push({ url: String(url), method: init?.method, body: init?.body })
+        return ok(null)
+      },
+    })
+
+    await api.closeIssue(9)
+
+    expect(calls).toEqual([
+      {
+        url: 'https://git.solla.dev/api/v1/repos/fsolla/teqo/issues/9',
+        method: 'PATCH',
+        body: JSON.stringify({ state: 'closed' }),
+      },
+    ])
   })
 
   it('workflowDispatch posts inputs and ref', async () => {
@@ -440,6 +479,9 @@ describe('forgejo-api', () => {
     const calls: string[] = []
     let poll = 0
     const api = createApi({
+      // OPS71: explicit base — the GitHub Actions CI sets GITHUB_SERVER_URL,
+      // which would change the env-resolved base and break the URL pins.
+      base: 'https://git.solla.dev/api/v1',
       token: 'tok',
       fetchImpl: async (url, init) => {
         calls.push(`${init?.method ?? 'GET'} ${url}`)
@@ -850,6 +892,70 @@ describe('forgejo-api', () => {
 
       await expect(api.addComment(1, 'x')).rejects.toThrow(/503/)
       expect(calls).toBe(1)
+    })
+
+    it('retries a 410 on GET (proxy answered — origin untouched)', async () => {
+      silentWarn()
+      let calls = 0
+      const api = createApi({
+        token: 'tok',
+        retries: 2,
+        backoffMs: 0,
+        jitter: false,
+        sleepImpl: async () => {},
+        fetchImpl: async () => {
+          calls += 1
+          return calls === 1 ? ok('<html>410 Gone</html>', 410) : ok(issueOk)
+        },
+      })
+
+      const issues = await api.listIssues()
+
+      expect(calls).toBe(2)
+      expect(issues).toHaveLength(1)
+    })
+
+    it('retries a 410 on write methods too (nginx answered before the origin — no duplicated side effect)', async () => {
+      silentWarn()
+      let calls = 0
+      const api = createApi({
+        token: 'tok',
+        retries: 2,
+        backoffMs: 0,
+        jitter: false,
+        sleepImpl: async () => {},
+        fetchImpl: async () => {
+          calls += 1
+          return calls === 1 ? ok('<html>410 Gone</html>', 410) : ok(null)
+        },
+      })
+
+      await api.addComment(1, 'x')
+
+      expect(calls).toBe(2)
+    })
+
+    it('throws a compact proxy marker after exhausting 410 retries (nginx html not swallowed raw)', async () => {
+      silentWarn()
+      let calls = 0
+      const api = createApi({
+        token: 'tok',
+        retries: 1,
+        backoffMs: 0,
+        jitter: false,
+        sleepImpl: async () => {},
+        fetchImpl: async () => {
+          calls += 1
+          return ok('<html>\n<head><title>410 Gone</title></head>\n<body>gone</body></html>', 410)
+        },
+      })
+
+      const error = await api.addComment(1, 'x').catch((e: unknown) => e)
+
+      expect((error as Error).message).toMatch(/410/)
+      expect((error as Error).message).toMatch(/corpo não-JSON \(proxy\/nginx/)
+      expect((error as Error).message).toMatch(/410 Gone/)
+      expect(calls).toBe(2)
     })
   })
 })

@@ -1,30 +1,52 @@
-# PR gate: feature → main. SINGLE sequential job (OPS62, X1): one container,
-# one checkout, one pnpm install, one runner slot. Fail-fast is STRUCTURAL —
-# a failed step skips every step after it, the job fails, the run fails and
-# the slot is released immediately. No cancel-run API (Forgejo 9.0.3 has
-# none), no watchdog job, no upgrades: with one job there are no siblings to
-# cancel. Steps keep their own logs, so diagnosis is intact after a failure.
-# The job id `checks` preserves the `CI (PR) / checks` status context the
-# automerger waitForChecks and branch protection rely on (OPS61).
+# PR gate: feature → main (OPS71 — GitHub Actions). SINGLE sequential job
+# (OPS62, X1): one container, one checkout, one pnpm install, one runner slot.
+# Fail-fast is STRUCTURAL — a failed step skips every step after it, the job
+# fails and the run fails. GitHub-native `concurrency` cancels the in-flight
+# run when the PR gets a new push (the Forgejo era had no cancel API; here it
+# is free and matches the OPS62 "one slot per PR" spirit).
+#
+# The job id `checks` preserves the `CI (PR) / checks` check-run that the
+# branch protection rule and the native auto-merge rely on (OPS71): GitHub
+# names it <workflow name> / <job name> — keep both literals frozen. GitHub's
+# auto-merge is server-side: it only merges with every required check green,
+# so the OPS64 "rollup can lie" defense is structural here (single job posts
+# one honest check-run; no matrix, no shards).
 #
 # Job-level skips come from the `scope` classifier (scripts/ci-scope.mjs) run
-# as a step; its outputs drive `if:` on the heavy steps (same modes as the
-# former per-job cascade: none/changed/full).
+# as a step; its outputs drive `if:` on the heavy steps (code/build/test:
+# none/changed/full; e2e: none/selected/full). e2e policy (OPS72): the PR
+# runs ONLY the blast radius — the specs the classifier detected as touched
+# (mode `selected`), never `full`. A high-risk diff (schema/lockfile/test
+# harness) classifies as `full` → the PR simply runs no e2e: the local agent
+# mirror (`pnpm test:e2e:affected`) runs full in that same case, and the
+# deploy `verify` job runs the full suite before publishing.
 #
 # Schema migrations are NOT serialized across PRs (migration-lock removed
 # 2026-08-12): a stale chain is caught by `pnpm migrate` + `test:int` on every
-# PR and on main (ci.yml), incl. campaignMigrationReconciliation — the check's
-# hard fail deadlocked every open schema PR the moment two coexisted.
+# PR, incl. campaignMigrationReconciliation.
 #
-# Forgejo port (OPS50): Postgres services live on the job network and are
-# reached by NAME (postgres-int / postgres-build on 5432) — no host publish,
-# so concurrent runs never collide on host ports (OPS62 X1). Two isolated
-# services keep e2e from inheriting int fixture residue.
+# Fork-PRs are excluded at job level (`if:` same-repo): the repo is public and
+# a fork PR would burn hosted minutes running arbitrary code. Same guard class
+# as the RCE guard on the post-merge workflows.
+#
+# Postgres services (OPS71 — GitHub hosted): jobs run directly on the runner
+# VM (NOT inside the job-container network of the Forgejo era), so services
+# are reached at localhost on PUBLISHED host ports. Each hosted run is its own
+# VM, so fixed ports never collide across runs. Two isolated services — int
+# on 5432 and build+e2e on 5433 — keep e2e from inheriting int fixture
+# residue.
 name: CI (PR)
 
 on:
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-pr-${{ github.head_ref }}
+  cancel-in-progress: true
 
 env:
   PAYLOAD_SECRET: test-only-secret-not-used-in-production
@@ -32,22 +54,18 @@ env:
 
 jobs:
   checks:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 50
     services:
-      # Services are reached by NAME on the job network (no host publish —
-      # OPS62 X1): concurrent runs never collide on host ports, which the
-      # single long-lived job would hold for the whole run. Two isolated
-      # services — int and build+e2e — keep e2e from inheriting int fixture
-      # residue (same isolation the former jobs had). Forgejo 9 does not
-      # expand expressions in `services.ports`, so a per-run port scheme was
-      # dropped in favour of the job-network DNS.
       postgres-int:
         image: postgres:17-alpine
         env:
           POSTGRES_USER: teqo
           POSTGRES_PASSWORD: teqo
           POSTGRES_DB: teqo_test
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -59,6 +77,8 @@ jobs:
           POSTGRES_USER: teqo
           POSTGRES_PASSWORD: teqo
           POSTGRES_DB: teqo_test
+        ports:
+          - 5433:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -133,11 +153,11 @@ jobs:
       - name: Prepare database URL (int service)
         run: |
           set -euo pipefail
-          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-int:5432/teqo_test" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test" >> "$GITHUB_ENV"
           # vitest re-loads .env.test over the process env, so the service URL
           # must win through the .env.test.local layer (same mechanism
-          # `pnpm worktree next` uses). OPS50.
-          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-int:5432/teqo_test" > .env.test.local
+          # `pnpm worktree next` uses).
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test" > .env.test.local
       - name: Migrate (int database)
         run: pnpm migrate
       - name: Seed minimal (int database)
@@ -146,10 +166,10 @@ jobs:
       - name: Integration tests (full suite)
         if: steps.scope.outputs.test_mode == 'full'
         env:
-          # Self-hosted runner has 8 CPUs; vitest forks ≈ CPUs and each fork
-          # holds a Payload pool (max 10) → overflows the service Postgres' 100
-          # clients ("too many clients already", CI run 180). 4 forks stay
-          # well under. The unit step above stays CPU-relative (no DB).
+          # vitest forks ≈ CPUs and each fork holds a Payload pool (max 10) →
+          # overflows the service Postgres' 100 clients ("too many clients
+          # already"). 4 forks stay well under. The unit step above stays
+          # CPU-relative (no DB).
           VITEST_MAX_WORKERS: 4
         run: pnpm test:int
       - name: Integration tests (changed since PR base)
@@ -159,16 +179,16 @@ jobs:
         run: pnpm test:int -- --changed origin/${{ github.base_ref }} --passWithNoTests
 
       - name: Prepare database URL (build/e2e service)
-        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
+        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode == 'selected'
         run: |
           set -euo pipefail
-          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-build:5432/teqo_test" >> "$GITHUB_ENV"
-          echo "DATABASE_URL=postgresql://teqo:teqo@postgres-build:5432/teqo_test" > .env.test.local
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" > .env.test.local
       - name: Migrate (build/e2e database)
-        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
+        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode == 'selected'
         run: pnpm migrate
       - name: Seed minimal (build/e2e database)
-        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode != 'none'
+        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode == 'selected'
         run: pnpm db:seed:minimal
 
       - name: Build (against the local service database)
@@ -176,7 +196,7 @@ jobs:
         run: pnpm build
 
       - name: Cache Playwright browsers
-        if: steps.scope.outputs.e2e_mode != 'none'
+        if: steps.scope.outputs.e2e_mode == 'selected'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
@@ -184,26 +204,23 @@ jobs:
           restore-keys: |
             playwright-${{ runner.os }}-
       - name: Install Playwright chromium
-        if: steps.scope.outputs.e2e_mode != 'none'
+        if: steps.scope.outputs.e2e_mode == 'selected'
         run: pnpm exec playwright install --with-deps chromium
       - name: Build for e2e
         # Selected mode needs the build too (the Playwright webServer serves
-        # .next-e2e; the fallback `.next-e2e` dir is what gate-ci.mjs builds).
-        if: steps.scope.outputs.e2e_mode != 'none'
+        # the `.next-e2e` production build).
+        if: steps.scope.outputs.e2e_mode == 'selected'
         run: pnpm build
         env:
           NEXT_DIST_DIR: .next-e2e
-      - name: E2E tests (full suite, single job, 4 workers)
-        if: steps.scope.outputs.e2e_mode == 'full'
+      - name: E2E tests (blast radius — manifest-selected specs)
+        if: steps.scope.outputs.e2e_mode == 'selected'
+        # OPS72: the PR never runs e2e full — mode `full` (high-risk diff)
+        # skips this step by design (local mirror + deploy verify cover it).
         # Explicit CI workers; the local default stays 2 (playwright.config.ts).
         # 4 workers in one process replace the former 2 shards × 2 workers.
-        # No `--` separator: pnpm would forward it verbatim to playwright and
-        # the flag would be parsed as a file pattern ("No tests found").
         env:
           PLAYWRIGHT_WORKERS: 4
-        run: pnpm test:e2e
-      - name: E2E tests (manifest-selected specs)
-        if: steps.scope.outputs.e2e_mode == 'selected'
-        env:
-          PLAYWRIGHT_WORKERS: 4
+        # The `--` separates pnpm from the scope paths: pnpm consumes it and
+        # playwright receives the bare spec paths (no flag parsing drift).
         run: pnpm test:e2e -- ${{ steps.scope.outputs.e2e_specs }}

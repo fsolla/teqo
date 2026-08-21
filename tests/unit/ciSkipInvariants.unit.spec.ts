@@ -77,8 +77,6 @@ describe('ciSkipInvariants', () => {
 
   it('keeps local e2e build artifacts outside the development dist directory', () => {
     for (const file of [
-      '.forgejo/workflows/ci.yml',
-      '.forgejo/workflows/ci-pr.yml',
       '.gitignore',
       '.prettierignore',
       'eslint.config.mjs',
@@ -96,8 +94,6 @@ describe('ciSkipInvariants', () => {
     for (const path of [
       'scripts/lib/test-affected-core.mjs',
       'scripts/ci-scope.mjs',
-      'scripts/ci-classify-production.mjs',
-      'scripts/lib/dockerignore.mjs',
       'scripts/check-test-locations.mjs',
       'scripts/check-plans-only-pr-closes.mjs',
       'scripts/lib/plansOnlyClosesGuard.mjs',
@@ -111,30 +107,17 @@ describe('ciSkipInvariants', () => {
     }
   })
 
-  it('main CI runs in a 30-minute window with a production gate (OPS65)', () => {
-    const ci = readFileSync(join(repoRoot, '.forgejo/workflows/ci.yml'), 'utf8')
-    expect(ci).toContain('schedule:')
-    expect(ci).toContain("cron: '*/30 * * * *'")
-    expect(ci).not.toMatch(/push:\s*\n\s*branches:\s*\[main\]/)
-    expect(ci).toContain('workflow_dispatch:')
+  it('deploy is manual-only — never a push/schedule trigger (OPS71)', () => {
+    const deploy = readFileSync(join(repoRoot, '.github/workflows/deploy.yml'), 'utf8')
+    expect(deploy).toContain('workflow_dispatch:')
+    expect(deploy).not.toMatch(/^\s*push:/m)
+    expect(deploy).not.toMatch(/^\s*schedule:/m)
 
-    // The cheap gate (no pnpm) classifies production change and every
-    // expensive job consumes it, fail-open on gate errors. The gate is
-    // main-only: a branch dispatch must not run branch code on the host.
-    expect(ci).toContain('gate production change')
-    expect(ci).toContain("if: github.ref == 'refs/heads/main'")
-    expect(ci).toContain('fetch-depth: 0')
-    expect(ci).toContain('scripts/ci-classify-production.mjs')
-    expect(ci).toContain(
-      "needs.gate.result != 'success' || needs.gate.outputs.production == 'true'",
-    )
-
-    // Deploy is double-gated: green rollup AND production change (never
-    // deploy blind, never deploy with a red suite).
-    expect(ci).toContain('needs: [checks, gate]')
-    expect(ci).toContain(
-      "needs.checks.result == 'success' && needs.gate.outputs.production == 'true'",
-    )
+    // The OPS65 production-change gate died with the Forgejo ci.yml: the
+    // manual dispatch always runs the full suite (verify) before deploy, so
+    // no PR workflow may reference the removed classifier.
+    const ciPr = readFileSync(join(repoRoot, '.github/workflows/ci-pr.yml'), 'utf8')
+    expect(ciPr).not.toContain('ci-classify-production.mjs')
   })
 
   it('every campaign domain dir is covered by the e2e affected manifest', () => {

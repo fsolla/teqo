@@ -33,9 +33,9 @@ Conduz **uma** Issue já claimada do plano de implementação ao merge em `main`
 - [ ] 1. Sessão: rename_chat + open_resource na intenção
 - [ ] 2. Modelo: spawn do pool já fixou (`model:` da Issue) — sem comparação
 - [ ] 3. Plan mode → plano de implementação (`*-impl.md`)
-- [ ] 4. Executar o impl plan (schema/server → UI → gates)
+- [ ] 4. Executar o impl plan (schema/server → UI → e2e local afetado → gates)
 - [ ] 5. /simplify → fixes; capture-review-debts (modo autônomo)
-- [ ] 6. PR Ready `--base main` + auto-merge + checks --required
+- [ ] 6. PR Ready `--base main` (GitHub) + auto-merge nativo — `pnpm push -u origin HEAD` → `node scripts/github-pr.mjs` (ou `ManagePullRequest` `draft: false` no Cloud)
 ```
 
 ## Passo 0 — Prep
@@ -79,13 +79,20 @@ O spawn do pool já fixou o modelo (`model:` da Issue — ver `model-selection`)
 (executar → simplify → fechar em main), com os deltas do ator pool:
 
 - **Branch:** `agent/<id>-<slug>` (worktrees Cursor podem já ter criado).
+- **E2E local afetado (OPS72):** mesmo passo discricionário do ator humano
+  (rodar os e2e criados + da mesma superfície — ver `execution-pipeline.md`);
+  **worktree com browsers Playwright** → rode; **Cursor Cloud sem browsers** →
+  registre a justificativa no fechamento e siga — o CI de PR roda o blast
+  radius quando o diff classifica `selected`; em diff high-risk (`full`) o PR
+  não roda e2e e a rede final é o `verify` do deploy.
 - **UI:** shape → craft → critique → polish (harden/optimize só sob gatilho).
 - **`capture-review-debts`:** **autônomo** — só `expensive_lock` com score ≥4
   (Issues novas com `depends: [<id-pai>]` se necessário); score ≤3 /
   cheap_polish / defer_trigger → defer com gatilho no `*-impl.md` ou descarte —
   **não** polua a fila.
-- **Cloud:** PR via `ManagePullRequest` com `draft: false`; Prep Cloud no
-  Passo 0.
+- **Cloud:** PR via `ManagePullRequest` com `draft: false` no **GitHub**
+  (repo/PR agora no GitHub; o tracker de Issues segue no Forgejo — OPS71);
+  Prep Cloud no Passo 0.
 
 ## Resumo final
 

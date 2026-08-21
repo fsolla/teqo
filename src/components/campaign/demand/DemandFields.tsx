@@ -1,5 +1,9 @@
 'use client'
 
+import {
+  DemandResponsibleMultiSelect,
+  type DemandResponsibleOption,
+} from '@/components/campaign/demand/DemandResponsibleMultiSelect'
 import { AsyncSearchCombobox } from '@/components/campaign/shared/AsyncSearchCombobox'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { Button } from '@/components/ui/button'
@@ -16,6 +20,8 @@ import {
   CAMPAIGN_DEMAND_BODY_MAX_LENGTH,
   CAMPAIGN_DEMAND_BODY_PLACEHOLDER,
   CAMPAIGN_DEMAND_KIND_LABEL,
+  CAMPAIGN_DEMAND_RESPONSIBLES_DESCRIPTION,
+  CAMPAIGN_DEMAND_RESPONSIBLES_LABEL,
   campaignDemandKindLabels,
   campaignDemandKinds,
 } from '@/lib/schemas/campaignDemand'
@@ -38,6 +44,12 @@ type DemandFieldsProps = {
     value: string
     onValueChange: (value: string) => void
   }
+  /** C143 — explicit-responsible picker; `aside` splits a right column (nova). */
+  responsibles?: {
+    currentUser: { id: number; name: string } | null
+    search: (query: string) => Promise<RelationOption[]>
+    layout: 'aside' | 'stacked'
+  }
 }
 
 /**
@@ -53,6 +65,7 @@ export const DemandFields = ({
   onActivityChange,
   searchActivities,
   municipality,
+  responsibles,
 }: DemandFieldsProps) => {
   const municipalityReady = municipality ? municipality.value !== '' : true
 
@@ -114,7 +127,7 @@ export const DemandFields = ({
     </Field>
   )
 
-  return (
+  const coreFields = (
     <>
       {municipality ? (
         <div className="grid gap-4 sm:grid-cols-2">
@@ -170,6 +183,49 @@ export const DemandFields = ({
           <FieldError>{fieldError(state.fieldErrors, 'description')}</FieldError>
         ) : null}
       </Field>
+    </>
+  )
+
+  if (!responsibles) return coreFields
+
+  const creatorValue: DemandResponsibleOption[] = responsibles.currentUser
+    ? [
+        {
+          id: responsibles.currentUser.id,
+          name: responsibles.currentUser.name,
+        },
+      ]
+    : []
+
+  const responsiblesField = (
+    <Field>
+      <FieldLabel>{CAMPAIGN_DEMAND_RESPONSIBLES_LABEL}</FieldLabel>
+      <DemandResponsibleMultiSelect
+        name="responsibles"
+        value={creatorValue}
+        creatorUserId={responsibles.currentUser?.id ?? null}
+        search={responsibles.search}
+        triggerPlaceholder="Buscar assessor…"
+        triggerAriaLabel={CAMPAIGN_DEMAND_RESPONSIBLES_LABEL}
+        disabled={disabled}
+      />
+      <FieldDescription>{CAMPAIGN_DEMAND_RESPONSIBLES_DESCRIPTION}</FieldDescription>
+    </Field>
+  )
+
+  if (responsibles.layout === 'aside') {
+    return (
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="flex flex-col gap-4">{coreFields}</div>
+        {responsiblesField}
+      </div>
+    )
+  }
+
+  return (
+    <>
+      {coreFields}
+      {responsiblesField}
     </>
   )
 }
