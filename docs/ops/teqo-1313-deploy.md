@@ -91,9 +91,10 @@ history (`git revert` do PR da remoção, ou clone do main congelado do Forgejo)
 
 ## Rollback (do deploy)
 
-A imagem anterior continua local e no registry (`localhost:5000/teqo-1313:<sha>`
-— o registry nunca deleta). O compose anterior fica em
-`~/stack/docker-compose.yml.pre-<sha-do-deploy-que-falhou>`.
+A imagem anterior **não** fica mais local após a limpeza pós-deploy (INF3/F2:
+`docker builder prune` + remoção das tags locais antigas, exceto o SHA em uso)
+— o registry `localhost:5000` **nunca deleta** e é a fonte do rollback. O
+compose anterior fica em `~/stack/docker-compose.yml.pre-<sha-do-deploy-que-falhou>`.
 
 ```bash
 ssh homeserver
@@ -102,7 +103,7 @@ cd ~/stack
 #    o backup do deploy que falhou é o compose com os tags antigos
 ls docker-compose.yml.pre-*          # escolha o anterior ao deploy ruim
 cp docker-compose.yml.pre-<sha-anterior> docker-compose.yml
-# 2. a imagem antiga ainda está local; se não, puxe do registry:
+# 2. puxar do registry (a imagem antiga já não fica local após a limpeza):
 docker pull localhost:5000/teqo-1313:<sha-anterior>
 docker tag localhost:5000/teqo-1313:<sha-anterior> teqo-1313:<sha-anterior>
 # 3. subir:

@@ -5,6 +5,7 @@ import { CampaignFooter } from '@/components/CampaignFooter'
 import { CampaignHero } from '@/components/CampaignHero'
 import { CampaignProblemCard } from '@/components/CampaignProblemCard'
 import { CampaignStorySection } from '@/components/CampaignStorySection'
+import { getCampaignHomeMetaPixelId } from '@/utilities/campaignHomeTracking'
 import type { ReactNode } from 'react'
 import { CampaignNewsletterSection } from './CampaignNewsletterSection'
 
@@ -110,6 +111,9 @@ const proofItems = [
 ]
 
 export default async function HomePage() {
+  // S10 — site-level Meta pixel for the campaign home (cached read, fail-closed).
+  const pixelId = await getCampaignHomeMetaPixelId()
+
   return (
     <>
       <main className="w-full bg-white text-black">
@@ -231,7 +235,7 @@ export default async function HomePage() {
         </section>
 
         <CampaignStorySection />
-        <CampaignNewsletterSection />
+        <CampaignNewsletterSection pixelId={pixelId ?? undefined} />
       </main>
 
       <CampaignFooter />

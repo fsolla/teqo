@@ -107,6 +107,14 @@ export const test = base.extend<E2EFailureGuardFixtures>({
       // player loading — same spirit as the S2/S3 feed stubs).
       await context.route('https://www.youtube-nocookie.com/**', (route) => route.abort())
 
+      // S10 — the campaign-home pixel spec publishes a Meta Pixel ID into the
+      // shared test DB, so concurrent specs may render the home with the base
+      // code. Fulfill the external script locally (never a real request to
+      // Meta): a blocked network would trip the console-error guard below.
+      await context.route('https://connect.facebook.net/**', (route) =>
+        route.fulfill({ body: '', contentType: 'application/javascript' }),
+      )
+
       await use()
 
       page.off('console', onConsole)

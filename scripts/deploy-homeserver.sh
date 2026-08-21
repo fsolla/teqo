@@ -230,4 +230,26 @@ curl -fsS -o /dev/null -X POST "$base/campanha/webauthn/login-options" \
 body="$(curl -fsS -X POST "$base/api/revalidate" -H "x-revalidate-secret: $REVALIDATE_SECRET" || true)"
 echo "$body" | grep -q '"revalidated":true' || smoke_fail "POST /api/revalidate did not confirm"
 
+# --- post-deploy cleanup (INF3/F2) --------------------------------------
+# O deploy compila no homeserver e acumulava build cache + tags locais
+# antigas no disco raiz (incidente 19/08: 45G de cache + ~20 tags teqo
+# antigas). Best-effort e APÓS o smoke: falha de limpeza nunca falha um
+# deploy verde. O registry localhost:5000 preserva as imagens (rollback
+# intacto — runbook teqo-1313-deploy.md); removemos só as tags LOCAIS.
+# Fail-closed: sem revision no container, não remove nada além do cache.
+
+say "post-deploy cleanup: build cache + tags locais antigas"
+docker builder prune -f >/dev/null 2>&1 || true
+
+in_use="$(docker inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' teqo-1313 2>/dev/null || true)"
+if [ -n "$in_use" ]; then
+  for img in $(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E '^(localhost:5000/)?teqo-1313(-migrator)?:' || true); do
+    tag="${img##*:}"
+    [ "$tag" = "$in_use" ] && continue
+    docker rmi "$img" >/dev/null 2>&1 || true
+  done
+else
+  say "cleanup: container sem revision — mantendo imagens locais"
+fi
+
 say "deploy of $SHA complete: $(docker inspect -f '{{.Image}}' teqo-1313)"

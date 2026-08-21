@@ -1,4 +1,8 @@
-import { normalizeFacebookPixelId } from '@/lib/facebookPixel'
+import {
+  FACEBOOK_PIXEL_ID_DESCRIPTION,
+  normalizeFacebookPixelId,
+  validateFacebookPixelId,
+} from '@/lib/facebookPixel'
 import { payloadAdminOnly } from '@/utilities/campaignAccess'
 import { revalidateDocumentById } from '@/utilities/documents'
 import type { CollectionConfig } from 'payload'
@@ -116,16 +120,9 @@ export const Petition: CollectionConfig<typeof slug> = {
           type: 'text',
           label: 'ID do Pixel do Meta (Facebook)',
           admin: {
-            description:
-              'Cole somente o ID numérico do Events Manager (ex.: 123456789012345), não o snippet HTML completo.',
+            description: FACEBOOK_PIXEL_ID_DESCRIPTION,
           },
-          validate: (value: string | null | undefined) => {
-            if (!value) return true
-            if (!normalizeFacebookPixelId(String(value))) {
-              return 'Informe somente o ID numérico do Pixel (5 a 20 dígitos), sem HTML ou script.'
-            }
-            return true
-          },
+          validate: validateFacebookPixelId,
         },
       ],
     },

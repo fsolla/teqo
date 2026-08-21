@@ -29,6 +29,12 @@ vi.mock('@/components/CampaignNewsletterForm', () => ({
   CampaignNewsletterCapture: () => null,
 }))
 
+// S10 — the section reads the site-settings global (server-only, Payload DB);
+// the unit env has no database, and the pixel behavior is e2e-covered.
+vi.mock('@/utilities/campaignHomeTracking', () => ({
+  getCampaignHomeMetaPixelId: async () => null,
+}))
+
 afterEach(cleanup)
 
 describe('Campaign home', () => {

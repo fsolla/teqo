@@ -1,8 +1,14 @@
+import { MetaPixel } from '@/components/MetaPixel'
+import { getCampaignHomeMetaPixelId } from '@/utilities/campaignHomeTracking'
 import React from 'react'
 import '../styles.css'
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props
+
+  // S10 — the Meta base code + PageView for the campaign page. The read is
+  // cached under `global_site-settings` and fails closed (no ID → nothing).
+  const pixelId = await getCampaignHomeMetaPixelId()
 
   // A root `(frontend)` trava o documento com `overflow-hidden`, então a home
   // é dona do container de scroll interno. `data-theme="campaign-site"` aplica
@@ -12,6 +18,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       data-theme="campaign-site"
       className="relative h-dvh w-full scroll-smooth overflow-y-auto bg-(--campaign-cream) text-(--campaign-ink) motion-reduce:scroll-auto"
     >
+      {pixelId ? <MetaPixel pixelId={pixelId} /> : null}
       {children}
     </div>
   )

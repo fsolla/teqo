@@ -433,6 +433,9 @@ describe('src/utilities top-level is pinned', () => {
     'campaignFormFields.ts',
     'campaignGeolocation.ts',
     'campaignGoals.ts',
+    // S10 — campaign-home Meta pixel read (site-settings global, fail-closed);
+    // shared by the home layout (PageView) and the page (Lead prop).
+    'campaignHomeTracking.ts',
     'campaignInvite.ts',
     'campaignInviteCreation.ts',
     'campaignInviteOrigin.ts',
