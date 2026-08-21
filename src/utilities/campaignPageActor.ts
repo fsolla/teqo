@@ -4,12 +4,13 @@ import { redirect } from 'next/navigation'
 
 import { LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
 import { isStaffCampaignRole, isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
+import { advisorEditingAccess } from '@/utilities/access/shared'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 
 /** Exactly the non-null actor `getCampaignUser` proves (keeps its `email` refinement). */
 export type CampaignPageActor = NonNullable<Awaited<ReturnType<typeof getCampaignUser>>>
 
-export type CampaignPageGate = 'staff' | 'unrestricted' | 'noLeader'
+export type CampaignPageGate = 'staff' | 'unrestricted' | 'noLeader' | 'writable'
 
 export { LEADER_CONTACTS_HOME }
 
@@ -24,7 +25,10 @@ export const CAMPAIGN_STAFF_QUADRO_PATH = '/campanha/quadro'
  * - (none)         → any authenticated campaign user;
  * - 'staff'        → non-staff (leader) goes to `/campanha/meus-contatos` (B43, C139);
  * - 'unrestricted' → non-coordinator/candidate goes to `/campanha`;
- * - 'noLeader'     → leader goes to `/campanha/meus-contatos` (B43, C139).
+ * - 'noLeader'     → leader goes to `/campanha/meus-contatos` (B43, C139);
+ * - 'writable'     → advisor with Edição `somente_leitura` goes to `/campanha`
+ *                    (C142 — write destinations must not be offered to a
+ *                    read-only advisor; the server already rejects the write).
  *
  * A custom `redirectTo` overrides the gate's default target. The convention
  * guard in `codebaseConventions.unit.spec.ts` fails the build on a
@@ -42,6 +46,7 @@ export const requireCampaignPageActor = async (
   if (gate === 'staff' && !isStaffCampaignRole(user.role)) redirect(denyRedirect)
   if (gate === 'unrestricted' && !isUnrestrictedCampaignRole(user.role)) redirect(denyRedirect)
   if (gate === 'noLeader' && user.role === 'leader') redirect(denyRedirect)
+  if (gate === 'writable' && advisorEditingAccess(user) === 'none') redirect(denyRedirect)
 
   return user
 }

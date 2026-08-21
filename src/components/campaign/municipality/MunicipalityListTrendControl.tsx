@@ -54,6 +54,8 @@ type MunicipalityListTrendControlProps = {
   trigger?: (trend: MunicipalityListSavedPoliticalTrend) => ReactNode
   /** B193 — dense card chip styling override (shorter, pill-shaped). */
   triggerClassName?: string
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): the badge renders without the editor overlay. */
+  readOnly?: boolean
 }
 
 const politicalTrendIcon = {
@@ -71,6 +73,7 @@ export const MunicipalityListTrendControl = ({
   triggerPresentation = 'full',
   trigger,
   triggerClassName,
+  readOnly = false,
 }: MunicipalityListTrendControlProps) => {
   const { open, onOpenChange, value, change, flush, isPending, errorMessage, statusMessage } =
     useCampaignCellAutosave<
@@ -126,6 +129,12 @@ export const MunicipalityListTrendControl = ({
       <span className="hidden @min-[60rem]/municipality-list:inline-flex">{fullTrigger}</span>
     </>
   )
+
+  // C142 — read-only: the badge/trigger renders with no editor overlay (the
+  // custom mobile-card trigger is itself a non-interactive display).
+  if (readOnly) {
+    return triggerNode
+  }
 
   return (
     <CampaignCellEditOverlay

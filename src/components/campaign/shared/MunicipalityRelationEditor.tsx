@@ -60,6 +60,12 @@ type MunicipalityRelationEditorProps = MunicipalityRelationTriggerProps & {
   onToggle: (id: number, assigned: boolean) => Promise<MunicipalityRelationMutationResult>
   onCreate: (name: string) => Promise<MunicipalityRelationMutationResult>
   onCreated?: (entry: MunicipalityRelationEntry) => void
+  /**
+   * C142 — read-only presentation (advisor with Edição `somente_leitura`): the
+   * selected entries render as the closed display with no editor, no remove
+   * chips and no search — the avatar stack or the custom trigger stays.
+   */
+  readOnly?: boolean
 }
 
 const isPendingCreateID = (id: number): boolean => id < 0
@@ -88,6 +94,7 @@ export const MunicipalityRelationEditor = ({
   onCreated,
   trigger,
   triggerClassName,
+  readOnly = false,
 }: MunicipalityRelationEditorProps) => {
   const [open, setOpen] = useState(false)
   const [selectedIDs, setSelectedIDs] = useState(currentIDs)
@@ -270,6 +277,14 @@ export const MunicipalityRelationEditor = ({
   const statusMessage = errorMessage ? errorMessage : isPending ? savingMessage : ''
   const isSheet = variant === 'sheet'
   const trimmedQuery = query.trim()
+
+  if (readOnly) {
+    return trigger ? (
+      trigger(selectedEntries, emptyState)
+    ) : (
+      <MunicipalityRelationAvatarStack entries={selectedEntries} emptyState={emptyState} />
+    )
+  }
 
   return (
     <CampaignCellEditOverlay

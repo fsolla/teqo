@@ -15,6 +15,7 @@ import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignLis
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
+import { advisorEditingScope, type AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import type { Activity } from '@/payload-types'
 import { loadAccessibleActivityTags, loadActivityListPageData } from '@/utilities/activityPageData'
@@ -48,6 +49,10 @@ export default async function ActivityListPage({ searchParams }: ActivityListPag
     getPayload({ config }),
   ])
 
+  // C142 — the write scope gates the create buttons (Planejar giro, Nova atividade).
+  const editingScope: AdvisorEditingScope =
+    user.role === 'advisor' ? advisorEditingScope(user.visibility, user.editing) : 'tudo'
+
   const now = new Date()
   const [{ result, state }, municipalityOptions, organizationOptions, knownTags] =
     await Promise.all([
@@ -59,7 +64,7 @@ export default async function ActivityListPage({ searchParams }: ActivityListPag
   const resolvedUrl = resolveActivityListUrl(rawSearchParams, result.totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
 
-  const canCreate = isCampaignStaff(user)
+  const canCreate = isCampaignStaff(user) && editingScope !== 'none'
 
   return (
     <CampaignPageShell>

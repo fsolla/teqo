@@ -45,6 +45,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
+import { rowEditingAllowed, type AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import {
   resolveVisibleColumns,
   type CampaignColumnPickerColumn,
@@ -124,6 +125,10 @@ export type MunicipalityListProps = {
   signalFormAction: MunicipalityStaffFormAction
   state: MunicipalityListState
   columnVisibility: CampaignColumnVisibility
+  /** C142 — the UI write scope for the row controls; a `carteira` scope with a
+   * portfolio excludes rows outside it. See `rowEditingAllowed`. */
+  editingScope: AdvisorEditingScope
+  portfolioIDs: ReadonlySet<number> | null
 }
 
 /** Replaces only the rows: the filter header row stays put. */
@@ -224,6 +229,8 @@ const municipalityListColumns = ({
   stateDeputyCommitAction,
   stateDeputyCreateAction,
   signalFormAction,
+  editingScope,
+  portfolioIDs,
   columnVisibility,
 }: MunicipalityListProps): Array<MunicipalityColumn> => {
   const manuallyHidden = isStaffView ? new Set(columnVisibility.hiddenColumnIds) : new Set<string>()
@@ -233,6 +240,14 @@ const municipalityListColumns = ({
   // closed by the same 60rem breakpoint that hides trend's own column (one
   // visible editor per row per width); a manual hide pins the column open.
   const actionsAlwaysVisible = trendIsHidden || signalIsHidden
+
+  // C142 — per-row write gate: `portfolioIDs === null` (whole catalog) or the
+  // row's own municipality inside the portfolio makes the row editable. The
+  // virtual city row has no DB document and stays read-only.
+  const rowEditable = (municipality: MunicipalityListViewModel): boolean =>
+    municipality.isCity
+      ? false
+      : rowEditingAllowed(editingScope, portfolioIDs ? [...portfolioIDs] : null, [municipality.id])
 
   const renderTrendControl = (
     municipality: MunicipalityListViewModel,
@@ -245,6 +260,7 @@ const municipalityListColumns = ({
       trendNote={municipality.politicalTrendNote}
       variant="popover"
       triggerPresentation={triggerPresentation}
+      readOnly={!rowEditable(municipality)}
     />
   )
 
@@ -260,6 +276,7 @@ const municipalityListColumns = ({
       variant="popover"
       formAction={signalFormAction}
       isStaff={isCampaignUnrestricted}
+      readOnly={!rowEditable(municipality)}
     >
       <MunicipalityListSignalTrigger
         lastSignalAt={municipality.lastSignalAt}
@@ -390,6 +407,7 @@ const municipalityListColumns = ({
                     expectedVotes={municipality.expectedVotes}
                     pledgeCoverage={toMunicipalityPledgeCoverageView(municipality.pledges)}
                     variant="popover"
+                    readOnly={!rowEditable(municipality)}
                   />
                 )}
               </div>
@@ -536,6 +554,7 @@ const municipalityListColumns = ({
                   leadershipNamesById={leadershipNamesById}
                   options={leadershipOptions}
                   variant="popover"
+                  readOnly={!rowEditable(municipality)}
                 />
               ),
           },
@@ -569,6 +588,7 @@ const municipalityListColumns = ({
                   commitAction={stateDeputyCommitAction}
                   createAction={stateDeputyCreateAction}
                   editorVariant="popover"
+                  readOnly={!rowEditable(municipality)}
                 />
               ),
           },
@@ -728,6 +748,8 @@ export const MunicipalityList = (props: MunicipalityListProps) => {
             stateDeputyCommitAction={stateDeputyCommitAction}
             stateDeputyCreateAction={stateDeputyCreateAction}
             signalFormAction={props.signalFormAction}
+            editingScope={props.editingScope}
+            portfolioIDs={props.portfolioIDs}
             emptySlot={<MunicipalityListEmptyState state={state} />}
           />
 

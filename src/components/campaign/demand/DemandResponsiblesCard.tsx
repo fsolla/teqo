@@ -23,6 +23,8 @@ type DemandResponsiblesCardProps = {
     state: CampaignFormActionState,
     formData: FormData,
   ) => Promise<CampaignFormActionState>
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): the responsibles render as chips with no editor. */
+  readOnly?: boolean
 }
 
 /**
@@ -38,6 +40,7 @@ export const DemandResponsiblesCard = ({
   creatorUserId,
   initialResponsibles,
   formAction,
+  readOnly = false,
 }: DemandResponsiblesCardProps) => {
   const [state, submitAction, isPending] = useActionState(formAction, {})
   const [dirty, setDirty] = useState(false)
@@ -47,6 +50,29 @@ export const DemandResponsiblesCard = ({
   }, [state.status])
 
   const search = (query: string) => searchDemandResponsibleOptions(query, municipalityId)
+
+  if (readOnly) {
+    return (
+      <section className="flex flex-col gap-3 rounded-xl border p-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-base font-medium">{CAMPAIGN_DEMAND_RESPONSIBLES_LABEL}</h2>
+          <p className="text-sm text-muted-foreground">Só quem é responsável vê esta demanda.</p>
+        </div>
+        {initialResponsibles.length > 0 ? (
+          <ul className="flex flex-wrap gap-1.5">
+            {initialResponsibles.map((responsible) => (
+              <li key={responsible.id} className="text-sm">
+                {responsible.name}
+                {responsible.id === creatorUserId ? ' (criador)' : ''}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">Sem responsáveis.</p>
+        )}
+      </section>
+    )
+  }
 
   return (
     <form action={submitAction} className="flex flex-col gap-3 rounded-xl border p-4">

@@ -30,6 +30,8 @@ type LeadershipStateDeputyRelationCellProps = {
   ) => Promise<CampaignFormActionState>
   /** Clamp rest chips to 3 rows + "Ver mais…". Default true; pass false when few chips are expected. */
   measureOverflow?: boolean
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`). */
+  readOnly?: boolean
 }
 
 const DIRECTION_COPY: Record<
@@ -89,6 +91,7 @@ export const LeadershipStateDeputyRelationCell = ({
   options,
   membershipAction,
   measureOverflow = true,
+  readOnly = false,
 }: LeadershipStateDeputyRelationCellProps) => {
   const copy = DIRECTION_COPY[direction]
 
@@ -135,6 +138,7 @@ export const LeadershipStateDeputyRelationCell = ({
       triggerLabel={`Editar ${copy.triggerVerb} de ${ownerName}`}
       updateErrorMessage={copy.updateErrorMessage}
       measureOverflow={measureOverflow}
+      readOnly={readOnly}
     />
   )
 }

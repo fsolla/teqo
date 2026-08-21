@@ -40,6 +40,7 @@ export const PhonesFieldEditor = ({
   saveLabel = 'Salvar',
   cancelLabel = 'Cancelar',
   className,
+  readOnly = false,
 }: {
   name?: string
   defaultValues?: string[]
@@ -57,6 +58,8 @@ export const PhonesFieldEditor = ({
   saveLabel?: string
   cancelLabel?: string
   className?: string
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): the phones render as a plain list with no edit affordance. */
+  readOnly?: boolean
 }) => {
   const router = useRouter()
   const [rows, setRows] = useState<PhoneRow[]>(() => {
@@ -245,6 +248,25 @@ export const PhonesFieldEditor = ({
           <span className="sr-only">Editar</span>
           <PlusIcon className="size-4" aria-hidden="true" />
         </Button>
+      </div>
+    )
+  }
+
+  // C142 — read-only: the phones render as a plain list with no edit
+  // affordance (absence is the language).
+  if (readOnly) {
+    return (
+      <div className={className}>
+        <ul className="flex flex-col gap-1.5" aria-label={label}>
+          {(rows.length ? rows : [{ key: EMPTY_ROW_KEY, value: '' }]).map((row, index) => (
+            <li key={row.key} className="flex items-center gap-1.5 text-sm tabular-nums">
+              <span className="w-6 text-right text-muted-foreground">{index + 1}.</span>
+              <span className="min-w-40">
+                {row.value ? formatBrazilianPhoneInput(row.value) : '—'}
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
     )
   }

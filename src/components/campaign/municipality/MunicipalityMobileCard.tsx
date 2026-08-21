@@ -28,6 +28,7 @@ import {
 } from '@/components/campaign/shared/MunicipalityStateDeputyRelationCell'
 import { VoteEstimateScenarioStrip } from '@/components/campaign/votePledge/VoteEstimateScenarioStrip'
 import { Badge } from '@/components/ui/Badge'
+import { rowEditingAllowed, type AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { SALVADOR_CITY_AGGREGATE_LABEL } from '@/lib/salvadorCity'
 import {
   municipalityUpdatePolarityBadgeVariant,
@@ -79,6 +80,9 @@ type MunicipalityMobileCardProps = {
   stateDeputyCommitAction: MunicipalityStaffFormAction
   stateDeputyCreateAction: MunicipalityStateDeputyCreateAction
   signalFormAction: MunicipalityStaffFormAction
+  /** C142 — the UI write scope for the quick-edit chips. */
+  editingScope: AdvisorEditingScope
+  portfolioIDs: ReadonlySet<number> | null
 }
 
 /**
@@ -165,6 +169,8 @@ export const MunicipalityMobileCard = ({
   stateDeputyCommitAction,
   stateDeputyCreateAction,
   signalFormAction,
+  editingScope,
+  portfolioIDs,
 }: MunicipalityMobileCardProps) => {
   const [expanded, setExpanded] = useState(false)
   const isCity = municipality.isCity
@@ -175,6 +181,11 @@ export const MunicipalityMobileCard = ({
   const update = municipality.lastUpdate
   const updateAge = municipalitySignalAgeInDays(update?.createdAt ?? null)
   const updateIsCold = isMunicipalitySignalCold(updateAge)
+
+  // C142 — per-row write gate for the mobile quick-edit chips.
+  const rowEditable =
+    !isCity &&
+    rowEditingAllowed(editingScope, portfolioIDs ? [...portfolioIDs] : null, [municipality.id])
 
   const registerCta = (
     <span className="flex min-h-11 w-full items-center justify-center rounded-md border border-dashed border-border px-3 text-sm font-medium">
@@ -191,6 +202,7 @@ export const MunicipalityMobileCard = ({
       variant="sheet"
       formAction={signalFormAction}
       isStaff={isCampaignUnrestricted}
+      readOnly={!rowEditable}
     >
       {trigger}
     </MunicipalityListUpdateControl>
@@ -252,6 +264,7 @@ export const MunicipalityMobileCard = ({
               expectedVotes={municipality.expectedVotes}
               pledgeCoverage={toMunicipalityPledgeCoverageView(municipality.pledges)}
               variant="sheet"
+              readOnly={!rowEditable}
               trigger={(values, activeScenario) => (
                 <VoteEstimateScenarioStrip
                   values={values}
@@ -282,6 +295,7 @@ export const MunicipalityMobileCard = ({
                 status={municipality.politicalTrendStatus}
                 trendNote={municipality.politicalTrendNote}
                 variant="sheet"
+                readOnly={!rowEditable}
                 triggerClassName={chipTriggerClassName}
                 trigger={(trend) => (
                   <ChipBlock label="Tendência">
@@ -364,6 +378,7 @@ export const MunicipalityMobileCard = ({
                   leadershipNamesById={leadershipNamesById}
                   options={leadershipOptions}
                   variant="sheet"
+                  readOnly={!rowEditable}
                   trigger={(entries, emptyState) => (
                     <RelationGroupTrigger
                       label="Lideranças"
@@ -385,6 +400,7 @@ export const MunicipalityMobileCard = ({
                   commitAction={stateDeputyCommitAction}
                   createAction={stateDeputyCreateAction}
                   editorVariant="sheet"
+                  readOnly={!rowEditable}
                   trigger={(entries, emptyState) => (
                     <RelationGroupTrigger
                       label="Dobradinhas"

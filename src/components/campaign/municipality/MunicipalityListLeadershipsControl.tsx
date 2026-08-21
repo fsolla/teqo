@@ -25,6 +25,8 @@ type MunicipalityListLeadershipsControlProps = MunicipalityRelationTriggerProps 
   leadershipNamesById: ReadonlyMap<number, MunicipalityLeadershipSummary>
   options: EligibleLeadershipOption[]
   variant: CampaignCellEditOverlayVariant
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`). */
+  readOnly?: boolean
 }
 
 const entryOf = (option: { id: number; name: string }): MunicipalityRelationEntry => ({
@@ -41,6 +43,7 @@ export const MunicipalityListLeadershipsControl = ({
   variant,
   trigger,
   triggerClassName,
+  readOnly = false,
 }: MunicipalityListLeadershipsControlProps) => {
   const createBridge = useMunicipalityLeadershipCreate()
   const createdOptions = createBridge?.createdOptions ?? []
@@ -102,6 +105,7 @@ export const MunicipalityListLeadershipsControl = ({
       trigger={trigger}
       triggerClassName={triggerClassName}
       createLabel={(name) => `Criar liderança “${name}”`}
+      readOnly={readOnly}
       onToggle={toggle}
       onCreate={create}
       onCreated={(entry) =>

@@ -7,6 +7,7 @@ import { CampaignHomeLayout } from '@/components/campaign/dashboard/CampaignHome
 import { CampaignHomeStaffChrome } from '@/components/campaign/dashboard/CampaignHomeStaffChrome'
 import { CampaignHomeSummary } from '@/components/campaign/dashboard/CampaignHomeSummary'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { advisorEditingScope, type AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { UNCOVERED_MUNICIPALITIES_LIST_HREF } from '@/lib/campaignHomeActions'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
@@ -23,11 +24,16 @@ export default async function CampaignHomePage() {
 
   const staff = isStaffCampaignRole(user.role)
 
+  // C142 — the write scope filters the home actions for advisors.
+  const editingScope: AdvisorEditingScope =
+    user.role === 'advisor' ? advisorEditingScope(user.visibility, user.editing) : 'tudo'
+
   const uncoveredMunicipalitiesHref = staff ? UNCOVERED_MUNICIPALITIES_LIST_HREF : undefined
 
   const actions = (
     <CampaignHomeActions
       role={user.role}
+      editingScope={editingScope}
       uncoveredMunicipalitiesHref={uncoveredMunicipalitiesHref}
     />
   )

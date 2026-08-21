@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 
 import { MunicipalityMobileCard } from '@/components/campaign/municipality/MunicipalityMobileCard'
 import type { MunicipalityStateDeputyCreateAction } from '@/components/campaign/shared/MunicipalityStateDeputyRelationCell'
+import type { AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import type { StateDeputyRelationOption } from '@/utilities/campaignRelationOptions'
 import type {
@@ -36,6 +37,9 @@ export type MunicipalityListMobileCardsProps = {
   stateDeputyCreateAction: MunicipalityStateDeputyCreateAction
   signalFormAction: MunicipalityStaffFormAction
   emptySlot: ReactNode
+  /** C142 — the UI write scope for the mobile card quick edits. */
+  editingScope: AdvisorEditingScope
+  portfolioIDs: ReadonlySet<number> | null
 }
 
 /**
@@ -59,6 +63,8 @@ export const MunicipalityListMobileCards = ({
   stateDeputyCreateAction,
   signalFormAction,
   emptySlot,
+  editingScope,
+  portfolioIDs,
 }: MunicipalityListMobileCardsProps) => (
   <div
     data-view="mobile-cards"
@@ -86,6 +92,8 @@ export const MunicipalityListMobileCards = ({
         stateDeputyCreateAction={stateDeputyCreateAction}
         signalFormAction={signalFormAction}
         isCampaignUnrestricted={isCampaignUnrestricted}
+        editingScope={editingScope}
+        portfolioIDs={portfolioIDs}
       />
     ))}
   </div>

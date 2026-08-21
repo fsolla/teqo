@@ -9,6 +9,7 @@ import { MunicipalityStrategyForm } from '@/components/campaign/municipality/Mun
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
+import { rowEditingAllowed } from '@/lib/campaignAdvisorProfile'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
@@ -16,6 +17,7 @@ import {
   getMunicipalityDetailViewModel,
   MunicipalityNotFoundError,
   resolveAccessibleMunicipalityContext,
+  resolveMunicipalityWriteScope,
 } from '@/utilities/municipality/municipalityPageData'
 import { getEligibleAdvisorOptions } from '@/utilities/municipality/municipalityViewModels'
 import {
@@ -33,7 +35,7 @@ export async function generateMetadata({ params }: MunicipalityEditPageProps) {
   const { slug } = await params
   const payload = await getPayload({ config })
   const user = await requireCampaignPageActor({
-    gate: 'staff',
+    gate: 'writable',
     redirectTo: `/campanha/municipios/${slug}`,
   })
 
@@ -49,7 +51,7 @@ export async function generateMetadata({ params }: MunicipalityEditPageProps) {
 export default async function MunicipalityEditPage({ params }: MunicipalityEditPageProps) {
   const { slug } = await params
   const [user, payload] = await Promise.all([
-    requireCampaignPageActor({ gate: 'staff', redirectTo: `/campanha/municipios/${slug}` }),
+    requireCampaignPageActor({ gate: 'writable', redirectTo: `/campanha/municipios/${slug}` }),
     getPayload({ config }),
   ])
 
@@ -62,6 +64,18 @@ export default async function MunicipalityEditPage({ params }: MunicipalityEditP
   }
 
   const view = await getMunicipalityDetailViewModel(payload, context, user)
+
+  // C142 — an advisor with `carteira` editing scope may only edit
+  // administered municipalities. A read-only advisor is already blocked by
+  // the page-level `gate: 'writable'`, but a carteira advisor must not
+  // reach a municipality outside the portfolio via a direct URL.
+  const writeScope = await resolveMunicipalityWriteScope(payload, user)
+  const canEditRow = rowEditingAllowed(
+    writeScope.editingScope,
+    writeScope.portfolioIDs ? [...writeScope.portfolioIDs] : null,
+    [view.id],
+  )
+  if (!canEditRow) redirect(`/campanha/municipios/${slug}`)
   if (!view.strategy) redirect(`/campanha/municipios/${slug}`)
 
   const advisorOptions =

@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react'
 
+import type { AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { resolveStaffHomeQuickActions } from '@/lib/campaignHomeActions'
 import { isListPath } from '@/lib/campaignQuickActionPaths'
 import type { CampaignQuickAction } from '@/lib/campaignQuickActionTypes'
@@ -38,12 +39,13 @@ const newStateDeputyAction = (): CampaignQuickAction => ({
 export const resolveDobradinhasQuickActions = (
   pathname: string,
   role: CampaignRole,
+  editingScope: AdvisorEditingScope = 'tudo',
 ): readonly CampaignQuickAction[] => {
   if (!matchesDobradinhasQuickActionSurface(pathname) || !isStaffCampaignRole(role)) {
     return []
   }
 
-  const staffActions = resolveStaffHomeQuickActions(role, pathname)
+  const staffActions = resolveStaffHomeQuickActions(role, editingScope, pathname)
 
   if (isStateDeputyListPath(pathname)) {
     return [newStateDeputyAction(), ...staffActions]

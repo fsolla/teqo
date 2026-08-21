@@ -72,9 +72,12 @@ export const MunicipalityTabFallback = () => (
 export const OverviewTab = async ({
   view,
   payloadUser: { payload, user },
+  canEdit = true,
 }: {
   view: MunicipalityDetailView
   payloadUser: PayloadUser
+  /** C142 — false when the advisor has `somente_leitura` or the municipality is outside the portfolio. */
+  canEdit?: boolean
 }) => {
   const zoneNeighborhoodsCard =
     view.kind === 'zona' ? <MunicipalityZoneNeighborhoodsCard municipalitySlug={view.slug} /> : null
@@ -88,7 +91,11 @@ export const OverviewTab = async ({
       {zoneNeighborhoodsCard}
       {view.strategy ? (
         <>
-          <MunicipalityStrategyCard strategy={view.strategy} municipalitySlug={view.slug} canEdit />
+          <MunicipalityStrategyCard
+            strategy={view.strategy}
+            municipalitySlug={view.slug}
+            canEdit={canEdit}
+          />
           <GoalAccountCard
             payloadUser={{ payload, user }}
             municipalityID={view.id}
@@ -96,6 +103,7 @@ export const OverviewTab = async ({
             expectedVotes={view.strategy.expectedVotes}
             pledgeCoverage={pledgeCoverage}
             pledgeAggregate={pledgeAggregate}
+            readOnly={!canEdit}
           />
           {/* Two round trips deep (território scope, then its aggregates), against
               one for the goal account — so it streams instead of holding the tab. */}
@@ -119,11 +127,19 @@ export const OverviewTab = async ({
               />
             }
           >
-            <SuggestionsCard payloadUser={{ payload, user }} municipalityID={view.id} />
+            <SuggestionsCard
+              payloadUser={{ payload, user }}
+              municipalityID={view.id}
+              readOnly={!canEdit}
+            />
           </Suspense>
         </>
       ) : null}
-      <MunicipalityPledgesPanel pledges={pledges} estimateFormAction={estimateVotesFormAction} />
+      <MunicipalityPledgesPanel
+        pledges={pledges}
+        estimateFormAction={estimateVotesFormAction}
+        readOnly={!canEdit}
+      />
     </div>
   )
 }
@@ -136,9 +152,11 @@ export const OverviewTab = async ({
 const SuggestionsCard = async ({
   payloadUser: { payload, user },
   municipalityID,
+  readOnly = false,
 }: {
   payloadUser: PayloadUser
   municipalityID: number
+  readOnly?: boolean
 }) => {
   const bundle = await loadMunicipalitySuggestions(payload, user, { municipalityID })
   const silence = bundle.silence.find((entry) => entry.municipalityID === municipalityID)
@@ -149,6 +167,7 @@ const SuggestionsCard = async ({
       suggestions={bundle.suggestions}
       activeCount={bundle.suggestions.length}
       resolveAction={resolveSuggestionFormAction}
+      readOnly={readOnly}
       emptyState={
         <p className="text-sm text-muted-foreground">
           {formatMunicipalitySuggestionEmptyMessage(
@@ -167,6 +186,7 @@ const GoalAccountCard = async ({
   expectedVotes,
   pledgeCoverage,
   pledgeAggregate,
+  readOnly = false,
 }: {
   payloadUser: PayloadUser
   municipalityID: number
@@ -174,6 +194,7 @@ const GoalAccountCard = async ({
   expectedVotes: VoteEstimateScenarioViewModel
   pledgeCoverage: MunicipalityPledgeCoverageView | null
   pledgeAggregate: MunicipalityPledgeAggregate
+  readOnly?: boolean
 }) => {
   const { suggestedGoal, goalCoverage, potential, territorialClass, territoryCaptureBenchmark } =
     await loadMunicipalityGoalAccount(payload, user, { slug, expectedVotes }, pledgeAggregate)
@@ -188,6 +209,7 @@ const GoalAccountCard = async ({
       potential={potential}
       territorialClass={territorialClass}
       territoryCaptureBenchmark={territoryCaptureBenchmark}
+      readOnly={readOnly}
     />
   )
 }
@@ -309,9 +331,12 @@ const TicketPartnersSection = async ({
 export const LeadershipsTab = async ({
   municipalityID,
   payloadUser: { payload, user },
+  readOnly = false,
 }: {
   municipalityID: number
   payloadUser: PayloadUser
+  /** C142 — the declare-votes form and the create link are write affordances. */
+  readOnly?: boolean
 }) => {
   const [leaderships, pledges] = await Promise.all([
     loadMunicipalityLeaderships(payload, user, municipalityID),
@@ -324,6 +349,7 @@ export const LeadershipsTab = async ({
       leaderships={leaderships}
       pledges={pledges}
       declareFormAction={declareVotesFormAction}
+      readOnly={readOnly}
     />
   )
 }
@@ -333,11 +359,14 @@ export const UpdatesTab = async ({
   municipalitySlug,
   rawSearchParams,
   payloadUser: { payload, user },
+  readOnly = false,
 }: {
   municipalityID: number
   municipalitySlug: string
   rawSearchParams: MunicipalityDetailSearchParams
   payloadUser: PayloadUser
+  /** C142 — the "Registrar atualização" form is a write affordance; hide it in read-only. */
+  readOnly?: boolean
 }) => {
   const feedState = parseMunicipalityUpdateFeedParams(rawSearchParams)
   const feed = await loadMunicipalityUpdatesFeed(payload, user, municipalityID, feedState)
@@ -345,11 +374,13 @@ export const UpdatesTab = async ({
 
   return (
     <div className="flex flex-col gap-6">
-      <MunicipalityUpdateForm
-        municipalityID={municipalityID}
-        formAction={createMunicipalityUpdateFormAction}
-        isStaff={isStaff}
-      />
+      {readOnly ? null : (
+        <MunicipalityUpdateForm
+          municipalityID={municipalityID}
+          formAction={createMunicipalityUpdateFormAction}
+          isStaff={isStaff}
+        />
+      )}
       <MunicipalityUpdateFeed updates={feed.updates} />
       <CampaignListPagination
         page={feed.page}

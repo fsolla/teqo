@@ -1,4 +1,5 @@
 import { CAMPAIGN_ACTIONS_HOME } from '@/lib/campaignActionRoutes'
+import type { AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { isAdvisorsPath } from '@/lib/campaignAdvisorQuickActions'
 import { CAMPAIGN_CONTACTS_HOME, CAMPAIGN_HOME, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
 import { isActivityTourComposerPath, isListPath } from '@/lib/campaignQuickActionPaths'
@@ -24,8 +25,14 @@ export const isContactsPath = (pathname: string): boolean =>
 
 /**
  * Whether the quick-actions FAB should mount on this navigation (all viewports).
+ * C142 — advisors with `somente_leitura` never see the FAB on staff surfaces
+ * (every action is a write destination).
  */
-export const shouldMountQuickActionsFab = (pathname: string, role: CampaignRole): boolean => {
+export const shouldMountQuickActionsFab = (
+  pathname: string,
+  role: CampaignRole,
+  editingScope: AdvisorEditingScope = 'tudo',
+): boolean => {
   if (isCampaignHomePath(pathname)) return false
   if (isCampaignActionsPath(pathname)) return false
   // B84: E13 compositor already exposes primary CTAs — skip competing drawer chrome.
@@ -33,5 +40,7 @@ export const shouldMountQuickActionsFab = (pathname: string, role: CampaignRole)
   if (role === 'leader') return isLeaderContactsPath(pathname)
   if (isContactsPath(pathname)) return false
   if (isAdvisorsPath(pathname)) return isUnrestrictedCampaignRole(role)
-  return isStaffCampaignRole(role)
+  if (!isStaffCampaignRole(role)) return false
+  // C142 — `somente_leitura` advisors see no write actions in the drawer.
+  return editingScope !== 'none'
 }

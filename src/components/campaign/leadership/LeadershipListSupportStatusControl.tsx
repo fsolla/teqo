@@ -23,11 +23,14 @@ const DEFAULT_STATUS: SupportStatus = 'a_abordar'
 type LeadershipListSupportStatusControlProps = {
   leadershipID: number
   status: SupportStatus | null
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): the status badge renders with no editor overlay. */
+  readOnly?: boolean
 }
 
 export const LeadershipListSupportStatusControl = ({
   leadershipID,
   status,
+  readOnly = false,
 }: LeadershipListSupportStatusControlProps) => {
   const { open, onOpenChange, value, change, isPending, errorMessage, statusMessage } =
     useCampaignCellAutosave<SupportStatus, LeadershipListSupportStatusResponse>({
@@ -43,6 +46,11 @@ export const LeadershipListSupportStatusControl = ({
   const handleStatusChange = (raw: string) => {
     if (!isSupportStatus(raw)) return
     change(raw, STATUS_AUTOSAVE_MS)
+  }
+
+  // C142 — read-only: the status badge renders with no editor overlay.
+  if (readOnly) {
+    return <SupportStatusBadge status={value} />
   }
 
   return (

@@ -61,6 +61,12 @@ type CampaignInlineEditableCellProps = {
    * state worth spelling, not a dash.
    */
   placeholder?: string
+  /**
+   * C142 — read-only presentation (advisor with Edição `somente_leitura`):
+   * the value renders with no edit affordance of any kind (no pencil, no
+   * permanent input, no cell-click trigger). The name-link keeps navigating.
+   */
+  readOnly?: boolean
   className?: string
 }
 
@@ -94,6 +100,7 @@ export const CampaignInlineEditableCell = ({
   saveOnChange = true,
   permanent = false,
   placeholder,
+  readOnly = false,
   className,
 }: CampaignInlineEditableCellProps) => {
   const router = useRouter()
@@ -229,6 +236,61 @@ export const CampaignInlineEditableCell = ({
     if (event.key !== 'Enter' && event.key !== ' ') return
     event.preventDefault()
     startEditing()
+  }
+
+  const displayValue = field === 'phone' && value ? formatBrazilianPhoneInput(value) : undefined
+  const readValue =
+    href && field === 'name' && value ? (
+      <Link
+        href={href}
+        className={cn(
+          campaignReadCellClassName,
+          'inline-flex w-auto max-w-full',
+          'pointer-events-auto font-medium text-primary underline-offset-4 hover:underline',
+        )}
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
+      >
+        <span className="truncate">{value}</span>
+      </Link>
+    ) : readBehavior === 'copy' ? (
+      <CampaignCopyableCell
+        value={value}
+        label={label}
+        displayValue={displayValue}
+        className={field === 'phone' ? 'tabular-nums' : undefined}
+      />
+    ) : (
+      <span
+        className={cn(
+          campaignReadCellClassName,
+          'text-sm text-muted-foreground',
+          value ? 'text-foreground' : undefined,
+          field === 'phone' ? 'tabular-nums' : undefined,
+        )}
+      >
+        {displayValue ?? value ?? '—'}
+      </span>
+    )
+
+  const savedFeedback = showSavedFeedback ? (
+    <span role="status" aria-live="polite" className="text-xs text-muted-foreground">
+      Salvo.
+    </span>
+  ) : null
+
+  /**
+   * C142 — read-only: the value with no edit affordance of any kind (no
+   * pencil, no permanent input, no cell-click trigger). The name-link keeps
+   * navigating — presence/absence of editing is the only language.
+   */
+  if (readOnly) {
+    return (
+      <div className={cn('flex min-w-0 items-center gap-0.5', className)}>
+        <div className="min-w-0 flex-1">{readValue}</div>
+        {savedFeedback}
+      </div>
+    )
   }
 
   /**
@@ -383,47 +445,6 @@ export const CampaignInlineEditableCell = ({
       </div>
     )
   }
-
-  const displayValue = field === 'phone' && value ? formatBrazilianPhoneInput(value) : undefined
-  const readValue =
-    href && field === 'name' && value ? (
-      <Link
-        href={href}
-        className={cn(
-          campaignReadCellClassName,
-          'inline-flex w-auto max-w-full',
-          'pointer-events-auto font-medium text-primary underline-offset-4 hover:underline',
-        )}
-        onClick={(event) => event.stopPropagation()}
-        onKeyDown={(event) => event.stopPropagation()}
-      >
-        <span className="truncate">{value}</span>
-      </Link>
-    ) : readBehavior === 'copy' ? (
-      <CampaignCopyableCell
-        value={value}
-        label={label}
-        displayValue={displayValue}
-        className={field === 'phone' ? 'tabular-nums' : undefined}
-      />
-    ) : (
-      <span
-        className={cn(
-          campaignReadCellClassName,
-          'text-sm text-muted-foreground',
-          value ? 'text-foreground' : undefined,
-          field === 'phone' ? 'tabular-nums' : undefined,
-        )}
-      >
-        {displayValue ?? value ?? '—'}
-      </span>
-    )
-
-  const savedFeedback = showSavedFeedback ? (
-    <span role="status" aria-live="polite" className="text-xs text-muted-foreground">
-      Salvo.
-    </span>
-  ) : null
 
   if (editTrigger === 'cell') {
     if (href && field === 'name') {

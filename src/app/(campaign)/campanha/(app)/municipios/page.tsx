@@ -38,7 +38,10 @@ import {
   buildMunicipalityListHref,
   resolveMunicipalityListUrl,
 } from '@/utilities/municipality/municipalityListUrl'
-import { loadMunicipalityListPageBundle } from '@/utilities/municipality/municipalityPageData'
+import {
+  loadMunicipalityListPageBundle,
+  resolveMunicipalityWriteScope,
+} from '@/utilities/municipality/municipalityPageData'
 import {
   getEligibleAdvisorOptions,
   getEligibleLeadershipOptions,
@@ -68,6 +71,10 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
   const isStaffView = isCampaignStaff(user)
   const isCoordinator = isCampaignCoordinator(user)
   const canMoveEngagementLevel = isCampaignUnrestricted(user)
+
+  // C142 — the write scope for the row controls (expectedVotes, trend,
+  // leaderships, stateDeputies, updates): 'none' renders everything read-only.
+  const writeScope = await resolveMunicipalityWriteScope(payload, user)
 
   const pageBundle = await loadMunicipalityListPageBundle(payload, user, rawSearchParams)
   const {
@@ -184,6 +191,8 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
         stateDeputyCreateAction={createMunicipalityStateDeputyFormAction}
         columnFilterOptions={columnFilterOptions}
         signalFormAction={createMunicipalityListUpdateFormAction}
+        editingScope={writeScope.editingScope}
+        portfolioIDs={writeScope.portfolioIDs}
         state={state}
         columnVisibility={columnVisibility}
       />

@@ -22,6 +22,8 @@ type MunicipalityV2DeclaredVotesCellProps = {
   leadershipName: string
   declaredVotes: number | null
   variant: 'popover' | 'sheet'
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): the votes render with no editor overlay. */
+  readOnly?: boolean
 }
 
 const declaredVotesEqual = (left: number | null, right: number | null): boolean => left === right
@@ -32,6 +34,7 @@ export const MunicipalityV2DeclaredVotesCell = ({
   leadershipName,
   declaredVotes,
   variant,
+  readOnly = false,
 }: MunicipalityV2DeclaredVotesCellProps) => {
   const { open, onOpenChange, value, change, isPending, errorMessage, statusMessage } =
     useCampaignCellAutosave<number | null, MunicipalityPledgeDeclaredVotesResponse>({
@@ -70,6 +73,11 @@ export const MunicipalityV2DeclaredVotesCell = ({
     const parsed = Number.parseInt(raw, 10)
     if (Number.isNaN(parsed)) return
     change(parsed, AUTOSAVE_MS)
+  }
+
+  // C142 — read-only: the value renders with no editor overlay.
+  if (readOnly) {
+    return display
   }
 
   return (

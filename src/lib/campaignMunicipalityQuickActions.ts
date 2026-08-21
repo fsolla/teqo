@@ -1,3 +1,4 @@
+import type { AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import {
   homeActionsForRole,
   resolveStaffHomeQuickActions,
@@ -23,8 +24,10 @@ export const parseMunicipalityDetailSlug = (pathname: string): string | undefine
 
 export const resolveMunicipalityListQuickActions = (
   role: CampaignRole,
+  editingScope: AdvisorEditingScope = 'tudo',
   returnPath?: string,
-): readonly ResolvedCampaignHomeAction[] => resolveStaffHomeQuickActions(role, returnPath)
+): readonly ResolvedCampaignHomeAction[] =>
+  resolveStaffHomeQuickActions(role, editingScope, returnPath)
 
 export const resolveMunicipalityDetailQuickActions = (
   role: CampaignRole,
@@ -43,9 +46,10 @@ export const resolveMunicipalityQuickActionsForPath = (
   pathname: string,
   role: CampaignRole,
   context: CampaignQuickActionContext,
+  editingScope: AdvisorEditingScope = 'tudo',
 ): readonly ResolvedCampaignHomeAction[] => {
   if (isMunicipalitiesListPath(pathname)) {
-    return resolveMunicipalityListQuickActions(role, pathname)
+    return resolveMunicipalityListQuickActions(role, editingScope, pathname)
   }
 
   const slug = context.municipalitySlug ?? parseMunicipalityDetailSlug(pathname)

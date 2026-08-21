@@ -15,6 +15,7 @@ import { CampaignTable, type CampaignTableColumn } from '@/components/campaign/s
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
+import { advisorEditingScope, type AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import {
@@ -103,6 +104,11 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
     getPayload({ config }),
   ])
 
+  // C142 — the write scope gates the "Nova demanda" buttons.
+  const editingScope: AdvisorEditingScope =
+    user.role === 'advisor' ? advisorEditingScope(user.visibility, user.editing) : 'tudo'
+  const canCreate = editingScope !== 'none'
+
   const state = parseDemandListParams(rawSearchParams)
   const { rows, totalDocs, totalPages } = await loadDemandListPageData(payload, user, state)
   const columnVisibility = await readCampaignColumnVisibility('demandas')
@@ -110,12 +116,14 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
   return (
     <CampaignPageShell>
       <div className="flex justify-end pt-4 md:pt-0">
-        <Button asChild className="min-h-11">
-          <Link href="/campanha/demandas/nova">
-            <PlusIcon data-icon="inline-start" aria-hidden="true" />
-            Nova demanda
-          </Link>
-        </Button>
+        {canCreate ? (
+          <Button asChild className="min-h-11">
+            <Link href="/campanha/demandas/nova">
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Nova demanda
+            </Link>
+          </Button>
+        ) : null}
       </div>
 
       <CampaignListPendingBoundary>
@@ -141,12 +149,14 @@ export default async function DemandsPage({ searchParams }: DemandsPageProps) {
                 title="Nenhuma demanda por aqui"
                 description="Abra uma demanda quando precisar de material, transporte, espaço ou apoio para uma ação."
               >
-                <Button asChild className="min-h-11">
-                  <Link href="/campanha/demandas/nova">
-                    <PlusIcon data-icon="inline-start" aria-hidden="true" />
-                    Nova demanda
-                  </Link>
-                </Button>
+                {canCreate ? (
+                  <Button asChild className="min-h-11">
+                    <Link href="/campanha/demandas/nova">
+                      <PlusIcon data-icon="inline-start" aria-hidden="true" />
+                      Nova demanda
+                    </Link>
+                  </Button>
+                ) : null}
               </CampaignListEmptyState>
             }
           />

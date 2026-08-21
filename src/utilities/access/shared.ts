@@ -3,6 +3,7 @@
 // Domain modules may import from here; this module must not import from them.
 // ---------------------------------------------------------------------------
 
+import { advisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { isStaffCampaignRole, isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
 import type { CampaignUser, User } from '@/payload-types'
 import type { Access, PayloadRequest, Where } from 'payload'
@@ -229,13 +230,13 @@ export const resolveProfileScopedRead = async (
  * catalog, minus coordination fields), `carteira` → today's portfolio scope.
  * Callers resolve admin/unrestricted first and keep their own where shape for
  * the carteira branch; non-advisor actors resolve 'none' here and are handled
- * by their own branches.
+ * by their own branches. C142 — delegates the advisor branch to the client-safe
+ * `advisorEditingScope` (`src/lib/campaignAdvisorProfile.ts`) so the axis
+ * semantics live once.
  */
 export const advisorEditingAccess = (user: CampaignActor): 'none' | 'carteira' | 'tudo' => {
   if (!isCampaignUser(user) || user.role !== 'advisor') return 'none'
-  if (user.editing === 'somente_leitura') return 'none'
-  if (user.editing === 'tudo') return 'tudo'
-  return 'carteira'
+  return advisorEditingScope(user.visibility ?? 'carteira', user.editing ?? 'carteira')
 }
 
 /**

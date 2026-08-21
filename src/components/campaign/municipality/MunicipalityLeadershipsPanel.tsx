@@ -17,6 +17,8 @@ type MunicipalityLeadershipsPanelProps = {
     state: CampaignFormActionState,
     formData: FormData,
   ) => Promise<CampaignFormActionState>
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): no create link, no declare form. */
+  readOnly?: boolean
 }
 
 /** Staff-only: leaderships linked to this municipality + declare-on-behalf form. */
@@ -25,6 +27,7 @@ export const MunicipalityLeadershipsPanel = ({
   leaderships,
   pledges,
   declareFormAction,
+  readOnly = false,
 }: MunicipalityLeadershipsPanelProps) => {
   const pledgeByLeadership = new Map(pledges.map((pledge) => [pledge.leadershipID, pledge]))
 
@@ -39,12 +42,14 @@ export const MunicipalityLeadershipsPanel = ({
             Uma liderança pode atuar em vários municípios e organizações.
           </p>
         </div>
-        <Button asChild className="min-h-11">
-          <Link href={`/campanha/liderancas/nova?municipality=${municipalityID}`}>
-            <PlusIcon data-icon="inline-start" aria-hidden="true" />
-            Nova liderança
-          </Link>
-        </Button>
+        {readOnly ? null : (
+          <Button asChild className="min-h-11">
+            <Link href={`/campanha/liderancas/nova?municipality=${municipalityID}`}>
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Nova liderança
+            </Link>
+          </Button>
+        )}
       </div>
 
       {leaderships.length ? (
@@ -78,12 +83,14 @@ export const MunicipalityLeadershipsPanel = ({
                     </span>
                   ) : null}
                 </div>
-                <DeclareVotesForm
-                  municipalityID={municipalityID}
-                  leadershipID={leadership.id}
-                  currentDeclaredVotes={pledge?.declaredVotes ?? null}
-                  formAction={declareFormAction}
-                />
+                {readOnly ? null : (
+                  <DeclareVotesForm
+                    municipalityID={municipalityID}
+                    leadershipID={leadership.id}
+                    currentDeclaredVotes={pledge?.declaredVotes ?? null}
+                    formAction={declareFormAction}
+                  />
+                )}
               </li>
             )
           })}

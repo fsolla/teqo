@@ -18,6 +18,7 @@ import {
   wizardActionHref,
   type CampaignWizardActionId,
 } from '@/lib/campaignActionRoutes'
+import type { AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
 import { isStaffCampaignRole, type CampaignRole } from '@/lib/campaignRoles'
 
@@ -115,10 +116,22 @@ export const wizardFlowTitleForActionId = (id: CampaignWizardActionId): string =
   return action?.label ?? 'Continuar'
 }
 
-export const homeActionsForRole = (role: CampaignRole): readonly CampaignHomeAction[] => {
+export const homeActionsForRole = (
+  role: CampaignRole,
+  editingScope: AdvisorEditingScope = 'tudo',
+): readonly CampaignHomeAction[] => {
   if (role === 'leader') return leaderHomeActions
   if (!isStaffCampaignRole(role)) return []
-  if (role === 'advisor') return staffHomeActionsAdvisor
+
+  // C142 — advisors with `somente_leitura` see only navigation actions
+  // (uncovered-municipalities); the 4 wizards are write destinations.
+  if (role === 'advisor') {
+    if (editingScope === 'none') {
+      return staffHomeActionsAdvisor.filter((action) => action.id === 'uncovered-municipalities')
+    }
+    return staffHomeActionsAdvisor
+  }
+
   return staffHomeActionsCoordinator
 }
 
@@ -141,18 +154,19 @@ const staffHomeQuickActionsByRole = new Map<CampaignRole, readonly ResolvedCampa
 
 export const resolveStaffHomeQuickActions = (
   role: CampaignRole,
+  editingScope: AdvisorEditingScope = 'tudo',
   returnPath?: string,
 ): readonly ResolvedCampaignHomeAction[] => {
   if (!isStaffCampaignRole(role)) return []
   if (!returnPath) {
     const cached = staffHomeQuickActionsByRole.get(role)
-    if (cached) return cached
+    if (cached && editingScope === 'tudo') return cached
   }
-  const actions = toHomeActionButtonProps(homeActionsForRole(role), {
+  const actions = toHomeActionButtonProps(homeActionsForRole(role, editingScope), {
     uncoveredMunicipalitiesHref: UNCOVERED_MUNICIPALITIES_LIST_HREF,
     returnPath,
   })
-  if (!returnPath) {
+  if (!returnPath && editingScope === 'tudo') {
     staffHomeQuickActionsByRole.set(role, actions)
   }
   return actions

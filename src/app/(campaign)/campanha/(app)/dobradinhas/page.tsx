@@ -37,6 +37,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
+import { advisorEditingScope, type AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
@@ -301,8 +302,10 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
   const columnVisibility = await readCampaignColumnVisibility('dobradinhas')
   const isLeadershipVisible = !columnVisibility.hiddenColumnIds.includes('leaderships')
   const isAdvisorsVisible = !columnVisibility.hiddenColumnIds.includes('advisors')
-  // Advisor assignment is unrestricted-only (B156); the rest of staff reads.
-  const canEditAdvisors = isCampaignUnrestricted(user)
+  // C142 — the write scope gates the create button and the advisors column.
+  const editingScope: AdvisorEditingScope =
+    user.role === 'advisor' ? advisorEditingScope(user.visibility, user.editing) : 'tudo'
+  const canEditAdvisors = isCampaignUnrestricted(user) && editingScope !== 'none'
 
   const [
     { rows, totalDocs, totalPages, filterFacets },
@@ -356,12 +359,14 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
   return (
     <CampaignPageShell>
       <div className="flex justify-end pt-4 md:pt-0">
-        <Button asChild className="min-h-11">
-          <Link href="/campanha/dobradinhas/nova">
-            <PlusIcon data-icon="inline-start" aria-hidden="true" />
-            Nova dobradinha
-          </Link>
-        </Button>
+        {editingScope === 'none' ? null : (
+          <Button asChild className="min-h-11">
+            <Link href="/campanha/dobradinhas/nova">
+              <PlusIcon data-icon="inline-start" aria-hidden="true" />
+              Nova dobradinha
+            </Link>
+          </Button>
+        )}
       </div>
 
       <CampaignListPendingBoundary>

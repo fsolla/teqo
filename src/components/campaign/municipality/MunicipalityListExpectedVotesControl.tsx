@@ -53,6 +53,8 @@ type MunicipalityListExpectedVotesControlProps = {
   ) => ReactNode
   /** B193 — dense card styling override (same slot as the sibling controls). */
   triggerClassName?: string
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): the votes display renders without the editor overlay. */
+  readOnly?: boolean
 } & (
   | { variant: 'popover'; municipalityName?: string }
   | { variant: 'sheet'; municipalityName: string }
@@ -66,6 +68,7 @@ export const MunicipalityListExpectedVotesControl = ({
   variant,
   trigger,
   triggerClassName,
+  readOnly = false,
 }: MunicipalityListExpectedVotesControlProps) => {
   const scenarioContext = useMunicipalityEstimateScenarioOptional()
   const activeScenario = scenarioContext?.scenario ?? DEFAULT_VOTE_ESTIMATE_SCENARIO
@@ -98,6 +101,26 @@ export const MunicipalityListExpectedVotesControl = ({
     ` — ${scenarioSummary}`,
   ].join('')
 
+  const triggerNode = trigger ? (
+    trigger(value, activeScenario)
+  ) : (
+    <StaffMunicipalityVotesDisplay
+      expectedVotes={value}
+      pledgeCoverage={pledgeCoverage}
+      activeScenario={activeScenario}
+      layout="compact"
+      align="center"
+      suppressHoverPreview={open}
+      valueClassName="font-medium tabular-nums"
+    />
+  )
+
+  // C142 — read-only: the votes display renders with no editor overlay (the
+  // custom mobile-card trigger is itself a non-interactive display).
+  if (readOnly) {
+    return triggerNode
+  }
+
   return (
     <CampaignCellEditOverlay
       variant={variant}
@@ -112,21 +135,7 @@ export const MunicipalityListExpectedVotesControl = ({
       align="center"
       contentClassName="w-[15.5rem] p-3"
       preventPopoverAutoFocus
-      trigger={
-        trigger ? (
-          trigger(value, activeScenario)
-        ) : (
-          <StaffMunicipalityVotesDisplay
-            expectedVotes={value}
-            pledgeCoverage={pledgeCoverage}
-            activeScenario={activeScenario}
-            layout="compact"
-            align="center"
-            suppressHoverPreview={open}
-            valueClassName="font-medium tabular-nums"
-          />
-        )
-      }
+      trigger={triggerNode}
     >
       <div className="relative flex flex-col gap-2.5">
         {isPending ? (

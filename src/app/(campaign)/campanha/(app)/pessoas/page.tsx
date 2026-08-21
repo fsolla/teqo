@@ -39,6 +39,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/Empty'
+import { advisorEditingScope, type AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
@@ -144,8 +145,10 @@ type PeopleEditability = {
 const buildPeopleEditability = (
   userRole: CampaignUser['role'],
   administered: ReadonlySet<number> | null,
+  editingScope: AdvisorEditingScope = 'tudo',
 ): PeopleEditability => {
   const unrestricted = isUnrestrictedCampaignRole(userRole)
+  const none = editingScope === 'none'
   const inCarteira = (ids: readonly number[]): boolean =>
     administered !== null && ids.some((id) => administered.has(id))
   return {
@@ -153,12 +156,14 @@ const buildPeopleEditability = (
     // C128: a person without the capacity yet is editable (the first
     // municipality creates the entity); with one, the row's own municipalities
     // must cross the carteira (the chips outside it do not render anyway).
+    // C142: `somente_leitura` (none) blocks all edits regardless of role.
     canEditLidera: (row) =>
-      unrestricted || row.leadershipID === null || inCarteira(row.leadershipMunicipalityIDs),
+      !none &&
+      (unrestricted || row.leadershipID === null || inCarteira(row.leadershipMunicipalityIDs)),
     canEditAliada: (row) =>
-      unrestricted || row.deputyID === null || inCarteira(row.deputyMunicipalityIDs),
-    canEditAssessora: (row) => unrestricted && row.staff.length <= 1,
-    canEditAssessorado: unrestricted,
+      !none && (unrestricted || row.deputyID === null || inCarteira(row.deputyMunicipalityIDs)),
+    canEditAssessora: (row) => !none && unrestricted && row.staff.length <= 1,
+    canEditAssessorado: !none && unrestricted,
   }
 }
 
@@ -337,7 +342,7 @@ const peopleColumns = ({
       const whatsAppHref = whatsAppHrefForPhone(row.phone)
       return (
         <div className="inline-flex items-center justify-end gap-1">
-          {row.leadershipID !== null ? (
+          {row.leadershipID !== null && editability.canEditLidera(row) ? (
             // C130 — the span wrapper keeps the hover tooltip reachable when
             // the button is disabled (disabled buttons swallow pointer events).
             <CampaignHoverTooltip
@@ -406,11 +411,13 @@ const PeopleMobileCards = ({
   rows,
   municipalityIndex,
   canDelete,
+  editability,
   empty,
 }: {
   rows: readonly PeopleRowViewModel[]
   municipalityIndex: ReadonlyMap<number, ResolvedPortfolioEntry>
   canDelete: boolean
+  editability: PeopleEditability
   empty: ReactNode
 }) => (
   <ul data-view="mobile-cards" className="flex flex-col divide-y md:hidden">
@@ -441,7 +448,7 @@ const PeopleMobileCards = ({
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-0.5">
-                {row.leadershipID !== null ? (
+                {row.leadershipID !== null && editability.canEditLidera(row) ? (
                   <LeadershipInviteRowAction
                     leadershipID={row.leadershipID}
                     name={row.name}
@@ -536,9 +543,15 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
     loadMunicipalityPortfolioIndex(),
     user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : null,
   ])
+
+  // C142 — the write scope gates all inline edit affordances in the people list.
+  const editingScope: AdvisorEditingScope =
+    user.role === 'advisor' ? advisorEditingScope(user.visibility, user.editing) : 'tudo'
+
   const editability = buildPeopleEditability(
     user.role,
     administeredIds ? new Set(administeredIds) : null,
+    editingScope,
   )
   const resolvedUrl = resolvePeopleListUrl(rawSearchParams, listData.totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
@@ -608,6 +621,7 @@ export default async function PeoplePage({ searchParams }: PeoplePageProps) {
             rows={listData.rows}
             municipalityIndex={resolvedIndex}
             canDelete={canDelete}
+            editability={editability}
             empty={
               <PeopleListEmptyState
                 hasFilters={hasFilters}

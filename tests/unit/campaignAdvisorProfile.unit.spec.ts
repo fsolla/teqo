@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest'
 import {
   ADVISOR_EDITING_OPTIONS,
   ADVISOR_VISIBILITY_OPTIONS,
+  advisorEditingScope,
   advisorProfileLabel,
   isAdvisorEditingValue,
   isAdvisorVisibilityValue,
   isCoherentAdvisorProfile,
+  rowEditingAllowed,
 } from '@/lib/campaignAdvisorProfile'
 
 describe('campaign advisor profile (C141)', () => {
@@ -46,5 +48,32 @@ describe('campaign advisor profile (C141)', () => {
     expect(isAdvisorEditingValue('somente_leitura')).toBe(true)
     expect(isAdvisorEditingValue('readonly')).toBe(false)
     expect(isAdvisorEditingValue(null)).toBe(false)
+  })
+
+  it('C142 advisorEditingScope maps the Edição axis to a write-scope decision', () => {
+    expect(advisorEditingScope('carteira', 'carteira')).toBe('carteira')
+    expect(advisorEditingScope('tudo', 'carteira')).toBe('carteira')
+    expect(advisorEditingScope('tudo', 'tudo')).toBe('tudo')
+    expect(advisorEditingScope('carteira', 'somente_leitura')).toBe('none')
+    expect(advisorEditingScope('tudo', 'somente_leitura')).toBe('none')
+    expect(advisorEditingScope('carteira', undefined)).toBe('carteira')
+    expect(advisorEditingScope(undefined, undefined)).toBe('carteira')
+  })
+
+  it('C142 advisorEditingScope fails closed on the incoherent combination', () => {
+    expect(advisorEditingScope('carteira', 'tudo')).toBe('none')
+  })
+
+  it('C142 rowEditingAllowed gates a row under a carteira scope by portfolio intersection', () => {
+    const portfolio = [1, 2, 3]
+    expect(rowEditingAllowed('tudo', portfolio, [9])).toBe(true)
+    expect(rowEditingAllowed('tudo', null, [9])).toBe(true)
+    expect(rowEditingAllowed('none', portfolio, [1])).toBe(false)
+    expect(rowEditingAllowed('none', null, [1])).toBe(false)
+    expect(rowEditingAllowed('carteira', portfolio, [2, 9])).toBe(true)
+    expect(rowEditingAllowed('carteira', portfolio, [9])).toBe(false)
+    expect(rowEditingAllowed('carteira', null, [9])).toBe(true)
+    expect(rowEditingAllowed('carteira', portfolio, [])).toBe(false)
+    expect(rowEditingAllowed('carteira', portfolio, null)).toBe(false)
   })
 })

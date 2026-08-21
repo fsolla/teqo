@@ -18,12 +18,15 @@ type MunicipalityPledgesPanelProps = {
     state: CampaignFormActionState,
     formData: FormData,
   ) => Promise<CampaignFormActionState>
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): pledges show estimates only, no edit form. */
+  readOnly?: boolean
 }
 
 /** Staff-only: declared vs estimated votes per leadership in this municipality. */
 export const MunicipalityPledgesPanel = ({
   pledges,
   estimateFormAction,
+  readOnly = false,
 }: MunicipalityPledgesPanelProps) => {
   const declaredTotal = pledges.reduce((total, pledge) => total + pledge.declaredVotes, 0)
   const effectiveTotal = pledges.reduce(
@@ -91,12 +94,14 @@ export const MunicipalityPledgesPanel = ({
                       </Badge>
                     )}
                   </div>
-                  <PledgeEstimateForm
-                    pledgeID={pledge.id}
-                    currentEstimatedVotes={pledge.estimatedVotes}
-                    currentEstimateNote={pledge.estimateNote}
-                    formAction={estimateFormAction}
-                  />
+                  {readOnly ? null : (
+                    <PledgeEstimateForm
+                      pledgeID={pledge.id}
+                      currentEstimatedVotes={pledge.estimatedVotes}
+                      currentEstimateNote={pledge.estimateNote}
+                      formAction={estimateFormAction}
+                    />
+                  )}
                 </li>
               )
             })}

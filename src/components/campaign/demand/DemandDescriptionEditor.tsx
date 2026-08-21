@@ -22,6 +22,8 @@ type DemandDescriptionEditorProps = {
     state: CampaignFormActionState,
     formData: FormData,
   ) => Promise<CampaignFormActionState>
+  /** C142 — read-only presentation (advisor with Edição `somente_leitura`): the description renders with no edit affordance. */
+  readOnly?: boolean
 }
 
 /**
@@ -33,6 +35,7 @@ export const DemandDescriptionEditor = ({
   demandId,
   initialDescription,
   formAction,
+  readOnly = false,
 }: DemandDescriptionEditorProps) => {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
@@ -48,9 +51,11 @@ export const DemandDescriptionEditor = ({
       <section aria-label="Descrição da demanda" className="rounded-xl border p-4">
         <div className="flex items-start justify-between gap-2">
           <p className="whitespace-pre-wrap text-sm">{initialDescription}</p>
-          <Button type="button" variant="ghost" onClick={() => setEditing(true)}>
-            {initialDescription ? 'Editar' : 'Adicionar descrição'}
-          </Button>
+          {readOnly ? null : (
+            <Button type="button" variant="ghost" onClick={() => setEditing(true)}>
+              {initialDescription ? 'Editar' : 'Adicionar descrição'}
+            </Button>
+          )}
         </div>
       </section>
     )
