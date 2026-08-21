@@ -1,6 +1,6 @@
 ---
 name: design-code-architecture
-description: 'Guided journey from an app idea to a deliberate architecture: boundaries, domain model, data decisions, and resilience, making only the expensive-to-reverse decisions and deferring the rest. Orchestrates eight skills phase by phase - clean-architecture, domain-driven-design, system-design, ddia-systems, software-design-philosophy, release-it, pragmatic-programmer, 37signals-way - asking the user questions at every decision point and recording results in the project docs/ folder (ARCHITECTURE.md, RELIABILITY.md, DESIGN-CODE-ARCHITECTURE-PLAN.md) so the journey resumes across sessions. Use when the user wants to design a new app''s architecture, choose boundaries and a domain model before building, decide monolith versus microservices, or says ''how should I structure this app''. If a codebase already exists, use remove-technical-debt (aged) or improve-code-quality (fresh prototype); if the idea is not validated, run create-business or create-app first. For one framework in isolation, invoke that skill directly.'
+description: 'Guided journey from app idea to deliberate architecture.'
 license: MIT
 metadata:
   author: wondelai

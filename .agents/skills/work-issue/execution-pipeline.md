@@ -50,8 +50,9 @@ antes do deploy**.
 
 ## /simplify + débitos
 
-1. Rode o comando `/simplify` completo (3 reviewers paralelos via Task,
-   read-only) no diff da sessão.
+1. Rode o comando `/simplify` completo (2 reviewers paralelos via Task —
+   revisor estrutural + revisor de qualidade, ver `work-issue` SKILL.md)
+   no diff da sessão.
 2. Aplique fixes pontuais que preservem comportamento.
 3. Rode `capture-review-debts` no modo do ator (ver deltas). Nunca edite a
    Issue `in-progress` atual para absorver débitos.

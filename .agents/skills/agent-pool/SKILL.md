@@ -1,6 +1,6 @@
 ---
 name: agent-pool
-description: >-
+description: 'Opera e monitora o pool de agentes Cursor Cloud do Teqo.'
   Opera e monitora o pool de agentes Cursor Cloud do Teqo (supervisor remoto
   determinístico em Forgejo Actions). Ao invocar: SEMPRE status + fila elegível
   primeiro; NUNCA liga o pool sem confirmação explícita do usuário. Usar quando

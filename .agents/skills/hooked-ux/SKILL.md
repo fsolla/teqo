@@ -1,6 +1,6 @@
 ---
 name: hooked-ux
-description: 'Design habit-forming product loops using the Hook Model (Trigger, Action, Variable Reward, Investment). Use when the user mentions "users arent coming back", "habit formation", "engagement loops", "habit zone", or "the manipulation matrix". Also trigger when designing notification or re-engagement strategies, building streaks or progress systems, or analyzing why users stop after signup. Covers ethics evaluation and onboarding for habits. For friction reduction and B=MAP, see improve-retention. For viral sharing, see contagious.'
+description: 'Design habit-forming product loops using the Hook Model.'
 license: MIT
 metadata:
   author: wondelai

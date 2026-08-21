@@ -11,9 +11,8 @@ Status: rascunho
 Atualizado em: <YYYY-MM-DD>
 Issue: #<N> (após `pnpm agent:register`; senão "—")
 Priority: <P0 | P1 | P2 | P3>
-Model: <slug model-selection>
 Impeccable: <A | B | C | D> — <N/A sem UI | encaixe em tela X | fluxo novo em Y>
-Rascunho UI: <N/A — sem UI | docs/plans/<slug>-ui-draft.html + PNG embutido abaixo>
+Rascunho UI: <N/A — sem UI | docs/plans/<slug>-ui-draft.html>
 Appetite: <ex.: ~0,5–1 dia eng; um outcome verificável>
 Responsável: —
 
@@ -31,7 +30,7 @@ Responsável: —
 ### Esboço de fluxo (B/C/D)
 
 <!-- Opcional se houver Rascunho UI. ASCII de jornada (backup textual), não layout de implementação.
-     Omitir se A / sem UI. O artefato obrigatório do gate para UI é o PNG do rascunho HTML+Tailwind — ver ui-draft-html.md. -->
+     Omitir se A / sem UI. O artefato obrigatório do gate para UI é o HTML+Tailwind commitado — ver ui-draft-html.md. -->
 
 \```text
 [início] → … → [outcome]
@@ -39,11 +38,11 @@ Responsável: —
 
 ### Rascunho UI (B/C/D)
 
-<!-- Obrigatório se houver UI: PNG(s) renderizado(s) de docs/plans/<slug>-ui-draft.html
-     (pnpm ui-draft:render) — este é o rascunho visual a validar no gate.
-     Omitir se A / sem UI. O HTML é a fonte iterável; o PNG é o registro do aceite. -->
+<!-- Obrigatório se houver UI: link para docs/plans/<slug>-ui-draft.html
+     (commitado no repo) — o humano abre no browser para validar no gate.
+     Omitir se A / sem UI. O HTML é a fonte iterável e o registro do aceite. -->
 
-![Rascunho UI — <rótulo da cena>](<slug>-ui-draft-<rótulo>.png)
+- Rascunho UI (gate): `docs/plans/<slug>-ui-draft.html`
 
 ## Objetivo e aceite
 
@@ -96,6 +95,6 @@ Notas:
 
 - Alvo: ~60–100 linhas. Mais que isso costuma significar engenharia vazando para a intenção.
 - Classe **A:** `Impeccable: A — N/A`; `Rascunho UI: N/A`; omita esboço de fluxo.
-- Classe **B/C/D:** rascunho HTML+Tailwind obrigatório no gate ([ui-draft-html.md](ui-draft-html.md)); renderize com `pnpm ui-draft:render` e embuta o PNG no plano.
+- Classe **B/C/D:** rascunho HTML+Tailwind obrigatório no gate ([ui-draft-html.md](ui-draft-html.md)); commite o `.html` no repo.
 - Não rode `/impeccable` aqui.
 - Self-score shaping ≥4/5 antes de gravar.

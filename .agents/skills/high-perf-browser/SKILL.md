@@ -1,6 +1,6 @@
 ---
 name: high-perf-browser
-description: 'Optimize web performance through network protocols, resource loading, and browser rendering internals. Use when the user mentions "my site is slow", "Core Web Vitals", "HTTP/2 or HTTP/3", "resource hints", "network latency", "render blocking", "TCP/TLS optimization", "service worker", "Cache-Control or caching strategy", or "critical rendering path". Also trigger when diagnosing slow page loads, optimizing time to first byte, choosing between WebSocket and SSE, or reducing bundle sizes. For UI visual performance, see refactoring-ui. For font loading, see web-typography.'
+description: 'Optimize web performance: protocols, resource loading, rendering.'
 license: MIT
 metadata:
   author: wondelai

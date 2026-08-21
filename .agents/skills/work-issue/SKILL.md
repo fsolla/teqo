@@ -1,42 +1,78 @@
 ---
 name: work-issue
-description: >-
-  Executa uma Issue já claimada de ponta a ponta com supervisão humana no
-  plano: o contexto da sessão identifica a Issue (sem claim), Plan mode com
-  plano de implementação, pausa para confirmação humana, depois execução →
-  /simplify → capture-review-debts autônomo (o agente decide o que registrar
-  e o que descartar) → PR Ready em main com auto-merge. Use quando o usuário
-  pedir /work-issue, quiser supervisionar a abordagem de engenharia, ou
-  trabalhar uma Issue com gate humano antes do código.
+description: 'Execute a claimed Issue end-to-end with human supervision on the impl plan.'
 disable-model-invocation: true
 ---
 
 # Work-issue (humano supervisiona)
 
-Fluxo próprio do humano na sua máquina, com a sessão aberta no worktree da
-Issue. A sessão **já nasce no contrato**: Issue claimada, worktree correto,
-branch correta, modelo fixo do ambiente — o claim é feito **fora da skill**
-(hoje: `pnpm agent:claim` manual antes da sessão; OPS33: o `worktree next`
-claima). A skill assume isso e vai direto ao trabalho — **nenhum passo de
-claim/ambiente/modelo** (só a validação de contexto do Passo 1).
+Executa uma Issue já claimada de ponta a ponta com supervisão humana. A sessão nasce no contrato: Issue claimada, worktree correto, branch correta.
 
-O pool tem a skill irmã `agent-work-issue` (workers Cursor Cloud, autônoma) —
-não é base nem filha desta. Os materiais compartilhados vivem aqui como
-referência: `engineering-brief.md`, `implementation-template.md`,
-`decision-quality.md`, `execution-pipeline.md` (mecânica de execução →
-fechamento, com deltas por ator).
+**Proibido:** DB de prod; merge sem CI green; editar outras Issues `in-progress`; pular a pausa do impl plan; Draft / sem auto-merge.
 
-**Proibido:** DB de prod; merge sem CI green; editar outras Issues `in-progress`;
-pular a pausa do impl plan; Draft / sem auto-merge.
+## Decomposição em sub-agentes
+
+Fases pesadas são delegadas a sub-agentes com contexto mínimo. O agente principal orquestra.
+
+### Sub-agente: Explorador de código
+
+**Quando:** Passo 3a, antes de escrever o plano.
+**Input:** plano de intenção + `engineering-brief.md` + `codebase-map.mdc`
+**Task:** Explorar o codebase para esta feature. Encontrar: padrões existentes para reutilizar, implementações similares, arquivos afetados, rabbit holes potenciais. **Não escrever código nem planos.**
+**Output:** ≤25 linhas de achados concisos.
+
+### Sub-agente: Escritor de plano de implementação
+
+**Quando:** Passo 3b, após o explorador.
+**Input:** plano de intenção + achados do explorador + `implementation-template.md` + `decision-quality.md`
+**Task:** Escrever `docs/plans/<slug>-impl.md` conforme o template. Incluir: abordagem recomendada + alternativas rejeitadas + fases + riscos. Self-score decision-quality ≥4/5.
+**Output:** conteúdo markdown do plano.
+
+### Sub-agente: Revisor estrutural
+
+**Quando:** Passo 5, reviewer 1 (paralelo).
+**Input:** diff da sessão + princípios de `code-simplification`
+**Task:** Revisar o diff para conformidade arquitetural:
+- Violações da Dependency Rule (lib→utilities→components→app)
+- Violações de boundary de módulo (lógica na camada errada)
+- Abstrações prematuras (abstrações novas para <3 call sites)
+- Duplicação entre módulos
+- Violações de type honesty
+- Conformidade de padrões de access/transaction
+**Output:** lista de achados com file:line e severidade.
+
+### Sub-agente: Revisor de qualidade
+
+**Quando:** Passo 5, reviewer 2 (paralelo).
+**Input:** diff da sessão + princípios de `code-simplification`
+**Task:** Revisar o diff para qualidade de código:
+- Clareza de nomes (nomes descrevem o que o código faz?)
+- Tamanho/complexidade de funções (funções longas, nesting profundo)
+- Código morto (imports não usados, branches inacessíveis)
+- Type assertions redundantes
+- Complexidade desnecessária (poderia ser mais simples sem mudar comportamento)
+- Convenções do projeto
+**Output:** lista de achados com file:line e severidade.
+
+### Sub-agente: Capturador de débitos
+
+**Quando:** Passo 6, após simplify.
+**Input:** achados da sessão + regras de triagem de `capture-review-debts`
+**Task:** Triagem: score (1-5), tipo (expensive_lock/cheap_polish/defer_trigger), destino (registrar/absorver/defer/descartar/já_resolvido). **Output:** tabela de triage.
 
 ## Checklist
 
 ```
 - [ ] 0. Prep: `pnpm i` se preciso
-- [ ] 1. Contexto: Issue do prompt/`$ARGUMENTS` da sessão (ausente → UMA pergunta com validação; nunca claim)
-- [ ] 2. Abrir o plano de intenção do body da Issue (`Plano: docs/plans/...`; sem link → body é spec)
-- [ ] 3. Plan mode → escrever `docs/plans/<slug>-impl.md` → **PARAR e confirmar com o humano**
-- [ ] 4. Após “ok”: Passo 4 (execução → e2e local afetado → /simplify → débitos autônomos → PR, via `execution-pipeline.md`)
+- [ ] 1. Contexto: validar Issue + carregar camada AGENTS
+- [ ] 2. Ler plano de intenção do body da Issue
+- [ ] 3a. Dispatch sub-agente explorador → receber findings
+- [ ] 3b. Dispatch sub-agente escritor → receber impl plan
+- [ ] 3c. GATE humano: apresentar plano → pausa → confirmação
+- [ ] 4. Executar (main agent iterativo)
+- [ ] 5. Dispatch 2 sub-agentes revisores (paralelo) → receber achados
+- [ ] 6. Dispatch sub-agente capturador → receber triage
+- [ ] 7. PR → merge
 ```
 
 ## Passo 1 — Contexto da sessão
@@ -60,57 +96,68 @@ resto (fonte única é a Issue, nunca um brief duplicado).
 - **Modelo: não verifique.** `model:` da Issue é metadata consultiva (o pool
   spawna nele; o claim brief o imprime). A sessão da máquina do humano é sempre
   o modelo fixo do ambiente (DeepSeek V4 Flash).
+- **Carregar camada AGENTS:** se toca `/campanha`, leia `AGENTS-campaign.md`. Se site público, `AGENTS-public.md`. Se deploy/CI, leia `AGENTS-infra.md`.
 
 ## Passo 2 — Intenção
 
-O path do plano de intenção vem do **body da Issue** (`Plano: [docs/plans/<slug>.md]` —
-mesmo contrato de `extractPlanPath` do prompt do pool). Sem plano linkado → o body
-é a spec. Abra e leia.
+O path do plano vem do body da Issue (`Plano: docs/plans/...`). Sem link → body é spec. Abra e leia.
 
-## Passo 3 — Plano de implementação + GATE humano
+## Passo 3 — Plano de implementação + GATE
 
-Plan mode: `SwitchMode` → `plan` (deliberar engenharia a partir da intenção).
+### 3a. Dispatch sub-agente explorador
 
-1. Leia `engineering-brief.md` e aplique skills/princípios sob demanda.
-2. Explore o código o bastante para **reavaliar** a "Direção no codebase" da
-   intenção — você **deve** escolher a melhor abordagem maintainable, mesmo que
-   difira da hipótese do plano de intenção, desde que o **aceite de produto** se
-   mantenha.
-3. Escreva `docs/plans/<slug>-impl.md` via `implementation-template.md`.
-   Qualidade: `decision-quality.md` ≥4/5.
-4. Apresente no chat: abordagem recomendada, opções rejeitadas, fases, riscos,
-   o que diverge da hipótese de direção da intenção.
-5. **Pare.** Não escreva código de feature até confirmação explícita ("ok",
-   "pode executar", "aprovado", …).
-6. Se o humano pedir mudança de abordagem → revise o `*-impl.md` e reapresente.
-7. Confirmação → marque Status `aprovado` no impl plan → `SwitchMode` `agent` →
-   continue.
+Monte o task prompt:
+- Plano de intenção (conteúdo completo)
+- `engineering-brief.md` (invariantes + skills sob demanda)
+- `codebase-map.mdc` (direção de dependência + onde vive o quê)
+- Instrução: "Encontre arquivos relevantes, padrões existentes, rabbit holes. ≤25 linhas. Não escreva código nem planos."
 
-Divergência material de produto (aceite/persona/lockdown da intenção não cabem):
-pare e **pergunte ao humano** — ele decide entre item sucessor ou `blocked`;
-nunca invente produto novo.
+Aguarde o output.
+
+### 3b. Dispatch sub-agente escritor
+
+Monte o task prompt:
+- Plano de intenção + achados do explorador
+- `implementation-template.md` + `decision-quality.md`
+- Instrução: "Escreva `docs/plans/<slug>-impl.md`. Abordagem + alternativas rejeitadas + fases + riscos."
+
+Aguarde o output. Crie o arquivo `docs/plans/<slug>-impl.md`.
+
+### 3c. GATE humano
+
+Apresente no chat:
+- Abordagem recomendada + opções rejeitadas
+- Fases, riscos, divergências da hipótese de direção
+
+**Pare.** Não escreva código até confirmação explícita.
+
+Divergência material de produto → pare, pergunte ao humano.
 
 ## Passo 4 — Executar
 
-`SwitchMode` → `agent` se ainda estiver em plan. Siga a mecânica de
-[`execution-pipeline.md`](execution-pipeline.md) (executar → simplify →
-fechar em main), com os deltas do ator humano:
+`SwitchMode` → `agent`. Siga `execution-pipeline.md`:
 
-- **Branch:** `<Code>-<slug>` do worktree — nunca crie branch nova na sessão.
-- **E2E local afetado (OPS72, discricionário):** antes do push, rode
-  localmente os e2e que você **criou** + os da **mesma superfície afetada** —
-  você decide quais (`pnpm test:e2e:affected` ou specs diretas). Não está no
-  `gate:push`; ver a seção "E2E local afetado" do `execution-pipeline.md`
-  (incl. a limitação da #72: `--no-deps` + projetos paralelos → `--workers=1`
-  ou a cadeia padrão de projetos).
+- **Branch:** `<Code>-<slug>` do worktree — nunca crie branch nova.
+- **E2E local afetado (OPS72):** discricionário — rode os e2e criados + mesma superfície.
 - **UI:** shape → craft → critique → polish.
-- **`capture-review-debts`:** **autônomo** — colha, dedupe, pontue e **decida
-  você mesmo o destino** (registrar/absorver/deferir/descartar) pela triage
-  da própria skill, **sem pausa para o humano**; registre via
-  `agent:register` / `agent:file-miss` (Issues novas com `depends` no pai se
-  necessário) e resuma o que registrou vs descartou no fechamento.
+- **Gates:** `pnpm gate:fast` na iteração; entrega com `pnpm push`.
+
+## Passo 5 — Simplify (2 sub-agentes paralelos)
+
+Dispatche os dois revisores em paralelo com o diff da sessão + princípios de `code-simplification`. Cada um retorna lista de achados.
+
+Aplique fixes pontuais que preservem comportamento.
+
+## Passo 6 — Capture debts (sub-agente)
+
+Dispatche o capturador com os achados do simplify + sessão + regras de `capture-review-debts`. Receba a tabela de triage.
+
+Aplique: registre o aprovado, absorva em plano existente, defira com gatilho, descarte o resto.
+
+## Passo 7 — Fechar em main
+
+Siga `execution-pipeline.md`: changelog → `pnpm push` → PR no GitHub `--base main` com `Closes #N` → auto-merge → CI.
 
 ## Resumo final
 
-Issue (contexto da sessão) · impl plan (abordagem + rejeitadas + divergências da
-hipótese) · simplify + débitos registrados/deferidos · PR + estado do merge.
+Issue · impl plan · simplify + débitos · PR + merge.

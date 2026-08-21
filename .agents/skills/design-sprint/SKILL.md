@@ -1,6 +1,6 @@
 ---
 name: design-sprint
-description: 'Run a structured 5-day process to prototype, test, and validate product ideas with real users. Use when the user mentions "design sprint", "validate before we build", "rapid prototype", "test with users", or "should we build this". Also trigger when a team is stuck in endless debate over a high-stakes product decision, or wants to de-risk a costly idea before investing in development. Covers mapping, sketching, deciding, prototyping, and testing across Monday-Friday. For ongoing experimentation and MVPs, see lean-startup. For customer job analysis, see jobs-to-be-done. For non-leading user interviews, see mom-test.'
+description: 'Run a structured 5-day process to prototype and validate product ideas.'
 license: MIT
 metadata:
   author: wondelai

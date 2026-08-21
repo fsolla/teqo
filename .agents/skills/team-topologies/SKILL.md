@@ -1,6 +1,6 @@
 ---
 name: team-topologies
-description: 'Organize business and technology teams for fast flow using Skelton & Pais''s "Team Topologies". Use when the user mentions "team topologies", "Conway''s law", "platform team", "stream-aligned team", "team boundaries", "cognitive load", "how should we split teams", "who owns this service", "team dependencies", or "reorg". Also trigger when reorganizing engineering teams, aligning team and service boundaries, splitting a monolith and deciding ownership, reducing cross-team handoffs, or designing an internal platform. Covers the four team types, three interaction modes, the inverse Conway maneuver, and fracture planes. For bounded contexts, see domain-driven-design. For dependency direction in code, see clean-architecture.'
+description: 'Organize teams for fast flow using Team Topologies.'
 license: MIT
 metadata:
   author: wondelai

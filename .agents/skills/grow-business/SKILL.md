@@ -1,6 +1,6 @@
 ---
 name: grow-business
-description: 'Guided journey from a business with lucky months to a repeatable growth engine that produces a forecast. Orchestrates nine skills phase by phase - one-page-marketing, hundred-million-offers, predictable-revenue, contagious, influence-psychology, crossing-the-chasm, cold-start-problem, lean-analytics, negotiation - asking the user questions at every decision point and recording results in the project docs/ folder (MARKETING.md, OFFER.md, METRICS.md, GROW-BUSINESS-PLAN.md) so the journey resumes across sessions. Use when the user wants to build a marketing and sales system, manufacture predictable pipeline, engineer word-of-mouth and referrals, or says ''revenue is real but lumpy and I need growth that repeats''. If the offer, retention, or operations underneath are broken, run improve-business first; with no paying customers yet, start with create-business; when the product itself must carry the growth loops, use grow-app. For one framework in isolation, invoke that skill directly.'
+description: 'Build a repeatable growth engine with predictable pipeline.'
 license: MIT
 metadata:
   author: wondelai

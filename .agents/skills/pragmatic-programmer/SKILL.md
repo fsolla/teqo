@@ -1,6 +1,6 @@
 ---
 name: pragmatic-programmer
-description: 'Apply meta-principles of software craftsmanship: DRY, orthogonality, tracer bullets, and design by contract. Use when the user mentions "best practices", "pragmatic approach", "broken windows", "tracer bullet", "software craftsmanship", "avoid technical debt", "code ownership", or "how do I become a better developer". Also trigger when evaluating build-vs-buy decisions, designing estimation approaches, or choosing between reversible and irreversible architectural decisions. Covers estimation, domain languages, and reversibility. For code-level quality, see clean-code. For refactoring techniques, see refactoring-patterns.'
+description: 'Apply DRY, orthogonality, tracer bullets, and design by contract.'
 license: MIT
 metadata:
   author: wondelai

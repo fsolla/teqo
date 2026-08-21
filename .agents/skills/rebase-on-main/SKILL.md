@@ -1,6 +1,6 @@
 ---
 name: rebase-on-main
-description: >-
+description: 'Sync current branch with latest origin/main via fetch + rebase.'
   Sync the current feature branch with latest origin/main via fetch + rebase,
   then resolve conflicts intelligently. Auto-handles a dirty tree (commit WIP
   or stash+pop — no asking). Use after /simplify & /impeccable and before

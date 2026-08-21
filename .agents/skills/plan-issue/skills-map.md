@@ -39,7 +39,7 @@ No Teqo: **idea-refine / interview** antes se vago; **spec + plan + tasks** = es
 
 `frontend-ui-engineering`, `security-and-hardening`, `performance-optimization`, `code-review-and-quality`, `code-simplification`, `observability-and-instrumentation`, `shipping-and-launch`, `ci-cd-and-automation`, `git-workflow-and-versioning`, `deprecation-and-migration`, `debugging-and-error-recovery`, `browser-testing-with-devtools` — entram em `work-issue` / gates do repo, não no registro da Issue.
 
-**Exceção de superfície:** o **rascunho UI/UX do gate** — HTML+Tailwind renderizado em PNG (`pnpm ui-draft:render`), [ui-draft-html.md](ui-draft-html.md) — é usado no `plan-issue` só quando o item muda UI. Não é implementação de `/campanha` nem substituto de Impeccable.
+**Exceção de superfície:** o **rascunho UI/UX do gate** — HTML+Tailwind commitado no repo ([ui-draft-html.md](ui-draft-html.md)) — é usado no `plan-issue` só quando o item muda UI. Não é implementação de `/campanha` nem substituto de Impeccable.
 
 ## Precedência quando conflita
 

@@ -73,7 +73,6 @@
     "test:e2e:affected": "node scripts/run-e2e-affected.mjs",
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
     "test:unit": "cross-env NODE_OPTIONS=--no-deprecation DATABASE_URL=postgresql://invalid:invalid@127.0.0.1:1/unit_tests_must_not_connect vitest run --config ./vitest.unit.config.mts",
-    "ui-draft:render": "node scripts/render-ui-draft.mjs",
     "images:resize": "node scripts/resize-images.mjs",
     "images:fill": "node scripts/fill-image.mjs",
     "typecheck": "tsc --noEmit",

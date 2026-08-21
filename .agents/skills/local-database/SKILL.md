@@ -1,6 +1,6 @@
 ---
 name: local-database
-description: Set up, refresh, and safely use the Teqo local Postgres database, and copy production content locally with `pnpm db:pull`. Use when starting local development, when the local database is empty or stale, when preparing the test database, or when the user mentions the local DB, docker-compose, db:pull, or seeding local data. Enforces that local development and tests never touch the production Neon database.
+description: 'Set up and safely use the Teqo local Postgres database.'
 ---
 
 # Teqo Local Database

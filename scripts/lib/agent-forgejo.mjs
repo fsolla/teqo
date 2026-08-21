@@ -204,8 +204,8 @@ export const claimBriefLines = (entry) => {
     `  id: ${issueId ?? '(none)'}  priority: ${entry.priority}`,
     `  rename_chat: ${sessionTitle.slice(0, 200)}`,
     entry.meta.model
-      ? `  model: ${entry.meta.model} (metadata consultiva — o work-issue não verifica modelo; o pool spawna nele; ver skill model-selection)`
-      : '  model: ausente — registrar slug único na Issue (ver skill model-selection)',
+      ? `  model: ${entry.meta.model} (metadata consultiva — o work-issue não verifica modelo)`
+      : '  model: ausente — registrar slug único na Issue',
     ...(entry.satisfiedWithoutIssue.length > 0
       ? [
           `  deps sem issue (roadmap entregue, satisfeitas): ${entry.satisfiedWithoutIssue.join(', ')}`,
