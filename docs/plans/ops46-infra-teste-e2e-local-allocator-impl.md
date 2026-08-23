@@ -19,7 +19,7 @@ Impl plan do plano de intenção: `docs/plans/ops46-infra-teste-e2e-local-alloca
   `NODE_OPTIONS="--no-deprecation --conditions=react-server --import=tsx/esm"`
   — por isso o CI passa: o CI nunca roda `playwright` bare, sempre via script.
   Qualquer invocação bare (extensão VS Code, `pnpm exec playwright test
-  --list`, runs ad-hoc) quebra na coleta.
+--list`, runs ad-hoc) quebra na coleta.
 - CI vs máquina: sem delta — o CI usa o mesmo comando com os mesmos flags;
   a hipótese do plano ("investigar o que difere no ambiente CI") se resolveu
   em "nada difere — o CI só roda pelo script".
@@ -87,7 +87,7 @@ Registry de claims em módulo compartilhado vitest-free
   e2e `CampaignE2EOwnership.cleanup`), só quando o fixture claimou
   (Set `claimedMunicipalityIndexes` — cleanup sem claims não toca a tabela).
 - O fixture int perdeu o allocator inline (`nextAllocatedMunicipalityIndex`
-  + a sequence própria); o e2e idem (CREATE SEQUENCE + nextval inline).
+  - a sequence própria); o e2e idem (CREATE SEQUENCE + nextval inline).
 
 ### Guards e testes
 
