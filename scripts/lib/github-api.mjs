@@ -88,7 +88,7 @@ export const createApi = ({
     }
   }
 
-  const request = async (path, { method = 'GET', body, query } = {}) => {
+  const request = async (path, { method = 'GET', body, query, ignoreNotFound = false } = {}) => {
     const qs = query
       ? '?' +
         Object.entries(query)
@@ -131,6 +131,7 @@ export const createApi = ({
       }
       if (response.status === 404 && method === 'GET') return null
       if (!response.ok) {
+        if (ignoreNotFound && response.status === 404) return null
         throw new Error(`GitHub API ${method} ${path} → ${response.status}: ${text.slice(0, 400)}`)
       }
       if (!text) return null
@@ -237,13 +238,19 @@ export const createApi = ({
         body: { labels },
       }),
 
-    /** Removes labels by NAME (GitHub DELETE is by label name). */
+    /**
+     * Removes labels by NAME (GitHub DELETE is by label name). Idempotent:
+     * removing an already-absent label (404) is the desired end state — a
+     * re-run of the flip/recovery path must not fail (live finding OPS46-S1,
+     * dispatch re-run after a manual flip 404'd on `in-progress`).
+     */
     removeLabels: async (number, labels) => {
       for (const label of labels) {
         await request(
           `/repos/${owner}/${name}/issues/${number}/labels/${encodeURIComponent(label)}`,
           {
             method: 'DELETE',
+            ignoreNotFound: true,
           },
         )
       }
