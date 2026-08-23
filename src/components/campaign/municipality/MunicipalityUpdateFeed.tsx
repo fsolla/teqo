@@ -1,9 +1,29 @@
+import {
+  addUpdateCommentFormAction,
+  assignUpdateResponsibleFormAction,
+  markUpdateReopenedFormAction,
+  markUpdateResolvedFormAction,
+} from '@/app/(campaign)/campanha/actions/municipalityUpdateDeliberation'
+import {
+  MunicipalityUpdateDeliberation,
+  type MunicipalityUpdateDeliberationFormActions,
+} from '@/components/campaign/municipality/MunicipalityUpdateDeliberation'
 import { Badge } from '@/components/ui/Badge'
 import {
   municipalityUpdatePolarityBadgeVariant,
   municipalityUpdatePolarityLabels,
 } from '@/lib/schemas/municipalityUpdate'
-import type { MunicipalityUpdateViewModel } from '@/utilities/municipality/municipalityUpdatePageData'
+import type {
+  MunicipalityUpdateDeliberationContext,
+  MunicipalityUpdateViewModel,
+} from '@/utilities/municipality/municipalityUpdatePageData'
+
+const deliberationFormActions: MunicipalityUpdateDeliberationFormActions = {
+  assign: assignUpdateResponsibleFormAction,
+  comment: addUpdateCommentFormAction,
+  resolve: markUpdateResolvedFormAction,
+  reopen: markUpdateReopenedFormAction,
+}
 
 const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',
@@ -12,7 +32,13 @@ const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
 
 const numberFormatter = new Intl.NumberFormat('pt-BR')
 
-export const MunicipalityUpdateFeed = ({ updates }: { updates: MunicipalityUpdateViewModel[] }) => {
+export const MunicipalityUpdateFeed = ({
+  updates,
+  deliberation,
+}: {
+  updates: MunicipalityUpdateViewModel[]
+  deliberation: MunicipalityUpdateDeliberationContext
+}) => {
   if (!updates.length) {
     return (
       <p className="rounded-xl border px-4 py-6 text-sm text-muted-foreground">
@@ -36,7 +62,13 @@ export const MunicipalityUpdateFeed = ({ updates }: { updates: MunicipalityUpdat
               {dateTimeFormatter.format(new Date(update.createdAt))}
             </span>
           </div>
-          <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+          <p
+            className={
+              update.resolvedAt
+                ? 'text-sm text-muted-foreground/70 whitespace-pre-wrap'
+                : 'text-sm text-muted-foreground whitespace-pre-wrap'
+            }
+          >
             {update.body ?? 'Sem texto.'}
           </p>
           {update.activeVolunteers != null || update.newSupports != null ? (
@@ -49,6 +81,19 @@ export const MunicipalityUpdateFeed = ({ updates }: { updates: MunicipalityUpdat
                 ? `${numberFormatter.format(update.newSupports)} novos apoios`
                 : null}
             </p>
+          ) : null}
+          {deliberation ? (
+            <MunicipalityUpdateDeliberation
+              updateId={update.id}
+              responsibleId={update.responsibleId}
+              responsibleName={update.responsibleName}
+              resolvedAt={update.resolvedAt}
+              resolvedByName={update.resolvedByName}
+              comments={update.comments}
+              eligibleStaff={deliberation.eligibleStaff}
+              capabilities={deliberation.capabilities}
+              formActions={deliberationFormActions}
+            />
           ) : null}
         </li>
       ))}

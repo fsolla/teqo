@@ -18,6 +18,11 @@ import {
   campaignUpdatesFeedPageSize,
   type CampaignUpdatesFeedState,
 } from '@/utilities/municipality/municipalityUpdateListUrl'
+import {
+  loadMunicipalityUpdateDeliberationContext,
+  type MunicipalityUpdateDeliberationContext,
+  type MunicipalityUpdateViewModel,
+} from '@/utilities/municipality/municipalityUpdatePageData'
 
 export type CampaignUpdatesFeedCard = {
   id: number
@@ -34,6 +39,11 @@ export type CampaignUpdatesFeedCard = {
   createdAt: string
   author: { id: number; name: string; avatarUrl: string | null }
   municipality: { id: number; name: string; slug: string }
+  /** C88 — deliberation state (responsible, thread, resolved) for the card. */
+  deliberation: Pick<
+    MunicipalityUpdateViewModel,
+    'responsibleId' | 'responsibleName' | 'resolvedAt' | 'resolvedByName' | 'comments'
+  >
 }
 
 export type CampaignUpdatesFeedFacets = {
@@ -65,6 +75,7 @@ export const loadCampaignUpdatesFeed = async (
   totalDocs: number
   totalPages: number
   page: number
+  deliberation: MunicipalityUpdateDeliberationContext
 }> => {
   const result = await payload.find({
     collection: 'municipalityUpdate',
@@ -79,18 +90,32 @@ export const loadCampaignUpdatesFeed = async (
 
   const authorIDs = uniqueRelationshipIds(result.docs.map((update) => update.author))
   const municipalityIDs = uniqueRelationshipIds(result.docs.map((update) => update.municipality))
-  const [authorDisplayById, municipalityLabelsById] = await Promise.all([
-    loadCampaignUserDisplayByIds(payload, authorIDs),
+  const deliberationUserIDs = new Set(authorIDs)
+  for (const doc of result.docs as MunicipalityUpdate[]) {
+    const responsibleID = relationshipId(doc.responsible)
+    if (responsibleID !== null) deliberationUserIDs.add(responsibleID)
+    const resolvedByID = relationshipId(doc.resolvedBy)
+    if (resolvedByID !== null) deliberationUserIDs.add(resolvedByID)
+    for (const comment of doc.comments ?? []) {
+      const commentAuthorID = relationshipId(comment.author)
+      if (commentAuthorID !== null) deliberationUserIDs.add(commentAuthorID)
+    }
+  }
+  const [userDisplayById, municipalityLabelsById, deliberation] = await Promise.all([
+    loadCampaignUserDisplayByIds(payload, [...deliberationUserIDs]),
     loadMunicipalityLabelsByIds(payload, municipalityIDs),
+    loadMunicipalityUpdateDeliberationContext(payload, user, municipalityIDs),
   ])
 
   const cards = result.docs.map((update): CampaignUpdatesFeedCard => {
     const doc = update as MunicipalityUpdate
     const authorID = relationshipId(doc.author) ?? 0
     const municipalityID = relationshipId(doc.municipality) ?? 0
-    const author = authorDisplayById.get(authorID)
+    const author = userDisplayById.get(authorID)
     const municipality = municipalityLabelsById.get(municipalityID)
     const polarity = doc.polarity as MunicipalityUpdatePolarity | undefined
+    const responsibleID = relationshipId(doc.responsible)
+    const resolvedByID = relationshipId(doc.resolvedBy)
 
     return {
       id: doc.id,
@@ -107,6 +132,20 @@ export const loadCampaignUpdatesFeed = async (
       municipality: municipality
         ? { id: municipalityID, name: municipality.name, slug: municipality.slug }
         : { id: municipalityID, name: 'Município', slug: '' },
+      deliberation: {
+        responsibleId: responsibleID,
+        responsibleName:
+          responsibleID === null ? null : (userDisplayById.get(responsibleID)?.name ?? 'Usuário'),
+        resolvedAt: doc.resolvedAt ?? null,
+        resolvedByName:
+          resolvedByID === null ? null : (userDisplayById.get(resolvedByID)?.name ?? 'Usuário'),
+        comments: (doc.comments ?? []).map((comment) => ({
+          id: comment.id ?? null,
+          authorName: userDisplayById.get(relationshipId(comment.author) ?? -1)?.name ?? 'Usuário',
+          createdAt: comment.createdAt ?? null,
+          body: comment.body,
+        })),
+      },
     }
   })
 
@@ -115,6 +154,7 @@ export const loadCampaignUpdatesFeed = async (
     totalDocs: result.totalDocs,
     totalPages: result.totalPages,
     page: result.page ?? state.page,
+    deliberation,
   }
 }
 

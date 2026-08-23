@@ -171,8 +171,8 @@ describe('campaign municipality update page data queries', () => {
     }
 
     const preview = await loadMunicipalityUpdatesPreview(payload, user, municipality.id)
-    expect(preview).toHaveLength(3)
-    expect(preview[0]?.body).toBe('Prévia 3')
+    expect(preview.updates).toHaveLength(3)
+    expect(preview.updates[0]?.body).toBe('Prévia 3')
   })
 
   it('denies leaders read access to municipality update feeds', async () => {

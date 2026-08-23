@@ -336,7 +336,10 @@ export const MunicipalityDossier = ({
           title={`Sinais e atualizações recentes (${formatElectionNumber(data.signals.totalCount)})`}
           seeAllHref={`/campanha/municipios/${view.slug}?tab=updates`}
         />
-        <MunicipalityUpdateFeed updates={data.signals.rows} />
+        <MunicipalityUpdateFeed
+          updates={data.signals.rows}
+          deliberation={data.signals.deliberation}
+        />
       </section>
 
       {/* Perfil do eleitorado — IBGE Censo 2022 (A8). */}

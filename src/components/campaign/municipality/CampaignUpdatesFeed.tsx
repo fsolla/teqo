@@ -1,5 +1,15 @@
 import { Inbox } from 'lucide-react'
 
+import {
+  addUpdateCommentFormAction,
+  assignUpdateResponsibleFormAction,
+  markUpdateReopenedFormAction,
+  markUpdateResolvedFormAction,
+} from '@/app/(campaign)/campanha/actions/municipalityUpdateDeliberation'
+import {
+  MunicipalityUpdateDeliberation,
+  type MunicipalityUpdateDeliberationFormActions,
+} from '@/components/campaign/municipality/MunicipalityUpdateDeliberation'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignUserAvatar } from '@/components/campaign/shared/CampaignUserAvatar'
 import { Badge } from '@/components/ui/Badge'
@@ -8,13 +18,27 @@ import {
   municipalityUpdatePolarityLabels,
 } from '@/lib/schemas/municipalityUpdate'
 import type { CampaignUpdatesFeedCard } from '@/utilities/municipality/campaignUpdatesFeedData'
+import type { MunicipalityUpdateDeliberationContext } from '@/utilities/municipality/municipalityUpdatePageData'
+
+const deliberationFormActions: MunicipalityUpdateDeliberationFormActions = {
+  assign: assignUpdateResponsibleFormAction,
+  comment: addUpdateCommentFormAction,
+  resolve: markUpdateResolvedFormAction,
+  reopen: markUpdateReopenedFormAction,
+}
 
 const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
   dateStyle: 'short',
   timeStyle: 'short',
 })
 
-const CampaignUpdatesFeedItem = ({ card }: { card: CampaignUpdatesFeedCard }) => (
+const CampaignUpdatesFeedItem = ({
+  card,
+  deliberation,
+}: {
+  card: CampaignUpdatesFeedCard
+  deliberation: MunicipalityUpdateDeliberationContext
+}) => (
   <li className="flex gap-3 rounded-none border-b border-border p-4 last:border-b-0 md:rounded-xl md:border md:last:border-b">
     <CampaignUserAvatar
       name={card.author.name}
@@ -23,7 +47,7 @@ const CampaignUpdatesFeedItem = ({ card }: { card: CampaignUpdatesFeedCard }) =>
       className="mt-0.5 size-10 shrink-0"
     />
     <div className="flex min-w-0 flex-1 flex-col gap-2">
-      <p className="whitespace-pre-wrap text-sm">{card.body ?? 'Sem texto.'}</p>
+      <p className="text-sm whitespace-pre-wrap">{card.body ?? 'Sem texto.'}</p>
       <div className="flex flex-wrap gap-1.5">
         <Badge variant={municipalityUpdatePolarityBadgeVariant[card.polarity]}>
           {municipalityUpdatePolarityLabels[card.polarity]}
@@ -38,11 +62,28 @@ const CampaignUpdatesFeedItem = ({ card }: { card: CampaignUpdatesFeedCard }) =>
         <span aria-hidden="true"> · </span>
         {dateTimeFormatter.format(new Date(card.createdAt))}
       </p>
+      <MunicipalityUpdateDeliberation
+        updateId={card.id}
+        responsibleId={card.deliberation.responsibleId}
+        responsibleName={card.deliberation.responsibleName}
+        resolvedAt={card.deliberation.resolvedAt}
+        resolvedByName={card.deliberation.resolvedByName}
+        comments={card.deliberation.comments}
+        eligibleStaff={deliberation.eligibleStaff}
+        capabilities={deliberation.capabilities}
+        formActions={deliberationFormActions}
+      />
     </div>
   </li>
 )
 
-export const CampaignUpdatesFeed = ({ cards }: { cards: CampaignUpdatesFeedCard[] }) => {
+export const CampaignUpdatesFeed = ({
+  cards,
+  deliberation,
+}: {
+  cards: CampaignUpdatesFeedCard[]
+  deliberation: MunicipalityUpdateDeliberationContext
+}) => {
   if (cards.length === 0) {
     return (
       <CampaignListEmptyState
@@ -56,7 +97,7 @@ export const CampaignUpdatesFeed = ({ cards }: { cards: CampaignUpdatesFeedCard[
   return (
     <ul className="-mx-4 my-0 flex list-none flex-col [&>li]:mt-0 md:mx-0 md:gap-4">
       {cards.map((card) => (
-        <CampaignUpdatesFeedItem key={card.id} card={card} />
+        <CampaignUpdatesFeedItem key={card.id} card={card} deliberation={deliberation} />
       ))}
     </ul>
   )

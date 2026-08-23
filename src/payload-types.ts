@@ -885,6 +885,23 @@ export interface MunicipalityUpdate {
   body: string;
   activeVolunteers?: number | null;
   newSupports?: number | null;
+  /**
+   * Staff do município ou coordenação que acompanha este fato.
+   */
+  responsible?: (number | null) | CampaignUser;
+  resolvedBy?: (number | null) | CampaignUser;
+  resolvedAt?: string | null;
+  /**
+   * Fio de deliberação sobre esta atualização.
+   */
+  comments?:
+    | {
+        body: string;
+        author?: (number | null) | CampaignUser;
+        createdAt?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1861,6 +1878,17 @@ export interface MunicipalityUpdateSelect<T extends boolean = true> {
   body?: T;
   activeVolunteers?: T;
   newSupports?: T;
+  responsible?: T;
+  resolvedBy?: T;
+  resolvedAt?: T;
+  comments?:
+    | T
+    | {
+        body?: T;
+        author?: T;
+        createdAt?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

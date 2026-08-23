@@ -28,6 +28,7 @@ import {
 } from '@/utilities/municipality/municipalityGoalAccount'
 import {
   loadMunicipalityUpdatesFeed,
+  type MunicipalityUpdateDeliberationContext,
   type MunicipalityUpdateViewModel,
 } from '@/utilities/municipality/municipalityUpdatePageData'
 import type { MunicipalityDetailViewModel } from '@/utilities/municipality/municipalityViewModels'
@@ -51,7 +52,11 @@ export type MunicipalityDossierData = {
   goalAccount: MunicipalityGoalAccount | null
   pledgeAggregate: MunicipalityPledgeAggregate
   leaderships: { rows: LeadershipRowViewModel[]; totalCount: number }
-  signals: { rows: MunicipalityUpdateViewModel[]; totalCount: number }
+  signals: {
+    rows: MunicipalityUpdateViewModel[]
+    totalCount: number
+    deliberation: MunicipalityUpdateDeliberationContext
+  }
   upcomingActivities: ActivityListViewModel[]
   recentActivities: ActivityListViewModel[]
   demographics: MunicipalityDemographics | null
@@ -122,7 +127,11 @@ export const loadMunicipalityDossierData = async (
     goalAccount: pledgesAndGoal.goalAccount,
     pledgeAggregate: pledgesAndGoal.pledgeAggregate,
     leaderships,
-    signals: { rows: feed.updates.slice(0, DOSSIER_SIGNAL_LIMIT), totalCount: feed.totalDocs },
+    signals: {
+      rows: feed.updates.slice(0, DOSSIER_SIGNAL_LIMIT),
+      totalCount: feed.totalDocs,
+      deliberation: feed.deliberation,
+    },
     upcomingActivities: activities.upcoming,
     recentActivities: activities.recent,
     demographics: demographicsForCode(view.ibgeCode) ?? null,
