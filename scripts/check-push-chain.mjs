@@ -10,12 +10,12 @@
  *   - The site URL is only fetched with GET.
  *
  * Usage:
- *   PROD_DATABASE_URL=postgres://... pnpm db:check:push-chain [--site https://pt.jorgesolla.com.br]
+ *   PROD_DATABASE_URL=postgres://... pnpm db:check:push-chain [--site https://jorgesolla1313.com.br]
  *
- * PROD_DATABASE_URL should be the UNPOOLED Neon connection string (the
- * DATABASE_URL_UNPOOLED value from `vercel env pull --environment=production`).
- * The VAPID env check reads process.env — source them the same way, or run the
- * check inside an environment that already has them.
+ * PROD_DATABASE_URL should be the connection string from the homeserver stack
+ * (`~/stack/teqo-1313.env`). The VAPID env check reads process.env — source
+ * them the same way, or run the check inside an environment that already has
+ * them.
  */
 import { Client } from 'pg'
 
@@ -44,9 +44,9 @@ if (LOCAL_HOSTS.has(new URL(PROD_DATABASE_URL).hostname)) {
 let site
 try {
   const siteArg = process.argv.find((arg) => arg.startsWith('--site='))
-  site = new URL(siteArg?.slice('--site='.length) || 'https://pt.jorgesolla.com.br').origin
+  site = new URL(siteArg?.slice('--site='.length) || 'https://jorgesolla1313.com.br').origin
 } catch {
-  die('--site=<url> deve ser uma URL válida (ex.: https://pt.jorgesolla.com.br).')
+  die('--site=<url> deve ser uma URL válida (ex.: https://jorgesolla1313.com.br).')
 }
 
 const results = []
@@ -82,7 +82,7 @@ try {
 
 // --- Elo 2: VAPID envs (server + public) --------------------------------------
 // Proves the DIAGNOSTIC environment, not the deployment — source them from
-// `vercel env pull --environment=production` to mirror the deployed server.
+// `~/stack/teqo-1313.env` on the homeserver to mirror the deployed server.
 const vapidServer = process.env.VAPID_PUBLIC_KEY?.trim()
 const vapidPrivate = process.env.VAPID_PRIVATE_KEY?.trim()
 const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim()

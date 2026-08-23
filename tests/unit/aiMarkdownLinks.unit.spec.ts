@@ -63,7 +63,7 @@ describe('isCampaignInternalLink', () => {
   it('rejects look-alike paths, web URLs and non-web protocols', () => {
     expect(isCampaignInternalLink('/campanha-mobile')).toBe(false)
     expect(isCampaignInternalLink('/campanhaX')).toBe(false)
-    expect(isCampaignInternalLink('https://pt.jorgesolla.com.br/campanha')).toBe(false)
+    expect(isCampaignInternalLink('https://jorgesolla1313.com.br/campanha')).toBe(false)
     expect(isCampaignInternalLink('mailto:contato@jorgesolla.com.br')).toBe(false)
     expect(isCampaignInternalLink('')).toBe(false)
   })

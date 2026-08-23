@@ -14,11 +14,11 @@ describe('getCampaignWebAuthnRelyingParty', () => {
     expect(
       getCampaignWebAuthnRelyingParty({
         environment: 'production',
-        configuredURL: 'https://pt.jorgesolla.com.br',
-        forwardedHost: 'pt.jorgesolla.com.br',
+        configuredURL: 'https://jorgesolla1313.com.br',
+        forwardedHost: 'jorgesolla1313.com.br',
         forwardedProto: 'https',
       }),
-    ).toMatchObject({ rpID: 'pt.jorgesolla.com.br', origin: 'https://pt.jorgesolla.com.br' })
+    ).toMatchObject({ rpID: 'jorgesolla1313.com.br', origin: 'https://jorgesolla1313.com.br' })
   })
 
   it('refuses a Vercel preview, where the served host is not the configured one', () => {
@@ -29,7 +29,7 @@ describe('getCampaignWebAuthnRelyingParty', () => {
     expect(
       getCampaignWebAuthnRelyingParty({
         environment: 'production',
-        configuredURL: 'https://pt.jorgesolla.com.br',
+        configuredURL: 'https://jorgesolla1313.com.br',
         forwardedHost: 'teqo-git-b40-solla.vercel.app',
         forwardedProto: 'https',
       }),
@@ -49,7 +49,7 @@ describe('getCampaignWebAuthnRelyingParty', () => {
   it('follows localhost when a production build is served there (CI e2e)', () => {
     expect(
       getCampaignWebAuthnRelyingParty({
-        configuredURL: 'https://pt.jorgesolla.com.br',
+        configuredURL: 'https://jorgesolla1313.com.br',
         forwardedHost: 'localhost:3000',
       }),
     ).toMatchObject({ rpID: 'localhost', origin: 'http://localhost:3000' })
