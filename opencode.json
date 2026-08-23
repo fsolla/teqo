@@ -30,6 +30,23 @@
           }
         }
       }
+    },
+    "vercel": {
+      "models": {
+        "deepseek/deepseek-v4-flash": {
+          "variants": {
+            "low": {
+              "reasoningEffort": "low"
+            },
+            "high": {
+              "reasoningEffort": "high"
+            },
+            "max": {
+              "reasoningEffort": "max"
+            }
+          }
+        }
+      }
     }
   }
 }

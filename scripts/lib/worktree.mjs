@@ -19,8 +19,13 @@ export const PLAN_BRANCH_PREFIX = 'plans/plan-issue'
 /** Env var the interactive-terminal `worktree()` function sets to request the opencode launch. */
 export const WORKTREE_TERMINAL_ENV = 'TEQO_WORKTREE_TERMINAL'
 
-/** Preset model for the opencode launch — change the preset by editing this constant. */
-export const OPENCODE_PRESET_MODEL = 'deepseek/deepseek-v4-flash'
+/**
+ * Preset model for the opencode launch — change the preset by editing this
+ * constant. OPS78: routes through the Vercel AI Gateway (cache/stability/
+ * failover) instead of the direct provider; the low/high/max variants are
+ * exposed by the `provider.vercel` override in `opencode.json`.
+ */
+export const OPENCODE_PRESET_MODEL = 'vercel/deepseek/deepseek-v4-flash'
 
 /**
  * Skill command sent as the launch's initial message per purpose. `next`
