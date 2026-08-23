@@ -1,3 +1,4 @@
+import { adminHeaders } from '../helpers/adminApi'
 import { login } from '../helpers/login'
 import { cleanupTestUser, seedTestUser, testUser } from '../helpers/seedUser'
 import { instagramStubUrlFor } from '../helpers/socialStub'
@@ -47,12 +48,7 @@ test.describe('Admin Panel', () => {
     // Seed the social-feed global with an Instagram snapshot so the exclusion
     // picker (S3) has posts to show. The snapshot is plain data — the picker
     // lists it and writes `excludedItems` (the same mechanism YouTube uses).
-    const login = await request.post(`${baseURL}/api/users/login`, {
-      data: { email: testUser.email, password: testUser.password },
-    })
-    expect(login.ok()).toBeTruthy()
-    const { token } = await login.json()
-    const headers = { cookie: `payload-token=${token}` }
+    const headers = await adminHeaders(request, baseURL)
 
     const snapshot = {
       username: 'depjorgesolla',
@@ -149,12 +145,7 @@ test.describe('Admin Panel', () => {
     }
     await setStub('ok')
 
-    const login = await request.post(`${baseURL}/api/users/login`, {
-      data: { email: testUser.email, password: testUser.password },
-    })
-    expect(login.ok()).toBeTruthy()
-    const { token } = await login.json()
-    const headers = { cookie: `payload-token=${token}` }
+    const headers = await adminHeaders(request, baseURL)
 
     const seed = await request.post(`${baseURL}/api/globals/social-feed-settings`, {
       headers,
