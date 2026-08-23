@@ -29,7 +29,21 @@ todos:
 isProject: false
 ---
 
-> **HISTÓRICO (2026-08-23):** plano de intenção **pré-main** (2026-07-30) do desenho stage/Neon do paradigma de agentes paralelos — **nunca implementado nessa forma** (todos ainda `pending`). O paradigma **vigente vive em [docs/AGENT-OPS.md](../AGENT-OPS.md)** ("operação do paradigma de agentes paralelos"): agentes entregam direto em `main`, deploy manual por `workflow_dispatch`, ladder de 2 ambientes (mínimo + prod), sem smoke stage. O corpo abaixo preserva **referências mortas da era stage/Neon** como registro histórico — `scripts/refresh-stage.mjs` (deletado 2026-08-01), Neon/stage (`STAGE_DATABASE_URL`, branch git `stage`, `ci-stage.yml`), job `migration-lock` (removido 2026-08-12), `gh pr create --base stage`, `pnpm agent:promote` — **nada aqui é instrução corrente.**
+> **HISTÓRICO (2026-08-23):** plano de intenção **pré-main** (2026-07-30) do desenho
+> stage/Neon do paradigma de agentes paralelos — **nunca implementado nessa forma**
+> (todos ainda `pending`). O paradigma **vigente vive em
+> [docs/AGENT-OPS.md](../AGENT-OPS.md)** ("operação do paradigma de agentes
+> paralelos"): agentes entregam direto em `main`, deploy manual por
+> `workflow_dispatch`, ladder de 2 ambientes (mínimo + prod), sem smoke stage.
+> O corpo abaixo preserva **referências mortas da era stage/Neon** como registro
+> histórico:
+>
+> - `scripts/refresh-stage.mjs` (deletado 2026-08-01)
+> - Neon/stage (`STAGE_DATABASE_URL`, branch git `stage`, `ci-stage.yml`)
+> - job `migration-lock` (removido 2026-08-12)
+> - `gh pr create --base stage`, `pnpm agent:promote`
+>
+> **Nada aqui é instrução corrente.**
 
 # Teqo ops: só GitHub + Cursor
 
