@@ -15,15 +15,31 @@ import {
   municipalityUpdatePolarities,
   municipalityUpdatePolarityLabels,
 } from '@/lib/schemas/municipalityUpdate'
+import { trimmedText } from '@/lib/text'
 import {
+  canAssignUpdateResponsible,
+  canCommentOnMunicipalityUpdate,
   canCreateMunicipalityUpdate,
-  canMutateMunicipalityUpdate,
+  canDeleteMunicipalityUpdate,
   canReadMunicipalityUpdate,
+  canResolveMunicipalityUpdate,
   canSetMunicipalityUpdateAuthor,
+  canSetMunicipalityUpdateSystemField,
+  canUpdateMunicipalityUpdate,
+  eligibleCampaignStaffWhere,
+  MUNICIPALITY_UPDATE_DELIBERATION_MUTATIONS,
 } from '@/utilities/campaignAccess'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 
 const DERIVED_MUNICIPALITY_UPDATE_CONTEXT = 'municipalityUpdateDerivedField'
+
+/** C88 — fields the deliberative writes may touch; everything else is a 403. */
+const MUNICIPALITY_UPDATE_DELIBERATION_ALLOWLIST = [
+  'responsible',
+  'resolvedBy',
+  'resolvedAt',
+  'comments',
+]
 const MUNICIPALITY_UPDATE_POLARITY_OPTIONS = municipalityUpdatePolarities.map((value) => ({
   label: municipalityUpdatePolarityLabels[value],
   value,
@@ -94,6 +110,74 @@ const recomputeMunicipalityLastUpdateAt = async (
       req,
     })
   }
+}
+
+/**
+ * C88 — the deliberative write path (`assignResponsible`/`appendComment`/
+ * `resolve`/`reopen`). Fail-closed on three fronts: only the allowlisted
+ * fields may CHANGE (Payload's beforeChange `data` is the merged doc, so the
+ * gate is the diff against `originalDoc`), comment items are stamped
+ * (author/createdAt) exactly like `Activity.updates`, and the resolve/reopen
+ * transitions stamp or clear the audit fields from the acting user — never
+ * from the request body. The raw update path (admin) is untouched:
+ * non-deliberative updates return here without any change.
+ */
+const deriveMunicipalityUpdateDeliberation: CollectionBeforeChangeHook = ({
+  context,
+  data,
+  operation,
+  originalDoc,
+  req,
+}) => {
+  if (operation !== 'update' || !data) return data
+
+  const mutationKind = context?.mutationKind
+  if (
+    typeof mutationKind !== 'string' ||
+    !MUNICIPALITY_UPDATE_DELIBERATION_MUTATIONS.has(mutationKind)
+  ) {
+    return data
+  }
+
+  const previous = (originalDoc ?? {}) as Record<string, unknown>
+  const changedKeys = Object.keys(data).filter((key) => {
+    const next = data[key]
+    const before = previous[key]
+    if (
+      (typeof next === 'object' && next !== null) ||
+      (typeof before === 'object' && before !== null)
+    ) {
+      return JSON.stringify(next) !== JSON.stringify(before)
+    }
+    return next !== before
+  })
+  const forbiddenKeys = changedKeys.filter(
+    (key) => !MUNICIPALITY_UPDATE_DELIBERATION_ALLOWLIST.includes(key),
+  )
+  if (forbiddenKeys.length > 0) {
+    throw new APIError('Esta atualização não pode ser alterada por deliberação.', 403)
+  }
+
+  if (mutationKind === 'appendComment') {
+    const previousComments = Array.isArray(originalDoc?.comments) ? originalDoc.comments : []
+    const nextComments = Array.isArray(data.comments) ? data.comments : []
+    data.comments = nextComments.map((comment: Record<string, unknown>, index: number) => {
+      if (index < previousComments.length) return previousComments[index]
+      return {
+        body: trimmedText(comment.body),
+        author: req.user?.collection === 'campaignUser' ? req.user.id : null,
+        createdAt: new Date().toISOString(),
+      }
+    })
+  } else if (mutationKind === 'resolve') {
+    data.resolvedAt = new Date().toISOString()
+    if (req.user?.collection === 'campaignUser') data.resolvedBy = req.user.id
+  } else if (mutationKind === 'reopen') {
+    data.resolvedBy = null
+    data.resolvedAt = null
+  }
+
+  return data
 }
 
 const lockMunicipalitiesBeforeChange: CollectionBeforeChangeHook = async ({
@@ -182,17 +266,17 @@ export const MunicipalityUpdate: CollectionConfig = {
   admin: {
     group: 'Campanha',
     useAsTitle: 'body',
-    defaultColumns: ['municipality', 'author', 'polarity', 'urgent', 'createdAt'],
+    defaultColumns: ['municipality', 'author', 'responsible', 'polarity', 'urgent', 'createdAt'],
   },
   access: {
     create: canCreateMunicipalityUpdate,
     read: canReadMunicipalityUpdate,
-    update: canMutateMunicipalityUpdate,
-    delete: canMutateMunicipalityUpdate,
+    update: canUpdateMunicipalityUpdate,
+    delete: canDeleteMunicipalityUpdate,
   },
   hooks: {
     beforeValidate: [validateMunicipalityUpdatePolarity],
-    beforeChange: [lockMunicipalitiesBeforeChange],
+    beforeChange: [deriveMunicipalityUpdateDeliberation, lockMunicipalitiesBeforeChange],
     beforeDelete: [lockMunicipalityBeforeDelete],
     afterChange: [recomputeChangedMunicipalities],
     afterDelete: [recomputeDeletedMunicipality],
@@ -265,6 +349,98 @@ export const MunicipalityUpdate: CollectionConfig = {
       type: 'number',
       label: 'Novos apoios',
       min: 0,
+    },
+    {
+      name: 'responsible',
+      type: 'relationship',
+      relationTo: 'campaignUser',
+      label: 'Responsável',
+      index: true,
+      filterOptions: eligibleCampaignStaffWhere,
+      admin: {
+        description: 'Staff do município ou coordenação que acompanha este fato.',
+      },
+      access: {
+        create: canAssignUpdateResponsible,
+        update: canAssignUpdateResponsible,
+      },
+    },
+    {
+      name: 'resolvedBy',
+      type: 'relationship',
+      relationTo: 'campaignUser',
+      label: 'Resolvido por',
+      index: true,
+      admin: {
+        readOnly: true,
+      },
+      access: {
+        create: canResolveMunicipalityUpdate,
+        update: canResolveMunicipalityUpdate,
+      },
+    },
+    {
+      name: 'resolvedAt',
+      type: 'date',
+      label: 'Resolvido em',
+      index: true,
+      admin: {
+        readOnly: true,
+      },
+      access: {
+        create: canResolveMunicipalityUpdate,
+        update: canResolveMunicipalityUpdate,
+      },
+    },
+    {
+      name: 'comments',
+      type: 'array',
+      label: 'Comentários',
+      admin: {
+        description: 'Fio de deliberação sobre esta atualização.',
+      },
+      // C88 — write gated by the comment rule; READ follows the collection
+      // gate (`canReadMunicipalityUpdate`): anyone who can read the update
+      // reads its thread, even a somente_leitura advisor.
+      access: {
+        create: canCommentOnMunicipalityUpdate,
+        update: canCommentOnMunicipalityUpdate,
+      },
+      fields: [
+        {
+          name: 'body',
+          type: 'textarea',
+          label: 'Comentário',
+          maxLength: 4000,
+          required: true,
+        },
+        {
+          name: 'author',
+          type: 'relationship',
+          relationTo: 'campaignUser',
+          label: 'Autor',
+          index: true,
+          admin: {
+            readOnly: true,
+          },
+          access: {
+            create: canSetMunicipalityUpdateSystemField,
+            update: canSetMunicipalityUpdateSystemField,
+          },
+        },
+        {
+          name: 'createdAt',
+          type: 'date',
+          label: 'Criado em',
+          admin: {
+            readOnly: true,
+          },
+          access: {
+            create: canSetMunicipalityUpdateSystemField,
+            update: canSetMunicipalityUpdateSystemField,
+          },
+        },
+      ],
     },
   ],
 }

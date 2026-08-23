@@ -73,7 +73,10 @@ test.describe('C106 — atualizações mobile sem moldura', () => {
     await expect(strip).toHaveCSS('position', 'sticky')
     await expect(strip).toHaveCSS('top', '0px')
     await expect(strip).toHaveCSS('border-bottom-width', '1px')
-    await expect(page.getByRole('combobox').locator('xpath=..')).toHaveCSS(
+    // C88 — scoped to the filter strip: each update card may now carry its own
+    // combobox (the deliberation assignee select), so a page-wide locator is
+    // ambiguous.
+    await expect(strip.getByRole('combobox').locator('xpath=..')).toHaveCSS(
       'border-top-width',
       '0px',
     )

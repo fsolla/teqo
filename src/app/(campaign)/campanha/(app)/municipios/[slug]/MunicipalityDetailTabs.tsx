@@ -381,7 +381,7 @@ export const UpdatesTab = async ({
           isStaff={isStaff}
         />
       )}
-      <MunicipalityUpdateFeed updates={feed.updates} />
+      <MunicipalityUpdateFeed updates={feed.updates} deliberation={feed.deliberation} />
       <CampaignListPagination
         page={feed.page}
         totalPages={feed.totalPages}

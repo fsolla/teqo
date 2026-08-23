@@ -61,6 +61,7 @@ import * as migration_20260819_213947_add_site_settings_facebook_pixel_id from '
 import * as migration_20260819_214755_add_campaign_user_advisor_permission_profile from './20260819_214755_add_campaign_user_advisor_permission_profile';
 import * as migration_20260819_233503_add_campaign_demand_responsibles from './20260819_233503_add_campaign_demand_responsibles';
 import * as migration_20260820_003426_add_instagram_sync_status from './20260820_003426_add_instagram_sync_status';
+import * as migration_20260823_161905_add_municipality_update_deliberation from './20260823_161905_add_municipality_update_deliberation';
 
 export const migrations = [
   {
@@ -377,5 +378,10 @@ export const migrations = [
     up: migration_20260820_003426_add_instagram_sync_status.up,
     down: migration_20260820_003426_add_instagram_sync_status.down,
     name: '20260820_003426_add_instagram_sync_status',
+  },
+  {
+    up: migration_20260823_161905_add_municipality_update_deliberation.up,
+    down: migration_20260823_161905_add_municipality_update_deliberation.down,
+    name: '20260823_161905_add_municipality_update_deliberation'
   },
 ];

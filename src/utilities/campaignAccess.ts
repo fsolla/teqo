@@ -72,10 +72,19 @@ export {
 } from '@/utilities/access/allocationDecisions'
 
 export {
+  MUNICIPALITY_UPDATE_DELIBERATION_MUTATIONS,
+  assignableUpdateStaffWhere,
+  canAssignUpdateResponsible,
+  canCommentOnMunicipalityUpdate,
   canCreateMunicipalityUpdate,
-  canMutateMunicipalityUpdate,
+  canDeleteMunicipalityUpdate,
   canReadMunicipalityUpdate,
+  canResolveMunicipalityUpdate,
   canSetMunicipalityUpdateAuthor,
+  canSetMunicipalityUpdateSystemField,
+  canUpdateMunicipalityUpdate,
+  resolveMunicipalityUpdateCapabilities,
+  type MunicipalityUpdateDeliberationCapabilities,
 } from '@/utilities/access/municipalityUpdates'
 
 export {
