@@ -107,6 +107,52 @@ describe('useAsyncSearchOptions', () => {
     expect(view.result.current.options).toEqual([])
   })
 
+  it('recovers from a failed search on the next successful one', async () => {
+    const { search, view } = renderOptions({ query: 'ca' })
+    search.mockRejectedValueOnce(new Error('boom'))
+
+    await act(async () => void vi.advanceTimersByTime(ASYNC_SEARCH_DEBOUNCE_MS))
+    expect(view.result.current.failed).toBe(true)
+
+    view.rerender({ open: true, query: 'cairu' })
+    await act(async () => void vi.advanceTimersByTime(ASYNC_SEARCH_DEBOUNCE_MS))
+
+    expect(view.result.current.failed).toBe(false)
+    expect(view.result.current.options).toEqual([{ id: 1, label: 'hit:cairu' }])
+    expect(view.result.current.loading).toBe(false)
+  })
+
+  it('keeps loading while the request is in flight', async () => {
+    const { search, view } = renderOptions({ query: 'ca' })
+    search.mockImplementationOnce(() => new Promise<TestOption[]>(() => {}))
+
+    act(() => void vi.advanceTimersByTime(ASYNC_SEARCH_DEBOUNCE_MS))
+
+    expect(view.result.current.loading).toBe(true)
+    expect(view.result.current.failed).toBe(false)
+  })
+
+  it('lets a stale in-flight response land after the query turns not-ready (preserved quirk)', async () => {
+    const { search, view } = renderOptions({ query: 'ca', isQueryReady: (q) => q.length >= 2 })
+
+    let resolveFirst: (options: TestOption[]) => void = () => {}
+    search.mockImplementationOnce(
+      () => new Promise<TestOption[]>((resolve) => (resolveFirst = resolve)),
+    )
+
+    act(() => void vi.advanceTimersByTime(ASYNC_SEARCH_DEBOUNCE_MS))
+    expect(view.result.current.loading).toBe(true)
+
+    view.rerender({ open: true, query: '', isQueryReady: (q) => q.length >= 2 })
+    expect(view.result.current.options).toEqual([])
+    expect(view.result.current.loading).toBe(false)
+
+    await act(async () => resolveFirst([{ id: 1, label: 'stale' }]))
+
+    expect(view.result.current.options).toEqual([{ id: 1, label: 'stale' }])
+    expect(view.result.current.loading).toBe(false)
+  })
+
   it('discards an out-of-order response from a superseded request', async () => {
     const { search, view } = renderOptions({ query: 'ca' })
 

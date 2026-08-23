@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 export const ASYNC_SEARCH_DEBOUNCE_MS = 250
 
-export type UseAsyncSearchOptionsResult<T> = {
+type UseAsyncSearchOptionsResult<T> = {
   options: T[]
   loading: boolean
   failed: boolean
@@ -20,6 +20,10 @@ type UseAsyncSearchOptionsArgs<T> = {
  * out-of-order responses, loading/failed states, per-consumer query gate).
  * The server action is injected as a prop by the consumer, keeping this module
  * client-safe; each consumer keeps its own filtering/grouping/pinned options.
+ * Contract quirks, preserved from the three original copies: a not-ready query
+ * resets options/loading/failed without invalidating an in-flight request
+ * (a stale response still lands after the reset), and the search receives the
+ * trimmed query.
  */
 export function useAsyncSearchOptions<T extends { id: number }>({
   open,
