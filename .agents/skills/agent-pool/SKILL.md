@@ -76,7 +76,7 @@ Pergunte de forma explícita, por exemplo:
 ## Pré-requisitos (uma vez)
 
 1. **Repo secret `CURSOR_API_KEY`** (Settings → Secrets and variables → Actions) — chave de cursor.com/dashboard/api. Sem ela o tick live morre antes de spawnar (fail-closed).
-2. Workflow mergeado em `main` — `schedule` e o trigger de merge em `main` **só rodam da default branch**. Antes do promote, use dispatch na branch (`--ref`).
+2. Workflow mergeado em `main` — `schedule` e o trigger de merge em `main` **só rodam da default branch**. (Histórico: não há mais promote `stage→main` — removido em 2026-08-01 — nem dispatch no workflow, que foi removido no OPS65.)
 3. Fila com Issues `ready` elegíveis (`pnpm agent:pool -- status` / `pnpm agent:status`) e nenhum audit solitário em curso (se audit: `pause`).
 4. Validar o ambiente: `pnpm agent:pool -- doctor` (gh auth, repo variables, chave Cursor, tabela de modelos `/v1/models`).
 
@@ -102,7 +102,7 @@ Issues nascidas de `plan-issue` com `--plan` **não** entram como `ready`: ficam
 - **Falha terminal** (run ERROR/CANCELLED/EXPIRED ou fim sem PR): tick comenta, move a Issue para `blocked` e arquiva o agente. **Triage humana**: ler o run em cursor.com/agents, decidir — re-`ready` manual se transitório (o circuit breaker recusa a 3ª tentativa automática), corrigir a spec se sistêmico.
 - **Worker travado**: archive em cursor.com/agents → o próximo tick reconcilia como falha documentada.
 - **Duplicata**: impossível em condições normais (alocador único + lock otimista + `agentId` idempotente); o tick cancela runs extras se alguém spawnar manualmente.
-- **`needs:migration`/`serializes:[migrations]`**: o tick não spawna enquanto houver PR aberto tocando schema (predicado `countOpenSchemaPrs` em `agent-pool-github.mjs`) — re-avalia a cada tick.
+- **`needs:migration`/`serializes:[migrations]`**: o tick não spawna enquanto houver PR aberto tocando schema (predicado `countOpenSchemaPrs` em `agent-pool-forgejo.mjs`) — re-avalia a cada tick.
 - **Audit solitário**: `pause` antes, `resume` depois (a skill `engineering-audit` lembra).
 
 ## Smoke remoto (aceite — rodar na primeira ativação)
