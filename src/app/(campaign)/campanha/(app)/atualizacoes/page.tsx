@@ -54,7 +54,7 @@ export default async function CampaignUpdatesPage({ searchParams }: CampaignUpda
       <CampaignListPendingBoundary>
         <CampaignUpdatesFilters state={canonicalState} facets={facets} isStaff={isStaff} />
         <CampaignListResults>
-          <CampaignUpdatesFeed cards={feed.cards} />
+          <CampaignUpdatesFeed cards={feed.cards} deliberation={feed.deliberation} />
           <CampaignListFooter
             totalDocs={feed.totalDocs}
             singular="atualização encontrada"

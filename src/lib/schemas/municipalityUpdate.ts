@@ -47,3 +47,38 @@ export const municipalityUpdateCreateSchema = z.object({
 })
 
 export type MunicipalityUpdateCreateInput = z.input<typeof municipalityUpdateCreateSchema>
+
+export const MUNICIPALITY_UPDATE_COMMENT_MAX_LENGTH = 4000
+
+const MUNICIPALITY_UPDATE_COMMENT_REQUIRED_MESSAGE = 'Escreva o comentário antes de enviar.'
+
+const MUNICIPALITY_UPDATE_COMMENT_TOO_LONG_MESSAGE = `O comentário deve ter no máximo ${MUNICIPALITY_UPDATE_COMMENT_MAX_LENGTH} caracteres.`
+
+export const MUNICIPALITY_UPDATE_NO_MUNICIPALITY_MESSAGE =
+  'Atualização sem município não pode ter responsável.'
+
+export const MUNICIPALITY_UPDATE_RESPONSIBLE_NOT_ELIGIBLE_MESSAGE =
+  'Este usuário não pode ser responsável: escolha um assessor do município ou a coordenação.'
+
+export const municipalityUpdateCommentSchema = z.object({
+  updateId: positiveRelationshipId,
+  body: z
+    .string()
+    .trim()
+    .min(1, MUNICIPALITY_UPDATE_COMMENT_REQUIRED_MESSAGE)
+    .max(MUNICIPALITY_UPDATE_COMMENT_MAX_LENGTH, MUNICIPALITY_UPDATE_COMMENT_TOO_LONG_MESSAGE),
+})
+
+export const municipalityUpdateResponsibleSchema = z.object({
+  updateId: positiveRelationshipId,
+  /** `null` clears the assignee — every fact may also be ownerless. */
+  responsibleId: positiveRelationshipId.nullable(),
+})
+
+export const municipalityUpdateResolveSchema = z.object({
+  updateId: positiveRelationshipId,
+})
+
+export type MunicipalityUpdateResponsibleInput = z.input<typeof municipalityUpdateResponsibleSchema>
+
+export type MunicipalityUpdateCommentInput = z.input<typeof municipalityUpdateCommentSchema>

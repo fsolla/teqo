@@ -12,12 +12,18 @@ import {
   isCampaignLeader,
   isCampaignUnrestricted,
   isPayloadAdmin,
+  payloadAdminOnly,
 } from '@/utilities/access/shared'
 
-export {
-  canMutateMunicipalityUpdate as canMutateAllocationDecision,
-  canReadMunicipalityUpdate as canReadAllocationDecision,
-} from '@/utilities/access/municipalityUpdates'
+export { canReadMunicipalityUpdate as canReadAllocationDecision } from '@/utilities/access/municipalityUpdates'
+
+/**
+ * Allocation decisions are coordination records (E14 movements, triage
+ * outcomes): raw updates stay admin-only. Deliberate no longer aliases the
+ * municipality-update update gate — that gate is C88's deliberative
+ * `mutationKind` channel, which must never reach this collection.
+ */
+export const canMutateAllocationDecision: Access = payloadAdminOnly
 
 /**
  * C141 — allocation decisions record coordination movements (E14) and triage
