@@ -24,7 +24,7 @@ const buildRoute = (handler: (body: { municipalityId: number }) => Promise<NextR
   )
 
 const postRequest = (body: unknown, headers?: HeadersInit) =>
-  new Request('https://pt.jorgesolla.com.br/campanha/municipios/political-trend', {
+  new Request('https://jorgesolla1313.com.br/campanha/municipios/political-trend', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: typeof body === 'string' ? body : JSON.stringify(body),
@@ -51,7 +51,7 @@ describe('campaignJsonMutationRoute', () => {
     )
 
     const response = await route(
-      postRequest({ municipalityId: 7 }, { Origin: 'https://pt.jorgesolla.com.br' }),
+      postRequest({ municipalityId: 7 }, { Origin: 'https://jorgesolla1313.com.br' }),
     )
 
     expect(response.status).toBe(200)

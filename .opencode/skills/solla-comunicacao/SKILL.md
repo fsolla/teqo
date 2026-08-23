@@ -12,7 +12,7 @@ Banco de conhecimento para escrever qualquer peça de comunicação do mandato. 
 
 ## Regras rápidas
 
-1. **Sem fato, não afirme**: pesquise nas fontes oficiais (pt.jorgesolla.com.br, camara.leg.br/deputados/178857). Números inventados destroem a credibilidade do mandato.
+1. **Sem fato, não afirme**: pesquise nas fontes oficiais (jorgesolla1313.com.br, camara.leg.br/deputados/178857). Números inventados destroem a credibilidade do mandato.
 2. **Três registros de tom** (detalhados na referência):
    - **Institucional**: site, notas, artigos, discursos — técnico, com dados e ciência, mas acessível.
    - **Redes sociais**: afetivo e caloroso, "mandato do tamanho da Bahia", territórios e gente do interior.

@@ -120,6 +120,22 @@ describe('setGoogleCalendarSyncDisabled action (S18/D7)', () => {
 
   it('no-op without a config doc keeps ok with the derived not-configured state', async () => {
     await installStaffActor()
+    // Ensure no residual config doc from parallel specs (C114 shares the test DB).
+    const stale = await payload.find({
+      collection: 'googleCalendarSync',
+      limit: 1,
+      pagination: false,
+      depth: 0,
+      where: { calendarId: { exists: true } },
+      overrideAccess: true,
+    })
+    if (stale.docs[0]) {
+      await payload.delete({
+        collection: 'googleCalendarSync',
+        id: stale.docs[0].id,
+        overrideAccess: true,
+      })
+    }
 
     const result: GoogleCalendarSyncActionResult = await withGoogleCalendarTestCredential(() =>
       setGoogleCalendarSyncDisabled(true),

@@ -31,7 +31,10 @@ import {
   createSupporterRecord,
   updateSupporterContactRecord,
 } from '@/app/(campaign)/campanha/actions/supporter'
-import { SUPPORTER_REGISTRATION_CONSENT_KEY } from '@/lib/campaignConsentKeys'
+import {
+  CAMPAIGN_INVITE_CONSENT_KEY,
+  SUPPORTER_REGISTRATION_CONSENT_KEY,
+} from '@/lib/campaignConsentKeys'
 import {
   BRAZILIAN_PHONE_DUPLICATE_MESSAGE,
   BRAZILIAN_PHONE_INVALID_MESSAGE,
@@ -41,6 +44,7 @@ import {
 import config from '@/payload.config'
 import { toSupporterDetailViewModel } from '@/utilities/supporter/supporterViewModels'
 import {
+  CAMPAIGN_INVITE_CONSENT_LEASE_KEY,
   ensureLeasedConsent,
   SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY,
 } from '../helpers/testDatabaseLease'
@@ -333,13 +337,17 @@ describe('C112 — busca e convite com números secundários', () => {
       phone: primary,
       recipientName: 'Liderança',
       senderName: 'Coordenação',
-      inviteUrl: 'https://pt.jorgesolla.com.br/campanha/convite/abc',
+      inviteUrl: 'https://jorgesolla1313.com.br/campanha/convite/abc',
       kind: 'autopreenchimento',
     })
     expect(url).toContain(`wa.me/55${primary}`)
     expect(url).not.toContain(`wa.me/55${secondary}`)
 
     // And the invitation creation gate uses the ficha's primary.
+    await ensureLeasedConsent(payload, {
+      consentKey: CAMPAIGN_INVITE_CONSENT_KEY,
+      leaseKey: CAMPAIGN_INVITE_CONSENT_LEASE_KEY,
+    })
     const coordinator = await campaignFixtures().createCampaignUser('coordinator')
     const municipality = await campaignFixtures().getMunicipality()
     const created = await createLeadershipRecord(payload, coordinator, {
