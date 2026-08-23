@@ -95,4 +95,31 @@ describe('municipality allocator discipline (miss #73)', () => {
       'anchor with ^ (or locate by href) — catalog names are not prefix-unique',
     ).toEqual([])
   })
+
+  it('routes every claim through the shared allocator module (OPS46)', () => {
+    // The claims registry (campaignMunicipalityAllocator.ts) is what makes the
+    // purge-on-claim contract safe after the sequence wraps; a direct
+    // nextval/sequence reference anywhere else reintroduces the collision it
+    // exists to prevent.
+    const offenders: string[] = []
+    const allocatorModule = repoPath(
+      resolve(repoRoot, 'tests/helpers/campaignMunicipalityAllocator.ts'),
+    )
+    const scanned = [
+      ...specFiles,
+      ...walkFiles(resolve(repoRoot, 'tests/helpers'), ['.ts']),
+    ].filter((file) => repoPath(file) !== allocatorModule)
+
+    for (const file of scanned) {
+      const source = readFileSync(file, 'utf8')
+      if (/nextval\(|campaign_fixture_municipality_alloc/.test(source)) {
+        offenders.push(repoPath(file))
+      }
+    }
+
+    expect(
+      offenders,
+      'claim through claimMunicipalityIndex — direct sequence access bypasses the claims registry',
+    ).toEqual([])
+  })
 })

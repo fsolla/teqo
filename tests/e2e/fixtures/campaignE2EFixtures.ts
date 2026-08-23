@@ -9,6 +9,10 @@ import type { CampaignUser } from '../../../src/payload-types.js'
 import config from '../../../src/payload.config.js'
 import { withPayloadTransaction } from '../../../src/utilities/payloadTransaction.js'
 import { assertTestDatabase } from '../../helpers/assertTestDatabase.js'
+import {
+  claimMunicipalityIndex,
+  releaseMunicipalityClaims,
+} from '../../helpers/campaignMunicipalityAllocator.js'
 import { purgeMunicipalityResidue } from '../../helpers/campaignResidue.js'
 import { withInviteConsent } from '../../helpers/testDatabaseLease.js'
 import { test as base, expect } from './e2eTest.js'
@@ -75,6 +79,7 @@ export class CampaignE2EOwnership {
   readonly payload: Payload
   readonly runID = randomUUID()
   private counter = 0
+  private readonly claimedMunicipalityIndexes = new Set<number>()
   private readonly touchedMunicipalities = new Set<number>()
   private readonly owned = new Map<OwnedCollection, Set<number>>(
     deletionOrder.map((collection) => [collection, new Set<number>()]),
@@ -145,17 +150,12 @@ export class CampaignE2EOwnership {
   }
 
   async claimMunicipality(): Promise<{ id: number; name: string; slug: string }> {
-    await this.rootPayload.db.drizzle
-      .execute(sql.raw(`CREATE SEQUENCE IF NOT EXISTS "campaign_fixture_municipality_alloc"`))
-      .catch((error: unknown) => {
-        if ((error as { code?: string }).code === '23505') return
-        throw error
-      })
-    const result = await this.rootPayload.db.drizzle.execute(
-      sql.raw(`SELECT nextval('"campaign_fixture_municipality_alloc"') AS "value"`),
+    const index = await claimMunicipalityIndex(
+      this.rootPayload,
+      municipalityCatalog.length,
+      this.runID,
     )
-    const index =
-      Number((result.rows[0] as { value: string | number }).value) % municipalityCatalog.length
+    this.claimedMunicipalityIndexes.add(index)
     const slug = municipalityCatalog[index]!.slug
     const found = await this.rootPayload.find({
       collection: 'municipality',
@@ -423,6 +423,9 @@ export class CampaignE2EOwnership {
   }
 
   async cleanup(): Promise<void> {
+    if (this.claimedMunicipalityIndexes.size > 0) {
+      await releaseMunicipalityClaims(this.rootPayload, this.runID)
+    }
     await this.discoverOwnedRows()
     await withPayloadTransaction(this.rootPayload, async ({ req, transactionID }) => {
       const transaction = this.rootPayload.db.sessions?.[String(transactionID)]?.db as

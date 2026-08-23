@@ -21,6 +21,7 @@ import type {
   VotePledge,
 } from '@/payload-types'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
+import { claimMunicipalityIndex, releaseMunicipalityClaims } from './campaignMunicipalityAllocator'
 import { purgeMunicipalityResidue, relationId, relationIds } from './campaignResidue'
 
 /**
@@ -202,32 +203,11 @@ const combineErrors = (primary: unknown, cleanup: unknown): AggregateError =>
 
 /**
  * Cross-process municipality allocator: seeded municipalities are shared reference rows, so
- * concurrently running spec files must never operate on the same municipality. A
- * Postgres sequence hands out globally unique catalog indexes.
+ * concurrently running spec files must never operate on the same municipality. The allocator
+ * (`campaignMunicipalityAllocator.ts`) hands out a catalog index per claim — unique across
+ * live runs even after the Postgres sequence wraps (see its module docs for the wrap
+ * mechanism). Claims are released by `cleanup()` so later runs reuse the slots.
  */
-const MUNICIPALITY_ALLOCATION_SEQUENCE = 'campaign_fixture_municipality_alloc'
-let allocationSequenceReady: Promise<void> | undefined
-
-const nextAllocatedMunicipalityIndex = async (
-  payload: Payload,
-  catalogSize: number,
-): Promise<number> => {
-  allocationSequenceReady ??= payload.db.drizzle
-    .execute(sql.raw(`CREATE SEQUENCE IF NOT EXISTS "${MUNICIPALITY_ALLOCATION_SEQUENCE}"`))
-    .then(() => undefined)
-    .catch((error: unknown) => {
-      // IF NOT EXISTS still races across parallel workers (pg_class unique
-      // violation, SQLSTATE 23505) — the sequence exists, which is all we need.
-      if ((error as { code?: string }).code === '23505') return undefined
-      throw error
-    })
-  await allocationSequenceReady
-  const result = await payload.db.drizzle.execute(
-    sql.raw(`SELECT nextval('"${MUNICIPALITY_ALLOCATION_SEQUENCE}"') AS "value"`),
-  )
-  const value = Number((result.rows[0] as { value: string | number }).value)
-  return value % catalogSize
-}
 
 export class CampaignFixtures {
   readonly payload: Payload
@@ -236,6 +216,7 @@ export class CampaignFixtures {
   private cleaned = false
   private counter = 0
   private municipalityCursor = 0
+  private readonly claimedMunicipalityIndexes = new Set<number>()
   private readonly markers = new Set<string>()
   private readonly owned = emptyOwnedIDs()
   private readonly touchedMunicipalities = new Set<number>()
@@ -377,10 +358,12 @@ export class CampaignFixtures {
   async getMunicipality(slug?: string): Promise<Municipality> {
     let requestedSlug = slug
     if (!requestedSlug) {
-      const index = await nextAllocatedMunicipalityIndex(
+      const index = await claimMunicipalityIndex(
         this.rootPayload,
         municipalityCatalog.length,
+        this.runID,
       )
+      this.claimedMunicipalityIndexes.add(index)
       requestedSlug = municipalityCatalog[index]!.slug
       this.municipalityCursor += 1
     }
@@ -1033,6 +1016,9 @@ export class CampaignFixtures {
 
   async cleanup(): Promise<void> {
     if (this.cleaned) return
+    if (this.claimedMunicipalityIndexes.size > 0) {
+      await releaseMunicipalityClaims(this.rootPayload, this.runID)
+    }
     await this.discoverDependents()
     await withPayloadTransaction(this.rootPayload, async ({ req }) => {
       for (const collection of [
