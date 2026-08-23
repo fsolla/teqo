@@ -18,6 +18,7 @@ export const CampaignQuickActionsFab = ({
 
   return (
     <div
+      data-slot="campaign-quick-actions-fab"
       className={cn(
         'pointer-events-none fixed bottom-4 right-4 z-40 print:hidden',
         'pb-[max(0px,env(safe-area-inset-bottom))]',
