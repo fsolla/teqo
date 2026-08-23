@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — C145 · Permissão do assessor em modal central / bottom drawer</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-6xl p-8">
+      <p class="text-sm text-zinc-400">
+        C145 — o editor Visão × Edição sai do popover ancorado (que estoura a tela) e vira overlay
+        centralizado: Dialog central no desktop, bottom drawer no celular. Conteúdo do editor (C141)
+        intacto — muda só o invólucro. Cenas: desktop e mobile.
+      </p>
+
+      <!-- ============ CENA 1: DESKTOP — Dialog central ============ -->
+      <section data-shot="desktop" class="mt-6 overflow-hidden rounded-xl border border-zinc-800">
+        <div
+          class="flex items-center justify-between border-b border-zinc-200 bg-zinc-100 px-6 py-4"
+        >
+          <div>
+            <div class="h-5 w-44 rounded bg-zinc-500"></div>
+            <div class="mt-1 h-2 w-64 rounded bg-zinc-400"></div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div
+              class="h-9 w-44 rounded-full border border-zinc-300 bg-white px-3 text-sm text-zinc-500"
+            >
+              Buscar assessor…
+            </div>
+            <div
+              class="inline-flex h-9 items-center rounded-lg bg-red-600 px-4 text-sm font-extrabold text-white"
+            >
+              + Novo assessor
+            </div>
+          </div>
+        </div>
+
+        <div class="relative bg-zinc-100 px-6 pb-6 pt-6">
+          <!-- tabela -->
+          <div class="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+            <div
+              class="grid grid-cols-[1.3fr_1.7fr_1.1fr_1.7fr_1.5fr] gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-xs font-bold text-zinc-500"
+            >
+              <div>Nome</div>
+              <div>E-mail</div>
+              <div>Celular</div>
+              <div>Municípios</div>
+              <div>Permissão</div>
+            </div>
+            <div
+              class="grid grid-cols-[1.3fr_1.7fr_1.1fr_1.7fr_1.5fr] items-center gap-2 border-b border-zinc-100 px-4 py-3 text-sm"
+            >
+              <div class="font-semibold text-zinc-900">Nome do assessor</div>
+              <div class="text-zinc-600">assessor@exemplo.org</div>
+              <div class="text-zinc-600">(71) 90000-0000</div>
+              <div class="flex flex-wrap gap-1">
+                <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs text-zinc-700"
+                  >Salvador (19)</span
+                >
+                <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs text-zinc-700"
+                  >Feira de Santana</span
+                >
+              </div>
+              <div>
+                <span
+                  class="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs font-bold text-zinc-800 ring-1 ring-zinc-300"
+                  >Carteira · Edita carteira</span
+                >
+              </div>
+            </div>
+            <div
+              class="grid grid-cols-[1.3fr_1.7fr_1.1fr_1.7fr_1.5fr] items-center gap-2 border-b border-zinc-100 px-4 py-3 text-sm"
+            >
+              <div class="font-semibold text-zinc-900">Outra assessora</div>
+              <div class="text-zinc-600">outra@exemplo.org</div>
+              <div class="text-zinc-600">(71) 90000-0001</div>
+              <div class="flex flex-wrap gap-1">
+                <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs text-zinc-700"
+                  >Camaçari</span
+                >
+              </div>
+              <div>
+                <span class="rounded bg-zinc-300 px-2 py-0.5 text-xs font-bold text-zinc-800"
+                  >Tudo · Somente leitura</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- overlay escuro do Dialog -->
+          <div class="absolute inset-0 z-10 flex items-center justify-center bg-zinc-950/60 px-6">
+            <!-- Dialog central -->
+            <div class="w-full max-w-md rounded-xl bg-white p-5 shadow-2xl">
+              <div>
+                <p class="text-sm font-bold text-zinc-900">Permissão da conta</p>
+                <p class="mt-1 text-xs text-zinc-500">Vale para todas as telas do /campanha.</p>
+              </div>
+
+              <div class="mt-4 flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-zinc-900" for="d-visibility">Visão</label>
+                <select
+                  id="d-visibility"
+                  class="h-9 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900"
+                >
+                  <option>Edita tudo — Edita tudo o que vê</option>
+                  <option>Carteira — Municípios que administra</option>
+                </select>
+                <p class="text-[11px] leading-relaxed text-zinc-500">
+                  Enxerga todos os municípios e lideranças.
+                </p>
+              </div>
+
+              <div class="mt-3 flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-zinc-900" for="d-editing">Edição</label>
+                <select
+                  id="d-editing"
+                  class="h-9 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900"
+                >
+                  <option>Edita tudo — Edita tudo o que vê</option>
+                  <option>Edita carteira — Edita só o que administra</option>
+                  <option>Somente leitura — Nenhum controle de edição</option>
+                </select>
+                <p class="text-[11px] leading-relaxed text-zinc-500">
+                  Edita tudo o que vê — contas, carteiras, nível de envolvimento e demandas
+                  escaladas seguem com a coordenação.
+                </p>
+              </div>
+
+              <div
+                class="mt-3 rounded-md bg-zinc-100 px-3 py-2 text-[11px] leading-relaxed text-zinc-600"
+              >
+                Demandas seguem regra própria: só quem é responsável pela demanda (e
+                candidato/coordenador) a vê — mesmo com visão "Tudo". Decisões de coordenação
+                (contas, carteiras, nível de envolvimento, demandas escaladas) continuam restritas a
+                coordenador e candidato.
+              </div>
+
+              <div class="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  class="inline-flex h-9 items-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex h-9 items-center rounded-md bg-red-600 px-4 text-sm font-extrabold text-white"
+                >
+                  Salvar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CENA 2: MOBILE — bottom drawer ============ -->
+      <section data-shot="mobile" class="mt-10 overflow-hidden rounded-xl border border-zinc-800">
+        <div
+          class="flex items-center justify-between border-b border-zinc-200 bg-zinc-100 px-4 py-3"
+        >
+          <div class="h-5 w-32 rounded bg-zinc-500"></div>
+          <div class="h-8 w-8 rounded-lg bg-red-600"></div>
+        </div>
+
+        <div class="relative bg-zinc-100 p-3 pb-[17rem]">
+          <!-- linha da lista com o badge tocado -->
+          <div class="rounded-lg border border-zinc-200 bg-white p-3 text-sm">
+            <div class="font-semibold text-zinc-900">Assessora de campo</div>
+            <div class="mt-1 text-xs text-zinc-500">campo@exemplo.org · (71) 90000-0002</div>
+            <div class="mt-2 flex flex-wrap gap-1">
+              <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs text-zinc-700">Ilhéus</span>
+              <span class="rounded bg-zinc-200 px-1.5 py-0.5 text-xs text-zinc-700">Itabuna</span>
+              <span
+                class="inline-flex items-center rounded bg-zinc-200 px-2 py-0.5 text-xs font-bold text-zinc-800"
+                >Carteira · Edita carteira</span
+              >
+            </div>
+          </div>
+
+          <!-- bottom drawer -->
+          <div class="absolute inset-x-3 bottom-3 z-10 rounded-t-xl bg-white shadow-2xl">
+            <div class="mx-auto mt-2 h-1 w-10 rounded-full bg-zinc-300"></div>
+            <div class="p-5">
+              <div>
+                <p class="text-sm font-bold text-zinc-900">Permissão da conta</p>
+                <p class="mt-1 text-xs text-zinc-500">Vale para todas as telas do /campanha.</p>
+              </div>
+
+              <div class="mt-4 flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-zinc-900" for="m-visibility">Visão</label>
+                <select
+                  id="m-visibility"
+                  class="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900"
+                >
+                  <option>Carteira — Municípios que administra</option>
+                  <option>Edita tudo — Edita tudo o que vê</option>
+                </select>
+              </div>
+
+              <div class="mt-3 flex flex-col gap-1.5">
+                <label class="text-xs font-bold text-zinc-900" for="m-editing">Edição</label>
+                <select
+                  id="m-editing"
+                  class="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900"
+                >
+                  <option>Edita carteira — Edita só o que administra</option>
+                  <option>Edita tudo — Edita tudo o que vê</option>
+                  <option>Somente leitura — Nenhum controle de edição</option>
+                </select>
+              </div>
+
+              <div
+                class="mt-3 rounded-md bg-zinc-100 px-3 py-2 text-[11px] leading-relaxed text-zinc-600"
+              >
+                Demandas seguem regra própria: só quem é responsável pela demanda (e
+                candidato/coordenador) a vê — mesmo com visão "Tudo". Decisões de coordenação
+                (contas, carteiras, nível de envolvimento, demandas escaladas) continuam restritas a
+                coordenador e candidato.
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  class="inline-flex h-11 items-center justify-center rounded-md border border-zinc-300 bg-white text-sm font-semibold text-zinc-700"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex h-11 items-center justify-center rounded-md bg-red-600 text-sm font-extrabold text-white"
+                >
+                  Salvar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
