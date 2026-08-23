@@ -2,7 +2,7 @@
 
 Status: rascunho
 Atualizado em: 2026-08-23
-Issue: — (após `pnpm agent:register`; senão "—")
+Issue: #784
 Priority: P2
 Impeccable: A — N/A sem UI
 Rascunho UI: N/A — sem UI
@@ -58,5 +58,5 @@ Dados: N/A — item de tooling/launch, sem superfície de dados.
 
 ## Referências
 
-- GitHub Issue #OPS78 (após registro)
+- GitHub Issue #784 (registro)
 - `scripts/lib/worktree.mjs` · `scripts/worktree.mjs` · `tests/unit/worktree.unit.spec.ts` · `opencode.json` · `.opencode/commands/work-issue.md` · `.opencode/commands/plan-issue.md` · `.agents/shell/worktree.sh` · `.agents/skills/worktree-next-issue/SKILL.md`
