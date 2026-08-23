@@ -216,7 +216,7 @@ export class CampaignFixtures {
   private cleaned = false
   private counter = 0
   private municipalityCursor = 0
-  private readonly claimedMunicipalityIndexes = new Set<number>()
+  private claimedAnyMunicipality = false
   private readonly markers = new Set<string>()
   private readonly owned = emptyOwnedIDs()
   private readonly touchedMunicipalities = new Set<number>()
@@ -363,7 +363,7 @@ export class CampaignFixtures {
         municipalityCatalog.length,
         this.runID,
       )
-      this.claimedMunicipalityIndexes.add(index)
+      this.claimedAnyMunicipality = true
       requestedSlug = municipalityCatalog[index]!.slug
       this.municipalityCursor += 1
     }
@@ -1016,9 +1016,6 @@ export class CampaignFixtures {
 
   async cleanup(): Promise<void> {
     if (this.cleaned) return
-    if (this.claimedMunicipalityIndexes.size > 0) {
-      await releaseMunicipalityClaims(this.rootPayload, this.runID)
-    }
     await this.discoverDependents()
     await withPayloadTransaction(this.rootPayload, async ({ req }) => {
       for (const collection of [
@@ -1072,6 +1069,13 @@ export class CampaignFixtures {
         )
       }
     })
+    // Release the allocator claim only AFTER the run's rows are purged: a
+    // concurrent run that claims this slot in the meantime would purge-on-claim
+    // the rows still live here (the release→purge window is the corruption the
+    // registry exists to prevent).
+    if (this.claimedAnyMunicipality) {
+      await releaseMunicipalityClaims(this.rootPayload, this.runID)
+    }
     this.cleaned = true
   }
 

@@ -63,11 +63,13 @@ describe('campaign municipality allocator registry', () => {
       const runID = freshRunID()
       const first = await claimMunicipalityIndex(payload, catalogSize, runID)
       const second = await claimMunicipalityIndex(payload, catalogSize, runID)
-      expect(second).not.toBe(first)
-      expect([first, second]).not.toContain(anchorIndex)
+      expect(second, 'claims of the same run must be distinct').not.toBe(first)
+      expect([first, second], 'a live run must never receive the anchor slot').not.toContain(
+        anchorIndex,
+      )
       await releaseMunicipalityClaims(payload, runID)
     }
-    expect(await claimCount(anchor)).toBe(1)
+    expect(await claimCount(anchor), 'the anchor claim must survive every wrap').toBe(1)
   })
 
   it('fails loudly with an exhaustion error instead of colliding, then recovers on release', async () => {
@@ -106,7 +108,7 @@ describe('campaign municipality allocator registry', () => {
     const crashed = freshRunID()
     const survivor = freshRunID()
 
-    const crashedIndex = await claimMunicipalityIndex(payload, catalogSize, crashed)
+    await claimMunicipalityIndex(payload, catalogSize, crashed)
     // Simulate a run killed before cleanup: age its claim past the 2h window.
     await payload.db.drizzle.execute(sql`
       UPDATE "campaign_fixture_municipality_claims"
@@ -114,17 +116,20 @@ describe('campaign municipality allocator registry', () => {
       WHERE "run_id" = ${crashed}
     `)
 
-    // The stale slot is reclaimable: keep claiming until the survivor lands
-    // on the crashed run's index (the sequence advances one slot per claim,
-    // so a bounded loop covers every slot of the residue space).
-    let reclaimed = false
-    for (let attempt = 0; attempt < catalogSize * 3 && !reclaimed; attempt += 1) {
-      if ((await claimMunicipalityIndex(payload, catalogSize, survivor)) === crashedIndex) {
-        reclaimed = true
-      }
+    // A stale claim must not block the space forever: keep claiming until
+    // the crashed run's claim is gone. Under the PARALLEL suite another spec
+    // may steal the aged slot first (shared cursor), so the invariant is
+    // "the stale claim disappears while the survivor claims succeed" — not
+    // "the survivor lands on that exact slot".
+    let stolen = false
+    for (let attempt = 0; attempt < catalogSize * 3 && !stolen; attempt += 1) {
+      await claimMunicipalityIndex(payload, catalogSize, survivor)
+      if ((await claimCount(crashed)) === 0) stolen = true
     }
-    expect(reclaimed, 'stale claim must be stealable').toBe(true)
-    expect(await claimCount(crashed)).toBe(0)
+    expect(stolen, 'a stale claim must be stolen (or the slot reclaimed) within the loop').toBe(
+      true,
+    )
+    expect(await claimCount(crashed), 'crashed run must hold no claim after the steal').toBe(0)
     // The survivor may hold up to catalogSize slots at this point; release
     // inline so the later tests keep free space (the afterAll is the net).
     await releaseMunicipalityClaims(payload, survivor)
