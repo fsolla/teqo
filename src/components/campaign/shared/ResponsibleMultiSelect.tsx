@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronsUpDownIcon, XIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/Command'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/Spinner'
+import { useAsyncSearchOptions } from '@/hooks/useAsyncSearchOptions'
 import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
 import {
   MAX_ACTIVITY_RESPONSIBLES,
@@ -67,44 +68,12 @@ export const ResponsibleMultiSelect = ({
   const [selected, setSelected] = useState<ResponsibleOption[]>(value)
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const [options, setOptions] = useState<ResponsibleOption[]>([])
-  const [loading, setLoading] = useState(false)
-  const [failed, setFailed] = useState(false)
-  const requestId = useRef(0)
-  const searchRef = useRef(search)
-
-  searchRef.current = search
-
-  useEffect(() => {
-    if (!open) return
-    if (!isContactSearchQueryReady(query)) {
-      setOptions([])
-      setLoading(false)
-      setFailed(false)
-      return
-    }
-
-    const currentRequestId = ++requestId.current
-    const timeout = window.setTimeout(() => {
-      setLoading(true)
-      setFailed(false)
-      void searchRef
-        .current(query.trim())
-        .then((nextOptions) => {
-          if (requestId.current !== currentRequestId) return
-          setOptions(nextOptions)
-        })
-        .catch(() => {
-          if (requestId.current !== currentRequestId) return
-          setFailed(true)
-        })
-        .finally(() => {
-          if (requestId.current === currentRequestId) setLoading(false)
-        })
-    }, 250)
-
-    return () => window.clearTimeout(timeout)
-  }, [open, query])
+  const { options, loading, failed } = useAsyncSearchOptions({
+    open,
+    query,
+    search,
+    isQueryReady: isContactSearchQueryReady,
+  })
 
   const selectedKey = (option: ResponsibleOption) => `${option.relationTo}:${option.id}`
   const selectedKeys = new Set(selected.map(selectedKey))

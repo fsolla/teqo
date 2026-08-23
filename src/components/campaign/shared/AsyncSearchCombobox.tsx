@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronsUpDownIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -13,6 +13,7 @@ import {
   CommandList,
 } from '@/components/ui/Command'
 import { Spinner } from '@/components/ui/Spinner'
+import { useAsyncSearchOptions } from '@/hooks/useAsyncSearchOptions'
 
 export type AsyncSearchOption = {
   id: number
@@ -49,50 +50,11 @@ export const AsyncSearchCombobox = ({
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<AsyncSearchOption | null>(value)
-  const [options, setOptions] = useState<AsyncSearchOption[]>([])
-  const [loading, setLoading] = useState(false)
-  const [failed, setFailed] = useState(false)
-  const requestId = useRef(0)
-  const searchRef = useRef(search)
-  const isQueryReadyRef = useRef(isQueryReady)
-
-  searchRef.current = search
-  isQueryReadyRef.current = isQueryReady
+  const { options, loading, failed } = useAsyncSearchOptions({ open, query, search, isQueryReady })
 
   useEffect(() => {
     setSelected(value)
   }, [value])
-
-  useEffect(() => {
-    if (!open) return
-    if (!isQueryReadyRef.current(query)) {
-      setOptions([])
-      setLoading(false)
-      setFailed(false)
-      return
-    }
-
-    const currentRequestId = ++requestId.current
-    const timeout = window.setTimeout(() => {
-      setLoading(true)
-      setFailed(false)
-      void searchRef
-        .current(query.trim())
-        .then((nextOptions) => {
-          if (requestId.current !== currentRequestId) return
-          setOptions(nextOptions)
-        })
-        .catch(() => {
-          if (requestId.current !== currentRequestId) return
-          setFailed(true)
-        })
-        .finally(() => {
-          if (requestId.current === currentRequestId) setLoading(false)
-        })
-    }, 250)
-
-    return () => window.clearTimeout(timeout)
-  }, [open, query])
 
   const choose = (option: AsyncSearchOption | null) => {
     setSelected(option)

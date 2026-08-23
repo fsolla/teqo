@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronsUpDownIcon, XIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar'
@@ -16,6 +16,7 @@ import {
   CommandList,
 } from '@/components/ui/Command'
 import { Spinner } from '@/components/ui/Spinner'
+import { useAsyncSearchOptions } from '@/hooks/useAsyncSearchOptions'
 import { campaignUserInitials } from '@/utilities/campaignUserProfile'
 
 export type DemandResponsibleOption = RelationOption & { avatarUrl?: string | null }
@@ -60,38 +61,7 @@ export const DemandResponsibleMultiSelect = ({
   const [selected, setSelected] = useState<DemandResponsibleOption[]>(value)
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const [options, setOptions] = useState<RelationOption[]>([])
-  const [loading, setLoading] = useState(false)
-  const [failed, setFailed] = useState(false)
-  const requestId = useRef(0)
-  const searchRef = useRef(search)
-
-  searchRef.current = search
-
-  useEffect(() => {
-    if (!open) return
-
-    const currentRequestId = ++requestId.current
-    const timeout = window.setTimeout(() => {
-      setLoading(true)
-      setFailed(false)
-      void searchRef
-        .current(query.trim())
-        .then((nextOptions) => {
-          if (requestId.current !== currentRequestId) return
-          setOptions(nextOptions)
-        })
-        .catch(() => {
-          if (requestId.current !== currentRequestId) return
-          setFailed(true)
-        })
-        .finally(() => {
-          if (requestId.current === currentRequestId) setLoading(false)
-        })
-    }, 250)
-
-    return () => window.clearTimeout(timeout)
-  }, [open, query])
+  const { options, loading, failed } = useAsyncSearchOptions({ open, query, search })
 
   const isCreator = (id: number) => creatorUserId != null && creatorUserId === id
   const selectedIds = new Set(selected.map((option) => option.id))
