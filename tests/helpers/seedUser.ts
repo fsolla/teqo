@@ -35,20 +35,3 @@ export async function seedTestUser(): Promise<void> {
     // A parallel worker already seeded the shared user; nothing to reset.
   }
 }
-
-/**
- * Cleans up test user after tests
- */
-export async function cleanupTestUser(): Promise<void> {
-  assertTestDatabase(process.env.DATABASE_URL)
-  const payload = await getPayload({ config })
-
-  await payload.delete({
-    collection: 'users',
-    where: {
-      email: {
-        equals: testUser.email,
-      },
-    },
-  })
-}
