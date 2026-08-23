@@ -112,7 +112,7 @@ describe('municipality allocator discipline (miss #73)', () => {
 
     for (const file of scanned) {
       const source = readFileSync(file, 'utf8')
-      if (/nextval\(|campaign_fixture_municipality_alloc/.test(source)) {
+      if (/\bnextval\s*\(|\bsetval\s*\(|campaign_fixture_municipality_alloc/.test(source)) {
         offenders.push(repoPath(file))
       }
     }

@@ -79,7 +79,7 @@ export class CampaignE2EOwnership {
   readonly payload: Payload
   readonly runID = randomUUID()
   private counter = 0
-  private readonly claimedMunicipalityIndexes = new Set<number>()
+  private claimedAnyMunicipality = false
   private readonly touchedMunicipalities = new Set<number>()
   private readonly owned = new Map<OwnedCollection, Set<number>>(
     deletionOrder.map((collection) => [collection, new Set<number>()]),
@@ -155,7 +155,7 @@ export class CampaignE2EOwnership {
       municipalityCatalog.length,
       this.runID,
     )
-    this.claimedMunicipalityIndexes.add(index)
+    this.claimedAnyMunicipality = true
     const slug = municipalityCatalog[index]!.slug
     const found = await this.rootPayload.find({
       collection: 'municipality',
@@ -423,9 +423,6 @@ export class CampaignE2EOwnership {
   }
 
   async cleanup(): Promise<void> {
-    if (this.claimedMunicipalityIndexes.size > 0) {
-      await releaseMunicipalityClaims(this.rootPayload, this.runID)
-    }
     await this.discoverOwnedRows()
     await withPayloadTransaction(this.rootPayload, async ({ req, transactionID }) => {
       const transaction = this.rootPayload.db.sessions?.[String(transactionID)]?.db as
@@ -499,6 +496,13 @@ export class CampaignE2EOwnership {
         })
       }
     })
+    // Release the allocator claim only AFTER the run's rows are purged: a
+    // concurrent run that claims this slot in the meantime would purge-on-claim
+    // the rows still live here (the release→purge window is the corruption the
+    // registry exists to prevent).
+    if (this.claimedAnyMunicipality) {
+      await releaseMunicipalityClaims(this.rootPayload, this.runID)
+    }
   }
 
   async expectNoOwnedRows(): Promise<void> {
