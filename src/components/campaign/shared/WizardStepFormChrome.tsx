@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { startTransition, type FormEvent, type ReactNode } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
@@ -77,8 +77,20 @@ export const WizardStepFormChrome = (
     </>
   )
 
+  // C140 — manual dispatch (no `action={props.action}`): React 19 resets
+  // uncontrolled fields after any settled form action, wiping typed values
+  // on a validation error — the step stays visible, so the wipe showed.
+  // `startTransition` keeps `isPending` correct for the imperative dispatch.
+  const handleSubmit =
+    'action' in props
+      ? (event: FormEvent<HTMLFormElement>) => {
+          event.preventDefault()
+          startTransition(() => props.action(new FormData(event.currentTarget)))
+        }
+      : undefined
+
   return 'action' in props ? (
-    <form action={props.action} className="flex flex-col gap-6" {...pendingAttrs}>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6" {...pendingAttrs}>
       {content}
     </form>
   ) : (

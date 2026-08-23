@@ -128,7 +128,7 @@ export const POOL_SPAWN_GRACE_MS = 15 * 60 * 1000
  * by the pool (no claim marker) — those belong to humans/manual agents and the
  * pool never touches them.
  *
- * Occupied means "from the claim to the merge in main (or a documented
+ * Occupied means "from the claim to the merge in stage (or a documented
  * terminal failure)" — a terminal run with an open PR is still occupied
  * (auto-merge finishes the job hands-off), per the plan's slot definition.
  *

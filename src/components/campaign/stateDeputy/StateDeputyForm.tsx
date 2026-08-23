@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { startTransition, useActionState, type FormEvent } from 'react'
 
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { Button } from '@/components/ui/button'
@@ -29,8 +29,16 @@ export const StateDeputyForm = ({ formAction, initial, initialName }: StateDeput
   const [state, submitAction, isPending] = useActionState(formAction, {})
   const isEdit = Boolean(initial)
 
+  // C140 — manual dispatch (no `action={submitAction}`): React 19 resets
+  // uncontrolled fields after any settled form action, wiping typed values
+  // on a validation error — the page stays visible, so the wipe showed.
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => submitAction(new FormData(event.currentTarget)))
+  }
+
   return (
-    <form action={submitAction} className="flex max-w-2xl flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-4">
       {initial ? <input type="hidden" name="stateDeputyId" value={initial.id} /> : null}
       {!isEdit ? (
         <Field>

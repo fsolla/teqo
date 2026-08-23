@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
+import { startTransition, useActionState, useEffect, useState, type FormEvent } from 'react'
 
 import { searchDemandResponsibleOptions } from '@/app/(campaign)/campanha/(app)/demandas/responsibleSearchActions'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
@@ -74,8 +74,16 @@ export const DemandResponsiblesCard = ({
     )
   }
 
+  // C140 — manual dispatch (no `action={submitAction}`): React 19 resets
+  // uncontrolled fields after any settled form action, wiping typed values
+  // on a validation error — the card stays open, so the wipe showed.
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => submitAction(new FormData(event.currentTarget)))
+  }
+
   return (
-    <form action={submitAction} className="flex flex-col gap-3 rounded-xl border p-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-xl border p-4">
       <div className="flex flex-col gap-1">
         <h2 className="text-base font-medium">{CAMPAIGN_DEMAND_RESPONSIBLES_LABEL}</h2>
         <p className="text-sm text-muted-foreground">Só quem é responsável vê esta demanda.</p>

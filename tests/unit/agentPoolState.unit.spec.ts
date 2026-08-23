@@ -100,7 +100,7 @@ describe('classifyPoolClaim', () => {
     expect(classifyPoolClaim({ events: [], now })).toBeNull()
   })
 
-  it('frees the slot once the issue is done (CI flipped on main merge)', () => {
+  it('frees the slot once the issue is done (CI flipped on stage merge)', () => {
     expect(classifyPoolClaim({ events: [claimEvent], issueDone: true, now })).toEqual({
       class: POOL_CLAIM_CLASS.freed,
     })

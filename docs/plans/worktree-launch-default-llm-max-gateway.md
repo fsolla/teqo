@@ -1,7 +1,7 @@
 # Default de launch do worktree opencode passa a usar o DeepSeek na variante max servido pelo gateway da Vercel
 
 Status: rascunho
-Atualizado em: 2026-08-23 (fix de variantes)
+Atualizado em: 2026-08-23
 Issue: #784
 Priority: P2
 Impeccable: A — N/A sem UI
@@ -32,9 +32,8 @@ Dados: N/A — item de tooling/launch, sem superfície de dados.
 ## Direção no codebase (hipótese)
 
 - **Áreas prováveis:** `scripts/lib/worktree.mjs:23` (constante do preset, emitida em `:143`); testes `tests/unit/worktree.unit.spec.ts:151-197` e `tests/unit/opencodeCommands.unit.spec.ts:37`; repo `opencode.json` (adicionar provider OpenAI-compatible do gateway e expor a variante max); textos de doc `.agents/shell/worktree.sh:10`, `scripts/worktree.mjs:27,778`, `.agents/skills/worktree-next-issue/SKILL.md:34`.
-- **Fix de variantes (observação ao vivo):** o provider `vercel` (Vercel AI Gateway) é **built-in** do opencode (documentado em `opencode.ai/docs/providers/#vercel-ai-gateway`), mas o catálogo built-in **não define `variants`** para `deepseek-v4-flash` — por isso as variantes `low`/`high`/`max` não aparecem no TUI. O SDK do opencode permite `variants` no model config (tipo `types.gen.d.ts:1453`), mas o built-in não os expõe. **Fix:** sobrescrever o model config no repo `opencode.json` adicionando `provider.vercel.models["deepseek/deepseek-v4-flash"].variants` com as definições (low/high/max com `reasoningEffort`). O built-in já lista `vercel/deepseek/deepseek-v4-flash` como modelo disponível; a sobrescreve só adiciona as variantes sem quebrar o routing existente.
 - **Precedente a olhar:** OPS26 (criou o preset e o mecanismo "trocar modelo = editar a constante"), OPS31/OPS25 (extensões do launch).
-- **Risco de acoplamento:** baixo — a constante é single source e os testes a seguram; qualquer mudança de string quebra testes, o que é a verificação do item. Fix de variantes é config-only em `opencode.json`.
+- **Risco de acoplamento:** baixo — a constante é single source e os testes a seguram; qualquer mudança de string quebra testes, o que é a verificação do item.
 
 ## Dependências
 
@@ -51,12 +50,11 @@ Dados: N/A — item de tooling/launch, sem superfície de dados.
 
 - **"Só completar a string nos comandos".** Se alguém apenas trocar o modelo nos frontmatters dos comandos, muda a execução de Issues (fora de escopo) e ignora o provider do gateway. **Corte neste item:** a mudança é no default de LAUNCH do worktree (preset + provider no repo), não no cardápio de execução.
 - **"Configurar o gateway no global".** Se alguém criar o provider no opencode.jsonc global, vira config de máquina do humano e contamina todas as sessões. **Corte neste item:** provider no repo `opencode.json`, apenas para expor o caminho que o preset usa.
-- **"Adicionar o provider sem variantes".** Se alguém adicionar o provider Vercel AI Gateway no `opencode.json` mas esquecer o campo `variants` no model config, as variantes não aparecem no TUI e a max não pode ser selecionada. **Corte neste item:** ao sobrescrever o model config, o campo `variants` DEVE incluir as definições low/high/max (cada uma com `reasoningEffort`). O fix é config-only em `opencode.json` — sem migration, sem code.
 
 ## Questões em aberto (produto)
 
 - **Os comandos de execução de Issues acompanham o novo default ou ficam como estão?** **Opções:** A) ficam como estão (execução = escolha estável, só o launch muda) | B) alinhar também. **Recomendação:** A — o item é o default de LAUNCH; o cardápio de execução é outro mecanismo e está fora de escopo.
-- **Onde expor a variante max: no provider built-in ou como override no repo?** **Opções:** A) sobrescrever o model config do provider `vercel` no repo `opencode.json` (adicionar `variants`) | B) flag nova (`--variant max`) na emissão do launch. **Recomendação:** A — sobrescrever o model config do provider built-in, mantendo a emissão atual de `--model` intacta e o teste unitário como guarda. O provider `vercel` é built-in; a sobrescreve só adiciona as variantes sem quebrar o routing.
+- **Onde expor a variante max: no provider do repo ou como flag no preset?** **Opções:** A) default no provider | B) flag nova (`--variant max`) na emissão do launch. **Recomendação:** A — default explícito no provider, mantendo a emissão atual de `--model` intacta e o teste unitário como guarda.
 
 ## Referências
 
