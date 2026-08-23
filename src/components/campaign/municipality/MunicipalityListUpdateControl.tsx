@@ -1,6 +1,13 @@
 'use client'
 
-import { useActionState, useId, useState, type ReactNode } from 'react'
+import {
+  startTransition,
+  useActionState,
+  useId,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react'
 
 import { MunicipalityUpdateFields } from '@/components/campaign/municipality/MunicipalityUpdateFields'
 import {
@@ -75,6 +82,14 @@ export const MunicipalityListUpdateControl = ({
     return children
   }
 
+  // C140 — manual dispatch (no `action={submitAction}`): React 19 resets
+  // uncontrolled fields after any settled form action, wiping typed values
+  // on a validation error — the overlay stays open, so the wipe showed.
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => submitAction(new FormData(event.currentTarget)))
+  }
+
   return (
     <CampaignCellEditOverlay
       variant={variant}
@@ -101,7 +116,7 @@ export const MunicipalityListUpdateControl = ({
       <form
         key={formKey}
         id={formId}
-        action={submitAction}
+        onSubmit={handleSubmit}
         className={cn('flex flex-col', !isSheet && 'gap-3')}
         aria-busy={isPending || undefined}
       >

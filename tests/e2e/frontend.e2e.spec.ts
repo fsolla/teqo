@@ -1,7 +1,6 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 
-import { adminHeaders } from '../helpers/adminApi'
-import { seedTestUser } from '../helpers/seedUser'
+import { seedTestUser, testUser } from '../helpers/seedUser'
 import { instagramStubUrlFor, youtubeStubUrlFor } from '../helpers/socialStub'
 import { expect, test } from './fixtures/e2eTest'
 
@@ -606,10 +605,19 @@ test.describe('Campaign home content section', () => {
     // Start every run with the social feed unconfigured so the empty-state
     // test stays deterministic even when a previous S2 run left settings or a
     // persisted snapshot behind (same reasoning as the `posts` bust below).
-    const headers = await adminHeaders(request, baseURL)
+    const headers = await adminHeaders(request)
     await resetSocialFeedSettings(request, headers)
     await bustSocialFeed(request)
   })
+
+  const adminHeaders = async (request: APIRequestContext): Promise<Record<string, string>> => {
+    const login = await request.post(`${baseURL}/api/users/login`, {
+      data: { email: testUser.email, password: testUser.password },
+    })
+    expect(login.ok()).toBeTruthy()
+    const { token } = await login.json()
+    return { cookie: `payload-token=${token}` }
+  }
 
   const createTag = async (
     request: APIRequestContext,
@@ -799,7 +807,7 @@ test.describe('Campaign home content section', () => {
     request,
   }) => {
     await seedTestUser()
-    const headers = await adminHeaders(request, baseURL)
+    const headers = await adminHeaders(request)
 
     const visibleTag = await createTag(request, headers, categoryName, categorySlug)
     const hiddenTag = await createTag(request, headers, hiddenTagName, hiddenTagSlug, true)
@@ -957,7 +965,7 @@ test.describe('Campaign home content section', () => {
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
     } finally {
-      const headers2 = await adminHeaders(request, baseURL).catch(() => undefined)
+      const headers2 = await adminHeaders(request).catch(() => undefined)
       if (headers2) {
         for (const id of createdPosts) {
           await request
@@ -990,7 +998,7 @@ test.describe('Campaign home content section', () => {
     request,
   }) => {
     await seedTestUser()
-    const headers = await adminHeaders(request, baseURL)
+    const headers = await adminHeaders(request)
     await setYouTubeStubState(request, 'ok')
 
     const mixTag = await createTag(request, headers, `E2e Mix ${runSuffix}`, `e2e-mix-${runSuffix}`)
@@ -1071,7 +1079,7 @@ test.describe('Campaign home content section', () => {
     request,
   }) => {
     await seedTestUser()
-    const headers = await adminHeaders(request, baseURL)
+    const headers = await adminHeaders(request)
     await setYouTubeStubState(request, 'fail')
 
     const fallbackTag = await createTag(
@@ -1124,7 +1132,7 @@ test.describe('Campaign home content section', () => {
 
   test('keeps the last snapshot while the API is down', async ({ page, request }) => {
     await seedTestUser()
-    const headers = await adminHeaders(request, baseURL)
+    const headers = await adminHeaders(request)
     await setYouTubeStubState(request, 'ok')
     const baseSettings = {
       enabled: true,
@@ -1188,7 +1196,7 @@ test.describe('Campaign home content section', () => {
     request,
   }) => {
     await seedTestUser()
-    const headers = await adminHeaders(request, baseURL)
+    const headers = await adminHeaders(request)
     await setYouTubeStubState(request, 'ok')
     await setInstagramStubState(request, 'ok')
 
@@ -1278,7 +1286,7 @@ test.describe('Campaign home content section', () => {
     request,
   }) => {
     await seedTestUser()
-    const headers = await adminHeaders(request, baseURL)
+    const headers = await adminHeaders(request)
     await setInstagramStubState(request, 'fail')
 
     const fallbackTag = await createTag(
@@ -1336,7 +1344,7 @@ test.describe('Campaign home content section', () => {
 
   test('keeps the last Instagram snapshot while the API is down', async ({ page, request }) => {
     await seedTestUser()
-    const headers = await adminHeaders(request, baseURL)
+    const headers = await adminHeaders(request)
     await setInstagramStubState(request, 'ok')
     const baseSettings = {
       enabled: true,
@@ -1407,7 +1415,7 @@ test.describe('Campaign home content section', () => {
     request,
   }) => {
     await seedTestUser()
-    const headers = await adminHeaders(request, baseURL)
+    const headers = await adminHeaders(request)
     await setYouTubeStubState(request, 'ok')
     await setInstagramStubState(request, 'ok')
 
@@ -1472,7 +1480,7 @@ test.describe('Campaign home content section', () => {
     context,
   }) => {
     await seedTestUser()
-    const headers = await adminHeaders(request, baseURL)
+    const headers = await adminHeaders(request)
     await setYouTubeStubState(request, 'ok')
     await setInstagramStubState(request, 'ok')
 

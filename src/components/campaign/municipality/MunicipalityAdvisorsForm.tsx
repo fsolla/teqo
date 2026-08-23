@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { startTransition, useActionState, type FormEvent } from 'react'
 
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { Button } from '@/components/ui/button'
@@ -32,8 +32,16 @@ export const MunicipalityAdvisorsForm = ({
   const [state, submitAction, isPending] = useActionState(formAction, {})
   const currentSet = new Set(currentAdvisorIDs)
 
+  // C140 — manual dispatch (no `action={submitAction}`): React 19 resets
+  // uncontrolled fields after any settled form action, wiping typed values
+  // on a validation error — the page stays visible, so the wipe showed.
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => submitAction(new FormData(event.currentTarget)))
+  }
+
   return (
-    <form action={submitAction} className="flex flex-col gap-4 rounded-xl border p-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-xl border p-4">
       <div className="flex flex-col gap-1">
         <h2 className="text-base font-medium">Assessores do município</h2>
         <p className="text-sm text-muted-foreground">

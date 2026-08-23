@@ -38,11 +38,7 @@ jobs:
     env:
       # The github-api.mjs client reads GITHUB_TOKEN; the built-in token has
       # `issues: write` scoped to this repo (the issue tracker is on GitHub).
-      # GH_TOKEN feeds the `gh` CLI steps; GITHUB_TOKEN feeds the Node client
-      # (live finding OPS46-S1/PR #794: only GH_TOKEN was set, the flip died
-      # with "Sem token para a API do GitHub" and the status labels lied).
       GH_TOKEN: ${{ github.token }}
-      GITHUB_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v5
       # Script is plain Node (stdlib) — no pnpm. Disable package-manager-cache:

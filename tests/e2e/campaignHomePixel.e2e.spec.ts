@@ -33,10 +33,11 @@ test.describe('Campaign home Meta pixel', () => {
     headers: Record<string, string>,
     pixelId: string | null,
   ) => {
-    // Insurance against the same-user concurrent-login session race during
-    // retries of this very spec's own non-serialized write: a 403 means the
-    // session row was lost to another worker — re-login mints a fresh one.
-    // The locked helper already serializes the specs that use it.
+    // Insurance against the same-user concurrent-login session race with
+    // specs that do NOT route their login through the advisory-locked
+    // `adminHeaders` helper (e.g. the frontend spec's inline logins): a 403
+    // means the session row was lost to another worker — re-login mints a
+    // fresh one. The locked helper already serializes the specs that use it.
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const response = await request.post(`${baseURL}/api/globals/site-settings`, {
         headers,

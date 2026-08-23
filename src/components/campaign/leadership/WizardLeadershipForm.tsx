@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useRef } from 'react'
+import { startTransition, useActionState, useEffect, useRef, type FormEvent } from 'react'
 
 import {
   createLeadershipWizardFormAction,
@@ -55,8 +55,16 @@ export const WizardLeadershipForm = ({
     }
   }, [onSaved, state.status])
 
+  // C140 — manual dispatch (no `action={submitAction}`): React 19 resets
+  // uncontrolled fields after any settled form action, wiping typed values
+  // on a validation error — the wizard step stays visible, so the wipe showed.
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => submitAction(new FormData(event.currentTarget)))
+  }
+
   return (
-    <form action={submitAction} className="flex flex-col gap-4" aria-busy={isPending}>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4" aria-busy={isPending}>
       <input type="hidden" name="municipalityId" value={municipalityId} />
       <input type="hidden" name="municipalitySlug" value={municipalitySlug} />
       {!isCreate ? <input type="hidden" name="leadershipId" value={leadership.id} /> : null}

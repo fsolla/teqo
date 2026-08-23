@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useCallback, useState } from 'react'
+import { startTransition, useActionState, useCallback, useState, type FormEvent } from 'react'
 
 import { searchDemandResponsibleOptions } from '@/app/(campaign)/campanha/(app)/demandas/responsibleSearchActions'
 import { DemandFields, type DemandActivityValue } from '@/components/campaign/demand/DemandFields'
@@ -53,8 +53,16 @@ export const DemandForm = ({
     [parsedMunicipalityId],
   )
 
+  // C140 — manual dispatch (no `action={submitAction}`): React 19 resets
+  // uncontrolled fields after any settled form action, wiping typed values
+  // on a validation error — the page stays visible, so the wipe showed.
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => submitAction(new FormData(event.currentTarget)))
+  }
+
   return (
-    <form action={submitAction} className="flex max-w-3xl flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex max-w-3xl flex-col gap-4">
       <DemandFields
         idPrefix="demand"
         state={state}

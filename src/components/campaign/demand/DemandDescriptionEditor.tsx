@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useActionState, useState } from 'react'
+import { startTransition, useActionState, useState, type FormEvent } from 'react'
 
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { useCampaignFormSuccessToast } from '@/components/campaign/shared/useCampaignFormSuccessToast'
@@ -61,10 +61,18 @@ export const DemandDescriptionEditor = ({
     )
   }
 
+  // C140 — manual dispatch (no `action={submitAction}`): React 19 resets
+  // uncontrolled fields after any settled form action, wiping typed values
+  // on a validation error — the editor stays open, so the wipe showed.
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => submitAction(new FormData(event.currentTarget)))
+  }
+
   return (
     <section aria-label="Editar descrição da demanda" className="rounded-xl border p-4">
       <form
-        action={submitAction}
+        onSubmit={handleSubmit}
         className="flex flex-col gap-4"
         aria-busy={isPending || undefined}
         data-pending={isPending ? '' : undefined}

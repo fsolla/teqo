@@ -1,6 +1,13 @@
 'use client'
 
-import { useActionState, useEffect, useMemo, useState } from 'react'
+import {
+  startTransition,
+  useActionState,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from 'react'
 
 import { createCampaignUpdatesFormAction } from '@/app/(campaign)/campanha/(app)/atualizacoes/createFormActions'
 import { MunicipalityUpdateFields } from '@/components/campaign/municipality/MunicipalityUpdateFields'
@@ -71,6 +78,14 @@ export const CampaignUpdatesCreateModal = ({
 
   const municipalityError = fieldError(state.fieldErrors, 'municipalityId')
 
+  // C140 — manual dispatch (no `action={submitAction}`): React 19 resets
+  // uncontrolled fields after any settled form action, wiping typed values
+  // on a validation error — the modal stays open, so the wipe showed.
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => submitAction(new FormData(event.currentTarget)))
+  }
+
   // Mobile sheet: list-style form — no visible labels/borders, full-bleed
   // divider rows, descriptive placeholders (C107). The label stays for the
   // accessible name; the sheet auto-sizes to the content with its ceiling at
@@ -78,7 +93,7 @@ export const CampaignUpdatesCreateModal = ({
   // content outgrows the viewport (e.g. open keyboard). Desktop keeps the
   // labeled dialog chrome.
   const createForm = (
-    <form action={submitAction} className={cn('flex flex-col', !isMobile && 'gap-4')}>
+    <form onSubmit={handleSubmit} className={cn('flex flex-col', !isMobile && 'gap-4')}>
       <input type="hidden" name="municipalityId" value={municipalityId} />
       {isMobile ? (
         <>

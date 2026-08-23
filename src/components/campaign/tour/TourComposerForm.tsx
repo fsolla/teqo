@@ -2,7 +2,7 @@
 
 import { ExternalLinkIcon } from 'lucide-react'
 import Link from 'next/link'
-import { useActionState, useMemo, useState } from 'react'
+import { startTransition, useActionState, useMemo, useState, type FormEvent } from 'react'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert'
 import { Badge } from '@/components/ui/Badge'
@@ -161,8 +161,16 @@ export const TourComposerForm = ({
       checked ? [...current, slug] : current.filter((entry) => entry !== slug),
     )
 
+  // C140 — manual dispatch (no `action={submitAction}`): React 19 resets
+  // uncontrolled fields after any settled form action, wiping typed values
+  // on a validation error — the page stays visible, so the wipe showed.
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => submitAction(new FormData(event.currentTarget)))
+  }
+
   return (
-    <form action={submitAction} className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <input type="hidden" name="stopsJson" value={stopsJson} />
 
       <div className="rounded-xl border">

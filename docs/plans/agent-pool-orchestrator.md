@@ -1,6 +1,6 @@
 ---
 name: Agent pool orchestrator
-overview: 'Supervisor remoto stateless (GitHub Actions tick) que mantém até 5 Cursor Cloud Agents rodando work-issue sobre Issues ready; claim coordenado pelo supervisor, modelo da Issue no spawn, estado em repo variables + derivação; workers PR direto para main (o promote stage→main foi removido em 2026-08-01).'
+overview: 'Supervisor remoto stateless (GitHub Actions tick) que mantém até 5 Cursor Cloud Agents rodando work-issue sobre Issues ready; claim coordenado pelo supervisor, modelo da Issue no spawn, estado em repo variables + derivação; promote stage→main continua humano.'
 todos:
   - id: fase0-spike
     content: 'Spike API Cursor: GET /v1/models, spawn com model explícito, agentId idempotente, boot real'
@@ -26,9 +26,8 @@ isProject: false
 
 Um **supervisor remoto stateless** mantém até **5 Cursor Cloud Agents** em paralelo, cada um
 executando `work-issue` sobre uma GitHub Issue `ready` e elegível para autonomia. O supervisor
-é um **workflow do GitHub Actions** (na prática `.forgejo/workflows/agent-pool.yml`, removido no
-OPS65; descrito aqui como histórico "O que foi") que roda
-`node scripts/agent-pool.mjs tick` a cada 10 minutos, a cada merge em `main`, e sob
+é um **workflow do GitHub Actions** (`.github/workflows/agent-pool.yml`) que roda
+`node scripts/agent-pool.mjs tick` a cada 10 minutos, a cada merge em `stage`, e sob
 `workflow_dispatch` — nenhum processo local, nenhum daemon, laptop fechado não importa.
 
 A cada tick, um script Node determinístico (testável, sem deps npm): lê o estado do pool
@@ -37,8 +36,7 @@ calcula `gap = maxSlots - ativos`, **claima ele mesmo** as próximas Issues eleg
 `ready→in-progress` com lock otimista — alocador único, sem race) e spawna workers via
 `POST https://api.cursor.com/v1/agents` com o `model:` do frontmatter da Issue (fallback
 `composer-2.5`). Para quando o humano mandar (`action=stop`) ou quando a fila drenar.
-Workers abrem PR `--base main` com `Closes #N` (o promote `stage→main` não existe mais —
-removido em 2026-08-01; o merge acontece direto em `main`).
+`agent:promote` nunca é chamado — promote `stage→main` continua humano.
 
 Decisão central: o supervisor é **GitHub Actions**, não um Cursor Automation — o tick é lógica
 determinística com testes unitários, e cada tick de Automation queimaria um slot de agente (de 8
@@ -51,11 +49,11 @@ do plano Pro) + tokens a cada 10 min. Automation fica documentado como plano B.
 ```mermaid
 flowchart TB
   subgraph humano [Humano]
-    Cmd["gh workflow run agent-pool.yml -f action=start|stop|status (workflow removido OPS65 — falha 404)"]
+    Cmd["gh workflow run agent-pool.yml -f action=start|stop|status"]
   end
 
   subgraph sup [Supervisor remoto — GitHub Actions]
-    Trig["Triggers: schedule */10min · pull_request closed em main · workflow_dispatch"]
+    Trig["Triggers: schedule */10min · pull_request closed em stage · workflow_dispatch"]
     Tick["pnpm agent:pool tick — scripts/agent-pool.mjs"]
     Vars["Estado: repo variables POOL_*"]
     Derive["Ativos derivados: Cursor API + labels GitHub"]
@@ -66,13 +64,13 @@ flowchart TB
 
   subgraph workers [Workers — Cursor Cloud Agents, cap 5]
     Spawn["POST /v1/agents — prompt work-issue + model da Issue"]
-    W["worker × N: claim pré-feito → implementa → PR base main → watch CI até merge"]
+    W["worker × N: claim pré-feito → implementa → PR base stage → watch CI até merge"]
     Spawn --> W
   end
 
   Cmd -->|"workflow_dispatch (único canal)"| Trig
   Tick -->|"claim coordenado + spawn até gap"| Spawn
-  W -->|"PR + auto-merge CI green"| Merge["merge em main → issue-done-on-main-merge.yml flip done"]
+  W -->|"PR + auto-merge CI green"| Merge["merge em stage → issue-done-on-stage-merge.yml flip done"]
   Merge -->|"trigger pull_request closed"| Trig
 ```
 
@@ -94,11 +92,10 @@ Cada tick é um job curto (< 2 min) e idempotente que executa, nesta ordem:
      (sai da fila, humano triage), archive do agente, circuit breaker (≥2 falhas na mesma Issue
      → nunca re-enfileira; conta via comentários do pool).
    - run não-terminal → slot ocupado.
-4. **Gargalo de migrations** — `countOpenSchemaPrs` (`scripts/lib/agent-pool-forgejo.mjs`):
-   se ≥1 PR aberto toca `src/migrations/` ou `payload-types.ts`, Issues `needs:migration` /
-   `serializes:[migrations]` saem da fila **deste tick** (re-avaliadas no próximo). O job CI
-   `migration-lock` foi removido em 2026-08-12; a guarda sobrevive neste limite de PRs de schema
-   abertos.
+4. **Gargalo de migrations** — mesma query do job `migration-lock`
+   (`gh pr list --state open --json files`): se ≥1 PR aberto toca `src/migrations/` ou
+   `payload-types.ts`, Issues `needs:migration` / `serializes:[migrations]` saem da fila **deste
+   tick** (re-avaliadas no próximo).
 5. **Fila elegível** — `isAutonomousClaimable` (seção 3) ordenada por prio → mais antiga
    (paridade com `agent:claim`).
 6. **Spawn** — `gap = maxSlots - ativos`; claima e spawna até `gap` workers (seção 4 e 5).
@@ -122,19 +119,16 @@ cron, e não há nada no loop que um tick de 30 s não faça.
 | --------------------------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `enabled`, `maxSlots`, `paused`, `startedAt`, `startedBy` | **Repo variables** (`gh variable get/set POOL_*`)                            | Escalares de config; API própria; legíveis por humano no browser (Settings → Variables)                                                                                                                                                                                 |
 | `activeRuns: [{runId, issueNumber, claimedAt}]`           | **Derivado, não persistido**                                                 | Estado persistido dessincroniza da realidade (crash entre spawn e write). As duas fontes de verdade — status do run na Cursor API e labels/comentários no GitHub — bastam; o comentário de claim na Issue (com a URL do agente `bc-…`) é o vínculo durável worker↔Issue |
-| `lastTickAt`, histórico de ticks, último erro             | **GHA runs + job summary** (`gh run list --workflow agent-pool.yml`)         | O próprio run é o registro; não duplica (workflow removido no OPS65 — pool dormente)                                                                                                                                                                                    |
+| `lastTickAt`, histórico de ticks, último erro             | **GHA runs + job summary** (`gh run list --workflow agent-pool.yml`)         | O próprio run é o registro; não duplica                                                                                                                                                                                                                                 |
 | Reserva worker→Issue                                      | **Comentário de claim na Issue** (marcador `pool-worker bc-<id> <agentUrl>`) | Visível a humanos, auditável, self-healing                                                                                                                                                                                                                              |
 
 O step "set/get variables" usa `gh variable` com `GITHUB_TOKEN` e `permissions: actions: write`
 (REST de Actions variables). Localmente, `pnpm agent:pool -- status` usa o `gh` auth do usuário.
-(O pool está dormente desde o OPS65 — o workflow `agent-pool.yml` foi removido e o dispatch via
-CLI falha 404; este estado era persistido enquanto o pool operava.)
 
 ### Canal canônico: **`workflow_dispatch`** (um só)
 
 ```bash
 # start (qualquer máquina/phone com gh auth; também via browser Actions → Run workflow)
-# — workflow REMOVIDO no OPS65: dispatch falha 404 (pool dormente)
 gh workflow run agent-pool.yml -f action=start            # maxSlots default 5
 gh workflow run agent-pool.yml -f action=start -f maxSlots=3
 
@@ -161,17 +155,17 @@ Função pura em `scripts/lib/agent-pool-eligibility.mjs`, testada por tabela. E
 (labels, body/frontmatter, state), `doneIds`, `migrationBusy` (bool do tick), `now`. Saída:
 `{ ok: true } | { ok: false, reason }`.
 
-| Condição                                                             | Decisão                                  | Motivo                                                                                                                                                            |
-| -------------------------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `state !== 'OPEN'` ou sem label `ready`                              | exclui (`not-ready`)                     | contrato básico do claim                                                                                                                                          |
-| label `in-progress` / `blocked` / `done` / `in-prod`                 | exclui (`state-label`)                   | estado é exclusivo                                                                                                                                                |
-| label `requirements-changed`                                         | exclui (`needs-human`)                   | escopo mudou; gate humano pendente                                                                                                                                |
-| label `needs:consent`                                                | exclui (`needs-human`)                   | gate legal/produto — nunca autônomo                                                                                                                               |
-| `depends:` com dep não satisfeita (não `done`/`in-prod`/fechada)     | exclui (`blocked-by-deps`)               | mesma regra de `agent-claim.mjs` (dep sem Issue = roadmap entregue, satisfeita)                                                                                   |
-| `needs:migration` ou `serializes:[migrations]` **e** `migrationBusy` | exclui **neste tick** (`migration-busy`) | serializa migrations (≤1 PR de schema aberto via `countOpenSchemaPrs` — o job `migration-lock` do CI foi removido 2026-08-12); transitório, volta no próximo tick |
-| sem link `docs/plans/` no body                                       | **warn, não bloqueia** (v1)              | preferir Issues com plano; loga no sumário                                                                                                                        |
-| `POOL_PAUSED` (audit solitário)                                      | pausa **global** no passo 2 do tick      | engineering-audit é modo solitário (AGENT-OPS)                                                                                                                    |
-| `model:` ausente/inválido                                            | **não exclui**                           | fallback `composer-2.5` (seção 5)                                                                                                                                 |
+| Condição                                                             | Decisão                                  | Motivo                                                                            |
+| -------------------------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------- |
+| `state !== 'OPEN'` ou sem label `ready`                              | exclui (`not-ready`)                     | contrato básico do claim                                                          |
+| label `in-progress` / `blocked` / `done` / `in-prod`                 | exclui (`state-label`)                   | estado é exclusivo                                                                |
+| label `requirements-changed`                                         | exclui (`needs-human`)                   | escopo mudou; gate humano pendente                                                |
+| label `needs:consent`                                                | exclui (`needs-human`)                   | gate legal/produto — nunca autônomo                                               |
+| `depends:` com dep não satisfeita (não `done`/`in-prod`/fechada)     | exclui (`blocked-by-deps`)               | mesma regra de `agent-claim.mjs` (dep sem Issue = roadmap entregue, satisfeita)   |
+| `needs:migration` ou `serializes:[migrations]` **e** `migrationBusy` | exclui **neste tick** (`migration-busy`) | respeita o `migration-lock` (≤1 PR de schema); transitório, volta no próximo tick |
+| sem link `docs/plans/` no body                                       | **warn, não bloqueia** (v1)              | preferir Issues com plano; loga no sumário                                        |
+| `POOL_PAUSED` (audit solitário)                                      | pausa **global** no passo 2 do tick      | engineering-audit é modo solitário (AGENT-OPS)                                    |
+| `model:` ausente/inválido                                            | **não exclui**                           | fallback `composer-2.5` (seção 5)                                                 |
 
 Issues que exigem gate de `plan-issue` (wireframes, confirmação de produto) já chegam `blocked`
 ou sem `ready` — o predicado as exclui por construção, e isso é pinado em teste.
@@ -181,7 +175,7 @@ contrato; uma label a mais é um passo manual a mais no `plan-issue` sem ganho d
 (as exclusões já são fail-closed).
 
 A fila do pool é uma **extensão** da fila do `agent-claim` (mesma ordenação, predicados mais
-estritos). O builder da fila é extraído para `scripts/lib/agent-forgejo.mjs`
+estritos). O builder da fila é extraído para `scripts/lib/agent-github.mjs`
 (`buildClaimQueue(openReady, byId)`) e compartilhado — `agent-claim.mjs` continua com
 comportamento idêntico (humano pode claimar `needs:consent` conscientemente; o pool, não).
 
@@ -220,8 +214,7 @@ Parâmetros (só relevantes ao backoff de retry de tick): `spawnRetryBackoff = p
 ## 5. Seleção de modelo
 
 - Fonte: frontmatter `model:` da Issue (escrito por `agent:register --model`, tabela de slugs
-  e regras em `scripts/lib/agent-pool-models.mjs` — a skill `model-selection` foi removida; as
-  regras de modelo migraram para o módulo).
+  em `.agents/skills/model-selection/SKILL.md`).
 - Spawn: `model: { id: <slug>, params: [...] }` no body do `POST /v1/agents`. A API valida contra
   `GET /v1/models` (ids + aliases + params, ex.: `composer-2.5` com param `fast`).
 - **Namespace:** os slugs do repo (Task tool) e os da Cloud API são tabelas irmãs, não idênticas.
@@ -233,7 +226,7 @@ Parâmetros (só relevantes ao backoff de retry de tick): `spawnRetryBackoff = p
   Omitir `fast` faz a API cair no default da variante (`fast=true` → usage `composer-2.5-fast`);
   o resolver pina `fast=false` sempre que o modelo anuncia o param.
 - **Fallback:** `model:` ausente, desconhecido ou rejeitado pela API → **`composer-2.5` + `fast=false`**
-  (pool "Cursor Models", custo incluído — regra 1 do mapeamento em `agent-pool-models.mjs`). Warn no sumário do tick.
+  (pool "Cursor Models", custo incluído — regra 1 da model-selection). Warn no sumário do tick.
 - Validação: o tick consulta `GET /v1/models` uma vez por tick (cache em memória do processo)
   e nunca spawna com slug fora da lista — erro de validação não pode derrubar o tick.
 
@@ -244,14 +237,14 @@ mas com a dependência transitiva habitual de `scripts/lib/cli.mjs` → `dotenv`
 deps como os workflows irmãos; corrigido em 2026-07-31 após o ERR_MODULE_NOT_FOUND da primeira
 ativação):
 
-| Comando                 | Faz                                                                                                                                        |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `start [--max-slots N]` | Wrapper: `gh workflow run agent-pool.yml -f action=start [-f maxSlots=N]` — **falha 404 desde o OPS65** (workflow removido, pool dormente) |
-| `stop`                  | Idem `action=stop` (para de spawnar; ativos drenam)                                                                                        |
-| `pause` / `resume`      | Idem — modo audit solitário                                                                                                                |
-| `status`                | Lê variables + Cursor API + Issues; imprime slots, Issues em voo, PRs, fila elegível, último tick/erro                                     |
-| `tick`                  | Executa a reconciliação (usado pelo workflow; local exige `--dry-run`)                                                                     |
-| `tick --dry-run`        | Reconcilia **sem** claim/spawn/flip — imprime o plano do tick (default local)                                                              |
+| Comando                 | Faz                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------ |
+| `start [--max-slots N]` | Wrapper: `gh workflow run agent-pool.yml -f action=start [-f maxSlots=N]`                              |
+| `stop`                  | Idem `action=stop` (para de spawnar; ativos drenam)                                                    |
+| `pause` / `resume`      | Idem — modo audit solitário                                                                            |
+| `status`                | Lê variables + Cursor API + Issues; imprime slots, Issues em voo, PRs, fila elegível, último tick/erro |
+| `tick`                  | Executa a reconciliação (usado pelo workflow; local exige `--dry-run`)                                 |
+| `tick --dry-run`        | Reconcilia **sem** claim/spawn/flip — imprime o plano do tick (default local)                          |
 
 Flags de ambiente: `CURSOR_API_KEY` (obrigatória para spawn/archive/cancel; `status` degrada
 para "Cursor API indisponível" sem ela), `GH_TOKEN`/`gh auth` para GitHub. Logs: stdout
@@ -264,26 +257,26 @@ rotação documentada no runbook). `GITHUB_TOKEN` com `issues: write` (flip/come
 
 ## 7. Mudanças no repo (lista de arquivos previstos)
 
-| Arquivo                                        | Ação                                                                                                         | Fase                                    |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
-| `scripts/lib/agent-pool-eligibility.mjs`       | novo — `isAutonomousClaimable` + fila do pool                                                                | 1                                       |
-| `scripts/lib/agent-pool-state.mjs`             | novo — variables get/set + derivação de ativos                                                               | 1                                       |
-| `scripts/agent-pool.mjs`                       | novo — CLI da seção 6                                                                                        | 1 (status/tick dry) → 2/3 (spawn/ciclo) |
-| `scripts/lib/agent-forgejo.mjs`                | extrai `buildClaimQueue()` (mesma lógica, hoje inline em agent-claim)                                        | 1                                       |
-| `scripts/agent-claim.mjs`                      | consome `buildClaimQueue()` — **comportamento idêntico**                                                     | 1                                       |
-| `scripts/lib/agent-pool-cursor.mjs`            | novo — client fino da API v1 (models/agents/runs/cancel/archive)                                             | 2                                       |
-| `scripts/lib/agent-pool-prompt.mjs`            | novo — template do prompt do worker                                                                          | 2                                       |
-| `scripts/lib/agent-pool-models.mjs`            | novo — mapeamento slug repo → `model.id` Cloud + fallback                                                    | 2                                       |
-| `.forgejo/workflows/agent-pool.yml`            | novo — dispatch (fase 2) + schedule + `pull_request` closed (fase 3) — **removido no OPS65** (pool dormente) | 2→3                                     |
-| `package.json`                                 | script `agent:pool`                                                                                          | 1                                       |
-| `tests/unit/agentPoolEligibility.unit.spec.ts` | novo — tabela do predicado + ordenação + migration cap                                                       | 1                                       |
-| `tests/unit/agentPoolState.unit.spec.ts`       | novo — derivação de ativos, failure path, circuit breaker, gap                                               | 1→3                                     |
-| `tests/unit/agentPoolModels.unit.spec.ts`      | novo — mapping/fallback/validação                                                                            | 2                                       |
-| `tests/unit/agentPoolPrompt.unit.spec.ts`      | novo — contrato do prompt (issue N, sem claim, PR base main)                                                 | 2                                       |
-| `docs/plans/agent-pool-orchestrator.md`        | este plano + resultados do spike                                                                             | 0                                       |
-| `.agents/skills/agent-pool/SKILL.md`           | novo — runbook humano (start/stop/status/triage)                                                             | 4                                       |
-| `docs/AGENT-OPS.md`                            | linha na tabela de comandos + seção curta de secrets                                                         | 4                                       |
-| `docs/CHANGELOG-AGENTS.md`                     | uma entrada curta                                                                                            | 4                                       |
+| Arquivo                                        | Ação                                                                  | Fase                                    |
+| ---------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------- |
+| `scripts/lib/agent-pool-eligibility.mjs`       | novo — `isAutonomousClaimable` + fila do pool                         | 1                                       |
+| `scripts/lib/agent-pool-state.mjs`             | novo — variables get/set + derivação de ativos                        | 1                                       |
+| `scripts/agent-pool.mjs`                       | novo — CLI da seção 6                                                 | 1 (status/tick dry) → 2/3 (spawn/ciclo) |
+| `scripts/lib/agent-github.mjs`                 | extrai `buildClaimQueue()` (mesma lógica, hoje inline em agent-claim) | 1                                       |
+| `scripts/agent-claim.mjs`                      | consome `buildClaimQueue()` — **comportamento idêntico**              | 1                                       |
+| `scripts/lib/agent-pool-cursor.mjs`            | novo — client fino da API v1 (models/agents/runs/cancel/archive)      | 2                                       |
+| `scripts/lib/agent-pool-prompt.mjs`            | novo — template do prompt do worker                                   | 2                                       |
+| `scripts/lib/agent-pool-models.mjs`            | novo — mapeamento slug repo → `model.id` Cloud + fallback             | 2                                       |
+| `.github/workflows/agent-pool.yml`             | novo — dispatch (fase 2) + schedule + `pull_request` closed (fase 3)  | 2→3                                     |
+| `package.json`                                 | script `agent:pool`                                                   | 1                                       |
+| `tests/unit/agentPoolEligibility.unit.spec.ts` | novo — tabela do predicado + ordenação + migration cap                | 1                                       |
+| `tests/unit/agentPoolState.unit.spec.ts`       | novo — derivação de ativos, failure path, circuit breaker, gap        | 1→3                                     |
+| `tests/unit/agentPoolModels.unit.spec.ts`      | novo — mapping/fallback/validação                                     | 2                                       |
+| `tests/unit/agentPoolPrompt.unit.spec.ts`      | novo — contrato do prompt (issue N, sem claim, PR base stage)         | 2                                       |
+| `docs/plans/agent-pool-orchestrator.md`        | este plano + resultados do spike                                      | 0                                       |
+| `.agents/skills/agent-pool/SKILL.md`           | novo — runbook humano (start/stop/status/triage)                      | 4                                       |
+| `docs/AGENT-OPS.md`                            | linha na tabela de comandos + seção curta de secrets                  | 4                                       |
+| `docs/CHANGELOG-AGENTS.md`                     | uma entrada curta                                                     | 4                                       |
 
 Nada em `src/` — sem migrations, sem gates de app (`tsc`/lint cobrem scripts; `knip`/`cycles`
 não são afetados por `scripts/`, verificar no gate). `pnpm gate:fast` antes de cada push, como
@@ -297,15 +290,15 @@ sempre.
    (Settings → Secrets → Actions).
 2. Fila com Issues `ready` (ver `pnpm agent:status`); nenhum audit em curso.
 3. Workflow mergeado em `main` — **schedule e trigger de PR só rodam da default branch**
-   (antes do merge, tudo funciona via `workflow_dispatch` na branch do PR B/C).
+   (antes do promote, tudo funciona via `workflow_dispatch` na branch do PR B/C).
 
 **Start remoto:** `gh workflow run agent-pool.yml -f action=start` (ou browser). Em ≤1 tick
 (≤10 min; dispatch dispara na hora) os primeiros `min(maxSlots, fila)` workers aparecem em
 cursor.com/agents com nome `pool-i<N>-…`.
 
 **Monitorar:** `pnpm agent:pool status` local, ou Actions → último run → job summary, ou
-cursor.com/agents. Workers abrem PR `--base main` com `Closes #N`; auto-merge no CI green;
-`issue-done-on-main-merge.yml` flipa `done`; o tick seguinte repõe o slot.
+cursor.com/agents. Workers abrem PR `--base stage` com `Closes #N`; auto-merge no CI green;
+`issue-done-on-stage-merge.yml` flipa `done`; o tick seguinte repõe o slot.
 
 **Stop/drain:** `action=stop` — próximo tick já não spawna; ativos seguem até o merge e o pool
 marca `POOL_ENABLED=false` ao drenar. Matar worker travado: cursor.com/agents → archive (o tick
@@ -331,7 +324,7 @@ ou deixar bloqueada.
 - Cálculo de `gap` e cap hard (nunca spawna além de `maxSlots` mesmo com fila longa).
 - Model mapping: slug válido → id Cloud (+ effort/reasoning) **+ `fast=false` quando o param existe**; `-fast` **proibido** (strip + warn + pin `fast=false`);
   ausente/inválido → `composer-2.5` + `fast=false`; slug fora do `GET /v1/models` → fallback + warn.
-- Prompt: contém `#N`, instrução de não-claim, `gh pr create --base main`, `Closes #N`.
+- Prompt: contém `#N`, instrução de não-claim, `gh pr create --base stage`, `Closes #N`.
 - State: parse/serialize de variables; defaults.
 
 **Smoke manual remoto (critérios de aceite):**
@@ -367,14 +360,12 @@ ou deixar bloqueada.
 - **Fase 4 — docs/ops (~1–2h):** PR D — skill `agent-pool`, AGENT-OPS, CHANGELOG, linha de pause
   na skill engineering-audit, smoke remoto completo (seção 9) executado e registrado.
 
-Cada PR vai `--base main` com CI green (fluxo normal de PR, mas **sem** `agent:register`/Issue
-de spec — ops infra). **Schedule só ativa após o merge em `main`.** (O promote `stage→main` foi
-removido em 2026-08-01 — o merge acontece direto em `main`.)
+Cada PR vai `--base stage` com CI green (fluxo normal de PR, mas **sem** `agent:register`/Issue
+de spec — ops infra). **Schedule só ativa após o promote humano a `main`.**
 
 ## 11. Fora de escopo
 
-- `pnpm agent:promote` — **não existe mais** (script removido 2026-08-01): workers PR direto para
-  `main` com auto-merge nativo; o pool nunca teve promote.
+- `pnpm agent:promote` (promote `stage→main` é humano — o pool nunca chama).
 - Qualquer `DATABASE_URL` de stage/prod no supervisor ou nos workers (Cloud usa
   `.cursor/cloud-setup.sh` + seed mínimo; o workflow não recebe secrets de banco).
 - Editar Issues `in-progress` de outros agentes/humanos (o pool só toca as que ele claimou).
@@ -395,7 +386,7 @@ task exige `isAutonomousClaimable` testável); custa zero slots de agente e zero
 concorrentes — 5 workers + supervisor Automation deixariam 2 para humanos e queimariam LLM a
 cada 10 min, ~144 ticks/dia); triggers nativos cobrem cron e merge; `workflow_dispatch` é remoto
 por definição. Mantém o norte "só GitHub + Cursor" (Actions é GitHub) e a família de scripts
-`agent:*` (precedente direto de ops via dispatch; `refresh-stage` foi removido em 2026-08-01).
+`agent:*`/`refresh-stage` (precedente direto de ops via dispatch).
 Rejeitadas: Automation cron (plano B documentado — o mesmo `pnpm agent:pool tick` pode ser
 embrulhado numa Automation depois, pois o script é agnóstico de superfície); supervisor 24/7
 (timeout não documentado, slot permanente, LLM fazendo cron); VPS (fora do norte).
@@ -430,11 +421,11 @@ validação (namespaces diferem; falha de spawn por slug inválido derrubaria o 
 fail-closed; label extra é passo manual sem ganho.
 
 **D7 — PR do worker.** `autoCreatePR: false` no spawn — o worker segue a skill (`gh pr create
---base main` + `Closes #N` + auto-merge nativo por rebase + watch). O auto-PR da API abriria
-contra a base errada e sem o corpo do contrato. `startingRef: POOL_BASE_REF` (= `'main'`) no
-spawn (diff mínimo contra a base do PR).
+--base stage` + `Closes #N` + `gh pr merge --auto --merge` + watch). O auto-PR da API abriria
+contra a base errada e sem o corpo do contrato. `startingRef: 'stage'` no spawn (diff mínimo
+contra a base do PR).
 
-**D8 — Slot ocupado até o merge.** Conforme a spec: ativo = do claim ao merge em `main` (ou
+**D8 — Slot ocupado até o merge.** Conforme a spec: ativo = do claim ao merge em `stage` (ou
 falha documentada). Efeito: o throughput do pool inclui a espera do CI (~dezenas de min por PR);
 com auto-merge isso é hands-off e correto por construção. Derivação: Issue `in-progress` com
 marcador do pool = ocupado.
@@ -448,11 +439,10 @@ marcador do pool = ocupado.
 - **Custo 5× Cloud:** agents são cobrados a preço de API por modelo; default `composer-2.5`
   (pool incluído) e `maxSlots` configurável são as rédeas; spend limit no dashboard Cursor é
   pré-requisito operacional; `GET /v1/agents/{id}/usage` no `status` fica como follow-up.
-- **Flake de CI com 5 PRs simultâneos:** o cap de schema (`countOpenSchemaPrs`) serializa
-  migrations; e2e/unit por diff
+- **Flake de CI com 5 PRs simultâneos:** `migration-lock` já serializa schema; e2e/unit por diff
   limitam carga; risco real é fila de runners GHA — visível no job summary, fora do controle do
   pool (documentado, não mitigado em v1).
-- **Migration starvation:** humano abre PR de schema fora do pool → pool respeita o cap e
+- **Migration-lock starvation:** humano abre PR de schema fora do pool → pool respeita o cap e
   para de spawnar migrations; o inverso (pool segurando o único slot de migration enquanto o
   worker demora) é resolvido pelo drain natural + triage humano da Issue `blocked`.
 - **Timeout GHA 6h vs cron:** irrelevante no modelo stateless (tick < 2 min). Schedules do

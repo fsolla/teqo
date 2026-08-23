@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { startTransition, useActionState, type FormEvent } from 'react'
 
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import {
@@ -40,8 +40,16 @@ export const LeadershipInternalForm = ({
 }: LeadershipInternalFormProps) => {
   const [state, submitAction, isPending] = useActionState(formAction, {})
 
+  // C140 — manual dispatch (no `action={submitAction}`): React 19 resets
+  // uncontrolled fields after any settled form action, wiping typed values
+  // on a validation error — the card stays open, so the wipe showed.
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => submitAction(new FormData(event.currentTarget)))
+  }
+
   return (
-    <form action={submitAction} className="flex max-w-2xl flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-4">
       <input type="hidden" name="leadershipId" value={leadership.id} />
 
       <RelationMultiSelect

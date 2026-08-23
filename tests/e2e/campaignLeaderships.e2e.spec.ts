@@ -80,6 +80,7 @@ test.describe('campaign leaderships list', () => {
     await campaign.login(page, coordinator.email!, password)
     await page.goto(`${campaign.baseURL}/campanha/liderancas?q=${encodeURIComponent(contactName)}`)
     await expect(campaignPageChrome(page, 'Lideranças')).toBeVisible()
+    await page.waitForLoadState('networkidle')
 
     // The chip is still a link to the município — editing did not cost the
     // navigation the column had before.
