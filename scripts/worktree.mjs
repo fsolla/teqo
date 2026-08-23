@@ -775,7 +775,9 @@ if (!subcommand) {
   console.log('    opencode command, ou a função `worktree()` de .agents/shell/worktree.sh);')
   console.log('    no terminal (TEQO_WORKTREE_TERMINAL=1) imprime também a diretiva')
   console.log('    `launch opencode … --prompt "/work-issue --issue <N>"` (OPS26+OPS33:')
-  console.log('    abre o TUI com vercel/deepseek/deepseek-v4-flash (gateway) + auto + a Issue claimada já')
+  console.log(
+    '    abre o TUI com vercel/deepseek/deepseek-v4-flash (gateway) + auto + a Issue claimada já',
+  )
   console.log('    informada); --stay suprime cd e launch (o claim ainda acontece); --go')
   console.log('    explícito continua aceito como no-op; --no-migrate pula migrations e o')
   console.log('    seed mínimo (db:seed:minimal) nos bancos novos (OPS28: paridade com a CI)')

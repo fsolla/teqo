@@ -26,6 +26,7 @@ flowchart LR
 **Opções consideradas:** A | B | C
 **Recomendação:** B — mudar a constante single-source do preset para a rota do gateway (`vercel/deepseek/deepseek-v4-flash`) e expor as variantes low/high/max via override do model config no `opencode.json` do projeto (bloco `provider.vercel.models["deepseek/deepseek-v4-flash"].variants`, max com `reasoningEffort: "max"`). É a única opção que atende o outcome dentro das capacidades reais do TUI, preserva o cardápio de execução intacto, é verificável (linha de launch + testes unit) e cabe no appetite (config-only). O override foi validado ao vivo (`opencode debug config` mostra o override; `opencode run --model vercel/deepseek/deepseek-v4-flash --variant max` funciona).
 **Rejeitadas:**
+
 - **A — agente default com `variant: max`** (`model.agent`/default): muda o comportamento de launch de **todas** as sessões do repo e força a variante por fora do TUI, arriscando o cardápio de execução de Issues (que pina `model: deepseek/deepseek-v4-flash` no frontmatter dos comandos) e o próprio modelo de descoberta no TUI. Rejeitada porque é mais intrusiva do que a intenção pede e fere o "config-only" (variante no default muda a experiência de todo mundo, não só o preset).
 - **C — flag `--variant` na linha de launch** (`--model ...:max` ou `--variant max`): o TUI do opencode não suporta (`tui.ts` só expõe `--model`; formato estritamente `provider/model`). Verificado ao vivo (erro de servidor em `:max`). Rejeitada por impossibilidade técnica upstream.
 
