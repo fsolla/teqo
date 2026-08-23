@@ -31,7 +31,7 @@ Durante a transição, o site continuou vivo em DUAS plataformas: a antiga `pt.j
 
 - **Vou apresentar dados?** Não — migração move dados, não apresenta superfície de decisão.
 - **Decisões desbloqueadas:** nada novo que dependa de um dashboard; o que importa é que decisões JÁ existentes continuem íntegras pós-migração: (a) conta da cadeira, (b) mapas e leitura territorial, (c) pledges com `declaredVotes` vs `estimatedVotes` e seus agregados devem refletir o MESMO estado que o time via na plataforma antiga.
-- **Forma:** *adiada ao plano de implementação* — aqui só a restrição de produto: o pós-migração precisa produzir a mesma leitura relativa/local que a plataforma antiga mostrava (sem "conserto" silencioso de números).
+- **Forma:** _adiada ao plano de implementação_ — aqui só a restrição de produto: o pós-migração precisa produzir a mesma leitura relativa/local que a plataforma antiga mostrava (sem "conserto" silencioso de números).
 
 ## Direção no codebase (hipótese)
 

@@ -32,7 +32,7 @@ Depois da desativação (OPS80, que congelou a fonte) e da última migração de
 
 - **Vou apresentar dados?** Não.
 - **Decisões desbloqueadas:** nenhuma decisão de produto depende de métrica aqui; o cutoff é uma decisão de política (uma única fonte de verdade), não de dado.
-- **Forma:** *adiada ao plano de implementação* — sem restrição de produto além do acima.
+- **Forma:** _adiada ao plano de implementação_ — sem restrição de produto além do acima.
 
 ## Direção no codebase (hipótese)
 
