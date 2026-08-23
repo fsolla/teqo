@@ -1,7 +1,35 @@
+import { register } from 'node:module'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { defineConfig, devices } from '@playwright/test'
 import { config as loadEnv } from 'dotenv'
 
 import { assertTestDatabase } from './tests/helpers/assertTestDatabase'
+
+/*
+ * OPS46 — a bare `playwright test` (VS Code extension, `pnpm exec playwright
+ * test --list`, ad-hoc runs) must collect like `pnpm test:e2e` does. That
+ * script carries the needed flags in NODE_OPTIONS (`--conditions=react-server
+ * --import=tsx/esm`); this block re-applies the same behavior when they are
+ * absent:
+ *  - register() installs the resolution hook (tests/helpers/e2eEsmResolve.mjs)
+ *    in THIS process — test collection happens here after config load, which
+ *    is why a bare `--list` needs it in-process;
+ *  - the NODE_OPTIONS mutation hands the same hook to the worker processes
+ *    Playwright spawns for actual runs (they inherit the env at spawn).
+ * When the flags are already present (the scripted path) nothing changes.
+ */
+const bareInvocation = !process.env.NODE_OPTIONS?.includes('--conditions=react-server')
+if (bareInvocation) {
+  register(new URL('./tests/helpers/e2eEsmResolve.mjs', import.meta.url))
+  const configDir = path.dirname(fileURLToPath(import.meta.url))
+  const loaderEntry = path.join(configDir, 'tests', 'helpers', 'e2eEsmLoader.mjs')
+  process.env.NODE_OPTIONS = [process.env.NODE_OPTIONS, `--import=${loaderEntry}`]
+    .filter(Boolean)
+    .join(' ')
+}
+
 import {
   GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV_NAME,
   GOOGLE_CALENDAR_TEST_KEY,
