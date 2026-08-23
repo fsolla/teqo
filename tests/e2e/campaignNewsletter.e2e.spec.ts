@@ -197,3 +197,47 @@ test.describe('Campaign home novidades capture', () => {
   // refusal precedent is a handled 4xx). The refusal path is pinned by the
   // int spec `submitCampaignNewsletter.int.spec.ts` (exact message + no rows).
 })
+
+/**
+ * S12 — the home owns its scroll container (body `overflow-hidden`), so the
+ * native fragment navigation lands on the section only through
+ * `CampaignHashScroll`. These tests pin the deep-link contract on mobile
+ * (where the `h-dvh` reflow + eager hero images used to kick the page back to
+ * the top) and the direct-load path on desktop (previously uncovered).
+ */
+test.describe('Campaign home novidades hash scroll', () => {
+  const scrollSuffix = Date.now()
+
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('direct #novidades deep link lands on the section (mobile)', async ({ page }) => {
+    await page.goto(`/?e2e=scroll-${scrollSuffix}#novidades`)
+    const section = page.locator('[data-home-section="newsletter"]')
+    await expect(
+      section.getByRole('heading', { name: 'Receba as novidades da campanha' }),
+    ).toBeVisible()
+    await expect(section).toBeInViewport()
+  })
+
+  test('hero CTA scrolls to the newsletter section (mobile)', async ({ page }) => {
+    await page.goto(`/?e2e=scroll-${scrollSuffix}`)
+    await page.locator('[data-cta="secondary"]').click()
+    await expect(page).toHaveURL(/#novidades$/)
+    await expect(page.locator('[data-home-section="newsletter"]')).toBeInViewport()
+  })
+
+  test('deep link respects prefers-reduced-motion (mobile)', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto(`/?e2e=scroll-${scrollSuffix}#novidades`)
+    await expect(page.locator('[data-home-section="newsletter"]')).toBeInViewport()
+  })
+})
+
+test.describe('Campaign home novidades hash scroll — desktop', () => {
+  const desktopSuffix = Date.now()
+
+  test('direct #novidades deep link lands on the section (desktop)', async ({ page }) => {
+    await page.goto(`/?e2e=scroll-${desktopSuffix}#novidades`)
+    await expect(page.locator('[data-home-section="newsletter"]')).toBeInViewport()
+  })
+})

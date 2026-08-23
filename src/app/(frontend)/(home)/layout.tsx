@@ -1,3 +1,4 @@
+import { CampaignHashScroll } from '@/components/CampaignHashScroll'
 import { MetaPixel } from '@/components/MetaPixel'
 import { getCampaignHomeMetaPixelId } from '@/utilities/campaignHomeTracking'
 import React from 'react'
@@ -19,6 +20,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       className="relative h-dvh w-full scroll-smooth overflow-y-auto bg-(--campaign-cream) text-(--campaign-ink) motion-reduce:scroll-auto"
     >
       {pixelId ? <MetaPixel pixelId={pixelId} /> : null}
+      <CampaignHashScroll />
       {children}
     </div>
   )
