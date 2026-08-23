@@ -118,6 +118,11 @@ describe('CampaignQuickActionsFab (B126)', () => {
     rerender(<CampaignQuickActionsFab open onOpenChange={vi.fn()} />)
     expect(screen.queryByRole('button', { name: 'Ações rápidas' })).toBeNull()
   })
+
+  it('carries the data-slot the e2e permission-profile spec locates (C142)', () => {
+    const { container } = render(<CampaignQuickActionsFab open={false} onOpenChange={vi.fn()} />)
+    expect(container.querySelector('[data-slot="campaign-quick-actions-fab"]')).toBeTruthy()
+  })
 })
 
 describe('CampaignQuickActionsOverlay (B126)', () => {

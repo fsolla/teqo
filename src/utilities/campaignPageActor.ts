@@ -46,7 +46,13 @@ export const requireCampaignPageActor = async (
   if (gate === 'staff' && !isStaffCampaignRole(user.role)) redirect(denyRedirect)
   if (gate === 'unrestricted' && !isUnrestrictedCampaignRole(user.role)) redirect(denyRedirect)
   if (gate === 'noLeader' && user.role === 'leader') redirect(denyRedirect)
-  if (gate === 'writable' && advisorEditingAccess(user) === 'none') redirect(denyRedirect)
+  if (gate === 'writable' && !isStaffCampaignRole(user.role)) redirect(denyRedirect)
+  // C142 — `somente_leitura` applies to advisors only; `advisorEditingAccess`
+  // returns 'none' for every non-advisor role, so gate on the role first or
+  // coordinators/candidates are wrongly redirected away from write pages.
+  if (gate === 'writable' && user.role === 'advisor' && advisorEditingAccess(user) === 'none') {
+    redirect(denyRedirect)
+  }
 
   return user
 }
