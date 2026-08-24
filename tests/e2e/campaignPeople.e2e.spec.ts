@@ -13,18 +13,17 @@ import type { CampaignUser } from '../../src/payload-types.js'
  * merged person row, and the route stays locked for leaders.
  */
 test.describe('Pessoas — lista unificada', () => {
-
-/**
- * OPS87 — client slice of `campaignPeople` after the HTTP migration. The
- * server-side assertions (list render, C130 columns, party filter, name link,
- * leader redirects, detail sections, C117 URL contracts) moved to
- * tests/e2e/campaignPeopleHttp.e2e.spec.ts with the original test names, 1:1;
- * what remains here is the interaction only a browser can exercise: omnibox
- * typing, sortable-header clicks with `aria-sort`, mobile card ordering, and
- * the cell combobox/dialog writes (C125/C128/C131).
- *
- * HTTP twin: tests/e2e/campaignPeopleHttp.e2e.spec.ts.
- */
+  /**
+   * OPS87 — client slice of `campaignPeople` after the HTTP migration. The
+   * server-side assertions (list render, C130 columns, party filter, name link,
+   * leader redirects, detail sections, C117 URL contracts) moved to
+   * tests/e2e/campaignPeopleHttp.e2e.spec.ts with the original test names, 1:1;
+   * what remains here is the interaction only a browser can exercise: omnibox
+   * typing, sortable-header clicks with `aria-sort`, mobile card ordering, and
+   * the cell combobox/dialog writes (C125/C128/C131).
+   *
+   * HTTP twin: tests/e2e/campaignPeopleHttp.e2e.spec.ts.
+   */
   test('staff sorts by a column header and filters absence via the omnibox (C117)', async ({
     campaign,
     page,
