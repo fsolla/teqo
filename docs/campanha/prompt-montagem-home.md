@@ -2,7 +2,7 @@
 
 > Use este prompt com um agente **poderoso (visão + raciocínio)** para montar a
 > home pública da campanha a partir do rascunho Penpot e do wireframe HTML.
-> Você tem acesso ao **MCP do Penpot** (já configurado) e pode ler imagens.
+> Você tem acesso ao **MCP do Penpot via subagente `penpot`** (declarado em `opencode.json`, `permission` gated) e pode ler imagens — chame o subagente quando precisar de geometria do Penpot.
 
 ---
 
@@ -17,11 +17,11 @@ antiga) — **não mexa nela**.
 
 ## 2. Fontes de verdade (leia TODAS antes de codar)
 
-1. **Rascunho Penpot (o SPEC visual)** — acesse via MCP do Penpot:
+1. **Rascunho Penpot (o SPEC visual)** — acesse via subagente `penpot` (MCP `penpot`, `permission` gated):
    - Team: `369311f5-bdaf-8185-8008-54047a2d029c`
    - File: `8694f143-a620-8054-8008-66e8aa584028`
    - Page: `62dfa60b-a5ec-8097-8008-7cc15cc939bd` ("Page 2")
-   - Use `penpotUtils` (getPageById, shapeStructure, dump de geometria x/y/w/h,
+   - Use `penpotUtils` via `penpot_execute_code` no subagente (getPageById, shapeStructure, dump de geometria x/y/w/h,
      cores, fontes) para extrair o layout exato. Há 2 boards: **desktop
      1024×1954** e **mobile 393×2365**. Referências exportadas também em:
      `/home/fsolla/Downloads/Board(2).png` (desktop) e
