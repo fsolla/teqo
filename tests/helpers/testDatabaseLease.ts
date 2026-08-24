@@ -457,6 +457,16 @@ export const ensureLeasedConsent = async (
     // hitting the UNIQUE constraint. Autocommit is safe: we hold the
     // exclusive lease, so no live renamer can be mid-flight.
     await purgeOrphanedConsentRenames((query) => payload.db.drizzle.execute(query))
+    // Idempotent upsert: INSERT … ON CONFLICT (key) DO NOTHING eliminates the
+    // TOCTOU race between the find and the create — even if two ensures slip
+    // past the advisory lock under extreme load, the UNIQUE consent_key_idx
+    // guarantees exactly one row. The subsequent find always returns the
+    // committed row (created by this INSERT or a prior one).
+    await payload.db.drizzle.execute(sql`
+      INSERT INTO "consent" ("key", "text", "updated_at", "created_at")
+      VALUES (${consentKey}, ${fixtureConsentText}, now(), now())
+      ON CONFLICT ("key") DO NOTHING
+    `)
     const existing = await payload.find({
       collection: 'consent',
       where: { key: { equals: consentKey } },
@@ -464,16 +474,10 @@ export const ensureLeasedConsent = async (
       sort: 'id',
       depth: 0,
     })
-    if (existing.docs[0]) return existing.docs[0]
-
-    return payload.create({
-      collection: 'consent',
-      data: {
-        key: consentKey,
-        text: fixtureConsentText,
-      },
-      depth: 0,
-    })
+    if (!existing.docs[0]) {
+      throw new Error(`ensureLeasedConsent: consent key "${consentKey}" not found after upsert.`)
+    }
+    return existing.docs[0]
   })
 
 export const withLeasedConsent = async <Result>(
