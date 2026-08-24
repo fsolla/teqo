@@ -719,9 +719,10 @@ test.describe('Municípios — jornadas por papel', () => {
     // leadership-list chunk can land after `goto` settles, so let the stream
     // commit before asserting the leadership link (same class as the `:115`
     // editar checkbox and the C142 FAB). The generic `S:` gate alone is not
-    // enough (observed in the OPS83 verify run #15): poll the DOM for the
-    // specific link instead of `.first()` on the nondeterministic stream.
-    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    // enough (observed in the OPS83 verify run #15): poll until the specific
+    // link lands in the DOM, then assert visibility (`.first()` only disambiguates
+    // if a duplicate ever appears — the count poll is the real gate).
+    await settleMunicipalityStream(page)
     const leadershipLink = page.getByRole('link', { name: contact.name })
     await expect.poll(() => leadershipLink.count(), { timeout: 15_000 }).toBeGreaterThan(0)
     await expect(leadershipLink.first()).toBeVisible()
