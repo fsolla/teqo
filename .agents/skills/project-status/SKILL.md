@@ -22,6 +22,6 @@ pnpm agent:status
    - **Bloqueios** — cada `blocked` com o motivo (dep aberta, jurídico, `requirements-changed`).
    - **Sugestões de consolidação** — as heurísticas do script (merge por domínio+prio; break-down por gargalo de depends) como **texto para o usuário decidir**. Nunca aplique consolidação aqui: aplicação é manual ou via `plan-issue`/`pnpm agent:register`. Nunca proponha nada sobre Issues `in-progress`.
 
-3. Se o usuário pedir interpretação além da saída (ex.: "o que destrava mais coisa?"), responda a partir do grafo — sem inventar dados que o script não imprimiu; se faltar dado, leia a Issue via API do Forgejo (MCP/`pnpm issue`) somente-leitura.
+3. Se o usuário pedir interpretação além da saída (ex.: "o que destrava mais coisa?"), responda a partir do grafo — sem inventar dados que o script não imprimiu; se faltar dado, leia a Issue via API do GitHub (MCP/`pnpm issue`) somente-leitura.
 
 **NÃO faz:** editar `docs/roadmap.md` (legado congelado), claim, registro, qualquer escrita de Issue.

@@ -20,7 +20,7 @@ parse (main agent)
 
 **Regras duras:**
 
-1. **Nada no Forgejo antes do gate.** Antes da confirmação: proibido `pnpm agent:register`, criar Issue/PR.
+1. **Nada no tracker antes do gate.** Antes da confirmação: proibido `pnpm agent:register`, criar Issue/PR.
 2. **Register com `--plan` nasce `blocked`.** Promote só depois do plano em `main`.
 3. **Planos de Issues `in-progress`/`done`/`in-prod` são imutáveis.**
 4. **Rascunho UI (obrigatório se muda UI):** HTML+Tailwind commitado no repo. Classe A/sem UI → sem rascunho.

@@ -31,9 +31,10 @@ export const loadCliEnv = () => {
 
 /**
  * Local database hosts — docker-compose service name, the job-network service
- * names of the self-hosted Forgejo runner (OPS62 X1: services are reached by
- * name, no host publish), and the bridge gateway (OPS50: legacy per-port
- * publish kept in the allowlist). THE one list.
+ * names of the Forgejo-era runner (OPS62 X1: services by name, no host publish —
+ * the GitHub hosted CI reaches services on published localhost ports, OPS71),
+ * and the bridge gateway (OPS50: legacy per-port publish kept in the
+ * allowlist). THE one list.
  */
 export const LOCAL_HOSTS = new Set([
   'localhost',
@@ -46,12 +47,15 @@ export const LOCAL_HOSTS = new Set([
 ])
 
 /**
- * Gateway of the default route, read from /proc/net/route (Linux). The
- * self-hosted Forgejo runner publishes each job's `services:` Postgres on the
- * bridge gateway IP (192.168.x.1 — differs per job), so a job reaches it via
- * that IP instead of localhost. The same octet order the ci-pr.yml awk
- * produces (the /proc fields are little-endian). Returns null when there is
- * no default route or the file is unreadable (macOS/Windows dev boxes).
+ * Gateway of the default route, read from /proc/net/route (Linux). In the
+ * Forgejo-era CI the self-hosted runner published each job's `services:`
+ * Postgres on the bridge gateway IP (192.168.x.1 — differs per job), so a job
+ * reached it via that IP instead of localhost; the GitHub hosted CI (OPS71)
+ * reaches services on published localhost ports instead, and the bridge
+ * gateway stays in the allowlist for Docker-based runners. The same octet
+ * order the ci-pr.yml awk produces (the /proc fields are little-endian).
+ * Returns null when there is no default route or the file is unreadable
+ * (macOS/Windows dev boxes).
  */
 export const defaultGatewayHost = () => {
   try {

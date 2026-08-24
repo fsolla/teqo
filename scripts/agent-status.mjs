@@ -23,7 +23,7 @@ let issues
 try {
   issues = await api.listIssues({ state: 'all', limit: 200 })
 } catch (error) {
-  die(`Forgejo issue list failed: ${error.message}`)
+  die(`GitHub issue list failed: ${error.message}`)
 }
 
 const rows = issues

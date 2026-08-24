@@ -37,7 +37,7 @@ const parseArgs = (argv) => {
 const flags = parseArgs(process.argv)
 const prNumber = Number(flags.pr)
 if (!Number.isInteger(prNumber) || prNumber <= 0) {
-  console.error('Usage: node scripts/forgejo-issue-transition.mjs --pr <N>')
+  console.error('Usage: node scripts/issue-transition-on-merge.mjs --pr <N>')
   process.exit(1)
 }
 
@@ -48,11 +48,11 @@ const pr =
     ? { merged: true, body: bodyFromEnv }
     : await api.getPullRequest(prNumber)
 if (!pr) {
-  console.error(`[forgejo-issue-transition] PR #${prNumber} não encontrada`)
+  console.error(`[issue-transition] PR #${prNumber} não encontrada`)
   process.exit(1)
 }
 if (!pr.merged) {
-  console.log(`[forgejo-issue-transition] PR #${prNumber} não mergeada — skip`)
+  console.log(`[issue-transition] PR #${prNumber} não mergeada — skip`)
   process.exit(0)
 }
 
@@ -61,7 +61,7 @@ const numbers = [
 ]
 
 if (numbers.length === 0) {
-  console.log(`[forgejo-issue-transition] PR #${prNumber}: nenhum Closes/Fixes #N — nada a fazer`)
+  console.log(`[issue-transition] PR #${prNumber}: nenhum Closes/Fixes #N — nada a fazer`)
   process.exit(0)
 }
 
@@ -77,17 +77,17 @@ for (const number of numbers) {
     // (`Closes #N`) só acontece para issues AINDA abertas citadas no body —
     // o flip de labels (done/in-prod/remover in-progress) é explícito aqui.
     await api.closeIssue(number)
-    console.log(`[forgejo-issue-transition] #${number}: done + in-prod + fechada`)
+    console.log(`[issue-transition] #${number}: done + in-prod + fechada`)
   } catch (error) {
     flipFailed = true
     console.error(
-      `[forgejo-issue-transition] #${number}: FLIP FALHOU — ${error instanceof Error ? error.message : error}`,
+      `[issue-transition] #${number}: FLIP FALHOU — ${error instanceof Error ? error.message : error}`,
     )
   }
 }
 if (flipFailed) {
   console.error(
-    `[forgejo-issue-transition] PR #${prNumber}: ${numbers.length} Issue(s) citada(s), pelo menos 1 flip falhou — os labels de status podem estar mentindo.`,
+    `[issue-transition] PR #${prNumber}: ${numbers.length} Issue(s) citada(s), pelo menos 1 flip falhou — os labels de status podem estar mentindo.`,
   )
   process.exit(1)
 }

@@ -1,7 +1,7 @@
 /**
  * Plain-Node CLI (no pnpm) — create a GitHub PR (Ready, never draft) for
  * agent deliveries. Replaces the Forgejo MCP `create_pull_request` in the
- * delivery flow (OPS71: PRs live on GitHub; the tracker stays on Forgejo).
+ * delivery flow (OPS71: PRs live on GitHub; the tracker lives on GitHub too — OPS76).
  *
  *   GITHUB_TOKEN=<PAT> node scripts/github-pr.mjs \
  *     --head <branch> --title "<título>" --body-file <path>

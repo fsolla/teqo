@@ -1,10 +1,10 @@
 /**
  * Shared helpers for the agent ops scripts (`pnpm agent:*`). Everything goes
- * through the Forgejo REST API (scripts/lib/forgejo-api.mjs) — agents never
+ * through the GitHub REST API (scripts/lib/github-api.mjs) — agents never
  * get a token of their own beyond the env, and these scripts never touch
  * stage/prod database URLs.
  *
- * Issue contract (spec + status + deps in Forgejo Issues, per the parallel
+ * Issue contract (spec + status + deps in GitHub Issues, per the parallel
  * paradigm plan): each trackable issue carries a YAML-ish frontmatter block
  * at the top of the body:
  *
