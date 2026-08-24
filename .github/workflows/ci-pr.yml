@@ -208,11 +208,15 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
       - name: Build for e2e
         # Selected mode needs the build too (the Playwright webServer serves
-        # the `.next-e2e` production build).
+        # the `.next-e2e` production build). NEXT_PUBLIC_SITE_URL is inlined
+        # at build time, so the canonical `.test` origin must reach THIS build
+        # — it lets the agenda feed dialog generate a link under the
+        # production build when AgendaFeed is in the blast radius (OPS83).
         if: steps.scope.outputs.e2e_mode == 'selected'
         run: pnpm build
         env:
           NEXT_DIST_DIR: .next-e2e
+          NEXT_PUBLIC_SITE_URL: https://feed.e2e.teqo.test
       - name: E2E tests (blast radius — manifest-selected specs)
         if: steps.scope.outputs.e2e_mode == 'selected'
         # OPS72: the PR never runs e2e full — mode `full` (high-risk diff)
@@ -221,6 +225,7 @@ jobs:
         # 4 workers in one process replace the former 2 shards × 2 workers.
         env:
           PLAYWRIGHT_WORKERS: 4
+          NEXT_PUBLIC_SITE_URL: https://feed.e2e.teqo.test
         # The `--` separates pnpm from the scope paths: pnpm consumes it and
         # playwright receives the bare spec paths (no flag parsing drift).
         run: pnpm test:e2e -- ${{ steps.scope.outputs.e2e_specs }}

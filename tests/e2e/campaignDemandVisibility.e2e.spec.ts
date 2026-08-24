@@ -95,8 +95,13 @@ test.describe('C143 — demand visibility (explicit responsibles)', () => {
     await page.getByRole('button', { name: 'Salvar responsáveis' }).click()
     await expect(page.getByRole('button', { name: `Remover ${peer.name}` })).toHaveCount(0)
 
+    // The peer already rendered THIS URL (granted, line 88); the Next router
+    // cache serves the previous RSC payload on a plain goto even after the
+    // cookie swap (OPS83 run #15: the accessible demand showed instead of the
+    // 404). The route ignores unknown query params — bust the cache so the
+    // revoked access is observed from the server.
     await campaign.sessionFor(context, peer)
-    await page.goto(demandURL)
+    await page.goto(`${demandURL}?e2e=${Date.now()}`)
     await expect(page.getByText('This page could not be found.')).toBeVisible()
   })
 })

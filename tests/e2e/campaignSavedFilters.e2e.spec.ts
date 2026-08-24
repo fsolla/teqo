@@ -1,3 +1,5 @@
+import type { Page } from '@playwright/test'
+
 import { expect, test } from './fixtures/campaignE2EFixtures.js'
 
 /**
@@ -21,6 +23,13 @@ const RENAMED = 'Recorte renomeado'
  * for the same reason, as `campaignColumnPicker.e2e.spec.ts`.
  */
 const NAVIGATION = { timeout: 20_000 }
+
+/**
+ * The nav link, scoped to the desktop sidebar: the same name also exists in the
+ * mobile bottom nav, so a bare `getByRole` violates strict mode (#669, OPS83).
+ */
+const municipalityNavLink = (page: Page) =>
+  page.locator('[data-slot="sidebar"]').getByRole('link', { name: 'Municípios', exact: true })
 
 test.describe('Filtros salvos de Municípios', () => {
   test('saves the current recorte, restores it from the sidebar and deletes it', async ({
@@ -61,7 +70,7 @@ test.describe('Filtros salvos de Municípios', () => {
     // Another recorte is not this one, and the shortcut brings it back. Use the
     // sidebar link — a bare `goto` here races an in-flight RSC navigation and
     // flakes as net::ERR_ABORTED under prod load (measured in CI 2026-07-30).
-    await page.getByRole('link', { name: 'Municípios', exact: true }).click()
+    await municipalityNavLink(page).click()
     await expect(page).toHaveURL('/campanha/municipios', NAVIGATION)
     await expect(shortcut).not.toHaveAttribute('aria-current', 'page')
     await shortcut.click()
@@ -81,7 +90,7 @@ test.describe('Filtros salvos de Municípios', () => {
     await expect(page.getByRole('link', { name: RENAMED })).toHaveCount(0)
     // Emptying the group unmounts the sub-list, so focus lands on the nav link
     // rather than falling to <body>.
-    await expect(page.getByRole('link', { name: 'Municípios', exact: true })).toBeFocused()
+    await expect(municipalityNavLink(page)).toBeFocused()
 
     // Deleting is undoable, which is why it never asks for confirmation.
     await page.getByRole('button', { name: 'Desfazer' }).click()

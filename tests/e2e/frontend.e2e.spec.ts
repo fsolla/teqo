@@ -690,6 +690,20 @@ test.describe('Campaign home content section', () => {
     }
   }
 
+  /**
+   * Polls the RENDERED contents section for a card/link count, scoped to
+   * `[data-home-section="contents"]`. The server-HTML polls above converge on
+   * the ISR response, but the page may serve a heuristic-cached body that lags
+   * the server (measured in the OPS83 verify run #15: the server showed the
+   * kill switch applied while the rendered section still held the Instagram
+   * link). This is the source that observes the actual payload — pair it with
+   * `gotoHomeFresh` so the navigation itself misses the cache.
+   */
+  const expectSectionCardCount = (locator: Locator, expected: number, timeout = 15_000) =>
+    expect
+      .poll(async () => locator.count(), { timeout, message: 'contents section card count' })
+      .toBe(expected)
+
   // The home route is ISR (s-maxage 300, no max-age): Chromium applies a
   // heuristic cache to such responses and a plain goto may serve the previous
   // body even after the poll converged (measured on the S2 snapshot tests —
@@ -782,17 +796,20 @@ test.describe('Campaign home content section', () => {
     // The dev server persists its `posts` cache to .next-e2e/cache/fetch-cache
     // between runs, so an earlier full-state run could leave it populated.
     // Busting first makes the empty state deterministic on every rerun.
-    await request
-      .post(`${baseURL}/api/revalidate?tag=posts`, {
-        headers: { 'x-revalidate-secret': revalidateSecret },
-      })
-      .catch(() => undefined)
-    await waitForHomeSectionState(request, 'absent')
+    // OPS83: assert the revalidate actually landed (a swallowed failure made
+    // the server poll below time out in verify run #15) and converge on the
+    // rendered DOM with an explicit ISR-regeneration budget — never a blind
+    // wall-clock bump.
+    const revalidate = await request.post(`${baseURL}/api/revalidate?tag=posts`, {
+      headers: { 'x-revalidate-secret': revalidateSecret },
+    })
+    expect(revalidate.ok()).toBeTruthy()
+    await waitForHomeSectionState(request, 'absent', 30)
 
     // Plain URL on purpose: the test also pins the canonical home URL.
     await page.goto('/')
     await expect(page).toHaveURL(/\/$/)
-    await expect(page.locator('[data-home-section="contents"]')).toHaveCount(0)
+    await expectSectionCardCount(page.locator('[data-home-section="contents"]'), 0)
     await expect(page.getByText('A caminhada, em tempo real')).toHaveCount(0)
 
     const proof = await page.locator('[data-home-section="proof"]').boundingBox()
@@ -1331,8 +1348,10 @@ test.describe('Campaign home content section', () => {
       const section = page.locator('[data-home-section="contents"]')
       await expect(section).toBeVisible()
       await expect(section.getByRole('link', { name: /E2e Artigo fallback IG/ })).toBeVisible()
-      await expect(section.getByText('E2e Post do muro')).toHaveCount(0)
-      await expect(section.getByRole('link', { name: /Seguir no Instagram/ })).toHaveCount(0)
+      // Same rendered-DOM class as the kill-switch test (OPS83 run #15): the
+      // server poll converged but the page served a stale body — poll the DOM.
+      await expectSectionCardCount(section.getByText('E2e Post do muro'), 0)
+      await expectSectionCardCount(section.getByRole('link', { name: /Seguir no Instagram/ }), 0)
 
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
@@ -1456,14 +1475,17 @@ test.describe('Campaign home content section', () => {
         ['E2e Artigo kill switch'],
         ['E2e Vídeo em destaque', 'YouTube →', 'E2e Post do muro', 'Seguir no Instagram'],
       )
+      // The page can serve a heuristic-cached body that lags the server poll
+      // (OPS83 run #15): navigate fresh AND poll the rendered section DOM —
+      // the IG link is what failed there, scoped to the same payload.
       await gotoHomeFresh(page)
       const section = page.locator('[data-home-section="contents"]')
       await expect(section).toBeVisible()
       await expect(section.getByRole('link', { name: /E2e Artigo kill switch/ })).toBeVisible()
-      await expect(section.getByText('E2e Vídeo em destaque')).toHaveCount(0)
-      await expect(section.getByRole('link', { name: /YouTube →/ })).toHaveCount(0)
-      await expect(section.getByText('E2e Post do muro')).toHaveCount(0)
-      await expect(section.getByRole('link', { name: /Seguir no Instagram/ })).toHaveCount(0)
+      await expectSectionCardCount(section.getByText('E2e Vídeo em destaque'), 0)
+      await expectSectionCardCount(section.getByRole('link', { name: /YouTube →/ }), 0)
+      await expectSectionCardCount(section.getByText('E2e Post do muro'), 0)
+      await expectSectionCardCount(section.getByRole('link', { name: /Seguir no Instagram/ }), 0)
 
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
