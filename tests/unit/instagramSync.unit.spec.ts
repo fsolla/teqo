@@ -9,6 +9,8 @@ import {
   successInstagramSyncStatus,
 } from '@/utilities/socialFeed/instagramFeed'
 import {
+  INSTAGRAM_SYNC_HOOK_TIMEOUT_MS,
+  INSTAGRAM_SYNC_TIMEOUT_MS,
   instagramCredentialsChanged,
   syncInstagramFeed,
 } from '@/utilities/socialFeed/instagramSync'
@@ -36,6 +38,15 @@ const feedResponse = (json: unknown, ok = true, status = 200) =>
 
 afterEach(() => {
   vi.unstubAllGlobals()
+})
+
+describe('sync deadlines', () => {
+  it('keeps the hook deadline strictly below the button deadline (S11-FOLLOWUP lock window)', () => {
+    // The hook fetch runs inside the save's transaction — its deadline bounds
+    // the row lock window; the retry button holds no transaction.
+    expect(INSTAGRAM_SYNC_HOOK_TIMEOUT_MS).toBe(5_000)
+    expect(INSTAGRAM_SYNC_HOOK_TIMEOUT_MS).toBeLessThan(INSTAGRAM_SYNC_TIMEOUT_MS)
+  })
 })
 
 describe('successInstagramSyncStatus / failedInstagramSyncStatus', () => {
