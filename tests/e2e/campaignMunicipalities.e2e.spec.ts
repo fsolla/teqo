@@ -701,7 +701,12 @@ test.describe('Municípios — jornadas por papel', () => {
 
     // Staff declare votes on behalf of the leadership.
     await page.goto(`${campaign.baseURL}/campanha/municipios/${administered.slug}?tab=leaderships`)
-    await expect(page.getByRole('link', { name: contact.name })).toBeVisible()
+    // C106 — the dossiê tab streams a transient `S:` shell copy; under load the
+    // leadership-list chunk can land after `goto` settles, so let the stream
+    // commit before asserting the leadership link (same class as the `:115`
+    // editar checkbox and the C142 FAB).
+    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    await expect(page.getByRole('link', { name: contact.name }).first()).toBeVisible()
     await page.getByLabel('Quantos votos a liderança traz neste município?').fill('250')
     await page.getByRole('button', { name: 'Declarar' }).click()
     await expect(page.getByText('Declaração de votos registrada.')).toBeVisible()
