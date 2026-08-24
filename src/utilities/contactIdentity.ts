@@ -3,7 +3,7 @@ import 'server-only'
 import type { Payload, PayloadRequest } from 'payload'
 
 import type { Contact } from '@/payload-types'
-import { acquireContactPhoneLocks } from '@/utilities/contactPhoneLocks'
+import { acquireContactFichaLock, acquireContactPhoneLocks } from '@/utilities/contactPhoneLocks'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 
 type ContactIdentityRequest = PayloadTransactionRequest | PayloadRequest
@@ -20,9 +20,15 @@ type ContactIdentityRequest = PayloadTransactionRequest | PayloadRequest
  * created is the ficha just written; never a guess among the existing ones).
  * The remaining typed numbers follow the ficha wherever it lands: they fill
  * the fresh ficha, or are appended (only the ones it lacks, at the END — a
- * re-registration never reorders the mesa's priority). Without phones, a
- * fresh name-only ficha is created. Every "cria ou vincula a ficha" path
- * shares one owner for the "BA default + shared-phone" policy.
+ * re-registration never reorders the mesa's priority). The reuse append is
+ * serialized by the ficha lock (`contact-ficha:<id>`) with a fresh re-read of
+ * the phones INSIDE the lock — C120: two flows reusing the same ficha by
+ * different primaries must never drop each other's typed number. The re-read
+ * is what closes the race: `pg_advisory_xact_lock` is held until commit, so
+ * the peer's append is already committed before the lock grants the re-read
+ * sees it (READ COMMITTED — each statement takes a fresh snapshot).
+ * Without phones, a fresh name-only ficha is created. Every "cria ou vincula a ficha"
+ * path shares one owner for the "BA default + shared-phone" policy.
  *
  * Callers must already be inside an active Payload transaction (the advisory
  * lock requires it) and authorized to own the write (staff creation flows run
@@ -67,7 +73,23 @@ export const findOrCreateContactByPhone = async ({
 
     if (contacts.totalDocs === 1) {
       const existing = contacts.docs[0]!
-      const existingPhones = (existing.phones ?? [])
+      // C120 — serialize the append-on-reuse with every other flow writing
+      // THIS ficha, then RE-READ the phones inside the lock: the dedupe find
+      // above is a snapshot that can be stale once a concurrent flow reusing
+      // the same ficha by a different primary commits its own append, and
+      // appending from a stale array would silently drop its typed number.
+      await acquireContactFichaLock(payload, req, existing.id)
+      // Intentional admin bypass: same policy as the dedupe find — the ficha
+      // lock already serialized this flow; this read only derives the append target.
+      const current = await payload.findByID({
+        collection: 'contact',
+        id: existing.id,
+        depth: 0,
+        select: { phones: { value: true } },
+        overrideAccess: true,
+        req,
+      })
+      const existingPhones = (current.phones ?? [])
         .map((entry) => entry.value)
         .filter((value): value is string => Boolean(value))
       const missing = phones.filter((phone) => !existingPhones.includes(phone))

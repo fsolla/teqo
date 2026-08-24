@@ -25,6 +25,7 @@ import {
 } from '@/utilities/campaignAccess'
 import { buildCampaignPasswordResetUrl } from '@/utilities/campaignPasswordReset'
 import { findOrCreateContactByPhone } from '@/utilities/contactIdentity'
+import { acquireContactFichaLock } from '@/utilities/contactPhoneLocks'
 import {
   APIError,
   type CollectionAfterReadHook,
@@ -272,6 +273,11 @@ const ensureCampaignUserContactIdentity: CollectionBeforeChangeHook<CampaignUser
       data.phone.length > 0 &&
       data.phone !== originalDoc?.phone
     ) {
+      // C120 — same ficha lock as the find-or-create reuse append: this
+      // read-modify-write must not read a stale phones array while another
+      // flow appends to the same ficha. Lock first, then the read below is the
+      // RMW's read already serialized by it.
+      await acquireContactFichaLock(req.payload, req, linkedContactID)
       const contact = await req.payload.findByID({
         collection: 'contact',
         id: linkedContactID,
