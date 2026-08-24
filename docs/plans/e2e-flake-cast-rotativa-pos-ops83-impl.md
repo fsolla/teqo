@@ -7,6 +7,7 @@ Status: rascunho · Issue: (registrada via agent:register) · Débito capturado 
 O e2e full (deploy `verify`) e runs locais encontram uma cast rotativa de flakes na família `campaign`: no rerun do #767, 5 testes falharam consistentemente em **main limpo** (não relacionados àquela entrega) e 5 irmãos flakearam 1×:
 
 **Reprodutíveis em main limpo:**
+
 - `campaignPeople.e2e.spec.ts:180` (C131) — `campaignPeople.e2e.spec.ts:212`: opção `Todas as zonas` do aggregate Salvador não aparece (stream/aggregate).
 - `campaignMunicipalities.e2e.spec.ts:387` (B176) — filtro por Dobradinha/Liderança/Partido no omnibox; tocado 2× pelo OPS83 (#824) e ainda vermelho.
 - `campaignColumnPicker.e2e.spec.ts:146` (B197) — assessor ganha o picker com e-mail oculto.
@@ -25,6 +26,7 @@ O e2e full (deploy `verify`) e runs locais encontram uma cast rotativa de flakes
 Linha spec-only (padrão provado pela casa de flakes): settle/poll com `waitForStreamSettled`/`expect.poll`/`expectPostResponse`, reuso do owner existente. Sem migration, sem mudança de app.
 
 Fases por ROI:
+
 1. B176 `campaignMunicipalities:387` (pista mais quente — 2× tocado pelo OPS83 e ainda vermelho)
 2. C131 `campaignPeople:180` (aggregate/stream)
 3. `campaignConcepts:15`
