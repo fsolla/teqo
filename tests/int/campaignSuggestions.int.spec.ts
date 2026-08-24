@@ -276,9 +276,11 @@ describe('loadMunicipalitySuggestions (E11)', () => {
 
     // A quiet município cannot be staged — quietness means NO artifact-anchored
     // pattern fires — so claim through the allocator until one qualifies
-    // (measured: 205 of 435 with zeroed rows).
+    // (measured: 205 of 435 with zeroed rows → P(fail in 30) ≈ 0.53^30 ≈ 7e-9).
+    // 30 attempts keeps the flake probability negligible even under parallel load
+    // where the effective quiet rate may dip below the nominal 47%.
     let municipality: Municipality | null = null
-    for (let attempt = 0; attempt < 10; attempt += 1) {
+    for (let attempt = 0; attempt < 30; attempt += 1) {
       const candidate = await fixtures.getMunicipality()
       await normalizeMunicipality(candidate, { priority: 'alta' })
       fixtures.touchMunicipality(candidate.id)
@@ -289,7 +291,7 @@ describe('loadMunicipalitySuggestions (E11)', () => {
         break
       }
     }
-    if (!municipality) throw new Error('Nenhum município silencioso em 10 alocações.')
+    if (!municipality) throw new Error('Nenhum município silencioso em 30 alocações.')
 
     const author = await fixtures.createCampaignUser('coordinator')
     await fixtures.createMunicipalityUpdate({
