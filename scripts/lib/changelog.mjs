@@ -37,6 +37,35 @@ const ENTRY_FILE_RE = /^(\d{4})-(\d{2})-(\d{2})-([a-z0-9-]+)\.md$/
 const ENTRY_BLOCK_RE = /^\*\*Recently resolved \((\d{4}-\d{2}-\d{2})\)/
 
 /**
+ * Seeds the regenerable aggregate from the frozen HISTORY snapshot (OPS85):
+ * the snapshot's entry blocks become the seed blocks under the fresh
+ * CHANGELOG_HEADER. Used when the local aggregate file is absent.
+ *
+ * @param {string} historyContent - content of docs/CHANGELOG-AGENTS-HISTORY.md
+ * @returns {string} - aggregate-shaped content with CHANGELOG_HEADER + blocks
+ */
+export function seedAggregateFromHistory(historyContent) {
+  const { blocks } = splitChangelogBody(historyContent)
+  return [CHANGELOG_HEADER, ...blocks].join('\n\n') + '\n'
+}
+
+/**
+ * Post-condition of the generator (OPS85): every parsed entry must appear
+ * in the generated aggregate, or the entry was silently lost — the role the
+ * old committed-aggregate multiset played. Substring check is honest for
+ * "no silent loss" (a vanishing block fails; see build-changelog.mjs).
+ *
+ * @param {{ path: string, content: string }[]} entries
+ * @param {string} aggregateContent
+ * @returns {string[]} - paths of entries missing from the aggregate
+ */
+export function missingAggregateEntries(entries, aggregateContent) {
+  return entries
+    .filter(({ content }) => !aggregateContent.includes(content.trimEnd()))
+    .map(({ path }) => path)
+}
+
+/**
  * `changelog-rewrite: <motivo>` — standalone-line escape in the PR body for
  * legitimate aggregate loss (header rewrites, D8-style restorations). Kept
  * in the lib so the CLI and unit tests share one spelling. The template's

@@ -92,8 +92,8 @@ if (diffLines.length === 0) {
 
 // --no-renames guarantees the `STATUS<TAB>path` shape (no R entries).
 const changed = diffLines.map((line) => {
-  const [status, ...rest] = line.split('\t')
-  return { status, path: rest.join('\t') }
+  const [status, path] = line.split('\t')
+  return { status, path }
 })
 
 const body = readPrBody()
