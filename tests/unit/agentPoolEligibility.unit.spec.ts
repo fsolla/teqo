@@ -6,6 +6,7 @@ import {
   buildClaimQueue,
   claimQueueEntry,
   claimTargetVerdict,
+  withoutIdReadyIssues,
 } from '../../scripts/lib/agent-forgejo.mjs'
 import {
   buildPoolQueue,
@@ -167,8 +168,9 @@ describe('buildClaimQueue parity (shared with agent:claim)', () => {
       number: 2,
       createdAt: '2026-07-03T00:00:00Z',
       labels: [{ name: 'ready' }, { name: 'prio:P0' }],
+      body: fm([]),
     })
-    const p2New = issue({ number: 3, createdAt: '2026-07-02T00:00:00Z' })
+    const p2New = issue({ number: 3, createdAt: '2026-07-02T00:00:00Z', body: fm([]) })
     const queue = buildClaimQueue([p2New, p2Old, p0], byId)
     expect(queue.map((item) => item.issue.number)).toEqual([2, 1, 3])
     expect(queue[1]!.satisfiedWithoutIssue).toEqual(['B9'])
@@ -179,6 +181,16 @@ describe('buildClaimQueue parity (shared with agent:claim)', () => {
     const free = issue({ number: 2, body: fm(['B1']) })
     const queue = buildClaimQueue([blocked, free], byId)
     expect(queue.map((item) => item.issue.number)).toEqual([2])
+  })
+
+  it('excludes ready issues without a frontmatter id and surfaces them via withoutIdReadyIssues', () => {
+    const withId = issue({ number: 1, body: fm([]) })
+    const withoutId = issue({ number: 2, body: 'defeito sem frontmatter' })
+    const queue = buildClaimQueue([withoutId, withId], byId)
+    expect(queue.map((item) => item.issue.number)).toEqual([1])
+    expect(
+      withoutIdReadyIssues([withoutId, withId]).map(({ issue: skipped }) => skipped.number),
+    ).toEqual([2])
   })
 })
 

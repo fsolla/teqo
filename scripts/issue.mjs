@@ -19,9 +19,15 @@ import { githubApi as api } from './lib/github-api.mjs'
 const die = dieAgent('issue')
 
 const cmdNext = async () => {
-  const pick = await nextClaimableIssue()
+  const { entry: pick, skippedWithoutId } = await nextClaimableIssue()
   if (!pick) {
-    die('Fila vazia — nada `ready` desbloqueado. Rode `pnpm issue all` para a overview.')
+    const skipped =
+      skippedWithoutId.length > 0
+        ? ` Issues \`ready\` sem frontmatter id fora da fila: ${skippedWithoutId.map(({ issue }) => `#${issue.number}`).join(', ')}.`
+        : ''
+    die(
+      `Fila vazia — nada \`ready\` desbloqueado. Rode \`pnpm issue all\` para a overview.${skipped}`,
+    )
   }
   const { issue, meta, priority, satisfiedWithoutIssue } = pick
   const id = typeof meta.id === 'string' ? meta.id : null

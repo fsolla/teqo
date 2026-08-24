@@ -21,6 +21,7 @@ import {
   dieAgent,
   issuesById,
   parseArgs,
+  withoutIdReadyIssues,
 } from './lib/agent-forgejo.mjs'
 import { githubApi as api } from './lib/github-api.mjs'
 
@@ -33,11 +34,23 @@ const openReady = await api.listIssues({ state: 'open', labels: 'ready', limit: 
 // identical ordering/filtering, pinned by agentPoolEligibility.unit.spec.ts).
 const queue = buildClaimQueue(openReady, await issuesById())
 
+const skippedWithoutId = withoutIdReadyIssues(openReady)
+
+if (skippedWithoutId.length > 0) {
+  console.warn(
+    `[agent:claim] ${skippedWithoutId.length} issue(s) \`ready\` sem frontmatter id — fora da fila (não viram worktree): ` +
+      `${skippedWithoutId.map(({ issue }) => `#${issue.number}`).join(', ')} — adicione o bloco frontmatter (id/depends/...) e re-role.`,
+  )
+}
+
 if (flags['dry-run'] || flags['dryrun']) {
   console.log(`[agent:claim] ${queue.length} unblocked ready issue(s):`)
   for (const entry of queue) {
     const model = entry.meta.model ? ` model:${entry.meta.model}` : ''
     console.log(`  #${entry.issue.number} [${entry.priority}]${model} ${entry.issue.title}`)
+  }
+  for (const { issue } of skippedWithoutId) {
+    console.log(`  #${issue.number} [SKIP — sem frontmatter id] ${issue.title}`)
   }
   process.exit(0)
 }
