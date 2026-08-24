@@ -28,6 +28,7 @@ o C120; aqui é só o call-site novo + revalidar as asserções **literais** do
 spec `tests/int/campaignInvite.int.spec.ts:799-898` (que ancora a chave antiga).
 
 **Opções consideradas:**
+
 - **A — reusar `acquireContactFichaLock` trocando a chave (recomendada):** 1
   call-site + revalidação do spec; alinha com o C120.
 - **B — manter chaves separadas e documentar (rejeitada):** é exatamente o gap
