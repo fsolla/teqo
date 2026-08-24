@@ -47,6 +47,7 @@ function listChangedPaths() {
     'git',
     [
       'diff',
+      '--no-renames',
       '--name-status',
       `${mergeBase}...HEAD`,
       '--',
@@ -89,10 +90,10 @@ if (diffLines.length === 0) {
   process.exit(0)
 }
 
-// R (rename): status + old path + new path — use the new path.
+// --no-renames guarantees the `STATUS<TAB>path` shape (no R entries).
 const changed = diffLines.map((line) => {
   const [status, ...rest] = line.split('\t')
-  return { status, path: status.startsWith('R') ? rest[rest.length - 1] : rest.join('\t') }
+  return { status, path: rest.join('\t') }
 })
 
 const body = readPrBody()
