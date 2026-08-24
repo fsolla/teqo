@@ -17,9 +17,19 @@ import {
 } from '@/utilities/socialFeed/instagramFeed'
 import type { Payload, PayloadRequest } from 'payload'
 
-/** Deadline for a sync triggered by the admin (hook or button) — a hanging
- * Graph API must never stall a global save. */
+/** Deadline for the admin retry button (`POST /api/social-feed/sync`) — a
+ * hanging Graph API must never stall the request. The hook uses the shorter
+ * `INSTAGRAM_SYNC_HOOK_TIMEOUT_MS` (its fetch runs inside the save's
+ * transaction). */
 export const INSTAGRAM_SYNC_TIMEOUT_MS = 10_000
+
+/** Deadline for the hook-triggered sync only (S11-FOLLOWUP): the afterChange
+ * hook runs INSIDE the save's transaction, holding the `social_feed_settings`
+ * row lock for its whole duration — the fetch must not stretch that lock
+ * window beyond ~5s. The retry button keeps the 10s headroom (no transaction
+ * is open there, so its fetch holds no lock and needs room for the refresh +
+ * retry round trips). */
+export const INSTAGRAM_SYNC_HOOK_TIMEOUT_MS = 5_000
 
 export type InstagramSyncOutcome = {
   ok: boolean

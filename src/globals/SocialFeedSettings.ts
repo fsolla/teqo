@@ -1,7 +1,7 @@
 import { payloadAdminOnly } from '@/utilities/campaignAccess'
 import { REVALIDATE_SOCIAL_FEED_TAG } from '@/utilities/revalidateRequest'
 import {
-  INSTAGRAM_SYNC_TIMEOUT_MS,
+  INSTAGRAM_SYNC_HOOK_TIMEOUT_MS,
   instagramCredentialsChanged,
   syncInstagramFeed,
 } from '@/utilities/socialFeed/instagramSync'
@@ -23,6 +23,11 @@ const revalidateFeed = async () => revalidateTag(REVALIDATE_SOCIAL_FEED_TAG)
  * failure is swallowed — the sync's own status IS the result, and a broken
  * sync must never break the save.
  *
+ * The hook runs inside the save's transaction, so its deadline is the
+ * shorter hook-specific one (S11-FOLLOWUP): the fetch must not stretch the
+ * row lock the render path's persists block on (the retry button has no
+ * transaction and keeps the longer deadline).
+ *
  * The sync modules must not import `@payload-config` (they do not), so the
  * static import here closes no cycle: `payload.config → this global →
  * instagramSync → instagramFeed` ends at `instagramFeed`, which is pure.
@@ -33,7 +38,7 @@ const syncInstagramAfterChange: GlobalAfterChangeHook = async ({ doc, previousDo
     // `req` lets the sync write inside this very transaction (same row lock
     // held by the save) instead of blocking a second pool connection.
     await syncInstagramFeed(req.payload, {
-      signal: AbortSignal.timeout(INSTAGRAM_SYNC_TIMEOUT_MS),
+      signal: AbortSignal.timeout(INSTAGRAM_SYNC_HOOK_TIMEOUT_MS),
       req,
     })
   } catch {
