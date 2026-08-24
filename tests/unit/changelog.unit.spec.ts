@@ -6,11 +6,14 @@ import {
   assertChangelogAppendOnly,
   buildChangelog,
   CHANGELOG_AGGREGATE,
+  CHANGELOG_HEADER,
   CHANGELOG_HISTORY,
   CHANGELOG_REWRITE_ESCAPE_RE,
   entryDateOf,
   listChangelogEntries,
+  missingAggregateEntries,
   parseChangelogEntryName,
+  seedAggregateFromHistory,
   splitChangelogBody,
 } from '../../scripts/lib/changelog.mjs'
 
@@ -204,6 +207,54 @@ describe('CHANGELOG_REWRITE_ESCAPE_RE', () => {
         '- [ ] Se o changelog perdeu linhas de propósito: `changelog-rewrite: <motivo>` no body',
       ),
     ).toBe(false)
+  })
+})
+
+describe('seedAggregateFromHistory', () => {
+  const history = `${HEADER}\n\n${ENTRY_2026_08_12}\n`
+
+  it('uses the fresh CHANGELOG_HEADER with the HISTORY blocks as seed', () => {
+    const seeded = seedAggregateFromHistory(history)
+    expect(seeded.startsWith(CHANGELOG_HEADER)).toBe(true)
+    expect(seeded).toContain(ENTRY_2026_08_12)
+  })
+
+  it('round-trips: build over the seed is idempotent and complete', () => {
+    const seeded = seedAggregateFromHistory(history)
+    const next = buildChangelog({
+      entries: [{ content: ENTRY_2026_08_12 }, { content: ENTRY_2026_08_13 }],
+      aggregateContent: seeded,
+    })
+    expect(next).toBe(`${CHANGELOG_HEADER}\n\n${ENTRY_2026_08_13}\n\n${ENTRY_2026_08_12}\n`)
+    expect(
+      missingAggregateEntries(
+        [
+          { path: 'docs/changelog/2026-08-12-x.md', content: ENTRY_2026_08_12 },
+          { path: 'docs/changelog/2026-08-13-y.md', content: ENTRY_2026_08_13 },
+        ],
+        next,
+      ),
+    ).toEqual([])
+  })
+})
+
+describe('missingAggregateEntries', () => {
+  it('flags an entry absent from the generated aggregate', () => {
+    expect(
+      missingAggregateEntries(
+        [{ path: 'docs/changelog/2026-08-12-x.md', content: ENTRY_2026_08_12 }],
+        'outro conteúdo',
+      ),
+    ).toEqual(['docs/changelog/2026-08-12-x.md'])
+  })
+
+  it('returns [] when every entry text appears', () => {
+    expect(
+      missingAggregateEntries(
+        [{ path: 'docs/changelog/2026-08-12-x.md', content: ENTRY_2026_08_12 }],
+        `prefácio\n\n${ENTRY_2026_08_12}\n`,
+      ),
+    ).toEqual([])
   })
 })
 

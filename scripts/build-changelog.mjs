@@ -11,7 +11,9 @@
  * Usage: node scripts/build-changelog.mjs [--stdout] [--check]
  *   --stdout  print the aggregate to stdout instead of writing the file
  *   --check   verify the local aggregate (when present) is up to date —
- *             local sanity only, not a CI/gate requirement since OPS85
+ *             local sanity only, not a CI/gate requirement since OPS85.
+ *             With the local file absent it is a no-op (nothing to compare).
+ *   --stdout and --check together: --check wins (verification only).
  */
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -20,10 +22,10 @@ import {
   buildChangelog,
   CHANGELOG_AGGREGATE,
   CHANGELOG_DIR,
-  CHANGELOG_HEADER,
   CHANGELOG_HISTORY,
   listChangelogEntries,
-  splitChangelogBody,
+  missingAggregateEntries,
+  seedAggregateFromHistory,
 } from './lib/changelog.mjs'
 
 const repoRoot = process.cwd()
@@ -53,8 +55,7 @@ if (aggregateContent === null) {
   } catch {
     die(`não consegui ler ${CHANGELOG_AGGREGATE} nem o seed ${CHANGELOG_HISTORY}`)
   }
-  const { blocks } = splitChangelogBody(historyContent)
-  aggregateContent = [CHANGELOG_HEADER, ...blocks].join('\n\n') + '\n'
+  aggregateContent = seedAggregateFromHistory(historyContent)
 }
 
 let files
@@ -84,10 +85,9 @@ const next = buildChangelog({
 
 // Post-condition (OPS85): no parsed entry may silently vanish from the
 // generated aggregate — replaces the old committed-aggregate multiset.
-for (const { path, content } of withContent) {
-  if (!next.includes(content.trimEnd())) {
-    die(`entrada ausente do agregado gerado (perda silenciosa?): ${path}`)
-  }
+const missing = missingAggregateEntries(withContent, next)
+if (missing.length > 0) {
+  die(`entrada(s) ausente(s) do agregado gerado (perda silenciosa?): ${missing.join(', ')}`)
 }
 
 if (checkOnly) {
