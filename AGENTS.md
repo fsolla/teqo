@@ -35,7 +35,7 @@ These are product/architecture constraints — not a ban on editing existing cod
 
 ## Histórico de entregas (movido)
 
-"Known Gaps" e os blocos "Recently resolved" saíram deste arquivo em 2026-07-30: vivem em [`docs/CHANGELOG-AGENTS.md`](docs/CHANGELOG-AGENTS.md). Novas entregas registram UMA entrada curta em `docs/changelog/<data>-<id>.md` e rodam `pnpm changelog:build` (agregado insert-only, OPS44) — nunca editam `docs/CHANGELOG-AGENTS.md` na mão. A referência genérica de Payload (config/collections/fields/hooks/queries/components) foi para [`docs/PAYLOAD-REFERENCE.md`](docs/PAYLOAD-REFERENCE.md) — consulta sob demanda, não always-on. Operação do paradigma de agentes paralelos (claim→PR→main→deploy gated): [`docs/AGENT-OPS.md`](docs/AGENT-OPS.md).
+"Known Gaps" e os blocos "Recently resolved" saíram deste arquivo em 2026-07-30: o registro commitado vive em [`docs/changelog/`](docs/changelog/) (uma entrada por arquivo, imune a conflito). O agregado legível `docs/CHANGELOG-AGENTS.md` é **gitignored e gerado sob demanda** (OPS85): `pnpm changelog:build` grava, `pnpm changelog:read` imprime no stdout — com seed do snapshot congelado `docs/CHANGELOG-AGENTS-HISTORY.md`. Novas entregas registram UMA entrada curta em `docs/changelog/<data>-<id>.md` — nunca editam `docs/CHANGELOG-AGENTS.md` nem o HISTORY na mão. A referência genérica de Payload (config/collections/fields/hooks/queries/components) foi para [`docs/PAYLOAD-REFERENCE.md`](docs/PAYLOAD-REFERENCE.md) — consulta sob demanda, não always-on. Operação do paradigma de agentes paralelos (claim→PR→main→deploy gated): [`docs/AGENT-OPS.md`](docs/AGENT-OPS.md).
 
 ## Core Principles
 

@@ -1,23 +1,26 @@
 #!/usr/bin/env node
 /**
- * check-changelog-append-only — CI guard (OPS44): the aggregated changelog
- * must never lose an existing line, and docs/changelog/ entries are
- * additions-only. Legitimate restorations (D8 pattern) and header rewrites
- * escape via the documented `changelog-rewrite:` token in the PR body.
+ * check-changelog-append-only — CI + pre-push guard (OPS44/OPS85): the
+ * committed changelog record is per-file only. docs/changelog/ entries are
+ * additions-only, docs/CHANGELOG-AGENTS-HISTORY.md is a frozen snapshot
+ * (only its creation is allowed), and the regenerable aggregate
+ * docs/CHANGELOG-AGENTS.md must never be committed — its one-time removal
+ * is allowed only together with the HISTORY creation (the OPS85 migration).
+ * Legitimate exceptions (D8-style restorations, HISTORY corrections) escape
+ * via the documented `changelog-rewrite:` token in the PR body.
  *
  * Paths from git diff (merge-base…HEAD); body from PR_BODY env or `gh pr
  * view` when PR_NUMBER is set. The escape is honored only when the diff
- * actually touches the aggregate or docs/changelog/, and only as a
- * standalone line (never the PR template's own checkbox text).
+ * actually touches the changelog paths, and only as a standalone line
+ * (never the PR template's own checkbox text).
  */
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 
 import {
   assertChangelogAppendOnly,
   CHANGELOG_AGGREGATE,
   CHANGELOG_DIR,
+  CHANGELOG_HISTORY,
   CHANGELOG_REWRITE_ESCAPE_RE,
 } from './lib/changelog.mjs'
 
@@ -42,7 +45,15 @@ try {
 function listChangedPaths() {
   const raw = execFileSync(
     'git',
-    ['diff', '--name-status', `${mergeBase}...HEAD`, '--', CHANGELOG_AGGREGATE, CHANGELOG_DIR],
+    [
+      'diff',
+      '--name-status',
+      `${mergeBase}...HEAD`,
+      '--',
+      CHANGELOG_AGGREGATE,
+      CHANGELOG_HISTORY,
+      CHANGELOG_DIR,
+    ],
     { encoding: 'utf8' },
   )
 
@@ -79,7 +90,7 @@ if (diffLines.length === 0) {
 }
 
 // R (rename): status + old path + new path — use the new path.
-const changelogDiff = diffLines.map((line) => {
+const changed = diffLines.map((line) => {
   const [status, ...rest] = line.split('\t')
   return { status, path: status.startsWith('R') ? rest[rest.length - 1] : rest.join('\t') }
 })
@@ -90,19 +101,10 @@ if (CHANGELOG_REWRITE_ESCAPE_RE.test(body)) {
   process.exit(0)
 }
 
-function blob(ref, path) {
-  return execFileSync('git', ['show', `${ref}:${path}`], { encoding: 'utf8' })
-}
-
-const aggregateDiff = changelogDiff.filter(({ path }) => path === CHANGELOG_AGGREGATE)
-const oldAggregate = aggregateDiff.length > 0 ? blob(mergeBase, CHANGELOG_AGGREGATE) : ''
-const newAggregate =
-  aggregateDiff.length > 0 ? readFileSync(join(process.cwd(), CHANGELOG_AGGREGATE), 'utf8') : ''
-
 const result = assertChangelogAppendOnly({
-  oldAggregate,
-  newAggregate,
-  changelogDiff: changelogDiff.filter(({ path }) => path.startsWith(`${CHANGELOG_DIR}/`)),
+  changelogDiff: changed.filter(({ path }) => path.startsWith(`${CHANGELOG_DIR}/`)),
+  historyDiff: changed.filter(({ path }) => path === CHANGELOG_HISTORY),
+  aggregateDiff: changed.filter(({ path }) => path === CHANGELOG_AGGREGATE),
 })
 
 if (!result.ok) {

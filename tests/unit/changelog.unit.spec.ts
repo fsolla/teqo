@@ -5,10 +5,11 @@ import { describe, expect, it } from 'vitest'
 import {
   assertChangelogAppendOnly,
   buildChangelog,
+  CHANGELOG_AGGREGATE,
+  CHANGELOG_HISTORY,
   CHANGELOG_REWRITE_ESCAPE_RE,
   entryDateOf,
   listChangelogEntries,
-  missingLines,
   parseChangelogEntryName,
   splitChangelogBody,
 } from '../../scripts/lib/changelog.mjs'
@@ -189,28 +190,6 @@ describe('buildChangelog', () => {
   })
 })
 
-describe('missingLines', () => {
-  it('returns [] for a pure addition', () => {
-    expect(missingLines('a\nb\n', 'x\na\nb\n')).toEqual([])
-  })
-
-  it('flags a removed line', () => {
-    expect(missingLines('a\nb\n', 'a\n')).toEqual(['b'])
-  })
-
-  it('treats a moved line as present (multiset, not position)', () => {
-    expect(missingLines('a\nb\nc\n', 'c\na\nb\n')).toEqual([])
-  })
-
-  it('flags a line whose count decreases (duplicate lost)', () => {
-    expect(missingLines('a\na\n', 'a\n')).toEqual(['a'])
-  })
-
-  it('returns distinct missing lines', () => {
-    expect(missingLines('a\nb\nb\n', 'a\n')).toEqual(['b'])
-  })
-})
-
 describe('CHANGELOG_REWRITE_ESCAPE_RE', () => {
   it('matches a standalone changelog-rewrite line in a PR body', () => {
     expect(
@@ -229,44 +208,73 @@ describe('CHANGELOG_REWRITE_ESCAPE_RE', () => {
 })
 
 describe('assertChangelogAppendOnly', () => {
-  it('passes on a pure addition with no changelog file touched', () => {
+  it('passes on a pure addition in docs/changelog/ with no other changelog diff', () => {
     expect(
       assertChangelogAppendOnly({
-        oldAggregate: 'a\nb\n',
-        newAggregate: 'a\nb\nc\n',
         changelogDiff: [{ status: 'A', path: 'docs/changelog/2026-08-13-ops44.md' }],
+        historyDiff: [],
+        aggregateDiff: [],
       }),
     ).toEqual({ ok: true })
   })
 
-  it('fails when an aggregate line disappears', () => {
+  it('passes on the OPS85 migration — aggregate removed together with HISTORY creation', () => {
+    expect(
+      assertChangelogAppendOnly({
+        changelogDiff: [{ status: 'A', path: 'docs/changelog/2026-08-24-ops85.md' }],
+        historyDiff: [{ status: 'A', path: CHANGELOG_HISTORY }],
+        aggregateDiff: [{ status: 'D', path: CHANGELOG_AGGREGATE }],
+      }),
+    ).toEqual({ ok: true })
+  })
+
+  it('fails when the aggregate is added or modified (it must never be committed)', () => {
+    for (const status of ['A', 'M']) {
+      const result = assertChangelogAppendOnly({
+        changelogDiff: [],
+        historyDiff: [],
+        aggregateDiff: [{ status, path: CHANGELOG_AGGREGATE }],
+      })
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toContain('não deve ser commitado')
+      }
+    }
+  })
+
+  it('fails when the aggregate is removed without creating the HISTORY snapshot', () => {
     const result = assertChangelogAppendOnly({
-      oldAggregate: 'a\nb\n',
-      newAggregate: 'a\n',
       changelogDiff: [],
+      historyDiff: [],
+      aggregateDiff: [{ status: 'D', path: CHANGELOG_AGGREGATE }],
     })
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toContain('não é append-only')
+      expect(result.message).toContain('removido sem criar')
       expect(result.message).toContain('changelog-rewrite')
     }
   })
 
-  it('passes on an addition inside docs/changelog/', () => {
-    expect(
-      assertChangelogAppendOnly({
-        oldAggregate: 'a\n',
-        newAggregate: 'a\nb\n',
-        changelogDiff: [{ status: 'A', path: 'docs/changelog/2026-08-13-ops44.md' }],
-      }),
-    ).toEqual({ ok: true })
+  it('fails when the HISTORY snapshot is modified or deleted', () => {
+    for (const status of ['M', 'D']) {
+      const result = assertChangelogAppendOnly({
+        changelogDiff: [],
+        historyDiff: [{ status, path: CHANGELOG_HISTORY }],
+        aggregateDiff: [],
+      })
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toContain('congelado')
+        expect(result.message).toContain('changelog-rewrite')
+      }
+    }
   })
 
   it('fails when a docs/changelog file is modified', () => {
     const result = assertChangelogAppendOnly({
-      oldAggregate: 'a\n',
-      newAggregate: 'a\nb\n',
       changelogDiff: [{ status: 'M', path: 'docs/changelog/2026-08-13-ops44.md' }],
+      historyDiff: [],
+      aggregateDiff: [],
     })
     expect(result.ok).toBe(false)
     if (!result.ok) {
@@ -277,9 +285,9 @@ describe('assertChangelogAppendOnly', () => {
 
   it('fails when a docs/changelog file is deleted', () => {
     const result = assertChangelogAppendOnly({
-      oldAggregate: 'a\n',
-      newAggregate: 'a\n',
       changelogDiff: [{ status: 'D', path: 'docs/changelog/2026-08-12-b200.md' }],
+      historyDiff: [],
+      aggregateDiff: [],
     })
     expect(result.ok).toBe(false)
     if (!result.ok) {
