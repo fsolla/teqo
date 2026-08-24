@@ -137,6 +137,10 @@ test.describe('Municípios — jornadas por papel', () => {
     await expect(campaignPageChrome(page, municipality.name)).toBeVisible()
 
     await page.goto(`${campaign.baseURL}/campanha/municipios/${municipality.slug}/editar`)
+    // C106 — the editar page streams heavy content (detail view model +
+    // advisor options + stateDeputy options); the shell's `S:` copies must
+    // settle before the advisor checkbox option can be reliably checked.
+    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
     await page.getByLabel(`${advisor.name} `, { exact: false }).check()
     await page.getByRole('button', { name: 'Salvar assessores' }).click()
     await expect(page.getByText('Assessores atualizados.')).toBeVisible()

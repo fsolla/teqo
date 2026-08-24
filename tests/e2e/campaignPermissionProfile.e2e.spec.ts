@@ -91,6 +91,10 @@ test.describe('Advisor permission profiles (C142)', () => {
 
       await page.goto('/campanha/municipios')
       await page.waitForLoadState('networkidle')
+      // C106 — dynamic pages stream a transient hidden `#S:*` copy of the shell;
+      // the FAB lives in the streamed shell and won't be present until the
+      // `S:` copies settle.
+      await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
 
       // The FAB should be present (carteira scope = write allowed).
       await expect(page.locator('[data-slot="campaign-quick-actions-fab"]')).toBeVisible()
@@ -107,6 +111,8 @@ test.describe('Advisor permission profiles (C142)', () => {
 
       await page.goto('/campanha/municipios')
       await page.waitForLoadState('networkidle')
+      // C106 — same shell-settle requirement as the carteira sibling.
+      await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
 
       // The FAB must be present for a tudo advisor.
       await expect(page.locator('[data-slot="campaign-quick-actions-fab"]')).toBeVisible()
