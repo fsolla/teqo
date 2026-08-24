@@ -5,6 +5,40 @@
       "type": "remote",
       "url": "https://design.penpot.app/mcp/stream?userToken={file:.opencode/secrets/penpot-token}",
       "enabled": true
+    },
+    "postgres": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://teqo:teqo@localhost:5432/teqo"
+      ],
+      "enabled": true
+    }
+  },
+  "permission": {
+    "penpot*": "deny",
+    "postgres*": "deny",
+    "query": "deny",
+    "forgejo*": "deny",
+    "stalwart*": "deny",
+    "office-word*": "deny",
+    "office_word*": "deny",
+    "jobspy*": "deny",
+    "github*": "deny"
+  },
+  "agent": {
+    "penpot": {
+      "permission": {
+        "penpot*": "allow"
+      }
+    },
+    "postgres": {
+      "permission": {
+        "postgres*": "allow",
+        "query": "allow"
+      }
     }
   }
 }
