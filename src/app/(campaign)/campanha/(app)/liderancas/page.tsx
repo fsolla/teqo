@@ -50,7 +50,7 @@ import {
 import { whatsAppHrefForPhone } from '@/lib/phone'
 import { MAX_LEADERSHIP_MUNICIPALITIES } from '@/lib/schemas/leadership'
 import { cn } from '@/lib/utils'
-import { getAdvisorMunicipalityIds } from '@/utilities/campaignAccess'
+import { getWritableMunicipalityIds } from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadStateDeputyOptions } from '@/utilities/campaignRelationOptions'
@@ -139,7 +139,10 @@ const leadershipColumns = ({
   stateDeputyOptions: RelationCellOption[]
   municipalityIndex: MunicipalityPortfolioIndexEntry[]
   municipalityFilterOptions: LeadershipFilterOption[]
-  /** Advisors may only link municipalities they administer; staff: undefined. */
+  /**
+   * C144 — advisors may only add municipalities in their WRITE scope
+   * (`undefined` = whole catalog: unrestricted staff and Edição "Tudo").
+   */
   addableMunicipalityIds?: ReadonlySet<number>
   /** C142 — false when the advisor has `somente_leitura`: no invite, no per-row edits. */
   canEditAny?: boolean
@@ -357,12 +360,12 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
     { rows, totalDocs, totalPages, filterFacets },
     stateDeputyOptions,
     municipalityIndex,
-    administeredIds,
+    writableIds,
   ] = await Promise.all([
     loadLeadershipListPageData(payload, user, canonicalUrl.state),
     isStateDeputyVisible ? loadStateDeputyOptions(payload, user) : Promise.resolve([]),
     loadMunicipalityPortfolioIndex(),
-    user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : null,
+    user.role === 'advisor' ? getWritableMunicipalityIds(payload, user) : null,
   ])
 
   // C142 — the write scope gates the create button, the invite action, and
@@ -423,7 +426,7 @@ export default async function LeadershipsPage({ searchParams }: LeadershipsPageP
     })),
     municipalityIndex,
     municipalityFilterOptions,
-    ...(canEditAny && administeredIds ? { addableMunicipalityIds: new Set(administeredIds) } : {}),
+    ...(canEditAny && writableIds ? { addableMunicipalityIds: new Set(writableIds) } : {}),
     canEditAny,
     nowMs: Date.now(),
   })

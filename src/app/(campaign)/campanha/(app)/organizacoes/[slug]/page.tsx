@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/Badge'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { organizationKindLabels } from '@/lib/schemas/organization'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
+import { loadWritableMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { loadOrganizationDetail } from '@/utilities/organizationData'
 import { updateOrganizationFormAction } from './formActions'
 
@@ -48,7 +48,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
   const organization = await loadOrganizationDetail(payload, user, slug)
   if (!organization) notFound()
 
-  const municipalityOptions = await loadMunicipalityOptions(payload, user)
+  const municipalityOptions = await loadWritableMunicipalityOptions(payload, user)
 
   return (
     <CampaignPageShell>

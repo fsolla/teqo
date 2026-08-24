@@ -88,8 +88,8 @@ export default async function TourComposerPage({ searchParams }: TourComposerPag
 
   const now = new Date()
   const [regions, bundle] = await Promise.all([
-    loadVisitPlannerRegions(payload, user),
-    region ? loadVisitCandidates(payload, user, { region, now }) : null,
+    loadVisitPlannerRegions(payload, user, { writeScope: true }),
+    region ? loadVisitCandidates(payload, user, { region, now, writeScope: true }) : null,
   ])
   const candidates = bundle?.groups.flatMap((group) => group.candidates) ?? []
   const suggestion = composeTourSuggestion(candidates)

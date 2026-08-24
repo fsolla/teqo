@@ -5,9 +5,9 @@ import type { Payload } from 'payload'
 import type { RelationOption } from '@/components/campaign/shared/RelationMultiSelect'
 import { populatedContactName } from '@/lib/relationship'
 import type { CampaignUser } from '@/payload-types'
-import { eligibleCampaignStaffWhere } from '@/utilities/campaignAccess'
+import { eligibleCampaignStaffWhere, getWritableMunicipalityIds } from '@/utilities/campaignAccess'
 
-/** Municipalities the actor may operate on (coordinator: all 436; advisor: administered). */
+/** Municipalities the actor may operate on (coordinator: all 435; advisor: administered). */
 export const loadMunicipalityOptions = async (
   payload: Payload,
   user: CampaignUser,
@@ -20,6 +20,36 @@ export const loadMunicipalityOptions = async (
     sort: 'name',
     select: { name: true },
     where: {},
+    user,
+    overrideAccess: false,
+  })
+  return result.docs.map((municipality) => ({ id: municipality.id, name: municipality.name }))
+}
+
+/**
+ * C144 — WRITE-scoped variant for the write forms: only municipalities the
+ * actor may write under the Edição axis (`getWritableMunicipalityIds`).
+ * `null` (unrestricted staff or `editing === 'tudo'`) delegates to the read
+ * loader (same query — the whole catalog); `[]` (`somente_leitura`) returns no
+ * options without a fetch; a carteira resolves to exactly the portfolio ids.
+ * Read surfaces keep `loadMunicipalityOptions`.
+ */
+export const loadWritableMunicipalityOptions = async (
+  payload: Payload,
+  user: CampaignUser,
+): Promise<RelationOption[]> => {
+  const writableIds = await getWritableMunicipalityIds(payload, user)
+  if (writableIds === null) return loadMunicipalityOptions(payload, user)
+  if (writableIds.length === 0) return []
+
+  const result = await payload.find({
+    collection: 'municipality',
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    sort: 'name',
+    select: { name: true },
+    where: { id: { in: writableIds } },
     user,
     overrideAccess: false,
   })

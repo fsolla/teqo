@@ -23,8 +23,8 @@ import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { loadAccessibleActivityTags } from '@/utilities/activityPageData'
 import { formatActivityWhenLabel } from '@/utilities/activityViewModels'
 import {
-  loadMunicipalityOptions,
   loadOrganizationOptions,
+  loadWritableMunicipalityOptions,
 } from '@/utilities/campaignRelationOptions'
 
 import { getActivityDetailPageData } from '@/utilities/activityDetailPageData'
@@ -97,7 +97,7 @@ export default async function ActivityDetailPage({
   if (canonicalTabRedirect) redirect(canonicalTabRedirect)
 
   const [municipalityOptions, organizationOptions, knownTags] = await Promise.all([
-    loadMunicipalityOptions(payload, user),
+    loadWritableMunicipalityOptions(payload, user),
     loadOrganizationOptions(payload, user),
     loadAccessibleActivityTags(payload, user),
   ])

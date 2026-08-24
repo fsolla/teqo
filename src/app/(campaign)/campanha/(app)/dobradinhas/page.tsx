@@ -40,7 +40,11 @@ import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import type { MunicipalityPortfolioIndexEntry } from '@/lib/municipalityPortfolio'
 import { cn } from '@/lib/utils'
-import { getAdvisorMunicipalityIds, isCampaignUnrestricted } from '@/utilities/campaignAccess'
+import {
+  getAdvisorMunicipalityIds,
+  getWritableMunicipalityIds,
+  isCampaignUnrestricted,
+} from '@/utilities/campaignAccess'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
@@ -309,7 +313,7 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
     leadershipOptions,
     advisorOptions,
     municipalityIndex,
-    administeredIds,
+    addableMunicipalityIds,
   ] = await Promise.all([
     loadStateDeputyListPageData(payload, user, canonicalUrl.state),
     isLeadershipVisible ? loadLeadershipOptions(payload, user) : Promise.resolve([]),
@@ -317,7 +321,14 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
       ? loadEligibleAdvisorOptions(payload, user)
       : Promise.resolve([]),
     loadMunicipalityPortfolioIndex(),
-    user.role === 'advisor' ? getAdvisorMunicipalityIds(payload, user.id) : null,
+    // C144 — the cell's `addableIds` is ALSO the read lens (chips outside the
+    // set hide, `undefined` shows the whole catalog): a carteira-visão advisor
+    // keeps the carteira set so somente_leitura does not regress into seeing
+    // every município; visão-tudo follows the Edição axis (null → whole
+    // catalog, [] → none offered, carteira → portfolio adds).
+    user.role === 'advisor' && user.visibility === 'carteira'
+      ? getAdvisorMunicipalityIds(payload, user.id)
+      : getWritableMunicipalityIds(payload, user),
   ])
   const resolvedUrl = resolveStateDeputyListUrl(rawSearchParams, totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
@@ -350,7 +361,11 @@ export default async function StateDeputiesPage({ searchParams }: StateDeputiesP
     })),
     canEditAdvisors,
     municipalityIndex,
-    administeredIds ? new Set(administeredIds) : undefined,
+    // The length-guard keeps `[]` (no writable município) from collapsing
+    // every chip: an empty `Set` hides all municipalities from the cell.
+    addableMunicipalityIds && addableMunicipalityIds.length > 0
+      ? new Set(addableMunicipalityIds)
+      : undefined,
   )
 
   return (

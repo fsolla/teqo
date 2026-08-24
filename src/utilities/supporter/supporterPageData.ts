@@ -9,7 +9,10 @@ import {
   getSupporterRegistrationConsent,
   getSupporterVoteIntentionConsent,
 } from '@/utilities/campaignConsent'
-import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
+import {
+  loadMunicipalityOptions,
+  loadWritableMunicipalityOptions,
+} from '@/utilities/campaignRelationOptions'
 import { createEntityNotFoundError } from '@/utilities/entityNotFound'
 import { computeSupporterListOverviewAggregate } from '@/utilities/supporter/supporterListOverviewAggregate'
 import {
@@ -159,7 +162,7 @@ export const loadSupporterCreatePageData = async (
   user: CampaignUser,
 ): Promise<SupporterCreatePageData> => {
   const [municipalityOptions, registrationConsent, voteIntentionConsent] = await Promise.all([
-    loadMunicipalityOptions(payload, user),
+    loadWritableMunicipalityOptions(payload, user),
     getSupporterRegistrationConsent(payload),
     getSupporterVoteIntentionConsent(payload),
   ])

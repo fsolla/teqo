@@ -20,6 +20,13 @@ import {
 } from '@/app/(campaign)/campanha/actions/municipality'
 import config from '@/payload.config'
 import { canCreateOrganization } from '@/utilities/campaignAccess'
+import { loadWritableMunicipalityOptions } from '@/utilities/campaignRelationOptions'
+import { loadSupporterCreatePageData } from '@/utilities/supporter/supporterPageData'
+import {
+  loadMunicipalityVisitEligibility,
+  loadVisitCandidates,
+  loadVisitPlannerRegions,
+} from '@/utilities/visit/visitPlannerData'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 import { stub } from '../helpers/stub'
@@ -770,5 +777,106 @@ describe('advisor permission profile (C141)', () => {
         depth: 0,
       }),
     ).rejects.toThrow(/exige Visão/)
+  })
+})
+
+describe('write-scoped municipality options (C144)', () => {
+  beforeAll(async () => {
+    payload = await getPayload({ config: await config })
+  })
+
+  it('loadWritableMunicipalityOptions follows the Edição axis for every profile', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const carteiraAdvisor = await fixtures.createCampaignUser('advisor')
+    const wideReadAdvisor = await fixtures.createCampaignUser('advisor', {
+      visibility: 'tudo',
+      editing: 'carteira',
+    })
+    const wideEditAdvisor = await fixtures.createCampaignUser('advisor', {
+      visibility: 'tudo',
+      editing: 'tudo',
+    })
+    const readOnlyAdvisor = await fixtures.createCampaignUser('advisor', {
+      editing: 'somente_leitura',
+    })
+    const administered = await fixtures.getMunicipality()
+    const outside = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(administered.id, [
+      carteiraAdvisor.id,
+      wideReadAdvisor.id,
+      wideEditAdvisor.id,
+      readOnlyAdvisor.id,
+    ])
+
+    const idsOf = (options: Awaited<ReturnType<typeof loadWritableMunicipalityOptions>>) =>
+      new Set(options.map((option) => option.id))
+
+    // Unrestricted staff and Edição "Tudo" offer the whole catalog.
+    expect(idsOf(await loadWritableMunicipalityOptions(payload, coordinator)).has(outside.id)).toBe(
+      true,
+    )
+    expect(
+      idsOf(await loadWritableMunicipalityOptions(payload, wideEditAdvisor)).has(outside.id),
+    ).toBe(true)
+
+    // The C144 core fix: Visão "Tudo" + Edição "Carteira" offers ONLY the
+    // carteira — the picker can no longer suggest a município the server rejects.
+    for (const advisor of [carteiraAdvisor, wideReadAdvisor]) {
+      const ids = idsOf(await loadWritableMunicipalityOptions(payload, advisor))
+      expect(ids.has(administered.id)).toBe(true)
+      expect(ids.has(outside.id)).toBe(false)
+    }
+
+    // Somente leitura: nothing to write, nothing offered.
+    expect(await loadWritableMunicipalityOptions(payload, readOnlyAdvisor)).toEqual([])
+  })
+
+  it('giro composer writeScope restricts regions and candidates; the dossier card stays read-wide', async () => {
+    const fixtures = campaignFixtures()
+    const wideReadAdvisor = await fixtures.createCampaignUser('advisor', {
+      visibility: 'tudo',
+      editing: 'carteira',
+    })
+    const administered = await fixtures.getMunicipality()
+    const outside = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(administered.id, [wideReadAdvisor.id])
+
+    // Regions are built only over writable municípios — one portfolio, one count.
+    const regions = await loadVisitPlannerRegions(payload, wideReadAdvisor, { writeScope: true })
+    expect(regions.reduce((sum, region) => sum + region.municipalityCount, 0)).toBe(1)
+
+    // Candidates exclude the readable-but-not-writable município.
+    const bundle = await loadVisitCandidates(payload, wideReadAdvisor, { writeScope: true })
+    const slugs = bundle.groups.flatMap((group) =>
+      group.candidates.map((candidate) => candidate.slug),
+    )
+    expect(slugs).toEqual([administered.slug])
+    expect(slugs).not.toContain(outside.slug)
+
+    // The dossier eligibility card (read surface) keeps the read scope: the
+    // same actor still reads the out-of-carteira município there.
+    const { candidate } = await loadMunicipalityVisitEligibility(
+      payload,
+      wideReadAdvisor,
+      outside.slug,
+    )
+    expect(candidate).not.toBeNull()
+  })
+
+  it('loadSupporterCreatePageData offers only writable municipalities', async () => {
+    const fixtures = campaignFixtures()
+    const wideReadAdvisor = await fixtures.createCampaignUser('advisor', {
+      visibility: 'tudo',
+      editing: 'carteira',
+    })
+    const administered = await fixtures.getMunicipality()
+    const outside = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(administered.id, [wideReadAdvisor.id])
+
+    const pageData = await loadSupporterCreatePageData(payload, wideReadAdvisor)
+    const ids = new Set(pageData.municipalityOptions.map((option) => option.id))
+    expect(ids.has(administered.id)).toBe(true)
+    expect(ids.has(outside.id)).toBe(false)
   })
 })

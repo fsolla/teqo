@@ -9,9 +9,9 @@ import { Button } from '@/components/ui/button'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
-  loadMunicipalityOptions,
   loadOrganizationOptions,
   loadStateDeputyOptions,
+  loadWritableMunicipalityOptions,
 } from '@/utilities/campaignRelationOptions'
 import { createLeadershipFormAction } from './formActions'
 
@@ -29,7 +29,7 @@ export default async function NewLeadershipPage({ searchParams }: NewLeadershipP
   ])
 
   const [municipalityOptions, organizationOptions, stateDeputyOptions] = await Promise.all([
-    loadMunicipalityOptions(payload, user),
+    loadWritableMunicipalityOptions(payload, user),
     loadOrganizationOptions(payload, user),
     loadStateDeputyOptions(payload, user),
   ])
