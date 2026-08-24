@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { LeadershipStateDeputiesColumnCell } from '@/components/campaign/leadership/LeadershipStateDeputiesColumnCell'
 import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignInlineEditableCell } from '@/components/campaign/shared/CampaignInlineEditableCell'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
@@ -19,10 +20,7 @@ import {
   CampaignTableHead,
   type CampaignTableColumn,
 } from '@/components/campaign/shared/CampaignTable'
-import {
-  LeadershipStateDeputyRelationCell,
-  type RelationCellOption,
-} from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
+import type { RelationCellOption } from '@/components/campaign/shared/LeadershipStateDeputyRelationCell'
 import { MunicipalityPortfolioCell } from '@/components/campaign/shared/MunicipalityPortfolioCell'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { StateDeputyAdvisorRelationCell } from '@/components/campaign/stateDeputy/StateDeputyAdvisorRelationCell'
@@ -69,7 +67,6 @@ import {
 } from '@/utilities/stateDeputyListUrl'
 
 import {
-  setLeadershipStateDeputyMembershipFormAction,
   setStateDeputyAdvisorMembershipFormAction,
   setStateDeputyMunicipalitiesFormAction,
   updateStateDeputyBallotNameFormAction,
@@ -253,7 +250,7 @@ const stateDeputyColumns = (
     label: 'Lideranças',
     cellClassName: 'max-w-72 whitespace-normal',
     cell: (row) => (
-      <LeadershipStateDeputyRelationCell
+      <LeadershipStateDeputiesColumnCell
         direction="fromStateDeputy"
         fixedId={row.id}
         ownerName={row.name}
@@ -263,7 +260,6 @@ const stateDeputyColumns = (
           href: `/campanha/liderancas/${leadership.id}`,
         }))}
         options={leadershipOptions}
-        membershipAction={setLeadershipStateDeputyMembershipFormAction}
       />
     ),
   },

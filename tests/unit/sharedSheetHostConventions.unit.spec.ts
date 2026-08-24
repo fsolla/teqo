@@ -20,7 +20,14 @@ describe('shared sheet host for chip-relation cells (miss #52)', () => {
    * table (their owning page holds the provider — checked for the C116 people
    * list like the dobradinhas one).
    */
-  const cellWrapperFiles = new Set(['src/components/campaign/people/PeopleMunicipalityCell.tsx'])
+  const cellWrapperFiles = new Set([
+    // C128 people list; C116 batch-chip expansion state — the owning page
+    // holds the provider.
+    'src/components/campaign/people/PeopleMunicipalityCell.tsx',
+    // B155+ route-backed column adapters — the owning pages hold the provider.
+    'src/components/campaign/leadership/LeadershipMunicipalitiesColumnCell.tsx',
+    'src/components/campaign/leadership/LeadershipStateDeputiesColumnCell.tsx',
+  ])
 
   it('wraps every chip-relation table in CampaignListSheetProvider', () => {
     const offenders: string[] = []

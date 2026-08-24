@@ -1,7 +1,7 @@
 # Escala/DRY pós-B155 — padrão de escrita de célula: quick-edits via form action → rota JSON
 
 Status: rascunho
-Atualizado em: 2026-08-04
+Atualizado em: 2026-08-24 (escopo revisado — F1 resolvida por C87; B36 entra)
 Issue: #368
 Prioridade: P2
 Item do roadmap: débito da entrega B155 (#359) — regra travada com o humano em 2026-08-04: **célula → rota, form → server action**
@@ -18,36 +18,45 @@ multi-campo** usam **server action** (`runCampaignFormAction`). O padrão rota �
 `codebaseConventions.unit.spec.ts` recusa `POST` nu — com 8+ endpoints sob `(app)/municipios` +
 `liderancas/support-status`.
 
-Restam **3 quick-edits de célula** que ainda passam por form action (as anomalias):
+Restam quick-edits de célula que ainda passam por form action (as anomalias):
 
-1. **Sinal na lista de municípios** — `MunicipalityListSignalControl` recebe
-   `signalFormAction` = `createMunicipalityListSignalFormAction` (debounce/abort via
-   `useCampaignCellAutosave`), mesma superfície que já tem advisors/leaderships/level/trend
-   por rota.
-2. **Coluna "Dobradinhas" de `/campanha/liderancas` (B31)** — `setLeadershipStateDeputyMembershipFormAction`.
+1. ~~**Sinal na lista de municípios** — ~~ **RESOLVIDO por C87 (2026-08-07):** o quick-edit de sinal
+   (`MunicipalityListSignalControl`/`createMunicipalityListSignalFormAction`) foi substituído pelo
+   form multi-campo unificado `MunicipalityListUpdateControl` (body/polaridade/urgente) — per a
+   regra B155, form multi-campo permanece em server action. Nada a migrar.
+2. **Coluna "Dobradinhas" de `/campanha/liderancas` (B31)** — `setLeadershipStateDeputyMembershipFormAction`
+   (mesma action record também na coluna "Lideranças" de `/campanha/dobradinhas`, B36 — a rota F2
+   serve os dois lados).
 3. **Coluna "Municípios" de `/campanha/liderancas` (B34)** — `setLeadershipMunicipalitiesMembershipFormAction`
    (delta por chip e batch território/ZE).
 
+**Deferido (fora deste lote):** colunas de `/campanha/dobradinhas` B37 (Municípios,
+`setStateDeputyMunicipalitiesBatch`) e B156 (Assessores), inline-edits por campo B153 (contatos de
+liderança), B163 (partido) e C129 (nome de legenda) — mesmas células-espelho em outros domínios;
+gatilho registrado no `*-impl.md`.
+
 ## Escopo
 
-Migrar os 3 para o padrão rota, sem tocar comportamento:
+Migrar as anomalias vivas para o padrão rota, sem tocar comportamento:
 
-- **F1 — sinal de municípios:** nova rota `POST /campanha/municipios/signal` (ou reusar o
-  contrato do `political-trend`) via `campaignJsonMutationRoute`; o controle passa a chamar
-  `postCampaignJson` mantendo debounce/abort; `createMunicipalityListSignalFormAction` vira
-  wrapper interno ou é eliminada.
+- **F1 — ~~sinal de municípios~~** **não existe mais** — C87 substituiu o quick-edit por form
+  multi-campo (fica em server action por regra B155). Registrado como "já resolvido", não reabrir.
 - **F2 — dobradinhas de liderança:** rota `POST /campanha/liderancas/state-deputies` (delta
-  `{ leadershipId, stateDeputyId, assigned }`, allowlist do cap `LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE`).
+  `{ leadershipId, stateDeputyId, assigned }`, allowlist do cap `LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE`),
+  servindo os chips de `/campanha/liderancas` (B31) e `/campanha/dobradinhas` (B36).
 - **F3 — municípios de liderança:** rota `POST /campanha/liderancas/municipalities` (delta
   `{ leadershipId, municipalityIds[], assigned }` — inclui o batch território/ZE; allowlist de
   floor/cap/scope).
 
 Cada fase reusa as **actions record já existentes** (sem mudança de domínio): o trabalho é
-transport (rota + allowlist) + o controle trocando `useActionState`/form action por
-`postCampaignJson` com o mesmo estado otimista/debounce que já tem.
+transport (rota + allowlist) + o call site trocando a form action por um shim cliente
+`postCampaignJson` com o mesmo estado otimista que as shared cells já têm.
 
 ## Já resolvido no simplify (não reabrir)
 
+- **F1 (sinal na lista de municípios)** — resolvido por C87 (2026-08-07): o quick-edit virou form
+  multi-campo `MunicipalityListUpdateControl`; per a regra B155 essa superfície permanece em
+  server action (`createMunicipalityListUpdateFormAction`). Nada a migrar, não reabrir.
 - Reconcile scoped das wrappers B155 (sem bypass novo), toggle revalidando `/campanha/liderancas`,
   nome real do contato no chip otimista, validação cliente espelhando o schema, ids `useId`,
   refoco pós-form — todos aplicados na sessão B155.
@@ -65,23 +74,24 @@ transport (rota + allowlist) + o controle trocando `useActionState`/form action 
 
 ## Fases verificáveis
 
-1. **F1** — sinal de municípios (mesma superfície já no padrão; ROI mais alto).
-2. **F2 + F3** — colunas de `/campanha/liderancas`.
-3. **Gates** — `pnpm gate:fast`; e2e afetado (campaignMunicipalities, campaignLeaderships);
+1. **F2 + F3** — colunas de `/campanha/liderancas` (+ B36 em `/campanha/dobradinhas`, mesma rota).
+2. **Gates** — `pnpm gate:fast`; e2e afetado (campaignLeaderships, campaignMunicipalities);
    `pnpm push`.
 
 ## Rabbit holes
 
 - **Generalizar** os controles/providers de chips durante a migração — refactor de transporte
-  apenas; os 2+2 controles seguem espelhos.
-- **Mudar o contrato do sinal** (hoje debounce com flush no close) — preservar
-  `useCampaignCellAutosave` behavior no novo transporte.
+  apenas; os controles espelho (dobradinhas B37/B156, inline-edits B153/B163/C129) seguem
+  em form action até o lote próprio.
+- **Mudar o contrato do sinal** — não se aplica mais (F1 morta por C87); sem debounce/autosave
+  novo no lote.
 - **Fundir com UX** — nenhum achado de critique nesta superfície; manter o lote só-engenharia.
 
 ## Riscos e mitigação
 
-- Controles de lideranças hoje acionam form actions com revalidate via server action — a rota
-  precisa replicar o `revalidatePath` equivalente (as actions record reusadas já revalidam
-  paths de detalhe; a lista onde o chip está NÃO é revalidada — contrato B34/B31).
+- A rota reusa as actions record (que já revalidam paths de detalhe; a lista onde o chip está
+  NÃO é revalidada — contrato B34/B31) — o revalidate vem das actions, zero linhas na rota;
+  adicionar a lista seria mudança de comportamento, não de transporte.
 - `codebaseConventions` (rota obrigatória via `campaignJsonMutationRoute`) e o prewarm do e2e
-  (`setup.e2e.spec.ts`) ganham as rotas novas no mesmo PR.
+  (`setup.e2e.spec.ts`) ganham as rotas novas no mesmo PR; o e2e B34 troca o filtro de POST da
+  URL da página para a rota nova.

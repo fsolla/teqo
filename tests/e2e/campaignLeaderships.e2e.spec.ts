@@ -97,9 +97,9 @@ test.describe('campaign leaderships list', () => {
       page.getByRole('button', { name: new RegExp(`não é possível remover ${linked.name}$`) }),
     ).toBeDisabled()
 
-    // Server actions POST to the page URL, so the response filter is the route
-    // itself — the optimistic chip renders before the write lands.
-    const persisted = () => expectPostResponse(page, '/campanha/liderancas')
+    // The chip cell posts JSON to its mutation route — the optimistic chip
+    // renders before the write lands.
+    const persisted = () => expectPostResponse(page, '/campanha/liderancas/municipalities')
 
     const search = page.getByRole('combobox', {
       name: 'Buscar município, território de identidade ou zona eleitoral',
