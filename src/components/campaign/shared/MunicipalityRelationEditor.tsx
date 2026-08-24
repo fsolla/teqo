@@ -30,6 +30,26 @@ export type MunicipalityRelationMutationResult =
   | { status: 'error'; message: string }
 
 /**
+ * B160 — one link of the per-instance mutation queue. The transport
+ * (`run`) is serialized per cell: the next mutation only fires when the
+ * previous one settles, so the server persists mutations in the order the
+ * person chose them. A failure undoes only this link's optimistic delta
+ * (`revert`) and the queue keeps going; `onSuccess` carries domain
+ * bookkeeping that must not run on failure (e.g. swapping a create's
+ * tempID for the persisted entry) and returns false when the success is
+ * not acceptable (a create without `createdEntry`), so the confirmed
+ * state stays at the last genuinely persisted mutation.
+ */
+type QueuedMutation = {
+  run: () => Promise<MunicipalityRelationMutationResult>
+  revert: () => void
+  errorMessage: string
+  onSuccess?: (
+    result: Extract<MunicipalityRelationMutationResult, { status: 'success' }>,
+  ) => boolean
+}
+
+/**
  * B193 — the closed-display override the dense mobile card passes through the
  * relation wrappers (Advisors/Lideranças/Dobradinhas) to this editor.
  */
@@ -71,6 +91,13 @@ type MunicipalityRelationEditorProps = MunicipalityRelationTriggerProps & {
 const isPendingCreateID = (id: number): boolean => id < 0
 const EMPTY_ENTRIES: MunicipalityRelationEntry[] = []
 
+const applyToggleDelta = (ids: number[], id: number, assigned: boolean): number[] => {
+  const next = new Set(ids)
+  if (assigned) next.add(id)
+  else next.delete(id)
+  return [...next]
+}
+
 export const MunicipalityRelationEditor = ({
   municipalityName,
   currentIDs,
@@ -106,10 +133,11 @@ export const MunicipalityRelationEditor = ({
   const [pendingCreates, setPendingCreates] = useState<
     ReadonlyMap<number, MunicipalityRelationEntry>
   >(new Map())
-  const pendingCountRef = useRef(0)
   const lastPropsIDsRef = useRef(currentIDs)
-  const requestSeqRef = useRef(0)
-  const latestConfirmedRef = useRef<{ seq: number; ids: number[] } | null>(null)
+  const latestConfirmedRef = useRef<number[] | null>(null)
+  const queueRef = useRef<QueuedMutation[]>([])
+  const drainingRef = useRef(false)
+  const nextCreateTempIDRef = useRef(-1)
 
   const handleOpenChange = (nextOpen: boolean) => {
     noteOpenChange(nextOpen)
@@ -119,7 +147,7 @@ export const MunicipalityRelationEditor = ({
   useEffect(() => {
     if (sameIdSet(currentIDs, lastPropsIDsRef.current)) return
     lastPropsIDsRef.current = currentIDs
-    if (pendingCountRef.current === 0) latestConfirmedRef.current = null
+    if (queueRef.current.length === 0 && !drainingRef.current) latestConfirmedRef.current = null
     setSelectedIDs(currentIDs)
   }, [currentIDs])
 
@@ -163,93 +191,92 @@ export const MunicipalityRelationEditor = ({
     [selectableOptions, query],
   )
 
-  const finishRequest = () => {
-    pendingCountRef.current = Math.max(0, pendingCountRef.current - 1)
-    if (pendingCountRef.current > 0) return
-    setIsPending(false)
-    if (latestConfirmedRef.current) setSelectedIDs(latestConfirmedRef.current.ids)
-  }
-
-  const rememberConfirmation = (requestSeq: number, result: MunicipalityRelationMutationResult) => {
-    if (result.status !== 'success' || !result.selectedIDs) return
-    if (requestSeq > (latestConfirmedRef.current?.seq ?? 0)) {
-      latestConfirmedRef.current = { seq: requestSeq, ids: result.selectedIDs }
+  /**
+   * B160 — serialized pump for this cell's mutation queue. One transport at a
+   * time, in the order the person chose; the optimistic delta is already
+   * applied at enqueue time, so the UI never waits on the network. When the
+   * queue drains, the last confirmed server state replaces the local one —
+   * only if the final response carried `selectedIDs` (JSON relations); a
+   * response without it (dobradinhas) nulls the confirmation and keeps the
+   * optimistic state, letting the RSC reconcile.
+   */
+  const pump = () => {
+    if (drainingRef.current) return
+    const next = queueRef.current.shift()
+    if (!next) {
+      setIsPending(false)
+      if (latestConfirmedRef.current) setSelectedIDs(latestConfirmedRef.current)
+      return
     }
+    drainingRef.current = true
+    setIsPending(true)
+    void (async () => {
+      let result: MunicipalityRelationMutationResult | undefined
+      try {
+        result = await next.run()
+      } catch {
+        next.revert()
+        reportFailure(next.errorMessage)
+      }
+      if (result) {
+        if (result.status === 'error') {
+          next.revert()
+          reportFailure(result.message || next.errorMessage)
+        } else {
+          // Bookkeeping runs outside the try: a throw after the server
+          // persisted must never revert the optimistic delta.
+          const accepted = next.onSuccess?.(result) ?? true
+          if (accepted) latestConfirmedRef.current = result.selectedIDs ?? null
+        }
+      }
+      drainingRef.current = false
+      pump()
+    })()
   }
 
   const toggle = (id: number, assigned: boolean) => {
     if (isPendingCreateID(id)) return
     setErrorMessage(null)
-    setSelectedIDs((current) => {
-      const next = new Set(current)
-      if (assigned) next.add(id)
-      else next.delete(id)
-      return [...next]
-    })
+    setSelectedIDs((current) => applyToggleDelta(current, id, assigned))
     setQuery('')
-    pendingCountRef.current += 1
-    setIsPending(true)
-    const requestSeq = (requestSeqRef.current += 1)
-
-    void (async () => {
-      const revertDelta = () => {
-        setSelectedIDs((current) => {
-          const next = new Set(current)
-          if (assigned) next.delete(id)
-          else next.add(id)
-          return [...next]
-        })
-      }
-
-      try {
-        const result = await onToggle(id, assigned)
-        if (result.status === 'error') {
-          revertDelta()
-          reportFailure(result.message || saveErrorMessage)
-          finishRequest()
-          return
-        }
-        rememberConfirmation(requestSeq, result)
-        finishRequest()
-      } catch {
-        revertDelta()
-        reportFailure(saveErrorMessage)
-        finishRequest()
-      }
-    })()
+    queueRef.current.push({
+      run: () => onToggle(id, assigned),
+      revert: () => {
+        setSelectedIDs((current) => applyToggleDelta(current, id, !assigned))
+      },
+      errorMessage: saveErrorMessage,
+    })
+    pump()
   }
 
   const create = (name: string) => {
     if ([...pendingCreates.values()].some((entry) => entry.label === name)) return
     setErrorMessage(null)
     setQuery('')
-    pendingCountRef.current += 1
-    setIsPending(true)
-    const requestSeq = (requestSeqRef.current += 1)
-    const tempID = -requestSeq
+    const tempID = nextCreateTempIDRef.current--
     const pendingEntry = { id: tempID, label: name }
     setSelectedIDs((current) => [...current, tempID])
     setPendingCreates((current) => new Map(current).set(tempID, pendingEntry))
 
-    void (async () => {
-      const revertCreate = () => {
-        setSelectedIDs((current) => current.filter((id) => id !== tempID))
-        setPendingCreates((current) => {
-          const next = new Map(current)
-          next.delete(tempID)
-          return next
-        })
-      }
+    const revertCreate = () => {
+      setSelectedIDs((current) => current.filter((id) => id !== tempID))
+      setPendingCreates((current) => {
+        const next = new Map(current)
+        next.delete(tempID)
+        return next
+      })
+    }
 
-      try {
-        const result = await onCreate(name)
-        if (result.status === 'error' || !result.createdEntry) {
+    queueRef.current.push({
+      run: () => onCreate(name),
+      revert: revertCreate,
+      errorMessage: createErrorMessage,
+      onSuccess: (result) => {
+        if (!result.createdEntry) {
           revertCreate()
-          reportFailure(result.status === 'error' ? result.message : createErrorMessage)
-          finishRequest()
-          return
+          reportFailure(createErrorMessage)
+          return false
         }
-        rememberConfirmation(requestSeq, result)
         const createdEntry = result.createdEntry
         setSelectedIDs((current) => [
           ...new Set([...current.filter((id) => id !== tempID), createdEntry.id]),
@@ -265,13 +292,10 @@ export const MunicipalityRelationEditor = ({
             : [...current, createdEntry],
         )
         onCreated?.(createdEntry)
-        finishRequest()
-      } catch {
-        revertCreate()
-        reportFailure(createErrorMessage)
-        finishRequest()
-      }
-    })()
+        return true
+      },
+    })
+    pump()
   }
 
   const statusMessage = errorMessage ? errorMessage : isPending ? savingMessage : ''
