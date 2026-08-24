@@ -146,10 +146,18 @@ test.describe('Agenda — link de import (C98)', () => {
       depth: 0,
     })
 
+    // The feed MUST stay scoped to this test's claimed municipality:
+    // claims are exclusive per live run, so parallel workers' activities
+    // never enter the body — DTSTART/ETag/304 assertions below are hermetic.
     const secretSlug = randomUUID()
     await fixtures.payload.create({
       collection: 'calendarFeed',
-      data: { secretSlug, label: fixtures.value('Feed vivo'), createdBy: coordinator.id },
+      data: {
+        secretSlug,
+        label: fixtures.value('Feed vivo'),
+        filterMunicipality: municipality.id,
+        createdBy: coordinator.id,
+      },
       depth: 0,
       draft: false,
       user: coordinator,
