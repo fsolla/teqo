@@ -2,7 +2,7 @@
  * `pnpm worktree` — worktree management determinístico em torno da fila de
  * claim do projeto (mesma fila de `agent:claim` / agent pool).
  *
- *   pnpm worktree next [--issue N] [--stay] [--no-migrate]
+ *   pnpm worktree next [--issue N] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]
  *                              claima a próxima Issue claimável ANTES de criar
  *                              o worktree a partir de origin/main (mesma fila
  *                              e lock otimista de `pnpm agent:claim`; claim
@@ -19,21 +19,27 @@
  *                              terminal interativo: função `worktree()` em
  *                              `.agents/shell/worktree.sh`, sourced no profile).
  *                              `--stay` suprime a linha `cd` (o claim ainda
- *                              acontece); `--go` explícito continua aceito como
- *                              no-op (era o antigo padrão).
+ *                              acontece); `--cheap/--pro/--zen/--go/--alibaba`
+ *                              escolhe o modelo por invocação no mapa fixo
+ *                              `WORKTREE_MODEL_MAP` (cheap=cheapestinference/
+ *                              deepseek-v4-flash, pro=opencode-go/qwen3.7-max,
+ *                              zen=opencode-go/ox-alpha-free, go=opencode-go/
+ *                              mimo-v2.5, alibaba=alibaba-token-plan/qwen3.7-max)
+ *                              com `--variant max` sempre (OPS93; sem flag o
+ *                              preset `deepseek/deepseek-v4-flash` permanece).
  *                              Chamado do terminal interativo (com
  *                              `TEQO_WORKTREE_TERMINAL=1`, que só a função shell
  *                              seta), imprime também a diretiva `launch
- *                              opencode <dir> --model vercel/deepseek/deepseek-v4-flash-0731
+ *                              opencode <dir> --model <preset|map> --variant max
  *                              --auto --prompt "/work-issue --issue <N>"` ANTES
  *                              do `cd` — a função shell executa o cd e então a
  *                              linha, e o TUI do opencode abre no worktree com
  *                              `/work-issue --issue <N>` já enviado (OPS26 +
  *                              OPS33: o launch entrega a Issue claimada ao
- *                              agente; a skill lê o resto do GitHub). Presets
- *                              em scripts/lib/worktree.mjs. Sem o marcador
- *                              (comando `/worktree` do opencode), a diretiva
- *                              não é impressa — nunca abre TUI aninhado.
+ *                              agente; a skill lê o resto do GitHub) em effort
+ *                              max. Presets e mapa em scripts/lib/worktree.mjs.
+ *                              Sem o marcador (comando `/worktree` do opencode),
+ *                              a diretiva não é impressa — nunca abre TUI aninhado.
  *                              Também PROVISIONA o ambiente isolado do worktree:
  *                              porta do dev server + bancos próprios derivados
  *                              deterministicamente do branch (ver
@@ -50,7 +56,7 @@
  *                              recusa a abrir com `{file:…}` pendurado.
  *                              `--no-migrate` pula migrations E o seed (que
  *                              depende do catálogo migrado).
- *   pnpm worktree plan [bag] [--stay] [--no-migrate]
+ *   pnpm worktree plan [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]
  *                              cria um worktree de PLANEJAMENTO novo para rodar
  *                              a skill /plan-issue sem ocupar o main — cada
  *                              invocação cria UM DIFERENTE, para sessões de
@@ -63,8 +69,10 @@
  *                              Mesmo provisionamento isolado do `next`; no
  *                              terminal, mesma diretiva `launch` — com
  *                              `--prompt /plan-issue` já enviado (OPS31: o TUI
- *                              abre no fluxo de planejamento, sem digitação).
- *   pnpm worktree new [bag] [--stay] [--no-migrate]
+ *                              abre no fluxo de planejamento, sem digitação) e
+ *                              `--model <map> --variant max` quando a flag de
+ *                              modelo está presente.
+ *   pnpm worktree new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]
  *                              cria um worktree NEUTRO novo — sem função
  *                              pré-definida (explorar ideia, conversar, ou
  *                              planejar sem registrar nada): cada invocação
@@ -76,9 +84,12 @@
  *                              com `plans/plan-issue-…` de `plan`.
  *                              Mesmo provisionamento isolado do `next`/`plan`;
  *                              no terminal, mesma diretiva `launch` — SEM
- *                              `--prompt` (apenas conversar, nenhuma skill).
+ *                              `--prompt` (apenas conversar, nenhuma skill) e
+ *                              `--model <map> --variant max` quando a flag de
+ *                              modelo está presente.
  *                              `--stay` suprime a linha `cd` e a diretiva;
- *                              `--go` explícito continua aceito como no-op.
+ *                              `--cheap/--pro/--zen/--go/--alibaba` escolhe o
+ *                              modelo por invocação (sem flag o preset permanece).
  *                              Migrations E seed mínimo nos dois bancos, como
  *                              o `next`/`plan` (OPS28).
  *   pnpm worktree kill [--force]   destrói o worktree em que o shell atual está
@@ -138,8 +149,10 @@ import {
   OPENCODE_PRESET_MODEL,
   opencodeLaunchDirective,
   planBranchName,
+  resolveWorktreeModel,
   workBranchName,
   WORKTREE_TERMINAL_ENV,
+  WORKTREE_VARIANT,
 } from './lib/worktree.mjs'
 
 const die = dieAgent('worktree')
@@ -153,9 +166,25 @@ const WORKTREES_ROOT = process.env.WORKTREES_ROOT ?? join(homedir(), '.cursor', 
  */
 const terminalShell = process.env[WORKTREE_TERMINAL_ENV] === '1'
 
+/** Resolve the per-invocation model from the parsed flags (at-most-one, fail-high). */
+const resolveLaunchModel = (flags) => {
+  try {
+    return resolveWorktreeModel(flags)
+  } catch (error) {
+    die(error.message)
+  }
+}
+
 /** Print the `launch` directive (only exists from the terminal shell); the `cd` line stays last. */
-const printLaunchDirective = ({ dir, purpose, issueNumber }) => {
-  const line = opencodeLaunchDirective({ dir, purpose, terminal: terminalShell, issueNumber })
+const printLaunchDirective = ({ dir, purpose, issueNumber, flags = {} }) => {
+  const model = resolveLaunchModel(flags)
+  const line = opencodeLaunchDirective({
+    dir,
+    purpose,
+    terminal: terminalShell,
+    issueNumber,
+    model,
+  })
   if (line) console.log(line)
 }
 
@@ -473,7 +502,9 @@ const pickNextIssue = async ({ requestedIssueNumber, die }) => {
   return { entry: pick, reopened: false, directed: false }
 }
 
-const cmdNext = async (stay, skipMigrate, requestedIssueNumber) => {
+const cmdNext = async (stay, skipMigrate, requestedIssueNumber, flags = {}) => {
+  // Fail-high on conflicting model flags before touching GitHub (no orphan claim).
+  resolveLaunchModel(flags)
   const { entry, reopened, directed } = await pickNextIssue({ requestedIssueNumber, die })
 
   const issue = entry.issue
@@ -553,7 +584,7 @@ const cmdNext = async (stay, skipMigrate, requestedIssueNumber) => {
   }
 
   if (!stay) {
-    printLaunchDirective({ dir, purpose: 'next', issueNumber: issue.number })
+    printLaunchDirective({ dir, purpose: 'next', issueNumber: issue.number, flags })
     console.log(`cd ${dir}`)
   }
 }
@@ -594,7 +625,10 @@ const cmdNamespaceBranch = async ({
   noun,
   sessionLabel,
   branchName,
+  flags = {},
 }) => {
+  // Fail-high on conflicting model flags before touching git.
+  resolveLaunchModel(flags)
   git(['fetch', 'origin'])
 
   const entries = parseWorktreeList(git(['worktree', 'list', '--porcelain']))
@@ -634,7 +668,7 @@ const cmdNamespaceBranch = async ({
   console.log(`  banco test: postgresql://teqo:teqo@localhost:5432/${env.testDatabase}`)
 
   if (!stay) {
-    printLaunchDirective({ dir, purpose })
+    printLaunchDirective({ dir, purpose, flags })
     console.log(`cd ${dir}`)
   }
 }
@@ -649,7 +683,7 @@ const cmdNamespaceBranch = async ({
  * marker and `next` bumps around it). Same isolated env provisioning as
  * `next`.
  */
-const cmdPlan = async (stay, skipMigrate, bag) =>
+const cmdPlan = async (stay, skipMigrate, bag, flags = {}) =>
   cmdNamespaceBranch({
     stay,
     skipMigrate,
@@ -657,6 +691,7 @@ const cmdPlan = async (stay, skipMigrate, bag) =>
     noun: 'de planejamento',
     sessionLabel: bag && bag.trim() ? `lote "${bag}"` : 'sequencial',
     branchName: (taken) => planBranchName({ bag, taken }),
+    flags,
   })
 
 /**
@@ -668,7 +703,7 @@ const cmdPlan = async (stay, skipMigrate, bag) =>
  * (uppercase-led `<code>-<slug>`) nor with a `plan` branch (`plans/…`), in
  * branch name or slot space. Same isolated env provisioning as `plan`.
  */
-const cmdNew = async (stay, skipMigrate, bag) =>
+const cmdNew = async (stay, skipMigrate, bag, flags = {}) =>
   cmdNamespaceBranch({
     stay,
     skipMigrate,
@@ -676,6 +711,7 @@ const cmdNew = async (stay, skipMigrate, bag) =>
     noun: 'neutro',
     sessionLabel: bag && bag.trim() ? `bag "${bag}"` : 'sequencial',
     branchName: (taken) => workBranchName({ bag, taken }),
+    flags,
   })
 
 /** Generated database names referenced by a worktree's own env files. */
@@ -764,9 +800,9 @@ const subcommand = positional[0]
 
 if (!subcommand) {
   console.log(
-    'Uso: pnpm worktree next [--issue N] [--stay] [--no-migrate] | plan [bag] [--stay] [--no-migrate] | new [bag] [--stay] [--no-migrate] | kill [--force]',
+    'Uso: pnpm worktree next [--issue N] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba] | plan [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba] | new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba] | kill [--force]',
   )
-  console.log('  next [--issue N] [--stay] [--no-migrate]')
+  console.log('  next [--issue N] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]')
   console.log('    CLAIMA a próxima Issue claimável (mesma fila/ordem e lock otimista do')
   console.log('    `pnpm agent:claim`) e cria o worktree dela (branch <code>-<slug>),')
   console.log('    provisionando o ambiente isolado: porta de dev + bancos próprios;')
@@ -775,12 +811,19 @@ if (!subcommand) {
   console.log('    re-claim). Por padrão imprime `cd <dir>` no fim (quem aplica o cd:')
   console.log('    opencode command, ou a função `worktree()` de .agents/shell/worktree.sh);')
   console.log('    no terminal (TEQO_WORKTREE_TERMINAL=1) imprime também a diretiva')
-  console.log('    `launch opencode … --prompt "/work-issue --issue <N>"` (OPS26+OPS33:')
-  console.log(`    abre o TUI com ${OPENCODE_PRESET_MODEL} (gateway) + auto + a Issue claimada já`)
-  console.log('    informada); --stay suprime cd e launch (o claim ainda acontece); --go')
-  console.log('    explícito continua aceito como no-op; --no-migrate pula migrations e o')
-  console.log('    seed mínimo (db:seed:minimal) nos bancos novos (OPS28: paridade com a CI)')
-  console.log(`\n  plan [bag] [--stay] [--no-migrate]`)
+  console.log(
+    '    `launch opencode <dir> --model <preset|map> --variant max --auto --prompt "/work-issue --issue <N>"` (OPS26+OPS33+OPS93:',
+  )
+  console.log(
+    `    abre o TUI com ${OPENCODE_PRESET_MODEL} (sem flag) ou com o mapa --cheap=cheapestinference/deepseek-v4-flash --pro=opencode-go/qwen3.7-max --zen=opencode-go/ox-alpha-free --go=opencode-go/mimo-v2.5 --alibaba=alibaba-token-plan/qwen3.7-max (todos --variant ${WORKTREE_VARIANT}) + auto + a Issue claimada já`,
+  )
+  console.log(
+    '    informada); --stay suprime cd e launch (o claim ainda acontece); --no-migrate pula migrations e o',
+  )
+  console.log(
+    '    seed mínimo (db:seed:minimal) nos bancos novos (OPS28: paridade com a CI); at-most-one de --cheap/--pro/--zen/--go/--alibaba (múltiplas → erro)',
+  )
+  console.log(`\n  plan [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]`)
   console.log(
     '    cria um worktree de planejamento DIFERENTE a cada invocação (sessões /plan-issue',
   )
@@ -790,14 +833,16 @@ if (!subcommand) {
     '    minúsculo plans/… nunca colide com o branch <code>-<slug> de `next`; no terminal,',
   )
   console.log(
-    '    mesma diretiva `launch` com --prompt /plan-issue enviado (abre no fluxo de planejamento, sem digitação)',
+    '    mesma diretiva `launch` com --prompt /plan-issue enviado (abre no fluxo de planejamento, sem digitação) e --model <map> --variant max quando a flag está presente',
   )
-  console.log(`\n  new [bag] [--stay] [--no-migrate]`)
+  console.log(`\n  new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]`)
   console.log('    cria um worktree NEUTRO (sem função pré-definida) DIFERENTE a cada invocação:')
   console.log('    com bag, branch work/<bag> (sufixo -2/-3 se o nome já existir); sem bag, o')
   console.log('    próximo work/<n> sequencial livre; o prefixo minúsculo work/… nunca colide com')
   console.log('    o branch <code>-<slug> de `next` nem com plans/plan-issue-… de `plan`; no')
-  console.log('    terminal, mesma diretiva `launch` porém sem --prompt (apenas conversar)')
+  console.log(
+    '    terminal, mesma diretiva `launch` porém sem --prompt (apenas conversar) e --model <map> --variant max quando a flag está presente',
+  )
   console.log('  kill [--force]  destrói o worktree em que você está (recusa sujo sem --force),')
   console.log('                  remove os bancos gerados do worktree (best-effort) e imprime')
   console.log('                  `cd <main>` no fim — o shell sempre volta ao worktree principal')
@@ -812,11 +857,11 @@ try {
     if (positional.length > 1) {
       die('`next` não aceita argumento posicional — use `--issue <N>` para direcionar a Issue.')
     }
-    await cmdNext(Boolean(flags.stay), Boolean(flags['no-migrate']), flags.issue ?? null)
+    await cmdNext(Boolean(flags.stay), Boolean(flags['no-migrate']), flags.issue ?? null, flags)
   } else if (subcommand === 'plan')
-    await cmdPlan(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1])
+    await cmdPlan(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1], flags)
   else if (subcommand === 'new')
-    await cmdNew(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1])
+    await cmdNew(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1], flags)
   else if (subcommand === 'kill') {
     if (flags.stay) die('`--stay` não se aplica a `kill` — ele sempre volta ao main.')
     await cmdKill(Boolean(flags.force))

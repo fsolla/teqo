@@ -27,13 +27,49 @@ export const WORKTREE_TERMINAL_ENV = 'TEQO_WORKTREE_TERMINAL'
  * preset era o flavor `-0731` via Vercel AI Gateway; voltou ao provider
  * direto porque o gateway está sem créditos (erros "positive credit balance"
  * em 24/08/2026) e porque unificar o default reduz a sobrescrita confusa de
- * seleção de modelo do TUI (opencode issues #8349/#13456).
+ * seleção de modelo do TUI (opencode issues #8349/#13456). OPS93: com
+ * `--cheap/--pro/--zen/--go/--alibaba` o mapa `WORKTREE_MODEL_MAP` escolhe o
+ * modelo por invocação; sem flag o preset permanece.
  */
 export const OPENCODE_PRESET_MODEL =
   process.env.OPENCODE_WORKTREE_MODEL || 'deepseek/deepseek-v4-flash'
 
 /**
- * Skill command sent as the launch's initial message per purpose. `next`
+ * Per-invocation model map — fixed menu of 5 named flags (OPS93). The
+ * directive picks `WORKTREE_MODEL_MAP[flag]` when a single flag is present,
+ * otherwise falls back to `OPENCODE_PRESET_MODEL`. Always launched with
+ * `--variant max` (fail-high if the target model doesn't expose the variant).
+ */
+export const WORKTREE_MODEL_MAP = {
+  cheap: 'cheapestinference/deepseek-v4-flash',
+  pro: 'opencode-go/qwen3.7-max',
+  zen: 'opencode-go/ox-alpha-free',
+  go: 'opencode-go/mimo-v2.5',
+  alibaba: 'alibaba-token-plan/qwen3.7-max',
+}
+
+/** Set of flag names that select a model (keys of WORKTREE_MODEL_MAP). */
+export const WORKTREE_MODEL_FLAGS = new Set(Object.keys(WORKTREE_MODEL_MAP))
+
+/** Variant always used for worktree launches — effort max (OPS78 guardrail). */
+export const WORKTREE_VARIANT = 'max'
+
+/**
+ * Resolve the model for a parsed `flags` bag (from `parseArgs`). At most one
+ * model flag may be present — multiple → throw (fail-high, never guess).
+ * No flag → `OPENCODE_PRESET_MODEL`.
+ */
+export const resolveWorktreeModel = (flags = {}) => {
+  const active = [...WORKTREE_MODEL_FLAGS].filter((flag) => flags[flag])
+  if (active.length > 1) {
+    throw new Error(
+      `Flags de modelo conflitantes: --${active.join(' --')} (use apenas um de --cheap/--pro/--zen/--go/--alibaba)`,
+    )
+  }
+  if (active.length === 1) return WORKTREE_MODEL_MAP[active[0]]
+  return OPENCODE_PRESET_MODEL
+}
+
 /**
  * Skill command sent as the launch's initial message per purpose. `next`
  * sends `/work-issue` (the OPS25 command executes the full cycle; the OPS33
@@ -135,22 +171,31 @@ const namespaceBranchName = ({ prefix, bag = '', taken = new Set(), fallback }) 
 /**
  * Launch directive for the opencode TUI, printed by `worktree next`/`plan`
  * right before the `cd <dir>` line when called from the interactive terminal
- * (`WORKTREE_TERMINAL=1`): `launch opencode <dir> --model <preset> --auto
- * [--prompt "<command>"]`. The shell function (`.agents/shell/worktree.sh`)
- * applies the `cd` first, then tokenizes and executes this line (xargs —
- * quote-aware, never eval) — the dir is always `<root without spaces>/<slugified
- * branch>`, so the line never needs quoting for the path. `next` with an
- * `issueNumber` sends `/work-issue --issue <N>` (OPS33: the launch delivers the
- * claimed issue to the agent; the skill reads the rest from GitHub), the prompt
- * value is quoted in the line because it now carries a space. Returns `null`
- * outside the terminal so the `/worktree` opencode command never launches a
- * nested TUI.
- * @param {{ dir: string, purpose: string, terminal?: boolean, issueNumber?: number | null }} options
+ * (`WORKTREE_TERMINAL=1`): `launch opencode <dir> --model <preset|map>
+ * --variant max --auto [--prompt "<command>"]` (OPS93: `--variant max` sempre;
+ * modelo vem do mapa `WORKTREE_MODEL_MAP` quando a flag `--cheap/--pro/--zen/
+ * --go/--alibaba` está presente, senão do preset). The shell function
+ * (`.agents/shell/worktree.sh`) applies the `cd` first, then tokenizes and
+ * executes this line (xargs — quote-aware, never eval) — the dir is always
+ * `<root without spaces>/<slugified branch>`, so the line never needs quoting
+ * for the path. `next` with an `issueNumber` sends `/work-issue --issue <N>`
+ * (OPS33: the launch delivers the claimed issue to the agent; the skill reads
+ * the rest from GitHub), the prompt value is quoted in the line because it
+ * now carries a space. Returns `null` outside the terminal so the `/worktree`
+ * opencode command never launches a nested TUI.
+ * @param {{ dir: string, purpose: string, terminal?: boolean, issueNumber?: number | null, model?: string | null }} options
  */
-export const opencodeLaunchDirective = ({ dir, purpose, terminal = false, issueNumber = null }) => {
+export const opencodeLaunchDirective = ({
+  dir,
+  purpose,
+  terminal = false,
+  issueNumber = null,
+  model = null,
+}) => {
   if (!terminal) return null
   const prompt = OPENCODE_SKILL_COMMAND_BY_PURPOSE[purpose]
-  const args = [dir, '--model', OPENCODE_PRESET_MODEL, '--auto']
+  const selectedModel = model ?? OPENCODE_PRESET_MODEL
+  const args = [dir, '--model', selectedModel, '--variant', WORKTREE_VARIANT, '--auto']
   if (prompt) {
     // The issue suffix belongs to `next` alone — `plan`/`new` never carry a
     // claimed issue (fail-safe: a stray issueNumber must not break /plan-issue).

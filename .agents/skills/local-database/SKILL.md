@@ -26,7 +26,7 @@ VMs Cloud **não rodam** `docker compose` / `pnpm db:start`. Postgres nativo: `.
 
 ## Per-worktree environments (`pnpm worktree next`)
 
-Parallel agents must not fight over port 3000, the shared `teqo_test`, or a second Postgres container. `pnpm worktree next [--stay]` provisions each worktree with a deterministic isolated env (`next`/`plan`/`new` print `cd <dir>` by default — apply it, or pass `--stay` to suppress; `--go` is still accepted as a no-op):
+Parallel agents must not fight over port 3000, the shared `teqo_test`, or a second Postgres container. `pnpm worktree next [--stay] [--cheap|--pro|--zen|--go|--alibaba]` provisions each worktree with a deterministic isolated env (`next`/`plan`/`new` print `cd <dir>` by default — apply it, or pass `--stay` to suppress; `--cheap/--pro/--zen/--go/--alibaba` selects the model per invocation via `WORKTREE_MODEL_MAP` with `--variant max`):
 
 - `slot` = numeric part of the issue code (`C15` → 15, `B164` → 164; hash fallback without digits; bumped on collision among live worktrees).
 - Dev server port `3100+slot`; databases `teqo_wt<slot>` (dev) and `teqo_wt<slot>_test` (tests), created on the **one shared container** with the full migration chain **and the minimal seed** applied (one-time, ~30 s each; OPS28 parity with CI, which runs `migrate → seed:minimal` before e2e — a worktree's `pnpm test:e2e` mirrors CI).
