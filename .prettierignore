@@ -22,6 +22,9 @@ src/app/(payload)/admin/importMap.js
 # Frozen history — migrations are never edited retroactively
 src/migrations/
 
+# Frozen changelog snapshot (OPS85) — seed of the regenerated aggregate
+docs/CHANGELOG-AGENTS-HISTORY.md
+
 # Committed data artifacts (rebuilt by scripts; pretty-printing would explode them
 # and the next regeneration would revert it)
 src/lib/geometries/
