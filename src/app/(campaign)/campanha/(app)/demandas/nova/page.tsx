@@ -11,7 +11,7 @@ import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { loadActivityRelationOptionById } from '@/utilities/activityRelationOptions'
 import { firstValue, strictDecimalInteger } from '@/utilities/campaignListUrl'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
+import { loadWritableMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { createDemandFormAction } from './formActions'
 
 export const metadata = campaignPageMetadataFromCatalog('demandasNova')
@@ -30,7 +30,7 @@ export default async function NewDemandPage({ searchParams }: NewDemandPageProps
   const requestedActivityId = strictDecimalInteger(firstValue(query.activity))
   const requestedMunicipalityId = strictDecimalInteger(firstValue(query.municipality))
   const [municipalityOptions, initialActivity] = await Promise.all([
-    loadMunicipalityOptions(payload, user),
+    loadWritableMunicipalityOptions(payload, user),
     requestedActivityId
       ? loadActivityRelationOptionById(payload, user, requestedActivityId)
       : Promise.resolve(null),

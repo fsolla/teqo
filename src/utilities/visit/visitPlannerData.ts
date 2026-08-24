@@ -9,6 +9,7 @@ import { relationshipId, uniqueRelationshipIds } from '@/lib/relationship'
 import type { CalendarPhase } from '@/lib/visitPlannerAnchors'
 import { DEFAULT_VOTE_ESTIMATE_SCENARIO } from '@/lib/voteEstimate'
 import type { CampaignUser, Municipality } from '@/payload-types'
+import { getWritableMunicipalityIds } from '@/utilities/campaignAccess'
 import { computeGoalCoverage } from '@/utilities/municipality/goalCoverage'
 import { loadStatewideSuggestedGoals } from '@/utilities/municipality/municipalityGoalAccount'
 import {
@@ -119,17 +120,28 @@ type VisitPlannerRegionOption = {
  * all 27 TIs to an advisor with a six-município portfolio would be offering
  * twenty-one dead ends, and evaluating the full eligibility of the state just to
  * build a picker would cost the whole planner load.
+ *
+ * C144 — `writeScope` restricts the municipalities to the actor's WRITE scope
+ * (`getWritableMunicipalityIds`): the composer is a write surface, so a
+ * Visão-Tudo/Edição-Carteira advisor must not be offered territories built
+ * over municípios the batch would reject. Default `false` keeps the read
+ * contract for `loadMunicipalityVisitEligibility` (dossier card).
  */
 export const loadVisitPlannerRegions = async (
   payload: Payload,
   user: CampaignUser,
+  { writeScope = false }: { writeScope?: boolean } = {},
 ): Promise<VisitPlannerRegionOption[]> => {
+  const writableIds = writeScope ? await getWritableMunicipalityIds(payload, user) : null
+  if (writeScope && writableIds?.length === 0) return []
+
   const result = await payload.find({
     collection: 'municipality',
     depth: 0,
     limit: 0,
     pagination: false,
     select: { slug: true },
+    where: writableIds ? { id: { in: writableIds } } : {},
     user,
     overrideAccess: false,
   })
@@ -150,14 +162,24 @@ export type VisitPlannerFilter = {
   region?: BahiaIdentityTerritory
   /** Injected so the calendar phase is testable and stable within a request. */
   now?: Date
+  /** C144 — restrict to the actor's WRITE scope (write-composer surfaces). */
+  writeScope?: boolean
 }
 
 export const loadVisitCandidates = async (
   payload: Payload,
   user: CampaignUser,
-  { region, now = new Date() }: VisitPlannerFilter = {},
+  { region, now = new Date(), writeScope = false }: VisitPlannerFilter = {},
 ): Promise<VisitPlannerBundle> => {
-  const where: Where = region ? { region: { equals: region } } : {}
+  const writableIds = writeScope ? await getWritableMunicipalityIds(payload, user) : null
+  if (writeScope && writableIds?.length === 0) {
+    return { phase: resolveCalendarPhase(now), groups: [] }
+  }
+
+  const conditions: Where[] = []
+  if (region) conditions.push({ region: { equals: region } })
+  if (writableIds) conditions.push({ id: { in: writableIds } })
+  const where: Where = conditions.length === 0 ? {} : { and: conditions }
 
   const result = await payload.find({
     collection: 'municipality',

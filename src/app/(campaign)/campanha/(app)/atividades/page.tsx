@@ -30,6 +30,7 @@ import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   loadMunicipalityOptions,
   loadOrganizationOptions,
+  loadWritableMunicipalityOptions,
 } from '@/utilities/campaignRelationOptions'
 import { TOUR_COMPOSER_PATH } from '@/utilities/visit/visitPlannerUrl'
 
@@ -54,13 +55,19 @@ export default async function ActivityListPage({ searchParams }: ActivityListPag
     user.role === 'advisor' ? advisorEditingScope(user.visibility, user.editing) : 'tudo'
 
   const now = new Date()
-  const [{ result, state }, municipalityOptions, organizationOptions, knownTags] =
-    await Promise.all([
-      loadActivityListPageData(payload, user, rawSearchParams, now),
-      loadMunicipalityOptions(payload, user),
-      loadOrganizationOptions(payload, user),
-      loadAccessibleActivityTags(payload, user),
-    ])
+  const [
+    { result, state },
+    municipalityOptions,
+    writableMunicipalityOptions,
+    organizationOptions,
+    knownTags,
+  ] = await Promise.all([
+    loadActivityListPageData(payload, user, rawSearchParams, now),
+    loadMunicipalityOptions(payload, user),
+    loadWritableMunicipalityOptions(payload, user),
+    loadOrganizationOptions(payload, user),
+    loadAccessibleActivityTags(payload, user),
+  ])
   const resolvedUrl = resolveActivityListUrl(rawSearchParams, result.totalPages)
   if (resolvedUrl.redirectHref) redirect(resolvedUrl.redirectHref)
 
@@ -78,7 +85,7 @@ export default async function ActivityListPage({ searchParams }: ActivityListPag
           </Button>
           <ActivityCreateOverlayHost
             municipalityId={state.municipality}
-            municipalityOptions={municipalityOptions}
+            municipalityOptions={writableMunicipalityOptions}
             organizationOptions={organizationOptions}
             knownTags={knownTags}
           />

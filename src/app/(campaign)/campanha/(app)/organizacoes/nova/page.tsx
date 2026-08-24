@@ -8,7 +8,7 @@ import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell
 import { Button } from '@/components/ui/button'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { loadMunicipalityOptions } from '@/utilities/campaignRelationOptions'
+import { loadWritableMunicipalityOptions } from '@/utilities/campaignRelationOptions'
 import { createOrganizationFormAction } from './formActions'
 
 export const metadata = campaignPageMetadataFromCatalog('organizacoesNova')
@@ -19,7 +19,7 @@ export default async function NewOrganizationPage() {
     getPayload({ config }),
   ])
 
-  const municipalityOptions = await loadMunicipalityOptions(payload, user)
+  const municipalityOptions = await loadWritableMunicipalityOptions(payload, user)
 
   return (
     <CampaignPageShell>

@@ -18,9 +18,9 @@ import { isCampaignUnrestricted } from '@/utilities/campaignAccess'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   loadEligibleAdvisorOptions,
-  loadMunicipalityOptions,
   loadOrganizationOptions,
   loadStateDeputyOptions,
+  loadWritableMunicipalityOptions,
 } from '@/utilities/campaignRelationOptions'
 import { loadLeadershipDetail } from '@/utilities/leadership/leadershipData'
 import { loadMunicipalityPortfolioIndex } from '@/utilities/municipality/municipalityPortfolioIndex'
@@ -63,7 +63,7 @@ export default async function LeadershipDetailPage({ params }: LeadershipDetailP
 
   const [municipalityOptions, organizationOptions, stateDeputyOptions, municipalityIndex] =
     await Promise.all([
-      loadMunicipalityOptions(payload, user),
+      loadWritableMunicipalityOptions(payload, user),
       loadOrganizationOptions(payload, user),
       loadStateDeputyOptions(payload, user),
       loadMunicipalityPortfolioIndex(),
