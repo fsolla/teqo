@@ -141,15 +141,20 @@ jobs:
       - name: Build for e2e
         # Same dir the Playwright webServer serves (playwright.config.ts
         # falls back to '.next-e2e'; gate-ci.mjs builds there too).
+        # NEXT_PUBLIC_SITE_URL is inlined at build time, so the canonical
+        # `.test` origin must reach THIS build — it is what lets the agenda
+        # feed dialog generate a link under the production build (OPS83).
         run: pnpm build
         env:
           NEXT_DIST_DIR: .next-e2e
+          NEXT_PUBLIC_SITE_URL: https://feed.e2e.teqo.test
       - name: E2E tests (full suite, single job, 4 workers)
         # Explicit CI workers; the local default stays 2 (playwright.config.ts).
         # No `--` separator: pnpm would forward it verbatim to playwright and
         # the flag would be parsed as a file pattern ("No tests found").
         env:
           PLAYWRIGHT_WORKERS: 4
+          NEXT_PUBLIC_SITE_URL: https://feed.e2e.teqo.test
         run: pnpm test:e2e
 
   deploy:

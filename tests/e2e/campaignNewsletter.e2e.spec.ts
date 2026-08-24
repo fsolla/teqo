@@ -222,7 +222,9 @@ test.describe('Campaign home novidades hash scroll', () => {
   test('hero CTA scrolls to the newsletter section (mobile)', async ({ page }) => {
     await page.goto(`/?e2e=scroll-${scrollSuffix}`)
     await page.locator('[data-cta="secondary"]').click()
-    await expect(page).toHaveURL(/#novidades$/)
+    // The URL legitimately carries the `?e2e=scroll-…` cache-buster query,
+    // so assert only the hash (no trailing `$`), which lands after the click.
+    await expect(page).toHaveURL(/#novidades/)
     await expect(page.locator('[data-home-section="newsletter"]')).toBeInViewport()
   })
 

@@ -45,6 +45,16 @@ const visibleMunicipalityButton = (page: Page, name: string) =>
     .getByRole('button', { name: new RegExp(`^${escapeRegExp(name)}(?: —|$)`) })
     .filter({ visible: true })
 
+/**
+ * Waits for the municipality list's RSC stream to commit (no transient `S:`
+ * shell copies) before interacting with the rows/options again. Chip removal
+ * and omnibox facet changes are client-side `navigate` calls that re-stream
+ * the list; clicking an option against the stale DOM races that stream
+ * (observed in the OPS83 verify run #15 at 4 workers).
+ */
+const settleMunicipalityStream = (page: Page) =>
+  page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+
 const ensureWideMunicipalityList = async (page: Page) => {
   // The resizable panel hydrates independently from the RSC list and can
   // change the container stage after a cell first becomes visible. These
@@ -437,9 +447,12 @@ test.describe('Municípios — jornadas por papel', () => {
     await expect(tableRows).toHaveCount(1)
     await expect(page.getByRole('link', { name: municipalityA.name, exact: true })).toBeVisible()
 
-    // Removing the chip restores the unfiltered 25-row page 1.
+    // Removing the chip restores the unfiltered 25-row page 1. The removal is
+    // a client `navigate` — poll the chip out and let the stream commit before
+    // touching the omnibox again (OPS83: the next option click raced this).
     await removeChip(`Dobradinha: ${deputyName} (BR176)`).click()
     await expect(removeChip(`Dobradinha: ${deputyName} (BR176)`)).toHaveCount(0)
+    await settleMunicipalityStream(page)
 
     // Partido by acronym → the same single municipality (its only dobradinha).
     await omnibox.fill('BR176')
@@ -450,6 +463,7 @@ test.describe('Municípios — jornadas por papel', () => {
 
     await removeChip('Partido: BR176').click()
     await expect(removeChip('Partido: BR176')).toHaveCount(0)
+    await settleMunicipalityStream(page)
 
     // Liderança by contact name → municipality B only.
     await omnibox.fill(leadership.contactName)
@@ -704,9 +718,13 @@ test.describe('Municípios — jornadas por papel', () => {
     // C106 — the dossiê tab streams a transient `S:` shell copy; under load the
     // leadership-list chunk can land after `goto` settles, so let the stream
     // commit before asserting the leadership link (same class as the `:115`
-    // editar checkbox and the C142 FAB).
+    // editar checkbox and the C142 FAB). The generic `S:` gate alone is not
+    // enough (observed in the OPS83 verify run #15): poll the DOM for the
+    // specific link instead of `.first()` on the nondeterministic stream.
     await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
-    await expect(page.getByRole('link', { name: contact.name }).first()).toBeVisible()
+    const leadershipLink = page.getByRole('link', { name: contact.name })
+    await expect.poll(() => leadershipLink.count(), { timeout: 15_000 }).toBeGreaterThan(0)
+    await expect(leadershipLink.first()).toBeVisible()
     await page.getByLabel('Quantos votos a liderança traz neste município?').fill('250')
     await page.getByRole('button', { name: 'Declarar' }).click()
     await expect(page.getByText('Declaração de votos registrada.')).toBeVisible()

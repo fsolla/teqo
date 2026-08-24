@@ -5,22 +5,17 @@ import { hookFilledCreateData } from '../../src/utilities/hookFilledData.js'
 import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures.js'
 
 /**
- * The full generate → fetch flow needs the app served from a local origin:
- * `getCampaignInviteBaseURL` rejects non-public DNS in NODE_ENV=production
- * (fail-closed — the feed URL must be canonical), and CI/`pnpm push` boot the
- * production build (`E2E_PROD=1`) with `NEXT_PUBLIC_SITE_URL=http://localhost:3000`.
- * The CI covers the unlocked dialog via the C93 component unit and the
- * filterless feed content via the C93 int tests; the e2e here pins the real
- * end-to-end flow on the dev server.
+ * OPS83 Decision B — these flows now run under the production build too: the
+ * e2e build inlines `NEXT_PUBLIC_SITE_URL=https://feed.e2e.teqo.test`
+ * (`.test` TLD, passes `requireProductionDNSOrigin` fail-closed), so the
+ * dialog can generate a canonical feed link. The tests assert the PATH and
+ * fetch the feed via `campaign.baseURL + path` — never the canonical origin,
+ * which is deliberately non-resolving.
  */
-const isProdMode =
-  ['1', 'true'].includes(process.env.E2E_PROD ?? '') || ['1', 'true'].includes(process.env.CI ?? '')
-
 test.describe('Agenda — link de import (C98)', () => {
   test.setTimeout(90_000)
 
   test('gera o link sem filtros pelo header e o feed responde iCal', async ({ campaign, page }) => {
-    test.skip(isProdMode, 'fluxo completo exige origem local (dev server)')
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.claimMunicipality()
@@ -61,10 +56,13 @@ test.describe('Agenda — link de import (C98)', () => {
     const linkInput = dialog.getByRole('textbox', { name: 'Link de import' })
     await expect(linkInput).toBeVisible({ timeout: 15_000 })
     const feedUrl = await linkInput.inputValue()
+    // The link carries the canonical origin (OPS83 Decision B) — the PATH is
+    // the contract, the origin is test-only and deliberately non-resolving.
     expect(feedUrl).toMatch(/\/campanha\/agenda\/ical\/[0-9a-f-]{36}$/)
 
     // O link responde com o feed iCal do recorte pedido (a atividade criada).
-    const response = await page.request.get(feedUrl)
+    // Fetch against the local server by path — never the absolute origin.
+    const response = await page.request.get(`${campaign.baseURL}${new URL(feedUrl).pathname}`)
     expect(response.status()).toBe(200)
     expect(response.headers()['content-type']).toContain('text/calendar')
     const body = await response.text()
@@ -73,7 +71,6 @@ test.describe('Agenda — link de import (C98)', () => {
   })
 
   test('gera o link sem filtros pelo FAB mobile', async ({ campaign, page }) => {
-    test.skip(isProdMode, 'fluxo completo exige origem local (dev server)')
     const { fixtures } = campaign
     const coordinator = await fixtures.createCampaignUser('coordinator')
     const municipality = await fixtures.claimMunicipality()

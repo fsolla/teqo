@@ -68,6 +68,16 @@ const youtubeStubUrl = youtubeStubUrlFor(baseURL)
 const youtubeStubPort = new URL(youtubeStubUrl).port
 const instagramStubUrl = instagramStubUrlFor(baseURL)
 const instagramStubPort = new URL(instagramStubUrl).port
+/*
+ * Canonical HTTPS origin the e2e prod build inlines as NEXT_PUBLIC_SITE_URL
+ * (OPS83 Decision B): `requireProductionDNSOrigin` demands an HTTPS public DNS
+ * name, so the agenda feed dialog can generate a link under the production
+ * build. `.test` is a reserved TLD (RFC 6761) — never resolves, exists only so
+ * the feed link passes the guard; the specs fetch the feed via `campaign.baseURL
+ * + path`, never this origin.
+ */
+const CANONICAL_E2E_ORIGIN = 'https://feed.e2e.teqo.test'
+
 const workersOverride = process.env.PLAYWRIGHT_WORKERS
 const workers = workersOverride === undefined ? 2 : Number(workersOverride)
 if (!Number.isInteger(workers) || workers < 2) {
@@ -216,7 +226,14 @@ export default defineConfig({
         // owns that entire directory and may clear nested production bundles.
         NEXT_DIST_DIR: process.env.NEXT_DIST_DIR ?? '.next-e2e',
         PAYLOAD_SECRET: process.env.PAYLOAD_SECRET ?? 'test-only-secret-not-used-in-production',
-        NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? baseURL,
+        // Prod mode serves a production build where `getCampaignInviteBaseURL`
+        // fails closed unless NEXT_PUBLIC_SITE_URL is an HTTPS public DNS name
+        // (C98). The e2e build inlines this same value (see the "Build for e2e"
+        // steps in deploy.yml/ci-pr.yml), so the dialog-generated feed link is
+        // canonical — and the spec fetches it back via `campaign.baseURL`, never
+        // the absolute origin (OPS83 Decision B).
+        NEXT_PUBLIC_SITE_URL:
+          process.env.NEXT_PUBLIC_SITE_URL ?? (isProdMode ? CANONICAL_E2E_ORIGIN : baseURL),
         // Lets e2e specs bust the `posts` tag after direct REST deletes (cleanup),
         // mirroring the documented post-seed runbook against the deployed site.
         REVALIDATE_SECRET: process.env.REVALIDATE_SECRET ?? 'e2e-revalidate-secret',
