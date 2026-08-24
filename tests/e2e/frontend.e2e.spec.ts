@@ -699,7 +699,7 @@ test.describe('Campaign home content section', () => {
    * link). This is the source that observes the actual payload — pair it with
    * `gotoHomeFresh` so the navigation itself misses the cache.
    */
-  const expectSectionCardCount = (locator: Locator, expected: number, timeout = 15_000) =>
+  const expectSectionCount = (locator: Locator, expected: number, timeout = 15_000) =>
     expect
       .poll(async () => locator.count(), { timeout, message: 'contents section card count' })
       .toBe(expected)
@@ -803,13 +803,13 @@ test.describe('Campaign home content section', () => {
     const revalidate = await request.post(`${baseURL}/api/revalidate?tag=posts`, {
       headers: { 'x-revalidate-secret': revalidateSecret },
     })
-    expect(revalidate.ok()).toBeTruthy()
+    expect(revalidate).toBeOK()
     await waitForHomeSectionState(request, 'absent', 30)
 
     // Plain URL on purpose: the test also pins the canonical home URL.
     await page.goto('/')
     await expect(page).toHaveURL(/\/$/)
-    await expectSectionCardCount(page.locator('[data-home-section="contents"]'), 0)
+    await expectSectionCount(page.locator('[data-home-section="contents"]'), 0)
     await expect(page.getByText('A caminhada, em tempo real')).toHaveCount(0)
 
     const proof = await page.locator('[data-home-section="proof"]').boundingBox()
@@ -1350,8 +1350,8 @@ test.describe('Campaign home content section', () => {
       await expect(section.getByRole('link', { name: /E2e Artigo fallback IG/ })).toBeVisible()
       // Same rendered-DOM class as the kill-switch test (OPS83 run #15): the
       // server poll converged but the page served a stale body — poll the DOM.
-      await expectSectionCardCount(section.getByText('E2e Post do muro'), 0)
-      await expectSectionCardCount(section.getByRole('link', { name: /Seguir no Instagram/ }), 0)
+      await expectSectionCount(section.getByText('E2e Post do muro'), 0)
+      await expectSectionCount(section.getByRole('link', { name: /Seguir no Instagram/ }), 0)
 
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
@@ -1482,10 +1482,10 @@ test.describe('Campaign home content section', () => {
       const section = page.locator('[data-home-section="contents"]')
       await expect(section).toBeVisible()
       await expect(section.getByRole('link', { name: /E2e Artigo kill switch/ })).toBeVisible()
-      await expectSectionCardCount(section.getByText('E2e Vídeo em destaque'), 0)
-      await expectSectionCardCount(section.getByRole('link', { name: /YouTube →/ }), 0)
-      await expectSectionCardCount(section.getByText('E2e Post do muro'), 0)
-      await expectSectionCardCount(section.getByRole('link', { name: /Seguir no Instagram/ }), 0)
+      await expectSectionCount(section.getByText('E2e Vídeo em destaque'), 0)
+      await expectSectionCount(section.getByRole('link', { name: /YouTube →/ }), 0)
+      await expectSectionCount(section.getByText('E2e Post do muro'), 0)
+      await expectSectionCount(section.getByRole('link', { name: /Seguir no Instagram/ }), 0)
 
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
