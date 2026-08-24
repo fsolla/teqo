@@ -22,10 +22,11 @@ export const WORKTREE_TERMINAL_ENV = 'TEQO_WORKTREE_TERMINAL'
 /**
  * Preset model for the opencode launch — change the preset by editing this
  * constant. OPS78: routes through the Vercel AI Gateway (cache/stability/
- * failover) instead of the direct provider; the low/high/max variants are
+ * failover) instead of the direct provider. OPS82: the preset is the cheaper
+ * `-0731` flavor (input $0.076/M vs $0.13/M); the low/high/max variants are
  * exposed by the `provider.vercel` override in `opencode.json`.
  */
-export const OPENCODE_PRESET_MODEL = 'vercel/deepseek/deepseek-v4-flash'
+export const OPENCODE_PRESET_MODEL = 'vercel/deepseek/deepseek-v4-flash-0731'
 
 /**
  * Skill command sent as the launch's initial message per purpose. `next`

@@ -148,7 +148,7 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33)
 
   it('next launches with the preset model, --auto and the /work-issue command sent (value always quoted)', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'next', terminal: true })).toBe(
-      `launch opencode ${dir} --model vercel/deepseek/deepseek-v4-flash --auto --prompt "/work-issue"`,
+      `launch opencode ${dir} --model vercel/deepseek/deepseek-v4-flash-0731 --auto --prompt "/work-issue"`,
     )
   })
 
@@ -156,33 +156,33 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33)
     expect(
       opencodeLaunchDirective({ dir, purpose: 'next', terminal: true, issueNumber: 595 }),
     ).toBe(
-      `launch opencode ${dir} --model vercel/deepseek/deepseek-v4-flash --auto --prompt "/work-issue --issue 595"`,
+      `launch opencode ${dir} --model vercel/deepseek/deepseek-v4-flash-0731 --auto --prompt "/work-issue --issue 595"`,
     )
   })
 
   it('plan launches with the same presets and /plan-issue sent (OPS31, value quoted)', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true })).toBe(
-      `launch opencode ${dir} --model vercel/deepseek/deepseek-v4-flash --auto --prompt "/plan-issue"`,
+      `launch opencode ${dir} --model vercel/deepseek/deepseek-v4-flash-0731 --auto --prompt "/plan-issue"`,
     )
   })
 
   it('new launches prompt-less too — "apenas conversar", no skill sent', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'new', terminal: true })).toBe(
-      `launch opencode ${dir} --model vercel/deepseek/deepseek-v4-flash --auto`,
+      `launch opencode ${dir} --model vercel/deepseek/deepseek-v4-flash-0731 --auto`,
     )
   })
 
   it('plan/new ignore the issueNumber — only next carries the claimed issue', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true, issueNumber: 7 })).toBe(
-      `launch opencode ${dir} --model vercel/deepseek/deepseek-v4-flash --auto --prompt "/plan-issue"`,
+      `launch opencode ${dir} --model vercel/deepseek/deepseek-v4-flash-0731 --auto --prompt "/plan-issue"`,
     )
     expect(opencodeLaunchDirective({ dir, purpose: 'new', terminal: true, issueNumber: 7 })).toBe(
-      `launch opencode ${dir} --model vercel/deepseek/deepseek-v4-flash --auto`,
+      `launch opencode ${dir} --model vercel/deepseek/deepseek-v4-flash-0731 --auto`,
     )
   })
 
   it('pins the preset constants — changing the model is editing a constant', () => {
-    expect(OPENCODE_PRESET_MODEL).toBe('vercel/deepseek/deepseek-v4-flash')
+    expect(OPENCODE_PRESET_MODEL).toBe('vercel/deepseek/deepseek-v4-flash-0731')
     expect(WORKTREE_TERMINAL_ENV).toBe('TEQO_WORKTREE_TERMINAL')
     expect(OPENCODE_SKILL_COMMAND_BY_PURPOSE).toEqual({
       next: '/work-issue',
@@ -193,7 +193,7 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33)
 
   it('an unknown purpose degrades to a prompt-less launch (fail-safe direction)', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'bogus', terminal: true })).toBe(
-      `launch opencode ${dir} --model vercel/deepseek/deepseek-v4-flash --auto`,
+      `launch opencode ${dir} --model vercel/deepseek/deepseek-v4-flash-0731 --auto`,
     )
   })
 })

@@ -7,7 +7,7 @@
 # shell que o chamou.
 #
 # No terminal (esta função), o script também imprime a diretiva `launch
-# opencode <dir> --model vercel/deepseek/deepseek-v4-flash --auto [--prompt "…"]` (OPS26):
+# opencode <dir> --model vercel/deepseek/deepseek-v4-flash-0731 --auto [--prompt "…"]` (OPS26):
 # a função executa o cd e então a linha (tokenizada por xargs — honra as aspas
 # do prompt, nunca eval), e o TUI do opencode abre no worktree — `next` com
 # `/work-issue --issue <N>` já enviado (OPS33: a Issue claimada vai no prompt),
