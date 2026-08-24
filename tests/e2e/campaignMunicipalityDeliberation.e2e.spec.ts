@@ -6,15 +6,11 @@ import {
   mintCampaignSession,
   seedCampaignSession,
   test,
+  waitForStreamSettled,
   type CampaignE2EFixture,
 } from './fixtures/campaignE2EFixtures.js'
 
 const DESKTOP_VIEWPORT = { width: 1280, height: 900 }
-
-const settleStream = (page: Page) =>
-  page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0, undefined, {
-    timeout: 15_000,
-  })
 
 type DeliberationSeed = {
   coordinator: CampaignUser & { password: string }
@@ -60,7 +56,7 @@ const openFeedAs = async (
   await seedCampaignSession(context, campaign.baseURL, token)
   await page.setViewportSize(DESKTOP_VIEWPORT)
   await page.goto(`${campaign.baseURL}/campanha/atualizacoes`)
-  await settleStream(page)
+  await waitForStreamSettled(page, { timeout: 15_000 })
 }
 
 test.describe('C88 — deliberação na atualização', () => {

@@ -1,22 +1,15 @@
 import type { Page } from '@playwright/test'
 
 import type { CampaignUser } from '../../src/payload-types.js'
-import { expect, test, type CampaignE2EFixture } from './fixtures/campaignE2EFixtures.js'
+import {
+  expect,
+  test,
+  waitForStreamSettled,
+  type CampaignE2EFixture,
+} from './fixtures/campaignE2EFixtures.js'
 
 const MOBILE_VIEWPORT = { width: 390, height: 844 }
 const DESKTOP_VIEWPORT = { width: 1280, height: 900 }
-
-/**
- * Dynamic campaign pages stream their content (awaited `searchParams`), so
- * right after `page.goto` the DOM can hold a transient hidden `#S:*` copy of
- * the page shell while the stream settles. All class-based locators below
- * filter `visible: true` so assertions never match that transient duplicate
- * (role-based locators already exclude it).
- */
-const settleStream = (page: Page) =>
-  page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0, undefined, {
-    timeout: 15_000,
-  })
 
 const seedUpdates = async (
   campaign: CampaignE2EFixture,
@@ -60,7 +53,7 @@ test.describe('C106 — atualizações mobile sem moldura', () => {
     await page.setViewportSize(MOBILE_VIEWPORT)
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/atualizacoes`)
-    await settleStream(page)
+    await waitForStreamSettled(page, { timeout: 15_000 })
 
     const strip = page.getByRole('search')
     const feedList = page.locator('ul').filter({ hasText: 'Fato de campo C106 #8' }).first()
@@ -123,7 +116,7 @@ test.describe('C106 — atualizações mobile sem moldura', () => {
     await page.setViewportSize(MOBILE_VIEWPORT)
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/atualizacoes`)
-    await settleStream(page)
+    await waitForStreamSettled(page, { timeout: 15_000 })
 
     await page.getByRole('combobox', { name: 'Filtrar atualizações' }).fill('zzz')
     await page.getByRole('combobox', { name: 'Filtrar atualizações' }).press('Enter')
@@ -140,7 +133,7 @@ test.describe('C106 — atualizações mobile sem moldura', () => {
     await page.setViewportSize(DESKTOP_VIEWPORT)
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/atualizacoes`)
-    await settleStream(page)
+    await waitForStreamSettled(page, { timeout: 15_000 })
 
     const strip = page.getByRole('search')
 

@@ -3,6 +3,7 @@ import {
   expect,
   expectPostResponse,
   test,
+  waitForStreamSettled,
 } from './fixtures/campaignE2EFixtures.js'
 
 import type { CampaignUser } from '../../src/payload-types.js'
@@ -38,7 +39,7 @@ test.describe('Pessoas — lista unificada', () => {
     // `goto`'s settle, so let the stream commit and then poll the DOM for the
     // specific row (same class as the `S:` gate at campaignMunicipalities:708,
     // observed as a flake in the OPS83 verify run #15 at 4 workers).
-    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    await waitForStreamSettled(page)
     await expect(page.getByRole('row', { name: new RegExp(contactName) })).toBeVisible()
     // The coordinator account itself is a staff person (with a ficha) — ≥ 2 rows.
     await expect(page.getByText(/^\d+ pessoas?$/)).toBeVisible()
@@ -49,7 +50,7 @@ test.describe('Pessoas — lista unificada', () => {
     await omnibox.press('Enter')
     await expect(page).toHaveURL(/q=/)
     // The filter navigation re-streams the list — let it commit before the row.
-    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    await waitForStreamSettled(page)
     await expect(page.getByRole('row', { name: new RegExp(contactName) })).toBeVisible()
   })
 
@@ -104,7 +105,7 @@ test.describe('Pessoas — lista unificada', () => {
     await page.goto('/campanha/pessoas')
     // The list streams RSC chunks; clicking the name link against the stale DOM
     // races the stream (OPS83: C118 flaked under parallel load).
-    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    await waitForStreamSettled(page)
 
     await page.getByRole('link', { name: contactName, exact: true }).click()
     await expect(page).toHaveURL(new RegExp(`/campanha/pessoas/${contactId}$`))
@@ -340,7 +341,7 @@ test.describe('Pessoas — lista unificada', () => {
     await expect(page.getByText('Ausência: Sem base')).toBeVisible()
     await expect(page.getByText('Ausência: Sem assessor')).toBeVisible()
     // Multi-facet navigation re-streams the list — commit before asserting rows.
-    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    await waitForStreamSettled(page)
     await expect(page.getByRole('row', { name: new RegExp(noPhoneName) })).toBeVisible()
     // The union widened: the staff leaderships have no advisors, so they match
     // `sem_assessor` — the row hidden by `sem_contato` alone is back in.
