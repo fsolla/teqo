@@ -24,7 +24,8 @@ export const WORKTREE_TERMINAL_ENV = 'TEQO_WORKTREE_TERMINAL'
  * constant. OPS78: routes through the Vercel AI Gateway (cache/stability/
  * failover) instead of the direct provider. OPS82: the preset is the cheaper
  * `-0731` flavor (input $0.076/M vs $0.13/M); the low/high/max variants are
- * exposed by the `provider.vercel` override in `opencode.json`.
+ * exposed by the `provider.vercel` override in the global opencode config
+ * (`~/.config/opencode/opencode.jsonc`, outside the repo — OPS89).
  */
 export const OPENCODE_PRESET_MODEL = 'vercel/deepseek/deepseek-v4-flash-0731'
 
