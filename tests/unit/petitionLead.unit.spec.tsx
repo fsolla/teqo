@@ -87,25 +87,35 @@ describe('Petition form Lead wiring', () => {
   })
 
   it('fires exactly one Lead on a successful signature with a configured pixel', async () => {
-    render(<PetitionForm id="formulario" petition={petition} consentHTML="" facebookPixelId={PIXEL_ID} />)
+    render(
+      <PetitionForm
+        id="formulario"
+        petition={petition}
+        consentHTML=""
+        facebookPixelId={PIXEL_ID}
+      />,
+    )
     await fillAndSubmit()
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Obrigado por assinar!' })).toBeTruthy()
     })
     expect(trackMetaLeadMock).toHaveBeenCalledTimes(1)
-    expect(trackMetaLeadMock).toHaveBeenCalledWith(
-      PIXEL_ID,
-      petition.title,
-      expect.any(String),
-    )
+    expect(trackMetaLeadMock).toHaveBeenCalledWith(PIXEL_ID, petition.title, expect.any(String))
   })
 
   it('keeps the committed signature a success when tracking throws', async () => {
     trackMetaLeadMock.mockImplementation(() => {
       throw new Error('crypto.randomUUID is not available')
     })
-    render(<PetitionForm id="formulario" petition={petition} consentHTML="" facebookPixelId={PIXEL_ID} />)
+    render(
+      <PetitionForm
+        id="formulario"
+        petition={petition}
+        consentHTML=""
+        facebookPixelId={PIXEL_ID}
+      />,
+    )
     await fillAndSubmit()
 
     await waitFor(() => {
@@ -127,7 +137,14 @@ describe('Petition form Lead wiring', () => {
 
   it('never fires a Lead when the submission fails', async () => {
     submitPetitionSignatureMock.mockRejectedValue(new Error('boom'))
-    render(<PetitionForm id="formulario" petition={petition} consentHTML="" facebookPixelId={PIXEL_ID} />)
+    render(
+      <PetitionForm
+        id="formulario"
+        petition={petition}
+        consentHTML=""
+        facebookPixelId={PIXEL_ID}
+      />,
+    )
     await fillAndSubmit()
 
     await waitFor(() => {
