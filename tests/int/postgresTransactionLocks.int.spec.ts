@@ -4,7 +4,7 @@ import { getPayload, type Payload } from 'payload'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import config from '@/payload.config'
-import { contactPhoneLockKeys } from '@/utilities/contactPhoneLocks'
+import { contactFichaLockKey, contactPhoneLockKeys } from '@/utilities/contactPhoneLocks'
 import {
   acquireTextAdvisoryLocks,
   getPostgresTransactionDatabase,
@@ -64,6 +64,11 @@ describe('PostgreSQL transaction advisory locks', () => {
       'contact-phone:71999990001',
       'contact-phone:71999990002',
     ])
+  })
+
+  it('derives the canonical contact-ficha lock key (C120 append serialization)', () => {
+    expect(contactFichaLockKey(42)).toBe('contact-ficha:42')
+    expect(contactFichaLockKey('42')).toBe('contact-ficha:42')
   })
 
   it('uses only the exact Payload transaction session and fails closed without it', async () => {
