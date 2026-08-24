@@ -78,12 +78,18 @@ if (process.env.E2E_PROD === '1') {
 }
 
 const curatedSpecPaths = E2E_CURATED_SPECS.map((name) => `tests/e2e/${name}.e2e.spec.ts`)
-const scopeSpecPaths =
-  scope.mode === 'selected'
-    ? scope.specs.map((name) => `tests/e2e/${name}.e2e.spec.ts`)
-    : scope.mode === 'unmapped-risk'
-      ? curatedSpecPaths
-      : [] // curated/full → run the whole suite locally
+let scopeSpecPaths
+switch (scope.mode) {
+  case 'selected':
+    scopeSpecPaths = scope.specs.map((name) => `tests/e2e/${name}.e2e.spec.ts`)
+    break
+  case 'unmapped-risk':
+    scopeSpecPaths = curatedSpecPaths
+    break
+  default:
+    // curated / full → run the whole suite locally (OPS72 local contract).
+    scopeSpecPaths = []
+}
 const playwrightArgs = buildPlaywrightE2eArgs({
   scopeSpecPaths,
   passthroughArgs,

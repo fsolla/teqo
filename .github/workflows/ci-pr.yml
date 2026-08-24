@@ -121,11 +121,11 @@ jobs:
       - name: Fail on unmapped risk paths
         if: steps.scope.outputs.e2e_mode == 'unmapped-risk'
         run: |
-          echo "::error::Risk-area files touched by this PR have no e2e manifest mapping:"
+          echo "::error::Risk-area files touched by this PR have no e2e manifest mapping (fail-closed). Unmapped files:"
           for file in ${{ steps.scope.outputs.e2e_unmapped }}; do
             echo "::error::- $file"
           done
-          echo "::error::Add an entry in scripts/lib/e2e-affected-manifest.mjs (E2E_AFFECTED_MANIFEST) covering these paths."
+          echo "::error::Add entries in scripts/lib/e2e-affected-manifest.mjs (E2E_AFFECTED_MANIFEST) covering the risk-area paths."
           exit 1
 
       # Content guards are PR-scoped and cheap — run them before the suite so

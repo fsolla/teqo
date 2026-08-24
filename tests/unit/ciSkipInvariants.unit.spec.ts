@@ -152,4 +152,21 @@ describe('ciSkipInvariants', () => {
     // The PR never runs e2e full.
     expect(ciPr).not.toContain("e2e_mode == 'full'")
   })
+
+  it('vitest-changed-or-full mirrors the package.json test scripts (config + unit DB guard)', () => {
+    // The wrapper re-declares the vitest config paths and the unit
+    // invalid-DATABASE_URL guard from the `test:unit`/`test:int` scripts; a
+    // drift changes what `--changed` detects and is silent. Pin the sync.
+    const pkg = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8'))
+    const wrapper = readFileSync(join(repoRoot, 'scripts/vitest-changed-or-full.mjs'), 'utf8')
+
+    expect(pkg.scripts['test:unit']).toContain('./vitest.unit.config.mts')
+    expect(pkg.scripts['test:int']).toContain('./vitest.config.mts')
+    expect(wrapper).toContain('./vitest.unit.config.mts')
+    expect(wrapper).toContain('./vitest.config.mts')
+
+    const invalidUnitDbUrl = 'postgresql://invalid:invalid@127.0.0.1:1/unit_tests_must_not_connect'
+    expect(pkg.scripts['test:unit']).toContain(invalidUnitDbUrl)
+    expect(wrapper).toContain(invalidUnitDbUrl)
+  })
 })

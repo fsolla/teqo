@@ -84,6 +84,15 @@ const main = async () => {
     `[gate:ci] scope base=${scope.base} code=${scope.code.mode} build=${scope.build.mode} test=${scope.test.mode} e2e=${scope.e2e.mode} (e2e not in this gate — OPS72; local affected is a skill step)`,
   )
 
+  // Fail-fast mirror of the CI fail-closed step: risk-area files without a
+  // manifest entry fail the job — catch it before running the whole suite.
+  if (scope.e2e.mode === 'unmapped-risk') {
+    console.error(
+      `\n[gate:ci] ✗ e2e: RISK-AREA files without a manifest mapping — CI fails closed on this, so the local mirror fails too:\n  ${scope.e2e.unmapped.join('\n  ')}\n  Add an e2e manifest entry (scripts/lib/e2e-affected-manifest.mjs) covering them.`,
+    )
+    process.exit(1)
+  }
+
   // --- Phase 1 (cheap) ---
   run('check-test-locations', 'node', ['scripts/check-test-locations.mjs'])
   run('lint', 'pnpm', ['lint'])
@@ -163,9 +172,9 @@ const main = async () => {
     console.log(
       `\n[gate:ci] ▶ e2e: diff is high-risk — CI runs the curated cross-section (${scope.e2e.specs.join(', ')}) — not in this gate (OPS72); run \`pnpm test:e2e:affected\` locally (runs full); deploy verify runs full before publishing`,
     )
-  } else if (scope.e2e.mode === 'unmapped-risk') {
+  } else {
     console.log(
-      `\n[gate:ci] ✗ e2e: RISK-AREA files without a manifest mapping — CI WILL FAIL on:\n  ${scope.e2e.unmapped.join('\n  ')}\n  Add an e2e manifest entry for them before pushing.`,
+      `\n[gate:ci] ⚠ e2e: unexpected mode "${scope.e2e.mode}" — review scripts/ci-scope.mjs (contract drift?)`,
     )
   }
 

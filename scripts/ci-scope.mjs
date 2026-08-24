@@ -61,7 +61,7 @@ if (e2e.unmapped.length > 0) {
   const label =
     e2e.mode === 'unmapped-risk'
       ? '[ci-scope] RISK-AREA paths with no e2e manifest mapping (CI will fail closed):'
-      : '[ci-scope] src/ paths with no e2e manifest mapping (running the home smoke):'
+      : '[ci-scope] src/ paths with no e2e manifest mapping (selection may not cover them):'
   console.error(`${label}\n  ${e2e.unmapped.join('\n  ')}`)
 }
 

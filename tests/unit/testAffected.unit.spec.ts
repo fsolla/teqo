@@ -2,12 +2,14 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { E2E_CURATED_SPECS } from '../../scripts/lib/e2e-affected-manifest.mjs'
+import {
+  E2E_CURATED_SPECS,
+  E2E_SMOKE_FALLBACK_SPEC,
+} from '../../scripts/lib/e2e-affected-manifest.mjs'
 import {
   classifyBuildScope,
   classifyStaticScope,
   classifyTestScope,
-  E2E_SMOKE_FALLBACK_SPEC,
   HIGH_RISK_EXACT,
   HIGH_RISK_PREFIXES,
   selectE2eSpecs,
