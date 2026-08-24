@@ -4,7 +4,7 @@ import {
   CAMPAIGN_DEMAND_BODY_LABEL,
   CAMPAIGN_DEMAND_KIND_LABEL,
 } from '../../src/lib/schemas/campaignDemand.js'
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { expect, test, waitForStreamSettled } from './fixtures/campaignE2EFixtures.js'
 
 test.use({ viewport: { width: 390, height: 844 } })
 
@@ -24,6 +24,10 @@ test.describe('Wizard "Registrar pedido" (A5/B195)', () => {
 
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`/campanha/acoes/registrar-pedido?municipio=${municipality.slug}`)
+    // Prod-build streams a transient hidden `div[id^="S:*"]` copy of the whole
+    // wizard shell + form (OPS83/C106 artifact, #517; B195-F1 diag) — wait it
+    // out before any strict-mode assertion.
+    await waitForStreamSettled(page)
 
     const topBar = page.locator('[data-slot="campaign-mobile-top-bar"][data-mode="wizard"]')
     await expect(topBar.getByText('Registrar pedido', { exact: true })).toBeVisible()
@@ -35,8 +39,10 @@ test.describe('Wizard "Registrar pedido" (A5/B195)', () => {
     // free-text field comes straight after Tipo and Atividade.
     await expect(page.getByRole('heading', { name: 'Registrar pedido' })).toHaveCount(0)
     await expect(page.getByLabel(CAMPAIGN_DEMAND_KIND_LABEL)).toBeVisible()
-    // `.first()`: transient RSC-pending duplication also copies the combobox
-    // trigger (same strict-mode flake as cd469857; observed on loaded machines).
+    // `.first()`: legacy guard from cd469857/D12 — before the S: settle gate,
+    // the streamed copy duplicated the whole shell, trigger included. The kind/
+    // body/fill/submit locators below stay UNscoped on purpose: a genuinely
+    // duplicated form in prod must still fail here (#659).
     await expect(page.getByLabel(CAMPAIGN_DEMAND_ACTIVITY_LABEL).first()).toBeVisible()
     await expect(page.getByLabel(CAMPAIGN_DEMAND_BODY_LABEL)).toBeVisible()
     await expect(page.locator('input[name="title"]')).toHaveCount(0)
