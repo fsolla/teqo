@@ -31,7 +31,7 @@ Hoje, "trocar de modelo no worktree" = editar uma constante no código (OPS26). 
 
 - **Vou apresentar dados?** Não — tooling de dev, sem métrica de produto.
 - **Decisões desbloqueadas:** dev escolhe modelo por invocação (antes: escolha só na edição da constante).
-- **Forma:** *adiada ao plano de implementação* — aqui só a restrição "cardápio fixo de 5 flags nomeadas".
+- **Forma:** _adiada ao plano de implementação_ — aqui só a restrição "cardápio fixo de 5 flags nomeadas".
 
 ## Direção no codebase (hipótese)
 
