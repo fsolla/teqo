@@ -7,12 +7,17 @@
 # shell que o chamou.
 #
 # No terminal (esta função), o script também imprime a diretiva `launch
-# opencode <dir> --model vercel/deepseek/deepseek-v4-flash-0731 --auto [--prompt "…"]` (OPS26):
+# opencode <dir> --model <preset|map> --variant max --auto [--prompt "…"]` (OPS26+OPS33+OPS93):
 # a função executa o cd e então a linha (tokenizada por xargs — honra as aspas
 # do prompt, nunca eval), e o TUI do opencode abre no worktree — `next` com
 # `/work-issue --issue <N>` já enviado (OPS33: a Issue claimada vai no prompt),
 # `plan` com `/plan-issue` já enviado (OPS31), `new` sem prompt (apenas
-# conversar). Sem `exec` de propósito: ao sair do opencode, o terminal volta ao
+# conversar), sempre em `--variant max` (OPS78 guardrail; falha alto se a variante
+# não existir). Modelo por invocação: `--cheap` (cheapestinference/deepseek-v4-flash),
+# `--pro` (opencode-go/qwen3.7-max), `--zen` (opencode-go/ox-alpha-free),
+# `--go` (opencode-go/mimo-v2.5), `--alibaba` (alibaba-token-plan/qwen3.7-max) no
+# mapa fixo `WORKTREE_MODEL_MAP` (OPS93); sem flag o preset `deepseek/deepseek-v4-flash`
+# permanece. Sem `exec` de propósito: ao sair do opencode, o terminal volta ao
 # shell dentro do worktree. Presets são constantes em scripts/lib/worktree.mjs;
 # o marcador TEQO_WORKTREE_TERMINAL=1 é o que separa esta superfície da do comando
 # `/worktree` do opencode (que nunca lança TUI). `--stay` suprime cd e launch.
@@ -21,25 +26,28 @@
 #   source <repo>/.agents/shell/worktree.sh
 #
 # Uso (terminal interativo):
-#   worktree next [--issue N] [--stay]
+#   worktree next [--issue N] [--stay] [--cheap|--pro|--zen|--go|--alibaba]
 #                            CLAIMA a próxima Issue claimável e cria/reutiliza o
 #                            worktree dela, cd para dentro por padrão; --issue N
 #                            claima a Issue direcionada ou reabre a já claimada
-#                            (sem re-claim); --stay não troca
-#   worktree plan [bag] [--stay]   cria um worktree de planejamento do /plan-issue
+#                            (sem re-claim); --stay não troca; --cheap/--pro/--zen/--go/--alibaba
+#                            escolhe o modelo por invocação (sem flag o preset permanece; at-most-one)
+#   worktree plan [bag] [--stay] [--cheap|--pro|--zen|--go|--alibaba]
+#                            cria um worktree de planejamento do /plan-issue
 #                            DIFERENTE a cada chamada (sessões paralelas): com bag,
 #                            branch plans/plan-issue-<bag> (sufixo -2/-3 se o nome
 #                            já existir), sem bag o próximo plans/plan-issue-<n>
 #                            sequencial; cd para dentro dele por padrão; --stay não
-#                            troca
-#   worktree new [bag] [--stay]   cria um worktree NEUTRO (sem função pré-definida)
+#                            troca; flag de modelo como no `next`
+#   worktree new [bag] [--stay] [--cheap|--pro|--zen|--go|--alibaba]
+#                            cria um worktree NEUTRO (sem função pré-definida)
 #                            DIFERENTE a cada chamada: com bag, branch work/<bag>
 #                            (sufixo -2/-3 se o nome já existir), sem bag o próximo
 #                            work/<n> sequencial; cd para dentro dele por padrão;
-#                            --stay não troca
+#                            --stay não troca; flag de modelo como no `next`
 #   worktree kill [--force]  destrói o worktree atual e cd para o main por padrão
 #
-# `--go` explícito continua aceito como no-op (era o antigo padrão).
+# `--go` remapeado em OPS93 para o mapa `opencode-go/mimo-v2.5` (antes no-op do OPS24).
 # Claim determinístico: `next` claima antes de criar o worktree (mesma fila e
 # lock de `pnpm agent:claim`); `plan`/`new`/`kill` não tocam Issues.
 
