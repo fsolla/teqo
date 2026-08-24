@@ -33,6 +33,8 @@
     "media:recover": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/recover-media.mjs",
     "db:seed:minimal": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-minimal.mjs",
     "db:check:push-chain": "node scripts/check-push-chain.mjs",
+    "ops79:reconcile": "node scripts/reconcile-campaign-vertical.mjs",
+    "ops79:migrate": "node scripts/migrate-signature-orphan.mjs",
     "agent:claim": "node scripts/agent-claim.mjs",
     "agent:register": "node scripts/agent-register.mjs",
     "agent:ready": "node scripts/agent-ready.mjs",

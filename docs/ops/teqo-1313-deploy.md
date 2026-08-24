@@ -168,6 +168,72 @@ automaticamente — **não serve push, não recebe PRs, é somente leitura**.
 - Segredos nunca ecoados: sem `set -x`, senhas via `--password-stdin` /
   build-secrets; envs só no homeserver.
 
+## OPS79 — última migração da plataforma antiga → nova (vertical campanha)
+
+Operação de dados executada em 2026-08-23. Ver assistência lógica completa:
+`docs/plans/ops79-ultima-migracao-dados-campanha.md` (intenção) e
+`…campanha-impl.md` (impl). **A fonte (Neon, plataforma antiga) está congelada
+desde o OPS80** — zero escritas desde 2026-08-23 22:30 UTC; a URL antiga segue
+viva na Vercel apenas tecnicamente (desligamento de infra é o OPS81).
+
+**Descoberta-chave da reconciliação:** a vertical campanha JÁ estava 100% íntegra
+no `teo_1313` após o OPS51 (dump Neon→homeserver) — nenhum dado de operação de
+campanha ficou órfão; o time de campanha não escreveu na URL antiga depois do
+OPS51. O único residual real entre as plataformas era a `signature` pública
+1486 (e seu contato/subscription), cujo contato originário **não existia** no
+target (o id 2221 do target é OUTRA pessoa, Jorge Solla).
+
+### Reconciliador (read-only, repetível)
+
+Compara contagens + junta de IDs das 13 coleções da vertical e o conteúdo
+semântico das join-tables de relações contra a fonte Neon.
+
+```bash
+ssh homeserver
+cd ~/teqo-deploy
+git fetch origin main && git checkout main && git pull --ff-only origin main
+pnpm install
+set -a; source ~/stack/.env; set +a            # fornece NEON_DATABASE_URL
+set -a; source ~/stack/teqo-1313.env; set +a   # fornece DATABASE_URL (teqo_1313)
+# o host `postgres` só resolve dentro da rede stack_default; do host usa-se o
+# proxy socat do build (127.0.0.1:5433):
+export DATABASE_URL="${DATABASE_URL/@postgres:5432/@127.0.0.1:5433}"
+NEON_DATABASE_URL="$NEON_DATABASE_URL" DATABASE_URL="$DATABASE_URL" pnpm ops79:reconcile
+```
+
+Esperado: `19/19 PASS` (a `municipality_rels` reporta `+3 absorvida pós-OPS51` —
+edições de portfólio na plataforma nova, não-dado). Exit `1` em qualquer nova
+divergência. Nunca imprime PII.
+
+### Migração do residual (one-off, com guard de confirmação)
+
+Copia a `signature` 1486 + seu contato + subscription (a transação que o
+`submitPetitionSignature` faz junto), reusando petition/consent já presentes e
+criando o contato com **id novo** (nunca o 2221, ocupado por outra pessoa).
+
+```bash
+# dry-run (valida referentes e imprime o plano sem escrever):
+NEON_DATABASE_URL="$NEON_DATABASE_URL" DATABASE_URL="$DATABASE_URL" pnpm ops79:migrate --dry-run
+# aplica (ESCREVE em prod — exige a flag de intenção explícita):
+OPS79_MIGRATE_CONFIRM=1 NEON_DATABASE_URL="$NEON_DATABASE_URL" DATABASE_URL="$DATABASE_URL" pnpm ops79:migrate --apply
+```
+
+Resultado registrado em 2026-08-23: contact novo **2225** (Juares Lagimar de
+Souza), signature **1486** preservada (petition `fim-escala-6x1`, consent 2),
+subscription **1492**; sequences ajustadas (`setval` com `true` → próximo id =
+último+1). Sequências conferidas após: contact 2225 / signature 1486 /
+subscription 1492. Pós-verificação: `signature` 1485=1485 (Neon×target) e
+reconcile 19/19; smoke `/`, `/campanha`, `/admin` 200.
+
+### Rollback
+
+A migração é idempotente (fail-closed: aborta se referentes/ids divergirem). Se
+precisar desfazer, DELETar as 3 linhas + ajustar sequences de volta:
+`DELETE FROM signature WHERE id=1486; DELETE FROM subscription WHERE id=1492;
+DELETE FROM contact_phones WHERE _parent_id=2225; DELETE FROM contact WHERE id=2225;`
+e `setval('contact_id_seq',2224)`, `setval('signature_id_seq',1485)`,
+`setval('subscription_id_seq',1491)`.
+
 ## Referências
 
 - `scripts/deploy-homeserver.sh` — o script (fonte da verdade do fluxo)
