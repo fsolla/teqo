@@ -59,7 +59,13 @@ export const PetitionForm = ({ id, petition, consentHTML, facebookPixelId }: Pet
           petitionId: petition.id,
         })
         if (facebookPixelId) {
-          trackMetaLead(facebookPixelId, petition.title, crypto.randomUUID())
+          // #766 — tracking must never fail an already-committed signature
+          // (same inner guard as CampaignNewsletterForm S10).
+          try {
+            trackMetaLead(facebookPixelId, petition.title, crypto.randomUUID())
+          } catch {
+            // tracking is invisible to the visitor
+          }
         }
         methods.reset()
         setSignatureNumber(result.signatureNumber)
