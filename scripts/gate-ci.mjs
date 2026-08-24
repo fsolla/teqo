@@ -156,6 +156,15 @@ const main = async () => {
     console.log('\n[gate:ci] ⊘ test:int skipped (no src/tests blast radius)')
   }
 
+  // OPS88: mirror of the CI single-Postgres reset — the build phase starts
+  // from the same clean baseline (drop schema → migrate → seed:minimal) the
+  // e2e build would get in CI, instead of int fixture residue.
+  if (scope.build.mode === 'none' && scope.e2e.mode !== 'selected') {
+    console.log('\n[gate:ci] ⊘ db:reset skipped (no build/e2e phase)')
+  } else {
+    run('db:reset', 'pnpm', ['db:reset'], dbEnv)
+  }
+
   if (scope.build.mode === 'none') {
     console.log('\n[gate:ci] ⊘ build skipped (no build surface)')
   } else {

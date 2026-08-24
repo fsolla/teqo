@@ -26,6 +26,7 @@
     "db:stop": "docker compose -p teqo down",
     "db:doctor": "node scripts/db-doctor.mjs",
     "db:pull": "node scripts/db-pull.mjs",
+    "db:reset": "node scripts/db-reset.mjs",
     "db:seed:posts": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-posts.mjs",
     "db:seed:tse": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-tse-results.mjs",
     "db:seed:consent": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-consent.mjs",

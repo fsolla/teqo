@@ -41,6 +41,7 @@ export const HIGH_RISK_EXACT = new Set([
   'scripts/run-e2e-affected.mjs',
   'scripts/vitest-changed-or-full.mjs',
   'scripts/ci-scope.mjs',
+  'scripts/db-reset.mjs',
   'scripts/check-test-locations.mjs',
   'scripts/check-plans-only-pr-closes.mjs',
   'scripts/lib/plansOnlyClosesGuard.mjs',

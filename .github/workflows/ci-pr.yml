@@ -35,12 +35,13 @@
 # a fork PR would burn hosted minutes running arbitrary code. Same guard class
 # as the RCE guard on the post-merge workflows.
 #
-# Postgres services (OPS71 — GitHub hosted): jobs run directly on the runner
+# Postgres service (OPS71 — GitHub hosted): jobs run directly on the runner
 # VM (NOT inside the job-container network of the Forgejo era), so services
 # are reached at localhost on PUBLISHED host ports. Each hosted run is its own
-# VM, so fixed ports never collide across runs. Two isolated services — int
-# on 5432 and build+e2e on 5433 — keep e2e from inheriting int fixture
-# residue.
+# VM, so fixed ports never collide across runs. ONE service (OPS88): a
+# deterministic reset (`pnpm db:reset` — drop schema → migrate → seed
+# minimal) between the integration phase and the build/e2e phase keeps e2e
+# from inheriting int fixture residue, instead of a second container.
 name: CI (PR)
 
 on:
@@ -72,19 +73,6 @@ jobs:
           POSTGRES_DB: teqo_test
         ports:
           - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U teqo"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 12
-      postgres-build:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: teqo
-          POSTGRES_PASSWORD: teqo
-          POSTGRES_DB: teqo_test
-        ports:
-          - 5433:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -195,21 +183,19 @@ jobs:
           VITEST_MAX_WORKERS: 4
         run: node scripts/vitest-changed-or-full.mjs --suite int --base origin/${{ github.base_ref }}
 
-      - name: Prepare database URL (build/e2e service)
+      - name: Reset database (drop → migrate → seed)
+        # OPS88: one Postgres per run — the build/e2e phase starts from the
+        # same clean baseline (drop schema → migrate → seed:minimal) instead
+        # of a second container. Runs whenever a build phase follows
+        # (selected/curated e2e always builds `.next-e2e` — OPS86).
         if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode == 'selected' || steps.scope.outputs.e2e_mode == 'curated'
-        run: |
-          set -euo pipefail
-          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" >> "$GITHUB_ENV"
-          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" > .env.test.local
-      - name: Migrate (build/e2e database)
-        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode == 'selected' || steps.scope.outputs.e2e_mode == 'curated'
-        run: pnpm migrate
-      - name: Seed minimal (build/e2e database)
-        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode == 'selected' || steps.scope.outputs.e2e_mode == 'curated'
-        run: pnpm db:seed:minimal
+        run: pnpm db:reset
 
       - name: Build (against the local service database)
-        if: steps.scope.outputs.build_mode != 'none'
+        # Only when it is the single build of the run: selected/curated e2e
+        # runs serve the `.next-e2e` build (below), so the default build is
+        # skipped there (OPS88 — one build per run when build+e2e run together).
+        if: steps.scope.outputs.build_mode != 'none' && steps.scope.outputs.e2e_mode != 'selected' && steps.scope.outputs.e2e_mode != 'curated'
         run: pnpm build
 
       - name: Cache Playwright browsers

@@ -87,6 +87,14 @@ export const defaultGatewayHost = () => {
 const gatewayHost = defaultGatewayHost()
 if (gatewayHost) LOCAL_HOSTS.add(gatewayHost)
 
+/**
+ * The one test-database name contract: `teqo_test` or `teqo_<worktree>_test`.
+ * Shared by `tests/helpers/assertTestDatabase.ts` (test suite guard) and
+ * `scripts/db-reset.mjs` (OPS88) so a DROP-SCHEMA script can never accept the
+ * dev database `teqo` or any non-test name.
+ */
+export const TEST_DATABASE_NAME_RE = /^teqo(_[a-z0-9]+)?_test$/
+
 export const ALLOW_REMOTE_DB_FLAG = 'ALLOW_REMOTE_DB'
 
 /**
