@@ -93,3 +93,6 @@ next-env.d.ts
 
 /data/encode/
 /data/poster-candidates/
+
+# Changelog aggregate is a regenerable artifact (OPS85) — entries live in docs/changelog/
+/docs/CHANGELOG-AGENTS.md

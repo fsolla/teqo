@@ -1,3 +1,4 @@
+<!-- CONGELADO em 2026-08-24 (OPS85): snapshot do agregado docs/CHANGELOG-AGENTS.md na data da morte do agregado commitado. Seed do artefato regenerado sob demanda; NUNCA editar (guard: docs-guards — zero-diff). -->
 # Changelog de contexto para agentes (fatias do AGENTS.md)
 
 Conteúdo movido do `AGENTS.md` em 2026-07-30 (fatiamento do paradigma de agentes paralelos): "Known Gaps" e todos os blocos "Recently resolved". Histórico — leia só quando precisar do contexto de uma entrega passada; o sempre-presente fica no `AGENTS.md`. **Desde OPS44 (2026-08-13)** cada entrega registra UMA entrada em `docs/changelog/<data>-<id>.md` e o agregado é regenerado por `pnpm changelog:build` (insert-only — este arquivo nunca é editado na mão; guard de CI `docs-guards` e escape `changelog-rewrite:` documentados em AGENT-OPS).

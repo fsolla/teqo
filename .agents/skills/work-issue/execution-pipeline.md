@@ -62,11 +62,12 @@ antes do deploy**.
 ## Fechar em main
 
 1. Branch do ator (ver deltas) — nunca crie branch nova fora dela.
-2. **Changelog da entrega (OPS44):** escreva `docs/changelog/<data>-<id>.md`
-   (ex. `2026-08-13-ops44.md`) — uma entrada curta no formato do agregado —
-   e rode `pnpm changelog:build` para regenerar `docs/CHANGELOG-AGENTS.md`
-   (insert-only: entradas históricas nunca mudam; o diff será só a entrada
-   nova + o agregado). Rode `pnpm changelog:check` para confirmar.
+2. **Changelog da entrega (OPS44, OPS85):** escreva `docs/changelog/<data>-<id>.md`
+   (ex. `2026-08-13-ops44.md`) — uma entrada curta no formato do agregado. É o
+   único registro commitado: **não rode `pnpm changelog:build` nem commite o
+   agregado** (ele é gitignored desde OPS85). Opcional: `pnpm changelog:read`
+   para conferir a leitura completa localmente (seed do HISTORY). O diff
+   commitado é só a entrada nova.
 3. **`pnpm push -u origin HEAD`** — origin é o **GitHub** (OPS71; o tracker de
    Issues continua no Forgejo por API).
 4. PR no **GitHub** via `GITHUB_TOKEN=<PAT> node scripts/github-pr.mjs --head <branch> --title "<id> — <título>" --body-file <arquivo>` — **Ready** (nunca draft; o script não tem flag draft), base `main`, body com `Closes #<N>` (ou `Related #N` em plans-only). Em Cursor Cloud: `ManagePullRequest` com `draft: false`.

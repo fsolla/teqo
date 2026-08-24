@@ -1,20 +1,34 @@
 /**
- * changelog — pure policy for the per-delivery changelog format (OPS44).
+ * changelog — pure policy for the per-delivery changelog format (OPS44/OPS85).
  *
  * Deliveries write `docs/changelog/<date>-<id>.md` (one entry per file,
  * immune to merge conflicts by construction — same pattern as docs/plans/).
- * `pnpm changelog:build` inserts those entries into the single readable
- * docs/CHANGELOG-AGENTS.md in chronological position, keeping the
- * "Recently resolved" reading intact. The build is insert-only: it never
- * removes or rewrites existing blocks (historical entries stay as-is —
- * OPS44 scope), so the aggregate is append-only by construction. CI guards
- * that property (scripts/check-changelog-append-only.mjs) and that docs
- * diffs never carry conflict markers
+ * Since OPS85 the committed changelog record is exactly those files: the
+ * readable aggregate docs/CHANGELOG-AGENTS.md is a gitignored artifact
+ * regenerated on demand (`pnpm changelog:build` writes it, `changelog:read`
+ * prints it), seeded from the frozen snapshot
+ * docs/CHANGELOG-AGENTS-HISTORY.md when the local file is absent. The build
+ * stays insert-only: it never removes or rewrites existing blocks. CI guards
+ * (scripts/check-changelog-append-only.mjs) that docs/changelog/ entries are
+ * additions-only, the HISTORY snapshot is frozen, and the regenerable
+ * aggregate is never committed; docs diffs must never carry conflict markers
  * (scripts/check-docs-conflict-markers.mjs).
  */
 
 export const CHANGELOG_DIR = 'docs/changelog'
 export const CHANGELOG_AGGREGATE = 'docs/CHANGELOG-AGENTS.md'
+export const CHANGELOG_HISTORY = 'docs/CHANGELOG-AGENTS-HISTORY.md'
+
+/**
+ * Header of the regenerated aggregate (OPS85). Used as the seed header when
+ * the local aggregate is absent and the build starts from the HISTORY
+ * snapshot. Must contain the `---` separator (splitChangelogBody contract).
+ */
+export const CHANGELOG_HEADER = `# Changelog de contexto para agentes (fatias do AGENTS.md)
+
+Conteúdo movido do \`AGENTS.md\` em 2026-07-30 (fatiamento do paradigma de agentes paralelos): "Known Gaps" e todos os blocos "Recently resolved". Histórico — leia só quando precisar do contexto de uma entrega passada; o sempre-presente fica no \`AGENTS.md\`. **Este arquivo é um artefato regenerado sob demanda (OPS85):** é gitignored e nunca é commitado. Cada entrega registra UMA entrada em \`docs/changelog/<data>-<id>.md\` (único registro versionado); o agregado é gerado por \`pnpm changelog:build\` (grava aqui) ou \`pnpm changelog:read\` (stdout), com seed do snapshot congelado \`docs/CHANGELOG-AGENTS-HISTORY.md\` quando o arquivo local não existe. Guard de CI \`docs-guards\` (entradas additions-only, HISTORY congelado, agregado não-commitado) e escape \`changelog-rewrite:\` documentados em AGENT-OPS.
+
+---`
 
 /** `2026-08-13-ops44.md` — date desc, then id asc. */
 const ENTRY_FILE_RE = /^(\d{4})-(\d{2})-(\d{2})-([a-z0-9-]+)\.md$/
@@ -151,68 +165,80 @@ export function entryDateOf(block) {
 }
 
 /**
- * Append-only policy for the changelog (CI guard).
+ * Changelog policy for the committed diff (CI + pre-push guard).
  *
- * The aggregate must never lose an existing line: every line of the old
- * content must still appear in the new content with equal or greater
- * count (multiset inclusion — honest under line moves/reordering, unlike
- * a diff parser). Files under docs/changelog/ must be additions only
- * (entries are immutable once committed; a deletion or modification is a
- * silent data-loss path).
+ * Since OPS85 the committed changelog record is per-file only:
+ *  - files under docs/changelog/ must be additions only (entries are
+ *    immutable once committed; a deletion or modification is a silent
+ *    data-loss path);
+ *  - docs/CHANGELOG-AGENTS-HISTORY.md is a frozen snapshot of the old
+ *    aggregate — only its creation (status A) is allowed, so any later
+ *    modification or deletion fails;
+ *  - the regenerable docs/CHANGELOG-AGENTS.md must never appear in the
+ *    diff; the one-time removal (status D) is allowed only in the same
+ *    diff that creates the HISTORY snapshot (the OPS85 migration).
  *
- * Legitimate restorations (D8-style) and header rewrites escape via the
- * documented `changelog-rewrite:` token in the PR body (see AGENT-OPS).
+ * Legitimate exceptions (D8-style restorations, HISTORY corrections) escape
+ * via the documented `changelog-rewrite:` token in the PR body (see
+ * AGENT-OPS). The old committed-aggregate multiset check died with OPS85:
+ * the "no silent entry loss" guarantee now lives in the per-file
+ * additions-only rule plus the generator post-condition in
+ * scripts/build-changelog.mjs.
  *
- * @param {{ oldAggregate: string, newAggregate: string,
- *           changelogDiff: { status: string, path: string }[] }} input
+ * @param {{ changelogDiff: { status: string, path: string }[],
+ *           historyDiff: { status: string, path: string }[],
+ *           aggregateDiff: { status: string, path: string }[] }} input
  * @returns {{ ok: true } | { ok: false, message: string }}
  */
-export function assertChangelogAppendOnly({ oldAggregate, newAggregate, changelogDiff }) {
-  const missing = missingLines(oldAggregate, newAggregate)
-  if (missing.length > 0) {
+export function assertChangelogAppendOnly({ changelogDiff, historyDiff, aggregateDiff }) {
+  const touchedEntries = changelogDiff.filter((change) => change.status !== 'A')
+  if (touchedEntries.length > 0) {
     return {
       ok: false,
       message:
-        `docs/CHANGELOG-AGENTS.md não é append-only: ${missing.length} linha(s) existente(s) ` +
-        `somem (ex.: ${JSON.stringify(missing[0])}). Restaurações legítimas: use ` +
-        '`changelog-rewrite: <motivo>` no body do PR (linha própria; definição em AGENT-OPS).',
-    }
-  }
-
-  const touched = changelogDiff.filter((change) => change.status !== 'A')
-  if (touched.length > 0) {
-    return {
-      ok: false,
-      message:
-        `docs/changelog/ não é additions-only: ${touched
+        `docs/changelog/ não é additions-only: ${touchedEntries
           .map((change) => `${change.status} ${change.path}`)
           .join(', ')}. Entradas são imutáveis; restaurações legítimas: use ` +
         '`changelog-rewrite: <motivo>` no body do PR (linha própria; definição em AGENT-OPS).',
     }
   }
 
-  return { ok: true }
-}
-
-/**
- * @param {string} oldContent
- * @param {string} newContent
- * @returns {string[]} - distinct old lines missing or under-counted in new
- */
-export function missingLines(oldContent, newContent) {
-  const counts = new Map()
-  for (const line of newContent.split('\n')) {
-    counts.set(line, (counts.get(line) ?? 0) + 1)
-  }
-
-  const missing = []
-  for (const line of oldContent.split('\n')) {
-    const remaining = counts.get(line) ?? 0
-    if (remaining <= 0) {
-      missing.push(line)
-    } else {
-      counts.set(line, remaining - 1)
+  const touchedHistory = historyDiff.filter((change) => change.status !== 'A')
+  if (touchedHistory.length > 0) {
+    return {
+      ok: false,
+      message:
+        `${CHANGELOG_HISTORY} é um snapshot congelado: ${touchedHistory
+          .map((change) => `${change.status} ${change.path}`)
+          .join(', ')} não é permitido. Correções legítimas: use ` +
+        '`changelog-rewrite: <motivo>` no body do PR (linha própria; definição em AGENT-OPS).',
     }
   }
-  return [...new Set(missing)]
+
+  const nonDeletions = aggregateDiff.filter((change) => change.status !== 'D')
+  if (nonDeletions.length > 0) {
+    return {
+      ok: false,
+      message:
+        `${CHANGELOG_AGGREGATE} não deve ser commitado — é um artefato gitignored regenerado ` +
+        `sob demanda (OPS85): ${nonDeletions
+          .map((change) => `${change.status} ${change.path}`)
+          .join(', ')}.`,
+    }
+  }
+
+  const aggregateDeleted = aggregateDiff.some((change) => change.status === 'D')
+  const historyCreated = historyDiff.some((change) => change.status === 'A')
+  if (aggregateDeleted && !historyCreated) {
+    return {
+      ok: false,
+      message:
+        `${CHANGELOG_AGGREGATE} removido sem criar ${CHANGELOG_HISTORY} — a remoção do ` +
+        'agregado commitado só é válida na entrega que congela o snapshot (OPS85). ' +
+        'Exceções legítimas: use `changelog-rewrite: <motivo>` no body do PR (linha ' +
+        'própria; definição em AGENT-OPS).',
+    }
+  }
+
+  return { ok: true }
 }

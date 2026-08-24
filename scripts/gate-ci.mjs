@@ -87,9 +87,8 @@ const main = async () => {
   run('lint', 'pnpm', ['lint'])
   run('format:check', 'pnpm', ['format:check'])
 
-  // --- Docs guards (OPS63): same checks as the CI `docs-guards` job ---
+  // --- Docs guards (OPS63/OPS85): same checks as the CI `docs-guards` job ---
   run('docs-guards (changelog append-only)', 'node', ['scripts/check-changelog-append-only.mjs'])
-  run('docs-guards (aggregate sync)', 'node', ['scripts/build-changelog.mjs', '--check'])
   run('docs-guards (conflict markers)', 'node', ['scripts/check-docs-conflict-markers.mjs'])
 
   if (scope.code.mode === 'none') {
