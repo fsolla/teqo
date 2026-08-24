@@ -260,6 +260,7 @@ const stateDeputyColumns = (
           href: `/campanha/liderancas/${leadership.id}`,
         }))}
         options={leadershipOptions}
+        saveErrorMessage="Não foi possível atualizar as lideranças. Tente novamente."
       />
     ),
   },
