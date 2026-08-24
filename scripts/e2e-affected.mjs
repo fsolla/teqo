@@ -49,8 +49,10 @@ const files = raw
 
 const result = { ...selectE2eSpecs(files, E2E_AFFECTED_MANIFEST), base }
 if (result.unmapped.length > 0) {
-  console.error(
-    `[e2e-affected] src/ paths with no manifest mapping:\n  ${result.unmapped.join('\n  ')}`,
-  )
+  const label =
+    result.mode === 'unmapped-risk'
+      ? '[e2e-affected] RISK-AREA paths with no manifest mapping (CI fails closed; running curated locally):'
+      : '[e2e-affected] src/ paths with no manifest mapping (the selection may not cover them):'
+  console.error(`${label}\n  ${result.unmapped.join('\n  ')}`)
 }
 console.log(JSON.stringify(result))

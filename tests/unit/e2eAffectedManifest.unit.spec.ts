@@ -9,6 +9,7 @@ import {
   E2E_AFFECTED_MANIFEST,
   E2E_CURATED_SPECS,
   E2E_RISK_PREFIXES,
+  E2E_SMOKE_FALLBACK_SPEC,
 } from '../../scripts/lib/e2e-affected-manifest.mjs'
 
 const E2E_DIR = join(__dirname, '../e2e')
@@ -71,5 +72,11 @@ describe('E2E_AFFECTED_MANIFEST (OPS5)', () => {
     for (const prefix of E2E_RISK_PREFIXES) {
       expect(mappedPrefixes.has(prefix), prefix).toBe(true)
     }
+  })
+
+  it('the unmapped fallback smoke spec exists on disk (OPS86 never-zero)', () => {
+    // A rename of the smoke spec would turn the fallback into a CI
+    // "No tests found" failure.
+    expect(new Set(specNamesOnDisk()).has(E2E_SMOKE_FALLBACK_SPEC)).toBe(true)
   })
 })

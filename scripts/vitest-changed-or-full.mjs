@@ -12,7 +12,7 @@
  * Exit code is the test run's — the wrapper never turns red into green.
  *
  * The env/config pairs mirror the `test:unit` / `test:int` package.json
- * scripts; keep them in sync (both are pinned by ciSkipInvariants).
+ * scripts; the sync is pinned by ciSkipInvariants.unit.spec.ts.
  */
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
@@ -58,7 +58,15 @@ if (listResult.status !== 0) {
   console.error(`[vitest-changed-or-full] ✗ vitest list failed (exit ${listResult.status ?? 1})`)
   process.exit(listResult.status ?? 1)
 }
-const changedSpecs = JSON.parse(listResult.stdout)
+let changedSpecs
+try {
+  changedSpecs = JSON.parse(listResult.stdout)
+} catch {
+  console.error(
+    `[vitest-changed-or-full] ✗ vitest list emitted non-JSON on stdout:\n${listResult.stdout.slice(0, 500)}`,
+  )
+  process.exit(1)
+}
 
 const run = (label, argv, env = process.env) => {
   console.log(`\n[vitest-changed-or-full] ▶ ${args.suite} ${label}`)

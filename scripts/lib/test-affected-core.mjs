@@ -11,10 +11,11 @@
  * file wakes the home smoke.
  */
 
-import { E2E_CURATED_SPECS, E2E_RISK_PREFIXES } from './e2e-affected-manifest.mjs'
-
-/** Generic e2e smoke for unmapped non-risk src/ files (OPS86 fallback). */
-export const E2E_SMOKE_FALLBACK_SPEC = 'campaignHomeActions'
+import {
+  E2E_CURATED_SPECS,
+  E2E_RISK_PREFIXES,
+  E2E_SMOKE_FALLBACK_SPEC,
+} from './e2e-affected-manifest.mjs'
 
 /**
  * Paths whose blast radius is the whole app: schema, test harness, lockfile,

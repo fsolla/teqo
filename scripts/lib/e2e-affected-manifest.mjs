@@ -44,6 +44,14 @@ export const E2E_RISK_PREFIXES = [
   'src/utilities/ai',
 ]
 
+/**
+ * Generic e2e smoke for unmapped non-risk src/ files (OPS86 fallback): the
+ * home spec renders the campaign shell (login + home) with console-error
+ * fail-fast. Lives here (not in the core) so the manifest entries below can
+ * reference the same constant without a cycle.
+ */
+export const E2E_SMOKE_FALLBACK_SPEC = 'campaignHomeActions'
+
 export const E2E_AFFECTED_MANIFEST = [
   {
     prefixes: ['src/app/(payload)'],
@@ -201,7 +209,7 @@ export const E2E_AFFECTED_MANIFEST = [
     // Web Push client — the opt-in toast mounts on the campaign shell, so a
     // push diff wakes the home smoke (console-error fail-fast covers it).
     prefixes: ['src/utilities/campaignPushClient.ts'],
-    specs: ['campaignHomeActions'],
+    specs: [E2E_SMOKE_FALLBACK_SPEC],
   },
   {
     prefixes: ['src/app/(campaign)/campanha/agenda/ical', 'src/utilities/calendarFeed'],
@@ -244,6 +252,6 @@ export const E2E_AFFECTED_MANIFEST = [
       `${CAMPAIGN_APP}/perfil`,
       `${CAMPAIGN_APP}/quadro`,
     ],
-    specs: ['campaignHomeActions'],
+    specs: [E2E_SMOKE_FALLBACK_SPEC],
   },
 ]
