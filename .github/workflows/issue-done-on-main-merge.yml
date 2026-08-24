@@ -36,8 +36,12 @@ jobs:
       (github.event_name == 'workflow_dispatch' && inputs.pr != '')
     runs-on: ubuntu-latest
     env:
-      # The github-api.mjs client reads GITHUB_TOKEN; the built-in token has
-      # `issues: write` scoped to this repo (the issue tracker is on GitHub).
+      # The github-api.mjs client reads GITHUB_TOKEN (not GH_TOKEN); the built-in
+      # token has `issues: write` scoped to this repo (the issue tracker is on
+      # GitHub). Explicit `github.token` — the built-in GITHUB_TOKEN env is not
+      # guaranteed on every event path; passing it via the documented context is
+      # the robust form (same as agent-pr-ready-automerge.yml).
+      GITHUB_TOKEN: ${{ github.token }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v5
