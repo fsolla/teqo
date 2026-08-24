@@ -495,9 +495,15 @@ const pickNextIssue = async ({ requestedIssueNumber, die }) => {
     return { entry, reopened: false, directed: true }
   }
 
-  const pick = await nextClaimableIssue()
+  const { entry: pick, skippedWithoutId } = await nextClaimableIssue()
   if (!pick) {
-    die('Fila vazia — nada `ready` desbloqueado. Rode `pnpm agent:status` para ver a fila.')
+    const skipped =
+      skippedWithoutId.length > 0
+        ? ` Issues \`ready\` sem frontmatter id fora da fila (corrija antes de re-rodar): ${skippedWithoutId.map(({ issue }) => `#${issue.number}`).join(', ')}.`
+        : ''
+    die(
+      `Fila vazia — nada \`ready\` desbloqueado. Rode \`pnpm agent:status\` para ver a fila.${skipped}`,
+    )
   }
   return { entry: pick, reopened: false, directed: false }
 }

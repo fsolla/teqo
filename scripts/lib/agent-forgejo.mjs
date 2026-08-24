@@ -100,6 +100,18 @@ const entryForIssue = (issue, byId, doneIds) => {
   }
 }
 
+/** Ready issues without a frontmatter `id` — unworkable: `branchNameForIssue`
+ * fails loudly and they can never become a worktree, so they stay out of the
+ * queue instead of poisoning `worktree next` forever.
+ *
+ * @param {Array<any>} openReady
+ * @returns {Array<{ issue: any, meta: Record<string, any> }>}
+ */
+export const withoutIdReadyIssues = (openReady) =>
+  openReady
+    .map((issue) => ({ issue, meta: parseFrontmatter(issue.body).meta }))
+    .filter(({ meta }) => typeof meta.id !== 'string' || meta.id.length === 0)
+
 /**
  * Claim queue shared by `agent:claim` and the agent pool: open `ready` issues
  * filtered to UNBLOCKED (every frontmatter `depends` id is closed or labeled
@@ -115,15 +127,17 @@ const entryForIssue = (issue, byId, doneIds) => {
 export const buildClaimQueue = (openReady, byId) => {
   const doneIds = doneIdsOf(byId)
 
-  return openReady
+  const queue = openReady
     .map((issue) => entryForIssue(issue, byId, doneIds))
     .filter((entry) => entry.blockedBy.length === 0)
+    .filter((entry) => typeof entry.meta.id === 'string' && entry.meta.id.length > 0)
     .sort((a, b) => {
       const rank =
         priorityRank(a.priority.replace('prio:', '')) -
         priorityRank(b.priority.replace('prio:', ''))
       return rank !== 0 ? rank : a.issue.createdAt.localeCompare(b.issue.createdAt)
     })
+  return queue
 }
 
 /**
@@ -225,7 +239,7 @@ export const setLabels = (number, { add = [], remove = [] }) =>
 export const nextClaimableIssue = async () => {
   const openReady = await api.listIssues({ state: 'open', labels: 'ready', limit: 200 })
   const queue = buildClaimQueue(openReady, await issuesById())
-  return queue[0] ?? null
+  return { entry: queue[0] ?? null, skippedWithoutId: withoutIdReadyIssues(openReady) }
 }
 
 export const parseArgs = (argv, flagsWithValue) => {
