@@ -31,10 +31,12 @@ export const loadCliEnv = () => {
 
 /**
  * Local database hosts — docker-compose service name, the job-network service
- * names of the Forgejo-era runner (OPS62 X1: services by name, no host publish —
- * the GitHub hosted CI reaches services on published localhost ports, OPS71),
- * and the bridge gateway (OPS50: legacy per-port publish kept in the
- * allowlist). THE one list.
+ * names of the Forgejo-era runner (OPS62 X1: services by name, no host
+ * publish — the GitHub hosted CI reaches services on published localhost
+ * ports, OPS71; `postgres-int` remains active, `postgres-build` is a
+ * defensive legacy entry since OPS88 removed the second container), and the
+ * bridge gateway (OPS50: legacy per-port publish kept in the allowlist).
+ * THE one list.
  */
 export const LOCAL_HOSTS = new Set([
   'localhost',

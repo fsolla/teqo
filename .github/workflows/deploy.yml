@@ -86,7 +86,7 @@ jobs:
       - name: Unit tests (full suite)
         run: pnpm test:unit
 
-      - name: Prepare database URL (int service)
+      - name: Prepare database URL
         run: |
           set -euo pipefail
           echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test" >> "$GITHUB_ENV"
@@ -94,9 +94,9 @@ jobs:
           # must win through the .env.test.local layer (same mechanism
           # `pnpm worktree next` uses).
           echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test" > .env.test.local
-      - name: Migrate (int database)
+      - name: Migrate
         run: pnpm migrate
-      - name: Seed minimal (int database)
+      - name: Seed minimal
         run: pnpm db:seed:minimal
       - name: Integration tests (full suite)
         env:
@@ -106,7 +106,7 @@ jobs:
           VITEST_MAX_WORKERS: 4
         run: pnpm test:int
 
-      - name: Reset database (single service)
+      - name: Reset database (drop → migrate → seed)
         # OPS88: one Postgres per run — the e2e build starts from the same
         # clean baseline (drop schema → migrate → seed:minimal) instead of a
         # second container. The full suite always runs here, so only the

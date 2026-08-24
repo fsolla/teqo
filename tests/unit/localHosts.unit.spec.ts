@@ -11,7 +11,7 @@ describe('LOCAL_HOSTS (OPS50/OPS62 — self-hosted runner services by name, lega
     }
   })
 
-  it('admits the job-network service names (OPS62 X1: no host publish)', () => {
+  it('keeps the legacy job-network service names in the allowlist (OPS62 X1; postgres-build dormant since OPS88)', () => {
     expect(LOCAL_HOSTS.has('postgres-int')).toBe(true)
     expect(LOCAL_HOSTS.has('postgres-build')).toBe(true)
   })

@@ -125,7 +125,8 @@ const main = async () => {
   }
 
   // --- Phase 2 (expensive) — only when phase 1 would have been green ---
-  const needsDb = scope.test.mode !== 'none' || scope.build.mode !== 'none'
+  const needsDb =
+    scope.test.mode !== 'none' || scope.build.mode !== 'none' || scope.e2e.mode === 'selected'
   if (needsDb) {
     console.log('\n[gate:ci] ▶ preflight (teqo_test)')
     const dbOk = await diagnoseDatabaseTarget({
@@ -156,13 +157,15 @@ const main = async () => {
     console.log('\n[gate:ci] ⊘ test:int skipped (no src/tests blast radius)')
   }
 
-  // OPS88: mirror of the CI single-Postgres reset — the build phase starts
-  // from the same clean baseline (drop schema → migrate → seed:minimal) the
-  // e2e build would get in CI, instead of int fixture residue.
-  if (scope.build.mode === 'none' && scope.e2e.mode !== 'selected') {
-    console.log('\n[gate:ci] ⊘ db:reset skipped (no build/e2e phase)')
-  } else {
+  // OPS88: mirror of the CI single-Postgres reset — the build phase below
+  // starts from the same clean baseline (drop schema → migrate → seed:minimal)
+  // the e2e build gets in CI, instead of int fixture residue. Same condition
+  // as the CI step. (The gate still builds the default `.next`, not
+  // `.next-e2e` — e2e never runs here, OPS72.)
+  if (scope.build.mode !== 'none' || scope.e2e.mode === 'selected') {
     run('db:reset', 'pnpm', ['db:reset'], dbEnv)
+  } else {
+    console.log('\n[gate:ci] ⊘ db:reset skipped (no build/e2e phase)')
   }
 
   if (scope.build.mode === 'none') {

@@ -155,7 +155,7 @@ jobs:
       - name: Unit tests (changed since PR base, full on empty selection)
         if: steps.scope.outputs.test_mode == 'changed'
         run: node scripts/vitest-changed-or-full.mjs --suite unit --base origin/${{ github.base_ref }}
-      - name: Prepare database URL (int service)
+      - name: Prepare database URL
         run: |
           set -euo pipefail
           echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test" >> "$GITHUB_ENV"
@@ -163,9 +163,9 @@ jobs:
           # must win through the .env.test.local layer (same mechanism
           # `pnpm worktree next` uses).
           echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5432/teqo_test" > .env.test.local
-      - name: Migrate (int database)
+      - name: Migrate
         run: pnpm migrate
-      - name: Seed minimal (int database)
+      - name: Seed minimal
         run: pnpm db:seed:minimal
 
       - name: Integration tests (full suite)

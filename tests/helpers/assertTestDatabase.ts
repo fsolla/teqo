@@ -9,10 +9,11 @@
  * looks test-like.
  */
 
-// Self-hosted Forgejo runner: services are reached by NAME on the job network
-// (postgres-int / postgres-build, OPS62 X1) or, on the legacy per-port
-// publish, through the bridge gateway IP (RFC1918). Same source as the CLI
-// guard so both guards admit exactly the same hosts (OPS50/OPS62).
+// `postgres-int`/`postgres-build` are legacy Forgejo job-network service
+// names (OPS62 X1), kept in the allowlist defensively — since OPS88 only one
+// service (`postgres-int`) exists, reached at localhost:5432 on hosted
+// runners. Same source as the CLI guard so both guards admit exactly the
+// same hosts (OPS50/OPS62).
 // TEST_DATABASE_NAME_RE is the shared name contract (cli.mjs) — the same
 // regex `scripts/db-reset.mjs` uses before dropping the schema (OPS88).
 import { defaultGatewayHost, TEST_DATABASE_NAME_RE } from '../../scripts/lib/cli.mjs'
