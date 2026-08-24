@@ -8,52 +8,9 @@
     }
   },
   "provider": {
-    "cheapest-inference": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "Cheapest Inference",
-      "options": {
-        "baseURL": "https://api.cheapestinference.com/v1"
-      },
+    "vercel": {
       "models": {
-        "deepseek-v4-flash": {
-          "name": "DeepSeek V4 Flash",
-          "reasoning": true,
-          "interleaved": {
-            "field": "reasoning_content"
-          },
-          "options": {
-            "thinking": {
-              "type": "enabled"
-            }
-          },
-          "limit": {
-            "context": 1000000,
-            "output": 384000
-          },
-          "variants": {
-            "low": {
-              "reasoningEffort": "low"
-            },
-            "high": {
-              "reasoningEffort": "high"
-            },
-            "max": {
-              "reasoningEffort": "max",
-              "textVerbosity": "low",
-              "reasoningSummary": "auto"
-            }
-          }
-        },
-        "mimo-v2.5": {
-          "name": "MiMo v2.5",
-          "reasoning": true,
-          "interleaved": {
-            "field": "reasoning_content"
-          },
-          "limit": {
-            "context": 1000000,
-            "output": 128000
-          },
+        "deepseek/deepseek-v4-flash": {
           "variants": {
             "low": {
               "reasoningEffort": "low"
@@ -65,12 +22,8 @@
               "reasoningEffort": "max"
             }
           }
-        }
-      }
-    },
-    "vercel": {
-      "models": {
-        "deepseek/deepseek-v4-flash": {
+        },
+        "deepseek/deepseek-v4-flash-0731": {
           "variants": {
             "low": {
               "reasoningEffort": "low"
