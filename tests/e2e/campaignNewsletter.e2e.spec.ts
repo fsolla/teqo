@@ -144,9 +144,11 @@ test.describe('Campaign home novidades capture', () => {
       section.getByRole('heading', { name: 'Receba as novidades da campanha' }),
     ).toBeVisible()
 
-    // The hero CTA is the shortcut into the section (smooth anchor).
+    // The hero CTA is the shortcut into the section (smooth anchor). The URL
+    // legitimately carries the `?e2e=…` cache-buster query (OPS83), so assert
+    // only the hash — no trailing `$`.
     await page.locator('[data-cta="secondary"]').click()
-    await expect(page).toHaveURL(/#novidades$/)
+    await expect(page).toHaveURL(/#novidades/)
     await expect(section).toBeInViewport()
 
     // The toggle is pre-selected: the default level is "time".

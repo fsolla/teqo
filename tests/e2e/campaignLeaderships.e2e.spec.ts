@@ -81,6 +81,10 @@ test.describe('campaign leaderships list', () => {
     await page.goto(`${campaign.baseURL}/campanha/liderancas?q=${encodeURIComponent(contactName)}`)
     await expect(campaignPageChrome(page, 'Lideranças')).toBeVisible()
     await page.waitForLoadState('networkidle')
+    // The cell chips stream with the list's RSC chunk; under 4-worker load the
+    // chip link can land after `networkidle` settles (OPS83 run #16: B34
+    // flaked on the initial chip). Let the stream commit before asserting.
+    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
 
     // The chip is still a link to the município — editing did not cost the
     // navigation the column had before.

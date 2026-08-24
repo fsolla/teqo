@@ -67,11 +67,32 @@ export const createCampaignNotifications = async (
   input: Omit<CreateCampaignNotificationInput, 'recipientID'>,
   req?: NotificationWriteRequest,
 ): Promise<void> => {
-  const uniqueRecipients = [...new Set(recipientIDs)]
-  if (uniqueRecipients.length === 0) return
+  const candidates = [...new Set(recipientIDs)].filter((id) => Number.isFinite(id))
+  if (candidates.length === 0) return
+
+  // A resolved recipient can be concurrently deleted (a staff member removed
+  // from a município's `advisors`, or a parallel writer's cleanup) between the
+  // recipient resolution and this insert. Inserting for a stale id aborts the
+  // WHOLE host transaction with an FK violation — observed crashing
+  // `notifyMunicipalityUpdateCreated` under the parallel e2e suite (OPS83 run
+  // #16) and the same hazard exists in production when an advisor is removed
+  // while a notification fan-out is in flight. Re-validate existence before
+  // the fan-out so a vanished recipient is skipped, never a transaction kill.
+  const existing = await payload.find({
+    collection: 'campaignUser',
+    where: { id: { in: candidates } },
+    depth: 0,
+    limit: 500,
+    pagination: false,
+    overrideAccess: true,
+    req,
+  })
+  const existingIDs = new Set(existing.docs.map((doc) => doc.id))
+  const recipients = candidates.filter((id) => existingIDs.has(id))
+  if (recipients.length === 0) return
 
   await Promise.all(
-    uniqueRecipients.map((recipientID) =>
+    recipients.map((recipientID) =>
       createCampaignNotification(
         payload,
         {
