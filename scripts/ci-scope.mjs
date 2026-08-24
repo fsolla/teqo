@@ -5,11 +5,15 @@
  * classify* / selectE2eSpecs result. Used by the `scope` step (id: scope) in
  * ci-pr.yml — its outputs drive `if:` on the heavy steps.
  *
+ * e2e modes (OPS86): none | selected | curated | unmapped-risk — the PR CI
+ * gates the e2e step on `selected || curated` and fails closed on
+ * `unmapped-risk`; the full suite stays in the deploy verify.
+ *
  * Base ref: $GITHUB_BASE_REF (PR target) or origin/main locally.
  */
 import { execFileSync } from 'node:child_process'
 
-import { E2E_AFFECTED_MANIFEST } from './lib/e2e-affected-manifest.mjs'
+import { E2E_AFFECTED_MANIFEST, E2E_CURATED_SPECS } from './lib/e2e-affected-manifest.mjs'
 import {
   classifyBuildScope,
   classifyStaticScope,
@@ -33,7 +37,9 @@ try {
       code: { mode: 'code', reason: full.reason },
       build: { mode: 'build', reason: full.reason },
       test: { ...full },
-      e2e: { mode: 'full', specs: [], reason: full.reason, unmapped: [] },
+      // The PR can never run e2e full — without a merge-base the safest
+      // never-zero answer is the curated cross-section (OPS86).
+      e2e: { mode: 'curated', specs: [...E2E_CURATED_SPECS], reason: full.reason, unmapped: [] },
     }),
   )
   process.exit(0)
@@ -52,9 +58,11 @@ const files = raw
 
 const e2e = selectE2eSpecs(files, E2E_AFFECTED_MANIFEST)
 if (e2e.unmapped.length > 0) {
-  console.error(
-    `[ci-scope] src/ paths with no e2e manifest mapping:\n  ${e2e.unmapped.join('\n  ')}`,
-  )
+  const label =
+    e2e.mode === 'unmapped-risk'
+      ? '[ci-scope] RISK-AREA paths with no e2e manifest mapping (CI will fail closed):'
+      : '[ci-scope] src/ paths with no e2e manifest mapping (running the home smoke):'
+  console.error(`${label}\n  ${e2e.unmapped.join('\n  ')}`)
 }
 
 console.log(

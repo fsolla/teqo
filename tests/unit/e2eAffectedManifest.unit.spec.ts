@@ -5,7 +5,11 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { E2E_AFFECTED_MANIFEST } from '../../scripts/lib/e2e-affected-manifest.mjs'
+import {
+  E2E_AFFECTED_MANIFEST,
+  E2E_CURATED_SPECS,
+  E2E_RISK_PREFIXES,
+} from '../../scripts/lib/e2e-affected-manifest.mjs'
 
 const E2E_DIR = join(__dirname, '../e2e')
 
@@ -41,5 +45,31 @@ describe('E2E_AFFECTED_MANIFEST (OPS5)', () => {
     // mode); this pins the reverse direction: no manifest entry is dead.
     const mapped = new Set(E2E_AFFECTED_MANIFEST.flatMap((entry) => entry.specs))
     expect(mapped.size).toBeGreaterThanOrEqual(10)
+  })
+
+  it('freezes the curated high-risk e2e set (OPS86 — deliberate growth only)', () => {
+    // The curated set is the never-zero answer for high-risk PR diffs; change
+    // it on purpose (cost of the PR CI high-risk path), not by drift.
+    expect(E2E_CURATED_SPECS).toEqual([
+      'campaignPermissionProfile',
+      'campaignDemandVisibility',
+      'campaignAiTranscribe',
+      'campaignAgendaFeed',
+      'campaignNewsletter',
+    ])
+    const onDisk = new Set(specNamesOnDisk())
+    for (const spec of E2E_CURATED_SPECS) {
+      expect(onDisk.has(spec), spec).toBe(true)
+    }
+  })
+
+  it('keeps every risk prefix covered by a manifest entry (OPS86 fail-closed net)', () => {
+    // The classifier fails closed when a risk-area file matches no entry; if
+    // the entries drift out of sync with the risk prefixes, that fail-closed
+    // fires on every diff in the area. Pin the pair together.
+    const mappedPrefixes = new Set(E2E_AFFECTED_MANIFEST.flatMap((entry) => entry.prefixes))
+    for (const prefix of E2E_RISK_PREFIXES) {
+      expect(mappedPrefixes.has(prefix), prefix).toBe(true)
+    }
   })
 })

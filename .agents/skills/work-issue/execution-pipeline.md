@@ -39,9 +39,15 @@ antes do deploy**.
   `--no-deps --project=<família>`).
 - **CI/PR:** roda só o **blast radius** detectado (`ci-scope.mjs`, modo
   `selected`) — nunca `full`. Diff high-risk (schema/lockfile/harness)
-  classifica `full` → o PR não roda e2e: o full fica para o `verify` do
-  deploy manual (antes de publicar) e, nesse mesmo diff, o espelho local
-  roda full.
+  classifica **`curated`** (OPS86): o PR roda o conjunto curado de e2e —
+  nunca zero; o full fica para o `verify` do deploy manual (antes de
+  publicar) e, nesse mesmo diff, o espelho local roda full. Arquivo de área
+  de risco sem entry no manifesto (`src/utilities/access`, `src/lib/schemas`,
+  `campaignPushClient`, `src/utilities/ai`) classifica `unmapped-risk` e o PR
+  **falha** listando os arquivos — a correção é adicionar a entry no
+  `E2E_AFFECTED_MANIFEST` (`scripts/lib/e2e-affected-manifest.mjs`).
+  Unit/int `changed` passam por `scripts/vitest-changed-or-full.mjs`:
+  seleção vazia cai na suíte full — nunca verde com 0 testes.
 - **Limitação da #72 (S3-FOLLOWUP):** e2e local com `--no-deps` + projetos
   paralelos (`--project=a --project=b`) colide no `seedTestUser` (delete +
   create concorrentes nos `beforeAll` → `ValidationError: email` e falhas

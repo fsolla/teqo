@@ -4,8 +4,45 @@
  * of truth. Granularity is the DOMAIN prefix on purpose — finer grains rot.
  * Spec names exist as tests/e2e/<name>.e2e.spec.ts (pinned by unit test).
  * Prefixes are repo-relative POSIX paths; matching is startsWith.
+ *
+ * OPS86 additions: `E2E_CURATED_SPECS` (the never-zero e2e set for high-risk
+ * PR diffs) and `E2E_RISK_PREFIXES` (surfaces whose blast radius is the whole
+ * product — RBAC, form schemas, push, AI). Both are pinned by unit invariants
+ * (`e2eAffectedManifest.unit.spec.ts`): the curated set is frozen and every
+ * risk prefix must stay covered by a manifest entry, so a diff in those areas
+ * can never select zero e2e in silence.
  */
 const CAMPAIGN_APP = 'src/app/(campaign)/campanha/(app)'
+
+/**
+ * Curated e2e cross-section for high-risk diffs (OPS86). High-risk used to
+ * mean zero e2e on the PR (OPS72); this set is the smallest stable coverage of
+ * the risk surfaces — RBAC/permission profiles, demand visibility, AI
+ * transcription, agenda feed, newsletter capture. Frozen by design: growing
+ * it requires editing the invariant pin on purpose.
+ */
+export const E2E_CURATED_SPECS = [
+  'campaignPermissionProfile',
+  'campaignDemandVisibility',
+  'campaignAiTranscribe',
+  'campaignAgendaFeed',
+  'campaignNewsletter',
+]
+
+/**
+ * Risk-area source prefixes (OPS86). A diff touching them must never select
+ * zero e2e: the entries below map each prefix to specs, and the classifier
+ * fails closed (mode `unmapped-risk`) if a matching file has no entry — the
+ * net for manifest drift. Deliberately NOT "all of src/" (the intention's
+ * "map everything" rabbit hole).
+ */
+export const E2E_RISK_PREFIXES = [
+  'src/utilities/access',
+  'src/utilities/campaignAccess.ts',
+  'src/lib/schemas',
+  'src/utilities/campaignPushClient.ts',
+  'src/utilities/ai',
+]
 
 export const E2E_AFFECTED_MANIFEST = [
   {
@@ -141,6 +178,34 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/utilities/contacts',
     ],
     specs: ['campaignContacts'],
+  },
+  // OPS86 — risk surfaces. RBAC/visibility specs were orphaned (only ran in
+  // `full`); these entries map the whole access surface plus form schemas,
+  // push and AI transcription. Each prefix is in `E2E_RISK_PREFIXES` and the
+  // invariant pins require the pair to stay in sync.
+  {
+    prefixes: ['src/utilities/access', 'src/utilities/campaignAccess.ts'],
+    specs: ['campaignPermissionProfile', 'campaignDemandVisibility'],
+  },
+  {
+    prefixes: ['src/utilities/ai'],
+    specs: ['campaignAiTranscribe'],
+  },
+  {
+    // Zod input schemas surface in the browser through form flows; the
+    // public-site and newsletter specs exercise those flows end to end.
+    prefixes: ['src/lib/schemas'],
+    specs: ['frontend', 'campaignNewsletter'],
+  },
+  {
+    // Web Push client — the opt-in toast mounts on the campaign shell, so a
+    // push diff wakes the home smoke (console-error fail-fast covers it).
+    prefixes: ['src/utilities/campaignPushClient.ts'],
+    specs: ['campaignHomeActions'],
+  },
+  {
+    prefixes: ['src/app/(campaign)/campanha/agenda/ical', 'src/utilities/calendarFeed'],
+    specs: ['campaignAgendaFeed'],
   },
   // Domains without a dedicated e2e family still wake campaign home smoke so
   // the affected classifier cannot return mode=none on an unmapped domain dir.
