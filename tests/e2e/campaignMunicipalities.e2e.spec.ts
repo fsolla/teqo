@@ -16,6 +16,7 @@ import {
   mintCampaignSession,
   seedCampaignSession,
   test,
+  waitForStreamSettled,
   type CampaignE2EOwnership,
   type CampaignSessionUser,
 } from './fixtures/campaignE2EFixtures.js'
@@ -44,16 +45,6 @@ const visibleMunicipalityButton = (page: Page, name: string) =>
   municipalityContainer(page)
     .getByRole('button', { name: new RegExp(`^${escapeRegExp(name)}(?: —|$)`) })
     .filter({ visible: true })
-
-/**
- * Waits for the municipality list's RSC stream to commit (no transient `S:`
- * shell copies) before interacting with the rows/options again. Chip removal
- * and omnibox facet changes are client-side `navigate` calls that re-stream
- * the list; clicking an option against the stale DOM races that stream
- * (observed in the OPS83 verify run #15 at 4 workers).
- */
-const settleMunicipalityStream = (page: Page) =>
-  page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
 
 const ensureWideMunicipalityList = async (page: Page) => {
   // The resizable panel hydrates independently from the RSC list and can
@@ -150,7 +141,7 @@ test.describe('Municípios — jornadas por papel', () => {
     // C106 — the editar page streams heavy content (detail view model +
     // advisor options + stateDeputy options); the shell's `S:` copies must
     // settle before the advisor checkbox option can be reliably checked.
-    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    await waitForStreamSettled(page)
     await page.getByLabel(`${advisor.name} `, { exact: false }).check()
     await page.getByRole('button', { name: 'Salvar assessores' }).click()
     await expect(page.getByText('Assessores atualizados.')).toBeVisible()
@@ -443,7 +434,7 @@ test.describe('Municípios — jornadas por papel', () => {
     // Dobradinha by contact name → chip + only municipality A remains.
     await omnibox.fill(deputyName)
     await listbox.getByRole('option', { name: new RegExp(`^${deputyName} \\(BR176\\)$`) }).click()
-    await settleMunicipalityStream(page)
+    await waitForStreamSettled(page)
     await expect(removeChip(`Dobradinha: ${deputyName} (BR176)`)).toBeVisible()
     await expect(tableRows).toHaveCount(1)
     await expect(page.getByRole('link', { name: municipalityA.name, exact: true })).toBeVisible()
@@ -453,24 +444,24 @@ test.describe('Municípios — jornadas por papel', () => {
     // touching the omnibox again (OPS83: the next option click raced this).
     await removeChip(`Dobradinha: ${deputyName} (BR176)`).click()
     await expect(removeChip(`Dobradinha: ${deputyName} (BR176)`)).toHaveCount(0)
-    await settleMunicipalityStream(page)
+    await waitForStreamSettled(page)
 
     // Partido by acronym → the same single municipality (its only dobradinha).
     await omnibox.fill('BR176')
     await listbox.getByRole('option', { name: 'BR176', exact: true }).click()
-    await settleMunicipalityStream(page)
+    await waitForStreamSettled(page)
     await expect(removeChip('Partido: BR176')).toBeVisible()
     await expect(tableRows).toHaveCount(1)
     await expect(page.getByRole('link', { name: municipalityA.name, exact: true })).toBeVisible()
 
     await removeChip('Partido: BR176').click()
     await expect(removeChip('Partido: BR176')).toHaveCount(0)
-    await settleMunicipalityStream(page)
+    await waitForStreamSettled(page)
 
     // Liderança by contact name → municipality B only.
     await omnibox.fill(leadership.contactName)
     await listbox.getByRole('option', { name: new RegExp(`^${leadership.contactName}$`) }).click()
-    await settleMunicipalityStream(page)
+    await waitForStreamSettled(page)
     await expect(removeChip(`Liderança: ${leadership.contactName}`)).toBeVisible()
     await expect(tableRows).toHaveCount(1)
     await expect(page.getByRole('link', { name: municipalityB.name, exact: true })).toBeVisible()
@@ -725,7 +716,7 @@ test.describe('Municípios — jornadas por papel', () => {
     // enough (observed in the OPS83 verify run #15): poll until the specific
     // link lands in the DOM, then assert visibility (`.first()` only disambiguates
     // if a duplicate ever appears — the count poll is the real gate).
-    await settleMunicipalityStream(page)
+    await waitForStreamSettled(page)
     const leadershipLink = page.getByRole('link', { name: contact.name })
     await expect.poll(() => leadershipLink.count(), { timeout: 15_000 }).toBeGreaterThan(0)
     await expect(leadershipLink.first()).toBeVisible()
@@ -737,7 +728,7 @@ test.describe('Municípios — jornadas por papel', () => {
     await page.goto(`${campaign.baseURL}/campanha/municipios/${administered.slug}`)
     // The overview pledges panel streams under load; the `Média` estimate
     // field can land after `goto` settles (OPS83 run #16: fill timed out).
-    await settleMunicipalityStream(page)
+    await waitForStreamSettled(page)
     const estimateInput = page.getByLabel('Média', { exact: true })
     await expect.poll(() => estimateInput.count(), { timeout: 20_000 }).toBeGreaterThan(0)
     await estimateInput.fill('90')
@@ -977,7 +968,7 @@ test.describe('Municípios — filtro e cards sem moldura no celular (B184)', ()
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
     // C106 — dynamic pages stream a transient hidden `#S:*` copy of the shell;
     // strict-mode locators below would match BOTH copies while it settles.
-    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    await waitForStreamSettled(page)
 
     // The mobile standard hides the field label; the input keeps its name via
     // aria-label, and the filter form is a borderless sticky bar.
@@ -1248,7 +1239,7 @@ test.describe('Municípios — barra colada e card denso (B196)', () => {
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/municipios`)
     // C106 — dynamic pages stream a transient hidden `#S:*` copy of the shell.
-    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    await waitForStreamSettled(page)
 
     const topBar = mobileTopBar(page)
     const omniboxInput = page.getByRole('combobox', { name: 'Filtrar municípios' })
@@ -1328,7 +1319,7 @@ test.describe('Municípios — barra colada e card denso (B196)', () => {
     )
     // C106 — dynamic pages stream a transient hidden `#S:*` copy of the shell;
     // geometry assertions must wait it out or they measure the stream copy.
-    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    await waitForStreamSettled(page)
     const card = cardFor(page, municipality.name)
     await expect(card).toBeVisible()
 
@@ -1403,7 +1394,7 @@ test.describe('Municípios — barra colada e card denso (B196)', () => {
     // Five advisors: all on ONE row, each covering the start of the next —
     // the overlap is proportional to the count (no wrap, no cap, no "…").
     await page.goto(`${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(crowded.name)}`)
-    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    await waitForStreamSettled(page)
     const crowdedCard = cardFor(page, crowded.name)
     await expect(crowdedCard).toBeVisible()
     // The completion footer proves the filtered list finished streaming — the
@@ -1462,7 +1453,7 @@ test.describe('Municípios — barra colada e card denso (B196)', () => {
     // Two advisors: same single row, a slight deliberate overlap — a pile at
     // the left, not one avatar in each corner (B200).
     await page.goto(`${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(sparse.name)}`)
-    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    await waitForStreamSettled(page)
     const sparseCard = cardFor(page, sparse.name)
     await expect(sparseCard).toBeVisible()
     // Same B196 stream-latency flake class as the `crowdedCard` footer above:
@@ -1566,7 +1557,7 @@ test.describe('Municípios — encaixes dos cards (B200)', () => {
     await page.goto(
       `${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(municipality.name)}`,
     )
-    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    await waitForStreamSettled(page)
     // The bar's own `pt-1` applying proves the stylesheet reached the page —
     // before that the form renders unstyled and measures ~79px (visible label).
     const form = page
@@ -1653,7 +1644,7 @@ test.describe('Municípios — encaixes dos cards (B200)', () => {
 
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(crowded.name)}`)
-    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    await waitForStreamSettled(page)
     const card = cardFor(page, crowded.name)
     await expect(card).toBeVisible()
     // The completion footer proves the filtered list finished streaming — the

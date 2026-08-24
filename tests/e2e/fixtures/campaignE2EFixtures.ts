@@ -555,6 +555,31 @@ export const checkRadixWhenHydrated = async (page: Page, label: string) => {
 }
 
 /**
+ * Waits for dynamic campaign pages to commit their RSC stream by polling
+ * until the browser has no transient hidden `#S:*` shell copies left.
+ *
+ * Every campaign page that loads via `await searchParams` can hold a
+ * transient hidden `div[id^="S:*"]` in the DOM while the RSC chunks land;
+ * class-based locators and click actions that race the stream see
+ * the stale copy (OPS83 verify #15 — observed flake at 4 workers).
+ *
+ * **The generic `S:` gate alone is not enough for some flows** (OPS83
+ * verified the dossiê tab needs a specific DOM poll after the settle).
+ * Pair with a focused poll when the assertion is on a specific element
+ * (e.g. `expect.poll(() => link.count()).toBeGreaterThan(0)`) rather
+ * than relying on the settle gate to prove the element exists.
+ *
+ * Default timeout: 15 000 ms (matching the OPS83-validated settle
+ * budget for campaign pages). Override via `options` for heavier pages.
+ */
+export const waitForStreamSettled = (page: Page, options?: { timeout?: number }) =>
+  page.waitForFunction(
+    () => document.querySelectorAll('div[id^="S:"]').length === 0,
+    undefined,
+    options,
+  )
+
+/**
  * OPS42 — waits out a pending dev-mode router navigation before the test
  * interacts. Next dev's hydration/router churn can commit a layout remount
  * (new chat provider, new textarea with `defaultValue=''`) ~150–500 ms AFTER
