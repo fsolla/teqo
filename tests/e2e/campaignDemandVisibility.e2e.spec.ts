@@ -1,6 +1,7 @@
 import {
   campaignPageChrome,
   expect,
+  expectPostResponse,
   test,
   type CampaignE2EFixture,
 } from './fixtures/campaignE2EFixtures.js'
@@ -92,16 +93,23 @@ test.describe('C143 — demand visibility (explicit responsibles)', () => {
     await campaign.sessionFor(context, responsible)
     await page.goto(demandURL)
     await page.getByRole('button', { name: `Remover ${peer.name}` }).click()
-    await page.getByRole('button', { name: 'Salvar responsáveis' }).click()
+    // The responsibles save is an optimistic server-action write — wait for the
+    // POST to land BEFORE swapping to the peer, or the peer's navigation can
+    // race the revoke (OPS83 run #16: the accessible demand still served).
+    await Promise.all([
+      expectPostResponse(page, demandURL),
+      page.getByRole('button', { name: 'Salvar responsáveis' }).click(),
+    ])
     await expect(page.getByRole('button', { name: `Remover ${peer.name}` })).toHaveCount(0)
 
-    // The peer already rendered THIS URL (granted, line 88); the Next router
-    // cache serves the previous RSC payload on a plain goto even after the
-    // cookie swap (OPS83 run #15: the accessible demand showed instead of the
-    // 404). The route ignores unknown query params — bust the cache so the
-    // revoked access is observed from the server.
+    // The peer already rendered THIS URL (granted, line 88), so the Next RSC
+    // cache can serve the previous payload on a plain goto even after the
+    // cookie swap (OPS83 run #15/#16). Break the router context through a
+    // blank page so the 404 boundary is fetched fresh from the server.
     await campaign.sessionFor(context, peer)
-    await page.goto(`${demandURL}?e2e=${Date.now()}`)
+    await page.goto('about:blank')
+    await expect(page).toHaveURL(/about:blank/)
+    await page.goto(demandURL)
     await expect(page.getByText('This page could not be found.')).toBeVisible()
   })
 })

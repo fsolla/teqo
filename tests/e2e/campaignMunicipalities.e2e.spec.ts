@@ -443,6 +443,7 @@ test.describe('Municípios — jornadas por papel', () => {
     // Dobradinha by contact name → chip + only municipality A remains.
     await omnibox.fill(deputyName)
     await listbox.getByRole('option', { name: new RegExp(`^${deputyName} \\(BR176\\)$`) }).click()
+    await settleMunicipalityStream(page)
     await expect(removeChip(`Dobradinha: ${deputyName} (BR176)`)).toBeVisible()
     await expect(tableRows).toHaveCount(1)
     await expect(page.getByRole('link', { name: municipalityA.name, exact: true })).toBeVisible()
@@ -457,6 +458,7 @@ test.describe('Municípios — jornadas por papel', () => {
     // Partido by acronym → the same single municipality (its only dobradinha).
     await omnibox.fill('BR176')
     await listbox.getByRole('option', { name: 'BR176', exact: true }).click()
+    await settleMunicipalityStream(page)
     await expect(removeChip('Partido: BR176')).toBeVisible()
     await expect(tableRows).toHaveCount(1)
     await expect(page.getByRole('link', { name: municipalityA.name, exact: true })).toBeVisible()
@@ -468,6 +470,7 @@ test.describe('Municípios — jornadas por papel', () => {
     // Liderança by contact name → municipality B only.
     await omnibox.fill(leadership.contactName)
     await listbox.getByRole('option', { name: new RegExp(`^${leadership.contactName}$`) }).click()
+    await settleMunicipalityStream(page)
     await expect(removeChip(`Liderança: ${leadership.contactName}`)).toBeVisible()
     await expect(tableRows).toHaveCount(1)
     await expect(page.getByRole('link', { name: municipalityB.name, exact: true })).toBeVisible()
@@ -732,7 +735,12 @@ test.describe('Municípios — jornadas por papel', () => {
 
     // Advisor records an internal estimate on the overview pledges panel.
     await page.goto(`${campaign.baseURL}/campanha/municipios/${administered.slug}`)
-    await page.getByLabel('Média', { exact: true }).fill('90')
+    // The overview pledges panel streams under load; the `Média` estimate
+    // field can land after `goto` settles (OPS83 run #16: fill timed out).
+    await settleMunicipalityStream(page)
+    const estimateInput = page.getByLabel('Média', { exact: true })
+    await expect.poll(() => estimateInput.count(), { timeout: 20_000 }).toBeGreaterThan(0)
+    await estimateInput.fill('90')
     await page.getByLabel('Justificativa').fill('Histórico da região indica menos.')
     await page.getByRole('button', { name: 'Salvar estimativa' }).click()
     await expect(page.getByText('Média: 90')).toBeVisible()

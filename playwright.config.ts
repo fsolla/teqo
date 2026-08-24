@@ -182,7 +182,13 @@ export default defineConfig({
     {
       name: 'admin',
       testMatch: /admin\.e2e\.spec\.ts/,
-      dependencies: isProdMode ? [] : ['frontend'],
+      // Serialize behind `frontend` in BOTH modes: admin's Instagram sync
+      // panel and the frontend IG feed specs share the instagram stub and the
+      // `social-feed-settings` global (single server process). Drop the
+      // dependency in prod and the two projects run concurrently, letting a
+      // frontend IG test flip the stub/global while admin:134 seeds and syncs
+      // (OPS83 run #16: hard-failed all 3 retries on the shared stub state).
+      dependencies: ['frontend'],
       fullyParallel: false,
       use: { ...devices['Desktop Chrome'], channel: 'chromium' },
     },
