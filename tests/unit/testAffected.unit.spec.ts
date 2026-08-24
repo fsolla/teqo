@@ -129,6 +129,17 @@ describe('selectE2eSpecs (OPS5)', () => {
     }
   })
 
+  it('reports unmapped risk-area files even when a high-risk path wins (OPS86+)', () => {
+    const result = selectE2eSpecs(
+      [changed('src/migrations/x.ts'), changed('src/utilities/access/brandNewPolicy.ts')],
+      manifest,
+    )
+    expect(result.mode).toBe('curated')
+    expect(result.specs).toEqual(E2E_CURATED_SPECS)
+    expect(result.unmapped).toEqual(['src/utilities/access/brandNewPolicy.ts'])
+    expect(result.reason).toContain('curated + risk files without mapping')
+  })
+
   it('wakes the home smoke for unmapped non-risk src files (never zero, OPS86)', () => {
     const result = selectE2eSpecs([changed('src/utilities/brandNewModule.ts')], manifest)
     expect(result.mode).toBe('selected')

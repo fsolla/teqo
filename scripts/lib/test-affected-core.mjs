@@ -204,6 +204,31 @@ export function classifyBuildScope(files) {
 const E2E_SPEC_PATTERN = /^tests\/e2e\/[^/]+\.e2e\.spec\.ts$/
 
 /**
+ * Walk files and collect src/ paths that have no manifest match.
+ * This is the single source of truth for unmapped paths in selectE2eSpecs — the
+ * loop below consumes this list (via Set) instead of re-collecting.
+ * Mirrors loop semantics: skip deleted e2e spec files, only src/ paths, startsWith.
+ * @param {{ path: string, status: string }[]} files
+ * @param {{ prefixes: string[], specs: string[] }[]} manifest
+ * @returns {string[]}
+ */
+function collectUnmappedSrc(files, manifest) {
+  const unmapped = []
+  for (const { path, status } of files) {
+    // A deleted spec file cannot run — selecting it would make CI fail with
+    // "No tests found" (the stale-manifest variant of a spec rename).
+    if (status === 'D' && E2E_SPEC_PATTERN.test(path)) continue
+    if (E2E_SPEC_PATTERN.test(path)) continue
+    if (!path.startsWith('src/')) continue
+    if (manifest.some((entry) => entry.prefixes.some((prefix) => path.startsWith(prefix)))) {
+      continue
+    }
+    unmapped.push(path)
+  }
+  return unmapped
+}
+
+/**
  * Decide the Playwright scope for a PR diff.
  * @param {{ path: string, status: string }[]} files
  * @param {{ prefixes: string[], specs: string[] }[]} manifest prefix → spec names.
@@ -212,7 +237,9 @@ const E2E_SPEC_PATTERN = /^tests\/e2e\/[^/]+\.e2e\.spec\.ts$/
  *
  * Modes (OPS86):
  * - `curated` — high-risk diff: run `E2E_CURATED_SPECS`, never zero (the
- *   full suite stays in the deploy verify).
+ *   full suite stays in the deploy verify). If risk-area files without a
+ *   manifest entry exist, they are included in `unmapped` and appended to
+ *   `reason` (OPS86+: diagnostic visibility even when curated wins).
  * - `unmapped-risk` — a risk-area file (`E2E_RISK_PREFIXES`) matched no
  *   manifest entry: the CI fails closed listing the files instead of going
  *   green with zero e2e.
@@ -221,17 +248,28 @@ const E2E_SPEC_PATTERN = /^tests\/e2e\/[^/]+\.e2e\.spec\.ts$/
  * - `none` — no e2e-relevant changes (docs-only).
  */
 export function selectE2eSpecs(files, manifest) {
+  // OPS86+: compute unmapped src/ files before any early-return so risk-area
+  // files without a manifest entry surface in the curated result (mode stays
+  // curated — the curated cross-section covers risk surfaces).
+  const unmappedSrc = collectUnmappedSrc(files, manifest)
+  const unmappedRisk = unmappedSrc.filter((path) =>
+    E2E_RISK_PREFIXES.some((prefix) => path.startsWith(prefix)),
+  )
   if (files.some(({ path }) => isHighRisk(path))) {
     return {
       mode: 'curated',
       specs: [...E2E_CURATED_SPECS],
       reason:
-        'diff touches a high-risk path (schema/lockfile/test harness) — curated e2e cross-section; full suite stays in the deploy verify',
-      unmapped: [],
+        'diff touches a high-risk path (schema/lockfile/test harness) — curated e2e cross-section; full suite stays in the deploy verify' +
+        (unmappedRisk.length > 0
+          ? ` — curated + risk files without mapping: ${unmappedRisk.join(', ')}`
+          : ''),
+      unmapped: unmappedRisk,
     }
   }
+  // Main loop: collect specs. The hoisted unmappedSrc list is the single source
+  // of truth for unmapped; unmapped files are skipped via `continue`.
   const specs = new Set()
-  const unmapped = []
   for (const { path, status } of files) {
     // A deleted spec file cannot run — selecting it would make CI fail with
     // "No tests found" (the stale-manifest variant of a spec rename).
@@ -244,31 +282,26 @@ export function selectE2eSpecs(files, manifest) {
     const matches = manifest.filter((entry) =>
       entry.prefixes.some((prefix) => path.startsWith(prefix)),
     )
-    if (matches.length === 0) {
-      unmapped.push(path)
-      continue
-    }
+    if (matches.length === 0) continue // already in unmappedSrc
     for (const match of matches) for (const spec of match.specs) specs.add(spec)
   }
-  const unmappedRisk = unmapped.filter((path) =>
-    E2E_RISK_PREFIXES.some((prefix) => path.startsWith(prefix)),
-  )
+  // unmappedRisk is already computed above; reuse for the fail-closed branch.
   if (unmappedRisk.length > 0) {
     return {
       mode: 'unmapped-risk',
       specs: [],
       reason: 'risk-area files have no e2e manifest mapping — add an entry (fail-closed)',
-      unmapped,
+      unmapped: unmappedSrc,
     }
   }
   if (specs.size === 0) {
-    if (unmapped.length > 0) {
+    if (unmappedSrc.length > 0) {
       return {
         mode: 'selected',
         specs: [E2E_SMOKE_FALLBACK_SPEC],
         reason:
           'src/ changes with no e2e manifest mapping — running the home smoke (never zero e2e)',
-        unmapped,
+        unmapped: unmappedSrc,
       }
     }
     return {
@@ -286,26 +319,26 @@ export function selectE2eSpecs(files, manifest) {
   // setup-only case drops out — and an unmapped src/ file still wakes the
   // smoke instead (OPS86: never zero e2e on touched code).
   if (specs.size === 1 && specs.has('setup')) {
-    if (unmapped.length > 0) {
+    if (unmappedSrc.length > 0) {
       return {
         mode: 'selected',
         specs: [E2E_SMOKE_FALLBACK_SPEC],
         reason: 'setup-only spec plus unmapped src/ changes — running the home smoke',
-        unmapped,
+        unmapped: unmappedSrc,
       }
     }
     return {
       mode: 'none',
       specs: [],
       reason: 'setup spec is dev-mode-only; prod-mode e2e cannot run it',
-      unmapped,
+      unmapped: unmappedSrc,
     }
   }
   return {
     mode: 'selected',
     specs: [...specs].sort(),
     reason: `${specs.size} spec(s) selected via manifest and changed specs`,
-    unmapped,
+    unmapped: unmappedSrc,
   }
 }
 
