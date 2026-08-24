@@ -52,7 +52,9 @@ describe('E2E_AFFECTED_MANIFEST (OPS5)', () => {
     // The curated set is the never-zero answer for high-risk PR diffs; change
     // it on purpose (cost of the PR CI high-risk path), not by drift.
     expect(E2E_CURATED_SPECS).toEqual([
-      'campaignPermissionProfile',
+      // OPS87 — deliberate: the permission-profile family moved to the
+      // browserless HTTP mode (same coverage, new spec name).
+      'campaignPermissionProfileHttp',
       'campaignDemandVisibility',
       'campaignAiTranscribe',
       'campaignAgendaFeed',
