@@ -1,7 +1,10 @@
 import 'server-only'
 
 import type { SocialFeedSetting } from '@/payload-types'
-import { getPostgresTransactionDatabase } from '@/utilities/postgresTransactionLocks'
+import {
+  getPostgresTransactionDatabase,
+  type PostgresTransactionDatabase,
+} from '@/utilities/postgresTransactionLocks'
 import {
   describeInstagramError,
   failedInstagramSyncStatus,
@@ -12,7 +15,6 @@ import {
   persistInstagramSnapshot,
   persistInstagramSyncStatus,
   successInstagramSyncStatus,
-  type InstagramPersistDatabase,
   type InstagramSyncStatus,
 } from '@/utilities/socialFeed/instagramFeed'
 import type { Payload, PayloadRequest } from 'payload'
@@ -56,7 +58,7 @@ export const instagramCredentialsChanged = (
 const resolvePersistDatabase = async (
   payload: Payload,
   req?: PayloadRequest,
-): Promise<InstagramPersistDatabase | null> => {
+): Promise<PostgresTransactionDatabase | null> => {
   if (!req?.transactionID) return null
   try {
     return await getPostgresTransactionDatabase(payload, req)

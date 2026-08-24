@@ -33,6 +33,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     const outcome = await syncInstagramFeed(payload, {
       signal: AbortSignal.timeout(INSTAGRAM_SYNC_TIMEOUT_MS),
     })
+    // `syncInstagramFeed` returns `{ ok: false, status: {} }` only when
+    // `isInstagramFeedConfigured` is false (no token/ID) — no snapshot/status
+    // was persisted, so no cache to bust.
+    if (!outcome.ok && Object.keys(outcome.status).length === 0) {
+      return NextResponse.json(
+        { ok: false, error: 'Instagram não configurado — informe token e ID da conta.' },
+        { status: 400 },
+      )
+    }
     revalidateTag(REVALIDATE_SOCIAL_FEED_TAG)
     return NextResponse.json({ ok: outcome.ok, status: outcome.status })
   } catch {
