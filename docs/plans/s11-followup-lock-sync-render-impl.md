@@ -101,6 +101,12 @@ intocado (o stub responde instantaneamente — o deadline de 5s é invisível pa
   real da Graph API em prod segurando a home stale → fix de 1 linha (signal no render).
 - Débito registrado na triage: hooks do sync do Google Calendar seguram row lock por I/O
   de rede (mesmo anti-padrão) → Issue #870 (C114-LOCK, depends #762).
+- Flake pré-existente observado na verificação e2e local: `admin.e2e.spec.ts:44` ("can
+  exclude an Instagram post through the content board picker") falha ~3/4 runs locais —
+  após clicar "Ocultar", o botão "Reexibir" não aparece em 10s. Reproduzido também na base
+  `a79d2d37` (não é regressão desta entrega) e sem relação com o deadline do hook
+  (superfície do picker; repro com `--workers=1`). Descartado deste lote pela regra
+  "pré-existente em main, fora do escopo" — bug separado se o usuário pedir.
 - Reduzir a constante compartilhada globalmente (E): não — ver rejeitadas.
 - Reordenar hooks (D), mexer no render path (`getInstagramFeed`/`instagramFeedView.ts`),
   no panel ou na rota de retry: não escopo.
