@@ -1,6 +1,7 @@
 import 'server-only'
 
 import type { SocialFeedSetting } from '@/payload-types'
+import type { PostgresTransactionDatabase } from '@/utilities/postgresTransactionLocks'
 import { sql } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 
@@ -331,10 +332,13 @@ export const describeInstagramError = (cause: unknown): string => {
  * database (`getPostgresTransactionDatabase`, S11) so the write lands inside
  * the global save's transaction — writing the same row from a second pool
  * connection while the save holds its row lock deadlocks on that lock.
+ *
+ * Owner is `PostgresTransactionDatabase` (`postgresTransactionLocks.ts`);
+ * this alias keeps the historical import path stable — prefer the owner type
+ * for new code.
+ * @deprecated Use `PostgresTransactionDatabase` directly.
  */
-export type InstagramPersistDatabase = {
-  execute: (query: ReturnType<typeof sql>) => Promise<unknown>
-}
+export type InstagramPersistDatabase = PostgresTransactionDatabase
 
 const countAffected = (result: unknown): number | null | undefined =>
   (result as { rowCount?: number | null } | undefined)?.rowCount
