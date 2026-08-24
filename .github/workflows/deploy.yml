@@ -43,8 +43,10 @@ jobs:
     services:
       # OPS71 — GitHub hosted: jobs run on the runner VM, so services are
       # reached at localhost on PUBLISHED host ports (fixed — each run is its
-      # own VM). Two isolated services — int on 5432, build+e2e on 5433 —
-      # keep e2e from inheriting int fixture residue.
+      # own VM). ONE service (OPS88): a deterministic reset (`pnpm db:reset`
+      # — drop schema → migrate → seed minimal) between the integration
+      # phase and the e2e build keeps e2e from inheriting int fixture
+      # residue, instead of a second container.
       postgres-int:
         image: postgres:17-alpine
         env:
@@ -53,19 +55,6 @@ jobs:
           POSTGRES_DB: teqo_test
         ports:
           - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U teqo"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 12
-      postgres-build:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: teqo
-          POSTGRES_PASSWORD: teqo
-          POSTGRES_DB: teqo_test
-        ports:
-          - 5433:5432
         options: >-
           --health-cmd "pg_isready -U teqo"
           --health-interval 5s
@@ -117,17 +106,12 @@ jobs:
           VITEST_MAX_WORKERS: 4
         run: pnpm test:int
 
-      - name: Prepare database URL (build/e2e service)
-        run: |
-          set -euo pipefail
-          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" >> "$GITHUB_ENV"
-          echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" > .env.test.local
-      - name: Migrate (build/e2e database)
-        run: pnpm migrate
-      - name: Seed minimal (build/e2e database)
-        run: pnpm db:seed:minimal
-      - name: Build (against the service database)
-        run: pnpm build
+      - name: Reset database (single service)
+        # OPS88: one Postgres per run — the e2e build starts from the same
+        # clean baseline (drop schema → migrate → seed:minimal) instead of a
+        # second container. The full suite always runs here, so only the
+        # `.next-e2e` build (below) exists — the default build is gone.
+        run: pnpm db:reset
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4

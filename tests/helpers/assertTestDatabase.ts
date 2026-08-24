@@ -9,14 +9,13 @@
  * looks test-like.
  */
 
-/** `teqo_test`, `teqo_wt15_test`, … — the _test suffix is the hard contract. */
-const TEST_DATABASE_NAME = /^teqo(_[a-z0-9]+)?_test$/
-
 // Self-hosted Forgejo runner: services are reached by NAME on the job network
 // (postgres-int / postgres-build, OPS62 X1) or, on the legacy per-port
 // publish, through the bridge gateway IP (RFC1918). Same source as the CLI
 // guard so both guards admit exactly the same hosts (OPS50/OPS62).
-import { defaultGatewayHost } from '../../scripts/lib/cli.mjs'
+// TEST_DATABASE_NAME_RE is the shared name contract (cli.mjs) — the same
+// regex `scripts/db-reset.mjs` uses before dropping the schema (OPS88).
+import { defaultGatewayHost, TEST_DATABASE_NAME_RE } from '../../scripts/lib/cli.mjs'
 
 export function assertTestDatabase(databaseUrl: string | undefined): void {
   if (!databaseUrl) {
@@ -47,7 +46,7 @@ export function assertTestDatabase(databaseUrl: string | undefined): void {
 
   if (
     parsedUrl.protocol !== 'postgresql:' ||
-    !TEST_DATABASE_NAME.test(databaseName) ||
+    !TEST_DATABASE_NAME_RE.test(databaseName) ||
     !localHosts.has(parsedUrl.hostname)
   ) {
     throw new Error(
