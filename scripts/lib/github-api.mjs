@@ -6,7 +6,7 @@
  * Auth: `GITHUB_TOKEN` (PAT locally; the built-in Actions token in
  * workflows). Base URL: `GITHUB_API_URL`, else `https://api.github.com`.
  *
- * Retry (same policy as forgejo-api OPS67): transient failures retry with
+ * Retry (OPS67 policy): transient failures retry with
  * exponential backoff — a fetch that rejects (network-level, DNS/TCP/reset)
  * retries on ANY method; a 5xx retries on GET only, so read polls survive
  * while write endpoints keep failing closed instead of risking duplicated
@@ -180,7 +180,7 @@ export const createApi = ({
     base: { ref: pr.base?.ref ?? '' },
   })
 
-  /** Issue shape normalized to the agent-script contract (same as forgejo-api). */
+  /** Issue shape normalized to the agent-script contract. */
   const normalizeIssue = (issue) => ({
     number: issue.number,
     title: issue.title,
@@ -208,8 +208,8 @@ export const createApi = ({
       const issues = await request(`/repos/${owner}/${name}/issues`, {
         query: { state, labels, per_page: limit, page },
       })
-      // GitHub returns PRs in the issues list; filter them out (the Forgejo
-      // `type: issues` query had no GitHub equivalent).
+      // GitHub returns PRs in the issues list; filter them out (the GitHub
+      // issues endpoint mixes PRs; there is no `type` filter).
       return (Array.isArray(issues) ? issues : [])
         .filter((issue) => !issue.pull_request)
         .map(normalizeIssue)

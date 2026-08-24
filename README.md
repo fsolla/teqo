@@ -6,11 +6,11 @@
 
 > **Cheatsheet de operação agentic (humanos)** — o fluxo em 5 linhas:
 >
-> 1. O agente roda `pnpm agent:claim` (ou `pnpm worktree next --issue N`) e pega a próxima Issue `ready` por prioridade (`prio:P0..P3`). O **tracker de Issues vive no Forgejo** (`git.solla.dev/fsolla/teqo`); o código/PR/CI vive no **GitHub**.
+> 1. O agente roda `pnpm agent:claim` (ou `pnpm worktree next --issue N`) e pega a próxima Issue `ready` por prioridade (`prio:P0..P3`). O **tracker de Issues, o código, os PRs e o CI vivem no GitHub** (`github.com/fsolla/teqo`).
 > 2. Ele implementa, roda o fast gate (`lint + typecheck + unit`) e `pnpm push -u origin HEAD` — abre a PR para `main` (Ready, `Closes #N`).
 > 3. CI verde (`CI (PR) / checks`) → o safety net `agent-pr-ready-automerge.yml` arma o **auto-merge nativo** (rebase) — o servidor só mergea com o required check verde.
 > 4. Publicar é **manual**: dispatch de `deploy.yml` roda a suíte full (`verify`) e o job `deploy` publica no homeserver (`jorgesolla1313.com.br`, runner self-hosted) — migrações aplicadas antes do rollout. Nada é automático pós-merge.
-> 5. Secrets humanos (uma vez): `FORGEJO_API_TOKEN` no GitHub (flips pós-merge no Forgejo); envs de prod em `~/stack/teqo-1313.env` no homeserver. Branch protection de `main` já aplicada (reaplicar: `pnpm configure:branch-protection`).
+> 5. Secrets humanos (uma vez): `GITHUB_TOKEN` (PAT com escopo `repo` + `issues: write`) para os scripts de agente/PR (`pnpm issue`/`agent:*`, `github-pr.mjs`); envs de prod em `~/stack/teqo-1313.env` no homeserver. Branch protection de `main` já aplicada (reaplicar: `pnpm configure:branch-protection`).
 >
 > Comandos: `pnpm agent:claim | agent:register | agent:prioritize | agent:file-miss | worktree next` e `pnpm db:seed:minimal`.
 > Labels: estado `ready|in-progress|blocked|done|in-prod`, `prio:P0..P3`, `kind:*`, `needs:migration|consent`, `requirements-changed`.
@@ -113,7 +113,7 @@ Then run:
 - `pnpm test:e2e` — Playwright (requires the test DB schema and a free port)
 - `pnpm test:all` — unit + integration + E2E
 
-Quality gates (also enforced by CI on the Forgejo Actions): `pnpm lint` (zero warnings — `--max-warnings=0`), `pnpm typecheck`, and `pnpm exec knip` (dead files/dependencies fail; delete what your change orphaned). Standards: `.agents/rules/engineering-standards.mdc`.
+Quality gates (also enforced by CI on GitHub Actions — `ci-pr.yml`): `pnpm lint` (zero warnings — `--max-warnings=0`), `pnpm typecheck`, and `pnpm exec knip` (dead files/dependencies fail; delete what your change orphaned). Standards: `.agents/rules/engineering-standards.mdc`.
 
 ## Tech Stack
 
@@ -130,4 +130,4 @@ Internal campaign tool for municípios (435 pré-definidos), local leaderships, 
 
 ## Roadmap
 
-Backlog and future plans live as tracked [Forgejo Issues](https://git.solla.dev/fsolla/teqo/issues) (spec + deps + prio + model per issue; flow skills: `plan-issue` → `work-issue` → `project-status`; `docs/roadmap.md` is a frozen legacy stub).
+Backlog and future plans live as tracked [GitHub Issues](https://github.com/fsolla/teqo/issues) (spec + deps + prio + model per issue; flow skills: `plan-issue` → `work-issue` → `project-status`; `docs/roadmap.md` is a frozen legacy stub).

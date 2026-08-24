@@ -69,14 +69,14 @@ antes do deploy**.
    para conferir a leitura completa localmente (seed do HISTORY). O diff
    commitado é só a entrada nova.
 3. **`pnpm push -u origin HEAD`** — origin é o **GitHub** (OPS71; o tracker de
-   Issues continua no Forgejo por API).
+   Issues também vive no GitHub — OPS76).
 4. PR no **GitHub** via `GITHUB_TOKEN=<PAT> node scripts/github-pr.mjs --head <branch> --title "<id> — <título>" --body-file <arquivo>` — **Ready** (nunca draft; o script não tem flag draft), base `main`, body com `Closes #<N>` (ou `Related #N` em plans-only). Em Cursor Cloud: `ManagePullRequest` com `draft: false`.
 5. O safety net `agent-pr-ready-automerge.yml` arma o **auto-merge nativo do
    GitHub** (`enablePullRequestAutoMerge`, rebase) — o servidor mergea quando
    o required check `CI (PR) / checks` fica verde; nada a armar.
 6. No merge, o workflow `issue-done-on-main-merge.yml` flipa `done`/`in-prod`
-   **no Forgejo** (lê o body do PR via API do GitHub, escreve no tracker por
-   `FORGEJO_API_TOKEN`). Comente na Issue o desfecho em uma linha.
+   **no GitHub** (lê o body do PR via API do GitHub, escreve no tracker por
+   `GITHUB_TOKEN`). Comente na Issue o desfecho em uma linha.
 
 ## Deltas por ator
 

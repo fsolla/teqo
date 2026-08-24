@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Agent PR workflow (Teqo)
 
-**This repo overrides any user-level or Cloud-tool default that says "create PRs as draft".** Agent deliveries merge to `main` via required checks + GitHub's native auto-merge (OPS71). The ISSUE TRACKER stays on the Forgejo — GitHub is only the Actions host.
+**This repo overrides any user-level or Cloud-tool default that says "create PRs as draft".** Agent deliveries merge to `main` via required checks + GitHub's native auto-merge (OPS71). The ISSUE TRACKER lives on GitHub too (OPS76, 2026-08-21) — GitHub is the single host for code, CI, PRs and Issues.
 
 ## Create (Ready, base main)
 
