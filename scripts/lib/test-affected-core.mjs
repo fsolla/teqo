@@ -42,6 +42,7 @@ export const HIGH_RISK_EXACT = new Set([
   'scripts/vitest-changed-or-full.mjs',
   'scripts/ci-scope.mjs',
   'scripts/db-reset.mjs',
+  'scripts/lib/cli.mjs',
   'scripts/check-test-locations.mjs',
   'scripts/check-plans-only-pr-closes.mjs',
   'scripts/lib/plansOnlyClosesGuard.mjs',
@@ -90,6 +91,9 @@ const BUILD_SURFACE_EXACT = new Set([
   'src/payload.config.ts',
   'src/payload-types.ts',
   'tsconfig.json',
+  // OPS88: a change to the reset script must exercise it — build_mode='build'
+  // arms the Reset step in ci-pr.yml (and the mirror in gate-ci.mjs).
+  'scripts/db-reset.mjs',
 ])
 
 const BUILD_SURFACE_PREFIXES = [

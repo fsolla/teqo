@@ -52,7 +52,13 @@ if (!LOCAL_HOSTS.has(parsedUrl.hostname)) {
   )
 }
 
-const databaseName = decodeURIComponent(parsedUrl.pathname.replace(/^\//, ''))
+let databaseName
+try {
+  databaseName = decodeURIComponent(parsedUrl.pathname.replace(/^\//, ''))
+} catch {
+  die('DATABASE_URL database name has invalid percent-encoding.')
+}
+
 if (!TEST_DATABASE_NAME_RE.test(databaseName)) {
   die(
     `Refusing to reset database "${databaseName}" — the name must match ` +
@@ -60,18 +66,22 @@ if (!TEST_DATABASE_NAME_RE.test(databaseName)) {
   )
 }
 
-const pool = new pg.Pool({ connectionString: databaseUrl, max: 1 })
 try {
-  console.log(`[db:reset] Dropping schema public on "${databaseName}"…`)
-  await pool.query('DROP SCHEMA public CASCADE')
-  await pool.query('CREATE SCHEMA public')
-  console.log('[db:reset] Schema rebuilt — running migrate…')
-} finally {
-  await pool.end()
-}
+  const pool = new pg.Pool({ connectionString: databaseUrl, max: 1 })
+  try {
+    console.log(`[db:reset] Dropping schema public on "${databaseName}"…`)
+    await pool.query('DROP SCHEMA public CASCADE')
+    await pool.query('CREATE SCHEMA public')
+    console.log('[db:reset] Schema rebuilt — running migrate…')
+  } finally {
+    await pool.end()
+  }
 
-execFileSync('pnpm', ['migrate'], { stdio: 'inherit' })
-console.log('[db:reset] Migrations applied — seeding minimal baseline…')
-execFileSync('pnpm', ['db:seed:minimal'], { stdio: 'inherit' })
+  execFileSync('pnpm', ['migrate'], { stdio: 'inherit' })
+  console.log('[db:reset] Migrations applied — seeding minimal baseline…')
+  execFileSync('pnpm', ['db:seed:minimal'], { stdio: 'inherit' })
+} catch (error) {
+  die(`reset failed: ${error?.message ?? error}`)
+}
 
 console.log('[db:reset] ✓ deterministic baseline ready (migrate + db:seed:minimal).')

@@ -1,6 +1,6 @@
 # Impl: Verify do CI (PR e deploy): um Postgres com reset determinístico, um build, migrate/seed sem repetição
 
-Status: rascunho
+Status: aprovado (gate humano 2026-08-24)
 Atualizado em: 2026-08-24
 Issue: #834
 Intenção: docs/plans/ops88-ci-verify-setup-unico.md
@@ -82,7 +82,7 @@ flowchart LR
 - **`.github/workflows/ci-pr.yml`**: remove `postgres-build` + steps 5433; adiciona step "Reset database (single service)" com o `if:` de D2; ajusta `if:` do build default; atualiza comentário de serviços.
 - **`.github/workflows/deploy.yml`** (job `verify`): espelho do acima, sem skips — remove `postgres-build`, remove build default, adiciona reset entre int e build `.next-e2e`.
 - **`scripts/gate-ci.mjs`**: `pnpm db:reset` antes do build quando há fase de build — paridade local com o CI novo (o mirror deixa de construir sobre resíduo do int).
-- **`scripts/lib/test-affected-core.mjs`**: `HIGH_RISK_EXACT` += `'scripts/db-reset.mjs'` — mudança no reset é harness de teste, deve rodar suíte cheia.
+- **`scripts/lib/test-affected-core.mjs`**: `HIGH_RISK_EXACT` += `'scripts/db-reset.mjs'` **e** `'scripts/lib/cli.mjs'` (mudança no reset ou no contrato `_test` é harness, deve rodar suíte cheia); `BUILD_SURFACE_EXACT` += `'scripts/db-reset.mjs'` — sem isso um PR só no reset classificaria `build_mode='none'` e o próprio step Reset pularia no CI (achado do simplify).
 - **Docs:** entrada em `docs/changelog/<data>-ops88.md` + `pnpm changelog:build`; menção curta no AGENTS.md (bloco de CI) se o runbook do job mudar — o runbook de deploy (`docs/ops/teqo-1313-deploy.md`) **não** muda.
 - **Migration:** sem migration (nenhum schema/dado novo).
 - **Access / Consent:** nenhum (nenhuma chave de Consent tocada; fail-closed intacto).
