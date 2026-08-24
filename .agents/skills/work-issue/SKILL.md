@@ -138,6 +138,7 @@ Divergência material de produto → pare, pergunte ao humano.
 `SwitchMode` → `agent`. Siga `execution-pipeline.md`:
 
 - **Branch:** `<Code>-<slug>` do worktree — nunca crie branch nova.
+- **Nível de teste:** unit → int → e2e-com-benefício (dono da definição: `test-driven-development`; ver pipeline).
 - **E2E local afetado (OPS72):** discricionário — rode os e2e criados + mesma superfície.
 - **UI:** shape → craft → critique → polish.
 - **Gates:** `pnpm gate:fast` na iteração; entrega com `pnpm push`.

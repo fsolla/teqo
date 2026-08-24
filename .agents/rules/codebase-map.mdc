@@ -23,7 +23,7 @@ Conceitos e decisões: `docs/ARCHITECTURE.md`. Operação (setup/seeds/deploy/se
 - `src/components/ui/` — kit shadcn da casa (sem peças mortas; `shadcn add` re-adiciona).
 - `src/lib/schemas/` — zod de entrada; `src/lib/` também guarda catálogos estáticos e o artefato TSE (`electionAggregates/`).
 - `src/migrations/` — história congelada; nunca editar retroativamente.
-- `tests/` — `unit` (DATABASE_URL inválida), `int` (Payload real em `teqo_test`, fixtures em `tests/helpers/campaignFixtures.ts`), `e2e` (Playwright smoke).
+- `tests/` — `unit` primeiro (lógica pura, DATABASE_URL inválida), depois `int` para fronteiras Payload/DB (Payload real em `teqo_test`, fixtures em `tests/helpers/campaignFixtures.ts`), e `e2e` só com benefício real por fluxo que as camadas inferiores não cobrem (Playwright smoke; dono da definição: skill `test-driven-development`).
 
 ## Sistema de listas (Pass 2 W1 — use, não reinvente)
 

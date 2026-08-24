@@ -156,6 +156,7 @@ Tests reveal intent and coverage:
 ```
 - Do tests exist for the change?
 - Do they test behavior (not implementation details)?
+- Is the test level right for the change? (unit first → int for boundaries → e2e only when the flow has real benefit the lower layers don't cover — see `test-driven-development`)
 - Are edge cases covered?
 - Do tests have descriptive names?
 - Would the tests catch a regression if the code changed?
@@ -311,7 +312,7 @@ For triaging `npm audit` findings and supply-chain risk (typosquatting, compromi
 - [ ] Change matches spec/task requirements
 - [ ] Edge cases handled
 - [ ] Error paths handled
-- [ ] Tests cover the change adequately
+- [ ] Tests cover the change adequately at the right level (unit first → int → e2e only with real benefit)
 
 ### Readability
 - [ ] Names are clear and consistent
