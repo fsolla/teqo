@@ -11,11 +11,12 @@
 # Flow: HEAD guard (only the current main HEAD deploys) -> flock
 # serialization -> workspace fetch at <sha> -> docker login (local registry)
 # -> build of the MIGRATOR stage (it never runs `next build`, so it builds
-# even against the old schema) -> push/tag of the migrator -> compose
-# image-tag swap (with backup) -> migrate via the maintenance service
+# even against the old schema) -> push of the migrator (registry-qualified
+# tag — INF13: the ONLY ref the compose references) -> compose image-tag swap
+# (with backup) -> migrate via the maintenance service
 # (BEFORE the runner build — static generation reads the NEW schema, OPS66)
 # -> build of the runner stage (BuildKit secrets, compose network) ->
-# push/tag -> compose up -> healthcheck wait -> smoke. Any failure after the
+# push -> compose up -> healthcheck wait -> smoke. Any failure after the
 # swap rolls back to the previous compose + image; failures before it leave
 # the running site untouched and the job red.
 #
@@ -151,9 +152,13 @@ cd "$WORKSPACE_DIR"
 # and therefore needs the migrations applied first (OPS66).
 build_image migrator "localhost:5000/teqo-1313-migrator:$SHA"
 
-# The compose references bare `teqo-1313:<sha>` tags with pull_policy: never.
+# INF13: the compose references REGISTRY-QUALIFIED tags
+# (`localhost:5000/teqo-1313(-migrator):<sha>`) with pull_policy: never — the
+# exact name every build produces, so the ref the compose needs can never go
+# missing (the old bare `teqo-1313:<sha>` alias was a second local-only ref
+# that nothing recreated once lost — homeserver incident 24/08, `No such
+# image` on recreate).
 docker push "localhost:5000/teqo-1313-migrator:$SHA"
-docker tag "localhost:5000/teqo-1313-migrator:$SHA" "teqo-1313-migrator:$SHA"
 
 # --- compose swap (backup first; failures from here roll back) ----------
 
@@ -161,12 +166,12 @@ compose="$STACK_DIR/docker-compose.yml"
 backup="$compose.pre-$SHA"
 cp "$compose" "$backup"
 sed -i -E \
-  -e "s|image: teqo-1313-migrator:[0-9a-f]+|image: teqo-1313-migrator:$SHA|g" \
-  -e "s|image: teqo-1313:[0-9a-f]+|image: teqo-1313:$SHA|g" \
+  -e "s|image: (localhost:5000/)?teqo-1313-migrator:[0-9a-f]+|image: localhost:5000/teqo-1313-migrator:$SHA|g" \
+  -e "s|image: (localhost:5000/)?teqo-1313:[0-9a-f]+|image: localhost:5000/teqo-1313:$SHA|g" \
   -e "s|org.opencontainers.image.revision: [0-9a-f]+|org.opencontainers.image.revision: $SHA|g" \
   "$compose"
-grep -q "image: teqo-1313:$SHA" "$compose" || fatal "compose swap failed (runner image)"
-grep -q "image: teqo-1313-migrator:$SHA" "$compose" || fatal "compose swap failed (migrator image)"
+grep -q "image: localhost:5000/teqo-1313:$SHA" "$compose" || fatal "compose swap failed (runner image)"
+grep -q "image: localhost:5000/teqo-1313-migrator:$SHA" "$compose" || fatal "compose swap failed (migrator image)"
 
 rollback() {
   trap - ERR
@@ -197,7 +202,6 @@ cd "$WORKSPACE_DIR"
 say "building runner"
 build_image runner "localhost:5000/teqo-1313:$SHA"
 docker push "localhost:5000/teqo-1313:$SHA"
-docker tag "localhost:5000/teqo-1313:$SHA" "teqo-1313:$SHA"
 
 # --- rollout ------------------------------------------------------------
 
@@ -236,20 +240,23 @@ echo "$body" | grep -q '"revalidated":true' || smoke_fail "POST /api/revalidate 
 # antigas). Best-effort e APÓS o smoke: falha de limpeza nunca falha um
 # deploy verde. O registry localhost:5000 preserva as imagens (rollback
 # intacto — runbook teqo-1313-deploy.md); removemos só as tags LOCAIS.
-# Fail-closed: sem revision no container, não remove nada além do cache.
+# INF13: a preservação é pelo IMAGE ID do container em uso (`{{.Image}}`),
+# não por comparação tag×label do compose — imune a drift de label/recriação
+# manual; TODAS as tags da imagem rodando sobrevivem, as demais são removidas.
+# Fail-closed: container sem image ID não remove nada além do cache.
 
 say "post-deploy cleanup: build cache + tags locais antigas"
 docker builder prune -f >/dev/null 2>&1 || true
 
-in_use="$(docker inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' teqo-1313 2>/dev/null || true)"
-if [ -n "$in_use" ]; then
+in_use_id="$(docker inspect -f '{{.Image}}' teqo-1313 2>/dev/null || true)"
+if [ -n "$in_use_id" ]; then
   for img in $(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E '^(localhost:5000/)?teqo-1313(-migrator)?:' || true); do
-    tag="${img##*:}"
-    [ "$tag" = "$in_use" ] && continue
+    img_id="$(docker image inspect -f '{{.Id}}' "$img" 2>/dev/null || true)"
+    [ -n "$img_id" ] && [ "$img_id" = "$in_use_id" ] && continue
     docker rmi "$img" >/dev/null 2>&1 || true
   done
 else
-  say "cleanup: container sem revision — mantendo imagens locais"
+  say "cleanup: container sem image ID — mantendo imagens locais"
 fi
 
 say "deploy of $SHA complete: $(docker inspect -f '{{.Image}}' teqo-1313)"
