@@ -241,6 +241,76 @@ DELETE FROM contact_phones WHERE _parent_id=2225; DELETE FROM contact WHERE id=2
 e `setval('contact_id_seq',2224)`, `setval('signature_id_seq',1485)`,
 `setval('subscription_id_seq',1491)`.
 
+## OPS84 — Verificação de valores (não só entidades) da migração
+
+Extensão do reconciliador OPS79: compara TODAS as colunas de conteúdo (não só
+ids/contagens) das 13 tabelas da vertical campanha entre a fonte congelada
+(Neon) e a base nova (`teqo_1313`). Foco confirmado em `vote_pledge` (votos
+declarados + 3 cenários de estimativa).
+
+**Resultado registrado em 2026-08-24:** 13/13 tabelas PASS — **0 divergências
+de conteúdo**. A migração de valores está 100% íntegra. Neon e target com
+dados idênticos em todas as 13 tabelas da vertical.
+
+### Verificador de valores (read-only, repetível)
+
+```bash
+ssh homeserver
+cd ~/teqo-deploy && git fetch origin main && git checkout main && git pull --ff-only origin main
+pnpm install
+set -a; source ~/stack/.env; set +a            # fornece NEON_DATABASE_URL
+set -a; source ~/stack/teqo-1313.env; set +a   # fornece DATABASE_URL (teqo_1313)
+export DATABASE_URL="${DATABASE_URL/@postgres:5432/@127.0.0.1:5433}"
+
+# Todas as 13 tabelas (foco em vote_pledge):
+NEON_DATABASE_URL="$NEON_DATABASE_URL" DATABASE_URL="$DATABASE_URL" \
+  pnpm ops84:reconcile-values
+
+# Tabela isolada (debug/iteração):
+NEON_DATABASE_URL="$NEON_DATABASE_URL" DATABASE_URL="$DATABASE_URL" \
+  pnpm ops84:reconcile-values --table vote_pledge
+
+# Com relatório markdown (anexável ao issue):
+NEON_DATABASE_URL="$NEON_DATABASE_URL" DATABASE_URL="$DATABASE_URL" \
+  pnpm ops84:reconcile-values --report /tmp/ops84-report.md
+```
+
+**Esperado:** `13/13 PASS` com 0 content diffs. Exit `1` se houver divergência
+de conteúdo. Colunas classified em 3 buckets:
+
+- **content** — falha o run (aceite: "0 divergência" ou "N listadas")
+- **derived** — hook-derivadas (`declared_at/by`, `estimated_at/by`,
+  `created_at`, `updated_at`); informativas, não falham
+- **sensitive** — PII; valores nunca impressos, só contados
+
+Colunas jsonb comparadas via `col::text` (preserva `1` vs `1.0` como
+divergência; SQL NULL ≠ JSON null). Zero normalização (trim/round/coalesce).
+
+### Fallback: Neon inacessível (OPS81 já executado)
+
+Se o Neon estiver inacessível (OPS81 desligou a infra), usar o dump do OPS51
+como base de comparação:
+
+```bash
+# Restaurar dump em scratch DB local:
+createdb teqo_1313_compare_src
+pg_restore -d teqo_1313_compare_src \
+  /srv/hdd/backups/teqo-neon-pre-migracao/teqo-neon-full-20260817-204800.dump
+
+# Apontar NEON_DATABASE_URL para o scratch:
+NEON_DATABASE_URL="postgresql://teqo:teqo@localhost:5432/teqo_1313_compare_src" \
+DATABASE_URL="$DATABASE_URL" \
+  pnpm ops84:reconcile-values --report /tmp/ops84-report-dump.md
+```
+
+**Nota:** dump é pré-freeze (2026-08-17) — deltas legítimos entre 08-17 e
+08-23 (quando o Neon foi congelado) aparecem como divergências derivadas. O
+relatório declara qual base foi usada.
+
+### Rollback
+
+Não há escrita; "rollback" = rodar de novo (idempotente, read-only).
+
 ## Referências
 
 - `scripts/deploy-homeserver.sh` — o script (fonte da verdade do fluxo)

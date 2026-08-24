@@ -35,6 +35,7 @@
     "db:check:push-chain": "node scripts/check-push-chain.mjs",
     "ops79:reconcile": "node scripts/reconcile-campaign-vertical.mjs",
     "ops79:migrate": "node scripts/migrate-signature-orphan.mjs",
+    "ops84:reconcile-values": "node scripts/reconcile-campaign-vertical.mjs --values",
     "agent:claim": "node scripts/agent-claim.mjs",
     "agent:register": "node scripts/agent-register.mjs",
     "agent:ready": "node scripts/agent-ready.mjs",
