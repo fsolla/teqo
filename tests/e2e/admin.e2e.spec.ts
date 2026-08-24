@@ -1,6 +1,6 @@
 import { adminHeaders } from '../helpers/adminApi'
 import { login } from '../helpers/login'
-import { cleanupTestUser, seedTestUser, testUser } from '../helpers/seedUser'
+import { seedTestUser, testUser } from '../helpers/seedUser'
 import { instagramStubUrlFor } from '../helpers/socialStub'
 import { expect, test } from './fixtures/e2eTest'
 
@@ -14,10 +14,6 @@ test.describe('Admin Panel', () => {
 
   test.beforeEach(async ({ page }) => {
     await login({ page, serverURL: baseURL, user: testUser })
-  })
-
-  test.afterAll(async () => {
-    await cleanupTestUser()
   })
 
   test('can navigate to dashboard', async ({ page }) => {
