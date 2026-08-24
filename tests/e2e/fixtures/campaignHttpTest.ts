@@ -110,3 +110,32 @@ export const test = base.extend<CampaignHttpTestFixtures>({
 })
 
 export { expect }
+
+/**
+ * OPS35 → OPS87 — React's streaming inserts `<!-- -->` text-node separators
+ * between adjacent server-rendered nodes: transport, not content. Every text
+ * assertion over the rendered HTML runs through this strip. Was local to
+ * `campaignTerritoriesHttp` until the second HTTP family needed it (OPS87) —
+ * the base fixture is the natural owner of the HTTP-mode parsing utility.
+ */
+export const rendered = (html: string) => html.replaceAll('<!-- -->', '')
+
+/**
+ * The route-gate redirect contract (OPS35 → OPS87, 4 call sites): `noLeader`/
+ * `staff` gates throw `redirect()` deep in the page, after the layout has
+ * started streaming — so the document usually answers 200 carrying Next's
+ * route-redirect meta tag instead of a 3xx; when the redirect beats the
+ * stream it is a real 3xx (dev 307 / prod 308). Both are the server contract
+ * the browser follows — assert the redirect TARGET, never pin the transport.
+ */
+export const assertLeaderRedirect = async (request: APIRequestContext, path: string) => {
+  const direct = await request.get(path, { maxRedirects: 0 })
+  expect([200, 307, 308]).toContain(direct.status())
+  if (direct.status() === 200) {
+    expect(await direct.text()).toContain(
+      'http-equiv="refresh" content="1;url=/campanha/meus-contatos"',
+    )
+  } else {
+    expect(direct.headers()['location']).toMatch(/\/campanha\/meus-contatos$/)
+  }
+}

@@ -120,7 +120,9 @@ export const E2E_AFFECTED_MANIFEST = [
   },
   {
     prefixes: [`${CAMPAIGN_APP}/conceitos`],
-    specs: ['campaignConcepts'],
+    // OPS87 — server slice migrated to the browserless HTTP mode; the browser
+    // spec keeps the tooltip/popover interactions.
+    specs: ['campaignConceptsHttp', 'campaignConcepts'],
   },
   {
     prefixes: [
@@ -177,7 +179,9 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/utilities/people',
       'src/utilities/campaignSavedFilterStore',
     ],
-    specs: ['campaignPeople'],
+    // OPS87 — server slice migrated to the browserless HTTP mode; the browser
+    // spec keeps the omnibox/combobox interactions and the dialog writes.
+    specs: ['campaignPeopleHttp', 'campaignPeople'],
   },
   {
     prefixes: [
@@ -217,6 +221,25 @@ export const E2E_AFFECTED_MANIFEST = [
   },
   // Domains without a dedicated e2e family still wake campaign home smoke so
   // the affected classifier cannot return mode=none on an unmapped domain dir.
+  {
+    prefixes: [
+      // OPS87 — C142 advisor permission profiles: the write-control gating
+      // lives in the advisor/access domain plus the FAB mount decision
+      // (`CampaignQuickActionsHost/Fab` in the shell), exercised on the write
+      // surfaces of these routes (FAB, "Nova demanda", create buttons).
+      'src/lib/campaignAdvisorProfile',
+      'src/lib/campaignQuickActionMount',
+      'src/lib/campaignQuickActionRegistry',
+      'src/components/campaign/shell',
+      'src/utilities/advisor',
+      'src/utilities/advisorData',
+      `${CAMPAIGN_APP}/atividades`,
+      `${CAMPAIGN_APP}/apoiadores`,
+      `${CAMPAIGN_APP}/demandas`,
+      `${CAMPAIGN_APP}/municipios`,
+    ],
+    specs: ['campaignPermissionProfileHttp'],
+  },
   {
     prefixes: [
       'src/components/campaign/advisor',
