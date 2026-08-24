@@ -70,6 +70,16 @@ O guard com `--name-status` detectou a migração como **rename** (`R099 docs/CH
 - Nada commitado além da entrada por-arquivo; HISTORY é o único arquivo de changelog commitado e é congelado; escape CI-only preservado; `git rm --cached` sem rewrite de histórico.
 - Testes: unit changelog (assinatura nova + migração), pin agentPoolPrompt; verificação manual em clone-fresco; `pnpm gate:fast` verde; guard append-only passa no próprio diff da migração.
 
+## Triage pós-simplify (capture-review-debts, 2026-08-24)
+
+**Já resolvido no simplify/critique (não reabrir):** 106 entradas pré-OPS44 só no agregado → HISTORY congelado commitado + verificação em clone-fresco (fase 2); classe de conflito do changelog → agregado gitignored; docs externos → arquivado com evidência (AGENT-OPS "Decisões arquivadas", alvo Wiki.js registrado).
+
+**Explicitamente fora / Adiado com gatilho:**
+
+- **Adiado com gatilho — pós-condição substring do gerador (`missingAggregateEntries`):** entrada que seja substring de bloco existente passa sem bloco próprio, e entrada com `\n\n` interno escapa da idempotência por bloco (pré-OPS44). Garantia honesta para "perda silenciosa" (bloco que some falha); reforço para igualdade de bloco só quando 1ª entrada real com `\n\n` interno for observada no agregado regenerado (duplicata visível, cosmético).
+- **Adiado com gatilho — `--check` no-op com agregado local ausente:** documentado no docblock; viraria falso-verde só se `--check` voltar a rodar em CI/gate (OPS85 tirou do gate) — gatilho: re-entrada do check em CI.
+- **Descartados:** guard "A do HISTORY sem D do agregado" (heuristic aceita; janela de migração fechada, HISTORY já em main); header antigo pré-OPS85 no build local (artefato regenerável, leitura canônica `changelog:read`, convergência via seed); CLI do gerador sem spec (convenção: camada CLI de scripts sem infra de teste; lógica pinada na lib); rótulo `docs-guards` sem step homônimo no ci-pr.yml (rótulo conceitual vivo no `gate-ci.mjs` — alinhar nomes = churn sem valor); `--stdout --check` com `--check` vencendo (precedência documentada, operação mais forte); knip sem carregar `payload.config.ts` (P3 ledgered pré-existente, TECH-DEBT.md).
+
 ## Self-score decision-quality
 
 **5/5** — decisões caras com rejeitadas explícitas (A/B/C + D1-D5); cabe no appetite; rabbit holes nomeados; depth check (zero módulo novo, seed é dado não código); intenção satisfeita — a extensão (seed HISTORY) existe para cumprir o anti-goal de conteúdo íntegro.
