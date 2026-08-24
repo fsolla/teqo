@@ -185,6 +185,18 @@ Is it a critical user flow that must work end-to-end?
   → E2E test (large) — limit these to critical paths
 ```
 
+### This repo: the three layers (unit → int → e2e)
+
+In this repo the pyramid maps to `tests/` (see `docs/TESTING.md` and the `codebase-map` rule):
+
+| Level | Where | Runs against |
+|---|---|---|
+| Unit (most) | `tests/unit/**/*.unit.spec.ts` | deliberately invalid `DATABASE_URL` — pure logic, no DB |
+| Integration | `tests/int/**/*.int.spec.ts` | real Payload + Postgres `teqo_test`, fixtures in `tests/helpers/campaignFixtures.ts` |
+| E2E (few) | `tests/e2e` (Playwright smoke) | only when the flow has real benefit the lower layers don't cover: critical user path, UX/navigation, URL contract |
+
+Order of preference: unit first, integration for Payload/DB boundaries, e2e only with real per-flow benefit. Running and gating follow the repo E2E policy (OPS72) — see `docs/TESTING.md`.
+
 ## Writing Good Tests
 
 ### Test State, Not Interactions

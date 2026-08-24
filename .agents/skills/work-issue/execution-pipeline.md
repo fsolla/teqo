@@ -6,6 +6,8 @@ ator** e referencia este material — nenhuma é "base" da outra.
 
 ## Executar
 
+**Nível de teste:** unit primeiro (lógica pura, `tests/unit`) → int para fronteiras Payload/DB (`tests/int`) → e2e só com benefício real por fluxo que as camadas inferiores não cobrem (`tests/e2e`). Dono da definição: skill `test-driven-development`.
+
 Ordem:
 
 1. **Schema/server** — migrations (`payload-migrations`), utilities, actions,

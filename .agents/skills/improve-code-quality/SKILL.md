@@ -266,7 +266,7 @@ Ship in order, not all at once: Phases 1-3 (net, readability, refactoring) belon
 
 Exit checklist — every box tied to an artifact:
 
-- [ ] Business rules have tests that run with no database or framework (TESTING.md Safety Net Map complete for changed modules).
+- [ ] Business rules have tests that run with no database or framework — unit first, Payload/DB boundaries at `tests/int`, e2e only with real benefit (`test-driven-development`; TESTING.md Safety Net Map complete for changed modules).
 - [ ] Every outbound call has a timeout, critical dependencies have circuit breakers, and a deep health check + RED metrics are wired to symptom-based alerts (RELIABILITY.md Integration-Point Audit clear, Health Checks & Metrics filled).
 - [ ] Dependency Rule holds — business logic imports no framework or ORM (ARCHITECTURE.md Layer Map, violations closed).
 - [ ] Database isolation level known and read-then-write paths locked (ARCHITECTURE.md Data & Storage Decisions).
