@@ -80,6 +80,8 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
     '/campanha/municipios/political-trend',
     '/campanha/municipios/next-steps',
     '/campanha/liderancas/support-status',
+    '/campanha/liderancas/state-deputies',
+    '/campanha/liderancas/municipalities',
     '/campanha/home-search',
     // The Sollinha chat mounts on every authenticated page: its transport and
     // the PWA registration hit these on first load/session-restore — cold

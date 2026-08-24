@@ -1,6 +1,5 @@
 'use server'
 
-import { setLeadershipStateDeputyMembership } from '@/app/(campaign)/campanha/actions/leadership'
 import {
   setStateDeputyAdvisorMembership,
   setStateDeputyMunicipalitiesBatch,
@@ -17,10 +16,6 @@ import {
   requiredRelationshipFormValue,
 } from '@/lib/formData'
 import {
-  LEADERSHIP_STAFF_MESSAGE,
-  LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE,
-} from '@/lib/schemas/leadership'
-import {
   STATE_DEPUTY_ADVISOR_SAFE_MESSAGES,
   STATE_DEPUTY_CONFLICT_MESSAGE,
   STATE_DEPUTY_INVALID_CONTACT_MESSAGE,
@@ -32,8 +27,6 @@ import {
   runCampaignFormAction,
   type CampaignFormActionState,
 } from '@/utilities/campaignFormActionError'
-
-const safeMessages = [LEADERSHIP_STAFF_MESSAGE, LEADERSHIP_STATE_DEPUTIES_CAP_MESSAGE] as const
 
 const stateDeputyContactSafeMessages = [
   STATE_DEPUTY_STAFF_MESSAGE,
@@ -123,24 +116,6 @@ export const updateStateDeputyBallotNameFormAction = async (
     safeMessages: stateDeputyInlineFieldSafeMessages,
     genericMessage:
       'Não foi possível salvar o nome de legenda. Verifique os dados e tente novamente.',
-  })
-
-/** One chip toggle in the "Lideranças" column of `/campanha/dobradinhas` (B36). */
-export const setLeadershipStateDeputyMembershipFormAction = async (
-  _state: CampaignFormActionState,
-  formData: FormData,
-): Promise<CampaignFormActionState> =>
-  runCampaignFormAction({
-    execute: async () => {
-      await setLeadershipStateDeputyMembership({
-        leadershipId: requiredRelationshipFormValue(formData, 'leadershipId'),
-        stateDeputyId: requiredRelationshipFormValue(formData, 'stateDeputyId'),
-        assigned: requiredFormBoolean(formData, 'assigned'),
-      })
-      return { message: 'Lideranças atualizadas.' }
-    },
-    safeMessages,
-    genericMessage: 'Não foi possível atualizar as lideranças. Tente novamente.',
   })
 
 /** One chip toggle in the "Assessores" column/section of a dobradinha (B156). */
