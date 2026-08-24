@@ -1376,8 +1376,13 @@ test.describe('Municípios — barra colada e card denso (B196)', () => {
     await expect(crowdedCard).toBeVisible()
     // The completion footer proves the filtered list finished streaming — the
     // `S:` settle alone can pass while the list still re-renders (measured:
-    // a mid-stream card can report a transient narrow layout).
-    await expect(page.getByText('1 município encontrado')).toBeVisible()
+    // a mid-stream card can report a transient narrow layout). B196 flake
+    // class: under 4-worker load the footer chunk can land late, so poll with
+    // the same 30s budget as the geometry asserts below instead of the 10s
+    // expect default.
+    await expect
+      .poll(() => page.getByText('1 município encontrado').first().isVisible(), { timeout: 30_000 })
+      .toBe(true)
     const crowdedRow = crowdedCard.locator('[data-view="relation-avatars"]').first()
     await expect(crowdedRow.locator('.size-7')).toHaveCount(5)
     // ONE layout snapshot per read, polled until the settled layout satisfies
@@ -1428,7 +1433,11 @@ test.describe('Municípios — barra colada e card denso (B196)', () => {
     await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
     const sparseCard = cardFor(page, sparse.name)
     await expect(sparseCard).toBeVisible()
-    await expect(page.getByText('1 município encontrado')).toBeVisible()
+    // Same B196 stream-latency flake class as the `crowdedCard` footer above:
+    // poll the completion footer with the 30s geometry budget.
+    await expect
+      .poll(() => page.getByText('1 município encontrado').first().isVisible(), { timeout: 30_000 })
+      .toBe(true)
     const sparseRow = sparseCard.locator('[data-view="relation-avatars"]').first()
     await expect(sparseRow.locator('.size-7')).toHaveCount(2)
     await expect
