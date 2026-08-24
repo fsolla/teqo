@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures/campaignHttpTest.js'
+import { assertLeaderRedirect, expect, rendered, test } from './fixtures/campaignHttpTest.js'
 
 /**
  * OPS35 — `campaignTerritories` migrated to the browserless HTTP mode: same
@@ -19,8 +19,6 @@ import { expect, test } from './fixtures/campaignHttpTest.js'
  * server contract asserted here is which columns are rendered for a given
  * state.
  */
-
-const rendered = (html: string) => html.replaceAll('<!-- -->', '')
 
 test.describe('Territórios de Identidade (HTTP)', () => {
   test('staff sorts, filters and opens the municipality queue for a territory', async ({
@@ -140,15 +138,7 @@ test.describe('Territórios de Identidade (HTTP)', () => {
     // redirect beats the stream it is a real 3xx (dev 307 / prod 308). Both
     // are the server contract the browser follows — assert the redirect
     // target, never pin the transport.
-    const direct = await request.get('/campanha/territorios', { maxRedirects: 0 })
-    expect([200, 307, 308]).toContain(direct.status())
-    if (direct.status() === 200) {
-      expect(await direct.text()).toContain(
-        'http-equiv="refresh" content="1;url=/campanha/meus-contatos"',
-      )
-    } else {
-      expect(direct.headers()['location']).toMatch(/\/campanha\/meus-contatos$/)
-    }
+    await assertLeaderRedirect(request, '/campanha/territorios')
 
     // The leader home renders no way in.
     const home = await request.get('/campanha/meus-contatos')

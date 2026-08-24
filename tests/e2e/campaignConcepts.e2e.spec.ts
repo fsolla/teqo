@@ -2,12 +2,17 @@ import { campaignConceptHref } from '../../src/lib/campaignIntelligenceConcepts.
 import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures.js'
 
 /**
- * E18 — `/campanha/conceitos` documents staff-only numbers (estimates, goals,
- * field ceiling), so the route gate and the "Saiba mais" path out of the
- * "Conta da cadeira" card are what these tests protect.
+ * OPS87 — client slice of `campaignConcepts` after the HTTP migration. The
+ * route gate, the rendered content and the deep-link anchors moved to
+ * tests/e2e/campaignConceptsHttp.e2e.spec.ts (same original test names, 1:1);
+ * what remains here is the interaction only a browser can exercise: the
+ * tooltip and the card popover mount their links on open, so their content
+ * never lives in the server HTML.
+ *
+ * HTTP twin: tests/e2e/campaignConceptsHttp.e2e.spec.ts.
  */
 test.describe('Conceitos de inteligência', () => {
-  test('staff reads the concepts page and reaches it from the goal-account card', async ({
+  test('staff reaches the concepts page via the tooltip and the card popover', async ({
     campaign,
     page,
   }) => {
@@ -21,13 +26,13 @@ test.describe('Conceitos de inteligência', () => {
 
     await campaign.login(page, email, password)
 
-    // Always-visible way in, at the foot of the sidebar.
-    await page.getByRole('link', { name: 'Conceitos', exact: true }).click()
-    await expect(page).toHaveURL(/\/campanha\/conceitos$/)
-
     await page.goto(`/campanha/municipios/${municipality.slug}`)
     const goalAccount = page.getByRole('region', { name: 'Conta da cadeira' })
     await expect(goalAccount).toBeVisible()
+    // C106 — dynamic pages stream a transient hidden `#S:*` copy of the shell;
+    // a hover landing before hydration is a silent no-op (the B13/B17 flake
+    // class), so let the streamed shell settle first.
+    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
 
     // Per-metric tooltips carry a deep link to the matching anchor.
     await goalAccount.getByRole('button', { name: /Captura \(2022\): mais informações/ }).hover()
@@ -45,26 +50,10 @@ test.describe('Conceitos de inteligência', () => {
     await expect(page.getByRole('heading', { name: 'Cobertura da meta' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Teto do campo (projetado)' })).toBeVisible()
 
-    // Deep link lands on the documented concept, not just on the page.
+    // Deep link lands on the documented concept and the browser applies the
+    // `:target` tint — the HTTP twin proves the anchor exists in the server
+    // HTML, this proves the fragment navigation itself.
     await page.goto(campaignConceptHref('captura'))
     await expect(page.locator('article:target')).toHaveAttribute('id', 'captura')
-  })
-
-  test('leader cannot open the concepts page', async ({ campaign, page }) => {
-    const { fixtures } = campaign
-    const phone = fixtures.phone()
-    const leader = await fixtures.createCampaignUser('leader', {
-      name: fixtures.value('Liderança Conceitos'),
-      username: phone,
-    })
-    const password = leader.password
-
-    await campaign.login(page, phone, password)
-    await expect(page.getByRole('link', { name: 'Conceitos', exact: true })).toHaveCount(0)
-
-    await page.goto('/campanha/conceitos')
-
-    await expect(page).toHaveURL(/\/campanha\/meus-contatos\/?$/)
-    await expect(campaignPageChrome(page, 'Conceitos de inteligência')).toHaveCount(0)
   })
 })
