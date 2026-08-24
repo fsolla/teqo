@@ -13,18 +13,43 @@ import type { CampaignUser } from '../../src/payload-types.js'
  * merged person row, and the route stays locked for leaders.
  */
 test.describe('Pessoas — lista unificada', () => {
+  /**
+   * OPS87 — client slice of `campaignPeople` after the HTTP migration. The
+   * server-side assertions (list render, C130 columns, party filter, name link,
+   * leader redirects, detail sections, C117 URL contracts) moved to
+   * tests/e2e/campaignPeopleHttp.e2e.spec.ts with the original test names, 1:1;
+   * what remains here is the interaction only a browser can exercise: omnibox
+   * typing, sortable-header clicks with `aria-sort`, mobile card ordering, and
+   * the cell combobox/dialog writes (C125/C128/C131).
+   *
+   * HTTP twin: tests/e2e/campaignPeopleHttp.e2e.spec.ts.
+   */
+  test('the omnibox narrows the people recorte', async ({ campaign, page }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator', {
+      name: fixtures.value('Coordenadora Pessoas'),
+    })
+    const municipality = await fixtures.claimMunicipality()
+    const { contactName } = await fixtures.createStaffLeadership({
+      namePrefix: 'Liderança Pessoas',
+      municipalities: [municipality],
+    })
 
-/**
- * OPS87 — client slice of `campaignPeople` after the HTTP migration. The
- * server-side assertions (list render, C130 columns, party filter, name link,
- * leader redirects, detail sections, C117 URL contracts) moved to
- * tests/e2e/campaignPeopleHttp.e2e.spec.ts with the original test names, 1:1;
- * what remains here is the interaction only a browser can exercise: omnibox
- * typing, sortable-header clicks with `aria-sort`, mobile card ordering, and
- * the cell combobox/dialog writes (C125/C128/C131).
- *
- * HTTP twin: tests/e2e/campaignPeopleHttp.e2e.spec.ts.
- */
+    await campaign.login(page, coordinator.email!, coordinator.password)
+
+    await page.goto('/campanha/pessoas')
+    await expect(campaignPageChrome(page, 'Pessoas')).toBeVisible()
+
+    // The omnibox search narrows the recorte (canonical URL, chips mounted).
+    const omnibox = page.getByRole('combobox', { name: 'Filtrar pessoas' })
+    await omnibox.fill(contactName.slice(0, 8))
+    await omnibox.press('Enter')
+    await expect(page).toHaveURL(/q=/)
+    // The filter navigation re-streams the list — let it commit before the row.
+    await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+    await expect(page.getByRole('row', { name: new RegExp(contactName) })).toBeVisible()
+  })
+
   test('staff sorts by a column header and filters absence via the omnibox (C117)', async ({
     campaign,
     page,

@@ -22,7 +22,9 @@ const CAMPAIGN_APP = 'src/app/(campaign)/campanha/(app)'
  * it requires editing the invariant pin on purpose.
  */
 export const E2E_CURATED_SPECS = [
-  'campaignPermissionProfile',
+  // OPS87 — deliberate: the permission-profile family moved to the
+  // browserless HTTP mode (same coverage, new spec name).
+  'campaignPermissionProfileHttp',
   'campaignDemandVisibility',
   'campaignAiTranscribe',
   'campaignAgendaFeed',
@@ -197,7 +199,7 @@ export const E2E_AFFECTED_MANIFEST = [
   // invariant pins require the pair to stay in sync.
   {
     prefixes: ['src/utilities/access', 'src/utilities/campaignAccess.ts'],
-    specs: ['campaignPermissionProfile', 'campaignDemandVisibility'],
+    specs: ['campaignPermissionProfileHttp', 'campaignDemandVisibility'],
   },
   {
     prefixes: ['src/utilities/ai'],
