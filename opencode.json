@@ -6,37 +6,5 @@
       "url": "https://design.penpot.app/mcp/stream?userToken={file:.opencode/secrets/penpot-token}",
       "enabled": true
     }
-  },
-  "provider": {
-    "vercel": {
-      "models": {
-        "deepseek/deepseek-v4-flash": {
-          "variants": {
-            "low": {
-              "reasoningEffort": "low"
-            },
-            "high": {
-              "reasoningEffort": "high"
-            },
-            "max": {
-              "reasoningEffort": "max"
-            }
-          }
-        },
-        "deepseek/deepseek-v4-flash-0731": {
-          "variants": {
-            "low": {
-              "reasoningEffort": "low"
-            },
-            "high": {
-              "reasoningEffort": "high"
-            },
-            "max": {
-              "reasoningEffort": "max"
-            }
-          }
-        }
-      }
-    }
   }
 }
