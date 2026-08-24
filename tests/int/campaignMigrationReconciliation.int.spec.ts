@@ -20,6 +20,8 @@ const testDatabaseUrl =
 const adminUrl = testDatabaseUrl.replace(/\/[^/]+$/, '/postgres')
 const consolidatedName = '20260718_010733_consolidate_campaign_schema'
 const stateDeputyContactMigrationName = '20260806_082110_add_state_deputy_contact'
+const rationaleNullableMigrationName =
+  '20260824_000000_reconcile_allocation_decision_rationale_nullable'
 type MigrationDatabase = MigrateUpArgs['db']
 let databaseSequence = 0
 let databaseName = ''
@@ -300,5 +302,36 @@ describe('campaign migration existing-schema reconciliation', () => {
       ORDER BY column_name
     `)
     expect(columns.rows).toEqual([{ column_name: 'contact_id' }])
+  })
+
+  it('reconciles allocation_decision.rationale nullable and remains idempotent', async () => {
+    if (!database) throw new Error('Disposable database is not initialized.')
+    const migration = migrations.find(({ name }) => name === rationaleNullableMigrationName)
+    if (!migration) throw new Error('Rationale nullable migration is not registered.')
+
+    const getNullability = async () => {
+      const result = await database!.execute(sql`
+        SELECT is_nullable
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'allocation_decision'
+          AND column_name = 'rationale'
+      `)
+      return String(result.rows[0]?.is_nullable)
+    }
+
+    expect(await getNullability()).toBe('YES')
+
+    await migration.down(stub<MigrateDownArgs>({ db: database }))
+    expect(await getNullability()).toBe('NO')
+
+    await migration.up(stub<MigrateUpArgs>({ db: database }))
+    expect(await getNullability()).toBe('YES')
+
+    await migration.up(stub<MigrateUpArgs>({ db: database }))
+    expect(await getNullability()).toBe('YES')
+
+    await migration.down(stub<MigrateDownArgs>({ db: database }))
+    expect(await getNullability()).toBe('NO')
   })
 })
