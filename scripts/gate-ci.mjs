@@ -2,10 +2,12 @@
 /**
  * Local mirror of `.github/workflows/ci-pr.yml` (serial): phase-1 cheap checks,
  * then phase-2 expensive (int/build). e2e is NOT part of the local mirror
- * (OPS59 + OPS72): the PR CI runs only the e2e blast radius (mode `selected`,
- * never `full`), the deploy `verify` job runs the full suite before
- * publishing, and the local affected run is a skill step (discretionary):
- * `pnpm test:e2e:affected`.
+ * (OPS59 + OPS72): the PR CI runs only the e2e blast radius (mode `selected`
+ * or the high-risk `curated` cross-section — never `full`, OPS86), the deploy
+ * `verify` job runs the full suite before publishing, and the local affected
+ * run is a skill step (discretionary): `pnpm test:e2e:affected`.
+ * The unit/int `changed` steps go through `vitest-changed-or-full.mjs`
+ * (OPS86): a zero selection falls back to the full suite, never green with 0.
  * Docs guards (OPS63): the `docs-guards` checks (changelog append-only,
  * aggregate sync, conflict markers) also run here — cheap git diffs, same
  * scripts the CI job runs (the `changelog-rewrite:` escape stays CI-only,
@@ -102,12 +104,12 @@ const main = async () => {
   if (scope.test.mode === 'full') {
     run('test:unit (full)', 'pnpm', ['test:unit'])
   } else if (scope.test.mode === 'changed') {
-    run('test:unit (changed)', 'pnpm', [
-      'test:unit',
-      '--',
-      '--changed',
+    run('test:unit (changed-or-full)', 'node', [
+      'scripts/vitest-changed-or-full.mjs',
+      '--suite',
+      'unit',
+      '--base',
       scope.base,
-      '--passWithNoTests',
     ])
   } else {
     console.log('\n[gate:ci] ⊘ test:unit skipped (no src/tests blast radius)')
@@ -133,12 +135,12 @@ const main = async () => {
     if (scope.test.mode === 'full') {
       run('test:int (full)', 'pnpm', ['test:int'])
     } else {
-      run('test:int (changed)', 'pnpm', [
-        'test:int',
-        '--',
-        '--changed',
+      run('test:int (changed-or-full)', 'node', [
+        'scripts/vitest-changed-or-full.mjs',
+        '--suite',
+        'int',
+        '--base',
         scope.base,
-        '--passWithNoTests',
       ])
     }
   } else {
@@ -157,9 +159,13 @@ const main = async () => {
     console.log(
       `\n[gate:ci] ▶ e2e: CI runs the blast radius (${scope.e2e.specs.join(', ')}) — not in this gate (OPS72); full lives in deploy verify`,
     )
-  } else {
+  } else if (scope.e2e.mode === 'curated') {
     console.log(
-      '\n[gate:ci] ▶ e2e: diff is high-risk (full mode) — no e2e in this PR by design (OPS72); run `pnpm test:e2e:affected` locally; deploy verify runs full before publishing',
+      `\n[gate:ci] ▶ e2e: diff is high-risk — CI runs the curated cross-section (${scope.e2e.specs.join(', ')}) — not in this gate (OPS72); run \`pnpm test:e2e:affected\` locally (runs full); deploy verify runs full before publishing`,
+    )
+  } else if (scope.e2e.mode === 'unmapped-risk') {
+    console.log(
+      `\n[gate:ci] ✗ e2e: RISK-AREA files without a manifest mapping — CI WILL FAIL on:\n  ${scope.e2e.unmapped.join('\n  ')}\n  Add an e2e manifest entry for them before pushing.`,
     )
   }
 

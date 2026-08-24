@@ -2,10 +2,12 @@
 
 import { describe, expect, it } from 'vitest'
 
+import { E2E_CURATED_SPECS } from '../../scripts/lib/e2e-affected-manifest.mjs'
 import {
   classifyBuildScope,
   classifyStaticScope,
   classifyTestScope,
+  E2E_SMOKE_FALLBACK_SPEC,
   HIGH_RISK_EXACT,
   HIGH_RISK_PREFIXES,
   selectE2eSpecs,
@@ -116,15 +118,39 @@ describe('selectE2eSpecs (OPS5)', () => {
     expect(result).toMatchObject({ mode: 'selected', specs: ['campaignMunicipalities'] })
   })
 
-  it('runs the full suite on high-risk paths', () => {
-    expect(selectE2eSpecs([changed('tests/e2e/fixtures/auth.ts')], manifest).mode).toBe('full')
-    expect(selectE2eSpecs([changed('src/migrations/x.ts')], manifest).mode).toBe('full')
+  it('runs the curated e2e cross-section on high-risk paths (never zero, OPS86)', () => {
+    for (const path of ['tests/e2e/fixtures/auth.ts', 'src/migrations/x.ts']) {
+      const result = selectE2eSpecs([changed(path)], manifest)
+      expect(result.mode, path).toBe('curated')
+      expect(result.specs).toEqual(E2E_CURATED_SPECS)
+      expect(result.unmapped).toEqual([])
+    }
   })
 
-  it('reports unmapped src paths without failing and skips the run', () => {
+  it('wakes the home smoke for unmapped non-risk src files (never zero, OPS86)', () => {
     const result = selectE2eSpecs([changed('src/utilities/brandNewModule.ts')], manifest)
-    expect(result.mode).toBe('none')
+    expect(result.mode).toBe('selected')
+    expect(result.specs).toEqual([E2E_SMOKE_FALLBACK_SPEC])
     expect(result.unmapped).toEqual(['src/utilities/brandNewModule.ts'])
+  })
+
+  it('fails closed (unmapped-risk) for risk-area files without a manifest entry', () => {
+    const result = selectE2eSpecs([changed('src/utilities/access/brandNewPolicy.ts')], manifest)
+    expect(result.mode).toBe('unmapped-risk')
+    expect(result.specs).toEqual([])
+    expect(result.unmapped).toEqual(['src/utilities/access/brandNewPolicy.ts'])
+  })
+
+  it('fails closed even when other specs would run (risk file is uncovered)', () => {
+    const result = selectE2eSpecs(
+      [
+        changed('src/components/campaign/municipality/MunicipalityTable.tsx'),
+        changed('src/lib/schemas/brandNewForm.ts'),
+      ],
+      manifest,
+    )
+    expect(result.mode).toBe('unmapped-risk')
+    expect(result.unmapped).toEqual(['src/lib/schemas/brandNewForm.ts'])
   })
 
   it('skips e2e for diffs with no src/e2e changes', () => {

@@ -100,6 +100,7 @@ describe('ciSkipInvariants', () => {
       'scripts/test-affected.mjs',
       'scripts/e2e-affected.mjs',
       'scripts/run-e2e-affected.mjs',
+      'scripts/vitest-changed-or-full.mjs',
       'tests/unit/ciSkipInvariants.unit.spec.ts',
       'tests/unit/testAffected.unit.spec.ts',
     ]) {
@@ -139,5 +140,16 @@ describe('ciSkipInvariants', () => {
       E2E_AFFECTED_MANIFEST,
     )
     expect(missing, `unmapped domains:\n${missing.join('\n')}`).toEqual([])
+  })
+
+  it('ci-pr wires the OPS86 never-zero fallbacks (curated e2e, unmapped-risk fail, changed-or-full)', () => {
+    // The fail-closed behavior IS the workflow wiring — pin it like the
+    // other CI contracts in this file.
+    const ciPr = readFileSync(join(repoRoot, '.github/workflows/ci-pr.yml'), 'utf8')
+    expect(ciPr).toContain("e2e_mode == 'selected' || steps.scope.outputs.e2e_mode == 'curated'")
+    expect(ciPr).toContain("e2e_mode == 'unmapped-risk'")
+    expect(ciPr).toContain('vitest-changed-or-full.mjs')
+    // The PR never runs e2e full.
+    expect(ciPr).not.toContain("e2e_mode == 'full'")
   })
 })

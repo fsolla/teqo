@@ -14,12 +14,18 @@
 #
 # Job-level skips come from the `scope` classifier (scripts/ci-scope.mjs) run
 # as a step; its outputs drive `if:` on the heavy steps (code/build/test:
-# none/changed/full; e2e: none/selected/full). e2e policy (OPS72): the PR
-# runs ONLY the blast radius — the specs the classifier detected as touched
-# (mode `selected`), never `full`. A high-risk diff (schema/lockfile/test
-# harness) classifies as `full` → the PR simply runs no e2e: the local agent
-# mirror (`pnpm test:e2e:affected`) runs full in that same case, and the
-# deploy `verify` job runs the full suite before publishing.
+# none/changed/full; e2e: none/selected/curated/unmapped-risk). e2e policy
+# (OPS72 + OPS86): the PR runs ONLY the blast radius — the specs the
+# classifier detected as touched (mode `selected`) — never `full`. A
+# high-risk diff (schema/lockfile/test harness) classifies as `curated`: the
+# PR runs the curated e2e cross-section (never zero), the local agent mirror
+# (`pnpm test:e2e:affected`) runs full in that same case, and the deploy
+# `verify` job runs the full suite before publishing. Risk-area files
+# (`src/utilities/access`, `src/lib/schemas`, push, AI) without a manifest
+# entry classify `unmapped-risk` and the job FAILS closed listing them —
+# touched code never passes CI on zero e2e. The unit/int `changed` steps go
+# through `vitest-changed-or-full.mjs`: a zero selection falls back to the
+# full suite instead of green with no tests (OPS86).
 #
 # Schema migrations are NOT serialized across PRs (migration-lock removed
 # 2026-08-12): a stale chain is caught by `pnpm migrate` + `test:int` on every
@@ -108,6 +114,19 @@ jobs:
           echo "test_mode=$(echo "$result" | jq -r .test.mode)" >> "$GITHUB_OUTPUT"
           echo "e2e_mode=$(echo "$result" | jq -r .e2e.mode)" >> "$GITHUB_OUTPUT"
           echo "e2e_specs=$(echo "$result" | jq -r '[.e2e.specs[] | "tests/e2e/" + . + ".e2e.spec.ts"] | join(" ")')" >> "$GITHUB_OUTPUT"
+          echo "e2e_unmapped=$(echo "$result" | jq -r '[.e2e.unmapped[]] | join(" ")')" >> "$GITHUB_OUTPUT"
+
+      # OPS86 fail-closed: risk-area files without a manifest entry must
+      # never pass green with zero e2e. Fail fast, before the expensive steps.
+      - name: Fail on unmapped risk paths
+        if: steps.scope.outputs.e2e_mode == 'unmapped-risk'
+        run: |
+          echo "::error::Risk-area files touched by this PR have no e2e manifest mapping:"
+          for file in ${{ steps.scope.outputs.e2e_unmapped }}; do
+            echo "::error::- $file"
+          done
+          echo "::error::Add an entry in scripts/lib/e2e-affected-manifest.mjs (E2E_AFFECTED_MANIFEST) covering these paths."
+          exit 1
 
       # Content guards are PR-scoped and cheap — run them before the suite so
       # a guard failure fails fast instead of after 20 minutes of tests.
@@ -145,9 +164,9 @@ jobs:
       - name: Unit tests (full suite)
         if: steps.scope.outputs.test_mode == 'full'
         run: pnpm test:unit
-      - name: Unit tests (changed since PR base)
+      - name: Unit tests (changed since PR base, full on empty selection)
         if: steps.scope.outputs.test_mode == 'changed'
-        run: pnpm test:unit -- --changed origin/${{ github.base_ref }} --passWithNoTests
+        run: node scripts/vitest-changed-or-full.mjs --suite unit --base origin/${{ github.base_ref }}
       - name: Prepare database URL (int service)
         run: |
           set -euo pipefail
@@ -170,23 +189,23 @@ jobs:
           # CPU-relative (no DB).
           VITEST_MAX_WORKERS: 4
         run: pnpm test:int
-      - name: Integration tests (changed since PR base)
+      - name: Integration tests (changed since PR base, full on empty selection)
         if: steps.scope.outputs.test_mode == 'changed'
         env:
           VITEST_MAX_WORKERS: 4
-        run: pnpm test:int -- --changed origin/${{ github.base_ref }} --passWithNoTests
+        run: node scripts/vitest-changed-or-full.mjs --suite int --base origin/${{ github.base_ref }}
 
       - name: Prepare database URL (build/e2e service)
-        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode == 'selected'
+        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode == 'selected' || steps.scope.outputs.e2e_mode == 'curated'
         run: |
           set -euo pipefail
           echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" >> "$GITHUB_ENV"
           echo "DATABASE_URL=postgresql://teqo:teqo@localhost:5433/teqo_test" > .env.test.local
       - name: Migrate (build/e2e database)
-        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode == 'selected'
+        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode == 'selected' || steps.scope.outputs.e2e_mode == 'curated'
         run: pnpm migrate
       - name: Seed minimal (build/e2e database)
-        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode == 'selected'
+        if: steps.scope.outputs.build_mode != 'none' || steps.scope.outputs.e2e_mode == 'selected' || steps.scope.outputs.e2e_mode == 'curated'
         run: pnpm db:seed:minimal
 
       - name: Build (against the local service database)
@@ -194,7 +213,7 @@ jobs:
         run: pnpm build
 
       - name: Cache Playwright browsers
-        if: steps.scope.outputs.e2e_mode == 'selected'
+        if: steps.scope.outputs.e2e_mode == 'selected' || steps.scope.outputs.e2e_mode == 'curated'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
@@ -202,23 +221,25 @@ jobs:
           restore-keys: |
             playwright-${{ runner.os }}-
       - name: Install Playwright chromium
-        if: steps.scope.outputs.e2e_mode == 'selected'
+        if: steps.scope.outputs.e2e_mode == 'selected' || steps.scope.outputs.e2e_mode == 'curated'
         run: pnpm exec playwright install --with-deps chromium
       - name: Build for e2e
-        # Selected mode needs the build too (the Playwright webServer serves
-        # the `.next-e2e` production build). NEXT_PUBLIC_SITE_URL is inlined
-        # at build time, so the canonical `.test` origin must reach THIS build
-        # — it lets the agenda feed dialog generate a link under the
-        # production build when AgendaFeed is in the blast radius (OPS83).
-        if: steps.scope.outputs.e2e_mode == 'selected'
+        # Selected and curated modes need the build too (the Playwright
+        # webServer serves the `.next-e2e` production build).
+        # NEXT_PUBLIC_SITE_URL is inlined at build time, so the canonical
+        # `.test` origin must reach THIS build — it lets the agenda feed
+        # dialog generate a link under the production build when AgendaFeed
+        # is in the blast radius (OPS83).
+        if: steps.scope.outputs.e2e_mode == 'selected' || steps.scope.outputs.e2e_mode == 'curated'
         run: pnpm build
         env:
           NEXT_DIST_DIR: .next-e2e
           NEXT_PUBLIC_SITE_URL: https://feed.e2e.teqo.test
-      - name: E2E tests (blast radius — manifest-selected specs)
-        if: steps.scope.outputs.e2e_mode == 'selected'
-        # OPS72: the PR never runs e2e full — mode `full` (high-risk diff)
-        # skips this step by design (local mirror + deploy verify cover it).
+      - name: E2E tests (blast radius — manifest-selected or curated specs)
+        if: steps.scope.outputs.e2e_mode == 'selected' || steps.scope.outputs.e2e_mode == 'curated'
+        # OPS72 + OPS86: the PR never runs e2e full — a high-risk diff runs
+        # the curated cross-section (`curated`, never zero) and the full suite
+        # stays in the deploy verify; `unmapped-risk` failed the job earlier.
         # Explicit CI workers; the local default stays 2 (playwright.config.ts).
         # 4 workers in one process replace the former 2 shards × 2 workers.
         env:

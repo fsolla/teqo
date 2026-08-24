@@ -4,7 +4,17 @@
  * Unit-pinned in tests/unit/testAffected.unit.spec.ts,
  * tests/unit/ciSkipInvariants.unit.spec.ts, and
  * tests/unit/e2eAffectedManifest.unit.spec.ts.
+ *
+ * OPS86: e2e selection is never silently zero when code changed — high-risk
+ * diffs run the curated cross-section (`curated`), risk-area files without a
+ * manifest entry fail closed (`unmapped-risk`), and any other unmapped src/
+ * file wakes the home smoke.
  */
+
+import { E2E_CURATED_SPECS, E2E_RISK_PREFIXES } from './e2e-affected-manifest.mjs'
+
+/** Generic e2e smoke for unmapped non-risk src/ files (OPS86 fallback). */
+export const E2E_SMOKE_FALLBACK_SPEC = 'campaignHomeActions'
 
 /**
  * Paths whose blast radius is the whole app: schema, test harness, lockfile,
@@ -28,6 +38,7 @@ export const HIGH_RISK_EXACT = new Set([
   'scripts/test-affected.mjs',
   'scripts/e2e-affected.mjs',
   'scripts/run-e2e-affected.mjs',
+  'scripts/vitest-changed-or-full.mjs',
   'scripts/ci-scope.mjs',
   'scripts/check-test-locations.mjs',
   'scripts/check-plans-only-pr-closes.mjs',
@@ -190,15 +201,26 @@ const E2E_SPEC_PATTERN = /^tests\/e2e\/[^/]+\.e2e\.spec\.ts$/
  * Decide the Playwright scope for a PR diff.
  * @param {{ path: string, status: string }[]} files
  * @param {{ prefixes: string[], specs: string[] }[]} manifest prefix → spec names.
- * @returns {{ mode: 'full' | 'selected' | 'none', specs: string[], reason: string,
- *             unmapped: string[] }}
+ * @returns {{ mode: 'curated' | 'selected' | 'unmapped-risk' | 'none',
+ *             specs: string[], reason: string, unmapped: string[] }}
+ *
+ * Modes (OPS86):
+ * - `curated` — high-risk diff: run `E2E_CURATED_SPECS`, never zero (the
+ *   full suite stays in the deploy verify).
+ * - `unmapped-risk` — a risk-area file (`E2E_RISK_PREFIXES`) matched no
+ *   manifest entry: the CI fails closed listing the files instead of going
+ *   green with zero e2e.
+ * - `selected` — manifest-selected specs; an unmapped non-risk src/ file
+ *   still wakes the home smoke so code never ships on zero e2e.
+ * - `none` — no e2e-relevant changes (docs-only).
  */
 export function selectE2eSpecs(files, manifest) {
   if (files.some(({ path }) => isHighRisk(path))) {
     return {
-      mode: 'full',
-      specs: [],
-      reason: 'diff touches a high-risk path (schema/lockfile/test harness)',
+      mode: 'curated',
+      specs: [...E2E_CURATED_SPECS],
+      reason:
+        'diff touches a high-risk path (schema/lockfile/test harness) — curated e2e cross-section; full suite stays in the deploy verify',
       unmapped: [],
     }
   }
@@ -222,15 +244,32 @@ export function selectE2eSpecs(files, manifest) {
     }
     for (const match of matches) for (const spec of match.specs) specs.add(spec)
   }
+  const unmappedRisk = unmapped.filter((path) =>
+    E2E_RISK_PREFIXES.some((prefix) => path.startsWith(prefix)),
+  )
+  if (unmappedRisk.length > 0) {
+    return {
+      mode: 'unmapped-risk',
+      specs: [],
+      reason: 'risk-area files have no e2e manifest mapping — add an entry (fail-closed)',
+      unmapped,
+    }
+  }
   if (specs.size === 0) {
+    if (unmapped.length > 0) {
+      return {
+        mode: 'selected',
+        specs: [E2E_SMOKE_FALLBACK_SPEC],
+        reason:
+          'src/ changes with no e2e manifest mapping — running the home smoke (never zero e2e)',
+        unmapped,
+      }
+    }
     return {
       mode: 'none',
       specs: [],
-      reason:
-        unmapped.length > 0
-          ? 'src/ changes with no e2e manifest mapping (see unmapped list)'
-          : 'no e2e-relevant changes',
-      unmapped,
+      reason: 'no e2e-relevant changes',
+      unmapped: [],
     }
   }
   // The `setup` spec is dev-mode-only: the setup project is dropped under
@@ -238,8 +277,17 @@ export function selectE2eSpecs(files, manifest) {
   // run `playwright test -- tests/e2e/setup.e2e.spec.ts` against zero projects
   // and fail with "No tests found" (OPS39 — first setup-only PR hit it). In a
   // mixed set the spec is harmless (it just matches no project), so only the
-  // setup-only case drops out.
+  // setup-only case drops out — and an unmapped src/ file still wakes the
+  // smoke instead (OPS86: never zero e2e on touched code).
   if (specs.size === 1 && specs.has('setup')) {
+    if (unmapped.length > 0) {
+      return {
+        mode: 'selected',
+        specs: [E2E_SMOKE_FALLBACK_SPEC],
+        reason: 'setup-only spec plus unmapped src/ changes — running the home smoke',
+        unmapped,
+      }
+    }
     return {
       mode: 'none',
       specs: [],
