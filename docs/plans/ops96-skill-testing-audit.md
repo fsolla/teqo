@@ -27,7 +27,7 @@ A suíte de testes cresceu bem além do que os guias contemplavam (unit foi de 1
 ## Objetivo e aceite
 
 - Relatório final obrigatório que conta **tudo o que foi feito e o porquê**: cada melhoria aplicada (com evidência verde antes/depois), cada passo revertido (com o motivo da falha), cada proposta não executada (com a razão) — lido sozinho, ele explica a noite inteira.
-- Entrega da noite: **um único PR draft** com tudo; **a descrição do PR é o relatório final**; fixes separados por commit quando possível (preferência, não requisito duro).
+- Entrega da noite: **um único PR em estado ready** (não draft) com tudo, **sem auto-merge armado**, entregue com **CI green e mergeable** (sem conflitos); **a descrição do PR é o relatório final**; fixes separados por commit quando possível (preferência, não requisito duro).
 - O mesmo relatório traz os números do retrato: contagens e tempos por camada, duplicatas, candidatos a mover/reforçar/remover — cada item com disposição e justificativa.
 - Melhorias seguras implementadas como código, cada passo com a suíte relevante verde antes e depois.
 - Itens intocáveis preservados: testes de consentimento/LGPD fail-closed, access control/RBAC e lockdown de liderança não podem ser removidos nem enfraquecidos autonomamente.
@@ -69,7 +69,7 @@ A suíte de testes cresceu bem além do que os guias contemplavam (unit foi de 1
 
 ## Decisões (gate 2026-08-24)
 
-- **Entrega noturna = PR draft único ao fim**, com todo o conjunto do trabalho; **a descrição do PR é o relatório final**; fixes separados por commit quando possível (preferência, não requisito duro); sem auto-merge armado. O relatório também vive como artefato próprio referenciado pelo PR.
+- **Entrega noturna = um único PR em estado ready** (não draft) com todo o conjunto do trabalho, **sem auto-merge armado**, entregue com **CI green e mergeable** (sem conflitos com main — se surgir conflito, a skill rebasa ou registra no relatório); a descrição do PR é o relatório final; fixes separados por commit quando possível (preferência, não requisito duro). O relatório também vive como artefato próprio referenciado pelo PR. A skill deve seguir os gatilhos do fluxo de auto-merge do repo para NÃO armar automerge nesse PR. Emenda no gate (2026-08-25): antes estava "draft".
 - **Remoções autônomas permitidas só com prova forte** (duplicata comprovada, teste morto de feature removida); guardrail da rede de proteção intocável (consentimento/LGPD, RBAC, lockdown de liderança); caso dúvido vira proposta no relatório.
 - **Cobertura sim nesta 1ª versão:** instalar @vitest/coverage-v8 como devDependency opcional atrás de flag — first-party e barato, base objetiva para identificar "teste de pouco valor".
 
