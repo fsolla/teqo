@@ -390,20 +390,48 @@ export const createApi = ({
     },
 
     /**
-     * DELETE /pulls/{number}/auto-merge — disarms GitHub's native auto-merge.
-     * Tolerates 404 (nothing armed) — idempotent by contract; any other error
-     * rethrows. The react-audit skill calls this right after opening its PR
-     * and after every subsequent push (the safety net workflow re-arms on
-     * each `synchronize`).
+     * Disarms GitHub's native auto-merge via GraphQL — the same channel the
+     * `agent-pr-ready-automerge` safety net uses to arm it. The REST
+     * counterpart (`DELETE /pulls/{number}/auto-merge`) answers 404 even
+     * when auto-merge IS armed by GraphQL, so it is not usable here
+     * (found live in the OPS97 dogfood, PR #905). Takes the PR's `nodeId`
+     * (`getPullRequest(n).nodeId`), mirroring `enableAutoMerge`.
      */
-    disableAutoMerge: async (number) => {
-      try {
-        await request(`/repos/${owner}/${name}/pulls/${number}/auto-merge`, {
-          method: 'DELETE',
-        })
-      } catch (error) {
-        if (!/\b404\b/.test(String(error?.message ?? ''))) throw error
+    disableAutoMerge: async (nodeId) => {
+      await graphql(
+        `
+          mutation DisablePullRequestAutoMerge($id: ID!) {
+            disablePullRequestAutoMerge(input: { pullRequestId: $id }) {
+              pullRequest {
+                number
+              }
+            }
+          }
+        `,
+        { id: nodeId },
+      )
+    },
+
+    /**
+     * Disarm-and-verify loop for react-audit's Done condition. The safety
+     * net arms auto-merge asynchronously AFTER the PR opens (the race is
+     * real: a single disarm right after opening lost it in the OPS97
+     * dogfood), so a bare DELETE/mutation is not enough — poll until
+     * `auto_merge` reads null or attempts are exhausted. Resolves true
+     * when verified disarmed; throws naming the PR otherwise.
+     */
+    ensureAutoMergeDisabled: async (number, { attempts = 5, delayMs = 2000 } = {}) => {
+      for (let attempt = 1; attempt <= attempts; attempt += 1) {
+        const pr = await api.getPullRequest(number)
+        if (!pr || pr.autoMerge === null) return true
+        await api.disableAutoMerge(pr.nodeId)
+        if (attempt < attempts) await sleepImpl(delayMs)
       }
+      const final = await api.getPullRequest(number)
+      if (!final || final.autoMerge === null) return true
+      throw new Error(
+        `auto-merge do PR #${number} segue armado após ${attempts} tentativas de desarme`,
+      )
     },
 
     /**
