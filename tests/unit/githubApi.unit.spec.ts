@@ -132,4 +132,45 @@ describe('github-api (issue tracker layer)', () => {
     expect(file?.content).toBe('olá mundo')
     expect(file?.sha).toBe('s')
   })
+
+  it('getPullRequest normalizes auto_merge into autoMerge', async () => {
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async () =>
+        ok({ number: 5, state: 'open', draft: false, auto_merge: { merge_method: 'rebase' } }),
+    })
+    const pr = await api.getPullRequest(5)
+    expect(pr?.autoMerge?.mergeMethod).toBe('rebase')
+    expect(pr?.head).toEqual({ ref: '', sha: '' })
+  })
+
+  it('disableAutoMerge DELETEs the auto-merge endpoint', async () => {
+    const calls: FetchCall[] = []
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url, init) => {
+        calls.push({ url: String(url), init })
+        return ok({})
+      },
+    })
+    await api.disableAutoMerge(7)
+    expect(calls[0].url).toContain('/repos/fsolla/teqo/pulls/7/auto-merge')
+    expect(calls[0].init?.method).toBe('DELETE')
+  })
+
+  it('disableAutoMerge tolerates 404 when nothing is armed', async () => {
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async () => ok({ message: 'Auto-merge request is disabled for this pull request' }, 404),
+    })
+    await expect(api.disableAutoMerge(9)).resolves.toBeUndefined()
+  })
+
+  it('disableAutoMerge rethrows non-404 errors', async () => {
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async () => ok({ message: 'nope' }, 422),
+    })
+    await expect(api.disableAutoMerge(11)).rejects.toThrow(/422/)
+  })
 })

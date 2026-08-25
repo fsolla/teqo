@@ -175,6 +175,9 @@ export const createApi = ({
     merged: Boolean(pr.merged_at || pr.merged),
     draft: Boolean(pr.draft),
     mergeable: pr.mergeable ?? null,
+    autoMerge: pr.auto_merge
+      ? { mergeMethod: pr.auto_merge.merge_method ?? '', enabledBy: pr.auto_merge.enabled_by?.login ?? '' }
+      : null,
     nodeId: pr.node_id ?? '',
     head: { ref: pr.head?.ref ?? '', sha: pr.head?.sha ?? '' },
     base: { ref: pr.base?.ref ?? '' },
@@ -384,6 +387,23 @@ export const createApi = ({
         `,
         { id: nodeId, mergeMethod },
       )
+    },
+
+    /**
+     * DELETE /pulls/{number}/auto-merge — disarms GitHub's native auto-merge.
+     * Tolerates 404 (nothing armed) — idempotent by contract; any other error
+     * rethrows. The react-audit skill calls this right after opening its PR
+     * and after every subsequent push (the safety net workflow re-arms on
+     * each `synchronize`).
+     */
+    disableAutoMerge: async (number) => {
+      try {
+        await request(`/repos/${owner}/${name}/pulls/${number}/auto-merge`, {
+          method: 'DELETE',
+        })
+      } catch (error) {
+        if (!/\b404\b/.test(String(error?.message ?? ''))) throw error
+      }
     },
 
     /**
