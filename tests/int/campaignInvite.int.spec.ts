@@ -611,10 +611,12 @@ describe('campaign invite domain', () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite').catch(() => null)
       expect(actions).not.toBeNull()
 
-      await payload.delete({
-        collection: 'consent',
-        where: { key: { equals: 'lideranca-autopreenchimento' } },
-      })
+      // Harness purge (Onda0-provision / lease precedent): raw SQL so the
+      // admin-path beforeDelete guard and access checks never apply to this
+      // lifecycle setup — the window lease already guarantees isolation.
+      await payload.db.drizzle.execute(
+        sql`DELETE FROM "consent" WHERE "key" = ${'lideranca-autopreenchimento'}`,
+      )
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
       const municipality = await campaignFixtures().getMunicipality()
       const { leadership } = await createInviteLeadershipGraph(coordinator, municipality.id)

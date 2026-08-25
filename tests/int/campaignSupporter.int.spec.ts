@@ -212,6 +212,17 @@ describe('campaign supporter domain', () => {
       limit: 1,
     })
     if (existingVoteConsent.docs[0]) {
+      // S9+: Consent.beforeDelete refuses deleting an in-use legal text. The
+      // minimal seed links seeded supporters to this canonical consent, so
+      // detach the live voteIntentionConsent references FIRST — the explicit,
+      // ordered version of the FK `ON DELETE SET NULL` this purge relied on
+      // silently before the guard existed.
+      await payload.update({
+        collection: 'supporter',
+        where: { voteIntentionConsent: { equals: existingVoteConsent.docs[0].id } },
+        data: { voteIntentionConsent: null },
+        overrideAccess: true,
+      })
       await payload.delete({
         collection: 'consent',
         id: existingVoteConsent.docs[0].id,
