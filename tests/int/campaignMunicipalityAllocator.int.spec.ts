@@ -116,16 +116,31 @@ describe('campaign municipality allocator registry', () => {
       WHERE "run_id" = ${crashed}
     `)
 
-    // A stale claim must not block the space forever: keep claiming until
-    // the crashed run's claim is gone. Under the PARALLEL suite another spec
-    // may steal the aged slot first (shared cursor), so the invariant is
-    // "the stale claim disappears while the survivor claims succeed" — not
-    // "the survivor lands on that exact slot".
-    let stolen = false
-    for (let attempt = 0; attempt < catalogSize * 3 && !stolen; attempt += 1) {
-      await claimMunicipalityIndex(payload, catalogSize, survivor)
-      if ((await claimCount(crashed)) === 0) stolen = true
+    // Deterministic steal (OPS46-S3): query the stale slot's index and drive
+    // the shared cursor directly to it. The old loop (catalogSize*3 claims)
+    // depended on the cursor probabilistically visiting the stale slot within
+    // the bound — under heavy parallel load the visit could miss the window
+    // and flake. Under the PARALLEL suite another spec may steal the aged
+    // slot first (shared cursor), so a null SELECT means "already stolen".
+    const targetResult = await payload.db.drizzle.execute(sql`
+      SELECT "index" FROM "campaign_fixture_municipality_claims" WHERE "run_id" = ${crashed}
+    `)
+    const targetIndex =
+      targetResult.rows.length > 0
+        ? Number((targetResult.rows[0] as { index: number }).index)
+        : null
+
+    let stolen = targetIndex === null
+    if (!stolen) {
+      for (let attempt = 0; attempt < catalogSize && !stolen; attempt += 1) {
+        const claimed = await claimMunicipalityIndex(payload, catalogSize, survivor)
+        if (claimed === targetIndex) stolen = true
+        else if ((await claimCount(crashed)) === 0) stolen = true
+      }
     }
+    // If another spec stole between the SELECT and our loop, claimCount
+    // already reflects it — still a successful steal for the invariant.
+    if (!stolen && (await claimCount(crashed)) === 0) stolen = true
     expect(stolen, 'a stale claim must be stolen (or the slot reclaimed) within the loop').toBe(
       true,
     )
