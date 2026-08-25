@@ -5,9 +5,9 @@
  * functions; the unit spec pins their behavior against fixture payloads.
  */
 
-const DEFAULT_TOP = 15
+export const DEFAULT_TOP = 15
 
-const ms = (value) => `${(value / 1000).toFixed(1)}s`
+export const ms = (value) => `${(value / 1000).toFixed(1)}s`
 
 /** @returns {number} */
 const fileDurationMs = (entry) => {
@@ -80,6 +80,8 @@ export const renderSlowestFilesTable = (summary, { top = DEFAULT_TOP } = {}) => 
 
 /**
  * Static inventory of an e2e spec source — counting only, never execution.
+ * Deliberate approximation: `test.each`/`test.skip` variants are not counted
+ * (the audit's portrait is structural, not exhaustive).
  *
  * @param {{ file: string, content: string }} source
  * @returns {{ file: string, describes: number, tests: number }}
