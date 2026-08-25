@@ -277,23 +277,23 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 
 ## Remediation deliveries (in-session, on `audit/pass-6`)
 
-| WS    | Content                                                                                                        | Guard (class)                                                                          | Status |
-| ----- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------ |
-| P6-1  | Bypass-ratchet hardening: header-covered bypasses count; pin new files at current counts; per-site comment = 0 | 3 — `codebaseConventions` bypass ratchet (P3-E hardened)                                | done   |
-| P6-2  | `perfil` uses `requireCampaignPageActor`; P3-I regex widened to `getCampaignUser[A-Za-z0-9]*\(`                | 3 — `codebaseConventions` page-actor guard (P3-I hardened)                              | done   |
-| P6-M909 | Miss #909: `scripts/testing-audit-disarm.mjs` (create→disarm→verify-null, atomic) + skill wiring            | 3 — script invoked by the skill's PR step (order-proof)                                 | done   |
-| P6-M895 | Miss #895: `plan-issue` skill convention — intention plans record literal decision data (tables/IDs), not narrative | 6 — declared judgment-only (no deterministic detector for missing prose data)       | done   |
+| WS      | Content                                                                                                             | Guard (class)                                                                 | Status |
+| ------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------ |
+| P6-1    | Bypass-ratchet hardening: header-covered bypasses count; pin new files at current counts; per-site comment = 0      | 3 — `codebaseConventions` bypass ratchet (P3-E hardened)                      | done   |
+| P6-2    | `perfil` uses `requireCampaignPageActor`; P3-I regex widened to `getCampaignUser[A-Za-z0-9]*\(`                     | 3 — `codebaseConventions` page-actor guard (P3-I hardened)                    | done   |
+| P6-M909 | Miss #909: `scripts/testing-audit-disarm.mjs` (create→disarm→verify-null, atomic) + skill wiring                    | 3 — script invoked by the skill's PR step (order-proof)                       | done   |
+| P6-M895 | Miss #895: `plan-issue` skill convention — intention plans record literal decision data (tables/IDs), not narrative | 6 — declared judgment-only (no deterministic detector for missing prose data) | done   |
 
 ## Pass 6 Decisions
 
-| ID  | Decision                                                                                  | Rationale                                                                                                        |
-| --- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| D1  | One branch, one PR, no auto-merge (OPS98 contract)                                        | Artifacts + implementations commit separately on `audit/pass-6`; the safety-net vetoes `audit/*` by construction |
-| D2  | Implementations = P0/P1 S/M only (cap 6): 2 P1 guard-hardenings + 2 miss guardrails       | Everything else goes to `entrega-engenharia-p6.md` + ledger; P2 duplicates the last three passes' deferred pile   |
+| ID  | Decision                                                                                   | Rationale                                                                                                            |
+| --- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| D1  | One branch, one PR, no auto-merge (OPS98 contract)                                         | Artifacts + implementations commit separately on `audit/pass-6`; the safety-net vetoes `audit/*` by construction     |
+| D2  | Implementations = P0/P1 S/M only (cap 6): 2 P1 guard-hardenings + 2 miss guardrails        | Everything else goes to `entrega-engenharia-p6.md` + ledger; P2 duplicates the last three passes' deferred pile      |
 | D3  | Guard-hardening IS the fix for the two P1s — product code untouched where scope-guarded    | Both P1s are guard decay, not live holes (verified per site); hardening the spec is cheaper and safer than re-writes |
-| D4  | Stale rows closed only with re-measured evidence; wizard rows closed as superseded (OPS95) | The wizard domain's deletion makes P4-E/P5-A moot — closing on code absence, not on fix                          |
-| D5  | #895 guardrail is class 6, declared judgment-only                                         | Prose can't be deterministically checked for missing data; pretending otherwise would fake a guard (4b rule)     |
-| D6  | knip `scripts/*.mjs` entry-list dodge → ledger, not config change in-pass                  | Changing knip's entry model mid-pass risks unrelated CI churn; deletion of the 3 dead scripts rides P6-G         |
+| D4  | Stale rows closed only with re-measured evidence; wizard rows closed as superseded (OPS95) | The wizard domain's deletion makes P4-E/P5-A moot — closing on code absence, not on fix                              |
+| D5  | #895 guardrail is class 6, declared judgment-only                                          | Prose can't be deterministically checked for missing data; pretending otherwise would fake a guard (4b rule)         |
+| D6  | knip `scripts/*.mjs` entry-list dodge → ledger, not config change in-pass                  | Changing knip's entry model mid-pass risks unrelated CI churn; deletion of the 3 dead scripts rides P6-G             |
 
 ## Next Actions
 
