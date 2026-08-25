@@ -4,6 +4,7 @@ import type { Activity, GoogleCalendarSync as GoogleCalendarSyncDoc } from '@/pa
 import type { PayloadRequest } from 'payload'
 
 import {
+  GOOGLE_CALENDAR_SYNC_HOOK_TIMEOUT_MS,
   runCampaignCalendarSync,
   shouldSyncActivityOperation,
   shouldSyncConfigChange,
@@ -22,6 +23,11 @@ import {
  *
  * Both NEVER throw: the Teqo write paths are independent of Google
  * (fail-closed at the trigger; engine failures land in the `paused` state).
+ * C114-LOCK: the hooks run INSIDE the save's transaction, so the Google I/O
+ * is bounded by `GOOGLE_CALENDAR_SYNC_HOOK_TIMEOUT_MS` (S11 parity) — the row
+ * lock (`activity` / `googleCalendarSync`) is not held for the full
+ * `REQUEST_TIMEOUT_MS × N` RTTs. The manual / webhook paths keep the full
+ * per-hop budget (no transaction open) as the reliable fallback.
  */
 export const activityGoogleCalendarSyncHook = async ({
   doc,
@@ -41,7 +47,11 @@ export const activityGoogleCalendarSyncHook = async ({
     if (req.context?.mutationKind === 'googleCalendarSync') return doc
     const resolvedOperation = operation ?? 'delete'
     if (shouldSyncActivityOperation({ operation: resolvedOperation, doc, previousDoc })) {
-      await runCampaignCalendarSync(req.payload, { reason: resolvedOperation, req })
+      await runCampaignCalendarSync(req.payload, {
+        reason: resolvedOperation,
+        req,
+        signal: AbortSignal.timeout(GOOGLE_CALENDAR_SYNC_HOOK_TIMEOUT_MS),
+      })
     }
   } catch {
     // recorded as paused inside the engine; the write path stays intact
@@ -62,7 +72,11 @@ export const googleCalendarSyncConfigHook = async ({
 }): Promise<unknown> => {
   try {
     if (shouldSyncConfigChange({ operation, doc, previousDoc })) {
-      await runCampaignCalendarSync(req.payload, { reason: 'config-change', req })
+      await runCampaignCalendarSync(req.payload, {
+        reason: 'config-change',
+        req,
+        signal: AbortSignal.timeout(GOOGLE_CALENDAR_SYNC_HOOK_TIMEOUT_MS),
+      })
     }
   } catch {
     // never throw into admin writes

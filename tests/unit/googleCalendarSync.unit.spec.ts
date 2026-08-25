@@ -2,9 +2,11 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import type { Activity, GoogleCalendarSync as GoogleCalendarSyncDoc } from '@/payload-types'
 
+import { REQUEST_TIMEOUT_MS } from '@/utilities/googleCalendarClient'
 import {
   deriveGoogleCalendarSyncStatus,
   GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV,
+  GOOGLE_CALENDAR_SYNC_HOOK_TIMEOUT_MS,
   readGoogleServiceAccountCredentials,
   shouldSyncActivityOperation,
   shouldSyncConfigChange,
@@ -236,5 +238,14 @@ describe('shouldSyncConfigChange', () => {
         previousDoc: config({ disabledAt: '2026-08-11T10:00:00.000Z' }),
       }),
     ).toBe(true)
+  })
+})
+
+describe('sync deadlines (C114-LOCK)', () => {
+  it('keeps the hook deadline strictly below the per-hop deadline (row lock window)', () => {
+    // The hook fetch runs inside the save's transaction — its deadline bounds
+    // the row lock window; manual / webhook holds no lock and keeps 15s headroom.
+    expect(GOOGLE_CALENDAR_SYNC_HOOK_TIMEOUT_MS).toBe(5_000)
+    expect(GOOGLE_CALENDAR_SYNC_HOOK_TIMEOUT_MS).toBeLessThan(REQUEST_TIMEOUT_MS)
   })
 })
