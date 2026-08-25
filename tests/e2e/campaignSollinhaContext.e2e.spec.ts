@@ -1,40 +1,17 @@
 import type { Page } from '@playwright/test'
 
-import { expect, test, waitForRouterSettled } from './fixtures/campaignE2EFixtures.js'
+import {
+  expect,
+  mockSollinhaChat,
+  sollinhaChatStreamBody,
+  test,
+  waitForRouterSettled,
+} from './fixtures/campaignE2EFixtures.js'
 
 const SESSION_KEY = 'teqo:campaign:sollinha-chat-session'
 
 const DEFAULT_REPLY = 'Resposta mockada com [Municípios](/campanha/municipios).'
 const EXTERNAL_REPLY = 'Resposta mockada com [portal da saúde](https://www.saude.ba.gov.br/).'
-
-/**
- * The SSE body the mocks reply with. Chunks follow the SDK v7 UI-message-stream
- * wire format (start / text-start / text-delta / text-end / finish) — a bare
- * legacy `{"type":"text"}` chunk fails the client schema and the chat would
- * never settle.
- */
-const streamBody = (reply: string) =>
-  [
-    'data: {"type":"start"}\n\n',
-    'data: {"type":"text-start","id":"t1"}\n\n',
-    `data: {"type":"text-delta","id":"t1","delta":${JSON.stringify(reply)}}\n\n`,
-    'data: {"type":"text-end","id":"t1"}\n\n',
-    'data: {"type":"finish","finishReason":"stop"}\n\n',
-  ].join('')
-
-/**
- * Mock the AI endpoint with a minimal SSE stream so sending a message neither
- * needs a DeepSeek API key nor hits the real rate limiter. The reply carries a
- * markdown link so the "navigate without reload" path has a real anchor.
- */
-const mockAiChat = (page: Page, reply: string = DEFAULT_REPLY) =>
-  page.route('**/campanha/api/ai-chat', async (route) => {
-    await route.fulfill({
-      status: 200,
-      headers: { 'Content-Type': 'text/event-stream' },
-      body: streamBody(reply),
-    })
-  })
 
 /**
  * Mock whose FIRST request replies immediately and every later request hangs
@@ -56,7 +33,7 @@ const gatedMockAiChat = (page: Page) => {
       await route.fulfill({
         status: 200,
         headers: { 'Content-Type': 'text/event-stream' },
-        body: streamBody(DEFAULT_REPLY),
+        body: sollinhaChatStreamBody(DEFAULT_REPLY),
       })
     } catch {
       // An early failure may end the test before `release()` — fulfilling on a
@@ -113,7 +90,7 @@ const storedSession = (page: Page) =>
 test.describe('B188 — contexto da conversa persiste na sessão da janela/tab', () => {
   test.beforeEach(async ({ page }) => {
     test.slow()
-    await mockAiChat(page)
+    await mockSollinhaChat(page, DEFAULT_REPLY)
   })
 
   test('reload na mesma aba restaura a conversa', async ({ page, campaign }) => {
@@ -234,7 +211,7 @@ test.describe('B188 — contexto da conversa persiste na sessão da janela/tab',
 test.describe('B198 — link de resposta fecha o drawer mobile ao navegar no mesmo tab', () => {
   test.beforeEach(async ({ page }) => {
     test.slow()
-    await mockAiChat(page)
+    await mockSollinhaChat(page, DEFAULT_REPLY)
   })
 
   test('link interno: drawer fecha no toque e a navegação segue no mesmo tab', async ({
@@ -272,7 +249,7 @@ test.describe('B198 — link de resposta fecha o drawer mobile ao navegar no mes
 
   test('link externo: abre em nova aba e o drawer permanece aberto', async ({ page, campaign }) => {
     // Last-registered route wins (LIFO) — overrides the beforeEach mock.
-    await mockAiChat(page, EXTERNAL_REPLY)
+    await mockSollinhaChat(page, EXTERNAL_REPLY)
     // The popup would hit the real site; fulfill it so CI stays deterministic.
     await page
       .context()
@@ -306,7 +283,7 @@ test.describe('B198 — link de resposta fecha o drawer mobile ao navegar no mes
 test.describe('B199 — fechar o drawer durante streaming persiste fechado no reload', () => {
   test.beforeEach(async ({ page }) => {
     test.slow()
-    await mockAiChat(page)
+    await mockSollinhaChat(page, DEFAULT_REPLY)
   })
 
   test('fechar mid-stream grava open:false e o reload não reabre o drawer', async ({

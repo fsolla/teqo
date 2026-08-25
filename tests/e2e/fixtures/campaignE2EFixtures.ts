@@ -555,6 +555,39 @@ export const checkRadixWhenHydrated = async (page: Page, label: string) => {
 }
 
 /**
+ * The SSE body the Sollinha chat mocks reply with. Chunks follow the SDK v7
+ * UI-message-stream wire format (start / text-start / text-delta / text-end /
+ * finish) — a bare legacy `{"type":"text"}` chunk fails the client schema and
+ * the chat would never settle. Shared by every chat e2e mock so the v7 shape
+ * lives in exactly one place.
+ */
+export const sollinhaChatStreamBody = (delta: string): string =>
+  [
+    'data: {"type":"start"}\n\n',
+    'data: {"type":"text-start","id":"t1"}\n\n',
+    `data: {"type":"text-delta","id":"t1","delta":${JSON.stringify(delta)}}\n\n`,
+    'data: {"type":"text-end","id":"t1"}\n\n',
+    'data: {"type":"finish","finishReason":"stop"}\n\n',
+  ].join('')
+
+/**
+ * Mock `/campanha/api/ai-chat` with a minimal v7 SSE stream so sending a
+ * message neither needs a DeepSeek API key nor hits the real rate limiter. The
+ * reply carries a markdown link so the "navigate without reload" path has a
+ * real anchor. Mirrors the precedent helpers (`checkRadixWhenHydrated`,
+ * `expectPostResponse`) that already live in this fixture module.
+ */
+export const mockSollinhaChat = async (page: Page, delta: string): Promise<void> => {
+  await page.route('**/campanha/api/ai-chat', async (route) => {
+    await route.fulfill({
+      status: 200,
+      headers: { 'Content-Type': 'text/event-stream' },
+      body: sollinhaChatStreamBody(delta),
+    })
+  })
+}
+
+/**
  * Waits for dynamic campaign pages to commit their RSC stream by polling
  * until the browser has no transient hidden `#S:*` shell copies left.
  *

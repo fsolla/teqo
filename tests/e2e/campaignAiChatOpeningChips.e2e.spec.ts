@@ -1,20 +1,11 @@
 import type { Page } from '@playwright/test'
 
-import { expect, test, waitForRouterSettled } from './fixtures/campaignE2EFixtures.js'
-
-/**
- * Mock the AI endpoint with a minimal SSE stream so sending a chip neither
- * needs a DeepSeek API key nor hits the real rate limiter — the user message is
- * still recorded client-side, which is all these assertions need.
- */
-const mockAiChat = (page: Page) =>
-  page.route('**/campanha/api/ai-chat', async (route) => {
-    await route.fulfill({
-      status: 200,
-      headers: { 'Content-Type': 'text/event-stream' },
-      body: 'data: {"type":"text","text":"Resposta mockada da Sollinha."}\n\n',
-    })
-  })
+import {
+  expect,
+  mockSollinhaChat,
+  test,
+  waitForRouterSettled,
+} from './fixtures/campaignE2EFixtures.js'
 
 const STAFF_DESKTOP_CHIPS = [
   'Quem foi o deputado mais votado em Feira de Santana?',
@@ -51,7 +42,7 @@ const pickChip = async (page: Page, text: string) => {
 test.describe('B191 — ações rápidas de abertura no chat Sollinha (chips de pergunta)', () => {
   test.beforeEach(async ({ page }) => {
     test.slow()
-    await mockAiChat(page)
+    await mockSollinhaChat(page, 'Resposta mockada da Sollinha.')
   })
 
   test('staff no desktop vê 4 chips; tocar envia a pergunta e os chips somem', async ({

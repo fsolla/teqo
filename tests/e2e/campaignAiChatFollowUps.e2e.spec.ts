@@ -1,6 +1,11 @@
 import type { Page } from '@playwright/test'
 
-import { expect, test, waitForRouterSettled } from './fixtures/campaignE2EFixtures.js'
+import {
+  expect,
+  sollinhaChatStreamBody,
+  test,
+  waitForRouterSettled,
+} from './fixtures/campaignE2EFixtures.js'
 
 /**
  * Mock the AI endpoint with SDK v7 UI-message-stream SSE chunks (start /
@@ -41,8 +46,8 @@ const lastUserText = (body: unknown): string | null => {
   return null
 }
 
-const mockAiChat = (page: Page) =>
-  page.route('**/campanha/api/ai-chat', async (route) => {
+const mockSollinhaChatDynamic = async (page: Page): Promise<void> => {
+  await page.route('**/campanha/api/ai-chat', async (route) => {
     const raw = route.request().postData() ?? ''
     const userText = lastUserText(JSON.parse(raw || '{}'))
     const response = userText?.includes('Ilhéus')
@@ -53,15 +58,10 @@ const mockAiChat = (page: Page) =>
     await route.fulfill({
       status: 200,
       headers: { 'Content-Type': 'text/event-stream' },
-      body: [
-        'data: {"type":"start"}\n\n',
-        'data: {"type":"text-start","id":"t1"}\n\n',
-        `data: {"type":"text-delta","id":"t1","delta":${JSON.stringify(response)}}\n\n`,
-        'data: {"type":"text-end","id":"t1"}\n\n',
-        'data: {"type":"finish","finishReason":"stop"}\n\n',
-      ].join(''),
+      body: sollinhaChatStreamBody(response),
     })
   })
+}
 
 const chipButton = (page: Page, text: string) =>
   page.getByRole('button', { name: text, exact: true })
@@ -97,7 +97,7 @@ const askViaInput = async (page: Page, text: string, expected: string) => {
 test.describe('B192 — follow-ups sugeridos após cada resposta do Sollinha', () => {
   test.beforeEach(async ({ page }) => {
     test.slow()
-    await mockAiChat(page)
+    await mockSollinhaChatDynamic(page)
   })
 
   test('resposta com bloco: bolha sem o bloco, chips acima do input, tocar envia e o slot é substituído', async ({
