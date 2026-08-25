@@ -111,6 +111,8 @@ N/A — tooling de desenvolvimento, sem dado de negócio (herdado da intenção)
 
 ## Riscos e mitigação
 
+- **Débito colhido na run (triage Passo 6):** D1 — flake 1× em `tests/int/googleCalendarSync.int.spec.ts:591` (snapshot CAS) deferido com gatilho: **2ª ocorrência** (local ou CI) → investigar determinismo do CAS e registrar Issue; se casar com a cast rotativa, absorver em #882. D2 (flakes e2e campaignMunicipalities pós-OPS83) já trackeado em #882. D3 (12 achados do sweep do dogfood) adiado por desígnio para a 1ª run real da skill — recaptura garantida pelo próprio ciclo (lista no relatório do PR #905).
+
 - **Safety net re-armer o auto-merge a cada `synchronize`** (crítico — é o comportamento projetado do `agent-pr-ready-automerge.yml`): desarme idempotente é passo obrigatório PÓS-CADA-PUSH (não só pós-abertura); Done só com `auto_merge = null` verificado; PR aberto uma única vez, já estabilizado localmente, minimizando pushes pós-abertura.
 - **Corrida de instant-merge:** estruturalmente evitada — nunca draft→flip (decisão ii); PR Ready nasce com CI frio (janela de minutos para o desarme, não segundos).
 - **CI vermelho por causa alheia aos fixes:** política "dono do PR, dono do CI" com limite declarado — conserta se dentro do blast radius dos fixes; infra/estrutural → caps de tentativa/tempo, relatório honesto, parada com estado declarado (nunca fingir Done).
