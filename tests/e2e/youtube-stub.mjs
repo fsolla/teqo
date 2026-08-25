@@ -25,28 +25,28 @@ const minutesAgo = (minutes) => new Date(Date.now() - minutes * 60_000).toISOStr
 
 const VIDEOS = [
   {
-    id: 'e2e-video-destaque-1',
+    id: 'e2evideo001',
     title: 'E2e Vídeo em destaque',
     minutesAgo: 30,
     views: 12400,
     maxres: true,
   },
   {
-    id: 'e2e-video-caravana-2',
+    id: 'e2evideo002',
     title: 'E2e Vídeo de caravana',
     minutesAgo: 120,
     views: 8100,
     maxres: true,
   },
   {
-    id: 'e2e-video-entrevista-3',
+    id: 'e2evideo003',
     title: 'E2e Vídeo de entrevista',
     minutesAgo: 26 * 60,
     views: 987,
     maxres: false,
   },
   {
-    id: 'e2e-video-excluido-4',
+    id: 'e2evideo004',
     title: 'E2e Vídeo excluído',
     minutesAgo: 10,
     views: 5_000_000,
