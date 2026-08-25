@@ -57,7 +57,7 @@ Cada fase pesada é delegada a um sub-agente com contexto mínimo. O agente prin
 - [ ] 2. Reserva de IDs
 - [ ] 3. Dispatch sub-agente explorador → receber findings
 - [ ] 4. Dispatch sub-agentes escritores (paralelo) → receber planos
-- [ ] 5. GATE: overview + rascunho UI (se muda UI) → confirmar
+- [ ] 5. GATE: overview + rascunho UI (se muda UI) + decisão de dados → literais no plano → confirmar
 - [ ] 6. Dispatch sub-agente registrador → PR → merge → promote
 ```
 
@@ -117,6 +117,7 @@ Antes de criar Issues:
 
 - Overview: ID, título, prio, depends, appetite, link do plano
 - Para cada item UI: aponte o link do `.html` fonte
+- Decisão de dados → valores literais presentes no plano? (bloco "Dados da decisão (literais)" — nunca só narrativa)
 - Perguntas acumuladas, recomendação de produto primeiro
 
 **Pare e espere.** Itere até confirmação explícita do lote.
