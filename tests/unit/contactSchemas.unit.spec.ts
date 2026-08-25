@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import { BRAZILIAN_PHONE_DUPLICATE_MESSAGE } from '@/lib/phone'
-import { contactCreateSchema, contactFieldUpdateSchema } from '@/lib/schemas/contact'
+import {
+  contactCitySchema,
+  contactCreateSchema,
+  contactFieldUpdateSchema,
+  contactStateSchema,
+} from '@/lib/schemas/contact'
 
 describe('contactCreateSchema (C139)', () => {
   it('accepts a full valid ficha', () => {
@@ -101,5 +106,41 @@ describe('contactFieldUpdateSchema — C139 variants', () => {
       contactFieldUpdateSchema.safeParse({ id: 5, field: 'phones', phones: ['71999990000'] })
         .success,
     ).toBe(true)
+  })
+
+  it('collapses an empty city to undefined in the create ficha (C139 DRY)', () => {
+    const result = contactCreateSchema.safeParse({ name: 'Ana Souza', state: 'BA', city: '' })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect((result.data as { city?: string }).city).toBeUndefined()
+    }
+  })
+
+  it('reports the long-city message on the field-update city variant', () => {
+    const result = contactFieldUpdateSchema.safeParse({
+      id: 5,
+      field: 'city',
+      city: 'a'.repeat(101),
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues.some((issue) => issue.message === 'Cidade muito longa')).toBe(true)
+    }
+  })
+})
+
+describe('contactStateSchema / contactCitySchema (S9+ DRY consolidation)', () => {
+  it('contactStateSchema accepts a known UF and rejects an unknown one', () => {
+    expect(contactStateSchema.safeParse('BA').success).toBe(true)
+    expect(contactStateSchema.safeParse('XX').success).toBe(false)
+  })
+
+  it('contactCitySchema reports the long-city message at the max boundary', () => {
+    expect(contactCitySchema.safeParse('Camaçari').success).toBe(true)
+    const result = contactCitySchema.safeParse('a'.repeat(101))
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues.some((issue) => issue.message === 'Cidade muito longa')).toBe(true)
+    }
   })
 })

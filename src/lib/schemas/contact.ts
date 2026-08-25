@@ -29,11 +29,11 @@ export const contactNameSchema = z
   )
 
 /**
- * UF-of-the-cities-catalog rule (required). Private: the S9 optional variant
- * is the only external consumer; the ficha schemas keep their own inline
- * copies (consolidating them is a follow-up).
+ * UF-of-the-cities-catalog rule (required). Exported so the four ficha schemas
+ * reuse the single definition instead of re-declaring the inline predicate
+ * (Fase 3 of the S9+ DRY pass — was private until it gained multiple consumers).
  */
-const contactStateSchema = z.custom<StateKey>(
+export const contactStateSchema = z.custom<StateKey>(
   (value) => typeof value === 'string' && value in CitiesByState,
   'Estado inválido',
 )
@@ -44,6 +44,27 @@ const contactStateSchema = z.custom<StateKey>(
  */
 export const optionalContactStateSchema = z
   .union([contactStateSchema, z.literal('')])
+  .optional()
+  .transform((value) => (value === '' || value === undefined ? undefined : value))
+
+/**
+ * Required free-text city rule (trim + min/max with the same messages the ficha
+ * schemas already used). Exported so the ficha schemas and the optional variant
+ * below share one definition (Fase 3 of the S9+ DRY pass).
+ */
+export const contactCitySchema = z
+  .string()
+  .trim()
+  .min(3, 'Cidade inválida')
+  .max(100, 'Cidade muito longa')
+
+/**
+ * Optional free-text city (''/undefined collapse). Composed over `contactCitySchema`
+ * so it inherits the same min/max messages, and exported so sibling schemas reuse
+ * the same optional-city rule as the ficha's mobile sheet.
+ */
+export const contactCityFieldSchema = z
+  .union([contactCitySchema, z.literal('')])
   .optional()
   .transform((value) => (value === '' || value === undefined ? undefined : value))
 
@@ -82,11 +103,8 @@ export const contactSchema = z.object({
     .trim()
     .length(11, 'Telefone celular inválido')
     .regex(/^\d{11}$/, 'Telefone celular inválido'),
-  state: z.custom<StateKey>(
-    (value) => typeof value === 'string' && value in CitiesByState,
-    'Estado inválido',
-  ),
-  city: z.string().trim().min(3, 'Cidade inválida').max(100, 'Cidade muito longa'),
+  state: contactStateSchema,
+  city: contactCitySchema,
   postalCode: contactPostalCodeSchema,
 })
 
@@ -102,11 +120,8 @@ export const contactCreateSchema = z.object({
   // sends [] when the actor typed no phone.
   phones: contactPhonesSchema.optional(),
   gender: z.enum(contactGenders).optional(),
-  state: z.custom<StateKey>(
-    (value) => typeof value === 'string' && value in CitiesByState,
-    'Estado inválido',
-  ),
-  city: z.string().trim().min(3, 'Cidade inválida').max(100, 'Cidade muito longa').optional(),
+  state: contactStateSchema,
+  city: contactCityFieldSchema,
   postalCode: z
     .string()
     .trim()
@@ -155,10 +170,7 @@ export const contactFieldUpdateSchema = z.discriminatedUnion('field', [
   z.object({
     id: positiveRelationshipId,
     field: z.literal('state'),
-    state: z.custom<StateKey>(
-      (value) => typeof value === 'string' && value in CitiesByState,
-      'Estado inválido',
-    ),
+    state: contactStateSchema,
   }),
   // C139 — the contacts page edits the ficha's own fields in place: city and
   // CEP are free text on the Contact collection itself (no person-join
@@ -166,7 +178,7 @@ export const contactFieldUpdateSchema = z.discriminatedUnion('field', [
   z.object({
     id: positiveRelationshipId,
     field: z.literal('city'),
-    city: z.string().trim().min(3, 'Cidade inválida').max(100, 'Cidade muito longa'),
+    city: contactCitySchema,
   }),
   z.object({
     id: positiveRelationshipId,
@@ -183,19 +195,6 @@ const contactGenderFieldSchema = z
   .optional()
 
 /**
- * Optional free-text city (''/undefined collapse). Exported so sibling schemas
- * reuse the same optional-city rule as the ficha's mobile sheet.
- */
-export const contactCityFieldSchema = z
-  .string()
-  .trim()
-  .transform((value) => (value === '' ? undefined : value))
-  .refine((value) => value === undefined || (value.length >= 3 && value.length <= 100), {
-    message: 'Cidade inválida',
-  })
-  .optional()
-
-/**
  * C139 — the mobile edit sheet is a SINGLE atomic write (plan decision F):
  * the whole ficha in one schema, with the same gate/scope/name invariant as
  * the per-field ladder; an empty email/CEP/city clears the column (null),
@@ -207,10 +206,7 @@ export const contactFullUpdateSchema = z.object({
   email: optionalPersistedEmail,
   phones: contactPhonesSchema.optional(),
   gender: contactGenderFieldSchema,
-  state: z.custom<StateKey>(
-    (value) => typeof value === 'string' && value in CitiesByState,
-    'Estado inválido',
-  ),
+  state: contactStateSchema,
   city: contactCityFieldSchema,
   postalCode: contactPostalCodeSchema,
 })

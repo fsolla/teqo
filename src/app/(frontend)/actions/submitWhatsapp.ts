@@ -6,6 +6,7 @@ import { getPayload } from 'payload'
 import { WHATSAPP_SUBSCRIPTION_CONSENT_KEY } from '@/lib/campaignConsentKeys'
 import { WhatsAppFormInput, whatsAppFormSchema } from '@/lib/schemas/whatsapp-form'
 import { requireConsentByKey } from '@/utilities/campaignConsent'
+import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 
 export const submitWhatsapp = async (input: WhatsAppFormInput) => {
   const { comment, ...contactInput } = whatsAppFormSchema.parse(input)
@@ -13,7 +14,8 @@ export const submitWhatsapp = async (input: WhatsAppFormInput) => {
 
   // Fail-closed consent resolution by stable key (Pass 2 D3) — the flow
   // refuses to record a subscription while the keyed Consent document is
-  // missing, same policy as the campaign flows.
+  // missing, same policy as the campaign flows. Resolved before the
+  // transaction because it is a read, not a write.
   const consent = await requireConsentByKey(
     payload,
     WHATSAPP_SUBSCRIPTION_CONSENT_KEY,
@@ -21,41 +23,33 @@ export const submitWhatsapp = async (input: WhatsAppFormInput) => {
     'Consentimento da inscrição no WhatsApp ainda não configurado.',
   )
 
-  const transactionID = await payload.db.beginTransaction()
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const { phone, ...contactFields } = contactInput
+      const contact = await payload.create({
+        collection: 'contact',
+        data: {
+          ...contactFields,
+          // The public forms keep a single phone input; the ficha stores the
+          // phones array with that number as primary (C112).
+          phones: phone ? [{ value: phone }] : [],
+        },
+        req,
+      })
 
-  if (!transactionID) {
-    throw new Error('failed to start transaction')
-  }
+      await payload.create({
+        collection: 'subscription',
+        data: {
+          contact: contact.id,
+          consent: consent.id,
+          comment,
+        },
+        req,
+      })
 
-  try {
-    const { phone, ...contactFields } = contactInput
-    const contact = await payload.create({
-      collection: 'contact',
-      data: {
-        ...contactFields,
-        // The public forms keep a single phone input; the ficha stores the
-        // phones array with that number as primary (C112).
-        phones: phone ? [{ value: phone }] : [],
-      },
-      req: { transactionID },
-    })
-
-    await payload.create({
-      collection: 'subscription',
-      data: {
-        contact: contact.id,
-        consent: consent.id,
-        comment,
-      },
-      req: { transactionID },
-    })
-
-    await payload.db.commitTransaction(transactionID)
-
-    return { ok: true }
-  } catch (error) {
-    await payload.db.rollbackTransaction(transactionID)
-
-    throw error
-  }
+      return { ok: true }
+    },
+    { beginFailureMessage: 'failed to start transaction' },
+  )
 }
