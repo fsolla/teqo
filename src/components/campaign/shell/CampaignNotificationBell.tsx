@@ -48,14 +48,20 @@ export const CampaignNotificationBell = ({
   const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(initialUnreadCount)
+  const [prevInitialUnreadCount, setPrevInitialUnreadCount] = useState(initialUnreadCount)
   const [items, setItems] = useState<NotificationListItem[]>([])
   const [isPending, startTransition] = useTransition()
   const [loadError, setLoadError] = useState<string | null>(null)
   const nowMs = Date.now()
 
-  useEffect(() => {
-    setUnreadCount(initialUnreadCount)
-  }, [initialUnreadCount])
+  // Prop sync during render (no effect): the badge is local state once the
+  // panel is open — opening marks everything as read — so a refresh racing the
+  // open must not resurrect the count. The old `useEffect` mirror could re-apply
+  // a stale prop over the local `setUnreadCount(0)`.
+  if (initialUnreadCount !== prevInitialUnreadCount) {
+    setPrevInitialUnreadCount(initialUnreadCount)
+    if (!open) setUnreadCount(initialUnreadCount)
+  }
 
   const loadPanel = useCallback(() => {
     startTransition(async () => {
