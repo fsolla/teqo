@@ -47,5 +47,5 @@ export const legacyCamelCaseFilenameIgnores = [
   'src/lib/schemas/campaign-login.ts',
   'src/lib/schemas/petition-form.ts',
   'src/lib/schemas/whatsapp-form.ts',
-  'tests/int/petition-page-layout.int.spec.ts',
+  'tests/unit/petition-page-layout.unit.spec.ts',
 ]

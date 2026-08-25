@@ -49,7 +49,9 @@ describe('summarizeVitestReport', () => {
 
   it('falls back to summed durations when the payload lacks timestamps', () => {
     const payload = {
-      testResults: [{ name: '/x/y.unit.spec.ts', assertionResults: [{ title: 't', duration: 120 }] }],
+      testResults: [
+        { name: '/x/y.unit.spec.ts', assertionResults: [{ title: 't', duration: 120 }] },
+      ],
     }
 
     expect(summarizeVitestReport(payload).rows[0].durationMs).toBe(120)
@@ -96,6 +98,8 @@ describe('renderE2EInventoryTable', () => {
       { file: 'tests/e2e/x.e2e.spec.ts', describes: 1, tests: 4 },
     ])
 
-    expect(table).toContain('| tests/e2e/x.e2e.spec.ts | 1 | 4 | não medido — execução noturna proibida |')
+    expect(table).toContain(
+      '| tests/e2e/x.e2e.spec.ts | 1 | 4 | não medido — execução noturna proibida |',
+    )
   })
 })

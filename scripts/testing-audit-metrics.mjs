@@ -14,8 +14,8 @@
  * e2e-inventory: static count of describe/test blocks per spec file — durations
  * are deliberately absent because running Playwright overnight is forbidden.
  */
-import { readdirSync, readFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
+import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -62,7 +62,9 @@ const runVitestLayer = async (layer) => {
   try {
     report = JSON.parse(result.stdout.slice(jsonStart))
   } catch (error) {
-    console.error(`[metrics] relatório JSON inválido: ${error instanceof Error ? error.message : error}`)
+    console.error(
+      `[metrics] relatório JSON inválido: ${error instanceof Error ? error.message : error}`,
+    )
     process.exit(2)
   }
   const summary = summarizeVitestReport(report)
