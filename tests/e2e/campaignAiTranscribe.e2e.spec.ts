@@ -1,6 +1,11 @@
 import type { Page } from '@playwright/test'
 
-import { expect, test, waitForRouterSettled } from './fixtures/campaignE2EFixtures.js'
+import {
+  expect,
+  mockSollinhaChat,
+  test,
+  waitForRouterSettled,
+} from './fixtures/campaignE2EFixtures.js'
 
 /**
  * B173 — voice transcription for the Sollinha chat.
@@ -47,15 +52,6 @@ const mockTranscribe = (page: Page, text: string) =>
     })
   })
 
-const mockAiChat = (page: Page) =>
-  page.route('**/campanha/api/ai-chat', async (route) => {
-    await route.fulfill({
-      status: 200,
-      headers: { 'Content-Type': 'text/event-stream' },
-      body: 'data: {"type":"text","text":"Resposta mockada da Sollinha."}\n\n',
-    })
-  })
-
 const openChat = async (page: Page) => {
   await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
   // OPS42 — dev-only settle before interacting (see `waitForRouterSettled`).
@@ -80,7 +76,7 @@ test.describe('B173 — consulta por voz no chat da Sollinha', () => {
     await page.goto('/campanha')
 
     await mockTranscribe(page, 'Quantos votos tivemos em Ilhéus?')
-    await mockAiChat(page)
+    await mockSollinhaChat(page, 'Resposta mockada da Sollinha.')
     await openChat(page)
 
     const input = page.getByRole('textbox', { name: 'Pergunte para o Sollinha...' })
@@ -118,7 +114,7 @@ test.describe('B173 — consulta por voz no chat da Sollinha', () => {
     })
     await campaign.login(page, user.email!, user.password)
     await page.goto('/campanha')
-    await mockAiChat(page)
+    await mockSollinhaChat(page, 'Resposta mockada da Sollinha.')
     await openChat(page)
 
     await page.getByRole('button', { name: 'Falar pergunta (voz)' }).click()

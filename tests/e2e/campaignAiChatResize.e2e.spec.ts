@@ -1,29 +1,11 @@
 import type { Page } from '@playwright/test'
 
-import { expect, test, waitForRouterSettled } from './fixtures/campaignE2EFixtures.js'
-
-/**
- * Mock the AI endpoint with a minimal SSE stream so sending a message neither
- * needs a DeepSeek API key nor hits the real rate limiter — the user message is
- * still recorded client-side, which is all these assertions need. The chunks
- * follow the SDK v7 UI-message-stream wire format (start / text-start /
- * text-delta / text-end / finish): a bare legacy `{"type":"text"}` chunk fails
- * the client schema and leaves the chat stuck in an error status.
- */
-const mockAiChat = (page: Page) =>
-  page.route('**/campanha/api/ai-chat', async (route) => {
-    await route.fulfill({
-      status: 200,
-      headers: { 'Content-Type': 'text/event-stream' },
-      body: [
-        'data: {"type":"start"}\n\n',
-        'data: {"type":"text-start","id":"t1"}\n\n',
-        'data: {"type":"text-delta","id":"t1","delta":"Resposta mockada da Sollinha."}\n\n',
-        'data: {"type":"text-end","id":"t1"}\n\n',
-        'data: {"type":"finish","finishReason":"stop"}\n\n',
-      ].join(''),
-    })
-  })
+import {
+  expect,
+  mockSollinhaChat,
+  test,
+  waitForRouterSettled,
+} from './fixtures/campaignE2EFixtures.js'
 
 const MESSAGE = 'Mensagem que migra entre as superficies'
 
@@ -55,7 +37,7 @@ const chatPanelWidthAt = (page: Page, index: number) =>
 test.describe('B167 — chat Sollinha migra entre painel e drawer ao redimensionar', () => {
   test.beforeEach(async ({ page }) => {
     test.slow()
-    await mockAiChat(page)
+    await mockSollinhaChat(page, 'Resposta mockada da Sollinha.')
     await page.setViewportSize({ width: 1280, height: 800 })
   })
 

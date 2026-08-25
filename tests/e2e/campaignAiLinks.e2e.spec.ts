@@ -1,6 +1,11 @@
 import type { Page } from '@playwright/test'
 
-import { expect, test, waitForRouterSettled } from './fixtures/campaignE2EFixtures.js'
+import {
+  expect,
+  mockSollinhaChat,
+  test,
+  waitForRouterSettled,
+} from './fixtures/campaignE2EFixtures.js'
 
 /**
  * B187 — links in the Sollinha's markdown answers must look like links: brand
@@ -13,24 +18,6 @@ import { expect, test, waitForRouterSettled } from './fixtures/campaignE2EFixtur
 
 const ASSISTANT_LINKS =
   'Confira [o portal da saúde](https://www.saude.ba.gov.br/) e [o município de Ilhéus](/campanha/municipios/ilheus).'
-
-const mockAiChat = (page: Page) =>
-  page.route('**/campanha/api/ai-chat', async (route) => {
-    await route.fulfill({
-      status: 200,
-      headers: { 'Content-Type': 'text/event-stream' },
-      // SDK v7 UI-message-stream wire format (start / text-start / text-delta /
-      // text-end / finish) — a bare legacy `{"type":"text"}` chunk fails the
-      // client schema and the chat would never settle.
-      body: [
-        'data: {"type":"start"}\n\n',
-        'data: {"type":"text-start","id":"t1"}\n\n',
-        `data: {"type":"text-delta","id":"t1","delta":${JSON.stringify(ASSISTANT_LINKS)}}\n\n`,
-        'data: {"type":"text-end","id":"t1"}\n\n',
-        'data: {"type":"finish","finishReason":"stop"}\n\n',
-      ].join(''),
-    })
-  })
 
 const openChatAndSend = async (page: Page) => {
   await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
@@ -52,7 +39,7 @@ const openChatAndSend = async (page: Page) => {
 test.describe('B187 — links com aparência de link nas respostas do Sollinha', () => {
   test.beforeEach(async ({ page }) => {
     test.slow()
-    await mockAiChat(page)
+    await mockSollinhaChat(page, ASSISTANT_LINKS)
     await page.setViewportSize({ width: 1280, height: 800 })
   })
 
