@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useActionState } from 'react'
+import { startTransition, useActionState, type FormEvent } from 'react'
 
 import { registerActivityResultFormAction } from '@/app/(campaign)/campanha/(app)/atividades/[slug]/resultFormActions'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
@@ -42,6 +42,14 @@ export const ActivityResultForm = ({
         .join(' ')
     : null
 
+  // C139 — manual dispatch: React 19 resets uncontrolled fields after any
+  // settled form action, reverting the typed result to `initialSummary` on
+  // a validation error. `startTransition` keeps `pending` correct.
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => formAction(new FormData(event.currentTarget)))
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -49,7 +57,7 @@ export const ActivityResultForm = ({
         {recordedLabel ? <p className="text-sm text-muted-foreground">{recordedLabel}</p> : null}
       </CardHeader>
       <CardContent>
-        <form action={formAction} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input type="hidden" name="activityId" value={activityId} />
           {state.status !== 'success' ? (
             <CampaignFormActionMessage state={state} errorTitle="Não foi possível registrar" />

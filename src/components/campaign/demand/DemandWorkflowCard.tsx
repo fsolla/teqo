@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { startTransition, useActionState, type FormEvent } from 'react'
 
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/button'
@@ -63,6 +63,19 @@ export const DemandWorkflowCard = ({
       (target !== 'aprovada' && target !== 'rejeitada'),
   )
 
+  // C139 — manual dispatch (no `action={submitTransition}`/`action={submitCost}`):
+  // React 19 resets uncontrolled fields after any settled form action, wiping
+  // the typed decision note and cost on a validation error. `startTransition`
+  // keeps the pending flags correct for the imperative dispatch.
+  const handleTransitionSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => submitTransition(new FormData(event.currentTarget)))
+  }
+  const handleCostSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => submitCost(new FormData(event.currentTarget)))
+  }
+
   if (readOnly) {
     return (
       <section
@@ -101,7 +114,7 @@ export const DemandWorkflowCard = ({
       </div>
 
       {availableTransitions.length ? (
-        <form action={submitTransition} className="flex flex-col gap-3">
+        <form onSubmit={handleTransitionSubmit} className="flex flex-col gap-3">
           <input type="hidden" name="demandId" value={demandID} />
           <Field>
             <FieldLabel htmlFor={`demand-note-${demandID}`}>Nota da decisão</FieldLabel>
@@ -144,7 +157,7 @@ export const DemandWorkflowCard = ({
         <p className="text-sm text-muted-foreground">Esta demanda já foi decidida.</p>
       )}
 
-      <form action={submitCost} className="flex flex-col gap-2">
+      <form onSubmit={handleCostSubmit} className="flex flex-col gap-2">
         <input type="hidden" name="demandId" value={demandID} />
         <FieldLabel htmlFor={`demand-cost-${demandID}`}>
           Custo estimado (R$) — controle interno
