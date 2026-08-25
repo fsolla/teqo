@@ -209,7 +209,11 @@ export const GoogleCalendarSyncDialog = ({
           A sincronização está desativada. A agenda do Teqo continua funcionando normalmente; nada é
           enviado ao Google enquanto estiver desativada.
         </div>
-        {actionError && <p className="text-sm text-red-600">{actionError}</p>}
+        {actionError && (
+          <p role="alert" className="text-sm text-red-600">
+            {actionError}
+          </p>
+        )}
         <div className="flex justify-end">
           <Button type="button" onClick={() => void handleSetDisabled(false)} disabled={isBusy}>
             Reativar
@@ -248,7 +252,11 @@ export const GoogleCalendarSyncDialog = ({
         {instructions}
         {reverseEditBlock}
 
-        {actionError && <p className="text-sm text-red-600">{actionError}</p>}
+        {actionError && (
+          <p role="alert" className="text-sm text-red-600">
+            {actionError}
+          </p>
+        )}
 
         <div className="flex justify-end gap-2">
           {paused ? (
