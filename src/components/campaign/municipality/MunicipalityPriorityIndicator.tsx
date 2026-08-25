@@ -1,5 +1,3 @@
-'use client'
-
 import { FlagIcon } from 'lucide-react'
 
 import { CampaignHoverTooltip } from '@/components/campaign/shared/CampaignHoverTooltip'
