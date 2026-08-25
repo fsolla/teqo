@@ -15,6 +15,7 @@ describe('API', () => {
     const users = await payload.find({
       collection: 'users',
     })
-    expect(users).toBeDefined()
+    expect(users.docs).toBeInstanceOf(Array)
+    expect(typeof users.totalDocs).toBe('number')
   })
 })
