@@ -1,0 +1,3 @@
+# OPS96-followup — errata do desarme do automerge
+
+**Recently resolved (2026-08-25):** **OPS96-followup** — o PR #907 foi mergeado pelo auto-merge às 05:42:41Z CONTRA o aceite "sem automerge armado": a sequência do impl plan (desarmar após o CI green) é estruturalmente tarde — o GitHub mergea em segundos após o required check ficar verde. Errata completa no relatório `docs/testing-audits/2026-08-25.md`; SKILL.md Fase 5 reescrita (desarmar imediatamente após cada push, com CI pendente — provado ao vivo no próprio PR #910); miss registrada em #909; flake da família Google Calendar int com evidência de recidiva em #906. Julgamento do merged/revert de #907: humano pela manhã.
