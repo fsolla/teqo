@@ -642,9 +642,10 @@ describe('admin bypasses carry a justification comment', () => {
   // P3-E: "Local API com `user` sempre com `overrideAccess: false`; bypass
   // admin só com comentário justificando" was social — 89 of 127 bypasses had
   // none. Documented means a comment containing "bypass" within 10 lines above
-  // the occurrence, or a module-policy comment in the file's first 40 lines.
-  // This is a RATCHET: counts may only shrink. A new undocumented bypass fails
-  // the build; documenting an old one means lowering its pin.
+  // the occurrence (P6-1: a module header comment alone does NOT document a
+  // site — only per-site comments count). This is a RATCHET: counts may only
+  // shrink. A new undocumented bypass fails the build; documenting an old one
+  // means lowering its pin.
   const pinnedUndocumented = new Map<string, number>([
     ['src/app/(campaign)/campanha/actions/advisor.ts', 2],
     ['src/app/(campaign)/campanha/actions/leaderSupporter.ts', 1],
@@ -686,11 +687,30 @@ describe('admin bypasses carry a justification comment', () => {
     ['src/collections/SupporterImportBatch.ts', 1],
     ['src/collections/Users.ts', 1],
     ['src/collections/VotePledge.ts', 1],
+    // P6-1 baseline: 2026-08-25 — header comments no longer zero a file;
+    // these counts are the per-site measurement the RED of fase 1 reported.
+    ['src/collections/Consent.ts', 7],
+    ['src/utilities/campaignStubEmail.ts', 1],
+    ['src/utilities/campaignVoteSummarySnapshot.ts', 6],
+    ['src/utilities/contactIdentity.ts', 2],
+    ['src/utilities/loadNamesByIds.ts', 5],
+    ['src/utilities/access/notifications.ts', 2],
+    ['src/utilities/municipality/municipalityPortfolioIndex.ts', 1],
+    ['src/utilities/municipality/municipalityTicketPartnerData.ts', 4],
+    ['src/utilities/notification/createCampaignNotification.ts', 3],
+    ['src/utilities/notification/notificationEvents.ts', 8],
+    ['src/utilities/notification/notificationList.ts', 2],
+    ['src/utilities/notification/notificationRecipients.ts', 3],
+    ['src/utilities/notification/sendCampaignPush.ts', 4],
+    ['src/utilities/people/personDelete.ts', 26],
+    ['src/utilities/supporter/supporterImportToken.ts', 4],
+    ['src/utilities/webauthn/campaignWebAuthnCeremony.ts', 4],
+    ['src/app/(campaign)/campanha/actions/contact.ts', 2],
+    ['src/app/(campaign)/campanha/actions/notifications.ts', 3],
   ])
 
   const countUndocumented = (path: string): number => {
     const lines = readFileSync(resolve(repoRoot, path), 'utf8').split('\n')
-    const header = lines.slice(0, 40).join('\n').toLowerCase()
     let count = 0
     for (const [index, line] of lines.entries()) {
       if (!line.includes('overrideAccess: true')) continue
@@ -698,7 +718,7 @@ describe('admin bypasses carry a justification comment', () => {
         .slice(Math.max(0, index - 10), index)
         .join('\n')
         .toLowerCase()
-      if (!context.includes('bypass') && !header.includes('bypass')) count += 1
+      if (!context.includes('bypass')) count += 1
     }
     return count
   }
