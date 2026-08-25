@@ -9,6 +9,40 @@ export const DEFAULT_TOP = 15
 
 export const ms = (value) => `${(value / 1000).toFixed(1)}s`
 
+/** Vitest's jest-compatible JSON payload starts with this key. */
+const VITEST_JSON_ANCHOR = '{"numTotal'
+
+/**
+ * Extract the Vitest JSON report from the runner's raw stdout. pnpm echoes the
+ * script line BEFORE the JSON and appends its own noise (e.g. the `ELIFECYCLE`
+ * notice) AFTER it when the suite is red; tests may also print console blobs
+ * with braces around the payload. Walking back from the last `}` finds the
+ * payload boundary, so a red suite still yields its portrait.
+ *
+ * @param {string} stdout raw stdout of `vitest run --reporter=json`
+ * @returns {Record<string, unknown>} parsed JSON report
+ */
+export const parseVitestStdout = (stdout) => {
+  if (typeof stdout !== 'string' || stdout.length === 0) {
+    throw new Error('vitest não produziu relatório JSON no stdout')
+  }
+  const jsonStart = stdout.indexOf(VITEST_JSON_ANCHOR)
+  if (jsonStart === -1) {
+    throw new Error('vitest não produziu relatório JSON no stdout')
+  }
+  let end = stdout.length
+  while (end > jsonStart) {
+    end = stdout.lastIndexOf('}', end - 1)
+    if (end < jsonStart) break
+    try {
+      return JSON.parse(stdout.slice(jsonStart, end + 1))
+    } catch {
+      // not the payload boundary yet — keep walking back
+    }
+  }
+  throw new Error('relatório JSON inválido')
+}
+
 /** @returns {number} */
 const fileDurationMs = (entry) => {
   if (typeof entry.endTime === 'number' && typeof entry.startTime === 'number') {
