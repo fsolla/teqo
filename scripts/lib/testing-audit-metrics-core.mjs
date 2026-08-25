@@ -21,7 +21,8 @@ const slowestAssertion = (entry) =>
   (entry.assertionResults ?? [])
     .filter((result) => typeof result.duration === 'number')
     .reduce(
-      (slowest, result) => (slowest === null || result.duration > slowest.duration ? result : slowest),
+      (slowest, result) =>
+        slowest === null || result.duration > slowest.duration ? result : slowest,
       null,
     )
 
@@ -68,10 +69,7 @@ export const summarizeVitestReport = (report) => {
  * @param {{ top?: number }} [options]
  */
 export const renderSlowestFilesTable = (summary, { top = DEFAULT_TOP } = {}) => {
-  const lines = [
-    '| arquivo | testes | duração | teste mais lento |',
-    '|---|---:|---:|---|',
-  ]
+  const lines = ['| arquivo | testes | duração | teste mais lento |', '|---|---:|---:|---|']
   for (const row of summary.rows.slice(0, Math.max(0, top))) {
     const slowest =
       row.slowestTest === null ? '—' : `${row.slowestTest} (${ms(row.slowestMs ?? 0)})`
@@ -83,8 +81,8 @@ export const renderSlowestFilesTable = (summary, { top = DEFAULT_TOP } = {}) => 
 /**
  * Static inventory of an e2e spec source — counting only, never execution.
  *
- * @param {{ file: string, content: string }} sources
- * @returns {Array<{ file: string, describes: number, tests: number }>}
+ * @param {{ file: string, content: string }} source
+ * @returns {{ file: string, describes: number, tests: number }}
  */
 export const inventoryE2ESource = ({ file, content }) => ({
   file,
@@ -98,7 +96,8 @@ export const renderE2EInventoryTable = (rows) => {
     '| arquivo | describes | testes | duração |',
     '|---|---:|---:|---|',
     ...rows.map(
-      (row) => `| ${row.file} | ${row.describes} | ${row.tests} | não medido — execução noturna proibida |`,
+      (row) =>
+        `| ${row.file} | ${row.describes} | ${row.tests} | não medido — execução noturna proibida |`,
     ),
   ]
   return lines.join('\n')

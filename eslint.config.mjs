@@ -224,6 +224,8 @@ const eslintConfig = [
     // Playwright artifacts (generated on e2e failures/reports):
     'playwright-report/**',
     'test-results/**',
+    // Vitest coverage output (generated under the --coverage flag):
+    'coverage/**',
     // Vendored agent material (same carve-out as .prettierignore):
     '.agents/**',
   ]),
