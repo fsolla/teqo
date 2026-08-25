@@ -442,6 +442,79 @@ export const createApi = ({
     },
 
     /**
+     * GraphQL status read of a PR's auto-merge — the verification arm of the
+     * testing-audit disarm guard (P6-M909, miss #909). One query carries the
+     * `autoMergeRequest` (GraphQL-only), `isDraft`, `mergeable` and
+     * `mergeStateStatus` plus the node `id` (needed by the draft conversion
+     * fallback). Fail-closed: an unknown PR throws — a wrong number must not
+     * read as "disarmed".
+     * @param {number} number
+     */
+    getPullRequestAutoMergeStatus: async (number) => {
+      const data = await graphql(
+        `
+          query PullRequestAutoMergeStatus($owner: String!, $name: String!, $number: Int!) {
+            repository(owner: $owner, name: $name) {
+              pullRequest(number: $number) {
+                id
+                isDraft
+                mergeable
+                mergeStateStatus
+                autoMergeRequest {
+                  mergeMethod
+                  enabledBy {
+                    login
+                  }
+                }
+              }
+            }
+          }
+        `,
+        { owner, name, number },
+      )
+      const pr = data?.repository?.pullRequest
+      if (!pr) {
+        throw new Error(`PR #${number} não encontrado — status de auto-merge não verificado`)
+      }
+      return {
+        number,
+        nodeId: pr.id,
+        isDraft: Boolean(pr.isDraft),
+        mergeable: pr.mergeable,
+        mergeStateStatus: pr.mergeStateStatus,
+        autoMergeRequest: pr.autoMergeRequest
+          ? {
+              mergeMethod: pr.autoMergeRequest.mergeMethod,
+              enabledBy: pr.autoMergeRequest.enabledBy?.login ?? '',
+            }
+          : null,
+      }
+    },
+
+    /**
+     * GraphQL mutation `convertPullRequestToDraft` — the fail-closed fallback
+     * of the testing-audit disarm guard: when the disarm verification fails,
+     * a draft is the structural veto the safety net respects (a draft never
+     * auto-merges). Takes the PR's node `id`
+     * (`getPullRequestAutoMergeStatus(n).nodeId`).
+     */
+    convertPullRequestToDraft: async (nodeId) => {
+      await graphql(
+        `
+          mutation ConvertPullRequestToDraft($id: ID!) {
+            convertPullRequestToDraft(input: { pullRequestId: $id }) {
+              pullRequest {
+                number
+                isDraft
+              }
+            }
+          }
+        `,
+        { id: nodeId },
+      )
+    },
+
+    /**
      * GET /repos/{owner}/{repo}/branches/{branch}/protection — normalized for
      * drift comparison; `null` when the branch has no protection rule (404).
      */

@@ -95,8 +95,8 @@ Evidência por passo no relatório: timestamp, hash curto, linhas-resumo antes/d
 2. Escrever `docs/changelog/<data>-ops96-testing-audit.md` (entrada append-only curta; o agregado é gitignored — nunca commitar `docs/CHANGELOG-AGENTS.md`).
 3. Gate completo no SHA final, bare: `pnpm lint`, `pnpm format:check`, `pnpm typecheck` (`tsc --noEmit`), `pnpm exec knip`, `pnpm check:cycles`, `pnpm test:unit`, `pnpm test:int`.
 4. Push ÚNICO via `pnpm push -u origin HEAD` (o hook roda `gate:push`; minimiza rearms do automerge).
-5. Abrir PR **ready** base `main` (`GITHUB_TOKEN=<PAT> node scripts/github-pr.mjs --head <branch> --title "<data> — testing-audit" --body-file <relatório>`), body = relatório, com `Closes #898` se a Issue desta entrega ainda estiver aberta.
-6. Aguardar CI green no SHA final: flake aparente → 1 rerun (`gh run rerun --failed`); quebra real → fix-forward ≤2 ciclos (cada fix é novo push e REARMA o automerge → repetir Fase 5 depois). Esgotado → CI pendente registrado como pendência conhecida (main não corre risco: automerge desarmado na Fase 5).
+5. Abrir PR **ready** base `main` e desarmar o auto-merge num ÚNICO passo atômico: `GITHUB_TOKEN=<PAT> node scripts/testing-audit-disarm.mjs --head <branch> --title "<data> — testing-audit" --body-file <relatório> --draft-on-failure` (cria Ready → desarma → verifica `autoMergeRequest === null`; em falha converte a draft e sai 1 — fallback fail-closed estrutural). Body = relatório, com `Closes #898` se a Issue desta entrega ainda estiver aberta.
+6. Aguardar CI green no SHA final: flake aparente → 1 rerun (`gh run rerun --failed`); quebra real → fix-forward ≤2 ciclos (cada fix é novo push e REARMA o automerge → desarmar de novo com `scripts/testing-audit-disarm.mjs --pr <N> --draft-on-failure` depois). Esgotado → CI pendente registrado como pendência conhecida (main não corre risco: automerge desarmado na Fase 5).
 
 ### Template do relatório (seções fixas)
 
@@ -130,16 +130,15 @@ Evidência por passo no relatório: timestamp, hash curto, linhas-resumo antes/d
 (CI, mergeable, automerge desarmado às HH:MM)
 ```
 
-## Fase 5 — Desarme do auto-merge (imediatamente após CADA push, nunca depois do green)
+## Fase 5 — Desarme do auto-merge (na criação e imediatamente após CADA push, nunca depois do green)
 
-O safety-net arma o automerge no evento de abertura e REARMA a cada push. **Errata OPS96 (falha real da 1ª noite):** desarmar DEPOIS do CI green é tarde — o GitHub mergea em segundos quando o required check fica verde; o PR da 1ª noite mergeou sozinho nesse intervalo (~40s). Sequência correta:
+O safety-net arma o automerge no evento de abertura e REARMA a cada push. **Errata OPS96 (falha real da 1ª noite):** desarmar DEPOIS do CI green é tarde — o GitHub mergea em segundos quando o required check fica verde; o PR da 1ª noite mergeou sozinho nesse intervalo (~40s). Desde o Pass 6 o desarme é determinístico — `scripts/testing-audit-disarm.mjs` cria→desarma→verifica e falha fechado; nada depende de lembrar a ordem:
 
-1. Abrir o PR ready LOGO após o push — o safety-net arma no evento `opened`.
-2. **Desarmar imediatamente**, com o CI ainda pendente: `gh pr merge <N> --disable-auto`. Armado + checks pendentes não mergeia nada; o desarme cedo elimina a condição de corrida (a janela de CI ~13min é o seu tempo folga).
-3. Cada push novo REARMA (evento `synchronize`) → repetir o desarme logo após cada push, sempre enquanto o CI estiver pendente. **Nunca "aguardar o workflow/arquivo de checks terminar" para então desarmar** — isso chega exatamente no momento do merge.
-4. Verificação final no fecho da noite (último passo): `gh pr view <N> --json isDraft,autoMergeRequest,mergeable,mergeStateStatus` → esperado `{isDraft: false, autoMergeRequest: null, mergeable: MERGEABLE}`.
-5. **Fallback fail-closed:** desarme falhou ou `autoMergeRequest` persistiu não-nulo → converter para draft (`gh pr ready <N> --undo`; draft fora de `cursor/*` é veto estrutural do safety-net) e registrar no relatório que o humano vira ready pela manhã. Draft protegido é preferível a main mergeado sem querer.
-6. Gravar no relatório (seção estado final): hora do desarme + saída da verificação.
+1. A criação do PR na Fase 4 JÁ desarma e verifica (um único comando com `--draft-on-failure`).
+2. Cada push novo REARMA (evento `synchronize`) → repetir o desarme logo após cada push, sempre enquanto o CI estiver pendente: `GITHUB_TOKEN=<PAT> node scripts/testing-audit-disarm.mjs --pr <N> --draft-on-failure`. **Nunca "aguardar o workflow/arquivo de checks terminar" para então desarmar** — isso chega exatamente no momento do merge.
+3. Verificação final no fecho da noite (último passo): o script imprime o JSON de status — esperado `"autoMergeRequest": null, "isDraft": false` com exit 0 (exit 0 SÓ com desarmado+Ready). Qualquer outra saída é falha do passo 4.
+4. **Fallback fail-closed:** verificação falhou e o `--draft-on-failure` converteu a PR para draft (draft é veto estrutural do safety-net) — registrar no relatório que o humano vira ready pela manhã. Draft protegido é preferível a main mergeado sem querer.
+5. Gravar no relatório (seção estado final): hora do desarme + JSON de status da verificação.
 
 Depois da verificação final: **nenhum push, rebase ou merge** — tudo isso rearma.
 
