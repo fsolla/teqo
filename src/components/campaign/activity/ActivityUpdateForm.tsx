@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useActionState, useRef } from 'react'
+import { startTransition, useActionState, useRef, type FormEvent } from 'react'
 
 import { createActivityUpdateFormAction } from '@/app/(campaign)/campanha/(app)/atividades/[slug]/updateFormActions'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
@@ -25,13 +25,21 @@ export const ActivityUpdateForm = ({ activityId }: { activityId: number }) => {
 
   const bodyError = fieldError(state.fieldErrors, 'body')
 
+  // C139 — manual dispatch (no `action={formAction}`): React 19 resets
+  // uncontrolled fields after any settled form action, wiping the typed
+  // update on a validation error. `startTransition` keeps `pending` correct.
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => formAction(new FormData(event.currentTarget)))
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Nova atualização</CardTitle>
       </CardHeader>
       <CardContent>
-        <form ref={formRef} action={formAction} className="flex flex-col gap-4">
+        <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input type="hidden" name="activityId" value={activityId} />
           {state.status !== 'success' ? (
             <CampaignFormActionMessage state={state} errorTitle="Não foi possível enviar" />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useRef } from 'react'
+import { startTransition, useActionState, useEffect, useRef, type FormEvent } from 'react'
 
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { Badge } from '@/components/ui/Badge'
@@ -197,6 +197,14 @@ const CommentThread = ({
     if (state.status === 'success' && formRef.current) formRef.current.reset()
   }, [state])
 
+  // C139 — manual dispatch: React 19 resets uncontrolled fields after any
+  // settled form action, wiping the typed comment on a validation error.
+  // The success reset above stays explicit; `startTransition` keeps `pending`.
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    startTransition(() => submitAction(new FormData(event.currentTarget)))
+  }
+
   return (
     <div className="flex flex-col gap-2">
       <p className="text-sm font-medium">Discussão</p>
@@ -224,7 +232,7 @@ const CommentThread = ({
         </ul>
       ) : null}
       {canComment ? (
-        <form ref={formRef} action={submitAction} className="flex flex-col gap-2">
+        <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-2">
           <input type="hidden" name="updateId" value={updateId} />
           <Textarea
             name="body"
