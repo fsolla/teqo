@@ -6,13 +6,23 @@
  *
  * GitHub's native auto-merge only fires with the required checks green, so
  * the safety net's only real decisions are: skip (non-main base, draft veto,
- * already merged) or mark-ready (cursor/* draft) before arming auto-merge.
+ * already merged, audit/* veto) or mark-ready (cursor/* draft) before arming
+ * auto-merge.
  */
 
 export const CURSOR_HEAD_PREFIX = 'cursor/'
 
 /** OPS57: only `cursor/*` drafts get force-marked ready — any other draft is the actor's veto. */
 export const isCursorHead = (ref) => typeof ref === 'string' && ref.startsWith(CURSOR_HEAD_PREFIX)
+
+/**
+ * OPS98: branches `audit/*` belong to the engineering-audit overnight run —
+ * its single PR must stay Ready WITHOUT auto-merge (the human is the final
+ * gate). The veto is dominant: it applies to ready and draft states alike.
+ */
+export const AUDIT_HEAD_PREFIX = 'audit/'
+
+export const isAuditHead = (ref) => typeof ref === 'string' && ref.startsWith(AUDIT_HEAD_PREFIX)
 
 /**
  * OPS71-FLIP: the auto-merge MUST be armed with a real user PAT. Arming with
@@ -41,6 +51,7 @@ export const automergeArmingToken = (env = process.env) => {
  */
 export const decideAutomergeAction = (pr) => {
   if (!pr) return { action: 'skip', reason: 'pr-inexistente' }
+  if (isAuditHead(pr.head?.ref)) return { action: 'skip', reason: 'audit-veto' }
   if (pr.merged) return { action: 'skip', reason: 'ja-mergeada' }
   if (pr.state !== 'OPEN') return { action: 'skip', reason: 'pr-nao-aberta' }
   if (pr.base?.ref !== 'main') return { action: 'skip', reason: 'base-nao-main' }

@@ -5,6 +5,8 @@
 # non-`cursor/*` branches are never touched — the draft flag is the actor's
 # veto (the CLI skips them). Fork PRs are excluded (the repo is public; a
 # merged fork PR would deploy) — same RCE-guard class as the other workflows.
+# OPS98: `audit/*` branches (engineering-audit overnight run) are also skipped —
+# that single Ready PR merges by human hand only.
 #
 # GitHub's NATIVE auto-merge replaces the Forgejo-era poll CLI (removed in
 # OPS71 Fase 2): `enablePullRequestAutoMerge` (GraphQL, REBASE —
