@@ -4,6 +4,8 @@ import { petitionFormSchema, type PetitionFormInput } from '@/lib/schemas/petiti
 import config from '@payload-config'
 import { getPayload } from 'payload'
 
+import { withPayloadTransaction } from '@/utilities/payloadTransaction'
+
 type SubmitPetitionSignatureInput = PetitionFormInput & {
   petitionId: string
 }
@@ -21,7 +23,8 @@ export const submitPetitionSignature = async ({
   // renders the text from `petition.form.consent`, and the signature must
   // record exactly that document. Petition read access is public, like the
   // page that renders it; a `consentId` posted by the client is dropped at
-  // the input boundary above, so a tampered one is inert.
+  // the input boundary above, so a tampered one is inert. Resolved before the
+  // transaction because it is a read, not a write.
   const petition = await payload.findByID({
     collection: 'petition',
     id: petitionId,
@@ -30,56 +33,50 @@ export const submitPetitionSignature = async ({
   const consentId =
     typeof petition.form.consent === 'number' ? petition.form.consent : petition.form.consent.id
 
-  const transactionID = await payload.db.beginTransaction()
+  return withPayloadTransaction(
+    payload,
+    async ({ req }) => {
+      const { phone, ...contactFields } = data
+      const contact = await payload.create({
+        collection: 'contact',
+        data: {
+          ...contactFields,
+          // The public forms keep a single phone input; the ficha stores the
+          // phones array with that number as primary (C112).
+          phones: phone ? [{ value: phone }] : [],
+        },
+        req,
+      })
 
-  if (!transactionID) {
-    throw new Error('Failed to begin transaction')
-  }
+      await Promise.all([
+        payload.create({
+          collection: 'signature',
+          data: {
+            contact: contact.id,
+            petition: petitionId,
+            consent: consentId,
+            comment,
+          },
+          req,
+        }),
+        payload.create({
+          collection: 'subscription',
+          data: {
+            contact: contact.id,
+            consent: consentId,
+          },
+          req,
+        }),
+      ])
 
-  try {
-    const { phone, ...contactFields } = data
-    const contact = await payload.create({
-      collection: 'contact',
-      data: {
-        ...contactFields,
-        // The public forms keep a single phone input; the ficha stores the
-        // phones array with that number as primary (C112).
-        phones: phone ? [{ value: phone }] : [],
-      },
-      req: { transactionID },
-    })
-
-    await Promise.all([
-      payload.create({
+      const { totalDocs: signatureNumber } = await payload.count({
         collection: 'signature',
-        data: {
-          contact: contact.id,
-          petition: petitionId,
-          consent: consentId,
-          comment,
-        },
-        req: { transactionID },
-      }),
-      payload.create({
-        collection: 'subscription',
-        data: {
-          contact: contact.id,
-          consent: consentId,
-        },
-        req: { transactionID },
-      }),
-    ])
+        where: { petition: { equals: petitionId } },
+        req,
+      })
 
-    const { totalDocs: signatureNumber } = await payload.count({
-      collection: 'signature',
-      where: { petition: { equals: petitionId } },
-      req: { transactionID },
-    })
-
-    await payload.db.commitTransaction(transactionID)
-    return { ok: true, signatureNumber }
-  } catch (error) {
-    await payload.db.rollbackTransaction(transactionID)
-    throw error
-  }
+      return { ok: true, signatureNumber }
+    },
+    { beginFailureMessage: 'Failed to begin transaction' },
+  )
 }

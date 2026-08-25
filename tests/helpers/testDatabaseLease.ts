@@ -640,11 +640,10 @@ export const withMissingInviteConsentFixture = async <Result>(
       depth: 0,
     })
     if (recreated.docs[0]) {
-      await payload.delete({
-        collection: 'consent',
-        where: { key: { equals: consentKey } },
-        depth: 0,
-      })
+      // Raw SQL bypasses the Consent.beforeDelete guard (the lease window guarantees
+      // no live references exist, so the guard would never fire here — but the hook is
+      // authorization of the admin delete path and must not run for this test harness delete).
+      await payload.db.drizzle.execute(sql`DELETE FROM "consent" WHERE "key" = ${consentKey}`)
     }
   }
 
