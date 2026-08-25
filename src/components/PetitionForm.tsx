@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/field'
 import { trackMetaLead } from '@/lib/facebookPixel'
 import { petitionFormSchema, type PetitionFormInput } from '@/lib/schemas/petition-form'
-import { Petition } from '@/payload-types'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState, useTransition } from 'react'
 import { FormProvider, useForm, type SubmitHandler } from 'react-hook-form'
@@ -26,9 +25,18 @@ import { StateSelect } from './StateSelect'
 import { Button } from './ui/button'
 import { Textarea } from './ui/textarea'
 
+// View model — the server page selects only the fields this form renders, so
+// the full petition document (body richText, consent relation, tracking,
+// timestamps) never crosses the RSC wire into this client component.
+type PetitionFormPetition = {
+  id: string
+  title: string
+  form: { title?: string | null; subtitle?: string | null }
+}
+
 interface PetitionFormProps {
   id: string
-  petition: Petition
+  petition: PetitionFormPetition
   consentHTML: string
   facebookPixelId?: string
 }

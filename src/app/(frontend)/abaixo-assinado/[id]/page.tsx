@@ -237,7 +237,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <div className="rounded-xl border border-border bg-card p-5 text-card-foreground shadow-[0_24px_60px_rgb(122_25_18/0.12)] sm:p-7">
             <PetitionForm
               id="formulario"
-              petition={petition}
+              petition={{
+                id: petition.id,
+                title: petition.title,
+                form: { title: petition.form.title, subtitle: petition.form.subtitle },
+              }}
               consentHTML={consentHTML}
               facebookPixelId={facebookPixelId ?? undefined}
             />

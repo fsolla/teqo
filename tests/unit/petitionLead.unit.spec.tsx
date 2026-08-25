@@ -31,7 +31,7 @@ vi.mock('@/lib/facebookPixel', async (importOriginal) => {
 const PIXEL_ID = '123456789012345'
 
 const petition = {
-  id: 1,
+  id: '1',
   title: 'Pela manutenção do Hospital do Subúrbio',
   form: { title: 'Assine a petição', subtitle: '' },
 } as unknown as Petition
