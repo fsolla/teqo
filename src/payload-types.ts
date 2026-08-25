@@ -857,7 +857,7 @@ export interface Supporter {
 export interface SupporterImportBatch {
   id: number;
   batchId: string;
-  actor: number | CampaignUser;
+  actor?: (number | null) | CampaignUser;
   expiresAt: string;
   rows:
     | {
