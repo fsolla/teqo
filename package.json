@@ -160,6 +160,7 @@
     "@types/web-push": "^3.6.4",
     "@types/yauzl": "^3.4.0",
     "@vitejs/plugin-react": "4.5.2",
+    "@vitest/coverage-v8": "4.0.18",
     "csv-parse": "^7.0.1",
     "eslint": "^9.39.2",
     "eslint-config-next": "15.4.11",
