@@ -1,6 +1,6 @@
 ---
 name: testing-audit
-description: Auditoria autônoma noturna da suíte de testes do Teqo — retrato honesto (contagens, tempos, duplicatas por camada), melhorias seguras aplicadas com prova verde antes/depois e revert fail-closed, entregues num único PR ready SEM auto-merge armado cuja descrição é o relatório final.
+description: 'Auditoria autônoma noturna da suíte de testes do Teqo — retrato honesto (contagens, tempos, duplicatas por camada), melhorias seguras aplicadas com prova verde antes/depois e revert fail-closed, entregues num único PR ready SEM auto-merge armado cuja descrição é o relatório final.'
 ---
 
 # Skill: testing-audit
@@ -28,7 +28,7 @@ Intocáveis estruturais (nenhum diff toca): `scripts/ci-scope.mjs`, `scripts/lib
 
 ## Critérios de nível (aponte, não redefina)
 
-A pirâmide das três camadas já está codificada: `.agents/skills/test-driven-development/SKILL.md` §144–198 e `docs/TESTING.md`. As disposições da auditoria julgam contra esses critérios existentes — nunca criem critérios novos paralelos.
+A pirâmide das três camadas já está codificada: `.agents/skills/test-driven-development/SKILL.md` (seção da pirâmide, "as três camadas do repo" — hoje §144–198) e `docs/TESTING.md`. As disposições da auditoria julgam contra esses critérios existentes — nunca criem critérios novos paralelos.
 
 ## Tetos duros da noite
 
@@ -135,7 +135,7 @@ Evidência por passo no relatório: timestamp, hash curto, linhas-resumo antes/d
 O safety-net arma o automerge no evento de abertura e REARMA a cada push. Sequência obrigatória:
 
 1. Confirmar que nenhum push novo acontecerá (todo o trabalho já foi empurrado na Fase 4).
-2. Aguardar o run do workflow `PR Ready + auto-merge` **do SHA final** terminar (foi ele que armou): `gh run list --workflow agent-pr-ready-automerge.yml --limit 1`.
+2. Aguardar o run do workflow `PR Ready + auto-merge` **do SHA final** terminar (foi ele que armou): `gh run list --workflow agent-pr-ready-automerge.yml --branch <branch-deste-PR> --limit 1` — filtre pela branch/SHA, nunca pelo "último run" global (PRs concorrentes poluem a lista).
 3. Desarmar: `gh pr merge <N> --disable-auto`.
 4. Verificar: `gh pr view <N> --json isDraft,autoMergeRequest,mergeable,mergeStateStatus` → esperado `{isDraft: false, autoMergeRequest: null, mergeable: MERGEABLE}`.
 5. **Fallback fail-closed:** desarme falhou ou `autoMergeRequest` persistiu não-nulo → converter para draft (`gh pr ready <N> --undo`; draft fora de `cursor/*` é veto estrutural do safety-net) e registrar no relatório que o humano vira ready pela manhã. Draft protegido é preferível a main mergeado sem querer.

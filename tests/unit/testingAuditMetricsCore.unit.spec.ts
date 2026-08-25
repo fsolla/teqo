@@ -60,6 +60,19 @@ describe('summarizeVitestReport', () => {
   it('rejects payloads without testResults', () => {
     expect(() => summarizeVitestReport({})).toThrow('missing testResults')
   })
+
+  it('falls back to counted totals and a placeholder when fields are absent', () => {
+    const payload = {
+      testResults: [{ assertionResults: [{ title: 't' }] }],
+    }
+    const summary = summarizeVitestReport(payload)
+
+    expect(summary.totals.files).toBe(1)
+    expect(summary.totals.tests).toBe(1)
+    expect(summary.totals.failedTests).toBe(0)
+    expect(summary.rows[0].file).toBe('(desconhecido)')
+    expect(summary.rows[0].slowestTest).toBeNull()
+  })
 })
 
 describe('renderSlowestFilesTable', () => {
@@ -68,6 +81,15 @@ describe('renderSlowestFilesTable', () => {
 
     expect(table.split('\n')).toHaveLength(3)
     expect(table).toContain('| tests/unit/b.unit.spec.ts | 2 | 1.1s | slow one (0.4s) |')
+  })
+
+  it('renders a placeholder for rows without a slowest test', () => {
+    const table = renderSlowestFilesTable(
+      summarizeVitestReport({ testResults: [{ name: '/x/y.unit.spec.ts', assertionResults: [] }] }),
+      { top: 5 },
+    )
+
+    expect(table).toContain('| /x/y.unit.spec.ts | 0 | 0.0s | — |')
   })
 })
 

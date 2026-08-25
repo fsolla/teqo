@@ -20,7 +20,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import {
+  DEFAULT_TOP,
   inventoryE2ESource,
+  ms,
   renderE2EInventoryTable,
   renderSlowestFilesTable,
   summarizeVitestReport,
@@ -28,7 +30,6 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const E2E_DIR = 'tests/e2e'
-const DEFAULT_TOP = 15
 
 const usage = () => {
   console.error('usage: node scripts/testing-audit-metrics.mjs <unit|int|e2e-inventory> [--top N]')
@@ -56,7 +57,7 @@ const runVitestLayer = async (layer) => {
   if (jsonStart === -1) {
     console.error(`[metrics] vitest não produziu relatório JSON no stdout (exit ${result.status})`)
     console.error((result.stderr ?? '').slice(-4000))
-    process.exit(result.status ?? 2)
+    process.exit(result.status === 0 ? 2 : result.status)
   }
   let report
   try {
@@ -75,8 +76,6 @@ const runVitestLayer = async (layer) => {
   console.log(renderSlowestFilesTable(summary, { top }))
   if (result.status !== 0) process.exit(result.status)
 }
-
-const ms = (value) => `${(value / 1000).toFixed(1)}s`
 
 const runE2EInventory = () => {
   const dir = path.join(repoRoot, E2E_DIR)
