@@ -31,7 +31,7 @@ Closes #<N>
 
 - **`draft: false`** (or omit only if the tool’s default is Ready — today Cloud defaults to draft, so **always pass `draft: false`**).
 - Não há auto-merge a armar por PR: o safety net (abaixo) arma o auto-merge nativo.
-- Never end a turn with an open agent PR left as **Draft** — inclui PRs do `engineering-audit` (artefatos e remediações).
+- Never end a turn with an open agent PR left as **Draft** — inclui PRs do `engineering-audit` (artefatos e remediações). Única exceção de auto-merge: branches `audit/*` do engineering-audit ficam **Ready SEM auto-merge** — o safety net as pula (`audit-veto` em `decideAutomergeAction`; OPS98) e o merge é humano.
 
 ## Push (determinístico)
 
@@ -86,5 +86,6 @@ manual que colocou a PR #52 em main com o CI vermelho na era Forgejo).
 Cobre o caso em que o
 agente (ou o default draft do Cloud) esqueceu e PRs humanas/worktree com merge
 falho silencioso (incidente OPS52). **Draft de branch não-`cursor/*` nunca é
-tocado** — o draft é o veto do ator (skip do CLI). Não há opt-out por skill
-(audit incluído).
+tocado** — o draft é o veto do ator (skip do CLI). Único opt-out, restrito por
+prefixo de branch: `audit/*` (engineering-audit) → skip (`audit-veto`,
+`scripts/lib/github-pr-flow.mjs`; pins em `tests/unit/githubPrFlow.unit.spec.ts`).
