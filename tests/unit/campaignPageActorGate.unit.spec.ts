@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
   redirect: vi.fn(),
   getCampaignUser: vi.fn(),
+  getCampaignUserWithAvatar: vi.fn(),
 }))
 
 vi.mock('next/navigation', () => ({
@@ -13,6 +14,7 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/utilities/campaignAuth', () => ({
   getCampaignUser: mocks.getCampaignUser,
+  getCampaignUserWithAvatar: mocks.getCampaignUserWithAvatar,
 }))
 
 vi.mock('@/utilities/access/shared', () => ({
@@ -77,5 +79,32 @@ describe('requireCampaignPageActor — gate: writable (C142)', () => {
     mocks.getCampaignUser.mockResolvedValue(actor('leader'))
     await requireCampaignPageActor({ gate: 'writable' })
     expect(mocks.redirect).toHaveBeenCalled()
+  })
+})
+
+describe('requireCampaignPageActor — withAvatar option', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('loads the actor through the avatar getter (perfil shell needs a populated avatarUrl)', async () => {
+    mocks.getCampaignUserWithAvatar.mockResolvedValue(actor('coordinator'))
+    const user = await requireCampaignPageActor({ withAvatar: true })
+    expect(user.role).toBe('coordinator')
+    expect(mocks.getCampaignUserWithAvatar).toHaveBeenCalledTimes(1)
+    expect(mocks.getCampaignUser).not.toHaveBeenCalled()
+    expect(mocks.redirect).not.toHaveBeenCalled()
+  })
+
+  it('redirects to login when the avatar getter finds no session', async () => {
+    mocks.getCampaignUserWithAvatar.mockResolvedValue(null)
+    // Real `next/navigation` redirect never returns (throws NEXT_REDIRECT);
+    // the helper reads `user.role` right after, so mimic that here.
+    mocks.redirect.mockImplementationOnce(() => {
+      throw new Error('NEXT_REDIRECT')
+    })
+    await expect(requireCampaignPageActor({ withAvatar: true })).rejects.toThrow('NEXT_REDIRECT')
+    expect(mocks.redirect).toHaveBeenCalledWith('/campanha/login')
+    expect(mocks.getCampaignUser).not.toHaveBeenCalled()
   })
 })

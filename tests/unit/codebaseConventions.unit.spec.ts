@@ -528,11 +528,12 @@ describe('src/utilities top-level is pinned', () => {
 describe('campaign route-page actor comes from requireCampaignPageActor', () => {
   // P3-I: the staff page prologue was ~110 hand-spelled lines across 30 pages
   // with a real divergence (`return null` ×5 — a blank screen for a missing
-  // session). A page that re-spells `getCampaignUser()` breaks the build here;
-  // genuinely bespoke prologues are allowlisted with their reason:
+  // session). A page that re-spells any `getCampaignUser*()` getter variant
+  // (e.g. `getCampaignUserWithAvatar`) breaks the build here; genuinely
+  // bespoke prologues are allowlisted with their reason:
   const allowlist = new Set<string>([])
 
-  it('keeps getCampaignUser() out of (app) route pages', () => {
+  it('keeps getCampaignUser*() getters out of (app) route pages', () => {
     const offenders: string[] = []
 
     for (const file of walkSourceFiles(resolve(repoRoot, 'src/app/(campaign)/campanha/(app)'), [
@@ -540,7 +541,7 @@ describe('campaign route-page actor comes from requireCampaignPageActor', () => 
     ])) {
       const path = repoPath(file)
       if (basename(file) !== 'page.tsx' || allowlist.has(path)) continue
-      if (/getCampaignUser\(\)/.test(readFileSync(file, 'utf8'))) offenders.push(path)
+      if (/getCampaignUser[A-Za-z0-9]*\(/.test(readFileSync(file, 'utf8'))) offenders.push(path)
     }
 
     expect(offenders, 'use requireCampaignPageActor from @/utilities/campaignPageActor').toEqual([])

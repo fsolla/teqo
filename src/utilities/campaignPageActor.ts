@@ -5,10 +5,22 @@ import { redirect } from 'next/navigation'
 import { LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
 import { isStaffCampaignRole, isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
 import { advisorEditingAccess } from '@/utilities/access/shared'
-import { getCampaignUser } from '@/utilities/campaignAuth'
+import { getCampaignUser, getCampaignUserWithAvatar } from '@/utilities/campaignAuth'
 
 /** Exactly the non-null actor `getCampaignUser` proves (keeps its `email` refinement). */
 export type CampaignPageActor = NonNullable<Awaited<ReturnType<typeof getCampaignUser>>>
+
+export type CampaignPageActorOptions = {
+  gate?: CampaignPageGate
+  redirectTo?: string
+  /**
+   * Load the actor with `avatar` populated (depth 1). The perfil shell renders
+   * `avatarUrl`, which requires the `avatar` relationship to be a populated
+   * media object — depth 0 would resolve it to a number id that the shell
+   * would treat as `null`.
+   */
+  withAvatar?: boolean
+}
 
 export type CampaignPageGate = 'staff' | 'unrestricted' | 'noLeader' | 'writable'
 
@@ -30,14 +42,19 @@ export const CAMPAIGN_STAFF_QUADRO_PATH = '/campanha/quadro'
  *                    (C142 — write destinations must not be offered to a
  *                    read-only advisor; the server already rejects the write).
  *
- * A custom `redirectTo` overrides the gate's default target. The convention
- * guard in `codebaseConventions.unit.spec.ts` fails the build on a
- * `getCampaignUser()` call in a `(app)` route page outside this helper.
+ * A custom `redirectTo` overrides the gate's default target. `withAvatar`
+ * loads the actor through `getCampaignUserWithAvatar` (avatar populated at
+ * depth 1) instead of `getCampaignUser` — both return
+ * `AuthenticatedCampaignUser | null`; the avatar depth is runtime-only and
+ * does not change the gates. The convention guard in
+ * `codebaseConventions.unit.spec.ts` fails the build on a `getCampaignUser*()`
+ * call in a `(app)` route page outside this helper.
  */
 export const requireCampaignPageActor = async (
-  options: { gate?: CampaignPageGate; redirectTo?: string } = {},
+  options: CampaignPageActorOptions = {},
 ): Promise<CampaignPageActor> => {
-  const user = await getCampaignUser()
+  const getter = options.withAvatar ? getCampaignUserWithAvatar : getCampaignUser
+  const user = await getter()
   if (!user) redirect('/campanha/login')
 
   const { gate, redirectTo } = options

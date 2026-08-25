@@ -1,6 +1,5 @@
 import config from '@payload-config'
 import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { CampaignPasskeysCard } from '@/components/campaign/auth/CampaignPasskeysCard'
@@ -8,8 +7,8 @@ import { CampaignProfileSettings } from '@/components/campaign/auth/CampaignProf
 import { CampaignPushNotificationsCard } from '@/components/campaign/auth/CampaignPushNotificationsCard'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { deviceLabelFromUserAgent } from '@/lib/deviceLabel'
-import { getCampaignUserWithAvatar } from '@/utilities/campaignAuth'
 import { getCampaignPushConsent } from '@/utilities/campaignConsent'
+import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { campaignUserShellView } from '@/utilities/campaignUserProfile'
 import { getCampaignVapidPublicKey } from '@/utilities/notification/sendCampaignPush'
 import { loadCampaignPasskeys } from '@/utilities/webauthn/campaignWebAuthnCeremony'
@@ -22,8 +21,10 @@ type CampaignProfilePageProps = {
 }
 
 export default async function CampaignProfilePage({ searchParams }: CampaignProfilePageProps) {
-  const [user, params] = await Promise.all([getCampaignUserWithAvatar(), searchParams])
-  if (!user) redirect('/campanha/login')
+  const [user, params] = await Promise.all([
+    requireCampaignPageActor({ withAvatar: true }),
+    searchParams,
+  ])
 
   const payload = await getPayload({ config })
   const [passkeys, relyingParty, requestHeaders, pushConsent] = await Promise.all([
