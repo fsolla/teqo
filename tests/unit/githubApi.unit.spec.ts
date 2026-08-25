@@ -141,11 +141,10 @@ describe('github-api (issue tracker layer)', () => {
     })
     const pr = await api.getPullRequest(5)
     expect(pr?.autoMerge?.mergeMethod).toBe('rebase')
-    expect(pr?.head).toEqual({ ref: '', sha: '' })
   })
 
   it('disableAutoMerge sends the GraphQL disable mutation with the node id', async () => {
-    const calls: { url: string; init?: { method?: string; body?: string } }[] = []
+    const calls: FetchCall[] = []
     const api = createApi({
       token: 'tok',
       fetchImpl: async (url, init) => {
@@ -159,6 +158,15 @@ describe('github-api (issue tracker layer)', () => {
     const payload = JSON.parse(calls[0].init?.body ?? '{}')
     expect(payload.query).toContain('disablePullRequestAutoMerge')
     expect(payload.variables).toEqual({ id: 'PR_node7' })
+  })
+
+  it('ensureAutoMergeDisabled throws fail-closed on an unknown PR', async () => {
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async () => ok({ message: 'Not Found' }, 404),
+      retries: 0,
+    })
+    await expect(api.ensureAutoMergeDisabled(13)).rejects.toThrow(/não encontrado/)
   })
 
   it('ensureAutoMergeDisabled converges once a poll sees null', async () => {

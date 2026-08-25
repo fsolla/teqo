@@ -50,7 +50,7 @@ Tudo aqui é leitura. Falhou um item → pare com o remédio nomeado, não impro
 3. Branch corrente ≠ `main`. Se estiver em main/detached, crie `agent/<N>-react-audit`
    a partir de `origin/main` — nunca commitar fix em main.
 4. `GITHUB_TOKEN` presente e validado com chamada barata ANTES do trabalho:
-   `node -e "import('./scripts/lib/github-api.mjs').then(m=>m.githubApi.getIssue(901)).then(i=>console.log(i?.state))"`.
+   `node -e "import('./scripts/lib/github-api.mjs').then(m=>m.githubApi.listIssues({limit:1})).then(i=>console.log(i.length>=0))"`.
 5. Baseline bare dos gates estáticos — vermelhos pré-existentes são BASELINE (política
    "dono do PR, dono do CI", `docs/AGENT-OPS.md`), anote-os:
    `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm exec knip`, `pnpm check:cycles`.

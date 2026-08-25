@@ -176,7 +176,10 @@ export const createApi = ({
     draft: Boolean(pr.draft),
     mergeable: pr.mergeable ?? null,
     autoMerge: pr.auto_merge
-      ? { mergeMethod: pr.auto_merge.merge_method ?? '', enabledBy: pr.auto_merge.enabled_by?.login ?? '' }
+      ? {
+          mergeMethod: pr.auto_merge.merge_method ?? '',
+          enabledBy: pr.auto_merge.enabled_by?.login ?? '',
+        }
       : null,
     nodeId: pr.node_id ?? '',
     head: { ref: pr.head?.ref ?? '', sha: pr.head?.sha ?? '' },
@@ -417,18 +420,22 @@ export const createApi = ({
      * net arms auto-merge asynchronously AFTER the PR opens (the race is
      * real: a single disarm right after opening lost it in the OPS97
      * dogfood), so a bare DELETE/mutation is not enough — poll until
-     * `auto_merge` reads null or attempts are exhausted. Resolves true
-     * when verified disarmed; throws naming the PR otherwise.
+     * `auto_merge` reads null or attempts are exhausted. Fail-closed: an
+     * unknown PR throws (a wrong number must not read as success); the
+     * final GET runs without a preceding sleep, so eventual consistency
+     * may raise a false "still armed" — that direction is safe.
      */
     ensureAutoMergeDisabled: async (number, { attempts = 5, delayMs = 2000 } = {}) => {
       for (let attempt = 1; attempt <= attempts; attempt += 1) {
         const pr = await api.getPullRequest(number)
-        if (!pr || pr.autoMerge === null) return true
+        if (!pr) throw new Error(`PR #${number} não encontrado — desarme não verificado`)
+        if (pr.autoMerge === null) return true
         await api.disableAutoMerge(pr.nodeId)
         if (attempt < attempts) await sleepImpl(delayMs)
       }
       const final = await api.getPullRequest(number)
-      if (!final || final.autoMerge === null) return true
+      if (!final) throw new Error(`PR #${number} não encontrado — desarme não verificado`)
+      if (final.autoMerge === null) return true
       throw new Error(
         `auto-merge do PR #${number} segue armado após ${attempts} tentativas de desarme`,
       )
