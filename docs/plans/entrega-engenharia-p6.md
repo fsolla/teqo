@@ -4,12 +4,12 @@ Retrato consolidado do audit (Pass 6) e o plano de execução dos workstreams re
 
 ## Executado no Pass (commitados na branch)
 
-| WS | Entrega | Guarda (classe) |
-| --- | --- | --- |
-| P6-1 | Ratchet de bypass endurecido: comentário de módulo não zera mais o arquivo (conta como indocumentado); arquivos novos entram pinados na contagem atual; só comentário per-site abaixa | 3 — `codebaseConventions` (P3-E endurecida) |
-| P6-2 | `perfil` usa `requireCampaignPageActor`; regex do P3-I ampliada para `getCampaignUser[A-Za-z0-9]*\(` | 3 — `codebaseConventions` (P3-I endurecida) |
-| P6-M909 | Guardrail da miss #909: `scripts/testing-audit-disarm.mjs` (cria PR → desarma → verifica `autoMergeRequest: null`, atômico) + fiação na skill /testing-audit | 3 — script no passo de criação do PR (a ordem deixa de depender do agente) |
-| P6-M895 | Guardrail da miss #895: convenção no skill `plan-issue` — plano de intenção que registra decisão de DADOS registra os valores literais (tabela/IDs), não só narrativa | 6 — declarada judgment-only (prosa não tem detector determinístico) |
+| WS      | Entrega                                                                                                                                                                               | Guarda (classe)                                                            |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| P6-1    | Ratchet de bypass endurecido: comentário de módulo não zera mais o arquivo (conta como indocumentado); arquivos novos entram pinados na contagem atual; só comentário per-site abaixa | 3 — `codebaseConventions` (P3-E endurecida)                                |
+| P6-2    | `perfil` usa `requireCampaignPageActor`; regex do P3-I ampliada para `getCampaignUser[A-Za-z0-9]*\(`                                                                                  | 3 — `codebaseConventions` (P3-I endurecida)                                |
+| P6-M909 | Guardrail da miss #909: `scripts/testing-audit-disarm.mjs` (cria PR → desarma → verifica `autoMergeRequest: null`, atômico) + fiação na skill /testing-audit                          | 3 — script no passo de criação do PR (a ordem deixa de depender do agente) |
+| P6-M895 | Guardrail da miss #895: convenção no skill `plan-issue` — plano de intenção que registra decisão de DADOS registra os valores literais (tabela/IDs), não só narrativa                 | 6 — declarada judgment-only (prosa não tem detector determinístico)        |
 
 ## Workstreams planejados (fora do teto do Pass)
 
@@ -17,46 +17,46 @@ Ordenados por severidade; dentro dela, por blast radius crescente. Teto do Pass 
 
 ### P2
 
-| WS | Conteúdo | Guarda (classe) | Evidência |
-| --- | --- | --- | --- |
-| P6-A | Saved-filters ×6 → 1 trio (hook/control/nav) sobre o store compartilhado; copy como data | 3 — spec bane novo twin de saved-filter fora do dono | `usePeopleSavedFilters` 43L ↔ `useMunicipalitySavedFilters` 48L; comentário "must not be written twice" violado em `:26` |
-| P6-B | Advisor-relation cells ×3 → 1 célula com record de owner-kind (precedente `DIRECTION_COPY`) | 3 — spec: arquivo `*AdvisorRelationCell`/`*AssessoradoCell` novo precisa delegar ao dono | 89/96/99 LOC, só diferem FormData field/título/label |
-| P6-C | Filter-bar shells ×13 → shell com slots + adapter record (adapters já exportam a superfície de 6 fns idêntica) | 6 — judgment-only (abstração grande); gatilho: próximo shell novo | ~1.700 LOC, `StateDeputyFilters` 96L ≈ `AdvisorFilters` 103L |
-| P6-D | `searchHome*` ×6 → core tipado + wrappers nomeados (padrão `runStaffEntityMutation`); cap single-source | 3 — spec: cap com nome único; skeleton ban | 847 LOC; cap ×2 nomes (25) |
-| P6-E | `chipLabel` ×12 → 1 export; deletar re-spell de `filterOmniboxSuggestionSeeds` em `municipalityOmnibox.ts:401-445` | 3 — spec: `const chipLabel` permitido 1× | 12/13 arquivos |
-| P6-F | Bare `86_400_000` ×12 → `DAY_MS` | 3 — `scriptCliConventions`/spec flag do literal com allowlist | 11 tests + `campaignTime.ts:134` |
-| P6-G | Deletar módulos mortos (`projectionSheetParse` 173L, `searchOnlyListOmnibox` 98L) + scripts mortos (`github-pr.mjs`, `measure-e2e-family.mjs`, `regenerate-municipality-catalog-snapshot.mjs`) | 4 — knip config: spec não conta como usage (entry de testes excluído) | 0 importadores de produção |
-| P6-H | Guard de CLI estendido: ban `function die(` + `process.exit(`; migrar 4 scripts para `dieWithLabel` | 3 — `scriptCliConventions` endurecida | 4 `function die()` + ~20 `process.exit(1)` |
-| P6-I | `taskActions.ts` no wrapper `runCampaignFormAction`; safelists importam as constantes (`ACTIVITY_RESULT_STAFF_MESSAGE` etc.) | 2/3 — spec varre `error.message` em `(campaign)` + literal em safelist | `taskActions.ts:20-27`; `resultFormActions.ts:17` |
-| P6-J | Dedup de contact nos 3 forms públicos (`findOrCreateContactByPhone` pattern) | 5 — pin int: mesma submissão 2× → 1 contact | `submitWhatsapp.ts:30`, `submitPetitionSignature.ts:40`, `submitCampaignNewsletter.ts:26` |
-| P6-K | `findPublishedPosts` com `select` (projeção de listagem); related-posts derivam da mesma query | 3 — spec: `find` de post sem `select` falha | `posts.ts:102-114` sem `select` nenhum |
-| P6-M | Sweep `server-only` ampliado para `next/navigation` (+ allowlist dos limpos) | 3 — `codebaseConventions` | `campaignFormActionError.ts:1` |
-| P6-N | D1 trigger com dentes: spec conta N módulos top-level com prefixo de domínio; 12 `activity*` + trio `googleCalendar*` + 3 omniboxes top-level → subpastas | 3 — spec de contagem de prefixo | `src/utilities/` top-level |
-| P6-O | Fold `personContactWriteScope.ts` → `people/` | 3 — spec de split-brain por prefixo | `person/` com 1 arquivo |
-| P6-P | `as unknown as` → `stub<T>` + ban ESLint em tests | 2 — ESLint `no-restricted-syntax` em tests | 21 arquivos de spec |
-| P6-R | Guard de actor-field invertido: qualquer `relationTo: 'campaignUser'` não vindo da factory falha (não só os 3 nomes) | 2/3 — spec | `codebaseConventions.unit.spec.ts:571` |
-| P6-U | `peopleData`/`personDelete` split (facets/sort vs loader; enumeração read-only vs mutação) | 6 — judgment | 627/521 LOC |
-| P6-V | AI shell: região polite anunciando resposta; usar `CampaignFormActionMessage` nos contatos | 6 — judgment (a11y) | 0 aria-live em 8 arquivos `shell/ai/` |
-| P6-V2 | `campaignNavigationUrls.ts` → `lib/` (puro, client-safe) | 3 — spec de pureza top-level | 636 LOC, imports só `@/lib/*` |
+| WS    | Conteúdo                                                                                                                                                                                       | Guarda (classe)                                                                          | Evidência                                                                                                                |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| P6-A  | Saved-filters ×6 → 1 trio (hook/control/nav) sobre o store compartilhado; copy como data                                                                                                       | 3 — spec bane novo twin de saved-filter fora do dono                                     | `usePeopleSavedFilters` 43L ↔ `useMunicipalitySavedFilters` 48L; comentário "must not be written twice" violado em `:26` |
+| P6-B  | Advisor-relation cells ×3 → 1 célula com record de owner-kind (precedente `DIRECTION_COPY`)                                                                                                    | 3 — spec: arquivo `*AdvisorRelationCell`/`*AssessoradoCell` novo precisa delegar ao dono | 89/96/99 LOC, só diferem FormData field/título/label                                                                     |
+| P6-C  | Filter-bar shells ×13 → shell com slots + adapter record (adapters já exportam a superfície de 6 fns idêntica)                                                                                 | 6 — judgment-only (abstração grande); gatilho: próximo shell novo                        | ~1.700 LOC, `StateDeputyFilters` 96L ≈ `AdvisorFilters` 103L                                                             |
+| P6-D  | `searchHome*` ×6 → core tipado + wrappers nomeados (padrão `runStaffEntityMutation`); cap single-source                                                                                        | 3 — spec: cap com nome único; skeleton ban                                               | 847 LOC; cap ×2 nomes (25)                                                                                               |
+| P6-E  | `chipLabel` ×12 → 1 export; deletar re-spell de `filterOmniboxSuggestionSeeds` em `municipalityOmnibox.ts:401-445`                                                                             | 3 — spec: `const chipLabel` permitido 1×                                                 | 12/13 arquivos                                                                                                           |
+| P6-F  | Bare `86_400_000` ×12 → `DAY_MS`                                                                                                                                                               | 3 — `scriptCliConventions`/spec flag do literal com allowlist                            | 11 tests + `campaignTime.ts:134`                                                                                         |
+| P6-G  | Deletar módulos mortos (`projectionSheetParse` 173L, `searchOnlyListOmnibox` 98L) + scripts mortos (`github-pr.mjs`, `measure-e2e-family.mjs`, `regenerate-municipality-catalog-snapshot.mjs`) | 4 — knip config: spec não conta como usage (entry de testes excluído)                    | 0 importadores de produção                                                                                               |
+| P6-H  | Guard de CLI estendido: ban `function die(` + `process.exit(`; migrar 4 scripts para `dieWithLabel`                                                                                            | 3 — `scriptCliConventions` endurecida                                                    | 4 `function die()` + ~20 `process.exit(1)`                                                                               |
+| P6-I  | `taskActions.ts` no wrapper `runCampaignFormAction`; safelists importam as constantes (`ACTIVITY_RESULT_STAFF_MESSAGE` etc.)                                                                   | 2/3 — spec varre `error.message` em `(campaign)` + literal em safelist                   | `taskActions.ts:20-27`; `resultFormActions.ts:17`                                                                        |
+| P6-J  | Dedup de contact nos 3 forms públicos (`findOrCreateContactByPhone` pattern)                                                                                                                   | 5 — pin int: mesma submissão 2× → 1 contact                                              | `submitWhatsapp.ts:30`, `submitPetitionSignature.ts:40`, `submitCampaignNewsletter.ts:26`                                |
+| P6-K  | `findPublishedPosts` com `select` (projeção de listagem); related-posts derivam da mesma query                                                                                                 | 3 — spec: `find` de post sem `select` falha                                              | `posts.ts:102-114` sem `select` nenhum                                                                                   |
+| P6-M  | Sweep `server-only` ampliado para `next/navigation` (+ allowlist dos limpos)                                                                                                                   | 3 — `codebaseConventions`                                                                | `campaignFormActionError.ts:1`                                                                                           |
+| P6-N  | D1 trigger com dentes: spec conta N módulos top-level com prefixo de domínio; 12 `activity*` + trio `googleCalendar*` + 3 omniboxes top-level → subpastas                                      | 3 — spec de contagem de prefixo                                                          | `src/utilities/` top-level                                                                                               |
+| P6-O  | Fold `personContactWriteScope.ts` → `people/`                                                                                                                                                  | 3 — spec de split-brain por prefixo                                                      | `person/` com 1 arquivo                                                                                                  |
+| P6-P  | `as unknown as` → `stub<T>` + ban ESLint em tests                                                                                                                                              | 2 — ESLint `no-restricted-syntax` em tests                                               | 21 arquivos de spec                                                                                                      |
+| P6-R  | Guard de actor-field invertido: qualquer `relationTo: 'campaignUser'` não vindo da factory falha (não só os 3 nomes)                                                                           | 2/3 — spec                                                                               | `codebaseConventions.unit.spec.ts:571`                                                                                   |
+| P6-U  | `peopleData`/`personDelete` split (facets/sort vs loader; enumeração read-only vs mutação)                                                                                                     | 6 — judgment                                                                             | 627/521 LOC                                                                                                              |
+| P6-V  | AI shell: região polite anunciando resposta; usar `CampaignFormActionMessage` nos contatos                                                                                                     | 6 — judgment (a11y)                                                                      | 0 aria-live em 8 arquivos `shell/ai/`                                                                                    |
+| P6-V2 | `campaignNavigationUrls.ts` → `lib/` (puro, client-safe)                                                                                                                                       | 3 — spec de pureza top-level                                                             | 636 LOC, imports só `@/lib/*`                                                                                            |
 
 ### P3
 
-| WS | Conteúdo | Guarda | Evidência |
-| --- | --- | --- | --- |
-| P6-Q | `fixtures.own()` 75 → auto-ownership; split do hub de fixtures | 3 | `campaignFixtures.ts` 1.168L |
-| P6-S | Gender labels: manter fork deliberado (rejeitado como look-alike), registrar gatilho | 6 | 'Não binário' vs 'Outro' |
-| P6-T | `getSignatureCount` com `cache()` | 2 | `getSignatureCount.ts:9` |
-| P6-X | Migração de schema (ex.: users-roles) e URLs públicas: **fora de escopo** por construção | — | ledger |
+| WS   | Conteúdo                                                                                 | Guarda | Evidência                    |
+| ---- | ---------------------------------------------------------------------------------------- | ------ | ---------------------------- |
+| P6-Q | `fixtures.own()` 75 → auto-ownership; split do hub de fixtures                           | 3      | `campaignFixtures.ts` 1.168L |
+| P6-S | Gender labels: manter fork deliberado (rejeitado como look-alike), registrar gatilho     | 6      | 'Não binário' vs 'Outro'     |
+| P6-T | `getSignatureCount` com `cache()`                                                        | 2      | `getSignatureCount.ts:9`     |
+| P6-X | Migração de schema (ex.: users-roles) e URLs públicas: **fora de escopo** por construção | —      | ledger                       |
 
 ## Defer + trigger registrados (sem ID próprio)
 
-| Candidato | Motivo do defer | Gatilho de reabertura |
-| --- | --- | --- |
-| homeSearch int triplet → `describe.each` | 2 specs gêmeos de fixture-heavy int; restruturar carrega cada assertion verbatim | 4º irmão do triplet |
-| `agent-pool.mjs` + `lib/agent-pool-*` (516L) | pool dormente (OPS65); `agent:pool` ainda tem entrada em package.json | limpeza pós-pool |
-| Parsers quick-action V1/V2 | B147 paralelo deliberado (ledger, issue #335) | cutover do v2 |
-| `municipio/[slug]/v2` prologue `cache()` | mesma classe P5-D — a rota v2 é a pior instância; corrigir junto do P5-D | — |
-| `measure-e2e-family.mjs` | ferramenta OPS87 com docs próprias | deletar junto das docs do workflow |
+| Candidato                                    | Motivo do defer                                                                  | Gatilho de reabertura              |
+| -------------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------- |
+| homeSearch int triplet → `describe.each`     | 2 specs gêmeos de fixture-heavy int; restruturar carrega cada assertion verbatim | 4º irmão do triplet                |
+| `agent-pool.mjs` + `lib/agent-pool-*` (516L) | pool dormente (OPS65); `agent:pool` ainda tem entrada em package.json            | limpeza pós-pool                   |
+| Parsers quick-action V1/V2                   | B147 paralelo deliberado (ledger, issue #335)                                    | cutover do v2                      |
+| `municipio/[slug]/v2` prologue `cache()`     | mesma classe P5-D — a rota v2 é a pior instância; corrigir junto do P5-D         | —                                  |
+| `measure-e2e-family.mjs`                     | ferramenta OPS87 com docs próprias                                               | deletar junto das docs do workflow |
 
 ## Rejeitados como look-alike (não re-propor)
 
@@ -67,14 +67,14 @@ Ordenados por severidade; dentro dela, por blast radius crescente. Teto do Pass 
 
 ## Guard map do Pass
 
-| Classe de achado | Guarda | Mecanismo | Status |
-| --- | --- | --- | --- |
-| Bypass admin indocumentado | P3-E ratchet | `codebaseConventions` por-arquivo, só diminui | **endurecida P6-1** (comentário de módulo não zera; novos arquivos pinados) |
-| Ator de página hand-rolled | P3-I | regex em page.tsx de `(app)` | **endurecida P6-2** (variantes `getCampaignUser*`) |
-| Automerge armado em PR de audit | OPS98 veto + #909 | safety-net pula `audit/*`; script de desarme atômico | **nova P6-M909** |
-| Plano de intenção sem dados literais | #895 convenção | skill `plan-issue` | **nova P6-M895** (classe 6 declarada) |
-| `as never` twin (`as unknown as`) | P6-P | ESLint em tests | planejada |
-| Literal `86_400_000` | P6-F | spec com allowlist | planejada |
-| `function die(`/`process.exit(` em scripts | P6-H | `scriptCliConventions` estendida | planejada |
-| Módulo morto sustentado por spec | P6-G | knip config | planejada |
-| Actor-field fora da factory | P6-R | spec invertida (nome-independente) | planejada |
+| Classe de achado                           | Guarda            | Mecanismo                                            | Status                                                                      |
+| ------------------------------------------ | ----------------- | ---------------------------------------------------- | --------------------------------------------------------------------------- |
+| Bypass admin indocumentado                 | P3-E ratchet      | `codebaseConventions` por-arquivo, só diminui        | **endurecida P6-1** (comentário de módulo não zera; novos arquivos pinados) |
+| Ator de página hand-rolled                 | P3-I              | regex em page.tsx de `(app)`                         | **endurecida P6-2** (variantes `getCampaignUser*`)                          |
+| Automerge armado em PR de audit            | OPS98 veto + #909 | safety-net pula `audit/*`; script de desarme atômico | **nova P6-M909**                                                            |
+| Plano de intenção sem dados literais       | #895 convenção    | skill `plan-issue`                                   | **nova P6-M895** (classe 6 declarada)                                       |
+| `as never` twin (`as unknown as`)          | P6-P              | ESLint em tests                                      | planejada                                                                   |
+| Literal `86_400_000`                       | P6-F              | spec com allowlist                                   | planejada                                                                   |
+| `function die(`/`process.exit(` em scripts | P6-H              | `scriptCliConventions` estendida                     | planejada                                                                   |
+| Módulo morto sustentado por spec           | P6-G              | knip config                                          | planejada                                                                   |
+| Actor-field fora da factory                | P6-R              | spec invertida (nome-independente)                   | planejada                                                                   |
