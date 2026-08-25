@@ -1,5 +1,6 @@
 import { payloadAdminOnly } from '@/utilities/campaignAccess'
 import { REVALIDATE_SOCIAL_FEED_TAG } from '@/utilities/revalidateRequest'
+import { validateExcludedItemId } from '@/utilities/socialFeed/excludedItems'
 import {
   INSTAGRAM_SYNC_HOOK_TIMEOUT_MS,
   instagramCredentialsChanged,
@@ -9,8 +10,6 @@ import { revalidateTag } from 'next/cache'
 import type { GlobalAfterChangeHook, GlobalConfig } from 'payload'
 
 const slug = 'social-feed-settings'
-
-const YOUTUBE_VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/
 
 const revalidateFeed = async () => revalidateTag(REVALIDATE_SOCIAL_FEED_TAG)
 
@@ -203,13 +202,8 @@ export const SocialFeedSettings: GlobalConfig = {
           required: true,
           validate: (
             value: string | null | undefined,
-            { data }: { data: { platform?: string } },
-          ) => {
-            if (data.platform === 'youtube' && value && !YOUTUBE_VIDEO_ID_PATTERN.test(value)) {
-              return 'Informe o ID do vídeo (11 caracteres)'
-            }
-            return true
-          },
+            { siblingData }: { siblingData: { platform?: string } | undefined },
+          ) => validateExcludedItemId(value, siblingData),
         },
         {
           name: 'reason',

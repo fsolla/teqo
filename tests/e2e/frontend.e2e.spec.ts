@@ -1027,7 +1027,7 @@ test.describe('Campaign home content section', () => {
       youtubeApiKey: 'e2e-youtube-api-key',
       youtubeChannelId: 'UCe2eTestChannel',
       youtubeMaxItems: 3,
-      excludedItems: [{ platform: 'youtube', itemId: 'e2e-video-excluido-4' }],
+      excludedItems: [{ platform: 'youtube', itemId: 'e2evideo004' }],
       youtubeFeedSnapshot: null,
     })
 
@@ -1044,10 +1044,7 @@ test.describe('Campaign home content section', () => {
 
       const featured = section.getByRole('link', { name: /E2e Vídeo em destaque/ })
       await expect(featured).toBeVisible()
-      await expect(featured).toHaveAttribute(
-        'href',
-        'https://www.youtube.com/watch?v=e2e-video-destaque-1',
-      )
+      await expect(featured).toHaveAttribute('href', 'https://www.youtube.com/watch?v=e2evideo001')
       await expect(featured).toHaveAttribute('target', '_blank')
       await expect(featured).toHaveAttribute('rel', 'noopener noreferrer')
       await expect(
@@ -1149,7 +1146,7 @@ test.describe('Campaign home content section', () => {
       youtubeApiKey: 'e2e-youtube-api-key',
       youtubeChannelId: 'UCe2eTestChannel',
       youtubeMaxItems: 3,
-      excludedItems: [{ platform: 'youtube', itemId: 'e2e-video-excluido-4' }],
+      excludedItems: [{ platform: 'youtube', itemId: 'e2evideo004' }],
       youtubeFeedSnapshot: null,
     }
     await updateSocialFeedSettings(request, headers, baseSettings)
@@ -1581,7 +1578,7 @@ test.describe('Campaign home content section', () => {
       const videoShare = videoCard.locator('xpath=..').getByRole('button', { name: 'Compartilhar' })
       await videoShare.click()
       expect(await waMessage(page.getByRole('link', { name: 'Compartilhar no WhatsApp' }))).toBe(
-        'Olha esse vídeo do Solla: E2e Vídeo em destaque — https://www.youtube.com/watch?v=e2e-video-destaque-1',
+        'Olha esse vídeo do Solla: E2e Vídeo em destaque — https://www.youtube.com/watch?v=e2evideo001',
       )
       await page.keyboard.press('Escape')
       await expect(page.locator('[data-slot="popover-content"]')).toHaveCount(0)
