@@ -15,9 +15,9 @@ Appetite restante: herdado (~0,5–1 dia eng)
   espelhada (estabilidade ×N sem falhas de contagem).
 - **O que NÃO negociar:**
   - Regra D4/C115 intacta: evento previamente visto que sumiu (`lastSeenIds.has(eventId)`
-    + atividade `confirmado`) → cancelamento da atividade (`cancelActivityFromGoogle`),
-    nunca recriação (`src/utilities/googleCalendarSync.ts:569-584`). O fix só muda QUANDO
-    o snapshot é confiável para gravar, jamais a semântica de decisão.
+    - atividade `confirmado`) → cancelamento da atividade (`cancelActivityFromGoogle`),
+      nunca recriação (`src/utilities/googleCalendarSync.ts:569-584`). O fix só muda QUANDO
+      o snapshot é confiável para gravar, jamais a semântica de decisão.
   - `ensureGoogleCalendarPushChannel` lê o MESMO snapshot para o pin de calendarId
     (`googleCalendarSync.ts:678-690`) — essa leitura continua funcionando com estado
     legado e novo, sem mudança de contrato.
@@ -82,6 +82,7 @@ benignos; serializá-los seria cerimônia sem volatilidade. O doc carregado em
 o owner `googleCalendarSync.ts`).
 
 **Alternativas rejeitadas:**
+
 - **B) advisory lock por passada** (`acquireTextAdvisoryLocks`,
   `src/utilities/postgresTransactionLocks.ts:40-61`): `pg_advisory_xact_lock` exige
   transação aberta durante toda a passada (`withPayloadTransaction` envolvendo
@@ -111,8 +112,8 @@ o owner `googleCalendarSync.ts`).
 **Recomendação: C — documentar a convenção no header de
 `tests/int/googleCalendarSync.int.spec.ts`.** O mecanismo de isolamento JÁ EXISTE e já
 é usado: `fixtures.own` limpa por teste (beforeEach/afterEach em
-`tests/helpers/campaignFixtures.ts:1115-1146`), então não há vazamento *entre testes* —
-o problema real é coexistência *durante* execução paralela (vitest até 8 forks num único
+`tests/helpers/campaignFixtures.ts:1115-1146`), então não há vazamento _entre testes_ —
+o problema real é coexistência _durante_ execução paralela (vitest até 8 forks num único
 `teqo_test`, `vitest.config.mts:18-22`), e contra isso a única defesa válida é o
 consumidor da janela se escopar — o que a spec do motor já faz com
 `activityWhere {title like 'C114%'}` (`googleCalendarSync.int.spec.ts:120-130`, mecanismo
@@ -176,7 +177,7 @@ Não se aplica (nenhuma superfície de dados nova exposta; o snapshot mantém a 
    criam atividades de passagem mantêm cleanup por teste via `installCampaignFixtures`.
    Sem código de produção. Verificar: lint verde.
 4. **Gates e estabilidade**: rodar o arquivo alvo ×5 local (`pnpm test:int --
-   tests/int/googleCalendarSync.int.spec.ts`, repetido) e a suíte int completa 1×
+tests/int/googleCalendarSync.int.spec.ts`, repetido) e a suíte int completa 1×
    (`pnpm test:int`) sem falhas de contagem; `pnpm gate:fast`; PR com cascade normal
    (CI roda o conjunto curado conforme ci-scope); push via `pnpm push`.
 
@@ -237,10 +238,10 @@ Não se aplica (nenhuma superfície de dados nova exposta; o snapshot mantém a 
 
 ## Self-score (decision-quality, gate ≥4)
 
-| Dimensão | Nota | Justificativa |
-| --- | --- | --- |
-| Decisões caras têm rejeitadas? | 5 | CAS vs advisory-lock vs aceitar vs merge-por-listedAt vs retry — cada uma com motivo técnico citando precedentes do repo. |
-| Abordagem cabe no appetite? | 5 | Guard ~20 linhas no owner + 1 teste de corrida + 1 bloco de comentário; bem dentro de 0,5–1 dia. |
-| Rabbit holes nomeados? | 5 | Seis itens explícitos (fila, retry, generalização do CAS, helper F2, specs irmãs, dupla-insersão). |
-| Depth check: reusa o que existe? | 4 | Edita o owner `googleCalendarSync.ts`, reusa `activityWhere`/fixtures/stub existentes; perde 1 pois o stub ganha mecanismo novo de gate (justificado: único jeito determinístico de coreografar a corrida). |
-| Intenção permanece satisfeita? | 5 | Outcome e regra D4 intactos; engenharia escolheu forma (guard por `updatedAt` vs `lastSuccessAt`) sem reescrever o aceite. |
+| Dimensão                         | Nota | Justificativa                                                                                                                                                                                               |
+| -------------------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Decisões caras têm rejeitadas?   | 5    | CAS vs advisory-lock vs aceitar vs merge-por-listedAt vs retry — cada uma com motivo técnico citando precedentes do repo.                                                                                   |
+| Abordagem cabe no appetite?      | 5    | Guard ~20 linhas no owner + 1 teste de corrida + 1 bloco de comentário; bem dentro de 0,5–1 dia.                                                                                                            |
+| Rabbit holes nomeados?           | 5    | Seis itens explícitos (fila, retry, generalização do CAS, helper F2, specs irmãs, dupla-insersão).                                                                                                          |
+| Depth check: reusa o que existe? | 4    | Edita o owner `googleCalendarSync.ts`, reusa `activityWhere`/fixtures/stub existentes; perde 1 pois o stub ganha mecanismo novo de gate (justificado: único jeito determinístico de coreografar a corrida). |
+| Intenção permanece satisfeita?   | 5    | Outcome e regra D4 intactos; engenharia escolheu forma (guard por `updatedAt` vs `lastSuccessAt`) sem reescrever o aceite.                                                                                  |
