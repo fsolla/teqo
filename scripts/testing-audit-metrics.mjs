@@ -23,6 +23,7 @@ import {
   DEFAULT_TOP,
   inventoryE2ESource,
   ms,
+  parseVitestStdout,
   renderE2EInventoryTable,
   renderSlowestFilesTable,
   summarizeVitestReport,
@@ -43,9 +44,6 @@ const topFlag = args.indexOf('--top')
 const top = topFlag === -1 ? DEFAULT_TOP : Number(args[topFlag + 1])
 if (!Number.isInteger(top) || top <= 0) usage()
 
-/** Vitest's jest-compatible JSON payload starts with this key. */
-const VITEST_JSON_ANCHOR = '{"numTotal'
-
 const runVitestLayer = async (layer) => {
   console.log(`[metrics] rodando pnpm test:${layer} --reporter=json …`)
   const result = spawnSync('pnpm', [`test:${layer}`, '--reporter=json'], {
@@ -53,19 +51,15 @@ const runVitestLayer = async (layer) => {
     encoding: 'utf8',
     maxBuffer: 256 * 1024 * 1024,
   })
-  const jsonStart = (result.stdout ?? '').indexOf(VITEST_JSON_ANCHOR)
-  if (jsonStart === -1) {
-    console.error(`[metrics] vitest não produziu relatório JSON no stdout (exit ${result.status})`)
-    console.error((result.stderr ?? '').slice(-4000))
-    process.exit(result.status === 0 ? 2 : result.status)
-  }
   let report
   try {
-    report = JSON.parse(result.stdout.slice(jsonStart))
+    report = parseVitestStdout(result.stdout ?? '')
   } catch (error) {
-    console.error(
-      `[metrics] relatório JSON inválido: ${error instanceof Error ? error.message : error}`,
-    )
+    console.error(`[metrics] ${error instanceof Error ? error.message : error}`)
+    if (result.status !== 0) {
+      console.error((result.stderr ?? '').slice(-4000))
+      process.exit(result.status)
+    }
     process.exit(2)
   }
   const summary = summarizeVitestReport(report)

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   inventoryE2ESource,
+  parseVitestStdout,
   renderE2EInventoryTable,
   renderSlowestFilesTable,
   summarizeVitestReport,
@@ -72,6 +73,41 @@ describe('summarizeVitestReport', () => {
     expect(summary.totals.failedTests).toBe(0)
     expect(summary.rows[0].file).toBe('(desconhecido)')
     expect(summary.rows[0].slowestTest).toBeNull()
+  })
+})
+
+describe('parseVitestStdout', () => {
+  const json = '{"numTotalTestSuites":1,"numTotalTests":3,"numFailedTests":1,"testResults":[]}'
+
+  it('parses the payload when pnpm echoes the script before and appends noise after (red suite)', () => {
+    const stdout = `\n> teqo@1.0.0 test:int /repo\n> cross-env … vitest run\n\n${json}\n ELIFECYCLE  Command failed with exit code 1.\n`
+
+    expect(parseVitestStdout(stdout)).toEqual({
+      numTotalTestSuites: 1,
+      numTotalTests: 3,
+      numFailedTests: 1,
+      testResults: [],
+    })
+  })
+
+  it('parses the payload when test console noise with braces follows the report', () => {
+    const stdout = `${json}\nconsole output { "not": "json" } trailing\n`
+
+    expect(parseVitestStdout(stdout).numTotalTests).toBe(3)
+  })
+
+  it('parses a bare payload with surrounding whitespace', () => {
+    expect(parseVitestStdout(`  ${json}\n`).numFailedTests).toBe(1)
+  })
+
+  it('rejects output without the vitest anchor', () => {
+    expect(() => parseVitestStdout('no json here')).toThrow(
+      'vitest não produziu relatório JSON no stdout',
+    )
+  })
+
+  it('rejects an anchor without a valid JSON boundary', () => {
+    expect(() => parseVitestStdout('{"numTotal"not json')).toThrow('relatório JSON inválido')
   })
 })
 
