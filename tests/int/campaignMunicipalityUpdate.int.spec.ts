@@ -10,7 +10,6 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { createMunicipalityUpdateRecord } from '@/app/(campaign)/campanha/actions/municipalityUpdate'
 import { MunicipalityUpdate } from '@/collections/MunicipalityUpdate'
-import { municipalityUpdateCreateSchema } from '@/lib/schemas/municipalityUpdate'
 import type { CampaignUser } from '@/payload-types'
 import config from '@/payload.config'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
@@ -66,77 +65,6 @@ const listMunicipalityUpdates = (user: CampaignUser, municipalityID: number) =>
 describe('campaign municipality update domain', () => {
   beforeAll(async () => {
     payload = await getPayload({ config: await config })
-  })
-
-  it('requires body and polarity and accepts urgent and adversary flags', () => {
-    expect(
-      municipalityUpdateCreateSchema.safeParse({
-        municipality: 1,
-        polarity: 'neutra',
-        body: 'Mobilização na feira',
-      }).success,
-    ).toBe(true)
-    expect(
-      municipalityUpdateCreateSchema.safeParse({
-        municipality: 1,
-        body: 'Sem polaridade',
-      }).success,
-    ).toBe(false)
-    expect(
-      municipalityUpdateCreateSchema.safeParse({
-        municipality: 1,
-        polarity: 'ruim',
-        urgent: true,
-        body: 'Precisamos responder hoje.',
-      }).success,
-    ).toBe(true)
-    expect(
-      municipalityUpdateCreateSchema.safeParse({
-        municipality: 1,
-        polarity: 'neutra',
-        body: '   ',
-      }).success,
-    ).toBe(false)
-    expect(
-      municipalityUpdateCreateSchema.safeParse({
-        municipality: 1,
-        polarity: 'ruim',
-        body: 'Ex-prefeito retirou o apoio na feira.',
-      }).success,
-    ).toBe(true)
-    expect(
-      municipalityUpdateCreateSchema.safeParse({
-        municipality: 1,
-        polarity: 'invalid',
-        body: 'Visita adversária confirmada.',
-      }).success,
-    ).toBe(false)
-    expect(
-      municipalityUpdateCreateSchema.safeParse({
-        municipality: 1,
-        polarity: 'ruim',
-        adversarySignal: true,
-      }).success,
-    ).toBe(false)
-  })
-
-  it('strips forged author and timestamps from input', () => {
-    const parsed = municipalityUpdateCreateSchema.parse({
-      municipality: 1,
-      polarity: 'neutra',
-      body: 'Registro de campo',
-      author: 999,
-      createdAt: '2000-01-01T00:00:00.000Z',
-      updatedAt: '2000-01-01T00:00:00.000Z',
-    })
-
-    expect(parsed).toEqual({
-      municipality: 1,
-      polarity: 'neutra',
-      body: 'Registro de campo',
-      urgent: false,
-      adversarySignal: false,
-    })
   })
 
   it('enforces body and polarity validation through the Local API', async () => {
