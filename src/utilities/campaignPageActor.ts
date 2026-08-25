@@ -10,18 +10,6 @@ import { getCampaignUser, getCampaignUserWithAvatar } from '@/utilities/campaign
 /** Exactly the non-null actor `getCampaignUser` proves (keeps its `email` refinement). */
 export type CampaignPageActor = NonNullable<Awaited<ReturnType<typeof getCampaignUser>>>
 
-export type CampaignPageActorOptions = {
-  gate?: CampaignPageGate
-  redirectTo?: string
-  /**
-   * Load the actor with `avatar` populated (depth 1). The perfil shell renders
-   * `avatarUrl`, which requires the `avatar` relationship to be a populated
-   * media object — depth 0 would resolve it to a number id that the shell
-   * would treat as `null`.
-   */
-  withAvatar?: boolean
-}
-
 export type CampaignPageGate = 'staff' | 'unrestricted' | 'noLeader' | 'writable'
 
 export { LEADER_CONTACTS_HOME }
@@ -51,7 +39,14 @@ export const CAMPAIGN_STAFF_QUADRO_PATH = '/campanha/quadro'
  * call in a `(app)` route page outside this helper.
  */
 export const requireCampaignPageActor = async (
-  options: CampaignPageActorOptions = {},
+  /**
+   * `withAvatar` loads the actor through `getCampaignUserWithAvatar` (avatar
+   * populated at depth 1) instead of `getCampaignUser` — both return
+   * `AuthenticatedCampaignUser | null`; the avatar depth is runtime-only and
+   * does not change the gates. The perfil shell renders `avatarUrl`, which
+   * requires the populated media object — depth 0 resolves to a number id.
+   */
+  options: { gate?: CampaignPageGate; redirectTo?: string; withAvatar?: boolean } = {},
 ): Promise<CampaignPageActor> => {
   const getter = options.withAvatar ? getCampaignUserWithAvatar : getCampaignUser
   const user = await getter()
