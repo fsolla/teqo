@@ -219,4 +219,110 @@ describe('github-api (issue tracker layer)', () => {
     })
     await expect(api.ensureAutoMergeDisabled(11, { attempts: 3 })).rejects.toThrow(/auto-merge/i)
   })
+
+  it('ensureAutoMergeDisabled is idempotent — a null auto_merge gets no mutation', async () => {
+    const calls: FetchCall[] = []
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url, init) => {
+        calls.push({ url: String(url), init })
+        return ok({ number: 21, state: 'open', draft: false })
+      },
+    })
+    await expect(api.ensureAutoMergeDisabled(21)).resolves.toBe(true)
+    expect(calls).toHaveLength(1)
+    expect(calls[0].url).not.toContain('/graphql')
+  })
+
+  it('getPullRequestAutoMergeStatus reads the GraphQL status and normalizes it', async () => {
+    const calls: FetchCall[] = []
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url, init) => {
+        calls.push({ url: String(url), init })
+        return ok({
+          data: {
+            repository: {
+              pullRequest: {
+                id: 'PR_node33',
+                isDraft: false,
+                mergeable: 'MERGEABLE',
+                mergeStateStatus: 'CLEAN',
+                autoMergeRequest: {
+                  mergeMethod: 'REBASE',
+                  enabledBy: { login: 'github-actions[bot]' },
+                },
+              },
+            },
+          },
+        })
+      },
+    })
+    const status = await api.getPullRequestAutoMergeStatus(33)
+    expect(status).toEqual({
+      number: 33,
+      nodeId: 'PR_node33',
+      isDraft: false,
+      mergeable: 'MERGEABLE',
+      mergeStateStatus: 'CLEAN',
+      autoMergeRequest: { mergeMethod: 'REBASE', enabledBy: 'github-actions[bot]' },
+    })
+    expect(calls[0].url).toContain('/graphql')
+    expect(calls[0].init?.method).toBe('POST')
+    const payload = JSON.parse(calls[0].init?.body ?? '{}')
+    expect(payload.query).toContain('query PullRequestAutoMergeStatus')
+    expect(payload.query).toContain('autoMergeRequest')
+    expect(payload.variables).toEqual({ owner: 'fsolla', name: 'teqo', number: 33 })
+  })
+
+  it('getPullRequestAutoMergeStatus normalizes a disarmed PR to autoMergeRequest null', async () => {
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async () =>
+        ok({
+          data: {
+            repository: {
+              pullRequest: {
+                id: 'PR_node34',
+                isDraft: false,
+                mergeable: 'MERGEABLE',
+                mergeStateStatus: 'BLOCKED',
+                autoMergeRequest: null,
+              },
+            },
+          },
+        }),
+    })
+    const status = await api.getPullRequestAutoMergeStatus(34)
+    expect(status.autoMergeRequest).toBeNull()
+    expect(status.isDraft).toBe(false)
+  })
+
+  it('getPullRequestAutoMergeStatus throws fail-closed on an unknown PR', async () => {
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async () => ok({ data: { repository: { pullRequest: null } } }),
+      retries: 0,
+    })
+    await expect(api.getPullRequestAutoMergeStatus(99)).rejects.toThrow(/não encontrado/)
+  })
+
+  it('convertPullRequestToDraft sends the GraphQL draft mutation with the node id', async () => {
+    const calls: FetchCall[] = []
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url, init) => {
+        calls.push({ url: String(url), init })
+        return ok({
+          data: { convertPullRequestToDraft: { pullRequest: { number: 41, isDraft: true } } },
+        })
+      },
+    })
+    await api.convertPullRequestToDraft('PR_node41')
+    expect(calls[0].url).toContain('/graphql')
+    expect(calls[0].init?.method).toBe('POST')
+    const payload = JSON.parse(calls[0].init?.body ?? '{}')
+    expect(payload.query).toContain('convertPullRequestToDraft')
+    expect(payload.variables).toEqual({ id: 'PR_node41' })
+  })
 })
