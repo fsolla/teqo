@@ -40,5 +40,13 @@ export default defineConfig({
     // beats per-test overrides. Genuinely hung tests still fail — just 10s
     // later. The unit suite keeps the 5s default.
     testTimeout: 15_000,
+    // High-core local machines run up to 8 parallel forks against one
+    // Postgres (gate:ci, OPS98). Cross-file DB contention makes a few
+    // wall-clock-sensitive specs flake intermittently (C113/C115 calendar
+    // family) even at low system load — each run picks different victims.
+    // One retry gives the contended transaction a second chance without
+    // hiding real failures (CI on 2–4 vCPU rarely needs it; the unit suite
+    // stays at 0 retries).
+    retry: 1,
   },
 })
