@@ -1,4 +1,5 @@
 import { canManagePublishedContent } from '@/utilities/campaignAccess'
+import { revalidateDocumentById } from '@/utilities/documents'
 import type { CollectionConfig } from 'payload'
 
 export const Media: CollectionConfig = {
@@ -17,6 +18,21 @@ export const Media: CollectionConfig = {
     create: canManagePublishedContent,
     update: canManagePublishedContent,
     delete: canManagePublishedContent,
+  },
+  // The public pages read media through `getCachedDocumentById('media', …)`
+  // (`unstable_cache` under the `document_media:<id>` tag), so admin edits and
+  // deletions must bust that cache — same contract as Post/Petition.
+  hooks: {
+    afterChange: [
+      ({ doc, previousDoc }) => {
+        revalidateDocumentById('media', previousDoc?.id ?? doc.id)
+      },
+    ],
+    afterDelete: [
+      ({ doc }) => {
+        revalidateDocumentById('media', doc.id)
+      },
+    ],
   },
   fields: [
     {
