@@ -57,6 +57,15 @@ Responsável: —
 - **Decisões desbloqueadas:** <ator + escolha; uma por bullet. Sem decisão nomeável → corte vaidade.>
 - **Forma:** *adiada ao plano de implementação* — aqui só restrições de produto (ex.: "sem % estadual absoluto", "leitura relativa/local").
 
+## Dados da decisão (literais)
+
+<!-- Sempre presente. Se a intenção fixa valores de dados (IDs, nomes de modelo, strings
+     exatas, envs, tabelas de threshold), grave-os verbatim aqui — nunca só narrativa.
+     Sem valor fixo: "N/A — <por quê>". -->
+
+- <valor literal que o executor deve aplicar, um por bullet>
+- ex.: OPS95 registraria a tabela flag→ID do mapa (os 5 IDs)
+
 ## Direção no codebase (hipótese)
 
 <!-- Soft. Revisável. Sem signatures, sem "criar collection X", sem mermaid de solução. -->
