@@ -13,7 +13,9 @@
  * mergeable. The OPS64 "never trust the rollup" pin is structural here: a
  * single sequential job posts one honest check-run, and the server enforces
  * it. Draft policy (OPS57) preserved: only `cursor/*` heads are marked
- * ready — any other draft is the actor's veto (skip, exit 0).
+ * ready — any other draft is the actor's veto (skip, exit 0). OPS98: `audit/*`
+ * heads are vetoed entirely (ready or draft) — the engineering-audit single PR
+ * merges by human hand only.
  *
  * Idempotent: already merged / closed / non-main base → no-op success.
  * A GraphQL error (e.g. repo auto-merge disabled, PR in conflict) exits 1 so

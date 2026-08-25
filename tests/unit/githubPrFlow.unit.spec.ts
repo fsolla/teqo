@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  AUDIT_HEAD_PREFIX,
   CURSOR_HEAD_PREFIX,
   automergeArmingToken,
   decideAutomergeAction,
+  isAuditHead,
   isCursorHead,
 } from '../../scripts/lib/github-pr-flow.mjs'
 
@@ -66,6 +68,29 @@ describe('github-pr-flow automerge decision (OPS71)', () => {
     expect(isCursorHead(undefined)).toBe(false)
   })
 
+  it('skips a ready audit/* PR — the single-PR overnight delivery (OPS98)', () => {
+    const verdict = decideAutomergeAction(
+      pr({ head: { ref: `${AUDIT_HEAD_PREFIX}pass-6`, sha: 'abc' } }),
+    )
+    expect(verdict).toEqual({ action: 'skip', reason: 'audit-veto' })
+  })
+
+  it('audit/* veto dominates the draft logic — a draft audit/* never becomes mark-ready', () => {
+    const verdict = decideAutomergeAction(
+      pr({ draft: true, head: { ref: `${AUDIT_HEAD_PREFIX}pass-6`, sha: 'abc' } }),
+    )
+    expect(verdict).toEqual({ action: 'skip', reason: 'audit-veto' })
+  })
+
+  it('isAuditHead only matches the exact audit/ prefix', () => {
+    expect(isAuditHead('audit/pass-6')).toBe(true)
+    expect(isAuditHead('OPS71-x')).toBe(false)
+    expect(isAuditHead('cursor/x')).toBe(false)
+    expect(isAuditHead('auditoria/x')).toBe(false)
+    expect(isAuditHead('')).toBe(false)
+    expect(isAuditHead(undefined)).toBe(false)
+  })
+
   it('the merge contract has no poll path: ready always arms native auto-merge', () => {
     // OPS64 pin, GitHub shape: the Forgejo rollup-lie bug is structural here
     // (single job → one honest check-run), and the server only merges with
@@ -73,8 +98,9 @@ describe('github-pr-flow automerge decision (OPS71)', () => {
     const actions = [
       decideAutomergeAction(pr()).action,
       decideAutomergeAction(pr({ draft: true, head: { ref: 'cursor/x', sha: 'a' } })).action,
+      decideAutomergeAction(pr({ head: { ref: 'audit/pass-6', sha: 'a' } })).action,
     ]
-    expect(actions).toEqual(['enable-auto-merge', 'mark-ready'])
+    expect(actions).toEqual(['enable-auto-merge', 'mark-ready', 'skip'])
   })
 
   it('automergeArmingToken accepts a non-empty AUTOMERGE_PAT (OPS71-FLIP)', () => {
