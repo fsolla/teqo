@@ -124,13 +124,6 @@ export const findSameContactAccountIDs = async (
     .filter((value): value is number => typeof value === 'number')
 }
 
-export const acquireCampaignInviteRedemptionContactLock = (
-  payload: Payload,
-  req: PayloadTransactionRequest,
-  contactID: number,
-): Promise<void> =>
-  acquireTextAdvisoryLocks(payload, req, [`invite-redemption-contact:${contactID}`])
-
 export const acquireCampaignInviteAccountLocks = (
   payload: Payload,
   req: PayloadTransactionRequest,
