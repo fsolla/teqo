@@ -144,33 +144,71 @@ describe('github-api (issue tracker layer)', () => {
     expect(pr?.head).toEqual({ ref: '', sha: '' })
   })
 
-  it('disableAutoMerge DELETEs the auto-merge endpoint', async () => {
-    const calls: FetchCall[] = []
+  it('disableAutoMerge sends the GraphQL disable mutation with the node id', async () => {
+    const calls: { url: string; init?: { method?: string; body?: string } }[] = []
     const api = createApi({
       token: 'tok',
       fetchImpl: async (url, init) => {
         calls.push({ url: String(url), init })
-        return ok({})
+        return ok({ data: { disablePullRequestAutoMerge: { pullRequest: { number: 7 } } } })
       },
     })
-    await api.disableAutoMerge(7)
-    expect(calls[0].url).toContain('/repos/fsolla/teqo/pulls/7/auto-merge')
-    expect(calls[0].init?.method).toBe('DELETE')
+    await api.disableAutoMerge('PR_node7')
+    expect(calls[0].url).toContain('/graphql')
+    expect(calls[0].init?.method).toBe('POST')
+    const payload = JSON.parse(calls[0].init?.body ?? '{}')
+    expect(payload.query).toContain('disablePullRequestAutoMerge')
+    expect(payload.variables).toEqual({ id: 'PR_node7' })
   })
 
-  it('disableAutoMerge tolerates 404 when nothing is armed', async () => {
+  it('ensureAutoMergeDisabled converges once a poll sees null', async () => {
+    let poll = 0
+    let disabledCalls = 0
+    const sleeps: number[] = []
     const api = createApi({
       token: 'tok',
-      fetchImpl: async () => ok({ message: 'Auto-merge request is disabled for this pull request' }, 404),
+      fetchImpl: async (url, init) => {
+        if (String(url).includes('/graphql')) {
+          disabledCalls += 1
+          return ok({ data: { disablePullRequestAutoMerge: { pullRequest: { number: 9 } } } })
+        }
+        poll += 1
+        // Armed on the first two polls, disarmed on the third.
+        return ok({
+          number: 9,
+          state: 'open',
+          draft: false,
+          node_id: 'PR_node9',
+          ...(poll < 3 ? { auto_merge: { merge_method: 'rebase' } } : {}),
+        })
+      },
+      sleepImpl: async (ms) => {
+        sleeps.push(ms)
+      },
     })
-    await expect(api.disableAutoMerge(9)).resolves.toBeUndefined()
+    await expect(api.ensureAutoMergeDisabled(9)).resolves.toBe(true)
+    expect(disabledCalls).toBe(2)
+    expect(sleeps.length).toBe(2)
   })
 
-  it('disableAutoMerge rethrows non-404 errors', async () => {
+  it('ensureAutoMergeDisabled throws after exhausting attempts while still armed', async () => {
     const api = createApi({
       token: 'tok',
-      fetchImpl: async () => ok({ message: 'nope' }, 422),
+      fetchImpl: async (url) => {
+        if (String(url).includes('/graphql')) {
+          return ok({ data: { disablePullRequestAutoMerge: { pullRequest: { number: 11 } } } })
+        }
+        return ok({
+          number: 11,
+          state: 'open',
+          draft: false,
+          node_id: 'PR_node11',
+          auto_merge: { merge_method: 'rebase' },
+        })
+      },
+      sleepImpl: async () => {},
+      retries: 0,
     })
-    await expect(api.disableAutoMerge(11)).rejects.toThrow(/422/)
+    await expect(api.ensureAutoMergeDisabled(11, { attempts: 3 })).rejects.toThrow(/auto-merge/i)
   })
 })

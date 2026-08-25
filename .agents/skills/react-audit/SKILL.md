@@ -127,20 +127,25 @@ O PR nasce UMA vez, já estabilizado localmente, e fica SEM auto-merge.
 1. `GITHUB_TOKEN=<PAT> node scripts/github-pr.mjs --head <branch> \
    --title "react-audit <data>: <N> fixes" --base main --body-file <relatorio.md>`
    — nunca draft; `Refs #N` apenas; jamais `Closes` de Issue alheia.
-2. Imediatamente após abrir, DESARME o auto-merge (o safety net
-   `agent-pr-ready-automerge.yml` arma em TODO PR same-repo→main não-draft):
+2. Imediatamente após abrir, DESARME O AUTO-MERGE COM VERIFICAÇÃO EM LAÇO — o safety net
+   `agent-pr-ready-automerge.yml` arma ASSINCRONAMENTE depois da abertura (na corrida real
+   capturada no dogfood #905, um desarme único perdeu: o armar aconteceu ENTRE o primeiro
+   GET e o DELETE; e o endpoint REST `DELETE /pulls/N/auto-merge` responde **404 mesmo
+   armado-via-GraphQL** — não serve). Use o helper do dono, que codifica essa lição:
 
    ```js
    // node --input-type=module
    import { githubApi } from './scripts/lib/github-api.mjs'
-   const pr = await githubApi.getPullRequest(<N>) // head.sha confere a branch
-   await githubApi.disableAutoMerge(<N>)          // DELETE .../auto-merge; 404 tolerado
-   const after = await githubApi.getPullRequest(<N>)
-   if (after.autoMerge !== null) throw new Error('auto-merge ainda armado')
+   const pr = await githubApi.getPullRequest(<N>)      // confere head.sha = branch
+   await githubApi.ensureAutoMergeDisabled(<N>)        // mutation GraphQL disablePullRequestAutoMerge
+                                                      // + re-poll até auto_merge null (lança se não convergir)
    ```
 
+   `ensureAutoMergeDisabled` resolve `true` só quando um poll lê `auto_merge = null`;
+   lança erro nomeando o PR se esgotar as tentativas — nesse caso, trate como falha de Done.
+
 3. REGRA DURA: todo push pós-abertura (fix de CI vermelho, rebase) é seguido IMEDIATAMENTE
-   do desarme + verificação acima — cada `synchronize` RE-ARMA o auto-merge silenciosamente.
+   de `ensureAutoMergeDisabled(<N>)` — cada `synchronize` RE-ARMA o auto-merge silenciosamente.
 
 ## Passo 6 — Estabilizar até o fim (Done condition)
 
