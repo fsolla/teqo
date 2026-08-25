@@ -19,7 +19,13 @@
     "server-only": ["tests/helpers/serverOnly.ts"]
   },
   "ignoreBinaries": [],
-  "ignoreDependencies": ["tailwindcss-animate", "tw-animate-css", "shadcn", "eslint-config-next", "@vitest/coverage-v8"],
+  "ignoreDependencies": [
+    "tailwindcss-animate",
+    "tw-animate-css",
+    "shadcn",
+    "eslint-config-next",
+    "@vitest/coverage-v8"
+  ],
   "rules": {
     "exports": "error",
     "types": "error",
