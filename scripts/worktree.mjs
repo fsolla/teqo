@@ -22,22 +22,25 @@
  *                              acontece); `--cheap/--pro/--zen/--go/--alibaba`
  *                              escolhe o modelo por invocação no mapa fixo
  *                              `WORKTREE_MODEL_MAP` (cheap=cheapestinference/
- *                              deepseek-v4-flash, pro=opencode-go/qwen3.7-max,
+ *                              deepseek-v4-flash, pro=deepseek/deepseek-v4-pro,
  *                              zen=opencode-go/ox-alpha-free, go=opencode-go/
- *                              mimo-v2.5, alibaba=alibaba-token-plan/qwen3.7-max)
- *                              com `--variant max` sempre (OPS93; sem flag o
- *                              preset `deepseek/deepseek-v4-flash` permanece).
+ *                              hy3, alibaba=alibaba-token-plan/deepseek-v4-flash;
+ *                              OPS95) — sem flag o preset
+ *                              `deepseek/deepseek-v4-flash` permanece.
  *                              Chamado do terminal interativo (com
  *                              `TEQO_WORKTREE_TERMINAL=1`, que só a função shell
  *                              seta), imprime também a diretiva `launch
- *                              opencode <dir> --model <preset|map> --variant max
+ *                              opencode <dir> --model <preset|map>
  *                              --auto --prompt "/work-issue --issue <N>"` ANTES
  *                              do `cd` — a função shell executa o cd e então a
  *                              linha, e o TUI do opencode abre no worktree com
  *                              `/work-issue --issue <N>` já enviado (OPS26 +
  *                              OPS33: o launch entrega a Issue claimada ao
- *                              agente; a skill lê o resto do GitHub) em effort
- *                              max. Presets e mapa em scripts/lib/worktree.mjs.
+ *                              agente; a skill lê o resto do GitHub). OPS95:
+ *                              sem `--variant` na diretiva — o yargs do TUI
+ *                              rejeita o flag e só imprime o helper; variantes
+ *                              ficam na config global da máquina (Ctrl+T).
+ *                              Presets e mapa em scripts/lib/worktree.mjs.
  *                              Sem o marcador (comando `/worktree` do opencode),
  *                              a diretiva não é impressa — nunca abre TUI aninhado.
  *                              Também PROVISIONA o ambiente isolado do worktree:
@@ -70,8 +73,8 @@
  *                              terminal, mesma diretiva `launch` — com
  *                              `--prompt /plan-issue` já enviado (OPS31: o TUI
  *                              abre no fluxo de planejamento, sem digitação) e
- *                              `--model <map> --variant max` quando a flag de
- *                              modelo está presente.
+ *                              `--model <map>` quando a flag de modelo está
+ *                              presente.
  *   pnpm worktree new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]
  *                              cria um worktree NEUTRO novo — sem função
  *                              pré-definida (explorar ideia, conversar, ou
@@ -85,8 +88,8 @@
  *                              Mesmo provisionamento isolado do `next`/`plan`;
  *                              no terminal, mesma diretiva `launch` — SEM
  *                              `--prompt` (apenas conversar, nenhuma skill) e
- *                              `--model <map> --variant max` quando a flag de
- *                              modelo está presente.
+ *                              `--model <map>` quando a flag de modelo está
+ *                              presente.
  *                              `--stay` suprime a linha `cd` e a diretiva;
  *                              `--cheap/--pro/--zen/--go/--alibaba` escolhe o
  *                              modelo por invocação (sem flag o preset permanece).
@@ -98,7 +101,8 @@
  *                              padrão termina imprimindo `cd <main>` para o
  *                              shell voltar ao worktree principal — o cwd nunca
  *                              fica num diretório destruído (não aceita
- *                              `--stay`; `--go` é no-op)
+ *                              `--stay`; sem launch, as flags de modelo são
+ *                              irrelevantes)
  *
  * Read-only no GitHub? NÃO — desde o OPS33 `next` CLAIMA: claim determinístico
  * antes do worktree (mesma fila/ordem e lock otimista do `pnpm agent:claim`;
@@ -151,8 +155,9 @@ import {
   planBranchName,
   resolveWorktreeModel,
   workBranchName,
+  WORKTREE_MODEL_FLAGS,
+  WORKTREE_MODEL_MAP,
   WORKTREE_TERMINAL_ENV,
-  WORKTREE_VARIANT,
 } from './lib/worktree.mjs'
 
 const die = dieAgent('worktree')
@@ -818,10 +823,14 @@ if (!subcommand) {
   console.log('    opencode command, ou a função `worktree()` de .agents/shell/worktree.sh);')
   console.log('    no terminal (TEQO_WORKTREE_TERMINAL=1) imprime também a diretiva')
   console.log(
-    '    `launch opencode <dir> --model <preset|map> --variant max --auto --prompt "/work-issue --issue <N>"` (OPS26+OPS33+OPS93:',
+    '    `launch opencode <dir> --model <preset|map> --auto --prompt "/work-issue --issue <N>"` (OPS26+OPS33+OPS93+OPS95:',
   )
   console.log(
-    `    abre o TUI com ${OPENCODE_PRESET_MODEL} (sem flag) ou com o mapa --cheap=cheapestinference/deepseek-v4-flash --pro=opencode-go/qwen3.7-max --zen=opencode-go/ox-alpha-free --go=opencode-go/mimo-v2.5 --alibaba=alibaba-token-plan/qwen3.7-max (todos --variant ${WORKTREE_VARIANT}) + auto + a Issue claimada já`,
+    `    abre o TUI com ${OPENCODE_PRESET_MODEL} (sem flag) ou com o mapa ${[
+      ...WORKTREE_MODEL_FLAGS,
+    ]
+      .map((flag) => `--${flag}=${WORKTREE_MODEL_MAP[flag]}`)
+      .join(' ')} + auto + a Issue claimada já`,
   )
   console.log(
     '    informada); --stay suprime cd e launch (o claim ainda acontece); --no-migrate pula migrations e o',
@@ -839,7 +848,7 @@ if (!subcommand) {
     '    minúsculo plans/… nunca colide com o branch <code>-<slug> de `next`; no terminal,',
   )
   console.log(
-    '    mesma diretiva `launch` com --prompt /plan-issue enviado (abre no fluxo de planejamento, sem digitação) e --model <map> --variant max quando a flag está presente',
+    '    mesma diretiva `launch` com --prompt /plan-issue enviado (abre no fluxo de planejamento, sem digitação) e --model <map> quando a flag está presente',
   )
   console.log(`\n  new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]`)
   console.log('    cria um worktree NEUTRO (sem função pré-definida) DIFERENTE a cada invocação:')
@@ -847,7 +856,7 @@ if (!subcommand) {
   console.log('    próximo work/<n> sequencial livre; o prefixo minúsculo work/… nunca colide com')
   console.log('    o branch <code>-<slug> de `next` nem com plans/plan-issue-… de `plan`; no')
   console.log(
-    '    terminal, mesma diretiva `launch` porém sem --prompt (apenas conversar) e --model <map> --variant max quando a flag está presente',
+    '    terminal, mesma diretiva `launch` porém sem --prompt (apenas conversar) e --model <map> quando a flag está presente',
   )
   console.log('  kill [--force]  destrói o worktree em que você está (recusa sujo sem --force),')
   console.log('                  remove os bancos gerados do worktree (best-effort) e imprime')

@@ -7,16 +7,17 @@
 # shell que o chamou.
 #
 # No terminal (esta função), o script também imprime a diretiva `launch
-# opencode <dir> --model <preset|map> --variant max --auto [--prompt "…"]` (OPS26+OPS33+OPS93):
+# opencode <dir> --model <preset|map> --auto [--prompt "…"]` (OPS26+OPS33+OPS93+OPS95):
 # a função executa o cd e então a linha (tokenizada por xargs — honra as aspas
 # do prompt, nunca eval), e o TUI do opencode abre no worktree — `next` com
 # `/work-issue --issue <N>` já enviado (OPS33: a Issue claimada vai no prompt),
 # `plan` com `/plan-issue` já enviado (OPS31), `new` sem prompt (apenas
-# conversar), sempre em `--variant max` (OPS78 guardrail; falha alto se a variante
-# não existir). Modelo por invocação: `--cheap` (cheapestinference/deepseek-v4-flash),
-# `--pro` (opencode-go/qwen3.7-max), `--zen` (opencode-go/ox-alpha-free),
-# `--go` (opencode-go/mimo-v2.5), `--alibaba` (alibaba-token-plan/qwen3.7-max) no
-# mapa fixo `WORKTREE_MODEL_MAP` (OPS93); sem flag o preset `deepseek/deepseek-v4-flash`
+# conversar). Sem `--variant` (OPS95: o yargs do TUI rejeita o flag e só
+# imprime o helper; variantes ficam na config global da máquina, via Ctrl+T).
+# Modelo por invocação: `--cheap` (cheapestinference/deepseek-v4-flash),
+# `--pro` (deepseek/deepseek-v4-pro), `--zen` (opencode-go/ox-alpha-free),
+# `--go` (opencode-go/hy3), `--alibaba` (alibaba-token-plan/deepseek-v4-flash) no
+# mapa fixo `WORKTREE_MODEL_MAP` (OPS93 menu; valores OPS95); sem flag o preset `deepseek/deepseek-v4-flash`
 # permanece. Sem `exec` de propósito: ao sair do opencode, o terminal volta ao
 # shell dentro do worktree. Presets são constantes em scripts/lib/worktree.mjs;
 # o marcador TEQO_WORKTREE_TERMINAL=1 é o que separa esta superfície da do comando
@@ -47,8 +48,8 @@
 #                            --stay não troca; flag de modelo como no `next`
 #   worktree kill [--force]  destrói o worktree atual e cd para o main por padrão
 #
-# `--go` remapeado em OPS93 para o mapa `opencode-go/mimo-v2.5` (antes no-op do OPS24).
-# Claim determinístico: `next` claima antes de criar o worktree (mesma fila e
+# `--go` remapeado em OPS93 para o provider OpenCode Go e em OPS95 para o modelo `opencode-go/hy3`
+# (antes no-op do OPS24). Claim determinístico: `next` claima antes de criar o worktree (mesma fila e
 # lock de `pnpm agent:claim`); `plan`/`new`/`kill` não tocam Issues.
 
 worktree() {
