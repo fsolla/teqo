@@ -466,6 +466,11 @@ const runSyncPass = async (
   activityWhere: Where | undefined,
   config: GoogleCalendarSyncDoc,
 ): Promise<SyncCounts> => {
+  // C115-F1 — captured AFTER the channel ensure (its own writes are part of
+  // this pass's baseline) and BEFORE reading the inputs it summarizes. This
+  // ONE read is both the decision basis (snapshot parsed below) and the CAS
+  // guard of the final write — full rationale on recordLastSeenSnapshot.
+  const casToken = await loadGoogleCalendarSyncConfig(payload, req)
   const { rangeStart, rangeEnd } = buildActivityWindowRange()
   const { activities, municipalityNames } = await loadSyncActivities(payload, req, activityWhere)
   const listWindow = buildListWindow(rangeStart, rangeEnd)
@@ -478,7 +483,11 @@ const runSyncPass = async (
     activityWhere,
   )
 
-  const snapshot = parseLastSeenSnapshot(config.lastSeenEventIds)
+  // The CAS token doc IS this pass's consistent view — the same read feeds
+  // the decisions and the guarded write. Deciding on the outer `config`
+  // instead would let a writer between the two loads leave this pass on a
+  // stale snapshot while it still wins the CAS (resurrection window).
+  const snapshot = parseLastSeenSnapshot((casToken ?? config).lastSeenEventIds)
   const lastSeenIds =
     snapshot?.calendarId === calendarId ? new Set(snapshot.ids) : new Set<string>()
 
@@ -596,11 +605,9 @@ const runSyncPass = async (
     created += 1
   }
 
-  await recordSyncState(payload, req, {
-    lastSeenEventIds: {
-      calendarId,
-      ids: [...remoteEventIds].filter((id) => !removedEventIds.has(id)),
-    },
+  await recordLastSeenSnapshot(payload, req, casToken, {
+    calendarId,
+    ids: [...remoteEventIds].filter((id) => !removedEventIds.has(id)),
   })
 
   return { created, updated, deleted, reverseEdits }
@@ -613,7 +620,6 @@ type SyncStatePatch = Partial<
     | 'lastSuccessAt'
     | 'lastErrorAt'
     | 'lastError'
-    | 'lastSeenEventIds'
     | 'pushChannelId'
     | 'pushChannelResourceId'
     | 'pushChannelExpiresAt'
@@ -621,6 +627,52 @@ type SyncStatePatch = Partial<
     | 'pushChannelError'
   >
 >
+
+/**
+ * C115-F1 — records the last-seen snapshot behind an optimistic
+ * compare-and-swap. The snapshot is READ-MODIFY-WRITE state: two passes can
+ * overlap (webhook vs activity hook on separate instances), and a stale pass
+ * recording LAST erases ids it never saw — the user's permanent removal then
+ * looks "never created" and the next pass rebuilds the event, un-doing the
+ * removal for good. The write therefore lands only while the sync row still
+ * carries the `updatedAt` this pass observed before reading its inputs
+ * (`casToken`, captured at the top of `runSyncPass` — that same doc is also
+ * the decision basis, keeping decisions and write on one consistent read).
+ * On a miss the stale view
+ * is dropped (debug-logged) — never-throw contract: the winner's fresher
+ * snapshot stands; a merely lagging one self-heals next pass (a present
+ * event is re-listed, not rebuilt). Residual window: the conditional update
+ * matches at query time (find-then-update), milliseconds wide against
+ * passes that run for seconds.
+ */
+const recordLastSeenSnapshot = async (
+  payload: Payload,
+  req: PayloadRequest | undefined,
+  casToken: GoogleCalendarSyncDoc | null,
+  snapshot: GoogleCalendarSyncSnapshot,
+): Promise<void> => {
+  if (!casToken) return // the row vanished mid-pass — nothing to record onto
+
+  const result = await payload.update({
+    collection: 'googleCalendarSync',
+    where: {
+      and: [{ id: { equals: casToken.id } }, { updatedAt: { equals: casToken.updatedAt } }],
+    },
+    data: { lastSeenEventIds: snapshot },
+    depth: 0,
+    // Intentional admin bypass: the state fields are system-only by design.
+    overrideAccess: true,
+    req,
+  })
+
+  // CAS miss (docs.length === 0): another writer recorded state mid-pass —
+  // this pass's view lost the race and its snapshot is intentionally dropped.
+  if (result.docs.length === 0) {
+    payload.logger.debug(
+      'googleCalendarSync: snapshot descartado — outra passada gravou estado durante esta passada.',
+    )
+  }
+}
 
 const recordSyncState = async (
   payload: Payload,

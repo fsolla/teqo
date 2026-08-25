@@ -1,4 +1,21 @@
 // @vitest-environment node
+//
+// C115-F1 — window hermeticity convention (read before adding tests here):
+// this engine mirrors the WHOLE activity window by design, and the int suite
+// runs files in parallel against ONE shared database — sibling spec files
+// keep activities inside that window while they run. Two rules keep counts
+// stable without touching other specs:
+//
+//   1. Any NEW spec here that asserts on mirror counts MUST scope its passes
+//      with its own title prefix via `activityWhere` (this file uses
+//      `{ title: { like: 'C114%' } }`) — never count on an empty window.
+//   2. Specs elsewhere that create pass-through activities in the window
+//      keep the per-test cleanup from `installCampaignFixtures` (fixtures
+//      are owned and removed beforeEach/afterEach) — never leak rows past
+//      the test that created them.
+//
+// A shared "window-safe fixture" helper stays OUT until a second spec needs
+// it (DRY < 3 call sites).
 
 import { getPayload, type Payload } from 'payload'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
@@ -524,6 +541,57 @@ describe('campaign Google calendar sync engine (C114)', () => {
       const outcome = await runSync(client)
       expect(outcome.reverseEdits).toBe(1)
       expect((await reloadActivity(activity.id)).status).toBe('cancelado')
+    })
+
+    it('an overlapping stale pass does not resurrect a permanent removal (snapshot CAS)', async () => {
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const stub = createStubClient(store)
+
+      // Pass B mirrors the webhook-vs-hook overlap: it loads its activity
+      // view BEFORE X exists, then parks inside `listEvents`. The park is
+      // awaited so the staleness is deterministic — never timing-dependent.
+      let parkB!: () => void
+      let releaseB!: () => void
+      const parked = new Promise<void>((resolve) => {
+        parkB = resolve
+      })
+      const gate = new Promise<void>((resolve) => {
+        releaseB = resolve
+      })
+      const clientB: GoogleCalendarClient = {
+        ...stub,
+        listEvents: async (calendarId, range) => {
+          parkB()
+          await gate
+          return stub.listEvents(calendarId, range)
+        },
+      }
+      const passB = runSync(clientB)
+      await parked
+
+      // X is born mid-flight (its own hook pass runs credential-less: no-op).
+      const activity = await createActivity()
+
+      // Pass A completes cleanly: creates x and records it as seen.
+      const outcomeA = await runSync(stub)
+      expect(outcomeA.created).toBe(1)
+
+      // The user permanently removes x from Google…
+      store.splice(0, 1)
+
+      // …and B — whose view predates X — finishes LAST. Erasing x from the
+      // last-seen snapshot here is what resurrects it on the next pass.
+      releaseB()
+      const outcomeB = await passB
+      expect(outcomeB.status).toBe('synced')
+
+      // The removal stands: previously seen & gone cancels, never re-creates.
+      const outcomeC = await runSync(createStubClient(store))
+      expect(outcomeC.created).toBe(0)
+      expect(outcomeC.reverseEdits).toBe(1)
+      expect((await reloadActivity(activity.id)).status).toBe('cancelado')
+      expect(store).toHaveLength(0)
     })
 
     it('a failed creation is never "seen" — the next pass creates instead of cancelling', async () => {
