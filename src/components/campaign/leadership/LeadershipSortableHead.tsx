@@ -1,5 +1,3 @@
-'use client'
-
 import type { ReactNode } from 'react'
 
 import { LeadershipHeaderFilter } from '@/components/campaign/leadership/LeadershipHeaderFilter'
