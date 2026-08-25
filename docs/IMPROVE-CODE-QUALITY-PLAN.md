@@ -254,3 +254,50 @@ Statuses: pending · in-progress · awaiting-evidence · done · deferred: \<rea
 - [x] P5-P1 remediation PR = Ready + auto-merge
 - [ ] P5-A → P5-L as independent deliveries ([entrega-engenharia-p5.md](plans/entrega-engenharia-p5.md)); oversized → `plan-issue`
 - [ ] Leftovers → ledger via `capture-review-debts`
+
+---
+
+# Pass 6 — Engineering Audit (2026-08-25)
+
+## Context
+
+- **Started:** 2026-08-25 — first execution of the **v2 skill** (autonomous, sub-agents, single-branch delivery, single PR **sem auto-merge** — OPS98): varredores por área em paralelo → caçador de consolidação → escritores `-impl` → implementadores em série na MESMA branch `audit/pass-6`.
+- **Delta anchor:** Pass 5 (2026-08-03). **681 non-merge commits** (~910 total) in 22 days, **2.041 unique files** touched. New domains since the anchor: `people/` (9 modules), `ai/` (6), `contacts/` (5), calendar trio (`googleCalendarSync` 949 LOC + client + hooks + `calendarFeed`) + **2 new collections** (`CalendarFeed`, `GoogleCalendarSync`) + `tour/`, `suggestion/`; the **wizard domain was DELETED** (OPS95) — several Pass 4/5 rows die with it. E2E suite grew **17 → 43 specs**; OPS71→OPS98 landed (GitHub CI/tracker, homeserver deploy, single-branch audit paradigm).
+- **Method:** canon loaded (rules, ARCHITECTURE, AGENT-OPS, TECH-DEBT, TESTING, GUARDRAILS, precedents, rejected-with-reason); hotspot map (delta + churn + static gates); **six parallel sweeps** (lib, utilities+access, components, (campaign), collections+globals+(frontend)+(payload), scripts+tests) with measured findings; consolidation hunt under the anti-DRY rule; **2 open `kind:agent-miss`** harvested (#909 disarm race, #895 literal-decision data); every open ledger row re-verified (5 stale closed with evidence); P1s + miss guardrails implemented in-session on the pass branch.
+- **Baseline:** green — `tsc` 0, `lint` 0 warnings, `knip` 0 findings (known `payload.config.ts` loader noise, ledger P3 — verified still true), madge 0 cycles (**1.526** TS files src+tests, +247 since Pass 5's 859… measured as 1.104 src + 422 tests).
+
+## Audit headlines (all measured)
+
+- **0 P0.** Security invariants held across all six sweeps: new collections declare `access` (`CalendarFeed.ts:31`, `GoogleCalendarSync.ts:39`); actor fields use the factory (`systemStampedActorField`, `CalendarFeed.ts:101`); consent fail-closed held; transactions held on campaign writes. The one `overrideAccess`-heavy new module (`people/personDelete.ts`, 28 bypasses) is scope-guarded per site (verified) — recorded as guard-decay P1, not a hole.
+- **2 P1:** (a) the P3-E bypass ratchet is dodged by blanket module comments — 1 header covers 28 bypasses in `personDelete.ts`, 22 in `notification/*`, 6 in `googleCalendarSync.ts`, and new files (`peopleData`, `personDetail`, `calendarFeed`, `loadNamesByIds`) are absent from `pinnedUndocumented` so a fresh file ships N undocumented bypasses invisibly; (b) the P3-I page gate is dodged by name variant — `perfil/page.tsx:25` calls `getCampaignUserWithAvatar()` (regex matches only `getCampaignUser\(`) and hand-rolls the redirect, bypassing the B43 leader gate. Both remediated in-session.
+- **2 misses → 2 guardrails:** #909 (testing-audit automerge-disarm race) — skill fix was judgment-only; deterministic residual shipped as `scripts/testing-audit-disarm.mjs` (create→disarm→verify-null atomic) wired into the skill; #895 (intention plan without literal decision data) — no deterministic mechanism can detect missing data in prose → class-6 convention registered in the `plan-issue` skill (declared judgment-only).
+- **Guard dodges measured (the dominant class this pass):** CLI skeleton dodged twice (4 local `function die()` + ~20 raw `process.exit(1)`, `scriptCliConventions` sees neither); knip's `entry: ["scripts/*.mjs"]` + test-imports-as-usage keep 2 fully dead modules (`projectionSheetParse.ts` 173 LOC, `searchOnlyListOmnibox.ts` 98 LOC — 0 production importers) and 3 dead scripts alive; actor-field guard regex covers only 3 field names (`createdBy|decidedBy|declaredBy`); `server-only` sweep is blind to `next/navigation`; DAY_MS re-spelled as bare `86_400_000` ×11 in tests + 1 in lib (`campaignTime.ts:134`); `as unknown as` ×21 files in tests serves as the unguarded twin of the `as never` ban; form-action filename shapes (`taskActions.ts` etc.) dodge the ladder guard and one (`taskActions.ts:20-27`) already passes raw `error.message` to the UI.
+- **Consolidation measured:** filter-bar shells ×13 (~1.700 LOC, ~60-LOC shared machine, 9/13 clean); saved-filters machinery ×6 re-spelled despite the committed comment "must not be written twice" (`useMunicipalitySavedFilters.ts:26`); advisor-relation cell twins ×3 (89/96/99 LOC); `chipLabel` re-spelled in 12/13 omnibox files; `searchHome*` skeletons ×6 (847 LOC, cap under two names); `fixtures.own()` 49 → **75**; homeSearch int triplet 346 LOC.
+- **Ledger hygiene:** 5 stale rows closed with evidence (P4-E wizard drawers, P4-F mobile-cards import, P4-G provider wrapping, assessores/novo actor helper, P5-A wizardActionChain — the wizard domain died in OPS95 and the redirect-only page needs no actor); counts updated (P4-A…P4-D, P4-H, god modules, P5-B…P5-G, e2e specs, homeSearch suites); 19 new rows (P2/P3).
+
+## Remediation deliveries (in-session, on `audit/pass-6`)
+
+| WS    | Content                                                                                                        | Guard (class)                                                                          | Status |
+| ----- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------ |
+| P6-1  | Bypass-ratchet hardening: header-covered bypasses count; pin new files at current counts; per-site comment = 0 | 3 — `codebaseConventions` bypass ratchet (P3-E hardened)                                | done   |
+| P6-2  | `perfil` uses `requireCampaignPageActor`; P3-I regex widened to `getCampaignUser[A-Za-z0-9]*\(`                | 3 — `codebaseConventions` page-actor guard (P3-I hardened)                              | done   |
+| P6-M909 | Miss #909: `scripts/testing-audit-disarm.mjs` (create→disarm→verify-null, atomic) + skill wiring            | 3 — script invoked by the skill's PR step (order-proof)                                 | done   |
+| P6-M895 | Miss #895: `plan-issue` skill convention — intention plans record literal decision data (tables/IDs), not narrative | 6 — declared judgment-only (no deterministic detector for missing prose data)       | done   |
+
+## Pass 6 Decisions
+
+| ID  | Decision                                                                                  | Rationale                                                                                                        |
+| --- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| D1  | One branch, one PR, no auto-merge (OPS98 contract)                                        | Artifacts + implementations commit separately on `audit/pass-6`; the safety-net vetoes `audit/*` by construction |
+| D2  | Implementations = P0/P1 S/M only (cap 6): 2 P1 guard-hardenings + 2 miss guardrails       | Everything else goes to `entrega-engenharia-p6.md` + ledger; P2 duplicates the last three passes' deferred pile   |
+| D3  | Guard-hardening IS the fix for the two P1s — product code untouched where scope-guarded    | Both P1s are guard decay, not live holes (verified per site); hardening the spec is cheaper and safer than re-writes |
+| D4  | Stale rows closed only with re-measured evidence; wizard rows closed as superseded (OPS95) | The wizard domain's deletion makes P4-E/P5-A moot — closing on code absence, not on fix                          |
+| D5  | #895 guardrail is class 6, declared judgment-only                                         | Prose can't be deterministically checked for missing data; pretending otherwise would fake a guard (4b rule)     |
+| D6  | knip `scripts/*.mjs` entry-list dodge → ledger, not config change in-pass                  | Changing knip's entry model mid-pass risks unrelated CI churn; deletion of the 3 dead scripts rides P6-G         |
+
+## Next Actions
+
+- [x] Three artifacts + 4 implementations committed on `audit/pass-6`
+- [x] Single Ready PR, base `main`, **sem auto-merge**, report-as-description
+- [ ] P6-A → P6-V as independent deliveries ([entrega-engenharia-p6.md](plans/entrega-engenharia-p6.md)); oversized → `plan-issue`
+- [ ] Leftovers → ledger via `capture-review-debts` (new rows already in TECH-DEBT.md)
