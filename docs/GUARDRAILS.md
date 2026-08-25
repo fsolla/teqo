@@ -2,7 +2,7 @@
 
 Ledger dos guardrails determinísticos colhidos de `kind:agent-miss` (fluxo `pnpm agent:file-miss` → harvest no engineering-audit → guarda programática) e dos endurecimentos de guarda existentes. Uma linha por guarda: origem, classe na escada de determinismo, mecanismo, status.
 
-**Classes (escada do Pass 3 D6 / skill engineering-audit passo 4b):** 1 tipo (estado ruim irrepresentável) · 2 ESLint · 3 spec de convenção · 4 análise estática em CI (knip/madge) · 5 pin comportamental · 6 doc/convenção (judgment-only declarado — não fingir que doc é guarda).
+**Classes (escada do Pass 3 D6 / `engineering-audit` → `.agents/skills/engineering-audit/reference/guards.md`):** 1 tipo (estado ruim irrepresentável) · 2 ESLint · 3 spec de convenção · 4 análise estática em CI (knip/madge) · 5 pin comportamental · 6 doc/convenção (judgment-only declarado — não fingir que doc é guarda).
 
 ## Ativos
 
