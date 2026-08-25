@@ -28,7 +28,6 @@ import {
   WORKTREE_MODEL_FLAGS,
   WORKTREE_MODEL_MAP,
   WORKTREE_TERMINAL_ENV,
-  WORKTREE_VARIANT,
 } from '../../scripts/lib/worktree.mjs'
 
 type TestIssue = {
@@ -146,7 +145,7 @@ describe('planBranchName (per-invocation planning worktrees)', () => {
   })
 })
 
-describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 + OPS93)', () => {
+describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 + OPS93 + OPS95)', () => {
   const dir = '/home/fsolla/.cursor/worktrees/teqo/OPS26-foo'
 
   it('returns null outside the terminal — the /worktree command never launches a TUI', () => {
@@ -157,9 +156,9 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 
     ).toBeNull()
   })
 
-  it('next launches with the preset model, --variant max, --auto and the /work-issue command sent (value always quoted)', () => {
+  it('next launches with the preset model, --auto and the /work-issue command sent (value always quoted)', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'next', terminal: true })).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --variant ${WORKTREE_VARIANT} --auto --prompt "/work-issue"`,
+      `launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/work-issue"`,
     )
   })
 
@@ -167,35 +166,34 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 
     expect(
       opencodeLaunchDirective({ dir, purpose: 'next', terminal: true, issueNumber: 595 }),
     ).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --variant ${WORKTREE_VARIANT} --auto --prompt "/work-issue --issue 595"`,
+      `launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/work-issue --issue 595"`,
     )
   })
 
   it('plan launches with the same presets and /plan-issue sent (OPS31, value quoted)', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true })).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --variant ${WORKTREE_VARIANT} --auto --prompt "/plan-issue"`,
+      `launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/plan-issue"`,
     )
   })
 
   it('new launches prompt-less too — "apenas conversar", no skill sent', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'new', terminal: true })).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --variant ${WORKTREE_VARIANT} --auto`,
+      `launch opencode ${dir} --model ${presetInEffect()} --auto`,
     )
   })
 
   it('plan/new ignore the issueNumber — only next carries the claimed issue', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true, issueNumber: 7 })).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --variant ${WORKTREE_VARIANT} --auto --prompt "/plan-issue"`,
+      `launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/plan-issue"`,
     )
     expect(opencodeLaunchDirective({ dir, purpose: 'new', terminal: true, issueNumber: 7 })).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --variant ${WORKTREE_VARIANT} --auto`,
+      `launch opencode ${dir} --model ${presetInEffect()} --auto`,
     )
   })
 
   it('pins the preset constants — fallback comum deepseek-v4-flash, override via OPENCODE_WORKTREE_MODEL', () => {
     expect(OPENCODE_PRESET_MODEL).toBe(presetInEffect())
     expect(WORKTREE_TERMINAL_ENV).toBe('TEQO_WORKTREE_TERMINAL')
-    expect(WORKTREE_VARIANT).toBe('max')
     expect(OPENCODE_SKILL_COMMAND_BY_PURPOSE).toEqual({
       next: '/work-issue',
       plan: '/plan-issue',
@@ -205,14 +203,23 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 
 
   it('an unknown purpose degrades to a prompt-less launch (fail-safe direction)', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'bogus', terminal: true })).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --variant ${WORKTREE_VARIANT} --auto`,
+      `launch opencode ${dir} --model ${presetInEffect()} --auto`,
     )
   })
 
-  it('uses the explicit model when provided (OPS93 map) — always with --variant max', () => {
+  it('never emits --variant — the TUI yargs rejects it (OPS95); variants live on machine config (Ctrl+T)', () => {
+    for (const model of Object.values(WORKTREE_MODEL_MAP)) {
+      for (const purpose of ['next', 'plan', 'new']) {
+        const directive = opencodeLaunchDirective({ dir, purpose, terminal: true, model })
+        expect(directive).not.toContain('--variant')
+      }
+    }
+  })
+
+  it('uses the explicit model when provided (OPS93 map, OPS95 values)', () => {
     for (const [, model] of Object.entries(WORKTREE_MODEL_MAP)) {
       expect(opencodeLaunchDirective({ dir, purpose: 'next', terminal: true, model })).toBe(
-        `launch opencode ${dir} --model ${model} --variant ${WORKTREE_VARIANT} --auto --prompt "/work-issue"`,
+        `launch opencode ${dir} --model ${model} --auto --prompt "/work-issue"`,
       )
     }
   })
@@ -229,17 +236,16 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 
   })
 })
 
-describe('resolveWorktreeModel + WORKTREE_MODEL_MAP (OPS93)', () => {
+describe('resolveWorktreeModel + WORKTREE_MODEL_MAP (OPS93 menu, OPS95 values)', () => {
   it('pins the 5-flag map — cheap/pro/zen/go/alibaba', () => {
     expect(WORKTREE_MODEL_MAP).toEqual({
       cheap: 'cheapestinference/deepseek-v4-flash',
-      pro: 'opencode-go/qwen3.7-max',
+      pro: 'deepseek/deepseek-v4-pro',
       zen: 'opencode-go/ox-alpha-free',
-      go: 'opencode-go/mimo-v2.5',
-      alibaba: 'alibaba-token-plan/qwen3.7-max',
+      go: 'opencode-go/hy3',
+      alibaba: 'alibaba-token-plan/deepseek-v4-flash',
     })
     expect(WORKTREE_MODEL_FLAGS).toEqual(new Set(['cheap', 'pro', 'zen', 'go', 'alibaba']))
-    expect(WORKTREE_VARIANT).toBe('max')
   })
 
   it('no flag → preset', () => {
@@ -264,20 +270,20 @@ describe('resolveWorktreeModel + WORKTREE_MODEL_MAP (OPS93)', () => {
     )
   })
 
-  it('each flag launches with --variant max in the directive (next/plan/new share the path)', () => {
+  it('each flag launches with the mapped model in the directive (next/plan/new share the path)', () => {
     const dir = '/tmp/wt'
     for (const [flag, model] of Object.entries(WORKTREE_MODEL_MAP)) {
       const resolved = resolveWorktreeModel({ [flag]: true })
       expect(resolved).toBe(model)
       expect(
         opencodeLaunchDirective({ dir, purpose: 'next', terminal: true, model: resolved }),
-      ).toContain(`--model ${model} --variant ${WORKTREE_VARIANT} --auto`)
+      ).toContain(`--model ${model} --auto`)
       expect(
         opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true, model: resolved }),
-      ).toContain(`--model ${model} --variant ${WORKTREE_VARIANT} --auto`)
+      ).toContain(`--model ${model} --auto`)
       expect(
         opencodeLaunchDirective({ dir, purpose: 'new', terminal: true, model: resolved }),
-      ).toContain(`--model ${model} --variant ${WORKTREE_VARIANT} --auto`)
+      ).toContain(`--model ${model} --auto`)
     }
   })
 })
