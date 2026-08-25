@@ -14,13 +14,12 @@ import type { CampaignUser, Contact } from '@/payload-types'
 import { requireLeadershipConsent, resolveInviteConsent } from '@/utilities/campaignConsent'
 import {
   acquireCampaignInviteAccountLocks,
-  acquireCampaignInviteRedemptionContactLock,
   consumeCampaignInvite,
   findSameContactAccountIDs,
   INVALID_CAMPAIGN_INVITE_MESSAGE,
   requireCampaignInvitePostgres,
 } from '@/utilities/campaignInviteRepository'
-import { contactPhoneLockKeys } from '@/utilities/contactPhoneLocks'
+import { acquireContactFichaLock, contactPhoneLockKeys } from '@/utilities/contactPhoneLocks'
 import type { PayloadTransactionRequest } from '@/utilities/payloadTransaction'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 
@@ -64,7 +63,6 @@ const findReusableLeadershipAccount = async (
   leadership: { contact: unknown; user?: unknown },
 ): Promise<CampaignUser | null> => {
   const contactID = requireRelationshipId(leadership.contact)
-  await acquireCampaignInviteRedemptionContactLock(payload, req, contactID)
 
   let accountID = relationshipId(leadership.user)
   if (accountID === null) {
@@ -132,13 +130,28 @@ export const redeemCampaignInviteAutofillRecord = async (
           ),
         ),
       )
+      // C121 — serialize the contact RMW on the C120 ficha lock (`contact-ficha:<id>`),
+      // acquired AFTER the phone/account locks to honor that order and avoid a deadlock.
+      await acquireContactFichaLock(payload, req, contactID)
+      // C121 (bypass) — re-read phones inside the ficha lock: the read above was
+      // pre-lock, so a concurrent create-append would otherwise be dropped here.
+      const currentPhones = (
+        await payload.findByID({
+          collection: 'contact',
+          id: contactID,
+          depth: 0,
+          select: { phones: { value: true } },
+          overrideAccess: true,
+          req,
+        })
+      ).phones
       // C111 — the phone is a contact channel, not a unique person identity:
       // the ficha this invite anchors is known (leadership.contact), so the
       // typed number may legitimately match another ficha's.
       await payload.update({
         collection: 'contact',
         id: contactID,
-        data: profileContactData(data, originalContact.phones),
+        data: profileContactData(data, currentPhones),
         depth: 0,
         overrideAccess: true,
         req,
@@ -208,6 +221,21 @@ export const redeemCampaignInviteLoginRecord = async (
         `account-username:${data.phone}`,
         ...(account ? [`invite-redemption-user:${account.id}`] : []),
       ])
+      // C121 — serialize the contact RMW on the C120 ficha lock (`contact-ficha:<id>`),
+      // acquired AFTER the phone/account locks to honor that order and avoid a deadlock.
+      await acquireContactFichaLock(payload, req, originalContact.id)
+      // C121 (bypass) — re-read phones inside the ficha lock: the read above was
+      // pre-lock, so a concurrent create-append would otherwise be dropped here.
+      const currentPhones = (
+        await payload.findByID({
+          collection: 'contact',
+          id: originalContact.id,
+          depth: 0,
+          select: { phones: { value: true } },
+          overrideAccess: true,
+          req,
+        })
+      ).phones
       // C111 — the ficha this invite anchors is known; the typed phone may be
       // shared with another ficha. The account side stays fail-closed below:
       // `username` is the login key and remains DB-unique, so the second
@@ -232,7 +260,7 @@ export const redeemCampaignInviteLoginRecord = async (
       await payload.update({
         collection: 'contact',
         id: originalContact.id,
-        data: profileContactData(data, originalContact.phones),
+        data: profileContactData(data, currentPhones),
         depth: 0,
         overrideAccess: true,
         req,

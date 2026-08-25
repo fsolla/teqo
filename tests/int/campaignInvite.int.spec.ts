@@ -796,12 +796,12 @@ describe('campaign invite domain', () => {
   )
 
   itWithInviteConsent(
-    'waits on the exact invite-redemption-contact key before login redemption mutates data',
+    'waits on the exact contact-ficha key before login redemption mutates data',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
       const fixture = await createLinkedLoginInvite(coordinator)
-      const key = `invite-redemption-contact:${fixture.contact.id}`
+      const key = `contact-ficha:${fixture.contact.id}`
       const originalAccountName = fixture.account.name
       const originalContactName = fixture.contact.name
 
@@ -850,11 +850,7 @@ describe('campaign invite domain', () => {
               password: campaignFixtures().value('senha-nova'),
               consentAccepted: true,
             }),
-          whileWaiting: async (waiterPID) => {
-            await expectExactAdvisoryLockGranted(
-              `invite-redemption-contact:${fixture.contact.id}`,
-              waiterPID,
-            )
+          whileWaiting: async () => {
             await expectLoginInviteUnchanged({
               accountID: fixture.account.id,
               accountName: fixture.account.name,
@@ -870,7 +866,7 @@ describe('campaign invite domain', () => {
   )
 
   itWithInviteConsent(
-    'orders all login redemption keys before waiting on the exact invite-redemption-user key',
+    'orders all login redemption keys before waiting on the exact contact-ficha key',
     async () => {
       const actions = await import('@/app/(campaign)/campanha/actions/invite')
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
@@ -878,10 +874,11 @@ describe('campaign invite domain', () => {
       const usernameKey = `account-username:${fixture.contact.phone}`
       const contactPhoneKey = `contact-phone:${fixture.contact.phone}`
       const userKey = `invite-redemption-user:${fixture.account.id}`
+      const fichaKey = `contact-ficha:${fixture.contact.id}`
 
       await expect(
         withBlockedInviteAction({
-          key: userKey,
+          key: fichaKey,
           start: () =>
             actions.redeemCampaignInviteLogin({
               token: fixture.invite.token,
@@ -894,10 +891,7 @@ describe('campaign invite domain', () => {
             await Promise.all([
               expectExactAdvisoryLockGranted(usernameKey, waiterPID),
               expectExactAdvisoryLockGranted(contactPhoneKey, waiterPID),
-              expectExactAdvisoryLockGranted(
-                `invite-redemption-contact:${fixture.contact.id}`,
-                waiterPID,
-              ),
+              expectExactAdvisoryLockGranted(userKey, waiterPID),
             ])
             await expectLoginInviteUnchanged({
               accountID: fixture.account.id,
@@ -907,6 +901,46 @@ describe('campaign invite domain', () => {
               inviteHash: fixture.invite.tokenHash,
               leadershipID: fixture.leadership.id,
             })
+          },
+        }),
+      ).resolves.toEqual({ ok: true })
+    },
+  )
+
+  itWithInviteConsent(
+    'waits on the exact contact-ficha key before autofill redemption mutates data',
+    async () => {
+      const actions = await import('@/app/(campaign)/campanha/actions/invite')
+      const coordinator = await campaignFixtures().createCampaignUser('coordinator')
+      const municipality = await campaignFixtures().getMunicipality()
+      const { contact, leadership } = await createInviteLeadershipGraph(
+        coordinator,
+        municipality.id,
+      )
+      const invite = await createInviteThroughAction(coordinator, {
+        leadership: leadership.id,
+        kind: 'autopreenchimento',
+      })
+      const key = `contact-ficha:${contact.id}`
+      const originalContactName = contact.name
+
+      await expect(
+        withBlockedInviteAction({
+          key,
+          start: () =>
+            actions.redeemCampaignInviteAutofill({
+              token: invite.token,
+              name: campaignFixtures().value('Nome após contato'),
+              phone: contact.phone,
+              consentAccepted: true,
+            }),
+          whileWaiting: async () => {
+            const unchanged = await payload.findByID({
+              collection: 'contact',
+              id: contact.id,
+              depth: 0,
+            })
+            expect(unchanged.name).toBe(originalContactName)
           },
         }),
       ).resolves.toEqual({ ok: true })
