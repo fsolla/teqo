@@ -130,18 +130,18 @@ Evidência por passo no relatório: timestamp, hash curto, linhas-resumo antes/d
 (CI, mergeable, automerge desarmado às HH:MM)
 ```
 
-## Fase 5 — Desarme do auto-merge (SEMPRE o último passo da noite)
+## Fase 5 — Desarme do auto-merge (imediatamente após CADA push, nunca depois do green)
 
-O safety-net arma o automerge no evento de abertura e REARMA a cada push. Sequência obrigatória:
+O safety-net arma o automerge no evento de abertura e REARMA a cada push. **Errata OPS96 (falha real da 1ª noite):** desarmar DEPOIS do CI green é tarde — o GitHub mergea em segundos quando o required check fica verde; o PR da 1ª noite mergeou sozinho nesse intervalo (~40s). Sequência correta:
 
-1. Confirmar que nenhum push novo acontecerá (todo o trabalho já foi empurrado na Fase 4).
-2. Aguardar o run do workflow `PR Ready + auto-merge` **do SHA final** terminar (foi ele que armou): `gh run list --workflow agent-pr-ready-automerge.yml --branch <branch-deste-PR> --limit 1` — filtre pela branch/SHA, nunca pelo "último run" global (PRs concorrentes poluem a lista).
-3. Desarmar: `gh pr merge <N> --disable-auto`.
-4. Verificar: `gh pr view <N> --json isDraft,autoMergeRequest,mergeable,mergeStateStatus` → esperado `{isDraft: false, autoMergeRequest: null, mergeable: MERGEABLE}`.
+1. Abrir o PR ready LOGO após o push — o safety-net arma no evento `opened`.
+2. **Desarmar imediatamente**, com o CI ainda pendente: `gh pr merge <N> --disable-auto`. Armado + checks pendentes não mergeia nada; o desarme cedo elimina a condição de corrida (a janela de CI ~13min é o seu tempo folga).
+3. Cada push novo REARMA (evento `synchronize`) → repetir o desarme logo após cada push, sempre enquanto o CI estiver pendente. **Nunca "aguardar o workflow/arquivo de checks terminar" para então desarmar** — isso chega exatamente no momento do merge.
+4. Verificação final no fecho da noite (último passo): `gh pr view <N> --json isDraft,autoMergeRequest,mergeable,mergeStateStatus` → esperado `{isDraft: false, autoMergeRequest: null, mergeable: MERGEABLE}`.
 5. **Fallback fail-closed:** desarme falhou ou `autoMergeRequest` persistiu não-nulo → converter para draft (`gh pr ready <N> --undo`; draft fora de `cursor/*` é veto estrutural do safety-net) e registrar no relatório que o humano vira ready pela manhã. Draft protegido é preferível a main mergeado sem querer.
 6. Gravar no relatório (seção estado final): hora do desarme + saída da verificação.
 
-Depois do desarme: **nenhum push, rebase ou merge** — tudo isso rearma.
+Depois da verificação final: **nenhum push, rebase ou merge** — tudo isso rearma.
 
 ## Done when
 
