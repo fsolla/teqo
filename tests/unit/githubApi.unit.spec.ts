@@ -175,7 +175,7 @@ describe('github-api (issue tracker layer)', () => {
     const sleeps: number[] = []
     const api = createApi({
       token: 'tok',
-      fetchImpl: async (url, init) => {
+      fetchImpl: async (url) => {
         if (String(url).includes('/graphql')) {
           disabledCalls += 1
           return ok({ data: { disablePullRequestAutoMerge: { pullRequest: { number: 9 } } } })
