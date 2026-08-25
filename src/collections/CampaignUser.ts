@@ -359,11 +359,11 @@ const deleteCampaignUserNotifications: CollectionBeforeDeleteHook = async ({ id,
 
 /**
  * Staged CSV-import batches authored by the deleted account must go BEFORE the
- * account: `supporter_import_batch.actor_id` is NOT NULL with an `ON DELETE
- * set null` FK (C6 schema drift — the column and the FK action disagree), so
- * without this the delete fails with a not-null violation whenever the account
- * left an unconsumed batch (10-minute window, no sweep). Same pattern as the
- * passkey/notification cascade above; `deletePersonRecord` spells the same
+ * account. D13 aligned the schema (`actor_id` is now nullable, matching the
+ * `ON DELETE set null` FK — issue #643), so the FK no longer violates NOT NULL;
+ * the hook still deletes the transient staging rows explicitly rather than
+ * leaving orphaned NULL-actor batches until the expiry sweep. Same pattern as
+ * the passkey/notification cascade above; `deletePersonRecord` spells the same
  * cleanup by hand.
  */
 const deleteCampaignUserImportBatches: CollectionBeforeDeleteHook = async ({ id, req }) => {

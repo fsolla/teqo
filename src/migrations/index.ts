@@ -63,6 +63,7 @@ import * as migration_20260819_233503_add_campaign_demand_responsibles from './2
 import * as migration_20260820_003426_add_instagram_sync_status from './20260820_003426_add_instagram_sync_status';
 import * as migration_20260823_161905_add_municipality_update_deliberation from './20260823_161905_add_municipality_update_deliberation';
 import * as migration_20260824_000000_reconcile_allocation_decision_rationale_nullable from './20260824_000000_reconcile_allocation_decision_rationale_nullable';
+import * as migration_20260824_010000_make_supporter_import_batch_actor_nullable from './20260824_010000_make_supporter_import_batch_actor_nullable';
 
 export const migrations = [
   {
@@ -389,5 +390,10 @@ export const migrations = [
     up: migration_20260824_000000_reconcile_allocation_decision_rationale_nullable.up,
     down: migration_20260824_000000_reconcile_allocation_decision_rationale_nullable.down,
     name: '20260824_000000_reconcile_allocation_decision_rationale_nullable'
+  },
+  {
+    up: migration_20260824_010000_make_supporter_import_batch_actor_nullable.up,
+    down: migration_20260824_010000_make_supporter_import_batch_actor_nullable.down,
+    name: '20260824_010000_make_supporter_import_batch_actor_nullable'
   },
 ];

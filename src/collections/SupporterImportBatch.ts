@@ -47,7 +47,7 @@ export const SupporterImportBatch: CollectionConfig = {
       type: 'relationship',
       relationTo: 'campaignUser',
       label: 'Operador',
-      required: true,
+      required: false,
       index: true,
     },
     {

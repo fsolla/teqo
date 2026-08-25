@@ -28,7 +28,8 @@ const countRemaining = async (
     | 'stateDeputy'
     | 'campaignUser'
     | 'votePledge'
-    | 'supporter',
+    | 'supporter'
+    | 'supporterImportBatch',
   where: Where,
 ): Promise<number> => {
   const result = await payload.find({
@@ -183,5 +184,63 @@ describe('C100 — apagar pessoa (manifest + cascata)', () => {
 
     const manifest = await loadPersonDeleteManifest(payload, 999999999)
     expect(manifest).toBeNull()
+  })
+})
+
+describe('D13 — delete de conta com batch de importação órfão (drift C6)', () => {
+  beforeAll(async () => {
+    payload = await getPayload({ config: await config })
+  })
+
+  it('applies the migration: supporter_import_batch.actor_id accepts a null actor', async () => {
+    // The migration dropped NOT NULL, so a NULL `actor` (the FK set-null result
+    // on account delete) is a valid row — proving the column now agrees with
+    // the `ON DELETE set null` FK.
+    const orphan = await payload.create({
+      collection: 'supporterImportBatch',
+      data: {
+        batchId: `null-actor-batch-${Date.now()}`,
+        actor: null,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+        rows: [{ ok: true }],
+      },
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(orphan.actor).toBeNull()
+
+    await payload.delete({
+      collection: 'supporterImportBatch',
+      id: orphan.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+  })
+
+  it('deletes a campaignUser that owns an unconsumed import batch without a not-null violation', async () => {
+    const fixtures = campaignFixtures()
+    const actor = await fixtures.createCampaignUser('coordinator')
+
+    await payload.create({
+      collection: 'supporterImportBatch',
+      data: {
+        batchId: `orphan-batch-${actor.id}-${Date.now()}`,
+        actor: actor.id,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+        rows: [{ ok: true }],
+      },
+      depth: 0,
+      overrideAccess: true,
+    })
+
+    // The beforeDelete hook (`deleteCampaignUserImportBatches`) removes the
+    // batch first; with the column now nullable the FK set-null path is also
+    // safe, so the delete must not throw 23502 (not-null violation).
+    await expect(
+      payload.delete({ collection: 'campaignUser', id: actor.id, overrideAccess: true }),
+    ).resolves.toBeDefined()
+
+    expect(await countRemaining('campaignUser', { id: { equals: actor.id } })).toBe(0)
+    expect(await countRemaining('supporterImportBatch', { actor: { equals: actor.id } })).toBe(0)
   })
 })
