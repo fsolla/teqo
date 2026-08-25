@@ -11,7 +11,7 @@
  *
  *   NEXT_DIST_DIR=.next-e2e pnpm build   # once, before the first run
  *   node scripts/measure-e2e-family.mjs tests/e2e/campaignConcepts.e2e.spec.ts \
- *       tests/e2e/campaignPermissionProfile.e2e.spec.ts
+ *       tests/e2e/campaignPeopleHttp.e2e.spec.ts
  *
  * Args accept full repo-relative spec paths or bare family names
  * (`campaignPeople` → `tests/e2e/campaignPeople.e2e.spec.ts`).
