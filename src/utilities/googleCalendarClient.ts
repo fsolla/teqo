@@ -23,8 +23,9 @@ const MAX_LIST_PAGE_SIZE = 2500
  * Every outbound call carries a hard timeout so a hanging Google never holds
  * the activity write path (the afterChange hook awaits the sync) — Teqo's
  * availability cannot depend on Google's.
+ * Exported for the hook pin test (C114-LOCK: hook < per-hop).
  */
-const REQUEST_TIMEOUT_MS = 15_000
+export const REQUEST_TIMEOUT_MS = 15_000
 
 export type { GoogleRemoteEvent } from '@/lib/googleCalendarEventMapping'
 
@@ -91,8 +92,14 @@ export const buildServiceAccountAssertion = async (
 export const createGoogleCalendarClient = (
   credentials: GoogleCalendarCredentials,
   fetchImpl: FetchLike = fetch,
+  hookSignal?: AbortSignal,
 ): GoogleCalendarClient => {
   let cachedToken: { value: string; expiresAtMs: number } | null = null
+
+  const requestSignal = (): AbortSignal => {
+    const perHop = AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+    return hookSignal ? AbortSignal.any([hookSignal, perHop]) : perHop
+  }
 
   const requestAccessToken = async (): Promise<string> => {
     const nowSeconds = Math.floor(Date.now() / 1000)
@@ -105,7 +112,7 @@ export const createGoogleCalendarClient = (
         grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
         assertion,
       }).toString(),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      signal: requestSignal(),
     })
     if (!response.ok) {
       throw new GoogleCalendarApiError(
@@ -142,7 +149,7 @@ export const createGoogleCalendarClient = (
     const response = await fetchImpl(url, {
       ...init,
       headers: { ...init.headers, Authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      signal: requestSignal(),
     })
 
     // A 401 usually means the cached token expired server-side — re-mint once.

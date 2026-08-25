@@ -81,6 +81,18 @@ const PUSH_CHANNEL_RENEW_LEAD_MS = 48 * 60 * 60 * 1000
 const SYNC_DELETE_LOOKBACK_DAYS = 730
 const SYNC_LIST_WINDOW_BUFFER_DAYS = 30
 /**
+ * Deadline for the hook-triggered sync only (C114-LOCK, mirrors S11-FOLLOWUP):
+ * the afterChange/afterDelete hooks run INSIDE the save's transaction, holding
+ * the `activity` / `googleCalendarSync` row lock for their whole duration — a
+ * full reconciliation pass does N×RTTs to Google (token → list → N writes →
+ * watch → stop), each with `REQUEST_TIMEOUT_MS=15s`. Without a hook budget
+ * the lock is held for 45–75s, blocking concurrent campaign writes and pinning
+ * a Drizzle pool connection on network I/O (the anti-pattern the Issue calls
+ * out). The manual / webhook paths have no transaction open and keep the full
+ * per-hop 15s budget — they are the reliable fallback when the hook aborts.
+ */
+export const GOOGLE_CALENDAR_SYNC_HOOK_TIMEOUT_MS = 5_000
+/**
  * The fields the Google event mirrors (title, schedule, location, tags,
  * deputy flag, municipality). Task toggles, updates and result records are
  * deliberately absent — those never trigger a pass.
@@ -747,6 +759,8 @@ export type CampaignCalendarSyncOptions = {
   reason: 'create' | 'update' | 'delete' | 'config-change' | 'manual' | 'webhook'
   client?: GoogleCalendarClient
   req?: PayloadRequest
+  /** C114-LOCK: hook budget that bounds the row lock window (S11 parity). */
+  signal?: AbortSignal
   /** Int tests stub the transport; the channel ensure needs it too — off in tests that don't want it. */
   skipChannelEnsure?: boolean
   /**
@@ -783,7 +797,12 @@ export const runCampaignCalendarSync = async (
     }
   }
 
-  const client = options.client ?? createGoogleCalendarClient(credentials)
+  // C114-LOCK: when the engine is injected with a stub `client` (int tests)
+  // the hook `signal` is not plumbed into that instance — the stub must be
+  // created with its own signal. Production hooks never inject a client, so
+  // the `??` branch covers the row-lock path.
+  const client =
+    options.client ?? createGoogleCalendarClient(credentials, undefined, options.signal)
 
   try {
     if (!options.skipChannelEnsure) {
