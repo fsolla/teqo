@@ -3,180 +3,103 @@ name: engineering-audit
 description: 'Run a Pass-style engineering audit of the Teqo codebase.'
 ---
 
-# Engineering Audit (Pass N)
+# Engineering Audit (Pass N v2)
 
-**Audit solitário (não paralelizável):** quando esta skill roda, o desenvolvimento paralelo **pausa** — nenhum outro agente trabalhando no repo. O agente do audit também **executa as remediações P0/P1 na mesma sessão** para trazer o projeto aos trilhos (não só registra); P2/P3 seguem o fluxo normal de ledger. O **agent-pool está morto desde OPS65** (workflow removido; scripts/skills dormentes) — nada a pausar.
+**Modo primário: autônomo, de ponta a ponta numa execução** ("dispara antes de dormir, acolhe pela manhã"). Nenhum passo depende de confirmação humana durante a noite; o humano é o gate **FINAL** — explora o PR único e mescla. O modo interativo (desktop) é fallback documentado, não o caminho canônico.
 
-## Modo autônomo (Cursor Cloud)
-
-A skill roda sem supervisão humana no paradigma de agentes paralelos. Quatro diferenças em relação à execução interativa (desktop):
-
-1. **Precheck solitário, fail-closed.** Antes de qualquer varredura: `pnpm agent:pool -- status` (read-only). Pool `desligado` ou `pausado` → segue. Pool **ligado** → o agente Cloud não consegue pausá-lo (dispatch de workflow é escrita): **pare** com o remédio nomeado ("pause o pool — `pnpm agent:pool -- pause` — e re-dispare o audit"). Nunca rodar a varredura com o pool spawnando.
-2. **Entrega = PR Ready + auto-merge.** O gate "apresentar os três artefatos antes de escrever" (passo 5) não se aplica em modo autônomo — não há humano interativo na sessão. Os artefatos são escritos na branch e o **PR Ready → `main` com auto-merge** (mesmo contrato `agent-pr-workflow`) é a entrega do plano. Fechar o PR antes do merge = rejeição (o ledger sobrevive no histórico da branch). As remediações **P0/P1 e os guardrails das misses colhidas** seguem na mesma sessão, cada um em PR próprio com gate completo + auto-merge. P2/P3 continuam só ledger/plano.
-3. **Canais de PR:** fechar miss colhida = `Closes #N` no body do PR do guardrail (o flip `done`/`in-prod` no merge em `main` — keyword adjacente a cada número, `Closes #52, closes #73`, nunca `Closes #52, #73`). Em Cloud, usar `ManagePullRequest` com **`draft: false`** (o merge fica com o safety net `agent-pr-ready-automerge`). **Sem exceção:** o PR dos *artefatos* do audit também é Ready + auto-merge (igual remediações P0/P1 e guardrails). Push: `pnpm push -u origin HEAD`.
-4. **Delta desde o último audit é o foco declarado** (passo 1): a varredura cobre o repo inteiro, mas o esforço concentra-se no churn desde a data do último Pass — é o trabalho paralelo dos agentes desde o último audit que precisa ser consolidado.
-
-Read-only audit that sweeps the Teqo codebase for code smells, drift from documented patterns, and consolidation opportunities, then produces a findings ledger and a remediation plan. **No fixes in the audit run** — deliverables are updated docs, presented for sign-off before writing — exceto as remediações P0/P1 declaradas acima. Sign-off: interativo = apresentação prévia dos artefatos; autônomo (Cursor Cloud) = PR Ready + auto-merge dos artefatos (ver "Modo autônomo (Cursor Cloud)").
+> Nota histórica: o modo "solitário" com precheck do agent-pool morreu com o pool (OPS65) — nada a pausar, nenhum precheck. A remediação P0/P1 in-session virou implementação por sub-agentes na mesma branch (contrato abaixo).
 
 Method: the engineering skills this repo follows (improve-code-quality, clean-code, refactoring-patterns, software-design-philosophy, pragmatic-programmer, working-with-legacy-code, remove-technical-debt), specialized to Teqo's standards and history. The pass number is the next one after the last in `docs/IMPROVE-CODE-QUALITY-PLAN.md`.
+
+## Contrato de entrega (o Pass inteiro numa branch)
+
+1. **Branch:** `audit/pass-<N>` criada de `main` atual.
+2. **Três artefatos** (passo 5) commitados nessa branch — retrato consolidado comparável entre Passes. Fallback interativo: apresentar antes de escrever.
+3. **Melhorias elegíveis** (teto abaixo) planejadas por escritores `-impl` e executadas por implementadores em série na MESMA branch — commit(s) separado(s) por entrega (soft).
+4. **UM único PR Ready**, base `main`, **SEM auto-merge**: o safety-net pula branches `audit/*` (`decideAutomergeAction` → `audit-veto`; OPS98). A descrição do PR é o **relatório completo**: achados com números, índice dos artefatos, decisões autônomas + justificativas, bloqueadores, índice commit→achado.
+5. **Estado terminal:** required check verde + mergeable. Conflito → rebase em `main`. Falha de CI → loop de correção; 3 ciclos consecutivos no mesmo delivery → estaciona (reverte se necessário), registra bloqueador no relatório e segue. Inviável após esforço limitado → parar gracefully e documentar.
+6. Miss resolvida por guardrail nesta entrega carrega `Closes #N` no corpo do relatório (keyword repetida por número — `Closes #52, closes #73`); o resto do relatório usa keyword nenhuma. Sem Issues/PRs por entrega: o registro é o par ledger + PR único; Issue só para pendência/bloqueio que sobrevive ao Pass.
+
+### Teto de implementações por Pass
+
+Elegível = severidade **P0/P1** **e** esforço **S/M**. Fora da noite por construção (independe de severidade): migração de schema, contrato de URL público, behavior delta "not allowed" do protocolo do passo 3 (Consent/LGPD fail-closed, shapes públicos); item L vira ledger + Issue (padrão plan-issue). Guardrails colhidos de misses contam para o teto (a guarda embarca na entrega do fix). **Teto duro: 6 implementações** — ordenadas P0 primeiro, depois P1, dentro de cada severidade por blast radius crescente; excedente elegível fica no ledger marcado `deferred: teto do Pass` e vai para o relatório.
+
+## Decomposição em sub-agentes
+
+Fases pesadas rodam em sub-agentes com contexto mínimo e output limitado; o agente principal orquestra, valida e grava.
+
+### Sub-agente: Varredor de área
+
+**Quando:** passo 2, um por área (paralelo).
+**Input:** escopo da área + `reference/smells.md` (desta pasta) + formato de linha do passo 4.
+**Task:** Varrer a área contra as famílias de smell. **Não corrigir nada.**
+**Output:** ≤20 linhas de ledger-row candidata.
+
+### Sub-agente: Caçador de consolidação
+
+**Quando:** passo 3.
+**Input:** hotspot map + `reference/consolidation.md` + precedents/rejected-with-reason de `reference/canon.md`.
+**Task:** Classificar candidatos (merge agora / register-with-trigger / look-alike-not-duplication), nomeando o CONHECIMENTO duplicado. **Não propor abstrações fora das táticas listadas.**
+**Output:** ≤15 candidatos com knowledge nomeado.
+
+### Sub-agente: Escritor de -impl
+
+**Quando:** passo 6, um por melhoria elegível (paralelo).
+**Input:** linha(s) aprovada(s) do ledger + `work-issue/implementation-template.md` + `work-issue/decision-quality.md`.
+**Task:** Escrever o conteúdo de `docs/plans/<slug>-impl.md` conforme o template. **Não criar arquivos nem registrar Issues.**
+**Output:** conteúdo markdown do plano; self-score decision-quality ≥4.
+
+### Sub-agente: Implementador serial
+
+**Quando:** passo 7, UM POR VEZ, sempre na branch `audit/pass-<N>` compartilhada — sem corridas.
+**Input:** UM `-impl` aprovado.
+**Task:** Executar o plano (padrão `agent-work-issue`: gates bare, §Prep Cloud sem Docker quando aplicável), commit(s) separado(s) por entrega. **Proibido: mergear, abrir PR, criar branch nova, tocar migração.**
+**Output:** hash(es) de commit + resultado do gate (≤10 linhas).
 
 ## Checklist
 
 ```
-- [ ] 0. Precheck solitário (fail-closed) — pool off/paused; em Cloud, ver "Modo autônomo"
-- [ ] 0a. Load the canon and the history (before judging anything) — incl. `docs/AGENT-OPS.md` (paradigma vigente)
-- [ ] 0b. Harvest `kind:agent-miss` → candidatos a guardrail (alimenta o Passo 4b)
-- [ ] 1. Hotspot map (churn × size × mechanical gates) — aim the sweep; âncora de delta = data do último Pass
-- [ ] 2. Smell sweep (Fowler families + Teqo-specific), parallelized per area
-- [ ] 3. Consolidation hunt (equivalence classes; name the duplicated KNOWLEDGE)
+- [ ] 0a. Load the canon and the history (OBRIGATÓRIO antes de julgar qualquer coisa) — ler `reference/canon.md` + `docs/AGENT-OPS.md` (paradigma vigente)
+- [ ] 0b. Harvest `kind:agent-miss` → candidatos a guardrail (alimenta o passo 4b)
+- [ ] 1. Hotspot map (churn × size × mechanical gates); âncora de delta = seção mais recente de `docs/IMPROVE-CODE-QUALITY-PLAN.md`
+- [ ] 2. Smell sweep por varredores de área em paralelo (`reference/smells.md`)
+- [ ] 3. Consolidation hunt pelo caçador (`reference/consolidation.md`)
 - [ ] 4. Triage (severity P0–P3; verify open ledger rows)
-- [ ] 4b. Recurrence prevention: classify a deterministic guard for every finding class
-- [ ] 5. Draft the three artifacts; sign-off (interativo = apresentar antes de escrever; autônomo = PR dos artefatos); then write and stop
+- [ ] 4b. Recurrence prevention: classify a deterministic guard for every finding class (`reference/guards.md`; ledger em `docs/GUARDRAILS.md`)
+- [ ] 5. Write the three artifacts on the branch (fallback interativo: apresentar antes)
+- [ ] 6. Melhorias elegíveis planejadas por escritores `-impl`
+- [ ] 7. Implementação serial pelos implementadores (teto: 6)
+- [ ] 8. Único PR Ready sem auto-merge + relatório-na-descrição + loop até CI green + mergeable
 ```
+
+## Passos operacionais
+
+**0a — Canon:** leitura obrigatória de `reference/canon.md` (ordem do canon, precedents de consolidação, rejected-with-reason) ANTES de julgar — reproposta de ideia rejeitada (ex.: ports-and-adapters NO-GO) é defeito do audit. **0b — Harvest:** investigue cada miss aberta (`pnpm issue all` / API do GitHub): causa raiz no corpo, fix aplicado segurou?, classe ainda reproduzível? Miss cuja classe já tem guarda viva gera hardening da guarda, não guardrail novo; cada miss alimenta o 4b; guardrail mergeado fecha a miss com `Closes #N`.
+
+**1 — Hotspot map:** âncora de delta = data da seção mais recente de `docs/IMPROVE-CODE-QUALITY-PLAN.md`; `git log --since="<âncora>" --name-only --format= | sort -u` é o foco prioritário (trabalho paralelo desde o último Pass); churn 3 meses: `git log --since="3 months ago" --name-only --format= | sort | uniq -c | sort -rn | head -40`; baseline dos gates estáticos (`tsc --noEmit`, `lint`, `knip`, `check:cycles`) anotada — vermelho pré-existente é "pre-existing", não do audit.
+
+**2 — Sweep:** áreas (`src/lib`, `src/utilities` +`access/`, `src/components/campaign`, `(campaign)`, `(frontend)`, `src/collections`, `src/globals`, `scripts/`, `tests/`) distribuídas aos varredores; detalhe das famílias em `reference/smells.md`. Bug achado na auditoria é REGISTRADO, não corrigido. Guarda existente dodgeável é finding próprio.
+
+**3 — Consolidação (core deliverable):** classes de equivalência, táticas e behavior-delta protocol em `reference/consolidation.md`; precedents e rejected em `reference/canon.md`.
+
+**4 — Triage:** cada vira linha de ledger — ID, area, smell/type, evidence (file:line + measurement), pattern/decision violated, proposed fix, behavior delta, blast radius, pins, recurrence-guard class (4b), effort (S/M/L), severity: **P0** correctness/security (access control, transactions, consent, type honesty masking errors) · **P1** active harm (gate permanentemente vermelho, perf medida, duplicação com comportamento divergente) · **P2** drift com custo real · **P3** polish. Verifique toda linha aberta de `docs/TECH-DEBT.md`: still true? Close stale com evidência. Priorize: changing next × high churn × core domain.
+
+**4b — Guardas determinísticas:** classifique cada classe de achado na escada de `reference/guards.md` (1 Type → 6 Doc/judgment-only declarado). Guarda viável embarca NA MESMA entrega do fix; guarda dodgeável vira item de hardening; preferir UMA guarda por classe a N pins.
+
+**5 — Artefatos:** (1) nova seção Pass N em `docs/IMPROVE-CODE-QUALITY-PLAN.md`; (2) novas linhas `open — Pass N` nas tabelas de `docs/TECH-DEBT.md` + stale fechadas; (3) `docs/plans/entrega-engenharia-pN.md` (pt-BR) com workstreams P0→P3, cada item com sua Guarda determinística e o plano com guard map. Commitados na branch (fallback interativo: sign-off antes).
+
+**6–8 — Ciclo de melhorias e entrega:** escritores `-impl` → implementadores em série (teto acima) → push `pnpm push -u origin HEAD` → PR único Ready (base `main`, **sem auto-merge**) com relatório completo na descrição → loop até CI green + mergeable → para. O humano explora e mescla.
 
 ## Ground rules (non-negotiable)
 
-1. Read-only on `src/`, `tests/`, `scripts/` durante a varredura. Os únicos writes da sessão são: os artefatos do passo 5 (após sign-off interativo; em modo autônomo, direto na branch do PR) e as remediações P0/P1 + guardrails de misses colhidas declarados no cabeçalho.
+1. Read-only em `src/`, `tests/`, `scripts/` durante a VARREDURA. Writes da noite: os três artefatos, os `-impl` das melhorias elegíveis e suas implementações na branch do Pass.
 2. Gate commands bare, never piped (`pnpm test | tail` swallows the exit code).
 3. Never `knip --fix` blind — verify with `git grep -w <symbol>` (knip cannot load `payload.config.ts`; ledgered P3).
 4. Production is live Postgres on the homeserver (`teqo_1313`) with real PII. Local DB only, `teqo_test` for tests. The audit needs no DB writes.
-5. Every claim gets a number (lines, exports, call sites, ms, kB). "Rejected by measurement" is an acceptable outcome for any hypothesis, including the ones below.
-
-## Step 0a — Load the canon
-
-Read, in this order:
-
-1. `.agents/rules/engineering-standards.mdc` — gates, type honesty, client boundary, caching ladder, access control.
-2. `.agents/rules/codebase-map.mdc` — dependency direction, where things live, the list system, invariants.
-3. `docs/ARCHITECTURE.md` — layers, bounded contexts, decision log.
-4. `AGENTS.md` — operational rules + "Recently resolved" history (Pass 1, Pass 2, every post-Pass-2 delivery's /simplify findings).
-5. `docs/AGENT-OPS.md` — paradigma de agentes paralelos vigente (claim→PR→main, skills plan-issue / work-issue / agent-work-issue / project-status). O audit avalia o repo **contra** esse fluxo, não contra o fluxo legacy de roadmap.md.
-6. `docs/IMPROVE-CODE-QUALITY-PLAN.md` — what the earlier passes already swept. Don't re-register what they fixed; verify fixes held.
-7. `docs/TECH-DEBT.md` — open ledger. New findings de-dup against it; verify each open row still exists, close stale ones.
-8. `docs/TESTING.md` — safety-net map: what is pinned, where the gaps are.
-9. `docs/plans/escala-dry-pos-*.md` — per-delivery debt registrations.
-10. Consolidation precedents (the quality bar for step 3): `runStaffEntityMutation` (`src/utilities/campaignEntityActions.ts` — dedup by POLICY, not generic plumbing), `runCampaignFormAction`/`runCampaignRedirectFormAction` (`src/utilities/campaignFormActionError.ts`), `CampaignTable` columns-as-data (`src/components/campaign/shared/CampaignTable.tsx`), `RelationChipCell` (B37: one engine, two thin domain wrappers), `useCampaignCellAutosave` + `campaignJsonMutationRoute` (B32+: wrapper > helper — a helper is a line someone can forget), `relationMembershipDelta.ts` (algorithm once, cap as data, three one-line wrappers).
-11. **Rejected-with-reason** (never re-propose): set-with-floor generic form (B37); `CampaignCellEditOverlay` Popover branch for comboboxes (dialog can't be an ARIA 1.2 combobox popup); `maxItems` on dobradinhas "for parity" (invents a rule); catalog-out-of-browser vs payload-minimal chips (B34+ — fixes oppose each other; chosen: payload-minimal); `src/domains/` + ports-and-adapters (Pass 2 D1 NO-GO).
-
-## Step 0b — Harvest `kind:agent-miss` → guardrails
-
-Antes da varredura, colha os défices comportamentais registrados pelo fluxo:
-
-```bash
-pnpm issue all   # kind `agent-miss` nos contadores; ou api.listIssues({ state: 'open', labels: 'kind:agent-miss' })
-```
-
-**Investigue cada miss colhida** (leitura da Issue via API do GitHub — `gh` CLI / `scripts/lib/github-api.mjs`, disponível no Cloud): o corpo registra causa raiz, fix aplicado e o guardrail proposto por `agent:file-miss`. Verifique no código se o fix segurou e se a classe do defeito ainda é reproduzível. Miss cuja classe já tem guarda viva não gera guardrail novo — gera item de hardening da guarda existente (o passo 2 já trata guarda dodgeable como finding).
-
-Cada Issue colhida alimenta o **Passo 4b (recurrence prevention)**: toda miss vira candidata a guardrail determinístico (tipo / ESLint / convention spec / CI / pin comportamental). O ledger desses guardrails vive em **`docs/GUARDRAILS.md`** (criar o arquivo na primeira execução — é o escopo da Issue OPS2): uma linha por guardrail — miss de origem (link da Issue), classe 1–6, mecanismo, status. Quando o guardrail mergeia, **feche as Issues colhidas** (`done`) com comentário apontando o guardrail. Em Cursor Cloud o fechamento é determinístico e não exige escrita manual: o PR do guardrail carrega `Closes #N` (keyword repetida por número — o regex do `issue-done-on-main-merge.yml` não resolve `Closes #A, #B`) e o merge em `main` flippa a miss para `done`; guardrails de várias misses podem ir no mesmo PR desde que cada uma tenha seu `closes`. Miss que não admite guardrail determinístico vira convenção explícita marcada "judgment-only" — não fingir que doc é guarda.
-
-## Step 1 — Hotspot map
-
-- **Âncora de delta (desde o último audit):** a data do último Pass está na seção mais recente de `docs/IMPROVE-CODE-QUALITY-PLAN.md`. Meça o delta com `git log --since="<data do último Pass>" --name-only --format= | sort -u` — esse conjunto é o **foco prioritário** da varredura (consolidação do trabalho paralelo dos agentes desde o último audit); a varredura estrutural continua cobrindo o repo inteiro.
-- Churn: `git log --since="3 months ago" --name-only --format= | sort | uniq -c | sort -rn | head -40` (e o mesmo comando com `--since` da âncora de delta). Three-axis heuristic: changing next × high churn × core domain.
-- Size: largest modules and widest interfaces (exports per module).
-- Static gates: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm exec knip`, `pnpm check:cycles` — record baseline. Pre-existing reds (e.g. the ledger's P1 e2e row) are noted as pre-existing, not the audit's.
-
-## Step 2 — Smell sweep
-
-Sweep `src/lib`, `src/utilities` (+`access/`), `src/components/campaign`, `src/app/(campaign)`, `src/app/(frontend)`, `src/collections`, `src/globals`, `scripts/`, `tests/`. Parallelize with subagents per area; each returns findings in the step-4 row format.
-
-**Fowler families, Teqo reading:**
-
-- Bloaters: god modules (>400 lines or >20 exports needs justification), long functions (>~60 lines), long parameter lists (>4 → options object), god cells/pages.
-- Dispensables: dead code, commented-out code, speculative generality (config params nobody passes — a decision the author declined to make), pass-through wrappers.
-- Change preventers: divergent change (one file every feature touches), shotgun surgery (one concept scattered — e.g. a cap message as a bare literal in a throw AND in two allowlists; B32+/B37 found exactly this).
-- Couplers: feature envy, message chains, middle men, inappropriate intimacy.
-- Primitive obsession: stringly-typed slugs/ids/enums where a contract type exists; magic numbers without a named constant next to its policy.
-
-**Teqo-specific smells:**
-
-- Local API with `user` but no `overrideAccess: false`; admin bypass without the justifying comment.
-- Multi-collection write without `withPayloadTransaction` / `req: { transactionID }`.
-- Client component importing a server data module for VALUES (only `import type` or contract modules); URL serializers reaching the browser (B14's 21 kB lesson); static catalogs in RSC payloads without measurement.
-- Loader missing `import 'server-only'`; `lib/` importing from `utilities/`; pure helpers stranded in `utilities/`; React components in `utilities/`.
-- `as never` (banned), unjustified casts, types declared twice (W4e single-source rule), `any`.
-- RSC payload bloat: whole Payload docs over the wire instead of selected view models.
-- New lists not on the W1 list system (raw `ui/Table` outside documented exceptions); JSON POST routes not on `campaignJsonMutationRoute`; formActions ladders not on the shared wrappers beyond documented exceptions.
-- Vocabulary: banned terms (`actionPlan`, Praça/Núcleo) outside migrations; pt-BR identifiers; English in user-visible copy.
-- Error messages as bare literals matched by exact string in `mapCampaignFormActionError` — must be constants (B32+ lesson).
-- State captured by the render that scheduled the work (B34's recurring bug class): closures over stale state in autosave/optimistic paths; functional updaters whose FALLBACK reads stale render state.
-- Live-region mistakes (B32+): regions inside what unmounts on close; polite regions mounted unconditionally at scale.
-- Effects doing derived-state work; state lifted higher than its consumers; providers wrapping non-consumers.
-- Caching-ladder violations: live 2026 data under `unstable_cache` without write-path invalidation; auth inside a cached core; artifacts computed at build time.
-
-**Legacy-code discipline:** a bug found while auditing gets RECORDED, not fixed. Pin actual behavior before proposing its consolidation.
-
-**Existing guards are findings too.** For every convention spec (`codebaseConventions.unit.spec.ts`), ESLint restriction, and knip/madge config, ask how it can be dodged: accent variants the regex misses, filename shapes the glob doesn't reach, import kinds the sweep doesn't mark, props invisible to knip, modules born after the allowlist. A dodgeable guard is a finding in its own row.
-
-## Step 3 — Consolidation hunt (core deliverable)
-
-Merge components, hooks, functions, and modules implementing the SAME functionality with different data — even when not textually identical. Small result changes are acceptable when functionality is equivalent; every proposal names its **behavior delta** explicitly.
-
-**Anti-DRY trap:** DRY is about KNOWLEDGE, not text. Two identical-looking blocks serving different business rules are NOT duplication. For every candidate pair, write down *what single piece of knowledge/rule/policy both encode*. Can't name it → record "look-alike, not duplication" and move on.
-
-**Equivalence classes (ranked by expected yield):**
-
-1. Same algorithm, different domain data → parameterize the data (`relationMembershipDelta` precedent).
-2. Same interaction machine, different entity → one engine + thin domain wrappers (`RelationChipCell` precedent).
-3. Same state machine, different field → shared hook (`useCampaignCellAutosave` precedent).
-4. Same route/action skeleton, different collection → policy wrapper with typed caller (`runStaffEntityMutation` — NEVER a generic slug-union factory; typed mutation stays in the caller).
-5. Same visual pattern, different content → slots/children from the server, not flag props.
-6. Same predicate shape, different role/field → policy-as-data or named aliases (`canUpdateX = canReadX` is a deliberate declaration).
-
-**Fertile grounds (history):** `components/campaign/**/*Cell.tsx`/`*Control.tsx` (remaining twins — ledger B34+ F2: `LeadershipStateDeputyRelationCell` vs shared chip cell, ~165 duplicated lines); `campanha/actions/*.ts` twins beyond current wrappers; `utilities/*Data.ts`/`*PageData.ts` same-shaped read assemblies (where-builders, facet loaders, scope reads — E11's own-read-vs-shared-scope is the documented example); `utilities/access/*.ts` same constraint per domain; `lib/` parse/format/label twins, same-shaped zod schemas, constants under two names; `components/campaign/shared/` overlapping pieces; `tests/` cloned specs (`describe.each` precedent) and helper twins; `scripts/` seed/build twins (B5 precedent: `scripts/lib/`).
-
-**Generalization tactics, in order:** (1) parameterize difference as DATA (columns/caps/copy); (2) compose via slots/children from the server; (3) inject the variant as a narrow concrete-typed callback; (4) named wrapper over a shared core (policy in the wrapper; core stays dumb). Forbidden/last-resort: boolean-flag multiplication; generics forcing `as never`/`as unknown` (type honesty outranks reuse); "universal" abstraction with more configuration than code; merging things whose only commonality is shape.
-
-**Abstraction gate:** 3+ call sites OR a policy worth naming. With exactly 2: delete one, inline, or ledger the pair WITH A TRIGGER ("3rd call site merges these") — the B34+/B37 pattern. Merges must REDUCE total interface count (anti-classitis).
-
-**Behavior-delta protocol:** allowed — consolidating where outputs differ in small ways (copy, ordering, debounce timings, class names), listed per item; required — existing pins are the characterization net, updated DELIBERATELY in the same delivery with every changed assertion listed (a silently changed pin is a defect); not allowed — URL contracts (frozen, B18), DB schema (migration = separate delivery), public API shapes, Consent/LGPD fail-closed behavior, without a named separately-approved item.
-
-## Step 4 — Triage
-
-Each finding a ledger row: ID, area, smell/type, evidence (file:line + measurement), pattern/decision violated, proposed fix/consolidation, behavior delta, blast radius, pins needed, recurrence-guard class (step 4b), effort (S/M/L), severity:
-
-- **P0** correctness/security (access control, transactions, consent, type honesty masking errors)
-- **P1** active harm (permanently red gate, measured perf harm, duplication causing divergent behavior)
-- **P2** smell/drift with real cost
-- **P3** polish
-
-Prioritize: changing next × high churn × core domain. Verify every open TECH-DEBT row: still true? Close stale with evidence.
-
-## Step 4b — Recurrence prevention (deterministic guards)
-
-A finding is not fully planned until its **recurrence prevention** is classified. The question for every finding class: "what deterministic mechanism makes this smell impossible — or at least a build failure — next time?" Rank the mechanisms by determinism:
-
-1. **Type** — the bad state becomes unrepresentable (single-source the type/value; a required prop; a schema transform). Strongest: it cannot compile.
-2. **ESLint** (`no-restricted-syntax`, `no-restricted-imports`) — per-file, instant feedback. Precedents: the `as never` ban; the `src/lib` boundary.
-3. **Convention unit spec** (`tests/unit/codebaseConventions.unit.spec.ts`, table-driven sweeps of `src`/`tests`/`scripts`) — structural policies. Precedents: vocabulary guard (C13), formActions guard (W4d), `campaignJsonMutationRoute` guard (B32+), `server-only` sweep.
-4. **CI static analysis** — knip (dead code), madge (cycles). Already at error level.
-5. **Behavioral pin** — a unit/int spec locking the contract ("every curated alias resolves in every consumer"; "dossier aggregate === list aggregate").
-6. **Doc/convention** — rules files, codebase-map, rejected-with-reason lists. Last resort, and it must say so: judgment-only findings (abstraction-gate calls, bundle trade-offs) live here, declared as such.
-
-Rules:
-
-- If a guard is feasible, it ships **in the same delivery as the fix** — never as a follow-up. A guard that lands later is a guard that never lands.
-- If an existing guard covers the class but is dodgeable, hardening it is its own plan item.
-- If only judgment prevents recurrence, register the convention explicitly (rules/codebase-map) and mark the finding "judgment-only" — do not pretend a doc is a guard.
-- Prefer one guard per class over N per-instance pins: the guard is what makes the fix the _last_ time the smell is fixed.
-
-## Step 5 — Artifacts (draft, then sign-off)
-
-1. `docs/IMPROVE-CODE-QUALITY-PLAN.md` — new Pass section (context, audit headlines with numbers, workstreams, decisions), matching earlier-pass format.
-2. `docs/TECH-DEBT.md` — new rows in the same tables/columns, marked `open — Pass N`; stale rows closed with evidence.
-3. `docs/plans/entrega-engenharia-pN.md` (pt-BR, like the other plans) — workstreams ordered P0→P1→P2; each item: goal, evidence, target shape, migration path (Branch by Abstraction / Parallel Change for wide merges), pins to write first, full gate, rollback. Items too big for one delivery → Issue rastreável via `plan-issue`. Every workstream item declares its **Guarda determinística** (class 1–6, step 4b), and the plan carries a **guard map** section: new guards shipped / existing guards hardened / judgment-only residue with the convention that stands in.
-4. **Interativo (desktop):** present ALL THREE for sign-off before writing. Then write and stop. **Autônomo (Cursor Cloud):** não há sign-off interativo — escreva os três na branch e abra o PR (**Ready**, base `main` — mesmo fluxo `agent-pr-workflow`; "Modo autônomo", item 2; o merge fica com o safety net). As remediações P0/P1 e os guardrails das misses colhidas seguem na mesma sessão, em PRs próprios com gate completo + auto-merge, sem esperar o merge dos artefatos.
-
-## Execution rules for the eventual implementation (record in the plan)
-
-- One consolidation per delivery; full gate per delivery: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm format:check`, `pnpm exec knip`, `pnpm check:cycles`, `pnpm test`, `pnpm build` — bare — plus Aikido on edited files.
-- Structure-only commits never mix with behavior changes; red test mid-refactor = revert, not debug.
-- Frozen migrations never edited; schema change = `pnpm migrate:create`.
-- The rejected-with-reason list binds implementation too.
-- Leftovers → ledger via `capture-review-debts`; nothing lives only in chat.
-- No item closes without its prevention class recorded in the PR; a guard ships with the fix, not "after".
+5. Every claim gets a number (lines, exports, call sites, ms, kB). "Rejected by measurement" is an acceptable outcome.
+6. Frozen migrations never edited; schema change = `pnpm migrate:create` (e sai do escopo da noite — ver teto).
+7. Leftovers → ledger via `capture-review-debts`; nothing lives only in chat.
 
 ## Done when
 
-Precheck solitário verde (ou parada fail-closed com remédio nomeado); canon read; hotspot map com âncora de delta desde o último Pass e números; sweep complete with ledger rows; every consolidation candidate classified (merge now / register with trigger / look-alike-not-duplication — duplicated KNOWLEDGE named for each merge); every open ledger row verified; every harvested miss classified (guardrail shipped com `Closes #N` / hardening de guarda viva / judgment-only); every finding class carries a recurrence-guard classification and the plan carries the guard map; three artifacts presented for sign-off (interativo) ou commitados na branch com PR aberto (autônomo).
+Canon lido antes de julgar; hotspot map com âncora de delta e números; sweep completo com ledger rows; todo candidato de consolidação classificado (merge now / register-with-trigger / look-alike-not-duplication); toda linha aberta do ledger verificada; toda miss colhida classificada (guardrail com `Closes #N` / hardening de guarda viva / judgment-only); todo classe de achado com guarda classificada e guard map no plano; três artefatos commitados na branch; melhorias elegíveis implementadas em série (≤6) com commits separados; PR único Ready sem auto-merge com relatório completo na descrição; CI verde + mergeable — ou parada gracefully documentada no relatório.
