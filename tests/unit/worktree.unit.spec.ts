@@ -16,6 +16,8 @@ import {
 } from '../../scripts/lib/worktree-env.mjs'
 import {
   branchNameForIssue,
+  FIX_BRANCH_PREFIX,
+  fixBranchName,
   issueCodeAndSubject,
   OPENCODE_PRESET_MODEL,
   OPENCODE_SKILL_COMMAND_BY_PURPOSE,
@@ -191,6 +193,55 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 
     )
   })
 
+  it('fix launches with /bug-fix sent and the bag as the argument (quoted value)', () => {
+    expect(
+      opencodeLaunchDirective({
+        dir,
+        purpose: 'fix',
+        terminal: true,
+        argument: '500 no autosave de estimativas',
+      }),
+    ).toBe(
+      `launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/bug-fix 500 no autosave de estimativas"`,
+    )
+  })
+
+  it('fix without a bag sends the bare /bug-fix', () => {
+    expect(opencodeLaunchDirective({ dir, purpose: 'fix', terminal: true })).toBe(
+      `launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/bug-fix"`,
+    )
+  })
+
+  it('fix strips quotes/backslashes from the bag (xargs-safe) and drops it when it empties', () => {
+    expect(
+      opencodeLaunchDirective({ dir, purpose: 'fix', terminal: true, argument: 'a"b\\c' }),
+    ).toBe(`launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/bug-fix abc"`)
+    expect(opencodeLaunchDirective({ dir, purpose: 'fix', terminal: true, argument: ' "" ' })).toBe(
+      `launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/bug-fix"`,
+    )
+  })
+
+  it('fix ignores the issueNumber — fix worktrees never carry a claimed issue', () => {
+    expect(
+      opencodeLaunchDirective({
+        dir,
+        purpose: 'fix',
+        terminal: true,
+        issueNumber: 7,
+        argument: 'bug x',
+      }),
+    ).toBe(`launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/bug-fix bug x"`)
+  })
+
+  it('the argument belongs to fix alone — plan/new ignore it', () => {
+    expect(
+      opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true, argument: 'bag x' }),
+    ).toBe(`launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/plan-issue"`)
+    expect(
+      opencodeLaunchDirective({ dir, purpose: 'new', terminal: true, argument: 'bag x' }),
+    ).toBe(`launch opencode ${dir} --model ${presetInEffect()} --auto`)
+  })
+
   it('pins the preset constants — fallback comum deepseek-v4-flash, override via OPENCODE_WORKTREE_MODEL', () => {
     expect(OPENCODE_PRESET_MODEL).toBe(presetInEffect())
     expect(WORKTREE_TERMINAL_ENV).toBe('TEQO_WORKTREE_TERMINAL')
@@ -198,6 +249,7 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 
       next: '/work-issue',
       plan: '/plan-issue',
       new: null,
+      fix: '/bug-fix',
     })
   })
 
@@ -359,6 +411,71 @@ describe('workBranchName (per-invocation neutral worktrees)', () => {
     expect(planBranchName({ bag: 'agenda', taken: new Set(['plans/plan-issue-agenda']) })).toBe(
       'plans/plan-issue-agenda-2',
     )
+  })
+})
+
+describe('fixBranchName (per-invocation bug-fix worktrees)', () => {
+  it('no bag → first free sequential fix/<n>', () => {
+    expect(fixBranchName({})).toBe('fix/1')
+    expect(fixBranchName({ bag: '' })).toBe('fix/1')
+    expect(fixBranchName({ bag: '   ' })).toBe('fix/1')
+  })
+
+  it('no bag → skips taken sequential names (parallel sessions)', () => {
+    const taken = new Set(['fix/1', 'fix/2'])
+    expect(fixBranchName({ taken })).toBe('fix/3')
+  })
+
+  it('named bag → fix/<slug> when free (the bug description slugs the branch)', () => {
+    expect(fixBranchName({ bag: '500 no autosave de estimativas' })).toBe(
+      'fix/500-no-autosave-de-estimativas',
+    )
+  })
+
+  it('named bag whose name is taken → suffixed -2, -3, …', () => {
+    const taken = new Set(['fix/bug'])
+    expect(fixBranchName({ bag: 'bug', taken })).toBe('fix/bug-2')
+
+    taken.add('fix/bug-2')
+    expect(fixBranchName({ bag: 'bug', taken })).toBe('fix/bug-3')
+  })
+
+  it('each invocation returns a different branch for the same bag (live name)', () => {
+    const first = fixBranchName({ bag: 'teste' })
+    expect(fixBranchName({ bag: 'teste', taken: new Set([first]) })).toBe('fix/teste-2')
+  })
+
+  it('never collides with a `next` branch nor with a `plan` nor with a `new` branch', () => {
+    const taken = new Set([
+      'C15-fullcalendar-em-campanha-agenda',
+      'plans/plan-issue-agenda',
+      'work/agenda',
+    ])
+    expect(FIX_BRANCH_PREFIX).toBe('fix')
+    expect(`${FIX_BRANCH_PREFIX}/`).not.toMatch(/^[A-Z][A-Za-z0-9]*-/)
+    for (const bag of ['agenda', 'municipios', 'C15']) {
+      const branch = fixBranchName({ bag, taken })
+      expect(branch).toMatch(/^fix\//)
+      expect(branch).not.toMatch(/^[A-Z][A-Za-z0-9]*-/)
+      expect(branch).not.toMatch(/^plans\//)
+      expect(branch).not.toMatch(/^work\//)
+    }
+  })
+
+  it('a numeric bag shares the sequential namespace (uniform)', () => {
+    expect(fixBranchName({ bag: '3' })).toBe('fix/3')
+  })
+
+  it('unslugifiable bag falls back to the namespace label', () => {
+    expect(fixBranchName({ bag: '!!!' })).toBe('fix/fix')
+  })
+
+  it('truncates long slugs within the branch budget', () => {
+    const branch = fixBranchName({ bag: 'palavra '.repeat(20).trim() })
+    expect(branch.startsWith('fix/')).toBe(true)
+    expect(branch.length).toBeLessThanOrEqual(60)
+    // fix/ leaves a 56-char slug budget — 7 exact 8-char "palavra-" chunks.
+    expect(branch).toBe(`fix/${'palavra-'.repeat(7)}`)
   })
 })
 

@@ -72,4 +72,4 @@ src/
 
 ## Per-worktree environments
 
-`pnpm worktree next` provisions isolated envs per worktree: dev port `3100+slot`, databases `teqo_wt<slot>` / `teqo_wt<slot>_test` on the shared container with full migration chain + minimal seed, `.env.local` + `.env.test.local` (gitignored), copies of `PAYLOAD_SECRET`/`S3_*`/VAPID from main repo. The skill `local-database` covers the full workflow.
+`pnpm worktree next` provisions isolated envs per worktree: dev port `3100+slot`, databases `teqo_wt<slot>` / `teqo_wt<slot>_test` on the shared container with full migration chain + minimal seed, `.env.local` + `.env.test.local` (gitignored), copies of `PAYLOAD_SECRET`/`S3_*`/VAPID from main repo. Same provisioning for `plan [bag]`, `new [bag]` and `fix [bag]` worktrees (`plans/plan-issue-…`, `work/…`, `fix/…` namespaces — `fix` opens `/bug-fix` with the bug description delivered; no claim, no Issue). The skill `local-database` covers the full workflow.

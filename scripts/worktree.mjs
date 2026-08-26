@@ -95,6 +95,24 @@
  *                              modelo por invocação (sem flag o preset permanece).
  *                              Migrations E seed mínimo nos dois bancos, como
  *                              o `next`/`plan` (OPS28).
+ *   pnpm worktree fix [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]
+ *                              cria um worktree de CORREÇÃO DE BUG (skill
+ *                              /bug-fix) DIFERENTE a cada invocação: com bag,
+ *                              branch `fix/<bag>` (e `-2`, `-3`, … se o nome
+ *                              já estiver vivo); sem bag, o próximo sequencial
+ *                              `fix/<n>` livre. Prefixo minúsculo `fix/…` —
+ *                              nunca colide com `<code>-<slug>` de `next`,
+ *                              com `plans/plan-issue-…` de `plan` nem com
+ *                              `work/…` de `new`. Mesmo provisionamento
+ *                              isolado do `next`/`plan`/`new`; no terminal, a
+ *                              diretiva `launch` envia `--prompt
+ *                              "/bug-fix <bag>"` — a descrição do bug chega ao
+ *                              agente junto com a skill (aspas/barra-invertida
+ *                              do bag são removidas — o xargs da camada shell
+ *                              não honra escapes); `--model <map>` quando a
+ *                              flag de modelo está presente; `--stay` suprime
+ *                              cd e launch (nenhuma Issue é claimada nem
+ *                              criada — o registro do bug é o post-mortem).
  *   pnpm worktree kill [--force]   destrói o worktree em que o shell atual está
  *                              (recusa worktree sujo sem `--force`) e remove os
  *                              bancos gerados do worktree (best-effort); por
@@ -107,7 +125,7 @@
  * Read-only no GitHub? NÃO — desde o OPS33 `next` CLAIMA: claim determinístico
  * antes do worktree (mesma fila/ordem e lock otimista do `pnpm agent:claim`;
  * `--issue N` claim direcionado ou reabre sessão já claimada). `plan`/`new`/
- * `kill` não tocam Issues. O claim do pool (supervisor coordenado) é intacto.
+ * `fix`/`kill` não tocam Issues. O claim do pool (supervisor coordenado) é intacto.
  * Dir raiz: `~/.cursor/worktrees/teqo/` (mesma casa dos worktrees do Cursor).
  */
 
@@ -150,6 +168,7 @@ import {
 } from './lib/worktree-env.mjs'
 import {
   branchNameForIssue,
+  fixBranchName,
   OPENCODE_PRESET_MODEL,
   opencodeLaunchDirective,
   planBranchName,
@@ -181,7 +200,7 @@ const resolveLaunchModel = (flags) => {
 }
 
 /** Print the `launch` directive (only exists from the terminal shell); the `cd` line stays last. */
-const printLaunchDirective = ({ dir, purpose, issueNumber, flags = {} }) => {
+const printLaunchDirective = ({ dir, purpose, issueNumber, argument = null, flags = {} }) => {
   const model = resolveLaunchModel(flags)
   const line = opencodeLaunchDirective({
     dir,
@@ -189,6 +208,7 @@ const printLaunchDirective = ({ dir, purpose, issueNumber, flags = {} }) => {
     terminal: terminalShell,
     issueNumber,
     model,
+    argument,
   })
   if (line) console.log(line)
 }
@@ -623,11 +643,13 @@ const buildTakenBranchNames = () => {
 }
 
 /**
- * Shared runner for namespace worktrees NOT tied to the claim queue (`plan`
- * and `new`): fetches origin, picks a FRESH branch in the namespace (via
+ * Shared runner for namespace worktrees NOT tied to the claim queue (`plan`,
+ * `new` and `fix`): fetches origin, picks a FRESH branch in the namespace (via
  * `branchName`), provisions the same isolated env as `next` (with `purpose`)
  * and prints the `cd <dir>` line by default (`--stay` suppresses). Every
  * invocation creates a DIFFERENT worktree — parallel sessions never share one.
+ * `argument` (optional) rides the launch prompt — for `fix`, the bug
+ * description the `/bug-fix` skill receives.
  */
 const cmdNamespaceBranch = async ({
   stay,
@@ -637,6 +659,7 @@ const cmdNamespaceBranch = async ({
   sessionLabel,
   branchName,
   flags = {},
+  argument = null,
 }) => {
   // Fail-high on conflicting model flags before touching git.
   resolveLaunchModel(flags)
@@ -679,7 +702,7 @@ const cmdNamespaceBranch = async ({
   console.log(`  banco test: postgresql://teqo:teqo@localhost:5432/${env.testDatabase}`)
 
   if (!stay) {
-    printLaunchDirective({ dir, purpose, flags })
+    printLaunchDirective({ dir, purpose, argument, flags })
     console.log(`cd ${dir}`)
   }
 }
@@ -723,6 +746,28 @@ const cmdNew = async (stay, skipMigrate, bag, flags = {}) =>
     sessionLabel: bag && bag.trim() ? `bag "${bag}"` : 'sequencial',
     branchName: (taken) => workBranchName({ bag, taken }),
     flags,
+  })
+
+/**
+ * `fix` — a bug-fix worktree for the `/bug-fix` skill. Same detached-namespace
+ * shape as `new`: with `bag` (the bug description), branch `fix/<bag>`
+ * (suffixed `-2`, `-3`, … on collision); without, the next free sequential
+ * `fix/<n>`. The lowercase `fix/…` prefix can never collide with a `next`
+ * branch (uppercase-led `<code>-<slug>`), nor with `plans/…` or `work/…`. The
+ * launch prompt carries the bag as the skill's argument — the bug description
+ * arrives with `/bug-fix` (sanitized in the directive builder). Never claims
+ * nor creates Issues: the bug record is the skill's post-mortem.
+ */
+const cmdFix = async (stay, skipMigrate, bag, flags = {}) =>
+  cmdNamespaceBranch({
+    stay,
+    skipMigrate,
+    purpose: 'fix',
+    noun: 'de correção de bug',
+    sessionLabel: bag && bag.trim() ? `bug "${bag}"` : 'sequencial',
+    branchName: (taken) => fixBranchName({ bag, taken }),
+    flags,
+    argument: bag,
   })
 
 /** Generated database names referenced by a worktree's own env files. */
@@ -811,7 +856,7 @@ const subcommand = positional[0]
 
 if (!subcommand) {
   console.log(
-    'Uso: pnpm worktree next [--issue N] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba] | plan [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba] | new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba] | kill [--force]',
+    'Uso: pnpm worktree next [--issue N] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba] | plan [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba] | new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba] | fix [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba] | kill [--force]',
   )
   console.log('  next [--issue N] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]')
   console.log('    CLAIMA a próxima Issue claimável (mesma fila/ordem e lock otimista do')
@@ -858,6 +903,14 @@ if (!subcommand) {
   console.log(
     '    terminal, mesma diretiva `launch` porém sem --prompt (apenas conversar) e --model <map> quando a flag está presente',
   )
+  console.log(`\n  fix [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]`)
+  console.log('    cria um worktree de CORREÇÃO DE BUG (skill /bug-fix) DIFERENTE a cada')
+  console.log('    invocação: com bag (a descrição do bug), branch fix/<bag> (sufixo -2/-3 se o')
+  console.log('    nome já existir); sem bag, o próximo fix/<n> sequencial livre; o prefixo')
+  console.log('    minúsculo fix/… nunca colide com `next`, `plan` nem `new`; não claima nem cria')
+  console.log(
+    '    Issues — o registro do bug é o post-mortem da skill; no terminal, a diretiva `launch` envia --prompt "/bug-fix <bag>" (a descrição chega com a skill) e --model <map> quando a flag está presente',
+  )
   console.log('  kill [--force]  destrói o worktree em que você está (recusa sujo sem --force),')
   console.log('                  remove os bancos gerados do worktree (best-effort) e imprime')
   console.log('                  `cd <main>` no fim — o shell sempre volta ao worktree principal')
@@ -877,10 +930,12 @@ try {
     await cmdPlan(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1], flags)
   else if (subcommand === 'new')
     await cmdNew(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1], flags)
+  else if (subcommand === 'fix')
+    await cmdFix(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1], flags)
   else if (subcommand === 'kill') {
     if (flags.stay) die('`--stay` não se aplica a `kill` — ele sempre volta ao main.')
     await cmdKill(Boolean(flags.force))
-  } else die(`subcomando desconhecido: ${subcommand} (esperado: next | plan | new | kill)`)
+  } else die(`subcomando desconhecido: ${subcommand} (esperado: next | plan | new | fix | kill)`)
 } catch (error) {
   if (error?.stderr) die(error.stderr.toString().trim())
   die(error?.message ?? String(error))
