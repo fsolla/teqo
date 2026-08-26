@@ -49,7 +49,7 @@ These are product/architecture constraints — not a ban on editing existing cod
 ### Code Validation
 
 - To validate typescript correctness after modifying code run `tsc --noEmit`
-- Generate import maps after creating or modifying components.
+- Generate import maps after creating or modifying components. **Always set the 4 `S3_*` envs (dummy values ok) when running `pnpm generate:importmap`** — without them the generator orphans `@payloadcms/storage-s3/client#S3ClientUploadHandler` and the admin goes blank in production (class OPS69/OPS72/OPS73; `scripts/check-importmap-s3.mjs` + the `importMapS3UploadHandler` unit pin guard this in CI).
 - Any change to a collection/global/field schema requires a migration: `pnpm migrate:create <name>`, then `pnpm migrate` locally. Never rely on `push` (it is `false`). See the `payload-migrations` skill.
 
 ## Project Structure

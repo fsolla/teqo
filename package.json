@@ -61,7 +61,7 @@
     "changelog:build": "node scripts/build-changelog.mjs",
     "changelog:read": "node scripts/build-changelog.mjs --stdout",
     "changelog:check": "node scripts/build-changelog.mjs --check",
-    "generate:importmap": "cross-env NODE_OPTIONS=\"--no-deprecation --conditions=react-server\" payload generate:importmap",
+    "generate:importmap": "node scripts/generate-importmap.mjs",
     "generate:types": "cross-env NODE_OPTIONS=\"--no-deprecation --conditions=react-server\" payload generate:types",
     "migrate": "cross-env NODE_OPTIONS=\"--no-deprecation --conditions=react-server\" payload migrate",
     "migrate:create": "cross-env NODE_OPTIONS=\"--no-deprecation --conditions=react-server\" payload migrate:create",
