@@ -38,6 +38,13 @@ type DemandWorkflowCardProps = {
 const transitionVariant = (target: CampaignDemandStatus) =>
   target === 'aprovada' ? 'default' : target === 'rejeitada' ? 'destructive' : 'secondary'
 
+/**
+ * The native submit event always carries the pressed submit button; React
+ * types `FormEvent.nativeEvent` as a plain `Event`, so the read is a cast.
+ */
+const submitterFrom = (event: FormEvent<HTMLFormElement>): HTMLElement | null =>
+  (event.nativeEvent as SubmitEvent).submitter
+
 /** Staff-only workflow: analysis, escalation, decision, cost and receipts. */
 export const DemandWorkflowCard = ({
   demandID,
@@ -66,14 +73,16 @@ export const DemandWorkflowCard = ({
   // C139 — manual dispatch (no `action={submitTransition}`/`action={submitCost}`):
   // React 19 resets uncontrolled fields after any settled form action, wiping
   // the typed decision note and cost on a validation error. `startTransition`
-  // keeps the pending flags correct for the imperative dispatch.
+  // keeps the pending flags correct for the imperative dispatch. The FormData
+  // constructor receives the submitter (#921): the decision buttons carry
+  // `name="status" value={target}` and only the pressed one must travel.
   const handleTransitionSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    startTransition(() => submitTransition(new FormData(event.currentTarget)))
+    startTransition(() => submitTransition(new FormData(event.currentTarget, submitterFrom(event))))
   }
   const handleCostSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    startTransition(() => submitCost(new FormData(event.currentTarget)))
+    startTransition(() => submitCost(new FormData(event.currentTarget, submitterFrom(event))))
   }
 
   if (readOnly) {
