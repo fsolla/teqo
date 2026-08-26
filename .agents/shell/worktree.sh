@@ -11,7 +11,9 @@
 # a função executa o cd e então a linha (tokenizada por xargs — honra as aspas
 # do prompt, nunca eval), e o TUI do opencode abre no worktree — `next` com
 # `/work-issue --issue <N>` já enviado (OPS33: a Issue claimada vai no prompt),
-# `plan` com `/plan-issue` já enviado (OPS31), `new` sem prompt (apenas
+# `plan` com `/plan-issue` já enviado (OPS31), `fix` com `/bug-fix <bag>` já
+# enviado (a descrição do bug vai no prompt — aspas/barra-invertida do bag são
+# removidas porque o xargs não honra escapes), `new` sem prompt (apenas
 # conversar). Sem `--variant` (OPS95: o yargs do TUI rejeita o flag e só
 # imprime o helper; variantes ficam na config global da máquina, via Ctrl+T).
 # Modelo por invocação: `--cheap` (cheapestinference/deepseek-v4-flash),
@@ -46,11 +48,20 @@
 #                            (sufixo -2/-3 se o nome já existir), sem bag o próximo
 #                            work/<n> sequencial; cd para dentro dele por padrão;
 #                            --stay não troca; flag de modelo como no `next`
+#   worktree fix [bag] [--stay] [--cheap|--pro|--zen|--go|--alibaba]
+#                            cria um worktree de CORREÇÃO DE BUG (skill /bug-fix)
+#                            DIFERENTE a cada chamada: com bag (a descrição do bug),
+#                            branch fix/<bag> (sufixo -2/-3 se o nome já existir),
+#                            sem bag o próximo fix/<n> sequencial; o launch envia
+#                            `/bug-fix <bag>` (a descrição chega com a skill); não
+#                            claima nem cria Issues — o registro é o post-mortem;
+#                            cd para dentro dele por padrão; --stay não troca;
+#                            flag de modelo como no `next`
 #   worktree kill [--force]  destrói o worktree atual e cd para o main por padrão
 #
 # `--go` remapeado em OPS93 para o provider OpenCode Go e em OPS95 para o modelo `opencode-go/hy3`
 # (antes no-op do OPS24). Claim determinístico: `next` claima antes de criar o worktree (mesma fila e
-# lock de `pnpm agent:claim`); `plan`/`new`/`kill` não tocam Issues.
+# lock de `pnpm agent:claim`); `plan`/`new`/`fix`/`kill` não tocam Issues.
 
 worktree() {
   local src="${BASH_SOURCE[0]:-$0}"

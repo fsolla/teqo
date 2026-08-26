@@ -77,7 +77,8 @@ export const resolveWorktreeModel = (flags = {}) => {
  * sends `/work-issue` (the OPS25 command executes the full cycle; the OPS33
  * launch appends `--issue <N>` — the claimed issue — via
  * `opencodeLaunchDirective`); `plan` sends `/plan-issue` (OPS31 — auto-submit
- * is the real need of the flow) and `new` sends nothing ("apenas conversar",
+ * is the real need of the flow), `fix` sends `/bug-fix` (with the bug
+ * description as the argument) and `new` sends nothing ("apenas conversar",
  * no skill at all). The opencode CLI's `--prompt` always auto-submits, there
  * is no prefill-without-submit flag; prefill stays an upstream-only feature
  * request (proposition annotated), not a Teqo fallback.
@@ -86,6 +87,7 @@ export const OPENCODE_SKILL_COMMAND_BY_PURPOSE = {
   next: '/work-issue',
   plan: '/plan-issue',
   new: null,
+  fix: '/bug-fix',
 }
 
 /**
@@ -94,6 +96,14 @@ export const OPENCODE_SKILL_COMMAND_BY_PURPOSE = {
  * and from `plan`'s `plans/plan-issue-…`, in branch name and slot space alike.
  */
 export const WORK_BRANCH_PREFIX = 'work'
+
+/**
+ * Prefix of every bug-fix worktree branch (`pnpm worktree fix`). Lowercase-led
+ * `fix/…` — structurally disjoint from `next`'s uppercase-led `<Code>-<slug>`,
+ * from `plan`'s `plans/plan-issue-…` and from `new`'s `work/…`, in branch name
+ * and slot space alike.
+ */
+export const FIX_BRANCH_PREFIX = 'fix'
 
 /** Total branch-name budget — mirrors `branchNameForIssue` (60). */
 const NAMESPACE_BRANCH_MAX_LENGTH = 60
@@ -183,10 +193,11 @@ const namespaceBranchName = ({ prefix, bag = '', taken = new Set(), fallback }) 
  * `<root without spaces>/<slugified branch>`, so the line never needs quoting
  * for the path. `next` with an `issueNumber` sends `/work-issue --issue <N>`
  * (OPS33: the launch delivers the claimed issue to the agent; the skill reads
- * the rest from GitHub), the prompt value is quoted in the line because it
- * now carries a space. Returns `null` outside the terminal so the `/worktree`
- * opencode command never launches a nested TUI.
- * @param {{ dir: string, purpose: string, terminal?: boolean, issueNumber?: number | null, model?: string | null }} options
+ * the rest from GitHub), `fix` with an `argument` sends `/bug-fix <argument>`
+ * (the bug description arrives with the skill), the prompt value is quoted in
+ * the line because it now carries a space. Returns `null` outside the terminal
+ * so the `/worktree` opencode command never launches a nested TUI.
+ * @param {{ dir: string, purpose: string, terminal?: boolean, issueNumber?: number | null, model?: string | null, argument?: string | null }} options
  */
 export const opencodeLaunchDirective = ({
   dir,
@@ -194,15 +205,22 @@ export const opencodeLaunchDirective = ({
   terminal = false,
   issueNumber = null,
   model = null,
+  argument = null,
 }) => {
   if (!terminal) return null
   const prompt = OPENCODE_SKILL_COMMAND_BY_PURPOSE[purpose]
   const selectedModel = model ?? OPENCODE_PRESET_MODEL
   const args = [dir, '--model', selectedModel, '--auto']
   if (prompt) {
-    // The issue suffix belongs to `next` alone — `plan`/`new` never carry a
-    // claimed issue (fail-safe: a stray issueNumber must not break /plan-issue).
-    const value = purpose === 'next' && issueNumber ? `${prompt} --issue ${issueNumber}` : prompt
+    // The issue suffix belongs to `next` alone — `plan`/`new`/`fix` never carry
+    // a claimed issue (fail-safe: a stray issueNumber must not break them).
+    const issueSuffix = purpose === 'next' && issueNumber ? `--issue ${issueNumber}` : null
+    // The bag suffix belongs to `fix` alone — the bug description arrives with
+    // the skill. Quotes/backslashes are stripped: the shell layer tokenizes the
+    // directive with xargs, which does not honor backslash escapes.
+    const sanitized = typeof argument === 'string' ? argument.replace(/["\\]/g, '').trim() : null
+    const bagSuffix = purpose === 'fix' && sanitized ? sanitized : null
+    const value = [prompt, issueSuffix, bagSuffix].filter(Boolean).join(' ')
     // JSON.stringify quotes the value — the directive carries spaces now.
     args.push('--prompt', JSON.stringify(value))
   }
@@ -222,3 +240,10 @@ export const planBranchName = ({ bag = '', taken = new Set() }) =>
  */
 export const workBranchName = ({ bag = '', taken = new Set() }) =>
   namespaceBranchName({ prefix: `${WORK_BRANCH_PREFIX}/`, bag, taken, fallback: 'work' })
+
+/**
+ * Branch for a bug-fix worktree (`pnpm worktree fix`) — see
+ * `namespaceBranchName` (namespace `fix/…`, fallback label `fix`).
+ */
+export const fixBranchName = ({ bag = '', taken = new Set() }) =>
+  namespaceBranchName({ prefix: `${FIX_BRANCH_PREFIX}/`, bag, taken, fallback: 'fix' })
