@@ -35,10 +35,20 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # layers and image history; migrations run separately through the migrator —
 # the deploy script applies them BEFORE this build (OPS66: static routes read
 # the new schema, so the build must see a migrated DB).
+#
+# OPS99: Generate importMap with dummy S3_* envs BEFORE next build.
+# This ensures the production image always has the S3ClientUploadHandler entry,
+# eliminating the class of bugs where the admin goes blank (OPS69/OPS72/OPS73).
+# The dummy values are safe because Payload's generator doesn't connect to S3.
 RUN --mount=type=secret,id=database_url,env=DATABASE_URL \
   --mount=type=secret,id=payload_secret,env=PAYLOAD_SECRET \
+  S3_BUCKET=build-dummy \
+  S3_ENDPOINT=http://127.0.0.1:3900 \
+  S3_ACCESS_KEY_ID=build-dummy \
+  S3_SECRET_ACCESS_KEY=build-dummy \
   NEXT_OUTPUT_STANDALONE=1 \
   NODE_OPTIONS="--no-deprecation --max-old-space-size=8000" \
+  pnpm exec payload generate:importmap && \
   pnpm exec next build
 
 # Production image, copy all the files and run next

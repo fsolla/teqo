@@ -51,6 +51,7 @@
     "build:tse-city-codes": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-bahia-tse-city-codes.mjs",
     "dev": "node scripts/dev.mjs",
     "devsafe": "rm -rf .next && node scripts/dev.mjs",
+    "predev": "node scripts/predev-importmap.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "gate:fast": "pnpm lint && pnpm typecheck && pnpm test:unit",

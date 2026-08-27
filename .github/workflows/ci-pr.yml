@@ -132,8 +132,6 @@ jobs:
           GITHUB_BASE_REF: ${{ github.base_ref }}
           PR_BODY: ${{ github.event.pull_request.body }}
         run: node scripts/check-plans-only-pr-closes.mjs
-      - name: ImportMap keeps the S3 upload handler
-        run: node scripts/check-importmap-s3.mjs
 
       - name: Check test file locations
         run: node scripts/check-test-locations.mjs

@@ -73,8 +73,6 @@ jobs:
 
       - name: Check test file locations
         run: node scripts/check-test-locations.mjs
-      - name: ImportMap keeps the S3 upload handler
-        run: node scripts/check-importmap-s3.mjs
       - name: Lint
         run: pnpm lint
       - name: Format check
