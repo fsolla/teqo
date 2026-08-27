@@ -26,6 +26,12 @@
 /.next-e2e-check/
 /out/
 
+# Payload importMap (OPS99: build artifact, not committed)
+/src/app/(payload)/admin/importMap.js
+
+# OPS99: removed guard script (importMap now generated at build time)
+/scripts/check-importmap-s3.mjs
+
 # production
 /build
 

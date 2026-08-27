@@ -49,7 +49,7 @@ These are product/architecture constraints — not a ban on editing existing cod
 ### Code Validation
 
 - To validate typescript correctness after modifying code run `tsc --noEmit`
-- Generate import maps after creating or modifying components. **Always set the 4 `S3_*` envs (dummy values ok) when running `pnpm generate:importmap`** — without them the generator orphans `@payloadcms/storage-s3/client#S3ClientUploadHandler` and the admin goes blank in production (class OPS69/OPS72/OPS73; `scripts/check-importmap-s3.mjs` + the `importMapS3UploadHandler` unit pin guard this in CI).
+- **ImportMap is a build artifact (OPS99):** Generated at build time (Dockerfile with dummy S3\_\* envs) and dev time (`pnpm predev`). Never commit `src/app/(payload)/admin/importMap.js` to git — it's in `.gitignore`. The `pnpm predev` hook ensures it exists before `pnpm dev` starts. If you need to regenerate manually, run: `S3_BUCKET=x S3_ENDPOINT=http://127.0.0.1:3900 S3_ACCESS_KEY_ID=x S3_SECRET_ACCESS_KEY=x pnpm generate:importmap`
 - Any change to a collection/global/field schema requires a migration: `pnpm migrate:create <name>`, then `pnpm migrate` locally. Never rely on `push` (it is `false`). See the `payload-migrations` skill.
 
 ## Project Structure
