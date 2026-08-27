@@ -2,3 +2,12 @@ onlyBuiltDependencies:
   - sharp
   - esbuild
   - unrs-resolver
+
+# The homeserver cannot download the libvips binaries from GitHub releases
+# (objects.githubusercontent.com times out), which sharp@0.32.6 ships via
+# prebuild-install. sharp 0.33+ bundles libvips through npm-registry packages
+# (@img/sharp-libvips-*), which the homeserver CAN reach. Force the transitive
+# sharp of @imgly/background-removal-node (script local only) onto the app's
+# own version so every sharp install is registry-based.
+overrides:
+  'sharp@0.32.6': 0.34.2
