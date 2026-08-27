@@ -149,7 +149,12 @@ export const deriveGoogleCalendarSyncStatus = (input: {
  */
 export const readGoogleServiceAccountCredentials = (): GoogleCalendarCredentials | null => {
   const raw = process.env[GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV]
-  if (!raw) return null
+  if (!raw) {
+    // Note: this function is called without payload context, so we use console.warn
+    // In production, this warning will appear in server logs
+    console.warn(`[GoogleCalendarSync] ${GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV} não está definido no ambiente.`)
+    return null
+  }
 
   try {
     const parsed = JSON.parse(Buffer.from(raw, 'base64').toString('utf8')) as Record<
@@ -163,8 +168,9 @@ export const readGoogleServiceAccountCredentials = (): GoogleCalendarCredentials
     ) {
       return { clientEmail: parsed.client_email, privateKey: parsed.private_key }
     }
+    console.warn(`[GoogleCalendarSync] ${GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV} está malformado: client_email ou private_key ausente/vazio.`)
   } catch {
-    // malformed credential — treated as absent (fail-closed, no sync attempts)
+    console.warn(`[GoogleCalendarSync] ${GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV} não é base64 válido ou JSON inválido.`)
   }
   return null
 }
@@ -610,6 +616,12 @@ const runSyncPass = async (
     ids: [...remoteEventIds].filter((id) => !removedEventIds.has(id)),
   })
 
+  // Only log if there were actual changes or errors
+  if (created > 0 || updated > 0 || deleted > 0 || reverseEdits > 0) {
+    payload.logger.info(
+      `[GoogleCalendarSync] Passada concluída com mudanças: created=${created}, updated=${updated}, deleted=${deleted}, reverseEdits=${reverseEdits}, calendarId=${calendarId}`,
+    )
+  }
   return { created, updated, deleted, reverseEdits }
 }
 
@@ -750,6 +762,12 @@ const ensureGoogleCalendarPushChannel = async (
     if (config.pushChannelError) {
       await recordSyncState(payload, req, { pushChannelError: null })
     }
+    // Only log on first successful check or after error recovery
+    if (config.pushChannelError) {
+      payload.logger.info(
+        `[GoogleCalendarSync] Canal de push recuperado: channelId=${config.pushChannelId}`,
+      )
+    }
     return
   }
 
@@ -798,6 +816,9 @@ const ensureGoogleCalendarPushChannel = async (
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Erro desconhecido ao registrar o webhook do Google.'
+    payload.logger.error(
+      `[GoogleCalendarSync] Erro ao registrar canal de push: ${message}`,
+    )
     await recordSyncState(payload, req, { pushChannelError: message.slice(0, 500) })
   }
 }
@@ -833,14 +854,18 @@ export const runCampaignCalendarSync = async (
   const at = new Date().toISOString()
 
   if (!credentials || !config?.calendarId || config.disabledAt) {
+    const status = deriveGoogleCalendarSyncStatus({
+      hasCredential: credentials !== null,
+      calendarId: config?.calendarId ?? null,
+      disabledAt: config?.disabledAt ?? null,
+      lastSuccessAt: config?.lastSuccessAt ?? null,
+      lastErrorAt: config?.lastErrorAt ?? null,
+    })
+    payload.logger.warn(
+      `[GoogleCalendarSync] Sincronização ignorada: credentialsPresent=${credentials !== null}, calendarId=${config?.calendarId ?? 'null'}, disabledAt=${config?.disabledAt ?? 'null'}, status=${status}`,
+    )
     return {
-      status: deriveGoogleCalendarSyncStatus({
-        hasCredential: credentials !== null,
-        calendarId: config?.calendarId ?? null,
-        disabledAt: config?.disabledAt ?? null,
-        lastSuccessAt: config?.lastSuccessAt ?? null,
-        lastErrorAt: config?.lastErrorAt ?? null,
-      }),
+      status,
       created: 0,
       updated: 0,
       deleted: 0,
@@ -873,6 +898,9 @@ export const runCampaignCalendarSync = async (
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Erro desconhecido ao sincronizar com o Google.'
+    payload.logger.error(
+      `[GoogleCalendarSync] Erro durante a sincronização: ${message}`,
+    )
     await recordSyncState(payload, options.req, {
       lastSyncedAt: at,
       lastErrorAt: at,
