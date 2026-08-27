@@ -74,7 +74,7 @@ N/A.
 
 2. **Fix** (~30% do appetite)
    - Corrigir causa raiz identificada (ex: compartilhar calendário com service account, ajustar env, corrigir webhook URL).
-   - Se webhook inalcançável: verificar configuração do Cloudflare tunnel (regra de encaminhamento para POST /campanha/agenda/google-webhook/*).
+   - Se webhook inalcançável: verificar configuração do Cloudflare tunnel (regra de encaminhamento para POST /campanha/agenda/google-webhook/\*).
    - Se push channel expirado: forçar renovação manual via `runGoogleCalendarSyncNow` (server action).
    - Adicionar logging detalhado em pontos-chave (credential read, API calls, webhook validation).
    - Gate: `pnpm gate:fast`.

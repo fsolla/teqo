@@ -152,7 +152,9 @@ export const readGoogleServiceAccountCredentials = (): GoogleCalendarCredentials
   if (!raw) {
     // Note: this function is called without payload context, so we use console.warn
     // In production, this warning will appear in server logs
-    console.warn(`[GoogleCalendarSync] ${GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV} não está definido no ambiente.`)
+    console.warn(
+      `[GoogleCalendarSync] ${GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV} não está definido no ambiente.`,
+    )
     return null
   }
 
@@ -168,9 +170,13 @@ export const readGoogleServiceAccountCredentials = (): GoogleCalendarCredentials
     ) {
       return { clientEmail: parsed.client_email, privateKey: parsed.private_key }
     }
-    console.warn(`[GoogleCalendarSync] ${GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV} está malformado: client_email ou private_key ausente/vazio.`)
+    console.warn(
+      `[GoogleCalendarSync] ${GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV} está malformado: client_email ou private_key ausente/vazio.`,
+    )
   } catch {
-    console.warn(`[GoogleCalendarSync] ${GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV} não é base64 válido ou JSON inválido.`)
+    console.warn(
+      `[GoogleCalendarSync] ${GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV} não é base64 válido ou JSON inválido.`,
+    )
   }
   return null
 }
@@ -816,9 +822,7 @@ const ensureGoogleCalendarPushChannel = async (
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Erro desconhecido ao registrar o webhook do Google.'
-    payload.logger.error(
-      `[GoogleCalendarSync] Erro ao registrar canal de push: ${message}`,
-    )
+    payload.logger.error(`[GoogleCalendarSync] Erro ao registrar canal de push: ${message}`)
     await recordSyncState(payload, req, { pushChannelError: message.slice(0, 500) })
   }
 }
@@ -898,9 +902,7 @@ export const runCampaignCalendarSync = async (
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Erro desconhecido ao sincronizar com o Google.'
-    payload.logger.error(
-      `[GoogleCalendarSync] Erro durante a sincronização: ${message}`,
-    )
+    payload.logger.error(`[GoogleCalendarSync] Erro durante a sincronização: ${message}`)
     await recordSyncState(payload, options.req, {
       lastSyncedAt: at,
       lastErrorAt: at,
