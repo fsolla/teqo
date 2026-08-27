@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — C149 Conectar Google (OAuth)</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-5xl p-6 md:p-8">
+      <p class="text-sm text-zinc-400">
+        Candidato/coordenador configura o espelho Google Calendar da agenda — conexão por botão, sem
+        service account. Cenas: não configurado, conectado, erro de token, mobile.
+      </p>
+
+      <section class="mt-8">
+        <p class="text-xs font-medium uppercase tracking-wide text-zinc-500">
+          Cena 1 · Desktop — estado: não configurado
+        </p>
+        <div class="mt-3 rounded-lg border border-zinc-800 bg-zinc-900 p-6">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 class="text-lg font-semibold">Google Calendar</h2>
+              <p class="mt-1 text-sm text-zinc-400">
+                Espelha a agenda da campanha num calendário Google, com atualização em minutos.
+              </p>
+            </div>
+            <span
+              class="self-start rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300"
+            >
+              Não configurado
+            </span>
+          </div>
+          <div class="mt-6 rounded-md border border-dashed border-zinc-700 p-6">
+            <p class="text-sm text-zinc-300">
+              Conecte a conta Google do calendário da campanha para ativar o espelho.
+            </p>
+            <p class="mt-1 text-sm text-zinc-500">
+              Você será levado à tela de consentimento do Google para autorizar o Teqo a gerenciar o
+              calendário da campanha.
+            </p>
+            <button class="mt-4 h-11 rounded-lg bg-sky-600 px-5 text-sm font-medium text-white">
+              Conectar com o Google
+            </button>
+          </div>
+          <p class="mt-4 text-xs text-zinc-500">
+            A configuração manual por service account continua disponível como caminho técnico de
+            fallback.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-8">
+        <p class="text-xs font-medium uppercase tracking-wide text-zinc-500">
+          Cena 2 · Desktop — estado: conectado
+        </p>
+        <div class="mt-3 rounded-lg border border-zinc-800 bg-zinc-900 p-6">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 class="text-lg font-semibold">Google Calendar</h2>
+              <p class="mt-1 text-sm text-zinc-400">
+                O espelho usa a conexão abaixo para escrever os compromissos no calendário da
+                campanha.
+              </p>
+            </div>
+            <span
+              class="self-start rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300"
+            >
+              Conectado
+            </span>
+          </div>
+          <div
+            class="mt-6 flex flex-col gap-4 rounded-md border border-zinc-800 p-4 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div class="flex items-center gap-3">
+              <div class="h-9 w-9 rounded-full bg-zinc-800"></div>
+              <div>
+                <p class="text-sm font-medium">Conta Google da campanha</p>
+                <div class="mt-1 h-3 w-40 rounded bg-zinc-800"></div>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button class="h-10 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-200">
+                Regerar acesso
+              </button>
+              <button class="h-10 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-200">
+                Desconectar
+              </button>
+            </div>
+          </div>
+          <p class="mt-4 text-xs text-zinc-500">
+            Desconectar revoga o acesso do Teqo; depois, revogue o app nas configurações de
+            segurança da conta Google.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-8">
+        <p class="text-xs font-medium uppercase tracking-wide text-zinc-500">
+          Cena 3 · Desktop — estado: erro de token (caminho de reconexão)
+        </p>
+        <div class="mt-3 rounded-lg border border-zinc-800 bg-zinc-900 p-6">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 class="text-lg font-semibold">Google Calendar</h2>
+              <p class="mt-1 text-sm text-zinc-400">
+                O espelho está pausado até a conexão ser restabelecida.
+              </p>
+            </div>
+            <span
+              class="self-start rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300"
+            >
+              Erro
+            </span>
+          </div>
+          <div class="mt-6 rounded-md border border-zinc-700 p-6">
+            <p class="text-sm font-medium text-zinc-100">Erro de conexão com o Google</p>
+            <p class="mt-1 text-sm text-zinc-400">
+              O token de acesso não pôde ser renovado. O Teqo continua sendo a fonte da verdade — a
+              agenda segue funcionando aqui; nada foi perdido no espelho.
+            </p>
+            <p class="mt-3 text-sm text-zinc-500">
+              Reconecte com a mesma conta Google do calendário da campanha. Se a conta mudou,
+              desconecte antes e conecte novamente.
+            </p>
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+              <button class="h-11 rounded-lg bg-sky-600 px-5 text-sm font-medium text-white">
+                Reconectar com o Google
+              </button>
+              <button class="h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-200">
+                Desconectar
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-8">
+        <p class="text-xs font-medium uppercase tracking-wide text-zinc-500">
+          Cena 4 · Mobile ~390px — estado: não configurado (cena 1)
+        </p>
+        <div class="mt-3 w-[390px] max-w-full">
+          <div class="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+            <div class="flex flex-col gap-3">
+              <div>
+                <h2 class="text-base font-semibold">Google Calendar</h2>
+                <p class="mt-1 text-sm text-zinc-400">
+                  Espelha a agenda da campanha num calendário Google.
+                </p>
+              </div>
+              <span
+                class="self-start rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300"
+              >
+                Não configurado
+              </span>
+            </div>
+            <div class="mt-4 rounded-md border border-dashed border-zinc-700 p-4">
+              <p class="text-sm text-zinc-300">
+                Conecte a conta Google do calendário da campanha para ativar o espelho.
+              </p>
+              <p class="mt-1 text-sm text-zinc-500">
+                Você autoriza o Teqo na tela de consentimento do Google.
+              </p>
+              <button
+                class="mt-4 h-11 w-full rounded-lg bg-sky-600 px-5 text-sm font-medium text-white"
+              >
+                Conectar com o Google
+              </button>
+            </div>
+            <p class="mt-3 text-xs text-zinc-500">
+              Service account segue disponível como fallback técnico.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

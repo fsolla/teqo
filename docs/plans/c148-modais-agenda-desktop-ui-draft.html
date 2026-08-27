@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — C148 · Modais da agenda no desktop</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-6xl px-6 py-10">
+      <h1 class="text-lg font-semibold">C148 · Modais da agenda usáveis no desktop</h1>
+      <p class="mt-1 text-sm text-zinc-400">
+        Assessor/coordenador no desktop, criando atividade e sincronizando a agenda. Zinc neutro +
+        um acento (indigo) só no CTA primário. Estático — só medidas e encaixe.
+      </p>
+
+      <!-- Cena 1 · desktop ~1280px · criação de atividade -->
+      <section class="mt-10">
+        <p class="text-xs font-medium uppercase tracking-wider text-zinc-500">
+          Cena 1 · Desktop ~1280px — modal de criação de atividade
+        </p>
+        <p class="mt-1 text-xs text-zinc-500">
+          Largura generosa, paddings contidos, Início/Término lado a lado (cada um com data+hora na
+          mesma linha), corpo com rolagem interna e rodapé fixo.
+        </p>
+        <div class="mt-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-6 sm:p-10">
+          <div class="space-y-2 opacity-40" aria-hidden="true">
+            <div class="h-3 w-48 rounded bg-zinc-800"></div>
+            <div class="h-3 w-32 rounded bg-zinc-800"></div>
+          </div>
+          <div class="mt-6 flex justify-center">
+            <div
+              class="w-full max-w-3xl overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900"
+            >
+              <div class="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
+                <h3 class="text-sm font-semibold">Nova atividade</h3>
+                <span class="text-lg leading-none text-zinc-500">×</span>
+              </div>
+              <div class="max-h-80 overflow-y-auto px-5 py-5">
+                <div class="grid gap-4">
+                  <div>
+                    <span class="mb-1.5 block text-xs font-medium text-zinc-400">Título</span>
+                    <div
+                      class="flex h-11 items-center rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-600"
+                    >
+                      Título da atividade
+                    </div>
+                  </div>
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <span class="mb-1.5 block text-xs font-medium text-zinc-400">Tipo</span>
+                      <div
+                        class="flex h-11 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm"
+                      >
+                        <span class="text-zinc-600">Selecione o tipo</span
+                        ><span class="text-zinc-600">▾</span>
+                      </div>
+                    </div>
+                    <div>
+                      <span class="mb-1.5 block text-xs font-medium text-zinc-400">Status</span>
+                      <div
+                        class="flex h-11 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm"
+                      >
+                        <span class="text-zinc-600">Selecione o status</span
+                        ><span class="text-zinc-600">▾</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <span class="mb-1.5 block text-xs font-medium text-zinc-400">Município</span>
+                      <div
+                        class="flex h-11 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm"
+                      >
+                        <span class="text-zinc-600">Selecione o município</span
+                        ><span class="text-zinc-600">▾</span>
+                      </div>
+                    </div>
+                    <div>
+                      <span class="mb-1.5 block text-xs font-medium text-zinc-400">Localidade</span>
+                      <div
+                        class="flex h-11 items-center rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-600"
+                      >
+                        Bairro, praça ou referência
+                      </div>
+                    </div>
+                  </div>
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <span class="mb-1.5 block text-xs font-medium text-zinc-400">Início</span>
+                      <div class="flex gap-2">
+                        <div
+                          class="flex h-11 min-w-0 flex-1 items-center rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-600"
+                        >
+                          dd/mm/aaaa
+                        </div>
+                        <div
+                          class="flex h-11 w-16 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-2 text-sm"
+                        >
+                          <span class="text-zinc-600">--</span><span class="text-zinc-600">▾</span>
+                        </div>
+                        <div
+                          class="flex h-11 w-16 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-2 text-sm"
+                        >
+                          <span class="text-zinc-600">--</span><span class="text-zinc-600">▾</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <span class="mb-1.5 block text-xs font-medium text-zinc-400">Término</span>
+                      <div class="flex gap-2">
+                        <div
+                          class="flex h-11 min-w-0 flex-1 items-center rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-600"
+                        >
+                          dd/mm/aaaa
+                        </div>
+                        <div
+                          class="flex h-11 w-16 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-2 text-sm"
+                        >
+                          <span class="text-zinc-600">--</span><span class="text-zinc-600">▾</span>
+                        </div>
+                        <div
+                          class="flex h-11 w-16 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-2 text-sm"
+                        >
+                          <span class="text-zinc-600">--</span><span class="text-zinc-600">▾</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <span class="mb-1.5 block text-xs font-medium text-zinc-400"
+                      >Assessores responsáveis</span
+                    >
+                    <div class="flex flex-wrap gap-2">
+                      <div class="h-9 w-28 rounded-lg bg-zinc-800"></div>
+                      <div class="h-9 w-36 rounded-lg bg-zinc-800"></div>
+                      <div
+                        class="flex h-9 items-center rounded-lg border border-dashed border-zinc-700 px-3 text-xs text-zinc-500"
+                      >
+                        Adicionar
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <span class="mb-1.5 block text-xs font-medium text-zinc-400"
+                      >Organizações apoiadoras</span
+                    >
+                    <div class="flex flex-wrap gap-2">
+                      <div class="h-9 w-32 rounded-lg bg-zinc-800"></div>
+                      <div class="h-9 w-24 rounded-lg bg-zinc-800"></div>
+                      <div class="h-9 w-40 rounded-lg bg-zinc-800"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center justify-end gap-3 border-t border-zinc-800 px-5 py-4">
+                <div
+                  class="flex h-11 items-center rounded-lg border border-zinc-700 px-4 text-sm font-medium text-zinc-200"
+                >
+                  Cancelar
+                </div>
+                <div
+                  class="flex h-11 items-center rounded-lg bg-indigo-600 px-4 text-sm font-medium text-white"
+                >
+                  Salvar atividade
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cena 2 · desktop · sync Google -->
+      <section class="mt-10">
+        <p class="text-xs font-medium uppercase tracking-wider text-zinc-500">
+          Cena 2 · Desktop — modal de sincronização Google (feed ICS segue o mesmo padrão)
+        </p>
+        <p class="mt-1 text-xs text-zinc-500">
+          Corpo com altura máxima e rolagem interna: a lista longa de opções não vaza para fora da
+          tela; os botões ficam fixos no rodapé.
+        </p>
+        <div class="mt-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-6 sm:p-10">
+          <div class="flex justify-center">
+            <div
+              class="w-full max-w-xl overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900"
+            >
+              <div class="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
+                <h3 class="text-sm font-semibold">Sincronizar com Google Agenda</h3>
+                <span class="text-lg leading-none text-zinc-500">×</span>
+              </div>
+              <div class="max-h-64 overflow-y-auto px-5 py-4">
+                <p class="text-sm text-zinc-400">
+                  Escolha o que importar e o que publicar no feed da agenda. As opções continuam
+                  acessíveis rolando dentro do modal.
+                </p>
+                <div class="mt-4 space-y-2">
+                  <div class="flex items-start gap-3 rounded-lg border border-zinc-800 p-3">
+                    <span class="mt-0.5 h-4 w-4 shrink-0 rounded border border-zinc-600"></span>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm text-zinc-300">Importar eventos do Google</p>
+                      <div class="mt-1.5 h-3 w-64 rounded bg-zinc-800"></div>
+                    </div>
+                  </div>
+                  <div class="flex items-start gap-3 rounded-lg border border-zinc-800 p-3">
+                    <span class="mt-0.5 h-4 w-4 shrink-0 rounded border border-zinc-600"></span>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm text-zinc-300">Publicar atividades no Google Agenda</p>
+                      <div class="mt-1.5 h-3 w-56 rounded bg-zinc-800"></div>
+                    </div>
+                  </div>
+                  <div class="flex items-start gap-3 rounded-lg border border-zinc-800 p-3">
+                    <span class="mt-0.5 h-4 w-4 shrink-0 rounded border border-zinc-600"></span>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm text-zinc-300">Selecionar quais calendários sincronizar</p>
+                      <div class="mt-1.5 h-3 w-72 rounded bg-zinc-800"></div>
+                    </div>
+                  </div>
+                  <div class="flex items-start gap-3 rounded-lg border border-zinc-800 p-3">
+                    <span class="mt-0.5 h-4 w-4 shrink-0 rounded border border-zinc-600"></span>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm text-zinc-300">Avisos de conflito de horário</p>
+                      <div class="mt-1.5 h-3 w-48 rounded bg-zinc-800"></div>
+                    </div>
+                  </div>
+                  <div class="flex items-start gap-3 rounded-lg border border-zinc-800 p-3">
+                    <span class="mt-0.5 h-4 w-4 shrink-0 rounded border border-zinc-600"></span>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm text-zinc-300">Fuso horário dos eventos</p>
+                      <div class="mt-1.5 h-3 w-40 rounded bg-zinc-800"></div>
+                    </div>
+                  </div>
+                  <div class="flex items-start gap-3 rounded-lg border border-zinc-800 p-3">
+                    <span class="mt-0.5 h-4 w-4 shrink-0 rounded border border-zinc-600"></span>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm text-zinc-300">Reprocessar sincronização anterior</p>
+                      <div class="mt-1.5 h-3 w-60 rounded bg-zinc-800"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center justify-end gap-3 border-t border-zinc-800 px-5 py-4">
+                <div
+                  class="flex h-11 items-center rounded-lg border border-zinc-700 px-4 text-sm font-medium text-zinc-200"
+                >
+                  Fechar
+                </div>
+                <div
+                  class="flex h-11 items-center rounded-lg bg-indigo-600 px-4 text-sm font-medium text-white"
+                >
+                  Sincronizar agora
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cena 3 · mobile ~390px · o mesmo modal de criação (não muda) -->
+      <section class="mt-10">
+        <p class="text-xs font-medium uppercase tracking-wider text-zinc-500">
+          Cena 3 · Mobile ~390px — o mesmo modal de criação (não muda)
+        </p>
+        <p class="mt-1 text-xs text-zinc-500">
+          Hoje o mobile já abre como folha (Drawer) com corpo rolável e campos empilhados; a
+          correção desktop não pode alterar isso.
+        </p>
+        <div class="mt-3 w-[390px] rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+          <div class="space-y-2 opacity-40" aria-hidden="true">
+            <div class="h-3 w-40 rounded bg-zinc-800"></div>
+            <div class="h-3 w-24 rounded bg-zinc-800"></div>
+          </div>
+          <div
+            class="mt-4 overflow-hidden rounded-t-2xl border-x border-t border-zinc-700 bg-zinc-900"
+          >
+            <div class="mx-auto mt-3 h-1 w-10 rounded-full bg-zinc-700"></div>
+            <div class="flex items-center justify-between px-4 pb-2 pt-3">
+              <h3 class="text-sm font-semibold">Nova atividade</h3>
+              <span class="text-lg leading-none text-zinc-500">×</span>
+            </div>
+            <div class="max-h-72 overflow-y-auto px-4 pb-4">
+              <div class="grid gap-4">
+                <div>
+                  <span class="mb-1.5 block text-xs font-medium text-zinc-400">Título</span>
+                  <div
+                    class="flex h-11 items-center rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-600"
+                  >
+                    Título da atividade
+                  </div>
+                </div>
+                <div>
+                  <span class="mb-1.5 block text-xs font-medium text-zinc-400">Tipo</span>
+                  <div
+                    class="flex h-11 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm"
+                  >
+                    <span class="text-zinc-600">Selecione o tipo</span
+                    ><span class="text-zinc-600">▾</span>
+                  </div>
+                </div>
+                <div>
+                  <span class="mb-1.5 block text-xs font-medium text-zinc-400">Município</span>
+                  <div
+                    class="flex h-11 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm"
+                  >
+                    <span class="text-zinc-600">Selecione o município</span
+                    ><span class="text-zinc-600">▾</span>
+                  </div>
+                </div>
+                <div>
+                  <span class="mb-1.5 block text-xs font-medium text-zinc-400">Início</span>
+                  <div
+                    class="flex h-11 items-center rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-600"
+                  >
+                    dd/mm/aaaa
+                  </div>
+                  <div class="mt-2 flex gap-2">
+                    <div
+                      class="flex h-11 w-20 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-2 text-sm"
+                    >
+                      <span class="text-zinc-600">Hora</span><span class="text-zinc-600">▾</span>
+                    </div>
+                    <div
+                      class="flex h-11 w-20 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-2 text-sm"
+                    >
+                      <span class="text-zinc-600">Min</span><span class="text-zinc-600">▾</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <span class="mb-1.5 block text-xs font-medium text-zinc-400">Término</span>
+                  <div
+                    class="flex h-11 items-center rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-600"
+                  >
+                    dd/mm/aaaa
+                  </div>
+                  <div class="mt-2 flex gap-2">
+                    <div
+                      class="flex h-11 w-20 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-2 text-sm"
+                    >
+                      <span class="text-zinc-600">Hora</span><span class="text-zinc-600">▾</span>
+                    </div>
+                    <div
+                      class="flex h-11 w-20 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950 px-2 text-sm"
+                    >
+                      <span class="text-zinc-600">Min</span><span class="text-zinc-600">▾</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <span class="mb-1.5 block text-xs font-medium text-zinc-400"
+                    >Assessores responsáveis</span
+                  >
+                  <div class="flex flex-wrap gap-2">
+                    <div class="h-9 w-28 rounded-lg bg-zinc-800"></div>
+                    <div class="h-9 w-36 rounded-lg bg-zinc-800"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 border-t border-zinc-800 px-4 py-4">
+              <div
+                class="flex h-11 items-center justify-center rounded-lg border border-zinc-700 text-sm font-medium text-zinc-200"
+              >
+                Cancelar
+              </div>
+              <div
+                class="flex h-11 items-center justify-center rounded-lg bg-indigo-600 text-sm font-medium text-white"
+              >
+                Salvar
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
