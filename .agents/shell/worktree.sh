@@ -29,26 +29,26 @@
 #   source <repo>/.agents/shell/worktree.sh
 #
 # Uso (terminal interativo):
-#   worktree next [--issue N] [--stay] [--cheap|--pro|--zen|--go|--alibaba]
+#   worktree next [--issue N] [--stay] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
 #                            CLAIMA a próxima Issue claimável e cria/reutiliza o
 #                            worktree dela, cd para dentro por padrão; --issue N
 #                            claima a Issue direcionada ou reabre a já claimada
-#                            (sem re-claim); --stay não troca; --cheap/--pro/--zen/--go/--alibaba
+# (sem re-claim); --stay não troca; --cheap/--pro/--zen/--go/--alibaba/--glm/--free
 #                            escolhe o modelo por invocação (sem flag o preset permanece; at-most-one)
-#   worktree plan [bag] [--stay] [--cheap|--pro|--zen|--go|--alibaba]
+#   worktree plan [bag] [--stay] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
 #                            cria um worktree de planejamento do /plan-issue
 #                            DIFERENTE a cada chamada (sessões paralelas): com bag,
 #                            branch plans/plan-issue-<bag> (sufixo -2/-3 se o nome
 #                            já existir), sem bag o próximo plans/plan-issue-<n>
 #                            sequencial; cd para dentro dele por padrão; --stay não
 #                            troca; flag de modelo como no `next`
-#   worktree new [bag] [--stay] [--cheap|--pro|--zen|--go|--alibaba]
+#   worktree new [bag] [--stay] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
 #                            cria um worktree NEUTRO (sem função pré-definida)
 #                            DIFERENTE a cada chamada: com bag, branch work/<bag>
 #                            (sufixo -2/-3 se o nome já existir), sem bag o próximo
 #                            work/<n> sequencial; cd para dentro dele por padrão;
 #                            --stay não troca; flag de modelo como no `next`
-#   worktree fix [bag] [--stay] [--cheap|--pro|--zen|--go|--alibaba]
+#   worktree fix [bag] [--stay] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
 #                            cria um worktree de CORREÇÃO DE BUG (skill /bug-fix)
 #                            DIFERENTE a cada chamada: com bag (a descrição do bug),
 #                            branch fix/<bag> (sufixo -2/-3 se o nome já existir),

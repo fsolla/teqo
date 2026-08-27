@@ -288,16 +288,20 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 
   })
 })
 
-describe('resolveWorktreeModel + WORKTREE_MODEL_MAP (OPS93 menu, OPS95 values)', () => {
-  it('pins the 5-flag map — cheap/pro/zen/go/alibaba', () => {
+describe('resolveWorktreeModel + WORKTREE_MODEL_MAP (OPS93 menu, OPS95 values, OPS100 glm/free)', () => {
+  it('pins the 7-flag map — cheap/pro/zen/go/alibaba/glm/free', () => {
     expect(WORKTREE_MODEL_MAP).toEqual({
       cheap: 'cheapestinference/deepseek-v4-flash',
       pro: 'deepseek/deepseek-v4-pro',
       zen: 'opencode-go/ox-alpha-free',
       go: 'opencode-go/hy3',
       alibaba: 'alibaba-token-plan/deepseek-v4-flash',
+      glm: 'opencode-go/glm-5.3-flash',
+      free: 'openrouter/openrouter/free',
     })
-    expect(WORKTREE_MODEL_FLAGS).toEqual(new Set(['cheap', 'pro', 'zen', 'go', 'alibaba']))
+    expect(WORKTREE_MODEL_FLAGS).toEqual(
+      new Set(['cheap', 'pro', 'zen', 'go', 'alibaba', 'glm', 'free']),
+    )
   })
 
   it('no flag → preset', () => {
@@ -312,6 +316,8 @@ describe('resolveWorktreeModel + WORKTREE_MODEL_MAP (OPS93 menu, OPS95 values)',
     expect(resolveWorktreeModel({ zen: true })).toBe(WORKTREE_MODEL_MAP.zen)
     expect(resolveWorktreeModel({ go: true })).toBe(WORKTREE_MODEL_MAP.go)
     expect(resolveWorktreeModel({ alibaba: true })).toBe(WORKTREE_MODEL_MAP.alibaba)
+    expect(resolveWorktreeModel({ glm: true })).toBe(WORKTREE_MODEL_MAP.glm)
+    expect(resolveWorktreeModel({ free: true })).toBe(WORKTREE_MODEL_MAP.free)
   })
 
   it('multiple flags → throws (fail-high, never guess)', () => {
