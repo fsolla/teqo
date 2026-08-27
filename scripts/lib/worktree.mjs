@@ -28,22 +28,22 @@ export const WORKTREE_TERMINAL_ENV = 'TEQO_WORKTREE_TERMINAL'
  * direto porque o gateway está sem créditos (erros "positive credit balance"
  * em 24/08/2026) e porque unificar o default reduz a sobrescrita confusa de
  * seleção de modelo do TUI (opencode issues #8349/#13456). OPS93: com
- * `--cheap/--pro/--zen/--go/--alibaba` o mapa `WORKTREE_MODEL_MAP` escolhe o
- * modelo por invocação; sem flag o preset permanece. OPS95: sem `--variant`
- * na diretiva (o TUI rejeita o flag) — variantes ficam na config global da
- * máquina, via Ctrl+T.
+ * `--cheap/--pro/--zen/--go/--alibaba/--glm/--free` o mapa `WORKTREE_MODEL_MAP`
+ * escolhe o modelo por invocação; sem flag o preset permanece. OPS95: sem
+ * `--variant` na diretiva (o TUI rejeita o flag) — variantes ficam na config
+ * global da máquina, via Ctrl+T.
  */
 export const OPENCODE_PRESET_MODEL =
   process.env.OPENCODE_WORKTREE_MODEL || 'deepseek/deepseek-v4-flash'
 
 /**
- * Per-invocation model map — fixed menu of 5 named flags (OPS93; values
- * corrected in OPS95 after the OPS93 delivery shipped wrong IDs). The
- * directive picks `WORKTREE_MODEL_MAP[flag]` when a single flag is present,
- * otherwise falls back to `OPENCODE_PRESET_MODEL`. No `--variant` is emitted
- * (the TUI yargs rejects the flag — OPS95): variants live on the machine's
- * global config, selectable via Ctrl+T (`opencode run --variant max` remains
- * the headless path).
+ * Per-invocation model map — fixed menu of named flags (OPS93; values
+ * corrected in OPS95 after the OPS93 delivery shipped wrong IDs; OPS100 adds
+ * `--glm` and `--free`). The directive picks `WORKTREE_MODEL_MAP[flag]` when
+ * a single flag is present, otherwise falls back to `OPENCODE_PRESET_MODEL`.
+ * No `--variant` is emitted (the TUI yargs rejects the flag — OPS95):
+ * variants live on the machine's global config, selectable via Ctrl+T
+ * (`opencode run --variant max` remains the headless path).
  */
 export const WORKTREE_MODEL_MAP = {
   cheap: 'cheapestinference/deepseek-v4-flash',
@@ -51,6 +51,8 @@ export const WORKTREE_MODEL_MAP = {
   zen: 'opencode-go/ox-alpha-free',
   go: 'opencode-go/hy3',
   alibaba: 'alibaba-token-plan/deepseek-v4-flash',
+  glm: 'opencode-go/glm-5.3-flash',
+  free: 'openrouter/openrouter/free',
 }
 
 /** Set of flag names that select a model (keys of WORKTREE_MODEL_MAP). */
@@ -65,7 +67,7 @@ export const resolveWorktreeModel = (flags = {}) => {
   const active = [...WORKTREE_MODEL_FLAGS].filter((flag) => flags[flag])
   if (active.length > 1) {
     throw new Error(
-      `Flags de modelo conflitantes: --${active.join(' --')} (use apenas um de --cheap/--pro/--zen/--go/--alibaba)`,
+      `Flags de modelo conflitantes: --${active.join(' --')} (use apenas um de --cheap/--pro/--zen/--go/--alibaba/--glm/--free)`,
     )
   }
   if (active.length === 1) return WORKTREE_MODEL_MAP[active[0]]
@@ -187,7 +189,7 @@ const namespaceBranchName = ({ prefix, bag = '', taken = new Set(), fallback }) 
  * --auto [--prompt "<command>"]` (OPS95: no `--variant` — the TUI yargs
  * rejects the unknown flag and the helper prints instead of opening; modelo
  * vem do mapa `WORKTREE_MODEL_MAP` quando a flag `--cheap/--pro/--zen/
- * --go/--alibaba` está presente, senão do preset). The shell function
+ * --go/--alibaba/--glm/--free` está presente, senão do preset). The shell function
  * (`.agents/shell/worktree.sh`) applies the `cd` first, then tokenizes and
  * executes this line (xargs — quote-aware, never eval) — the dir is always
  * `<root without spaces>/<slugified branch>`, so the line never needs quoting

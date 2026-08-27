@@ -2,7 +2,7 @@
  * `pnpm worktree` — worktree management determinístico em torno da fila de
  * claim do projeto (mesma fila de `agent:claim` / agent pool).
  *
- *   pnpm worktree next [--issue N] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]
+ *   pnpm worktree next [--issue N] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
  *                              claima a próxima Issue claimável ANTES de criar
  *                              o worktree a partir de origin/main (mesma fila
  *                              e lock otimista de `pnpm agent:claim`; claim
@@ -19,13 +19,14 @@
  *                              terminal interativo: função `worktree()` em
  *                              `.agents/shell/worktree.sh`, sourced no profile).
  *                              `--stay` suprime a linha `cd` (o claim ainda
- *                              acontece); `--cheap/--pro/--zen/--go/--alibaba`
+ *                              acontece); `--cheap/--pro/--zen/--go/--alibaba/--glm/--free`
  *                              escolhe o modelo por invocação no mapa fixo
  *                              `WORKTREE_MODEL_MAP` (cheap=cheapestinference/
  *                              deepseek-v4-flash, pro=deepseek/deepseek-v4-pro,
  *                              zen=opencode-go/ox-alpha-free, go=opencode-go/
- *                              hy3, alibaba=alibaba-token-plan/deepseek-v4-flash;
- *                              OPS95) — sem flag o preset
+ *                              hy3, alibaba=alibaba-token-plan/deepseek-v4-flash,
+ *                              glm=opencode-go/glm-5.3-flash, free=openrouter/
+ *                              openrouter/free; OPS95 + OPS100) — sem flag o preset
  *                              `deepseek/deepseek-v4-flash` permanece.
  *                              Chamado do terminal interativo (com
  *                              `TEQO_WORKTREE_TERMINAL=1`, que só a função shell
@@ -59,7 +60,7 @@
  *                              recusa a abrir com `{file:…}` pendurado.
  *                              `--no-migrate` pula migrations E o seed (que
  *                              depende do catálogo migrado).
- *   pnpm worktree plan [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]
+ *   pnpm worktree plan [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
  *                              cria um worktree de PLANEJAMENTO novo para rodar
  *                              a skill /plan-issue sem ocupar o main — cada
  *                              invocação cria UM DIFERENTE, para sessões de
@@ -75,7 +76,7 @@
  *                              abre no fluxo de planejamento, sem digitação) e
  *                              `--model <map>` quando a flag de modelo está
  *                              presente.
- *   pnpm worktree new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]
+ *   pnpm worktree new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
  *                              cria um worktree NEUTRO novo — sem função
  *                              pré-definida (explorar ideia, conversar, ou
  *                              planejar sem registrar nada): cada invocação
@@ -91,11 +92,11 @@
  *                              `--model <map>` quando a flag de modelo está
  *                              presente.
  *                              `--stay` suprime a linha `cd` e a diretiva;
- *                              `--cheap/--pro/--zen/--go/--alibaba` escolhe o
+ *                              `--cheap/--pro/--zen/--go/--alibaba/--glm/--free` escolhe o
  *                              modelo por invocação (sem flag o preset permanece).
  *                              Migrations E seed mínimo nos dois bancos, como
  *                              o `next`/`plan` (OPS28).
- *   pnpm worktree fix [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]
+ *   pnpm worktree fix [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
  *                              cria um worktree de CORREÇÃO DE BUG (skill
  *                              /bug-fix) DIFERENTE a cada invocação: com bag,
  *                              branch `fix/<bag>` (e `-2`, `-3`, … se o nome
@@ -856,9 +857,11 @@ const subcommand = positional[0]
 
 if (!subcommand) {
   console.log(
-    'Uso: pnpm worktree next [--issue N] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba] | plan [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba] | new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba] | fix [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba] | kill [--force]',
+    'Uso: pnpm worktree next [--issue N] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free] | plan [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free] | new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free] | fix [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free] | kill [--force]',
   )
-  console.log('  next [--issue N] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]')
+  console.log(
+    '  next [--issue N] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]',
+  )
   console.log('    CLAIMA a próxima Issue claimável (mesma fila/ordem e lock otimista do')
   console.log('    `pnpm agent:claim`) e cria o worktree dela (branch <code>-<slug>),')
   console.log('    provisionando o ambiente isolado: porta de dev + bancos próprios;')
@@ -881,9 +884,11 @@ if (!subcommand) {
     '    informada); --stay suprime cd e launch (o claim ainda acontece); --no-migrate pula migrations e o',
   )
   console.log(
-    '    seed mínimo (db:seed:minimal) nos bancos novos (OPS28: paridade com a CI); at-most-one de --cheap/--pro/--zen/--go/--alibaba (múltiplas → erro)',
+    '    seed mínimo (db:seed:minimal) nos bancos novos (OPS28: paridade com a CI); at-most-one de --cheap/--pro/--zen/--go/--alibaba/--glm/--free (múltiplas → erro)',
   )
-  console.log(`\n  plan [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]`)
+  console.log(
+    `\n  plan [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]`,
+  )
   console.log(
     '    cria um worktree de planejamento DIFERENTE a cada invocação (sessões /plan-issue',
   )
@@ -895,7 +900,9 @@ if (!subcommand) {
   console.log(
     '    mesma diretiva `launch` com --prompt /plan-issue enviado (abre no fluxo de planejamento, sem digitação) e --model <map> quando a flag está presente',
   )
-  console.log(`\n  new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]`)
+  console.log(
+    `\n  new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]`,
+  )
   console.log('    cria um worktree NEUTRO (sem função pré-definida) DIFERENTE a cada invocação:')
   console.log('    com bag, branch work/<bag> (sufixo -2/-3 se o nome já existir); sem bag, o')
   console.log('    próximo work/<n> sequencial livre; o prefixo minúsculo work/… nunca colide com')
@@ -903,7 +910,9 @@ if (!subcommand) {
   console.log(
     '    terminal, mesma diretiva `launch` porém sem --prompt (apenas conversar) e --model <map> quando a flag está presente',
   )
-  console.log(`\n  fix [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba]`)
+  console.log(
+    `\n  fix [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]`,
+  )
   console.log('    cria um worktree de CORREÇÃO DE BUG (skill /bug-fix) DIFERENTE a cada')
   console.log('    invocação: com bag (a descrição do bug), branch fix/<bag> (sufixo -2/-3 se o')
   console.log('    nome já existir); sem bag, o próximo fix/<n> sequencial livre; o prefixo')
