@@ -110,6 +110,13 @@ const openDatePicker = (label: string) => {
 }
 
 beforeAll(() => {
+  /*
+   * The fixtures (and the submitted `startAt`) live in August 2026 and the
+   * calendar picker opens on the CURRENT month: pin the clock to the fixture
+   * month so the day buttons stay reachable no matter when the suite runs.
+   */
+  vi.useFakeTimers({ shouldAdvanceTime: true })
+  vi.setSystemTime(new Date('2026-08-10T15:00:00.000Z'))
   vi.stubGlobal(
     'ResizeObserver',
     class {
@@ -121,6 +128,7 @@ beforeAll(() => {
 })
 
 afterAll(() => {
+  vi.useRealTimers()
   vi.unstubAllGlobals()
 })
 
