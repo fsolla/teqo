@@ -1263,6 +1263,15 @@ test.describe('Campaign home content section', () => {
       // Instagram cards render the 1:1 cover of the approved draft.
       await expect(featured.locator('.aspect-square').first()).toBeVisible()
 
+      // Long captions are clamped with an ellipsis so a single post cannot
+      // stretch the bento row (production captions run into hundreds of
+      // characters; the stub's reel caption is deliberately long).
+      const longCaptionTitle = section
+        .getByRole('link', { name: /E2e Reel da caravana/ })
+        .locator('h3')
+      await expect(longCaptionTitle).toHaveCSS('-webkit-line-clamp', '3')
+      await expect(longCaptionTitle).toHaveCSS('overflow', 'hidden')
+
       await expect(
         section.getByRole('link', { name: /E2e Artigo no mix IG/ }).first(),
       ).toBeVisible()
