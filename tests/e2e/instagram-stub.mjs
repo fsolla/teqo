@@ -36,7 +36,13 @@ const POSTS = [
   },
   {
     id: 'e2e-ig-reel-2',
-    caption: 'E2e Reel da caravana',
+    // Deliberately long: the card must clamp the caption (line-clamp) instead
+    // of stretching the bento row — production captions run into hundreds of
+    // characters.
+    caption:
+      'E2e Reel da caravana — legenda longa de propósito para o card não esticar. ' +
+      'A caminhada segue pelo interior da Bahia, com caravanas, encontros, ' +
+      'reuniões e muito trabalho de base em cada município visitado. '.repeat(4),
     media_type: 'REEL',
     minutesAgo: 90,
   },

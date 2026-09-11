@@ -56,14 +56,16 @@ export const CampaignContentCard = ({ card, featured = false }: CampaignContentC
       </div>
       <div className="flex flex-1 flex-col gap-1 p-3">
         <h3
-          className={`leading-snug font-bold text-(--campaign-ink) group-hover:underline ${
+          className={`line-clamp-3 leading-snug font-bold text-(--campaign-ink) group-hover:underline ${
             featured ? 'text-base' : 'text-sm'
           }`}
         >
           {card.title}
         </h3>
         {featured && card.subtitle ? (
-          <p className="text-xs leading-relaxed text-(--campaign-muted)">{card.subtitle}</p>
+          <p className="line-clamp-2 text-xs leading-relaxed text-(--campaign-muted)">
+            {card.subtitle}
+          </p>
         ) : null}
         <span className="mt-auto text-xs text-(--campaign-muted)">{card.meta}</span>
       </div>
