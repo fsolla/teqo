@@ -163,13 +163,13 @@ Estado da conexão é **derivado** (nunca armazenado), função de `oauthRefresh
 
 ## Débitos (triage do /simplify)
 
-| ID  | Achado                                                              | Score | Tipo          | Destino                                                       |
-| --- | ------------------------------------------------------------------- | ----- | ------------- | ------------------------------------------------------------- |
-| S1  | Cookie HMAC — 3ª cópia (`googleCalendarOAuth` vs WebAuthn vs import) | 3     | defer_trigger | Defer: extrair `signedCampaignCookie` no 4º cookie assinado ou no próximo toque de um dos três |
-| S2  | Refresh token OAuth em texto puro no DB                             | 3     | defer_trigger | Defer: cifrar em repouso quando compliance/counsel exigir (o campo já é `read: false` e o precedente do repo é texto puro) |
-| S3  | Upsert do singleton sem constraint única                            | 2     | defer_trigger | Defer para **C150** (dono do `calendarId`): decidir constraint se twins virarem risco real |
-| S4  | Helper de env dos testes duplicado em 3 specs                       | 2     | cheap_polish  | Descartado (barato, local; os specs estão verdes)              |
-| S5  | `docToView` com 3 flags posicionais                                 | 1     | cheap_polish  | Descartado (cosmético)                                         |
+| ID  | Achado                                                               | Score | Tipo          | Destino                                                                                                                    |
+| --- | -------------------------------------------------------------------- | ----- | ------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| S1  | Cookie HMAC — 3ª cópia (`googleCalendarOAuth` vs WebAuthn vs import) | 3     | defer_trigger | Defer: extrair `signedCampaignCookie` no 4º cookie assinado ou no próximo toque de um dos três                             |
+| S2  | Refresh token OAuth em texto puro no DB                              | 3     | defer_trigger | Defer: cifrar em repouso quando compliance/counsel exigir (o campo já é `read: false` e o precedente do repo é texto puro) |
+| S3  | Upsert do singleton sem constraint única                             | 2     | defer_trigger | Defer para **C150** (dono do `calendarId`): decidir constraint se twins virarem risco real                                 |
+| S4  | Helper de env dos testes duplicado em 3 specs                        | 2     | cheap_polish  | Descartado (barato, local; os specs estão verdes)                                                                          |
+| S5  | `docToView` com 3 flags posicionais                                  | 1     | cheap_polish  | Descartado (cosmético)                                                                                                     |
 
 - **Já resolvido no simplify (não reabrir):** índice em `oauthConnectedAt` removido; `failure()` sem diagnóstico falso; copy do card ajustada; `Date.parse` na derivação; guarda do `parseAccessToken`; validação de escopo concedido; prefixo morto do manifest; callback grava erro só do exchange; `runAction` no dialog; classify puro `oauthErrorPatchFor`; serialização int.
 - **Explicitamente fora:** criptografia do refresh token agora; revogação remota no Google (só orientação); rate limiting nas rotas OAuth; verificação completa do app Google; aposentadoria da service account.

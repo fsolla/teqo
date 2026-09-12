@@ -52,13 +52,10 @@ import {
 } from '@/utilities/googleCalendarOAuth'
 import { recordGoogleCalendarOAuthConnection } from '@/utilities/googleCalendarSync'
 
-import {
-  GOOGLE_CALENDAR_SYNC_LOCK_KEY,
-  serializeSpecWithAdvisoryLock,
-} from '../helpers/advisoryLock'
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { serializeGoogleCalendarSyncSpec } from '../helpers/googleCalendarSyncLock'
 
-serializeSpecWithAdvisoryLock(GOOGLE_CALENDAR_SYNC_LOCK_KEY)
+serializeGoogleCalendarSyncSpec()
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
