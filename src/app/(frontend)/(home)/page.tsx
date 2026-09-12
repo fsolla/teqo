@@ -7,6 +7,7 @@ import { CampaignProblemCard } from '@/components/CampaignProblemCard'
 import { CampaignStorySection } from '@/components/CampaignStorySection'
 import { getCampaignHomeMetaPixelId } from '@/utilities/campaignHomeTracking'
 import type { ReactNode } from 'react'
+import { CampaignCardsSection } from './CampaignCardsSection'
 import { CampaignNewsletterSection } from './CampaignNewsletterSection'
 
 /**
@@ -236,6 +237,7 @@ export default async function HomePage() {
 
         <CampaignStorySection />
         <CampaignNewsletterSection pixelId={pixelId ?? undefined} />
+        <CampaignCardsSection />
       </main>
 
       <CampaignFooter />

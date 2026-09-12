@@ -1,0 +1,126 @@
+/**
+ * S13 — pure cover/pan/zoom math for the photo card models. The visitor photo
+ * is drawn full-bleed under the master overlay and must always cover the
+ * transparent window: `clampCardPhotoTransform` keeps the zoom inside
+ * [1, 4] and pins the offsets so no gap can open at the window edges.
+ *
+ * `centerCardPhotoTransform` is the initial framing (cover on the window, not
+ * on the whole card) so the face lands on the visible area of the frame.
+ */
+
+import type { CardRect } from './cardModels'
+
+export const CARD_PHOTO_MIN_ZOOM = 1
+export const CARD_PHOTO_MAX_ZOOM = 4
+
+export type CardPhotoSize = {
+  width: number
+  height: number
+}
+
+export type CardPhotoTransform = {
+  zoom: number
+  offsetX: number
+  offsetY: number
+}
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(Math.max(value, min), max)
+
+export const coverScale = (source: CardPhotoSize, window: CardRect): number => {
+  if (source.width <= 0 || source.height <= 0 || window.width <= 0 || window.height <= 0) return 1
+
+  return Math.max(window.width / source.width, window.height / source.height)
+}
+
+export const cardPhotoDrawRect = (
+  transform: CardPhotoTransform,
+  source: CardPhotoSize,
+  window: CardRect,
+): CardRect => {
+  const clamped = clampCardPhotoTransform(transform, source, window)
+  const scale = coverScale(source, window) * clamped.zoom
+
+  return {
+    x: clamped.offsetX,
+    y: clamped.offsetY,
+    width: source.width * scale,
+    height: source.height * scale,
+  }
+}
+
+export const clampCardPhotoTransform = (
+  transform: CardPhotoTransform,
+  source: CardPhotoSize,
+  window: CardRect,
+): CardPhotoTransform => {
+  const zoom = clamp(transform.zoom, CARD_PHOTO_MIN_ZOOM, CARD_PHOTO_MAX_ZOOM)
+  const scale = coverScale(source, window) * zoom
+  const width = source.width * scale
+  const height = source.height * scale
+
+  return {
+    zoom,
+    offsetX: clamp(transform.offsetX, window.x + window.width - width, window.x),
+    offsetY: clamp(transform.offsetY, window.y + window.height - height, window.y),
+  }
+}
+
+export const centerCardPhotoTransform = (
+  source: CardPhotoSize,
+  window: CardRect,
+): CardPhotoTransform => {
+  const scale = coverScale(source, window)
+  const width = source.width * scale
+  const height = source.height * scale
+
+  return {
+    zoom: CARD_PHOTO_MIN_ZOOM,
+    offsetX: window.x + (window.width - width) / 2,
+    offsetY: window.y + (window.height - height) / 2,
+  }
+}
+
+/** Nudges the offset by a step in card pixels, clamped to the window. */
+export const panCardPhotoTransform = (
+  transform: CardPhotoTransform,
+  source: CardPhotoSize,
+  window: CardRect,
+  dx: number,
+  dy: number,
+): CardPhotoTransform =>
+  clampCardPhotoTransform(
+    { ...transform, offsetX: transform.offsetX + dx, offsetY: transform.offsetY + dy },
+    source,
+    window,
+  )
+
+/**
+ * Rescales around a window anchor (used by the zoom control): keeps the point
+ * under `anchor` stable from old to new zoom, then clamps.
+ */
+export const zoomCardPhotoTransform = (
+  transform: CardPhotoTransform,
+  source: CardPhotoSize,
+  window: CardRect,
+  nextZoom: number,
+  anchor: { x: number; y: number } = {
+    x: window.x + window.width / 2,
+    y: window.y + window.height / 2,
+  },
+): CardPhotoTransform => {
+  const zoom = clamp(nextZoom, CARD_PHOTO_MIN_ZOOM, CARD_PHOTO_MAX_ZOOM)
+  if (zoom === transform.zoom) return clampCardPhotoTransform(transform, source, window)
+
+  const ratio = zoom / transform.zoom
+
+  return clampCardPhotoTransform(
+    {
+      zoom,
+      offsetX: anchor.x - (anchor.x - transform.offsetX) * ratio,
+      offsetY: anchor.y - (anchor.y - transform.offsetY) * ratio,
+    },
+    source,
+    window,
+  )
+}
