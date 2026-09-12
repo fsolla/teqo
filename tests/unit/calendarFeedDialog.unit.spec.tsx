@@ -6,6 +6,8 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 
 type DialogProps = Parameters<typeof CalendarFeedDialog>[0]
 
+const FEED_URL = 'https://teqo.dev/campanha/agenda/ical/secret'
+
 const renderDialog = (overrides: Partial<DialogProps> = {}) => {
   const onCreateFeed = vi.fn()
   const onRevokeFeed = vi.fn()
@@ -72,7 +74,6 @@ describe('CalendarFeedDialog (C93 — no filters needed)', () => {
   })
 
   it('creates the filterless feed through onCreateFeed with the chosen label', async () => {
-    const FEED_URL = 'https://teqo.dev/campanha/agenda/ical/secret'
     const { onCreateFeed } = renderDialog()
     onCreateFeed.mockResolvedValue({ ok: true, feedUrl: FEED_URL })
 
@@ -84,5 +85,36 @@ describe('CalendarFeedDialog (C93 — no filters needed)', () => {
 
     await waitFor(() => expect(onCreateFeed).toHaveBeenCalledWith('Agenda completa'))
     await within(dialog).findByDisplayValue(FEED_URL)
+  })
+
+  it('mantém o conteúdo no corpo rolável e as ações no rodapé (C148)', () => {
+    renderDialog()
+
+    const dialog = screen.getByRole('dialog')
+    const body = dialog.querySelector('[data-slot="dialog-scroll-body"]')
+    const footer = dialog.querySelector('[data-slot="dialog-footer"]')
+    expect(body).toBeTruthy()
+    expect(footer).toBeTruthy()
+    expect(body!.contains(screen.getByLabelText('Nome do feed'))).toBe(true)
+    expect(body!.contains(screen.getByRole('button', { name: 'Gerar link' }))).toBe(false)
+    expect(footer!.contains(screen.getByRole('button', { name: 'Gerar link' }))).toBe(true)
+  })
+
+  it('no estado criado, o link fica no corpo e as ações no rodapé (C148)', async () => {
+    const { onCreateFeed } = renderDialog()
+    onCreateFeed.mockResolvedValue({ ok: true, feedUrl: FEED_URL })
+
+    const dialog = screen.getByRole('dialog')
+    fireEvent.change(within(dialog).getByLabelText('Nome do feed'), {
+      target: { value: 'Agenda completa' },
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Gerar link' }))
+
+    const link = await within(dialog).findByDisplayValue(FEED_URL)
+    const body = dialog.querySelector('[data-slot="dialog-scroll-body"]')
+    const footer = dialog.querySelector('[data-slot="dialog-footer"]')
+    expect(body!.contains(link)).toBe(true)
+    expect(body!.contains(screen.getByRole('link', { name: /Abrir Google Calendar/ }))).toBe(false)
+    expect(footer!.contains(screen.getByRole('link', { name: /Abrir Google Calendar/ }))).toBe(true)
   })
 })

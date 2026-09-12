@@ -99,7 +99,10 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/utilities/activityOmnibox',
       'src/lib/activityQuickActions',
     ],
-    specs: ['campaignActivity'],
+    // C148 — the activity components host the agenda's three modals: the
+    // create/edit overlay (campaignActivity), the Google sync dialog and the
+    // iCal feed dialog. A change there must wake all three surfaces.
+    specs: ['campaignActivity', 'campaignAgendaGoogleSync', 'campaignAgendaFeed'],
   },
   {
     prefixes: [

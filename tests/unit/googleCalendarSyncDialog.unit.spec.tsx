@@ -21,6 +21,19 @@ const syncedState = (
   ...overrides,
 })
 
+const notConfiguredState = (): GoogleCalendarSyncActionResult => ({
+  ok: true,
+  status: 'not-configured',
+  calendarId: null,
+  lastSyncedAt: null,
+  lastSuccessAt: null,
+  lastErrorAt: null,
+  lastError: null,
+  pushChannelExpiresAt: null,
+  pushChannelError: null,
+  addLink: null,
+})
+
 const renderDialog = (state: GoogleCalendarSyncActionResult) =>
   render(
     <GoogleCalendarSyncDialog
@@ -86,20 +99,33 @@ describe('GoogleCalendarSyncDialog — seção "Edições pelo Google" (C115)', 
   })
 
   it('não mostra a seção no estado não configurado', () => {
-    renderDialog({
-      ok: true,
-      status: 'not-configured',
-      calendarId: null,
-      lastSyncedAt: null,
-      lastSuccessAt: null,
-      lastErrorAt: null,
-      lastError: null,
-      pushChannelExpiresAt: null,
-      pushChannelError: null,
-      addLink: null,
-    })
+    renderDialog(notConfiguredState())
     const dialog = screen.getByRole('dialog', { name: /Agenda da Campanha no Google/ })
     expect(within(dialog).queryByText(/Edições pelo Google/)).toBeNull()
+  })
+})
+
+describe('GoogleCalendarSyncDialog — encaixe desktop (C148)', () => {
+  it('mantém o conteúdo no corpo rolável e as ações no rodapé', () => {
+    renderDialog(syncedState())
+
+    const dialog = screen.getByRole('dialog', { name: /Agenda da Campanha no Google/ })
+    const body = dialog.querySelector('[data-slot="dialog-scroll-body"]')
+    const footer = dialog.querySelector('[data-slot="dialog-footer"]')
+    expect(body).toBeTruthy()
+    expect(footer).toBeTruthy()
+    expect(body!.contains(screen.getByText(/Edições pelo Google/))).toBe(true)
+    expect(body!.contains(screen.getByRole('button', { name: /Sincronizar agora/ }))).toBe(false)
+    expect(footer!.contains(screen.getByRole('button', { name: /Sincronizar agora/ }))).toBe(true)
+    expect(footer!.contains(screen.getByRole('button', { name: 'Desativar' }))).toBe(true)
+  })
+
+  it('não renderiza rodapé quando não há ação (não configurado)', () => {
+    renderDialog(notConfiguredState())
+
+    const dialog = screen.getByRole('dialog', { name: /Agenda da Campanha no Google/ })
+    expect(dialog.querySelector('[data-slot="dialog-footer"]')).toBeNull()
+    expect(dialog.querySelector('[data-slot="dialog-scroll-body"]')).toBeTruthy()
   })
 })
 

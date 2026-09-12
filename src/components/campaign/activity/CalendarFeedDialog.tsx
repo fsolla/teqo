@@ -92,125 +92,123 @@ export const CalendarFeedDialog = ({
     onOpenChange(false)
   }
 
-  const body = (
+  const content = createdUrl ? (
     <>
-      {createdUrl ? (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="feed-url">
-              Link de import
-            </label>
-            <div className="flex gap-2">
-              <Input id="feed-url" value={createdUrl} readOnly className="font-mono text-xs" />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={handleCopy}
-                aria-label="Copiar link"
-              >
-                <CopyIcon className="h-4 w-4" />
-              </Button>
-            </div>
-            {copied && <p className="text-xs text-green-600">Link copiado!</p>}
-          </div>
-
-          <div className="rounded-lg bg-muted p-4 text-sm">
-            <p className="mb-2 font-medium">Como adicionar ao Google Calendar:</p>
-            <ol className="list-inside list-decimal space-y-1 text-muted-foreground">
-              <li>Abra o Google Calendar no computador</li>
-              <li>
-                No menu lateral, clique em {'"'}
-                {'+'}
-                {'"'} ao lado de {'"'}Outras agendas{'"'}
-              </li>
-              <li>
-                Selecione {'"'}Por URL{'"'}
-              </li>
-              <li>
-                Cole o link acima e clique em {'"'}Adicionar agenda{'"'}
-              </li>
-            </ol>
-          </div>
-
-          <div className="flex justify-end gap-2">
-            {!isMobile ? (
-              <Button type="button" variant="outline" onClick={() => handleClose(false)}>
-                Fechar
-              </Button>
-            ) : null}
-            <Button asChild>
-              <a
-                href="https://calendar.google.com/calendar/u/0/r/settings/addbyurl"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <ExternalLinkIcon className="mr-2 h-4 w-4" />
-                Abrir Google Calendar
-              </a>
-            </Button>
-          </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium" htmlFor="feed-url">
+          Link de import
+        </label>
+        <div className="flex gap-2">
+          <Input id="feed-url" value={createdUrl} readOnly className="font-mono text-xs" />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={handleCopy}
+            aria-label="Copiar link"
+          >
+            <CopyIcon className="h-4 w-4" />
+          </Button>
         </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="feed-label" className="text-sm font-medium">
-              Nome do feed
-            </label>
-            <Input
-              id="feed-label"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder="Ex: Só deputado presente"
-              maxLength={120}
-              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-            />
-            <p className="text-xs text-muted-foreground">
-              Um nome para identificar este feed (ex: {'"'}Agenda do candidato{'"'}, {'"'}
-              Reuniões em Salvador{'"'})
-            </p>
-          </div>
+        {copied && <p className="text-xs text-green-600">Link copiado!</p>}
+      </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="rounded-lg bg-muted p-4 text-sm">
+        <p className="mb-2 font-medium">Como adicionar ao Google Calendar:</p>
+        <ol className="list-inside list-decimal space-y-1 text-muted-foreground">
+          <li>Abra o Google Calendar no computador</li>
+          <li>
+            No menu lateral, clique em {'"'}
+            {'+'}
+            {'"'} ao lado de {'"'}Outras agendas{'"'}
+          </li>
+          <li>
+            Selecione {'"'}Por URL{'"'}
+          </li>
+          <li>
+            Cole o link acima e clique em {'"'}Adicionar agenda{'"'}
+          </li>
+        </ol>
+      </div>
+    </>
+  ) : (
+    <>
+      <div className="space-y-2">
+        <label htmlFor="feed-label" className="text-sm font-medium">
+          Nome do feed
+        </label>
+        <Input
+          id="feed-label"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder="Ex: Só deputado presente"
+          maxLength={120}
+          onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+        />
+        <p className="text-xs text-muted-foreground">
+          Um nome para identificar este feed (ex: {'"'}Agenda do candidato{'"'}, {'"'}
+          Reuniões em Salvador{'"'})
+        </p>
+      </div>
 
-          {feeds.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Seus feeds ativos</p>
-              <ul className="space-y-1">
-                {feeds.map((feed) => (
-                  <li
-                    key={feed.id}
-                    className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
-                  >
-                    <span>{feed.label}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => void onRevokeFeed(feed.id)}
-                      aria-label={`Revogar feed ${feed.label}`}
-                    >
-                      <Trash2Icon className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <div className="flex justify-end gap-2">
-            {!isMobile ? (
-              <Button type="button" variant="outline" onClick={() => handleClose(false)}>
-                Cancelar
-              </Button>
-            ) : null}
-            <Button type="button" onClick={handleCreate} disabled={!label.trim() || isCreating}>
-              {isCreating ? 'Gerando...' : 'Gerar link'}
-            </Button>
-          </div>
+      {feeds.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Seus feeds ativos</p>
+          <ul className="space-y-1">
+            {feeds.map((feed) => (
+              <li
+                key={feed.id}
+                className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
+              >
+                <span>{feed.label}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => void onRevokeFeed(feed.id)}
+                  aria-label={`Revogar feed ${feed.label}`}
+                >
+                  <Trash2Icon className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </>
+  )
+
+  const actions = createdUrl ? (
+    <div className="flex justify-end gap-2">
+      {!isMobile ? (
+        <Button type="button" variant="outline" onClick={() => handleClose(false)}>
+          Fechar
+        </Button>
+      ) : null}
+      <Button asChild>
+        <a
+          href="https://calendar.google.com/calendar/u/0/r/settings/addbyurl"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <ExternalLinkIcon className="mr-2 h-4 w-4" />
+          Abrir Google Calendar
+        </a>
+      </Button>
+    </div>
+  ) : (
+    <div className="flex justify-end gap-2">
+      {!isMobile ? (
+        <Button type="button" variant="outline" onClick={() => handleClose(false)}>
+          Cancelar
+        </Button>
+      ) : null}
+      <Button type="button" onClick={handleCreate} disabled={!label.trim() || isCreating}>
+        {isCreating ? 'Gerando...' : 'Gerar link'}
+      </Button>
+    </div>
   )
 
   if (isMobile) {
@@ -224,7 +222,12 @@ export const CalendarFeedDialog = ({
               Teqo serão refletidas automaticamente.
             </DrawerDescription>
           </DrawerHeader>
-          <div className="overflow-y-auto px-4 pb-2">{body}</div>
+          <div className="overflow-y-auto px-4 pb-2">
+            <div className="space-y-4">
+              {content}
+              {actions}
+            </div>
+          </div>
           <DrawerFooter className="border-t">
             <DrawerCloseButton className="w-full">Fechar</DrawerCloseButton>
           </DrawerFooter>
@@ -235,15 +238,23 @@ export const CalendarFeedDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl sm:p-0">
+        <DialogHeader className="shrink-0 border-b px-6 py-4 pr-12 text-left">
           <DialogTitle>Sincronizar com Google Calendar</DialogTitle>
           <DialogDescription>
             Gere um link de import para sincronizar a agenda com o Google Calendar. Alterações em
             Teqo serão refletidas automaticamente.
           </DialogDescription>
         </DialogHeader>
-        {body}
+        <div
+          data-slot="dialog-scroll-body"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4"
+        >
+          <div className="space-y-4">{content}</div>
+        </div>
+        <div data-slot="dialog-footer" className="shrink-0 border-t px-6 py-4">
+          {actions}
+        </div>
       </DialogContent>
     </Dialog>
   )

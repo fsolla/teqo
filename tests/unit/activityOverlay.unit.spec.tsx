@@ -317,6 +317,20 @@ describe('ActivityOverlay — criação (modal central)', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
     expect(mocks.createOverlay).not.toHaveBeenCalled()
   })
+
+  it('no modal desktop, mantém o conteúdo no corpo rolável e as ações no rodapé (C148)', () => {
+    renderOverlay({ agendaState: { municipality: 12 } })
+
+    const dialog = screen.getByRole('dialog', { name: 'Nova atividade' })
+    const body = dialog.querySelector('[data-slot="dialog-scroll-body"]')
+    const footer = dialog.querySelector('[data-slot="dialog-footer"]')
+    expect(body).toBeTruthy()
+    expect(footer).toBeTruthy()
+    expect(body!.contains(screen.getByLabelText('Título *'))).toBe(true)
+    expect(body!.contains(screen.getByRole('button', { name: 'Salvar' }))).toBe(false)
+    expect(footer!.contains(screen.getByRole('button', { name: 'Salvar' }))).toBe(true)
+    expect(footer!.contains(screen.getByRole('button', { name: 'Cancelar' }))).toBe(true)
+  })
 })
 
 describe('ActivityOverlay — edição (modal central)', () => {

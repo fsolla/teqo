@@ -151,7 +151,7 @@ export const ActivityDateTimeField = ({
           ['Minuto', minute, setMinute],
         ] as const
       ).map(([part, value, onChange]) => (
-        <div key={part} className={cn('flex flex-col gap-1', isNarrow ? 'w-16' : 'w-20')}>
+        <div key={part} className="flex w-16 flex-col gap-1">
           {!isNarrow ? (
             <span className="text-xs font-medium text-muted-foreground select-none">{part}</span>
           ) : null}

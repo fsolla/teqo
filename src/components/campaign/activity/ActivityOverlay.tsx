@@ -436,11 +436,7 @@ const ActivityOverlayForm = ({
   const demandsSection = <ActivityDemandFields error={errorFor('demandsJson')} />
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      noValidate
-      className={sheet ? 'flex min-h-0 flex-1 flex-col' : 'flex flex-col'}
-    >
+    <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
       {isEdit ? <input type="hidden" name="id" value={editDraft?.id ?? ''} /> : null}
       <input type="hidden" name="status" value="confirmado" />
       {allDay ? <input type="hidden" name="allDay" value="on" /> : null}
@@ -449,10 +445,11 @@ const ActivityOverlayForm = ({
       <input type="hidden" name="municipality" value={municipalityValue} />
 
       <div
+        data-slot="dialog-scroll-body"
         className={
           sheet
             ? 'min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-6'
-            : 'max-h-[calc(100dvh-14rem)] flex-1 overflow-y-auto overscroll-contain p-6'
+            : 'min-h-0 flex-1 overflow-y-auto overscroll-contain p-6'
         }
       >
         {sheet ? (
@@ -518,6 +515,7 @@ const ActivityOverlayForm = ({
       </div>
 
       <div
+        data-slot="dialog-footer"
         className={
           sheet
             ? 'flex shrink-0 items-center justify-between gap-3 border-t px-4 py-3'
@@ -598,8 +596,8 @@ export const ActivityOverlay = ({
       </Drawer>
     ) : (
       <Dialog open onOpenChange={(next) => (next ? undefined : onClose())}>
-        <DialogContent className="flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col gap-0 overflow-hidden p-0">
-          <DialogHeader className="border-b px-6 py-4">
+        <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl sm:p-0">
+          <DialogHeader className="shrink-0 border-b px-6 py-4">
             <DialogTitle>{isEdit ? 'Editar atividade' : 'Nova atividade'}</DialogTitle>
             {request.kind === 'create' ? (
               <DialogDescription>{formatBahiaDateTimeLabel(request.startAt)}</DialogDescription>
