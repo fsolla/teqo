@@ -189,11 +189,30 @@ describe('ESLint conventions', () => {
   it('allows async function and type-only exports from use server modules', async () => {
     await expectValid(
       'src/app/(campaign)/campanha/actions/futureAction.ts',
-      `'use server'\n\nexport type Result = { ok: true }\nexport const save = async () => ({ ok: true as const })\nexport async function load() { return 1 }\n`,
+      `'use server'\nexport type Result = { ok: true }\nexport const save = async () => ({ ok: true as const })\nexport async function load() { return 1 }\n`,
     )
     await expectValid(
       'src/app/(campaign)/campanha/(app)/municipios/municipalityStaffEditMessages.ts',
       `export const municipalityStaffEditSafeMessages = ['x'] as const\n`,
+    )
+  })
+
+  it('bans hardcoded ISO fixture dates in e2e specs but not state timestamps', async () => {
+    await expectInvalid(
+      'tests/e2e/futureFixture.e2e.spec.ts',
+      `const fixture = { startAt: '2026-09-01T13:00:00.000Z' }`,
+      'no-restricted-syntax',
+    )
+    await expectInvalid(
+      'tests/e2e/futureFixture.e2e.spec.ts',
+      `const fixture = { endDate: '2026-09-01T13:00:00.000Z' }`,
+      'no-restricted-syntax',
+    )
+    // `disabledAt`/`lastSyncedAt` are the state under test, not a time window;
+    // a computed `startAt` is exactly the sanctioned derivation.
+    await expectValid(
+      'tests/e2e/futureFixture.e2e.spec.ts',
+      `const fixture = { disabledAt: '2026-08-11T00:00:00.000Z' }\nconst startAt = 'dynamic'\nconst activity = { startAt }`,
     )
   })
 })

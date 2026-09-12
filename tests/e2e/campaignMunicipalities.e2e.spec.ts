@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test'
 
 import { SUPPORTER_REGISTRATION_CONSENT_KEY } from '../../src/lib/campaignConsentKeys.js'
+import { formatBahiaCivilDate, parseBahiaDateTimeInput } from '../../src/lib/campaignTime.js'
 import { fallbackDemandTitle } from '../../src/lib/demandTitle.js'
 import { hookFilledCreateData } from '../../src/utilities/hookFilledData.js'
 import {
@@ -24,6 +25,7 @@ import {
   assertThreeColumnActionGrid,
   collectActionBoundingBoxes,
 } from './helpers/actionGridGeometry.js'
+import { civilDatePlusDays } from './helpers/agendaPeriodLabels.js'
 
 const showAllMunicipalityColumns = (page: Page, url: string) =>
   page.context().addCookies([
@@ -1496,6 +1498,14 @@ test.describe('Municípios — barra colada e card denso (B196)', () => {
       name: fixtures.value('Coordenadora B196 Ativ'),
     })
     const municipality = await fixtures.claimMunicipality()
+    // The default tab (`proximos`) only lists `confirmado` activities with
+    // `startAt >= now`, so the fixture start must be derived from "today" —
+    // a hardcoded date empties the list once it expires (deploy verify
+    // 2026-09-11: `scrollHeight - clientHeight` stuck at 0 on all retries).
+    const startAt = parseBahiaDateTimeInput(
+      `${civilDatePlusDays(formatBahiaCivilDate(new Date()), 7)}T13:00`,
+    )
+    if (!startAt) throw new Error('Falha ao montar horário da fixture de atividades.')
     // Enough rows to make the scrollport scrollable once the top bar takes over.
     for (let i = 0; i < 5; i++) {
       await fixtures.payload.create({
@@ -1503,7 +1513,7 @@ test.describe('Municípios — barra colada e card denso (B196)', () => {
         data: hookFilledCreateData<'activity'>({
           title: `Atividade B196 ${fixtures.value('x')}`,
           status: 'confirmado',
-          startAt: '2026-09-01T13:00:00.000Z',
+          startAt,
           municipality: municipality.id,
           responsible: [{ relationTo: 'campaignUser', value: coordinator.id }],
         }),
@@ -1524,10 +1534,14 @@ test.describe('Municípios — barra colada e card denso (B196)', () => {
     const headerBottomValue = await headerBottom(topBar)
     expect((await form.boundingBox())!.y).toBeGreaterThan(headerBottomValue)
 
-    // The scrollport must actually scroll for the sticky to engage.
+    // The scrollport must actually scroll for the sticky to engage. Same B196
+    // stream-latency class as the sibling polls: the list chunk can land late
+    // under 4-worker load, so use the 30s budget instead of the 10s default.
     const scrollport = contentScroll(page)
     await expect
-      .poll(() => scrollport.evaluate((el) => el.scrollHeight - el.clientHeight))
+      .poll(() => scrollport.evaluate((el) => el.scrollHeight - el.clientHeight), {
+        timeout: 30_000,
+      })
       .toBeGreaterThan(0)
     await scrollport.evaluate((el) => el.scrollTo(0, el.scrollHeight))
     await expect.poll(async () => (await form.boundingBox())!.y).toBe(headerBottomValue)

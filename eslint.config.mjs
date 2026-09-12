@@ -43,6 +43,22 @@ const noHardcodedConsentId = {
     'Never hardcode a Consent document id — resolve it by stable key via requireConsentByKey (keys in src/lib/campaignConsentKeys.ts).',
 }
 
+// E2E fixtures must derive dates from "today": a hardcoded ISO instant
+// silently expires once it stops matching a time-windowed default view. The
+// B196 activities fixture (`startAt: '2026-09-01...'`) emptied the default
+// `proximos` tab and blocked the 2026-09-11 deploy verify. Derive with
+// `civilDatePlusDays(formatBahiaCivilDate(new Date()), days)` +
+// `parseBahiaDateTimeInput` (tests/e2e/helpers/agendaPeriodLabels.ts,
+// src/lib/campaignTime.ts). Deliberately narrow (start*/end*/date* keys):
+// state timestamps like `disabledAt`/`lastSyncedAt` are the scenario under
+// test, not a time window.
+const noHardcodedE2eFixtureDate = {
+  selector:
+    "Property[key.name=/^(start|end|date)/][value.type='Literal'][value.raw=/20[0-9]{2}-[0-9]{2}-[0-9]{2}T/]",
+  message:
+    'Never hardcode a fixture date in e2e specs — derive it from today (civilDatePlusDays + parseBahiaDateTimeInput); a literal expires and empties time-windowed lists (B196 deploy verify, 2026-09-11).',
+}
+
 const eslintConfig = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
@@ -210,6 +226,15 @@ const eslintConfig = [
     files: ['src/migrations/**/*.ts'],
     rules: {
       '@typescript-eslint/no-unused-vars': ['warn', { args: 'none' }],
+    },
+  },
+  {
+    // E2E fixture dates must derive from "today" (B196 deploy verify,
+    // 2026-09-11): a hardcoded ISO instant expires and empties the
+    // time-windowed default view. Keeps the global as-never ban too.
+    files: ['tests/e2e/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': ['error', noAsNeverCast, noHardcodedE2eFixtureDate],
     },
   },
   prettier,
