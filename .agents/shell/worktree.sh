@@ -19,7 +19,7 @@
 # Modelo por invocação: `--cheap` (cheapestinference/deepseek-v4-flash),
 # `--pro` (deepseek/deepseek-v4-pro), `--zen` (opencode-go/ox-alpha-free),
 # `--go` (opencode-go/hy3), `--alibaba` (alibaba-token-plan/deepseek-v4-flash) no
-# mapa fixo `WORKTREE_MODEL_MAP` (OPS93 menu; valores OPS95); sem flag o preset `deepseek/deepseek-v4-flash`
+# mapa fixo `WORKTREE_MODEL_MAP` (OPS93 menu; valores OPS95); sem flag o preset `deepseek/deepseek-flash`
 # permanece. Sem `exec` de propósito: ao sair do opencode, o terminal volta ao
 # shell dentro do worktree. Presets são constantes em scripts/lib/worktree.mjs;
 # o marcador TEQO_WORKTREE_TERMINAL=1 é o que separa esta superfície da do comando

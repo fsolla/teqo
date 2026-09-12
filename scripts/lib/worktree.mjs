@@ -31,10 +31,12 @@ export const WORKTREE_TERMINAL_ENV = 'TEQO_WORKTREE_TERMINAL'
  * `--cheap/--pro/--zen/--go/--alibaba/--glm/--free` o mapa `WORKTREE_MODEL_MAP`
  * escolhe o modelo por invocação; sem flag o preset permanece. OPS95: sem
  * `--variant` na diretiva (o TUI rejeita o flag) — variantes ficam na config
- * global da máquina, via Ctrl+T.
+ * global da máquina, via Ctrl+T. OPS101: o fallback passou ao nome canônico
+ * `deepseek/deepseek-flash` (DeepSeek V4.1 Flash, lançado em 2026-09-10; o
+ * alias legado segue servido ao preço Flash, mas pode sumir sem aviso).
  */
 export const OPENCODE_PRESET_MODEL =
-  process.env.OPENCODE_WORKTREE_MODEL || 'deepseek/deepseek-v4-flash'
+  process.env.OPENCODE_WORKTREE_MODEL || 'deepseek/deepseek-flash'
 
 /**
  * Per-invocation model map — fixed menu of named flags (OPS93; values
