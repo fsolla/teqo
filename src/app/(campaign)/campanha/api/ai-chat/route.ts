@@ -59,7 +59,7 @@ export async function POST(req: Request) {
   })
 
   const result = streamText({
-    model: deepSeek('deepseek-v4-flash'),
+    model: deepSeek('deepseek-flash'),
     system: AI_SYSTEM_PROMPT,
     messages: strippedMessages,
     tools: buildAITools({ user, payload }),

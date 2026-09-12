@@ -28,7 +28,7 @@ export const deriveDemandTitle = async (
 
   try {
     const { text } = await generateText({
-      model: deepSeek('deepseek-v4-flash'),
+      model: deepSeek('deepseek-flash'),
       system: DEMAND_TITLE_SYSTEM_PROMPT,
       prompt: kind
         ? `Tipo: ${campaignDemandKindLabels[kind]}\nPedido: ${description}`
