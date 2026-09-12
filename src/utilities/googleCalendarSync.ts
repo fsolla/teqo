@@ -32,9 +32,15 @@ import { getCampaignInviteBaseURL } from '@/utilities/campaignInviteOrigin'
 import {
   createGoogleCalendarClient,
   GoogleCalendarApiError,
+  GoogleCalendarAuthError,
+  type GoogleCalendarAuth,
   type GoogleCalendarClient,
-  type GoogleCalendarCredentials,
+  type GoogleCalendarServiceAccountCredentials,
 } from '@/utilities/googleCalendarClient'
+import {
+  readGoogleCalendarOAuthCredentials,
+  type GoogleCalendarOAuthClientCredentials,
+} from '@/utilities/googleCalendarOAuth'
 
 /**
  * C114+C115 — the campaign↔Google calendar reconciliation engine.
@@ -57,6 +63,12 @@ import {
  * trigger also lazily ensures the push channel (D5). The engine NEVER throws
  * into the caller — failures land in the state fields and the status derives
  * to `paused`; the channel itself is best-effort and never pauses the mirror.
+ *
+ * C149 — the credential is now resolved by `readGoogleCalendarAuth`: the OAuth
+ * connection (refresh token stored on the config row) wins when present and
+ * the service account remains the fallback. A dead OAuth connection
+ * (`GoogleCalendarAuthError`) additionally records `oauthError`, which derives
+ * the connection `error` state that offers reconnect in one click.
  */
 
 export const GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV = 'GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY'
@@ -111,8 +123,16 @@ const SYNC_RELEVANT_ACTIVITY_FIELDS = [
 
 export type GoogleCalendarSyncStatus = 'not-configured' | 'disabled' | 'synced' | 'paused'
 
+export type GoogleCalendarConnectionStatus = 'connected' | 'error' | 'not-configured'
+
 export type GoogleCalendarSyncView = {
   status: GoogleCalendarSyncStatus
+  /** C149 — state of the OAuth connection (derived, never stored). */
+  connection: GoogleCalendarConnectionStatus
+  /** C149 — the OAuth client env is present, so the connect button can work. */
+  oauthAvailable: boolean
+  oauthConnectedAt: string | null
+  oauthError: string | null
   calendarId: string | null
   lastSyncedAt: string | null
   lastSuccessAt: string | null
@@ -143,42 +163,91 @@ export const deriveGoogleCalendarSyncStatus = (input: {
 }
 
 /**
+ * C149 — pure derivation of the connection state (the intent's literal
+ * `conectado | erro | não configurado`). An auth error newer than the last
+ * connection wins (including before any successful connection); a token
+ * without a newer error is connected; anything else is not configured. The
+ * state is never stored — reconnect clears the error fields and the state
+ * recovers by construction.
+ */
+export const deriveGoogleCalendarConnectionStatus = (input: {
+  hasRefreshToken: boolean
+  oauthConnectedAt?: string | null
+  oauthErrorAt?: string | null
+}): GoogleCalendarConnectionStatus => {
+  // Timestamps are compared as instants, not strings: a value persisted with
+  // a UTC offset (admin edit, fixture) would invert a lexical comparison.
+  const errorAt = input.oauthErrorAt ? Date.parse(input.oauthErrorAt) : Number.NaN
+  const connectedAt = input.oauthConnectedAt ? Date.parse(input.oauthConnectedAt) : Number.NaN
+  if (!Number.isNaN(errorAt) && (Number.isNaN(connectedAt) || errorAt > connectedAt)) {
+    return 'error'
+  }
+  return input.hasRefreshToken ? 'connected' : 'not-configured'
+}
+
+/**
  * Reads the service account credential from the environment (base64 of the
  * Google Cloud JSON key). Fail-closed: malformed/absent → null, which
  * disables the sync entirely without breaking anything else.
  */
-export const readGoogleServiceAccountCredentials = (): GoogleCalendarCredentials | null => {
-  const raw = process.env[GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV]
-  if (!raw) {
-    // Note: this function is called without payload context, so we use console.warn
-    // In production, this warning will appear in server logs
-    console.warn(
-      `[GoogleCalendarSync] ${GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV} não está definido no ambiente.`,
-    )
+export const readGoogleServiceAccountCredentials =
+  (): GoogleCalendarServiceAccountCredentials | null => {
+    const raw = process.env[GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV]
+    if (!raw) {
+      // Note: this function is called without payload context, so we use console.warn
+      // In production, this warning will appear in server logs
+      console.warn(
+        `[GoogleCalendarSync] ${GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV} não está definido no ambiente.`,
+      )
+      return null
+    }
+
+    try {
+      const parsed = JSON.parse(Buffer.from(raw, 'base64').toString('utf8')) as Record<
+        string,
+        unknown
+      >
+      if (
+        typeof parsed.client_email === 'string' &&
+        typeof parsed.private_key === 'string' &&
+        parsed.private_key.length > 0
+      ) {
+        return { clientEmail: parsed.client_email, privateKey: parsed.private_key }
+      }
+      console.warn(
+        `[GoogleCalendarSync] ${GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV} está malformado: client_email ou private_key ausente/vazio.`,
+      )
+    } catch {
+      console.warn(
+        `[GoogleCalendarSync] ${GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV} não é base64 válido ou JSON inválido.`,
+      )
+    }
     return null
   }
 
-  try {
-    const parsed = JSON.parse(Buffer.from(raw, 'base64').toString('utf8')) as Record<
-      string,
-      unknown
-    >
-    if (
-      typeof parsed.client_email === 'string' &&
-      typeof parsed.private_key === 'string' &&
-      parsed.private_key.length > 0
-    ) {
-      return { clientEmail: parsed.client_email, privateKey: parsed.private_key }
+/**
+ * C149 — resolves the credential the engine uses. The OAuth connection (when
+ * a refresh token is stored AND the client env is present) wins over the
+ * service account, which stays as the technical fallback. `null` means no
+ * credential at all — the fail-closed state that skips the sync.
+ */
+export const readGoogleCalendarAuth = (
+  doc: GoogleCalendarSyncDoc | null,
+  oauthClient: GoogleCalendarOAuthClientCredentials | null = readGoogleCalendarOAuthCredentials(),
+): GoogleCalendarAuth | null => {
+  if (doc?.oauthRefreshToken && oauthClient) {
+    return {
+      kind: 'oauth',
+      credentials: {
+        clientId: oauthClient.clientId,
+        clientSecret: oauthClient.clientSecret,
+        refreshToken: doc.oauthRefreshToken,
+      },
     }
-    console.warn(
-      `[GoogleCalendarSync] ${GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV} está malformado: client_email ou private_key ausente/vazio.`,
-    )
-  } catch {
-    console.warn(
-      `[GoogleCalendarSync] ${GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV} não é base64 válido ou JSON inválido.`,
-    )
   }
-  return null
+
+  const serviceAccount = readGoogleServiceAccountCredentials()
+  return serviceAccount ? { kind: 'service-account', credentials: serviceAccount } : null
 }
 
 export const loadGoogleCalendarSyncConfig = async (
@@ -187,26 +256,31 @@ export const loadGoogleCalendarSyncConfig = async (
 ): Promise<GoogleCalendarSyncDoc | null> => {
   // Intentional admin bypass: config/state of the mirror is read by the
   // engine and the agenda pill for any staff — access is enforced at the
-  // action layer, never per-read. The configured row wins: a stray empty
-  // row (staff can no longer create one, but legacy rows may exist) must
-  // never shadow the operational calendar (single-row invariant). The
-  // webhook route and the engine rely on this bypass for the channel
-  // identity fields, which no user path may read.
+  // action layer, never per-read. The webhook route and the engine rely on
+  // this bypass for the channel identity fields, which no user path may read.
+  //
+  // C149 — single-row read with a preference: the configured row (calendarId
+  // present) wins, and when none is configured the connection-only row is
+  // returned (fresh setup: the OAuth connection exists before C150 picks the
+  // calendar). The collection holds one row operationally; legacy extra docs
+  // must never shadow the operational calendar — same intentional admin bypass.
   const result = await payload.find({
     collection: 'googleCalendarSync',
-    limit: 1,
+    limit: 0,
     pagination: false,
     depth: 0,
-    where: { calendarId: { exists: true } },
+    sort: 'createdAt',
     overrideAccess: true,
     req,
   })
-  return result.docs[0] ?? null
+  const docs = result.docs
+  return docs.find((doc) => Boolean(doc.calendarId)) ?? docs[0] ?? null
 }
 
 const docToView = (
   doc: GoogleCalendarSyncDoc | null,
   hasCredential: boolean,
+  oauthAvailable: boolean,
 ): GoogleCalendarSyncView => ({
   status: deriveGoogleCalendarSyncStatus({
     hasCredential,
@@ -215,6 +289,14 @@ const docToView = (
     lastSuccessAt: doc?.lastSuccessAt ?? null,
     lastErrorAt: doc?.lastErrorAt ?? null,
   }),
+  connection: deriveGoogleCalendarConnectionStatus({
+    hasRefreshToken: Boolean(doc?.oauthRefreshToken),
+    oauthConnectedAt: doc?.oauthConnectedAt ?? null,
+    oauthErrorAt: doc?.oauthErrorAt ?? null,
+  }),
+  oauthAvailable,
+  oauthConnectedAt: doc?.oauthConnectedAt ?? null,
+  oauthError: doc?.oauthError ?? null,
   calendarId: doc?.calendarId ?? null,
   lastSyncedAt: doc?.lastSyncedAt ?? null,
   lastSuccessAt: doc?.lastSuccessAt ?? null,
@@ -228,11 +310,9 @@ const docToView = (
 export const readGoogleCalendarSyncView = async (
   payload: Payload,
 ): Promise<GoogleCalendarSyncView> => {
-  const [doc, credentials] = await Promise.all([
-    loadGoogleCalendarSyncConfig(payload),
-    readGoogleServiceAccountCredentials(),
-  ])
-  return docToView(doc, credentials !== null)
+  const doc = await loadGoogleCalendarSyncConfig(payload)
+  const oauthClient = readGoogleCalendarOAuthCredentials()
+  return docToView(doc, readGoogleCalendarAuth(doc, oauthClient) !== null, oauthClient !== null)
 }
 
 /**
@@ -638,6 +718,8 @@ type SyncStatePatch = Partial<
     | 'lastSuccessAt'
     | 'lastErrorAt'
     | 'lastError'
+    | 'oauthErrorAt'
+    | 'oauthError'
     | 'pushChannelId'
     | 'pushChannelResourceId'
     | 'pushChannelExpiresAt'
@@ -718,6 +800,100 @@ export const recordGoogleCalendarSyncError = async (
 ): Promise<void> => {
   const at = new Date().toISOString()
   await recordSyncState(payload, undefined, { lastErrorAt: at, lastError: message.slice(0, 500) })
+}
+
+/**
+ * C149 — persists the OAuth connection (the callback calls this after a
+ * successful code exchange). Creates the singleton connection row when the
+ * start action did not (fresh setup); clears every error field so the derived
+ * connection state recovers to `connected` by construction. The refresh token
+ * is system state, written with the admin bypass, and never returned here.
+ */
+export const recordGoogleCalendarOAuthConnection = async (
+  payload: Payload,
+  data: { refreshToken: string; scope: string | null },
+  req?: PayloadRequest,
+): Promise<void> => {
+  const at = new Date().toISOString()
+  const patch = {
+    oauthRefreshToken: data.refreshToken,
+    oauthScope: data.scope,
+    oauthConnectedAt: at,
+    oauthErrorAt: null,
+    oauthError: null,
+  }
+
+  const doc = await loadGoogleCalendarSyncConfig(payload, req)
+  if (doc) {
+    await payload.update({
+      collection: 'googleCalendarSync',
+      id: doc.id,
+      data: patch,
+      depth: 0,
+      // Intentional admin bypass: the connection is system state, unreadable
+      // by user paths; the caller checks the actor before getting here.
+      overrideAccess: true,
+      req,
+    })
+    return
+  }
+
+  await payload.create({
+    collection: 'googleCalendarSync',
+    data: patch,
+    depth: 0,
+    // Intentional admin bypass: same rationale as above.
+    overrideAccess: true,
+    req,
+  })
+}
+
+/**
+ * C149 — records a failed handshake (code exchange) so the UI shows the
+ * connection `error` with the reconnect path. Never throws into the callback:
+ * the failure is already being surfaced by the redirect.
+ */
+export const recordGoogleCalendarOAuthError = async (
+  payload: Payload,
+  message: string,
+): Promise<void> => {
+  const doc = await loadGoogleCalendarSyncConfig(payload)
+  if (!doc) return // nothing to record onto — the start action creates the row
+
+  const at = new Date().toISOString()
+  await payload.update({
+    collection: 'googleCalendarSync',
+    id: doc.id,
+    data: { oauthErrorAt: at, oauthError: message.slice(0, 500) },
+    depth: 0,
+    // Intentional admin bypass: connection state is system-only.
+    overrideAccess: true,
+  })
+}
+
+/**
+ * C149 — disconnect: drops the OAuth connection from the Teqo (the UI guides
+ * revoking the app access on the Google account). The service account, when
+ * configured, takes over on the next trigger — no sync pass is forced here.
+ */
+export const clearGoogleCalendarOAuthConnection = async (payload: Payload): Promise<void> => {
+  const doc = await loadGoogleCalendarSyncConfig(payload)
+  if (!doc) return
+
+  await payload.update({
+    collection: 'googleCalendarSync',
+    id: doc.id,
+    data: {
+      oauthRefreshToken: null,
+      oauthScope: null,
+      oauthConnectedAt: null,
+      oauthErrorAt: null,
+      oauthError: null,
+    },
+    depth: 0,
+    // Intentional admin bypass: the disconnect action checks the actor.
+    overrideAccess: true,
+  })
 }
 
 /** The push-channel webhook address; the URL secret IS the credential. */
@@ -827,6 +1003,20 @@ const ensureGoogleCalendarPushChannel = async (
   }
 }
 
+/**
+ * C149 — pure classification for the engine's catch: only a dead OAuth
+ * connection (`GoogleCalendarAuthError`, i.e. `invalid_grant`) also flips the
+ * connection to `error`; every other failure stays `paused` without touching
+ * the connection. Exported for the unit pin (the engine catch is I/O-bound).
+ */
+export const oauthErrorPatchFor = (
+  error: unknown,
+  at: string,
+): Pick<GoogleCalendarSyncDoc, 'oauthErrorAt' | 'oauthError'> | null =>
+  error instanceof GoogleCalendarAuthError
+    ? { oauthErrorAt: at, oauthError: error.message.slice(0, 500) }
+    : null
+
 export type CampaignCalendarSyncOutcome = SyncCounts & {
   status: GoogleCalendarSyncStatus
   at: string
@@ -853,20 +1043,20 @@ export const runCampaignCalendarSync = async (
   payload: Payload,
   options: CampaignCalendarSyncOptions,
 ): Promise<CampaignCalendarSyncOutcome> => {
-  const credentials = readGoogleServiceAccountCredentials()
   const config = await loadGoogleCalendarSyncConfig(payload, options.req)
+  const auth = readGoogleCalendarAuth(config)
   const at = new Date().toISOString()
 
-  if (!credentials || !config?.calendarId || config.disabledAt) {
+  if (!auth || !config?.calendarId || config.disabledAt) {
     const status = deriveGoogleCalendarSyncStatus({
-      hasCredential: credentials !== null,
+      hasCredential: auth !== null,
       calendarId: config?.calendarId ?? null,
       disabledAt: config?.disabledAt ?? null,
       lastSuccessAt: config?.lastSuccessAt ?? null,
       lastErrorAt: config?.lastErrorAt ?? null,
     })
     payload.logger.warn(
-      `[GoogleCalendarSync] Sincronização ignorada: credentialsPresent=${credentials !== null}, calendarId=${config?.calendarId ?? 'null'}, disabledAt=${config?.disabledAt ?? 'null'}, status=${status}`,
+      `[GoogleCalendarSync] Sincronização ignorada: credentialsPresent=${auth !== null}, calendarId=${config?.calendarId ?? 'null'}, disabledAt=${config?.disabledAt ?? 'null'}, status=${status}`,
     )
     return {
       status,
@@ -882,8 +1072,7 @@ export const runCampaignCalendarSync = async (
   // the hook `signal` is not plumbed into that instance — the stub must be
   // created with its own signal. Production hooks never inject a client, so
   // the `??` branch covers the row-lock path.
-  const client =
-    options.client ?? createGoogleCalendarClient(credentials, undefined, options.signal)
+  const client = options.client ?? createGoogleCalendarClient(auth, undefined, options.signal)
 
   try {
     if (!options.skipChannelEnsure) {
@@ -897,17 +1086,28 @@ export const runCampaignCalendarSync = async (
       options.activityWhere,
       config,
     )
-    await recordSyncState(payload, options.req, { lastSyncedAt: at, lastSuccessAt: at })
+    // C149 — a successful pass also clears a previous OAuth error: the
+    // connection state recovers to `connected` without a manual reconnect.
+    await recordSyncState(payload, options.req, {
+      lastSyncedAt: at,
+      lastSuccessAt: at,
+      oauthErrorAt: null,
+      oauthError: null,
+    })
     return { status: 'synced', ...counts, at }
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Erro desconhecido ao sincronizar com o Google.'
     payload.logger.error(`[GoogleCalendarSync] Erro durante a sincronização: ${message}`)
-    await recordSyncState(payload, options.req, {
+    const patch: SyncStatePatch = {
       lastSyncedAt: at,
       lastErrorAt: at,
       lastError: message.slice(0, 500),
-    })
+    }
+    // C149 — a dead OAuth connection (`invalid_grant`) additionally flips the
+    // derived connection state to `error`, which offers reconnect in one click.
+    Object.assign(patch, oauthErrorPatchFor(error, at) ?? {})
+    await recordSyncState(payload, options.req, patch)
     return { status: 'paused', created: 0, updated: 0, deleted: 0, reverseEdits: 0, at }
   }
 }

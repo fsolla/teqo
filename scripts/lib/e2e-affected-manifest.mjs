@@ -112,6 +112,23 @@ export const E2E_AFFECTED_MANIFEST = [
     specs: ['campaignActivity', 'campaignAgendaGoogleSync', 'campaignAgendaFeed'],
   },
   {
+    // C149 — the Google Calendar OAuth connection surface. The engine/client
+    // utilities live top-level (not under `src/utilities/activity`), and the
+    // callback route sits OUTSIDE `(app)` — without this entry a diff to them
+    // would only wake the home smoke, leaving the mirror spec unrun.
+    prefixes: [
+      'src/utilities/googleCalendarSync.ts',
+      'src/utilities/googleCalendarSyncHooks.ts',
+      'src/utilities/googleCalendarClient.ts',
+      'src/utilities/googleCalendarOAuth.ts',
+      'src/lib/googleCalendarOAuth.ts',
+      'src/components/campaign/activity/AgendaGoogleSyncChrome',
+      'src/components/campaign/activity/GoogleCalendarSyncDialog',
+      'src/app/(campaign)/campanha/agenda/google-oauth',
+    ],
+    specs: ['campaignAgendaGoogleSync'],
+  },
+  {
     prefixes: [
       `${CAMPAIGN_APP}/liderancas`,
       'src/components/campaign/leadership',

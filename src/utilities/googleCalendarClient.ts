@@ -5,8 +5,10 @@ import { importPKCS8, SignJWT } from 'jose'
 import type { GoogleRemoteEvent } from '@/lib/googleCalendarEventMapping'
 
 /**
- * C114 — thin Calendar API v3 client authenticated as the campaign's service
- * account (JWT assertion → OAuth2 token → REST). Only the four event endpoints
+ * C114 — thin Calendar API v3 client authenticated either as the campaign's
+ * service account (JWT assertion → OAuth2 token → REST) or — C149 — with the
+ * OAuth refresh token granted by the "Conectar com o Google" consent
+ * (refresh_token grant → access token → REST). Only the four event endpoints
  * the reconciliation engine needs; the token is cached per runtime instance
  * and re-minted on 401. The `fetch` implementation is injectable so tests can
  * stub the transport without network.
@@ -29,10 +31,26 @@ export const REQUEST_TIMEOUT_MS = 15_000
 
 export type { GoogleRemoteEvent } from '@/lib/googleCalendarEventMapping'
 
-export type GoogleCalendarCredentials = {
+export type GoogleCalendarServiceAccountCredentials = {
   clientEmail: string
   privateKey: string
 }
+
+/** C149 — the connection created by the OAuth consent (refresh token + app pair). */
+type GoogleCalendarOAuthCredentials = {
+  clientId: string
+  clientSecret: string
+  refreshToken: string
+}
+
+/**
+ * How the client authenticates. The engine resolves OAuth first (when the
+ * campaign connected an account) and falls back to the service account —
+ * `googleCalendarSync.readGoogleCalendarAuth`.
+ */
+export type GoogleCalendarAuth =
+  | { kind: 'service-account'; credentials: GoogleCalendarServiceAccountCredentials }
+  | { kind: 'oauth'; credentials: GoogleCalendarOAuthCredentials }
 
 /** Typed transport failure — safe message, never echoes credentials or bodies. */
 export class GoogleCalendarApiError extends Error {
@@ -42,6 +60,19 @@ export class GoogleCalendarApiError extends Error {
     super(message)
     this.name = 'GoogleCalendarApiError'
     this.status = status
+  }
+}
+
+/**
+ * C149 — the OAuth connection is dead (`invalid_grant`: the refresh token was
+ * revoked or expired). Reconnectable by the user, unlike an API/config error:
+ * the engine records it as the connection `error` state that offers
+ * "Reconectar" in one click.
+ */
+export class GoogleCalendarAuthError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'GoogleCalendarAuthError'
   }
 }
 
@@ -76,7 +107,7 @@ export type FetchLike = typeof fetch
  * for tests — `createGoogleCalendarClient` mints and exchanges it internally.
  */
 export const buildServiceAccountAssertion = async (
-  credentials: GoogleCalendarCredentials,
+  credentials: GoogleCalendarServiceAccountCredentials,
   nowSeconds: number,
 ): Promise<string> => {
   const key = await importPKCS8(credentials.privateKey, 'RS256')
@@ -89,8 +120,18 @@ export const buildServiceAccountAssertion = async (
     .sign(key)
 }
 
+/** Reads the token endpoint's error code without ever surfacing the body. */
+const readOAuthErrorCode = async (response: Response): Promise<string | null> => {
+  try {
+    const body = (await response.json()) as { error?: unknown }
+    return typeof body.error === 'string' ? body.error : null
+  } catch {
+    return null
+  }
+}
+
 export const createGoogleCalendarClient = (
-  credentials: GoogleCalendarCredentials,
+  auth: GoogleCalendarAuth,
   fetchImpl: FetchLike = fetch,
   hookSignal?: AbortSignal,
 ): GoogleCalendarClient => {
@@ -101,7 +142,29 @@ export const createGoogleCalendarClient = (
     return hookSignal ? AbortSignal.any([hookSignal, perHop]) : perHop
   }
 
-  const requestAccessToken = async (): Promise<string> => {
+  const parseAccessToken = async (response: Response): Promise<string> => {
+    const body = (await response.json().catch(() => null)) as {
+      access_token?: unknown
+      expires_in?: unknown
+    } | null
+    const accessToken = typeof body?.access_token === 'string' ? body.access_token : ''
+    if (!accessToken) {
+      throw new GoogleCalendarApiError('Resposta de autenticação do Google sem token.', 502)
+    }
+    const expiresIn =
+      typeof body?.expires_in === 'number' && Number.isFinite(body.expires_in)
+        ? body.expires_in
+        : GOOGLE_TOKEN_TTL_SECONDS
+    cachedToken = {
+      value: accessToken,
+      expiresAtMs: Date.now() + expiresIn * 1000,
+    }
+    return cachedToken.value
+  }
+
+  const requestServiceAccountAccessToken = async (
+    credentials: GoogleCalendarServiceAccountCredentials,
+  ): Promise<string> => {
     const nowSeconds = Math.floor(Date.now() / 1000)
     const assertion = await buildServiceAccountAssertion(credentials, nowSeconds)
 
@@ -120,18 +183,45 @@ export const createGoogleCalendarClient = (
         response.status,
       )
     }
-
-    const body = (await response.json()) as { access_token?: string; expires_in?: number }
-    if (!body.access_token) {
-      throw new GoogleCalendarApiError('Resposta de autenticação do Google sem token.', 502)
-    }
-
-    cachedToken = {
-      value: body.access_token,
-      expiresAtMs: Date.now() + (body.expires_in ?? GOOGLE_TOKEN_TTL_SECONDS) * 1000,
-    }
-    return cachedToken.value
+    return parseAccessToken(response)
   }
+
+  const requestOAuthAccessToken = async (
+    credentials: GoogleCalendarOAuthCredentials,
+  ): Promise<string> => {
+    const response = await fetchImpl(GOOGLE_TOKEN_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: credentials.refreshToken,
+        client_id: credentials.clientId,
+        client_secret: credentials.clientSecret,
+      }).toString(),
+      signal: requestSignal(),
+    })
+    if (!response.ok) {
+      // `invalid_grant` is the user-fixable case (token revoked/expired) and
+      // becomes the reconnectable auth error. `invalid_client` (our app
+      // credential is wrong) and transient failures stay API errors: telling
+      // the user to reconnect would not fix them.
+      if ((await readOAuthErrorCode(response)) === 'invalid_grant') {
+        throw new GoogleCalendarAuthError(
+          'A conexão com o Google expirou ou foi revogada. Reconecte a conta.',
+        )
+      }
+      throw new GoogleCalendarApiError(
+        `Não foi possível autenticar no Google (HTTP ${response.status}).`,
+        response.status,
+      )
+    }
+    return parseAccessToken(response)
+  }
+
+  const requestAccessToken = (): Promise<string> =>
+    auth.kind === 'oauth'
+      ? requestOAuthAccessToken(auth.credentials)
+      : requestServiceAccountAccessToken(auth.credentials)
 
   const getAccessToken = async (): Promise<string> => {
     if (cachedToken && cachedToken.expiresAtMs > Date.now() + TOKEN_REFRESH_LEAD_SECONDS * 1000) {

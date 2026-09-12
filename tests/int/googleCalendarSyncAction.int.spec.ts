@@ -10,6 +10,10 @@ import {
 import config from '@/payload.config'
 import { loadGoogleCalendarSyncConfig } from '@/utilities/googleCalendarSync'
 
+import {
+  GOOGLE_CALENDAR_SYNC_LOCK_KEY,
+  serializeSpecWithAdvisoryLock,
+} from '../helpers/advisoryLock'
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 import { withGoogleCalendarTestCredential } from '../helpers/googleCalendarTestKey'
 
@@ -29,6 +33,8 @@ vi.mock('@/utilities/campaignActionContext', async (importOriginal) => {
 })
 
 import { getCampaignActionContext, reloadStaffActor } from '@/utilities/campaignActionContext'
+
+serializeSpecWithAdvisoryLock(GOOGLE_CALENDAR_SYNC_LOCK_KEY)
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({

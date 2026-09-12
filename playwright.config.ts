@@ -228,6 +228,17 @@ export default defineConfig({
          * e2e states stay deterministic (see `googleCalendarTestKey.ts`).
          */
         [GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV_NAME]: GOOGLE_CALENDAR_TEST_KEY,
+        /*
+         * C149 — dummy OAuth client pair so the agenda dialog offers the
+         * "Conectar com o Google" button (the view derives `oauthAvailable`).
+         * No spec seeds a refresh token on the shared sync row except with a
+         * far-future success, and the button test intercepts the navigation
+         * to Google — no request ever leaves the runner for oauth2.
+         */
+        GOOGLE_CALENDAR_OAUTH_CLIENT_ID:
+          process.env.GOOGLE_CALENDAR_OAUTH_CLIENT_ID ?? 'e2e-client-id.apps.googleusercontent.com',
+        GOOGLE_CALENDAR_OAUTH_CLIENT_SECRET:
+          process.env.GOOGLE_CALENDAR_OAUTH_CLIENT_SECRET ?? 'e2e-client-secret',
         // Keep e2e artifacts outside `.next`: a concurrent development server
         // owns that entire directory and may clear nested production bundles.
         NEXT_DIST_DIR: process.env.NEXT_DIST_DIR ?? '.next-e2e',

@@ -417,6 +417,9 @@ describe('src/utilities top-level is pinned', () => {
     // C114 — Google Calendar mirror: activity/config hooks (separate module so
     // the engine is mockable at the import boundary in tests).
     'googleCalendarSyncHooks.ts',
+    // C149 — Google Calendar OAuth: env client pair, signed single-use state
+    // cookie and the authorization-code exchange (server-only).
+    'googleCalendarOAuth.ts',
     'campaignAuth.ts',
     'campaignBiometricsPrompt.ts',
     'campaignColumnVisibilityCookie.ts',

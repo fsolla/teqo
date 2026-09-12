@@ -3,8 +3,10 @@ import type { Access, FieldAccess } from 'payload'
 import {
   getFreshCampaignUser,
   isCampaignStaff,
+  isCampaignUnrestricted,
   isPayloadAdmin,
   payloadAdminOnly,
+  type CampaignActor,
 } from '@/utilities/access/shared'
 
 /**
@@ -53,3 +55,13 @@ export const canSetGoogleCalendarSyncSystemField: FieldAccess = () => false
  * hand out full push-forging authority to any staff member.
  */
 export const canReadGoogleCalendarSyncIdentityField: FieldAccess = () => false
+
+/**
+ * C149 — connecting/disconnecting the campaign's Google account is a core
+ * decision over a credential that belongs to the whole campaign: candidate or
+ * coordinator only (advisor reads the state but never holds the token; leader
+ * never reaches the agenda). Enforced at the action layer with the freshly
+ * reloaded actor — same pattern as the other campaign actions.
+ */
+export const canManageGoogleCalendarConnection = (user: CampaignActor): boolean =>
+  isCampaignUnrestricted(user)
