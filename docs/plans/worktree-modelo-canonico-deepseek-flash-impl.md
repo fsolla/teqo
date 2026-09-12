@@ -104,6 +104,17 @@ N/A — config-only de tooling; nenhum dado de negócio modelado (pergunta 3 de 
 - NÃO varrer o repo inteiro por `deepseek-v4-flash` (atinge app e aliases).
 - NÃO usar `pnpm worktree next` como smoke (claimaria Issue real) — o smoke é a chamada direta da lib.
 
+## Triage de débitos (simplify, 2026-09-12)
+
+6 colhidos / 2 já resolvidos na sessão / 2 descartados / 2 deferidos com gatilho / 0 registrados (nenhum score ≥3).
+
+- **Já resolvido (não reabrir):** gramática do docblock (`scripts/lib/worktree.mjs`, "passou a usar o nome canônico") e fragilidade da regex do guard (`opencodeCommands.unit.spec.ts:39` → `/^\s*["']?model["']?\s*:/m`).
+- **Descartado:** espelho `presetInEffect()` inerte com `OPENCODE_WORKTREE_MODEL` exportada (deliberado e documentado em `worktree.unit.spec.ts:41-45`; o CI exercita o literal) e docblock stale `.forgejo/worktree.env` (pré-existente, doc-only, parkeado como follow-up).
+- **Adiado com gatilho:**
+  - Literais do preset em comentários vivos (`scripts/worktree.mjs:30`, `.agents/shell/worktree.sh:22`, `.agents/skills/worktree-next-issue/SKILL.md:34`) sem guard de sincronização — **gatilho:** próxima troca de preset deixar um dos textos divergente.
+  - Guard de frontmatter cobre os 4 commands do array (`opencodeCommands.unit.spec.ts:13`), não os 6 arquivos de `.opencode/commands/` — **gatilho:** novo command de execução (ou pin em command fora do array).
+
+
 ## Riscos e mitigação
 
 - **Sessões manuais que invocam `/work-issue` fora do launch passam a herdar o modelo da sessão** (antes o pin forçava o legado) → é o comportamento desejado (o launch/flags/override mandam); registrar como mudança intencional no PR.
