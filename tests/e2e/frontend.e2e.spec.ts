@@ -1,9 +1,18 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 
 import { adminHeaders } from '../helpers/adminApi'
 import { seedTestUser } from '../helpers/seedUser'
 import { instagramStubUrlFor, youtubeStubUrlFor } from '../helpers/socialStub'
 import { expect, test } from './fixtures/e2eTest'
+
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+
+// 4×3 opaque PNG — enough to exercise decode/cover/clamp without a binary fixture.
+const TEST_PHOTO_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEklEQVR4nGOQqzjxHxkzEBQAAMHJHF0PRQWkAAAAAElFTkSuQmCC',
+  'base64',
+)
 
 const swipeLeft = async (
   page: Page,
@@ -1644,5 +1653,132 @@ test.describe('Campaign home content section', () => {
       await setInstagramStubState(request, 'ok')
       await cleanupS2Fixtures(request, headers)
     }
+  })
+})
+
+test.describe('Cards personalizados (S13)', () => {
+  test('home invites to the card funnel right after the newsletter capture', async ({ page }) => {
+    await page.goto('/')
+
+    const order = await page
+      .locator('[data-home-section]')
+      .evaluateAll((sections) =>
+        sections.map((section) => section.getAttribute('data-home-section')),
+      )
+    expect(order.indexOf('cards')).toBe(order.indexOf('newsletter') + 1)
+
+    const section = page.locator('section#cards')
+    await expect(
+      section.getByRole('heading', { name: 'Mostre que você está com Solla' }),
+    ).toBeVisible()
+    for (const model of ['eu-sou-solla', 'perfil-quadrado', 'perfil-retangular']) {
+      await expect(section.locator(`a[href="/cards?model=${model}"]`).first()).toBeAttached()
+    }
+
+    await section.getByRole('link', { name: /Moldura quadrada/ }).click()
+    await expect(page).toHaveURL(/\/cards\?model=perfil-quadrado$/)
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByRole('heading', { name: 'Enquadre sua foto' })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+  })
+
+  test('name card fits the master, reaches the result and downloads a real PNG', async ({
+    page,
+  }) => {
+    await page.goto('/cards')
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Card com seu nome' }).click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByRole('heading', { name: 'Personalize com seu nome' })).toBeVisible()
+
+    const primary = dialog.getByRole('button', { name: 'Criar meu card' })
+    await expect(primary).toBeDisabled()
+    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('João')
+    await expect(primary).toBeEnabled()
+
+    const canvas = dialog.locator('canvas')
+    await expect(canvas).toHaveAttribute('width', '1080')
+    await expect(canvas).toHaveAttribute('height', '1440')
+    await expect
+      .poll(() =>
+        canvas.evaluate((element) => {
+          const node = element as HTMLCanvasElement
+          const band = node.getContext('2d')!.getImageData(0, 420, node.width, 120).data
+          let yellow = 0
+          for (let index = 0; index < band.length; index += 4) {
+            if (band[index] > 230 && band[index + 1] > 200 && band[index + 2] < 80) yellow += 1
+          }
+          return yellow
+        }),
+      )
+      .toBeGreaterThan(1000)
+
+    await primary.click()
+    await expect(dialog.getByText('Seu card está pronto para compartilhar.')).toBeVisible()
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      dialog.getByRole('button', { name: 'Baixar meu card' }).click(),
+    ])
+    expect(download.suggestedFilename()).toBe('card-jorge-solla-eu-sou-solla.png')
+    const downloadPath = await download.path()
+    expect(downloadPath).toBeTruthy()
+    expect(readFileSync(downloadPath!).subarray(0, 8).equals(PNG_SIGNATURE)).toBe(true)
+  })
+
+  test('a name that cannot fit fails closed with an actionable message', async ({ page }) => {
+    await page.goto('/cards?model=eu-sou-solla')
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+
+    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Anticonstitucionalissimamente')
+    await expect(dialog.getByRole('alert')).toContainText('nome mais curto')
+    await expect(dialog.getByRole('button', { name: 'Criar meu card' })).toBeDisabled()
+  })
+
+  test('photo card decodes the file, keeps the overlay and recovers from a bad image', async ({
+    page,
+  }) => {
+    await page.goto('/cards?model=perfil-quadrado')
+    const dialog = page.getByRole('dialog')
+    const canvas = dialog.locator('canvas')
+    await expect(canvas).toHaveAttribute('width', '1000')
+    await expect(canvas).toHaveAttribute('height', '1000')
+
+    await dialog.locator('input[type="file"]').setInputFiles({
+      name: 'foto-e2e.png',
+      mimeType: 'image/png',
+      buffer: TEST_PHOTO_PNG,
+    })
+    await expect(dialog.getByRole('button', { name: 'Trocar foto' })).toBeVisible()
+    await expect
+      .poll(() =>
+        canvas.evaluate((element) => {
+          const node = element as HTMLCanvasElement
+          return node.getContext('2d')!.getImageData(5, 5, 1, 1).data[3]
+        }),
+      )
+      .toBe(255)
+
+    await dialog.locator('input[type="file"]').setInputFiles({
+      name: 'nao-e-foto.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('not an image'),
+    })
+    await expect(dialog.getByRole('alert')).toContainText('Não foi possível usar esta foto')
+    await expect(dialog.getByRole('button', { name: 'Escolher outra foto' })).toBeVisible()
+  })
+
+  test('mobile opens the composer in the bottom drawer', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/cards?model=eu-sou-solla')
+
+    const drawer = page.locator('[data-slot="drawer-popup"]')
+    await expect(drawer).toBeVisible()
+    await expect(drawer.getByRole('heading', { name: 'Personalize com seu nome' })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(drawer).toHaveCount(0)
   })
 })

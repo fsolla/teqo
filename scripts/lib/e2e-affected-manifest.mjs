@@ -64,6 +64,13 @@ export const E2E_AFFECTED_MANIFEST = [
     specs: ['frontend'],
   },
   {
+    // S13 — the personalized-cards studio lives in shared cards components and
+    // pure card* modules; a future diff there must wake the frontend spec (the
+    // home section is already covered by the src/app/(frontend) prefix).
+    prefixes: ['src/components/cards', 'src/lib/card'],
+    specs: ['frontend'],
+  },
+  {
     prefixes: ['src/app/(campaign)/campanha/login', 'src/utilities/campaignAuth'],
     specs: ['campaignAuth'],
   },

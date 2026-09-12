@@ -61,6 +61,7 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
     '/campanha/sw.js',
     '/campanha/convite/e2e-prewarm',
     '/',
+    '/cards',
   ]) {
     await prewarmGet(path)
   }
