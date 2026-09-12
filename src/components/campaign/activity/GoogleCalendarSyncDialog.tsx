@@ -28,7 +28,10 @@ import {
 import { Input } from '@/components/ui/input'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
-import { buildGoogleCalendarPublicIcalUrl } from '@/lib/googleCalendarLink'
+import {
+  buildGoogleCalendarAddLink,
+  buildGoogleCalendarPublicIcalUrl,
+} from '@/lib/googleCalendarLink'
 import type { GoogleCalendarConnectionStatus } from '@/utilities/googleCalendarSync'
 
 type GoogleCalendarSyncDialogProps = {
@@ -100,8 +103,9 @@ export const GoogleCalendarSyncDialog = ({
     setActionError(null)
   }
 
-  // C150 — the manual path ("Por URL", Apple Calendar, Outlook) consumes the
-  // public iCal URL; the one-click button consumes `state.addLink`.
+  // C150 — the one-click button and the manual path ("Por URL", Apple
+  // Calendar, Outlook) are both derived from the configured calendar.
+  const addLink = state.calendarId ? buildGoogleCalendarAddLink(state.calendarId) : null
   const icalUrl = state.calendarId ? buildGoogleCalendarPublicIcalUrl(state.calendarId) : null
 
   const handleCopy = async () => {
@@ -143,12 +147,12 @@ export const GoogleCalendarSyncDialog = ({
 
   const handleDisconnect = () => runAction(onDisconnect, 'Não foi possível desconectar.')
 
-  const linkBlock = state.calendarId ? (
+  const linkBlock = addLink ? (
     <div className="space-y-3">
       <div className="space-y-2">
         <p className="text-sm font-medium">Adicionar ao meu Google Calendar</p>
         <Button asChild className="w-full sm:w-auto">
-          <a href={state.addLink ?? undefined} target="_blank" rel="noopener noreferrer">
+          <a href={addLink} target="_blank" rel="noopener noreferrer">
             <ExternalLinkIcon className="mr-2 h-4 w-4" />
             Adicionar ao meu Google Calendar
           </a>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { RefreshCwIcon } from 'lucide-react'
 
@@ -41,7 +41,50 @@ type GoogleCalendarPickerDialogProps = {
 type PickerListStatus = 'loading' | 'error' | 'ready'
 
 const TITLE = 'Calendário principal da campanha'
-const DESCRIPTION = 'Criar e editar atividades espelham no calendário escolhido.'
+const DESCRIPTION = 'Atividades criadas e editadas no Teqo espelham no calendário escolhido.'
+const LIST_FAILED_MESSAGE = 'Não foi possível listar os calendários agora.'
+
+const CalendarOption = ({
+  calendar,
+  isSelected,
+  isCurrent,
+  disabled,
+  onSelect,
+}: {
+  calendar: GoogleCalendarPickerOption
+  isSelected: boolean
+  isCurrent: boolean
+  disabled: boolean
+  onSelect: () => void
+}) => (
+  <button
+    type="button"
+    aria-pressed={isSelected}
+    onClick={onSelect}
+    disabled={disabled}
+    className={cn(
+      'flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60',
+      isSelected ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted',
+    )}
+  >
+    <span
+      className={cn(
+        'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border',
+        isSelected ? 'border-primary' : 'border-muted-foreground',
+      )}
+      aria-hidden
+    >
+      {isSelected ? <span className="h-2 w-2 rounded-full bg-primary" /> : null}
+    </span>
+    <span className="min-w-0 flex-1">
+      <span className="block truncate text-sm">{calendar.summary}</span>
+      {calendar.primary ? (
+        <span className="block text-xs text-muted-foreground">Calendário principal da conta</span>
+      ) : null}
+    </span>
+    {isCurrent ? <span className="shrink-0 text-xs text-muted-foreground">em uso</span> : null}
+  </button>
+)
 
 /**
  * C150 — primary-calendar picker. The list is fetched live from the connected
@@ -64,43 +107,68 @@ export const GoogleCalendarPickerDialog = ({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [chooseError, setChooseError] = useState<string | null>(null)
   const [isChoosing, setIsChoosing] = useState(false)
-  const [attempt, setAttempt] = useState(0)
+  const [reloadCount, setReloadCount] = useState(0)
+  // A session is one open→close cycle: results from a previous session never
+  // apply to the next one (a choose in flight when the picker is closed and
+  // reopened must not close/relabel the new session).
+  const sessionRef = useRef(0)
 
   useEffect(() => {
     if (!open) return
+    const session = ++sessionRef.current
     let cancelled = false
+    const isStale = () => cancelled || session !== sessionRef.current
+
     setStatus('loading')
+    setCalendars([])
+    setSelectedId(null)
     setListError(null)
     setChooseError(null)
-    void onListCalendars().then((result) => {
-      if (cancelled) return
-      if (result.ok) {
-        setCalendars(result.calendars)
-        setSelectedId(currentCalendarId)
-        setStatus('ready')
-      } else {
-        setListError(result.message)
+    setIsChoosing(false)
+
+    void onListCalendars()
+      .then((result) => {
+        if (isStale()) return
+        if (result.ok) {
+          setCalendars(result.calendars)
+          setSelectedId(currentCalendarId)
+          setStatus('ready')
+        } else {
+          setListError(result.message)
+          setStatus('error')
+        }
+      })
+      .catch(() => {
+        if (isStale()) return
+        setListError(LIST_FAILED_MESSAGE)
         setStatus('error')
-      }
-    })
+      })
+
     return () => {
       cancelled = true
     }
-  }, [open, attempt, onListCalendars, currentCalendarId])
+  }, [open, reloadCount, onListCalendars, currentCalendarId])
+
+  const retryList = useCallback(() => setReloadCount((value) => value + 1), [])
 
   const handleChoose = async () => {
     if (!selectedId || selectedId === currentCalendarId || isChoosing) return
+    const session = sessionRef.current
     setIsChoosing(true)
     setChooseError(null)
     try {
       const result = await onChooseCalendar(selectedId)
+      if (session !== sessionRef.current) return
       if (result.ok) {
         onOpenChange(false)
       } else {
         setChooseError(result.message ?? 'Não foi possível escolher o calendário.')
       }
+    } catch {
+      if (session !== sessionRef.current) return
+      setChooseError('Não foi possível escolher o calendário agora.')
     } finally {
-      setIsChoosing(false)
+      if (session === sessionRef.current) setIsChoosing(false)
     }
   }
 
@@ -115,7 +183,7 @@ export const GoogleCalendarPickerDialog = ({
         <p role="alert" className="text-sm text-red-600">
           {listError}
         </p>
-        <Button type="button" variant="outline" onClick={() => setAttempt((value) => value + 1)}>
+        <Button type="button" variant="outline" onClick={retryList}>
           Tentar de novo
         </Button>
       </div>
@@ -124,55 +192,23 @@ export const GoogleCalendarPickerDialog = ({
         <p className="text-sm text-muted-foreground">
           Nenhum calendário com permissão de edição nesta conta Google.
         </p>
-        <Button type="button" variant="outline" onClick={() => setAttempt((value) => value + 1)}>
+        <Button type="button" variant="outline" onClick={retryList}>
           Atualizar lista
         </Button>
       </div>
     ) : (
-      <ul
-        role="radiogroup"
-        aria-label="Calendários da conta Google conectada"
-        className="space-y-2"
-      >
-        {calendars.map((calendar) => {
-          const isSelected = selectedId === calendar.id
-          const isCurrent = currentCalendarId === calendar.id
-          return (
-            <li key={calendar.id}>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={isSelected}
-                onClick={() => setSelectedId(calendar.id)}
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring',
-                  isSelected ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted',
-                )}
-              >
-                <span
-                  className={cn(
-                    'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border',
-                    isSelected ? 'border-primary' : 'border-muted-foreground',
-                  )}
-                  aria-hidden
-                >
-                  {isSelected ? <span className="h-2 w-2 rounded-full bg-primary" /> : null}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm">{calendar.summary}</span>
-                  {calendar.primary ? (
-                    <span className="block text-xs text-muted-foreground">
-                      Calendário principal da conta
-                    </span>
-                  ) : null}
-                </span>
-                {isCurrent ? (
-                  <span className="shrink-0 text-xs text-muted-foreground">em uso</span>
-                ) : null}
-              </button>
-            </li>
-          )
-        })}
+      <ul aria-label="Calendários da conta Google conectada" className="space-y-2">
+        {calendars.map((calendar) => (
+          <li key={calendar.id}>
+            <CalendarOption
+              calendar={calendar}
+              isSelected={selectedId === calendar.id}
+              isCurrent={currentCalendarId === calendar.id}
+              disabled={isChoosing}
+              onSelect={() => setSelectedId(calendar.id)}
+            />
+          </li>
+        ))}
       </ul>
     )
 

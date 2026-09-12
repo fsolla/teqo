@@ -133,6 +133,24 @@ Não se aplica como apresentação de dado do Teqo (nenhuma leitura nova; a inte
 
 **Auto-avaliação: 4/5** — todas as decisões caras (listagem, escrita do `calendarId`, schema, auth error, UI, literal do link, estratégia de teste) têm recomendação e rejeitadas ancoradas em achados concretos (union de auth C149, precedente de system write, hook D7, pins de teste, manifest); o appetite cabe (~1,7–1,9 dia) e o depth check reusa client/utility/action/dialog/hook existentes, criando só o componente de picker (ciclo de estados próprio). Perde 1 ponto porque o caminho feliz da listagem real (shape do Google, `showHidden`, paginação) só é provado por unit/int com stub — sem e2e de rede (D7) —, então a verificação contra o Google real fica no smoke pós-deploy.
 
+## Execução — desvios e decisões emergentes (2026-09-12)
+
+- **`buildGoogleCalendarWebcalUrl` removido:** o plano previa mantê-la para Apple/Outlook, mas o diálogo serve esse caminho com a URL iCal pública (HTTPS); o export ficou morto e saiu no simplify.
+- **Validação do id e leitura única:** `resolveGoogleCalendarPickerClient` dobrado em `loadWritableGoogleCalendars`, que recebe o doc já carregado — a escolha faz uma leitura da row, não duas.
+- **Picker sem roles ARIA de radio:** a lista usa botões com `aria-pressed` (roving tabindex/owned-children não valem a cerimônia); a seleção fica desabilitada durante a escolha e há guarda de sessão (`sessionRef`) contra corrida de close/reopen.
+- **Catch explícito no picker:** listagem/escolha rejeitadas (sessão expirada/serialização) caem em erro com "Tentar de novo" — nunca spinner infinito.
+
+## Débitos (triage do /simplify)
+
+| ID  | Achado                                                         | Score | Tipo          | Destino                                                                                                       |
+| --- | -------------------------------------------------------------- | ----- | ------------- | ------------------------------------------------------------------------------------------------------------- |
+| S1  | 3ª cópia do chrome responsivo Dialog/Drawer (Picker/Sync/Feed) | 3     | cheap_polish  | Registrado: **C156** (#965) — `docs/plans/escala-dry-pos-c150.md` (o gatilho do C148 disparou com o 4º modal) |
+| S2  | Copy "Adicionar ao meu Google Calendar" duplicada              | 2     | cheap_polish  | Absorvido como F3 cortável do C156                                                                            |
+| S3  | Máquinas de estado semelhantes Picker/Sync                     | 2     | defer_trigger | Defer no plano do C156: 3º diálogo com a mesma máquina busy/erro/ação                                         |
+
+- **Já resolvido no simplify (não reabrir):** guarda de sessão/catch do picker; `CalendarOption`; envelope `applyState` no chrome; `addLink` derivado no diálogo; webcal morto; leitura única da row; flag `changed` removida; roles ARIA.
+- **Explicitamente fora:** copy única fora do C156; máquinas de estado unificadas; shell do `ActivityOverlay`.
+
 ## Aceite de engenharia
 
 - [ ] Aceite de produto da intenção ainda coberto: candidato/coordenador escolhe o calendário principal na agenda; create/edit espelham nele; staff adiciona a agenda ao Google com um clique; recorte ICS intocado; admin do Payload segue escape hatch.

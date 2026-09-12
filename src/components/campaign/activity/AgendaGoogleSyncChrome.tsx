@@ -87,13 +87,17 @@ export const AgendaGoogleSyncChrome = ({
 
   useBridgedQuickAction('openGoogleCalendarSync', openSync)
 
-  // "Re-tenta sem ação manual": a paused mirror tries once when the agenda
-  // page loads (the staff is operating — the natural retry moment).
-  const handleSyncNow = useCallback(async () => {
-    const result = await onSyncNow()
+  // Shared envelope: every action result that succeeded becomes the rendered
+  // state; failures are left for the caller's UI to surface.
+  const applyState = useCallback(async (run: () => Promise<GoogleCalendarSyncActionResult>) => {
+    const result = await run()
     if (result.ok) setState(result)
     return result
-  }, [onSyncNow])
+  }, [])
+
+  // "Re-tenta sem ação manual": a paused mirror tries once when the agenda
+  // page loads (the staff is operating — the natural retry moment).
+  const handleSyncNow = useCallback(() => applyState(onSyncNow), [applyState, onSyncNow])
 
   useEffect(() => {
     if (state.status === 'paused' && !autoRetriedRef.current) {
@@ -103,20 +107,12 @@ export const AgendaGoogleSyncChrome = ({
   }, [state.status, handleSyncNow])
 
   const handleSetDisabled = useCallback(
-    async (disabled: boolean) => {
-      const result = await onSetDisabled(disabled)
-      if (result.ok) setState(result)
-      return result
-    },
-    [onSetDisabled],
+    (disabled: boolean) => applyState(() => onSetDisabled(disabled)),
+    [applyState, onSetDisabled],
   )
 
   // C149 — the connection card follows the disconnect without a page reload.
-  const handleDisconnect = useCallback(async () => {
-    const result = await onDisconnect()
-    if (result.ok) setState(result)
-    return result
-  }, [onDisconnect])
+  const handleDisconnect = useCallback(() => applyState(onDisconnect), [applyState, onDisconnect])
 
   // C150 — one overlay at a time: the picker replaces the mirror dialog while
   // open (nested Radix/vaul overlays have fragile focus/scroll on mobile).
@@ -131,12 +127,8 @@ export const AgendaGoogleSyncChrome = ({
   }, [])
 
   const handleChooseCalendar = useCallback(
-    async (calendarId: string) => {
-      const result = await onChooseCalendar(calendarId)
-      if (result.ok) setState(result)
-      return result
-    },
-    [onChooseCalendar],
+    (calendarId: string) => applyState(() => onChooseCalendar(calendarId)),
+    [applyState, onChooseCalendar],
   )
 
   const pill = useMemo(() => {

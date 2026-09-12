@@ -230,7 +230,7 @@ describe('AgendaGoogleSyncChrome (S14)', () => {
     const picker = await screen.findByRole('dialog', {
       name: /Calendário principal da campanha/,
     })
-    fireEvent.click(within(picker).getByRole('radio', { name: /Meu calendário/ }))
+    fireEvent.click(within(picker).getByRole('button', { name: /Meu calendário/ }))
     fireEvent.click(within(picker).getByRole('button', { name: 'Escolher calendário' }))
 
     await waitFor(() => expect(onChooseCalendar).toHaveBeenCalledTimes(1))
