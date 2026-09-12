@@ -48,3 +48,12 @@ Mesmo método (literatura → personas → entrevistas sintéticas em subagents 
 | [`roteiro-entrevista-emendas-responsavel-real.md`](roteiro-entrevista-emendas-responsavel-real.md) | Roteiro Mom Test da sessão real com a pessoa do gabinete que mantém a planilha de emendas (artefato-first; não é auditoria)                                                                         | **aguardando agendamento**          |
 
 **Limitação metodológica (ciclo 3):** as quatro personas bebem do MESMO compêndio — convergência é consistência de leitura, não evidência independente; o que informa é a divergência entre lentes de papel. Exceção parcial: a persona 4 ancora os campos [R] na entrevista real de 2026-07-23 (`docs/CUSTOMER.md`). **Nada entra no roadmap nem vira código antes da validação com a pessoa real do gabinete — inclusive a criação das verticais `/mandato` e `/comunicacao`.** O eixo B do compêndio não é parecer jurídico; qualquer registro novo da camada política passa pelo advogado antes de existir.
+
+## Piloto de fonte — acervo de falas da Câmara (C152, 2026-09-12)
+
+Viabilidade da fonte do acervo de falas (Issue #954): 2–3 discursos de legislaturas diferentes processados ponta a ponta (evento → trecho → VOD → transcrição ASR com segmentos). Não é discovery de produto — é relatório de engenharia que destrava C153/C154/C155.
+
+| Artefato                                                                            | O quê                                                                                                                                    | Status               |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| [`piloto-fonte-videos-camara.md`](piloto-fonte-videos-camara.md)                    | Respostas às 4 incógnitas da fonte (permanência do link, trechos em 55ª/56ª, segmentos Deep Infra, casamento antigo), custos e fallbacks | concluído 2026-09-12 |
+| [`piloto-fonte-videos-camara-impl.md`](../plans/piloto-fonte-videos-camara-impl.md) | Plano de implementação do piloto (script + lib pura + unit tests)                                                                        | executado            |
