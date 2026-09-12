@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — S14 · Cards personalizados: ajustes de fidelidade e experiência</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-[1400px] px-6 py-10">
+      <h1 class="text-lg font-semibold">
+        S14 · Cards personalizados — ajustes de fidelidade e experiência
+      </h1>
+      <p class="mt-2 max-w-4xl text-sm leading-6 text-zinc-400">
+        Visitante da home pública, principalmente no celular. O compositor passa a abrir na própria
+        home (sem navegar para <code>/cards</code>) e o CTA da home sai — tocar num modelo já abre a
+        criação; o nome fica alinhado à esquerda com o "SOU" no card e no tile; a seção muda de
+        posição; o modal perde o vão interno e o texto de ajuda ganha contraste. Cenas estáticas em
+        cinza neutro com um único acento indigo. Arte real omitida — este rascunho valida interface,
+        não redesenha os arquivos oficiais.
+      </p>
+      <div
+        class="mt-4 inline-flex min-h-9 items-center border border-zinc-700 bg-zinc-900 px-3 text-xs font-semibold text-zinc-300"
+      >
+        GEOMETRIA DO NOME · borda esquerda x≈213/1080 · tinta ≤714px · cap 106px · Brexter 700 ·
+        #ffec01
+      </div>
+
+      <!-- Cena 1: home desktop, nova ordem + compositor aberto -->
+      <section class="mt-12">
+        <h2 class="text-xs font-semibold tracking-wider text-zinc-500 uppercase">
+          Cena 1 · Home desktop — nova ordem + compositor aberto no lugar
+        </h2>
+        <p class="mt-1 text-xs text-zinc-500">
+          A seção "Mostre que você está com Solla" sobe para antes de "Receba as novidades da
+          campanha" (mantém a captura como último bloco). Tocar num modelo abre o modal sobre a
+          home; a URL não muda e a rolagem fica onde está. Sem CTA: os três modelos são o único
+          gatilho.
+        </p>
+
+        <div
+          class="relative mt-4 w-full max-w-[1160px] overflow-hidden border border-zinc-700 bg-white text-zinc-950"
+        >
+          <!-- bandas de contexto, na ordem -->
+          <div class="border-b border-zinc-200 bg-zinc-100 px-10 py-6">
+            <p class="text-[10px] font-bold tracking-wider text-zinc-400 uppercase">Hero</p>
+            <div class="mt-2 h-4 w-64 bg-zinc-300"></div>
+            <div class="mt-2 h-3 w-40 bg-zinc-200"></div>
+          </div>
+          <div class="border-b border-zinc-200 px-10 py-4">
+            <p class="text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
+              Prova (números)
+            </p>
+            <div class="mt-2 grid grid-cols-3 gap-6">
+              <div class="h-3 bg-zinc-200"></div>
+              <div class="h-3 bg-zinc-200"></div>
+              <div class="h-3 bg-zinc-200"></div>
+            </div>
+          </div>
+          <div class="border-b border-zinc-200 bg-zinc-50 px-10 py-4">
+            <p class="text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
+              Últimas notícias
+            </p>
+            <div class="mt-2 grid grid-cols-4 gap-3">
+              <div class="h-10 bg-zinc-200"></div>
+              <div class="h-10 bg-zinc-200"></div>
+              <div class="h-10 bg-zinc-200"></div>
+              <div class="h-10 bg-zinc-200"></div>
+            </div>
+          </div>
+          <div class="border-b border-zinc-200 bg-zinc-100 px-10 py-4">
+            <p class="text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
+              Por que essa eleição importa
+            </p>
+            <div class="mt-2 h-3 w-80 bg-zinc-300"></div>
+          </div>
+          <div class="border-b border-zinc-200 px-10 py-4">
+            <p class="text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
+              Nossa caminhada
+            </p>
+            <div class="mt-2 grid grid-cols-3 gap-3">
+              <div class="h-8 bg-zinc-200"></div>
+              <div class="h-8 bg-zinc-200"></div>
+              <div class="h-8 bg-zinc-200"></div>
+            </div>
+          </div>
+          <div class="border-b border-zinc-200 bg-zinc-50 px-10 py-4">
+            <p class="text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
+              Acompanhe de perto
+            </p>
+            <div class="mt-2 grid grid-cols-4 gap-3">
+              <div class="h-8 bg-zinc-200"></div>
+              <div class="h-8 bg-zinc-200"></div>
+              <div class="h-8 bg-zinc-200"></div>
+              <div class="h-8 bg-zinc-200"></div>
+            </div>
+          </div>
+
+          <!-- seção de cards, agora aqui -->
+          <div class="border-y-2 border-indigo-500 bg-zinc-100 px-10 py-6">
+            <p class="text-[10px] font-bold tracking-wider text-indigo-600 uppercase">
+              Faça parte · nova posição
+            </p>
+            <div class="mt-2 grid grid-cols-[1fr_1.4fr] items-center gap-10">
+              <div>
+                <div class="h-4 w-56 bg-zinc-400"></div>
+                <div class="mt-2 h-3 w-72 bg-zinc-300"></div>
+                <p class="mt-4 text-[11px] font-semibold text-zinc-500">
+                  Sem CTA — tocar num modelo abre o compositor
+                </p>
+              </div>
+              <div class="grid grid-cols-3 gap-3">
+                <div class="flex h-24 flex-col border border-zinc-400 bg-zinc-200">
+                  <div class="m-1 h-3 w-14 self-start bg-zinc-400"></div>
+                  <div class="mx-1 h-2 w-20 bg-zinc-300"></div>
+                  <div class="mx-1 mt-1 h-2 w-12 bg-zinc-300"></div>
+                </div>
+                <div class="h-24 border border-zinc-400 bg-zinc-300"></div>
+                <div class="h-24 border border-zinc-400 bg-zinc-300"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-b border-zinc-200 bg-zinc-50 px-10 py-4">
+            <p class="text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
+              Receba as novidades da campanha
+            </p>
+            <div class="mt-2 h-8 w-72 border border-zinc-300 bg-white"></div>
+          </div>
+          <div class="bg-zinc-100 px-10 py-4">
+            <p class="text-[10px] font-bold tracking-wider text-zinc-400 uppercase">Rodapé</p>
+          </div>
+
+          <!-- modal sobre a home -->
+          <div class="absolute inset-0 bg-zinc-950/50">
+            <div
+              class="absolute top-1/2 left-1/2 w-[420px] -translate-x-1/2 -translate-y-1/2 border border-zinc-400 bg-white p-0 text-zinc-950 shadow-xl"
+            >
+              <div class="flex items-start gap-3 px-5 pt-5">
+                <div>
+                  <p class="text-base font-black">Personalize com seu nome</p>
+                </div>
+                <span class="ml-auto text-lg leading-none text-zinc-500">×</span>
+              </div>
+              <div class="px-5 pt-4 pb-5">
+                <div class="mx-auto flex h-56 w-40 flex-col border border-zinc-300 bg-zinc-200 p-3">
+                  <div class="h-4 w-16 bg-zinc-400"></div>
+                  <div class="mt-2 h-5 w-32 bg-zinc-500"></div>
+                  <div class="mt-3 h-3 w-24 self-center bg-zinc-400"></div>
+                  <div class="mt-auto h-4 w-28 self-center bg-zinc-500"></div>
+                </div>
+                <p class="mt-4 text-sm font-bold text-zinc-950">Seu nome</p>
+                <div class="mt-2 h-10 border border-zinc-300 bg-white"></div>
+                <p class="mt-2 text-xs text-zinc-600">
+                  Use seu primeiro nome ou o nome pelo qual as pessoas conhecem você.
+                </p>
+              </div>
+              <div class="flex gap-3 border-t border-zinc-300 px-5 py-4">
+                <div
+                  class="flex h-10 flex-1 items-center justify-center border border-zinc-300 text-xs font-bold"
+                >
+                  Cancelar
+                </div>
+                <div
+                  class="flex h-10 flex-1 items-center justify-center bg-indigo-600 text-xs font-bold text-white"
+                >
+                  Criar meu card
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="mt-2 text-xs text-zinc-500">
+          Nota: o modal abre sobre a home e fecha de volta à seção; nenhuma navegação.
+        </p>
+      </section>
+
+      <!-- Cena 2: mobile com drawer -->
+      <section class="mt-12">
+        <h2 class="text-xs font-semibold tracking-wider text-zinc-500 uppercase">
+          Cena 2 · Home mobile (~390px) — drawer do compositor
+        </h2>
+        <p class="mt-1 text-xs text-zinc-500">
+          Mesma ilha, casca inferior; fechar devolve à seção sem perder a posição de rolagem.
+        </p>
+
+        <div class="mt-4 w-[390px] overflow-hidden border border-zinc-700 bg-white text-zinc-950">
+          <div class="border-b border-zinc-200 bg-zinc-100 px-5 py-4">
+            <p class="text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
+              Acompanhe de perto
+            </p>
+            <div class="mt-2 h-8 bg-zinc-200"></div>
+          </div>
+          <div class="border-y-2 border-indigo-500 px-5 py-5">
+            <p class="text-[10px] font-bold tracking-wider text-indigo-600 uppercase">Faça parte</p>
+            <div class="mt-2 h-4 w-48 bg-zinc-400"></div>
+            <div class="mt-2 h-3 w-64 bg-zinc-300"></div>
+            <div class="mt-4 flex snap-x gap-3 overflow-hidden">
+              <div
+                class="flex h-40 w-[78%] shrink-0 flex-col border border-zinc-400 bg-zinc-200 p-2"
+              >
+                <div class="h-3 w-14 bg-zinc-400"></div>
+                <div class="mt-1 h-4 w-24 bg-zinc-500"></div>
+                <div class="mt-2 h-2 w-16 bg-zinc-400"></div>
+              </div>
+              <div class="h-40 w-[78%] shrink-0 border border-zinc-400 bg-zinc-300"></div>
+            </div>
+            <p class="mt-3 text-[11px] font-semibold text-zinc-500">
+              Sem CTA — tocar num modelo abre o drawer
+            </p>
+          </div>
+          <div class="relative h-72 bg-zinc-950/50">
+            <div class="absolute inset-x-0 bottom-0 border-t border-zinc-400 bg-white">
+              <div class="mx-auto mt-2 h-1 w-10 rounded-full bg-zinc-300"></div>
+              <div class="flex items-start gap-3 px-5 pt-4">
+                <p class="text-base font-black">Enquadre sua foto</p>
+                <span class="ml-auto text-lg leading-none text-zinc-500">×</span>
+              </div>
+              <div class="px-5 pt-3 pb-4">
+                <p class="text-sm text-zinc-700">
+                  Arraste para posicionar e use os controles para aproximar ou ajustar.
+                </p>
+                <div class="mx-auto mt-3 h-32 w-32 border border-zinc-300 bg-zinc-200"></div>
+                <div class="mt-3 flex gap-3">
+                  <div class="h-10 flex-1 border border-zinc-300"></div>
+                  <div class="h-10 flex-1 bg-indigo-600"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cena 3: fidelidade do tile de nome -->
+      <section class="mt-12">
+        <h2 class="text-xs font-semibold tracking-wider text-zinc-500 uppercase">
+          Cena 3 · Tile do modelo de nome — fiel ao resultado
+        </h2>
+        <p class="mt-1 text-xs text-zinc-500">
+          O tile passa a repetir a geometria do card real: nome na mesma borda esquerda do "SOU",
+          fonte display em peso forte, maior, na cor de destaque. Arte real omitida.
+        </p>
+
+        <div class="mt-4 flex flex-wrap items-start gap-8">
+          <div>
+            <p class="text-xs font-semibold text-zinc-400">Hoje — centralizado e menor</p>
+            <div class="mt-2 flex h-64 w-48 flex-col border border-zinc-600 bg-zinc-200 p-4">
+              <div class="h-4 w-16 bg-zinc-400"></div>
+              <div class="mt-3 h-4 w-32 self-center bg-zinc-500"></div>
+              <div class="mt-6 h-3 w-24 self-center bg-zinc-400"></div>
+              <div class="mt-auto h-4 w-28 bg-zinc-500"></div>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-indigo-400">
+              Proposto — alinhado à esquerda com "SOU"
+            </p>
+            <div class="mt-2 flex h-64 w-48 flex-col border border-indigo-500 bg-zinc-200 p-4">
+              <div class="h-4 w-16 bg-zinc-400"></div>
+              <div class="mt-3 h-6 w-36 bg-zinc-600"></div>
+              <div class="mt-6 h-3 w-24 self-center bg-zinc-400"></div>
+              <div class="mt-auto h-4 w-28 bg-zinc-500"></div>
+            </div>
+            <p class="mt-2 max-w-48 text-[11px] leading-4 text-zinc-500">
+              Exemplo literal: <span class="font-semibold text-zinc-300">SEU NOME</span> · borda
+              esquerda igual à do "SOU" · Brexter 700 · #ffec01
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cena 4: modal enxuto + ajuda legível -->
+      <section class="mt-12">
+        <h2 class="text-xs font-semibold tracking-wider text-zinc-500 uppercase">
+          Cena 4 · Compositor de foto — moldura enxuta e ajuda legível
+        </h2>
+        <p class="mt-1 text-xs text-zinc-500">
+          Sem o vão interno de 32px: o conteúdo encosta na moldura com o respiro próprio do
+          componente. A ajuda usa cinza escuro com contraste ≥ 4.5:1 sobre branco.
+        </p>
+
+        <div class="mt-4 flex flex-wrap items-start gap-8">
+          <div>
+            <p class="text-xs font-semibold text-zinc-400">
+              Hoje — vão interno grande + ajuda clara
+            </p>
+            <div class="mt-2 w-[380px] border border-zinc-600 bg-white p-8 text-zinc-950">
+              <p class="text-sm font-bold">Enquadre sua foto</p>
+              <p class="mt-1 text-sm text-zinc-300">
+                Arraste para posicionar e use os controles para aproximar ou ajustar.
+              </p>
+              <div class="mx-auto mt-4 h-40 w-40 border border-zinc-300 bg-zinc-200"></div>
+              <div class="mt-4 flex gap-3">
+                <div class="h-10 flex-1 border border-zinc-300"></div>
+                <div class="h-10 flex-1 bg-indigo-600"></div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-indigo-400">Proposto — encostado + ajuda escura</p>
+            <div class="mt-2 w-[380px] border border-indigo-500 bg-white p-0 text-zinc-950">
+              <div class="px-5 pt-5">
+                <p class="text-sm font-bold">Enquadre sua foto</p>
+                <p class="mt-1 text-sm text-zinc-700">
+                  Arraste para posicionar e use os controles para aproximar ou ajustar.
+                </p>
+              </div>
+              <div class="px-5 pt-3 pb-5">
+                <div class="mx-auto h-40 w-40 border border-zinc-300 bg-zinc-200"></div>
+              </div>
+              <div class="flex gap-3 border-t border-zinc-200 px-5 py-4">
+                <div class="h-10 flex-1 border border-zinc-300"></div>
+                <div class="h-10 flex-1 bg-indigo-600"></div>
+              </div>
+            </div>
+            <p class="mt-2 max-w-80 text-[11px] leading-4 text-zinc-500">
+              Moldura: borda fina e raio preservados; só o padding base de 32px do desktop é
+              neutralizado.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
