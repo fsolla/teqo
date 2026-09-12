@@ -36,6 +36,6 @@ describe('opencode commands couple to their skill by exact name', () => {
     expect(
       frontmatter![1],
       'frontmatter must NOT pin a model — the command inherits the session model (OPS101)',
-    ).not.toMatch(/^model:/m)
+    ).not.toMatch(/^\s*["']?model["']?\s*:/m)
   })
 })
