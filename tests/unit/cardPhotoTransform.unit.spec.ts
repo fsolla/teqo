@@ -115,4 +115,11 @@ describe('zoomCardPhotoTransform', () => {
     expect(zoomed.zoom).toBe(CARD_PHOTO_MAX_ZOOM)
     expect(coversWindow(cardPhotoDrawRect(zoomed, PORTRAIT, WINDOW), WINDOW)).toBe(true)
   })
+
+  it('returns the clamped transform untouched when the zoom does not change', () => {
+    const start = centerCardPhotoTransform(LANDSCAPE, WINDOW)
+    const same = zoomCardPhotoTransform(start, LANDSCAPE, WINDOW, start.zoom)
+
+    expect(same).toEqual(start)
+  })
 })

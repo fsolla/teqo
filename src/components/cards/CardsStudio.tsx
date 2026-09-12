@@ -33,6 +33,16 @@ export const CardsStudio = ({
     setOpen(true)
   }
 
+  // Radix restores focus to the element that opened the dialog, but the home
+  // tile that deep-linked here is unmounted after navigation. Send focus back
+  // to the catalog tile of the selected model instead (visible list only).
+  const focusSelectedTile = () => {
+    if (!selectedId) return
+    const tiles = document.querySelectorAll<HTMLElement>(`[data-card-model-tile="${selectedId}"]`)
+    const visibleTile = Array.from(tiles).find((tile) => tile.getClientRects().length > 0)
+    visibleTile?.focus()
+  }
+
   return (
     <div>
       <CardModelGallery
@@ -62,6 +72,10 @@ export const CardsStudio = ({
             <DialogContent
               data-theme="campaign-site"
               showCloseButton={false}
+              onCloseAutoFocus={(event) => {
+                event.preventDefault()
+                focusSelectedTile()
+              }}
               className="max-h-[92dvh] gap-0 overflow-hidden p-0 sm:max-w-lg"
             >
               <CardComposer

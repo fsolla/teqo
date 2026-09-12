@@ -1675,12 +1675,16 @@ test.describe('Cards personalizados (S13)', () => {
       await expect(section.locator(`a[href="/cards?model=${model}"]`).first()).toBeAttached()
     }
 
-    await section.getByRole('link', { name: /Moldura quadrada/ }).click()
+    const trigger = section.getByRole('link', { name: /Moldura quadrada/ })
+    await trigger.click()
     await expect(page).toHaveURL(/\/cards\?model=perfil-quadrado$/)
     const dialog = page.getByRole('dialog')
     await expect(dialog.getByRole('heading', { name: 'Enquadre sua foto' })).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('dialog')).toHaveCount(0)
+    await expect(
+      page.locator('[data-card-model-tile="perfil-quadrado"]:visible').first(),
+    ).toBeFocused()
   })
 
   test('name card fits the master, reaches the result and downloads a real PNG', async ({

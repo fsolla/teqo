@@ -8,7 +8,7 @@ import {
   MinusIcon,
   PlusIcon,
 } from 'lucide-react'
-import { useEffect, useId, useRef, useState, type PointerEvent } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type PointerEvent } from 'react'
 
 import {
   canvasToPngBlob,
@@ -18,6 +18,7 @@ import {
   loadCardImage,
   loadCardPhoto,
 } from '@/components/cards/cardCanvas'
+import { CARD_PHOTO_PRIVACY_NOTE, CARD_PRIVACY_NOTE } from '@/components/cards/cardCopy'
 import { CardPreviewCanvas } from '@/components/cards/CardPreviewCanvas'
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/Drawer'
@@ -29,13 +30,10 @@ import {
   centerCardPhotoTransform,
   panCardPhotoTransform,
   zoomCardPhotoTransform,
+  type CardPhotoSize,
   type CardPhotoTransform,
 } from '@/lib/cardPhotoTransform'
 import { createCardMeasure, renderNameCard, renderPhotoCard } from '@/lib/cardRender'
-
-const PRIVACY_NOTE =
-  'Seu nome e sua foto são processados apenas no seu aparelho e não são enviados para nós.'
-const PHOTO_PRIVACY_NOTE = 'Sua foto fica neste aparelho e não é enviada para nós.'
 
 const primaryButtonClassName =
   'inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-(--pt-red) px-5 text-sm font-extrabold text-white transition hover:brightness-95 focus-visible:ring-2 focus-visible:ring-(--pt-red) focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
@@ -59,6 +57,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const [photoTransform, setPhotoTransform] = useState<CardPhotoTransform | null>(null)
   const [photoError, setPhotoError] = useState<string | null>(null)
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [baseImage, setBaseImage] = useState<HTMLImageElement | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
 
@@ -69,65 +68,80 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const zoomInputId = useId()
 
   const photoWindow = model.photoWindow
-  const photoSize = photo ? { width: photo.naturalWidth, height: photo.naturalHeight } : null
+  const photoSize = useMemo<CardPhotoSize | null>(
+    () => (photo ? { width: photo.naturalWidth, height: photo.naturalHeight } : null),
+    [photo],
+  )
 
+  // Assets + font load once per model: typing/panning must not flip the preview
+  // back into the loading state (flicker) nor re-announce the live region.
   useEffect(() => {
     let cancelled = false
+    setLoadState('loading')
+    setBaseImage(null)
 
-    const draw = async () => {
-      const ctx = canvasRef.current?.getContext('2d')
-      if (!ctx) return
-
-      setLoadState('loading')
+    const load = async () => {
       try {
-        await ensureCardFont(fontFamily)
-        const base = await loadCardImage(model.assetSrc)
+        const fontReady = await ensureCardFont(fontFamily)
+        if (!fontReady) throw new Error('card-font-unavailable')
+        const image = await loadCardImage(model.assetSrc)
         if (cancelled) return
-
-        ctx.clearRect(0, 0, model.width, model.height)
-
-        if (model.kind === 'name') {
-          const fit = renderNameCard(ctx, model, {
-            image: base,
-            name,
-            fontFamily,
-            measure: createCardMeasure(ctx, fontFamily),
-          })
-          if (!cancelled) setNameFit(fit)
-        } else if (photo && photoTransform && photoWindow) {
-          const clamped = renderPhotoCard(ctx, {
-            photo,
-            frame: base,
-            photoSize: { width: photo.naturalWidth, height: photo.naturalHeight },
-            frameSize: { width: model.width, height: model.height },
-            window: photoWindow,
-            transform: photoTransform,
-          })
-          if (
-            !cancelled &&
-            (clamped.zoom !== photoTransform.zoom ||
-              clamped.offsetX !== photoTransform.offsetX ||
-              clamped.offsetY !== photoTransform.offsetY)
-          ) {
-            setPhotoTransform(clamped)
-          }
-        } else if (photoWindow) {
-          ctx.fillStyle = '#ded8d2'
-          ctx.fillRect(0, 0, model.width, model.height)
-          ctx.drawImage(base, 0, 0, model.width, model.height)
-        }
-
-        if (!cancelled) setLoadState('ready')
+        setBaseImage(image)
+        setLoadState('ready')
       } catch {
         if (!cancelled) setLoadState('error')
       }
     }
 
-    void draw()
+    void load()
     return () => {
       cancelled = true
     }
-  }, [model, name, photo, photoTransform, photoWindow, fontFamily])
+  }, [model.assetSrc, fontFamily])
+
+  useEffect(() => {
+    const ctx = canvasRef.current?.getContext('2d')
+    if (!ctx || !baseImage || loadState !== 'ready') return
+
+    ctx.clearRect(0, 0, model.width, model.height)
+
+    if (model.kind === 'name') {
+      setNameFit(
+        renderNameCard(ctx, model, {
+          image: baseImage,
+          name,
+          fontFamily,
+          measure: createCardMeasure(ctx, fontFamily),
+        }),
+      )
+      return
+    }
+
+    if (photo && photoTransform && photoWindow && photoSize) {
+      const clamped = renderPhotoCard(ctx, {
+        photo,
+        frame: baseImage,
+        photoSize,
+        frameSize: { width: model.width, height: model.height },
+        window: photoWindow,
+        transform: photoTransform,
+      })
+      if (
+        clamped.zoom !== photoTransform.zoom ||
+        clamped.offsetX !== photoTransform.offsetX ||
+        clamped.offsetY !== photoTransform.offsetY
+      ) {
+        setPhotoTransform(clamped)
+      }
+      return
+    }
+
+    if (photoWindow) {
+      ctx.fillStyle = '#ded8d2'
+      ctx.fillRect(0, 0, model.width, model.height)
+      ctx.drawImage(baseImage, 0, 0, model.width, model.height)
+    }
+  }, [baseImage, loadState, model, name, fontFamily, photo, photoSize, photoTransform, photoWindow])
 
   const handlePhotoFile = async (file: File | undefined) => {
     if (!file || !photoWindow) return
@@ -152,7 +166,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   }
 
   const handlePointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
-    if (!photoSize || !photoTransform || !photoWindow) return
+    if (!photoSize || !photoWindow) return
     dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY }
     event.currentTarget.setPointerCapture(event.pointerId)
   }
@@ -160,21 +174,15 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const handlePointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
     const drag = dragRef.current
     const canvas = canvasRef.current
-    if (
-      !drag ||
-      drag.pointerId !== event.pointerId ||
-      !photoSize ||
-      !photoTransform ||
-      !photoWindow
-    )
-      return
-    if (!canvas) return
+    if (!drag || drag.pointerId !== event.pointerId || !photoSize || !photoWindow || !canvas) return
 
     const scale = model.width / Math.max(1, canvas.getBoundingClientRect().width)
     const dx = (event.clientX - drag.x) * scale
     const dy = (event.clientY - drag.y) * scale
     dragRef.current = { ...drag, x: event.clientX, y: event.clientY }
-    setPhotoTransform(panCardPhotoTransform(photoTransform, photoSize, photoWindow, dx, dy))
+    setPhotoTransform((current) =>
+      current ? panCardPhotoTransform(current, photoSize, photoWindow, dx, dy) : current,
+    )
   }
 
   const handlePointerEnd = () => {
@@ -182,13 +190,17 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   }
 
   const panBy = (dx: number, dy: number) => {
-    if (!photoSize || !photoTransform || !photoWindow) return
-    setPhotoTransform(panCardPhotoTransform(photoTransform, photoSize, photoWindow, dx, dy))
+    if (!photoSize || !photoWindow) return
+    setPhotoTransform((current) =>
+      current ? panCardPhotoTransform(current, photoSize, photoWindow, dx, dy) : current,
+    )
   }
 
   const zoomTo = (zoom: number) => {
-    if (!photoSize || !photoTransform || !photoWindow) return
-    setPhotoTransform(zoomCardPhotoTransform(photoTransform, photoSize, photoWindow, zoom))
+    if (!photoSize || !photoWindow) return
+    setPhotoTransform((current) =>
+      current ? zoomCardPhotoTransform(current, photoSize, photoWindow, zoom) : current,
+    )
   }
 
   const handleDownload = async () => {
@@ -323,7 +335,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
                 chamado.
               </p>
             ) : null}
-            <p className="mt-2 text-xs text-(--campaign-muted)">{PRIVACY_NOTE}</p>
+            <p className="mt-2 text-xs text-(--campaign-muted)">{CARD_PRIVACY_NOTE}</p>
           </div>
         ) : null}
 
@@ -411,6 +423,8 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
               ref={fileInputRef}
               type="file"
               accept="image/*"
+              tabIndex={-1}
+              aria-hidden="true"
               className="sr-only"
               onChange={(event) => void handlePhotoFile(event.target.files?.[0])}
             />
@@ -434,13 +448,13 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
               </button>
             </div>
 
-            <p className="mt-3 text-xs text-(--campaign-muted)">{PHOTO_PRIVACY_NOTE}</p>
+            <p className="mt-3 text-xs text-(--campaign-muted)">{CARD_PHOTO_PRIVACY_NOTE}</p>
           </div>
         ) : null}
 
         {step === 'result' ? (
           <div className="mt-5">
-            <p className="text-sm text-(--campaign-muted)">{PRIVACY_NOTE}</p>
+            <p className="text-sm text-(--campaign-muted)">{CARD_PRIVACY_NOTE}</p>
             {downloadError ? (
               <p role="alert" className="mt-2 text-sm font-semibold text-(--pt-red)">
                 {downloadError}

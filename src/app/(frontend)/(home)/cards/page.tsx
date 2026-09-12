@@ -3,13 +3,12 @@ import Link from 'next/link'
 
 import { brexterBold } from '@/app/(frontend)/fonts'
 import { CampaignFooter } from '@/components/CampaignFooter'
+import { CARD_PRIVACY_NOTE } from '@/components/cards/cardCopy'
 import { CardsStudio } from '@/components/cards/CardsStudio'
 import { isCardModelId } from '@/lib/cardModels'
 
 const intro =
   'Escolha um dos três modelos, personalize com seu nome ou sua foto e baixe para compartilhar.'
-const privacyNote =
-  'Seu nome e sua foto são processados apenas no seu aparelho e não são enviados para nós.'
 
 export const metadata: Metadata = {
   title: 'Crie seu card de apoio | Jorge Solla',
@@ -52,7 +51,7 @@ export default async function CardsPage({ searchParams }: CardsPageProps) {
               Crie seu card de apoio
             </h1>
             <p className="campaign-section-copy m-0 mt-1 text-(--campaign-muted)">{intro}</p>
-            <p className="mt-2 text-xs text-(--campaign-muted)">{privacyNote}</p>
+            <p className="mt-2 text-xs text-(--campaign-muted)">{CARD_PRIVACY_NOTE}</p>
           </div>
 
           <CardsStudio initialModelId={initialModelId} fontFamily={brexterBold.style.fontFamily} />

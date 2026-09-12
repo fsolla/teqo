@@ -11,7 +11,7 @@
 
 import { NAME_CARD_SLOT } from './cardModels'
 
-type CardTextMetrics = {
+export type CardTextMetrics = {
   width: number
   actualBoundingBoxAscent: number
   actualBoundingBoxDescent: number

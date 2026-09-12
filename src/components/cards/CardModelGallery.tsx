@@ -41,6 +41,7 @@ export const CardModelGallery = ({
           type="button"
           aria-pressed={selected}
           aria-label={`${model.label}${selected ? ' (selecionado)' : ''}`}
+          data-card-model-tile={model.id}
           onClick={() => onSelect?.(model.id)}
           className={tileClassName}
         >
@@ -53,6 +54,7 @@ export const CardModelGallery = ({
       <Link
         href={cardModelHref(model.id)}
         aria-label={`${model.label} — criar meu card`}
+        data-card-model-tile={model.id}
         className={tileClassName}
       >
         {content}
