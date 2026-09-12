@@ -24,12 +24,9 @@ import {
   recordGoogleCalendarOAuthError,
 } from '@/utilities/googleCalendarSync'
 
-import {
-  GOOGLE_CALENDAR_SYNC_LOCK_KEY,
-  serializeSpecWithAdvisoryLock,
-} from '../helpers/advisoryLock'
+import { serializeGoogleCalendarSyncSpec } from '../helpers/googleCalendarSyncLock'
 
-serializeSpecWithAdvisoryLock(GOOGLE_CALENDAR_SYNC_LOCK_KEY)
+serializeGoogleCalendarSyncSpec()
 
 let payload: Payload
 

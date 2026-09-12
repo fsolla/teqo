@@ -37,14 +37,11 @@ import {
 } from '@/utilities/googleCalendarSync'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
 
-import {
-  GOOGLE_CALENDAR_SYNC_LOCK_KEY,
-  serializeSpecWithAdvisoryLock,
-} from '../helpers/advisoryLock'
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { serializeGoogleCalendarSyncSpec } from '../helpers/googleCalendarSyncLock'
 import { withGoogleCalendarTestCredential } from '../helpers/googleCalendarTestKey'
 
-serializeSpecWithAdvisoryLock(GOOGLE_CALENDAR_SYNC_LOCK_KEY)
+serializeGoogleCalendarSyncSpec()
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({
