@@ -22,6 +22,13 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     expect(script).toContain('stale run')
   })
 
+  it('fails the run when main advanced during verify — no silent false success', () => {
+    // The skip used to `exit 0`, so GitHub reported a green deploy that never
+    // happened while prod stayed on an older image (2026-09-12 incident).
+    expect(script).not.toMatch(/say "stale run/)
+    expect(script.match(/fatal "stale run/g) ?? []).toHaveLength(2)
+  })
+
   it('skips idempotently when the running container already runs the SHA (OPS65)', () => {
     expect(script).toContain('already deployed')
     expect(script).toContain('docker inspect')
@@ -102,5 +109,17 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     expect(migratorStage).not.toContain('next build')
     const builderStage = dockerfile.slice(dockerfile.indexOf('AS builder'))
     expect(builderStage).toContain('next build')
+  })
+
+  it('Dockerfile: generates the importMap via the canonical script (react-server condition)', () => {
+    // OPS99 added the generator to the builder, but the bare
+    // `pnpm exec payload generate:importmap` misses `--conditions=react-server`;
+    // `server-only` then throws and every Docker build failed (2026-09-12
+    // incident — no deploy landed after OPS99). The package script owns the
+    // flags.
+    const dockerfile = readFileSync(join(repoRoot, 'Dockerfile'), 'utf8')
+    const builderStage = dockerfile.slice(dockerfile.indexOf('AS builder'))
+    expect(builderStage).toContain('pnpm generate:importmap')
+    expect(builderStage).not.toContain('pnpm exec payload generate:importmap')
   })
 })

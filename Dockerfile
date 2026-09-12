@@ -48,7 +48,7 @@ RUN --mount=type=secret,id=database_url,env=DATABASE_URL \
   S3_SECRET_ACCESS_KEY=build-dummy \
   NEXT_OUTPUT_STANDALONE=1 \
   NODE_OPTIONS="--no-deprecation --max-old-space-size=8000" \
-  pnpm exec payload generate:importmap && \
+  pnpm generate:importmap && \
   pnpm exec next build
 
 # Production image, copy all the files and run next
