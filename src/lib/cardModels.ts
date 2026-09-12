@@ -64,12 +64,14 @@ export const CARD_MODELS: readonly CardModel[] = [
 
 /**
  * Name model slot, pixel-measured from the filled master (`FULANO` example):
- * glyph cap band tops at y=430 with a 106px cap height, ink spans x[213..926]
- * (714px) centered at x≈570 — not at the canvas center. The visitor's name is
- * the only thing drawn over the base; the fixed lines already live in the art.
+ * the `#SOU` line and the visitor's name share the same left border at x=213
+ * (S14 — the name is left-aligned, not centered); the cap band tops at y=430
+ * with a 106px cap height and the master's ink spans x[214..925] (712px), so a
+ * fitted name never crosses 714px. The visitor's name is the only thing drawn
+ * over the base; the fixed lines already live in the art.
  */
 export const NAME_CARD_SLOT = {
-  centerX: 570,
+  leftX: 213,
   capTop: 430,
   capHeight: 106,
   maxInkWidth: 714,
@@ -86,5 +88,3 @@ export const isCardModelId = (value: unknown): value is CardModelId =>
 
 export const getCardModel = (id: CardModelId): CardModel | undefined =>
   CARD_MODELS.find((model) => model.id === id)
-
-export const cardModelHref = (id: CardModelId): string => `/cards?model=${id}`

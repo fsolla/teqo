@@ -175,6 +175,11 @@ body,
   --campaign-cream: #fff8f2;
   --campaign-ink: #000000;
   --campaign-muted: #6c615e;
+  /* S14 — the campaign theme is light: the near-white `--muted-foreground`
+     inherited from `:root` (built for the dark pages) is illegible on white.
+     Point it at the campaign gray (~6:1) so generic descriptions — e.g. the
+     card composer help text — read correctly in dialogs/drawers. */
+  --muted-foreground: var(--campaign-muted);
   --campaign-surface: #f9faff;
   --campaign-band: #ebe9e9;
   --campaign-line: rgb(0 0 0 / 12%);

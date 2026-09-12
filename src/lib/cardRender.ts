@@ -56,6 +56,40 @@ export type NameCardRenderArgs = {
   slot?: CardNameSlot
 }
 
+export type CardNameDrawArgs = {
+  fit: Extract<CardNameFit, { ok: true }>
+  fontFamily: string
+  slot?: CardNameSlot
+}
+
+/**
+ * S14 — draws only the fitted name (no base image) so the home tile preview
+ * reuses the exact composer geometry. `fit.ok` is the caller's contract: a
+ * failed fit never draws (names are never cut silently).
+ */
+export const drawCardName = (ctx: CardDrawContext, args: CardNameDrawArgs): void => {
+  const slot = args.slot ?? NAME_CARD_SLOT
+  const { fit } = args
+
+  ctx.font = `700 ${fit.fontSize}px ${args.fontFamily}`
+  ctx.fillStyle = slot.fill
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'alphabetic'
+
+  if (fit.lines.length === 1) {
+    ctx.fillText(fit.lines[0], slot.leftX, slot.capTop + fit.capHeight)
+    return
+  }
+
+  const availableHeight = slot.maxBlockBottom - slot.capTop
+  const blockHeight = fit.lineHeight + fit.capHeight
+  const blockTop = slot.capTop + Math.max(0, (availableHeight - blockHeight) / 2)
+
+  fit.lines.forEach((line, index) => {
+    ctx.fillText(line, slot.leftX, blockTop + fit.capHeight + index * fit.lineHeight)
+  })
+}
+
 export const renderNameCard = (
   ctx: CardDrawContext,
   model: CardModel,
@@ -67,23 +101,7 @@ export const renderNameCard = (
   const fit = fitCardName(args.name, args.measure, slot)
   if (!fit.ok) return fit
 
-  ctx.font = `700 ${fit.fontSize}px ${args.fontFamily}`
-  ctx.fillStyle = slot.fill
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'alphabetic'
-
-  if (fit.lines.length === 1) {
-    ctx.fillText(fit.lines[0], slot.centerX, slot.capTop + fit.capHeight)
-    return fit
-  }
-
-  const availableHeight = slot.maxBlockBottom - slot.capTop
-  const blockHeight = fit.lineHeight + fit.capHeight
-  const blockTop = slot.capTop + Math.max(0, (availableHeight - blockHeight) / 2)
-
-  fit.lines.forEach((line, index) => {
-    ctx.fillText(line, slot.centerX, blockTop + fit.capHeight + index * fit.lineHeight)
-  })
+  drawCardName(ctx, { fit, fontFamily: args.fontFamily, slot })
 
   return fit
 }

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import { NAME_CARD_SLOT, getCardModel, type CardRect } from '@/lib/cardModels'
+import { fitCardName } from '@/lib/cardNameFit'
 import { centerCardPhotoTransform, type CardPhotoSize } from '@/lib/cardPhotoTransform'
 import {
   createCardMeasure,
+  drawCardName,
   renderNameCard,
   renderPhotoCard,
   type CardDrawContext,
@@ -49,7 +51,7 @@ const nameModel = getCardModel('eu-sou-solla')!
 const squareModel = getCardModel('perfil-quadrado')!
 
 describe('renderNameCard', () => {
-  it('draws the master base first and then the centered name', () => {
+  it('draws the master base first and then the name on the left border', () => {
     const { ctx, drawCalls, textCalls } = createFakeContext()
     const image = { id: 'base' } as unknown as CanvasImageSource
     const fit = renderNameCard(ctx, nameModel, {
@@ -63,10 +65,10 @@ describe('renderNameCard', () => {
     expect(drawCalls).toEqual([{ image, dx: 0, dy: 0, dw: 1080, dh: 1440 }])
     expect(textCalls).toHaveLength(1)
     expect(textCalls[0]!.text).toBe('JOÃO')
-    expect(textCalls[0]!.x).toBe(NAME_CARD_SLOT.centerX)
+    expect(textCalls[0]!.x).toBe(NAME_CARD_SLOT.leftX)
     expect(textCalls[0]!.y).toBeCloseTo(NAME_CARD_SLOT.capTop + NAME_CARD_SLOT.capHeight, 5)
     expect(ctx.fillStyle).toBe(NAME_CARD_SLOT.fill)
-    expect(ctx.textAlign).toBe('center')
+    expect(ctx.textAlign).toBe('left')
   })
 
   it('wraps long names into two lines with baselines inside the free band', () => {
@@ -96,6 +98,38 @@ describe('renderNameCard', () => {
     expect(fit).toEqual({ ok: false, reason: 'too-long' })
     expect(drawCalls).toHaveLength(1)
     expect(textCalls).toHaveLength(0)
+  })
+})
+
+describe('drawCardName', () => {
+  it('draws only the fitted name (no base) on the left border', () => {
+    const { ctx, drawCalls, textCalls } = createFakeContext()
+    const fit = fitCardName('João', createCardMeasure(ctx, 'Brexter'))
+    expect(fit.ok).toBe(true)
+    if (!fit.ok) return
+
+    drawCardName(ctx, { fit, fontFamily: 'Brexter' })
+
+    expect(drawCalls).toHaveLength(0)
+    expect(textCalls).toEqual([
+      { text: 'JOÃO', x: NAME_CARD_SLOT.leftX, y: NAME_CARD_SLOT.capTop + fit.capHeight },
+    ])
+    expect(ctx.textAlign).toBe('left')
+    expect(ctx.fillStyle).toBe(NAME_CARD_SLOT.fill)
+  })
+
+  it('left-aligns both wrapped lines inside the free band', () => {
+    const { ctx, textCalls } = createFakeContext()
+    const fit = fitCardName('Jorge Solla da Bahia', createCardMeasure(ctx, 'Brexter'))
+    expect(fit.ok).toBe(true)
+    if (!fit.ok) return
+
+    drawCardName(ctx, { fit, fontFamily: 'Brexter' })
+
+    expect(textCalls.map((call) => call.text)).toEqual(['JORGE SOLLA', 'DA BAHIA'])
+    expect(textCalls.every((call) => call.x === NAME_CARD_SLOT.leftX)).toBe(true)
+    expect(textCalls[0]!.y).toBeLessThan(textCalls[1]!.y)
+    expect(textCalls[1]!.y).toBeLessThanOrEqual(NAME_CARD_SLOT.maxBlockBottom)
   })
 })
 

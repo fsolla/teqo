@@ -38,6 +38,41 @@ const swipeLeft = async (
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
 }
 
+/**
+ * S14 — scans the name band (y[420..540]) of a card canvas: yellow pixel count
+ * and leftmost x. The base masters have no yellow in this band, so the scan
+ * sees only the drawn name.
+ */
+const readCardNameBand = (canvas: Locator) =>
+  canvas.evaluate((element) => {
+    const node = element as HTMLCanvasElement
+    const ctx = node.getContext('2d')
+    if (!ctx) return { yellow: 0, minX: node.width }
+
+    const band = ctx.getImageData(0, 420, node.width, 120).data
+    let yellow = 0
+    let minX = node.width
+    for (let index = 0; index < band.length; index += 4) {
+      if (band[index] > 230 && band[index + 1] > 200 && band[index + 2] < 80) {
+        yellow += 1
+        const x = (index / 4) % node.width
+        if (x < minX) minX = x
+      }
+    }
+
+    return { yellow, minX }
+  })
+
+/** S14 — the name starts on the `SOU` left border (x≈213 at 1080), not centered. */
+const expectCardNameLeftAligned = async (canvas: Locator) => {
+  await expect
+    .poll(async () => {
+      const { yellow, minX } = await readCardNameBand(canvas)
+      return yellow > 1000 && minX >= 205 && minX <= 245
+    })
+    .toBe(true)
+}
+
 test.describe('Frontend', () => {
   test('can go on homepage', async ({ page }) => {
     await page.goto('/')
@@ -1656,8 +1691,8 @@ test.describe('Campaign home content section', () => {
   })
 })
 
-test.describe('Cards personalizados (S13)', () => {
-  test('home invites to the card funnel right after the newsletter capture', async ({ page }) => {
+test.describe('Cards personalizados (S14)', () => {
+  test('home opens the composer in place right before the newsletter capture', async ({ page }) => {
     await page.goto('/')
 
     const order = await page
@@ -1665,19 +1700,28 @@ test.describe('Cards personalizados (S13)', () => {
       .evaluateAll((sections) =>
         sections.map((section) => section.getAttribute('data-home-section')),
       )
-    expect(order.indexOf('cards')).toBe(order.indexOf('newsletter') + 1)
+    expect(order.indexOf('cards')).toBe(order.indexOf('story') + 1)
+    expect(order.indexOf('cards')).toBe(order.indexOf('newsletter') - 1)
 
     const section = page.locator('section#cards')
     await expect(
       section.getByRole('heading', { name: 'Mostre que você está com Solla' }),
     ).toBeVisible()
+    // S14 — the CTA is gone: the three models are the only trigger.
+    await expect(section.getByRole('link', { name: 'Criar meu card' })).toHaveCount(0)
     for (const model of ['eu-sou-solla', 'perfil-quadrado', 'perfil-retangular']) {
-      await expect(section.locator(`a[href="/cards?model=${model}"]`).first()).toBeAttached()
+      await expect(section.locator(`[data-card-model-tile="${model}"]`).first()).toBeAttached()
     }
 
-    const trigger = section.getByRole('link', { name: /Moldura quadrada/ })
+    // S14 — the name tile reproduces the real result: `SEU NOME` drawn by the
+    // composer pipeline, left-aligned with the `SOU` border (x≈213 at 1080).
+    const nameTileCanvas = section.locator('[data-card-model-tile="eu-sou-solla"] canvas').first()
+    await expectCardNameLeftAligned(nameTileCanvas)
+
+    const trigger = section.getByRole('button', { name: /Moldura quadrada/ })
     await trigger.click()
-    await expect(page).toHaveURL(/\/cards\?model=perfil-quadrado$/)
+    // No navigation: the same composer island opens over the home.
+    expect(new URL(page.url()).pathname).toBe('/')
     const dialog = page.getByRole('dialog')
     await expect(dialog.getByRole('heading', { name: 'Enquadre sua foto' })).toBeVisible()
     await page.keyboard.press('Escape')
@@ -1705,19 +1749,9 @@ test.describe('Cards personalizados (S13)', () => {
     const canvas = dialog.locator('canvas')
     await expect(canvas).toHaveAttribute('width', '1080')
     await expect(canvas).toHaveAttribute('height', '1440')
-    await expect
-      .poll(() =>
-        canvas.evaluate((element) => {
-          const node = element as HTMLCanvasElement
-          const band = node.getContext('2d')!.getImageData(0, 420, node.width, 120).data
-          let yellow = 0
-          for (let index = 0; index < band.length; index += 4) {
-            if (band[index] > 230 && band[index + 1] > 200 && band[index + 2] < 80) yellow += 1
-          }
-          return yellow
-        }),
-      )
-      .toBeGreaterThan(1000)
+    // S14 — the name is drawn on the `SOU` left border (x≈213 at 1080), not
+    // centered: a centered `João` would start past x=350.
+    await expectCardNameLeftAligned(canvas)
 
     await primary.click()
     await expect(dialog.getByText('Seu card está pronto para compartilhar.')).toBeVisible()

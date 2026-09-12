@@ -1,19 +1,20 @@
-import Link from 'next/link'
-
-import { CardModelGallery } from '@/components/cards/CardModelGallery'
+import { brexterBold } from '@/app/(frontend)/fonts'
+import { CardsStudio } from '@/components/cards/CardsStudio'
 
 /**
- * S13 — the home invitation to the card funnel: short copy + the three model
- * tiles, positioned after the newsletter capture (which stays the first
- * conversion of the page end) and before the footer. Each tile deep-links into
- * `/cards` with its model selected; the general CTA opens the plain catalog.
+ * S14 — the home invitation to the card funnel: short copy + the three model
+ * tiles, positioned right before the newsletter capture (which stays the last
+ * conversion block). Tapping a tile opens the SAME composer island used by
+ * `/cards` right here (dialog on desktop, drawer on mobile) — no navigation and
+ * no separate CTA. `brexterBold.variable` includes the display face in the page
+ * so the name-tile canvas (family passed as a prop) can load it.
  */
 export const CampaignCardsSection = () => (
   <section
     id="cards"
     aria-labelledby="cards-title"
     data-home-section="cards"
-    className="border-b border-(--campaign-line) bg-(--campaign-cream)"
+    className={`border-b border-(--campaign-line) bg-(--campaign-cream) ${brexterBold.variable}`}
   >
     <div className="mx-auto w-full max-w-[1160px] px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
       <div className="mx-auto max-w-2xl text-center">
@@ -32,16 +33,7 @@ export const CampaignCardsSection = () => (
         </p>
       </div>
 
-      <CardModelGallery variant="link" ariaLabel="Modelos de card" />
-
-      <div className="mt-8 text-center">
-        <Link
-          href="/cards"
-          className="inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-(--pt-red) px-6 text-sm font-extrabold text-white transition hover:brightness-95 focus-visible:ring-2 focus-visible:ring-(--pt-red) focus-visible:ring-offset-2 focus-visible:outline-none sm:w-auto"
-        >
-          Criar meu card
-        </Link>
-      </div>
+      <CardsStudio fontFamily={brexterBold.style.fontFamily} />
     </div>
   </section>
 )

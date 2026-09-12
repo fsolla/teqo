@@ -35,6 +35,17 @@ vi.mock('@/utilities/campaignHomeTracking', () => ({
   getCampaignHomeMetaPixelId: async () => null,
 }))
 
+// S14 — the card section renders the client studio island (next/font local
+// face + matchMedia + canvas); its behavior is e2e-covered, so the unit
+// skeleton mocks both the face module and the island.
+vi.mock('@/app/(frontend)/fonts', () => ({
+  brexterBold: { variable: 'font-brexter-mock', style: { fontFamily: 'Brexter' } },
+}))
+
+vi.mock('@/components/cards/CardsStudio', () => ({
+  CardsStudio: () => null,
+}))
+
 afterEach(cleanup)
 
 describe('Campaign home', () => {
@@ -51,6 +62,7 @@ describe('Campaign home', () => {
         name: /Junto com o trabalhador e do lado de quem mais precisa, sempre/i,
       }),
     ).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /Mostre que você está com Solla/i })).toBeTruthy()
     expect(screen.getByRole('heading', { name: /Receba as novidades da campanha/i })).toBeTruthy()
     expect(screen.getByText(/CNPJ: 68\.430\.467\/0001-05/)).toBeTruthy()
   })

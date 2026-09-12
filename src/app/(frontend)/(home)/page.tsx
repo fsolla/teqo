@@ -236,8 +236,8 @@ export default async function HomePage() {
         </section>
 
         <CampaignStorySection />
-        <CampaignNewsletterSection pixelId={pixelId ?? undefined} />
         <CampaignCardsSection />
+        <CampaignNewsletterSection pixelId={pixelId ?? undefined} />
       </main>
 
       <CampaignFooter />

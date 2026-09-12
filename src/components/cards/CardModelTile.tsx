@@ -1,23 +1,24 @@
 import { CheckIcon, UserRoundIcon } from 'lucide-react'
 import Image from 'next/image'
 
-import { NAME_CARD_SLOT, type CardModel } from '@/lib/cardModels'
+import { CardNameTileCanvas } from '@/components/cards/CardNameTileCanvas'
+import type { CardModel } from '@/lib/cardModels'
 import { cn } from '@/lib/utils'
 
 /**
  * S13 — artwork preview of one card model, shared by the home section and the
- * `/cards` gallery. The name tile reuses the empty master with an HTML
- * `SEU NOME` placeholder (the real name is only drawn by the canvas); the photo
- * tiles show the official transparent overlay above a neutral photo slot.
+ * `/cards` gallery. The name tile reuses the empty master with a `SEU NOME`
+ * preview drawn by the real composer pipeline (S14); the photo tiles show the
+ * official transparent overlay above a neutral photo slot.
  */
 export const CardModelTile = ({
   model,
+  fontFamily,
   selected = false,
-  priority = false,
 }: {
   model: CardModel
+  fontFamily: string
   selected?: boolean
-  priority?: boolean
 }) => (
   <span
     className={cn(
@@ -26,7 +27,7 @@ export const CardModelTile = ({
         ? 'border-(--pt-red) ring-2 ring-(--pt-red)'
         : 'border-(--campaign-line) group-hover:-translate-y-0.5 group-hover:shadow-lg',
     )}
-    style={{ aspectRatio: `${model.width} / ${model.height}`, containerType: 'inline-size' }}
+    style={{ aspectRatio: `${model.width} / ${model.height}` }}
   >
     {model.kind === 'photo' ? (
       <>
@@ -52,25 +53,11 @@ export const CardModelTile = ({
       src={model.assetSrc}
       alt=""
       fill
-      priority={priority}
       sizes="(min-width: 1024px) 340px, 78vw"
       className="object-cover"
     />
 
-    {model.kind === 'name' ? (
-      <span
-        aria-hidden="true"
-        className="absolute -translate-x-1/2 font-[family-name:var(--font-exo2)] leading-none font-black tracking-[-0.02em]"
-        style={{
-          left: `${(NAME_CARD_SLOT.centerX / model.width) * 100}%`,
-          top: `${(NAME_CARD_SLOT.capTop / model.height) * 100}%`,
-          fontSize: '11.5cqw',
-          color: NAME_CARD_SLOT.fill,
-        }}
-      >
-        SEU NOME
-      </span>
-    ) : null}
+    {model.kind === 'name' ? <CardNameTileCanvas model={model} fontFamily={fontFamily} /> : null}
 
     {selected ? (
       <span className="absolute top-3 right-3 inline-flex size-7 items-center justify-center rounded-full bg-(--pt-red) text-white shadow-md">
