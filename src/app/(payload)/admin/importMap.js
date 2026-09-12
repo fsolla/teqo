@@ -36,7 +36,6 @@ import { ImportPreview as ImportPreview_cdf7e044479f899a31f804427d568b36 } from 
 import { ImportSaveButton as ImportSaveButton_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { InstagramSyncStatusPanel as InstagramSyncStatusPanel_90dd38ffecf41d93e389c788f98f48da } from '../../../components/admin/InstagramSyncStatusPanel'
 import { InstagramPostExclusionPicker as InstagramPostExclusionPicker_ba03418db242c21470543bbeb06827a0 } from '../../../components/admin/InstagramPostExclusionPicker'
-import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 import { ImportExportProvider as ImportExportProvider_cdf7e044479f899a31f804427d568b36 } from '@payloadcms/plugin-import-export/rsc'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
@@ -79,7 +78,6 @@ export const importMap = {
   "@payloadcms/plugin-import-export/rsc#ImportSaveButton": ImportSaveButton_cdf7e044479f899a31f804427d568b36,
   "./components/admin/InstagramSyncStatusPanel#InstagramSyncStatusPanel": InstagramSyncStatusPanel_90dd38ffecf41d93e389c788f98f48da,
   "./components/admin/InstagramPostExclusionPicker#InstagramPostExclusionPicker": InstagramPostExclusionPicker_ba03418db242c21470543bbeb06827a0,
-  "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
   "@payloadcms/plugin-import-export/rsc#ImportExportProvider": ImportExportProvider_cdf7e044479f899a31f804427d568b36,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

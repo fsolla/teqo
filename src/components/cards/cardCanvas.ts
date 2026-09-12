@@ -42,13 +42,20 @@ export const loadCardPhoto = (file: File): Promise<HTMLImageElement> =>
     image.src = url
   })
 
-/** Canvas does not wait for CSS fonts: the family must be loaded before measuring. */
+/**
+ * Canvas does not wait for CSS fonts: the family must be loaded before
+ * measuring. `next/font` hands a family list (primary + generated fallback),
+ * and `document.fonts.check` fails closed on the unloaded fallback — so only
+ * the primary family is awaited here.
+ */
 export const ensureCardFont = async (fontFamily: string): Promise<boolean> => {
   if (typeof document === 'undefined' || !document.fonts) return false
 
+  const primaryFamily = fontFamily.split(',')[0]?.trim() || fontFamily
+
   try {
-    await document.fonts.load(`700 100px ${fontFamily}`)
-    return document.fonts.check(`700 100px ${fontFamily}`)
+    const faces = await document.fonts.load(`700 100px ${primaryFamily}`)
+    return faces.length > 0
   } catch {
     return false
   }

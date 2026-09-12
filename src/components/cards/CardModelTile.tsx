@@ -4,9 +4,6 @@ import Image from 'next/image'
 import { NAME_CARD_SLOT, type CardModel } from '@/lib/cardModels'
 import { cn } from '@/lib/utils'
 
-const NAME_OVERLAY_LEFT = `${(NAME_CARD_SLOT.centerX / 1080) * 100}%`
-const NAME_OVERLAY_TOP = `${(NAME_CARD_SLOT.capTop / 1440) * 100}%`
-
 /**
  * S13 — artwork preview of one card model, shared by the home section and the
  * `/cards` gallery. The name tile reuses the empty master with an HTML
@@ -63,8 +60,13 @@ export const CardModelTile = ({
     {model.kind === 'name' ? (
       <span
         aria-hidden="true"
-        className="absolute -translate-x-1/2 font-[family-name:var(--font-exo2)] leading-none font-black tracking-[-0.02em] text-[#ffec01]"
-        style={{ left: NAME_OVERLAY_LEFT, top: NAME_OVERLAY_TOP, fontSize: '11.5cqw' }}
+        className="absolute -translate-x-1/2 font-[family-name:var(--font-exo2)] leading-none font-black tracking-[-0.02em]"
+        style={{
+          left: `${(NAME_CARD_SLOT.centerX / model.width) * 100}%`,
+          top: `${(NAME_CARD_SLOT.capTop / model.height) * 100}%`,
+          fontSize: '11.5cqw',
+          color: NAME_CARD_SLOT.fill,
+        }}
       >
         SEU NOME
       </span>

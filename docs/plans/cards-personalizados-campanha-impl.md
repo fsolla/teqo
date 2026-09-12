@@ -101,7 +101,7 @@ flowchart LR
 - **`src/app/(frontend)/(home)/CampaignCardsSection.tsx`** (novo): seção server da home no molde de `CampaignNewsletterSection.tsx` — `id="cards"`, `aria-labelledby`, `data-home-section="cards"`, `mx-auto max-w-[1160px] px-5 py-12 sm:px-8 lg:px-10 lg:py-16`, eyebrow/título/corpo com `.campaign-section-*`, CTA `--pt-red`; usa `CardModelGallery variant="link"` (tiles levam a `/cards?model=<id>`).
 - **`src/app/(frontend)/(home)/page.tsx`** (editar): `<CampaignCardsSection />` logo após `<CampaignNewsletterSection … />`, dentro do `<main>`, antes de `</main>`/`CampaignFooter`.
 - **`src/app/(frontend)/fonts.ts`** + **`src/app/(frontend)/fonts/Brexter-Bold.ttf`** (novos): `export const brexterBold = localFont({ src: './fonts/Brexter-Bold.ttf', weight: '700', style: 'normal', display: 'swap' })`; só a família (string) cruza para os componentes.
-- **`src/lib/cardModels.ts`** (novo, puro): `CardModelId`, `CardModel`, `CARD_MODELS`, `isCardModelId`, `NAME_SLOT` (centerX 570 / capHeight 106 / maxInkWidth 714 / bandTop 430 / bandBottom 536 / ink `#ffec01`), `PHOTO_WINDOWS` (quadrada 1000×1000 janela y[0..740]; vertical 1000×1440 janela y[0..1044]), `OUTPUT` dims e paths ASCII. Fonte única do catálogo (home + `/cards` + render).
+- **`src/lib/cardModels.ts`** (novo, puro): `CardModelId`, `CardModel`, `CARD_MODELS`, `isCardModelId`, `NAME_CARD_SLOT` (centerX 570 / capTop 430 / capHeight 106 / maxInkWidth 714 / maxBlockBottom 630 para 2 linhas / minCapHeight 48 / ink `#ffec01`), janelas de foto em `CARD_MODELS[i].photoWindow` (quadrada 1000×1000 janela y[0..740]; vertical 1000×1440 janela y[0..1044]), dims de saída nos próprios modelos e paths ASCII. Fonte única do catálogo (home + `/cards` + render).
 - **`src/lib/cardNameFit.ts`** (novo, puro): `fitCardName(name, measure, slot)` + `resolveFontSizeForCapHeight`; retorno `{ ok: true; lines; fontSize; lineHeight } | { ok: false; reason: 'too-long' }`; `MIN_CAP_HEIGHT` fill-in (~48px, validado no craft); nunca trunca.
 - **`src/lib/cardPhotoTransform.ts`** (novo, puro): cover scale na janela, `clampPhotoTransform`, `photoDrawRect`; zoom 1–4; pan clampado para nunca abrir gap na janela (inclui a contra-forma transparente dentro dos limites da janela).
 - **`src/lib/cardRender.ts`** (novo, puro): interfaces estruturais mínimas `CardRenderContext`/`CardTextMetrics` (o `CanvasRenderingContext2D` real as satisfaz); `renderNameCard` (base → nome) e `renderPhotoCard` (foto → máscara, nessa ordem); sem dependência de DOM/Next.
@@ -155,7 +155,6 @@ Não se aplica (data-presentation Q3): nenhum KPI, mapa ou série; a única “f
 4. **Craft/Critique/Polish + e2e + gates** — quota ~0,5 dia. Impeccable C; e2e novo + prewarm + manifest; changelog; `pnpm gate:fast`; e2e local do describe (`pnpm test:e2e --no-deps -- tests/e2e/frontend.e2e.spec.ts -g "Cards personalizados"`); `pnpm push`.
 
 ## Rabbit holes / Não escopo (engenharia)
-
 - Não criar collection/global/migration/CMS para modelos (o catálogo é código).
 - Não criar um segundo compositor na home: o tile da home é link e só `/cards` edita.
 - Não recriar faixas/contra-formas das artes em CSS/SVG; overlay é o PNG mestre.
@@ -167,7 +166,7 @@ Não se aplica (data-presentation Q3): nenhum KPI, mapa ou série; a única “f
 
 ## Riscos e mitigação
 
-- **Fonte não pronta no draw** (medida com fallback desalinha o fit): só desenhar após `document.fonts.load` e `document.fonts.check` na família primária; estado de carregamento no preview.
+- **Fonte não pronta no draw** (medida com fallback desalinha o fit): só desenhar após `document.fonts.load` da família primária (`check` falha pela fallback gerada do next/font); estado de carregamento no preview.
 - **Canvas tainted/cross-origin**: assets same-origin em `public/cards/`; nunca URL externa.
 - **Foto HEIC/grande/corrompida**: decode em try/catch com erro recuperável (`Escolher outra foto`); formatos suportados pelo browser seguem funcionando; limite defensivo de tamanho sem bloquear caso comum.
 - **Gap no pan/zoom**: clamp puro testado; a foto é desenhada antes do overlay, então nem uma borda vazaria.
@@ -176,6 +175,13 @@ Não se aplica (data-presentation Q3): nenhum KPI, mapa ou série; a única “f
 - **Peso da home**: `next/image` com `sizes` para os tiles; os assets full só são carregados quando o composer abre (lazy).
 - **Cold compile do `/cards` no e2e dev**: entrada no prewarm do `setup.e2e.spec.ts`.
 - **Formato TTF no `next/font/local`**: se o build reclamar, converter para WOFF2 na mesma fase (família/permissão inalteradas).
+
+## Débitos diferidos (triage pós-review, 2026-09-12)
+
+- **Extrair `PhotoControls`/`NameField` do `CardComposer`** (cheap_polish, score 2) — gatilho: próximo toque funcional no composer (novo passo/controle) ou regressão de interação no bloco de foto.
+- **Helper único do idioma download Blob → object URL → `<a download>`** (2 call sites hoje) — gatilho: 3º call site.
+- **Cobertura de pan por teclado no e2e e dos re-checks do fit de duas linhas no unit** — gatilho: próximo toque em `cardNameFit`/`CardComposer` ou regressão de teclado/duas linhas em UAT.
+- Descartados na triagem: união discriminada do `CardModelGallery` e inline do `CardPreviewCanvas` (polish sem gatilho; invariantes já garantidas pelos call sites atuais).
 
 ## Aceite de engenharia
 

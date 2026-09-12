@@ -13,6 +13,7 @@ import {
   type CardMeasureText,
   type CardNameFit,
   type CardNameSlot,
+  type CardTextMetrics,
 } from './cardNameFit'
 import {
   cardPhotoDrawRect,
@@ -28,13 +29,7 @@ export type CardDrawContext = {
   textBaseline: CanvasTextBaseline
   drawImage(image: CanvasImageSource, dx: number, dy: number, dWidth: number, dHeight: number): void
   fillText(text: string, x: number, y: number): void
-  measureText(text: string): CardTextMetricsLike
-}
-
-type CardTextMetricsLike = {
-  width: number
-  actualBoundingBoxAscent: number
-  actualBoundingBoxDescent: number
+  measureText(text: string): CardTextMetrics
 }
 
 export const createCardMeasure = (

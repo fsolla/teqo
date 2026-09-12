@@ -86,6 +86,30 @@ describe('fitCardName', () => {
     expect(fitCardName('   ', measure)).toEqual({ ok: false, reason: 'empty' })
   })
 
+  it('fails closed when shrinking cannot reach the ink width (adversarial metrics)', () => {
+    const rigid: CardMeasureText = (_text, fontSize) => ({
+      width: 5000,
+      actualBoundingBoxAscent: fontSize * 0.72,
+      actualBoundingBoxDescent: fontSize * 0.2,
+    })
+    const rigidCase = fitCardName('João', rigid)
+
+    expect(rigidCase.ok).toBe(false)
+    if (!rigidCase.ok) expect(rigidCase.reason).toBe('too-long')
+  })
+
+  it('fails closed when the shrink factor collapses to zero', () => {
+    const absurd: CardMeasureText = (_text, fontSize) => ({
+      width: 1_000_000_000,
+      actualBoundingBoxAscent: fontSize * 0.72,
+      actualBoundingBoxDescent: fontSize * 0.2,
+    })
+    const absurdCase = fitCardName('João', absurd)
+
+    expect(absurdCase.ok).toBe(false)
+    if (!absurdCase.ok) expect(absurdCase.reason).toBe('too-long')
+  })
+
   it('preserves Portuguese accents in the fitted lines', () => {
     const fit = fitCardName('Coração', measure)
 
