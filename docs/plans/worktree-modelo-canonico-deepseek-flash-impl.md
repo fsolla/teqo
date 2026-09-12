@@ -48,6 +48,7 @@ flowchart LR
 **Opções consideradas:** A | B | C
 **Recomendação:** A — trocar o fallback na constante única + remover o pin `model:` dos 4 commands + trocar o guard do frontmatter para proibir qualquer pin + sincronizar os textos vivos e os pins de teste. É o menor diff que cumpre o aceite integral e ataca a causa (o pin que sobrescreve a sessão), sem tocar mapa, override ou config.
 **Rejeitadas:**
+
 - **B — preset canônico + pin trocado para `deepseek/deepseek-flash` nos 4 commands:** cumpre o nome, mas mantém o acoplamento que anula as flags/override dentro da sessão e recria o débito na próxima renomeação; a intenção manda "deixar de pinar".
 - **C — preset canônico apenas (commands intocados):** deixaria o frontmatter pinando o legado — falha o aceite (2) e mantém o override do pin sobre a sessão.
 
@@ -113,7 +114,6 @@ N/A — config-only de tooling; nenhum dado de negócio modelado (pergunta 3 de 
 - **Adiado com gatilho:**
   - Literais do preset em comentários vivos (`scripts/worktree.mjs:30`, `.agents/shell/worktree.sh:22`, `.agents/skills/worktree-next-issue/SKILL.md:34`) sem guard de sincronização — **gatilho:** próxima troca de preset deixar um dos textos divergente.
   - Guard de frontmatter cobre os 4 commands do array (`opencodeCommands.unit.spec.ts:13`), não os 6 arquivos de `.opencode/commands/` — **gatilho:** novo command de execução (ou pin em command fora do array).
-
 
 ## Riscos e mitigação
 
