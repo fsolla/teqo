@@ -8,7 +8,8 @@
 # (The Forgejo-era invocation `ssh homeserver "bash -s -- <sha>" < script`
 # is gone — no SSH hop, no workstation involvement.)
 #
-# Flow: HEAD guard (only the current main HEAD deploys) -> flock
+# Flow: HEAD guard (only the current main HEAD deploys; a stale run FAILS the
+# job — never a false green with prod left on the old image) -> flock
 # serialization -> workspace fetch at <sha> -> docker login (local registry)
 # -> build of the MIGRATOR stage (it never runs `next build`, so it builds
 # even against the old schema) -> push of the migrator (registry-qualified
@@ -47,8 +48,7 @@ fatal() {
 
 main_head="$(git ls-remote "$TEQO_REPO_URL" refs/heads/main | awk '{print $1}')"
 if [ "$main_head" != "$SHA" ]; then
-  say "stale run: main is $main_head, job deploys $SHA — skipping"
-  exit 0
+  fatal "stale run: main is $main_head, job deploys $SHA — refusing to deploy an outdated SHA"
 fi
 
 exec 9>"$DEPLOY_LOCK"
@@ -56,8 +56,7 @@ flock -w 3600 9 || fatal "another deploy holds $DEPLOY_LOCK"
 
 main_head="$(git ls-remote "$TEQO_REPO_URL" refs/heads/main | awk '{print $1}')"
 if [ "$main_head" != "$SHA" ]; then
-  say "stale run after lock: main is $main_head, job deploys $SHA — skipping"
-  exit 0
+  fatal "stale run after lock: main is $main_head, job deploys $SHA — refusing to deploy an outdated SHA"
 fi
 
 # --- idempotency (OPS65) ------------------------------------------------
