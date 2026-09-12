@@ -155,6 +155,7 @@ Não se aplica (data-presentation Q3): nenhum KPI, mapa ou série; a única “f
 4. **Craft/Critique/Polish + e2e + gates** — quota ~0,5 dia. Impeccable C; e2e novo + prewarm + manifest; changelog; `pnpm gate:fast`; e2e local do describe (`pnpm test:e2e --no-deps -- tests/e2e/frontend.e2e.spec.ts -g "Cards personalizados"`); `pnpm push`.
 
 ## Rabbit holes / Não escopo (engenharia)
+
 - Não criar collection/global/migration/CMS para modelos (o catálogo é código).
 - Não criar um segundo compositor na home: o tile da home é link e só `/cards` edita.
 - Não recriar faixas/contra-formas das artes em CSS/SVG; overlay é o PNG mestre.
