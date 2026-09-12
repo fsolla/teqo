@@ -163,6 +163,7 @@ const parseSharedActivityFormData = (formData: FormData) => {
     description: optionalFormText(formData, 'description'),
     deputyPresent: checkboxFormValue(formData, 'deputyPresent'),
     allDay,
+    publicEvent: checkboxFormValue(formData, 'publicEvent'),
     startAt: parseScheduleFormField(formData, 'startAt', allDay),
     endAt: parseScheduleFormField(formData, 'endAt', allDay),
     municipality: requiredRelationshipFormValue(formData, 'municipality'),

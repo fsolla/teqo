@@ -412,6 +412,8 @@ test.describe('Agenda — calendário operacional', () => {
     // regression): saving must actually persist.
     await editModal.getByLabel('Hora de Término').selectOption('15')
     await editModal.getByLabel('Local (opcional)').fill(newLocality)
+    // C151 — the public-event intent is marked in the same save.
+    await editModal.getByLabel('Evento público').click()
     await editModal.getByRole('button', { name: 'Salvar alterações' }).click()
 
     // Save closes the overlay, never navigates; the calendar reflects the edit.
@@ -426,6 +428,8 @@ test.describe('Agenda — calendário operacional', () => {
     await page.getByText(title, { exact: true }).first().click()
     const detailModal = page.getByRole('dialog', { name: 'Editar atividade' })
     await expect(detailModal.getByLabel('Título *')).toBeVisible({ timeout: 30_000 })
+    // C151 — the mark survives the save and comes back on reopening the overlay.
+    await expect(detailModal.getByLabel('Evento público')).toHaveAttribute('aria-checked', 'true')
     await detailModal.getByRole('link', { name: 'Ver detalhes' }).click()
     await expect(page).toHaveURL(/\/campanha\/atividades\/[^/?]+(?:\?tab=overview)?$/, {
       timeout: 30_000,

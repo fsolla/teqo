@@ -133,6 +133,7 @@ const activityFieldsSchema = z.object({
   description: trimmedOptionalText(4000),
   deputyPresent: z.boolean().optional(),
   allDay: z.boolean().optional(),
+  publicEvent: z.boolean().optional(),
   startAt: z.string().datetime().optional().nullable(),
   endAt: z.string().datetime().optional().nullable(),
   municipality: positiveRelationshipId,

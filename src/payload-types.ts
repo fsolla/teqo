@@ -776,6 +776,10 @@ export interface Activity {
    * Compromisso que ocupa um ou mais dias inteiros, sem horário.
    */
   allDay?: boolean | null;
+  /**
+   * Quando marcado, este evento poderá ser publicado no site do candidato (futuro).
+   */
+  publicEvent?: boolean | null;
   startAt?: string | null;
   endAt?: string | null;
   municipality: number | Municipality;
@@ -1915,6 +1919,7 @@ export interface ActivitySelect<T extends boolean = true> {
   description?: T;
   deputyPresent?: T;
   allDay?: T;
+  publicEvent?: T;
   startAt?: T;
   endAt?: T;
   municipality?: T;

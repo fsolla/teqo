@@ -352,6 +352,20 @@ const ActivityOverlayForm = ({
         <span>Todo o dia</span>
       </Field>
 
+      <Field
+        orientation="horizontal"
+        className={
+          sheet ? 'min-h-11 gap-2 rounded-none border-0 px-0' : 'min-h-11 rounded-lg border p-3'
+        }
+      >
+        <Checkbox
+          name="publicEvent"
+          defaultChecked={isEdit ? editDraft?.publicEvent : false}
+          aria-label="Evento público"
+        />
+        <span>Evento público</span>
+      </Field>
+
       {sheet ? startEndFields : <div className="grid gap-3 sm:grid-cols-2">{startEndFields}</div>}
     </>
   )
