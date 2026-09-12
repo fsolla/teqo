@@ -8,9 +8,11 @@ import {
   revokeCalendarFeed,
 } from '@/app/(campaign)/campanha/actions/calendarFeed'
 import {
+  disconnectGoogleCalendarOAuth,
   getGoogleCalendarSyncState,
   runGoogleCalendarSyncNow,
   setGoogleCalendarSyncDisabled,
+  startGoogleCalendarOAuth,
 } from '@/app/(campaign)/campanha/actions/googleCalendarSync'
 import { ActivityAgenda } from '@/components/campaign/activity/ActivityAgenda'
 import { ActivityAgendaFilters } from '@/components/campaign/activity/ActivityAgendaFilters'
@@ -101,6 +103,14 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
         onSetDisabled={async (disabled) => {
           'use server'
           return setGoogleCalendarSyncDisabled(disabled)
+        }}
+        onStartOAuth={async () => {
+          'use server'
+          return startGoogleCalendarOAuth()
+        }}
+        onDisconnect={async () => {
+          'use server'
+          return disconnectGoogleCalendarOAuth()
         }}
       />
 

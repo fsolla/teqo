@@ -2,11 +2,22 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import type { Activity, GoogleCalendarSync as GoogleCalendarSyncDoc } from '@/payload-types'
 
-import { REQUEST_TIMEOUT_MS } from '@/utilities/googleCalendarClient'
 import {
+  GoogleCalendarApiError,
+  GoogleCalendarAuthError,
+  REQUEST_TIMEOUT_MS,
+} from '@/utilities/googleCalendarClient'
+import {
+  GOOGLE_CALENDAR_OAUTH_CLIENT_ID_ENV,
+  GOOGLE_CALENDAR_OAUTH_CLIENT_SECRET_ENV,
+} from '@/utilities/googleCalendarOAuth'
+import {
+  deriveGoogleCalendarConnectionStatus,
   deriveGoogleCalendarSyncStatus,
   GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV,
   GOOGLE_CALENDAR_SYNC_HOOK_TIMEOUT_MS,
+  oauthErrorPatchFor,
+  readGoogleCalendarAuth,
   readGoogleServiceAccountCredentials,
   shouldSyncActivityOperation,
   shouldSyncConfigChange,
@@ -61,6 +72,71 @@ describe('deriveGoogleCalendarSyncStatus', () => {
   })
 })
 
+describe('deriveGoogleCalendarConnectionStatus (C149)', () => {
+  it('is not-configured without a refresh token and without an error', () => {
+    expect(deriveGoogleCalendarConnectionStatus({ hasRefreshToken: false })).toBe('not-configured')
+  })
+
+  it('is connected with a refresh token and no newer error', () => {
+    expect(
+      deriveGoogleCalendarConnectionStatus({
+        hasRefreshToken: true,
+        oauthConnectedAt: '2026-08-11T10:00:00.000Z',
+      }),
+    ).toBe('connected')
+    // An error recorded BEFORE the last connection is stale — connected wins.
+    expect(
+      deriveGoogleCalendarConnectionStatus({
+        hasRefreshToken: true,
+        oauthConnectedAt: '2026-08-11T12:00:00.000Z',
+        oauthErrorAt: '2026-08-11T10:00:00.000Z',
+      }),
+    ).toBe('connected')
+  })
+
+  it('is error when the auth error is newer than the connection (or there is none)', () => {
+    expect(
+      deriveGoogleCalendarConnectionStatus({
+        hasRefreshToken: true,
+        oauthConnectedAt: '2026-08-11T10:00:00.000Z',
+        oauthErrorAt: '2026-08-11T12:00:00.000Z',
+      }),
+    ).toBe('error')
+    // A failed handshake before the first connection has no connectedAt.
+    expect(
+      deriveGoogleCalendarConnectionStatus({
+        hasRefreshToken: false,
+        oauthErrorAt: '2026-08-11T12:00:00.000Z',
+      }),
+    ).toBe('error')
+  })
+})
+
+describe('oauthErrorPatchFor (C149)', () => {
+  it('maps a dead OAuth connection to the connection error fields', () => {
+    expect(
+      oauthErrorPatchFor(
+        new GoogleCalendarAuthError('A conexão com o Google expirou. Reconecte a conta.'),
+        '2026-09-12T10:00:00.000Z',
+      ),
+    ).toEqual({
+      oauthErrorAt: '2026-09-12T10:00:00.000Z',
+      oauthError: 'A conexão com o Google expirou. Reconecte a conta.',
+    })
+  })
+
+  it('leaves every other failure out of the connection state', () => {
+    expect(oauthErrorPatchFor(new Error('HTTP 500'), 'at')).toBeNull()
+    expect(oauthErrorPatchFor(new GoogleCalendarApiError('HTTP 403', 403), 'at')).toBeNull()
+    expect(oauthErrorPatchFor('not-an-error', 'at')).toBeNull()
+  })
+
+  it('truncates the message to the stored 500-char limit', () => {
+    const patch = oauthErrorPatchFor(new GoogleCalendarAuthError('x'.repeat(900)), 'at')
+    expect(patch?.oauthError).toHaveLength(500)
+  })
+})
+
 describe('readGoogleServiceAccountCredentials', () => {
   const originalKey = process.env[GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV]
 
@@ -100,6 +176,86 @@ describe('readGoogleServiceAccountCredentials', () => {
       'utf8',
     ).toString('base64')
     expect(readGoogleServiceAccountCredentials()).toBeNull()
+  })
+})
+
+describe('readGoogleCalendarAuth (C149)', () => {
+  const original = {
+    sa: process.env[GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV],
+    id: process.env[GOOGLE_CALENDAR_OAUTH_CLIENT_ID_ENV],
+    secret: process.env[GOOGLE_CALENDAR_OAUTH_CLIENT_SECRET_ENV],
+  }
+
+  afterEach(() => {
+    const restore = (key: string, value: string | undefined) => {
+      if (value === undefined) delete process.env[key]
+      else process.env[key] = value
+    }
+    restore(GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV, original.sa)
+    restore(GOOGLE_CALENDAR_OAUTH_CLIENT_ID_ENV, original.id)
+    restore(GOOGLE_CALENDAR_OAUTH_CLIENT_SECRET_ENV, original.secret)
+  })
+
+  const setServiceAccountEnv = () => {
+    process.env[GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV] = Buffer.from(
+      JSON.stringify({
+        client_email: 'teqo-sa@projeto.iam.gserviceaccount.com',
+        private_key: '-----BEGIN PRIVATE KEY-----\nMOCK\n-----END PRIVATE KEY-----\n',
+      }),
+      'utf8',
+    ).toString('base64')
+  }
+
+  const setOAuthClientEnv = () => {
+    process.env[GOOGLE_CALENDAR_OAUTH_CLIENT_ID_ENV] = 'client-id'
+    process.env[GOOGLE_CALENDAR_OAUTH_CLIENT_SECRET_ENV] = 'client-secret'
+  }
+
+  const doc = (overrides: Record<string, unknown> = {}) =>
+    ({ id: 1, ...overrides }) as unknown as GoogleCalendarSyncDoc
+
+  it('prefers the OAuth connection over the service account', () => {
+    setServiceAccountEnv()
+    setOAuthClientEnv()
+
+    const auth = readGoogleCalendarAuth(doc({ oauthRefreshToken: 'refresh-token' }))
+
+    expect(auth).toEqual({
+      kind: 'oauth',
+      credentials: {
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+        refreshToken: 'refresh-token',
+      },
+    })
+  })
+
+  it('falls back to the service account without a refresh token', () => {
+    setServiceAccountEnv()
+    setOAuthClientEnv()
+
+    const auth = readGoogleCalendarAuth(doc())
+
+    expect(auth?.kind).toBe('service-account')
+  })
+
+  it('falls back to the service account when the OAuth client env is missing', () => {
+    setServiceAccountEnv()
+    delete process.env[GOOGLE_CALENDAR_OAUTH_CLIENT_ID_ENV]
+    delete process.env[GOOGLE_CALENDAR_OAUTH_CLIENT_SECRET_ENV]
+
+    expect(readGoogleCalendarAuth(doc({ oauthRefreshToken: 'refresh-token' }))?.kind).toBe(
+      'service-account',
+    )
+  })
+
+  it('is null (fail-closed) without any credential', () => {
+    delete process.env[GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY_ENV]
+    delete process.env[GOOGLE_CALENDAR_OAUTH_CLIENT_ID_ENV]
+    delete process.env[GOOGLE_CALENDAR_OAUTH_CLIENT_SECRET_ENV]
+
+    expect(readGoogleCalendarAuth(doc({ oauthRefreshToken: 'refresh-token' }))).toBeNull()
+    expect(readGoogleCalendarAuth(null)).toBeNull()
   })
 })
 
@@ -238,6 +394,20 @@ describe('shouldSyncConfigChange', () => {
         previousDoc: config({ disabledAt: '2026-08-11T10:00:00.000Z' }),
       }),
     ).toBe(true)
+  })
+
+  it('skips OAuth-connection writes — the callback runs its own pass (C149)', () => {
+    expect(
+      shouldSyncConfigChange({
+        operation: 'update',
+        doc: config({
+          oauthRefreshToken: 'refresh-token',
+          oauthConnectedAt: 'x',
+          oauthError: null,
+        }),
+        previousDoc: config({ oauthRefreshToken: null }),
+      }),
+    ).toBe(false)
   })
 })
 

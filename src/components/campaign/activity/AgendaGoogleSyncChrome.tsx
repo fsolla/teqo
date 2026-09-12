@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import type { GoogleCalendarSyncActionResult } from '@/app/(campaign)/campanha/actions/googleCalendarSync'
+import type {
+  GoogleCalendarOAuthStartResult,
+  GoogleCalendarSyncActionResult,
+} from '@/app/(campaign)/campanha/actions/googleCalendarSync'
 import { GoogleCalendarSyncDialog } from '@/components/campaign/activity/GoogleCalendarSyncDialog'
 import { SetCampaignHeaderAction } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { useBridgedQuickAction } from '@/components/campaign/shell/CampaignQuickActionContext'
@@ -12,6 +15,10 @@ type AgendaGoogleSyncChromeProps = {
   initialState: GoogleCalendarSyncActionResult
   onSyncNow: () => Promise<GoogleCalendarSyncActionResult>
   onSetDisabled: (disabled: boolean) => Promise<GoogleCalendarSyncActionResult>
+  /** C149 — starts the OAuth handshake; the dialog navigates to the consent URL. */
+  onStartOAuth: () => Promise<GoogleCalendarOAuthStartResult>
+  /** C149 — drops the OAuth connection from the Teqo. */
+  onDisconnect: () => Promise<GoogleCalendarSyncActionResult>
 }
 
 const PILL_COPY: Record<
@@ -50,6 +57,8 @@ export const AgendaGoogleSyncChrome = ({
   initialState,
   onSyncNow,
   onSetDisabled,
+  onStartOAuth,
+  onDisconnect,
 }: AgendaGoogleSyncChromeProps) => {
   const [open, setOpen] = useState(false)
   const [state, setState] = useState(initialState)
@@ -83,6 +92,13 @@ export const AgendaGoogleSyncChrome = ({
     [onSetDisabled],
   )
 
+  // C149 — the connection card follows the disconnect without a page reload.
+  const handleDisconnect = useCallback(async () => {
+    const result = await onDisconnect()
+    if (result.ok) setState(result)
+    return result
+  }, [onDisconnect])
+
   const pill = useMemo(() => {
     const copy = PILL_COPY[state.status]
     return (
@@ -109,6 +125,8 @@ export const AgendaGoogleSyncChrome = ({
         state={state}
         onSyncNow={handleSyncNow}
         onSetDisabled={handleSetDisabled}
+        onStartOAuth={onStartOAuth}
+        onDisconnect={handleDisconnect}
       />
     </>
   )

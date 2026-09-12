@@ -7,11 +7,17 @@ import config from '@/payload.config'
 import { loadGoogleCalendarSyncConfig } from '@/utilities/googleCalendarSync'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
 
+import {
+  GOOGLE_CALENDAR_SYNC_LOCK_KEY,
+  serializeSpecWithAdvisoryLock,
+} from '../helpers/advisoryLock'
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 import {
   createSlowGoogleFetch,
   withValidGoogleCalendarCredential,
 } from '../helpers/googleCalendarTestKey'
+
+serializeSpecWithAdvisoryLock(GOOGLE_CALENDAR_SYNC_LOCK_KEY)
 
 let payload: Payload
 const campaignFixtures = installCampaignFixtures({

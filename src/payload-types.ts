@@ -941,6 +941,17 @@ export interface GoogleCalendarSync {
    */
   calendarId?: string | null;
   /**
+   * Credencial da conexão OAuth com a conta Google da campanha. Preenchida pelo callback do botão "Conectar com o Google"; nunca é exibida.
+   */
+  oauthRefreshToken?: string | null;
+  /**
+   * Escopos que o Google devolveu na conexão (diagnóstico).
+   */
+  oauthScope?: string | null;
+  oauthConnectedAt?: string | null;
+  oauthErrorAt?: string | null;
+  oauthError?: string | null;
+  /**
    * Enquanto preenchido, o Teqo não escreve no Google.
    */
   disabledAt?: string | null;
@@ -1959,6 +1970,11 @@ export interface CalendarFeedSelect<T extends boolean = true> {
  */
 export interface GoogleCalendarSyncSelect<T extends boolean = true> {
   calendarId?: T;
+  oauthRefreshToken?: T;
+  oauthScope?: T;
+  oauthConnectedAt?: T;
+  oauthErrorAt?: T;
+  oauthError?: T;
   disabledAt?: T;
   lastSyncedAt?: T;
   lastSuccessAt?: T;

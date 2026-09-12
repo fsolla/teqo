@@ -49,7 +49,7 @@ const seedSyncConfig = (
   })
 
 test.describe('Agenda — sincronização Google (C114/C122)', () => {
-  test('staff vê a pill "não configurado" e o diálogo explica o passo de operação', async ({
+  test('staff vê a pill "não configurado" e o diálogo oferece conectar (C149)', async ({
     campaign,
     page,
   }) => {
@@ -67,9 +67,57 @@ test.describe('Agenda — sincronização Google (C114/C122)', () => {
 
     const dialog = syncDialog(page)
     await expect(dialog).toBeVisible()
-    await expect(dialog.getByText('Ainda não configurado')).toBeVisible()
-    // O runbook de operação aparece (a ativação depende da conta Google da campanha).
-    await expect(dialog.getByText(/service account do Teqo/)).toBeVisible()
+    // C149: sem conexão, o card oferece o botão de conectar (o client OAuth
+    // dummy está no webServer) e mantém a service account como fallback.
+    await expect(dialog.getByText('Não configurado')).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Conectar com o Google' })).toBeVisible()
+    await expect(dialog.getByText(/service account continua disponível/)).toBeVisible()
+  })
+
+  test('o botão Conectar leva ao consent do Google com os escopos mínimos (C149)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    // Row owned by the fixture: the start action UPDATES it (the connection
+    // row may exist before any calendar is chosen) instead of creating a row
+    // the cleanup would not track.
+    await fixtures.payload.create({
+      collection: 'googleCalendarSync',
+      data: {},
+      depth: 0,
+      overrideAccess: true,
+    })
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    await page.goto(`${campaign.baseURL}/campanha/agenda`)
+
+    // The click navigates the browser to accounts.google.com — intercept so
+    // the assertion observes the URL Google would receive, with no network.
+    await page.route('https://accounts.google.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/html', body: '<title>consent</title>' }),
+    )
+
+    const pill = page.getByRole('button', { name: 'Google: não configurado' })
+    await expect(pill).toBeVisible({ timeout: 15_000 })
+    await pill.click()
+
+    const dialog = syncDialog(page)
+    await expect(dialog).toBeVisible()
+    await dialog.getByRole('button', { name: 'Conectar com o Google' }).click()
+
+    await expect.poll(() => page.url()).toContain('accounts.google.com/o/oauth2/v2/auth')
+    const url = new URL(page.url())
+    expect(url.searchParams.get('access_type')).toBe('offline')
+    expect(url.searchParams.get('prompt')).toBe('consent')
+    expect(url.searchParams.get('response_type')).toBe('code')
+    expect(url.searchParams.get('scope')).toBe(
+      'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly',
+    )
+    expect(url.searchParams.get('state')).toBeTruthy()
+    const redirectUri = new URL(url.searchParams.get('redirect_uri') as string)
+    expect(redirectUri.pathname).toBe('/campanha/agenda/google-oauth/callback')
   })
 
   test('estado disabled: pill, aviso de desativação e Reativar re-sincroniza (D7)', async ({
@@ -212,7 +260,8 @@ test.describe('Agenda — sincronização Google (C114/C122)', () => {
 
       const sheet = syncDialog(page)
       await expect(sheet).toBeVisible({ timeout: 15_000 })
-      await expect(sheet.getByText('Ainda não configurado')).toBeVisible()
+      await expect(sheet.getByText('Não configurado')).toBeVisible()
+      await expect(sheet.getByRole('button', { name: 'Conectar com o Google' })).toBeVisible()
     })
   })
 

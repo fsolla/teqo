@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { GoogleCalendarSyncActionResult } from '@/app/(campaign)/campanha/actions/googleCalendarSync'
@@ -9,6 +9,11 @@ const syncedState = (
   overrides: Partial<GoogleCalendarSyncActionResult> = {},
 ): GoogleCalendarSyncActionResult => ({
   ok: true,
+  canManageConnection: true,
+  connection: 'connected',
+  oauthAvailable: true,
+  oauthConnectedAt: '2026-08-01T12:00:00.000Z',
+  oauthError: null,
   status: 'synced',
   calendarId: 'c_campanha@group.calendar.google.com',
   lastSyncedAt: '2026-08-11T12:00:00.000Z',
@@ -21,8 +26,15 @@ const syncedState = (
   ...overrides,
 })
 
-const notConfiguredState = (): GoogleCalendarSyncActionResult => ({
+const notConfiguredState = (
+  overrides: Partial<GoogleCalendarSyncActionResult> = {},
+): GoogleCalendarSyncActionResult => ({
   ok: true,
+  canManageConnection: true,
+  connection: 'not-configured',
+  oauthAvailable: true,
+  oauthConnectedAt: null,
+  oauthError: null,
   status: 'not-configured',
   calendarId: null,
   lastSyncedAt: null,
@@ -32,9 +44,18 @@ const notConfiguredState = (): GoogleCalendarSyncActionResult => ({
   pushChannelExpiresAt: null,
   pushChannelError: null,
   addLink: null,
+  ...overrides,
 })
 
-const renderDialog = (state: GoogleCalendarSyncActionResult) =>
+const renderDialog = (
+  state: GoogleCalendarSyncActionResult,
+  overrides: {
+    onStartOAuth?: () => Promise<
+      { ok: true; authorizeUrl: string } | { ok: false; message: string }
+    >
+    onDisconnect?: () => Promise<GoogleCalendarSyncActionResult>
+  } = {},
+) =>
   render(
     <GoogleCalendarSyncDialog
       open
@@ -42,6 +63,8 @@ const renderDialog = (state: GoogleCalendarSyncActionResult) =>
       state={state}
       onSyncNow={vi.fn()}
       onSetDisabled={vi.fn()}
+      onStartOAuth={overrides.onStartOAuth ?? vi.fn()}
+      onDisconnect={overrides.onDisconnect ?? vi.fn()}
     />,
   )
 
@@ -126,6 +149,51 @@ describe('GoogleCalendarSyncDialog — encaixe desktop (C148)', () => {
     const dialog = screen.getByRole('dialog', { name: /Agenda da Campanha no Google/ })
     expect(dialog.querySelector('[data-slot="dialog-footer"]')).toBeNull()
     expect(dialog.querySelector('[data-slot="dialog-scroll-body"]')).toBeTruthy()
+  })
+})
+
+describe('GoogleCalendarSyncDialog — card de conexão OAuth (C149)', () => {
+  it('offers the connect button when the OAuth client is configured', () => {
+    renderDialog(notConfiguredState())
+    const dialog = screen.getByRole('dialog', { name: /Agenda da Campanha no Google/ })
+    expect(within(dialog).getByText('Não configurado')).toBeTruthy()
+    expect(within(dialog).getByRole('button', { name: /Conectar com o Google/ })).toBeTruthy()
+    // The service account remains documented as the technical fallback.
+    expect(within(dialog).getByText(/service account continua disponível/)).toBeTruthy()
+  })
+
+  it('shows the handshake error with the one-click reconnect path', () => {
+    renderDialog(
+      syncedState({
+        connection: 'error',
+        oauthError: 'A conexão com o Google expirou ou foi revogada.',
+      }),
+    )
+    const dialog = screen.getByRole('dialog', { name: /Agenda da Campanha no Google/ })
+    expect(within(dialog).getByText('Erro')).toBeTruthy()
+    expect(within(dialog).getByText(/expirou ou foi revogada/)).toBeTruthy()
+    expect(within(dialog).getByRole('button', { name: /Reconectar com o Google/ })).toBeTruthy()
+  })
+
+  it('disconnects from the card when connected', async () => {
+    const onDisconnect = vi.fn(async () => notConfiguredState())
+    renderDialog(syncedState(), { onDisconnect })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Desconectar' }))
+
+    await waitFor(() => expect(onDisconnect).toHaveBeenCalledTimes(1))
+  })
+
+  it('hides the connect/disconnect actions from non-managers (advisor)', () => {
+    renderDialog(notConfiguredState({ canManageConnection: false }))
+    expect(screen.queryByRole('button', { name: /Conectar com o Google/ })).toBeNull()
+    expect(screen.getByText(/Somente candidato ou coordenação/)).toBeTruthy()
+  })
+
+  it('falls back to the admin runbook when the server has no OAuth client', () => {
+    renderDialog(notConfiguredState({ oauthAvailable: false }))
+    expect(screen.getByText(/service account do Teqo/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Conectar com o Google/ })).toBeNull()
   })
 })
 

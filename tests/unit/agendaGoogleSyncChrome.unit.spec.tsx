@@ -1,7 +1,10 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { GoogleCalendarSyncActionResult } from '@/app/(campaign)/campanha/actions/googleCalendarSync'
+import type {
+  GoogleCalendarOAuthStartResult,
+  GoogleCalendarSyncActionResult,
+} from '@/app/(campaign)/campanha/actions/googleCalendarSync'
 import { AgendaGoogleSyncChrome } from '@/components/campaign/activity/AgendaGoogleSyncChrome'
 import {
   CampaignPageChromeProvider,
@@ -23,6 +26,11 @@ import { stubMatchMedia } from '../helpers/matchMedia'
 
 const stateFor = (status: GoogleCalendarSyncStatus): GoogleCalendarSyncActionResult => ({
   ok: true,
+  canManageConnection: true,
+  connection: status === 'not-configured' ? 'not-configured' : 'connected',
+  oauthAvailable: true,
+  oauthConnectedAt: status === 'not-configured' ? null : '2026-08-01T10:00:00.000Z',
+  oauthError: null,
   status,
   calendarId: status === 'not-configured' ? null : 'c_campanha@group.calendar.google.com',
   lastSyncedAt: status === 'synced' || status === 'paused' ? '2026-08-11T10:00:00.000Z' : null,
@@ -62,6 +70,13 @@ const renderChrome = ({
           initialState={stateFor(status)}
           onSyncNow={onSyncNow}
           onSetDisabled={vi.fn(async () => stateFor('disabled'))}
+          onStartOAuth={vi.fn(
+            async (): Promise<GoogleCalendarOAuthStartResult> => ({
+              ok: true,
+              authorizeUrl: 'https://accounts.google.com/',
+            }),
+          )}
+          onDisconnect={vi.fn(async () => stateFor('not-configured'))}
         />
         <HeaderActionsProbe />
       </CampaignQuickActionContextProvider>

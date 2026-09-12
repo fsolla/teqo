@@ -175,6 +175,28 @@ automaticamente — **não serve push, não recebe PRs, é somente leitura**.
 - Segredos nunca ecoados: sem `set -x`, senhas via `--password-stdin` /
   build-secrets; envs só no homeserver.
 
+## C149 — Google OAuth da agenda (envs novas + GCP)
+
+O botão **"Conectar com o Google"** da agenda usa um OAuth client do GCP. Sem
+as envs, o diálogo cai no runbook antigo da service account — que segue como
+fallback e não foi removida por esta entrega.
+
+1. No GCP (mesmo projeto da service account), crie um OAuth client **Web
+   application** com os redirect URIs:
+   - `https://jorgesolla1313.com.br/campanha/agenda/google-oauth/callback`
+   - `http://localhost:<porta>/campanha/agenda/google-oauth/callback` (dev)
+2. Publique o app em produção — **unverified** é aceito (uso interno). Em
+   "Testing" o refresh token expira em ~7 dias e o estado vira `erro` na UI.
+3. Adicione ao `~/stack/teqo-1313.env` (homeserver, chmod 600):
+   `GOOGLE_CALENDAR_OAUTH_CLIENT_ID` e `GOOGLE_CALENDAR_OAUTH_CLIENT_SECRET`.
+4. Deploy normal (`workflow_dispatch` do `deploy.yml`). O callback monta o
+   redirect a partir de `NEXT_PUBLIC_SITE_URL` — precisa bater exatamente com
+   o URI registrado no passo 1.
+
+Desconectar no Teqo apaga o refresh token daquele lado; para revogar o acesso
+de fato, revogue o app em `myaccount.google.com/permissions` (a UI orienta o
+passo).
+
 ## OPS79 — última migração da plataforma antiga → nova (vertical campanha)
 
 Operação de dados executada em 2026-08-23. Ver assistência lógica completa:

@@ -1,4 +1,5 @@
 import { Client } from 'pg'
+import { afterAll, beforeAll } from 'vitest'
 
 import { assertTestDatabase } from './assertTestDatabase'
 
@@ -11,6 +12,16 @@ import { assertTestDatabase } from './assertTestDatabase'
  * its key here instead of inventing an integer ad hoc.
  */
 export const ADMIN_LOGIN_LOCK_KEY = 727_001
+
+/**
+ * C149 — `googleCalendarSync` is a SINGLETON row, and the int suite runs files
+ * in parallel against one database: several google specs create/pick/delete
+ * configured rows concurrently, and the loader's "configured row wins"
+ * preference then resolves to ANOTHER file's row (channel/count assertions
+ * read the wrong doc, snapshots land on a row being deleted). The lock
+ * serializes the whole google calendar family for the duration of each file.
+ */
+export const GOOGLE_CALENDAR_SYNC_LOCK_KEY = 727_002
 
 /**
  * Runs `fn` while holding a Postgres advisory lock.
@@ -32,4 +43,27 @@ export const withAdvisoryLock = async <T>(key: number, fn: () => Promise<T>): Pr
     await client.query('SELECT pg_advisory_unlock($1)', [key]).catch(() => {})
     await client.end().catch(() => {})
   }
+}
+
+/**
+ * Holds the given advisory lock for the WHOLE spec file: `beforeAll` acquires
+ * on a dedicated connection and `afterAll` releases it. Call at the top level
+ * of a spec. A crashed worker drops its connection, releasing the lock.
+ */
+export const serializeSpecWithAdvisoryLock = (key: number): void => {
+  let client: Client | null = null
+
+  beforeAll(async () => {
+    assertTestDatabase(process.env.DATABASE_URL)
+    client = new Client({ connectionString: process.env.DATABASE_URL })
+    await client.connect()
+    await client.query('SELECT pg_advisory_lock($1)', [key])
+  }, 60_000)
+
+  afterAll(async () => {
+    if (!client) return
+    await client.query('SELECT pg_advisory_unlock($1)', [key]).catch(() => {})
+    await client.end().catch(() => {})
+    client = null
+  })
 }

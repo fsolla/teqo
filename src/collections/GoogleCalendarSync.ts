@@ -18,6 +18,12 @@ import { googleCalendarSyncConfigHook } from '@/utilities/googleCalendarSyncHook
  * account private key never lives here — it is `GOOGLE_CALENDAR_SERVICE_ACCOUNT_KEY`
  * in the environment. Changing `calendarId` (or re-enabling) re-runs the full
  * reconciliation automatically via `googleCalendarSyncConfigHook` (D7).
+ *
+ * C149 — the same row also holds the OAuth connection (refresh token + state)
+ * created by the "Conectar com o Google" button. The refresh token is
+ * system-only and unreadable by every user path (`read: false`), exactly like
+ * the push-channel secret; the engine reads it with the admin bypass. The
+ * service account remains the fallback while no OAuth connection exists.
  */
 export const GoogleCalendarSync: CollectionConfig = {
   slug: 'googleCalendarSync',
@@ -59,6 +65,64 @@ export const GoogleCalendarSync: CollectionConfig = {
         description:
           'O calendarId do calendário "Agenda da Campanha" na conta Google da campanha (ex.: c_…@group.calendar.google.com). O calendário precisa estar público no link e a service account com permissão de edição.',
       },
+    },
+    {
+      name: 'oauthRefreshToken',
+      type: 'text',
+      label: 'Token de atualização (OAuth)',
+      access: {
+        create: canSetGoogleCalendarSyncSystemField,
+        read: canReadGoogleCalendarSyncIdentityField,
+        update: canSetGoogleCalendarSyncSystemField,
+      },
+      admin: {
+        readOnly: true,
+        description:
+          'Credencial da conexão OAuth com a conta Google da campanha. Preenchida pelo callback do botão "Conectar com o Google"; nunca é exibida.',
+      },
+    },
+    {
+      name: 'oauthScope',
+      type: 'text',
+      label: 'Escopos concedidos (OAuth)',
+      access: {
+        create: canSetGoogleCalendarSyncSystemField,
+        update: canSetGoogleCalendarSyncSystemField,
+      },
+      admin: {
+        readOnly: true,
+        description: 'Escopos que o Google devolveu na conexão (diagnóstico).',
+      },
+    },
+    {
+      name: 'oauthConnectedAt',
+      type: 'date',
+      label: 'Conta Google conectada em',
+      access: {
+        create: canSetGoogleCalendarSyncSystemField,
+        update: canSetGoogleCalendarSyncSystemField,
+      },
+      admin: { readOnly: true },
+    },
+    {
+      name: 'oauthErrorAt',
+      type: 'date',
+      label: 'Último erro de conexão (OAuth)',
+      access: {
+        create: canSetGoogleCalendarSyncSystemField,
+        update: canSetGoogleCalendarSyncSystemField,
+      },
+      admin: { readOnly: true },
+    },
+    {
+      name: 'oauthError',
+      type: 'textarea',
+      label: 'Mensagem do último erro de conexão (OAuth)',
+      access: {
+        create: canSetGoogleCalendarSyncSystemField,
+        update: canSetGoogleCalendarSyncSystemField,
+      },
+      admin: { readOnly: true },
     },
     {
       name: 'disabledAt',

@@ -8,12 +8,14 @@ import {
   createGoogleCalendarClient,
   GOOGLE_CALENDAR_SCOPE,
   GoogleCalendarApiError,
+  GoogleCalendarAuthError,
   type FetchLike,
-  type GoogleCalendarCredentials,
+  type GoogleCalendarAuth,
+  type GoogleCalendarServiceAccountCredentials,
 } from '@/utilities/googleCalendarClient'
 
 describe('buildServiceAccountAssertion', () => {
-  let credentials: GoogleCalendarCredentials
+  let credentials: GoogleCalendarServiceAccountCredentials
   let publicKeyPem: string
 
   beforeAll(async () => {
@@ -38,7 +40,8 @@ describe('buildServiceAccountAssertion', () => {
 })
 
 describe('createGoogleCalendarClient', () => {
-  let credentials: GoogleCalendarCredentials
+  let credentials: GoogleCalendarServiceAccountCredentials
+  let serviceAccountAuth: GoogleCalendarAuth
 
   beforeAll(async () => {
     // The token endpoint is stubbed, but the client still SIGNS the JWT
@@ -48,7 +51,17 @@ describe('createGoogleCalendarClient', () => {
       clientEmail: 'teqo-sa@projeto.iam.gserviceaccount.com',
       privateKey: await exportPKCS8(privateKey),
     }
+    serviceAccountAuth = { kind: 'service-account', credentials }
   })
+
+  const oauthAuth: GoogleCalendarAuth = {
+    kind: 'oauth',
+    credentials: {
+      clientId: 'client-id.apps.googleusercontent.com',
+      clientSecret: 'client-secret',
+      refreshToken: 'refresh-token',
+    },
+  }
 
   const calendarId = 'c_abc@group.calendar.google.com'
 
@@ -112,7 +125,7 @@ describe('createGoogleCalendarClient', () => {
 
   it('inserts with the deterministic id, bearer auth and JSON body', async () => {
     const { fetchImpl, calls, events } = stubTransport()
-    const client = createGoogleCalendarClient(credentials, fetchImpl)
+    const client = createGoogleCalendarClient(serviceAccountAuth, fetchImpl)
 
     await client.insertEvent(calendarId, { id: 'teqo1a', summary: 'S', description: 'D' })
 
@@ -125,7 +138,7 @@ describe('createGoogleCalendarClient', () => {
 
   it('lists with the window params and pagination', async () => {
     const { fetchImpl, calls } = stubTransport()
-    const client = createGoogleCalendarClient(credentials, fetchImpl)
+    const client = createGoogleCalendarClient(serviceAccountAuth, fetchImpl)
 
     await client.listEvents(calendarId, {
       timeMin: '2026-01-01T00:00:00Z',
@@ -158,7 +171,7 @@ describe('createGoogleCalendarClient', () => {
       })
     }) as FetchLike
 
-    const client = createGoogleCalendarClient(credentials, fetchImpl)
+    const client = createGoogleCalendarClient(serviceAccountAuth, fetchImpl)
     const events = await client.listEvents(calendarId, {
       timeMin: '2026-01-01T00:00:00Z',
       timeMax: '2026-12-31T00:00:00Z',
@@ -177,9 +190,79 @@ describe('createGoogleCalendarClient', () => {
       return new Response('ok', { status: 200 })
     }) as FetchLike
 
-    const client = createGoogleCalendarClient(credentials, fetchImpl)
+    const client = createGoogleCalendarClient(serviceAccountAuth, fetchImpl)
     await expect(
       client.listEvents(calendarId, { timeMin: 'a', timeMax: 'b' }),
     ).rejects.toBeInstanceOf(GoogleCalendarApiError)
+  })
+
+  it('mints an access token with the OAuth refresh grant (C149)', async () => {
+    const { fetchImpl, calls } = stubTransport()
+    const client = createGoogleCalendarClient(oauthAuth, fetchImpl)
+
+    await client.listEvents(calendarId, { timeMin: 'a', timeMax: 'b' })
+
+    const tokenCall = calls.find((call) => call.url === 'https://oauth2.googleapis.com/token')
+    const params = new URLSearchParams(tokenCall?.body)
+    expect(params.get('grant_type')).toBe('refresh_token')
+    expect(params.get('refresh_token')).toBe('refresh-token')
+    expect(params.get('client_id')).toBe('client-id.apps.googleusercontent.com')
+    expect(params.get('client_secret')).toBe('client-secret')
+    const listCall = calls.find((call) => call.method === 'GET')
+    expect(listCall?.auth).toBe('Bearer token-1')
+  })
+
+  it('maps invalid_grant to GoogleCalendarAuthError (reconnectable)', async () => {
+    const fetchImpl: FetchLike = (async () =>
+      new Response(JSON.stringify({ error: 'invalid_grant' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      })) as FetchLike
+
+    const client = createGoogleCalendarClient(oauthAuth, fetchImpl)
+    await expect(
+      client.listEvents(calendarId, { timeMin: 'a', timeMax: 'b' }),
+    ).rejects.toBeInstanceOf(GoogleCalendarAuthError)
+  })
+
+  it('keeps invalid_client as an API error (reconnect would not fix it)', async () => {
+    const fetchImpl: FetchLike = (async () =>
+      new Response(JSON.stringify({ error: 'invalid_client' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      })) as FetchLike
+
+    const client = createGoogleCalendarClient(oauthAuth, fetchImpl)
+    await expect(
+      client.listEvents(calendarId, { timeMin: 'a', timeMax: 'b' }),
+    ).rejects.toBeInstanceOf(GoogleCalendarApiError)
+  })
+
+  it('re-mints the OAuth token once on a 401 and retries the call', async () => {
+    let calendarCalls = 0
+    let tokenRequests = 0
+    const fetchImpl: FetchLike = (async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === 'https://oauth2.googleapis.com/token') {
+        tokenRequests += 1
+        return new Response(
+          JSON.stringify({ access_token: `oauth-token-${tokenRequests}`, expires_in: 3600 }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        )
+      }
+      calendarCalls += 1
+      if (calendarCalls === 1) return new Response('unauthorized', { status: 401 })
+      return new Response(JSON.stringify({ items: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }) as FetchLike
+
+    const client = createGoogleCalendarClient(oauthAuth, fetchImpl)
+    const events = await client.listEvents(calendarId, { timeMin: 'a', timeMax: 'b' })
+
+    expect(events).toEqual([])
+    expect(calendarCalls).toBe(2)
+    expect(tokenRequests).toBe(2)
   })
 })

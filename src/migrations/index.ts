@@ -64,6 +64,7 @@ import * as migration_20260820_003426_add_instagram_sync_status from './20260820
 import * as migration_20260823_161905_add_municipality_update_deliberation from './20260823_161905_add_municipality_update_deliberation';
 import * as migration_20260824_000000_reconcile_allocation_decision_rationale_nullable from './20260824_000000_reconcile_allocation_decision_rationale_nullable';
 import * as migration_20260824_010000_make_supporter_import_batch_actor_nullable from './20260824_010000_make_supporter_import_batch_actor_nullable';
+import * as migration_20260912_052226_add_google_calendar_oauth_connection from './20260912_052226_add_google_calendar_oauth_connection';
 
 export const migrations = [
   {
@@ -384,16 +385,21 @@ export const migrations = [
   {
     up: migration_20260823_161905_add_municipality_update_deliberation.up,
     down: migration_20260823_161905_add_municipality_update_deliberation.down,
-    name: '20260823_161905_add_municipality_update_deliberation'
+    name: '20260823_161905_add_municipality_update_deliberation',
   },
   {
     up: migration_20260824_000000_reconcile_allocation_decision_rationale_nullable.up,
     down: migration_20260824_000000_reconcile_allocation_decision_rationale_nullable.down,
-    name: '20260824_000000_reconcile_allocation_decision_rationale_nullable'
+    name: '20260824_000000_reconcile_allocation_decision_rationale_nullable',
   },
   {
     up: migration_20260824_010000_make_supporter_import_batch_actor_nullable.up,
     down: migration_20260824_010000_make_supporter_import_batch_actor_nullable.down,
-    name: '20260824_010000_make_supporter_import_batch_actor_nullable'
+    name: '20260824_010000_make_supporter_import_batch_actor_nullable',
+  },
+  {
+    up: migration_20260912_052226_add_google_calendar_oauth_connection.up,
+    down: migration_20260912_052226_add_google_calendar_oauth_connection.down,
+    name: '20260912_052226_add_google_calendar_oauth_connection'
   },
 ];
