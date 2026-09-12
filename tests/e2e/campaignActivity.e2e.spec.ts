@@ -69,6 +69,20 @@ test.describe('Atividades — registro-fundação', () => {
     // The central modal (desktop) hosts every section of the old full form.
     const modal = page.getByRole('dialog', { name: 'Nova atividade' })
     await expect(modal).toBeVisible()
+    // C148 — encaixe desktop: largura generosa (não os 28rem que a base
+    // `sm:max-w-md` impunha) e Início/Término lado a lado na mesma linha.
+    const modalBox = await modal.boundingBox()
+    expect(modalBox?.width ?? 0).toBeGreaterThan(600)
+    const pairBoxes = await modal.evaluate((dialog) => {
+      const start = dialog.querySelector('#overlay-startAt')?.getBoundingClientRect()
+      const end = dialog.querySelector('#overlay-endAt')?.getBoundingClientRect()
+      return start && end
+        ? { startY: start.top, endY: end.top, startX: start.left, endX: end.left }
+        : null
+    })
+    if (!pairBoxes) throw new Error('overlay start/end boxes unavailable')
+    expect(Math.abs(pairBoxes.startY - pairBoxes.endY)).toBeLessThan(4)
+    expect(pairBoxes.endX).toBeGreaterThan(pairBoxes.startX)
     await page.getByLabel('Título *').fill(activityTitle)
     // The municipality filter prefills the field; the times come from the slot.
     await expect(page.getByLabel('Município *')).toHaveValue(municipality.name)

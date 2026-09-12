@@ -183,48 +183,42 @@ export const GoogleCalendarSyncDialog = ({
     </Button>
   )
 
-  let body: React.ReactNode
+  let content: React.ReactNode
+  let actions: React.ReactNode = null
 
   if (state.status === 'not-configured') {
-    body = (
-      <div className="space-y-4">
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm">
-          <p className="mb-2 font-medium text-amber-900">Ainda não configurado</p>
-          <p className="text-amber-800">
-            O Teqo segue 100% funcional — a agenda do Teqo nunca depende do Google. Para ativar o
-            espelho, um administrador precisa concluir a configuração:
-          </p>
-          <ol className="mt-2 list-inside list-decimal space-y-1 text-amber-800">
-            {NOT_CONFIGURED_RUNBOOK.map((step) => (
-              <li key={step}>{step}</li>
-            ))}
-          </ol>
-        </div>
+    content = (
+      <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm">
+        <p className="mb-2 font-medium text-amber-900">Ainda não configurado</p>
+        <p className="text-amber-800">
+          O Teqo segue 100% funcional — a agenda do Teqo nunca depende do Google. Para ativar o
+          espelho, um administrador precisa concluir a configuração:
+        </p>
+        <ol className="mt-2 list-inside list-decimal space-y-1 text-amber-800">
+          {NOT_CONFIGURED_RUNBOOK.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
       </div>
     )
   } else if (state.status === 'disabled') {
-    body = (
-      <div className="space-y-4">
-        <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
-          A sincronização está desativada. A agenda do Teqo continua funcionando normalmente; nada é
-          enviado ao Google enquanto estiver desativada.
-        </div>
-        {actionError && (
-          <p role="alert" className="text-sm text-red-600">
-            {actionError}
-          </p>
-        )}
-        <div className="flex justify-end">
-          <Button type="button" onClick={() => void handleSetDisabled(false)} disabled={isBusy}>
-            Reativar
-          </Button>
-        </div>
+    content = (
+      <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
+        A sincronização está desativada. A agenda do Teqo continua funcionando normalmente; nada é
+        enviado ao Google enquanto estiver desativada.
+      </div>
+    )
+    actions = (
+      <div className="flex justify-end">
+        <Button type="button" onClick={() => void handleSetDisabled(false)} disabled={isBusy}>
+          Reativar
+        </Button>
       </div>
     )
   } else {
     const paused = state.status === 'paused'
-    body = (
-      <div className="space-y-4">
+    content = (
+      <>
         {paused ? (
           <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm">
             <p className="mb-1 font-medium text-amber-900">Pausado — re-tentando</p>
@@ -251,39 +245,40 @@ export const GoogleCalendarSyncDialog = ({
         {linkBlock}
         {instructions}
         {reverseEditBlock}
-
-        {actionError && (
-          <p role="alert" className="text-sm text-red-600">
-            {actionError}
-          </p>
-        )}
-
-        <div className="flex justify-end gap-2">
-          {paused ? (
-            <Button asChild variant="outline">
-              <a
-                href="https://calendar.google.com/calendar/u/0/r/settings/addbyurl"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <ExternalLinkIcon className="mr-2 h-4 w-4" />
-                Abrir Google Calendar
-              </a>
-            </Button>
-          ) : null}
-          {syncButton}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void handleSetDisabled(true)}
-            disabled={isBusy}
-          >
-            Desativar
+      </>
+    )
+    actions = (
+      <div className="flex justify-end gap-2">
+        {paused ? (
+          <Button asChild variant="outline">
+            <a
+              href="https://calendar.google.com/calendar/u/0/r/settings/addbyurl"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ExternalLinkIcon className="mr-2 h-4 w-4" />
+              Abrir Google Calendar
+            </a>
           </Button>
-        </div>
+        ) : null}
+        {syncButton}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void handleSetDisabled(true)}
+          disabled={isBusy}
+        >
+          Desativar
+        </Button>
       </div>
     )
   }
+
+  const errorNotice = actionError ? (
+    <p role="alert" className="text-sm text-red-600">
+      {actionError}
+    </p>
+  ) : null
 
   const description =
     'Compromissos do Teqo refletem no calendário Google compartilhado em minutos, e edições feitas nele voltam para o Teqo. Quem segue recebe aviso conforme as próprias configurações.'
@@ -301,7 +296,13 @@ export const GoogleCalendarSyncDialog = ({
             <DrawerTitle>Agenda da Campanha no Google</DrawerTitle>
             <DrawerDescription>{description}</DrawerDescription>
           </DrawerHeader>
-          <div className="overflow-y-auto px-4 pb-2">{body}</div>
+          <div className="overflow-y-auto px-4 pb-2">
+            <div className="space-y-4">
+              {content}
+              {errorNotice}
+              {actions}
+            </div>
+          </div>
           <DrawerFooter className="border-t">
             <DrawerCloseButton className="w-full">Fechar</DrawerCloseButton>
           </DrawerFooter>
@@ -312,12 +313,23 @@ export const GoogleCalendarSyncDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl sm:p-0">
+        <DialogHeader className="shrink-0 border-b px-6 py-4 pr-12 text-left">
           <DialogTitle>Agenda da Campanha no Google</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        {body}
+        <div
+          data-slot="dialog-scroll-body"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4"
+        >
+          <div className="space-y-4">{content}</div>
+        </div>
+        {errorNotice || actions ? (
+          <div data-slot="dialog-footer" className="shrink-0 space-y-3 border-t px-6 py-4">
+            {errorNotice}
+            {actions}
+          </div>
+        ) : null}
       </DialogContent>
     </Dialog>
   )

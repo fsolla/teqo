@@ -170,6 +170,21 @@ test.describe('Agenda — sincronização Google (C114/C122)', () => {
     await expect(dialog.getByRole('button', { name: 'Copiar link' })).toBeVisible()
     await expect(dialog.getByText(/Como adicionar ao Google Calendar:/)).toBeVisible()
     await expect(dialog.getByRole('button', { name: 'Desativar' })).toBeVisible()
+
+    // C148 — na janela baixa o corpo rola dentro do modal e o rodapé de ações
+    // permanece visível (antes o conteúdo vazava para fora da tela sem scroll).
+    await page.setViewportSize({ width: 1280, height: 560 })
+    // O `100dvh` reflui no frame seguinte ao resize; poll até o box caber.
+    await expect
+      .poll(async () => {
+        const box = await dialog.boundingBox()
+        return box ? Math.round(box.y + box.height) : Number.POSITIVE_INFINITY
+      })
+      .toBeLessThanOrEqual(560)
+    const body = dialog.locator('[data-slot="dialog-scroll-body"]')
+    await expect(body).toBeVisible()
+    expect(await body.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeGreaterThan(0)
+    await expect(dialog.getByRole('button', { name: 'Sincronizar agora' })).toBeVisible()
   })
 
   test.describe('mobile (FAB)', () => {
