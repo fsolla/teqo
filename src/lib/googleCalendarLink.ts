@@ -1,11 +1,13 @@
 /**
- * C114 — public "add this calendar" links for the campaign's shared Google
- * calendar. The calendar itself is created in the campaign's Google account
- * (never by a service account — Google's recommendation) and shared publicly
- * by link (ops runbook); these URLs are what the team receives:
+ * C114/C150 — public "add this calendar" links for the campaign's shared
+ * Google calendar. The calendar itself is created in the campaign's Google
+ * account (never by a service account — Google's recommendation) and shared
+ * publicly by link (ops runbook); these URLs are what the team receives:
  *
- * - Google Calendar: the `cid` webcal URL (the established add-by-URL flow the
- *   iCal feed dialog already uses, `calendar/r/settings/addbyurl`).
+ * - Google Calendar: the `cid` calendarId (C150) — Google opens the calendar
+ *   ready to subscribe, no "add by URL" step. The previous `cid` webcal URL
+ *   was the manual flow; the raw webcal/public iCal URL stays for the other
+ *   apps.
  * - Apple Calendar / Outlook: subscribe straight to the webcal URL the Google
  *   calendar exposes for public calendars.
  *
@@ -18,11 +20,10 @@ const GOOGLE_CALENDAR_ICAL_BASE = 'https://calendar.google.com/calendar/ical'
 export const buildGoogleCalendarWebcalUrl = (calendarId: string): string =>
   `webcal://calendar.google.com/calendar/ical/${encodeURIComponent(calendarId)}/public/basic.ics`
 
-export const buildGoogleCalendarAddLink = (calendarId: string): string => {
-  const webcal = buildGoogleCalendarWebcalUrl(calendarId)
-  return `${GOOGLE_CALENDAR_ADD_BASE}?cid=${encodeURIComponent(webcal)}`
-}
+/** C150 — the one-click add link: `cid` carries the calendar id itself. */
+export const buildGoogleCalendarAddLink = (calendarId: string): string =>
+  `${GOOGLE_CALENDAR_ADD_BASE}?cid=${encodeURIComponent(calendarId)}`
 
-/** The public iCal URL of the shared calendar — same `cid` target, plain HTTPS. */
+/** The public iCal URL of the shared calendar — the manual "add by URL" target. */
 export const buildGoogleCalendarPublicIcalUrl = (calendarId: string): string =>
   `${GOOGLE_CALENDAR_ICAL_BASE}/${encodeURIComponent(calendarId)}/public/basic.ics`

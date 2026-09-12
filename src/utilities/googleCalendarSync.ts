@@ -35,6 +35,7 @@ import {
   GoogleCalendarAuthError,
   type GoogleCalendarAuth,
   type GoogleCalendarClient,
+  type GoogleCalendarListEntry,
   type GoogleCalendarServiceAccountCredentials,
 } from '@/utilities/googleCalendarClient'
 import {
@@ -894,6 +895,114 @@ export const clearGoogleCalendarOAuthConnection = async (payload: Payload): Prom
     // Intentional admin bypass: the disconnect action checks the actor.
     overrideAccess: true,
   })
+}
+
+/** C150 — one calendar option of the primary-calendar picker. */
+export type GoogleCalendarPickerOption = GoogleCalendarListEntry
+
+export type GoogleCalendarPickerListResult =
+  | { ok: true; calendars: GoogleCalendarPickerOption[] }
+  | { ok: false; reason: 'not-connected' | 'auth-error' | 'api-error'; message: string }
+
+export type GoogleCalendarPrimaryCalendarResult =
+  | { ok: true; calendarId: string; changed: boolean }
+  | {
+      ok: false
+      reason: 'not-connected' | 'auth-error' | 'api-error' | 'not-listed'
+      message: string
+    }
+
+const GOOGLE_CALENDAR_PICKER_NOT_CONNECTED_MESSAGE =
+  'Conecte a conta Google da campanha para listar e escolher o calendário principal.'
+const GOOGLE_CALENDAR_PICKER_LIST_FAILED_MESSAGE =
+  'Não foi possível listar os calendários do Google agora. Tente de novo.'
+const GOOGLE_CALENDAR_PICKER_NOT_LISTED_MESSAGE =
+  'O calendário escolhido não está mais disponível na conta Google conectada. Atualize a lista e escolha de novo.'
+
+/**
+ * C150 — the picker lists the calendars of the OAuth-connected account. The
+ * service account is deliberately refused: its own calendar list does not
+ * contain the calendars shared with it, so it cannot back a picker (the
+ * connection is the C149 hard dependency of this surface).
+ */
+const resolveGoogleCalendarPickerClient = (
+  doc: GoogleCalendarSyncDoc | null,
+  client?: GoogleCalendarClient,
+): { client: GoogleCalendarClient } | { reason: 'not-connected'; message: string } => {
+  const auth = readGoogleCalendarAuth(doc)
+  if (auth?.kind !== 'oauth') {
+    return { reason: 'not-connected', message: GOOGLE_CALENDAR_PICKER_NOT_CONNECTED_MESSAGE }
+  }
+  return { client: client ?? createGoogleCalendarClient(auth) }
+}
+
+/**
+ * C150 — lists the calendars the connected account can WRITE to, for the
+ * primary-calendar picker. A dead OAuth connection is recorded on the row
+ * (same classification as the engine) so the card derives `error` and offers
+ * Reconnect; every other failure is a transient API error.
+ */
+export const listGoogleCalendarPickerOptions = async (
+  payload: Payload,
+  options?: { client?: GoogleCalendarClient },
+): Promise<GoogleCalendarPickerListResult> => {
+  const doc = await loadGoogleCalendarSyncConfig(payload)
+  const resolved = resolveGoogleCalendarPickerClient(doc, options?.client)
+  if ('reason' in resolved) return { ok: false, ...resolved }
+
+  try {
+    return { ok: true, calendars: await resolved.client.listCalendars() }
+  } catch (error) {
+    if (error instanceof GoogleCalendarAuthError) {
+      await recordGoogleCalendarOAuthError(payload, error.message)
+      return { ok: false, reason: 'auth-error', message: error.message }
+    }
+    return { ok: false, reason: 'api-error', message: GOOGLE_CALENDAR_PICKER_LIST_FAILED_MESSAGE }
+  }
+}
+
+/**
+ * C150 — sets the campaign's primary calendar (`calendarId`), the one the
+ * mirror writes to. The id is validated server-side against the connected
+ * account's LIVE writable list before the write, so the campaign surface can
+ * never point the mirror at an arbitrary string (the Payload admin keeps that
+ * escape hatch through the field's admin-only access). The write uses the
+ * admin bypass by design: the caller (campaign action) authorizes the actor
+ * and this utility owns the value validation. The `afterChange` config hook
+ * (D7) reconciles the mirror into the new calendar; the old one is left as-is
+ * (design C114 D7 — no backfill, no retro-cleanup).
+ */
+export const setCampaignPrimaryCalendarId = async (
+  payload: Payload,
+  calendarId: string,
+  options?: { client?: GoogleCalendarClient },
+): Promise<GoogleCalendarPrimaryCalendarResult> => {
+  const doc = await loadGoogleCalendarSyncConfig(payload)
+  if (!doc) {
+    return {
+      ok: false,
+      reason: 'not-connected',
+      message: GOOGLE_CALENDAR_PICKER_NOT_CONNECTED_MESSAGE,
+    }
+  }
+  if (doc.calendarId === calendarId) return { ok: true, calendarId, changed: false }
+
+  const listed = await listGoogleCalendarPickerOptions(payload, options)
+  if (!listed.ok) return listed
+  if (!listed.calendars.some((calendar) => calendar.id === calendarId)) {
+    return { ok: false, reason: 'not-listed', message: GOOGLE_CALENDAR_PICKER_NOT_LISTED_MESSAGE }
+  }
+
+  await payload.update({
+    collection: 'googleCalendarSync',
+    id: doc.id,
+    data: { calendarId },
+    depth: 0,
+    // Intentional admin bypass: `calendarId` is admin-only at the field level;
+    // the campaign path is authorized at the action and validated above.
+    overrideAccess: true,
+  })
+  return { ok: true, calendarId, changed: true }
 }
 
 /** The push-channel webhook address; the URL secret IS the credential. */

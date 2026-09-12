@@ -2,13 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { CalendarPlusIcon } from 'lucide-react'
+
 import type {
+  GoogleCalendarListActionResult,
   GoogleCalendarOAuthStartResult,
   GoogleCalendarSyncActionResult,
 } from '@/app/(campaign)/campanha/actions/googleCalendarSync'
+import { GoogleCalendarPickerDialog } from '@/components/campaign/activity/GoogleCalendarPickerDialog'
 import { GoogleCalendarSyncDialog } from '@/components/campaign/activity/GoogleCalendarSyncDialog'
 import { SetCampaignHeaderAction } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { useBridgedQuickAction } from '@/components/campaign/shell/CampaignQuickActionContext'
+import { Button } from '@/components/ui/button'
 import type { GoogleCalendarSyncStatus } from '@/utilities/googleCalendarSync'
 
 type AgendaGoogleSyncChromeProps = {
@@ -19,6 +24,10 @@ type AgendaGoogleSyncChromeProps = {
   onStartOAuth: () => Promise<GoogleCalendarOAuthStartResult>
   /** C149 — drops the OAuth connection from the Teqo. */
   onDisconnect: () => Promise<GoogleCalendarSyncActionResult>
+  /** C150 — lists the connected account's writable calendars (picker). */
+  onListCalendars: () => Promise<GoogleCalendarListActionResult>
+  /** C150 — sets the campaign's primary calendar. */
+  onChooseCalendar: (calendarId: string) => Promise<GoogleCalendarSyncActionResult>
 }
 
 const PILL_COPY: Record<
@@ -47,11 +56,18 @@ const PILL_COPY: Record<
   },
 }
 
+const ADD_TO_GOOGLE_LABEL = 'Adicionar ao meu Google Calendar'
+
 /**
  * C114 — agenda page → app chrome bridge for the Google Calendar mirror
  * (same pattern as AgendaFeedChrome/C94): the status pill registers in the
  * desktop header cluster (after "Link de import"), the mobile FAB opens the
  * same dialog, and a paused mirror auto-retries once on mount.
+ *
+ * C150 — the chrome also owns the primary-calendar picker (one overlay at a
+ * time: opening the picker closes the mirror dialog and closing it brings the
+ * dialog back) and registers the one-click "add to my Google Calendar" link
+ * for every staff member as soon as a primary calendar exists.
  */
 export const AgendaGoogleSyncChrome = ({
   initialState,
@@ -59,8 +75,11 @@ export const AgendaGoogleSyncChrome = ({
   onSetDisabled,
   onStartOAuth,
   onDisconnect,
+  onListCalendars,
+  onChooseCalendar,
 }: AgendaGoogleSyncChromeProps) => {
   const [open, setOpen] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [state, setState] = useState(initialState)
   const autoRetriedRef = useRef(false)
 
@@ -99,6 +118,27 @@ export const AgendaGoogleSyncChrome = ({
     return result
   }, [onDisconnect])
 
+  // C150 — one overlay at a time: the picker replaces the mirror dialog while
+  // open (nested Radix/vaul overlays have fragile focus/scroll on mobile).
+  const openPicker = useCallback(() => {
+    setOpen(false)
+    setPickerOpen(true)
+  }, [])
+
+  const handlePickerOpenChange = useCallback((next: boolean) => {
+    setPickerOpen(next)
+    if (!next) setOpen(true)
+  }, [])
+
+  const handleChooseCalendar = useCallback(
+    async (calendarId: string) => {
+      const result = await onChooseCalendar(calendarId)
+      if (result.ok) setState(result)
+      return result
+    },
+    [onChooseCalendar],
+  )
+
   const pill = useMemo(() => {
     const copy = PILL_COPY[state.status]
     return (
@@ -115,9 +155,41 @@ export const AgendaGoogleSyncChrome = ({
     )
   }, [state.status, openSync])
 
+  const addToGoogle = useMemo(() => {
+    if (!state.addLink) return null
+    return (
+      <>
+        <Button asChild size="sm" className="hidden shrink-0 whitespace-nowrap md:inline-flex">
+          <a
+            href={state.addLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={ADD_TO_GOOGLE_LABEL}
+          >
+            <CalendarPlusIcon className="mr-2 size-4" aria-hidden />
+            {ADD_TO_GOOGLE_LABEL}
+          </a>
+        </Button>
+        <Button
+          asChild
+          variant="ghost"
+          size="icon"
+          className="size-11 shrink-0 md:hidden"
+          aria-label={ADD_TO_GOOGLE_LABEL}
+          title={ADD_TO_GOOGLE_LABEL}
+        >
+          <a href={state.addLink} target="_blank" rel="noopener noreferrer">
+            <CalendarPlusIcon className="size-5" aria-hidden />
+          </a>
+        </Button>
+      </>
+    )
+  }, [state.addLink])
+
   return (
     <>
       <SetCampaignHeaderAction id="google-calendar-sync">{pill}</SetCampaignHeaderAction>
+      <SetCampaignHeaderAction id="google-calendar-add">{addToGoogle}</SetCampaignHeaderAction>
 
       <GoogleCalendarSyncDialog
         open={open}
@@ -127,6 +199,15 @@ export const AgendaGoogleSyncChrome = ({
         onSetDisabled={handleSetDisabled}
         onStartOAuth={onStartOAuth}
         onDisconnect={handleDisconnect}
+        onOpenPicker={openPicker}
+      />
+
+      <GoogleCalendarPickerDialog
+        open={pickerOpen}
+        onOpenChange={handlePickerOpenChange}
+        currentCalendarId={state.calendarId}
+        onListCalendars={onListCalendars}
+        onChooseCalendar={handleChooseCalendar}
       />
     </>
   )

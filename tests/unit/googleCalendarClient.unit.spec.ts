@@ -151,6 +151,69 @@ describe('createGoogleCalendarClient', () => {
     expect(listCall?.url).toContain('maxResults=2500')
   })
 
+  it('lists writable calendars with pagination, hiding deleted and falling back the summary (C150)', async () => {
+    const pages: Record<string, { items: Array<Record<string, unknown>>; nextPageToken?: string }> =
+      {
+        '': {
+          items: [
+            { id: 'primary-id', summary: 'Conta da campanha', primary: true, accessRole: 'owner' },
+            { id: 'campaign-id', summary: 'Agenda da Campanha', accessRole: 'writer' },
+            { id: 'no-summary-id' },
+            { id: 'deleted-id', summary: 'Antiga', deleted: true },
+          ],
+          nextPageToken: 'page-2',
+        },
+        'page-2': {
+          items: [{ id: 'second-page-id', summary: 'Segunda página' }],
+        },
+      }
+    const calls: string[] = []
+    const fetchImpl: FetchLike = (async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === 'https://oauth2.googleapis.com/token') {
+        return new Response(JSON.stringify({ access_token: 'token-1', expires_in: 3600 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      calls.push(url)
+      const pageToken = new URL(url).searchParams.get('pageToken') ?? ''
+      return new Response(JSON.stringify(pages[pageToken]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }) as FetchLike
+
+    const client = createGoogleCalendarClient(oauthAuth, fetchImpl)
+    const calendars = await client.listCalendars()
+
+    expect(calendars).toEqual([
+      { id: 'primary-id', summary: 'Conta da campanha', primary: true },
+      { id: 'campaign-id', summary: 'Agenda da Campanha', primary: false },
+      { id: 'no-summary-id', summary: 'no-summary-id', primary: false },
+      { id: 'second-page-id', summary: 'Segunda página', primary: false },
+    ])
+    expect(calls).toHaveLength(2)
+    const first = new URL(calls[0])
+    expect(first.pathname).toBe('/calendar/v3/users/me/calendarList')
+    expect(first.searchParams.get('minAccessRole')).toBe('writer')
+    expect(first.searchParams.get('showHidden')).toBe('true')
+    expect(first.searchParams.get('maxResults')).toBe('250')
+    expect(first.searchParams.get('fields')).toBe('items(id,summary,primary,deleted),nextPageToken')
+    expect(new URL(calls[1]).searchParams.get('pageToken')).toBe('page-2')
+  })
+
+  it('maps invalid_grant on the calendar list to GoogleCalendarAuthError (C150)', async () => {
+    const fetchImpl: FetchLike = (async () =>
+      new Response(JSON.stringify({ error: 'invalid_grant' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      })) as FetchLike
+
+    const client = createGoogleCalendarClient(oauthAuth, fetchImpl)
+    await expect(client.listCalendars()).rejects.toBeInstanceOf(GoogleCalendarAuthError)
+  })
+
   it('re-mints the token once on a 401 and retries the call', async () => {
     let calendarCalls = 0
     const fetchImpl: FetchLike = (async (input: RequestInfo | URL, _init?: RequestInit) => {

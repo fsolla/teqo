@@ -22,7 +22,7 @@ const syncedState = (
   lastError: null,
   pushChannelExpiresAt: null,
   pushChannelError: null,
-  addLink: 'https://calendar.google.com/calendar/r?cid=webcal%3A%2F%2F…',
+  addLink: 'https://calendar.google.com/calendar/r?cid=c_campanha%40group.calendar.google.com',
   ...overrides,
 })
 
@@ -54,6 +54,7 @@ const renderDialog = (
       { ok: true; authorizeUrl: string } | { ok: false; message: string }
     >
     onDisconnect?: () => Promise<GoogleCalendarSyncActionResult>
+    onOpenPicker?: () => void
   } = {},
 ) =>
   render(
@@ -65,6 +66,7 @@ const renderDialog = (
       onSetDisabled={vi.fn()}
       onStartOAuth={overrides.onStartOAuth ?? vi.fn()}
       onDisconnect={overrides.onDisconnect ?? vi.fn()}
+      onOpenPicker={overrides.onOpenPicker ?? vi.fn()}
     />,
   )
 
@@ -194,6 +196,58 @@ describe('GoogleCalendarSyncDialog — card de conexão OAuth (C149)', () => {
     renderDialog(notConfiguredState({ oauthAvailable: false }))
     expect(screen.getByText(/service account do Teqo/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: /Conectar com o Google/ })).toBeNull()
+  })
+})
+
+describe('GoogleCalendarSyncDialog — calendário principal e one-click (C150)', () => {
+  it('shows the current calendar and the picker trigger to managers', () => {
+    renderDialog(syncedState())
+    const dialog = screen.getByRole('dialog', { name: /Agenda da Campanha no Google/ })
+    expect(within(dialog).getByText('Calendário principal da campanha')).toBeTruthy()
+    expect(within(dialog).getByText('c_campanha@group.calendar.google.com')).toBeTruthy()
+    expect(within(dialog).getByRole('button', { name: 'Trocar calendário principal' })).toBeTruthy()
+  })
+
+  it('opens the picker from the connection card', () => {
+    const onOpenPicker = vi.fn()
+    renderDialog(syncedState(), { onOpenPicker })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Trocar calendário principal' }))
+
+    expect(onOpenPicker).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers to choose when the connection is active but no calendar is set', () => {
+    renderDialog(syncedState({ status: 'not-configured', calendarId: null, addLink: null }))
+    const dialog = screen.getByRole('dialog', { name: /Agenda da Campanha no Google/ })
+    expect(
+      within(dialog).getByRole('button', { name: 'Escolher calendário principal' }),
+    ).toBeTruthy()
+    expect(within(dialog).getByText(/Escolha o calendário principal/)).toBeTruthy()
+  })
+
+  it('hides the picker trigger from non-managers and names the nucleus', () => {
+    renderDialog(syncedState({ canManageConnection: false }))
+    const dialog = screen.getByRole('dialog', { name: /Agenda da Campanha no Google/ })
+    expect(within(dialog).queryByRole('button', { name: /calendário principal/ })).toBeNull()
+    expect(within(dialog).getByText(/escolhido por candidato ou coordenação/)).toBeTruthy()
+  })
+
+  it('renders the one-click add link and the public iCal URL for the manual path', () => {
+    renderDialog(syncedState())
+    const dialog = screen.getByRole('dialog', { name: /Agenda da Campanha no Google/ })
+    const addLink = within(dialog).getByRole('link', {
+      name: /Adicionar ao meu Google Calendar/,
+    })
+    expect(addLink.getAttribute('href')).toBe(
+      'https://calendar.google.com/calendar/r?cid=c_campanha%40group.calendar.google.com',
+    )
+    const icalInput = within(dialog).getByLabelText(
+      'URL pública do calendário (Por URL, Apple Calendar e Outlook)',
+    ) as HTMLInputElement
+    expect(icalInput.value).toBe(
+      'https://calendar.google.com/calendar/ical/c_campanha%40group.calendar.google.com/public/basic.ics',
+    )
   })
 })
 
