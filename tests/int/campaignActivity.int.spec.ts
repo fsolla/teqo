@@ -647,6 +647,57 @@ describe('activity domain', () => {
     expect(parsed.endAt).toBe(allDayEndInstant('2026-08-12'))
   })
 
+  it('parses the public event flag from the activity form (C151)', () => {
+    const formData = new FormData()
+    formData.set('title', 'Comício público')
+    formData.set('status', 'confirmado')
+    formData.set('municipality', '1')
+    formData.set('tagsJson', '[]')
+    formData.set('demandsJson', '[]')
+
+    // Unchecked checkbox is absent from FormData — parses as false.
+    expect(parseActivityCreateFormData(formData).publicEvent).toBe(false)
+
+    formData.set('publicEvent', 'on')
+    expect(parseActivityCreateFormData(formData).publicEvent).toBe(true)
+  })
+
+  it('persists the public event flag and returns it when reopening the overlay (C151)', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const [markedMunicipality, ordinaryMunicipality] = await Promise.all([
+      fixtures.getMunicipality(),
+      fixtures.getMunicipality(),
+    ])
+    // Far-future startAt keeps these rows OUTSIDE the Google sync engine's
+    // 90/365-day scan window, avoiding the C126 parallel-flake class.
+    const farFuture = new Date(Date.now() + 400 * 86_400_000).toISOString()
+
+    const marked = await createActivityRecord(payload, coordinator, {
+      ...validActivityInput(markedMunicipality.id),
+      title: fixtures.value('Evento público marcado'),
+      startAt: farFuture,
+      publicEvent: true,
+    })
+    fixtures.own('activity', marked.id)
+
+    const ordinary = await createActivityRecord(payload, coordinator, {
+      ...validActivityInput(ordinaryMunicipality.id),
+      title: fixtures.value('Atividade interna'),
+      startAt: farFuture,
+    })
+    fixtures.own('activity', ordinary.id)
+
+    expect(marked.publicEvent).toBe(true)
+    expect(ordinary.publicEvent).toBe(false)
+    expect((await loadActivityEditDraftRecord(payload, coordinator, marked.id)).publicEvent).toBe(
+      true,
+    )
+    expect((await loadActivityEditDraftRecord(payload, coordinator, ordinary.id)).publicEvent).toBe(
+      false,
+    )
+  })
+
   it('loads only accessible events matching the agenda range and filters', async () => {
     const fixtures = campaignFixtures()
     const advisor = await fixtures.createCampaignUser('advisor')

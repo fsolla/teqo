@@ -57,6 +57,7 @@ const activityStaffFieldSnapshot = (doc: Record<string, unknown>) => ({
   municipality: relationshipId(doc.municipality),
   locality: trimmedText(doc.locality),
   deputyPresent: Boolean(doc.deputyPresent),
+  publicEvent: Boolean(doc.publicEvent),
   organizations: relationshipIds(doc.organizations),
   responsible: JSON.stringify(
     parseActivityResponsibleEntries(doc.responsible)
@@ -512,6 +513,21 @@ export const Activity: CollectionConfig = {
       index: true,
       admin: {
         description: 'Compromisso que ocupa um ou mais dias inteiros, sem horário.',
+      },
+    },
+    {
+      // C151 — marks a staff intent to expose this activity as a public event
+      // in the candidate's website (a future PUB item). The flag is durable and
+      // consultable; nothing consumes it yet and it does not affect the agenda,
+      // the list, or the Google Calendar mirror.
+      name: 'publicEvent',
+      type: 'checkbox',
+      label: 'Evento público',
+      defaultValue: false,
+      index: true,
+      admin: {
+        description:
+          'Quando marcado, este evento poderá ser publicado no site do candidato (futuro).',
       },
     },
     {

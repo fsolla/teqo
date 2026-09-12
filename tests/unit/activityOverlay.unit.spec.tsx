@@ -49,6 +49,7 @@ const EDIT_VIEW_MODEL: ActivityFormViewModel = {
   description: 'Panfletagem no centro histórico',
   deputyPresent: true,
   allDay: false,
+  publicEvent: true,
   startAt: '2026-08-07T16:00:00.000Z',
   endAt: '2026-08-07T17:00:00.000Z',
   municipalityId: 12,
@@ -170,6 +171,7 @@ describe('ActivityOverlay — criação (modal central)', () => {
     expect(screen.getByText('Demandas')).toBeTruthy()
     expect(screen.getByLabelText('Descrição')).toBeTruthy()
     expect(screen.getByLabelText('Deputado presente')).toBeTruthy()
+    expect(screen.getByLabelText('Evento público')).toBeTruthy()
     expect(screen.getByRole('combobox', { name: /Organizações apoiadoras/ })).toBeTruthy()
   })
 
@@ -218,6 +220,7 @@ describe('ActivityOverlay — criação (modal central)', () => {
       target: { value: 'Café da manhã com lideranças' },
     })
     fireEvent.click(screen.getByLabelText('Deputado presente'))
+    fireEvent.click(screen.getByLabelText('Evento público'))
     fireEvent.change(screen.getByRole('combobox', { name: 'Minuto de Término' }), {
       target: { value: '45' },
     })
@@ -232,6 +235,7 @@ describe('ActivityOverlay — criação (modal central)', () => {
     expect(formData.get('locality')).toBe('Centro histórico')
     expect(formData.get('description')).toBe('Café da manhã com lideranças')
     expect(formData.get('deputyPresent')).toBe('on')
+    expect(formData.get('publicEvent')).toBe('on')
     expect(formData.get('status')).toBe('confirmado')
     expect(formData.get('allDay')).toBeNull()
     expect(formData.get('id')).toBeNull()
@@ -365,6 +369,7 @@ describe('ActivityOverlay — edição (modal central)', () => {
     expect((screen.getByLabelText('Descrição') as HTMLInputElement).value).toBe(
       'Panfletagem no centro histórico',
     )
+    expect(screen.getByLabelText('Evento público').getAttribute('aria-checked')).toBe('true')
     expect((screen.getByLabelText('Título *') as HTMLInputElement).readOnly).toBe(true)
     expect(screen.getByText('Comício')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Ver detalhes' }).getAttribute('href')).toBe(
@@ -380,6 +385,7 @@ describe('ActivityOverlay — edição (modal central)', () => {
     const formData = mocks.updateOverlay.mock.calls[0][0] as FormData
     expect(formData.get('id')).toBe('42')
     expect(formData.get('title')).toBe('Comício na feira')
+    expect(formData.get('publicEvent')).toBe('on')
     expect(formData.get('startAt')).toBe('2026-08-07T13:00')
     expect(formData.get('endAt')).toBe('2026-08-07T14:30')
     expect(onSaved).toHaveBeenCalledTimes(1)

@@ -65,6 +65,7 @@ import * as migration_20260823_161905_add_municipality_update_deliberation from 
 import * as migration_20260824_000000_reconcile_allocation_decision_rationale_nullable from './20260824_000000_reconcile_allocation_decision_rationale_nullable';
 import * as migration_20260824_010000_make_supporter_import_batch_actor_nullable from './20260824_010000_make_supporter_import_batch_actor_nullable';
 import * as migration_20260912_052226_add_google_calendar_oauth_connection from './20260912_052226_add_google_calendar_oauth_connection';
+import * as migration_20260912_224719_add_activity_public_event from './20260912_224719_add_activity_public_event';
 
 export const migrations = [
   {
@@ -401,5 +402,10 @@ export const migrations = [
     up: migration_20260912_052226_add_google_calendar_oauth_connection.up,
     down: migration_20260912_052226_add_google_calendar_oauth_connection.down,
     name: '20260912_052226_add_google_calendar_oauth_connection'
+  },
+  {
+    up: migration_20260912_224719_add_activity_public_event.up,
+    down: migration_20260912_224719_add_activity_public_event.down,
+    name: '20260912_224719_add_activity_public_event'
   },
 ];

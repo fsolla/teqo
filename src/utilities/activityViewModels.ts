@@ -228,6 +228,7 @@ export const activityFormSelect = {
   description: true,
   deputyPresent: true,
   allDay: true,
+  publicEvent: true,
   startAt: true,
   endAt: true,
   municipality: true,
@@ -253,6 +254,7 @@ export type ActivityFormViewModel = {
   description: string | null
   deputyPresent: boolean
   allDay: boolean
+  publicEvent: boolean
   startAt: string | null
   endAt: string | null
   municipalityId: number | null
@@ -274,6 +276,7 @@ export const toActivityFormViewModel = (activity: Activity): ActivityFormViewMod
   description: activity.description ?? null,
   deputyPresent: Boolean(activity.deputyPresent),
   allDay: Boolean(activity.allDay),
+  publicEvent: Boolean(activity.publicEvent),
   startAt: activity.startAt ?? null,
   endAt: activity.endAt ?? null,
   municipalityId: relationshipId(activity.municipality),
