@@ -19,7 +19,7 @@
 | ------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Início provável    | 2026-08-11                 | commit `02abd7de` (B196) cria a fixture com `startAt: '2026-09-01T13:00:00.000Z'` hardcoded; o PR CI de agosto era verde porque 01/09 ainda era futuro — a data venceu em 02/09/2026                                                                                                                                     |
 | Detecção           | 2026-09-11 22:04–22:24 UTC | run 34652323456 do `deploy.yml` (job `verify`, main `3aad110e`): o E2E `tests/e2e/campaignMunicipalities.e2e.spec.ts:1492` falha nas 3 tentativas (11.8s / 19.4s / 18.4s) em `:1529` (`Expected: > 0`, `Received: 0`) e o job `deploy homeserver (teqo-1313)` fica skipped — o main não vai para produção nesse dispatch |
-| Correção mergeada  | 2026-09-12                 | commit `e846c916` no PR #943 — CI em execução; merge pendente no momento da escrita                                                                                                                                                                                                                                      |
+| Correção mergeada  | 2026-09-12                 | commit `e846c916` no PR #943 — CI verde (run 34673571340); merge pelo auto-merge nativo após este documento                                                                                                                                                                                                               |
 | Deploy             | pendente                   | dispatch manual do `deploy.yml` pelo humano após o merge                                                                                                                                                                                                                                                                 |
 | Verificado em prod | pendente                   | confirmação do humano após o deploy                                                                                                                                                                                                                                                                                      |
 
@@ -53,7 +53,7 @@ Resolve a causa: a fixture deixa de depender de uma data absoluta e o guard pega
 
 - Teste de regressão: `tests/e2e/campaignMunicipalities.e2e.spec.ts:1492` "chassis elsewhere… (atividades)" — falha sem o fix (RED local em 2026-09-12, mesma linha `:1529`, `Received: 0`; reproduzido também pelo verificador independente via stash) e passa com o fix (GREEN 3 passed = 2 setups + alvo)
 - Suíte: `pnpm gate:fast` verde (lint + typecheck + 2687 unit); `pnpm lint` completo verde (zero falso positivo da regra nova); spec completo `campaignMunicipalities.e2e.spec.ts` 27 passed / 2 failed — B176 (flake conhecido, Issue #882) e B200 (falha determinística só em dev local, `87 > 48`, reproduzida também no estado pré-fix e aprovada no verify real de 2026-09-11 em prod-mode)
-- CI: em execução no PR #943
+- CI: verde no PR #943 (run 34673571340, job `checks`)
 - Prod: pendente — deploy manual pendente de dispatch do humano após o merge; confirmação do humano pendente
 
 ## Prevenção
