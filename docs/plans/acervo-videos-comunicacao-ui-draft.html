@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — Vertical Comunicação + Acervo de falas (C154)</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-5xl p-6 sm:p-8">
+      <h1 class="text-lg font-medium text-zinc-100">
+        UI draft — Vertical Comunicação + Acervo de falas (C154)
+      </h1>
+      <p class="mt-1 text-sm text-zinc-400">
+        Assessor de comunicação busca uma fala por assunto/tema/município, abre no trecho exato, lê
+        a transcrição clicável e baixa o vídeo. Papel próprio (<code>communicator</code>) com
+        navegação restrita à vertical.
+      </p>
+      <p class="mt-2 text-sm text-zinc-500">
+        Cinza = estrutura existente · <span class="text-amber-400">acento</span> = novo neste item.
+        Cenas estáticas: sem interação, sem dados reais.
+      </p>
+
+      <section class="mt-8">
+        <p class="text-xs uppercase tracking-wide text-zinc-500">
+          Cena 1 · desktop — Acervo: busca e resultados
+        </p>
+        <div class="mt-3 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+          <div class="flex min-h-[560px]">
+            <!-- Sidebar da vertical (papel communicator) -->
+            <aside class="w-56 shrink-0 border-r border-zinc-800 px-3 py-4">
+              <div class="flex items-center gap-2 px-2">
+                <div class="h-6 w-6 rounded bg-zinc-800"></div>
+                <span class="text-sm font-medium text-zinc-300">Campanha</span>
+              </div>
+              <nav class="mt-5 space-y-1">
+                <div class="flex items-center gap-2 rounded-lg bg-zinc-800 px-3 py-2">
+                  <span class="h-4 w-4 rounded bg-zinc-700"></span>
+                  <span class="text-sm text-zinc-100">Comunicação</span>
+                </div>
+                <div class="flex items-center gap-2 rounded-lg px-3 py-2">
+                  <span class="h-4 w-4 rounded bg-zinc-800"></span>
+                  <span class="text-sm text-zinc-500">Perfil</span>
+                </div>
+              </nav>
+              <div class="mt-64 border-t border-zinc-800 pt-3">
+                <div class="flex items-center gap-2 px-3 py-2">
+                  <span class="h-4 w-4 rounded bg-zinc-800"></span>
+                  <span class="text-sm text-zinc-500">Sair</span>
+                </div>
+              </div>
+            </aside>
+
+            <!-- Conteúdo -->
+            <div class="min-w-0 flex-1">
+              <header class="border-b border-zinc-800 px-6 py-5">
+                <h2 class="text-base font-medium text-zinc-100">Acervo de falas</h2>
+                <p class="mt-0.5 text-sm text-zinc-500">
+                  Discursos do Deputado Jorge Solla na Câmara
+                </p>
+                <div class="mt-4 flex gap-2">
+                  <div
+                    class="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-950/60 px-3"
+                  >
+                    <span class="h-4 w-4 rounded bg-zinc-700"></span>
+                    <span class="truncate text-sm text-zinc-300">Farmácia Popular</span>
+                  </div>
+                  <button
+                    class="h-11 shrink-0 rounded-lg bg-amber-500 px-4 text-sm font-medium text-zinc-950"
+                  >
+                    Buscar
+                  </button>
+                </div>
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                  <span
+                    class="inline-flex h-8 items-center gap-1 rounded-full border border-zinc-700 px-3 text-xs text-zinc-300"
+                    >Ano: 2026 ▾</span
+                  >
+                  <span
+                    class="inline-flex h-8 items-center gap-1 rounded-full border border-zinc-700 px-3 text-xs text-zinc-300"
+                    >Tema: Saúde ▾</span
+                  >
+                  <span
+                    class="inline-flex h-8 items-center gap-1 rounded-full border border-zinc-700 px-3 text-xs text-zinc-300"
+                    >Alcance ▾</span
+                  >
+                  <span
+                    class="inline-flex h-8 items-center gap-1 rounded-full border border-zinc-700 px-3 text-xs text-zinc-300"
+                    >Fase ▾</span
+                  >
+                  <span
+                    class="inline-flex h-8 items-center gap-1 rounded-full border border-zinc-700 px-3 text-xs text-zinc-300"
+                    >Município ▾</span
+                  >
+                  <span
+                    class="inline-flex h-8 items-center gap-1 rounded-full border border-zinc-700 px-3 text-xs text-zinc-300"
+                    >Duração ▾</span
+                  >
+                  <span class="text-xs text-zinc-500">Limpar filtros</span>
+                </div>
+              </header>
+
+              <div class="px-6 py-4">
+                <div class="flex items-center justify-between">
+                  <p class="text-xs text-zinc-500">23 falas encontradas</p>
+                  <p class="text-xs text-zinc-500">Mais recentes ▾</p>
+                </div>
+
+                <!-- Card de resultado -->
+                <article class="mt-3 rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
+                  <div class="flex items-center gap-2 text-xs text-zinc-500">
+                    <span>11/08/2026 · 18:48</span>
+                    <span>·</span>
+                    <span>Breves Comunicações</span>
+                    <span>·</span>
+                    <span>4min25s</span>
+                    <span>·</span>
+                    <span>Presidiu: [placeholder]</span>
+                  </div>
+                  <p class="mt-2 text-sm leading-relaxed text-zinc-300">
+                    … o Governo Lula retomou a
+                    <mark class="rounded bg-amber-500/20 px-0.5 text-amber-300"
+                      >Farmácia Popular</mark
+                    >
+                    e ampliou o acesso a medicamentos, com recorde de unidades credenciadas na Bahia
+                    …
+                  </p>
+                  <div class="mt-3 flex flex-wrap gap-1.5">
+                    <span class="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300"
+                      >Saúde</span
+                    >
+                    <span class="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300"
+                      >Bahia</span
+                    >
+                    <span
+                      class="rounded-full border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400"
+                      >Farmácia Popular</span
+                    >
+                    <span
+                      class="rounded-full border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400"
+                      >Medicamento</span
+                    >
+                  </div>
+                  <div class="mt-3 flex items-center gap-3">
+                    <button
+                      class="h-9 rounded-lg bg-amber-500 px-3 text-sm font-medium text-zinc-950"
+                    >
+                      Assistir no trecho
+                    </button>
+                    <button
+                      class="h-9 rounded-lg border border-zinc-700 px-3 text-sm text-zinc-300"
+                    >
+                      Baixar
+                    </button>
+                    <span class="text-xs text-zinc-500">Abrir fonte</span>
+                  </div>
+                </article>
+
+                <!-- Card de resultado 2 -->
+                <article class="mt-3 rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
+                  <div class="flex items-center gap-2 text-xs text-zinc-500">
+                    <span>05/06/2026 · 16:12</span>
+                    <span>·</span>
+                    <span>Discussão e Votação</span>
+                    <span>·</span>
+                    <span>7min02s</span>
+                  </div>
+                  <p class="mt-2 text-sm leading-relaxed text-zinc-300">
+                    … defendeu o financiamento do SUS e citou o impacto da
+                    <mark class="rounded bg-amber-500/20 px-0.5 text-amber-300"
+                      >Farmácia Popular</mark
+                    >
+                    nos municípios baianos, especialmente no interior …
+                  </p>
+                  <div class="mt-3 flex flex-wrap gap-1.5">
+                    <span class="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300"
+                      >Saúde</span
+                    >
+                    <span class="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300"
+                      >Brasil</span
+                    >
+                    <span
+                      class="rounded-full border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400"
+                      >Sistema Único de Saúde (SUS)</span
+                    >
+                  </div>
+                  <div class="mt-3 flex items-center gap-3">
+                    <button
+                      class="h-9 rounded-lg bg-amber-500 px-3 text-sm font-medium text-zinc-950"
+                    >
+                      Assistir no trecho
+                    </button>
+                    <button
+                      class="h-9 rounded-lg border border-zinc-700 px-3 text-sm text-zinc-300"
+                    >
+                      Baixar
+                    </button>
+                    <span class="text-xs text-zinc-500">Abrir fonte</span>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-8">
+        <p class="text-xs uppercase tracking-wide text-zinc-500">
+          Cena 2 · desktop — detalhe da fala (player + transcrição clicável)
+        </p>
+        <div class="mt-3 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+          <div class="px-6 py-5">
+            <p class="text-xs text-zinc-500">← Voltar ao acervo</p>
+            <h2 class="mt-2 text-base font-medium text-zinc-100">
+              Solla destaca retomada da Farmácia Popular e recorde na Bahia
+            </h2>
+            <p class="mt-1 text-xs text-zinc-500">
+              11/08/2026 · 18:48 · Breves Comunicações · 4min25s · Plenário · Presidiu:
+              [placeholder]
+            </p>
+
+            <div class="mt-4 grid grid-cols-[1fr_260px] gap-5">
+              <div>
+                <div
+                  class="relative flex aspect-video items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950"
+                >
+                  <div
+                    class="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800 text-zinc-400"
+                  >
+                    ▶
+                  </div>
+                  <div class="absolute inset-x-4 bottom-4">
+                    <div class="h-1 rounded bg-zinc-800">
+                      <div class="relative h-1 w-1/3 rounded bg-amber-500">
+                        <span
+                          class="absolute -right-1.5 -top-1 h-3 w-3 rounded-full bg-amber-500"
+                        ></span>
+                      </div>
+                    </div>
+                    <div class="mt-1 flex justify-between text-[10px] text-zinc-500">
+                      <span>01:12</span>
+                      <span>04:25</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-3 flex items-center gap-3">
+                  <button
+                    class="h-9 rounded-lg bg-amber-500 px-3 text-sm font-medium text-zinc-950"
+                  >
+                    Baixar vídeo (MP4)
+                  </button>
+                  <button class="h-9 rounded-lg border border-zinc-700 px-3 text-sm text-zinc-300">
+                    Abrir fonte
+                  </button>
+                </div>
+
+                <p class="mt-5 text-xs uppercase tracking-wide text-zinc-500">
+                  Transcrição (clique para posicionar)
+                </p>
+                <div class="mt-2 space-y-1">
+                  <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                    <span class="w-12 shrink-0 text-xs text-zinc-500">00:00</span>
+                    <span class="text-sm text-zinc-400"
+                      >… agradeço, Presidente. Quero falar sobre a saúde …</span
+                    >
+                  </div>
+                  <div class="flex gap-3 rounded-lg bg-zinc-800/60 px-2 py-1.5">
+                    <span class="w-12 shrink-0 text-xs text-amber-400">01:12</span>
+                    <span class="text-sm text-zinc-100"
+                      >… o Governo Lula retomou a Farmácia Popular e ampliou o acesso a
+                      medicamentos, com recorde de unidades credenciadas na Bahia …</span
+                    >
+                  </div>
+                  <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                    <span class="w-12 shrink-0 text-xs text-zinc-500">02:40</span>
+                    <span class="text-sm text-zinc-400"
+                      >… e é preciso garantir o financiamento tripartite …</span
+                    >
+                  </div>
+                  <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                    <span class="w-12 shrink-0 text-xs text-zinc-500">03:58</span>
+                    <span class="text-sm text-zinc-400">… muito obrigado, Presidente. …</span>
+                  </div>
+                </div>
+              </div>
+
+              <aside class="space-y-4">
+                <div>
+                  <p class="text-xs uppercase tracking-wide text-zinc-500">Temas</p>
+                  <div class="mt-1.5 flex flex-wrap gap-1.5">
+                    <span class="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300"
+                      >Saúde</span
+                    >
+                  </div>
+                </div>
+                <div>
+                  <p class="text-xs uppercase tracking-wide text-zinc-500">Alcance</p>
+                  <div class="mt-1.5 flex flex-wrap gap-1.5">
+                    <span class="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300"
+                      >Bahia</span
+                    >
+                    <span class="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300"
+                      >Brasil</span
+                    >
+                  </div>
+                </div>
+                <div>
+                  <p class="text-xs uppercase tracking-wide text-zinc-500">Municípios citados</p>
+                  <div class="mt-1.5 flex flex-wrap gap-1.5">
+                    <span
+                      class="rounded-full border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400"
+                      >[Município A]</span
+                    >
+                    <span
+                      class="rounded-full border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400"
+                      >[Município B]</span
+                    >
+                  </div>
+                </div>
+                <div>
+                  <p class="text-xs uppercase tracking-wide text-zinc-500">Keywords oficiais</p>
+                  <div class="mt-1.5 flex flex-wrap gap-1.5">
+                    <span
+                      class="rounded-full border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400"
+                      >Farmácia Popular</span
+                    >
+                    <span
+                      class="rounded-full border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400"
+                      >Medicamento</span
+                    >
+                    <span
+                      class="rounded-full border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400"
+                      >Sistema Único de Saúde (SUS)</span
+                    >
+                  </div>
+                </div>
+                <div class="border-t border-zinc-800 pt-3">
+                  <p class="text-xs text-zinc-500">Fonte: Câmara dos Deputados · CC BY 4.0</p>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-8">
+        <p class="text-xs uppercase tracking-wide text-zinc-500">
+          Cena 3 · mobile (~390px) — busca e resultados
+        </p>
+        <div class="mt-3 w-[390px] overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+          <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+            <span class="text-zinc-400">☰</span>
+            <span class="text-sm font-medium text-zinc-200">Comunicação</span>
+            <span class="h-6 w-6 rounded-full bg-zinc-800"></span>
+          </div>
+          <div class="px-4 py-3">
+            <div class="flex gap-2">
+              <div
+                class="flex h-11 min-w-0 flex-1 items-center rounded-lg border border-zinc-700 bg-zinc-950/60 px-3"
+              >
+                <span class="truncate text-sm text-zinc-300">Farmácia Popular</span>
+              </div>
+              <button class="h-11 shrink-0 rounded-lg bg-amber-500 px-3 text-sm text-zinc-950">
+                Buscar
+              </button>
+            </div>
+            <div class="mt-2 flex gap-2 overflow-hidden">
+              <span
+                class="inline-flex h-8 shrink-0 items-center rounded-full border border-zinc-700 px-3 text-xs text-zinc-300"
+                >Ano: 2026 ▾</span
+              >
+              <span
+                class="inline-flex h-8 shrink-0 items-center rounded-full border border-zinc-700 px-3 text-xs text-zinc-300"
+                >Tema: Saúde ▾</span
+              >
+              <span
+                class="inline-flex h-8 shrink-0 items-center rounded-full border border-zinc-700 px-3 text-xs text-zinc-300"
+                >Alcance ▾</span
+              >
+            </div>
+            <p class="mt-3 text-xs text-zinc-500">23 falas encontradas</p>
+            <article class="mt-2 rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
+              <p class="text-xs text-zinc-500">11/08/2026 · 4min25s</p>
+              <p class="mt-1.5 text-sm leading-relaxed text-zinc-300">
+                … retomou a
+                <mark class="rounded bg-amber-500/20 px-0.5 text-amber-300">Farmácia Popular</mark>
+                e ampliou o acesso …
+              </p>
+              <div class="mt-2 flex gap-1.5">
+                <span class="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300"
+                  >Saúde</span
+                >
+                <span class="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300"
+                  >Bahia</span
+                >
+              </div>
+              <button
+                class="mt-3 h-9 w-full rounded-lg bg-amber-500 text-sm font-medium text-zinc-950"
+              >
+                Assistir no trecho
+              </button>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-8">
+        <p class="text-xs uppercase tracking-wide text-zinc-500">
+          Cena 4 · estado vazio — nenhum resultado
+        </p>
+        <div class="mt-3 rounded-lg border border-zinc-800 bg-zinc-900 px-6 py-10 text-center">
+          <p class="text-sm font-medium text-zinc-200">Nenhuma fala encontrada para "termo"</p>
+          <p class="mt-1 text-sm text-zinc-500">
+            Tente outro termo, remova filtros ou busque por um tema.
+          </p>
+          <div class="mt-4 flex flex-wrap justify-center gap-2">
+            <span class="rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300"
+              >Saúde</span
+            >
+            <span class="rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300"
+              >Educação</span
+            >
+            <span class="rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300"
+              >Bahia</span
+            >
+            <span class="rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300"
+              >Limpar filtros</span
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
