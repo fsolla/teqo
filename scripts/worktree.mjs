@@ -27,7 +27,7 @@
  *                              hy3, alibaba=alibaba-token-plan/deepseek-v4-flash,
  *                              glm=opencode-go/glm-5.3-flash, free=openrouter/
  *                              openrouter/free; OPS95 + OPS100) — sem flag o preset
- *                              `deepseek/deepseek-v4-flash` permanece.
+ *                              `deepseek/deepseek-flash` permanece.
  *                              Chamado do terminal interativo (com
  *                              `TEQO_WORKTREE_TERMINAL=1`, que só a função shell
  *                              seta), imprime também a diretiva `launch

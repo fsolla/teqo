@@ -33,8 +33,9 @@ describe('opencode commands couple to their skill by exact name', () => {
     expect(frontmatter![1], 'frontmatter must declare a TUI description').toMatch(
       /^description: .+$/m,
     )
-    expect(frontmatter![1], 'frontmatter must pin the preference model').toMatch(
-      /^model: deepseek\/deepseek-v4-flash$/m,
-    )
+    expect(
+      frontmatter![1],
+      'frontmatter must NOT pin a model — the command inherits the session model (OPS101)',
+    ).not.toMatch(/^model:/m)
   })
 })

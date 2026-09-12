@@ -43,7 +43,7 @@ type TestIssue = {
  * OPENCODE_WORKTREE_MODEL não está exportado (CI), ou o valor exportado
  * (shell local) — o lib resolve exatamente nessa precedência.
  */
-const presetInEffect = () => process.env.OPENCODE_WORKTREE_MODEL || 'deepseek/deepseek-v4-flash'
+const presetInEffect = () => process.env.OPENCODE_WORKTREE_MODEL || 'deepseek/deepseek-flash'
 
 const issue = (over: Partial<TestIssue> = {}): TestIssue => ({
   number: 1,
@@ -242,7 +242,7 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 
     ).toBe(`launch opencode ${dir} --model ${presetInEffect()} --auto`)
   })
 
-  it('pins the preset constants — fallback comum deepseek-v4-flash, override via OPENCODE_WORKTREE_MODEL', () => {
+  it('pins the preset constants — fallback comum deepseek-flash, override via OPENCODE_WORKTREE_MODEL', () => {
     expect(OPENCODE_PRESET_MODEL).toBe(presetInEffect())
     expect(WORKTREE_TERMINAL_ENV).toBe('TEQO_WORKTREE_TERMINAL')
     expect(OPENCODE_SKILL_COMMAND_BY_PURPOSE).toEqual({
