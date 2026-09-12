@@ -97,6 +97,25 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     expect(script).not.toContain('--password "$REGISTRY_PASSWORD"')
   })
 
+  it('Dockerfile: NEXT_OUTPUT_STANDALONE and NODE_OPTIONS reach next build (shell prefix scoping)', () => {
+    // Shell prefix assignments (`VAR=x cmd1 && cmd2`) bind to only the first
+    // command. When OPS99 chained the importmap generator before next build,
+    // the standalone/memory flags silently stayed on the generator side — next
+    // build would produce no standalone output for the runner stage.
+    const dockerfile = readFileSync(join(repoRoot, 'Dockerfile'), 'utf8')
+    const builderStage = dockerfile
+      .slice(dockerfile.indexOf('AS builder'), dockerfile.indexOf('AS runner'))
+      .split('\n')
+      .filter((line) => !line.trimStart().startsWith('#'))
+      .join('\n')
+    const [importMapCommand, nextBuildCommand] = builderStage.split('&&')
+    expect(importMapCommand).not.toContain('NEXT_OUTPUT_STANDALONE')
+    expect(importMapCommand).not.toContain('max-old-space-size')
+    expect(nextBuildCommand).toContain('next build')
+    expect(nextBuildCommand).toContain('NEXT_OUTPUT_STANDALONE=1')
+    expect(nextBuildCommand).toContain('max-old-space-size=8000')
+  })
+
   it('Dockerfile: the migrator stage never runs `next build` (it builds against the old schema)', () => {
     // The invariant OPS66 depends on: the migrator image can always be built,
     // even before the new migrations exist in the DB.
@@ -117,6 +136,11 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     // `server-only` then throws and every Docker build failed (2026-09-12
     // incident — no deploy landed after OPS99). The package script owns the
     // flags.
+    const pkg = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf8')) as {
+      scripts: Record<string, string>
+    }
+    expect(pkg.scripts['generate:importmap']).toContain('--conditions=react-server')
+
     const dockerfile = readFileSync(join(repoRoot, 'Dockerfile'), 'utf8')
     const builderStage = dockerfile.slice(dockerfile.indexOf('AS builder'))
     expect(builderStage).toContain('pnpm generate:importmap')

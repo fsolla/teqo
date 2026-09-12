@@ -40,15 +40,19 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # This ensures the production image always has the S3ClientUploadHandler entry,
 # eliminating the class of bugs where the admin goes blank (OPS69/OPS72/OPS73).
 # The dummy values are safe because Payload's generator doesn't connect to S3.
+# Shell prefix assignments bind to a single command, so each side of the `&&`
+# declares its own env: the generator runs through `pnpm generate:importmap`
+# (which owns the `--conditions=react-server` the Payload CLI needs to import
+# server-only modules), and `next build` carries the standalone flag itself.
 RUN --mount=type=secret,id=database_url,env=DATABASE_URL \
   --mount=type=secret,id=payload_secret,env=PAYLOAD_SECRET \
   S3_BUCKET=build-dummy \
   S3_ENDPOINT=http://127.0.0.1:3900 \
   S3_ACCESS_KEY_ID=build-dummy \
   S3_SECRET_ACCESS_KEY=build-dummy \
+  pnpm generate:importmap && \
   NEXT_OUTPUT_STANDALONE=1 \
   NODE_OPTIONS="--no-deprecation --max-old-space-size=8000" \
-  pnpm generate:importmap && \
   pnpm exec next build
 
 # Production image, copy all the files and run next
