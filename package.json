@@ -81,6 +81,7 @@
     "test:unit": "cross-env NODE_OPTIONS=--no-deprecation DATABASE_URL=postgresql://invalid:invalid@127.0.0.1:1/unit_tests_must_not_connect vitest run --config ./vitest.unit.config.mts",
     "images:resize": "node scripts/resize-images.mjs",
     "images:fill": "node scripts/fill-image.mjs",
+    "camara:pilot": "node scripts/pilot-camara-speeches.mjs",
     "typecheck": "tsc --noEmit",
     "typecheck:tsc6": "tsc6 --noEmit",
     "prepare": "husky",

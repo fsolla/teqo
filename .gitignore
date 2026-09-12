@@ -73,6 +73,8 @@ next-env.d.ts
 /data/demographics/
 # AI fill masters (pnpm images:fill — regenerable drafts, never commit)
 /data/ai-fill/
+# Câmara pilot media/JSON cache (pnpm camara:pilot — VOD MP4 + report, never commit)
+/data/camara/
 
 # Local-only sensitive material (agents may read; never commit content)
 /private/**
