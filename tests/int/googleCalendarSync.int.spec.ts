@@ -53,6 +53,8 @@ const campaignFixtures = installCampaignFixtures({
 
 /** In-memory Google calendar stub — list/insert/update/delete over an array. */
 const createStubClient = (store: GoogleRemoteEvent[] = []): GoogleCalendarClient => ({
+  // C150 — the picker lists calendars; the engine never calls this.
+  listCalendars: async () => [],
   listEvents: async (_calendarId, range) =>
     store.filter((event) => {
       const start = event.start?.dateTime ?? event.start?.date ?? ''

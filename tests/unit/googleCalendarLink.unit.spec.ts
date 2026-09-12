@@ -15,10 +15,10 @@ describe('googleCalendarLink', () => {
     )
   })
 
-  it('builds the Google add-by-URL link with the webcal URL as cid', () => {
+  it('builds the one-click Google add link with the calendarId as cid (C150)', () => {
     const link = buildGoogleCalendarAddLink(calendarId)
     expect(link).toBe(
-      'https://calendar.google.com/calendar/r?cid=webcal%3A%2F%2Fcalendar.google.com%2Fcalendar%2Fical%2Fc_abc123%2540group.calendar.google.com%2Fpublic%2Fbasic.ics',
+      'https://calendar.google.com/calendar/r?cid=c_abc123%40group.calendar.google.com',
     )
   })
 

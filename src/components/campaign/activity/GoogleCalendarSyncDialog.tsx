@@ -28,6 +28,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
+import { buildGoogleCalendarPublicIcalUrl } from '@/lib/googleCalendarLink'
 import type { GoogleCalendarConnectionStatus } from '@/utilities/googleCalendarSync'
 
 type GoogleCalendarSyncDialogProps = {
@@ -40,6 +41,8 @@ type GoogleCalendarSyncDialogProps = {
   onStartOAuth: () => Promise<GoogleCalendarOAuthStartResult>
   /** C149 — drops the OAuth connection from the Teqo. */
   onDisconnect: () => Promise<GoogleCalendarSyncActionResult>
+  /** C150 — opens the primary-calendar picker (candidate/coordination only). */
+  onOpenPicker: () => void
 }
 
 const NOT_CONFIGURED_RUNBOOK: readonly string[] = [
@@ -85,6 +88,7 @@ export const GoogleCalendarSyncDialog = ({
   onSetDisabled,
   onStartOAuth,
   onDisconnect,
+  onOpenPicker,
 }: GoogleCalendarSyncDialogProps) => {
   const isMobile = useIsMobile()
   const [isBusy, setIsBusy] = useState(false)
@@ -96,9 +100,13 @@ export const GoogleCalendarSyncDialog = ({
     setActionError(null)
   }
 
+  // C150 — the manual path ("Por URL", Apple Calendar, Outlook) consumes the
+  // public iCal URL; the one-click button consumes `state.addLink`.
+  const icalUrl = state.calendarId ? buildGoogleCalendarPublicIcalUrl(state.calendarId) : null
+
   const handleCopy = async () => {
-    if (!state.addLink) return
-    await navigator.clipboard.writeText(state.addLink)
+    if (!icalUrl) return
+    await navigator.clipboard.writeText(icalUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -135,36 +143,51 @@ export const GoogleCalendarSyncDialog = ({
 
   const handleDisconnect = () => runAction(onDisconnect, 'Não foi possível desconectar.')
 
-  const linkBlock = state.addLink ? (
-    <div className="space-y-2">
-      <label className="text-sm font-medium" htmlFor="google-calendar-link">
-        Link do calendário (copie e envie à equipe)
-      </label>
-      <div className="flex gap-2">
-        <Input
-          id="google-calendar-link"
-          value={state.addLink}
-          readOnly
-          className="font-mono text-xs"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          onClick={handleCopy}
-          aria-label="Copiar link"
-        >
-          {copyIcon}
+  const linkBlock = state.calendarId ? (
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <p className="text-sm font-medium">Adicionar ao meu Google Calendar</p>
+        <Button asChild className="w-full sm:w-auto">
+          <a href={state.addLink ?? undefined} target="_blank" rel="noopener noreferrer">
+            <ExternalLinkIcon className="mr-2 h-4 w-4" />
+            Adicionar ao meu Google Calendar
+          </a>
         </Button>
-      </div>
-      {copied && (
-        <p className="text-xs text-green-600" aria-live="polite">
-          Link copiado!
+        <p className="text-xs text-muted-foreground">
+          O Google abre com o calendário da campanha pronto para assinar — vale para o computador e
+          o celular.
         </p>
-      )}
-      <p className="text-xs text-muted-foreground">
-        Quem segue o calendário recebe aviso conforme as próprias configurações do Google.
-      </p>
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium" htmlFor="google-calendar-link">
+          URL pública do calendário (Por URL, Apple Calendar e Outlook)
+        </label>
+        <div className="flex gap-2">
+          <Input
+            id="google-calendar-link"
+            value={icalUrl ?? ''}
+            readOnly
+            className="font-mono text-xs"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={handleCopy}
+            aria-label="Copiar link"
+          >
+            {copyIcon}
+          </Button>
+        </div>
+        {copied && (
+          <p className="text-xs text-green-600" aria-live="polite">
+            Link copiado!
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Quem segue o calendário recebe aviso conforme as próprias configurações do Google.
+        </p>
+      </div>
     </div>
   ) : null
 
@@ -330,6 +353,38 @@ export const GoogleCalendarSyncDialog = ({
               ? `Conta Google conectada em ${formatBahiaDateTimeLabel(state.oauthConnectedAt)}.`
               : 'Conta Google conectada.'}
           </p>
+          <div className="rounded-md border border-dashed border-border p-4">
+            <p className="text-sm font-medium">Calendário principal da campanha</p>
+            {state.canManageConnection ? (
+              <>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {state.calendarId
+                    ? 'O espelho escreve neste calendário:'
+                    : 'Nenhum calendário escolhido ainda — o espelho fica parado até a escolha.'}
+                </p>
+                {state.calendarId ? (
+                  <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
+                    {state.calendarId}
+                  </p>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-3"
+                  onClick={onOpenPicker}
+                  disabled={isBusy}
+                >
+                  {state.calendarId
+                    ? 'Trocar calendário principal'
+                    : 'Escolher calendário principal'}
+                </Button>
+              </>
+            ) : (
+              <p className="mt-1 text-sm text-muted-foreground">
+                O calendário principal é escolhido por candidato ou coordenação.
+              </p>
+            )}
+          </div>
           {connectionActions}
           <p className="text-xs text-muted-foreground">
             Desconectar revoga o acesso do Teqo; depois, revogue o app nas configurações de
@@ -364,7 +419,9 @@ export const GoogleCalendarSyncDialog = ({
     content =
       state.connection === 'connected' ? (
         <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-          A conexão está ativa. O calendário da campanha é escolhido na configuração do Painel.
+          {state.canManageConnection
+            ? 'Escolha o calendário principal para a agenda começar a espelhar no Google.'
+            : 'O calendário principal da campanha é escolhido por candidato ou coordenação.'}
         </p>
       ) : null
   } else if (state.status === 'disabled') {

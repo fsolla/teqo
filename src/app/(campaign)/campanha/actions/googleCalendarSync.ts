@@ -20,9 +20,12 @@ import {
 } from '@/utilities/googleCalendarOAuth'
 import {
   clearGoogleCalendarOAuthConnection,
+  listGoogleCalendarPickerOptions,
   loadGoogleCalendarSyncConfig,
   readGoogleCalendarSyncView,
   runCampaignCalendarSync,
+  setCampaignPrimaryCalendarId,
+  type GoogleCalendarPickerOption,
   type GoogleCalendarSyncView,
 } from '@/utilities/googleCalendarSync'
 
@@ -34,6 +37,9 @@ const GOOGLE_CALENDAR_OAUTH_MANAGER_ONLY_MESSAGE =
   'Apenas candidato ou coordenação pode conectar ou desconectar a conta Google da campanha.'
 const GOOGLE_CALENDAR_OAUTH_UNAVAILABLE_MESSAGE =
   'A conexão com o Google ainda não está configurada no servidor. Fale com a equipe técnica.'
+const GOOGLE_CALENDAR_PRIMARY_MANAGER_ONLY_MESSAGE =
+  'Apenas candidato ou coordenação pode escolher o calendário principal da campanha.'
+const GOOGLE_CALENDAR_PRIMARY_INVALID_MESSAGE = 'Calendário inválido.'
 
 export type GoogleCalendarSyncActionResult = {
   ok: boolean
@@ -41,6 +47,10 @@ export type GoogleCalendarSyncActionResult = {
   /** C149 — the actor may connect/disconnect (candidate or coordinator). */
   canManageConnection: boolean
 } & GoogleCalendarSyncView & { addLink: string | null }
+
+export type GoogleCalendarListActionResult =
+  | { ok: true; calendars: GoogleCalendarPickerOption[] }
+  | { ok: false; message: string }
 
 export type GoogleCalendarOAuthStartResult =
   | { ok: true; authorizeUrl: string }
@@ -152,6 +162,57 @@ export const setGoogleCalendarSyncDisabled = async (
     }
   } catch (error) {
     console.error('setGoogleCalendarSyncDisabled failed', error)
+    return failure(GOOGLE_CALENDAR_SYNC_FAILED_MESSAGE, canManageGoogleCalendarConnection(actor))
+  }
+}
+
+/**
+ * C150 — lists the calendars of the OAuth-connected account for the primary
+ * calendar picker. Candidate/coordinator only (the picker is a nucleus
+ * decision); a Google failure maps to a safe message and never throws.
+ */
+export const listGoogleCalendars = async (): Promise<GoogleCalendarListActionResult> => {
+  const { payload, actor } = await getCampaignActionContext()
+
+  try {
+    if (!(await loadConnectionManager(payload, actor))) {
+      return { ok: false, message: GOOGLE_CALENDAR_PRIMARY_MANAGER_ONLY_MESSAGE }
+    }
+    const result = await listGoogleCalendarPickerOptions(payload)
+    if (!result.ok) return { ok: false, message: result.message }
+    return { ok: true, calendars: result.calendars }
+  } catch (error) {
+    console.error('listGoogleCalendars failed', error)
+    return { ok: false, message: GOOGLE_CALENDAR_SYNC_FAILED_MESSAGE }
+  }
+}
+
+/**
+ * C150 — sets the campaign's primary calendar from the picker. The utility
+ * validates the id against the connected account's live writable list and the
+ * `afterChange` config hook (D7) reconciles the mirror into the new calendar.
+ */
+export const chooseGoogleCalendar = async (
+  calendarId: string,
+): Promise<GoogleCalendarSyncActionResult> => {
+  const { payload, actor } = await getCampaignActionContext()
+
+  try {
+    const currentActor = await loadConnectionManager(payload, actor)
+    if (!currentActor) return failure(GOOGLE_CALENDAR_PRIMARY_MANAGER_ONLY_MESSAGE, false)
+    if (typeof calendarId !== 'string' || calendarId.length === 0 || calendarId.length > 1024) {
+      return failure(GOOGLE_CALENDAR_PRIMARY_INVALID_MESSAGE, true)
+    }
+
+    const result = await setCampaignPrimaryCalendarId(payload, calendarId)
+    if (!result.ok) return failure(result.message, true)
+    return {
+      ok: true,
+      canManageConnection: true,
+      ...withLinks(await readGoogleCalendarSyncView(payload)),
+    }
+  } catch (error) {
+    console.error('chooseGoogleCalendar failed', error)
     return failure(GOOGLE_CALENDAR_SYNC_FAILED_MESSAGE, canManageGoogleCalendarConnection(actor))
   }
 }

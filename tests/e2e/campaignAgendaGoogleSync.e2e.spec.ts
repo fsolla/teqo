@@ -183,7 +183,7 @@ test.describe('Agenda — sincronização Google (C114/C122)', () => {
     )
   })
 
-  test('estado synced: pill, link do calendário com copiar e instruções', async ({
+  test('estado synced: pill, link do calendário, seletor principal e one-click (C150)', async ({
     campaign,
     page,
   }) => {
@@ -191,13 +191,25 @@ test.describe('Agenda — sincronização Google (C114/C122)', () => {
     const coordinator = await fixtures.createCampaignUser('coordinator')
     // lastSuccessAt no futuro: imune a lastErrorAt gravado por hooks de specs
     // paralelas (a derivação só volta a synced enquanto erro não for mais novo).
+    // O refresh token seedado dá o estado `connected` (o client OAuth dummy
+    // está no webServer) — necessário para o seletor de calendário principal.
     await seedSyncConfig(fixtures, {
       lastSyncedAt: FAR_FUTURE,
       lastSuccessAt: FAR_FUTURE,
+      oauthRefreshToken: 'c150-e2e-refresh',
+      oauthConnectedAt: '2026-08-01T10:00:00.000Z',
     })
 
     await campaign.login(page, coordinator.email!, coordinator.password)
     await page.goto(`${campaign.baseURL}/campanha/agenda`)
+
+    // C150 — o one-click do header aparece para staff quando há calendário.
+    const headerAdd = page.locator('a[aria-label="Adicionar ao meu Google Calendar"]:visible')
+    await expect(headerAdd).toBeVisible({ timeout: 15_000 })
+    await expect(headerAdd).toHaveAttribute(
+      'href',
+      `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(CALENDAR_ID)}`,
+    )
 
     const pill = page.getByRole('button', { name: 'Google: sincronizado' })
     await expect(pill).toBeVisible({ timeout: 15_000 })
@@ -208,12 +220,20 @@ test.describe('Agenda — sincronização Google (C114/C122)', () => {
     await expect(
       dialog.getByText(/Sincronizado — as mudanças da agenda já refletiram/),
     ).toBeVisible()
-    // O link de adição vem do calendarId seedado (webcal → cid) + copiar + instruções.
-    const linkInput = dialog.getByLabel('Link do calendário (copie e envie à equipe)')
-    await expect(linkInput).toHaveValue(
-      `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(
-        `webcal://calendar.google.com/calendar/ical/${encodeURIComponent(CALENDAR_ID)}/public/basic.ics`,
-      )}`,
+    // C150 — o seletor do calendário principal (manager + conexão ativa).
+    await expect(dialog.getByRole('button', { name: 'Trocar calendário principal' })).toBeVisible()
+    // O one-click no diálogo e a URL iCal pública para o caminho manual.
+    await expect(
+      dialog.getByRole('link', { name: 'Adicionar ao meu Google Calendar' }),
+    ).toHaveAttribute(
+      'href',
+      `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(CALENDAR_ID)}`,
+    )
+    const icalInput = dialog.getByLabel(
+      'URL pública do calendário (Por URL, Apple Calendar e Outlook)',
+    )
+    await expect(icalInput).toHaveValue(
+      `https://calendar.google.com/calendar/ical/${encodeURIComponent(CALENDAR_ID)}/public/basic.ics`,
     )
     await expect(dialog.getByRole('button', { name: 'Copiar link' })).toBeVisible()
     await expect(dialog.getByText(/Como adicionar ao Google Calendar:/)).toBeVisible()
@@ -233,6 +253,35 @@ test.describe('Agenda — sincronização Google (C114/C122)', () => {
     await expect(body).toBeVisible()
     expect(await body.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeGreaterThan(0)
     await expect(dialog.getByRole('button', { name: 'Sincronizar agora' })).toBeVisible()
+  })
+
+  test('advisor vê o one-click mas não o seletor de calendário (C150)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const advisor = await fixtures.createCampaignUser('advisor')
+    await seedSyncConfig(fixtures, {
+      lastSyncedAt: FAR_FUTURE,
+      lastSuccessAt: FAR_FUTURE,
+      oauthRefreshToken: 'c150-e2e-refresh-advisor',
+      oauthConnectedAt: '2026-08-01T10:00:00.000Z',
+    })
+
+    await campaign.login(page, advisor.email!, advisor.password)
+    await page.goto(`${campaign.baseURL}/campanha/agenda`)
+
+    const headerAdd = page.locator('a[aria-label="Adicionar ao meu Google Calendar"]:visible')
+    await expect(headerAdd).toBeVisible({ timeout: 15_000 })
+
+    const pill = page.getByRole('button', { name: 'Google: sincronizado' })
+    await expect(pill).toBeVisible({ timeout: 15_000 })
+    await pill.click()
+
+    const dialog = syncDialog(page)
+    await expect(dialog).toBeVisible()
+    await expect(dialog.getByRole('button', { name: /calendário principal/ })).toHaveCount(0)
+    await expect(dialog.getByText(/escolhido por candidato ou coordenação/)).toBeVisible()
   })
 
   test.describe('mobile (FAB)', () => {
@@ -262,6 +311,30 @@ test.describe('Agenda — sincronização Google (C114/C122)', () => {
       await expect(sheet).toBeVisible({ timeout: 15_000 })
       await expect(sheet.getByText('Não configurado')).toBeVisible()
       await expect(sheet.getByRole('button', { name: 'Conectar com o Google' })).toBeVisible()
+    })
+
+    test('o one-click do header aparece no mobile com calendário principal (C150)', async ({
+      campaign,
+      page,
+    }) => {
+      const { fixtures } = campaign
+      const coordinator = await fixtures.createCampaignUser('coordinator')
+      await seedSyncConfig(fixtures, {
+        lastSyncedAt: FAR_FUTURE,
+        lastSuccessAt: FAR_FUTURE,
+      })
+
+      await campaign.login(page, coordinator.email!, coordinator.password)
+      await page.goto(`${campaign.baseURL}/campanha/agenda`)
+
+      // O cluster do top bar não suporta botão full-width (adaptação do
+      // rascunho): no mobile o one-click é o ícone com aria-label.
+      const addLink = page.locator('a[aria-label="Adicionar ao meu Google Calendar"]:visible')
+      await expect(addLink).toBeVisible({ timeout: 15_000 })
+      await expect(addLink).toHaveAttribute(
+        'href',
+        `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(CALENDAR_ID)}`,
+      )
     })
   })
 

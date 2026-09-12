@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type {
@@ -39,7 +39,10 @@ const stateFor = (status: GoogleCalendarSyncStatus): GoogleCalendarSyncActionRes
   lastError: status === 'paused' ? 'Google fora do ar (simulado)' : null,
   pushChannelExpiresAt: null,
   pushChannelError: null,
-  addLink: status === 'not-configured' ? null : 'https://calendar.google.com/calendar/r?cid=webcal',
+  addLink:
+    status === 'not-configured'
+      ? null
+      : 'https://calendar.google.com/calendar/r?cid=c_campanha%40group.calendar.google.com',
 })
 
 const PILL_LABELS: Record<GoogleCalendarSyncStatus, string> = {
@@ -51,7 +54,12 @@ const PILL_LABELS: Record<GoogleCalendarSyncStatus, string> = {
 
 const HeaderActionsProbe = () => {
   const actions = useCampaignHeaderActions()
-  return <>{actions['google-calendar-sync'] ?? null}</>
+  return (
+    <>
+      {actions['google-calendar-sync'] ?? null}
+      {actions['google-calendar-add'] ?? null}
+    </>
+  )
 }
 
 const renderChrome = ({
@@ -59,9 +67,11 @@ const renderChrome = ({
   // Status-consistent default: a paused mount's auto-retry resolves back to
   // the same state, so the label assertions never race the retry's setState.
   onSyncNow = vi.fn(async () => stateFor(status)),
+  onChooseCalendar,
 }: {
   status: GoogleCalendarSyncStatus
   onSyncNow?: () => Promise<GoogleCalendarSyncActionResult>
+  onChooseCalendar?: (calendarId: string) => Promise<GoogleCalendarSyncActionResult>
 }) =>
   render(
     <CampaignPageChromeProvider role="coordinator">
@@ -77,6 +87,22 @@ const renderChrome = ({
             }),
           )}
           onDisconnect={vi.fn(async () => stateFor('not-configured'))}
+          onListCalendars={vi.fn(async () => ({
+            ok: true as const,
+            calendars: [
+              {
+                id: 'c_campanha@group.calendar.google.com',
+                summary: 'Agenda da Campanha',
+                primary: false,
+              },
+              {
+                id: 'c_pessoal@group.calendar.google.com',
+                summary: 'Meu calendário',
+                primary: true,
+              },
+            ],
+          }))}
+          onChooseCalendar={onChooseCalendar ?? vi.fn(async () => stateFor('synced'))}
         />
         <HeaderActionsProbe />
       </CampaignQuickActionContextProvider>
@@ -153,5 +179,68 @@ describe('AgendaGoogleSyncChrome (S14)', () => {
       expect(screen.getByRole('button', { name: PILL_LABELS.synced })).toBeTruthy(),
     )
     expect(onSyncNow).toHaveBeenCalledTimes(1)
+  })
+
+  it('registers the one-click add link when a primary calendar is set (C150)', () => {
+    renderChrome({ status: 'synced' })
+
+    const links = screen.getAllByRole('link', { name: 'Adicionar ao meu Google Calendar' })
+    expect(links).toHaveLength(2)
+    for (const link of links) {
+      expect(link.getAttribute('href')).toBe(
+        'https://calendar.google.com/calendar/r?cid=c_campanha%40group.calendar.google.com',
+      )
+    }
+  })
+
+  it('hides the one-click add link without a primary calendar (C150)', () => {
+    renderChrome({ status: 'not-configured' })
+
+    expect(screen.queryByRole('link', { name: 'Adicionar ao meu Google Calendar' })).toBeNull()
+  })
+
+  it('opens the picker from the sync dialog and returns to it on close (C150)', async () => {
+    renderChrome({ status: 'synced' })
+
+    fireEvent.click(screen.getByRole('button', { name: /^Google:/ }))
+    const syncDialog = screen.getByRole('dialog', { name: /Agenda da Campanha no Google/ })
+    fireEvent.click(within(syncDialog).getByRole('button', { name: 'Trocar calendário principal' }))
+
+    const picker = await screen.findByRole('dialog', {
+      name: /Calendário principal da campanha/,
+    })
+    expect(within(picker).getByText('Agenda da Campanha')).toBeTruthy()
+    expect(within(picker).getByText('em uso')).toBeTruthy()
+
+    fireEvent.click(within(picker).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.getByRole('dialog', { name: /Agenda da Campanha no Google/ })).toBeTruthy()
+  })
+
+  it('chooses a calendar and refreshes the one-click link (C150)', async () => {
+    const chosen: GoogleCalendarSyncActionResult = {
+      ...stateFor('synced'),
+      calendarId: 'c_pessoal@group.calendar.google.com',
+      addLink: 'https://calendar.google.com/calendar/r?cid=c_pessoal%40group.calendar.google.com',
+    }
+    const onChooseCalendar = vi.fn(async () => chosen)
+    renderChrome({ status: 'synced', onChooseCalendar })
+
+    fireEvent.click(screen.getByRole('button', { name: /^Google:/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Trocar calendário principal' }))
+    const picker = await screen.findByRole('dialog', {
+      name: /Calendário principal da campanha/,
+    })
+    fireEvent.click(within(picker).getByRole('radio', { name: /Meu calendário/ }))
+    fireEvent.click(within(picker).getByRole('button', { name: 'Escolher calendário' }))
+
+    await waitFor(() => expect(onChooseCalendar).toHaveBeenCalledTimes(1))
+    expect(onChooseCalendar).toHaveBeenCalledWith('c_pessoal@group.calendar.google.com')
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByRole('link', { name: 'Adicionar ao meu Google Calendar' })[0]
+          .getAttribute('href'),
+      ).toBe('https://calendar.google.com/calendar/r?cid=c_pessoal%40group.calendar.google.com'),
+    )
   })
 })

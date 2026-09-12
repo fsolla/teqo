@@ -8,8 +8,10 @@ import {
   revokeCalendarFeed,
 } from '@/app/(campaign)/campanha/actions/calendarFeed'
 import {
+  chooseGoogleCalendar,
   disconnectGoogleCalendarOAuth,
   getGoogleCalendarSyncState,
+  listGoogleCalendars,
   runGoogleCalendarSyncNow,
   setGoogleCalendarSyncDisabled,
   startGoogleCalendarOAuth,
@@ -111,6 +113,14 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
         onDisconnect={async () => {
           'use server'
           return disconnectGoogleCalendarOAuth()
+        }}
+        onListCalendars={async () => {
+          'use server'
+          return listGoogleCalendars()
+        }}
+        onChooseCalendar={async (calendarId) => {
+          'use server'
+          return chooseGoogleCalendar(calendarId)
         }}
       />
 

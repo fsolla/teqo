@@ -21,6 +21,8 @@ const GOOGLE_CALENDAR_API_BASE = 'https://www.googleapis.com/calendar/v3'
 const GOOGLE_TOKEN_TTL_SECONDS = 3600
 const TOKEN_REFRESH_LEAD_SECONDS = 60
 const MAX_LIST_PAGE_SIZE = 2500
+/** calendarList caps `maxResults` at 250 (unlike events). */
+const CALENDAR_LIST_PAGE_SIZE = 250
 /**
  * Every outbound call carries a hard timeout so a hanging Google never holds
  * the activity write path (the afterChange hook awaits the sync) — Teqo's
@@ -76,7 +78,23 @@ export class GoogleCalendarAuthError extends Error {
   }
 }
 
+/**
+ * C150 — one entry of the connected account's calendar list, reduced to what
+ * the picker renders. `summary` falls back to the id when Google omits it.
+ */
+export type GoogleCalendarListEntry = {
+  id: string
+  summary: string
+  primary: boolean
+}
+
 export type GoogleCalendarClient = {
+  /**
+   * C150 — the calendars the connected account can WRITE to (`minAccessRole=writer`),
+   * for the campaign's primary-calendar picker. The mirror only works on a
+   * calendar the account owns/edits, so read-only subscriptions never show up.
+   */
+  listCalendars: () => Promise<GoogleCalendarListEntry[]>
   listEvents: (
     calendarId: string,
     range: { timeMin: string; timeMax: string },
@@ -261,6 +279,42 @@ export const createGoogleCalendarClient = (
       .map((part) => `/${encodeURIComponent(part)}`)
       .join('')}`
 
+  const listCalendars: GoogleCalendarClient['listCalendars'] = async () => {
+    const calendars: GoogleCalendarListEntry[] = []
+    let pageToken: string | undefined
+
+    do {
+      const params = new URLSearchParams({
+        minAccessRole: 'writer',
+        // A calendar the operation hid in the Google sidebar is still a valid
+        // mirror target — hiding is a UI preference, not a permission.
+        showHidden: 'true',
+        maxResults: String(CALENDAR_LIST_PAGE_SIZE),
+        fields: 'items(id,summary,primary,deleted),nextPageToken',
+      })
+      if (pageToken) params.set('pageToken', pageToken)
+
+      const response = await apiFetch(`${GOOGLE_CALENDAR_API_BASE}/users/me/calendarList?${params}`)
+      const body = (await response.json()) as {
+        items?: Array<{ id?: unknown; summary?: unknown; primary?: unknown; deleted?: unknown }>
+        nextPageToken?: string
+      }
+      for (const item of body.items ?? []) {
+        // Deleted calendars linger in the list until Google purges them.
+        if (typeof item.id !== 'string' || item.id.length === 0 || item.deleted === true) continue
+        calendars.push({
+          id: item.id,
+          summary:
+            typeof item.summary === 'string' && item.summary.length > 0 ? item.summary : item.id,
+          primary: item.primary === true,
+        })
+      }
+      pageToken = body.nextPageToken
+    } while (pageToken)
+
+    return calendars
+  }
+
   const listEvents: GoogleCalendarClient['listEvents'] = async (calendarId, range) => {
     const events: GoogleRemoteEvent[] = []
     let pageToken: string | undefined
@@ -357,5 +411,13 @@ export const createGoogleCalendarClient = (
     }
   }
 
-  return { listEvents, insertEvent, updateEvent, deleteEvent, watchEvents, stopChannel }
+  return {
+    listCalendars,
+    listEvents,
+    insertEvent,
+    updateEvent,
+    deleteEvent,
+    watchEvents,
+    stopChannel,
+  }
 }

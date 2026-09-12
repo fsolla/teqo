@@ -116,14 +116,19 @@ export const E2E_AFFECTED_MANIFEST = [
     // utilities live top-level (not under `src/utilities/activity`), and the
     // callback route sits OUTSIDE `(app)` — without this entry a diff to them
     // would only wake the home smoke, leaving the mirror spec unrun.
+    // C150 — the one-click link builder and the campaign actions (picker +
+    // choose) join the same domain entry.
     prefixes: [
       'src/utilities/googleCalendarSync.ts',
       'src/utilities/googleCalendarSyncHooks.ts',
       'src/utilities/googleCalendarClient.ts',
       'src/utilities/googleCalendarOAuth.ts',
       'src/lib/googleCalendarOAuth.ts',
+      'src/lib/googleCalendarLink.ts',
       'src/components/campaign/activity/AgendaGoogleSyncChrome',
       'src/components/campaign/activity/GoogleCalendarSyncDialog',
+      'src/components/campaign/activity/GoogleCalendarPickerDialog',
+      'src/app/(campaign)/campanha/actions/googleCalendarSync.ts',
       'src/app/(campaign)/campanha/agenda/google-oauth',
     ],
     specs: ['campaignAgendaGoogleSync'],
