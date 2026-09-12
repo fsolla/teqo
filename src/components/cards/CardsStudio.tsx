@@ -10,10 +10,13 @@ import { useIsMobileMeasured } from '@/hooks/use-mobile'
 import { getCardModel, type CardModelId } from '@/lib/cardModels'
 
 /**
- * S13 — the `/cards` studio island: owns which model is selected and whether
- * the composer is open, renders the catalog and mounts the single editor in a
+ * S13 — the card studio island: owns which model is selected and whether the
+ * composer is open, renders the catalog and mounts the single editor in a
  * centered dialog (desktop) or a bottom drawer (mobile). Closing returns to the
  * catalog with the selection kept; the URL is only read, never rewritten.
+ *
+ * S14 — the home section renders this same island (no second editor): tiles are
+ * buttons everywhere and opening the composer never navigates.
  */
 export const CardsStudio = ({
   initialModelId,
@@ -33,9 +36,9 @@ export const CardsStudio = ({
     setOpen(true)
   }
 
-  // Radix restores focus to the element that opened the dialog, but the home
-  // tile that deep-linked here is unmounted after navigation. Send focus back
-  // to the catalog tile of the selected model instead (visible list only).
+  // Radix restores focus to the element that opened the dialog; send it back to
+  // the catalog tile of the selected model (visible list only) so home and
+  // `/cards` share the same focus return.
   const focusSelectedTile = () => {
     if (!selectedId) return
     const tiles = document.querySelectorAll<HTMLElement>(`[data-card-model-tile="${selectedId}"]`)
@@ -46,8 +49,8 @@ export const CardsStudio = ({
   return (
     <div>
       <CardModelGallery
-        variant="select"
         ariaLabel="Modelos de card"
+        fontFamily={fontFamily}
         selectedId={selectedId}
         onSelect={handleSelect}
       />
@@ -76,7 +79,7 @@ export const CardsStudio = ({
                 event.preventDefault()
                 focusSelectedTile()
               }}
-              className="max-h-[92dvh] gap-0 overflow-hidden p-0 sm:max-w-lg"
+              className="max-h-[92dvh] gap-0 overflow-hidden p-0 sm:max-w-lg sm:p-0"
             >
               <CardComposer
                 model={selectedModel}

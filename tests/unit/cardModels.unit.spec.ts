@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  CARD_MODELS,
-  NAME_CARD_SLOT,
-  cardModelHref,
-  getCardModel,
-  isCardModelId,
-} from '@/lib/cardModels'
+import { CARD_MODELS, NAME_CARD_SLOT, getCardModel, isCardModelId } from '@/lib/cardModels'
 
 describe('card model catalog (S13)', () => {
   it('exposes the three shipped models with unique ids', () => {
@@ -56,7 +50,7 @@ describe('card model catalog (S13)', () => {
 
   it('guards the name slot geometry measured from the filled master', () => {
     expect(NAME_CARD_SLOT).toMatchObject({
-      centerX: 570,
+      leftX: 213,
       capTop: 430,
       capHeight: 106,
       maxInkWidth: 714,
@@ -70,9 +64,5 @@ describe('card model catalog (S13)', () => {
     expect(isCardModelId('modelo-inventado')).toBe(false)
     expect(isCardModelId(['perfil-quadrado'])).toBe(false)
     expect(isCardModelId(undefined)).toBe(false)
-  })
-
-  it('builds the deep-link used by the home tiles', () => {
-    expect(cardModelHref('perfil-quadrado')).toBe('/cards?model=perfil-quadrado')
   })
 })
