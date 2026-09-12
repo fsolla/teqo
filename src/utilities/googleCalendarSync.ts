@@ -905,7 +905,7 @@ export type GoogleCalendarPickerListResult =
   | { ok: false; reason: 'not-connected' | 'auth-error' | 'api-error'; message: string }
 
 export type GoogleCalendarPrimaryCalendarResult =
-  | { ok: true; calendarId: string; changed: boolean }
+  | { ok: true; calendarId: string }
   | {
       ok: false
       reason: 'not-connected' | 'auth-error' | 'api-error' | 'not-listed'
@@ -920,38 +920,32 @@ const GOOGLE_CALENDAR_PICKER_NOT_LISTED_MESSAGE =
   'O calendário escolhido não está mais disponível na conta Google conectada. Atualize a lista e escolha de novo.'
 
 /**
- * C150 — the picker lists the calendars of the OAuth-connected account. The
- * service account is deliberately refused: its own calendar list does not
- * contain the calendars shared with it, so it cannot back a picker (the
- * connection is the C149 hard dependency of this surface).
+ * C150 — lists the calendars the connected account can WRITE to. The service
+ * account is deliberately refused: its own calendar list does not contain the
+ * calendars shared with it, so it cannot back a picker (the connection is the
+ * C149 hard dependency of this surface). A dead OAuth connection is recorded
+ * on the row (same classification as the engine) so the card derives `error`
+ * and offers Reconnect; every other failure is a transient API error.
  */
-const resolveGoogleCalendarPickerClient = (
+const loadWritableGoogleCalendars = async (
+  payload: Payload,
   doc: GoogleCalendarSyncDoc | null,
   client?: GoogleCalendarClient,
-): { client: GoogleCalendarClient } | { reason: 'not-connected'; message: string } => {
+): Promise<GoogleCalendarPickerListResult> => {
   const auth = readGoogleCalendarAuth(doc)
   if (auth?.kind !== 'oauth') {
-    return { reason: 'not-connected', message: GOOGLE_CALENDAR_PICKER_NOT_CONNECTED_MESSAGE }
+    return {
+      ok: false,
+      reason: 'not-connected',
+      message: GOOGLE_CALENDAR_PICKER_NOT_CONNECTED_MESSAGE,
+    }
   }
-  return { client: client ?? createGoogleCalendarClient(auth) }
-}
-
-/**
- * C150 — lists the calendars the connected account can WRITE to, for the
- * primary-calendar picker. A dead OAuth connection is recorded on the row
- * (same classification as the engine) so the card derives `error` and offers
- * Reconnect; every other failure is a transient API error.
- */
-export const listGoogleCalendarPickerOptions = async (
-  payload: Payload,
-  options?: { client?: GoogleCalendarClient },
-): Promise<GoogleCalendarPickerListResult> => {
-  const doc = await loadGoogleCalendarSyncConfig(payload)
-  const resolved = resolveGoogleCalendarPickerClient(doc, options?.client)
-  if ('reason' in resolved) return { ok: false, ...resolved }
 
   try {
-    return { ok: true, calendars: await resolved.client.listCalendars() }
+    return {
+      ok: true,
+      calendars: await (client ?? createGoogleCalendarClient(auth)).listCalendars(),
+    }
   } catch (error) {
     if (error instanceof GoogleCalendarAuthError) {
       await recordGoogleCalendarOAuthError(payload, error.message)
@@ -960,6 +954,13 @@ export const listGoogleCalendarPickerOptions = async (
     return { ok: false, reason: 'api-error', message: GOOGLE_CALENDAR_PICKER_LIST_FAILED_MESSAGE }
   }
 }
+
+/** The read model of the picker: the connected account's writable calendars. */
+export const listGoogleCalendarPickerOptions = async (
+  payload: Payload,
+  options?: { client?: GoogleCalendarClient },
+): Promise<GoogleCalendarPickerListResult> =>
+  loadWritableGoogleCalendars(payload, await loadGoogleCalendarSyncConfig(payload), options?.client)
 
 /**
  * C150 — sets the campaign's primary calendar (`calendarId`), the one the
@@ -985,9 +986,9 @@ export const setCampaignPrimaryCalendarId = async (
       message: GOOGLE_CALENDAR_PICKER_NOT_CONNECTED_MESSAGE,
     }
   }
-  if (doc.calendarId === calendarId) return { ok: true, calendarId, changed: false }
+  if (doc.calendarId === calendarId) return { ok: true, calendarId }
 
-  const listed = await listGoogleCalendarPickerOptions(payload, options)
+  const listed = await loadWritableGoogleCalendars(payload, doc, options?.client)
   if (!listed.ok) return listed
   if (!listed.calendars.some((calendar) => calendar.id === calendarId)) {
     return { ok: false, reason: 'not-listed', message: GOOGLE_CALENDAR_PICKER_NOT_LISTED_MESSAGE }
@@ -1002,7 +1003,7 @@ export const setCampaignPrimaryCalendarId = async (
     // the campaign path is authorized at the action and validated above.
     overrideAccess: true,
   })
-  return { ok: true, calendarId, changed: true }
+  return { ok: true, calendarId }
 }
 
 /** The push-channel webhook address; the URL secret IS the credential. */

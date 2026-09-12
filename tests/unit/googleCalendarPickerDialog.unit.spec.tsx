@@ -114,8 +114,11 @@ describe('GoogleCalendarPickerDialog (C150)', () => {
     const picker = await screen.findByRole('dialog', {
       name: /Calendário principal da campanha/,
     })
-    const current = within(picker).getByRole('radio', { name: /Agenda da Campanha/ })
-    expect(current.getAttribute('aria-checked')).toBe('true')
+    const current = within(picker).getByRole('button', {
+      name: /Agenda da Campanha/,
+      pressed: true,
+    })
+    expect(current.getAttribute('aria-pressed')).toBe('true')
     expect(within(picker).getByText('em uso')).toBeTruthy()
     expect(within(picker).getByText('Calendário principal da conta')).toBeTruthy()
 
@@ -131,7 +134,7 @@ describe('GoogleCalendarPickerDialog (C150)', () => {
     const picker = await screen.findByRole('dialog', {
       name: /Calendário principal da campanha/,
     })
-    fireEvent.click(within(picker).getByRole('radio', { name: /Meu calendário/ }))
+    fireEvent.click(within(picker).getByRole('button', { name: /Meu calendário/ }))
     fireEvent.click(within(picker).getByRole('button', { name: 'Escolher calendário' }))
 
     await waitFor(() => expect(onChooseCalendar).toHaveBeenCalledWith(CALENDAR_B))
@@ -148,7 +151,7 @@ describe('GoogleCalendarPickerDialog (C150)', () => {
     const picker = await screen.findByRole('dialog', {
       name: /Calendário principal da campanha/,
     })
-    fireEvent.click(within(picker).getByRole('radio', { name: /Meu calendário/ }))
+    fireEvent.click(within(picker).getByRole('button', { name: /Meu calendário/ }))
     fireEvent.click(within(picker).getByRole('button', { name: 'Escolher calendário' }))
 
     expect(await within(picker).findByText(/não está mais disponível/)).toBeTruthy()
@@ -180,5 +183,36 @@ describe('GoogleCalendarPickerDialog (C150)', () => {
       await screen.findByText('Nenhum calendário com permissão de edição nesta conta Google.'),
     ).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Escolher calendário' })).toBeNull()
+  })
+
+  it('maps a rejected list action to the error state with retry', async () => {
+    const onListCalendars = vi
+      .fn<() => Promise<GoogleCalendarListActionResult>>()
+      .mockRejectedValueOnce(new Error('transport down'))
+      .mockResolvedValueOnce(listResult)
+    renderPicker({ onListCalendars })
+
+    expect(await screen.findByText('Não foi possível listar os calendários agora.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+    expect(await screen.findByText('Agenda da Campanha')).toBeTruthy()
+  })
+
+  it('maps a rejected choose action to an inline error without closing', async () => {
+    const onOpenChange = vi.fn()
+    const onChooseCalendar = vi
+      .fn<() => Promise<GoogleCalendarSyncActionResult>>()
+      .mockRejectedValueOnce(new Error('transport down'))
+    renderPicker({ onOpenChange, onChooseCalendar })
+
+    const picker = await screen.findByRole('dialog', {
+      name: /Calendário principal da campanha/,
+    })
+    fireEvent.click(within(picker).getByRole('button', { name: /Meu calendário/ }))
+    fireEvent.click(within(picker).getByRole('button', { name: 'Escolher calendário' }))
+
+    expect(
+      await within(picker).findByText(/Não foi possível escolher o calendário agora/),
+    ).toBeTruthy()
+    expect(onOpenChange).not.toHaveBeenCalled()
   })
 })

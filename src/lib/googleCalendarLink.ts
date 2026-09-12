@@ -5,20 +5,15 @@
  * publicly by link (ops runbook); these URLs are what the team receives:
  *
  * - Google Calendar: the `cid` calendarId (C150) — Google opens the calendar
- *   ready to subscribe, no "add by URL" step. The previous `cid` webcal URL
- *   was the manual flow; the raw webcal/public iCal URL stays for the other
- *   apps.
- * - Apple Calendar / Outlook: subscribe straight to the webcal URL the Google
- *   calendar exposes for public calendars.
+ *   ready to subscribe, no "add by URL" step.
+ * - Google Calendar "add by URL", Apple Calendar and Outlook: the public iCal
+ *   URL of the same calendar (manual path).
  *
  * Both require the calendar to be public in the owner's sharing settings —
  * the link IS the credential, same model as the iCal feed secret.
  */
 const GOOGLE_CALENDAR_ADD_BASE = 'https://calendar.google.com/calendar/r'
 const GOOGLE_CALENDAR_ICAL_BASE = 'https://calendar.google.com/calendar/ical'
-
-export const buildGoogleCalendarWebcalUrl = (calendarId: string): string =>
-  `webcal://calendar.google.com/calendar/ical/${encodeURIComponent(calendarId)}/public/basic.ics`
 
 /** C150 — the one-click add link: `cid` carries the calendar id itself. */
 export const buildGoogleCalendarAddLink = (calendarId: string): string =>
