@@ -447,9 +447,9 @@ export const aggregateBackfillRuns = (runs) => {
  * spread evenly over the legislature ordered by `speechAt` + id. Same DB state
  * → same sample, so the verification is reproducible and reportable.
  *
- * @param {Array<{ id: number, legislature?: string | null, speechAt?: string | null, vodPlaybackUrl?: string | null, vodDownloadUrl?: string | null }>} rows
+ * @param {Array<{ id: number, legislature?: string | null, speechAt?: string | null, vodPlaybackUrl?: string | null, vodDownloadUrl?: string | null }> | null | undefined} rows
  * @param {number} perLegislature
- * @returns {typeof rows}
+ * @returns {Array<{ id: number, legislature?: string | null, speechAt?: string | null, vodPlaybackUrl?: string | null, vodDownloadUrl?: string | null }>}
  */
 export const selectLinkSample = (rows, perLegislature) => {
   const limit = Math.max(1, Math.trunc(Number(perLegislature) || 1))

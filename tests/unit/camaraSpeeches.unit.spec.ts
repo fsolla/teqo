@@ -601,6 +601,26 @@ describe('selectLinkSample', () => {
     ).toEqual([1, 3, 4])
   })
 
+  it('spreads the picks over a legislature larger than n', () => {
+    const many = Array.from({ length: 6 }, (_, index) => ({
+      id: index + 1,
+      legislature: '55',
+      speechAt: `2016-0${index + 1}-01T10:00`,
+      vodPlaybackUrl: `https://vod/${index + 1}`,
+      vodDownloadUrl: null,
+    }))
+    expect(
+      selectLinkSample(many, 2)
+        .map((row) => row.id)
+        .sort(),
+    ).toEqual([1, 4])
+    expect(
+      selectLinkSample(many, 3)
+        .map((row) => row.id)
+        .sort(),
+    ).toEqual([1, 3, 5])
+  })
+
   it('is deterministic for the same rows', () => {
     expect(selectLinkSample(rows, 2)).toEqual(selectLinkSample(rows, 2))
   })

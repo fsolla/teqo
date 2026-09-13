@@ -4,7 +4,10 @@ import { sql } from '@payloadcms/db-postgres'
 import type { Payload, PayloadRequest } from 'payload'
 
 import { drizzleResultRows } from '@/utilities/drizzleBulk'
-import { getPostgresTransactionDatabase } from '@/utilities/postgresTransactionLocks'
+import {
+  getPostgresTransactionDatabase,
+  type PostgresTransactionDatabase,
+} from '@/utilities/postgresTransactionLocks'
 
 /**
  * C155 backfill coverage: what the catalog actually HAS, per legislature.
@@ -30,10 +33,6 @@ export type SpeechCoverage = {
 }
 
 type CoverageRequest = { transactionID?: PayloadRequest['transactionID'] }
-
-type PostgresDb = {
-  execute: (query: ReturnType<typeof sql>) => Promise<unknown>
-}
 
 const COVERAGE_QUERY = sql`
   SELECT
@@ -109,11 +108,11 @@ export const getSpeechCoverage = async (
     throw new Error('A cobertura do acervo exige o adaptador PostgreSQL.')
   }
 
-  let database: PostgresDb | undefined
+  let database: PostgresTransactionDatabase | undefined
   if (req?.transactionID) {
     database = await getPostgresTransactionDatabase(payload, req)
   } else {
-    database = (payload.db as unknown as { drizzle?: PostgresDb }).drizzle
+    database = (payload.db as unknown as { drizzle?: PostgresTransactionDatabase }).drizzle
   }
   if (!database || typeof database.execute !== 'function') {
     throw new Error('A sessão PostgreSQL da cobertura do acervo não está disponível.')
