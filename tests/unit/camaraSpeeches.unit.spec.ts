@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  aggregateBackfillRuns,
   buildVodUrl,
   clockToSeconds,
   legislatureForDate,
@@ -15,6 +16,7 @@ import {
   parsePresidingOfficerTransitions,
   parseVodStatus,
   resolvePresidingOfficer,
+  selectLinkSample,
   selectSpeechEvents,
   speechContentHash,
   speechDate,
@@ -474,5 +476,141 @@ describe('normalizeTranscription', () => {
       chunks: [{ timestamp: [2, 3], text: 'chunk' }],
     })
     expect(result.segments).toEqual([{ start: 0, end: 1, text: 'seg' }])
+  })
+})
+
+describe('aggregateBackfillRuns', () => {
+  it('sums the numeric blocks of every legislature and keeps the first LLM sample error', () => {
+    const combined = aggregateBackfillRuns([
+      {
+        totals: {
+          listed: 10,
+          processed: 10,
+          created: 8,
+          updated: 2,
+          withExcerpt: 9,
+          withoutExcerpt: 1,
+          withSegments: 8,
+          failed: 1,
+        },
+        asr: { calls: 8, audioSeconds: 480, elapsedMs: 9000, failures: 0 },
+        llm: {
+          calls: 10,
+          used: 10,
+          failed: 0,
+          totalTokens: 1000,
+          estimatedCostUsd: 0.01,
+          sampleError: null,
+        },
+        elapsedMs: 12_000,
+      },
+      {
+        totals: {
+          listed: 5,
+          processed: 5,
+          created: 0,
+          updated: 5,
+          withExcerpt: 5,
+          withoutExcerpt: 0,
+          withSegments: 5,
+          failed: 0,
+        },
+        asr: { calls: 0, audioSeconds: 0, elapsedMs: 0, failures: 0 },
+        llm: {
+          calls: 5,
+          used: 4,
+          failed: 1,
+          totalTokens: 400,
+          estimatedCostUsd: 0.004,
+          sampleError: 'timeout',
+        },
+        elapsedMs: 3_000,
+      },
+    ])
+
+    expect(combined.totals).toEqual({
+      listed: 15,
+      processed: 15,
+      created: 8,
+      updated: 7,
+      withExcerpt: 14,
+      withoutExcerpt: 1,
+      withSegments: 13,
+      failed: 1,
+    })
+    expect(combined.asr).toEqual({ calls: 8, audioSeconds: 480, elapsedMs: 9000, failures: 0 })
+    expect(combined.llm.calls).toBe(15)
+    expect(combined.llm.used).toBe(14)
+    expect(combined.llm.failed).toBe(1)
+    expect(combined.llm.totalTokens).toBe(1400)
+    expect(combined.llm.estimatedCostUsd).toBeCloseTo(0.014, 6)
+    expect(combined.llm.sampleError).toBe('timeout')
+    expect(combined.elapsedMs).toBe(15_000)
+  })
+
+  it('returns zeroed blocks for an empty/absent run list', () => {
+    expect(aggregateBackfillRuns([]).totals.processed).toBe(0)
+    expect(aggregateBackfillRuns(undefined).asr.audioSeconds).toBe(0)
+    expect(aggregateBackfillRuns(undefined).llm.sampleError).toBeNull()
+    expect(aggregateBackfillRuns(undefined).elapsedMs).toBe(0)
+  })
+})
+
+describe('selectLinkSample', () => {
+  const rows = [
+    {
+      id: 1,
+      legislature: '57',
+      speechAt: '2023-03-01T10:00',
+      vodPlaybackUrl: 'https://vod/1',
+      vodDownloadUrl: 'https://vod/1.mp4',
+    },
+    {
+      id: 2,
+      legislature: '57',
+      speechAt: '2023-02-01T10:00',
+      vodPlaybackUrl: null,
+      vodDownloadUrl: null,
+    },
+    {
+      id: 3,
+      legislature: '57',
+      speechAt: '2023-04-01T10:00',
+      vodPlaybackUrl: 'https://vod/3',
+      vodDownloadUrl: null,
+    },
+    {
+      id: 4,
+      legislature: '56',
+      speechAt: '2021-02-01T10:00',
+      vodPlaybackUrl: 'https://vod/4',
+      vodDownloadUrl: 'https://vod/4.mp4',
+    },
+  ]
+
+  it('picks up to n linked speeches per legislature, skipping link-less rows', () => {
+    expect(
+      selectLinkSample(rows, 1)
+        .map((row) => row.id)
+        .sort(),
+    ).toEqual([1, 4])
+    expect(
+      selectLinkSample(rows, 5)
+        .map((row) => row.id)
+        .sort(),
+    ).toEqual([1, 3, 4])
+  })
+
+  it('is deterministic for the same rows', () => {
+    expect(selectLinkSample(rows, 2)).toEqual(selectLinkSample(rows, 2))
+  })
+
+  it('returns an empty sample when nothing carries a link', () => {
+    expect(
+      selectLinkSample(
+        [{ id: 9, legislature: '55', speechAt: null, vodPlaybackUrl: null, vodDownloadUrl: null }],
+        3,
+      ),
+    ).toEqual([])
   })
 })
