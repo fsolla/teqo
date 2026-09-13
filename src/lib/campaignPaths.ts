@@ -20,4 +20,9 @@ export const LEADER_CONTACTS_HOME = '/campanha/meus-contatos' as const
 
 export const CAMPAIGN_PROFILE_HOME = '/campanha/perfil' as const
 
+/** Communication vertical (C154) — home redirects to the acervo. */
+export const CAMPAIGN_COMMUNICATION_HOME = '/campanha/comunicacao' as const
+
+export const CAMPAIGN_COMMUNICATION_ACERVO = '/campanha/comunicacao/acervo' as const
+
 export const CAMPAIGN_UPDATES_HREF = '/campanha/atualizacoes' as const

@@ -6,8 +6,15 @@ import { CampaignAIHeaderButton } from '@/components/campaign/shell/ai/CampaignA
 import { useCampaignHeaderActions } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageChromeDisplay } from '@/components/campaign/shell/CampaignPageChromeDisplay'
 import { SidebarTrigger } from '@/components/ui/Sidebar'
+import { canUseCampaignAssistant, type CampaignRole } from '@/lib/campaignRoles'
 
-export const CampaignDesktopHeader = ({ notificationBell }: { notificationBell?: ReactNode }) => {
+export const CampaignDesktopHeader = ({
+  notificationBell,
+  role,
+}: {
+  notificationBell?: ReactNode
+  role: CampaignRole
+}) => {
   const headerActions = useCampaignHeaderActions()
 
   return (
@@ -19,7 +26,7 @@ export const CampaignDesktopHeader = ({ notificationBell }: { notificationBell?:
           <Fragment key={id}>{node}</Fragment>
         ))}
         {notificationBell ?? null}
-        <CampaignAIHeaderButton />
+        {canUseCampaignAssistant(role) ? <CampaignAIHeaderButton /> : null}
       </div>
     </header>
   )

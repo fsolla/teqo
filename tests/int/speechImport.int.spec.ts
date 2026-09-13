@@ -1,7 +1,5 @@
 // @vitest-environment node
 
-import { randomUUID } from 'node:crypto'
-
 import type { Payload } from 'payload'
 import { getPayload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -14,46 +12,15 @@ import {
   type SpeechImportBundle,
 } from '@/utilities/speech/speechImport'
 
+import { speechBundleFixture } from '../helpers/speechBundleFixture'
+
 let payload: Payload
 const createdSourceKeys = new Set<string>()
 
 const baseBundle = (overrides: Partial<SpeechImportBundle> = {}): SpeechImportBundle => {
-  const sourceKey = `test-import-${randomUUID()}`
-  createdSourceKeys.add(sourceKey)
-  return {
-    sourceKey,
-    speechAt: '2023-02-07T17:28',
-    year: 2023,
-    legislature: '57',
-    type: 'BREVES COMUNICAÇÕES',
-    phase: 'Breves Comunicações',
-    durationSeconds: 252,
-    summary: 'Saúde e educação em Feira de Santana.',
-    officialTranscript: 'O SR. JORGE SOLLA (Bloco/PT - BA) - Sr. Presidente...',
-    officialTextUrl: null,
-    keywords: ['SUS'],
-    eventId: 67091,
-    eventType: 'Sessão Deliberativa',
-    eventStartAt: '2023-02-07T15:00',
-    eventEndAt: '2023-02-07T21:23',
-    youtubeUrl: null,
-    presidingOfficer: 'Pompeo de Mattos',
-    audioId: 558641,
-    excerptTMs: 1675801808560,
-    vodPlaybackUrl: null,
-    vodDownloadUrl: null,
-    facets: {
-      topics: ['saude'],
-      scopes: ['bahia'],
-      municipalities: matchMunicipalityMentions('Feira de Santana'),
-      people: ['Lula'],
-      programs: [],
-      projects: [],
-      classifiedBy: 'gazetteer',
-    },
-    segments: [{ startSeconds: 0, endSeconds: 2.7, text: 'A saúde pública baiana' }],
-    ...overrides,
-  }
+  const bundle = speechBundleFixture(overrides)
+  createdSourceKeys.add(bundle.sourceKey)
+  return bundle
 }
 
 const findBySourceKey = async (sourceKey: string) => {
@@ -116,6 +83,26 @@ describe('upsertSpeechBundle (C153)', () => {
     const again = await findBySourceKey(bundle.sourceKey)
     expect(again?.id).toBe(speech?.id)
     expect(await countSegments(again?.id ?? 0)).toBe(1)
+  })
+
+  it('mirrors the segments into the speech searchText and preserves it when skipped', async () => {
+    const bundle = baseBundle({
+      segments: [
+        { startSeconds: 0, endSeconds: 2, text: 'A saúde pública baiana' },
+        { startSeconds: 2, endSeconds: 5, text: 'Educação em Feira de Santana' },
+      ],
+    })
+
+    await upsertSpeechBundle(payload, bundle)
+    const speech = await findBySourceKey(bundle.sourceKey)
+    expect(speech?.searchText).toBe('a saude publica baiana educacao em feira de santana')
+
+    await upsertSpeechBundle(
+      payload,
+      baseBundle({ sourceKey: bundle.sourceKey, segments: undefined }),
+    )
+    const preserved = await findBySourceKey(bundle.sourceKey)
+    expect(preserved?.searchText).toBe('a saude publica baiana educacao em feira de santana')
   })
 
   it('preserves manual facets and skips facet writes', async () => {

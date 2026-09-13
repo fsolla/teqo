@@ -58,6 +58,17 @@ describe('campaignPageChrome', () => {
     expect(campaignPageMetadata(null).title).toBe('Início')
   })
 
+  it('resolves the communication vertical and its acervo (C154)', () => {
+    expect(resolveCampaignPageChrome('/campanha/comunicacao', 'communicator')).toEqual({
+      title: 'Comunicação',
+    })
+    expect(resolveCampaignPageChrome('/campanha/comunicacao/acervo', 'communicator')).toEqual({
+      title: 'Acervo de falas',
+      subtitle: 'Discursos do Deputado Jorge Solla na Câmara.',
+    })
+    expect(resolveCampaignPageChrome('/campanha/comunicacao/acervo/42', 'communicator')).toBeNull()
+  })
+
   it('separates staff contatos from the leader meus-contatos (C139)', () => {
     expect(resolveCampaignPageChrome('/campanha/contatos', 'coordinator')).toEqual({
       title: 'Contatos',

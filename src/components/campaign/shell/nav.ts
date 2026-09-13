@@ -12,6 +12,7 @@ import {
   LayoutDashboardIcon,
   MapIcon,
   MapPinIcon,
+  MegaphoneIcon,
   UserCogIcon,
   Users2Icon,
   UsersIcon,
@@ -20,11 +21,16 @@ import {
 
 import {
   CAMPAIGN_AGENDA_HOME,
+  CAMPAIGN_COMMUNICATION_HOME,
   CAMPAIGN_CONTACTS_HOME,
   CAMPAIGN_UPDATES_HREF,
   LEADER_CONTACTS_HOME,
 } from '@/lib/campaignPaths'
-import { isStaffCampaignRole, isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
+import {
+  canReadSpeechCatalog,
+  isStaffCampaignRole,
+  isUnrestrictedCampaignRole,
+} from '@/lib/campaignRoles'
 import type { CampaignUser } from '@/payload-types'
 import { canAccessSupporterArea } from '@/utilities/supporter/supporterUi'
 
@@ -61,6 +67,7 @@ const staffNav: CampaignNavItem[] = [
   { title: 'Demandas', href: '/campanha/demandas', icon: InboxIcon },
   { title: 'Apoiadores', href: '/campanha/apoiadores', icon: UsersIcon },
   { title: 'Assessores', href: '/campanha/assessores', icon: UserCogIcon },
+  { title: 'Comunicação', href: CAMPAIGN_COMMUNICATION_HOME, icon: MegaphoneIcon },
 ]
 
 /**
@@ -82,15 +89,24 @@ const leaderNav: CampaignNavItem[] = [
   { title: 'Meus contatos', href: LEADER_CONTACTS_HOME, icon: UsersIcon },
 ]
 
+/**
+ * C154 — the communication assessor is not staff: the sidebar shows only the
+ * vertical (plus the perfil/logout footer). Coordinator/candidate also reach
+ * the vertical, through the staff nav below.
+ */
+const communicatorNav: CampaignNavItem[] = [
+  { title: 'Comunicação', href: CAMPAIGN_COMMUNICATION_HOME, icon: MegaphoneIcon },
+]
+
 export const getCampaignNav = (role: CampaignUser['role']): CampaignNavItem[] => {
   if (role === 'leader') return leaderNav
-  // C153 — the communication assessor is not staff: no staff destinations.
-  // The catalog vertical (C154) adds its own nav items here.
-  if (role === 'communicator') return []
+  if (role === 'communicator') return communicatorNav
 
   return staffNav.filter((item) => {
     if (item.href === '/campanha/apoiadores') return canAccessSupporterArea(role)
     if (item.href === '/campanha/assessores') return isUnrestrictedCampaignRole(role)
+    // C154 — advisor has no speech catalog access; coordinator/candidate do.
+    if (item.href === CAMPAIGN_COMMUNICATION_HOME) return canReadSpeechCatalog(role)
     return true
   })
 }

@@ -119,7 +119,7 @@ type SpeechWriteData = RequiredDataFromCollectionSlug<'speech'>
 
 const metadataData = (
   bundle: SpeechImportBundle,
-): Omit<SpeechWriteData, 'sourceKey' | 'classifiedBy'> => ({
+): Omit<SpeechWriteData, 'sourceKey' | 'classifiedBy' | 'searchText'> => ({
   speechAt: bundle.speechAt,
   year: bundle.year,
   legislature: bundle.legislature,
@@ -160,6 +160,14 @@ export const upsertSpeechBundle = async (
     const current = found.docs[0]
     const manualFacetsPreserved = current?.classifiedBy === 'manual'
 
+    // C154 — the speech-level search text mirrors the segments and is owned by
+    // this bundle: `segments: undefined` (skip/ASR failure) preserves whatever
+    // is stored, exactly like the segments themselves.
+    const segmentSearchText =
+      bundle.segments === undefined
+        ? undefined
+        : normalizeForSearch(bundle.segments.map((segment) => segment.text).join(' '))
+
     const metadata = metadataData(bundle)
     const facets: Partial<SpeechWriteData> = {}
     if (bundle.facets && !manualFacetsPreserved) {
@@ -195,7 +203,7 @@ export const upsertSpeechBundle = async (
       await payload.update({
         collection: 'speech',
         id: current.id,
-        data,
+        data: segmentSearchText === undefined ? data : { ...data, searchText: segmentSearchText },
         depth: 0,
         req,
         // Intentional bypass: the import CLI is a trusted actor with no session.
@@ -208,6 +216,7 @@ export const upsertSpeechBundle = async (
         data: {
           sourceKey: bundle.sourceKey,
           classifiedBy: bundle.facets?.classifiedBy ?? 'gazetteer',
+          searchText: segmentSearchText ?? '',
           ...data,
         },
         depth: 0,

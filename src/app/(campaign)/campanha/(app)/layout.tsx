@@ -108,6 +108,7 @@ export default async function CampaignAppLayout({ children }: { children: React.
                       notificationBell={<CampaignNotificationBellSlot user={user} />}
                     />
                     <CampaignDesktopHeader
+                      role={user.role}
                       notificationBell={<CampaignNotificationBellSlot user={user} />}
                     />
                     {/*

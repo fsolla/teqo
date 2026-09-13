@@ -941,6 +941,10 @@ export interface Speech {
    * Preservadas cruas; as facetas não as substituem.
    */
   keywords?: string[] | null;
+  /**
+   * Concatenação normalizada dos segmentos (sem acentos); mantida pelo import.
+   */
+  searchText?: string | null;
   eventId?: number | null;
   eventType?: string | null;
   eventStartAt?: string | null;
@@ -2081,6 +2085,7 @@ export interface SpeechSelect<T extends boolean = true> {
   officialTranscript?: T;
   officialTextUrl?: T;
   keywords?: T;
+  searchText?: T;
   eventId?: T;
   eventType?: T;
   eventStartAt?: T;

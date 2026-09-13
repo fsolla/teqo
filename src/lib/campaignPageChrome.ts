@@ -113,6 +113,13 @@ export const campaignPageChromeCatalog = {
     title: 'Meu perfil',
     subtitle: 'Gerencie sua foto, sua senha e a entrada por biometria.',
   },
+  comunicacao: {
+    title: 'Comunicação',
+  },
+  acervo: {
+    title: 'Acervo de falas',
+    subtitle: 'Discursos do Deputado Jorge Solla na Câmara.',
+  },
 } as const satisfies Record<string, CampaignPageChrome | null>
 
 const resolveCatalogEntry = (
@@ -270,6 +277,18 @@ const pathRules: PathRule[] = [
   {
     match: (pathname) => pathname === '/campanha/perfil',
     resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.perfil),
+  },
+  {
+    match: (pathname) => pathname === '/campanha/comunicacao/acervo',
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.acervo),
+  },
+  {
+    match: (pathname) => /^\/campanha\/comunicacao\/acervo\/[^/]+$/.test(pathname),
+    resolve: () => null,
+  },
+  {
+    match: (pathname) => pathname === '/campanha/comunicacao',
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.comunicacao),
   },
 ]
 

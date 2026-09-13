@@ -288,11 +288,18 @@ describe('speechContentHash', () => {
 })
 
 describe('parseOfficialKeywords', () => {
-  it('splits the raw newline string and keeps each keyword', () => {
+  it('splits newline-separated groups and comma-separated keywords', () => {
     expect(parseOfficialKeywords('Saúde, SUS\r\nEducação\r\n\r\nEscola')).toEqual([
-      'Saúde, SUS',
+      'Saúde',
+      'SUS',
       'Educação',
       'Escola',
+    ])
+    // Live Câmara shape: one group per line, keywords joined by commas.
+    expect(parseOfficialKeywords('Governo federal,reconstrução,Política pública')).toEqual([
+      'Governo federal',
+      'reconstrução',
+      'Política pública',
     ])
     expect(parseOfficialKeywords(null)).toEqual([])
   })
