@@ -430,6 +430,68 @@ relatório declara qual base foi usada.
 
 Não há escrita; "rollback" = rodar de novo (idempotente, read-only).
 
+## C155 — backfill do acervo de falas em produção
+
+Operação de dados do catálogo de falas (`speech`/`speechSegment`, C153/C154):
+processa as 54ª–57ª legislaturas (~1.011 discursos) contra o `teqo_1313` e
+imprime um relatório por legislatura + a cobertura do banco. O import é
+idempotente por `sourceKey` (reexecutar atualiza metadados e pula VOD/ASR do
+que já tem segmentos), então o run é resumível — falha de rede em uma
+legislatura não derruba as outras.
+
+**Pré-requisitos:** o deploy que aplicou as migrations do catálogo
+(`20260913_001112_add_speech_catalog`, `20260913_001200_add_speech_segment_trgm_index`,
+`20260913_145820_add_speech_search_text`, `20260913_150000_backfill_speech_search_text_trgm_index`)
+já está em produção desde o deploy de `424ee311` (2026-09-13); `DEEPINFRA_API_KEY`
+no `~/stack/.env` do homeserver; `~/teqo-backfill` no SHA desejado com
+`pnpm install`; espaço em `/srv/hdd/backups/teqo-camara` para o cache de MP4
+(o cache do C153 foi descartado com o worktree; o backfill baixa de novo).
+
+```bash
+ssh homeserver
+source ~/.nvm/nvm.sh            # Node 24 (engines do repo)
+cd ~/teqo-backfill && git fetch origin && git checkout <SHA> && pnpm install
+set -a; source ~/stack/.env; set +a            # DEEPINFRA_API_KEY
+set -a; source ~/stack/teqo-1313.env; set +a   # DATABASE_URL + NODE_ENV=production
+# o host `postgres` só resolve na rede do stack; do host usa-se o proxy socat:
+export DATABASE_URL="${DATABASE_URL/@postgres:5432/@127.0.0.1:5433}"
+export CAMARA_IMPORT_CONFIRM=1                 # guard C155: escrita em produção
+
+# smoke (4 discursos, ~2 min; repetir para provar idempotência: 0 criados/0 ASR):
+pnpm camara:import --all --limit 1 --out /srv/hdd/backups/teqo-camara
+# run completo (tmux; ~10–15h de parede, resumível):
+tmux new -d -s c155 "pnpm camara:import --all --out /srv/hdd/backups/teqo-camara 2>&1 | tee -a /srv/hdd/backups/c155-run.log"
+# validação pós-run (read-only):
+pnpm camara:import --coverage --out /srv/hdd/backups/teqo-camara
+pnpm camara:import --verify-links 3 --out /srv/hdd/backups/teqo-camara
+```
+
+O guard `CAMARA_IMPORT_CONFIRM=1` é exigido sempre que a escrita não é
+provadamente local (`NODE_ENV=production`, host remoto ou `ALLOW_REMOTE_DB`);
+`--coverage` e `--verify-links` são read-only e não exigem a flag. A escrita é
+confinada a `speech`/`speechSegment`/rels; nenhum objeto de mídia vai para o
+S3 (os MP4 ficam só no cache local). Crédito CC BY 4.0 da Câmara mantido no
+admin/relatórios.
+
+**Resultado registrado (2026-09-13/14):** _preenchido após o run_ — ver
+`docs/changelog/2026-09-13-c155.md` e o JSON em
+`/srv/hdd/backups/teqo-camara/reports/`.
+
+### Rollback
+
+O import é aditivo e idempotente; não há migração para desfazer. Para remover
+uma legislatura (ex.: reimportar do zero), apagar os discursos e seus
+segmentos — as rels (`speech_rels`, `speech_topics`, `speech_scopes`) caem por
+cascade:
+
+```sql
+DELETE FROM "speech_segment" WHERE "speech_id" IN (SELECT id FROM "speech" WHERE "legislature" = '55');
+DELETE FROM "speech" WHERE "legislature" = '55';
+```
+
+Para desfazer o acervo inteiro: `DELETE FROM "speech_segment"; DELETE FROM "speech";`
+(a cobertura `--coverage` volta a zero). Reexecutar `--all` reconstrói.
+
 ## Referências
 
 - `scripts/deploy-homeserver.sh` — o script (fonte da verdade do fluxo; parametrizado por `TEQO_ENV`)
