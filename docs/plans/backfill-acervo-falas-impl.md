@@ -64,8 +64,8 @@ flowchart TB
   H --> J
 ```
 
-| Opções | Recomendação | Rejeitadas |
-| --- | --- | --- |
+| Opções                                                                                                      | Recomendação                                                                                                               | Rejeitadas                                                                                                                                                                                                                                |
+| ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **A)** Evoluir o dono: `--all`/`--coverage`/`--verify-links` no import do C153 + utility de coverage + docs | **A** — um CLI, um artefato, caches em memória, agregação pura testável; knip e convenções de script continuam com um dono | **B)** script novo de orquestração + script novo de coverage (segundo CLI/knip/drift, dois lugares para o mesmo bug); **C)** operar só com loop shell no runbook (sem relatório por legislatura como artefato, operador vira o agregador) |
 
 ### Decisões de engenharia
@@ -120,18 +120,18 @@ flowchart TB
 
 ### Componentes / mudanças
 
-| Arquivo | Mudança |
-| --- | --- |
-| `scripts/import-camara-speeches.mjs` (dono) | Flags `--all` (mutex com `--date`/`--legislature` explícito) e modos `--coverage`/`--verify-links <n>`; loop 54→57 com checkpoint JSON por legislatura; `coverage` anexada ao relatório final; guard `CAMARA_IMPORT_CONFIRM` (D3) antes de `getPayload`; eco do alvo; falha por legislatura não aborta o run inteiro; `HELP` atualizado; hint do `assertLocalDatabase` aponta o runbook §C155 |
-| `scripts/lib/camaraSpeeches.mjs` (puro) | `aggregateBackfillRuns(runs)` (somas de `totals`/`asr`/`llm`/`elapsedMs`, por legislatura e combinado) e `selectLinkSample(rows, n)` (amostragem determinística) |
-| `scripts/lib/camaraFetch.mjs` (HTTP) | `probeVodLink(url)` — GET `Range: bytes=0-1023`, fallback HEAD, status/content-type/bytes, erro de rede = warning |
-| `scripts/lib/cli.mjs` (CLI) | `isLocalDatabaseUrl(url)` e `requiresWriteConfirm({ nodeEnv, databaseUrl, allowRemoteDb })` puros; `assert-local-database.mjs` passa a consumir `isLocalDatabaseUrl` (refactor mínimo, semântica intacta) |
-| `src/utilities/speech/speechCoverage.ts` (novo) | `getSpeechCoverage(payload)` — query agregada por legislatura: `total`, `withExcerpt` (`audio_id`), `withVideo` (`vod_playback_url`), `withSegments` (`speech_segment` > 0), `withoutExcerpt`, `withoutSegments`, `fallbackYoutube` (`audio_id` nulo e `youtube_url` presente) + totais |
-| `tests/unit/camaraSpeeches.unit.spec.ts` | + unit de `aggregateBackfillRuns`/`selectLinkSample` |
-| `tests/unit/cliEnvFlags.unit.spec.ts` | + unit de `requiresWriteConfirm`/`isLocalDatabaseUrl` |
-| `tests/int/speechCoverage.int.spec.ts` (novo) | fixtures de `speech`/`speechSegment` cobrindo os buckets; cleanup no `afterAll` |
-| `docs/ops/teqo-1313-deploy.md` | Seção `## C155 — backfill do acervo de falas em produção`: pré-requisito (deploy com migration C153), comandos, resultado e rollback |
-| `docs/changelog/2026-09-13-c155.md` (novo) | Entrada curta com os números medidos (preenchida na Fase 4) |
+| Arquivo                                         | Mudança                                                                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/import-camara-speeches.mjs` (dono)     | Flags `--all` (mutex com `--date`/`--legislature` explícito) e modos `--coverage`/`--verify-links <n>`; loop 54→57 com checkpoint JSON por legislatura; `coverage` anexada ao relatório final; guard `CAMARA_IMPORT_CONFIRM` (D3) antes de `getPayload`; eco do alvo; falha por legislatura não aborta o run inteiro; `HELP` atualizado; hint do `assertLocalDatabase` aponta o runbook §C155 |
+| `scripts/lib/camaraSpeeches.mjs` (puro)         | `aggregateBackfillRuns(runs)` (somas de `totals`/`asr`/`llm`/`elapsedMs`, por legislatura e combinado) e `selectLinkSample(rows, n)` (amostragem determinística)                                                                                                                                                                                                                              |
+| `scripts/lib/camaraFetch.mjs` (HTTP)            | `probeVodLink(url)` — GET `Range: bytes=0-1023`, fallback HEAD, status/content-type/bytes, erro de rede = warning                                                                                                                                                                                                                                                                             |
+| `scripts/lib/cli.mjs` (CLI)                     | `isLocalDatabaseUrl(url)` e `requiresWriteConfirm({ nodeEnv, databaseUrl, allowRemoteDb })` puros; `assert-local-database.mjs` passa a consumir `isLocalDatabaseUrl` (refactor mínimo, semântica intacta)                                                                                                                                                                                     |
+| `src/utilities/speech/speechCoverage.ts` (novo) | `getSpeechCoverage(payload)` — query agregada por legislatura: `total`, `withExcerpt` (`audio_id`), `withVideo` (`vod_playback_url`), `withSegments` (`speech_segment` > 0), `withoutExcerpt`, `withoutSegments`, `fallbackYoutube` (`audio_id` nulo e `youtube_url` presente) + totais                                                                                                       |
+| `tests/unit/camaraSpeeches.unit.spec.ts`        | + unit de `aggregateBackfillRuns`/`selectLinkSample`                                                                                                                                                                                                                                                                                                                                          |
+| `tests/unit/cliEnvFlags.unit.spec.ts`           | + unit de `requiresWriteConfirm`/`isLocalDatabaseUrl`                                                                                                                                                                                                                                                                                                                                         |
+| `tests/int/speechCoverage.int.spec.ts` (novo)   | fixtures de `speech`/`speechSegment` cobrindo os buckets; cleanup no `afterAll`                                                                                                                                                                                                                                                                                                               |
+| `docs/ops/teqo-1313-deploy.md`                  | Seção `## C155 — backfill do acervo de falas em produção`: pré-requisito (deploy com migration C153), comandos, resultado e rollback                                                                                                                                                                                                                                                          |
+| `docs/changelog/2026-09-13-c155.md` (novo)      | Entrada curta com os números medidos (preenchida na Fase 4)                                                                                                                                                                                                                                                                                                                                   |
 
 Sem migration, sem schema, sem access, sem UI, sem `package.json` (o `pnpm camara:import` já existe). Nenhuma escrita fora de `speech`/`speechSegment`/`speech_rels`.
 
@@ -139,15 +139,15 @@ Sem migration, sem schema, sem access, sem UI, sem `package.json` (o `pnpm camar
 
 **Coverage (por legislatura + totais):**
 
-| Campo | Definição | Responde |
-| --- | --- | --- |
-| `total` | discursos da legislatura no banco | tamanho do acervo |
-| `withExcerpt` | `audio_id` não nulo | trecho identificado na página do evento |
-| `withVideo` | `vod_playback_url` não nulo | tem vídeo (VOD) |
-| `withSegments` | ≥1 `speechSegment` | tem transcrição minutada |
-| `withoutExcerpt` | `audio_id` nulo | o que ficou de fora |
-| `withoutSegments` | 0 segmentos | pendência de transcrição |
-| `fallbackYoutube` | `audio_id` nulo e `youtube_url` presente | "quantos caíram no fallback" |
+| Campo             | Definição                                | Responde                                |
+| ----------------- | ---------------------------------------- | --------------------------------------- |
+| `total`           | discursos da legislatura no banco        | tamanho do acervo                       |
+| `withExcerpt`     | `audio_id` não nulo                      | trecho identificado na página do evento |
+| `withVideo`       | `vod_playback_url` não nulo              | tem vídeo (VOD)                         |
+| `withSegments`    | ≥1 `speechSegment`                       | tem transcrição minutada                |
+| `withoutExcerpt`  | `audio_id` nulo                          | o que ficou de fora                     |
+| `withoutSegments` | 0 segmentos                              | pendência de transcrição                |
+| `fallbackYoutube` | `audio_id` nulo e `youtube_url` presente | "quantos caíram no fallback"            |
 
 **`--all` (JSON):** `{ runAt, mode: 'all', options, legislatures: [{ legislature, range, totals, asr, llm, elapsedMs, aborted, speeches[], failures[] }], totals/asr/llm/elapsedMs combinados, coverage }`. O modo `--legislature`/`--date` mantém o shape do C153 e ganha `coverage` no fim (compatível com o artefato existente).
 
@@ -205,20 +205,20 @@ _Quota:_ 1 PR; prova: check `checks` verde.
 
 ## Riscos e mitigação
 
-| Risco | Mitigação |
-| --- | --- |
-| Migration C153 não aplicada em produção (fato: batch 52) → escrita falha | Fase 3.0 deploy de main **antes** de qualquer run; Fase 0 confere migration + tabelas |
-| `DEEPINFRA_API_KEY` ausente no homeserver (fato) | Adicionar ao env file na Fase 0; o modo de escrita sem `--skip-transcribe` falha cedo e claro |
-| Guard furado pelo proxy `127.0.0.1`/host `postgres` | D3: confirm por `NODE_ENV=production` + host + `ALLOW_REMOTE_DB`; eco do alvo; smoke de produção com re-run antes do run completo |
-| Queda de rede/SSH durante 10–15h | tmux + `tee`; checkpoint por legislatura; resume idempotente (`--all` ou `--legislature N`); falha de uma legislatura não derruba as demais |
-| Disco `/` enche com MP4/HTML cacheados | `--out /srv/hdd/teqo-backfill/camara` (394GB livres); cache de eventos no mesmo destino |
-| Sessões antigas sem trecho/HTML fora do padrão (54ª inteira, 55ª parcial) | Não é falha: vira `withoutExcerpt`/`withoutSegments`/`fallbackYoutube` no coverage e pendência documentada; nenhuma correção manual |
-| Custo acima do orçamento | Relatório mede ASR/LLM por legislatura; teto declarado ~US$0,7; `--skip-transcribe` disponível para re-runs de metadados |
-| Memória do processo (caches `eventsByDate`/`eventPages`) em 8c/15GB | Monitorar no run; fallback: rodar por `--legislature` (o checkpoint já é natural) |
-| Escrita concorrente com o app em produção | Escrita confinada a `speech`/`speechSegment`/rels, transacional, sem locks de outras tabelas; janela de baixa atividade |
-| Reexecução acidental pós-run (tempo/custo) | Idempotência + coverage + guard; re-run é seguro, mas exige a flag e custa wall clock |
-| C154 não está em main | Dados ficam prontos; validação visual registrada como pendência do C154, não bloqueio deste item |
-| Colisão de `sourceKey` (vista na 57ª) | Já resolvida no C153 por hash de conteúdo; o relatório marca `suffixedKey` |
+| Risco                                                                     | Mitigação                                                                                                                                   |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Migration C153 não aplicada em produção (fato: batch 52) → escrita falha  | Fase 3.0 deploy de main **antes** de qualquer run; Fase 0 confere migration + tabelas                                                       |
+| `DEEPINFRA_API_KEY` ausente no homeserver (fato)                          | Adicionar ao env file na Fase 0; o modo de escrita sem `--skip-transcribe` falha cedo e claro                                               |
+| Guard furado pelo proxy `127.0.0.1`/host `postgres`                       | D3: confirm por `NODE_ENV=production` + host + `ALLOW_REMOTE_DB`; eco do alvo; smoke de produção com re-run antes do run completo           |
+| Queda de rede/SSH durante 10–15h                                          | tmux + `tee`; checkpoint por legislatura; resume idempotente (`--all` ou `--legislature N`); falha de uma legislatura não derruba as demais |
+| Disco `/` enche com MP4/HTML cacheados                                    | `--out /srv/hdd/teqo-backfill/camara` (394GB livres); cache de eventos no mesmo destino                                                     |
+| Sessões antigas sem trecho/HTML fora do padrão (54ª inteira, 55ª parcial) | Não é falha: vira `withoutExcerpt`/`withoutSegments`/`fallbackYoutube` no coverage e pendência documentada; nenhuma correção manual         |
+| Custo acima do orçamento                                                  | Relatório mede ASR/LLM por legislatura; teto declarado ~US$0,7; `--skip-transcribe` disponível para re-runs de metadados                    |
+| Memória do processo (caches `eventsByDate`/`eventPages`) em 8c/15GB       | Monitorar no run; fallback: rodar por `--legislature` (o checkpoint já é natural)                                                           |
+| Escrita concorrente com o app em produção                                 | Escrita confinada a `speech`/`speechSegment`/rels, transacional, sem locks de outras tabelas; janela de baixa atividade                     |
+| Reexecução acidental pós-run (tempo/custo)                                | Idempotência + coverage + guard; re-run é seguro, mas exige a flag e custa wall clock                                                       |
+| C154 não está em main                                                     | Dados ficam prontos; validação visual registrada como pendência do C154, não bloqueio deste item                                            |
+| Colisão de `sourceKey` (vista na 57ª)                                     | Já resolvida no C153 por hash de conteúdo; o relatório marca `suffixedKey`                                                                  |
 
 ## Aceite de engenharia (checklist)
 
@@ -237,12 +237,12 @@ _Quota:_ 1 PR; prova: check `checks` verde.
 
 ## Self-score decision-quality
 
-| Item | Nota | Justificativa |
-| --- | --- | --- |
-| Decisões caras (guard de escrita, sequência da operação, contrato do relatório/coverage) decididas explicitamente | 5 | D3/D4/D2 têm opções, recomendação e rejeitadas; o barato (nomes de campo, n da amostra) ficou como fill-in com gatilho |
-| Reuso dos donos existentes (depth check) | 5 | `import-camara-speeches.mjs`, `camaraSpeeches`/`camaraFetch`, `cli.mjs`, `speechImport`, `recover-media`/OPS79 como molde, `drizzleResultRows` — sem twin |
-| Formato Opções/Recomendação/Rejeitadas em todas as decisões | 5 | D1–D8 no formato obrigatório, com rejeitadas justificadas (não decorativas) |
-| Fases verificáveis com quota e prova por fase | 4 | Cada fase tem quota e prova; a estimativa de wall clock (10–15h) é probabilística e a fase 3 depende do deploy manual |
-| Riscos com mitigação e rollback idempotente | 4 | 12 riscos mapeados com mitigação; rollback por DELETE/re-run documentado, mas depende de operador humano no homeserver |
+| Item                                                                                                              | Nota | Justificativa                                                                                                                                             |
+| ----------------------------------------------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Decisões caras (guard de escrita, sequência da operação, contrato do relatório/coverage) decididas explicitamente | 5    | D3/D4/D2 têm opções, recomendação e rejeitadas; o barato (nomes de campo, n da amostra) ficou como fill-in com gatilho                                    |
+| Reuso dos donos existentes (depth check)                                                                          | 5    | `import-camara-speeches.mjs`, `camaraSpeeches`/`camaraFetch`, `cli.mjs`, `speechImport`, `recover-media`/OPS79 como molde, `drizzleResultRows` — sem twin |
+| Formato Opções/Recomendação/Rejeitadas em todas as decisões                                                       | 5    | D1–D8 no formato obrigatório, com rejeitadas justificadas (não decorativas)                                                                               |
+| Fases verificáveis com quota e prova por fase                                                                     | 4    | Cada fase tem quota e prova; a estimativa de wall clock (10–15h) é probabilística e a fase 3 depende do deploy manual                                     |
+| Riscos com mitigação e rollback idempotente                                                                       | 4    | 12 riscos mapeados com mitigação; rollback por DELETE/re-run documentado, mas depende de operador humano no homeserver                                    |
 
 Média: **4,6** (≥4).
