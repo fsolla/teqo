@@ -399,6 +399,33 @@ export const normalizeTranscription = (json) => {
   }
 }
 
+/**
+ * Splits an inclusive `YYYY-MM-DD` range into calendar-year chunks (no
+ * overlap; first/last partial). The backfill fallback uses it when the API
+ * refuses a deep page: a shallow per-year listing still recovers the years
+ * the broken offset does not cover.
+ *
+ * @param {string} from
+ * @param {string} to
+ * @returns {Array<[string, string]>}
+ */
+export const dateRangeChunks = (from, to) => {
+  const chunks = []
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(from)) || !/^\d{4}-\d{2}-\d{2}$/.test(String(to))) {
+    return chunks
+  }
+  let start = String(from)
+  while (start <= String(to)) {
+    const yearEnd = `${start.slice(0, 4)}-12-31`
+    const end = yearEnd < String(to) ? yearEnd : String(to)
+    chunks.push([start, end])
+    const next = new Date(`${end}T00:00:00Z`)
+    next.setUTCDate(next.getUTCDate() + 1)
+    start = next.toISOString().slice(0, 10)
+  }
+  return chunks
+}
+
 /** Numeric blocks of one run that `aggregateBackfillRuns` folds together. */
 const BACKFILL_TOTAL_KEYS = [
   'listed',

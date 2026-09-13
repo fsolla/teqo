@@ -47,6 +47,7 @@ import {
   LEGISLATURE_RANGES,
   SOLLA_DEPUTY_ID,
   aggregateBackfillRuns,
+  dateRangeChunks,
   legislatureForDate,
   matchExcerpt,
   parseDurationToSeconds,
@@ -227,7 +228,7 @@ async function loadEventPage(eventId, options) {
   return html
 }
 
-async function fetchSpeeches(deputyId, from, to) {
+async function fetchSpeechesRange(deputyId, from, to) {
   const speeches = []
   for (let page = 1; ; page += 1) {
     const body = await getJsonWithBackoff(`${speechesUrl(deputyId, from, to)}&pagina=${page}`, {
@@ -240,6 +241,32 @@ async function fetchSpeeches(deputyId, from, to) {
     await sleep(500)
   }
   return speeches
+}
+
+/**
+ * Lista a faixa inteira; se a API recusar uma página funda (500/hang
+ * persistente, visto na 55ª em 2026-09-13), cai para a listagem por ano — cada
+ * chunk é raso e um ano quebrado não derruba os demais. Os chunks que falharem
+ * são reportados via `onWarning` (o run os registra como falha de `list`).
+ */
+async function fetchSpeeches(deputyId, from, to, onWarning = () => {}) {
+  try {
+    return await fetchSpeechesRange(deputyId, from, to)
+  } catch (error) {
+    onWarning(`listagem ${from}..${to} falhou (${error?.message}); tentando por ano`)
+    const speeches = []
+    let listedChunks = 0
+    for (const [chunkFrom, chunkTo] of dateRangeChunks(from, to)) {
+      try {
+        speeches.push(...(await fetchSpeechesRange(deputyId, chunkFrom, chunkTo)))
+        listedChunks += 1
+      } catch (chunkError) {
+        onWarning(`listagem ${chunkFrom}..${chunkTo} falhou: ${chunkError?.message}`)
+      }
+    }
+    if (listedChunks === 0) throw error
+    return speeches
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -638,7 +665,9 @@ const runLegislature = async (payload, options, { legislature, from, to, label }
   const startedAt = Date.now()
   console.log(`\n[camara:import] === ${label} (${from}..${to}) ===`)
 
-  const speeches = await fetchSpeeches(SOLLA_DEPUTY_ID, from, to)
+  const speeches = await fetchSpeeches(SOLLA_DEPUTY_ID, from, to, (message) => {
+    run.failures.push({ sourceKey: null, speechAt: null, stage: 'list', message })
+  })
   const targets = options.limit === null ? speeches : speeches.slice(0, options.limit)
   console.log(`[camara:import] ${speeches.length} discursos na API; processando ${targets.length}`)
   if (targets.length === 0) throw new Error(`nenhum discurso em ${from}..${to}.`)
