@@ -21,16 +21,21 @@ import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import {
-  CAMARA_USER_AGENT,
-  DEEPINFRA_TRANSCRIBE_URL,
-  DEEPINFRA_WHISPER_MODEL,
+  DEEPINFRA_COST_PER_MINUTE_USD,
+  downloadToBuffer,
+  eventPageUrl,
+  eventsUrl,
+  getJson,
+  getText,
+  resolveVod,
+  speechesUrl,
+  transcribeSpeechAudio,
+} from './lib/camaraFetch.mjs'
+import {
   LEGISLATURE_RANGES,
   SOLLA_DEPUTY_ID,
-  buildVodUrl,
   matchExcerpt,
-  normalizeTranscription,
   parseEventExcerpts,
-  parseVodStatus,
   selectSpeechEvents,
 } from './lib/camaraSpeeches.mjs'
 import { dieWithLabel, ensureCachedDownload, loadCliEnv } from './lib/cli.mjs'
@@ -39,9 +44,6 @@ loadCliEnv()
 
 const die = dieWithLabel('camara:pilot')
 
-const DEEPINFRA_COST_PER_MINUTE_USD = 0.00045
-const VOD_POLL_INTERVAL_MS = 5_000
-const VOD_POLL_MAX_ATTEMPTS = 40
 const DEFAULT_OUT_DIR = 'data/camara'
 
 // ---------------------------------------------------------------------------
@@ -104,47 +106,8 @@ Opções:
 `
 
 // ---------------------------------------------------------------------------
-// HTTP helpers
-// ---------------------------------------------------------------------------
-
-const camaraHeaders = { 'User-Agent': CAMARA_USER_AGENT, Accept: 'application/json' }
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-async function fetchOnce(url, { timeoutMs = 30_000, headers = camaraHeaders } = {}) {
-  const response = await fetch(url, { headers, signal: AbortSignal.timeout(timeoutMs) })
-  if (!response.ok) throw new Error(`HTTP ${response.status} em ${url}`)
-  return response
-}
-
-/** The Câmara API drops connections now and then — bounded retry for GETs. */
-async function getText(url, { attempts = 3, ...options } = {}) {
-  let lastError
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    try {
-      return await (await fetchOnce(url, options)).text()
-    } catch (error) {
-      lastError = error
-      if (attempt < attempts) await sleep(2_000)
-    }
-  }
-  throw lastError
-}
-
-const getJson = async (url, options) => JSON.parse(await getText(url, options))
-
-// ---------------------------------------------------------------------------
 // Pipeline steps
 // ---------------------------------------------------------------------------
-
-const speechesUrl = (deputyId, from, to) =>
-  `https://dadosabertos.camara.leg.br/api/v2/deputados/${deputyId}/discursos` +
-  `?dataInicio=${from}&dataFim=${to}&itens=100&ordenarPor=dataHoraInicio&ordem=ASC`
-
-const eventsUrl = (date) =>
-  `https://dadosabertos.camara.leg.br/api/v2/eventos?dataInicio=${date}&dataFim=${date}&itens=100`
-
-const eventPageUrl = (eventId) => `https://www.camara.leg.br/evento-legislativo/${eventId}`
 
 const fileExists = async (path) => {
   try {
@@ -159,62 +122,6 @@ const resolveRange = (options) => {
   if (options.date) return { from: options.date, to: options.date }
   const [from, to] = LEGISLATURE_RANGES[options.legislature]
   return { from, to }
-}
-
-/** Polls the async VOD generation until PRONTO (or gives up). */
-async function resolveVod(eventId, excerpt) {
-  const url = buildVodUrl(eventId, excerpt.audioId, excerpt.tMs)
-  let lastStatus = null
-  for (let attempt = 1; attempt <= VOD_POLL_MAX_ATTEMPTS; attempt += 1) {
-    const status = parseVodStatus(await getJson(url, { timeoutMs: 60_000 }))
-    lastStatus = status
-    if (status.state === 'PRONTO') return { url, status, attempts: attempt }
-    if (status.state === 'INDISPONIVEL') return { url, status, attempts: attempt }
-    await sleep(VOD_POLL_INTERVAL_MS)
-  }
-  return { url, status: lastStatus, attempts: VOD_POLL_MAX_ATTEMPTS }
-}
-
-const downloadToBuffer = async (url) => {
-  let lastError
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    try {
-      const response = await fetchOnce(url, {
-        timeoutMs: 120_000,
-        headers: { 'User-Agent': CAMARA_USER_AGENT },
-      })
-      return Buffer.from(await response.arrayBuffer())
-    } catch (error) {
-      lastError = error
-      if (attempt < 3) await sleep(3_000)
-    }
-  }
-  throw lastError
-}
-
-async function transcribe(mp4Buffer) {
-  const apiKey = process.env.DEEPINFRA_API_KEY
-  if (!apiKey) die('DEEPINFRA_API_KEY ausente — configure no .env.local ou no env do processo.')
-  const form = new FormData()
-  form.append('file', new Blob([mp4Buffer], { type: 'video/mp4' }), 'trecho.mp4')
-  form.append('model', DEEPINFRA_WHISPER_MODEL)
-  form.append('language', 'pt')
-  form.append('response_format', 'verbose_json')
-  form.append('timestamp_granularities[]', 'segment')
-  const startedAt = Date.now()
-  const response = await fetch(DEEPINFRA_TRANSCRIBE_URL, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}` },
-    body: form,
-    signal: AbortSignal.timeout(600_000),
-  })
-  if (!response.ok) {
-    throw new Error(`Deep Infra HTTP ${response.status}: ${(await response.text()).slice(0, 300)}`)
-  }
-  return {
-    transcription: normalizeTranscription(await response.json()),
-    elapsedMs: Date.now() - startedAt,
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -311,7 +218,7 @@ async function processSpeech(speech, options) {
 
     if (!options.skipTranscribe && report.mp4) {
       const buffer = await readFile(report.mp4.path)
-      const { transcription, elapsedMs } = await transcribe(buffer)
+      const { transcription, elapsedMs } = await transcribeSpeechAudio(buffer)
       const estimatedCostUsd = transcription.duration
         ? (transcription.duration / 60) * DEEPINFRA_COST_PER_MINUTE_USD
         : null
@@ -395,6 +302,9 @@ async function main() {
   if (options.help) {
     console.log(HELP)
     process.exit(0)
+  }
+  if (!options.skipTranscribe && !process.env.DEEPINFRA_API_KEY) {
+    die('DEEPINFRA_API_KEY ausente — configure no .env.local ou no env do processo.')
   }
 
   const { from, to } = resolveRange(options)

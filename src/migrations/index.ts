@@ -66,6 +66,8 @@ import * as migration_20260824_000000_reconcile_allocation_decision_rationale_nu
 import * as migration_20260824_010000_make_supporter_import_batch_actor_nullable from './20260824_010000_make_supporter_import_batch_actor_nullable';
 import * as migration_20260912_052226_add_google_calendar_oauth_connection from './20260912_052226_add_google_calendar_oauth_connection';
 import * as migration_20260912_224719_add_activity_public_event from './20260912_224719_add_activity_public_event';
+import * as migration_20260913_001112_add_speech_catalog from './20260913_001112_add_speech_catalog';
+import * as migration_20260913_001200_add_speech_segment_trgm_index from './20260913_001200_add_speech_segment_trgm_index';
 
 export const migrations = [
   {
@@ -401,11 +403,21 @@ export const migrations = [
   {
     up: migration_20260912_052226_add_google_calendar_oauth_connection.up,
     down: migration_20260912_052226_add_google_calendar_oauth_connection.down,
-    name: '20260912_052226_add_google_calendar_oauth_connection'
+    name: '20260912_052226_add_google_calendar_oauth_connection',
   },
   {
     up: migration_20260912_224719_add_activity_public_event.up,
     down: migration_20260912_224719_add_activity_public_event.down,
-    name: '20260912_224719_add_activity_public_event'
+    name: '20260912_224719_add_activity_public_event',
+  },
+  {
+    up: migration_20260913_001112_add_speech_catalog.up,
+    down: migration_20260913_001112_add_speech_catalog.down,
+    name: '20260913_001112_add_speech_catalog'
+  },
+  {
+    up: migration_20260913_001200_add_speech_segment_trgm_index.up,
+    down: migration_20260913_001200_add_speech_segment_trgm_index.down,
+    name: '20260913_001200_add_speech_segment_trgm_index'
   },
 ];

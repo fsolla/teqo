@@ -84,6 +84,9 @@ const leaderNav: CampaignNavItem[] = [
 
 export const getCampaignNav = (role: CampaignUser['role']): CampaignNavItem[] => {
   if (role === 'leader') return leaderNav
+  // C153 — the communication assessor is not staff: no staff destinations.
+  // The catalog vertical (C154) adds its own nav items here.
+  if (role === 'communicator') return []
 
   return staffNav.filter((item) => {
     if (item.href === '/campanha/apoiadores') return canAccessSupporterArea(role)

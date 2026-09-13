@@ -33,6 +33,8 @@ import { Petition } from './collections/Petition'
 import { Post } from './collections/Post'
 import { PushSubscription } from './collections/PushSubscription'
 import { Signature } from './collections/Signature'
+import { Speech } from './collections/Speech'
+import { SpeechSegment } from './collections/SpeechSegment'
 import { StateDeputy } from './collections/StateDeputy'
 import { Subscription } from './collections/Subscription'
 import { Supporter } from './collections/Supporter'
@@ -111,6 +113,8 @@ export default buildConfig({
     SupporterImportBatch,
     MunicipalityUpdate,
     Activity,
+    Speech,
+    SpeechSegment,
     CalendarFeed,
     GoogleCalendarSync,
     ElectionTally,
