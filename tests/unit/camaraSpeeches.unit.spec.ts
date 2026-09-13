@@ -6,6 +6,7 @@ import {
   aggregateBackfillRuns,
   buildVodUrl,
   clockToSeconds,
+  dateRangeChunks,
   legislatureForDate,
   matchExcerpt,
   normalizeSpeakerName,
@@ -632,5 +633,27 @@ describe('selectLinkSample', () => {
         3,
       ),
     ).toEqual([])
+  })
+})
+
+describe('dateRangeChunks', () => {
+  it('splits a multi-year range into non-overlapping calendar years', () => {
+    expect(dateRangeChunks('2015-02-01', '2019-01-31')).toEqual([
+      ['2015-02-01', '2015-12-31'],
+      ['2016-01-01', '2016-12-31'],
+      ['2017-01-01', '2017-12-31'],
+      ['2018-01-01', '2018-12-31'],
+      ['2019-01-01', '2019-01-31'],
+    ])
+  })
+
+  it('handles a single day and an exact year without spilling over', () => {
+    expect(dateRangeChunks('2023-02-07', '2023-02-07')).toEqual([['2023-02-07', '2023-02-07']])
+    expect(dateRangeChunks('2023-01-01', '2023-12-31')).toEqual([['2023-01-01', '2023-12-31']])
+  })
+
+  it('returns no chunks for malformed dates', () => {
+    expect(dateRangeChunks('2023-1-1', '2023-12-31')).toEqual([])
+    expect(dateRangeChunks('', '2023-12-31')).toEqual([])
   })
 })
