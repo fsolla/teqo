@@ -10,7 +10,7 @@
 | Severidade          | alta (bloqueou o deploy de produção; sem outage — produção permaneceu no build anterior) |
 | Ambiente            | CI (verify do deploy manual)                                                             |
 | Issue(s)            | sem Issue (fluxo `/bug-fix`; precedente: post-mortem B196 de 2026-09-12)                 |
-| PR do fix           | a preencher no merge                                                                     |
+| PR do fix           | #973                                                                                     |
 | Detectado por       | teste (job `verify` do `deploy.yml`, passo "Integration tests (full suite)")             |
 
 ## Timeline
@@ -19,7 +19,7 @@
 | ------------------ | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Início provável    | 2026-08-11              | commit `c69990a3` ("fix(C126): isola o escopo do espelho Google nos int specs (fim do flake paralelo)") introduz o escopo/limpeza por título `{ title: { like: 'C114%' } }` em `tests/int/googleCalendarSync.int.spec.ts`; a colisão com UUID alheio é rara, então o defeito fica latente                                                                             |
 | Detecção           | 2026-09-13 14:46:31 UTC | run de deploy 34763253924 (main `7ca708a3`), job `verify`, passo "Integration tests (full suite)": 1 failed \| 82 passed — `tests/int/googleCalendarSync.int.spec.ts` > "a cancelled event in Google cancels the confirmado activity, then the trash is cleaned" falha nas DUAS tentativas (`retry: 1`); os jobs `deploy-staging` e `deploy-production` ficam skipped |
-| Correção mergeada  | pendente                | PR do fix a preencher no merge                                                                                                                                                                                                                                                                                                                                        |
+| Correção mergeada  | pendente                | PR #973 aguardando CI + auto-merge                                                                                                                                                                                                                                                                                                                                    |
 | Deploy             | pendente                | dispatch manual do `deploy.yml` pelo humano após o merge (nenhum merge publica sozinho)                                                                                                                                                                                                                                                                               |
 | Verificado em prod | pendente                | confirmação do humano após o deploy                                                                                                                                                                                                                                                                                                                                   |
 
@@ -54,16 +54,16 @@ Resolve a causa: o escopo e a limpeza passam a ser ownership por id (à prova de
 
 - Teste de regressão: `tests/int/googleCalendarSync.int.spec.ts:250` "a foreign title CONTAINING c114 stays out of the scope (id-scoped mirror)" — falha sem o fix (`expected 2 to be 1`) e passa com
 - Suíte: verificador independente rodou a suíte int completa `VITEST_MAX_WORKERS=4 pnpm test:int` = 83 files / 744 tests verdes (antes: 83 files / 743 tests, 1 failed no CI) e os 6 specs da família Google (47 tests) verdes; `pnpm gate:fast` verde; o pin de convenções falha com o padrão antigo
-- CI: pendente — PR do fix a preencher no merge
+- CI: pendente — PR #973 aberta (check required `CI (PR) / checks`)
 - Prod: pendente — dispatch manual do `deploy.yml` pelo humano após o merge; confirmação do humano pendente
 
 ## Prevenção
 
 | Estratégia                                                                                                      | Custo  | Estado                                                               |
 | --------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------------------------------------------- |
-| Escopo e limpeza do spec Google por ids das linhas criadas (`ownedActivityIds`) + teste de regressão            | barata | implementada agora (PR do fix — a preencher no merge)                |
-| Pin de convenção em `tests/unit/codebaseConventions.unit.spec.ts` banindo marcador de título hex em `tests/int` | barata | implementada agora (PR do fix — a preencher no merge)                |
-| Convenção documentada no header do spec (marcador textual não é ownership)                                      | barata | implementada agora (PR do fix — a preencher no merge)                |
+| Escopo e limpeza do spec Google por ids das linhas criadas (`ownedActivityIds`) + teste de regressão            | barata | implementada agora (PR #973)                                         |
+| Pin de convenção em `tests/unit/codebaseConventions.unit.spec.ts` banindo marcador de título hex em `tests/int` | barata | implementada agora (PR #973)                                         |
+| Convenção documentada no header do spec (marcador textual não é ownership)                                      | barata | implementada agora (PR #973)                                         |
 | Isolamento de banco/schema por arquivo ou suíte int serial (infra de teste nova)                                | cara   | documentada — não implementada neste fluxo; candidata a Issue futura |
 | Operador de prefixo no Payload ou remoção do `retry: 1` (mudança de contrato/framework)                         | cara   | documentada — não implementada neste fluxo; candidata a Issue futura |
 
