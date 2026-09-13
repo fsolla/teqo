@@ -787,7 +787,10 @@ describe('int fixture scoping avoids hex title markers', () => {
       }
     }
 
-    expect(offenders, 'scope by owned ids instead of a title marker (deploy verify 2026-09-13)').toEqual([])
+    expect(
+      offenders,
+      'scope by owned ids instead of a title marker (deploy verify 2026-09-13)',
+    ).toEqual([])
   })
 })
 
