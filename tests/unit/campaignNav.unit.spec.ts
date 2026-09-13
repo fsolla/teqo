@@ -58,6 +58,14 @@ describe('agenda sidebar entry', () => {
   })
 })
 
+describe('communicator sidebar', () => {
+  it('has no staff destinations before the C154 vertical lands', () => {
+    expect(getCampaignNav('communicator')).toEqual([])
+    expect(getCampaignBottomNav('communicator')).toHaveLength(0)
+    expect(getCampaignOverflowNav('communicator')).toHaveLength(0)
+  })
+})
+
 describe('mobile bottom nav', () => {
   it('offers exactly five primary items to staff, zero to leaders', () => {
     for (const role of ['coordinator', 'advisor', 'candidate'] as const) {

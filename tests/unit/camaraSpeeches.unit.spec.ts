@@ -16,6 +16,7 @@ import {
   parseVodStatus,
   resolvePresidingOfficer,
   selectSpeechEvents,
+  speechContentHash,
   speechDate,
   speechSourceKey,
   speechTimeOfDaySeconds,
@@ -271,6 +272,18 @@ describe('speechSourceKey', () => {
   it('degrades missing parts to empty strings', () => {
     expect(speechSourceKey({})).toBe('||')
     expect(speechSourceKey(null)).toBe('||')
+  })
+})
+
+describe('speechContentHash', () => {
+  it('is stable for the same content and differs otherwise', () => {
+    expect(speechContentHash('Sumário', 'Transcrição')).toBe(
+      speechContentHash('Sumário', 'Transcrição'),
+    )
+    expect(speechContentHash('Sumário', 'Transcrição')).not.toBe(
+      speechContentHash('Outro sumário', 'Transcrição'),
+    )
+    expect(speechContentHash(null, null)).toHaveLength(12)
   })
 })
 

@@ -1,7 +1,7 @@
 # Impl: Catálogo de falas do Solla: import idempotente e busca textual
 
-Status: em execução
-Atualizado em: 2026-09-12
+Status: executado
+Atualizado em: 2026-09-13
 Issue: #955
 Intenção: docs/plans/catalogo-falas-solla.md
 Appetite restante: herdado (~2–3 dias; a Fase 4 é wall-clock de máquina, sem trabalho humano)
@@ -150,11 +150,21 @@ flowchart LR
 
 ## Aceite de engenharia
 
-- [ ] Aceite de produto da intenção coberto: 57ª no banco local com transcrição oficial + segmentos + facetas + menções; reexecução sem duplicar; relatório por execução (total, com vídeo, sem trecho, falhas, tempo, custo ASR); busca por palavra com e sem acento; keywords cruas preservadas.
-- [ ] Invariantes AGENTS/engineering-standards: `access` explícito nas duas collections; migration via `pnpm migrate:create` (+ índice hand-written registrado); `src/utilities/speech/`; `server-only` nos módulos acoplados; identificadores em inglês; sem `Contact` paralelo; `data/camara/` gitignored; `overrideAccess: true` com comentário "bypass"; knip sem órfão; crédito CC BY 4.0 no admin/relatório.
-- [ ] Testes de domínio: unit (facets, search, presiding, role predicate) e int (access allow/deny, upsert idempotente, replace de segmentos, manual preservado, `segments: undefined`, hook `searchText` + `contains`).
-- [ ] Gates: `pnpm gate:fast`; `pnpm migrate`/`migrate:status` limpos; `pnpm knip`; `pnpm generate:types` sem diff; `pnpm test:e2e:affected`; `pnpm push`; changelog `docs/changelog/2026-09-12-c153.md`.
-- [ ] Prova viva registrada (relatório JSON da 57ª + re-run idempotente) no PR.
+- [x] Aceite de produto da intenção coberto: 57ª no banco local com transcrição oficial + segmentos + facetas + menções; reexecução sem duplicar; relatório por execução (total, com vídeo, sem trecho, falhas, tempo, custo ASR); busca por palavra com e sem acento; keywords cruas preservadas.
+- [x] Invariantes AGENTS/engineering-standards: `access` explícito nas duas collections; migration via `pnpm migrate:create` (+ índice hand-written registrado); `src/utilities/speech/`; `server-only` nos módulos acoplados; identificadores em inglês; sem `Contact` paralelo; `data/camara/` gitignored; `overrideAccess: true` com comentário "bypass"; knip sem órfão; crédito CC BY 4.0 no admin/relatório.
+- [x] Testes de domínio: unit (facets, search, presiding, role predicate) e int (access allow/deny, upsert idempotente, replace de segmentos, manual preservado, `segments: undefined`, hook `searchText` + `contains`).
+- [x] Gates: `pnpm gate:fast`; `pnpm migrate`/`migrate:status` limpos; `pnpm knip`; `pnpm generate:types` sem diff; e2e curado do CI (`campaignPermissionProfileHttp` + `campaignDemandVisibility`) verde em dev; `pnpm push`; changelog `docs/changelog/2026-09-13-c153.md`.
+- [x] Prova viva registrada (relatório JSON da 57ª + re-run idempotente) no PR.
+
+## Prova viva (2026-09-13, `teqo_wt153`)
+
+- **Run inicial:** 234 discursos listados/processados em 10.773s; 206 com segmentos; 26 falhas de rede/ASR.
+- **Re-run de recuperação:** 19 min; 231 com segmentos; colisão de `sourceKey` (2026-06-17T17:16, "PELA ORDEM") detectada e resolvida com chave sufixada por hash de conteúdo — as duas falas existem.
+- **Re-run idempotente final:** 83s, `0 criados / 234 atualizados`, 0 chamadas de ASR, 0 de LLM (nada re-transcrito nem re-classificado).
+- **Estado final:** 234 discursos; 7.590 segmentos; 232 com identidade de vídeo; 231 com segmentos; 224 com "quem presidia"; 208 com pessoas citadas; 89 com programas; 42 com município citado; keywords oficiais preservadas; 1 chave sufixada (colisão real).
+- **Busca (contrato do C154):** `search_text LIKE '%saude%'` → 295 segmentos; `'%petrobras%'` → 34; `'%educacao%'` → 114; `' sus '` → 20.
+- **Gap conhecido (1/234):** o trecho de 2023-03-15T17:16 é rejeitado pela Deep Infra ("Invalid or unsupported audio file") — MP4 válido de 9,7 MB, mas sem faixa de áudio suportada. O discurso existe com transcrição oficial e sem segmentos; documentado no relatório. Extrair áudio com ffmpeg é o fallback conhecido (não instalado; não vale a dependência por 1 arquivo).
+- **Falsos positivos de município corrigidos no caminho:** keywords oficiais (vocabulário de tema, ex. "Saúde") deixaram de alimentar o match de lugares; nomes ambíguos (Saúde, Central, Palmeiras, Planalto, Santana, Wagner, Juazeiro...) exigem contexto de lugar ("em X", "cidade de X"). Reclassificação final sem os 24 falsos positivos de Saúde (BA).
 
 ## Self-score decision-quality
 

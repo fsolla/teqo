@@ -37,6 +37,23 @@ describe('classifySpeechByGazetteer', () => {
 
     expect(result.scopes).toEqual(['bahia'])
   })
+
+  it('ignores official keywords for place mentions (controlled topic vocabulary)', () => {
+    const result = classifySpeechByGazetteer({
+      summary: 'Debate sobre financiamento da educação.',
+      keywords: ['Saúde', 'Educação', 'Governo federal'],
+      transcript: 'Precisamos investir na educação pública.',
+    })
+
+    expect(result.topics).toContain('saude')
+    expect(result.municipalities).toEqual([])
+
+    const withPlace = classifySpeechByGazetteer({
+      summary: 'Investimento em Saúde, no interior da Bahia.',
+      transcript: 'A comitiva esteve em Saúde.',
+    })
+    expect(withPlace.municipalities.map((entry) => entry.slug)).toEqual(['saude'])
+  })
 })
 
 describe('matchMunicipalityMentions', () => {
@@ -59,10 +76,22 @@ describe('matchMunicipalityMentions', () => {
   it('requires a capitalized proper noun (prose "saúde" is not the municipality Saúde)', () => {
     expect(matchMunicipalityMentions('A saúde pública é prioridade.')).toEqual([])
     expect(
-      matchMunicipalityMentions('A agenda passou por Saúde, no interior da Bahia.').map(
+      matchMunicipalityMentions('A agenda passou em Saúde, no interior da Bahia.').map(
         (entry) => entry.slug,
       ),
     ).toEqual(['saude'])
+  })
+
+  it('requires a place context for ambiguous names (Saúde, Wagner, Santana)', () => {
+    expect(matchMunicipalityMentions('A visita da Ministra da Saúde foi destaque.')).toEqual([])
+    expect(matchMunicipalityMentions('O senador Jaques Wagner discursou.')).toEqual([])
+    expect(matchMunicipalityMentions('O deputado Santana votou com o governo.')).toEqual([])
+    expect(
+      matchMunicipalityMentions('Ele esteve em Saúde, no interior.').map((entry) => entry.slug),
+    ).toEqual(['saude'])
+    expect(
+      matchMunicipalityMentions('A comitiva passou em Wagner.').map((entry) => entry.slug),
+    ).toEqual(['wagner'])
   })
 
   it('ignores institutional phrases that contain a municipality name', () => {

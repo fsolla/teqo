@@ -9,6 +9,7 @@
  * decisions, so the fragile rules (HTML anchors, time-of-day matching, epoch
  * offsets, provider shapes) are unit-tested without network.
  */
+import { createHash } from 'node:crypto'
 
 /** Câmara's open-data deputy id for Jorge Solla (used by the pilot). */
 export const SOLLA_DEPUTY_ID = 178857
@@ -78,7 +79,9 @@ export const speechDate = (iso) => String(iso ?? '').slice(0, 10)
 /**
  * Stable natural key of an open-data speech. The API has no id, so identity is
  * the naive datetime plus the speech type and event phase — the record is
- * updated in place across imports (C153 idempotency).
+ * updated in place across imports (C153 idempotency). Two genuinely distinct
+ * speeches can share that triple (seen on 2026-06-17T17:16, "PELA ORDEM"); the
+ * importer disambiguates those with `speechContentHash`.
  *
  * @param {{ dataHoraInicio?: string, tipoDiscurso?: string, faseEvento?: { titulo?: string } } | null | undefined} speech
  * @returns {string}
@@ -89,6 +92,21 @@ export const speechSourceKey = (speech) =>
     String(speech?.tipoDiscurso ?? '').trim(),
     String(speech?.faseEvento?.titulo ?? '').trim(),
   ].join('|')
+
+/**
+ * Short content hash (summary + official transcript) used to disambiguate a
+ * `sourceKey` collision: the first item keeps the base key, a distinct item
+ * gets `<baseKey>#<hash>` and stays stable across re-imports.
+ *
+ * @param {unknown} summary
+ * @param {unknown} transcript
+ * @returns {string}
+ */
+export const speechContentHash = (summary, transcript) =>
+  createHash('sha256')
+    .update(`${String(summary ?? '').trim()}\n${String(transcript ?? '').trim()}`)
+    .digest('hex')
+    .slice(0, 12)
 
 /**
  * Official keywords come as a newline-separated string; keep each keyword raw.
