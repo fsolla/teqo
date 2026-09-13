@@ -50,14 +50,14 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     expect(script).toContain('id=payload_secret,env=PAYLOAD_SECRET')
   })
 
-  it('reaches the prod DB from the build (loopback proxy on the compose network)', () => {
+  it('reaches the env DB from the build (loopback proxy on the compose network)', () => {
     // BuildKit rejects `--network <bridge>`; the build uses --network host and
     // a socat proxy (on stack_default, published on the host loopback) with a
-    // rewritten DATABASE_URL.
+    // rewritten DATABASE_URL. OPS103 parameterized the proxy per environment.
     expect(script).toContain('--network host')
-    expect(script).toContain('teqo-1313-build-proxy')
+    expect(script).toContain('$TEQO_BUILD_PROXY')
     expect(script).toContain('TCP:postgres:5432')
-    expect(script).toContain('127.0.0.1:5433')
+    expect(script).toContain('$TEQO_BUILD_PROXY_PORT')
   })
 
   it('applies migrations BEFORE the runner build — static generation reads the new schema (OPS66)', () => {
@@ -66,14 +66,16 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     // failed again). The migrator stage never runs `next build`, so it must
     // build first; the compose swap feeds the new migrator image to the
     // maintenance service; then migrate runs; only then the runner builds
-    // against the migrated DB.
+    // against the migrated DB. OPS103 anchors the markers on the invocation
+    // itself (the raw `teqo-1313-migrate` literal now appears first in the
+    // environment map at the top of the script).
     const migratorBuildIndex = script.indexOf('build_image migrator')
     const swapIndex = script.indexOf('compose swap')
-    const migrateIndex = script.indexOf('teqo-1313-migrate')
+    const migrateIndex = script.indexOf('--profile maintenance run --rm')
     const runnerBuildIndex = script.indexOf('build_image runner')
     // The rollback helper also contains a `compose up -d` (before the migrate
     // step); the REAL rollout is the last occurrence.
-    const upIndex = script.lastIndexOf('docker compose up -d teqo-1313')
+    const upIndex = script.lastIndexOf('docker compose up -d "$TEQO_CONTAINER"')
     for (const i of [migratorBuildIndex, swapIndex, migrateIndex, runnerBuildIndex, upIndex]) {
       expect(i).toBeGreaterThan(-1)
     }
@@ -152,5 +154,86 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     const builderStage = dockerfile.slice(dockerfile.indexOf('AS builder'))
     expect(builderStage).toContain('pnpm generate:importmap')
     expect(builderStage).not.toContain('pnpm exec payload generate:importmap')
+  })
+})
+
+describe('scripts/deploy-homeserver.sh environment parameterization (OPS103)', () => {
+  const productionBlock = script.slice(
+    script.indexOf('  production)'),
+    script.indexOf('  staging)'),
+  )
+  const stagingBlock = script.slice(script.indexOf('  staging)'), script.indexOf('  *)'))
+  const fallbackBlock = script.slice(script.indexOf('  *)'), script.indexOf('esac'))
+
+  it('defaults to production with the exact pre-OPS103 identities', () => {
+    // The canonical invocation `bash scripts/deploy-homeserver.sh <sha>` (no
+    // env) must keep deploying production with the same names and ports as
+    // before — a drift here is a production regression.
+    expect(script).toContain('TEQO_ENV="${TEQO_ENV:-production}"')
+    expect(productionBlock).toContain('TEQO_CONTAINER=teqo-1313')
+    expect(productionBlock).toContain('TEQO_MIGRATE_SERVICE=teqo-1313-migrate')
+    expect(productionBlock).toContain('teqo-1313.env')
+    expect(productionBlock).toContain('TEQO_IMAGE_REPO=teqo-1313')
+    expect(productionBlock).toContain('TEQO_BUILD_PROXY=teqo-1313-build-proxy')
+    expect(productionBlock).toContain('TEQO_BUILD_PROXY_PORT=5433')
+    expect(productionBlock).toContain('TEQO_SMOKE_BASE=http://localhost:1313')
+  })
+
+  it('maps the staging identities (container, service, env file, ports)', () => {
+    expect(stagingBlock).toContain('TEQO_CONTAINER=teqo-staging')
+    expect(stagingBlock).toContain('TEQO_MIGRATE_SERVICE=teqo-staging-migrate')
+    expect(stagingBlock).toContain('teqo-staging.env')
+    expect(stagingBlock).toContain('TEQO_IMAGE_REPO=teqo-staging')
+    expect(stagingBlock).toContain('TEQO_BUILD_PROXY=teqo-staging-build-proxy')
+    expect(stagingBlock).toContain('TEQO_BUILD_PROXY_PORT=5434')
+    expect(stagingBlock).toContain('TEQO_SMOKE_BASE=http://localhost:1314')
+  })
+
+  it('serializes both environments on ONE shared lock (compose/workspace are shared)', () => {
+    // Per-env locks would let staging and production build/swap concurrently
+    // on the same workspace and compose file (the workflow concurrency does
+    // not cover manual invocations on the host).
+    expect(script).toContain('DEPLOY_LOCK="${DEPLOY_LOCK:-/tmp/teqo-deploy.lock}"')
+    expect(script).not.toContain('/tmp/teqo-1313-deploy.lock')
+    expect(script).not.toContain('/tmp/teqo-staging-deploy.lock')
+  })
+
+  it('fails closed on an unknown TEQO_ENV (case fallback, before any deploy step)', () => {
+    expect(fallbackBlock).toContain('fatal "unknown TEQO_ENV')
+    expect(script.indexOf('fatal "unknown TEQO_ENV')).toBeLessThan(script.indexOf('exec 9>'))
+  })
+
+  it('freezes the derived env map against env-file retargeting (readonly)', () => {
+    expect(script).toContain(
+      'readonly TEQO_CONTAINER TEQO_MIGRATE_SERVICE TEQO_ENV_FILE TEQO_IMAGE_REPO',
+    )
+    expect(script).toContain(
+      'readonly TEQO_BUILD_PROXY TEQO_BUILD_PROXY_PORT TEQO_SMOKE_BASE DEPLOY_LOCK',
+    )
+    // The env files are sourced after the map; a readonly assignment error
+    // aborts the deploy (fail-closed) instead of silently switching targets.
+    const readonlyIndex = script.indexOf('readonly TEQO_CONTAINER')
+    const sourceIndex = script.indexOf('. "$TEQO_ENV_FILE"')
+    expect(readonlyIndex).toBeGreaterThan(-1)
+    expect(readonlyIndex).toBeLessThan(sourceIndex)
+  })
+
+  it('parameterizes image refs, migrate service, rollout, healthcheck and cleanup', () => {
+    expect(script).toContain('$TEQO_REGISTRY/$TEQO_IMAGE_REPO-migrator:$SHA')
+    expect(script).toContain('$TEQO_REGISTRY/$TEQO_IMAGE_REPO:$SHA')
+    expect(script).toContain('run --rm "$TEQO_MIGRATE_SERVICE"')
+    expect(script).toContain('docker compose up -d "$TEQO_CONTAINER"')
+    expect(script).toContain('\'{{.State.Health.Status}}\' "$TEQO_CONTAINER"')
+    expect(script).toContain('grep -E "^($TEQO_REGISTRY/)?$TEQO_IMAGE_REPO(-migrator)?:"')
+  })
+
+  it('anchors the revision-label sed to the service block (never stamps the other env)', () => {
+    // A bare global replace would stamp THIS env's SHA onto the other
+    // environment's service, and the "already deployed" guard would read a
+    // lying revision. The range is re-read afterwards to fail closed when the
+    // service block has no label (a silent no-op would disable the guard).
+    expect(script).toContain('label_range="/^  $TEQO_CONTAINER:/,/^  [A-Za-z0-9_.-]+:/"')
+    expect(script).not.toContain('-e "s|org.opencontainers.image.revision')
+    expect(script).toContain('grep -q "org.opencontainers.image.revision: $SHA"')
   })
 })

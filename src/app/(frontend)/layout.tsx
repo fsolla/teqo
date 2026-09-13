@@ -1,5 +1,6 @@
 import { RefreshRouteOnSave } from '@/components/RefreshRouteOnSave'
 import { ThemeProvider } from '@/components/ThemeProvider'
+import { isStagingSite } from '@/lib/siteEnvironment'
 import { getCachedDocumentById } from '@/utilities/documentReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
 import { resolveSiteMetadata } from '@/utilities/seo'
@@ -37,10 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
     ],
     creator: 'Francisco Solla',
     publisher: 'Teqo',
-    robots: {
-      index: true,
-      follow: true,
-    },
+    robots: isStagingSite() ? { index: false, follow: false } : { index: true, follow: true },
     openGraph: {
       type: 'website',
       locale: 'pt-BR',

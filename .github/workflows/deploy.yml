@@ -1,29 +1,45 @@
-# Manual production deploy (OPS71 — GitHub Actions). `workflow_dispatch`
-# only: there is NO automatic main verifier anymore (ci.yml eliminated in the
-# gate 2026-08-19) — publishing is a deliberate operator act, and this
-# workflow runs the FULL suite (no scope skips, e2e included) before the
-# deploy job touches the homeserver.
+# Manual deploy (OPS71 — GitHub Actions; staging + production since OPS103).
+# `workflow_dispatch` only: there is NO automatic main verifier anymore
+# (ci.yml eliminated in the gate 2026-08-19) — publishing is a deliberate
+# operator act, and this workflow runs the FULL suite (no scope skips, e2e
+# included) before any deploy job touches the homeserver.
 #
-# TWO jobs, same workflow:
-#   verify  — ubuntu-latest (hosted): full cascade (guards for PR contracts are
-#             left out — they gate PRs, not production).
-#   deploy  — needs: [verify], runs-on [self-hosted, homeserver]: the GitHub
-#             self-hosted runner ON the homeserver executes
-#             scripts/deploy-homeserver.sh LOCALLY (no SSH; outbound-only
-#             runner, works behind the Cloudflare tunnel). The hosted job
-#             never reaches the homeserver; the self-hosted job never counts
-#             hosted minutes.
+# THREE jobs, same workflow (OPS103):
+#   verify            — ubuntu-latest (hosted): full cascade (guards for PR
+#                       contracts are left out — they gate PRs, not
+#                       production). Untouched by OPS103; it verifies the
+#                       COMMIT once for both environments.
+#   deploy-staging    — needs: [verify], environment: staging (no reviewer:
+#                       the dispatch itself is the deliberate act). Runs the
+#                       same script with TEQO_ENV=staging (teqo-staging,
+#                       127.0.0.1:1314).
+#   deploy-production — needs: [deploy-staging], environment: production
+#                       (required reviewer fsolla, configured in the repo).
+#                       A red staging fail-closes production. Same script,
+#                       TEQO_ENV=production (teqo-1313, 127.0.0.1:1313).
 #
-# The production build CANNOT leave the homeserver (migrate pre-build on the
-# prod DB — OPS66 — and the compose network / local registry localhost:5000),
-# which is exactly why the hosted job only verifies and the self-hosted job
-# only builds + deploys. Deploy is idempotent ("already deployed" guard in
-# deploy-homeserver.sh) and serialized by flock on the homeserver.
+# Both deploy jobs run on the GitHub self-hosted runner ON the homeserver
+# (labels self-hosted + homeserver): the script executes locally — no SSH
+# hop, no workstation involvement. Deliberately wired ONLY here (manual
+# dispatch), never in ci-pr.yml: a self-hosted job is code execution on the
+# production machine, and only an explicit dispatch with the full verify
+# suite green can reach it. The hosted job never reaches the homeserver; the
+# self-hosted job never counts hosted minutes.
 #
-# The `deploy` job fetches the repo from github.com (public) — TEQO_REPO_URL
-# in deploy-homeserver.sh now defaults there; the script runs to completion
-# for the dispatched SHA even if main advances during verify (OPS102 —
-# publishing is a deliberate operator act).
+# The environment-specific builds CANNOT leave the homeserver (migrate
+# pre-build on the env DB — OPS66 — and the compose network / local registry
+# localhost:5000), which is exactly why the hosted job only verifies and the
+# self-hosted jobs only build + deploy. Deploy is idempotent ("already
+# deployed" guard in deploy-homeserver.sh) and serialized by flock per
+# environment; the `concurrency` group below serializes the two shared
+# homeserver compose/workspace consumers across runs without cancelling an
+# in-flight deploy (the staged `needs` chain already serializes them inside
+# one run).
+#
+# The deploy jobs fetch the repo from github.com (public) — TEQO_REPO_URL in
+# deploy-homeserver.sh now defaults there; the script runs to completion for
+# the dispatched SHA even if main advances during verify (OPS102 — publishing
+# is a deliberate operator act).
 
 name: Deploy (manual)
 
@@ -142,18 +158,54 @@ jobs:
           NEXT_PUBLIC_SITE_URL: https://feed.e2e.teqo.test
         run: pnpm test:e2e
 
-  deploy:
-    name: deploy homeserver (teqo-1313)
-    # OPS53 + OPS71. Runs on the GitHub self-hosted runner ON the homeserver
-    # (labels self-hosted + homeserver): the script executes locally — no SSH
-    # hop, no workstation involvement. Deliberately wired ONLY here (manual
-    # dispatch), never in ci-pr.yml: a self-hosted job is code execution on
-    # the production machine, and only an explicit dispatch with the full
-    # verify suite green can reach it.
+  deploy-staging:
+    name: deploy staging (teqo-staging)
+    # OPS103: same SHA, same verify, own environment — no reviewer (the
+    # manual dispatch is the deliberate act); production is the approval that
+    # matters. The `main` guard makes a dispatch from a branch/tag a no-op
+    # for deploys (the runbook's dispatch ref is always `main`).
     needs: [verify]
-    if: needs.verify.result == 'success'
+    if: needs.verify.result == 'success' && github.ref == 'refs/heads/main'
+    environment: staging
     runs-on: [self-hosted, homeserver]
     timeout-minutes: 60
+    concurrency:
+      # Shared homeserver compose/workspace: never two deploys at once across
+      # runs. The staged needs chain serializes them within one run. `queue:
+      # max`: the default single-slot queue cancels a previously pending
+      # deploy when a new dispatch arrives, even with cancel-in-progress
+      # false — deploys must wait their turn (OPS102: run to completion).
+      group: deploy-homeserver
+      cancel-in-progress: false
+      queue: max
+    env:
+      TEQO_ENV: staging
+    steps:
+      - uses: actions/checkout@v5
+      - name: Deploy teqo-staging on the homeserver
+        run: bash scripts/deploy-homeserver.sh "$GITHUB_SHA"
+
+  deploy-production:
+    name: deploy production (teqo-1313)
+    # OPS53 + OPS71 + OPS103. Runs on the GitHub self-hosted runner ON the
+    # homeserver (labels self-hosted + homeserver): the script executes
+    # locally — no SSH hop, no workstation involvement. Deliberately wired
+    # ONLY here (manual dispatch), never in ci-pr.yml: a self-hosted job is
+    # code execution on the production machine, and only an explicit dispatch
+    # with the full verify suite green can reach it. `needs: [deploy-staging]`
+    # makes a red staging fail-close production; the environment `production`
+    # (required reviewer, configured in the repo) is the approval gate.
+    needs: [deploy-staging]
+    if: needs.deploy-staging.result == 'success' && github.ref == 'refs/heads/main'
+    environment: production
+    runs-on: [self-hosted, homeserver]
+    timeout-minutes: 60
+    concurrency:
+      group: deploy-homeserver
+      cancel-in-progress: false
+      queue: max
+    env:
+      TEQO_ENV: production
     steps:
       - uses: actions/checkout@v5
       - name: Deploy teqo-1313 on the homeserver
