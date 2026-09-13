@@ -139,6 +139,22 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     expect(builderStage).toContain('next build')
   })
 
+  it('Dockerfile: the migrator bakes pnpm at build time (no runtime registry fetch)', () => {
+    // The migrator container runs `pnpm migrate` at CONTAINER START: without a
+    // corepack cache in the image, corepack downloads pnpm from
+    // registry.npmjs.org at deploy time — the maintenance container's outbound
+    // is not guaranteed (the staging deploy of 2026-09-13 failed with
+    // ETIMEDOUT to the registry while the same download worked at build time).
+    // `corepack install` bakes the cache into the layer; offline proof:
+    // `docker run --network none <image> pnpm --version` answers 10.11.0.
+    const dockerfile = readFileSync(join(repoRoot, 'Dockerfile'), 'utf8')
+    const migratorStage = dockerfile.slice(
+      dockerfile.indexOf('AS migrator'),
+      dockerfile.indexOf('AS builder'),
+    )
+    expect(migratorStage).toContain('RUN corepack install')
+  })
+
   it('Dockerfile: generates the importMap via the canonical script (react-server condition)', () => {
     // OPS99 added the generator to the builder, but the bare
     // `pnpm exec payload generate:importmap` misses `--conditions=react-server`;

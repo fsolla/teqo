@@ -19,6 +19,13 @@ FROM base AS migrator
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Bake the package manager INTO the image: `pnpm migrate` runs at CONTAINER
+# START, so without a corepack cache the runtime downloads pnpm from
+# registry.npmjs.org — the maintenance container's outbound is not guaranteed
+# (the staging deploy of 2026-09-13 failed exactly there, ETIMEDOUT to the
+# registry, while the same download worked at build time). The install runs at
+# BUILD time, where the network is available, and the cache ships in the layer.
+RUN corepack install
 CMD ["pnpm", "migrate"]
 
 # Rebuild the source code only when needed
