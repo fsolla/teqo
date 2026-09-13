@@ -10,7 +10,7 @@
 | Severidade          | alta (bloqueou o deploy de produção; sem outage — produção permaneceu no build anterior) |
 | Ambiente            | CI (job `deploy staging` do deploy manual, runner self-hosted no homeserver)             |
 | Issue(s)            | sem Issue (fluxo `/bug-fix`; o registro é o post-mortem)                                 |
-| PR do fix           | # a preencher                                                                            |
+| PR do fix           | #974                                                                                     |
 | Detectado por       | log                                                                                      |
 
 ## Timeline
@@ -19,7 +19,7 @@
 | ------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Início provável    | 2026-08-16              | commit `21b3c00d` ("chore(deploy): prepara imagem standalone para homeserver") introduz a stage `migrator` com `CMD ["pnpm", "migrate"]`; o defeito (dependência de egress no start do container) é latente desde então — o mesmo download de pnpm no start funcionou no migrator de produção em 2026-09-13 01:09:36 UTC (`teqo-1313-migrate`, run 34728680411), mascarando a falha |
 | Detecção           | 2026-09-13 15:52:09 UTC | deploy run 34765554681 (main `67a40a6c`, PR #973 mergeado 15:24:11 UTC), job `deploy staging (teqo-staging)`: `[deploy] FAILED: migrations failed — restoring previous compose and image`, exit 1; `deploy production (teqo-1313)` skipped (`needs: [deploy-staging]`); o script restaurou o compose anterior (nada publicado); produção intocada                                   |
-| Correção mergeada  | pendente                | PR # a preencher aguardando CI + auto-merge                                                                                                                                                                                                                                                                                                                                         |
+| Correção mergeada  | pendente                | PR #974 aguardando CI + auto-merge                                                                                                                                                                                                                                                                                                                                                  |
 | Deploy             | pendente                | re-dispatch manual do `deploy.yml` após o merge (a registrar)                                                                                                                                                                                                                                                                                                                       |
 | Verificado em prod | pendente                | confirmação do humano após o deploy                                                                                                                                                                                                                                                                                                                                                 |
 
@@ -54,14 +54,14 @@ Resolve a causa: o toolchain deixa de ser buscado na rede no start do container;
 - Teste de regressão: `tests/unit/deployScript.unit.spec.ts:142` "Dockerfile: the migrator bakes pnpm at build time (no runtime registry fetch)" — falha sem o fix (RED sem a linha `RUN corepack install`) e passa com
 - Prova offline local: `docker run --network none <imagem> pnpm --version` → `10.11.0` com o bake; sem o bake o mesmo run offline falha com o erro exato do staging
 - Suíte: `pnpm gate:fast` verde
-- CI: pendente — PR # a preencher (check required `CI (PR) / checks`)
+- CI: pendente — PR #974 (check required `CI (PR) / checks`)
 - Prod: pendente — re-dispatch manual do `deploy.yml` após o merge; confirmação do humano pendente (a registrar)
 
 ## Prevenção
 
 | Estratégia                                                                       | Custo  | Estado                                                               |
 | -------------------------------------------------------------------------------- | ------ | -------------------------------------------------------------------- |
-| Assar o pnpm na imagem do migrator (`RUN corepack install`) + teste de regressão | barata | implementada agora (PR # a preencher)                                |
+| Assar o pnpm na imagem do migrator (`RUN corepack install`) + teste de regressão | barata | implementada agora (PR #974)                                         |
 | Probe/healthcheck de egress pré-migration ou registry mirror interno             | cara   | documentada — não implementada neste fluxo; candidata a Issue futura |
 
 **Estratégia implementada:** o pnpm é baixado no build e o cache do corepack viaja na imagem do migrator, com um teste unitário que pina a linha do `Dockerfile` — a imagem deixa de depender de egress no start do container, e a regressão passa a falhar na autoria, não no deploy.
