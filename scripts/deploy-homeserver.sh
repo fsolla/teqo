@@ -8,9 +8,10 @@
 # (The Forgejo-era invocation `ssh homeserver "bash -s -- <sha>" < script`
 # is gone — no SSH hop, no workstation involvement.)
 #
-# Flow: HEAD guard (only the current main HEAD deploys; a stale run FAILS the
-# job — never a false green with prod left on the old image) -> flock
-# serialization -> workspace fetch at <sha> -> docker login (local registry)
+# Flow: flock serialization (a manual dispatch runs to the end with its SHA
+# even if main advances during verify — OPS102; the idempotency guard below
+# is the only early green, and it proves the SHA is already running) ->
+# workspace fetch at <sha> -> docker login (local registry)
 # -> build of the MIGRATOR stage (it never runs `next build`, so it builds
 # even against the old schema) -> push of the migrator (registry-qualified
 # tag — INF13: the ONLY ref the compose references) -> compose image-tag swap
@@ -44,20 +45,10 @@ fatal() {
   exit 1
 }
 
-# --- guards ------------------------------------------------------------
-
-main_head="$(git ls-remote "$TEQO_REPO_URL" refs/heads/main | awk '{print $1}')"
-if [ "$main_head" != "$SHA" ]; then
-  fatal "stale run: main is $main_head, job deploys $SHA — refusing to deploy an outdated SHA"
-fi
+# --- serialization (flock) ----------------------------------------------
 
 exec 9>"$DEPLOY_LOCK"
 flock -w 3600 9 || fatal "another deploy holds $DEPLOY_LOCK"
-
-main_head="$(git ls-remote "$TEQO_REPO_URL" refs/heads/main | awk '{print $1}')"
-if [ "$main_head" != "$SHA" ]; then
-  fatal "stale run after lock: main is $main_head, job deploys $SHA — refusing to deploy an outdated SHA"
-fi
 
 # --- idempotency (OPS65) ------------------------------------------------
 # A 30-min main window can re-deliver a SHA the cluster already runs (e.g. a
@@ -94,8 +85,8 @@ if [ ! -d "$WORKSPACE_DIR/.git" ]; then
   git clone "$TEQO_REPO_URL" "$WORKSPACE_DIR"
 else
   # OPS71: the pre-cutover clone pointed at the local Forgejo — re-point
-  # idempotently so the HEAD guard and the fetch compare against the repo
-  # that actually received the merge.
+  # idempotently so the fetch targets the repo that actually received the
+  # merge.
   current_url="$(git -C "$WORKSPACE_DIR" remote get-url origin 2>/dev/null || true)"
   if [ -n "$current_url" ] && [ "$current_url" != "$TEQO_REPO_URL" ]; then
     say "updating workspace origin: $current_url → $TEQO_REPO_URL"
