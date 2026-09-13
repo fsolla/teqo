@@ -40,6 +40,37 @@ export async function getText(url, { attempts = 3, ...options } = {}) {
 
 export const getJson = async (url, options) => JSON.parse(await getText(url, options))
 
+/**
+ * Pagination-grade GET: the open-data API throws transient 500s and hangs on
+ * deep pages (seen 2026-09-13 on the 55ª page 4), and `getText`'s own 3
+ * attempts are too impatient for a 1.011-speech backfill. Bounded backoff;
+ * the caller owns the failure policy (the import aborts only the legislature).
+ *
+ * @param {string} url
+ * @param {{ attempts?: number, timeoutMs?: number, label?: string }} [options]
+ */
+export async function getJsonWithBackoff(
+  url,
+  { attempts = 5, timeoutMs = 45_000, label = 'camara' } = {},
+) {
+  let lastError
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return JSON.parse(await getText(url, { attempts: 1, timeoutMs }))
+    } catch (error) {
+      lastError = error
+      if (attempt < attempts) {
+        const waitMs = Math.min(30_000, 2 ** attempt * 1_000)
+        console.log(
+          `[${label}] ${error?.message ?? error} — retry ${attempt}/${attempts - 1} em ${waitMs / 1000}s`,
+        )
+        await sleep(waitMs)
+      }
+    }
+  }
+  throw lastError
+}
+
 export const downloadToBuffer = async (url, { attempts = 3, timeoutMs = 120_000 } = {}) => {
   let lastError
   for (let attempt = 1; attempt <= attempts; attempt += 1) {

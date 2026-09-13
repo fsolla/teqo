@@ -132,6 +132,7 @@ export const isLocalDatabaseUrl = (databaseUrl) => {
   const host = databaseHostname(databaseUrl)
   return host !== null && LOCAL_HOSTS.has(host)
 }
+
 /**
  * C155 write guard: any write run whose target is not provably local — or that
  * runs under `NODE_ENV=production` (the homeserver env file) or with the

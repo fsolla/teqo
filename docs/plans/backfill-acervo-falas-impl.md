@@ -103,7 +103,7 @@ flowchart TB
 #### D6 — Artefato do relatório (barato; forma de guarda é fill-in)
 
 - **Opções:** A) JSONs em `data/camara/reports` (gitignored, `.gitignore:77`) + resumo no changelog + seção nova no runbook + anexo do JSON à Issue #957; **nada commitado** | B) commitar o JSON (ou recorte) no repo | C) só changelog | D) relatório em serviço externo.
-- **Recomendação:** A — `data/camara` é gitignored por contrato; o run completo tem `speeches[]` de ~1.011 entradas (grande e regenerável); o runbook é dono do como-fazer, o changelog do o-que-aconteceu. O resumo de coverage (pequeno) vai no corpo do PR; o JSON completo fica no homeserver (`/srv/hdd/teqo-backfill/camara/reports`) e anexado à Issue (upload web). Arquivos: `import-all-<runAt>.json`, `coverage-<runAt>.json`, `verify-links-<runAt>.json`.
+- **Recomendação:** A — `data/camara` é gitignored por contrato; o run completo tem `speeches[]` de ~1.011 entradas (grande e regenerável); o runbook é dono do como-fazer, o changelog do o-que-aconteceu. O resumo de coverage (pequeno) vai no corpo do PR; o JSON completo fica no homeserver (`/srv/hdd/backups/teqo-camara/reports`) e anexado à Issue (upload web). Arquivos: `backfill-<runAt>.json`, `coverage-<runAt>.json`, `verify-links-<runAt>.json`.
 - **Rejeitadas:** B — ruído de repo, `format`/knip e conflito garantido a cada reexecução; C — perde detalhe por legislatura/falhas; D — dependência externa sem necessidade.
 
 #### D7 — Testes proporcionais (barato; o corte é fill-in)

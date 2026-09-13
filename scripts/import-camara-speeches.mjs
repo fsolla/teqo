@@ -36,6 +36,7 @@ import {
   eventPageUrl,
   eventsUrl,
   getJson,
+  getJsonWithBackoff,
   getText,
   probeVodLink,
   resolveVod,
@@ -226,36 +227,12 @@ async function loadEventPage(eventId, options) {
   return html
 }
 
-/**
- * The open-data API throws transient 500s and hangs on deep pages (seen
- * 2026-09-13 on the 55ª page 4). `getText`'s own 3 attempts are too impatient
- * for a 1.011-speech backfill, so pagination owns a bounded backoff; a page
- * that never recovers aborts only its legislature (`--all` continues and the
- * operator resumes with `--legislature <n>`).
- */
-async function fetchJsonWithBackoff(url, { attempts = 5, timeoutMs = 45_000 } = {}) {
-  let lastError
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    try {
-      return JSON.parse(await getText(url, { attempts: 1, timeoutMs }))
-    } catch (error) {
-      lastError = error
-      if (attempt < attempts) {
-        const waitMs = Math.min(30_000, 2 ** attempt * 1_000)
-        console.log(
-          `[camara:import] ${error?.message ?? error} — retry ${attempt}/${attempts - 1} em ${waitMs / 1000}s`,
-        )
-        await sleep(waitMs)
-      }
-    }
-  }
-  throw lastError
-}
-
 async function fetchSpeeches(deputyId, from, to) {
   const speeches = []
   for (let page = 1; ; page += 1) {
-    const body = await fetchJsonWithBackoff(`${speechesUrl(deputyId, from, to)}&pagina=${page}`)
+    const body = await getJsonWithBackoff(`${speechesUrl(deputyId, from, to)}&pagina=${page}`, {
+      label: 'camara:import',
+    })
     const batch = body.dados ?? []
     speeches.push(...batch)
     const hasNext = (body.links ?? []).some((link) => link?.rel === 'next')
@@ -552,7 +529,9 @@ const printBackfillReport = (combined) => {
         `${totals.withSegments} com segmentos · ` +
         `ASR ${(asr.audioSeconds / 60).toFixed(1)} min ` +
         `~US$ ${((asr.audioSeconds * DEEPINFRA_COST_PER_MINUTE_USD) / 60).toFixed(4)} · ` +
-        `${(run.elapsedMs / 1000).toFixed(0)}s${run.aborted ? ' · ABORTADA' : ''}`,
+        `${(run.elapsedMs / 1000).toFixed(0)}s` +
+        `${run.failures.length > 0 ? ` · ${run.failures.length} falha(s)` : ''}` +
+        `${run.aborted ? ' · ABORTADA' : ''}`,
     )
   }
   const { totals, asr, llm } = combined
@@ -603,7 +582,8 @@ const writeReport = async (options, filename, report) => {
 }
 
 const runOptions = (options) => ({
-  legislature: options.all ? null : options.legislature,
+  // A `--date` run is not a legislature run — C153 shape kept.
+  legislature: options.all || options.date ? null : options.legislature,
   all: options.all,
   date: options.date,
   limit: options.limit,
@@ -647,27 +627,40 @@ const processTargets = async (payload, options, targets, run) => {
   }
 }
 
-const runSingleRange = async (payload, options) => {
-  const from = options.date ?? LEGISLATURE_RANGES[options.legislature][0]
-  const to = options.date ?? LEGISLATURE_RANGES[options.legislature][1]
-  const run = createRun(options, {
-    legislature: options.date ? null : options.legislature,
-    from,
-    to,
-  })
+/**
+ * One legislature end-to-end: list from the API, slice `--limit`, process,
+ * close the run. Throws on a list failure or an empty range — the caller owns
+ * the policy (single range dies; `--all` marks the legislature aborted and
+ * continues with the next).
+ */
+const runLegislature = async (payload, options, { legislature, from, to, label }) => {
+  const run = createRun(options, { legislature, from, to })
   const startedAt = Date.now()
-  console.log(
-    `[camara:import] deputado ${SOLLA_DEPUTY_ID} | ${from}..${to} | speaker "${options.speaker}"`,
-  )
+  console.log(`\n[camara:import] === ${label} (${from}..${to}) ===`)
 
   const speeches = await fetchSpeeches(SOLLA_DEPUTY_ID, from, to)
   const targets = options.limit === null ? speeches : speeches.slice(0, options.limit)
   console.log(`[camara:import] ${speeches.length} discursos na API; processando ${targets.length}`)
-  if (targets.length === 0) die(`nenhum discurso em ${from}..${to}.`)
+  if (targets.length === 0) throw new Error(`nenhum discurso em ${from}..${to}.`)
   run.totals.listed = speeches.length
 
   await processTargets(payload, options, targets, run)
   run.elapsedMs = Date.now() - startedAt
+  return run
+}
+
+const runSingleRange = async (payload, options) => {
+  const from = options.date ?? LEGISLATURE_RANGES[options.legislature][0]
+  const to = options.date ?? LEGISLATURE_RANGES[options.legislature][1]
+  console.log(
+    `[camara:import] deputado ${SOLLA_DEPUTY_ID} | ${from}..${to} | speaker "${options.speaker}"`,
+  )
+  const run = await runLegislature(payload, options, {
+    legislature: options.date ? null : options.legislature,
+    from,
+    to,
+    label: options.date ? `date ${options.date}` : `legislatura ${options.legislature}ª`,
+  })
   run.coverage = await getSpeechCoverage(payload)
   printReport(run)
   printCoverage(run.coverage)
@@ -683,10 +676,7 @@ const runBackfill = async (payload, options) => {
     mode: 'all',
     options: runOptions(options),
     legislatures: [],
-    totals: null,
-    asr: null,
-    llm: null,
-    elapsedMs: 0,
+    ...aggregateBackfillRuns([]),
     failures: [],
     coverage: null,
   }
@@ -696,19 +686,19 @@ const runBackfill = async (payload, options) => {
 
   for (const legislature of legislatures) {
     const [from, to] = LEGISLATURE_RANGES[legislature]
-    const run = createRun(options, { legislature, from, to })
     const rangeStartedAt = Date.now()
-    console.log(`\n[camara:import] === legislatura ${legislature}ª (${from}..${to}) ===`)
+    let run
     try {
-      const speeches = await fetchSpeeches(SOLLA_DEPUTY_ID, from, to)
-      const targets = options.limit === null ? speeches : speeches.slice(0, options.limit)
-      console.log(
-        `[camara:import] ${speeches.length} discursos na API; processando ${targets.length}`,
-      )
-      run.totals.listed = speeches.length
-      await processTargets(payload, options, targets, run)
+      run = await runLegislature(payload, options, {
+        legislature,
+        from,
+        to,
+        label: `legislatura ${legislature}ª`,
+      })
     } catch (error) {
+      run = createRun(options, { legislature, from, to })
       run.aborted = true
+      run.elapsedMs = Date.now() - rangeStartedAt
       run.failures.push({
         sourceKey: null,
         speechAt: null,
@@ -719,7 +709,6 @@ const runBackfill = async (payload, options) => {
         `[camara:import] legislatura ${legislature}ª abortada: ${error?.message ?? error}`,
       )
     }
-    run.elapsedMs = Date.now() - rangeStartedAt
     combined.legislatures.push(run)
     combined.failures.push(...run.failures.map((failure) => ({ legislature, ...failure })))
 
@@ -803,13 +792,15 @@ const runVerifyLinks = async (payload, options) => {
     warnings,
     elapsedMs: Date.now() - startedAt,
   }
+  if (checked.length === 0) {
+    die('nenhum link de VOD verificado — amostra vazia (banco sem links?).')
+  }
   console.log(
     `[camara:import] links: ${report.ok}/${checked.length} ok` +
       `${warnings > 0 ? `, ${warnings} warning(s)` : ''}`,
   )
   const reportPath = await writeReport(options, `verify-links-${stamp(report.runAt)}.json`, report)
   console.log(`\n[camara:import] relatório JSON: ${reportPath}`)
-  if (checked.length === 0) die('nenhum link de VOD verificado — amostra vazia (banco sem links?).')
 }
 
 // ---------------------------------------------------------------------------
@@ -817,13 +808,11 @@ const runVerifyLinks = async (payload, options) => {
 // ---------------------------------------------------------------------------
 
 const databaseTarget = () => {
-  const host = databaseHostname(process.env.DATABASE_URL)
+  const url = process.env.DATABASE_URL
+  const host = databaseHostname(url)
   if (host === null) return '(DATABASE_URL ausente ou inválida)'
-  try {
-    return `${host}${new URL(process.env.DATABASE_URL).pathname}`
-  } catch {
-    return host
-  }
+  // `databaseHostname` only returns non-null when `new URL` already parsed.
+  return `${host}${new URL(url).pathname}`
 }
 
 const modeLabel = (options) => {
@@ -858,13 +847,15 @@ async function main() {
 
   const readOnly = options.coverage || options.verifyLinks !== null
   if (readOnly) {
-    if (!process.env.DATABASE_URL) die('DATABASE_URL is not set. Refusing to continue.')
+    if (!process.env.DATABASE_URL) die('DATABASE_URL não definida; recusando continuar.')
   } else {
+    // Confirm first: a non-local host is exactly what the flag is for; the
+    // local-DB guard below still blocks a remote host without ALLOW_REMOTE_DB.
+    assertWriteAllowed()
     assertLocalDatabase(
       'camara:import',
       'O import escreve no acervo; produção exige CAMARA_IMPORT_CONFIRM=1 (runbook §C155).',
     )
-    assertWriteAllowed()
   }
   console.log(`[camara:import] alvo: ${databaseTarget()} | modo: ${modeLabel(options)}`)
 
