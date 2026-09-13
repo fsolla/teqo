@@ -398,3 +398,86 @@ export const normalizeTranscription = (json) => {
     segments,
   }
 }
+
+/** Numeric blocks of one run that `aggregateBackfillRuns` folds together. */
+const BACKFILL_TOTAL_KEYS = [
+  'listed',
+  'processed',
+  'created',
+  'updated',
+  'withExcerpt',
+  'withoutExcerpt',
+  'withSegments',
+  'failed',
+]
+const BACKFILL_ASR_KEYS = ['calls', 'audioSeconds', 'elapsedMs', 'failures']
+const BACKFILL_LLM_KEYS = ['calls', 'used', 'failed', 'totalTokens', 'estimatedCostUsd']
+
+/**
+ * Folds the per-legislature runs of a `--all` backfill into the combined
+ * block. Pure arithmetic — the run report must not depend on network/DB to be
+ * summed, so it is unit-tested with hand-written run objects.
+ *
+ * @param {Array<{ totals?: Record<string, unknown>, asr?: Record<string, unknown>, llm?: Record<string, unknown>, elapsedMs?: unknown }> | null | undefined} runs
+ * @returns {{ totals: Record<string, number>, asr: Record<string, number>, llm: Record<string, number | string | null>, elapsedMs: number }}
+ */
+export const aggregateBackfillRuns = (runs) => {
+  const list = Array.isArray(runs) ? runs : []
+  const sumBy = (group, keys) =>
+    Object.fromEntries(
+      keys.map((key) => [
+        key,
+        list.reduce((total, run) => total + (Number(run?.[group]?.[key]) || 0), 0),
+      ]),
+    )
+  return {
+    totals: sumBy('totals', BACKFILL_TOTAL_KEYS),
+    asr: sumBy('asr', BACKFILL_ASR_KEYS),
+    llm: {
+      ...sumBy('llm', BACKFILL_LLM_KEYS),
+      sampleError: list.find((run) => run?.llm?.sampleError)?.llm?.sampleError ?? null,
+    },
+    elapsedMs: list.reduce((total, run) => total + (Number(run?.elapsedMs) || 0), 0),
+  }
+}
+
+/**
+ * Deterministic VOD-link sample for the `--verify-links` mode: up to
+ * `perLegislature` speeches per legislature that actually carry a VOD link,
+ * spread evenly over the legislature ordered by `speechAt` + id. Same DB state
+ * → same sample, so the verification is reproducible and reportable.
+ *
+ * @param {Array<{ id: number, legislature?: string | null, speechAt?: string | null, vodPlaybackUrl?: string | null, vodDownloadUrl?: string | null }>} rows
+ * @param {number} perLegislature
+ * @returns {typeof rows}
+ */
+export const selectLinkSample = (rows, perLegislature) => {
+  const limit = Math.max(1, Math.trunc(Number(perLegislature) || 1))
+  const byLegislature = new Map()
+  for (const row of Array.isArray(rows) ? rows : []) {
+    if (!row?.vodPlaybackUrl && !row?.vodDownloadUrl) continue
+    const key = String(row.legislature ?? '')
+    byLegislature.set(key, [...(byLegislature.get(key) ?? []), row])
+  }
+
+  const sample = []
+  for (const key of [...byLegislature.keys()].sort()) {
+    const ordered = [...byLegislature.get(key)].sort(
+      (left, right) =>
+        String(left.speechAt ?? '').localeCompare(String(right.speechAt ?? '')) ||
+        Number(left.id) - Number(right.id),
+    )
+    const indexes = new Set()
+    if (limit >= ordered.length) {
+      for (let index = 0; index < ordered.length; index += 1) indexes.add(index)
+    } else {
+      for (let index = 0; index < limit; index += 1) {
+        indexes.add(Math.floor((index * ordered.length) / limit))
+      }
+    }
+    for (const index of [...indexes].sort((left, right) => left - right)) {
+      sample.push(ordered[index])
+    }
+  }
+  return sample
+}

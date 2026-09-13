@@ -1,21 +1,28 @@
 /**
- * C153 import — populates the speech catalog from the Câmara sources:
- * open-data speeches → event on that date → speaker excerpt on the event page
- * → async VOD → Deep Infra Whisper segments (minutagem) + facet classification
- * (gazetteer + LLM) → idempotent upsert into `speech`/`speechSegment`.
+ * C153 import + C155 backfill — populates the speech catalog from the Câmara
+ * sources: open-data speeches → event on that date → speaker excerpt on the
+ * event page → async VOD → Deep Infra Whisper segments (minutagem) + facet
+ * classification (gazetteer + LLM) → idempotent upsert into
+ * `speech`/`speechSegment`.
  *
  * Re-running is safe: records are matched by `sourceKey`, metadata is
  * refreshed, VOD/ASR is skipped when the excerpt identity and segments are
  * already stored, and a `manual` facet curation is never overwritten.
  *
- * Media and reports land under `data/camara/` (gitignored). The local-DB guard
- * refuses a non-local DATABASE_URL; production is C155.
+ * C155 adds the full-archive backfill (`--all`, one process, per-legislature
+ * report + DB coverage) and the read-only modes `--coverage` and
+ * `--verify-links <n>`. Media and reports land under `data/camara/`
+ * (gitignored). The local-DB guard refuses a non-local DATABASE_URL, and any
+ * write run targeting production (or a remote/override DB) additionally
+ * requires `CAMARA_IMPORT_CONFIRM=1`.
  *
  * Usage:
  *   pnpm camara:import --legislature 57
  *   pnpm camara:import --date 2023-02-07 --limit 3
- *   pnpm camara:import --legislature 57 --skip-transcribe
- *   pnpm camara:import --legislature 57 --reclassify
+ *   pnpm camara:import --all
+ *   pnpm camara:import --all --limit 2          # smoke
+ *   pnpm camara:import --coverage
+ *   pnpm camara:import --verify-links 3
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -30,6 +37,7 @@ import {
   eventsUrl,
   getJson,
   getText,
+  probeVodLink,
   resolveVod,
   speechesUrl,
   transcribeSpeechAudio,
@@ -37,6 +45,7 @@ import {
 import {
   LEGISLATURE_RANGES,
   SOLLA_DEPUTY_ID,
+  aggregateBackfillRuns,
   legislatureForDate,
   matchExcerpt,
   parseDurationToSeconds,
@@ -44,12 +53,20 @@ import {
   parseOfficialKeywords,
   parsePresidingOfficerTransitions,
   resolvePresidingOfficer,
+  selectLinkSample,
   selectSpeechEvents,
   speechContentHash,
   speechDate,
   speechSourceKey,
 } from './lib/camaraSpeeches.mjs'
-import { dieWithLabel, ensureCachedDownload, loadCliEnv } from './lib/cli.mjs'
+import {
+  databaseHostname,
+  dieWithLabel,
+  ensureCachedDownload,
+  isTruthyEnv,
+  loadCliEnv,
+  requiresWriteConfirm,
+} from './lib/cli.mjs'
 
 loadCliEnv()
 
@@ -59,6 +76,9 @@ const config = (await import('../src/payload.config.ts')).default
 const { findSpeechImportState, upsertSpeechBundle } =
   await import('../src/utilities/speech/speechImport.ts')
 const { classifySpeech } = await import('../src/utilities/speech/speechClassifier.ts')
+const { getSpeechCoverage } = await import('../src/utilities/speech/speechCoverage.ts')
+
+const WRITE_CONFIRM_FLAG = 'CAMARA_IMPORT_CONFIRM'
 
 const DEFAULT_OUT_DIR = 'data/camara'
 const MAX_EVENT_CANDIDATES = 5
@@ -76,13 +96,16 @@ const EVENT_TYPE_PRIORITY = [
 
 const parseArgs = (argv) => {
   const options = {
-    legislature: 57,
+    legislature: null,
+    all: false,
     date: null,
     limit: null,
     speaker: 'Jorge Solla',
     out: DEFAULT_OUT_DIR,
     skipTranscribe: false,
     reclassify: false,
+    coverage: false,
+    verifyLinks: null,
     help: false,
   }
   for (let index = 0; index < argv.length; index += 1) {
@@ -93,6 +116,9 @@ const parseArgs = (argv) => {
       return next
     }
     if (arg === '--help' || arg === '-h') options.help = true
+    else if (arg === '--all') options.all = true
+    else if (arg === '--coverage') options.coverage = true
+    else if (arg === '--verify-links') options.verifyLinks = Number(value())
     else if (arg === '--skip-transcribe') options.skipTranscribe = true
     else if (arg === '--reclassify') options.reclassify = true
     else if (arg === '--legislature') options.legislature = Number(value())
@@ -102,34 +128,69 @@ const parseArgs = (argv) => {
     else if (arg === '--out') options.out = value()
     else die(`argumento desconhecido: ${arg}`)
   }
-  if (!options.help && !options.date && !LEGISLATURE_RANGES[options.legislature]) {
+  if (options.help) return options
+
+  const readOnlyModes = [options.coverage, options.verifyLinks !== null].filter(Boolean).length
+  const importModes = [options.all, options.date !== null, options.legislature !== null].filter(
+    Boolean,
+  ).length
+  if (readOnlyModes > 1) die('--coverage e --verify-links são modos separados.')
+  if (readOnlyModes > 0 && importModes > 0) {
+    die('--coverage/--verify-links não combinam com --all/--date/--legislature.')
+  }
+  if (
+    readOnlyModes > 0 &&
+    (options.limit !== null || options.skipTranscribe || options.reclassify)
+  ) {
+    die('--limit/--skip-transcribe/--reclassify só valem para os modos de import.')
+  }
+  if (options.all && options.date !== null) die('--all e --date são mutuamente exclusivos.')
+  if (options.all && options.legislature !== null) {
+    die('--all e --legislature são mutuamente exclusivos.')
+  }
+  if (
+    options.verifyLinks !== null &&
+    (!Number.isInteger(options.verifyLinks) || options.verifyLinks < 1)
+  ) {
+    die('--verify-links exige um inteiro >= 1.')
+  }
+  if (importModes === 0 && readOnlyModes === 0) options.legislature = 57
+  if (options.legislature !== null && !LEGISLATURE_RANGES[options.legislature]) {
     die('informe --legislature <54|55|56|57> ou --date <YYYY-MM-DD> (veja --help).')
   }
-  if (!options.help && options.date && !/^\d{4}-\d{2}-\d{2}$/.test(options.date)) {
+  if (options.date !== null && !/^\d{4}-\d{2}-\d{2}$/.test(options.date)) {
     die('--date deve ser YYYY-MM-DD.')
   }
   if (options.limit !== null && (!Number.isInteger(options.limit) || options.limit < 1)) {
     die('--limit deve ser >= 1.')
   }
-  if (!options.help && options.out.includes('..')) {
+  if (options.out.includes('..')) {
     die('--out não pode escapar do diretório do repo (sem "..").')
   }
   return options
 }
 
 const HELP = `
-Uso: pnpm camara:import [--legislature 54|55|56|57] [--date YYYY-MM-DD] [opções]
+Uso: pnpm camara:import [--all | --legislature 54|55|56|57 | --date YYYY-MM-DD | --coverage | --verify-links <n>] [opções]
 
-Opções:
-  --legislature <n>   54|55|56|57 (default 57; ignorado se --date)
-  --date <YYYY-MM-DD> discursos de um único dia
-  --limit <n>         quantos discursos processar (default: todos)
+Modos de import (escrevem no acervo):
+  --all                processa as 54ª–57ª em sequência (relatório por legislatura)
+  --legislature <n>    54|55|56|57 (default 57 quando nenhum modo é dado)
+  --date <YYYY-MM-DD>  discursos de um único dia
+Modos read-only:
+  --coverage           imprime a cobertura do banco por legislatura (sem rede/escrita)
+  --verify-links <n>   amostra n discursos por legislatura e testa os links do VOD
+
+Opções de import:
+  --limit <n>         quantos discursos processar por legislatura (default: todos)
   --speaker <nome>    nome do orador a casar no evento (default "Jorge Solla")
   --out <dir>         diretório de cache/artefatos (default data/camara)
   --skip-transcribe   não chama a Deep Infra (preserva os segmentos existentes)
   --reclassify        refaz a classificação mesmo já tendo facetas da LLM
   --help              esta ajuda
 
+Escrita em alvo não-local ou com NODE_ENV=production exige CAMARA_IMPORT_CONFIRM=1
+(runbook: docs/ops/teqo-1313-deploy.md §C155).
 A página do evento é cacheada em <out>/events; apague-a para reler a Câmara.
 `
 
@@ -165,14 +226,41 @@ async function loadEventPage(eventId, options) {
   return html
 }
 
+/**
+ * The open-data API throws transient 500s and hangs on deep pages (seen
+ * 2026-09-13 on the 55ª page 4). `getText`'s own 3 attempts are too impatient
+ * for a 1.011-speech backfill, so pagination owns a bounded backoff; a page
+ * that never recovers aborts only its legislature (`--all` continues and the
+ * operator resumes with `--legislature <n>`).
+ */
+async function fetchJsonWithBackoff(url, { attempts = 5, timeoutMs = 45_000 } = {}) {
+  let lastError
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return JSON.parse(await getText(url, { attempts: 1, timeoutMs }))
+    } catch (error) {
+      lastError = error
+      if (attempt < attempts) {
+        const waitMs = Math.min(30_000, 2 ** attempt * 1_000)
+        console.log(
+          `[camara:import] ${error?.message ?? error} — retry ${attempt}/${attempts - 1} em ${waitMs / 1000}s`,
+        )
+        await sleep(waitMs)
+      }
+    }
+  }
+  throw lastError
+}
+
 async function fetchSpeeches(deputyId, from, to) {
   const speeches = []
   for (let page = 1; ; page += 1) {
-    const body = await getJson(`${speechesUrl(deputyId, from, to)}&pagina=${page}`)
+    const body = await fetchJsonWithBackoff(`${speechesUrl(deputyId, from, to)}&pagina=${page}`)
     const batch = body.dados ?? []
     speeches.push(...batch)
     const hasNext = (body.links ?? []).some((link) => link?.rel === 'next')
     if (!hasNext || batch.length === 0) break
+    await sleep(500)
   }
   return speeches
 }
@@ -405,7 +493,7 @@ async function processSpeech(payload, speech, options, run) {
 
 const printReport = (run) => {
   const { totals, asr, llm, failures } = run
-  console.log('\n=== Relatório do import C153 ===')
+  console.log('\n=== Relatório do import (camara:import) ===')
   console.log(
     `discursos: ${totals.listed} listados, ${totals.processed} processados ` +
       `(${totals.created} criados, ${totals.updated} atualizados)`,
@@ -429,6 +517,62 @@ const printReport = (run) => {
   }
 }
 
+const pad = (value, width) => String(value).padStart(width)
+const padEnd = (value, width) => String(value).padEnd(width)
+
+const printCoverage = (coverage) => {
+  console.log('\n=== Cobertura do acervo (por legislatura) ===')
+  console.log(
+    `${padEnd('leg', 5)}${pad('total', 7)}${pad('trecho', 8)}${pad('vídeo', 7)}` +
+      `${pad('segm.', 7)}${pad('sem trecho', 11)}${pad('sem segm.', 10)}${pad('fallback YT', 12)}`,
+  )
+  for (const row of coverage.byLegislature) {
+    console.log(
+      `${padEnd(row.legislature ?? '—', 5)}${pad(row.total, 7)}${pad(row.withExcerpt, 8)}` +
+        `${pad(row.withVideo, 7)}${pad(row.withSegments, 7)}${pad(row.withoutExcerpt, 11)}` +
+        `${pad(row.withoutSegments, 10)}${pad(row.fallbackYoutube, 12)}`,
+    )
+  }
+  const { totals } = coverage
+  console.log(
+    `${padEnd('total', 5)}${pad(totals.total, 7)}${pad(totals.withExcerpt, 8)}` +
+      `${pad(totals.withVideo, 7)}${pad(totals.withSegments, 7)}${pad(totals.withoutExcerpt, 11)}` +
+      `${pad(totals.withoutSegments, 10)}${pad(totals.fallbackYoutube, 12)}`,
+  )
+}
+
+const printBackfillReport = (combined) => {
+  console.log('\n=== Relatório do backfill (54ª–57ª) ===')
+  for (const run of combined.legislatures) {
+    const { totals, asr } = run
+    console.log(
+      `${run.legislature}ª: ${totals.listed} listados, ${totals.processed} processados ` +
+        `(${totals.created} criados, ${totals.updated} atualizados) · ` +
+        `${totals.withExcerpt} com trecho / ${totals.withoutExcerpt} sem · ` +
+        `${totals.withSegments} com segmentos · ` +
+        `ASR ${(asr.audioSeconds / 60).toFixed(1)} min ` +
+        `~US$ ${((asr.audioSeconds * DEEPINFRA_COST_PER_MINUTE_USD) / 60).toFixed(4)} · ` +
+        `${(run.elapsedMs / 1000).toFixed(0)}s${run.aborted ? ' · ABORTADA' : ''}`,
+    )
+  }
+  const { totals, asr, llm } = combined
+  console.log(
+    `combinado: ${totals.processed} processados (${totals.created} criados, ` +
+      `${totals.updated} atualizados) · ${totals.withSegments} com segmentos · ` +
+      `ASR ${(asr.audioSeconds / 60).toFixed(1)} min ~US$ ` +
+      `${((asr.audioSeconds * DEEPINFRA_COST_PER_MINUTE_USD) / 60).toFixed(4)} · ` +
+      `LLM ${llm.used}/${llm.calls} ~US$ ${llm.estimatedCostUsd.toFixed(4)}`,
+  )
+  console.log(
+    `tempo total: ${(combined.elapsedMs / 1000).toFixed(1)}s; falhas: ${combined.failures.length}`,
+  )
+  for (const failure of combined.failures) {
+    console.log(
+      `  ✗ [${failure.legislature ?? '-'}] ${failure.speechAt} [${failure.stage}] ${failure.message}`,
+    )
+  }
+}
+
 const speechLine = (report) => {
   const parts = [
     report.created ? 'criado' : 'atualizado',
@@ -444,59 +588,54 @@ const speechLine = (report) => {
 }
 
 // ---------------------------------------------------------------------------
-// Main
+// Runs
 // ---------------------------------------------------------------------------
 
-async function main() {
-  const options = parseArgs(process.argv.slice(2))
-  if (options.help) {
-    console.log(HELP)
-    process.exit(0)
-  }
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-  assertLocalDatabase('camara:import', 'O import C153 escreve no banco local; produção é C155.')
-  const payload = await getPayload({ config })
+const stamp = (runAt) => runAt.replace(/[:.]/g, '-')
 
-  const from = options.date ?? LEGISLATURE_RANGES[options.legislature][0]
-  const to = options.date ?? LEGISLATURE_RANGES[options.legislature][1]
-  const startedAt = Date.now()
-  console.log(
-    `[camara:import] deputado ${SOLLA_DEPUTY_ID} | ${from}..${to} | speaker "${options.speaker}"`,
-  )
+const writeReport = async (options, filename, report) => {
+  const reportPath = join(options.out, 'reports', filename)
+  await mkdir(dirname(reportPath), { recursive: true })
+  await writeFile(reportPath, JSON.stringify(report, null, 2))
+  return reportPath
+}
 
-  const speeches = await fetchSpeeches(SOLLA_DEPUTY_ID, from, to)
-  const targets = options.limit === null ? speeches : speeches.slice(0, options.limit)
-  console.log(`[camara:import] ${speeches.length} discursos na API; processando ${targets.length}`)
-  if (targets.length === 0) die(`nenhum discurso em ${from}..${to}.`)
+const runOptions = (options) => ({
+  legislature: options.all ? null : options.legislature,
+  all: options.all,
+  date: options.date,
+  limit: options.limit,
+  speaker: options.speaker,
+  skipTranscribe: options.skipTranscribe,
+  reclassify: options.reclassify,
+})
 
-  const run = {
-    runAt: new Date().toISOString(),
-    range: { from, to },
-    options: {
-      legislature: options.date ? null : options.legislature,
-      date: options.date,
-      limit: options.limit,
-      speaker: options.speaker,
-      skipTranscribe: options.skipTranscribe,
-      reclassify: options.reclassify,
-    },
-    totals: {
-      listed: speeches.length,
-      processed: 0,
-      created: 0,
-      updated: 0,
-      withExcerpt: 0,
-      withoutExcerpt: 0,
-      withSegments: 0,
-      failed: 0,
-    },
-    asr: { calls: 0, audioSeconds: 0, elapsedMs: 0, failures: 0 },
-    llm: { calls: 0, used: 0, failed: 0, totalTokens: 0, estimatedCostUsd: 0, sampleError: null },
-    elapsedMs: 0,
-    speeches: [],
-    failures: [],
-  }
+const createRun = (options, { legislature, from, to }) => ({
+  runAt: new Date().toISOString(),
+  mode: options.date ? 'date' : 'legislature',
+  legislature,
+  range: { from, to },
+  options: runOptions(options),
+  totals: {
+    listed: 0,
+    processed: 0,
+    created: 0,
+    updated: 0,
+    withExcerpt: 0,
+    withoutExcerpt: 0,
+    withSegments: 0,
+    failed: 0,
+  },
+  asr: { calls: 0, audioSeconds: 0, elapsedMs: 0, failures: 0 },
+  llm: { calls: 0, used: 0, failed: 0, totalTokens: 0, estimatedCostUsd: 0, sampleError: null },
+  elapsedMs: 0,
+  speeches: [],
+  failures: [],
+})
 
+const processTargets = async (payload, options, targets, run) => {
   for (const [index, speech] of targets.entries()) {
     const report = await processSpeech(payload, speech, options, run)
     run.totals.processed += 1
@@ -506,14 +645,234 @@ async function main() {
     }
     console.log(`[${index + 1}/${targets.length}] ${report.speechAt} — ${speechLine(report)}`)
   }
+}
 
+const runSingleRange = async (payload, options) => {
+  const from = options.date ?? LEGISLATURE_RANGES[options.legislature][0]
+  const to = options.date ?? LEGISLATURE_RANGES[options.legislature][1]
+  const run = createRun(options, {
+    legislature: options.date ? null : options.legislature,
+    from,
+    to,
+  })
+  const startedAt = Date.now()
+  console.log(
+    `[camara:import] deputado ${SOLLA_DEPUTY_ID} | ${from}..${to} | speaker "${options.speaker}"`,
+  )
+
+  const speeches = await fetchSpeeches(SOLLA_DEPUTY_ID, from, to)
+  const targets = options.limit === null ? speeches : speeches.slice(0, options.limit)
+  console.log(`[camara:import] ${speeches.length} discursos na API; processando ${targets.length}`)
+  if (targets.length === 0) die(`nenhum discurso em ${from}..${to}.`)
+  run.totals.listed = speeches.length
+
+  await processTargets(payload, options, targets, run)
   run.elapsedMs = Date.now() - startedAt
+  run.coverage = await getSpeechCoverage(payload)
   printReport(run)
+  printCoverage(run.coverage)
 
-  const reportPath = join(options.out, 'reports', `import-${run.runAt.replace(/[:.]/g, '-')}.json`)
-  await mkdir(dirname(reportPath), { recursive: true })
-  await writeFile(reportPath, JSON.stringify(run, null, 2))
+  const reportPath = await writeReport(options, `import-${stamp(run.runAt)}.json`, run)
   console.log(`\n[camara:import] relatório JSON: ${reportPath}`)
+}
+
+const runBackfill = async (payload, options) => {
+  const startedAt = Date.now()
+  const combined = {
+    runAt: new Date().toISOString(),
+    mode: 'all',
+    options: runOptions(options),
+    legislatures: [],
+    totals: null,
+    asr: null,
+    llm: null,
+    elapsedMs: 0,
+    failures: [],
+    coverage: null,
+  }
+  const legislatures = Object.keys(LEGISLATURE_RANGES)
+    .map(Number)
+    .sort((left, right) => left - right)
+
+  for (const legislature of legislatures) {
+    const [from, to] = LEGISLATURE_RANGES[legislature]
+    const run = createRun(options, { legislature, from, to })
+    const rangeStartedAt = Date.now()
+    console.log(`\n[camara:import] === legislatura ${legislature}ª (${from}..${to}) ===`)
+    try {
+      const speeches = await fetchSpeeches(SOLLA_DEPUTY_ID, from, to)
+      const targets = options.limit === null ? speeches : speeches.slice(0, options.limit)
+      console.log(
+        `[camara:import] ${speeches.length} discursos na API; processando ${targets.length}`,
+      )
+      run.totals.listed = speeches.length
+      await processTargets(payload, options, targets, run)
+    } catch (error) {
+      run.aborted = true
+      run.failures.push({
+        sourceKey: null,
+        speechAt: null,
+        stage: 'legislature',
+        message: error?.message ?? String(error),
+      })
+      console.error(
+        `[camara:import] legislatura ${legislature}ª abortada: ${error?.message ?? error}`,
+      )
+    }
+    run.elapsedMs = Date.now() - rangeStartedAt
+    combined.legislatures.push(run)
+    combined.failures.push(...run.failures.map((failure) => ({ legislature, ...failure })))
+
+    const partial = aggregateBackfillRuns(combined.legislatures)
+    combined.totals = partial.totals
+    combined.asr = partial.asr
+    combined.llm = partial.llm
+    combined.elapsedMs = Date.now() - startedAt
+    // Checkpoint after each legislature: a network drop loses at most one.
+    await writeReport(options, `backfill-${stamp(combined.runAt)}.json`, combined)
+  }
+
+  combined.coverage = await getSpeechCoverage(payload)
+  printBackfillReport(combined)
+  printCoverage(combined.coverage)
+
+  const reportPath = await writeReport(options, `backfill-${stamp(combined.runAt)}.json`, combined)
+  console.log(`\n[camara:import] relatório JSON: ${reportPath}`)
+  if (combined.legislatures.some((run) => run.aborted)) {
+    die('legislatura(s) abortada(s) — reexecute --all ou --legislature <n> para completar.')
+  }
+}
+
+const runCoverage = async (payload, options) => {
+  const startedAt = Date.now()
+  const coverage = await getSpeechCoverage(payload)
+  printCoverage(coverage)
+  const report = {
+    runAt: new Date().toISOString(),
+    mode: 'coverage',
+    options: runOptions(options),
+    coverage,
+    elapsedMs: Date.now() - startedAt,
+  }
+  const reportPath = await writeReport(options, `coverage-${stamp(report.runAt)}.json`, report)
+  console.log(`\n[camara:import] relatório JSON: ${reportPath}`)
+}
+
+const runVerifyLinks = async (payload, options) => {
+  const startedAt = Date.now()
+  const found = await payload.find({
+    collection: 'speech',
+    where: { or: [{ vodPlaybackUrl: { exists: true } }, { vodDownloadUrl: { exists: true } }] },
+    pagination: false,
+    depth: 0,
+    select: { legislature: true, speechAt: true, vodPlaybackUrl: true, vodDownloadUrl: true },
+    // Intentional bypass: the import CLI is a trusted actor with no session.
+    overrideAccess: true,
+  })
+  const sample = selectLinkSample(found.docs, options.verifyLinks)
+  console.log(
+    `[camara:import] amostra: ${sample.length} discursos (${options.verifyLinks} por legislatura)`,
+  )
+
+  const checked = []
+  for (const row of sample) {
+    const links = [
+      ['playback', row.vodPlaybackUrl],
+      ['download', row.vodDownloadUrl],
+    ]
+    for (const [kind, url] of links) {
+      if (!url) continue
+      const probe = await probeVodLink(url)
+      checked.push({ legislature: row.legislature, speechId: row.id, kind, ...probe })
+      console.log(
+        `[camara:import] ${row.legislature ?? '—'} #${row.id} ${kind}: ` +
+          `${probe.ok ? 'ok' : 'WARN'} ${probe.note}`,
+      )
+      await sleep(250)
+    }
+  }
+
+  const warnings = checked.filter((entry) => !entry.ok).length
+  const report = {
+    runAt: new Date().toISOString(),
+    mode: 'verify-links',
+    options: runOptions(options),
+    sample: { perLegislature: options.verifyLinks, total: sample.length },
+    checked,
+    ok: checked.length - warnings,
+    warnings,
+    elapsedMs: Date.now() - startedAt,
+  }
+  console.log(
+    `[camara:import] links: ${report.ok}/${checked.length} ok` +
+      `${warnings > 0 ? `, ${warnings} warning(s)` : ''}`,
+  )
+  const reportPath = await writeReport(options, `verify-links-${stamp(report.runAt)}.json`, report)
+  console.log(`\n[camara:import] relatório JSON: ${reportPath}`)
+  if (checked.length === 0) die('nenhum link de VOD verificado — amostra vazia (banco sem links?).')
+}
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
+
+const databaseTarget = () => {
+  const host = databaseHostname(process.env.DATABASE_URL)
+  if (host === null) return '(DATABASE_URL ausente ou inválida)'
+  try {
+    return `${host}${new URL(process.env.DATABASE_URL).pathname}`
+  } catch {
+    return host
+  }
+}
+
+const modeLabel = (options) => {
+  if (options.coverage) return 'coverage (read-only)'
+  if (options.verifyLinks !== null) return `verify-links n=${options.verifyLinks} (read-only)`
+  if (options.all) return 'backfill 54ª–57ª'
+  if (options.date) return `date ${options.date}`
+  return `legislature ${options.legislature}`
+}
+
+/**
+ * C155 write guard: the homeserver env file sets `NODE_ENV=production` and the
+ * runbook rewrites the DB host to the local proxy, so the host check alone
+ * cannot see production — the explicit flag is what makes the write deliberate.
+ */
+const assertWriteAllowed = () => {
+  if (!requiresWriteConfirm()) return
+  if (isTruthyEnv(process.env[WRITE_CONFIRM_FLAG])) return
+  die(
+    `alvo de escrita não-local/produção detectado (${databaseTarget()}).\n` +
+      `Confirme a intenção com:\n  ${WRITE_CONFIRM_FLAG}=1 pnpm camara:import …\n` +
+      `Runbook: docs/ops/teqo-1313-deploy.md §C155.`,
+  )
+}
+
+async function main() {
+  const options = parseArgs(process.argv.slice(2))
+  if (options.help) {
+    console.log(HELP)
+    process.exit(0)
+  }
+
+  const readOnly = options.coverage || options.verifyLinks !== null
+  if (readOnly) {
+    if (!process.env.DATABASE_URL) die('DATABASE_URL is not set. Refusing to continue.')
+  } else {
+    assertLocalDatabase(
+      'camara:import',
+      'O import escreve no acervo; produção exige CAMARA_IMPORT_CONFIRM=1 (runbook §C155).',
+    )
+    assertWriteAllowed()
+  }
+  console.log(`[camara:import] alvo: ${databaseTarget()} | modo: ${modeLabel(options)}`)
+
+  const payload = await getPayload({ config })
+  if (options.coverage) await runCoverage(payload, options)
+  else if (options.verifyLinks !== null) await runVerifyLinks(payload, options)
+  else if (options.all) await runBackfill(payload, options)
+  else await runSingleRange(payload, options)
   process.exit(0)
 }
 

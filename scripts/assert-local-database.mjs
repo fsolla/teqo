@@ -4,9 +4,10 @@
  */
 
 import {
+  databaseHostname,
   dieWithLabel,
+  isLocalDatabaseUrl,
   isRemoteDbOverrideSet,
-  LOCAL_HOSTS,
   ALLOW_REMOTE_DB_FLAG as OVERRIDE_FLAG,
 } from './lib/cli.mjs'
 
@@ -27,14 +28,10 @@ export const assertLocalDatabase = (label, usageHint = '') => {
     return
   }
 
-  let host
-  try {
-    host = new URL(databaseUrl).hostname
-  } catch {
-    die('DATABASE_URL is not a valid connection string.')
-  }
+  const host = databaseHostname(databaseUrl)
+  if (host === null) die('DATABASE_URL is not a valid connection string.')
 
-  if (!LOCAL_HOSTS.has(host)) {
+  if (!isLocalDatabaseUrl(databaseUrl)) {
     die(
       `DATABASE_URL points at a non-local host ("${host}").\n` +
         (usageHint ? `${usageHint}\n\n` : '') +

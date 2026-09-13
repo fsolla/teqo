@@ -109,6 +109,47 @@ export const isTruthyEnv = (value) => value === 'true' || value === '1'
 export const isRemoteDbOverrideSet = () => isTruthyEnv(process.env[ALLOW_REMOTE_DB_FLAG])
 
 /**
+ * Hostname of a connection string, or null when it is missing/unparseable.
+ *
+ * @param {unknown} databaseUrl
+ * @returns {string | null}
+ */
+export const databaseHostname = (databaseUrl) => {
+  try {
+    return new URL(String(databaseUrl ?? '')).hostname
+  } catch {
+    return null
+  }
+}
+
+/**
+ * True when the connection string targets one of the LOCAL_HOSTS.
+ *
+ * @param {unknown} databaseUrl
+ * @returns {boolean}
+ */
+export const isLocalDatabaseUrl = (databaseUrl) => {
+  const host = databaseHostname(databaseUrl)
+  return host !== null && LOCAL_HOSTS.has(host)
+}
+/**
+ * C155 write guard: any write run whose target is not provably local — or that
+ * runs under `NODE_ENV=production` (the homeserver env file) or with the
+ * `ALLOW_REMOTE_DB` escape — requires an explicit intent flag. The proxy socat
+ * used on the homeserver rewrites the host to 127.0.0.1, so the host check
+ * alone cannot see production; NODE_ENV is the honest signal there. Read-only
+ * modes never call this.
+ *
+ * @param {{ nodeEnv?: string | null, databaseUrl?: string | null, allowRemoteDb?: boolean }} [options]
+ * @returns {boolean}
+ */
+export const requiresWriteConfirm = ({
+  nodeEnv = process.env.NODE_ENV,
+  databaseUrl = process.env.DATABASE_URL,
+  allowRemoteDb = isRemoteDbOverrideSet(),
+} = {}) => nodeEnv === 'production' || allowRemoteDb || !isLocalDatabaseUrl(databaseUrl)
+
+/**
  * Port for `next dev` (OPS40). Next's CLI resolves its port via commander's
  * `.env('PORT')` BEFORE `@next/env` loads `.env.local`, so a `PORT` written by
  * the worktree provisioner was silently ignored and every `pnpm dev` bound

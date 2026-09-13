@@ -84,6 +84,42 @@ export async function resolveVod(eventId, excerpt) {
   return { url, status: lastStatus, attempts: VOD_POLL_MAX_ATTEMPTS }
 }
 
+/**
+ * Lightweight reachability probe of one stored VOD link (C155 sample check):
+ * GET with a 1 KiB `Range` so the MP4 body never streams, falling back to HEAD
+ * when the server refuses the ranged GET (405/501). Never throws — a network
+ * error becomes an `ok: false` result so one dead link cannot abort the report.
+ *
+ * @param {string | null | undefined} url
+ * @returns {Promise<{ url: string | null, status: number | null, ok: boolean, note: string }>}
+ */
+export async function probeVodLink(url, { timeoutMs = 20_000 } = {}) {
+  if (!url) return { url: null, status: null, ok: false, note: 'sem link' }
+
+  const request = async (method) => {
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'User-Agent': CAMARA_USER_AGENT,
+        ...(method === 'GET' ? { Range: 'bytes=0-1023' } : {}),
+      },
+      signal: AbortSignal.timeout(timeoutMs),
+    })
+    const contentType = response.headers.get('content-type')
+    const note = `HTTP ${response.status}${contentType ? ` ${contentType}` : ''}`
+    await response.body?.cancel().catch(() => undefined)
+    return { url, status: response.status, ok: response.ok, note }
+  }
+
+  try {
+    const first = await request('GET')
+    if (first.status === 405 || first.status === 501) return await request('HEAD')
+    return first
+  } catch (error) {
+    return { url, status: null, ok: false, note: error?.message ?? String(error) }
+  }
+}
+
 export const DEEPINFRA_COST_PER_MINUTE_USD = 0.00045
 
 /**
