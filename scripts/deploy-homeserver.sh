@@ -8,13 +8,16 @@
 # (The Forgejo-era invocation `ssh homeserver "bash -s -- <sha>" < script`
 # is gone — no SSH hop, no workstation involvement.)
 #
-# Flow: flock serialization (a manual dispatch runs to the end with its SHA
-# even if main advances during verify — OPS102; the idempotency guard below
-# is the only early green, and it proves the SHA is already running) ->
-# workspace fetch at <sha> -> docker login (local registry)
-# -> build of the MIGRATOR stage (it never runs `next build`, so it builds
-# even against the old schema) -> push of the migrator (registry-qualified
-# tag — INF13: the ONLY ref the compose references) -> compose image-tag swap
+# OPS102: a manual dispatch runs to the end with its SHA even if main advances
+# during verify (the old stale-run guard belonged to the automatic era); the
+# only early green is the idempotency guard, which proves the SHA is already
+# running.
+#
+# Flow: flock serialization -> workspace fetch at <sha> -> docker login
+# (local registry) -> build of the MIGRATOR stage (it never runs `next
+# build`, so it builds even against the old schema) -> push of the migrator
+# (registry-qualified tag — INF13: the ONLY ref the compose references) ->
+# compose image-tag swap
 # (with backup) -> migrate via the maintenance service
 # (BEFORE the runner build — static generation reads the NEW schema, OPS66)
 # -> build of the runner stage (BuildKit secrets, compose network) ->
@@ -51,8 +54,8 @@ exec 9>"$DEPLOY_LOCK"
 flock -w 3600 9 || fatal "another deploy holds $DEPLOY_LOCK"
 
 # --- idempotency (OPS65) ------------------------------------------------
-# A 30-min main window can re-deliver a SHA the cluster already runs (e.g. a
-# duplicate workflow_dispatch): rebuilding it is a ~15 min no-op. The truth
+# A duplicate workflow_dispatch can re-deliver a SHA the cluster already runs:
+# rebuilding it is a ~15 min no-op. The truth
 # is the RUNNING container's revision label — the compose file can lie after
 # a failed rollback (it is swapped before the rollout and restored best-
 # effort). A container without the label (or down) counts as "not deployed":

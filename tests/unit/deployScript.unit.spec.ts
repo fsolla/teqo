@@ -28,7 +28,7 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
   it('never exits green without deploying: the only early exit 0 is "already deployed"', () => {
     // #953: the stale-run skip used to `exit 0` — a green deploy that never
     // happened while prod stayed on an older image.
-    expect(script.match(/^\s*exit 0\s*$/gm) ?? []).toHaveLength(1)
+    expect(script.match(/\bexit 0\b/g) ?? []).toHaveLength(1)
   })
 
   it('keeps flock serialization after removing the HEAD guards (OPS102)', () => {

@@ -21,9 +21,9 @@
 # deploy-homeserver.sh) and serialized by flock on the homeserver.
 #
 # The `deploy` job fetches the repo from github.com (public) — TEQO_REPO_URL
-# in deploy-homeserver.sh now defaults there; the script deploys the
-# dispatched SHA to the end even if main advances during verify (OPS102 —
-# deliberate dispatch; idempotency is the "already deployed" guard).
+# in deploy-homeserver.sh now defaults there; the script runs to completion
+# for the dispatched SHA even if main advances during verify (OPS102 —
+# publishing is a deliberate operator act).
 
 name: Deploy (manual)
 
