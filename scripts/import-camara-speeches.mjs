@@ -245,9 +245,10 @@ async function fetchSpeechesRange(deputyId, from, to) {
 
 /**
  * Lista a faixa inteira; se a API recusar uma página funda (500/hang
- * persistente, visto na 55ª em 2026-09-13), cai para a listagem por ano — cada
- * chunk é raso e um ano quebrado não derruba os demais. Os chunks que falharem
- * são reportados via `onWarning` (o run os registra como falha de `list`).
+ * persistente, visto na 55ª em 2026-09-13), cai para a listagem por ano e,
+ * se um ano inteiro falhar, desce ao mês — cada chunk é raso e um mês
+ * quebrado não derruba os demais. Os chunks que falharem são reportados via
+ * `onWarning` (o run os registra como falha de `list`).
  */
 async function fetchSpeeches(deputyId, from, to, onWarning = () => {}) {
   try {
@@ -256,12 +257,21 @@ async function fetchSpeeches(deputyId, from, to, onWarning = () => {}) {
     onWarning(`listagem ${from}..${to} falhou (${error?.message}); tentando por ano`)
     const speeches = []
     let listedChunks = 0
-    for (const [chunkFrom, chunkTo] of dateRangeChunks(from, to)) {
+    for (const [yearFrom, yearTo] of dateRangeChunks(from, to)) {
       try {
-        speeches.push(...(await fetchSpeechesRange(deputyId, chunkFrom, chunkTo)))
+        speeches.push(...(await fetchSpeechesRange(deputyId, yearFrom, yearTo)))
         listedChunks += 1
-      } catch (chunkError) {
-        onWarning(`listagem ${chunkFrom}..${chunkTo} falhou: ${chunkError?.message}`)
+        continue
+      } catch (yearError) {
+        onWarning(`listagem ${yearFrom}..${yearTo} falhou: ${yearError?.message}; tentando por mês`)
+      }
+      for (const [monthFrom, monthTo] of dateRangeChunks(yearFrom, yearTo, 'month')) {
+        try {
+          speeches.push(...(await fetchSpeechesRange(deputyId, monthFrom, monthTo)))
+          listedChunks += 1
+        } catch (monthError) {
+          onWarning(`listagem ${monthFrom}..${monthTo} falhou: ${monthError?.message}`)
+        }
       }
     }
     if (listedChunks === 0) throw error
