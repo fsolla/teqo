@@ -121,6 +121,34 @@ describe('ciSkipInvariants', () => {
     expect(ciPr).not.toContain('ci-classify-production.mjs')
   })
 
+  it('deploy.yml chains verify → deploy-staging → deploy-production with separate environments (OPS103)', () => {
+    // One dispatch, one verify, two separately approved deploys. The gate is
+    // the GitHub Environment (reviewer on production, configured in the repo —
+    // not in this YAML); the chain is needs-based so a red staging fail-closes
+    // production. Comments are stripped first: the header prose also mentions
+    // these keys, and it must never satisfy the pin.
+    const raw = readFileSync(join(repoRoot, '.github/workflows/deploy.yml'), 'utf8')
+    const deploy = raw
+      .split('\n')
+      .filter((line) => !line.trimStart().startsWith('#'))
+      .join('\n')
+    expect(deploy).toContain('  deploy-staging:')
+    expect(deploy).toContain('  deploy-production:')
+    expect(deploy).toContain('    environment: staging')
+    expect(deploy).toContain('    environment: production')
+    expect(deploy).toContain('    needs: [deploy-staging]')
+    expect(deploy).toContain('      TEQO_ENV: staging')
+    expect(deploy).toContain('      TEQO_ENV: production')
+    expect(deploy).toContain("github.ref == 'refs/heads/main'")
+    expect(deploy).toContain("needs.deploy-staging.result == 'success'")
+    // Deploys share the homeserver compose/workspace: serialize them across
+    // runs without cancelling an in-flight deploy, and queue (never cancel) a
+    // previously pending one (`queue: max`).
+    expect(deploy).toContain('      group: deploy-homeserver')
+    expect(deploy).toContain('      cancel-in-progress: false')
+    expect(deploy).toContain('      queue: max')
+  })
+
   it('every campaign domain dir is covered by the e2e affected manifest', () => {
     const componentDirs = readdirSync(join(repoRoot, 'src/components/campaign'), {
       withFileTypes: true,

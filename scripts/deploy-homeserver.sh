@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 #
-# Deploy teqo-1313 to the homeserver (OPS53).
+# Deploy teqo-1313 (production) or teqo-staging to the homeserver (OPS53,
+# parameterized by OPS103).
 #
-# OPS71: runs ON the homeserver via the GitHub self-hosted runner (deploy job
+# OPS71: runs ON the homeserver via the GitHub self-hosted runner (deploy jobs
 # of .github/workflows/deploy.yml):
 #   bash scripts/deploy-homeserver.sh <commit-sha>
 # (The Forgejo-era invocation `ssh homeserver "bash -s -- <sha>" < script`
 # is gone — no SSH hop, no workstation involvement.)
+#
+# OPS103: one script, both environments — `TEQO_ENV=production` (default,
+# byte-for-byte the pre-OPS103 behavior) and `TEQO_ENV=staging`. Each
+# environment owns its container/service, env file, image repo, build-proxy
+# port, smoke base and lock; the compose file, workspace and registry stay
+# shared. An unknown TEQO_ENV fails closed before anything is touched.
 #
 # OPS102: a manual dispatch runs to the end with its SHA even if main advances
 # during verify (the old stale-run guard belonged to the automatic era); the
@@ -35,10 +42,16 @@
 set -euo pipefail
 
 SHA="${1:?usage: deploy-homeserver.sh <commit-sha>}"
+TEQO_ENV="${TEQO_ENV:-production}"
 TEQO_REPO_URL="${TEQO_REPO_URL:-https://github.com/fsolla/teqo.git}"
 STACK_DIR="${STACK_DIR:-$HOME/stack}"
 WORKSPACE_DIR="${WORKSPACE_DIR:-$HOME/teqo-deploy}"
-DEPLOY_LOCK="${DEPLOY_LOCK:-/tmp/teqo-1313-deploy.lock}"
+TEQO_REGISTRY="${TEQO_REGISTRY:-localhost:5000}"
+# ONE lock for both environments: the compose file, the workspace and the
+# local registry are shared, so staging and production must never build or
+# swap concurrently (the workflow's job-level concurrency serializes the
+# runs; this lock also covers manual invocations on the host).
+DEPLOY_LOCK="${DEPLOY_LOCK:-/tmp/teqo-deploy.lock}"
 
 say() { printf '[deploy] %s\n' "$*"; }
 
@@ -47,6 +60,40 @@ fatal() {
   say "FAILED: $*" >&2
   exit 1
 }
+
+# --- environment map (OPS103) -------------------------------------------
+# Production values are the pre-OPS103 literals: the canonical invocation
+# `bash scripts/deploy-homeserver.sh <sha>` (no TEQO_ENV) behaves exactly as
+# before. The workflow passes TEQO_ENV per deploy job. The DB name is NOT
+# here — it lives inside each environment's env file. `readonly` keeps the
+# env files (sourced below) from silently retargeting the deploy.
+
+case "$TEQO_ENV" in
+  production)
+    TEQO_CONTAINER=teqo-1313
+    TEQO_MIGRATE_SERVICE=teqo-1313-migrate
+    TEQO_ENV_FILE="$STACK_DIR/teqo-1313.env"
+    TEQO_IMAGE_REPO=teqo-1313
+    TEQO_BUILD_PROXY=teqo-1313-build-proxy
+    TEQO_BUILD_PROXY_PORT=5433
+    TEQO_SMOKE_BASE=http://localhost:1313
+    ;;
+  staging)
+    TEQO_CONTAINER=teqo-staging
+    TEQO_MIGRATE_SERVICE=teqo-staging-migrate
+    TEQO_ENV_FILE="$STACK_DIR/teqo-staging.env"
+    TEQO_IMAGE_REPO=teqo-staging
+    TEQO_BUILD_PROXY=teqo-staging-build-proxy
+    TEQO_BUILD_PROXY_PORT=5434
+    TEQO_SMOKE_BASE=http://localhost:1314
+    ;;
+  *)
+    fatal "unknown TEQO_ENV '$TEQO_ENV' (expected production or staging)"
+    ;;
+esac
+
+readonly TEQO_CONTAINER TEQO_MIGRATE_SERVICE TEQO_ENV_FILE TEQO_IMAGE_REPO
+readonly TEQO_BUILD_PROXY TEQO_BUILD_PROXY_PORT TEQO_SMOKE_BASE DEPLOY_LOCK
 
 # --- serialization (flock) ----------------------------------------------
 
@@ -61,23 +108,23 @@ flock -w 3600 9 || fatal "another deploy holds $DEPLOY_LOCK"
 # effort). A container without the label (or down) counts as "not deployed":
 # the deploy proceeds (safe direction — it rebuilds).
 
-running_rev="$(docker inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' teqo-1313 2>/dev/null || true)"
+running_rev="$(docker inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$TEQO_CONTAINER" 2>/dev/null || true)"
 if [ -n "$running_rev" ] && [ "$running_rev" = "$SHA" ]; then
-  say "already deployed: teqo-1313 runs $SHA — nothing to do"
+  say "already deployed: $TEQO_CONTAINER runs $SHA — nothing to do"
   exit 0
 fi
 
 # --- secrets (sourced locally, never echoed) ----------------------------
 
 set -a
-. "$STACK_DIR/teqo-1313.env"
+. "$TEQO_ENV_FILE"
 . "$STACK_DIR/.env"
 set +a
 
-: "${DATABASE_URL:?teqo-1313.env is missing DATABASE_URL}"
-: "${PAYLOAD_SECRET:?teqo-1313.env is missing PAYLOAD_SECRET}"
-: "${NEXT_PUBLIC_SITE_URL:?teqo-1313.env is missing NEXT_PUBLIC_SITE_URL}"
-: "${REVALIDATE_SECRET:?teqo-1313.env is missing REVALIDATE_SECRET}"
+: "${DATABASE_URL:?$TEQO_ENV_FILE is missing DATABASE_URL}"
+: "${PAYLOAD_SECRET:?$TEQO_ENV_FILE is missing PAYLOAD_SECRET}"
+: "${NEXT_PUBLIC_SITE_URL:?$TEQO_ENV_FILE is missing NEXT_PUBLIC_SITE_URL}"
+: "${REVALIDATE_SECRET:?$TEQO_ENV_FILE is missing REVALIDATE_SECRET}"
 : "${REGISTRY_USER:?stack/.env is missing REGISTRY_USER}"
 : "${REGISTRY_PASSWORD:?stack/.env is missing REGISTRY_PASSWORD}"
 
@@ -102,23 +149,25 @@ say "workspace at $SHA"
 
 # --- registry -----------------------------------------------------------
 
-say "logging into local registry localhost:5000"
-echo "$REGISTRY_PASSWORD" | docker login localhost:5000 --username "$REGISTRY_USER" --password-stdin >/dev/null
+say "logging into local registry $TEQO_REGISTRY"
+echo "$REGISTRY_PASSWORD" | docker login "$TEQO_REGISTRY" --username "$REGISTRY_USER" --password-stdin >/dev/null
 
 # --- build --------------------------------------------------------------
 
 # BuildKit rejects a custom bridge network on `--network`, so the build runs
-# with `--network host`; the prod DB (only reachable inside stack_default) is
+# with `--network host`; the env DB (only reachable inside stack_default) is
 # proxied to the host loopback by a one-off socat container on the compose
 # network, and DATABASE_URL is rewritten to that endpoint. The proxy is
-# idempotent and survives reboots (restart: unless-stopped).
+# idempotent and survives reboots (restart: unless-stopped). Each
+# environment publishes its own loopback port (TEQO_BUILD_PROXY_PORT) so the
+# two proxies never collide.
 ensure_db_proxy() {
-  if ! docker inspect teqo-1313-build-proxy >/dev/null 2>&1; then
-    docker run -d --name teqo-1313-build-proxy \
+  if ! docker inspect "$TEQO_BUILD_PROXY" >/dev/null 2>&1; then
+    docker run -d --name "$TEQO_BUILD_PROXY" \
       --network stack_default \
       --restart unless-stopped \
-      -p 127.0.0.1:5433:5433 \
-      alpine/socat TCP-LISTEN:5433,fork TCP:postgres:5432 >/dev/null
+      -p "127.0.0.1:$TEQO_BUILD_PROXY_PORT:$TEQO_BUILD_PROXY_PORT" \
+      alpine/socat "TCP-LISTEN:$TEQO_BUILD_PROXY_PORT,fork TCP:postgres:5432" >/dev/null
   fi
 }
 
@@ -128,7 +177,7 @@ build_image() {
   ensure_db_proxy
   # The build's DATABASE_URL points at the loopback proxy; the outer env
   # keeps the original value and nothing is echoed.
-  local build_db_url="${DATABASE_URL/@postgres:5432/@127.0.0.1:5433}"
+  local build_db_url="${DATABASE_URL/@postgres:5432/@127.0.0.1:$TEQO_BUILD_PROXY_PORT}"
   DATABASE_URL="$build_db_url" DOCKER_BUILDKIT=1 docker build \
     --network host \
     --build-arg "NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL" \
@@ -143,34 +192,47 @@ cd "$WORKSPACE_DIR"
 # The migrator stage never runs `next build`, so it builds fine against the
 # OLD schema — unlike the runner, whose static generation reads Payload data
 # and therefore needs the migrations applied first (OPS66).
-build_image migrator "localhost:5000/teqo-1313-migrator:$SHA"
+build_image migrator "$TEQO_REGISTRY/$TEQO_IMAGE_REPO-migrator:$SHA"
 
 # INF13: the compose references REGISTRY-QUALIFIED tags
-# (`localhost:5000/teqo-1313(-migrator):<sha>`) with pull_policy: never — the
-# exact name every build produces, so the ref the compose needs can never go
-# missing (the old bare `teqo-1313:<sha>` alias was a second local-only ref
-# that nothing recreated once lost — homeserver incident 24/08, `No such
-# image` on recreate).
-docker push "localhost:5000/teqo-1313-migrator:$SHA"
+# (`$TEQO_REGISTRY/$TEQO_IMAGE_REPO(-migrator):<sha>`) with pull_policy: never
+# — the exact name every build produces, so the ref the compose needs can
+# never go missing (the old bare `teqo-1313:<sha>` alias was a second
+# local-only ref that nothing recreated once lost — homeserver incident
+# 24/08, `No such image` on recreate).
+docker push "$TEQO_REGISTRY/$TEQO_IMAGE_REPO-migrator:$SHA"
 
 # --- compose swap (backup first; failures from here roll back) ----------
 
 compose="$STACK_DIR/docker-compose.yml"
 backup="$compose.pre-$SHA"
 cp "$compose" "$backup"
+# Image lines: the env-specific repo names cannot touch the other
+# environment's services (the migrator pattern runs first; `teqo-1313:`
+# never matches `teqo-1313-migrator:`).
 sed -i -E \
-  -e "s|image: (localhost:5000/)?teqo-1313-migrator:[0-9a-f]+|image: localhost:5000/teqo-1313-migrator:$SHA|g" \
-  -e "s|image: (localhost:5000/)?teqo-1313:[0-9a-f]+|image: localhost:5000/teqo-1313:$SHA|g" \
-  -e "s|org.opencontainers.image.revision: [0-9a-f]+|org.opencontainers.image.revision: $SHA|g" \
+  -e "s|image: ($TEQO_REGISTRY/)?$TEQO_IMAGE_REPO-migrator:[0-9a-f]+|image: $TEQO_REGISTRY/$TEQO_IMAGE_REPO-migrator:$SHA|g" \
+  -e "s|image: ($TEQO_REGISTRY/)?$TEQO_IMAGE_REPO:[0-9a-f]+|image: $TEQO_REGISTRY/$TEQO_IMAGE_REPO:$SHA|g" \
   "$compose"
-grep -q "image: localhost:5000/teqo-1313:$SHA" "$compose" || fatal "compose swap failed (runner image)"
-grep -q "image: localhost:5000/teqo-1313-migrator:$SHA" "$compose" || fatal "compose swap failed (migrator image)"
+# Revision label: it lives INSIDE the service block, so a bare global
+# replace would stamp THIS env's SHA onto the other environment's service —
+# and the "already deployed" guard would read a lying revision. The sed
+# range starts at the service key and ends at the next two-space key (the
+# next service); keys inside a service are indented four spaces. The range
+# is then re-read to fail closed when the service has no revision label
+# (a silent no-op would disable the idempotency guard for this env).
+label_range="/^  $TEQO_CONTAINER:/,/^  [A-Za-z0-9_.-]+:/"
+sed -i -E -e "$label_range s|org.opencontainers.image.revision: [0-9a-f]+|org.opencontainers.image.revision: $SHA|" "$compose"
+sed -n -e "$label_range p" "$compose" | grep -q "org.opencontainers.image.revision: $SHA" \
+  || fatal "compose swap failed (revision label of $TEQO_CONTAINER)"
+grep -q "image: $TEQO_REGISTRY/$TEQO_IMAGE_REPO:$SHA" "$compose" || fatal "compose swap failed (runner image)"
+grep -q "image: $TEQO_REGISTRY/$TEQO_IMAGE_REPO-migrator:$SHA" "$compose" || fatal "compose swap failed (migrator image)"
 
 rollback() {
   trap - ERR
   say "FAILED: $* — restoring previous compose and image"
   cp "$backup" "$compose" 2>/dev/null || true
-  ( cd "$STACK_DIR" && docker compose up -d teqo-1313 ) 2>/dev/null || true
+  ( cd "$STACK_DIR" && docker compose up -d "$TEQO_CONTAINER" ) 2>/dev/null || true
   exit 1
 }
 trap 'rollback "unexpected failure"' ERR
@@ -180,32 +242,32 @@ trap 'rollback "unexpected failure"' ERR
 # migration that creates a table a static route reads would otherwise
 # deadlock the deploy (build fails -> migrate never runs -> build fails...).
 # The migrator image above is already swapped into the compose, so this
-# maintenance service runs the migrations of the NEW sha against prod.
+# maintenance service runs the migrations of the NEW sha against the env DB.
 
 cd "$STACK_DIR"
-say "applying pending migrations (maintenance service teqo-1313-migrate)"
+say "applying pending migrations (maintenance service $TEQO_MIGRATE_SERVICE)"
 # `< /dev/null`: `compose run` attaches stdin by default; the container would
 # consume the rest of the script piped into `bash -s` (bash then hits EOF and
 # exits right after the migrate step, skipping the rollout).
-docker compose --profile maintenance run --rm teqo-1313-migrate </dev/null || rollback "migrations failed"
+docker compose --profile maintenance run --rm "$TEQO_MIGRATE_SERVICE" </dev/null || rollback "migrations failed"
 
 # --- runner build (against the migrated schema) --------------------------
 
 cd "$WORKSPACE_DIR"
 say "building runner"
-build_image runner "localhost:5000/teqo-1313:$SHA"
-docker push "localhost:5000/teqo-1313:$SHA"
+build_image runner "$TEQO_REGISTRY/$TEQO_IMAGE_REPO:$SHA"
+docker push "$TEQO_REGISTRY/$TEQO_IMAGE_REPO:$SHA"
 
 # --- rollout ------------------------------------------------------------
 
 cd "$STACK_DIR"
-say "rolling out teqo-1313"
-docker compose up -d teqo-1313 || rollback "compose up failed"
+say "rolling out $TEQO_CONTAINER"
+docker compose up -d "$TEQO_CONTAINER" || rollback "compose up failed"
 
 say "waiting for the healthcheck to go healthy"
 health="starting"
 for _ in $(seq 1 30); do
-  health="$(docker inspect -f '{{.State.Health.Status}}' teqo-1313 2>/dev/null || true)"
+  health="$(docker inspect -f '{{.State.Health.Status}}' "$TEQO_CONTAINER" 2>/dev/null || true)"
   [ "$health" = "healthy" ] && break
   [ "$health" = "unhealthy" ] && break
   sleep 10
@@ -214,7 +276,7 @@ done
 
 # --- smoke --------------------------------------------------------------
 
-base="http://localhost:1313"
+base="$TEQO_SMOKE_BASE"
 smoke_fail() { rollback "smoke: $*"; }
 
 curl -fsS -o /dev/null "$base/" || smoke_fail "GET /"
@@ -241,9 +303,9 @@ echo "$body" | grep -q '"revalidated":true' || smoke_fail "POST /api/revalidate 
 say "post-deploy cleanup: build cache + tags locais antigas"
 docker builder prune -f >/dev/null 2>&1 || true
 
-in_use_id="$(docker inspect -f '{{.Image}}' teqo-1313 2>/dev/null || true)"
+in_use_id="$(docker inspect -f '{{.Image}}' "$TEQO_CONTAINER" 2>/dev/null || true)"
 if [ -n "$in_use_id" ]; then
-  for img in $(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E '^(localhost:5000/)?teqo-1313(-migrator)?:' || true); do
+  for img in $(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E "^($TEQO_REGISTRY/)?$TEQO_IMAGE_REPO(-migrator)?:" || true); do
     img_id="$(docker image inspect -f '{{.Id}}' "$img" 2>/dev/null || true)"
     [ -n "$img_id" ] && [ "$img_id" = "$in_use_id" ] && continue
     docker rmi "$img" >/dev/null 2>&1 || true
@@ -252,4 +314,4 @@ else
   say "cleanup: container sem image ID — mantendo imagens locais"
 fi
 
-say "deploy of $SHA complete: $(docker inspect -f '{{.Image}}' teqo-1313)"
+say "deploy of $SHA complete: $(docker inspect -f '{{.Image}}' "$TEQO_CONTAINER")"

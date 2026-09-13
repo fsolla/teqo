@@ -1,62 +1,146 @@
-# Runbook: deploy do site 1313 no homeserver (OPS53 + OPS71 — dispatch manual)
+# Runbook: deploy do site 1313 no homeserver (OPS53 + OPS71 + OPS103 — dispatch manual)
 
-O deploy de produção é uma **action manual** (`workflow_dispatch` no GitHub
-Actions, `.github/workflows/deploy.yml`): mergir em `main` **não** publica
-nada. O operador dispara o deploy quando decide publicar; antes de tocar o
-homeserver, o job `verify` (hosted) roda a suíte **full** (incl. e2e full).
+O deploy é uma **action manual** (`workflow_dispatch` no GitHub Actions,
+`.github/workflows/deploy.yml`): mergir em `main` **não** publica nada. O
+operador dispara o deploy quando decide publicar; antes de tocar o homeserver,
+o job `verify` (hosted) roda a suíte **full** (incl. e2e full) **uma vez** e
+gateia os dois alvos: `deploy-staging` → aprovação do environment `production`
+→ `deploy-production` (OPS103).
 
 ## Gatilho e fluxo
 
 1. GitHub → Actions → **Deploy (manual)** → Run workflow (ref: `main`).
 2. Job `verify` (hosted `ubuntu-latest`, ~50 min): suíte full sem skips —
    check-test-locations → lint → format → typecheck → knip → cycles → unit →
-   int (migrate+seed nos services) → build → e2e full.
-3. Se `verify` verde, o job `deploy` (`needs: [verify]`,
-   `runs-on: [self-hosted, homeserver]`) roda no **runner do GitHub instalado
-   no homeserver** e executa `scripts/deploy-homeserver.sh <sha>` **localmente**
-   (sem SSH; o runner conecta outbound ao GitHub — funciona atrás do
-   Cloudflare tunnel; o hosted nunca toca o homeserver; o self-hosted não
-   conta minutos hosted).
-4. O script, no **homeserver**: `flock` (serializa os dispatches; desde a
-   OPS102 o run vai até o fim com o SHA do dispatch mesmo se `main` avançar
-   durante o verify; o workspace é clonado/atualizado de `TEQO_REPO_URL` —
-   default `https://github.com/fsolla/teqo.git`, público) → guard "already
-   deployed" (revision do container rodando) → **build do migrator**
-   (o estágio migrator não roda `next build` — builda mesmo contra o schema
-   antigo; BuildKit, secrets do `~/stack/teqo-1313.env`) → push do migrator em
-   `localhost:5000` (tag **qualificada de registry** — INF13: a única ref que o
-   compose referencia) → swap dos tags de imagem no
-   `~/stack/docker-compose.yml` (backup antes; sed idempotente aceita as formas
-   antiga e qualificada e escreve sempre a qualificada) → **migrations**
-   (`docker compose --profile maintenance run --rm teqo-1313-migrate </dev/null`,
-   já com a imagem do SHA novo) → **build do runner** (contra o banco JÁ
-   migrado — o `next build` da geração estática lê o schema novo, OPS66;
-   `--network host` com proxy socat `teqo-1313-build-proxy` na `stack_default`
-   para alcançar o `postgres`; o proxy é criado idempotentemente pelo script)
-   → push do runner (tag qualificada de registry) → `docker compose up -d teqo-1313` → healthcheck →
-   smoke (`/`, `/campanha/login`, `/admin`, barreira 307, WebAuthn
-   login-options, `api/revalidate` com o secret real).
-5. Falha = job vermelho; nada é publicado pela metade (rollback automático
-   após o swap).
+   int (migrate+seed nos services) → build → e2e full. **Intocado pela
+   OPS103**: verifica o commit, não o alvo.
+3. Se `verify` verde, o job `deploy-staging` (`needs: [verify]`,
+   `environment: staging`, sem reviewer) roda no runner self-hosted e executa
+   `TEQO_ENV=staging bash scripts/deploy-homeserver.sh <sha>` — publica o SHA
+   em `staging.jorgesolla1313.com.br` (container `teqo-staging`,
+   `127.0.0.1:1314`).
+4. Com staging verde, o job `deploy-production` (`needs: [deploy-staging]`,
+   `environment: production`) **aguarda a aprovação do reviewer** e então
+   executa `TEQO_ENV=production bash scripts/deploy-homeserver.sh <sha>` —
+   publica o **mesmo SHA** em produção (`teqo-1313`, `127.0.0.1:1313`).
+   Staging vermelho = produção nunca roda; a corrida entre os dois é
+   serializada pela `concurrency: deploy-homeserver`.
+5. O script, no **homeserver**: `flock` único (compose, workspace e registry
+   são compartilhados — um deploy por vez no host; o `concurrency` do
+   workflow serializa os runs e o lock cobre invocação manual; desde a OPS102
+   o run vai até o fim com o SHA do dispatch mesmo se `main` avançar durante o
+   verify; o workspace é clonado/atualizado de `TEQO_REPO_URL` — default
+   `https://github.com/fsolla/teqo.git`, público) →
+   guard "already deployed" (revision do container do ambiente) → **build do
+   migrator** (o estágio migrator não roda `next build` — builda mesmo contra o
+   schema antigo; BuildKit, secrets do env file do ambiente) → push do migrator
+   em `localhost:5000` (tag **qualificada de registry** — INF13: a única ref
+   que o compose referencia) → swap dos tags de imagem no
+   `~/stack/docker-compose.yml` (backup antes; sed ancorado ao serviço do
+   ambiente — a linha do outro ambiente não é tocada) → **migrations**
+   (`docker compose --profile maintenance run --rm teqo-<env>-migrate
+</dev/null`, já com a imagem do SHA novo) → **build do runner** (contra o
+   banco JÁ migrado — o `next build` da geração estática lê o schema novo,
+   OPS66; `--network host` com proxy socat por ambiente na `stack_default` para
+   alcançar o `postgres`; o proxy é criado idempotentemente pelo script) →
+   push do runner (tag qualificada de registry) → `docker compose up -d
+teqo-<env>` → healthcheck → smoke (`/`, `/campanha/login`, `/admin`,
+   barreira 307, WebAuthn login-options, `api/revalidate` com o secret real do
+   ambiente).
+6. Falha = job vermelho; nada é publicado pela metade (rollback automático
+   após o swap, **só do ambiente que falhou**).
 
 **Primeiro deploy (verificação ao vivo):** depois do cutover OPS71, dispare o
-deploy manual e confira no log do job `deploy` o `set-url` do workspace
-(origem Forgejo → GitHub), o `deployed_sha` lido do container e o guard
-"already deployed" num segundo dispatch do mesmo SHA.
+deploy manual e confira no log do job `deploy-production` o `set-url` do
+workspace (origem Forgejo → GitHub), o `deployed_sha` lido do container e o
+guard "already deployed" num segundo dispatch do mesmo SHA. Na OPS103, o
+caminho de estreia é o mesmo dispatch: staging primeiro (bootstrap abaixo),
+inspeção humana, aprovação, produção.
 
 ## Onde roda cada coisa
 
-| Máquina                    | Papel                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **GitHub hosted** (ubuntu) | CI de PR (`ci-pr.yml`, job `checks`) e job `verify` do `deploy.yml` (suíte full). Nunca toca o homeserver.                                                                                                                                                                                                                                                                                                                                                                           |
-| **homeserver** (8c/16GB)   | todo o stack (`~/stack/docker-compose.yml`): postgres `teqo_1313`, forgejo, registry `localhost:5000`, cloudflared, `teqo-1313` na 127.0.0.1:1313; **runner self-hosted do GitHub** (labels `self-hosted`, `homeserver`; instalado 2026-08-19 — Issue #113 OPS71-INFRA; `~/actions-runner` v2.336.0, systemd user `actions.runner.fsolla-teqo.teqo-1313-runner.service` — `systemctl --user status/restart`); workspace `~/teqo-deploy` (clone de `github.com/fsolla/teqo`, público) |
-| **workstation**            | dev/agentes apenas — o runner do Forgejo foi **desligado** no cutover (o schedule do `ci.yml` antigo não tem mais razão; religar é reversível)                                                                                                                                                                                                                                                                                                                                       |
+| Máquina                    | Papel                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **GitHub hosted** (ubuntu) | CI de PR (`ci-pr.yml`, job `checks`) e job `verify` do `deploy.yml` (suíte full). Nunca toca o homeserver.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **homeserver** (8c/16GB)   | todo o stack (`~/stack/docker-compose.yml`): postgres `teqo_1313`, forgejo, registry `localhost:5000`, cloudflared, `teqo-1313` na 127.0.0.1:1313 e `teqo-staging` na 127.0.0.1:1314 (OPS103; DB `teqo_staging`, env `~/stack/teqo-staging.env`, bucket `teqo-media-staging`); **runner self-hosted do GitHub** (labels `self-hosted`, `homeserver`; instalado 2026-08-19 — Issue #113 OPS71-INFRA; `~/actions-runner` v2.336.0, systemd user `actions.runner.fsolla-teqo.teqo-1313-runner.service` — `systemctl --user status/restart`); workspace `~/teqo-deploy` (clone de `github.com/fsolla/teqo`, público) |
+| **workstation**            | dev/agentes apenas — o runner do Forgejo foi **desligado** no cutover (o schedule do `ci.yml` antigo não tem mais razão; religar é reversível)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
-Segredos **não** ficam no GitHub: o script sourceia `~/stack/teqo-1313.env` e
+Segredos **não** ficam no GitHub: o script sourceia o env file do ambiente
+(`~/stack/teqo-1313.env` em produção, `~/stack/teqo-staging.env` em staging) e
 `~/stack/.env` (chmod 600) no próprio homeserver. O repo GitHub é público — o
 clone do workspace não precisa de credencial. No GitHub ficam apenas os
 secrets de integração: `FORGEJO_API_TOKEN` (flips pós-merge) e
 `CURSOR_API_KEY` (archive helper, dormente).
+
+## Staging (OPS103)
+
+Alvo real e descartável para validar o SHA (migração/build/rollout/smoke) antes
+de produção. Mesmo dispatch, mesmo `verify`, mesmo script — o que muda é
+`TEQO_ENV=staging` e o environment `staging` (sem reviewer; a aprovação que
+importa é a de `production`).
+
+| Item        | Staging                                                                        | Produção                                   |
+| ----------- | ------------------------------------------------------------------------------ | ------------------------------------------ |
+| Container   | `teqo-staging` (127.0.0.1:1314)                                                | `teqo-1313` (127.0.0.1:1313)               |
+| Migrator    | `teqo-staging-migrate`                                                         | `teqo-1313-migrate`                        |
+| DB          | `teqo_staging`                                                                 | `teqo_1313`                                |
+| Env file    | `~/stack/teqo-staging.env`                                                     | `~/stack/teqo-1313.env`                    |
+| Imagens     | `localhost:5000/teqo-staging(-migrator):$SHA`                                  | `localhost:5000/teqo-1313(-migrator):$SHA` |
+| Bucket      | `teqo-media-staging`                                                           | `teqo-media`                               |
+| URL         | `https://staging.jorgesolla1313.com.br` (noindex)                              | `https://jorgesolla1313.com.br`            |
+| Build proxy | `teqo-staging-build-proxy` (127.0.0.1:5434)                                    | `teqo-1313-build-proxy` (127.0.0.1:5433)   |
+| Lock        | `/tmp/teqo-deploy.lock` (compartilhado — compose/workspace/registry são um só) | idem                                       |
+
+### Bootstrap do homeserver (uma vez, manual — fora do repo)
+
+1. **DB:** criar `teqo_staging` no Postgres do stack
+   (`docker compose exec postgres createdb -U teqo teqo_staging`).
+2. **Env file:** `~/stack/teqo-staging.env` (chmod 600) com `DATABASE_URL`
+   apontando para `teqo_staging`, `PAYLOAD_SECRET` próprio,
+   `NEXT_PUBLIC_SITE_URL=https://staging.jorgesolla1313.com.br`,
+   `REVALIDATE_SECRET` próprio e `S3_*` do bucket `teqo-media-staging`.
+3. **Compose:** adicionar `teqo-staging` e `teqo-staging-migrate` ao
+   `~/stack/docker-compose.yml`, espelhando os serviços de produção
+   (`pull_policy: never`, label `org.opencontainers.image.revision` **por
+   serviço**, healthcheck, `extra_hosts: host-gateway`) e a porta
+   `127.0.0.1:1314`.
+4. **Bucket:** criar `teqo-media-staging` no Garage com key própria — nunca
+   reutilizar a key/bucket de produção.
+5. **Tunnel/DNS:** ingress `staging.jorgesolla1313.com.br` →
+   `http://localhost:1314` no cloudflared + DNS no Cloudflare. Opcional
+   (defesa em profundidade): header `X-Robots-Tag: noindex` no ingress — o
+   noindex versionado (robots.ts + metadata, OPS103) já cobre crawlers.
+6. **GitHub Environments:** criar `staging` (sem reviewer) e `production`
+   (required reviewer `fsolla`) em Settings → Environments — **antes do
+   primeiro dispatch** (environment `production` sem reviewer é fail-open).
+7. **Migrate + seed sintético (antes do primeiro dispatch):** no homeserver,
+   com o workspace em `~/teqo-deploy`, criar o proxy de staging manualmente
+   (o deploy também cria, idempotente), migrar e semear. O guard local passa
+   porque o alvo é `127.0.0.1` — **sem** `ALLOW_REMOTE_DB`:
+
+   ```bash
+   ssh homeserver
+   cd ~/teqo-deploy && pnpm install
+   docker inspect teqo-staging-build-proxy >/dev/null 2>&1 || docker run -d \
+     --name teqo-staging-build-proxy --network stack_default \
+     --restart unless-stopped -p 127.0.0.1:5434:5434 \
+     alpine/socat TCP-LISTEN:5434,fork TCP:postgres:5432
+   set -a; source ~/stack/teqo-staging.env; set +a
+   export DATABASE_URL="${DATABASE_URL/@postgres:5432/@127.0.0.1:5434}"
+   pnpm migrate
+   pnpm db:seed:minimal
+   ```
+
+   Nunca copiar dados de produção (PII/LGPD): o seed mínimo é sintético.
+
+### Limites do staging (o que ele NÃO valida)
+
+- e2e automatizado (o full continua no `verify`, que valida o commit);
+- carga, caos, multi-região;
+- integrações origin-bound sem configuração própria: WebAuthn/passkeys,
+  Google OAuth e envio de e-mail (Resend). "Staging verde" ≠ "produção
+  garantida" — é validação de migração/build/rollout/smoke + inspeção humana;
+- dados são sintéticos; nunca PII real.
 
 ## Cutover OPS71 (passos manuais, ordem)
 
@@ -97,7 +181,10 @@ history (`git revert` do PR da remoção, ou clone do main congelado do Forgejo)
 A imagem anterior **não** fica mais local após a limpeza pós-deploy (INF3/F2:
 `docker builder prune` + remoção das tags locais antigas, exceto o SHA em uso)
 — o registry `localhost:5000` **nunca deleta** e é a fonte do rollback. O
-compose anterior fica em `~/stack/docker-compose.yml.pre-<sha-do-deploy-que-falhou>`.
+compose anterior fica em `~/stack/docker-compose.yml.pre-<sha-do-deploy-que-falhou>`
+(um por deploy; como o staging roda antes no mesmo SHA, o backup de produção é
+o compose já com a linha do staging — o restore devolve o arquivo inteiro, o
+que é o correto).
 
 ```bash
 ssh homeserver
@@ -117,6 +204,11 @@ docker pull localhost:5000/teqo-1313:<sha-anterior>
 docker compose up -d teqo-1313
 ```
 
+Para **staging**, o mesmo procedimento com as identidades do ambiente
+(`teqo-staging`, `localhost:5000/teqo-staging:<sha-anterior>`,
+`docker compose up -d teqo-staging`) — o rollback de um ambiente não toca o
+container do outro (só restaura as linhas de imagem do arquivo compartilhado).
+
 **Caveat:** uma migration de schema aplicada no passo de migrate **não** é
 desfeita pelo rollback (Payload é append-only). Código velho sobre schema novo
 pode se comportar mal — o caminho primário minimiza essa janela (migrate só
@@ -132,16 +224,17 @@ a correção se re-mergeia e o próximo deploy completo publica.
 | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Prod regride para um SHA antigo após re-dispatch fora de ordem                                   | O `flock` serializa mas não ordena; o "already deployed" não pega revision diferente                                                                    | Não re-dispatchar SHA antigo; se acontecer, re-dispatchar o `main` atual (rollback manual disponível na seção Rollback). Revisitar se o deploy ganhar frequência/automação ou se uma regressão fora-de-ordem acontecer                                                                                                                                                                 |
 | Job verde sem deploy ("already deployed")                                                        | O container rodando já tem a revision do SHA do job (ex.: `workflow_dispatch` duplicado da mesma HEAD)                                                  | Nada a fazer — o site já roda esse SHA. Forçar rebuild da MESMA HEAD não é suportado via dispatch: edite o tag da imagem no compose (`image: localhost:5000/teqo-1313:<sha>-rebuild`) e `docker compose up -d`, ou espere um commit novo                                                                                                                                               |
-| Job `deploy` nunca roda / runner offline                                                         | Runner self-hosted do homeserver não instalado ou parado (passo manual do cutover OPS71)                                                                | Instalar/religar o runner (labels `self-hosted`, `homeserver`); os PRs e o `verify` não dependem dele — só o deploy                                                                                                                                                                                                                                                                    |
+| Job de deploy nunca roda / runner offline                                                        | Runner self-hosted do homeserver não instalado ou parado (passo manual do cutover OPS71)                                                                | Instalar/religar o runner (labels `self-hosted`, `homeserver`); os PRs e o `verify` não dependem dele — só os deploys                                                                                                                                                                                                                                                                  |
 | Deploy dispara mas o job `verify` falha                                                          | Regressão real na suíte full                                                                                                                            | Corrigir e re-dispatchar — o homeserver nunca é tocado                                                                                                                                                                                                                                                                                                                                 |
 | `No such image` ao recriar o container fora de deploy (ex.: `compose up -d` pós-reboot/migração) | O compose referenciava uma tag local bare (`teqo-1313:<sha>`) que desapareceu sem recriação (achado INF8/INF13, 24/08: só restava a ref do registry)    | Corrigido no INF13: o compose passa a referenciar a tag **qualificada** (`localhost:5000/teqo-1313:<sha>`) a partir do primeiro deploy pós-fix — até lá, produção ainda roda o compose bare (recrie o alias via `docker tag` se necessário). Recovery geral: `docker pull localhost:5000/teqo-1313:<sha>` (+ `docker tag` se o compose em uso tiver tag bare) e `docker compose up -d` |
 | Deploy para logo após o migrate ("Done." e nada mais, EXIT=0)                                    | `docker compose run` anexa stdin por padrão — o container consome o resto do script; o bash chega a EOF e termina sem rodar o rollout                   | O script já usa `< /dev/null` no `run --rm` do migrate (não remover); sintoma visto 2026-08-17 no primeiro deploy                                                                                                                                                                                                                                                                      |
-| Build falha: `network mode "stack_default" not supported by buildkit`                            | BuildKit (drivers docker e docker-container) recusa rede bridge custom no `--network`                                                                   | O script builda com `--network host` + proxy socat `teqo-1313-build-proxy` (na `stack_default`, publicado em 127.0.0.1:5433, criado idempotentemente com `restart: unless-stopped`) + `DATABASE_URL` reescrita para o loopback                                                                                                                                                         |
+| Build falha: `network mode "stack_default" not supported by buildkit`                            | BuildKit (drivers docker e docker-container) recusa rede bridge custom no `--network`                                                                   | O script builda com `--network host` + proxy socat do ambiente (prod `teqo-1313-build-proxy` em 127.0.0.1:5433; staging `teqo-staging-build-proxy` em 127.0.0.1:5434, na `stack_default`, criado idempotentemente com `restart: unless-stopped`) + `DATABASE_URL` reescrita para o loopback                                                                                            |
 | Build OOM no homeserver                                                                          | Laptop 8c/16GB com o stack ativo (~12GB livres medidos)                                                                                                 | Re-dispatch; se recorrente, item futuro: build na workstation com túnel                                                                                                                                                                                                                                                                                                                |
 | Build do runner falha: `relation "..." does not exist` no `next build`                           | Migration nova criou tabela lida em geração estática. Pré-OPS66 a ordem era build→migrate e o deploy morria aqui para sempre (incidente 2026-08-18, S2) | Pós-OPS66 não deve ocorrer: migrate roda antes do build do runner. Se reaparecer, confira no log se o passo migrate rodou; recovery manual: `docker build --target migrator` + `docker run --rm --network stack_default --env-file ~/stack/teqo-1313.env localhost:5000/teqo-1313-migrator:<sha>` e re-dispatch do workflow                                                            |
 | Workspace clone sem o SHA novo                                                                   | O workspace antigo apontava para o Forgejo local (pré-OPS71) e o fetch não achou o SHA                                                                  | O script agora re-aponta `origin` para `TEQO_REPO_URL` (idempotente) antes do fetch — se ainda falhar, `git -C ~/teqo-deploy remote -v` e corrigir manualmente                                                                                                                                                                                                                         |
 | Migrate falha                                                                                    | Drift/erro de schema                                                                                                                                    | Job vermelho; site segue no container antigo; corrigir e re-mergear                                                                                                                                                                                                                                                                                                                    |
 | Smoke falha pós-up                                                                               | Regressão de runtime                                                                                                                                    | Rollback automático (restore + `up -d`) + job vermelho; investigar                                                                                                                                                                                                                                                                                                                     |
+| `deploy-staging` falha cedo (`teqo-staging.env`/serviço ausente)                                 | Bootstrap do staging incompleto (DB, env file, serviços no compose ou environment `staging`)                                                            | Rodar o bootstrap da seção Staging; produção nunca é tocada (staging vermelho fail-closa o job `deploy-production`)                                                                                                                                                                                                                                                                    |
 
 ## Backup passivo no Forgejo (OPS76-FOLLOWUP, 2026-08-21)
 
@@ -166,15 +259,18 @@ automaticamente — **não serve push, não recebe PRs, é somente leitura**.
 
 ## Segurança (decisão deliberada)
 
-- O job `deploy` usa `runs-on: [self-hosted, homeserver]` — executa como o
-  usuário do runner no homeserver. Está **apenas** no `deploy.yml`
-  (dispatch manual), nunca no `ci-pr.yml`; o hosted (`verify`) não tem acesso
-  ao homeserver e o self-hosted não recebe secrets de produção (as envs vivem
-  no próprio homeserver). `main` só anda por PR mergeado com CI verde; o
-  deploy só roda com `verify` full verde. Fork-PRs não rodam CI (same-repo
-  gate + setting do repo).
+- Os jobs `deploy-staging`/`deploy-production` usam
+  `runs-on: [self-hosted, homeserver]` — executam como o usuário do runner no
+  homeserver. Estão **apenas** no `deploy.yml` (dispatch manual), nunca no
+  `ci-pr.yml`; o hosted (`verify`) não tem acesso ao homeserver e o self-hosted
+  não recebe secrets de produção (as envs vivem no próprio homeserver,
+  inclusive as de staging — nunca como GitHub secrets). `main` só anda por PR
+  mergeado com CI verde; o deploy só roda com `verify` full verde. Fork-PRs
+  não rodam CI (same-repo gate + setting do repo).
 - Segredos nunca ecoados: sem `set -x`, senhas via `--password-stdin` /
   build-secrets; envs só no homeserver.
+- Staging sem PII real (seed sintético), bucket/DB/env próprios e noindex —
+  nunca compartilha credencial, bucket ou dados com produção.
 
 ## C149 — Google OAuth da agenda (envs novas + GCP)
 
@@ -336,8 +432,9 @@ Não há escrita; "rollback" = rodar de novo (idempotente, read-only).
 
 ## Referências
 
-- `scripts/deploy-homeserver.sh` — o script (fonte da verdade do fluxo)
-- `.github/workflows/deploy.yml` — verify → deploy
+- `scripts/deploy-homeserver.sh` — o script (fonte da verdade do fluxo; parametrizado por `TEQO_ENV`)
+- `.github/workflows/deploy.yml` — verify → deploy-staging → deploy-production (OPS103)
 - `docs/plans/ops53-ci-deploy-homeserver*.md` — intenção e decisões (era Forgejo)
 - `docs/plans/ops71-ci-github-actions-tracker-forgejo*.md` — o cutover
+- `docs/plans/ops103-staging-homeserver*.md` — staging com verify único e aprovações separadas
 - infra-solla: `STATE.md`, `plano-infra-final.md` §"Arquitetura de deploy"
