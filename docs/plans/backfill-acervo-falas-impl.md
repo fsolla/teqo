@@ -222,6 +222,27 @@ _Quota:_ 1 PR; prova: check `checks` verde.
 | C154 não está em main                                                     | Dados ficam prontos; validação visual registrada como pendência do C154, não bloqueio deste item                                            |
 | Colisão de `sourceKey` (vista na 57ª)                                     | Já resolvida no C153 por hash de conteúdo; o relatório marca `suffixedKey`                                                                  |
 
+## Débitos (triage pós-simplify)
+
+Nenhum achado dos dois revisores virou Issue nova (nenhum `expensive_lock` com score ≥4). O que ficou:
+
+**Deferido com gatilho:**
+
+- **Resolver do pool Postgres duplicado** (`src/utilities/speech/speechCoverage.ts` vs `src/utilities/supporter/supporterListOverviewAggregate.ts`): os dois checam `payload.db.name` + `drizzle.execute` com mensagens de erro próprias. Extrair para `drizzleBulk` seria abstração com 2 call sites e semânticas de erro distintas. Gatilho: 3º consumidor do resolver ou mudança no shape do adapter.
+- **Listas de buckets/chaves soletradas** (`speechCoverage`: tipo/SQL/`rowToCoverage`/`sumCoverage`; `camaraSpeeches`: `BACKFILL_*_KEYS` vs `createRun`): derivar dinamicamente de `Object.keys` esconderia a quebra de contrato (campo novo que some do relatório sem erro). Gatilho: um 8º bucket no coverage ou um 4º bloco numérico no relatório.
+
+**Descartado:** o par `--date` + `--legislature` continua aceito (ignorado, shape do C153 preservado) — o C153 já o aceitava; agora o `options.legislature` fica `null` como antes e o HELP diz "ignorado se --date".
+
+**Já resolvido no simplify (não reabrir):**
+
+- `getJsonWithBackoff` movido para `scripts/lib/camaraFetch.mjs` (o dono do retry HTTP), com `label` injetável.
+- Guard reordenado (`assertWriteAllowed` antes do `assertLocalDatabase`) para o disjunto de host remoto ser alcançável; mensagem de `DATABASE_URL` ausente em pt-BR.
+- Pipeline por legislatura extraído (`runLegislature`) e reusado pelo single-range e pelo `--all`.
+- `combined` inicializado por `aggregateBackfillRuns([])` (sem `totals/asr/llm` nulos).
+- Bloco por legislatura imprime `N falha(s)`; `--verify-links` não grava JSON com amostra vazia.
+- `databaseTarget` com parse único; `PostgresDb` reusa `PostgresTransactionDatabase`; JSDoc de `selectLinkSample` honesto; linha em branco no `cli.mjs`; nome do artefato do plano alinhado (`backfill-<runAt>.json`).
+- Teste do ramo uniforme de `selectLinkSample` (6 linhas, n=2/3, ids exatos).
+
 ## Aceite de engenharia (checklist)
 
 - [ ] `--all` processa 54→57 num processo, com `legislatures[]` + totais combinados + `coverage`; mutex com `--date`/`--legislature` explícito; checkpoint por legislatura.
