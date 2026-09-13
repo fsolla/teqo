@@ -768,6 +768,29 @@ describe('e2e name locators are anchored', () => {
   })
 })
 
+describe('int fixture scoping avoids hex title markers', () => {
+  // Deploy verify blocker of 2026-09-13 — Payload's `like` and `contains` are
+  // CONTAINS matches (the Postgres adapter compiles them to `ILIKE '%…%'`), so
+  // a hex-only title marker like `C114` also matches a fixture UUID that
+  // embeds it: a parallel spec's row leaks into the scoped mirror/cleanup and
+  // flakes exact counts. Scope passes by the ids of the rows the spec created;
+  // this sweep keeps the marker assumption from coming back.
+  const hexTitleMarker = /title:\s*\{\s*(?:like|contains):\s*['"]([^'"]+)['"]/g
+
+  it('keeps hex-only title markers out of tests/int queries', () => {
+    const offenders: string[] = []
+
+    for (const file of walkSourceFiles(resolve(repoRoot, 'tests/int'), ['.ts'])) {
+      const source = readFileSync(file, 'utf8')
+      for (const match of source.matchAll(hexTitleMarker)) {
+        if (/^[0-9a-f]{3,}%?$/i.test(match[1]!)) offenders.push(`${repoPath(file)}: ${match[0]}`)
+      }
+    }
+
+    expect(offenders, 'scope by owned ids instead of a title marker (deploy verify 2026-09-13)').toEqual([])
+  })
+})
+
 describe('public site metadata global access', () => {
   // An empty `metadata` global (fresh DB / poisoned unstable_cache) used to
   // crash `next build` via raw field access. Every `getCachedGlobal('metadata')`
