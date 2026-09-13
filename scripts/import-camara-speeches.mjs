@@ -45,6 +45,7 @@ import {
   parsePresidingOfficerTransitions,
   resolvePresidingOfficer,
   selectSpeechEvents,
+  speechContentHash,
   speechDate,
   speechSourceKey,
 } from './lib/camaraSpeeches.mjs'
@@ -238,9 +239,21 @@ async function transcribeExcerpt(eventId, excerpt, options) {
 }
 
 async function processSpeech(payload, speech, options, run) {
-  const sourceKey = speechSourceKey(speech)
+  // Identity: the API triple is the key; a genuinely distinct speech sharing
+  // the triple (seen 2026-06-17T17:16) gets a content-hash suffix instead of
+  // overwriting the first one.
+  const baseKey = speechSourceKey(speech)
+  const contentHash = speechContentHash(speech.sumario, speech.transcricao)
+  const baseState = await findSpeechImportState(payload, baseKey)
+  const suffixedKey =
+    Boolean(baseState) &&
+    contentHash !== speechContentHash(baseState.summary, baseState.officialTranscript)
+  const sourceKey = suffixedKey ? `${baseKey}#${contentHash}` : baseKey
+  const existing = suffixedKey ? await findSpeechImportState(payload, sourceKey) : baseState
+
   const report = {
     sourceKey,
+    suffixedKey,
     speechAt: speech.dataHoraInicio,
     eventId: null,
     excerpt: null,
@@ -253,7 +266,6 @@ async function processSpeech(payload, speech, options, run) {
     failures: [],
   }
 
-  const existing = await findSpeechImportState(payload, sourceKey)
   const keywords = parseOfficialKeywords(speech.keywords)
   const date = speechDate(speech.dataHoraInicio)
   const year = /^\d{4}-\d{2}-\d{2}$/.test(date) ? Number(date.slice(0, 4)) : null
@@ -422,6 +434,7 @@ const speechLine = (report) => {
     report.created ? 'criado' : 'atualizado',
     report.excerpt ? `trecho a=${report.excerpt.audioId} t=${report.excerpt.tMs}` : 'sem trecho',
   ]
+  if (report.suffixedKey) parts.push('chave sufixada por colisão')
   if (report.vodState) parts.push(`VOD ${report.vodState}`)
   if (report.segmentCount > 0) parts.push(`${report.segmentCount} segmentos`)
   if (report.presidingOfficer) parts.push(`presidiu ${report.presidingOfficer}`)

@@ -365,6 +365,28 @@ const maskFalsePositivePhrases = (value: string): string => {
 }
 
 /**
+ * Municipality names that are also common words, institutions or people
+ * ("Saúde", "Central", "Palmeiras", "Planalto", "Santana", "Wagner", the
+ * senator Jaques Wagner): a bare capitalized match is not enough, so they
+ * require a place context. Curated — grows with observed false positives.
+ */
+const AMBIGUOUS_MUNICIPALITY_CITIES = new Set([
+  'saude',
+  'central',
+  'gloria',
+  'palmeiras',
+  'planalto',
+  'santana',
+  'seabra',
+  'urandi',
+  'wanderley',
+  'wagner',
+  'juazeiro',
+])
+
+const PLACE_CONTEXT = /(?:^|[^a-z0-9])(?:em|para|cidade de|municipio de|distrito de) $/
+
+/**
  * Matches catalog municipality names in the text. Longest names are consumed
  * first so "São Félix do Coribe" never also yields "Coribe"; a match must
  * start with an uppercase letter in the original text, so prose "saúde" does
@@ -386,6 +408,12 @@ export const matchMunicipalityMentions = (text: string): MunicipalityCatalogEntr
     while ((match = pattern.exec(haystack)) !== null) {
       const start = match.index + match[1].length
       if (!/[A-Z]/.test(comparable[start] ?? '')) continue
+      if (
+        AMBIGUOUS_MUNICIPALITY_CITIES.has(matcher.normalized) &&
+        !PLACE_CONTEXT.test(comparable.slice(0, start).toLowerCase())
+      ) {
+        continue
+      }
       found = true
       for (let index = start; index < start + matcher.normalized.length; index += 1) {
         masked[index] = ' '
@@ -415,16 +443,22 @@ export type SpeechFacetInput = {
 /**
  * Offline facet pass: topic lexicon + scope lexicon + municipality gazetteer.
  * People/programs/projects require the LLM pass; this pass never invents them.
+ * Municipality mentions ignore the official keywords: they are a controlled
+ * topic vocabulary ("Saúde" the theme) and produced false place matches.
  */
 export const classifySpeechByGazetteer = (input: SpeechFacetInput): SpeechFacetClassification => {
-  const text = [input.summary ?? '', input.keywords?.join(' ') ?? '', input.transcript].join(' ')
-  const normalized = normalizeForSearch(text)
+  const keywordText = input.keywords?.join(' ') ?? ''
+  const normalized = normalizeForSearch(
+    [input.summary ?? '', keywordText, input.transcript].join(' '),
+  )
 
   const topics = SPEECH_TOPICS.filter(({ value }) =>
     SPEECH_TOPIC_TERMS[value].some((term) => containsTerm(normalized, term)),
   ).map(({ value }) => value)
 
-  const municipalities = matchMunicipalityMentions(text)
+  const municipalities = matchMunicipalityMentions(
+    [input.summary ?? '', input.transcript].join(' '),
+  )
   const matchedScopes = new Set<SpeechScope>(
     SPEECH_SCOPES.filter(({ value }) =>
       SPEECH_SCOPE_TERMS[value].some((term) => containsTerm(normalized, term)),
