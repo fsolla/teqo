@@ -176,7 +176,7 @@ Uso: pnpm camara:import [--all | --legislature 54|55|56|57 | --date YYYY-MM-DD |
 
 Modos de import (escrevem no acervo):
   --all                processa as 54ª–57ª em sequência (relatório por legislatura)
-  --legislature <n>    54|55|56|57 (default 57 quando nenhum modo é dado)
+  --legislature <n>    54|55|56|57 (default 57 quando nenhum modo é dado; ignorado se --date)
   --date <YYYY-MM-DD>  discursos de um único dia
 Modos read-only:
   --coverage           imprime a cobertura do banco por legislatura (sem rede/escrita)
