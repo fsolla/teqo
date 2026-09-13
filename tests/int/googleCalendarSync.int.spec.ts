@@ -7,8 +7,12 @@
 // stable without touching other specs:
 //
 //   1. Any NEW spec here that asserts on mirror counts MUST scope its passes
-//      with its own title prefix via `activityWhere` (this file uses
-//      `{ title: { like: 'C114%' } }`) — never count on an empty window.
+//      by the ids of the activities THIS spec created via `activityWhere`
+//      (`{ id: { in: [...] } }`) — never count on an empty window. A title
+//      marker is NOT enough: Payload's `like`/`contains` are CONTAINS matches
+//      (`ILIKE '%…%'`), so a marker of hex characters (e.g. `C114`) also
+//      matches a fixture UUID that embeds it — that is how a parallel spec's
+//      row leaked into this mirror and broke the exact counts (deploy verify 2026-09-13).
 //   2. Specs elsewhere that create pass-through activities in the window
 //      keep the per-test cleanup from `installCampaignFixtures` (fixtures
 //      are owned and removed beforeEach/afterEach) — never leak rows past
@@ -90,23 +94,43 @@ describe('campaign Google calendar sync engine (C114)', () => {
   /** Config rows this file created — cleanup never touches other specs' rows. */
   const ownedConfigIds = new Set<number>()
 
+  /**
+   * Activity ids this spec created — the mirror scope AND the cleanup set.
+   * Ownership by id is collision-proof: a title marker is not (Payload's
+   * `like`/`contains` match anywhere in the string — the deploy verify blocker
+   * of 2026-09-13).
+   */
+  const ownedActivityIds = new Set<number>()
+
   afterEach(async () => {
     // Teqo never depends on Google: the engine must never throw into callers.
     // Cleanup happens per test; the env is restored by the credential helper.
-    await payload.delete({
-      collection: 'activity',
-      where: { title: { like: 'C114%' } },
-      overrideAccess: true,
-    })
+    if (ownedActivityIds.size > 0) {
+      await payload.delete({
+        collection: 'activity',
+        where: { id: { in: [...ownedActivityIds] } },
+        overrideAccess: true,
+      })
+      ownedActivityIds.clear()
+    }
     for (const id of ownedConfigIds) {
       await payload.delete({ collection: 'googleCalendarSync', id, overrideAccess: true })
     }
     ownedConfigIds.clear()
   })
 
-  const createActivity = async (overrides: Record<string, unknown> = {}) => {
+  /**
+   * Creates an activity this spec OWNS by default (mirror scope + cleanup).
+   * Pass `{ track: false }` for a deliberately foreign row: it exists in the
+   * window but must stay out of the scoped mirror (the fixture cleanup still
+   * owns it through the proxy — the flag only keeps it out of the scope).
+   */
+  const createActivity = async (
+    overrides: Record<string, unknown> = {},
+    options: { track?: boolean } = {},
+  ) => {
     const municipality = await campaignFixtures().getMunicipality()
-    return payload.create({
+    const activity = await payload.create({
       collection: 'activity',
       data: hookFilledCreateData<'activity'>({
         title: `C114 ${crypto.randomUUID().slice(0, 8)}`,
@@ -119,6 +143,8 @@ describe('campaign Google calendar sync engine (C114)', () => {
       depth: 0,
       overrideAccess: true,
     })
+    if (options.track !== false) ownedActivityIds.add(activity.id)
+    return activity
   }
 
   const createConfig = async (calendarId: string) => {
@@ -133,11 +159,11 @@ describe('campaign Google calendar sync engine (C114)', () => {
   }
 
   /**
-   * Runs a sync pass scoped to THIS spec's fixture (`C114%` titles). The int
-   * suite runs files in parallel against one shared database and other specs
-   * create activities inside the mirror window — a full-scope pass would count
-   * them and flake the global assertions (C126). Production callers omit the
-   * scope and keep the espelho cheio.
+   * Runs a sync pass scoped to the activities THIS spec created. The int suite
+   * runs files in parallel against one shared database and other specs create
+   * activities inside the mirror window — a full-scope pass would count them
+   * and flake the global assertions (C126; deploy verify blocker of
+   * 2026-09-13). Production callers omit the scope and keep the espelho cheio.
    */
   const runSync = (
     client: GoogleCalendarClient,
@@ -147,7 +173,7 @@ describe('campaign Google calendar sync engine (C114)', () => {
       runCampaignCalendarSync(payload, {
         reason,
         client,
-        activityWhere: { title: { like: 'C114%' } },
+        activityWhere: { id: { in: [...ownedActivityIds] } },
       }),
     )
 
@@ -195,9 +221,10 @@ describe('campaign Google calendar sync engine (C114)', () => {
     // C114 fixture scope. The int suite runs files in parallel against one
     // shared database, so such rows exist at arbitrary times — the mirror
     // must not count them (the C126 race).
-    const foreign = await createActivity({
-      title: `C126 alheia ${crypto.randomUUID().slice(0, 8)}`,
-    })
+    const foreign = await createActivity(
+      { title: `C126 alheia ${crypto.randomUUID().slice(0, 8)}` },
+      { track: false },
+    )
     await createConfig(calendarA)
     const store: GoogleRemoteEvent[] = []
     const client = createStubClient(store)
@@ -211,10 +238,39 @@ describe('campaign Google calendar sync engine (C114)', () => {
         store.find((event) => event.id === googleEventIdForActivity(foreign.id)),
       ).toBeUndefined()
     } finally {
-      // The afterEach only cleans `C114%` titles — never leak the foreign
-      // row into other specs (the exact bug this pin guards against). The
-      // fixture proxy also auto-owns it, but the explicit delete keeps the
-      // guarantee visible here.
+      // Never leak the foreign row into other specs (the exact bug this pin
+      // guards against). The fixture proxy also auto-owns it, but the
+      // explicit delete keeps the guarantee visible here.
+      if (foreign) {
+        await payload.delete({ collection: 'activity', id: foreign.id, overrideAccess: true })
+      }
+    }
+  })
+
+  it('a foreign title CONTAINING c114 stays out of the scope (id-scoped mirror)', async () => {
+    const activity = await createActivity()
+    // The scope used to be a title marker (`like: 'C114%'`), but Payload's
+    // `like`/`contains` match ANYWHERE in the string (`ILIKE '%…%'`) — a
+    // parallel spec's fixture UUID embedding `c114` pulled its row into the
+    // mirror, flaking the exact counts (deploy verify, 2026-09-13). The
+    // scope is now ownership by id, so the marker's position is irrelevant.
+    const foreign = await createActivity(
+      { title: `C126 alheia c114 ${crypto.randomUUID().slice(0, 8)}` },
+      { track: false },
+    )
+    await createConfig(calendarA)
+    const store: GoogleRemoteEvent[] = []
+    const client = createStubClient(store)
+
+    try {
+      const outcome = await runSync(client)
+      expect(outcome.created).toBe(1)
+      expect(store).toHaveLength(1)
+      expect(store.find((event) => event.id === googleEventIdForActivity(activity.id))).toBeTruthy()
+      expect(
+        store.find((event) => event.id === googleEventIdForActivity(foreign.id)),
+      ).toBeUndefined()
+    } finally {
       if (foreign) {
         await payload.delete({ collection: 'activity', id: foreign.id, overrideAccess: true })
       }
@@ -227,9 +283,10 @@ describe('campaign Google calendar sync engine (C114)', () => {
     // scope. A scoped mirror is authoritative for its scope — its teqo
     // events are reconciled even when the delete-guard's full-scope view
     // would have kept them.
-    const foreign = await createActivity({
-      title: `C126 alheia ${crypto.randomUUID().slice(0, 8)}`,
-    })
+    const foreign = await createActivity(
+      { title: `C126 alheia ${crypto.randomUUID().slice(0, 8)}` },
+      { track: false },
+    )
     await createConfig(calendarA)
     const store: GoogleRemoteEvent[] = [
       {
