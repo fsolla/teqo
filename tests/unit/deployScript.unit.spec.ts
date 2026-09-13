@@ -16,17 +16,24 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     expect(() => execFileSync('bash', ['-n', scriptPath], { stdio: 'pipe' })).not.toThrow()
   })
 
-  it('guards against stale runs: only the current main HEAD deploys', () => {
-    expect(script).toContain('git ls-remote')
-    expect(script).toContain('refs/heads/main')
-    expect(script).toContain('stale run')
+  it('deploys the dispatched SHA to the end even when main advanced during verify (OPS102)', () => {
+    // OPS53's stale-run guard assumed an automatic deploy; since OPS71 the
+    // dispatch is a deliberate operator act — the run must complete with the
+    // SHA it started with. Reintroducing a main-HEAD comparison must fail here.
+    expect(script).not.toContain('stale run')
+    expect(script).not.toContain('git ls-remote')
+    expect(script).not.toContain('refs/heads/main')
   })
 
-  it('fails the run when main advanced during verify — no silent false success', () => {
-    // The skip used to `exit 0`, so GitHub reported a green deploy that never
-    // happened while prod stayed on an older image (2026-09-12 incident).
-    expect(script).not.toMatch(/say "stale run/)
-    expect(script.match(/fatal "stale run/g) ?? []).toHaveLength(2)
+  it('never exits green without deploying: the only early exit 0 is "already deployed"', () => {
+    // #953: the stale-run skip used to `exit 0` — a green deploy that never
+    // happened while prod stayed on an older image.
+    expect(script.match(/^\s*exit 0\s*$/gm) ?? []).toHaveLength(1)
+  })
+
+  it('keeps flock serialization after removing the HEAD guards (OPS102)', () => {
+    expect(script).toContain('exec 9>"$DEPLOY_LOCK"')
+    expect(script).toContain('flock -w 3600 9')
   })
 
   it('skips idempotently when the running container already runs the SHA (OPS65)', () => {
