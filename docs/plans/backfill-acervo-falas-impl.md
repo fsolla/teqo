@@ -190,7 +190,9 @@ _Quota:_ 1 PR; prova: check `checks` verde.
 - **Fase 3.0 cumprida por outro deploy.** A C154 (`3e062749`) mergeou em `main` e o deploy manual de 2026-09-13 publicou `424ee311` em produção — o schema do C153 (`speech`/`speech_segment` + migrations `20260913_001112`/`001200`) e o `searchText` da C154 já estão no `teqo_1313`. Nenhum deploy novo é pré-requisito do backfill; o workspace `~/teqo-deploy` também já está no SHA novo.
 - **Rede da workstation para a Câmara instável** (hangs/HTTP 500 na API em 2026-09-13 à tarde; o homeserver responde 200 em ~2s). O smoke local da Fase 1 vira o smoke de produção da Fase 3.3 (mesmo código, rede confiável); unit/int locais continuam sendo o gate de lógica.
 - **Paginação do import ganhou backoff** (`fetchJsonWithBackoff`, 5 tentativas com espera exponencial até 30s) porque a API devolveu 500 na página 4 da 55ª durante o smoke — o comportamento de abortar só a legislatura e seguir continua, agora com mais paciência.
-- **Cache/mídia do run de produção** em `--out /srv/hdd/teqo-backfill/camara` (67 GB livres em `/`, 394 GB no HDD).
+- **Cache/mídia do run de produção** em `--out /srv/hdd/backups/teqo-camara` (`/srv/hdd` é root-owned; `backups/` é do usuário — 392 GB livres).
+- **Smoke de produção (2026-09-13, `teqo_1313`):** `--all --limit 1` processou 54ª/56ª/57ª (2 ASR, ~US$0,003) e abortou só a 55ª (HTTP 500 persistente na página 4 da listagem da API — não é o import). Reexecução do mesmo comando: **0 criados, 0 ASR, 0 LLM** (idempotência viva em produção); coverage do banco bateu com o relatório. O guard `CAMARA_IMPORT_CONFIRM=1` foi exercitado (sem a flag, o run morre antes de conectar).
+- **Run completo em tmux no homeserver** (`c155-run.log` + JSONs em `/srv/hdd/backups/teqo-camara/reports/`), ~13h estimadas; 55ª será retomada com `--legislature 55` (a API precisa recuperar a página 4).
 
 ## Rabbit holes / Não escopo (engenharia)
 
