@@ -19,9 +19,9 @@
 | ------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Início provável    | 2026-08-16              | commit `21b3c00d` ("chore(deploy): prepara imagem standalone para homeserver") introduz a stage `migrator` com `CMD ["pnpm", "migrate"]`; o defeito (dependência de egress no start do container) é latente desde então — o mesmo download de pnpm no start funcionou no migrator de produção em 2026-09-13 01:09:36 UTC (`teqo-1313-migrate`, run 34728680411), mascarando a falha |
 | Detecção           | 2026-09-13 15:52:09 UTC | deploy run 34765554681 (main `67a40a6c`, PR #973 mergeado 15:24:11 UTC), job `deploy staging (teqo-staging)`: `[deploy] FAILED: migrations failed — restoring previous compose and image`, exit 1; `deploy production (teqo-1313)` skipped (`needs: [deploy-staging]`); o script restaurou o compose anterior (nada publicado); produção intocada                                   |
-| Correção mergeada  | pendente                | PR #976 aguardando CI + auto-merge                                                                                                                                                                                                                                                                                                                                                  |
-| Deploy             | pendente                | re-dispatch manual do `deploy.yml` após o merge (a registrar)                                                                                                                                                                                                                                                                                                                       |
-| Verificado em prod | pendente                | confirmação do humano após o deploy                                                                                                                                                                                                                                                                                                                                                 |
+| Correção mergeada  | 2026-09-13 17:12:38 UTC | PR #976 mergeada (auto-merge, `CI (PR) / checks` verde); o PR #974 foi fechado como superseded porque o branch antigo carregava os commits do #973 e o rebase merge do GitHub recusava (`This branch can't be rebased`) — o #976 nasceu de `main` com só os 2 commits novos                                                                                                         |
+| Deploy             | 2026-09-13              | run 34770925404: `verify` verde → staging verde (pnpm assado, migrations aplicadas, rollout + smoke) → produção aprovada no environment `production` e verde                                                                                                                                                                                                                        |
+| Verificado em prod | 2026-09-13 18:33:36 UTC | run 34770925404 publicou o SHA `424ee311`; healthcheck + smoke do script verdes e `https://jorgesolla1313.com.br/` respondendo 200 (checagem read-only)                                                                                                                                                                                                                             |
 
 ## O bug
 
@@ -54,8 +54,8 @@ Resolve a causa: o toolchain deixa de ser buscado na rede no start do container;
 - Teste de regressão: `tests/unit/deployScript.unit.spec.ts:142` "Dockerfile: the migrator bakes pnpm at build time (no runtime registry fetch)" — falha sem o fix (RED sem a linha `RUN corepack install`) e passa com
 - Prova offline local: `docker run --network none <imagem> pnpm --version` → `10.11.0` com o bake; sem o bake o mesmo run offline falha com o erro exato do staging
 - Suíte: `pnpm gate:fast` verde
-- CI: pendente — PR #976 (check required `CI (PR) / checks`)
-- Prod: pendente — re-dispatch manual do `deploy.yml` após o merge; confirmação do humano pendente (a registrar)
+- CI: verde no PR #976 (check required `CI (PR) / checks`)
+- Prod: run 34770925404 (2026-09-13 18:33:36 UTC), SHA `424ee311` — staging e produção verdes; `https://jorgesolla1313.com.br/` 200 (checagem read-only)
 
 ## Prevenção
 

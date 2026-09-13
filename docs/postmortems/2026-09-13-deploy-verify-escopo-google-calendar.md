@@ -19,9 +19,9 @@
 | ------------------ | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Início provável    | 2026-08-11              | commit `c69990a3` ("fix(C126): isola o escopo do espelho Google nos int specs (fim do flake paralelo)") introduz o escopo/limpeza por título `{ title: { like: 'C114%' } }` em `tests/int/googleCalendarSync.int.spec.ts`; a colisão com UUID alheio é rara, então o defeito fica latente                                                                             |
 | Detecção           | 2026-09-13 14:46:31 UTC | run de deploy 34763253924 (main `7ca708a3`), job `verify`, passo "Integration tests (full suite)": 1 failed \| 82 passed — `tests/int/googleCalendarSync.int.spec.ts` > "a cancelled event in Google cancels the confirmado activity, then the trash is cleaned" falha nas DUAS tentativas (`retry: 1`); os jobs `deploy-staging` e `deploy-production` ficam skipped |
-| Correção mergeada  | pendente                | PR #973 aguardando CI + auto-merge                                                                                                                                                                                                                                                                                                                                    |
-| Deploy             | pendente                | dispatch manual do `deploy.yml` pelo humano após o merge (nenhum merge publica sozinho)                                                                                                                                                                                                                                                                               |
-| Verificado em prod | pendente                | confirmação do humano após o deploy                                                                                                                                                                                                                                                                                                                                   |
+| Correção mergeada  | 2026-09-13 15:24:11 UTC | PR #973 mergeada (auto-merge, `CI (PR) / checks` verde)                                                                                                                                                                                                                                                                                                               |
+| Deploy             | 2026-09-13              | run 34765554681 (bloqueado no migrator do staging — ver post-mortem `2026-09-13-deploy-staging-migrator-corepack.md`) e run 34770925404 (staging + produção verdes)                                                                                                                                                                                                   |
+| Verificado em prod | 2026-09-13 18:33:36 UTC | run 34770925404 publicou o SHA `424ee311`; healthcheck + smoke do script verdes e `https://jorgesolla1313.com.br/` respondendo 200 (checagem read-only)                                                                                                                                                                                                               |
 
 ## O bug
 
@@ -54,8 +54,8 @@ Resolve a causa: o escopo e a limpeza passam a ser ownership por id (à prova de
 
 - Teste de regressão: `tests/int/googleCalendarSync.int.spec.ts:250` "a foreign title CONTAINING c114 stays out of the scope (id-scoped mirror)" — falha sem o fix (`expected 2 to be 1`) e passa com
 - Suíte: verificador independente rodou a suíte int completa `VITEST_MAX_WORKERS=4 pnpm test:int` = 83 files / 744 tests verdes (antes: 83 files / 743 tests, 1 failed no CI) e os 6 specs da família Google (47 tests) verdes; `pnpm gate:fast` verde; o pin de convenções falha com o padrão antigo
-- CI: pendente — PR #973 aberta (check required `CI (PR) / checks`)
-- Prod: pendente — dispatch manual do `deploy.yml` pelo humano após o merge; confirmação do humano pendente
+- CI: verde no PR #973 (check required `CI (PR) / checks`)
+- Prod: run 34770925404 (2026-09-13 18:33:36 UTC), SHA `424ee311` — healthcheck + smoke do script verdes; `https://jorgesolla1313.com.br/` 200 (checagem read-only)
 
 ## Prevenção
 
