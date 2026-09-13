@@ -656,4 +656,15 @@ describe('dateRangeChunks', () => {
     expect(dateRangeChunks('2023-1-1', '2023-12-31')).toEqual([])
     expect(dateRangeChunks('', '2023-12-31')).toEqual([])
   })
+
+  it('splits by month when asked, with the right month length', () => {
+    expect(dateRangeChunks('2018-01-01', '2018-03-15', 'month')).toEqual([
+      ['2018-01-01', '2018-01-31'],
+      ['2018-02-01', '2018-02-28'],
+      ['2018-03-01', '2018-03-15'],
+    ])
+    expect(dateRangeChunks('2024-02-01', '2024-02-29', 'month')).toEqual([
+      ['2024-02-01', '2024-02-29'],
+    ])
+  })
 })

@@ -399,27 +399,36 @@ export const normalizeTranscription = (json) => {
   }
 }
 
+const isIsoDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value))
+
 /**
- * Splits an inclusive `YYYY-MM-DD` range into calendar-year chunks (no
- * overlap; first/last partial). The backfill fallback uses it when the API
- * refuses a deep page: a shallow per-year listing still recovers the years
- * the broken offset does not cover.
+ * Splits an inclusive `YYYY-MM-DD` range into calendar chunks (no overlap;
+ * first/last partial) at `unit` granularity. The backfill fallback uses it
+ * when the API refuses a deep page: a shallow per-year listing still recovers
+ * the years the broken offset does not cover, and a broken year is isolated
+ * down to the month.
  *
  * @param {string} from
  * @param {string} to
+ * @param {'year' | 'month'} unit
  * @returns {Array<[string, string]>}
  */
-export const dateRangeChunks = (from, to) => {
+export const dateRangeChunks = (from, to, unit = 'year') => {
   const chunks = []
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(from)) || !/^\d{4}-\d{2}-\d{2}$/.test(String(to))) {
-    return chunks
-  }
+  if (!isIsoDate(from) || !isIsoDate(to)) return chunks
   let start = String(from)
   while (start <= String(to)) {
-    const yearEnd = `${start.slice(0, 4)}-12-31`
-    const end = yearEnd < String(to) ? yearEnd : String(to)
-    chunks.push([start, end])
-    const next = new Date(`${end}T00:00:00Z`)
+    const end =
+      unit === 'month'
+        ? `${start.slice(0, 7)}-${String(
+            new Date(
+              Date.UTC(Number(start.slice(0, 4)), Number(start.slice(5, 7)), 0),
+            ).getUTCDate(),
+          ).padStart(2, '0')}`
+        : `${start.slice(0, 4)}-12-31`
+    const boundedEnd = end < String(to) ? end : String(to)
+    chunks.push([start, boundedEnd])
+    const next = new Date(`${boundedEnd}T00:00:00Z`)
     next.setUTCDate(next.getUTCDate() + 1)
     start = next.toISOString().slice(0, 10)
   }
