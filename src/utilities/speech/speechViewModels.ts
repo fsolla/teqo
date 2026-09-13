@@ -1,0 +1,263 @@
+/**
+ * Speech acervo view models (C154). Pure: the loader hands raw Payload rows
+ * and the view model decides labels, the matching excerpt and the links the
+ * list/detail render.
+ */
+import { CAMPAIGN_COMMUNICATION_ACERVO } from '@/lib/campaignPaths'
+import type { SpeechScope, SpeechTopic } from '@/lib/speechFacets'
+import {
+  buildHighlightedExcerpt,
+  matchesSearchTerms,
+  speechSearchTerms,
+  splitHighlightedParts,
+  type SpeechHighlightedExcerpt,
+  type SpeechHighlightPart,
+} from '@/lib/speechHighlight'
+import { normalizeForSearch } from '@/lib/speechSearch'
+import type { Municipality } from '@/payload-types'
+import { speechScopeLabels, speechTopicLabels } from '@/utilities/speech/speechListUrl'
+
+export type SpeechSegmentRecord = {
+  startSeconds: number
+  endSeconds: number
+  text: string
+}
+
+export type SpeechListRecord = {
+  id: number
+  speechAt: string
+  type?: string | null
+  durationSeconds?: number | null
+  summary?: string | null
+  officialTranscript?: string | null
+  keywords?: string[] | null
+  topics?: SpeechTopic[] | null
+  scopes?: SpeechScope[] | null
+  mentionedMunicipalities?: (number | Municipality)[] | null
+  presidingOfficer?: string | null
+  vodDownloadUrl?: string | null
+  officialTextUrl?: string | null
+  youtubeUrl?: string | null
+}
+
+type SpeechListMatchKind = 'segment' | 'keyword' | 'fallback'
+
+export type SpeechListItemViewModel = {
+  id: number
+  speechAtLabel: string
+  type: string | null
+  durationLabel: string | null
+  presidingOfficer: string | null
+  excerpt: SpeechHighlightedExcerpt
+  matchKind: SpeechListMatchKind
+  topics: { value: SpeechTopic; label: string }[]
+  scopes: { value: SpeechScope; label: string }[]
+  keywords: string[]
+  municipalities: { id: number; name: string }[]
+  watchHref: string
+  downloadUrl: string | null
+  sourceUrl: string | null
+}
+
+export type SpeechDetailSegmentViewModel = {
+  startSeconds: number
+  endSeconds: number
+  startLabel: string
+  parts: SpeechHighlightPart[]
+}
+
+export type SpeechDetailViewModel = {
+  id: number
+  speechAtLabel: string
+  type: string | null
+  phase: string | null
+  durationLabel: string | null
+  presidingOfficer: string | null
+  summary: string | null
+  officialTranscript: string | null
+  officialTextUrl: string | null
+  youtubeUrl: string | null
+  keywords: string[]
+  topics: { value: SpeechTopic; label: string }[]
+  scopes: { value: SpeechScope; label: string }[]
+  municipalities: { id: number; name: string }[]
+  segments: SpeechDetailSegmentViewModel[]
+  vodPlaybackUrl: string | null
+  vodDownloadUrl: string | null
+}
+
+const pad = (value: number): string => String(value).padStart(2, '0')
+
+/**
+ * `speechAt` is the Câmara wall-clock string ("2026-08-11T18:48", no timezone);
+ * slicing it keeps the local reading and avoids a `Date` shifting it.
+ */
+const formatSpeechAt = (speechAt: string): string => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(speechAt)
+  if (!match) return speechAt
+  const [, year, month, day, hour, minute] = match
+  return `${day}/${month}/${year} · ${hour}:${minute}`
+}
+
+const formatSpeechDuration = (seconds: number | null | undefined): string | null => {
+  if (seconds === null || seconds === undefined || !Number.isFinite(seconds) || seconds <= 0) {
+    return null
+  }
+  const total = Math.round(seconds)
+  const hours = Math.floor(total / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
+  const secs = total % 60
+  if (hours > 0) return `${hours}h${pad(minutes)}min`
+  if (minutes > 0) return `${minutes}min${pad(secs)}s`
+  return `${secs}s`
+}
+
+/** Transcript timestamp ("01:12" / "1:02:03"). */
+const formatSpeechClock = (seconds: number): string => {
+  const total = Math.max(0, Math.round(seconds))
+  const hours = Math.floor(total / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
+  const secs = total % 60
+  return hours > 0 ? `${hours}:${pad(minutes)}:${pad(secs)}` : `${pad(minutes)}:${pad(secs)}`
+}
+
+type MunicipalityMentions = {
+  mentionedMunicipalities?: (number | Municipality)[] | null
+}
+
+/** Cited municipality ids from a speech row (depth 0 keeps them as numbers). */
+export const municipalityIdsOfSpeech = (speech: MunicipalityMentions): number[] =>
+  (speech.mentionedMunicipalities ?? []).flatMap((value) =>
+    typeof value === 'number' ? [value] : [value.id],
+  )
+
+const municipalityViewModels = (
+  speech: SpeechListRecord,
+  labels: ReadonlyMap<number, string>,
+): { id: number; name: string }[] =>
+  (speech.mentionedMunicipalities ?? []).flatMap((value) => {
+    if (typeof value !== 'number') return [{ id: value.id, name: value.name }]
+    const name = labels.get(value)
+    return name ? [{ id: value, name }] : []
+  })
+
+const topicViewModels = (speech: SpeechListRecord) =>
+  (speech.topics ?? []).map((value) => ({ value, label: speechTopicLabels[value] }))
+
+const scopeViewModels = (speech: SpeechListRecord) =>
+  (speech.scopes ?? []).map((value) => ({ value, label: speechScopeLabels[value] }))
+
+const pickMatchingSegment = (
+  segments: readonly SpeechSegmentRecord[],
+  query: string | undefined,
+): SpeechSegmentRecord | undefined => {
+  const q = query?.trim()
+  if (!q || segments.length === 0) return undefined
+  const allTerms = segments.find((segment) => matchesSearchTerms(segment.text, q))
+  if (allTerms) return allTerms
+  const terms = speechSearchTerms(q)
+  return segments.find((segment) => {
+    const normalized = normalizeForSearch(segment.text)
+    return terms.some((term) => normalized.includes(term))
+  })
+}
+
+const buildWatchHref = (
+  speechId: number,
+  segment: SpeechSegmentRecord | undefined,
+  query: string | undefined,
+): string => {
+  const params = new URLSearchParams()
+  // ASR timestamps are fractional seconds; the URL carries whole seconds.
+  if (segment) params.set('t', String(Math.max(0, Math.floor(segment.startSeconds))))
+  if (query) params.set('q', query)
+  const queryString = params.toString()
+  return `${CAMPAIGN_COMMUNICATION_ACERVO}/${speechId}${queryString ? `?${queryString}` : ''}`
+}
+
+/** Seek offset from the detail URL (`?t=`), non-negative seconds or null. */
+export const parseSpeechSeekSeconds = (raw: string | undefined): number | null => {
+  if (raw === undefined) return null
+  const seconds = Number(raw)
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds : null
+}
+
+export const toSpeechListItemViewModel = ({
+  speech,
+  segments,
+  query,
+  municipalityLabels,
+}: {
+  speech: SpeechListRecord
+  segments: readonly SpeechSegmentRecord[]
+  query?: string
+  municipalityLabels: ReadonlyMap<number, string>
+}): SpeechListItemViewModel => {
+  const matchedSegment = pickMatchingSegment(segments, query)
+  const q = query?.trim()
+  const normalizedQuery = q ? normalizeForSearch(q) : ''
+  const keywordMatch =
+    !matchedSegment &&
+    Boolean(normalizedQuery) &&
+    (speech.keywords ?? []).some((keyword) => normalizeForSearch(keyword).includes(normalizedQuery))
+
+  const excerptSource =
+    matchedSegment?.text ?? segments[0]?.text ?? speech.summary ?? speech.officialTranscript ?? ''
+
+  return {
+    id: speech.id,
+    speechAtLabel: formatSpeechAt(speech.speechAt),
+    type: speech.type ?? null,
+    durationLabel: formatSpeechDuration(speech.durationSeconds),
+    presidingOfficer: speech.presidingOfficer ?? null,
+    excerpt: buildHighlightedExcerpt(excerptSource, q ?? ''),
+    matchKind: matchedSegment ? 'segment' : keywordMatch ? 'keyword' : 'fallback',
+    topics: topicViewModels(speech),
+    scopes: scopeViewModels(speech),
+    keywords: speech.keywords ?? [],
+    municipalities: municipalityViewModels(speech, municipalityLabels),
+    watchHref: buildWatchHref(speech.id, matchedSegment, q),
+    downloadUrl: speech.vodDownloadUrl ?? null,
+    sourceUrl: speech.officialTextUrl ?? speech.youtubeUrl ?? null,
+  }
+}
+
+export type SpeechDetailRecord = SpeechListRecord & {
+  phase?: string | null
+  vodPlaybackUrl?: string | null
+}
+
+export const toSpeechDetailViewModel = ({
+  speech,
+  segments,
+  query,
+  municipalityLabels,
+}: {
+  speech: SpeechDetailRecord
+  segments: readonly SpeechSegmentRecord[]
+  query?: string
+  municipalityLabels: ReadonlyMap<number, string>
+}): SpeechDetailViewModel => ({
+  id: speech.id,
+  speechAtLabel: formatSpeechAt(speech.speechAt),
+  type: speech.type ?? null,
+  phase: speech.phase ?? null,
+  durationLabel: formatSpeechDuration(speech.durationSeconds),
+  presidingOfficer: speech.presidingOfficer ?? null,
+  summary: speech.summary ?? null,
+  officialTranscript: speech.officialTranscript ?? null,
+  officialTextUrl: speech.officialTextUrl ?? null,
+  youtubeUrl: speech.youtubeUrl ?? null,
+  keywords: speech.keywords ?? [],
+  topics: topicViewModels(speech),
+  scopes: scopeViewModels(speech),
+  municipalities: municipalityViewModels(speech, municipalityLabels),
+  segments: segments.map((segment) => ({
+    startSeconds: segment.startSeconds,
+    endSeconds: segment.endSeconds,
+    startLabel: formatSpeechClock(segment.startSeconds),
+    parts: splitHighlightedParts(segment.text, query ?? ''),
+  })),
+  vodPlaybackUrl: speech.vodPlaybackUrl ?? null,
+  vodDownloadUrl: speech.vodDownloadUrl ?? null,
+})

@@ -275,6 +275,20 @@ export const E2E_AFFECTED_MANIFEST = [
     specs: ['campaignPermissionProfileHttp'],
   },
   {
+    // C154 — the communication vertical: the acervo search/filters/detail and
+    // the `speechCatalog` role gate. `src/lib/speech*` carries the pure
+    // search/highlight modules the RSC list renders with.
+    prefixes: [
+      `${CAMPAIGN_APP}/comunicacao`,
+      'src/components/campaign/speech',
+      'src/utilities/speech',
+      'src/lib/speech',
+      // The role predicates drive the vertical gate and the assistant surfaces.
+      'src/lib/campaignRoles',
+    ],
+    specs: ['campaignSpeechAcervo'],
+  },
+  {
     prefixes: [
       'src/components/campaign/advisor',
       'src/components/campaign/demand',

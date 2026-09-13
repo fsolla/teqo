@@ -1,6 +1,6 @@
 'use client'
 
-import { FunnelIcon, FunnelPlusIcon } from 'lucide-react'
+import { ChevronDownIcon, FunnelIcon, FunnelPlusIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
@@ -29,6 +29,13 @@ type CampaignHeaderFilterPopoverProps = {
   id: string
   label: string
   optionRows: CampaignHeaderFilterRow[]
+  /**
+   * C154 — chip trigger for the speech acervo filter ruler ("Ano: 2026 ▾").
+   * Default `'icon'` keeps every existing call site byte-identical.
+   */
+  triggerVariant?: 'icon' | 'chip'
+  /** Chip text; the caller folds the selection into it ("Ano: 2026"). */
+  triggerLabel?: string
 }
 
 const SEARCHABLE_OPTION_THRESHOLD = 8
@@ -70,6 +77,8 @@ export const CampaignHeaderFilterPopover = ({
   id,
   label,
   optionRows,
+  triggerVariant = 'icon',
+  triggerLabel,
 }: CampaignHeaderFilterPopoverProps) => {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -116,6 +125,10 @@ export const CampaignHeaderFilterPopover = ({
     if (closeOnChoose) setOpen(false)
   }
 
+  const triggerAriaLabel = active
+    ? `Filtrar ${label}: ativo. Alterar filtro`
+    : `Filtrar por ${label}`
+
   const renderRows = (rows: readonly CampaignHeaderFilterRow[]) =>
     rows.map((row) => <FilterRow key={row.value} row={row} onChoose={() => choose(row)} />)
 
@@ -133,20 +146,37 @@ export const CampaignHeaderFilterPopover = ({
       }}
     >
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            'inline-flex size-11 shrink-0 items-center justify-center rounded-md hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
-          )}
-          aria-label={active ? `Filtrar ${label}: ativo. Alterar filtro` : `Filtrar por ${label}`}
-        >
-          {active ? (
-            <FunnelPlusIcon className="size-3.5 shrink-0" aria-hidden="true" />
-          ) : (
+        {triggerVariant === 'chip' ? (
+          <button
+            type="button"
+            className={cn(
+              'inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              active
+                ? 'border-foreground/25 bg-muted text-foreground'
+                : 'border-border text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+            )}
+            aria-label={triggerAriaLabel}
+          >
             <FunnelIcon className="size-3.5 shrink-0" aria-hidden="true" />
-          )}
-        </button>
+            <span className="max-w-40 truncate">{triggerLabel ?? label}</span>
+            <ChevronDownIcon className="size-3.5 shrink-0" aria-hidden="true" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={cn(
+              'inline-flex size-11 shrink-0 items-center justify-center rounded-md hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+            )}
+            aria-label={triggerAriaLabel}
+          >
+            {active ? (
+              <FunnelPlusIcon className="size-3.5 shrink-0" aria-hidden="true" />
+            ) : (
+              <FunnelIcon className="size-3.5 shrink-0" aria-hidden="true" />
+            )}
+          </button>
+        )}
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 p-2">
         <div className="flex items-center justify-between gap-2 px-2 py-1.5">

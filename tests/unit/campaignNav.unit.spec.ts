@@ -8,7 +8,11 @@ import {
   getCampaignOverflowNav,
   isCampaignNavActive,
 } from '@/components/campaign/shell/nav'
-import { CAMPAIGN_AGENDA_HOME, CAMPAIGN_UPDATES_HREF } from '@/lib/campaignPaths'
+import {
+  CAMPAIGN_AGENDA_HOME,
+  CAMPAIGN_COMMUNICATION_HOME,
+  CAMPAIGN_UPDATES_HREF,
+} from '@/lib/campaignPaths'
 import { ORGANIZATIONS_LIST_PATH } from '@/lib/campaignQuickActionPaths'
 
 describe('organizations sidebar entry', () => {
@@ -59,10 +63,34 @@ describe('agenda sidebar entry', () => {
 })
 
 describe('communicator sidebar', () => {
-  it('has no staff destinations before the C154 vertical lands', () => {
-    expect(getCampaignNav('communicator')).toEqual([])
+  it('offers only the communication vertical, with no staff destinations', () => {
+    const items = getCampaignNav('communicator')
+    expect(items.map((item) => item.href)).toEqual([CAMPAIGN_COMMUNICATION_HOME])
+    expect(items[0]?.title).toBe('Comunicação')
     expect(getCampaignBottomNav('communicator')).toHaveLength(0)
     expect(getCampaignOverflowNav('communicator')).toHaveLength(0)
+  })
+
+  it('is offered to coordinator/candidate and hidden from advisor/leader', () => {
+    for (const role of ['coordinator', 'candidate'] as const) {
+      expect(getCampaignNav(role).map((item) => item.href)).toContain(CAMPAIGN_COMMUNICATION_HOME)
+    }
+    expect(getCampaignNav('advisor').map((item) => item.href)).not.toContain(
+      CAMPAIGN_COMMUNICATION_HOME,
+    )
+    expect(getCampaignNav('leader').map((item) => item.href)).not.toContain(
+      CAMPAIGN_COMMUNICATION_HOME,
+    )
+  })
+
+  it('marks the acervo and detail as active on the vertical item', () => {
+    expect(isCampaignNavActive(CAMPAIGN_COMMUNICATION_HOME, CAMPAIGN_COMMUNICATION_HOME)).toBe(true)
+    expect(isCampaignNavActive('/campanha/comunicacao/acervo', CAMPAIGN_COMMUNICATION_HOME)).toBe(
+      true,
+    )
+    expect(
+      isCampaignNavActive('/campanha/comunicacao/acervo/42', CAMPAIGN_COMMUNICATION_HOME),
+    ).toBe(true)
   })
 })
 

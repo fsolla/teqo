@@ -1,4 +1,5 @@
 import config from '@payload-config'
+import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import type { ReactNode } from 'react'
 
@@ -10,6 +11,7 @@ import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell
 import { advisorEditingScope, type AdvisorEditingScope } from '@/lib/campaignAdvisorProfile'
 import { UNCOVERED_MUNICIPALITIES_LIST_HREF } from '@/lib/campaignHomeActions'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
+import { CAMPAIGN_COMMUNICATION_HOME } from '@/lib/campaignPaths'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
 import { loadCampaignHomeSummary } from '@/utilities/campaignDashboardData'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
@@ -21,6 +23,10 @@ export const metadata = campaignPageMetadata(null)
 
 export default async function CampaignHomePage() {
   const [payload, user] = await Promise.all([getPayload({ config }), requireCampaignPageActor()])
+
+  // C154 — the communicator's home is the communication vertical; the login
+  // lands on `/campanha`, so this is where the redirect happens.
+  if (user.role === 'communicator') redirect(CAMPAIGN_COMMUNICATION_HOME)
 
   const staff = isStaffCampaignRole(user.role)
 

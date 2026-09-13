@@ -121,21 +121,28 @@ export { expect }
 export const rendered = (html: string) => html.replaceAll('<!-- -->', '')
 
 /**
- * The route-gate redirect contract (OPS35 → OPS87, 4 call sites): `noLeader`/
- * `staff` gates throw `redirect()` deep in the page, after the layout has
- * started streaming — so the document usually answers 200 carrying Next's
- * route-redirect meta tag instead of a 3xx; when the redirect beats the
- * stream it is a real 3xx (dev 307 / prod 308). Both are the server contract
- * the browser follows — assert the redirect TARGET, never pin the transport.
+ * The route-gate redirect contract (OPS35 → OPS87, 4 call sites; C154
+ * generalized the target): `noLeader`/`staff`/`speechCatalog` gates throw
+ * `redirect()` deep in the page, after the layout has started streaming — so
+ * the document usually answers 200 carrying Next's route-redirect meta tag
+ * instead of a 3xx; when the redirect beats the stream it is a real 3xx (dev
+ * 307 / prod 308). Both are the server contract the browser follows — assert
+ * the redirect TARGET, never pin the transport.
  */
-export const assertLeaderRedirect = async (request: APIRequestContext, path: string) => {
+export const assertCampaignRedirect = async (
+  request: APIRequestContext,
+  path: string,
+  target: string,
+) => {
   const direct = await request.get(path, { maxRedirects: 0 })
   expect([200, 307, 308]).toContain(direct.status())
   if (direct.status() === 200) {
-    expect(await direct.text()).toContain(
-      'http-equiv="refresh" content="1;url=/campanha/meus-contatos"',
-    )
+    expect(await direct.text()).toContain(`http-equiv="refresh" content="1;url=${target}"`)
   } else {
-    expect(direct.headers()['location']).toMatch(/\/campanha\/meus-contatos$/)
+    const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    expect(direct.headers()['location']).toMatch(new RegExp(`${escaped}$`))
   }
 }
+
+export const assertLeaderRedirect = (request: APIRequestContext, path: string) =>
+  assertCampaignRedirect(request, path, '/campanha/meus-contatos')

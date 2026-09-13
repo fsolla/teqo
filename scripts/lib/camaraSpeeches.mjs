@@ -109,14 +109,17 @@ export const speechContentHash = (summary, transcript) =>
     .slice(0, 12)
 
 /**
- * Official keywords come as a newline-separated string; keep each keyword raw.
+ * Official keywords: the API separates keyword GROUPS with newlines and the
+ * individual keywords inside a group with commas (live data:
+ * `Governo federal,reconstrução,Política pública`). Both are separators; no
+ * official keyword contains a comma.
  *
  * @param {unknown} raw
  * @returns {string[]}
  */
 export const parseOfficialKeywords = (raw) =>
   String(raw ?? '')
-    .split(/[\r\n]+/)
+    .split(/[\r\n,]+/)
     .map((keyword) => keyword.trim())
     .filter(Boolean)
 

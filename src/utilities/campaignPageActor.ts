@@ -2,15 +2,19 @@ import 'server-only'
 
 import { redirect } from 'next/navigation'
 
-import { LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
-import { isStaffCampaignRole, isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
+import { CAMPAIGN_COMMUNICATION_HOME, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
+import {
+  canReadSpeechCatalog,
+  isStaffCampaignRole,
+  isUnrestrictedCampaignRole,
+} from '@/lib/campaignRoles'
 import { advisorEditingAccess } from '@/utilities/access/shared'
 import { getCampaignUser, getCampaignUserWithAvatar } from '@/utilities/campaignAuth'
 
 /** Exactly the non-null actor `getCampaignUser` proves (keeps its `email` refinement). */
 export type CampaignPageActor = NonNullable<Awaited<ReturnType<typeof getCampaignUser>>>
 
-export type CampaignPageGate = 'staff' | 'unrestricted' | 'noLeader' | 'writable'
+export type CampaignPageGate = 'staff' | 'unrestricted' | 'noLeader' | 'writable' | 'speechCatalog'
 
 export { LEADER_CONTACTS_HOME }
 
@@ -28,7 +32,10 @@ export const CAMPAIGN_STAFF_QUADRO_PATH = '/campanha/quadro'
  * - 'noLeader'     → leader goes to `/campanha/meus-contatos` (B43, C139);
  * - 'writable'     → advisor with Edição `somente_leitura` goes to `/campanha`
  *                    (C142 — write destinations must not be offered to a
- *                    read-only advisor; the server already rejects the write).
+ *                    read-only advisor; the server already rejects the write);
+ * - 'speechCatalog'→ advisor/leader lose the communication vertical (C154);
+ *                    communicator/coordinator/candidate pass, the same
+ *                    predicate the collection access uses.
  *
  * A custom `redirectTo` overrides the gate's default target. `withAvatar`
  * loads the actor through `getCampaignUserWithAvatar` (avatar populated at
@@ -53,9 +60,18 @@ export const requireCampaignPageActor = async (
   if (!user) redirect('/campanha/login')
 
   const { gate, redirectTo } = options
-  const denyRedirect = redirectTo ?? (user.role === 'leader' ? LEADER_CONTACTS_HOME : '/campanha')
+  // C154 — a denied communicator belongs in the vertical, not in the staff
+  // home (which itself redirects there, but a direct redirect avoids a hop).
+  const roleHome: Partial<Record<typeof user.role, string>> = {
+    leader: LEADER_CONTACTS_HOME,
+    communicator: CAMPAIGN_COMMUNICATION_HOME,
+  }
+  const denyRedirect = redirectTo ?? roleHome[user.role] ?? '/campanha'
 
   if (gate === 'staff' && !isStaffCampaignRole(user.role)) redirect(denyRedirect)
+  // C154 — the speech catalog vertical: communicator/coordinator/candidate,
+  // the same predicate the collection access uses.
+  if (gate === 'speechCatalog' && !canReadSpeechCatalog(user.role)) redirect(denyRedirect)
   if (gate === 'unrestricted' && !isUnrestrictedCampaignRole(user.role)) redirect(denyRedirect)
   if (gate === 'noLeader' && user.role === 'leader') redirect(denyRedirect)
   if (gate === 'writable' && !isStaffCampaignRole(user.role)) redirect(denyRedirect)

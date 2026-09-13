@@ -42,6 +42,10 @@ type OwnedCollection =
   | 'supporter'
   | 'calendarFeed'
   | 'googleCalendarSync'
+  // C154 — the speech acervo fixtures; segments go before the speech so the
+  // bulk cleanup never depends on the collection's cascade hook.
+  | 'speech'
+  | 'speechSegment'
 
 const deletionOrder: OwnedCollection[] = [
   'campaignInvite',
@@ -52,6 +56,8 @@ const deletionOrder: OwnedCollection[] = [
   'activity',
   'calendarFeed',
   'googleCalendarSync',
+  'speechSegment',
+  'speech',
   'leadership',
   'supporter',
   'organization',
@@ -419,6 +425,24 @@ export class CampaignE2EOwnership {
         pagination: false,
       })
       for (const feed of feeds.docs) this.own('calendarFeed', feed.id)
+    }
+    // C154 — speeches carry the run marker in `sourceKey`; their segments are
+    // discovered through the owned speeches (crashed-run safety net).
+    const speeches = await this.rootPayload.find({
+      collection: 'speech',
+      where: { sourceKey: { contains: this.runID } },
+      depth: 0,
+      pagination: false,
+    })
+    for (const speech of speeches.docs) this.own('speech', speech.id)
+    if (speeches.docs.length) {
+      const segments = await this.rootPayload.find({
+        collection: 'speechSegment',
+        where: { speech: { in: speeches.docs.map((speech) => speech.id) } },
+        depth: 0,
+        pagination: false,
+      })
+      for (const segment of segments.docs) this.own('speechSegment', segment.id)
     }
   }
 

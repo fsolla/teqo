@@ -186,6 +186,22 @@ export const Speech: CollectionConfig = {
       },
     },
     {
+      // C154 — normalized concatenation of the segment texts, so the acervo
+      // search paginates by SPEECH (the unit the UI shows) with the Payload
+      // access layer in the path. Kept in sync by `upsertSpeechBundle` (the
+      // only writer of segments); the GIN trigram index is hand-written.
+      name: 'searchText',
+      type: 'textarea',
+      label: 'Texto normalizado (busca)',
+      // Optional on purpose: a speech without ASR segments legitimately has no
+      // search text, and Payload's `required` rejects the empty string.
+      defaultValue: '',
+      admin: {
+        readOnly: true,
+        description: 'Concatenação normalizada dos segmentos (sem acentos); mantida pelo import.',
+      },
+    },
+    {
       name: 'eventId',
       type: 'number',
       label: 'Evento',

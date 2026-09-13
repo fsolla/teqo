@@ -1,0 +1,249 @@
+import 'server-only'
+
+import type { Payload } from 'payload'
+
+import type { CampaignUser, Speech } from '@/payload-types'
+import { createEntityNotFoundError } from '@/utilities/entityNotFound'
+import { loadMunicipalityLabelsByIds } from '@/utilities/loadNamesByIds'
+import { buildSpeechListWhere } from '@/utilities/speech/speechListFilters'
+import {
+  resolveSpeechListUrl,
+  speechPageSize,
+  type SpeechFilterOptions,
+  type SpeechListState,
+} from '@/utilities/speech/speechListUrl'
+import {
+  municipalityIdsOfSpeech,
+  toSpeechDetailViewModel,
+  toSpeechListItemViewModel,
+  type SpeechDetailRecord,
+  type SpeechDetailViewModel,
+  type SpeechListItemViewModel,
+  type SpeechSegmentRecord,
+} from '@/utilities/speech/speechViewModels'
+
+type SpeechListSearchParams = Record<string, string | string[] | undefined>
+
+export const SpeechNotFoundError = createEntityNotFoundError('Speech', 'Fala não encontrada.')
+
+const speechListSelect = {
+  speechAt: true,
+  type: true,
+  durationSeconds: true,
+  summary: true,
+  officialTranscript: true,
+  keywords: true,
+  topics: true,
+  scopes: true,
+  mentionedMunicipalities: true,
+  presidingOfficer: true,
+  vodDownloadUrl: true,
+  officialTextUrl: true,
+  youtubeUrl: true,
+} as const
+
+const speechDetailSelect = {
+  ...speechListSelect,
+  phase: true,
+  vodPlaybackUrl: true,
+} as const
+
+const segmentSelect = {
+  speech: true,
+  startSeconds: true,
+  endSeconds: true,
+  text: true,
+} as const
+
+const municipalityNameMap = (
+  labels: Awaited<ReturnType<typeof loadMunicipalityLabelsByIds>>,
+): Map<number, string> => new Map([...labels.entries()].map(([id, entry]) => [id, entry.name]))
+
+/**
+ * Options the URL filters offer: the years and phases actually present in the
+ * catalog and the municipalities cited by at least one speech (labels resolved
+ * through the justified `loadMunicipalityLabelsByIds` bypass — the ids come
+ * from speeches the actor was already authorized to read).
+ */
+const loadSpeechFilterOptions = async (
+  payload: Payload,
+  user: CampaignUser,
+): Promise<SpeechFilterOptions> => {
+  const result = await payload.find({
+    collection: 'speech',
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { year: true, phase: true, mentionedMunicipalities: true },
+    user,
+    overrideAccess: false,
+  })
+
+  const years = new Set<number>()
+  const phases = new Set<string>()
+  const municipalityIds = new Set<number>()
+  for (const speech of result.docs) {
+    if (typeof speech.year === 'number') years.add(speech.year)
+    if (speech.phase) phases.add(speech.phase)
+    for (const id of municipalityIdsOfSpeech(speech)) municipalityIds.add(id)
+  }
+
+  const labels = await loadMunicipalityLabelsByIds(payload, [...municipalityIds])
+  const municipalities = [...municipalityIds]
+    .flatMap((id) => {
+      const entry = labels.get(id)
+      return entry ? [{ value: String(id), label: entry.name }] : []
+    })
+    .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'))
+
+  return {
+    years: [...years].sort((left, right) => right - left),
+    phases: [...phases].sort((left, right) => left.localeCompare(right, 'pt-BR')),
+    municipalities,
+  }
+}
+
+const loadSegmentsForSpeeches = async (
+  payload: Payload,
+  user: CampaignUser,
+  speechIds: readonly number[],
+): Promise<Map<number, SpeechSegmentRecord[]>> => {
+  const bySpeech = new Map<number, SpeechSegmentRecord[]>()
+  if (speechIds.length === 0) return bySpeech
+
+  const result = await payload.find({
+    collection: 'speechSegment',
+    where: { speech: { in: [...speechIds] } },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    sort: 'order',
+    select: segmentSelect,
+    user,
+    overrideAccess: false,
+  })
+
+  for (const segment of result.docs) {
+    const speechId = typeof segment.speech === 'number' ? segment.speech : segment.speech.id
+    const list = bySpeech.get(speechId) ?? []
+    list.push({
+      startSeconds: segment.startSeconds,
+      endSeconds: segment.endSeconds,
+      text: segment.text,
+    })
+    bySpeech.set(speechId, list)
+  }
+  return bySpeech
+}
+
+export type SpeechAcervoPageData = {
+  rows: SpeechListItemViewModel[]
+  state: SpeechListState
+  redirectHref?: string
+  totalDocs: number
+  totalPages: number
+  filterOptions: SpeechFilterOptions
+}
+
+export const loadSpeechAcervoPageData = async (
+  payload: Payload,
+  user: CampaignUser,
+  searchParams: Promise<SpeechListSearchParams> | SpeechListSearchParams,
+): Promise<SpeechAcervoPageData> => {
+  const rawSearchParams = await searchParams
+  const canonicalUrl = resolveSpeechListUrl(rawSearchParams)
+
+  const result = await payload.find({
+    collection: 'speech',
+    depth: 0,
+    limit: speechPageSize,
+    page: canonicalUrl.state.page,
+    sort: '-speechAt',
+    where: buildSpeechListWhere(canonicalUrl.state),
+    select: speechListSelect,
+    user,
+    overrideAccess: false,
+  })
+
+  const resolvedUrl = resolveSpeechListUrl(rawSearchParams, result.totalPages)
+  const speeches = result.docs as Speech[]
+
+  const [segmentsBySpeech, filterOptions] = await Promise.all([
+    loadSegmentsForSpeeches(
+      payload,
+      user,
+      speeches.map((speech) => speech.id),
+    ),
+    loadSpeechFilterOptions(payload, user),
+  ])
+
+  const municipalityIds = new Set<number>()
+  for (const speech of speeches) {
+    for (const id of municipalityIdsOfSpeech(speech)) municipalityIds.add(id)
+  }
+  const municipalityLabels = municipalityNameMap(
+    await loadMunicipalityLabelsByIds(payload, [...municipalityIds]),
+  )
+
+  return {
+    rows: speeches.map((speech) =>
+      toSpeechListItemViewModel({
+        speech,
+        segments: segmentsBySpeech.get(speech.id) ?? [],
+        query: canonicalUrl.state.q,
+        municipalityLabels,
+      }),
+    ),
+    state: resolvedUrl.state,
+    redirectHref: resolvedUrl.redirectHref ?? canonicalUrl.redirectHref,
+    totalDocs: result.totalDocs,
+    totalPages: result.totalPages,
+    filterOptions,
+  }
+}
+
+export const loadSpeechDetailPageData = async (
+  payload: Payload,
+  user: CampaignUser,
+  speechId: number,
+  query?: string,
+): Promise<SpeechDetailViewModel> => {
+  const result = await payload.find({
+    collection: 'speech',
+    where: { id: { equals: speechId } },
+    depth: 0,
+    limit: 1,
+    pagination: false,
+    select: speechDetailSelect,
+    user,
+    overrideAccess: false,
+  })
+  const speech = result.docs[0]
+  if (!speech) throw new SpeechNotFoundError()
+
+  const [segments, municipalityLabels] = await Promise.all([
+    payload.find({
+      collection: 'speechSegment',
+      where: { speech: { equals: speechId } },
+      depth: 0,
+      limit: 0,
+      pagination: false,
+      sort: 'order',
+      select: segmentSelect,
+      user,
+      overrideAccess: false,
+    }),
+    loadMunicipalityLabelsByIds(payload, municipalityIdsOfSpeech(speech)).then(municipalityNameMap),
+  ])
+
+  return toSpeechDetailViewModel({
+    speech: speech as SpeechDetailRecord,
+    segments: segments.docs.map((segment) => ({
+      startSeconds: segment.startSeconds,
+      endSeconds: segment.endSeconds,
+      text: segment.text,
+    })),
+    query,
+    municipalityLabels,
+  })
+}
