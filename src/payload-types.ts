@@ -86,6 +86,8 @@ export interface Config {
     supporterImportBatch: SupporterImportBatch;
     municipalityUpdate: MunicipalityUpdate;
     activity: Activity;
+    speech: Speech;
+    speechSegment: SpeechSegment;
     calendarFeed: CalendarFeed;
     googleCalendarSync: GoogleCalendarSync;
     electionTally: ElectionTally;
@@ -127,6 +129,8 @@ export interface Config {
     supporterImportBatch: SupporterImportBatchSelect<false> | SupporterImportBatchSelect<true>;
     municipalityUpdate: MunicipalityUpdateSelect<false> | MunicipalityUpdateSelect<true>;
     activity: ActivitySelect<false> | ActivitySelect<true>;
+    speech: SpeechSelect<false> | SpeechSelect<true>;
+    speechSegment: SpeechSegmentSelect<false> | SpeechSegmentSelect<true>;
     calendarFeed: CalendarFeedSelect<false> | CalendarFeedSelect<true>;
     googleCalendarSync: GoogleCalendarSyncSelect<false> | GoogleCalendarSyncSelect<true>;
     electionTally: ElectionTallySelect<false> | ElectionTallySelect<true>;
@@ -272,7 +276,7 @@ export interface CampaignUser {
   contact?: (number | null) | Contact;
   name: string;
   avatar?: (number | null) | Media;
-  role: 'coordinator' | 'advisor' | 'candidate' | 'leader';
+  role: 'coordinator' | 'advisor' | 'candidate' | 'communicator' | 'leader';
   /**
    * O que o assessor enxerga no /campanha.
    */
@@ -910,6 +914,105 @@ export interface MunicipalityUpdate {
   createdAt: string;
 }
 /**
+ * Acervo de falas do deputado na Câmara. Dados e vídeos da Câmara dos Deputados (CC BY 4.0).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "speech".
+ */
+export interface Speech {
+  id: number;
+  /**
+   * Identidade da fala na API da Câmara (data/hora + tipo + fase).
+   */
+  sourceKey: string;
+  /**
+   * Horário local de Brasília, como publicado pela Câmara.
+   */
+  speechAt: string;
+  year?: number | null;
+  legislature?: ('54' | '55' | '56' | '57') | null;
+  type?: string | null;
+  phase?: string | null;
+  durationSeconds?: number | null;
+  summary?: string | null;
+  officialTranscript?: string | null;
+  officialTextUrl?: string | null;
+  /**
+   * Preservadas cruas; as facetas não as substituem.
+   */
+  keywords?: string[] | null;
+  eventId?: number | null;
+  eventType?: string | null;
+  eventStartAt?: string | null;
+  eventEndAt?: string | null;
+  youtubeUrl?: string | null;
+  /**
+   * Derivado das trocas de mesa da sessão; vazio quando não há registro.
+   */
+  presidingOfficer?: string | null;
+  audioId?: number | null;
+  excerptTMs?: number | null;
+  /**
+   * Último link conhecido; regerável pelo VOD.
+   */
+  vodPlaybackUrl?: string | null;
+  /**
+   * Último link conhecido; regerável pelo VOD.
+   */
+  vodDownloadUrl?: string | null;
+  topics?:
+    | (
+        | 'saude'
+        | 'educacao'
+        | 'cultura'
+        | 'esporte'
+        | 'seguranca-publica'
+        | 'meio-ambiente'
+        | 'economia-trabalho'
+        | 'direitos-humanos'
+        | 'infraestrutura'
+        | 'ciencia-tecnologia'
+        | 'politica-instituicoes'
+        | 'agricultura'
+        | 'habitacao-cidades'
+        | 'comunicacao-midia'
+        | 'igualdade-racial'
+        | 'mulheres-genero'
+        | 'juventude'
+        | 'pessoa-deficiencia'
+      )[]
+    | null;
+  scopes?: ('bahia' | 'brasil' | 'internacional')[] | null;
+  classifiedBy: 'gazetteer' | 'llm' | 'manual';
+  mentionedMunicipalities?: (number | Municipality)[] | null;
+  /**
+   * Menções textuais — não é cadastro de contatos.
+   */
+  mentionedPeople?: string[] | null;
+  mentionedPrograms?: string[] | null;
+  mentionedProjects?: string[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "speechSegment".
+ */
+export interface SpeechSegment {
+  id: number;
+  speech: number | Speech;
+  order: number;
+  startSeconds: number;
+  endSeconds: number;
+  text: string;
+  /**
+   * Derivado do texto (sem acentos, minúsculas) para a busca por palavra.
+   */
+  searchText: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "calendarFeed".
  */
@@ -1447,6 +1550,14 @@ export interface PayloadLockedDocument {
         value: number | Activity;
       } | null)
     | ({
+        relationTo: 'speech';
+        value: number | Speech;
+      } | null)
+    | ({
+        relationTo: 'speechSegment';
+        value: number | SpeechSegment;
+      } | null)
+    | ({
         relationTo: 'calendarFeed';
         value: number | CalendarFeed;
       } | null)
@@ -1951,6 +2062,56 @@ export interface ActivitySelect<T extends boolean = true> {
   resultRecordedAt?: T;
   lastMirroredChangeAt?: T;
   createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "speech_select".
+ */
+export interface SpeechSelect<T extends boolean = true> {
+  sourceKey?: T;
+  speechAt?: T;
+  year?: T;
+  legislature?: T;
+  type?: T;
+  phase?: T;
+  durationSeconds?: T;
+  summary?: T;
+  officialTranscript?: T;
+  officialTextUrl?: T;
+  keywords?: T;
+  eventId?: T;
+  eventType?: T;
+  eventStartAt?: T;
+  eventEndAt?: T;
+  youtubeUrl?: T;
+  presidingOfficer?: T;
+  audioId?: T;
+  excerptTMs?: T;
+  vodPlaybackUrl?: T;
+  vodDownloadUrl?: T;
+  topics?: T;
+  scopes?: T;
+  classifiedBy?: T;
+  mentionedMunicipalities?: T;
+  mentionedPeople?: T;
+  mentionedPrograms?: T;
+  mentionedProjects?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "speechSegment_select".
+ */
+export interface SpeechSegmentSelect<T extends boolean = true> {
+  speech?: T;
+  order?: T;
+  startSeconds?: T;
+  endSeconds?: T;
+  text?: T;
+  searchText?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2684,6 +2845,8 @@ export interface TaskCreateCollectionExport {
       | 'supporterImportBatch'
       | 'municipalityUpdate'
       | 'activity'
+      | 'speech'
+      | 'speechSegment'
       | 'calendarFeed'
       | 'googleCalendarSync'
       | 'electionTally'

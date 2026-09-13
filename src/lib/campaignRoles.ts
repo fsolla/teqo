@@ -16,3 +16,11 @@ export const isStaffCampaignRole = (role: CampaignRole): boolean =>
 /** Coordinator or candidate — unrestricted scope (all municipalities, decisions). */
 export const isUnrestrictedCampaignRole = (role: CampaignRole): boolean =>
   role === 'coordinator' || role === 'candidate'
+
+/**
+ * Speech catalog readers (C153): the communication assessor plus the
+ * unrestricted roles. Deliberately NOT part of `isStaffCampaignRole` — the
+ * communicator does not inherit any staff area, only the catalog vertical.
+ */
+export const canReadSpeechCatalog = (role: CampaignRole): boolean =>
+  role === 'communicator' || isUnrestrictedCampaignRole(role)

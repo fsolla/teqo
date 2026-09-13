@@ -10,6 +10,7 @@ export const campaignRoleLabels: Record<CampaignUser['role'], string> = {
   coordinator: 'Coordenador Geral',
   advisor: 'Assessor',
   candidate: 'Candidato',
+  communicator: 'Assessor de Comunicação',
   leader: 'Liderança',
 }
 

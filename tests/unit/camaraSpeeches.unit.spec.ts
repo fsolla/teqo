@@ -5,13 +5,19 @@ import { describe, expect, it } from 'vitest'
 import {
   buildVodUrl,
   clockToSeconds,
+  legislatureForDate,
   matchExcerpt,
   normalizeSpeakerName,
   normalizeTranscription,
+  parseDurationToSeconds,
   parseEventExcerpts,
+  parseOfficialKeywords,
+  parsePresidingOfficerTransitions,
   parseVodStatus,
+  resolvePresidingOfficer,
   selectSpeechEvents,
   speechDate,
+  speechSourceKey,
   speechTimeOfDaySeconds,
 } from '../../scripts/lib/camaraSpeeches.mjs'
 
@@ -248,6 +254,146 @@ describe('matchExcerpt', () => {
       ...excerpts,
     ]
     expect(matchExcerpt(withMissing, '2016-03-10T09:28', 'Jorge Solla')?.audioId).toBe(1)
+  })
+})
+
+describe('speechSourceKey', () => {
+  it('joins datetime, type and phase into the stable identity', () => {
+    expect(
+      speechSourceKey({
+        dataHoraInicio: '2023-02-07T17:28',
+        tipoDiscurso: 'BREVES COMUNICAÇÕES',
+        faseEvento: { titulo: 'Breves Comunicações' },
+      }),
+    ).toBe('2023-02-07T17:28|BREVES COMUNICAÇÕES|Breves Comunicações')
+  })
+
+  it('degrades missing parts to empty strings', () => {
+    expect(speechSourceKey({})).toBe('||')
+    expect(speechSourceKey(null)).toBe('||')
+  })
+})
+
+describe('parseOfficialKeywords', () => {
+  it('splits the raw newline string and keeps each keyword', () => {
+    expect(parseOfficialKeywords('Saúde, SUS\r\nEducação\r\n\r\nEscola')).toEqual([
+      'Saúde, SUS',
+      'Educação',
+      'Escola',
+    ])
+    expect(parseOfficialKeywords(null)).toEqual([])
+  })
+})
+
+describe('legislatureForDate', () => {
+  it('maps dates to the legislature ranges at the boundaries', () => {
+    expect(legislatureForDate('2023-02-01')).toBe('57')
+    expect(legislatureForDate('2023-01-31')).toBe('56')
+    expect(legislatureForDate('2015-02-01')).toBe('55')
+    expect(legislatureForDate('2015-01-31')).toBe('54')
+    expect(legislatureForDate('2011-01-01')).toBe('54')
+  })
+
+  it('returns null outside the supported range or for invalid input', () => {
+    expect(legislatureForDate('2010-12-31')).toBeNull()
+    expect(legislatureForDate('')).toBeNull()
+    expect(legislatureForDate('2023-2-1')).toBeNull()
+  })
+})
+
+describe('parseDurationToSeconds', () => {
+  it('parses the excerpt card and VOD spellings', () => {
+    expect(parseDurationToSeconds('0h04\'03"')).toBe(243)
+    expect(parseDurationToSeconds('1h00\'00"')).toBe(3600)
+    expect(parseDurationToSeconds('0:04:07')).toBe(247)
+    expect(parseDurationToSeconds('4:07')).toBe(247)
+  })
+
+  it('rejects empty, malformed and out-of-range values', () => {
+    expect(parseDurationToSeconds('')).toBeNull()
+    expect(parseDurationToSeconds(null)).toBeNull()
+    expect(parseDurationToSeconds('abc')).toBeNull()
+    expect(parseDurationToSeconds('1::30')).toBeNull()
+    expect(parseDurationToSeconds('1:99:99')).toBeNull()
+    expect(parseDurationToSeconds('0h99\'00"')).toBeNull()
+    expect(parseDurationToSeconds('1:99')).toBeNull()
+  })
+})
+
+describe('parsePresidingOfficerTransitions', () => {
+  const transitionHtml = (heading: string, times: number[]) => `
+<h4 class="g-l-assista__categoria-outros-videos">${heading}</h4>
+<ul class="g-l-assista__lista-outros-videos">
+${times
+  .map(
+    (tMs) =>
+      `<li><a id="link-trecho-video" href="https://www.camara.leg.br/evento-legislativo/67091?a&#x3D;558641&amp;t&#x3D;${tMs}&trechosOrador=&crawl=no" class="chamada__link-trecho" titulo="X">y</a></li>`,
+  )
+  .join('\n')}
+</ul>`
+
+  it('reads the transition groups, using the newest clip of each as the change moment', () => {
+    const html = [
+      transitionHtml(
+        'Troca da mesa Presidente Bohn Gass por Participante Pompeo de Mattos',
+        [1675815220717, 1675814951403],
+      ),
+      transitionHtml(
+        'Troca da mesa Presidente Pompeo de Mattos por Participante Bohn Gass',
+        [1675814710153],
+      ),
+    ].join('\n')
+
+    expect(parsePresidingOfficerTransitions(html)).toEqual([
+      { from: 'Pompeo de Mattos', to: 'Bohn Gass', tMs: 1675814710153 },
+      { from: 'Bohn Gass', to: 'Pompeo de Mattos', tMs: 1675815220717 },
+    ])
+  })
+
+  it('returns [] when the page has no transitions or the markup changes', () => {
+    const html = excerptHtml(67091, {
+      audioId: 5,
+      tMs: 1000,
+      speaker: 'JORGE SOLLA',
+      party: 'DEPUTADO (PT-BA)',
+      startTime: '17:30',
+      duration: '0h01\'00"',
+    })
+    expect(parsePresidingOfficerTransitions(html)).toEqual([])
+    expect(parsePresidingOfficerTransitions('')).toEqual([])
+  })
+})
+
+describe('resolvePresidingOfficer', () => {
+  // Real transition groups of event 67091 (2023-02-07), newest-clip times.
+  const transitions = [
+    { from: 'Bohn Gass', to: 'Pompeo de Mattos', tMs: 1675815220717 },
+    { from: 'Gilberto Nascimento', to: 'Pompeo de Mattos', tMs: 1675800828283 },
+    { from: 'Pompeo de Mattos', to: 'Adriana Ventura', tMs: 1675804114707 },
+    { from: 'Adriana Ventura', to: 'Pompeo de Mattos', tMs: 1675804616513 },
+    { from: 'Pompeo de Mattos', to: 'Bohn Gass', tMs: 1675814710153 },
+  ]
+
+  it('returns the incoming officer of the latest transition before the moment', () => {
+    // Solla spoke at 17:28 BRT (20:28 UTC) — Gilberto→Pompeo at 17:13 BRT.
+    expect(resolvePresidingOfficer(transitions, Date.parse('2023-02-07T20:28:00Z'))).toBe(
+      'Pompeo de Mattos',
+    )
+    // After Bohn→Pompeo (21:13 BRT), Pompeo presided again.
+    expect(resolvePresidingOfficer(transitions, Date.parse('2023-02-08T00:16:00Z'))).toBe(
+      'Pompeo de Mattos',
+    )
+  })
+
+  it('returns the outgoing officer before the first transition', () => {
+    expect(resolvePresidingOfficer(transitions, Date.parse('2023-02-07T19:00:00Z'))).toBe(
+      'Gilberto Nascimento',
+    )
+  })
+
+  it('returns null without transitions or a usable moment', () => {
+    expect(resolvePresidingOfficer([], 1675801680000)).toBeNull()
+    expect(resolvePresidingOfficer(transitions, Number.NaN)).toBeNull()
   })
 })
 

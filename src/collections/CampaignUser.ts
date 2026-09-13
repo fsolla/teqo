@@ -484,6 +484,7 @@ export const CampaignUser: CollectionConfig = {
         { label: 'Coordenador Geral', value: 'coordinator' },
         { label: 'Assessor', value: 'advisor' },
         { label: 'Candidato', value: 'candidate' },
+        { label: 'Assessor de Comunicação', value: 'communicator' },
         { label: 'Liderança', value: 'leader' },
       ],
       access: {

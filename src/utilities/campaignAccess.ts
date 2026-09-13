@@ -168,3 +168,5 @@ export {
   canSetCalendarFeedSystemField,
   canUpdateCalendarFeed,
 } from '@/utilities/access/calendarFeeds'
+
+export { canReadSpeech, canUpdateSpeech } from '@/utilities/access/speeches'

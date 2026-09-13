@@ -1,7 +1,9 @@
 /**
- * Pure derivation for the C152 pilot (`scripts/pilot-camara-speeches.mjs`):
- * matching a Câmara speech to its legislative event and to the speaker's video
- * excerpt, plus normalizing the VOD status and the Deep Infra transcription.
+ * Pure derivation for the Câmara speech scripts — the C152 pilot
+ * (`scripts/pilot-camara-speeches.mjs`) and the C153 catalog import
+ * (`scripts/import-camara-speeches.mjs`): matching a Câmara speech to its
+ * legislative event and to the speaker's video excerpt, the presiding-officer
+ * transitions, plus normalizing the VOD status and the Deep Infra transcription.
  *
  * No I/O here — the CLI threads fetch/download/transcribe through these
  * decisions, so the fragile rules (HTML anchors, time-of-day matching, epoch
@@ -72,6 +74,83 @@ export const speechTimeOfDaySeconds = (iso) => clockToSeconds(String(iso ?? '').
 
 /** `YYYY-MM-DD` prefix of a naive datetime. */
 export const speechDate = (iso) => String(iso ?? '').slice(0, 10)
+
+/**
+ * Stable natural key of an open-data speech. The API has no id, so identity is
+ * the naive datetime plus the speech type and event phase — the record is
+ * updated in place across imports (C153 idempotency).
+ *
+ * @param {{ dataHoraInicio?: string, tipoDiscurso?: string, faseEvento?: { titulo?: string } } | null | undefined} speech
+ * @returns {string}
+ */
+export const speechSourceKey = (speech) =>
+  [
+    String(speech?.dataHoraInicio ?? '').trim(),
+    String(speech?.tipoDiscurso ?? '').trim(),
+    String(speech?.faseEvento?.titulo ?? '').trim(),
+  ].join('|')
+
+/**
+ * Official keywords come as a newline-separated string; keep each keyword raw.
+ *
+ * @param {unknown} raw
+ * @returns {string[]}
+ */
+export const parseOfficialKeywords = (raw) =>
+  String(raw ?? '')
+    .split(/[\r\n]+/)
+    .map((keyword) => keyword.trim())
+    .filter(Boolean)
+
+/**
+ * Legislature of a `YYYY-MM-DD` date per `LEGISLATURE_RANGES`, or null when it
+ * falls outside the supported range.
+ *
+ * @param {string} iso
+ * @returns {string | null}
+ */
+export const legislatureForDate = (iso) => {
+  const date = speechDate(iso)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null
+  for (const [legislature, [from, to]] of Object.entries(LEGISLATURE_RANGES)) {
+    if (date >= from && date <= to) return legislature
+  }
+  return null
+}
+
+/**
+ * Parses the Câmara duration spellings into seconds: `0h04'03"` (excerpt card)
+ * and `0:04:07` / `4:07` (VOD status). Null when unparseable.
+ *
+ * @param {unknown} value
+ * @returns {number | null}
+ */
+export const parseDurationToSeconds = (value) => {
+  const raw = String(value ?? '').trim()
+  if (raw === '') return null
+
+  const card = /^(\d+)h(\d{1,2})'(\d{1,2})"?$/.exec(raw)
+  if (card) {
+    const minutes = Number(card[2])
+    const seconds = Number(card[3])
+    if (minutes > 59 || seconds > 59) return null
+    return Number(card[1]) * 3600 + minutes * 60 + seconds
+  }
+
+  const parts = raw.split(':')
+  if (!parts.every((part) => /^\d{1,2}$/.test(part))) return null
+  if (parts.length === 3) {
+    const [hours, minutes, seconds] = parts.map(Number)
+    if (minutes > 59 || seconds > 59) return null
+    return hours * 3600 + minutes * 60 + seconds
+  }
+  if (parts.length === 2) {
+    const [minutes, seconds] = parts.map(Number)
+    if (seconds > 59) return null
+    return minutes * 60 + seconds
+  }
+  return null
+}
 
 const integerOrNull = (value) => {
   const n = Number(value)
@@ -198,6 +277,67 @@ export const matchExcerpt = (excerpts, speechIso, speaker) => {
     return start === null ? Number.POSITIVE_INFINITY : Math.abs(start - target)
   }
   return bySpeaker.reduce((best, current) => (delta(current) < delta(best) ? current : best))
+}
+
+/**
+ * Parses the "Troca da mesa" transition groups of an event page. Each heading
+ * `<h4 class="g-l-assista__categoria-outros-videos">Troca da mesa Presidente X
+ * por Participante Y</h4>` labels the excerpt cards that follow it; the newest
+ * card of the group (`t` epoch ms) marks the observed moment of the change.
+ * Returns transitions ascending by time; `[]` when the layout changed or the
+ * page recorded none.
+ *
+ * @param {string} html
+ * @returns {Array<{ from: string, to: string, tMs: number }>}
+ */
+export const parsePresidingOfficerTransitions = (html) => {
+  const page = String(html ?? '')
+  const headingPattern =
+    /<h4 class="g-l-assista__categoria-outros-videos">Troca da mesa Presidente (.+?) por Participante (.+?)<\/h4>/g
+  const transitions = []
+  let heading
+  while ((heading = headingPattern.exec(page)) !== null) {
+    const nextHeading = page.indexOf(
+      'g-l-assista__categoria-outros-videos',
+      headingPattern.lastIndex,
+    )
+    const group = page.slice(heading.index, nextHeading === -1 ? page.length : nextHeading)
+    const times = [...group.matchAll(/<a id="link-trecho-video" href="[^"]*?t&#x3D;(\d+)[^"]*"/g)]
+      .map((match) => Number(match[1]))
+      .filter((value) => Number.isInteger(value) && value > 0)
+    if (times.length === 0) continue
+    transitions.push({
+      from: heading[1].trim(),
+      to: heading[2].trim(),
+      tMs: Math.max(...times),
+    })
+  }
+  return transitions.sort((left, right) => left.tMs - right.tMs)
+}
+
+/**
+ * Who presided at `tMs` according to the transition groups: the incoming
+ * officer (`to`) of the latest transition at or before the moment; before the
+ * first transition, the outgoing officer (`from`) of the earliest one. Returns
+ * null when the page recorded no transitions (unknown, never invented).
+ *
+ * @param {ReturnType<typeof parsePresidingOfficerTransitions>} transitions
+ * @param {number} tMs
+ * @returns {string | null}
+ */
+export const resolvePresidingOfficer = (transitions, tMs) => {
+  const ordered = (Array.isArray(transitions) ? transitions : [])
+    .filter((transition) => Number.isFinite(transition?.tMs))
+    .sort((left, right) => left.tMs - right.tMs)
+  const target = Number(tMs)
+  if (ordered.length === 0 || !Number.isFinite(target)) return null
+
+  let current = ordered[0].from
+  for (const transition of ordered) {
+    if (transition.tMs > target) break
+    current = transition.to
+  }
+  return current
 }
 
 /**
