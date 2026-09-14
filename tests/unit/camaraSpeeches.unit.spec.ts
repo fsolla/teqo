@@ -737,6 +737,30 @@ describe('parseLegacyOfficialUrl', () => {
     expect(parsed?.page).toBeNull()
   })
 
+  it('normalizes the stale J and empty collection codes to D', () => {
+    const staleJ =
+      'https://imagem.camara.gov.br/dc_20b.asp?largura=&altura=&tipoForm=diarios' +
+      '&selCodColecaoCsv=J&Datain=10%2F10%2F2019&txPagina=147&txSuplemento=&enviar=Pesquisar'
+    const parsedJ = parseLegacyOfficialUrl(staleJ)
+    expect(parsedJ?.publication).toEqual({ date: '2019-10-10', collection: 'D', supplement: null })
+    expect(parsedJ?.lookupUrl).toContain('selCodColecaoCsv=D')
+    expect(parsedJ?.lookupUrl).not.toContain('selCodColecaoCsv=J')
+
+    const parsedEmpty = parseLegacyOfficialUrl(
+      staleJ.replace('selCodColecaoCsv=J', 'selCodColecaoCsv='),
+    )
+    expect(parsedEmpty?.publication.collection).toBe('D')
+    expect(parsedEmpty?.lookupUrl).toContain('selCodColecaoCsv=D')
+  })
+
+  it('keeps a collection that is not a known stale alias', () => {
+    const parsed = parseLegacyOfficialUrl(
+      legacyGovUrl.replace('selCodColecaoCsv=D', 'selCodColecaoCsv=S'),
+    )
+    expect(parsed?.publication.collection).toBe('S')
+    expect(parsed?.lookupUrl).toContain('selCodColecaoCsv=S')
+  })
+
   it('returns null for non-legacy or dateless URLs', () => {
     expect(parseLegacyOfficialUrl(directPdfUrl)).toBeNull()
     expect(parseLegacyOfficialUrl('https://imagem.camara.leg.br/dc_20b.asp?Datain=xx')).toBeNull()

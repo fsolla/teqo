@@ -499,6 +499,67 @@ DELETE FROM "speech" WHERE "legislature" = '55';
 Para desfazer o acervo inteiro: `DELETE FROM "speech_segment"; DELETE FROM "speech";`
 (a cobertura `--coverage` volta a zero). Reexecutar `--all` reconstrói.
 
+## C160 — reparo do link oficial do acervo (PDF direto do Diário)
+
+Operação de dados do acervo de falas (C153/C154/C155): troca o
+`officialTextUrl` legado (`dc_20b.asp`/`dc_20.asp`/`montaPdf.asp`, que pendura
+no browser) pelo PDF direto do Diário
+(`https://imagem.camara.leg.br/Imagem/d/pdf/<arquivo>#page=<página>`). É
+script-only (nenhuma migration): resolve uma vez por publicação
+(`<out>/diario/`), é idempotente e reporta cobertura (falas/datas atualizadas,
+falhas e legado restante).
+
+**Pré-requisitos:** o SHA do branch/commit com o C160 (a passada original rodou
+de `~/teqo-backfill` no SHA `766e4ae9`, 2026-09-14); `~/stack/.env` +
+`~/stack/teqo-1313.env`; `~/teqo-backfill` com `pnpm install` no SHA. O
+`git fetch` do homeserver alcança o GitHub pelo bundle/com o remote disponível
+(na passada original o clone apontava para repo local e usou-se `git fetch
+~/c160.bundle <branch>`).
+
+```bash
+ssh homeserver
+source ~/.nvm/nvm.sh
+cd ~/teqo-backfill && git fetch origin && git checkout <SHA> && pnpm install
+set -a; source ~/stack/.env; set +a
+set -a; source ~/stack/teqo-1313.env; set +a
+export DATABASE_URL="${DATABASE_URL/@postgres:5432/@127.0.0.1:5433}"
+export CAMARA_IMPORT_CONFIRM=1                 # guard C160: escrita em produção
+
+# dry-run (read-only; aquece o cache por publicação em <out>/diario):
+pnpm camara:import --repair-links --dry-run --out /srv/hdd/backups/teqo-camara
+# escrita (idempotente; 2ª passada = 0 atualizações):
+pnpm camara:import --repair-links --out /srv/hdd/backups/teqo-camara
+# validação (0 legadas restantes):
+pnpm camara:import --repair-links --dry-run --out /srv/hdd/backups/teqo-camara
+```
+
+O guard `CAMARA_IMPORT_CONFIRM=1` é exigido sempre que a escrita não é
+provadamente local (`NODE_ENV=production`, host remoto ou `ALLOW_REMOTE_DB`);
+`--dry-run` é read-only e não exige a flag. A escrita é confinada a
+`speech.officialTextUrl`; VOD, transcrições e segmentos não são tocados.
+
+**Comportamento medido da Câmara (2026-09-14):** o legado `.gov.br` responde
+302 para `.leg.br` (hop lento, 25–135s) e o `.leg.br` responde 302 para
+`montaPdf.asp?narquivo=…&npagina=…` (~5s); o PDF direto responde 200/206
+`application/pdf` em <1s. O resolver reescreve `.gov.br`→`.leg.br` no lookup,
+segue o redirect e parseia o `montaPdf`; a resolução é cacheada uma vez por
+publicação (`diario/<data>-<coleção>[-s<suplemento>].json`) e cada PDF é
+provado com GET Range antes de gravar. Falha de resolução deixa a fala
+intocada, o run sai 1 e a próxima passada é idempotente.
+
+**Resultado registrado (2026-09-14):** 965 falas legadas em 510 publicações
+resolvidas; 0 legadas restantes na validação; 32 falas sem link (fallback
+YouTube/oculto). Relatórios em
+`/srv/hdd/backups/teqo-camara/reports/repair-links-*.json` e changelog
+`docs/changelog/2026-09-14-c160.md`.
+
+### Rollback
+
+Não há migração; o reparo só reescreve `speech.officialTextUrl` e o valor
+anterior de cada fala está em `updates[].previousUrl` no JSON do run. O import
+(`pnpm camara:import --date <dia>`) reconstrói o link a partir da API (a fonte
+é a URL legada devolvida pela Câmara); reexecutar o reparo é idempotente.
+
 ## Referências
 
 - `scripts/deploy-homeserver.sh` — o script (fonte da verdade do fluxo; parametrizado por `TEQO_ENV`)

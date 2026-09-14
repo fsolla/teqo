@@ -506,6 +506,22 @@ const queryValue = (url, ...names) => {
   return null
 }
 
+/**
+ * The open-data API still emits stale `selCodColecaoCsv` codes for speeches
+ * whose Diário is the Câmara collection: `J` and empty return "Documento não
+ * encontrado" (measured 2026-09-14) while the same date/page resolves under the
+ * current `D` code the Câmara search itself generates. Any other code (e.g.
+ * `DCN`) is kept as-is.
+ */
+const LEGACY_COLLECTION_ALIASES = { '': 'D', J: 'D' }
+
+const normalizeLegacyCollection = (raw) => {
+  const value = String(raw ?? '')
+    .trim()
+    .toUpperCase()
+  return LEGACY_COLLECTION_ALIASES[value] ?? value
+}
+
 const positiveIntegerOrNull = (value) => {
   const number = Number(value)
   return Number.isInteger(number) && number > 0 ? number : null
@@ -565,13 +581,20 @@ export const parseLegacyOfficialUrl = (raw) => {
   }
   const date = parseDiarioDate(queryValue(url, 'Datain'))
   if (date === null) return null
+  const rawCollection = queryValue(url, 'selCodColecaoCsv', 'selCodColecao')
+  const collection = normalizeLegacyCollection(rawCollection)
   const lookupUrl = new URL(url)
   if (lookupUrl.hostname === 'imagem.camara.gov.br') lookupUrl.hostname = 'imagem.camara.leg.br'
+  if (collection !== rawCollection) {
+    lookupUrl.searchParams.delete('selCodColecaoCsv')
+    lookupUrl.searchParams.delete('selCodColecao')
+    lookupUrl.searchParams.set('selCodColecaoCsv', collection)
+  }
   return {
     lookupUrl: lookupUrl.toString(),
     publication: {
       date,
-      collection: queryValue(url, 'selCodColecaoCsv', 'selCodColecao'),
+      collection,
       supplement: queryValue(url, 'txSuplemento'),
     },
     page: positiveIntegerOrNull(queryValue(url, 'txPagina')),
