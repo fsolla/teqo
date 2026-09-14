@@ -57,3 +57,14 @@ Viabilidade da fonte do acervo de falas (Issue #954): 2–3 discursos de legisla
 | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
 | [`piloto-fonte-videos-camara.md`](piloto-fonte-videos-camara.md)                    | Respostas às 4 incógnitas da fonte (permanência do link, trechos em 55ª/56ª, segmentos Deep Infra, casamento antigo), custos e fallbacks | concluído 2026-09-12 |
 | [`piloto-fonte-videos-camara-impl.md`](../plans/piloto-fonte-videos-camara-impl.md) | Plano de implementação do piloto (script + lib pura + unit tests)                                                                        | executado            |
+
+## Relatório — sobreposição Solla × Ceuci em Salvador (C157, 2026-09-14)
+
+Comparação da votação de 2022 de Jorge Solla (federal, nº 1313) e Ceuci Nunes (estadual, nº 13192) nas 19 zonas eleitorais de Salvador e nos bairros: mapas por ZE e por bairro, tabelas de sobreposição e plano de campanha para acionar a rede e a memória de Ceuci (apoiadora do mandato, sem candidatura em 2026). Dados públicos TSE 2022; o limite "não existe voto por bairro" está documentado no próprio relatório.
+
+| Artefato                                                                                                             | O quê                                                                                        | Status              |
+| -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------- |
+| [`analise-sobreposicao-solla-ceuci-salvador-2022.pdf`](analise-sobreposicao-solla-ceuci-salvador-2022.pdf)           | Relatório final em PDF (15 páginas) — mapas, tabelas, leitura da ciência política e plano    | entregue 2026-09-14 |
+| [`analise-sobreposicao-solla-ceuci-salvador-2022.md`](analise-sobreposicao-solla-ceuci-salvador-2022.md)             | Companion em Markdown com os números e a proveniência (os mapas vivem no PDF)                | entregue 2026-09-14 |
+| [`solla-ceuci-salvador-2022-dados.json`](solla-ceuci-salvador-2022-dados.json)                                       | Entrada do gerador: votos e tallies por ZE, com proveniência e conferências cruzadas         | congelado           |
+| [`../plans/relatorio-sobreposicao-solla-ceuci-salvador.md`](../plans/relatorio-sobreposicao-solla-ceuci-salvador.md) | Plano de intenção (+ [`impl`](../plans/relatorio-sobreposicao-solla-ceuci-salvador-impl.md)) | executado           |
