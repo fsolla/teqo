@@ -1,7 +1,7 @@
 /**
- * One-off report generator (C157): Solla × Ceuci in Salvador, 2022 TSE.
+ * Report generator (C157, granular layer C161): Solla × Ceuci in Salvador, 2022 TSE.
  *
- * Produces, from the committed input JSON and the committed geometries:
+ * Produces, from the committed input JSONs and the committed geometries:
  *   - docs/research/analise-sobreposicao-solla-ceuci-salvador-2022.md
  *   - docs/research/analise-sobreposicao-solla-ceuci-salvador-2022.pdf
  *
@@ -10,16 +10,17 @@
  * CSS/HTML print over a server-side PDF library (docs/plans/dossie-municipio.md).
  * Chromium comes from the already-installed @playwright/test — no new dependency.
  *
- * Data: docs/research/solla-ceuci-salvador-2022-dados.json (public TSE 2022,
- * provenance inside). The script re-checks Solla zone by zone against the
- * committed federal artifact before rendering, so the report can never drift
- * from the app's own baseline.
+ * Data:
+ *   - docs/research/solla-ceuci-salvador-2022-dados.json (zone layer, C157)
+ *   - docs/research/solla-ceuci-salvador-2022-bairros-dados.json (bairro layer,
+ *     built from the TSE section files by scripts/build-solla-ceuci-salvador-bairros.mjs)
+ * The script re-checks Solla zone by zone against the committed federal artifact
+ * before rendering, so the report can never drift from the app's own baseline.
  *
  * Geometry: Salvador zones from src/lib/geometries/bahia-municipality-zones.topo.json
  * (committed); Salvador neighborhoods from the IBGE Censo 2022 shapefile,
- * downloaded once to the gitignored data/geometries cache (the same source the
- * zone build uses). Each neighborhood is painted with the numbers of the zone
- * that contains its centroid — the votes themselves exist only per zone.
+ * downloaded once to the gitignored data/geometries cache. Each IBGE polygon is
+ * painted with the votes of the polling places it contains — the bairro layer.
  *
  * Usage (no pnpm alias on purpose: a package.json change would force the full
  * CI suite for a one-off report):
@@ -37,16 +38,15 @@ import { feature } from 'topojson-client'
 
 import { dieWithLabel, ensureCachedDownload } from './lib/cli.mjs'
 import {
+  buildBairroMetrics,
+  buildBairroSummary,
   buildReportSummary,
   buildZoneMetrics,
   ZONE_CLASSES,
 } from './lib/sollaCeuciSalvadorMetrics.mjs'
 
 const { discreteChoroplethFill, NO_DATA_FILL } = await import('../src/lib/choroplethColorScale.ts')
-const { featureCentroid, featureContainsPoint, haversineKm } =
-  await import('../src/lib/municipalityProximity.ts')
-const { municipalityZoneNeighborhoods } =
-  await import('../src/lib/municipalityZoneNeighborhoods.ts')
+const { featureCentroid } = await import('../src/lib/municipalityProximity.ts')
 const { downloadToBuffer } = await import('../src/lib/electionResultsZip.ts')
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -54,6 +54,7 @@ const LABEL = 'build-solla-ceuci-salvador-report'
 const die = dieWithLabel(LABEL)
 
 const DATA_PATH = join(ROOT, 'docs/research/solla-ceuci-salvador-2022-dados.json')
+const BAIRRO_DATA_PATH = join(ROOT, 'docs/research/solla-ceuci-salvador-2022-bairros-dados.json')
 const ARTIFACT_PATH = join(ROOT, 'src/lib/electionAggregates/bahia-federal-baseline.json')
 const ZONE_TOPOLOGY_PATH = join(ROOT, 'src/lib/geometries/bahia-municipality-zones.topo.json')
 const REPORT_BASE = 'docs/research/analise-sobreposicao-solla-ceuci-salvador-2022'
@@ -69,8 +70,14 @@ const int = new Intl.NumberFormat('pt-BR')
 const nf = (value) => int.format(Math.round(value))
 const dec = (value, digits = 2) => value.toFixed(digits).replace('.', ',')
 const pct = (value, digits = 1) => `${dec(value * 100, digits)}%`
-const list = (values) => values.map((value) => `ZE ${value}`).join(', ')
-const zoneList = (zones) => zones.map((zone) => zone.zoneNumber)
+const normalizeBairroName = (value) =>
+  String(value)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[.,/()-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 
 const htmlEscape = (value) =>
   String(value)
@@ -105,9 +112,39 @@ const summary = buildReportSummary({
 })
 const metricsByZone = new Map(metrics.map((zone) => [zone.zoneNumber, zone]))
 
-const neighborhoodsByZone = new Map(
-  municipalityZoneNeighborhoods.map((record) => [record.zoneNumber, record.neighborhoods]),
-)
+const bairroData = JSON.parse(await readFile(BAIRRO_DATA_PATH, 'utf8'))
+const bairroMetrics = buildBairroMetrics({ bairros: bairroData.bairros, totals: bairroData.totals })
+const bairroSummary = buildBairroSummary({ metrics: bairroMetrics })
+const bairroMetricsByName = new Map(bairroMetrics.map((bairro) => [bairro.name, bairro]))
+
+if (bairroData.totals.sollaVotes !== data.salvadorTotals.sollaVotes) {
+  die(
+    `Bairro layer Solla drift: ${bairroData.totals.sollaVotes} vs zone layer ${data.salvadorTotals.sollaVotes}.`,
+  )
+}
+if (bairroData.totals.ceuciVotes !== data.salvadorTotals.ceuciVotes) {
+  die(
+    `Bairro layer Ceuci drift: ${bairroData.totals.ceuciVotes} vs zone layer ${data.salvadorTotals.ceuciVotes}.`,
+  )
+}
+
+/** Bairros sorted by combined votes, capped — the one ordering the report uses. */
+const topByCombined = (list, count) =>
+  [...list].sort((left, right) => right.combinedVotes - left.combinedVotes).slice(0, count)
+
+const bairroNumbers = (bairro) =>
+  `(Solla ${nf(bairro.sollaVotes)} · Ceuci ${nf(bairro.ceuciVotes)})`
+
+const bairroNames = (list) => list.map((bairro) => bairro.name).join(' · ')
+
+const bairroLines = (list, count) =>
+  list
+    .slice(0, count)
+    .map(
+      (bairro) =>
+        `${bairro.name} (Solla ${nf(bairro.sollaVotes)} · Ceuci ${nf(bairro.ceuciVotes)})`,
+    )
+    .join(' · ')
 
 // ---------------------------------------------------------------------------
 // Geometry
@@ -129,39 +166,8 @@ const bairros = bairroCollections
   .flatMap((collection) => collection.features)
   .filter((item) => String(item.properties?.CD_MUN) === data.city.ibgeCode)
 if (bairros.length === 0) die('No Salvador neighborhoods in the IBGE mesh.')
-
-const zoneBySlug = new Map(zoneFeatures.map((zone) => [zone.properties.municipalitySlug, zone]))
-
-let nearestFallbacks = 0
-for (const bairro of bairros) {
-  const centroid = featureCentroid(bairro)
-  const containing = zoneFeatures.find((zone) => featureContainsPoint(zone, centroid))
-  if (containing) {
-    bairro.zoneSlug = containing.properties.municipalitySlug
-    continue
-  }
-
-  nearestFallbacks += 1
-  const nearest = [...zoneFeatures]
-    .map((zone) => ({
-      slug: zone.properties.municipalitySlug,
-      distanceKm: haversineKm(centroid, featureCentroid(zone)),
-    }))
-    .sort((left, right) => left.distanceKm - right.distanceKm)[0]
-  bairro.zoneSlug = nearest.slug
-  console.log(
-    `[${LABEL}] "${bairro.properties?.NM_BAIRRO}" has no zone at its centroid — ` +
-      `nearest ${nearest.slug} (${nearest.distanceKm.toFixed(1)} km).`,
-  )
-}
-
-const zoneNumberBySlug = new Map(
-  [...zoneBySlug.keys()].map((slug) => [slug, Number(slug.replace('salvador-ze-', ''))]),
-)
-for (const bairro of bairros) {
-  const zoneNumber = zoneNumberBySlug.get(bairro.zoneSlug)
-  if (!Number.isFinite(zoneNumber)) die(`Bad zone slug ${bairro.zoneSlug}.`)
-  bairro.zoneNumber = zoneNumber
+if (bairros.length !== bairroData.polygonsWithoutVotes.length + bairroData.bairros.length) {
+  die('IBGE mesh size does not match the bairro layer (polygons with and without votes).')
 }
 
 // ---------------------------------------------------------------------------
@@ -264,38 +270,6 @@ const classRanges = (values, classCount = 5) => {
   return ranges
 }
 
-const renderZoneChoropleth = ({ values, title, caption, legendTitle }) => {
-  const entries = [...values.values()]
-  const classes = quantileClasses(entries)
-  const ranges = classRanges(entries)
-  const fills = zoneFeatures
-    .map((zone) => {
-      const zoneNumber = Number(zone.properties.municipalitySlug.replace('salvador-ze-', ''))
-      const value = values.get(zoneNumber) ?? 0
-      const classIndex = classes.get(value) ?? 0
-      const fill = value > 0 ? discreteChoroplethFill(classIndex, 5) : NO_DATA_FILL
-      return `<path d="${pathOf(zone.geometry)}" fill="${fill}" stroke="#52525b" stroke-width="1.1"/>`
-    })
-    .join('')
-
-  const legend = ranges
-    .map((range, index) =>
-      legendSwatch(discreteChoroplethFill(index, 5), `${nf(range.min)}–${nf(range.max)}`),
-    )
-    .join('')
-
-  return `
-    <figure class="map">
-      <figcaption><strong>${htmlEscape(title)}</strong><span>${htmlEscape(caption)}</span></figcaption>
-      <svg viewBox="0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}" role="img" aria-label="${htmlEscape(title)}">
-        ${bairroOutlineSvg('rgba(255,255,255,0.5)', 0.45)}
-        ${fills}
-        ${zoneLabelSvg()}
-      </svg>
-      <div class="legend"><span class="legend-title">${htmlEscape(legendTitle)}</span>${legend}</div>
-    </figure>`
-}
-
 const renderZoneClassMap = () => {
   const fills = zoneFeatures
     .map((zoneFeature) => {
@@ -325,12 +299,51 @@ const renderZoneClassMap = () => {
     </figure>`
 }
 
+const renderBairroChoropleth = ({ valueOf, title, caption, legendTitle }) => {
+  const entries = bairroMetrics.map(valueOf).filter((value) => value > 0)
+  const classes = quantileClasses(entries)
+  const ranges = classRanges(entries)
+  const fills = bairros
+    .map((item) => {
+      const metric = bairroMetricsByName.get(item.properties?.NM_BAIRRO)
+      const value = metric ? valueOf(metric) : 0
+      const classIndex = classes.get(value) ?? 0
+      const fill = value > 0 ? discreteChoroplethFill(classIndex, 5) : NO_DATA_FILL
+      return `<path d="${pathOf(item.geometry)}" fill="${fill}" stroke="#ffffff" stroke-width="0.4"/>`
+    })
+    .join('')
+
+  const zoneBorders = zoneFeatures
+    .map(
+      (zone) =>
+        `<path d="${pathOf(zone.geometry)}" fill="none" stroke="#3f3f46" stroke-width="1.2"/>`,
+    )
+    .join('')
+
+  const legend = ranges
+    .map((range, index) =>
+      legendSwatch(discreteChoroplethFill(index, 5), `${nf(range.min)}–${nf(range.max)}`),
+    )
+    .join('')
+
+  return `
+    <figure class="map">
+      <figcaption><strong>${htmlEscape(title)}</strong><span>${htmlEscape(caption)}</span></figcaption>
+      <svg viewBox="0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}" role="img" aria-label="${htmlEscape(title)}">
+        ${fills}
+        ${zoneBorders}
+        ${zoneLabelSvg()}
+      </svg>
+      <div class="legend"><span class="legend-title">${htmlEscape(legendTitle)}</span>${legend}</div>
+    </figure>`
+}
+
 const renderBairroClassMap = () => {
   const fills = bairros
-    .map((bairro) => {
-      const zone = metricsByZone.get(bairro.zoneNumber)
-      const fill = zone?.zoneClass.color ?? NO_DATA_FILL
-      return `<path d="${pathOf(bairro.geometry)}" fill="${fill}" stroke="#ffffff" stroke-width="0.4"/>`
+    .map((item) => {
+      const metric = bairroMetricsByName.get(item.properties?.NM_BAIRRO)
+      const fill = metric?.bairroClass.color ?? NO_DATA_FILL
+      return `<path d="${pathOf(item.geometry)}" fill="${fill}" stroke="#ffffff" stroke-width="0.4"/>`
     })
     .join('')
 
@@ -342,13 +355,18 @@ const renderBairroClassMap = () => {
     .join('')
 
   const legend = Object.values(ZONE_CLASSES)
-    .map((zoneClass) => legendSwatch(zoneClass.color, zoneClass.label))
+    .map((bairroClass) => {
+      const count = bairroMetrics.filter(
+        (bairro) => bairro.bairroClass.key === bairroClass.key,
+      ).length
+      return legendSwatch(bairroClass.color, `${bairroClass.label} (${count} bairros)`)
+    })
     .join('')
 
   return `
     <figure class="map">
-      <figcaption><strong>Salvador por bairros — classes da zona eleitoral de cada bairro</strong><span>Malha de bairros do IBGE (Censo 2022); cada bairro recebe a classe da ZE que contém seu centroide. As linhas grossas são os limites das 19 ZE. Os votos existem por zona, não por bairro.</span></figcaption>
-      <svg viewBox="0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}" role="img" aria-label="Bairros de Salvador por classe de sobreposição">
+      <figcaption><strong>Classes de sobreposição por bairro</strong><span>Cada polígono IBGE é o bairro do local de votação; cinza = sem local de votação. Classes pelo quociente local (LQ) de cada candidato: acima ou abaixo da média dele em Salvador.</span></figcaption>
+      <svg viewBox="0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}" role="img" aria-label="Classes de sobreposição por bairro">
         ${fills}
         ${zoneBorders}
         ${zoneLabelSvg()}
@@ -358,87 +376,88 @@ const renderBairroClassMap = () => {
 }
 
 const renderBars = () => {
-  const rows = [...metrics].sort((left, right) => right.combinedVotes - left.combinedVotes)
-  const maxValue = Math.max(...metrics.map((zone) => Math.max(zone.sollaVotes, zone.ceuciVotes)))
-  const barMaxWidth = 760
+  const rows = topByCombined(bairroMetrics, 25)
+  const maxValue = Math.max(...rows.map((bairro) => Math.max(bairro.sollaVotes, bairro.ceuciVotes)))
+  const barMaxWidth = 640
+  const labelWidth = 190
   const rowHeight = 27
   const top = 34
   const height = top + rows.length * rowHeight + 12
 
   const bars = rows
-    .map((zone, index) => {
+    .map((bairro, index) => {
       const y = top + index * rowHeight
-      const sollaWidth = (zone.sollaVotes / maxValue) * barMaxWidth
-      const ceuciWidth = (zone.ceuciVotes / maxValue) * barMaxWidth
+      const sollaWidth = (bairro.sollaVotes / maxValue) * barMaxWidth
+      const ceuciWidth = (bairro.ceuciVotes / maxValue) * barMaxWidth
+      const label = bairro.name.length > 30 ? `${bairro.name.slice(0, 29)}…` : bairro.name
       return `
-        <text x="46" y="${y + 13}" class="chart-label" text-anchor="end">ZE ${zone.zoneNumber}</text>
-        <rect x="56" y="${y + 2}" width="${sollaWidth.toFixed(1)}" height="9" rx="1.5" fill="#c51414"/>
-        <text x="${(60 + sollaWidth).toFixed(1)}" y="${y + 10}" class="chart-value">${nf(zone.sollaVotes)}</text>
-        <rect x="56" y="${y + 13}" width="${ceuciWidth.toFixed(1)}" height="9" rx="1.5" fill="#0d9488"/>
-        <text x="${(60 + ceuciWidth).toFixed(1)}" y="${y + 21}" class="chart-value">${nf(zone.ceuciVotes)}</text>`
+        <text x="${labelWidth - 10}" y="${y + 13}" class="chart-label" text-anchor="end">${htmlEscape(label)}</text>
+        <rect x="${labelWidth}" y="${y + 2}" width="${sollaWidth.toFixed(1)}" height="9" rx="1.5" fill="#c51414"/>
+        <text x="${(labelWidth + 4 + sollaWidth).toFixed(1)}" y="${y + 10}" class="chart-value">${nf(bairro.sollaVotes)}</text>
+        <rect x="${labelWidth}" y="${y + 13}" width="${ceuciWidth.toFixed(1)}" height="9" rx="1.5" fill="#0d9488"/>
+        <text x="${(labelWidth + 4 + ceuciWidth).toFixed(1)}" y="${y + 21}" class="chart-value">${nf(bairro.ceuciVotes)}</text>`
     })
     .join('')
 
   return `
     <figure class="map">
-      <figcaption><strong>Votos por zona eleitoral — Solla e Ceuci (2022)</strong><span>Zonas ordenadas pela soma Solla + Ceuci. Vermelho: Solla (federal 1313). Verde: Ceuci (estadual 13192).</span></figcaption>
-      <svg viewBox="0 0 1000 ${height}" role="img" aria-label="Votos por zona eleitoral">
+      <figcaption><strong>Top 25 bairros — Solla e Ceuci (2022)</strong><span>Bairros ordenados pela soma Solla + Ceuci. Vermelho: Solla (federal 1313). Verde: Ceuci (estadual 13192).</span></figcaption>
+      <svg viewBox="0 0 1000 ${height}" role="img" aria-label="Votos por bairro">
         <g class="chart">${bars}</g>
       </svg>
     </figure>`
 }
 
-const renderScatter = () => {
+const renderBairroQuadrant = () => {
   const width = 1000
-  const height = 520
-  const left = 80
-  const right = 40
+  const height = 560
+  const left = 90
+  const right = 50
   const top = 30
   const bottom = 60
-  const maxX = Math.max(...metrics.map((zone) => zone.sollaVotes))
-  const maxY = Math.max(...metrics.map((zone) => zone.ceuciVotes))
-  const xOf = (value) => left + (value / maxX) * (width - left - right)
-  const yOf = (value) => height - bottom - (value / maxY) * (height - top - bottom)
-  const xTicks = 5
-  const yTicks = 5
+  const limit = 3 // log2 domain: LQ 0,125 a 8
+  const xOf = (lq) => left + ((Math.log2(lq) + limit) / (2 * limit)) * (width - left - right)
+  const yOf = (lq) =>
+    height - bottom - ((Math.log2(lq) + limit) / (2 * limit)) * (height - top - bottom)
+  const ticks = [0.25, 0.5, 1, 2, 4, 8]
 
-  const grid = Array.from({ length: xTicks + 1 }, (_, index) => {
-    const value = (maxX / xTicks) * index
-    const x = xOf(value)
-    return `<line x1="${x}" y1="${top}" x2="${x}" y2="${height - bottom}" class="grid"/><text x="${x}" y="${height - bottom + 18}" class="axis-label" text-anchor="middle">${nf(value)}</text>`
-  }).join('')
+  const grid = ticks
+    .map((tick) => {
+      const x = xOf(tick)
+      const y = yOf(tick)
+      return `<line x1="${x}" y1="${top}" x2="${x}" y2="${height - bottom}" class="grid"/><text x="${x}" y="${height - bottom + 18}" class="axis-label" text-anchor="middle">${dec(tick)}</text><line x1="${left}" y1="${y}" x2="${width - right}" y2="${y}" class="grid"/><text x="${left - 10}" y="${y + 4}" class="axis-label" text-anchor="end">${dec(tick)}</text>`
+    })
+    .join('')
 
-  const yGrid = Array.from({ length: yTicks + 1 }, (_, index) => {
-    const value = (maxY / yTicks) * index
-    const y = yOf(value)
-    return `<line x1="${left}" y1="${y}" x2="${width - right}" y2="${y}" class="grid"/><text x="${left - 10}" y="${y + 4}" class="axis-label" text-anchor="end">${nf(value)}</text>`
-  }).join('')
+  const maxCombined = Math.max(...bairroMetrics.map((bairro) => bairro.combinedVotes))
+  const pointRadius = (bairro) => 3.5 + Math.sqrt(bairro.combinedVotes / maxCombined) * 9
 
-  const medianX = [...metrics].map((zone) => zone.sollaVotes).sort((a, b) => a - b)[
-    Math.floor(metrics.length / 2)
-  ]
-  const medianY = [...metrics].map((zone) => zone.ceuciVotes).sort((a, b) => a - b)[
-    Math.floor(metrics.length / 2)
-  ]
+  const labelCandidates = new Set(topByCombined(bairroMetrics, 14).map((bairro) => bairro.name))
+  for (const bairro of bairroSummary.topCeuciLq.slice(0, 4)) labelCandidates.add(bairro.name)
+  for (const bairro of bairroSummary.topSollaLq.slice(0, 4)) labelCandidates.add(bairro.name)
 
-  const points = metrics
-    .map((zone) => {
-      const x = xOf(zone.sollaVotes)
-      const y = yOf(zone.ceuciVotes)
-      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="${zone.zoneClass.color}" stroke="#ffffff" stroke-width="1.5"/><text x="${(x + 9).toFixed(1)}" y="${(y + 4).toFixed(1)}" class="point-label">ZE ${zone.zoneNumber}</text>`
+  const points = bairroMetrics
+    .map((bairro) => {
+      const x = xOf(Math.max(bairro.sollaLq, 0.13))
+      const y = yOf(Math.max(bairro.ceuciLq, 0.13))
+      const radius = pointRadius(bairro)
+      const circle = `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${radius.toFixed(1)}" fill="${bairro.bairroClass.color}" stroke="#ffffff" stroke-width="1.4"/>`
+      if (!labelCandidates.has(bairro.name)) return circle
+      const label = bairro.name.length > 24 ? `${bairro.name.slice(0, 23)}…` : bairro.name
+      return `${circle}<text x="${(x + radius + 3).toFixed(1)}" y="${(y + 3.5).toFixed(1)}" class="point-label">${htmlEscape(label)}</text>`
     })
     .join('')
 
   return `
     <figure class="map">
-      <figcaption><strong>Dispersão — Solla × Ceuci por zona</strong><span>Cada ponto é uma ZE; cor = classe de sobreposição. Linhas tracejadas: medianas (Solla ${nf(medianX)}; Ceuci ${nf(medianY)}). Correlação de Pearson ${dec(summary.pearson)}; Spearman ${dec(summary.spearman)} (N=19).</span></figcaption>
-      <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Dispersão Solla por Ceuci">
-        <g class="chart">${grid}${yGrid}
-          <line x1="${xOf(medianX)}" y1="${top}" x2="${xOf(medianX)}" y2="${height - bottom}" class="median"/>
-          <line x1="${left}" y1="${yOf(medianY)}" x2="${width - right}" y2="${yOf(medianY)}" class="median"/>
+      <figcaption><strong>Bairros no plano do quociente local (LQ)</strong><span>Cada bolha é um bairro; tamanho = votos somados; cor = classe. Eixos em escala log: à direita/acima, o bairro pesa mais que a média do candidato. Linhas nos LQ 1,0 (médias de Solla e de Ceuci). LQ 0 é desenhado no piso do eixo. Bairros rotulados: os 14 maiores em volume e os extremos de LQ.</span></figcaption>
+      <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Bairros no plano do quociente local">
+        <g class="chart">${grid}
+          <line x1="${xOf(1)}" y1="${top}" x2="${xOf(1)}" y2="${height - bottom}" class="median"/>
+          <line x1="${left}" y1="${yOf(1)}" x2="${width - right}" y2="${yOf(1)}" class="median"/>
           ${points}
-          <text x="${(width - right) / 2}" y="${height - 14}" class="axis-title" text-anchor="middle">Votos de Solla (federal 1313)</text>
-          <text x="18" y="${(height - bottom + top) / 2}" class="axis-title" transform="rotate(-90 18 ${(height - bottom + top) / 2})" text-anchor="middle">Votos de Ceuci (estadual 13192)</text>
+          <text x="${(width - right) / 2}" y="${height - 14}" class="axis-title" text-anchor="middle">LQ de Solla (federal 1313)</text>
+          <text x="18" y="${(height - bottom + top) / 2}" class="axis-title" transform="rotate(-90 18 ${(height - bottom + top) / 2})" text-anchor="middle">LQ de Ceuci (estadual 13192)</text>
         </g>
       </svg>
     </figure>`
@@ -499,51 +518,67 @@ const overlapTable = () => ({
   ]),
 })
 
-const bairroTable = () => {
-  const rows = [...metrics]
+const bairroTable = () => ({
+  caption: 'Votação 2022 por bairro (local de votação) — Solla e Ceuci, LQ e classe',
+  head: [
+    'Bairro',
+    'ZE',
+    'Cadastro TSE',
+    'Solla',
+    'Ceuci',
+    'Soma',
+    'LQ Solla',
+    'LQ Ceuci',
+    'Classe',
+  ],
+  align: ['left', 'left', 'left', 'right', 'right', 'right', 'right', 'right', 'left'],
+  rows: [...bairroMetrics]
     .sort((left, right) => right.combinedVotes - left.combinedVotes)
-    .map((zone) => [
-      `ZE ${zone.zoneNumber}`,
-      classBadge(zone.zoneClass),
-      nf(zone.sollaVotes),
-      nf(zone.ceuciVotes),
-      (neighborhoodsByZone.get(zone.zoneNumber) ?? []).join(' · '),
-    ])
-  return {
-    caption: 'Bairros oficiais por zona eleitoral (TRE-BA RA 02/2017) e votos da ZE',
-    head: ['ZE', 'Classe', 'Solla', 'Ceuci', 'Bairros da zona'],
-    align: ['left', 'left', 'right', 'right', 'left'],
-    rows,
-  }
-}
+    .map((bairro) => {
+      const registryNames = bairro.tseBairros
+        .map((record) => record.name)
+        .filter((name) => normalizeBairroName(name) !== normalizeBairroName(bairro.name))
+      return [
+        bairro.name,
+        bairro.zones.map((zone) => zone.zoneNumber).join(' · '),
+        registryNames.length > 0 ? registryNames.join(' · ') : '—',
+        nf(bairro.sollaVotes),
+        nf(bairro.ceuciVotes),
+        nf(bairro.combinedVotes),
+        dec(bairro.sollaLq),
+        dec(bairro.ceuciLq),
+        classBadge(bairro.bairroClass),
+      ]
+    }),
+})
 
 const priorityTable = () => ({
-  caption: 'Fila de prioridade da campanha (critério: % do nosso voto e classe de sobreposição)',
-  head: ['Prioridade', 'Zonas', 'Por quê', 'Ação com Ceuci'],
+  caption: 'Fila de prioridade da campanha por bairro (critério: volume e classe de sobreposição)',
+  head: ['Prioridade', 'Bairros', 'Por quê', 'Ação com Ceuci'],
   align: ['left', 'left', 'left', 'left'],
   rows: [
     [
       '1 — Defender',
-      list(zoneList(summary.shared)),
+      bairroNames(sharedTop8),
       'Redutos compartilhados: os dois acima da média; maior soma de votos.',
-      'Evento conjunto por zona (saúde + prestação de contas); material “Ceuci apoia Solla” na porta das unidades, rádio e digital geolocalizado.',
+      'Evento conjunto no bairro (saúde + prestação de contas); material “Ceuci apoia Solla” na porta dos maiores locais, rádio e digital geolocalizado.',
     ],
     [
       '2 — Ponte Ceuci',
-      list(zoneList(summary.ceuciOnly)),
-      'Ela acima da média, ele abaixo: rede dela alcança eleitor que o mandato ainda não mobiliza.',
-      'Agenda dela com lideranças de saúde e comunitárias; Solla entra no fim; meta: elevar o LQ de Solla na zona para ≥ 1,0.',
+      bairroNames(ceuciPonte),
+      'Ela acima da média, ele abaixo: a rede dela alcança eleitor que o mandato ainda não mobiliza.',
+      'Agenda dela com lideranças de saúde e comunitárias; Solla entra no fim; meta: elevar o LQ de Solla no bairro para ≥ 1,0.',
     ],
     [
       '3 — Consolidar',
-      list(zoneList(summary.sollaOnly)),
+      bairroNames(sollaBase.slice(0, 8)),
       'Base Solla: ele acima da média; ela tem voto residual.',
-      'Apoio declarado dela em material e visitas pontuais onde houver rede de saúde; não gastar agenda dela em zona de baixo retorno.',
+      'Apoio declarado dela em material e visitas pontuais onde houver rede de saúde; não gastar agenda dela em bairro de baixo retorno.',
     ],
     [
-      '4 — Decidir por volume',
-      list(zoneList(summary.open)),
-      'Ambos abaixo da média; decidir pelo volume absoluto (ex.: ZE 12 e ZE 4 somam mais que ZE 5 e ZE 18).',
+      '4 — Volume aberto',
+      bairroNames(openTop6),
+      'Ambos abaixo da média nos dois quocientes; decidir pelo volume absoluto.',
       'Sem agenda dedicada dela; entra apenas em ação municipal de saúde (mutirão, anúncio de política pública).',
     ],
   ],
@@ -553,61 +588,75 @@ const priorityTable = () => ({
 // Narrative model (rendered to HTML and Markdown from the same blocks)
 // ---------------------------------------------------------------------------
 
-const strongestCeuci = summary.strongestCeuci
-const strongestCombined = summary.strongestCombined
-const ceuciAheadText = summary.ceuciAhead
-  .map((zone) => `ZE ${zone.zoneNumber} (${nf(zone.ceuciVotes)} × ${nf(zone.sollaVotes)})`)
-  .join('; ')
-const combinedTop = strongestCombined
+const sharedTop8 = topByCombined(bairroSummary.shared, 8)
+const ceuciPonte = [...bairroSummary.ceuciOnly]
+  .filter((bairro) => bairro.ceuciVotes >= 100)
+  .sort((left, right) => right.ceuciVotes - left.ceuciVotes)
+const sollaBase = [...bairroSummary.sollaOnly]
+  .filter((bairro) => bairro.sollaVotes >= 200)
+  .sort((left, right) => right.sollaVotes - left.sollaVotes)
+const openTop6 = topByCombined(bairroSummary.open, 6)
+const ceuciAheadTop5 = [...bairroSummary.ceuciAhead]
+  .sort((left, right) => right.ceuciVotes - left.ceuciVotes)
   .slice(0, 5)
-  .map((zone) => `ZE ${zone.zoneNumber} (${nf(zone.combinedVotes)})`)
-  .join(', ')
-const ceuciTop = strongestCeuci
-  .slice(0, 5)
-  .map((zone) => `ZE ${zone.zoneNumber} (${nf(zone.ceuciVotes)})`)
-  .join(', ')
-const ceuciTop5Share = strongestCeuci.slice(0, 5).reduce((sum, zone) => sum + zone.ceuciShareOwn, 0)
+const ceuciAheadShare = bairroSummary.ceuciAhead.reduce(
+  (sum, bairro) => sum + bairro.ceuciShareOwn,
+  0,
+)
+const ceuciConcentration = bairroSummary.ceuciHhi / bairroSummary.sollaHhi
+const priorityBairros = [...sharedTop8, ...ceuciPonte]
+const priorityBairroShare =
+  priorityBairros.reduce((sum, bairro) => sum + bairro.combinedVotes, 0) /
+  (data.salvadorTotals.sollaVotes + data.salvadorTotals.ceuciVotes)
+
+const localsByCeuci = [...bairroData.locals]
+  .filter((local) => local.polygonName)
+  .sort((left, right) => right.ceuciVotes - left.ceuciVotes)
+const biggestCeuciLocal = localsByCeuci[0]
+
+const bairroPick = (name) => {
+  const metric = bairroMetricsByName.get(name)
+  if (!metric) die(`Bairro not found in the bairro layer: ${name}`)
+  return metric
+}
 
 const executiveBullets = [
   {
-    label: 'Sobreposição parcial, com centro claro.',
+    label: 'Descer ao bairro separa o que a zona juntava.',
     text:
-      `As duas distribuições de voto se sobrepõem em ${pct(summary.overlapCoefficient)} ` +
-      `(índice de sobreposição; 1,0 seriam distribuições idênticas), com correlação moderada entre as 19 zonas ` +
-      `(Pearson ${dec(summary.pearson)}; Spearman ${dec(summary.spearman)}). O centro comum é ${list(zoneList(summary.shared))}. ` +
-      `Fora dele, as duas votações seguem lógicas diferentes — e é aí que está o trabalho de campo.`,
+      `Nas 19 zonas, as duas votações se sobrepõem em ${pct(summary.overlapCoefficient)}; nos ` +
+      `${nf(bairroMetrics.length)} bairros com local de votação, a sobreposição cai para ${pct(bairroSummary.overlapCoefficient)}. ` +
+      `A leitura de zona escondia contraste dentro dela — a ZE 12 mistura Stella Maris ${bairroNumbers(bairroPick('Stella Maris'))} ` +
+      `com São Cristóvão ${bairroNumbers(bairroPick('São Cristóvão'))}; a ZE 4 tem Paripe ${bairroNumbers(bairroPick('Paripe'))} ` +
+      `ao lado de Ilha Bom Jesus dos Passos ${bairroNumbers(bairroPick('Ilha Bom Jesus dos Passos'))}.`,
   },
   {
     label: 'Ceuci é candidata da capital; Solla, do estado.',
     text:
       `${pct(summary.salvadorShareOfCeuciState)} do voto de Ceuci (${nf(data.salvadorTotals.ceuciVotes)} de ${nf(data.candidates.ceuci.stateVotes)}) ` +
       `está em Salvador, contra ${pct(summary.salvadorShareOfSollaState)} do voto de Solla (${nf(data.salvadorTotals.sollaVotes)} de ${nf(data.candidates.solla.stateVotes)}). ` +
-      `Na cidade, ela é concentrada: as 3 zonas mais fortes dela somam ${pct(summary.ceuciTop3Share)} do voto dela; as 3 de Solla somam ${pct(summary.sollaTop3Share)}.`,
+      `Na cidade, ela é concentrada: os 5 maiores bairros dela somam ${pct(bairroSummary.ceuciTop5Share)} do voto dela, contra ` +
+      `${pct(bairroSummary.sollaTop5Share)} de Solla (concentração ${dec(ceuciConcentration)}× maior pelo HHI).`,
   },
   {
     label: 'Onde ela é maior que ele.',
-    text: `Ceuci supera Solla em ${summary.ceuciAhead.length} zonas — ${ceuciAheadText}.`,
+    text:
+      `Ceuci supera Solla em ${bairroSummary.ceuciAhead.length} dos ${nf(bairroMetrics.length)} bairros, que juntos reúnem ` +
+      `${pct(ceuciAheadShare)} do voto dela na cidade — ${bairroLines(ceuciAheadTop5, 5)}, entre outros.`,
   },
   {
     label: 'Onde os dois somam mais.',
-    text:
-      `As maiores somas Solla + Ceuci estão em ${combinedTop} — os territórios onde uma agenda conjunta tem mais público potencial. ` +
-      `Ela sozinha é mais forte em ${ceuciTop}.`,
+    text: `As maiores somas Solla + Ceuci estão em ${bairroLines(bairroSummary.strongestCombined, 6)} — os territórios onde uma agenda conjunta tem mais público potencial.`,
   },
   {
     label: 'Recomendação central.',
     text:
-      `Três movimentos: (1) defender os redutos compartilhados (${list(zoneList(summary.shared))}) com agenda e material conjuntos; ` +
-      `(2) usar Ceuci como cabeça de ponte onde ela é acima da média e Solla abaixo (${list(zoneList(summary.ceuciOnly))}); ` +
-      `(3) acionar a rede dela como apoio declarado nas zonas de Base Solla (${list(zoneList(summary.sollaOnly))}) — ` +
+      `Três movimentos por bairro: (1) defender os redutos compartilhados (${bairroNames(sharedTop8)}, …) com agenda e material conjuntos; ` +
+      `(2) usar Ceuci como cabeça de ponte onde ela é acima da média e Solla abaixo (${bairroNames(ceuciPonte)}); ` +
+      `(3) ancorar o apoio declarado nas bases de Solla (${bairroNames(sollaBase.slice(0, 6))}, …) — ` +
       `sem tratá-la como candidata: ela declarou que não disputa 2026.`,
   },
 ]
-
-const priorityZones = [...summary.shared, ...summary.ceuciOnly]
-const priorityVotes = priorityZones.reduce((sum, zone) => sum + zone.combinedVotes, 0)
-const priorityShare =
-  priorityVotes / (data.salvadorTotals.sollaVotes + data.salvadorTotals.ceuciVotes)
 
 const report = {
   title: 'Solla × Ceuci em Salvador',
@@ -623,10 +672,13 @@ const report = {
       label: 'votos de Ceuci em Salvador (estadual 13192)',
     },
     {
-      value: pct(summary.overlapCoefficient, 0),
-      label: 'índice de sobreposição das distribuições',
+      value: pct(bairroSummary.overlapCoefficient, 0),
+      label: 'sobreposição das distribuições nos bairros',
     },
-    { value: '19', label: 'zonas eleitorais · 170 bairros na malha' },
+    {
+      value: nf(bairroMetrics.length),
+      label: `bairros com local de votação · ${nf(bairroData.totals.locais)} locais`,
+    },
   ],
   sections: [
     {
@@ -640,7 +692,8 @@ const report = {
           text:
             'Todos os números são oficiais (TSE 2022, 1º turno). O relatório compara duas candidaturas de cargos diferentes: ' +
             'Solla foi deputado federal (nº 1313) e Ceuci, deputada estadual (nº 13192). A sobreposição medida é entre as duas ' +
-            'geografias de voto, não entre eleitores — não se observa quem votou em quem.',
+            'geografias de voto, não entre eleitores — não se observa quem votou em quem. O bairro é o do local de votação ' +
+            '(cadastro do TSE), posicionado na malha do IBGE; não é o bairro de residência do eleitor.',
         },
       ],
     },
@@ -653,7 +706,9 @@ const report = {
           items: [
             'Ceuci de Lima Xavier Nunes é médica infectologista e ficou 15 anos à frente do Instituto Couto Maia, referência estadual em infectologia — inclusive na pandemia de covid-19. Em 2022, foi candidata a deputada estadual pelo PT (nº 13192): recebeu 36.992 votos, não se elegeu, mas foi a mais votada do PT na capital, com 19.776 votos em Salvador. Desde março de 2023 preside a Bahiafarma, fundação estadual de medicamentos. Declarou à imprensa, em 2025, que não será candidata em 2026.',
             `Para a campanha de Solla, isso define o papel dela: não é concorrente interna nem candidata a acomodar — é uma liderança com rede própria na saúde, voto concentrado na capital e história de gestão reconhecida. A pergunta deste relatório é onde essa rede encosta na votação de Solla e onde ela alcança eleitor que o mandato ainda não mobiliza.`,
-            `A resposta tem dois lados. O primeiro: existe um centro comum (${list(zoneList(summary.shared))}) em que os dois estão acima da média — nesses territórios, a memória de Ceuci reforça o voto que Solla já tem. O segundo: a votação dela é bem mais concentrada que a dele. ${pct(ceuciTop5Share)} do voto dela na cidade está em ${ceuciTop}; a de Solla se espalha por toda a cidade, com presença forte em zonas periféricas onde ela quase não aparece (ZE 8, 14, 15, 16 e 19).`,
+            `Na leitura por bairro, o centro comum tem endereço: ${bairroNames(sharedTop8)} — os maiores entre os bairros em que os dois estão acima da própria média. É um eixo centro-sul de serviços e educação: ${biggestCeuciLocal.name} (${nf(biggestCeuciLocal.ceuciVotes)} votos dela), em ${biggestCeuciLocal.polygonName}, é o maior local de votação dela na cidade, e as faculdades da UFBA, em Canela e Graça, aparecem entre os maiores.`,
+            `Fora desse eixo, a votação dela é bem mais concentrada que a dele: os 10 maiores bairros dela somam ${pct(bairroSummary.ceuciTop10Share)} do voto dela, contra ${pct(bairroSummary.sollaTop10Share)} dos 10 maiores dele. Onde ela é maior que ele — ${nf(bairroSummary.ceuciAhead.length)} bairros, que reúnem ${pct(ceuciAheadShare)} do voto dela — estão ${bairroLines(ceuciAheadTop5, 5)}. Onde Solla é forte e ela quase não aparece estão as bases do mandato: ${bairroNames(sollaBase.slice(0, 7))}.`,
+            `Há ainda a faixa em que ela está acima da média e ele abaixo — ${bairroNames(ceuciPonte)}. É onde a rede de Ceuci alcança eleitor que o mandato ainda não mobiliza, e onde a agenda conjunta rende mais do que repetir evento em bairro já consolidado.`,
           ],
         },
         {
@@ -670,17 +725,17 @@ const report = {
         {
           type: 'paragraphs',
           items: [
-            'Fonte: resultados oficiais do TSE para 2022 (votação nominal de 1º turno por município e zona eleitoral). Solla: deputado federal nº 1313 (PT), 128.968 votos no estado e 27.264 em Salvador. Ceuci: deputada estadual nº 13192 (PT), 36.992 votos no estado e 19.776 em Salvador. Salvador é lida pelas suas 19 zonas eleitorais (ZE 1–19).',
-            'Os valores foram conferidos contra duas referências: o artefato federal já commitado no Teqo (votação de Solla por zona, conferida zona a zona) e os totais oficiais de Ceuci (36.992 no estado; 19.776 em Salvador).',
-            'Bairros: a lista de bairros por zona é a circunscrição oficial do TRE-BA (Resolução Administrativa nº 2/2017, Anexo I). O mapa de bairros usa a malha de bairros do IBGE (Censo 2022) e pinta cada bairro com os números da zona que contém seu centroide.',
-            'Força relativa: o LQ (quociente local) compara a fatia da zona no voto do candidato com a fatia da zona nos votos válidos. LQ = 1 é exatamente a média do candidato; acima de 1, a zona é relativamente forte para ele.',
-            'Sobreposição: o índice soma, zona a zona, o menor valor entre as duas fatias de voto (0 a 1). A correlação mede se as duas votações sobem e descem juntas entre as zonas — com 19 zonas, é indício, não probabilidade.',
+            'Fonte: resultados oficiais do TSE para 2022 (1º turno). Solla: deputado federal nº 1313 (PT), 128.968 votos no estado e 27.264 em Salvador. Ceuci: deputada estadual nº 13192 (PT), 36.992 votos no estado e 19.776 em Salvador. Salvador é lida em dois níveis: as 19 zonas eleitorais (agregação oficial) e os bairros dos locais de votação.',
+            'A camada de bairro desce à menor unidade publicada pelo TSE: a seção eleitoral. Cada seção tem votos por candidato (votacao_secao_2022) e pertence a um local de votação; o cadastro eleitoral (eleitorado_local_votacao_2022) associa esse local a um bairro e a uma coordenada. Somando as seções de cada local e agrupando pelos bairros, chega-se ao voto por bairro — cada local posicionado no polígono do IBGE Censo 2022. O denominador do LQ é a soma dos votos nominais das candidaturas válidas da seção, a mesma base do recorte por zona.',
+            'Força relativa: o LQ (quociente local) compara a fatia do território no voto do candidato com a fatia do território nos votos válidos. LQ = 1 é exatamente a média do candidato; acima de 1, o território é relativamente forte para ele. Sobreposição: o índice soma, território a território, o menor valor entre as duas fatias de voto (0 a 1).',
+            `Conferências: a soma das seções reproduz zona a zona o recorte por zona (Solla ${nf(data.salvadorTotals.sollaVotes)}; Ceuci ${nf(data.salvadorTotals.ceuciVotes)}); o denominador fecha com diferença residual ≤ 0,1% do total por zona; ${nf(bairroData.totals.sections)} seções, ${nf(bairroData.totals.locais)} locais e ${nf(bairroData.totals.bairros)} bairros com votação foram conferidos. Os hashes dos arquivos-fonte estão no JSON da camada de bairro.`,
+            'Esta edição substitui a primeira versão do relatório, que pintava a malha de bairros com os números da zona do centroide: agora cada polígono tem os votos dos locais de votação que contém.',
           ],
         },
         {
           type: 'note',
-          title: 'Limite duro: não existe voto por bairro',
-          text: 'Os dados disponíveis têm votação por município e zona eleitoral. Não há voto por seção, local de votação ou bairro — nenhum número deste relatório deve ser lido como votação de um bairro. Bairro aqui é a lista oficial de bairros que compõem a zona. O mapa de bairros é ilustrativo: mostra a malha e a classe da zona de cada bairro.',
+          title: 'O que o dado não é',
+          text: 'O voto é do local de votação, não da casa do eleitor: o cadastro não liga o voto ao domicílio e um mesmo local pode atender mais de um bairro. O bairro do TSE (150 nomes no cadastro eleitoral) e o polígono do IBGE (170 na malha; 138 com local de votação) têm recortes e nomes próprios — o mapa usa o polígono e mostra o nome do cadastro quando difere. Nenhum número aqui mede transferência de voto entre candidatos.',
         },
       ],
     },
@@ -690,34 +745,34 @@ const report = {
       blocks: [
         {
           type: 'html',
-          html: renderZoneChoropleth({
-            values: new Map(metrics.map((zone) => [zone.zoneNumber, zone.sollaVotes])),
-            title: 'Solla em Salvador — votos por ZE (2022)',
+          html: renderBairroChoropleth({
+            valueOf: (bairro) => bairro.sollaVotes,
+            title: 'Solla em Salvador — votos por bairro (2022)',
             caption:
-              'Classes por quantis da própria votação. Quanto mais escuro, mais votos na zona.',
+              'Cada polígono é um bairro do IBGE com local de votação; classes por quantis. Quanto mais escuro, mais votos. Cinza: bairro sem local de votação.',
             legendTitle: 'Votos de Solla:',
           }),
         },
         {
           type: 'html',
-          html: renderZoneChoropleth({
-            values: new Map(metrics.map((zone) => [zone.zoneNumber, zone.ceuciVotes])),
-            title: 'Ceuci em Salvador — votos por ZE (2022)',
+          html: renderBairroChoropleth({
+            valueOf: (bairro) => bairro.ceuciVotes,
+            title: 'Ceuci em Salvador — votos por bairro (2022)',
             caption:
-              'Classes por quantis da própria votação. A mancha dela é bem mais concentrada que a de Solla.',
+              'A mancha dela é bem mais concentrada: um eixo centro-sul (Pituba, Itaigara, Canela/Graça, Ondina) contra uma base de Solla espalhada pela periferia.',
             legendTitle: 'Votos de Ceuci:',
           }),
         },
-        { type: 'html', html: renderZoneClassMap() },
         { type: 'html', html: renderBairroClassMap() },
+        { type: 'html', html: renderZoneClassMap() },
       ],
     },
     {
       id: 'graficos',
-      title: 'Votos por zona e dispersão',
+      title: 'Bairros em volume e em força relativa',
       blocks: [
         { type: 'html', html: renderBars() },
-        { type: 'html', html: renderScatter() },
+        { type: 'html', html: renderBairroQuadrant() },
       ],
     },
     {
@@ -738,9 +793,9 @@ const report = {
           type: 'paragraphs',
           items: [
             `A conta do quociente. Em 2022, a Bahia teve ${nf(data.stateContext.stateValid)} votos válidos para deputado estadual e 63 cadeiras — quociente eleitoral de aproximadamente ${nf(data.stateContext.stateValid / 63)} votos. Ceuci fez 36.992 (cerca de um terço de um quociente): não se elegeu sozinha, mas construiu uma base de capital que, em 2026, vale como rede de apoio para um deputado federal que precisa de 150 mil votos.`,
-            `Dominância e concentração são coisas diferentes. Ceuci tem dominância concentrada: LQ ${dec(metricsByZone.get(13).ceuciLq)} na ZE 13, LQ ${dec(metricsByZone.get(1).ceuciLq)} na ZE 1, e ${pct(summary.ceuciTop3Share)} do voto dela nas três maiores zonas. Solla tem dominância dispersa: as três maiores zonas dele somam ${pct(summary.sollaTop3Share)}. Não é defeito de um nem virtude do outro — é a diferença entre uma candidata de uma cidade e um deputado de um estado. A estratégia mora no cruzamento: nos redutos compartilhados, somar; nas zonas de Ceuci sem Solla, transferir presença; nas de Solla sem Ceuci, não forçar.`,
-            `Eleito é o que dispersa a tempo. Solla já dispersa no estado; o risco em Salvador é concentrar esforço onde ele já vai bem. As zonas mais fortes de Ceuci (1, 2, 6, 10 e 13) são urbanas, de classe média e de serviços — não são o reduto histórico do mandato, e é exatamente aí que a rede dela muda o patamar.`,
-            `Campanha não persuade; organiza e orienta. A função de Ceuci não é converter adversários: é orientar quem já votou nela a votar 1313. São quase 37 mil pessoas no estado — 19.776 só na capital — e a literatura de campanha mostra que contato pessoal via rede de confiança é o que mobiliza. O custo é baixo porque a lista de apoiadores de 2022 existe.`,
+            `Dominância e concentração são coisas diferentes. Ceuci tem dominância concentrada: seus dez maiores bairros somam ${pct(bairroSummary.ceuciTop10Share)} do voto dela, contra ${pct(bairroSummary.sollaTop10Share)} dos dez maiores de Solla — e o HHI dela é ${dec(ceuciConcentration)}× o dele. Solla tem dominância dispersa: aparece acima da média em ${bairroSummary.sollaAhead.length} bairros, contra ${bairroSummary.ceuciAhead.length} de Ceuci. A estratégia mora no cruzamento: nos redutos compartilhados, somar; nos bairros de Ceuci sem Solla, transferir presença; nos de Solla sem Ceuci, não forçar.`,
+            `Descer ao bairro separa o que a zona juntava. A sobreposição das duas distribuições cai de ${pct(summary.overlapCoefficient)} (19 zonas) para ${pct(bairroSummary.overlapCoefficient)} (138 bairros): no agregado, os dois parecem mais parecidos do que são. O eixo forte dela é de serviços e educação — Pituba, Itaigara, Brotas, Canela/Graça, Ondina, Imbuí, STIEP/Pituaçu —, com as faculdades da UFBA entre os maiores locais de votação; o dele é a periferia e o centro-norte — São Caetano, Pernambués, Cosme de Farias, Paripe, Nova Sussuarana, Mussurunga, as Cajazeiras.`,
+            `Campanha não persuade; organiza e orienta. A função de Ceuci não é converter adversários: é orientar quem já votou nela a votar 1313. São quase 37 mil pessoas no estado — 19.776 só na capital, ${pct(ceuciAheadShare)} delas em bairros onde ela bateu Solla. E a literatura de campanha mostra que contato pessoal via rede de confiança é o que mobiliza; o custo é baixo porque a lista de apoiadores de 2022 existe e os locais de votação têm endereço.`,
             `O mandato é a campanha. A memória que Ceuci carrega é de gestão e de saúde pública (Couto Maia, pandemia, medicamentos). O material e os eventos devem falar de entrega e continuidade do mandato de Solla — não de cargo, nem de futura candidatura dela.`,
           ],
         },
@@ -760,8 +815,8 @@ const report = {
         {
           type: 'paragraphs',
           items: [
-            'O critério é o de sempre: % do nosso voto decide a fila, e a agenda segue a fila. A tabela abaixo traduz a análise em quatro filas de trabalho. As zonas de prioridade 1 e 2 concentram ' +
-              `${pct(priorityShare)} ` +
+            'O critério é o de sempre: % do nosso voto decide a fila, e a agenda segue a fila. A tabela abaixo traduz a análise em quatro filas de bairro. Os redutos compartilhados e as pontes de Ceuci concentram ' +
+              `${pct(priorityBairroShare)} ` +
               'da soma das duas votações na cidade — é onde o esforço conjunto tem retorno mais claro.',
             `Cuidado com fogo amigo: Ceuci não é candidata e não deve virar palanque paralelo. O material é de apoio ao mandato; o alinhamento com o PT estadual evita disputa de narrativa.`,
           ],
@@ -772,26 +827,28 @@ const report = {
           items: [
             {
               label: 'Semana 1 — rede.',
-              text: 'Fechar a lista de convites da rede de Ceuci (saúde, profissionais, apoiadores de 2022) e cruzar com as zonas 1, 2, 6, 10 e 13. Sem lista, não há evento.',
+              text: `Fechar a lista de convites da rede de Ceuci (saúde, profissionais, apoiadores de 2022) e cruzar com o eixo: ${bairroNames(sharedTop8.slice(0, 5))}. Sem lista, não há evento.`,
             },
             {
               label: 'Semana 2 — redutos.',
-              text: `Dois eventos conjuntos: ZE 13 (${nf(metricsByZone.get(13).combinedVotes)} votos somados) e ZE 10 (${nf(metricsByZone.get(10).combinedVotes)}). Formato: agenda de saúde + prestação de contas do mandato.`,
+              text: `Dois eventos conjuntos: ${topByCombined(bairroSummary.shared, 2)
+                .map((bairro) => `${bairro.name} (${nf(bairro.combinedVotes)} votos somados)`)
+                .join(' e ')}. Formato: agenda de saúde + prestação de contas do mandato.`,
             },
             {
-              label: 'Semana 3 — capital.',
-              text: `ZE 1 (${nf(metricsByZone.get(1).combinedVotes)}) e ZE 6 (${nf(metricsByZone.get(6).combinedVotes)}). Material “Ceuci apoia Solla” na porta das unidades e no digital geolocalizado.`,
+              label: 'Semana 3 — ponte.',
+              text: `${bairroNames(ceuciPonte.slice(0, 2))}: agenda dela com lideranças comunitárias e de saúde; Solla entra no fim.`,
             },
             {
-              label: 'Semana 4 — ponte.',
-              text: `ZE 2 (${nf(metricsByZone.get(2).combinedVotes)}): agenda dela com lideranças comunitárias; Solla entra no fim. Balanço e repriorização com os deltas do campo.`,
+              label: 'Semana 4 — consolidar.',
+              text: `${bairroNames(sollaBase.slice(0, 3))}: apoio declarado no material e visita do mandato com a rede de saúde local. Balanço e repriorização com os deltas do campo.`,
             },
           ],
         },
         {
           type: 'note',
           title: 'Como usar este documento na assessoria',
-          text: 'A tabela por bairro (seção Tabelas) é o anexo do dossiê pré-agenda: antes de qualquer visita, confira a zona do bairro e a classe. Nas zonas 1 e 2, a presença de Ceuci é o argumento; nas zonas 3 e 4, o mandato fala sozinho.',
+          text: `A tabela por bairro (seção Tabelas) é o anexo do dossiê pré-agenda: antes de qualquer visita, confira o bairro, o LQ e a classe. Nos redutos compartilhados e nas pontes, a presença de Ceuci é o argumento; nas bases de Solla, o mandato fala sozinho. Os locais de votação de cada bairro estão no JSON da camada de bairro (docs/research/solla-ceuci-salvador-2022-bairros-dados.json).`,
         },
       ],
     },
@@ -804,11 +861,11 @@ const report = {
           items: [
             {
               label: 'Dados eleitorais.',
-              text: 'TSE — Resultados 2022, votação nominal de 1º turno por município e zona (arquivos de dados abertos). Extração de 14/09/2026, conferida contra o artefato interno do Teqo e contra os totais oficiais.',
+              text: 'TSE — Portal de Dados Abertos. Camada de bairro: votação por seção (votacao_secao_2022_BA), aferição por seção (detalhe_votacao_secao_2022_BA), cadastro de locais e bairros (eleitorado_local_votacao_2022; coordenadas faltantes completadas pelo cadastro atual, pelo número do local) e candidaturas válidas (votacao_candidato_munzona_2022). Extração de 14/09/2026; hashes e conferências no JSON da camada de bairro.',
             },
             {
               label: 'Bairros.',
-              text: 'TRE-BA, Resolução Administrativa nº 2/2017, Anexo I (circunscrição das zonas por bairro). Malha de bairros: IBGE, Censo 2022 (shapefile BA_bairros_CD2022).',
+              text: 'Malha de bairros: IBGE, Censo 2022 (shapefile BA_bairros_CD2022). Nomes do cadastro eleitoral do TSE quando diferem do polígono. A lista TRE-BA (RA 02/2017) permanece na camada por zona.',
             },
             {
               label: 'Biografia de Ceuci.',
@@ -816,11 +873,11 @@ const report = {
             },
             {
               label: 'Reprodução.',
-              text: 'NODE_OPTIONS="--no-deprecation --import=tsx/esm" node scripts/build-solla-ceuci-salvador-report.mjs — lê o JSON de entrada commitado e regenera o PDF e este Markdown. Sem banco de dados.',
+              text: 'Camada de bairro: NODE_OPTIONS="--no-deprecation --import=tsx/esm" node scripts/build-solla-ceuci-salvador-bairros.mjs --download (baixa os arquivos do TSE para o cache gitignored). Relatório: NODE_OPTIONS="--no-deprecation --import=tsx/esm" node scripts/build-solla-ceuci-salvador-report.mjs — lê os JSONs commitados e regenera o PDF e este Markdown. Sem banco de dados.',
             },
             {
               label: 'Aviso.',
-              text: 'Documento interno de campanha. Não contém dados pessoais; usa apenas dados públicos de votação. Os mapas de zona são derivados de malha de bairros (aproximação) — não são limites oficiais do TSE.',
+              text: 'Documento interno de campanha. Não contém dados pessoais; usa apenas dados públicos de votação. Os polígonos dos mapas são a malha de bairros do IBGE — não são limites oficiais do TSE — e o voto é atribuído ao local de votação, não à residência do eleitor.',
             },
           ],
         },
@@ -893,6 +950,10 @@ const markdown = [
   `Proveniência dos dados: ${data.provenance.source} Extração: ${data.provenance.extractedAt}. ${data.provenance.extractedFrom}`,
   '',
   ...data.provenance.crossChecks.map((check) => `- ${check}`),
+  '',
+  `Camada de bairro: ${bairroData.provenance.source} Extração: ${bairroData.provenance.extractedAt}.`,
+  '',
+  ...bairroData.validation.map((check) => `- ${check}`),
   '',
 ].join('\n')
 
@@ -1076,11 +1137,11 @@ try {
 
 console.log(`[${LABEL}] wrote ${REPORT_BASE}.pdf`)
 console.log(
-  `[${LABEL}] overlap=${pct(summary.overlapCoefficient)} pearson=${dec(summary.pearson)} ` +
-    `spearman=${dec(summary.spearman)} zones=${metrics.length} bairros=${bairros.length} ` +
-    `(centroid fallbacks: ${nearestFallbacks}, mesh sha256=${bairroHash.slice(0, 16)})`,
+  `[${LABEL}] zone-overlap=${pct(summary.overlapCoefficient)} bairro-overlap=${pct(bairroSummary.overlapCoefficient)} ` +
+    `pearson=${dec(bairroSummary.pearson)} spearman=${dec(bairroSummary.spearman)} zones=${metrics.length} ` +
+    `bairros=${bairroMetrics.length} mesh=${bairros.length} (mesh sha256=${bairroHash.slice(0, 16)})`,
 )
 console.log(
-  `[${LABEL}] shared=${list(zoneList(summary.shared))} | ceuci-only=${list(zoneList(summary.ceuciOnly))} | ` +
-    `solla-only=${list(zoneList(summary.sollaOnly))} | open=${list(zoneList(summary.open))}`,
+  `[${LABEL}] shared=${bairroNames(sharedTop8)} | ponte=${bairroNames(ceuciPonte)} | ` +
+    `base-solla=${bairroNames(sollaBase.slice(0, 6))} | aberto=${bairroNames(openTop6)}`,
 )
