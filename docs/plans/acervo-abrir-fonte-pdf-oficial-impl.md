@@ -165,6 +165,12 @@ Sem migration, sem schema, sem access, sem UI, sem package.json (`pnpm camara:im
 - Refatorar `parseArgs` inteiro ou promover o resolver a utility `src/` — **não**; dono é `scripts/`.
 - Commitar cache/relatórios — **não** (`data/camara/` gitignored).
 
+### Adiado com gatilho (triage do simplify)
+
+- **Conversão `montaPdf` duplicada** (2 call sites: `resolveOfficialTextUrl` e `planOfficialLinkRepairs`): extrair um helper puro no lib **quando um 3º call site aparecer** ou a regra mudar.
+- **Wiring do fallback do import** (preservar PDF direto anterior em falha de resolução) coberto pelo unit de `officialTextUrlFallback`, não pela closure do script: extrair o resolvedor com deps injetadas **se o caminho de falha ganhar um modo novo** ou o fallback for modificado.
+- **Sanitize da cache key** (`publicationCacheKey`) funde códigos de coleção com caracteres não previstos (`_`): revisitar **se aparecer coleção real fora de `[A-Za-z0-9]`**.
+
 ## Riscos e mitigação
 
 | Risco                                                    | Mitigação                                                                                                                                            |
