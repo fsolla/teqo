@@ -69,7 +69,7 @@ describe('findSpeechExcerpts gate (C158)', () => {
     expect(rerankMock).not.toHaveBeenCalled()
   })
 
-  it('deixa coordinator, candidate e communicator passarem (herança do C159)', async () => {
+  it('deixa coordinator, candidate e communicator passarem (gate herdado pelo chat do C159)', async () => {
     for (const actor of [coordinator, user('candidate'), user('communicator')]) {
       const find = vi.fn().mockResolvedValue(speechResult([]))
       const result = (await execute(

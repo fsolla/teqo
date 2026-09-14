@@ -207,6 +207,12 @@ export const E2E_AFFECTED_MANIFEST = [
     ],
   },
   {
+    // C159 — the opening-question catalog is pinned by the staff/leader chip
+    // spec and by the communicator assertions in the acervo spec.
+    prefixes: ['src/lib/sollinhaOpeningQuestions'],
+    specs: ['campaignAiChatOpeningChips', 'campaignSpeechAcervo'],
+  },
+  {
     prefixes: [
       `${CAMPAIGN_APP}/pessoas`,
       'src/components/campaign/people',

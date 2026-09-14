@@ -6,7 +6,8 @@
  * election/dobradinha/overview questions backed by their tools; leaders get a
  * minimal safe set (meta + links via `buildCampaignLinks`, whose leader
  * allowlist is home/perfil/leaderContacts) — never an election tool, which
- * fails closed for the leader (B180).
+ * fails closed for the leader (B180). The communication assessor (C159) gets
+ * acervo questions answerable by `findSpeechExcerpts`, her whole toolset.
  */
 
 import type { CampaignRole } from '@/lib/campaignRoles'
@@ -35,17 +36,31 @@ const LEADER_OPENING_QUESTIONS: readonly SollinhaChatChip[] = [
   { text: 'Me manda o link do meu perfil' },
 ]
 
+/** Communicator (C159): 3 chips, all answerable by `findSpeechExcerpts`. */
+const COMMUNICATOR_OPENING_QUESTIONS: readonly SollinhaChatChip[] = [
+  { text: 'O que o Solla já falou sobre Farmácia Popular?' },
+  { text: 'Me dá uma fala do deputado para um reels sobre saúde.' },
+  { text: 'Qual um trecho bom sobre o hospital do subúrbio?' },
+]
+
 const MOBILE_LIMIT = 3
 
 /**
  * Opening-question chips for an empty conversation. Staff get the full catalog
- * (capped by viewport); any non-staff role (leader — and unknown roles as a
- * fail-closed fallback) gets the safe set. Deterministic and client-safe.
+ * (capped by viewport), the communication assessor the acervo set, and any
+ * other role (leader — and unknown roles as a fail-closed fallback) the safe
+ * leader set. Deterministic and client-safe.
  */
 export const getSollinhaOpeningQuestions = (
   role: CampaignRole,
   isMobile: boolean,
 ): readonly SollinhaChatChip[] => {
-  const catalog = isStaffCampaignRole(role) ? STAFF_OPENING_QUESTIONS : LEADER_OPENING_QUESTIONS
+  const catalog = openingQuestionsForRole(role)
   return isMobile ? catalog.slice(0, MOBILE_LIMIT) : catalog
+}
+
+const openingQuestionsForRole = (role: CampaignRole): readonly SollinhaChatChip[] => {
+  if (role === 'communicator') return COMMUNICATOR_OPENING_QUESTIONS
+  if (isStaffCampaignRole(role)) return STAFF_OPENING_QUESTIONS
+  return LEADER_OPENING_QUESTIONS
 }

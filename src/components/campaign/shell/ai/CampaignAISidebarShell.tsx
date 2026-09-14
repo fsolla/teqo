@@ -10,7 +10,6 @@ import {
 } from 'react-resizable-panels'
 
 import type { CampaignRole } from '@/lib/campaignRoles'
-import { canUseCampaignAssistant } from '@/lib/campaignRoles'
 import {
   CHAT_MIN_PX,
   getSavedChatWidthPx,
@@ -39,11 +38,9 @@ export const CampaignAISidebarShell = ({
 }) => {
   const panelRef = usePanelRef()
 
-  // C154 — the communication assessor has no Sollinha: the assistant's tools
-  // are campaign-scoped and the vertical is her whole surface (the FAB, the
-  // drawer and the desktop header button all live inside these surfaces).
-  if (!canUseCampaignAssistant(role)) return <>{children}</>
-
+  // C159 — every role reaches the assistant: the communication assessor's
+  // chat is scoped by the toolset (speech acervo only), not by hiding the
+  // FAB, the drawer or the desktop header button. (C154 hid all three.)
   return (
     <CampaignAISidebarProvider role={role} panelRef={panelRef}>
       <CampaignAIFab />

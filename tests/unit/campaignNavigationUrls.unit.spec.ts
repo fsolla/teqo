@@ -126,6 +126,25 @@ describe('campaignNavigationUrls', () => {
     expect(profile).toEqual({ ok: true, path: CAMPAIGN_PROFILE_HOME, label: 'Perfil' })
   })
 
+  it('blocks Meus contatos for every non-leader role (C159)', () => {
+    for (const role of ['coordinator', 'advisor', 'candidate', 'communicator'] as const) {
+      const outcome = buildCampaignNavigationLink(role, { destination: 'leaderContacts' })
+      expect(outcome.ok).toBe(false)
+      if (!outcome.ok) {
+        expect(outcome.error).toMatch(/exclusiva da liderança/)
+        expect(outcome.alternatives).toEqual([CAMPAIGN_HOME, CAMPAIGN_PROFILE_HOME])
+      }
+    }
+  })
+
+  it('keeps home and perfil available to the communication assessor (C159)', () => {
+    const home = buildCampaignNavigationLink('communicator', { destination: 'home' })
+    expect(home).toEqual({ ok: true, path: CAMPAIGN_HOME, label: 'Início' })
+
+    const profile = buildCampaignNavigationLink('communicator', { destination: 'perfil' })
+    expect(profile).toEqual({ ok: true, path: CAMPAIGN_PROFILE_HOME, label: 'Perfil' })
+  })
+
   it('blocks assessor area for advisors', () => {
     const outcome = buildCampaignNavigationLink(advisor.role, {
       destination: 'advisor',
