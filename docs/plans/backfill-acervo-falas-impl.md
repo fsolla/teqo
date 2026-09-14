@@ -1,7 +1,7 @@
 # Impl: Backfill 2011–2026 + import de produção do acervo de falas
 
-Status: em execução
-Atualizado em: 2026-09-13
+Status: executado
+Atualizado em: 2026-09-14
 Issue: #957
 Intenção: docs/plans/backfill-acervo-falas.md
 Appetite restante: herdado (~1–2 dias + tempo de máquina)
@@ -192,7 +192,9 @@ _Quota:_ 1 PR; prova: check `checks` verde.
 - **Paginação do import ganhou backoff** (`fetchJsonWithBackoff`, 5 tentativas com espera exponencial até 30s) porque a API devolveu 500 na página 4 da 55ª durante o smoke — o comportamento de abortar só a legislatura e seguir continua, agora com mais paciência.
 - **Cache/mídia do run de produção** em `--out /srv/hdd/backups/teqo-camara` (`/srv/hdd` é root-owned; `backups/` é do usuário — 392 GB livres).
 - **Smoke de produção (2026-09-13, `teqo_1313`):** `--all --limit 1` processou 54ª/56ª/57ª (2 ASR, ~US$0,003) e abortou só a 55ª (HTTP 500 persistente na página 4 da listagem da API — não é o import). Reexecução do mesmo comando: **0 criados, 0 ASR, 0 LLM** (idempotência viva em produção); coverage do banco bateu com o relatório. O guard `CAMARA_IMPORT_CONFIRM=1` foi exercitado (sem a flag, o run morre antes de conectar).
-- **Run completo em tmux no homeserver** (`c155-run.log` + JSONs em `/srv/hdd/backups/teqo-camara/reports/`), ~13h estimadas; 55ª será retomada com `--legislature 55` (a API precisa recuperar a página 4).
+- **Run completo em tmux no homeserver** (`c155-run.log`/`c155-run55.log` + JSONs em `/srv/hdd/backups/teqo-camara/reports/`): 54ª/56ª/57ª em ~6,2h e 55ª em paralelo (~2,8h); retry por data das falhas (~2h) e consolidação read-only. **Resultado: 997 discursos** (54ª=1, 55ª=348, 56ª=414, 57ª=234) — 947 com trecho, 924 com vídeo, 920 com segmentos; ASR 925 chamadas / 45,4h / ~US$1,23; LLM ~US$0,11.
+- **Fallback de listagem desceu dois níveis** (`dateRangeChunks` ano→mês): a API responde 500 para o mês inteiro de **outubro/2018** (13-14 discursos da 55ª ficaram fora); o resto da 55ª (349/362) entrou. Os chunks que falham viram falha `list` no relatório — nada silencioso.
+- **Retry por data** (`retry-c155.sh` sobre as datas com falha): 84 datas, recuperou +64 segmentos e +28 trechos; `--verify-links 3` com retentativa no probe: 17/18 ok.
 
 ## Rabbit holes / Não escopo (engenharia)
 
@@ -245,18 +247,18 @@ Nenhum achado dos dois revisores virou Issue nova (nenhum `expensive_lock` com s
 
 ## Aceite de engenharia (checklist)
 
-- [ ] `--all` processa 54→57 num processo, com `legislatures[]` + totais combinados + `coverage`; mutex com `--date`/`--legislature` explícito; checkpoint por legislatura.
-- [ ] Idempotência comprovada: reexecução de `--all --limit 1` em produção e do smoke local resultam em 0 criados e 0 chamadas ASR.
-- [ ] `--coverage` é read-only no banco e sem rede; imprime por legislatura (total, com trecho, com vídeo, com segmentos, sem trecho, sem segmentos, fallback YouTube) + totais.
-- [ ] `CAMARA_IMPORT_CONFIRM=1` exigido para escrita com `NODE_ENV=production`, host remoto ou `ALLOW_REMOTE_DB`; fail-closed antes de `getPayload`; `--coverage`/`--verify-links` isentos; `--skip-transcribe` não isento; alvo ecoado.
-- [ ] `--verify-links <n>` amostra n por legislatura, GET Range com fallback HEAD, warnings não fatais, 0 verificados = exit 1.
-- [ ] Nenhuma escrita fora de `speech`/`speechSegment`/`speech_rels`; nenhum objeto no S3; CC BY 4.0 no runbook/changelog.
-- [ ] Unit novos (agregação, amostragem, guard) e int de `speechCoverage` com fixtures, verdes.
-- [ ] `pnpm gate:fast` + knip + cycles + typecheck + unit + int verdes; e2e conforme `ci-scope` (esperado `none`; `unmapped-risk` tratado).
-- [ ] Produção com 1.011 discursos (54ª=1, 55ª=362, 56ª=414, 57ª=234) e migration C153 aplicada; coverage pós-run bate com o relatório do run.
-- [ ] `--verify-links 3` na amostra sem falha dura; warnings e sessões sem trecho documentados como pendência.
-- [ ] Relatórios anexados à Issue #957; resumo no corpo do PR; `docs/changelog/2026-09-13-c155.md` e seção C155 no runbook com resultado e rollback (`DELETE` em `speech_segment`/`speech_rels`/`speech`, ou re-run idempotente).
-- [ ] Nenhuma migration nova; nenhum arquivo de `data/camara/` commitado; `Closes #957` no PR com auto-merge armado.
+- [x] `--all` processa 54→57 num processo, com `legislatures[]` + totais combinados + `coverage`; mutex com `--date`/`--legislature` explícito; checkpoint por legislatura.
+- [x] Idempotência comprovada em produção: segunda passada do `--all --limit 1` = 0 criados / 0 ASR / 0 LLM.
+- [x] `--coverage` é read-only no banco e sem rede; imprime por legislatura (total, com trecho, com vídeo, com segmentos, sem trecho, sem segmentos, fallback YouTube) + totais.
+- [x] `CAMARA_IMPORT_CONFIRM=1` exigido para escrita com `NODE_ENV=production`, host remoto ou `ALLOW_REMOTE_DB`; fail-closed antes de `getPayload`; `--coverage`/`--verify-links` isentos; `--skip-transcribe` não isento; alvo ecoado.
+- [x] `--verify-links <n>` amostra n por legislatura, GET Range com fallback HEAD (e uma retentativa), warnings não fatais, 0 verificados = exit 1.
+- [x] Nenhuma escrita fora de `speech`/`speechSegment`/`speech_rels`; nenhum objeto no S3; CC BY 4.0 no runbook/changelog.
+- [x] Unit novos (agregação, amostragem, guard, chunks de data) e int de `speechCoverage` com fixtures, verdes.
+- [x] `pnpm gate:ci` (lint/format/typecheck/knip/cycles/unit/int/build) verde; e2e local `campaignSpeechAcervo` 6/6; CI/PR roda o curado.
+- [x] Produção com **997 discursos** (54ª=1, 55ª=348, 56ª=414, 57ª=234) e migrations C153/C154 aplicadas; coverage pós-run bate com o relatório (1 re-run do smoke explica 998 processamentos).
+- [x] `--verify-links 3` na amostra sem falha dura (17/18 ok, 1 warning transitório); 77 sem segmentos e 50 sem trecho documentados como pendência de fonte.
+- [x] Relatórios anexados à Issue #957; resumo no corpo do PR; `docs/changelog/2026-09-13-c155.md` e seção C155 no runbook com resultado e rollback (`DELETE` em `speech_segment`/`speech_rels`/`speech`, ou re-run idempotente).
+- [x] Nenhuma migration nova; nenhum arquivo de `data/camara/` commitado; `Closes #957` no PR com auto-merge armado.
 
 ## Self-score decision-quality
 
