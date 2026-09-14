@@ -189,3 +189,76 @@ export const buildReportSummary = ({ metrics, candidates, salvadorTotals }) => {
     ceuciAhead,
   }
 }
+
+/**
+ * Per-bairro rows (IBGE Censo 2022 mesh, keyed by the polygon name). Same
+ * arithmetic as the zones, but the denominator is the bairro's share of the
+ * valid nominal votes of each office and N is the number of bairros with a
+ * polling place — a finer reading of the same two geographies of vote.
+ */
+export const buildBairroMetrics = ({ bairros, totals }) =>
+  bairros.map((bairro) => {
+    const sollaShareOwn = shareOf(bairro.sollaVotes, totals.sollaVotes)
+    const ceuciShareOwn = shareOf(bairro.ceuciVotes, totals.ceuciVotes)
+    const sollaLq = localQuotient(
+      bairro.sollaVotes,
+      totals.sollaVotes,
+      bairro.federalNominal,
+      totals.federalNominal,
+    )
+    const ceuciLq = localQuotient(
+      bairro.ceuciVotes,
+      totals.ceuciVotes,
+      bairro.stateNominal,
+      totals.stateNominal,
+    )
+    return {
+      ...bairro,
+      sollaShareOwn,
+      ceuciShareOwn,
+      sollaShareValid: shareOf(bairro.sollaVotes, bairro.federalNominal),
+      ceuciShareValid: shareOf(bairro.ceuciVotes, bairro.stateNominal),
+      sollaLq,
+      ceuciLq,
+      overlapMin: Math.min(sollaShareOwn, ceuciShareOwn),
+      combinedVotes: bairro.sollaVotes + bairro.ceuciVotes,
+      bairroClass: classifyZone(sollaLq, ceuciLq),
+    }
+  })
+
+/** Bairro cuts used by the executive summary, the personas and the action plan. */
+export const buildBairroSummary = ({ metrics }) => {
+  const sollaShares = metrics.map((bairro) => bairro.sollaShareOwn)
+  const ceuciShares = metrics.map((bairro) => bairro.ceuciShareOwn)
+  const sollaVotes = metrics.map((bairro) => bairro.sollaVotes)
+  const ceuciVotes = metrics.map((bairro) => bairro.ceuciVotes)
+  const byClass = (key) => metrics.filter((bairro) => bairro.bairroClass.key === key)
+
+  return {
+    overlapCoefficient: overlapCoefficient(sollaShares, ceuciShares),
+    cosine: cosineSimilarity(sollaShares, ceuciShares),
+    pearson: pearson(sollaVotes, ceuciVotes),
+    spearman: spearman(sollaVotes, ceuciVotes),
+    sollaTop5Share: topShare(sollaShares, 5),
+    ceuciTop5Share: topShare(ceuciShares, 5),
+    sollaTop10Share: topShare(sollaShares, 10),
+    ceuciTop10Share: topShare(ceuciShares, 10),
+    sollaHhi: hhi(sollaShares),
+    ceuciHhi: hhi(ceuciShares),
+    shared: byClass('shared'),
+    sollaOnly: byClass('solla'),
+    ceuciOnly: byClass('ceuci'),
+    open: byClass('open'),
+    strongestCombined: [...metrics].sort((left, right) => right.combinedVotes - left.combinedVotes),
+    strongestCeuci: [...metrics].sort((left, right) => right.ceuciVotes - left.ceuciVotes),
+    strongestSolla: [...metrics].sort((left, right) => right.sollaVotes - left.sollaVotes),
+    ceuciAhead: metrics.filter((bairro) => bairro.ceuciVotes > bairro.sollaVotes),
+    sollaAhead: metrics.filter((bairro) => bairro.sollaVotes > bairro.ceuciVotes),
+    topCeuciLq: [...metrics]
+      .filter((bairro) => bairro.ceuciVotes >= 100)
+      .sort((left, right) => right.ceuciLq - left.ceuciLq),
+    topSollaLq: [...metrics]
+      .filter((bairro) => bairro.sollaVotes >= 100)
+      .sort((left, right) => right.sollaLq - left.sollaLq),
+  }
+}

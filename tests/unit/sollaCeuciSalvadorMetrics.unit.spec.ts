@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   averageRanks,
+  buildBairroMetrics,
+  buildBairroSummary,
   buildReportSummary,
   buildZoneMetrics,
   classifyZone,
@@ -108,5 +110,33 @@ describe('sollaCeuciSalvadorMetrics', () => {
     expect(summary.salvadorShareOfSollaState).toBeCloseTo(0.5)
     expect(summary.salvadorShareOfCeuciState).toBeCloseTo(0.25)
     expect(summary.ceuciAhead.map((zone: { zoneNumber: number }) => zone.zoneNumber)).toEqual([2])
+  })
+
+  it('builds per-bairro metrics with the bairro as the denominator', () => {
+    const bairros = [
+      { name: 'A', sollaVotes: 80, ceuciVotes: 20, federalNominal: 800, stateNominal: 800 },
+      { name: 'B', sollaVotes: 20, ceuciVotes: 20, federalNominal: 100, stateNominal: 100 },
+      { name: 'C', sollaVotes: 0, ceuciVotes: 60, federalNominal: 100, stateNominal: 100 },
+    ]
+    const totals = {
+      sollaVotes: 100,
+      ceuciVotes: 100,
+      federalNominal: 1000,
+      stateNominal: 1000,
+    }
+    const metrics = buildBairroMetrics({ bairros, totals })
+    expect(metrics[0].sollaLq).toBeCloseTo(1)
+    expect(metrics[0].ceuciLq).toBeCloseTo(0.25)
+    expect(metrics[0].bairroClass).toBe(ZONE_CLASSES.solla)
+    expect(metrics[1].bairroClass).toBe(ZONE_CLASSES.shared)
+    expect(metrics[2].bairroClass).toBe(ZONE_CLASSES.ceuci)
+    expect(metrics[2].ceuciLq).toBeCloseTo(6)
+
+    const summary = buildBairroSummary({ metrics })
+    expect(summary.overlapCoefficient).toBeCloseTo(0.4)
+    expect(summary.strongestCombined.map((bairro) => bairro.name)).toEqual(['A', 'C', 'B'])
+    expect(summary.ceuciAhead.map((bairro) => bairro.name)).toEqual(['C'])
+    expect(summary.sollaAhead.map((bairro) => bairro.name)).toEqual(['A'])
+    expect(summary.topCeuciLq).toEqual([])
   })
 })
