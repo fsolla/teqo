@@ -571,9 +571,14 @@ publicação (`diario/<data>-<coleção>[-s<suplemento>].json`) e cada PDF é
 provado com GET Range antes de gravar. Falha de resolução deixa a fala
 intocada, o run sai 1 e a próxima passada é idempotente.
 
-**Resultado registrado (2026-09-14):** 965 falas legadas em 510 publicações
-resolvidas; 0 legadas restantes na validação; 32 falas sem link (fallback
-YouTube/oculto). Relatórios em
+**Resultado registrado (2026-09-14):** dry-run achou 965 falas legadas em 504
+publicações (33 em `selCodColecaoCsv=J` e 1 com o parâmetro vazio, normalizadas
+para `D`; a Câmara devolve "Documento não encontrado" nos códigos obsoletos e a
+mesma data/página resolve em `D`) + 32 falas sem link (fallback
+YouTube/oculto); resolução cacheada das 504 publicações (retries absorvem
+`fetch failed` transiente); o write atualizou **965 falas** em 58s
+(`remainingLegacy: 0`, 0 falhas) e a validação read-only deu 965 diretas/0
+legadas com o `--coverage` inalterado (997 discursos). Relatórios em
 `/srv/hdd/backups/teqo-camara/reports/repair-links-*.json` e changelog
 `docs/changelog/2026-09-14-c160.md`.
 
