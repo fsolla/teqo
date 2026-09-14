@@ -137,9 +137,9 @@ Rejeitadas: B porque ressuscita link efêmero (o problema que o item resolve) e 
 
 ## Gatilhos de revisitação (pós-simplify, 2026-09-14)
 
-- **Popup blocker no download:** se a assessoria relatar "Baixar vídeo (MP4)" sem nada abrir (Safari/iOS), trocar o fallback pós-await por um aviso com link verificado na página. *(defer; score 3)*
-- **`parseYoutubeVideoId` com id de 6–10 chars:** mantido `{6,20}` (contrato desta fatia); se um `urlRegistro` real curto gerar iframe quebrado, alinhar a `{11}`. *(defer; score 2)*
-- **Política HTTP duplicada:** deliberada na decisão 1 — 3º call-site interativo extrai o `probeLink` compartilhado. *(defer; score 2)*
+- **Popup blocker no download:** se a assessoria relatar "Baixar vídeo (MP4)" sem nada abrir (Safari/iOS), trocar o fallback pós-await por um aviso com link verificado na página. _(defer; score 3)_
+- **`parseYoutubeVideoId` com id de 6–10 chars:** mantido `{6,20}` (contrato desta fatia); se um `urlRegistro` real curto gerar iframe quebrado, alinhar a `{11}`. _(defer; score 2)_
+- **Política HTTP duplicada:** deliberada na decisão 1 — 3º call-site interativo extrai o `probeLink` compartilhado. _(defer; score 2)_
 
 ## Rabbit holes / Não escopo (engenharia)
 
