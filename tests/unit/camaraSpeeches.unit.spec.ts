@@ -4,18 +4,28 @@ import { describe, expect, it } from 'vitest'
 
 import {
   aggregateBackfillRuns,
+  buildOfficialPdfUrl,
   buildVodUrl,
+  classifyOfficialTextUrl,
   clockToSeconds,
   dateRangeChunks,
+  isLegacyDiarioUrl,
   legislatureForDate,
   matchExcerpt,
   normalizeSpeakerName,
   normalizeTranscription,
+  officialTextUrlFallback,
+  parseDiarioDate,
+  parseDirectOfficialPdfUrl,
   parseDurationToSeconds,
   parseEventExcerpts,
+  parseLegacyOfficialUrl,
+  parseMontaPdfUrl,
   parseOfficialKeywords,
   parsePresidingOfficerTransitions,
   parseVodStatus,
+  planOfficialLinkRepairs,
+  publicationCacheKey,
   resolvePresidingOfficer,
   selectLinkSample,
   selectSpeechEvents,
@@ -666,5 +676,242 @@ describe('dateRangeChunks', () => {
     expect(dateRangeChunks('2024-02-01', '2024-02-29', 'month')).toEqual([
       ['2024-02-01', '2024-02-29'],
     ])
+  })
+})
+
+// Real URLs measured on 2026-09-14 (see docs/plans/acervo-abrir-fonte-pdf-oficial.md).
+const legacyGovUrl =
+  'https://imagem.camara.gov.br/dc_20b.asp?largura=&altura=&tipoForm=diarios' +
+  '&selCodColecaoCsv=D&Datain=8%2F2%2F2023&txPagina=73&txSuplemento=&enviar=Pesquisar'
+const legacyGovUrl75 = legacyGovUrl.replace('txPagina=73', 'txPagina=75')
+const montaPdfUrl =
+  'https://imagem.camara.leg.br/montaPdf.asp?narquivo=DCD0020230208000210000.PDF&npagina=73'
+const directPdfUrl = 'https://imagem.camara.leg.br/Imagem/d/pdf/DCD0020230208000210000.PDF'
+
+describe('parseDiarioDate', () => {
+  it('parses the Datain spelling into ISO', () => {
+    expect(parseDiarioDate('25/6/2020')).toBe('2020-06-25')
+    expect(parseDiarioDate('8/2/2023')).toBe('2023-02-08')
+    expect(parseDiarioDate('28/09/2011')).toBe('2011-09-28')
+  })
+
+  it('rejects what is not a real date', () => {
+    expect(parseDiarioDate('2023-02-08')).toBeNull()
+    expect(parseDiarioDate('32/1/2023')).toBeNull()
+    expect(parseDiarioDate('31/2/2023')).toBeNull()
+    expect(parseDiarioDate('1/13/2023')).toBeNull()
+    expect(parseDiarioDate('')).toBeNull()
+  })
+})
+
+describe('isLegacyDiarioUrl', () => {
+  it('recognizes the legacy endpoints even with malformed params', () => {
+    expect(isLegacyDiarioUrl(legacyGovUrl)).toBe(true)
+    expect(isLegacyDiarioUrl(montaPdfUrl)).toBe(true)
+    expect(isLegacyDiarioUrl('https://imagem.camara.leg.br/dc_20b.asp?Datain=xx')).toBe(true)
+  })
+
+  it('rejects direct PDFs and foreign URLs', () => {
+    expect(isLegacyDiarioUrl(directPdfUrl)).toBe(false)
+    expect(isLegacyDiarioUrl('https://example.com/dc_20b.asp?Datain=8/2/2023')).toBe(false)
+    expect(isLegacyDiarioUrl(null)).toBe(false)
+  })
+})
+
+describe('parseLegacyOfficialUrl', () => {
+  it('extracts publication, page and a .leg.br lookup URL from the legacy link', () => {
+    expect(parseLegacyOfficialUrl(legacyGovUrl)).toEqual({
+      lookupUrl:
+        'https://imagem.camara.leg.br/dc_20b.asp?largura=&altura=&tipoForm=diarios' +
+        '&selCodColecaoCsv=D&Datain=8%2F2%2F2023&txPagina=73&txSuplemento=&enviar=Pesquisar',
+      publication: { date: '2023-02-08', collection: 'D', supplement: null },
+      page: 73,
+    })
+  })
+
+  it('keeps a .leg.br host and reports a missing page', () => {
+    const parsed = parseLegacyOfficialUrl(
+      'https://imagem.camara.leg.br/dc_20.asp?Datain=1/3/2023&txPagina=',
+    )
+    expect(parsed?.lookupUrl).toContain('imagem.camara.leg.br')
+    expect(parsed?.page).toBeNull()
+  })
+
+  it('returns null for non-legacy or dateless URLs', () => {
+    expect(parseLegacyOfficialUrl(directPdfUrl)).toBeNull()
+    expect(parseLegacyOfficialUrl('https://imagem.camara.leg.br/dc_20b.asp?Datain=xx')).toBeNull()
+    expect(parseLegacyOfficialUrl(null)).toBeNull()
+  })
+})
+
+describe('parseMontaPdfUrl', () => {
+  it('parses the relative redirect target and the absolute one', () => {
+    expect(parseMontaPdfUrl('montaPdf.asp?narquivo=DCD0020230208000210000.PDF&npagina=73')).toEqual(
+      {
+        archiveFileName: 'DCD0020230208000210000.PDF',
+        page: 73,
+      },
+    )
+    expect(parseMontaPdfUrl(montaPdfUrl)).toEqual({
+      archiveFileName: 'DCD0020230208000210000.PDF',
+      page: 73,
+    })
+    expect(parseMontaPdfUrl('montaPdf.asp?narquivo=DCD0020230208000210000.PDF')?.page).toBeNull()
+  })
+
+  it('rejects an unsafe archive name and non-montaPdf URLs', () => {
+    expect(parseMontaPdfUrl('montaPdf.asp?narquivo=../../etc/passwd&npagina=1')).toBeNull()
+    expect(parseMontaPdfUrl(directPdfUrl)).toBeNull()
+  })
+})
+
+describe('buildOfficialPdfUrl', () => {
+  it('builds the direct PDF URL with the page fragment when known', () => {
+    expect(buildOfficialPdfUrl('DCD0020230208000210000.PDF', 73)).toBe(
+      'https://imagem.camara.leg.br/Imagem/d/pdf/DCD0020230208000210000.PDF#page=73',
+    )
+    expect(buildOfficialPdfUrl('DCD28SET2011.pdf')).toBe(
+      'https://imagem.camara.leg.br/Imagem/d/pdf/DCD28SET2011.pdf',
+    )
+  })
+
+  it('omits an invalid page and refuses an empty archive name', () => {
+    expect(buildOfficialPdfUrl('DCD0020230208000210000.PDF', 0)).toBe(directPdfUrl)
+    expect(buildOfficialPdfUrl('', 10)).toBeNull()
+  })
+})
+
+describe('parseDirectOfficialPdfUrl', () => {
+  it('parses the archive name and the page fragment', () => {
+    expect(parseDirectOfficialPdfUrl(`${directPdfUrl}#page=73`)).toEqual({
+      archiveFileName: 'DCD0020230208000210000.PDF',
+      page: 73,
+    })
+    expect(parseDirectOfficialPdfUrl(directPdfUrl)).toEqual({
+      archiveFileName: 'DCD0020230208000210000.PDF',
+      page: null,
+    })
+    expect(
+      parseDirectOfficialPdfUrl('https://imagem.camara.leg.br/Imagem/d/pdf/DCD28SET2011.pdf'),
+    ).toEqual({ archiveFileName: 'DCD28SET2011.pdf', page: null })
+  })
+
+  it('returns null outside the Câmara PDF path', () => {
+    expect(parseDirectOfficialPdfUrl(legacyGovUrl)).toBeNull()
+    expect(parseDirectOfficialPdfUrl('https://example.com/Imagem/d/pdf/x.PDF')).toBeNull()
+  })
+})
+
+describe('classifyOfficialTextUrl', () => {
+  it('classifies none, direct, legacy and montaPdf', () => {
+    expect(classifyOfficialTextUrl(null)).toBe('none')
+    expect(classifyOfficialTextUrl('  ')).toBe('none')
+    expect(classifyOfficialTextUrl(directPdfUrl)).toBe('direct')
+    expect(classifyOfficialTextUrl(`${directPdfUrl}#page=129`)).toBe('direct')
+    expect(classifyOfficialTextUrl(legacyGovUrl)).toBe('legacy')
+    expect(classifyOfficialTextUrl(montaPdfUrl)).toBe('montaPdf')
+  })
+
+  it('classifies everything else as unknown', () => {
+    expect(classifyOfficialTextUrl('https://example.com/discurso')).toBe('unknown')
+    expect(classifyOfficialTextUrl('https://imagem.camara.leg.br/outro.asp?x=1')).toBe('unknown')
+    expect(classifyOfficialTextUrl('https://imagem.camara.leg.br/dc_20b.asp?Datain=xx')).toBe(
+      'unknown',
+    )
+    expect(classifyOfficialTextUrl('lixo')).toBe('unknown')
+  })
+})
+
+describe('officialTextUrlFallback', () => {
+  it('preserves a stored direct PDF and nulls everything else', () => {
+    expect(officialTextUrlFallback(`${directPdfUrl}#page=73`)).toBe(`${directPdfUrl}#page=73`)
+    expect(officialTextUrlFallback(legacyGovUrl)).toBeNull()
+    expect(officialTextUrlFallback(montaPdfUrl)).toBeNull()
+    expect(officialTextUrlFallback(null)).toBeNull()
+  })
+})
+
+describe('publicationCacheKey', () => {
+  it('keys by date, collection and supplement', () => {
+    expect(publicationCacheKey({ date: '2023-02-08', collection: 'D', supplement: null })).toBe(
+      '2023-02-08-D',
+    )
+    expect(publicationCacheKey({ date: '2020-06-25', collection: 'D', supplement: '1' })).toBe(
+      '2020-06-25-D-s1',
+    )
+    expect(publicationCacheKey({ date: '2023-02-08', collection: null, supplement: '' })).toBe(
+      '2023-02-08',
+    )
+  })
+
+  it('returns null without a valid date', () => {
+    expect(publicationCacheKey({ date: '08/02/2023', collection: 'D' })).toBeNull()
+    expect(publicationCacheKey(null)).toBeNull()
+  })
+})
+
+describe('planOfficialLinkRepairs', () => {
+  it('groups legacy rows by publication and separates the other classes', () => {
+    const malformedLegacyUrl = 'https://imagem.camara.leg.br/dc_20b.asp?Datain=xx'
+    const plan = planOfficialLinkRepairs([
+      {
+        id: 1,
+        officialTextUrl: legacyGovUrl,
+        speechAt: '2023-02-08T10:00',
+        legislature: '57',
+      },
+      {
+        id: 2,
+        officialTextUrl: legacyGovUrl75,
+        speechAt: '2023-02-08T11:00',
+        legislature: '57',
+      },
+      { id: 3, officialTextUrl: directPdfUrl, speechAt: null, legislature: null },
+      { id: 4, officialTextUrl: null, speechAt: null, legislature: null },
+      { id: 5, officialTextUrl: montaPdfUrl, speechAt: null, legislature: null },
+      { id: 6, officialTextUrl: 'https://example.com/discurso', speechAt: null, legislature: null },
+      { id: 7, officialTextUrl: malformedLegacyUrl },
+    ])
+
+    expect(plan.groups).toHaveLength(1)
+    expect(plan.groups[0].key).toBe('2023-02-08-D')
+    expect(plan.groups[0].publication).toEqual({
+      date: '2023-02-08',
+      collection: 'D',
+      supplement: null,
+    })
+    expect(plan.groups[0].rows.map((row: { id: number }) => row.id)).toEqual([1, 2])
+    expect(plan.groups[0].rows.map((row: { page: number | null }) => row.page)).toEqual([73, 75])
+    expect(plan.directUpdates).toEqual([
+      {
+        id: 5,
+        previousUrl: montaPdfUrl,
+        nextUrl: `${directPdfUrl}#page=73`,
+        speechAt: null,
+        legislature: null,
+      },
+    ])
+    expect(plan.alreadyDirect).toBe(1)
+    expect(plan.none).toBe(1)
+    expect(plan.unknown.map((row: { id: number }) => row.id)).toEqual([6])
+    expect(plan.unresolvable).toEqual([
+      {
+        id: 7,
+        previousUrl: malformedLegacyUrl,
+        speechAt: null,
+        legislature: null,
+      },
+    ])
+  })
+
+  it('tolerates an empty scan', () => {
+    expect(planOfficialLinkRepairs(null)).toEqual({
+      groups: [],
+      directUpdates: [],
+      alreadyDirect: 0,
+      unknown: [],
+      unresolvable: [],
+      none: 0,
+    })
   })
 })

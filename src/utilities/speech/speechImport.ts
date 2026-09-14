@@ -59,6 +59,7 @@ export type SpeechImportState = {
   vodDownloadUrl: string | null
   summary: string | null
   officialTranscript: string | null
+  officialTextUrl: string | null
 }
 
 export type SpeechUpsertCounts = {
@@ -87,6 +88,7 @@ export const findSpeechImportState = async (
       vodDownloadUrl: true,
       summary: true,
       officialTranscript: true,
+      officialTextUrl: true,
     },
     // Intentional bypass: the import CLI is a trusted actor with no session.
     overrideAccess: true,
@@ -112,6 +114,7 @@ export const findSpeechImportState = async (
     vodDownloadUrl: speech.vodDownloadUrl ?? null,
     summary: speech.summary ?? null,
     officialTranscript: speech.officialTranscript ?? null,
+    officialTextUrl: speech.officialTextUrl ?? null,
   }
 }
 
