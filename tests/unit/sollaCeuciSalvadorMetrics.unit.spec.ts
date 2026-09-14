@@ -134,9 +134,13 @@ describe('sollaCeuciSalvadorMetrics', () => {
 
     const summary = buildBairroSummary({ metrics })
     expect(summary.overlapCoefficient).toBeCloseTo(0.4)
-    expect(summary.strongestCombined.map((bairro) => bairro.name)).toEqual(['A', 'C', 'B'])
-    expect(summary.ceuciAhead.map((bairro) => bairro.name)).toEqual(['C'])
-    expect(summary.sollaAhead.map((bairro) => bairro.name)).toEqual(['A'])
+    expect(summary.strongestCombined.map((bairro: { name: string }) => bairro.name)).toEqual([
+      'A',
+      'C',
+      'B',
+    ])
+    expect(summary.ceuciAhead.map((bairro: { name: string }) => bairro.name)).toEqual(['C'])
+    expect(summary.sollaAhead.map((bairro: { name: string }) => bairro.name)).toEqual(['A'])
     expect(summary.topCeuciLq).toEqual([])
   })
 })
