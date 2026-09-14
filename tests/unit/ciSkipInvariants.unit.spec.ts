@@ -153,7 +153,7 @@ describe('ciSkipInvariants', () => {
     expect(ciPr).not.toContain('ci-classify-production.mjs')
   })
 
-  it('deploy.yml chains verify → deploy-staging → deploy-production with separate environments (OPS103)', () => {
+  it('deploy.yml chains verify → deploy-staging → deploy-production with separate environments (OPS103 + OPS107)', () => {
     // One dispatch, one verify, two separately approved deploys. The gate is
     // the GitHub Environment (reviewer on production, configured in the repo —
     // not in this YAML); the chain is needs-based so a red staging fail-closes
@@ -169,12 +169,24 @@ describe('ciSkipInvariants', () => {
     expect(deploy).toContain('      TEQO_ENV: production')
     expect(deploy).toContain("github.ref == 'refs/heads/main'")
     expect(deploy).toContain("needs.deploy-staging.result == 'success'")
-    // Deploys share the homeserver compose/workspace: serialize them across
-    // runs without cancelling an in-flight deploy, and queue (never cancel) a
-    // previously pending one (`queue: max`).
-    expect(deploy).toContain('      group: deploy-homeserver')
-    expect(deploy).toContain('      cancel-in-progress: false')
-    expect(deploy).toContain('      queue: max')
+    // OPS107: only staging holds the shared lane. Staging never waits on an
+    // approval, so it always drains; the production approval must NOT hold a
+    // concurrency group — a `waiting` job blocks every later run's staging
+    // (the bug this delivers). Real serialization: the needs chain inside a
+    // run, the single self-hosted runner and the host `flock`.
+    const stagingBlock = deploy.slice(
+      deploy.indexOf('  deploy-staging:'),
+      deploy.indexOf('  requeue:'),
+    )
+    expect(stagingBlock).toContain('concurrency:')
+    expect(stagingBlock).toContain('      group: deploy-homeserver')
+    expect(stagingBlock).toContain('      cancel-in-progress: false')
+    expect(stagingBlock).toContain('      queue: max')
+    const productionBlock = deploy.slice(deploy.indexOf('  deploy-production:'))
+    expect(productionBlock).not.toContain('concurrency:')
+    // A workflow-level `concurrency:` would be acquired when the run starts
+    // (before any approval) and reintroduce the same blockage.
+    expect(deploy).not.toMatch(/^concurrency:/m)
   })
 
   it('every campaign domain dir is covered by the e2e affected manifest', () => {

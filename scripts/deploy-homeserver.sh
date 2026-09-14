@@ -49,8 +49,10 @@ WORKSPACE_DIR="${WORKSPACE_DIR:-$HOME/teqo-deploy}"
 TEQO_REGISTRY="${TEQO_REGISTRY:-localhost:5000}"
 # ONE lock for both environments: the compose file, the workspace and the
 # local registry are shared, so staging and production must never build or
-# swap concurrently (the workflow's job-level concurrency serializes the
-# runs; this lock also covers manual invocations on the host).
+# swap concurrently (the workflow's job-level concurrency lives only on
+# deploy-staging since OPS107 — the production approval never holds it, so
+# this lock IS the cross-run serialization; it also covers manual invocations
+# on the host).
 DEPLOY_LOCK="${DEPLOY_LOCK:-/tmp/teqo-deploy.lock}"
 
 say() { printf '[deploy] %s\n' "$*"; }

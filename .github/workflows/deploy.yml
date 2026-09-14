@@ -1,5 +1,5 @@
 # Deploy (OPS71 — GitHub Actions; staging + production since OPS103;
-# automatic start since OPS104).
+# automatic start since OPS104; approval lane decoupled since OPS107).
 #
 # STARTS BY ITSELF: a `push` to `main` starts the run (OPS104 trigger 1) —
 # the `preflight` job skips it when another deploy run is already
@@ -28,6 +28,10 @@
 #                       (required reviewer fsolla, configured in the repo).
 #                       A red staging fail-closes production. Same script,
 #                       TEQO_ENV=production (teqo-1313, 127.0.0.1:1313).
+#                       NO concurrency group (OPS107): a job `waiting` on the
+#                       approval must not occupy the shared deploy lane — the
+#                       concurrency is evaluated before the environment gate,
+#                       and holding the group blocked every later run's staging.
 #   requeue           — hosted, after deploy-staging: re-dispatches when main
 #                       advanced (OPS104 trigger 2).
 #
@@ -42,11 +46,12 @@
 # pre-build on the env DB — OPS66 — and the compose network / local registry
 # localhost:5000), which is exactly why the hosted jobs only verify/decide
 # and the self-hosted jobs only build + deploy. Deploy is idempotent
-# ("already deployed" guard in deploy-homeserver.sh) and serialized by flock
-# per environment; the `concurrency` group below serializes the two shared
-# homeserver compose/workspace consumers across runs without cancelling an
-# in-flight deploy (the staged `needs` chain already serializes them inside
-# one run).
+# ("already deployed" guard in deploy-homeserver.sh) and serialized by ONE
+# flock on the host (both environments). The `concurrency` group below lives
+# ONLY on `deploy-staging` (OPS107) — it never waits on an approval, so it
+# always drains; the staged `needs` chain serializes the environments inside
+# one run. Production execution is serialized by that same chain, the single
+# self-hosted runner and the host flock — never by a GitHub group.
 #
 # The deploy jobs fetch the repo from github.com (public) — TEQO_REPO_URL in
 # deploy-homeserver.sh defaults there; the script runs to completion for the
@@ -211,11 +216,14 @@ jobs:
     runs-on: [self-hosted, homeserver]
     timeout-minutes: 60
     concurrency:
-      # Shared homeserver compose/workspace: never two deploys at once across
-      # runs. The staged needs chain serializes them within one run. `queue:
-      # max`: the default single-slot queue cancels a previously pending
-      # deploy when a new dispatch arrives, even with cancel-in-progress
-      # false — deploys must wait their turn (OPS102: run to completion).
+      # Shared homeserver compose/workspace: never two staging deploys at once
+      # across runs. Only staging holds this group (OPS107): it never waits on
+      # an approval, so it always drains — production has NO group because a
+      # `waiting` approval would block every later run's staging (the
+      # concurrency is evaluated before the environment gate). `queue: max`:
+      # the default single-slot queue cancels a previously pending deploy when
+      # a new dispatch arrives, even with cancel-in-progress false — deploys
+      # must wait their turn (OPS102: run to completion).
       group: deploy-homeserver
       cancel-in-progress: false
       queue: max
@@ -250,24 +258,24 @@ jobs:
 
   deploy-production:
     name: deploy production (teqo-1313)
-    # OPS53 + OPS71 + OPS103 + OPS104. Runs on the GitHub self-hosted runner
-    # ON the homeserver (labels self-hosted + homeserver): the script executes
-    # locally — no SSH hop, no workstation involvement. Never wired in
+    # OPS53 + OPS71 + OPS103 + OPS104 + OPS107. Runs on the GitHub self-hosted
+    # runner ON the homeserver (labels self-hosted + homeserver): the script
+    # executes locally — no SSH hop, no workstation involvement. Never wired in
     # ci-pr.yml: a self-hosted job is code execution on the production
     # machine, and only a run with the full verify suite green can reach it
     # (the automatic start and the manual dispatch share the same gate).
     # `needs: [deploy-staging]` makes a red staging fail-close production; the
     # environment `production` (required reviewer, configured in the repo) is
-    # the approval gate — and the ONLY one.
+    # the approval gate — and the ONLY one. No concurrency group (OPS107): a
+    # job `waiting` here must not hold the shared deploy lane (it blocked every
+    # later run's staging, forcing old runs to be approved to reach the
+    # newest). Execution stays serialized by the needs chain, the single
+    # self-hosted runner and the host flock in deploy-homeserver.sh.
     needs: [deploy-staging]
     if: needs.deploy-staging.result == 'success' && github.ref == 'refs/heads/main'
     environment: production
     runs-on: [self-hosted, homeserver]
     timeout-minutes: 60
-    concurrency:
-      group: deploy-homeserver
-      cancel-in-progress: false
-      queue: max
     env:
       TEQO_ENV: production
     steps:
