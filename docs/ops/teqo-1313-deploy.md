@@ -1,31 +1,48 @@
-# Runbook: deploy do site 1313 no homeserver (OPS53 + OPS71 + OPS103 — dispatch manual)
+# Runbook: deploy do site 1313 no homeserver (OPS53 + OPS71 + OPS103 + OPS104 — início automático, produção com review)
 
-O deploy é uma **action manual** (`workflow_dispatch` no GitHub Actions,
-`.github/workflows/deploy.yml`): mergir em `main` **não** publica nada. O
-operador dispara o deploy quando decide publicar; antes de tocar o homeserver,
-o job `verify` (hosted) roda a suíte **full** (incl. e2e full) **uma vez** e
-gateia os dois alvos: `deploy-staging` → aprovação do environment `production`
-→ `deploy-production` (OPS103).
+Desde a OPS104 o deploy **começa sozinho**: todo merge em `main` (evento
+`push`) inicia o run do `deploy.yml` no head, e um segundo gatilho re-despacha
+um run novo se `main` andar durante o verify/staging. O que continua manual é
+a **publicação em produção**: o job `deploy-production` espera a aprovação do
+environment `production`. Antes de tocar o homeserver, o job `verify` (hosted)
+roda a suíte **full** (incl. e2e full) **uma vez** e gateia os dois alvos:
+`deploy-staging` → aprovação do environment `production` →
+`deploy-production` (OPS103).
 
 ## Gatilho e fluxo
 
-1. GitHub → Actions → **Deploy (manual)** → Run workflow (ref: `main`).
-2. Job `verify` (hosted `ubuntu-latest`, ~50 min): suíte full sem skips —
+1. **Início automático (OPS104):** merge em `main` → o run nasce no head; o
+   job `preflight` (hosted) pula o run quando já existe outro deploy
+   `queued`/`in_progress`. Um run aguardando aprovação de produção (`waiting`)
+   **não** conta: um merge nessa janela começa um run novo e os dois ficam
+   pendentes (o humano aprova qual promover). `workflow_dispatch` (GitHub →
+   Actions → **Deploy** → Run workflow, ref: `main`) segue como escape manual e
+   **não** passa pelo guard.
+2. Job `preflight` (hosted, `scripts/deploy-preflight.mjs`): consulta os runs
+   do próprio workflow; sem deploy ativo → segue. Falha de API é fail-open
+   (o guard é dedupe, não gate de segurança).
+3. Job `verify` (hosted `ubuntu-latest`, ~50 min): suíte full sem skips —
    check-test-locations → lint → format → typecheck → knip → cycles → unit →
-   int (migrate+seed nos services) → build → e2e full. **Intocado pela
-   OPS103**: verifica o commit, não o alvo.
-3. Se `verify` verde, o job `deploy-staging` (`needs: [verify]`,
+   int (migrate+seed nos services) → build → e2e full. **Intocado pelas
+   OPS103/OPS104**: verifica o commit, não o alvo.
+4. Se `verify` verde, o job `deploy-staging` (`needs: [verify]`,
    `environment: staging`, sem reviewer) roda no runner self-hosted e executa
    `TEQO_ENV=staging bash scripts/deploy-homeserver.sh <sha>` — publica o SHA
    em `staging.jorgesolla1313.com.br` (container `teqo-staging`,
    `127.0.0.1:1314`).
-4. Com staging verde, o job `deploy-production` (`needs: [deploy-staging]`,
+5. Com staging verde, o job `deploy-production` (`needs: [deploy-staging]`,
    `environment: production`) **aguarda a aprovação do reviewer** e então
    executa `TEQO_ENV=production bash scripts/deploy-homeserver.sh <sha>` —
    publica o **mesmo SHA** em produção (`teqo-1313`, `127.0.0.1:1313`).
    Staging vermelho = produção nunca roda; a corrida entre os dois é
    serializada pela `concurrency: deploy-homeserver`.
-5. O script, no **homeserver**: `flock` único (compose, workspace e registry
+6. **Requeue (OPS104):** com o staging verde, o job hosted `requeue`
+   (`scripts/deploy-requeue.mjs`, **fora** do grupo `deploy-homeserver` —
+   um run aguardando aprovação não pode bloquear o requeue) compara o head de
+   `main` com o SHA do run; se `main` andou durante o verify/staging, dispara
+   um run novo no head novo. Falha aqui é fail-red (job vermelho): staging
+   velho nunca fica silencioso.
+7. O script, no **homeserver**: `flock` único (compose, workspace e registry
    são compartilhados — um deploy por vez no host; o `concurrency` do
    workflow serializa os runs e o lock cobre invocação manual; desde a OPS102
    o run vai até o fim com o SHA do dispatch mesmo se `main` avançar durante o
@@ -47,15 +64,17 @@ gateia os dois alvos: `deploy-staging` → aprovação do environment `productio
 teqo-<env>` → healthcheck → smoke (`/`, `/campanha/login`, `/admin`,
    barreira 307, WebAuthn login-options, `api/revalidate` com o secret real do
    ambiente).
-6. Falha = job vermelho; nada é publicado pela metade (rollback automático
+8. Falha = job vermelho; nada é publicado pela metade (rollback automático
    após o swap, **só do ambiente que falhou**).
 
-**Primeiro deploy (verificação ao vivo):** depois do cutover OPS71, dispare o
-deploy manual e confira no log do job `deploy-production` o `set-url` do
-workspace (origem Forgejo → GitHub), o `deployed_sha` lido do container e o
-guard "already deployed" num segundo dispatch do mesmo SHA. Na OPS103, o
-caminho de estreia é o mesmo dispatch: staging primeiro (bootstrap abaixo),
-inspeção humana, aprovação, produção.
+**Primeiro deploy (verificação ao vivo):** o caminho de estreia do OPS104 é
+mergear em `main` e observar o run nascer sozinho: log do `preflight`
+(`should_deploy=true`), `verify` verde, staging publicado e `deploy-production`
+aguardando aprovação. Para o cutover OPS71, confira no log do job
+`deploy-production` o `set-url` do workspace (origem Forgejo → GitHub), o
+`deployed_sha` lido do container e o guard "already deployed" num segundo run
+do mesmo SHA. Na OPS103, staging primeiro (bootstrap abaixo), inspeção humana,
+aprovação, produção.
 
 ## Onde roda cada coisa
 
@@ -75,7 +94,7 @@ secrets de integração: `FORGEJO_API_TOKEN` (flips pós-merge) e
 ## Staging (OPS103)
 
 Alvo real e descartável para validar o SHA (migração/build/rollout/smoke) antes
-de produção. Mesmo dispatch, mesmo `verify`, mesmo script — o que muda é
+de produção. Mesmo run, mesmo `verify`, mesmo script — o que muda é
 `TEQO_ENV=staging` e o environment `staging` (sem reviewer; a aprovação que
 importa é a de `production`).
 
@@ -222,8 +241,10 @@ a correção se re-mergeia e o próximo deploy completo publica.
 
 | Sintoma                                                                                          | Causa                                                                                                                                                   | Tratamento                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Prod regride para um SHA antigo após re-dispatch fora de ordem                                   | O `flock` serializa mas não ordena; o "already deployed" não pega revision diferente                                                                    | Não re-dispatchar SHA antigo; se acontecer, re-dispatchar o `main` atual (rollback manual disponível na seção Rollback). Revisitar se o deploy ganhar frequência/automação ou se uma regressão fora-de-ordem acontecer                                                                                                                                                                 |
-| Job verde sem deploy ("already deployed")                                                        | O container rodando já tem a revision do SHA do job (ex.: `workflow_dispatch` duplicado da mesma HEAD)                                                  | Nada a fazer — o site já roda esse SHA. Forçar rebuild da MESMA HEAD não é suportado via dispatch: edite o tag da imagem no compose (`image: localhost:5000/teqo-1313:<sha>-rebuild`) e `docker compose up -d`, ou espere um commit novo                                                                                                                                               |
+| Prod regride para um SHA antigo após re-dispatch fora de ordem                                   | O `flock` serializa mas não ordena; o "already deployed" não pega revision diferente                                                                    | Evitar re-dispatchar SHA antigo (o requeue da OPS104 sempre despacha o head atual); se acontecer, re-dispatchar o `main` atual (rollback manual disponível na seção Rollback). Revisitar se uma regressão fora-de-ordem acontecer mesmo com o requeue                                                                                                                                  |
+| Job verde sem deploy ("already deployed")                                                        | O container rodando já tem a revision do SHA do job (ex.: run duplicado da mesma HEAD — `workflow_dispatch`, ou push + requeue da OPS104)               | Nada a fazer — o site já roda esse SHA. Forçar rebuild da MESMA HEAD não é suportado via dispatch: edite o tag da imagem no compose (`image: localhost:5000/teqo-1313:<sha>-rebuild`) e `docker compose up -d`, ou espere um commit novo                                                                                                                                               |
+| Merge durante aprovação pendente de produção: staging do run novo fica `pending`                 | O job `waiting` de approval **segura o grupo** `deploy-homeserver` (a avaliação de concurrency acontece antes do approval — comportamento do GitHub)    | O run novo já nasceu (o guard não conta `waiting`); aprovar/rejeitar o run pendente libera o grupo. Nada publica sem reviewer. Revisitar se aprovações passarem a demorar sistematicamente → avaliar grupos/locks por ambiente (o lock compartilhado é decisão da OPS103)                                                                                                              |
+| Merge durante `deploy-production` `in_progress` não gera requeue                                 | O push nasce, o `preflight` vê o deploy ativo e pula; o requeue daquele run já rodou (logo após o staging)                                              | Nada nasce até o próximo merge ou `workflow_dispatch`. Revisitar na primeira ocorrência real → 2º requeue após produção verde, ou refinar o guard                                                                                                                                                                                                                                      |
 | Job de deploy nunca roda / runner offline                                                        | Runner self-hosted do homeserver não instalado ou parado (passo manual do cutover OPS71)                                                                | Instalar/religar o runner (labels `self-hosted`, `homeserver`); os PRs e o `verify` não dependem dele — só os deploys                                                                                                                                                                                                                                                                  |
 | Deploy dispara mas o job `verify` falha                                                          | Regressão real na suíte full                                                                                                                            | Corrigir e re-dispatchar — o homeserver nunca é tocado                                                                                                                                                                                                                                                                                                                                 |
 | `No such image` ao recriar o container fora de deploy (ex.: `compose up -d` pós-reboot/migração) | O compose referenciava uma tag local bare (`teqo-1313:<sha>`) que desapareceu sem recriação (achado INF8/INF13, 24/08: só restava a ref do registry)    | Corrigido no INF13: o compose passa a referenciar a tag **qualificada** (`localhost:5000/teqo-1313:<sha>`) a partir do primeiro deploy pós-fix — até lá, produção ainda roda o compose bare (recrie o alias via `docker tag` se necessário). Recovery geral: `docker pull localhost:5000/teqo-1313:<sha>` (+ `docker tag` se o compose em uso tiver tag bare) e `docker compose up -d` |
@@ -261,12 +282,14 @@ automaticamente — **não serve push, não recebe PRs, é somente leitura**.
 
 - Os jobs `deploy-staging`/`deploy-production` usam
   `runs-on: [self-hosted, homeserver]` — executam como o usuário do runner no
-  homeserver. Estão **apenas** no `deploy.yml` (dispatch manual), nunca no
-  `ci-pr.yml`; o hosted (`verify`) não tem acesso ao homeserver e o self-hosted
-  não recebe secrets de produção (as envs vivem no próprio homeserver,
-  inclusive as de staging — nunca como GitHub secrets). `main` só anda por PR
-  mergeado com CI verde; o deploy só roda com `verify` full verde. Fork-PRs
-  não rodam CI (same-repo gate + setting do repo).
+  homeserver. Estão **apenas** no `deploy.yml` (início automático por `push`
+  em `main` ou `workflow_dispatch`; ambos passam pelo mesmo `verify` full),
+  nunca no `ci-pr.yml`; o hosted (`preflight`/`verify`/`requeue`) não tem
+  acesso ao homeserver e o self-hosted não recebe secrets de produção (as
+  envs vivem no próprio homeserver, inclusive as de staging — nunca como
+  GitHub secrets). `main` só anda por PR mergeado com CI verde; o deploy só
+  roda com `verify` full verde. Fork-PRs não rodam CI (same-repo gate +
+  setting do repo).
 - Segredos nunca ecoados: sem `set -x`, senhas via `--password-stdin` /
   build-secrets; envs só no homeserver.
 - Staging sem PII real (seed sintético), bucket/DB/env próprios e noindex —
@@ -286,9 +309,10 @@ fallback e não foi removida por esta entrega.
    "Testing" o refresh token expira em ~7 dias e o estado vira `erro` na UI.
 3. Adicione ao `~/stack/teqo-1313.env` (homeserver, chmod 600):
    `GOOGLE_CALENDAR_OAUTH_CLIENT_ID` e `GOOGLE_CALENDAR_OAUTH_CLIENT_SECRET`.
-4. Deploy normal (`workflow_dispatch` do `deploy.yml`). O callback monta o
-   redirect a partir de `NEXT_PUBLIC_SITE_URL` — precisa bater exatamente com
-   o URI registrado no passo 1.
+4. Deploy normal (`deploy.yml` — o merge em `main` já dispara; `workflow_dispatch`
+   segue como escape). O callback monta o redirect a partir de
+   `NEXT_PUBLIC_SITE_URL` — precisa bater exatamente com o URI registrado no
+   passo 1.
 
 Desconectar no Teqo apaga o refresh token daquele lado; para revogar o acesso
 de fato, revogue o app em `myaccount.google.com/permissions` (a UI orienta o
@@ -502,8 +526,9 @@ Para desfazer o acervo inteiro: `DELETE FROM "speech_segment"; DELETE FROM "spee
 ## Referências
 
 - `scripts/deploy-homeserver.sh` — o script (fonte da verdade do fluxo; parametrizado por `TEQO_ENV`)
-- `.github/workflows/deploy.yml` — verify → deploy-staging → deploy-production (OPS103)
+- `.github/workflows/deploy.yml` — preflight → verify → deploy-staging → requeue/deploy-production (OPS103/OPS104)
 - `docs/plans/ops53-ci-deploy-homeserver*.md` — intenção e decisões (era Forgejo)
 - `docs/plans/ops71-ci-github-actions-tracker-forgejo*.md` — o cutover
 - `docs/plans/ops103-staging-homeserver*.md` — staging com verify único e aprovações separadas
+- `docs/plans/ops104-disparo-automatico-do-deploy*.md` — início automático + requeue (staging automático, produção com review)
 - infra-solla: `STATE.md`, `plano-infra-final.md` §"Arquitetura de deploy"

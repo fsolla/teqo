@@ -51,7 +51,7 @@ Fases pesadas são delegadas a sub-agentes com contexto mínimo — o agente pri
 - [ ] 3. Dispatch sub-agente investigador → causa-raiz
 - [ ] 4. Fix da causa-raiz + teste de regressão (main agent iterativo)
 - [ ] 5. Dispatch sub-agente verificador → prova verde
-- [ ] 6. Gates + PR → merge; bug de prod: deploy manual → confirmação do humano
+- [ ] 6. Gates + PR → merge; bug de prod: deploy (staging automático, produção após approve) → confirmação do humano
 - [ ] 7. Dispatch sub-agente estrategista → prevenção classificada
 - [ ] 8. Implementar prevenção barata agora (a cara fica no post-mortem)
 - [ ] 9. Dispatch sub-agente escritor → post-mortem + entrada de changelog
@@ -106,7 +106,7 @@ Dispatch o **verificador** com o diff + causa-raiz + cenário original. Ele roda
 ## Passo 6 — Fechar e confirmar em prod
 
 - `pnpm push` → PR no GitHub **Ready** base `main` (`Closes #N` se houver Issue; `Related #N` para PR só de docs — plans-only guard) → auto-merge nativo com o required check `CI (PR) / checks` verde. Siga `agent-pr-workflow.mdc`.
-- **Bug de prod:** o merge NÃO é o fim. O deploy é **manual** (`workflow_dispatch` de `deploy.yml`, só humano — AGENT-OPS). Peça ao humano para disparar o deploy e **espere a confirmação de que prod se comporta** (o humano relata; você nunca toca o homeserver). Só então o bug está corrigido — registre data/hora da confirmação.
+- **Bug de prod:** o merge NÃO é o fim. O deploy **começa sozinho** no merge (`push` em `main` dispara o `deploy.yml` — OPS104): o staging publica automaticamente e a **produção só sai com o approve humano** no environment `production`. Peça ao humano para aprovar a produção do run e **espere a confirmação de que prod se comporta** (o humano relata; você nunca toca o homeserver). Só então o bug está corrigido — registre data/hora da confirmação.
 
 ## Passo 7 — Prevenção (sub-agente)
 

@@ -40,8 +40,8 @@ antes do deploy**.
 - **CI/PR:** roda só o **blast radius** detectado (`ci-scope.mjs`, modo
   `selected`) — nunca `full`. Diff high-risk (schema/lockfile/harness)
   classifica **`curated`** (OPS86): o PR roda o conjunto curado de e2e —
-  nunca zero; o full fica para o `verify` do deploy manual (antes de
-  publicar) e, nesse mesmo diff, o espelho local roda full. Arquivo de área
+  nunca zero; o full fica para o `verify` do deploy (o run nasce no merge —
+  OPS104) antes de publicar e, nesse mesmo diff, o espelho local roda full. Arquivo de área
   de risco sem entry no manifesto (`src/utilities/access`, `src/lib/schemas`,
   `campaignPushClient`, `src/utilities/ai`) classifica `unmapped-risk` e o PR
   **falha** listando os arquivos — a correção é adicionar a entry no

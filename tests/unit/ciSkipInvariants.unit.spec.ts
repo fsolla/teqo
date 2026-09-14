@@ -28,6 +28,13 @@ import {
 
 const repoRoot = join(fileURLToPath(new URL('.', import.meta.url)), '../..')
 
+/** YAML with comment-only lines stripped — header prose must never satisfy a pin. */
+const readWorkflow = (relativePath: string) =>
+  readFileSync(join(repoRoot, relativePath), 'utf8')
+    .split('\n')
+    .filter((line) => !line.trimStart().startsWith('#'))
+    .join('\n')
+
 describe('ciSkipInvariants', () => {
   it('exports shared path predicates used by classifiers and the lint guard', () => {
     expect(isSrcPath('src/lib/x.ts')).toBe(true)
@@ -108,15 +115,40 @@ describe('ciSkipInvariants', () => {
     }
   })
 
-  it('deploy is manual-only — never a push/schedule trigger (OPS71)', () => {
-    const deploy = readFileSync(join(repoRoot, '.github/workflows/deploy.yml'), 'utf8')
+  it('deploy starts on push to main with an active-run guard, dispatch kept (OPS104)', () => {
+    // OPS104 supersedes the OPS71 manual-only pin: a push to main starts the
+    // deploy run in the same workflow, and the preflight guard skips it when
+    // another run is queued/in_progress (a `waiting` production approval does
+    // NOT count — the script decision is pinned in deployTrigger.unit.spec.ts).
+    // The manual dispatch stays as the escape. Comments are stripped first:
+    // the header prose also mentions these keys and must never satisfy the pin.
+    const deploy = readWorkflow('.github/workflows/deploy.yml')
     expect(deploy).toContain('workflow_dispatch:')
-    expect(deploy).not.toMatch(/^\s*push:/m)
+    expect(deploy).toContain('  push:')
+    expect(deploy).toContain('    branches: [main]')
     expect(deploy).not.toMatch(/^\s*schedule:/m)
+    // Trigger 1: push-only guard; the output default keeps a dispatch flowing.
+    expect(deploy).toContain('  preflight:')
+    expect(deploy).toContain('node scripts/deploy-preflight.mjs')
+    expect(deploy).toContain("if: github.event_name == 'push'")
+    expect(deploy).toContain("steps.guard.outputs.should_deploy || 'true'")
+    expect(deploy).toContain("needs.preflight.outputs.should_deploy == 'true'")
+    // Trigger 2: hosted requeue, token-native dispatch.
+    expect(deploy).toContain('  requeue:')
+    expect(deploy).toContain('node scripts/deploy-requeue.mjs')
+    expect(deploy).toContain('actions: write')
+    // Anti-goal: the requeue stays hosted and OUTSIDE the deploy concurrency
+    // group — a run waiting on the production approval must not block it.
+    const requeueBlock = deploy.slice(
+      deploy.indexOf('  requeue:'),
+      deploy.indexOf('  deploy-production:'),
+    )
+    expect(requeueBlock).toContain('runs-on: ubuntu-latest')
+    expect(requeueBlock).not.toContain('concurrency:')
 
     // The OPS65 production-change gate died with the Forgejo ci.yml: the
-    // manual dispatch always runs the full suite (verify) before deploy, so
-    // no PR workflow may reference the removed classifier.
+    // full suite (verify) always runs before deploy, so no PR workflow may
+    // reference the removed classifier.
     const ciPr = readFileSync(join(repoRoot, '.github/workflows/ci-pr.yml'), 'utf8')
     expect(ciPr).not.toContain('ci-classify-production.mjs')
   })
@@ -127,11 +159,7 @@ describe('ciSkipInvariants', () => {
     // not in this YAML); the chain is needs-based so a red staging fail-closes
     // production. Comments are stripped first: the header prose also mentions
     // these keys, and it must never satisfy the pin.
-    const raw = readFileSync(join(repoRoot, '.github/workflows/deploy.yml'), 'utf8')
-    const deploy = raw
-      .split('\n')
-      .filter((line) => !line.trimStart().startsWith('#'))
-      .join('\n')
+    const deploy = readWorkflow('.github/workflows/deploy.yml')
     expect(deploy).toContain('  deploy-staging:')
     expect(deploy).toContain('  deploy-production:')
     expect(deploy).toContain('    environment: staging')

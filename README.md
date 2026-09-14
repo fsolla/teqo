@@ -9,12 +9,12 @@
 > 1. O agente roda `pnpm agent:claim` (ou `pnpm worktree next --issue N`) e pega a próxima Issue `ready` por prioridade (`prio:P0..P3`). O **tracker de Issues, o código, os PRs e o CI vivem no GitHub** (`github.com/fsolla/teqo`).
 > 2. Ele implementa, roda o fast gate (`lint + typecheck + unit`) e `pnpm push -u origin HEAD` — abre a PR para `main` (Ready, `Closes #N`).
 > 3. CI verde (`CI (PR) / checks`) → o safety net `agent-pr-ready-automerge.yml` arma o **auto-merge nativo** (rebase) — o servidor só mergea com o required check verde.
-> 4. Publicar é **manual**: dispatch de `deploy.yml` roda a suíte full (`verify`) e o job `deploy` publica no homeserver (`jorgesolla1313.com.br`, runner self-hosted) — migrações aplicadas antes do rollout. Nada é automático pós-merge.
+> 4. Deploy **começa automático**: o merge em `main` dispara o `deploy.yml` (suíte full no `verify`) → staging publica sozinho → **produção só com o approve do reviewer** no environment `production` (`jorgesolla1313.com.br`, runner self-hosted) — migrações aplicadas antes do rollout; o staging velho se atualiza via requeue (OPS104). `workflow_dispatch` segue como escape manual.
 > 5. Secrets humanos (uma vez): `GITHUB_TOKEN` (PAT com escopo `repo` + `issues: write`) para os scripts de agente/PR (`pnpm issue`/`agent:*`, `github-pr.mjs`); envs de prod em `~/stack/teqo-1313.env` no homeserver. Branch protection de `main` já aplicada (reaplicar: `pnpm configure:branch-protection`).
 >
 > Comandos: `pnpm agent:claim | agent:register | agent:prioritize | agent:file-miss | worktree next` e `pnpm db:seed:minimal`.
 > Labels: estado `ready|in-progress|blocked|done|in-prod`, `prio:P0..P3`, `kind:*`, `needs:migration|consent`, `requirements-changed`.
-> **Agente faz sozinho:** claim → implementar → PR → main. **Só humano:** deploy (dispatch), envs do homeserver, branch protection, runbook de rollback.
+> **Agente faz sozinho:** claim → implementar → PR → main (o merge já inicia o deploy de staging). **Só humano:** aprovar a produção no environment do run, envs do homeserver, branch protection, runbook de rollback.
 > Tudo em detalhe: [`docs/AGENT-OPS.md`](docs/AGENT-OPS.md) · CI: `.github/workflows/ci-pr.yml` · Deploy: `.github/workflows/deploy.yml`.
 
 Teqo starts as the official digital platform for **deputado Jorge Solla** and evolves into a **white-label civic engagement platform** for politicians in Brazil.
@@ -97,7 +97,7 @@ To change the schema:
 3. Review and commit the generated files in `src/migrations/` (both `.ts` and `.json`, plus `index.ts`).
 4. Apply it locally: `pnpm migrate` (check status anytime with `pnpm migrate:status`).
 
-**Deploying to production:** merges to `main` with production changes are deployed by the `deploy` job of `ci.yml` (windowed — see `docs/AGENT-OPS.md`); the remote script (`scripts/deploy-homeserver.sh`) builds on the homeserver and applies pending migrations through the compose maintenance service `teqo-1313-migrate` **before** the rollout. Do not run migrations against production by hand. Runbook (rollback, known failures): `docs/ops/teqo-1313-deploy.md`.
+**Deploying to production:** merges to `main` trigger `deploy.yml` automatically (OPS104) — the `verify` job runs the full suite, `deploy-staging` publishes on its own, and `deploy-production` waits for the `production` environment approval. The remote script (`scripts/deploy-homeserver.sh`) builds on the homeserver and applies pending migrations through the compose maintenance service `teqo-1313-migrate` **before** the rollout. Do not run migrations against production by hand. Runbook (rollback, known failures): `docs/ops/teqo-1313-deploy.md`.
 
 ### Running tests
 
