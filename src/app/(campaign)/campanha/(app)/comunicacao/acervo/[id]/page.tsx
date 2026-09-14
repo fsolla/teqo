@@ -1,5 +1,5 @@
 import config from '@payload-config'
-import { ArrowLeftIcon, DownloadIcon, ExternalLinkIcon } from 'lucide-react'
+import { ArrowLeftIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
@@ -103,29 +103,14 @@ export default async function SpeechDetailPage({ params, searchParams }: SpeechD
 
             <div className="mt-4">
               <SpeechDetailPlayer
-                vodPlaybackUrl={view.vodPlaybackUrl}
+                speechId={view.id}
+                youtubeVideoId={view.youtubeVideoId}
+                youtubeOffsetSeconds={view.youtubeOffsetSeconds}
+                vodResolvable={view.vodResolvable}
                 segments={view.segments}
                 initialSeconds={initialSeconds}
+                sourceUrl={sourceUrl}
               />
-            </div>
-
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {view.vodDownloadUrl ? (
-                <Button asChild className="min-h-10">
-                  <a href={view.vodDownloadUrl} target="_blank" rel="noreferrer">
-                    <DownloadIcon data-icon="inline-start" aria-hidden="true" />
-                    Baixar vídeo (MP4)
-                  </a>
-                </Button>
-              ) : null}
-              {sourceUrl ? (
-                <Button asChild variant="outline" className="min-h-10">
-                  <a href={sourceUrl} target="_blank" rel="noreferrer">
-                    <ExternalLinkIcon data-icon="inline-start" aria-hidden="true" />
-                    Abrir fonte
-                  </a>
-                </Button>
-              ) : null}
             </div>
 
             {view.officialTranscript ? (

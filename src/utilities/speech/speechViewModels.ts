@@ -15,6 +15,7 @@ import {
   type SpeechHighlightPart,
 } from '@/lib/speechHighlight'
 import { normalizeForSearch } from '@/lib/speechSearch'
+import { excerptOffsetSeconds, parseYoutubeVideoId } from '@/lib/speechVod'
 import type { Municipality } from '@/payload-types'
 import { speechScopeLabels, speechTopicLabels } from '@/utilities/speech/speechListUrl'
 
@@ -33,7 +34,6 @@ export type SpeechListRecord = {
   scopes?: SpeechScope[] | null
   mentionedMunicipalities?: (number | Municipality)[] | null
   presidingOfficer?: string | null
-  vodDownloadUrl?: string | null
   officialTextUrl?: string | null
   youtubeUrl?: string | null
 }
@@ -53,7 +53,6 @@ export type SpeechListItemViewModel = {
   keywords: string[]
   municipalities: { id: number; name: string }[]
   watchHref: string
-  downloadUrl: string | null
   sourceUrl: string | null
 }
 
@@ -80,8 +79,12 @@ export type SpeechDetailViewModel = {
   scopes: { value: SpeechScope; label: string }[]
   municipalities: { id: number; name: string }[]
   segments: SpeechDetailSegmentViewModel[]
-  vodPlaybackUrl: string | null
-  vodDownloadUrl: string | null
+  /** YouTube default source (C162): id when the session link parses, else null. */
+  youtubeVideoId: string | null
+  /** Session offset in seconds (excerpt epoch − session start), null when unknowable. */
+  youtubeOffsetSeconds: number | null
+  /** Stored VOD + excerpt coordinates — the Câmara may be asked on click. */
+  vodResolvable: boolean
 }
 
 const pad = (value: number): string => String(value).padStart(2, '0')
@@ -215,7 +218,6 @@ export const toSpeechListItemViewModel = ({
     keywords: speech.keywords ?? [],
     municipalities: municipalityViewModels(speech, municipalityLabels),
     watchHref: buildWatchHref(speech.id, matchedSegment, q),
-    downloadUrl: speech.vodDownloadUrl ?? null,
     sourceUrl: speech.officialTextUrl ?? speech.youtubeUrl ?? null,
   }
 }
@@ -223,6 +225,11 @@ export const toSpeechListItemViewModel = ({
 export type SpeechDetailRecord = SpeechListRecord & {
   phase?: string | null
   vodPlaybackUrl?: string | null
+  vodDownloadUrl?: string | null
+  eventId?: number | null
+  audioId?: number | null
+  excerptTMs?: number | null
+  eventStartAt?: string | null
 }
 
 export const toSpeechDetailViewModel = ({
@@ -235,27 +242,39 @@ export const toSpeechDetailViewModel = ({
   segments: readonly SpeechSegmentRecord[]
   query?: string
   municipalityLabels: ReadonlyMap<number, string>
-}): SpeechDetailViewModel => ({
-  id: speech.id,
-  speechAtLabel: formatSpeechAt(speech.speechAt),
-  type: speech.type ?? null,
-  phase: speech.phase ?? null,
-  durationLabel: formatSpeechDuration(speech.durationSeconds),
-  presidingOfficer: speech.presidingOfficer ?? null,
-  summary: speech.summary ?? null,
-  officialTranscript: speech.officialTranscript ?? null,
-  officialTextUrl: speech.officialTextUrl ?? null,
-  youtubeUrl: speech.youtubeUrl ?? null,
-  keywords: speech.keywords ?? [],
-  topics: topicViewModels(speech),
-  scopes: scopeViewModels(speech),
-  municipalities: municipalityViewModels(speech, municipalityLabels),
-  segments: segments.map((segment) => ({
-    startSeconds: segment.startSeconds,
-    endSeconds: segment.endSeconds,
-    startLabel: formatSpeechClock(segment.startSeconds),
-    parts: splitHighlightedParts(segment.text, query ?? ''),
-  })),
-  vodPlaybackUrl: speech.vodPlaybackUrl ?? null,
-  vodDownloadUrl: speech.vodDownloadUrl ?? null,
-})
+}): SpeechDetailViewModel => {
+  // The stored VOD link is a cache and never a URL handed to the client; it
+  // only signals that this record had a generated excerpt to re-resolve.
+  const vodResolvable = Boolean(
+    (speech.vodPlaybackUrl || speech.vodDownloadUrl) &&
+    speech.eventId &&
+    speech.audioId &&
+    speech.excerptTMs,
+  )
+
+  return {
+    id: speech.id,
+    speechAtLabel: formatSpeechAt(speech.speechAt),
+    type: speech.type ?? null,
+    phase: speech.phase ?? null,
+    durationLabel: formatSpeechDuration(speech.durationSeconds),
+    presidingOfficer: speech.presidingOfficer ?? null,
+    summary: speech.summary ?? null,
+    officialTranscript: speech.officialTranscript ?? null,
+    officialTextUrl: speech.officialTextUrl ?? null,
+    youtubeUrl: speech.youtubeUrl ?? null,
+    keywords: speech.keywords ?? [],
+    topics: topicViewModels(speech),
+    scopes: scopeViewModels(speech),
+    municipalities: municipalityViewModels(speech, municipalityLabels),
+    segments: segments.map((segment) => ({
+      startSeconds: segment.startSeconds,
+      endSeconds: segment.endSeconds,
+      startLabel: formatSpeechClock(segment.startSeconds),
+      parts: splitHighlightedParts(segment.text, query ?? ''),
+    })),
+    youtubeVideoId: parseYoutubeVideoId(speech.youtubeUrl),
+    youtubeOffsetSeconds: excerptOffsetSeconds(speech.excerptTMs, speech.eventStartAt),
+    vodResolvable,
+  }
+}

@@ -11,12 +11,17 @@
  */
 import { createHash } from 'node:crypto'
 
+// The VOD/YouTube contract moved to its production owner (C162) and is
+// re-exported here so the C152/C153 scripts keep the same import surface.
+export {
+  buildVodUrl,
+  CAMARA_USER_AGENT,
+  parseDurationToSeconds,
+  parseVodStatus,
+} from '../../src/lib/speechVod.ts'
+
 /** Câmara's open-data deputy id for Jorge Solla (used by the pilot). */
 export const SOLLA_DEPUTY_ID = 178857
-
-/** Browser-like UA — the trecho/evento pages answer 400 "Acesso via bot" to curl. */
-export const CAMARA_USER_AGENT =
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
 
 /** Deep Infra OpenAI-compatible transcription endpoint (returns segments with `verbose_json`). */
 export const DEEPINFRA_TRANSCRIBE_URL = 'https://api.deepinfra.com/v1/openai/audio/transcriptions'
@@ -139,40 +144,6 @@ export const legislatureForDate = (iso) => {
   return null
 }
 
-/**
- * Parses the Câmara duration spellings into seconds: `0h04'03"` (excerpt card)
- * and `0:04:07` / `4:07` (VOD status). Null when unparseable.
- *
- * @param {unknown} value
- * @returns {number | null}
- */
-export const parseDurationToSeconds = (value) => {
-  const raw = String(value ?? '').trim()
-  if (raw === '') return null
-
-  const card = /^(\d+)h(\d{1,2})'(\d{1,2})"?$/.exec(raw)
-  if (card) {
-    const minutes = Number(card[2])
-    const seconds = Number(card[3])
-    if (minutes > 59 || seconds > 59) return null
-    return Number(card[1]) * 3600 + minutes * 60 + seconds
-  }
-
-  const parts = raw.split(':')
-  if (!parts.every((part) => /^\d{1,2}$/.test(part))) return null
-  if (parts.length === 3) {
-    const [hours, minutes, seconds] = parts.map(Number)
-    if (minutes > 59 || seconds > 59) return null
-    return hours * 3600 + minutes * 60 + seconds
-  }
-  if (parts.length === 2) {
-    const [minutes, seconds] = parts.map(Number)
-    if (seconds > 59) return null
-    return minutes * 60 + seconds
-  }
-  return null
-}
-
 const integerOrNull = (value) => {
   const n = Number(value)
   return Number.isInteger(n) && n > 0 ? n : null
@@ -220,38 +191,6 @@ export const parseEventExcerpts = (html, eventId) => {
     })
   }
   return excerpts
-}
-
-/** The async VOD-generation status URL for one excerpt. */
-export const buildVodUrl = (eventId, audioId, tMs) =>
-  `https://www.camara.leg.br/evento-legislativo/${eventId}/video-sob-demanda?idAudio=${audioId}&trecho=${tMs}`
-
-/**
- * Normalizes the `video-sob-demanda` JSON (`{ estado, video }`). `state` is
- * `GERANDO` while the server transcodes, `PRONTO` when the MP4 exists,
- * `INDISPONIVEL` when there is none.
- *
- * @param {unknown} json
- * @returns {{ state: string, video: { title: string | null, subtitle: string | null, duration: string | null, clock: string | null, downloadUrl: string | null, playbackUrl: string | null } | null }}
- */
-export const parseVodStatus = (json) => {
-  const data = json && typeof json === 'object' ? json : {}
-  const estado = typeof data.estado === 'string' ? data.estado : 'DESCONHECIDO'
-  const raw = data.video && typeof data.video === 'object' ? data.video : null
-  const pick = (key) => (typeof raw?.[key] === 'string' ? raw[key] : null)
-  return {
-    state: estado,
-    video: raw
-      ? {
-          title: pick('titulo'),
-          subtitle: pick('subtitulo'),
-          duration: pick('duracao'),
-          clock: pick('horario'),
-          downloadUrl: pick('linkParaDownload'),
-          playbackUrl: pick('linkParaReproducao'),
-        }
-      : null,
-  }
 }
 
 /**

@@ -1,15 +1,26 @@
+import { request as playwrightRequest } from '@playwright/test'
+
 import type { SpeechScope, SpeechTopic } from '@/lib/speechFacets'
 
 import type { CampaignE2EOwnership } from './fixtures/campaignE2EFixtures.js'
 import { assertCampaignRedirect, expect, rendered, test } from './fixtures/campaignHttpTest.js'
 
 /**
- * C154 — the communication vertical over real HTTP (browserless, OPS35/OPS87):
- * role gates, the acervo search rendering (highlight + excerpt), the filter
- * URL contract and the detail's player/transcript/actions. Playback itself is
- * browser territory and is not asserted here — the HTML carries the contract
- * (`<video src>`, `data-start-seconds`).
+ * C154/C162 — the communication vertical over real HTTP (browserless,
+ * OPS35/OPS87): role gates, the acervo search rendering (highlight + excerpt),
+ * the filter URL contract and the detail's player/transcript/actions. The
+ * player picks the surface from the row coordinates — YouTube default when the
+ * session link parses, stored-VOD capa resolved on click otherwise, honest
+ * unavailable state when neither exists — and the stored VOD link itself is
+ * never rendered (C162). Playback is browser territory and is not asserted
+ * here; the HTML carries the contract (`<video src>` only after a click,
+ * `data-start-seconds`, the iframe `start`).
  */
+
+const YOUTUBE_VIDEO_ID = 'lLhRDkSPw0A'
+const EXCERPT_TMS = 1786473834650
+const EXCERPT_SESSION = '2026-08-11T15:00'
+const EXCERPT_OFFSET_SECONDS = 2634
 
 const createSpeech = async (
   campaign: { fixtures: CampaignE2EOwnership },
@@ -21,6 +32,8 @@ const createSpeech = async (
     keywords?: string[]
     durationSeconds?: number
     withVideo?: boolean
+    youtubeUrl?: string | null
+    eventStartAt?: string
   },
 ) => {
   const marker = input.marker
@@ -42,6 +55,11 @@ const createSpeech = async (
       searchText: `a retomada da saude ${marker} na bahia`,
       presidingOfficer: 'Pompeo de Mattos',
       officialTextUrl: 'https://camara.leg.br/discurso',
+      eventId: 67091,
+      audioId: 558641,
+      excerptTMs: EXCERPT_TMS,
+      eventStartAt: input.eventStartAt ?? EXCERPT_SESSION,
+      youtubeUrl: input.youtubeUrl ?? null,
       ...(input.withVideo === false
         ? {}
         : {
@@ -66,7 +84,7 @@ const createSpeech = async (
   return speech
 }
 
-test.describe('communication vertical (C154)', () => {
+test.describe('communication vertical (C154/C162)', () => {
   test('communicator lands on the acervo and sees only the vertical nav, with her scoped Sollinha', async ({
     campaign,
     campaignRequest,
@@ -111,12 +129,15 @@ test.describe('communication vertical (C154)', () => {
     expect(rendered(await advisorHome.text())).not.toContain('href="/campanha/comunicacao"')
   })
 
-  test('search renders the highlighted excerpt and the detail carries the player', async ({
+  test('search keeps the download off the card; the both-sources detail defaults to YouTube', async ({
     campaign,
     campaignRequest,
   }) => {
     const marker = campaign.fixtures.value('falateste')
-    const speech = await createSpeech(campaign, { marker })
+    const speech = await createSpeech(campaign, {
+      marker,
+      youtubeUrl: `https://www.youtube.com/watch?v=${YOUTUBE_VIDEO_ID}`,
+    })
 
     const user = await campaign.fixtures.createCampaignUser('communicator')
     const request = await campaignRequest(user, user.password)
@@ -128,16 +149,46 @@ test.describe('communication vertical (C154)', () => {
     expect(resultsHtml).toContain('<mark')
     expect(resultsHtml).toContain('Assistir no trecho')
     expect(resultsHtml).toContain('1 fala encontrada')
+    // C162 — the direct download left the card, and the stored ephemeral link
+    // never reaches any list HTML.
+    expect(resultsHtml).not.toContain('Baixar')
+    expect(resultsHtml).not.toContain('vod.camara.leg.br')
 
-    const detail = await request.get(`/campanha/comunicacao/acervo/${speech.id}?t=0&q=${marker}`)
+    const detail = await request.get(`/campanha/comunicacao/acervo/${speech.id}?t=43&q=${marker}`)
     expect(detail.status()).toBe(200)
     const detailHtml = rendered(await detail.text())
     expect(detailHtml).toContain('data-slot="speech-player"')
-    expect(detailHtml).toContain('<video')
+    // Default surface is the YouTube embed, positioned by the session offset
+    // (2634) plus the deep-linked transcript second (43).
+    expect(detailHtml).toContain(`youtube-nocookie.com/embed/${YOUTUBE_VIDEO_ID}`)
+    expect(detailHtml).toContain(`start=${EXCERPT_OFFSET_SECONDS + 43}`)
     expect(detailHtml).toContain('data-start-seconds="0"')
     expect(detailHtml).toContain('Baixar vídeo (MP4)')
     expect(detailHtml).toContain('Abrir fonte')
     expect(detailHtml).toContain('Fonte: Câmara dos Deputados')
+    expect(detailHtml).not.toContain('<video')
+    expect(detailHtml).not.toContain('vod.camara.leg.br')
+  })
+
+  test('a VOD-only speech offers the on-click resolution instead of a player', async ({
+    campaign,
+    campaignRequest,
+  }) => {
+    const marker = campaign.fixtures.value('sovod')
+    const speech = await createSpeech(campaign, { marker })
+
+    const user = await campaign.fixtures.createCampaignUser('communicator')
+    const request = await campaignRequest(user, user.password)
+
+    const detail = await request.get(`/campanha/comunicacao/acervo/${speech.id}`)
+    expect(detail.status()).toBe(200)
+    const html = rendered(await detail.text())
+    expect(html).toContain('Assistir o trecho')
+    expect(html).toContain('Baixar vídeo (MP4)')
+    expect(html).not.toContain('<video')
+    expect(html).not.toContain('<iframe')
+    // The stored link is an eligibility signal, never a rendered URL.
+    expect(html).not.toContain('vod.camara.leg.br')
   })
 
   test('facet filters narrow the results and the empty state suggests clearing', async ({
@@ -186,7 +237,7 @@ test.describe('communication vertical (C154)', () => {
     )
   })
 
-  test('a speech without VOD renders the unavailable block instead of a player', async ({
+  test('a speech without video renders the unavailable block instead of a player', async ({
     campaign,
     campaignRequest,
   }) => {
@@ -198,7 +249,66 @@ test.describe('communication vertical (C154)', () => {
 
     const detail = await request.get(`/campanha/comunicacao/acervo/${speech.id}`)
     const html = rendered(await detail.text())
-    expect(html).toContain('VOD indisponível')
+    expect(html).toContain('Vídeo indisponível neste momento')
+    expect(html).toContain('Abrir fonte')
+    // No stored VOD means nothing to resolve: no MP4 button and no retry.
     expect(html).not.toContain('Baixar vídeo (MP4)')
+    expect(html).not.toContain('Tentar novamente')
+  })
+
+  test.describe('POST /campanha/comunicacao/acervo/resolver-vod (C162)', () => {
+    const endpoint = '/campanha/comunicacao/acervo/resolver-vod'
+
+    test('rejects a request without a campaign session', async ({ campaign }) => {
+      const anonymous = await playwrightRequest.newContext({ baseURL: campaign.baseURL })
+      try {
+        const response = await anonymous.post(endpoint, { data: { speechId: 1 } })
+        expect(response.status()).toBe(401)
+      } finally {
+        await anonymous.dispose()
+      }
+    })
+
+    test('rejects a cross-origin request before any read', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('origem')
+      const speech = await createSpeech(campaign, { marker })
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      const response = await request.post(endpoint, {
+        data: { speechId: speech.id },
+        headers: { Origin: 'https://evil.example' },
+      })
+      expect(response.status()).toBe(403)
+      expect(await response.text()).toContain('Requisição inválida.')
+    })
+
+    test('refuses an actor outside the catalog gate', async ({ campaign, campaignRequest }) => {
+      const marker = campaign.fixtures.value('assessor')
+      const speech = await createSpeech(campaign, { marker })
+      const advisor = await campaign.fixtures.createCampaignUser('advisor')
+      const request = await campaignRequest(advisor, advisor.password)
+
+      const response = await request.post(endpoint, { data: { speechId: speech.id } })
+      expect(response.status()).toBe(400)
+      expect(await response.text()).toContain('Você não tem acesso ao acervo de falas.')
+    })
+
+    test('refuses a speech without a stored VOD without calling the Câmara', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('inelegivel')
+      const speech = await createSpeech(campaign, { marker, withVideo: false })
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      const response = await request.post(endpoint, { data: { speechId: speech.id } })
+      expect(response.status()).toBe(400)
+      expect(await response.text()).toContain('não tem trecho de vídeo')
+    })
   })
 })

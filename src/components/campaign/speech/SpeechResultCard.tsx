@@ -1,4 +1,4 @@
-import { DownloadIcon, ExternalLinkIcon, PlayIcon } from 'lucide-react'
+import { ExternalLinkIcon, PlayIcon } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
@@ -116,12 +116,6 @@ export const SpeechResultCard = ({ speech }: { speech: SpeechListItemViewModel }
             {speech.matchKind === 'segment' ? 'Assistir no trecho' : 'Ver fala'}
           </Link>
         </Button>
-        {speech.downloadUrl ? (
-          <ActionLink href={speech.downloadUrl} variant="outline">
-            <DownloadIcon data-icon="inline-start" aria-hidden="true" />
-            Baixar
-          </ActionLink>
-        ) : null}
         {speech.sourceUrl ? (
           <ActionLink href={speech.sourceUrl} variant="ghost">
             <ExternalLinkIcon data-icon="inline-start" aria-hidden="true" />

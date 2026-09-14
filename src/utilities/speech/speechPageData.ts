@@ -37,7 +37,6 @@ const speechListSelect = {
   scopes: true,
   mentionedMunicipalities: true,
   presidingOfficer: true,
-  vodDownloadUrl: true,
   officialTextUrl: true,
   youtubeUrl: true,
 } as const
@@ -46,6 +45,11 @@ const speechDetailSelect = {
   ...speechListSelect,
   phase: true,
   vodPlaybackUrl: true,
+  vodDownloadUrl: true,
+  eventId: true,
+  audioId: true,
+  excerptTMs: true,
+  eventStartAt: true,
 } as const
 
 const segmentSelect = {
