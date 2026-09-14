@@ -207,8 +207,9 @@ describe('scripts/deploy-homeserver.sh environment parameterization (OPS103)', (
 
   it('serializes both environments on ONE shared lock (compose/workspace are shared)', () => {
     // Per-env locks would let staging and production build/swap concurrently
-    // on the same workspace and compose file (the workflow concurrency does
-    // not cover manual invocations on the host).
+    // on the same workspace and compose file (the workflow job-level
+    // concurrency lives only on deploy-staging since OPS107 — this lock also
+    // covers cross-run execution and manual invocations on the host).
     expect(script).toContain('DEPLOY_LOCK="${DEPLOY_LOCK:-/tmp/teqo-deploy.lock}"')
     expect(script).not.toContain('/tmp/teqo-1313-deploy.lock')
     expect(script).not.toContain('/tmp/teqo-staging-deploy.lock')
