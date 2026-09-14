@@ -296,10 +296,15 @@ export const createApi = ({
       }))
     },
 
-    /** GET /pulls — normalized, GitHub PATCH uses `draft` not `is_draft`. */
-    listPullRequests: async ({ state = 'open', limit = 100 } = {}) => {
+    /**
+     * GET /pulls — normalized, GitHub PATCH uses `draft` not `is_draft`.
+     * `head` is the GitHub filter `owner:branch` (OPS106: the auto-unblock
+     * wrapper finds the agent's PR by the `fix/*` branch it created).
+     * @param {{ state?: string, limit?: number, head?: string }} [options]
+     */
+    listPullRequests: async ({ state = 'open', limit = 100, head } = {}) => {
       const pulls = await request(`/repos/${owner}/${name}/pulls`, {
-        query: { state, per_page: limit },
+        query: { state, head, per_page: limit },
       })
       return (Array.isArray(pulls) ? pulls : []).map(normalizePullRequest)
     },
@@ -334,6 +339,59 @@ export const createApi = ({
         createdAt: run.created_at,
         htmlUrl: run.html_url ?? '',
       }))
+    },
+
+    /**
+     * GET /repos/{owner}/{repo}/actions/runs/{id}/jobs — normalized job list
+     * of a run (OPS106 gate: only a failed `verify` job earns an agent).
+     * Steps keep name+conclusion so the bug report names the failed step.
+     */
+    getWorkflowRunJobs: async (runId) => {
+      const payload = await request(`/repos/${owner}/${name}/actions/runs/${runId}/jobs`, {
+        query: { per_page: 100 },
+      })
+      const jobs = Array.isArray(payload?.jobs) ? payload.jobs : []
+      return jobs.map((job) => ({
+        id: job.id,
+        name: job.name ?? '',
+        status: job.status ?? '',
+        conclusion: job.conclusion ?? null,
+        htmlUrl: job.html_url ?? '',
+        steps: (Array.isArray(job.steps) ? job.steps : []).map((step) => ({
+          name: step.name ?? '',
+          conclusion: step.conclusion ?? null,
+        })),
+      }))
+    },
+
+    /** GET /labels/{name} — `null` when the label does not exist (404). */
+    getLabel: async (label) => {
+      const found = await request(`/repos/${owner}/${name}/labels/${encodeURIComponent(label)}`)
+      if (!found) return null
+      return { name: found.name ?? '', color: found.color ?? '' }
+    },
+
+    /** POST /labels — creates a repo label (idempotent callers probe first). */
+    createLabel: async (label, { color = '1D76DB', description = '' } = {}) => {
+      const created = await request(`/repos/${owner}/${name}/labels`, {
+        method: 'POST',
+        body: { name: label, color, description },
+      })
+      return { name: created.name ?? label, color: created.color ?? color }
+    },
+
+    /** GET /repos/{owner}/{repo} — normalized (permissions used by `--check`). */
+    getRepository: async () => {
+      const repoPayload = await request(`/repos/${owner}/${name}`)
+      return {
+        fullName: repoPayload.full_name ?? repo,
+        defaultBranch: repoPayload.default_branch ?? 'main',
+        permissions: {
+          admin: Boolean(repoPayload.permissions?.admin),
+          push: Boolean(repoPayload.permissions?.push),
+          pull: Boolean(repoPayload.permissions?.pull),
+        },
+      }
     },
 
     /** GET /git/ref/heads/{branch} — `{ ref, sha }`; `null` when the branch is gone (404). */

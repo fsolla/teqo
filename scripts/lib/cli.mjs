@@ -22,6 +22,31 @@ export const dieWithLabel = (label) => (message) => {
 
 export const sha256Hex = (buffer) => createHash('sha256').update(buffer).digest('hex')
 
+/**
+ * `--flag=value` / `--flag` parser for the self-contained CLIs that use the
+ * equals form (the auto-unblock family). The historical `--flag value` parser
+ * lives in `agent-forgejo.mjs` (`parseArgs`); keeping the equals form here
+ * means an absent flag can never swallow the next argv as its value.
+ *
+ * @param {string[]} argv
+ * @returns {{ flags: Record<string, string | boolean>, positional: string[] }}
+ */
+export const parseEqualsFlags = (argv) => {
+  const flags = {}
+  const positional = []
+  for (const arg of Array.isArray(argv) ? argv : []) {
+    if (typeof arg !== 'string' || !arg.startsWith('--')) {
+      positional.push(arg)
+      continue
+    }
+    const body = arg.slice(2)
+    const equals = body.indexOf('=')
+    if (equals === -1) flags[body] = true
+    else flags[body.slice(0, equals)] = body.slice(equals + 1)
+  }
+  return { flags, positional }
+}
+
 /** The dotenv preamble every DB-touching script needs (.env.local wins over .env). */
 export const loadCliEnv = () => {
   const { config: loadEnv } = require('dotenv')

@@ -170,6 +170,7 @@ import {
 import {
   branchNameForIssue,
   fixBranchName,
+  headlessDirective,
   OPENCODE_PRESET_MODEL,
   opencodeLaunchDirective,
   planBranchName,
@@ -661,9 +662,14 @@ const cmdNamespaceBranch = async ({
   branchName,
   flags = {},
   argument = null,
+  headless = false,
+  directivePath = null,
 }) => {
+  if (headless && !directivePath) {
+    die('`--headless` requer `--directive <path>` (a diretiva vai para arquivo, nunca stdout).')
+  }
   // Fail-high on conflicting model flags before touching git.
-  resolveLaunchModel(flags)
+  const launchModel = resolveLaunchModel(flags)
   git(['fetch', 'origin'])
 
   const entries = parseWorktreeList(git(['worktree', 'list', '--porcelain']))
@@ -701,6 +707,15 @@ const cmdNamespaceBranch = async ({
   console.log(`  dev server: http://localhost:${env.devPort}   (pnpm dev)`)
   console.log(`  banco dev:  postgresql://teqo:teqo@localhost:5432/${env.devDatabase}`)
   console.log(`  banco test: postgresql://teqo:teqo@localhost:5432/${env.testDatabase}`)
+
+  if (headless) {
+    // OPS106: the auto-unblock wrapper consumes this file; stdout stays human
+    // logs (git/pnpm/seed children inherit stdio and would corrupt a JSON line).
+    const directive = headlessDirective({ dir, branch, model: launchModel, report: argument ?? '' })
+    writeFileSync(directivePath, `${JSON.stringify(directive)}\n`)
+    console.log(`[worktree] diretiva headless escrita em ${directivePath}`)
+    return
+  }
 
   if (!stay) {
     printLaunchDirective({ dir, purpose, argument, flags })
@@ -758,8 +773,13 @@ const cmdNew = async (stay, skipMigrate, bag, flags = {}) =>
  * launch prompt carries the bag as the skill's argument — the bug description
  * arrives with `/bug-fix` (sanitized in the directive builder). Never claims
  * nor creates Issues: the bug record is the skill's post-mortem.
+ *
+ * OPS106: `--headless --directive <path>` is the auto-unblock variant — it
+ * provisions exactly the same worktree and writes the machine-readable launch
+ * directive (opencode `run --command bug-fix`) to the file instead of printing
+ * the TUI launch/cd. The bug report arrives as the `bag`.
  */
-const cmdFix = async (stay, skipMigrate, bag, flags = {}) =>
+const cmdFix = async (stay, skipMigrate, bag, flags = {}, headless = false, directivePath = null) =>
   cmdNamespaceBranch({
     stay,
     skipMigrate,
@@ -769,6 +789,8 @@ const cmdFix = async (stay, skipMigrate, bag, flags = {}) =>
     branchName: (taken) => fixBranchName({ bag, taken }),
     flags,
     argument: bag,
+    headless,
+    directivePath,
   })
 
 /** Generated database names referenced by a worktree's own env files. */
@@ -852,7 +874,7 @@ const cmdKill = async (force) => {
   console.log(`cd ${mainRoot}`)
 }
 
-const { flags, positional } = parseArgs(process.argv.slice(2), new Set(['issue']))
+const { flags, positional } = parseArgs(process.argv.slice(2), new Set(['issue', 'directive']))
 const subcommand = positional[0]
 
 if (!subcommand) {
@@ -911,7 +933,7 @@ if (!subcommand) {
     '    terminal, mesma diretiva `launch` porém sem --prompt (apenas conversar) e --model <map> quando a flag está presente',
   )
   console.log(
-    `\n  fix [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]`,
+    `\n  fix [bag] [--stay] [--no-migrate] [--headless --directive <path>] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]`,
   )
   console.log('    cria um worktree de CORREÇÃO DE BUG (skill /bug-fix) DIFERENTE a cada')
   console.log('    invocação: com bag (a descrição do bug), branch fix/<bag> (sufixo -2/-3 se o')
@@ -920,6 +942,13 @@ if (!subcommand) {
   console.log(
     '    Issues — o registro do bug é o post-mortem da skill; no terminal, a diretiva `launch` envia --prompt "/bug-fix <bag>" (a descrição chega com a skill) e --model <map> quando a flag está presente',
   )
+  console.log(
+    '    OPS106: --headless --directive <path> provisiona o mesmo worktree e grava a diretiva',
+  )
+  console.log(
+    '    machine-readable de launch (opencode run --command bug-fix) no arquivo, sem TUI/cd — é o',
+  )
+  console.log('    caminho do wrapper auto-unblock no homeserver.')
   console.log('  kill [--force]  destrói o worktree em que você está (recusa sujo sem --force),')
   console.log('                  remove os bancos gerados do worktree (best-effort) e imprime')
   console.log('                  `cd <main>` no fim — o shell sempre volta ao worktree principal')
@@ -940,7 +969,14 @@ try {
   else if (subcommand === 'new')
     await cmdNew(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1], flags)
   else if (subcommand === 'fix')
-    await cmdFix(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1], flags)
+    await cmdFix(
+      Boolean(flags.stay),
+      Boolean(flags['no-migrate']),
+      positional[1],
+      flags,
+      Boolean(flags.headless),
+      flags.directive ?? null,
+    )
   else if (subcommand === 'kill') {
     if (flags.stay) die('`--stay` não se aplica a `kill` — ele sempre volta ao main.')
     await cmdKill(Boolean(flags.force))

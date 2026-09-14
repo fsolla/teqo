@@ -1,4 +1,4 @@
-# Runbook: deploy do site 1313 no homeserver (OPS53 + OPS71 + OPS103 + OPS104 — início automático, produção com review)
+# Runbook: deploy do site 1313 no homeserver (OPS53 + OPS71 + OPS103 + OPS104 + OPS106 — início automático, produção com review)
 
 Desde a OPS104 o deploy **começa sozinho**: todo merge em `main` (evento
 `push`) inicia o run do `deploy.yml` no head, e um segundo gatilho re-despacha
@@ -66,6 +66,16 @@ teqo-<env>` → healthcheck → smoke (`/`, `/campanha/login`, `/admin`,
    ambiente).
 8. Falha = job vermelho; nada é publicado pela metade (rollback automático
    após o swap, **só do ambiente que falhou**).
+9. **`verify` vermelho (OPS106):** o workflow separado `auto-unblock.yml`
+   (`workflow_run` no Deploy, só `push` + `main` + `failure`) dispara **um**
+   agente autônomo de desbloqueio no homeserver — launcher síncrono de ~1 min
+   que cria/atualiza a Issue token `auto-unblock` e destaca o agente
+   (`scripts/auto-unblock-agent.mjs`, cap de 4h, flock `/tmp/teqo-unblock.lock`);
+   o agente provisiona um worktree `fix/*` com banco **local** `teqo_wt*`
+   (guard fail-closed), roda a skill `/bug-fix` headless e entrega PR Ready
+   (auto-merge nativo). Agente ativo + nova falha = só comentário no token
+   (nunca enfileira); sem PR = token `blocked` para o humano. O `deploy.yml` e
+   o `verify` não mudam, e não há auto-retry do deploy.
 
 **Primeiro deploy (verificação ao vivo):** o caminho de estreia do OPS104 é
 mergear em `main` e observar o run nascer sozinho: log do `preflight`
@@ -256,6 +266,66 @@ a correção se re-mergeia e o próximo deploy completo publica.
 | Migrate falha                                                                                    | Drift/erro de schema                                                                                                                                    | Job vermelho; site segue no container antigo; corrigir e re-mergear                                                                                                                                                                                                                                                                                                                    |
 | Smoke falha pós-up                                                                               | Regressão de runtime                                                                                                                                    | Rollback automático (restore + `up -d`) + job vermelho; investigar                                                                                                                                                                                                                                                                                                                     |
 | `deploy-staging` falha cedo (`teqo-staging.env`/serviço ausente)                                 | Bootstrap do staging incompleto (DB, env file, serviços no compose ou environment `staging`)                                                            | Rodar o bootstrap da seção Staging; produção nunca é tocada (staging vermelho fail-closa o job `deploy-production`)                                                                                                                                                                                                                                                                    |
+| `verify` vermelho                                                                                | Regressão real na suíte full (ou flake — #882/#906)                                                                                                     | O `auto-unblock.yml` dispara o agente sozinho (OPS106): acompanhe a Issue `auto-unblock` (token) e o PR `fix/*`. Sem PR, o token fica `blocked` — inspecione o log em `~/teqo-unblock/logs/`. Correção manual segue possível (re-merge ou `workflow_dispatch`)                                                                                                                         |
+| Agente de desbloqueio não disparou (token inexistente)                                           | Bootstrap do homeserver incompleto — opencode sem auth, Node/pnpm fora do PATH do runner, PAT ausente/sem push, Docker/porta 5432, label ausente        | Rodar `pnpm unblock:check` no homeserver (com `GITHUB_TOKEN` e `AUTOMERGE_PAT` exportados) e seguir a seção Auto-unblock (OPS106) abaixo                                                                                                                                                                                                                                               |
+| Token `auto-unblock` preso (agente morto, sem PR)                                                | Wrapper morreu (OOM/timeout/erro) — lock livre, token < TTL se torna `skip_comment` na próxima falha                                                    | O TTL de 3h reclaima o token automaticamente (comenta + fecha + novo agente). Antes disso, inspecione o log e a branch `fix/*`; para liberar na hora, feche a Issue token com um comentário                                                                                                                                                                                            |
+
+## Auto-unblock (OPS106)
+
+Uma falha do job `verify` dispara **um** agente autônomo de desbloqueio no
+homeserver (workflow `.github/workflows/auto-unblock.yml`, runner self-hosted),
+com o mesmo contexto de `pnpm worktree fix`: worktree `fix/*` provisionado pelo
+dono (`scripts/worktree.mjs fix --headless`), bancos **locais** `teqo_wt*`/
+`*_test`, skill `/bug-fix` headless (`opencode run --command bug-fix`), PR Ready
+com auto-merge nativo. O registro visível é a Issue token `auto-unblock`, que
+linka o run vermelho; o token aberto + o `flock /tmp/teqo-unblock.lock` são o
+single-flight (falha com agente ativo só comenta — nunca enfileira).
+
+Guardrails: banco alvo tem de ser local e casar `teqo_wt*`/`*_test` (senão o
+agente nem lança; nunca `teqo_1313`/`teqo_staging`, nunca `~/stack/*.env`);
+`DATABASE_URL`/`ALLOW_REMOTE_DB`/`TEQO_ENV` são removidos do env do agente; o
+agente roda com o PAT (`AUTOMERGE_PAT`) só no processo destacado, via credential
+helper não-persistente; cap de 4h; produção continua só com aprovação humana e
+o deploy não tem auto-retry.
+
+### Bootstrap (uma vez, manual — fora do repo)
+
+1. **opencode no homeserver:** instalado e autenticado no usuário do runner
+   (`opencode auth login`; o provider do modelo default — `deepseek/deepseek-flash`
+   via env `OPENCODE_WORKTREE_MODEL` para override — precisa estar presente).
+2. **PAT:** secret `AUTOMERGE_PAT` no repo com os escopos `contents: write`,
+   `pull requests: write` e `issues: write` (o agente faz push/PR e o outcome
+   comenta/fecha a Issue; o built-in token do job não sobrevive ao processo
+   destacado). O armar do auto-merge continua no `agent-pr-ready-automerge.yml`.
+3. **Docker/Postgres dev:** o runner user precisa de Docker; o agente sobe o
+   container dev do repo (`docker compose -p teqo` com o `docker-compose.yml`
+   da raiz — serviço `postgres`, init em `docker/postgres/init`; porta 5432) —
+   **não** é o Postgres do stack (`stack_default`), então nenhum banco de
+   prod/staging é alcançável pelo env do agente.
+4. **Deps do checkout:** o workflow roda `pnpm install --frozen-lockfile` no
+   checkout do runner **antes** do launcher — o wrapper destacado carrega
+   `scripts/worktree.mjs`, que importa `dotenv`/`pg` no load, e o
+   `actions/checkout` limpa `node_modules` no runner self-hosted. O `--check`
+   valida `node_modules` (rode-o de um checkout com deps instaladas).
+5. **Dir do agente:** `$HOME/teqo-unblock/{logs,state,worktrees}` (criado pelo
+   próprio launcher; `WORKTREES_ROOT=$HOME/teqo-unblock/worktrees`).
+6. **Label:** `auto-unblock` (o launcher cria idempotentemente; o token nunca
+   recebe `ready`/`in-progress` e não entra na fila de claim).
+7. **Smoke:** com `GITHUB_TOKEN` (built-in/PAT) e `AUTOMERGE_PAT` exportados,
+   `pnpm unblock:check` valida node/git/pnpm/flock/timeout/docker (binário +
+   daemon)/opencode/auth, porta 5432, dirs, deps do repo, label e
+   `permissions.push` do PAT — fail-closed com a mensagem acionável.
+
+### Operação
+
+- **Token `auto-unblock` aberto** = agente ativo (ou órfão dentro do TTL de 3h).
+  Falha nova com token aberto: comenta no token, não dispara.
+- **Sem PR ao fim:** token recebe `blocked` e fica aberto (gate humano) — o log
+  está em `~/teqo-unblock/logs/unblock-<run-id>.log`.
+- **Limpeza:** worktrees/databases acumulam um punhado por falha; apague com
+  `pnpm worktree kill` de dentro do worktree (dropa os bancos do worktree).
+  Gatilho para automatizar retention: **≥3 worktrees/DBs `teqo-unblock`
+  acumulados** (`ls ~/teqo-unblock/worktrees`).
 
 ## Backup passivo no Forgejo (OPS76-FOLLOWUP, 2026-08-21)
 
@@ -288,8 +358,21 @@ automaticamente — **não serve push, não recebe PRs, é somente leitura**.
   acesso ao homeserver e o self-hosted não recebe secrets de produção (as
   envs vivem no próprio homeserver, inclusive as de staging — nunca como
   GitHub secrets). `main` só anda por PR mergeado com CI verde; o deploy só
-  roda com `verify` full verde. Fork-PRs não rodam CI (same-repo gate +
-  setting do repo).
+  roda com `verify` full verde (**exceção OPS106**: o agente de desbloqueio é
+  um job self-hosted disparado por `verify` vermelho — launcher fino + agente
+  destacado com guardrails fail-closed; ver seção Auto-unblock). Fork-PRs não
+  rodam CI (same-repo gate + setting do repo).
+- **Agente de desbloqueio (OPS106):** o `auto-unblock.yml` roda código na
+  máquina de produção justamente quando o `verify` falha. Mitigações: gatilho
+  restrito (push em `main` + job `verify` falho conferido pela jobs API),
+  launcher fino (só decide/spawna e sai), `flock` + Issue token
+  (single-flight), agente sem `RUNNER_TRACKING_ID` com cap de 4h, banco local
+  `teqo_wt*`/`*_test` fail-closed, env sem
+  `DATABASE_URL`/`ALLOW_REMOTE_DB`/`TEQO_ENV`, PAT por credential helper
+  não-persistente, entrega só por PR Ready com auto-merge (nunca push direto
+  em `main`) e produção ainda com approval humano. Risco residual aceito: o
+  agente tem Docker e o PAT no homeserver — sem sandbox/usuário dedicado
+  nesta fatia (revisitar só com evidência de abuso).
 - Segredos nunca ecoados: sem `set -x`, senhas via `--password-stdin` /
   build-secrets; envs só no homeserver.
 - Staging sem PII real (seed sintético), bucket/DB/env próprios e noindex —

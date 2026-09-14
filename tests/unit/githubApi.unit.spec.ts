@@ -168,6 +168,118 @@ describe('github-api (issue tracker layer)', () => {
     await expect(api.listWorkflowRuns('deploy.yml')).resolves.toEqual([])
   })
 
+  it('getWorkflowRunJobs normalizes jobs and their steps (OPS106 verify gate)', async () => {
+    const calls: FetchCall[] = []
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url, init) => {
+        calls.push({ url: String(url), init })
+        return ok({
+          jobs: [
+            {
+              id: 2,
+              name: 'verify',
+              status: 'completed',
+              conclusion: 'failure',
+              html_url: 'https://github.com/fsolla/teqo/actions/runs/1/job/2',
+              steps: [
+                { name: 'Lint', conclusion: 'success' },
+                { name: 'Integration tests (full suite)', conclusion: 'failure' },
+              ],
+            },
+          ],
+        })
+      },
+    })
+    const jobs = await api.getWorkflowRunJobs(1)
+    expect(calls[0].url).toContain('/actions/runs/1/jobs?per_page=100')
+    expect(jobs).toEqual([
+      {
+        id: 2,
+        name: 'verify',
+        status: 'completed',
+        conclusion: 'failure',
+        htmlUrl: 'https://github.com/fsolla/teqo/actions/runs/1/job/2',
+        steps: [
+          { name: 'Lint', conclusion: 'success' },
+          { name: 'Integration tests (full suite)', conclusion: 'failure' },
+        ],
+      },
+    ])
+  })
+
+  it('getWorkflowRunJobs tolerates a missing jobs array', async () => {
+    const api = createApi({ token: 'tok', fetchImpl: async () => ok({}) })
+    await expect(api.getWorkflowRunJobs(1)).resolves.toEqual([])
+  })
+
+  it('getLabel returns null on 404 and normalizes an existing label', async () => {
+    const missing = createApi({
+      token: 'tok',
+      retries: 0,
+      fetchImpl: async () => ok({ message: 'Not Found' }, 404),
+    })
+    await expect(missing.getLabel('auto-unblock')).resolves.toBeNull()
+
+    const found = createApi({
+      token: 'tok',
+      fetchImpl: async () => ok({ name: 'auto-unblock', color: '1D76DB' }),
+    })
+    await expect(found.getLabel('auto-unblock')).resolves.toEqual({
+      name: 'auto-unblock',
+      color: '1D76DB',
+    })
+  })
+
+  it('createLabel POSTs name/color/description', async () => {
+    const calls: FetchCall[] = []
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url, init) => {
+        calls.push({ url: String(url), init })
+        return ok({ name: 'auto-unblock', color: '1D76DB' })
+      },
+    })
+    await api.createLabel('auto-unblock', { color: '1D76DB', description: 'agente de desbloqueio' })
+    expect(calls[0].url).toContain('/labels')
+    expect(JSON.parse(calls[0].init?.body ?? '{}')).toEqual({
+      name: 'auto-unblock',
+      color: '1D76DB',
+      description: 'agente de desbloqueio',
+    })
+  })
+
+  it('listPullRequests forwards the head filter (owner:branch)', async () => {
+    const calls: FetchCall[] = []
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url, init) => {
+        calls.push({ url: String(url), init })
+        return ok([])
+      },
+    })
+    await api.listPullRequests({ state: 'all', head: 'fsolla:fix/abc' })
+    expect(calls[0].url).toContain('state=all')
+    expect(calls[0].url).toContain('head=fsolla%3Afix%2Fabc')
+  })
+
+  it('getRepository normalizes the push permission (--check)', async () => {
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async () =>
+        ok({
+          full_name: 'fsolla/teqo',
+          default_branch: 'main',
+          permissions: { admin: false, push: true, pull: true },
+        }),
+    })
+    await expect(api.getRepository()).resolves.toEqual({
+      fullName: 'fsolla/teqo',
+      defaultBranch: 'main',
+      permissions: { admin: false, push: true, pull: true },
+    })
+  })
+
   it('getBranchHead reads and normalizes the branch ref', async () => {
     const calls: FetchCall[] = []
     const api = createApi({
