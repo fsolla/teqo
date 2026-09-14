@@ -133,8 +133,9 @@ antiga) — **não mexa nela**.
    (posições, alinhamentos, cores, fontes).
 2. Suba `pnpm dev`, capture screenshots (desktop 1024 e mobile 393) **por seção**
    (elemento, não fullPage — o fullPage trunca por causa do scroll aninhado).
-3. Use os subagentes `design-vision` / `design-vision-fidelidade` para conferir
-   a implementação contra as referências `/home/fsolla/Downloads/Board(1|2).png`.
+3. Leia os screenshots com a tool Read e confira a implementação contra as
+   referências `/home/fsolla/Downloads/Board(1|2).png` (o modelo padrão enxerga
+   imagem); compare seção por seção — a referência é o alvo, nunca a critique.
    Confira também o **comportamento dos carrosséis** (auto-advance, chip ativo
    sincronizado) com o Playwright (aguarde o timer avançar e valide o estado).
 4. Rode: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm format:check`, `pnpm build`.
