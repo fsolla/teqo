@@ -45,7 +45,7 @@ Na lista de municípios, quem filtra já vê os números linha a linha, mas ning
 
 - **Vou apresentar dados?** Sim — somas do recorte, na própria lista, junto das colunas que já existem.
 - **Decisões desbloqueadas:** Coordenador/assessor/candidato dimensiona o recorte filtrado e compara cenários de relance para priorizar onde agir; leitura relativa/local preservada (somas do conjunto que se está olhando, nunca % estadual).
-- **Forma:** *adiada ao plano de implementação* — restrições: recorte inteiro (não página), rótulo honesto, sem médias/percentuais/cobertura, sem pledges na v1, sem seletor novo, sem consulta nova se os dados do recorte já estiverem carregados.
+- **Forma:** _adiada ao plano de implementação_ — restrições: recorte inteiro (não página), rótulo honesto, sem médias/percentuais/cobertura, sem pledges na v1, sem seletor novo, sem consulta nova se os dados do recorte já estiverem carregados.
 
 ## Dados da decisão (literais)
 
