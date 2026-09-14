@@ -16,6 +16,11 @@
  * write run targeting production (or a remote/override DB) additionally
  * requires `CAMARA_IMPORT_CONFIRM=1`.
  *
+ * C160 writes `officialTextUrl` as the direct Diário PDF: the import normalizes
+ * the legacy `urlTexto` (`dc_20b.asp`/`dc_20.asp`) by following its redirect,
+ * cached once per publication under `<out>/diario/`, and `--repair-links
+ * [--dry-run]` fixes the already-imported speeches without reimporting.
+ *
  * Usage:
  *   pnpm camara:import --legislature 57
  *   pnpm camara:import --date 2023-02-07 --limit 3
@@ -23,6 +28,8 @@
  *   pnpm camara:import --all --limit 2          # smoke
  *   pnpm camara:import --coverage
  *   pnpm camara:import --verify-links 3
+ *   pnpm camara:import --repair-links --dry-run
+ *   CAMARA_IMPORT_CONFIRM=1 pnpm camara:import --repair-links
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -38,7 +45,8 @@ import {
   getJson,
   getJsonWithBackoff,
   getText,
-  probeVodLink,
+  probeLink,
+  resolveOfficialPdfUrl,
   resolveVod,
   speechesUrl,
   transcribeSpeechAudio,
@@ -47,13 +55,21 @@ import {
   LEGISLATURE_RANGES,
   SOLLA_DEPUTY_ID,
   aggregateBackfillRuns,
+  buildOfficialPdfUrl,
+  classifyOfficialTextUrl,
   dateRangeChunks,
+  isLegacyDiarioUrl,
   legislatureForDate,
   matchExcerpt,
+  officialTextUrlFallback,
   parseDurationToSeconds,
   parseEventExcerpts,
+  parseLegacyOfficialUrl,
+  parseMontaPdfUrl,
   parseOfficialKeywords,
   parsePresidingOfficerTransitions,
+  planOfficialLinkRepairs,
+  publicationCacheKey,
   resolvePresidingOfficer,
   selectLinkSample,
   selectSpeechEvents,
@@ -103,11 +119,14 @@ const parseArgs = (argv) => {
     date: null,
     limit: null,
     speaker: 'Jorge Solla',
+    speakerProvided: false,
     out: DEFAULT_OUT_DIR,
     skipTranscribe: false,
     reclassify: false,
     coverage: false,
     verifyLinks: null,
+    repairLinks: false,
+    dryRun: false,
     help: false,
   }
   for (let index = 0; index < argv.length; index += 1) {
@@ -121,13 +140,17 @@ const parseArgs = (argv) => {
     else if (arg === '--all') options.all = true
     else if (arg === '--coverage') options.coverage = true
     else if (arg === '--verify-links') options.verifyLinks = Number(value())
+    else if (arg === '--repair-links') options.repairLinks = true
+    else if (arg === '--dry-run') options.dryRun = true
     else if (arg === '--skip-transcribe') options.skipTranscribe = true
     else if (arg === '--reclassify') options.reclassify = true
     else if (arg === '--legislature') options.legislature = Number(value())
     else if (arg === '--date') options.date = value()
     else if (arg === '--limit') options.limit = Number(value())
-    else if (arg === '--speaker') options.speaker = value()
-    else if (arg === '--out') options.out = value()
+    else if (arg === '--speaker') {
+      options.speaker = value()
+      options.speakerProvided = true
+    } else if (arg === '--out') options.out = value()
     else die(`argumento desconhecido: ${arg}`)
   }
   if (options.help) return options
@@ -136,6 +159,22 @@ const parseArgs = (argv) => {
   const importModes = [options.all, options.date !== null, options.legislature !== null].filter(
     Boolean,
   ).length
+  if (options.dryRun && !options.repairLinks) die('--dry-run só vale com --repair-links.')
+  if (options.repairLinks && readOnlyModes > 0) {
+    die('--repair-links não combina com --coverage/--verify-links.')
+  }
+  if (options.repairLinks && importModes > 0) {
+    die('--repair-links não combina com --all/--date/--legislature.')
+  }
+  if (
+    options.repairLinks &&
+    (options.limit !== null ||
+      options.skipTranscribe ||
+      options.reclassify ||
+      options.speakerProvided)
+  ) {
+    die('--limit/--skip-transcribe/--reclassify/--speaker só valem para os modos de import.')
+  }
   if (readOnlyModes > 1) die('--coverage e --verify-links são modos separados.')
   if (readOnlyModes > 0 && importModes > 0) {
     die('--coverage/--verify-links não combinam com --all/--date/--legislature.')
@@ -156,9 +195,11 @@ const parseArgs = (argv) => {
   ) {
     die('--verify-links exige um inteiro >= 1.')
   }
-  if (importModes === 0 && readOnlyModes === 0) options.legislature = 57
-  if (options.legislature !== null && !LEGISLATURE_RANGES[options.legislature]) {
-    die('informe --legislature <54|55|56|57> ou --date <YYYY-MM-DD> (veja --help).')
+  if (!options.repairLinks) {
+    if (importModes === 0 && readOnlyModes === 0) options.legislature = 57
+    if (options.legislature !== null && !LEGISLATURE_RANGES[options.legislature]) {
+      die('informe --legislature <54|55|56|57> ou --date <YYYY-MM-DD> (veja --help).')
+    }
   }
   if (options.date !== null && !/^\d{4}-\d{2}-\d{2}$/.test(options.date)) {
     die('--date deve ser YYYY-MM-DD.')
@@ -173,7 +214,7 @@ const parseArgs = (argv) => {
 }
 
 const HELP = `
-Uso: pnpm camara:import [--all | --legislature 54|55|56|57 | --date YYYY-MM-DD | --coverage | --verify-links <n>] [opções]
+Uso: pnpm camara:import [--all | --legislature 54|55|56|57 | --date YYYY-MM-DD | --coverage | --verify-links <n> | --repair-links [--dry-run]] [opções]
 
 Modos de import (escrevem no acervo):
   --all                processa as 54ª–57ª em sequência (relatório por legislatura)
@@ -182,6 +223,14 @@ Modos de import (escrevem no acervo):
 Modos read-only:
   --coverage           imprime a cobertura do banco por legislatura (sem rede/escrita)
   --verify-links <n>   amostra n discursos por legislatura e testa os links do VOD
+  --repair-links --dry-run
+                       planeja o reparo do link oficial (PDF direto do Diário) sem escrever
+
+Reparo do link oficial (C160):
+  --repair-links       troca officialTextUrl legado (dc_20b/dc_20.asp/montaPdf) pelo PDF
+                       direto do Diário; resolve uma vez por publicação (cache em <out>/diario)
+                       e exige CAMARA_IMPORT_CONFIRM=1 fora de alvo local (runbook §C160)
+  --dry-run            só com --repair-links: relata o plano sem escrever
 
 Opções de import:
   --limit <n>         quantos discursos processar por legislatura (default: todos)
@@ -192,7 +241,7 @@ Opções de import:
   --help              esta ajuda
 
 Escrita em alvo não-local ou com NODE_ENV=production exige CAMARA_IMPORT_CONFIRM=1
-(runbook: docs/ops/teqo-1313-deploy.md §C155).
+(runbook: docs/ops/teqo-1313-deploy.md §C155/§C160).
 A página do evento é cacheada em <out>/events; apague-a para reler a Câmara.
 `
 
@@ -340,6 +389,99 @@ async function transcribeExcerpt(eventId, excerpt, options) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Official Diário link (C160)
+// ---------------------------------------------------------------------------
+
+const DIARIO_CACHE_DIR = 'diario'
+const OFFICIAL_LINK_FAILURE_STAGE = 'official-link'
+
+/**
+ * One publication, one network resolution, ever: the cached PDF archive file
+ * name of a `(date, collection, supplement)` in `<out>/diario/`. The injected
+ * download follows the legacy redirect and probes the direct PDF with a Range
+ * GET, so a failure throws before anything is cached.
+ *
+ * @param {{ date: string, collection: string | null, supplement: string | null }} publication
+ * @param {string} lookupUrl
+ * @param {{ out: string }} options
+ * @returns {Promise<string>}
+ */
+async function resolvePublicationPdf(publication, lookupUrl, options) {
+  const key = publicationCacheKey(publication)
+  if (key === null) throw new Error('publicação sem data — link oficial não resolvível')
+  const cached = await ensureCachedDownload({
+    label: 'camara:import',
+    key,
+    url: lookupUrl,
+    ext: 'json',
+    cacheDir: join(options.out, DIARIO_CACHE_DIR),
+    download: async () => {
+      const resolved = await resolveOfficialPdfUrl(lookupUrl)
+      const probe = await probeLink(resolved.pdfUrl, { timeoutMs: 60_000 })
+      if (!probe.ok || !String(probe.contentType ?? '').includes('application/pdf')) {
+        throw new Error(`PDF oficial inacessível (${probe.note}) em ${resolved.pdfUrl}`)
+      }
+      return Buffer.from(
+        JSON.stringify({
+          archiveFileName: resolved.archiveFileName,
+          page: resolved.page,
+          finalUrl: resolved.finalUrl,
+          checkedAt: new Date().toISOString(),
+        }),
+      )
+    },
+  })
+  const archiveFileName = String(cached.json?.archiveFileName ?? '').trim()
+  if (archiveFileName === '') throw new Error(`cache sem archiveFileName para ${key}`)
+  return archiveFileName
+}
+
+/**
+ * Resolves one raw `urlTexto` to the direct Diário PDF. Never returns the
+ * legacy visualizer or the `montaPdf` hop: on failure it preserves a previously
+ * stored direct URL (null otherwise, so the UI falls back to YouTube/the hidden
+ * button) and reports.
+ *
+ * @param {unknown} rawUrl
+ * @param {unknown} existingUrl
+ * @param {{ out: string }} options
+ * @returns {Promise<{ url: string | null, state: 'none' | 'direct' | 'resolved' | 'failed' | 'unknown', error?: string }>}
+ */
+async function resolveOfficialTextUrl(rawUrl, existingUrl, options) {
+  const kind = classifyOfficialTextUrl(rawUrl)
+  if (kind === 'none') return { url: null, state: 'none' }
+  if (kind === 'direct') return { url: String(rawUrl).trim(), state: 'direct' }
+  if (kind === 'montaPdf') {
+    const parsed = parseMontaPdfUrl(rawUrl)
+    return { url: buildOfficialPdfUrl(parsed.archiveFileName, parsed.page), state: 'resolved' }
+  }
+  if (kind === 'unknown') {
+    if (!isLegacyDiarioUrl(rawUrl)) return { url: String(rawUrl).trim(), state: 'unknown' }
+    return {
+      url: officialTextUrlFallback(existingUrl),
+      state: 'failed',
+      error: `link legado não resolvível: ${String(rawUrl).slice(0, 160)}`,
+    }
+  }
+
+  const parsed = parseLegacyOfficialUrl(rawUrl)
+  try {
+    const archiveFileName = await resolvePublicationPdf(
+      parsed.publication,
+      parsed.lookupUrl,
+      options,
+    )
+    return { url: buildOfficialPdfUrl(archiveFileName, parsed.page), state: 'resolved' }
+  } catch (error) {
+    return {
+      url: officialTextUrlFallback(existingUrl),
+      state: 'failed',
+      error: error?.message ?? String(error),
+    }
+  }
+}
+
 async function processSpeech(payload, speech, options, run) {
   // Identity: the API triple is the key; a genuinely distinct speech sharing
   // the triple (seen 2026-06-17T17:16) gets a content-hash suffix instead of
@@ -365,6 +507,7 @@ async function processSpeech(payload, speech, options, run) {
     segmentCount: 0,
     created: false,
     manualFacetsPreserved: false,
+    officialLink: null,
     failures: [],
   }
 
@@ -455,6 +598,17 @@ async function processSpeech(payload, speech, options, run) {
     media.durationSeconds ??
     (preserveStoredMedia ? (existing?.durationSeconds ?? null) : null) ??
     parseDurationToSeconds(excerpt?.duration)
+
+  const official = await resolveOfficialTextUrl(
+    speech.urlTexto ?? null,
+    existing?.officialTextUrl ?? null,
+    options,
+  )
+  report.officialLink = official.state
+  if (official.error) {
+    report.failures.push({ stage: OFFICIAL_LINK_FAILURE_STAGE, message: official.error })
+  }
+
   const bundle = {
     sourceKey,
     speechAt: String(speech.dataHoraInicio ?? '').trim(),
@@ -465,7 +619,7 @@ async function processSpeech(payload, speech, options, run) {
     durationSeconds,
     summary: speech.sumario ?? null,
     officialTranscript: speech.transcricao ?? null,
-    officialTextUrl: speech.urlTexto ?? null,
+    officialTextUrl: official.url,
     keywords,
     eventId: event?.id ?? null,
     eventType: event?.descricaoTipo ?? null,
@@ -599,6 +753,8 @@ const speechLine = (report) => {
   if (report.segmentCount > 0) parts.push(`${report.segmentCount} segmentos`)
   if (report.presidingOfficer) parts.push(`presidiu ${report.presidingOfficer}`)
   if (report.classifiedBy) parts.push(`facetas ${report.classifiedBy}`)
+  if (report.officialLink === 'resolved') parts.push('link oficial resolvido')
+  if (report.officialLink === 'failed') parts.push('link oficial falhou')
   if (report.failures.length > 0) parts.push(`${report.failures.length} falha(s)`)
   return parts.join(' · ')
 }
@@ -810,7 +966,7 @@ const runVerifyLinks = async (payload, options) => {
     ]
     for (const [kind, url] of links) {
       if (!url) continue
-      const probe = await probeVodLink(url)
+      const probe = await probeLink(url)
       checked.push({ legislature: row.legislature, speechId: row.id, kind, ...probe })
       console.log(
         `[camara:import] ${row.legislature ?? '—'} #${row.id} ${kind}: ` +
@@ -846,6 +1002,153 @@ const runVerifyLinks = async (payload, options) => {
 // Main
 // ---------------------------------------------------------------------------
 
+/** Resolves every publication of the repair plan once (cache + probe). */
+async function resolveRepairPublications(plan, options) {
+  const publications = []
+  const archiveNames = new Map()
+  let failedRows = 0
+  for (const group of plan.groups) {
+    try {
+      const archiveFileName = await resolvePublicationPdf(
+        group.publication,
+        group.lookupUrl,
+        options,
+      )
+      archiveNames.set(group.key, archiveFileName)
+      publications.push({
+        key: group.key,
+        lookupUrl: group.lookupUrl,
+        archiveFileName,
+        state: 'resolved',
+        rows: group.rows.length,
+        pages: group.rows.map((row) => row.page),
+      })
+    } catch (error) {
+      failedRows += group.rows.length
+      publications.push({
+        key: group.key,
+        lookupUrl: group.lookupUrl,
+        archiveFileName: null,
+        state: 'failed',
+        rows: group.rows.length,
+        error: error?.message ?? String(error),
+      })
+      console.log(`[camara:import]   ✗ ${group.key}: ${error?.message ?? error}`)
+    }
+  }
+  return { publications, archiveNames, failedRows }
+}
+
+/** Offline `montaPdf` conversions + the rows of every resolved publication. */
+const buildRepairUpdates = (plan, archiveNames) => [
+  ...plan.directUpdates,
+  ...plan.groups.flatMap((group) => {
+    const archiveFileName = archiveNames.get(group.key)
+    if (!archiveFileName) return []
+    return group.rows.map((row) => ({
+      id: row.id,
+      previousUrl: row.previousUrl,
+      nextUrl: buildOfficialPdfUrl(archiveFileName, row.page),
+      speechAt: row.speechAt,
+      legislature: row.legislature,
+    }))
+  }),
+]
+
+async function applyRepairUpdates(payload, updates) {
+  let updated = 0
+  const failures = []
+  for (const update of updates) {
+    try {
+      await payload.update({
+        collection: 'speech',
+        id: update.id,
+        data: { officialTextUrl: update.nextUrl },
+        depth: 0,
+        // Intentional bypass: the import CLI is a trusted actor with no session.
+        overrideAccess: true,
+      })
+      updated += 1
+    } catch (error) {
+      failures.push({ id: update.id, message: error?.message ?? String(error) })
+    }
+  }
+  return { updated, failures }
+}
+
+const runRepairLinks = async (payload, options) => {
+  const startedAt = Date.now()
+  const found = await payload.find({
+    collection: 'speech',
+    where: { officialTextUrl: { exists: true } },
+    pagination: false,
+    depth: 0,
+    select: { legislature: true, speechAt: true, officialTextUrl: true },
+    // Intentional bypass: the import CLI is a trusted actor with no session.
+    overrideAccess: true,
+  })
+  const total = await payload.count({
+    collection: 'speech',
+    // Intentional bypass: the import CLI is a trusted actor with no session.
+    overrideAccess: true,
+  })
+  const plan = planOfficialLinkRepairs(found.docs)
+  const legacyRows = plan.groups.reduce((sum, group) => sum + group.rows.length, 0)
+  const totalLegacy = legacyRows + plan.directUpdates.length
+  console.log(
+    `[camara:import] falas: ${found.docs.length} com link ` +
+      `(${plan.alreadyDirect} diretas, ${legacyRows} legadas em ${plan.groups.length} publicações, ` +
+      `${plan.directUpdates.length} montaPdf, ${plan.unresolvable.length} malformadas, ` +
+      `${plan.unknown.length} desconhecidas); ` +
+      `${total.totalDocs - found.docs.length} sem link`,
+  )
+
+  const { publications, archiveNames, failedRows } = await resolveRepairPublications(plan, options)
+  const updates = buildRepairUpdates(plan, archiveNames)
+  const { updated, failures } = options.dryRun
+    ? { updated: 0, failures: [] }
+    : await applyRepairUpdates(payload, updates)
+
+  const failedPublications = publications.filter((entry) => entry.state === 'failed').length
+  const unresolved = plan.unresolvable.length
+  const report = {
+    runAt: new Date().toISOString(),
+    mode: 'repair-links',
+    dryRun: options.dryRun,
+    options: runOptions(options),
+    scanned: found.docs.length,
+    withoutLink: total.totalDocs - found.docs.length,
+    alreadyDirect: plan.alreadyDirect,
+    unknown: plan.unknown,
+    unresolvable: plan.unresolvable,
+    publications,
+    updates,
+    failures,
+    totals: {
+      legacy: totalLegacy,
+      unresolved,
+      updated,
+      failedPublications,
+      failedRows,
+      failedUpdates: failures.length,
+      remainingLegacy: Math.max(0, totalLegacy + unresolved - updated),
+    },
+    elapsedMs: Date.now() - startedAt,
+  }
+
+  console.log(
+    options.dryRun
+      ? `[camara:import] dry-run: ${updates.length} falas seriam atualizadas, ` +
+          `${failedRows + unresolved} pendente(s) em ${failedPublications} publicação(ões)`
+      : `[camara:import] atualizadas: ${updated}; legadas restantes: ${report.totals.remainingLegacy}`,
+  )
+  const reportPath = await writeReport(options, `repair-links-${stamp(report.runAt)}.json`, report)
+  console.log(`\n[camara:import] relatório JSON: ${reportPath}`)
+  if (!options.dryRun && (failedPublications > 0 || failures.length > 0 || unresolved > 0)) {
+    die('reparo incompleto — publicações/falas pendentes listadas no relatório.')
+  }
+}
+
 const databaseTarget = () => {
   const url = process.env.DATABASE_URL
   const host = databaseHostname(url)
@@ -857,6 +1160,9 @@ const databaseTarget = () => {
 const modeLabel = (options) => {
   if (options.coverage) return 'coverage (read-only)'
   if (options.verifyLinks !== null) return `verify-links n=${options.verifyLinks} (read-only)`
+  if (options.repairLinks) {
+    return options.dryRun ? 'repair-links dry-run (read-only)' : 'repair-links'
+  }
   if (options.all) return 'backfill 54ª–57ª'
   if (options.date) return `date ${options.date}`
   return `legislature ${options.legislature}`
@@ -873,7 +1179,7 @@ const assertWriteAllowed = () => {
   die(
     `alvo de escrita não-local/produção detectado (${databaseTarget()}).\n` +
       `Confirme a intenção com:\n  ${WRITE_CONFIRM_FLAG}=1 pnpm camara:import …\n` +
-      `Runbook: docs/ops/teqo-1313-deploy.md §C155.`,
+      `Runbook: docs/ops/teqo-1313-deploy.md §C155/§C160.`,
   )
 }
 
@@ -884,7 +1190,8 @@ async function main() {
     process.exit(0)
   }
 
-  const readOnly = options.coverage || options.verifyLinks !== null
+  const readOnly =
+    options.coverage || options.verifyLinks !== null || (options.repairLinks && options.dryRun)
   if (readOnly) {
     if (!process.env.DATABASE_URL) die('DATABASE_URL não definida; recusando continuar.')
   } else {
@@ -893,7 +1200,7 @@ async function main() {
     assertWriteAllowed()
     assertLocalDatabase(
       'camara:import',
-      'O import escreve no acervo; produção exige CAMARA_IMPORT_CONFIRM=1 (runbook §C155).',
+      'O import escreve no acervo; produção exige CAMARA_IMPORT_CONFIRM=1 (runbook §C155/§C160).',
     )
   }
   console.log(`[camara:import] alvo: ${databaseTarget()} | modo: ${modeLabel(options)}`)
@@ -901,6 +1208,7 @@ async function main() {
   const payload = await getPayload({ config })
   if (options.coverage) await runCoverage(payload, options)
   else if (options.verifyLinks !== null) await runVerifyLinks(payload, options)
+  else if (options.repairLinks) await runRepairLinks(payload, options)
   else if (options.all) await runBackfill(payload, options)
   else await runSingleRange(payload, options)
   process.exit(0)

@@ -168,7 +168,9 @@ describe('upsertSpeechBundle (C153)', () => {
   })
 
   it('reports the stored import state for skip decisions', async () => {
-    const bundle = baseBundle()
+    const officialTextUrl =
+      'https://imagem.camara.leg.br/Imagem/d/pdf/DCD0020230208000210000.PDF#page=73'
+    const bundle = baseBundle({ officialTextUrl })
     await upsertSpeechBundle(payload, bundle)
 
     const state = await findSpeechImportState(payload, bundle.sourceKey)
@@ -177,6 +179,7 @@ describe('upsertSpeechBundle (C153)', () => {
       excerptTMs: 1675801808560,
       segmentCount: 1,
       classifiedBy: 'gazetteer',
+      officialTextUrl,
     })
     expect(await findSpeechImportState(payload, 'test-import-missing')).toBeNull()
   })

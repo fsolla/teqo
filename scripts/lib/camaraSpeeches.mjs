@@ -477,6 +477,289 @@ export const aggregateBackfillRuns = (runs) => {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Official Diário link (C160)
+// ---------------------------------------------------------------------------
+
+const CAMARA_IMAGEM_HOSTS = new Set(['imagem.camara.leg.br', 'imagem.camara.gov.br'])
+const LEGACY_DIARIO_PATHS = new Set(['/dc_20b.asp', '/dc_20.asp'])
+const MONTA_PDF_PATH = '/montaPdf.asp'
+const DIRECT_PDF_PATH = /^\/Imagem\/d\/pdf\/([^/]+\.pdf)$/i
+
+/** Absolute or Câmara-relative URL of a Diário link; null when unparseable. */
+const parseDiarioUrl = (raw) => {
+  const value = String(raw ?? '').trim()
+  if (value === '') return null
+  try {
+    const url = new URL(value, 'https://imagem.camara.leg.br/')
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url : null
+  } catch {
+    return null
+  }
+}
+
+const queryValue = (url, ...names) => {
+  for (const name of names) {
+    const value = url.searchParams.get(name)
+    if (value !== null && value.trim() !== '') return value.trim()
+  }
+  return null
+}
+
+const positiveIntegerOrNull = (value) => {
+  const number = Number(value)
+  return Number.isInteger(number) && number > 0 ? number : null
+}
+
+/**
+ * `Datain` spelling (`25/6/2020`, URL-decoded) → `2020-06-25`; null when the
+ * day/month/year is not a real date.
+ *
+ * @param {unknown} value
+ * @returns {string | null}
+ */
+export const parseDiarioDate = (value) => {
+  const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(String(value ?? '').trim())
+  if (!match) return null
+  const day = Number(match[1])
+  const month = Number(match[2])
+  const year = Number(match[3])
+  if (day < 1 || month < 1 || month > 12) return null
+  const parsed = new Date(Date.UTC(year, month - 1, day))
+  if (parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) return null
+  return `${match[3]}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+/**
+ * True when the URL is one of the legacy Diário endpoints
+ * (`dc_20b.asp`/`dc_20.asp`/`montaPdf.asp` on the Câmara image host), even when
+ * its `Datain`/`narquivo` is malformed. The write paths must never store one of
+ * these.
+ *
+ * @param {unknown} raw
+ * @returns {boolean}
+ */
+export const isLegacyDiarioUrl = (raw) => {
+  const url = parseDiarioUrl(raw)
+  return Boolean(
+    url &&
+    CAMARA_IMAGEM_HOSTS.has(url.hostname) &&
+    (LEGACY_DIARIO_PATHS.has(url.pathname) || url.pathname === MONTA_PDF_PATH),
+  )
+}
+
+/**
+ * Parses the legacy Diário visualizer URL (`dc_20b.asp`/`dc_20.asp`) into what
+ * the resolver needs: the `.leg.br` lookup URL (the `.gov.br` hop alone measured
+ * ~135s on 2026-09-14), the publication identity that keys the cache and the
+ * speech page. Null when the URL is not a legacy Diário link with a parseable
+ * `Datain`.
+ *
+ * @param {unknown} raw
+ * @returns {{ lookupUrl: string, publication: { date: string, collection: string | null, supplement: string | null }, page: number | null } | null}
+ */
+export const parseLegacyOfficialUrl = (raw) => {
+  const url = parseDiarioUrl(raw)
+  if (!url || !CAMARA_IMAGEM_HOSTS.has(url.hostname) || !LEGACY_DIARIO_PATHS.has(url.pathname)) {
+    return null
+  }
+  const date = parseDiarioDate(queryValue(url, 'Datain'))
+  if (date === null) return null
+  const lookupUrl = new URL(url)
+  if (lookupUrl.hostname === 'imagem.camara.gov.br') lookupUrl.hostname = 'imagem.camara.leg.br'
+  return {
+    lookupUrl: lookupUrl.toString(),
+    publication: {
+      date,
+      collection: queryValue(url, 'selCodColecaoCsv', 'selCodColecao'),
+      supplement: queryValue(url, 'txSuplemento'),
+    },
+    page: positiveIntegerOrNull(queryValue(url, 'txPagina')),
+  }
+}
+
+/**
+ * Parses the intermediate redirect target
+ * (`montaPdf.asp?narquivo=DCD….PDF&npagina=73`) into the PDF archive file name
+ * and the page. Null when the URL is not a `montaPdf` link or the `narquivo` is
+ * not a safe file name (that value goes into a URL path, never into HTML).
+ *
+ * @param {unknown} raw
+ * @returns {{ archiveFileName: string, page: number | null } | null}
+ */
+export const parseMontaPdfUrl = (raw) => {
+  const url = parseDiarioUrl(raw)
+  if (!url || !CAMARA_IMAGEM_HOSTS.has(url.hostname) || url.pathname !== MONTA_PDF_PATH) {
+    return null
+  }
+  const archiveFileName = queryValue(url, 'narquivo')
+  if (archiveFileName === null || !/^[A-Za-z0-9._-]+$/.test(archiveFileName)) return null
+  return { archiveFileName, page: positiveIntegerOrNull(queryValue(url, 'npagina')) }
+}
+
+/**
+ * The direct official PDF URL, with `#page=<n>` when the page is known; null
+ * when the archive file name is empty.
+ *
+ * @param {unknown} archiveFileName
+ * @param {unknown} [page]
+ * @returns {string | null}
+ */
+export const buildOfficialPdfUrl = (archiveFileName, page = null) => {
+  const name = String(archiveFileName ?? '').trim()
+  if (name === '') return null
+  const base = `https://imagem.camara.leg.br/Imagem/d/pdf/${encodeURIComponent(name)}`
+  const pageNumber = positiveIntegerOrNull(page)
+  return pageNumber === null ? base : `${base}#page=${pageNumber}`
+}
+
+/**
+ * Parses an already-direct official PDF URL (the format the import writes)
+ * back into `{ archiveFileName, page }`. The page comes from the `#page=<n>`
+ * fragment; null when the URL is not a Câmara PDF.
+ *
+ * @param {unknown} raw
+ * @returns {{ archiveFileName: string, page: number | null } | null}
+ */
+export const parseDirectOfficialPdfUrl = (raw) => {
+  const url = parseDiarioUrl(raw)
+  if (!url || !CAMARA_IMAGEM_HOSTS.has(url.hostname)) return null
+  const match = DIRECT_PDF_PATH.exec(url.pathname)
+  if (!match) return null
+  const pageFromHash = /^#page=(\d+)$/.exec(url.hash)
+  return { archiveFileName: match[1], page: positiveIntegerOrNull(pageFromHash?.[1]) }
+}
+
+/**
+ * `none` (no link), `direct` (already the PDF), `legacy` (`dc_20b`/`dc_20` with
+ * a parseable date), `montaPdf` (the intermediate redirect) or `unknown`
+ * (anything else). Only `legacy` needs the network; `montaPdf` is converted
+ * offline.
+ *
+ * @param {unknown} raw
+ * @returns {'none' | 'direct' | 'legacy' | 'montaPdf' | 'unknown'}
+ */
+export const classifyOfficialTextUrl = (raw) => {
+  if (String(raw ?? '').trim() === '') return 'none'
+  const url = parseDiarioUrl(raw)
+  if (!url || !CAMARA_IMAGEM_HOSTS.has(url.hostname)) return 'unknown'
+  if (LEGACY_DIARIO_PATHS.has(url.pathname)) {
+    return parseLegacyOfficialUrl(raw) ? 'legacy' : 'unknown'
+  }
+  if (url.pathname === MONTA_PDF_PATH) return parseMontaPdfUrl(raw) ? 'montaPdf' : 'unknown'
+  if (parseDirectOfficialPdfUrl(raw)) return 'direct'
+  return 'unknown'
+}
+
+/**
+ * What the write paths keep when resolution fails: a previously stored direct
+ * PDF (never a legacy link), or null so the UI falls back to YouTube/hides the
+ * button.
+ *
+ * @param {unknown} existingUrl
+ * @returns {string | null}
+ */
+export const officialTextUrlFallback = (existingUrl) =>
+  classifyOfficialTextUrl(existingUrl) === 'direct' ? String(existingUrl).trim() : null
+
+/**
+ * Filesystem-safe cache key of one Diário publication: date + collection
+ * (`D`, `S`, …) + supplement. One network resolution per key, ever.
+ *
+ * @param {{ date?: string, collection?: string | null, supplement?: string | null } | null | undefined} publication
+ * @returns {string | null}
+ */
+export const publicationCacheKey = (publication) => {
+  const date = String(publication?.date ?? '').trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null
+  const collection = String(publication?.collection ?? '').trim()
+  const supplement = String(publication?.supplement ?? '').trim()
+  const key = [
+    date,
+    ...(collection === '' ? [] : [collection]),
+    ...(supplement === '' ? [] : [`s${supplement}`]),
+  ].join('-')
+  return key.replace(/[^A-Za-z0-9._-]+/g, '_')
+}
+
+/**
+ * Splits scanned speeches into the repair work plan: `groups` are legacy URLs
+ * sharing one publication (one resolution each), `directUpdates` are
+ * `montaPdf` links convertible offline, `alreadyDirect`/`none` are untouched,
+ * `unresolvable` are malformed legacy links that must not stay (they fail the
+ * write run) and `unknown` is reported. Pure — the caller owns resolution and
+ * writes.
+ *
+ * @param {Array<{ id: number, officialTextUrl?: string | null, speechAt?: string | null, legislature?: string | null }> | null | undefined} rows
+ * @returns {{
+ *   groups: Array<{ key: string, publication: { date: string, collection: string | null, supplement: string | null }, lookupUrl: string, rows: Array<{ id: number, page: number | null, previousUrl: string, speechAt: string | null, legislature: string | null }> }>,
+ *   directUpdates: Array<{ id: number, previousUrl: string, nextUrl: string, speechAt: string | null, legislature: string | null }>,
+ *   alreadyDirect: number,
+ *   unknown: Array<{ id: number, previousUrl: string, speechAt: string | null, legislature: string | null }>,
+ *   unresolvable: Array<{ id: number, previousUrl: string, speechAt: string | null, legislature: string | null }>,
+ *   none: number,
+ * }}
+ */
+export const planOfficialLinkRepairs = (rows) => {
+  const groups = new Map()
+  const directUpdates = []
+  const unknown = []
+  const unresolvable = []
+  let alreadyDirect = 0
+  let none = 0
+
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const raw = row?.officialTextUrl
+    const kind = classifyOfficialTextUrl(raw)
+    const meta = {
+      id: row?.id,
+      previousUrl: String(raw ?? '').trim(),
+      speechAt: row?.speechAt ?? null,
+      legislature: row?.legislature ?? null,
+    }
+    if (kind === 'none') {
+      none += 1
+      continue
+    }
+    if (kind === 'direct') {
+      alreadyDirect += 1
+      continue
+    }
+    if (kind === 'montaPdf') {
+      const parsed = parseMontaPdfUrl(raw)
+      directUpdates.push({
+        ...meta,
+        nextUrl: buildOfficialPdfUrl(parsed.archiveFileName, parsed.page),
+      })
+      continue
+    }
+    if (kind === 'legacy') {
+      const parsed = parseLegacyOfficialUrl(raw)
+      const key = publicationCacheKey(parsed.publication)
+      const group = groups.get(key) ?? {
+        key,
+        publication: parsed.publication,
+        lookupUrl: parsed.lookupUrl,
+        rows: [],
+      }
+      group.rows.push({ ...meta, page: parsed.page })
+      groups.set(key, group)
+      continue
+    }
+    if (isLegacyDiarioUrl(raw)) unresolvable.push(meta)
+    else unknown.push(meta)
+  }
+
+  return {
+    groups: [...groups.values()].sort((left, right) => left.key.localeCompare(right.key)),
+    directUpdates,
+    alreadyDirect,
+    unknown,
+    unresolvable,
+    none,
+  }
+}
+
 /**
  * Deterministic VOD-link sample for the `--verify-links` mode: up to
  * `perLegislature` speeches per legislature that actually carry a VOD link,

@@ -6,11 +6,15 @@
  * network.
  */
 import {
+  buildOfficialPdfUrl,
   buildVodUrl,
   CAMARA_USER_AGENT,
   DEEPINFRA_TRANSCRIBE_URL,
   DEEPINFRA_WHISPER_MODEL,
   normalizeTranscription,
+  parseDirectOfficialPdfUrl,
+  parseLegacyOfficialUrl,
+  parseMontaPdfUrl,
   parseVodStatus,
 } from './camaraSpeeches.mjs'
 
@@ -116,18 +120,19 @@ export async function resolveVod(eventId, excerpt) {
 }
 
 /**
- * Lightweight reachability probe of one stored VOD link (C155 sample check):
- * GET with a 1 KiB `Range` so the MP4 body never streams, falling back to HEAD
- * when the server refuses the ranged GET (405/501). One retry absorbs the
- * CDN's transient connection resets; it never throws — a network error becomes
- * an `ok: false` result so one dead link cannot abort the report.
+ * Lightweight reachability probe of one stored Câmara link (C155 VOD sample
+ * check + C160 official-PDF check): GET with a 1 KiB `Range` so the body never
+ * streams, falling back to HEAD when the server refuses the ranged GET
+ * (405/501). One retry absorbs the CDN's transient connection resets; it never
+ * throws — a network error becomes an `ok: false` result so one dead link
+ * cannot abort the report.
  *
  * @param {string | null | undefined} url
  * @param {{ timeoutMs?: number, attempts?: number }} [options]
- * @returns {Promise<{ url: string | null, status: number | null, ok: boolean, note: string }>}
+ * @returns {Promise<{ url: string | null, status: number | null, contentType: string | null, ok: boolean, note: string }>}
  */
-export async function probeVodLink(url, { timeoutMs = 20_000, attempts = 2 } = {}) {
-  if (!url) return { url: null, status: null, ok: false, note: 'sem link' }
+export async function probeLink(url, { timeoutMs = 20_000, attempts = 2 } = {}) {
+  if (!url) return { url: null, status: null, contentType: null, ok: false, note: 'sem link' }
 
   const request = async (method) => {
     const response = await fetch(url, {
@@ -141,7 +146,7 @@ export async function probeVodLink(url, { timeoutMs = 20_000, attempts = 2 } = {
     const contentType = response.headers.get('content-type')
     const note = `HTTP ${response.status}${contentType ? ` ${contentType}` : ''}`
     await response.body?.cancel().catch(() => undefined)
-    return { url, status: response.status, ok: response.ok, note }
+    return { url, status: response.status, contentType, ok: response.ok, note }
   }
 
   let lastError
@@ -155,7 +160,57 @@ export async function probeVodLink(url, { timeoutMs = 20_000, attempts = 2 } = {
       if (attempt < attempts) await sleep(1_000)
     }
   }
-  return { url, status: null, ok: false, note: lastError?.message ?? String(lastError) }
+  return {
+    url,
+    status: null,
+    contentType: null,
+    ok: false,
+    note: lastError?.message ?? String(lastError),
+  }
+}
+
+/**
+ * Follows the legacy Diário visualizer redirect to the direct PDF (C160). The
+ * chain measured on 2026-09-14: `dc_20b.asp` 302 → `montaPdf.asp?narquivo=…`
+ * (~5s on `.leg.br`; the `.gov.br` host adds a slow ~135s hop, so the lookup
+ * starts at `.leg.br`), and `response.url` is the `montaPdf` URL carrying
+ * `narquivo`/`npagina` — no HTML parsing. Fails closed when the chain does not
+ * land on a Câmara `montaPdf`/PDF URL.
+ *
+ * @param {string} legacyUrl
+ * @param {{ timeoutMs?: number, attempts?: number }} [options]
+ * @returns {Promise<{ archiveFileName: string, page: number | null, pdfUrl: string, finalUrl: string }>}
+ */
+export async function resolveOfficialPdfUrl(legacyUrl, { timeoutMs = 180_000, attempts = 2 } = {}) {
+  const parsedLookup = parseLegacyOfficialUrl(legacyUrl)
+  if (!parsedLookup) throw new Error(`link oficial não reconhecido: ${String(legacyUrl ?? '')}`)
+  const lookupUrl = parsedLookup.lookupUrl
+
+  let lastError
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const response = await fetch(lookupUrl, {
+        redirect: 'follow',
+        headers: { 'User-Agent': CAMARA_USER_AGENT },
+        signal: AbortSignal.timeout(timeoutMs),
+      })
+      const finalUrl = response.url
+      await response.body?.cancel().catch(() => undefined)
+      if (!response.ok) throw new Error(`HTTP ${response.status} em ${lookupUrl}`)
+
+      const parsed = parseMontaPdfUrl(finalUrl) ?? parseDirectOfficialPdfUrl(finalUrl)
+      if (!parsed) throw new Error(`redirect final inesperado em ${finalUrl}`)
+      return {
+        ...parsed,
+        pdfUrl: buildOfficialPdfUrl(parsed.archiveFileName, parsed.page),
+        finalUrl,
+      }
+    } catch (error) {
+      lastError = error
+      if (attempt < attempts) await sleep(3_000)
+    }
+  }
+  throw lastError
 }
 
 export const DEEPINFRA_COST_PER_MINUTE_USD = 0.00045
