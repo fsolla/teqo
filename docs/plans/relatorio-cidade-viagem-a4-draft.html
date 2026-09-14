@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Rascunho A4 — Relatório de cidade pré-viagem</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-[1800px] p-6 sm:p-8">
+      <h1 class="text-lg font-medium text-zinc-100">
+        Rascunho A4 — Relatório de cidade pré-viagem
+      </h1>
+      <p class="mt-1 max-w-3xl text-sm text-zinc-400">
+        Persona/job: candidato e CG/assessor chamam um agente + skill com a cidade e recebem um PDF
+        A4 datado — página 1 = resumo de uma olhada; páginas 2+ = aprofundamento — cruzando base
+        Teqo com pesquisa web datada. Cenas estáticas, sem interação, valores genéricos.
+      </p>
+      <p class="mt-2 text-sm text-zinc-500">
+        Cinza = estrutura · <span class="text-amber-400">acento</span> = decisão/guarda
+        (anunciar × não anunciar, lacuna explícita) · páginas em A4 (794×1123 px).
+      </p>
+
+      <div class="mt-8 flex items-start gap-8 overflow-x-auto pb-6">
+        <!-- ============================================================= -->
+        <!-- Cena 1 · Página 1 do PDF — resumo de uma olhada               -->
+        <!-- ============================================================= -->
+        <section class="shrink-0">
+          <p class="mb-2 text-xs uppercase tracking-wide text-zinc-500">
+            Cena 1 · PDF página 1 — resumo de uma olhada
+          </p>
+          <article
+            class="flex min-h-[1123px] w-[794px] flex-col bg-white px-10 py-8 text-[11px] leading-snug text-zinc-900"
+          >
+            <header class="flex items-start justify-between border-b-2 border-zinc-900 pb-3">
+              <div>
+                <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                  Relatório de cidade — pré-viagem
+                </p>
+                <h2 class="mt-1 text-xl font-semibold leading-tight">Município Exemplo</h2>
+                <p class="mt-0.5 text-[11px] text-zinc-600">
+                  Território de Identidade Exemplo · prioridade alta · classe de exemplo (A/B/C) ·
+                  nível de envolvimento N2
+                </p>
+              </div>
+              <div class="text-right text-[10px] text-zinc-500">
+                <p class="font-medium text-zinc-700">Gerado em 14/09/2026</p>
+                <p>snapshot do momento</p>
+                <p>pág. 1/4</p>
+              </div>
+            </header>
+
+            <div class="mt-4 grid grid-cols-2 gap-4">
+              <!-- 2) conta eleitoral 2022 -->
+              <section class="rounded border border-zinc-300 p-3">
+                <h3 class="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                  Conta eleitoral 2022
+                </h3>
+                <p class="mt-2 text-2xl font-semibold">
+                  0.000 <span class="text-xs font-normal text-zinc-500">votos</span>
+                </p>
+                <dl class="mt-2 space-y-1.5 text-[10px]">
+                  <div class="flex items-center justify-between gap-2">
+                    <dt class="text-zinc-600">% do próprio voto</dt>
+                    <dd class="font-medium">0,0%</dd>
+                  </div>
+                  <div class="h-2 rounded-full bg-zinc-200">
+                    <div class="h-2 w-1/3 rounded-full bg-zinc-700"></div>
+                  </div>
+                  <div class="flex items-center justify-between gap-2">
+                    <dt class="text-zinc-600">Rank no estado</dt>
+                    <dd class="font-medium">00º / 435</dd>
+                  </div>
+                  <div class="flex items-center justify-between gap-2">
+                    <dt class="text-zinc-600">Meta 2026 (faixa)</dt>
+                    <dd class="font-medium">0.000</dd>
+                  </div>
+                  <div class="flex items-center justify-between gap-2">
+                    <dt class="text-zinc-600">Cobertura de pledges</dt>
+                    <dd class="font-medium">0%</dd>
+                  </div>
+                  <div class="h-2 rounded-full bg-zinc-200">
+                    <div class="h-2 w-1/5 rounded-full bg-zinc-400"></div>
+                  </div>
+                </dl>
+                <p class="mt-2 text-[9px] text-zinc-500">
+                  Fonte: base Teqo — TSE 2022 (leitura relativa ao próprio voto; sem % estadual
+                  absoluto).
+                </p>
+              </section>
+
+              <!-- 3) quem é quem -->
+              <section class="rounded border border-zinc-300 p-3">
+                <h3 class="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                  Quem é quem
+                </h3>
+                <ul class="mt-2 space-y-1.5 text-[10px]">
+                  <li class="flex justify-between gap-2">
+                    <span class="text-zinc-600">Prefeito(a)</span>
+                    <span class="font-medium">Nome do prefeito · Partido X</span>
+                  </li>
+                  <li class="flex justify-between gap-2">
+                    <span class="text-zinc-600">Vice</span>
+                    <span>Nome do vice · Partido Y</span>
+                  </li>
+                  <li class="flex justify-between gap-2">
+                    <span class="text-zinc-600">Federação / relação</span>
+                    <span>Federação de exemplo · relação a confirmar</span>
+                  </li>
+                  <li class="flex justify-between gap-2">
+                    <span class="text-zinc-600">Lideranças</span>
+                    <span class="font-medium">12 na base · 3 sem responsável</span>
+                  </li>
+                  <li class="flex justify-between gap-2">
+                    <span class="text-zinc-600">Dobradinhas</span>
+                    <span>Nome 1, Nome 2, Nome 3</span>
+                  </li>
+                </ul>
+                <div class="mt-2 flex items-center gap-2">
+                  <span class="h-2 w-24 rounded bg-zinc-200"></span>
+                  <span class="text-[9px] text-zinc-500">vereador/dobrada ainda sem leitura (lacuna)</span>
+                </div>
+                <p class="mt-2 text-[9px] text-zinc-500">
+                  Fonte: base Teqo (lideranças) + web datada 12/09/2026 (prefeito/vice/dobradas —
+                  URL por item).
+                </p>
+              </section>
+            </div>
+
+            <!-- 4) o que Solla entregou -->
+            <section class="mt-4 rounded border border-zinc-300 p-3">
+              <h3 class="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                O que Solla entregou
+              </h3>
+              <div class="mt-2 grid grid-cols-3 gap-3">
+                <div>
+                  <p class="text-[10px] font-medium text-zinc-700">Emendas aportadas</p>
+                  <p class="mt-1 text-lg font-semibold">R$ 0,0 mi</p>
+                  <p class="text-[9px] text-zinc-500">
+                    Fonte oficial 14/09/2026 (fase por item: empenhada/paga); notas da base quando
+                    houver. Empenho ≠ pagamento.
+                  </p>
+                </div>
+                <div>
+                  <p class="text-[10px] font-medium text-zinc-700">Falas no acervo</p>
+                  <p class="mt-1 text-lg font-semibold">0 trechos</p>
+                  <p class="text-[9px] text-zinc-500">
+                    Busca por município no acervo (C153/C155): 0 resultados.
+                  </p>
+                </div>
+                <div>
+                  <p class="text-[10px] font-medium text-zinc-700">Notícias (≤90 dias)</p>
+                  <p class="mt-1 text-lg font-semibold">0 matérias</p>
+                  <p class="text-[9px] text-zinc-500">
+                    Web 14/09/2026 · imprensa local sem matéria no período.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <!-- 5) anunciar × não anunciar -->
+            <div class="mt-4 grid grid-cols-2 gap-4">
+              <section class="rounded border border-amber-600 p-3">
+                <h3 class="text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+                  O que anunciar agora
+                </h3>
+                <ul class="mt-2 list-disc space-y-1 pl-4 text-[10px]">
+                  <li>Pauta/entrega com fonte e data — a fonte vai ao lado da frase.</li>
+                  <li>Agradecimento a liderança/prefeito com papel confirmado.</li>
+                  <li>Compromisso novo com escopo que a campanha consegue cumprir.</li>
+                </ul>
+              </section>
+              <section class="rounded border border-zinc-400 bg-zinc-100 p-3">
+                <h3 class="text-[10px] font-semibold uppercase tracking-wide text-zinc-700">
+                  O que NÃO anunciar
+                </h3>
+                <ul class="mt-2 space-y-1 text-[10px]">
+                  <li>— Empenho tratado como pagamento (defeso/ano eleitoral).</li>
+                  <li>— Nada sem fonte ("sem fonte, não publica").</li>
+                  <li>— Dado staff-only (estimativa, nível N0–N4) fora da coordenação.</li>
+                  <li>— Contato pessoal de liderança além do necessário (PII mínima).</li>
+                </ul>
+              </section>
+            </div>
+
+            <!-- 6) riscos -->
+            <section class="mt-4 rounded border border-zinc-300 p-3">
+              <h3 class="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                Riscos — oposição/disputa local
+              </h3>
+              <div class="mt-2 grid grid-cols-3 gap-3 text-[10px]">
+                <div>
+                  <p class="font-medium">Oposição local</p>
+                  <p class="mt-1 h-2 w-full rounded bg-zinc-200"></p>
+                  <p class="mt-1 text-zinc-500">Sem leitura suficiente — lacuna</p>
+                </div>
+                <div>
+                  <p class="font-medium">Disputa local</p>
+                  <p class="mt-1 h-2 w-3/4 rounded bg-zinc-200"></p>
+                  <p class="mt-1 text-zinc-500">Conferir com o CG antes da agenda</p>
+                </div>
+                <div>
+                  <p class="font-medium">Rede</p>
+                  <p class="mt-1 h-2 w-1/2 rounded bg-zinc-400"></p>
+                  <p class="mt-1 text-zinc-500">3 lideranças sem responsável</p>
+                </div>
+              </div>
+            </section>
+
+            <footer class="mt-auto border-t border-zinc-300 pt-2 text-[9px] text-zinc-500">
+              Fontes: base Teqo (leitura 14/09/2026) · pesquisa web e fonte oficial (data + URL em cada item) ·
+              documento datado, completo para o candidato.
+            </footer>
+          </article>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- Cena 2 · Aprofundamento — índice + 2 seções                   -->
+        <!-- ============================================================= -->
+        <section class="shrink-0">
+          <p class="mb-2 text-xs uppercase tracking-wide text-zinc-500">
+            Cena 2 · PDF páginas 2+ — aprofundamento (índice + 2 seções)
+          </p>
+          <article
+            class="flex min-h-[1123px] w-[794px] flex-col bg-white px-10 py-8 text-[11px] leading-snug text-zinc-900"
+          >
+            <header class="flex items-start justify-between border-b border-zinc-300 pb-3">
+              <div>
+                <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                  Relatório de cidade — aprofundamento
+                </p>
+                <h2 class="mt-1 text-lg font-semibold leading-tight">Município Exemplo</h2>
+              </div>
+              <div class="text-right text-[10px] text-zinc-500">
+                <p>Gerado em 14/09/2026</p>
+                <p>pág. 2/4</p>
+              </div>
+            </header>
+
+            <section class="mt-4">
+              <h3 class="text-sm font-semibold">Índice</h3>
+              <ol class="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-[10px] text-zinc-600">
+                <li>1. Conta eleitoral completa 2014/2018/2022</li>
+                <li>2. Rede e lideranças (responsável e frescor)</li>
+                <li>3. Conjuntura (tendência, forças, riscos, dobradinhas)</li>
+                <li>4. Sinais recentes</li>
+                <li>5. Demandas e visitas</li>
+                <li>6. Demografia</li>
+                <li>7. Acervo de falas (data e link)</li>
+                <li>8. Notícias internas e imprensa local</li>
+                <li>9. Panorama regional (Território de Identidade)</li>
+                <li>10. Fontes e limites</li>
+              </ol>
+            </section>
+
+            <section class="mt-5">
+              <h3 class="text-sm font-semibold">1. Conta eleitoral completa</h3>
+              <table class="mt-2 w-full border-collapse text-[10px]">
+                <thead>
+                  <tr class="border-b border-zinc-400 text-left text-zinc-500">
+                    <th class="py-1 font-medium">Ano</th>
+                    <th class="font-medium">Votos</th>
+                    <th class="font-medium">% do próprio voto</th>
+                    <th class="font-medium">Rank</th>
+                    <th class="font-medium">Válidos do cargo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-b border-zinc-200">
+                    <td class="py-1">2014</td>
+                    <td>0.000</td>
+                    <td>0,0%</td>
+                    <td>00º</td>
+                    <td>0.000</td>
+                  </tr>
+                  <tr class="border-b border-zinc-200">
+                    <td class="py-1">2018</td>
+                    <td>0.000</td>
+                    <td>0,0%</td>
+                    <td>00º</td>
+                    <td>0.000</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1">2022</td>
+                    <td>0.000</td>
+                    <td>0,0%</td>
+                    <td>00º</td>
+                    <td>0.000</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p class="mt-1 text-[9px] text-zinc-500">
+                Fonte: base Teqo — artefato TSE 2014/2018/2022. Leitura relativa; sem % estadual
+                absoluto.
+              </p>
+            </section>
+
+            <section class="mt-5">
+              <h3 class="text-sm font-semibold">2. Rede e lideranças</h3>
+              <ul class="mt-2 space-y-2 text-[10px]">
+                <li class="flex items-center justify-between gap-3 border-b border-zinc-200 pb-1.5">
+                  <span class="font-medium">Liderança 1 — organização de exemplo</span>
+                  <span class="text-zinc-500">responsável: Assessor Exemplo · atualizada há 2 semanas</span>
+                </li>
+                <li class="flex items-center justify-between gap-3 border-b border-zinc-200 pb-1.5">
+                  <span class="font-medium">Liderança 2 — organização de exemplo</span>
+                  <span class="text-zinc-500">responsável: — · atualizada há 6 semanas</span>
+                </li>
+                <li class="flex items-center justify-between gap-3">
+                  <span class="font-medium">Liderança 3 — sem dados suficientes</span>
+                  <span class="text-zinc-500">lacuna: pledge não declarado · ver "fontes e limites"</span>
+                </li>
+              </ul>
+              <p class="mt-2 text-[9px] text-zinc-500">
+                Fonte: base Teqo (pledges, frescor). Nomes omitidos no rascunho; no PDF, só o
+                necessário (PII mínima).
+              </p>
+            </section>
+
+            <footer class="mt-auto border-t border-zinc-300 pt-2 text-[9px] text-zinc-500">
+              Seções 3–10 seguem na mesma página/continuação · fontes item a item.
+            </footer>
+          </article>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- Cena 3 · Lacuna explícita (dado ausente)                      -->
+        <!-- ============================================================= -->
+        <section class="shrink-0">
+          <p class="mb-2 text-xs uppercase tracking-wide text-zinc-500">
+            Cena 3 · PDF — dado ausente vira lacuna explícita
+          </p>
+          <article
+            class="flex min-h-[1123px] w-[794px] flex-col bg-white px-10 py-8 text-[11px] leading-snug text-zinc-900"
+          >
+            <header class="flex items-start justify-between border-b border-zinc-300 pb-3">
+              <div>
+                <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                  Relatório de cidade — aprofundamento
+                </p>
+                <h2 class="mt-1 text-lg font-semibold leading-tight">Município Exemplo</h2>
+              </div>
+              <div class="text-right text-[10px] text-zinc-500">
+                <p>Gerado em 14/09/2026</p>
+                <p>pág. 4/4</p>
+              </div>
+            </header>
+
+            <section class="mt-5">
+              <h3 class="text-sm font-semibold">8. Notícias internas e imprensa local</h3>
+              <div class="mt-2 rounded border-l-4 border-amber-600 bg-zinc-100 p-3">
+                <p class="text-[11px] font-medium text-zinc-800">
+                  Não encontrado na base nem na pesquisa.
+                </p>
+                <p class="mt-1 text-[10px] text-zinc-600">
+                  Buscas web em 14/09/2026: "Município Exemplo" + prefeito, obras, saúde — nenhuma
+                  matéria com data ≤90 dias. Nenhum post interno relacionado ao município.
+                </p>
+                <p class="mt-1 text-[10px] text-zinc-500">
+                  Lacuna explícita — não preencher por inferência.
+                </p>
+              </div>
+            </section>
+
+            <section class="mt-5">
+              <h3 class="text-sm font-semibold">Emendas aportadas</h3>
+              <div class="mt-2 rounded border border-zinc-300 p-3">
+                <p class="text-[10px] text-zinc-600">
+                  Campo "Emendas aportadas" (staff) sem registro para o município.
+                </p>
+                <p class="text-[10px] text-zinc-600">
+                  Fontes oficiais consultadas em 14/09/2026 (Portal da Transparência, Câmara):
+                  nenhum resultado associado com segurança.
+                </p>
+                <p class="mt-1 text-[10px] font-medium text-amber-700">
+                  Sem fonte, não publica — e nada de anunciar empenho como pagamento.
+                </p>
+              </div>
+            </section>
+
+            <section class="mt-5">
+              <h3 class="text-sm font-semibold">10. Fontes e limites</h3>
+              <ul class="mt-2 space-y-1 text-[10px] text-zinc-600">
+                <li>Base Teqo: leitura read-only em 14/09/2026 — o PDF é datado e o dado envelhece.</li>
+                <li>Web: cada item carrega data + URL; o que não veio com fonte virou lacuna.</li>
+                <li>Limite: não existe voto por bairro/seção — o relatório não inventa granularidade.</li>
+                <li>Efeito eleitoral de emenda é condicional ao crédito local — o PDF não promete voto.</li>
+              </ul>
+            </section>
+
+            <footer class="mt-auto border-t border-zinc-300 pt-2 text-[9px] text-zinc-500">
+              Exemplo de seção vazia: a ausência é resultado, não falha de layout.
+            </footer>
+          </article>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- Cena 4 · Leitura de bolso (390px)                             -->
+        <!-- ============================================================= -->
+        <section class="shrink-0">
+          <p class="mb-2 text-xs uppercase tracking-wide text-zinc-500">
+            Cena 4 · leitura de bolso (390px) — o mesmo resumo, uma coluna
+          </p>
+          <article class="min-h-[1123px] w-[390px] bg-white p-4 text-[11px] leading-snug text-zinc-900">
+            <header class="border-b border-zinc-300 pb-2">
+              <p class="text-[9px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                Relatório de cidade
+              </p>
+              <h2 class="mt-0.5 text-base font-semibold">Município Exemplo</h2>
+              <p class="text-[9px] text-zinc-500">Gerado em 14/09/2026</p>
+            </header>
+
+            <div class="mt-3">
+              <p class="text-[9px] font-semibold uppercase tracking-wide text-zinc-500">
+                Conta eleitoral 2022
+              </p>
+              <p class="mt-1 text-lg font-semibold">0.000 votos · 0,0% do próprio voto</p>
+              <div class="mt-1 h-1.5 rounded-full bg-zinc-200">
+                <div class="h-1.5 w-1/3 rounded-full bg-zinc-600"></div>
+              </div>
+              <p class="mt-1 text-[9px] text-zinc-500">rank 00º/435 · meta 0.000 · cobertura 0%</p>
+            </div>
+
+            <div class="mt-3 border-t border-zinc-200 pt-2">
+              <p class="text-[9px] font-semibold uppercase tracking-wide text-zinc-500">
+                Quem é quem
+              </p>
+              <p class="mt-1">Prefeito: Nome do prefeito (Partido X) — relação a confirmar.</p>
+              <p>12 lideranças na base · 3 sem responsável.</p>
+            </div>
+
+            <div class="mt-3 border-t border-zinc-200 pt-2">
+              <p class="text-[9px] font-semibold uppercase tracking-wide text-zinc-500">
+                O que Solla entregou
+              </p>
+              <p class="mt-1">Emendas: R$ 0,0 mi (sem fonte oficial). Falas: 0 trechos.</p>
+              <p>Notícias: 0 matérias na janela ≤90 dias.</p>
+            </div>
+
+            <div class="mt-3 rounded border border-amber-600 p-2">
+              <p class="text-[9px] font-semibold uppercase tracking-wide text-amber-700">
+                Anunciar
+              </p>
+              <p class="mt-1">Só o que tem fonte e escopo cumprível na cidade.</p>
+            </div>
+
+            <div class="mt-2 rounded border border-zinc-300 p-2">
+              <p class="text-[9px] font-semibold uppercase tracking-wide text-zinc-700">
+                Não anunciar
+              </p>
+              <p class="mt-1">Empenho como pagamento · dado staff-only · PII além do necessário.</p>
+            </div>
+
+            <div class="mt-3 border-t border-zinc-200 pt-2">
+              <p class="text-[9px] font-semibold uppercase tracking-wide text-zinc-500">
+                Riscos
+              </p>
+              <p class="mt-1">Oposição: sem leitura · Disputa local: conferir com o CG.</p>
+            </div>
+
+            <p class="mt-3 border-t border-zinc-200 pt-1 text-[8px] text-zinc-500">
+              Fontes: base Teqo (leitura 14/09/2026) · web datada com URL.
+            </p>
+          </article>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>
