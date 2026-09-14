@@ -7,7 +7,7 @@ import {
   SPEECH_VOD_NOT_FOUND_MESSAGE,
   speechVodRequestSchema,
 } from '@/lib/schemas/speechVod'
-import type { SpeechVodResolution } from '@/lib/speechVod'
+import { speechVodCoordinates, type SpeechVodResolution } from '@/lib/speechVod'
 import { getCampaignActionContext } from '@/utilities/campaignActionContext'
 import { resolveSpeechVod } from '@/utilities/speech/speechVodResolver'
 
@@ -46,11 +46,8 @@ export const resolveSpeechVodForActor = async (input: {
   const speech = result.docs[0]
   if (!speech) throw new Error(SPEECH_VOD_NOT_FOUND_MESSAGE)
 
-  const hasStoredVod = Boolean(speech.vodPlaybackUrl || speech.vodDownloadUrl)
-  const { eventId, audioId, excerptTMs } = speech
-  if (!hasStoredVod || !eventId || !audioId || !excerptTMs) {
-    throw new Error(SPEECH_VOD_INELIGIBLE_MESSAGE)
-  }
+  const coordinates = speechVodCoordinates(speech)
+  if (!coordinates) throw new Error(SPEECH_VOD_INELIGIBLE_MESSAGE)
 
-  return resolveSpeechVod({ eventId, audioId, excerptTms: excerptTMs })
+  return resolveSpeechVod(coordinates)
 }

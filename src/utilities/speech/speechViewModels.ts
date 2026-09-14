@@ -15,7 +15,7 @@ import {
   type SpeechHighlightPart,
 } from '@/lib/speechHighlight'
 import { normalizeForSearch } from '@/lib/speechSearch'
-import { excerptOffsetSeconds, parseYoutubeVideoId } from '@/lib/speechVod'
+import { excerptOffsetSeconds, parseYoutubeVideoId, speechVodCoordinates } from '@/lib/speechVod'
 import type { Municipality } from '@/payload-types'
 import { speechScopeLabels, speechTopicLabels } from '@/utilities/speech/speechListUrl'
 
@@ -245,12 +245,7 @@ export const toSpeechDetailViewModel = ({
 }): SpeechDetailViewModel => {
   // The stored VOD link is a cache and never a URL handed to the client; it
   // only signals that this record had a generated excerpt to re-resolve.
-  const vodResolvable = Boolean(
-    (speech.vodPlaybackUrl || speech.vodDownloadUrl) &&
-    speech.eventId &&
-    speech.audioId &&
-    speech.excerptTMs,
-  )
+  const vodResolvable = speechVodCoordinates(speech) !== null
 
   return {
     id: speech.id,

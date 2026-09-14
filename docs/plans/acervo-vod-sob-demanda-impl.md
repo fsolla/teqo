@@ -1,6 +1,6 @@
 # Impl: Acervo de falas: player resolve o trecho sob demanda e YouTube vira default quando existe
 
-Status: em execução
+Status: executado
 Atualizado em: 2026-09-14
 Issue: #999
 Intenção: docs/plans/acervo-vod-sob-demanda.md
@@ -156,9 +156,9 @@ Rejeitadas: B porque ressuscita link efêmero (o problema que o item resolve) e 
 
 ## Aceite de engenharia
 
-- [ ] Aceite de produto da intenção ainda coberto (quadrantes, `excerptTMs` verbatim, Baixar verificado, estado honesto, crédito CC BY, gate do acervo).
-- [ ] Invariantes AGENTS/engineering-standards (dono único, sem twin, sem migration/collection/Consent, sem escrita nova, `overrideAccess: false`, client boundary, zero warnings, dead code).
-- [ ] Testes de domínio previstos (unit/resolver/player/int/e2e) onde o access/write path e os contratos de URL mudam.
+- [x] Aceite de produto da intenção ainda coberto (quadrantes, `excerptTMs` verbatim, Baixar verificado, estado honesto, crédito CC BY, gate do acervo).
+- [x] Invariantes AGENTS/engineering-standards (dono único, sem twin, sem migration/collection/Consent, sem escrita nova, `overrideAccess: false`, client boundary, zero warnings, dead code).
+- [x] Testes de domínio previstos (unit/resolver/player/int/e2e) onde o access/write path e os contratos de URL mudam.
 
 ## Self-score (decision-quality, gate ≥4)
 

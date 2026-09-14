@@ -40,6 +40,30 @@ export type SpeechVodResolution =
   | { state: 'gerando' }
   | { state: 'indisponivel' }
 
+export type SpeechVodCoordinatesSource = {
+  vodPlaybackUrl?: string | null
+  vodDownloadUrl?: string | null
+  eventId?: number | null
+  audioId?: number | null
+  excerptTMs?: number | null
+}
+
+/**
+ * The Câmara coordinates of a speech whose excerpt can be re-resolved: a
+ * stored VOD link (eligibility signal only — it is a cache and never a URL
+ * handed to the browser) plus `eventId`/`audioId`/`excerptTMs`. Null means the
+ * player must not offer the resolution; the view model and the action share
+ * this one decision.
+ */
+export const speechVodCoordinates = (
+  speech: SpeechVodCoordinatesSource,
+): { eventId: number; audioId: number; excerptTms: number } | null => {
+  const hasStoredVod = Boolean(speech.vodPlaybackUrl || speech.vodDownloadUrl)
+  const { eventId, audioId, excerptTMs } = speech
+  if (!hasStoredVod || !eventId || !audioId || !excerptTMs) return null
+  return { eventId, audioId, excerptTms: excerptTMs }
+}
+
 /**
  * Normalizes the `video-sob-demanda` JSON (`{ estado, video }`). `state` is
  * `GERANDO` while the server transcodes, `PRONTO` when the MP4 exists,
@@ -149,21 +173,24 @@ const brtWallClock = new Intl.DateTimeFormat('en-CA', {
   hour12: false,
 })
 
-/** BRT wall-clock of an epoch instant, as seconds since epoch-treated-as-UTC. */
-const wallClockSeconds = (epochMs: number): number | null => {
+/** JavaScript Date range: ±100,000,000 days from the epoch. */
+const MAX_DATE_MS = 8.64e15
+
+/** BRT wall-clock of a valid epoch instant, as seconds since epoch-as-UTC. */
+const wallClockSeconds = (epochMs: number): number => {
   const parts = brtWallClock.formatToParts(new Date(epochMs))
   const get = (type: Intl.DateTimeFormatPartTypes): number =>
     Number(parts.find((part) => part.type === type)?.value)
-  const [year, month, day, hour, minute, second] = [
-    get('year'),
-    get('month'),
-    get('day'),
-    get('hour'),
-    get('minute'),
-    get('second'),
-  ]
-  if (![year, month, day, hour, minute, second].every(Number.isFinite)) return null
-  return Date.UTC(year, month - 1, day, hour % 24, minute, second) / 1000
+  return (
+    Date.UTC(
+      get('year'),
+      get('month') - 1,
+      get('day'),
+      get('hour') % 24,
+      get('minute'),
+      get('second'),
+    ) / 1000
+  )
 }
 
 /**
@@ -174,7 +201,7 @@ const wallClockSeconds = (epochMs: number): number | null => {
  */
 export const excerptOffsetSeconds = (excerptTMs: unknown, eventStartAt: unknown): number | null => {
   const epochMs = Number(excerptTMs)
-  if (!Number.isFinite(epochMs) || epochMs <= 0) return null
+  if (!Number.isFinite(epochMs) || epochMs <= 0 || epochMs > MAX_DATE_MS) return null
 
   const match = NAIVE_DATETIME.exec(String(eventStartAt ?? '').trim())
   if (!match) return null
@@ -183,11 +210,16 @@ export const excerptOffsetSeconds = (excerptTMs: unknown, eventStartAt: unknown)
   if (mo < 1 || mo > 12 || d < 1 || d > 31 || h > 23 || mi > 59 || s > 59) {
     return null
   }
-  const startSeconds = Date.UTC(y, mo - 1, d, h, mi, s) / 1000
+  const startMs = Date.UTC(y, mo - 1, d, h, mi, s)
+  const startDate = new Date(startMs)
+  if (
+    startDate.getUTCFullYear() !== y ||
+    startDate.getUTCMonth() !== mo - 1 ||
+    startDate.getUTCDate() !== d
+  ) {
+    return null
+  }
 
-  const excerptSeconds = wallClockSeconds(epochMs)
-  if (excerptSeconds === null) return null
-
-  const offset = Math.floor(excerptSeconds - startSeconds)
+  const offset = Math.floor(wallClockSeconds(epochMs) - startMs / 1000)
   return offset >= 0 ? offset : null
 }
