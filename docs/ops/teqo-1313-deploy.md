@@ -473,9 +473,16 @@ confinada a `speech`/`speechSegment`/rels; nenhum objeto de mídia vai para o
 S3 (os MP4 ficam só no cache local). Crédito CC BY 4.0 da Câmara mantido no
 admin/relatórios.
 
-**Resultado registrado (2026-09-13/14):** _preenchido após o run_ — ver
-`docs/changelog/2026-09-13-c155.md` e o JSON em
-`/srv/hdd/backups/teqo-camara/reports/`.
+**Resultado registrado (2026-09-13/14):** **997 discursos** em produção
+(54ª=1, 55ª=348, 56ª=414, 57ª=234) — 947 com trecho, 924 com vídeo, 920 com
+segmentos; ASR 925 chamadas / 45,4h / ~US$1,23; LLM ~US$0,11; ~11h de máquina
+(9h de runs + ~2h de retry por data). A 55ª veio pelo fallback de listagem
+por ano/mês (a API responde 500 em **outubro/2018**; ~14 discursos ficaram
+fora — reexecutar `pnpm camara:import --date <dia>` quando a fonte voltar).
+O smoke idempotente (`--all --limit 1` duas vezes) provou 0 criados/0 ASR/0 LLM
+na segunda passada; `--verify-links 3` deu 17/18 ok (1 warning transitório de
+CDN). Relatórios completos em `/srv/hdd/backups/teqo-camara/reports/` e no
+changelog `docs/changelog/2026-09-13-c155.md`.
 
 ### Rollback
 
