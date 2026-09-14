@@ -95,6 +95,8 @@ describe('SpeechDetailPlayer — VOD-only quadrant', () => {
     expect(screen.getByText(/O trecho deste vídeo é gerado pela Câmara/)).toBeDefined()
     expect(videoElement()).toBeNull()
     expect(iframeElement()).toBeNull()
+    // The invariant: rendering the detail never calls the Câmara.
+    expect(fetchMock).not.toHaveBeenCalled()
 
     fireEvent.click(screen.getByRole('button', { name: /assistir o trecho/i }))
 
@@ -176,6 +178,18 @@ describe('SpeechDetailPlayer — YouTube quadrant', () => {
     await waitFor(() => {
       expect(iframeElement()?.getAttribute('src')).toContain('start=2677')
     })
+  })
+
+  it('embeds the session at the excerpt offset even without a ?t deep link', () => {
+    renderPlayer({
+      youtubeVideoId: 'lLhRDkSPw0A',
+      youtubeOffsetSeconds: 2634,
+      initialSeconds: null,
+    })
+
+    expect(iframeElement()?.getAttribute('src')).toBe(
+      'https://www.youtube-nocookie.com/embed/lLhRDkSPw0A?playsinline=1&rel=0&start=2634',
+    )
   })
 
   it('leaves the transcript inert when the session offset is unknown', () => {

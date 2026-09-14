@@ -1,7 +1,7 @@
 'use client'
 
 import { DownloadIcon, ExternalLinkIcon, FilmIcon, PlayIcon } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import type { SpeechVodResolveResponse } from '@/app/(campaign)/campanha/(app)/comunicacao/acervo/resolver-vod/types'
 import { SpeechHighlightParts } from '@/components/campaign/speech/SpeechHighlightParts'
@@ -13,6 +13,15 @@ import { cn } from '@/lib/utils'
 import type { SpeechDetailSegmentViewModel } from '@/utilities/speech/speechViewModels'
 
 const RESOLVE_ENDPOINT = '/campanha/comunicacao/acervo/resolver-vod'
+const GENERATING_TITLE = 'A Câmara está gerando o trecho deste vídeo.'
+
+const buildYoutubeSrc = (videoId: string, startSeconds: number | null): string => {
+  const params = new URLSearchParams({ playsinline: '1', rel: '0' })
+  if (startSeconds !== null && startSeconds > 0) {
+    params.set('start', String(Math.floor(startSeconds)))
+  }
+  return `https://www.youtube-nocookie.com/embed/${videoId}?${params.toString()}`
+}
 
 type ResolutionState =
   | { kind: 'idle' }
@@ -96,8 +105,8 @@ export const SpeechDetailPlayer = ({
   const [resolution, setResolution] = useState<ResolutionState>({ kind: 'idle' })
   const [activeStart, setActiveStart] = useState<number | null>(null)
   const [youtubeStart, setYoutubeStart] = useState<number | null>(() =>
-    youtubeVideoId && youtubeOffsetSeconds !== null && initialSeconds !== null
-      ? youtubeOffsetSeconds + initialSeconds
+    youtubeVideoId && youtubeOffsetSeconds !== null
+      ? youtubeOffsetSeconds + (initialSeconds ?? 0)
       : null,
   )
 
@@ -177,95 +186,105 @@ export const SpeechDetailPlayer = ({
     setActiveStart(active?.startSeconds ?? null)
   }
 
-  const youtubeSrc = useMemo(() => {
-    const params = new URLSearchParams({ playsinline: '1', rel: '0' })
-    if (youtubeStart !== null && youtubeStart > 0)
-      params.set('start', String(Math.floor(youtubeStart)))
-    return `https://www.youtube-nocookie.com/embed/${youtubeVideoId}?${params.toString()}`
-  }, [youtubeVideoId, youtubeStart])
-
   const seekable = youtubeVideoId ? youtubeOffsetSeconds !== null : Boolean(playbackUrl)
 
-  const downloadAvailable = vodResolvable
-
-  const media = youtubeVideoId ? (
-    <iframe
-      src={youtubeSrc}
-      title="Vídeo da sessão no YouTube"
-      loading="lazy"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; compute-pressure"
-      allowFullScreen
-      className="aspect-video w-full rounded-lg border bg-black"
-    />
-  ) : playbackUrl ? (
-    <video
-      ref={videoRef}
-      controls
-      preload="metadata"
-      src={playbackUrl}
-      onTimeUpdate={onTimeUpdate}
-      className="aspect-video w-full rounded-lg border bg-black"
-    >
-      <track kind="captions" />
-    </video>
-  ) : resolution.kind === 'resolving' ? (
-    <StatusPanel
-      busy
-      title="Resolvendo o trecho na Câmara…"
-      detail="Isso pode levar alguns segundos. Se demorar, tente novamente em instantes — a página não trava."
-    />
-  ) : resolution.kind === 'generating' ? (
-    <StatusPanel
-      title="A Câmara está gerando o trecho deste vídeo."
-      detail="A geração pode levar alguns instantes. Tente novamente em um momento."
-    >
-      <Button
-        variant="outline"
-        className="mt-1 min-h-10"
-        onClick={() => void requestResolution(false)}
-      >
-        Tentar novamente
-      </Button>
-    </StatusPanel>
-  ) : resolution.kind === 'failed' ||
-    (resolution.kind === 'resolved' && !resolution.playbackUrl) ? (
-    <StatusPanel
-      title="Não foi possível carregar o vídeo deste trecho."
-      detail={
-        resolution.kind === 'failed' && resolution.message
-          ? resolution.message
-          : 'A Câmara não entregou o arquivo agora. A transcrição e a fonte oficial continuam disponíveis.'
-      }
-    >
-      <Button
-        variant="outline"
-        className="mt-1 min-h-10"
-        onClick={() => void requestResolution(false)}
-      >
-        Tentar novamente
-      </Button>
-    </StatusPanel>
-  ) : vodResolvable ? (
-    <StatusPanel
-      title="O trecho deste vídeo é gerado pela Câmara dos Deputados."
-      detail="Clique para resolver o arquivo exato desta fala — ele é verificado antes de tocar."
-    >
-      <Button className="mt-1 min-h-10" onClick={() => void requestResolution(false)}>
-        <PlayIcon data-icon="inline-start" aria-hidden="true" />
-        Assistir o trecho
-      </Button>
-    </StatusPanel>
-  ) : (
-    <StatusPanel
-      title="Vídeo indisponível neste momento."
-      detail="Esta fala não tem vídeo no YouTube nem trecho gerado pela Câmara disponível agora."
-    />
-  )
+  const renderMedia = (): ReactNode => {
+    if (youtubeVideoId) {
+      return (
+        <iframe
+          src={buildYoutubeSrc(youtubeVideoId, youtubeStart)}
+          title="Vídeo da sessão no YouTube"
+          loading="lazy"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; compute-pressure"
+          allowFullScreen
+          className="aspect-video w-full rounded-lg border bg-black"
+        />
+      )
+    }
+    if (playbackUrl) {
+      return (
+        <video
+          ref={videoRef}
+          controls
+          preload="metadata"
+          src={playbackUrl}
+          onTimeUpdate={onTimeUpdate}
+          className="aspect-video w-full rounded-lg border bg-black"
+        >
+          <track kind="captions" />
+        </video>
+      )
+    }
+    if (resolution.kind === 'resolving') {
+      return (
+        <StatusPanel
+          busy
+          title="Resolvendo o trecho na Câmara…"
+          detail="Isso pode levar alguns segundos. Se demorar, tente novamente em instantes — a página não trava."
+        />
+      )
+    }
+    if (resolution.kind === 'generating') {
+      return (
+        <StatusPanel
+          title={GENERATING_TITLE}
+          detail="A geração pode levar alguns instantes. Tente novamente em um momento."
+        >
+          <Button
+            variant="outline"
+            className="mt-1 min-h-10"
+            onClick={() => void requestResolution(false)}
+          >
+            Tentar novamente
+          </Button>
+        </StatusPanel>
+      )
+    }
+    if (resolution.kind === 'failed' || resolution.kind === 'resolved') {
+      return (
+        <StatusPanel
+          title="Não foi possível carregar o vídeo deste trecho."
+          detail={
+            resolution.kind === 'failed' && resolution.message
+              ? resolution.message
+              : 'A Câmara não entregou o arquivo agora. A transcrição e a fonte oficial continuam disponíveis.'
+          }
+        >
+          <Button
+            variant="outline"
+            className="mt-1 min-h-10"
+            onClick={() => void requestResolution(false)}
+          >
+            Tentar novamente
+          </Button>
+        </StatusPanel>
+      )
+    }
+    if (vodResolvable) {
+      return (
+        <StatusPanel
+          title="O trecho deste vídeo é gerado pela Câmara dos Deputados."
+          detail="Clique para resolver o arquivo exato desta fala — ele é verificado antes de tocar."
+        >
+          <Button className="mt-1 min-h-10" onClick={() => void requestResolution(false)}>
+            <PlayIcon data-icon="inline-start" aria-hidden="true" />
+            Assistir o trecho
+          </Button>
+        </StatusPanel>
+      )
+    }
+    return (
+      <StatusPanel
+        title="Vídeo indisponível neste momento."
+        detail="Esta fala não tem vídeo no YouTube nem trecho gerado pela Câmara disponível agora."
+      />
+    )
+  }
 
   const inlineNotice = youtubeVideoId ? (
     resolution.kind === 'generating' ? (
       <p className="text-xs text-muted-foreground" role="status" aria-live="polite">
-        A Câmara está gerando o trecho deste vídeo. Tente novamente em um momento.
+        {GENERATING_TITLE} Tente novamente em um momento.
       </p>
     ) : resolution.kind === 'failed' ? (
       <p className="text-xs text-destructive" role="status" aria-live="polite">
@@ -281,10 +300,10 @@ export const SpeechDetailPlayer = ({
 
   return (
     <div data-slot="speech-player" aria-busy={resolving || undefined}>
-      {media}
+      {renderMedia()}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        {downloadAvailable ? (
+        {vodResolvable ? (
           <Button
             className="min-h-10"
             disabled={resolving}

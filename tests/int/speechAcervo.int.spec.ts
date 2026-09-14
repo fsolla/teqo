@@ -225,7 +225,7 @@ describe('speech acervo (C154)', () => {
     const row = data.rows.find((item) => item.id === id)
 
     expect(row).toBeDefined()
-    expect('downloadUrl' in (row as object)).toBe(false)
+    expect(row).not.toHaveProperty('downloadUrl')
   })
 
   it('allows communicator/coordinator/candidate and denies advisor/leader', async () => {

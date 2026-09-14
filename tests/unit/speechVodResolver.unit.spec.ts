@@ -127,20 +127,30 @@ describe('resolveSpeechVod', () => {
     expect(calls).toHaveLength(1)
 
     vi.unstubAllGlobals()
-    stubFetch(async () => jsonResponse({ estado: 'INDISPONIVEL', video: null }))
+    const unavailableCalls = stubFetch(async () =>
+      jsonResponse({ estado: 'INDISPONIVEL', video: null }),
+    )
     await expect(resolveSpeechVod({ eventId: 1, audioId: 2, excerptTms: 3 })).resolves.toEqual({
       state: 'indisponivel',
     })
+    expect(unavailableCalls).toHaveLength(1)
   })
 
   it('throws after the bounded retries when the Câmara is unreachable', async () => {
-    const calls = stubFetch(async () => {
-      throw new Error('connect ETIMEDOUT')
-    })
+    vi.useFakeTimers()
+    try {
+      const calls = stubFetch(async () => {
+        throw new Error('connect ETIMEDOUT')
+      })
 
-    await expect(resolveSpeechVod({ eventId: 1, audioId: 2, excerptTms: 3 })).rejects.toThrow(
-      'connect ETIMEDOUT',
-    )
-    expect(calls).toHaveLength(2)
+      const assertion = expect(
+        resolveSpeechVod({ eventId: 1, audioId: 2, excerptTms: 3 }),
+      ).rejects.toThrow('connect ETIMEDOUT')
+      await vi.advanceTimersByTimeAsync(1_100)
+      await assertion
+      expect(calls).toHaveLength(2)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
