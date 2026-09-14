@@ -71,7 +71,7 @@ for (const number of numbers) {
     await api.setLabels(number, { add: ['done', 'in-prod'], remove: ['in-progress'] })
     await api.addComment(
       number,
-      `Merged em main via PR #${prNumber} — \`done\` + \`in-prod\` + Issue fechada. Deploy de produção é manual (workflow_dispatch no GitHub Actions) — ver docs/AGENT-OPS.md.`,
+      `Merged em main via PR #${prNumber} — \`done\` + \`in-prod\` + Issue fechada. O deploy começa sozinho no merge (staging automático); produção publica só com o approve do reviewer no environment \`production\` — ver docs/AGENT-OPS.md.`,
     )
     // OPS76: o PR e a Issue vivem no GitHub; o close nativo por keyword
     // (`Closes #N`) só acontece para issues AINDA abertas citadas no body —

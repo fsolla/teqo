@@ -123,6 +123,74 @@ describe('github-api (issue tracker layer)', () => {
     })
   })
 
+  it('listWorkflowRuns queries the workflow runs endpoint and normalizes the payload', async () => {
+    const calls: FetchCall[] = []
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url, init) => {
+        calls.push({ url: String(url), init })
+        return ok({
+          workflow_runs: [
+            {
+              id: 55,
+              status: 'in_progress',
+              conclusion: null,
+              event: 'push',
+              head_sha: 'abc',
+              head_branch: 'main',
+              created_at: '2026-09-14T10:00:00Z',
+              html_url: 'https://github.com/fsolla/teqo/actions/runs/55',
+            },
+          ],
+        })
+      },
+    })
+    const runs = await api.listWorkflowRuns('deploy.yml', { status: 'in_progress', branch: 'main' })
+    expect(runs).toEqual([
+      {
+        id: 55,
+        status: 'in_progress',
+        conclusion: null,
+        event: 'push',
+        headSha: 'abc',
+        headBranch: 'main',
+        createdAt: '2026-09-14T10:00:00Z',
+        htmlUrl: 'https://github.com/fsolla/teqo/actions/runs/55',
+      },
+    ])
+    expect(calls[0].url).toContain(
+      '/actions/workflows/deploy.yml/runs?status=in_progress&branch=main&per_page=100',
+    )
+  })
+
+  it('listWorkflowRuns tolerates a missing workflow_runs array', async () => {
+    const api = createApi({ token: 'tok', fetchImpl: async () => ok({}) })
+    await expect(api.listWorkflowRuns('deploy.yml')).resolves.toEqual([])
+  })
+
+  it('getBranchHead reads and normalizes the branch ref', async () => {
+    const calls: FetchCall[] = []
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url, init) => {
+        calls.push({ url: String(url), init })
+        return ok({ ref: 'refs/heads/main', object: { sha: 'deadbeef' } })
+      },
+    })
+    const head = await api.getBranchHead('main')
+    expect(head).toEqual({ ref: 'refs/heads/main', sha: 'deadbeef' })
+    expect(calls[0].url).toContain('/git/ref/heads/main')
+  })
+
+  it('getBranchHead returns null on a missing branch (404)', async () => {
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async () => ok({ message: 'Not Found' }, 404),
+      retries: 0,
+    })
+    await expect(api.getBranchHead('nope')).resolves.toBeNull()
+  })
+
   it('getFileContents base64-decodes content', async () => {
     const api = createApi({
       token: 'tok',

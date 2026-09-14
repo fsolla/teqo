@@ -20,7 +20,7 @@
 | Início provável | | quando o bug começou (commit/entrega que o introduziu, se apurado) |
 | Detecção | | |
 | Correção mergeada | | |
-| Deploy | | (bug de prod: dispatch manual do deploy.yml) |
+| Deploy | | (bug de prod: deploy começa no merge; produção após approve do environment) |
 | Verificado em prod | | (bug de prod: confirmação do humano) |
 
 ## O bug

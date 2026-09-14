@@ -311,6 +311,38 @@ export const createApi = ({
         body: { ref, inputs },
       }),
 
+    /**
+     * GET /actions/workflows/{file}/runs — normalized, newest first. GitHub's
+     * `status` filter accepts a single value, so callers wanting several poll
+     * once per status (e.g. OPS104's queued + in_progress).
+     * @param {string} workflowFile
+     * @param {{ status?: string, branch?: string, limit?: number }} [options]
+     */
+    listWorkflowRuns: async (workflowFile, { status, branch, limit = 100 } = {}) => {
+      const payload = await request(
+        `/repos/${owner}/${name}/actions/workflows/${workflowFile}/runs`,
+        { query: { status, branch, per_page: limit } },
+      )
+      const runs = Array.isArray(payload?.workflow_runs) ? payload.workflow_runs : []
+      return runs.map((run) => ({
+        id: run.id,
+        status: run.status ?? '',
+        conclusion: run.conclusion ?? null,
+        event: run.event ?? '',
+        headSha: run.head_sha ?? '',
+        headBranch: run.head_branch ?? '',
+        createdAt: run.created_at,
+        htmlUrl: run.html_url ?? '',
+      }))
+    },
+
+    /** GET /git/ref/heads/{branch} — `{ ref, sha }`; `null` when the branch is gone (404). */
+    getBranchHead: async (branch = 'main') => {
+      const ref = await request(`/repos/${owner}/${name}/git/ref/heads/${branch}`)
+      if (!ref) return null
+      return { ref: ref.ref ?? '', sha: ref.object?.sha ?? '' }
+    },
+
     /** GET /contents/{path}?ref= — { content, sha } base64-decoded. */
     getFileContents: async (path, ref = 'main') => {
       const file = await request(`/repos/${owner}/${name}/contents/${path}`, { query: { ref } })
