@@ -226,7 +226,7 @@ export const buildBairroMetrics = ({ bairros, totals }) =>
     }
   })
 
-/** Bairro cuts used by the executive summary, the personas and the action plan. */
+/** Bairro cuts used by the executive summary, the personas and the coordinator queues. */
 export const buildBairroSummary = ({ metrics }) => {
   const sollaShares = metrics.map((bairro) => bairro.sollaShareOwn)
   const ceuciShares = metrics.map((bairro) => bairro.ceuciShareOwn)
