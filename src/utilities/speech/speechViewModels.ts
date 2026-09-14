@@ -4,6 +4,7 @@
  * list/detail render.
  */
 import { CAMPAIGN_COMMUNICATION_ACERVO } from '@/lib/campaignPaths'
+import type { SpeechExcerptSegment } from '@/lib/speechExcerpt'
 import type { SpeechScope, SpeechTopic } from '@/lib/speechFacets'
 import {
   buildHighlightedExcerpt,
@@ -17,11 +18,8 @@ import { normalizeForSearch } from '@/lib/speechSearch'
 import type { Municipality } from '@/payload-types'
 import { speechScopeLabels, speechTopicLabels } from '@/utilities/speech/speechListUrl'
 
-export type SpeechSegmentRecord = {
-  startSeconds: number
-  endSeconds: number
-  text: string
-}
+/** ASR segment shape, owned by the C158 excerpt builder (`lib/speechExcerpt`). */
+export type SpeechSegmentRecord = SpeechExcerptSegment
 
 export type SpeechListRecord = {
   id: number
@@ -92,7 +90,7 @@ const pad = (value: number): string => String(value).padStart(2, '0')
  * `speechAt` is the Câmara wall-clock string ("2026-08-11T18:48", no timezone);
  * slicing it keeps the local reading and avoids a `Date` shifting it.
  */
-const formatSpeechAt = (speechAt: string): string => {
+export const formatSpeechAt = (speechAt: string): string => {
   const match = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(speechAt)
   if (!match) return speechAt
   const [, year, month, day, hour, minute] = match
@@ -113,7 +111,7 @@ const formatSpeechDuration = (seconds: number | null | undefined): string | null
 }
 
 /** Transcript timestamp ("01:12" / "1:02:03"). */
-const formatSpeechClock = (seconds: number): string => {
+export const formatSpeechClock = (seconds: number): string => {
   const total = Math.max(0, Math.round(seconds))
   const hours = Math.floor(total / 3600)
   const minutes = Math.floor((total % 3600) / 60)
@@ -162,7 +160,7 @@ const pickMatchingSegment = (
   })
 }
 
-const buildWatchHref = (
+export const buildWatchHref = (
   speechId: number,
   segment: SpeechSegmentRecord | undefined,
   query: string | undefined,

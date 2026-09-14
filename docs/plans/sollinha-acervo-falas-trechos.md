@@ -25,6 +25,7 @@ O acervo de falas do deputado já está em produção (C153/C154/C155), mas acha
 - A pergunta de exemplo ("Qual seria uma boa fala do deputado para criarmos um reels sobre o hospital do subúrbio?") devolve 1–3 sugestões, cada uma com citação aproximada do trecho e minutagem de começo e fim.
 - Cada sugestão leva ao acervo no ponto do trecho (onde já há assistir/baixar/abrir a fonte); o chat não entrega arquivo nem edita.
 - **Guardrails:** sem trecho encontrado, o Sollinha diz que não achou — nunca inventa fala ou minutagem; cada sugestão é um trecho contínuo, curto o bastante para virar peça; quem não lê o acervo recebe negativa clara (fail-closed), nunca dado parcial nem erro técnico; a citação vem do ASR e pode ter ruído — vale como localizador, a referência é o vídeo; sem migration/collection/Consent.
+- **Decisão do gate (2026-09-14):** o Sollinha **reflete** sobre qual trecho serve melhor à intenção declarada (tema, uso, tom, duração) e de que ponto a que ponto: a tool devolve candidatos com corte proposto e uma etapa de **reranking por LLM dentro da tool** escolhe/ordena os melhores com uma justificativa curta, apresentada na resposta. Sem embeddings/índice vetorial (a busca continua textual).
 
 ## Dados (intenção)
 
@@ -58,7 +59,7 @@ O acervo de falas do deputado já está em produção (C153/C154/C155), mas acha
 
 ## Rabbit holes de produto
 
-- **Busca semântica/embeddings.** Se alguém "só completar": índice vetorial, sinônimos, reranking, infra nova. **Corte neste item:** busca textual existente; sem resultado, o Sollinha diz que não achou.
+- **Busca semântica/embeddings.** Se alguém "só completar": índice vetorial, sinônimos, infra nova. **Corte neste item:** busca textual existente; sem resultado, o Sollinha diz que não achou. **Revisado no gate (2026-09-14):** o reranking por LLM **sobre os candidatos recuperados pela busca textual** foi incorporado a pedido do produto (ver decisão do gate no aceite); índice vetorial/embeddings seguem fora.
 - **Ler a fala inteira no chat.** Se alguém "só completar": transcrição longa na resposta, contexto estourado, citação sem foco. **Corte neste item:** só trechos contínuos curtos com começo/fim; a íntegra fica no acervo.
 - **Cortar/editar/gerar vídeo.** Se alguém "só completar": editor, fila de render, storage. **Corte neste item:** o chat sugere e aponta; edição é ferramenta externa.
 - **Publicar o acervo fora de `/campanha`.** Se alguém "só completar": página pública, compartilhamento externo, direitos. **Corte neste item:** acervo segue interno.

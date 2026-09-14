@@ -9,6 +9,7 @@ import type { AIToolContext } from '@/lib/ai/types'
 
 import { buildCampaignLinks } from '@/utilities/ai/tools/buildCampaignLinks'
 import { calculate } from '@/utilities/ai/tools/calculate'
+import { findSpeechExcerpts } from '@/utilities/ai/tools/findSpeechExcerpts'
 import { getDobradinhas } from '@/utilities/ai/tools/getDobradinhas'
 import { getLeaderships } from '@/utilities/ai/tools/getLeaderships'
 import { getLeadingMunicipalities } from '@/utilities/ai/tools/getLeadingMunicipalities'
@@ -37,4 +38,5 @@ export const buildAITools = (ctx: AIToolContext) => ({
   getOrganizations: getOrganizations(ctx),
   getPartnershipCoverage: getPartnershipCoverage(ctx),
   searchEntities: searchEntities(ctx),
+  findSpeechExcerpts: findSpeechExcerpts(ctx),
 })
