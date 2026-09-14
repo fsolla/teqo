@@ -1,0 +1,378 @@
+{
+  "year": 2022,
+  "turn": 1,
+  "city": {
+    "name": "Salvador",
+    "tseCityCode": "38490",
+    "ibgeCode": "2927408"
+  },
+  "offices": {
+    "federal": "deputado_federal",
+    "state": "deputado_estadual"
+  },
+  "candidates": {
+    "solla": {
+      "candidateNumber": 1313,
+      "office": "deputado_federal",
+      "urnaName": "JORGE SOLLA",
+      "completeName": "JORGE JOSE SANTOS PEREIRA SOLLA",
+      "party": "PT",
+      "coalition": "FEDERAÇÃO",
+      "elected": true,
+      "stateVotes": 128968
+    },
+    "ceuci": {
+      "candidateNumber": 13192,
+      "office": "deputado_estadual",
+      "urnaName": "DR. CEUCI",
+      "completeName": "CEUCI DE LIMA XAVIER NUNES",
+      "party": "PT",
+      "coalition": "FEDERAÇÃO",
+      "elected": false,
+      "stateVotes": 36992
+    }
+  },
+  "stateContext": {
+    "federalValid": 7605138,
+    "stateValid": 7175437,
+    "federalCandidates": 669,
+    "stateCandidates": 847
+  },
+  "salvadorTotals": {
+    "sollaVotes": 27264,
+    "ceuciVotes": 19776,
+    "federalValid": 1290350,
+    "stateValid": 1232082,
+    "federalComparecimento": 1627906,
+    "stateComparecimento": 1627906
+  },
+  "zones": [
+    {
+      "zoneNumber": 1,
+      "sollaVotes": 1298,
+      "ceuciVotes": 2374,
+      "federalValid": 53575,
+      "stateValid": 51697,
+      "federalComparecimento": 62489,
+      "stateComparecimento": 62489,
+      "sollaFederalRank": 8,
+      "federalCandidates": 547,
+      "ceuciStateRank": 3,
+      "stateCandidates": 690
+    },
+    {
+      "zoneNumber": 2,
+      "sollaVotes": 1199,
+      "ceuciVotes": 1651,
+      "federalValid": 61247,
+      "stateValid": 57599,
+      "federalComparecimento": 74547,
+      "stateComparecimento": 74547,
+      "sollaFederalRank": 11,
+      "federalCandidates": 550,
+      "ceuciStateRank": 8,
+      "stateCandidates": 710
+    },
+    {
+      "zoneNumber": 3,
+      "sollaVotes": 1257,
+      "ceuciVotes": 474,
+      "federalValid": 69090,
+      "stateValid": 67283,
+      "federalComparecimento": 91018,
+      "stateComparecimento": 91018,
+      "sollaFederalRank": 13,
+      "federalCandidates": 582,
+      "ceuciStateRank": 35,
+      "stateCandidates": 698
+    },
+    {
+      "zoneNumber": 4,
+      "sollaVotes": 1531,
+      "ceuciVotes": 310,
+      "federalValid": 76325,
+      "stateValid": 72120,
+      "federalComparecimento": 100352,
+      "stateComparecimento": 100352,
+      "sollaFederalRank": 12,
+      "federalCandidates": 551,
+      "ceuciStateRank": 53,
+      "stateCandidates": 710
+    },
+    {
+      "zoneNumber": 5,
+      "sollaVotes": 893,
+      "ceuciVotes": 632,
+      "federalValid": 57013,
+      "stateValid": 54068,
+      "federalComparecimento": 71095,
+      "stateComparecimento": 71095,
+      "sollaFederalRank": 21,
+      "federalCandidates": 548,
+      "ceuciStateRank": 19,
+      "stateCandidates": 704
+    },
+    {
+      "zoneNumber": 6,
+      "sollaVotes": 1475,
+      "ceuciVotes": 1632,
+      "federalValid": 64496,
+      "stateValid": 62230,
+      "federalComparecimento": 79572,
+      "stateComparecimento": 79572,
+      "sollaFederalRank": 8,
+      "federalCandidates": 571,
+      "ceuciStateRank": 6,
+      "stateCandidates": 704
+    },
+    {
+      "zoneNumber": 7,
+      "sollaVotes": 1774,
+      "ceuciVotes": 1188,
+      "federalValid": 63799,
+      "stateValid": 60694,
+      "federalComparecimento": 77593,
+      "stateComparecimento": 77593,
+      "sollaFederalRank": 9,
+      "federalCandidates": 568,
+      "ceuciStateRank": 6,
+      "stateCandidates": 703
+    },
+    {
+      "zoneNumber": 8,
+      "sollaVotes": 1455,
+      "ceuciVotes": 348,
+      "federalValid": 67371,
+      "stateValid": 63750,
+      "federalComparecimento": 87276,
+      "stateComparecimento": 87276,
+      "sollaFederalRank": 11,
+      "federalCandidates": 587,
+      "ceuciStateRank": 40,
+      "stateCandidates": 703
+    },
+    {
+      "zoneNumber": 9,
+      "sollaVotes": 1265,
+      "ceuciVotes": 532,
+      "federalValid": 60344,
+      "stateValid": 59204,
+      "federalComparecimento": 79818,
+      "stateComparecimento": 79818,
+      "sollaFederalRank": 11,
+      "federalCandidates": 568,
+      "ceuciStateRank": 23,
+      "stateCandidates": 681
+    },
+    {
+      "zoneNumber": 10,
+      "sollaVotes": 2260,
+      "ceuciVotes": 2806,
+      "federalValid": 95719,
+      "stateValid": 90859,
+      "federalComparecimento": 113017,
+      "stateComparecimento": 113017,
+      "sollaFederalRank": 8,
+      "federalCandidates": 588,
+      "ceuciStateRank": 4,
+      "stateCandidates": 751
+    },
+    {
+      "zoneNumber": 11,
+      "sollaVotes": 1460,
+      "ceuciVotes": 335,
+      "federalValid": 75491,
+      "stateValid": 71434,
+      "federalComparecimento": 97411,
+      "stateComparecimento": 97411,
+      "sollaFederalRank": 12,
+      "federalCandidates": 575,
+      "ceuciStateRank": 46,
+      "stateCandidates": 723
+    },
+    {
+      "zoneNumber": 12,
+      "sollaVotes": 1436,
+      "ceuciVotes": 983,
+      "federalValid": 78414,
+      "stateValid": 74998,
+      "federalComparecimento": 97061,
+      "stateComparecimento": 97061,
+      "sollaFederalRank": 16,
+      "federalCandidates": 591,
+      "ceuciStateRank": 12,
+      "stateCandidates": 720
+    },
+    {
+      "zoneNumber": 13,
+      "sollaVotes": 1721,
+      "ceuciVotes": 3670,
+      "federalValid": 76839,
+      "stateValid": 73307,
+      "federalComparecimento": 90093,
+      "stateComparecimento": 90093,
+      "sollaFederalRank": 9,
+      "federalCandidates": 554,
+      "ceuciStateRank": 3,
+      "stateCandidates": 699
+    },
+    {
+      "zoneNumber": 14,
+      "sollaVotes": 1682,
+      "ceuciVotes": 572,
+      "federalValid": 72988,
+      "stateValid": 69464,
+      "federalComparecimento": 94242,
+      "stateComparecimento": 94242,
+      "sollaFederalRank": 10,
+      "federalCandidates": 578,
+      "ceuciStateRank": 25,
+      "stateCandidates": 719
+    },
+    {
+      "zoneNumber": 15,
+      "sollaVotes": 1289,
+      "ceuciVotes": 286,
+      "federalValid": 57956,
+      "stateValid": 53814,
+      "federalComparecimento": 74565,
+      "stateComparecimento": 74565,
+      "sollaFederalRank": 9,
+      "federalCandidates": 542,
+      "ceuciStateRank": 41,
+      "stateCandidates": 661
+    },
+    {
+      "zoneNumber": 16,
+      "sollaVotes": 1643,
+      "ceuciVotes": 653,
+      "federalValid": 67117,
+      "stateValid": 64030,
+      "federalComparecimento": 84583,
+      "stateComparecimento": 84583,
+      "sollaFederalRank": 7,
+      "federalCandidates": 571,
+      "ceuciStateRank": 22,
+      "stateCandidates": 702
+    },
+    {
+      "zoneNumber": 17,
+      "sollaVotes": 990,
+      "ceuciVotes": 342,
+      "federalValid": 62509,
+      "stateValid": 60593,
+      "federalComparecimento": 85769,
+      "stateComparecimento": 85769,
+      "sollaFederalRank": 17,
+      "federalCandidates": 554,
+      "ceuciStateRank": 41,
+      "stateCandidates": 687
+    },
+    {
+      "zoneNumber": 18,
+      "sollaVotes": 860,
+      "ceuciVotes": 437,
+      "federalValid": 47708,
+      "stateValid": 46874,
+      "federalComparecimento": 63580,
+      "stateComparecimento": 63580,
+      "sollaFederalRank": 12,
+      "federalCandidates": 565,
+      "ceuciStateRank": 26,
+      "stateCandidates": 665
+    },
+    {
+      "zoneNumber": 19,
+      "sollaVotes": 1776,
+      "ceuciVotes": 551,
+      "federalValid": 82349,
+      "stateValid": 78064,
+      "federalComparecimento": 103825,
+      "stateComparecimento": 103825,
+      "sollaFederalRank": 9,
+      "federalCandidates": 584,
+      "ceuciStateRank": 34,
+      "stateCandidates": 745
+    }
+  ],
+  "topCities": {
+    "solla": [
+      {
+        "city_name": "Salvador",
+        "votes": 27264
+      },
+      {
+        "city_name": "Amargosa",
+        "votes": 7602
+      },
+      {
+        "city_name": "Vitória da Conquista",
+        "votes": 5005
+      },
+      {
+        "city_name": "Feira de Santana",
+        "votes": 3074
+      },
+      {
+        "city_name": "Santa Inês",
+        "votes": 2925
+      },
+      {
+        "city_name": "Mutuípe",
+        "votes": 2816
+      },
+      {
+        "city_name": "Itaberaba",
+        "votes": 2558
+      },
+      {
+        "city_name": "Governador Mangabeira",
+        "votes": 2336
+      }
+    ],
+    "ceuci": [
+      {
+        "city_name": "Salvador",
+        "votes": 19776
+      },
+      {
+        "city_name": "Amargosa",
+        "votes": 4570
+      },
+      {
+        "city_name": "Miguel Calmon",
+        "votes": 1775
+      },
+      {
+        "city_name": "Lauro de Freitas",
+        "votes": 804
+      },
+      {
+        "city_name": "Feira de Santana",
+        "votes": 552
+      },
+      {
+        "city_name": "Itaberaba",
+        "votes": 488
+      },
+      {
+        "city_name": "Castro Alves",
+        "votes": 426
+      },
+      {
+        "city_name": "Camaçari",
+        "votes": 409
+      }
+    ]
+  },
+  "provenance": {
+    "source": "TSE — Resultados 2022 (votação nominal por município e zona; detalhe da votação por município e zona).",
+    "extractedAt": "2026-09-14",
+    "extractedFrom": "Base de produção do Teqo (teqo_1313) via SELECT read-only — o CDN de dados abertos do TSE está bloqueado nesta rede.",
+    "crossChecks": [
+      "Solla Salvador (soma das 19 ZE) = 27.264 = soma do artefato commitado src/lib/electionAggregates/bahia-federal-baseline.json (conferida zona a zona).",
+      "Ceuci estado = 36.992 = total_votes_state do registro TSE e valor noticiado na imprensa.",
+      "Ceuci Salvador (soma das 19 ZE) = 19.776 = valor noticiado na imprensa (mais votada do PT na capital)."
+    ]
+  }
+}

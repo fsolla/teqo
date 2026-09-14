@@ -75,6 +75,8 @@ next-env.d.ts
 /data/ai-fill/
 # Câmara pilot media/JSON cache (pnpm camara:pilot — VOD MP4 + report, never commit)
 /data/camara/
+# Solla × Ceuci report HTML cache (scripts/build-solla-ceuci-salvador-report.mjs)
+/data/solla-ceuci-salvador/
 
 # Local-only sensitive material (agents may read; never commit content)
 /private/**
