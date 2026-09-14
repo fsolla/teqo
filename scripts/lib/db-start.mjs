@@ -26,7 +26,7 @@ import { execFileSync } from 'node:child_process'
 const SHARED_COMPOSE_PROJECT = 'teqo'
 
 /** Compose names the project's service container `<project>-<service>-1`. */
-const SHARED_POSTGRES_CONTAINER = 'teqo-postgres-1'
+export const SHARED_POSTGRES_CONTAINER = 'teqo-postgres-1'
 
 /** How long to wait for a peer's `starting` container before falling back to compose. */
 const STARTING_WAIT_MS = 60_000

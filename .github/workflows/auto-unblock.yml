@@ -1,0 +1,77 @@
+# OPS106 — a red `verify` job of the Deploy workflow starts ONE autonomous
+# unblock agent on the homeserver. Single-flight: an open `auto-unblock` token
+# Issue + flock; a new failure with an active agent only comments, never queues.
+#
+# This is the deliberate exception to the deploy.yml rule "only a run with the
+# full verify suite green reaches a self-hosted job": the launcher here is a
+# thin, ~1-minute script that only decides + spawns a detached agent (the
+# runner slot is released immediately). The agent itself is capped (4h), runs
+# in a `fix/*` worktree with a LOCAL generated database (`teqo_wt*` /
+# `*_test`, fail-closed guard) and delivers through a Ready PR + native
+# auto-merge. It never touches prod/staging envs and never approves production;
+# the Deploy workflow itself is untouched (no auto-retry, no auto-dispatch).
+#
+# Trigger surface: ONLY `push` runs of `Deploy` whose `verify` job failed
+# (checked via the jobs API in the launcher — a red staging/production is out
+# of scope). Manual dispatches of Deploy never spawn an agent.
+name: Auto-unblock
+
+on:
+  workflow_run:
+    workflows: ['Deploy']
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  unblock:
+    name: unblock verify failure
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    # Same self-hosted runner as the deploys: the agent must live next to the
+    # repo, the Docker dev Postgres and the opencode credentials.
+    runs-on: [self-hosted, homeserver]
+    # Includes `pnpm install` (~a couple of minutes on a clean self-hosted
+    # workspace) before the ~1-minute launcher.
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    concurrency:
+      # Single-slot by design (never two launchers); the real single-flight is
+      # the token Issue + flock. The default pending behavior replaces a
+      # queued launcher instead of piling them up.
+      group: auto-unblock
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The worktree provisions from `origin/main`; no bot credential may
+          # leak into it (the agent pushes with the PAT credential helper).
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      # package-manager-cache: false — the job downloads nothing from the
+      # Actions cache service; setup-node's default auto-cache probe would be
+      # a needless dependency on the self-hosted runner.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Install dependencies
+        # The detached wrapper loads `scripts/worktree.mjs` (dotenv/pg at
+        # module load) from this checkout; actions/checkout cleans ignored
+        # files, so node_modules must exist BEFORE the launcher spawns it.
+        run: pnpm install --frozen-lockfile
+      - name: Dispatch the unblock agent (single-flight)
+        run: bash scripts/auto-unblock.sh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AUTOMERGE_PAT: ${{ secrets.AUTOMERGE_PAT }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}

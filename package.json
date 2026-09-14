@@ -88,6 +88,7 @@
     "prepare": "husky",
     "agent:status": "node scripts/agent-status.mjs",
     "worktree": "node scripts/worktree.mjs",
+    "unblock:check": "node scripts/auto-unblock.mjs --check",
     "issue": "node scripts/issue.mjs"
   },
   "dependencies": {

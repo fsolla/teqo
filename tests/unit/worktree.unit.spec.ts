@@ -18,9 +18,12 @@ import {
   branchNameForIssue,
   FIX_BRANCH_PREFIX,
   fixBranchName,
+  headlessDirective,
   issueCodeAndSubject,
+  OPENCODE_HEADLESS_COMMAND,
   OPENCODE_PRESET_MODEL,
   OPENCODE_SKILL_COMMAND_BY_PURPOSE,
+  opencodeHeadlessArgs,
   opencodeLaunchDirective,
   PLAN_BRANCH_PREFIX,
   planBranchName,
@@ -285,6 +288,46 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 
         model: WORKTREE_MODEL_MAP.cheap,
       }),
     ).toBeNull()
+  })
+})
+
+describe('opencodeHeadlessArgs + headlessDirective (OPS106 auto-unblock)', () => {
+  it('builds the opencode run argv with the bug-fix command and the report as one arg', () => {
+    expect(
+      opencodeHeadlessArgs({ model: 'deepseek/deepseek-flash', report: 'run 1 falhou' }),
+    ).toEqual([
+      'opencode',
+      'run',
+      '--model',
+      'deepseek/deepseek-flash',
+      '--auto',
+      '--command',
+      OPENCODE_HEADLESS_COMMAND,
+      'run 1 falhou',
+    ])
+  })
+
+  it('defaults the command to bug-fix and allows an override', () => {
+    expect(OPENCODE_HEADLESS_COMMAND).toBe('bug-fix')
+    expect(opencodeHeadlessArgs({ model: 'm', report: 'r', command: 'x' })).toContain('x')
+  })
+
+  it('fails high on a missing model or empty report', () => {
+    expect(() => opencodeHeadlessArgs({ model: '', report: 'r' })).toThrow(/model/)
+    expect(() => opencodeHeadlessArgs({ model: 'm', report: '   ' })).toThrow(/report/)
+  })
+
+  it('headlessDirective carries dir/branch/model and the argv', () => {
+    const directive = headlessDirective({
+      dir: '/work/fix/abc',
+      branch: 'fix/abc',
+      model: 'deepseek/deepseek-flash',
+      report: 'r',
+    })
+    expect(directive.dir).toBe('/work/fix/abc')
+    expect(directive.branch).toBe('fix/abc')
+    expect(directive.argv[0]).toBe('opencode')
+    expect(() => headlessDirective({ model: 'm', report: 'r' })).toThrow(/dir/)
   })
 })
 

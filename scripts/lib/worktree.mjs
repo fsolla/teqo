@@ -233,6 +233,45 @@ export const opencodeLaunchDirective = ({
 }
 
 /**
+ * Headless launch for the OPS106 auto-unblock wrapper: the same `/bug-fix`
+ * contract as `fix`, no TUI and no `--prompt` (the headless CLI has
+ * `--command` as a first-class option — the report rides as the message/args).
+ * The directive is written to a FILE, never stdout: the provisioning path
+ * inherits stdio from git/pnpm/seed children, so stdout cannot be a clean JSON
+ * channel. Emitted by `scripts/worktree.mjs fix --headless --directive <path>`.
+ */
+export const OPENCODE_HEADLESS_COMMAND = 'bug-fix'
+
+/**
+ * opencode `run` argv for the auto-unblock agent (model + report, no shell).
+ * @param {{ model?: string, report?: string, command?: string }} [options]
+ */
+export const opencodeHeadlessArgs = ({
+  model,
+  report,
+  command = OPENCODE_HEADLESS_COMMAND,
+} = {}) => {
+  if (typeof model !== 'string' || model.length === 0) {
+    throw new Error('opencodeHeadlessArgs: model ausente')
+  }
+  if (typeof report !== 'string' || report.trim().length === 0) {
+    throw new Error('opencodeHeadlessArgs: report vazio')
+  }
+  return ['opencode', 'run', '--model', model, '--auto', '--command', command, report]
+}
+
+/**
+ * Machine-readable `--headless` directive persisted for the wrapper.
+ * @param {{ dir?: string, branch?: string, model?: string, report?: string }} [options]
+ */
+export const headlessDirective = ({ dir, branch, model, report } = {}) => {
+  if (typeof dir !== 'string' || dir.length === 0) {
+    throw new Error('headlessDirective: dir ausente')
+  }
+  return { dir, branch: branch ?? '', model, argv: opencodeHeadlessArgs({ model, report }) }
+}
+
+/**
  * Branch for a `/plan-issue` planning worktree — see `namespaceBranchName`
  * (namespace `plans/plan-issue-…`, fallback label `plano`).
  */
