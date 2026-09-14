@@ -118,13 +118,15 @@ export async function resolveVod(eventId, excerpt) {
 /**
  * Lightweight reachability probe of one stored VOD link (C155 sample check):
  * GET with a 1 KiB `Range` so the MP4 body never streams, falling back to HEAD
- * when the server refuses the ranged GET (405/501). Never throws — a network
- * error becomes an `ok: false` result so one dead link cannot abort the report.
+ * when the server refuses the ranged GET (405/501). One retry absorbs the
+ * CDN's transient connection resets; it never throws — a network error becomes
+ * an `ok: false` result so one dead link cannot abort the report.
  *
  * @param {string | null | undefined} url
+ * @param {{ timeoutMs?: number, attempts?: number }} [options]
  * @returns {Promise<{ url: string | null, status: number | null, ok: boolean, note: string }>}
  */
-export async function probeVodLink(url, { timeoutMs = 20_000 } = {}) {
+export async function probeVodLink(url, { timeoutMs = 20_000, attempts = 2 } = {}) {
   if (!url) return { url: null, status: null, ok: false, note: 'sem link' }
 
   const request = async (method) => {
@@ -142,13 +144,18 @@ export async function probeVodLink(url, { timeoutMs = 20_000 } = {}) {
     return { url, status: response.status, ok: response.ok, note }
   }
 
-  try {
-    const first = await request('GET')
-    if (first.status === 405 || first.status === 501) return await request('HEAD')
-    return first
-  } catch (error) {
-    return { url, status: null, ok: false, note: error?.message ?? String(error) }
+  let lastError
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const first = await request('GET')
+      if (first.status === 405 || first.status === 501) return await request('HEAD')
+      return first
+    } catch (error) {
+      lastError = error
+      if (attempt < attempts) await sleep(1_000)
+    }
   }
+  return { url, status: null, ok: false, note: lastError?.message ?? String(lastError) }
 }
 
 export const DEEPINFRA_COST_PER_MINUTE_USD = 0.00045
