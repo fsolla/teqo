@@ -254,6 +254,15 @@ const assertDestinationAccess = (
     }
   }
 
+  // C159 — Meus contatos is the leader's own area; every other role would get
+  // a link that redirects them away.
+  if (destination === 'leaderContacts') {
+    return {
+      error: 'A área Meus contatos é exclusiva da liderança.',
+      alternatives: [CAMPAIGN_HOME, CAMPAIGN_PROFILE_HOME],
+    }
+  }
+
   if (UNRESTRICTED_DESTINATIONS.has(destination) && !isUnrestrictedCampaignRole(role)) {
     return {
       error: 'A área de assessores é restrita a coordenador e candidato.',

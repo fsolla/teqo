@@ -88,7 +88,7 @@ export const CampaignAISidebarProvider = ({
   useEffect(() => {
     if (sessionReadRef.current || !measured) return
     sessionReadRef.current = true
-    const session = readSollinhaChatSession()
+    const session = readSollinhaChatSession(role)
     if (session) {
       setMessages(session.messages)
       // B199: the mid-stream `open` write must never clobber a restored
@@ -100,7 +100,7 @@ export const CampaignAISidebarProvider = ({
     }
     restoredSessionRef.current = session !== null
     setSessionRestored(true)
-  }, [setMessages, measured, isMobile])
+  }, [setMessages, measured, isMobile, role])
 
   // OPS22: every user surface (FAB, header button, drawer swipe) opens/closes
   // the chat through the context `setOpen`/`toggle` — those mark the intent.
@@ -128,8 +128,8 @@ export const CampaignAISidebarProvider = ({
     if (!sessionRestored || status !== 'ready') return
     settledMessagesRef.current = messages
     lastWrittenOpenRef.current = open
-    writeSollinhaChatSession(messages, open, openByForWrite())
-  }, [sessionRestored, status, messages, open])
+    writeSollinhaChatSession(messages, open, role, openByForWrite())
+  }, [sessionRestored, status, messages, open, role])
 
   // B199: persist `open` without waiting for the settle — closing the drawer
   // mid-stream must reach the storage immediately, or a reload would restore
@@ -143,8 +143,8 @@ export const CampaignAISidebarProvider = ({
   useEffect(() => {
     if (!sessionRestored || status === 'ready' || lastWrittenOpenRef.current === open) return
     lastWrittenOpenRef.current = open
-    writeSollinhaChatSession(settledMessagesRef.current, open, openByForWrite())
-  }, [sessionRestored, status, open])
+    writeSollinhaChatSession(settledMessagesRef.current, open, role, openByForWrite())
+  }, [sessionRestored, status, open, role])
 
   // The chat has two surfaces keyed by viewport — the desktop panel and the
   // mobile drawer — and both derive from the SAME `open` flag. Crossing the

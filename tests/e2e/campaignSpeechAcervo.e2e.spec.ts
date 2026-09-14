@@ -67,7 +67,7 @@ const createSpeech = async (
 }
 
 test.describe('communication vertical (C154)', () => {
-  test('communicator lands on the acervo and sees only the vertical nav', async ({
+  test('communicator lands on the acervo and sees only the vertical nav, with her scoped Sollinha', async ({
     campaign,
     campaignRequest,
   }) => {
@@ -84,9 +84,14 @@ test.describe('communication vertical (C154)', () => {
     expect(html).toContain('href="/campanha/comunicacao"')
     expect(html).not.toContain('href="/campanha/apoiadores"')
     expect(html).not.toContain('href="/campanha/municipios"')
-    // C154 — no Sollinha for the communication assessor (C153 debt resolved).
-    expect(html).not.toContain('campaign-ai-shell')
-    expect(html).not.toContain('Sollinha')
+    // C159 — the communication assessor gets the Sollinha scoped to the
+    // acervo: the surface exists, the greeting speaks acervo and the opening
+    // chips are hers (never the staff set).
+    expect(html).toContain('campaign-ai-shell')
+    expect(html).toContain('Olá! Eu sou o Sollinha')
+    expect(html).toContain('O que o Solla já falou sobre Farmácia Popular?')
+    expect(html).toContain('Qual um trecho bom sobre o hospital do subúrbio?')
+    expect(html).not.toContain('Quem foi o deputado mais votado em Feira de Santana?')
   })
 
   test('coordinator sees the vertical from the staff nav; advisor does not', async ({

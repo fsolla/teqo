@@ -23,63 +23,93 @@ describe('sollinhaChatSession storage', () => {
   })
 
   it('returns null when storage is missing or invalid (fail-closed)', () => {
-    expect(readSollinhaChatSession()).toBeNull()
+    expect(readSollinhaChatSession('coordinator')).toBeNull()
     window.sessionStorage.setItem(SOLLINHA_CHAT_SESSION_STORAGE_KEY, 'not-json')
-    expect(readSollinhaChatSession()).toBeNull()
+    expect(readSollinhaChatSession('coordinator')).toBeNull()
     window.sessionStorage.setItem(
       SOLLINHA_CHAT_SESSION_STORAGE_KEY,
-      JSON.stringify({ version: 2, messages: [], open: false }),
+      JSON.stringify({ version: 2, role: 'coordinator', messages: [], open: false }),
     )
-    expect(readSollinhaChatSession()).toBeNull()
+    expect(readSollinhaChatSession('coordinator')).toBeNull()
     window.sessionStorage.setItem(
       SOLLINHA_CHAT_SESSION_STORAGE_KEY,
-      JSON.stringify({ version: 1, messages: 'nope', open: false }),
+      JSON.stringify({ version: 1, role: 'coordinator', messages: 'nope', open: false }),
     )
-    expect(readSollinhaChatSession()).toBeNull()
+    expect(readSollinhaChatSession('coordinator')).toBeNull()
     window.sessionStorage.setItem(
       SOLLINHA_CHAT_SESSION_STORAGE_KEY,
-      JSON.stringify({ version: 1, messages: [{ id: 1, role: 'user' }], open: false }),
+      JSON.stringify({
+        version: 1,
+        role: 'coordinator',
+        messages: [{ id: 1, role: 'user' }],
+        open: false,
+      }),
     )
-    expect(readSollinhaChatSession()).toBeNull()
+    expect(readSollinhaChatSession('coordinator')).toBeNull()
     window.sessionStorage.setItem(
       SOLLINHA_CHAT_SESSION_STORAGE_KEY,
-      JSON.stringify({ version: 1, messages: [], open: 'yes' }),
+      JSON.stringify({ version: 1, role: 'coordinator', messages: [], open: 'yes' }),
     )
-    expect(readSollinhaChatSession()).toBeNull()
+    expect(readSollinhaChatSession('coordinator')).toBeNull()
   })
 
   it('round-trips messages and open state', () => {
     const messages = [makeMessage('1', 'user'), makeMessage('2', 'assistant')]
-    writeSollinhaChatSession(messages, true)
-    const session = readSollinhaChatSession()
+    writeSollinhaChatSession(messages, true, 'coordinator')
+    const session = readSollinhaChatSession('coordinator')
     expect(session?.messages).toEqual(messages)
     expect(session?.open).toBe(true)
+    expect(session?.role).toBe('coordinator')
   })
 
   it('round-trips the open origin and defaults to settle without one', () => {
-    writeSollinhaChatSession([], true, 'user')
-    expect(readSollinhaChatSession()?.openBy).toBe('user')
-    writeSollinhaChatSession([], true, 'settle')
-    expect(readSollinhaChatSession()?.openBy).toBe('settle')
+    writeSollinhaChatSession([], true, 'coordinator', 'user')
+    expect(readSollinhaChatSession('coordinator')?.openBy).toBe('user')
+    writeSollinhaChatSession([], true, 'coordinator', 'settle')
+    expect(readSollinhaChatSession('coordinator')?.openBy).toBe('settle')
     // No origin passed — a write without intent must never restore a drawer.
-    writeSollinhaChatSession([], true)
-    expect(readSollinhaChatSession()?.openBy).toBe('settle')
+    writeSollinhaChatSession([], true, 'coordinator')
+    expect(readSollinhaChatSession('coordinator')?.openBy).toBe('settle')
   })
 
   it('rejects an invalid open origin (fail-closed)', () => {
     window.sessionStorage.setItem(
       SOLLINHA_CHAT_SESSION_STORAGE_KEY,
-      JSON.stringify({ version: 1, messages: [], open: true, openBy: 'system' }),
+      JSON.stringify({
+        version: 1,
+        role: 'coordinator',
+        messages: [],
+        open: true,
+        openBy: 'system',
+      }),
     )
-    expect(readSollinhaChatSession()).toBeNull()
+    expect(readSollinhaChatSession('coordinator')).toBeNull()
   })
 
-  it('still reads legacy sessions without an open origin', () => {
+  it('still reads sessions without an open origin', () => {
+    window.sessionStorage.setItem(
+      SOLLINHA_CHAT_SESSION_STORAGE_KEY,
+      JSON.stringify({ version: 1, role: 'coordinator', messages: [], open: true }),
+    )
+    expect(readSollinhaChatSession('coordinator')?.openBy).toBeUndefined()
+  })
+
+  it('discards sessions written before the role field (C159, fail-closed)', () => {
     window.sessionStorage.setItem(
       SOLLINHA_CHAT_SESSION_STORAGE_KEY,
       JSON.stringify({ version: 1, messages: [], open: true }),
     )
-    expect(readSollinhaChatSession()?.openBy).toBeUndefined()
+    expect(readSollinhaChatSession('coordinator')).toBeNull()
+  })
+
+  it('never restores another role’s conversation (C159)', () => {
+    writeSollinhaChatSession(
+      [makeMessage('1', 'user'), makeMessage('2', 'assistant')],
+      true,
+      'coordinator',
+    )
+    expect(readSollinhaChatSession('communicator')).toBeNull()
+    expect(readSollinhaChatSession('coordinator')?.messages).toHaveLength(2)
   })
 
   it('prunes to the message-count guardrail keeping the newest', () => {
@@ -123,8 +153,8 @@ describe('sollinhaChatSession storage', () => {
     const messages = Array.from({ length: SOLLINHA_CHAT_MAX_MESSAGES + 5 }, (_, index) =>
       makeMessage(String(index), index % 2 === 0 ? 'user' : 'assistant'),
     )
-    writeSollinhaChatSession(messages, false)
-    const session = readSollinhaChatSession()
+    writeSollinhaChatSession(messages, false, 'coordinator')
+    const session = readSollinhaChatSession('coordinator')
     expect(session?.messages).toHaveLength(SOLLINHA_CHAT_MAX_MESSAGES - 1)
     expect(session?.messages[0]?.id).toBe('6')
     expect(session?.messages[0]?.role).toBe('user')
@@ -153,7 +183,7 @@ describe('sollinhaChatSession storage', () => {
         ],
       },
     ] as unknown as UIMessage[]
-    writeSollinhaChatSession(messages, true)
-    expect(readSollinhaChatSession()?.messages).toEqual(messages)
+    writeSollinhaChatSession(messages, true, 'coordinator')
+    expect(readSollinhaChatSession('coordinator')?.messages).toEqual(messages)
   })
 })

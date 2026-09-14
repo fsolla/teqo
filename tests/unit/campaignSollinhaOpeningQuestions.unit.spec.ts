@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from 'vitest'
 
+import type { CampaignRole } from '@/lib/campaignRoles'
 import { getSollinhaOpeningQuestions } from '@/lib/sollinhaOpeningQuestions'
 
 const STAFF_TEXT = [
@@ -15,6 +16,14 @@ const LEADER_TEXT = [
   'O que você sabe fazer?',
   'Me manda o link dos meus contatos',
   'Me manda o link do meu perfil',
+]
+
+// C159 — the assessoria de comunicação gets acervo questions, all answerable
+// by her toolset (`findSpeechExcerpts`).
+const COMMUNICATOR_TEXT = [
+  'O que o Solla já falou sobre Farmácia Popular?',
+  'Me dá uma fala do deputado para um reels sobre saúde.',
+  'Qual um trecho bom sobre o hospital do subúrbio?',
 ]
 
 describe('getSollinhaOpeningQuestions', () => {
@@ -46,8 +55,25 @@ describe('getSollinhaOpeningQuestions', () => {
     expect(getSollinhaOpeningQuestions('leader', true).map((q) => q.text)).toEqual(LEADER_TEXT)
   })
 
+  it('gives the communication assessor the acervo set — never a campaign question', () => {
+    for (const isMobile of [false, true]) {
+      const questions = getSollinhaOpeningQuestions('communicator', isMobile)
+      expect(questions.map((q) => q.text)).toEqual(COMMUNICATOR_TEXT)
+      for (const question of questions) {
+        expect(question.text).not.toMatch(
+          /deputado mais votado|votos tivemos|dobradinhas temos|como está o município|meus contatos/i,
+        )
+      }
+    }
+  })
+
+  it('falls back to the leader safe set for an unknown role (fail-closed)', () => {
+    const unknown = 'desconhecido' as CampaignRole
+    expect(getSollinhaOpeningQuestions(unknown, false).map((q) => q.text)).toEqual(LEADER_TEXT)
+  })
+
   it('every text is non-empty and trimmed', () => {
-    for (const role of ['coordinator', 'leader'] as const) {
+    for (const role of ['coordinator', 'leader', 'communicator'] as const) {
       for (const question of getSollinhaOpeningQuestions(role, false)) {
         expect(question.text.trim().length).toBeGreaterThan(0)
       }

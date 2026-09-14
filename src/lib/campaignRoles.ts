@@ -24,11 +24,3 @@ export const isUnrestrictedCampaignRole = (role: CampaignRole): boolean =>
  */
 export const canReadSpeechCatalog = (role: CampaignRole): boolean =>
   role === 'communicator' || isUnrestrictedCampaignRole(role)
-
-/**
- * Sollinha (AI assistant) surfaces. The communication assessor does not use
- * the campaign assistant — its tools are campaign-scoped and the vertical is
- * her whole job (C153 debt, resolved by C154). Leaders keep the safe
- * link/meta chips.
- */
-export const canUseCampaignAssistant = (role: CampaignRole): boolean => role !== 'communicator'

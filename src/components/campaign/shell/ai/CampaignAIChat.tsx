@@ -140,6 +140,13 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
   const showOpeningChips = messages.length === 0 && status === 'ready'
   const openingQuestions = getSollinhaOpeningQuestions(role, isMobile)
 
+  // C159 — the assessoria de comunicação has an acervo-scoped assistant: the
+  // greeting must promise what her toolset answers, not the campaign catalog.
+  const welcomeText =
+    role === 'communicator'
+      ? 'Olá! Eu sou o Sollinha. Posso buscar no acervo de falas do deputado trechos para suas peças — é só dizer o tema.'
+      : 'Olá! Eu sou o Sollinha, assistente virtual da campanha. Pergunte sobre votações, municípios, dobradinhas, lideranças e muito mais.'
+
   return (
     <div className={cn('grid min-h-0 grid-rows-[1fr_auto]', className)}>
       {/* Messages area */}
@@ -148,10 +155,7 @@ export const CampaignAIChat = ({ className }: { className?: string }) => {
           <div className="flex h-full items-center justify-center px-4 text-center">
             <div className="max-w-xs space-y-3">
               <Bot className="mx-auto size-10 text-muted-foreground" aria-hidden />
-              <p className="text-sm text-muted-foreground">
-                Olá! Eu sou o Sollinha, assistente virtual da campanha. Pergunte sobre votações,
-                municípios, dobradinhas, lideranças e muito mais.
-              </p>
+              <p className="text-sm text-muted-foreground">{welcomeText}</p>
             </div>
           </div>
         ) : (

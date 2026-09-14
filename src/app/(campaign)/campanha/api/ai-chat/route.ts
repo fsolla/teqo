@@ -11,7 +11,7 @@ import { getPayload } from 'payload'
 
 import { splitSollinhaFollowUpBlock } from '@/lib/sollinhaFollowUpSuggestions'
 import { checkRateLimit } from '@/utilities/ai/rateLimit'
-import { AI_SYSTEM_PROMPT } from '@/utilities/ai/systemPrompt'
+import { buildAISystemPrompt } from '@/utilities/ai/systemPrompt'
 import { buildAITools } from '@/utilities/ai/tools'
 import { getCampaignUserRaw } from '@/utilities/campaignAuth'
 
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: deepSeek('deepseek-flash'),
-    system: AI_SYSTEM_PROMPT,
+    system: buildAISystemPrompt(user.role),
     messages: strippedMessages,
     tools: buildAITools({ user, payload }),
     stopWhen: stepCountIs(10),
