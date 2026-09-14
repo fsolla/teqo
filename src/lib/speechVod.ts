@@ -15,7 +15,7 @@ export const CAMARA_USER_AGENT =
 export const buildVodUrl = (eventId: number, audioId: number, tMs: number): string =>
   `https://www.camara.leg.br/evento-legislativo/${eventId}/video-sob-demanda?idAudio=${audioId}&trecho=${tMs}`
 
-export type CamaraVodVideo = {
+type CamaraVodVideo = {
   title: string | null
   subtitle: string | null
   duration: string | null
