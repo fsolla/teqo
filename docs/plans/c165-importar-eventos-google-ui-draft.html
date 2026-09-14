@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — C165 · Eventos do Google viram atividades</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-[1400px] p-6 sm:p-8">
+      <h1 class="text-lg font-medium text-zinc-100">
+        UI draft — Agenda: importar eventos do Google como atividades (C165)
+      </h1>
+      <p class="mt-1 max-w-3xl text-sm text-zinc-400">
+        A assessoria cria o compromisso no Google Calendar; ele aparece sozinho em
+        /campanha/atividades como atividade confirmada, sem município; a coordenação abre o overlay
+        e atribui o município quando quiser.
+      </p>
+      <p class="mt-2 text-sm text-zinc-500">
+        Cinza = estrutura existente · <span class="text-amber-400">acento</span> = novo neste item ·
+        barras cinza = conteúdo não especificado. Cenas estáticas: sem interação, sem dados reais.
+      </p>
+
+      <!-- ============================================================ -->
+      <!-- Cena 1 · desktop (~1280px) — lista de atividades             -->
+      <!-- ============================================================ -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 1 · desktop (~1280px) — lista /campanha/atividades com importados do Google
+        </p>
+        <div class="mt-3 overflow-x-auto">
+          <div
+            class="w-[1280px] max-w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900"
+          >
+            <div class="flex min-h-[560px]">
+              <aside class="w-52 shrink-0 border-r border-zinc-800 bg-zinc-950/50 p-4">
+                <p class="px-3 text-xs tracking-wide text-zinc-500 uppercase">Campanha</p>
+                <nav class="mt-3 flex flex-col gap-1 text-sm">
+                  <span class="rounded-lg px-3 py-2 text-zinc-400">Painel</span>
+                  <span class="rounded-lg bg-zinc-800 px-3 py-2 font-medium text-zinc-100"
+                    >Atividades</span
+                  >
+                  <span class="rounded-lg px-3 py-2 text-zinc-400">Municípios</span>
+                  <span class="rounded-lg px-3 py-2 text-zinc-400">Lideranças</span>
+                  <span class="rounded-lg px-3 py-2 text-zinc-400">Apoiadores</span>
+                </nav>
+              </aside>
+
+              <div class="min-w-0 flex-1 p-6">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 class="text-base font-medium">Atividades</h2>
+                    <p class="mt-0.5 text-sm text-zinc-400">Agenda da campanha · Próximos</p>
+                  </div>
+                  <button
+                    type="button"
+                    class="h-11 rounded-lg bg-amber-500 px-4 text-sm font-medium text-zinc-950"
+                  >
+                    Nova atividade
+                  </button>
+                </div>
+
+                <div class="mt-4 flex flex-wrap gap-2 text-sm">
+                  <span class="rounded-lg bg-zinc-800 px-3 py-2 font-medium">Próximos</span>
+                  <span class="rounded-lg px-3 py-2 text-zinc-400">Todos</span>
+                  <span class="rounded-lg px-3 py-2 text-zinc-400">Realizados</span>
+                  <span class="rounded-lg px-3 py-2 text-zinc-400">Rascunhos</span>
+                </div>
+
+                <div
+                  class="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 p-2"
+                >
+                  <span
+                    class="inline-flex items-center gap-1 rounded-md bg-zinc-800 px-2 py-1 text-xs text-zinc-200"
+                  >
+                    Sem município <span class="text-zinc-500">×</span>
+                  </span>
+                  <span class="px-1 text-sm text-zinc-500"
+                    >Filtrar por janela, tipo, título, município…</span
+                  >
+                  <span class="ml-auto px-1 text-xs text-zinc-500">3 resultados</span>
+                </div>
+
+                <div class="mt-4 grid gap-3 lg:grid-cols-2">
+                  <!-- Card importado, ainda sem município -->
+                  <article class="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span
+                        class="rounded-md border border-zinc-700 px-2 py-0.5 text-xs text-zinc-300"
+                        >Confirmado</span
+                      >
+                      <span
+                        class="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-400"
+                        >Do Google</span
+                      >
+                      <span
+                        class="rounded-md border border-dashed border-zinc-600 px-2 py-0.5 text-xs text-zinc-400"
+                        >Sem município</span
+                      >
+                    </div>
+                    <h3
+                      class="mt-3 text-sm font-medium text-zinc-100 underline decoration-zinc-700 underline-offset-4"
+                    >
+                      Nome do compromisso (título como está no Google)
+                    </h3>
+                    <div class="mt-2 flex flex-col gap-1.5 text-sm text-zinc-400">
+                      <span class="flex items-center gap-1.5">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          class="size-4 shrink-0"
+                        >
+                          <path
+                            d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+                          />
+                        </svg>
+                        12/09/2026 · 19:00
+                      </span>
+                      <span class="flex items-center gap-1.5">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          class="size-4 shrink-0"
+                        >
+                          <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </svg>
+                        Local informado no Google
+                      </span>
+                    </div>
+                    <div
+                      class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-800 pt-3 text-sm text-zinc-400"
+                    >
+                      <span class="flex items-center gap-1.5">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          class="size-4 shrink-0"
+                        >
+                          <path d="M20 21a8 8 0 0 0-16 0M12 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" />
+                        </svg>
+                        Resp: Não definido
+                      </span>
+                      <span class="text-xs text-zinc-500">Importado automaticamente</span>
+                    </div>
+                  </article>
+
+                  <!-- Card importado já triado (município atribuído) -->
+                  <article class="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span
+                        class="rounded-md border border-zinc-700 px-2 py-0.5 text-xs text-zinc-300"
+                        >Confirmado</span
+                      >
+                      <span
+                        class="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-400"
+                        >Do Google</span
+                      >
+                      <span
+                        class="rounded-md border border-zinc-700 px-2 py-0.5 text-xs text-zinc-300"
+                        >Município · [nome]</span
+                      >
+                    </div>
+                    <h3
+                      class="mt-3 text-sm font-medium text-zinc-100 underline decoration-zinc-700 underline-offset-4"
+                    >
+                      Outro compromisso (título original do Google)
+                    </h3>
+                    <div class="mt-2 flex flex-col gap-1.5 text-sm text-zinc-400">
+                      <span class="flex items-center gap-1.5">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          class="size-4 shrink-0"
+                        >
+                          <path
+                            d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+                          />
+                        </svg>
+                        15/09/2026 · 09:30
+                      </span>
+                      <span class="flex items-center gap-1.5">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          class="size-4 shrink-0"
+                        >
+                          <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </svg>
+                        Local informado no Google
+                      </span>
+                    </div>
+                    <div
+                      class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-800 pt-3 text-sm text-zinc-400"
+                    >
+                      <span class="text-xs text-zinc-500">Visível para o assessor da carteira</span>
+                      <span class="text-xs text-zinc-500">Importado automaticamente</span>
+                    </div>
+                  </article>
+
+                  <!-- Card comum do Teqo (sem Google) -->
+                  <article class="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span
+                        class="rounded-md border border-zinc-700 px-2 py-0.5 text-xs text-zinc-300"
+                        >Confirmado</span
+                      >
+                    </div>
+                    <h3
+                      class="mt-3 text-sm font-medium text-zinc-100 underline decoration-zinc-700 underline-offset-4"
+                    >
+                      Atividade criada no Teqo
+                    </h3>
+                    <div class="mt-2 flex flex-col gap-1.5 text-sm text-zinc-400">
+                      <span class="flex items-center gap-1.5">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          class="size-4 shrink-0"
+                        >
+                          <path
+                            d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+                          />
+                        </svg>
+                        18/09/2026 · 16:00
+                      </span>
+                      <span class="flex items-center gap-1.5">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          class="size-4 shrink-0"
+                        >
+                          <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </svg>
+                        Município · [nome]
+                      </span>
+                    </div>
+                  </article>
+
+                  <!-- Placeholder de conteúdo não especificado -->
+                  <article
+                    class="flex flex-col justify-center gap-3 rounded-lg border border-dashed border-zinc-800 bg-zinc-900/50 p-4"
+                  >
+                    <div class="h-4 w-32 rounded bg-zinc-800"></div>
+                    <div class="h-3 w-56 rounded bg-zinc-800/80"></div>
+                    <div class="h-3 w-40 rounded bg-zinc-800/60"></div>
+                  </article>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- Cena 2 · desktop — omnibox aberto com "Sem município"        -->
+      <!-- ============================================================ -->
+      <section class="mt-10">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 2 · desktop — omnibox aberto com a opção "Sem município" (triagem)
+        </p>
+        <div class="mt-3 w-[760px] max-w-full rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+          <div
+            class="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 p-2"
+          >
+            <span
+              class="inline-flex items-center gap-1 rounded-md bg-zinc-800 px-2 py-1 text-xs text-zinc-200"
+            >
+              Sem município <span class="text-zinc-500">×</span>
+            </span>
+            <span class="px-1 text-sm text-zinc-300">sem<span class="text-zinc-600">|</span></span>
+          </div>
+          <div class="mt-2 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950">
+            <div
+              class="flex items-center justify-between gap-2 border-l-2 border-amber-500 bg-amber-500/10 px-3 py-2 text-sm"
+            >
+              <span class="flex items-center gap-2">
+                <span
+                  class="rounded-md border border-amber-500/40 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-400 uppercase"
+                  >novo</span
+                >
+                <span class="text-zinc-100">Sem município</span>
+              </span>
+              <span class="text-xs text-zinc-500">2 atividades</span>
+            </div>
+            <div
+              class="flex items-center justify-between gap-2 border-t border-zinc-800 px-3 py-2 text-sm text-zinc-400"
+            >
+              <span>Município: [nome do município]</span>
+              <span class="text-xs text-zinc-600">12</span>
+            </div>
+            <div
+              class="flex items-center justify-between gap-2 border-t border-zinc-800 px-3 py-2 text-sm text-zinc-400"
+            >
+              <span>Janela: Próximos 30 dias</span>
+              <span class="text-xs text-zinc-600">—</span>
+            </div>
+            <div
+              class="flex items-center justify-between gap-2 border-t border-zinc-800 px-3 py-2 text-sm text-zinc-400"
+            >
+              <span>Título contém "caminhada"</span>
+              <span class="text-xs text-zinc-600">1</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- Cena 3 · desktop — overlay de edição (Município opcional)    -->
+      <!-- ============================================================ -->
+      <section class="mt-10">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 3 · desktop — overlay de edição com Município opcional e aviso de visibilidade
+        </p>
+        <div
+          class="mt-3 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/70 p-6 sm:p-10"
+        >
+          <div class="mx-auto max-w-2xl rounded-xl border border-zinc-800 bg-zinc-900">
+            <div class="flex items-start justify-between gap-3 border-b border-zinc-800 p-4">
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h2 class="text-sm font-medium">Editar atividade</h2>
+                  <span
+                    class="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-400"
+                    >Do Google</span
+                  >
+                  <span
+                    class="rounded-md border border-dashed border-zinc-600 px-2 py-0.5 text-xs text-zinc-400"
+                    >Sem município</span
+                  >
+                </div>
+                <p class="mt-1 text-xs text-zinc-500">
+                  Importado do Google Calendar · salvar aqui atualiza o mesmo evento
+                </p>
+              </div>
+              <span class="text-zinc-500">×</span>
+            </div>
+
+            <div class="flex flex-col gap-4 p-4">
+              <div class="flex flex-col gap-1.5">
+                <span class="text-sm text-zinc-300">Título</span>
+                <div
+                  class="flex h-11 items-center rounded-lg border border-zinc-700 px-3 text-sm text-zinc-200"
+                >
+                  Nome do compromisso
+                </div>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div class="flex flex-col gap-1.5">
+                  <span class="text-sm text-zinc-300">Início</span>
+                  <div
+                    class="flex h-11 items-center rounded-lg border border-zinc-700 px-3 text-sm text-zinc-200"
+                  >
+                    12/09/2026 19:00
+                  </div>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <span class="text-sm text-zinc-300">Término (opcional)</span>
+                  <div
+                    class="flex h-11 items-center rounded-lg border border-zinc-700 px-3 text-sm text-zinc-200"
+                  >
+                    12/09/2026 21:00
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex h-11 items-center gap-2 rounded-lg border border-zinc-800 px-3">
+                <span class="size-4 rounded border border-zinc-600"></span>
+                <span class="text-sm text-zinc-300">Todo o dia</span>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <span class="flex items-center gap-2 text-sm text-zinc-300">
+                  Município (opcional)
+                  <span
+                    class="rounded-md border border-amber-500/40 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-400 uppercase"
+                    >novo</span
+                  >
+                </span>
+                <div
+                  class="flex h-11 items-center justify-between rounded-lg border border-amber-500/50 px-3 text-sm"
+                >
+                  <span class="text-zinc-500">Sem município</span>
+                  <span class="text-zinc-600">⌄</span>
+                </div>
+                <p class="text-xs text-amber-400/90">
+                  Sem município, só coordenação e candidato veem. Ao atribuir, o assessor da
+                  carteira passa a ver.
+                </p>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <span class="text-sm text-zinc-300">Local (opcional)</span>
+                <div
+                  class="flex h-11 items-center rounded-lg border border-zinc-700 px-3 text-sm text-zinc-200"
+                >
+                  Local informado no Google
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <span class="text-sm text-zinc-300">Responsáveis</span>
+                <div
+                  class="h-11 rounded-lg border border-dashed border-zinc-800 bg-zinc-950/60"
+                ></div>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <span class="text-sm text-zinc-300">Organizações apoiadoras</span>
+                <div
+                  class="h-11 rounded-lg border border-dashed border-zinc-800 bg-zinc-950/60"
+                ></div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 border-t border-zinc-800 p-4">
+              <button
+                type="button"
+                class="h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-300"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                class="h-11 rounded-lg bg-amber-500 px-4 text-sm font-medium text-zinc-950"
+              >
+                Salvar atividade
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- Cena 4 · mobile (~390px) — card e sheet                      -->
+      <!-- ============================================================ -->
+      <section class="mt-10">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 4 · mobile (~390px) — card importado e sheet de edição
+        </p>
+        <div class="mt-3 flex flex-wrap items-start gap-6">
+          <!-- Card mobile -->
+          <div class="w-[390px] max-w-full rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+            <div class="flex items-center justify-between gap-2">
+              <h2 class="text-sm font-medium">Atividades</h2>
+              <span class="text-xs text-zinc-500">Próximos</span>
+            </div>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+              <span class="rounded-md border border-zinc-700 px-2 py-0.5 text-xs text-zinc-300"
+                >Confirmado</span
+              >
+              <span
+                class="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-400"
+                >Do Google</span
+              >
+              <span
+                class="rounded-md border border-dashed border-zinc-600 px-2 py-0.5 text-xs text-zinc-400"
+                >Sem município</span
+              >
+            </div>
+            <h3 class="mt-3 text-sm font-medium text-zinc-100">
+              Nome do compromisso (título como está no Google)
+            </h3>
+            <div class="mt-2 flex flex-col gap-1.5 text-sm text-zinc-400">
+              <span class="flex items-center gap-1.5">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  class="size-4 shrink-0"
+                >
+                  <path
+                    d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+                  />
+                </svg>
+                12/09/2026 · 19:00
+              </span>
+              <span class="flex items-center gap-1.5">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  class="size-4 shrink-0"
+                >
+                  <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                Local informado no Google
+              </span>
+            </div>
+            <div
+              class="mt-3 flex items-center justify-between border-t border-zinc-800 pt-3 text-xs text-zinc-500"
+            >
+              <span>Resp: Não definido</span>
+              <span>Importado automaticamente</span>
+            </div>
+          </div>
+
+          <!-- Sheet mobile -->
+          <div
+            class="w-[390px] max-w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900"
+          >
+            <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+              <span class="text-sm font-medium">Editar atividade</span>
+              <span class="text-zinc-500">×</span>
+            </div>
+            <div class="flex flex-col gap-3 p-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span
+                  class="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-400"
+                  >Do Google</span
+                >
+                <span
+                  class="rounded-md border border-dashed border-zinc-600 px-2 py-0.5 text-xs text-zinc-400"
+                  >Sem município</span
+                >
+              </div>
+              <div
+                class="flex h-11 items-center rounded-lg border border-zinc-700 px-3 text-sm text-zinc-200"
+              >
+                Nome do compromisso
+              </div>
+              <div
+                class="flex h-11 items-center rounded-lg border border-zinc-700 px-3 text-sm text-zinc-200"
+              >
+                12/09/2026 19:00
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <span class="text-sm text-zinc-300">Município (opcional)</span>
+                <div
+                  class="flex h-11 items-center justify-between rounded-lg border border-amber-500/50 px-3 text-sm"
+                >
+                  <span class="text-zinc-500">Sem município</span>
+                  <span class="text-zinc-600">⌄</span>
+                </div>
+                <p class="text-xs text-amber-400/90">
+                  Sem município, só coordenação e candidato veem.
+                </p>
+              </div>
+              <div
+                class="flex h-11 items-center rounded-lg border border-zinc-700 px-3 text-sm text-zinc-200"
+              >
+                Local informado no Google
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <span class="text-sm text-zinc-300">Responsáveis</span>
+                <div
+                  class="h-11 rounded-lg border border-dashed border-zinc-800 bg-zinc-950/60"
+                ></div>
+              </div>
+            </div>
+            <div class="border-t border-zinc-800 p-4">
+              <button
+                type="button"
+                class="h-11 w-full rounded-lg bg-amber-500 text-sm font-medium text-zinc-950"
+              >
+                Salvar atividade
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
