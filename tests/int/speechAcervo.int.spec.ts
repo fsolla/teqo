@@ -196,6 +196,38 @@ describe('speech acervo (C154)', () => {
     expect(view.presidingOfficer).toBe('Pompeo de Mattos')
   })
 
+  it('derives the YouTube default and the resoluble VOD from the detail row (C162)', async () => {
+    const withBoth = await createSpeech({
+      youtubeUrl: 'https://www.youtube.com/watch?v=lLhRDkSPw0A',
+      vodPlaybackUrl: 'https://vod.camara.leg.br/old.mp4',
+      vodDownloadUrl: 'https://vod.camara.leg.br/old.mp4',
+      excerptTMs: 1786473834650,
+      eventStartAt: '2026-08-11T15:00',
+    })
+    const onlyYoutube = await createSpeech({ youtubeUrl: 'https://youtu.be/lLhRDkSPw0A' })
+
+    const { communicator } = await createUsers()
+    const both = await loadSpeechDetailPageData(payload, communicator, withBoth)
+    expect(both.youtubeVideoId).toBe('lLhRDkSPw0A')
+    expect(both.youtubeOffsetSeconds).toBe(2634)
+    expect(both.vodResolvable).toBe(true)
+
+    const youtubeOnly = await loadSpeechDetailPageData(payload, communicator, onlyYoutube)
+    expect(youtubeOnly.youtubeVideoId).toBe('lLhRDkSPw0A')
+    expect(youtubeOnly.vodResolvable).toBe(false)
+  })
+
+  it('keeps the direct download link off the list view model (C162)', async () => {
+    const id = await createSpeech({ vodDownloadUrl: 'https://vod.camara.leg.br/old.mp4' })
+
+    const { communicator } = await createUsers()
+    const data = await loadSpeechAcervoPageData(payload, communicator, {})
+    const row = data.rows.find((item) => item.id === id)
+
+    expect(row).toBeDefined()
+    expect('downloadUrl' in (row as object)).toBe(false)
+  })
+
   it('allows communicator/coordinator/candidate and denies advisor/leader', async () => {
     const id = await createSpeech()
     const { communicator, coordinator, candidate, advisor, leader } = await createUsers()

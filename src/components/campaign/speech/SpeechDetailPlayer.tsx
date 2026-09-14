@@ -1,29 +1,108 @@
 'use client'
 
-import { FilmIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { DownloadIcon, ExternalLinkIcon, FilmIcon, PlayIcon } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
+import type { SpeechVodResolveResponse } from '@/app/(campaign)/campanha/(app)/comunicacao/acervo/resolver-vod/types'
 import { SpeechHighlightParts } from '@/components/campaign/speech/SpeechHighlightParts'
+import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/Spinner'
+import { postCampaignJson } from '@/lib/campaignJsonRequest'
+import type { SpeechVodResolution } from '@/lib/speechVod'
 import { cn } from '@/lib/utils'
 import type { SpeechDetailSegmentViewModel } from '@/utilities/speech/speechViewModels'
 
-/**
- * C154 — native `<video>` plus the clickable ASR transcript. The VOD is the
- * Câmara excerpt MP4 and the segment `startSeconds` are relative to it, so a
- * click is a plain `currentTime` seek. No autoplay (browsers block it): the
- * user presses play and the video starts at the requested fragment.
- */
-export const SpeechDetailPlayer = ({
-  vodPlaybackUrl,
-  segments,
-  initialSeconds,
-}: {
-  vodPlaybackUrl: string | null
+const RESOLVE_ENDPOINT = '/campanha/comunicacao/acervo/resolver-vod'
+
+type ResolutionState =
+  | { kind: 'idle' }
+  | { kind: 'resolving' }
+  | { kind: 'generating' }
+  | { kind: 'resolved'; playbackUrl: string | null; downloadUrl: string | null }
+  | { kind: 'failed'; message: string | null }
+
+const toResolutionState = (resolution: SpeechVodResolution): ResolutionState =>
+  resolution.state === 'pronto'
+    ? {
+        kind: 'resolved',
+        playbackUrl: resolution.playbackUrl,
+        downloadUrl: resolution.downloadUrl,
+      }
+    : resolution.state === 'gerando'
+      ? { kind: 'generating' }
+      : { kind: 'failed', message: null }
+
+type SpeechDetailPlayerProps = {
+  speechId: number
+  /** C162 — YouTube default when the session link parses; null falls back to the VOD. */
+  youtubeVideoId: string | null
+  /** Seconds from the session start to the excerpt; null makes the YouTube seek inert. */
+  youtubeOffsetSeconds: number | null
+  /** Stored VOD + excerpt coordinates: the Câmara may be asked on click. */
+  vodResolvable: boolean
   segments: readonly SpeechDetailSegmentViewModel[]
   initialSeconds: number | null
-}) => {
+  sourceUrl: string | null
+}
+
+const StatusPanel = ({
+  title,
+  detail,
+  busy = false,
+  children,
+}: {
+  title: string
+  detail: string
+  busy?: boolean
+  children?: ReactNode
+}) => (
+  <div
+    role="status"
+    aria-live="polite"
+    className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-lg border bg-muted/40 px-6 text-center text-muted-foreground"
+  >
+    {busy ? (
+      <Spinner
+        className="size-6 text-muted-foreground"
+        aria-label="Resolvendo o trecho na Câmara"
+      />
+    ) : (
+      <FilmIcon className="size-8" aria-hidden="true" />
+    )}
+    <p className="text-sm font-medium text-foreground/90">{title}</p>
+    <p className="max-w-md text-xs">{detail}</p>
+    {children}
+  </div>
+)
+
+/**
+ * C162 — one player for the four acervo quadrants: YouTube default when the
+ * session link exists (no Câmara call on render), the stored VOD otherwise
+ * resolved on click (`video-sob-demanda`, exact `excerptTMs`, links probed
+ * before use), and honest states when neither path has a playable file.
+ * Transcript clicks seek the current surface: native seconds on the MP4,
+ * session-offset seconds on the YouTube embed.
+ */
+export const SpeechDetailPlayer = ({
+  speechId,
+  youtubeVideoId,
+  youtubeOffsetSeconds,
+  vodResolvable,
+  segments,
+  initialSeconds,
+  sourceUrl,
+}: SpeechDetailPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const [resolution, setResolution] = useState<ResolutionState>({ kind: 'idle' })
   const [activeStart, setActiveStart] = useState<number | null>(null)
+  const [youtubeStart, setYoutubeStart] = useState<number | null>(() =>
+    youtubeVideoId && youtubeOffsetSeconds !== null && initialSeconds !== null
+      ? youtubeOffsetSeconds + initialSeconds
+      : null,
+  )
+
+  const resolving = resolution.kind === 'resolving'
+  const playbackUrl = resolution.kind === 'resolved' ? resolution.playbackUrl : null
 
   useEffect(() => {
     const video = videoRef.current
@@ -38,9 +117,50 @@ export const SpeechDetailPlayer = ({
     }
     video.addEventListener('loadedmetadata', seek, { once: true })
     return () => video.removeEventListener('loadedmetadata', seek)
-  }, [initialSeconds, vodPlaybackUrl])
+  }, [initialSeconds, playbackUrl])
+
+  const requestResolution = async (deliverDownload: boolean) => {
+    // Opened synchronously inside the click gesture so the popup blocker sees
+    // a user-initiated tab; pointed at the verified URL only after the probe.
+    const pendingTab = deliverDownload ? window.open('', '_blank') : null
+    setResolution({ kind: 'resolving' })
+
+    try {
+      const { ok, payload } = await postCampaignJson<SpeechVodResolveResponse>(RESOLVE_ENDPOINT, {
+        speechId,
+      })
+      if (!ok || payload.status !== 'success') {
+        pendingTab?.close()
+        setResolution({
+          kind: 'failed',
+          message: payload.status === 'error' ? payload.message : null,
+        })
+        return
+      }
+
+      const next = toResolutionState(payload.resolution)
+      setResolution(next)
+      if (!deliverDownload) return
+
+      if (next.kind === 'resolved' && next.downloadUrl) {
+        if (pendingTab) pendingTab.location.href = next.downloadUrl
+        else window.open(next.downloadUrl, '_blank')
+        return
+      }
+      pendingTab?.close()
+    } catch {
+      pendingTab?.close()
+      setResolution({ kind: 'failed', message: null })
+    }
+  }
 
   const seekTo = (seconds: number) => {
+    if (youtubeVideoId) {
+      if (youtubeOffsetSeconds === null) return
+      setYoutubeStart(youtubeOffsetSeconds + seconds)
+      setActiveStart(seconds)
+      return
+    }
     const video = videoRef.current
     if (!video) return
     video.currentTime = seconds
@@ -57,30 +177,150 @@ export const SpeechDetailPlayer = ({
     setActiveStart(active?.startSeconds ?? null)
   }
 
+  const youtubeSrc = useMemo(() => {
+    const params = new URLSearchParams({ playsinline: '1', rel: '0' })
+    if (youtubeStart !== null && youtubeStart > 0)
+      params.set('start', String(Math.floor(youtubeStart)))
+    return `https://www.youtube-nocookie.com/embed/${youtubeVideoId}?${params.toString()}`
+  }, [youtubeVideoId, youtubeStart])
+
+  const seekable = youtubeVideoId ? youtubeOffsetSeconds !== null : Boolean(playbackUrl)
+
+  const downloadAvailable = vodResolvable
+
+  const media = youtubeVideoId ? (
+    <iframe
+      src={youtubeSrc}
+      title="Vídeo da sessão no YouTube"
+      loading="lazy"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; compute-pressure"
+      allowFullScreen
+      className="aspect-video w-full rounded-lg border bg-black"
+    />
+  ) : playbackUrl ? (
+    <video
+      ref={videoRef}
+      controls
+      preload="metadata"
+      src={playbackUrl}
+      onTimeUpdate={onTimeUpdate}
+      className="aspect-video w-full rounded-lg border bg-black"
+    >
+      <track kind="captions" />
+    </video>
+  ) : resolution.kind === 'resolving' ? (
+    <StatusPanel
+      busy
+      title="Resolvendo o trecho na Câmara…"
+      detail="Isso pode levar alguns segundos. Se demorar, tente novamente em instantes — a página não trava."
+    />
+  ) : resolution.kind === 'generating' ? (
+    <StatusPanel
+      title="A Câmara está gerando o trecho deste vídeo."
+      detail="A geração pode levar alguns instantes. Tente novamente em um momento."
+    >
+      <Button
+        variant="outline"
+        className="mt-1 min-h-10"
+        onClick={() => void requestResolution(false)}
+      >
+        Tentar novamente
+      </Button>
+    </StatusPanel>
+  ) : resolution.kind === 'failed' ||
+    (resolution.kind === 'resolved' && !resolution.playbackUrl) ? (
+    <StatusPanel
+      title="Não foi possível carregar o vídeo deste trecho."
+      detail={
+        resolution.kind === 'failed' && resolution.message
+          ? resolution.message
+          : 'A Câmara não entregou o arquivo agora. A transcrição e a fonte oficial continuam disponíveis.'
+      }
+    >
+      <Button
+        variant="outline"
+        className="mt-1 min-h-10"
+        onClick={() => void requestResolution(false)}
+      >
+        Tentar novamente
+      </Button>
+    </StatusPanel>
+  ) : vodResolvable ? (
+    <StatusPanel
+      title="O trecho deste vídeo é gerado pela Câmara dos Deputados."
+      detail="Clique para resolver o arquivo exato desta fala — ele é verificado antes de tocar."
+    >
+      <Button className="mt-1 min-h-10" onClick={() => void requestResolution(false)}>
+        <PlayIcon data-icon="inline-start" aria-hidden="true" />
+        Assistir o trecho
+      </Button>
+    </StatusPanel>
+  ) : (
+    <StatusPanel
+      title="Vídeo indisponível neste momento."
+      detail="Esta fala não tem vídeo no YouTube nem trecho gerado pela Câmara disponível agora."
+    />
+  )
+
+  const inlineNotice = youtubeVideoId ? (
+    resolution.kind === 'generating' ? (
+      <p className="text-xs text-muted-foreground" role="status" aria-live="polite">
+        A Câmara está gerando o trecho deste vídeo. Tente novamente em um momento.
+      </p>
+    ) : resolution.kind === 'failed' ? (
+      <p className="text-xs text-destructive" role="status" aria-live="polite">
+        {resolution.message ??
+          'Não foi possível resolver o arquivo deste trecho na Câmara. Tente novamente.'}
+      </p>
+    ) : resolution.kind === 'resolved' && !resolution.downloadUrl ? (
+      <p className="text-xs text-muted-foreground" role="status" aria-live="polite">
+        O arquivo deste trecho não pôde ser verificado na Câmara agora.
+      </p>
+    ) : null
+  ) : null
+
   return (
-    <div data-slot="speech-player">
-      {vodPlaybackUrl ? (
-        <video
-          ref={videoRef}
-          controls
-          preload="metadata"
-          src={vodPlaybackUrl}
-          onTimeUpdate={onTimeUpdate}
-          className="aspect-video w-full rounded-lg border bg-black"
-        >
-          <track kind="captions" />
-        </video>
-      ) : (
-        <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-lg border bg-muted/40 text-muted-foreground">
-          <FilmIcon className="size-8" aria-hidden="true" />
-          <p className="text-sm">VOD indisponível para esta fala.</p>
-        </div>
-      )}
+    <div data-slot="speech-player" aria-busy={resolving || undefined}>
+      {media}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {downloadAvailable ? (
+          <Button
+            className="min-h-10"
+            disabled={resolving}
+            aria-busy={resolving || undefined}
+            onClick={() => {
+              if (resolution.kind === 'resolved' && resolution.downloadUrl) {
+                window.open(resolution.downloadUrl, '_blank')
+                return
+              }
+              void requestResolution(true)
+            }}
+          >
+            {resolving ? (
+              <Spinner data-icon="inline-start" aria-label="Resolvendo o trecho" />
+            ) : (
+              <DownloadIcon data-icon="inline-start" aria-hidden="true" />
+            )}
+            Baixar vídeo (MP4)
+          </Button>
+        ) : null}
+        {sourceUrl ? (
+          <Button asChild variant="outline" className="min-h-10">
+            <a href={sourceUrl} target="_blank" rel="noreferrer">
+              <ExternalLinkIcon data-icon="inline-start" aria-hidden="true" />
+              Abrir fonte
+            </a>
+          </Button>
+        ) : null}
+      </div>
+
+      {inlineNotice}
 
       {segments.length > 0 ? (
         <section className="mt-5" aria-label="Transcrição">
           <p className="text-xs tracking-wide text-muted-foreground uppercase">
-            Transcrição (clique para posicionar)
+            {seekable ? 'Transcrição (clique para posicionar)' : 'Transcrição'}
           </p>
           <ol className="mt-2 space-y-0.5">
             {segments.map((segment) => {
@@ -91,8 +331,11 @@ export const SpeechDetailPlayer = ({
                     type="button"
                     data-start-seconds={segment.startSeconds}
                     onClick={() => seekTo(segment.startSeconds)}
+                    disabled={!seekable}
                     className={cn(
-                      'flex w-full gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      'flex w-full gap-3 rounded-lg px-2 py-1.5 text-left transition-colors',
+                      seekable && 'hover:bg-muted',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                       active && 'bg-muted',
                     )}
                   >
