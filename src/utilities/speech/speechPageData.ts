@@ -103,7 +103,7 @@ const loadSpeechFilterOptions = async (
   }
 }
 
-const loadSegmentsForSpeeches = async (
+export const loadSegmentsForSpeeches = async (
   payload: Payload,
   user: CampaignUser,
   speechIds: readonly number[],
