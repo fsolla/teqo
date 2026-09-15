@@ -8,19 +8,24 @@ import type { Payload, PayloadRequest, Where } from 'payload'
 import {
   activityMunicipalityIdOf,
   buildGoogleEventPayload,
+  buildImportedGoogleEventActivity,
+  buildImportedGoogleEventPatch,
   decodeGoogleEventActivityId,
   GOOGLE_EVENT_STATUS_CANCELLED,
   googleEventContentEquals,
   googleEventIdForActivity,
+  googleImportedEventContentEquals,
+  googleScheduleToActivityFields,
   googleStartEndInstantEquals,
+  googleTitleFromSummary,
+  isForeignGoogleEvent,
+  isImportableGoogleEvent,
   type GoogleRemoteEvent,
 } from '@/lib/googleCalendarEventMapping'
 import {
   buildGoogleReverseCancelBody,
   buildGoogleReverseUpdateBody,
   googleEditIsNewer,
-  googleScheduleToActivityFields,
-  googleTitleFromSummary,
   type GoogleReverseActivityEdit,
 } from '@/lib/googleCalendarReverseEdit'
 import {
@@ -436,7 +441,14 @@ const deleteRemoteEvent = async (
   }
 }
 
-type SyncCounts = { created: number; updated: number; deleted: number; reverseEdits: number }
+type SyncCounts = {
+  created: number
+  updated: number
+  deleted: number
+  reverseEdits: number
+  /** C165 — foreign events that became activities in this pass. */
+  imported: number
+}
 
 /**
  * C115 — the reconciliation's last-seen snapshot (JSONB on the sync row).
@@ -541,6 +553,224 @@ const googleEditableContentEquals = (
   googleStartEndInstantEquals(remote.start, payload.start) &&
   googleStartEndInstantEquals(remote.end, payload.end)
 
+type ImportedEventsCounts = Omit<SyncCounts, 'created'>
+
+type ImportedEventsPassInput = {
+  payload: Payload
+  req: PayloadRequest | undefined
+  client: GoogleCalendarClient
+  calendarId: string
+  remoteEvents: GoogleRemoteEvent[]
+  lastSeenIds: Set<string>
+  remoteEventIds: Set<string>
+  window: { rangeStart: string; rangeEnd: string }
+  activityWhere: Where | undefined
+}
+
+/**
+ * C165 — the import/link pass: events on the campaign calendar that the Teqo
+ * did NOT create (full id decode is null), start on/after the campaign's
+ * legal start and sit in the mirror window become activities of their own.
+ *
+ * The link (`googleEventId` + `googleCalendarId`, system-write) is what keeps
+ * the pass idempotent and what makes the forward direction patch the SAME
+ * remote event instead of inserting a second `teqo…` one. Foreign events are
+ * never deleted: a Teqo cancellation patches `status: cancelled`, a Teqo
+ * "reopen" patches it back. A previously-seen linked event that vanished from
+ * Google cancels its activity (same rule as the native mirror); a linked
+ * activity hard-deleted in the Teqo leaves the event alone (its id stays in
+ * the last-seen snapshot, so it is never re-imported).
+ *
+ * Runs inside `runSyncPass`, sharing its list window, last-seen snapshot and
+ * CAS write — no second listing, no second snapshot writer.
+ */
+const runImportedEventsPass = async ({
+  payload,
+  req,
+  client,
+  calendarId,
+  remoteEvents,
+  lastSeenIds,
+  remoteEventIds,
+  window,
+  activityWhere,
+}: ImportedEventsPassInput): Promise<ImportedEventsCounts> => {
+  const linked = await payload.find({
+    collection: 'activity',
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    where: {
+      and: [
+        { googleEventId: { exists: true } },
+        { googleCalendarId: { equals: calendarId } },
+        ...buildActivityWindowWhereClauses(window.rangeStart, window.rangeEnd, {
+          includeCancelled: true,
+        }),
+        ...(activityWhere ? [activityWhere] : []),
+      ],
+    },
+    // Intentional admin bypass: same espelho-cheio rationale as loadSyncActivities.
+    overrideAccess: true,
+    req,
+  })
+
+  const linkedByEventId = new Map<string, Activity>()
+  for (const activity of linked.docs) {
+    if (activity.googleEventId) linkedByEventId.set(activity.googleEventId, activity)
+  }
+
+  let imported = 0
+  let updated = 0
+  let deleted = 0
+  let reverseEdits = 0
+
+  for (const event of remoteEvents) {
+    const eventId = event.id
+    if (!eventId || !isForeignGoogleEvent(event)) continue
+
+    const activity = linkedByEventId.get(eventId)
+
+    if (!activity) {
+      // Previously seen without a link: its imported activity was hard-deleted
+      // in the Teqo. The id STAYS in the snapshot — dropping it here would
+      // re-import the same event on the very next pass.
+      if (lastSeenIds.has(eventId)) {
+        remoteEventIds.add(eventId)
+        continue
+      }
+      if (!isImportableGoogleEvent(event, window)) continue
+
+      const data = buildImportedGoogleEventActivity(event, calendarId)
+      if (!data) continue
+
+      // Pre-check right before the insert: the unique `googleEventId` is the
+      // lock of last resort (create outside the caller's transaction keeps a
+      // failed insert from poisoning it), and this read narrows the race —
+      // the common concurrent case converges here, without a failed write.
+      const existingLink = await payload.find({
+        collection: 'activity',
+        depth: 0,
+        limit: 1,
+        pagination: false,
+        where: { googleEventId: { equals: eventId } },
+        // Intentional admin bypass: the link is system state.
+        overrideAccess: true,
+        req,
+      })
+      const winner = existingLink.docs[0]
+      if (winner) {
+        linkedByEventId.set(eventId, winner)
+        remoteEventIds.add(eventId)
+        continue
+      }
+
+      try {
+        const created = await payload.create({
+          collection: 'activity',
+          data,
+          depth: 0,
+          // Intentional admin bypass: the Google editor acts through the
+          // calendar, and the link fields are system-write by design.
+          overrideAccess: true,
+          context: { mutationKind: 'googleCalendarSync' },
+          // Deliberately OUTSIDE the caller's transaction (no `req`): the
+          // import is Google-sourced and independent from the save that
+          // triggered this pass. Sharing its transaction would let a unique
+          // violation in a concurrent import poison the user's save; here the
+          // recovery read below runs in its own session.
+        })
+        linkedByEventId.set(eventId, created)
+        imported += 1
+      } catch (error) {
+        // A concurrent pass may still have won between the pre-check and the
+        // insert: converge on the winner; any other failure is real and
+        // pauses the pass.
+        const existing = await payload.find({
+          collection: 'activity',
+          depth: 0,
+          limit: 1,
+          pagination: false,
+          where: { googleEventId: { equals: eventId } },
+          // Intentional admin bypass: same rationale as the pre-check above.
+          overrideAccess: true,
+          req,
+        })
+        if (!existing.docs[0]) throw error
+        linkedByEventId.set(eventId, existing.docs[0])
+      }
+      remoteEventIds.add(eventId)
+      continue
+    }
+
+    // The linked event is ours to reconcile; it stays in the snapshot even if
+    // this pass only re-asserts it.
+    remoteEventIds.add(eventId)
+
+    if (activity.status === 'cancelado') {
+      // Teqo cancelled it: the foreign event is never deleted, only trashed —
+      // the event continues to exist in the user's Google (and its history).
+      if (event.status !== GOOGLE_EVENT_STATUS_CANCELLED) {
+        await client.patchEvent(calendarId, eventId, {
+          status: GOOGLE_EVENT_STATUS_CANCELLED,
+        })
+        deleted += 1
+      }
+      continue
+    }
+
+    if (event.status === GOOGLE_EVENT_STATUS_CANCELLED) {
+      // Same clock rule as the native mirror: a NEWER Google cancellation
+      // cancels the activity; an older one is re-asserted (reopen).
+      if (activity.status === 'confirmado') {
+        if (googleEditIsNewer(event.updated, activity.lastMirroredChangeAt ?? activity.updatedAt)) {
+          await cancelActivityFromGoogle(payload, req, activity)
+          reverseEdits += 1
+        } else {
+          await client.patchEvent(calendarId, eventId, { status: 'confirmed' })
+          updated += 1
+        }
+      }
+      continue
+    }
+
+    const importedPatch = buildImportedGoogleEventPatch(activity)
+    if (googleImportedEventContentEquals(event, importedPatch)) continue
+
+    if (
+      activity.status === 'confirmado' &&
+      googleEditIsNewer(event.updated, activity.lastMirroredChangeAt ?? activity.updatedAt)
+    ) {
+      // No `[Município] ` prefix to strip here: imported titles are verbatim.
+      const reverseEdit = googleReverseEditOf(event, undefined)
+      if (reverseEdit) {
+        const body = buildGoogleReverseUpdateBody(activity, reverseEdit)
+        await applyGoogleReverseActivityPatch(payload, req, activity, reverseEdit, body)
+        reverseEdits += 1
+        continue
+      }
+    }
+
+    // Teqo newer/different: PATCH only the fields the campaign owns, on the
+    // SAME remote event (never `insertEvent`, never the deterministic id).
+    await client.patchEvent(calendarId, eventId, importedPatch)
+    updated += 1
+  }
+
+  for (const [eventId, activity] of linkedByEventId) {
+    if (remoteEventIds.has(eventId)) continue
+    // Seen before and now gone: the user permanently removed the event (trash
+    // still shows as `cancelled`, handled above). Never-seen ids are simply
+    // out of this pass's listing.
+    if (!lastSeenIds.has(eventId)) continue
+    if (activity.status !== 'confirmado') continue
+    await cancelActivityFromGoogle(payload, req, activity)
+    reverseEdits += 1
+  }
+
+  return { imported, updated, deleted, reverseEdits }
+}
+
 /**
  * C115 — one full pass, now BIDIRECTIONAL (D2): for every event of ours the
  * diff decides the direction by the clock rule (D3) — Google wins when its
@@ -593,6 +823,7 @@ const runSyncPass = async (
   let updated = 0
   let deleted = 0
   let reverseEdits = 0
+  let imported = 0
 
   // Ids PRESENT in this pass's remote list (the second loop's "exists" check)
   // — never removed mid-pass. Ids the engine DELETES are tracked separately so
@@ -676,6 +907,24 @@ const runSyncPass = async (
     updated += 1
   }
 
+  // C165 — foreign events (id does not decode) are imported/linked here,
+  // sharing this pass's listing, last-seen snapshot and CAS write.
+  const importedCounts = await runImportedEventsPass({
+    payload,
+    req,
+    client,
+    calendarId,
+    remoteEvents,
+    lastSeenIds,
+    remoteEventIds,
+    window: { rangeStart, rangeEnd },
+    activityWhere,
+  })
+  imported += importedCounts.imported
+  updated += importedCounts.updated
+  deleted += importedCounts.deleted
+  reverseEdits += importedCounts.reverseEdits
+
   for (const [activityId, activity] of wantedById) {
     const eventId = googleEventIdForActivity(activityId)
     if (remoteEventIds.has(eventId)) continue
@@ -686,6 +935,15 @@ const runSyncPass = async (
     if (activity.status === 'confirmado' && lastSeenIds.has(eventId)) {
       await cancelActivityFromGoogle(payload, req, activity)
       reverseEdits += 1
+      continue
+    }
+
+    // C165 — imported activities are reconciled by their Google link above;
+    // a municipality-less activity waits for triage before entering the
+    // mirror (the original cut: untriaged events are not official agenda).
+    // The seen-and-gone rule above still applies to a municipality-less
+    // native activity whose mirrored event was removed in Google.
+    if (activity.googleEventId || activityMunicipalityIdOf(activity.municipality) === undefined) {
       continue
     }
 
@@ -704,12 +962,12 @@ const runSyncPass = async (
   })
 
   // Only log if there were actual changes or errors
-  if (created > 0 || updated > 0 || deleted > 0 || reverseEdits > 0) {
+  if (created > 0 || updated > 0 || deleted > 0 || reverseEdits > 0 || imported > 0) {
     payload.logger.info(
-      `[GoogleCalendarSync] Passada concluída com mudanças: created=${created}, updated=${updated}, deleted=${deleted}, reverseEdits=${reverseEdits}, calendarId=${calendarId}`,
+      `[GoogleCalendarSync] Passada concluída com mudanças: created=${created}, updated=${updated}, deleted=${deleted}, reverseEdits=${reverseEdits}, imported=${imported}, calendarId=${calendarId}`,
     )
   }
-  return { created, updated, deleted, reverseEdits }
+  return { created, updated, deleted, reverseEdits, imported }
 }
 
 type SyncStatePatch = Partial<
@@ -1183,6 +1441,7 @@ export const runCampaignCalendarSync = async (
       updated: 0,
       deleted: 0,
       reverseEdits: 0,
+      imported: 0,
       at,
     }
   }
@@ -1227,7 +1486,15 @@ export const runCampaignCalendarSync = async (
     // derived connection state to `error`, which offers reconnect in one click.
     Object.assign(patch, oauthErrorPatchFor(error, at) ?? {})
     await recordSyncState(payload, options.req, patch)
-    return { status: 'paused', created: 0, updated: 0, deleted: 0, reverseEdits: 0, at }
+    return {
+      status: 'paused',
+      created: 0,
+      updated: 0,
+      deleted: 0,
+      reverseEdits: 0,
+      imported: 0,
+      at,
+    }
   }
 }
 

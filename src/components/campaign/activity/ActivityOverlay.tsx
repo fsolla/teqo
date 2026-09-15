@@ -52,6 +52,7 @@ import {
   formatIsoAsBahiaDateTimeInput,
   parseBahiaDateTimeInput,
 } from '@/lib/campaignTime'
+import { ACTIVITY_UNSCOPED_LABEL } from '@/lib/schemas/activity'
 import type { ActivityAgendaState } from '@/utilities/activityUi'
 import type { ActivityFormViewModel } from '@/utilities/activityViewModels'
 import type { StrictComboboxOption } from '@/utilities/territory/territoryComboboxOptions'
@@ -84,8 +85,12 @@ type ActivityOverlayProps = {
   onSaved: () => void
 }
 
-const inlineMunicipalityOptions = (options: RelationOption[]): StrictComboboxOption[] =>
-  options.map((option) => ({ value: String(option.id), label: option.name }))
+const inlineMunicipalityOptions = (options: RelationOption[]): StrictComboboxOption[] => [
+  // C165 — the explicit "no município" state; imported Google events are born
+  // here and only coordination/candidate can keep them (server-enforced).
+  { value: '', label: ACTIVITY_UNSCOPED_LABEL },
+  ...options.map((option) => ({ value: String(option.id), label: option.name })),
+]
 
 /** List-row styling for the label-less mobile sheet (C103). */
 const sheetFieldInputClass =
@@ -192,7 +197,6 @@ const ActivityOverlayForm = ({
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
     const trimmedTitle = title.trim()
-    const municipalityId = Number(municipalityValue)
     const startIso = parseBahiaDateTimeInput(start)
     const endIso = end ? parseBahiaDateTimeInput(end) : undefined
 
@@ -202,7 +206,8 @@ const ActivityOverlayForm = ({
     } else if (!isEdit && trimmedTitle.length < 2) {
       nextFieldErrors.title = ['Informe um título com ao menos 2 caracteres.']
     }
-    if (!municipalityId) nextFieldErrors.municipality = ['Informe o município.']
+    // C165 — município is optional: "Sem município" is a valid state for an
+    // imported event awaiting triage (the server gates who may keep it).
     if (allDay) {
       if (!startIso) nextFieldErrors.startAt = ['Informe a data de início do compromisso.']
       if (startIso && endIso && !allDayRangeValid(startIso, endIso)) {
@@ -374,7 +379,7 @@ const ActivityOverlayForm = ({
     <>
       <Field data-invalid={Boolean(errorFor('municipality'))}>
         <FieldLabel htmlFor="overlay-municipality" className={sheet ? 'sr-only' : undefined}>
-          Município *
+          Município (opcional)
         </FieldLabel>
         <StrictCombobox
           id="overlay-municipality"
@@ -382,11 +387,17 @@ const ActivityOverlayForm = ({
           value={municipalityValue}
           onValueChange={setMunicipalityValue}
           error={errorFor('municipality')}
-          placeholder={sheet ? 'Município *' : undefined}
+          placeholder={sheet ? 'Município (opcional)' : undefined}
           className={sheet ? 'min-h-11 rounded-none border-0' : undefined}
         />
         {errorFor('municipality') ? (
           <FieldError id="overlay-municipality-error">{errorFor('municipality')}</FieldError>
+        ) : null}
+        {!municipalityValue ? (
+          <p className="text-xs text-amber-700">
+            Sem município, só coordenação e candidato veem. Ao atribuir, o assessor da carteira
+            passa a ver.
+          </p>
         ) : null}
       </Field>
 

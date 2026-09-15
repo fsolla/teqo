@@ -101,6 +101,17 @@ export type GoogleCalendarClient = {
   ) => Promise<GoogleRemoteEvent[]>
   insertEvent: (calendarId: string, event: GoogleRemoteEvent) => Promise<void>
   updateEvent: (calendarId: string, eventId: string, event: GoogleRemoteEvent) => Promise<void>
+  /**
+   * C165 — partial update (`events.patch`) for events the Teqo did NOT create:
+   * only the fields the campaign owns go in the body, so the user's
+   * description, guests, reminders and Meet link survive an edit made here.
+   * `sendUpdates: 'none'` — the campaign's edit is not a broadcast.
+   */
+  patchEvent: (
+    calendarId: string,
+    eventId: string,
+    patch: Partial<GoogleRemoteEvent>,
+  ) => Promise<void>
   deleteEvent: (calendarId: string, eventId: string) => Promise<void>
   /** C115 — push channel for the Google→Teqo direction (events.watch). */
   watchEvents: (
@@ -388,6 +399,14 @@ export const createGoogleCalendarClient = (
     })
   }
 
+  const patchEvent: GoogleCalendarClient['patchEvent'] = async (calendarId, eventId, patch) => {
+    await apiFetch(`${eventsUrl(calendarId, eventId)}?sendUpdates=none`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    })
+  }
+
   const deleteEvent: GoogleCalendarClient['deleteEvent'] = async (calendarId, eventId) => {
     await apiFetch(eventsUrl(calendarId, eventId), { method: 'DELETE' })
   }
@@ -437,6 +456,7 @@ export const createGoogleCalendarClient = (
     listEvents,
     insertEvent,
     updateEvent,
+    patchEvent,
     deleteEvent,
     watchEvents,
     stopChannel,

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ActivityStatusBadge } from '@/components/campaign/activity/ActivityStatusBadge'
 import { Badge } from '@/components/ui/Badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ACTIVITY_IMPORTED_LABEL, ACTIVITY_UNSCOPED_LABEL } from '@/lib/schemas/activity'
 import { formatActivityWhenLabel, type ActivityListViewModel } from '@/utilities/activityViewModels'
 
 export const ActivityCard = ({ activity }: { activity: ActivityListViewModel }) => (
@@ -16,6 +17,16 @@ export const ActivityCard = ({ activity }: { activity: ActivityListViewModel }) 
           </Badge>
         ))}
         <ActivityStatusBadge status={activity.status} />
+        {activity.importedFromGoogle ? (
+          <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700">
+            {ACTIVITY_IMPORTED_LABEL}
+          </Badge>
+        ) : null}
+        {!activity.municipalityName ? (
+          <Badge variant="outline" className="border-dashed text-muted-foreground">
+            {ACTIVITY_UNSCOPED_LABEL}
+          </Badge>
+        ) : null}
         {activity.deputyPresent ? <Badge>Deputado presente</Badge> : null}
       </div>
       <CardTitle>
@@ -66,9 +77,16 @@ export const ActivityCard = ({ activity }: { activity: ActivityListViewModel }) 
             'Resp: Não definido'
           )}
         </span>
-        {activity.taskProgress.total > 0 ? (
-          <span className="font-medium tabular-nums text-muted-foreground">
-            {activity.taskProgress.done}/{activity.taskProgress.total} tarefas
+        {activity.importedFromGoogle || activity.taskProgress.total > 0 ? (
+          <span className="flex items-center gap-2">
+            {activity.importedFromGoogle ? (
+              <span className="text-xs text-muted-foreground">Importado automaticamente</span>
+            ) : null}
+            {activity.taskProgress.total > 0 ? (
+              <span className="font-medium tabular-nums text-muted-foreground">
+                {activity.taskProgress.done}/{activity.taskProgress.total} tarefas
+              </span>
+            ) : null}
           </span>
         ) : null}
       </div>

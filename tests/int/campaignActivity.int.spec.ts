@@ -14,11 +14,15 @@ import {
   loadActivityAgendaEventsRecord,
   loadActivityEditDraftRecord,
   rescheduleActivityRecord,
+  updateActivityRecord,
 } from '@/app/(campaign)/campanha/actions/activity'
 import { allDayEndInstant, allDayStartInstant } from '@/lib/activityAllDay'
 import { relationshipId } from '@/lib/relationship'
 import {
+  ACTIVITY_DEMANDS_MUNICIPALITY_MESSAGE,
   ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE,
+  ACTIVITY_OUT_OF_SCOPE_MESSAGE,
+  ACTIVITY_UNSCOPED_ADVISOR_MESSAGE,
   activityCreateSchema,
   activityUpdateSchema,
 } from '@/lib/schemas/activity'
@@ -96,13 +100,185 @@ describe('activity domain', () => {
     ).toBe(false)
   })
 
-  it('requires a municipality on create', () => {
-    const result = activityCreateSchema.safeParse({
-      title: campaignFixtures().value('Atividade sem município'),
-      tags: ['Caminhada'],
-      status: 'confirmado',
+  it('allows an activity without a municipality for coordination and blocks advisors', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const municipality = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(municipality, [advisor])
+
+    // C165 — imported Google events are born without a município: the schema
+    // accepts it and the create access enforces the role split.
+    expect(
+      activityCreateSchema.safeParse({
+        title: fixtures.value('Atividade sem município'),
+        tags: ['Caminhada'],
+        status: 'confirmado',
+        startAt: new Date(Date.now() + 86_400_000).toISOString(),
+        municipality: null,
+      }).success,
+    ).toBe(true)
+
+    const coordinatorCreate = await canCreateActivity({
+      req: stub<PayloadRequest>({ user: coordinator, payload, context: {} }),
+      data: { title: 'Sem município' },
     })
-    expect(result.success).toBe(false)
+    expect(coordinatorCreate).toBe(true)
+
+    const advisorCreateWithoutMunicipality = await canCreateActivity({
+      req: stub<PayloadRequest>({ user: advisor, payload, context: {} }),
+      data: { title: 'Sem município' },
+    })
+    expect(advisorCreateWithoutMunicipality).toBe(false)
+
+    const advisorCreateWithMunicipality = await canCreateActivity({
+      req: stub<PayloadRequest>({ user: advisor, payload, context: {} }),
+      data: { title: 'Com município', municipality: municipality.id },
+    })
+    expect(advisorCreateWithMunicipality).toBe(true)
+  })
+
+  it('creates and clears a municipality-less activity for coordination only (C165)', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const municipality = await fixtures.getMunicipality()
+    const outside = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(municipality, [advisor])
+
+    const activity = await createActivityRecord(payload, coordinator, {
+      title: fixtures.value('Atividade sem município'),
+      tags: [],
+      status: 'confirmado',
+      startAt: new Date(Date.now() + 86_400_000).toISOString(),
+      municipality: null,
+    })
+    fixtures.own('activity', activity.id)
+    expect(relationshipId(activity.municipality)).toBeNull()
+
+    // Demandas continuam exigindo município (a demanda é entidade municipal).
+    await expect(
+      createActivityRecord(
+        payload,
+        coordinator,
+        {
+          ...validActivityInput(municipality.id),
+          title: fixtures.value('Atividade sem município com demanda'),
+          municipality: null,
+        },
+        [{ title: 'Panfletos', kind: 'material' }],
+      ),
+    ).rejects.toThrow(ACTIVITY_DEMANDS_MUNICIPALITY_MESSAGE)
+
+    // O advisor não cria sem município (access + guarda da action)…
+    await expect(
+      createActivityRecord(payload, advisor, {
+        title: fixtures.value('Sem município do assessor'),
+        tags: [],
+        status: 'confirmado',
+        startAt: new Date(Date.now() + 86_400_000).toISOString(),
+        municipality: null,
+      }),
+    ).rejects.toThrow(ACTIVITY_UNSCOPED_ADVISOR_MESSAGE)
+
+    // …nem aponta para um município fora da carteira.
+    await expect(
+      createActivityRecord(payload, advisor, {
+        ...validActivityInput(outside.id),
+        title: fixtures.value('Fora da carteira'),
+      }),
+    ).rejects.toThrow(ACTIVITY_OUT_OF_SCOPE_MESSAGE)
+
+    // Updates: o coordenador limpa o município; o advisor não pode.
+    const cleared = await updateActivityRecord(payload, coordinator, {
+      id: activity.id,
+      startAt: activity.startAt,
+      municipality: null,
+    })
+    expect(relationshipId(cleared.municipality)).toBeNull()
+
+    const advisorActivity = await createActivityRecord(payload, advisor, {
+      ...validActivityInput(municipality.id),
+      title: fixtures.value('Com município do assessor'),
+    })
+    fixtures.own('activity', advisorActivity.id)
+
+    await expect(
+      updateActivityRecord(payload, advisor, {
+        id: advisorActivity.id,
+        startAt: advisorActivity.startAt,
+        municipality: null,
+      }),
+    ).rejects.toThrow(ACTIVITY_UNSCOPED_ADVISOR_MESSAGE)
+
+    await expect(
+      updateActivityRecord(payload, advisor, {
+        id: advisorActivity.id,
+        startAt: advisorActivity.startAt,
+        municipality: outside.id,
+      }),
+    ).rejects.toThrow(ACTIVITY_OUT_OF_SCOPE_MESSAGE)
+  })
+
+  it('hides municipality-less activities from advisors even with Visão "Tudo" (C165)', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const wideAdvisor = await fixtures.createCampaignUser('advisor', { visibility: 'tudo' })
+    const responsibleAdvisor = await fixtures.createCampaignUser('advisor')
+    const municipality = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(municipality, [responsibleAdvisor])
+
+    const orphan = await createActivityRecord(payload, coordinator, {
+      title: fixtures.value('Importada sem município'),
+      tags: [],
+      status: 'confirmado',
+      startAt: new Date(Date.now() + 86_400_000).toISOString(),
+      municipality: null,
+    })
+    fixtures.own('activity', orphan.id)
+
+    // A coordenação lê; o advisor "tudo" e o advisor listado como responsável
+    // não — a atividade sem município é coordenação/candidato-only.
+    const coordinatorRead = await payload.find({
+      collection: 'activity',
+      where: { id: { equals: orphan.id } },
+      user: coordinator,
+      overrideAccess: false,
+      depth: 0,
+    })
+    expect(coordinatorRead.totalDocs).toBe(1)
+
+    const wideRead = await payload.find({
+      collection: 'activity',
+      where: { id: { equals: orphan.id } },
+      user: wideAdvisor,
+      overrideAccess: false,
+      depth: 0,
+    })
+    expect(wideRead.totalDocs).toBe(0)
+
+    await payload.update({
+      collection: 'activity',
+      id: orphan.id,
+      data: {
+        responsible: [{ relationTo: 'campaignUser', value: responsibleAdvisor.id }],
+      },
+      overrideAccess: true,
+    })
+    const responsibleRead = await payload.find({
+      collection: 'activity',
+      where: { id: { equals: orphan.id } },
+      user: responsibleAdvisor,
+      overrideAccess: false,
+      depth: 0,
+    })
+    expect(responsibleRead.totalDocs).toBe(0)
+
+    expect(
+      await canReadActivity({
+        req: stub<PayloadRequest>({ user: wideAdvisor, payload, context: {} }),
+      }),
+    ).toEqual({ municipality: { exists: true } })
   })
 
   it('parses several demand drafts from the activity form', () => {
@@ -237,6 +413,7 @@ describe('activity domain', () => {
     })
     const createAsAdvisor = await canCreateActivity({
       req: stub<PayloadRequest>({ user: advisor, payload, context: {} }),
+      data: { municipality: municipality.id },
     })
     const createAsLeader = await canCreateActivity({
       req: stub<PayloadRequest>({ user: leaderAccount, payload, context: {} }),
@@ -268,9 +445,14 @@ describe('activity domain', () => {
       req: stub<PayloadRequest>({ user: advisor, payload, context: {} }),
     })
     expect(advisorRead).toEqual({
-      or: [
-        { responsible: { equals: { relationTo: 'campaignUser', value: advisor.id } } },
-        { municipality: { in: [municipality.id] } },
+      and: [
+        { municipality: { exists: true } },
+        {
+          or: [
+            { responsible: { equals: { relationTo: 'campaignUser', value: advisor.id } } },
+            { municipality: { in: [municipality.id] } },
+          ],
+        },
       ],
     })
 
@@ -278,9 +460,14 @@ describe('activity domain', () => {
       req: stub<PayloadRequest>({ user: otherAdvisor, payload, context: {} }),
     })
     expect(otherAdvisorRead).toEqual({
-      or: [
-        { responsible: { equals: { relationTo: 'campaignUser', value: otherAdvisor.id } } },
-        { municipality: { in: [] } },
+      and: [
+        { municipality: { exists: true } },
+        {
+          or: [
+            { responsible: { equals: { relationTo: 'campaignUser', value: otherAdvisor.id } } },
+            { municipality: { in: [] } },
+          ],
+        },
       ],
     })
 
@@ -299,9 +486,14 @@ describe('activity domain', () => {
       req: stub<PayloadRequest>({ user: advisor, payload, context: {} }),
     })
     expect(advisorUpdate).toEqual({
-      or: [
-        { responsible: { equals: { relationTo: 'campaignUser', value: advisor.id } } },
-        { municipality: { in: [municipality.id] } },
+      and: [
+        { municipality: { exists: true } },
+        {
+          or: [
+            { responsible: { equals: { relationTo: 'campaignUser', value: advisor.id } } },
+            { municipality: { in: [municipality.id] } },
+          ],
+        },
       ],
     })
 

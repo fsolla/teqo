@@ -48,7 +48,9 @@ import {
 } from '@/lib/activityAllDay'
 import { formatBahiaCivilDate } from '@/lib/campaignTime'
 import {
+  ACTIVITY_IMPORTED_LABEL,
   ACTIVITY_RESCHEDULE_FAILED_MESSAGE,
+  ACTIVITY_UNSCOPED_LABEL,
   activityStatusLabels,
   type ActivityStatus,
 } from '@/lib/schemas/activity'
@@ -72,6 +74,8 @@ type AgendaEventProps = {
   municipalityName: string | null
   locality: string | null
   tags: string[]
+  /** C165 — imported from the Google Calendar (link present). */
+  importedFromGoogle: boolean
 }
 
 const eventColors: Record<ActivityStatus, { color: string; contrastColor: string }> = {
@@ -115,6 +119,7 @@ const toEventInput = (event: ActivityAgendaEvent): EventInput => ({
     municipalityName: event.municipality?.name ?? null,
     locality: event.locality,
     tags: event.tags,
+    importedFromGoogle: event.importedFromGoogle,
   } satisfies AgendaEventProps,
 })
 
@@ -150,6 +155,13 @@ const renderEventContent = ({ event, timeText, view }: EventDisplayInfo) => {
       </div>
       <span className="activity-agenda-event-title">{event.title}</span>
       {location ? <span className="activity-agenda-event-location">{location}</span> : null}
+      {props.importedFromGoogle ? (
+        <span className="activity-agenda-imported">
+          {props.municipalityName
+            ? ACTIVITY_IMPORTED_LABEL
+            : `${ACTIVITY_IMPORTED_LABEL} · ${ACTIVITY_UNSCOPED_LABEL}`}
+        </span>
+      ) : null}
       {tags ? <span className="activity-agenda-event-tags">{tags}</span> : null}
       <span className="activity-agenda-event-status">{activityStatusLabels[props.status]}</span>
     </div>

@@ -23,9 +23,13 @@ const openAgendaSlot = async ({
 }: {
   campaign: { baseURL: string }
   page: import('@playwright/test').Page
-  municipalityId: number
+  /** C165 — omit to open the agenda unfiltered (the triage create). */
+  municipalityId?: number
 }) => {
-  await page.goto(`${campaign.baseURL}/campanha/agenda?municipality=${municipalityId}`)
+  const agendaUrl = municipalityId
+    ? `${campaign.baseURL}/campanha/agenda?municipality=${municipalityId}`
+    : `${campaign.baseURL}/campanha/agenda`
+  await page.goto(agendaUrl)
   await expect(page.getByText('Carregando compromissos…')).toHaveCount(0, { timeout: 15_000 })
   const slotLocator = page.locator('[data-time="14:00:00"]:visible').last()
   await expect(slotLocator).toBeVisible()
@@ -85,7 +89,7 @@ test.describe('Atividades — registro-fundação', () => {
     expect(pairBoxes.endX).toBeGreaterThan(pairBoxes.startX)
     await page.getByLabel('Título *').fill(activityTitle)
     // The municipality filter prefills the field; the times come from the slot.
-    await expect(page.getByLabel('Município *')).toHaveValue(municipality.name)
+    await expect(page.getByLabel('Município (opcional)')).toHaveValue(municipality.name)
 
     // C90 — the unified polymorphic selector replaces the old Contact
     // responsável + assessores/liderança fields.
@@ -276,7 +280,7 @@ test.describe('Agenda — calendário operacional', () => {
     ])
     expect(startLabel).toMatch(/\d{2}\/\d{2}\/\d{4}/)
     expect(endLabel).toMatch(/\d{2}\/\d{2}\/\d{4}/)
-    await expect(page.getByLabel('Município *')).toHaveValue(municipality.name)
+    await expect(page.getByLabel('Município (opcional)')).toHaveValue(municipality.name)
     // C123 — the time selects are INLINE, visible without opening anything.
     await expect(page.getByLabel('Hora de Início')).toHaveValue('14')
     await expect(page.getByLabel('Minuto de Início')).toHaveValue('00')
@@ -405,7 +409,7 @@ test.describe('Agenda — calendário operacional', () => {
     await expect(editModal).toBeVisible()
     await expect(page).toHaveURL(new RegExp('/campanha/agenda.*'))
     await expect(editModal.getByLabel('Título *')).toHaveValue(title, { timeout: 30_000 })
-    await expect(editModal.getByLabel('Município *')).toHaveValue(municipality.name)
+    await expect(editModal.getByLabel('Município (opcional)')).toHaveValue(municipality.name)
     await expect(editModal.getByLabel('Hora de Início')).toHaveValue('14')
     await expect(editModal.getByLabel('Minuto de Término')).toHaveValue('30')
     // C123 — the edit overlay carries the id the old /editar page lost (C14
@@ -517,6 +521,36 @@ test.describe('Agenda — calendário operacional', () => {
     await expect(page.getByRole('button', { name: 'Hoje', exact: true })).toHaveCount(0)
     await expect(page.getByRole('grid').first()).toBeVisible()
   })
+
+  test('cria atividade sem município e a triagem mostra o badge "Sem município" (C165)', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const title = fixtures.value('Compromisso sem município')
+
+    await campaign.login(page, coordinator.email!, coordinator.password)
+    // Sem filtro de município: o overlay nasce no estado "Sem município".
+    await openAgendaSlot({ campaign, page })
+
+    const modal = page.getByRole('dialog', { name: 'Nova atividade' })
+    await expect(modal).toBeVisible()
+    await page.getByLabel('Título *').fill(title)
+    await expect(page.getByLabel('Município (opcional)')).toHaveValue('Sem município')
+    await expect(page.getByText(/só coordenação e candidato veem/)).toBeVisible()
+
+    await page.getByRole('button', { name: 'Salvar', exact: true }).click()
+    await expect(page.getByText(title, { exact: true })).toBeVisible({ timeout: 15_000 })
+
+    // A triagem: o filtro "Sem município" da omnibox lista o card com o badge.
+    await page.goto(`${campaign.baseURL}/campanha/atividades?tab=todos&unscoped=1`)
+    await expect(page.getByText(title, { exact: true })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('Sem município', { exact: true }).first()).toBeVisible()
+    // Nativa (criada no Teqo), não importada: sem badge "Do Google".
+    await expect(page.getByText('Do Google', { exact: true })).toHaveCount(0)
+    await expect(page.getByText('Importado automaticamente')).toHaveCount(0)
+  })
 })
 
 test.describe('Atividades — agenda mobile (C103)', () => {
@@ -547,7 +581,7 @@ test.describe('Atividades — agenda mobile (C103)', () => {
     // Label-less form: the placeholder gives context, the sr-only label keeps
     // the field addressable and accessible.
     await page.getByLabel('Título *').fill(title)
-    await expect(page.getByLabel('Município *')).toHaveValue(municipality.name)
+    await expect(page.getByLabel('Município (opcional)')).toHaveValue(municipality.name)
 
     // The footer is FIXED: "Salvar" is visible without scrolling on a small
     // viewport — the acceptance center of C103.

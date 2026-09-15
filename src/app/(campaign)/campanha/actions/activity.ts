@@ -2,7 +2,9 @@
 
 import type { Payload } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import {
+  ACTIVITY_DEMANDS_MUNICIPALITY_MESSAGE,
   ACTIVITY_DEPUTY_RESCHEDULE_FORBIDDEN_MESSAGE,
   ACTIVITY_OUT_OF_SCOPE_MESSAGE,
   ACTIVITY_RESCHEDULE_FAILED_MESSAGE,
@@ -10,6 +12,7 @@ import {
   ACTIVITY_RESULT_STAFF_MESSAGE,
   ACTIVITY_RESULT_TOO_LONG_MESSAGE,
   ACTIVITY_TASK_NOT_FOUND_MESSAGE,
+  ACTIVITY_UNSCOPED_ADVISOR_MESSAGE,
   ACTIVITY_UPDATE_BODY_REQUIRED_MESSAGE,
   ACTIVITY_UPDATE_BODY_TOO_LONG_MESSAGE,
   activityAgendaRequestSchema,
@@ -36,6 +39,7 @@ import {
   canCampaignUserRescheduleActivity,
   getWritableMunicipalityIds,
   isCampaignStaff,
+  isCampaignUnrestricted,
 } from '@/utilities/campaignAccess'
 import { getCampaignActionContext, reloadCampaignActor } from '@/utilities/campaignActionContext'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
@@ -125,9 +129,20 @@ export const createActivityRecord = async (
       // create must check the municipality against the WRITE scope itself —
       // with Visão "Tudo" + Edição "Carteira" the read widens while the
       // carteira stays the edit boundary (same rule as the giro batch).
+      // C165 — without a município, only coordination/candidate may create;
+      // advisors cannot reach this branch (their `canCreateActivity` requires
+      // a município), but the guard keeps the rule local to the action too.
+      const municipalityID = raw.municipality ?? null
       const writableIDs = await getWritableMunicipalityIds(payload, currentActor, req)
-      if (writableIDs !== null && !writableIDs.includes(raw.municipality)) {
+      if (municipalityID === null) {
+        if (!isCampaignUnrestricted(currentActor)) {
+          throw new Error(ACTIVITY_UNSCOPED_ADVISOR_MESSAGE)
+        }
+      } else if (writableIDs !== null && !writableIDs.includes(municipalityID)) {
         throw new Error(ACTIVITY_OUT_OF_SCOPE_MESSAGE)
+      }
+      if (municipalityID === null && demands.length > 0) {
+        throw new Error(ACTIVITY_DEMANDS_MUNICIPALITY_MESSAGE)
       }
 
       const activity = await payload.create({
@@ -139,19 +154,21 @@ export const createActivityRecord = async (
         req,
       })
 
-      for (const demand of demands) {
-        await payload.create({
-          collection: 'campaignDemand',
-          data: hookFilledCreateData<'campaignDemand'>({
-            ...demand,
-            municipality: raw.municipality,
-            activity: activity.id,
-          }),
-          depth: 0,
-          user: currentActor,
-          overrideAccess: false,
-          req,
-        })
+      if (demands.length > 0 && municipalityID !== null) {
+        for (const demand of demands) {
+          await payload.create({
+            collection: 'campaignDemand',
+            data: hookFilledCreateData<'campaignDemand'>({
+              ...demand,
+              municipality: municipalityID,
+              activity: activity.id,
+            }),
+            depth: 0,
+            user: currentActor,
+            overrideAccess: false,
+            req,
+          })
+        }
       }
 
       return activity
@@ -254,7 +271,7 @@ export const createTourDraftActivitiesRecord = async (
   )
 }
 
-const updateActivityRecord = async (
+export const updateActivityRecord = async (
   payload: Payload,
   actor: CampaignUser,
   input: ActivityUpdateInput,
@@ -280,6 +297,24 @@ const updateActivityRecord = async (
       const currentActor = await reloadCampaignActor(payload, actor, req)
       await acquireTextAdvisoryLocks(payload, req, [`activity:${id}`])
 
+      // C165 — the Edição axis grants the ROW, not any município: an advisor
+      // cannot clear the município (coordination/candidate-only) nor point the
+      // activity at one outside their write scope. Coordination/candidate are
+      // unrestricted by definition.
+      if (!isCampaignUnrestricted(currentActor)) {
+        const writableIDs = await getWritableMunicipalityIds(payload, currentActor, req)
+        if (data.municipality === null) {
+          throw new Error(ACTIVITY_UNSCOPED_ADVISOR_MESSAGE)
+        }
+        if (
+          typeof data.municipality === 'number' &&
+          writableIDs !== null &&
+          !writableIDs.includes(data.municipality)
+        ) {
+          throw new Error(ACTIVITY_OUT_OF_SCOPE_MESSAGE)
+        }
+      }
+
       const activity = (await payload.update({
         collection: 'activity',
         id,
@@ -290,21 +325,25 @@ const updateActivityRecord = async (
         req,
       })) as unknown as Activity
 
-      const municipality =
-        typeof activity.municipality === 'number' ? activity.municipality : activity.municipality.id
-      for (const demand of demands) {
-        await payload.create({
-          collection: 'campaignDemand',
-          data: hookFilledCreateData<'campaignDemand'>({
-            ...demand,
-            municipality,
-            activity: activity.id,
-          }),
-          depth: 0,
-          user: currentActor,
-          overrideAccess: false,
-          req,
-        })
+      const municipality = relationshipId(activity.municipality)
+      if (demands.length > 0 && municipality === null) {
+        throw new Error(ACTIVITY_DEMANDS_MUNICIPALITY_MESSAGE)
+      }
+      if (municipality !== null) {
+        for (const demand of demands) {
+          await payload.create({
+            collection: 'campaignDemand',
+            data: hookFilledCreateData<'campaignDemand'>({
+              ...demand,
+              municipality,
+              activity: activity.id,
+            }),
+            depth: 0,
+            user: currentActor,
+            overrideAccess: false,
+            req,
+          })
+        }
       }
 
       return activity

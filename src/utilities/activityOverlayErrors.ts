@@ -3,6 +3,11 @@ import {
   ACTIVITY_DUPLICATE_TITLE_MESSAGE,
   ACTIVITY_OVERLAY_GENERIC_FAILURE_MESSAGE,
 } from '@/lib/activityOverlayMessages'
+import {
+  ACTIVITY_DEMANDS_MUNICIPALITY_MESSAGE,
+  ACTIVITY_OUT_OF_SCOPE_MESSAGE,
+  ACTIVITY_UNSCOPED_ADVISOR_MESSAGE,
+} from '@/lib/schemas/activity'
 import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
 
 /**
@@ -34,6 +39,11 @@ export const mapActivityOverlayError = (error: unknown): ActivityOverlayErrorRes
   }
   const mapped = mapCampaignFormActionError({
     error,
+    safeMessages: [
+      ACTIVITY_OUT_OF_SCOPE_MESSAGE,
+      ACTIVITY_UNSCOPED_ADVISOR_MESSAGE,
+      ACTIVITY_DEMANDS_MUNICIPALITY_MESSAGE,
+    ],
     genericMessage: ACTIVITY_OVERLAY_GENERIC_FAILURE_MESSAGE,
   })
   return {

@@ -43,6 +43,8 @@ export type ActivityListState = {
   tag?: string
   status?: ActivityStatus
   municipality?: number
+  /** C165 — the triage filter: activities without a município (imported). */
+  unscoped?: boolean
 }
 
 type RawSearchParams = CampaignListRawSearchParams
@@ -386,7 +388,15 @@ export const activityDefaultCreatePrefill = (
 ): { startAt: string; endAt: string } | null =>
   activitySlotPrefill({ allDay: true, dateStr: formatBahiaCivilDate(now) })
 
-const activityListParamNames = ['q', 'tab', 'tag', 'status', 'municipality', 'page'] as const
+const activityListParamNames = [
+  'q',
+  'tab',
+  'tag',
+  'status',
+  'municipality',
+  'unscoped',
+  'page',
+] as const
 
 const activityListParamNameSet = new Set<string>(activityListParamNames)
 
@@ -411,7 +421,10 @@ export const parseActivityListParams = (params: RawSearchParams): ActivityListSt
   const tag = rawTag?.trim() ? rawTag.trim() : undefined
   const rawStatus = tab === 'todos' ? firstValue(params.status) : undefined
   const status = isActivityStatus(rawStatus) ? rawStatus : undefined
-  const municipality = strictDecimalInteger(firstValue(params.municipality))
+  // C165 — `unscoped` and `municipality` are mutually exclusive; `unscoped`
+  // wins a hand-crafted URL with both (the canonical form keeps one).
+  const unscoped = firstValue(params.unscoped) === '1'
+  const municipality = unscoped ? undefined : strictDecimalInteger(firstValue(params.municipality))
 
   return {
     page: rawPage ?? 1,
@@ -419,6 +432,7 @@ export const parseActivityListParams = (params: RawSearchParams): ActivityListSt
     ...(q ? { q } : {}),
     ...(tag ? { tag } : {}),
     ...(status ? { status } : {}),
+    ...(unscoped ? { unscoped: true } : {}),
     ...(municipality ? { municipality } : {}),
   }
 }
@@ -437,7 +451,11 @@ export const buildActivityListWhere = (state: ActivityListState, now: Date): Whe
   }
 
   if (state.tag) filters.push({ tags: { contains: state.tag } })
-  if (state.municipality) filters.push({ municipality: { equals: state.municipality } })
+  if (state.unscoped) {
+    filters.push({ municipality: { exists: false } })
+  } else if (state.municipality) {
+    filters.push({ municipality: { equals: state.municipality } })
+  }
 
   if (state.tab === 'proximos') {
     filters.push({ status: { equals: 'confirmado' } })
@@ -462,6 +480,7 @@ export const buildActivityListSearchParams = (
     tag: state.tag,
     status: state.status,
     municipality: state.municipality === undefined ? undefined : String(state.municipality),
+    unscoped: state.unscoped ? '1' : undefined,
   })
   const params = new URLSearchParams()
 
@@ -469,6 +488,7 @@ export const buildActivityListSearchParams = (
   if (canonicalState.tab !== 'proximos') params.set('tab', canonicalState.tab)
   if (canonicalState.tag) params.set('tag', canonicalState.tag)
   if (canonicalState.status) params.set('status', canonicalState.status)
+  if (canonicalState.unscoped) params.set('unscoped', '1')
   if (canonicalState.municipality) params.set('municipality', String(canonicalState.municipality))
   if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
 

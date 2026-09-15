@@ -788,7 +788,7 @@ export interface Activity {
   publicEvent?: boolean | null;
   startAt?: string | null;
   endAt?: string | null;
-  municipality: number | Municipality;
+  municipality?: (number | null) | Municipality;
   locality?: string | null;
   organizations?: (number | Organization)[] | null;
   responsible?:
@@ -834,6 +834,8 @@ export interface Activity {
   resultRecordedBy?: (number | null) | CampaignUser;
   resultRecordedAt?: string | null;
   lastMirroredChangeAt?: string | null;
+  googleEventId?: string | null;
+  googleCalendarId?: string | null;
   createdBy?: (number | null) | CampaignUser;
   updatedAt: string;
   createdAt: string;
@@ -2112,6 +2114,8 @@ export interface ActivitySelect<T extends boolean = true> {
   resultRecordedBy?: T;
   resultRecordedAt?: T;
   lastMirroredChangeAt?: T;
+  googleEventId?: T;
+  googleCalendarId?: T;
   createdBy?: T;
   updatedAt?: T;
   createdAt?: T;

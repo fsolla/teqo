@@ -39,6 +39,7 @@ const settledOutcome = {
   updated: 0,
   deleted: 0,
   reverseEdits: 0,
+  imported: 0,
   at: '',
 }
 
