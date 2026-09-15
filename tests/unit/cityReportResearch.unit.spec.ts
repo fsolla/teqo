@@ -68,6 +68,22 @@ describe('normalizeResearchInput', () => {
     )
   })
 
+  it('treats an explicit gap as researched, without a duplicate "Não pesquisado"', () => {
+    const research = normalizeResearchInput(
+      baseResearch({
+        items: RESEARCH_CHECKLIST_IDS.filter((id) => id !== 'emendas_web').map((id) =>
+          validItem(id),
+        ),
+        gaps: [{ id: 'emendas_web', label: 'Emendas na web', reason: 'Fonte oficial respondeu.' }],
+      }),
+      { now },
+    )
+    const emendasGaps = research.gaps.filter((gap) => gap.id === 'emendas_web')
+    expect(emendasGaps).toHaveLength(1)
+    expect(emendasGaps[0].reason).toBe('Fonte oficial respondeu.')
+    expect(research.gaps.filter((gap) => gap.reason === 'Não pesquisado.')).toHaveLength(0)
+  })
+
   it('drops news outside the 90-day window and without source', () => {
     const research = normalizeResearchInput(
       baseResearch({

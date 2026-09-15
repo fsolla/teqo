@@ -52,11 +52,17 @@ export const formatMoneyCompact = (value) => {
   return `R$ ${formatDecimal(millions)} mi`
 }
 
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+
 export const formatDateBr = (value) => {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
-  return new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Bahia' }).format(date)
+  // Date-only strings ("2026-08-17") parse as UTC midnight; formatting them in
+  // America/Bahia would print the previous day. Keep the calendar date.
+  const timeZone =
+    typeof value === 'string' && DATE_ONLY_PATTERN.test(value) ? 'UTC' : 'America/Bahia'
+  return new Intl.DateTimeFormat('pt-BR', { timeZone }).format(date)
 }
 
 export const formatDateTimeBr = (value) => {

@@ -218,8 +218,18 @@ const snapshot = {
   },
 }
 
-type ReportItem = { label?: string; text?: string; value?: string; hint?: string | null }
-type ReportRow = { label: string; value: string; source?: { url?: string } }
+type ReportItem = {
+  label?: string
+  text?: string
+  value?: string
+  hint?: string | null
+  url?: string | null
+}
+type ReportRow = {
+  label: string
+  value: string
+  source?: { url?: string | null; date?: string | null }
+}
 type ReportBlock = {
   kind: string
   title?: string
@@ -310,12 +320,15 @@ describe('buildCityReport', () => {
     expect(gaps.body!.join(' ')).toMatch(/Emendas/)
   })
 
-  it('puts research answers in Quem é quem with their source', () => {
+  it('puts research answers in Quem é quem with compact sources and URLs in section 10', () => {
     const grid = report.page1.blocks.find((block) => block.kind === 'grid')!
     const who = grid.cells![1].blocks[0]
     const prefeito = who.rows!.find((row) => row.label === 'Prefeito(a)')!
     expect(prefeito.value).toBe('Resposta de prefeito')
-    expect(prefeito.source!.url).toBe('https://exemplo.test/prefeito')
+    expect(prefeito.source!.url).toBeNull()
+    expect(prefeito.source!.date).toBe('2026-09-10')
+    const fontes = report.sections.find((section) => section.id === 'fontes')!.blocks[0]
+    expect(fontes.items!.some((item) => item.url === 'https://exemplo.test/prefeito')).toBe(true)
   })
 
   it('builds the region panorama from the committed artifact', () => {

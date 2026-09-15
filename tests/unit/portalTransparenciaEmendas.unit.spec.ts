@@ -24,7 +24,7 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   valorLiquidado: 50000,
   valorPago: 25000,
   valorRestoPago: 1000,
-  codigoMunicipio: '2930709',
+  localidadeDoGasto: 'Itamaraju - BA',
   ...overrides,
 })
 
@@ -47,6 +47,21 @@ describe('portalTransparenciaEmendas', () => {
     )
   })
 
+  it('parses the pt-BR amount strings returned by the Portal API', () => {
+    const normalized = normalizeEmendaRow(
+      row({
+        valorEmpenhado: '81.000,00',
+        valorLiquidado: '0,00',
+        valorPago: '1.234,56',
+        valorRestoPago: '1.000.000,01',
+      }),
+    )
+    expect(normalized.empenhado).toBe(81000)
+    expect(normalized.liquidado).toBe(0)
+    expect(normalized.pago).toBe(1234.56)
+    expect(normalized.restoPago).toBe(1000000.01)
+  })
+
   it('sums phases', () => {
     const totals = sumEmendas([
       normalizeEmendaRow(row()),
@@ -63,18 +78,23 @@ describe('portalTransparenciaEmendas', () => {
     expect(result.rows).toEqual([])
   })
 
-  it('fetches only the author exact-match and the municipality', async () => {
+  it('fetches the author exact-match and keeps only the município rows', async () => {
     const fetchImpl = vi.fn(async (url: string) => {
       expect(url).toContain('nomeAutor=JORGE+SOLLA')
-      expect(url).toContain('codigoMunicipio=2930709')
+      expect(url).not.toContain('codigoMunicipio')
       expect(url).toContain('ano=2023')
       if (url.includes('pagina=2')) return jsonResponse([])
-      return jsonResponse([row(), row({ nomeAutor: 'JORGE SOLLA NETO', codigoAutor: '9999' })])
+      return jsonResponse([
+        row(),
+        row({ codigoEmenda: 'uf', localidadeDoGasto: 'BAHIA (UF)' }),
+        row({ nomeAutor: 'JORGE SOLLA NETO', codigoAutor: '9999' }),
+      ])
     })
     const later = vi.fn(async () => jsonResponse([]))
     const result = await fetchAuthorEmendas({
       years: [2023, 2024],
-      municipalityCode: '2930709',
+      municipalityCode: '2915601',
+      municipalityName: 'Itamaraju',
       apiKey: 'chave',
       fetchImpl: (url: string) => (url.includes('ano=2023') ? fetchImpl(url) : later()),
     })
@@ -82,6 +102,25 @@ describe('portalTransparenciaEmendas', () => {
     expect(result.rows).toHaveLength(1)
     expect(result.authorCode).toBe('1234')
     expect(result.requestCount).toBe(3)
+  })
+
+  it('degrades to a gap when no author row carries the município locality', async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse([
+        row({ localidadeDoGasto: 'BAHIA (UF)' }),
+        row({ localidadeDoGasto: 'Múltiplo' }),
+      ]),
+    )
+    const result = await fetchAuthorEmendas({
+      years: [2023],
+      municipalityCode: '2915601',
+      municipalityName: 'Itamaraju',
+      apiKey: 'chave',
+      fetchImpl,
+    })
+    expect(result.status).toBe('gap')
+    expect(result.reason).toMatch(/localidade Itamaraju/)
+    expect(result.detail).toMatch(/não expõe o município/)
   })
 
   it('degrades to a gap when two authors share the name', async () => {
