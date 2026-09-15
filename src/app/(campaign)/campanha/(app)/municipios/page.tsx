@@ -14,6 +14,7 @@ import {
   municipalityListPickerColumns,
 } from '@/components/campaign/municipality/MunicipalityList'
 import { MunicipalityListPageChrome } from '@/components/campaign/municipality/MunicipalityListPageChrome'
+import { MunicipalitySliceTotalsLine } from '@/components/campaign/municipality/MunicipalitySliceTotalsLine'
 import { SaveMunicipalityFilterControl } from '@/components/campaign/municipality/SaveMunicipalityFilterControl'
 import { CampaignColumnPickerTrailing } from '@/components/campaign/shared/CampaignColumnPickerTrailing'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
@@ -81,6 +82,7 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
     municipalities: listMunicipalities,
     totalDocs,
     totalPages,
+    sliceTotals,
     filterFacets,
     leadershipNamesById,
   } = pageBundle
@@ -203,6 +205,7 @@ export default async function MunicipalitiesPage({ searchParams }: Municipalitie
         page={state.page}
         totalPages={totalPages}
         hrefForPage={(page) => buildMunicipalityListHref(state, page)}
+        totals={sliceTotals ? <MunicipalitySliceTotalsLine totals={sliceTotals} /> : undefined}
       />
     </>
   )

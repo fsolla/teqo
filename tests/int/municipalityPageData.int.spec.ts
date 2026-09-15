@@ -4,11 +4,17 @@ import type { Payload } from 'payload'
 import { getPayload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
+import {
+  getMunicipalityFederalBaseline,
+  getStatewideFederalTotals,
+} from '@/lib/bahiaElectionAggregates'
 import { getMunicipalityCatalogEntry, municipalityCatalog } from '@/lib/municipalityCatalog'
+import { DEFAULT_VOTE_RANK_YEAR } from '@/lib/municipalityVoteRank'
 import { territorialClassSortWeight } from '@/lib/territorialClassSortWeight'
 import config from '@/payload.config'
 import { loadMunicipalityListPageBundle } from '@/utilities/municipality/municipalityPageData'
 import { computeMunicipalityTerritorialClass } from '@/utilities/municipality/municipalityTerritorialClass'
+import { cityFederalBaseline } from '@/utilities/municipality/salvadorCityAggregates'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
@@ -32,6 +38,7 @@ describe('loadMunicipalityListPageBundle', () => {
 
     expect(bundle.municipalities).toHaveLength(0)
     expect(bundle.totalDocs).toBe(0)
+    expect(bundle.sliceTotals).toBeNull()
   })
 
   it('includes 2022 vote position on list rows', async () => {
@@ -458,6 +465,7 @@ describe('loadMunicipalityListPageBundle', () => {
 
     expect(bundle.municipalities).toHaveLength(0)
     expect(bundle.scopeTotal).toBe(0)
+    expect(bundle.sliceTotals).toBeNull()
   })
 
   // -------------------------------------------------------------------------
@@ -699,5 +707,137 @@ describe('loadMunicipalityListPageBundle', () => {
 
     const searched = await loadMunicipalityListPageBundle(payload, advisor, { q: 'salvador' })
     expect(cityRow(searched)).toBeDefined()
+  })
+
+  // -------------------------------------------------------------------------
+  // B202 — totals of the filtered slice (footer line)
+  // -------------------------------------------------------------------------
+
+  const baselineVotes = (slug: string): number =>
+    getMunicipalityFederalBaseline(slug).votesByYear[String(DEFAULT_VOTE_RANK_YEAR)] ?? 0
+
+  it('sums the whole default recorte to the statewide 2022 votes', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+
+    const bundle = await loadMunicipalityListPageBundle(payload, coordinator, {})
+
+    expect(bundle.sliceTotals?.rowCount).toBe(bundle.totalDocs)
+    expect(bundle.sliceTotals?.rowCount).toBe(municipalityCatalog.length + 1)
+    expect(bundle.sliceTotals?.votes2022).toBe(
+      getStatewideFederalTotals(DEFAULT_VOTE_RANK_YEAR).ownVotes,
+    )
+  })
+
+  it('covers every page of a paged recorte: the visible page is not the total', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const region = 'Litoral Sul'
+    const regionEntries = municipalityCatalog.filter((entry) => entry.region === region)
+    const expectedVotes = regionEntries.reduce((sum, entry) => sum + baselineVotes(entry.slug), 0)
+
+    const bundle = await loadMunicipalityListPageBundle(payload, coordinator, {
+      region: [region],
+      sort: 'name',
+    })
+
+    expect(regionEntries.length).toBeGreaterThan(25)
+    expect(bundle.municipalities).toHaveLength(25)
+    expect(bundle.totalDocs).toBe(regionEntries.length)
+    expect(bundle.sliceTotals?.rowCount).toBe(regionEntries.length)
+    expect(bundle.sliceTotals?.votes2022).toBe(expectedVotes)
+  })
+
+  it('sums expectations per scenario and counts the rows with any estimate', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+    const first = await fixtures.getMunicipality()
+    const second = await fixtures.getMunicipality()
+    const third = await fixtures.getMunicipality()
+
+    await payload.update({
+      collection: 'municipality',
+      id: first.id,
+      data: { expectedVotes: { pessimistic: 100, central: 250, optimistic: 400 } },
+      depth: 0,
+      overrideAccess: true,
+    })
+    await payload.update({
+      collection: 'municipality',
+      id: second.id,
+      data: { expectedVotes: { pessimistic: 50, central: null, optimistic: null } },
+      depth: 0,
+      overrideAccess: true,
+    })
+    for (const municipality of [first, second, third]) {
+      fixtures.touchMunicipality(municipality.id)
+    }
+
+    const bundle = await loadMunicipalityListPageBundle(payload, coordinator, {
+      slug: [first.slug, second.slug, third.slug],
+    })
+
+    expect(bundle.sliceTotals?.rowCount).toBe(3)
+    expect(bundle.sliceTotals?.expectedByScenario).toEqual({
+      pessimistic: 150,
+      central: 250,
+      optimistic: 400,
+    })
+    expect(bundle.sliceTotals?.withEstimateCount).toBe(2)
+  })
+
+  it('counts Salvador once under q: 2022 equals the city fold, never city plus zones', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+
+    const bundle = await loadMunicipalityListPageBundle(payload, coordinator, { q: 'salvador' })
+    const cityVotes = cityFederalBaseline().votesByYear[String(DEFAULT_VOTE_RANK_YEAR)]!
+
+    expect(cityVotes).toBeGreaterThan(0)
+    expect(bundle.municipalities).toHaveLength(20)
+    expect(bundle.sliceTotals?.rowCount).toBe(20)
+    expect(bundle.sliceTotals?.votes2022).toBe(cityVotes)
+  })
+
+  it('sums the city baseline when only the city row is selected', async () => {
+    const fixtures = campaignFixtures()
+    const coordinator = await fixtures.createCampaignUser('coordinator')
+
+    const bundle = await loadMunicipalityListPageBundle(payload, coordinator, {
+      slug: ['salvador'],
+    })
+
+    expect(bundle.sliceTotals?.rowCount).toBe(1)
+    expect(bundle.sliceTotals?.votes2022).toBe(
+      cityFederalBaseline().votesByYear[String(DEFAULT_VOTE_RANK_YEAR)]!,
+    )
+  })
+
+  it('scopes the totals to the advisor carteira', async () => {
+    const fixtures = campaignFixtures()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const administered = await fixtures.getMunicipality()
+    await fixtures.assignMunicipalityAdvisors(administered.id, [advisor.id])
+
+    const bundle = await loadMunicipalityListPageBundle(payload, advisor, {})
+
+    expect(bundle.sliceTotals?.rowCount).toBe(1)
+    expect(bundle.sliceTotals?.votes2022).toBe(baselineVotes(administered.slug))
+  })
+
+  it('mirrors the row scope for an advisor with Visão Tudo', async () => {
+    const fixtures = campaignFixtures()
+    const advisor = await fixtures.createCampaignUser('advisor', {
+      visibility: 'tudo',
+      editing: 'tudo',
+    })
+
+    const bundle = await loadMunicipalityListPageBundle(payload, advisor, {})
+
+    expect(bundle.municipalities.length).toBeLessThan(bundle.totalDocs)
+    expect(bundle.sliceTotals?.rowCount).toBe(municipalityCatalog.length)
+    expect(bundle.sliceTotals?.votes2022).toBe(
+      getStatewideFederalTotals(DEFAULT_VOTE_RANK_YEAR).ownVotes,
+    )
   })
 })
