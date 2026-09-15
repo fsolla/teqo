@@ -52,6 +52,19 @@ describe('auto-unblock.yml (OPS106 reactor)', () => {
     expect(workflow).toContain('pnpm install --frozen-lockfile')
   })
 
+  it('sets up Node 24 before pnpm (OPS111: homeserver runner defaults to Node 18)', () => {
+    // pnpm/action-setup@v6 dies under the homeserver default Node 18
+    // (TypeError paths[0] undefined); setup-node@v5 (Node 24) must run first.
+    const setupNodeIndex = workflow.indexOf('actions/setup-node@v5')
+    const pnpmSetupIndex = workflow.indexOf('pnpm/action-setup')
+    const installIndex = workflow.indexOf('pnpm install --frozen-lockfile')
+    expect(setupNodeIndex).toBeGreaterThan(-1)
+    expect(pnpmSetupIndex).toBeGreaterThan(setupNodeIndex)
+    expect(installIndex).toBeGreaterThan(pnpmSetupIndex)
+    expect(workflow).toContain('node-version: 24')
+    expect(workflow).toContain('package-manager-cache: false')
+  })
+
   it('keeps the Deploy workflow untouched (no auto-retry, no reactor wiring)', () => {
     expect(deployWorkflow).not.toContain('unblock')
     expect(deployWorkflow).not.toContain('workflow_run')
