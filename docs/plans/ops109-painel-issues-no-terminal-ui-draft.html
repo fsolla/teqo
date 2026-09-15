@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — OPS109 · Painel de issues e planos no terminal</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-[1400px] p-6 sm:p-8">
+      <h1 class="text-lg font-medium text-zinc-100">
+        UI draft — Painel de issues e planos no terminal (OPS109)
+      </h1>
+      <p class="mt-1 max-w-3xl text-sm text-zinc-400">
+        O mantenedor abre a TUI no terminal (mesa ou SSH do laptop/celular): lista de issues com
+        estado, prioridade e o que esperam dele; detalhe com plano de intenção e de implementação e
+        o status de cada um; leitor de markdown renderizado. Do detalhe também abre o rascunho UI no
+        browser da máquina e anexa à sessão do agente que está rodando aquela issue. Read-only sobre
+        tracker e planos.
+      </p>
+      <p class="mt-2 text-sm text-zinc-500">
+        Cena estática — sem interação, sem dados reais. Cinza = estrutura · acento
+        <span class="text-sky-400">sky</span> = seleção/foco · cores de estado = leitura funcional ·
+        barras cinza = conteúdo não especificado.
+      </p>
+
+      <!-- ============================================================ -->
+      <!-- Cena 1 · desktop (~100 colunas) — lista de issues            -->
+      <!-- ============================================================ -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 1 · desktop (~100 colunas) — lista com filtro por estado
+        </p>
+        <div class="mt-3 w-full max-w-[1100px] overflow-x-auto">
+          <div
+            class="min-w-[900px] overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950 font-mono text-[13px] leading-6"
+          >
+            <div class="flex items-center gap-3 border-b border-zinc-700 px-4 py-2">
+              <span class="font-medium text-zinc-200">teqo · issues</span>
+              <span class="text-zinc-500">|</span>
+              <span class="text-zinc-400">repo fsolla/teqo</span>
+              <span class="ml-auto text-zinc-500">última sync: 14:32</span>
+            </div>
+            <div class="flex flex-wrap gap-x-5 gap-y-1 border-b border-zinc-800 px-4 py-2">
+              <span class="bg-sky-500/15 px-2 text-sky-300">1 todas (43)</span>
+              <span class="px-2 text-zinc-400">2 em andamento (3)</span>
+              <span class="px-2 text-zinc-400">3 aguardando (12)</span>
+              <span class="px-2 text-zinc-400">4 concluídas (28)</span>
+            </div>
+            <div class="border-b border-zinc-800 px-4 py-1 text-xs text-zinc-500 uppercase">
+              <span class="inline-block w-28">estado</span>
+              <span class="inline-block w-20">id</span>
+              <span class="inline-block w-[380px]">título</span>
+              <span class="inline-block w-36">plano</span>
+              <span>prio</span>
+            </div>
+            <div class="bg-sky-500/15 text-sky-100">
+              <div class="px-4 py-1">
+                <span class="inline-block w-28 text-sky-300">● em andamento</span>
+                <span class="inline-block w-20">C163</span>
+                <span class="inline-block w-[380px]">Título de exemplo da issue em curso</span>
+                <span class="inline-block w-36">impl em execução</span>
+                <span>P1</span>
+              </div>
+            </div>
+            <div class="border-t border-zinc-900 text-zinc-300">
+              <div class="px-4 py-1">
+                <span class="inline-block w-28 text-amber-300">◌ aguardando</span>
+                <span class="inline-block w-20">OPS000</span>
+                <span class="inline-block w-[380px]">Título de exemplo aguardando aprovação</span>
+                <span class="inline-block w-36 text-amber-300">intenção: aguardando</span>
+                <span>P2</span>
+              </div>
+            </div>
+            <div class="border-t border-zinc-900 text-zinc-300">
+              <div class="px-4 py-1">
+                <span class="inline-block w-28 text-red-300">■ travada</span>
+                <span class="inline-block w-20">B000</span>
+                <span class="inline-block w-[380px]">Título de exemplo com dependência aberta</span>
+                <span class="inline-block w-36 text-zinc-400">depends OPS111</span>
+                <span>P2</span>
+              </div>
+            </div>
+            <div class="border-t border-zinc-900 text-zinc-300">
+              <div class="px-4 py-1">
+                <span class="inline-block w-28 text-zinc-400">○ pronta</span>
+                <span class="inline-block w-20">C000</span>
+                <span class="inline-block w-[380px]">Título de exemplo pronto para claim</span>
+                <span class="inline-block w-36 text-zinc-400">intenção: aprovado</span>
+                <span>P2</span>
+              </div>
+            </div>
+            <div class="border-t border-zinc-900 text-zinc-300">
+              <div class="px-4 py-1">
+                <span class="inline-block w-28 text-emerald-300">✓ concluída</span>
+                <span class="inline-block w-20">OPS097</span>
+                <span class="inline-block w-[380px]">Título de exemplo já entregue</span>
+                <span class="inline-block w-36 text-emerald-300">impl entregue</span>
+                <span>P2</span>
+              </div>
+            </div>
+            <div class="border-t border-zinc-900 text-zinc-300">
+              <div class="px-4 py-1">
+                <span class="inline-block w-28 text-zinc-400">○ pronta</span>
+                <span class="inline-block w-20">OPS000</span>
+                <span class="inline-block w-[380px]">Título de exemplo sem plano ligado</span>
+                <span class="inline-block w-36 text-zinc-500">sem plano</span>
+                <span>P3</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-4 border-t border-zinc-800 px-4 py-2 text-zinc-500">
+              <span><span class="text-zinc-300">↑↓</span> navegar</span>
+              <span><span class="text-zinc-300">enter</span> abrir</span>
+              <span><span class="text-zinc-300">1-4</span> filtrar</span>
+              <span><span class="text-zinc-300">/</span> buscar</span>
+              <span><span class="text-zinc-300">r</span> recarregar</span>
+              <span><span class="text-zinc-300">q</span> sair</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- Cena 2 · desktop — detalhe da issue com os dois planos       -->
+      <!-- ============================================================ -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 2 · desktop — detalhe da issue: resumo + planos e status
+        </p>
+        <div class="mt-3 w-full max-w-[1100px] overflow-x-auto">
+          <div
+            class="min-w-[900px] overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950 font-mono text-[13px] leading-6"
+          >
+            <div class="flex items-center gap-3 border-b border-zinc-700 px-4 py-2">
+              <span class="text-zinc-200">OPS000 — Título de exemplo aguardando aprovação</span>
+              <span class="ml-auto text-amber-300">◌ aguardando</span>
+            </div>
+            <div class="border-b border-zinc-800 px-4 py-2 text-zinc-400">
+              Issue <span class="text-zinc-200">#0000</span> · prio
+              <span class="text-zinc-200">P2</span> · kind
+              <span class="text-zinc-200">feature</span> · depends
+              <span class="text-zinc-200">—</span> ·
+              <span class="text-sky-300 underline">github.com/fsolla/teqo/issues/0000</span>
+            </div>
+            <div class="border-b border-zinc-800 px-4 py-3 text-zinc-300">
+              <p class="text-zinc-500">resumo</p>
+              <p class="mt-1 max-w-[820px] text-zinc-300">
+                Duas linhas de exemplo do resumo de produto, na voz do humano que pediu o item. Sem
+                números reais e sem promessa que o plano não faça.
+              </p>
+            </div>
+            <div class="px-4 py-3">
+              <p class="text-zinc-500">planos</p>
+              <div class="mt-2 text-zinc-300">
+                <span class="text-emerald-300">✓ intenção</span>
+                <span class="mx-2 text-zinc-500">·</span>
+                <span>docs/plans/ops000-exemplo.md</span>
+                <span class="mx-2 text-zinc-500">·</span>
+                <span class="text-emerald-300">aprovado (gate humano 2026-09-10)</span>
+                <span class="mx-2 text-zinc-500">·</span>
+                <span class="text-sky-300">enter abre</span>
+              </div>
+              <div class="mt-1 text-zinc-300">
+                <span class="text-amber-300">◌ implementação</span>
+                <span class="mx-2 text-zinc-500">·</span>
+                <span>docs/plans/ops000-exemplo-impl.md</span>
+                <span class="mx-2 text-zinc-500">·</span>
+                <span class="text-amber-300">aguardando aprovação</span>
+                <span class="mx-2 text-zinc-500">·</span>
+                <span class="text-sky-300">enter abre</span>
+              </div>
+            </div>
+            <div class="border-t border-zinc-800 px-4 py-3">
+              <p class="text-zinc-500">ações</p>
+              <div class="mt-2 text-zinc-300">
+                <span class="text-sky-300">w</span>
+                <span class="mx-2">abrir rascunho UI no browser</span>
+                <span class="mx-2 text-zinc-500">·</span>
+                <span>docs/plans/ops000-exemplo-ui-draft.html</span>
+              </div>
+              <div class="mt-1 text-zinc-300">
+                <span class="text-sky-300">s</span>
+                <span class="mx-2">abrir sessão do agente</span>
+                <span class="mx-2 text-zinc-500">·</span>
+                <span class="text-emerald-300">run ativo</span>
+                <span class="mx-2 text-zinc-500">·</span>
+                <span>worktree do exemplo</span>
+              </div>
+            </div>
+            <div class="border-t border-zinc-800 px-4 py-2 text-zinc-500">
+              <span><span class="text-zinc-300">esc</span> voltar</span>
+              <span class="mx-4"><span class="text-zinc-300">enter</span> abrir plano</span>
+              <span class="mx-4"><span class="text-zinc-300">w</span> rascunho UI</span>
+              <span class="mx-4"><span class="text-zinc-300">s</span> sessão do agente</span>
+              <span><span class="text-zinc-300">o</span> abrir no GitHub</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- Cena 3 · desktop — leitor de plano (markdown renderizado)    -->
+      <!-- ============================================================ -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 3 · desktop — leitor de plano: markdown renderizado no terminal
+        </p>
+        <div class="mt-3 w-full max-w-[1100px] overflow-x-auto">
+          <div
+            class="min-w-[900px] overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950 font-mono text-[13px] leading-6"
+          >
+            <div class="flex items-center gap-3 border-b border-zinc-700 px-4 py-2">
+              <span class="text-zinc-200">docs/plans/ops000-exemplo-impl.md</span>
+              <span class="text-emerald-300">Status: aprovado</span>
+              <span class="ml-auto text-zinc-500">64% · ↑↓ rolar</span>
+            </div>
+            <div class="px-5 py-4 text-zinc-300">
+              <p class="text-base font-medium text-zinc-100"># Impl: OPS000 — Título de exemplo</p>
+              <p class="mt-3 max-w-[820px]">
+                Parágrafo de exemplo com <span class="font-medium text-zinc-100">negrito</span> e
+                alguma decisão de implementação já tomada — o leitor de terminal precisa distinguir
+                hierarquia sem browser.
+              </p>
+              <p class="mt-3 text-zinc-500">## Fases verificáveis</p>
+              <p class="mt-1">1. Tracer bullet — esqueleto navegável</p>
+              <p>2. UI — encaixe na tela existente</p>
+              <p>3. Gates — <span class="text-zinc-100">pnpm gate:fast</span>, push</p>
+              <p class="mt-3 text-zinc-500">## Alternativas rejeitadas</p>
+              <div class="mt-1">
+                <span class="text-zinc-500">|</span> Opção <span class="text-zinc-500">|</span> Por
+                que caiu <span class="text-zinc-500">|</span>
+              </div>
+              <div class="text-zinc-500">
+                <span>|</span>-------------<span>|</span>--------------------------------<span
+                  >|</span
+                >
+              </div>
+              <div>
+                <span class="text-zinc-500">|</span> A <span class="text-zinc-500">|</span> exemplo
+                de motivo <span class="text-zinc-500">|</span>
+              </div>
+              <div>
+                <span class="text-zinc-500">|</span> B <span class="text-zinc-500">|</span> exemplo
+                de motivo <span class="text-zinc-500">|</span>
+              </div>
+              <p class="mt-3 text-zinc-500">```text</p>
+              <p class="bg-zinc-900 px-3 text-zinc-200">fluxo de exemplo → outcome</p>
+              <p class="text-zinc-500">```</p>
+              <p class="mt-3 border-l-2 border-zinc-600 pl-3 text-zinc-400">
+                &gt; citação de exemplo do plano
+              </p>
+            </div>
+            <div class="border-t border-zinc-800 px-4 py-2 text-zinc-500">
+              <span><span class="text-zinc-300">↑↓</span> rolar</span>
+              <span class="mx-4"><span class="text-zinc-300">pgup/pgdn</span> página</span>
+              <span><span class="text-zinc-300">esc</span> voltar à issue</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- Cena 4 · estados críticos — erro e vazio                     -->
+      <!-- ============================================================ -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 4 · estados críticos — sem token (erro claro), filtro vazio e sem ações
+        </p>
+        <div class="mt-3 grid max-w-[1100px] gap-4 lg:grid-cols-3">
+          <div class="overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950">
+            <div class="border-b border-zinc-700 px-4 py-2 font-mono text-[13px] text-zinc-200">
+              teqo · issues
+            </div>
+            <div class="px-4 py-6 font-mono text-[13px] leading-6">
+              <p class="text-red-300">erro: GITHUB_TOKEN não definido no ambiente.</p>
+              <p class="mt-1 text-zinc-400">Nada foi alterado. Defina o token e rode de novo:</p>
+              <p class="mt-1 bg-zinc-900 px-3 text-zinc-200">GITHUB_TOKEN=… pnpm issues:tui</p>
+            </div>
+            <div class="border-t border-zinc-800 px-4 py-2 font-mono text-[13px] text-zinc-500">
+              <span><span class="text-zinc-300">r</span> tentar de novo</span>
+              <span class="mx-4"><span class="text-zinc-300">q</span> sair</span>
+            </div>
+          </div>
+          <div class="overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950">
+            <div class="border-b border-zinc-700 px-4 py-2 font-mono text-[13px] text-zinc-200">
+              teqo · issues · aguardando
+            </div>
+            <div class="px-4 py-6 font-mono text-[13px] leading-6">
+              <p class="text-zinc-400">Nenhuma issue aguardando aprovação no momento.</p>
+              <p class="mt-1 text-zinc-500">
+                <span class="text-sky-300">1</span> ver todas ·
+                <span class="text-sky-300">2</span> em andamento ·
+                <span class="text-sky-300">4</span> concluídas
+              </p>
+            </div>
+            <div class="border-t border-zinc-800 px-4 py-2 font-mono text-[13px] text-zinc-500">
+              <span><span class="text-zinc-300">1-4</span> trocar filtro</span>
+              <span class="mx-4"><span class="text-zinc-300">q</span> sair</span>
+            </div>
+          </div>
+          <div class="overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950">
+            <div class="border-b border-zinc-700 px-4 py-2 font-mono text-[13px] text-zinc-200">
+              teqo · issues · ações
+            </div>
+            <div class="px-4 py-6 font-mono text-[13px] leading-6">
+              <p class="text-zinc-400">sessão do agente: nenhuma ativa.</p>
+              <p class="mt-1 text-zinc-500">
+                O painel não inicia run — dispare pelo worktree/skill.
+              </p>
+              <p class="mt-2 text-zinc-400">rascunho UI: não tem (classe A).</p>
+              <p class="mt-1 text-zinc-500">Um caminho longo de exemplo é impresso no lugar.</p>
+            </div>
+            <div class="border-t border-zinc-800 px-4 py-2 font-mono text-[13px] text-zinc-500">
+              <span><span class="text-zinc-300">esc</span> voltar</span>
+              <span class="mx-4"><span class="text-zinc-300">q</span> sair</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- Cena 5 · celular (~390px) — terminal estreito (~46 colunas)  -->
+      <!-- ============================================================ -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 5 · celular (~390px) — terminal estreito: lista e leitor
+        </p>
+        <div class="mt-3 flex flex-wrap gap-6">
+          <div
+            class="w-[390px] max-w-full overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950"
+          >
+            <div class="border-b border-zinc-700 px-3 py-2 font-mono text-[12px] text-zinc-200">
+              teqo · issues
+            </div>
+            <div class="flex gap-3 border-b border-zinc-800 px-3 py-1 font-mono text-[12px]">
+              <span class="text-sky-300">todas</span>
+              <span class="text-zinc-500">andam.</span>
+              <span class="text-zinc-500">aguard.</span>
+              <span class="text-zinc-500">feitas</span>
+            </div>
+            <div class="bg-sky-500/15 py-1 font-mono text-[12px] leading-5 text-sky-100">
+              <p class="px-3"><span class="text-sky-300">● em andamento</span> · C163 · P1</p>
+              <p class="px-3 text-sky-200">Título de exemplo da issue em curv…</p>
+              <p class="px-3 text-sky-300">s abrir sessão (run ativo)</p>
+            </div>
+            <div
+              class="border-t border-zinc-900 py-1 font-mono text-[12px] leading-5 text-zinc-300"
+            >
+              <p class="px-3"><span class="text-amber-300">◌ aguardando</span> · OPS000 · P2</p>
+              <p class="px-3 text-zinc-400">Título de exemplo aguardando aprovaç…</p>
+            </div>
+            <div
+              class="border-t border-zinc-900 py-1 font-mono text-[12px] leading-5 text-zinc-300"
+            >
+              <p class="px-3"><span class="text-red-300">■ travada</span> · B000 · P2</p>
+              <p class="px-3 text-zinc-400">Título de exemplo com dependência ab…</p>
+            </div>
+            <div
+              class="border-t border-zinc-900 py-1 font-mono text-[12px] leading-5 text-zinc-300"
+            >
+              <p class="px-3"><span class="text-emerald-300">✓ concluída</span> · OPS097 · P2</p>
+              <p class="px-3 text-zinc-400">Título de exemplo já entregue</p>
+            </div>
+            <div
+              class="flex gap-3 border-t border-zinc-800 px-3 py-2 font-mono text-[12px] text-zinc-500"
+            >
+              <span><span class="text-zinc-300">↑↓</span> mover</span>
+              <span><span class="text-zinc-300">enter</span> abrir</span>
+              <span><span class="text-zinc-300">q</span> sair</span>
+            </div>
+          </div>
+          <div
+            class="w-[390px] max-w-full overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950"
+          >
+            <div class="border-b border-zinc-700 px-3 py-2 font-mono text-[12px] leading-5">
+              <p class="text-zinc-200">ops000-exemplo-impl.md</p>
+              <p class="text-emerald-300">Status: aprovado · 64%</p>
+            </div>
+            <div class="px-3 py-3 font-mono text-[12px] leading-5 text-zinc-300">
+              <p class="font-medium text-zinc-100"># Impl: OPS000 —</p>
+              <p class="font-medium text-zinc-100">Título de exemplo</p>
+              <p class="mt-2">Parágrafo de exemplo com</p>
+              <p><span class="font-medium text-zinc-100">negrito</span> e decisão já tomada.</p>
+              <p class="mt-2 text-zinc-500">## Fases verificáveis</p>
+              <p>1. Tracer bullet — esqueleto</p>
+              <p>2. UI — encaixe na tela</p>
+              <p>3. Gates — <span class="text-zinc-100">gate:fast</span></p>
+              <p class="mt-2 text-zinc-500">## Alternativas</p>
+              <p>A · exemplo de motivo</p>
+              <p>B · exemplo de motivo</p>
+            </div>
+            <div class="border-t border-zinc-800 px-3 py-2 font-mono text-[12px] text-zinc-500">
+              <span><span class="text-zinc-300">↑↓</span> rolar</span>
+              <span class="mx-3"><span class="text-zinc-300">esc</span> voltar</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
