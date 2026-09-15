@@ -764,6 +764,11 @@ describe('campaign Google calendar sync engine (C114)', () => {
         calendarId: string
         channel: { id: string; token: string; address: string }
       }> = []
+      // C164 — the client hands the engine millis (the raw Google string is
+      // normalized at the API boundary by the client itself). The renewal
+      // pass overwrites the manually-set `now + 60s` below, so the assertion
+      // distinguishes the stub's value from a stale one.
+      const channelExpiration = Date.now() + 30 * 86_400_000
       const stopped: Array<{ id: string; resourceId: string }> = []
       const client: GoogleCalendarClient = {
         ...createStubClient(store),
@@ -772,7 +777,7 @@ describe('campaign Google calendar sync engine (C114)', () => {
           return {
             id: 'watch-' + watched.length,
             resourceId: 'resource-' + watched.length,
-            expiration: Date.now() + 30 * 86_400_000,
+            expiration: channelExpiration,
           }
         },
         stopChannel: async (channel) => {
@@ -788,6 +793,7 @@ describe('campaign Google calendar sync engine (C114)', () => {
       expect(doc?.pushChannelId).toBe('watch-1')
       expect(doc?.pushChannelSecret).toHaveLength(43)
       expect(doc?.pushChannelError).toBeNull()
+      expect(doc?.pushChannelExpiresAt).toBe(new Date(channelExpiration).toISOString())
 
       // Expiring soon → renewal with a NEW unique id + stop of the old
       // channel; the URL secret ROTATES per channel (a leaked URL self-heals
@@ -807,6 +813,52 @@ describe('campaign Google calendar sync engine (C114)', () => {
       expect(doc?.pushChannelId).toBe('watch-2')
       expect(doc?.pushChannelSecret).toBe(watched[1].channel.token)
       expect(doc?.pushChannelSecret).not.toBe(watched[0].channel.token)
+      expect(doc?.pushChannelExpiresAt).toBe(new Date(channelExpiration).toISOString())
+    })
+
+    it('registers the channel through the TTL fallback when Google omits the expiration (C164)', async () => {
+      await createActivity()
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const client: GoogleCalendarClient = {
+        ...createStubClient(store),
+        watchEvents: async () => ({
+          id: 'watch-no-expiration',
+          resourceId: 'resource-no-expiration',
+          expiration: null,
+        }),
+      }
+
+      const before = Date.now()
+      const outcome = await runSync(client)
+
+      expect(outcome.status).toBe('synced')
+      const doc = await loadGoogleCalendarSyncConfig(payload)
+      expect(doc?.pushChannelId).toBe('watch-no-expiration')
+      expect(doc?.pushChannelResourceId).toBe('resource-no-expiration')
+      expect(doc?.pushChannelError).toBeNull()
+      const expiresAt = Date.parse(doc?.pushChannelExpiresAt ?? '')
+      expect(expiresAt).toBeGreaterThanOrEqual(before + 29 * 86_400_000)
+      expect(expiresAt).toBeLessThanOrEqual(Date.now() + 31 * 86_400_000)
+    })
+
+    it('records the transport cause in the channel error (C164)', async () => {
+      await createActivity()
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const client: GoogleCalendarClient = {
+        ...createStubClient(store),
+        watchEvents: async () => {
+          throw new TypeError('fetch failed', { cause: new Error('connect ETIMEDOUT') })
+        },
+      }
+
+      const outcome = await runSync(client)
+      expect(outcome.status).toBe('synced')
+
+      const doc = await loadGoogleCalendarSyncConfig(payload)
+      expect(doc?.pushChannelError).toContain('fetch failed')
+      expect(doc?.pushChannelError).toContain('connect ETIMEDOUT')
     })
 
     it('a channel failure is recorded but never pauses the mirror', async () => {

@@ -1106,10 +1106,19 @@ const ensureGoogleCalendarPushChannel = async (
       })
     }
   } catch (error) {
-    const message =
+    // C164 — a `fetch failed` TypeError carries the transport cause (DNS,
+    // timeout) on `error.cause`; the cause diagnoses an intermittent
+    // transport failure, so it rides along in `pushChannelError`. The base is
+    // truncated first: the cause is the diagnostic payload worth keeping.
+    const baseMessage =
       error instanceof Error ? error.message : 'Erro desconhecido ao registrar o webhook do Google.'
+    const causeSuffix =
+      error instanceof Error && error.cause instanceof Error
+        ? ` (causa: ${error.cause.message})`
+        : ''
+    const message = `${baseMessage.slice(0, 500 - causeSuffix.length)}${causeSuffix}`.slice(0, 500)
     payload.logger.error(`[GoogleCalendarSync] Erro ao registrar canal de push: ${message}`)
-    await recordSyncState(payload, req, { pushChannelError: message.slice(0, 500) })
+    await recordSyncState(payload, req, { pushChannelError: message })
   }
 }
 

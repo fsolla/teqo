@@ -9,6 +9,7 @@ import {
   GOOGLE_CALENDAR_SCOPE,
   GoogleCalendarApiError,
   GoogleCalendarAuthError,
+  parseGoogleWatchExpiration,
   type FetchLike,
   type GoogleCalendarAuth,
   type GoogleCalendarServiceAccountCredentials,
@@ -39,6 +40,39 @@ describe('buildServiceAccountAssertion', () => {
   })
 })
 
+describe('parseGoogleWatchExpiration', () => {
+  it('parses the int64 expiration serialized as a JSON string', () => {
+    expect(parseGoogleWatchExpiration('1757900000000')).toBe(1757900000000)
+  })
+
+  it('accepts a finite number unchanged', () => {
+    expect(parseGoogleWatchExpiration(1757900000000)).toBe(1757900000000)
+  })
+
+  it('fails to null for absent, malformed or degenerate values (engine fallback path)', () => {
+    const invalid = [
+      undefined,
+      null,
+      '',
+      '   ',
+      'abc',
+      'NaN',
+      0,
+      -1,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      // Beyond Date's range: toISOString() would throw — fallback, never crash.
+      8.64e15 + 1,
+      '8640000000000001',
+      {},
+      [],
+    ]
+    for (const value of invalid) {
+      expect(parseGoogleWatchExpiration(value)).toBeNull()
+    }
+  })
+})
+
 describe('createGoogleCalendarClient', () => {
   let credentials: GoogleCalendarServiceAccountCredentials
   let serviceAccountAuth: GoogleCalendarAuth
@@ -66,7 +100,15 @@ describe('createGoogleCalendarClient', () => {
   const calendarId = 'c_abc@group.calendar.google.com'
 
   /** Minimal fake transport: token endpoint + calendar REST in memory. */
-  const stubTransport = (events: Array<Record<string, unknown>> = []) => {
+  const stubTransport = (
+    events: Array<Record<string, unknown>> = [],
+    watchResponse: Record<string, unknown> = {
+      id: 'watch-1',
+      resourceId: 'resource-1',
+      // C164 — events.watch serializes the int64 `expiration` as a JSON string.
+      expiration: '1757900000000',
+    },
+  ) => {
     let tokenRequests = 0
     const calls: Array<{ url: string; method: string; body?: string; auth?: string }> = []
 
@@ -88,6 +130,12 @@ describe('createGoogleCalendarClient', () => {
         )
       }
 
+      if (url.includes('/events/watch') && method === 'POST') {
+        return new Response(JSON.stringify(watchResponse), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
       if (url.includes('/events') && method === 'POST') {
         const event = JSON.parse(body ?? '{}') as Record<string, unknown>
         events.push(event)
@@ -327,5 +375,47 @@ describe('createGoogleCalendarClient', () => {
     expect(events).toEqual([])
     expect(calendarCalls).toBe(2)
     expect(tokenRequests).toBe(2)
+  })
+
+  it('normalizes the watch expiration string into millis (C164)', async () => {
+    const { fetchImpl, calls } = stubTransport()
+    const client = createGoogleCalendarClient(serviceAccountAuth, fetchImpl)
+
+    const channel = await client.watchEvents(calendarId, {
+      id: 'channel-1',
+      address: 'https://jorgesolla1313.com.br/campanha/agenda/google-webhook/secret',
+      token: 'secret',
+      ttlSeconds: 3600,
+    })
+
+    expect(channel).toEqual({
+      id: 'watch-1',
+      resourceId: 'resource-1',
+      expiration: 1757900000000,
+    })
+    const watchCall = calls.find((call) => call.url.includes('/events/watch'))
+    expect(watchCall?.method).toBe('POST')
+    expect(watchCall?.url).toBe(
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/watch`,
+    )
+    expect(JSON.parse(watchCall?.body ?? '{}')).toMatchObject({
+      id: 'channel-1',
+      type: 'web_hook',
+      params: { ttl: '3600' },
+    })
+  })
+
+  it('returns a null expiration when the watch response omits it (engine falls back to the TTL)', async () => {
+    const { fetchImpl } = stubTransport([], { id: 'watch-1', resourceId: 'resource-1' })
+    const client = createGoogleCalendarClient(serviceAccountAuth, fetchImpl)
+
+    const channel = await client.watchEvents(calendarId, {
+      id: 'channel-1',
+      address: 'https://example.test/campanha/agenda/google-webhook/secret',
+      token: 'secret',
+      ttlSeconds: 3600,
+    })
+
+    expect(channel.expiration).toBeNull()
   })
 })

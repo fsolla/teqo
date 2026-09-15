@@ -118,6 +118,27 @@ type GoogleWatchChannel = {
   expiration: number | null
 }
 
+/** `Date`'s maximum time value — beyond it `new Date(ms).toISOString()` throws. */
+const MAX_DATE_MS = 8.64e15
+
+/**
+ * C164 — `events.watch` serializes the int64 `expiration` (epoch millis) as a
+ * JSON **string**; reading it as a number made `new Date(...)` invalid and the
+ * channel was never persisted. Normalizes at the API boundary so the engine
+ * keeps the `number | null` contract: any finite epoch millis inside `Date`'s
+ * range is accepted from a number or a string; everything else is `null`,
+ * which the engine maps to the TTL fallback. Never throws.
+ */
+export const parseGoogleWatchExpiration = (value: unknown): number | null => {
+  const parsed = typeof value === 'string' ? Number(value) : value
+  return typeof parsed === 'number' &&
+    Number.isFinite(parsed) &&
+    parsed > 0 &&
+    parsed <= MAX_DATE_MS
+    ? parsed
+    : null
+}
+
 export type FetchLike = typeof fetch
 
 /**
@@ -386,7 +407,7 @@ export const createGoogleCalendarClient = (
     const body = (await response.json()) as {
       id?: string
       resourceId?: string
-      expiration?: number | null
+      expiration?: unknown
     }
     if (!body.id || !body.resourceId) {
       throw new GoogleCalendarApiError('O Google não devolveu um canal de notificação válido.', 502)
@@ -394,7 +415,7 @@ export const createGoogleCalendarClient = (
     return {
       id: body.id,
       resourceId: body.resourceId,
-      expiration: body.expiration ?? null,
+      expiration: parseGoogleWatchExpiration(body.expiration),
     }
   }
 
