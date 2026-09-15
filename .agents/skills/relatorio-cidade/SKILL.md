@@ -103,7 +103,7 @@ URL por item) e emendas lidas da fonte oficial **em tempo de geração**. Págin
   ],
   "leaders": [                     // últimos prefeitos/vices, vereadores mais votados
     {
-      "name": "…", "role": "Ex-prefeito", "period": "2017–2024",
+      "name": "…", "role": "Ex-prefeito", "party": "PSDB", "period": "2017–2024",
       "sourceUrl": "https://…", "sourceDate": "2024-08-14"
     }
   ],

@@ -64,6 +64,7 @@ const research = normalizeResearchInput(
       {
         name: 'Ex-Prefeito',
         role: 'Prefeito',
+        party: 'PSDB',
         period: '2017–2024',
         sourceUrl: 'https://exemplo.test/lideranca',
         sourceDate: '2026-03-05',
@@ -353,6 +354,7 @@ describe('buildCityReport', () => {
     )!
     const rows = leadersBlock.rows as unknown as TableRow[]
     expect(rows[0].name).toBe('Ex-Prefeito')
+    expect(rows[0].party).toBe('PSDB')
     expect(rows[0].period).toBe('2017–2024')
     expect(leadersBlock.sources![0]).toEqual(
       expect.objectContaining({ url: 'https://exemplo.test/lideranca' }),
