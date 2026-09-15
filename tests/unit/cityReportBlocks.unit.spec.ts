@@ -306,7 +306,7 @@ type ReportBlock = {
   title?: string
   items?: ReportItem[]
   rows?: ReportRow[]
-  columns?: Array<{ key: string; label: string }>
+  columns?: Array<{ key: string; label: string; width?: number }>
   cells?: Array<{ title: string; blocks: ReportBlock[] }>
   body?: string[]
   sources?: Array<{ kind: string; url?: string | null }>
@@ -389,6 +389,8 @@ describe('buildCityReport', () => {
       `Menção a ${snapshot.municipality.name}`,
       'Link',
     ])
+    expect(falas.columns!.find((column) => column.key === 'description')!.width).toBe(37)
+    expect(falas.columns!.find((column) => column.key === 'mention')!.width).toBe(32)
     expect(rows[0].description).toBe('Resumo da fala')
     expect(rows[0].mention).toContain('cita Feira de Santana')
     expect(rows[1].description).toBe('Saúde indígena na Bahia')

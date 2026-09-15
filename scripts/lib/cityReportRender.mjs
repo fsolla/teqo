@@ -127,6 +127,8 @@ const PRINT_CSS = `
   .pair .panel li, .bullets li { margin-bottom: .8mm; }
   .pair-note { color: #92400e; font-size: 7.6pt; margin: 1.2mm 0 0; }
   table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+  table.table-fixed { table-layout: fixed; }
+  table.table-fixed td, table.table-fixed th { overflow-wrap: anywhere; }
   caption { caption-side: top; text-align: left; font-weight: 600; font-size: 8.6pt; padding-bottom: 1.2mm; color: #18181b; }
   th { text-align: left; background: #f4f4f5; border-bottom: .8px solid #d4d4d8; padding: 1.4mm 1.4mm; font-size: 7pt; text-transform: uppercase; letter-spacing: .03em; color: #52525b; }
   td { border-bottom: .6px solid #e4e4e7; padding: 1.4mm 1.4mm; vertical-align: top; }
@@ -217,8 +219,12 @@ const renderPair = (block) => {
 }
 
 const renderTable = (block) => {
+  const fixed = block.columns.some((column) => column.width)
   const head = block.columns
-    .map((column) => `<th${column.numeric ? ' class="num"' : ''}>${htmlEscape(column.label)}</th>`)
+    .map(
+      (column) =>
+        `<th${column.numeric ? ' class="num"' : ''}${column.width ? ` style="width:${column.width}%"` : ''}>${htmlEscape(column.label)}</th>`,
+    )
     .join('')
   const rows = block.rows
     .map(
@@ -231,7 +237,7 @@ const renderTable = (block) => {
           .join('')}</tr>`,
     )
     .join('')
-  return `<table><caption>${htmlEscape(block.title)}</caption><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>${
+  return `<table${fixed ? ' class="table-fixed"' : ''}><caption>${htmlEscape(block.title)}</caption><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>${
     block.note ? `<p class="table-note">${htmlEscape(block.note)}</p>` : ''
   }`
 }
