@@ -278,7 +278,7 @@ const snapshot = {
         officialTextUrl: 'https://camara.test/discurso',
         youtubeUrl: 'https://youtube.test/video',
         vodPlaybackUrl: 'https://vod.test/video.mp4',
-        youtubeOffsetSeconds: 125,
+        youtubeStartSeconds: 125,
         mentionExcerpt: 'Trecho da fala que cita Feira de Santana',
         mentionedMunicipalityCount: 3,
       },
