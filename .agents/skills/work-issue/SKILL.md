@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Executa uma Issue já claimada de ponta a ponta com supervisão humana. A sessão nasce no contrato: Issue claimada, worktree correto, branch correta.
 
-**Proibido:** DB de prod; merge sem CI green; editar outras Issues `in-progress`; pular a pausa do impl plan; Draft / sem auto-merge.
+**Proibido:** DB de prod; merge sem CI green; editar outras Issues `in-progress`; pular a pausa do impl plan (exceto com `--auto`, ver §Modo autônomo); Draft / sem auto-merge.
 
 ## Decomposição em sub-agentes
 
@@ -132,6 +132,17 @@ Apresente no chat:
 **Pare.** Não escreva código até confirmação explícita.
 
 Divergência material de produto → pare, pergunte ao humano.
+
+## Modo autônomo (`--auto`)
+
+Opt-out da pausa por invocação. Detecta-se em `$ARGUMENTS`: `/work-issue --issue <N> --auto` (a flag vive dentro do prompt, junto do `--issue <N>` do contrato OPS33; sem parser dedicado).
+
+- **Sem a flag (ou flag desconhecida):** o Passo 3c GATE vale idêntico — apresente o plano, pare e aguarde confirmação explícita. Proibido pular a pausa.
+- **Com a flag:** o impl plan do Passo 3b nasce marcado `aprovado` pelo próprio agente; o Passo 3c vira apresentação-no-chat-sem-espera (abordagem + rejeitadas + fases + riscos continuam obrigatórios no chat e no arquivo) e a execução (Passo 4) segue direto até o PR.
+- **Pode auto-aprovar:** abordagem técnica, cortes de escopo já previstos na skill e os literais de dados que o próprio plano recomenda (registrados como assumidos).
+- **Continua parando (vale mesmo com a flag):** Consent/LGPD fail-closed, migração de schema, contrato de URL público, shapes públicos, produção/aprovação humana, merge sem CI green, DB de prod; divergência material de produto → pare, comente na Issue e flipe para `blocked` (precedente do fluxo autônomo). O claim continua contrato do ambiente: este modo nunca claima Issue.
+- **Não confundir:** `--auto` aqui é flag da skill dentro do prompt; o `--auto` do CLI opencode (auto-aprovar permissões de ferramenta) é outro conceito.
+- **Convivência:** `agent-work-issue` continua sendo o contrato do pool dormente; este modo é opt-in da sessão humana. Consolidação futura é item à parte.
 
 ## Passo 4 — Executar
 

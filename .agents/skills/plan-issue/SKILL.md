@@ -122,6 +122,17 @@ Antes de criar Issues:
 
 **Pare e espere.** Itere até confirmação explícita do lote.
 
+## Modo autônomo (`--auto`)
+
+Opt-out da pausa por invocação. Detecta-se em `$ARGUMENTS`: `/plan-issue --auto ...` (a flag vive dentro do prompt, junto dos demais argumentos; sem parser dedicado).
+
+- **Sem a flag (ou flag desconhecida):** o Passo 4 GATE vale idêntico — pare e espere confirmação explícita. Nada no tracker antes do gate.
+- **Com a flag:** o Passo 4 vira apresentação-sem-pausa (o overview continua obrigatório, mas no resumo final, não como pedido de confirmação); o Passo 5 (registro) segue direto: `pnpm agent:register` por plano aprovado pelo próprio agente, PR `Related #N`, `pnpm agent:ready`.
+- **Pode auto-aprovar:** conteúdo e fatiamento dos planos, prioridade, dependências, abordagem de intenção, cortes de escopo já previstos na skill e os literais de dados que o próprio plano recomenda (registrados como assumidos).
+- **Continua parando (vale mesmo com a flag):** Consent/LGPD fail-closed, migração de schema, contrato de URL público, shapes públicos, produção/aprovação humana; divergência material de produto → o item **não é registrado** e fica fora do lote até decisão humana, reportado no resumo final.
+- **Não confundir:** `--auto` aqui é flag da skill dentro do prompt; o `--auto` do CLI opencode (auto-aprovar permissões de ferramenta) é outro conceito.
+- **Convivência:** `agent-work-issue` continua sendo o contrato do pool dormente; este modo é opt-in da sessão humana. Consolidação futura é item à parte.
+
 ## Passo 5 — Registro (sub-agente registrador)
 
 Após confirmação, dispatche o sub-agente registrador com:

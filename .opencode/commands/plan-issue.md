@@ -4,4 +4,6 @@ description: Transforma ideias humanas em Issues GitHub + planos de intenção e
 
 Carregue a skill `plan-issue` (ferramenta de skills, nome exato) e siga o fluxo dela de ponta a ponta. A fonte canônica é `.agents/skills/plan-issue/SKILL.md` — não a transcreva nem recrie o fluxo.
 
+Uso: /plan-issue [--auto] [...ideias]. Com `--auto`, a skill dispensa a pausa do GATE e segue até o registro; sem ela, o fluxo supervisionado atual vale.
+
 $ARGUMENTS
