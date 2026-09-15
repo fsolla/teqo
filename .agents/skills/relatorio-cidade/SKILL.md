@@ -189,6 +189,11 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   limites`.
 - **Links clicáveis:** todo URL no PDF é um link (`<a href>`): células de
   tabela, fontes por linha e a seção de fontes.
+- **Tabela da seção 11 (notícias) com larguras fixas:** `Data 9 · Veículo 14 ·
+  Título 49 · Link 28` (%). As larguras explícitas tornam a tabela `table-fixed`
+  (a URL longa/crua quebra em vez de inflar a coluna) e dão ao **Título** — o
+  texto mais longo — a maior fatia. Sem largura, a URL sem espaços domina o
+  layout automático e espreme/estoura a tabela.
 
 ## Guardrails de produto (não negociáveis)
 
