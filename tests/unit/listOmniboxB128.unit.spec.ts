@@ -234,6 +234,48 @@ describe('list omnibox adapters (B128)', () => {
     if (removedTab.kind === 'url') expect(removedTab.state.tab).toBe('proximos')
   })
 
+  it('activity triage filter toggles "Sem município" exclusively with a município (C165)', () => {
+    const base = parseActivityListParams({ tab: 'todos' })
+    const seeds = buildActivityOmniboxSuggestionSeeds({ tab: base.tab, municipalityOptions: [] })
+    const suggestions = filterActivityOmniboxSuggestions(seeds, 'sem')
+    expect(suggestions.some((entry) => entry.id === 'unscoped')).toBe(true)
+
+    const applied = applyActivityOmniboxSuggestion({ state: base, suggestionId: 'unscoped' })
+    expect(applied.kind).toBe('url')
+    if (applied.kind !== 'url') return
+    expect(applied.state.unscoped).toBe(true)
+
+    const chips = buildActivityOmniboxChips({
+      state: applied.state,
+      municipalityLabelsById: new Map(),
+    })
+    expect(chips.map((chip) => chip.id)).toEqual(['tab:todos', 'unscoped'])
+
+    // Escolher um município tira o filtro de triagem (exclusivos)…
+    const withMunicipality = applyActivityOmniboxSuggestion({
+      state: applied.state,
+      suggestionId: 'municipality:12',
+    })
+    expect(withMunicipality.kind).toBe('url')
+    if (withMunicipality.kind === 'url') {
+      expect(withMunicipality.state.municipality).toBe(12)
+      expect(withMunicipality.state.unscoped).toBeUndefined()
+    }
+
+    // …e aplicar "Sem município" de novo limpa o município.
+    const backToTriage = applyActivityOmniboxSuggestion({
+      state: parseActivityListParams({ municipality: '12' }),
+      suggestionId: 'unscoped',
+    })
+    if (backToTriage.kind === 'url') {
+      expect(backToTriage.state.unscoped).toBe(true)
+      expect(backToTriage.state.municipality).toBeUndefined()
+    }
+
+    const removed = removeActivityOmniboxChip({ state: applied.state, chipId: 'unscoped' })
+    if (removed.kind === 'url') expect(removed.state.unscoped).toBeUndefined()
+  })
+
   it('demand toggles exclusive status, kind and search; preserves activity on clear', () => {
     const state = parseDemandListParams({
       status: 'aberta',

@@ -6,6 +6,7 @@ import {
   boundedJsonFormValue,
   checkboxFormValue,
   FormDataBoundaryError,
+  nullableRelationshipFormValue,
   optionalFormText,
   repeatedRelationshipFormValues,
   requiredFormText,
@@ -166,7 +167,9 @@ const parseSharedActivityFormData = (formData: FormData) => {
     publicEvent: checkboxFormValue(formData, 'publicEvent'),
     startAt: parseScheduleFormField(formData, 'startAt', allDay),
     endAt: parseScheduleFormField(formData, 'endAt', allDay),
-    municipality: requiredRelationshipFormValue(formData, 'municipality'),
+    // C165 — empty input means "Sem município" (`null`), not a missing field:
+    // the overlay always renders the hidden input.
+    municipality: nullableRelationshipFormValue(formData, 'municipality'),
     locality: optionalFormText(formData, 'locality'),
     organizations: repeatedRelationshipFormValues(formData, 'organizations'),
     responsible: parseResponsiblesFormData(formData),

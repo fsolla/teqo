@@ -29,6 +29,17 @@ export const ACTIVITY_RESCHEDULE_FAILED_MESSAGE =
   'Não foi possível remarcar a atividade. O horário anterior foi mantido.'
 export const ACTIVITY_OUT_OF_SCOPE_MESSAGE =
   'O município escolhido está fora do seu escopo de edição. Atualize a página e tente novamente.'
+export const ACTIVITY_UNSCOPED_ADVISOR_MESSAGE =
+  'Só a coordenação e o candidato podem criar ou manter uma atividade sem município.'
+export const ACTIVITY_DEMANDS_MUNICIPALITY_MESSAGE =
+  'Atribua um município para criar demandas desta atividade.'
+
+/**
+ * C165 — the shared labels of the imported/triage states (overlay option,
+ * card badges, agenda marker and omnibox chip/seed): one spelling, no drift.
+ */
+export const ACTIVITY_IMPORTED_LABEL = 'Do Google'
+export const ACTIVITY_UNSCOPED_LABEL = 'Sem município'
 
 /**
  * C14 — tags are free-form labels the mesa invents (comício, imprensa, etc.).
@@ -257,6 +268,10 @@ export const activityRescheduleSchema = z
 export const activityCreateSchema = activityFieldsSchema
   .extend({
     status: z.enum(['confirmado']).default('confirmado'),
+    // C165 — an activity may be born without a municipality (an imported
+    // Google event awaiting triage). The base field stays required so the giro
+    // stop pick keeps its município obligation.
+    municipality: positiveRelationshipId.nullable().optional(),
   })
   .superRefine((data, context) => {
     validateSchedule(data, context, true)
@@ -271,6 +286,8 @@ export const activityUpdateSchema = activityFieldsSchema
   .partial()
   .extend({
     id: positiveRelationshipId,
+    // C165 — `null` clears the município; only coordination/candidate can.
+    municipality: positiveRelationshipId.nullable().optional(),
     locality: trimmedNullableText(160),
     description: trimmedNullableText(4000),
     startAt: z.string().datetime().nullable().optional(),

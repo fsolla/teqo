@@ -21,7 +21,9 @@ const isActivityTitleQueryReady = (query: string) =>
 const toActivityRelationOption = (activity: {
   id: number
   title: string
-  municipality: unknown
+  // C165 — optional in the generated type (the município is nullable) and in
+  // partial `select`s; a municipality-less activity is simply not an option.
+  municipality?: unknown
 }): ActivityRelationOption | null => {
   const municipalityId = relationshipId(activity.municipality)
   if (!municipalityId) return null

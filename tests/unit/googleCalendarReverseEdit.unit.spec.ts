@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  googleScheduleToActivityFields,
+  googleTitleFromSummary,
+} from '@/lib/googleCalendarEventMapping'
+import {
   buildGoogleReverseCancelBody,
   buildGoogleReverseUpdateBody,
   GOOGLE_REVERSE_EDIT_BODY_PREFIX,
   googleEditIsNewer,
-  googleScheduleToActivityFields,
-  googleTitleFromSummary,
 } from '@/lib/googleCalendarReverseEdit'
 
 const MUNICIPALITY = 'Salvador'

@@ -156,7 +156,9 @@ describe('ActivityOverlay — criação (modal central)', () => {
     expect(
       (screen.getByRole('combobox', { name: 'Minuto de Término' }) as HTMLSelectElement).value,
     ).toBe('30')
-    expect((screen.getByLabelText('Município *') as HTMLInputElement).value).toBe('Camaçari')
+    expect((screen.getByLabelText('Município (opcional)') as HTMLInputElement).value).toBe(
+      'Camaçari',
+    )
 
     // C123 — "Local" aparece uma única vez no overlay.
     expect(screen.getAllByLabelText('Local (opcional)')).toHaveLength(1)
@@ -242,7 +244,7 @@ describe('ActivityOverlay — criação (modal central)', () => {
     expect(onSaved).toHaveBeenCalledTimes(1)
   })
 
-  it('bloqueia salvar sem município e não invoca a ação', async () => {
+  it('salva sem município: "Sem município" é estado válido e envia o campo vazio (C165)', async () => {
     const onSaved = vi.fn()
     mocks.createOverlay.mockResolvedValue({ ok: true })
     renderOverlay({ agendaState: {}, onSaved })
@@ -250,11 +252,17 @@ describe('ActivityOverlay — criação (modal central)', () => {
     fireEvent.change(screen.getByLabelText('Título *'), {
       target: { value: 'Café com apoiadores' },
     })
+    // O aviso de visibilidade acompanha o estado sem município.
+    expect((screen.getByLabelText('Município (opcional)') as HTMLInputElement).value).toBe(
+      'Sem município',
+    )
+    expect(screen.getByText(/só coordenação e candidato veem/)).toBeTruthy()
+
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
 
-    await waitFor(() => expect(screen.getByText('Informe o município.')).toBeTruthy())
-    expect(mocks.createOverlay).not.toHaveBeenCalled()
-    expect(onSaved).not.toHaveBeenCalled()
+    await waitFor(() => expect(mocks.createOverlay).toHaveBeenCalledTimes(1))
+    expect(submittedFormData().get('municipality')).toBe('')
+    expect(onSaved).toHaveBeenCalledTimes(1)
   })
 
   it('mantém o overlay aberto com erro inline quando a criação falha', async () => {
@@ -362,7 +370,9 @@ describe('ActivityOverlay — edição (modal central)', () => {
     expect(
       (screen.getByRole('combobox', { name: 'Hora de Término' }) as HTMLSelectElement).value,
     ).toBe('14')
-    expect((screen.getByLabelText('Município *') as HTMLInputElement).value).toBe('Camaçari')
+    expect((screen.getByLabelText('Município (opcional)') as HTMLInputElement).value).toBe(
+      'Camaçari',
+    )
     expect((screen.getByLabelText('Local (opcional)') as HTMLInputElement).value).toBe(
       'Centro histórico',
     )
@@ -445,8 +455,8 @@ describe('ActivityOverlay — sheet mobile (C103)', () => {
     expect(
       (screen.getByRole('combobox', { name: 'Minuto de Início' }) as HTMLSelectElement).value,
     ).toBe('00')
-    expect((screen.getByLabelText('Município *') as HTMLInputElement).placeholder).toBe(
-      'Município *',
+    expect((screen.getByLabelText('Município (opcional)') as HTMLInputElement).placeholder).toBe(
+      'Município (opcional)',
     )
     expect((screen.getByLabelText('Local (opcional)') as HTMLInputElement).placeholder).toBe(
       'Local (opcional)',

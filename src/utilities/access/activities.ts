@@ -4,6 +4,7 @@
 
 import type { Access, FieldAccess, PayloadRequest, Where } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import type { CampaignUser } from '@/payload-types'
 import { getAccessibleMunicipalityIds } from '@/utilities/access/municipalities'
 import {
@@ -27,15 +28,20 @@ const canStaffCreateActivity: FieldAccess = async ({ req }) => {
  * a per-município constraint on create), so the Edição axis narrows it for
  * advisors: a `somente_leitura` advisor creates nothing. The giro batch checks
  * the stops against the WRITE scope on top (`getWritableMunicipalityIds`).
+ * C165 — an activity without município is coordination/candidate-only (the
+ * `supporter` precedent), so an advisor's create requires one; the carteira
+ * membership of that município is still enforced by the action.
  */
-export const canCreateActivity: Access = async ({ req }) => {
+export const canCreateActivity: Access = async ({ data, req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
   if (!currentUser || !isCampaignStaff(currentUser)) return false
-  if (currentUser.role === 'advisor') return advisorEditingAccess(currentUser) !== 'none'
+  if (isCampaignUnrestricted(currentUser)) return true
+  if (currentUser.role !== 'advisor') return false
+  if (advisorEditingAccess(currentUser) === 'none') return false
 
-  return true
+  return relationshipId(data?.municipality) !== null
 }
 
 export const canCampaignUserRescheduleActivity = (
@@ -49,16 +55,24 @@ const advisorActivityScopeWhere = async (
 ): Promise<Where> => {
   const municipalityIDs = await getAccessibleMunicipalityIds(req, currentUser)
   return {
-    or: [
-      // C90 — polymorphic `responsible`: the only scalar query the adapter
-      // supports on a multi-relation relationship is the object notation
-      // with `equals` (see @payloadcms/drizzle sanitizeQueryValue).
+    // C165 — the `and` closes the responsible branch for an activity WITHOUT
+    // município: it is coordination/candidate-only (precedente `supporter`),
+    // so an advisor listed as responsible must not see/update it.
+    and: [
+      { municipality: { exists: true } },
       {
-        responsible: {
-          equals: { relationTo: 'campaignUser', value: currentUser.id },
-        },
+        or: [
+          // C90 — polymorphic `responsible`: the only scalar query the adapter
+          // supports on a multi-relation relationship is the object notation
+          // with `equals` (see @payloadcms/drizzle sanitizeQueryValue).
+          {
+            responsible: {
+              equals: { relationTo: 'campaignUser', value: currentUser.id },
+            },
+          },
+          advisorMunicipalityScopeWhere('municipality', municipalityIDs),
+        ],
       },
-      advisorMunicipalityScopeWhere('municipality', municipalityIDs),
     ],
   }
 }
@@ -72,8 +86,9 @@ export const canReadActivity: Access = async ({ req }): Promise<boolean | Where>
   if (isCampaignUnrestricted(currentUser)) return true
 
   if (currentUser.role === 'advisor') {
-    // C141 — Visão "Tudo": the advisor sees the whole activity agenda.
-    if (currentUser.visibility === 'tudo') return true
+    // C141 — Visão "Tudo": the advisor sees the whole activity agenda, except
+    // C165 activities without município (coordination/candidate-only).
+    if (currentUser.visibility === 'tudo') return { municipality: { exists: true } }
     return advisorActivityScopeWhere(req, currentUser)
   }
 
@@ -84,6 +99,7 @@ export const canReadActivity: Access = async ({ req }): Promise<boolean | Where>
  * C141 — the Edição axis rules activity updates. `tudo` widens to every
  * activity; `somente_leitura` closes updates entirely; the carteira branch
  * keeps the same row scope as read (responsible OR municipality).
+ * C165 — `tudo` never widens into activities without município.
  */
 export const canUpdateActivity: Access = async ({ req }): Promise<boolean | Where> => {
   if (isPayloadAdmin(req.user)) return true
@@ -96,7 +112,7 @@ export const canUpdateActivity: Access = async ({ req }): Promise<boolean | Wher
 
   const editingAccess = advisorEditingAccess(currentUser)
   if (editingAccess === 'none') return false
-  if (editingAccess === 'tudo') return true
+  if (editingAccess === 'tudo') return { municipality: { exists: true } }
 
   return advisorActivityScopeWhere(req, currentUser)
 }

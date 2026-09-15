@@ -13,8 +13,17 @@
  */
 import type { Activity } from '@/payload-types'
 
-import { allDayCivilDateOf, allDayExclusiveEndDate } from '@/lib/activityAllDay'
+import {
+  allDayCivilDateOf,
+  allDayEndInstantFromExclusive,
+  allDayExclusiveEndDate,
+  allDayStartInstant,
+  isCivilDate,
+} from '@/lib/activityAllDay'
 import { buildActivityDescriptionParts } from '@/lib/activityDescription'
+import { formatBahiaCivilDate, formatIsoAsBahiaDateTimeInput } from '@/lib/campaignTime'
+import { slugify } from '@/lib/slug'
+import { CALENDAR_PHASE_ANCHORS } from '@/lib/visitPlannerAnchors'
 
 const GOOGLE_EVENT_ID_PREFIX = 'teqo'
 
@@ -106,22 +115,15 @@ export const buildGoogleCalendarDescription = (
   municipalityName?: string,
 ): string => buildActivityDescriptionParts(activity, municipalityName).join('\n')
 
-export const buildGoogleEventPayload = (
-  activity: Pick<
-    Activity,
-    'id' | 'title' | 'startAt' | 'endAt' | 'allDay' | 'locality' | 'tags' | 'deputyPresent'
-  >,
-  municipalityName?: string,
-): GoogleCalendarEventPayload => {
+const buildGoogleEventSchedule = (
+  activity: Pick<Activity, 'startAt' | 'endAt' | 'allDay'>,
+): { start: GoogleCalendarEventPayload['start']; end: GoogleCalendarEventPayload['end'] } => {
   // C14 guarantees startAt beyond draft; a null start has no Google shape —
   // fail loudly in the mapping (the engine never feeds one: the window query
   // only returns dated activities).
   if (!activity.startAt) {
     throw new Error('Atividade sem data de início não pode virar evento do Google.')
   }
-
-  const summary = municipalityName ? `[${municipalityName}] ${activity.title}` : activity.title
-  const description = buildGoogleCalendarDescription(activity, municipalityName)
 
   const allDay = Boolean(activity.allDay)
   const start = allDay
@@ -134,6 +136,20 @@ export const buildGoogleEventPayload = (
           activity.endAt ?? addMinutes(activity.startAt, DEFAULT_TIMED_EVENT_DURATION_MINUTES),
         ),
       }
+  return { start, end }
+}
+
+export const buildGoogleEventPayload = (
+  activity: Pick<
+    Activity,
+    'id' | 'title' | 'startAt' | 'endAt' | 'allDay' | 'locality' | 'tags' | 'deputyPresent'
+  >,
+  municipalityName?: string,
+): GoogleCalendarEventPayload => {
+  const summary = municipalityName ? `[${municipalityName}] ${activity.title}` : activity.title
+  const description = buildGoogleCalendarDescription(activity, municipalityName)
+
+  const { start, end } = buildGoogleEventSchedule(activity)
 
   const locality = activity.locality?.trim()
   const location = locality || municipalityName || undefined
@@ -198,3 +214,227 @@ export const googleEventContentEquals = (
   (remote.location ?? '') === (payload.location ?? '') &&
   startEndInstantEquals(remote.start, payload.start) &&
   startEndInstantEquals(remote.end, payload.end)
+
+/** Matches the `title` field cap in the Activity collection — the same bound the Teqo form enforces. */
+const ACTIVITY_TITLE_MAX_LENGTH = 160
+
+/**
+ * The summary carries a `[Município] ` prefix we wrote; the user edits what
+ * follows it. Only OUR OWN prefix is stripped (matched against the activity's
+ * municipality name); anything else is the user's title verbatim — and the
+ * forward direction re-prefixes it consistently. A summary that is ONLY the
+ * prefix is structural tampering → null → the Teqo re-asserts.
+ */
+export const googleTitleFromSummary = (
+  summary: string | undefined,
+  municipalityName?: string,
+): string | null => {
+  const raw = summary?.trim()
+  if (!raw) return null
+  const stripped =
+    municipalityName && raw.startsWith(`[${municipalityName}]`)
+      ? raw.slice(municipalityName.length + 2).trim()
+      : raw
+  if (!stripped) return null
+  return stripped.length > ACTIVITY_TITLE_MAX_LENGTH
+    ? stripped.slice(0, ACTIVITY_TITLE_MAX_LENGTH)
+    : stripped
+}
+
+const parseInstant = (value: string | undefined): string | null => {
+  if (!value) return null
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString()
+}
+
+/**
+ * Event start/end → activity schedule. `date` (all-day) maps through the
+ * `activityAllDay` conventions; `dateTime` (timed) maps by absolute instant.
+ * Malformed values (missing end, exclusive end not after start, unparseable)
+ * → null: the Teqo keeps its state and the forward direction re-asserts
+ * (fail-safe — a bad Google value never corrupts the activity).
+ */
+export const googleScheduleToActivityFields = (
+  event: Pick<GoogleRemoteEvent, 'start' | 'end'>,
+): { startAt: string | null; endAt: string | null; allDay: boolean } | null => {
+  const start = event.start
+  if (!start) return null
+
+  if (start.date) {
+    if (!isCivilDate(start.date)) return null
+    const startAt = allDayStartInstant(start.date)
+    let endAt = startAt
+    if (event.end?.date) {
+      if (!isCivilDate(event.end.date) || event.end.date <= start.date) return null
+      endAt = allDayEndInstantFromExclusive(event.end.date)
+    }
+    return { startAt, endAt, allDay: true }
+  }
+
+  if (start.dateTime) {
+    const startAt = parseInstant(start.dateTime)
+    if (!startAt || !event.end?.dateTime) return null
+    const endAt = parseInstant(event.end.dateTime)
+    if (!endAt) return null
+    return { startAt, endAt, allDay: false }
+  }
+
+  return null
+}
+
+/**
+ * C165 — fire only for events the mirror does NOT own: the full deterministic
+ * id decode is null. A manual `teqo3`-looking id decodes (non-null) and stays
+ * in the mirror namespace — never imported.
+ */
+export const isForeignGoogleEvent = (event: GoogleRemoteEvent): boolean => {
+  const id = event.id
+  return typeof id === 'string' && id.length > 0 && decodeGoogleEventActivityId(id) === null
+}
+
+/** C165 — the import window mirrors the push window (90d/365d) with the cut as its floor. */
+export type GoogleEventImportWindow = { rangeStart: string; rangeEnd: string }
+
+/**
+ * C165 — the product cut: only events that START on/after the legal campaign
+ * start (`CALENDAR_PHASE_ANCHORS.consolidationStart`) are imported — no
+ * backfill, ever. The comparison is a Bahia civil date (the day turns at
+ * midnight in Bahia, not in UTC), the same rule the phase anchors use.
+ */
+export const isImportableGoogleEvent = (
+  event: GoogleRemoteEvent,
+  window: GoogleEventImportWindow,
+): boolean => {
+  if (!event.id || event.status === GOOGLE_EVENT_STATUS_CANCELLED) return false
+  if (!isForeignGoogleEvent(event)) return false
+  const schedule = googleScheduleToActivityFields(event)
+  if (!schedule?.startAt) return false
+
+  const startMs = Date.parse(schedule.startAt)
+  const rangeStartMs = Date.parse(window.rangeStart)
+  const rangeEndMs = Date.parse(window.rangeEnd)
+  if (Number.isNaN(startMs) || !(startMs >= rangeStartMs && startMs < rangeEndMs)) return false
+
+  return (
+    formatBahiaCivilDate(new Date(schedule.startAt)) >= CALENDAR_PHASE_ANCHORS.consolidationStart
+  )
+}
+
+/**
+ * Short deterministic digest of the Google event id (FNV-1a, base36). The
+ * slug suffix must be unique even for two distinct events with the same title
+ * and start (duplicated invites are real): the event id is the only unique
+ * input, and hashing keeps the slug reproducible across passes.
+ */
+const shortGoogleEventHash = (eventId: string): string => {
+  let hash = 2166136261
+  for (let index = 0; index < eventId.length; index += 1) {
+    hash ^= eventId.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return (hash >>> 0).toString(36)
+}
+
+/**
+ * C165 — deterministic slug for an imported event: title + occurrence (civil
+ * date/date-time in Bahia) + event digest. The occurrence suffix keeps two
+ * instances of a recurring series apart; the digest keeps equal title+start
+ * events apart.
+ */
+const importedActivitySlug = (
+  title: string,
+  schedule: { startAt: string | null; allDay: boolean },
+  eventId: string,
+): string => {
+  const occurrence = schedule.allDay
+    ? allDayCivilDateOf(schedule.startAt ?? '')
+    : formatIsoAsBahiaDateTimeInput(schedule.startAt ?? '')
+  const suffix = occurrence.replace(/[-:]/g, '')
+  const base = slugify(title) || 'evento'
+  return `${base}-${suffix}-${shortGoogleEventHash(eventId)}`
+}
+
+/**
+ * C165 — the activity an imported Google event is born as: `confirmado`,
+ * title verbatim (no `[Município] ` prefix — that prefix belongs to mirrored
+ * events), `location → locality`, description deliberately ignored (the text
+ * lives in Google), and the system-write link that makes the import
+ * idempotent. Null when the event has no usable title/schedule (skip — never
+ * invent a title in an immutable field, never pause the pass).
+ */
+export const buildImportedGoogleEventActivity = (
+  event: GoogleRemoteEvent,
+  calendarId: string,
+): {
+  title: string
+  slug: string
+  status: 'confirmado'
+  startAt: string
+  endAt?: string
+  allDay: boolean
+  locality?: string
+  googleEventId: string
+  googleCalendarId: string
+  tags: string[]
+} | null => {
+  if (!event.id) return null
+  const title = googleTitleFromSummary(event.summary, undefined)
+  if (!title || title.length < 2 || slugify(title) === '') return null
+
+  const schedule = googleScheduleToActivityFields(event)
+  if (!schedule?.startAt) return null
+
+  const locality = event.location?.trim().slice(0, 160)
+
+  return {
+    title,
+    slug: importedActivitySlug(title, schedule, event.id),
+    status: 'confirmado',
+    startAt: schedule.startAt,
+    ...(schedule.endAt ? { endAt: schedule.endAt } : {}),
+    allDay: schedule.allDay,
+    ...(locality ? { locality } : {}),
+    googleEventId: event.id,
+    googleCalendarId: calendarId,
+    tags: [],
+  }
+}
+
+/**
+ * C165 — the partial event the engine PATCHes for an imported activity: only
+ * the fields the Teqo owns from then on (title, schedule, location). No
+ * `description` (the Google text is preserved by the partial PATCH), no
+ * `id` (the linked remote id is the target), no prefix on the summary.
+ */
+export type GoogleImportedEventPatch = {
+  summary: string
+  location: string
+  start: GoogleCalendarEventPayload['start']
+  end: GoogleCalendarEventPayload['end']
+}
+
+export const buildImportedGoogleEventPatch = (
+  activity: Pick<Activity, 'title' | 'startAt' | 'endAt' | 'allDay' | 'locality'>,
+): GoogleImportedEventPatch => {
+  const { start, end } = buildGoogleEventSchedule(activity)
+  return {
+    summary: activity.title,
+    location: activity.locality?.trim() ?? '',
+    start,
+    end,
+  }
+}
+
+/**
+ * C165 — content equality for imported activities: summary + schedule +
+ * location. Description is out by design (the Teqo never reads, stores or
+ * writes the Google description of an imported event).
+ */
+export const googleImportedEventContentEquals = (
+  remote: GoogleRemoteEvent,
+  patch: GoogleImportedEventPatch,
+): boolean =>
+  (remote.summary ?? '') === patch.summary &&
+  (remote.location ?? '') === patch.location &&
+  startEndInstantEquals(remote.start, patch.start) &&
+  startEndInstantEquals(remote.end, patch.end)

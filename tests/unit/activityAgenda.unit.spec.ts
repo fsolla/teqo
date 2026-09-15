@@ -167,6 +167,7 @@ describe('activity agenda event view model', () => {
       municipality: { id: 12, name: 'Ilhéus', slug: 'ilheus' },
       locality: 'Centro histórico',
       canReschedule: true,
+      importedFromGoogle: false,
     })
   })
 

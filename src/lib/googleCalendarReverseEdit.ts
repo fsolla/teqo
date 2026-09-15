@@ -7,14 +7,8 @@
  *
  * This module is pure and client-safe; only the engine touches the network.
  */
-import {
-  allDayEndInstantFromExclusive,
-  allDayStartInstant,
-  formatAllDayRangeLabel,
-  isCivilDate,
-} from '@/lib/activityAllDay'
+import { formatAllDayRangeLabel } from '@/lib/activityAllDay'
 import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
-import type { GoogleRemoteEvent } from '@/lib/googleCalendarEventMapping'
 
 /** Body prefix that marks an activity-update entry as written by the reverse direction. */
 export const GOOGLE_REVERSE_EDIT_BODY_PREFIX = 'Google Calendar:'
@@ -26,9 +20,6 @@ export type GoogleReverseActivityEdit = {
   endAt?: string | null
   allDay?: boolean | null
 }
-
-/** Matches the `title` field cap in the Activity collection — the same bound the Teqo form enforces. */
-const ACTIVITY_TITLE_MAX_LENGTH = 160
 
 /**
  * D3 — the conflict clock rule: the Google edit wins only when its `updated`
@@ -47,70 +38,6 @@ export const googleEditIsNewer = (
   const localMs = Date.parse(activityUpdatedAt)
   if (Number.isNaN(remoteMs) || Number.isNaN(localMs)) return false
   return remoteMs > localMs + toleranceMs
-}
-
-/**
- * The summary carries a `[Município] ` prefix we wrote; the user edits what
- * follows it. Only OUR OWN prefix is stripped (matched against the activity's
- * municipality name); anything else is the user's title verbatim — and the
- * forward direction re-prefixes it consistently. A summary that is ONLY the
- * prefix is structural tampering → null → the Teqo re-asserts.
- */
-export const googleTitleFromSummary = (
-  summary: string | undefined,
-  municipalityName?: string,
-): string | null => {
-  const raw = summary?.trim()
-  if (!raw) return null
-  const stripped =
-    municipalityName && raw.startsWith(`[${municipalityName}]`)
-      ? raw.slice(municipalityName.length + 2).trim()
-      : raw
-  if (!stripped) return null
-  return stripped.length > ACTIVITY_TITLE_MAX_LENGTH
-    ? stripped.slice(0, ACTIVITY_TITLE_MAX_LENGTH)
-    : stripped
-}
-
-const parseInstant = (value: string | undefined): string | null => {
-  if (!value) return null
-  const parsed = new Date(value)
-  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString()
-}
-
-/**
- * Event start/end → activity schedule. `date` (all-day) maps through the
- * `activityAllDay` conventions; `dateTime` (timed) maps by absolute instant.
- * Malformed values (missing end, exclusive end not after start, unparseable)
- * → null: the Teqo keeps its state and the forward direction re-asserts
- * (fail-safe — a bad Google value never corrupts the activity).
- */
-export const googleScheduleToActivityFields = (
-  event: Pick<GoogleRemoteEvent, 'start' | 'end'>,
-): Pick<GoogleReverseActivityEdit, 'startAt' | 'endAt' | 'allDay'> | null => {
-  const start = event.start
-  if (!start) return null
-
-  if (start.date) {
-    if (!isCivilDate(start.date)) return null
-    const startAt = allDayStartInstant(start.date)
-    let endAt = startAt
-    if (event.end?.date) {
-      if (!isCivilDate(event.end.date) || event.end.date <= start.date) return null
-      endAt = allDayEndInstantFromExclusive(event.end.date)
-    }
-    return { startAt, endAt, allDay: true }
-  }
-
-  if (start.dateTime) {
-    const startAt = parseInstant(start.dateTime)
-    if (!startAt || !event.end?.dateTime) return null
-    const endAt = parseInstant(event.end.dateTime)
-    if (!endAt) return null
-    return { startAt, endAt, allDay: false }
-  }
-
-  return null
 }
 
 const scheduleLabelOf = (

@@ -318,3 +318,37 @@ describe('activity slot prefill (C91)', () => {
     })
   })
 })
+
+describe('activity triage filter — Sem município (C165)', () => {
+  it('parses and serializes `unscoped` exclusively with `municipality`', () => {
+    expect(parseActivityListParams({ unscoped: '1' })).toMatchObject({ unscoped: true })
+    // A hand-crafted URL with both: the triage filter wins and the município
+    // drops (the canonical form keeps only one).
+    const both = parseActivityListParams({ unscoped: '1', municipality: '12' })
+    expect(both.unscoped).toBe(true)
+    expect(both.municipality).toBeUndefined()
+
+    const params = buildActivityListSearchParams(both)
+    expect(params.get('unscoped')).toBe('1')
+    expect(params.get('municipality')).toBeNull()
+
+    // O caminho inverso: município presente nunca serializa `unscoped`.
+    const scoped = buildActivityListSearchParams(parseActivityListParams({ municipality: '12' }))
+    expect(scoped.get('municipality')).toBe('12')
+    expect(scoped.get('unscoped')).toBeNull()
+  })
+
+  it('builds `municipality exists: false` on any tab', () => {
+    const where = buildActivityListWhere(
+      parseActivityListParams({ tab: 'todos', unscoped: '1' }),
+      NOW,
+    )
+    expect(where).toEqual({ and: [{ municipality: { exists: false } }] })
+
+    const scoped = buildActivityListWhere(
+      parseActivityListParams({ tab: 'todos', municipality: '12' }),
+      NOW,
+    )
+    expect(scoped).toEqual({ and: [{ municipality: { equals: 12 } }] })
+  })
+})

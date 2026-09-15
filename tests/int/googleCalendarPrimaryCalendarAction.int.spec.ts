@@ -97,6 +97,7 @@ const createStubClient = (): StubClient => {
     listEvents,
     insertEvent: vi.fn(async () => {}),
     updateEvent: vi.fn(async () => {}),
+    patchEvent: vi.fn(async () => {}),
     deleteEvent: vi.fn(async () => {}),
     watchEvents: vi.fn(async () => ({
       id: 'watch-1',

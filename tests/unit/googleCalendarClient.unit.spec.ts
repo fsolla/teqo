@@ -153,6 +153,16 @@ describe('createGoogleCalendarClient', () => {
           headers: { 'Content-Type': 'application/json' },
         })
       }
+      if (url.includes('/events') && method === 'PATCH') {
+        const patch = JSON.parse(body ?? '{}') as Record<string, unknown>
+        const eventId = new URL(url).pathname.split('/').pop()
+        const index = events.findIndex((e) => e.id === eventId)
+        if (index >= 0) events[index] = { ...events[index], ...patch }
+        return new Response(JSON.stringify(events[index] ?? patch), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
       if (url.includes('/events') && method === 'DELETE') {
         const eventId = url.split('/').pop()
         const index = events.findIndex((e) => e.id === eventId)
@@ -375,6 +385,24 @@ describe('createGoogleCalendarClient', () => {
     expect(events).toEqual([])
     expect(calendarCalls).toBe(2)
     expect(tokenRequests).toBe(2)
+  })
+
+  it('patches partial fields with sendUpdates=none, preserving what was not sent (C165)', async () => {
+    const { fetchImpl, calls, events } = stubTransport([
+      { id: 'foreign-1', summary: 'Antigo', description: 'descrição do usuário' },
+    ])
+    const client = createGoogleCalendarClient(serviceAccountAuth, fetchImpl)
+
+    await client.patchEvent(calendarId, 'foreign-1', { summary: 'Novo', location: '' })
+
+    const patchCall = calls.find((call) => call.method === 'PATCH')
+    expect(patchCall?.url).toContain(
+      `/calendars/${encodeURIComponent(calendarId)}/events/foreign-1`,
+    )
+    expect(patchCall?.url).toContain('sendUpdates=none')
+    expect(JSON.parse(patchCall?.body ?? '{}')).toEqual({ summary: 'Novo', location: '' })
+    // O PATCH preserva o que não foi enviado — a descrição do usuário fica.
+    expect(events[0]).toMatchObject({ summary: 'Novo', description: 'descrição do usuário' })
   })
 
   it('normalizes the watch expiration string into millis (C164)', async () => {

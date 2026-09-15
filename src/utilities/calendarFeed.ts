@@ -158,8 +158,15 @@ export const buildActivityWindowRange = (): { rangeStart: string; rangeEnd: stri
  * clauses — shared by the iCal feed and the C114 Google mirror so both
  * surfaces keep the SAME horizon by definition. The feed adds its per-feed
  * filters (municipality/deputy/tag + advisor scope) on top.
+ * C165 — `includeCancelled` drops only the `status != cancelado` clause: the
+ * imported-events pass needs the cancelled activities to re-assert their
+ * cancellation on the same remote event.
  */
-export const buildActivityWindowWhereClauses = (rangeStart: string, rangeEnd: string): Where[] => [
+export const buildActivityWindowWhereClauses = (
+  rangeStart: string,
+  rangeEnd: string,
+  options: { includeCancelled?: boolean } = {},
+): Where[] => [
   { startAt: { less_than: rangeEnd } },
   {
     or: [
@@ -169,7 +176,7 @@ export const buildActivityWindowWhereClauses = (rangeStart: string, rangeEnd: st
       },
     ],
   },
-  { status: { not_equals: 'cancelado' } },
+  ...(options.includeCancelled ? [] : [{ status: { not_equals: 'cancelado' as const } }]),
 ]
 
 const buildFeedWhere = (

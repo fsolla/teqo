@@ -9,7 +9,7 @@ import {
   type CampaignListOmniboxSuggestion,
 } from '@/lib/campaignListOmnibox'
 import { isContactSearchQueryReady, normalizeContactSearchQuery } from '@/lib/contactSearchQuery'
-import { activityStatusLabels } from '@/lib/schemas/activity'
+import { ACTIVITY_UNSCOPED_LABEL, activityStatusLabels } from '@/lib/schemas/activity'
 import {
   activityTabLabels,
   activityTabs,
@@ -38,7 +38,7 @@ const parseStateFromParams = (
 
 const setExclusiveField = (
   state: ActivityListState,
-  field: 'tag' | 'status' | 'municipality',
+  field: 'tag' | 'status' | 'municipality' | 'unscoped',
   value: string | undefined,
 ): ActivityListState => {
   const params = buildActivityListSearchParams(withPageReset(state))
@@ -48,10 +48,14 @@ const setExclusiveField = (
     raw.tag = value
   } else if (field === 'status') {
     raw.status = value
-  } else {
+  } else if (field === 'municipality') {
+    // C165 — picking a município leaves the "Sem município" triage filter.
     raw.municipality = value
+    delete raw.unscoped
+  } else if (field === 'unscoped') {
+    raw.unscoped = value
+    delete raw.municipality
   }
-
   return parseStateFromParams(raw)
 }
 
@@ -102,6 +106,11 @@ export const buildActivityOmniboxChips = ({
       id: `status:${state.status}`,
       label: chipLabel('Status', activityStatusLabels[state.status]),
     })
+  }
+
+  if (state.unscoped) {
+    // C165 — the triage filter: activities without a município.
+    chips.push({ id: 'unscoped', label: ACTIVITY_UNSCOPED_LABEL })
   }
 
   if (state.municipality) {
@@ -183,6 +192,16 @@ export const buildActivityOmniboxSuggestionSeeds = ({
     )
   }
 
+  // C165 — the triage entry: imported Google activities awaiting a município.
+  seeds.push(
+    createOmniboxSuggestionSeed({
+      id: 'unscoped',
+      group: 'Município',
+      label: ACTIVITY_UNSCOPED_LABEL,
+      keywords: ['municipio', 'sem', 'importado', 'google'],
+    }),
+  )
+
   return seeds
 }
 
@@ -229,6 +248,13 @@ export const applyActivityOmniboxSuggestion = ({
     return { kind: 'url', state: next }
   }
 
+  if (suggestionId === 'unscoped') {
+    const next = state.unscoped
+      ? setExclusiveField(state, 'unscoped', undefined)
+      : setExclusiveField(state, 'unscoped', '1')
+    return { kind: 'url', state: next }
+  }
+
   if (suggestionId.startsWith('municipality:')) {
     const value = suggestionId.slice(13)
     const next =
@@ -260,6 +286,10 @@ export const removeActivityOmniboxChip = ({
 
   if (chipId.startsWith('status:')) {
     return { kind: 'url', state: setExclusiveField(state, 'status', undefined) }
+  }
+
+  if (chipId === 'unscoped') {
+    return { kind: 'url', state: setExclusiveField(state, 'unscoped', undefined) }
   }
 
   if (chipId.startsWith('municipality:')) {

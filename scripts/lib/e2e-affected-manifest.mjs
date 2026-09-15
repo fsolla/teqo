@@ -109,6 +109,13 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/utilities/activity',
       'src/utilities/activityOmnibox',
       'src/lib/activityQuickActions',
+      // C165 — the activity schema/access/collection moved the município to
+      // optional and added the Google link; those diffs must wake the
+      // activity e2e family (the generic `src/lib/schemas` entry alone only
+      // wakes the public-site/newsletter specs).
+      'src/collections/Activity.ts',
+      'src/lib/schemas/activity',
+      'src/utilities/access/activities.ts',
     ],
     // C148 — the activity components host the agenda's three modals: the
     // create/edit overlay (campaignActivity), the Google sync dialog and the
@@ -122,6 +129,7 @@ export const E2E_AFFECTED_MANIFEST = [
     // would only wake the home smoke, leaving the mirror spec unrun.
     // C150 — the one-click link builder and the campaign actions (picker +
     // choose) join the same domain entry.
+    // C165 — the pure mapping/reverse-edit modules joined the engine surface.
     prefixes: [
       'src/utilities/googleCalendarSync.ts',
       'src/utilities/googleCalendarSyncHooks.ts',
@@ -129,6 +137,8 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/utilities/googleCalendarOAuth.ts',
       'src/lib/googleCalendarOAuth.ts',
       'src/lib/googleCalendarLink.ts',
+      'src/lib/googleCalendarEventMapping.ts',
+      'src/lib/googleCalendarReverseEdit.ts',
       'src/components/campaign/activity/AgendaGoogleSyncChrome',
       'src/components/campaign/activity/GoogleCalendarSyncDialog',
       'src/components/campaign/activity/GoogleCalendarPickerDialog',

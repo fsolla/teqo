@@ -71,6 +71,10 @@ const createStubClient = (store: GoogleRemoteEvent[] = []): GoogleCalendarClient
     const index = store.findIndex((entry) => entry.id === eventId)
     if (index >= 0) store[index] = event
   },
+  patchEvent: async (_calendarId, eventId, patch) => {
+    const index = store.findIndex((entry) => entry.id === eventId)
+    if (index >= 0) store[index] = { ...store[index], ...patch }
+  },
   deleteEvent: async (_calendarId, eventId) => {
     const index = store.findIndex((entry) => entry.id === eventId)
     if (index >= 0) store.splice(index, 1)
@@ -176,6 +180,21 @@ describe('campaign Google calendar sync engine (C114)', () => {
         activityWhere: { id: { in: [...ownedActivityIds] } },
       }),
     )
+
+  /** UTC ISO → the `-03:00` dateTime shape the Calendar API echoes. */
+  const formatBahiaDateTime = (iso: string): string =>
+    `${new Date(new Date(iso).getTime() - 3 * 3_600_000).toISOString().slice(0, 19)}-03:00`
+
+  /** Replaces one event's fields in the stub store (throws when absent). */
+  const replaceEvent = (
+    store: GoogleRemoteEvent[],
+    eventId: string,
+    patch: Partial<GoogleRemoteEvent>,
+  ) => {
+    const index = store.findIndex((entry) => entry.id === eventId)
+    if (index < 0) throw new Error(`Evento ${eventId} não está no stub store.`)
+    store[index] = { ...store[index], ...patch }
+  }
 
   it('creates the full mirror on the first pass (timed + all-day, municipality summary)', async () => {
     const municipality = await campaignFixtures().getMunicipality()
@@ -477,19 +496,6 @@ describe('campaign Google calendar sync engine (C114)', () => {
   })
 
   describe('bidirectional reconciliation (C115)', () => {
-    /** UTC ISO → the `-03:00` dateTime shape the Calendar API echoes. */
-    const formatBahiaDateTime = (iso: string): string =>
-      `${new Date(new Date(iso).getTime() - 3 * 3_600_000).toISOString().slice(0, 19)}-03:00`
-
-    const replaceEvent = (
-      store: GoogleRemoteEvent[],
-      eventId: string,
-      patch: Partial<GoogleRemoteEvent>,
-    ) => {
-      const index = store.findIndex((entry) => entry.id === eventId)
-      store[index] = { ...store[index], ...patch }
-    }
-
     const reloadActivity = async (id: number) =>
       payload.findByID({
         collection: 'activity',
@@ -984,6 +990,390 @@ describe('campaign Google calendar sync engine (C114)', () => {
       outcome = await runSync(client)
       expect(outcome.created).toBe(1)
       expect((await reloadActivity(activity.id)).status).toBe('confirmado')
+    })
+  })
+
+  describe('imported Google events (C165)', () => {
+    /** A foreign event inside the window and after the legal-start cut. */
+    const foreignEvent = (
+      overrides: Partial<GoogleRemoteEvent> & { id: string },
+    ): GoogleRemoteEvent => {
+      const start = new Date(Date.now() + 2 * 86_400_000)
+      return {
+        summary: `C165 ${crypto.randomUUID().slice(0, 8)}`,
+        description: 'descrição que vive no Google',
+        location: 'Gabinete',
+        start: { dateTime: formatBahiaDateTime(start.toISOString()) },
+        end: {
+          dateTime: formatBahiaDateTime(new Date(start.getTime() + 3_600_000).toISOString()),
+        },
+        ...overrides,
+      }
+    }
+
+    /**
+     * The imported activity is born DURING the pass, so it enters the file's
+     * scope/cleanup only after this read — subsequent scoped passes then see
+     * it as a linked row.
+     */
+    const trackImported = async (eventId: string) => {
+      const found = await payload.find({
+        collection: 'activity',
+        where: { googleEventId: { equals: eventId } },
+        depth: 0,
+        limit: 1,
+        pagination: false,
+        overrideAccess: true,
+      })
+      const activity = found.docs[0]
+      if (activity) ownedActivityIds.add(activity.id)
+      return activity
+    }
+
+    it('imports an eligible foreign event once — confirmado, sem município, título verbatim', async () => {
+      await createConfig(calendarA)
+      const event = foreignEvent({ id: `foreign-${crypto.randomUUID()}` })
+      const store: GoogleRemoteEvent[] = [event]
+      const client = createStubClient(store)
+
+      const outcome = await runSync(client)
+      expect(outcome.status).toBe('synced')
+      expect(outcome.imported).toBe(1)
+      expect(outcome.created).toBe(0)
+
+      const activity = await trackImported(event.id!)
+      expect(activity).toBeTruthy()
+      expect(activity?.status).toBe('confirmado')
+      expect(activity?.title).toBe(event.summary)
+      expect(activity?.municipality).toBeNull()
+      expect(activity?.locality).toBe('Gabinete')
+      expect(activity?.googleCalendarId).toBe(calendarA)
+      // Description deliberately ignored: the text lives in Google.
+      expect(activity?.description ?? null).toBeNull()
+      // The mirror never materializes an imported activity as a `teqo…` event.
+      expect(store.filter((entry) => entry.id?.startsWith('teqo'))).toHaveLength(0)
+
+      // Idempotent: a second pass converges and never re-imports.
+      const again = await runSync(client)
+      expect(again).toMatchObject({ imported: 0, created: 0, updated: 0, reverseEdits: 0 })
+      expect(store).toHaveLength(1)
+    })
+
+    it('leaves pre-cut events out — no backfill — and imports the cut day', async () => {
+      await createConfig(calendarA)
+      const beforeCut = foreignEvent({
+        id: `foreign-${crypto.randomUUID()}`,
+        // 2026-08-15 22:00 in Bahia — the civil date before the legal start.
+        start: { dateTime: '2026-08-15T22:00:00-03:00' },
+        end: { dateTime: '2026-08-15T23:00:00-03:00' },
+      })
+      const onCut = foreignEvent({
+        id: `foreign-${crypto.randomUUID()}`,
+        start: { dateTime: '2026-08-16T09:00:00-03:00' },
+        end: { dateTime: '2026-08-16T10:00:00-03:00' },
+      })
+      const store: GoogleRemoteEvent[] = [beforeCut, onCut]
+
+      const outcome = await runSync(createStubClient(store))
+      expect(outcome.imported).toBe(1)
+      expect(await trackImported(beforeCut.id!)).toBeUndefined()
+      expect(await trackImported(onCut.id!)).toBeTruthy()
+      // The pre-cut event stays untouched in Google.
+      expect(store).toHaveLength(2)
+    })
+
+    it('skips events without a usable title without pausing the pass', async () => {
+      await createConfig(calendarA)
+      const emptyTitle = foreignEvent({ id: `foreign-${crypto.randomUUID()}`, summary: '' })
+      const oneChar = foreignEvent({ id: `foreign-${crypto.randomUUID()}`, summary: 'A' })
+      const valid = foreignEvent({ id: `foreign-${crypto.randomUUID()}` })
+      const store: GoogleRemoteEvent[] = [emptyTitle, oneChar, valid]
+
+      const outcome = await runSync(createStubClient(store))
+      expect(outcome.status).toBe('synced')
+      expect(outcome.imported).toBe(1)
+      expect(await trackImported(valid.id!)).toBeTruthy()
+      expect(store).toHaveLength(3)
+    })
+
+    it('applies a newer Google edit back with an audit record, then converges', async () => {
+      await createConfig(calendarA)
+      const event = foreignEvent({ id: `foreign-${crypto.randomUUID()}` })
+      const store: GoogleRemoteEvent[] = [event]
+      const client = createStubClient(store)
+      await runSync(client)
+      const activity = await trackImported(event.id!)
+      expect(activity).toBeTruthy()
+
+      const renamed = `C165 ${crypto.randomUUID().slice(0, 8)} (renomeada no Google)`
+      // Whole seconds: the Calendar API echoes second precision, and the
+      // helper below formats the same way.
+      const newStart = new Date(Math.floor((Date.now() + 3 * 86_400_000) / 1000) * 1000)
+      replaceEvent(store, event.id!, {
+        summary: renamed,
+        start: { dateTime: formatBahiaDateTime(newStart.toISOString()) },
+        end: {
+          dateTime: formatBahiaDateTime(new Date(newStart.getTime() + 3_600_000).toISOString()),
+        },
+        updated: new Date(Date.now() + 60_000).toISOString(),
+      })
+
+      const outcome = await runSync(client)
+      expect(outcome.reverseEdits).toBe(1)
+      expect(outcome.updated).toBe(0)
+
+      const reloaded = await payload.findByID({
+        collection: 'activity',
+        id: activity!.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+      expect(reloaded.title).toBe(renamed)
+      expect(reloaded.slug).toBe(activity!.slug)
+      expect(new Date(reloaded.startAt!).getTime()).toBe(newStart.getTime())
+      expect((reloaded.updates ?? []).at(-1)?.body).toContain('Google Calendar:')
+
+      const again = await runSync(client)
+      expect(again).toMatchObject({ imported: 0, updated: 0, reverseEdits: 0 })
+      expect(store).toHaveLength(1)
+    })
+
+    it('edits the Teqo into the SAME remote event — never a second `teqo…`, description preserved', async () => {
+      await createConfig(calendarA)
+      const event = foreignEvent({ id: `foreign-${crypto.randomUUID()}` })
+      const store: GoogleRemoteEvent[] = [event]
+      const client = createStubClient(store)
+      await runSync(client)
+      const activity = await trackImported(event.id!)
+      expect(activity).toBeTruthy()
+
+      await payload.update({
+        collection: 'activity',
+        id: activity!.id,
+        data: { locality: 'Centro (atualizado no Teqo)' },
+        depth: 0,
+        overrideAccess: true,
+      })
+
+      const outcome = await runSync(client)
+      expect(outcome.updated).toBe(1)
+      expect(outcome.imported).toBe(0)
+      expect(store).toHaveLength(1)
+      expect(store[0].id).toBe(event.id)
+      expect(store[0].location).toBe('Centro (atualizado no Teqo)')
+      // The partial PATCH never touches the user's description.
+      expect(store[0].description).toBe('descrição que vive no Google')
+      expect(store.filter((entry) => entry.id?.startsWith('teqo'))).toHaveLength(0)
+    })
+
+    it('assigning a município keeps the verbatim title (no `[Município] ` prefix)', async () => {
+      await createConfig(calendarA)
+      const event = foreignEvent({ id: `foreign-${crypto.randomUUID()}` })
+      const store: GoogleRemoteEvent[] = [event]
+      const client = createStubClient(store)
+      await runSync(client)
+      const activity = await trackImported(event.id!)
+      const municipality = await campaignFixtures().getMunicipality()
+
+      await payload.update({
+        collection: 'activity',
+        id: activity!.id,
+        data: { municipality: municipality.id },
+        depth: 0,
+        overrideAccess: true,
+      })
+
+      const outcome = await runSync(client)
+      expect(outcome.updated).toBe(0)
+      expect(store[0].summary).toBe(event.summary)
+      expect(store[0].summary).not.toContain('[')
+    })
+
+    it('cancelling in the Teqo trashes the SAME remote event — never deletes it', async () => {
+      await createConfig(calendarA)
+      const event = foreignEvent({ id: `foreign-${crypto.randomUUID()}` })
+      const store: GoogleRemoteEvent[] = [event]
+      const client = createStubClient(store)
+      await runSync(client)
+      const activity = await trackImported(event.id!)
+
+      await payload.update({
+        collection: 'activity',
+        id: activity!.id,
+        data: { status: 'cancelado' },
+        depth: 0,
+        overrideAccess: true,
+      })
+
+      const outcome = await runSync(client)
+      expect(outcome.deleted).toBe(1)
+      expect(store).toHaveLength(1)
+      expect(store[0].status).toBe('cancelled')
+
+      // Converged: no repeated patch on the next pass.
+      const again = await runSync(client)
+      expect(again).toMatchObject({ imported: 0, updated: 0, deleted: 0, reverseEdits: 0 })
+    })
+
+    it('a newer Google cancellation cancels the activity; a staff reopen re-asserts the event', async () => {
+      await createConfig(calendarA)
+      const event = foreignEvent({ id: `foreign-${crypto.randomUUID()}` })
+      const store: GoogleRemoteEvent[] = [event]
+      const client = createStubClient(store)
+      await runSync(client)
+      const activity = await trackImported(event.id!)
+
+      replaceEvent(store, event.id!, {
+        status: 'cancelled',
+        // +5s: newer than the import stamp (the cancel wins), yet older than
+        // the reopen's stamp after the 3.5s sleep below (the reopen wins).
+        updated: new Date(Date.now() + 5_000).toISOString(),
+      })
+      let outcome = await runSync(client)
+      expect(outcome.reverseEdits).toBe(1)
+      let reloaded = await payload.findByID({
+        collection: 'activity',
+        id: activity!.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+      expect(reloaded.status).toBe('cancelado')
+      expect((reloaded.updates ?? []).at(-1)?.body).toContain('Google Calendar: cancelada')
+
+      // Staff reopens after the cancel: the clock rule says Teqo wins — the
+      // SAME event is patched back to confirmed (never deleted/recreated).
+      await new Promise((resolve) => setTimeout(resolve, 3_500))
+      await payload.update({
+        collection: 'activity',
+        id: activity!.id,
+        data: { status: 'confirmado' },
+        depth: 0,
+        overrideAccess: true,
+      })
+      outcome = await runSync(client)
+      expect(outcome.updated).toBe(1)
+      expect(outcome.reverseEdits).toBe(0)
+      expect(store).toHaveLength(1)
+      expect(store[0].status).toBe('confirmed')
+      reloaded = await payload.findByID({
+        collection: 'activity',
+        id: activity!.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+      expect(reloaded.status).toBe('confirmado')
+    })
+
+    it('a permanently removed remote event cancels the linked activity (snapshot rule)', async () => {
+      await createConfig(calendarA)
+      const event = foreignEvent({ id: `foreign-${crypto.randomUUID()}` })
+      const store: GoogleRemoteEvent[] = [event]
+      const client = createStubClient(store)
+      await runSync(client)
+      const activity = await trackImported(event.id!)
+
+      store.splice(0, 1)
+
+      const outcome = await runSync(client)
+      expect(outcome.reverseEdits).toBe(1)
+      const reloaded = await payload.findByID({
+        collection: 'activity',
+        id: activity!.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+      expect(reloaded.status).toBe('cancelado')
+    })
+
+    it('a hard-deleted imported activity leaves its foreign event alone — never resurrected', async () => {
+      await createConfig(calendarA)
+      const event = foreignEvent({ id: `foreign-${crypto.randomUUID()}` })
+      const store: GoogleRemoteEvent[] = [event]
+      const client = createStubClient(store)
+      await runSync(client)
+      const activity = await trackImported(event.id!)
+      expect(activity).toBeTruthy()
+
+      await payload.delete({ collection: 'activity', id: activity!.id, overrideAccess: true })
+      ownedActivityIds.delete(activity!.id)
+
+      const outcome = await runSync(client)
+      expect(outcome.imported).toBe(0)
+      expect(store).toHaveLength(1)
+      expect(await trackImported(event.id!)).toBeUndefined()
+
+      // The snapshot kept the dismissed id: the FIRST pass after the delete
+      // must not have dropped it, or this second pass would re-import.
+      const again = await runSync(client)
+      expect(again.imported).toBe(0)
+      expect(await trackImported(event.id!)).toBeUndefined()
+    })
+
+    it('a municipality-less native activity whose mirrored event vanished is cancelled (seen-and-gone)', async () => {
+      const municipality = await campaignFixtures().getMunicipality()
+      const activity = await createActivity({ municipality: municipality.id })
+      await createConfig(calendarA)
+      const store: GoogleRemoteEvent[] = []
+      const client = createStubClient(store)
+      await runSync(client)
+      expect(store).toHaveLength(1)
+
+      // Triage clears the município; the user then permanently removes the
+      // event in Google. The seen-and-gone rule must still cancel it (the C165
+      // mirror guard only skips the CREATE of municipality-less activities).
+      await payload.update({
+        collection: 'activity',
+        id: activity.id,
+        data: { municipality: null },
+        depth: 0,
+        overrideAccess: true,
+      })
+      store.splice(0, 1)
+
+      const outcome = await runSync(client)
+      expect(outcome.reverseEdits).toBe(1)
+      const reloaded = await payload.findByID({
+        collection: 'activity',
+        id: activity.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+      expect(reloaded.status).toBe('cancelado')
+    })
+
+    it('never touches a different foreign event and never imports a mirrored `teqo…` event', async () => {
+      const activity = await createActivity()
+      await createConfig(calendarA)
+      const untouched: GoogleRemoteEvent = { id: 'foreign-sem-data', summary: 'Sem data' }
+      const store: GoogleRemoteEvent[] = [untouched]
+      const client = createStubClient(store)
+      await runSync(client)
+      expect(store).toHaveLength(2)
+
+      // A manual `teqo…`-looking event is NOT a mirror id and is out of the
+      // import criteria: it is never imported (the mirror's stray-event
+      // cleanup owns the native namespace, not the import pass).
+      const manual: GoogleRemoteEvent = {
+        id: 'teqo999',
+        summary: 'Evento manual com cara de espelho',
+        start: { dateTime: '2026-09-20T09:00:00-03:00' },
+        end: { dateTime: '2026-09-20T10:00:00-03:00' },
+      }
+      store.push(manual)
+
+      const outcome = await runSync(client)
+      expect(outcome.imported).toBe(0)
+      expect(store.find((entry) => entry.id === 'foreign-sem-data')).toBe(untouched)
+      const importedManual = await payload.find({
+        collection: 'activity',
+        where: { googleEventId: { equals: 'teqo999' } },
+        depth: 0,
+        limit: 1,
+        pagination: false,
+        overrideAccess: true,
+      })
+      expect(importedManual.docs).toHaveLength(0)
+      expect(store.find((entry) => entry.id === googleEventIdForActivity(activity.id))).toBeTruthy()
     })
   })
 })

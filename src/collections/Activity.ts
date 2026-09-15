@@ -93,7 +93,16 @@ const setCanonicalActivitySlug: CollectionBeforeValidateHook = ({
     throw new APIError('O título da atividade não pode ser alterado após a criação.', 409)
   }
   data.title = title
-  data.slug = operation === 'create' ? slug : originalDoc?.slug
+  if (operation === 'create') {
+    // C165 — an imported Google event carries its own deterministic slug
+    // (title + occurrence suffix) so two occurrences of a recurring event
+    // never collide on the unique index. Sanitize and preserve it; fall back
+    // to the title's own slug when absent.
+    const providedSlug = isGoogleCalendarWrite ? slugify(String(data.slug ?? '')) : ''
+    data.slug = providedSlug || slug
+  } else {
+    data.slug = originalDoc?.slug
+  }
   return data
 }
 
@@ -556,7 +565,10 @@ export const Activity: CollectionConfig = {
       type: 'relationship',
       relationTo: 'municipality',
       label: 'Município',
-      required: true,
+      // C165 — optional: imported Google events are born without a município
+      // and the coordination triages later. Without one, only the
+      // coordination/candidate see the activity (see access/activities).
+      required: false,
       index: true,
     },
     {
@@ -760,6 +772,37 @@ export const Activity: CollectionConfig = {
       name: 'lastMirroredChangeAt',
       type: 'date',
       label: 'Última mudança espelhada',
+      admin: {
+        readOnly: true,
+      },
+      access: {
+        create: canSetActivitySystemField,
+        update: canSetActivitySystemField,
+      },
+    },
+    {
+      // C165 — link to the FOREIGN Google event this activity was imported
+      // from. Its presence is what makes an activity "imported": the mirror
+      // writes `teqo…` events and never fills this field. `unique` is the
+      // idempotency lock (Postgres allows many NULLs); the calendar id pins
+      // WHICH calendar, so a calendar switch never patches the wrong event.
+      name: 'googleEventId',
+      type: 'text',
+      label: 'Evento do Google',
+      unique: true,
+      index: true,
+      admin: {
+        readOnly: true,
+      },
+      access: {
+        create: canSetActivitySystemField,
+        update: canSetActivitySystemField,
+      },
+    },
+    {
+      name: 'googleCalendarId',
+      type: 'text',
+      label: 'Calendário do Google',
       admin: {
         readOnly: true,
       },

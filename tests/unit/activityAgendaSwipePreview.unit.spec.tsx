@@ -21,6 +21,7 @@ const event = (overrides: Partial<ActivityAgendaEvent> = {}): ActivityAgendaEven
   municipality: null,
   locality: null,
   canReschedule: true,
+  importedFromGoogle: false,
   ...overrides,
 })
 

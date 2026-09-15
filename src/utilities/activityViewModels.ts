@@ -126,6 +126,8 @@ export const activityAgendaSelect = {
   endAt: true,
   municipality: true,
   locality: true,
+  // C165 — the link is what makes an activity "Do Google".
+  googleEventId: true,
 } as const
 
 export const activityListSelect = {
@@ -148,6 +150,8 @@ export type ActivityAgendaEvent = {
   municipality: ActivityMunicipalitySummary | null
   locality: string | null
   canReschedule: boolean
+  /** C165 — imported from the Google Calendar (link present). */
+  importedFromGoogle: boolean
 }
 
 export const toActivityAgendaEvent = (
@@ -172,6 +176,7 @@ export const toActivityAgendaEvent = (
     municipality: activityMunicipalitySummary(activity.municipality),
     locality: activity.locality ?? null,
     canReschedule: canCampaignUserRescheduleActivity(user, deputyPresent),
+    importedFromGoogle: Boolean(activity.googleEventId),
   }
 }
 
@@ -190,6 +195,8 @@ export type ActivityListViewModel = {
   locationLabel: string
   responsibles: ActivityResponsibleDisplay[]
   taskProgress: { done: number; total: number }
+  /** C165 — imported from the Google Calendar (link present). */
+  importedFromGoogle: boolean
 }
 
 const relationshipName = (
@@ -217,6 +224,7 @@ export const toActivityListViewModel = (activity: Activity): ActivityListViewMod
       done: activity.taskDoneCount ?? 0,
       total: activity.taskTotal ?? 0,
     },
+    importedFromGoogle: Boolean(activity.googleEventId),
   }
 }
 
