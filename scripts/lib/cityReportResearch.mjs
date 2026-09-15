@@ -259,6 +259,7 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
     leaders.push({
       name,
       role,
+      party: isNonEmptyString(entry.party) ? entry.party.trim() : null,
       period: isNonEmptyString(entry.period) ? entry.period.trim() : null,
       note: isNonEmptyString(entry.note) ? entry.note.trim() : null,
       sourceUrl,

@@ -528,12 +528,14 @@ const buildNetworkSection = ({ snapshot, research }) => {
       columns: [
         { key: 'name', label: 'Nome' },
         { key: 'role', label: 'Papel' },
+        { key: 'party', label: 'Partido' },
         { key: 'period', label: 'Período' },
         { key: 'source', label: 'Fonte' },
       ],
       rows: cityLeaders.map((leader) => ({
         name: leader.name,
         role: leader.role,
+        party: leader.party ?? '—',
         period: leader.period ?? '—',
         source: formatDateBr(leader.sourceDate),
       })),
