@@ -445,7 +445,7 @@ describe('buildCityReport', () => {
     expect(falas.columns!.find((column) => column.key === 'mention')!.width).toBe(27)
     expect(rows[0].description).toBe('Resumo da fala')
     expect(rows[0].mention).toContain('cita Feira de Santana')
-    expect(rows[0].video).toBe('https://youtube.test/video?t=625s')
+    expect(rows[0].video).toBe('https://youtube.test/video?t=608s')
     expect(rows[0].transcript).toBe('https://camara.test/discurso')
     expect(rows[1].description).toBe('Saúde indígena na Bahia')
     expect(rows[1].mention).toContain('nome não localizado nos trechos')
