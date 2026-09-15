@@ -189,6 +189,7 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/lib/campaignQuickAction',
       'src/lib/campaignReferenceQuickActions',
       'src/lib/campaignPaths.ts',
+      'src/lib/campaignPageChrome.ts',
     ],
     specs: ['campaign-pwa', 'campaignWizardChrome', 'campaignBottomNav', 'campaignMunicipalities'],
   },
@@ -250,8 +251,9 @@ export const E2E_AFFECTED_MANIFEST = [
   {
     // Zod input schemas surface in the browser through form flows; the
     // public-site and newsletter specs exercise those flows end to end. C167
-    // adds the cut schemas, whose HTTP contract is the cut spec.
-    prefixes: ['src/lib/schemas'],
+    // adds the cut schemas, whose HTTP contract is the cut spec; C168's library
+    // mutations live in the same `speech` actions file.
+    prefixes: ['src/lib/schemas', 'src/app/(campaign)/campanha/actions/speech.ts'],
     specs: ['frontend', 'campaignNewsletter', 'campaignSpeechCut'],
   },
   {
@@ -303,8 +305,13 @@ export const E2E_AFFECTED_MANIFEST = [
   {
     // C167 — the unlisted public page of a cut: 200 with the stored file and
     // 404 for unpublished/unknown ids are the HTTP contract this spec owns.
-    // The root share kit is rendered by both the cut card and that page.
-    prefixes: ['src/app/(frontend)/corte', 'src/components/SpeechCutShareActions.tsx'],
+    // The root share kit is rendered by both the cut card and that page; C168
+    // extracted its copy button, which those same surfaces render.
+    prefixes: [
+      'src/app/(frontend)/corte',
+      'src/components/SpeechCutShareActions.tsx',
+      'src/components/CopyLinkButton.tsx',
+    ],
     specs: ['campaignSpeechCut'],
   },
   {
