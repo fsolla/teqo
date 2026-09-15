@@ -84,6 +84,61 @@ describe('normalizeResearchInput', () => {
     expect(research.gaps.filter((gap) => gap.reason === 'Não pesquisado.')).toHaveLength(0)
   })
 
+  it('keeps item extra sources with URL + date and drops ones without', () => {
+    const research = normalizeResearchInput(
+      baseResearch({
+        items: [
+          validItem('emendas_web', {
+            extraSources: [
+              { label: 'Polo regional', url: 'https://exemplo.test/polo', date: '2026-09-01' },
+              { label: 'Sem data', url: 'https://exemplo.test/sem-data' },
+            ],
+          }),
+          ...RESEARCH_CHECKLIST_IDS.filter((id) => id !== 'emendas_web').map((id) => validItem(id)),
+        ],
+      }),
+      { now },
+    )
+    const item = research.items.find((entry) => entry.id === 'emendas_web')!
+    expect(item.extraSources).toHaveLength(1)
+    expect(item.extraSources[0].url).toBe('https://exemplo.test/polo')
+    expect(research.gaps).toContainEqual(
+      expect.objectContaining({ id: 'fonte_extra', reason: expect.stringMatching(/URL ou data/) }),
+    )
+  })
+
+  it('keeps sourced approach suggestions and gaps ones without source', () => {
+    const research = normalizeResearchInput(
+      baseResearch({
+        approach: [
+          {
+            persona: 'Coordenação',
+            topic: 'Saúde',
+            suggestion: 'Agenda no hospital regional.',
+            sourceUrl: 'https://exemplo.test/saude',
+            sourceDate: '2026-09-01',
+          },
+          {
+            persona: 'Ciência política',
+            topic: 'Sem fonte',
+            suggestion: 'Não entra.',
+            sourceUrl: null,
+            sourceDate: null,
+          },
+        ],
+      }),
+      { now },
+    )
+    expect(research.approach).toHaveLength(1)
+    expect(research.approach[0].persona).toBe('Coordenação')
+    expect(research.gaps).toContainEqual(
+      expect.objectContaining({
+        id: 'abordagem_sem_fonte',
+        reason: expect.stringMatching(/URL e data/),
+      }),
+    )
+  })
+
   it('drops news outside the 90-day window and without source', () => {
     const research = normalizeResearchInput(
       baseResearch({

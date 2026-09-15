@@ -8,24 +8,65 @@ import {
 
 const generatedAt = new Date('2026-09-15T12:00:00.000Z')
 
-const validItem = (id: string) => ({
+const validItem = (id: string, overrides: Record<string, unknown> = {}) => ({
   id,
   answer: `Resposta de ${id}`,
   sourceUrl: `https://exemplo.test/${id}`,
   sourceDate: '2026-09-10',
+  ...overrides,
 })
 
 const research = normalizeResearchInput(
   {
     municipalitySlug: 'feira-de-santana',
     researchedAt: '2026-09-14T10:00:00.000Z',
-    items: RESEARCH_CHECKLIST_IDS.map(validItem),
+    items: RESEARCH_CHECKLIST_IDS.map((id) =>
+      id === 'emendas_web'
+        ? validItem(id, {
+            extraSources: [
+              {
+                label: 'Polo regional — Teixeira de Freitas',
+                url: 'https://exemplo.test/polo',
+                date: '2026-09-01',
+              },
+            ],
+          })
+        : validItem(id),
+    ),
     news: [
       {
         title: 'Matéria local',
         url: 'https://jornal.test/materia',
         publishedAt: '2026-09-01T00:00:00.000Z',
         outlet: 'Jornal Local',
+      },
+    ],
+    approach: [
+      {
+        persona: 'Ciência política',
+        topic: 'Saúde',
+        suggestion: 'Ancorar a agenda na defesa do SUS e no SAMU.',
+        sourceUrl: 'https://exemplo.test/abordagem',
+        sourceDate: '2026-09-10',
+      },
+    ],
+    preCandidates: [
+      {
+        name: 'Deputado do Prefeito',
+        office: 'Deputado federal',
+        party: 'PSDB',
+        support: 'Prefeito Jorge Almeida',
+        sourceUrl: 'https://exemplo.test/pre-candidato',
+        sourceDate: '2026-04-18',
+      },
+    ],
+    leaders: [
+      {
+        name: 'Ex-Prefeito',
+        role: 'Prefeito',
+        period: '2017–2024',
+        sourceUrl: 'https://exemplo.test/lideranca',
+        sourceDate: '2026-03-05',
       },
     ],
     gaps: [],
@@ -182,8 +223,26 @@ const snapshot = {
     budgetNotes: 'Emenda de custeio aportada em 2025',
     stateDeputies: [{ id: 5, name: 'Deputada Estadual', party: 'PT' }],
   },
+  competitors: {
+    referenceYear: 2022,
+    federal: [
+      {
+        candidateNumber: 1313,
+        name: 'Solla',
+        party: 'PT',
+        votesByYear: { '2018': 40_000, '2022': 50_000 },
+      },
+      {
+        candidateNumber: 4545,
+        name: 'Concorrente A',
+        party: 'PSDB',
+        votesByYear: { '2018': 20_000, '2022': 30_000 },
+      },
+    ],
+    state: [],
+  },
   speeches: {
-    totalCount: 1,
+    totalCount: 2,
     rows: [
       {
         id: 30,
@@ -192,8 +251,18 @@ const snapshot = {
         phase: 'Discurso em plenário',
         summary: 'Resumo da fala',
         officialTextUrl: 'https://camara.test/discurso',
-        watchHref: '/campanha/comunicacao/acervo/30?t=120',
-        excerpt: 'Trecho da fala sobre Feira de Santana',
+        mentionExcerpt: 'Trecho da fala que cita Feira de Santana',
+        mentionedMunicipalityCount: 3,
+      },
+      {
+        id: 31,
+        speechAt: '2026-06-01T10:00:00.000Z',
+        year: 2026,
+        phase: 'Pequeno Expediente',
+        summary: 'Saúde indígena na Bahia',
+        officialTextUrl: 'https://camara.test/discurso-2',
+        mentionExcerpt: null,
+        mentionedMunicipalityCount: 25,
       },
     ],
   },
@@ -230,11 +299,13 @@ type ReportRow = {
   value: string
   source?: { url?: string | null; date?: string | null }
 }
+type TableRow = Record<string, string>
 type ReportBlock = {
   kind: string
   title?: string
   items?: ReportItem[]
   rows?: ReportRow[]
+  columns?: Array<{ key: string; label: string }>
   cells?: Array<{ title: string; blocks: ReportBlock[] }>
   body?: string[]
   sources?: Array<{ kind: string; url?: string | null }>
@@ -251,10 +322,86 @@ const asReport = (value: unknown) => value as ReportShape
 describe('buildCityReport', () => {
   const report = asReport(buildCityReport({ snapshot, research, emendas, generatedAt }))
 
-  it('builds the 10 deepening sections in the product order', () => {
-    expect(report.sections).toHaveLength(10)
+  it('builds the 12 deepening sections in the product order', () => {
+    expect(report.sections).toHaveLength(12)
     expect(report.sections[0].title).toMatch(/Conta eleitoral completa/)
-    expect(report.sections[9].title).toMatch(/Fontes e limites/)
+    expect(report.sections[1].title).toMatch(/Concorrentes no município/)
+    expect(report.sections[10].title).toMatch(/Abordagem sugerida/)
+    expect(report.sections[11].title).toMatch(/Fontes e limites/)
+  })
+
+  it('lists the main competitors with their vote series and the pre-candidates', () => {
+    const concorrentes = report.sections.find((section) => section.id === 'concorrentes')!
+    const federal = concorrentes.blocks[0]
+    const rows = federal.rows as unknown as TableRow[]
+    expect(federal.title).toContain('Deputado federal')
+    expect(rows.map((row) => row.name)).toEqual(['Solla', 'Concorrente A'])
+    expect(rows[1].y2022).toBe('30.000')
+    expect(rows[1].y2014).toBe('—')
+    const preCandidates = concorrentes.blocks[2]
+    const preRows = preCandidates.rows as unknown as TableRow[]
+    expect(preRows[0].name).toBe('Deputado do Prefeito')
+    expect(preCandidates.sources![0]).toEqual(
+      expect.objectContaining({ url: 'https://exemplo.test/pre-candidato' }),
+    )
+  })
+
+  it('lists the researched city leaders in the network section', () => {
+    const rede = report.sections.find((section) => section.id === 'rede')!
+    const leadersBlock = rede.blocks.find(
+      (block) => block.title === 'Lideranças da cidade (pesquisa)',
+    )!
+    const rows = leadersBlock.rows as unknown as TableRow[]
+    expect(rows[0].name).toBe('Ex-Prefeito')
+    expect(rows[0].period).toBe('2017–2024')
+    expect(leadersBlock.sources![0]).toEqual(
+      expect.objectContaining({ url: 'https://exemplo.test/lideranca' }),
+    )
+  })
+
+  it('shows expected votes on page 1 instead of the goal/pledge coverage', () => {
+    const grid = report.page1.blocks.find((block) => block.kind === 'grid')!
+    const kpis = grid.cells![0].blocks.find((block) => block.kind === 'kpis')!
+    expect(kpis.items!.map((item) => item.label)).toEqual([
+      'Votos em 2022',
+      'Rank no estado',
+      'Expectativa de votos',
+    ])
+    expect(kpis.items![2].value).toBe('50.000')
+    expect(kpis.items![2].hint).toContain('Pessimista 40.000')
+    expect(kpis.items![2].hint).toContain('Otimista 70.000')
+    const leftLabels = grid.cells![0].blocks.flatMap((block) =>
+      (block.rows ?? []).map((row) => row.label),
+    )
+    expect(leftLabels).not.toContain('Cobertura de pledges')
+    expect(JSON.stringify(report.page1)).not.toContain('Meta 2026')
+  })
+
+  it('describes what each speech is and how the município is mentioned', () => {
+    const falas = report.sections.find((section) => section.id === 'falas')!.blocks[0]
+    const rows = falas.rows as unknown as TableRow[]
+    expect(falas.columns!.map((column) => column.label)).toEqual([
+      'Data',
+      'Fase',
+      'O que é',
+      `Menção a ${snapshot.municipality.name}`,
+      'Link',
+    ])
+    expect(rows[0].description).toBe('Resumo da fala')
+    expect(rows[0].mention).toContain('cita Feira de Santana')
+    expect(rows[1].description).toBe('Saúde indígena na Bahia')
+    expect(rows[1].mention).toContain('nome não localizado nos trechos')
+    expect(rows[1].mention).toContain('25 municípios')
+  })
+
+  it('renders the persona approach section and its sources', () => {
+    const abordagem = report.sections.find((section) => section.id === 'abordagem')!.blocks[0]
+    const rows = abordagem.rows as unknown as TableRow[]
+    expect(rows[0].topic).toContain('Ciência política')
+    expect(rows[0].suggestion).toContain('SAMU')
+    expect(abordagem.sources![0]).toEqual(
+      expect.objectContaining({ url: 'https://exemplo.test/abordagem' }),
+    )
   })
 
   it('keeps page 1 in the contract order (six blocks + footer)', () => {
@@ -314,10 +461,37 @@ describe('buildCityReport', () => {
       (block) => block.kind === 'kpis' && block.title === 'O que Solla entregou',
     )!
     expect(delivered.items![0].value).toBe('Sem fonte oficial')
-    const gaps = gapReport.page1.blocks.find(
-      (block) => block.kind === 'callout' && block.title === 'Pontos sem leitura',
-    )!
-    expect(gaps.body!.join(' ')).toMatch(/Emendas/)
+    expect(delivered.items![0].hint).toContain('sem emenda atribuível')
+  })
+
+  it('shows the web evidence for emendas when the official source is a gap', () => {
+    const gapReport = asReport(
+      buildCityReport({
+        snapshot,
+        research,
+        emendas: {
+          status: 'gap',
+          reason: 'Sem emenda do autor com localidade Feira de Santana na janela.',
+          detail: 'API não expõe o município da emenda.',
+          sourceUrl: 'https://api.portaldatransparencia.gov.br/api-de-dados/emendas',
+          consultedAt: '2026-09-15T11:00:00.000Z',
+        },
+        generatedAt,
+      }),
+    )
+    const evidence = gapReport.page1.blocks.find(
+      (block) =>
+        block.kind === 'callout' &&
+        block.title === 'Emendas — indícios web (sem atribuição oficial ao município)',
+    )
+    expect(evidence).toBeTruthy()
+    expect(evidence!.body!.join(' ')).toContain('Resposta de emendas_web')
+    const evidenceOk = asReport(buildCityReport({ snapshot, research, emendas, generatedAt }))
+    expect(
+      evidenceOk.page1.blocks.some(
+        (block) => block.title === 'Emendas — indícios web (sem atribuição oficial ao município)',
+      ),
+    ).toBe(false)
   })
 
   it('puts research answers in Quem é quem with compact sources and URLs in section 10', () => {
@@ -329,6 +503,7 @@ describe('buildCityReport', () => {
     expect(prefeito.source!.date).toBe('2026-09-10')
     const fontes = report.sections.find((section) => section.id === 'fontes')!.blocks[0]
     expect(fontes.items!.some((item) => item.url === 'https://exemplo.test/prefeito')).toBe(true)
+    expect(fontes.items!.some((item) => item.url === 'https://exemplo.test/polo')).toBe(true)
   })
 
   it('builds the region panorama from the committed artifact', () => {

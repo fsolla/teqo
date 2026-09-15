@@ -20,7 +20,10 @@ const RESEARCH_CHECKLIST = [
   { id: 'quem_investe', label: 'Quem mais investe na cidade (bancada e adversários)' },
   { id: 'noticias', label: 'Notícias da cidade/região (janela ≤90 dias)' },
   { id: 'imprensa_local', label: 'Imprensa e rádio local' },
-  { id: 'emendas_web', label: 'Emendas na web (quando a fonte oficial não responder)' },
+  {
+    id: 'emendas_web',
+    label: 'Emendas — indícios web (município, região ou polo)',
+  },
 ]
 
 export const RESEARCH_CHECKLIST_IDS = RESEARCH_CHECKLIST.map((item) => item.id)
@@ -87,6 +90,24 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
       })
       continue
     }
+    const extraSources = []
+    for (const extra of Array.isArray(entry.extraSources) ? entry.extraSources : []) {
+      const extraUrl = isNonEmptyString(extra?.url) ? extra.url.trim() : null
+      const extraDate = isValidDate(extra?.date) ? extra.date : null
+      if (!extraUrl || !extraDate) {
+        gaps.push({
+          id: 'fonte_extra',
+          label: checklistById.get(id).label,
+          reason: 'Fonte adicional sem URL ou data — descartada.',
+        })
+        continue
+      }
+      extraSources.push({
+        label: isNonEmptyString(extra.label) ? extra.label.trim() : null,
+        url: extraUrl,
+        date: extraDate,
+      })
+    }
     items.push({
       id,
       label: checklistById.get(id).label,
@@ -94,6 +115,7 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
       details: isNonEmptyString(entry.details) ? entry.details.trim() : null,
       sourceUrl,
       sourceDate,
+      extraSources,
       consultedAt: isValidDate(entry.consultedAt) ? entry.consultedAt : null,
     })
   }
@@ -147,11 +169,111 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
     })
   }
 
+  const approach = []
+  for (const entry of Array.isArray(raw.approach) ? raw.approach : []) {
+    const topic = isNonEmptyString(entry?.topic) ? entry.topic.trim() : null
+    const suggestion = isNonEmptyString(entry?.suggestion) ? entry.suggestion.trim() : null
+    const sourceUrl = isNonEmptyString(entry?.sourceUrl) ? entry.sourceUrl.trim() : null
+    const sourceDate = isValidDate(entry?.sourceDate) ? entry.sourceDate : null
+    if (!topic || !suggestion) {
+      gaps.push({
+        id: 'abordagem_incompleta',
+        label: topic,
+        reason: 'Sugestão sem tema ou texto — descartada.',
+      })
+      continue
+    }
+    if (!sourceUrl || !sourceDate) {
+      gaps.push({
+        id: 'abordagem_sem_fonte',
+        label: topic,
+        reason: 'Sugestão sem fonte: URL e data são obrigatórias.',
+      })
+      continue
+    }
+    approach.push({
+      persona: isNonEmptyString(entry.persona) ? entry.persona.trim() : null,
+      topic,
+      suggestion,
+      sourceUrl,
+      sourceDate,
+      consultedAt: isValidDate(entry.consultedAt) ? entry.consultedAt : null,
+    })
+  }
+
+  const preCandidates = []
+  for (const entry of Array.isArray(raw.preCandidates) ? raw.preCandidates : []) {
+    const name = isNonEmptyString(entry?.name) ? entry.name.trim() : null
+    const office = isNonEmptyString(entry?.office) ? entry.office.trim() : null
+    const sourceUrl = isNonEmptyString(entry?.sourceUrl) ? entry.sourceUrl.trim() : null
+    const sourceDate = isValidDate(entry?.sourceDate) ? entry.sourceDate : null
+    if (!name || !office) {
+      gaps.push({
+        id: 'precandidato_incompleto',
+        label: name,
+        reason: 'Pré-candidato sem nome ou cargo — descartado.',
+      })
+      continue
+    }
+    if (!sourceUrl || !sourceDate) {
+      gaps.push({
+        id: 'precandidato_sem_fonte',
+        label: name,
+        reason: 'Pré-candidato sem fonte: URL e data são obrigatórias.',
+      })
+      continue
+    }
+    preCandidates.push({
+      name,
+      office,
+      party: isNonEmptyString(entry.party) ? entry.party.trim() : null,
+      support: isNonEmptyString(entry.support) ? entry.support.trim() : null,
+      note: isNonEmptyString(entry.note) ? entry.note.trim() : null,
+      sourceUrl,
+      sourceDate,
+    })
+  }
+
+  const leaders = []
+  for (const entry of Array.isArray(raw.leaders) ? raw.leaders : []) {
+    const name = isNonEmptyString(entry?.name) ? entry.name.trim() : null
+    const role = isNonEmptyString(entry?.role) ? entry.role.trim() : null
+    const sourceUrl = isNonEmptyString(entry?.sourceUrl) ? entry.sourceUrl.trim() : null
+    const sourceDate = isValidDate(entry?.sourceDate) ? entry.sourceDate : null
+    if (!name || !role) {
+      gaps.push({
+        id: 'lideranca_incompleta',
+        label: name,
+        reason: 'Liderança sem nome ou papel — descartada.',
+      })
+      continue
+    }
+    if (!sourceUrl || !sourceDate) {
+      gaps.push({
+        id: 'lideranca_sem_fonte',
+        label: name,
+        reason: 'Liderança sem fonte: URL e data são obrigatórias.',
+      })
+      continue
+    }
+    leaders.push({
+      name,
+      role,
+      period: isNonEmptyString(entry.period) ? entry.period.trim() : null,
+      note: isNonEmptyString(entry.note) ? entry.note.trim() : null,
+      sourceUrl,
+      sourceDate,
+    })
+  }
+
   return {
     municipalitySlug: raw.municipalitySlug.trim(),
     researchedAt: researchedAt.toISOString(),
     items,
     news,
+    approach,
+    preCandidates,
+    leaders,
     gaps,
   }
 }

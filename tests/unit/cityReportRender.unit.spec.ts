@@ -95,6 +95,13 @@ describe('renderReportHtml', () => {
     expect(html).toContain('&lt;script&gt;')
   })
 
+  it('turns every URL into a clickable anchor', () => {
+    expect(html).toContain(
+      '<a href="https://exemplo.test/prefeito">https://exemplo.test/prefeito</a>',
+    )
+    expect(html).toContain('href="https://exemplo.test/emendas_web"')
+  })
+
   it('prints the gaps as callouts and the limits list', () => {
     expect(html).toContain('Lacuna explícita')
     expect(html).toContain('Limites')
@@ -106,7 +113,9 @@ describe('renderReportMd', () => {
 
   it('carries the same sections as tables and headings', () => {
     expect(md).toContain('## 1. Conta eleitoral completa')
-    expect(md).toContain('## 10. Fontes e limites')
+    expect(md).toContain('## 2. Concorrentes no município (federal e estadual)')
+    expect(md).toContain('## 11. Abordagem sugerida (pesquisa)')
+    expect(md).toContain('## 12. Fontes e limites')
     expect(md).toContain('| Ano | Votos |')
   })
 

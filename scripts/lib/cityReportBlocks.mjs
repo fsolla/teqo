@@ -18,7 +18,10 @@ import {
   campaignDemandStatusLabels,
 } from '../../src/lib/schemas/campaignDemand.ts'
 import { municipalityUpdatePolarityLabels } from '../../src/lib/schemas/municipalityUpdate.ts'
-import { voteEstimateScenarioLabels } from '../../src/lib/voteEstimate.ts'
+import {
+  formatVoteEstimateEndpointsLabel,
+  voteEstimateScenarioLabels,
+} from '../../src/lib/voteEstimate.ts'
 import { supportStatusLabels } from '../../src/utilities/leadership/leadershipLabels.ts'
 import {
   municipalityPriorityLabels,
@@ -47,7 +50,8 @@ const ADVERTENCIA_DEFESO =
 
 const GAP_CALLOUT_LIMIT = 4
 const SIGNAL_EXCERPT_MAX = 180
-const SPEECH_EXCERPT_MAX = 220
+const SPEECH_SUMMARY_MAX = 220
+const SPEECH_MENTION_MAX = 220
 
 const sourceTeqo = (label, date) => ({ kind: 'teqo', label, date: date ?? null })
 const sourceWeb = (label, url, date) => ({
@@ -94,15 +98,6 @@ const gapCallout = (gaps, title = 'Lacunas desta seção') => {
   }
 }
 
-const emendasGap = (emendas) =>
-  emendas?.status === 'gap'
-    ? {
-        id: 'emendas',
-        label: 'Emendas',
-        reason: emendas.detail ? `${emendas.reason} (${emendas.detail})` : emendas.reason,
-      }
-    : null
-
 const buildIdentificationItems = ({ municipality, goal, conjuncture, advisors }) => [
   { label: 'Território', value: municipality.region },
   {
@@ -125,21 +120,26 @@ const buildIdentificationItems = ({ municipality, goal, conjuncture, advisors })
   },
 ]
 
-const buildElectoralKpis = ({ electoral, goal }) => [
-  {
-    label: 'Votos em 2022',
-    value: formatInteger(electoral.rank2022?.votes ?? null),
-    hint: electoral.rank2022
-      ? `% do próprio voto: ${formatPercent(electoral.rank2022.share)}`
-      : null,
-  },
-  { label: 'Rank no estado', value: formatRank(electoral.rank2022) },
-  {
-    label: 'Meta 2026 (central)',
-    value: goal ? formatInteger(goal.suggestedGoal) : '—',
-    hint: goal ? 'Cenário central' : null,
-  },
-]
+const buildElectoralKpis = ({ electoral, conjuncture }) => {
+  const expectedVotes = conjuncture?.expectedVotes ?? null
+  return [
+    {
+      label: 'Votos em 2022',
+      value: formatInteger(electoral.rank2022?.votes ?? null),
+      hint: electoral.rank2022
+        ? `% do próprio voto: ${formatPercent(electoral.rank2022.share)}`
+        : null,
+    },
+    { label: 'Rank no estado', value: formatRank(electoral.rank2022) },
+    {
+      label: 'Expectativa de votos',
+      value: formatInteger(expectedVotes?.central ?? null),
+      hint: expectedVotes
+        ? (formatVoteEstimateEndpointsLabel(expectedVotes) ?? 'Cenários da base')
+        : 'sem registro na base',
+    },
+  ]
+}
 
 const buildWhoRows = ({ leaderships, advisors, conjuncture }, research, prefeito) => {
   const rows = []
@@ -231,7 +231,7 @@ const buildRiskCards = ({ leaderships, advisors, conjuncture }, research) => {
     {
       title: 'Oposição local',
       body: opposition
-        ? `${opposition.text} (fonte: pesquisa web · ${formatDateBr(opposition.source.date)}; URLs na seção 10)`
+        ? `${opposition.text} (fonte: pesquisa web · ${formatDateBr(opposition.source.date)})`
         : 'Sem leitura suficiente — lacuna',
     },
     {
@@ -247,20 +247,34 @@ const buildRiskCards = ({ leaderships, advisors, conjuncture }, research) => {
   ]
 }
 
-const collectPageOneGaps = ({ electoral, goal, prefeito }, emendas) => {
+/**
+ * Page-1 gaps: the emendas gap is not repeated here — it is carried by the
+ * "O que Solla entregou" KPI and, when the agent researched it, by the web
+ * evidence block ("nunca zero silencioso" stays explicit on those surfaces).
+ */
+const collectPageOneGaps = ({ electoral, prefeito }) => {
   const gaps = []
   if (!prefeito) gaps.push({ id: 'prefeito', label: 'Prefeito(a)', reason: 'Não pesquisado.' })
-  if (!goal) gaps.push({ id: 'meta', label: 'Meta', reason: 'Sem conta da cadeira na base.' })
   if (!electoral.rank2022) gaps.push({ id: 'rank', label: 'Rank', reason: 'Fora do artefato TSE.' })
-  const deliveriesGap = emendasGap(emendas)
-  if (deliveriesGap) gaps.push(deliveriesGap)
   return gaps
+}
+
+const buildEmendasEvidenceBlock = (research, emendas) => {
+  if (emendas?.status === 'ok') return null
+  const evidence = researchAnswerItem(research, 'emendas_web')
+  if (!evidence) return null
+  return {
+    kind: 'callout',
+    tone: 'decision',
+    title: 'Emendas — indícios web (sem atribuição oficial ao município)',
+    body: [evidence.text, 'Não somar região/polo como emenda da cidade; URLs nas fontes.'],
+  }
 }
 
 const buildPageOne = ({ snapshot, research, emendas, generatedAt }) => {
   const prefeito = researchAnswerItem(research, 'prefeito')
   const gapCalloutBlock = gapCallout(
-    collectPageOneGaps({ electoral: snapshot.electoral, goal: snapshot.goal, prefeito }, emendas),
+    collectPageOneGaps({ electoral: snapshot.electoral, prefeito }),
     'Pontos sem leitura',
   )
 
@@ -273,23 +287,7 @@ const buildPageOne = ({ snapshot, research, emendas, generatedAt }) => {
         cells: [
           {
             title: 'Conta eleitoral 2022',
-            blocks: [
-              { kind: 'kpis', items: buildElectoralKpis(snapshot) },
-              {
-                kind: 'stats',
-                rows: [
-                  {
-                    label: 'Cobertura de pledges',
-                    value: snapshot.goal
-                      ? formatPercent(snapshot.goal.goalCoverage.coverageRatio)
-                      : '—',
-                    hint: snapshot.goal
-                      ? `${formatInteger(snapshot.goal.goalCoverage.committed)} de ${formatInteger(snapshot.goal.goalCoverage.goal)}`
-                      : null,
-                  },
-                ],
-              },
-            ],
+            blocks: [{ kind: 'kpis', items: buildElectoralKpis(snapshot) }],
           },
           {
             title: 'Quem é quem',
@@ -297,7 +295,10 @@ const buildPageOne = ({ snapshot, research, emendas, generatedAt }) => {
           },
         ],
         sources: [
-          sourceTeqo('base Teqo — TSE 2022, conta da cadeira e lideranças', snapshot.meta?.readAt),
+          sourceTeqo(
+            'base Teqo — TSE 2022, expectativa de votos e lideranças',
+            snapshot.meta?.readAt,
+          ),
         ],
       },
       {
@@ -314,6 +315,7 @@ const buildPageOne = ({ snapshot, research, emendas, generatedAt }) => {
           sourceWeb('pesquisa web — imprensa', null, research.researchedAt),
         ],
       },
+      buildEmendasEvidenceBlock(research, emendas),
       buildAnnouncePair(research),
       {
         kind: 'cards',
@@ -373,7 +375,93 @@ const buildElectoralSection = ({ snapshot }) => {
   ].filter(Boolean)
 }
 
-const buildNetworkSection = ({ snapshot }) => {
+const COMPETITOR_SERIES_YEARS = ['2014', '2018', '2022']
+
+const buildCompetitorsTable = ({ title, rows, referenceYear, readAt }) => ({
+  kind: 'table',
+  title,
+  columns: [
+    { key: 'name', label: 'Candidato' },
+    { key: 'party', label: 'Partido' },
+    ...COMPETITOR_SERIES_YEARS.map((year) => ({ key: `y${year}`, label: year, numeric: true })),
+  ],
+  rows: rows.map((row) => ({
+    name: row.name,
+    party: row.party ?? '—',
+    ...Object.fromEntries(
+      COMPETITOR_SERIES_YEARS.map((year) => [
+        `y${year}`,
+        year in (row.votesByYear ?? {}) ? formatInteger(row.votesByYear[year]) : '—',
+      ]),
+    ),
+  })),
+  note: `Top 5 por votos de ${referenceYear} no município (TSE, 1º turno, votos nominais); “—” = sem votos na série.`,
+  sources: [sourceTeqo('base Teqo — TSE 2014/2018/2022', readAt)],
+})
+
+const buildCompetitorsSection = ({ snapshot, research }) => {
+  const competitors = snapshot.competitors ?? { referenceYear: 2022, federal: [], state: [] }
+  const offices = [
+    { key: 'federal', label: 'Deputado federal' },
+    { key: 'state', label: 'Deputado estadual' },
+  ]
+  const blocks = offices.map((office) => {
+    const rows = competitors[office.key] ?? []
+    return rows.length
+      ? buildCompetitorsTable({
+          title: `Concorrentes — ${office.label}`,
+          rows,
+          referenceYear: competitors.referenceYear ?? 2022,
+          readAt: snapshot.meta?.readAt,
+        })
+      : {
+          kind: 'callout',
+          tone: 'gap',
+          title: `Concorrentes — ${office.label}`,
+          body: ['Sem série de concorrentes na base para este município.', GAP_COPY],
+        }
+  })
+
+  const preCandidates = research.preCandidates ?? []
+  blocks.push(
+    preCandidates.length
+      ? {
+          kind: 'table',
+          title: 'Prováveis candidatos do campo do prefeito em 2026 (pesquisa)',
+          columns: [
+            { key: 'name', label: 'Nome' },
+            { key: 'office', label: 'Cargo' },
+            { key: 'party', label: 'Partido' },
+            { key: 'support', label: 'Apoio' },
+            { key: 'source', label: 'Fonte' },
+          ],
+          rows: preCandidates.map((item) => ({
+            name: item.name,
+            office: item.office,
+            party: item.party ?? '—',
+            support: item.support ?? '—',
+            source: formatDateBr(item.sourceDate),
+          })),
+          note: 'Nomes declarados em fontes datadas; o histórico de votos vem das tabelas acima quando o nome aparece na base.',
+          sources: preCandidates.map((item) => ({
+            kind: 'web',
+            label: `${item.name} — ${item.office}`,
+            url: item.sourceUrl,
+            date: item.sourceDate,
+          })),
+        }
+      : {
+          kind: 'callout',
+          tone: 'gap',
+          title: 'Prováveis candidatos do campo do prefeito em 2026',
+          body: ['Nenhum pré-candidato pesquisado com fonte.', GAP_COPY],
+        },
+  )
+
+  return blocks
+}
+
+const buildNetworkSection = ({ snapshot, research }) => {
   const { leaderships, advisors } = snapshot
   const rows = leaderships.rows.map((row) => ({
     name: row.name,
@@ -431,6 +519,40 @@ const buildNetworkSection = ({ snapshot }) => {
     ],
     sources: [sourceTeqo('base Teqo — pledges', snapshot.meta?.readAt)],
   })
+
+  const cityLeaders = research?.leaders ?? []
+  if (cityLeaders.length) {
+    blocks.push({
+      kind: 'table',
+      title: 'Lideranças da cidade (pesquisa)',
+      columns: [
+        { key: 'name', label: 'Nome' },
+        { key: 'role', label: 'Papel' },
+        { key: 'period', label: 'Período' },
+        { key: 'source', label: 'Fonte' },
+      ],
+      rows: cityLeaders.map((leader) => ({
+        name: leader.name,
+        role: leader.role,
+        period: leader.period ?? '—',
+        source: formatDateBr(leader.sourceDate),
+      })),
+      note: 'Últimos prefeitos/vices, vereadores mais votados e lideranças locais — pesquisa web com URL por item.',
+      sources: cityLeaders.map((leader) => ({
+        kind: 'web',
+        label: `${leader.name} — ${leader.role}`,
+        url: leader.sourceUrl,
+        date: leader.sourceDate,
+      })),
+    })
+  } else {
+    blocks.push({
+      kind: 'callout',
+      tone: 'gap',
+      title: 'Lideranças da cidade (pesquisa)',
+      body: ['Nenhuma liderança local pesquisada com fonte.', GAP_COPY],
+    })
+  }
 
   return blocks
 }
@@ -658,7 +780,7 @@ const buildDemographicsSection = ({ snapshot }) => {
 }
 
 const buildSpeechesSection = ({ snapshot }) => {
-  const { speeches } = snapshot
+  const { speeches, municipality } = snapshot
   if (!speeches.rows.length) {
     return [
       {
@@ -672,6 +794,7 @@ const buildSpeechesSection = ({ snapshot }) => {
       },
     ]
   }
+  const cityLabel = municipality?.name ?? 'o município'
   return [
     {
       kind: 'table',
@@ -679,20 +802,67 @@ const buildSpeechesSection = ({ snapshot }) => {
       columns: [
         { key: 'date', label: 'Data' },
         { key: 'phase', label: 'Fase' },
-        { key: 'excerpt', label: 'Trecho' },
+        { key: 'description', label: 'O que é' },
+        { key: 'mention', label: `Menção a ${cityLabel}` },
         { key: 'link', label: 'Link' },
       ],
       rows: speeches.rows.map((row) => ({
         date: formatDateBr(row.speechAt),
         phase: row.phase ?? '—',
-        excerpt: row.excerpt ? row.excerpt.slice(0, SPEECH_EXCERPT_MAX) : '—',
+        description: row.summary ? row.summary.slice(0, SPEECH_SUMMARY_MAX) : '—',
+        mention: row.mentionExcerpt
+          ? row.mentionExcerpt.slice(0, SPEECH_MENTION_MAX)
+          : row.mentionedMunicipalityCount
+            ? `Marcada no acervo — nome não localizado nos trechos (a fala cita ${formatInteger(row.mentionedMunicipalityCount)} municípios).`
+            : 'Marcada no acervo — trecho não localizado.',
         link: row.officialTextUrl ?? '—',
       })),
-      note:
+      note: [
+        '“O que é” = sumário oficial da Câmara; “Menção” = passagem que cita o município ou, quando o nome não aparece nos trechos, a marcação do acervo (C153/C155) com o nº de municípios da fala.',
         speeches.totalCount > speeches.rows.length
           ? `Mostrando ${speeches.rows.length} de ${speeches.totalCount} falas.`
           : null,
+      ]
+        .filter(Boolean)
+        .join(' '),
       sources: [sourceTeqo('base Teqo — acervo C153/C155', snapshot.meta?.readAt)],
+    },
+  ]
+}
+
+const buildApproachSection = ({ research }) => {
+  const approach = research.approach ?? []
+  if (!approach.length) {
+    return [
+      {
+        kind: 'callout',
+        tone: 'gap',
+        title: 'Abordagem sugerida (pesquisa)',
+        body: ['Nenhuma sugestão pesquisada para este município.', GAP_COPY],
+      },
+    ]
+  }
+  return [
+    {
+      kind: 'table',
+      title: 'Abordagem sugerida (pesquisa)',
+      columns: [
+        { key: 'topic', label: 'Frente' },
+        { key: 'suggestion', label: 'Sugestão' },
+        { key: 'source', label: 'Fonte' },
+      ],
+      rows: approach.map((item) => ({
+        topic: item.persona ? `${item.persona} · ${item.topic}` : item.topic,
+        suggestion: item.suggestion,
+        source: formatDateBr(item.sourceDate),
+      })),
+      note: 'Sugestões das personas de ciência política e coordenação de campanha, ancoradas nas fontes listadas (URL por item); sem fonte, não entra.',
+      sources: approach.map((item) => ({
+        kind: 'web',
+        label: `${item.topic}${item.persona ? ` — ${item.persona}` : ''}`,
+        url: item.sourceUrl,
+        date: item.sourceDate,
+      })),
     },
   ]
 }
@@ -789,6 +959,14 @@ const buildSourcesSection = ({ snapshot, research, emendas }) => {
       url: item.sourceUrl,
       date: item.sourceDate,
     })
+    for (const extra of item.extraSources ?? []) {
+      items.push({
+        kind: 'web',
+        label: extra.label ?? `${item.label} — fonte adicional`,
+        url: extra.url,
+        date: extra.date,
+      })
+    }
   }
   if (emendas?.status === 'ok') {
     items.push({
@@ -808,6 +986,14 @@ const buildSourcesSection = ({ snapshot, research, emendas }) => {
   for (const item of research.news) {
     items.push({ kind: 'web', label: item.title, url: item.url, date: item.publishedAt })
   }
+  for (const item of research.approach ?? []) {
+    items.push({
+      kind: 'web',
+      label: `Abordagem — ${item.topic}${item.persona ? ` (${item.persona})` : ''}`,
+      url: item.sourceUrl,
+      date: item.sourceDate,
+    })
+  }
 
   return [
     {
@@ -820,6 +1006,8 @@ const buildSourcesSection = ({ snapshot, research, emendas }) => {
         'Não existe voto por bairro/seção — o relatório não inventa granularidade.',
         'Efeito eleitoral de emenda é condicional ao crédito local — o PDF não promete voto.',
         'Emendas são lidas da fonte oficial em tempo de geração e não são persistidas na base.',
+        'Quando a fonte oficial não atribui emenda ao município, indícios web (município, região ou polo) entram como evidência datada — nunca somados como emenda da cidade.',
+        'Abordagem sugerida é análise das personas ancorada nas fontes listadas item a item, não fato verificado além delas.',
       ],
     },
   ]
@@ -862,29 +1050,43 @@ export const buildCityReport = ({ snapshot, research, emendas, generatedAt = new
       title: '1. Conta eleitoral completa (2014/2018/2022)',
       blocks: buildElectoralSection({ snapshot }),
     },
-    { id: 'rede', title: '2. Rede e lideranças', blocks: buildNetworkSection({ snapshot }) },
-    { id: 'conjuntura', title: '3. Conjuntura', blocks: buildConjunctureSection({ snapshot }) },
-    { id: 'sinais', title: '4. Sinais recentes', blocks: buildSignalsSection({ snapshot }) },
+    {
+      id: 'concorrentes',
+      title: '2. Concorrentes no município (federal e estadual)',
+      blocks: buildCompetitorsSection({ snapshot, research }),
+    },
+    {
+      id: 'rede',
+      title: '3. Rede e lideranças',
+      blocks: buildNetworkSection({ snapshot, research }),
+    },
+    { id: 'conjuntura', title: '4. Conjuntura', blocks: buildConjunctureSection({ snapshot }) },
+    { id: 'sinais', title: '5. Sinais recentes', blocks: buildSignalsSection({ snapshot }) },
     {
       id: 'demandas',
-      title: '5. Demandas e visitas',
+      title: '6. Demandas e visitas',
       blocks: buildDemandsVisitsSection({ snapshot }),
     },
-    { id: 'demografia', title: '6. Demografia', blocks: buildDemographicsSection({ snapshot }) },
-    { id: 'falas', title: '7. Acervo de falas', blocks: buildSpeechesSection({ snapshot }) },
+    { id: 'demografia', title: '7. Demografia', blocks: buildDemographicsSection({ snapshot }) },
+    { id: 'falas', title: '8. Acervo de falas', blocks: buildSpeechesSection({ snapshot }) },
     {
       id: 'noticias',
-      title: '8. Notícias internas e imprensa local',
+      title: '9. Notícias internas e imprensa local',
       blocks: buildNewsSection({ research }),
     },
     {
       id: 'regiao',
-      title: '9. Panorama regional (Território de Identidade)',
+      title: '10. Panorama regional (Território de Identidade)',
       blocks: buildRegionSection({ snapshot }),
     },
     {
+      id: 'abordagem',
+      title: '11. Abordagem sugerida (pesquisa)',
+      blocks: buildApproachSection({ research }),
+    },
+    {
       id: 'fontes',
-      title: '10. Fontes e limites',
+      title: '12. Fontes e limites',
       blocks: buildSourcesSection({ snapshot, research, emendas }),
     },
   ]
