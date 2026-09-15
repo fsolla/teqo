@@ -278,6 +278,7 @@ const snapshot = {
         officialTextUrl: 'https://camara.test/discurso',
         youtubeUrl: 'https://youtube.test/video',
         vodPlaybackUrl: 'https://vod.test/video.mp4',
+        youtubeOffsetSeconds: 125,
         mentionExcerpt: 'Trecho da fala que cita Feira de Santana',
         mentionedMunicipalityCount: 3,
       },
@@ -444,7 +445,7 @@ describe('buildCityReport', () => {
     expect(falas.columns!.find((column) => column.key === 'mention')!.width).toBe(27)
     expect(rows[0].description).toBe('Resumo da fala')
     expect(rows[0].mention).toContain('cita Feira de Santana')
-    expect(rows[0].video).toBe('https://youtube.test/video')
+    expect(rows[0].video).toBe('https://youtube.test/video?t=125s')
     expect(rows[0].transcript).toBe('https://camara.test/discurso')
     expect(rows[1].description).toBe('Saúde indígena na Bahia')
     expect(rows[1].mention).toContain('nome não localizado nos trechos')
