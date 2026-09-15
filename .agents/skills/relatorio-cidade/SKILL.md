@@ -73,6 +73,9 @@ URL por item) e emendas lidas da fonte oficial **em tempo de geração**. Págin
       "details": "opcional",
       "sourceUrl": "https://…",     // obrigatório em item publicado
       "sourceDate": "2026-09-10",   // obrigatório
+      "extraSources": [             // opcional; cada uma exige url+date
+        { "label": "Polo regional", "url": "https://…", "date": "2026-09-01" }
+      ],
       "consultedAt": "2026-09-15T09:00:00.000Z" // opcional
     }
   ],
@@ -83,6 +86,27 @@ URL por item) e emendas lidas da fonte oficial **em tempo de geração**. Págin
       "url": "https://…", "summary": "…"
     }
   ],
+  "approach": [                    // sugestões das personas; tema+texto+fonte
+    {
+      "persona": "Ciência política",   // ou "Coordenação de campanha"
+      "topic": "Saúde regional (polo)",
+      "suggestion": "…",
+      "sourceUrl": "https://…", "sourceDate": "2026-04-07"
+    }
+  ],
+  "preCandidates": [               // prováveis candidatos do campo do prefeito em 2026
+    {
+      "name": "…", "office": "Deputado federal", "party": "PSDB",
+      "support": "Campo do prefeito …",
+      "sourceUrl": "https://…", "sourceDate": "2026-04-18"
+    }
+  ],
+  "leaders": [                     // últimos prefeitos/vices, vereadores mais votados
+    {
+      "name": "…", "role": "Ex-prefeito", "period": "2017–2024",
+      "sourceUrl": "https://…", "sourceDate": "2024-08-14"
+    }
+  ],
   "gaps": [{ "id": "…", "label": "…", "reason": "…" }] // lacunas que o agente já sabe
 }
 ```
@@ -90,11 +114,48 @@ URL por item) e emendas lidas da fonte oficial **em tempo de geração**. Págin
 Checklist (`id`s): `prefeito`, `vice`, `relacao_campo`, `vereadores`,
 `disputa_local`, `quem_investe`, `noticias`, `imprensa_local`, `emendas_web`.
 Item sem `sourceUrl`/`sourceDate` é convertido em lacuna pelo validador; item
-ausente também.
+ausente também. `approach`, `preCandidates` e `leaders` são listas de pesquisa:
+cada entrada sem fonte vira lacuna (`abordagem_sem_fonte`,
+`precandidato_sem_fonte`, `lideranca_sem_fonte`) e não entra no PDF.
 
-Emendas: sem `--emendas`, o builder consulta o Portal da Transparência
-(`PORTAL_TRANSPARENCIA_API_KEY` no ambiente; sem chave → lacuna). O resultado
-fica cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
+**`emendas_web` — indícios de emenda (município, região ou polo):** quando a
+fonte oficial não atribui emenda ao município, pesquise artigos, falas e
+indicações de emenda para (a) o município, (b) a região/Território de
+Identidade e (c) a maior cidade próxima (polo regional — cidades pequenas usam
+serviços do polo). Registre cada indício com URL+data; use `extraSources` para
+mais de uma fonte. O PDF mostra o item como "Emendas — indícios web" na página
+1 e as URLs na seção de fontes. **Nunca somar** indício de região/polo como
+emenda da cidade.
+
+**Emendas oficiais:** sem `--emendas`, o builder consulta o Portal da
+Transparência (`PORTAL_TRANSPARENCIA_API_KEY` no ambiente; sem chave → lacuna).
+A API oficial **não filtra por município** (só UF/Nacional/Múltiplo na
+`localidadeDoGasto`); o builder casa pela localidade com o nome do município e,
+sem linha atribuível, degrada para lacuna (Issue #1025). O resultado fica
+cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
+
+## Conteúdo do relatório
+
+- **Página 1 (uma olhada):** identificação/prioridade/classe/nível, conta
+  eleitoral 2022 (votos, % do próprio voto, rank/435) **+ expectativa de votos
+  (cenário central com pessimista/otimista)** — a meta de cadeira e a cobertura
+  de pledges **saíram** da página 1; quem é quem (prefeito, vice, relação com o
+  campo, lideranças, dobradinhas, vereadores), o que Solla entregou (emendas
+  oficiais com fase, acervo de falas, notícias ≤90 dias), **indícios web de
+  emendas** quando a fonte oficial não atribui ao município, anunciar × não
+  anunciar, riscos e pontos sem leitura.
+- **Seções 2+:** `1. Conta eleitoral` · `2. Concorrentes no município (federal
+  e estadual)` — top 5 por votos de 2022 na base TSE, com série 2014/2018/2022
+  e os prováveis candidatos do campo do prefeito (pesquisa) · `3. Rede e
+  lideranças` — inclui as lideranças locais pesquisadas (ex-prefeitos/vices,
+  vereadores mais votados) · `4. Conjuntura` · `5. Sinais` · `6. Demandas e
+  visitas` · `7. Demografia` · `8. Acervo de falas` — cada fala com "O que é"
+  (sumário oficial) e "Menção ao município" (passagem que cita a cidade ou, se
+  o nome não aparece nos trechos, a marcação do acervo com o nº de municípios)
+  · `9. Notícias e imprensa` · `10. Panorama regional` · `11. Abordagem
+  sugerida (personas)` · `12. Fontes e limites`.
+- **Links clicáveis:** todo URL no PDF é um link (`<a href>`): células de
+  tabela, fontes por linha e a seção de fontes.
 
 ## Guardrails de produto (não negociáveis)
 
@@ -106,6 +167,12 @@ fica cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   lideranças entram porque o produto pede "quem é quem".
 - **Completo para o candidato**: estimativas e nível N0–N4 entram no PDF, sem
   marca de restrição; o que não sai é para o palanque.
+- **Indício regional não é emenda da cidade**: emendas do município, da região
+  ou do polo entram rotuladas na evidência web e **nunca somadas**; a fonte
+  oficial ausente continua lacuna explícita.
+- **Abordagem é análise ancorada**: as sugestões das personas (governo do PT na
+  região, projetos futuros, prioridades locais) saem do `approach` com fonte por
+  item — sem fonte, não entra; o PDF deixa claro que é análise, não fato novo.
 - **Artefato gitignored**: o repo é público; o PDF/MD com dado interno nunca é
   commitado (só a skill/scripts/changelog).
 
@@ -116,6 +183,9 @@ fica cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
 - **`tsx` ausente no homeserver**: `pnpm install --prod=false`.
 - **API de emendas 429/erro**: o builder degrada para lacuna com URL+motivo;
   reexecute depois (o cache só é escrito com resultado utilizável).
+- **Emenda sem atribuição oficial**: é o comportamento esperado (a API não
+  expõe o município). Pesquise os indícios web (município/região/polo) no item
+  `emendas_web`; sem indício, a lacuna fica explícita — nunca zero silencioso.
 - **Chromium**: vem do `@playwright/test`; se faltar binário,
   `pnpm exec playwright install chromium`.
 - **Snapshot de outro município**: o builder recusa (`municipalitySlug` ≠

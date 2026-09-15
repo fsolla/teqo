@@ -14,6 +14,12 @@ const htmlEscape = (value) =>
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
 
+const URL_PATTERN = /(https?:\/\/[^\s<>"')]+)/g
+
+/** Escapes the text and turns every bare URL into a clickable anchor (PDF links). */
+const htmlWithLinks = (value) =>
+  htmlEscape(value).replace(URL_PATTERN, (url) => `<a href="${url}">${url}</a>`)
+
 const sourceKindLabels = {
   teqo: 'base Teqo',
   web: 'pesquisa web',
@@ -128,7 +134,7 @@ const PRINT_CSS = `
   .table-note { color: #71717a; font-size: 7.2pt; margin: 1mm 0 0; }
   .prose p { margin: 0 0 1.4mm; }
   .page-break { break-before: page; }
-  .index ol { columns: 2; margin: 0; padding-left: 5mm; color: #3f3f46; font-size: 8.6pt; }
+  .index ol { columns: 2; margin: 0; padding-left: 0; list-style: none; color: #3f3f46; font-size: 8.6pt; }
   .report-section { margin-bottom: 6mm; }
   .report-section > h3 { font-size: 11pt; margin: 0 0 2mm; break-after: avoid; }
   .block + .block { margin-top: 3mm; }
@@ -181,7 +187,7 @@ const renderStats = (block) => {
     .map(
       (row) => `<div class="stat">
         <span class="stat-label">${htmlEscape(row.label)}</span>
-        <span class="stat-value">${htmlEscape(row.value)}${row.hint ? `<span class="stat-hint">${htmlEscape(row.hint)}</span>` : ''}${row.source ? `<span class="row-source">fonte: ${htmlEscape(sourceLabel(row.source))}</span>` : ''}</span>
+        <span class="stat-value">${htmlEscape(row.value)}${row.hint ? `<span class="stat-hint">${htmlEscape(row.hint)}</span>` : ''}${row.source ? `<span class="row-source">fonte: ${htmlWithLinks(sourceLabel(row.source))}</span>` : ''}</span>
       </div>`,
     )
     .join('')
@@ -192,7 +198,7 @@ const renderBullets = (block) => {
   const items = block.items
     .map((item) => {
       const source = item.source
-        ? ` <span class="row-source">fonte: ${htmlEscape(sourceLabel(item.source))}</span>`
+        ? ` <span class="row-source">fonte: ${htmlWithLinks(sourceLabel(item.source))}</span>`
         : ''
       return `<li>${htmlEscape(item.text)}${source}</li>`
     })
@@ -220,7 +226,7 @@ const renderTable = (block) => {
         `<tr>${block.columns
           .map(
             (column) =>
-              `<td${column.numeric ? ' class="num"' : ''}>${htmlEscape(row[column.key])}</td>`,
+              `<td${column.numeric ? ' class="num"' : ''}>${htmlWithLinks(row[column.key])}</td>`,
           )
           .join('')}</tr>`,
     )
@@ -291,7 +297,7 @@ const renderBlockHtml = (block) => {
       throw new Error(`Bloco desconhecido no render HTML: ${block.kind}`)
   }
   const sources = block.sources?.length
-    ? `<p class="source">Fontes: ${block.sources.map((source) => htmlEscape(sourceLabel(source))).join(' · ')}</p>`
+    ? `<p class="source">Fontes: ${block.sources.map((source) => htmlWithLinks(sourceLabel(source))).join(' · ')}</p>`
     : ''
   const className = block.kind === 'table' ? 'block table-block' : 'block'
   return `<div class="${className}">${title}${body}${sources}</div>`
