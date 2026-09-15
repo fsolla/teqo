@@ -276,6 +276,8 @@ const snapshot = {
         phase: 'Discurso em plenário',
         summary: 'Resumo da fala',
         officialTextUrl: 'https://camara.test/discurso',
+        youtubeUrl: 'https://youtube.test/video',
+        vodPlaybackUrl: 'https://vod.test/video.mp4',
         mentionExcerpt: 'Trecho da fala que cita Feira de Santana',
         mentionedMunicipalityCount: 3,
       },
@@ -286,6 +288,8 @@ const snapshot = {
         phase: 'Pequeno Expediente',
         summary: 'Saúde indígena na Bahia',
         officialTextUrl: 'https://camara.test/discurso-2',
+        youtubeUrl: null,
+        vodPlaybackUrl: null,
         mentionExcerpt: null,
         mentionedMunicipalityCount: 25,
       },
@@ -433,15 +437,19 @@ describe('buildCityReport', () => {
       'Fase',
       'O que é',
       `Menção a ${snapshot.municipality.name}`,
-      'Link',
+      'Vídeo',
+      'Transcrição',
     ])
-    expect(falas.columns!.find((column) => column.key === 'description')!.width).toBe(37)
-    expect(falas.columns!.find((column) => column.key === 'mention')!.width).toBe(32)
+    expect(falas.columns!.find((column) => column.key === 'description')!.width).toBe(32)
+    expect(falas.columns!.find((column) => column.key === 'mention')!.width).toBe(27)
     expect(rows[0].description).toBe('Resumo da fala')
     expect(rows[0].mention).toContain('cita Feira de Santana')
+    expect(rows[0].video).toBe('https://youtube.test/video')
+    expect(rows[0].transcript).toBe('https://camara.test/discurso')
     expect(rows[1].description).toBe('Saúde indígena na Bahia')
     expect(rows[1].mention).toContain('nome não localizado nos trechos')
     expect(rows[1].mention).toContain('25 municípios')
+    expect(rows[1].video).toBe('—')
   })
 
   it('renders the persona approach section and its sources', () => {

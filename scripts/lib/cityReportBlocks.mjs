@@ -873,11 +873,12 @@ const buildSpeechesSection = ({ snapshot }) => {
       kind: 'table',
       title: 'Acervo de falas',
       columns: [
-        { key: 'date', label: 'Data', width: 8 },
-        { key: 'phase', label: 'Fase', width: 11 },
-        { key: 'description', label: 'O que é', width: 37 },
-        { key: 'mention', label: `Menção a ${cityLabel}`, width: 32 },
-        { key: 'link', label: 'Link', width: 12 },
+        { key: 'date', label: 'Data', width: 9 },
+        { key: 'phase', label: 'Fase', width: 10 },
+        { key: 'description', label: 'O que é', width: 32 },
+        { key: 'mention', label: `Menção a ${cityLabel}`, width: 27 },
+        { key: 'video', label: 'Vídeo', width: 11 },
+        { key: 'transcript', label: 'Transcrição', width: 11 },
       ],
       rows: speeches.rows.map((row) => ({
         date: formatDateBr(row.speechAt),
@@ -888,10 +889,11 @@ const buildSpeechesSection = ({ snapshot }) => {
           : row.mentionedMunicipalityCount
             ? `Marcada no acervo — nome não localizado nos trechos (a fala cita ${formatInteger(row.mentionedMunicipalityCount)} municípios).`
             : 'Marcada no acervo — trecho não localizado.',
-        link: row.officialTextUrl ?? '—',
+        video: row.youtubeUrl ?? row.vodPlaybackUrl ?? '—',
+        transcript: row.officialTextUrl ?? '—',
       })),
       note: [
-        '“O que é” = sumário oficial da Câmara; “Menção” = passagem que cita o município ou, quando o nome não aparece nos trechos, a marcação do acervo (C153/C155) com o nº de municípios da fala.',
+        '“O que é” = sumário oficial da Câmara; “Menção” = passagem que cita o município ou, quando o nome não aparece nos trechos, a marcação do acervo (C153/C155) com o nº de municípios da fala; “Vídeo” e “Transcrição” = links oficiais da Câmara quando existem.',
         speeches.totalCount > speeches.rows.length
           ? `Mostrando ${speeches.rows.length} de ${speeches.totalCount} falas.`
           : null,

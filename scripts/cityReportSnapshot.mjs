@@ -63,6 +63,8 @@ const loadSpeeches = async (payload, actor, municipalityID, municipalityName) =>
       phase: true,
       summary: true,
       officialTextUrl: true,
+      youtubeUrl: true,
+      vodPlaybackUrl: true,
       mentionedMunicipalities: true,
     },
     user: actor,
@@ -88,6 +90,8 @@ const loadSpeeches = async (payload, actor, municipalityID, municipalityName) =>
         phase: doc.phase ?? null,
         summary: doc.summary ?? null,
         officialTextUrl: doc.officialTextUrl ?? null,
+        youtubeUrl: doc.youtubeUrl ?? null,
+        vodPlaybackUrl: doc.vodPlaybackUrl ?? null,
         mentionExcerpt: mentionSegment?.text ?? null,
         mentionedMunicipalityCount: Array.isArray(doc.mentionedMunicipalities)
           ? doc.mentionedMunicipalities.length
