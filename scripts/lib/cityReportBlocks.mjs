@@ -971,11 +971,14 @@ const buildNewsSection = ({ research }) => {
     blocks.push({
       kind: 'table',
       title: 'Notícias internas e imprensa local',
+      // Título é o texto mais longo: larguras explícitas tornam a tabela
+      // `table-fixed` (URL quebra em vez de empurrar a coluna) e dão a ela a
+      // maior fatia — sem largura, a URL sem espaços infla a coluna Link.
       columns: [
-        { key: 'date', label: 'Data' },
-        { key: 'outlet', label: 'Veículo' },
-        { key: 'title', label: 'Título' },
-        { key: 'link', label: 'Link' },
+        { key: 'date', label: 'Data', width: 9 },
+        { key: 'outlet', label: 'Veículo', width: 14 },
+        { key: 'title', label: 'Título', width: 49 },
+        { key: 'link', label: 'Link', width: 28 },
       ],
       rows: research.news.map((item) => ({
         date: formatDateBr(item.publishedAt),
