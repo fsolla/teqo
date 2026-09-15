@@ -226,22 +226,3 @@ export const excerptOffsetSeconds = (excerptTMs: unknown, eventStartAt: unknown)
   const offset = Math.floor(wallClockSeconds(epochMs) - startSeconds)
   return offset >= 0 ? offset : null
 }
-
-/**
- * Seconds from the session start (`eventStartAt`) to the speech itself
- * (`speechAt`, the Câmara wall clock of the speech) — where a video link must
- * start to open at the beginning of the deputy's speech, not at a curated
- * excerpt inside it. Null when either side is unparseable or the speech
- * precedes the session start.
- */
-export const speechStartOffsetSeconds = (
-  speechAt: unknown,
-  eventStartAt: unknown,
-): number | null => {
-  const speechSeconds = naiveWallClockSeconds(speechAt)
-  const startSeconds = naiveWallClockSeconds(eventStartAt)
-  if (speechSeconds === null || startSeconds === null) return null
-
-  const offset = Math.floor(speechSeconds - startSeconds)
-  return offset >= 0 ? offset : null
-}

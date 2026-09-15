@@ -853,16 +853,25 @@ const buildTransportSection = ({ research }) =>
   })
 
 /**
- * YouTube link starts where the excerpt sits in the session video
- * (`youtubeOffsetSeconds`, from the Câmara excerpt epoch − session start).
- * The VOD clip is the excerpt itself, so it needs no timestamp.
+ * YouTube link starts at the Câmara excerpt of the speech (`excerptTMs` −
+ * session start): `speechAt` is the API slot clock, not when the deputy
+ * actually speaks (for speech 641 the previous speaker is still on at
+ * `speechAt`). A short lead-in keeps the link from starting already inside the
+ * speech when the session video drifts a few seconds.
  */
+const YOUTUBE_LEAD_IN_SECONDS = 20
+
 const withYoutubeTimestamp = (url, offsetSeconds) => {
   if (!url) return null
   if (!Number.isFinite(offsetSeconds) || offsetSeconds <= 0) return url
   const separator = url.includes('?') ? '&' : '?'
   return `${url}${separator}t=${Math.floor(offsetSeconds)}s`
 }
+
+const youtubeStartSeconds = (row) =>
+  Number.isFinite(row.youtubeExcerptStartSeconds)
+    ? Math.max(0, Math.floor(row.youtubeExcerptStartSeconds) - YOUTUBE_LEAD_IN_SECONDS)
+    : null
 
 const buildSpeechesSection = ({ snapshot }) => {
   const { speeches, municipality } = snapshot
@@ -902,7 +911,7 @@ const buildSpeechesSection = ({ snapshot }) => {
             ? `Marcada no acervo — nome não localizado nos trechos (a fala cita ${formatInteger(row.mentionedMunicipalityCount)} municípios).`
             : 'Marcada no acervo — trecho não localizado.',
         video: row.youtubeUrl
-          ? withYoutubeTimestamp(row.youtubeUrl, row.youtubeStartSeconds)
+          ? withYoutubeTimestamp(row.youtubeUrl, youtubeStartSeconds(row))
           : (row.vodPlaybackUrl ?? '—'),
         transcript: row.officialTextUrl ?? '—',
       })),

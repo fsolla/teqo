@@ -178,10 +178,11 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   econômica (pesquisa)` · `9. Transporte e conexões (pesquisa)` · `10. Acervo
   de falas` — cada fala com "O que é" (sumário oficial) e "Menção ao município"
   (passagem que cita a cidade ou, se o nome não aparece nos trechos, a marcação
-  do acervo com o nº de municípios), mais **Vídeo** (YouTube já no **início da
-  fala** — `youtubeStartSeconds` = `speechAt` − início da sessão, via
-  `speechStartOffsetSeconds`; fallback para o VOD da Câmara, que é o clipe do
-  próprio trecho) e **Transcrição** (PDF do Diário) quando existirem ·
+  do acervo com o nº de municípios), mais **Vídeo** (YouTube no trecho da fala
+  — `youtubeExcerptStartSeconds` = época do trecho (`excerptTMs`) − início da
+  sessão, com folga de 20s no link; o `speechAt` da API é o horário do slot,
+  não o início real; fallback para o VOD da Câmara, que é o clipe do próprio
+  trecho) e **Transcrição** (PDF do Diário) quando existirem ·
   `11. Notícias e imprensa` ·
   `12. Panorama regional` · `13. Abordagem sugerida (personas)` · `14. Fontes e
   limites`.
