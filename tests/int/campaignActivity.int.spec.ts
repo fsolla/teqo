@@ -526,6 +526,108 @@ describe('activity domain', () => {
     ).rejects.toThrow(/permissão/i)
   })
 
+  it('refuses to clear or repoint the município through the update access (C165-F1)', async () => {
+    const fixtures = campaignFixtures()
+    const advisor = await fixtures.createCampaignUser('advisor')
+    const wideReadAdvisor = await fixtures.createCampaignUser('advisor', { visibility: 'tudo' })
+    const wideAdvisor = await fixtures.createCampaignUser('advisor', {
+      visibility: 'tudo',
+      editing: 'tudo',
+    })
+    const [ownMunicipality, secondOwnMunicipality, outsideMunicipality] = await Promise.all([
+      fixtures.getMunicipality(),
+      fixtures.getMunicipality(),
+      fixtures.getMunicipality(),
+    ])
+    await fixtures.assignMunicipalityAdvisors(ownMunicipality, [advisor, wideReadAdvisor])
+    await fixtures.assignMunicipalityAdvisors(secondOwnMunicipality, [advisor])
+
+    const activity = await payload.create({
+      collection: 'activity',
+      data: stub<ActivityCreateData>({
+        ...validActivityInput(ownMunicipality.id),
+        title: fixtures.value('Atividade do access de update'),
+      }),
+      overrideAccess: true,
+    })
+    fixtures.own('activity', activity.id)
+
+    // The action guard is bypassed here (direct Local API update) — the REST
+    // JWT path: the collection access itself must refuse the valor write.
+    await expect(
+      payload.update({
+        collection: 'activity',
+        id: activity.id,
+        data: { municipality: null },
+        user: advisor,
+        overrideAccess: false,
+      }),
+    ).rejects.toThrow(/permissão/i)
+
+    await expect(
+      payload.update({
+        collection: 'activity',
+        id: activity.id,
+        data: { municipality: outsideMunicipality.id },
+        user: advisor,
+        overrideAccess: false,
+      }),
+    ).rejects.toThrow(/permissão/i)
+
+    // An absent município key is not a valor write: another field still saves.
+    const edited = await payload.update({
+      collection: 'activity',
+      id: activity.id,
+      data: { locality: 'Novo local' },
+      user: advisor,
+      overrideAccess: false,
+    })
+    expect(edited.locality).toBe('Novo local')
+    expect(relationshipId(edited.municipality)).toBe(ownMunicipality.id)
+
+    // Edição "Tudo" widens the READ, not the carteira write boundary: the
+    // wide-read advisor still cannot repoint outside their portfolio.
+    await expect(
+      payload.update({
+        collection: 'activity',
+        id: activity.id,
+        data: { municipality: outsideMunicipality.id },
+        user: wideReadAdvisor,
+        overrideAccess: false,
+      }),
+    ).rejects.toThrow(/permissão/i)
+
+    // Repointing INSIDE the carteira is allowed (positive edge).
+    const movedWithinPortfolio = await payload.update({
+      collection: 'activity',
+      id: activity.id,
+      data: { municipality: secondOwnMunicipality.id },
+      user: advisor,
+      overrideAccess: false,
+    })
+    expect(relationshipId(movedWithinPortfolio.municipality)).toBe(secondOwnMunicipality.id)
+
+    // Edição "Tudo" may repoint anywhere, but clearing stays coordination/candidate-only.
+    const repointed = await payload.update({
+      collection: 'activity',
+      id: activity.id,
+      data: { municipality: outsideMunicipality.id },
+      user: wideAdvisor,
+      overrideAccess: false,
+    })
+    expect(relationshipId(repointed.municipality)).toBe(outsideMunicipality.id)
+
+    await expect(
+      payload.update({
+        collection: 'activity',
+        id: activity.id,
+        data: { municipality: null },
+        user: wideAdvisor,
+        overrideAccess: false,
+      }),
+    ).rejects.toThrow(/permissão/i)
+  })
+
   it('grants an advisor access to an activity they are responsible for outside their portfolio (C90 polymorphic leg)', async () => {
     const fixtures = campaignFixtures()
     const advisor = await fixtures.createCampaignUser('advisor')
