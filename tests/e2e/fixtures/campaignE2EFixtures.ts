@@ -550,14 +550,31 @@ export class CampaignE2EOwnership {
  * Every cell in the B32+ family paints optimistically, so asserting on the text
  * proves nothing about the database — a `page.reload()` right after would race
  * the POST. Pair this with the interaction inside one `Promise.all`.
+ *
+ * `throwOnNonOk` is for the specs whose route can refuse (400): the default
+ * filters on `response.ok()`, so a refusal would hang until the test timeout
+ * with only a bare "400" in the console. Opted in, the first matching POST
+ * resolves and a non-ok answer throws with the route's own message, making the
+ * failure diagnosable from the report alone.
  */
-export const expectPostResponse = (page: Page, urlFragment: string) =>
-  page.waitForResponse(
-    (response) =>
-      response.url().includes(urlFragment) &&
-      response.request().method() === 'POST' &&
-      response.ok(),
-  )
+export const expectPostResponse = (
+  page: Page,
+  urlFragment: string,
+  { throwOnNonOk = false }: { throwOnNonOk?: boolean } = {},
+) =>
+  page
+    .waitForResponse(
+      (response) =>
+        response.url().includes(urlFragment) &&
+        response.request().method() === 'POST' &&
+        (throwOnNonOk || response.ok()),
+    )
+    .then(async (response) => {
+      if (throwOnNonOk && !response.ok()) {
+        throw new Error(`POST ${urlFragment} → ${response.status()}: ${await response.text()}`)
+      }
+      return response
+    })
 
 /**
  * Checks a Radix Checkbox only once the page has hydrated. A Radix checkbox is
