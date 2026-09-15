@@ -14,7 +14,7 @@ import { FEDERAL_DEPUTY_OFFICE, HISTORICAL_SERIES_YEARS } from '../src/lib/elect
 import { getMunicipalityCatalogEntry } from '../src/lib/municipalityCatalog.ts'
 import { getMunicipalityVoteRank } from '../src/lib/municipalityVoteRank.ts'
 import { normalizeForSearch } from '../src/lib/speechSearch.ts'
-import { excerptOffsetSeconds } from '../src/lib/speechVod.ts'
+import { speechStartOffsetSeconds } from '../src/lib/speechVod.ts'
 import { campaignRoleLabels } from '../src/utilities/campaignUserProfile.ts'
 import { loadMunicipalityDossierData } from '../src/utilities/municipality/municipalityDossierData.ts'
 import {
@@ -66,7 +66,6 @@ const loadSpeeches = async (payload, actor, municipalityID, municipalityName) =>
       officialTextUrl: true,
       youtubeUrl: true,
       vodPlaybackUrl: true,
-      excerptTMs: true,
       eventStartAt: true,
       mentionedMunicipalities: true,
     },
@@ -96,7 +95,7 @@ const loadSpeeches = async (payload, actor, municipalityID, municipalityName) =>
         youtubeUrl: doc.youtubeUrl ?? null,
         vodPlaybackUrl: doc.vodPlaybackUrl ?? null,
         /** Offset of the excerpt inside the session video (YouTube start). */
-        youtubeOffsetSeconds: excerptOffsetSeconds(doc.excerptTMs, doc.eventStartAt),
+        youtubeStartSeconds: speechStartOffsetSeconds(doc.speechAt, doc.eventStartAt),
         mentionExcerpt: mentionSegment?.text ?? null,
         mentionedMunicipalityCount: Array.isArray(doc.mentionedMunicipalities)
           ? doc.mentionedMunicipalities.length

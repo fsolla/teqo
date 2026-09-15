@@ -193,6 +193,23 @@ const wallClockSeconds = (epochMs: number): number => {
   )
 }
 
+/** BRT wall-clock seconds-since-epoch of a naive Câmara datetime, or null. */
+const naiveWallClockSeconds = (value: unknown): number | null => {
+  const match = NAIVE_DATETIME.exec(String(value ?? '').trim())
+  if (!match) return null
+  const [, year, month, day, hour, minute, second = '0'] = match
+  const [y, mo, d, h, mi, s] = [year, month, day, hour, minute, second].map(Number)
+  if (mo < 1 || mo > 12 || d < 1 || d > 31 || h > 23 || mi > 59 || s > 59) {
+    return null
+  }
+  const ms = Date.UTC(y, mo - 1, d, h, mi, s)
+  const date = new Date(ms)
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== mo - 1 || date.getUTCDate() !== d) {
+    return null
+  }
+  return ms / 1000
+}
+
 /**
  * Seconds from the session start (`eventStartAt`, naive Câmara wall clock) to
  * the excerpt (`excerptTMs`, epoch ms). Both sides are read as BRT wall clock,
@@ -203,23 +220,28 @@ export const excerptOffsetSeconds = (excerptTMs: unknown, eventStartAt: unknown)
   const epochMs = Number(excerptTMs)
   if (!Number.isFinite(epochMs) || epochMs <= 0 || epochMs > MAX_DATE_MS) return null
 
-  const match = NAIVE_DATETIME.exec(String(eventStartAt ?? '').trim())
-  if (!match) return null
-  const [, year, month, day, hour, minute, second = '0'] = match
-  const [y, mo, d, h, mi, s] = [year, month, day, hour, minute, second].map(Number)
-  if (mo < 1 || mo > 12 || d < 1 || d > 31 || h > 23 || mi > 59 || s > 59) {
-    return null
-  }
-  const startMs = Date.UTC(y, mo - 1, d, h, mi, s)
-  const startDate = new Date(startMs)
-  if (
-    startDate.getUTCFullYear() !== y ||
-    startDate.getUTCMonth() !== mo - 1 ||
-    startDate.getUTCDate() !== d
-  ) {
-    return null
-  }
+  const startSeconds = naiveWallClockSeconds(eventStartAt)
+  if (startSeconds === null) return null
 
-  const offset = Math.floor(wallClockSeconds(epochMs) - startMs / 1000)
+  const offset = Math.floor(wallClockSeconds(epochMs) - startSeconds)
+  return offset >= 0 ? offset : null
+}
+
+/**
+ * Seconds from the session start (`eventStartAt`) to the speech itself
+ * (`speechAt`, the Câmara wall clock of the speech) — where a video link must
+ * start to open at the beginning of the deputy's speech, not at a curated
+ * excerpt inside it. Null when either side is unparseable or the speech
+ * precedes the session start.
+ */
+export const speechStartOffsetSeconds = (
+  speechAt: unknown,
+  eventStartAt: unknown,
+): number | null => {
+  const speechSeconds = naiveWallClockSeconds(speechAt)
+  const startSeconds = naiveWallClockSeconds(eventStartAt)
+  if (speechSeconds === null || startSeconds === null) return null
+
+  const offset = Math.floor(speechSeconds - startSeconds)
   return offset >= 0 ? offset : null
 }

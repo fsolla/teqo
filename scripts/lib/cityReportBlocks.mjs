@@ -902,7 +902,7 @@ const buildSpeechesSection = ({ snapshot }) => {
             ? `Marcada no acervo — nome não localizado nos trechos (a fala cita ${formatInteger(row.mentionedMunicipalityCount)} municípios).`
             : 'Marcada no acervo — trecho não localizado.',
         video: row.youtubeUrl
-          ? withYoutubeTimestamp(row.youtubeUrl, row.youtubeOffsetSeconds)
+          ? withYoutubeTimestamp(row.youtubeUrl, row.youtubeStartSeconds)
           : (row.vodPlaybackUrl ?? '—'),
         transcript: row.officialTextUrl ?? '—',
       })),

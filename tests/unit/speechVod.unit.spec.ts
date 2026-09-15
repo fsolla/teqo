@@ -2,7 +2,11 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { excerptOffsetSeconds, parseYoutubeVideoId } from '@/lib/speechVod'
+import {
+  excerptOffsetSeconds,
+  parseYoutubeVideoId,
+  speechStartOffsetSeconds,
+} from '@/lib/speechVod'
 
 /**
  * The VOD URL/status/duration contracts moved from `scripts/lib/camaraSpeeches.mjs`
@@ -47,6 +51,25 @@ describe('excerptOffsetSeconds', () => {
     expect(excerptOffsetSeconds(1786473834650, '2026-13-11T15:00')).toBeNull()
     expect(excerptOffsetSeconds(1786473834650, '2026-08-11T25:00')).toBeNull()
     expect(excerptOffsetSeconds(1786473834650, '2026-08-11T15:75')).toBeNull()
+  })
+})
+
+describe('speechStartOffsetSeconds', () => {
+  it('measures the speech start against the session start', () => {
+    expect(speechStartOffsetSeconds('2018-03-13T14:08', '2018-03-13T14:00')).toBe(480)
+    expect(speechStartOffsetSeconds('2026-08-11T15:12:30', '2026-08-11T15:00')).toBe(750)
+  })
+
+  it('reads both sides as BRT wall clock across an old DST transition', () => {
+    // 2018-11-04: clocks move to -02:00 — the naive difference stays local.
+    expect(speechStartOffsetSeconds('2018-11-04T12:00', '2018-11-04T11:00')).toBe(3600)
+  })
+
+  it('returns null when the speech precedes the session or input is unparseable', () => {
+    expect(speechStartOffsetSeconds('2018-03-13T13:59', '2018-03-13T14:00')).toBeNull()
+    expect(speechStartOffsetSeconds(null, '2018-03-13T14:00')).toBeNull()
+    expect(speechStartOffsetSeconds('2018-03-13T14:08', null)).toBeNull()
+    expect(speechStartOffsetSeconds('2018-03-13T25:00', '2018-03-13T14:00')).toBeNull()
   })
 })
 
