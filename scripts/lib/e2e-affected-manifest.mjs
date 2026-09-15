@@ -29,6 +29,10 @@ export const E2E_CURATED_SPECS = [
   'campaignAiTranscribe',
   'campaignAgendaFeed',
   'campaignNewsletter',
+  // C167 — deliberate: the cut public page/route gates are the only e2e
+  // covering the new URL contract, and a migration always classifies the PR
+  // as high-risk (curated only).
+  'campaignSpeechCut',
 ]
 
 /**
@@ -245,9 +249,10 @@ export const E2E_AFFECTED_MANIFEST = [
   },
   {
     // Zod input schemas surface in the browser through form flows; the
-    // public-site and newsletter specs exercise those flows end to end.
+    // public-site and newsletter specs exercise those flows end to end. C167
+    // adds the cut schemas, whose HTTP contract is the cut spec.
     prefixes: ['src/lib/schemas'],
-    specs: ['frontend', 'campaignNewsletter'],
+    specs: ['frontend', 'campaignNewsletter', 'campaignSpeechCut'],
   },
   {
     // Web Push client — the opt-in toast mounts on the campaign shell, so a
@@ -283,7 +288,8 @@ export const E2E_AFFECTED_MANIFEST = [
   {
     // C154 — the communication vertical: the acervo search/filters/detail and
     // the `speechCatalog` role gate. `src/lib/speech*` carries the pure
-    // search/highlight modules the RSC list renders with.
+    // search/highlight modules the RSC list renders with. C167 adds the cut
+    // routes/player/dialog and the public cut page below.
     prefixes: [
       `${CAMPAIGN_APP}/comunicacao`,
       'src/components/campaign/speech',
@@ -292,7 +298,14 @@ export const E2E_AFFECTED_MANIFEST = [
       // The role predicates drive the vertical gate and the assistant surfaces.
       'src/lib/campaignRoles',
     ],
-    specs: ['campaignSpeechAcervo'],
+    specs: ['campaignSpeechAcervo', 'campaignSpeechCut'],
+  },
+  {
+    // C167 — the unlisted public page of a cut: 200 with the stored file and
+    // 404 for unpublished/unknown ids are the HTTP contract this spec owns.
+    // The root share kit is rendered by both the cut card and that page.
+    prefixes: ['src/app/(frontend)/corte', 'src/components/SpeechCutShareActions.tsx'],
+    specs: ['campaignSpeechCut'],
   },
   {
     prefixes: [

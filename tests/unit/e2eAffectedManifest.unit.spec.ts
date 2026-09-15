@@ -59,6 +59,9 @@ describe('E2E_AFFECTED_MANIFEST (OPS5)', () => {
       'campaignAiTranscribe',
       'campaignAgendaFeed',
       'campaignNewsletter',
+      // C167 — deliberate: the cut public page/route contract is new and the
+      // migration makes every PR of this delivery high-risk (curated only).
+      'campaignSpeechCut',
     ])
     const onDisk = new Set(specNamesOnDisk())
     for (const spec of E2E_CURATED_SPECS) {

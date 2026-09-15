@@ -34,6 +34,7 @@ import { Post } from './collections/Post'
 import { PushSubscription } from './collections/PushSubscription'
 import { Signature } from './collections/Signature'
 import { Speech } from './collections/Speech'
+import { SpeechCut } from './collections/SpeechCut'
 import { SpeechSegment } from './collections/SpeechSegment'
 import { StateDeputy } from './collections/StateDeputy'
 import { Subscription } from './collections/Subscription'
@@ -115,6 +116,7 @@ export default buildConfig({
     Activity,
     Speech,
     SpeechSegment,
+    SpeechCut,
     CalendarFeed,
     GoogleCalendarSync,
     ElectionTally,

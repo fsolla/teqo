@@ -66,6 +66,11 @@ RUN --mount=type=secret,id=database_url,env=DATABASE_URL \
 FROM base AS runner
 WORKDIR /app
 
+# C167 — `ffmpeg` cuts the exact [início,fim] excerpt of an acervo speech
+# (speechCutJob). Only the runner stage pays for it: the deps/builder/migrator
+# stages never run it. `FFMPEG_PATH` can still override the binary.
+RUN apk add --no-cache ffmpeg
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 

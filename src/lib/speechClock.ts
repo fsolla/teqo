@@ -25,3 +25,14 @@ export const formatSpeechSpan = (seconds: number): string => {
   if (minutes > 0) return `${minutes}min${pad(secs)}s`
   return `${secs}s`
 }
+
+/**
+ * Day-only label (`dd/mm/aaaa`) of a Câmara wall-clock `speechAt`. Slicing the
+ * string keeps the local reading, the same reason the clock never uses `Date`.
+ */
+export const formatSpeechDate = (speechAt: string): string => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(speechAt)
+  if (!match) return speechAt
+  const [, year, month, day] = match
+  return `${day}/${month}/${year}`
+}

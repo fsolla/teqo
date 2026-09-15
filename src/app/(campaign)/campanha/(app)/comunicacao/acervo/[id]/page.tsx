@@ -113,6 +113,7 @@ export default async function SpeechDetailPage({ params, searchParams }: SpeechD
                 durationSeconds={view.durationSeconds}
                 speechType={view.type}
                 speechDateLabel={view.speechDateLabel}
+                speechSummary={view.summary}
               />
             </div>
 

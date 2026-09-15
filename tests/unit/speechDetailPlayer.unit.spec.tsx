@@ -59,6 +59,7 @@ const renderPlayer = (props: Partial<Parameters<typeof SpeechDetailPlayer>[0]> =
       durationSeconds={300}
       speechType="BREVES COMUNICAÇÕES"
       speechDateLabel="11/08/2026"
+      speechSummary={null}
       {...props}
     />,
   )

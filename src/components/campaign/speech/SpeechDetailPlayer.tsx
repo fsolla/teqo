@@ -4,12 +4,15 @@ import { DownloadIcon, ExternalLinkIcon, FilmIcon, PlayIcon, ScissorsIcon } from
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import type { SpeechVodResolveResponse } from '@/app/(campaign)/campanha/(app)/comunicacao/acervo/resolver-vod/types'
+import { SpeechCutDialog } from '@/components/campaign/speech/SpeechCutDialog'
+import { SpeechCutResultCard } from '@/components/campaign/speech/SpeechCutResultCard'
 import { SpeechExcerptControls } from '@/components/campaign/speech/SpeechExcerptControls'
 import { SpeechExcerptShare } from '@/components/campaign/speech/SpeechExcerptShare'
 import { SpeechHighlightParts } from '@/components/campaign/speech/SpeechHighlightParts'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
+import type { SpeechCutViewModel } from '@/lib/speechCut'
 import {
   extendRangeToSegment,
   initialExcerptRange,
@@ -66,6 +69,8 @@ type SpeechDetailPlayerProps = {
   speechType: string | null
   /** C166 — day label (`dd/mm/aaaa`) for the share message. */
   speechDateLabel: string
+  /** C167 — official summary, the deterministic fallback for the cut metadata. */
+  speechSummary: string | null
 }
 
 const StatusPanel = ({
@@ -117,6 +122,7 @@ export const SpeechDetailPlayer = ({
   durationSeconds,
   speechType,
   speechDateLabel,
+  speechSummary,
 }: SpeechDetailPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [resolution, setResolution] = useState<ResolutionState>({ kind: 'idle' })
@@ -124,6 +130,10 @@ export const SpeechDetailPlayer = ({
   // C166: one state for the explicit selection mode — a non-null range means
   // the mode is on, so "selecting" cannot drift from "has a range".
   const [selection, setSelection] = useState<ExcerptRange | null>(null)
+  // C167: the dialog opens from the current selection; the published cut is kept
+  // in session so the share kit stays visible after the dialog closes.
+  const [cutDialogOpen, setCutDialogOpen] = useState(false)
+  const [publishedCut, setPublishedCut] = useState<SpeechCutViewModel | null>(null)
   const [youtubeStart, setYoutubeStart] = useState<number | null>(() =>
     youtubeVideoId && youtubeOffsetSeconds !== null
       ? youtubeOffsetSeconds + (initialSeconds ?? 0)
@@ -136,6 +146,7 @@ export const SpeechDetailPlayer = ({
   const selectionAvailable = selectionDuration !== null && selectionDuration >= MIN_EXCERPT_SECONDS
   const selecting = selection !== null
   const showExcerptShare = selecting && Boolean(youtubeVideoId)
+  const showCutAction = selecting && vodResolvable
 
   useEffect(() => {
     const video = videoRef.current
@@ -370,6 +381,17 @@ export const SpeechDetailPlayer = ({
             Selecionar trecho
           </Button>
         ) : null}
+        {showCutAction && selection ? (
+          <Button
+            type="button"
+            className="min-h-10"
+            data-slot="speech-cut-open"
+            onClick={() => setCutDialogOpen(true)}
+          >
+            <ScissorsIcon data-icon="inline-start" aria-hidden="true" />
+            Cortar vídeo
+          </Button>
+        ) : null}
         {showExcerptShare && selection && youtubeVideoId ? (
           <SpeechExcerptShare
             videoId={youtubeVideoId}
@@ -382,9 +404,10 @@ export const SpeechDetailPlayer = ({
         ) : null}
         {vodResolvable ? (
           <Button
-            // While the excerpt share is on screen it is the primary action;
-            // the download steps back to outline instead of splitting the CTA.
-            variant={showExcerptShare ? 'outline' : 'default'}
+            // While the excerpt share or the cut action is on screen it is the
+            // primary action; the download steps back to outline instead of
+            // splitting the CTA.
+            variant={showExcerptShare || showCutAction ? 'outline' : 'default'}
             className="min-h-10"
             disabled={resolving}
             aria-busy={resolving || undefined}
@@ -415,6 +438,21 @@ export const SpeechDetailPlayer = ({
       </div>
 
       {inlineNotice}
+
+      {publishedCut ? <SpeechCutResultCard cut={publishedCut} /> : null}
+
+      {selection ? (
+        <SpeechCutDialog
+          open={cutDialogOpen}
+          onOpenChange={setCutDialogOpen}
+          speechId={speechId}
+          speechType={speechType}
+          dateLabel={speechDateLabel}
+          summary={speechSummary}
+          range={selection}
+          onPublished={setPublishedCut}
+        />
+      ) : null}
 
       {!youtubeVideoId && selectionAvailable ? (
         <div className="mt-3 rounded-lg border bg-muted/40 px-4 py-3">

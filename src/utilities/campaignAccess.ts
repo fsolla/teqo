@@ -169,4 +169,4 @@ export {
   canUpdateCalendarFeed,
 } from '@/utilities/access/calendarFeeds'
 
-export { canReadSpeech, canUpdateSpeech } from '@/utilities/access/speeches'
+export { canReadSpeech, canReadSpeechCut, canUpdateSpeech } from '@/utilities/access/speeches'

@@ -88,6 +88,7 @@ export interface Config {
     activity: Activity;
     speech: Speech;
     speechSegment: SpeechSegment;
+    speechCut: SpeechCut;
     calendarFeed: CalendarFeed;
     googleCalendarSync: GoogleCalendarSync;
     electionTally: ElectionTally;
@@ -131,6 +132,7 @@ export interface Config {
     activity: ActivitySelect<false> | ActivitySelect<true>;
     speech: SpeechSelect<false> | SpeechSelect<true>;
     speechSegment: SpeechSegmentSelect<false> | SpeechSegmentSelect<true>;
+    speechCut: SpeechCutSelect<false> | SpeechCutSelect<true>;
     calendarFeed: CalendarFeedSelect<false> | CalendarFeedSelect<true>;
     googleCalendarSync: GoogleCalendarSyncSelect<false> | GoogleCalendarSyncSelect<true>;
     electionTally: ElectionTallySelect<false> | ElectionTallySelect<true>;
@@ -1017,6 +1019,47 @@ export interface SpeechSegment {
   createdAt: string;
 }
 /**
+ * Cortes do acervo de falas publicados em /corte/<id>. Dados e vídeos da Câmara dos Deputados (CC BY 4.0).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "speechCut".
+ */
+export interface SpeechCut {
+  id: number;
+  /**
+   * Fala de origem do corte. Preenchida pelo fluxo; fica vazia se a fala for excluída (o link público continua válido).
+   */
+  speech?: (number | null) | Speech;
+  startSeconds: number;
+  endSeconds: number;
+  /**
+   * Derivada do trecho escolhido.
+   */
+  durationSeconds?: number | null;
+  title: string;
+  description: string;
+  /**
+   * Despublicar tira o corte do ar na hora (kill switch).
+   */
+  status: 'processing' | 'published' | 'unpublished' | 'failed';
+  /**
+   * Progresso honesto do corte em andamento.
+   */
+  step?: ('resolving' | 'cutting' | 'metadata' | 'publishing') | null;
+  /**
+   * O arquivo que a página pública toca e baixa.
+   */
+  media?: (number | null) | Media;
+  /**
+   * Motivo interno da falha; nunca vai ao público.
+   */
+  error?: string | null;
+  publishedAt?: string | null;
+  createdBy?: (number | null) | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "calendarFeed".
  */
@@ -1560,6 +1603,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'speechSegment';
         value: number | SpeechSegment;
+      } | null)
+    | ({
+        relationTo: 'speechCut';
+        value: number | SpeechCut;
       } | null)
     | ({
         relationTo: 'calendarFeed';
@@ -2117,6 +2164,26 @@ export interface SpeechSegmentSelect<T extends boolean = true> {
   endSeconds?: T;
   text?: T;
   searchText?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "speechCut_select".
+ */
+export interface SpeechCutSelect<T extends boolean = true> {
+  speech?: T;
+  startSeconds?: T;
+  endSeconds?: T;
+  durationSeconds?: T;
+  title?: T;
+  description?: T;
+  status?: T;
+  step?: T;
+  media?: T;
+  error?: T;
+  publishedAt?: T;
+  createdBy?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2852,6 +2919,7 @@ export interface TaskCreateCollectionExport {
       | 'activity'
       | 'speech'
       | 'speechSegment'
+      | 'speechCut'
       | 'calendarFeed'
       | 'googleCalendarSync'
       | 'electionTally'

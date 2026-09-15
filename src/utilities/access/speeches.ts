@@ -29,3 +29,19 @@ export const canUpdateSpeech: Access = async ({ req }) => {
 
   return isCampaignUnrestricted(await getFreshCampaignUser(req))
 }
+
+/**
+ * C167 — a cut is public by link when `published`; every other status (and the
+ * internal `error`/`step`) stays behind the acervo gate. Returning a `where`
+ * for the anonymous reader keeps REST/GraphQL from listing drafts, while the
+ * public page reads with the default override and filters `published` itself,
+ * the same contract as `Petition.enabled`.
+ */
+export const canReadSpeechCut: Access = async ({ req }) => {
+  if (isPayloadAdmin(req.user)) return true
+
+  const currentUser = await getFreshCampaignUser(req)
+  return currentUser && canReadSpeechCatalog(currentUser.role)
+    ? true
+    : { status: { equals: 'published' } }
+}
