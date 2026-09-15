@@ -180,10 +180,11 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   (passagem que cita a cidade ou, se o nome não aparece nos trechos, a marcação
   do acervo com o nº de municípios), mais **Vídeo** (YouTube no trecho da fala
   — `youtubeExcerptStartSeconds` = época do trecho (`excerptTMs`) − início da
-  sessão, com folga de 20s no link; o `speechAt` da API é o horário do slot,
-  não o início real; fallback para o VOD da Câmara, que é o clipe do próprio
-  trecho) e **Transcrição** (PDF do Diário) quando existirem ·
-  `11. Notícias e imprensa` ·
+  sessão, calibrado contra o vídeo real: o da sessão de 13/03/2018 começa ~37s
+  depois do `eventStartAt`, então 645s viram `t=608s` (`YOUTUBE_VIDEO_OFFSET_SECONDS`);
+  o `speechAt` da API é o horário do slot, não o início real; fallback para o
+  VOD da Câmara, que é o clipe do próprio trecho) e **Transcrição** (PDF do
+  Diário) quando existirem · `11. Notícias e imprensa` ·
   `12. Panorama regional` · `13. Abordagem sugerida (personas)` · `14. Fontes e
   limites`.
 - **Links clicáveis:** todo URL no PDF é um link (`<a href>`): células de

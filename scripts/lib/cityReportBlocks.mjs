@@ -854,12 +854,12 @@ const buildTransportSection = ({ research }) =>
 
 /**
  * YouTube link starts at the Câmara excerpt of the speech (`excerptTMs` −
- * session start): `speechAt` is the API slot clock, not when the deputy
- * actually speaks (for speech 641 the previous speaker is still on at
- * `speechAt`). A short lead-in keeps the link from starting already inside the
- * speech when the session video drifts a few seconds.
+ * session start), calibrated by the live video: the 2018-03-13 session video
+ * starts ~37s after `eventStartAt`, so the excerpt at 645s plays at 608s
+ * (`youtube.com/live/2cX_gKkJH7Q?t=608`, checked in the browser). `speechAt` is
+ * the API slot clock, not when the deputy speaks.
  */
-const YOUTUBE_LEAD_IN_SECONDS = 20
+const YOUTUBE_VIDEO_OFFSET_SECONDS = 37
 
 const withYoutubeTimestamp = (url, offsetSeconds) => {
   if (!url) return null
@@ -870,7 +870,7 @@ const withYoutubeTimestamp = (url, offsetSeconds) => {
 
 const youtubeStartSeconds = (row) =>
   Number.isFinite(row.youtubeExcerptStartSeconds)
-    ? Math.max(0, Math.floor(row.youtubeExcerptStartSeconds) - YOUTUBE_LEAD_IN_SECONDS)
+    ? Math.max(0, Math.floor(row.youtubeExcerptStartSeconds) - YOUTUBE_VIDEO_OFFSET_SECONDS)
     : null
 
 const buildSpeechesSection = ({ snapshot }) => {
