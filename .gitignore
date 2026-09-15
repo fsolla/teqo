@@ -78,6 +78,11 @@ next-env.d.ts
 # Solla × Ceuci report HTML cache (scripts/build-solla-ceuci-salvador-report.mjs)
 /data/solla-ceuci-salvador/
 
+# C163 — city pre-trip report: snapshot/research/HTML cache + internal PDF/MD.
+# The repo is public; the report carries campaign-internal data and is never committed.
+/data/relatorios-cidade/
+/docs/research/relatorios-cidade/
+
 # Local-only sensitive material (agents may read; never commit content)
 /private/**
 !/private/README.md

@@ -691,6 +691,46 @@ anterior de cada fala está em `updates[].previousUrl` no JSON do run. O import
 (`pnpm camara:import --date <dia>`) reconstrói o link a partir da API (a fonte
 é a URL legada devolvida pela Câmara); reexecutar o reparo é idempotente.
 
+## C163 — relatório de cidade pré-viagem (leitura read-only)
+
+O gerador de PDF por cidade (`/work-issue` C163) extrai um snapshot da **base
+de produção** sem escrever nada: a sessão Postgres é aberta com
+`default_transaction_read_only=on` (options da connection string, aplicada pelo
+próprio `scripts/extract-city-report-snapshot.mjs`) e o render acontece fora do
+homeserver. Nenhum artefato é persistido na base; o snapshot e o PDF/MD são
+gitignored (`data/relatorios-cidade/`, `docs/research/relatorios-cidade/`).
+
+Fluxo completo e contrato dos JSONs: skill `.agents/skills/relatorio-cidade`.
+Receita do homeserver (checkout de scratch, **nunca** o `~/teqo-deploy` do
+deploy em andamento):
+
+```bash
+ssh homeserver
+source ~/.nvm/nvm.sh                     # Node 24 (engines do repo)
+test -d ~/teqo-report || git clone https://github.com/fsolla/teqo.git ~/teqo-report
+cd ~/teqo-report
+git fetch origin main && git checkout main && git pull --ff-only origin main
+# tsx vem do install completo (o deploy usa --prod e não traz devDeps):
+[ -d node_modules/tsx ] || pnpm install --prod=false
+set -a; source ~/stack/teqo-1313.env; set +a
+# o host `postgres` só resolve na rede do stack; do host usa-se o proxy socat:
+export DATABASE_URL="${DATABASE_URL/@postgres:5432/@127.0.0.1:5433}"
+export CITY_REPORT_CONFIRM=1              # guard de intenção explícita
+NODE_OPTIONS="--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs" \
+  node scripts/extract-city-report-snapshot.mjs \
+    --municipality=<slug> --out=data/relatorios-cidade/<slug>.snapshot.json
+```
+
+Depois, na workstation: `scp homeserver:~/teqo-report/data/relatorios-cidade/<slug>.snapshot.json data/relatorios-cidade/`
+e `node scripts/build-city-report.mjs --snapshot=... --research=...`. O snapshot
+carrega `readAt` + SHA do código — o PDF é datado por construção.
+
+Guardas: sem `CITY_REPORT_CONFIRM=1` o extrator recusa; a URL com `options`
+read-only é aplicada antes do Payload subir (qualquer write estoura no servidor);
+`PORTAL_TRANSPARENCIA_API_KEY` é opcional (sem chave, emendas viram lacuna
+explícita, nunca zero). Nunca aponte o extrator para o banco local esperando
+dados de produção — o caminho é o proxy do homeserver.
+
 ## Referências
 
 - `scripts/deploy-homeserver.sh` — o script (fonte da verdade do fluxo; parametrizado por `TEQO_ENV`)
