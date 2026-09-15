@@ -1,9 +1,9 @@
 # B32/B34 — Raiz dos testes de lideranças que quebraram o verify 3 runs seguidos (regressão ou flake sob carga)
 
-Status: rascunho
+Status: entregue (2026-09-15) — impl plan: `docs/plans/b32-b34-liderancas-estabilidade-verify-impl.md`
 Atualizado em: 2026-09-15
-Issue: #1036 (blocked via --plan — promover com agent:ready após merge em main)
-Priority: P1 (proposto — validar no gate; alternativa P2 abaixo)
+Issue: #1036
+Priority: P1 (validado no gate)
 Impeccable: A — N/A sem UI
 Rascunho UI: N/A — sem UI
 Appetite: ~1–2 dias eng (diagnóstico + fix + prova verde)
@@ -72,7 +72,7 @@ Quero saber por que a lista de lideranças quebrou o deploy três vezes seguidas
 
 ## Referências
 
-- GitHub Issue #1032 (reservado)
+- GitHub Issue #1036
 - Rascunho UI (gate): N/A
 - `tests/e2e/campaignLeaderships.e2e.spec.ts` (specs `:15` B32 e `:59` B34)
 - `docs/plans/autosave-status-lista-liderancas.md` (B32, precedente entregue)
