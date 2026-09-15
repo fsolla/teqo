@@ -358,11 +358,16 @@ describe('buildCityReport', () => {
   })
 
   it('adds the researched demography, economy and transport data', () => {
-    const demografia = report.sections.find((section) => section.id === 'demografia')!
-    const complementary = demografia.blocks.find(
-      (block) => block.title === 'Demografia complementar (pesquisa)',
-    )!
-    expect((complementary.rows as unknown as TableRow[])[0].topic).toBe('Cor/raça')
+    const demografia = report.sections.find((section) => section.id === 'demografia')!.blocks[0]
+    const rows = demografia.rows as unknown as TableRow[]
+    expect(rows[0].indicator).toBe('População')
+    expect(rows[0].source).toBe('base Teqo')
+    expect(rows.some((row) => row.indicator === 'Cor/raça' && row.source === '10/09/2026')).toBe(
+      true,
+    )
+    expect(
+      demografia.sources!.some((source) => source.url === 'https://exemplo.test/cor-raca'),
+    ).toBe(true)
     const economia = report.sections.find((section) => section.id === 'economia')!.blocks[0]
     expect((economia.rows as unknown as TableRow[])[0].detail).toContain('Serviços')
     const transporte = report.sections.find((section) => section.id === 'transporte')!.blocks[0]

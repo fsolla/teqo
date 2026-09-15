@@ -795,34 +795,47 @@ const buildDemographicsSection = ({ snapshot, research }) => {
       },
     ]
   }
-  const blocks = [
+  const baseRows = [
+    { indicator: 'População', value: formatInteger(demographics.population) },
+    { indicator: '0–17 anos', value: formatInteger(demographics.ageBands['0-17']) },
+    { indicator: '18–29 anos', value: formatInteger(demographics.ageBands['18-29']) },
+    { indicator: '30–59 anos', value: formatInteger(demographics.ageBands['30-59']) },
+    { indicator: '60+ anos', value: formatInteger(demographics.ageBands['60+']) },
+    { indicator: 'Mulheres', value: formatPercent(demographics.sexShareFemale) },
     {
-      kind: 'stats',
+      indicator: 'Idade mediana',
+      value:
+        demographics.medianAge === null ? '—' : `${formatInteger(demographics.medianAge)} anos`,
+    },
+  ].map((row) => ({ ...row, source: 'base Teqo' }))
+  const researchRows = (research.demography ?? []).map((item) => ({
+    indicator: item.topic,
+    value: item.detail,
+    source: formatDateBr(item.sourceDate),
+  }))
+
+  return [
+    {
+      kind: 'table',
       title: 'Demografia (IBGE Censo 2022)',
-      rows: [
-        { label: 'População', value: formatInteger(demographics.population) },
-        { label: '0–17 anos', value: formatInteger(demographics.ageBands['0-17']) },
-        { label: '18–29 anos', value: formatInteger(demographics.ageBands['18-29']) },
-        { label: '30–59 anos', value: formatInteger(demographics.ageBands['30-59']) },
-        { label: '60+ anos', value: formatInteger(demographics.ageBands['60+']) },
-        { label: 'Mulheres', value: formatPercent(demographics.sexShareFemale) },
-        {
-          label: 'Idade mediana',
-          value:
-            demographics.medianAge === null ? '—' : `${formatInteger(demographics.medianAge)} anos`,
-        },
+      columns: [
+        { key: 'indicator', label: 'Indicador', width: 22 },
+        { key: 'value', label: 'Dado', width: 61 },
+        { key: 'source', label: 'Fonte', width: 17 },
       ],
-      sources: [sourceTeqo('IBGE Censo 2022 (artefato commitado)', null)],
+      rows: [...baseRows, ...researchRows],
+      note: '“base Teqo” = artefato IBGE Censo 2022 commitado; datas = pesquisa web datada, com URL na seção de fontes.',
+      sources: [
+        sourceTeqo('IBGE Censo 2022 (artefato commitado)', null),
+        ...(research.demography ?? []).map((item) => ({
+          kind: 'web',
+          label: item.topic,
+          url: item.sourceUrl,
+          date: item.sourceDate,
+        })),
+      ],
     },
   ]
-  blocks.push(
-    ...buildSourcedListBlocks({
-      title: 'Demografia complementar (pesquisa)',
-      note: 'Cor/raça e poder aquisitivo (IBGE Censo 2022) — leitura para agenda e linguagem na cidade; cada item com URL.',
-      items: research.demography ?? [],
-    }),
-  )
-  return blocks
 }
 
 const buildEconomySection = ({ research }) =>
