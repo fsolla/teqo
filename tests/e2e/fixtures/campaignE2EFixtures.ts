@@ -2,7 +2,13 @@ import { randomUUID } from 'node:crypto'
 
 import { sql } from '@payloadcms/db-postgres'
 import type { BrowserContext, Fixtures, Frame, Page } from '@playwright/test'
-import { getPayload, type CollectionSlug, type Payload, type PayloadRequest } from 'payload'
+import {
+  getPayload,
+  type CollectionSlug,
+  type Payload,
+  type PayloadRequest,
+  type Where,
+} from 'payload'
 
 import { municipalityCatalog } from '../../../src/lib/municipalityCatalog.js'
 import type { CampaignUser } from '../../../src/payload-types.js'
@@ -345,18 +351,32 @@ export class CampaignE2EOwnership {
         })
       : { docs: [] }
     for (const stateDeputy of stateDeputies.docs) this.own('stateDeputy', stateDeputy.id)
-    const leaderships = await this.rootPayload.find({
-      collection: 'leadership',
-      where: {
-        or: [
-          ...(userIDs.length ? [{ createdBy: { in: userIDs } }] : []),
-          ...(userIDs.length ? [{ user: { in: userIDs } }] : []),
-          ...(contactIDs.length ? [{ contact: { in: contactIDs } }] : []),
-        ],
-      },
-      depth: 0,
-      pagination: false,
-    })
+    /**
+     * The conditions are dynamic and can ALL be absent — a test that created no
+     * campaignUser and no contact (a read-only journey) still runs this cleanup.
+     * An empty `or: []` is NOT "match nothing" in Payload's Drizzle adapter:
+     * `parseParams` drops it and the query runs with NO where clause, so the
+     * discovery would own EVERY leadership in the shared database and the
+     * cleanup would delete rows other workers are using (root cause of the
+     * B32/B34 verify flakes, 2026-09-15 — jobs 104476711539/104458195479/
+     * 104434116739). Guard the empty case exactly like the int fixture
+     * (`campaignFixtures.ts` `discoverDependents`) and the supporters block
+     * below; never let an empty `or` reach `find`.
+     */
+    const leadershipConditions: Where[] = [
+      ...(userIDs.length ? [{ createdBy: { in: userIDs } }] : []),
+      ...(userIDs.length ? [{ user: { in: userIDs } }] : []),
+      ...(contactIDs.length ? [{ contact: { in: contactIDs } }] : []),
+    ]
+    const leaderships =
+      leadershipConditions.length > 0
+        ? await this.rootPayload.find({
+            collection: 'leadership',
+            where: { or: leadershipConditions },
+            depth: 0,
+            pagination: false,
+          })
+        : { docs: [] }
     for (const leadership of leaderships.docs) this.own('leadership', leadership.id)
 
     const leadershipIDs = this.ids('leadership')

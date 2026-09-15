@@ -9,69 +9,93 @@ Rascunho UI: N/A
 Appetite: ~1–2 dias eng (diagnóstico + fix + prova verde)
 Responsável: —
 
-## Diagnóstico (revisado com logs)
+## Diagnóstico (revisado com logs e reprodução local)
 
-**Veredito: flake sob carga de 4 workers — não é regressão de código.** A trilha C165/C165-F1 é inocente: nenhum arquivo de liderança/célula/action mudou entre os SHAs que falharam e o HEAD.
+**Veredito: NÃO é regressão de código de produção — é um bug de test-infra do fixture e2e que apagava lideranças vivas de outros workers.** A trilha C165/C165-F1 é inocente (nenhum arquivo de liderança/célula/action mudou entre os SHAs que falharam e o HEAD).
 
-Evidência (logs dos jobs `104476711539`, `104458195479`, `104434116739` + run `35008333471`):
+### Causa raiz: `where: { or: [] }` no `discoverOwnedRows` do fixture e2e
 
-1. **B32 (`campaignLeaderships.e2e.spec.ts:15`)** — `Test timeout of 60000ms exceeded` no `locator.click` de "Editar status de apoio" (`:35:72`), sempre os 60 s inteiros do teste, em runs 2 e 3 (3/3 tentativas). O call log diz `waiting for getByRole(...)`: o controle da célula é filho de um boundary RSC — enquanto o chunk não commita, o botão existe apenas na cópia oculta `div[id^="S:"]` do stream (a mesma classe OPS83). O spec não tem gate de settle nenhum antes do clique e o clique consome o orçamento inteiro do teste.
-2. **B34 (`campaignLeaderships.e2e.spec.ts:59`)** — duas falhas distintas:
-   - `toHaveAttribute`/`toBeVisible` falhando na presença do chip (runs 1 e 3: `:91`, run 2: `:133`) **depois** do gate de settle inline — o gate genérico `div[id^="S:"]` pode resolver antes do chunk começar a streamar; a receita documentada do próprio helper (`waitForStreamSettled`, OPS83/E2E-DEBT-S-GATE) manda parear com um poll focado no elemento.
-   - `page.waitForResponse: Test timeout of 60000ms exceeded` no primeiro add (run 2, retry #1) com `400 Bad Request` no console e um `NotFound: Não Encontrado` no `payload.findByID` da liderança (runs 1 e 3, retry #1). O `expectPostResponse` filtra `response.ok()`, então um 400 vira 60 s de espera cega — a mensagem do corpo da rota (floor/cap/scope/staff/leadership inexistente) nunca aparece no log.
-   - **Colapso por conteúdo (reproduzido localmente sob carga):** a célula de municípios clampa em 3 linhas e esconde os chips atrás de "Ver mais…". Com **dois** chips, o loop de medição desconta o espaço reservado do input de busca (`min-w-32`) + toggle; com nomes largos — e o allocator entrega nomes arbitrários por run — o `fitting` chega a **0** e TODOS os chips saem do DOM (snapshot de falha: célula só com "Ver mais…" e status "Municípios salvos."). O spec afirmava visibilidade de chip sem expandir, então o timeout de 30 s era certo quando o par de nomes não cabia. É a mesma classe "flake sob carga" que os vizinhos, mas determinística por conteúdo.
-3. **Não é "último verify verde":** o run `35002372682` (`13aeb9bb`, 17:36) rodou o verify full e passou — é o mesmo HEAD verde que a Issue já registrava como anti-recorrência. Os runs seguintes (`a1649613`, `9e00de36`, `c2ee60dd`) têm `verify: skipped` (preflight pula quando outro deploy está queued/in_progress) e **não** são prova de estabilidade. O último verify que de fato executou (`35008333471`, `36d9abe8`, 18:34) **falhou**, e B32/B34 estavam de novo no conjunto flaky (B34 ✘→✘→✓ retry #2; B32 ✘→✓ retry #1) — o problema segue vivo.
-4. **Vizinhos** (`campaignAiChatResize:44`, `campaignColumnPicker:21`, `campaignMunicipalities:659`, `campaignActivity:525`, `campaignSavedFilters:35`) são a mesma classe de latência sob 4 workers (postmortem 2026-09-12); não são alvo.
+`CampaignE2EOwnership.discoverOwnedRows` (`tests/e2e/fixtures/campaignE2EFixtures.ts`) montava a descoberta de lideranças com um `or` **dinâmico**:
+
+```ts
+where: {
+  or: [
+    ...(userIDs.length ? [{ createdBy: { in: userIDs } }] : []),
+    ...(userIDs.length ? [{ user: { in: userIDs } }] : []),
+    ...(contactIDs.length ? [{ contact: { in: contactIDs } }] : []),
+  ]
+}
+```
+
+Um teste que **não cria** `campaignUser` nem `contact` (jornada read-only) roda o cleanup no `finally` com `userIDs` e `contactIDs` vazios → `or: []`. No adapter Drizzle do Payload 3.82.0, `parseParams` **descarta um `or` vazio** e a query roda **sem WHERE nenhum** → a descoberta "possui" TODAS as lideranças do banco compartilhado, e o `cleanup()` as deleta. O fixture int (`tests/helpers/campaignFixtures.ts`, `discoverDependents`) já guardava `leadershipConditions.length > 0`; o e2e não — assimetria entre irmãos.
+
+**Evidência forense (Postgres com `log_statement=all` + `log_parameter_max_length`, run local CI=1 E2E_PROD=1 4 workers):**
+
+- B32 (run 3): a liderança `id=27` foi criada às `21:37:51.875` e **deletada 57 ms depois** (`21:37:51.932`) por outra sessão em cleanup; a página abriu com "Nenhuma liderança encontrada" (snapshot do `error-context.md`) e o POST do status devolveu 400 genérico (`leadership` inexistente).
+- A sessão que deletou rodava `discoverOwnedRows` de um runID sem contatos/usuários: a query de lideranças saiu **sem cláusula WHERE** (`order by "leadership"."created_at" desc`, sem `where`) — o full scan de `or: []`.
+- Reprodução determinística do semantic: `payload.find({ where: { or: [] } })` retorna TODAS as linhas (pin novo em `tests/int/campaignFixtureOwnership.int.spec.ts`).
+- Mesmo mecanismo explica os vizinhos com linha sumida: `campaignMunicipalities:659`/B176 (`Remover Liderança: …` não encontrada), `campaignActivity:525` e parte da classe "flaky sob 4 workers" da Issue.
+
+### Mecanismos secundários (endurecidos no spec, mantidos)
+
+1. **B32** esperava o controle da célula por até 60 s num `click` nu — o row streama com o chunk RSC e o clique consumia o timeout inteiro do teste; o failure não dizia o que faltava. Agora: gate de settle + orçamento explícito de 30 s na presença do botão, e o waiter de POST lança o corpo da resposta quando a rota recusa.
+2. **B34** usava gate inline `div[id^="S:"]` (o helper `waitForStreamSettled` do OPS83 é o owner e manda parear com poll focado) e não tratava o **colapso por conteúdo** do clamp: a célula clampa em 3 linhas e, com dois chips de nome largo (nomes que o allocator entrega por run), o espaço reservado do input de busca derruba o `fitting` a 0 — todos os chips saem do DOM atrás de "Ver mais…" (snapshot de falha confirma). Agora: helper + poll focado + `expandCollapsedChips()` (clica "Ver mais…", nunca "Ver menos") antes de cada asserção de chip.
+
+### Não é "o último verify está verde"
+
+O run `35002372682` (`13aeb9bb`, 17:36) rodou o verify full e passou — é o mesmo HEAD verde que a Issue já registrava. Os runs seguintes (`a1649613`, `9e00de36`, `c2ee60dd`) têm `verify: skipped` (preflight pula quando outro deploy está na lane) e **não** são prova de estabilidade. O último verify que de fato executou (`35008333471`, `36d9abe8`, 18:34) **falhou**, com B32/B34 de novo no conjunto flaky — o problema estava vivo.
 
 ## Decisão
 
-**Hardening do spec + diagnóstico no waiter** — usar os helpers/recipe já abençoados pelo OPS83 em vez de gates inline, dar orçamentos explícitos aos pontos que hoje consomem o timeout inteiro do teste, e fazer o waiter do POST falhar rápido com o corpo da resposta quando a rota recusa. Zero mudança de produção.
+**Corrigir a causa raiz no fixture (guard de `or` vazio) + endurecer o spec com os helpers abençoados + instrumentar o waiter de POST.** Zero mudança de produção.
 
 ### Alternativas rejeitadas
 
-- **Marcar como flaky / aumentar retry:** `verify` verde por tolerância esconde a regressão viva — rabbit hole explícito da Issue.
-- **Mudar código de produção (células/actions/access):** sem evidência de que a UI seja a causa; o diagnóstico mostra latência de stream/RSC e orçamento de teste, não comportamento.
-- **Reabrir a cast rotativa do #882:** escopo distinto; B32/B34 são persistentes, não rotativos.
+- **Marcar como flaky / aumentar retry:** `verify` verde por tolerância esconderia o fixture apagando linhas vivas — rabbit hole explícito da Issue.
+- **Mudar código de produção (células/actions/access):** sem evidência de que a UI seja a causa; o diagnóstico mostra test-infra e latência de stream.
+- **Reabrir a cast rotativa do #882:** escopo distinto; a família dos vizinhos agora tem causa raiz própria (o fixture), corrigida aqui.
 - **Mudar a semântica global de `expectPostResponse` (resolver em qualquer POST):** mudaria o contrato compartilhado por 19 usos em 5 specs; adotou-se um opt-in `{ throwOnNonOk: true }` no owner, com o default byte-idêntico.
 
 ## Mudanças
 
-`tests/e2e/campaignLeaderships.e2e.spec.ts` (único arquivo de teste):
+`tests/e2e/fixtures/campaignE2EFixtures.ts` (owner do fixture):
 
-- **B32:** `waitForStreamSettled(page)` depois do chrome, `expect(statusButton).toBeVisible({ timeout: 30_000 })` e só então o clique — o botão deixa de consumir os 60 s do teste quando o row streama tarde.
-- **B34:** gate inline `page.waitForFunction(div[id^="S:"])` → `waitForStreamSettled(page)` (owner do concern, OPS83/E2E-DEBT-S-GATE); poll focado `expect.poll(count).toBeGreaterThan(0)` no chip inicial antes do `toHaveAttribute` (receita documentada do helper); waiter de POST via `expectPostResponse(..., { throwOnNonOk: true })` (owner), sem twin local.
-- **B34 colapso por conteúdo:** `expandCollapsedChips()` — espera a medição do clamp assentar e clica "Ver mais…" quando ele está no estado colapsado (nunca "Ver menos"), antes de cada asserção de chip (inicial, pós-add, pós-reload). É o caminho do usuário; sem ele, nomes largos deixam o chip fora do DOM.
-
-`tests/e2e/fixtures/campaignE2EFixtures.ts` (owner do helper):
-
+- **Causa raiz:** a descoberta de lideranças só roda quando há condição (`leadershipConditions.length > 0`), espelhando o fixture int; comentário explica o hazard do `or: []` (com os jobs dos runs afetados).
 - `expectPostResponse` ganha `{ throwOnNonOk?: boolean }` (default `false`, os 19 usos existentes intocados): resolve no primeiro POST da rota e lança `POST <rota> → <status>: <body>` quando a resposta não é ok — em vez de pendurar o teste até o timeout com um "400" cego.
 
-`docs/changelog/2026-09-15-b32-b34.md` (registro obrigatório da entrega, OPS85) e este impl plan.
+`tests/e2e/campaignLeaderships.e2e.spec.ts` (spec alvo):
+
+- **B32:** `waitForStreamSettled` + `expect(statusButton).toBeVisible({ timeout: 30_000 })` antes do clique; waiter do POST com `throwOnNonOk`.
+- **B34:** gate inline → `waitForStreamSettled`; poll focado do chip inicial (`expect.poll(count).toBeGreaterThan(0)`); `expandCollapsedChips()` antes das asserções de chip; waiter com `throwOnNonOk`.
+
+`tests/int/campaignFixtureOwnership.int.spec.ts` (novo): pin do semantic `or: []` = match-all para o guard do fixture nunca regredir.
+
+`docs/changelog/2026-09-15-b32-b34.md` e este impl plan. O doc de intenção ganhou Status/Referências atualizados (#1036).
 
 ## Prova
 
-- `pnpm gate:fast` (lint + typecheck + unit) verde.
-- E2E dos specs alterados em **modo prod** (`E2E_PROD=1`, o modo do CI — o dev server local emite um warning React de key dev-only que o `e2eFailureGuard` trata como erro e que não existe no build de produção), com repetição para estresse.
-- `verify` full (4 workers) no PR.
+- **Antes:** full local (CI=1, E2E_PROD=1, 4 workers): B32 falhava 2x por run (linha sumida), B34 idem, B176 com chip de liderança sumido, 4+ flaky; linha `id=27` deletada 57 ms após criar.
+- **Depois:** mesmo run full com o fixture corrigido: **B32, B34 e B176 verdes**; os 4 failures remanescentes são specs de agenda/contatos com fragilidade própria (strict-mode/dialog), fora do escopo e pré-existentes no ambiente local.
+- `pnpm gate:fast` (lint + typecheck + unit 3268) verde; int novo verde; `pnpm gate:push` verde no `pnpm push`.
+- O `verify` full pós-merge (4 workers) é a prova final.
 
 ## Riscos
 
-1. **Orçamentos explícitos mascararem regressão real:** os budgets são de presença (30 s) e o teste continua falhando rápido quando o elemento some — mitigado pelo waiter que lança a mensagem da rota.
-2. **400/NotFound residual:** o corpo da resposta passará a aparecer no log; se a causa for a colisão cross-run (purge-on-claim numa linha viva), o diagnóstico fica instrumentado para a próxima ocorrência. Não se mexe no contrato do allocator aqui.
-3. **Flake dos vizinhos:** fora de escopo (evidência, não alvo).
+1. **Orçamentos explícitos mascararem regressão real:** os budgets são de presença (30 s) e o waiter de POST lança a mensagem da rota — a falha fica explícita, não silenciosa.
+2. **Colapso por conteúdo da célula (UI):** o spec agora contorna clicando "Ver mais…"; a UX de esconder TODOS os chips segue registrada como débito próprio na Issue #1042 (com o key warning dev do head), fora deste escopo.
+3. **Flakes remanescentes fora do alvo:** `campaignAgendaFeed`/`campaignAgendaGoogleSync`/`campaignContacts:28` falham no ambiente local antes e depois da mudança; são de outras famílias (a #882 segue dona da cast).
 
 ## Fora de escopo
 
 - Contrato de deploy (`deploy.yml`, jobs, runners).
 - Mudança de UI/comportamento visível da lista.
 - Reescrita ampla dos specs B32/B34 ou das outras superfícies da cast.
-- Semântica global de `expectPostResponse` (19 usos).
 
 ## Referências
 
 - Issue #1036 · Run `35002372682` (verify verde em `13aeb9bb`) · Run `35008333471` (último verify executado, falhou em `36d9abe8`)
 - Jobs de log: `104476711539`, `104458195479`, `104434116739`, `104513700572`
-- `tests/e2e/campaignLeaderships.e2e.spec.ts` (B32 `:15`, B34 `:59`)
-- `tests/e2e/fixtures/campaignE2EFixtures.ts` (`waitForStreamSettled` `:632`, `expectPostResponse` `:554`)
-- `docs/plans/autosave-status-lista-liderancas.md` (B32) · `docs/plans/chips-municipios-lista-liderancas.md` (B34)
-- Postmortem 2026-09-12 (classe de latência sob 4 workers)
+- `tests/e2e/fixtures/campaignE2EFixtures.ts` (discover/cleanup), `tests/helpers/campaignFixtures.ts` (`discoverDependents`, o irmão que já guardava), `tests/helpers/campaignResidue.ts`
+- `tests/e2e/campaignLeaderships.e2e.spec.ts` · `tests/int/campaignFixtureOwnership.int.spec.ts`
+- `payload@3.82.0` `@payloadcms/drizzle` `queries/parseParams.js` + `queries/buildQuery.js` (o `or` vazio é descartado)
+- Issue #1042 (débito UX registrado: clamp + key warning) · Postmortem 2026-09-12
