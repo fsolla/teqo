@@ -199,6 +199,84 @@ export const purposeInvocation = ({ purpose = null, issueNumber = null, argument
 }
 
 /**
+ * Accepted flag NAMES per subcommand (OPS110-F1). Names only — the `=`/boolean
+ * form stays `parseEqualsFlags`' concern. `list`/`start`/`serve` legitimately
+ * take `--hostname/--port` (they override the probe/spawn target). An unknown
+ * name must fail high: `--prupose=next` used to fall through to the `new`
+ * default and create a driverless session.
+ */
+export const SESSION_FLAG_ALLOWLIST = {
+  serve: ['hostname', 'port'],
+  start: ['purpose', 'dir', 'model', 'issue', 'argument', 'new', 'hostname', 'port'],
+  attach: ['session', 'branch', 'issue'],
+  stop: ['session', 'branch', 'issue'],
+  list: ['json', 'hostname', 'port'],
+}
+
+/** Optimal string alignment (Damerau–Levenshtein, no adjacent transposition twice). */
+const osaDistance = (left, right) => {
+  const a = String(left ?? '')
+  const b = String(right ?? '')
+  if (a === b) return 0
+  if (a.length === 0) return b.length
+  if (b.length === 0) return a.length
+  const rows = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0))
+  for (let i = 0; i <= a.length; i += 1) rows[i][0] = i
+  for (let j = 0; j <= b.length; j += 1) rows[0][j] = j
+  for (let i = 1; i <= a.length; i += 1) {
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      rows[i][j] = Math.min(rows[i - 1][j] + 1, rows[i][j - 1] + 1, rows[i - 1][j - 1] + cost)
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        rows[i][j] = Math.min(rows[i][j], rows[i - 2][j - 2] + 1)
+      }
+    }
+  }
+  return rows[a.length][b.length]
+}
+
+/**
+ * Closest accepted flag at edit distance ≤1, or null. Damerau (transposition
+ * counts as 1) so the required `--prupose` → `--purpose` suggestion fires;
+ * limiar estrito evita sugerir em erros grandes (ruído acionável falso).
+ * @param {string} name
+ * @param {readonly string[]} accepted
+ */
+export const nearestAcceptedFlag = (name, accepted) => {
+  let best = null
+  let bestDistance = Number.POSITIVE_INFINITY
+  for (const candidate of accepted) {
+    const distance = osaDistance(name, candidate)
+    if (distance < bestDistance || (distance === bestDistance && candidate < String(best))) {
+      best = candidate
+      bestDistance = distance
+    }
+  }
+  return bestDistance <= 1 ? best : null
+}
+
+/**
+ * Fail high on any flag the subcommand does not accept. Throws a message with
+ * a suggestion when a near neighbor exists; unknown subcommands return silently
+ * (the CLI prints the USAGE for those). A bare `--` parses to an empty name and
+ * is ignored, not reported as a typo.
+ * @param {{ subcommand?: string | null, flags?: Record<string, unknown> }} [options]
+ */
+export const validateSessionFlags = ({ subcommand = null, flags = {} } = {}) => {
+  const accepted = SESSION_FLAG_ALLOWLIST[subcommand]
+  if (!accepted) return
+  for (const name of Object.keys(flags)) {
+    if (name === '' || accepted.includes(name)) continue
+    const suggestion = nearestAcceptedFlag(name, accepted)
+    throw new Error(
+      suggestion
+        ? `flag desconhecida: --${name} (sugestão: --${suggestion}).`
+        : `flag desconhecida: --${name}.`,
+    )
+  }
+}
+
+/**
  * argv of the detached run driver (sem o binário — o caller usa
  * `spawn('opencode', …)`). The `--` separator is required so a command
  * argument starting with `-` (`--issue 1019`) is not parsed as an opencode flag
@@ -290,6 +368,63 @@ export const resolveSessionRef = ({
 }
 
 /**
+ * Decide "reuse the existing run vs create a fresh one" — the single-flight
+ * invariant's brain (OPS110-F1). Pure: the caller injects the filesystem read,
+ * the busy probe and the driver liveness check. Mirrors `cmdStart`'s in-lock
+ * decision: `--new`/no state/unreadable state/different server → fresh; an
+ * alive driver or a busy session on the SAME server → reuse. `reason` lets the
+ * CLI keep its "estado ilegível" warning without the lib doing I/O.
+ * @param {{
+ *   forceNew?: boolean,
+ *   statePath: string,
+ *   readFile: (path: string) => string,
+ *   exists: (path: string) => boolean,
+ *   parse?: (text: string) => Record<string, unknown>,
+ *   serverUrl: string,
+ *   probeBusy: (sessionID: string) => boolean | Promise<boolean>,
+ *   driverAlive?: (pid: number | null, sessionID: string | null) => boolean,
+ * }} options
+ * @returns {Promise<{ action: 'reuse' | 'fresh', reason: 'forced' | 'missing' | 'unreadable' | 'server-mismatch' | 'running' | 'idle', state?: Record<string, unknown>, error?: Error }>}
+ */
+export const resolveStartDecision = async ({
+  forceNew = false,
+  statePath,
+  readFile,
+  exists,
+  parse = parseSessionState,
+  serverUrl,
+  probeBusy,
+  driverAlive = () => false,
+}) => {
+  if (forceNew) return { action: 'fresh', reason: 'forced' }
+  if (!exists(statePath)) return { action: 'fresh', reason: 'missing' }
+  let existing
+  try {
+    existing = parse(readFile(statePath))
+  } catch (error) {
+    return { action: 'fresh', reason: 'unreadable', error }
+  }
+  if (existing.url !== serverUrl) return { action: 'fresh', reason: 'server-mismatch' }
+  const busy = Boolean(await probeBusy(existing.sessionID))
+  if (driverAlive(existing.driverPid, existing.sessionID) || busy) {
+    return { action: 'reuse', reason: 'running', state: existing }
+  }
+  return { action: 'fresh', reason: 'idle' }
+}
+
+/**
+ * Whether an existing start-lock's holder is gone and the lock can be
+ * reclaimed. Pure: PID liveness is injected. A missing/non-numeric/dead holder
+ * counts as stale — the same branch the CLI used to inline.
+ * @param {{ holderPid?: number | string | null, isPidAlive: (pid: number) => boolean }} options
+ */
+export const isStaleLock = ({ holderPid, isPidAlive }) => {
+  const pid = Number(holderPid)
+  if (!Number.isInteger(pid) || pid <= 0) return true
+  return !isPidAlive(pid)
+}
+
+/**
  * Status shown by `list`: `stopped` (explicit stop) wins, then `unknown`
  * (server unreachable), then `working` (busy on the server or driver alive),
  * else `idle`.
@@ -314,10 +449,10 @@ export const sessionListPayload = ({ states, statuses = {}, server }) => ({
   })),
 })
 
-/** Human `list` lines — one per run, status first, `—` for namespace runs. */
+/** Human `list` lines — status first, `—` for namespace runs; `logPath` last. */
 export const formatSessionList = (rows) =>
   (Array.isArray(rows) ? rows : []).map((row) => {
     const reference =
       [row.code, row.issue ? `#${row.issue}` : null].filter(Boolean).join(' ') || '—'
-    return `${String(row.status).padEnd(8)} ${reference}  ${row.sessionID}  ${row.branch}  ${row.dir}`
+    return `${String(row.status).padEnd(8)} ${reference}  ${row.sessionID}  ${row.branch}  ${row.dir}  ${row.logPath ?? '—'}`
   })

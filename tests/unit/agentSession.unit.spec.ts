@@ -12,16 +12,20 @@ import {
   driverLogPath,
   formatSessionList,
   isLoopbackHost,
+  isStaleLock,
+  nearestAcceptedFlag,
   parseServerState,
   parseSessionState,
   purposeInvocation,
   resolveServerConfig,
   resolveSessionRef,
+  resolveStartDecision,
   serializeServerState,
   serializeSessionState,
   serverArgs,
   serverStatePath,
   SESSION_COMMAND_BY_PURPOSE,
+  SESSION_FLAG_ALLOWLIST,
   sessionDirFromEnv,
   sessionListPayload,
   sessionSlug,
@@ -29,6 +33,7 @@ import {
   startLockPath,
   STATE_VERSION,
   validateServerBind,
+  validateSessionFlags,
 } from '../../scripts/lib/agent-session.mjs'
 
 const state = (over: Record<string, unknown> = {}) => ({
@@ -239,6 +244,91 @@ describe('purposeInvocation (mapa purpose→comando movido do worktree)', () => 
   })
 })
 
+describe('validateSessionFlags + nearestAcceptedFlag (OPS110-F1 — flag desconhecida falha alto)', () => {
+  it('pins the accepted flag names per verb', () => {
+    expect(SESSION_FLAG_ALLOWLIST).toEqual({
+      serve: ['hostname', 'port'],
+      start: ['purpose', 'dir', 'model', 'issue', 'argument', 'new', 'hostname', 'port'],
+      attach: ['session', 'branch', 'issue'],
+      stop: ['session', 'branch', 'issue'],
+      list: ['json', 'hostname', 'port'],
+    })
+  })
+
+  it('accepts every documented flag per verb (names only, valued or boolean)', () => {
+    expect(() =>
+      validateSessionFlags({
+        subcommand: 'start',
+        flags: {
+          purpose: 'next',
+          dir: '/d',
+          model: 'm',
+          issue: '1',
+          argument: 'x',
+          new: true,
+          hostname: 'h',
+          port: '1',
+        },
+      }),
+    ).not.toThrow()
+    expect(() =>
+      validateSessionFlags({ subcommand: 'serve', flags: { hostname: 'h', port: '1' } }),
+    ).not.toThrow()
+    expect(() =>
+      validateSessionFlags({ subcommand: 'list', flags: { json: true, hostname: 'h', port: '1' } }),
+    ).not.toThrow()
+    expect(() =>
+      validateSessionFlags({ subcommand: 'attach', flags: { session: 'ses_x' } }),
+    ).not.toThrow()
+    expect(() => validateSessionFlags({ subcommand: 'stop', flags: { branch: 'b' } })).not.toThrow()
+  })
+
+  it('suggests the transposition neighbor: --prupose → --purpose', () => {
+    expect(nearestAcceptedFlag('prupose', ['purpose', 'dir', 'model'])).toBe('purpose')
+    expect(() => validateSessionFlags({ subcommand: 'start', flags: { prupose: 'next' } })).toThrow(
+      /--prupose[\s\S]*--purpose/,
+    )
+  })
+
+  it('suggests substitution/insertion neighbors at distance 1, nothing at distance 2', () => {
+    expect(nearestAcceptedFlag('purposee', ['purpose'])).toBe('purpose')
+    expect(nearestAcceptedFlag('purpos', ['purpose'])).toBe('purpose')
+    expect(nearestAcceptedFlag('prpose', ['purpose'])).toBe('purpose')
+    expect(nearestAcceptedFlag('purposxx', ['purpose'])).toBeNull()
+    expect(nearestAcceptedFlag('totallyWrong', ['purpose', 'dir'])).toBeNull()
+  })
+
+  it('reports an unknown flag without a suggestion as-is', () => {
+    expect(() =>
+      validateSessionFlags({ subcommand: 'start', flags: { totallyWrong: true } }),
+    ).toThrow('flag desconhecida: --totallyWrong.')
+  })
+
+  it('rejects a flag that belongs to another verb', () => {
+    expect(() => validateSessionFlags({ subcommand: 'serve', flags: { purpose: 'next' } })).toThrow(
+      /--purpose/,
+    )
+    expect(() => validateSessionFlags({ subcommand: 'list', flags: { dir: '/d' } })).toThrow(
+      /--dir/,
+    )
+  })
+
+  it('ignores a bare `--` (empty flag name), never a typo', () => {
+    expect(() =>
+      validateSessionFlags({ subcommand: 'start', flags: { '': true, purpose: 'next' } }),
+    ).not.toThrow()
+  })
+
+  it('stays silent for an unknown verb (the CLI prints the USAGE itself)', () => {
+    expect(() =>
+      validateSessionFlags({ subcommand: 'bogus', flags: { whatever: true } }),
+    ).not.toThrow()
+    expect(() =>
+      validateSessionFlags({ subcommand: null, flags: { whatever: true } }),
+    ).not.toThrow()
+  })
+})
+
 describe('driverArgs + attachArgs (o argv verificado ao vivo)', () => {
   it('drives the run through the server with --auto and --command + `--` separator', () => {
     expect(
@@ -385,6 +475,93 @@ describe('resolveSessionRef (--session > --branch > --issue > branch do cwd)', (
   })
 })
 
+describe('resolveStartDecision (OPS110-F1 — single-flight "reusar vs criar")', () => {
+  const liveState = state()
+  const base = {
+    statePath: '/state/OPS110.json',
+    serverUrl: liveState.url,
+    readFile: () => JSON.stringify(liveState),
+    exists: () => true,
+    probeBusy: async () => false,
+    driverAlive: () => false,
+  }
+
+  it('reuses when the driver is alive on the same server', async () => {
+    expect(await resolveStartDecision({ ...base, driverAlive: () => true })).toMatchObject({
+      action: 'reuse',
+      reason: 'running',
+      state: liveState,
+    })
+  })
+
+  it('reuses when the session is busy even with the driver gone', async () => {
+    expect(await resolveStartDecision({ ...base, probeBusy: async () => true })).toMatchObject({
+      action: 'reuse',
+      reason: 'running',
+    })
+  })
+
+  it('creates fresh when idle (driver dead and not busy)', async () => {
+    expect(await resolveStartDecision(base)).toMatchObject({ action: 'fresh', reason: 'idle' })
+  })
+
+  it('--new forces fresh without reading the state', async () => {
+    let read = false
+    const decision = await resolveStartDecision({
+      ...base,
+      forceNew: true,
+      readFile: () => {
+        read = true
+        return 'ignored'
+      },
+    })
+    expect(decision).toMatchObject({ action: 'fresh', reason: 'forced' })
+    expect(read).toBe(false)
+  })
+
+  it('creates fresh when there is no state file', async () => {
+    expect(await resolveStartDecision({ ...base, exists: () => false })).toMatchObject({
+      action: 'fresh',
+      reason: 'missing',
+    })
+  })
+
+  it('creates fresh on unreadable state and surfaces the error for the CLI warning', async () => {
+    const decision = await resolveStartDecision({
+      ...base,
+      readFile: () => {
+        throw new Error('boom')
+      },
+    })
+    expect(decision.action).toBe('fresh')
+    expect(decision.reason).toBe('unreadable')
+    expect(decision.error?.message).toBe('boom')
+  })
+
+  it('creates fresh when the state points at another server', async () => {
+    expect(await resolveStartDecision({ ...base, serverUrl: 'http://other:1' })).toMatchObject({
+      action: 'fresh',
+      reason: 'server-mismatch',
+    })
+  })
+})
+
+describe('isStaleLock (OPS110-F1 — reclaim do lock com PID morto)', () => {
+  it('treats a dead PID as stale', () => {
+    expect(isStaleLock({ holderPid: 4242, isPidAlive: () => false })).toBe(true)
+  })
+
+  it('keeps a live holder (not stale)', () => {
+    expect(isStaleLock({ holderPid: 4242, isPidAlive: () => true })).toBe(false)
+  })
+
+  it('treats a missing/non-numeric holder as stale (never deadlocks forever)', () => {
+    expect(isStaleLock({ holderPid: NaN, isPidAlive: () => true })).toBe(true)
+    expect(isStaleLock({ holderPid: null, isPidAlive: () => true })).toBe(true)
+    expect(isStaleLock({ holderPid: 0, isPidAlive: () => true })).toBe(true)
+  })
+})
+
 describe('deriveSessionStatus + list (contrato OPS109)', () => {
   it('stopped > unknown (server down) > working (busy or driver alive) > idle', () => {
     const live = state()
@@ -459,7 +636,7 @@ describe('deriveSessionStatus + list (contrato OPS109)', () => {
     expect(payload.sessions[0].status).toBe('unknown')
   })
 
-  it('human list prints one line per run with status/session/branch/dir', () => {
+  it('human list prints one line per run with status/session/branch/dir/log', () => {
     const lines = formatSessionList([
       {
         status: 'working',
@@ -468,6 +645,7 @@ describe('deriveSessionStatus + list (contrato OPS109)', () => {
         branch: 'OPS110-acompanhar-runs',
         sessionID: 'ses_abc',
         dir: '/work/OPS110',
+        logPath: '/state/ops110-acompanhar-runs.log',
       },
       {
         status: 'idle',
@@ -484,7 +662,9 @@ describe('deriveSessionStatus + list (contrato OPS109)', () => {
     expect(lines[0]).toContain('#1019')
     expect(lines[0]).toContain('ses_abc')
     expect(lines[0]).toContain('/work/OPS110')
+    expect(lines[0]).toContain('/state/ops110-acompanhar-runs.log')
     expect(lines[1]).toContain('plans/plan-issue-1')
     expect(lines[1]).not.toContain('#null')
+    expect(lines[1].endsWith('—')).toBe(true)
   })
 })
