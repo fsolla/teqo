@@ -190,6 +190,9 @@ describe('speech acervo (C154)', () => {
     expect(view.id).toBe(id)
     expect(view.segments).toHaveLength(2)
     expect(view.segments[1]?.startSeconds).toBe(3)
+    // C166 — the excerpt picker needs the raw duration and the day-only label.
+    expect(view.durationSeconds).toBe(252)
+    expect(view.speechDateLabel).toBe('07/02/2023')
     expect(view.municipalities.map((municipality) => municipality.name)).toContain(
       'Feira de Santana',
     )

@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import type { AIToolContext } from '@/lib/ai/types'
 import { canReadSpeechCatalog } from '@/lib/campaignRoles'
+import { formatSpeechClock } from '@/lib/speechClock'
 import {
   buildSpeechExcerpt,
   EXCERPT_VARIANT_TARGETS,
@@ -16,11 +17,7 @@ import {
   type SpeechExcerptRerankChoice,
 } from '@/utilities/ai/rerankSpeechExcerpts'
 import { loadSegmentsForSpeeches } from '@/utilities/speech/speechPageData'
-import {
-  buildWatchHref,
-  formatSpeechAt,
-  formatSpeechClock,
-} from '@/utilities/speech/speechViewModels'
+import { buildWatchHref, formatSpeechAt } from '@/utilities/speech/speechViewModels'
 
 const DENIED_MESSAGE = 'Leitura do acervo de falas negada.'
 const NO_TERMS_MESSAGE = 'Tema sem termos de busca: informe palavras com 3 caracteres ou mais.'
