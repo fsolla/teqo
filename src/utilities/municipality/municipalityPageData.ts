@@ -7,6 +7,10 @@ import { advisorEditingScope, type AdvisorEditingScope } from '@/lib/campaignAdv
 import { engagementLevelRank } from '@/lib/engagementLevel'
 import { getMunicipalityCatalogEntry, municipalityCatalog } from '@/lib/municipalityCatalog'
 import {
+  computeMunicipalitySliceTotals,
+  type MunicipalitySliceTotals,
+} from '@/lib/municipalitySliceTotals'
+import {
   compareMunicipalityVotesForSort,
   computeVoteRankByYear,
   DEFAULT_VOTE_RANK_YEAR,
@@ -128,6 +132,8 @@ export type MunicipalityListPageBundle = {
   totalDocs: number
   totalPages: number
   scopeTotal: number
+  /** B202 — totals of the WHOLE filtered slice (every page), staff-only; null for an empty slice. */
+  sliceTotals: MunicipalitySliceTotals | null
   filterFacets: MunicipalityListFilterFacets
   /** B155 — contact-name lookup for the chips of the município list rows. */
   leadershipNamesById: ReadonlyMap<number, MunicipalityLeadershipSummary>
@@ -459,6 +465,7 @@ export const loadMunicipalityListPageBundle = async (
       totalDocs: 0,
       totalPages: 0,
       scopeTotal: 0,
+      sliceTotals: null,
       filterFacets: emptyMunicipalityListFilterFacets,
       leadershipNamesById: EMPTY_LEADERSHIP_NAMES,
     }
@@ -595,12 +602,16 @@ export const loadMunicipalityListPageBundle = async (
   let pageDocs: Municipality[]
   let totalDocs: number
   let totalPages: number
+  let sliceTotals: MunicipalitySliceTotals | null
 
   if (isPagedByPayload) {
     // Payload select narrows the inferred type; the selected fields cover the view model.
     pageDocs = listResult.docs as Municipality[]
     totalDocs = listResult.totalDocs
     totalPages = listResult.totalPages
+    // B202 — the scope rows ARE the whole filtered slice on this path (same
+    // `where` + `user`, `limit: 0`), so the totals cost no extra query.
+    sliceTotals = computeMunicipalitySliceTotals(staffScope?.municipalities ?? [])
   } else {
     const scopedDocs = classMatches
       ? (listResult.docs as Municipality[]).filter((municipality) =>
@@ -628,6 +639,8 @@ export const loadMunicipalityListPageBundle = async (
     totalPages = Math.max(1, Math.ceil(totalDocs / municipalityPageSize))
     const start = (state.page - 1) * municipalityPageSize
     pageDocs = allDocs.slice(start, start + municipalityPageSize)
+    // B202 — totals over the same in-memory slice the count came from.
+    sliceTotals = computeMunicipalitySliceTotals(allDocs)
   }
 
   // B155 — the leaderships of the visible page only (staff surfaces; the
@@ -667,6 +680,7 @@ export const loadMunicipalityListPageBundle = async (
     totalDocs,
     totalPages,
     scopeTotal: scopeCount.totalDocs,
+    sliceTotals,
     filterFacets,
     leadershipNamesById: leadershipBundle?.summariesById ?? EMPTY_LEADERSHIP_NAMES,
   }

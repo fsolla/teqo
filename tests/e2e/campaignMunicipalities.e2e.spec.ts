@@ -1,8 +1,15 @@
 import type { Page } from '@playwright/test'
 
+import { getStatewideFederalTotals } from '../../src/lib/bahiaElectionAggregates.js'
 import { SUPPORTER_REGISTRATION_CONSENT_KEY } from '../../src/lib/campaignConsentKeys.js'
 import { formatBahiaCivilDate, parseBahiaDateTimeInput } from '../../src/lib/campaignTime.js'
 import { fallbackDemandTitle } from '../../src/lib/demandTitle.js'
+import { formatElectionNumber } from '../../src/lib/electionFormat.js'
+import { municipalityCatalog } from '../../src/lib/municipalityCatalog.js'
+import {
+  computeVoteRankByYear,
+  DEFAULT_VOTE_RANK_YEAR,
+} from '../../src/lib/municipalityVoteRank.js'
 import { hookFilledCreateData } from '../../src/utilities/hookFilledData.js'
 import {
   ensureLeasedConsent,
@@ -1921,5 +1928,65 @@ test.describe('Municípios — FAB overlay polish (B126)', () => {
     const results = overlay.getByRole('region', { name: 'Resultados da busca' })
     await expect(results).toContainText('Nenhuma sugestão ainda', { timeout: 10000 })
     await expect(overlay.getByRole('region', { name: 'Sugestões' })).toHaveCount(0)
+  })
+})
+
+/**
+ * B202 — the compact totals line of the municipality list footer. The numbers
+ * are computed server-side over the WHOLE filtered slice; the browser asserts
+ * the reading, the scope and the B129 guardrail (never a line inside the table).
+ */
+test.describe('Municípios — totais do recorte (B202)', () => {
+  test('single-municipality recorte reads its 2022 votes and scenario sums in the footer', async ({
+    campaign,
+    page,
+  }) => {
+    const { fixtures } = campaign
+    const municipality = await fixtures.claimMunicipality()
+    await fixtures.payload.update({
+      collection: 'municipality',
+      id: municipality.id,
+      data: { expectedVotes: { pessimistic: 100, central: 200, optimistic: 300 } },
+      depth: 0,
+    })
+    fixtures.touchMunicipality(municipality.id)
+
+    await page.goto(`${campaign.baseURL}/campanha/municipios?slug=${municipality.slug}`)
+    await waitForStreamSettled(page)
+
+    const totals = page.locator('[data-slot="municipality-slice-totals"]')
+    await expect(totals).toBeVisible()
+    await expect(page.getByText('1 município encontrado')).toBeVisible()
+
+    const votes2022 =
+      computeVoteRankByYear(DEFAULT_VOTE_RANK_YEAR).get(municipality.slug)?.votes ?? 0
+    const text = ((await totals.textContent()) ?? '').replace(/\s+/g, ' ').trim()
+    expect(text).toContain(`2022 ${formatElectionNumber(votes2022)}`)
+    expect(text).toContain('Pess. 100')
+    expect(text).toContain('Média 200')
+    expect(text).toContain('Otim. 300')
+    expect(text).toContain('1 de 1 com expectativa')
+    expect(text).toContain('Pessimista: 100; Média: 200; Otimista: 300')
+
+    // B129 — the aggregate never becomes a line inside the table.
+    await expect(page.locator('table [data-slot="municipality-slice-totals"]')).toHaveCount(0)
+  })
+
+  test('unfiltered recorte totals every page, not only the visible 25', async ({
+    campaign,
+    page,
+  }) => {
+    await page.goto(`${campaign.baseURL}/campanha/municipios`)
+    await waitForStreamSettled(page)
+
+    // The full catalog + the virtual city row span many pages; the summed 2022
+    // votes are the artifact's statewide total, which no single page produces.
+    const rowCount = municipalityCatalog.length + 1
+    await expect(page.getByText(`${rowCount} municípios encontrados`)).toBeVisible()
+    const totals = page.locator('[data-slot="municipality-slice-totals"]')
+    await expect(totals).toBeVisible()
+    await expect(totals).toContainText(
+      formatElectionNumber(getStatewideFederalTotals(DEFAULT_VOTE_RANK_YEAR).ownVotes),
+    )
   })
 })
