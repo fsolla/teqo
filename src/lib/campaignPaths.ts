@@ -25,4 +25,7 @@ export const CAMPAIGN_COMMUNICATION_HOME = '/campanha/comunicacao' as const
 
 export const CAMPAIGN_COMMUNICATION_ACERVO = '/campanha/comunicacao/acervo' as const
 
+/** C168 — library of cuts made from the acervo (list + `/<id>` detail). */
+export const CAMPAIGN_COMMUNICATION_CORTES = '/campanha/comunicacao/acervo/cortes' as const
+
 export const CAMPAIGN_UPDATES_HREF = '/campanha/atualizacoes' as const

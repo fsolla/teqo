@@ -6,7 +6,7 @@ import { request as playwrightRequest } from '@playwright/test'
 import { adminHeaders } from '../helpers/adminApi'
 import { seedTestUser } from '../helpers/seedUser'
 import type { CampaignE2EOwnership } from './fixtures/campaignE2EFixtures.js'
-import { expect, rendered, test } from './fixtures/campaignHttpTest.js'
+import { assertCampaignRedirect, expect, rendered, test } from './fixtures/campaignHttpTest.js'
 
 /**
  * C167 — speech cuts over real HTTP (browserless): the unlisted public page of
@@ -237,6 +237,103 @@ test.describe('Acervo speech cuts (C167)', () => {
       const response = await deniedRequest.post('/campanha/comunicacao/acervo/cortar/status', {
         data: { cutId },
       })
+      expect(response.status()).toBe(400)
+      expect(((await response.json()) as { message: string }).message).toContain(
+        'não tem acesso ao acervo',
+      )
+    }
+  })
+})
+
+/**
+ * C168 — the internal cut library: list and detail render for a communicator,
+ * the text edit and the kill switch go through the JSON routes, the public page
+ * reflects the unpublish, and advisor/leader are denied both the page and the
+ * edit route.
+ */
+test.describe('Acervo cut library (C168)', () => {
+  test.beforeAll(async () => {
+    await seedTestUser()
+  })
+
+  test('lists, edits and toggles a cut over HTTP; the kill switch reaches the public page', async ({
+    campaign,
+    campaignRequest,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    const speech = await createSpeech(campaign)
+    const title = 'Corte da biblioteca'
+    const cutId = await createCut(request, headers, {
+      speechId: speech.id,
+      status: 'published',
+      title,
+    })
+
+    const communicator = await campaign.fixtures.createCampaignUser('communicator')
+    const communicatorRequest = await campaignRequest(communicator, communicator.password)
+
+    const list = await communicatorRequest.get('/campanha/comunicacao/acervo/cortes')
+    expect(list.status()).toBe(200)
+    expect(rendered(await list.text())).toContain(title)
+
+    const detail = await communicatorRequest.get(`/campanha/comunicacao/acervo/cortes/${cutId}`)
+    expect(detail.status()).toBe(200)
+    const detailHtml = rendered(await detail.text())
+    expect(detailHtml).toContain(title)
+    expect(detailHtml).toContain(`/campanha/comunicacao/acervo/${speech.id}`)
+
+    const edit = await communicatorRequest.post(
+      `/campanha/comunicacao/acervo/cortes/${cutId}/texto`,
+      { data: { cutId, title: 'Título revisado', description: 'Descrição revisada' } },
+    )
+    expect(edit.status()).toBe(200)
+    const editBody = (await edit.json()) as { status: string; cut: { title: string } }
+    expect(editBody.status).toBe('success')
+    expect(editBody.cut.title).toBe('Título revisado')
+
+    const unpublish = await communicatorRequest.post(
+      `/campanha/comunicacao/acervo/cortes/${cutId}/publicacao`,
+      { data: { cutId, published: false } },
+    )
+    expect(unpublish.status()).toBe(200)
+    expect(((await unpublish.json()) as { cut: { status: string } }).cut.status).toBe('unpublished')
+
+    const anonymous = await playwrightRequest.newContext({ baseURL: campaign.baseURL })
+    try {
+      expect((await anonymous.get(`/corte/${cutId}`)).status()).toBe(404)
+    } finally {
+      await anonymous.dispose()
+    }
+  })
+
+  test('denies advisor/leader on the library page and on the edit route', async ({
+    campaign,
+    campaignRequest,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    const speech = await createSpeech(campaign)
+    const cutId = await createCut(request, headers, {
+      speechId: speech.id,
+      status: 'published',
+      title: 'Corte restrito',
+    })
+
+    for (const role of ['advisor', 'leader'] as const) {
+      const denied = await campaign.fixtures.createCampaignUser(role)
+      const deniedRequest = await campaignRequest(denied, denied.password)
+
+      await assertCampaignRedirect(
+        deniedRequest,
+        '/campanha/comunicacao/acervo/cortes',
+        role === 'leader' ? '/campanha/meus-contatos' : '/campanha',
+      )
+
+      const response = await deniedRequest.post(
+        `/campanha/comunicacao/acervo/cortes/${cutId}/publicacao`,
+        { data: { cutId, published: false } },
+      )
       expect(response.status()).toBe(400)
       expect(((await response.json()) as { message: string }).message).toContain(
         'não tem acesso ao acervo',

@@ -1,10 +1,10 @@
 'use client'
 
-import { CheckIcon, CopyIcon, DownloadIcon } from 'lucide-react'
+import { DownloadIcon } from 'lucide-react'
 
+import { CopyLinkButton } from '@/components/CopyLinkButton'
 import { WhatsAppIcon } from '@/components/socialIcons'
 import { Button } from '@/components/ui/button'
-import { copyFeedbackLabels, copyFeedbackLiveMessages, useCopyFeedback } from '@/lib/copyFeedback'
 import { buildSpeechCutShare } from '@/lib/speechCut'
 import { cn } from '@/lib/utils'
 
@@ -34,7 +34,6 @@ export const SpeechCutShareActions = ({
   primary = 'copy',
   className,
 }: SpeechCutShareActionsProps) => {
-  const { feedback, copy } = useCopyFeedback()
   const share = buildSpeechCutShare({ title, url })
 
   return (
@@ -50,19 +49,7 @@ export const SpeechCutShareActions = ({
           </a>
         </Button>
       ) : null}
-      <Button
-        type="button"
-        variant={primary === 'copy' ? 'default' : 'outline'}
-        className="min-h-10"
-        onClick={() => void copy(url)}
-      >
-        {feedback === 'copied' ? (
-          <CheckIcon data-icon="inline-start" aria-hidden="true" />
-        ) : (
-          <CopyIcon data-icon="inline-start" aria-hidden="true" />
-        )}
-        {copyFeedbackLabels[feedback]}
-      </Button>
+      <CopyLinkButton url={url} variant={primary === 'copy' ? 'default' : 'outline'} />
       {primary === 'copy' ? (
         <Button asChild variant="outline" className="min-h-10">
           <a href={share.whatsAppUrl} target="_blank" rel="noopener noreferrer">
@@ -79,9 +66,6 @@ export const SpeechCutShareActions = ({
           </a>
         </Button>
       ) : null}
-      <span aria-live="polite" className="sr-only">
-        {copyFeedbackLiveMessages[feedback]}
-      </span>
     </div>
   )
 }

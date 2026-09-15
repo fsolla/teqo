@@ -30,9 +30,14 @@ vi.mock('@/utilities/campaignActionContext', async (importOriginal) => {
 import {
   getSpeechCutStatusForActor,
   saveSpeechCutForActor,
+  setSpeechCutPublishedForActor,
   suggestSpeechCutMetadataForActor,
+  updateSpeechCutTextForActor,
 } from '@/app/(campaign)/campanha/actions/speech'
-import { SPEECH_CUT_FORBIDDEN_MESSAGE } from '@/lib/schemas/speechCut'
+import {
+  SPEECH_CUT_FORBIDDEN_MESSAGE,
+  SPEECH_CUT_PUBLISH_NOT_READY_MESSAGE,
+} from '@/lib/schemas/speechCut'
 import type { CampaignUser } from '@/payload-types'
 import config from '@/payload.config'
 import { getCampaignActionContext } from '@/utilities/campaignActionContext'
@@ -41,6 +46,11 @@ import {
   runSpeechCutJob,
   SPEECH_CUT_STALE_MS,
 } from '@/utilities/speech/speechCutJob'
+import {
+  loadSpeechCutAcervoPageData,
+  loadSpeechCutDetailPageData,
+  SpeechCutNotFoundError,
+} from '@/utilities/speech/speechCutPageData'
 import { startSpeechCutJobInBackground } from '@/utilities/speech/speechCutScheduler'
 import { upsertSpeechBundle, type SpeechImportBundle } from '@/utilities/speech/speechImport'
 
@@ -116,6 +126,8 @@ const createCut = async (data: {
   endSeconds: number
   status?: 'processing' | 'published' | 'unpublished' | 'failed'
   createdBy?: number
+  title?: string
+  description?: string
 }): Promise<number> => {
   const cut = await payload.create({
     collection: 'speechCut',
@@ -124,8 +136,8 @@ const createCut = async (data: {
       startSeconds: data.startSeconds,
       endSeconds: data.endSeconds,
       durationSeconds: data.endSeconds - data.startSeconds,
-      title: `Corte ${randomUUID().slice(0, 8)}`,
-      description: 'Descrição do corte',
+      title: data.title ?? `Corte ${randomUUID().slice(0, 8)}`,
+      description: data.description ?? 'Descrição do corte',
       status: data.status ?? 'processing',
       ...(data.createdBy ? { createdBy: data.createdBy } : {}),
     },
@@ -494,5 +506,188 @@ describe('speech cuts (C167)', () => {
         rmSync(workdir, { recursive: true, force: true })
       }
     })
+  })
+})
+
+describe('speech cut library (C168)', () => {
+  beforeAll(async () => {
+    payload = await getPayload({ config: await config })
+  })
+
+  afterEach(() => {
+    mockedGetContext.mockReset()
+  })
+
+  it('lists newest first and searches title or description case-insensitively', async () => {
+    const speech = await createSpeech()
+    const marker = `zebra${randomUUID().slice(0, 8)}`
+    const older = await createCut({
+      speech,
+      startSeconds: 0,
+      endSeconds: 20,
+      status: 'published',
+      title: `Obras paradas ${marker}`,
+    })
+    const newer = await createCut({
+      speech,
+      startSeconds: 30,
+      endSeconds: 50,
+      status: 'unpublished',
+      title: 'Título sem o termo',
+      description: `Conteúdo sobre OBRAS ${marker} e emprego`,
+    })
+    const unrelated = await createCut({
+      speech,
+      startSeconds: 60,
+      endSeconds: 80,
+      status: 'published',
+      title: `Saúde ${marker}`,
+    })
+    const { communicator } = await createUsers()
+
+    const data = await loadSpeechCutAcervoPageData(payload, communicator, { q: `obras ${marker}` })
+
+    expect(data.rows.map((row) => row.id)).toEqual([newer, older])
+    expect(data.rows.map((row) => row.id)).not.toContain(unrelated)
+    expect(data.totalDocs).toBe(2)
+  })
+
+  it('carries the origin speech and degrades when it was deleted', async () => {
+    const speech = await createSpeech()
+    const withOrigin = await createCut({ speech, startSeconds: 0, endSeconds: 20 })
+    const orphan = await payload.create({
+      collection: 'speechCut',
+      data: {
+        startSeconds: 0,
+        endSeconds: 10,
+        durationSeconds: 10,
+        title: `Órfão ${randomUUID().slice(0, 8)}`,
+        description: 'Sem fala de origem',
+        status: 'unpublished',
+      },
+      depth: 0,
+      overrideAccess: true,
+    })
+    createdCutIds.add(orphan.id)
+    const { communicator } = await createUsers()
+
+    const withSpeech = await loadSpeechCutDetailPageData(payload, communicator, withOrigin)
+    expect(withSpeech.origin?.id).toBe(speech)
+    expect(withSpeech.origin?.href).toBe(`/campanha/comunicacao/acervo/${speech}`)
+    expect(withSpeech.origin?.label).toContain('07/02/2023')
+    expect(withSpeech.createdAtLabel).toMatch(/^\d{2}\/\d{2}\/\d{4}$/)
+
+    const withoutSpeech = await loadSpeechCutDetailPageData(payload, communicator, orphan.id)
+    expect(withoutSpeech.origin).toBeNull()
+  })
+
+  it('edits only the cut text and reflects it in the library', async () => {
+    const speech = await createSpeech()
+    const cutId = await createCut({ speech, startSeconds: 0, endSeconds: 20 })
+    const { communicator } = await createUsers()
+    asActor(communicator)
+
+    const updated = await updateSpeechCutTextForActor({
+      cutId,
+      title: 'Título revisado',
+      description: 'Descrição revisada',
+    })
+    expect(updated.title).toBe('Título revisado')
+
+    const stored = await payload.findByID({
+      collection: 'speechCut',
+      id: cutId,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(stored.title).toBe('Título revisado')
+    expect(stored.description).toBe('Descrição revisada')
+    // The speech window and the (absent) video are untouched.
+    expect(stored.startSeconds).toBe(0)
+    expect(stored.endSeconds).toBe(20)
+    expect(stored.media ?? null).toBeNull()
+
+    const listed = await loadSpeechCutAcervoPageData(payload, communicator, { q: 'revisado' })
+    expect(listed.rows.map((row) => row.id)).toContain(cutId)
+  })
+
+  it('denies editing and publishing to advisor/leader fail-closed', async () => {
+    const speech = await createSpeech()
+    const cutId = await createCut({ speech, startSeconds: 0, endSeconds: 20 })
+    const { advisor, leader } = await createUsers()
+
+    for (const denied of [advisor, leader]) {
+      asActor(denied)
+      await expect(
+        updateSpeechCutTextForActor({ cutId, title: 't', description: 'd' }),
+      ).rejects.toThrow(SPEECH_CUT_FORBIDDEN_MESSAGE)
+      await expect(setSpeechCutPublishedForActor({ cutId, published: false })).rejects.toThrow(
+        SPEECH_CUT_FORBIDDEN_MESSAGE,
+      )
+    }
+  })
+
+  it('refuses to publish a cut without a stored file', async () => {
+    const speech = await createSpeech()
+    const cutId = await createCut({
+      speech,
+      startSeconds: 0,
+      endSeconds: 20,
+      status: 'unpublished',
+    })
+    const { communicator } = await createUsers()
+    asActor(communicator)
+
+    await expect(setSpeechCutPublishedForActor({ cutId, published: true })).rejects.toThrow(
+      SPEECH_CUT_PUBLISH_NOT_READY_MESSAGE,
+    )
+  })
+
+  it('kills and restores the same public link through the toggle', async () => {
+    const speech = await createSpeech()
+    const cutId = await createCut({ speech, startSeconds: 43, endSeconds: 118 })
+    const { communicator } = await createUsers()
+    asActor(communicator)
+
+    vi.stubGlobal('fetch', camaraFetchStub(MP4_BYTES))
+    const restoreFfmpeg = withFfmpegPath(FAKE_FFMPEG)
+
+    try {
+      await runSpeechCutJob(payload, cutId)
+      const publishedCut = await payload.findByID({
+        collection: 'speechCut',
+        id: cutId,
+        depth: 1,
+        overrideAccess: true,
+      })
+      const media =
+        typeof publishedCut.media === 'object' && publishedCut.media !== null
+          ? publishedCut.media
+          : null
+      if (media) createdMediaIds.add(media.id)
+
+      expect(publishedCut.status).toBe('published')
+      expect((await findCutsAs(undefined, [cutId])).docs.map((doc) => doc.id)).toEqual([cutId])
+
+      const unpublished = await setSpeechCutPublishedForActor({ cutId, published: false })
+      expect(unpublished.status).toBe('unpublished')
+      expect(unpublished.publicPath).toBe(`/corte/${cutId}`)
+      expect((await findCutsAs(undefined, [cutId])).docs).toHaveLength(0)
+
+      const republished = await setSpeechCutPublishedForActor({ cutId, published: true })
+      expect(republished.status).toBe('published')
+      expect(republished.publicPath).toBe(`/corte/${cutId}`)
+      expect((await findCutsAs(undefined, [cutId])).docs.map((doc) => doc.id)).toEqual([cutId])
+    } finally {
+      restoreFfmpeg()
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('throws the named not-found error for a missing cut', async () => {
+    const { communicator } = await createUsers()
+    await expect(
+      loadSpeechCutDetailPageData(payload, communicator, 999_999_999),
+    ).rejects.toBeInstanceOf(SpeechCutNotFoundError)
   })
 })

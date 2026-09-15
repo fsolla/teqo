@@ -11,69 +11,64 @@ import {
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
-import { SpeechAcervoFilters } from '@/components/campaign/speech/SpeechAcervoFilters'
-import { SpeechResultList } from '@/components/campaign/speech/SpeechResultList'
+import { SpeechCutLibraryFilters } from '@/components/campaign/speech/SpeechCutLibraryFilters'
+import { SpeechCutLibraryList } from '@/components/campaign/speech/SpeechCutLibraryList'
 import { Button } from '@/components/ui/button'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { CAMPAIGN_COMMUNICATION_ACERVO, CAMPAIGN_COMMUNICATION_CORTES } from '@/lib/campaignPaths'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { buildSpeechFiltersKey, buildSpeechListHref } from '@/utilities/speech/speechListUrl'
-import { loadSpeechAcervoPageData } from '@/utilities/speech/speechPageData'
+import {
+  buildSpeechCutFiltersKey,
+  buildSpeechCutListHref,
+} from '@/utilities/speech/speechCutListUrl'
+import { loadSpeechCutAcervoPageData } from '@/utilities/speech/speechCutPageData'
 
-export const metadata = campaignPageMetadataFromCatalog('acervo')
+export const metadata = campaignPageMetadataFromCatalog('cortes')
 
-type SpeechAcervoPageProps = {
+type SpeechCutLibraryPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-export default async function SpeechAcervoPage({ searchParams }: SpeechAcervoPageProps) {
+/** C168 — the cut library: what was already cut, newest first, searchable. */
+export default async function SpeechCutLibraryPage({ searchParams }: SpeechCutLibraryPageProps) {
   const [user, payload] = await Promise.all([
     requireCampaignPageActor({ gate: 'speechCatalog' }),
     getPayload({ config }),
   ])
 
-  const data = await loadSpeechAcervoPageData(payload, user, searchParams)
+  const data = await loadSpeechCutAcervoPageData(payload, user, searchParams)
   if (data.redirectHref) redirect(data.redirectHref)
 
-  const hasFilters = buildSpeechFiltersKey(data.state) !== ''
+  const hasFilters = Boolean(data.state.q)
 
   return (
-    <CampaignPageShell aria-label="Acervo de falas">
-      <div className="flex justify-end pt-4 md:pt-0">
-        <Button asChild variant="outline" className="min-h-11">
-          <Link href={CAMPAIGN_COMMUNICATION_CORTES}>
-            <ScissorsIcon data-icon="inline-start" aria-hidden="true" />
-            Biblioteca de cortes
-          </Link>
-        </Button>
-      </div>
-
+    <CampaignPageShell aria-label="Biblioteca de cortes">
       <CampaignListPendingBoundary>
-        <SpeechAcervoFilters
-          key={buildSpeechFiltersKey(data.state)}
-          state={data.state}
-          filterOptions={data.filterOptions}
-        />
+        <SpeechCutLibraryFilters key={buildSpeechCutFiltersKey(data.state)} state={data.state} />
 
         <CampaignListResults>
           {data.rows.length > 0 ? (
-            <SpeechResultList rows={data.rows} />
+            <SpeechCutLibraryList rows={data.rows} />
           ) : (
             <CampaignListEmptyState
-              icon={SearchXIcon}
+              icon={hasFilters ? SearchXIcon : ScissorsIcon}
               title={
                 data.state.q
-                  ? `Nenhuma fala encontrada para "${data.state.q}"`
-                  : 'Nenhuma fala encontrada'
+                  ? `Nenhum corte encontrado para "${data.state.q}"`
+                  : 'Nenhum corte ainda'
               }
               description={
                 hasFilters
-                  ? 'Tente outro termo, remova filtros ou busque por um tema.'
-                  : 'O acervo ainda não tem falas importadas.'
+                  ? 'Tente outro termo ou limpe a busca.'
+                  : 'Quando você cortar um trecho de uma fala, ele fica guardado aqui para reencontrar, baixar, ajustar o texto e republicar.'
               }
             >
               <Button asChild variant="outline" className="min-h-11">
-                <Link href={CAMPAIGN_COMMUNICATION_ACERVO}>Limpar busca e filtros</Link>
+                <Link
+                  href={hasFilters ? CAMPAIGN_COMMUNICATION_CORTES : CAMPAIGN_COMMUNICATION_ACERVO}
+                >
+                  {hasFilters ? 'Limpar busca' : 'Ir para o acervo de falas'}
+                </Link>
               </Button>
             </CampaignListEmptyState>
           )}
@@ -81,11 +76,11 @@ export default async function SpeechAcervoPage({ searchParams }: SpeechAcervoPag
           {data.rows.length > 0 ? (
             <CampaignListFooter
               totalDocs={data.totalDocs}
-              singular="fala encontrada"
-              plural="falas encontradas"
+              singular="corte encontrado"
+              plural="cortes encontrados"
               page={data.state.page}
               totalPages={data.totalPages}
-              hrefForPage={(page) => buildSpeechListHref(data.state, page)}
+              hrefForPage={(page) => buildSpeechCutListHref(data.state, page)}
             />
           ) : null}
         </CampaignListResults>

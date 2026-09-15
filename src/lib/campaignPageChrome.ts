@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import type { Metadata } from 'next'
 
 import {
+  CAMPAIGN_COMMUNICATION_CORTES,
   CAMPAIGN_CONTACTS_HOME,
   CAMPAIGN_HOME,
   CAMPAIGN_UPDATES_HREF,
@@ -119,6 +120,10 @@ export const campaignPageChromeCatalog = {
   acervo: {
     title: 'Acervo de falas',
     subtitle: 'Discursos do Deputado Jorge Solla na Câmara.',
+  },
+  cortes: {
+    title: 'Cortes',
+    subtitle: 'O que já foi cortado — reencontre, ajuste o texto e republique.',
   },
 } as const satisfies Record<string, CampaignPageChrome | null>
 
@@ -281,6 +286,12 @@ const pathRules: PathRule[] = [
   {
     match: (pathname) => pathname === '/campanha/comunicacao/acervo',
     resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.acervo),
+  },
+  {
+    // C168 — before the generic acervo-detail regex below, which would
+    // otherwise swallow the library route and resolve it to `null`.
+    match: (pathname) => pathname === CAMPAIGN_COMMUNICATION_CORTES,
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.cortes),
   },
   {
     match: (pathname) => /^\/campanha\/comunicacao\/acervo\/[^/]+$/.test(pathname),
