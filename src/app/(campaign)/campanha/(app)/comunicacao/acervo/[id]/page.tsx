@@ -110,6 +110,9 @@ export default async function SpeechDetailPage({ params, searchParams }: SpeechD
                 segments={view.segments}
                 initialSeconds={initialSeconds}
                 sourceUrl={sourceUrl}
+                durationSeconds={view.durationSeconds}
+                speechType={view.type}
+                speechDateLabel={view.speechDateLabel}
               />
             </div>
 

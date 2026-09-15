@@ -1,13 +1,21 @@
 'use client'
 
-import { DownloadIcon, ExternalLinkIcon, FilmIcon, PlayIcon } from 'lucide-react'
+import { DownloadIcon, ExternalLinkIcon, FilmIcon, PlayIcon, ScissorsIcon } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import type { SpeechVodResolveResponse } from '@/app/(campaign)/campanha/(app)/comunicacao/acervo/resolver-vod/types'
+import { SpeechExcerptControls } from '@/components/campaign/speech/SpeechExcerptControls'
+import { SpeechExcerptShare } from '@/components/campaign/speech/SpeechExcerptShare'
 import { SpeechHighlightParts } from '@/components/campaign/speech/SpeechHighlightParts'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
+import {
+  extendRangeToSegment,
+  initialExcerptRange,
+  MIN_EXCERPT_SECONDS,
+  type ExcerptRange,
+} from '@/lib/speechExcerptSelection'
 import type { SpeechVodResolution } from '@/lib/speechVod'
 import { cn } from '@/lib/utils'
 import type { SpeechDetailSegmentViewModel } from '@/utilities/speech/speechViewModels'
@@ -52,6 +60,12 @@ type SpeechDetailPlayerProps = {
   segments: readonly SpeechDetailSegmentViewModel[]
   initialSeconds: number | null
   sourceUrl: string | null
+  /** C166 — raw duration for the excerpt picker; null falls back to the last segment end. */
+  durationSeconds: number | null
+  /** C166 — speech type for the share message (`null` reads as "fala"). */
+  speechType: string | null
+  /** C166 — day label (`dd/mm/aaaa`) for the share message. */
+  speechDateLabel: string
 }
 
 const StatusPanel = ({
@@ -100,10 +114,16 @@ export const SpeechDetailPlayer = ({
   segments,
   initialSeconds,
   sourceUrl,
+  durationSeconds,
+  speechType,
+  speechDateLabel,
 }: SpeechDetailPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [resolution, setResolution] = useState<ResolutionState>({ kind: 'idle' })
   const [activeStart, setActiveStart] = useState<number | null>(null)
+  // C166: one state for the explicit selection mode — a non-null range means
+  // the mode is on, so "selecting" cannot drift from "has a range".
+  const [selection, setSelection] = useState<ExcerptRange | null>(null)
   const [youtubeStart, setYoutubeStart] = useState<number | null>(() =>
     youtubeVideoId && youtubeOffsetSeconds !== null
       ? youtubeOffsetSeconds + (initialSeconds ?? 0)
@@ -112,6 +132,10 @@ export const SpeechDetailPlayer = ({
 
   const resolving = resolution.kind === 'resolving'
   const playbackUrl = resolution.kind === 'resolved' ? resolution.playbackUrl : null
+  const selectionDuration = durationSeconds ?? segments.at(-1)?.endSeconds ?? null
+  const selectionAvailable = selectionDuration !== null && selectionDuration >= MIN_EXCERPT_SECONDS
+  const selecting = selection !== null
+  const showExcerptShare = selecting && Boolean(youtubeVideoId)
 
   useEffect(() => {
     const video = videoRef.current
@@ -184,6 +208,27 @@ export const SpeechDetailPlayer = ({
       (segment) => current >= segment.startSeconds && current < segment.endSeconds,
     )
     setActiveStart(active?.startSeconds ?? null)
+  }
+
+  const toggleSelection = () => {
+    if (selecting) {
+      setSelection(null)
+      return
+    }
+    if (selectionDuration === null || selectionDuration < MIN_EXCERPT_SECONDS) return
+    setSelection(initialExcerptRange(segments, selectionDuration))
+  }
+
+  // C162 keeps the transcript click seeking; C166 turns it into a phrase magnet
+  // while the explicit selection mode is on.
+  const onSegmentActivate = (index: number) => {
+    const segment = segments[index]
+    if (!segment) return
+    if (selection === null || selectionDuration === null) {
+      seekTo(segment.startSeconds)
+      return
+    }
+    setSelection(extendRangeToSegment(selection, segments, index, selectionDuration))
   }
 
   const seekable = youtubeVideoId ? youtubeOffsetSeconds !== null : Boolean(playbackUrl)
@@ -302,9 +347,44 @@ export const SpeechDetailPlayer = ({
     <div data-slot="speech-player" aria-busy={resolving || undefined}>
       {renderMedia()}
 
+      {selection && selectionDuration !== null ? (
+        <SpeechExcerptControls
+          segments={segments}
+          range={selection}
+          durationSeconds={selectionDuration}
+          onChange={setSelection}
+        />
+      ) : null}
+
       <div className="mt-3 flex flex-wrap items-center gap-2">
+        {selectionAvailable ? (
+          <Button
+            type="button"
+            variant={selecting ? 'secondary' : 'outline'}
+            className="min-h-10"
+            aria-pressed={selecting}
+            data-slot="speech-excerpt-toggle"
+            onClick={toggleSelection}
+          >
+            <ScissorsIcon data-icon="inline-start" aria-hidden="true" />
+            Selecionar trecho
+          </Button>
+        ) : null}
+        {showExcerptShare && selection && youtubeVideoId ? (
+          <SpeechExcerptShare
+            videoId={youtubeVideoId}
+            offsetSeconds={youtubeOffsetSeconds}
+            startSeconds={selection.startSeconds}
+            endSeconds={selection.endSeconds}
+            speechType={speechType}
+            dateLabel={speechDateLabel}
+          />
+        ) : null}
         {vodResolvable ? (
           <Button
+            // While the excerpt share is on screen it is the primary action;
+            // the download steps back to outline instead of splitting the CTA.
+            variant={showExcerptShare ? 'outline' : 'default'}
             className="min-h-10"
             disabled={resolving}
             aria-busy={resolving || undefined}
@@ -336,32 +416,56 @@ export const SpeechDetailPlayer = ({
 
       {inlineNotice}
 
+      {!youtubeVideoId && selectionAvailable ? (
+        <div className="mt-3 rounded-lg border bg-muted/40 px-4 py-3">
+          <p className="text-xs font-medium text-foreground/90">
+            Compartilhar por link exige o vídeo no YouTube
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Esta fala não tem vídeo no YouTube — não há link externo que abra no ponto. Você ainda
+            pode baixar o MP4 ou abrir a fonte oficial, e a seleção de trecho continua disponível.
+          </p>
+        </div>
+      ) : null}
+
       {segments.length > 0 ? (
         <section className="mt-5" aria-label="Transcrição">
           <p className="text-xs tracking-wide text-muted-foreground uppercase">
-            {seekable ? 'Transcrição (clique para posicionar)' : 'Transcrição'}
+            {selecting
+              ? 'Transcrição (clique nas frases para marcar o trecho)'
+              : seekable
+                ? 'Transcrição (clique para posicionar)'
+                : 'Transcrição'}
           </p>
           <ol className="mt-2 space-y-0.5">
-            {segments.map((segment) => {
+            {segments.map((segment, index) => {
               const active = activeStart === segment.startSeconds
+              const inSelection =
+                selection !== null &&
+                segment.endSeconds > selection.startSeconds &&
+                segment.startSeconds < selection.endSeconds
               return (
                 <li key={segment.startSeconds}>
                   <button
                     type="button"
                     data-start-seconds={segment.startSeconds}
-                    onClick={() => seekTo(segment.startSeconds)}
-                    disabled={!seekable}
+                    data-in-selection={inSelection || undefined}
+                    onClick={() => onSegmentActivate(index)}
+                    disabled={!seekable && !selecting}
                     className={cn(
                       'flex w-full gap-3 rounded-lg px-2 py-1.5 text-left transition-colors',
-                      seekable && 'hover:bg-muted',
+                      seekable && !selecting && 'hover:bg-muted',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                      active && 'bg-muted',
+                      !selecting && active && 'bg-muted',
+                      inSelection && 'border-l-2 border-primary bg-primary/10',
                     )}
                   >
                     <span
                       className={cn(
                         'w-12 shrink-0 pt-0.5 text-xs tabular-nums',
-                        active ? 'text-primary' : 'text-muted-foreground',
+                        inSelection || (!selecting && active)
+                          ? 'text-primary'
+                          : 'text-muted-foreground',
                       )}
                     >
                       {segment.startLabel}

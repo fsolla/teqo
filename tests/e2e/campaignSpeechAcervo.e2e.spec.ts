@@ -166,6 +166,11 @@ test.describe('communication vertical (C154/C162)', () => {
     expect(detailHtml).toContain('Baixar vídeo (MP4)')
     expect(detailHtml).toContain('Abrir fonte')
     expect(detailHtml).toContain('Fonte: Câmara dos Deputados')
+    // C166 — the excerpt picker's door is server-rendered; its link limit is
+    // not in this quadrant (the share control itself only appears in the mode,
+    // which is client interaction).
+    expect(detailHtml).toContain('Selecionar trecho')
+    expect(detailHtml).not.toContain('Compartilhar por link exige o vídeo no YouTube')
     expect(detailHtml).not.toContain('<video')
     expect(detailHtml).not.toContain('vod.camara.leg.br')
   })
@@ -185,6 +190,10 @@ test.describe('communication vertical (C154/C162)', () => {
     const html = rendered(await detail.text())
     expect(html).toContain('Assistir o trecho')
     expect(html).toContain('Baixar vídeo (MP4)')
+    // C166 — no YouTube means no excerpt link: the honest notice replaces it
+    // while the selection door stays offered.
+    expect(html).toContain('Selecionar trecho')
+    expect(html).toContain('Compartilhar por link exige o vídeo no YouTube')
     expect(html).not.toContain('<video')
     expect(html).not.toContain('<iframe')
     // The stored link is an eligibility signal, never a rendered URL.

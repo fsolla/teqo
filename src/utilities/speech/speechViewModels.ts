@@ -4,6 +4,7 @@
  * list/detail render.
  */
 import { CAMPAIGN_COMMUNICATION_ACERVO } from '@/lib/campaignPaths'
+import { formatSpeechClock, formatSpeechSpan } from '@/lib/speechClock'
 import type { SpeechExcerptSegment } from '@/lib/speechExcerpt'
 import type { SpeechScope, SpeechTopic } from '@/lib/speechFacets'
 import {
@@ -66,9 +67,13 @@ export type SpeechDetailSegmentViewModel = {
 export type SpeechDetailViewModel = {
   id: number
   speechAtLabel: string
+  /** Day-only label (`dd/mm/aaaa`) for the share message. */
+  speechDateLabel: string
   type: string | null
   phase: string | null
   durationLabel: string | null
+  /** Raw duration for the C166 excerpt picker; null when the row has none. */
+  durationSeconds: number | null
   presidingOfficer: string | null
   summary: string | null
   officialTranscript: string | null
@@ -87,8 +92,6 @@ export type SpeechDetailViewModel = {
   vodResolvable: boolean
 }
 
-const pad = (value: number): string => String(value).padStart(2, '0')
-
 /**
  * `speechAt` is the Câmara wall-clock string ("2026-08-11T18:48", no timezone);
  * slicing it keeps the local reading and avoids a `Date` shifting it.
@@ -100,27 +103,18 @@ export const formatSpeechAt = (speechAt: string): string => {
   return `${day}/${month}/${year} · ${hour}:${minute}`
 }
 
-const formatSpeechDuration = (seconds: number | null | undefined): string | null => {
-  if (seconds === null || seconds === undefined || !Number.isFinite(seconds) || seconds <= 0) {
-    return null
-  }
-  const total = Math.round(seconds)
-  const hours = Math.floor(total / 3600)
-  const minutes = Math.floor((total % 3600) / 60)
-  const secs = total % 60
-  if (hours > 0) return `${hours}h${pad(minutes)}min`
-  if (minutes > 0) return `${minutes}min${pad(secs)}s`
-  return `${secs}s`
+/** Day-only label (`dd/mm/aaaa`) for share messages; the clock stays out of it. */
+const formatSpeechDate = (speechAt: string): string => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(speechAt)
+  if (!match) return speechAt
+  const [, year, month, day] = match
+  return `${day}/${month}/${year}`
 }
 
-/** Transcript timestamp ("01:12" / "1:02:03"). */
-export const formatSpeechClock = (seconds: number): string => {
-  const total = Math.max(0, Math.round(seconds))
-  const hours = Math.floor(total / 3600)
-  const minutes = Math.floor((total % 3600) / 60)
-  const secs = total % 60
-  return hours > 0 ? `${hours}:${pad(minutes)}:${pad(secs)}` : `${pad(minutes)}:${pad(secs)}`
-}
+const formatSpeechDuration = (seconds: number | null | undefined): string | null =>
+  seconds === null || seconds === undefined || !Number.isFinite(seconds) || seconds <= 0
+    ? null
+    : formatSpeechSpan(seconds)
 
 type MunicipalityMentions = {
   mentionedMunicipalities?: (number | Municipality)[] | null
@@ -250,9 +244,11 @@ export const toSpeechDetailViewModel = ({
   return {
     id: speech.id,
     speechAtLabel: formatSpeechAt(speech.speechAt),
+    speechDateLabel: formatSpeechDate(speech.speechAt),
     type: speech.type ?? null,
     phase: speech.phase ?? null,
     durationLabel: formatSpeechDuration(speech.durationSeconds),
+    durationSeconds: speech.durationSeconds ?? null,
     presidingOfficer: speech.presidingOfficer ?? null,
     summary: speech.summary ?? null,
     officialTranscript: speech.officialTranscript ?? null,
