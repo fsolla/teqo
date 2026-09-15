@@ -68,8 +68,9 @@ import * as migration_20260912_052226_add_google_calendar_oauth_connection from 
 import * as migration_20260912_224719_add_activity_public_event from './20260912_224719_add_activity_public_event';
 import * as migration_20260913_001112_add_speech_catalog from './20260913_001112_add_speech_catalog';
 import * as migration_20260913_001200_add_speech_segment_trgm_index from './20260913_001200_add_speech_segment_trgm_index';
-import * as migration_20260913_150000_backfill_speech_search_text_trgm_index from './20260913_150000_backfill_speech_search_text_trgm_index';
 import * as migration_20260913_145820_add_speech_search_text from './20260913_145820_add_speech_search_text';
+import * as migration_20260913_150000_backfill_speech_search_text_trgm_index from './20260913_150000_backfill_speech_search_text_trgm_index';
+import * as migration_20260915_122356_add_speech_cut from './20260915_122356_add_speech_cut';
 
 export const migrations = [
   {
@@ -425,11 +426,16 @@ export const migrations = [
   {
     up: migration_20260913_145820_add_speech_search_text.up,
     down: migration_20260913_145820_add_speech_search_text.down,
-    name: '20260913_145820_add_speech_search_text'
+    name: '20260913_145820_add_speech_search_text',
   },
   {
     up: migration_20260913_150000_backfill_speech_search_text_trgm_index.up,
     down: migration_20260913_150000_backfill_speech_search_text_trgm_index.down,
     name: '20260913_150000_backfill_speech_search_text_trgm_index',
+  },
+  {
+    up: migration_20260915_122356_add_speech_cut.up,
+    down: migration_20260915_122356_add_speech_cut.down,
+    name: '20260915_122356_add_speech_cut'
   },
 ];

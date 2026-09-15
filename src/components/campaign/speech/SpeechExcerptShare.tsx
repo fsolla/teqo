@@ -1,7 +1,7 @@
 'use client'
 
 import { CheckIcon, CopyIcon, Share2Icon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { WhatsAppIcon } from '@/components/socialIcons'
 import { Button } from '@/components/ui/button'
@@ -14,23 +14,8 @@ import {
   SheetTitle,
 } from '@/components/ui/Sheet'
 import { useCoarsePointer } from '@/lib/campaignCoarsePointer'
+import { copyFeedbackLabels, copyFeedbackLiveMessages, useCopyFeedback } from '@/lib/copyFeedback'
 import { buildSpeechExcerptShare } from '@/lib/speechShare'
-
-const COPY_FEEDBACK_RESET_MS = 2000
-
-type CopyFeedback = 'idle' | 'copied' | 'error'
-
-const COPY_LABELS: Record<CopyFeedback, string> = {
-  idle: 'Copiar link',
-  copied: 'Link copiado',
-  error: 'Não foi possível copiar',
-}
-
-const COPY_LIVE_MESSAGES: Record<CopyFeedback, string> = {
-  idle: '',
-  copied: 'Link copiado.',
-  error: 'Não foi possível copiar o link.',
-}
 
 type SpeechExcerptShareProps = {
   videoId: string
@@ -63,13 +48,7 @@ export const SpeechExcerptShare = ({
 }: SpeechExcerptShareProps) => {
   const isCoarsePointer = useCoarsePointer()
   const [open, setOpen] = useState(false)
-  const [copyFeedback, setCopyFeedback] = useState<CopyFeedback>('idle')
-
-  useEffect(() => {
-    if (copyFeedback === 'idle') return
-    const reset = setTimeout(() => setCopyFeedback('idle'), COPY_FEEDBACK_RESET_MS)
-    return () => clearTimeout(reset)
-  }, [copyFeedback])
+  const { feedback, copy } = useCopyFeedback()
 
   const share = buildSpeechExcerptShare({
     videoId,
@@ -79,15 +58,6 @@ export const SpeechExcerptShare = ({
     speechType,
     dateLabel,
   })
-
-  const copyMessage = async () => {
-    try {
-      await navigator.clipboard.writeText(share.message)
-      setCopyFeedback('copied')
-    } catch {
-      setCopyFeedback('error')
-    }
-  }
 
   const trigger = (onClick?: () => void, expanded?: boolean) => (
     <Button
@@ -104,13 +74,13 @@ export const SpeechExcerptShare = ({
 
   const options = (
     <div data-slot="speech-excerpt-share-options">
-      <button type="button" onClick={copyMessage} className={OPTION_CLASS}>
-        {copyFeedback === 'copied' ? (
+      <button type="button" onClick={() => void copy(share.message)} className={OPTION_CLASS}>
+        {feedback === 'copied' ? (
           <CheckIcon className="size-4 text-emerald-600" aria-hidden="true" />
         ) : (
           <CopyIcon className="size-4" aria-hidden="true" />
         )}
-        {COPY_LABELS[copyFeedback]}
+        {copyFeedbackLabels[feedback]}
       </button>
       <a
         href={share.whatsAppUrl}
@@ -131,7 +101,7 @@ export const SpeechExcerptShare = ({
         </p>
       ) : null}
       <span aria-live="polite" className="sr-only">
-        {COPY_LIVE_MESSAGES[copyFeedback]}
+        {copyFeedbackLiveMessages[feedback]}
       </span>
     </div>
   )

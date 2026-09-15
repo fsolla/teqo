@@ -4,7 +4,7 @@
  * list/detail render.
  */
 import { CAMPAIGN_COMMUNICATION_ACERVO } from '@/lib/campaignPaths'
-import { formatSpeechClock, formatSpeechSpan } from '@/lib/speechClock'
+import { formatSpeechClock, formatSpeechDate, formatSpeechSpan } from '@/lib/speechClock'
 import type { SpeechExcerptSegment } from '@/lib/speechExcerpt'
 import type { SpeechScope, SpeechTopic } from '@/lib/speechFacets'
 import {
@@ -101,14 +101,6 @@ export const formatSpeechAt = (speechAt: string): string => {
   if (!match) return speechAt
   const [, year, month, day, hour, minute] = match
   return `${day}/${month}/${year} · ${hour}:${minute}`
-}
-
-/** Day-only label (`dd/mm/aaaa`) for share messages; the clock stays out of it. */
-const formatSpeechDate = (speechAt: string): string => {
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(speechAt)
-  if (!match) return speechAt
-  const [, year, month, day] = match
-  return `${day}/${month}/${year}`
 }
 
 const formatSpeechDuration = (seconds: number | null | undefined): string | null =>
