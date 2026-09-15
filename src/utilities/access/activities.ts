@@ -100,8 +100,13 @@ export const canReadActivity: Access = async ({ req }): Promise<boolean | Where>
  * activity; `somente_leitura` closes updates entirely; the carteira branch
  * keeps the same row scope as read (responsible OR municipality).
  * C165 — `tudo` never widens into activities without município.
+ * C165-F1 — the Edição axis owns the município VALUE too, not just the row:
+ * a write that bypasses the action (REST/Local API with a campaign JWT) must
+ * not clear the município (coordination/candidate-only) nor point it at one
+ * outside the advisor's write scope. An absent key keeps the row scope below,
+ * so editing any other field is unchanged.
  */
-export const canUpdateActivity: Access = async ({ req }): Promise<boolean | Where> => {
+export const canUpdateActivity: Access = async ({ data, req }): Promise<boolean | Where> => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
@@ -112,6 +117,21 @@ export const canUpdateActivity: Access = async ({ req }): Promise<boolean | Wher
 
   const editingAccess = advisorEditingAccess(currentUser)
   if (editingAccess === 'none') return false
+
+  if (data?.municipality !== undefined) {
+    const municipalityID = relationshipId(data.municipality)
+    // `null` (clear) or a malformed value: coordination/candidate-only.
+    if (municipalityID === null) return false
+    // Only the carteira needs the membership check (`tudo` skips it above).
+    // For `editing === 'carteira'` the read carteira IS the write boundary
+    // (the `visibility` axis never widens it), and this helper is memoized —
+    // the row scope below reuses the same ids, so no extra query.
+    if (editingAccess === 'carteira') {
+      const accessibleIDs = await getAccessibleMunicipalityIds(req, currentUser)
+      if (accessibleIDs !== null && !accessibleIDs.includes(municipalityID)) return false
+    }
+  }
+
   if (editingAccess === 'tudo') return { municipality: { exists: true } }
 
   return advisorActivityScopeWhere(req, currentUser)
