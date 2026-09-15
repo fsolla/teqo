@@ -54,7 +54,9 @@ jobs:
           # leak into it (the agent pushes with the PAT credential helper).
           fetch-depth: 0
           persist-credentials: false
-      - uses: pnpm/action-setup@v6
+      # OPS111: setup-node FIRST — the homeserver runner defaults to Node 18,
+      # which kills pnpm/action-setup (TypeError paths[0] undefined,
+      # runs 34994058878/34987287001/34999635390). Do not reorder.
       # package-manager-cache: false — the job downloads nothing from the
       # Actions cache service; setup-node's default auto-cache probe would be
       # a needless dependency on the self-hosted runner.
@@ -62,6 +64,7 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
+      - uses: pnpm/action-setup@v6
       - name: Install dependencies
         # The detached wrapper loads `scripts/worktree.mjs` (dotenv/pg at
         # module load) from this checkout; actions/checkout cleans ignored
