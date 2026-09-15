@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — C166: selecionar trecho e compartilhar por link</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-5xl p-6 sm:p-8">
+      <h1 class="text-lg font-medium">
+        UI draft — Acervo: selecionar trecho e compartilhar por link (C166)
+      </h1>
+      <p class="mt-1 text-sm text-zinc-400">
+        A assessoria de comunicação marca um trecho da fala no player e manda o link do YouTube já
+        abrindo no ponto escolhido (copiar ou WhatsApp), com o intervalo escrito na mensagem.
+      </p>
+      <p class="mt-2 text-sm text-zinc-500">
+        Cinza = estrutura existente · <span class="text-amber-400">acento</span> = novo neste item ·
+        barras cinza = conteúdo não especificado. Cenas estáticas: sem interação, sem dados reais.
+      </p>
+
+      <!-- Cena 1 · desktop — detalhe com a barra de seleção de trecho -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 1 · desktop (~1280px) — detalhe com barra de seleção (alças início/fim, duração) +
+          Compartilhar
+        </p>
+        <div class="mt-3 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+          <div class="px-6 py-5">
+            <p class="text-xs text-zinc-500">← Voltar ao acervo</p>
+            <h2 class="mt-2 text-base font-medium">BREVES COMUNICAÇÕES</h2>
+            <p class="mt-1 text-xs text-zinc-500">
+              11/08/2026 · 18:48 · 4min25s · Presidiu: [placeholder]
+            </p>
+
+            <div class="mt-4 grid grid-cols-[1fr_240px] gap-5">
+              <div>
+                <div
+                  class="relative flex aspect-video items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950"
+                >
+                  <div
+                    class="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800 text-zinc-300"
+                  >
+                    ▶
+                  </div>
+                  <p class="absolute bottom-3 left-3 text-xs text-zinc-400">
+                    Vídeo da sessão no YouTube
+                  </p>
+                </div>
+
+                <div class="mt-3 rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="text-xs font-medium text-amber-400">
+                      Selecionar trecho — ativo
+                    </span>
+                    <span class="text-xs text-zinc-400">
+                      Trecho:
+                      <span class="text-zinc-100 tabular-nums">00:43 → 02:10</span>
+                      ·
+                      <span class="text-zinc-100 tabular-nums">1min27s</span>
+                    </span>
+                  </div>
+
+                  <div class="relative mt-4 h-9">
+                    <div
+                      class="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded bg-zinc-800"
+                    ></div>
+                    <div
+                      class="absolute top-1/2 left-[18%] right-[26%] h-1.5 -translate-y-1/2 rounded bg-amber-500/70"
+                    ></div>
+                    <div
+                      class="absolute top-1/2 left-[18%] h-6 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-amber-400 bg-zinc-900"
+                    ></div>
+                    <div
+                      class="absolute top-1/2 right-[26%] h-6 w-2.5 translate-x-1/2 -translate-y-1/2 rounded-sm border border-amber-400 bg-zinc-900"
+                    ></div>
+                    <span
+                      class="absolute -top-0.5 left-[18%] -translate-x-1/2 text-[10px] text-amber-400"
+                    >
+                      início
+                    </span>
+                    <span
+                      class="absolute -top-0.5 right-[26%] translate-x-1/2 text-[10px] text-amber-400"
+                    >
+                      fim
+                    </span>
+                  </div>
+                  <div class="mt-2 flex justify-between text-[10px] text-zinc-500">
+                    <span>00:00</span>
+                    <span class="text-amber-400">00:43</span>
+                    <span>02:10</span>
+                    <span>04:25</span>
+                  </div>
+                  <p class="mt-3 text-[11px] text-zinc-500">
+                    Clique nas frases: o limite encaixa no segmento (ímã). Arraste as alças para o
+                    ajuste fino. Mínimo 5s · máximo 3min — a duração aparece durante a seleção.
+                  </p>
+                </div>
+
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    class="min-h-11 rounded-lg bg-amber-500 px-4 text-sm font-medium text-zinc-950"
+                  >
+                    Compartilhar
+                  </button>
+                  <button
+                    class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-300"
+                  >
+                    Baixar vídeo (MP4)
+                  </button>
+                  <button
+                    class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-300"
+                  >
+                    Abrir fonte
+                  </button>
+                </div>
+
+                <p class="mt-5 text-xs tracking-wide text-zinc-500 uppercase">
+                  Transcrição (clique nas frases para marcar o trecho)
+                </p>
+                <div class="mt-2 space-y-1">
+                  <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                    <span class="w-12 shrink-0 text-xs text-zinc-500">00:00</span>
+                    <span class="text-sm text-zinc-400">… agradeço, Presidente. …</span>
+                  </div>
+                  <div
+                    class="flex gap-3 rounded-lg border-l-2 border-amber-500/60 bg-amber-500/10 px-2 py-1.5"
+                  >
+                    <span class="w-12 shrink-0 text-xs text-amber-400">00:43</span>
+                    <span class="text-sm text-zinc-100"
+                      >… o acesso a medicamentos na Bahia precisa chegar a quem mora no interior
+                      …</span
+                    >
+                  </div>
+                  <div
+                    class="flex gap-3 rounded-lg border-l-2 border-amber-500/60 bg-amber-500/10 px-2 py-1.5"
+                  >
+                    <span class="w-12 shrink-0 text-xs text-amber-400">02:10</span>
+                    <span class="text-sm text-zinc-100"
+                      >… e é preciso garantir o financiamento tripartite …</span
+                    >
+                  </div>
+                  <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                    <span class="w-12 shrink-0 text-xs text-zinc-500">03:31</span>
+                    <span class="text-sm text-zinc-400">… muito obrigado, Presidente. …</span>
+                  </div>
+                </div>
+              </div>
+
+              <aside class="space-y-4">
+                <div>
+                  <p class="text-xs tracking-wide text-zinc-500 uppercase">Sumário oficial</p>
+                  <div class="mt-2 space-y-1.5">
+                    <div class="h-3 w-full rounded bg-zinc-800"></div>
+                    <div class="h-3 w-5/6 rounded bg-zinc-800"></div>
+                  </div>
+                </div>
+                <div>
+                  <p class="text-xs tracking-wide text-zinc-500 uppercase">Temas</p>
+                  <div class="mt-1.5 flex flex-wrap gap-1.5">
+                    <span class="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300"
+                      >Saúde</span
+                    >
+                  </div>
+                </div>
+                <div class="border-t border-zinc-800 pt-3">
+                  <p class="text-xs text-zinc-500">Fonte: Câmara dos Deputados · CC BY 4.0</p>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cena 2 · desktop — popover aberto, estado "Link copiado" -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 2 · popover de compartilhamento aberto — "Copiar link" (estado "Link copiado") e
+          "Enviar no WhatsApp"
+        </p>
+        <div class="mt-3 rounded-lg border border-zinc-800 bg-zinc-900 px-6 py-5">
+          <div class="max-w-[720px]">
+            <p class="text-xs text-zinc-500">BREVES COMUNICAÇÕES · trecho 00:43 → 02:10</p>
+            <div class="mt-2 flex flex-wrap items-center gap-2">
+              <button
+                class="min-h-11 rounded-lg bg-amber-500 px-4 text-sm font-medium text-zinc-950"
+              >
+                Compartilhar
+              </button>
+              <button class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-300">
+                Baixar vídeo (MP4)
+              </button>
+              <button class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-300">
+                Abrir fonte
+              </button>
+            </div>
+
+            <div class="mt-2 w-80 rounded-lg border border-zinc-700 bg-zinc-900 p-1">
+              <div class="flex min-h-11 items-center gap-2 rounded-md px-2 text-sm text-zinc-100">
+                <span class="text-amber-400">✓</span>
+                Link copiado
+              </div>
+              <div class="flex min-h-11 items-center gap-2 rounded-md px-2 text-sm text-zinc-100">
+                <span class="text-zinc-500">→</span>
+                Enviar no WhatsApp
+              </div>
+              <p
+                class="border-t border-zinc-800 px-2 py-2 text-[11px] leading-relaxed text-zinc-500"
+              >
+                Trecho de BREVES COMUNICAÇÕES (11/08/2026): de 00:43 a 02:10<br />
+                youtube.com/watch?v=[id]&amp;t=2634
+              </p>
+            </div>
+
+            <p class="mt-3 text-xs text-zinc-500">
+              Antes do clique a primeira opção lê "Copiar link"; o feedback volta sozinho depois de
+              alguns segundos. O link abre o vídeo em 00:43 da fala (2634s na sessão); o fim vai
+              escrito na mensagem.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cena 3 · desktop — fala sem YouTube: link indisponível + aviso honesto -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 3 · fala sem YouTube (só VOD) — sem opção de link + aviso honesto (seleção
+          preservada)
+        </p>
+        <div class="mt-3 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+          <div class="px-6 py-5">
+            <p class="text-xs text-zinc-500">← Voltar ao acervo</p>
+            <h2 class="mt-2 text-base font-medium">BREVES COMUNICAÇÕES</h2>
+            <p class="mt-1 text-xs text-zinc-500">11/08/2026 · 4min25s · só VOD (sem YouTube)</p>
+
+            <div class="mt-4 max-w-[720px]">
+              <div
+                class="flex aspect-video flex-col items-center justify-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 text-center"
+              >
+                <div
+                  class="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800 text-zinc-300"
+                >
+                  ▶
+                </div>
+                <p class="text-sm text-zinc-200">Assistir o trecho</p>
+                <p class="max-w-sm text-xs text-zinc-500">
+                  O trecho deste vídeo é gerado pela Câmara dos Deputados.
+                </p>
+              </div>
+
+              <div class="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  class="min-h-11 rounded-lg bg-amber-500 px-4 text-sm font-medium text-zinc-950"
+                >
+                  Baixar vídeo (MP4)
+                </button>
+                <button
+                  class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-300"
+                >
+                  Abrir fonte
+                </button>
+              </div>
+
+              <div class="mt-3 rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3">
+                <p class="text-xs font-medium text-zinc-300">
+                  Compartilhar por link exige o vídeo no YouTube
+                </p>
+                <p class="mt-1 text-xs text-zinc-500">
+                  Esta fala não tem vídeo no YouTube — não há link externo que abra no ponto. Você
+                  ainda pode baixar o MP4 ou abrir a fonte oficial, e a seleção de trecho continua
+                  disponível.
+                </p>
+              </div>
+            </div>
+
+            <p class="mt-5 text-xs tracking-wide text-zinc-500 uppercase">Transcrição</p>
+            <div class="mt-2 max-w-[720px] space-y-1">
+              <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                <span class="w-12 shrink-0 text-xs text-zinc-500">00:00</span>
+                <span class="text-sm text-zinc-400">… agradeço, Presidente. …</span>
+              </div>
+              <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                <span class="w-12 shrink-0 text-xs text-zinc-500">00:43</span>
+                <span class="text-sm text-zinc-400">… o acesso a medicamentos na Bahia …</span>
+              </div>
+            </div>
+
+            <p class="mt-4 border-t border-zinc-800 pt-3 text-xs text-zinc-500">
+              Fonte: Câmara dos Deputados · CC BY 4.0
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cena 4 · mobile — seleção + sheet de compartilhamento -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 4 · mobile (~390px) — seleção + sheet de compartilhamento aberto
+        </p>
+        <div class="mt-3 w-[390px] overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+          <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+            <span class="text-zinc-400">←</span>
+            <span class="text-sm font-medium text-zinc-200">Comunicação</span>
+            <span class="h-6 w-6 rounded-full bg-zinc-800"></span>
+          </div>
+
+          <div class="relative">
+            <div class="px-4 py-4 opacity-60">
+              <p class="text-xs text-zinc-500">Acervo · fala</p>
+              <h2 class="mt-1 text-sm font-medium text-zinc-100">BREVES COMUNICAÇÕES</h2>
+              <div
+                class="mt-3 flex aspect-video items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950"
+              >
+                <div
+                  class="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800 text-zinc-300"
+                >
+                  ▶
+                </div>
+              </div>
+
+              <div class="mt-3 rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-medium text-amber-400">Trecho selecionado</span>
+                  <span class="text-zinc-100 tabular-nums">00:43 → 02:10</span>
+                </div>
+                <div class="relative mt-3 h-8">
+                  <div
+                    class="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded bg-zinc-800"
+                  ></div>
+                  <div
+                    class="absolute top-1/2 left-[18%] right-[26%] h-1.5 -translate-y-1/2 rounded bg-amber-500/70"
+                  ></div>
+                  <div
+                    class="absolute top-1/2 left-[18%] h-6 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-amber-400 bg-zinc-900"
+                  ></div>
+                  <div
+                    class="absolute top-1/2 right-[26%] h-6 w-2.5 translate-x-1/2 -translate-y-1/2 rounded-sm border border-amber-400 bg-zinc-900"
+                  ></div>
+                </div>
+                <p class="mt-2 text-[10px] text-zinc-500">
+                  início 00:43 · fim 02:10 · 1min27s · mínimo 5s · máximo 3min
+                </p>
+              </div>
+
+              <button
+                class="mt-3 h-11 w-full rounded-lg bg-amber-500 text-sm font-medium text-zinc-950"
+              >
+                Compartilhar
+              </button>
+            </div>
+
+            <div
+              class="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-zinc-700 bg-zinc-900 px-4 pt-3 pb-4"
+            >
+              <div class="mx-auto h-1 w-10 rounded bg-zinc-700"></div>
+              <p class="mt-3 text-sm font-medium text-zinc-100">Compartilhar trecho</p>
+              <p class="mt-1 text-xs text-zinc-500">O link abre o vídeo no ponto escolhido.</p>
+              <div class="mt-2">
+                <div class="flex min-h-11 items-center gap-2 rounded-md px-2 text-sm text-zinc-100">
+                  <span class="text-amber-400">✓</span>
+                  Link copiado
+                </div>
+                <div class="flex min-h-11 items-center gap-2 rounded-md px-2 text-sm text-zinc-100">
+                  <span class="text-zinc-500">→</span>
+                  Enviar no WhatsApp
+                </div>
+              </div>
+              <p
+                class="mt-1 border-t border-zinc-800 px-2 pt-2 text-[10px] leading-relaxed text-zinc-500"
+              >
+                Trecho de BREVES COMUNICAÇÕES (11/08/2026): de 00:43 a 02:10<br />
+                youtube.com/watch?v=[id]&amp;t=2634
+              </p>
+              <button
+                class="mt-2 h-11 w-full rounded-lg border border-zinc-700 text-sm text-zinc-300"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
