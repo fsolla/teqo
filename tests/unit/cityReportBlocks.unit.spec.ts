@@ -94,6 +94,30 @@ const research = normalizeResearchInput(
         sourceDate: '2026-09-10',
       },
     ],
+    opposition: [
+      {
+        topic: 'Emenda sob investigação (PF)',
+        detail: 'Operação apura desvio em emendas do campo adversário.',
+        sourceUrl: 'https://exemplo.test/oposicao',
+        sourceDate: '2026-09-10',
+      },
+    ],
+    alliances: [
+      {
+        topic: 'Deputada Estadual (PT)',
+        detail: 'Dobradinha estadual indicada com Solla na cidade.',
+        sourceUrl: 'https://exemplo.test/dobradinha',
+        sourceDate: '2026-09-10',
+      },
+    ],
+    investments: [
+      {
+        topic: 'Obra federal no município',
+        detail: 'Investimento do governo federal em saúde; em execução.',
+        sourceUrl: 'https://exemplo.test/investimento',
+        sourceDate: '2026-09-10',
+      },
+    ],
     gaps: [],
   },
   { now: generatedAt },
@@ -395,6 +419,65 @@ describe('buildCityReport', () => {
     expect(preRows[0].name).toBe('Deputado do Prefeito')
     expect(preCandidates.sources![0]).toEqual(
       expect.objectContaining({ url: 'https://exemplo.test/pre-candidato' }),
+    )
+  })
+
+  it('renders the opposition front as sourced contrast, when researched', () => {
+    const concorrentes = report.sections.find((section) => section.id === 'concorrentes')!
+    const opposition = concorrentes.blocks.find(
+      (block) => block.title === 'Oposição — o que usar com fonte (pesquisa)',
+    )!
+    const rows = opposition.rows as unknown as TableRow[]
+    expect(rows[0].topic).toBe('Emenda sob investigação (PF)')
+    expect(rows[0].detail).toContain('desvio em emendas')
+    expect(opposition.sources![0]).toEqual(
+      expect.objectContaining({ url: 'https://exemplo.test/oposicao' }),
+    )
+  })
+
+  it('renders the dobradinhas research in the network section', () => {
+    const rede = report.sections.find((section) => section.id === 'rede')!
+    const dobradinhas = rede.blocks.find((block) => block.title === 'Dobradinhas (pesquisa)')!
+    const rows = dobradinhas.rows as unknown as TableRow[]
+    expect(rows[0].topic).toContain('Deputada Estadual')
+    expect(dobradinhas.sources![0]).toEqual(
+      expect.objectContaining({ url: 'https://exemplo.test/dobradinha' }),
+    )
+  })
+
+  it('renders the investments research in the conjuncture section', () => {
+    const conjuntura = report.sections.find((section) => section.id === 'conjuntura')!
+    const investments = conjuntura.blocks.find(
+      (block) => block.title === 'Investimentos e obras (pesquisa)',
+    )!
+    const rows = investments.rows as unknown as TableRow[]
+    expect(rows[0].detail).toContain('governo federal')
+    expect(investments.sources![0]).toEqual(
+      expect.objectContaining({ url: 'https://exemplo.test/investimento' }),
+    )
+  })
+
+  it('omits the empty signals/demands sections and renumbers the rest', () => {
+    const emptyReport = asReport(
+      buildCityReport({
+        snapshot: {
+          ...snapshot,
+          signals: { totalCount: 0, rows: [] },
+          demands: { totalCount: 0, rows: [] },
+          activities: { upcoming: [], recent: [] },
+        },
+        research,
+        emendas,
+        generatedAt,
+      }),
+    )
+    expect(emptyReport.sections.some((section) => section.id === 'sinais')).toBe(false)
+    expect(emptyReport.sections.some((section) => section.id === 'demandas')).toBe(false)
+    expect(
+      emptyReport.sections.every((section, index) => section.title.startsWith(`${index + 1}. `)),
+    ).toBe(true)
+    expect(emptyReport.sections.find((section) => section.id === 'demografia')!.title).toMatch(
+      /^5\. /,
     )
   })
 

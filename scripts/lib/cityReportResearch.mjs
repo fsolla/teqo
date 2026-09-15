@@ -267,7 +267,14 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
     })
   }
 
-  const sourcedLists = { demography: [], economy: [], transport: [] }
+  const sourcedLists = {
+    demography: [],
+    economy: [],
+    transport: [],
+    opposition: [],
+    alliances: [],
+    investments: [],
+  }
   for (const key of Object.keys(sourcedLists)) {
     for (const entry of Array.isArray(raw[key]) ? raw[key] : []) {
       const topic = isNonEmptyString(entry?.topic) ? entry.topic.trim() : null
@@ -311,6 +318,9 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
     demography: sourcedLists.demography,
     economy: sourcedLists.economy,
     transport: sourcedLists.transport,
+    opposition: sourcedLists.opposition,
+    alliances: sourcedLists.alliances,
+    investments: sourcedLists.investments,
     gaps,
   }
 }

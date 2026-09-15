@@ -177,4 +177,50 @@ describe('normalizeResearchInput', () => {
       expect.objectContaining({ id: 'inventado', reason: expect.stringMatching(/checklist/) }),
     )
   })
+
+  it('keeps sourced opposition facts and gaps entries without source', () => {
+    const research = normalizeResearchInput(
+      baseResearch({
+        opposition: [
+          {
+            topic: 'Emenda sob investigação (PF)',
+            detail: 'Operação apura desvio em emendas.',
+            sourceUrl: 'https://exemplo.test/oposicao',
+            sourceDate: '2026-09-10',
+          },
+          { topic: 'Sem fonte', detail: 'Não entra.' },
+        ],
+      }),
+      { now },
+    )
+    expect(research.opposition).toHaveLength(1)
+    const [firstOpposition] = research.opposition as unknown as Array<{ topic: string }>
+    expect(firstOpposition.topic).toBe('Emenda sob investigação (PF)')
+    expect(research.gaps).toContainEqual(
+      expect.objectContaining({
+        id: 'opposition_sem_fonte',
+        reason: expect.stringMatching(/URL e data/),
+      }),
+    )
+  })
+
+  it('keeps sourced dobradinhas and investments, gapping those without source', () => {
+    const research = normalizeResearchInput(
+      baseResearch({
+        alliances: [
+          {
+            topic: 'Dobradinha estadual',
+            detail: 'Deputada X (PT) indicada com Solla.',
+            sourceUrl: 'https://exemplo.test/dobradinha',
+            sourceDate: '2026-09-10',
+          },
+        ],
+        investments: [{ topic: 'Sem fonte', detail: 'Não entra.' }],
+      }),
+      { now },
+    )
+    expect(research.alliances).toHaveLength(1)
+    expect(research.investments).toHaveLength(0)
+    expect(research.gaps).toContainEqual(expect.objectContaining({ id: 'investments_sem_fonte' }))
+  })
 })
