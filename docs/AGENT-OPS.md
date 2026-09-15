@@ -41,6 +41,7 @@ main → push dispara deploy.yml sozinho (ou workflow_dispatch manual) → prefl
 | `pnpm agent:claim [-- --dry-run]`                                                                             | Fila ready+unblocked por prio → `in-progress` + brief (GitHub)                                                                     |
 | `pnpm worktree next [--issue N] [--stay]`                                                                     | Claim determinístico (mesma fila/lock do claim) → worktree + provisionamento                                                       |
 | `pnpm worktree fix [bug] [--stay]`                                                                            | Worktree de correção de bug (`fix/<slug>`, skill `/bug-fix` — o launch envia a descrição do bug); não claima nem cria Issues       |
+| `pnpm agent:session <serve\|start\|attach\|stop\|list> [--json]`                                              | Sessões persistentes do run (OPS110 — attach/detach; ver seção abaixo)                                                             |
 | `pnpm unblock:check`                                                                                          | Smoke do bootstrap do agente de desbloqueio no homeserver (OPS106; exige `GITHUB_TOKEN` + `AUTOMERGE_PAT`)                         |
 | `pnpm agent:register -- --id X --title T [--prio P1] [--depends A,B] [--plan docs/plans/x.md] [--model slug]` | Cria Issue no GitHub (`--plan` ⇒ `blocked` até `agent:ready`; sem plano ⇒ `ready`)                                                 |
 | `pnpm agent:ready -- --issue N[,N…]`                                                                          | Pós-merge do plano: `blocked`→`ready` (só Issues com link `docs/plans/`)                                                           |
@@ -56,6 +57,24 @@ main → push dispara deploy.yml sozinho (ou workflow_dispatch manual) → prefl
 Labels (GitHub): `ready|in-progress|blocked|done|in-prod`, `prio:*`, `kind:*`, `needs:*`, `auto-unblock` (token do single-flight do agente de desbloqueio — OPS106; fora da fila de claim).
 
 **plan-issue (OPS17 + OPS18):** gate pós-overview fecha o lote antes de qualquer Issue/PR; register com `--plan` nasce `blocked` (não entra na fila do claim/pool); após o PR de planos mergear em `main` (`Related #N`), promote dual idempotente: (A) `pnpm agent:ready` na sessão; (B) Action `plan-issue-ready-on-main-merge.yml` lê `Related #N` e promove Issues ainda “aguardando plano” (`blocked` + link `docs/plans/`). Chores sem plano continuam nascendo `ready`.
+
+## Sessões persistentes (attach/detach — OPS110)
+
+O launch do terminal (`worktree next|plan|new|fix`) **não abre mais um TUI dono da sessão**: ele chama `pnpm agent:session start …`, que sobe/reaproveita o `opencode serve` compartilhado, cria a sessão endereçável, dispara o **driver destacado** (`opencode run --attach … --auto --command <skill>`, que auto-aprova permissões enquanto vive) e **anexa** o TUI (`opencode attach -s <sessionID>`). Fechar o terminal/TUI desconecta — o run continua; encerrar é ato explícito.
+
+| Comando                                                                                                                    | Faz                                                                                    |
+| -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `pnpm agent:session serve [--hostname=H] [--port=P]`                                                                       | Sobe/reaproveita o servidor (loopback `127.0.0.1:4199`; `TEQO_AGENT_SERVER_HOST/PORT`) |
+| `pnpm agent:session start --purpose=<next\|plan\|new\|fix> --dir=<D> --model=<M> [--issue=N] [--argument="<bag>"] [--new]` | Cria a sessão, dispara o driver (quando há skill) e anexa o TUI                        |
+| `pnpm agent:session attach [--session=<ses_…>\|--branch=<B>\|--issue=N]`                                                   | (Re)entra na sessão — default: branch do cwd; sobe o servidor se ele estiver fora      |
+| `pnpm agent:session stop [--session=<ses_…>\|--branch=<B>\|--issue=N]`                                                     | Ato explícito de encerrar: abort via API + fim do driver + `stoppedAt`                 |
+| `pnpm agent:session list [--json]`                                                                                         | Status dos runs (`working\|idle\|stopped\|unknown`); `--json` é o contrato do OPS109   |
+
+- **Endereçamento (OPS109):** `~/.local/state/teqo/agent-sessions/<slug>.json` (`TEQO_AGENT_SESSION_DIR` > `XDG_STATE_HOME`) guarda `version, code, issue, purpose, branch, dir, sessionID, url, model, driverPid, logPath, startedAt, stoppedAt`; `list --json` entrega `{version, server, sessions:[…status]}` — é a única fonte para "abrir a sessão da Issue".
+- **Sair ≠ encerrar:** fechar o TUI/terminal não mata o run (verificado: SIGKILL no cliente e `tmux kill-session` não abortam; `attach` replayer histórico e streaming ao vivo). `Ctrl+C` no TUI limpa o input; sair é fechar o terminal ou o keybind `app_exit` (`ctrl+c,ctrl+d,<leader>q`).
+- **Reuso:** `start` com driver vivo ou sessão `busy` → apenas anexa (nunca dois runs no mesmo branch); caso contrário cria sessão nova (`--new` força). `worktree kill` encerra a sessão do worktree antes de destruí-lo (estado/lock removidos — sem sessão órfã).
+- **Segurança:** loopback por padrão; `--hostname` fora do loopback **exige** `OPENCODE_SERVER_PASSWORD` (fail-closed) e `--mdns` nunca é usado. A credencial vive só no ambiente — nunca no estado/log; loopback sem senha roda sem auth (aceito pelo produto: nada além de `127.0.0.1`).
+- **Modos de falha:** morte do driver deixa pedidos de permissão pendurados até um `attach` responder (o `stop` sempre aborta via API, sem depender do driver); reboot derruba o run (a sessão/histórico persiste e pode ser reanexada); o daemon do servidor fica de pé (idle, loopback) — parada manual pelo `pid` em `agent-sessions/server.json`.
 
 ## Contrato de PR
 

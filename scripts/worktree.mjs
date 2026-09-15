@@ -30,18 +30,23 @@
  *                              `deepseek/deepseek-flash` permanece.
  *                              Chamado do terminal interativo (com
  *                              `TEQO_WORKTREE_TERMINAL=1`, que só a função shell
- *                              seta), imprime também a diretiva `launch
- *                              opencode <dir> --model <preset|map>
- *                              --auto --prompt "/work-issue --issue <N>"` ANTES
- *                              do `cd` — a função shell executa o cd e então a
- *                              linha, e o TUI do opencode abre no worktree com
- *                              `/work-issue --issue <N>` já enviado (OPS26 +
- *                              OPS33: o launch entrega a Issue claimada ao
- *                              agente; a skill lê o resto do GitHub). OPS95:
- *                              sem `--variant` na diretiva — o yargs do TUI
- *                              rejeita o flag e só imprime o helper; variantes
- *                              ficam na config global da máquina (Ctrl+T).
- *                              Presets e mapa em scripts/lib/worktree.mjs.
+ *                              seta), imprime também a diretiva `launch node
+ *                              scripts/agent-session.mjs start --purpose=next
+ *                              --dir=<dir> --model <preset|map> --issue=<N>`
+ *                              ANTES do `cd` — a função shell executa o cd e
+ *                              então a linha. Desde a OPS110 o launch não abre um
+ *                              TUI local dono da sessão: o `agent-session` sobe
+ *                              o `opencode serve` compartilhado, cria a sessão
+ *                              endereçável, dispara o driver destacado com
+ *                              `/work-issue --issue <N>` (auto-submit; a skill lê
+ *                              o resto do GitHub) e anexa o TUI
+ *                              (`opencode attach -s <sessionID>`) — fechar o
+ *                              terminal NÃO encerra o run; encerrar é
+ *                              `pnpm agent:session stop`. OPS95 continua: sem
+ *                              `--variant`; variantes ficam na config global da
+ *                              máquina (Ctrl+T). Presets e mapa em
+ *                              scripts/lib/worktree.mjs; ciclo de vida em
+ *                              scripts/lib/agent-session.mjs.
  *                              Sem o marcador (comando `/worktree` do opencode),
  *                              a diretiva não é impressa — nunca abre TUI aninhado.
  *                              Também PROVISIONA o ambiente isolado do worktree:
@@ -71,11 +76,11 @@
  *                              deles (branch nem slot) colide com um `next`
  *                              posterior (prefixo minúsculo `plans/…`).
  *                              Mesmo provisionamento isolado do `next`; no
- *                              terminal, mesma diretiva `launch` — com
- *                              `--prompt /plan-issue` já enviado (OPS31: o TUI
- *                              abre no fluxo de planejamento, sem digitação) e
- *                              `--model <map>` quando a flag de modelo está
- *                              presente.
+ *                              terminal, mesma diretiva `launch` — o driver
+ *                              destacado auto-submete `/plan-issue` (OPS31: a
+ *                              sessão abre no fluxo de planejamento, sem
+ *                              digitação) e `--model <map>` quando a flag de
+ *                              modelo está presente (OPS110: attach/detach).
  *   pnpm worktree new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
  *                              cria um worktree NEUTRO novo — sem função
  *                              pré-definida (explorar ideia, conversar, ou
@@ -87,10 +92,9 @@
  *                              nunca colide com `<code>-<slug>` de `next` nem
  *                              com `plans/plan-issue-…` de `plan`.
  *                              Mesmo provisionamento isolado do `next`/`plan`;
- *                              no terminal, mesma diretiva `launch` — SEM
- *                              `--prompt` (apenas conversar, nenhuma skill) e
- *                              `--model <map>` quando a flag de modelo está
- *                              presente.
+ *                              no terminal, mesma diretiva `launch` — sessão
+ *                              sem skill (apenas conversar) e `--model <map>`
+ *                              quando a flag de modelo está presente (OPS110).
  *                              `--stay` suprime a linha `cd` e a diretiva;
  *                              `--cheap/--pro/--zen/--go/--alibaba/--glm/--free` escolhe o
  *                              modelo por invocação (sem flag o preset permanece).
@@ -106,22 +110,25 @@
  *                              com `plans/plan-issue-…` de `plan` nem com
  *                              `work/…` de `new`. Mesmo provisionamento
  *                              isolado do `next`/`plan`/`new`; no terminal, a
- *                              diretiva `launch` envia `--prompt
- *                              "/bug-fix <bag>"` — a descrição do bug chega ao
- *                              agente junto com a skill (aspas/barra-invertida
- *                              do bag são removidas — o xargs da camada shell
- *                              não honra escapes); `--model <map>` quando a
- *                              flag de modelo está presente; `--stay` suprime
+ *                              diretiva `launch` carrega `--argument="<bag>"`
+ *                              — o driver destacado auto-submete `/bug-fix
+ *                              <bag>` e a descrição do bug chega ao agente
+ *                              junto com a skill (aspas/barra-invertida do bag
+ *                              são removidas — o xargs da camada shell não
+ *                              honra escapes); `--model <map>` quando a flag de
+ *                              modelo está presente (OPS110); `--stay` suprime
  *                              cd e launch (nenhuma Issue é claimada nem
  *                              criada — o registro do bug é o post-mortem).
  *   pnpm worktree kill [--force]   destrói o worktree em que o shell atual está
- *                              (recusa worktree sujo sem `--force`) e remove os
- *                              bancos gerados do worktree (best-effort); por
- *                              padrão termina imprimindo `cd <main>` para o
- *                              shell voltar ao worktree principal — o cwd nunca
- *                              fica num diretório destruído (não aceita
- *                              `--stay`; sem launch, as flags de modelo são
- *                              irrelevantes)
+ *                              (recusa worktree sujo sem `--force`), ENCERRA a
+ *                              sessão persistente do run (OPS110: abort + fim
+ *                              do driver; o estado/lock são removidos — sem
+ *                              sessão órfã) e remove os bancos gerados do
+ *                              worktree (best-effort); por padrão termina
+ *                              imprimindo `cd <main>` para o shell voltar ao
+ *                              worktree principal — o cwd nunca fica num
+ *                              diretório destruído (não aceita `--stay`; sem
+ *                              launch, as flags de modelo são irrelevantes)
  *
  * Read-only no GitHub? NÃO — desde o OPS33 `next` CLAIMA: claim determinístico
  * antes do worktree (mesma fila/ordem e lock otimista do `pnpm agent:claim`;
@@ -139,10 +146,12 @@ import {
   readdirSync,
   readFileSync,
   statSync,
+  unlinkSync,
   writeFileSync,
 } from 'node:fs'
 import { homedir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { parse as parseEnv } from 'dotenv'
 import pg from 'pg'
@@ -157,6 +166,7 @@ import {
   nextClaimableIssue,
   parseArgs,
 } from './lib/agent-forgejo.mjs'
+import { sessionDirFromEnv, sessionStatePath, startLockPath } from './lib/agent-session.mjs'
 import { startSharedPostgres } from './lib/db-start.mjs'
 import { githubApi as api } from './lib/github-api.mjs'
 import {
@@ -183,6 +193,12 @@ import {
 
 const die = dieAgent('worktree')
 const WORKTREES_ROOT = process.env.WORKTREES_ROOT ?? join(homedir(), '.cursor', 'worktrees', 'teqo')
+/**
+ * Root deste checkout — o `stopAgentSession` reusa o CLI daqui e a diretiva de
+ * launch carrega o caminho ABSOLUTO dele (OPS110: worktree antigo não tem o
+ * arquivo novo no branch).
+ */
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
 /**
  * True when the interactive terminal shell function (`.agents/shell/worktree.sh`)
@@ -211,6 +227,9 @@ const printLaunchDirective = ({ dir, purpose, issueNumber, argument = null, flag
     issueNumber,
     model,
     argument,
+    // Absoluto de propósito (OPS110): worktrees reabertos/criados antes do
+    // merge não têm `scripts/agent-session.mjs`; o relativo quebraria o launch.
+    sessionScript: join(REPO_ROOT, 'scripts', 'agent-session.mjs'),
   })
   if (line) console.log(line)
 }
@@ -834,6 +853,52 @@ const dropWorktreeDatabases = async (names) => {
   }
 }
 
+/**
+ * OPS110 — encerra a sessão persistente do run deste worktree antes de
+ * destruí-lo (`stop`: abort via API + fim do driver). Só age quando existe
+ * estado registrado (worktrees anteriores à OPS110 não têm sessão); o estado e
+ * o lock são removidos ao fim para não deixar sessão órfã apontando para um
+ * diretório destruído.
+ */
+const stopAgentSession = (branch) => {
+  if (!branch) return
+  const sessionDir = sessionDirFromEnv()
+  const statePath = sessionStatePath({ sessionDir, branch })
+  const lockPath = startLockPath({ sessionDir, branch })
+  if (existsSync(statePath)) {
+    let stopped = true
+    try {
+      execFileSync(
+        process.execPath,
+        [join(REPO_ROOT, 'scripts', 'agent-session.mjs'), 'stop', `--branch=${branch}`],
+        { stdio: 'inherit' },
+      )
+    } catch (error) {
+      stopped = false
+      console.warn(
+        `[worktree] não consegui encerrar a sessão do run (${String(error.message).split('\n')[0]}); o kill segue.`,
+      )
+    }
+    // Só descarta o endereço se o stop funcionou — um driver sobrevivente sem
+    // estado viraria órfão invisível (e o estado fica para o `agent:session`).
+    if (stopped) {
+      try {
+        unlinkSync(statePath)
+      } catch {
+        // já removido
+      }
+    } else {
+      console.warn(`[worktree] a sessão pode seguir viva — estado preservado em ${statePath}`)
+    }
+  }
+  // O lock é artefato transitório do `start` — não sobrevive ao worktree.
+  try {
+    unlinkSync(lockPath)
+  } catch {
+    // não havia lock
+  }
+}
+
 const cmdKill = async (force) => {
   const entries = parseWorktreeList(git(['worktree', 'list', '--porcelain']))
   const mainRoot = entries[0]?.path
@@ -862,6 +927,9 @@ const cmdKill = async (force) => {
 
   // Read the generated DB names BEFORE the directory is removed.
   const databaseNames = worktreeDatabaseNamesOf(top)
+
+  // OPS110: encerra a sessão persistente do run antes de destruir o worktree.
+  stopAgentSession(branch)
 
   git(['-C', mainRoot, 'worktree', 'remove', '--force', top])
   if (branch) git(['-C', mainRoot, 'branch', '-D', branch])
@@ -893,17 +961,17 @@ if (!subcommand) {
   console.log('    opencode command, ou a função `worktree()` de .agents/shell/worktree.sh);')
   console.log('    no terminal (TEQO_WORKTREE_TERMINAL=1) imprime também a diretiva')
   console.log(
-    '    `launch opencode <dir> --model <preset|map> --auto --prompt "/work-issue --issue <N>"` (OPS26+OPS33+OPS93+OPS95:',
+    '    `launch node scripts/agent-session.mjs start --purpose=next --dir=<dir> --model <preset|map> --issue=<N>` (OPS26+OPS33+OPS93+OPS95+OPS110:',
   )
   console.log(
-    `    abre o TUI com ${OPENCODE_PRESET_MODEL} (sem flag) ou com o mapa ${[
+    `    abre a sessão com ${OPENCODE_PRESET_MODEL} (sem flag) ou com o mapa ${[
       ...WORKTREE_MODEL_FLAGS,
     ]
       .map((flag) => `--${flag}=${WORKTREE_MODEL_MAP[flag]}`)
-      .join(' ')} + auto + a Issue claimada já`,
+      .join(' ')} + a Issue claimada auto-submetida pelo driver destacado;`,
   )
   console.log(
-    '    informada); --stay suprime cd e launch (o claim ainda acontece); --no-migrate pula migrations e o',
+    '    fechar o terminal NÃO encerra o run — `pnpm agent:session attach|stop`); --stay suprime cd e launch (o claim ainda acontece); --no-migrate pula migrations e o',
   )
   console.log(
     '    seed mínimo (db:seed:minimal) nos bancos novos (OPS28: paridade com a CI); at-most-one de --cheap/--pro/--zen/--go/--alibaba/--glm/--free (múltiplas → erro)',
@@ -920,7 +988,7 @@ if (!subcommand) {
     '    minúsculo plans/… nunca colide com o branch <code>-<slug> de `next`; no terminal,',
   )
   console.log(
-    '    mesma diretiva `launch` com --prompt /plan-issue enviado (abre no fluxo de planejamento, sem digitação) e --model <map> quando a flag está presente',
+    '    mesma diretiva `launch` — o driver destacado auto-submete /plan-issue (abre no fluxo de planejamento, sem digitação) e --model <map> quando a flag está presente',
   )
   console.log(
     `\n  new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]`,
@@ -930,7 +998,7 @@ if (!subcommand) {
   console.log('    próximo work/<n> sequencial livre; o prefixo minúsculo work/… nunca colide com')
   console.log('    o branch <code>-<slug> de `next` nem com plans/plan-issue-… de `plan`; no')
   console.log(
-    '    terminal, mesma diretiva `launch` porém sem --prompt (apenas conversar) e --model <map> quando a flag está presente',
+    '    terminal, mesma diretiva `launch` — sessão sem skill (apenas conversar) e --model <map> quando a flag está presente',
   )
   console.log(
     `\n  fix [bag] [--stay] [--no-migrate] [--headless --directive <path>] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]`,
@@ -940,7 +1008,7 @@ if (!subcommand) {
   console.log('    nome já existir); sem bag, o próximo fix/<n> sequencial livre; o prefixo')
   console.log('    minúsculo fix/… nunca colide com `next`, `plan` nem `new`; não claima nem cria')
   console.log(
-    '    Issues — o registro do bug é o post-mortem da skill; no terminal, a diretiva `launch` envia --prompt "/bug-fix <bag>" (a descrição chega com a skill) e --model <map> quando a flag está presente',
+    '    Issues — o registro do bug é o post-mortem da skill; no terminal, a diretiva `launch` carrega --argument="<bag>" (o driver destacado auto-submete /bug-fix <bag>, a descrição chega com a skill) e --model <map> quando a flag está presente',
   )
   console.log(
     '    OPS106: --headless --directive <path> provisiona o mesmo worktree e grava a diretiva',
@@ -950,7 +1018,9 @@ if (!subcommand) {
   )
   console.log('    caminho do wrapper auto-unblock no homeserver.')
   console.log('  kill [--force]  destrói o worktree em que você está (recusa sujo sem --force),')
-  console.log('                  remove os bancos gerados do worktree (best-effort) e imprime')
+  console.log('                  ENCERRA a sessão persistente do run (OPS110: abort + fim do')
+  console.log('                  driver; estado/lock removidos) e remove os bancos gerados do')
+  console.log('                  worktree (best-effort); imprime')
   console.log('                  `cd <main>` no fim — o shell sempre volta ao worktree principal')
   process.exit(1)
 }

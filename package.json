@@ -87,6 +87,7 @@
     "typecheck:tsc6": "tsc6 --noEmit",
     "prepare": "husky",
     "agent:status": "node scripts/agent-status.mjs",
+    "agent:session": "node scripts/agent-session.mjs",
     "worktree": "node scripts/worktree.mjs",
     "unblock:check": "node scripts/auto-unblock.mjs --check",
     "issue": "node scripts/issue.mjs"

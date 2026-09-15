@@ -78,24 +78,6 @@ export const resolveWorktreeModel = (flags = {}) => {
 }
 
 /**
- * Skill command sent as the launch's initial message per purpose. `next`
- * sends `/work-issue` (the OPS25 command executes the full cycle; the OPS33
- * launch appends `--issue <N>` — the claimed issue — via
- * `opencodeLaunchDirective`); `plan` sends `/plan-issue` (OPS31 — auto-submit
- * is the real need of the flow), `fix` sends `/bug-fix` (with the bug
- * description as the argument) and `new` sends nothing ("apenas conversar",
- * no skill at all). The opencode CLI's `--prompt` always auto-submits, there
- * is no prefill-without-submit flag; prefill stays an upstream-only feature
- * request (proposition annotated), not a Teqo fallback.
- */
-export const OPENCODE_SKILL_COMMAND_BY_PURPOSE = {
-  next: '/work-issue',
-  plan: '/plan-issue',
-  new: null,
-  fix: '/bug-fix',
-}
-
-/**
  * Prefix of every neutral-worktree branch (`pnpm worktree new`). Lowercase-led
  * `work/…` — structurally disjoint from `next`'s uppercase-led `<Code>-<slug>`
  * and from `plan`'s `plans/plan-issue-…`, in branch name and slot space alike.
@@ -188,21 +170,32 @@ const namespaceBranchName = ({ prefix, bag = '', taken = new Set(), fallback }) 
 /**
  * Launch directive for the opencode TUI, printed by `worktree next`/`plan`
  * right before the `cd <dir>` line when called from the interactive terminal
- * (`WORKTREE_TERMINAL=1`): `launch opencode <dir> --model <preset|map>
- * --auto [--prompt "<command>"]` (OPS95: no `--variant` — the TUI yargs
- * rejects the unknown flag and the helper prints instead of opening; modelo
- * vem do mapa `WORKTREE_MODEL_MAP` quando a flag `--cheap/--pro/--zen/
- * --go/--alibaba/--glm/--free` está presente, senão do preset). The shell function
- * (`.agents/shell/worktree.sh`) applies the `cd` first, then tokenizes and
- * executes this line (xargs — quote-aware, never eval) — the dir is always
- * `<root without spaces>/<slugified branch>`, so the line never needs quoting
- * for the path. `next` with an `issueNumber` sends `/work-issue --issue <N>`
+ * (`WORKTREE_TERMINAL=1`): `launch node scripts/agent-session.mjs start
+ * --purpose=<P> --dir=<dir> --model=<preset|map> [--issue=<N>]
+ * [--argument="<bag>"]` (OPS110 — o launch deixa de abrir um TUI local dono da
+ * sessão e passa a delegar ao `scripts/agent-session.mjs`, que sobe/anexa no
+ * servidor compartilhado: o run sobrevive ao fechamento do terminal e pode ser
+ * reatado de outro dispositivo). O mapa purpose→skill e a montagem do comando
+ * vivem no dono do ciclo de vida (`scripts/lib/agent-session.mjs`,
+ * `purposeInvocation`). OPS95 continua: sem `--variant`; modelo vem do mapa
+ * `WORKTREE_MODEL_MAP` quando a flag `--cheap/--pro/--zen/--go/--alibaba/--glm/--free`
+ * está presente, senão do preset.
+ *
+ * The shell function (`.agents/shell/worktree.sh`) applies the `cd` first, then
+ * tokenizes and executes this line (xargs — quote-aware, never eval) — the dir
+ * is always `<root without spaces>/<slugified branch>`, so the line never needs
+ * quoting for the path. `next` with an `issueNumber` carries `--issue=<N>`
  * (OPS33: the launch delivers the claimed issue to the agent; the skill reads
- * the rest from GitHub), `fix` with an `argument` sends `/bug-fix <argument>`
- * (the bug description arrives with the skill), the prompt value is quoted in
- * the line because it now carries a space. Returns `null` outside the terminal
- * so the `/worktree` opencode command never launches a nested TUI.
- * @param {{ dir: string, purpose: string, terminal?: boolean, issueNumber?: number | null, model?: string | null, argument?: string | null }} options
+ * the rest from GitHub), `fix` with an `argument` carries `--argument="<bag>"`
+ * (the bug description arrives with the skill; quotes/backslashes are stripped
+ * because the shell layer tokenizes with xargs, which does not honor
+ * backslash escapes). Returns `null` outside the terminal so the `/worktree`
+ * opencode command never launches a nested TUI.
+ * `sessionScript` é o caminho do CLI de sessão — `worktree.mjs` passa o
+ * ABSOLUTO do checkout que emitiu a diretiva (worktrees reabertos/criados
+ * antes do merge não têm o arquivo novo; o relativo apontaria para o branch
+ * errado). O default relativo existe para os specs.
+ * @param {{ dir: string, purpose: string, terminal?: boolean, issueNumber?: number | null, model?: string | null, argument?: string | null, sessionScript?: string }} options
  */
 export const opencodeLaunchDirective = ({
   dir,
@@ -211,25 +204,29 @@ export const opencodeLaunchDirective = ({
   issueNumber = null,
   model = null,
   argument = null,
+  sessionScript = 'scripts/agent-session.mjs',
 }) => {
   if (!terminal) return null
-  const prompt = OPENCODE_SKILL_COMMAND_BY_PURPOSE[purpose]
   const selectedModel = model ?? OPENCODE_PRESET_MODEL
-  const args = [dir, '--model', selectedModel, '--auto']
-  if (prompt) {
-    // The issue suffix belongs to `next` alone — `plan`/`new`/`fix` never carry
-    // a claimed issue (fail-safe: a stray issueNumber must not break them).
-    const issueSuffix = purpose === 'next' && issueNumber ? `--issue ${issueNumber}` : null
-    // The bag suffix belongs to `fix` alone — the bug description arrives with
-    // the skill. Quotes/backslashes are stripped: the shell layer tokenizes the
-    // directive with xargs, which does not honor backslash escapes.
-    const sanitized = typeof argument === 'string' ? argument.replace(/["\\]/g, '').trim() : null
-    const bagSuffix = purpose === 'fix' && sanitized ? sanitized : null
-    const value = [prompt, issueSuffix, bagSuffix].filter(Boolean).join(' ')
-    // JSON.stringify quotes the value — the directive carries spaces now.
-    args.push('--prompt', JSON.stringify(value))
+  const args = [
+    'node',
+    sessionScript,
+    'start',
+    `--purpose=${purpose}`,
+    `--dir=${dir}`,
+    `--model=${selectedModel}`,
+  ]
+  // The issue suffix belongs to `next` alone — `plan`/`new`/`fix` never carry
+  // a claimed issue (fail-safe: a stray issueNumber must not break them).
+  if (purpose === 'next' && issueNumber) args.push(`--issue=${issueNumber}`)
+  // The bag suffix belongs to `fix` alone — the bug description arrives with
+  // the skill. JSON.stringify quotes the value (it carries spaces); xargs
+  // strips the quotes at execution time.
+  if (purpose === 'fix') {
+    const sanitized = typeof argument === 'string' ? argument.replace(/["\\]/g, '').trim() : ''
+    if (sanitized) args.push(`--argument=${JSON.stringify(sanitized)}`)
   }
-  return `launch opencode ${args.join(' ')}`
+  return `launch ${args.join(' ')}`
 }
 
 /**

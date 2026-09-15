@@ -1,0 +1,490 @@
+// @vitest-environment node
+
+import { describe, expect, it } from 'vitest'
+
+import {
+  attachArgs,
+  codeFromBranch,
+  DEFAULT_AGENT_SERVER_HOST,
+  DEFAULT_AGENT_SERVER_PORT,
+  deriveSessionStatus,
+  driverArgs,
+  driverLogPath,
+  formatSessionList,
+  isLoopbackHost,
+  parseServerState,
+  parseSessionState,
+  purposeInvocation,
+  resolveServerConfig,
+  resolveSessionRef,
+  serializeServerState,
+  serializeSessionState,
+  serverArgs,
+  serverStatePath,
+  SESSION_COMMAND_BY_PURPOSE,
+  sessionDirFromEnv,
+  sessionListPayload,
+  sessionSlug,
+  sessionStatePath,
+  startLockPath,
+  STATE_VERSION,
+  validateServerBind,
+} from '../../scripts/lib/agent-session.mjs'
+
+const state = (over: Record<string, unknown> = {}) => ({
+  version: STATE_VERSION,
+  code: 'OPS110',
+  issue: 1019,
+  purpose: 'next',
+  branch: 'OPS110-acompanhar-runs',
+  dir: '/home/fsolla/.cursor/worktrees/teqo/OPS110-acompanhar-runs',
+  sessionID: 'ses_f5b6ec763ffeTquA6nLR2XVxz3',
+  url: `http://${DEFAULT_AGENT_SERVER_HOST}:${DEFAULT_AGENT_SERVER_PORT}`,
+  model: 'deepseek/deepseek-flash',
+  driverPid: 4242,
+  logPath: '/home/fsolla/.local/state/teqo/agent-sessions/ops110-acompanhar-runs.log',
+  startedAt: '2026-09-15T10:00:00.000Z',
+  stoppedAt: null,
+  ...over,
+})
+
+describe('resolveServerConfig (OPS110 — loopback por padrão, env/flag overridáveis)', () => {
+  it('defaults to loopback:4199', () => {
+    expect(resolveServerConfig({ env: {} })).toEqual({
+      hostname: '127.0.0.1',
+      port: 4199,
+      url: 'http://127.0.0.1:4199',
+    })
+    expect(DEFAULT_AGENT_SERVER_HOST).toBe('127.0.0.1')
+    expect(DEFAULT_AGENT_SERVER_PORT).toBe(4199)
+  })
+
+  it('reads TEQO_AGENT_SERVER_HOST/PORT from the env', () => {
+    expect(
+      resolveServerConfig({
+        env: { TEQO_AGENT_SERVER_HOST: '100.119.220.31', TEQO_AGENT_SERVER_PORT: '4300' },
+      }),
+    ).toEqual({ hostname: '100.119.220.31', port: 4300, url: 'http://100.119.220.31:4300' })
+  })
+
+  it('explicit flags win over the env (serve --hostname/--port)', () => {
+    expect(
+      resolveServerConfig({
+        hostname: '127.0.0.1',
+        port: 5000,
+        env: { TEQO_AGENT_SERVER_PORT: '4300' },
+      }),
+    ).toEqual({ hostname: '127.0.0.1', port: 5000, url: 'http://127.0.0.1:5000' })
+  })
+
+  it('rejects a non-numeric/out-of-range port — fail high, never guess', () => {
+    expect(() => resolveServerConfig({ env: { TEQO_AGENT_SERVER_PORT: 'abc' } })).toThrow(/porta/)
+    expect(() => resolveServerConfig({ env: { TEQO_AGENT_SERVER_PORT: '70000' } })).toThrow(/porta/)
+  })
+})
+
+describe('validateServerBind + isLoopbackHost (aceite: nada além do loopback sem credencial)', () => {
+  it('recognizes loopback spellings only', () => {
+    for (const host of ['127.0.0.1', '127.0.0.5', 'localhost', '::1', '[::1]', ' LOCALHOST ']) {
+      expect(isLoopbackHost(host)).toBe(true)
+    }
+    for (const host of [
+      '0.0.0.0',
+      '100.119.220.31',
+      '192.168.1.10',
+      'jorgesolla1313.com.br',
+      '127.0.0.1.evil',
+      '127.0.0.1.example.com',
+    ]) {
+      expect(isLoopbackHost(host)).toBe(false)
+    }
+  })
+
+  it('loopback never requires a password', () => {
+    expect(validateServerBind({ hostname: '127.0.0.1', password: '' })).toBe(true)
+  })
+
+  it('non-loopback without OPENCODE_SERVER_PASSWORD fails closed', () => {
+    expect(() => validateServerBind({ hostname: '100.119.220.31', password: '' })).toThrow(
+      /OPENCODE_SERVER_PASSWORD/,
+    )
+    expect(() => validateServerBind({ hostname: '0.0.0.0', password: undefined })).toThrow(
+      /credencial|OPENCODE_SERVER_PASSWORD/,
+    )
+  })
+
+  it('non-loopback with a password is allowed', () => {
+    expect(validateServerBind({ hostname: '100.119.220.31', password: 'x' })).toBe(true)
+  })
+})
+
+describe('sessionDirFromEnv + caminhos de estado', () => {
+  it('TEQO_AGENT_SESSION_DIR wins; XDG_STATE_HOME; HOME fallback', () => {
+    expect(sessionDirFromEnv({ TEQO_AGENT_SESSION_DIR: '/tmp/runs', HOME: '/home/x' })).toBe(
+      '/tmp/runs',
+    )
+    expect(sessionDirFromEnv({ XDG_STATE_HOME: '/xdg', HOME: '/home/x' })).toBe(
+      '/xdg/teqo/agent-sessions',
+    )
+    expect(sessionDirFromEnv({ HOME: '/home/x' })).toBe('/home/x/.local/state/teqo/agent-sessions')
+  })
+
+  it('slugs the branch (paths with / become one filename) and derives every path', () => {
+    expect(sessionSlug('OPS110-acompanhar-runs')).toBe('ops110-acompanhar-runs')
+    expect(sessionSlug('plans/plan-issue-agenda eleitoral')).toBe(
+      'plans-plan-issue-agenda-eleitoral',
+    )
+    const sessionDir = '/state'
+    const branch = 'plans/plan-issue-agenda'
+    expect(sessionStatePath({ sessionDir, branch })).toBe('/state/plans-plan-issue-agenda.json')
+    expect(startLockPath({ sessionDir, branch })).toBe('/state/plans-plan-issue-agenda.lock')
+    expect(driverLogPath({ sessionDir, branch })).toBe('/state/plans-plan-issue-agenda.log')
+    expect(serverStatePath({ sessionDir })).toBe('/state/server.json')
+  })
+})
+
+describe('codeFromBranch', () => {
+  it('reads the uppercase code prefix of a claim branch', () => {
+    expect(codeFromBranch('OPS110-acompanhar-runs')).toBe('OPS110')
+    expect(codeFromBranch('C15-fullcalendar')).toBe('C15')
+  })
+
+  it('returns null for namespace branches (plan/new/fix have no claim code)', () => {
+    expect(codeFromBranch('plans/plan-issue-1')).toBeNull()
+    expect(codeFromBranch('work/ideia')).toBeNull()
+    expect(codeFromBranch('fix/abc')).toBeNull()
+  })
+})
+
+describe('estado da sessão (contrato OPS109)', () => {
+  it('serializes and parses the documented fields (roundtrip)', () => {
+    const parsed = parseSessionState(serializeSessionState(state()))
+    expect(parsed).toEqual(state())
+    expect(parsed.sessionID).toMatch(/^ses/)
+    expect(parsed.version).toBe(STATE_VERSION)
+  })
+
+  it('fails high on a malformed state (never silently accepts)', () => {
+    expect(() => parseSessionState('not json')).toThrow(/inválido/)
+    expect(() => parseSessionState(JSON.stringify({ branch: 'x' }))).toThrow(/inválido/)
+    expect(() => parseSessionState(JSON.stringify({ ...state(), sessionID: 'nope' }))).toThrow(
+      /inválido/,
+    )
+  })
+
+  it('serializes/parses the server state', () => {
+    const server = {
+      version: STATE_VERSION,
+      url: 'http://127.0.0.1:4199',
+      hostname: '127.0.0.1',
+      port: 4199,
+      pid: 777,
+      startedAt: '2026-09-15T10:00:00.000Z',
+      logPath: '/state/server.log',
+    }
+    expect(parseServerState(serializeServerState(server))).toEqual(server)
+    expect(() => parseServerState('{}')).toThrow(/inválido/)
+  })
+})
+
+describe('purposeInvocation (mapa purpose→comando movido do worktree)', () => {
+  it('pins the skill command by purpose', () => {
+    expect(SESSION_COMMAND_BY_PURPOSE).toEqual({
+      next: 'work-issue',
+      plan: 'plan-issue',
+      new: null,
+      fix: 'bug-fix',
+    })
+  })
+
+  it('next carries the claimed issue as --issue <N>', () => {
+    expect(purposeInvocation({ purpose: 'next', issueNumber: 1019 })).toEqual({
+      command: 'work-issue',
+      arguments: '--issue 1019',
+    })
+  })
+
+  it('next without a valid issue starts no driver — nothing to auto-submit', () => {
+    expect(purposeInvocation({ purpose: 'next' })).toBeNull()
+    expect(purposeInvocation({ purpose: 'next', issueNumber: 'x' })).toBeNull()
+    expect(purposeInvocation({ purpose: 'next', issueNumber: 0 })).toBeNull()
+  })
+
+  it('plan sends the bare /plan-issue command', () => {
+    expect(purposeInvocation({ purpose: 'plan' })).toEqual({ command: 'plan-issue', arguments: '' })
+    expect(purposeInvocation({ purpose: 'plan', issueNumber: 7 })).toEqual({
+      command: 'plan-issue',
+      arguments: '',
+    })
+  })
+
+  it('new has no command at all (apenas conversar)', () => {
+    expect(purposeInvocation({ purpose: 'new' })).toBeNull()
+  })
+
+  it('fix sends the sanitized bag (xargs/argv-safe); empty bag sends the bare command', () => {
+    expect(purposeInvocation({ purpose: 'fix', argument: 'a"b\\c bug' })).toEqual({
+      command: 'bug-fix',
+      arguments: 'abc bug',
+    })
+    expect(purposeInvocation({ purpose: 'fix', argument: '  ""  ' })).toEqual({
+      command: 'bug-fix',
+      arguments: '',
+    })
+  })
+
+  it('unknown purpose degrades to no command (fail-safe direction)', () => {
+    expect(purposeInvocation({ purpose: 'bogus' })).toBeNull()
+    expect(purposeInvocation({})).toBeNull()
+  })
+})
+
+describe('driverArgs + attachArgs (o argv verificado ao vivo)', () => {
+  it('drives the run through the server with --auto and --command + `--` separator', () => {
+    expect(
+      driverArgs({
+        url: 'http://127.0.0.1:4199',
+        sessionID: 'ses_abc',
+        dir: '/work/OPS110',
+        model: 'deepseek/deepseek-flash',
+        invocation: { command: 'work-issue', arguments: '--issue 1019' },
+      }),
+    ).toEqual([
+      'run',
+      '--attach',
+      'http://127.0.0.1:4199',
+      '-s',
+      'ses_abc',
+      '--dir',
+      '/work/OPS110',
+      '--model',
+      'deepseek/deepseek-flash',
+      '--auto',
+      '--command',
+      'work-issue',
+      '--',
+      '--issue 1019',
+    ])
+  })
+
+  it('omits the `--` separator when there are no arguments (plan)', () => {
+    expect(
+      driverArgs({
+        url: 'http://127.0.0.1:4199',
+        sessionID: 'ses_abc',
+        dir: '/work/plan',
+        model: 'm',
+        invocation: { command: 'plan-issue', arguments: '' },
+      }),
+    ).toEqual([
+      'run',
+      '--attach',
+      'http://127.0.0.1:4199',
+      '-s',
+      'ses_abc',
+      '--dir',
+      '/work/plan',
+      '--model',
+      'm',
+      '--auto',
+      '--command',
+      'plan-issue',
+    ])
+  })
+
+  it('fails high on a missing url/session/model (never spawns half a run)', () => {
+    expect(() =>
+      driverArgs({
+        url: '',
+        sessionID: 'ses_abc',
+        dir: '/d',
+        model: 'm',
+        invocation: { command: 'work-issue', arguments: '' },
+      }),
+    ).toThrow(/url/)
+    expect(() =>
+      driverArgs({
+        url: 'http://x',
+        sessionID: '',
+        dir: '/d',
+        model: 'm',
+        invocation: { command: 'work-issue', arguments: '' },
+      }),
+    ).toThrow(/session/)
+    expect(() =>
+      driverArgs({
+        url: 'http://x',
+        sessionID: 'ses_abc',
+        dir: '/d',
+        model: '',
+        invocation: { command: 'work-issue', arguments: '' },
+      }),
+    ).toThrow(/model/)
+    expect(() =>
+      driverArgs({
+        url: 'http://x',
+        sessionID: 'ses_abc',
+        dir: '/d',
+        model: 'm',
+        invocation: null,
+      }),
+    ).toThrow(/invocation|comando/i)
+  })
+
+  it('fails high on a missing attach url/session/dir — never spawns a half attach', () => {
+    expect(() => attachArgs({ url: '', sessionID: 'ses_a', dir: '/d' })).toThrow(/url/)
+    expect(() => attachArgs({ url: 'http://x', sessionID: '', dir: '/d' })).toThrow(/session/)
+    expect(() => attachArgs({ url: 'http://x', sessionID: 'ses_a', dir: '' })).toThrow(/dir/)
+  })
+
+  it('attach resumes exactly the same session/dir (never passes --auto/--model)', () => {
+    const argv = attachArgs({ url: 'http://127.0.0.1:4199', sessionID: 'ses_abc', dir: '/work/x' })
+    expect(argv).toEqual(['attach', 'http://127.0.0.1:4199', '--dir', '/work/x', '-s', 'ses_abc'])
+    expect(argv).not.toContain('--auto')
+    expect(argv).not.toContain('--model')
+  })
+
+  it('serverArgs is loopback-flagged and never enables --mdns', () => {
+    expect(serverArgs({ port: 4199, hostname: '127.0.0.1' })).toEqual([
+      'serve',
+      '--port',
+      '4199',
+      '--hostname',
+      '127.0.0.1',
+    ])
+    expect(serverArgs({ port: 4199, hostname: '127.0.0.1' })).not.toContain('--mdns')
+  })
+})
+
+describe('resolveSessionRef (--session > --branch > --issue > branch do cwd)', () => {
+  const next = state()
+  const plan = state({
+    code: null,
+    issue: null,
+    branch: 'plans/plan-issue-agenda',
+    sessionID: 'ses_plan',
+    dir: '/work/plans/plan-issue-agenda',
+  })
+
+  it('resolves by session id first', () => {
+    expect(
+      resolveSessionRef({ states: [next, plan], session: 'ses_plan', branch: next.branch }),
+    ).toBe(plan)
+  })
+
+  it('resolves by branch, then by issue, then by cwd branch', () => {
+    expect(resolveSessionRef({ states: [next, plan], branch: plan.branch })).toBe(plan)
+    expect(resolveSessionRef({ states: [next, plan], issue: 1019 })).toBe(next)
+    expect(resolveSessionRef({ states: [next, plan], cwdBranch: next.branch })).toBe(next)
+  })
+
+  it('returns null when nothing matches', () => {
+    expect(resolveSessionRef({ states: [next, plan], session: 'ses_nope' })).toBeNull()
+    expect(resolveSessionRef({ states: [], cwdBranch: 'x' })).toBeNull()
+    expect(resolveSessionRef({ states: [next, plan] })).toBeNull()
+  })
+})
+
+describe('deriveSessionStatus + list (contrato OPS109)', () => {
+  it('stopped > unknown (server down) > working (busy or driver alive) > idle', () => {
+    const live = state()
+    expect(
+      deriveSessionStatus({
+        state: live,
+        serverHealthy: true,
+        sessionBusy: true,
+        driverAlive: false,
+      }),
+    ).toBe('working')
+    expect(
+      deriveSessionStatus({
+        state: live,
+        serverHealthy: true,
+        sessionBusy: false,
+        driverAlive: true,
+      }),
+    ).toBe('working')
+    expect(
+      deriveSessionStatus({
+        state: live,
+        serverHealthy: true,
+        sessionBusy: false,
+        driverAlive: false,
+      }),
+    ).toBe('idle')
+    expect(
+      deriveSessionStatus({
+        state: live,
+        serverHealthy: false,
+        sessionBusy: false,
+        driverAlive: false,
+      }),
+    ).toBe('unknown')
+    const stopped = state({ stoppedAt: '2026-09-15T11:00:00.000Z' })
+    expect(
+      deriveSessionStatus({
+        state: stopped,
+        serverHealthy: true,
+        sessionBusy: true,
+        driverAlive: true,
+      }),
+    ).toBe('stopped')
+  })
+
+  it('list payload carries the versioned contract with the derived status', () => {
+    const payload = sessionListPayload({
+      states: [state()],
+      statuses: { ses_f5b6ec763ffeTquA6nLR2XVxz3: 'working' },
+      server: { url: 'http://127.0.0.1:4199', healthy: true, version: '1.18.31' },
+    })
+    expect(payload.version).toBe(STATE_VERSION)
+    expect(payload.server).toEqual({
+      url: 'http://127.0.0.1:4199',
+      healthy: true,
+      version: '1.18.31',
+    })
+    expect(payload.sessions).toHaveLength(1)
+    expect(payload.sessions[0]).toMatchObject({
+      sessionID: 'ses_f5b6ec763ffeTquA6nLR2XVxz3',
+      issue: 1019,
+      status: 'working',
+    })
+  })
+
+  it('list payload marks a session without a known status as unknown (never lies)', () => {
+    const payload = sessionListPayload({
+      states: [state()],
+      server: { url: 'http://127.0.0.1:4199', healthy: false, version: null },
+    })
+    expect(payload.sessions[0].status).toBe('unknown')
+  })
+
+  it('human list prints one line per run with status/session/branch/dir', () => {
+    const lines = formatSessionList([
+      {
+        status: 'working',
+        code: 'OPS110',
+        issue: 1019,
+        branch: 'OPS110-acompanhar-runs',
+        sessionID: 'ses_abc',
+        dir: '/work/OPS110',
+      },
+      {
+        status: 'idle',
+        code: null,
+        issue: null,
+        branch: 'plans/plan-issue-1',
+        sessionID: 'ses_def',
+        dir: '/work/plans/plan-issue-1',
+      },
+    ])
+    expect(lines).toHaveLength(2)
+    expect(lines[0]).toContain('working')
+    expect(lines[0]).toContain('OPS110')
+    expect(lines[0]).toContain('#1019')
+    expect(lines[0]).toContain('ses_abc')
+    expect(lines[0]).toContain('/work/OPS110')
+    expect(lines[1]).toContain('plans/plan-issue-1')
+    expect(lines[1]).not.toContain('#null')
+  })
+})

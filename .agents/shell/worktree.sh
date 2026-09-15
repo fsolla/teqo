@@ -6,23 +6,28 @@
 # na última linha, porque um processo filho (node) não consegue mudar o cwd do
 # shell que o chamou.
 #
-# No terminal (esta função), o script também imprime a diretiva `launch
-# opencode <dir> --model <preset|map> --auto [--prompt "…"]` (OPS26+OPS33+OPS93+OPS95):
+# No terminal (esta função), o script também imprime a diretiva `launch node
+# scripts/agent-session.mjs start --purpose=<next|plan|new|fix> --dir=<dir>
+# --model=<preset|map> [--issue=<N>] [--argument="<bag>"]` (OPS26+OPS33+OPS93+OPS95+OPS110):
 # a função executa o cd e então a linha (tokenizada por xargs — honra as aspas
-# do prompt, nunca eval), e o TUI do opencode abre no worktree — `next` com
-# `/work-issue --issue <N>` já enviado (OPS33: a Issue claimada vai no prompt),
-# `plan` com `/plan-issue` já enviado (OPS31), `fix` com `/bug-fix <bag>` já
-# enviado (a descrição do bug vai no prompt — aspas/barra-invertida do bag são
-# removidas porque o xargs não honra escapes), `new` sem prompt (apenas
-# conversar). Sem `--variant` (OPS95: o yargs do TUI rejeita o flag e só
-# imprime o helper; variantes ficam na config global da máquina, via Ctrl+T).
-# Modelo por invocação: `--cheap` (cheapestinference/deepseek-v4-flash),
-# `--pro` (deepseek/deepseek-v4-pro), `--zen` (opencode-go/ox-alpha-free),
-# `--go` (opencode-go/hy3), `--alibaba` (alibaba-token-plan/deepseek-v4-flash) no
-# mapa fixo `WORKTREE_MODEL_MAP` (OPS93 menu; valores OPS95); sem flag o preset `deepseek/deepseek-flash`
+# do argumento, nunca eval). Desde a OPS110 o launch não abre um TUI local dono
+# da sessão: o `agent-session` sobe/reaproveita o `opencode serve` compartilhado,
+# cria a sessão endereçável, dispara o driver destacado (que auto-submete
+# `/work-issue --issue <N>` no `next`, `/plan-issue` no `plan`, `/bug-fix <bag>`
+# no `fix`; `new` abre só a sessão) e ANEXA o TUI (`opencode attach -s <id>`) —
+# fechar o terminal NÃO encerra o run; reentre com `pnpm agent:session attach` e
+# encerre com `pnpm agent:session stop`. Sem `--variant` (OPS95: o yargs do TUI
+# rejeita o flag e só imprime o helper; variantes ficam na config global da
+# máquina, via Ctrl+T). Modelo por invocação: `--cheap`
+# (cheapestinference/deepseek-v4-flash), `--pro` (deepseek/deepseek-v4-pro),
+# `--zen` (opencode-go/ox-alpha-free), `--go` (opencode-go/hy3), `--alibaba`
+# (alibaba-token-plan/deepseek-v4-flash), `--glm` (opencode-go/glm-5.3-flash),
+# `--free` (openrouter/openrouter/free) no mapa fixo `WORKTREE_MODEL_MAP`
+# (OPS93 menu; valores OPS95); sem flag o preset `deepseek/deepseek-flash`
 # permanece. Sem `exec` de propósito: ao sair do opencode, o terminal volta ao
 # shell dentro do worktree. Presets são constantes em scripts/lib/worktree.mjs;
-# o marcador TEQO_WORKTREE_TERMINAL=1 é o que separa esta superfície da do comando
+# o ciclo de vida das sessões vive em scripts/agent-session.mjs. O marcador
+# TEQO_WORKTREE_TERMINAL=1 é o que separa esta superfície da do comando
 # `/worktree` do opencode (que nunca lança TUI). `--stay` suprime cd e launch.
 #
 # Instalação (uma linha no profile; requer bash ou zsh — usa BASH_SOURCE, arrays e here-strings):
@@ -96,11 +101,12 @@ worktree() {
 
   # Diretiva `launch` (só existe quando TEQO_WORKTREE_TERMINAL=1 e sem --stay): o
   # script a gera a partir de constantes + dir slugificado (sem espaços), e desde
-  # o OPS33 o valor do `--prompt` carrega espaço e vem CITADO (`"/work-issue
-  # --issue <N>"`) — o split por IFS=' ' não honra aspas, então a tokenização usa
-  # xargs (processa aspas duplas como um shell, NÃO é eval; o conteúdo é 100%
-  # gerado por constantes + número, sem input livre). Falha do launch (ex.:
-  # opencode fora do PATH) só avisa: o worktree já está pronto e utilizável.
+  # o OPS33 os valores com espaço vêm CITADOS (`--argument="<bag>"`; OPS110 —
+  # antes era o `--prompt "/work-issue --issue <N>"`) — o split por IFS=' ' não
+  # honra aspas, então a tokenização usa xargs (processa aspas duplas como um
+  # shell, NÃO é eval; o conteúdo é 100% gerado por constantes + número, sem
+  # input livre). Falha do launch (ex.: node/opencode fora do PATH) só avisa: o
+  # worktree já está pronto e utilizável.
   local launch
   launch="$(printf '%s\n' "$out" | sed -n 's/^launch //p' | tail -n 1)"
   if [ -n "$launch" ]; then

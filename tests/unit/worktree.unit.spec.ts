@@ -22,7 +22,6 @@ import {
   issueCodeAndSubject,
   OPENCODE_HEADLESS_COMMAND,
   OPENCODE_PRESET_MODEL,
-  OPENCODE_SKILL_COMMAND_BY_PURPOSE,
   opencodeHeadlessArgs,
   opencodeLaunchDirective,
   PLAN_BRANCH_PREFIX,
@@ -150,7 +149,7 @@ describe('planBranchName (per-invocation planning worktrees)', () => {
   })
 })
 
-describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 + OPS93 + OPS95)', () => {
+describe('opencodeLaunchDirective (terminal-only agent-session launch, OPS26 + OPS33 + OPS93 + OPS95 + OPS110)', () => {
   const dir = '/home/fsolla/.cursor/worktrees/teqo/OPS26-foo'
 
   it('returns null outside the terminal — the /worktree command never launches a TUI', () => {
@@ -161,42 +160,55 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 
     ).toBeNull()
   })
 
-  it('next launches with the preset model, --auto and the /work-issue command sent (value always quoted)', () => {
+  it('next delegates to scripts/agent-session.mjs start with the preset model (no local TUI)', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'next', terminal: true })).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/work-issue"`,
+      `launch node scripts/agent-session.mjs start --purpose=next --dir=${dir} --model=${presetInEffect()}`,
     )
   })
 
-  it('next with an issueNumber sends /work-issue --issue <N> with the value quoted (spaces)', () => {
+  it('uses the explicit sessionScript (absolute) — worktrees sem o arquivo novo ainda lançam', () => {
+    expect(
+      opencodeLaunchDirective({
+        dir,
+        purpose: 'plan',
+        terminal: true,
+        sessionScript: '/repo/scripts/agent-session.mjs',
+      }),
+    ).toBe(
+      `launch node /repo/scripts/agent-session.mjs start --purpose=plan --dir=${dir} --model=${presetInEffect()}`,
+    )
+  })
+
+  it('next with an issueNumber carries --issue=<N> (the claimed issue)', () => {
     expect(
       opencodeLaunchDirective({ dir, purpose: 'next', terminal: true, issueNumber: 595 }),
     ).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/work-issue --issue 595"`,
+      `launch node scripts/agent-session.mjs start --purpose=next --dir=${dir} --model=${presetInEffect()} --issue=595`,
     )
   })
 
-  it('plan launches with the same presets and /plan-issue sent (OPS31, value quoted)', () => {
+  it('plan launches through the same session CLI (the skill is auto-submitted by the driver)', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true })).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/plan-issue"`,
+      `launch node scripts/agent-session.mjs start --purpose=plan --dir=${dir} --model=${presetInEffect()}`,
     )
   })
 
-  it('new launches prompt-less too — "apenas conversar", no skill sent', () => {
+  it('new launches session-only — "apenas conversar", no driver/skill', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'new', terminal: true })).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --auto`,
+      `launch node scripts/agent-session.mjs start --purpose=new --dir=${dir} --model=${presetInEffect()}`,
     )
   })
 
   it('plan/new ignore the issueNumber — only next carries the claimed issue', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true, issueNumber: 7 })).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/plan-issue"`,
+      `launch node scripts/agent-session.mjs start --purpose=plan --dir=${dir} --model=${presetInEffect()}`,
     )
     expect(opencodeLaunchDirective({ dir, purpose: 'new', terminal: true, issueNumber: 7 })).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --auto`,
+      `launch node scripts/agent-session.mjs start --purpose=new --dir=${dir} --model=${presetInEffect()}`,
     )
   })
 
-  it('fix launches with /bug-fix sent and the bag as the argument (quoted value)', () => {
+  it('fix carries the bag as --argument (quoted value, xargs-safe)', () => {
     expect(
       opencodeLaunchDirective({
         dir,
@@ -205,22 +217,24 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 
         argument: '500 no autosave de estimativas',
       }),
     ).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/bug-fix 500 no autosave de estimativas"`,
+      `launch node scripts/agent-session.mjs start --purpose=fix --dir=${dir} --model=${presetInEffect()} --argument="500 no autosave de estimativas"`,
     )
   })
 
-  it('fix without a bag sends the bare /bug-fix', () => {
+  it('fix without a bag omits --argument', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'fix', terminal: true })).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/bug-fix"`,
+      `launch node scripts/agent-session.mjs start --purpose=fix --dir=${dir} --model=${presetInEffect()}`,
     )
   })
 
   it('fix strips quotes/backslashes from the bag (xargs-safe) and drops it when it empties', () => {
     expect(
-      opencodeLaunchDirective({ dir, purpose: 'fix', terminal: true, argument: 'a"b\\c' }),
-    ).toBe(`launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/bug-fix abc"`)
+      opencodeLaunchDirective({ dir, purpose: 'fix', terminal: true, argument: 'a"b\\c bug' }),
+    ).toBe(
+      `launch node scripts/agent-session.mjs start --purpose=fix --dir=${dir} --model=${presetInEffect()} --argument="abc bug"`,
+    )
     expect(opencodeLaunchDirective({ dir, purpose: 'fix', terminal: true, argument: ' "" ' })).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/bug-fix"`,
+      `launch node scripts/agent-session.mjs start --purpose=fix --dir=${dir} --model=${presetInEffect()}`,
     )
   })
 
@@ -233,32 +247,32 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 
         issueNumber: 7,
         argument: 'bug x',
       }),
-    ).toBe(`launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/bug-fix bug x"`)
+    ).toBe(
+      `launch node scripts/agent-session.mjs start --purpose=fix --dir=${dir} --model=${presetInEffect()} --argument="bug x"`,
+    )
   })
 
   it('the argument belongs to fix alone — plan/new ignore it', () => {
     expect(
       opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true, argument: 'bag x' }),
-    ).toBe(`launch opencode ${dir} --model ${presetInEffect()} --auto --prompt "/plan-issue"`)
+    ).toBe(
+      `launch node scripts/agent-session.mjs start --purpose=plan --dir=${dir} --model=${presetInEffect()}`,
+    )
     expect(
       opencodeLaunchDirective({ dir, purpose: 'new', terminal: true, argument: 'bag x' }),
-    ).toBe(`launch opencode ${dir} --model ${presetInEffect()} --auto`)
+    ).toBe(
+      `launch node scripts/agent-session.mjs start --purpose=new --dir=${dir} --model=${presetInEffect()}`,
+    )
   })
 
   it('pins the preset constants — fallback comum deepseek-flash, override via OPENCODE_WORKTREE_MODEL', () => {
     expect(OPENCODE_PRESET_MODEL).toBe(presetInEffect())
     expect(WORKTREE_TERMINAL_ENV).toBe('TEQO_WORKTREE_TERMINAL')
-    expect(OPENCODE_SKILL_COMMAND_BY_PURPOSE).toEqual({
-      next: '/work-issue',
-      plan: '/plan-issue',
-      new: null,
-      fix: '/bug-fix',
-    })
   })
 
-  it('an unknown purpose degrades to a prompt-less launch (fail-safe direction)', () => {
+  it('an unknown purpose still delegates — the session CLI decides there is no command (fail-safe)', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'bogus', terminal: true })).toBe(
-      `launch opencode ${dir} --model ${presetInEffect()} --auto`,
+      `launch node scripts/agent-session.mjs start --purpose=bogus --dir=${dir} --model=${presetInEffect()}`,
     )
   })
 
@@ -274,7 +288,7 @@ describe('opencodeLaunchDirective (terminal-only opencode launch, OPS26 + OPS33 
   it('uses the explicit model when provided (OPS93 map, OPS95 values)', () => {
     for (const [, model] of Object.entries(WORKTREE_MODEL_MAP)) {
       expect(opencodeLaunchDirective({ dir, purpose: 'next', terminal: true, model })).toBe(
-        `launch opencode ${dir} --model ${model} --auto --prompt "/work-issue"`,
+        `launch node scripts/agent-session.mjs start --purpose=next --dir=${dir} --model=${model}`,
       )
     }
   })
@@ -378,13 +392,13 @@ describe('resolveWorktreeModel + WORKTREE_MODEL_MAP (OPS93 menu, OPS95 values, O
       expect(resolved).toBe(model)
       expect(
         opencodeLaunchDirective({ dir, purpose: 'next', terminal: true, model: resolved }),
-      ).toContain(`--model ${model} --auto`)
+      ).toContain(`--model=${model}`)
       expect(
         opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true, model: resolved }),
-      ).toContain(`--model ${model} --auto`)
+      ).toContain(`--model=${model}`)
       expect(
         opencodeLaunchDirective({ dir, purpose: 'new', terminal: true, model: resolved }),
-      ).toContain(`--model ${model} --auto`)
+      ).toContain(`--model=${model}`)
     }
   })
 })
