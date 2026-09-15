@@ -6,7 +6,7 @@
  *       Sobe (ou reaproveita) o `opencode serve` COMPARTILHADO em loopback —
  *       ele é o dono das sessões e sobrevive a qualquer cliente. Bind fora do
  *       loopback exige `OPENCODE_SERVER_PASSWORD` (fail-closed). Nunca `--mdns`.
- *   pnpm agent:session start --purpose=<next|plan|new|fix> --dir=<D> --model=<M> [--issue=N] [--argument="<bag>"] [--new]
+ *   pnpm agent:session start --purpose=<next|plan|new|fix> --dir=<D> [--model=<M>] [--issue=N] [--argument="<bag>"] [--new] [--hostname=H] [--port=P]
  *       Cria a sessão endereçável, sobe o driver destacado
  *       (`opencode run --attach … --auto --command <skill> -- …`) quando o
  *       purpose tem skill, e abre o TUI anexado (`opencode attach -s <id>`).
@@ -18,14 +18,15 @@
  *       ele estiver fora (o histórico da sessão persiste).
  *   pnpm agent:session stop [--session=<ses_…>|--branch=<B>|--issue=N]
  *       Ato explícito de encerrar: abort via API + fim do driver + `stoppedAt`.
- *   pnpm agent:session list [--json]
+ *   pnpm agent:session list [--json] [--hostname=H] [--port=P]
  *       Estado dos runs (orquestrado pelo `serve`); `--json` é o contrato
  *       versionado que o painel OPS109 consome.
  *
  * Estado por run em `~/.local/state/teqo/agent-sessions/<slug>.json` (índice de
  * endereçamento: branch/dir/sessionID/url/driverPid/log); nenhuma credencial é
  * persistida. Os fatos de semântica (cliente pode morrer, `abort` interrompe,
- * `--` entrega `$ARGUMENTS`) foram verificados na 1.18.31.
+ * `--` entrega `$ARGUMENTS`) foram verificados na 1.18.31. Flag desconhecida
+ * falha alto por verbo (OPS110-F1) — nunca cai num default mudo.
  */
 import { spawn, spawnSync } from 'node:child_process'
 import {
@@ -47,11 +48,13 @@ import {
   driverArgs,
   driverLogPath,
   formatSessionList,
+  isStaleLock,
   parseServerState,
   parseSessionState,
   purposeInvocation,
   resolveServerConfig,
   resolveSessionRef,
+  resolveStartDecision,
   serializeServerState,
   serializeSessionState,
   serverArgs,
@@ -62,6 +65,7 @@ import {
   startLockPath,
   STATE_VERSION,
   validateServerBind,
+  validateSessionFlags,
 } from './lib/agent-session.mjs'
 import { dieWithLabel, parseEqualsFlags } from './lib/cli.mjs'
 
@@ -70,11 +74,13 @@ const die = dieWithLabel('agent:session')
 const USAGE = `Uso: pnpm agent:session <serve|start|attach|stop|list> [flags]
 
   serve  [--hostname=H] [--port=P]                sobe/reaproveita o opencode serve compartilhado
-  start  --purpose=<next|plan|new|fix> --dir=<D> --model=<M> [--issue=N] [--argument="<bag>"] [--new]
+  start  --purpose=<next|plan|new|fix> --dir=<D> [--model=<M>] [--issue=N] [--argument="<bag>"] [--new] [--hostname=H] [--port=P]
                                                   cria a sessão, sobe o driver destacado e anexa o TUI
   attach [--session=<ses_…>|--branch=<B>|--issue=N]  (re)entra na sessão (default: branch do cwd)
   stop   [--session=<ses_…>|--branch=<B>|--issue=N]  encerra de forma explícita (abort + fim do driver)
-  list   [--json]                                 status dos runs registrados`
+  list   [--json] [--hostname=H] [--port=P]        status dos runs registrados
+
+  --model é obrigatório quando o purpose tem skill (next/plan/fix); 'new' não dispara driver.`
 
 /** Loopback by default; the credential rides the env, never the state/log. */
 const serverPassword = () => process.env.OPENCODE_SERVER_PASSWORD ?? ''
@@ -419,13 +425,13 @@ const acquireStartLock = ({ sessionDir, branch }) => {
       }
     } catch (error) {
       if (error?.code !== 'EEXIST') throw error
-      let holder = null
+      let holder = NaN
       try {
         holder = Number(readFileSync(lockPath, 'utf8').trim())
       } catch {
-        // unreadable lock — treat as stale below
+        // unreadable lock — treated as stale by isStaleLock
       }
-      if (!pidAlive(holder)) {
+      if (isStaleLock({ holderPid: holder, isPidAlive: pidAlive })) {
         try {
           unlinkSync(lockPath)
         } catch {
@@ -477,21 +483,17 @@ const cmdStart = async (flags) => {
   warnVersionDrift(server.version)
 
   const statePath = sessionStatePath({ sessionDir, branch })
-  const readReusable = async () => {
-    if (flags.new || !existsSync(statePath)) return null
-    let existing
-    try {
-      existing = parseSessionState(readFileSync(statePath, 'utf8'))
-    } catch (error) {
-      console.warn(
-        `[agent:session] estado ilegível em ${statePath} (${error.message}) — tratando como sessão nova.`,
-      )
-      return null
-    }
-    if (existing.url !== server.url) return null
-    const busy = (await sessionStatuses(server.url))[existing.sessionID]?.type === 'busy'
-    return driverAlive(existing.driverPid, existing.sessionID) || busy ? existing : null
-  }
+  const decideReuse = () =>
+    resolveStartDecision({
+      forceNew: Boolean(flags.new),
+      statePath,
+      readFile: (path) => readFileSync(path, 'utf8'),
+      exists: existsSync,
+      serverUrl: server.url,
+      probeBusy: async (sessionID) =>
+        (await sessionStatuses(server.url))[sessionID]?.type === 'busy',
+      driverAlive,
+    })
 
   // A decisão de reuso acontece DENTRO do lock: dois `start`s concorrentes do
   // mesmo branch não podem ambos ler "não vivo" e criar dois drivers/sessões.
@@ -499,10 +501,15 @@ const cmdStart = async (flags) => {
   let state
   let reused = false
   try {
-    const existing = await readReusable()
-    if (existing) {
+    const decision = await decideReuse()
+    if (decision.reason === 'unreadable') {
+      console.warn(
+        `[agent:session] estado ilegível em ${statePath} (${decision.error?.message}) — tratando como sessão nova.`,
+      )
+    }
+    if (decision.action === 'reuse') {
       reused = true
-      state = existing
+      state = decision.state
     } else {
       const sessionID = await createSession(server.url, dir)
       state = {
@@ -637,7 +644,7 @@ const cmdList = async (flags) => {
     console.log(`nenhuma sessão registrada em ${sessionDir}`)
     return
   }
-  console.log('STATUS   REF  SESSÃO  BRANCH  DIR')
+  console.log('STATUS   REF  SESSÃO  BRANCH  DIR  LOG')
   for (const line of formatSessionList(
     states.map((state) => ({ ...state, status: derived[state.sessionID] })),
   )) {
@@ -660,6 +667,11 @@ try {
     die(
       `argumento posicional inesperado: ${positional.slice(1).join(' ')} (use --flag=valor; veja o USAGE).`,
     )
+  }
+  try {
+    validateSessionFlags({ subcommand, flags })
+  } catch (error) {
+    die(`${error.message} Veja o USAGE: \`pnpm agent:session\`.`)
   }
   if (subcommand === 'serve') await cmdServe(flags)
   else if (subcommand === 'start') {
