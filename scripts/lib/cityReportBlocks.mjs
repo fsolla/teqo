@@ -802,11 +802,11 @@ const buildSpeechesSection = ({ snapshot }) => {
       kind: 'table',
       title: 'Acervo de falas',
       columns: [
-        { key: 'date', label: 'Data' },
-        { key: 'phase', label: 'Fase' },
-        { key: 'description', label: 'O que é' },
-        { key: 'mention', label: `Menção a ${cityLabel}` },
-        { key: 'link', label: 'Link' },
+        { key: 'date', label: 'Data', width: 8 },
+        { key: 'phase', label: 'Fase', width: 11 },
+        { key: 'description', label: 'O que é', width: 37 },
+        { key: 'mention', label: `Menção a ${cityLabel}`, width: 32 },
+        { key: 'link', label: 'Link', width: 12 },
       ],
       rows: speeches.rows.map((row) => ({
         date: formatDateBr(row.speechAt),
