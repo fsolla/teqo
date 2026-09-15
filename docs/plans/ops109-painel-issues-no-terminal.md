@@ -1,6 +1,6 @@
 # OPS109 — Painel de issues e planos no terminal (via SSH)
 
-Status: rascunho
+Status: aprovado (gate humano 2026-09-15)
 Atualizado em: 2026-09-15
 Issue: #1020
 Priority: P2
