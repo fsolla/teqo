@@ -158,14 +158,14 @@ importa é a de `production`).
    `http://localhost:1314` no cloudflared + DNS no Cloudflare. **FEITO em
    2026-09-15** (túnel `home` remotely-managed, `network_mode: host`): no
    ingress (config API, versão 7) foi inserido `staging.jorgesolla1313.com.br
-   → http://localhost:1314` antes do catch-all `http_status:404`; CNAME
+→ http://localhost:1314` antes do catch-all `http_status:404`; CNAME
    `staging` → `<tunnel-id>.cfargotunnel.com` (proxied) criado na zona
    `jorgesolla1313.com.br` (`2ae7416abc4ea930db5ce6782504c578`) via
    `CLOUDFLARE_API_TOKEN` em `~/Code/infra-solla/.env`; `docker restart
-   cloudflared` aplicou. Validação: `https://staging.jorgesolla1313.com.br`
+cloudflared` aplicou. Validação: `https://staging.jorgesolla1313.com.br`
    responde 200 (`/`, `/campanha/login`, `/admin`) pela edge com o staging
    container. Opcional (defesa em profundidade): header `X-Robots-Tag:
-   noindex` no ingress — o noindex versionado (robots.ts + metadata, OPS103)
+noindex` no ingress — o noindex versionado (robots.ts + metadata, OPS103)
    já cobre crawlers.
 6. **GitHub Environments:** criar `staging` (sem reviewer) e `production`
    (required reviewer `fsolla`) em Settings → Environments — **antes do
