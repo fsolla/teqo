@@ -112,6 +112,7 @@ const PRINT_CSS = `
   .stats .stat-hint { display: block; font-weight: 400; color: #71717a; font-size: 7.4pt; }
   .source { color: #71717a; font-size: 7.2pt; margin: 1.4mm 0 0; }
   .source a { color: #1d4ed8; word-break: break-all; }
+  a { color: #1d4ed8; text-decoration: underline; text-decoration-color: #bfdbfe; text-underline-offset: 1.5px; }
   .callout { border-left: 2.2mm solid #b45309; background: #fffbeb; padding: 2.4mm 3mm; border-radius: 0 1.6mm 1.6mm 0; }
   .callout.gap { border-left-color: #71717a; background: #f4f4f5; }
   .callout.decision { border-left-color: #15803d; background: #f0fdf4; }
@@ -129,16 +130,18 @@ const PRINT_CSS = `
   table { width: 100%; border-collapse: collapse; font-size: 8pt; }
   table.table-fixed { table-layout: fixed; }
   table.table-fixed td, table.table-fixed th { overflow-wrap: anywhere; }
-  caption { caption-side: top; text-align: left; font-weight: 600; font-size: 8.6pt; padding-bottom: 1.2mm; color: #18181b; }
-  th { text-align: left; background: #f4f4f5; border-bottom: .8px solid #d4d4d8; padding: 1.4mm 1.4mm; font-size: 7pt; text-transform: uppercase; letter-spacing: .03em; color: #52525b; }
-  td { border-bottom: .6px solid #e4e4e7; padding: 1.4mm 1.4mm; vertical-align: top; }
+  caption { caption-side: top; text-align: left; font-weight: 600; font-size: 9.4pt; padding-bottom: 1.8mm; color: #18181b; }
+  th { text-align: left; background: #f4f4f5; border-bottom: .8px solid #d4d4d8; padding: 1.6mm 1.4mm; font-size: 7pt; text-transform: uppercase; letter-spacing: .03em; color: #52525b; }
+  td { border-bottom: .6px solid #e4e4e7; padding: 1.6mm 1.4mm; vertical-align: top; }
+  tbody tr:nth-child(even) { background: #fafafa; }
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .table-note { color: #71717a; font-size: 7.2pt; margin: 1mm 0 0; }
   .prose p { margin: 0 0 1.4mm; }
   .page-break { break-before: page; }
   .index ol { columns: 2; margin: 0; padding-left: 0; list-style: none; color: #3f3f46; font-size: 8.6pt; }
-  .report-section { margin-bottom: 6mm; }
-  .report-section > h3 { font-size: 11pt; margin: 0 0 2mm; break-after: avoid; }
+  .report-section { margin-bottom: 7mm; }
+  .report-section > h3 { font-size: 12pt; margin: 0 0 2.6mm; padding-top: 2.4mm; border-top: .8px solid #d4d4d8; break-after: avoid; }
+  .report-section:first-of-type > h3 { border-top: none; padding-top: 0; }
   .block + .block { margin-top: 3mm; }
   .block { break-inside: avoid; }
   .block.table-block { break-inside: auto; }
@@ -260,8 +263,23 @@ const renderSources = (block) => {
   return `<ul class="bullets">${items}</ul><h4 class="block-title">Limites</h4><ul class="bullets">${limits}</ul>`
 }
 
-const renderBlockHtml = (block) => {
-  const title = block.title ? `<h4 class="block-title">${htmlEscape(block.title)}</h4>` : ''
+const normalizeHeading = (value) =>
+  String(value ?? '')
+    .replace(/^\d+\.\s*/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+
+const renderBlockHtml = (block, sectionTitle = null) => {
+  // Tables carry their title in the caption; a block title equal to the section
+  // heading is duplication (the section h3 right above already says it).
+  const duplicatesSection =
+    Boolean(block.title && sectionTitle) &&
+    normalizeHeading(block.title) === normalizeHeading(sectionTitle)
+  const title =
+    block.title && block.kind !== 'table' && !duplicatesSection
+      ? `<h4 class="block-title">${htmlEscape(block.title)}</h4>`
+      : ''
   let body
   switch (block.kind) {
     case 'kpis':
@@ -344,7 +362,7 @@ export const renderReportHtml = (report) => {
 
   const sections = report.sections
     .map((section) => {
-      const blocks = section.blocks.map(renderBlockHtml).join('')
+      const blocks = section.blocks.map((block) => renderBlockHtml(block, section.title)).join('')
       return `<section class="report-section">${`<h3>${htmlEscape(section.title)}</h3>`}${blocks}</section>`
     })
     .join('')
