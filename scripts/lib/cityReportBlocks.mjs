@@ -747,7 +747,43 @@ const buildDemandsVisitsSection = ({ snapshot }) => {
   return blocks
 }
 
-const buildDemographicsSection = ({ snapshot }) => {
+const buildSourcedListBlocks = ({ title, note, items }) => {
+  if (!items.length) {
+    return [
+      {
+        kind: 'callout',
+        tone: 'gap',
+        title,
+        body: ['Nenhum item pesquisado com fonte para este município.', GAP_COPY],
+      },
+    ]
+  }
+  return [
+    {
+      kind: 'table',
+      title,
+      columns: [
+        { key: 'topic', label: 'Tema', width: 22 },
+        { key: 'detail', label: 'Dado', width: 62 },
+        { key: 'source', label: 'Fonte', width: 16 },
+      ],
+      rows: items.map((item) => ({
+        topic: item.topic,
+        detail: item.detail,
+        source: formatDateBr(item.sourceDate),
+      })),
+      note,
+      sources: items.map((item) => ({
+        kind: 'web',
+        label: item.topic,
+        url: item.sourceUrl,
+        date: item.sourceDate,
+      })),
+    },
+  ]
+}
+
+const buildDemographicsSection = ({ snapshot, research }) => {
   const demographics = snapshot.demographics
   if (!demographics) {
     return [
@@ -759,10 +795,10 @@ const buildDemographicsSection = ({ snapshot }) => {
       },
     ]
   }
-  return [
+  const blocks = [
     {
       kind: 'stats',
-      title: 'Demografia',
+      title: 'Demografia (IBGE Censo 2022)',
       rows: [
         { label: 'População', value: formatInteger(demographics.population) },
         { label: '0–17 anos', value: formatInteger(demographics.ageBands['0-17']) },
@@ -779,7 +815,29 @@ const buildDemographicsSection = ({ snapshot }) => {
       sources: [sourceTeqo('IBGE Censo 2022 (artefato commitado)', null)],
     },
   ]
+  blocks.push(
+    ...buildSourcedListBlocks({
+      title: 'Demografia complementar (pesquisa)',
+      note: 'Cor/raça e poder aquisitivo (IBGE Censo 2022) — leitura para agenda e linguagem na cidade; cada item com URL.',
+      items: research.demography ?? [],
+    }),
+  )
+  return blocks
 }
+
+const buildEconomySection = ({ research }) =>
+  buildSourcedListBlocks({
+    title: 'Atividade econômica (pesquisa)',
+    note: 'PIB, emprego e principais atividades (IBGE/CAGED e imprensa local) — onde a cidade gera renda e onde depende de fora; cada item com URL.',
+    items: research.economy ?? [],
+  })
+
+const buildTransportSection = ({ research }) =>
+  buildSourcedListBlocks({
+    title: 'Transporte e conexões (pesquisa)',
+    note: 'Rodovias (novas/reformadas), aeroporto mais próximo, portos e ferrovia: como a cidade se conecta à Bahia e o que está em obra/planejado — cada item com URL.',
+    items: research.transport ?? [],
+  })
 
 const buildSpeechesSection = ({ snapshot }) => {
   const { speeches, municipality } = snapshot
@@ -996,6 +1054,16 @@ const buildSourcesSection = ({ snapshot, research, emendas }) => {
       date: item.sourceDate,
     })
   }
+  for (const listKey of ['demography', 'economy', 'transport']) {
+    for (const item of research[listKey] ?? []) {
+      items.push({
+        kind: 'web',
+        label: `${listKey === 'demography' ? 'Demografia' : listKey === 'economy' ? 'Economia' : 'Transporte'} — ${item.topic}`,
+        url: item.sourceUrl,
+        date: item.sourceDate,
+      })
+    }
+  }
 
   return [
     {
@@ -1069,26 +1137,40 @@ export const buildCityReport = ({ snapshot, research, emendas, generatedAt = new
       title: '6. Demandas e visitas',
       blocks: buildDemandsVisitsSection({ snapshot }),
     },
-    { id: 'demografia', title: '7. Demografia', blocks: buildDemographicsSection({ snapshot }) },
-    { id: 'falas', title: '8. Acervo de falas', blocks: buildSpeechesSection({ snapshot }) },
+    {
+      id: 'demografia',
+      title: '7. Demografia',
+      blocks: buildDemographicsSection({ snapshot, research }),
+    },
+    {
+      id: 'economia',
+      title: '8. Atividade econômica (pesquisa)',
+      blocks: buildEconomySection({ research }),
+    },
+    {
+      id: 'transporte',
+      title: '9. Transporte e conexões (pesquisa)',
+      blocks: buildTransportSection({ research }),
+    },
+    { id: 'falas', title: '10. Acervo de falas', blocks: buildSpeechesSection({ snapshot }) },
     {
       id: 'noticias',
-      title: '9. Notícias internas e imprensa local',
+      title: '11. Notícias internas e imprensa local',
       blocks: buildNewsSection({ research }),
     },
     {
       id: 'regiao',
-      title: '10. Panorama regional (Território de Identidade)',
+      title: '12. Panorama regional (Território de Identidade)',
       blocks: buildRegionSection({ snapshot }),
     },
     {
       id: 'abordagem',
-      title: '11. Abordagem sugerida (pesquisa)',
+      title: '13. Abordagem sugerida (pesquisa)',
       blocks: buildApproachSection({ research }),
     },
     {
       id: 'fontes',
-      title: '12. Fontes e limites',
+      title: '14. Fontes e limites',
       blocks: buildSourcesSection({ snapshot, research, emendas }),
     },
   ]

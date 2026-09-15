@@ -107,6 +107,18 @@ URL por item) e emendas lidas da fonte oficial **em tempo de geração**. Págin
       "sourceUrl": "https://…", "sourceDate": "2024-08-14"
     }
   ],
+  "demography": [                  // cor/raça e poder aquisitivo (Censo 2022)
+    {
+      "topic": "Cor/raça (Censo 2022)", "detail": "Parda 73,1% …",
+      "sourceUrl": "https://sidra.ibge.gov.br/tabela/9605", "sourceDate": "2026-09-15"
+    }
+  ],
+  "economy": [                     // PIB, emprego, atividades (IBGE/RAIS e imprensa)
+    { "topic": "PIB e perfil", "detail": "…", "sourceUrl": "https://…", "sourceDate": "…" }
+  ],
+  "transport": [                   // rodovias, aeroporto, portos, ferrovia
+    { "topic": "Rodovia federal (BR-101)", "detail": "…", "sourceUrl": "https://…", "sourceDate": "…" }
+  ],
   "gaps": [{ "id": "…", "label": "…", "reason": "…" }] // lacunas que o agente já sabe
 }
 ```
@@ -126,6 +138,18 @@ serviços do polo). Registre cada indício com URL+data; use `extraSources` para
 mais de uma fonte. O PDF mostra o item como "Emendas — indícios web" na página
 1 e as URLs na seção de fontes. **Nunca somar** indício de região/polo como
 emenda da cidade.
+
+**Demografia, economia e transporte (pesquisa):** `demography`, `economy` e
+`transport` são listas de `{topic, detail, sourceUrl, sourceDate}` (sem fonte →
+lacuna). Pesquise: **cor/raça e rendimento** (Censo 2022 — SIDRA 9605 e 10295;
+IBGE Cidades para salário médio); **economia** (PIB e PIB per capita — IBGE
+Cidades; composição setorial e emprego formal — RAIS/CAGED e perfis regionais;
+café, pecuária e comércio no caso do Extremo Sul); **transporte** (rodovias
+federais/estaduais que cortam o município e obras novas/reformadas — DNIT,
+Seinfra; aeroporto mais próximo em operação e o do polo, com situação; portos e
+ferrovia da região — FIOL/Porto Sul, deixando claro quando não serve
+diretamente a cidade). O enquadramento é "onde falta × onde o estado e a União
+têm acertado" — o candidato é da base.
 
 **Emendas oficiais:** sem `--emendas`, o builder consulta o Portal da
 Transparência (`PORTAL_TRANSPARENCIA_API_KEY` no ambiente; sem chave → lacuna).
@@ -148,12 +172,14 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   e estadual)` — top 5 por votos de 2022 na base TSE, com série 2014/2018/2022
   e os prováveis candidatos do campo do prefeito (pesquisa) · `3. Rede e
   lideranças` — inclui as lideranças locais pesquisadas (ex-prefeitos/vices,
-  vereadores mais votados) · `4. Conjuntura` · `5. Sinais` · `6. Demandas e
-  visitas` · `7. Demografia` · `8. Acervo de falas` — cada fala com "O que é"
-  (sumário oficial) e "Menção ao município" (passagem que cita a cidade ou, se
-  o nome não aparece nos trechos, a marcação do acervo com o nº de municípios)
-  · `9. Notícias e imprensa` · `10. Panorama regional` · `11. Abordagem
-  sugerida (personas)` · `12. Fontes e limites`.
+  vereadores mais votados, com partido) · `4. Conjuntura` · `5. Sinais` · `6.
+  Demandas e visitas` · `7. Demografia` — IBGE Censo 2022 do artefato +
+  **complemento pesquisado** (cor/raça e poder aquisitivo) · `8. Atividade
+  econômica (pesquisa)` · `9. Transporte e conexões (pesquisa)` · `10. Acervo
+  de falas` — cada fala com "O que é" (sumário oficial) e "Menção ao município"
+  (passagem que cita a cidade ou, se o nome não aparece nos trechos, a marcação
+  do acervo com o nº de municípios) · `11. Notícias e imprensa` · `12. Panorama
+  regional` · `13. Abordagem sugerida (personas)` · `14. Fontes e limites`.
 - **Links clicáveis:** todo URL no PDF é um link (`<a href>`): células de
   tabela, fontes por linha e a seção de fontes.
 

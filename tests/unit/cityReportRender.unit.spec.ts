@@ -114,8 +114,10 @@ describe('renderReportMd', () => {
   it('carries the same sections as tables and headings', () => {
     expect(md).toContain('## 1. Conta eleitoral completa')
     expect(md).toContain('## 2. Concorrentes no município (federal e estadual)')
-    expect(md).toContain('## 11. Abordagem sugerida (pesquisa)')
-    expect(md).toContain('## 12. Fontes e limites')
+    expect(md).toContain('## 8. Atividade econômica (pesquisa)')
+    expect(md).toContain('## 9. Transporte e conexões (pesquisa)')
+    expect(md).toContain('## 13. Abordagem sugerida (pesquisa)')
+    expect(md).toContain('## 14. Fontes e limites')
     expect(md).toContain('| Ano | Votos |')
   })
 

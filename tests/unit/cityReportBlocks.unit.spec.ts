@@ -70,6 +70,30 @@ const research = normalizeResearchInput(
         sourceDate: '2026-03-05',
       },
     ],
+    demography: [
+      {
+        topic: 'Cor/raça',
+        detail: 'Parda 62%, branca 25%.',
+        sourceUrl: 'https://exemplo.test/cor-raca',
+        sourceDate: '2026-09-10',
+      },
+    ],
+    economy: [
+      {
+        topic: 'PIB',
+        detail: 'Serviços e agropecuária lideram.',
+        sourceUrl: 'https://exemplo.test/pib',
+        sourceDate: '2026-09-10',
+      },
+    ],
+    transport: [
+      {
+        topic: 'Rodovias',
+        detail: 'BR-101 corta o município; trecho em obra.',
+        sourceUrl: 'https://exemplo.test/br101',
+        sourceDate: '2026-09-10',
+      },
+    ],
     gaps: [],
   },
   { now: generatedAt },
@@ -323,12 +347,29 @@ const asReport = (value: unknown) => value as ReportShape
 describe('buildCityReport', () => {
   const report = asReport(buildCityReport({ snapshot, research, emendas, generatedAt }))
 
-  it('builds the 12 deepening sections in the product order', () => {
-    expect(report.sections).toHaveLength(12)
+  it('builds the 14 deepening sections in the product order', () => {
+    expect(report.sections).toHaveLength(14)
     expect(report.sections[0].title).toMatch(/Conta eleitoral completa/)
     expect(report.sections[1].title).toMatch(/Concorrentes no município/)
-    expect(report.sections[10].title).toMatch(/Abordagem sugerida/)
-    expect(report.sections[11].title).toMatch(/Fontes e limites/)
+    expect(report.sections[7].title).toMatch(/Atividade econômica/)
+    expect(report.sections[8].title).toMatch(/Transporte e conexões/)
+    expect(report.sections[12].title).toMatch(/Abordagem sugerida/)
+    expect(report.sections[13].title).toMatch(/Fontes e limites/)
+  })
+
+  it('adds the researched demography, economy and transport data', () => {
+    const demografia = report.sections.find((section) => section.id === 'demografia')!
+    const complementary = demografia.blocks.find(
+      (block) => block.title === 'Demografia complementar (pesquisa)',
+    )!
+    expect((complementary.rows as unknown as TableRow[])[0].topic).toBe('Cor/raça')
+    const economia = report.sections.find((section) => section.id === 'economia')!.blocks[0]
+    expect((economia.rows as unknown as TableRow[])[0].detail).toContain('Serviços')
+    const transporte = report.sections.find((section) => section.id === 'transporte')!.blocks[0]
+    expect((transporte.rows as unknown as TableRow[])[0].detail).toContain('BR-101')
+    expect(transporte.sources![0]).toEqual(
+      expect.objectContaining({ url: 'https://exemplo.test/br101' }),
+    )
   })
 
   it('lists the main competitors with their vote series and the pre-candidates', () => {

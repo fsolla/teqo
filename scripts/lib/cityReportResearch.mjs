@@ -267,6 +267,39 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
     })
   }
 
+  const sourcedLists = { demography: [], economy: [], transport: [] }
+  for (const key of Object.keys(sourcedLists)) {
+    for (const entry of Array.isArray(raw[key]) ? raw[key] : []) {
+      const topic = isNonEmptyString(entry?.topic) ? entry.topic.trim() : null
+      const detail = isNonEmptyString(entry?.detail) ? entry.detail.trim() : null
+      const sourceUrl = isNonEmptyString(entry?.sourceUrl) ? entry.sourceUrl.trim() : null
+      const sourceDate = isValidDate(entry?.sourceDate) ? entry.sourceDate : null
+      if (!topic || !detail) {
+        gaps.push({
+          id: `${key}_incompleto`,
+          label: topic,
+          reason: 'Item sem tema ou dado — descartado.',
+        })
+        continue
+      }
+      if (!sourceUrl || !sourceDate) {
+        gaps.push({
+          id: `${key}_sem_fonte`,
+          label: topic,
+          reason: 'Item sem fonte: URL e data são obrigatórias.',
+        })
+        continue
+      }
+      sourcedLists[key].push({
+        topic,
+        detail,
+        sourceUrl,
+        sourceDate,
+        consultedAt: isValidDate(entry.consultedAt) ? entry.consultedAt : null,
+      })
+    }
+  }
+
   return {
     municipalitySlug: raw.municipalitySlug.trim(),
     researchedAt: researchedAt.toISOString(),
@@ -275,6 +308,9 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
     approach,
     preCandidates,
     leaders,
+    demography: sourcedLists.demography,
+    economy: sourcedLists.economy,
+    transport: sourcedLists.transport,
     gaps,
   }
 }
