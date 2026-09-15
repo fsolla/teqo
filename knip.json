@@ -18,7 +18,7 @@
   "paths": {
     "server-only": ["tests/helpers/serverOnly.ts"]
   },
-  "ignoreBinaries": [],
+  "ignoreBinaries": ["opencode"],
   "ignoreDependencies": [
     "tailwindcss-animate",
     "tw-animate-css",
