@@ -852,6 +852,18 @@ const buildTransportSection = ({ research }) =>
     items: research.transport ?? [],
   })
 
+/**
+ * YouTube link starts where the excerpt sits in the session video
+ * (`youtubeOffsetSeconds`, from the Câmara excerpt epoch − session start).
+ * The VOD clip is the excerpt itself, so it needs no timestamp.
+ */
+const withYoutubeTimestamp = (url, offsetSeconds) => {
+  if (!url) return null
+  if (!Number.isFinite(offsetSeconds) || offsetSeconds <= 0) return url
+  const separator = url.includes('?') ? '&' : '?'
+  return `${url}${separator}t=${Math.floor(offsetSeconds)}s`
+}
+
 const buildSpeechesSection = ({ snapshot }) => {
   const { speeches, municipality } = snapshot
   if (!speeches.rows.length) {
@@ -889,7 +901,9 @@ const buildSpeechesSection = ({ snapshot }) => {
           : row.mentionedMunicipalityCount
             ? `Marcada no acervo — nome não localizado nos trechos (a fala cita ${formatInteger(row.mentionedMunicipalityCount)} municípios).`
             : 'Marcada no acervo — trecho não localizado.',
-        video: row.youtubeUrl ?? row.vodPlaybackUrl ?? '—',
+        video: row.youtubeUrl
+          ? withYoutubeTimestamp(row.youtubeUrl, row.youtubeOffsetSeconds)
+          : (row.vodPlaybackUrl ?? '—'),
         transcript: row.officialTextUrl ?? '—',
       })),
       note: [
