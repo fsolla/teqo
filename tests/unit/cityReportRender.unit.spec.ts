@@ -1,0 +1,121 @@
+import { describe, expect, it } from 'vitest'
+
+import { buildCityReport } from '../../scripts/lib/cityReportBlocks.mjs'
+import { renderReportHtml, renderReportMd } from '../../scripts/lib/cityReportRender.mjs'
+import {
+  normalizeResearchInput,
+  RESEARCH_CHECKLIST_IDS,
+} from '../../scripts/lib/cityReportResearch.mjs'
+
+const generatedAt = new Date('2026-09-15T12:00:00.000Z')
+
+const research = normalizeResearchInput(
+  {
+    municipalitySlug: 'feira-de-santana',
+    researchedAt: '2026-09-14T10:00:00.000Z',
+    items: RESEARCH_CHECKLIST_IDS.map((id) => ({
+      id,
+      answer: id === 'prefeito' ? 'Prefeito <script>alert(1)</script>' : `Resposta de ${id}`,
+      sourceUrl: `https://exemplo.test/${id}`,
+      sourceDate: '2026-09-10',
+    })),
+    news: [],
+    gaps: [],
+  },
+  { now: generatedAt },
+)
+
+const report = buildCityReport({
+  snapshot: {
+    meta: {
+      readAt: '2026-09-15T10:30:00.000Z',
+      database: '127.0.0.1:5433/teqo_1313',
+      codeSha: 'abc1234',
+    },
+    municipality: {
+      id: 42,
+      slug: 'feira-de-santana',
+      name: 'Feira de Santana',
+      kind: 'municipio',
+      city: 'Feira de Santana',
+      region: 'Portal do Sertão',
+      ibgeCode: '2910800',
+      tseCityCode: '31270',
+      zoneNumber: null,
+      tseZones: [12, 13],
+      lastUpdateAt: null,
+    },
+    electoral: {
+      candidateName: 'Jorge Solla',
+      candidateParty: 'PT',
+      series: [],
+      tally2022: null,
+      ticket2022: { president: null, governor: null },
+      rank2022: null,
+    },
+    goal: null,
+    pledges: {
+      declaredTotal: 0,
+      effectiveByScenario: {},
+      pledgeCount: 0,
+      missingEstimateCount: 0,
+      lastPledgeAt: null,
+    },
+    leaderships: { totalCount: 0, rows: [] },
+    advisors: [],
+    signals: { totalCount: 0, rows: [] },
+    activities: { upcoming: [], recent: [] },
+    conjuncture: null,
+    speeches: { totalCount: 0, rows: [] },
+    demands: { totalCount: 0, rows: [] },
+    demographics: null,
+  },
+  research,
+  emendas: {
+    status: 'gap',
+    reason: 'Chave ausente',
+    detail: null,
+    sourceUrl: null,
+    consultedAt: null,
+  },
+  generatedAt,
+})
+
+describe('renderReportHtml', () => {
+  const html = renderReportHtml(report)
+
+  it('renders the summary page anchor and both headers', () => {
+    expect(html).toContain('data-page="summary"')
+    expect(html).toContain('pág. 1')
+    expect(html).toContain('Índice')
+  })
+
+  it('escapes research text (no raw injection)', () => {
+    expect(html).not.toContain('<script>alert(1)</script>')
+    expect(html).toContain('&lt;script&gt;')
+  })
+
+  it('prints the gaps as callouts and the limits list', () => {
+    expect(html).toContain('Lacuna explícita')
+    expect(html).toContain('Limites')
+  })
+})
+
+describe('renderReportMd', () => {
+  const md = renderReportMd(report)
+
+  it('carries the same sections as tables and headings', () => {
+    expect(md).toContain('## 1. Conta eleitoral completa')
+    expect(md).toContain('## 10. Fontes e limites')
+    expect(md).toContain('| Ano | Votos |')
+  })
+
+  it('lists sources with URLs', () => {
+    expect(md).toContain('https://exemplo.test/prefeito')
+    expect(md).toContain('base Teqo')
+  })
+
+  it('states the base read date (dated snapshot)', () => {
+    expect(md).toContain('Base Teqo (read-only) lida em')
+  })
+})
