@@ -7,12 +7,17 @@ import {
   SPEECH_CUT_FORBIDDEN_MESSAGE,
   SPEECH_CUT_INVALID_RANGE_MESSAGE,
   SPEECH_CUT_NOT_FOUND_MESSAGE,
+  SPEECH_CUT_PUBLISH_NOT_READY_MESSAGE,
   SPEECH_CUT_RETRY_NOT_FAILED_MESSAGE,
   SPEECH_CUT_SPEECH_NOT_FOUND_MESSAGE,
+  speechCutPublicationRequestSchema,
   speechCutRequestSchema,
   speechCutStatusRequestSchema,
   speechCutSuggestionRequestSchema,
+  speechCutTextUpdateRequestSchema,
+  type SpeechCutPublicationRequest,
   type SpeechCutRequest,
+  type SpeechCutTextUpdateRequest,
 } from '@/lib/schemas/speechCut'
 import {
   SPEECH_VOD_FORBIDDEN_MESSAGE,
@@ -21,11 +26,7 @@ import {
   speechVodRequestSchema,
 } from '@/lib/schemas/speechVod'
 import { formatSpeechDate } from '@/lib/speechClock'
-import {
-  toSpeechCutViewModel,
-  type SpeechCutRecordForView,
-  type SpeechCutViewModel,
-} from '@/lib/speechCut'
+import { toSpeechCutViewModel, type SpeechCutViewModel } from '@/lib/speechCut'
 import {
   MAX_EXCERPT_SECONDS,
   MIN_EXCERPT_SECONDS,
@@ -34,6 +35,7 @@ import {
 import { speechVodCoordinates, type SpeechVodResolution } from '@/lib/speechVod'
 import type { CampaignUser } from '@/payload-types'
 import { getCampaignActionContext } from '@/utilities/campaignActionContext'
+import { findSpeechCutForActor as loadSpeechCutForActor } from '@/utilities/speech/speechCutData'
 import { reapStaleSpeechCut } from '@/utilities/speech/speechCutJob'
 import {
   suggestSpeechCutMetadata,
@@ -100,23 +102,6 @@ const speechCutSpeechSelect = {
   audioId: true,
   excerptTMs: true,
 } as const
-
-const loadSpeechCutForActor = async (
-  payload: Payload,
-  actor: CampaignUser,
-  cutId: number,
-): Promise<SpeechCutRecordForView | null> => {
-  const result = await payload.find({
-    collection: 'speechCut',
-    where: { id: { equals: cutId } },
-    depth: 1,
-    limit: 1,
-    pagination: false,
-    user: actor,
-    overrideAccess: false,
-  })
-  return result.docs[0] ?? null
-}
 
 const loadSpeechForCut = async (payload: Payload, actor: CampaignUser, speechId: number) => {
   const result = await payload.find({
@@ -274,6 +259,65 @@ export const getSpeechCutStatusForActor = async (input: {
     if (!cut) throw new Error(SPEECH_CUT_NOT_FOUND_MESSAGE)
   }
 
+  return toSpeechCutViewModel(cut)
+}
+
+// ---------------------------------------------------------------------------
+// C168 — the cut library: edit the cut's own text and toggle the public link.
+// Same fresh `speechCatalog` gate as the C167 mutations; the collection access
+// (canReadSpeech) and the whitelisted zod payload are the field boundary.
+// ---------------------------------------------------------------------------
+
+/** Edits the cut's title/description — never the source speech nor the video. */
+export const updateSpeechCutTextForActor = async (
+  input: SpeechCutTextUpdateRequest,
+): Promise<SpeechCutViewModel> => {
+  const parsed = speechCutTextUpdateRequestSchema.parse(input)
+  const { payload, actor } = await getCampaignActionContext()
+
+  if (!canReadSpeechCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
+
+  const current = await loadSpeechCutForActor(payload, actor, parsed.cutId)
+  if (!current) throw new Error(SPEECH_CUT_NOT_FOUND_MESSAGE)
+
+  const cut = await payload.update({
+    collection: 'speechCut',
+    id: parsed.cutId,
+    data: { title: parsed.title, description: parsed.description },
+    depth: 1,
+    user: actor,
+    overrideAccess: false,
+  })
+  return toSpeechCutViewModel(cut)
+}
+
+/**
+ * Kill switch: `published` restores the same public `/corte/<id>` link
+ * (`publishedAt` stamps the new publication); `unpublished` only takes it off
+ * the air — the row, the file and the id stay. Refused until the MP4 exists.
+ */
+export const setSpeechCutPublishedForActor = async (
+  input: SpeechCutPublicationRequest,
+): Promise<SpeechCutViewModel> => {
+  const parsed = speechCutPublicationRequestSchema.parse(input)
+  const { payload, actor } = await getCampaignActionContext()
+
+  if (!canReadSpeechCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
+
+  const current = await loadSpeechCutForActor(payload, actor, parsed.cutId)
+  if (!current) throw new Error(SPEECH_CUT_NOT_FOUND_MESSAGE)
+  if (parsed.published && !current.media) throw new Error(SPEECH_CUT_PUBLISH_NOT_READY_MESSAGE)
+
+  const cut = await payload.update({
+    collection: 'speechCut',
+    id: parsed.cutId,
+    data: parsed.published
+      ? { status: 'published', publishedAt: new Date().toISOString() }
+      : { status: 'unpublished' },
+    depth: 1,
+    user: actor,
+    overrideAccess: false,
+  })
   return toSpeechCutViewModel(cut)
 }
 

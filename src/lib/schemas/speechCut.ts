@@ -20,6 +20,10 @@ export const SPEECH_CUT_INVALID_RANGE_MESSAGE = 'Selecione um trecho de 5 a 180 
 export const SPEECH_CUT_RETRY_NOT_FAILED_MESSAGE =
   'Só é possível tentar novamente um corte que falhou.'
 
+/** Publish is refused until the job stored the MP4 (processing/failed have none). */
+export const SPEECH_CUT_PUBLISH_NOT_READY_MESSAGE =
+  'Este corte ainda não tem um arquivo para publicar.'
+
 /** Transport/ffmpeg/storage failure (or anything unmapped). */
 export const SPEECH_CUT_GENERIC_ERROR_MESSAGE =
   'Não foi possível preparar o corte. Verifique seu acesso e tente novamente.'
@@ -51,3 +55,20 @@ export const speechCutSuggestionRequestSchema = z.object({
   startSeconds: excerptBoundarySeconds,
   endSeconds: excerptBoundarySeconds,
 })
+
+/** C168 — edit the cut's own text: never the source speech nor the stored video. */
+export const speechCutTextUpdateRequestSchema = z.object({
+  cutId: positiveRelationshipId,
+  title: z.string().trim().min(1).max(SPEECH_CUT_TITLE_MAX_LENGTH),
+  description: z.string().trim().min(1).max(SPEECH_CUT_DESCRIPTION_MAX_LENGTH),
+})
+
+export type SpeechCutTextUpdateRequest = z.infer<typeof speechCutTextUpdateRequestSchema>
+
+/** C168 — the kill switch: publish/unpublish the cut's public link. */
+export const speechCutPublicationRequestSchema = z.object({
+  cutId: positiveRelationshipId,
+  published: z.boolean(),
+})
+
+export type SpeechCutPublicationRequest = z.infer<typeof speechCutPublicationRequestSchema>

@@ -1,0 +1,55 @@
+import { PlayIcon } from 'lucide-react'
+import Link from 'next/link'
+
+import { CopyLinkButton } from '@/components/CopyLinkButton'
+import { SpeechCutStatusBadge } from '@/components/campaign/speech/SpeechCutStatusBadge'
+import { Button } from '@/components/ui/button'
+import { CAMPAIGN_COMMUNICATION_CORTES } from '@/lib/campaignPaths'
+import type { SpeechCutLibraryItemViewModel } from '@/lib/speechCut'
+
+/**
+ * C168 — one row of the cut library: status + creation date, the editable title,
+ * the origin speech (label + link to the acervo) with the stored duration, and
+ * the two actions the list needs (open the detail, copy the public link when it
+ * is live). Download/WhatsApp/publição live in the detail.
+ */
+export const SpeechCutLibraryCard = ({ cut }: { cut: SpeechCutLibraryItemViewModel }) => (
+  <article
+    className={
+      cut.status === 'published'
+        ? 'rounded-xl border bg-card p-4'
+        : 'rounded-xl border border-dashed bg-card p-4'
+    }
+  >
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <SpeechCutStatusBadge status={cut.status} />
+      {cut.createdAtLabel ? (
+        <span className="text-xs text-muted-foreground">Criado em {cut.createdAtLabel}</span>
+      ) : null}
+    </div>
+
+    <h3 className="mt-2 text-sm font-medium">{cut.title}</h3>
+
+    <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+      {cut.origin ? (
+        <Link href={cut.origin.href} className="underline underline-offset-4 hover:text-foreground">
+          {cut.origin.label}
+        </Link>
+      ) : (
+        <span>Fala de origem indisponível</span>
+      )}
+      <span aria-hidden="true">·</span>
+      <span>{cut.durationLabel}</span>
+    </div>
+
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      <Button asChild variant="outline" className="min-h-10">
+        <Link href={`${CAMPAIGN_COMMUNICATION_CORTES}/${cut.id}`}>
+          <PlayIcon data-icon="inline-start" aria-hidden="true" />
+          Abrir corte
+        </Link>
+      </Button>
+      {cut.status === 'published' ? <CopyLinkButton url={cut.publicPath} variant="ghost" /> : null}
+    </div>
+  </article>
+)

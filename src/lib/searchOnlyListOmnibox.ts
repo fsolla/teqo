@@ -60,7 +60,8 @@ export const removeSearchOnlyOmniboxChip = <T extends SearchOnlyListState>({
 export const clearSearchOnlyOmnibox = <T extends SearchOnlyListState>({
   cleared,
 }: {
-  state: T
+  /** Optional for callers whose serializer already pins page 1. */
+  state?: T
   cleared: T
 }): SearchOnlyOmniboxAction<T> => ({
   kind: 'clear',

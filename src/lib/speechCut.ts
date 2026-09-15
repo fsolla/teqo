@@ -4,8 +4,10 @@
  * [start, end] MP4 and the public view model. No I/O and no `server-only`:
  * the dialog (client) and the job (server) share this module.
  */
+import { CAMPAIGN_COMMUNICATION_ACERVO } from '@/lib/campaignPaths'
+import { formatBahiaCivilDate } from '@/lib/campaignTime'
 import { buildWhatsAppTextShareUrl } from '@/lib/phone'
-import { formatSpeechSpan } from '@/lib/speechClock'
+import { formatSpeechDate, formatSpeechSpan } from '@/lib/speechClock'
 import { parseYoutubeVideoId } from '@/lib/speechVod'
 
 export const SPEECH_CUT_STATUSES = ['processing', 'published', 'unpublished', 'failed'] as const
@@ -162,7 +164,14 @@ export const buildSpeechCutShare = ({
 }
 
 type CutMediaRecord = { url?: string | null; filename?: string | null }
-type CutSpeechRecord = { youtubeUrl?: string | null }
+type CutSpeechRecord = {
+  /** Populated at depth 1; absent when the relation was not expanded. */
+  id?: number
+  youtubeUrl?: string | null
+  type?: string | null
+  phase?: string | null
+  speechAt?: string | null
+}
 type CutDurationRecord = { durationSeconds?: number | null }
 
 export type SpeechCutRecordForView = CutDurationRecord & {
@@ -176,6 +185,7 @@ export type SpeechCutRecordForView = CutDurationRecord & {
   media?: number | CutMediaRecord | null
   speech?: number | CutSpeechRecord | null
   publishedAt?: string | null
+  createdAt?: string | null
   updatedAt?: string | null
 }
 
@@ -233,3 +243,47 @@ export const toSpeechCutViewModel = (record: SpeechCutRecordForView): SpeechCutV
     publishedAt: record.publishedAt ?? null,
   }
 }
+
+/** Origin of a cut in the library: the speech it was cut from, with its link. */
+export type SpeechCutOriginViewModel = {
+  id: number
+  /** "Fala · Breves Comunicações · 11/08/2026" — readiness degrades, never empty. */
+  label: string
+  href: string
+}
+
+export type SpeechCutLibraryItemViewModel = SpeechCutViewModel & {
+  /** "Criado em dd/mm/aaaa" date part; null when the row has no timestamp. */
+  createdAtLabel: string | null
+  /** Null when the source speech was deleted (FK `SET NULL`) — degrade, don't break. */
+  origin: SpeechCutOriginViewModel | null
+}
+
+const formatCreatedAtLabel = (createdAt: string | null | undefined): string | null => {
+  if (!createdAt) return null
+  const instant = new Date(createdAt)
+  if (Number.isNaN(instant.getTime())) return null
+  return formatSpeechDate(formatBahiaCivilDate(instant))
+}
+
+const originOf = (speech: SpeechCutRecordForView['speech']): SpeechCutOriginViewModel | null => {
+  if (typeof speech !== 'object' || speech === null || typeof speech.id !== 'number') return null
+
+  const dateLabel = speech.speechAt ? formatSpeechDate(speech.speechAt) : null
+  const label =
+    [speech.type ?? 'Fala', speech.phase, dateLabel].filter(Boolean).join(' · ') || 'Fala'
+  return { id: speech.id, label, href: `${CAMPAIGN_COMMUNICATION_ACERVO}/${speech.id}` }
+}
+
+/**
+ * C168 — library view of a cut: the base view plus the origin speech (label +
+ * link to the acervo) and the creation date the list shows. `error`, `step`
+ * and `createdBy` still never pass through.
+ */
+export const toSpeechCutLibraryItemViewModel = (
+  record: SpeechCutRecordForView,
+): SpeechCutLibraryItemViewModel => ({
+  ...toSpeechCutViewModel(record),
+  createdAtLabel: formatCreatedAtLabel(record.createdAt),
+  origin: originOf(record.speech),
+})
