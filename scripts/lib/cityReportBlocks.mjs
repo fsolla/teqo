@@ -399,6 +399,32 @@ const buildCompetitorsTable = ({ title, rows, referenceYear, readAt }) => ({
   sources: [sourceTeqo('base Teqo — TSE 2014/2018/2022', readAt)],
 })
 
+const buildOppositionBlock = (research) => {
+  const entries = research.opposition ?? []
+  if (!entries.length) return null
+  return {
+    kind: 'table',
+    title: 'Oposição — o que usar com fonte (pesquisa)',
+    columns: [
+      { key: 'topic', label: 'Tema', width: 22 },
+      { key: 'detail', label: 'O que a fonte diz', width: 62 },
+      { key: 'source', label: 'Fonte', width: 16 },
+    ],
+    rows: entries.map((item) => ({
+      topic: item.topic,
+      detail: item.detail,
+      source: formatDateBr(item.sourceDate),
+    })),
+    note: 'Fato publicado com fonte datada — não é condenação. Atribua à fonte e não infira culpa; tema nacional pode ser de mão dupla.',
+    sources: entries.map((item) => ({
+      kind: 'web',
+      label: `Oposição — ${item.topic}`,
+      url: item.sourceUrl,
+      date: item.sourceDate,
+    })),
+  }
+}
+
 const buildCompetitorsSection = ({ snapshot, research }) => {
   const competitors = snapshot.competitors ?? { referenceYear: 2022, federal: [], state: [] }
   const offices = [
@@ -457,6 +483,9 @@ const buildCompetitorsSection = ({ snapshot, research }) => {
           body: ['Nenhum pré-candidato pesquisado com fonte.', GAP_COPY],
         },
   )
+
+  const opposition = buildOppositionBlock(research)
+  if (opposition) blocks.push(opposition)
 
   return blocks
 }
@@ -556,10 +585,18 @@ const buildNetworkSection = ({ snapshot, research }) => {
     })
   }
 
+  blocks.push(
+    ...buildSourcedListBlocks({
+      title: 'Dobradinhas (pesquisa)',
+      note: 'Com quem Solla soma na cidade em 2026 (estadual/federal, chapa e lideranças que transferem voto) — insumo direto da abordagem sugerida; cada item com URL.',
+      items: research?.alliances ?? [],
+    }),
+  )
+
   return blocks
 }
 
-const buildConjunctureSection = ({ snapshot }) => {
+const buildConjunctureSection = ({ snapshot, research }) => {
   const conjuncture = snapshot.conjuncture
   const trend = conjuncture?.politicalTrend
   const rows = [
@@ -631,6 +668,14 @@ const buildConjunctureSection = ({ snapshot }) => {
       sources: [sourceTeqo('base Teqo — nota manual', snapshot.meta?.readAt)],
     })
   }
+
+  blocks.push(
+    ...buildSourcedListBlocks({
+      title: 'Investimentos e obras (pesquisa)',
+      note: 'O que Solla, o governo do estado e o federal entregaram, anunciaram ou têm em obra no município e na região — com fase/valor quando a fonte informar; cada item com URL. Empenho ≠ pagamento.',
+      items: research?.investments ?? [],
+    }),
+  )
 
   return blocks
 }
@@ -1095,11 +1140,19 @@ const buildSourcesSection = ({ snapshot, research, emendas }) => {
       date: item.sourceDate,
     })
   }
-  for (const listKey of ['demography', 'economy', 'transport']) {
+  const listLabels = {
+    demography: 'Demografia',
+    economy: 'Economia',
+    transport: 'Transporte',
+    opposition: 'Oposição',
+    alliances: 'Dobradinhas',
+    investments: 'Investimentos e obras',
+  }
+  for (const listKey of Object.keys(listLabels)) {
     for (const item of research[listKey] ?? []) {
       items.push({
         kind: 'web',
-        label: `${listKey === 'demography' ? 'Demografia' : listKey === 'economy' ? 'Economia' : 'Transporte'} — ${item.topic}`,
+        label: `${listLabels[listKey]} — ${item.topic}`,
         url: item.sourceUrl,
         date: item.sourceDate,
       })
@@ -1119,6 +1172,7 @@ const buildSourcesSection = ({ snapshot, research, emendas }) => {
         'Emendas são lidas da fonte oficial em tempo de geração e não são persistidas na base.',
         'Quando a fonte oficial não atribui emenda ao município, indícios web (município, região ou polo) entram como evidência datada — nunca somados como emenda da cidade.',
         'Abordagem sugerida é análise das personas ancorada nas fontes listadas item a item, não fato verificado além delas.',
+        'Oposição: cada linha é fato publicado com URL + data; o PDF não afirma culpa nem orienta ataque pessoal — use como contraste ancorado.',
       ],
     },
   ]
@@ -1151,6 +1205,23 @@ const assertSnapshotShape = (snapshot) => {
   }
 }
 
+/**
+ * Sections whose only content would be an empty-state callout are omitted
+ * (sinais/demandas) so the report does not spend a page saying "nothing here".
+ * Research sections keep their explicit gap callout — a missing source is a
+ * product lacuna, not noise.
+ */
+const hasSectionData = (id, snapshot) => {
+  if (id === 'sinais') return (snapshot.signals?.rows?.length ?? 0) > 0
+  if (id === 'demandas') {
+    return (
+      (snapshot.demands?.rows?.length ?? 0) > 0 ||
+      (snapshot.activities?.upcoming?.length ?? 0) + (snapshot.activities?.recent?.length ?? 0) > 0
+    )
+  }
+  return true
+}
+
 export const buildCityReport = ({ snapshot, research, emendas, generatedAt = new Date() }) => {
   assertSnapshotShape(snapshot)
   const generatedAtIso = generatedAt instanceof Date ? generatedAt.toISOString() : generatedAt
@@ -1158,63 +1229,69 @@ export const buildCityReport = ({ snapshot, research, emendas, generatedAt = new
   const sections = [
     {
       id: 'conta-eleitoral',
-      title: '1. Conta eleitoral completa (2014/2018/2022)',
+      title: 'Conta eleitoral completa (2014/2018/2022)',
       blocks: buildElectoralSection({ snapshot }),
     },
     {
       id: 'concorrentes',
-      title: '2. Concorrentes no município (federal e estadual)',
+      title: 'Concorrentes no município (federal e estadual)',
       blocks: buildCompetitorsSection({ snapshot, research }),
     },
     {
       id: 'rede',
-      title: '3. Rede e lideranças',
+      title: 'Rede e lideranças',
       blocks: buildNetworkSection({ snapshot, research }),
     },
-    { id: 'conjuntura', title: '4. Conjuntura', blocks: buildConjunctureSection({ snapshot }) },
-    { id: 'sinais', title: '5. Sinais recentes', blocks: buildSignalsSection({ snapshot }) },
+    {
+      id: 'conjuntura',
+      title: 'Conjuntura',
+      blocks: buildConjunctureSection({ snapshot, research }),
+    },
+    { id: 'sinais', title: 'Sinais recentes', blocks: buildSignalsSection({ snapshot }) },
     {
       id: 'demandas',
-      title: '6. Demandas e visitas',
+      title: 'Demandas e visitas',
       blocks: buildDemandsVisitsSection({ snapshot }),
     },
     {
       id: 'demografia',
-      title: '7. Demografia',
+      title: 'Demografia',
       blocks: buildDemographicsSection({ snapshot, research }),
     },
     {
       id: 'economia',
-      title: '8. Atividade econômica (pesquisa)',
+      title: 'Atividade econômica (pesquisa)',
       blocks: buildEconomySection({ research }),
     },
     {
       id: 'transporte',
-      title: '9. Transporte e conexões (pesquisa)',
+      title: 'Transporte e conexões (pesquisa)',
       blocks: buildTransportSection({ research }),
     },
-    { id: 'falas', title: '10. Acervo de falas', blocks: buildSpeechesSection({ snapshot }) },
+    { id: 'falas', title: 'Acervo de falas', blocks: buildSpeechesSection({ snapshot }) },
     {
       id: 'noticias',
-      title: '11. Notícias internas e imprensa local',
+      title: 'Notícias internas e imprensa local',
       blocks: buildNewsSection({ research }),
     },
     {
       id: 'regiao',
-      title: '12. Panorama regional (Território de Identidade)',
+      title: 'Panorama regional (Território de Identidade)',
       blocks: buildRegionSection({ snapshot }),
     },
     {
       id: 'abordagem',
-      title: '13. Abordagem sugerida (pesquisa)',
+      title: 'Abordagem sugerida (pesquisa)',
       blocks: buildApproachSection({ research }),
     },
     {
       id: 'fontes',
-      title: '14. Fontes e limites',
+      title: 'Fontes e limites',
       blocks: buildSourcesSection({ snapshot, research, emendas }),
     },
   ]
+    .filter((section) => hasSectionData(section.id, snapshot))
+    .map((section, index) => ({ ...section, title: `${index + 1}. ${section.title}` }))
 
   return {
     meta: {

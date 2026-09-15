@@ -119,6 +119,15 @@ URL por item) e emendas lidas da fonte oficial **em tempo de geração**. Págin
   "transport": [                   // rodovias, aeroporto, portos, ferrovia
     { "topic": "Rodovia federal (BR-101)", "detail": "…", "sourceUrl": "https://…", "sourceDate": "…" }
   ],
+  "opposition": [                  // o que a oposição fez de errado na região (fato com fonte)
+    { "topic": "Emenda sob investigação (PF)", "detail": "…", "sourceUrl": "https://…", "sourceDate": "…" }
+  ],
+  "alliances": [                   // dobradinhas: com quem somar na cidade
+    { "topic": "Dobradinha estadual (PT)", "detail": "…", "sourceUrl": "https://…", "sourceDate": "…" }
+  ],
+  "investments": [                 // investimentos/obras de Solla, do estado e do federal (município e região)
+    { "topic": "Obra federal — saúde", "detail": "…", "sourceUrl": "https://…", "sourceDate": "…" }
+  ],
   "gaps": [{ "id": "…", "label": "…", "reason": "…" }] // lacunas que o agente já sabe
 }
 ```
@@ -151,6 +160,29 @@ ferrovia da região — FIOL/Porto Sul, deixando claro quando não serve
 diretamente a cidade). O enquadramento é "onde falta × onde o estado e a União
 têm acertado" — o candidato é da base.
 
+**Frente de oposição (pesquisa):** `opposition` é uma lista de
+`{topic, detail, sourceUrl, sourceDate}` (sem fonte → lacuna) com **fatos
+publicados e datados sobre o que a oposição fez de errado na região** — PF/MP em
+emendas, obras paradas, anúncio sem entrega, escândalos do campo adversário.
+Regras: (1) cada linha é fato publicado, **nunca** inferência de culpa — atribua
+à fonte ("segundo a PF / o jornal") e diferencie acusação de condenação; (2)
+priorize o **local** (operadores da oposição no município/região, ex.: emendas
+investigadas) sobre o ataque frontal ao líder estadual; (3) marque temas de
+**mão dupla** (casos que também citam o campo da base) para a coordenação não
+entrar desprevenida; (4) **não** recomende ataque pessoal nem onde a marca do
+adversário domina — o relatório é insumo ancorado, não roteiro de ataque. O item
+entra na seção 2 (junto aos concorrentes) e a seção 14 lista as URLs.
+
+**Dobradinhas e investimentos (pesquisa):** `alliances` é a lista de
+`{topic, detail, sourceUrl, sourceDate}` com **com quem Solla soma na cidade**
+(estadual/federal, chapa e lideranças que transferem voto) — insumo direto da
+`approach`, exibido como bloco "Dobradinhas (pesquisa)" na seção 3 (rede).
+`investments` lista **investimentos e obras de Solla, do governo do estado e do
+federal no município e na região**, com fase/valor quando a fonte informar
+(**empenho ≠ pagamento**), exibido como bloco "Investimentos e obras (pesquisa)"
+na seção 4 (conjuntura). Sem fonte, cada item vira lacuna; nenhuma das duas
+listas é obrigatória.
+
 **Emendas oficiais:** sem `--emendas`, o builder consulta o Portal da
 Transparência (`PORTAL_TRANSPARENCIA_API_KEY` no ambiente; sem chave → lacuna).
 A API oficial **não filtra por município** (só UF/Nacional/Múltiplo na
@@ -170,7 +202,8 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   anunciar, riscos e pontos sem leitura.
 - **Seções 2+:** `1. Conta eleitoral` · `2. Concorrentes no município (federal
   e estadual)` — top 5 por votos de 2022 na base TSE, com série 2014/2018/2022
-  e os prováveis candidatos do campo do prefeito (pesquisa) · `3. Rede e
+  e os prováveis candidatos do campo do prefeito (pesquisa), além da **frente de
+  oposição** quando pesquisada (fatos com fonte) · `3. Rede e
   lideranças` — inclui as lideranças locais pesquisadas (ex-prefeitos/vices,
   vereadores mais votados, com partido) · `4. Conjuntura` · `5. Sinais` · `6.
   Demandas e visitas` · `7. Demografia` — IBGE Censo 2022 do artefato +
@@ -189,7 +222,14 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   limites`.
 - **Links clicáveis:** todo URL no PDF é um link (`<a href>`): células de
   tabela, fontes por linha e a seção de fontes.
-- **Tabela da seção 11 (notícias) com larguras fixas:** `Data 9 · Veículo 14 ·
+- **Numeração dinâmica e omissão de seções vazias:** o builder numera as seções
+  depois de montá-las (o `id` é estável; o número é posicional). As seções
+  **Sinais recentes** e **Demandas e visitas** são **omitidas quando não há
+  dado na base** (mostrar um callout de "nada aqui" só gastaria página); as
+  seções de pesquisa (`opposition`, `alliances`, `investments`, demografia,
+  economia, transporte) mantêm a lacuna explícita quando o item falta. Nunca
+  referencie seção por número fixo — use o nome/`id`.
+- **Tabela de notícias com larguras fixas:** `Data 9 · Veículo 14 ·
   Título 49 · Link 28` (%). As larguras explícitas tornam a tabela `table-fixed`
   (a URL longa/crua quebra em vez de inflar a coluna) e dão ao **Título** — o
   texto mais longo — a maior fatia. Sem largura, a URL sem espaços domina o
@@ -211,6 +251,11 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
 - **Abordagem é análise ancorada**: as sugestões das personas (governo do PT na
   região, projetos futuros, prioridades locais) saem do `approach` com fonte por
   item — sem fonte, não entra; o PDF deixa claro que é análise, não fato novo.
+- **Frente de oposição é fato, não ataque**: `opposition` só recebe fato publicado
+  com URL + data; o PDF **não** afirma culpa, **não** infere dolo e **não** orienta
+  ataque pessoal. Prioriza o local (operadores na região) sobre o líder estadual e
+  sinaliza temas de mão dupla; onde a marca do adversário domina, o insumo é para
+  contraste, não para confronto frontal.
 - **Artefato gitignored**: o repo é público; o PDF/MD com dado interno nunca é
   commitado (só a skill/scripts/changelog).
 
