@@ -9,10 +9,18 @@ import { getCachedGlobal } from '@/utilities/globalReads'
 import { absoluteSitePath, resolveSiteMetadata, toAbsoluteUrl, truncate } from '@/utilities/seo'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { APIError } from 'payload'
 
 const MAX_DESCRIPTION_LENGTH = 200
 const CREDIT = 'Fonte: Câmara dos Deputados · CC BY 4.0'
+
+/**
+ * `findByID` answers 404 for an unknown id; on the production (bundled) server
+ * that error can cross a module boundary where `instanceof APIError` is false,
+ * so the status is the contract — an unknown id is "not found" (renders 404),
+ * anything else keeps failing loudly.
+ */
+const isNotFoundError = (error: unknown): boolean =>
+  typeof error === 'object' && error !== null && (error as { status?: unknown }).status === 404
 
 const parseCutId = (raw: string): number | null => {
   if (!/^\d+$/.test(raw)) return null
@@ -41,10 +49,10 @@ const loadPublishedCut = async (id: string): Promise<SpeechCut | null> => {
     if (!cut || cut.status !== 'published' || !mediaOf(cut)?.url) return null
     return cut
   } catch (error) {
-    // `findByID` throws NotFound for an unknown id; both that and an
-    // unpublished cut resolve to the same not-found screen (never reveal
-    // whether it existed). A real read failure keeps failing loudly.
-    if (error instanceof APIError && error.status === 404) return null
+    // Both an unknown id (404) and an unpublished cut resolve to the same
+    // not-found screen (never reveal whether it existed). A real read failure
+    // keeps failing loudly.
+    if (isNotFoundError(error)) return null
     throw error
   }
 }
