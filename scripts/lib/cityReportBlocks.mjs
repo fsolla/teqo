@@ -63,12 +63,18 @@ const sourceOfficial = (label, url, date) => ({
   date: date ?? null,
 })
 
+/**
+ * Página 1 = resumo de uma olhada: a fonte do item entra compacta (pesquisa web
+ * + data). A URL completa de cada item é preservada em "Fontes e limites"
+ * (seção 10) — imprimir a URL por linha estoura a página 1 com a pesquisa real
+ * (ver guarda de overflow do builder).
+ */
 const researchAnswerItem = (research, id) => {
   const item = researchItemById(research, id)
   if (!item) return null
   return {
     text: item.answer,
-    source: sourceWeb('Pesquisa web', item.sourceUrl, item.sourceDate),
+    source: sourceWeb(null, null, item.sourceDate),
   }
 }
 
@@ -173,7 +179,9 @@ const buildDeliveredKpis = ({ speeches }, research, emendas) => {
       value: emendasOk ? formatMoneyCompact(emendas.totals.empenhado) : 'Sem fonte oficial',
       hint: emendasOk
         ? `Pago: ${formatMoneyCompact(emendas.totals.pago)} · ${emendas.rows.length} emenda(s)`
-        : (emendas?.reason ?? null),
+        : emendas
+          ? 'sem emenda atribuível ao município'
+          : null,
     },
     {
       label: 'Falas no acervo',
@@ -223,7 +231,7 @@ const buildRiskCards = ({ leaderships, advisors, conjuncture }, research) => {
     {
       title: 'Oposição local',
       body: opposition
-        ? `${opposition.text} (fonte: ${opposition.source.url} · ${formatDateBr(opposition.source.date)})`
+        ? `${opposition.text} (fonte: pesquisa web · ${formatDateBr(opposition.source.date)}; URLs na seção 10)`
         : 'Sem leitura suficiente — lacuna',
     },
     {

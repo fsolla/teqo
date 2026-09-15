@@ -22,8 +22,19 @@ const normalizeAuthorName = (value) =>
 export const authorNameMatches = (candidate, expected) =>
   normalizeAuthorName(candidate) === normalizeAuthorName(expected)
 
-const number = (value) => {
-  const parsed = Number(value)
+/**
+ * The Portal returns amounts as pt-BR strings ("81.000,00"); `Number()` alone
+ * would zero every row. Numbers stay accepted for replays/fixtures.
+ */
+const parseAmount = (value) => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0
+  if (typeof value !== 'string') return 0
+  const raw = value.trim()
+  if (raw === '') return 0
+  const normalized = raw.includes(',')
+    ? raw.replace(/\./g, '').replace(',', '.')
+    : raw.replace(/\./g, '')
+  const parsed = Number(normalized)
   return Number.isFinite(parsed) ? parsed : 0
 }
 
@@ -35,10 +46,10 @@ export const normalizeEmendaRow = (row) => ({
   authorCode: row?.codigoAutor !== undefined ? String(row.codigoAutor) : null,
   authorName: typeof row?.nomeAutor === 'string' ? row.nomeAutor : null,
   functionName: typeof row?.nomeFuncao === 'string' ? row.nomeFuncao : null,
-  empenhado: number(row?.valorEmpenhado),
-  liquidado: number(row?.valorLiquidado),
-  pago: number(row?.valorPago),
-  restoPago: number(row?.valorRestoPago),
+  empenhado: parseAmount(row?.valorEmpenhado),
+  liquidado: parseAmount(row?.valorLiquidado),
+  pago: parseAmount(row?.valorPago),
+  restoPago: parseAmount(row?.valorRestoPago),
 })
 
 const rowMunicipalityCode = (row) => {
@@ -46,13 +57,38 @@ const rowMunicipalityCode = (row) => {
   return candidate === undefined || candidate === null ? null : String(candidate)
 }
 
+const normalizeText = (value) =>
+  String(value ?? '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+
+/**
+ * The `/emendas` endpoint has no municipality parameter (official swagger:
+ * codigoEmenda, numeroEmenda, nomeAutor, tipoEmenda, ano, codigoFuncao,
+ * codigoSubfuncao, pagina) and does not expose `codigoMunicipio` per row. The
+ * only per-city signal is `localidadeDoGasto` ("ITAMARAJU - BA"); rows at UF /
+ * "Nacional" / "MÚLTIPLO" level are not attributable to the município and are
+ * dropped (fail-closed) instead of inflating the city total.
+ */
+const localityMatchesMunicipality = (locality, municipalityName) => {
+  const normalizedLocality = normalizeText(locality)
+  const normalizedName = normalizeText(municipalityName)
+  if (!normalizedLocality || !normalizedName) return false
+  return (
+    normalizedLocality === normalizedName || normalizedLocality.startsWith(`${normalizedName} -`)
+  )
+}
+
 export const sumEmendas = (rows) =>
   rows.reduce(
     (totals, row) => ({
-      empenhado: totals.empenhado + number(row.empenhado),
-      liquidado: totals.liquidado + number(row.liquidado),
-      pago: totals.pago + number(row.pago),
-      restoPago: totals.restoPago + number(row.restoPago),
+      empenhado: totals.empenhado + parseAmount(row.empenhado),
+      liquidado: totals.liquidado + parseAmount(row.liquidado),
+      pago: totals.pago + parseAmount(row.pago),
+      restoPago: totals.restoPago + parseAmount(row.restoPago),
     }),
     { empenhado: 0, liquidado: 0, pago: 0, restoPago: 0 },
   )
@@ -69,14 +105,7 @@ const gapResult = ({ reason, detail = null, sourceUrl, consultedAt, requestCount
   totals: sumEmendas([]),
 })
 
-const fetchAuthorYear = async ({
-  fetchImpl,
-  apiKey,
-  authorName,
-  municipalityCode,
-  year,
-  maxPages,
-}) => {
+const fetchAuthorYear = async ({ fetchImpl, apiKey, authorName, year, maxPages }) => {
   const rows = []
   let requests = 0
   for (let page = 1; page <= maxPages; page += 1) {
@@ -85,7 +114,6 @@ const fetchAuthorYear = async ({
       nomeAutor: authorName,
       pagina: String(page),
     })
-    if (municipalityCode) params.set('codigoMunicipio', String(municipalityCode))
     const url = `${EMENDAS_API_URL}?${params.toString()}`
     requests += 1
     const response = await fetchImpl(url, {
@@ -138,6 +166,7 @@ const fetchAuthorYear = async ({
  * @param {{
  *   years?: number[],
  *   municipalityCode?: string | null,
+ *   municipalityName?: string | null,
  *   authorName?: string,
  *   apiKey?: string | null,
  *   fetchImpl?: (url: string, init?: { headers?: Record<string, string> }) => Promise<{ ok: boolean, status: number, json: () => Promise<unknown> }>,
@@ -149,6 +178,7 @@ const fetchAuthorYear = async ({
 export const fetchAuthorEmendas = async ({
   years = EMENDAS_YEARS,
   municipalityCode = null,
+  municipalityName = null,
   authorName = DEFAULT_AUTHOR_NAME,
   apiKey = null,
   fetchImpl = fetch,
@@ -174,7 +204,6 @@ export const fetchAuthorEmendas = async ({
         fetchImpl,
         apiKey,
         authorName,
-        municipalityCode,
         year,
         maxPages,
       })
@@ -225,16 +254,34 @@ export const fetchAuthorEmendas = async ({
     }
   }
 
+  const requestedMunicipality = municipalityCode !== null || municipalityName !== null
   const rows = matched
     .filter((row) => {
       const code = rowMunicipalityCode(row)
-      return code === null || municipalityCode === null || code === String(municipalityCode)
+      if (code !== null) return municipalityCode === null || code === String(municipalityCode)
+      if (!requestedMunicipality) return true
+      return localityMatchesMunicipality(row?.localidadeDoGasto, municipalityName)
     })
     .map(normalizeEmendaRow)
     .sort(
       (left, right) =>
         (right.year ?? 0) - (left.year ?? 0) || (left.code ?? '').localeCompare(right.code ?? ''),
     )
+
+  if (rows.length === 0) {
+    return {
+      ...gapResult({
+        reason: requestedMunicipality
+          ? `Sem emenda do autor com localidade ${municipalityName ?? municipalityCode} na janela.`
+          : 'Sem emenda do autor na janela consultada.',
+        detail: 'API não expõe o município da emenda.',
+        sourceUrl,
+        consultedAt,
+        requestCount,
+        years,
+      }),
+    }
+  }
 
   return {
     status: 'ok',

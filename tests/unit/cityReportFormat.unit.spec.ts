@@ -31,6 +31,8 @@ describe('cityReportFormat', () => {
 
   it('formats dates in pt-BR', () => {
     expect(formatDateBr('2026-09-15T12:00:00.000Z')).toBe('15/09/2026')
+    expect(formatDateBr('2026-08-17')).toBe('17/08/2026')
+    expect(formatDateBr('2024-10-06')).toBe('06/10/2024')
     expect(formatDateBr(null)).toBe('—')
   })
 

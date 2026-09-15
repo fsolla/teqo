@@ -98,6 +98,20 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
     })
   }
 
+  for (const entry of Array.isArray(raw.gaps) ? raw.gaps : []) {
+    if (isNonEmptyString(entry?.reason)) {
+      const id = isNonEmptyString(entry.id) ? entry.id : 'lacuna'
+      // A gap declared by the agent already accounts for the checklist item —
+      // otherwise the item would show up twice ("Não pesquisado." + the real gap).
+      if (checklistById.has(id)) seen.add(id)
+      gaps.push({
+        id,
+        label: isNonEmptyString(entry.label) ? entry.label : null,
+        reason: entry.reason.trim(),
+      })
+    }
+  }
+
   for (const checklistItem of RESEARCH_CHECKLIST) {
     if (!seen.has(checklistItem.id)) {
       gaps.push({ id: checklistItem.id, label: checklistItem.label, reason: 'Não pesquisado.' })
@@ -131,16 +145,6 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
       url,
       summary: isNonEmptyString(entry.summary) ? entry.summary.trim() : null,
     })
-  }
-
-  for (const entry of Array.isArray(raw.gaps) ? raw.gaps : []) {
-    if (isNonEmptyString(entry?.reason)) {
-      gaps.push({
-        id: isNonEmptyString(entry.id) ? entry.id : 'lacuna',
-        label: isNonEmptyString(entry.label) ? entry.label : null,
-        reason: entry.reason.trim(),
-      })
-    }
   }
 
   return {

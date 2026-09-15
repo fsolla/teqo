@@ -116,6 +116,7 @@ const resolveEmendas = async () => {
   const result = await fetchAuthorEmendas({
     years: EMENDAS_YEARS,
     municipalityCode: snapshot.municipality.ibgeCode,
+    municipalityName: snapshot.municipality.name,
     authorName,
     apiKey: process.env.PORTAL_TRANSPARENCIA_API_KEY ?? null,
     consultedAt: generatedAt.toISOString(),
