@@ -11,7 +11,7 @@ Responsável: —
 
 ## Intenção
 
-O acervo de falas mostra o botão "Abrir fonte" desde antes do C160. Depois que "Abrir no YouTube" chegou (com o timestamp da fala), o usuário relatou: *"O botão 'abrir fonte' se tornou inutil, já que agora temos o 'Abrir no Youtube', podemos remove-lo. Inclusive o link atual do 'Abrir fonte' vai para o video sem marcar o inicio, o que pode confundir o usuario."*
+O acervo de falas mostra o botão "Abrir fonte" desde antes do C160. Depois que "Abrir no YouTube" chegou (com o timestamp da fala), o usuário relatou: _"O botão 'abrir fonte' se tornou inutil, já que agora temos o 'Abrir no Youtube', podemos remove-lo. Inclusive o link atual do 'Abrir fonte' vai para o video sem marcar o inicio, o que pode confundir o usuario."_
 
 O defeito concreto: quando a fala tem o PDF oficial do Diário (`officialTextUrl`), o botão está certo e aponta para a fonte oficial. Quando o import **não** resolveu o Diário, o código cai num fallback (`view.officialTextUrl ?? view.youtubeUrl`) e o botão abre o **vídeo cru no YouTube, sem timestamp** — exatamente o que "Abrir no YouTube" já faz melhor. Ou seja, hoje o mesmo botão às vezes é proveniência oficial e às vezes é um atalho pior e duplicado. Este item faz "Abrir fonte" significar uma coisa só: a fonte oficial. Sem fonte oficial, o botão não aparece.
 

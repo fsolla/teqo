@@ -48,8 +48,8 @@ Quatro pedidos da assessoria são o mesmo job: **achar e reaproveitar um corte q
 ## Dados (intenção)
 
 - **Vou apresentar dados?** Sim, superfície neste item: **uma lista paginada** (a biblioteca de cortes, já do C168) e **um resultado de busca** (cortes aninhados no acervo de falas). **Sem KPI agregado** — não há decisão que peça contagem/gráfico de cortes.
-- **Decisões desbloqueadas:** assessoria escolhe *reusar/editar* vs *cortar de novo* ao ver o corte existente na fala; escolhe *abrir a biblioteca* vs seguir navegando ao vê-la no chrome.
-- **Forma:** *adiada ao plano de implementação* — aqui só restrição de produto: contagem honesta na lista ("N cortes"), sem percentual/taxa.
+- **Decisões desbloqueadas:** assessoria escolhe _reusar/editar_ vs _cortar de novo_ ao ver o corte existente na fala; escolhe _abrir a biblioteca_ vs seguir navegando ao vê-la no chrome.
+- **Forma:** _adiada ao plano de implementação_ — aqui só restrição de produto: contagem honesta na lista ("N cortes"), sem percentual/taxa.
 
 ## Dados da decisão (literais)
 
