@@ -18,6 +18,62 @@ import {
 } from './e2e-affected-manifest.mjs'
 
 /**
+ * `scripts/**` modules reachable from a spec under `tests/` (transitive over
+ * relative imports). Each is pinned by the suite a lib-only diff would
+ * otherwise skip: without the entry `classifyTestScope` returns `none` and the
+ * covering spec never runs (S6, OPS119++). The list is literal because this
+ * module is pure (no fs); the invariant in
+ * tests/unit/ciSkipInvariants.unit.spec.ts recomputes this closure and requires
+ * exact equality, so a new spec-pinned module (missing) or a rename (stale)
+ * fails the suite until the map tracks it. Overlap with the explicit entries in
+ * HIGH_RISK_EXACT below is intentional — this group is the exact map.
+ */
+export const SCRIPTS_SPEC_PINNED = [
+  'scripts/check-test-locations.mjs',
+  'scripts/cityReportSnapshot.mjs',
+  'scripts/lib/agent-forgejo.mjs',
+  'scripts/lib/agent-plan-lifecycle.mjs',
+  'scripts/lib/agent-pool-cursor.mjs',
+  'scripts/lib/agent-pool-eligibility.mjs',
+  'scripts/lib/agent-pool-models.mjs',
+  'scripts/lib/agent-pool-prompt.mjs',
+  'scripts/lib/agent-pool-state.mjs',
+  'scripts/lib/agent-session.mjs',
+  'scripts/lib/ansi.mjs',
+  'scripts/lib/auto-unblock.mjs',
+  'scripts/lib/camaraSpeeches.mjs',
+  'scripts/lib/changelog.mjs',
+  'scripts/lib/cityReportBlocks.mjs',
+  'scripts/lib/cityReportDatabase.mjs',
+  'scripts/lib/cityReportFormat.mjs',
+  'scripts/lib/cityReportRender.mjs',
+  'scripts/lib/cityReportResearch.mjs',
+  'scripts/lib/cityReportTerritory.mjs',
+  'scripts/lib/cli.mjs',
+  'scripts/lib/conflictMarkers.mjs',
+  'scripts/lib/db-start.mjs',
+  'scripts/lib/deploy-trigger.mjs',
+  'scripts/lib/e2e-affected-manifest.mjs',
+  'scripts/lib/github-api.mjs',
+  'scripts/lib/github-branch-protection.mjs',
+  'scripts/lib/github-pr-flow.mjs',
+  'scripts/lib/imageFill.mjs',
+  'scripts/lib/imageResize.mjs',
+  'scripts/lib/issues-panel.mjs',
+  'scripts/lib/markdown-ansi.mjs',
+  'scripts/lib/plansOnlyClosesGuard.mjs',
+  'scripts/lib/playwright-e2e-args.mjs',
+  'scripts/lib/portalTransparenciaEmendas.mjs',
+  'scripts/lib/seed-minimal-manifest.mjs',
+  'scripts/lib/sollaCeuciSalvadorMetrics.mjs',
+  'scripts/lib/test-affected-core.mjs',
+  'scripts/lib/testing-audit-metrics-core.mjs',
+  'scripts/lib/worktree-env.mjs',
+  'scripts/lib/worktree.mjs',
+  'scripts/lib/wpArticles.mjs',
+]
+
+/**
  * Paths whose blast radius is the whole app: schema, test harness, lockfile,
  * skip classifiers. Any diff touching them runs the FULL suites — selection
  * is unsafe there.
@@ -53,6 +109,9 @@ export const HIGH_RISK_EXACT = new Set([
   'tests/unit/ciSkipInvariants.unit.spec.ts',
   'tests/unit/testAffected.unit.spec.ts',
   '.env.test',
+  // OPS119++: spec-pinned scripts/** modules (some already explicit above; the
+  // Set dedupes — SCRIPTS_SPEC_PINNED is the exact map the invariant checks).
+  ...SCRIPTS_SPEC_PINNED,
 ])
 
 export const HIGH_RISK_PREFIXES = [
@@ -133,6 +192,7 @@ export function isSrcPath(path) {
  */
 export function isCodePath(path) {
   if (isSrcPath(path) || isTestPath(path)) return true
+  if (path.startsWith('scripts/')) return true
   if (CODE_CONFIG_EXACT.has(path)) return true
   if (CODE_CONFIG_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}.`))) {
     return true
@@ -185,7 +245,7 @@ export function classifyTestScope(files) {
  */
 export function classifyStaticScope(files) {
   if (files.some(({ path }) => isCodePath(path))) {
-    return { mode: 'code', reason: 'diff touches src/tests or type/graph config' }
+    return { mode: 'code', reason: 'diff touches src/tests/scripts or type/graph config' }
   }
   return { mode: 'none', reason: 'no code/type/graph surface changes' }
 }
