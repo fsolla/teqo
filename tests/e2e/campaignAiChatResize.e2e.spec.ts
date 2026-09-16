@@ -9,8 +9,18 @@ import {
 
 const MESSAGE = 'Mensagem que migra entre as superficies'
 
-const openChatAndSend = async (page: Page) => {
+const openDesktopChat = async (page: Page) => {
+  // B203 — fresh desktop sessions start closed; open explicitly via the header button.
+  await waitForRouterSettled(page)
+  await page
+    .getByRole('button', { name: 'Sollinha — Assistente virtual' })
+    .filter({ visible: true })
+    .click()
   await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
+}
+
+const openChatAndSend = async (page: Page) => {
+  await openDesktopChat(page)
   // OPS42 — dev-only settle before interacting (see `waitForRouterSettled`).
   await waitForRouterSettled(page)
   const input = page.getByRole('textbox', { name: 'Pergunte para o Sollinha...' })
@@ -104,13 +114,9 @@ test.describe('B167 — chat Sollinha migra entre painel e drawer ao redimension
     await campaign.login(page, user.email!, user.password)
     await page.goto('/campanha')
 
-    // Desktop opens the chat at load (as before); close it so it is "fechado".
-    // OPS42 — dev-only settle before the click (see `waitForRouterSettled`).
+    // B203 — fresh desktop sessions start closed; no close click needed.
+    // OPS42 — dev-only settle before asserting (see `waitForRouterSettled`).
     await waitForRouterSettled(page)
-    await page
-      .getByRole('button', { name: 'Fechar', exact: true })
-      .filter({ visible: true })
-      .click()
     // Closing hides the desktop panel's footprint.
     await expect.poll(() => chatPanelWidthAt(page, 1)).toBeLessThan(2)
 
@@ -130,10 +136,8 @@ test.describe('B167 — chat Sollinha migra entre painel e drawer ao redimension
     const user = await campaign.fixtures.createCampaignUser('coordinator', {
       name: campaign.fixtures.value('Chat Resize Coordenador'),
     })
-    // Mobile from the start (B188): a desktop login auto-opens the chat (the
-    // settle below); OPS22 makes that settle-originated `open: true` never
-    // restore on a mobile page of the same tab, and here the login itself
-    // happens at mobile width — so no drawer, only the FAB.
+    // Mobile from the start (B188): B203 starts every fresh session closed,
+    // so no `open: true` is ever persisted here — no drawer, only the FAB.
     await page.setViewportSize({ width: 500, height: 800 })
     await campaign.login(page, user.email!, user.password)
 
@@ -179,7 +183,9 @@ test.describe('B167 — chat Sollinha migra entre painel e drawer ao redimension
     await secondTab.setViewportSize({ width: 1280, height: 800 })
     await secondTab.goto('/campanha')
 
-    await expect(secondTab.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
+    // B203 — the new tab is a fresh session, so it starts closed; open it
+    // explicitly before asserting the empty greeting state.
+    await openDesktopChat(secondTab)
     await expect(secondTab.getByText(MESSAGE)).toHaveCount(0)
     await secondTab.close()
   })

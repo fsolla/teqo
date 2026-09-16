@@ -56,6 +56,12 @@ test.describe('B191 — ações rápidas de abertura no chat Sollinha (chips de 
     await campaign.login(page, user.email!, user.password)
     await page.goto('/campanha')
 
+    // B203 — fresh desktop sessions start closed; open explicitly.
+    await waitForRouterSettled(page)
+    await page
+      .getByRole('button', { name: 'Sollinha — Assistente virtual' })
+      .filter({ visible: true })
+      .click()
     await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
     for (const text of STAFF_DESKTOP_CHIPS) {
       await expect(chipButton(page, text)).toBeVisible()
@@ -108,6 +114,12 @@ test.describe('B191 — ações rápidas de abertura no chat Sollinha (chips de 
     await campaign.login(page, user.email!, user.password)
     await page.goto('/campanha')
 
+    // B203 — fresh desktop sessions start closed; open explicitly.
+    await waitForRouterSettled(page)
+    await page
+      .getByRole('button', { name: 'Sollinha — Assistente virtual' })
+      .filter({ visible: true })
+      .click()
     await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
     for (const text of LEADER_CHIPS) {
       await expect(chipButton(page, text)).toBeVisible()

@@ -42,7 +42,7 @@ export const CampaignAISidebarShell = ({
   // chat is scoped by the toolset (speech acervo only), not by hiding the
   // FAB, the drawer or the desktop header button. (C154 hid all three.)
   return (
-    <CampaignAISidebarProvider role={role} panelRef={panelRef}>
+    <CampaignAISidebarProvider role={role}>
       <CampaignAIFab />
       <AISidebarSurfaces panelRef={panelRef}>{children}</AISidebarSurfaces>
     </CampaignAISidebarProvider>
@@ -85,7 +85,8 @@ const AISidebarSurfaces = ({
   // Before the first viewport measurement the render must not hide the panel
   // (it would flash the main content at 100% then settle to 25% on desktop);
   // the hydration frame is treated as desktop-with-chat-open, matching the
-  // panel's RRP default, and the settle reconciles `open` afterwards.
+  // panel's RRP default. B203: a fresh session starts closed — `open` only
+  // leaves false via session restore or user action.
   const chatVisible = measured ? !isMobile && open : true
 
   // Apply the remembered — or the capped-default — width once the desktop
