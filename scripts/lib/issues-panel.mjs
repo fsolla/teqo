@@ -2,7 +2,7 @@
  * OPS109 — derivação pura do painel de issues (`pnpm issues:tui`).
  *
  * Todo o conhecimento do painel mora aqui: estado/ação da Issue, leitura do
- * `Status:` dos planos, descoberta do plano de intenção/impl/rascunho UI e o
+ * `Status:` dos planos, descoberta do plano de intenção/impl/design UI e o
  * casamento com a sessão do agente do OPS110. Puro por contrato — recebe os
  * insumos (issues normalizadas do `github-api`, sessões do
  * `agent-session list --json` e os planos já lidos do disco) e devolve o view
@@ -88,16 +88,43 @@ export const classifyPlanStatus = (status) => {
 
 /**
  * Sibling-file conventions of the plans (`docs/plans/<slug>.md`,
- * `docs/plans/<slug>-impl.md`, `docs/plans/<slug>-ui-draft.html`). Given the
- * intent path, derive the other two; the caller confirms existence on disk.
+ * `docs/plans/<slug>-impl.md`, `docs/plans/<slug>-ui-design.html`,
+ * `docs/plans/<slug>-ui-draft.html`). Given the intent path, derive the other
+ * three; the caller confirms existence on disk. `uiDesign` is the current
+ * name (OPS114) and `uiDraft` is the legacy name (OPS109) — the two are
+ * alternative names for the SAME artifact, never two artifacts. The
+ * historical `uiDraft` key stays for retrocompat; `resolveUiDraft` owns the
+ * precedence between them.
  * @param {string | null} planPath
  */
 export const siblingPlanPaths = (planPath) => {
   const path = typeof planPath === 'string' ? planPath.trim() : ''
-  if (!/\.md$/.test(path)) return { impl: null, uiDraft: null }
+  if (!/\.md$/.test(path)) return { impl: null, uiDesign: null, uiDraft: null }
   const stem = path.replace(/\.md$/, '')
   const base = stem.endsWith('-impl') ? stem.slice(0, -'-impl'.length) : stem
-  return { impl: `${base}-impl.md`, uiDraft: `${base}-ui-draft.html` }
+  return {
+    impl: `${base}-impl.md`,
+    uiDesign: `${base}-ui-design.html`,
+    uiDraft: `${base}-ui-draft.html`,
+  }
+}
+
+/**
+ * Pick the design artifact of a plan: `<base>-ui-design.html` (current name,
+ * OPS114) wins over `<base>-ui-draft.html` (legacy, immutable acervo). Pure by
+ * contract — the caller injects the existence predicate, so the lib never
+ * touches disk. When neither file exists the verdict is the current name with
+ * `exists: false`: the panel teaches the live convention and the legacy
+ * fallback still applies on disk.
+ * @param {string | null} planPath
+ * @param {(path: string) => boolean} [exists]
+ * @returns {{ path: string | null, exists: boolean }}
+ */
+export const resolveUiDraft = (planPath, exists = () => false) => {
+  const { uiDesign, uiDraft } = siblingPlanPaths(planPath)
+  if (uiDesign && exists(uiDesign)) return { path: uiDesign, exists: true }
+  if (uiDraft && exists(uiDraft)) return { path: uiDraft, exists: true }
+  return { path: uiDesign, exists: false }
 }
 
 /** Which issue state label the panel shows (closed wins as `done`). */
@@ -195,16 +222,18 @@ const planView = (kind, path, markdown) => {
 /**
  * Build one row of the panel from an issue and its already-read artifacts.
  * `intention`/`impl` carry the file contents, with `null`/missing meaning
- * “file does not exist”; `uiDraft` is the existence verdict (the CLI checks
- * the sibling `.html`; the panel never reads its content).
+ * “file does not exist”; `uiDraft` is the design verdict — the CLI checks the
+ * sibling `.html` (current `-ui-design` first, legacy `-ui-draft` as fallback)
+ * and hands back the real `{ path, exists }`; the panel never reads its
+ * content. The legacy key name stays: it means “design UI, new or legacy”.
  * @param {object} issue normalized GitHub issue
- * @param {{ intention?: string|null, impl?: string|null, uiDraft?: boolean, sessions?: Array<object>, doneIds?: Set<string>, knownIds?: Set<string>, repository?: string }} [context]
+ * @param {{ intention?: string|null, impl?: string|null, uiDraft?: { path: string|null, exists: boolean }|null, sessions?: Array<object>, doneIds?: Set<string>, knownIds?: Set<string>, repository?: string }} [context]
  */
 export const buildIssueRow = (issue, context = {}) => {
   const {
     intention = null,
     impl = null,
-    uiDraft = false,
+    uiDraft = null,
     sessions = [],
     doneIds = new Set(),
     knownIds = new Set(),
@@ -215,7 +244,7 @@ export const buildIssueRow = (issue, context = {}) => {
   const siblings = siblingPlanPaths(planPath)
   const intentionPath = planPath ?? siblings.impl?.replace(/-impl\.md$/, '.md') ?? null
   const implPath = planPath && /-impl\.md$/.test(planPath) ? planPath : siblings.impl
-  const uiDraftPath = siblings.uiDraft
+  const designVerdict = uiDraft ?? resolveUiDraft(planPath)
 
   const plan = {
     intention: planView('intention', intentionPath, intention),
@@ -237,7 +266,7 @@ export const buildIssueRow = (issue, context = {}) => {
     summary: issueSummary(issue),
     url: issueUrl(issue, repository),
     plan,
-    uiDraft: { path: uiDraftPath, exists: Boolean(uiDraft) },
+    uiDraft: { path: designVerdict.path ?? null, exists: Boolean(designVerdict.exists) },
     session: session
       ? {
           status: session.status ?? 'unknown',
@@ -311,7 +340,7 @@ export const visibleWindow = ({ count, cursor, capacity }) => {
  * Assemble the full panel view model. Pure: the caller (CLI) does fetch,
  * spawn and disk reads, then hands the raw inputs here. `limit` is the
  * effective page size (GitHub caps `per_page` at 100 — the CLI clamps it).
- * @param {{ issues: Array<object>, sessions?: Array<object>, plansByNumber?: Map<number, { intention?: string|null, impl?: string|null, uiDraft?: boolean }>, repository?: string, limit?: number }} input
+ * @param {{ issues: Array<object>, sessions?: Array<object>, plansByNumber?: Map<number, { intention?: string|null, impl?: string|null, uiDraft?: { path: string|null, exists: boolean }|null }>, repository?: string, limit?: number }} input
  */
 export const buildPanelViewModel = ({
   issues = [],
@@ -335,7 +364,7 @@ export const buildPanelViewModel = ({
       return buildIssueRow(issue, {
         intention: plans.intention ?? null,
         impl: plans.impl ?? null,
-        uiDraft: Boolean(plans.uiDraft),
+        uiDraft: plans.uiDraft,
         sessions,
         doneIds,
         knownIds,
@@ -353,7 +382,10 @@ export const buildPanelViewModel = ({
 
 /**
  * Render one issue as JSON-safe line for `--json` (already plain objects).
- * Kept as a helper so the CLI contract is explicit about the shape.
+ * Kept as a helper so the CLI contract is explicit about the shape. The
+ * `uiDraft` key is the historical name of the design artifact and carries the
+ * REAL path found on disk (current `-ui-design`, else legacy `-ui-draft`) —
+ * `version: 1` and the `{ path, exists }` shape are frozen.
  * @param {object} viewModel
  */
 export const toJsonPayload = (viewModel) => ({
