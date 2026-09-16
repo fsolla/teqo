@@ -50,10 +50,14 @@ import {
 import {
   loadSpeechCutAcervoPageData,
   loadSpeechCutDetailPageData,
+  loadSpeechCutOriginSpeechIds,
+  loadSpeechCutsForSpeech,
+  loadSpeechCutsForSpeeches,
   SpeechCutNotFoundError,
 } from '@/utilities/speech/speechCutPageData'
 import { startSpeechCutJobInBackground } from '@/utilities/speech/speechCutScheduler'
 import { upsertSpeechBundle, type SpeechImportBundle } from '@/utilities/speech/speechImport'
+import { loadSpeechAcervoPageData } from '@/utilities/speech/speechPageData'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 import { speechBundleFixture } from '../helpers/speechBundleFixture'
@@ -822,5 +826,91 @@ describe('speech cut library (C168)', () => {
     await expect(
       loadSpeechCutDetailPageData(payload, communicator, 999_999_999),
     ).rejects.toBeInstanceOf(SpeechCutNotFoundError)
+  })
+})
+
+describe('speech cut discovery (C174)', () => {
+  beforeAll(async () => {
+    payload = await getPayload({ config: await config })
+  })
+
+  it('lists every cut of one speech and groups the batch by speech', async () => {
+    const speech = await createSpeech()
+    const otherSpeech = await createSpeech()
+    const older = await createCut({
+      speech,
+      startSeconds: 0,
+      endSeconds: 20,
+      title: 'Primeiro corte',
+    })
+    const newer = await createCut({
+      speech,
+      startSeconds: 30,
+      endSeconds: 50,
+      title: 'Segundo corte',
+    })
+    const unrelated = await createCut({
+      speech: otherSpeech,
+      startSeconds: 0,
+      endSeconds: 20,
+      title: 'Corte de outra fala',
+    })
+    const { communicator } = await createUsers()
+
+    const forSpeech = await loadSpeechCutsForSpeech(payload, communicator, speech)
+    expect(forSpeech.map((cut) => cut.id)).toEqual([newer, older])
+    expect(forSpeech.map((cut) => cut.id)).not.toContain(unrelated)
+    // Depth 0: the row carries no media/file internals.
+    expect(forSpeech[0]?.mediaUrl).toBeNull()
+    expect(forSpeech[0]?.publicPath).toBe(`/corte/${newer}`)
+
+    const grouped = await loadSpeechCutsForSpeeches(payload, communicator, [speech, otherSpeech])
+    expect(grouped.get(speech)?.map((cut) => cut.id)).toEqual([newer, older])
+    expect(grouped.get(otherSpeech)?.map((cut) => cut.id)).toEqual([unrelated])
+    expect((await loadSpeechCutsForSpeeches(payload, communicator, [])).size).toBe(0)
+  })
+
+  it('keeps the collection access on the section loader (advisor sees published only)', async () => {
+    const speech = await createSpeech()
+    await createCut({ speech, startSeconds: 0, endSeconds: 20, status: 'published' })
+    await createCut({ speech, startSeconds: 30, endSeconds: 50, status: 'unpublished' })
+    const { communicator, advisor } = await createUsers()
+
+    expect(await loadSpeechCutsForSpeech(payload, communicator, speech)).toHaveLength(2)
+    expect(await loadSpeechCutsForSpeech(payload, advisor, speech)).toHaveLength(1)
+  })
+
+  it('surfaces an origin speech through a matching cut, flagged as origin-only', async () => {
+    const marker = `reformatrib${randomUUID().slice(0, 8)}`
+    const speech = await createSpeech()
+    const cutId = await createCut({
+      speech,
+      startSeconds: 0,
+      endSeconds: 20,
+      status: 'published',
+      title: `Reforma ${marker}`,
+    })
+    const { communicator } = await createUsers()
+
+    expect(await loadSpeechCutOriginSpeechIds(payload, communicator, marker)).toEqual([speech])
+
+    const data = await loadSpeechAcervoPageData(payload, communicator, { q: marker })
+    const row = data.rows.find((candidate) => candidate.id === speech)
+    expect(row).toBeDefined()
+    expect(row?.matchedTextSearch).toBe(false)
+    expect(row?.cuts.map((cut) => cut.id)).toEqual([cutId])
+  })
+
+  it('flags a speech whose own text matches as a regular result', async () => {
+    const marker = `saudepublica${randomUUID().slice(0, 8)}`
+    await createSpeech({
+      segments: [{ startSeconds: 0, endSeconds: 2.7, text: `A saúde pública ${marker}` }],
+    })
+    const { communicator } = await createUsers()
+
+    const data = await loadSpeechAcervoPageData(payload, communicator, { q: marker })
+    const row = data.rows.find((candidate) => candidate.matchedTextSearch)
+    expect(row).toBeDefined()
+    expect(row?.cuts).toHaveLength(0)
   })
 })

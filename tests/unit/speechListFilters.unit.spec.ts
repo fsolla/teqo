@@ -2,7 +2,10 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { buildSpeechListWhere } from '@/utilities/speech/speechListFilters'
+import {
+  buildSpeechListWhere,
+  buildSpeechListWhereIncludingCutOrigins,
+} from '@/utilities/speech/speechListFilters'
 import { parseSpeechListParams } from '@/utilities/speech/speechListUrl'
 
 describe('buildSpeechListWhere', () => {
@@ -74,5 +77,48 @@ describe('buildSpeechListWhere', () => {
         },
       ],
     })
+  })
+})
+
+describe('buildSpeechListWhereIncludingCutOrigins (C174)', () => {
+  it('matches the text branch or the origin speech of a matching cut', () => {
+    const where = buildSpeechListWhereIncludingCutOrigins(
+      parseSpeechListParams({ q: 'reforma' }),
+      [7, 9],
+    )
+
+    expect(where).toEqual({
+      and: [
+        {
+          or: [
+            { searchText: { like: 'reforma' } },
+            { keywords: { contains: 'reforma' } },
+            { id: { in: [7, 9] } },
+          ],
+        },
+      ],
+    })
+  })
+
+  it('keeps the facets AND-ed and stays identical to the plain where without origins', () => {
+    const withFacet = buildSpeechListWhereIncludingCutOrigins(
+      parseSpeechListParams({ q: 'reforma', topic: ['saude'] }),
+      [7],
+    )
+    expect(withFacet).toEqual({
+      and: [
+        { topics: { in: ['saude'] } },
+        {
+          or: [
+            { searchText: { like: 'reforma' } },
+            { keywords: { contains: 'reforma' } },
+            { id: { in: [7] } },
+          ],
+        },
+      ],
+    })
+
+    const state = parseSpeechListParams({ q: 'reforma' })
+    expect(buildSpeechListWhereIncludingCutOrigins(state, [])).toEqual(buildSpeechListWhere(state))
   })
 })

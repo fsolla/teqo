@@ -11,6 +11,7 @@ import { PeopleNavSavedFilters } from '@/components/campaign/people/PeopleNavSav
 import { CampaignUserAvatar } from '@/components/campaign/shared/CampaignUserAvatar'
 import { MunicipalityNavSavedFilters } from '@/components/campaign/shell/MunicipalityNavSavedFilters'
 import {
+  activeCampaignSubItemHref,
   getCampaignNav,
   getCampaignSecondaryNav,
   isCampaignNavActive,
@@ -28,11 +29,15 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/Sidebar'
 import { Spinner } from '@/components/ui/Spinner'
 import { clearLastActedMunicipality } from '@/lib/campaignLastActedMunicipality'
 import { isStaffCampaignRole } from '@/lib/campaignRoles'
+import { cn } from '@/lib/utils'
 import { clearCampaignPwaCaches } from '@/utilities/campaignPwaClient'
 import type { CampaignUserShellView } from '@/utilities/campaignUserProfile'
 import { campaignRoleLabels } from '@/utilities/campaignUserProfile'
@@ -45,25 +50,61 @@ export type CampaignSidebarUser = CampaignUserShellView
 const CampaignSidebarLink = ({
   item,
   isActive,
+  pathname,
   onNavigate,
   children,
 }: {
   item: CampaignNavItem
   isActive: boolean
+  pathname: string
   onNavigate: () => void
   /** Row affordances below the link — B18's saved-filter sub-list (B124: always on). */
   children?: ReactNode
-}) => (
-  <SidebarMenuItem>
-    <SidebarMenuButton asChild isActive={isActive}>
-      <Link href={item.href} onClick={onNavigate} aria-current={isActive ? 'page' : undefined}>
-        <item.icon />
-        <span>{item.title}</span>
-      </Link>
-    </SidebarMenuButton>
-    {children}
-  </SidebarMenuItem>
-)
+}) => {
+  // C174 — only the most specific sibling is active (`/acervo` is a prefix of
+  // `/acervo/cortes`). `isActive=false` on the button so our own active style
+  // (card + ring) is the only one applied.
+  const activeSubHref = item.subItems ? activeCampaignSubItemHref(pathname, item.subItems) : null
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton asChild isActive={isActive}>
+        <Link href={item.href} onClick={onNavigate} aria-current={isActive ? 'page' : undefined}>
+          <item.icon />
+          <span>{item.title}</span>
+        </Link>
+      </SidebarMenuButton>
+      {item.subItems?.length ? (
+        <SidebarMenuSub>
+          {item.subItems.map((sub) => {
+            const subActive = activeSubHref === sub.href
+            return (
+              <SidebarMenuSubItem key={sub.href}>
+                <SidebarMenuSubButton
+                  asChild
+                  isActive={false}
+                  className={cn(
+                    'text-muted-foreground hover:bg-card hover:text-foreground',
+                    subActive && 'bg-card font-medium text-primary ring-1 ring-border',
+                  )}
+                >
+                  <Link
+                    href={sub.href}
+                    onClick={onNavigate}
+                    aria-current={subActive ? 'page' : undefined}
+                  >
+                    <span>{sub.title}</span>
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            )
+          })}
+        </SidebarMenuSub>
+      ) : null}
+      {children}
+    </SidebarMenuItem>
+  )
+}
 
 export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
   const pathname = usePathname()
@@ -104,6 +145,7 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
                   key={item.href}
                   item={item}
                   isActive={isCampaignNavActive(pathname, item.href)}
+                  pathname={pathname}
                   onNavigate={closeMobileSidebar}
                 >
                   {item.href === MUNICIPALITY_NAV_HREF ? (
@@ -129,6 +171,7 @@ export const CampaignSidebar = ({ user }: { user: CampaignSidebarUser }) => {
                     key={item.href}
                     item={item}
                     isActive={isCampaignNavActive(pathname, item.href)}
+                    pathname={pathname}
                     onNavigate={closeMobileSidebar}
                   />
                 ))}

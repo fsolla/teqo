@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 import { SpeechHighlightParts } from '@/components/campaign/speech/SpeechHighlightParts'
+import { SpeechNestedCuts } from '@/components/campaign/speech/SpeechNestedCuts'
 import { SpeechResultThumbnail } from '@/components/campaign/speech/SpeechResultThumbnail'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
@@ -35,19 +36,126 @@ const ActionLink = ({
   href,
   children,
   variant,
+  fullWidthOnMobile = false,
 }: {
   href: string
   children: ReactNode
   variant: 'default' | 'outline' | 'ghost'
+  fullWidthOnMobile?: boolean
 }) => (
-  <Button asChild variant={variant} className="min-h-11">
+  <Button
+    asChild
+    variant={variant}
+    className={fullWidthOnMobile ? 'min-h-11 w-full md:w-auto' : 'min-h-11'}
+  >
     <a href={href} target="_blank" rel="noreferrer">
       {children}
     </a>
   </Button>
 )
 
-export const SpeechResultCard = ({ speech }: { speech: SpeechListItemViewModel }) => {
+const SpeechMetaLine = ({
+  speech,
+  originLabel = false,
+}: {
+  speech: SpeechListItemViewModel
+  originLabel?: boolean
+}) => (
+  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+    {originLabel ? (
+      <>
+        <span>Fala de origem</span>
+        <MetaSeparator />
+      </>
+    ) : null}
+    <span>{speech.speechAtLabel}</span>
+    {speech.type ? (
+      <>
+        <MetaSeparator />
+        <span>{speech.type}</span>
+      </>
+    ) : null}
+    {speech.durationLabel ? (
+      <>
+        <MetaSeparator />
+        <span>{speech.durationLabel}</span>
+      </>
+    ) : null}
+    {speech.presidingOfficer ? (
+      <>
+        <MetaSeparator />
+        <span>Presidiu: {speech.presidingOfficer}</span>
+      </>
+    ) : null}
+  </div>
+)
+
+const SpeechActions = ({
+  speech,
+  className,
+  fullWidthOnMobile = false,
+}: {
+  speech: SpeechListItemViewModel
+  className: string
+  fullWidthOnMobile?: boolean
+}) => (
+  <div className={className}>
+    <Button asChild className={fullWidthOnMobile ? 'min-h-11 w-full md:w-auto' : 'min-h-11'}>
+      <Link href={speech.watchHref}>
+        <PlayIcon data-icon="inline-start" aria-hidden="true" />
+        {speech.matchKind === 'segment' ? 'Assistir no trecho' : 'Ver fala'}
+      </Link>
+    </Button>
+    {speech.sourceUrl ? (
+      <ActionLink href={speech.sourceUrl} variant="ghost" fullWidthOnMobile={fullWidthOnMobile}>
+        <ExternalLinkIcon data-icon="inline-start" aria-hidden="true" />
+        Abrir fonte
+      </ActionLink>
+    ) : null}
+  </div>
+)
+
+export const SpeechResultCard = ({
+  speech,
+  query,
+}: {
+  speech: SpeechListItemViewModel
+  /** C174 — the search term, highlighted on the nested cuts. */
+  query?: string
+}) => {
+  // C174 (option B): a speech that surfaced only because a cut matched the term
+  // shows the origin note instead of an excerpt the speech does not contain, and
+  // the actions sit at the top right (approved scene 05).
+  if (!speech.matchedTextSearch) {
+    return (
+      <article className="rounded-xl border bg-card p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
+          <div className="min-w-0">
+            <SpeechMetaLine speech={speech} originLabel />
+            <p className="mt-2 text-sm text-muted-foreground">
+              A fala não contém o termo exato; ela aparece porque um corte vinculado corresponde à
+              busca.
+            </p>
+          </div>
+          <SpeechActions
+            speech={speech}
+            className="flex flex-col items-stretch gap-2 md:shrink-0 md:flex-row md:items-center"
+            fullWidthOnMobile
+          />
+        </div>
+
+        {speech.cuts.length ? (
+          <SpeechNestedCuts
+            cuts={speech.cuts}
+            caption="Correspondência no corte"
+            query={query}
+            showDescription
+          />
+        ) : null}
+      </article>
+    )
+  }
+
   const visibleTopics = speech.topics.slice(0, MAX_TOPIC_CHIPS)
   const visibleScopes = speech.scopes.slice(0, MAX_SCOPE_CHIPS)
   const visibleKeywords = speech.keywords.slice(0, MAX_KEYWORD_CHIPS)
@@ -61,27 +169,7 @@ export const SpeechResultCard = ({ speech }: { speech: SpeechListItemViewModel }
 
   return (
     <article className="rounded-xl border bg-card p-4">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-        <span>{speech.speechAtLabel}</span>
-        {speech.type ? (
-          <>
-            <MetaSeparator />
-            <span>{speech.type}</span>
-          </>
-        ) : null}
-        {speech.durationLabel ? (
-          <>
-            <MetaSeparator />
-            <span>{speech.durationLabel}</span>
-          </>
-        ) : null}
-        {speech.presidingOfficer ? (
-          <>
-            <MetaSeparator />
-            <span>Presidiu: {speech.presidingOfficer}</span>
-          </>
-        ) : null}
-      </div>
+      <SpeechMetaLine speech={speech} />
 
       <div className="mt-2">
         {speech.thumbnailUrl ? (
@@ -137,6 +225,8 @@ export const SpeechResultCard = ({ speech }: { speech: SpeechListItemViewModel }
           </ActionLink>
         ) : null}
       </div>
+
+      {speech.cuts.length ? <SpeechNestedCuts cuts={speech.cuts} query={query} /> : null}
     </article>
   )
 }

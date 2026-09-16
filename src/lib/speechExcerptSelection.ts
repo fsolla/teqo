@@ -6,6 +6,14 @@
  * the client controls only translate pointers/keys into these calls.
  */
 
+/**
+ * C174 — the empty-state CTA of "Cortes desta fala" lives outside the player
+ * but must turn the picker on. The player owns the selection state, so the CTA
+ * only announces the intent on `window`; the name lives here (client-safe, no
+ * DOM) so the two ends cannot drift into a silent no-op.
+ */
+export const SPEECH_EXCERPT_REQUEST_EVENT = 'speech:excerpt-request'
+
 export type ExcerptSegment = {
   startSeconds: number
   endSeconds: number
@@ -19,6 +27,25 @@ export type ExcerptRange = {
 export type ExcerptEdge = 'start' | 'end'
 
 export const MIN_EXCERPT_SECONDS = 5
+
+/**
+ * C174 — the duration the picker can work with: the stored duration, falling
+ * back to the last transcript segment's end. Single owner of the rule so the
+ * player and the empty "Cortes desta fala" block agree on availability.
+ */
+export const excerptSelectionDuration = (
+  durationSeconds: number | null | undefined,
+  segments: readonly ExcerptSegment[],
+): number | null => durationSeconds ?? segments.at(-1)?.endSeconds ?? null
+
+/** Whether the picker is offered at all (the speech holds the 5 s minimum). */
+export const isExcerptSelectionAvailable = (
+  durationSeconds: number | null | undefined,
+  segments: readonly ExcerptSegment[],
+): boolean => {
+  const duration = excerptSelectionDuration(durationSeconds, segments)
+  return duration !== null && duration >= MIN_EXCERPT_SECONDS
+}
 
 export const rangeDurationSeconds = (range: ExcerptRange): number =>
   range.endSeconds - range.startSeconds

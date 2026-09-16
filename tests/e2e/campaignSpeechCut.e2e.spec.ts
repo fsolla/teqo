@@ -344,3 +344,52 @@ test.describe('Acervo cut library (C168)', () => {
     }
   })
 })
+
+/**
+ * C174 — finding a cut without re-cutting: the library is reachable from the
+ * vertical nav, the speech detail lists its own cuts, the search nests them
+ * under the speech, and a cut matching the term surfaces its origin speech.
+ */
+test.describe('Acervo: finding cuts (C174)', () => {
+  test.beforeAll(async () => {
+    await seedTestUser()
+  })
+
+  test('reaches the library, the speech cuts and the nested/origin search results', async ({
+    campaign,
+    campaignRequest,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    const speech = await createSpeech(campaign)
+    const marker = randomUUID().slice(0, 8)
+    const title = `Corte localizável ${marker}`
+    await createCut(request, headers, { speechId: speech.id, status: 'published', title })
+
+    const communicator = await campaign.fixtures.createCampaignUser('communicator')
+    const communicatorRequest = await campaignRequest(communicator, communicator.password)
+
+    const detail = await communicatorRequest.get(`/campanha/comunicacao/acervo/${speech.id}`)
+    expect(detail.status()).toBe(200)
+    const detailHtml = rendered(await detail.text())
+    expect(detailHtml).toContain('Cortes desta fala')
+    expect(detailHtml).toContain(title)
+    // C174 — the library sub-item now lives in the vertical nav on every page.
+    expect(detailHtml).toContain('/campanha/comunicacao/acervo/cortes')
+
+    // The speech matches "retomada" (its searchText) and shows its cut nested.
+    const nested = await communicatorRequest.get('/campanha/comunicacao/acervo?q=retomada')
+    expect(nested.status()).toBe(200)
+    const nestedHtml = rendered(await nested.text())
+    expect(nestedHtml).toContain(title)
+    expect(nestedHtml).toContain('corte desta fala')
+
+    // Option B: only the cut matches; the origin speech still appears.
+    const byCut = await communicatorRequest.get(`/campanha/comunicacao/acervo?q=${marker}`)
+    expect(byCut.status()).toBe(200)
+    const byCutHtml = rendered(await byCut.text())
+    expect(byCutHtml).toContain(title)
+    expect(byCutHtml).toContain('Fala de origem')
+    expect(byCutHtml).toContain(`/campanha/comunicacao/acervo/${speech.id}`)
+  })
+})

@@ -31,7 +31,7 @@ const durationBucketWhere = (bucket: SpeechDurationBucket): Where => {
   }
 }
 
-export const buildSpeechListWhere = (state: SpeechListState): Where => {
+const buildSpeechFacetWhere = (state: SpeechListState): Where[] => {
   const filters: Where[] = []
 
   if (state.years?.length) filters.push({ year: { in: state.years } })
@@ -45,13 +45,39 @@ export const buildSpeechListWhere = (state: SpeechListState): Where => {
     const branch = collapseListWhereOrBranches(state.durations.map(durationBucketWhere))
     if (branch) filters.push(branch)
   }
+
+  return filters
+}
+
+const buildSpeechTextBranches = (q: string): Where[] => [
+  { searchText: { like: normalizeForSearch(q) } },
+  { keywords: { contains: q } },
+]
+
+/** The textual branch: normalized speech text OR a raw official keyword. */
+const buildSpeechTextWhere = (q: string): Where => ({ or: buildSpeechTextBranches(q) })
+
+export const buildSpeechListWhere = (state: SpeechListState): Where => {
+  const filters = buildSpeechFacetWhere(state)
+  if (state.q) filters.push(buildSpeechTextWhere(state.q))
+
+  return filters.length ? { and: filters } : {}
+}
+
+/**
+ * C174 (option B) — the acervo `where` widened to the origin speech of a
+ * matching cut: the page still paginates by SPEECH, so the origin ids are OR-ed
+ * into the textual branch (facets stay AND-ed over every row).
+ */
+export const buildSpeechListWhereIncludingCutOrigins = (
+  state: SpeechListState,
+  originSpeechIds: readonly number[],
+): Where => {
+  const filters = buildSpeechFacetWhere(state)
   if (state.q) {
-    filters.push({
-      or: [
-        { searchText: { like: normalizeForSearch(state.q) } },
-        { keywords: { contains: state.q } },
-      ],
-    })
+    const branches = buildSpeechTextBranches(state.q)
+    if (originSpeechIds.length) branches.push({ id: { in: [...originSpeechIds] } })
+    filters.push({ or: branches })
   }
 
   return filters.length ? { and: filters } : {}

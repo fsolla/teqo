@@ -3,6 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 
 import { SpeechDetailPlayer } from '@/components/campaign/speech/SpeechDetailPlayer'
 import { resetCampaignCoarsePointerForTests } from '@/lib/campaignCoarsePointer'
+import { SPEECH_EXCERPT_REQUEST_EVENT } from '@/lib/speechExcerptSelection'
 import type { SpeechDetailSegmentViewModel } from '@/utilities/speech/speechViewModels'
 
 import { stubMatchMedia } from '../helpers/matchMedia'
@@ -527,6 +528,38 @@ describe('SpeechDetailPlayer — C171-F1 keeps the transcript point across the s
     fireEvent.loadedMetadata(video)
 
     expect(video.currentTime).toBe(77)
+  })
+})
+
+describe('SpeechDetailPlayer — C174 excerpt request from outside the player', () => {
+  const announcement = () =>
+    act(() => {
+      window.dispatchEvent(new CustomEvent(SPEECH_EXCERPT_REQUEST_EVENT))
+    })
+
+  it('turns the picker on when the empty-state CTA announces the intent', () => {
+    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634 })
+
+    expect(screen.queryByRole('slider', { name: 'Início do trecho' })).toBeNull()
+
+    announcement()
+
+    expect(screen.getByRole('slider', { name: 'Início do trecho' })).toBeDefined()
+  })
+
+  it('does not overwrite an active range', () => {
+    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634 })
+
+    fireEvent.click(screen.getByRole('button', { name: /selecionar trecho/i }))
+    // Clicking the 43s phrase twice re-selects it alone: [43, 50].
+    fireEvent.click(document.querySelector('button[data-start-seconds="43"]')!)
+    fireEvent.click(document.querySelector('button[data-start-seconds="43"]')!)
+    const startSlider = () => screen.getByRole('slider', { name: 'Início do trecho' })
+    expect(startSlider().getAttribute('aria-valuenow')).toBe('43')
+
+    announcement()
+
+    expect(startSlider().getAttribute('aria-valuenow')).toBe('43')
   })
 })
 

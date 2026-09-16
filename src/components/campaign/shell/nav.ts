@@ -21,6 +21,8 @@ import {
 
 import {
   CAMPAIGN_AGENDA_HOME,
+  CAMPAIGN_COMMUNICATION_ACERVO,
+  CAMPAIGN_COMMUNICATION_CORTES,
   CAMPAIGN_COMMUNICATION_HOME,
   CAMPAIGN_CONTACTS_HOME,
   CAMPAIGN_UPDATES_HREF,
@@ -34,11 +36,32 @@ import {
 import type { CampaignUser } from '@/payload-types'
 import { canAccessSupporterArea } from '@/utilities/supporter/supporterUi'
 
+/**
+ * C174 — a nested destination under a top-level item. No icon: the design
+ * indents plain text under the parent (same shape for the sidebar sub-list and
+ * the mobile overflow drawer, so `nav.ts` stays the single source).
+ */
+type CampaignNavSubItem = {
+  title: string
+  href: string
+}
+
 export type CampaignNavItem = {
   title: string
   href: string
   icon: LucideIcon
+  subItems?: readonly CampaignNavSubItem[]
 }
+
+/**
+ * C174 — the communication vertical's two destinations, hung under its single
+ * top-level item. Naming the array keeps both consumers (sidebar and drawer)
+ * from spelling the list twice.
+ */
+const communicationSubItems: readonly CampaignNavSubItem[] = [
+  { title: 'Acervo de falas', href: CAMPAIGN_COMMUNICATION_ACERVO },
+  { title: 'Biblioteca de cortes', href: CAMPAIGN_COMMUNICATION_CORTES },
+]
 
 /**
  * Named because the sidebar has to recognize this one item to hang B18's saved
@@ -67,7 +90,12 @@ const staffNav: CampaignNavItem[] = [
   { title: 'Demandas', href: '/campanha/demandas', icon: InboxIcon },
   { title: 'Apoiadores', href: '/campanha/apoiadores', icon: UsersIcon },
   { title: 'Assessores', href: '/campanha/assessores', icon: UserCogIcon },
-  { title: 'Comunicação', href: CAMPAIGN_COMMUNICATION_HOME, icon: MegaphoneIcon },
+  {
+    title: 'Comunicação',
+    href: CAMPAIGN_COMMUNICATION_HOME,
+    icon: MegaphoneIcon,
+    subItems: communicationSubItems,
+  },
 ]
 
 /**
@@ -95,7 +123,12 @@ const leaderNav: CampaignNavItem[] = [
  * the vertical, through the staff nav below.
  */
 const communicatorNav: CampaignNavItem[] = [
-  { title: 'Comunicação', href: CAMPAIGN_COMMUNICATION_HOME, icon: MegaphoneIcon },
+  {
+    title: 'Comunicação',
+    href: CAMPAIGN_COMMUNICATION_HOME,
+    icon: MegaphoneIcon,
+    subItems: communicationSubItems,
+  },
 ]
 
 export const getCampaignNav = (role: CampaignUser['role']): CampaignNavItem[] => {
@@ -125,6 +158,19 @@ export const isCampaignNavActive = (pathname: string, href: string): boolean => 
   if (href === CAMPAIGN_AGENDA_HOME && pathname.startsWith('/campanha/atividades')) return true
   return pathname === href || pathname.startsWith(`${href}/`)
 }
+
+/**
+ * C174 — the sub-item that owns `pathname` when siblings share a prefix
+ * (`/acervo` is a prefix of `/acervo/cortes`): only the most specific match is
+ * active, so the acervo and the library never light up together.
+ */
+export const activeCampaignSubItemHref = (
+  pathname: string,
+  subItems: NonNullable<CampaignNavItem['subItems']>,
+): string | null =>
+  subItems
+    .filter((sub) => isCampaignNavActive(pathname, sub.href))
+    .sort((left, right) => right.href.length - left.href.length)[0]?.href ?? null
 
 // The four primary destinations shown in the bottom nav (all except "Mais").
 // Used to exclude them from the overflow drawer.

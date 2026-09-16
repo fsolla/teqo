@@ -1,7 +1,7 @@
 'use client'
 
 import { DownloadIcon, ExternalLinkIcon, FilmIcon, PlayIcon, ScissorsIcon } from 'lucide-react'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
 import type { SpeechVodResolveResponse } from '@/app/(campaign)/campanha/(app)/comunicacao/acervo/resolver-vod/types'
 import { SpeechCutDialog } from '@/components/campaign/speech/SpeechCutDialog'
@@ -15,9 +15,12 @@ import { Spinner } from '@/components/ui/Spinner'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import type { SpeechCutViewModel } from '@/lib/speechCut'
 import {
+  excerptSelectionDuration,
   extendRangeToSegment,
   initialExcerptRange,
+  isExcerptSelectionAvailable,
   MIN_EXCERPT_SECONDS,
+  SPEECH_EXCERPT_REQUEST_EVENT,
   type ExcerptRange,
 } from '@/lib/speechExcerptSelection'
 import { buildSpeechExcerptYoutubeUrl } from '@/lib/speechShare'
@@ -158,8 +161,8 @@ export const SpeechDetailPlayer = ({
         activeStart ?? initialSeconds ?? 0,
       )
     : null
-  const selectionDuration = durationSeconds ?? segments.at(-1)?.endSeconds ?? null
-  const selectionAvailable = selectionDuration !== null && selectionDuration >= MIN_EXCERPT_SECONDS
+  const selectionDuration = excerptSelectionDuration(durationSeconds, segments)
+  const selectionAvailable = isExcerptSelectionAvailable(durationSeconds, segments)
   const selecting = selection !== null
   const showExcerptShare = selecting && Boolean(youtubeVideoId)
   const showCutAction = selecting && vodResolvable
@@ -252,14 +255,27 @@ export const SpeechDetailPlayer = ({
     setActiveStart(active?.startSeconds ?? null)
   }
 
+  /** Turns the picker on with the initial range — idempotent (keeps the current one). */
+  const requestSelection = useCallback(() => {
+    if (selectionDuration === null || selectionDuration < MIN_EXCERPT_SECONDS) return
+    setSelection((current) => current ?? initialExcerptRange(segments, selectionDuration))
+  }, [segments, selectionDuration])
+
   const toggleSelection = () => {
     if (selecting) {
       setSelection(null)
       return
     }
-    if (selectionDuration === null || selectionDuration < MIN_EXCERPT_SECONDS) return
-    setSelection(initialExcerptRange(segments, selectionDuration))
+    requestSelection()
   }
+
+  // C174 — the empty "Cortes desta fala" CTA lives outside the player. It only
+  // announces the intent; the state stays here, so the request turns the picker
+  // on (idempotent, unlike the toggle) and never overwrites an active range.
+  useEffect(() => {
+    window.addEventListener(SPEECH_EXCERPT_REQUEST_EVENT, requestSelection)
+    return () => window.removeEventListener(SPEECH_EXCERPT_REQUEST_EVENT, requestSelection)
+  }, [requestSelection])
 
   // C162 keeps the transcript click seeking; C166 turns it into a phrase magnet
   // while the explicit selection mode is on.

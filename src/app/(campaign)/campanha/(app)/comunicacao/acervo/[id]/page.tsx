@@ -6,13 +6,16 @@ import { getPayload } from 'payload'
 
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
+import { SpeechCutsForSpeechSection } from '@/components/campaign/speech/SpeechCutsForSpeechSection'
 import { SpeechDetailPlayer } from '@/components/campaign/speech/SpeechDetailPlayer'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { CAMPAIGN_COMMUNICATION_ACERVO } from '@/lib/campaignPaths'
+import { isExcerptSelectionAvailable } from '@/lib/speechExcerptSelection'
 import { firstValue, strictDecimalInteger } from '@/utilities/campaignListUrl'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
+import { loadSpeechCutsForSpeech } from '@/utilities/speech/speechCutPageData'
 import { loadSpeechDetailPageData, SpeechNotFoundError } from '@/utilities/speech/speechPageData'
 import { parseSpeechSeekSeconds } from '@/utilities/speech/speechViewModels'
 
@@ -55,10 +58,13 @@ export default async function SpeechDetailPage({ params, searchParams }: SpeechD
   const q = firstValue(query.q)
   const initialSeconds = parseSpeechSeekSeconds(firstValue(query.t))
 
-  const view = await loadSpeechDetailPageData(payload, user, speechId, q).catch((error) => {
-    if (error instanceof SpeechNotFoundError) notFound()
-    throw error
-  })
+  const [view, cuts] = await Promise.all([
+    loadSpeechDetailPageData(payload, user, speechId, q).catch((error) => {
+      if (error instanceof SpeechNotFoundError) notFound()
+      throw error
+    }),
+    loadSpeechCutsForSpeech(payload, user, speechId),
+  ])
 
   const sourceUrl = view.officialTextUrl ?? view.youtubeUrl
 
@@ -76,8 +82,11 @@ export default async function SpeechDetailPage({ params, searchParams }: SpeechD
           </Link>
         </Button>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-          <div className="min-w-0">
+        {/* C174 — mobile: the cuts section comes before the metadata aside
+            (finding a cut is the job here). Desktop keeps the artifact's
+            full-width section below the player/aside grid. */}
+        <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_280px]">
+          <div className="order-1 min-w-0 lg:col-start-1 lg:row-start-1">
             <h1 className="text-lg font-medium">{view.type ?? 'Fala'}</h1>
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
               <span>{view.speechAtLabel}</span>
@@ -129,7 +138,17 @@ export default async function SpeechDetailPage({ params, searchParams }: SpeechD
             ) : null}
           </div>
 
-          <aside className="space-y-4">
+          <div className="order-2 lg:col-span-2 lg:row-start-2">
+            <SpeechCutsForSpeechSection
+              cuts={cuts}
+              excerptSelectionAvailable={isExcerptSelectionAvailable(
+                view.durationSeconds,
+                view.segments,
+              )}
+            />
+          </div>
+
+          <aside className="order-3 space-y-4 lg:col-start-2 lg:row-start-1">
             {view.summary ? (
               <section>
                 <h2 className="text-xs tracking-wide text-muted-foreground uppercase">
