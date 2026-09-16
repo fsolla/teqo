@@ -263,11 +263,41 @@ export type SpeechCutViewModel = {
   failureMessage: string | null
 }
 
+/**
+ * C180 — the narrow view of a cut for the discovery surfaces ("Cortes desta
+ * fala" and the search nesting): everything they render, nothing they don't
+ * (`media*`/`publicPath`/`youtubeVideoId`/`failureMessage`/`step` stay out).
+ */
+export type SpeechCutSummaryViewModel = {
+  id: number
+  status: SpeechCutStatus
+  title: string
+  description: string
+  /** Stored span, stable even if the speech row changes; falls back to end − start. */
+  durationSeconds: number
+}
+
+/**
+ * The shape the summary mapper needs. Payload does not reflect `select` in the
+ * result type, so this must stay field-for-field with `speechCutSummarySelect`
+ * in `utilities/speech/speechCutPageData.ts`.
+ */
+type SpeechCutSummaryRecord = Pick<
+  SpeechCutRecordForView,
+  'id' | 'status' | 'title' | 'description' | 'startSeconds' | 'endSeconds' | 'durationSeconds'
+>
+
 const mediaOf = (media: SpeechCutRecordForView['media']): CutMediaRecord | null =>
   typeof media === 'object' && media !== null ? media : null
 
 const youtubeUrlOf = (speech: SpeechCutRecordForView['speech']): string | null =>
   typeof speech === 'object' && speech !== null ? (speech.youtubeUrl ?? null) : null
+
+/** Stored span when present, else the raw [start, end] fallback, floored at 0. */
+const cutDurationSeconds = (record: SpeechCutSummaryRecord): number =>
+  typeof record.durationSeconds === 'number' && Number.isFinite(record.durationSeconds)
+    ? Math.max(0, Math.round(record.durationSeconds))
+    : Math.max(0, Math.round(record.endSeconds) - Math.round(record.startSeconds))
 
 /**
  * Internal/status wire view of a cut. `error` and `createdBy` never pass
@@ -278,10 +308,7 @@ export const toSpeechCutViewModel = (record: SpeechCutRecordForView): SpeechCutV
   const media = mediaOf(record.media)
   const status = isSpeechCutStatus(record.status) ? record.status : 'failed'
   const step = isSpeechCutStep(record.step) ? record.step : null
-  const durationSeconds =
-    typeof record.durationSeconds === 'number' && Number.isFinite(record.durationSeconds)
-      ? Math.max(0, Math.round(record.durationSeconds))
-      : Math.max(0, Math.round(record.endSeconds) - Math.round(record.startSeconds))
+  const durationSeconds = cutDurationSeconds(record)
 
   return {
     id: record.id,
@@ -301,6 +328,48 @@ export const toSpeechCutViewModel = (record: SpeechCutRecordForView): SpeechCutV
     failureMessage:
       status === 'failed' ? speechCutFailureMessage({ error: record.error, step }) : null,
   }
+}
+
+/**
+ * C180 — narrow view of a cut for the discovery surfaces, reusing the same
+ * duration fallback and status normalization as the full view (an unknown
+ * status still degrades to `failed`, so the badge never receives a stray value).
+ */
+export const toSpeechCutSummaryViewModel = (
+  record: SpeechCutSummaryRecord,
+): SpeechCutSummaryViewModel => ({
+  id: record.id,
+  status: isSpeechCutStatus(record.status) ? record.status : 'failed',
+  title: record.title,
+  description: record.description,
+  durationSeconds: cutDurationSeconds(record),
+})
+
+/**
+ * C180 — volume ceiling for the origin `id in` the acervo ORs into its textual
+ * `where`. A common term can match thousands of cuts; the cap degrades the
+ * "origin-only" surface (fewer origin speeches), never the result's correctness
+ * — the "Fala de origem" flag comes from the predicate, not from these ids.
+ * Revisit when the catalog approaches ~5–10k cuts (same trigger as C168).
+ */
+export const SPEECH_CUT_ORIGIN_SPEECH_ID_LIMIT = 200
+
+/**
+ * Deduped origin speech ids of a batch of cuts, capped at `limit`. Depth 0
+ * keeps an unresolved relation as the raw id; a populated relation contributes
+ * its `.id`, and a missing/null relation is skipped.
+ */
+export const originSpeechIdsOfCuts = (
+  cuts: readonly { speech?: number | CutSpeechRecord | null }[],
+  limit = SPEECH_CUT_ORIGIN_SPEECH_ID_LIMIT,
+): number[] => {
+  const ids = new Set<number>()
+  for (const cut of cuts) {
+    if (ids.size >= limit) break
+    const speechId = typeof cut.speech === 'number' ? cut.speech : cut.speech?.id
+    if (typeof speechId === 'number') ids.add(speechId)
+  }
+  return [...ids]
 }
 
 /** Origin of a cut in the library: the speech it was cut from, with its link. */

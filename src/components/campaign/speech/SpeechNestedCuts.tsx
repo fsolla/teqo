@@ -4,14 +4,14 @@ import { SpeechCutStatusBadge } from '@/components/campaign/speech/SpeechCutStat
 import { SpeechHighlightParts } from '@/components/campaign/speech/SpeechHighlightParts'
 import { campaignSpeechCutDetailHref } from '@/lib/campaignPaths'
 import { formatSpeechClock } from '@/lib/speechClock'
-import type { SpeechCutViewModel } from '@/lib/speechCut'
+import type { SpeechCutSummaryViewModel } from '@/lib/speechCut'
 import { splitHighlightedParts } from '@/lib/speechHighlight'
 
 const countLabel = (count: number): string =>
   count === 1 ? '1 corte desta fala' : `${count} cortes desta fala`
 
 /** Touch-sized outlined button on mobile; the compact text link on `md+`. */
-const CutAction = ({ cut }: { cut: SpeechCutViewModel }) => (
+const CutAction = ({ cut }: { cut: SpeechCutSummaryViewModel }) => (
   <Link
     href={campaignSpeechCutDetailHref(cut.id)}
     aria-label={`Abrir corte: ${cut.title}`}
@@ -34,7 +34,7 @@ export const SpeechNestedCuts = ({
   query,
   showDescription = false,
 }: {
-  cuts: readonly SpeechCutViewModel[]
+  cuts: readonly SpeechCutSummaryViewModel[]
   caption?: string
   /** The search term, highlighted in the title. */
   query?: string

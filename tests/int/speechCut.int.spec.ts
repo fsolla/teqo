@@ -863,9 +863,15 @@ describe('speech cut discovery (C174)', () => {
     const forSpeech = await loadSpeechCutsForSpeech(payload, communicator, speech)
     expect(forSpeech.map((cut) => cut.id)).toEqual([newer, older])
     expect(forSpeech.map((cut) => cut.id)).not.toContain(unrelated)
-    // Depth 0: the row carries no media/file internals.
-    expect(forSpeech[0]?.mediaUrl).toBeNull()
-    expect(forSpeech[0]?.publicPath).toBe(`/corte/${newer}`)
+    // C180 — the summary view carries only what the section renders (no media/file internals).
+    expect(Object.keys(forSpeech[0] ?? {}).sort()).toEqual([
+      'description',
+      'durationSeconds',
+      'id',
+      'status',
+      'title',
+    ])
+    expect(forSpeech[0]?.durationSeconds).toBe(20)
 
     const grouped = await loadSpeechCutsForSpeeches(payload, communicator, [speech, otherSpeech])
     expect(grouped.get(speech)?.map((cut) => cut.id)).toEqual([newer, older])
@@ -915,5 +921,20 @@ describe('speech cut discovery (C174)', () => {
     const row = data.rows.find((candidate) => candidate.matchedTextSearch)
     expect(row).toBeDefined()
     expect(row?.cuts).toHaveLength(0)
+  })
+
+  it('flags a speech whose keyword matches case-insensitively as a regular result', async () => {
+    // C180 — the SQL `contains` is ILIKE; the view-model mirror follows the same
+    // case-insensitive semantics instead of showing the origin-only note wrongly.
+    const marker = `saudepublica${randomUUID().slice(0, 8)}`
+    const speech = await createSpeech({
+      keywords: [`SAÚDE ${marker.toUpperCase()}`],
+      segments: [{ startSeconds: 0, endSeconds: 2.7, text: `Discurso ${randomUUID()}` }],
+    })
+    const { communicator } = await createUsers()
+
+    const data = await loadSpeechAcervoPageData(payload, communicator, { q: `saúde ${marker}` })
+    const row = data.rows.find((candidate) => candidate.id === speech)
+    expect(row?.matchedTextSearch).toBe(true)
   })
 })
