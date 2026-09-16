@@ -121,6 +121,11 @@ Opções: A) unit primeiro (fake timers para política/poll/fallback; mapper/VM)
 - **Int lento por delays reais:** o int usa estados imediatos (`INDISPONIVEL`, `PRONTO`, throw) e deixa poll puro para o unit com fake timers.
 - **Copy otimista do diálogo ("menos de um minuto")** no caso poll: ajuste textual opcional na fase 3 (Impeccable A), sem layout.
 
+## Débitos registrados (triagem pós-simplify)
+
+- **Pin unit do timeout do probe** (`probeSpeechMedia` catch → unverified): deferido com gatilho — a primeira mexida em `probeSpeechMedia`/`MEDIA_PROBE_TIMEOUT_MS`, ou uma 2ª regressão do fallback, pede o teste dedicado (o int cobre 403/hash morto, não o timeout).
+- **Flake dev-only do e2e paralelo:** `campaignSpeechCut.e2e.spec.ts:259` responde 500 na rota da biblioteca só com 2 workers em `next dev` (serial e prod verdes). Gatilho: o primeiro 500 da rota em `E2E_PROD=1`/CI, ou uma 2ª sessão gasta no diagnóstico, vira Issue (checar a família de flake de dev).
+
 ## Aceite de engenharia
 
 - [ ] Aceite de produto da intenção ainda coberto (tabela abaixo)
