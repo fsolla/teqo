@@ -26,7 +26,7 @@ O gate do `plan-issue` nasceu vendendo um **rascunho UI low-fi** (HTML descartá
 - O frontmatter do plano usa `Design UI:` (antes `Rascunho UI:`) e o corpo usa a seção `### Design UI (B/C/D)` com link do HTML + cenas (390/1280/estados); PNG embutido deixa de ser exigência.
 - Nenhuma referência a `ui-draft-html.md`, `-ui-draft.html` ou "Rascunho UI" sobra fora de `docs/plans/**` e `docs/changelog/**`.
 - Planos antigos e seus `-ui-draft.html`/PNGs ficam intactos (não renomear, não migrar).
-- Guardrails: o design não carrega comportamento JS nem nomeia componente final (não vira implementação); doutrina do gate continua fora de `docs/plans/`.
+- Guardrails: o design não carrega lógica de negócio/fetch/persistência (JS só de apresentação — modal/tabs/toggle, teto da doutrina) nem nomeia componente final (não vira implementação); doutrina do gate continua fora de `docs/plans/`.
 
 ## Dados (intenção)
 
