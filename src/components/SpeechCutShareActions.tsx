@@ -8,6 +8,58 @@ import { Button } from '@/components/ui/button'
 import { buildSpeechCutShare } from '@/lib/speechCut'
 import { cn } from '@/lib/utils'
 
+type SpeechCutWhatsAppButtonProps = {
+  /** Absolute public URL of the cut. */
+  url: string
+  title: string
+  variant?: 'default' | 'outline'
+  className?: string
+}
+
+/**
+ * C176 — the WhatsApp CTA of the cut surfaces, extracted from the share kit so
+ * the public page can place it on its own (full-width, above the description on
+ * mobile) without duplicating the shared message/URL.
+ */
+export const SpeechCutWhatsAppButton = ({
+  url,
+  title,
+  variant = 'default',
+  className,
+}: SpeechCutWhatsAppButtonProps) => {
+  const share = buildSpeechCutShare({ title, url })
+
+  return (
+    <Button asChild variant={variant} className={cn('min-h-10', className)}>
+      <a href={share.whatsAppUrl} target="_blank" rel="noopener noreferrer">
+        <WhatsAppIcon data-icon="inline-start" />
+        Compartilhar no WhatsApp
+      </a>
+    </Button>
+  )
+}
+
+type SpeechCutDownloadButtonProps = {
+  /** Stored MP4; absent while a cut is still being processed. */
+  url: string
+  filename?: string | null
+  className?: string
+}
+
+/** C176 — the MP4 download control, extracted for the same reason as the WhatsApp one. */
+export const SpeechCutDownloadButton = ({
+  url,
+  filename = null,
+  className,
+}: SpeechCutDownloadButtonProps) => (
+  <Button asChild variant="outline" className={cn('min-h-10', className)}>
+    <a href={url} download={filename ?? ''}>
+      <DownloadIcon data-icon="inline-start" aria-hidden="true" />
+      Baixar arquivo (MP4)
+    </a>
+  </Button>
+)
+
 type SpeechCutShareActionsProps = {
   /** Absolute public URL of the cut. */
   url: string
@@ -18,6 +70,8 @@ type SpeechCutShareActionsProps = {
   /** Which action leads on this surface (acervo: copy; public page: WhatsApp). */
   primary?: 'copy' | 'whatsapp'
   className?: string
+  /** Per-control sizing/extra classes (the public page asks for 44px controls). */
+  controlClassName?: string
 }
 
 /**
@@ -33,39 +87,31 @@ export const SpeechCutShareActions = ({
   downloadFilename = null,
   primary = 'copy',
   className,
-}: SpeechCutShareActionsProps) => {
-  const share = buildSpeechCutShare({ title, url })
-
-  return (
-    <div
-      className={cn('flex flex-wrap items-center gap-2', className)}
-      data-slot="speech-cut-share"
-    >
-      {primary === 'whatsapp' ? (
-        <Button asChild className="min-h-10">
-          <a href={share.whatsAppUrl} target="_blank" rel="noopener noreferrer">
-            <WhatsAppIcon data-icon="inline-start" />
-            Compartilhar no WhatsApp
-          </a>
-        </Button>
-      ) : null}
-      <CopyLinkButton url={url} variant={primary === 'copy' ? 'default' : 'outline'} />
-      {primary === 'copy' ? (
-        <Button asChild variant="outline" className="min-h-10">
-          <a href={share.whatsAppUrl} target="_blank" rel="noopener noreferrer">
-            <WhatsAppIcon data-icon="inline-start" />
-            Compartilhar no WhatsApp
-          </a>
-        </Button>
-      ) : null}
-      {downloadUrl ? (
-        <Button asChild variant="outline" className="min-h-10">
-          <a href={downloadUrl} download={downloadFilename ?? ''}>
-            <DownloadIcon data-icon="inline-start" aria-hidden="true" />
-            Baixar arquivo (MP4)
-          </a>
-        </Button>
-      ) : null}
-    </div>
-  )
-}
+  controlClassName,
+}: SpeechCutShareActionsProps) => (
+  <div className={cn('flex flex-wrap items-center gap-2', className)} data-slot="speech-cut-share">
+    {primary === 'whatsapp' ? (
+      <SpeechCutWhatsAppButton url={url} title={title} className={controlClassName} />
+    ) : null}
+    <CopyLinkButton
+      url={url}
+      variant={primary === 'copy' ? 'default' : 'outline'}
+      className={controlClassName}
+    />
+    {primary === 'copy' ? (
+      <SpeechCutWhatsAppButton
+        url={url}
+        title={title}
+        variant="outline"
+        className={controlClassName}
+      />
+    ) : null}
+    {downloadUrl ? (
+      <SpeechCutDownloadButton
+        url={downloadUrl}
+        filename={downloadFilename}
+        className={controlClassName}
+      />
+    ) : null}
+  </div>
+)

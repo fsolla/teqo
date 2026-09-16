@@ -149,6 +149,9 @@ test.describe('Acervo speech cuts (C167)', () => {
       expect(html).toContain('/api/media/file/')
       expect(html).toContain('Fonte: Câmara dos Deputados · CC BY 4.0')
       expect(html).toContain('noindex')
+      // C176 — the neutral `editorial` surface is what removes the dark-red
+      // body gradient this page used to inherit; the attribute is the guard.
+      expect(html).toContain('data-theme="editorial"')
       expect(html).toContain('https://i.ytimg.com/vi/lLhRDkSPw0A/hqdefault.jpg')
       expect(html).toContain('Ver sessão no YouTube')
     } finally {
