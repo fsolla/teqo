@@ -10,7 +10,7 @@ Appetite restante: ~0,5–1 dia (herdado; doc/config only — sem corte necessá
 
 - **Outcome:** `.opencode/agent/designer.md` (`mode: all`, `temperature: 0.7`, `model: openai/gpt-5.6-sol`) e `.opencode/agent/designer-degraded.md` (`mode: subagent`, `model: opencode-go/deepseek-v4.1-flash`) existem e são invocáveis, com os modos Criar/Criticar e sem escrita em `src/`; a doutrina viva é `.agents/skills/plan-issue/ui-design-html.md`; o artefato `docs/plans/<slug>-ui-design.html` (+ `docs/plans/<slug>-ui-design-assets/*.svg`) é a fonte de verdade do port; a ladder `openai/gpt-5.6-sol → openai/gpt-6-astra → opencode-go/deepseek-v4.1-flash (DEGRADED) → deepseek/deepseek-flash (DEGRADED, inline)` está documentada e auditável, com o tier registrado no PR — tier degradado nunca certifica.
 - **O que NÃO negociar:** output só em `docs/plans/<slug>-ui-design.*` (o designer nunca escreve em `src/`); `DEGRADED` + sign-off humano no tier degradado (nunca certifica); teto protetivo da doutrina mantido, **com o ajuste autorizado no GATE em 2026-09-15** (JS mínimo de apresentação permitido — modal, tabs, toggle; sem lógica de negócio — ver decisão 6; estados como cenas estáticas seguem válidos; 390/1280; copy pt-BR real; sem imports de `src/`; sem decisão de engenharia; claims só os aprovados no plano; `NEEDS ASSET`; LGPD/TSE; um CTA primário); pins literais de modelo/modo/temperatura; pré-requisito operacional verificado antes do pin; quota/indisponibilidade desce a ladder explicitamente — nunca pula design em silêncio.
-- **O que reavaliar:** (a) que o frontmatter de agente aceita `permission.edit` aninhado e que o merge com o global preserva o fail-closed — confirmado nas docs oficiais e a confirmar no `opencode agent list`/smoke; (b) que `docs/plans/*` casa o caminho que o edit tool envia — hipótese fundada no exemplo relativo das docs oficiais, **provada no smoke** (falso-deny é fail-closed: o smoke acusa e o padrão é corrigido antes do merge); (c) que os consumidores do nome antigo ficam intocados (OPS114) e o sufixo do painel é OPS116 — dívida declarada, não corrigida aqui.
+- **O que reavaliar:** (a) que o frontmatter de agente aceita `permission.edit` aninhado e que o merge com o global preserva o fail-closed — confirmado nas docs oficiais e a confirmar no `opencode agent list`/smoke; (b) que `docs/plans/*-ui-design*` casa o caminho que o edit tool envia — hipótese fundada no exemplo relativo das docs oficiais, **provada no smoke** (falso-deny é fail-closed: o smoke acusa e o padrão é corrigido antes do merge); (c) que os consumidores do nome antigo ficam intocados (OPS114) e o sufixo do painel é OPS116 — dívida declarada, não corrigida aqui.
 
 ## Estado atual verificado (explorador)
 
@@ -31,7 +31,7 @@ Appetite restante: ~0,5–1 dia (herdado; doc/config only — sem corte necessá
 flowchart LR
   REN["F1 · git mv\ndoutrina do gate"] --> DOC["F1 · ui-design-html.md\nfonte de verdade do port\n+ teto + SVG + ladder"]
   DOC --> AG["F2 · designer.md (sol, all)\ndesigner-degraded.md (deepseek-v4.1, subagent)"]
-  AG --> PERM["F2 · permission.edit fail-closed\n* deny → docs/plans/* allow"]
+  AG --> PERM["F2 · permission.edit fail-closed\n* deny → docs/plans/*-ui-design* allow"]
   DOC --> OPS["F3 · docs/AGENT-OPS.md\n1 parágrafo: pin/ladder/tier"]
   PERM --> EV["F3 · opencode agent list\nsmoke subprocesso: src/ deny + docs/plans/ allow"]
   OPS --> EV
@@ -45,18 +45,18 @@ flowchart LR
 ### Decisões de engenharia (com rejeitadas)
 
 1. **Forma do gate de escrita dos agentes.**
-   - Opções: A) `"src/**": "deny"` sozinho | B) fail-closed `{"*":"deny","docs/plans/*":"allow"}` (allowlist do único caminho de escrita) | C) sem `permission`, só prompt.
-   - Recomendação: **B** — o corte da intenção é "output só em `docs/plans/<slug>-ui-design.*`"; a allowlist codifica exatamente isso e nega todo o resto (`src/`, `scripts/`, `.github/`, `.agents/`, `.opencode/`, docs fora de plans). Com last-match-wins e catch-all primeiro, o bloco exato no frontmatter dos dois agentes é:
+   - Opções: A) `"src/**": "deny"` sozinho | B) fail-closed `{"*":"deny","docs/plans/*-ui-design*":"allow"}` (allowlist só do artefato: `<slug>-ui-design.html` + `-ui-design-assets/**`) | C) sem `permission`, só prompt.
+   - Recomendação: **B** — o corte da intenção é "output só em `docs/plans/<slug>-ui-design.*`"; a allowlist codifica exatamente isso e nega todo o resto (`src/`, `scripts/`, `.github/`, `.agents/`, `.opencode/`, planos existentes inclusive o de intenção). Com last-match-wins e catch-all primeiro, o bloco exato no frontmatter dos dois agentes é:
      ```yaml
      permission:
        edit:
          '*': deny
-         'docs/plans/*': allow
+         'docs/plans/*-ui-design*': allow
      ```
-     Fatos que sustentam: `edit` cobre `edit`/`write`/`patch`; `*` casa `/`, logo `docs/plans/*` cobre também `docs/plans/<slug>-ui-design-assets/*.svg`; `--auto` não aprova `deny`, portanto o smoke prova stop duro. `read` permanece allow (a crítica lê app/screenshots) — o gate é de escrita.
+     Fatos que sustentam: `edit` cobre `edit`/`write`/`patch`; `*` casa `/`, logo `docs/plans/*-ui-design*` cobre também `docs/plans/<slug>-ui-design-assets/*.svg`; `--auto` não aprova `deny`, portanto o smoke prova stop duro. `read` permanece allow (a crítica lê app/screenshots) — o gate é de escrita. **Revisão pós-simplify:** o padrão foi estreitado de `docs/plans/*` para `docs/plans/*-ui-design*` — o catch-all largo permitiria sobrescrever o plano de intenção (imutável) e planos de outros itens.
    - Rejeitadas: A — deny-list deixa todos os outros caminhos graváveis e não implementa o corte; C — prompt não é gate: a violação vira silenciosa, contra o aceite "sem permissão de escrita em `src/`".
    - **Resíduo declarado:** `bash` não é sandbox — a `permission` cobre os file tools (`edit`/`write`/`patch`), não redirecionamento de shell. O prompt proíbe `src/` explicitamente; o fluxo é humano-supervisionado. O smoke prova o gate dos file tools, não prometemos sandbox de shell.
-   - **Como o smoke prova:** subprocesso novo (`opencode run`, config não é hot-reloaded) pedindo (1) `write` em `docs/plans/ops113-smoke.txt` (deve passar) e (2) `write` em `src/ops113-smoke.txt` (deve ser negado, sem contornar por bash). O `designer` roda direto com `--agent designer`; o `designer-degraded` **não** roda como primário (`mode: subagent` — o CLI cai no default), então é lançado via task a partir de um run do `build`. Saída colada no PR; arquivos de smoke removidos antes do commit.
+   - **Como o smoke prova:** subprocesso novo (`opencode run`, config não é hot-reloaded) pedindo (1) `write` em `docs/plans/ops113-ui-design-smoke.html` (deve passar) e (2) `write` em `src/ops113-smoke.txt` (deve ser negado, sem contornar por bash). O `designer` roda direto com `--agent designer`; o `designer-degraded` **não** roda como primário (`mode: subagent` — o CLI cai no default), então é lançado via task a partir de um run do `build`. Saída colada no PR; arquivos de smoke removidos antes do commit.
 
 2. **Rename da doutrina.**
    - Opções: A) `git mv` + reescrita no mesmo lote | B) delete + create.
@@ -109,7 +109,7 @@ flowchart LR
    - Prova: `git diff --stat -M` mostra o rename; leitura final da doutrina contra a checklist de teto/elevação.
 2. **F2 — Agentes** — quota ~25%.
    - Criar `designer.md` e `designer-degraded.md` com os literais (frontmatter + permission) e prompts enxutos (doutrina como fonte única; visão nativa/fail-closed; `DEGRADED` no degradado).
-   - Prova: `opencode agent list` em processo novo lista `designer (all)` e `designer-degraded (subagent)` e mostra o ruleset `* deny` → `docs/plans/* allow` resolvido.
+   - Prova: `opencode agent list` em processo novo lista `designer (all)` e `designer-degraded (subagent)` e mostra o ruleset `* deny` → `docs/plans/*-ui-design* allow` resolvido.
 3. **F3 — Operacional + verificação** — quota ~40%.
    - Parágrafo em `docs/AGENT-OPS.md`; smokes em subprocesso (deny/allow) com limpeza dos arquivos de smoke; grep do nome antigo; prettier; changelog; `pnpm gate:fast`; `pnpm push` → PR `Closes #1056` (base `main`) com `Design tier:` + evidência dos smokes no body.
 
@@ -117,8 +117,8 @@ flowchart LR
 
 - **Pré-requisito (antes do pin):** `opencode models | grep '^openai/'` lista `openai/gpt-5.6-sol` (e `openai/gpt-6-astra`); `opencode-go/deepseek-v4.1-flash` e `deepseek/deepseek-flash` existem — **verificado em 2026-09-15**. Se o id fixado não existir: parar e escalar o humano — nunca pinar adivinhação nem trocar de modelo em silêncio.
 - `opencode agent list` (processo novo — config não é hot-reloaded) mostra os dois agentes com os modos corretos e o ruleset de escrita fail-closed.
-- **Smoke de permissão (subprocesso, fresh):** `opencode run --agent designer-degraded --auto "..."` grava `docs/plans/ops113-smoke.txt` (permitido) e tem `write` em `src/ops113-smoke.txt` negado (deny duro, não `ask`); repetir para `designer` (prova de carga + allow). Se o CLI recusar subagente como agente primário, lançar o `designer-degraded` via task a partir de um run do `build`. Saída colada no PR; `rm` dos arquivos de smoke antes do commit — nada de artefato-lixo no diff.
-- **Grep do nome antigo** (zero nos arquivos da entrega): `grep -rn "ui-draft-html" .agents/skills/plan-issue/ui-design-html.md .opencode/agent/designer.md .opencode/agent/designer-degraded.md docs/AGENT-OPS.md docs/changelog/2026-09-15-ops113.md` → vazio. Consumidores restantes = dívida do OPS114; sufixo do painel = OPS116.
+- **Smoke de permissão (subprocesso, fresh):** grava `docs/plans/ops113-ui-design-smoke.html` (permitido) e tem `write` em `src/ops113-smoke.txt` negado (deny duro, não `ask`). O `designer` roda com `--agent designer`; o `designer-degraded` (subagente não é primário — o CLI cai no default) é lançado via task a partir de um run do `build`. Saída colada no PR; `rm` dos arquivos de smoke antes do commit — nada de artefato-lixo no diff.
+- **Grep do nome antigo** (zero nos arquivos da entrega): `grep -rn "ui-draft-html" .agents/skills/plan-issue/ui-design-html.md .opencode/agent/designer.md .opencode/agent/designer-degraded.md docs/AGENT-OPS.md docs/changelog/2026-09-15-ops113.md` → vazio (o próprio `-impl.md` cita o nome antigo como registro do rename e por isso fica fora do grep). Consumidores restantes = dívida do OPS114; sufixo do painel = OPS116.
 - `pnpm exec prettier --check` nos tocados (`.opencode/` e `docs/` não são ignorados): os dois agentes, `docs/AGENT-OPS.md`, `docs/changelog/2026-09-15-ops113.md` e este `-impl.md`. A doutrina está em `.agents/` (ignorada) — mantê-la formatada por consistência.
 - `pnpm gate:fast` (lint + typecheck + unit) verde; `pnpm push` (ensure-deps + gate:ci) e PR `Closes #1056` com CI verde. Sem migration; sem mudança em `src/`.
 

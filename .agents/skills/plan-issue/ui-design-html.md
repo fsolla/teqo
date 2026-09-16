@@ -86,14 +86,13 @@ Mesma doutrina para os dois papéis (fonte única — os prompts dos agentes apo
 
 1. **Escreva** `docs/plans/<slug>-ui-design.html` — um arquivo por item, autossuficiente (Tailwind **v4** browser CDN; rede só na hora de renderizar no browser).
 2. **Assets** em `docs/plans/<slug>-ui-design-assets/*.svg` quando ícones/ilustrações próprios forem necessários.
-3. **Commitado com o plano**: o design aprovado é o registro do aceite visual e viaja com a Issue. Durante o work-issue, o `designer` pode editá-lo; mudança material volta ao humano no PR.
+3. **Commitado com o plano**: o design aprovado é o registro do aceite visual (ver "Imutável como registro" no topo).
 
 ## Relação com o plano em `docs/plans/`
 
 - Campo do cabeçalho do plano aponta o caminho do artefato (`Rascunho UI:` hoje; `Design UI:` a partir do OPS114) — ou `N/A — sem UI`.
 - Link do `.html` no corpo do plano.
 - Esboço ASCII no markdown vira **opcional** (backup textual).
-- **É commitado com o plano**: o HTML aprovado é o registro do aceite visual e viaja com a Issue.
 
 ## Gate
 
