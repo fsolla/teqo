@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
+import { SPEECH_VOD_INELIGIBLE_MESSAGE } from '@/lib/schemas/speechVod'
 import { formatSpeechDate } from '@/lib/speechClock'
 import {
   buildSpeechCutFallbackMetadata,
   buildSpeechCutFfmpegArgs,
   buildSpeechCutShare,
+  SPEECH_CUT_FAILURE_GENERATING,
+  SPEECH_CUT_FAILURE_INTERRUPTED,
+  SPEECH_CUT_FAILURE_SPEECH_GONE,
+  SPEECH_CUT_FAILURE_UNAVAILABLE,
+  SPEECH_CUT_FAILURE_UNPLAYABLE,
+  speechCutFailureMessage,
   speechCutPublicPath,
   speechCutStepStates,
   toSpeechCutViewModel,
@@ -148,6 +155,72 @@ describe('toSpeechCutViewModel', () => {
     expect(unknown.durationSeconds).toBe(20)
     expect(unknown.mediaUrl).toBeNull()
     expect(unknown.youtubeVideoId).toBeNull()
+  })
+
+  it('hands a failed cut its mapped cause and never the raw error', () => {
+    const failed = toSpeechCutViewModel({
+      id: 9,
+      status: 'failed',
+      step: 'cutting',
+      title: 't',
+      description: 'd',
+      startSeconds: 0,
+      endSeconds: 20,
+      error: 'HTTP 403 em https://cdn.camara.leg.br/trecho.mp4',
+    })
+
+    expect(failed.failureMessage).toBe('Não foi possível cortar o trecho.')
+    expect(JSON.stringify(failed)).not.toContain('HTTP 403')
+    expect(view.failureMessage).toBeNull()
+  })
+})
+
+describe('speechCutFailureMessage', () => {
+  it('maps the named causes of the first stage to honest pt-BR copy', () => {
+    expect(speechCutFailureMessage({ error: SPEECH_CUT_FAILURE_SPEECH_GONE })).toBe(
+      SPEECH_CUT_FAILURE_SPEECH_GONE,
+    )
+    expect(speechCutFailureMessage({ error: SPEECH_VOD_INELIGIBLE_MESSAGE })).toBe(
+      'Esta fala não tem trecho de vídeo para cortar.',
+    )
+    expect(speechCutFailureMessage({ error: SPEECH_CUT_FAILURE_GENERATING })).toBe(
+      SPEECH_CUT_FAILURE_GENERATING,
+    )
+    expect(speechCutFailureMessage({ error: SPEECH_CUT_FAILURE_UNAVAILABLE })).toBe(
+      'A Câmara não disponibiliza mais o arquivo deste trecho.',
+    )
+    expect(speechCutFailureMessage({ error: SPEECH_CUT_FAILURE_UNPLAYABLE })).toBe(
+      'A Câmara não disponibilizou um arquivo válido deste trecho.',
+    )
+    expect(speechCutFailureMessage({ error: SPEECH_CUT_FAILURE_INTERRUPTED })).toBe(
+      SPEECH_CUT_FAILURE_INTERRUPTED,
+    )
+  })
+
+  it('maps an unnamed cause by the step where the job died', () => {
+    const raw = 'HTTP 403 em https://cdn.camara.leg.br/trecho.mp4'
+    expect(speechCutFailureMessage({ error: raw, step: 'resolving' })).toBe(
+      'Não foi possível localizar o trecho na Câmara.',
+    )
+    expect(speechCutFailureMessage({ error: 'ffmpeg failed', step: 'cutting' })).toBe(
+      'Não foi possível cortar o trecho.',
+    )
+    expect(speechCutFailureMessage({ error: 'storage down', step: 'metadata' })).toBe(
+      'Não foi possível guardar o arquivo do corte.',
+    )
+    expect(speechCutFailureMessage({ error: 'storage down', step: 'publishing' })).toBe(
+      'Não foi possível guardar o arquivo do corte.',
+    )
+    expect(speechCutFailureMessage({ error: 'boom', step: null })).toBe(
+      'Não foi possível preparar o corte.',
+    )
+    expect(speechCutFailureMessage({ error: raw, step: 'resolving' })).not.toContain('https://')
+  })
+
+  it('stays null when the row stored no cause', () => {
+    expect(speechCutFailureMessage({ error: null, step: 'resolving' })).toBeNull()
+    expect(speechCutFailureMessage({ error: '   ', step: 'resolving' })).toBeNull()
+    expect(speechCutFailureMessage({})).toBeNull()
   })
 })
 

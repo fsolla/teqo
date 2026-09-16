@@ -25,6 +25,7 @@ const cutView = (overrides: Partial<SpeechCutViewModel> = {}): SpeechCutViewMode
   mediaFilename: null,
   youtubeVideoId: null,
   publishedAt: null,
+  failureMessage: null,
   ...overrides,
 })
 
@@ -152,6 +153,43 @@ describe('SpeechCutDialog (C167)', () => {
     await waitFor(() => expect(onPublished).toHaveBeenCalledTimes(1), { timeout: 4000 })
     expect(onPublished.mock.calls[0][0].publicPath).toBe('/corte/123')
     expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it('shows the cause the row mapped instead of the generic failure line', async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith(SUGGESTION_ENDPOINT)) {
+        return jsonResponse({
+          status: 'success',
+          suggestion: { title: 'Fallback', description: 'Fallback', source: 'fallback' },
+        })
+      }
+      if (url.endsWith(SAVE_ENDPOINT)) {
+        return jsonResponse({ status: 'success', cut: cutView() })
+      }
+      if (url.endsWith(STATUS_ENDPOINT)) {
+        return jsonResponse({
+          status: 'success',
+          cut: cutView({
+            status: 'failed',
+            step: null,
+            failureMessage: 'A Câmara ainda está gerando o vídeo deste trecho.',
+          }),
+        })
+      }
+      throw new Error(`unexpected fetch: ${url}`)
+    })
+
+    renderDialog()
+    await screen.findByDisplayValue(/Trecho de BREVES COMUNICAÇÕES/)
+    fireEvent.click(screen.getByRole('button', { name: /Cortar e publicar/ }))
+
+    await screen.findByText(
+      'A Câmara ainda está gerando o vídeo deste trecho.',
+      {},
+      { timeout: 4000 },
+    )
+    expect(screen.queryByText(/A Câmara não está entregando o vídeo desta fala agora/)).toBeNull()
   })
 
   it('shows the honest failure and retries the same row (no duplicate create)', async () => {

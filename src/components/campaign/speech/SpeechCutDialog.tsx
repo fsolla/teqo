@@ -177,7 +177,10 @@ export const SpeechCutDialog = ({
           return
         }
         if (cut.status === 'failed') {
+          // C169 — the row carries the mapped cause; null keeps the fallback
+          // line of the failure scene (a failure the server did not name).
           setPhase('failed')
+          setError(cut.failureMessage)
           return
         }
       } catch {

@@ -7,6 +7,7 @@
 import { CAMPAIGN_COMMUNICATION_ACERVO } from '@/lib/campaignPaths'
 import { formatBahiaCivilDate } from '@/lib/campaignTime'
 import { buildWhatsAppTextShareUrl } from '@/lib/phone'
+import { SPEECH_VOD_INELIGIBLE_MESSAGE } from '@/lib/schemas/speechVod'
 import { formatSpeechDate, formatSpeechSpan } from '@/lib/speechClock'
 import { parseYoutubeVideoId } from '@/lib/speechVod'
 
@@ -40,6 +41,57 @@ export const speechCutStepLabels: Record<SpeechCutStep, string> = {
 
 const isSpeechCutStep = (value: unknown): value is SpeechCutStep =>
   SPEECH_CUT_STEPS.includes(value as SpeechCutStep)
+
+/**
+ * C169 — the causes the job and the reaper store in `error` (the operator's
+ * detail) and the honest pt-BR copy the dialog shows for each one. Only these
+ * literals — or the failure step — ever reach the person; a raw transport
+ * message (URL, stderr) stays in the admin.
+ */
+export const SPEECH_CUT_FAILURE_SPEECH_GONE = 'A fala deste corte não está mais disponível.'
+export const SPEECH_CUT_FAILURE_GENERATING = 'A Câmara ainda está gerando o vídeo deste trecho.'
+export const SPEECH_CUT_FAILURE_UNAVAILABLE = 'A Câmara não entregou o arquivo deste trecho.'
+export const SPEECH_CUT_FAILURE_UNPLAYABLE =
+  'A Câmara não entregou um arquivo jogável deste trecho.'
+export const SPEECH_CUT_FAILURE_INTERRUPTED = 'O corte foi interrompido antes de terminar.'
+
+const SPEECH_CUT_FAILURE_INELIGIBLE_COPY = 'Esta fala não tem trecho de vídeo para cortar.'
+const SPEECH_CUT_FAILURE_UNAVAILABLE_COPY =
+  'A Câmara não disponibiliza mais o arquivo deste trecho.'
+const SPEECH_CUT_FAILURE_UNPLAYABLE_COPY =
+  'A Câmara não disponibilizou um arquivo válido deste trecho.'
+const SPEECH_CUT_FAILURE_RESOLVING_COPY = 'Não foi possível localizar o trecho na Câmara.'
+const SPEECH_CUT_FAILURE_CUTTING_COPY = 'Não foi possível cortar o trecho.'
+const SPEECH_CUT_FAILURE_STORING_COPY = 'Não foi possível guardar o arquivo do corte.'
+const SPEECH_CUT_FAILURE_UNKNOWN_COPY = 'Não foi possível preparar o corte.'
+
+/**
+ * Maps the stored cause of a failed cut to what the person reads: the exact
+ * literal when the job named it, otherwise the failure step (cortar ≠ guardar),
+ * otherwise a generic-but-honest line. Null when the row stored no cause at all.
+ */
+export const speechCutFailureMessage = ({
+  error,
+  step,
+}: {
+  error?: string | null
+  step?: SpeechCutStep | null
+}): string | null => {
+  const stored = error?.trim()
+  if (!stored) return null
+
+  if (stored === SPEECH_CUT_FAILURE_SPEECH_GONE) return SPEECH_CUT_FAILURE_SPEECH_GONE
+  if (stored === SPEECH_VOD_INELIGIBLE_MESSAGE) return SPEECH_CUT_FAILURE_INELIGIBLE_COPY
+  if (stored === SPEECH_CUT_FAILURE_GENERATING) return SPEECH_CUT_FAILURE_GENERATING
+  if (stored === SPEECH_CUT_FAILURE_UNAVAILABLE) return SPEECH_CUT_FAILURE_UNAVAILABLE_COPY
+  if (stored === SPEECH_CUT_FAILURE_UNPLAYABLE) return SPEECH_CUT_FAILURE_UNPLAYABLE_COPY
+  if (stored === SPEECH_CUT_FAILURE_INTERRUPTED) return SPEECH_CUT_FAILURE_INTERRUPTED
+
+  if (step === 'resolving') return SPEECH_CUT_FAILURE_RESOLVING_COPY
+  if (step === 'cutting') return SPEECH_CUT_FAILURE_CUTTING_COPY
+  if (step === 'metadata' || step === 'publishing') return SPEECH_CUT_FAILURE_STORING_COPY
+  return SPEECH_CUT_FAILURE_UNKNOWN_COPY
+}
 
 type SpeechCutStepState = {
   step: SpeechCutStep
@@ -187,6 +239,8 @@ export type SpeechCutRecordForView = CutDurationRecord & {
   publishedAt?: string | null
   createdAt?: string | null
   updatedAt?: string | null
+  /** Raw internal cause of a failure; never handed to the client as-is. */
+  error?: string | null
 }
 
 export type SpeechCutViewModel = {
@@ -205,6 +259,8 @@ export type SpeechCutViewModel = {
   mediaFilename: string | null
   youtubeVideoId: string | null
   publishedAt: string | null
+  /** C169 — honest cause of a failure; null unless `status === 'failed'`. */
+  failureMessage: string | null
 }
 
 const mediaOf = (media: SpeechCutRecordForView['media']): CutMediaRecord | null =>
@@ -215,7 +271,8 @@ const youtubeUrlOf = (speech: SpeechCutRecordForView['speech']): string | null =
 
 /**
  * Internal/status wire view of a cut. `error` and `createdBy` never pass
- * through here: the public page and the dialog receive only what they render.
+ * through here: the public page and the dialog receive only what they render —
+ * a failure becomes the mapped `failureMessage`, never the raw detail.
  */
 export const toSpeechCutViewModel = (record: SpeechCutRecordForView): SpeechCutViewModel => {
   const media = mediaOf(record.media)
@@ -241,6 +298,8 @@ export const toSpeechCutViewModel = (record: SpeechCutRecordForView): SpeechCutV
     mediaFilename: media?.filename ?? null,
     youtubeVideoId: parseYoutubeVideoId(youtubeUrlOf(record.speech)),
     publishedAt: record.publishedAt ?? null,
+    failureMessage:
+      status === 'failed' ? speechCutFailureMessage({ error: record.error, step }) : null,
   }
 }
 
@@ -277,8 +336,8 @@ const originOf = (speech: SpeechCutRecordForView['speech']): SpeechCutOriginView
 
 /**
  * C168 — library view of a cut: the base view plus the origin speech (label +
- * link to the acervo) and the creation date the list shows. `error`, `step`
- * and `createdBy` still never pass through.
+ * link to the acervo) and the creation date the list shows. `error` and
+ * `createdBy` still never pass through (a failure travels as `failureMessage`).
  */
 export const toSpeechCutLibraryItemViewModel = (
   record: SpeechCutRecordForView,
