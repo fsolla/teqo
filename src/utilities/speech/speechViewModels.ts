@@ -16,7 +16,12 @@ import {
   type SpeechHighlightPart,
 } from '@/lib/speechHighlight'
 import { normalizeForSearch } from '@/lib/speechSearch'
-import { excerptOffsetSeconds, parseYoutubeVideoId, speechVodCoordinates } from '@/lib/speechVod'
+import {
+  excerptOffsetSeconds,
+  parseYoutubeVideoId,
+  speechVodCoordinates,
+  youtubeThumbnailUrl,
+} from '@/lib/speechVod'
 import type { Municipality } from '@/payload-types'
 import { speechScopeLabels, speechTopicLabels } from '@/utilities/speech/speechListUrl'
 
@@ -53,6 +58,8 @@ export type SpeechListItemViewModel = {
   scopes: { value: SpeechScope; label: string }[]
   keywords: string[]
   municipalities: { id: number; name: string }[]
+  /** YouTube cover of the session link (C175); null when the speech has none. */
+  thumbnailUrl: string | null
   watchHref: string
   sourceUrl: string | null
 }
@@ -203,6 +210,7 @@ export const toSpeechListItemViewModel = ({
     scopes: scopeViewModels(speech),
     keywords: speech.keywords ?? [],
     municipalities: municipalityViewModels(speech, municipalityLabels),
+    thumbnailUrl: youtubeThumbnailUrl(parseYoutubeVideoId(speech.youtubeUrl)),
     watchHref: buildWatchHref(speech.id, matchedSegment, q),
     sourceUrl: speech.officialTextUrl ?? speech.youtubeUrl ?? null,
   }

@@ -160,6 +160,14 @@ export const parseYoutubeVideoId = (raw: unknown): string | null => {
   return candidate && YOUTUBE_VIDEO_ID.test(candidate) ? candidate : null
 }
 
+/**
+ * The YouTube default cover (C175) of an already-parsed video id, or null when
+ * there is none. `hqdefault` is the variant the whole repo uses; `object-cover`
+ * crops the 4:3 letterbox bars the YouTube player frame adds to 16:9 video.
+ */
+export const youtubeThumbnailUrl = (videoId: string | null): string | null =>
+  videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null
+
 const SAO_PAULO_TIME_ZONE = 'America/Sao_Paulo'
 const NAIVE_DATETIME = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/
 const brtWallClock = new Intl.DateTimeFormat('en-CA', {
