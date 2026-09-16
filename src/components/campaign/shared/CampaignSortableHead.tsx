@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronDownIcon, ChevronsUpDownIcon, ChevronUpIcon } from 'lucide-react'
-import type { PointerEvent, ReactElement, ReactNode, Ref } from 'react'
+import { Fragment, type PointerEvent, type ReactElement, type ReactNode, type Ref } from 'react'
 
 import { CampaignTransitionAnchor } from '@/components/campaign/shared/CampaignListPending'
 import { TableHead } from '@/components/ui/Table'
@@ -91,8 +91,13 @@ export const CampaignSortableHead = ({
             align === 'center' && 'justify-center',
           )}
         >
-          {labeledSort}
-          {filter}
+          {/* Keyed slots (Issue #1042): `filter` is created by a server
+              component (e.g. LeadershipSortableHead) and arrives without a
+              validated key, so reconciling this array warned "unique key" in
+              the dev build and failed the e2e console guard. Keying both
+              slots covers the array; the Fragments add no DOM. */}
+          <Fragment key="sort">{labeledSort}</Fragment>
+          <Fragment key="filter">{filter}</Fragment>
         </div>
       ) : (
         labeledSort

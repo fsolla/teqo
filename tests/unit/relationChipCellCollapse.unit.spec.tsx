@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { createElement } from 'react'
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   RelationChipCell,
@@ -22,11 +22,13 @@ import type { CampaignFormActionState } from '@/utilities/campaignFormActionErro
  * "Ver mais…"/"Ver menos" toggling between the slice and the full set.
  *
  * The stub keys off attributes, mirroring how the measurement walks the DOM:
- * `[data-relation-chip]` spans get index-derived rects (line = floor(idx/4)),
- * `[data-relation-toggle]` reserves a small width on the last line, INPUT is
- * width 0 (so the `minWidth` branch is skipped), and every other element is the
- * row, whose generously wide `right` keeps the trailing-width loop from
- * shrinking the slice.
+ * `[data-relation-chip]` spans get index-derived rects (line = floor(idx/N),
+ * N = 4 by default), `[data-relation-toggle]` reserves a small width on the
+ * last line, INPUT is width 0 by default (so the `minWidth` branch is
+ * skipped), and every other element is the row, `right` = 500 by default
+ * (generously wide, keeping the trailing-width loop from shrinking the slice).
+ * The `// Issue #1042` case below overrides all three, because the floor of
+ * one only matters where the defaults do not reach.
  */
 
 vi.mock('sonner', () => ({
@@ -40,9 +42,18 @@ const CHIPS_PER_LINE = 4
 const ROW_RIGHT = 500
 const TOGGLE_WIDTH = 40
 
+/**
+ * Issue #1042 — the geometry is per-test so the regression can narrow the
+ * column and make the search input reserve its real `min-w-32` (128px): that
+ * reservation is what used to walk `fitting` to zero. Reset in `beforeEach`.
+ */
+let chipsPerLine = CHIPS_PER_LINE
+let rowRight = ROW_RIGHT
+let inputWidth = 0
+
 const chipRect = (index: number) => {
-  const line = Math.floor(index / CHIPS_PER_LINE)
-  const col = index % CHIPS_PER_LINE
+  const line = Math.floor(index / chipsPerLine)
+  const col = index % chipsPerLine
   const top = line * (CHIP_HEIGHT + CHIP_GAP_PX)
   const left = col * (CHIP_WIDTH + CHIP_GAP_PX)
   return {
@@ -69,6 +80,7 @@ const indexAmongChipSiblings = (element: Element): number => {
 }
 
 const originalGetBoundingClientRect = Element.prototype.getBoundingClientRect
+const originalGetComputedStyle = window.getComputedStyle.bind(window)
 
 const chip = (id: number): RelationChip => ({
   key: `chip-${id}`,
@@ -122,13 +134,22 @@ beforeAll(() => {
       return { width: TOGGLE_WIDTH } as DOMRect
     }
     if (this.tagName === 'INPUT') {
-      return { width: 0, height: CHIP_HEIGHT } as DOMRect
+      return { width: inputWidth, height: CHIP_HEIGHT } as DOMRect
     }
-    return { right: ROW_RIGHT, width: ROW_RIGHT } as DOMRect
+    return { right: rowRight, width: rowRight } as DOMRect
   }
 })
 
-afterEach(cleanup)
+beforeEach(() => {
+  chipsPerLine = CHIPS_PER_LINE
+  rowRight = ROW_RIGHT
+  inputWidth = 0
+})
+
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
 
 afterAll(() => {
   vi.unstubAllGlobals()
@@ -178,5 +199,32 @@ describe('RelationChipCell collapse contract (B170 F1)', () => {
     expect(chipCount(container)).toBe(12)
     expect(screen.getByText('Estado 12')).toBeTruthy()
     expect(screen.queryByRole('button', { name: /Ver mais/ })).toBeNull()
+  })
+
+  it('keeps one chip visible when wide chips fill every line (Issue #1042)', () => {
+    // One chip per line: the 4th lands past the 3-row cap, so the shrink loop
+    // runs — and in the narrow column the input's 128px `min-w-32`
+    // reservation leaves no room for any tail chip. The loop used to walk
+    // `fitting` to 0 and the cell rendered with no chips at all, only
+    // "Ver mais…" (the B34 e2e failure snapshot). The floor of one keeps the
+    // first chip; the toggle and the input wrap to the next line.
+    chipsPerLine = 1
+    rowRight = 200
+    inputWidth = 128
+    vi.spyOn(window, 'getComputedStyle').mockImplementation((element: Element) =>
+      element.tagName === 'INPUT'
+        ? ({ minWidth: '128px' } as CSSStyleDeclaration)
+        : originalGetComputedStyle(element),
+    )
+
+    const { container } = render(chipCell([1, 2, 3, 4]))
+
+    expect(chipCount(container)).toBe(1)
+    expect(screen.getByText('Estado 1')).toBeTruthy()
+    expect(screen.queryByText('Estado 2')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Ver mais…' }))
+    expect(chipCount(container)).toBe(4)
+    fireEvent.click(screen.getByRole('button', { name: 'Ver menos' }))
+    expect(chipCount(container)).toBe(1)
   })
 })

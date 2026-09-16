@@ -518,7 +518,12 @@ export const RelationChipCell = ({
         ? Number.parseFloat(getComputedStyle(inputElement).minWidth) || 0
         : 0
     const trailingWidth = toggleWidth + CHIP_GAP_PX + inputWidth
-    while (fitting > 0 && fitting < chipElements.length) {
+    // Floor of one (Issue #1042): when wide chips fill every line, the tail
+    // chip always fails the reservation and the old `fitting > 0` guard walked
+    // all the way to 0 — a cell with links rendered as just "Ver mais…", every
+    // chip out of the DOM. One chip always survives; the toggle and the input
+    // wrap to the next line when they do not fit beside it.
+    while (fitting > 1 && fitting < chipElements.length) {
       const trailing = chipRects[fitting - 1]
       if (trailing.right + CHIP_GAP_PX + trailingWidth <= rowRect.right) break
       fitting -= 1
