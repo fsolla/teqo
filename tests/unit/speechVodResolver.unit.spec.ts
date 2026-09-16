@@ -125,12 +125,21 @@ describe('resolveSpeechVod', () => {
     })
   })
 
-  it('maps GERANDO and INDISPONIVEL without probing anything', async () => {
-    const calls = stubFetch(async () => jsonResponse({ estado: 'GERANDO', video: null }))
-    await expect(resolveSpeechVod({ eventId: 1, audioId: 2, excerptTms: 3 })).resolves.toEqual({
-      state: 'gerando',
-    })
-    expect(calls).toHaveLength(1)
+  it('maps GERANDO across the bounded polls and INDISPONIVEL without probing media', async () => {
+    vi.useFakeTimers()
+    try {
+      const calls = stubFetch(async () => jsonResponse({ estado: 'GERANDO', video: null }))
+      const assertion = resolveSpeechVod({ eventId: 1, audioId: 2, excerptTms: 3 })
+      await vi.advanceTimersByTimeAsync(
+        SPEECH_VOD_PLAYER_POLICY.pollDelayMs * SPEECH_VOD_PLAYER_POLICY.pollAttempts + 100,
+      )
+
+      await expect(assertion).resolves.toEqual({ state: 'gerando' })
+      expect(calls).toHaveLength(1 + SPEECH_VOD_PLAYER_POLICY.pollAttempts)
+      expect(calls.every((call) => call.url.includes('video-sob-demanda'))).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
 
     vi.unstubAllGlobals()
     const unavailableCalls = stubFetch(async () =>
@@ -140,6 +149,35 @@ describe('resolveSpeechVod', () => {
       state: 'indisponivel',
     })
     expect(unavailableCalls).toHaveLength(1)
+  })
+
+  it('polls a GERANDO answer until PRONTO instead of failing on the first read', async () => {
+    vi.useFakeTimers()
+    try {
+      let statusReads = 0
+      const calls = stubFetch(async (url) => {
+        if (url.includes('video-sob-demanda')) {
+          statusReads += 1
+          return statusReads === 1
+            ? jsonResponse({ estado: 'GERANDO', video: null })
+            : jsonResponse(readyBody)
+        }
+        return mediaResponse(206, 'video/mp4')
+      })
+
+      const assertion = resolveSpeechVod({ eventId: 1, audioId: 2, excerptTms: 3 })
+      await vi.advanceTimersByTimeAsync(SPEECH_VOD_PLAYER_POLICY.pollDelayMs + 100)
+
+      await expect(assertion).resolves.toEqual({
+        state: 'pronto',
+        playbackUrl: VOD_PLAYBACK,
+        downloadUrl: VOD_DOWNLOAD,
+      })
+      expect(statusReads).toBe(2)
+      expect(calls[0]?.url).toContain('trecho=3')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('throws after the bounded retries when the Câmara is unreachable', async () => {
@@ -160,13 +198,13 @@ describe('resolveSpeechVod', () => {
     }
   })
 
-  it('keeps the C162 player click pinned to the short policy', () => {
+  it('keeps the C162 player click pinned to the short policy with its own poll budget', () => {
     expect(SPEECH_VOD_PLAYER_POLICY).toEqual({
       statusTimeoutMs: 15_000,
       statusRetries: 1,
       retryDelayMs: 1_000,
-      pollAttempts: 0,
-      pollDelayMs: 1_000,
+      pollAttempts: 2,
+      pollDelayMs: 3_000,
     })
   })
 })
