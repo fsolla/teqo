@@ -51,24 +51,26 @@ const gatedMockAiChat = (page: Page) => {
 const MESSAGE = 'Mensagem que sobrevive ao reload'
 const SECOND_MESSAGE = 'Segunda pergunta'
 
-const openDesktopChat = async (page: Page) => {
-  // B203 — fresh desktop sessions start closed; open explicitly via the header button.
-  await waitForRouterSettled(page)
-  await page
-    .getByRole('button', { name: 'Sollinha — Assistente virtual' })
-    .filter({ visible: true })
-    .click()
-  await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
-}
-
 const openChatAndSend = async (page: Page) => {
-  await openDesktopChat(page)
+  // The chat must already be open (desktop: via the header button — B203;
+  // mobile: via the drawer) — this helper only sends.
+  await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
   // OPS42 — dev-only settle before interacting (see `waitForRouterSettled`).
   await waitForRouterSettled(page)
   const input = page.getByRole('textbox', { name: 'Pergunte para o Sollinha...' })
   await input.fill(MESSAGE)
   await input.press('Enter')
   await expect(page.getByText(MESSAGE)).toBeVisible({ timeout: 20_000 })
+}
+
+/** B203 — desktop-only: fresh sessions start closed; open via the header button. */
+const openDesktopChat = async (page: Page) => {
+  await waitForRouterSettled(page)
+  await page
+    .getByRole('button', { name: 'Sollinha — Assistente virtual' })
+    .filter({ visible: true })
+    .click()
+  await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
 }
 
 /** The chat has settled once the mic button re-enables (busy → ready). */
@@ -111,6 +113,7 @@ test.describe('B188 — contexto da conversa persiste na sessão da janela/tab',
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/campanha')
 
+    await openDesktopChat(page)
     await openChatAndSend(page)
     await waitForChatSettled(page)
     // Deterministic gate: the persist effect must have landed before reload.
@@ -130,6 +133,7 @@ test.describe('B188 — contexto da conversa persiste na sessão da janela/tab',
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/campanha')
 
+    await openDesktopChat(page)
     await openChatAndSend(page)
     await waitForChatSettled(page)
 
