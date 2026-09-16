@@ -636,16 +636,76 @@ describe('buildCityReport', () => {
     ).toBe(false)
   })
 
-  it('puts research answers in Quem é quem with compact sources and URLs in section 10', () => {
+  it('puts research answers in Quem é quem with compact sources and URLs in the sources section', () => {
     const grid = report.page1.blocks.find((block) => block.kind === 'grid')!
     const who = grid.cells![1].blocks[0]
     const prefeito = who.rows!.find((row) => row.label === 'Prefeito(a)')!
     expect(prefeito.value).toBe('Resposta de prefeito')
     expect(prefeito.source!.url).toBeNull()
     expect(prefeito.source!.date).toBe('2026-09-10')
-    const fontes = report.sections.find((section) => section.id === 'fontes')!.blocks[0]
+    const fontes = report.sections
+      .find((section) => section.id === 'fontes')!
+      .blocks.find((block) => block.kind === 'sources')!
     expect(fontes.items!.some((item) => item.url === 'https://exemplo.test/prefeito')).toBe(true)
     expect(fontes.items!.some((item) => item.url === 'https://exemplo.test/polo')).toBe(true)
+  })
+
+  it('caps the page-1 research excerpt and keeps the full text in the deep dive (OPS120)', () => {
+    const longAnswer = 'palavra '.repeat(20).trim()
+    const longResearch = normalizeResearchInput(
+      {
+        municipalitySlug: 'feira-de-santana',
+        researchedAt: '2026-09-14T10:00:00.000Z',
+        items: RESEARCH_CHECKLIST_IDS.map((id) => validItem(id, { answer: longAnswer })),
+        gaps: [],
+      },
+      { now: generatedAt },
+    )
+    const capped = asReport(
+      buildCityReport({ snapshot, research: longResearch, emendas, generatedAt }),
+    )
+
+    const who = capped.page1.blocks.find((block) => block.kind === 'grid')!.cells![1].blocks[0]
+    const prefeito = who.rows!.find((row) => row.label === 'Prefeito(a)')!
+    expect(prefeito.value!.length).toBeLessThan(longAnswer.length)
+    expect(prefeito.value!.endsWith('…')).toBe(true)
+
+    const appendix = capped.sections
+      .find((section) => section.id === 'fontes')!
+      .blocks.find((block) => block.title === 'Pesquisa — respostas integrais (texto completo)')!
+    const rows = appendix.rows as unknown as TableRow[]
+    expect(rows).toHaveLength(RESEARCH_CHECKLIST_IDS.length)
+    expect(rows[0].answer).toContain(longAnswer)
+  })
+
+  it('keeps short research answers untouched on page 1 and shows the list remainder', () => {
+    const who = report.page1.blocks.find((block) => block.kind === 'grid')!.cells![1].blocks[0]
+    const prefeito = who.rows!.find((row) => row.label === 'Prefeito(a)')!
+    expect(prefeito.value).toBe('Resposta de prefeito')
+
+    const manyDeputies = asReport(
+      buildCityReport({
+        snapshot: {
+          ...snapshot,
+          conjuncture: {
+            ...snapshot.conjuncture,
+            stateDeputies: [
+              { id: 5, name: 'Deputada Estadual', party: 'PT' },
+              { id: 6, name: 'Deputado Dois', party: 'PCdoB' },
+              { id: 7, name: 'Deputado Três', party: 'PT' },
+            ],
+          },
+        },
+        research,
+        emendas,
+        generatedAt,
+      }),
+    )
+    const many = manyDeputies.page1.blocks.find((block) => block.kind === 'grid')!.cells![1]
+      .blocks[0]
+    const dobradinhas = many.rows!.find((row) => row.label === 'Dobradinhas')!
+    expect(dobradinhas.value).toContain('e mais 1')
+    expect(dobradinhas.value).not.toContain('Deputado Três')
   })
 
   it('builds the region panorama from the committed artifact', () => {

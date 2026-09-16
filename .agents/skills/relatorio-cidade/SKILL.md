@@ -293,7 +293,10 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   campo, lideranças, dobradinhas, vereadores), o que Solla entregou (emendas
   oficiais com fase, acervo de falas, notícias ≤90 dias), **indícios web de
   emendas** quando a fonte oficial não atribui ao município, anunciar × não
-  anunciar, riscos e pontos sem leitura.
+  anunciar, riscos e pontos sem leitura. Os textos livres da pesquisa entram
+  **capados** (teto/orçamento de conteúdo, não layout espremido) e as listas
+  mostram `e mais N` — o texto integral de cada item fica no aprofundamento
+  (ver "respostas integrais" em `14. Fontes e limites`).
 - **Seções 2+:** `1. Conta eleitoral` · `2. Concorrentes no município (federal
   e estadual)` — top 5 por votos de 2022 na base TSE, com série 2014/2018/2022
   e os prováveis candidatos do campo do prefeito (pesquisa), além da **frente de
@@ -315,7 +318,9 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   VOD da Câmara, que é o clipe do próprio trecho) e **Transcrição** (PDF do
   Diário) quando existirem · `11. Notícias e imprensa` ·
   `12. Panorama regional` · `13. Abordagem sugerida (personas)` · `14. Fontes e
-  limites`.
+  limites` — lista as fontes e, antes delas, a tabela **"Pesquisa — respostas
+  integrais"** com o texto completo de cada item do checklist (o que a página 1
+  capou).
 - **Acervo por região e tema:** como cidade pequena quase nunca tem fala
   própria, a seção 10 mostra três recortes **não sobrepostos**: falas do
   município (quando existem), **menções à região** (demais municípios do mesmo
@@ -383,8 +388,11 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
 
 ## Troubleshooting
 
-- **Página 1 estourou**: o builder aborta com `scrollHeight > útil`; corte copy
-  do resumo/`caps`, não mexa no layout para "espremer".
+- **Página 1 estourou**: o builder aborta com `scrollHeight > útil` e o erro é
+  açãoável. A página 1 já aplica tetos de conteúdo aos textos da pesquisa
+  (`PAGE_ONE_*_MAX` em `scripts/lib/cityReportBlocks.mjs`) e preserva o texto
+  integral no aprofundamento; se ainda estourar, **aperte o teto da pesquisa ou
+  corte copy do resumo — nunca mexa no layout para "espremer"**.
 - **`tsx` ausente no homeserver**: `pnpm install --prod=false`.
 - **API de emendas 429/erro**: o builder degrada para lacuna com URL+motivo;
   reexecute depois (o cache só é escrito com resultado utilizável).
