@@ -132,6 +132,8 @@ export const branchNameForIssue = (issue, maxLength = 60) => {
   return `${code}-${slug.slice(0, keep)}`
 }
 
+const hasBag = (bag) => typeof bag === 'string' && bag.trim().length > 0
+
 /**
  * Shared branch naming for namespace worktrees NOT tied to the claim queue
  * (`plan`, `new`). Every invocation must land on a DIFFERENT branch so
@@ -148,9 +150,7 @@ export const branchNameForIssue = (issue, maxLength = 60) => {
  * `<Code>-<slug>` branches.
  */
 const namespaceBranchName = ({ prefix, bag = '', taken = new Set(), fallback }) => {
-  const hasBag = typeof bag === 'string' && bag.trim().length > 0
-
-  if (!hasBag) {
+  if (!hasBag(bag)) {
     for (let n = 1; ; n += 1) {
       const candidate = `${prefix}${n}`
       if (!taken.has(candidate)) return candidate
@@ -290,3 +290,33 @@ export const workBranchName = ({ bag = '', taken = new Set() }) =>
  */
 export const fixBranchName = ({ bag = '', taken = new Set() }) =>
   namespaceBranchName({ prefix: `${FIX_BRANCH_PREFIX}/`, bag, taken, fallback: 'fix' })
+
+const NAMESPACE_LAUNCH = new Map([
+  ['plan', { noun: 'de planejamento', labelPrefix: 'lote', carriesBag: true }],
+  ['new', { noun: 'neutro', labelPrefix: 'bag', carriesBag: false }],
+  ['fix', { noun: 'de correção de bug', labelPrefix: 'bug', carriesBag: true }],
+])
+
+/**
+ * Launch descriptor for a namespace worktree (`plan`/`new`/`fix`) — the pure
+ * purpose→options mapping the runner (`cmdNamespaceBranch`) derives from
+ * `purpose`+`bag` instead of receiving as droppable parameters. `noun` and
+ * `sessionLabel` are the human labels of the provisioning log (`lote "…"`/
+ * `bag "…"`/`bug "…"`, or `sequencial` without a bag); `argument` rides the
+ * launch directive only for the purposes whose skill accepts a bag (`plan`
+ * opening message, `fix` bug description) — `new` is neutral and never carries
+ * one. Unknown purposes throw: a purpose without a descriptor is a wiring
+ * error, never a silently invented label.
+ * @param {{ purpose?: string | null, bag?: string | null }} [options]
+ */
+export const namespaceLaunchDescriptor = ({ purpose = null, bag = null } = {}) => {
+  const entry = NAMESPACE_LAUNCH.get(purpose)
+  if (!entry) {
+    throw new Error(`namespaceLaunchDescriptor: purpose desconhecido "${purpose}"`)
+  }
+  return {
+    noun: entry.noun,
+    sessionLabel: hasBag(bag) ? `${entry.labelPrefix} "${bag}"` : 'sequencial',
+    argument: entry.carriesBag ? bag : null,
+  }
+}
