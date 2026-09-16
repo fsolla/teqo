@@ -1,6 +1,6 @@
 ---
 name: relatorio-cidade
-description: 'Gera o relatório de cidade pré-viagem (PDF A4 + .md) a partir da base Teqo read-only + pesquisa web datada + emendas oficiais.'
+description: 'Gera o relatório de cidade pré-viagem (PDF A4 + .md) a partir da base Teqo read-only + pesquisa web datada + emendas oficiais; aceita um município ou um lote separado por vírgula.'
 ---
 
 # Relatório de cidade pré-viagem (C163)
@@ -13,21 +13,56 @@ URL por item) e emendas lidas da fonte oficial **em tempo de geração**. Págin
 
 ## Quando usar
 
-- O candidato/CG pede "o relatório de <cidade>" antes de uma viagem.
-- Quem executa é o agente (pesquisa web + escrita dos JSONs) + os dois scripts
-  (`extract` no homeserver, `build` local). O PDF sai para leitura de bolso.
+- O candidato/CG pede "o relatório de <cidade>" antes de uma viagem — ou de
+  várias numa invocação (`/relatorio-cidade Ilheus, Itacare, Una`).
+- Quem executa são o **orquestrador** (agente principal) + um sub-agente
+  **researcher** por cidade + os dois scripts (`extract` no homeserver, `build`
+  local). O PDF sai para leitura de bolso; o detalhe das etapas está em
+  "Pipeline (etapas)".
 
-## Pipeline (3 passos)
+## Lote (várias cidades)
 
-1. **Slug canônico.** O município é sempre um slug do catálogo
-   (`src/lib/municipalityCatalog.ts`, 435 unidades; Salvador = `salvador-ze-N`).
+A invocação aceita **um** município (caso de sempre) ou **vários**, separados por
+**vírgula** — a lista é o argumento, não um novo comando:
+
+```text
+/relatorio-cidade Feira de Santana          # N=1 — caminho atual, sem regressão
+/relatorio-cidade Ilheus, Itacare, Una      # lote
+```
+
+Parsing (orquestrador, **antes** de qualquer pesquisa):
+
+- separa por `,`; aplica `trim`; descarta vazio;
+- cada token é aceito como **slug canônico** (`isMunicipalitySlug`) **ou** como
+  **nome** (fold acento-insensível `resolveMunicipalityName`; `null` = nome
+  desconhecido → token inválido) → `municipalityCatalogEntriesForCity`;
+- **0 entradas** = token inválido; **>1 entrada** = ambíguo (ex.: `Salvador`
+  resolve para 19 zonas `salvador-ze-N` — peça o slug da zona explícito);
+- **dedupe após a resolução**, preservando a ordem — duas grafias do mesmo
+  município (`Ilheus, ilheus`) geram **um** artefato, não dois;
+- token inválido/ambíguo vira **falha isolada** com o motivo no summary final —
+  **nunca** aborta o lote nem inventa slug.
+
+Uma cidade = um par PDF+MD (`<slug>-<YYYY-MM-DD>`); **sem** índice/PDF agregado.
+
+## Pipeline (etapas)
+
+1. **Orquestrador (agente principal).** Parseia a lista (seção "Lote"), resolve os
+   slugs no catálogo (`src/lib/municipalityCatalog.ts`, 435 unidades; Salvador =
+   `salvador-ze-N`) e dispara **um researcher por cidade em paralelo** (Task).
    Não invente slug: confirme no catálogo (`pnpm exec tsx -e` ou a lista em
-   `/campanha/municipios`).
-2. **Pesquisa web → `data/relatorios-cidade/<slug>.research.json`.**
-   Cada item do checklist com `sourceUrl` + `sourceDate`; sem fonte, **não
-   escreva o item** (ele vira lacuna). Notícias: janela ≤90 dias.
-3. **Extração read-only no homeserver** (receita completa no runbook
-   `docs/ops/teqo-1313-deploy.md` §"C163 — relatório de cidade"):
+   `/campanha/municipios`). Nunca retém pesquisa web nem o corpo de um
+   `research.json` — só os recibos.
+2. **Researcher (sub-agente, ×N, em paralelo).** `.opencode/agent/relatorio-cidade.md`
+   — o **único** passo pesado de contexto. Faz a pesquisa web datada e escreve
+   `data/relatorios-cidade/<slug>.research.json`: cada item do checklist com
+   `sourceUrl` + `sourceDate`; sem fonte, **não escreva o item** (ele vira
+   lacuna). Notícias: janela ≤90 dias. Devolve **apenas o recibo curto** (seção
+   "Recibo do researcher") — nunca o corpo. Não roda ssh nem build.
+3. **Extração read-only no homeserver — serializada.** Um município por vez: o
+   checkout `~/teqo-report` é compartilhado e ssh concorrente colide. Receita
+   completa no runbook
+   `docs/ops/teqo-1313-deploy.md` §"C163 — relatório de cidade":
    ```bash
    ssh homeserver
    source ~/.nvm/nvm.sh
@@ -41,9 +76,12 @@ URL por item) e emendas lidas da fonte oficial **em tempo de geração**. Págin
        --municipality=<slug> --out=data/relatorios-cidade/<slug>.snapshot.json
    ```
    Depois `scp homeserver:~/teqo-report/data/relatorios-cidade/<slug>.snapshot.json data/relatorios-cidade/`.
+   Crie `data/relatorios-cidade/logs/` e redirecione a saída para
+   `logs/<slug>.extract.log 2>&1`; retenha só o status + o caminho — o log não
+   entra no contexto do orquestrador.
    O `~/teqo-report` é checkout de **scratch** — não use `~/teqo-deploy` (deploy
    em andamento no mesmo host). O SHA do extrator e do builder devem ser o mesmo.
-4. **Render local:**
+4. **Render local (por cidade):**
    ```bash
    NODE_OPTIONS="--no-deprecation --import=tsx/esm" node scripts/build-city-report.mjs \
      --snapshot=data/relatorios-cidade/<slug>.snapshot.json \
@@ -52,11 +90,43 @@ URL por item) e emendas lidas da fonte oficial **em tempo de geração**. Págin
    ```
    Saídas: `docs/research/relatorios-cidade/<slug>-<YYYY-MM-DD>.pdf` + `.md`
    (companion revisável em diff). Intermediários gitignored em
-   `data/relatorios-cidade/` (HTML, JSONs de emendas).
+   `data/relatorios-cidade/` (HTML, JSONs de emendas, `logs/`). Também
+   redirecione a saída do builder para `logs/<slug>.build.log`.
    Flags úteis: `--emendas=<json>` (replay sem rede), `--author=<nome>`
    (default `JORGE SOLLA`), `--generated-at=<ISO>` (reprodutibilidade),
    `CITY_REPORT_STRICT=1` (falha o run se houver lacuna de pesquisa — para
    conferência, não para entrega).
+5. **Summary final.** Uma linha por entrada, na ordem da lista: `entrada · status
+   (ok|failed) · PDF/MD (quando ok) · motivo (quando falha)` — `entrada` é o slug
+   resolvido ou, quando o token falha antes de resolver, o próprio token cru.
+   Falha de uma cidade **não** cancela as demais (sucesso parcial explícito); a
+   cidade que falha é pulada nas etapas seguintes.
+
+## Recibo do researcher
+
+O sub-agente por cidade devolve **só** este recibo curto (≤ ~15 linhas) — **nunca**
+o corpo do `research.json` (`items[].answer/details`, `news[].summary`,
+`approach`, `leaders`, …):
+
+```jsonc
+{
+  "slug": "ilheus",
+  "status": "ok",              // ou "failed"
+  "researchPath": "data/relatorios-cidade/ilheus.research.json",
+  "researchedAt": "2026-09-16T10:00:00.000Z",
+  "itemCount": 6,              // itens do checklist com fonte
+  "gapCount": 3,               // == gaps.length (checklist + blocos de pesquisa)
+  "gaps": ["prefeito", "vice", "disputa_local"],
+  "newsCount90d": 4,           // notícias na janela ≤90 dias
+  "weakSourceCount": 1,        // item cujo único apoio é fonte de região/polo
+  "failureReason": "…"         // opcional (só quando status = failed)
+}
+```
+
+`itemCount` + `gapCount` cobrem o checklist fixo; `gapCount` conta também os
+blocos de pesquisa sem fonte. `status: "failed"` carrega o motivo e **não** escreve
+corpo parcial. O orquestrador agrega os recibos no summary final — é o único dado
+de pesquisa que cruza para ele.
 
 ## Contrato dos JSONs
 
@@ -304,6 +374,10 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   ataque pessoal. Prioriza o local (operadores na região) sobre o líder estadual e
   sinaliza temas de mão dupla; onde a marca do adversário domina, o insumo é para
   contraste, não para confronto frontal.
+- **Falha isolada no lote**: cidade que falha (token inválido/ambíguo, pesquisa
+  sem fonte suficiente, snapshot×research mismatch) não cancela as demais; o
+  summary final diz explicitamente o que saiu e o que falhou (sucesso parcial
+  visível).
 - **Artefato gitignored**: o repo é público; o PDF/MD com dado interno nunca é
   commitado (só a skill/scripts/changelog).
 
@@ -321,10 +395,17 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   `pnpm exec playwright install chromium`.
 - **Snapshot de outro município**: o builder recusa (`municipalitySlug` ≠
   snapshot) — regenere, nunca edite o JSON à mão para "casar".
+- **Token inválido/ambíguo no lote**: vira linha `failed` no summary com o
+  motivo; `Salvador` é ambíguo (19 zonas) e exige o slug da zona
+  (`salvador-ze-N`) — nunca expanda nem adivinhe.
+- **Extração ssh em paralelo**: não faça — o `~/teqo-report` é compartilhado
+  (`git fetch/checkout/pull` + `pnpm install`); serialize a extração por cidade.
 
 ## Referências
 
 - Intenção: `docs/plans/relatorio-cidade-viagem.md`; impl:
   `docs/plans/relatorio-cidade-viagem-impl.md`.
+- Lote + sub-agentes: `docs/plans/ops118-relatorio-cidade-lote-municipios-sub-agentes.md`
+  e `-impl.md`.
 - Precedente de PDF: `scripts/build-solla-ceuci-salvador-report.mjs` (C157).
 - Runbook: `docs/ops/teqo-1313-deploy.md` §C163.
