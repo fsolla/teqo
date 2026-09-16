@@ -1,8 +1,8 @@
 # OPS: knip carrega o payload.config.ts com erro (importMap commitado) e roda com análise degradada
 
-Status: rascunho
+Status: executado (impl: docs/plans/ops-knip-importmap-artifact-impl.md)
 Atualizado em: 2026-09-16
-Issue: a registrar — OPS124
+Issue: #1094 (OPS124)
 Priority: P3
 Impeccable: A — sem UI
 Appetite: ~30 min eng; sem schema, sem deploy
@@ -11,7 +11,9 @@ Appetite: ~30 min eng; sem schema, sem deploy
 
 `pnpm knip` imprime `ERROR: Error loading src/payload.config.ts (This module cannot be imported from a Client Component module. It should only be used from a Server Component.)` e **sai com código 0** — acontece no CI (run `35099887216`) e local, sempre que `src/app/(payload)/admin/importMap.js` está no working tree. Esse arquivo está **commitado** (apesar de `knip.json`/OPS99/`.gitignore` o tratarem como artefato de build), importa componentes client e faz o knip carregar `payload.config.ts`; o `server-only` resolve para o entry que lança sob as condições padrão (não `react-server`), e a regra `paths.server-only` do `knip.json` não está sendo aplicada ao specifier de pacote. Sem o arquivo, o knip completa (com 2 unresolved imports esperados de `[[...segments]]`). Por sair 0, o gate fica verde com o knip **degradado em silêncio**: um ERROR que ninguém lê e uma análise possivelmente incompleta (o entry falhou ao carregar).
 
-Correção de rumo (2026-09-16): durante o C178 eu supus que isso quebrava `pnpm push`/`gate:ci` local; na prática o exit é 0 e o push não é afetado. O problema real é o erro silencioso/análise degradada.
+Correção de rumo (2026-09-16): durante o C178 eu supus que isso quebrava `pnpm push`/`gate:ci` local; na prática o exit é 0 e o push não é afetado. O problema real é o erro silencioso.
+
+Segunda correção de rumo (2026-09-16, no impl): o ERROR é **independente** do `importMap.js` — ele reaparece só de carregar a config, com ou sem o arquivo; o `importMap` commitado apenas troca o exit 1 (unresolved `../importMap`) por um exit 0. E o `paths.server-only` **não** pode corrigir o carregamento (só alimenta o resolver estático do knip). O caminho escolhido é desabilitar o plugin do Payload e explicitar o que ele contribuía — ver `docs/plans/ops-knip-importmap-artifact-impl.md`.
 
 ## Fases verificáveis
 
