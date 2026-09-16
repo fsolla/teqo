@@ -449,6 +449,16 @@ describe('SpeechDetailPlayer — C171-F1 keeps the transcript point across the s
     await waitFor(() => expect(videoElement()).not.toBeNull())
   }
 
+  // The seek effect attaches its `loadedmetadata` listener on the passive
+  // effect pass, which can land after the video is in the DOM under load;
+  // re-dispatching inside waitFor closes that window deterministically.
+  const applyLoadedMetadata = async (seconds: number) => {
+    await waitFor(() => {
+      fireEvent.loadedMetadata(videoElement()!)
+      expect(videoElement()?.currentTime).toBe(seconds)
+    })
+  }
+
   it('keeps the transcript point clicked on the embed when switching to the Câmara', async () => {
     respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
     renderYoutubePlayer({ initialSeconds: 100 })
@@ -457,9 +467,7 @@ describe('SpeechDetailPlayer — C171-F1 keeps the transcript point across the s
     expect(iframeElement()?.getAttribute('src')).toContain('start=2677')
 
     await switchToCamera()
-    fireEvent.loadedMetadata(videoElement()!)
-
-    expect(videoElement()?.currentTime).toBe(43)
+    await applyLoadedMetadata(43)
   })
 
   it('seeks the clicked point on the Câmara surface even without a deep link', async () => {
@@ -468,9 +476,7 @@ describe('SpeechDetailPlayer — C171-F1 keeps the transcript point across the s
 
     fireEvent.click(segmentButton(43))
     await switchToCamera()
-    fireEvent.loadedMetadata(videoElement()!)
-
-    expect(videoElement()?.currentTime).toBe(43)
+    await applyLoadedMetadata(43)
   })
 
   it('seeks the deep link when the file was verified before switching to the Câmara', async () => {
@@ -478,9 +484,7 @@ describe('SpeechDetailPlayer — C171-F1 keeps the transcript point across the s
     await verifyDownloadFirst()
 
     await switchToCamera()
-    fireEvent.loadedMetadata(videoElement()!)
-
-    expect(videoElement()?.currentTime).toBe(100)
+    await applyLoadedMetadata(100)
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
@@ -489,9 +493,7 @@ describe('SpeechDetailPlayer — C171-F1 keeps the transcript point across the s
     await verifyDownloadFirst()
 
     await switchToCamera()
-    fireEvent.loadedMetadata(videoElement()!)
-
-    expect(videoElement()?.currentTime).toBe(0)
+    await applyLoadedMetadata(0)
   })
 
   it('applies the pending transcript point after the Câmara file resolves on retry', async () => {
@@ -506,9 +508,8 @@ describe('SpeechDetailPlayer — C171-F1 keeps the transcript point across the s
     respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
     fireEvent.click(screen.getByRole('button', { name: /tentar novamente/i }))
     await waitFor(() => expect(videoElement()).not.toBeNull())
-    fireEvent.loadedMetadata(videoElement()!)
 
-    expect(videoElement()?.currentTime).toBe(43)
+    await applyLoadedMetadata(43)
   })
 
   it('does not re-seek as playback advances after the pending point was applied', async () => {
@@ -519,8 +520,7 @@ describe('SpeechDetailPlayer — C171-F1 keeps the transcript point across the s
     await switchToCamera()
 
     const video = videoElement()!
-    fireEvent.loadedMetadata(video)
-    expect(video.currentTime).toBe(43)
+    await applyLoadedMetadata(43)
 
     video.currentTime = 77
     fireEvent.timeUpdate(video)
