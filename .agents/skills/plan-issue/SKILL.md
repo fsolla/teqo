@@ -23,7 +23,7 @@ parse (main agent)
 1. **Nada no tracker antes do gate.** Antes da confirmação: proibido `pnpm agent:register`, criar Issue/PR.
 2. **Register com `--plan` nasce `blocked`.** Promote só depois do plano em `main`.
 3. **Planos de Issues `in-progress`/`done`/`in-prod` são imutáveis.**
-4. **Design UI (obrigatório se muda UI):** o sub-agente `designer` produz `docs/plans/<slug>-ui-design.html` + `docs/plans/<slug>-ui-design-assets/*.svg` (doutrina: `ui-design-html.md`). Classe A/sem UI → sem design.
+4. **Design UI (obrigatório se muda UI):** o sub-agente `designer` produz o design hi-fi; o orquestrador grava `docs/plans/<slug>-ui-design.html` + `docs/plans/<slug>-ui-design-assets/*.svg` (doutrina: `ui-design-html.md`). Classe A/sem UI → sem design.
 
 ## Decomposição em sub-agentes
 
@@ -50,6 +50,13 @@ Cada fase pesada é delegada a um sub-agente com contexto mínimo. O agente prin
 **Task:** Rodar `pnpm agent:register` para cada plano. Atualizar headers `Issue: #N`. Criar PR `Related #N`.
 **Output:** Issues registradas + links de PR.
 
+### Sub-agente: Designer
+
+**Quando:** Passo 3d, paralelo (1 por ideia UI).
+**Input:** plano de intenção aprovado (B/C/D) + `ui-design-html.md` (doutrina) + `.opencode/agent/designer.md` (papel)
+**Task:** Produzir o design hi-fi do item — tokens/brand reais, cenas 390/1280, estados críticos. **Não escrever código de app nem nomear componente final.**
+**Output:** o design hi-fi — `docs/plans/<slug>-ui-design.html` + `docs/plans/<slug>-ui-design-assets/*.svg`; o orquestrador garante a gravação no disco.
+
 ## Checklist
 
 ```
@@ -57,7 +64,7 @@ Cada fase pesada é delegada a um sub-agente com contexto mínimo. O agente prin
 - [ ] 2. Reserva de IDs
 - [ ] 3. Dispatch sub-agente explorador → receber findings
 - [ ] 4. Dispatch sub-agentes escritores (paralelo) → receber planos
-- [ ] 5. GATE: overview + design UI (se muda UI) + decisão de dados → literais no plano → confirmar
+- [ ] 5. GATE: overview + Design UI (se muda UI) + decisão de dados → literais no plano → confirmar
 - [ ] 6. Dispatch sub-agente registrador → PR → merge → promote
 ```
 
@@ -108,14 +115,14 @@ O agente principal:
 1. Valida cada plano contra `shaping.md` (self-score ≥4)
 2. Aplica melhorias se necessário
 3. Cria os arquivos `docs/plans/<slug>.md` no disco
-4. Se UI: dispatcha o sub-agente `designer` (paralelo, 1 por ideia UI) para produzir `docs/plans/<slug>-ui-design.html` + `docs/plans/<slug>-ui-design-assets/*.svg`; o orquestrador grava os arquivos retornados no disco
+4. Se UI: dispatcha o sub-agente `designer` (paralelo, 1 por ideia UI) para produzir `docs/plans/<slug>-ui-design.html` + `docs/plans/<slug>-ui-design-assets/*.svg`; o orquestrador grava os arquivos no disco e preenche/valida o campo `Design UI:` + a seção do plano
 
 ## Passo 4 — GATE
 
 Antes de criar Issues:
 
 - Overview: ID, título, prio, depends, appetite, link do plano
-- Para cada item UI: aponte o link de `docs/plans/<slug>-ui-design.html` e confirme as cenas 390/1280 + estados críticos
+- Para cada item UI: aponte o link de `docs/plans/<slug>-ui-design.html` e confirme as cenas da doutrina (390/1280, quando o fluxo tocar os dois) + estados críticos
 - Decisão de dados → valores literais presentes no plano? (bloco "Dados da decisão (literais)" — nunca só narrativa)
 - Perguntas acumuladas, recomendação de produto primeiro
 

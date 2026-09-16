@@ -95,12 +95,13 @@ N/A — mudança de doutrina de ferramenta de agentes; nenhuma superfície de da
 1. **F1 — `SKILL.md` (owner).** Aplicar os 6 pontos + `description`: regra dura 4 (l.26), input do escritor (l.42), checklist (l.60), Passo 3c (l.100, remove a linha de UI), Passo 3d (l.112, dispatch do `designer` + gravação), Passo 4/GATE (l.119, link `-ui-design.html` + cenas). Quota: metade do appetite.
 2. **F2 — Template e vizinhos.** `intention-template.md` (campo/seção/paths/notas), `shaping.md:56`, `skills-map.md:42` e finalizar `ui-design-html.md:93`. Quota: a outra metade.
 3. **F3 — Sweep + prova.**
-   - `rg -n "ui-draft|Rascunho UI|rascunho UI" .agents .opencode` → **vazio**.
-   - `rg -n "ui-draft|Rascunho UI|rascunho UI"` fora de `docs/plans/**`, `docs/changelog*/**`, `docs/CHANGELOG-AGENTS-HISTORY.md`, `node_modules`, `.git` → conjunto **exatamente** `scripts/lib/issues-panel.mjs`, `scripts/issues-tui.mjs`, `tests/unit/issuesPanel.unit.spec.ts` (OPS116); qualquer hit fora disso é falha.
+   - `grep -rnE "ui-draft|Rascunho UI|rascunho UI" .agents .opencode` → **vazio**.
+   - `grep -rnE "ui-draft|Rascunho UI|rascunho UI"` fora de `docs/plans/**`, `docs/changelog*/**`, `docs/CHANGELOG-AGENTS-HISTORY.md`, `node_modules`, `.git` → conjunto **exatamente** `scripts/lib/issues-panel.mjs`, `scripts/issues-tui.mjs`, `tests/unit/issuesPanel.unit.spec.ts` (OPS116); qualquer hit fora disso é falha.
    - `git diff --name-only <base>...HEAD` → **nenhum arquivo antigo** de `docs/plans/`/`docs/changelog/`; as únicas adições são este `ops114-…-impl.md` e `docs/changelog/<data>-ops114.md`. Nenhum caminho `-ui-draft` no diff (planos antigos intactos).
    - `.opencode/commands/plan-issue.md` **ausente** do diff.
    - `pnpm format:check` verde (os markdown editados entram no check).
    - Leitura do `SKILL.md` final: escritor sem doutrina de UI; 3d dispatcha `designer`; gate exibe `-ui-design.html` + cenas.
+   - Walkthrough estático de um item UI fictício pelo fluxo novo: explorador → escritor (plano sem UI) → 3d dispatcha `designer` → orquestrador grava os arquivos e preenche `Design UI:`/seção → gate abre o `.html` com as cenas.
    - Push via `pnpm push`.
 
 ## Rabbit holes / Não escopo (engenharia)
@@ -131,3 +132,5 @@ N/A — mudança de doutrina de ferramenta de agentes; nenhuma superfície de da
 - [ ] Invariantes AGENTS/engineering-standards: doc-only, sem migration, sem editar `docs/plans/**`/`docs/changelog/**` existentes, sem tocar painel/CLI/tests.
 - [ ] `.opencode/commands/plan-issue.md` inalterado (confirmado por `git diff --name-only`).
 - [ ] `pnpm format:check` verde; push via `pnpm push`.
+
+Self-score decision-quality: 5/5 — decisões caras com alternativas rejeitadas; cabe no appetite (~0,5 dia, doc-only); rabbit holes nomeados; reusa a doutrina `ui-design-html.md` e os shells existentes sem twinar; aceite de produto da intenção preservado.

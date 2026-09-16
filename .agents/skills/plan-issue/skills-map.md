@@ -27,7 +27,7 @@ No Teqo: **idea-refine / interview** antes se vago; **spec + plan + tasks** = es
 | **doubt-driven-development** | Em decisão **cara** (schema/access/Consent/URL imutável): CLAIM curto + adversarial self-check (ou Task) antes de travar | Doubt em cada bullet; cross-model CLI; doubt pós-código |
 | **source-driven-development** | Se a Abordagem depende de API Payload/Next/WebAuthn: anotar “verificar docs na implementação” + versão em `package.json` | Fetch de docs e citações no plano |
 | **documentation-and-adrs** | Decisões travadas = ADR-lite do item (contexto + rejeitadas). Repo-wide → apontar follow-up em `docs/` | Criar `docs/decisions/` novo sem precedente |
-| **design-code-architecture** | Já destilado em [decision-quality.md](decision-quality.md) (caro/barato, depth, appetite) | Jornada de 8 fases / `ARCHITECTURE.md` |
+| **design-code-architecture** | Já destilado em [decision-quality.md](../work-issue/decision-quality.md) (caro/barato, depth, appetite) | Jornada de 8 fases / `ARCHITECTURE.md` |
 | **37signals-way** | Appetite, rabbit holes, no-gos (= Não escopo), shaped pitch | Betting table / cool-down / abolir backlog GitHub |
 | **continuous-discovery** / **mom-test** / **jobs-to-be-done** | Só se o item depende de evidência de usuário ainda inexistente → Issue `blocked` ou defer+gatilho | Rodar discovery / OST no fluxo de registro |
 | **domain-driven-design** / **clean-architecture** / **software-design-philosophy** | Vocabulário, Dependency Rule, deep modules — via decision-quality sob demanda | Modelar bounded contexts do zero num item de lista |
@@ -44,6 +44,6 @@ No Teqo: **idea-refine / interview** antes se vago; **spec + plan + tasks** = es
 ## Precedência quando conflita
 
 1. Convenções Teqo (`AGENTS.md`, access, migrations, Consent fail-closed)  
-2. Este skill + [decision-quality.md](decision-quality.md) + [data-presentation.md](data-presentation.md)  
+2. Este skill + [decision-quality.md](../work-issue/decision-quality.md) + [data-presentation.md](data-presentation.md)  
 3. Princípios das skills acima  
 4. Templates genéricos (`tasks/plan.md`, etc.) — **não** usamos; o artefato canônico é `docs/plans/<slug>.md`
