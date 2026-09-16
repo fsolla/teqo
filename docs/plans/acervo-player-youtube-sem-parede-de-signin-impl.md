@@ -117,7 +117,7 @@ flowchart LR
 
 ## Triage pós-simplify + crítica de design (não reabrir)
 
-**Registrado:** C179 (#1093) — helper único da URL do thumbnail `hqdefault` (4 módulos; `depends: C172`); OPS124 (#1094) — `pnpm knip` local quebra com o `importMap` gitignored no working tree (pré-existente, não é regressão desta entrega).
+**Registrado:** C179 (#1093) — helper único da URL do thumbnail `hqdefault` (4 módulos; `depends: C172`); OPS124 (#1094) — knip carrega `payload.config.ts` com erro (`importMap.js` commitado) e roda com análise degradada em CI e local, mas **sai com código 0** (a hipótese inicial de que quebrava o `gate:ci` local foi corrigida na própria Issue; pré-existente, não é regressão desta entrega).
 
 **Defer com gatilho:** duplicação do markup do bloco de saída (`renderYoutubeExit`) — revisitar com uma 3ª variante/superfície de saída ou reuso fora do `SpeechDetailPlayer`; testes unit quase-duplicados (VOD-only vs both-sources) — descartado (legibilidade dos quadrantes).
 
