@@ -9,6 +9,7 @@ import { SpeechCutResultCard } from '@/components/campaign/speech/SpeechCutResul
 import { SpeechExcerptControls } from '@/components/campaign/speech/SpeechExcerptControls'
 import { SpeechExcerptShare } from '@/components/campaign/speech/SpeechExcerptShare'
 import { SpeechHighlightParts } from '@/components/campaign/speech/SpeechHighlightParts'
+import { YoutubeIcon } from '@/components/socialIcons'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
@@ -19,6 +20,7 @@ import {
   MIN_EXCERPT_SECONDS,
   type ExcerptRange,
 } from '@/lib/speechExcerptSelection'
+import { buildSpeechExcerptYoutubeUrl } from '@/lib/speechShare'
 import type { SpeechVodResolution } from '@/lib/speechVod'
 import { cn } from '@/lib/utils'
 import type { SpeechDetailSegmentViewModel } from '@/utilities/speech/speechViewModels'
@@ -31,7 +33,7 @@ const buildYoutubeSrc = (videoId: string, startSeconds: number | null): string =
   if (startSeconds !== null && startSeconds > 0) {
     params.set('start', String(Math.floor(startSeconds)))
   }
-  return `https://www.youtube-nocookie.com/embed/${videoId}?${params.toString()}`
+  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`
 }
 
 type ResolutionState =
@@ -139,9 +141,20 @@ export const SpeechDetailPlayer = ({
       ? youtubeOffsetSeconds + (initialSeconds ?? 0)
       : null,
   )
+  // C171 — one player surface at a time: the YouTube embed until the assessor
+  // asks for the Câmara excerpt, which then plays in place.
+  const [surface, setSurface] = useState<'youtube' | 'vod'>(youtubeVideoId ? 'youtube' : 'vod')
 
   const resolving = resolution.kind === 'resolving'
   const playbackUrl = resolution.kind === 'resolved' ? resolution.playbackUrl : null
+  const youtubeSurface = surface === 'youtube' && Boolean(youtubeVideoId)
+  const youtubeWatchUrl = youtubeVideoId
+    ? buildSpeechExcerptYoutubeUrl(
+        youtubeVideoId,
+        youtubeOffsetSeconds,
+        activeStart ?? initialSeconds ?? 0,
+      )
+    : null
   const selectionDuration = durationSeconds ?? segments.at(-1)?.endSeconds ?? null
   const selectionAvailable = selectionDuration !== null && selectionDuration >= MIN_EXCERPT_SECONDS
   const selecting = selection !== null
@@ -198,8 +211,16 @@ export const SpeechDetailPlayer = ({
     }
   }
 
+  // C171 — "Assistir na Câmara": switches the player surface and asks the
+  // Câmara only when there is nothing verified yet and no request in flight.
+  const watchVod = () => {
+    setSurface('vod')
+    if (playbackUrl || resolving || resolution.kind === 'generating') return
+    void requestResolution(false)
+  }
+
   const seekTo = (seconds: number) => {
-    if (youtubeVideoId) {
+    if (youtubeSurface) {
       if (youtubeOffsetSeconds === null) return
       setYoutubeStart(youtubeOffsetSeconds + seconds)
       setActiveStart(seconds)
@@ -242,10 +263,10 @@ export const SpeechDetailPlayer = ({
     setSelection(extendRangeToSegment(selection, segments, index, selectionDuration))
   }
 
-  const seekable = youtubeVideoId ? youtubeOffsetSeconds !== null : Boolean(playbackUrl)
+  const seekable = youtubeSurface ? youtubeOffsetSeconds !== null : Boolean(playbackUrl)
 
   const renderMedia = (): ReactNode => {
-    if (youtubeVideoId) {
+    if (youtubeSurface && youtubeVideoId) {
       return (
         <iframe
           src={buildYoutubeSrc(youtubeVideoId, youtubeStart)}
@@ -337,7 +358,7 @@ export const SpeechDetailPlayer = ({
     )
   }
 
-  const inlineNotice = youtubeVideoId ? (
+  const inlineNotice = youtubeSurface ? (
     resolution.kind === 'generating' ? (
       <p className="text-xs text-muted-foreground" role="status" aria-live="polite">
         {GENERATING_TITLE} Tente novamente em um momento.
@@ -354,9 +375,55 @@ export const SpeechDetailPlayer = ({
     ) : null
   ) : null
 
+  // C171 — the exit block stays reachable with the embed playing: the app
+  // never sees the iframe's internal error, so the way out cannot depend on
+  // detecting the block.
+  const renderYoutubeExit = (): ReactNode => {
+    if (!youtubeWatchUrl) return null
+    return (
+      <div data-slot="speech-youtube-exit" className="mt-3 rounded-lg border bg-muted/40 px-4 py-3">
+        <p className="text-xs font-medium text-foreground/90">
+          Se o vídeo não abrir aqui, assista por outro caminho:
+        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {youtubeSurface && vodResolvable ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-10"
+              data-slot="speech-youtube-exit-camera"
+              onClick={watchVod}
+            >
+              <PlayIcon data-icon="inline-start" aria-hidden="true" />
+              Assistir na Câmara
+            </Button>
+          ) : null}
+          <Button asChild variant="outline" className="min-h-10">
+            <a
+              href={youtubeWatchUrl}
+              target="_blank"
+              rel="noreferrer"
+              data-slot="speech-youtube-exit-link"
+            >
+              <YoutubeIcon />
+              Abrir no YouTube
+            </a>
+          </Button>
+        </div>
+        {vodResolvable ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            O trecho da Câmara toca nesta página; o YouTube abre no ponto da fala.
+          </p>
+        ) : null}
+      </div>
+    )
+  }
+
   return (
     <div data-slot="speech-player" aria-busy={resolving || undefined}>
       {renderMedia()}
+
+      {renderYoutubeExit()}
 
       {selection && selectionDuration !== null ? (
         <SpeechExcerptControls
