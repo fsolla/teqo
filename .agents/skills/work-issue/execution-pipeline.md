@@ -12,8 +12,9 @@ Ordem:
 
 1. **Schema/server** — migrations (`payload-migrations`), utilities, actions,
    testes de domínio. Invariantes do engineering-brief.
-2. **UI** — se Impeccable B/C/D: shape → craft → critique → polish. Tokens
-   `data-theme='campaign'`; shells existentes.
+2. **UI** — se Impeccable B/C/D: a estrutura visual é do `designer` (§Design);
+   porte o artefato aprovado classe-a-classe. Tokens `data-theme='campaign'`;
+   shells existentes.
 3. **E2E local afetado (OPS72, discricionário)** — antes do push, rode
    localmente os e2e que você **criou** + os da **mesma superfície afetada**
    (você decide quais). Ver §E2E local afetado.
@@ -56,6 +57,49 @@ antes do deploy**.
   famílias rodam em paralelo) e os runs selecionados filtram por arquivo —
   quase sempre uma família — então o seed não colide.
 
+## Design (triggers, non-triggers, crítica final)
+
+Item que **muda UI** (Impeccable B/C/D) tem dono visual: o agente `designer`
+(`.opencode/agent/designer.md`), com a doutrina `.agents/skills/plan-issue/ui-design-html.md`
+como fonte única do artefato `docs/plans/<slug>-ui-design.html`
+(+ `-ui-design-assets/*.svg`). O implementador porta o design aprovado
+classe-a-classe; **nunca improvisa estrutura visual** (data/routes/queries/copy
+seguem com ele).
+
+**Triggers (dispatch do `designer`) — a lista fechada da intenção:**
+
+- **(a) Superfície/estado visual novo** que o design do plano não cobre → o
+  `designer` **estende o artefato antes** de o implementador mexer no markup.
+  Detectado no impl plan (que lista as superfícies) **e** na execução
+  (superfície que só aparece no código) — nunca inferir "não precisava".
+- **(b) O design aprovado não pode ser seguido como está** → o `designer`
+  propõe a adaptação; o implementador não decide a estrutura.
+- **(c) No fechamento, todo diff que muda a estrutura visual** → crítica do
+  `designer` contra o app **renderizado** (screenshots 390/1280 + estados
+  críticos). Os non-triggers abaixo **não** acionam (c).
+- **(d) Ícones/ilustrações** próprios → saem do `designer` (SVG na doutrina).
+
+**Non-triggers (segue com o implementador, sem dispatch):** fiação de
+dados/lógica no markup aprovado, hooks/rotas/queries, copy, port mecânico de
+seção aprovada, bug que restaura o design aprovado, reuso de
+tokens/componentes já especificados. O default é **não despachar**.
+
+**Crítica final (fail-closed).** Sem tier primário **não há certificação**. A
+ladder e a regra do `DEGRADED` são as de `ui-design-html.md` — a
+indisponibilidade **desce o tier** e registra `Design tier: <slug>` no PR;
+nunca pula o design em silêncio. Tier degradado marca `DEGRADED` no artefato e
+no PR e **não certifica**: para em sign-off humano.
+
+- **`work-issue` (humano presente, sem `--auto`):** com crítica certificada,
+  registre `Design tier:` no PR e siga. Com `DEGRADED`/tier não-primário,
+  **pare antes do `pnpm push`** — apresente a crítica `DEGRADED` + screenshots
+  e aguarde sign-off explícito; só então o PR nasce Ready com
+  `Design tier: DEGRADED (<slug>)` + o registro do sign-off no body.
+- **`agent-work-issue` (autônomo) e `work-issue --auto`:** não há humano para o
+  sign-off ⇒ **não abra PR**; comente o resultado na Issue e flip para
+  `blocked` (mesmo precedente da divergência material). `DEGRADED` nunca vira
+  "segue sem".
+
 ## /simplify + débitos
 
 1. Rode o comando `/simplify` completo (2 reviewers paralelos via Task —
@@ -88,5 +132,5 @@ antes do deploy**.
 
 | Ator | Branch | UI | `capture-review-debts` | Cloud |
 | ---- | ------ | --- | ---------------------- | ----- |
-| **Humano** (`work-issue`) | `<Code>-<slug>` (worktree; nunca crie branch nova na sessão) | shape → craft → critique → polish | **autônomo** — decide o destino dos achados (registrar/absorver/deferir/descartar) pela triage da skill; sem pausa para o humano | n/a (máquina do humano) |
-| **Pool** (`agent-work-issue`) | `agent/<id>-<slug>` (worktrees Cursor podem já ter criado) | shape → craft → critique → polish (harden/optimize só sob gatilho) | **autônomo** — só `expensive_lock` com score ≥4 (Issues novas com `depends`); score ≤3 / cheap_polish / defer_trigger → defer no `*-impl.md` ou descarte | `ManagePullRequest` com `draft: false`; Prep Cloud no Passo 0 |
+| **Humano** (`work-issue`) | `<Code>-<slug>` (worktree; nunca crie branch nova na sessão) | §Design — `designer` nos triggers (a/b/d) e crítica final (c); port classe-a-classe; `DEGRADED` ⇒ para antes do push (sign-off humano) | **autônomo** — decide o destino dos achados (registrar/absorver/deferir/descartar) pela triage da skill; sem pausa para o humano | n/a (máquina do humano) |
+| **Pool** (`agent-work-issue`) | `agent/<id>-<slug>` (worktrees Cursor podem já ter criado) | §Design — `designer` nos triggers (a/b/d) e crítica final (c); port classe-a-classe; `DEGRADED` ⇒ sem PR (comenta Issue + `blocked`) | **autônomo** — só `expensive_lock` com score ≥4 (Issues novas com `depends`); score ≤3 / cheap_polish / defer_trigger → defer no `*-impl.md` ou descarte | `ManagePullRequest` com `draft: false` (salvo `DEGRADED` ⇒ sem PR); Prep Cloud no Passo 0 |

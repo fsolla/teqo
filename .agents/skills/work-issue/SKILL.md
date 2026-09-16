@@ -28,6 +28,15 @@ Fases pesadas são delegadas a sub-agentes com contexto mínimo. O agente princi
 **Task:** Escrever `docs/plans/<slug>-impl.md` conforme o template. Incluir: abordagem recomendada + alternativas rejeitadas + fases + riscos. Self-score decision-quality ≥4/5.
 **Output:** conteúdo markdown do plano.
 
+### Sub-agente: Designer
+
+**Quando:** trigger (a) — superfície/estado visual novo que o design do plano não cobre e trigger (b) — design aprovado não pode ser seguido como está, ambos **antes** de o implementador mexer no markup; trigger (d) — ícones/ilustrações; e trigger (c) — no fechamento, crítica visual do diff que muda UI contra o app renderizado (screenshots 390/1280 + estados).
+**Input:** plano de intenção + artefato aprovado `docs/plans/<slug>-ui-design.html` + o app renderizado (screenshots).
+**Task:** criar/estender o artefato (a/b/d) ou criticar a implementação contra ele (c). Dono da estrutura visual: `.opencode/agent/designer.md` (fallback `designer-degraded.md`), doutrina `ui-design-html.md`. **Não implementa a feature nem decide engenharia.**
+**Output:** artefato estendido ou lista numerada de ajustes; `DEGRADED` + sign-off humano quando o tier não for primário.
+
+Triggers/non-triggers, ladder e o fechamento fail-closed vivem em `execution-pipeline.md` (§Design) — esta skill declara só o delta.
+
 ### Sub-agente: Revisor estrutural
 
 **Quando:** Passo 5, reviewer 1 (paralelo).
@@ -69,10 +78,11 @@ Fases pesadas são delegadas a sub-agentes com contexto mínimo. O agente princi
 - [ ] 3a. Dispatch sub-agente explorador → receber findings
 - [ ] 3b. Dispatch sub-agente escritor → receber impl plan
 - [ ] 3c. GATE humano: apresentar plano → pausa → confirmação
-- [ ] 4. Executar (main agent iterativo)
+- [ ] 3d. Designer (trigger a/b): estender o artefato se o design aprovado não cobrir a superfície
+- [ ] 4. Executar (main agent iterativo) — `designer` nos triggers (a/b/d)
 - [ ] 5. Dispatch 2 sub-agentes revisores (paralelo) → receber achados
 - [ ] 6. Dispatch sub-agente capturador → receber triage
-- [ ] 7. PR → merge
+- [ ] 7. PR → merge — crítica do `designer` (c); `DEGRADED` ⇒ sign-off humano antes do push
 ```
 
 ## Passo 1 — Contexto da sessão
@@ -140,7 +150,7 @@ Opt-out da pausa por invocação. Detecta-se em `$ARGUMENTS`: `/work-issue --iss
 - **Sem a flag (ou flag desconhecida):** o Passo 3c GATE vale idêntico — apresente o plano, pare e aguarde confirmação explícita. Proibido pular a pausa.
 - **Com a flag:** o impl plan do Passo 3b nasce marcado `aprovado` pelo próprio agente; o Passo 3c vira apresentação-no-chat-sem-espera (abordagem + rejeitadas + fases + riscos continuam obrigatórios no chat e no arquivo) e a execução (Passo 4) segue direto até o PR.
 - **Pode auto-aprovar:** abordagem técnica, cortes de escopo já previstos na skill e os literais de dados que o próprio plano recomenda (registrados como assumidos).
-- **Continua parando (vale mesmo com a flag):** Consent/LGPD fail-closed, migração de schema, contrato de URL público, shapes públicos, produção/aprovação humana, merge sem CI green, DB de prod; divergência material de produto → pare, comente na Issue e flipe para `blocked` (precedente do fluxo autônomo). O claim continua contrato do ambiente: este modo nunca claima Issue.
+- **Continua parando (vale mesmo com a flag):** Consent/LGPD fail-closed, migração de schema, contrato de URL público, shapes públicos, produção/aprovação humana, certificação visual `DEGRADED` (tier não-primário não certifica — o fluxo `--auto` para e flipa para `blocked`), merge sem CI green, DB de prod; divergência material de produto → pare, comente na Issue e flipe para `blocked` (precedente do fluxo autônomo). O claim continua contrato do ambiente: este modo nunca claima Issue.
 - **Não confundir:** `--auto` aqui é flag da skill dentro do prompt; o `--auto` do CLI opencode (auto-aprovar permissões de ferramenta) é outro conceito.
 - **Convivência:** `agent-work-issue` continua sendo o contrato do pool dormente; este modo é opt-in da sessão humana. Consolidação futura é item à parte.
 
@@ -151,7 +161,7 @@ Opt-out da pausa por invocação. Detecta-se em `$ARGUMENTS`: `/work-issue --iss
 - **Branch:** `<Code>-<slug>` do worktree — nunca crie branch nova.
 - **Nível de teste:** unit → int → e2e-com-benefício (dono da definição: `test-driven-development`; ver pipeline).
 - **E2E local afetado (OPS72):** discricionário — rode os e2e criados + mesma superfície.
-- **UI:** shape → craft → critique → polish.
+- **UI:** §Design do pipeline — o `designer` é dono da estrutura visual; dispare nos triggers (a/b/d) e porte o artefato aprovado classe-a-classe (nunca improvise estrutura visual).
 - **Gates:** `pnpm gate:fast` na iteração; entrega com `pnpm push`.
 
 ## Passo 5 — Simplify (2 sub-agentes paralelos)
@@ -169,6 +179,8 @@ Aplique: registre o aprovado, absorva em plano existente, defira com gatilho, de
 ## Passo 7 — Fechar em main
 
 Siga `execution-pipeline.md`: changelog → `pnpm push` → PR no GitHub `--base main` com `Closes #N` → auto-merge → CI.
+
+Antes do push, se o diff muda UI, a crítica final do `designer` (trigger c) é obrigatória (§Design). Com crítica certificada, registre `Design tier: <slug>` no body. Com `DEGRADED`/tier não-primário, **pare antes do `pnpm push`**, apresente a crítica `DEGRADED` + screenshots e aguarde sign-off humano explícito; só então o PR nasce Ready com `Design tier: DEGRADED (<slug>)` + o registro do sign-off — nunca "segue sem".
 
 ## Resumo final
 

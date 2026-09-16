@@ -12,6 +12,7 @@ Leia o que for relevante **antes** de travar a abordagem no `*-impl.md`. Não in
 | Schema Payload | skill `payload-migrations` |
 | DB local / Cloud sem Docker | skill `local-database` |
 | KPI/mapa/série na UI | [data-presentation.md](../plan-issue/data-presentation.md) pergunta 3 no impl |
+| Item que muda UI (estrutura visual) | agente `designer` (`designer.md`/`designer-degraded.md`) + doutrina `ui-design-html.md`; triggers e fail-closed em `execution-pipeline.md` (§Design) |
 | Domínio `/campanha` específico | rules `projects/*` se o item tocar aquele projeto |
 
 ## Invariantes que o impl plan não pode violar
