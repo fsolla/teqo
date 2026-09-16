@@ -27,6 +27,7 @@ Mesmo padrão de `work-issue` — sub-agentes para fases pesadas:
 
 - **Explorador** (código) → findings
 - **Escritor** (impl plan) → plano
+- **Designer** (triggers a/b/d antes de implementar; c no fechamento) → artefato estendido ou crítica; dono da estrutura visual (`designer.md`/`designer-degraded.md`, doutrina `ui-design-html.md`) — ver §Design do pipeline
 - **2 Revisores** (paralelo: estrutural + qualidade) → achados do simplify
 - **Capturador** (débitos) → tabela de triage
 
@@ -35,11 +36,11 @@ Mesmo padrão de `work-issue` — sub-agentes para fases pesadas:
 ```
 - [ ] 0. Prep: `pnpm i` se preciso; Cloud → §Prep Cloud (sem Docker)
 - [ ] 1. Sessão: rename_chat + open_resource + carregar camada AGENTS
-- [ ] 2. Plan mode → dispatch explorador + escritor → impl plan
-- [ ] 3. Executar (main agent iterativo)
+- [ ] 2. Plan mode → dispatch explorador + escritor → impl plan; `designer` (trigger a/b) se o design aprovado não cobrir a superfície
+- [ ] 3. Executar (main agent iterativo) — `designer` nos triggers (a/b/d)
 - [ ] 4. Dispatch 2 revisores paralelos → simplify
 - [ ] 5. Dispatch capturador → triage de débitos
-- [ ] 6. PR Ready + auto-merge
+- [ ] 6. PR Ready + auto-merge — crítica do `designer` (c); `DEGRADED` ⇒ sem PR (comenta Issue + `blocked`)
 ```
 
 ## Passo 0 — Prep
@@ -76,9 +77,9 @@ Siga `execution-pipeline.md` com deltas do pool:
 
 - **Branch:** `agent/<id>-<slug>` (worktrees Cursor podem já ter criado).
 - **E2E local afetado (OPS72):** discricionário (Cloud sem browsers → registre justificativa).
-- **UI:** shape → craft → critique → polish.
+- **UI:** §Design do pipeline — o `designer` é dono da estrutura visual; dispare nos triggers (a/b/d) e porte o artefato aprovado classe-a-classe (nunca improvise estrutura visual).
 - **`capture-review-debts`:** autônomo — só `expensive_lock` com score ≥4; resto → defer/descarte.
-- **Cloud:** PR via `ManagePullRequest` com `draft: false` no GitHub.
+- **Cloud:** PR via `ManagePullRequest` com `draft: false` no GitHub (salvo `DEGRADED`: sem PR — ver Passo 6).
 
 ## Passo 4 — Simplify (2 sub-agentes paralelos)
 
@@ -95,6 +96,8 @@ Dispatche capturador com achados + regras de `capture-review-debts`. Receba tria
 ## Passo 6 — Fechar
 
 PR Ready `--base main` (GitHub) + auto-merge nativo — `pnpm push -u origin HEAD` → `node scripts/github-pr.mjs` (ou `ManagePullRequest` `draft: false` no Cloud).
+
+Antes do PR, se o diff muda UI, a crítica final do `designer` (trigger c) é obrigatória (§Design) e `Design tier: <slug>` vai no body. Sem tier primário (`DEGRADED`) **não há certificação** — exceção explícita ao contrato "PR Ready + auto-merge": **não abra PR**; comente o resultado na Issue (crítica `DEGRADED` + screenshots + `Design tier: DEGRADED (<slug>)`) e flip para `blocked`; o humano decide. `DEGRADED` nunca vira "segue sem".
 
 ## Resumo final
 
