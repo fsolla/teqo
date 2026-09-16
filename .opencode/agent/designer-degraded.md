@@ -6,6 +6,39 @@ permission:
   edit:
     '*': deny
     'docs/plans/*-ui-design*': allow
+  bash:
+    '*': ask
+    '*>*': deny
+    'sed *-i*': deny
+    'tee *': deny
+    'cp *': deny
+    'mv *': deny
+    'rm *': deny
+    'mkdir *': deny
+    'touch *': deny
+    'truncate *': deny
+    'dd *': deny
+    'install *': deny
+    'ln *': deny
+    'chmod *': deny
+    'chown *': deny
+    'bash *': deny
+    'sh *': deny
+    'zsh *': deny
+    'python*': deny
+    'node *': deny
+    'bun *': deny
+    'deno *': deny
+    'perl *': deny
+    'ruby *': deny
+    'find *-exec*': deny
+    'find *-delete*': deny
+    'xargs *': deny
+    'git checkout*': deny
+    'git restore*': deny
+    'git apply*': deny
+    '* > docs/plans/*-ui-design*': allow
+    'prettier --write docs/plans/*-ui-design*': allow
 ---
 
 # Persona: Designer degradado do Teqo (tier de fallback)
