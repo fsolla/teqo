@@ -7,6 +7,7 @@
  */
 
 import { slugify } from '../../src/lib/slug.ts'
+import { assertKnownFlags, SKILL_AUTO_FLAG } from './agent-session.mjs'
 
 /**
  * Prefix of every `/plan-issue` planning-worktree branch (`pnpm worktree
@@ -79,6 +80,85 @@ export const resolveWorktreeModel = (flags = {}) => {
   return OPENCODE_PRESET_MODEL
 }
 
+const hasBag = (bag) => typeof bag === 'string' && bag.trim().length > 0
+
+/**
+ * Accepted flag NAMES per worktree subcommand (OPS122). Names only — the
+ * `=`/value form stays `parseArgs`' concern. Before OPS122 an unknown flag
+ * (`--auto`, a typo) parsed to `true` and was silently dropped; now the CLI
+ * fails high with a neighbor suggestion, mirroring OPS110-F1. `stay` is kept
+ * for `kill` so its specific "não se aplica" message still fires.
+ */
+export const WORKTREE_FLAG_ALLOWLIST = {
+  next: ['issue', 'stay', 'no-migrate', 'auto', ...WORKTREE_MODEL_FLAGS],
+  plan: ['stay', 'no-migrate', 'auto', ...WORKTREE_MODEL_FLAGS],
+  new: ['stay', 'no-migrate', 'auto', ...WORKTREE_MODEL_FLAGS],
+  fix: ['stay', 'no-migrate', 'headless', 'directive', 'auto', ...WORKTREE_MODEL_FLAGS],
+  kill: ['force', 'stay'],
+}
+
+/**
+ * Fail high on any flag the worktree subcommand does not accept. Delegates the
+ * message/suggestion rule to `assertKnownFlags` (single owner, shared with the
+ * session CLI). Unknown subcommands return silently — the CLI prints the usage.
+ * @param {{ subcommand?: string | null, flags?: Record<string, unknown> }} [options]
+ */
+export const validateWorktreeFlags = ({ subcommand = null, flags = {} } = {}) => {
+  const accepted = WORKTREE_FLAG_ALLOWLIST[subcommand]
+  if (!accepted) return
+  assertKnownFlags({ flags, accepted })
+}
+
+/**
+ * The human's `--auto` (opt-out of the skill GATE) only makes sense when there
+ * IS a skill invocation to auto-submit. Deterministic matrix, checked BEFORE
+ * any git/provisioning so an unhonorable flag never leaves an orphan worktree:
+ * `next`/`fix` always; `plan` only with a bag (OPS119 keeps it driverless
+ * otherwise); `new` never; `--stay` never (the launch is suppressed); outside
+ * the interactive terminal never (the `/worktree` command only applies `cd`, so
+ * the launch — and thus the auto-submit — does not exist there). The purpose
+ * matrix is checked before the terminal so `new --auto` reports the actionable
+ * "neutra" message. Throws a clear message pointing at the valid form.
+ * @param {{ purpose?: string | null, bag?: string | null, stay?: boolean, headless?: boolean, terminal?: boolean }} [options]
+ */
+export const assertSkillAutoSupported = ({
+  purpose = null,
+  bag = null,
+  stay = false,
+  headless = false,
+  terminal = true,
+} = {}) => {
+  if (headless) {
+    throw new Error(
+      '`--headless` (auto-unblock) roda `opencode run --command` sem a invocation de skill — `--auto` não se aplica. Remova a flag.',
+    )
+  }
+  if (stay) {
+    throw new Error(
+      '`--stay` suprime o launch — `--auto` ficaria sem efeito. Remova `--auto` ou `--stay`.',
+    )
+  }
+  const supported = purpose === 'next' || purpose === 'fix' || (purpose === 'plan' && hasBag(bag))
+  if (!supported) {
+    if (purpose === 'plan') {
+      throw new Error(
+        '`--auto` exige um comando para auto-submeter: `plan` sem bag abre a sessão sem driver (OPS119). Use `plan <bag>` ou remova `--auto`.',
+      )
+    }
+    if (purpose === 'new') {
+      throw new Error(
+        '`new` é uma sessão neutra, sem skill — `--auto` não se aplica. Remova a flag ou use `next`/`plan`/`fix`.',
+      )
+    }
+    throw new Error(`\`--auto\` não se aplica a \`${purpose}\`.`)
+  }
+  if (!terminal) {
+    throw new Error(
+      '`--auto` só é honrado no terminal interativo — o comando `/worktree` só aplica o `cd`, sem launch. Rode `pnpm worktree` no terminal ou remova `--auto`.',
+    )
+  }
+}
+
 /**
  * Prefix of every neutral-worktree branch (`pnpm worktree new`). Lowercase-led
  * `work/…` — structurally disjoint from `next`'s uppercase-led `<Code>-<slug>`
@@ -131,8 +211,6 @@ export const branchNameForIssue = (issue, maxLength = 60) => {
   const keep = Math.max(1, maxLength - code.length - 1)
   return `${code}-${slug.slice(0, keep)}`
 }
-
-const hasBag = (bag) => typeof bag === 'string' && bag.trim().length > 0
 
 /**
  * Shared branch naming for namespace worktrees NOT tied to the claim queue
@@ -197,7 +275,12 @@ const namespaceBranchName = ({ prefix, bag = '', taken = new Set(), fallback }) 
  * ABSOLUTO do checkout que emitiu a diretiva (worktrees reabertos/criados
  * antes do merge não têm o arquivo novo; o relativo apontaria para o branch
  * errado). O default relativo existe para os specs.
- * @param {{ dir: string, purpose: string, terminal?: boolean, issueNumber?: number | null, model?: string | null, argument?: string | null, sessionScript?: string }} options
+ *
+ * OPS122: `skillAuto` (o `--auto` do HUMANO) vira `--skill-auto` no argv do
+ * `start` — nome interno distinto do `--auto` de PERMISSÕES que o `driverArgs`
+ * emite para o `opencode run` (são coisas diferentes). O CLI de sessão o
+ * transpõe para o texto da invocation (`purposeInvocation`).
+ * @param {{ dir: string, purpose: string, terminal?: boolean, issueNumber?: number | null, model?: string | null, argument?: string | null, sessionScript?: string, skillAuto?: boolean }} options
  */
 export const opencodeLaunchDirective = ({
   dir,
@@ -207,6 +290,7 @@ export const opencodeLaunchDirective = ({
   model = null,
   argument = null,
   sessionScript = 'scripts/agent-session.mjs',
+  skillAuto = false,
 }) => {
   if (!terminal) return null
   const selectedModel = model ?? OPENCODE_PRESET_MODEL
@@ -218,6 +302,7 @@ export const opencodeLaunchDirective = ({
     `--dir=${dir}`,
     `--model=${selectedModel}`,
   ]
+  if (skillAuto) args.push(`--${SKILL_AUTO_FLAG}`)
   // The issue suffix belongs to `next` alone — `plan`/`new`/`fix` never carry
   // a claimed issue (fail-safe: a stray issueNumber must not break them).
   if (purpose === 'next' && issueNumber) args.push(`--issue=${issueNumber}`)

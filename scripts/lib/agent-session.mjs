@@ -182,25 +182,78 @@ export const SESSION_COMMAND_BY_PURPOSE = {
  * `/bug-fix`; `plan` with an empty bag is driverless by design (no context to
  * plan with — mirrors `new`). Unknown purposes degrade to no command
  * (fail-safe, mirrors the old directive).
- * @param {{ purpose?: string, issueNumber?: number | string | null, argument?: string | null }} [options]
+ *
+ * `auto` (OPS122) is the HUMAN's skill flag (`--auto` on the launcher line),
+ * NEVER the `opencode run --auto` permission flag that `driverArgs` emits on
+ * its own. When true it transposes into the skill text exactly as documented:
+ * `/work-issue --issue <N> --auto`, `/plan-issue --auto <bag>`,
+ * `/bug-fix --auto <bag>` (bare `/bug-fix --auto` with an empty bag). It is a
+ * text argument, not an argv flag, because the skill parses it from its
+ * invocation.
+ * @param {{ purpose?: string, issueNumber?: number | string | null, argument?: string | null, auto?: boolean }} [options]
  */
-export const purposeInvocation = ({ purpose = null, issueNumber = null, argument = null } = {}) => {
+export const purposeInvocation = ({
+  purpose = null,
+  issueNumber = null,
+  argument = null,
+  auto = false,
+} = {}) => {
   const command = SESSION_COMMAND_BY_PURPOSE[purpose] ?? null
   if (!command) return null
   if (purpose === 'next') {
     const number = Number(issueNumber)
     if (!Number.isInteger(number) || number <= 0) return null
-    return { command, arguments: `--issue ${number}` }
+    return { command, arguments: `--issue ${number}${auto ? ' --auto' : ''}` }
   }
   if (purpose === 'fix' || purpose === 'plan') {
     // Mesma sanitização da diretiva de launch (fronteira dupla de propósito:
     // o xargs da camada shell e o argv do `opencode run` não honram escapes).
     const sanitized = typeof argument === 'string' ? argument.replace(/["\\]/g, '').trim() : ''
     if (purpose === 'plan' && !sanitized) return null
+    if (auto) return { command, arguments: sanitized ? `--auto ${sanitized}` : '--auto' }
     return { command, arguments: sanitized }
   }
   return { command, arguments: '' }
 }
+
+/**
+ * Split a `provider/model` string (the format of `WORKTREE_MODEL_MAP` and the
+ * opencode `--model` flag) into the `{ providerID, id }` pair the server's
+ * `POST /session` expects. The split is on the FIRST slash: model ids may
+ * themselves carry slashes (`openrouter/openrouter/free`). Fail high on a
+ * string without both halves — never send the server a half ref.
+ * @param {string} model
+ */
+export const parseModelRef = (model) => {
+  if (typeof model !== 'string' || model.length === 0) {
+    throw new Error('parseModelRef: model ausente')
+  }
+  const slash = model.indexOf('/')
+  if (slash <= 0 || slash === model.length - 1) {
+    throw new Error(`parseModelRef: modelo inválido "${model}" (esperado provider/model)`)
+  }
+  return { providerID: model.slice(0, slash), id: model.slice(slash + 1) }
+}
+
+/**
+ * Body of `POST /session` — `{}` when no model was requested, or
+ * `{ model: { providerID, id } }` when one was (the session then reports the
+ * model, so the attached TUI inherits it even on a driverless launch). No
+ * `variant` (OPS95: variants stay on the machine's global config).
+ * @param {{ model?: string | null }} [options]
+ */
+export const buildCreateSessionBody = ({ model = null } = {}) => {
+  if (model === null || model === undefined || model === '') return {}
+  return { model: parseModelRef(model) }
+}
+
+/**
+ * Internal `start` argv flag carrying the HUMAN's skill `--auto` (opt-out of the
+ * skill GATE) — deliberately distinct from the `opencode run --auto` permission
+ * flag `driverArgs` emits. Single owner of the name: the worktree launch
+ * directive, the session allowlist and the CLI all use this constant.
+ */
+export const SKILL_AUTO_FLAG = 'skill-auto'
 
 /**
  * Accepted flag NAMES per subcommand (OPS110-F1). Names only — the `=`/boolean
@@ -211,7 +264,17 @@ export const purposeInvocation = ({ purpose = null, issueNumber = null, argument
  */
 export const SESSION_FLAG_ALLOWLIST = {
   serve: ['hostname', 'port'],
-  start: ['purpose', 'dir', 'model', 'issue', 'argument', 'new', 'hostname', 'port'],
+  start: [
+    'purpose',
+    'dir',
+    'model',
+    'issue',
+    'argument',
+    'new',
+    SKILL_AUTO_FLAG,
+    'hostname',
+    'port',
+  ],
   attach: ['session', 'branch', 'issue'],
   stop: ['session', 'branch', 'issue'],
   list: ['json', 'hostname', 'port'],
@@ -264,11 +327,13 @@ export const nearestAcceptedFlag = (name, accepted) => {
  * a suggestion when a near neighbor exists; unknown subcommands return silently
  * (the CLI prints the USAGE for those). A bare `--` parses to an empty name and
  * is ignored, not reported as a typo.
- * @param {{ subcommand?: string | null, flags?: Record<string, unknown> }} [options]
+ *
+ * Single owner of the fail-high message: both the session CLI
+ * (`validateSessionFlags`) and the worktree launcher (`validateWorktreeFlags`)
+ * delegate here, so the wording and the suggestion rule never drift.
+ * @param {{ flags?: Record<string, unknown>, accepted?: readonly string[] }} [options]
  */
-export const validateSessionFlags = ({ subcommand = null, flags = {} } = {}) => {
-  const accepted = SESSION_FLAG_ALLOWLIST[subcommand]
-  if (!accepted) return
+export const assertKnownFlags = ({ flags = {}, accepted = [] } = {}) => {
   for (const name of Object.keys(flags)) {
     if (name === '' || accepted.includes(name)) continue
     const suggestion = nearestAcceptedFlag(name, accepted)
@@ -278,6 +343,18 @@ export const validateSessionFlags = ({ subcommand = null, flags = {} } = {}) => 
         : `flag desconhecida: --${name}.`,
     )
   }
+}
+
+/**
+ * Fail high on any flag the subcommand does not accept (names only — the
+ * `=`/boolean form stays `parseEqualsFlags`' concern). Unknown subcommands
+ * return silently (the CLI prints the USAGE for those).
+ * @param {{ subcommand?: string | null, flags?: Record<string, unknown> }} [options]
+ */
+export const validateSessionFlags = ({ subcommand = null, flags = {} } = {}) => {
+  const accepted = SESSION_FLAG_ALLOWLIST[subcommand]
+  if (!accepted) return
+  assertKnownFlags({ flags, accepted })
 }
 
 /**

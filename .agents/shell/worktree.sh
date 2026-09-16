@@ -8,7 +8,7 @@
 #
 # No terminal (esta função), o script também imprime a diretiva `launch node
 # scripts/agent-session.mjs start --purpose=<next|plan|new|fix> --dir=<dir>
-# --model=<preset|map> [--issue=<N>] [--argument="<bag>"]` (OPS26+OPS33+OPS93+OPS95+OPS110):
+# --model=<preset|map> [--skill-auto] [--issue=<N>] [--argument="<bag>"]` (OPS26+OPS33+OPS93+OPS95+OPS110+OPS122):
 # a função executa o cd e então a linha (tokenizada por xargs — honra as aspas
 # do argumento, nunca eval). Desde a OPS110 o launch não abre um TUI local dono
 # da sessão: o `agent-session` sobe/reaproveita o `opencode serve` compartilhado,
@@ -30,6 +30,14 @@
 # o ciclo de vida das sessões vive em scripts/agent-session.mjs. O marcador
 # TEQO_WORKTREE_TERMINAL=1 é o que separa esta superfície da do comando
 # `/worktree` do opencode (que nunca lança TUI). `--stay` suprime cd e launch.
+#
+# OPS122: `--auto` (o opt-out do GATE da skill) transposta para a invocation do
+# driver — `/work-issue --issue <N> --auto`, `/plan-issue --auto <bag>`,
+# `/bug-fix --auto <bag>`. Vale em `next`/`fix` e em `plan` COM bag; flag
+# desconhecida, `--auto` sem destino (`new`, `plan` sem bag), `--stay --auto`,
+# `--headless --auto` ou `--auto` fora do terminal falham alto (nunca descarte
+# silencioso). O modelo pedido passa a ser gravado na própria SESSÃO do servidor
+# (o TUI anexado herda), inclusive driverless — não só no argv do driver.
 #
 # Instalação (uma linha no profile; requer bash ou zsh — usa BASH_SOURCE, arrays e here-strings):
 #   source <repo>/.agents/shell/worktree.sh

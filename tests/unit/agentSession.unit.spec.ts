@@ -3,7 +3,9 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  assertKnownFlags,
   attachArgs,
+  buildCreateSessionBody,
   codeFromBranch,
   DEFAULT_AGENT_SERVER_HOST,
   DEFAULT_AGENT_SERVER_PORT,
@@ -14,6 +16,7 @@ import {
   isLoopbackHost,
   isStaleLock,
   nearestAcceptedFlag,
+  parseModelRef,
   parseServerState,
   parseSessionState,
   purposeInvocation,
@@ -251,13 +254,126 @@ describe('purposeInvocation (mapa purpose→comando movido do worktree)', () => 
     expect(purposeInvocation({ purpose: 'bogus' })).toBeNull()
     expect(purposeInvocation({})).toBeNull()
   })
+
+  it('auto=true transposes to the exact skill flags — /work-issue --issue N --auto', () => {
+    expect(purposeInvocation({ purpose: 'next', issueNumber: 1088, auto: true })).toEqual({
+      command: 'work-issue',
+      arguments: '--issue 1088 --auto',
+    })
+  })
+
+  it('auto=true prefixes plan/fix bags — /plan-issue --auto <bag> and /bug-fix --auto <bag>', () => {
+    expect(purposeInvocation({ purpose: 'plan', argument: 'revisa o gate', auto: true })).toEqual({
+      command: 'plan-issue',
+      arguments: '--auto revisa o gate',
+    })
+    expect(purposeInvocation({ purpose: 'fix', argument: '500 no autosave', auto: true })).toEqual({
+      command: 'bug-fix',
+      arguments: '--auto 500 no autosave',
+    })
+  })
+
+  it('auto=true with an empty fix bag still submits the bare flag — /bug-fix --auto', () => {
+    expect(purposeInvocation({ purpose: 'fix', auto: true })).toEqual({
+      command: 'bug-fix',
+      arguments: '--auto',
+    })
+  })
+
+  it('auto=false (default) keeps the supervised forms byte-identical', () => {
+    expect(purposeInvocation({ purpose: 'next', issueNumber: 1088 })).toEqual({
+      command: 'work-issue',
+      arguments: '--issue 1088',
+    })
+    expect(purposeInvocation({ purpose: 'fix', argument: 'b' })).toMatchObject({
+      arguments: 'b',
+    })
+    expect(purposeInvocation({ purpose: 'fix' })).toMatchObject({ arguments: '' })
+    expect(purposeInvocation({ purpose: 'plan', argument: 'b' })).toMatchObject({
+      arguments: 'b',
+    })
+  })
+
+  it('auto=true never resurrects a missing invocation (new / plan without bag stay null)', () => {
+    expect(purposeInvocation({ purpose: 'new', auto: true })).toBeNull()
+    expect(purposeInvocation({ purpose: 'plan', auto: true })).toBeNull()
+    expect(purposeInvocation({ purpose: 'plan', argument: '  ', auto: true })).toBeNull()
+  })
+})
+
+describe('parseModelRef + buildCreateSessionBody (OPS122 — o modelo chega à SESSÃO)', () => {
+  it('splits provider/model at the FIRST slash', () => {
+    expect(parseModelRef('opencode/muse-spark-1.3-contributor-free')).toEqual({
+      providerID: 'opencode',
+      id: 'muse-spark-1.3-contributor-free',
+    })
+    expect(parseModelRef('openrouter/openrouter/free')).toEqual({
+      providerID: 'openrouter',
+      id: 'openrouter/free',
+    })
+    expect(parseModelRef('opencode-go/deepseek-v4.1-flash')).toEqual({
+      providerID: 'opencode-go',
+      id: 'deepseek-v4.1-flash',
+    })
+  })
+
+  it('fails high on a model without provider/id — never sends a half ref', () => {
+    expect(() => parseModelRef('deepseek-flash')).toThrow(/provider\/model|inválido/)
+    expect(() => parseModelRef('/deepseek-flash')).toThrow(/inválido/)
+    expect(() => parseModelRef('deepseek/')).toThrow(/inválido/)
+    expect(() => parseModelRef('')).toThrow()
+    expect(() => parseModelRef(null as unknown as string)).toThrow()
+  })
+
+  it('builds the POST /session body with the model ref, or an empty body without one', () => {
+    expect(buildCreateSessionBody({ model: 'opencode-go/deepseek-v4.1-flash' })).toEqual({
+      model: { providerID: 'opencode-go', id: 'deepseek-v4.1-flash' },
+    })
+    expect(buildCreateSessionBody({ model: null })).toEqual({})
+    expect(buildCreateSessionBody({ model: undefined })).toEqual({})
+    expect(buildCreateSessionBody({})).toEqual({})
+    expect(buildCreateSessionBody()).toEqual({})
+    expect(() => buildCreateSessionBody({ model: 'no-slash' })).toThrow(/inválido|provider/)
+  })
+
+  it('never emits a variant (OPS95 — variants live on the machine config)', () => {
+    const body = buildCreateSessionBody({ model: 'opencode-go/deepseek-v4.1-flash' })
+    expect(body.model).not.toHaveProperty('variant')
+  })
+})
+
+describe('assertKnownFlags (dono único da mensagem fail-high)', () => {
+  it('is silent when every flag is accepted or a bare `--`', () => {
+    expect(() =>
+      assertKnownFlags({ flags: { '': true, stay: true }, accepted: ['stay'] }),
+    ).not.toThrow()
+  })
+
+  it('throws with a neighbor suggestion, or as-is without one', () => {
+    expect(() => assertKnownFlags({ flags: { stya: true }, accepted: ['stay'] })).toThrow(
+      /--stya[\s\S]*--stay/,
+    )
+    expect(() => assertKnownFlags({ flags: { nope: true }, accepted: ['stay'] })).toThrow(
+      'flag desconhecida: --nope.',
+    )
+  })
 })
 
 describe('validateSessionFlags + nearestAcceptedFlag (OPS110-F1 — flag desconhecida falha alto)', () => {
   it('pins the accepted flag names per verb', () => {
     expect(SESSION_FLAG_ALLOWLIST).toEqual({
       serve: ['hostname', 'port'],
-      start: ['purpose', 'dir', 'model', 'issue', 'argument', 'new', 'hostname', 'port'],
+      start: [
+        'purpose',
+        'dir',
+        'model',
+        'issue',
+        'argument',
+        'new',
+        'skill-auto',
+        'hostname',
+        'port',
+      ],
       attach: ['session', 'branch', 'issue'],
       stop: ['session', 'branch', 'issue'],
       list: ['json', 'hostname', 'port'],
@@ -275,6 +391,7 @@ describe('validateSessionFlags + nearestAcceptedFlag (OPS110-F1 — flag desconh
           issue: '1',
           argument: 'x',
           new: true,
+          'skill-auto': true,
           hostname: 'h',
           port: '1',
         },

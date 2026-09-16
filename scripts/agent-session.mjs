@@ -44,6 +44,7 @@ import { dirname, join, resolve } from 'node:path'
 
 import {
   attachArgs,
+  buildCreateSessionBody,
   codeFromBranch,
   deriveSessionStatus,
   driverArgs,
@@ -63,6 +64,7 @@ import {
   sessionDirFromEnv,
   sessionListPayload,
   sessionStatePath,
+  SKILL_AUTO_FLAG,
   startLockPath,
   STATE_VERSION,
   validateServerBind,
@@ -75,13 +77,14 @@ const die = dieWithLabel('agent:session')
 const USAGE = `Uso: pnpm agent:session <serve|start|attach|stop|list> [flags]
 
   serve  [--hostname=H] [--port=P]                sobe/reaproveita o opencode serve compartilhado
-  start  --purpose=<next|plan|new|fix> --dir=<D> [--model=<M>] [--issue=N] [--argument="<bag>"] [--new] [--hostname=H] [--port=P]
+  start  --purpose=<next|plan|new|fix> --dir=<D> [--model=<M>] [--issue=N] [--argument="<bag>"] [--skill-auto] [--new] [--hostname=H] [--port=P]
                                                   cria a sessão, sobe o driver destacado e anexa o TUI
   attach [--session=<ses_…>|--branch=<B>|--issue=N]  (re)entra na sessão (default: branch do cwd)
   stop   [--session=<ses_…>|--branch=<B>|--issue=N]  encerra de forma explícita (abort + fim do driver)
   list   [--json] [--hostname=H] [--port=P]        status dos runs registrados
 
-  --model é obrigatório quando o purpose dispara driver (next/fix, plan com bag); 'new' e 'plan' sem bag não disparam driver.`
+  --model é obrigatório quando o purpose dispara driver (next/fix, plan com bag); 'new' e 'plan' sem bag não disparam driver.
+  --skill-auto é o --auto do HUMANO (opt-out do GATE da skill), transposto para o texto da invocation; não confundir com o --auto de permissões que o driver recebe.`
 
 /** Loopback by default; the credential rides the env, never the state/log. */
 const serverPassword = () => process.env.OPENCODE_SERVER_PASSWORD ?? ''
@@ -266,10 +269,10 @@ const sessionExists = async (url, sessionID) => {
 
 const sessionStatuses = async (url) => (await request(url, '/session/status')) ?? {}
 
-const createSession = async (url, dir) => {
+const createSession = async (url, dir, model = null) => {
   const result = await request(url, `/session?directory=${encodeURIComponent(dir)}`, {
     method: 'POST',
-    body: {},
+    body: buildCreateSessionBody({ model }),
   })
   if (!result?.id) die(`não consegui criar a sessão em ${url} (resposta sem id).`)
   return result.id
@@ -473,6 +476,7 @@ const cmdStart = async (flags) => {
     purpose,
     issueNumber,
     argument: flags.argument ?? null,
+    auto: Boolean(flags[SKILL_AUTO_FLAG]),
   })
   if (invocation && !model) die('--model é obrigatório para iniciar o run (driver).')
 
@@ -509,10 +513,19 @@ const cmdStart = async (flags) => {
       )
     }
     if (decision.action === 'reuse') {
+      // OPS122: `reuse` só acontece com driver vivo/sessão busy (ver
+      // `resolveStartDecision`), então não há janela para aplicar outro modelo.
+      // Falha alto sempre que o modelo pedido diverge do registrado — inclusive
+      // quando o estado é antigo e não tem `model` (nunca descarta em silêncio).
+      if (model && decision.state.model !== model) {
+        die(
+          `run já em andamento em ${decision.state.model ?? 'modelo não registrado'} — --model ${model} não se aplica a uma sessão ativa. Encerre com \`pnpm agent:session stop --branch=${branch}\` e reabra para trocar.`,
+        )
+      }
       reused = true
       state = decision.state
     } else {
-      const sessionID = await createSession(server.url, dir)
+      const sessionID = await createSession(server.url, dir, model)
       state = {
         version: STATE_VERSION,
         code: codeFromBranch(branch),

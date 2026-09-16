@@ -51,7 +51,7 @@ Fases pesadas são delegadas a sub-agentes com contexto mínimo — o agente pri
 - [ ] 3. Dispatch sub-agente investigador → causa-raiz
 - [ ] 4. Fix da causa-raiz + teste de regressão (main agent iterativo)
 - [ ] 5. Dispatch sub-agente verificador → prova verde
-- [ ] 6. Gates + PR → merge; bug de prod: deploy (staging automático, produção após approve) → confirmação do humano
+- [ ] 6. Gates + PR → merge; bug de prod: deploy (staging automático, produção após approve humano — `--auto` NÃO aprova produção) → confirmação do humano
 - [ ] 7. Dispatch sub-agente estrategista → prevenção classificada
 - [ ] 8. Implementar prevenção barata agora (a cara fica no post-mortem)
 - [ ] 9. Dispatch sub-agente escritor → post-mortem + entrada de changelog
@@ -76,6 +76,17 @@ O relatório chega no `$ARGUMENTS` (a descrição passada ao `worktree fix`), do
 - **Severidade/impacto:** quem afeta, bloqueia usuário?
 
 Ausente → **uma** pergunta ao humano ("Qual o bug?"). Se houver Issue no GitHub (`github.com/fsolla/teqo/issues`), leia-a via `pnpm issue` / `scripts/issue.mjs` — mas bug-fix não exige Issue (o post-mortem é o registro).
+
+## Modo autônomo (`--auto`)
+
+Opt-out da pausa por invocação. Detecta-se em `$ARGUMENTS`: `/bug-fix --auto <bug>` (a flag vive dentro do prompt, junto da descrição; sem parser dedicado). O transporte padrão é o `pnpm worktree fix --auto <bag>`, que auto-submete exatamente `/bug-fix --auto <bag>`.
+
+- **Sem a flag (ou flag desconhecida):** o fluxo supervisionado atual vale idêntico — inclusive a pergunta única do Passo 1 quando o relatório não chegou.
+- **Com a flag:** a descrição chega no `$ARGUMENTS` e o fluxo segue direto do Passo 2 ao 9 sem pedir confirmação. Relatório ausente mesmo com a flag → **pare** (sem sintoma não há o que investigar — mesmo fail-closed do Passo 1).
+- **Pode auto-aprovar:** o diagnóstico de causa-raiz, a escolha e a implementação do fix, a classificação da prevenção, a prevenção barata, o post-mortem e o push/PR.
+- **Continua parando (vale mesmo com a flag):** DB de prod/`ALLOW_REMOTE_DB`; escrita em prod (repro de bug de prod é read-only); Consent/LGPD fail-closed; migração de schema; contrato de URL público; shapes públicos; **aprovação humana da produção** (o deploy de prod nunca é automático — `--auto` não aprova o environment `production`); merge sem CI green; divergência material de produto → pare, registre o pendente no post-mortem e reporte no resumo final. Nunca declare bug de prod corrigido sem a confirmação do humano.
+- **Não confundir:** `--auto` aqui é flag da skill dentro do prompt; o `--auto` do CLI opencode (auto-aprovar permissões de ferramenta) é outro conceito.
+- **Convivência:** `agent-work-issue` continua sendo o contrato do pool dormente; este modo é opt-in da sessão humana.
 
 ## Passo 2 — Reproduzir
 

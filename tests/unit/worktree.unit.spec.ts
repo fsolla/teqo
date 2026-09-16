@@ -15,6 +15,7 @@ import {
   worktreeEnvironment,
 } from '../../scripts/lib/worktree-env.mjs'
 import {
+  assertSkillAutoSupported,
   branchNameForIssue,
   FIX_BRANCH_PREFIX,
   fixBranchName,
@@ -28,8 +29,10 @@ import {
   PLAN_BRANCH_PREFIX,
   planBranchName,
   resolveWorktreeModel,
+  validateWorktreeFlags,
   WORK_BRANCH_PREFIX,
   workBranchName,
+  WORKTREE_FLAG_ALLOWLIST,
   WORKTREE_MODEL_FLAGS,
   WORKTREE_MODEL_MAP,
   WORKTREE_TERMINAL_ENV,
@@ -317,6 +320,43 @@ describe('opencodeLaunchDirective (terminal-only agent-session launch, OPS26 + O
       }),
     ).toBeNull()
   })
+
+  it('skillAuto carries --skill-auto to the session CLI (OPS122 — o --auto do humano)', () => {
+    expect(
+      opencodeLaunchDirective({
+        dir,
+        purpose: 'next',
+        terminal: true,
+        issueNumber: 1088,
+        skillAuto: true,
+      }),
+    ).toBe(
+      `launch node scripts/agent-session.mjs start --purpose=next --dir=${dir} --model=${presetInEffect()} --skill-auto --issue=1088`,
+    )
+    expect(opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true, skillAuto: true })).toBe(
+      `launch node scripts/agent-session.mjs start --purpose=plan --dir=${dir} --model=${presetInEffect()} --skill-auto`,
+    )
+    expect(
+      opencodeLaunchDirective({
+        dir,
+        purpose: 'fix',
+        terminal: true,
+        skillAuto: true,
+        argument: 'bug x',
+      }),
+    ).toBe(
+      `launch node scripts/agent-session.mjs start --purpose=fix --dir=${dir} --model=${presetInEffect()} --skill-auto --argument="bug x"`,
+    )
+  })
+
+  it('omits --skill-auto by default and outside the terminal (supervised stays byte-identical)', () => {
+    expect(opencodeLaunchDirective({ dir, purpose: 'next', terminal: true })).not.toContain(
+      '--skill-auto',
+    )
+    expect(
+      opencodeLaunchDirective({ dir, purpose: 'next', terminal: false, skillAuto: true }),
+    ).toBeNull()
+  })
 })
 
 describe('namespaceLaunchDescriptor (purpose→options single source, OPS119+)', () => {
@@ -478,6 +518,122 @@ describe('resolveWorktreeModel + WORKTREE_MODEL_MAP (OPS93 menu, OPS95 values, O
         opencodeLaunchDirective({ dir, purpose: 'new', terminal: true, model: resolved }),
       ).toContain(`--model=${model}`)
     }
+  })
+})
+
+describe('validateWorktreeFlags + WORKTREE_FLAG_ALLOWLIST (OPS122 — flag desconhecida falha alto)', () => {
+  it('pins the accepted names per verb (model flags included)', () => {
+    const modelFlags = [...WORKTREE_MODEL_FLAGS]
+    expect(WORKTREE_FLAG_ALLOWLIST).toEqual({
+      next: ['issue', 'stay', 'no-migrate', 'auto', ...modelFlags],
+      plan: ['stay', 'no-migrate', 'auto', ...modelFlags],
+      new: ['stay', 'no-migrate', 'auto', ...modelFlags],
+      fix: ['stay', 'no-migrate', 'headless', 'directive', 'auto', ...modelFlags],
+      kill: ['force', 'stay'],
+    })
+  })
+
+  it('accepts every documented flag per verb', () => {
+    expect(() =>
+      validateWorktreeFlags({
+        subcommand: 'next',
+        flags: { issue: '1088', stay: true, 'no-migrate': true, auto: true, zen: true },
+      }),
+    ).not.toThrow()
+    expect(() =>
+      validateWorktreeFlags({ subcommand: 'plan', flags: { auto: true, go: true } }),
+    ).not.toThrow()
+    expect(() =>
+      validateWorktreeFlags({
+        subcommand: 'fix',
+        flags: { headless: true, directive: '/d', auto: true, free: true },
+      }),
+    ).not.toThrow()
+    expect(() =>
+      validateWorktreeFlags({ subcommand: 'kill', flags: { force: true } }),
+    ).not.toThrow()
+  })
+
+  it('suggests the neighbor: --zen flag typo and --stay typo', () => {
+    expect(() => validateWorktreeFlags({ subcommand: 'next', flags: { zenm: true } })).toThrow(
+      /--zenm[\s\S]*--zen/,
+    )
+    expect(() => validateWorktreeFlags({ subcommand: 'plan', flags: { stya: true } })).toThrow(
+      /--stya[\s\S]*--stay/,
+    )
+  })
+
+  it('reports an unknown flag without a suggestion as-is', () => {
+    expect(() =>
+      validateWorktreeFlags({ subcommand: 'next', flags: { totallyWrong: true } }),
+    ).toThrow('flag desconhecida: --totallyWrong.')
+  })
+
+  it('rejects a flag that belongs to another verb', () => {
+    expect(() => validateWorktreeFlags({ subcommand: 'plan', flags: { issue: '1' } })).toThrow(
+      /--issue/,
+    )
+    expect(() => validateWorktreeFlags({ subcommand: 'next', flags: { headless: true } })).toThrow(
+      /--headless/,
+    )
+    expect(() => validateWorktreeFlags({ subcommand: 'kill', flags: { auto: true } })).toThrow(
+      /--auto/,
+    )
+  })
+
+  it('ignores a bare `--` and stays silent for an unknown/absent verb', () => {
+    expect(() =>
+      validateWorktreeFlags({ subcommand: 'next', flags: { '': true, stay: true } }),
+    ).not.toThrow()
+    expect(() =>
+      validateWorktreeFlags({ subcommand: 'bogus', flags: { whatever: true } }),
+    ).not.toThrow()
+    expect(() =>
+      validateWorktreeFlags({ subcommand: null, flags: { whatever: true } }),
+    ).not.toThrow()
+  })
+})
+
+describe('assertSkillAutoSupported (OPS122 — `--auto` não-honrável falha alto)', () => {
+  it('honors next/fix always and plan only with a bag', () => {
+    expect(() => assertSkillAutoSupported({ purpose: 'next' })).not.toThrow()
+    expect(() => assertSkillAutoSupported({ purpose: 'fix' })).not.toThrow()
+    expect(() => assertSkillAutoSupported({ purpose: 'fix', bag: 'bug' })).not.toThrow()
+    expect(() => assertSkillAutoSupported({ purpose: 'plan', bag: 'uma ideia' })).not.toThrow()
+  })
+
+  it('fails high on new (neutral session, no skill to auto-submit)', () => {
+    expect(() => assertSkillAutoSupported({ purpose: 'new' })).toThrow(/new|neutra/)
+    expect(() => assertSkillAutoSupported({ purpose: 'new', bag: 'ideia' })).toThrow(/new|neutra/)
+  })
+
+  it('fails high on plan without a bag (OPS119 keeps it driverless)', () => {
+    expect(() => assertSkillAutoSupported({ purpose: 'plan' })).toThrow(/bag|driverless|sem/)
+    expect(() => assertSkillAutoSupported({ purpose: 'plan', bag: '   ' })).toThrow(
+      /bag|driverless|sem/,
+    )
+  })
+
+  it('fails high on --stay (the launch is suppressed, so --auto would be dead)', () => {
+    expect(() => assertSkillAutoSupported({ purpose: 'next', stay: true })).toThrow(/--stay/)
+  })
+
+  it('fails high on --headless (the auto-unblock path has no skill invocation)', () => {
+    expect(() => assertSkillAutoSupported({ purpose: 'fix', bag: 'bug', headless: true })).toThrow(
+      /--headless/,
+    )
+  })
+
+  it('fails high outside the interactive terminal (the /worktree command never launches)', () => {
+    expect(() => assertSkillAutoSupported({ purpose: 'next', terminal: false })).toThrow(/terminal/)
+    expect(() => assertSkillAutoSupported({ purpose: 'plan', bag: 'x', terminal: false })).toThrow(
+      /terminal/,
+    )
+  })
+
+  it('fails high on an unknown purpose (never invents a command)', () => {
+    expect(() => assertSkillAutoSupported({ purpose: 'bogus' })).toThrow(/bogus/)
+    expect(() => assertSkillAutoSupported({})).toThrow()
   })
 })
 
