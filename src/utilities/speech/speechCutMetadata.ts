@@ -39,7 +39,7 @@ const suggestionSchema = z.object({
 
 const SYSTEM_PROMPT =
   'Você prepara cortes de falas do deputado federal Jorge Solla no acervo da Câmara dos Deputados. ' +
-  'Receberá tipo, data, resumo oficial e a transcrição automática (ASR) de um trecho de 5 a 180 segundos. ' +
+  'Receberá tipo, data, resumo oficial e a transcrição automática (ASR) de um trecho da fala com 5 segundos ou mais. ' +
   'Escreva um título curto e concreto (o assunto do trecho, não o nome do deputado) e uma descrição de uma ' +
   'a duas frases, em português do Brasil, adequadas para compartilhar o vídeo no WhatsApp. ' +
   'Use apenas o que está no trecho e no resumo; nunca invente números, acordos ou citações, e a transcrição ' +

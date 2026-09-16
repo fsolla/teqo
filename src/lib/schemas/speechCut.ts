@@ -13,8 +13,9 @@ export const SPEECH_CUT_SPEECH_NOT_FOUND_MESSAGE = 'Fala não encontrada.'
 /** The cut does not exist (or the actor cannot read it). */
 export const SPEECH_CUT_NOT_FOUND_MESSAGE = 'Corte não encontrado.'
 
-/** Selection outside the C166 bounds (5–180 s) or outside the speech duration. */
-export const SPEECH_CUT_INVALID_RANGE_MESSAGE = 'Selecione um trecho de 5 a 180 segundos.'
+/** Selection below the 5 s minimum or outside the speech duration. */
+export const SPEECH_CUT_INVALID_RANGE_MESSAGE =
+  'Selecione um trecho de 5 segundos até o fim da fala.'
 
 /** Retry only applies to a failed cut — a published one is not re-cut. */
 export const SPEECH_CUT_RETRY_NOT_FAILED_MESSAGE =

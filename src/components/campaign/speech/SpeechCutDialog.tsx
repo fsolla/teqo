@@ -32,11 +32,7 @@ import {
   type SpeechCutStep,
   type SpeechCutViewModel,
 } from '@/lib/speechCut'
-import {
-  MAX_EXCERPT_SECONDS,
-  MIN_EXCERPT_SECONDS,
-  type ExcerptRange,
-} from '@/lib/speechExcerptSelection'
+import { MIN_EXCERPT_SECONDS, type ExcerptRange } from '@/lib/speechExcerptSelection'
 import { cn } from '@/lib/utils'
 
 const SAVE_ENDPOINT = '/campanha/comunicacao/acervo/cortar'
@@ -239,8 +235,8 @@ export const SpeechCutDialog = ({
                   {formatSpeechClock(range.startSeconds)} → {formatSpeechClock(range.endSeconds)}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {formatSpeechSpan(durationSeconds)} · dentro da faixa de {MIN_EXCERPT_SECONDS}–
-                  {MAX_EXCERPT_SECONDS} s
+                  {formatSpeechSpan(durationSeconds)} · mínimo {MIN_EXCERPT_SECONDS} s · até o fim
+                  da fala
                 </span>
               </div>
             </div>

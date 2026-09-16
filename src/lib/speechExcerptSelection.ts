@@ -1,7 +1,8 @@
 /**
  * C166 — pure geometry for the acervo excerpt picker: whole-second
  * [start, end] ranges snapped to transcript segment boundaries, clamped to the
- * excerpt limits (5 s..180 s) and to the speech duration. No DOM and no React:
+ * 5 s minimum and to the speech duration (C170: no upper cap — the speech
+ * itself is the limit). No DOM and no React:
  * the client controls only translate pointers/keys into these calls.
  */
 
@@ -18,7 +19,6 @@ export type ExcerptRange = {
 export type ExcerptEdge = 'start' | 'end'
 
 export const MIN_EXCERPT_SECONDS = 5
-export const MAX_EXCERPT_SECONDS = 180
 
 export const rangeDurationSeconds = (range: ExcerptRange): number =>
   range.endSeconds - range.startSeconds
@@ -31,7 +31,7 @@ const wholeCeil = (seconds: number): number => (Number.isFinite(seconds) ? Math.
 
 /**
  * Clamp a raw [start, end] pair into a valid excerpt range: whole seconds,
- * inside [0, duration], at least 5 s and at most 180 s long (a short pair
+ * inside [0, duration], at least 5 s long (a short pair
  * grows forward, and backwards when the speech ends first). Returns null when
  * the duration cannot hold the minimum — the caller then hides the picker.
  */
@@ -51,7 +51,6 @@ export const normalizeExcerptRange = (
     end = Math.min(duration, start + MIN_EXCERPT_SECONDS)
     start = Math.max(0, end - MIN_EXCERPT_SECONDS)
   }
-  if (end - start > MAX_EXCERPT_SECONDS) end = start + MAX_EXCERPT_SECONDS
 
   return { startSeconds: start, endSeconds: end }
 }
@@ -65,7 +64,7 @@ export const initialExcerptRange = (
     ? selectSegmentRange(segments, 0, durationSeconds)
     : normalizeExcerptRange(0, MIN_EXCERPT_SECONDS, durationSeconds)
 
-/** A whole phrase, clamped by the duration and by the 5 s/180 s limits. */
+/** A whole phrase, clamped by the duration and by the 5 s minimum. */
 export const selectSegmentRange = (
   segments: readonly ExcerptSegment[],
   index: number,
@@ -110,7 +109,7 @@ export const extendRangeToSegment = (
 
 /**
  * Handle/keyboard move of one edge: the other edge stays put, the span stays
- * between 5 s and 180 s, and the range stays inside the speech.
+ * at least 5 s, and the range stays inside the speech (C170: no upper cap).
  */
 export const moveRangeEdge = (
   range: ExcerptRange,
@@ -122,16 +121,15 @@ export const moveRangeEdge = (
   const requested = Math.round(Number.isFinite(nextSeconds) ? nextSeconds : 0)
 
   if (edge === 'start') {
-    const minimum = Math.max(0, range.endSeconds - MAX_EXCERPT_SECONDS)
     const maximum = range.endSeconds - MIN_EXCERPT_SECONDS
     return {
-      startSeconds: Math.min(Math.max(requested, minimum), maximum),
+      startSeconds: Math.min(Math.max(requested, 0), maximum),
       endSeconds: range.endSeconds,
     }
   }
 
   const minimum = range.startSeconds + MIN_EXCERPT_SECONDS
-  const maximum = Math.min(duration, range.startSeconds + MAX_EXCERPT_SECONDS)
+  const maximum = duration
   return {
     startSeconds: range.startSeconds,
     endSeconds: Math.min(Math.max(requested, minimum), maximum),

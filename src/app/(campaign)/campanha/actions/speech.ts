@@ -27,11 +27,7 @@ import {
 } from '@/lib/schemas/speechVod'
 import { formatSpeechDate } from '@/lib/speechClock'
 import { toSpeechCutViewModel, type SpeechCutViewModel } from '@/lib/speechCut'
-import {
-  MAX_EXCERPT_SECONDS,
-  MIN_EXCERPT_SECONDS,
-  normalizeExcerptRange,
-} from '@/lib/speechExcerptSelection'
+import { MIN_EXCERPT_SECONDS, normalizeExcerptRange } from '@/lib/speechExcerptSelection'
 import { speechVodCoordinates, type SpeechVodResolution } from '@/lib/speechVod'
 import type { CampaignUser } from '@/payload-types'
 import { getCampaignActionContext } from '@/utilities/campaignActionContext'
@@ -118,10 +114,10 @@ const loadSpeechForCut = async (payload: Payload, actor: CampaignUser, speechId:
 }
 
 /**
- * Validates the requested window against the C166 bounds and the speech
- * duration, then normalizes it. Deterministic (the action and the suggestion
- * must agree): a forged request fails closed instead of silently cutting a
- * different interval.
+ * Validates the requested window against the 5 s minimum (C170: no upper cap —
+ * the speech duration is the limit), then normalizes it. Deterministic (the
+ * action and the suggestion must agree): a forged request fails closed instead
+ * of silently cutting a different interval.
  */
 const resolveExcerptRange = (
   durationSeconds: number | null | undefined,
@@ -130,7 +126,7 @@ const resolveExcerptRange = (
 ): { startSeconds: number; endSeconds: number } => {
   const duration = Math.floor(durationSeconds ?? 0)
   const requested = endSeconds - startSeconds
-  if (requested < MIN_EXCERPT_SECONDS || requested > MAX_EXCERPT_SECONDS || endSeconds > duration) {
+  if (requested < MIN_EXCERPT_SECONDS || endSeconds > duration) {
     throw new Error(SPEECH_CUT_INVALID_RANGE_MESSAGE)
   }
   const range = normalizeExcerptRange(startSeconds, endSeconds, duration)
