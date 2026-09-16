@@ -11,7 +11,7 @@
  */
 
 import { FEDERAL_DEPUTY_OFFICE, HISTORICAL_SERIES_YEARS } from '../src/lib/electionResults.ts'
-import { getMunicipalityCatalogEntry } from '../src/lib/municipalityCatalog.ts'
+import { getMunicipalityCatalogEntry, municipalityCatalog } from '../src/lib/municipalityCatalog.ts'
 import { getMunicipalityVoteRank } from '../src/lib/municipalityVoteRank.ts'
 import { normalizeForSearch } from '../src/lib/speechSearch.ts'
 import { excerptOffsetSeconds } from '../src/lib/speechVod.ts'
@@ -32,6 +32,22 @@ import { loadSegmentsForSpeeches } from '../src/utilities/speech/speechPageData.
 const SPEECH_LIMIT = 10
 const DEMAND_LIMIT = 20
 const COMPETITOR_LIMIT = 5
+/**
+ * Region-relevant speech themes: the acervo search for a small município is
+ * nearly always empty, so the report also shows what the deputy said about the
+ * REGION and about the themes that matter there. These are the enum values from
+ * `SPEECH_TOPICS` (src/lib/speechFacets.ts).
+ */
+const SPEECH_REGION_TOPICS = [
+  'saude',
+  'educacao',
+  'agricultura',
+  'infraestrutura',
+  'meio-ambiente',
+  'cultura',
+  'economia-trabalho',
+  'habitacao-cidades',
+]
 /** Data value of the office enum (only the federal constant is exported today). */
 const STATE_DEPUTY_OFFICE = 'deputado_estadual'
 const REFERENCE_YEAR = 2022
@@ -44,65 +60,112 @@ const projectActivity = (activity) => ({
   locality: activity.locality,
 })
 
+const SPEECH_SELECT = {
+  speechAt: true,
+  type: true,
+  phase: true,
+  summary: true,
+  officialTextUrl: true,
+  youtubeUrl: true,
+  vodPlaybackUrl: true,
+  excerptTMs: true,
+  eventStartAt: true,
+  mentionedMunicipalities: true,
+  topics: true,
+}
+
 /**
- * Speeches mentioning the município, projected for the report: the official
- * summary says what the speech is; `mentionExcerpt` is the passage that
- * literally names the city (null when the acervo tag has no literal mention in
- * the ASR segments — e.g. a gazetteer tagging among dozens of municípios);
- * `mentionedMunicipalityCount` gives that context.
+ * Projects one speech for the report: the official summary says what the
+ * speech is; `mentionExcerpt` is the passage that literally names the matched
+ * município (null when the acervo tag has no literal mention in the ASR
+ * segments); `matchedMunicipality` is which name matched; the count gives the
+ * "tagged among dozens" context; `topics` carries the facet themes.
  */
-const loadSpeeches = async (payload, actor, municipalityID, municipalityName) => {
-  const result = await payload.find({
-    collection: 'speech',
-    where: buildSpeechListWhere({ page: 1, municipalities: [municipalityID] }),
-    depth: 0,
-    limit: SPEECH_LIMIT,
-    sort: '-speechAt',
-    select: {
-      speechAt: true,
-      type: true,
-      phase: true,
-      summary: true,
-      officialTextUrl: true,
-      youtubeUrl: true,
-      vodPlaybackUrl: true,
-      excerptTMs: true,
-      eventStartAt: true,
-      mentionedMunicipalities: true,
-    },
-    user: actor,
-    overrideAccess: false,
-  })
+const projectSpeechRow = (doc, segments, matchNames) => {
+  const candidates = matchNames
+    .map((name) => ({ name, key: normalizeForSearch(name) }))
+    .filter((candidate) => candidate.key)
+  const matched = candidates.find(({ key }) =>
+    segments.some((segment) => normalizeForSearch(segment.text).includes(key)),
+  )
+  const mentionSegment = matched
+    ? segments.find((segment) => normalizeForSearch(segment.text).includes(matched.key))
+    : undefined
+  return {
+    id: doc.id,
+    speechAt: doc.speechAt ?? null,
+    type: doc.type ?? null,
+    phase: doc.phase ?? null,
+    summary: doc.summary ?? null,
+    officialTextUrl: doc.officialTextUrl ?? null,
+    youtubeUrl: doc.youtubeUrl ?? null,
+    vodPlaybackUrl: doc.vodPlaybackUrl ?? null,
+    /** Offset of the excerpt inside the session video (YouTube start). */
+    youtubeExcerptStartSeconds: excerptOffsetSeconds(doc.excerptTMs, doc.eventStartAt),
+    mentionExcerpt: mentionSegment?.text ?? null,
+    matchedMunicipality: matched?.name ?? null,
+    mentionedMunicipalityCount: Array.isArray(doc.mentionedMunicipalities)
+      ? doc.mentionedMunicipalities.length
+      : 0,
+    topics: Array.isArray(doc.topics) ? doc.topics : [],
+  }
+}
+
+/**
+ * Speeches for the report, in three non-overlapping groups: the município, the
+ * rest of its Território de Identidade (mantido separado — região não é a
+ * cidade) and the region-relevant themes. A speech already shown in a more
+ * specific group is never repeated in the next one.
+ */
+const loadSpeeches = async (payload, actor, { municipalityID, municipalityName, region }) => {
+  const find = (state) =>
+    payload.find({
+      collection: 'speech',
+      where: buildSpeechListWhere({ page: 1, ...state }),
+      depth: 0,
+      limit: SPEECH_LIMIT,
+      sort: '-speechAt',
+      select: SPEECH_SELECT,
+      user: actor,
+      overrideAccess: false,
+    })
+
+  const cityResult = await find({ municipalities: [municipalityID] })
+  const cityIDs = new Set(cityResult.docs.map((doc) => doc.id))
+
+  const regionIDs = region?.ids ?? []
+  const regionResult = regionIDs.length
+    ? await find({ municipalities: regionIDs })
+    : { docs: [], totalDocs: 0 }
+  const regionDocs = regionResult.docs.filter((doc) => !cityIDs.has(doc.id))
+
+  const seen = new Set([...cityIDs, ...regionDocs.map((doc) => doc.id)])
+  const topicResult = await find({ topics: SPEECH_REGION_TOPICS })
+  const topicDocs = topicResult.docs.filter((doc) => !seen.has(doc.id))
+
+  const allDocs = [...cityResult.docs, ...regionDocs, ...topicDocs]
   const segmentsBySpeech = await loadSegmentsForSpeeches(
     payload,
     actor,
-    result.docs.map((doc) => doc.id),
+    allDocs.map((doc) => doc.id),
   )
-  const normalizedCity = municipalityName ? normalizeForSearch(municipalityName) : ''
+  const segmentsOf = (doc) => segmentsBySpeech.get(doc.id) ?? []
+  const cityNames = municipalityName ? [municipalityName] : []
+  const regionNames = region?.names ?? []
+
   return {
-    totalCount: result.totalDocs,
-    rows: result.docs.map((doc) => {
-      const segments = segmentsBySpeech.get(doc.id) ?? []
-      const mentionSegment = normalizedCity
-        ? segments.find((segment) => normalizeForSearch(segment.text).includes(normalizedCity))
-        : undefined
-      return {
-        id: doc.id,
-        speechAt: doc.speechAt ?? null,
-        type: doc.type ?? null,
-        phase: doc.phase ?? null,
-        summary: doc.summary ?? null,
-        officialTextUrl: doc.officialTextUrl ?? null,
-        youtubeUrl: doc.youtubeUrl ?? null,
-        vodPlaybackUrl: doc.vodPlaybackUrl ?? null,
-        /** Offset of the excerpt inside the session video (YouTube start). */
-        youtubeExcerptStartSeconds: excerptOffsetSeconds(doc.excerptTMs, doc.eventStartAt),
-        mentionExcerpt: mentionSegment?.text ?? null,
-        mentionedMunicipalityCount: Array.isArray(doc.mentionedMunicipalities)
-          ? doc.mentionedMunicipalities.length
-          : 0,
-      }
-    }),
+    totalCount: cityResult.totalDocs,
+    rows: cityResult.docs.map((doc) => projectSpeechRow(doc, segmentsOf(doc), cityNames)),
+    region: {
+      label: region?.label ?? null,
+      totalCount: regionDocs.length,
+      rows: regionDocs.map((doc) => projectSpeechRow(doc, segmentsOf(doc), regionNames)),
+    },
+    topics: {
+      themes: SPEECH_REGION_TOPICS,
+      totalCount: topicDocs.length,
+      rows: topicDocs.map((doc) => projectSpeechRow(doc, segmentsOf(doc), cityNames)),
+    },
   }
 }
 
@@ -204,9 +267,37 @@ export const composeCityReportSnapshot = async ({
   const context = await resolveAccessibleMunicipalityContext(payload, actor, slug)
   const detail = await getMunicipalityDetailViewModel(payload, context, actor)
   const dossier = await loadMunicipalityDossierData(payload, actor, detail)
+
+  const catalogEntry = getMunicipalityCatalogEntry(slug)
+  const regionSlugs = catalogEntry
+    ? municipalityCatalog.filter((row) => row.region === catalogEntry.region).map((row) => row.slug)
+    : []
+  const regionResult = regionSlugs.length
+    ? await payload.find({
+        collection: 'municipality',
+        where: { slug: { in: regionSlugs } },
+        depth: 0,
+        limit: 0,
+        pagination: false,
+        select: { slug: true, name: true },
+        user: actor,
+        overrideAccess: false,
+      })
+    : { docs: [] }
+  const regionDocs = regionResult.docs.filter((doc) => doc.slug !== slug)
+  const region = {
+    label: detail.region ?? catalogEntry?.region ?? null,
+    ids: regionDocs.map((doc) => doc.id).filter((id) => id !== context.id),
+    names: regionDocs.map((doc) => doc.name).filter(Boolean),
+  }
+
   const [advisors, speeches, demands, federalCompetitors, stateCompetitors] = await Promise.all([
     loadAdvisorSummaries(payload, actor, detail.advisorIDs),
-    loadSpeeches(payload, actor, context.id, detail.city),
+    loadSpeeches(payload, actor, {
+      municipalityID: context.id,
+      municipalityName: detail.city,
+      region,
+    }),
     loadDemands(payload, actor, context.id),
     loadCompetitors(payload, actor, slug, FEDERAL_DEPUTY_OFFICE),
     loadCompetitors(payload, actor, slug, STATE_DEPUTY_OFFICE),

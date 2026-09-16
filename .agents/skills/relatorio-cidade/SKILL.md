@@ -107,6 +107,15 @@ URL por item) e emendas lidas da fonte oficial **em tempo de geração**. Págin
       "sourceUrl": "https://…", "sourceDate": "2024-08-14"
     }
   ],
+  "leaderAgenda": [                // pauta provável por liderança (rede + mesmo campo)
+    {
+      "name": "…",
+      "field": "Aliado (prefeito) | Aliado (federação PT/PCdoB) | Rede da campanha (base) | …",
+      "topics": "Saúde (hospital municipal)",                  // pauta provável (hipótese)
+      "hook": "Gancho recente publicado (o que a fonte diz)",  // topics OU hook obrigatório
+      "sourceUrl": "https://…", "sourceDate": "2026-08-31"
+    }
+  ],
   "demography": [                  // cor/raça e poder aquisitivo (Censo 2022)
     {
       "topic": "Cor/raça (Censo 2022)", "detail": "Parda 73,1% …",
@@ -135,9 +144,24 @@ URL por item) e emendas lidas da fonte oficial **em tempo de geração**. Págin
 Checklist (`id`s): `prefeito`, `vice`, `relacao_campo`, `vereadores`,
 `disputa_local`, `quem_investe`, `noticias`, `imprensa_local`, `emendas_web`.
 Item sem `sourceUrl`/`sourceDate` é convertido em lacuna pelo validador; item
-ausente também. `approach`, `preCandidates` e `leaders` são listas de pesquisa:
-cada entrada sem fonte vira lacuna (`abordagem_sem_fonte`,
-`precandidato_sem_fonte`, `lideranca_sem_fonte`) e não entra no PDF.
+ausente também. `approach`, `preCandidates`, `leaders` e `leaderAgenda` são
+listas de pesquisa: cada entrada sem fonte vira lacuna (`abordagem_sem_fonte`,
+`precandidato_sem_fonte`, `lideranca_sem_fonte`, `agenda_lideranca_sem_fonte`) e
+não entra no PDF. Campos de texto livre (`detail`, `hook`, `suggestion`,
+`support`, `answer`) aceitam os **tokens de fonte inline** `{{fonte}}` /
+`{{fonte:N}}`, resolvidos para `(fonte)` no ponto exato da citação (ver "Links
+clicáveis / fonte inline" adiante).
+
+**`leaderAgenda` — pauta provável das lideranças (rede + mesmo campo):** para
+cada liderança que importa na visita, registre o que ela tende a priorizar
+(Saúde, Educação, Infraestrutura…) e o **gancho recente publicado** que ancora a
+leitura, sempre com URL+data. `name` é obrigatório; exige `topics` **ou** `hook`;
+sem fonte, não entra. Priorize (a) a **rede da campanha** (as lideranças na base
+Teqo, com `supportStatus`) e (b) o **mesmo campo** de Solla — é onde há margem
+de conversa. É **hipótese a validar na conversa, não declaração do líder**: o
+bloco "Pauta das lideranças (pesquisa)" (seção 3) sai com essa ressalva. Liderança
+de rede **sem rastro público** não vira item: fica como tarefa de ativação
+(cadastrar/atualizar `supportStatus`), não como pauta inventada.
 
 **`emendas_web` — indícios de emenda (município, região ou polo):** quando a
 fonte oficial não atribui emenda ao município, pesquise artigos, falas e
@@ -205,7 +229,9 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   e os prováveis candidatos do campo do prefeito (pesquisa), além da **frente de
   oposição** quando pesquisada (fatos com fonte) · `3. Rede e
   lideranças` — inclui as lideranças locais pesquisadas (ex-prefeitos/vices,
-  vereadores mais votados, com partido) · `4. Conjuntura` · `5. Sinais` · `6.
+  vereadores mais votados, com partido) e a **Pauta das lideranças (pesquisa)**:
+  pauta provável + gancho recente por liderança da rede/mesmo campo, marcada
+  como hipótese · `4. Conjuntura` · `5. Sinais` · `6.
   Demandas e visitas` · `7. Demografia` — IBGE Censo 2022 do artefato +
   **complemento pesquisado** (cor/raça e poder aquisitivo) · `8. Atividade
   econômica (pesquisa)` · `9. Transporte e conexões (pesquisa)` · `10. Acervo
@@ -220,8 +246,30 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   Diário) quando existirem · `11. Notícias e imprensa` ·
   `12. Panorama regional` · `13. Abordagem sugerida (personas)` · `14. Fontes e
   limites`.
-- **Links clicáveis:** todo URL no PDF é um link (`<a href>`): células de
-  tabela, fontes por linha e a seção de fontes.
+- **Acervo por região e tema:** como cidade pequena quase nunca tem fala
+  própria, a seção 10 mostra três recortes **não sobrepostos**: falas do
+  município (quando existem), **menções à região** (demais municípios do mesmo
+  Território de Identidade) e **falas por tema regional** (temas-chave do
+  interior). Região/polo **nunca** é somado como fala da cidade — o bloco diz
+  isso explicitamente. Fonte: `speeches.region` e `speeches.topics` do snapshot
+  (extraídos read-only no homeserver; ausentes nos snapshots antigos → seção
+  degrada para a busca por município sem quebrar). **Cada recorte diz por que a
+  fala entrou:** a tabela do município mostra "Menção a <cidade>"; a da região
+  mostra "Município da região citado"; a de tema mostra a coluna **"Tema"** —
+  porque essas falas foram selecionadas por tema, **não** por menção ao
+  município/região (não rotular como "marcada com o município" o que só foi
+  escolhido por tema).
+- **Links clicáveis / fonte inline:** todo URL no PDF é um link (`<a href>`):
+  células de tabela, fontes por linha e a seção de fontes. Nos textos de pesquisa
+  (oposição, dobradinhas, investimentos, pauta das lideranças, abordagem,
+  demografia…), o `(fonte)` com hyperlink entra **inline no próprio texto, logo
+  após o trecho que cita o fato verificado** — não numa coluna. Um mesmo texto
+  pode citar mais de uma fonte: use `{{fonte}}` para a fonte principal
+  (`sourceUrl`) e `{{fonte:2}}`, `{{fonte:3}}`… para cada entrada de
+  `extraSources`; o renderer resolve os tokens em `(fonte)` / `(fonte N)` e o
+  companion `.md` vira `[(fonte)](url)`. Se o texto não tiver token, o builder
+  acrescenta a(s) fonte(s) no fim do trecho. A coluna **Fonte** fica só com a
+  data e o link completo continua listado abaixo da tabela (`> Fontes:`).
 - **Numeração dinâmica e omissão de seções vazias:** o builder numera as seções
   depois de montá-las (o `id` é estável; o número é posicional). As seções
   **Sinais recentes** e **Demandas e visitas** são **omitidas quando não há
