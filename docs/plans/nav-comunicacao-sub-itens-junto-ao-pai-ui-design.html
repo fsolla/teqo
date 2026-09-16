@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — Navegação de Comunicação agrupada</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-card: var(--card);
+        --color-card-foreground: var(--card-foreground);
+        --color-primary: var(--primary);
+        --color-primary-foreground: var(--primary-foreground);
+        --color-secondary: var(--secondary);
+        --color-secondary-foreground: var(--secondary-foreground);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-accent: var(--accent);
+        --color-accent-foreground: var(--accent-foreground);
+        --color-border: var(--border);
+        --color-ring: var(--ring);
+        --color-sidebar: var(--sidebar);
+        --color-sidebar-foreground: var(--sidebar-foreground);
+        --color-sidebar-accent: var(--sidebar-accent);
+        --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+        --color-sidebar-border: var(--sidebar-border);
+        --color-sidebar-ring: var(--sidebar-ring);
+        --radius-sm: 0.25rem;
+        --radius-md: 0.375rem;
+        --radius-lg: 0.5rem;
+        --radius-xl: 0.75rem;
+      }
+
+      [data-theme='campaign'] {
+        --background: #ffffff;
+        --foreground: #1c1917;
+        --card: #ffffff;
+        --card-foreground: #1c1917;
+        --primary: #c51414;
+        --primary-foreground: #ffffff;
+        --secondary: #f5f5f4;
+        --secondary-foreground: #292524;
+        --muted: #f4f4f5;
+        --muted-foreground: #6b7280;
+        --accent: #f4f4f5;
+        --accent-foreground: #1c1917;
+        --border: rgb(28 25 23 / 12%);
+        --ring: #c51414;
+        --sidebar: #fafaf9;
+        --sidebar-foreground: #1c1917;
+        --sidebar-accent: #f5f5f4;
+        --sidebar-accent-foreground: #1c1917;
+        --sidebar-border: rgb(28 25 23 / 12%);
+        --sidebar-ring: #c51414;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      .scene-shadow {
+        box-shadow: 0 18px 48px rgb(28 25 23 / 10%);
+      }
+      .drawer-shadow {
+        box-shadow: 0 -16px 48px rgb(28 25 23 / 20%);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-stone-100 text-foreground antialiased">
+    <main class="mx-auto max-w-[1400px] space-y-12 px-5 py-10 md:px-8 md:py-14">
+      <header class="max-w-3xl">
+        <p class="text-sm font-medium text-primary">Design de gate · campanha</p>
+        <h1 class="mt-2 text-2xl font-semibold tracking-tight">Comunicação se lê como um bloco</h1>
+        <p class="mt-2 text-sm leading-6 text-muted-foreground">
+          Pai e filhos ficam próximos, unidos por uma única linha de hierarquia. Só o destino mais
+          específico recebe o estado ativo — no rail e no drawer.
+        </p>
+      </header>
+
+      <!-- CENA A — sidebar desktop -->
+      <section aria-labelledby="desktop-title">
+        <div class="mb-3 flex items-end justify-between gap-4">
+          <div>
+            <p class="text-xs font-medium text-muted-foreground">Cena A · desktop ~1280</p>
+            <h2 id="desktop-title" class="mt-1 text-base font-semibold">
+              Rail com agrupamento local, sem redesenhar a navegação
+            </h2>
+          </div>
+          <p class="hidden text-xs text-muted-foreground md:block">Ativo: Biblioteca de cortes</p>
+        </div>
+
+        <div
+          class="scene-shadow mx-auto h-[760px] max-w-[1280px] overflow-hidden rounded-xl border border-border bg-background"
+        >
+          <div class="flex h-full">
+            <aside
+              class="flex w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
+            >
+              <div class="flex h-16 items-center gap-3 border-b border-sidebar-border px-4">
+                <div
+                  class="grid size-8 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground"
+                >
+                  S
+                </div>
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold">Campanha</p>
+                  <p class="truncate text-xs text-muted-foreground">Mesa de trabalho</p>
+                </div>
+              </div>
+
+              <nav
+                class="min-h-0 flex-1 overflow-hidden px-2 py-3"
+                aria-label="Navegação principal"
+              >
+                <ul class="m-0 list-none space-y-0.5 p-0 text-sm">
+                  <li>
+                    <a
+                      href="/campanha"
+                      class="flex h-8 items-center gap-3 rounded-md px-2 text-sidebar-foreground hover:bg-sidebar-accent"
+                      ><svg
+                        aria-hidden="true"
+                        class="size-4 shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="m3 11 9-8 9 8" />
+                        <path d="M5 10v10h14V10" /></svg
+                      ><span>Início</span></a
+                    >
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      class="flex h-8 items-center gap-3 rounded-md px-2 text-sidebar-foreground hover:bg-sidebar-accent"
+                      ><svg
+                        aria-hidden="true"
+                        class="size-4 shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" /></svg
+                      ><span>Quadro</span></a
+                    >
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      class="flex h-8 items-center gap-3 rounded-md px-2 text-sidebar-foreground hover:bg-sidebar-accent"
+                      ><svg
+                        aria-hidden="true"
+                        class="size-4 shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+                        <circle cx="12" cy="10" r="2" /></svg
+                      ><span>Municípios</span></a
+                    >
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      class="flex h-8 items-center gap-3 rounded-md px-2 text-sidebar-foreground hover:bg-sidebar-accent"
+                      ><svg
+                        aria-hidden="true"
+                        class="size-4 shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z" />
+                        <path d="M9 3v15M15 6v15" /></svg
+                      ><span>Territórios</span></a
+                    >
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      class="flex h-8 items-center gap-3 rounded-md px-2 text-sidebar-foreground hover:bg-sidebar-accent"
+                      ><svg
+                        aria-hidden="true"
+                        class="size-4 shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="m11 17 2 2a3 3 0 0 0 4-4l-3-3" />
+                        <path d="m13 7-2-2a3 3 0 0 0-4 4l1 1" />
+                        <path d="m8 12 4-4 4 4-4 4-4-4Z" /></svg
+                      ><span>Lideranças</span></a
+                    >
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      class="flex h-8 items-center gap-3 rounded-md px-2 text-sidebar-foreground hover:bg-sidebar-accent"
+                      ><svg
+                        aria-hidden="true"
+                        class="size-4 shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M2 21v-2a7 7 0 0 1 14 0v2" />
+                        <path d="M16 3.1a4 4 0 0 1 0 7.8M22 21v-2a7 7 0 0 0-4-6.3" /></svg
+                      ><span>Pessoas</span></a
+                    >
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      class="flex h-8 items-center gap-3 rounded-md px-2 text-sidebar-foreground hover:bg-sidebar-accent"
+                      ><svg
+                        aria-hidden="true"
+                        class="size-4 shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <rect x="3" y="5" width="18" height="16" rx="2" />
+                        <path d="M16 3v4M8 3v4M3 11h18" /></svg
+                      ><span>Agenda</span></a
+                    >
+                  </li>
+
+                  <!-- Bloco de Comunicação: gap zero pai→linha; filhos compactos -->
+                  <li class="pt-1">
+                    <a
+                      href="/campanha/comunicacao"
+                      class="flex h-8 items-center gap-3 rounded-md px-2 font-medium text-sidebar-foreground hover:bg-sidebar-accent"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="size-4 shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="m3 11 18-5v12L3 14v-3Z" />
+                        <path d="M11.6 16.9 13 22H7l-1.3-7" />
+                      </svg>
+                      <span>Comunicação</span>
+                    </a>
+                    <ul
+                      class="m-0 ml-[22px] list-none border-l border-sidebar-border px-0.5 pb-1 pl-2.5 pt-0.5"
+                    >
+                      <li>
+                        <a
+                          href="/campanha/comunicacao/acervo"
+                          class="flex h-8 items-center rounded-md px-2 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+                          >Acervo de falas</a
+                        >
+                      </li>
+                      <li>
+                        <a
+                          href="/campanha/comunicacao/acervo/cortes"
+                          aria-current="page"
+                          class="flex h-8 items-center rounded-md bg-card px-2 text-sm font-medium text-primary ring-1 ring-border"
+                          >Biblioteca de cortes</a
+                        >
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </nav>
+
+              <div class="border-t border-sidebar-border p-3">
+                <div class="flex items-center gap-3 rounded-md px-1 py-2">
+                  <div class="size-8 rounded-full bg-secondary ring-1 ring-border"></div>
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-medium">Pessoa da equipe</p>
+                    <p class="truncate text-xs text-muted-foreground">Assessoria</p>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            <div class="min-w-0 flex-1 bg-background">
+              <header class="flex h-16 items-center justify-between border-b border-border px-8">
+                <div>
+                  <p class="text-xs text-muted-foreground">Comunicação</p>
+                  <p class="text-sm font-medium">Biblioteca de cortes</p>
+                </div>
+                <div class="flex gap-2">
+                  <span class="size-8 rounded-lg bg-secondary"></span
+                  ><span class="size-8 rounded-full bg-secondary"></span>
+                </div>
+              </header>
+              <div class="mx-auto max-w-4xl p-8">
+                <div class="h-10 w-3/5 rounded-md border border-border"></div>
+                <div class="mt-8 space-y-3">
+                  <div class="h-32 rounded-xl border border-border"></div>
+                  <div class="h-32 rounded-xl border border-border"></div>
+                  <div class="h-32 rounded-xl border border-dashed border-border"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA B — drawer mobile -->
+      <section aria-labelledby="mobile-title">
+        <div class="mb-3">
+          <p class="text-xs font-medium text-muted-foreground">Cena B · mobile ~390</p>
+          <h2 id="mobile-title" class="mt-1 text-base font-semibold">
+            Drawer “Mais” com a mesma gramática de agrupamento
+          </h2>
+        </div>
+
+        <div
+          class="scene-shadow relative mx-auto h-[780px] w-full max-w-[390px] overflow-hidden rounded-[28px] border-[6px] border-stone-800 bg-background"
+        >
+          <header
+            class="flex h-14 items-center justify-between bg-primary px-4 text-primary-foreground"
+          >
+            <span class="text-sm font-semibold">Campanha</span>
+            <span class="size-8 rounded-full bg-white/20"></span>
+          </header>
+          <div class="space-y-3 p-4">
+            <div class="h-20 rounded-xl bg-secondary"></div>
+            <div class="h-24 rounded-xl border border-border"></div>
+            <div class="h-24 rounded-xl border border-border"></div>
+          </div>
+          <div class="absolute inset-0 bg-foreground/30"></div>
+
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="drawer-title"
+            class="drawer-shadow absolute inset-x-0 bottom-0 max-h-[690px] rounded-t-2xl border-t border-border bg-background"
+          >
+            <div class="mx-auto mt-2 h-1.5 w-10 rounded-full bg-stone-300"></div>
+            <div class="px-4 pb-3 pt-4">
+              <h3 id="drawer-title" class="text-base font-semibold">Navegação</h3>
+              <p class="mt-1 text-sm text-muted-foreground">Destinos da campanha</p>
+            </div>
+
+            <nav class="max-h-[510px] overflow-hidden px-4 pb-3" aria-label="Mais destinos">
+              <div class="space-y-1">
+                <a
+                  href="#"
+                  class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium hover:bg-muted"
+                  ><svg
+                    aria-hidden="true"
+                    class="size-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="m11 17 2 2a3 3 0 0 0 4-4l-3-3" />
+                    <path d="m13 7-2-2a3 3 0 0 0-4 4l1 1" /></svg
+                  >Lideranças</a
+                >
+                <a
+                  href="#"
+                  class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium hover:bg-muted"
+                  ><svg
+                    aria-hidden="true"
+                    class="size-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M2 21v-2a7 7 0 0 1 14 0v2" /></svg
+                  >Pessoas</a
+                >
+
+                <!-- Mesmo bloco: pai toca visualmente a haste; os dois filhos ficam juntos. -->
+                <div class="pt-1">
+                  <a
+                    href="/campanha/comunicacao"
+                    class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium text-foreground hover:bg-muted"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="size-5 shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="m3 11 18-5v12L3 14v-3Z" />
+                      <path d="M11.6 16.9 13 22H7l-1.3-7" />
+                    </svg>
+                    <span>Comunicação</span>
+                  </a>
+                  <div class="ml-[22px] border-l border-border pb-1 pl-3 pt-0.5">
+                    <a
+                      href="/campanha/comunicacao/acervo"
+                      class="flex min-h-10 items-center rounded-md px-3 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                      >Acervo de falas</a
+                    >
+                    <a
+                      href="/campanha/comunicacao/acervo/cortes"
+                      aria-current="page"
+                      class="mt-1 flex min-h-10 items-center rounded-md bg-card px-3 text-sm font-medium text-primary ring-1 ring-border"
+                      >Biblioteca de cortes</a
+                    >
+                  </div>
+                </div>
+
+                <a
+                  href="#"
+                  class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium hover:bg-muted"
+                  ><svg
+                    aria-hidden="true"
+                    class="size-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" /></svg
+                  >Conceitos</a
+                >
+              </div>
+            </nav>
+
+            <div class="border-t border-border px-4 py-3">
+              <a href="#" class="flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium"
+                ><svg
+                  aria-hidden="true"
+                  class="size-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="12" cy="8" r="5" />
+                  <path d="M20 21a8 8 0 0 0-16 0" /></svg
+                >Perfil</a
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA C — comparação de estados -->
+      <section aria-labelledby="states-title">
+        <div class="mb-3">
+          <p class="text-xs font-medium text-muted-foreground">Cena C · estados do sub-item</p>
+          <h2 id="states-title" class="mt-1 text-base font-semibold">
+            Uma forma compartilhada; contraste suficiente para um único ativo
+          </h2>
+        </div>
+
+        <div class="grid gap-5 lg:grid-cols-2">
+          <article class="rounded-xl border border-border bg-sidebar p-5">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="text-sm font-semibold">Inativo</p>
+                <p class="mt-1 text-xs text-muted-foreground">
+                  Texto quieto, sem contorno ou preenchimento.
+                </p>
+              </div>
+              <span
+                class="rounded-full border border-border bg-background px-2 py-1 text-xs text-muted-foreground"
+                >estado padrão</span
+              >
+            </div>
+            <div class="mt-5 max-w-sm">
+              <a
+                href="/campanha/comunicacao"
+                class="flex h-9 items-center gap-3 rounded-md px-2 text-sm font-medium"
+                ><svg
+                  aria-hidden="true"
+                  class="size-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="m3 11 18-5v12L3 14v-3Z" /></svg
+                >Comunicação</a
+              >
+              <div class="ml-[22px] border-l border-sidebar-border pl-2.5 pt-0.5">
+                <a
+                  href="/campanha/comunicacao/acervo"
+                  class="flex h-8 items-center rounded-md px-2 text-sm text-muted-foreground"
+                  >Acervo de falas</a
+                >
+                <a
+                  href="/campanha/comunicacao/acervo/cortes"
+                  class="flex h-8 items-center rounded-md px-2 text-sm text-muted-foreground"
+                  >Biblioteca de cortes</a
+                >
+              </div>
+            </div>
+          </article>
+
+          <article class="rounded-xl border border-border bg-sidebar p-5">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="text-sm font-semibold">Ativo</p>
+                <p class="mt-1 text-xs text-muted-foreground">
+                  Vermelho + peso médio + hairline, apenas no filho exato.
+                </p>
+              </div>
+              <span class="rounded-full bg-primary px-2 py-1 text-xs text-primary-foreground"
+                >mais específico</span
+              >
+            </div>
+            <div class="mt-5 max-w-sm">
+              <a
+                href="/campanha/comunicacao"
+                class="flex h-9 items-center gap-3 rounded-md px-2 text-sm font-medium"
+                ><svg
+                  aria-hidden="true"
+                  class="size-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="m3 11 18-5v12L3 14v-3Z" /></svg
+                >Comunicação</a
+              >
+              <div class="ml-[22px] border-l border-sidebar-border pl-2.5 pt-0.5">
+                <a
+                  href="/campanha/comunicacao/acervo"
+                  class="flex h-8 items-center rounded-md px-2 text-sm text-muted-foreground"
+                  >Acervo de falas</a
+                >
+                <a
+                  href="/campanha/comunicacao/acervo/cortes"
+                  aria-current="page"
+                  class="flex h-8 items-center rounded-md bg-card px-2 text-sm font-medium text-primary ring-1 ring-border"
+                  >Biblioteca de cortes</a
+                >
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div
+          class="mt-4 rounded-lg border border-border bg-background p-4 text-xs leading-5 text-muted-foreground"
+        >
+          Destinos preservados:
+          <code class="rounded bg-muted px-1.5 py-0.5 text-foreground">/campanha/comunicacao</code>,
+          <code class="rounded bg-muted px-1.5 py-0.5 text-foreground"
+            >/campanha/comunicacao/acervo</code
+          >
+          e
+          <code class="rounded bg-muted px-1.5 py-0.5 text-foreground"
+            >/campanha/comunicacao/acervo/cortes</code
+          >.
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
