@@ -160,8 +160,15 @@ test.describe('communication vertical (C154/C162)', () => {
     expect(detailHtml).toContain('data-slot="speech-player"')
     // Default surface is the YouTube embed, positioned by the session offset
     // (2634) plus the deep-linked transcript second (43).
-    expect(detailHtml).toContain(`youtube-nocookie.com/embed/${YOUTUBE_VIDEO_ID}`)
+    expect(detailHtml).toContain(`www.youtube.com/embed/${YOUTUBE_VIDEO_ID}`)
     expect(detailHtml).toContain(`start=${EXCERPT_OFFSET_SECONDS + 43}`)
+    // C171 — the exit block is server-rendered with the embed: the Câmara
+    // surface is one click away and the watch URL opens at the deep-linked
+    // point (never a signin dead end).
+    expect(detailHtml).toContain('Se o vídeo não abrir aqui, assista por outro caminho:')
+    expect(detailHtml).toContain('Assistir na Câmara')
+    expect(detailHtml).toContain('Abrir no YouTube')
+    expect(detailHtml).toContain(`watch?v=${YOUTUBE_VIDEO_ID}&amp;t=${EXCERPT_OFFSET_SECONDS + 43}`)
     expect(detailHtml).toContain('data-start-seconds="0"')
     expect(detailHtml).toContain('Baixar vídeo (MP4)')
     expect(detailHtml).toContain('Abrir fonte')
@@ -194,6 +201,9 @@ test.describe('communication vertical (C154/C162)', () => {
     // while the selection door stays offered.
     expect(html).toContain('Selecionar trecho')
     expect(html).toContain('Compartilhar por link exige o vídeo no YouTube')
+    // C171 — no YouTube id means no exit block: there is no embed to escape.
+    expect(html).not.toContain('Abrir no YouTube')
+    expect(html).not.toContain('Se o vídeo não abrir aqui')
     expect(html).not.toContain('<video')
     expect(html).not.toContain('<iframe')
     // The stored link is an eligibility signal, never a rendered URL.
@@ -263,6 +273,9 @@ test.describe('communication vertical (C154/C162)', () => {
     // No stored VOD means nothing to resolve: no MP4 button and no retry.
     expect(html).not.toContain('Baixar vídeo (MP4)')
     expect(html).not.toContain('Tentar novamente')
+    // C171 — without a YouTube id there is no embed and no exit block.
+    expect(html).not.toContain('Abrir no YouTube')
+    expect(html).not.toContain('Se o vídeo não abrir aqui')
   })
 
   test.describe('POST /campanha/comunicacao/acervo/resolver-vod (C162)', () => {
