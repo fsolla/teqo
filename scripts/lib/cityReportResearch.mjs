@@ -39,6 +39,21 @@ const inNewsWindow = (publishedAt, reference) =>
   Date.parse(publishedAt) <= reference.getTime() + DAY_MS
 
 /**
+ * Validated `extraSources` of one research entry: additional URLs that support
+ * the same item (a text can cite facts from more than one outlet). Each needs
+ * url+date; invalid ones are dropped (the primary source already carries the
+ * item, so a broken extra is not worth a visible gap).
+ */
+const collectExtraSources = (entry) =>
+  (Array.isArray(entry?.extraSources) ? entry.extraSources : [])
+    .map((extra) => ({
+      label: isNonEmptyString(extra?.label) ? extra.label.trim() : null,
+      url: isNonEmptyString(extra?.url) ? extra.url.trim() : null,
+      date: isValidDate(extra?.date) ? extra.date : null,
+    }))
+    .filter((extra) => extra.url && extra.date)
+
+/**
  * Validates/normalizes the agent-written research JSON.
  *
  * Structural failures (no slug, no research date) throw — the operator has to
@@ -197,6 +212,7 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
       suggestion,
       sourceUrl,
       sourceDate,
+      extraSources: collectExtraSources(entry),
       consultedAt: isValidDate(entry.consultedAt) ? entry.consultedAt : null,
     })
   }
@@ -267,6 +283,47 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
     })
   }
 
+  const leaderAgenda = []
+  for (const entry of Array.isArray(raw.leaderAgenda) ? raw.leaderAgenda : []) {
+    const name = isNonEmptyString(entry?.name) ? entry.name.trim() : null
+    const topics = isNonEmptyString(entry?.topics) ? entry.topics.trim() : null
+    const hook = isNonEmptyString(entry?.hook) ? entry.hook.trim() : null
+    const sourceUrl = isNonEmptyString(entry?.sourceUrl) ? entry.sourceUrl.trim() : null
+    const sourceDate = isValidDate(entry?.sourceDate) ? entry.sourceDate : null
+    if (!name) {
+      gaps.push({
+        id: 'agenda_lideranca_incompleta',
+        reason: 'Pauta de liderança sem nome — descartada.',
+      })
+      continue
+    }
+    if (!topics && !hook) {
+      gaps.push({
+        id: 'agenda_lideranca_sem_pauta',
+        label: name,
+        reason: 'Liderança sem pauta provável nem gancho recente — descartada.',
+      })
+      continue
+    }
+    if (!sourceUrl || !sourceDate) {
+      gaps.push({
+        id: 'agenda_lideranca_sem_fonte',
+        label: name,
+        reason: 'Pauta de liderança sem fonte: URL e data são obrigatórias.',
+      })
+      continue
+    }
+    leaderAgenda.push({
+      name,
+      field: isNonEmptyString(entry.field) ? entry.field.trim() : null,
+      topics,
+      hook,
+      sourceUrl,
+      sourceDate,
+      extraSources: collectExtraSources(entry),
+    })
+  }
+
   const sourcedLists = {
     demography: [],
     economy: [],
@@ -302,6 +359,7 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
         detail,
         sourceUrl,
         sourceDate,
+        extraSources: collectExtraSources(entry),
         consultedAt: isValidDate(entry.consultedAt) ? entry.consultedAt : null,
       })
     }
@@ -315,6 +373,7 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
     approach,
     preCandidates,
     leaders,
+    leaderAgenda,
     demography: sourcedLists.demography,
     economy: sourcedLists.economy,
     transport: sourcedLists.transport,

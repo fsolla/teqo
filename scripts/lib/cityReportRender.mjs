@@ -20,6 +20,31 @@ const URL_PATTERN = /(https?:\/\/[^\s<>"')]+)/g
 const htmlWithLinks = (value) =>
   htmlEscape(value).replace(URL_PATTERN, (url) => `<a href="${url}">${url}</a>`)
 
+const INLINE_SOURCE_PATTERN = /\{\{fonte(?::(\d+))?\}\}/g
+
+/**
+ * Resolves the `{{fonte}}` / `{{fonte:N}}` tokens the content model leaves in
+ * the citation text into `(fonte)` anchors — inline, right where the excerpt
+ * cites the verified fact, so one text can point to more than one source.
+ */
+const renderInlineSourcesHtml = (value, sources) =>
+  htmlWithLinks(value).replace(INLINE_SOURCE_PATTERN, (_match, index) => {
+    const position = Number(index ?? 1) - 1
+    const url = sources?.[position]
+    if (!url) return ''
+    const label = sources.length > 1 ? `(fonte ${position + 1})` : '(fonte)'
+    return ` <a class="inline-source" href="${htmlEscape(url)}">${label}</a>`
+  })
+
+const renderInlineSourcesMd = (value, sources) =>
+  String(value ?? '').replace(INLINE_SOURCE_PATTERN, (_match, index) => {
+    const position = Number(index ?? 1) - 1
+    const url = sources?.[position]
+    if (!url) return ''
+    const label = sources.length > 1 ? `fonte ${position + 1}` : 'fonte'
+    return ` [(${label})](${url})`
+  })
+
 const sourceKindLabels = {
   teqo: 'base Teqo',
   web: 'pesquisa web',
@@ -112,6 +137,7 @@ const PRINT_CSS = `
   .stats .stat-hint { display: block; font-weight: 400; color: #71717a; font-size: 7.4pt; }
   .source { color: #71717a; font-size: 7.2pt; margin: 1.4mm 0 0; }
   .source a { color: #1d4ed8; word-break: break-all; }
+  .inline-source { color: #1d4ed8; white-space: nowrap; }
   a { color: #1d4ed8; text-decoration: underline; text-decoration-color: #bfdbfe; text-underline-offset: 1.5px; }
   .callout { border-left: 2.2mm solid #b45309; background: #fffbeb; padding: 2.4mm 3mm; border-radius: 0 1.6mm 1.6mm 0; }
   .callout.gap { border-left-color: #71717a; background: #f4f4f5; }
@@ -235,7 +261,7 @@ const renderTable = (block) => {
         `<tr>${block.columns
           .map(
             (column) =>
-              `<td${column.numeric ? ' class="num"' : ''}>${htmlWithLinks(row[column.key])}</td>`,
+              `<td${column.numeric ? ' class="num"' : ''}>${renderInlineSourcesHtml(row[column.key], row.sources)}</td>`,
           )
           .join('')}</tr>`,
     )
@@ -434,7 +460,9 @@ const mdBlock = (block) => {
       lines.push(`| ${block.columns.map(() => '---').join(' | ')} |`)
       for (const row of block.rows) {
         lines.push(
-          `| ${block.columns.map((column) => String(row[column.key] ?? '')).join(' | ')} |`,
+          `| ${block.columns
+            .map((column) => renderInlineSourcesMd(row[column.key], row.sources))
+            .join(' | ')} |`,
         )
       }
       if (block.note) lines.push(`\n_${block.note}_`)

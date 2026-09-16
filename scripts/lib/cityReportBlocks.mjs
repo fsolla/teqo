@@ -18,6 +18,7 @@ import {
   campaignDemandStatusLabels,
 } from '../../src/lib/schemas/campaignDemand.ts'
 import { municipalityUpdatePolarityLabels } from '../../src/lib/schemas/municipalityUpdate.ts'
+import { SPEECH_TOPICS } from '../../src/lib/speechFacets.ts'
 import {
   formatVoteEstimateEndpointsLabel,
   voteEstimateScenarioLabels,
@@ -66,6 +67,32 @@ const sourceOfficial = (label, url, date) => ({
   url: url ?? null,
   date: date ?? null,
 })
+
+/**
+ * Inline-source tokens: a free-text field (detail/hook/suggestion/value/support)
+ * can carry `{{fonte}}` for the item's primary URL and `{{fonte:2}}`,
+ * `{{fonte:3}}`… for its `extraSources`. The renderers turn them into a
+ * `(fonte)` link exactly where the text cites the verified fact, so one excerpt
+ * can point to more than one outlet. When the text has no token, the primary
+ * (and any extra) URL is appended at the end — "inline com o trecho", never a
+ * bare column.
+ */
+const INLINE_SOURCE_TOKEN = /\{\{fonte(?::\d+)?\}\}/
+const inlineSourceTokens = (count) =>
+  Array.from({ length: count }, (_, index) =>
+    index === 0 ? '{{fonte}}' : `{{fonte:${index + 1}}}`,
+  ).join(' ')
+
+const sourcesOf = (item) =>
+  [item?.sourceUrl, ...((item?.extraSources ?? []).map((extra) => extra?.url) ?? [])].filter(
+    (url) => typeof url === 'string' && url.trim() !== '',
+  )
+
+const withInlineSources = (text, sources) => {
+  if (!text || !sources.length) return text
+  if (INLINE_SOURCE_TOKEN.test(text)) return text
+  return `${text} ${inlineSourceTokens(sources.length)}`
+}
 
 /**
  * Página 1 = resumo de uma olhada: a fonte do item entra compacta (pesquisa web
@@ -410,11 +437,15 @@ const buildOppositionBlock = (research) => {
       { key: 'detail', label: 'O que a fonte diz', width: 62 },
       { key: 'source', label: 'Fonte', width: 16 },
     ],
-    rows: entries.map((item) => ({
-      topic: item.topic,
-      detail: item.detail,
-      source: formatDateBr(item.sourceDate),
-    })),
+    rows: entries.map((item) => {
+      const sources = sourcesOf(item)
+      return {
+        topic: item.topic,
+        detail: withInlineSources(item.detail, sources),
+        source: formatDateBr(item.sourceDate),
+        sources,
+      }
+    }),
     note: 'Fato publicado com fonte datada — não é condenação. Atribua à fonte e não infira culpa; tema nacional pode ser de mão dupla.',
     sources: entries.map((item) => ({
       kind: 'web',
@@ -461,13 +492,17 @@ const buildCompetitorsSection = ({ snapshot, research }) => {
             { key: 'support', label: 'Apoio' },
             { key: 'source', label: 'Fonte' },
           ],
-          rows: preCandidates.map((item) => ({
-            name: item.name,
-            office: item.office,
-            party: item.party ?? '—',
-            support: item.support ?? '—',
-            source: formatDateBr(item.sourceDate),
-          })),
+          rows: preCandidates.map((item) => {
+            const sources = sourcesOf(item)
+            return {
+              name: item.name,
+              office: item.office,
+              party: item.party ?? '—',
+              support: withInlineSources(item.support ?? '—', sources),
+              source: formatDateBr(item.sourceDate),
+              sources,
+            }
+          }),
           note: 'Nomes declarados em fontes datadas; o histórico de votos vem das tabelas acima quando o nome aparece na base.',
           sources: preCandidates.map((item) => ({
             kind: 'web',
@@ -585,6 +620,9 @@ const buildNetworkSection = ({ snapshot, research }) => {
     })
   }
 
+  const leaderAgenda = buildLeaderAgendaBlock(research)
+  if (leaderAgenda) blocks.push(leaderAgenda)
+
   blocks.push(
     ...buildSourcedListBlocks({
       title: 'Dobradinhas (pesquisa)',
@@ -594,6 +632,45 @@ const buildNetworkSection = ({ snapshot, research }) => {
   )
 
   return blocks
+}
+
+/**
+ * Pauta provável de cada liderança do mesmo campo / da rede: hipótese ancorada
+ * em fonte pública, NÃO um fato — a nota do bloco deixa isso explícito para
+ * ninguém tratar a leitura como compromisso do líder.
+ */
+const buildLeaderAgendaBlock = (research) => {
+  const entries = research?.leaderAgenda ?? []
+  if (!entries.length) return null
+  return {
+    kind: 'table',
+    title: 'Pauta das lideranças (pesquisa)',
+    columns: [
+      { key: 'name', label: 'Líder', width: 18 },
+      { key: 'field', label: 'Campo', width: 13 },
+      { key: 'topics', label: 'Pauta provável', width: 22 },
+      { key: 'hook', label: 'Gancho recente', width: 33 },
+      { key: 'source', label: 'Fonte', width: 14 },
+    ],
+    rows: entries.map((item) => {
+      const sources = sourcesOf(item)
+      return {
+        name: item.name,
+        field: item.field ?? '—',
+        topics: item.topics ?? '—',
+        hook: withInlineSources(item.hook ?? '—', sources),
+        source: formatDateBr(item.sourceDate),
+        sources,
+      }
+    }),
+    note: '“Pauta provável” é hipótese ancorada em fonte pública — validar na conversa; não é declaração do líder. Prioriza rede da campanha e mesmo campo.',
+    sources: entries.map((item) => ({
+      kind: 'web',
+      label: `${item.name} — pauta provável`,
+      url: item.sourceUrl,
+      date: item.sourceDate,
+    })),
+  }
 }
 
 const buildConjunctureSection = ({ snapshot, research }) => {
@@ -812,11 +889,15 @@ const buildSourcedListBlocks = ({ title, note, items }) => {
         { key: 'detail', label: 'Dado', width: 62 },
         { key: 'source', label: 'Fonte', width: 16 },
       ],
-      rows: items.map((item) => ({
-        topic: item.topic,
-        detail: item.detail,
-        source: formatDateBr(item.sourceDate),
-      })),
+      rows: items.map((item) => {
+        const sources = sourcesOf(item)
+        return {
+          topic: item.topic,
+          detail: withInlineSources(item.detail, sources),
+          source: formatDateBr(item.sourceDate),
+          sources,
+        }
+      }),
       note,
       sources: items.map((item) => ({
         kind: 'web',
@@ -853,11 +934,15 @@ const buildDemographicsSection = ({ snapshot, research }) => {
         demographics.medianAge === null ? '—' : `${formatInteger(demographics.medianAge)} anos`,
     },
   ].map((row) => ({ ...row, source: 'base Teqo' }))
-  const researchRows = (research.demography ?? []).map((item) => ({
-    indicator: item.topic,
-    value: item.detail,
-    source: formatDateBr(item.sourceDate),
-  }))
+  const researchRows = (research.demography ?? []).map((item) => {
+    const sources = sourcesOf(item)
+    return {
+      indicator: item.topic,
+      value: withInlineSources(item.detail, sources),
+      source: formatDateBr(item.sourceDate),
+      sources,
+    }
+  })
 
   return [
     {
@@ -918,59 +1003,154 @@ const youtubeStartSeconds = (row) =>
     ? Math.max(0, Math.floor(row.youtubeExcerptStartSeconds) - YOUTUBE_VIDEO_OFFSET_SECONDS)
     : null
 
+const speechTopicLabel = (value) =>
+  SPEECH_TOPICS.find((topic) => topic.value === value)?.label ?? value
+
+/**
+ * Why the row is in the table decides the "mention" text: a city row is tagged
+ * with the município in the acervo; a region row is tagged with another
+ * município of the same Território; a theme row is selected by topic and was
+ * NOT necessarily tagged with any of them — so it shows the theme, never a
+ * false "menção ao município".
+ */
+const speechMention = (row, variant) => {
+  if (row.mentionExcerpt) return row.mentionExcerpt.slice(0, SPEECH_MENTION_MAX)
+  const count = row.mentionedMunicipalityCount
+  if (variant === 'region') {
+    return count
+      ? `Marcada no acervo com município da região — o nome não aparece nos trechos (a fala cita ${formatInteger(count)} municípios).`
+      : 'Marcada no acervo com município da região — trecho não localizado.'
+  }
+  return count
+    ? `Marcada no acervo — nome não localizado nos trechos (a fala cita ${formatInteger(count)} municípios).`
+    : 'Marcada no acervo — trecho não localizado.'
+}
+
+const projectSpeechTableRow = (row, variant) => {
+  const base = {
+    date: formatDateBr(row.speechAt),
+    phase: row.phase ?? '—',
+    description: row.summary ? row.summary.slice(0, SPEECH_SUMMARY_MAX) : '—',
+    video: row.youtubeUrl
+      ? withYoutubeTimestamp(row.youtubeUrl, youtubeStartSeconds(row))
+      : (row.vodPlaybackUrl ?? '—'),
+    transcript: row.officialTextUrl ?? '—',
+  }
+  if (variant === 'theme') {
+    const labels = (row.topics ?? []).map(speechTopicLabel).join(' · ')
+    return { ...base, topics: labels || '—' }
+  }
+  return { ...base, mention: speechMention(row, variant) }
+}
+
+const buildSpeechTable = ({ title, rows, variant = 'city', cityLabel, note, readAt }) => {
+  const middle =
+    variant === 'theme'
+      ? { key: 'topics', label: 'Tema', width: 27 }
+      : {
+          key: 'mention',
+          label: variant === 'region' ? 'Município da região citado' : `Menção a ${cityLabel}`,
+          width: 27,
+        }
+  return {
+    kind: 'table',
+    title,
+    columns: [
+      { key: 'date', label: 'Data', width: 9 },
+      { key: 'phase', label: 'Fase', width: 10 },
+      { key: 'description', label: 'O que é', width: 32 },
+      middle,
+      { key: 'video', label: 'Vídeo', width: 11 },
+      { key: 'transcript', label: 'Transcrição', width: 11 },
+    ],
+    rows: rows.map((row) => projectSpeechTableRow(row, variant)),
+    note,
+    sources: [sourceTeqo('base Teqo — acervo C153/C155', readAt)],
+  }
+}
+
 const buildSpeechesSection = ({ snapshot }) => {
   const { speeches, municipality } = snapshot
-  if (!speeches.rows.length) {
+  const cityLabel = municipality?.name ?? 'o município'
+  const cityRows = speeches.rows ?? []
+  const region = speeches.region ?? { label: null, rows: [] }
+  const topics = speeches.topics ?? { themes: [], rows: [] }
+  const regionRows = region.rows ?? []
+  const themeRows = topics.rows ?? []
+
+  if (!cityRows.length && !regionRows.length && !themeRows.length) {
     return [
       {
         kind: 'callout',
         tone: 'gap',
         title: 'Acervo de falas',
         body: [
-          `Busca por município no acervo: nenhum trecho encontrado (${formatInteger(speeches.totalCount)} no total).`,
+          `Busca por município no acervo: nenhum trecho encontrado (${formatInteger(speeches.totalCount)} no total) e nenhum recorte regional/temático.`,
           GAP_COPY,
         ],
       },
     ]
   }
-  const cityLabel = municipality?.name ?? 'o município'
-  return [
-    {
-      kind: 'table',
+
+  const blocks = []
+  if (cityRows.length) {
+    blocks.push(
+      buildSpeechTable({
+        title: 'Acervo de falas',
+        rows: cityRows,
+        variant: 'city',
+        cityLabel,
+        note: [
+          '“O que é” = sumário oficial da Câmara; “Menção” = passagem que cita o município ou, quando o nome não aparece nos trechos, a marcação do acervo (C153/C155) com o nº de municípios da fala; “Vídeo” e “Transcrição” = links oficiais da Câmara quando existem.',
+          speeches.totalCount > cityRows.length
+            ? `Mostrando ${cityRows.length} de ${speeches.totalCount} falas.`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' '),
+        readAt: snapshot.meta?.readAt,
+      }),
+    )
+  } else {
+    blocks.push({
+      kind: 'callout',
+      tone: 'info',
       title: 'Acervo de falas',
-      columns: [
-        { key: 'date', label: 'Data', width: 9 },
-        { key: 'phase', label: 'Fase', width: 10 },
-        { key: 'description', label: 'O que é', width: 32 },
-        { key: 'mention', label: `Menção a ${cityLabel}`, width: 27 },
-        { key: 'video', label: 'Vídeo', width: 11 },
-        { key: 'transcript', label: 'Transcrição', width: 11 },
+      body: [
+        `Nenhuma fala cita ${cityLabel} diretamente; abaixo vão o recorte da região e os temas do mandato (não somar região/polo como fala da cidade).`,
       ],
-      rows: speeches.rows.map((row) => ({
-        date: formatDateBr(row.speechAt),
-        phase: row.phase ?? '—',
-        description: row.summary ? row.summary.slice(0, SPEECH_SUMMARY_MAX) : '—',
-        mention: row.mentionExcerpt
-          ? row.mentionExcerpt.slice(0, SPEECH_MENTION_MAX)
-          : row.mentionedMunicipalityCount
-            ? `Marcada no acervo — nome não localizado nos trechos (a fala cita ${formatInteger(row.mentionedMunicipalityCount)} municípios).`
-            : 'Marcada no acervo — trecho não localizado.',
-        video: row.youtubeUrl
-          ? withYoutubeTimestamp(row.youtubeUrl, youtubeStartSeconds(row))
-          : (row.vodPlaybackUrl ?? '—'),
-        transcript: row.officialTextUrl ?? '—',
-      })),
-      note: [
-        '“O que é” = sumário oficial da Câmara; “Menção” = passagem que cita o município ou, quando o nome não aparece nos trechos, a marcação do acervo (C153/C155) com o nº de municípios da fala; “Vídeo” e “Transcrição” = links oficiais da Câmara quando existem.',
-        speeches.totalCount > speeches.rows.length
-          ? `Mostrando ${speeches.rows.length} de ${speeches.totalCount} falas.`
-          : null,
-      ]
-        .filter(Boolean)
-        .join(' '),
-      sources: [sourceTeqo('base Teqo — acervo C153/C155', snapshot.meta?.readAt)],
-    },
-  ]
+    })
+  }
+
+  if (regionRows.length) {
+    blocks.push(
+      buildSpeechTable({
+        title: `Acervo — menções à região (${region.label ?? 'Território de Identidade'})`,
+        rows: regionRows,
+        variant: 'region',
+        note: `Falas marcadas no acervo com municípios do mesmo Território de Identidade (${region.label ?? 'região'}) — a região NÃO é a cidade; use como contexto, nunca some à conta do município.`,
+        readAt: snapshot.meta?.readAt,
+      }),
+    )
+  }
+
+  if (themeRows.length) {
+    blocks.push(
+      buildSpeechTable({
+        title: 'Acervo — falas por tema regional',
+        rows: themeRows,
+        variant: 'theme',
+        note: `Falas do mandato **selecionadas por tema** (${(topics.themes ?? [])
+          .map(speechTopicLabel)
+          .join(
+            ', ',
+          )}) — o critério é o tema, não uma menção ao município ou à região; use como repertório do tema, sem somar à conta da cidade.`,
+        readAt: snapshot.meta?.readAt,
+      }),
+    )
+  }
+
+  return blocks
 }
 
 const buildApproachSection = ({ research }) => {
@@ -994,11 +1174,15 @@ const buildApproachSection = ({ research }) => {
         { key: 'suggestion', label: 'Sugestão' },
         { key: 'source', label: 'Fonte' },
       ],
-      rows: approach.map((item) => ({
-        topic: item.persona ? `${item.persona} · ${item.topic}` : item.topic,
-        suggestion: item.suggestion,
-        source: formatDateBr(item.sourceDate),
-      })),
+      rows: approach.map((item) => {
+        const sources = sourcesOf(item)
+        return {
+          topic: item.persona ? `${item.persona} · ${item.topic}` : item.topic,
+          suggestion: withInlineSources(item.suggestion, sources),
+          source: formatDateBr(item.sourceDate),
+          sources,
+        }
+      }),
       note: 'Sugestões das personas de ciência política e coordenação de campanha, ancoradas nas fontes listadas (URL por item); sem fonte, não entra.',
       sources: approach.map((item) => ({
         kind: 'web',
