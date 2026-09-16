@@ -433,9 +433,8 @@ describe('SpeechDetailPlayer — C171-F1 keeps the transcript point across the s
   const segmentButton = (seconds: number) =>
     document.querySelector(`button[data-start-seconds="${seconds}"]`) as HTMLButtonElement
 
-  const renderYoutubePlayer = (
-    overrides: Partial<Parameters<typeof SpeechDetailPlayer>[0]> = {},
-  ) => renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634, ...overrides })
+  const renderYoutubePlayer = (overrides: Partial<Parameters<typeof SpeechDetailPlayer>[0]> = {}) =>
+    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634, ...overrides })
 
   const verifyDownloadFirst = async () => {
     const tab = { location: { href: '' }, close: vi.fn() }
