@@ -84,6 +84,14 @@ dados/lógica no markup aprovado, hooks/rotas/queries, copy, port mecânico de
 seção aprovada, bug que restaura o design aprovado, reuso de
 tokens/componentes já especificados. O default é **não despachar**.
 
+**Fora do `designer` frontier de vez (proibição, não non-trigger):** smoke/
+validação de `permission`/guard/frontmatter do próprio agente, teste de visão/
+sanidade de imagem, exploração (`@explore`), review geral (`@general`), escrita
+de plano/PR/changelog. Esses workers rodam no **modelo padrão da sessão** (ou no
+`designer-degraded`, barato, quando o alvo é o guard dos agentes de design) —
+nunca no pin frontier. Gate de dispatch e lista fechada: `ui-design-html.md`
+§Escopo de dispatch.
+
 **Crítica final (fail-closed).** Sem tier primário **não há certificação**. A
 ladder e a regra do `DEGRADED` são as de `ui-design-html.md` — a
 indisponibilidade **desce o tier** e registra `Design tier: <slug>` no PR;

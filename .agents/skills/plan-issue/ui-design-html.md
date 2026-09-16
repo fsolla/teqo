@@ -21,6 +21,28 @@ Mesma doutrina para os dois papéis (fonte única — os prompts dos agentes apo
 - **Tier degradado:** o `designer-degraded` cria/estende/critica, mas **marca todo output `DEGRADED`** e **nunca certifica** — exige sign-off humano explícito. `DEGRADED` não é design aprovado.
 - **Escrita só no artefato (file tools + bash):** os dois agentes têm `permission` fail-closed — `edit`/`write`/`patch` negados fora de `docs/plans/<slug>-ui-design*` e o **bash** nega os vetores de escrita enumerados (redirecionamento, `sed -i`, `tee`, shells/interpretadores) fora do artefato; o resto do shell fica em `ask`. Não tente contornar por shell (o guard cobre os vetores enumerados, não é sandbox de SO) — leia/inspecione à vontade (`cat`, `sed -n`, `git diff`) e grave o artefato pelas file tools.
 
+## Escopo de dispatch — o `designer` frontier só roda design de fato
+
+O tier frontier (`designer` com pin `openai/gpt-5.6-sol`) é **recurso escasso e caro**: ele é despachado **apenas** nos dois modos de design — **Criar** ou **Criticar** o artefato — e **apenas** para item que **muda UI**. Todo trabalho que não é isso roda no **modelo padrão da sessão**, nunca no frontier.
+
+**Lista fechada do que NUNCA vai para o `designer` frontier:**
+
+- smoke/validação de `permission`, guard de escrita, frontmatter, `model:` ou config de agente — **a semântica de `permission` é do frontmatter, não do modelo**: valide estaticamente, ou rode o smoke com o `designer-degraded` (barato); o resultado do guard é o mesmo;
+- teste de visão/sanidade de imagem ("qual a cor dominante") — use o modelo padrão da sessão, que tem visão;
+- exploração de código (`@explore`), review geral (`@general`), `@solla-comunicacao`;
+- escrever/revisar plano de intenção, impl plan, PR, changelog ou doc;
+- qualquer coisa cujo output não seja `docs/plans/<slug>-ui-design*`.
+
+**Gate antes de disparar (as três têm de ser "sim"):**
+
+1. O item **muda UI** (Impeccable B/C/D)? 2. É **Criar** ou **Criticar** o artefato hi-fi? 3. O output é `docs/plans/<slug>-ui-design*`?
+
+Qualquer "não" ⇒ **não despache** o `designer` frontier: segue com o implementador ou com o modelo padrão da sessão.
+
+**Fan-out:** prefira **uma** sessão `designer` para N itens UI do mesmo lote (cache reusado; o system prompt frio de ~25K tokens é pago uma vez) a N sessões frias em paralelo. Paralelismo maximiza velocidade **e consumo** — sob quota, agrupe.
+
+**Agente de design sem `model:` herda a sessão.** `designer-campanha-solla` não tem pin: ele roda no modelo da sessão-mãe. Dispare essa sessão em modelo barato e só troque para o frontier quando a task for de fato criar/criticar design.
+
 ## O que o design DEVE ter (fidelidade mínima)
 
 1. **Layout real** das superfícies tocadas: zonas (lista, detalhe, formulário, mapa, empty, erro), hierarquia de atenção, CTA primário vs secundário.
