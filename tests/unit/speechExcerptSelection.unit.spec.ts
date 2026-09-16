@@ -38,8 +38,9 @@ describe('normalizeExcerptRange', () => {
     expect(normalizeExcerptRange(248, 252, 252)).toEqual({ startSeconds: 247, endSeconds: 252 })
   })
 
-  it('caps at 180 s', () => {
-    expect(normalizeExcerptRange(0, 500, 600)).toEqual({ startSeconds: 0, endSeconds: 180 })
+  it('has no upper cap — the speech duration is the limit', () => {
+    expect(normalizeExcerptRange(0, 500, 600)).toEqual({ startSeconds: 0, endSeconds: 500 })
+    expect(normalizeExcerptRange(0, 600, 600)).toEqual({ startSeconds: 0, endSeconds: 600 })
     expect(normalizeExcerptRange(500, 500, 600)).toEqual({ startSeconds: 500, endSeconds: 505 })
   })
 
@@ -110,10 +111,10 @@ describe('extendRangeToSegment', () => {
     expect(extendRangeToSegment(range, SEGMENTS, 9, 252)).toEqual(range)
   })
 
-  it('caps the extension at 180 s when the clicked phrase is long', () => {
+  it('extends to the end of a long phrase without a cap', () => {
     expect(extendRangeToSegment(range, SEGMENTS, 3, 252)).toEqual({
       startSeconds: 43,
-      endSeconds: 223,
+      endSeconds: 252,
     })
   })
 })
@@ -127,9 +128,9 @@ describe('moveRangeEdge', () => {
     expect(moveRangeEdge(range, 'start', 20, 252)).toEqual({ startSeconds: 20, endSeconds: 51 })
   })
 
-  it('moves the end inside start + 5 s and the 180 s cap', () => {
+  it('moves the end between start + 5 s and the speech duration', () => {
     expect(moveRangeEdge(range, 'end', 0, 252)).toEqual({ startSeconds: 43, endSeconds: 48 })
-    expect(moveRangeEdge(range, 'end', 500, 252)).toEqual({ startSeconds: 43, endSeconds: 223 })
+    expect(moveRangeEdge(range, 'end', 500, 252)).toEqual({ startSeconds: 43, endSeconds: 252 })
     expect(moveRangeEdge(range, 'end', 200, 252)).toEqual({ startSeconds: 43, endSeconds: 200 })
   })
 
@@ -139,7 +140,7 @@ describe('moveRangeEdge', () => {
       endSeconds: 203,
     })
     expect(moveRangeEdge({ startSeconds: 240, endSeconds: 252 }, 'start', 10, 252)).toEqual({
-      startSeconds: 72,
+      startSeconds: 10,
       endSeconds: 252,
     })
   })

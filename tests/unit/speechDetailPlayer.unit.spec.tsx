@@ -287,7 +287,7 @@ describe('SpeechDetailPlayer — C166 excerpt selection and share', () => {
     fireEvent.click(segmentButton(43))
     expect(startSlider().getAttribute('aria-valuenow')).toBe('0')
     expect(endSlider().getAttribute('aria-valuenow')).toBe('50')
-    expect(endSlider().getAttribute('aria-valuemax')).toBe('180')
+    expect(endSlider().getAttribute('aria-valuemax')).toBe('300')
     // C162 contract: the selection mode does not seek the embed.
     expect(iframeElement()?.getAttribute('src')).toBe(
       'https://www.youtube-nocookie.com/embed/lLhRDkSPw0A?playsinline=1&rel=0&start=2634',
@@ -303,7 +303,7 @@ describe('SpeechDetailPlayer — C166 excerpt selection and share', () => {
     expect(iframeElement()?.getAttribute('src')).toContain('start=2677')
   })
 
-  it('adjusts the edges by keyboard with the 5 s/180 s limits', () => {
+  it('adjusts the edges by keyboard with the 5 s minimum and no upper cap', () => {
     renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634 })
 
     toggleSelection()
@@ -317,11 +317,11 @@ describe('SpeechDetailPlayer — C166 excerpt selection and share', () => {
     expect(startSlider().getAttribute('aria-valuenow')).toBe('45')
 
     fireEvent.keyDown(endSlider(), { key: 'End' })
-    expect(endSlider().getAttribute('aria-valuenow')).toBe('225')
-    expect(screen.getByText(/3min00s/)).toBeDefined()
+    expect(endSlider().getAttribute('aria-valuenow')).toBe('300')
+    expect(screen.getByText(/4min15s/)).toBeDefined()
 
     fireEvent.keyDown(endSlider(), { key: 'ArrowLeft' })
-    expect(endSlider().getAttribute('aria-valuenow')).toBe('224')
+    expect(endSlider().getAttribute('aria-valuenow')).toBe('299')
     fireEvent.keyDown(endSlider(), { key: 'Home' })
     expect(endSlider().getAttribute('aria-valuenow')).toBe('50')
   })
@@ -439,9 +439,9 @@ describe('SpeechDetailPlayer — C166 excerpt selection and share', () => {
     fireEvent.pointerMove(handle, { pointerId: 1, clientX: 150 })
     expect(endSlider().getAttribute('aria-valuenow')).toBe('150')
 
-    // 250s would pass the 180 s span cap from the 0 s start.
+    // 250s is far from every boundary and within the speech, so the handle moves freely.
     fireEvent.pointerMove(handle, { pointerId: 1, clientX: 250 })
-    expect(endSlider().getAttribute('aria-valuenow')).toBe('180')
+    expect(endSlider().getAttribute('aria-valuenow')).toBe('250')
 
     fireEvent.pointerUp(handle, { pointerId: 1, clientX: 250 })
     expect(releasePointerCapture).toHaveBeenCalled()

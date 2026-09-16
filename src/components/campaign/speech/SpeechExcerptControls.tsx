@@ -5,7 +5,6 @@ import { useRef } from 'react'
 
 import { formatSpeechClock, formatSpeechSpan } from '@/lib/speechClock'
 import {
-  MAX_EXCERPT_SECONDS,
   MIN_EXCERPT_SECONDS,
   moveRangeEdge,
   rangeDurationSeconds,
@@ -28,7 +27,7 @@ const HANDLE_KEY_DELTAS: Record<string, number> = {
   PageUp: 5,
 }
 
-const excerptLimitsLabel = `Mínimo ${MIN_EXCERPT_SECONDS}s · máximo ${MAX_EXCERPT_SECONDS / 60}min`
+const excerptLimitsLabel = `Mínimo ${MIN_EXCERPT_SECONDS}s · sem limite — até o fim da fala`
 
 type SpeechExcerptControlsProps = {
   segments: readonly ExcerptSegment[]
@@ -109,14 +108,8 @@ export const SpeechExcerptControls = ({
     role: 'slider' as const,
     tabIndex: 0,
     'aria-label': edge === 'start' ? 'Início do trecho' : 'Fim do trecho',
-    'aria-valuemin':
-      edge === 'start'
-        ? Math.max(0, range.endSeconds - MAX_EXCERPT_SECONDS)
-        : range.startSeconds + MIN_EXCERPT_SECONDS,
-    'aria-valuemax':
-      edge === 'start'
-        ? range.endSeconds - MIN_EXCERPT_SECONDS
-        : Math.min(durationSeconds, range.startSeconds + MAX_EXCERPT_SECONDS),
+    'aria-valuemin': edge === 'start' ? 0 : range.startSeconds + MIN_EXCERPT_SECONDS,
+    'aria-valuemax': edge === 'start' ? range.endSeconds - MIN_EXCERPT_SECONDS : durationSeconds,
     'aria-valuenow': seconds,
     'aria-valuetext': formatSpeechClock(seconds),
     'data-excerpt-edge': edge,

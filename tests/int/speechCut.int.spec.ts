@@ -297,7 +297,7 @@ describe('speech cuts (C167)', () => {
         title: 't',
         description: 'd',
       }),
-    ).rejects.toThrow(/5 a 180/)
+    ).rejects.toThrow(/5 segundos até o fim da fala/)
 
     for (const denied of [advisor, leader]) {
       asActor(denied)
@@ -311,6 +311,32 @@ describe('speech cuts (C167)', () => {
         }),
       ).rejects.toThrow(SPEECH_CUT_FORBIDDEN_MESSAGE)
     }
+  })
+
+  it('accepts a long selection up to the speech duration (C170, no 180 s cap)', async () => {
+    const speech = await createSpeech()
+    const { communicator } = await createUsers()
+    asActor(communicator)
+
+    const long = await saveSpeechCutForActor({
+      speechId: speech,
+      startSeconds: 0,
+      endSeconds: 240,
+      title: 'Discurso inteiro',
+      description: 'Trecho longo sem teto',
+    })
+    expect(long.durationSeconds).toBe(240)
+    createdCutIds.add(long.id)
+
+    await expect(
+      saveSpeechCutForActor({
+        speechId: speech,
+        startSeconds: 0,
+        endSeconds: 3,
+        title: 't',
+        description: 'd',
+      }),
+    ).rejects.toThrow(/5 segundos até o fim da fala/)
   })
 
   it('retries only a failed row, reusing the same id', async () => {
