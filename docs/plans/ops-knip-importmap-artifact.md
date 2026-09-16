@@ -1,4 +1,4 @@
-# OPS: knip local quebra com o importMap (artefato gitignored) no working tree
+# OPS: knip carrega o payload.config.ts com erro (importMap commitado) e roda com análise degradada
 
 Status: rascunho
 Atualizado em: 2026-09-16
@@ -9,23 +9,25 @@ Appetite: ~30 min eng; sem schema, sem deploy
 
 ## Intenção
 
-`pnpm knip` falha localmente com `ERROR: Error loading src/payload.config.ts (This module cannot be imported from a Client Component module. It should only be used from a Server Component.)` quando `src/app/(payload)/admin/importMap.js` existe no working tree — artefato gitignored gerado por `pnpm predev`/build (OPS99), que `knip.json` ainda lista em `entry`. Sem o artefato, o knip completa (com os 2 unresolved imports esperados de `[[...segments]]`). No CI o knip roda antes do build (sem o artefato) e passa — confirmado no run `35099887216`; reproduzido idêntico no worktree `main` (`/home/fsolla/Code/teqo`), então **não é regressão de entrega nenhuma**. Efeito: `pnpm push`/`gate:ci` local quebra depois de rodar dev.
+`pnpm knip` imprime `ERROR: Error loading src/payload.config.ts (This module cannot be imported from a Client Component module. It should only be used from a Server Component.)` e **sai com código 0** — acontece no CI (run `35099887216`) e local, sempre que `src/app/(payload)/admin/importMap.js` está no working tree. Esse arquivo está **commitado** (apesar de `knip.json`/OPS99/`.gitignore` o tratarem como artefato de build), importa componentes client e faz o knip carregar `payload.config.ts`; o `server-only` resolve para o entry que lança sob as condições padrão (não `react-server`), e a regra `paths.server-only` do `knip.json` não está sendo aplicada ao specifier de pacote. Sem o arquivo, o knip completa (com 2 unresolved imports esperados de `[[...segments]]`). Por sair 0, o gate fica verde com o knip **degradado em silêncio**: um ERROR que ninguém lê e uma análise possivelmente incompleta (o entry falhou ao carregar).
+
+Correção de rumo (2026-09-16): durante o C178 eu supus que isso quebrava `pnpm push`/`gate:ci` local; na prática o exit é 0 e o push não é afetado. O problema real é o erro silencioso/análise degradada.
 
 ## Fases verificáveis
 
-1. **Diagnóstico + fix** — decidir entre remover `src/app/(payload)/admin/importMap.js` do `entry` do `knip.json` (o arquivo é artefato de build; os unresolved imports de `[[...segments]]` apontam para um artefato inexistente) ou `ignore`-á-lo com justificativa. Provar: `pnpm predev` (gera o artefato) → `pnpm knip` verde; e `pnpm knip` verde sem o artefato.
-2. **Gate** — `pnpm gate:fast` + `pnpm push`; sem tocar no pipeline de CI (o CI já passa).
+1. **Diagnóstico + fix** — confirmar a causa (mapping `paths.server-only` não aplicado vs. `importMap.js` commitado) e corrigir: (a) fazer o mapeamento funcionar (ou trocar por `compilerOptions.paths`/condição `react-server` no knip) e/ou (b) destrackear o `importMap.js` (OPS99 diz que não deveria estar commitado — foi commitado em `fea6c645`/`b03cec7c` para corrigir o admin em branco). Provar: `pnpm knip` sem a linha `Error loading src/payload.config.ts` e com a análise completa (um export morto de teste é detectado).
+2. **Gate** — `pnpm gate:fast` + `pnpm push`; sem tocar no pipeline de CI além do necessário.
 
 ## Já resolvido no simplify/critique (não reabrir)
 
-- Confirmado que o erro é pré-existente e independente do C178 (mesmo erro em `main` com o artefato presente).
+- Confirmado que o comportamento é idêntico no CI e local (o `importMap.js` está commitado, então o CI também vê o arquivo) e que o exit code é 0 — não é um gate quebrado.
 
 ## Explicitamente fora
 
-- Mudar a ordem do CI (knip antes do build já é o caso).
-- Commitar o `importMap.js` (OPS99 proíbe; é artefato de build).
-- Qualquer outra limpeza de `knip.json`.
+- Mudar a ordem do CI (knip antes do build já é o caso; e o build não é o gerador do arquivo no repo).
+- Limpar outros pontos do `knip.json`.
 
 ## Self-score (decisão)
 
-4/5 — fix barato e reversível, causa-raiz nomeada, prova verde clara, sem risco de produção.
+4/5 — fix barato e reversível, causa-raiz nomeada (com correção de rumo registrada), prova objetiva (o ERROR some + export morto detectado), sem risco de produção.
+
