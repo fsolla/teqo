@@ -3,10 +3,12 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import {
+  originSpeechIdsOfCuts,
+  SPEECH_CUT_ORIGIN_SPEECH_ID_LIMIT,
   toSpeechCutLibraryItemViewModel,
-  toSpeechCutViewModel,
+  toSpeechCutSummaryViewModel,
   type SpeechCutLibraryItemViewModel,
-  type SpeechCutViewModel,
+  type SpeechCutSummaryViewModel,
 } from '@/lib/speechCut'
 import type { CampaignUser } from '@/payload-types'
 import { createEntityNotFoundError } from '@/utilities/entityNotFound'
@@ -20,6 +22,26 @@ import {
 } from '@/utilities/speech/speechCutListUrl'
 
 type SpeechCutListSearchParams = Record<string, string | string[] | undefined>
+
+/**
+ * C180 — lean `select` for the discovery surfaces: only the fields the summary
+ * view model renders, so the loaders stop hauling media/error/step rows. Keep
+ * field-for-field with `SpeechCutSummaryRecord` (`lib/speechCut.ts`); Payload
+ * does not reflect `select` in the result type, so the int test is the guard.
+ */
+const speechCutSummarySelect = {
+  status: true,
+  title: true,
+  description: true,
+  durationSeconds: true,
+  startSeconds: true,
+  endSeconds: true,
+  // Kept so the batch loader can group rows by their origin speech.
+  speech: true,
+} as const
+
+/** The origin loader only needs the speech relation to dedupe the origins. */
+const speechCutOriginSelect = { speech: true } as const
 
 export const SpeechCutNotFoundError = createEntityNotFoundError(
   'SpeechCut',
@@ -72,15 +94,15 @@ export const loadSpeechCutAcervoPageData = async (
 /**
  * C174 — every cut made from one speech, newest first, for the "Cortes desta
  * fala" section of the speech detail. Depth 0 is enough: the origin here IS the
- * page, and the section renders title/status/duration only (`error` still feeds
- * the honest `failureMessage`, never the raw cause). No page cap: the number of
- * cuts per speech is bounded by human effort.
+ * page, and the section renders title/status/duration only — the summary select
+ * keeps the query to what it shows. No page cap: the number of cuts per speech
+ * is bounded by human effort.
  */
 export const loadSpeechCutsForSpeech = async (
   payload: Payload,
   user: CampaignUser,
   speechId: number,
-): Promise<SpeechCutViewModel[]> => {
+): Promise<SpeechCutSummaryViewModel[]> => {
   const result = await payload.find({
     collection: 'speechCut',
     where: { speech: { equals: speechId } },
@@ -88,24 +110,26 @@ export const loadSpeechCutsForSpeech = async (
     limit: 0,
     pagination: false,
     sort: '-createdAt',
+    select: speechCutSummarySelect,
     user,
     overrideAccess: false,
   })
 
-  return result.docs.map((cut) => toSpeechCutViewModel(cut))
+  return result.docs.map((cut) => toSpeechCutSummaryViewModel(cut))
 }
 
 /**
  * C174 — every cut of every speech on the acervo page, grouped by speech id, so
  * the result list nests them under the speech without a query per row. Same
- * precedent as `loadSegmentsForSpeeches`; depth 0 keeps the origin as the id.
+ * precedent as `loadSegmentsForSpeeches`; depth 0 keeps the origin as the id and
+ * the summary select carries only what the nested card renders.
  */
 export const loadSpeechCutsForSpeeches = async (
   payload: Payload,
   user: CampaignUser,
   speechIds: readonly number[],
-): Promise<Map<number, SpeechCutViewModel[]>> => {
-  const bySpeech = new Map<number, SpeechCutViewModel[]>()
+): Promise<Map<number, SpeechCutSummaryViewModel[]>> => {
+  const bySpeech = new Map<number, SpeechCutSummaryViewModel[]>()
   if (speechIds.length === 0) return bySpeech
 
   const result = await payload.find({
@@ -115,6 +139,7 @@ export const loadSpeechCutsForSpeeches = async (
     limit: 0,
     pagination: false,
     sort: '-createdAt',
+    select: speechCutSummarySelect,
     user,
     overrideAccess: false,
   })
@@ -123,7 +148,7 @@ export const loadSpeechCutsForSpeeches = async (
     const speechId = typeof cut.speech === 'number' ? cut.speech : cut.speech?.id
     if (typeof speechId !== 'number') continue
     const list = bySpeech.get(speechId) ?? []
-    list.push(toSpeechCutViewModel(cut))
+    list.push(toSpeechCutSummaryViewModel(cut))
     bySpeech.set(speechId, list)
   }
   return bySpeech
@@ -133,6 +158,10 @@ export const loadSpeechCutsForSpeeches = async (
  * C174 (option B) — the origin speech ids of the cuts whose own title/description
  * match `q`. The acervo search uses them to surface a speech through a cut even
  * when the speech text itself does not contain the term.
+ *
+ * C180 — the query is capped at `SPEECH_CUT_ORIGIN_SPEECH_ID_LIMIT`: a common
+ * term must not let the acervo's `id in [...]` grow without bound. The cap only
+ * trims origin-only hits; it never makes a returned row wrong.
  */
 export const loadSpeechCutOriginSpeechIds = async (
   payload: Payload,
@@ -143,18 +172,14 @@ export const loadSpeechCutOriginSpeechIds = async (
     collection: 'speechCut',
     where: buildSpeechCutListWhere({ page: 1, q }),
     depth: 0,
-    limit: 0,
+    limit: SPEECH_CUT_ORIGIN_SPEECH_ID_LIMIT,
     pagination: false,
+    select: speechCutOriginSelect,
     user,
     overrideAccess: false,
   })
 
-  const ids = new Set<number>()
-  for (const cut of result.docs) {
-    const speechId = typeof cut.speech === 'number' ? cut.speech : cut.speech?.id
-    if (typeof speechId === 'number') ids.add(speechId)
-  }
-  return [...ids]
+  return originSpeechIdsOfCuts(result.docs)
 }
 
 /** One cut with its origin and stored media, for the library detail page. */

@@ -5,7 +5,7 @@
  */
 import { CAMPAIGN_COMMUNICATION_ACERVO } from '@/lib/campaignPaths'
 import { formatSpeechClock, formatSpeechDate, formatSpeechSpan } from '@/lib/speechClock'
-import type { SpeechCutViewModel } from '@/lib/speechCut'
+import type { SpeechCutSummaryViewModel } from '@/lib/speechCut'
 import type { SpeechExcerptSegment } from '@/lib/speechExcerpt'
 import type { SpeechScope, SpeechTopic } from '@/lib/speechFacets'
 import {
@@ -16,7 +16,7 @@ import {
   type SpeechHighlightedExcerpt,
   type SpeechHighlightPart,
 } from '@/lib/speechHighlight'
-import { normalizeForSearch } from '@/lib/speechSearch'
+import { normalizeForSearch, speechMatchesSearchQuery } from '@/lib/speechSearch'
 import {
   excerptOffsetSeconds,
   parseYoutubeVideoId,
@@ -66,7 +66,7 @@ export type SpeechListItemViewModel = {
   watchHref: string
   sourceUrl: string | null
   /** C174 — the cuts already made from this speech, newest first. */
-  cuts: SpeechCutViewModel[]
+  cuts: SpeechCutSummaryViewModel[]
   /**
    * C174 — false when the speech surfaced only because one of its cuts matched
    * the term; the card then swaps the excerpt for the honest origin note.
@@ -186,19 +186,7 @@ export const parseSpeechSeekSeconds = (raw: string | undefined): number | null =
   return Number.isFinite(seconds) && seconds >= 0 ? seconds : null
 }
 
-type SpeechCuts = readonly SpeechCutViewModel[]
-
-/**
- * C174 — does the speech itself match `q`? Mirrors the textual `where` branch
- * (`speechListFilters.buildSpeechTextBranches`): normalized `searchText` LIKE
- * and raw keyword contains. Keep the two spellings in step.
- */
-const speechMatchesText = (speech: SpeechListRecord, query: string | undefined): boolean => {
-  const trimmed = query?.trim()
-  if (!trimmed) return true
-  if (normalizeForSearch(speech.searchText ?? '').includes(normalizeForSearch(trimmed))) return true
-  return (speech.keywords ?? []).some((keyword) => keyword.includes(trimmed))
-}
+type SpeechCuts = readonly SpeechCutSummaryViewModel[]
 
 export const toSpeechListItemViewModel = ({
   speech,
@@ -241,7 +229,7 @@ export const toSpeechListItemViewModel = ({
     watchHref: buildWatchHref(speech.id, matchedSegment, q),
     sourceUrl: speech.officialTextUrl ?? speech.youtubeUrl ?? null,
     cuts: [...cuts],
-    matchedTextSearch: speechMatchesText(speech, query),
+    matchedTextSearch: speechMatchesSearchQuery(speech, query),
   }
 }
 

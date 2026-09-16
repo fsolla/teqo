@@ -54,7 +54,12 @@ const buildSpeechTextBranches = (q: string): Where[] => [
   { keywords: { contains: q } },
 ]
 
-/** The textual branch: normalized speech text OR a raw official keyword. */
+/**
+ * The textual branch: normalized speech text OR a raw official keyword. The
+ * keyword `contains` compiles to ILIKE `%q%` — case-insensitive, accent still
+ * significant. The view-model mirror is `lib/speechSearch.speechMatchesSearchQuery`
+ * (C180); a semantics change here has to land there too.
+ */
 const buildSpeechTextWhere = (q: string): Where => ({ or: buildSpeechTextBranches(q) })
 
 export const buildSpeechListWhere = (state: SpeechListState): Where => {

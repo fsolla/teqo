@@ -6,6 +6,7 @@ import {
   buildSpeechCutFallbackMetadata,
   buildSpeechCutFfmpegArgs,
   buildSpeechCutShare,
+  originSpeechIdsOfCuts,
   SPEECH_CUT_FAILURE_GENERATING,
   SPEECH_CUT_FAILURE_INTERRUPTED,
   SPEECH_CUT_FAILURE_SPEECH_GONE,
@@ -14,6 +15,7 @@ import {
   speechCutFailureMessage,
   speechCutPublicPath,
   speechCutStepStates,
+  toSpeechCutSummaryViewModel,
   toSpeechCutViewModel,
 } from '@/lib/speechCut'
 
@@ -172,6 +174,69 @@ describe('toSpeechCutViewModel', () => {
     expect(failed.failureMessage).toBe('Não foi possível cortar o trecho.')
     expect(JSON.stringify(failed)).not.toContain('HTTP 403')
     expect(view.failureMessage).toBeNull()
+  })
+})
+
+describe('toSpeechCutSummaryViewModel', () => {
+  it('emits only the fields the discovery surfaces render', () => {
+    const summary = toSpeechCutSummaryViewModel({
+      id: 7,
+      status: 'published',
+      title: 'Acesso a medicamentos',
+      description: 'Descrição',
+      startSeconds: 43,
+      endSeconds: 118,
+      durationSeconds: 75,
+    })
+    expect(summary).toEqual({
+      id: 7,
+      status: 'published',
+      title: 'Acesso a medicamentos',
+      description: 'Descrição',
+      durationSeconds: 75,
+    })
+    expect(Object.keys(summary).sort()).toEqual([
+      'description',
+      'durationSeconds',
+      'id',
+      'status',
+      'title',
+    ])
+  })
+
+  it('falls back to end − start and degrades an unknown status to failed', () => {
+    const summary = toSpeechCutSummaryViewModel({
+      id: 1,
+      status: 'weird',
+      title: 't',
+      description: 'd',
+      startSeconds: 10,
+      endSeconds: 30,
+    })
+    expect(summary.status).toBe('failed')
+    expect(summary.durationSeconds).toBe(20)
+  })
+})
+
+describe('originSpeechIdsOfCuts', () => {
+  it('dedupes resolved ids and skips null/missing relations', () => {
+    expect(
+      originSpeechIdsOfCuts([
+        { speech: 7 },
+        { speech: 7 },
+        { speech: 9 },
+        { speech: null },
+        { speech: { id: 11 } },
+        {},
+      ]),
+    ).toEqual([7, 9, 11])
+  })
+
+  it('caps the list at the limit and returns nothing at limit 0', () => {
+    const cuts = Array.from({ length: 10 }, () => ({ speech: 1 }))
+    cuts.push({ speech: 2 }, { speech: 3 })
+    expect(originSpeechIdsOfCuts(cuts, 2)).toEqual([1, 2])
+    expect(originSpeechIdsOfCuts(cuts, 0)).toEqual([])
   })
 })
 

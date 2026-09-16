@@ -6,7 +6,7 @@ import { SpeechExcerptCta } from '@/components/campaign/speech/SpeechExcerptCta'
 import { Button } from '@/components/ui/button'
 import { campaignSpeechCutDetailHref } from '@/lib/campaignPaths'
 import { formatSpeechClock } from '@/lib/speechClock'
-import type { SpeechCutViewModel } from '@/lib/speechCut'
+import type { SpeechCutSummaryViewModel } from '@/lib/speechCut'
 
 const SECTION_TITLE = 'Cortes desta fala'
 const SECTION_DESCRIPTION = 'Abra um corte existente para editar ou reaproveitar.'
@@ -38,7 +38,7 @@ export const SpeechCutsForSpeechSection = ({
   cuts,
   excerptSelectionAvailable,
 }: {
-  cuts: readonly SpeechCutViewModel[]
+  cuts: readonly SpeechCutSummaryViewModel[]
   excerptSelectionAvailable: boolean
 }) => {
   if (cuts.length === 0) {
