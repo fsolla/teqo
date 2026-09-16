@@ -149,6 +149,9 @@ test.describe('communication vertical (C154/C162)', () => {
     expect(resultsHtml).toContain('<mark')
     expect(resultsHtml).toContain('Assistir no trecho')
     expect(resultsHtml).toContain('1 fala encontrada')
+    // C175 — the card carries the trecho thumbnail hotlinked from the YouTube
+    // CDN, linked to the same watch target the CTA owns.
+    expect(resultsHtml).toContain(`https://i.ytimg.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`)
     // C162 — the direct download left the card, and the stored ephemeral link
     // never reaches any list HTML.
     expect(resultsHtml).not.toContain('Baixar')
@@ -191,6 +194,11 @@ test.describe('communication vertical (C154/C162)', () => {
 
     const user = await campaign.fixtures.createCampaignUser('communicator')
     const request = await campaignRequest(user, user.password)
+
+    const results = await request.get(`/campanha/comunicacao/acervo?q=${marker}`)
+    expect(results.status()).toBe(200)
+    // C175 — no YouTube session link means no thumbnail and no reserved media.
+    expect(rendered(await results.text())).not.toContain('i.ytimg.com')
 
     const detail = await request.get(`/campanha/comunicacao/acervo/${speech.id}`)
     expect(detail.status()).toBe(200)

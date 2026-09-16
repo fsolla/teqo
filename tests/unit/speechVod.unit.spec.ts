@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { excerptOffsetSeconds, parseYoutubeVideoId } from '@/lib/speechVod'
+import { excerptOffsetSeconds, parseYoutubeVideoId, youtubeThumbnailUrl } from '@/lib/speechVod'
 
 /**
  * The VOD URL/status/duration contracts moved from `scripts/lib/camaraSpeeches.mjs`
@@ -80,5 +80,18 @@ describe('parseYoutubeVideoId', () => {
   it('rejects an id that does not look like a YouTube id', () => {
     expect(parseYoutubeVideoId('https://www.youtube.com/watch?v=ab')).toBeNull()
     expect(parseYoutubeVideoId('https://www.youtube.com/watch?v=../etc/passwd')).toBeNull()
+  })
+})
+
+describe('youtubeThumbnailUrl', () => {
+  it('builds the hqdefault cover for a parsed video id (intent literal)', () => {
+    expect(youtubeThumbnailUrl('lLhRDkSPw0A')).toBe(
+      'https://i.ytimg.com/vi/lLhRDkSPw0A/hqdefault.jpg',
+    )
+  })
+
+  it('returns null when there is no video id', () => {
+    expect(youtubeThumbnailUrl(null)).toBeNull()
+    expect(youtubeThumbnailUrl('')).toBeNull()
   })
 })

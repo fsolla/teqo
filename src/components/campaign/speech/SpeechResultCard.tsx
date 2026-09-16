@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 import { SpeechHighlightParts } from '@/components/campaign/speech/SpeechHighlightParts'
+import { SpeechResultThumbnail } from '@/components/campaign/speech/SpeechResultThumbnail'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import type { SpeechHighlightedExcerpt } from '@/lib/speechHighlight'
@@ -55,6 +56,8 @@ export const SpeechResultCard = ({ speech }: { speech: SpeechListItemViewModel }
     visibleTopics.length +
     (speech.scopes.length - visibleScopes.length) +
     (speech.keywords.length - visibleKeywords.length)
+  const watchLabel = speech.matchKind === 'segment' ? 'Assistir no trecho' : 'Ver fala'
+  const excerptNode = <SpeechExcerpt excerpt={speech.excerpt} />
 
   return (
     <article className="rounded-xl border bg-card p-4">
@@ -81,7 +84,18 @@ export const SpeechResultCard = ({ speech }: { speech: SpeechListItemViewModel }
       </div>
 
       <div className="mt-2">
-        <SpeechExcerpt excerpt={speech.excerpt} />
+        {speech.thumbnailUrl ? (
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:gap-4">
+            <SpeechResultThumbnail
+              href={speech.watchHref}
+              src={speech.thumbnailUrl}
+              label={watchLabel}
+            />
+            <div className="min-w-0 flex-1">{excerptNode}</div>
+          </div>
+        ) : (
+          excerptNode
+        )}
       </div>
 
       {speech.topics.length || speech.scopes.length || speech.keywords.length ? (
@@ -113,7 +127,7 @@ export const SpeechResultCard = ({ speech }: { speech: SpeechListItemViewModel }
         <Button asChild className="min-h-11">
           <Link href={speech.watchHref}>
             <PlayIcon data-icon="inline-start" aria-hidden="true" />
-            {speech.matchKind === 'segment' ? 'Assistir no trecho' : 'Ver fala'}
+            {watchLabel}
           </Link>
         </Button>
         {speech.sourceUrl ? (

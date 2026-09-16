@@ -231,6 +231,26 @@ describe('speech acervo (C154)', () => {
     expect(row).not.toHaveProperty('downloadUrl')
   })
 
+  it('propagates the YouTube thumbnail to the list view model (C175)', async () => {
+    const runId = randomUUID().slice(0, 8)
+    const marker = `miniatura${runId}`
+    const withVideo = await createSpeech({
+      youtubeUrl: 'https://www.youtube.com/watch?v=lLhRDkSPw0A',
+      segments: [{ startSeconds: 0, endSeconds: 3, text: `A fala ${marker} no plenário` }],
+    })
+    const withoutVideo = await createSpeech({
+      segments: [{ startSeconds: 0, endSeconds: 3, text: `A fala ${marker} sem vídeo` }],
+    })
+
+    const { communicator } = await createUsers()
+    const data = await loadSpeechAcervoPageData(payload, communicator, { q: marker })
+
+    expect(data.rows.find((row) => row.id === withVideo)?.thumbnailUrl).toBe(
+      'https://i.ytimg.com/vi/lLhRDkSPw0A/hqdefault.jpg',
+    )
+    expect(data.rows.find((row) => row.id === withoutVideo)?.thumbnailUrl).toBeNull()
+  })
+
   it('allows communicator/coordinator/candidate and denies advisor/leader', async () => {
     const id = await createSpeech()
     const { communicator, coordinator, candidate, advisor, leader } = await createUsers()
