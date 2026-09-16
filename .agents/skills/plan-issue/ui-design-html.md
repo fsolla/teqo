@@ -19,6 +19,7 @@ Mesma doutrina para os dois papéis (fonte única — os prompts dos agentes apo
 - **Criticar:** o `designer` relê a **implementação renderizada** (screenshots do app) contra o artefato aprovado e devolve **lista numerada de ajustes concretos** — hierarquia (o CTA primário domina?), contraste, tipografia, espaçamento, mobile, acessibilidade. **A referência é o alvo — nunca a critique.**
 - **Visão nativa (fail-closed):** leia screenshots, prints e referências **direto com a tool Read**; nunca peça ao humano para descrever o que você pode ver. Se a leitura da imagem falhar (modelo da sessão sem visão), **pare** e peça a troca de modelo via `/models` antes de julgar a tela; **nunca descreva o que não viu**.
 - **Tier degradado:** o `designer-degraded` cria/estende/critica, mas **marca todo output `DEGRADED`** e **nunca certifica** — exige sign-off humano explícito. `DEGRADED` não é design aprovado.
+- **Escrita só no artefato (file tools + bash):** os dois agentes têm `permission` fail-closed — `edit`/`write`/`patch` negados fora de `docs/plans/<slug>-ui-design*` e o **bash** nega os vetores de escrita enumerados (redirecionamento, `sed -i`, `tee`, shells/interpretadores) fora do artefato; o resto do shell fica em `ask`. Não tente contornar por shell (o guard cobre os vetores enumerados, não é sandbox de SO) — leia/inspecione à vontade (`cat`, `sed -n`, `git diff`) e grave o artefato pelas file tools.
 
 ## O que o design DEVE ter (fidelidade mínima)
 
