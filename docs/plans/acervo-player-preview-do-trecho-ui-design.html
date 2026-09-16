@@ -70,6 +70,12 @@
       .btn-secondary {
         @apply bg-secondary text-secondary-foreground;
       }
+      .btn-resolving {
+        @apply cursor-wait border-border bg-muted/50 text-muted-foreground opacity-60;
+      }
+      .spinner {
+        @apply size-4 shrink-0 animate-spin fill-none stroke-current stroke-2;
+      }
       .icon {
         @apply size-4 shrink-0 fill-none stroke-current stroke-2;
       }
@@ -85,6 +91,9 @@
       }
       .selection-card {
         @apply rounded-lg border border-border bg-muted/30 p-3;
+      }
+      .status-panel {
+        @apply flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-lg border border-border bg-muted/40 px-6 text-center text-muted-foreground;
       }
       .video-placeholder {
         background:
@@ -104,6 +113,16 @@
           Assessoria de comunicação confere o intervalo no mesmo player antes de compartilhar ou
           cortar. O controle pertence à seleção; a fileira de ações permanece intacta.
         </p>
+        <div class="mt-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+          <p class="text-xs font-semibold tracking-wide text-primary uppercase">
+            Extensão trigger (a) · resolve → toca em um gesto
+          </p>
+          <p class="mt-1 text-xs leading-5 text-foreground/80">
+            Acrescenta o quadrante em que o vídeo da Câmara ainda não foi resolvido. O pedido de
+            pré-visualização fica pendente somente durante a resolução e toca o intervalo assim que
+            o arquivo verificado chega.
+          </p>
+        </div>
       </header>
 
       <!-- CENA 1: DESKTOP -->
@@ -636,6 +655,420 @@
                 <button class="btn btn-primary" type="button">Cortar vídeo</button>
                 <button class="btn btn-outline" type="button">Compartilhar</button>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 5: EXTENSÃO TRIGGER (A), VOD A RESOLVER -->
+      <section class="mt-10" aria-labelledby="resolve-preview-title">
+        <div class="scene-label" id="resolve-preview-title">
+          Cena 05 · Trigger (a) · Câmara a resolver · gesto único resolve → toca
+        </div>
+
+        <div class="frame mx-auto w-full max-w-[1280px] p-5 sm:p-6">
+          <div class="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
+            <div>
+              <p class="text-sm font-semibold">Desktop · viewport de referência 1280 px</p>
+              <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                O mesmo quadrante em três momentos. Painel e card coexistem; a ação continua dentro
+                do card de seleção.
+              </p>
+            </div>
+            <span
+              class="inline-flex h-6 items-center rounded-full bg-primary/10 px-2.5 text-[10px] font-semibold tracking-wide text-primary uppercase"
+              >Estado acrescentado ao gate</span
+            >
+          </div>
+
+          <div class="mt-5 grid gap-4 lg:grid-cols-3">
+            <!-- 5A: unresolved, ready for the single gesture -->
+            <article aria-labelledby="resolve-idle-title">
+              <div class="mb-2 flex items-center justify-between gap-2">
+                <h3 class="text-xs font-semibold text-foreground" id="resolve-idle-title">
+                  1 · Ainda não resolvido
+                </h3>
+                <span class="text-[10px] font-medium text-muted-foreground">PRONTO PARA PEDIR</span>
+              </div>
+              <div class="status-panel">
+                <svg class="icon size-8" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <path d="m10 9 5 3-5 3z" />
+                </svg>
+                <p class="text-sm font-medium text-foreground/90">
+                  O trecho deste vídeo é gerado pela Câmara dos Deputados.
+                </p>
+                <p class="max-w-md text-xs leading-5">
+                  Clique para resolver o arquivo exato desta fala — ele é verificado antes de tocar.
+                </p>
+                <button class="btn btn-primary mt-1" type="button">
+                  <svg class="icon fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m8 5 11 7-11 7z" />
+                  </svg>
+                  Assistir o trecho
+                </button>
+              </div>
+              <div class="selection-card mt-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="text-xs font-medium text-primary">Trecho selecionado</span>
+                  <span class="text-xs tabular-nums text-muted-foreground"
+                    ><span class="text-foreground">01:42</span> →
+                    <span class="text-foreground">02:14</span> · 32 s</span
+                  >
+                </div>
+                <div class="relative mt-3 h-9 select-none">
+                  <div
+                    class="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-muted"
+                  ></div>
+                  <div
+                    class="absolute left-[30%] right-[58%] top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-primary"
+                  ></div>
+                  <div
+                    class="absolute left-[30%] top-1/2 h-7 w-3 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-primary bg-background"
+                  ></div>
+                  <div
+                    class="absolute left-[42%] top-1/2 h-7 w-3 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-primary bg-background"
+                  ></div>
+                </div>
+                <div class="border-t border-border pt-3">
+                  <button class="btn btn-outline w-full" type="button">
+                    <svg class="icon fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="m8 5 11 7-11 7z" />
+                    </svg>
+                    Pré-visualizar trecho
+                  </button>
+                </div>
+              </div>
+            </article>
+
+            <!-- 5B: resolving with pending preview intent -->
+            <article aria-labelledby="resolve-busy-title">
+              <div class="mb-2 flex items-center justify-between gap-2">
+                <h3 class="text-xs font-semibold text-foreground" id="resolve-busy-title">
+                  2 · Resolvendo
+                </h3>
+                <span
+                  class="inline-flex h-5 items-center gap-1.5 rounded-full bg-secondary px-2 text-[10px] font-medium text-muted-foreground"
+                  ><svg class="spinner size-3" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M21 12a9 9 0 1 1-6.2-8.6" /></svg
+                  >AGUARDANDO ARQUIVO</span
+                >
+              </div>
+              <div class="status-panel" role="status" aria-live="polite">
+                <svg
+                  class="spinner size-6"
+                  viewBox="0 0 24 24"
+                  aria-label="Resolvendo o trecho na Câmara"
+                >
+                  <path d="M21 12a9 9 0 1 1-6.2-8.6" />
+                </svg>
+                <p class="text-sm font-medium text-foreground/90">Resolvendo o trecho na Câmara…</p>
+                <p class="max-w-md text-xs leading-5">
+                  Isso pode levar alguns segundos. Se demorar, tente novamente em instantes — a
+                  página não trava.
+                </p>
+              </div>
+              <div class="selection-card mt-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="text-xs font-medium text-primary">Trecho selecionado</span>
+                  <span class="text-xs tabular-nums text-muted-foreground"
+                    ><span class="text-foreground">01:42</span> →
+                    <span class="text-foreground">02:14</span> · 32 s</span
+                  >
+                </div>
+                <div class="relative mt-3 h-9 select-none">
+                  <div
+                    class="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-muted"
+                  ></div>
+                  <div
+                    class="absolute left-[30%] right-[58%] top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-primary"
+                  ></div>
+                  <div
+                    class="absolute left-[30%] top-1/2 h-7 w-3 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-primary bg-background"
+                  ></div>
+                  <div
+                    class="absolute left-[42%] top-1/2 h-7 w-3 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-primary bg-background"
+                  ></div>
+                </div>
+                <div class="border-t border-border pt-3">
+                  <button
+                    class="btn btn-outline btn-resolving w-full"
+                    type="button"
+                    aria-busy="true"
+                    disabled
+                  >
+                    <svg class="spinner" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M21 12a9 9 0 1 1-6.2-8.6" />
+                    </svg>
+                    Resolvendo trecho…
+                  </button>
+                </div>
+              </div>
+            </article>
+
+            <!-- 5C: resolution failed, preview intent discarded -->
+            <article aria-labelledby="resolve-failed-title">
+              <div class="mb-2 flex items-center justify-between gap-2">
+                <h3 class="text-xs font-semibold text-foreground" id="resolve-failed-title">
+                  3 · Falhou
+                </h3>
+                <span class="text-[10px] font-medium text-muted-foreground"
+                  >INTENÇÃO DESCARTADA</span
+                >
+              </div>
+              <div class="status-panel" role="status" aria-live="polite">
+                <svg class="icon size-8" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <path d="m4 20 16-16" />
+                </svg>
+                <p class="text-sm font-medium text-foreground/90">
+                  Não foi possível carregar o vídeo deste trecho.
+                </p>
+                <p class="max-w-md text-xs leading-5">
+                  A Câmara não entregou o arquivo agora. A transcrição e a fonte oficial continuam
+                  disponíveis.
+                </p>
+                <button class="btn btn-outline mt-1" type="button">Tentar novamente</button>
+              </div>
+              <div class="selection-card mt-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="text-xs font-medium text-primary">Trecho selecionado</span>
+                  <span class="text-xs tabular-nums text-muted-foreground"
+                    ><span class="text-foreground">01:42</span> →
+                    <span class="text-foreground">02:14</span> · 32 s</span
+                  >
+                </div>
+                <div class="relative mt-3 h-9 select-none">
+                  <div
+                    class="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-muted"
+                  ></div>
+                  <div
+                    class="absolute left-[30%] right-[58%] top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-primary"
+                  ></div>
+                  <div
+                    class="absolute left-[30%] top-1/2 h-7 w-3 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-primary bg-background"
+                  ></div>
+                  <div
+                    class="absolute left-[42%] top-1/2 h-7 w-3 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-primary bg-background"
+                  ></div>
+                </div>
+                <div class="border-t border-border pt-3">
+                  <button class="btn btn-outline w-full" type="button">
+                    <svg class="icon fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="m8 5 11 7-11 7z" />
+                    </svg>
+                    Pré-visualizar trecho
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div class="mt-5 rounded-lg border border-border bg-muted/30 px-4 py-3">
+            <p class="text-xs font-medium text-foreground/90">Regra visual desta extensão</p>
+            <p class="mt-1 text-xs leading-5 text-muted-foreground">
+              O botão ocupado não usa Mandate Red, não muda de lugar e não vira “Parar
+              pré-visualização”. Ele fica outline, desabilitado, com spinner e o texto “Resolvendo
+              trecho…”. “Parar pré-visualização” só aparece depois que o arquivo chegou e o vídeo
+              está efetivamente reproduzindo. Compartilhar, cortar e baixar continuam na fileira
+              externa, sem receber esta ação.
+            </p>
+          </div>
+        </div>
+
+        <!-- 5D: same state ladder at the mobile viewport -->
+        <div class="mt-6">
+          <p class="mb-3 text-xs font-medium text-muted-foreground">
+            Mobile · viewport de referência 390 px · mesmos três momentos
+          </p>
+          <div class="frame mx-auto w-[390px] max-w-full">
+            <div
+              class="flex h-14 items-center justify-between bg-primary px-4 text-primary-foreground"
+            >
+              <button class="grid size-10 place-items-center" type="button" aria-label="Abrir menu">
+                <svg class="icon size-5" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 7h16M4 12h16M4 17h16" />
+                </svg>
+              </button>
+              <span class="text-sm font-semibold">Campanha</span>
+              <span
+                class="grid size-9 place-items-center rounded-full bg-white/15 text-xs font-semibold"
+                >AS</span
+              >
+            </div>
+            <div class="space-y-6 p-4">
+              <article aria-labelledby="mobile-resolve-idle-title">
+                <div class="mb-2 flex items-center justify-between gap-2">
+                  <h3 class="text-xs font-semibold" id="mobile-resolve-idle-title">
+                    Ainda não resolvido
+                  </h3>
+                  <span class="text-[10px] text-muted-foreground">1 / 3</span>
+                </div>
+                <div class="status-panel min-h-[202px] aspect-auto py-5">
+                  <svg class="icon size-7" viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                    <path d="m10 9 5 3-5 3z" />
+                  </svg>
+                  <p class="text-sm font-medium text-foreground/90">
+                    O trecho deste vídeo é gerado pela Câmara dos Deputados.
+                  </p>
+                  <p class="text-xs leading-5">
+                    Clique para resolver o arquivo exato desta fala — ele é verificado antes de
+                    tocar.
+                  </p>
+                  <button class="btn btn-primary mt-1 h-11 w-full" type="button">
+                    <svg class="icon fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="m8 5 11 7-11 7z" />
+                    </svg>
+                    Assistir o trecho
+                  </button>
+                </div>
+                <div class="selection-card mt-3">
+                  <span class="text-xs font-medium text-primary">Trecho selecionado</span>
+                  <p class="mt-1 text-xs tabular-nums text-foreground">01:42 → 02:14 · 32 s</p>
+                  <div class="relative mt-2 h-11 select-none">
+                    <div
+                      class="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-muted"
+                    ></div>
+                    <div
+                      class="absolute left-[30%] right-[58%] top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-primary"
+                    ></div>
+                    <div
+                      class="absolute left-[30%] top-1/2 h-8 w-5 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-primary bg-background"
+                    ></div>
+                    <div
+                      class="absolute left-[42%] top-1/2 h-8 w-5 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-primary bg-background"
+                    ></div>
+                  </div>
+                  <div class="mt-3 border-t border-border pt-3">
+                    <button class="btn btn-outline h-11 w-full" type="button">
+                      <svg class="icon fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" />
+                      </svg>
+                      Pré-visualizar trecho
+                    </button>
+                  </div>
+                </div>
+              </article>
+
+              <div class="h-px bg-border"></div>
+
+              <article aria-labelledby="mobile-resolve-busy-title">
+                <div class="mb-2 flex items-center justify-between gap-2">
+                  <h3 class="text-xs font-semibold" id="mobile-resolve-busy-title">Resolvendo</h3>
+                  <span class="text-[10px] text-muted-foreground">2 / 3</span>
+                </div>
+                <div
+                  class="status-panel min-h-[202px] aspect-auto py-5"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <svg
+                    class="spinner size-6"
+                    viewBox="0 0 24 24"
+                    aria-label="Resolvendo o trecho na Câmara"
+                  >
+                    <path d="M21 12a9 9 0 1 1-6.2-8.6" />
+                  </svg>
+                  <p class="text-sm font-medium text-foreground/90">
+                    Resolvendo o trecho na Câmara…
+                  </p>
+                  <p class="text-xs leading-5">
+                    Isso pode levar alguns segundos. Se demorar, tente novamente em instantes — a
+                    página não trava.
+                  </p>
+                </div>
+                <div class="selection-card mt-3">
+                  <span class="text-xs font-medium text-primary">Trecho selecionado</span>
+                  <p class="mt-1 text-xs tabular-nums text-foreground">01:42 → 02:14 · 32 s</p>
+                  <div class="relative mt-2 h-11 select-none">
+                    <div
+                      class="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-muted"
+                    ></div>
+                    <div
+                      class="absolute left-[30%] right-[58%] top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-primary"
+                    ></div>
+                    <div
+                      class="absolute left-[30%] top-1/2 h-8 w-5 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-primary bg-background"
+                    ></div>
+                    <div
+                      class="absolute left-[42%] top-1/2 h-8 w-5 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-primary bg-background"
+                    ></div>
+                  </div>
+                  <div class="mt-3 border-t border-border pt-3">
+                    <button
+                      class="btn btn-outline btn-resolving h-11 w-full"
+                      type="button"
+                      aria-busy="true"
+                      disabled
+                    >
+                      <svg class="spinner" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M21 12a9 9 0 1 1-6.2-8.6" />
+                      </svg>
+                      Resolvendo trecho…
+                    </button>
+                  </div>
+                </div>
+              </article>
+
+              <div class="h-px bg-border"></div>
+
+              <article aria-labelledby="mobile-resolve-failed-title">
+                <div class="mb-2 flex items-center justify-between gap-2">
+                  <h3 class="text-xs font-semibold" id="mobile-resolve-failed-title">Falhou</h3>
+                  <span class="text-[10px] text-muted-foreground">3 / 3</span>
+                </div>
+                <div
+                  class="status-panel min-h-[222px] aspect-auto py-5"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <svg class="icon size-7" viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                    <path d="m4 20 16-16" />
+                  </svg>
+                  <p class="text-sm font-medium text-foreground/90">
+                    Não foi possível carregar o vídeo deste trecho.
+                  </p>
+                  <p class="text-xs leading-5">
+                    A Câmara não entregou o arquivo agora. A transcrição e a fonte oficial continuam
+                    disponíveis.
+                  </p>
+                  <button class="btn btn-outline mt-1 h-11 w-full" type="button">
+                    Tentar novamente
+                  </button>
+                </div>
+                <div class="selection-card mt-3">
+                  <span class="text-xs font-medium text-primary">Trecho selecionado</span>
+                  <p class="mt-1 text-xs tabular-nums text-foreground">01:42 → 02:14 · 32 s</p>
+                  <div class="relative mt-2 h-11 select-none">
+                    <div
+                      class="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-muted"
+                    ></div>
+                    <div
+                      class="absolute left-[30%] right-[58%] top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-primary"
+                    ></div>
+                    <div
+                      class="absolute left-[30%] top-1/2 h-8 w-5 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-primary bg-background"
+                    ></div>
+                    <div
+                      class="absolute left-[42%] top-1/2 h-8 w-5 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-primary bg-background"
+                    ></div>
+                  </div>
+                  <div class="mt-3 border-t border-border pt-3">
+                    <button class="btn btn-outline h-11 w-full" type="button">
+                      <svg class="icon fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" />
+                      </svg>
+                      Pré-visualizar trecho
+                    </button>
+                  </div>
+                </div>
+                <p class="mt-3 text-[11px] leading-5 text-muted-foreground">
+                  A falha descarta a intenção anterior. O controle volta ao estado normal; nada toca
+                  sozinho depois de um “Tentar novamente” separado.
+                </p>
+              </article>
             </div>
           </div>
         </div>
