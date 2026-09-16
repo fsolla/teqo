@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — C170: corte sem teto (5 s até o fim da fala)</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-[1400px] p-6 sm:p-8">
+      <h1 class="text-lg font-medium text-zinc-100">
+        UI draft — Acervo: cortar sem teto — do mínimo de 5 s até o fim da fala (C170)
+      </h1>
+      <p class="mt-1 max-w-3xl text-sm text-zinc-400">
+        A assessoria seleciona um trecho longo (discurso inteiro, fala de vários minutos) no mesmo
+        player do acervo: o teto de 3 min sai dos textos e do servidor, o mínimo de 5 s permanece, e
+        o corte publicado/baixado corresponde exatamente ao [início,fim] escolhido.
+      </p>
+      <p class="mt-2 text-sm text-zinc-500">
+        Cinza = estrutura existente ·
+        <span class="text-amber-400">acento</span> = CTA primário e o que muda neste item (copy e
+        valores sem teto) · barras cinza = conteúdo não especificado. Cenas estáticas: sem
+        interação, sem dados reais.
+      </p>
+
+      <!-- ============================================================ -->
+      <!-- Cena 1 · desktop (~1280px) — detalhe com seleção de 12 min  -->
+      <!-- ============================================================ -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 1 · desktop (~1280px) — seleção longa (12 min) na barra de trecho, sem travar em 3
+          min
+        </p>
+        <div
+          class="mt-3 w-[1280px] max-w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900"
+        >
+          <div class="px-6 py-5">
+            <p class="text-xs text-zinc-500">← Voltar ao acervo</p>
+            <h2 class="mt-2 text-base font-medium text-zinc-100">DISCURSO EM PLENÁRIO</h2>
+            <p class="mt-1 text-xs text-zinc-500">
+              11/08/2026 · 14:32 · Discurso em plenário · 21min07s
+            </p>
+
+            <div class="mt-4 grid grid-cols-[1fr_260px] gap-5">
+              <div>
+                <div
+                  class="relative flex aspect-video items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950"
+                >
+                  <div
+                    class="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800 text-zinc-300"
+                  >
+                    ▶
+                  </div>
+                  <p class="absolute bottom-3 left-3 text-xs text-zinc-400">
+                    Vídeo da sessão no YouTube
+                  </p>
+                </div>
+
+                <!-- SpeechExcerptControls com o limite novo -->
+                <div class="mt-3 rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="text-xs font-medium text-amber-400">Trecho selecionado</span>
+                    <span class="text-xs text-zinc-400 tabular-nums">
+                      <span class="text-zinc-100">02:14</span> →
+                      <span class="text-zinc-100">14:14</span> ·
+                      <span class="text-amber-400">12min0s</span>
+                    </span>
+                  </div>
+
+                  <div class="relative mt-4 h-9">
+                    <div
+                      class="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-zinc-800"
+                    ></div>
+                    <div
+                      class="absolute top-1/2 left-[10.6%] right-[32.6%] h-1.5 -translate-y-1/2 rounded-full bg-amber-500/70"
+                    ></div>
+                    <div
+                      class="absolute top-1/2 left-[10.6%] h-7 w-3 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-amber-400 bg-zinc-900"
+                    ></div>
+                    <div
+                      class="absolute top-1/2 right-[32.6%] h-7 w-3 translate-x-1/2 -translate-y-1/2 rounded-sm border border-amber-400 bg-zinc-900"
+                    ></div>
+                  </div>
+                  <div class="mt-1 flex justify-between text-[10px] text-zinc-500 tabular-nums">
+                    <span>00:00</span>
+                    <span class="text-amber-400">02:14</span>
+                    <span class="text-amber-400">14:14</span>
+                    <span>21:07</span>
+                  </div>
+                  <p class="mt-2 text-[11px] leading-relaxed text-zinc-500">
+                    Clique nas frases: o limite encaixa no segmento (ímã). Arraste as alças para o
+                    ajuste fino.
+                    <span class="text-amber-400">Mínimo 5s · sem limite — até o fim da fala</span>
+                    — a duração aparece enquanto seleciona.
+                  </p>
+                </div>
+
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    class="min-h-11 rounded-lg border border-zinc-600 bg-zinc-800 px-4 text-sm text-zinc-100"
+                  >
+                    Selecionar trecho
+                  </button>
+                  <button
+                    type="button"
+                    class="min-h-11 rounded-lg bg-amber-500 px-4 text-sm font-medium text-zinc-950"
+                  >
+                    Cortar vídeo
+                  </button>
+                  <button
+                    type="button"
+                    class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-300"
+                  >
+                    Compartilhar
+                  </button>
+                  <button
+                    type="button"
+                    class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-300"
+                  >
+                    Baixar vídeo (MP4)
+                  </button>
+                  <button
+                    type="button"
+                    class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-300"
+                  >
+                    Abrir fonte
+                  </button>
+                </div>
+
+                <p class="mt-5 text-xs tracking-wide text-zinc-500 uppercase">
+                  Transcrição (clique nas frases para marcar o trecho)
+                </p>
+                <div class="mt-2 space-y-1">
+                  <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                    <span class="w-12 shrink-0 text-xs text-zinc-500">00:00</span>
+                    <span class="text-sm text-zinc-400"
+                      >… senhor Presidente, colegas deputados …</span
+                    >
+                  </div>
+                  <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                    <span class="w-12 shrink-0 text-xs text-zinc-500">01:10</span>
+                    <span class="text-sm text-zinc-400">… agradeço a presença de todos …</span>
+                  </div>
+                  <div
+                    class="flex gap-3 rounded-lg border-l-2 border-amber-500/60 bg-amber-500/10 px-2 py-1.5"
+                  >
+                    <span class="w-12 shrink-0 text-xs text-amber-400">02:14</span>
+                    <span class="text-sm text-zinc-100"
+                      >… a saúde pública na Bahia vive um momento decisivo …</span
+                    >
+                  </div>
+                  <div
+                    class="flex gap-3 rounded-lg border-l-2 border-amber-500/60 bg-amber-500/10 px-2 py-1.5"
+                  >
+                    <span class="w-12 shrink-0 text-xs text-amber-400">05:30</span>
+                    <span class="text-sm text-zinc-100"
+                      >… o financiamento tripartite precisa ser cumprido …</span
+                    >
+                  </div>
+                  <div
+                    class="flex gap-3 rounded-lg border-l-2 border-amber-500/60 bg-amber-500/10 px-2 py-1.5"
+                  >
+                    <span class="w-12 shrink-0 text-xs text-amber-400">08:10</span>
+                    <span class="text-sm text-zinc-100"
+                      >… municípios do interior não conseguem manter o atendimento …</span
+                    >
+                  </div>
+                  <div
+                    class="flex gap-3 rounded-lg border-l-2 border-amber-500/60 bg-amber-500/10 px-2 py-1.5"
+                  >
+                    <span class="w-12 shrink-0 text-xs text-amber-400">13:45</span>
+                    <span class="text-sm text-zinc-100"
+                      >… defendo um compromisso com quem mora longe das capitais …</span
+                    >
+                  </div>
+                  <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                    <span class="w-12 shrink-0 text-xs text-zinc-500">14:38</span>
+                    <span class="text-sm text-zinc-400">… muito obrigado, Presidente. …</span>
+                  </div>
+                  <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                    <span class="w-12 shrink-0 text-xs text-zinc-500">16:20</span>
+                    <span class="text-sm text-zinc-400"
+                      >… encerro pedindo apoio ao requerimento …</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <aside class="space-y-4">
+                <div>
+                  <p class="text-xs tracking-wide text-zinc-500 uppercase">Sumário oficial</p>
+                  <div class="mt-2 space-y-1.5">
+                    <div class="h-3 w-full rounded bg-zinc-800"></div>
+                    <div class="h-3 w-5/6 rounded bg-zinc-800"></div>
+                  </div>
+                </div>
+                <div>
+                  <p class="text-xs tracking-wide text-zinc-500 uppercase">Temas</p>
+                  <div class="mt-1.5 flex flex-wrap gap-1.5">
+                    <span class="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300"
+                      >Saúde</span
+                    >
+                  </div>
+                </div>
+                <div class="border-t border-zinc-800 pt-3">
+                  <p class="text-xs text-zinc-500">Fonte: Câmara dos Deputados · CC BY 4.0</p>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </div>
+        <p class="mt-2 text-xs text-zinc-500">
+          O teto de 3 min sai dos textos da barra; o teto passa a ser o fim da fala (21:07). O
+          mínimo de 5 s permanece — e a duração do trecho (12min0s) é o feedback que já existe.
+        </p>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- Cena 2 · desktop — diálogo "Cortar vídeo" com a copy nova    -->
+      <!-- ============================================================ -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 2 · diálogo "Cortar vídeo" — duração longa com a copy nova (sem faixa de 5–180 s)
+        </p>
+        <div class="mt-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-6">
+          <div
+            class="mx-auto w-[560px] max-w-full rounded-xl border border-zinc-700 bg-zinc-900 p-6"
+          >
+            <div>
+              <h2 class="text-base font-medium text-zinc-100">Cortar vídeo</h2>
+              <p class="mt-0.5 text-xs text-zinc-500">
+                O arquivo sai com o trecho exato — nada antes, nada depois.
+              </p>
+            </div>
+
+            <div class="mt-4 rounded-lg border border-zinc-700 bg-zinc-950 p-3">
+              <div class="flex items-center justify-between gap-3">
+                <span class="font-mono text-sm text-zinc-100">02:14 → 14:14</span>
+                <span class="text-xs text-amber-400">
+                  12min0s · mínimo 5 s · até o fim da fala
+                </span>
+              </div>
+              <p class="mt-2 text-xs text-zinc-400">
+                "… a saúde pública na Bahia vive um momento decisivo …"
+              </p>
+            </div>
+
+            <div class="mt-4">
+              <label class="text-xs tracking-wide text-zinc-500 uppercase">Título</label>
+              <div
+                class="mt-1.5 flex min-h-11 w-full items-center rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-100"
+              >
+                Saúde pública: financiamento e acesso no interior da Bahia
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <label class="text-xs tracking-wide text-zinc-500 uppercase">Descrição</label>
+              <div
+                class="mt-1.5 min-h-[88px] w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-300"
+              >
+                No pronunciamento, o deputado cobra o financiamento tripartite da saúde e defende
+                mais recursos para o atendimento no interior baiano.
+              </div>
+            </div>
+
+            <div
+              class="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200/90"
+            >
+              Sugerido por IA — revise antes de publicar. Os dois campos são editáveis.
+            </div>
+
+            <div class="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-300"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                class="min-h-11 rounded-lg bg-amber-500 px-4 text-sm font-medium text-zinc-950"
+              >
+                Cortar e publicar
+              </button>
+            </div>
+            <p class="mt-3 text-xs text-zinc-500">
+              Nada é publicado antes de confirmar. No fim, o corte ganha o link
+              <span class="font-mono">/corte/123</span> e o arquivo fica na biblioteca de cortes
+              (C168).
+            </p>
+          </div>
+        </div>
+        <p class="mt-2 text-xs text-zinc-500">
+          Só a linha do trecho muda: "dentro da faixa de 5–180 s" vira "mínimo 5 s · até o fim da
+          fala". A mensagem de erro do servidor e o prompt da IA também perdem o 180 (fora da tela).
+        </p>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- Cena 3 · variantes da barra — extremos que o teto bloqueava  -->
+      <!-- ============================================================ -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 3 · variantes da seleção — trecho de 12 min (A), até o fim da fala (B) e fala inteira
+          (C)
+        </p>
+        <div class="mt-3 flex flex-wrap gap-4">
+          <div class="w-[380px] rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+            <p class="text-xs text-zinc-500">A · trecho longo comum</p>
+            <p class="mt-1 text-sm text-zinc-100 tabular-nums">
+              02:14 → 14:14 · <span class="text-amber-400">12min0s</span>
+            </p>
+            <div class="relative mt-3 h-8">
+              <div
+                class="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-zinc-800"
+              ></div>
+              <div
+                class="absolute top-1/2 left-[10.6%] right-[32.6%] h-1.5 -translate-y-1/2 rounded-full bg-amber-500/70"
+              ></div>
+              <div
+                class="absolute top-1/2 left-[10.6%] h-6 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-amber-400 bg-zinc-900"
+              ></div>
+              <div
+                class="absolute top-1/2 right-[32.6%] h-6 w-2.5 translate-x-1/2 -translate-y-1/2 rounded-sm border border-amber-400 bg-zinc-900"
+              ></div>
+            </div>
+            <p class="mt-2 text-[11px] text-zinc-500">
+              Antes: a barra travava o fim em 3 min. Agora vai até onde precisa.
+            </p>
+          </div>
+
+          <div class="w-[380px] rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+            <p class="text-xs text-zinc-500">B · até o fim da fala (fim = duração)</p>
+            <p class="mt-1 text-sm text-zinc-100 tabular-nums">
+              18:32 → 21:07 · <span class="text-amber-400">2min35s</span>
+            </p>
+            <div class="relative mt-3 h-8">
+              <div
+                class="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-zinc-800"
+              ></div>
+              <div
+                class="absolute top-1/2 left-[87.8%] right-0 h-1.5 -translate-y-1/2 rounded-full bg-amber-500/70"
+              ></div>
+              <div
+                class="absolute top-1/2 left-[87.8%] h-6 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-amber-400 bg-zinc-900"
+              ></div>
+              <div
+                class="absolute top-1/2 right-0 h-6 w-2.5 translate-x-1/2 -translate-y-1/2 rounded-sm border border-amber-400 bg-zinc-900"
+              ></div>
+            </div>
+            <p class="mt-2 text-[11px] text-zinc-500">
+              O fim encosta no último segundo da fala; o rótulo diz "até o fim da fala".
+            </p>
+          </div>
+
+          <div class="w-[380px] rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+            <p class="text-xs text-zinc-500">C · fala inteira</p>
+            <p class="mt-1 text-sm text-zinc-100 tabular-nums">
+              00:00 → 21:07 · <span class="text-amber-400">21min07s</span>
+            </p>
+            <div class="relative mt-3 h-8">
+              <div
+                class="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-amber-500/70"
+              ></div>
+              <div
+                class="absolute top-1/2 left-0 h-6 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-amber-400 bg-zinc-900"
+              ></div>
+              <div
+                class="absolute top-1/2 right-0 h-6 w-2.5 translate-x-1/2 -translate-y-1/2 rounded-sm border border-amber-400 bg-zinc-900"
+              ></div>
+            </div>
+            <p class="mt-2 text-[11px] text-zinc-500">
+              Permitido: o teto é a duração da fala. O mínimo de 5 s não some — seleções curtas
+              seguem bloqueadas.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- Cena 4 · mobile (~390px) — seleção longa no detalhe          -->
+      <!-- ============================================================ -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 4 · mobile (~390px) — mesma seleção longa, ações empilhadas
+        </p>
+        <div class="mt-3 w-[390px] overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+          <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+            <span class="text-zinc-400">←</span>
+            <span class="text-sm font-medium text-zinc-200">Comunicação</span>
+            <span class="h-6 w-6 rounded-full bg-zinc-800"></span>
+          </div>
+
+          <div class="px-4 py-4">
+            <p class="text-xs text-zinc-500">Acervo · fala</p>
+            <h2 class="mt-1 text-sm font-medium text-zinc-100">DISCURSO EM PLENÁRIO</h2>
+            <p class="mt-0.5 text-xs text-zinc-500">11/08/2026 · 21min07s</p>
+
+            <div
+              class="mt-3 flex aspect-video items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950"
+            >
+              <div
+                class="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800 text-zinc-300"
+              >
+                ▶
+              </div>
+            </div>
+
+            <div class="mt-3 rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+              <div class="flex flex-wrap items-center justify-between gap-1 text-xs">
+                <span class="font-medium text-amber-400">Trecho selecionado</span>
+                <span class="text-zinc-100 tabular-nums">02:14 → 14:14 · 12min0s</span>
+              </div>
+              <div class="relative mt-3 h-8">
+                <div
+                  class="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-zinc-800"
+                ></div>
+                <div
+                  class="absolute top-1/2 left-[10.6%] right-[32.6%] h-1.5 -translate-y-1/2 rounded-full bg-amber-500/70"
+                ></div>
+                <div
+                  class="absolute top-1/2 left-[10.6%] h-6 w-3 -translate-x-1/2 -translate-y-1/2 rounded-sm border border-amber-400 bg-zinc-900"
+                ></div>
+                <div
+                  class="absolute top-1/2 right-[32.6%] h-6 w-3 translate-x-1/2 -translate-y-1/2 rounded-sm border border-amber-400 bg-zinc-900"
+                ></div>
+              </div>
+              <div class="mt-2 flex justify-between text-[10px] text-zinc-500 tabular-nums">
+                <span>00:00</span>
+                <span class="text-amber-400">02:14</span>
+                <span class="text-amber-400">14:14</span>
+                <span>21:07</span>
+              </div>
+              <p class="mt-2 text-[10px] text-zinc-500">
+                <span class="text-amber-400">Mínimo 5s · sem limite — até o fim da fala</span> — a
+                duração aparece enquanto seleciona.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="mt-3 h-11 w-full rounded-lg bg-amber-500 text-sm font-medium text-zinc-950"
+            >
+              Cortar vídeo
+            </button>
+            <button
+              type="button"
+              class="mt-2 h-11 w-full rounded-lg border border-zinc-700 text-sm text-zinc-300"
+            >
+              Selecionar trecho
+            </button>
+            <button
+              type="button"
+              class="mt-2 h-11 w-full rounded-lg border border-zinc-700 text-sm text-zinc-300"
+            >
+              Compartilhar
+            </button>
+            <button
+              type="button"
+              class="mt-2 h-11 w-full rounded-lg border border-zinc-700 text-sm text-zinc-300"
+            >
+              Baixar vídeo (MP4)
+            </button>
+
+            <p class="mt-4 text-xs tracking-wide text-zinc-500 uppercase">Transcrição</p>
+            <div class="mt-2 space-y-0.5">
+              <div
+                class="flex gap-3 rounded-lg border-l-2 border-amber-500/60 bg-amber-500/10 px-2 py-1.5"
+              >
+                <span class="w-10 shrink-0 text-xs text-amber-400">02:14</span>
+                <span class="text-sm text-zinc-100">… a saúde pública na Bahia …</span>
+              </div>
+              <div
+                class="flex gap-3 rounded-lg border-l-2 border-amber-500/60 bg-amber-500/10 px-2 py-1.5"
+              >
+                <span class="w-10 shrink-0 text-xs text-amber-400">08:10</span>
+                <span class="text-sm text-zinc-100">… o atendimento no interior …</span>
+              </div>
+              <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                <span class="w-10 shrink-0 text-xs text-zinc-500">14:38</span>
+                <span class="text-sm text-zinc-400">… muito obrigado, Presidente. …</span>
+              </div>
+            </div>
+
+            <p class="mt-4 border-t border-zinc-800 pt-3 text-xs text-zinc-500">
+              Fonte: Câmara dos Deputados · CC BY 4.0
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- Cena 5 · mobile (~390px) — diálogo de corte                  -->
+      <!-- ============================================================ -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 5 · mobile (~390px) — diálogo de corte com a copy nova
+        </p>
+        <div class="mt-3 w-[390px] rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+          <div class="rounded-xl border border-zinc-700 bg-zinc-900 p-4">
+            <h2 class="text-base font-medium text-zinc-100">Cortar vídeo</h2>
+            <p class="mt-0.5 text-xs text-zinc-500">
+              O arquivo sai com o trecho exato — nada antes, nada depois.
+            </p>
+
+            <div class="mt-3 rounded-lg border border-zinc-700 bg-zinc-950 p-3">
+              <div class="flex flex-wrap items-center justify-between gap-1">
+                <span class="font-mono text-sm text-zinc-100">02:14 → 14:14</span>
+                <span class="text-xs text-amber-400">12min0s · mínimo 5 s · até o fim da fala</span>
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <label class="text-xs tracking-wide text-zinc-500 uppercase">Título</label>
+              <div
+                class="mt-1.5 flex min-h-11 w-full items-center rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-100"
+              >
+                Saúde pública: financiamento e acesso no interior
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <label class="text-xs tracking-wide text-zinc-500 uppercase">Descrição</label>
+              <div
+                class="mt-1.5 min-h-24 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-300"
+              >
+                No pronunciamento, o deputado cobra o financiamento tripartite da saúde e defende
+                mais recursos para o interior baiano.
+              </div>
+            </div>
+
+            <div
+              class="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200/90"
+            >
+              Sugerido por IA — revise antes de publicar. Os dois campos são editáveis.
+            </div>
+
+            <button
+              type="button"
+              class="mt-4 h-11 w-full rounded-lg bg-amber-500 text-sm font-medium text-zinc-950"
+            >
+              Cortar e publicar
+            </button>
+            <button
+              type="button"
+              class="mt-2 h-11 w-full rounded-lg border border-zinc-700 text-sm text-zinc-300"
+            >
+              Cancelar
+            </button>
+            <p class="mt-3 text-xs text-zinc-500">
+              Nada é publicado antes de confirmar. O corte longo segue o mesmo fluxo — espera com
+              progresso honesto (C167).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- Notas para o gate                                            -->
+      <!-- ============================================================ -->
+      <section class="mt-8 rounded-lg border border-zinc-800 bg-zinc-900 p-5">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">O que o gate valida aqui</p>
+        <ul class="mt-2 space-y-1 text-sm text-zinc-400">
+          <li>
+            1. O rótulo novo da barra ("Mínimo 5s · sem limite — até o fim da fala") e a ausência de
+            qualquer menção a 3 min/180 s nos textos visíveis.
+          </li>
+          <li>
+            2. A seleção longa (12 min) cabe na barra e o fim pode encostar no fim da fala (cenas 1,
+            3B e 4).
+          </li>
+          <li>
+            3. O diálogo de corte mantém a hierarquia atual, só trocando a faixa de duração pela
+            copy nova (cenas 2 e 5).
+          </li>
+          <li>
+            4. O resto do detalhe (player, transcrição com ímã, compartilhar, baixar, crédito CC BY)
+            fica intacto — a fatia não redesenha nada.
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

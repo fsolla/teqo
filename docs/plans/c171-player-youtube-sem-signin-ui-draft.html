@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>UI draft — Acervo: player do YouTube sem beco de signin (C171)</title>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-5xl p-6 sm:p-8">
+      <h1 class="text-lg font-medium text-zinc-100">
+        UI draft — Acervo: player do YouTube sem beco de signin (C171)
+      </h1>
+      <p class="mt-1 text-sm text-zinc-400">
+        A assessoria abre a fala com vídeo no YouTube e o player pede login; a outra janela já está
+        logada e nada muda. Este rascunho valida a saída: o vídeo toca quando o YouTube deixa e,
+        quando não deixa, a página oferece em um clique uma superfície que toca ("Assistir na
+        Câmara") ou "Abrir no YouTube" no ponto exato.
+      </p>
+      <p class="mt-2 text-sm text-zinc-500">
+        Cinza = estrutura existente · <span class="text-amber-400">âmbar</span> = novo neste item ·
+        barras cinza = conteúdo não especificado. Cenas estáticas: sem interação, sem dados reais.
+      </p>
+
+      <!-- ============================================================ -->
+      <!-- Cena 1 · desktop — embed bloqueado pelo YouTube + saída      -->
+      <!-- ============================================================ -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 1 · desktop (~1280px) — o estado que a assessoria vê hoje + superfície alternativa
+        </p>
+        <div class="mt-3 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+          <div class="px-6 py-5">
+            <p class="text-xs text-zinc-500">← Voltar ao acervo</p>
+            <h2 class="mt-2 text-base font-medium text-zinc-100">
+              Título da fala — tipo de sessão
+            </h2>
+            <p class="mt-1 text-xs text-zinc-500">
+              dd/mm/aaaa · hh:mm · Tipo de sessão · duração · Presidiu: [placeholder]
+            </p>
+
+            <div class="mt-4 grid grid-cols-[1fr_260px] gap-5">
+              <div>
+                <!-- Dentro do iframe: o YouTube renderiza o pedido de login -->
+                <div
+                  class="relative flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-6 text-center"
+                >
+                  <span
+                    class="absolute top-3 left-3 rounded border border-zinc-700 px-2 py-0.5 text-[10px] tracking-wide text-zinc-400 uppercase"
+                  >
+                    renderizado pelo YouTube (iframe)
+                  </span>
+                  <div
+                    class="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800 text-zinc-300"
+                  >
+                    ▶
+                  </div>
+                  <p class="text-sm font-medium text-zinc-100">
+                    Faça login para confirmar que você não é um robô
+                  </p>
+                  <button
+                    type="button"
+                    class="mt-1 min-h-9 rounded border border-zinc-600 px-3 text-sm text-zinc-300"
+                  >
+                    Fazer login
+                  </button>
+                  <p class="max-w-md text-xs text-zinc-500">
+                    Abre outra janela — a página do acervo continua no mesmo estado.
+                  </p>
+                </div>
+
+                <!-- Saída da página: sempre visível, um clique -->
+                <div class="mt-3 rounded-lg border border-amber-500/50 bg-amber-500/5 px-4 py-3">
+                  <p class="text-sm font-medium text-zinc-100">
+                    Se o vídeo não abrir aqui, assista por outro caminho:
+                  </p>
+                  <div class="mt-2 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      class="min-h-11 rounded-lg bg-amber-500 px-4 text-sm font-medium text-zinc-950"
+                    >
+                      Assistir na Câmara
+                    </button>
+                    <button
+                      type="button"
+                      class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-200"
+                    >
+                      Abrir no YouTube
+                    </button>
+                  </div>
+                  <p class="mt-2 text-xs text-zinc-400">
+                    O trecho da Câmara toca nesta página; o YouTube abre no ponto da fala. Sem
+                    trecho da Câmara, fica só "Abrir no YouTube".
+                  </p>
+                </div>
+
+                <!-- Ações que já existem no detalhe -->
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-200"
+                  >
+                    Baixar vídeo (MP4)
+                  </button>
+                  <button
+                    type="button"
+                    class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-200"
+                  >
+                    Abrir fonte
+                  </button>
+                  <button
+                    type="button"
+                    class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-200"
+                  >
+                    Selecionar trecho
+                  </button>
+                </div>
+
+                <p class="mt-5 text-xs tracking-wide text-zinc-500 uppercase">
+                  Transcrição (clique para posicionar)
+                </p>
+                <div class="mt-2 space-y-1">
+                  <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                    <span class="w-12 shrink-0 pt-0.5 text-xs text-zinc-500">00:00</span>
+                    <div class="h-4 w-full rounded bg-zinc-800"></div>
+                  </div>
+                  <div class="flex gap-3 rounded-lg bg-zinc-800/60 px-2 py-1.5">
+                    <span class="w-12 shrink-0 pt-0.5 text-xs text-amber-400">00:43</span>
+                    <div class="h-4 w-11/12 rounded bg-zinc-700"></div>
+                  </div>
+                  <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                    <span class="w-12 shrink-0 pt-0.5 text-xs text-zinc-500">02:10</span>
+                    <div class="h-4 w-5/6 rounded bg-zinc-800"></div>
+                  </div>
+                  <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                    <span class="w-12 shrink-0 pt-0.5 text-xs text-zinc-500">04:02</span>
+                    <div class="h-4 w-2/3 rounded bg-zinc-800"></div>
+                  </div>
+                </div>
+              </div>
+
+              <aside class="space-y-4">
+                <div>
+                  <p class="text-xs tracking-wide text-zinc-500 uppercase">Sumário oficial</p>
+                  <div class="mt-2 space-y-1.5">
+                    <div class="h-3 w-full rounded bg-zinc-800"></div>
+                    <div class="h-3 w-5/6 rounded bg-zinc-800"></div>
+                    <div class="h-3 w-4/6 rounded bg-zinc-800"></div>
+                  </div>
+                </div>
+                <div>
+                  <p class="text-xs tracking-wide text-zinc-500 uppercase">Temas</p>
+                  <div class="mt-1.5 flex flex-wrap gap-1.5">
+                    <span class="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300"
+                      >[tema]</span
+                    >
+                  </div>
+                </div>
+                <div>
+                  <p class="text-xs tracking-wide text-zinc-500 uppercase">Crédito</p>
+                  <p class="mt-1.5 text-xs text-zinc-400">
+                    Fonte: Câmara dos Deputados · CC BY 4.0
+                  </p>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- Cena 2 · mobile — mesmo estado bloqueado                     -->
+      <!-- ============================================================ -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 2 · mobile (~390px) — embed bloqueado + saídas empilhadas
+        </p>
+        <div class="mt-3 w-[390px] overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+          <div class="px-4 py-4">
+            <p class="text-xs text-zinc-500">← Voltar ao acervo</p>
+            <h2 class="mt-2 text-sm font-medium text-zinc-100">Título da fala</h2>
+            <p class="mt-1 text-xs text-zinc-500">dd/mm/aaaa · Tipo de sessão · duração</p>
+
+            <div
+              class="relative mt-3 flex aspect-video w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950 px-4 text-center"
+            >
+              <span
+                class="absolute top-2 left-2 rounded border border-zinc-700 px-1.5 py-0.5 text-[9px] tracking-wide text-zinc-400 uppercase"
+              >
+                renderizado pelo YouTube
+              </span>
+              <div
+                class="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-800 text-sm text-zinc-300"
+              >
+                ▶
+              </div>
+              <p class="text-xs font-medium text-zinc-100">
+                Faça login para confirmar que você não é um robô
+              </p>
+              <button
+                type="button"
+                class="min-h-8 rounded border border-zinc-600 px-2.5 text-xs text-zinc-300"
+              >
+                Fazer login
+              </button>
+            </div>
+
+            <div class="mt-3 rounded-lg border border-amber-500/50 bg-amber-500/5 px-3 py-3">
+              <p class="text-xs font-medium text-zinc-100">
+                Se o vídeo não abrir aqui, assista por outro caminho:
+              </p>
+              <div class="mt-2 flex flex-col gap-2">
+                <button
+                  type="button"
+                  class="min-h-11 w-full rounded-lg bg-amber-500 text-sm font-medium text-zinc-950"
+                >
+                  Assistir na Câmara
+                </button>
+                <button
+                  type="button"
+                  class="min-h-11 w-full rounded-lg border border-zinc-700 text-sm text-zinc-200"
+                >
+                  Abrir no YouTube
+                </button>
+              </div>
+            </div>
+
+            <div class="mt-3 flex flex-col gap-2">
+              <button
+                type="button"
+                class="min-h-11 w-full rounded-lg border border-zinc-700 text-sm text-zinc-200"
+              >
+                Baixar vídeo (MP4)
+              </button>
+              <button
+                type="button"
+                class="min-h-11 w-full rounded-lg border border-zinc-700 text-sm text-zinc-200"
+              >
+                Abrir fonte
+              </button>
+            </div>
+
+            <p class="mt-4 text-xs tracking-wide text-zinc-500 uppercase">
+              Transcrição (clique para posicionar)
+            </p>
+            <div class="mt-2 space-y-1">
+              <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                <span class="w-10 shrink-0 pt-0.5 text-xs text-zinc-500">00:43</span>
+                <div class="h-4 w-full rounded bg-zinc-800"></div>
+              </div>
+              <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                <span class="w-10 shrink-0 pt-0.5 text-xs text-zinc-500">02:10</span>
+                <div class="h-4 w-4/5 rounded bg-zinc-800"></div>
+              </div>
+            </div>
+
+            <p class="mt-3 text-[11px] text-zinc-500">Fonte: Câmara dos Deputados · CC BY 4.0</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- Cena 3 · desktop — YouTube tocando: saídas também visíveis   -->
+      <!-- ============================================================ -->
+      <section class="mt-8">
+        <p class="text-xs tracking-wide text-zinc-500 uppercase">
+          Cena 3 · desktop (~1280px) — YouTube tocando: as saídas continuam visíveis (discretas)
+        </p>
+        <div class="mt-3 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+          <div class="px-6 py-5">
+            <p class="text-xs text-zinc-500">← Voltar ao acervo</p>
+            <h2 class="mt-2 text-base font-medium text-zinc-100">
+              Título da fala — tipo de sessão
+            </h2>
+            <p class="mt-1 text-xs text-zinc-500">
+              dd/mm/aaaa · hh:mm · Tipo de sessão · duração · Presidiu: [placeholder]
+            </p>
+
+            <div class="mt-4">
+              <div
+                class="relative flex aspect-video w-full items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950"
+              >
+                <div
+                  class="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800 text-zinc-300"
+                >
+                  ▶
+                </div>
+                <span
+                  class="absolute top-3 right-3 rounded border border-zinc-700 px-2 py-0.5 text-[10px] tracking-wide text-zinc-400 uppercase"
+                >
+                  Vídeo da sessão no YouTube — tocando
+                </span>
+              </div>
+
+              <div
+                class="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 px-4 py-2.5"
+              >
+                <span class="text-xs text-zinc-400">Se o vídeo não abrir aqui:</span>
+                <button
+                  type="button"
+                  class="min-h-9 rounded-lg border border-zinc-700 px-3 text-sm text-zinc-200"
+                >
+                  Assistir na Câmara
+                </button>
+                <button
+                  type="button"
+                  class="min-h-9 rounded-lg border border-zinc-700 px-3 text-sm text-zinc-200"
+                >
+                  Abrir no YouTube
+                </button>
+              </div>
+              <p class="mt-2 text-xs text-zinc-500">
+                O app não vê o erro interno do iframe: a saída fica ao alcance sem depender de
+                detectar o bloqueio. A hierarquia (quem fica âmbar) se decide no gate.
+              </p>
+
+              <div class="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-200"
+                >
+                  Baixar vídeo (MP4)
+                </button>
+                <button
+                  type="button"
+                  class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-200"
+                >
+                  Abrir fonte
+                </button>
+                <button
+                  type="button"
+                  class="min-h-11 rounded-lg border border-zinc-700 px-4 text-sm text-zinc-200"
+                >
+                  Selecionar trecho
+                </button>
+              </div>
+
+              <p class="mt-5 text-xs tracking-wide text-zinc-500 uppercase">
+                Transcrição (clique para posicionar)
+              </p>
+              <div class="mt-2 space-y-1">
+                <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                  <span class="w-12 shrink-0 pt-0.5 text-xs text-zinc-500">00:00</span>
+                  <div class="h-4 w-full rounded bg-zinc-800"></div>
+                </div>
+                <div class="flex gap-3 rounded-lg px-2 py-1.5">
+                  <span class="w-12 shrink-0 pt-0.5 text-xs text-zinc-500">00:43</span>
+                  <div class="h-4 w-3/4 rounded bg-zinc-800"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
