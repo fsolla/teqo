@@ -25,6 +25,8 @@ Mesma doutrina para os dois papéis (fonte única — os prompts dos agentes apo
 
 O tier frontier (`designer` com pin `openai/gpt-5.6-sol`) é **recurso escasso e caro**: ele é despachado **apenas** nos dois modos de design — **Criar** ou **Criticar** o artefato — e **apenas** para item que **muda UI**. Todo trabalho que não é isso roda no **modelo padrão da sessão**, nunca no frontier.
 
+**Provider `openai` reservado aos agentes de design.** O provider `openai` (OAuth ChatGPT Plus) existe **só** para o design: todo modelo `openai/*` — `gpt-5.6-sol`/`sol-fast`, `gpt-6-astra`, `gpt-5.6-luna`/`-fast`, `gpt-5.6-terra` — é usado **apenas** pelos agentes de design (`designer`, e `designer-campanha-solla` na própria sessão) e **apenas** para criar/criticar design. Nenhuma outra sessão ou agente (`build`, `explore`, `general`, skills, subagentes), nem `small_model`, compaction ou worker de orquestração, troca para `openai/*` via `/models`, `--model` ou config — esses rodam no modelo padrão (`deepseek/deepseek-flash`). A reserva cobre **todo** o consumo do provider, não só o dispatch do `designer`.
+
 **Lista fechada do que NUNCA vai para o `designer` frontier:**
 
 - smoke/validação de `permission`, guard de escrita, frontmatter, `model:` ou config de agente — **a semântica de `permission` é do frontmatter, não do modelo**: valide estaticamente, ou rode o smoke com o `designer-degraded` (barato); o resultado do guard é o mesmo;
