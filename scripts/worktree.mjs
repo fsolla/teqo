@@ -2,7 +2,7 @@
  * `pnpm worktree` — worktree management determinístico em torno da fila de
  * claim do projeto (mesma fila de `agent:claim` / agent pool).
  *
- *   pnpm worktree next [--issue N] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
+ *   pnpm worktree next [--issue N] [--stay] [--no-migrate] [--auto] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
  *                              claima a próxima Issue claimável ANTES de criar
  *                              o worktree a partir de origin/main (mesma fila
  *                              e lock otimista de `pnpm agent:claim`; claim
@@ -47,6 +47,9 @@
  *                              máquina (Ctrl+T). Presets e mapa em
  *                              scripts/lib/worktree.mjs; ciclo de vida em
  *                              scripts/lib/agent-session.mjs.
+ *                              OPS122: `--auto` (opt-out do GATE da skill)
+ *                              transposta para a invocation; flag desconhecida
+ *                              ou `--auto` sem destino falha alto.
  *                              Sem o marcador (comando `/worktree` do opencode),
  *                              a diretiva não é impressa — nunca abre TUI aninhado.
  *                              Também PROVISIONA o ambiente isolado do worktree:
@@ -65,7 +68,7 @@
  *                              recusa a abrir com `{file:…}` pendurado.
  *                              `--no-migrate` pula migrations E o seed (que
  *                              depende do catálogo migrado).
- *   pnpm worktree plan [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
+ *   pnpm worktree plan [bag] [--stay] [--no-migrate] [--auto] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
  *                              cria um worktree de PLANEJAMENTO novo para rodar
  *                              a skill /plan-issue sem ocupar o main — cada
  *                              invocação cria UM DIFERENTE, para sessões de
@@ -103,7 +106,7 @@
  *                              modelo por invocação (sem flag o preset permanece).
  *                              Migrations E seed mínimo nos dois bancos, como
  *                              o `next`/`plan` (OPS28).
- *   pnpm worktree fix [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
+ *   pnpm worktree fix [bag] [--stay] [--no-migrate] [--auto] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
  *                              cria um worktree de CORREÇÃO DE BUG (skill
  *                              /bug-fix) DIFERENTE a cada invocação: com bag,
  *                              branch `fix/<bag>` (e `-2`, `-3`, … se o nome
@@ -181,6 +184,7 @@ import {
   worktreeEnvironment,
 } from './lib/worktree-env.mjs'
 import {
+  assertSkillAutoSupported,
   branchNameForIssue,
   fixBranchName,
   headlessDirective,
@@ -189,6 +193,7 @@ import {
   opencodeLaunchDirective,
   planBranchName,
   resolveWorktreeModel,
+  validateWorktreeFlags,
   workBranchName,
   WORKTREE_MODEL_FLAGS,
   WORKTREE_MODEL_MAP,
@@ -231,11 +236,30 @@ const printLaunchDirective = ({ dir, purpose, issueNumber, argument = null, flag
     issueNumber,
     model,
     argument,
+    // OPS122: o `--auto` do humano viaja como flag interna (`--skill-auto`).
+    skillAuto: Boolean(flags.auto),
     // Absoluto de propósito (OPS110): worktrees reabertos/criados antes do
     // merge não têm `scripts/agent-session.mjs`; o relativo quebraria o launch.
     sessionScript: join(REPO_ROOT, 'scripts', 'agent-session.mjs'),
   })
   if (line) console.log(line)
+}
+
+/**
+ * OPS122: falha alto antes de qualquer git quando `--auto` não tem para onde
+ * ir (purpose sem driver/skill ou `--stay`, que suprime o launch). Um worktree
+ * provisionado com a flag descartada seria órfão. O `die` do dispatch externo
+ * formata o erro.
+ */
+const assertAutoFlag = ({ purpose, bag = null, flags }) => {
+  if (!flags.auto) return
+  assertSkillAutoSupported({
+    purpose,
+    bag,
+    stay: Boolean(flags.stay),
+    headless: Boolean(flags.headless),
+    terminal: terminalShell,
+  })
 }
 
 /** Maintenance database on the shared local container — only ever localhost. */
@@ -950,10 +974,10 @@ const subcommand = positional[0]
 
 if (!subcommand) {
   console.log(
-    'Uso: pnpm worktree next [--issue N] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free] | plan [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free] | new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free] | fix [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free] | kill [--force]',
+    'Uso: pnpm worktree next [--issue N] [--stay] [--no-migrate] [--auto] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free] | plan [bag] [--stay] [--no-migrate] [--auto] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free] | new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free] | fix [bag] [--stay] [--no-migrate] [--auto] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free] | kill [--force]',
   )
   console.log(
-    '  next [--issue N] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]',
+    '  next [--issue N] [--stay] [--no-migrate] [--auto] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]',
   )
   console.log('    CLAIMA a próxima Issue claimável (mesma fila/ordem e lock otimista do')
   console.log('    `pnpm agent:claim`) e cria o worktree dela (branch <code>-<slug>),')
@@ -980,7 +1004,7 @@ if (!subcommand) {
     '    seed mínimo (db:seed:minimal) nos bancos novos (OPS28: paridade com a CI); at-most-one de --cheap/--pro/--zen/--go/--alibaba/--glm/--free (múltiplas → erro)',
   )
   console.log(
-    `\n  plan [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]`,
+    `\n  plan [bag] [--stay] [--no-migrate] [--auto] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]`,
   )
   console.log(
     '    cria um worktree de planejamento DIFERENTE a cada invocação (sessões /plan-issue',
@@ -1004,7 +1028,7 @@ if (!subcommand) {
     '    terminal, mesma diretiva `launch` — sessão sem skill (apenas conversar) e --model <map> quando a flag está presente',
   )
   console.log(
-    `\n  fix [bag] [--stay] [--no-migrate] [--headless --directive <path>] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]`,
+    `\n  fix [bag] [--stay] [--no-migrate] [--headless --directive <path>] [--auto] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]`,
   )
   console.log('    cria um worktree de CORREÇÃO DE BUG (skill /bug-fix) DIFERENTE a cada')
   console.log('    invocação: com bag (a descrição do bug), branch fix/<bag> (sufixo -2/-3 se o')
@@ -1025,10 +1049,19 @@ if (!subcommand) {
   console.log('                  driver; estado/lock removidos) e remove os bancos gerados do')
   console.log('                  worktree (best-effort); imprime')
   console.log('                  `cd <main>` no fim — o shell sempre volta ao worktree principal')
+  console.log('  --auto          opt-out do GATE da skill: o driver auto-submete')
+  console.log('                  /work-issue --issue <N> --auto | /plan-issue --auto <bag> |')
+  console.log('                  /bug-fix --auto <bag>. Vale em next/fix e em plan COM bag; falha')
+  console.log('                  alto em new, em plan sem bag, com --stay, com --headless e fora')
+  console.log('                  do terminal interativo.')
+  console.log('  Flag desconhecida falha alto com sugestão (OPS122) — nunca é descartada.')
   process.exit(1)
 }
 
 try {
+  // OPS122: falha alto ANTES de qualquer git/claim — flag desconhecida ou
+  // `--auto` sem destino não pode deixar worktree órfão (espelha OPS110-F1).
+  validateWorktreeFlags({ subcommand, flags })
   if (subcommand === 'next') {
     if ('issue' in flags && flags.issue === undefined) {
       die('`--issue` requer um número (ex.: `--issue 595`).')
@@ -1036,12 +1069,16 @@ try {
     if (positional.length > 1) {
       die('`next` não aceita argumento posicional — use `--issue <N>` para direcionar a Issue.')
     }
+    assertAutoFlag({ purpose: 'next', flags })
     await cmdNext(Boolean(flags.stay), Boolean(flags['no-migrate']), flags.issue ?? null, flags)
-  } else if (subcommand === 'plan')
+  } else if (subcommand === 'plan') {
+    assertAutoFlag({ purpose: 'plan', bag: positional[1], flags })
     await cmdPlan(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1], flags)
-  else if (subcommand === 'new')
+  } else if (subcommand === 'new') {
+    assertAutoFlag({ purpose: 'new', flags })
     await cmdNew(Boolean(flags.stay), Boolean(flags['no-migrate']), positional[1], flags)
-  else if (subcommand === 'fix')
+  } else if (subcommand === 'fix') {
+    assertAutoFlag({ purpose: 'fix', bag: positional[1], flags })
     await cmdFix(
       Boolean(flags.stay),
       Boolean(flags['no-migrate']),
@@ -1050,7 +1087,7 @@ try {
       Boolean(flags.headless),
       flags.directive ?? null,
     )
-  else if (subcommand === 'kill') {
+  } else if (subcommand === 'kill') {
     if (flags.stay) die('`--stay` não se aplica a `kill` — ele sempre volta ao main.')
     await cmdKill(Boolean(flags.force))
   } else die(`subcomando desconhecido: ${subcommand} (esperado: next | plan | new | fix | kill)`)
