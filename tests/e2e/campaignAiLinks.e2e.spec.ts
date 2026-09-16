@@ -20,6 +20,13 @@ const ASSISTANT_LINKS =
   'Confira [o portal da saúde](https://www.saude.ba.gov.br/) e [o município de Ilhéus](/campanha/municipios/ilheus).'
 
 const openChatAndSend = async (page: Page) => {
+  // B203 — fresh desktop sessions start closed (this spec is desktop-only);
+  // open explicitly via the header button.
+  await waitForRouterSettled(page)
+  await page
+    .getByRole('button', { name: 'Sollinha — Assistente virtual' })
+    .filter({ visible: true })
+    .click()
   await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
   // OPS42 — dev-only settle before interacting (see `waitForRouterSettled`).
   await waitForRouterSettled(page)
