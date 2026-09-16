@@ -94,7 +94,7 @@ Fases pesadas rodam em sub-agentes com contexto mínimo e output limitado; o age
 
 1. Read-only em `src/`, `tests/`, `scripts/` durante a VARREDURA. Writes da noite: os três artefatos, os `-impl` das melhorias elegíveis e suas implementações na branch do Pass.
 2. Gate commands bare, never piped (`pnpm test | tail` swallows the exit code).
-3. Never `knip --fix` blind — verify with `git grep -w <symbol>` (knip cannot load `payload.config.ts`; ledgered P3).
+3. Never `knip --fix` blind — verify with `git grep -w <symbol>` (knip's graph is deliberately scoped: `knip.json` `"payload": false`, OPS124 — the Payload plugin could not load `payload.config.ts` because `server-only` throws in knip's non-RSC loader; `--fix` can delete exports migrations/tests still reference).
 4. Production is live Postgres on the homeserver (`teqo_1313`) with real PII. Local DB only, `teqo_test` for tests. The audit needs no DB writes.
 5. Every claim gets a number (lines, exports, call sites, ms, kB). "Rejected by measurement" is an acceptable outcome.
 6. Frozen migrations never edited; schema change = `pnpm migrate:create` (e sai do escopo da noite — ver teto).
