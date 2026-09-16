@@ -29,6 +29,7 @@ describe('classifyTestScope (OPS5)', () => {
       'scripts/agent-session.mjs',
       'scripts/lib/agent-session.mjs',
       'scripts/lib/worktree.mjs',
+      'scripts/lib/worktree-env.mjs',
       'scripts/lib/test-affected-core.mjs',
       'tests/helpers/campaignFixtures.ts',
       'tests/unit/ciSkipInvariants.unit.spec.ts',
@@ -67,6 +68,9 @@ describe('classifyStaticScope', () => {
     expect(classifyStaticScope([changed('tsconfig.json')]).mode).toBe('code')
     expect(classifyStaticScope([changed('package.json')]).mode).toBe('code')
     expect(classifyStaticScope([changed('eslint.config.mjs')]).mode).toBe('code')
+    // OPS119++: scripts/ is code — a scripts-only diff must not skip
+    // typecheck/knip/cycles.
+    expect(classifyStaticScope([changed('scripts/lib/cli.mjs')]).mode).toBe('code')
   })
 
   it('skips for docs-only diffs', () => {
@@ -84,6 +88,10 @@ describe('classifyBuildScope', () => {
 
   it('skips for docs-only diffs', () => {
     expect(classifyBuildScope([changed('docs/AGENT-OPS.md')]).mode).toBe('none')
+  })
+
+  it('stays none for a scripts-only diff (scripts are not a build surface)', () => {
+    expect(classifyBuildScope([changed('scripts/lib/cli.mjs')]).mode).toBe('none')
   })
 })
 

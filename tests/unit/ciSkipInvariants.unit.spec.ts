@@ -1,12 +1,15 @@
 // @vitest-environment node
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
-import { checkTestLocations } from '../../scripts/check-test-locations.mjs'
+import {
+  checkTestLocations,
+  collectRepoRelativeFiles,
+} from '../../scripts/check-test-locations.mjs'
 import { E2E_AFFECTED_MANIFEST } from '../../scripts/lib/e2e-affected-manifest.mjs'
 import {
   CANONICAL_E2E_SPEC_SUFFIX,
@@ -24,6 +27,7 @@ import {
   isMisplacedSpecPath,
   isSrcPath,
   isTestPath,
+  SCRIPTS_SPEC_PINNED,
 } from '../../scripts/lib/test-affected-core.mjs'
 
 const repoRoot = join(fileURLToPath(new URL('.', import.meta.url)), '../..')
@@ -35,11 +39,67 @@ const readWorkflow = (relativePath: string) =>
     .filter((line) => !line.trimStart().startsWith('#'))
     .join('\n')
 
+/** Unit/int spec files — the surface whose imports pin `scripts/**` modules. */
+const specFiles = (): string[] =>
+  collectRepoRelativeFiles().filter(
+    (path) =>
+      (path.startsWith('tests/unit/') && /\.unit\.spec\.tsx?$/.test(path)) ||
+      (path.startsWith('tests/int/') && path.endsWith('.int.spec.ts')),
+  )
+
+/** Relative-import edges only — bare/alias imports cannot reach scripts/. */
+const STATIC_IMPORT_RE = /(?:from|import)\s*(?:\(\s*)?['"](\.[^'"]+)['"]/g
+
+const resolveRelativeImport = (specifier: string, fromDir: string): string | null => {
+  for (const candidate of [
+    specifier,
+    `${specifier}.mjs`,
+    `${specifier}.ts`,
+    `${specifier}.tsx`,
+    `${specifier}.js`,
+  ]) {
+    const full = join(fromDir, candidate)
+    if (existsSync(full)) return full
+  }
+  return null
+}
+
+/**
+ * Transitive `scripts/**` closure from `roots` (repo-relative spec paths).
+ * Every relative edge is followed; only `scripts/**` nodes are collected, so a
+ * spec reaching a lib through `tests/helpers` or `src/` is still pinned.
+ */
+const scriptsClosure = (roots: string[]): Set<string> => {
+  const closure = new Set<string>()
+  const visited = new Set<string>()
+  const queue = roots.map((path) => join(repoRoot, path))
+  while (queue.length > 0) {
+    const file = queue.pop()
+    if (file === undefined || visited.has(file)) continue
+    visited.add(file)
+    let source: string
+    try {
+      source = readFileSync(file, 'utf8')
+    } catch {
+      continue
+    }
+    for (const match of source.matchAll(STATIC_IMPORT_RE)) {
+      const resolved = resolveRelativeImport(match[1], dirname(file))
+      if (!resolved) continue
+      const relativePath = relative(repoRoot, resolved)
+      if (relativePath.startsWith('scripts/')) closure.add(relativePath)
+      if (!visited.has(resolved)) queue.push(resolved)
+    }
+  }
+  return closure
+}
+
 describe('ciSkipInvariants', () => {
   it('exports shared path predicates used by classifiers and the lint guard', () => {
     expect(isSrcPath('src/lib/x.ts')).toBe(true)
     expect(isTestPath('tests/unit/x.unit.spec.ts')).toBe(true)
     expect(isCodePath('tsconfig.json')).toBe(true)
+    expect(isCodePath('scripts/lib/cli.mjs')).toBe(true)
     expect(isBuildPath('public/favicon.ico')).toBe(true)
     expect(isHighRisk('src/migrations/x.ts')).toBe(true)
     expect(E2E_MANIFEST_DOMAIN_EXEMPT.has('shared')).toBe(true)
@@ -127,6 +187,32 @@ describe('ciSkipInvariants', () => {
       expect(HIGH_RISK_EXACT.has(path), path).toBe(true)
       expect(existsSync(join(repoRoot, path)), path).toBe(true)
     }
+  })
+
+  it('every scripts/ module reachable from a spec is high-risk (OPS119++ blast radius)', () => {
+    // SCRIPTS_SPEC_PINNED is literal because test-affected-core is pure (no fs),
+    // so the map sync is enforced here: recompute the spec import-graph closure
+    // over scripts/** and require exact equality. Without the entry, a lib-only
+    // diff classifies `none` and the covering spec never runs (S6).
+    const closure = scriptsClosure(specFiles())
+    // Self-check the walker sees real edges — direct and transitive — or the
+    // equality below would fail for the wrong reason.
+    expect(closure.has('scripts/lib/worktree-env.mjs')).toBe(true)
+    expect(closure.has('scripts/lib/cityReportTerritory.mjs')).toBe(true)
+
+    const missing = [...closure].filter((path) => !SCRIPTS_SPEC_PINNED.includes(path)).sort()
+    const stale = SCRIPTS_SPEC_PINNED.filter((path) => !closure.has(path)).sort()
+    expect(
+      missing,
+      `spec-pinned scripts/ modules missing from SCRIPTS_SPEC_PINNED:\n${missing.join('\n')}`,
+    ).toEqual([])
+    expect(
+      stale,
+      `SCRIPTS_SPEC_PINNED entries no longer reachable from a spec (rename/stale):\n${stale.join('\n')}`,
+    ).toEqual([])
+    // The map must stay folded into the high-risk set — a spec-pinned module
+    // can never classify `none`.
+    expect(SCRIPTS_SPEC_PINNED.every((path) => HIGH_RISK_EXACT.has(path))).toBe(true)
   })
 
   it('deploy starts on push to main with an active-run guard, dispatch kept (OPS104)', () => {
