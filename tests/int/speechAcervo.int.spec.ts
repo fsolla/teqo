@@ -13,6 +13,7 @@ import {
   loadSpeechAcervoPageData,
   loadSpeechDetailPageData,
   SpeechNotFoundError,
+  type SpeechVideoStartResolver,
 } from '@/utilities/speech/speechPageData'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
@@ -62,6 +63,12 @@ const createSpeech = async (overrides: Partial<SpeechImportBundle> = {}): Promis
   if (!speech) throw new Error('fixture speech was not created')
   return speech.id
 }
+
+/**
+ * C172 — the detail loader asks YouTube for the session video's start by
+ * default; the fixtures keep the suite offline by injecting a resolver.
+ */
+const noVideoStart: SpeechVideoStartResolver = async () => null
 
 const createUsers = async () => {
   const fixtures = campaignFixtures()
@@ -185,7 +192,7 @@ describe('speech acervo (C154)', () => {
     })
 
     const { communicator } = await createUsers()
-    const view = await loadSpeechDetailPageData(payload, communicator, id)
+    const view = await loadSpeechDetailPageData(payload, communicator, id, undefined, noVideoStart)
 
     expect(view.id).toBe(id)
     expect(view.segments).toHaveLength(2)
@@ -210,14 +217,69 @@ describe('speech acervo (C154)', () => {
     const onlyYoutube = await createSpeech({ youtubeUrl: 'https://youtu.be/lLhRDkSPw0A' })
 
     const { communicator } = await createUsers()
-    const both = await loadSpeechDetailPageData(payload, communicator, withBoth)
+    const both = await loadSpeechDetailPageData(
+      payload,
+      communicator,
+      withBoth,
+      undefined,
+      noVideoStart,
+    )
     expect(both.youtubeVideoId).toBe('lLhRDkSPw0A')
     expect(both.youtubeOffsetSeconds).toBe(2634)
     expect(both.vodResolvable).toBe(true)
 
-    const youtubeOnly = await loadSpeechDetailPageData(payload, communicator, onlyYoutube)
+    const youtubeOnly = await loadSpeechDetailPageData(
+      payload,
+      communicator,
+      onlyYoutube,
+      undefined,
+      noVideoStart,
+    )
     expect(youtubeOnly.youtubeVideoId).toBe('lLhRDkSPw0A')
     expect(youtubeOnly.vodResolvable).toBe(false)
+  })
+
+  it('moves the YouTube offset to the video start, measured evidence winning (C172)', async () => {
+    // No measurement for this video: the anchor the resolver answers is applied.
+    const anchored = await createSpeech({
+      youtubeUrl: 'https://www.youtube.com/watch?v=lLhRDkSPw0A',
+      excerptTMs: 1786473834650,
+      eventStartAt: '2026-08-11T15:00',
+    })
+    // Fala 997's session video has a measured lag (13s): it wins with no anchor.
+    const measured = await createSpeech({
+      youtubeUrl: 'https://www.youtube.com/watch?v=DC_i9Kp1LVk',
+      excerptTMs: 1786485082000,
+      eventStartAt: '2026-08-11T15:32',
+    })
+
+    const { communicator } = await createUsers()
+
+    const withAnchor = await loadSpeechDetailPageData(
+      payload,
+      communicator,
+      anchored,
+      undefined,
+      async () => '2026-08-11T18:00:40Z',
+    )
+    // 2634s of session offset − 40s of video start delay.
+    expect(withAnchor.youtubeOffsetSeconds).toBe(2594)
+
+    let anchorCalls = 0
+    const withEvidence = await loadSpeechDetailPageData(
+      payload,
+      communicator,
+      measured,
+      undefined,
+      async () => {
+        anchorCalls += 1
+        return null
+      },
+    )
+    // 11962s of session offset − the measured 13s, and the measured recording
+    // never pays the anchor lookup.
+    expect(withEvidence.youtubeOffsetSeconds).toBe(11949)
+    expect(anchorCalls).toBe(0)
   })
 
   it('keeps the direct download link off the list view model (C162)', async () => {

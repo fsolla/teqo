@@ -16,10 +16,13 @@ vi.mock('@/utilities/speech/speechCutScheduler', () => ({
 }))
 
 // The SpeechCut afterChange hook revalidates its document tag, which needs the
-// Next runtime — neuter it (the revalidation itself is pinned elsewhere).
+// Next runtime — neuter it (the revalidation itself is pinned elsewhere). The
+// acervo loader also reaches `unstable_cache` through the C172 YouTube anchor,
+// so the mock answers it with the uncached function.
 vi.mock('next/cache', () => ({
   revalidatePath: () => undefined,
   revalidateTag: () => undefined,
+  unstable_cache: (fn: unknown) => fn,
 }))
 
 vi.mock('@/utilities/campaignActionContext', async (importOriginal) => {

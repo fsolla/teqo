@@ -198,6 +198,53 @@ export const loadYouTubeFeed = async ({
   })
 }
 
+export type LoadYouTubeVideoStartArgs = {
+  apiKey: string
+  videoId: string
+  fetchImpl?: (input: string, init?: RequestInit) => Promise<Response>
+  baseUrl?: string
+}
+
+/** Lookup budget: the acervo render falls back to "unknown" instead of waiting. */
+const YOUTUBE_VIDEO_START_TIMEOUT_MS = 5_000
+
+/**
+ * `actualStartTime` of a live broadcast from a `videos.list?part=liveStreamingDetails`
+ * response, or null when the body carries none (plain uploads, unknown id,
+ * malformed shape). The archive can begin slightly BEFORE this instant, so the
+ * value is an upper bound on the video's start delay — never a lie about it.
+ */
+export const parseYouTubeLiveStartResponse = (json: unknown): string | null => {
+  if (!json || typeof json !== 'object') return null
+  const items = (json as { items?: unknown }).items
+  if (!Array.isArray(items)) return null
+
+  const details = (items[0] as { liveStreamingDetails?: unknown } | undefined)?.liveStreamingDetails
+  if (typeof details !== 'object' || details === null) return null
+
+  const actualStartTime = (details as { actualStartTime?: unknown }).actualStartTime
+  return typeof actualStartTime === 'string' && actualStartTime ? actualStartTime : null
+}
+
+/**
+ * Broadcast start of one video: null when the API answers without one or on a
+ * non-2xx response, and it throws on transport/malformed JSON — the cached
+ * caller turns both into "unknown", never into an error (C172).
+ */
+export const loadYouTubeVideoStart = async ({
+  apiKey,
+  videoId,
+  fetchImpl = fetch,
+  baseUrl = YOUTUBE_API_BASE_URL,
+}: LoadYouTubeVideoStartArgs): Promise<string | null> => {
+  const params = new URLSearchParams({ part: 'liveStreamingDetails', id: videoId, key: apiKey })
+  const response = await fetchImpl(`${baseUrl}/videos?${params}`, {
+    signal: AbortSignal.timeout(YOUTUBE_VIDEO_START_TIMEOUT_MS),
+  })
+  if (!response.ok) return null
+  return parseYouTubeLiveStartResponse(await response.json())
+}
+
 const excludedYouTubeIds = (settings: SocialFeedSetting): string[] =>
   (settings.excludedItems ?? [])
     .filter((item) => item.platform === 'youtube')
@@ -281,4 +328,31 @@ export const getYouTubeFeed = unstable_cache(
   },
   ['youtube-feed'],
   { tags: [REVALIDATE_SOCIAL_FEED_TAG], revalidate: 300 },
+)
+
+/**
+ * Cached session anchor for the acervo player (C172): the broadcast start of
+ * one session video, or null when it cannot be known. Reads ONLY
+ * `youtubeApiKey` on purpose — the platform/kill switches belong to the public
+ * home board and must never gate the acervo seek. Cached per `videoId` (the
+ * instant is immutable after the broadcast); a failure is "unknown", so the
+ * caller keeps today's behaviour.
+ */
+export const getYouTubeVideoStart = unstable_cache(
+  async (videoId: string): Promise<string | null> => {
+    const payload = await getPayload({ config: configPromise })
+    const settings = await payload.findGlobal({
+      slug: 'social-feed-settings',
+      depth: 0,
+    })
+    if (!settings.youtubeApiKey) return null
+
+    try {
+      return await loadYouTubeVideoStart({ apiKey: settings.youtubeApiKey, videoId })
+    } catch {
+      return null
+    }
+  },
+  ['youtube-video-start'],
+  { tags: [REVALIDATE_SOCIAL_FEED_TAG], revalidate: 86_400 },
 )

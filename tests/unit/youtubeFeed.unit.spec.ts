@@ -6,6 +6,8 @@ import {
   eligibleYouTubeVideos,
   formatYouTubeViews,
   loadYouTubeFeed,
+  loadYouTubeVideoStart,
+  parseYouTubeLiveStartResponse,
   parseYouTubeSearchResponse,
   parseYouTubeVideosResponse,
   pickThumbnailUrl,
@@ -262,5 +264,100 @@ describe('loadYouTubeFeed', () => {
             : fakeResponse({}, false),
       }),
     ).rejects.toThrow(/statistics/)
+  })
+})
+
+describe('parseYouTubeLiveStartResponse (C172)', () => {
+  it('reads the broadcast start of a live archive', () => {
+    expect(
+      parseYouTubeLiveStartResponse({
+        items: [{ liveStreamingDetails: { actualStartTime: '2026-08-11T18:32:57Z' } }],
+      }),
+    ).toBe('2026-08-11T18:32:57Z')
+  })
+
+  it('reads anything that is not a live broadcast as unknown', () => {
+    // Plain upload: `videos.list` answers the item without liveStreamingDetails.
+    expect(parseYouTubeLiveStartResponse({ items: [{ id: 'x' }] })).toBeNull()
+    expect(parseYouTubeLiveStartResponse({ items: [] })).toBeNull()
+    expect(parseYouTubeLiveStartResponse({ items: 'nope' })).toBeNull()
+    expect(parseYouTubeLiveStartResponse({})).toBeNull()
+    expect(parseYouTubeLiveStartResponse(null)).toBeNull()
+    expect(
+      parseYouTubeLiveStartResponse({
+        items: [{ liveStreamingDetails: { actualStartTime: '' } }],
+      }),
+    ).toBeNull()
+    expect(
+      parseYouTubeLiveStartResponse({
+        items: [{ liveStreamingDetails: { actualStartTime: 123 } }],
+      }),
+    ).toBeNull()
+  })
+})
+
+describe('loadYouTubeVideoStart (C172)', () => {
+  const fakeResponse = (body: unknown, ok = true): Response =>
+    ({ ok, json: async () => body }) as unknown as Response
+
+  const args = {
+    apiKey: 'test-key',
+    videoId: 'DC_i9Kp1LVk',
+    baseUrl: 'http://localhost:4000',
+  }
+
+  it('asks videos.list for liveStreamingDetails and returns the start', async () => {
+    const calls: string[] = []
+    const start = await loadYouTubeVideoStart({
+      ...args,
+      fetchImpl: async (input) => {
+        calls.push(input)
+        return fakeResponse({
+          items: [{ liveStreamingDetails: { actualStartTime: '2026-08-11T18:32:57Z' } }],
+        })
+      },
+    })
+
+    expect(start).toBe('2026-08-11T18:32:57Z')
+    expect(calls[0]).toContain('/videos?')
+    expect(calls[0]).toContain('part=liveStreamingDetails')
+    expect(calls[0]).toContain('id=DC_i9Kp1LVk')
+    expect(calls[0]).toContain('key=test-key')
+  })
+
+  it('reads a non-2xx answer as unknown', async () => {
+    expect(
+      await loadYouTubeVideoStart({ ...args, fetchImpl: async () => fakeResponse({}, false) }),
+    ).toBeNull()
+  })
+
+  it('reads a body without liveStreamingDetails as unknown', async () => {
+    expect(
+      await loadYouTubeVideoStart({ ...args, fetchImpl: async () => fakeResponse('not json') }),
+    ).toBeNull()
+  })
+
+  it('lets transport and malformed-body failures bubble to the cached caller', async () => {
+    await expect(
+      loadYouTubeVideoStart({
+        ...args,
+        fetchImpl: async () => {
+          throw new Error('network down')
+        },
+      }),
+    ).rejects.toThrow(/network down/)
+
+    await expect(
+      loadYouTubeVideoStart({
+        ...args,
+        fetchImpl: async () =>
+          ({
+            ok: true,
+            json: async () => {
+              throw new Error('bad json')
+            },
+          }) as unknown as Response,
+      }),
+    ).rejects.toThrow(/bad json/)
   })
 })
