@@ -30,4 +30,3 @@ Correção de rumo (2026-09-16): durante o C178 eu supus que isso quebrava `pnpm
 ## Self-score (decisão)
 
 4/5 — fix barato e reversível, causa-raiz nomeada (com correção de rumo registrada), prova objetiva (o ERROR some + export morto detectado), sem risco de produção.
-
