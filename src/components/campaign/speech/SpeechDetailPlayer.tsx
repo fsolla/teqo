@@ -9,7 +9,6 @@ import { SpeechCutResultCard } from '@/components/campaign/speech/SpeechCutResul
 import { SpeechExcerptControls } from '@/components/campaign/speech/SpeechExcerptControls'
 import { SpeechExcerptShare } from '@/components/campaign/speech/SpeechExcerptShare'
 import { SpeechHighlightParts } from '@/components/campaign/speech/SpeechHighlightParts'
-import { YoutubeIcon } from '@/components/socialIcons'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
@@ -27,14 +26,6 @@ import type { SpeechDetailSegmentViewModel } from '@/utilities/speech/speechView
 
 const RESOLVE_ENDPOINT = '/campanha/comunicacao/acervo/resolver-vod'
 const GENERATING_TITLE = 'A Câmara está gerando o trecho deste vídeo.'
-
-const buildYoutubeSrc = (videoId: string, startSeconds: number | null): string => {
-  const params = new URLSearchParams({ playsinline: '1', rel: '0' })
-  if (startSeconds !== null && startSeconds > 0) {
-    params.set('start', String(Math.floor(startSeconds)))
-  }
-  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`
-}
 
 type ResolutionState =
   | { kind: 'idle' }
@@ -56,9 +47,9 @@ const toResolutionState = (resolution: SpeechVodResolution): ResolutionState =>
 
 type SpeechDetailPlayerProps = {
   speechId: number
-  /** C162 — YouTube default when the session link parses; null falls back to the VOD. */
+  /** C162 — YouTube id for the external exit; without it the exit block does not render. */
   youtubeVideoId: string | null
-  /** Seconds from the session start to the excerpt; null makes the YouTube seek inert. */
+  /** Seconds from the session start to the excerpt; null drops `t=` from the external links. */
   youtubeOffsetSeconds: number | null
   /** Stored VOD + excerpt coordinates: the Câmara may be asked on click. */
   vodResolvable: boolean
@@ -106,12 +97,50 @@ const StatusPanel = ({
 )
 
 /**
- * C162 — one player for the four acervo quadrants: YouTube default when the
- * session link exists (no Câmara call on render), the stored VOD otherwise
- * resolved on click (`video-sob-demanda`, exact `excerptTMs`, links probed
- * before use), and honest states when neither path has a playable file.
- * Transcript clicks seek the current surface: native seconds on the MP4,
- * session-offset seconds on the YouTube embed.
+ * C178 — the YouTube is never an embedded entry surface (the anonymous embed can
+ * greet the assessor with a signin wall the app cannot even detect). Without a
+ * Câmara excerpt the speech gets an honest cover instead: a single click opens
+ * the video on YouTube, no iframe on the page.
+ */
+const YoutubeFacade = ({ videoId, href }: { videoId: string; href: string }) => (
+  <a
+    href={href}
+    target="_blank"
+    rel="noreferrer"
+    aria-label="Abrir no YouTube"
+    data-slot="speech-youtube-facade"
+    className="group relative flex aspect-video w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-black/30 bg-stone-900 outline-none transition-all after:pointer-events-none after:absolute after:inset-0 after:ring-0 after:ring-primary/50 after:ring-inset after:transition-all focus-visible:ring-3 focus-visible:ring-ring/50 hover:after:ring-4 focus-visible:after:ring-4"
+  >
+    <span
+      aria-hidden="true"
+      className="absolute inset-0 bg-cover bg-center opacity-60"
+      style={{ backgroundImage: `url(https://i.ytimg.com/vi/${videoId}/hqdefault.jpg)` }}
+    />
+    <span
+      aria-hidden="true"
+      className="absolute inset-0 bg-[linear-gradient(135deg,rgb(41_37_36/0.55)_0%,rgb(9_9_11/0.85)_60%,rgb(28_25_23/0.7)_100%)]"
+    />
+    <span className="absolute top-3 left-3 text-left sm:top-4 sm:left-4">
+      <span className="rounded-md border border-white/20 bg-black/45 px-2 py-1 text-xs text-white/80">
+        Vídeo no YouTube
+      </span>
+    </span>
+    <span className="relative grid size-12 place-items-center rounded-full bg-white/90 text-stone-950 shadow-lg transition-transform group-hover:scale-105 group-focus-visible:scale-105 sm:size-16">
+      <PlayIcon className="ml-0.5 size-5 sm:size-7" aria-hidden="true" />
+    </span>
+    <span className="absolute inset-x-3 bottom-3 text-left text-sm font-medium text-white sm:inset-x-5 sm:bottom-5">
+      Abrir no YouTube
+    </span>
+  </a>
+)
+
+/**
+ * C178 — one player for the four acervo quadrants: the Câmara excerpt is the
+ * default surface when the speech has one (resolved on click: `video-sob-demanda`,
+ * exact `excerptTMs`, links probed before use), a clickable YouTube cover when it
+ * only has a session link, and honest states when neither path has a playable
+ * file. The YouTube embed is gone — it is the external exit, never the entry.
+ * Transcript clicks seek the Câmara surface (native seconds on the MP4).
  */
 export const SpeechDetailPlayer = ({
   speechId,
@@ -127,9 +156,6 @@ export const SpeechDetailPlayer = ({
   speechSummary,
 }: SpeechDetailPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null)
-  // C171-F1 — transcript point clicked while the embed is active: the target
-  // has to survive until the Câmara `<video>` mounts and takes the first seek.
-  const pendingSeekRef = useRef<number | null>(null)
   const [resolution, setResolution] = useState<ResolutionState>({ kind: 'idle' })
   const [activeStart, setActiveStart] = useState<number | null>(null)
   // C166: one state for the explicit selection mode — a non-null range means
@@ -139,18 +165,9 @@ export const SpeechDetailPlayer = ({
   // in session so the share kit stays visible after the dialog closes.
   const [cutDialogOpen, setCutDialogOpen] = useState(false)
   const [publishedCut, setPublishedCut] = useState<SpeechCutViewModel | null>(null)
-  const [youtubeStart, setYoutubeStart] = useState<number | null>(() =>
-    youtubeVideoId && youtubeOffsetSeconds !== null
-      ? youtubeOffsetSeconds + (initialSeconds ?? 0)
-      : null,
-  )
-  // C171 — one player surface at a time: the YouTube embed until the assessor
-  // asks for the Câmara excerpt, which then plays in place.
-  const [surface, setSurface] = useState<'youtube' | 'vod'>(youtubeVideoId ? 'youtube' : 'vod')
 
   const resolving = resolution.kind === 'resolving'
   const playbackUrl = resolution.kind === 'resolved' ? resolution.playbackUrl : null
-  const youtubeSurface = surface === 'youtube' && Boolean(youtubeVideoId)
   const youtubeWatchUrl = youtubeVideoId
     ? buildSpeechExcerptYoutubeUrl(
         youtubeVideoId,
@@ -164,18 +181,15 @@ export const SpeechDetailPlayer = ({
   const showExcerptShare = selecting && Boolean(youtubeVideoId)
   const showCutAction = selecting && vodResolvable
 
-  // C171-F1 — the pending transcript point wins over the ?t deep link; the
-  // surface switch is a dep so the already verified file seeks on mount.
+  // The deep link (`?t=`) seeks the already verified file on mount.
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
 
-    const target = pendingSeekRef.current ?? initialSeconds
-    if (target === null || target <= 0) return
+    if (initialSeconds === null || initialSeconds <= 0) return
 
     const seek = () => {
-      video.currentTime = target
-      pendingSeekRef.current = null
+      video.currentTime = initialSeconds
     }
     if (video.readyState >= 1) {
       seek()
@@ -183,7 +197,7 @@ export const SpeechDetailPlayer = ({
     }
     video.addEventListener('loadedmetadata', seek, { once: true })
     return () => video.removeEventListener('loadedmetadata', seek)
-  }, [initialSeconds, playbackUrl, surface])
+  }, [initialSeconds, playbackUrl])
 
   const requestResolution = async (deliverDownload: boolean) => {
     // Opened synchronously inside the click gesture so the popup blocker sees
@@ -220,22 +234,7 @@ export const SpeechDetailPlayer = ({
     }
   }
 
-  // C171 — "Assistir na Câmara": switches the player surface and asks the
-  // Câmara only when there is nothing verified yet and no request in flight.
-  const watchVod = () => {
-    setSurface('vod')
-    if (playbackUrl || resolving || resolution.kind === 'generating') return
-    void requestResolution(false)
-  }
-
   const seekTo = (seconds: number) => {
-    if (youtubeSurface) {
-      if (youtubeOffsetSeconds === null) return
-      pendingSeekRef.current = seconds
-      setYoutubeStart(youtubeOffsetSeconds + seconds)
-      setActiveStart(seconds)
-      return
-    }
     const video = videoRef.current
     if (!video) return
     video.currentTime = seconds
@@ -273,21 +272,9 @@ export const SpeechDetailPlayer = ({
     setSelection(extendRangeToSegment(selection, segments, index, selectionDuration))
   }
 
-  const seekable = youtubeSurface ? youtubeOffsetSeconds !== null : Boolean(playbackUrl)
+  const seekable = Boolean(playbackUrl)
 
   const renderMedia = (): ReactNode => {
-    if (youtubeSurface && youtubeVideoId) {
-      return (
-        <iframe
-          src={buildYoutubeSrc(youtubeVideoId, youtubeStart)}
-          title="Vídeo da sessão no YouTube"
-          loading="lazy"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; compute-pressure"
-          allowFullScreen
-          className="aspect-video w-full rounded-lg border bg-black"
-        />
-      )
-    }
     if (playbackUrl) {
       return (
         <video
@@ -360,6 +347,9 @@ export const SpeechDetailPlayer = ({
         </StatusPanel>
       )
     }
+    if (youtubeVideoId && youtubeWatchUrl) {
+      return <YoutubeFacade videoId={youtubeVideoId} href={youtubeWatchUrl} />
+    }
     return (
       <StatusPanel
         title="Vídeo indisponível neste momento."
@@ -368,63 +358,48 @@ export const SpeechDetailPlayer = ({
     )
   }
 
-  const inlineNotice = youtubeSurface ? (
-    resolution.kind === 'generating' ? (
-      <p className="text-xs text-muted-foreground" role="status" aria-live="polite">
-        {GENERATING_TITLE} Tente novamente em um momento.
-      </p>
-    ) : resolution.kind === 'failed' ? (
-      <p className="text-xs text-destructive" role="status" aria-live="polite">
-        {resolution.message ??
-          'Não foi possível resolver o arquivo deste trecho na Câmara. Tente novamente.'}
-      </p>
-    ) : resolution.kind === 'resolved' && !resolution.downloadUrl ? (
-      <p className="text-xs text-muted-foreground" role="status" aria-live="polite">
-        O arquivo deste trecho não pôde ser verificado na Câmara agora.
-      </p>
-    ) : null
-  ) : null
+  // C178 — the exit block stays reachable in every state: the app never sees the
+  // reason the video cannot play, so the way out cannot depend on detecting it.
+  // The Câmara panel owns the primary CTA while it is idle ("Assistir o trecho");
+  // once it leaves that state the external exit takes the primary slot.
+  const exitTakesPrimary =
+    Boolean(youtubeWatchUrl) && (!vodResolvable || resolution.kind !== 'idle')
+  const exitVariant = exitTakesPrimary ? 'default' : 'outline'
 
-  // C171 — the exit block stays reachable with the embed playing: the app
-  // never sees the iframe's internal error, so the way out cannot depend on
-  // detecting the block.
   const renderYoutubeExit = (): ReactNode => {
     if (!youtubeWatchUrl) return null
+
     return (
       <div data-slot="speech-youtube-exit" className="mt-3 rounded-lg border bg-muted/40 px-4 py-3">
-        <p className="text-xs font-medium text-foreground/90">
-          Se o vídeo não abrir aqui, assista por outro caminho:
-        </p>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          {youtubeSurface && vodResolvable ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="min-h-10"
-              data-slot="speech-youtube-exit-camera"
-              onClick={watchVod}
-            >
-              <PlayIcon data-icon="inline-start" aria-hidden="true" />
-              Assistir na Câmara
-            </Button>
-          ) : null}
-          <Button asChild variant="outline" className="min-h-10">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            {vodResolvable ? (
+              <>
+                <p className="text-xs font-medium text-foreground/90">
+                  Se o vídeo não abrir aqui, assista por outro caminho:
+                </p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  O trecho da Câmara toca nesta página; o YouTube abre no ponto da fala.
+                </p>
+              </>
+            ) : (
+              <p className="hidden text-xs font-medium text-foreground/90 sm:block">
+                Abrir no YouTube
+              </p>
+            )}
+          </div>
+          <Button asChild variant={exitVariant} className="min-h-10 w-full sm:w-auto">
             <a
               href={youtubeWatchUrl}
               target="_blank"
               rel="noreferrer"
               data-slot="speech-youtube-exit-link"
             >
-              <YoutubeIcon />
+              <ExternalLinkIcon data-icon="inline-start" aria-hidden="true" />
               Abrir no YouTube
             </a>
           </Button>
         </div>
-        {vodResolvable ? (
-          <p className="mt-2 text-xs text-muted-foreground">
-            O trecho da Câmara toca nesta página; o YouTube abre no ponto da fala.
-          </p>
-        ) : null}
       </div>
     )
   }
@@ -481,10 +456,10 @@ export const SpeechDetailPlayer = ({
         ) : null}
         {vodResolvable ? (
           <Button
-            // While the excerpt share or the cut action is on screen it is the
-            // primary action; the download steps back to outline instead of
-            // splitting the CTA.
-            variant={showExcerptShare || showCutAction ? 'outline' : 'default'}
+            // While the excerpt share, the cut action or the external exit is
+            // the primary action; the download steps back to outline instead
+            // of splitting the CTA.
+            variant={showExcerptShare || showCutAction || exitTakesPrimary ? 'outline' : 'default'}
             className="min-h-10"
             disabled={resolving}
             aria-busy={resolving || undefined}
@@ -513,8 +488,6 @@ export const SpeechDetailPlayer = ({
           </Button>
         ) : null}
       </div>
-
-      {inlineNotice}
 
       {publishedCut ? <SpeechCutResultCard cut={publishedCut} /> : null}
 

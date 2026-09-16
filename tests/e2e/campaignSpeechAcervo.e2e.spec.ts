@@ -9,12 +9,13 @@ import { assertCampaignRedirect, expect, rendered, test } from './fixtures/campa
  * C154/C162 — the communication vertical over real HTTP (browserless,
  * OPS35/OPS87): role gates, the acervo search rendering (highlight + excerpt),
  * the filter URL contract and the detail's player/transcript/actions. The
- * player picks the surface from the row coordinates — YouTube default when the
- * session link parses, stored-VOD capa resolved on click otherwise, honest
- * unavailable state when neither exists — and the stored VOD link itself is
- * never rendered (C162). Playback is browser territory and is not asserted
- * here; the HTML carries the contract (`<video src>` only after a click,
- * `data-start-seconds`, the iframe `start`).
+ * player picks the surface from the row coordinates — the Câmara excerpt as the
+ * default when the speech has one (stored-VOD capa resolved on click), a
+ * clickable YouTube cover when it only has a session link (C178: YouTube is the
+ * external exit, never an embedded entry) — and honest states when neither
+ * exists — and the stored VOD link itself is never rendered (C162). Playback is
+ * browser territory and is not asserted here; the HTML carries the contract
+ * (`<video src>` only after a click, `data-start-seconds`, the cover href).
  */
 
 const YOUTUBE_VIDEO_ID = 'lLhRDkSPw0A'
@@ -129,7 +130,7 @@ test.describe('communication vertical (C154/C162)', () => {
     expect(rendered(await advisorHome.text())).not.toContain('href="/campanha/comunicacao"')
   })
 
-  test('search keeps the download off the card; the both-sources detail defaults to YouTube', async ({
+  test('search keeps the download off the card; the both-sources detail defaults to the Câmara excerpt', async ({
     campaign,
     campaignRequest,
   }) => {
@@ -158,17 +159,20 @@ test.describe('communication vertical (C154/C162)', () => {
     expect(detail.status()).toBe(200)
     const detailHtml = rendered(await detail.text())
     expect(detailHtml).toContain('data-slot="speech-player"')
-    // Default surface is the YouTube embed, positioned by the session offset
-    // (2634) plus the deep-linked transcript second (43).
-    expect(detailHtml).toContain(`www.youtube.com/embed/${YOUTUBE_VIDEO_ID}`)
-    expect(detailHtml).toContain(`start=${EXCERPT_OFFSET_SECONDS + 43}`)
-    // C171 — the exit block is server-rendered with the embed: the Câmara
-    // surface is one click away and the watch URL opens at the deep-linked
-    // point (never a signin dead end).
+    // C178 — the YouTube embed is never the entry: the default surface is the
+    // Câmara excerpt (resolved on click) and no iframe is ever server-rendered.
+    expect(detailHtml).not.toContain('youtube.com/embed')
+    expect(detailHtml).not.toContain('<iframe')
+    expect(detailHtml).toContain('O trecho deste vídeo é gerado pela Câmara dos Deputados.')
+    expect(detailHtml).toContain('Assistir o trecho')
+    // C178 — the exit block is server-rendered with the Câmara panel: the
+    // watch URL opens at the deep-linked point (never a signin dead end) and
+    // the old surface-switch button is gone.
     expect(detailHtml).toContain('Se o vídeo não abrir aqui, assista por outro caminho:')
-    expect(detailHtml).toContain('Assistir na Câmara')
     expect(detailHtml).toContain('Abrir no YouTube')
+    expect(detailHtml).not.toContain('Assistir na Câmara')
     expect(detailHtml).toContain(`watch?v=${YOUTUBE_VIDEO_ID}&amp;t=${EXCERPT_OFFSET_SECONDS + 43}`)
+    expect(detailHtml).toContain('data-slot="speech-youtube-exit-link"')
     expect(detailHtml).toContain('data-start-seconds="0"')
     expect(detailHtml).toContain('Baixar vídeo (MP4)')
     expect(detailHtml).toContain('Abrir fonte')
@@ -179,6 +183,40 @@ test.describe('communication vertical (C154/C162)', () => {
     expect(detailHtml).toContain('Selecionar trecho')
     expect(detailHtml).not.toContain('Compartilhar por link exige o vídeo no YouTube')
     expect(detailHtml).not.toContain('<video')
+    expect(detailHtml).not.toContain('vod.camara.leg.br')
+  })
+
+  test('a YouTube-only speech gets a clickable cover, never an embedded iframe', async ({
+    campaign,
+    campaignRequest,
+  }) => {
+    const marker = campaign.fixtures.value('soyoutube')
+    const speech = await createSpeech(campaign, {
+      marker,
+      withVideo: false,
+      youtubeUrl: `https://www.youtube.com/watch?v=${YOUTUBE_VIDEO_ID}`,
+    })
+
+    const user = await campaign.fixtures.createCampaignUser('communicator')
+    const request = await campaignRequest(user, user.password)
+
+    const detail = await request.get(`/campanha/comunicacao/acervo/${speech.id}`)
+    expect(detail.status()).toBe(200)
+    const detailHtml = rendered(await detail.text())
+    expect(detailHtml).toContain('data-slot="speech-youtube-facade"')
+    expect(detailHtml).toContain('aria-label="Abrir no YouTube"')
+    // C178 — the cover is the external exit: the click goes to YouTube, and no
+    // iframe/video reaches the HTML.
+    expect(detailHtml).toContain(`watch?v=${YOUTUBE_VIDEO_ID}&amp;t=${EXCERPT_OFFSET_SECONDS}`)
+    expect(detailHtml).toContain('Vídeo no YouTube')
+    expect(detailHtml).toContain('Abrir no YouTube')
+    expect(detailHtml).not.toContain('youtube.com/embed')
+    expect(detailHtml).not.toContain('<iframe')
+    expect(detailHtml).not.toContain('<video')
+    // Without an in-page player the "if the video fails here" copy would lie.
+    expect(detailHtml).not.toContain('Se o vídeo não abrir aqui')
+    expect(detailHtml).not.toContain('Assistir na Câmara')
+    expect(detailHtml).toContain('Abrir fonte')
     expect(detailHtml).not.toContain('vod.camara.leg.br')
   })
 
@@ -201,7 +239,7 @@ test.describe('communication vertical (C154/C162)', () => {
     // while the selection door stays offered.
     expect(html).toContain('Selecionar trecho')
     expect(html).toContain('Compartilhar por link exige o vídeo no YouTube')
-    // C171 — no YouTube id means no exit block: there is no embed to escape.
+    // C178 — no YouTube id means no cover and no exit block.
     expect(html).not.toContain('Abrir no YouTube')
     expect(html).not.toContain('Se o vídeo não abrir aqui')
     expect(html).not.toContain('<video')
@@ -273,7 +311,7 @@ test.describe('communication vertical (C154/C162)', () => {
     // No stored VOD means nothing to resolve: no MP4 button and no retry.
     expect(html).not.toContain('Baixar vídeo (MP4)')
     expect(html).not.toContain('Tentar novamente')
-    // C171 — without a YouTube id there is no embed and no exit block.
+    // C178 — without a YouTube id there is no cover and no exit block.
     expect(html).not.toContain('Abrir no YouTube')
     expect(html).not.toContain('Se o vídeo não abrir aqui')
   })
