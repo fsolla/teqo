@@ -9,10 +9,10 @@ import {
   speechCutStepLabels,
 } from '@/lib/speechCut'
 import {
+  canDeleteSpeechCut,
   canReadSpeech,
   canReadSpeechCut,
   canSetCampaignSystemField,
-  payloadAdminOnly,
 } from '@/utilities/campaignAccess'
 import { stampCampaignCreatedBy, systemStampedActorField } from '@/utilities/campaignAuditFields'
 import { revalidateDocumentById } from '@/utilities/documents'
@@ -52,7 +52,7 @@ export const SpeechCut: CollectionConfig = {
     create: canReadSpeech,
     read: canReadSpeechCut,
     update: canReadSpeech,
-    delete: payloadAdminOnly,
+    delete: canDeleteSpeechCut,
   },
   hooks: {
     beforeChange: [stampCampaignCreatedBy],

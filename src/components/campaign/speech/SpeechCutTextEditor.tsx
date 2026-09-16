@@ -17,20 +17,18 @@ type SpeechCutTextEditorProps = {
   cutId: number
   initialTitle: string
   initialDescription: string
-  /** A cut still processing/without a file has nothing to publish — and no text to trust. */
-  disabled?: boolean
 }
 
 /**
  * C168 — edits the cut's own title/description through the JSON route. Saving
  * refreshes the server tree, so the public page and the link preview reflect
- * the new text (the `afterChange` revalidation is the C167 one).
+ * the new text (the `afterChange` revalidation is the C167 one). Only rendered
+ * for a cut with a stored file; a pending/failed one shows the C183 placeholder.
  */
 export const SpeechCutTextEditor = ({
   cutId,
   initialTitle,
   initialDescription,
-  disabled = false,
 }: SpeechCutTextEditorProps) => {
   const router = useRouter()
   const [title, setTitle] = useState(initialTitle)
@@ -44,8 +42,7 @@ export const SpeechCutTextEditor = ({
   const trimmedDescription = description.trim()
   const dirty =
     trimmedTitle !== saved.title.trim() || trimmedDescription !== saved.description.trim()
-  const canSave =
-    !disabled && dirty && trimmedTitle.length > 0 && trimmedDescription.length > 0 && !submitting
+  const canSave = dirty && trimmedTitle.length > 0 && trimmedDescription.length > 0 && !submitting
 
   const save = async () => {
     setSubmitting(true)
@@ -91,7 +88,7 @@ export const SpeechCutTextEditor = ({
             id="speech-cut-title"
             value={title}
             maxLength={SPEECH_CUT_TITLE_MAX_LENGTH}
-            disabled={disabled || submitting}
+            disabled={submitting}
             onChange={(event) => {
               setTitle(event.target.value)
               setFeedback('idle')
@@ -107,7 +104,7 @@ export const SpeechCutTextEditor = ({
             maxLength={SPEECH_CUT_DESCRIPTION_MAX_LENGTH}
             rows={4}
             className="min-h-24 resize-y"
-            disabled={disabled || submitting}
+            disabled={submitting}
             onChange={(event) => {
               setDescription(event.target.value)
               setFeedback('idle')
@@ -132,7 +129,7 @@ export const SpeechCutTextEditor = ({
           type="button"
           variant="outline"
           className="min-h-11"
-          disabled={disabled || submitting || !dirty}
+          disabled={submitting || !dirty}
           onClick={() => {
             setTitle(saved.title)
             setDescription(saved.description)

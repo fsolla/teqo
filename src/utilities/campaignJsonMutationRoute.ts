@@ -11,6 +11,9 @@ import { isSameOriginRequest } from '@/utilities/sameOriginRequest'
 
 type CampaignJsonErrorBody = { status: 'error'; message: string }
 
+/** The 403 body of a cross-origin mutation — shared with the DELETE handlers. */
+export const CAMPAIGN_JSON_INVALID_REQUEST_MESSAGE = 'Requisição inválida.'
+
 /**
  * Structural on purpose: any zod schema satisfies it, and the shell stays out
  * of the validation library's type surface.
@@ -47,8 +50,11 @@ const parseCampaignJsonRequestBody = async (
  * Maps a thrown error to the JSON error response: safe messages (incl. the
  * two auth ones, appended once here) pass through as 400, an expired/missing
  * session is 401, anything else collapses to `genericMessage`.
+ *
+ * Exported for the DELETE handlers that cannot use the POST-only wrapper
+ * (C183's cut delete) but must keep the same envelope and status mapping.
  */
-const campaignJsonMutationErrorResponse = (
+export const campaignJsonMutationErrorResponse = (
   error: unknown,
   { safeMessages, genericMessage }: { safeMessages: readonly string[]; genericMessage: string },
 ): NextResponse<CampaignJsonErrorBody> => {
@@ -97,7 +103,7 @@ export const campaignJsonMutationRoute =
   async (request: Request): Promise<NextResponse<TResponse | CampaignJsonErrorBody>> => {
     if (!isSameOriginRequest(request)) {
       return NextResponse.json(
-        { status: 'error', message: 'Requisição inválida.' },
+        { status: 'error', message: CAMPAIGN_JSON_INVALID_REQUEST_MESSAGE },
         { status: 403 },
       )
     }

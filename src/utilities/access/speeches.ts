@@ -31,6 +31,19 @@ export const canUpdateSpeech: Access = async ({ req }) => {
 }
 
 /**
+ * C183 — who may remove a cut from the library: the same acervo audience that
+ * reads/edits it (`communicator`, `coordinator`, `candidate`) plus the Payload
+ * admin. Written as its own predicate, never `canReadSpeech`, so a future
+ * widening of the read surface cannot silently grant delete.
+ */
+export const canDeleteSpeechCut: Access = async ({ req }) => {
+  if (isPayloadAdmin(req.user)) return true
+
+  const currentUser = await getFreshCampaignUser(req)
+  return currentUser ? canReadSpeechCatalog(currentUser.role) : false
+}
+
+/**
  * C167 — a cut is public by link when `published`; every other status (and the
  * internal `error`/`step`) stays behind the acervo gate. Returning a `where`
  * for the anonymous reader keeps REST/GraphQL from listing drafts, while the

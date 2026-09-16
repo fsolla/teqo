@@ -50,6 +50,13 @@ export const speechCutStatusRequestSchema = z.object({
   cutId: positiveRelationshipId,
 })
 
+/** C183 — a bare cut id: the delete body and the library retry body. */
+export const speechCutCutIdRequestSchema = z.object({
+  cutId: positiveRelationshipId,
+})
+
+export type SpeechCutCutIdRequest = z.infer<typeof speechCutCutIdRequestSchema>
+
 /** AI title/description suggestion for the picked window. */
 export const speechCutSuggestionRequestSchema = z.object({
   speechId: positiveRelationshipId,

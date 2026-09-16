@@ -1,17 +1,13 @@
-import { PlayIcon } from 'lucide-react'
 import Link from 'next/link'
 
-import { CopyLinkButton } from '@/components/CopyLinkButton'
+import { SpeechCutLibraryCardActions } from '@/components/campaign/speech/SpeechCutLibraryCardActions'
 import { SpeechCutStatusBadge } from '@/components/campaign/speech/SpeechCutStatusBadge'
-import { Button } from '@/components/ui/button'
-import { campaignSpeechCutDetailHref } from '@/lib/campaignPaths'
 import type { SpeechCutLibraryItemViewModel } from '@/lib/speechCut'
 
 /**
  * C168 — one row of the cut library: status + creation date, the editable title,
  * the origin speech (label + link to the acervo) with the stored duration, and
- * the two actions the list needs (open the detail, copy the public link when it
- * is live). Download/WhatsApp/publição live in the detail.
+ * the actions (open, copy when live, retry a failure, delete) as a client island.
  */
 export const SpeechCutLibraryCard = ({ cut }: { cut: SpeechCutLibraryItemViewModel }) => (
   <article
@@ -42,14 +38,6 @@ export const SpeechCutLibraryCard = ({ cut }: { cut: SpeechCutLibraryItemViewMod
       <span>{cut.durationLabel}</span>
     </div>
 
-    <div className="mt-3 flex flex-wrap items-center gap-2">
-      <Button asChild variant="outline" className="min-h-10">
-        <Link href={campaignSpeechCutDetailHref(cut.id)}>
-          <PlayIcon data-icon="inline-start" aria-hidden="true" />
-          Abrir corte
-        </Link>
-      </Button>
-      {cut.status === 'published' ? <CopyLinkButton url={cut.publicPath} variant="ghost" /> : null}
-    </div>
+    <SpeechCutLibraryCardActions cut={cut} />
   </article>
 )

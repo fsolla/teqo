@@ -243,6 +243,22 @@ describe('campaign JSON mutation route convention', () => {
 
     expect(offenders, 'build the handler with campaignJsonMutationRoute').toEqual([])
   })
+
+  it('guards every DELETE route under src/app with isSameOriginRequest', () => {
+    // C183 — the DELETE handlers cannot use the POST-only wrapper, so the
+    // same-origin line is hand-written again; this sweep is what keeps the next
+    // one from forgetting it (forgetting it fails OPEN, exactly like POST).
+    const offenders = walkSourceFiles(resolve(repoRoot, 'src/app/(campaign)'), ['.ts'])
+      .filter((file) => basename(file) === 'route.ts')
+      .map(repoPath)
+      .filter((path) => {
+        const source = readFileSync(resolve(repoRoot, path), 'utf8')
+        if (!/export (const|async function) DELETE\b/.test(source)) return false
+        return !/isSameOriginRequest\(/.test(source)
+      })
+
+    expect(offenders, 'call isSameOriginRequest in the DELETE handler').toEqual([])
+  })
 })
 
 describe('campaign refusal messages come from shared constants', () => {

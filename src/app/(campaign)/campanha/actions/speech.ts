@@ -10,11 +10,13 @@ import {
   SPEECH_CUT_PUBLISH_NOT_READY_MESSAGE,
   SPEECH_CUT_RETRY_NOT_FAILED_MESSAGE,
   SPEECH_CUT_SPEECH_NOT_FOUND_MESSAGE,
+  speechCutCutIdRequestSchema,
   speechCutPublicationRequestSchema,
   speechCutRequestSchema,
   speechCutStatusRequestSchema,
   speechCutSuggestionRequestSchema,
   speechCutTextUpdateRequestSchema,
+  type SpeechCutCutIdRequest,
   type SpeechCutPublicationRequest,
   type SpeechCutRequest,
   type SpeechCutTextUpdateRequest,
@@ -315,6 +317,50 @@ export const setSpeechCutPublishedForActor = async (
     overrideAccess: false,
   })
   return toSpeechCutViewModel(cut)
+}
+
+/**
+ * C183 — deletes one cut (hard delete): the assessoria cleans the library and
+ * the public `/corte/<id>` (when it existed) stops responding. The collection's
+ * `delete` access (`canDeleteSpeechCut`) is the authority; this action repeats
+ * the fresh gate so a denied actor gets the domain message. Single-collection,
+ * so no transaction. The stored `media` row is deliberately left behind (the
+ * retry already orphans it the same way) — see the impl plan's revisit trigger.
+ */
+export const deleteSpeechCutForActor = async (
+  input: SpeechCutCutIdRequest,
+): Promise<{ deleted: true }> => {
+  const parsed = speechCutCutIdRequestSchema.parse(input)
+  const { payload, actor } = await getCampaignActionContext()
+
+  if (!canReadSpeechCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
+
+  const current = await loadSpeechCutForActor(payload, actor, parsed.cutId)
+  if (!current) throw new Error(SPEECH_CUT_NOT_FOUND_MESSAGE)
+
+  await payload.delete({
+    collection: 'speechCut',
+    id: parsed.cutId,
+    user: actor,
+    overrideAccess: false,
+  })
+  return { deleted: true }
+}
+
+/**
+ * C183 — retries a failed cut from where the person sees the failure (the
+ * library card or the detail header), without going back to the origin speech.
+ * A thin shell over the C167 `retrySpeechCut`: same row, same job, no new flow.
+ */
+export const retrySpeechCutForActor = async (
+  input: SpeechCutCutIdRequest,
+): Promise<SpeechCutViewModel> => {
+  const parsed = speechCutCutIdRequestSchema.parse(input)
+  const { payload, actor } = await getCampaignActionContext()
+
+  if (!canReadSpeechCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
+
+  return retrySpeechCut(payload, actor, parsed.cutId)
 }
 
 /** AI suggestion for the picked window; falls back deterministically, never blocks. */
