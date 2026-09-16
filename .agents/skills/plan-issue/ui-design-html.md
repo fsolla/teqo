@@ -90,7 +90,7 @@ Mesma doutrina para os dois papéis (fonte única — os prompts dos agentes apo
 
 ## Relação com o plano em `docs/plans/`
 
-- Campo do cabeçalho do plano aponta o caminho do artefato (`Rascunho UI:` hoje; `Design UI:` a partir do OPS114) — ou `N/A — sem UI`.
+- Campo do cabeçalho do plano aponta o caminho do artefato (`Design UI:`) — ou `N/A — sem UI`.
 - Link do `.html` no corpo do plano.
 - Esboço ASCII no markdown vira **opcional** (backup textual).
 

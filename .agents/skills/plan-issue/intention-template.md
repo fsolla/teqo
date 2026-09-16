@@ -12,7 +12,7 @@ Atualizado em: <YYYY-MM-DD>
 Issue: #<N> (após `pnpm agent:register`; senão "—")
 Priority: <P0 | P1 | P2 | P3>
 Impeccable: <A | B | C | D> — <N/A sem UI | encaixe em tela X | fluxo novo em Y>
-Rascunho UI: <N/A — sem UI | docs/plans/<slug>-ui-draft.html>
+Design UI: <N/A — sem UI | docs/plans/<slug>-ui-design.html>
 Appetite: <ex.: ~0,5–1 dia eng; um outcome verificável>
 Responsável: —
 
@@ -29,20 +29,21 @@ Responsável: —
 
 ### Esboço de fluxo (B/C/D)
 
-<!-- Opcional se houver Rascunho UI. ASCII de jornada (backup textual), não layout de implementação.
-     Omitir se A / sem UI. O artefato obrigatório do gate para UI é o HTML+Tailwind commitado — ver ui-draft-html.md. -->
+<!-- Opcional se houver Design UI. ASCII de jornada (backup textual), não layout de implementação.
+     Omitir se A / sem UI. O artefato obrigatório do gate para UI é o design hi-fi (HTML+Tailwind + assets) — ver ui-design-html.md. -->
 
 \```text
 [início] → … → [outcome]
 \```
 
-### Rascunho UI (B/C/D)
+### Design UI (B/C/D)
 
-<!-- Obrigatório se houver UI: link para docs/plans/<slug>-ui-draft.html
-     (commitado no repo) — o humano abre no browser para validar no gate.
-     Omitir se A / sem UI. O HTML é a fonte iterável e o registro do aceite. -->
+<!-- Obrigatório se houver UI: link para docs/plans/<slug>-ui-design.html
+     (+ assets em docs/plans/<slug>-ui-design-assets/) — o humano abre no browser
+     para validar no gate. Omitir se A / sem UI. O HTML hi-fi é a fonte iterável,
+     o registro do aceite e a fonte de verdade do port. -->
 
-- Rascunho UI (gate): `docs/plans/<slug>-ui-draft.html`
+- Design UI (gate): `docs/plans/<slug>-ui-design.html`
 
 ## Objetivo e aceite
 
@@ -95,7 +96,7 @@ Responsável: —
 ## Referências
 
 - GitHub Issue #<N>
-- Rascunho UI (gate): <link do `.html` + PNGs embutidos acima | N/A>
+- Design UI (gate): <link do `.html` + assets em `<slug>-ui-design-assets/` | N/A>
 - <arquivos/rotas úteis para o executor abrir primeiro — como pista, não contrato>
 - `AGENTS.md` / `docs/ARCHITECTURE.md` — só se o item toca convenção já travada no repo
 ````
@@ -103,7 +104,7 @@ Responsável: —
 Notas:
 
 - Alvo: ~60–100 linhas. Mais que isso costuma significar engenharia vazando para a intenção.
-- Classe **A:** `Impeccable: A — N/A`; `Rascunho UI: N/A`; omita esboço de fluxo.
-- Classe **B/C/D:** rascunho HTML+Tailwind obrigatório no gate ([ui-draft-html.md](ui-draft-html.md)); commite o `.html` no repo.
+- Classe **A:** `Impeccable: A — N/A`; `Design UI: N/A`; omita esboço de fluxo.
+- Classe **B/C/D:** design hi-fi obrigatório no gate ([ui-design-html.md](ui-design-html.md)); commite o `.html` + os assets no repo.
 - Não rode `/impeccable` aqui.
 - Self-score shaping ≥4/5 antes de gravar.
