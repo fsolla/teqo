@@ -66,8 +66,6 @@ export default async function SpeechDetailPage({ params, searchParams }: SpeechD
     loadSpeechCutsForSpeech(payload, user, speechId),
   ])
 
-  const sourceUrl = view.officialTextUrl ?? view.youtubeUrl
-
   return (
     <CampaignPageShell>
       <SetCampaignPageChrome
@@ -118,7 +116,7 @@ export default async function SpeechDetailPage({ params, searchParams }: SpeechD
                 vodResolvable={view.vodResolvable}
                 segments={view.segments}
                 initialSeconds={initialSeconds}
-                sourceUrl={sourceUrl}
+                officialTextUrl={view.officialTextUrl}
                 durationSeconds={view.durationSeconds}
                 speechType={view.type}
                 speechDateLabel={view.speechDateLabel}

@@ -35,6 +35,8 @@ const createSpeech = async (
     withVideo?: boolean
     youtubeUrl?: string | null
     eventStartAt?: string
+    /** C177 — set to null to create a speech without the official text. */
+    officialTextUrl?: string | null
   },
 ) => {
   const marker = input.marker
@@ -55,7 +57,10 @@ const createSpeech = async (
       // Mirrors what `upsertSpeechBundle` derives from the segments (C154).
       searchText: `a retomada da saude ${marker} na bahia`,
       presidingOfficer: 'Pompeo de Mattos',
-      officialTextUrl: 'https://camara.leg.br/discurso',
+      officialTextUrl:
+        input.officialTextUrl === undefined
+          ? 'https://camara.leg.br/discurso'
+          : input.officialTextUrl,
       eventId: 67091,
       audioId: 558641,
       excerptTMs: EXCERPT_TMS,
@@ -157,6 +162,8 @@ test.describe('communication vertical (C154/C162)', () => {
     // never reaches any list HTML.
     expect(resultsHtml).not.toContain('Baixar')
     expect(resultsHtml).not.toContain('vod.camara.leg.br')
+    // C177 — the source button names the official record (the card carries it too).
+    expect(resultsHtml).toContain('Abrir Diário Oficial')
 
     const detail = await request.get(`/campanha/comunicacao/acervo/${speech.id}?t=43&q=${marker}`)
     expect(detail.status()).toBe(200)
@@ -178,7 +185,7 @@ test.describe('communication vertical (C154/C162)', () => {
     expect(detailHtml).toContain('data-slot="speech-youtube-exit-link"')
     expect(detailHtml).toContain('data-start-seconds="0"')
     expect(detailHtml).toContain('Baixar vídeo (MP4)')
-    expect(detailHtml).toContain('Abrir fonte')
+    expect(detailHtml).toContain('Abrir Diário Oficial')
     expect(detailHtml).toContain('Fonte: Câmara dos Deputados')
     // C166 — the excerpt picker's door is server-rendered; its link limit is
     // not in this quadrant (the share control itself only appears in the mode,
@@ -219,8 +226,38 @@ test.describe('communication vertical (C154/C162)', () => {
     // Without an in-page player the "if the video fails here" copy would lie.
     expect(detailHtml).not.toContain('Se o vídeo não abrir aqui')
     expect(detailHtml).not.toContain('Assistir na Câmara')
-    expect(detailHtml).toContain('Abrir fonte')
+    expect(detailHtml).toContain('Abrir Diário Oficial')
     expect(detailHtml).not.toContain('vod.camara.leg.br')
+  })
+
+  test('a speech without the official text hides the source button in list and detail (C177)', async ({
+    campaign,
+    campaignRequest,
+  }) => {
+    const marker = campaign.fixtures.value('semfonte')
+    const speech = await createSpeech(campaign, {
+      marker,
+      officialTextUrl: null,
+      youtubeUrl: `https://www.youtube.com/watch?v=${YOUTUBE_VIDEO_ID}`,
+    })
+
+    const user = await campaign.fixtures.createCampaignUser('communicator')
+    const request = await campaignRequest(user, user.password)
+
+    const results = await request.get(`/campanha/comunicacao/acervo?q=${marker}`)
+    expect(results.status()).toBe(200)
+    const resultsHtml = rendered(await results.text())
+    expect(resultsHtml).toContain(marker)
+    // C177 — no official text means no source button, and the YouTube URL is
+    // never smuggled into a "source" link; the card CTA still opens the speech.
+    expect(resultsHtml).not.toContain('Abrir Diário Oficial')
+
+    const detail = await request.get(`/campanha/comunicacao/acervo/${speech.id}`)
+    expect(detail.status()).toBe(200)
+    const detailHtml = rendered(await detail.text())
+    expect(detailHtml).toContain('Abrir no YouTube')
+    expect(detailHtml).not.toContain('Abrir Diário Oficial')
+    expect(detailHtml).not.toContain('Abrir fonte')
   })
 
   test('a VOD-only speech offers the on-click resolution instead of a player', async ({
@@ -315,7 +352,7 @@ test.describe('communication vertical (C154/C162)', () => {
     const detail = await request.get(`/campanha/comunicacao/acervo/${speech.id}`)
     const html = rendered(await detail.text())
     expect(html).toContain('Vídeo indisponível neste momento')
-    expect(html).toContain('Abrir fonte')
+    expect(html).toContain('Abrir Diário Oficial')
     // No stored VOD means nothing to resolve: no MP4 button and no retry.
     expect(html).not.toContain('Baixar vídeo (MP4)')
     expect(html).not.toContain('Tentar novamente')

@@ -64,7 +64,12 @@ export type SpeechListItemViewModel = {
   /** YouTube cover of the session link (C175); null when the speech has none. */
   thumbnailUrl: string | null
   watchHref: string
-  sourceUrl: string | null
+  /**
+   * C177 — the official source (Diário) link; null when the speech has no
+   * official text. Never falls back to `youtubeUrl`: a source button that
+   * opened a video without the point is the duplicate atalho this item killed.
+   */
+  officialTextUrl: string | null
   /** C174 — the cuts already made from this speech, newest first. */
   cuts: SpeechCutViewModel[]
   /**
@@ -95,7 +100,6 @@ export type SpeechDetailViewModel = {
   summary: string | null
   officialTranscript: string | null
   officialTextUrl: string | null
-  youtubeUrl: string | null
   keywords: string[]
   topics: { value: SpeechTopic; label: string }[]
   scopes: { value: SpeechScope; label: string }[]
@@ -239,7 +243,7 @@ export const toSpeechListItemViewModel = ({
     municipalities: municipalityViewModels(speech, municipalityLabels),
     thumbnailUrl: youtubeThumbnailUrl(parseYoutubeVideoId(speech.youtubeUrl)),
     watchHref: buildWatchHref(speech.id, matchedSegment, q),
-    sourceUrl: speech.officialTextUrl ?? speech.youtubeUrl ?? null,
+    officialTextUrl: speech.officialTextUrl ?? null,
     cuts: [...cuts],
     matchedTextSearch: speechMatchesText(speech, query),
   }
@@ -282,7 +286,6 @@ export const toSpeechDetailViewModel = ({
     summary: speech.summary ?? null,
     officialTranscript: speech.officialTranscript ?? null,
     officialTextUrl: speech.officialTextUrl ?? null,
-    youtubeUrl: speech.youtubeUrl ?? null,
     keywords: speech.keywords ?? [],
     topics: topicViewModels(speech),
     scopes: scopeViewModels(speech),
