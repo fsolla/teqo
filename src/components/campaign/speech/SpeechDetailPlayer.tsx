@@ -127,6 +127,9 @@ export const SpeechDetailPlayer = ({
   speechSummary,
 }: SpeechDetailPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null)
+  // C171-F1 — transcript point clicked while the embed is active: the target
+  // has to survive until the Câmara `<video>` mounts and takes the first seek.
+  const pendingSeekRef = useRef<number | null>(null)
   const [resolution, setResolution] = useState<ResolutionState>({ kind: 'idle' })
   const [activeStart, setActiveStart] = useState<number | null>(null)
   // C166: one state for the explicit selection mode — a non-null range means
@@ -161,12 +164,18 @@ export const SpeechDetailPlayer = ({
   const showExcerptShare = selecting && Boolean(youtubeVideoId)
   const showCutAction = selecting && vodResolvable
 
+  // C171-F1 — the pending transcript point wins over the ?t deep link; the
+  // surface switch is a dep so the already verified file seeks on mount.
   useEffect(() => {
     const video = videoRef.current
-    if (!video || initialSeconds === null || initialSeconds <= 0) return
+    if (!video) return
+
+    const target = pendingSeekRef.current ?? initialSeconds
+    if (target === null || target <= 0) return
 
     const seek = () => {
-      video.currentTime = initialSeconds
+      video.currentTime = target
+      pendingSeekRef.current = null
     }
     if (video.readyState >= 1) {
       seek()
@@ -174,7 +183,7 @@ export const SpeechDetailPlayer = ({
     }
     video.addEventListener('loadedmetadata', seek, { once: true })
     return () => video.removeEventListener('loadedmetadata', seek)
-  }, [initialSeconds, playbackUrl])
+  }, [initialSeconds, playbackUrl, surface])
 
   const requestResolution = async (deliverDownload: boolean) => {
     // Opened synchronously inside the click gesture so the popup blocker sees
@@ -222,6 +231,7 @@ export const SpeechDetailPlayer = ({
   const seekTo = (seconds: number) => {
     if (youtubeSurface) {
       if (youtubeOffsetSeconds === null) return
+      pendingSeekRef.current = seconds
       setYoutubeStart(youtubeOffsetSeconds + seconds)
       setActiveStart(seconds)
       return

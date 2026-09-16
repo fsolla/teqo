@@ -427,6 +427,110 @@ describe('SpeechDetailPlayer — C171 exits out of the YouTube embed', () => {
   })
 })
 
+describe('SpeechDetailPlayer — C171-F1 keeps the transcript point across the surface switch', () => {
+  const cameraButton = () => screen.getByRole('button', { name: /assistir na câmara/i })
+  const downloadButton = () => screen.getByRole('button', { name: /baixar vídeo \(mp4\)/i })
+  const segmentButton = (seconds: number) =>
+    document.querySelector(`button[data-start-seconds="${seconds}"]`) as HTMLButtonElement
+
+  const renderYoutubePlayer = (
+    overrides: Partial<Parameters<typeof SpeechDetailPlayer>[0]> = {},
+  ) => renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634, ...overrides })
+
+  const verifyDownloadFirst = async () => {
+    const tab = { location: { href: '' }, close: vi.fn() }
+    vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window)
+    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
+    fireEvent.click(downloadButton())
+    await waitFor(() => expect(tab.location.href).toBe(DOWNLOAD_URL))
+  }
+
+  const switchToCamera = async () => {
+    fireEvent.click(cameraButton())
+    await waitFor(() => expect(videoElement()).not.toBeNull())
+  }
+
+  it('keeps the transcript point clicked on the embed when switching to the Câmara', async () => {
+    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
+    renderYoutubePlayer({ initialSeconds: 100 })
+
+    fireEvent.click(segmentButton(43))
+    expect(iframeElement()?.getAttribute('src')).toContain('start=2677')
+
+    await switchToCamera()
+    fireEvent.loadedMetadata(videoElement()!)
+
+    expect(videoElement()?.currentTime).toBe(43)
+  })
+
+  it('seeks the clicked point on the Câmara surface even without a deep link', async () => {
+    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
+    renderYoutubePlayer({ initialSeconds: null })
+
+    fireEvent.click(segmentButton(43))
+    await switchToCamera()
+    fireEvent.loadedMetadata(videoElement()!)
+
+    expect(videoElement()?.currentTime).toBe(43)
+  })
+
+  it('seeks the deep link when the file was verified before switching to the Câmara', async () => {
+    renderYoutubePlayer({ initialSeconds: 100 })
+    await verifyDownloadFirst()
+
+    await switchToCamera()
+    fireEvent.loadedMetadata(videoElement()!)
+
+    expect(videoElement()?.currentTime).toBe(100)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves the fresh Câmara video at zero when there is no click and no deep link', async () => {
+    renderYoutubePlayer({ initialSeconds: null })
+    await verifyDownloadFirst()
+
+    await switchToCamera()
+    fireEvent.loadedMetadata(videoElement()!)
+
+    expect(videoElement()?.currentTime).toBe(0)
+  })
+
+  it('applies the pending transcript point after the Câmara file resolves on retry', async () => {
+    respondWith(gerando)
+    renderYoutubePlayer({ initialSeconds: 100 })
+
+    fireEvent.click(segmentButton(43))
+    fireEvent.click(cameraButton())
+    expect(await screen.findByRole('button', { name: /tentar novamente/i })).toBeDefined()
+    expect(videoElement()).toBeNull()
+
+    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
+    fireEvent.click(screen.getByRole('button', { name: /tentar novamente/i }))
+    await waitFor(() => expect(videoElement()).not.toBeNull())
+    fireEvent.loadedMetadata(videoElement()!)
+
+    expect(videoElement()?.currentTime).toBe(43)
+  })
+
+  it('does not re-seek as playback advances after the pending point was applied', async () => {
+    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
+    renderYoutubePlayer({ initialSeconds: 100 })
+
+    fireEvent.click(segmentButton(43))
+    await switchToCamera()
+
+    const video = videoElement()!
+    fireEvent.loadedMetadata(video)
+    expect(video.currentTime).toBe(43)
+
+    video.currentTime = 77
+    fireEvent.timeUpdate(video)
+    fireEvent.loadedMetadata(video)
+
+    expect(video.currentTime).toBe(77)
+  })
+})
+
 describe('SpeechDetailPlayer — no-video quadrant', () => {
   it('renders the unavailable block without retry or download', () => {
     renderPlayer({ vodResolvable: false, sourceUrl: 'https://imagem.camara.leg.br/diario.pdf' })
