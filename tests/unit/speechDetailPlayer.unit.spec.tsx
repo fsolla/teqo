@@ -350,6 +350,48 @@ describe('SpeechDetailPlayer — C178 the exit is always one click away', () => 
   })
 })
 
+describe('SpeechDetailPlayer — C181 the YouTube embed is one click away', () => {
+  const embedSwitch = () => screen.getByRole('button', { name: /assistir no youtube/i })
+  const cameraSwitch = () => screen.getByRole('button', { name: /assistir na câmara/i })
+
+  it('switches to the embed on click and back to the Câmara excerpt', async () => {
+    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: 2634, initialSeconds: 100 })
+
+    // C178 stays the entry: no iframe until the assessor asks for the YouTube.
+    expect(iframeElement()).toBeNull()
+    expect(embedSwitch()).toBeDefined()
+
+    fireEvent.click(embedSwitch())
+    expect(iframeElement()?.getAttribute('src')).toBe(
+      `https://www.youtube.com/embed/${YOUTUBE_ID}?playsinline=1&rel=0&start=2734`,
+    )
+    expect(videoElement()).toBeNull()
+
+    fireEvent.click(cameraSwitch())
+    await waitFor(() => expect(videoElement()?.getAttribute('src')).toBe(PLAYBACK_URL))
+    expect(iframeElement()).toBeNull()
+  })
+
+  it('carries the transcript point back to the Câmara video', async () => {
+    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: 2634, initialSeconds: 100 })
+
+    fireEvent.click(embedSwitch())
+    fireEvent.click(segmentButton(43))
+    expect(iframeElement()?.getAttribute('src')).toBe(
+      `https://www.youtube.com/embed/${YOUTUBE_ID}?playsinline=1&rel=0&start=2677`,
+    )
+
+    fireEvent.click(cameraSwitch())
+    await waitFor(() => expect(videoElement()).not.toBeNull())
+    await waitFor(() => {
+      fireEvent.loadedMetadata(videoElement()!)
+      expect(videoElement()?.currentTime).toBe(43)
+    })
+  })
+})
+
 describe('SpeechDetailPlayer — C178 the deep link seeks the Câmara surface', () => {
   // The seek effect attaches its `loadedmetadata` listener on the passive
   // effect pass, which can land after the video is in the DOM under load;

@@ -15,10 +15,11 @@ import {
  * owns the wait budget through a `SpeechVodPolicy`, and the media verification
  * (not the policy) decides what may reach the browser.
  *
- * The player keeps the bounded click of C162 (`SPEECH_VOD_PLAYER_POLICY`); the
- * cut job (C169) needs the measured first-request window (~30s, then short
- * polls) plus the stored links as a last verified candidate, and passes
- * `SPEECH_VOD_CUT_POLICY` + `cachedUrls`.
+ * The player keeps a short click budget of its own (`SPEECH_VOD_PLAYER_POLICY`;
+ * C181 widened it to poll a transcode in progress) and stops before the cut
+ * job's window; the cut job (C169) needs the measured first-request window
+ * (~30s, then short polls) plus the stored links as a last verified candidate,
+ * and passes `SPEECH_VOD_CUT_POLICY` + `cachedUrls`.
  */
 
 export type SpeechVodPolicy = {
@@ -34,13 +35,19 @@ export type SpeechVodPolicy = {
   pollDelayMs: number
 }
 
-/** C162's player click: short, no poll, immediate answer. */
+/**
+ * C181's player click: a short, own budget that waits out the Câmara's
+ * transcoding instead of treating the first `GERANDO` as a failure — 1 read +
+ * 2 polls of 3 s (~6 s extra), between the old immediate answer and the cut
+ * job's budget (a 45 s read timeout plus 2 polls of 5 s). The wait stays
+ * bounded; past it the honest "gerando" state and the retry remain.
+ */
 export const SPEECH_VOD_PLAYER_POLICY: SpeechVodPolicy = {
   statusTimeoutMs: 15_000,
   statusRetries: 1,
   retryDelayMs: 1_000,
-  pollAttempts: 0,
-  pollDelayMs: 1_000,
+  pollAttempts: 2,
+  pollDelayMs: 3_000,
 }
 
 /** C169's cut job: covers the measured ~30s first request and 1–2 short polls. */

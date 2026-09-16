@@ -11,11 +11,13 @@ import { assertCampaignRedirect, expect, rendered, test } from './fixtures/campa
  * the filter URL contract and the detail's player/transcript/actions. The
  * player picks the surface from the row coordinates — the Câmara excerpt as the
  * default when the speech has one (stored-VOD capa resolved on click), a
- * clickable YouTube cover when it only has a session link (C178: YouTube is the
- * external exit, never an embedded entry) — and honest states when neither
- * exists — and the stored VOD link itself is never rendered (C162). Playback is
- * browser territory and is not asserted here; the HTML carries the contract
- * (`<video src>` only after a click, `data-start-seconds`, the cover href).
+ * clickable YouTube cover when it only has a session link (C178: YouTube is
+ * never an embedded entry; C181 restores the embed as the opt-in in-page surface
+ * behind "Assistir no YouTube", keeping the Câmara as the default entry) — and
+ * honest states when neither exists — and the stored VOD link itself is never
+ * rendered (C162). Playback is browser territory and is not asserted here; the
+ * HTML carries the contract (`<video src>` only after a click, `data-start-seconds`,
+ * the cover href; the embed is never server-rendered).
  */
 
 const YOUTUBE_VIDEO_ID = 'lLhRDkSPw0A'
@@ -176,11 +178,15 @@ test.describe('communication vertical (C154/C162)', () => {
     expect(detailHtml).toContain('O trecho deste vídeo é gerado pela Câmara dos Deputados.')
     expect(detailHtml).toContain('Assistir o trecho')
     // C178 — the exit block is server-rendered with the Câmara panel: the
-    // watch URL opens at the deep-linked point (never a signin dead end) and
-    // the old surface-switch button is gone.
+    // watch URL opens at the deep-linked point (never a signin dead end), and
+    // the Câmara surface owns the switch button (C181).
     expect(detailHtml).toContain('Se o vídeo não abrir aqui, assista por outro caminho:')
     expect(detailHtml).toContain('Abrir no YouTube')
     expect(detailHtml).not.toContain('Assistir na Câmara')
+    // C181 — the way back to the YouTube surface is server-rendered with the
+    // Câmara default (the embed itself only mounts after the click).
+    expect(detailHtml).toContain('Assistir no YouTube')
+    expect(detailHtml).toContain('data-slot="speech-youtube-exit-embed"')
     expect(detailHtml).toContain(`watch?v=${YOUTUBE_VIDEO_ID}&amp;t=${EXCERPT_OFFSET_SECONDS + 43}`)
     expect(detailHtml).toContain('data-slot="speech-youtube-exit-link"')
     expect(detailHtml).toContain('data-start-seconds="0"')
