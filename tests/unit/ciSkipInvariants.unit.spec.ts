@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -112,6 +112,20 @@ describe('ciSkipInvariants', () => {
       'tests/unit/testAffected.unit.spec.ts',
     ]) {
       expect(HIGH_RISK_EXACT.has(path), path).toBe(true)
+    }
+  })
+
+  it('launch/agent-session modules are high-risk — a lib-only diff cannot skip unit (OPS119+)', () => {
+    // The pure launch libs are unit-pinned, so a diff touching only them must
+    // still run the unit suite; the existence check keeps the entry from going
+    // stale on a rename.
+    for (const path of [
+      'scripts/agent-session.mjs',
+      'scripts/lib/agent-session.mjs',
+      'scripts/lib/worktree.mjs',
+    ]) {
+      expect(HIGH_RISK_EXACT.has(path), path).toBe(true)
+      expect(existsSync(join(repoRoot, path)), path).toBe(true)
     }
   })
 

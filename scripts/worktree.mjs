@@ -184,6 +184,7 @@ import {
   branchNameForIssue,
   fixBranchName,
   headlessDirective,
+  namespaceLaunchDescriptor,
   OPENCODE_PRESET_MODEL,
   opencodeLaunchDirective,
   planBranchName,
@@ -672,25 +673,27 @@ const buildTakenBranchNames = () => {
  * `branchName`), provisions the same isolated env as `next` (with `purpose`)
  * and prints the `cd <dir>` line by default (`--stay` suppresses). Every
  * invocation creates a DIFFERENT worktree — parallel sessions never share one.
- * `argument` (optional) rides the launch prompt — for `fix`, the bug
+ * The launch labels and the `argument` that rides the launch prompt are derived
+ * from `purpose`+`bag` by `namespaceLaunchDescriptor` (single source of truth —
+ * there is no droppable `argument` parameter). For `fix` the bag is the bug
  * description the `/bug-fix` skill receives; for `plan`, the opening message
- * the `/plan-issue` driver auto-submits (absent → driverless session).
+ * the `/plan-issue` driver auto-submits (absent → driverless session); `new`
+ * carries none.
  */
 const cmdNamespaceBranch = async ({
   stay,
   skipMigrate,
   purpose,
-  noun,
-  sessionLabel,
+  bag = null,
   branchName,
   flags = {},
-  argument = null,
   headless = false,
   directivePath = null,
 }) => {
   if (headless && !directivePath) {
     die('`--headless` requer `--directive <path>` (a diretiva vai para arquivo, nunca stdout).')
   }
+  const { noun, sessionLabel, argument } = namespaceLaunchDescriptor({ purpose, bag })
   // Fail-high on conflicting model flags before touching git.
   const launchModel = resolveLaunchModel(flags)
   git(['fetch', 'origin'])
@@ -761,11 +764,9 @@ const cmdPlan = async (stay, skipMigrate, bag, flags = {}) =>
     stay,
     skipMigrate,
     purpose: 'plan',
-    noun: 'de planejamento',
-    sessionLabel: bag && bag.trim() ? `lote "${bag}"` : 'sequencial',
+    bag,
     branchName: (taken) => planBranchName({ bag, taken }),
     flags,
-    argument: bag,
   })
 
 /**
@@ -782,8 +783,7 @@ const cmdNew = async (stay, skipMigrate, bag, flags = {}) =>
     stay,
     skipMigrate,
     purpose: 'new',
-    noun: 'neutro',
-    sessionLabel: bag && bag.trim() ? `bag "${bag}"` : 'sequencial',
+    bag,
     branchName: (taken) => workBranchName({ bag, taken }),
     flags,
   })
@@ -808,11 +808,9 @@ const cmdFix = async (stay, skipMigrate, bag, flags = {}, headless = false, dire
     stay,
     skipMigrate,
     purpose: 'fix',
-    noun: 'de correção de bug',
-    sessionLabel: bag && bag.trim() ? `bug "${bag}"` : 'sequencial',
+    bag,
     branchName: (taken) => fixBranchName({ bag, taken }),
     flags,
-    argument: bag,
     headless,
     directivePath,
   })

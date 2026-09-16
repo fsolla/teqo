@@ -20,6 +20,7 @@ import {
   fixBranchName,
   headlessDirective,
   issueCodeAndSubject,
+  namespaceLaunchDescriptor,
   OPENCODE_HEADLESS_COMMAND,
   OPENCODE_PRESET_MODEL,
   opencodeHeadlessArgs,
@@ -315,6 +316,70 @@ describe('opencodeLaunchDirective (terminal-only agent-session launch, OPS26 + O
         model: WORKTREE_MODEL_MAP.cheap,
       }),
     ).toBeNull()
+  })
+})
+
+describe('namespaceLaunchDescriptor (purpose→options single source, OPS119+)', () => {
+  it('plan carries the bag as argument and labels the session with it', () => {
+    expect(namespaceLaunchDescriptor({ purpose: 'plan', bag: 'revisa o gate' })).toEqual({
+      noun: 'de planejamento',
+      sessionLabel: 'lote "revisa o gate"',
+      argument: 'revisa o gate',
+    })
+  })
+
+  it('plan without a bag is driverless: sequential label, no argument', () => {
+    expect(namespaceLaunchDescriptor({ purpose: 'plan' })).toEqual({
+      noun: 'de planejamento',
+      sessionLabel: 'sequencial',
+      argument: null,
+    })
+  })
+
+  it('a blank bag is labeled sequential (trim decides the label) but still rides raw', () => {
+    expect(namespaceLaunchDescriptor({ purpose: 'plan', bag: '   ' })).toEqual({
+      noun: 'de planejamento',
+      sessionLabel: 'sequencial',
+      argument: '   ',
+    })
+  })
+
+  it('does not sanitize the bag — quotes/backslashes ride raw (sanitization stays with the owners)', () => {
+    const descriptor = namespaceLaunchDescriptor({ purpose: 'plan', bag: 'a "b"\\c ideia' })
+    expect(descriptor.argument).toBe('a "b"\\c ideia')
+    expect(descriptor.sessionLabel).toBe('lote "a "b"\\c ideia"')
+  })
+
+  it('new is neutral: it never carries an argument, even with a bag', () => {
+    expect(namespaceLaunchDescriptor({ purpose: 'new' })).toEqual({
+      noun: 'neutro',
+      sessionLabel: 'sequencial',
+      argument: null,
+    })
+    expect(namespaceLaunchDescriptor({ purpose: 'new', bag: 'ideia solta' })).toEqual({
+      noun: 'neutro',
+      sessionLabel: 'bag "ideia solta"',
+      argument: null,
+    })
+  })
+
+  it('fix carries the bug description and labels it', () => {
+    expect(namespaceLaunchDescriptor({ purpose: 'fix', bag: '500 no autosave' })).toEqual({
+      noun: 'de correção de bug',
+      sessionLabel: 'bug "500 no autosave"',
+      argument: '500 no autosave',
+    })
+    expect(namespaceLaunchDescriptor({ purpose: 'fix' })).toEqual({
+      noun: 'de correção de bug',
+      sessionLabel: 'sequencial',
+      argument: null,
+    })
+  })
+
+  it('throws on an unknown/absent purpose — a purpose without a descriptor is a wiring error', () => {
+    for (const purpose of [null, undefined, 'next', 'bogus', 'constructor']) {
+      expect(() => namespaceLaunchDescriptor({ purpose })).toThrow(/purpose desconhecido/)
+    }
   })
 })
 
