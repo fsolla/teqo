@@ -1,6 +1,6 @@
 ---
 name: plan-issue
-description: 'Turn human ideas into tracked GitHub Issues with intention plans and UI drafts.'
+description: 'Turn human ideas into tracked GitHub Issues with intention plans and hi-fi UI designs.'
 disable-model-invocation: true
 ---
 
@@ -23,7 +23,7 @@ parse (main agent)
 1. **Nada no tracker antes do gate.** Antes da confirmação: proibido `pnpm agent:register`, criar Issue/PR.
 2. **Register com `--plan` nasce `blocked`.** Promote só depois do plano em `main`.
 3. **Planos de Issues `in-progress`/`done`/`in-prod` são imutáveis.**
-4. **Rascunho UI (obrigatório se muda UI):** HTML+Tailwind commitado no repo. Classe A/sem UI → sem rascunho.
+4. **Design UI (obrigatório se muda UI):** o sub-agente `designer` produz `docs/plans/<slug>-ui-design.html` + `docs/plans/<slug>-ui-design-assets/*.svg` (doutrina: `ui-design-html.md`). Classe A/sem UI → sem design.
 
 ## Decomposição em sub-agentes
 
@@ -39,7 +39,7 @@ Cada fase pesada é delegada a um sub-agente com contexto mínimo. O agente prin
 ### Sub-agente: Escritor de plano
 
 **Quando:** Passo 3, paralelo (1 sub-agente por ideia).
-**Input:** UMA ideia + achados do explorador + `intention-template.md` + `shaping.md` (+ `ui-draft-html.md` se UI)
+**Input:** UMA ideia + achados do explorador + `intention-template.md` + `shaping.md`
 **Task:** Escrever `docs/plans/<slug>.md` conforme o template. **Não registrar Issues nem criar arquivos — só produzir o conteúdo do plano.**
 **Output:** conteúdo markdown do plano.
 
@@ -57,7 +57,7 @@ Cada fase pesada é delegada a um sub-agente com contexto mínimo. O agente prin
 - [ ] 2. Reserva de IDs
 - [ ] 3. Dispatch sub-agente explorador → receber findings
 - [ ] 4. Dispatch sub-agentes escritores (paralelo) → receber planos
-- [ ] 5. GATE: overview + rascunho UI (se muda UI) + decisão de dados → literais no plano → confirmar
+- [ ] 5. GATE: overview + design UI (se muda UI) + decisão de dados → literais no plano → confirmar
 - [ ] 6. Dispatch sub-agente registrador → PR → merge → promote
 ```
 
@@ -97,7 +97,6 @@ Para cada ideia, monte o task prompt do escritor com:
 - **Uma** ideia (título + intenção completa + tipo + ID)
 - Achados do explorador para essa ideia
 - Templates: `intention-template.md`, `shaping.md`
-- Se UI: `ui-draft-html.md`
 - Se dados: `data-presentation.md`
 - Instrução: "Escreva `docs/plans/<slug>.md` conforme o template. Output: conteúdo markdown."
 
@@ -109,14 +108,14 @@ O agente principal:
 1. Valida cada plano contra `shaping.md` (self-score ≥4)
 2. Aplica melhorias se necessário
 3. Cria os arquivos `docs/plans/<slug>.md` no disco
-4. Se UI: cria `docs/plans/<slug>-ui-draft.html` (sub-agente ou inline)
+4. Se UI: dispatcha o sub-agente `designer` (paralelo, 1 por ideia UI) para produzir `docs/plans/<slug>-ui-design.html` + `docs/plans/<slug>-ui-design-assets/*.svg`; o orquestrador grava os arquivos retornados no disco
 
 ## Passo 4 — GATE
 
 Antes de criar Issues:
 
 - Overview: ID, título, prio, depends, appetite, link do plano
-- Para cada item UI: aponte o link do `.html` fonte
+- Para cada item UI: aponte o link de `docs/plans/<slug>-ui-design.html` e confirme as cenas 390/1280 + estados críticos
 - Decisão de dados → valores literais presentes no plano? (bloco "Dados da decisão (literais)" — nunca só narrativa)
 - Perguntas acumuladas, recomendação de produto primeiro
 
