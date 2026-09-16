@@ -32,4 +32,11 @@ export const CAMPAIGN_COMMUNICATION_CORTES = '/campanha/comunicacao/acervo/corte
 export const campaignSpeechCutDetailHref = (id: number): string =>
   `${CAMPAIGN_COMMUNICATION_CORTES}/${id}`
 
+/** C183 — JSON endpoints the library card and the detail call to remove/retry a cut. */
+export const campaignSpeechCutDeleteHref = (id: number): string =>
+  `${campaignSpeechCutDetailHref(id)}/apagar`
+
+export const campaignSpeechCutRetryHref = (id: number): string =>
+  `${campaignSpeechCutDetailHref(id)}/retry`
+
 export const CAMPAIGN_UPDATES_HREF = '/campanha/atualizacoes' as const

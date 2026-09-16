@@ -341,7 +341,70 @@ test.describe('Acervo cut library (C168)', () => {
       expect(((await response.json()) as { message: string }).message).toContain(
         'não tem acesso ao acervo',
       )
+
+      const deleteResponse = await deniedRequest.delete(
+        `/campanha/comunicacao/acervo/cortes/${cutId}/apagar`,
+      )
+      expect(deleteResponse.status()).toBe(400)
+      expect(((await deleteResponse.json()) as { message: string }).message).toContain(
+        'não tem acesso ao acervo',
+      )
     }
+  })
+
+  test('deletes a cut over HTTP (public link dies) and retries a failed one', async ({
+    campaign,
+    campaignRequest,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    const speech = await createSpeech(campaign)
+    const title = `Corte apagável ${randomUUID().slice(0, 8)}`
+    const cutId = await createCut(request, headers, {
+      speechId: speech.id,
+      status: 'published',
+      title,
+    })
+
+    const communicator = await campaign.fixtures.createCampaignUser('communicator')
+    const communicatorRequest = await campaignRequest(communicator, communicator.password)
+
+    const publicBefore = await playwrightRequest.newContext({ baseURL: campaign.baseURL })
+    try {
+      expect((await publicBefore.get(`/corte/${cutId}`)).status()).toBe(200)
+    } finally {
+      await publicBefore.dispose()
+    }
+
+    const deleted = await communicatorRequest.delete(
+      `/campanha/comunicacao/acervo/cortes/${cutId}/apagar`,
+    )
+    expect(deleted.status()).toBe(200)
+    expect(((await deleted.json()) as { status: string }).status).toBe('success')
+
+    const list = await communicatorRequest.get('/campanha/comunicacao/acervo/cortes')
+    expect(list.status()).toBe(200)
+    expect(rendered(await list.text())).not.toContain(title)
+
+    const anonymous = await playwrightRequest.newContext({ baseURL: campaign.baseURL })
+    try {
+      expect((await anonymous.get(`/corte/${cutId}`)).status()).toBe(404)
+    } finally {
+      await anonymous.dispose()
+    }
+
+    const failedTitle = `Corte falho ${randomUUID().slice(0, 8)}`
+    const failedCut = await createCut(request, headers, {
+      speechId: speech.id,
+      status: 'failed',
+      title: failedTitle,
+    })
+    const retried = await communicatorRequest.post(
+      `/campanha/comunicacao/acervo/cortes/${failedCut}/retry`,
+      { data: { cutId: failedCut } },
+    )
+    expect(retried.status()).toBe(200)
+    expect(((await retried.json()) as { cut: { status: string } }).cut.status).toBe('processing')
   })
 })
 

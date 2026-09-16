@@ -9,3 +9,13 @@ export type SpeechCutTextUpdateResponse =
 export type SpeechCutPublicationResponse =
   | { status: 'success'; cut: SpeechCutViewModel }
   | { status: 'error'; message: string }
+
+/** Wire contract of `DELETE .../cortes/[id]/apagar` (C183) — hard delete. */
+export type SpeechCutDeleteResponse =
+  | { status: 'success'; deleted: true }
+  | { status: 'error'; message: string }
+
+/** Wire contract of `POST .../cortes/[id]/retry` (C183) — retry a failed cut. */
+export type SpeechCutRetryResponse =
+  | { status: 'success'; cut: SpeechCutViewModel }
+  | { status: 'error'; message: string }

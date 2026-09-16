@@ -135,7 +135,7 @@ export const SpeechCutPublicationPanel = ({ cutId, status }: SpeechCutPublicatio
 
       {status === 'failed' ? (
         <p className="mt-2 text-xs text-muted-foreground">
-          O corte falhou e não tem arquivo publicado. Refaça o corte no acervo de falas.
+          Não foi possível preparar o arquivo. Tente novamente sem refazer o corte.
         </p>
       ) : null}
 

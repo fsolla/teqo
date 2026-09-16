@@ -28,7 +28,9 @@ vi.mock('@/utilities/campaignActionContext', async (importOriginal) => {
 })
 
 import {
+  deleteSpeechCutForActor,
   getSpeechCutStatusForActor,
+  retrySpeechCutForActor,
   saveSpeechCutForActor,
   setSpeechCutPublishedForActor,
   suggestSpeechCutMetadataForActor,
@@ -37,6 +39,7 @@ import {
 import {
   SPEECH_CUT_FORBIDDEN_MESSAGE,
   SPEECH_CUT_PUBLISH_NOT_READY_MESSAGE,
+  SPEECH_CUT_RETRY_NOT_FAILED_MESSAGE,
 } from '@/lib/schemas/speechCut'
 import { SPEECH_CUT_FAILURE_INTERRUPTED, SPEECH_CUT_FAILURE_UNAVAILABLE } from '@/lib/speechCut'
 import type { CampaignUser } from '@/payload-types'
@@ -214,6 +217,17 @@ const findCutsAs = (user: CampaignUser | undefined, ids: readonly number[]) =>
     ...(user ? { user } : {}),
     overrideAccess: false,
   })
+
+const findCutById = async (id: number) => {
+  const result = await payload.find({
+    collection: 'speechCut',
+    where: { id: { equals: id } },
+    depth: 0,
+    limit: 1,
+    overrideAccess: true,
+  })
+  return result.docs[0] ?? null
+}
 
 const asActor = (actor: CampaignUser) => mockedGetContext.mockResolvedValue({ payload, actor })
 
@@ -826,6 +840,112 @@ describe('speech cut library (C168)', () => {
     await expect(
       loadSpeechCutDetailPageData(payload, communicator, 999_999_999),
     ).rejects.toBeInstanceOf(SpeechCutNotFoundError)
+  })
+
+  it('deletes the row and removes it from the library (C183)', async () => {
+    const speech = await createSpeech()
+    const marker = `apagavel${randomUUID().slice(0, 8)}`
+    const cutId = await createCut({
+      speech,
+      startSeconds: 0,
+      endSeconds: 20,
+      title: `Corte ${marker}`,
+    })
+    const { communicator } = await createUsers()
+    asActor(communicator)
+
+    await expect(deleteSpeechCutForActor({ cutId })).resolves.toEqual({ deleted: true })
+    expect(await findCutById(cutId)).toBeNull()
+
+    const listed = await loadSpeechCutAcervoPageData(payload, communicator, { q: marker })
+    expect(listed.rows.map((row) => row.id)).not.toContain(cutId)
+  })
+
+  it('denies delete to advisor/leader and keeps it for the Payload admin (C183)', async () => {
+    const speech = await createSpeech()
+    const { advisor, leader } = await createUsers()
+    const admin = await campaignFixtures().createAdminUser()
+
+    for (const denied of [advisor, leader]) {
+      const cutId = await createCut({ speech, startSeconds: 0, endSeconds: 20 })
+      await expect(
+        payload.delete({
+          collection: 'speechCut',
+          id: cutId,
+          user: denied,
+          overrideAccess: false,
+        }),
+      ).rejects.toThrow()
+      expect(await findCutById(cutId)).not.toBeNull()
+
+      asActor(denied)
+      await expect(deleteSpeechCutForActor({ cutId })).rejects.toThrow(SPEECH_CUT_FORBIDDEN_MESSAGE)
+    }
+
+    const adminCut = await createCut({ speech, startSeconds: 30, endSeconds: 50 })
+    await expect(
+      payload.delete({
+        collection: 'speechCut',
+        id: adminCut,
+        user: admin,
+        overrideAccess: false,
+      }),
+    ).resolves.toBeDefined()
+    expect(await findCutById(adminCut)).toBeNull()
+  })
+
+  it('retries a failed cut in place and refuses the others (C183)', async () => {
+    const speech = await createSpeech()
+    const failed = await createCut({ speech, startSeconds: 0, endSeconds: 20, status: 'failed' })
+    const published = await createCut({
+      speech,
+      startSeconds: 30,
+      endSeconds: 50,
+      status: 'published',
+    })
+    const { communicator, advisor } = await createUsers()
+    asActor(communicator)
+
+    mockedStartJob.mockClear()
+    const retried = await retrySpeechCutForActor({ cutId: failed })
+    expect(retried.id).toBe(failed)
+    expect(retried.status).toBe('processing')
+    expect(mockedStartJob).toHaveBeenCalledWith(failed)
+
+    await expect(retrySpeechCutForActor({ cutId: published })).rejects.toThrow(
+      SPEECH_CUT_RETRY_NOT_FAILED_MESSAGE,
+    )
+
+    asActor(advisor)
+    await expect(retrySpeechCutForActor({ cutId: failed })).rejects.toThrow(
+      SPEECH_CUT_FORBIDDEN_MESSAGE,
+    )
+  })
+
+  it('leaves the stored media behind when the cut is deleted (C183 documented orphan)', async () => {
+    const speech = await createSpeech()
+    const cutId = await createCut({ speech, startSeconds: 43, endSeconds: 118 })
+    const { communicator } = await createUsers()
+    asActor(communicator)
+
+    vi.stubGlobal('fetch', camaraFetchStub(MP4_BYTES))
+    const restoreFfmpeg = withFfmpegPath(FAKE_FFMPEG)
+
+    try {
+      await runSpeechCutJob(payload, cutId)
+      const { media } = await expectPublishedWithFakeFfmpeg(cutId)
+
+      await deleteSpeechCutForActor({ cutId })
+      expect(await findCutById(cutId)).toBeNull()
+
+      const mediaRow = await payload
+        .findByID({ collection: 'media', id: media.id, depth: 0, overrideAccess: true })
+        .catch(() => null)
+      expect(mediaRow).not.toBeNull()
+    } finally {
+      restoreFfmpeg()
+      vi.unstubAllGlobals()
+    }
   })
 })
 
