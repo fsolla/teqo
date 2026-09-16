@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — Biblioteca de cortes: apagar e recuperar falhas</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-card: var(--card);
+        --color-card-foreground: var(--card-foreground);
+        --color-popover: var(--popover);
+        --color-popover-foreground: var(--popover-foreground);
+        --color-primary: var(--primary);
+        --color-primary-foreground: var(--primary-foreground);
+        --color-secondary: var(--secondary);
+        --color-secondary-foreground: var(--secondary-foreground);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-accent: var(--accent);
+        --color-accent-foreground: var(--accent-foreground);
+        --color-destructive: var(--destructive);
+        --color-border: var(--border);
+        --color-input: var(--input);
+        --color-ring: var(--ring);
+        --color-sidebar: var(--sidebar);
+        --color-sidebar-foreground: var(--sidebar-foreground);
+        --color-sidebar-accent: var(--sidebar-accent);
+        --color-sidebar-border: var(--sidebar-border);
+        --radius-sm: 0.25rem;
+        --radius-md: 0.375rem;
+        --radius-lg: 0.5rem;
+        --radius-xl: 0.75rem;
+      }
+
+      [data-theme='campaign'] {
+        --background: #ffffff;
+        --foreground: #1c1917;
+        --card: #ffffff;
+        --card-foreground: #1c1917;
+        --popover: #ffffff;
+        --popover-foreground: #1c1917;
+        --primary: #c51414;
+        --primary-foreground: #ffffff;
+        --secondary: #f5f5f4;
+        --secondary-foreground: #292524;
+        --muted: #f4f4f5;
+        --muted-foreground: #6b7280;
+        --accent: #f4f4f5;
+        --accent-foreground: #1c1917;
+        --destructive: #b42318;
+        --border: rgb(28 25 23 / 12%);
+        --input: rgb(28 25 23 / 16%);
+        --ring: #c51414;
+        --sidebar: #fafaf9;
+        --sidebar-foreground: #1c1917;
+        --sidebar-accent: #f5f5f4;
+        --sidebar-border: rgb(28 25 23 / 12%);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+      .scene-shadow {
+        box-shadow: 0 18px 48px rgb(28 25 23 / 10%);
+      }
+      .dialog-shadow {
+        box-shadow: 0 24px 80px rgb(28 25 23 / 25%);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-stone-100 text-foreground antialiased">
+    <!-- Ícones abaixo seguem o grid/stroke do Lucide; não há asset próprio. -->
+    <main class="mx-auto max-w-[1400px] space-y-12 px-5 py-10 md:px-8 md:py-14">
+      <header class="max-w-3xl">
+        <p class="text-sm font-medium text-primary">Design de gate · campanha</p>
+        <h1 class="mt-2 text-2xl font-semibold tracking-tight">
+          Biblioteca limpa, falha recuperável
+        </h1>
+        <p class="mt-2 text-sm leading-6 text-muted-foreground">
+          A assessoria apaga um corte sem serventia com confirmação proporcional ao risco e tenta
+          novamente uma falha no mesmo lugar em que a encontra.
+        </p>
+      </header>
+
+      <!-- CENA A — desktop / lista -->
+      <section aria-labelledby="scene-a-title">
+        <div class="mb-3 flex items-end justify-between gap-4">
+          <div>
+            <p class="text-xs font-medium text-muted-foreground">Cena A · desktop ~1280</p>
+            <h2 id="scene-a-title" class="mt-1 text-base font-semibold">
+              Lista com os três estados
+            </h2>
+          </div>
+          <p class="hidden text-xs text-muted-foreground md:block">
+            Ações rotineiras à esquerda; apagar isolado à direita.
+          </p>
+        </div>
+
+        <div
+          class="scene-shadow mx-auto h-[790px] max-w-[1280px] overflow-hidden rounded-xl border border-border bg-background"
+        >
+          <div class="flex h-full">
+            <aside
+              class="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar p-4 lg:flex lg:flex-col"
+            >
+              <div class="flex h-12 items-center gap-3 border-b border-sidebar-border pb-4">
+                <div
+                  class="grid size-8 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground"
+                >
+                  S
+                </div>
+                <div>
+                  <p class="text-sm font-semibold">Campanha</p>
+                  <p class="text-xs text-muted-foreground">Mesa de trabalho</p>
+                </div>
+              </div>
+              <nav class="mt-4 space-y-1 text-sm" aria-label="Navegação ilustrativa">
+                <a
+                  href="#"
+                  class="flex h-8 items-center gap-3 rounded-md px-2 text-muted-foreground"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="size-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="m3 11 9-8 9 8" />
+                    <path d="M5 10v10h14V10" />
+                  </svg>
+                  Início
+                </a>
+                <a
+                  href="/campanha/comunicacao"
+                  class="flex h-8 items-center gap-3 rounded-md bg-sidebar-accent px-2 font-medium"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="size-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="m3 11 18-5v12L3 14v-3Z" />
+                    <path d="M11.6 16.9 13 22H7l-1.3-7" />
+                  </svg>
+                  Comunicação
+                </a>
+                <div class="mx-3.5 border-l border-sidebar-border px-2.5 py-0.5">
+                  <a
+                    href="/campanha/comunicacao/acervo"
+                    class="flex h-7 items-center rounded-md px-2 text-muted-foreground"
+                    >Acervo de falas</a
+                  >
+                  <a
+                    href="/campanha/comunicacao/acervo/cortes"
+                    class="flex h-7 items-center rounded-md bg-card px-2 font-medium text-primary ring-1 ring-border"
+                    >Biblioteca de cortes</a
+                  >
+                </div>
+              </nav>
+              <div
+                class="mt-auto border-t border-sidebar-border pt-4 text-xs text-muted-foreground"
+              >
+                Assessoria de comunicação
+              </div>
+            </aside>
+
+            <div class="min-w-0 flex-1">
+              <header class="flex h-16 items-center justify-between border-b border-border px-6">
+                <div>
+                  <p class="text-xs text-muted-foreground">Comunicação</p>
+                  <p class="text-sm font-medium">Biblioteca de cortes</p>
+                </div>
+                <div class="size-8 rounded-full bg-secondary ring-1 ring-border"></div>
+              </header>
+
+              <div class="mx-auto max-w-4xl p-6 lg:p-8">
+                <div class="mb-8">
+                  <label for="desktop-search" class="sr-only"
+                    >Buscar corte por título ou descrição</label
+                  >
+                  <div class="relative max-w-xl">
+                    <svg
+                      aria-hidden="true"
+                      class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="m21 21-4.3-4.3" />
+                    </svg>
+                    <input
+                      id="desktop-search"
+                      readonly
+                      placeholder="Buscar por título ou descrição…"
+                      class="h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground"
+                    />
+                  </div>
+                </div>
+
+                <div class="space-y-3">
+                  <!-- Publicado -->
+                  <article class="rounded-xl border border-border bg-card p-4">
+                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span
+                        class="inline-flex h-5 items-center rounded-full bg-primary px-2 text-xs font-normal text-primary-foreground"
+                        >Publicado</span
+                      >
+                      <span class="text-xs text-muted-foreground">Criado em 16 set. 2026</span>
+                    </div>
+                    <h3 class="mt-2 text-sm font-medium">Título do corte publicado</h3>
+                    <div
+                      class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
+                    >
+                      <a href="#" class="underline underline-offset-4 hover:text-foreground"
+                        >Fala de origem</a
+                      ><span aria-hidden="true">·</span><span>00:42</span>
+                    </div>
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                      <a
+                        href="/campanha/comunicacao/acervo/cortes/101"
+                        class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border bg-background px-3 text-xs font-medium"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="size-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <polygon points="6 3 20 12 6 21 6 3" />
+                        </svg>
+                        Abrir corte
+                      </a>
+                      <button
+                        type="button"
+                        class="inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs font-medium hover:bg-accent"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="size-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <rect width="14" height="14" x="8" y="8" rx="2" />
+                          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                        </svg>
+                        Copiar link
+                      </button>
+                      <button
+                        type="button"
+                        class="ml-auto inline-flex min-h-10 items-center rounded-lg px-3 text-xs font-medium text-destructive hover:bg-red-50"
+                      >
+                        Apagar
+                      </button>
+                    </div>
+                  </article>
+
+                  <!-- Despublicado -->
+                  <article class="rounded-xl border border-dashed border-border bg-card p-4">
+                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span
+                        class="inline-flex h-5 items-center rounded-full border border-border px-2 text-xs font-normal"
+                        >Despublicado</span
+                      >
+                      <span class="text-xs text-muted-foreground">Criado em 15 set. 2026</span>
+                    </div>
+                    <h3 class="mt-2 text-sm font-medium">Título do corte despublicado</h3>
+                    <div
+                      class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
+                    >
+                      <a href="#" class="underline underline-offset-4 hover:text-foreground"
+                        >Fala de origem</a
+                      ><span aria-hidden="true">·</span><span>01:08</span>
+                    </div>
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                      <a
+                        href="/campanha/comunicacao/acervo/cortes/102"
+                        class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border bg-background px-3 text-xs font-medium"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="size-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <polygon points="6 3 20 12 6 21 6 3" />
+                        </svg>
+                        Abrir corte
+                      </a>
+                      <button
+                        type="button"
+                        class="ml-auto inline-flex min-h-10 items-center rounded-lg px-3 text-xs font-medium text-destructive hover:bg-red-50"
+                      >
+                        Apagar
+                      </button>
+                    </div>
+                  </article>
+
+                  <!-- Falhou -->
+                  <article class="rounded-xl border border-dashed border-border bg-card p-4">
+                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span
+                        class="inline-flex h-5 items-center rounded-full bg-destructive px-2 text-xs font-normal text-white"
+                        >Falhou</span
+                      >
+                      <span class="text-xs text-muted-foreground">Criado em 15 set. 2026</span>
+                    </div>
+                    <h3 class="mt-2 text-sm font-medium">Título do corte que não foi concluído</h3>
+                    <div
+                      class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
+                    >
+                      <a href="#" class="underline underline-offset-4 hover:text-foreground"
+                        >Fala de origem</a
+                      ><span aria-hidden="true">·</span><span>00:35</span>
+                    </div>
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        class="inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:opacity-90"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="size-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path d="M20 6v6h-6" />
+                          <path d="M20 12a8 8 0 1 0-2.34 5.66" />
+                        </svg>
+                        Tentar novamente
+                      </button>
+                      <a
+                        href="/campanha/comunicacao/acervo/cortes/103"
+                        class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border bg-background px-3 text-xs font-medium"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="size-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <polygon points="6 3 20 12 6 21 6 3" />
+                        </svg>
+                        Abrir corte
+                      </a>
+                      <button
+                        type="button"
+                        class="ml-auto inline-flex min-h-10 items-center rounded-lg px-3 text-xs font-medium text-destructive hover:bg-red-50"
+                      >
+                        Apagar
+                      </button>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENAS B e C — diálogos sempre visíveis para o gate -->
+      <section aria-labelledby="dialog-scenes-title">
+        <div class="mb-3">
+          <p class="text-xs font-medium text-muted-foreground">Cenas B e C · confirmação</p>
+          <h2 id="dialog-scenes-title" class="mt-1 text-base font-semibold">
+            O aviso cresce somente quando existe link público
+          </h2>
+        </div>
+        <div class="grid gap-6 lg:grid-cols-2">
+          <div
+            class="relative flex min-h-[410px] items-center justify-center overflow-hidden rounded-xl border border-border bg-stone-200 p-5"
+          >
+            <div class="absolute inset-0 bg-foreground/35"></div>
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="published-dialog-title"
+              class="dialog-shadow relative w-full max-w-md rounded-xl border border-border bg-popover p-6 text-popover-foreground"
+            >
+              <div class="flex items-start gap-3">
+                <div
+                  class="grid size-9 shrink-0 place-items-center rounded-full bg-red-50 text-destructive"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="size-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8v4" />
+                    <path d="M12 16h.01" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 id="published-dialog-title" class="text-base font-semibold">
+                    Apagar este corte?
+                  </h3>
+                  <p class="mt-2 text-sm leading-6 text-muted-foreground">
+                    O link público
+                    <span class="font-medium text-foreground">/corte/&lt;id&gt;</span> deixa de
+                    funcionar para quem já recebeu. Esta ação não pode ser desfeita.
+                  </p>
+                </div>
+              </div>
+              <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  class="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex h-10 items-center justify-center rounded-lg bg-destructive px-4 text-sm font-medium text-white"
+                >
+                  Apagar
+                </button>
+              </div>
+            </div>
+            <span
+              class="absolute left-4 top-4 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-foreground"
+              >Publicado</span
+            >
+          </div>
+
+          <div
+            class="relative flex min-h-[410px] items-center justify-center overflow-hidden rounded-xl border border-border bg-stone-200 p-5"
+          >
+            <div class="absolute inset-0 bg-foreground/35"></div>
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="failed-dialog-title"
+              class="dialog-shadow relative w-full max-w-md rounded-xl border border-border bg-popover p-6 text-popover-foreground"
+            >
+              <div class="flex items-start gap-3">
+                <div
+                  class="grid size-9 shrink-0 place-items-center rounded-full bg-red-50 text-destructive"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="size-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8v4" />
+                    <path d="M12 16h.01" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 id="failed-dialog-title" class="text-base font-semibold">
+                    Apagar este corte?
+                  </h3>
+                  <p class="mt-2 text-sm leading-6 text-muted-foreground">
+                    Esta ação não pode ser desfeita.
+                  </p>
+                </div>
+              </div>
+              <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  class="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex h-10 items-center justify-center rounded-lg bg-destructive px-4 text-sm font-medium text-white"
+                >
+                  Apagar
+                </button>
+              </div>
+            </div>
+            <span
+              class="absolute left-4 top-4 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-foreground"
+              >Despublicado ou falhou</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA D — mobile -->
+      <section aria-labelledby="scene-d-title">
+        <div class="mb-3">
+          <p class="text-xs font-medium text-muted-foreground">Cena D · mobile ~390</p>
+          <h2 id="scene-d-title" class="mt-1 text-base font-semibold">
+            Falha e próxima ação cabem sem esconder apagar
+          </h2>
+        </div>
+        <div
+          class="scene-shadow mx-auto w-full max-w-[390px] overflow-hidden rounded-[28px] border-[6px] border-stone-800 bg-background"
+        >
+          <div
+            class="flex h-14 items-center justify-between bg-primary px-4 text-primary-foreground"
+          >
+            <button aria-label="Abrir menu" class="grid size-10 place-items-center rounded-lg">
+              <svg
+                aria-hidden="true"
+                class="size-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <span class="text-sm font-semibold">Biblioteca de cortes</span>
+            <div class="size-10"></div>
+          </div>
+          <div class="px-4 py-5">
+            <label for="mobile-search" class="sr-only">Buscar corte por título ou descrição</label>
+            <div class="relative">
+              <svg
+                aria-hidden="true"
+                class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                id="mobile-search"
+                readonly
+                placeholder="Buscar cortes…"
+                class="h-11 w-full rounded-md border border-input bg-background pl-9 pr-3 text-base outline-none placeholder:text-muted-foreground"
+              />
+            </div>
+
+            <div class="mt-5 space-y-3">
+              <article class="rounded-xl border border-border bg-card p-4">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span
+                    class="inline-flex h-5 items-center rounded-full bg-primary px-2 text-xs text-primary-foreground"
+                    >Publicado</span
+                  >
+                  <span class="text-xs text-muted-foreground">16 set. 2026</span>
+                </div>
+                <h3 class="mt-2 text-sm font-medium">Título do corte publicado</h3>
+                <p class="mt-1.5 text-xs text-muted-foreground">
+                  <span class="underline underline-offset-4">Fala de origem</span> · 00:42
+                </p>
+                <div class="mt-3 grid grid-cols-2 gap-2">
+                  <a
+                    href="/campanha/comunicacao/acervo/cortes/101"
+                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border px-2 text-xs font-medium"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="size-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <polygon points="6 3 20 12 6 21 6 3" /></svg
+                    >Abrir corte
+                  </a>
+                  <button
+                    type="button"
+                    class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-2 text-xs font-medium"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="size-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <rect width="14" height="14" x="8" y="8" rx="2" />
+                      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg
+                    >Copiar link
+                  </button>
+                  <button
+                    type="button"
+                    class="col-span-2 min-h-11 rounded-lg text-xs font-medium text-destructive hover:bg-red-50"
+                  >
+                    Apagar
+                  </button>
+                </div>
+              </article>
+
+              <article class="rounded-xl border border-dashed border-border bg-card p-4">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span
+                    class="inline-flex h-5 items-center rounded-full bg-destructive px-2 text-xs text-white"
+                    >Falhou</span
+                  >
+                  <span class="text-xs text-muted-foreground">15 set. 2026</span>
+                </div>
+                <h3 class="mt-2 text-sm font-medium">Título do corte que não foi concluído</h3>
+                <p class="mt-1.5 text-xs text-muted-foreground">
+                  <span class="underline underline-offset-4">Fala de origem</span> · 00:35
+                </p>
+                <div class="mt-3 space-y-2">
+                  <button
+                    type="button"
+                    class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="size-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M20 6v6h-6" />
+                      <path d="M20 12a8 8 0 1 0-2.34 5.66" />
+                    </svg>
+                    Tentar novamente
+                  </button>
+                  <div class="grid grid-cols-2 gap-2">
+                    <a
+                      href="/campanha/comunicacao/acervo/cortes/103"
+                      class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border px-2 text-xs font-medium"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="size-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <polygon points="6 3 20 12 6 21 6 3" /></svg
+                      >Abrir corte
+                    </a>
+                    <button
+                      type="button"
+                      class="min-h-11 rounded-lg text-xs font-medium text-destructive hover:bg-red-50"
+                    >
+                      Apagar
+                    </button>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+          <nav
+            aria-label="Navegação inferior ilustrativa"
+            class="grid h-16 grid-cols-5 border-t border-border bg-background px-2 text-[10px] text-muted-foreground"
+          >
+            <span class="grid place-items-center">Início</span
+            ><span class="grid place-items-center">Municípios</span
+            ><span class="grid place-items-center">Atualizações</span
+            ><span class="grid place-items-center">Agenda</span
+            ><span class="grid place-items-center text-primary">Mais</span>
+          </nav>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
