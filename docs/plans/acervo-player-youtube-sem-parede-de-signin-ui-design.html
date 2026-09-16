@@ -23,14 +23,18 @@
         --color-sidebar-foreground: #1c1917;
       }
 
-      * { box-sizing: border-box; }
-      body { margin: 0; }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
 
       .scene-label {
         @apply mb-3 flex items-center gap-2 text-xs font-medium text-muted-foreground;
       }
       .scene-label::before {
-        content: "";
+        content: '';
         @apply h-px w-5 bg-primary;
       }
       .btn {
@@ -49,7 +53,7 @@
         @apply relative flex aspect-video w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border bg-stone-900 outline-none transition-all;
       }
       .poster-facade::after {
-        content: "";
+        content: '';
         @apply pointer-events-none absolute inset-0 ring-0 ring-primary/50 ring-inset transition-all;
       }
       .poster-facade:hover::after,
@@ -67,7 +71,12 @@
         @apply ring-3 ring-ring/50;
       }
       @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition: none !important;
+        }
       }
     </style>
   </head>
@@ -83,7 +92,9 @@
               Câmara na página ou uma capa honesta com saída externa em um clique.
             </p>
           </div>
-          <span class="rounded-full border border-border bg-white px-3 py-1 text-xs text-muted-foreground">
+          <span
+            class="rounded-full border border-border bg-white px-3 py-1 text-xs text-muted-foreground"
+          >
             data-theme="campaign"
           </span>
         </div>
@@ -91,20 +102,34 @@
 
       <!-- DESKTOP A -->
       <section class="mx-auto mb-12 max-w-6xl" aria-labelledby="desktop-a-title">
-        <div class="scene-label"><span id="desktop-a-title">Desktop (~1280px), cena A — trecho da Câmara tocando na página</span></div>
-        <div class="overflow-hidden rounded-xl border border-border bg-background shadow-[0_4px_24px_rgb(28_25_23/0.08)]">
+        <div class="scene-label">
+          <span id="desktop-a-title"
+            >Desktop (~1280px), cena A — trecho da Câmara tocando na página</span
+          >
+        </div>
+        <div
+          class="overflow-hidden rounded-xl border border-border bg-background shadow-[0_4px_24px_rgb(28_25_23/0.08)]"
+        >
           <div class="grid min-h-[760px] grid-cols-[210px_minmax(0,1fr)]">
             <aside class="border-r border-border bg-sidebar p-3" aria-label="Navegação ilustrativa">
               <div class="flex h-12 items-center gap-2 px-2">
-                <div class="grid size-8 place-items-center rounded-lg bg-primary text-sm font-bold text-white">S</div>
+                <div
+                  class="grid size-8 place-items-center rounded-lg bg-primary text-sm font-bold text-white"
+                >
+                  S
+                </div>
                 <span class="text-sm font-semibold">Campanha</span>
               </div>
               <nav class="mt-5 space-y-1 text-sm">
                 <div class="rounded-lg px-3 py-2 text-muted-foreground">Visão geral</div>
                 <div class="rounded-lg px-3 py-2 text-muted-foreground">Municípios</div>
                 <div class="rounded-lg px-3 py-2 text-muted-foreground">Pessoas</div>
-                <div class="rounded-lg bg-secondary px-3 py-2 font-medium text-foreground">Comunicação</div>
-                <div class="ml-4 rounded-lg bg-primary/8 px-3 py-2 font-medium text-primary">Acervo de falas</div>
+                <div class="rounded-lg bg-secondary px-3 py-2 font-medium text-foreground">
+                  Comunicação
+                </div>
+                <div class="ml-4 rounded-lg bg-primary/8 px-3 py-2 font-medium text-primary">
+                  Acervo de falas
+                </div>
               </nav>
             </aside>
 
@@ -117,34 +142,93 @@
               </header>
               <div class="p-7">
                 <button class="btn btn-ghost -ml-2" type="button" aria-label="Voltar ao acervo">
-                  <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 18-6-6 6-6"/><path d="M9 12h10"/></svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="size-4"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <path d="m15 18-6-6 6-6" />
+                    <path d="M9 12h10" />
+                  </svg>
                   Voltar ao acervo
                 </button>
 
                 <div class="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_230px]">
                   <article class="min-w-0">
                     <h2 class="text-lg font-medium">Discurso</h2>
-                    <p class="mt-1 text-xs text-muted-foreground">Sessão plenária · duração da fala</p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                      Sessão plenária · duração da fala
+                    </p>
 
-                    <div class="mt-4 overflow-hidden rounded-lg border border-black/30 bg-black text-white">
+                    <div
+                      class="mt-4 overflow-hidden rounded-lg border border-black/30 bg-black text-white"
+                    >
                       <div class="relative aspect-video">
-                        <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,#44403c_0%,#1c1917_46%,#09090b_100%)]"></div>
-                        <div class="absolute inset-x-0 top-0 flex items-center justify-between p-4 text-xs text-white/75">
+                        <div
+                          class="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,#44403c_0%,#1c1917_46%,#09090b_100%)]"
+                        ></div>
+                        <div
+                          class="absolute inset-x-0 top-0 flex items-center justify-between p-4 text-xs text-white/75"
+                        >
                           <span class="rounded-md bg-black/55 px-2 py-1">Trecho da Câmara</span>
                           <span>Fonte oficial</span>
                         </div>
                         <div class="absolute inset-0 grid place-items-center">
-                          <div class="grid size-14 place-items-center rounded-full bg-white/12 ring-1 ring-white/25 backdrop-blur-sm">
-                            <svg viewBox="0 0 24 24" class="ml-0.5 size-6" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                          <div
+                            class="grid size-14 place-items-center rounded-full bg-white/12 ring-1 ring-white/25 backdrop-blur-sm"
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              class="ml-0.5 size-6"
+                              fill="currentColor"
+                              aria-hidden="true"
+                            >
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
                           </div>
                         </div>
-                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent px-4 pb-3 pt-9">
-                          <div class="h-1 rounded-full bg-white/25"><div class="h-1 w-[38%] rounded-full bg-primary"></div></div>
+                        <div
+                          class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent px-4 pb-3 pt-9"
+                        >
+                          <div class="h-1 rounded-full bg-white/25">
+                            <div class="h-1 w-[38%] rounded-full bg-primary"></div>
+                          </div>
                           <div class="mt-3 flex items-center gap-3 text-xs">
-                            <svg viewBox="0 0 24 24" class="size-4" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                            <svg
+                              viewBox="0 0 24 24"
+                              class="size-4"
+                              fill="currentColor"
+                              aria-hidden="true"
+                            >
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
                             <span class="tabular-nums">01:42 / 04:31</span>
-                            <svg viewBox="0 0 24 24" class="ml-auto size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
-                            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+                            <svg
+                              viewBox="0 0 24 24"
+                              class="ml-auto size-4"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              aria-hidden="true"
+                            >
+                              <path d="M11 5 6 9H2v6h4l5 4z" />
+                              <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                            </svg>
+                            <svg
+                              viewBox="0 0 24 24"
+                              class="size-4"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              aria-hidden="true"
+                            >
+                              <path
+                                d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"
+                              />
+                            </svg>
                           </div>
                         </div>
                       </div>
@@ -153,11 +237,26 @@
                     <div class="mt-3 rounded-lg border border-border bg-muted/40 px-4 py-3">
                       <div class="flex items-center justify-between gap-3">
                         <div>
-                          <p class="text-xs font-medium text-foreground/90">Se o vídeo não abrir aqui, assista por outro caminho:</p>
-                          <p class="mt-1 text-xs leading-5 text-muted-foreground">O trecho da Câmara toca nesta página; o YouTube abre no ponto da fala.</p>
+                          <p class="text-xs font-medium text-foreground/90">
+                            Se o vídeo não abrir aqui, assista por outro caminho:
+                          </p>
+                          <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                            O trecho da Câmara toca nesta página; o YouTube abre no ponto da fala.
+                          </p>
                         </div>
                         <a class="btn btn-primary" href="#desktop-a-title">
-                          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                          <svg
+                            viewBox="0 0 24 24"
+                            class="size-4"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            aria-hidden="true"
+                          >
+                            <path d="M15 3h6v6" />
+                            <path d="M10 14 21 3" />
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                          </svg>
                           Abrir no YouTube
                         </a>
                       </div>
@@ -170,18 +269,47 @@
                     </div>
 
                     <section class="mt-5" aria-label="Transcrição ilustrativa">
-                      <p class="text-xs text-muted-foreground">Transcrição (clique para posicionar)</p>
+                      <p class="text-xs text-muted-foreground">
+                        Transcrição (clique para posicionar)
+                      </p>
                       <div class="mt-2 space-y-1">
-                        <div class="flex gap-3 rounded-lg bg-muted px-2 py-2"><span class="w-12 text-xs tabular-nums text-primary">01:42</span><span class="text-sm text-foreground/90">Trecho da fala em reprodução nesta página.</span></div>
-                        <div class="flex gap-3 rounded-lg px-2 py-2"><span class="w-12 text-xs tabular-nums text-muted-foreground">01:58</span><span class="text-sm text-foreground/90">A transcrição permanece disponível para posicionar o vídeo.</span></div>
+                        <div class="flex gap-3 rounded-lg bg-muted px-2 py-2">
+                          <span class="w-12 text-xs tabular-nums text-primary">01:42</span
+                          ><span class="text-sm text-foreground/90"
+                            >Trecho da fala em reprodução nesta página.</span
+                          >
+                        </div>
+                        <div class="flex gap-3 rounded-lg px-2 py-2">
+                          <span class="w-12 text-xs tabular-nums text-muted-foreground">01:58</span
+                          ><span class="text-sm text-foreground/90"
+                            >A transcrição permanece disponível para posicionar o vídeo.</span
+                          >
+                        </div>
                       </div>
                     </section>
                   </article>
 
                   <aside class="space-y-5 border-l border-border pl-5">
-                    <section><h3 class="text-xs text-muted-foreground">Sumário oficial</h3><div class="mt-2 space-y-2"><div class="h-2.5 w-full rounded bg-muted"></div><div class="h-2.5 w-4/5 rounded bg-muted"></div><div class="h-2.5 w-2/3 rounded bg-muted"></div></div></section>
-                    <section><h3 class="text-xs text-muted-foreground">Temas</h3><div class="mt-2 flex gap-1.5"><span class="rounded-full bg-secondary px-2 py-1 text-xs">Tema</span><span class="rounded-full bg-secondary px-2 py-1 text-xs">Tema</span></div></section>
-                    <section class="border-t border-border pt-3"><p class="text-xs text-muted-foreground">Fonte: Câmara dos Deputados · CC BY 4.0</p></section>
+                    <section>
+                      <h3 class="text-xs text-muted-foreground">Sumário oficial</h3>
+                      <div class="mt-2 space-y-2">
+                        <div class="h-2.5 w-full rounded bg-muted"></div>
+                        <div class="h-2.5 w-4/5 rounded bg-muted"></div>
+                        <div class="h-2.5 w-2/3 rounded bg-muted"></div>
+                      </div>
+                    </section>
+                    <section>
+                      <h3 class="text-xs text-muted-foreground">Temas</h3>
+                      <div class="mt-2 flex gap-1.5">
+                        <span class="rounded-full bg-secondary px-2 py-1 text-xs">Tema</span
+                        ><span class="rounded-full bg-secondary px-2 py-1 text-xs">Tema</span>
+                      </div>
+                    </section>
+                    <section class="border-t border-border pt-3">
+                      <p class="text-xs text-muted-foreground">
+                        Fonte: Câmara dos Deputados · CC BY 4.0
+                      </p>
+                    </section>
                   </aside>
                 </div>
               </div>
@@ -192,26 +320,62 @@
 
       <!-- DESKTOP B -->
       <section class="mx-auto mb-12 max-w-6xl" aria-labelledby="desktop-b-title">
-        <div class="scene-label"><span id="desktop-b-title">Desktop, cena B — sem trecho da Câmara: capa clicável (hover/foco)</span></div>
-        <div class="rounded-xl border border-border bg-background p-7 shadow-[0_4px_24px_rgb(28_25_23/0.08)]">
+        <div class="scene-label">
+          <span id="desktop-b-title"
+            >Desktop, cena B — sem trecho da Câmara: capa clicável (hover/foco)</span
+          >
+        </div>
+        <div
+          class="rounded-xl border border-border bg-background p-7 shadow-[0_4px_24px_rgb(28_25_23/0.08)]"
+        >
           <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
             <article class="min-w-0">
               <h2 class="text-lg font-medium">Discurso</h2>
               <p class="mt-1 text-xs text-muted-foreground">Sessão plenária · data da fala</p>
 
-              <button class="poster-facade is-focus-demo mt-4" type="button" aria-label="Abrir este trecho no YouTube">
-                <div class="absolute inset-0 bg-[linear-gradient(135deg,#292524_0%,#0c0a09_60%,#1c1917_100%)]"></div>
-                <div class="absolute inset-0 opacity-40 [background-image:linear-gradient(rgb(255_255_255/0.05)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.05)_1px,transparent_1px)] [background-size:32px_32px]"></div>
-                <div class="absolute inset-x-5 top-5 flex items-start justify-between gap-3 text-left">
-                  <span class="rounded-md border border-white/20 bg-black/45 px-2 py-1 text-xs text-white/80">Vídeo no YouTube</span>
-                  <span class="rounded-md border border-amber-200/40 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-900">NEEDS ASSET — capa real do vídeo</span>
+              <button
+                class="poster-facade is-focus-demo mt-4"
+                type="button"
+                aria-label="Abrir este trecho no YouTube"
+              >
+                <div
+                  class="absolute inset-0 bg-[linear-gradient(135deg,#292524_0%,#0c0a09_60%,#1c1917_100%)]"
+                ></div>
+                <div
+                  class="absolute inset-0 opacity-40 [background-image:linear-gradient(rgb(255_255_255/0.05)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.05)_1px,transparent_1px)] [background-size:32px_32px]"
+                ></div>
+                <div
+                  class="absolute inset-x-5 top-5 flex items-start justify-between gap-3 text-left"
+                >
+                  <span
+                    class="rounded-md border border-white/20 bg-black/45 px-2 py-1 text-xs text-white/80"
+                    >Vídeo no YouTube</span
+                  >
+                  <span
+                    class="rounded-md border border-amber-200/40 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-900"
+                    >NEEDS ASSET — capa real do vídeo</span
+                  >
                 </div>
-                <div class="poster-action relative grid size-16 place-items-center rounded-full bg-white/90 text-stone-950 shadow-lg transition-all">
-                  <svg viewBox="0 0 24 24" class="ml-1 size-7" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                <div
+                  class="poster-action relative grid size-16 place-items-center rounded-full bg-white/90 text-stone-950 shadow-lg transition-all"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="ml-1 size-7"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
                 </div>
-                <div class="absolute inset-x-5 bottom-5 flex items-center justify-between gap-3 text-left">
+                <div
+                  class="absolute inset-x-5 bottom-5 flex items-center justify-between gap-3 text-left"
+                >
                   <div><p class="text-sm font-medium text-white">Abrir no YouTube</p></div>
-                  <span class="rounded-full bg-primary px-2.5 py-1 text-[10px] font-semibold text-white">Estado: foco / hover</span>
+                  <span
+                    class="rounded-full bg-primary px-2.5 py-1 text-[10px] font-semibold text-white"
+                    >Estado: foco / hover</span
+                  >
                 </div>
               </button>
 
@@ -219,22 +383,55 @@
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <p class="text-xs font-medium text-foreground/90">Abrir no YouTube</p>
                   <a class="btn btn-primary" href="#desktop-b-title">
-                    <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="size-4"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path d="M15 3h6v6" />
+                      <path d="M10 14 21 3" />
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    </svg>
                     Abrir no YouTube
                   </a>
                 </div>
               </div>
-              <div class="mt-3 flex flex-wrap gap-2"><button class="btn btn-outline" type="button">Selecionar trecho</button><button class="btn btn-outline" type="button">Abrir fonte</button></div>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <button class="btn btn-outline" type="button">Selecionar trecho</button
+                ><button class="btn btn-outline" type="button">Abrir fonte</button>
+              </div>
             </article>
 
             <aside class="flex flex-col gap-4">
               <div class="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4">
                 <div class="flex items-start gap-2">
-                  <svg viewBox="0 0 24 24" class="mt-0.5 size-4 shrink-0 text-primary" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                  <div><p class="text-xs font-medium text-primary">Caminho removido</p><p class="mt-1 text-xs leading-5 text-muted-foreground">aqui ficava a parede de signin — removida do caminho</p></div>
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="mt-0.5 size-4 shrink-0 text-primary"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8v4M12 16h.01" />
+                  </svg>
+                  <div>
+                    <p class="text-xs font-medium text-primary">Caminho removido</p>
+                    <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                      aqui ficava a parede de signin — removida do caminho
+                    </p>
+                  </div>
                 </div>
-                <div class="mt-3 flex aspect-video items-center justify-center rounded-md border border-dashed border-border bg-white text-center">
-                  <p class="max-w-[16rem] px-4 text-[11px] leading-5 text-muted-foreground">Nenhum iframe do YouTube é carregado automaticamente.</p>
+                <div
+                  class="mt-3 flex aspect-video items-center justify-center rounded-md border border-dashed border-border bg-white text-center"
+                >
+                  <p class="max-w-[16rem] px-4 text-[11px] leading-5 text-muted-foreground">
+                    Nenhum iframe do YouTube é carregado automaticamente.
+                  </p>
                 </div>
               </div>
               <p class="text-xs text-muted-foreground">Fonte: Câmara dos Deputados · CC BY 4.0</p>
@@ -249,51 +446,197 @@
         <div class="grid items-start gap-8 lg:grid-cols-2">
           <!-- MOBILE A -->
           <div>
-            <p class="mb-2 text-xs font-medium text-muted-foreground">Cena A · trecho da Câmara tocando</p>
-            <div class="mx-auto w-full max-w-[390px] overflow-hidden rounded-[20px] border border-stone-300 bg-background shadow-[0_10px_36px_rgb(28_25_23/0.12)]">
+            <p class="mb-2 text-xs font-medium text-muted-foreground">
+              Cena A · trecho da Câmara tocando
+            </p>
+            <div
+              class="mx-auto w-full max-w-[390px] overflow-hidden rounded-[20px] border border-stone-300 bg-background shadow-[0_10px_36px_rgb(28_25_23/0.12)]"
+            >
               <header class="flex min-h-14 items-center bg-primary px-4 text-white">
-                <div><p class="text-sm font-semibold">Discurso</p><p class="text-xs text-white/75">Sessão plenária</p></div>
-                <div class="ml-auto grid size-9 place-items-center rounded-lg bg-white/10" aria-hidden="true">•••</div>
+                <div>
+                  <p class="text-sm font-semibold">Discurso</p>
+                  <p class="text-xs text-white/75">Sessão plenária</p>
+                </div>
+                <div
+                  class="ml-auto grid size-9 place-items-center rounded-lg bg-white/10"
+                  aria-hidden="true"
+                >
+                  •••
+                </div>
               </header>
               <div class="p-4 pb-7">
-                <button class="btn btn-ghost -ml-2" type="button"><svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Voltar ao acervo</button>
+                <button class="btn btn-ghost -ml-2" type="button">
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="size-4"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <path d="m15 18-6-6 6-6" /></svg
+                  >Voltar ao acervo
+                </button>
                 <h2 class="mt-3 text-lg font-medium">Discurso</h2>
                 <p class="mt-1 text-xs text-muted-foreground">Data da fala · duração</p>
-                <div class="relative mt-4 aspect-video overflow-hidden rounded-lg border border-black/30 bg-[radial-gradient(circle_at_50%_35%,#44403c_0%,#09090b_75%)] text-white">
-                  <span class="absolute left-3 top-3 rounded bg-black/55 px-2 py-1 text-[10px]">Trecho da Câmara</span>
-                  <div class="absolute inset-0 grid place-items-center"><div class="grid size-12 place-items-center rounded-full bg-white/15 ring-1 ring-white/25"><svg viewBox="0 0 24 24" class="ml-0.5 size-5" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></div></div>
-                  <div class="absolute inset-x-3 bottom-3"><div class="h-1 rounded bg-white/25"><div class="h-full w-[38%] rounded bg-primary"></div></div><p class="mt-2 text-[10px] tabular-nums text-white/75">01:42 / 04:31</p></div>
+                <div
+                  class="relative mt-4 aspect-video overflow-hidden rounded-lg border border-black/30 bg-[radial-gradient(circle_at_50%_35%,#44403c_0%,#09090b_75%)] text-white"
+                >
+                  <span class="absolute left-3 top-3 rounded bg-black/55 px-2 py-1 text-[10px]"
+                    >Trecho da Câmara</span
+                  >
+                  <div class="absolute inset-0 grid place-items-center">
+                    <div
+                      class="grid size-12 place-items-center rounded-full bg-white/15 ring-1 ring-white/25"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        class="ml-0.5 size-5"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="absolute inset-x-3 bottom-3">
+                    <div class="h-1 rounded bg-white/25">
+                      <div class="h-full w-[38%] rounded bg-primary"></div>
+                    </div>
+                    <p class="mt-2 text-[10px] tabular-nums text-white/75">01:42 / 04:31</p>
+                  </div>
                 </div>
                 <div class="mt-3 rounded-lg border border-border bg-muted/40 p-3">
-                  <p class="text-xs font-medium">Se o vídeo não abrir aqui, assista por outro caminho:</p>
-                  <p class="mt-1 text-xs leading-5 text-muted-foreground">O trecho da Câmara toca nesta página; o YouTube abre no ponto da fala.</p>
-                  <a class="btn btn-primary mt-3 w-full" href="#mobile-title"><svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>Abrir no YouTube</a>
+                  <p class="text-xs font-medium">
+                    Se o vídeo não abrir aqui, assista por outro caminho:
+                  </p>
+                  <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                    O trecho da Câmara toca nesta página; o YouTube abre no ponto da fala.
+                  </p>
+                  <a class="btn btn-primary mt-3 w-full" href="#mobile-title"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      class="size-4"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path d="M15 3h6v6" />
+                      <path d="M10 14 21 3" />
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg
+                    >Abrir no YouTube</a
+                  >
                 </div>
-                <div class="mt-3 grid grid-cols-2 gap-2"><button class="btn btn-outline w-full" type="button">Selecionar trecho</button><button class="btn btn-outline w-full" type="button">Baixar MP4</button></div>
-                <section class="mt-5"><p class="text-xs text-muted-foreground">Transcrição (clique para posicionar)</p><div class="mt-2 flex gap-3 rounded-lg bg-muted p-2"><span class="text-xs tabular-nums text-primary">01:42</span><span class="text-sm leading-5">Trecho da fala em reprodução.</span></div></section>
-                <p class="mt-5 border-t border-border pt-3 text-xs text-muted-foreground">Fonte: Câmara dos Deputados · CC BY 4.0</p>
+                <div class="mt-3 grid grid-cols-2 gap-2">
+                  <button class="btn btn-outline w-full" type="button">Selecionar trecho</button
+                  ><button class="btn btn-outline w-full" type="button">Baixar MP4</button>
+                </div>
+                <section class="mt-5">
+                  <p class="text-xs text-muted-foreground">Transcrição (clique para posicionar)</p>
+                  <div class="mt-2 flex gap-3 rounded-lg bg-muted p-2">
+                    <span class="text-xs tabular-nums text-primary">01:42</span
+                    ><span class="text-sm leading-5">Trecho da fala em reprodução.</span>
+                  </div>
+                </section>
+                <p class="mt-5 border-t border-border pt-3 text-xs text-muted-foreground">
+                  Fonte: Câmara dos Deputados · CC BY 4.0
+                </p>
               </div>
             </div>
           </div>
 
           <!-- MOBILE B -->
           <div>
-            <p class="mb-2 text-xs font-medium text-muted-foreground">Cena B · capa clicável em foco</p>
-            <div class="mx-auto w-full max-w-[390px] overflow-hidden rounded-[20px] border border-stone-300 bg-background shadow-[0_10px_36px_rgb(28_25_23/0.12)]">
-              <header class="flex min-h-14 items-center bg-primary px-4 text-white"><div><p class="text-sm font-semibold">Discurso</p><p class="text-xs text-white/75">Sessão plenária</p></div><div class="ml-auto grid size-9 place-items-center rounded-lg bg-white/10" aria-hidden="true">•••</div></header>
+            <p class="mb-2 text-xs font-medium text-muted-foreground">
+              Cena B · capa clicável em foco
+            </p>
+            <div
+              class="mx-auto w-full max-w-[390px] overflow-hidden rounded-[20px] border border-stone-300 bg-background shadow-[0_10px_36px_rgb(28_25_23/0.12)]"
+            >
+              <header class="flex min-h-14 items-center bg-primary px-4 text-white">
+                <div>
+                  <p class="text-sm font-semibold">Discurso</p>
+                  <p class="text-xs text-white/75">Sessão plenária</p>
+                </div>
+                <div
+                  class="ml-auto grid size-9 place-items-center rounded-lg bg-white/10"
+                  aria-hidden="true"
+                >
+                  •••
+                </div>
+              </header>
               <div class="p-4 pb-7">
-                <button class="btn btn-ghost -ml-2" type="button"><svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Voltar ao acervo</button>
-                <h2 class="mt-3 text-lg font-medium">Discurso</h2><p class="mt-1 text-xs text-muted-foreground">Data da fala · duração</p>
-                <button class="poster-facade is-focus-demo mt-4" type="button" aria-label="Abrir este trecho no YouTube">
-                  <div class="absolute inset-0 bg-[linear-gradient(135deg,#292524,#09090b)]"></div>
-                  <span class="absolute left-3 top-3 rounded border border-amber-200/40 bg-amber-50 px-2 py-1 text-[9px] font-semibold text-amber-900">NEEDS ASSET — capa real do vídeo</span>
-                  <div class="poster-action relative grid size-12 place-items-center rounded-full bg-white/90 text-stone-950 shadow-lg transition-all"><svg viewBox="0 0 24 24" class="ml-0.5 size-5" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></div>
-                  <div class="absolute inset-x-3 bottom-3 text-left"><p class="text-xs font-medium text-white">Abrir no YouTube</p></div>
+                <button class="btn btn-ghost -ml-2" type="button">
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="size-4"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <path d="m15 18-6-6 6-6" /></svg
+                  >Voltar ao acervo
                 </button>
-                <div class="mt-3 rounded-lg border border-border bg-muted/40 p-3"><a class="btn btn-primary w-full" href="#mobile-title"><svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>Abrir no YouTube</a></div>
-                <div class="mt-4 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3"><p class="text-xs font-medium text-primary">aqui ficava a parede de signin — removida do caminho</p><p class="mt-1 text-[11px] leading-5 text-muted-foreground">Nenhum iframe é carregado automaticamente.</p></div>
+                <h2 class="mt-3 text-lg font-medium">Discurso</h2>
+                <p class="mt-1 text-xs text-muted-foreground">Data da fala · duração</p>
+                <button
+                  class="poster-facade is-focus-demo mt-4"
+                  type="button"
+                  aria-label="Abrir este trecho no YouTube"
+                >
+                  <div class="absolute inset-0 bg-[linear-gradient(135deg,#292524,#09090b)]"></div>
+                  <span
+                    class="absolute left-3 top-3 rounded border border-amber-200/40 bg-amber-50 px-2 py-1 text-[9px] font-semibold text-amber-900"
+                    >NEEDS ASSET — capa real do vídeo</span
+                  >
+                  <div
+                    class="poster-action relative grid size-12 place-items-center rounded-full bg-white/90 text-stone-950 shadow-lg transition-all"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="ml-0.5 size-5"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                  <div class="absolute inset-x-3 bottom-3 text-left">
+                    <p class="text-xs font-medium text-white">Abrir no YouTube</p>
+                  </div>
+                </button>
+                <div class="mt-3 rounded-lg border border-border bg-muted/40 p-3">
+                  <a class="btn btn-primary w-full" href="#mobile-title"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      class="size-4"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path d="M15 3h6v6" />
+                      <path d="M10 14 21 3" />
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg
+                    >Abrir no YouTube</a
+                  >
+                </div>
+                <div
+                  class="mt-4 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3"
+                >
+                  <p class="text-xs font-medium text-primary">
+                    aqui ficava a parede de signin — removida do caminho
+                  </p>
+                  <p class="mt-1 text-[11px] leading-5 text-muted-foreground">
+                    Nenhum iframe é carregado automaticamente.
+                  </p>
+                </div>
                 <button class="btn btn-outline mt-3 w-full" type="button">Abrir fonte</button>
-                <p class="mt-5 border-t border-border pt-3 text-xs text-muted-foreground">Fonte: Câmara dos Deputados · CC BY 4.0</p>
+                <p class="mt-5 border-t border-border pt-3 text-xs text-muted-foreground">
+                  Fonte: Câmara dos Deputados · CC BY 4.0
+                </p>
               </div>
             </div>
           </div>
@@ -302,23 +645,67 @@
 
       <!-- LOADING -->
       <section class="mx-auto max-w-6xl" aria-labelledby="loading-title">
-        <div class="scene-label"><span id="loading-title">Loading honest state — resolução do trecho</span></div>
-        <div class="rounded-xl border border-border bg-background p-6 shadow-[0_4px_24px_rgb(28_25_23/0.08)]">
-          <div class="mx-auto flex aspect-video w-full max-w-2xl flex-col items-center justify-center gap-2 rounded-lg border border-border bg-muted/40 px-6 text-center text-muted-foreground" role="status" aria-live="polite">
-            <svg viewBox="0 0 24 24" class="size-6 animate-spin text-muted-foreground motion-reduce:animate-none" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        <div class="scene-label">
+          <span id="loading-title">Loading honest state — resolução do trecho</span>
+        </div>
+        <div
+          class="rounded-xl border border-border bg-background p-6 shadow-[0_4px_24px_rgb(28_25_23/0.08)]"
+        >
+          <div
+            class="mx-auto flex aspect-video w-full max-w-2xl flex-col items-center justify-center gap-2 rounded-lg border border-border bg-muted/40 px-6 text-center text-muted-foreground"
+            role="status"
+            aria-live="polite"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              class="size-6 animate-spin text-muted-foreground motion-reduce:animate-none"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
             <p class="text-sm font-medium text-foreground/90">Resolvendo o trecho na Câmara…</p>
-            <p class="max-w-md text-xs leading-5">Isso pode levar alguns segundos. Se demorar, tente novamente em instantes — a página não trava.</p>
+            <p class="max-w-md text-xs leading-5">
+              Isso pode levar alguns segundos. Se demorar, tente novamente em instantes — a página
+              não trava.
+            </p>
           </div>
-          <div class="mx-auto mt-3 flex max-w-2xl items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3">
-            <p class="text-xs text-muted-foreground">A saída externa continua visível durante a espera.</p>
-            <a class="btn btn-primary" href="#loading-title"><svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>Abrir no YouTube</a>
+          <div
+            class="mx-auto mt-3 flex max-w-2xl items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3"
+          >
+            <p class="text-xs text-muted-foreground">
+              A saída externa continua visível durante a espera.
+            </p>
+            <a class="btn btn-primary" href="#loading-title"
+              ><svg
+                viewBox="0 0 24 24"
+                class="size-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path d="M15 3h6v6" />
+                <path d="M10 14 21 3" />
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg
+              >Abrir no YouTube</a
+            >
           </div>
         </div>
       </section>
 
-      <footer class="mx-auto mt-10 max-w-6xl border-t border-stone-300 pt-5 text-xs leading-5 text-muted-foreground">
-        <p><strong class="text-foreground">NEEDS ASSET:</strong> capa/poster real do vídeo para a fachada das cenas B (desktop e mobile).</p>
-        <p class="mt-1">Referência visual do gate; sem lógica, fetch, dados reais ou iframe do YouTube.</p>
+      <footer
+        class="mx-auto mt-10 max-w-6xl border-t border-stone-300 pt-5 text-xs leading-5 text-muted-foreground"
+      >
+        <p>
+          <strong class="text-foreground">NEEDS ASSET:</strong> capa/poster real do vídeo para a
+          fachada das cenas B (desktop e mobile).
+        </p>
+        <p class="mt-1">
+          Referência visual do gate; sem lógica, fetch, dados reais ou iframe do YouTube.
+        </p>
       </footer>
     </main>
   </body>
