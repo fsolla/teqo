@@ -23,7 +23,7 @@ parse (main agent)
 1. **Nada no tracker antes do gate.** Antes da confirmação: proibido `pnpm agent:register`, criar Issue/PR.
 2. **Register com `--plan` nasce `blocked`.** Promote só depois do plano em `main`.
 3. **Planos de Issues `in-progress`/`done`/`in-prod` são imutáveis.**
-4. **Design UI (obrigatório se muda UI):** o sub-agente `designer` produz o design hi-fi; o orquestrador grava `docs/plans/<slug>-ui-design.html` + `docs/plans/<slug>-ui-design-assets/*.svg` (doutrina: `ui-design-html.md`). Classe A/sem UI → sem design.
+4. **Design UI (obrigatório se muda UI):** o sub-agente `designer` produz o design hi-fi; o orquestrador grava `docs/plans/<slug>-ui-design.html` + `docs/plans/<slug>-ui-design-assets/*.svg` (doutrina: `ui-design-html.md`). Classe A/sem UI → sem design. **O `designer` frontier só roda design de fato** (doutrina §Escopo de dispatch): smoke/validação de `permission`/config, visão, exploração e escrita de plano **nunca** no frontier.
 
 ## Decomposição em sub-agentes
 
@@ -52,7 +52,7 @@ Cada fase pesada é delegada a um sub-agente com contexto mínimo. O agente prin
 
 ### Sub-agente: Designer
 
-**Quando:** Passo 3d, paralelo (1 por ideia UI).
+**Quando:** Passo 3d, **somente** ideia que muda UI (Impeccable B/C/D). Escopo e gate de dispatch são os de `ui-design-html.md` §Escopo de dispatch — o frontier não roda smoke/validação de `permission`, visão, exploração nem escrita de plano. Prefira **uma** sessão para N itens UI a N sessões frias.
 **Input:** plano de intenção aprovado (B/C/D) + `ui-design-html.md` (doutrina) + `.opencode/agent/designer.md` (papel)
 **Task:** Produzir o design hi-fi do item — tokens/brand reais, cenas 390/1280, estados críticos. **Não escrever código de app nem nomear componente final.**
 **Output:** o design hi-fi — `docs/plans/<slug>-ui-design.html` + `docs/plans/<slug>-ui-design-assets/*.svg`; o orquestrador garante a gravação no disco.
@@ -115,7 +115,7 @@ O agente principal:
 1. Valida cada plano contra `shaping.md` (self-score ≥4)
 2. Aplica melhorias se necessário
 3. Cria os arquivos `docs/plans/<slug>.md` no disco
-4. Se UI: dispatcha o sub-agente `designer` (paralelo, 1 por ideia UI) para produzir `docs/plans/<slug>-ui-design.html` + `docs/plans/<slug>-ui-design-assets/*.svg`; o orquestrador grava os arquivos no disco e preenche/valida o campo `Design UI:` + a seção do plano
+4. Se UI: dispatcha o sub-agente `designer` **só para ideia que muda UI** — prefira **uma** sessão para os N itens UI a N sessões frias (`ui-design-html.md` §Escopo de dispatch) — para produzir `docs/plans/<slug>-ui-design.html` + `docs/plans/<slug>-ui-design-assets/*.svg`; o orquestrador grava os arquivos no disco e preenche/valida o campo `Design UI:` + a seção do plano
 
 ## Passo 4 — GATE
 
