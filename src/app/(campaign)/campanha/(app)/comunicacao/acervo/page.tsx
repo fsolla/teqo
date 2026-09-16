@@ -57,7 +57,7 @@ export default async function SpeechAcervoPage({ searchParams }: SpeechAcervoPag
 
         <CampaignListResults>
           {data.rows.length > 0 ? (
-            <SpeechResultList rows={data.rows} />
+            <SpeechResultList rows={data.rows} query={data.state.q} />
           ) : (
             <CampaignListEmptyState
               icon={SearchXIcon}

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  excerptSelectionDuration,
   extendRangeToSegment,
   initialExcerptRange,
+  isExcerptSelectionAvailable,
   moveRangeEdge,
   normalizeExcerptRange,
   rangeDurationSeconds,
@@ -173,5 +175,17 @@ describe('track geometry', () => {
 
   it('derives the span between the edges', () => {
     expect(rangeDurationSeconds({ startSeconds: 43, endSeconds: 130 })).toBe(87)
+  })
+
+  // C174 — the player and the empty "Cortes desta fala" block share this rule.
+  it('resolves the picker duration and availability from the stored duration or segments', () => {
+    expect(excerptSelectionDuration(252, SEGMENTS)).toBe(252)
+    expect(excerptSelectionDuration(null, SEGMENTS)).toBe(252)
+    expect(excerptSelectionDuration(null, [])).toBeNull()
+
+    expect(isExcerptSelectionAvailable(252, [])).toBe(true)
+    expect(isExcerptSelectionAvailable(null, SEGMENTS)).toBe(true)
+    expect(isExcerptSelectionAvailable(3, SEGMENTS)).toBe(false)
+    expect(isExcerptSelectionAvailable(null, [{ startSeconds: 0, endSeconds: 2 }])).toBe(false)
   })
 })

@@ -9,6 +9,7 @@ import { logoutCampaign } from '@/app/(campaign)/campanha/actions/auth'
 import { PeopleNavSavedFilters } from '@/components/campaign/people/PeopleNavSavedFilters'
 import { MunicipalityNavSavedFilters } from '@/components/campaign/shell/MunicipalityNavSavedFilters'
 import {
+  activeCampaignSubItemHref,
   getCampaignBottomNav,
   getCampaignOverflowNav,
   isCampaignNavActive,
@@ -123,21 +124,49 @@ export const CampaignBottomNav = ({ user }: { user: CampaignUserShellView }) => 
             <div className="flex flex-col gap-1">
               {overflowNav.map((item) => {
                 const active = isCampaignNavActive(pathname, item.href)
+                const activeSubHref = item.subItems
+                  ? activeCampaignSubItemHref(pathname, item.subItems)
+                  : null
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-current={active ? 'page' : undefined}
-                    onClick={() => setOverflowOpen(false)}
-                    className={cn(
-                      'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground outline-none',
-                      'hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring',
-                      active && 'bg-muted text-primary',
-                    )}
-                  >
-                    <item.icon aria-hidden="true" className="size-5 shrink-0" />
-                    <span>{item.title}</span>
-                  </Link>
+                  <div key={item.href} className="flex flex-col">
+                    <Link
+                      href={item.href}
+                      aria-current={active ? 'page' : undefined}
+                      onClick={() => setOverflowOpen(false)}
+                      className={cn(
+                        'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground outline-none',
+                        'hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring',
+                        active && 'bg-muted text-primary',
+                      )}
+                    >
+                      <item.icon aria-hidden="true" className="size-5 shrink-0" />
+                      <span>{item.title}</span>
+                    </Link>
+                    {/* C174 — the nested destinations of the vertical, same
+                        indented sub-list as the desktop sidebar. */}
+                    {item.subItems?.length ? (
+                      <div className="ml-5 flex flex-col gap-1 border-l border-border py-1 pl-3">
+                        {item.subItems.map((sub) => {
+                          const subActive = activeSubHref === sub.href
+                          return (
+                            <Link
+                              key={sub.href}
+                              href={sub.href}
+                              aria-current={subActive ? 'page' : undefined}
+                              onClick={() => setOverflowOpen(false)}
+                              className={cn(
+                                'flex items-center rounded-md px-3 py-2 text-sm text-muted-foreground outline-none',
+                                'hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring',
+                                subActive && 'bg-card font-medium text-primary ring-1 ring-border',
+                              )}
+                            >
+                              <span>{sub.title}</span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
                 )
               })}
             </div>

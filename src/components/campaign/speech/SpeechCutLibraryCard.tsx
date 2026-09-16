@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { CopyLinkButton } from '@/components/CopyLinkButton'
 import { SpeechCutStatusBadge } from '@/components/campaign/speech/SpeechCutStatusBadge'
 import { Button } from '@/components/ui/button'
-import { CAMPAIGN_COMMUNICATION_CORTES } from '@/lib/campaignPaths'
+import { campaignSpeechCutDetailHref } from '@/lib/campaignPaths'
 import type { SpeechCutLibraryItemViewModel } from '@/lib/speechCut'
 
 /**
@@ -44,7 +44,7 @@ export const SpeechCutLibraryCard = ({ cut }: { cut: SpeechCutLibraryItemViewMod
 
     <div className="mt-3 flex flex-wrap items-center gap-2">
       <Button asChild variant="outline" className="min-h-10">
-        <Link href={`${CAMPAIGN_COMMUNICATION_CORTES}/${cut.id}`}>
+        <Link href={campaignSpeechCutDetailHref(cut.id)}>
           <PlayIcon data-icon="inline-start" aria-hidden="true" />
           Abrir corte
         </Link>

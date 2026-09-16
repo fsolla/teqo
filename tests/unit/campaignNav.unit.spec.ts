@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  activeCampaignSubItemHref,
   getCampaignBottomNav,
   getCampaignNav,
   getCampaignOverflowNav,
@@ -10,6 +11,8 @@ import {
 } from '@/components/campaign/shell/nav'
 import {
   CAMPAIGN_AGENDA_HOME,
+  CAMPAIGN_COMMUNICATION_ACERVO,
+  CAMPAIGN_COMMUNICATION_CORTES,
   CAMPAIGN_COMMUNICATION_HOME,
   CAMPAIGN_UPDATES_HREF,
 } from '@/lib/campaignPaths'
@@ -90,6 +93,63 @@ describe('communicator sidebar', () => {
     )
     expect(
       isCampaignNavActive('/campanha/comunicacao/acervo/42', CAMPAIGN_COMMUNICATION_HOME),
+    ).toBe(true)
+  })
+})
+
+describe('communication vertical sub-items (C174)', () => {
+  const expectedSubHrefs = [CAMPAIGN_COMMUNICATION_ACERVO, CAMPAIGN_COMMUNICATION_CORTES]
+
+  it('hangs the acervo and the cut library under Comunicação for the communicator', () => {
+    const [item] = getCampaignNav('communicator')
+    expect(item?.subItems?.map((sub) => sub.href)).toEqual(expectedSubHrefs)
+    expect(item?.subItems?.map((sub) => sub.title)).toEqual([
+      'Acervo de falas',
+      'Biblioteca de cortes',
+    ])
+  })
+
+  it('carries the same sub-items for staff with the vertical, and none for advisor', () => {
+    const forRole = (role: 'coordinator' | 'candidate' | 'advisor') =>
+      getCampaignNav(role).find((item) => item.href === CAMPAIGN_COMMUNICATION_HOME)
+
+    for (const role of ['coordinator', 'candidate'] as const) {
+      expect(forRole(role)?.subItems?.map((sub) => sub.href)).toEqual(expectedSubHrefs)
+    }
+    expect(forRole('advisor')).toBeUndefined()
+  })
+
+  it('keeps the sub-items in the mobile overflow drawer (staff)', () => {
+    const overflow = getCampaignOverflowNav('coordinator')
+    expect(overflow.find((item) => item.href === CAMPAIGN_COMMUNICATION_HOME)?.subItems).toEqual(
+      expect.arrayContaining(expectedSubHrefs.map((href) => expect.objectContaining({ href }))),
+    )
+  })
+
+  it('activates only the most specific sibling (the acervo is a prefix of the cortes path)', () => {
+    const subItems = getCampaignNav('communicator')[0]!.subItems!
+
+    expect(activeCampaignSubItemHref(CAMPAIGN_COMMUNICATION_CORTES, subItems)).toBe(
+      CAMPAIGN_COMMUNICATION_CORTES,
+    )
+    expect(activeCampaignSubItemHref(`${CAMPAIGN_COMMUNICATION_CORTES}/42`, subItems)).toBe(
+      CAMPAIGN_COMMUNICATION_CORTES,
+    )
+    expect(activeCampaignSubItemHref(`${CAMPAIGN_COMMUNICATION_ACERVO}/42`, subItems)).toBe(
+      CAMPAIGN_COMMUNICATION_ACERVO,
+    )
+    expect(activeCampaignSubItemHref(CAMPAIGN_COMMUNICATION_ACERVO, subItems)).toBe(
+      CAMPAIGN_COMMUNICATION_ACERVO,
+    )
+    expect(activeCampaignSubItemHref('/campanha/quadro', subItems)).toBeNull()
+  })
+
+  it('keeps the parent item active on any path of the vertical', () => {
+    expect(isCampaignNavActive(CAMPAIGN_COMMUNICATION_CORTES, CAMPAIGN_COMMUNICATION_HOME)).toBe(
+      true,
+    )
+    expect(
+      isCampaignNavActive(`${CAMPAIGN_COMMUNICATION_ACERVO}/42`, CAMPAIGN_COMMUNICATION_HOME),
     ).toBe(true)
   })
 })

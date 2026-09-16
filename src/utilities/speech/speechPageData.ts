@@ -5,7 +5,11 @@ import type { Payload } from 'payload'
 import type { CampaignUser, Speech } from '@/payload-types'
 import { createEntityNotFoundError } from '@/utilities/entityNotFound'
 import { loadMunicipalityLabelsByIds } from '@/utilities/loadNamesByIds'
-import { buildSpeechListWhere } from '@/utilities/speech/speechListFilters'
+import {
+  loadSpeechCutOriginSpeechIds,
+  loadSpeechCutsForSpeeches,
+} from '@/utilities/speech/speechCutPageData'
+import { buildSpeechListWhereIncludingCutOrigins } from '@/utilities/speech/speechListFilters'
 import {
   resolveSpeechListUrl,
   speechPageSize,
@@ -156,28 +160,33 @@ export const loadSpeechAcervoPageData = async (
 ): Promise<SpeechAcervoPageData> => {
   const rawSearchParams = await searchParams
   const canonicalUrl = resolveSpeechListUrl(rawSearchParams)
+  const state = canonicalUrl.state
+
+  // C174 (option B) — a speech also shows up when one of its cuts matches the
+  // term by title/description, even if the speech text itself does not.
+  const originSpeechIds = state.q ? await loadSpeechCutOriginSpeechIds(payload, user, state.q) : []
 
   const result = await payload.find({
     collection: 'speech',
     depth: 0,
     limit: speechPageSize,
-    page: canonicalUrl.state.page,
+    page: state.page,
     sort: '-speechAt',
-    where: buildSpeechListWhere(canonicalUrl.state),
-    select: speechListSelect,
+    where: buildSpeechListWhereIncludingCutOrigins(state, originSpeechIds),
+    // C174 — the row only needs its normalized text to tell whether it matched
+    // the term itself (option B); the unsearched list does not pay for it.
+    select: state.q ? { ...speechListSelect, searchText: true } : speechListSelect,
     user,
     overrideAccess: false,
   })
 
   const resolvedUrl = resolveSpeechListUrl(rawSearchParams, result.totalPages)
   const speeches = result.docs as Speech[]
+  const speechIds = speeches.map((speech) => speech.id)
 
-  const [segmentsBySpeech, filterOptions] = await Promise.all([
-    loadSegmentsForSpeeches(
-      payload,
-      user,
-      speeches.map((speech) => speech.id),
-    ),
+  const [segmentsBySpeech, cutsBySpeech, filterOptions] = await Promise.all([
+    loadSegmentsForSpeeches(payload, user, speechIds),
+    loadSpeechCutsForSpeeches(payload, user, speechIds),
     loadSpeechFilterOptions(payload, user),
   ])
 
@@ -194,8 +203,9 @@ export const loadSpeechAcervoPageData = async (
       toSpeechListItemViewModel({
         speech,
         segments: segmentsBySpeech.get(speech.id) ?? [],
-        query: canonicalUrl.state.q,
+        query: state.q,
         municipalityLabels,
+        cuts: cutsBySpeech.get(speech.id) ?? [],
       }),
     ),
     state: resolvedUrl.state,

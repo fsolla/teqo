@@ -28,4 +28,8 @@ export const CAMPAIGN_COMMUNICATION_ACERVO = '/campanha/comunicacao/acervo' as c
 /** C168 — library of cuts made from the acervo (list + `/<id>` detail). */
 export const CAMPAIGN_COMMUNICATION_CORTES = '/campanha/comunicacao/acervo/cortes' as const
 
+/** C168/C174 — internal detail of one cut in the library (id is immutable). */
+export const campaignSpeechCutDetailHref = (id: number): string =>
+  `${CAMPAIGN_COMMUNICATION_CORTES}/${id}`
+
 export const CAMPAIGN_UPDATES_HREF = '/campanha/atualizacoes' as const
