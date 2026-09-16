@@ -10,6 +10,8 @@ import { stubMatchMedia } from '../helpers/matchMedia'
 
 const PLAYBACK_URL = 'https://vod.camara.leg.br/trecho.mp4'
 const DOWNLOAD_URL = 'https://vod.camara.leg.br/trecho-download.mp4'
+const YOUTUBE_ID = 'lLhRDkSPw0A'
+const YOUTUBE_WATCH_URL = 'https://www.youtube.com/watch?v=lLhRDkSPw0A'
 
 const SEGMENTS: readonly SpeechDetailSegmentViewModel[] = [
   {
@@ -67,7 +69,12 @@ const renderPlayer = (props: Partial<Parameters<typeof SpeechDetailPlayer>[0]> =
 
 const videoElement = () => document.querySelector('video')
 const iframeElement = () => document.querySelector('iframe')
+const facadeElement = () => document.querySelector('[data-slot="speech-youtube-facade"]')
+const exitLink = () => document.querySelector('[data-slot="speech-youtube-exit-link"]')
 const playerRoot = () => document.querySelector('[data-slot="speech-player"]')
+const watchExcerptButton = () => screen.getByRole('button', { name: /assistir o trecho/i })
+const segmentButton = (seconds: number) =>
+  document.querySelector(`button[data-start-seconds="${seconds}"]`) as HTMLButtonElement
 
 beforeAll(() => {
   // jsdom does not implement media playback; the seek contract is what matters.
@@ -96,7 +103,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('SpeechDetailPlayer — VOD-only quadrant', () => {
+describe('SpeechDetailPlayer — VOD quadrant', () => {
   it('resolves on click, shows the pending state and plays the exact excerpt', async () => {
     const pending = deferred<{ ok: boolean; json: () => Promise<unknown> }>()
     fetchMock.mockReturnValue(pending.promise)
@@ -106,13 +113,13 @@ describe('SpeechDetailPlayer — VOD-only quadrant', () => {
     expect(screen.getByText(/O trecho deste vídeo é gerado pela Câmara/)).toBeDefined()
     expect(videoElement()).toBeNull()
     expect(iframeElement()).toBeNull()
-    // C171 — without a YouTube id there is no embed to escape from.
+    // C178 — without a YouTube id there is no cover and no exit.
     expect(screen.queryByText(/Se o vídeo não abrir aqui/)).toBeNull()
-    expect(screen.queryByRole('link', { name: /abrir no youtube/i })).toBeNull()
+    expect(exitLink()).toBeNull()
     // The invariant: rendering the detail never calls the Câmara.
     expect(fetchMock).not.toHaveBeenCalled()
 
-    fireEvent.click(screen.getByRole('button', { name: /assistir o trecho/i }))
+    fireEvent.click(watchExcerptButton())
 
     await waitFor(() => {
       expect(playerRoot()?.getAttribute('aria-busy')).toBe('true')
@@ -130,7 +137,7 @@ describe('SpeechDetailPlayer — VOD-only quadrant', () => {
     })
     expect(playerRoot()?.getAttribute('aria-busy')).toBeNull()
 
-    fireEvent.click(document.querySelector('button[data-start-seconds="43"]')!)
+    fireEvent.click(segmentButton(43))
     expect(videoElement()?.currentTime).toBe(43)
   })
 
@@ -138,7 +145,7 @@ describe('SpeechDetailPlayer — VOD-only quadrant', () => {
     respondWith(indisponivel)
     renderPlayer()
 
-    fireEvent.click(screen.getByRole('button', { name: /assistir o trecho/i }))
+    fireEvent.click(watchExcerptButton())
     expect(await screen.findByText('Não foi possível carregar o vídeo deste trecho.')).toBeDefined()
 
     respondWith(pronto(PLAYBACK_URL, null))
@@ -155,7 +162,7 @@ describe('SpeechDetailPlayer — VOD-only quadrant', () => {
     respondWith(gerando)
     renderPlayer()
 
-    fireEvent.click(screen.getByRole('button', { name: /assistir o trecho/i }))
+    fireEvent.click(watchExcerptButton())
 
     expect(await screen.findByText(/A Câmara está gerando o trecho deste vídeo/)).toBeDefined()
     expect(screen.getByRole('button', { name: /tentar novamente/i })).toBeDefined()
@@ -166,7 +173,7 @@ describe('SpeechDetailPlayer — VOD-only quadrant', () => {
     respondWith(pronto(null, DOWNLOAD_URL))
     renderPlayer()
 
-    fireEvent.click(screen.getByRole('button', { name: /assistir o trecho/i }))
+    fireEvent.click(watchExcerptButton())
 
     expect(await screen.findByText('Não foi possível carregar o vídeo deste trecho.')).toBeDefined()
     expect(screen.getByRole('button', { name: /baixar vídeo \(mp4\)/i })).toBeDefined()
@@ -174,44 +181,130 @@ describe('SpeechDetailPlayer — VOD-only quadrant', () => {
   })
 })
 
-describe('SpeechDetailPlayer — YouTube quadrant', () => {
-  it('embeds the session at the offset and seeks the transcript by reloading start', async () => {
+describe('SpeechDetailPlayer — C178 the YouTube embed is never the entry', () => {
+  it('defaults to the Câmara excerpt when the speech has both sources', () => {
     renderPlayer({
-      youtubeVideoId: 'lLhRDkSPw0A',
+      youtubeVideoId: YOUTUBE_ID,
       youtubeOffsetSeconds: 2634,
       initialSeconds: 100,
     })
 
+    expect(iframeElement()).toBeNull()
     expect(videoElement()).toBeNull()
-    expect(iframeElement()?.getAttribute('src')).toBe(
-      'https://www.youtube.com/embed/lLhRDkSPw0A?playsinline=1&rel=0&start=2734',
-    )
-
-    fireEvent.click(document.querySelector('button[data-start-seconds="43"]')!)
-
-    await waitFor(() => {
-      expect(iframeElement()?.getAttribute('src')).toContain('start=2677')
-    })
+    expect(screen.getByText(/O trecho deste vídeo é gerado pela Câmara/)).toBeDefined()
+    // The old surface switch is gone: the Câmara is already the default.
+    expect(screen.queryByRole('button', { name: /assistir na câmara/i })).toBeNull()
   })
 
-  it('embeds the session at the excerpt offset even without a ?t deep link', () => {
+  it('renders a clickable cover — never an iframe — when only YouTube exists', () => {
     renderPlayer({
-      youtubeVideoId: 'lLhRDkSPw0A',
+      youtubeVideoId: YOUTUBE_ID,
       youtubeOffsetSeconds: 2634,
-      initialSeconds: null,
+      vodResolvable: false,
     })
 
-    expect(iframeElement()?.getAttribute('src')).toBe(
-      'https://www.youtube.com/embed/lLhRDkSPw0A?playsinline=1&rel=0&start=2634',
-    )
+    expect(iframeElement()).toBeNull()
+    expect(videoElement()).toBeNull()
+    const facade = facadeElement() as HTMLAnchorElement
+    expect(facade).not.toBeNull()
+    expect(facade.getAttribute('href')).toBe(`${YOUTUBE_WATCH_URL}&t=2634`)
+    expect(facade.getAttribute('target')).toBe('_blank')
+    expect(facade.getAttribute('rel')).toBe('noreferrer')
+    expect(screen.getByText('Vídeo no YouTube')).toBeDefined()
+    // The Câmara panel would promise a surface this speech does not have.
+    expect(screen.queryByText(/gerado pela Câmara dos Deputados/)).toBeNull()
   })
 
-  it('leaves the transcript inert when the session offset is unknown', () => {
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: null })
+  it('drops t from the cover link when the session offset is unknown', () => {
+    renderPlayer({
+      youtubeVideoId: YOUTUBE_ID,
+      youtubeOffsetSeconds: null,
+      vodResolvable: false,
+    })
+
+    expect(facadeElement()?.getAttribute('href')).toBe(YOUTUBE_WATCH_URL)
+  })
+
+  it('leaves the transcript inert when there is no in-page surface', () => {
+    renderPlayer({
+      youtubeVideoId: YOUTUBE_ID,
+      youtubeOffsetSeconds: 2634,
+      vodResolvable: false,
+    })
 
     expect(screen.queryByText(/clique para posicionar/i)).toBeNull()
-    const segment = document.querySelector('button[data-start-seconds="43"]') as HTMLButtonElement
-    expect(segment.disabled).toBe(true)
+    expect(segmentButton(43).disabled).toBe(true)
+    // The selection mode still enables the phrases (C166).
+    fireEvent.click(screen.getByRole('button', { name: /selecionar trecho/i }))
+    expect(segmentButton(43).disabled).toBe(false)
+  })
+
+  it('repeats the external exit in a labelled box below the cover', () => {
+    renderPlayer({
+      youtubeVideoId: YOUTUBE_ID,
+      youtubeOffsetSeconds: 2634,
+      vodResolvable: false,
+    })
+
+    expect(document.querySelectorAll('[data-slot="speech-youtube-exit-link"]').length).toBe(1)
+    const link = exitLink() as HTMLAnchorElement
+    expect(link.getAttribute('href')).toBe(`${YOUTUBE_WATCH_URL}&t=2634`)
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.getAttribute('rel')).toBe('noreferrer')
+    // Without a player on the page the "if the video fails here" copy would lie.
+    expect(screen.queryByText('Se o vídeo não abrir aqui, assista por outro caminho:')).toBeNull()
+  })
+})
+
+describe('SpeechDetailPlayer — C178 the exit is always one click away', () => {
+  it('keeps the exit visible with the Câmara panel, pointed at the deep link', () => {
+    renderPlayer({
+      youtubeVideoId: YOUTUBE_ID,
+      youtubeOffsetSeconds: 2634,
+      initialSeconds: 100,
+    })
+
+    expect(screen.getByText('Se o vídeo não abrir aqui, assista por outro caminho:')).toBeDefined()
+    expect(
+      screen.getByText('O trecho da Câmara toca nesta página; o YouTube abre no ponto da fala.'),
+    ).toBeDefined()
+    expect(exitLink()?.getAttribute('href')).toBe(`${YOUTUBE_WATCH_URL}&t=2734`)
+  })
+
+  it('keeps the exit visible while the Câmara resolves and when it fails', async () => {
+    const pending = deferred<{ ok: boolean; json: () => Promise<unknown> }>()
+    fetchMock.mockReturnValue(pending.promise)
+
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: 2634 })
+    fireEvent.click(watchExcerptButton())
+
+    expect(screen.getByText(/Resolvendo o trecho na Câmara/)).toBeDefined()
+    expect(exitLink()).not.toBeNull()
+
+    await act(async () => {
+      pending.resolve({ ok: true, json: async () => indisponivel })
+    })
+
+    expect(await screen.findByText('Não foi possível carregar o vídeo deste trecho.')).toBeDefined()
+    expect(exitLink()).not.toBeNull()
+  })
+
+  it('follows the phrase being played on the Câmara surface', async () => {
+    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
+    renderPlayer({
+      youtubeVideoId: YOUTUBE_ID,
+      youtubeOffsetSeconds: 2634,
+      initialSeconds: 100,
+    })
+
+    fireEvent.click(watchExcerptButton())
+    await waitFor(() => expect(videoElement()).not.toBeNull())
+
+    const video = videoElement()!
+    video.currentTime = 43
+    fireEvent.timeUpdate(video)
+
+    expect(exitLink()?.getAttribute('href')).toBe(`${YOUTUBE_WATCH_URL}&t=2677`)
   })
 
   it('resolves the MP4 on download and opens the verified URL in a pre-opened tab', async () => {
@@ -220,11 +313,7 @@ describe('SpeechDetailPlayer — YouTube quadrant', () => {
     const tab = { location: { href: '' }, close: vi.fn() }
     const openSpy = vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window)
 
-    renderPlayer({
-      youtubeVideoId: 'lLhRDkSPw0A',
-      youtubeOffsetSeconds: 2634,
-      initialSeconds: null,
-    })
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: 2634 })
 
     fireEvent.click(screen.getByRole('button', { name: /baixar vídeo \(mp4\)/i }))
     expect(openSpy).toHaveBeenCalledWith('', '_blank')
@@ -240,7 +329,8 @@ describe('SpeechDetailPlayer — YouTube quadrant', () => {
       expect(tab.location.href).toBe(DOWNLOAD_URL)
     })
     expect(tab.close).not.toHaveBeenCalled()
-    expect(iframeElement()).not.toBeNull()
+    expect(videoElement()?.getAttribute('src')).toBe(PLAYBACK_URL)
+    expect(iframeElement()).toBeNull()
   })
 
   it('closes the tab and shows the honest notice when the resolution fails', async () => {
@@ -248,7 +338,7 @@ describe('SpeechDetailPlayer — YouTube quadrant', () => {
     const tab = { location: { href: '' }, close: vi.fn() }
     vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window)
 
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634 })
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: 2634 })
 
     fireEvent.click(screen.getByRole('button', { name: /baixar vídeo \(mp4\)/i }))
 
@@ -256,200 +346,11 @@ describe('SpeechDetailPlayer — YouTube quadrant', () => {
       expect(tab.close).toHaveBeenCalled()
     })
     expect(await screen.findByText('Não foi possível resolver o trecho.')).toBeDefined()
-    expect(iframeElement()).not.toBeNull()
+    expect(exitLink()).not.toBeNull()
   })
 })
 
-describe('SpeechDetailPlayer — C171 exits out of the YouTube embed', () => {
-  const cameraButton = () => screen.getByRole('button', { name: /assistir na câmara/i })
-  const youtubeLink = () => screen.getByRole('link', { name: /abrir no youtube/i })
-
-  it('offers both exits, visible with the embed playing, linking the watch URL at the point', () => {
-    renderPlayer({
-      youtubeVideoId: 'lLhRDkSPw0A',
-      youtubeOffsetSeconds: 2634,
-      initialSeconds: 100,
-    })
-
-    expect(screen.getByText('Se o vídeo não abrir aqui, assista por outro caminho:')).toBeDefined()
-    expect(
-      screen.getByText('O trecho da Câmara toca nesta página; o YouTube abre no ponto da fala.'),
-    ).toBeDefined()
-    expect(cameraButton()).toBeDefined()
-    expect(youtubeLink().getAttribute('href')).toBe(
-      'https://www.youtube.com/watch?v=lLhRDkSPw0A&t=2734',
-    )
-
-    fireEvent.click(document.querySelector('button[data-start-seconds="43"]')!)
-
-    expect(youtubeLink().getAttribute('href')).toBe(
-      'https://www.youtube.com/watch?v=lLhRDkSPw0A&t=2677',
-    )
-  })
-
-  it('drops t from the exit link when the session offset is unknown', () => {
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: null })
-
-    expect(youtubeLink().getAttribute('href')).toBe('https://www.youtube.com/watch?v=lLhRDkSPw0A')
-    // The Câmara surface does not depend on the session offset.
-    expect(cameraButton()).toBeDefined()
-  })
-
-  it('offers only the YouTube exit when the Câmara has no stored excerpt', () => {
-    renderPlayer({
-      youtubeVideoId: 'lLhRDkSPw0A',
-      youtubeOffsetSeconds: 2634,
-      vodResolvable: false,
-    })
-
-    expect(screen.queryByRole('button', { name: /assistir na câmara/i })).toBeNull()
-    expect(youtubeLink()).toBeDefined()
-    // The Câmara support line would promise a surface this speech does not have.
-    expect(
-      screen.queryByText('O trecho da Câmara toca nesta página; o YouTube abre no ponto da fala.'),
-    ).toBeNull()
-  })
-
-  it('plays the Câmara excerpt in place of the embed on a single click', async () => {
-    const pending = deferred<{ ok: boolean; json: () => Promise<unknown> }>()
-    fetchMock.mockReturnValue(pending.promise)
-
-    renderPlayer({
-      youtubeVideoId: 'lLhRDkSPw0A',
-      youtubeOffsetSeconds: 2634,
-      initialSeconds: 100,
-    })
-
-    fireEvent.click(cameraButton())
-
-    expect(iframeElement()).toBeNull()
-    expect(screen.getByText(/Resolvendo o trecho na Câmara/)).toBeDefined()
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({ speechId: 42 })
-
-    await act(async () => {
-      pending.resolve({ ok: true, json: async () => pronto(PLAYBACK_URL, DOWNLOAD_URL) })
-    })
-
-    await waitFor(() => {
-      expect(videoElement()?.getAttribute('src')).toBe(PLAYBACK_URL)
-    })
-    // The transcript now seeks the Câmara surface, and the YouTube exit stays.
-    fireEvent.click(document.querySelector('button[data-start-seconds="43"]')!)
-    expect(videoElement()?.currentTime).toBe(43)
-    expect(youtubeLink()).toBeDefined()
-    expect(screen.queryByRole('button', { name: /assistir na câmara/i })).toBeNull()
-  })
-
-  it('switches to the already verified file without posting again', async () => {
-    const pending = deferred<{ ok: boolean; json: () => Promise<unknown> }>()
-    fetchMock.mockReturnValue(pending.promise)
-    const tab = { location: { href: '' }, close: vi.fn() }
-    vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window)
-
-    renderPlayer({
-      youtubeVideoId: 'lLhRDkSPw0A',
-      youtubeOffsetSeconds: 2634,
-      initialSeconds: null,
-    })
-
-    fireEvent.click(screen.getByRole('button', { name: /baixar vídeo \(mp4\)/i }))
-    await act(async () => {
-      pending.resolve({ ok: true, json: async () => pronto(PLAYBACK_URL, DOWNLOAD_URL) })
-    })
-    await waitFor(() => expect(tab.location.href).toBe(DOWNLOAD_URL))
-
-    fireEvent.click(cameraButton())
-
-    expect(videoElement()?.getAttribute('src')).toBe(PLAYBACK_URL)
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-  })
-
-  it('does not ask the Câmara again while a resolution is already in flight', async () => {
-    const pending = deferred<{ ok: boolean; json: () => Promise<unknown> }>()
-    fetchMock.mockReturnValue(pending.promise)
-    const tab = { location: { href: '' }, close: vi.fn() }
-    vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window)
-
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634 })
-
-    fireEvent.click(screen.getByRole('button', { name: /baixar vídeo \(mp4\)/i }))
-    fireEvent.click(cameraButton())
-
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-
-    await act(async () => {
-      pending.resolve({ ok: true, json: async () => pronto(PLAYBACK_URL, DOWNLOAD_URL) })
-    })
-    await waitFor(() => expect(videoElement()?.getAttribute('src')).toBe(PLAYBACK_URL))
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-  })
-
-  it('switches to the Câmara surface without a second post while the Câmara generates', async () => {
-    respondWith(gerando)
-    const tab = { location: { href: '' }, close: vi.fn() }
-    vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window)
-
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634 })
-
-    fireEvent.click(screen.getByRole('button', { name: /baixar vídeo \(mp4\)/i }))
-    expect(await screen.findByText(/A Câmara está gerando o trecho deste vídeo/)).toBeDefined()
-
-    fireEvent.click(cameraButton())
-
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(iframeElement()).toBeNull()
-    expect(screen.getByRole('button', { name: /tentar novamente/i })).toBeDefined()
-  })
-
-  it('keeps the YouTube exit and the honest state when the Câmara fails', async () => {
-    respondWith(indisponivel)
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634 })
-
-    fireEvent.click(cameraButton())
-
-    expect(await screen.findByText('Não foi possível carregar o vídeo deste trecho.')).toBeDefined()
-    expect(screen.getByRole('button', { name: /tentar novamente/i })).toBeDefined()
-    expect(youtubeLink()).toBeDefined()
-  })
-
-  it('keeps share and cut offered while the Câmara surface is active', async () => {
-    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634 })
-
-    fireEvent.click(cameraButton())
-    await waitFor(() => expect(videoElement()).not.toBeNull())
-
-    fireEvent.click(screen.getByRole('button', { name: /selecionar trecho/i }))
-    fireEvent.click(document.querySelector('button[data-start-seconds="43"]')!)
-
-    expect(screen.getByRole('button', { name: /^compartilhar$/i })).toBeDefined()
-    expect(screen.getByRole('button', { name: /cortar vídeo/i })).toBeDefined()
-  })
-})
-
-describe('SpeechDetailPlayer — C171-F1 keeps the transcript point across the surface switch', () => {
-  const cameraButton = () => screen.getByRole('button', { name: /assistir na câmara/i })
-  const downloadButton = () => screen.getByRole('button', { name: /baixar vídeo \(mp4\)/i })
-  const segmentButton = (seconds: number) =>
-    document.querySelector(`button[data-start-seconds="${seconds}"]`) as HTMLButtonElement
-
-  const renderYoutubePlayer = (overrides: Partial<Parameters<typeof SpeechDetailPlayer>[0]> = {}) =>
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634, ...overrides })
-
-  const verifyDownloadFirst = async () => {
-    const tab = { location: { href: '' }, close: vi.fn() }
-    vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window)
-    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
-    fireEvent.click(downloadButton())
-    await waitFor(() => expect(tab.location.href).toBe(DOWNLOAD_URL))
-  }
-
-  const switchToCamera = async () => {
-    fireEvent.click(cameraButton())
-    await waitFor(() => expect(videoElement()).not.toBeNull())
-  }
-
+describe('SpeechDetailPlayer — C178 the deep link seeks the Câmara surface', () => {
   // The seek effect attaches its `loadedmetadata` listener on the passive
   // effect pass, which can land after the video is in the DOM under load;
   // re-dispatching inside waitFor closes that window deterministically.
@@ -460,74 +361,47 @@ describe('SpeechDetailPlayer — C171-F1 keeps the transcript point across the s
     })
   }
 
-  it('keeps the transcript point clicked on the embed when switching to the Câmara', async () => {
+  it('seeks the deep-linked point on the VOD-only surface', async () => {
     respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
-    renderYoutubePlayer({ initialSeconds: 100 })
+    renderPlayer({ initialSeconds: 100 })
 
-    fireEvent.click(segmentButton(43))
-    expect(iframeElement()?.getAttribute('src')).toContain('start=2677')
-
-    await switchToCamera()
-    await applyLoadedMetadata(43)
-  })
-
-  it('seeks the clicked point on the Câmara surface even without a deep link', async () => {
-    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
-    renderYoutubePlayer({ initialSeconds: null })
-
-    fireEvent.click(segmentButton(43))
-    await switchToCamera()
-    await applyLoadedMetadata(43)
-  })
-
-  it('seeks the deep link when the file was verified before switching to the Câmara', async () => {
-    renderYoutubePlayer({ initialSeconds: 100 })
-    await verifyDownloadFirst()
-
-    await switchToCamera()
+    fireEvent.click(watchExcerptButton())
+    await waitFor(() => expect(videoElement()).not.toBeNull())
     await applyLoadedMetadata(100)
-    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
-  it('leaves the fresh Câmara video at zero when there is no click and no deep link', async () => {
-    renderYoutubePlayer({ initialSeconds: null })
-    await verifyDownloadFirst()
+  it('seeks the deep-linked point on the both-sources surface', async () => {
+    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: 2634, initialSeconds: 100 })
 
-    await switchToCamera()
+    fireEvent.click(watchExcerptButton())
+    await waitFor(() => expect(videoElement()).not.toBeNull())
+    await applyLoadedMetadata(100)
+  })
+
+  it('leaves the fresh Câmara video at zero without a deep link', async () => {
+    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: 2634, initialSeconds: null })
+
+    fireEvent.click(watchExcerptButton())
+    await waitFor(() => expect(videoElement()).not.toBeNull())
     await applyLoadedMetadata(0)
   })
 
-  it('applies the pending transcript point after the Câmara file resolves on retry', async () => {
-    respondWith(gerando)
-    renderYoutubePlayer({ initialSeconds: 100 })
-
-    fireEvent.click(segmentButton(43))
-    fireEvent.click(cameraButton())
-    expect(await screen.findByRole('button', { name: /tentar novamente/i })).toBeDefined()
-    expect(videoElement()).toBeNull()
-
+  it('does not re-seek as playback advances after the deep link was applied', async () => {
     respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
-    fireEvent.click(screen.getByRole('button', { name: /tentar novamente/i }))
+    renderPlayer({ initialSeconds: 100 })
+
+    fireEvent.click(watchExcerptButton())
     await waitFor(() => expect(videoElement()).not.toBeNull())
-
-    await applyLoadedMetadata(43)
-  })
-
-  it('does not re-seek as playback advances after the pending point was applied', async () => {
-    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
-    renderYoutubePlayer({ initialSeconds: 100 })
-
-    fireEvent.click(segmentButton(43))
-    await switchToCamera()
+    await applyLoadedMetadata(100)
 
     const video = videoElement()!
-    await applyLoadedMetadata(43)
-
-    video.currentTime = 77
+    video.currentTime = 177
     fireEvent.timeUpdate(video)
     fireEvent.loadedMetadata(video)
 
-    expect(video.currentTime).toBe(77)
+    expect(video.currentTime).toBe(177)
   })
 })
 
@@ -572,22 +446,20 @@ describe('SpeechDetailPlayer — no-video quadrant', () => {
     expect(screen.queryByRole('button', { name: /baixar vídeo/i })).toBeNull()
     expect(screen.getByRole('link', { name: /abrir fonte/i })).toBeDefined()
     expect(screen.queryByText(/Se o vídeo não abrir aqui/)).toBeNull()
-    expect(screen.queryByRole('link', { name: /abrir no youtube/i })).toBeNull()
+    expect(exitLink()).toBeNull()
     expect(videoElement()).toBeNull()
     expect(iframeElement()).toBeNull()
   })
 })
 
 describe('SpeechDetailPlayer — C166 excerpt selection and share', () => {
-  const segmentButton = (seconds: number) =>
-    document.querySelector(`button[data-start-seconds="${seconds}"]`) as HTMLButtonElement
   const startSlider = () => screen.getByRole('slider', { name: 'Início do trecho' })
   const endSlider = () => screen.getByRole('slider', { name: 'Fim do trecho' })
   const toggleSelection = () =>
     fireEvent.click(screen.getByRole('button', { name: /selecionar trecho/i }))
 
-  it('turns phrase clicks into magnet selection while the mode is on, keeping C162 outside it', () => {
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634 })
+  it('turns phrase clicks into magnet selection while the mode is on', () => {
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: 2634 })
 
     toggleSelection()
     expect(startSlider().getAttribute('aria-valuenow')).toBe('0')
@@ -597,23 +469,19 @@ describe('SpeechDetailPlayer — C166 excerpt selection and share', () => {
     expect(startSlider().getAttribute('aria-valuenow')).toBe('0')
     expect(endSlider().getAttribute('aria-valuenow')).toBe('50')
     expect(endSlider().getAttribute('aria-valuemax')).toBe('300')
-    // C162 contract: the selection mode does not seek the embed.
-    expect(iframeElement()?.getAttribute('src')).toBe(
-      'https://www.youtube.com/embed/lLhRDkSPw0A?playsinline=1&rel=0&start=2634',
-    )
 
     // Clicking a phrase inside the range re-selects it alone.
     fireEvent.click(segmentButton(43))
     expect(startSlider().getAttribute('aria-valuenow')).toBe('43')
 
-    // Outside the mode the transcript click seeks exactly as before.
+    // Outside the mode there is no in-page surface yet, so the phrase is inert.
     toggleSelection()
-    fireEvent.click(segmentButton(43))
-    expect(iframeElement()?.getAttribute('src')).toContain('start=2677')
+    expect(segmentButton(43).disabled).toBe(true)
+    expect(videoElement()).toBeNull()
   })
 
   it('adjusts the edges by keyboard with the 5 s minimum and no upper cap', () => {
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634 })
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: 2634 })
 
     toggleSelection()
     fireEvent.click(segmentButton(43))
@@ -649,7 +517,7 @@ describe('SpeechDetailPlayer — C166 excerpt selection and share', () => {
   it('enables the phrases in selection mode and drops t when the offset is unknown', async () => {
     const writeText = vi.fn(async (_text: string) => undefined)
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: null })
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: null })
 
     expect(segmentButton(43).disabled).toBe(true)
     toggleSelection()
@@ -662,14 +530,14 @@ describe('SpeechDetailPlayer — C166 excerpt selection and share', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Copiar link' }))
     await waitFor(() => expect(writeText).toHaveBeenCalled())
     const copied = String(writeText.mock.calls[0]?.[0])
-    expect(copied).toContain('https://www.youtube.com/watch?v=lLhRDkSPw0A')
+    expect(copied).toContain(YOUTUBE_WATCH_URL)
     expect(copied).not.toContain('&t=')
   })
 
   it('copies the message with the interval and links WhatsApp with the same text', async () => {
     const writeText = vi.fn(async () => undefined)
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634 })
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: 2634 })
 
     toggleSelection()
     fireEvent.click(segmentButton(43))
@@ -681,7 +549,7 @@ describe('SpeechDetailPlayer — C166 excerpt selection and share', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Copiar link' }))
     await waitFor(() =>
       expect(writeText).toHaveBeenCalledWith(
-        'Trecho de BREVES COMUNICAÇÕES (11/08/2026): de 00:00 a 00:50 https://www.youtube.com/watch?v=lLhRDkSPw0A&t=2634',
+        `Trecho de BREVES COMUNICAÇÕES (11/08/2026): de 00:00 a 00:50 ${YOUTUBE_WATCH_URL}&t=2634`,
       ),
     )
     expect(await screen.findByRole('button', { name: 'Link copiado' })).toBeDefined()
@@ -692,7 +560,7 @@ describe('SpeechDetailPlayer — C166 excerpt selection and share', () => {
       throw new Error('denied')
     })
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634 })
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: 2634 })
 
     toggleSelection()
     fireEvent.click(screen.getByRole('button', { name: /^compartilhar$/i }))
@@ -703,7 +571,7 @@ describe('SpeechDetailPlayer — C166 excerpt selection and share', () => {
 
   it('opens the share options as a bottom sheet on coarse pointers', async () => {
     stubMatchMedia(true)
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634 })
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: 2634 })
 
     toggleSelection()
     fireEvent.click(screen.getByRole('button', { name: /^compartilhar$/i }))
@@ -715,7 +583,7 @@ describe('SpeechDetailPlayer — C166 excerpt selection and share', () => {
   })
 
   it('drags a handle with the phrase-boundary magnet', () => {
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634 })
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: 2634 })
     toggleSelection()
 
     const track = document.querySelector('[data-slot="speech-excerpt-track"]') as HTMLDivElement
@@ -759,7 +627,7 @@ describe('SpeechDetailPlayer — C166 excerpt selection and share', () => {
   it('resets the copy feedback after its window', async () => {
     const writeText = vi.fn(async () => undefined)
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
-    renderPlayer({ youtubeVideoId: 'lLhRDkSPw0A', youtubeOffsetSeconds: 2634 })
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: 2634 })
 
     toggleSelection()
     fireEvent.click(screen.getByRole('button', { name: /^compartilhar$/i }))
