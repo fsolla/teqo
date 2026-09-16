@@ -10,7 +10,13 @@ import { describe, expect, it } from 'vitest'
 
 const repoRoot = process.cwd()
 
-const commands = ['work-issue', 'plan-issue', 'testing-audit', 'bug-fix'] as const
+const commands = [
+  'work-issue',
+  'plan-issue',
+  'testing-audit',
+  'bug-fix',
+  'relatorio-cidade',
+] as const
 
 describe('opencode commands couple to their skill by exact name', () => {
   it.each(commands)('command /%s references the existing skill of the same name', (name) => {
