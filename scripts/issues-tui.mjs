@@ -16,7 +16,7 @@
  * clara, nunca stack trace; sair nunca deixa o terminal em raw mode.
  *
  *   Teclas na lista:    ↑↓ mover · enter abrir · 1-4 filtrar · r recarregar · q sair
- *   No detalhe:         esc voltar · enter abrir plano · w rascunho UI · s sessão · o GitHub
+ *   No detalhe:         esc voltar · enter abrir plano · w design UI · s sessão · o GitHub
  *   No leitor:          ↑↓ rolar · pgup/pgdn página · esc voltar
  */
 
@@ -48,6 +48,7 @@ import {
   buildPanelViewModel,
   filterByState,
   planLabel,
+  resolveUiDraft,
   toJsonPayload,
   visibleWindow,
 } from './lib/issues-panel.mjs'
@@ -99,7 +100,9 @@ const classificationTone = (classification) =>
 /**
  * Read the plan files for one row from disk (repo root = cwd). Missing files
  * come back null — “sem plano” / “impl não criado” are first-class states.
- * The UI draft only needs its existence verdict (content never rendered).
+ * The design UI only needs its existence verdict and real path (content never
+ * rendered): `resolveUiDraft` probes current `-ui-design.html` first and falls
+ * back to the legacy `-ui-draft.html`, keeping the precedence in the pure lib.
  */
 const readPlans = (row) => {
   const readIfExists = (path) => {
@@ -111,11 +114,11 @@ const readPlans = (row) => {
       return null
     }
   }
-  const uiDraftPath = row.uiDraft?.path
+  const isFileOnDisk = (path) => Boolean(path) && existsSync(resolve(process.cwd(), path))
   return {
     intention: readIfExists(row.plan.intention?.path),
     impl: readIfExists(row.plan.impl?.path),
-    uiDraft: Boolean(uiDraftPath) && existsSync(resolve(process.cwd(), uiDraftPath)),
+    uiDraft: resolveUiDraft(row.plan.intention?.path ?? null, isFileOnDisk),
   }
 }
 
@@ -336,8 +339,8 @@ const renderDetail = (row, { width, height, message }) => {
   lines.push(dim('ações'))
   push(
     row.uiDraft.exists
-      ? `${style(SGR.cyan, 'w')} abrir rascunho UI no browser · ${row.uiDraft.path}`
-      : dim('w rascunho UI: não tem (classe A)'),
+      ? `${style(SGR.cyan, 'w')} abrir design UI no browser · ${row.uiDraft.path}`
+      : dim('w design UI: não tem (classe A)'),
   )
   if (row.session) {
     push(
@@ -356,7 +359,7 @@ const renderDetail = (row, { width, height, message }) => {
       ? tone('ok', truncateToWidth(message, width))
       : dim(
           truncateToWidth(
-            'esc voltar · enter abrir plano · w rascunho UI · s sessão · o GitHub',
+            'esc voltar · enter abrir plano · w design UI · s sessão · o GitHub',
             width,
           ),
         ),
@@ -634,7 +637,7 @@ const runTui = async ({ limit }) => {
         if (key === 'esc') state.screen = 'list'
         else if (key === 'o') message = openGithub(state.row).message
         else if (key === 'w') {
-          if (!state.row.uiDraft.exists) message = 'rascunho UI: não tem (classe A)'
+          if (!state.row.uiDraft.exists) message = 'w design UI: não tem (classe A)'
           else message = openInBrowser(state.row.uiDraft.path).message
         } else if (key === 's') {
           message = attachSession(state.row).message

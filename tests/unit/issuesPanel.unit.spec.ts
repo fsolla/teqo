@@ -15,6 +15,7 @@ import {
   issueSummary,
   parsePlanStatus,
   planLabel,
+  resolveUiDraft,
   siblingPlanPaths,
   sortRows,
   toJsonPayload,
@@ -87,10 +88,11 @@ describe('classifyPlanStatus (OPS109 — leitura de produto)', () => {
   })
 })
 
-describe('siblingPlanPaths (OPS109)', () => {
-  it('derives impl and ui-draft from the intent path', () => {
+describe('siblingPlanPaths (OPS109 / OPS116)', () => {
+  it('derives impl, ui-design and the legacy ui-draft from the intent path', () => {
     expect(siblingPlanPaths('docs/plans/ops109-x.md')).toEqual({
       impl: 'docs/plans/ops109-x-impl.md',
+      uiDesign: 'docs/plans/ops109-x-ui-design.html',
       uiDraft: 'docs/plans/ops109-x-ui-draft.html',
     })
   })
@@ -100,8 +102,46 @@ describe('siblingPlanPaths (OPS109)', () => {
   })
 
   it('returns nulls for a non-markdown path', () => {
-    expect(siblingPlanPaths(null)).toEqual({ impl: null, uiDraft: null })
-    expect(siblingPlanPaths('docs/plans/x.html')).toEqual({ impl: null, uiDraft: null })
+    expect(siblingPlanPaths(null)).toEqual({ impl: null, uiDesign: null, uiDraft: null })
+    expect(siblingPlanPaths('docs/plans/x.html')).toEqual({
+      impl: null,
+      uiDesign: null,
+      uiDraft: null,
+    })
+  })
+})
+
+describe('resolveUiDraft (OPS116 — design wins over the legacy draft)', () => {
+  const intent = 'docs/plans/ops116-x.md'
+  const design = 'docs/plans/ops116-x-ui-design.html'
+  const draft = 'docs/plans/ops116-x-ui-draft.html'
+  const only =
+    (...existing: string[]) =>
+    (path: string) =>
+      existing.includes(path)
+
+  it('prefers the current -ui-design.html when only it exists', () => {
+    expect(resolveUiDraft(intent, only(design))).toEqual({ path: design, exists: true })
+  })
+
+  it('falls back to the legacy -ui-draft.html (retrocompat)', () => {
+    expect(resolveUiDraft(intent, only(draft))).toEqual({ path: draft, exists: true })
+  })
+
+  it('uses the current name when both exist', () => {
+    expect(resolveUiDraft(intent, only(design, draft))).toEqual({ path: design, exists: true })
+  })
+
+  it('shows the current name with exists:false when neither exists', () => {
+    expect(resolveUiDraft(intent, only())).toEqual({ path: design, exists: false })
+  })
+
+  it('is pure — defaults to no file on disk', () => {
+    expect(resolveUiDraft(intent)).toEqual({ path: design, exists: false })
+  })
+
+  it('returns a null path when the plan has no markdown path', () => {
+    expect(resolveUiDraft(null, only(draft))).toEqual({ path: null, exists: false })
   })
 })
 
@@ -151,7 +191,33 @@ describe('buildIssueRow (OPS109)', () => {
       classification: 'andou',
     })
     expect(row.uiDraft).toEqual({
+      path: 'docs/plans/ops109-painel-issues-no-terminal-ui-design.html',
+      exists: false,
+    })
+  })
+
+  it('carries the real design path the CLI resolved on disk', () => {
+    const row = buildIssueRow(issue(), {
+      ...deps,
+      uiDraft: { path: 'docs/plans/ops109-painel-issues-no-terminal-ui-draft.html', exists: true },
+    })
+    expect(row.uiDraft).toEqual({
       path: 'docs/plans/ops109-painel-issues-no-terminal-ui-draft.html',
+      exists: true,
+    })
+  })
+
+  it('returns a null design path when the plan is missing', () => {
+    const row = buildIssueRow(issue({ body: '---\nid: OPS999\n---\nsem plano' }), deps)
+    expect(row.uiDraft).toEqual({ path: null, exists: false })
+  })
+
+  it('derives the same design artifact from an impl plan link', () => {
+    const implLinked = issue({
+      body: '---\nid: OPS109\n---\nPlano: [`docs/plans/ops109-painel-issues-no-terminal-impl.md`](docs/plans/ops109-painel-issues-no-terminal-impl.md)',
+    })
+    expect(buildIssueRow(implLinked, deps).uiDraft).toEqual({
+      path: 'docs/plans/ops109-painel-issues-no-terminal-ui-design.html',
       exists: false,
     })
   })
@@ -262,7 +328,10 @@ describe('buildPanelViewModel / toJsonPayload (OPS109)', () => {
       {
         intention: 'Status: aprovado\n',
         impl: 'Status: em execução\n',
-        uiDraft: true,
+        uiDraft: {
+          path: 'docs/plans/ops109-painel-issues-no-terminal-ui-design.html',
+          exists: true,
+        },
       },
     ],
   ])
@@ -287,7 +356,10 @@ describe('buildPanelViewModel / toJsonPayload (OPS109)', () => {
     const row = payload.rows.find((entry: { code?: string }) => entry.code === 'OPS109')
     expect(row.plan.intention).toMatchObject({ classification: 'aprovado', status: 'aprovado' })
     expect(row.plan.impl).toMatchObject({ classification: 'andou', status: 'em execução' })
-    expect(row.uiDraft.exists).toBe(true)
+    expect(row.uiDraft).toEqual({
+      path: 'docs/plans/ops109-painel-issues-no-terminal-ui-design.html',
+      exists: true,
+    })
     expect(row.session).toBeNull()
     expect(JSON.parse(JSON.stringify(payload))).toEqual(payload)
   })

@@ -149,7 +149,14 @@ describe('toJsonPayload / buildPanelViewModel (OPS109 — no regressions)', () =
         }),
       ],
       plansByNumber: new Map([
-        [999, { intention: 'Status: aprovado\n', impl: null, uiDraft: false }],
+        [
+          999,
+          {
+            intention: 'Status: aprovado\n',
+            impl: null,
+            uiDraft: { path: 'docs/plans/test999-ui-draft.html', exists: true },
+          },
+        ],
       ]),
       limit: 200,
     })
@@ -157,5 +164,6 @@ describe('toJsonPayload / buildPanelViewModel (OPS109 — no regressions)', () =
     const row = payload.rows[0]
     expect(row.plan.intention).toMatchObject({ classification: 'aprovado', status: 'aprovado' })
     expect(row.plan.impl).toMatchObject({ exists: false, classification: 'não criado' })
+    expect(row.uiDraft).toEqual({ path: 'docs/plans/test999-ui-draft.html', exists: true })
   })
 })
