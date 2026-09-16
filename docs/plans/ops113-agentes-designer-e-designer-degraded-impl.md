@@ -144,6 +144,13 @@ flowchart LR
 - **Prettier vermelho em `.opencode/`.** Rodar `prettier --write` nos tocados; frontmatter com description longa passa como o precedente.
 - **Sem hot reload.** Qualquer prova de agente é subprocesso novo (`opencode run`), nunca a sessão atual.
 
+## Débitos da triagem pós-simplify (2026-09-15)
+
+- **Já resolvido no simplify/critique (não reabrir):** S4 (prova dos smokes vai no body do PR); S6–S12 (commit `refactor(OPS113)`: prompts enxutos anti-drift, permission estreitada ao artefato, `description` citada, roteamento de visão, posição no AGENT-OPS, duplicações da doutrina/grep).
+- **Registrado:** S1 — `bash` fora do gate de escrita dos agentes → **OPS117 (#1063)**, `depends OPS113`, plano `docs/plans/ops117-guard-bash-agentes-design.md` (nasce `blocked`; promove no merge com `Related #1063`).
+- **Absorvido:** S3 — guardrail do plano OPS114 (`docs/plans/ops114-plan-issue-design-hifi-no-gate.md`) alinhado ao teto de JS do GATE 2026-09-15 (JS só de apresentação; anti-goal "não é protótipo funcional" segue).
+- **Descartados:** S2 — o fail-closed do tier degradado (inclusive tier 4 inline) já é aceite/fase do OPS115 (#1058), não reabrir; S5 — `.agents/` fora do prettier é convenção pré-existente (`.prettierignore`). Défer com gatilho: nenhum.
+
 ## Aceite de engenharia
 
 - [ ] Aceite de produto da intenção coberto: os dois agentes existem e são invocáveis com os literais pinados; doutrina viva `ui-design-html.md` como fonte de verdade; ladder documentada com tier registrado e `DEGRADED` sem certificação; pré-requisito verificado.
