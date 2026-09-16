@@ -20,10 +20,10 @@
 # rejeita o flag e só imprime o helper; variantes ficam na config global da
 # máquina, via Ctrl+T). Modelo por invocação: `--cheap`
 # (cheapestinference/deepseek-v4-flash), `--pro` (deepseek/deepseek-v4-pro),
-# `--zen` (opencode-go/ox-alpha-free), `--go` (opencode-go/hy3), `--alibaba`
+# `--zen` (opencode/muse-spark-1.3-contributor-free), `--go` (opencode-go/deepseek-v4.1-flash), `--alibaba`
 # (alibaba-token-plan/deepseek-v4-flash), `--glm` (opencode-go/glm-5.3-flash),
 # `--free` (openrouter/openrouter/free) no mapa fixo `WORKTREE_MODEL_MAP`
-# (OPS93 menu; valores OPS95); sem flag o preset `deepseek/deepseek-flash`
+# (OPS93 menu; valores OPS95; `--go`/`--zen` OPS112); sem flag o preset `deepseek/deepseek-flash`
 # permanece. Sem `exec` de propósito: ao sair do opencode, o terminal volta ao
 # shell dentro do worktree. Presets são constantes em scripts/lib/worktree.mjs;
 # o ciclo de vida das sessões vive em scripts/agent-session.mjs. O marcador
@@ -64,8 +64,8 @@
 #                            flag de modelo como no `next`
 #   worktree kill [--force]  destrói o worktree atual e cd para o main por padrão
 #
-# `--go` remapeado em OPS93 para o provider OpenCode Go e em OPS95 para o modelo `opencode-go/hy3`
-# (antes no-op do OPS24). Claim determinístico: `next` claima antes de criar o worktree (mesma fila e
+# `--go` remapeado em OPS93 para o provider OpenCode Go, em OPS95 para `opencode-go/hy3`
+# e em OPS112 para `opencode-go/deepseek-v4.1-flash` (antes no-op do OPS24). Claim determinístico: `next` claima antes de criar o worktree (mesma fila e
 # lock de `pnpm agent:claim`); `plan`/`new`/`fix`/`kill` não tocam Issues.
 
 worktree() {
