@@ -76,11 +76,14 @@
  *                              deles (branch nem slot) colide com um `next`
  *                              posterior (prefixo minúsculo `plans/…`).
  *                              Mesmo provisionamento isolado do `next`; no
- *                              terminal, mesma diretiva `launch` — o driver
- *                              destacado auto-submete `/plan-issue` (OPS31: a
- *                              sessão abre no fluxo de planejamento, sem
- *                              digitação) e `--model <map>` quando a flag de
- *                              modelo está presente (OPS110: attach/detach).
+ *                              terminal, mesma diretiva `launch` — `--model`
+ *                              `<map>` quando a flag está presente (OPS110:
+ *                              attach/detach). Com `bag`, o driver destacado
+ *                              auto-submete `/plan-issue <bag>`; sem `bag`, a
+ *                              sessão abre SEM driver (como o `new`) para o
+ *                              humano digitar o `/plan-issue` com contexto
+ *                              (OPS119; supersede o auto-envio incondicional
+ *                              do OPS31).
  *   pnpm worktree new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]
  *                              cria um worktree NEUTRO novo — sem função
  *                              pré-definida (explorar ideia, conversar, ou
@@ -670,7 +673,8 @@ const buildTakenBranchNames = () => {
  * and prints the `cd <dir>` line by default (`--stay` suppresses). Every
  * invocation creates a DIFFERENT worktree — parallel sessions never share one.
  * `argument` (optional) rides the launch prompt — for `fix`, the bug
- * description the `/bug-fix` skill receives.
+ * description the `/bug-fix` skill receives; for `plan`, the opening message
+ * the `/plan-issue` driver auto-submits (absent → driverless session).
  */
 const cmdNamespaceBranch = async ({
   stay,
@@ -761,6 +765,7 @@ const cmdPlan = async (stay, skipMigrate, bag, flags = {}) =>
     sessionLabel: bag && bag.trim() ? `lote "${bag}"` : 'sequencial',
     branchName: (taken) => planBranchName({ bag, taken }),
     flags,
+    argument: bag,
   })
 
 /**
@@ -988,7 +993,7 @@ if (!subcommand) {
     '    minúsculo plans/… nunca colide com o branch <code>-<slug> de `next`; no terminal,',
   )
   console.log(
-    '    mesma diretiva `launch` — o driver destacado auto-submete /plan-issue (abre no fluxo de planejamento, sem digitação) e --model <map> quando a flag está presente',
+    '    mesma diretiva `launch` — --model <map> quando a flag está presente; com bag o driver auto-submete /plan-issue <bag>, sem bag a sessão abre SEM driver (você digita o /plan-issue)',
   )
   console.log(
     `\n  new [bag] [--stay] [--no-migrate] [--cheap|--pro|--zen|--go|--alibaba|--glm|--free]`,
