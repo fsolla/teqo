@@ -13,8 +13,9 @@
 # do argumento, nunca eval). Desde a OPS110 o launch não abre um TUI local dono
 # da sessão: o `agent-session` sobe/reaproveita o `opencode serve` compartilhado,
 # cria a sessão endereçável, dispara o driver destacado (que auto-submete
-# `/work-issue --issue <N>` no `next`, `/plan-issue` no `plan`, `/bug-fix <bag>`
-# no `fix`; `new` abre só a sessão) e ANEXA o TUI (`opencode attach -s <id>`) —
+# `/work-issue --issue <N>` no `next`, `/plan-issue <bag>` no `plan` com bag,
+# `/bug-fix <bag>` no `fix`; `new` e `plan` sem bag abrem só a sessão) e ANEXA
+# o TUI (`opencode attach -s <id>`) —
 # fechar o terminal NÃO encerra o run; reentre com `pnpm agent:session attach` e
 # encerre com `pnpm agent:session stop`. Sem `--variant` (OPS95: o yargs do TUI
 # rejeita o flag e só imprime o helper; variantes ficam na config global da

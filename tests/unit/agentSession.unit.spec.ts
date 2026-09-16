@@ -215,11 +215,20 @@ describe('purposeInvocation (mapa purpose→comando movido do worktree)', () => 
     expect(purposeInvocation({ purpose: 'next', issueNumber: 0 })).toBeNull()
   })
 
-  it('plan sends the bare /plan-issue command', () => {
-    expect(purposeInvocation({ purpose: 'plan' })).toEqual({ command: 'plan-issue', arguments: '' })
-    expect(purposeInvocation({ purpose: 'plan', issueNumber: 7 })).toEqual({
+  it('plan without a bag starts no driver — the human types the context', () => {
+    expect(purposeInvocation({ purpose: 'plan' })).toBeNull()
+    expect(purposeInvocation({ purpose: 'plan', issueNumber: 7 })).toBeNull()
+    expect(purposeInvocation({ purpose: 'plan', argument: '  ""  ' })).toBeNull()
+  })
+
+  it('plan carries the opening message as the sanitized bag (xargs/argv-safe)', () => {
+    expect(purposeInvocation({ purpose: 'plan', argument: 'revisa o gate do designer' })).toEqual({
       command: 'plan-issue',
-      arguments: '',
+      arguments: 'revisa o gate do designer',
+    })
+    expect(purposeInvocation({ purpose: 'plan', argument: 'a"b\\c' })).toEqual({
+      command: 'plan-issue',
+      arguments: 'abc',
     })
   })
 
@@ -357,14 +366,14 @@ describe('driverArgs + attachArgs (o argv verificado ao vivo)', () => {
     ])
   })
 
-  it('omits the `--` separator when there are no arguments (plan)', () => {
+  it('omits the `--` separator when the invocation carries no arguments (fix with an empty bag)', () => {
     expect(
       driverArgs({
         url: 'http://127.0.0.1:4199',
         sessionID: 'ses_abc',
-        dir: '/work/plan',
+        dir: '/work/fix',
         model: 'm',
-        invocation: { command: 'plan-issue', arguments: '' },
+        invocation: { command: 'bug-fix', arguments: '' },
       }),
     ).toEqual([
       'run',
@@ -373,12 +382,12 @@ describe('driverArgs + attachArgs (o argv verificado ao vivo)', () => {
       '-s',
       'ses_abc',
       '--dir',
-      '/work/plan',
+      '/work/fix',
       '--model',
       'm',
       '--auto',
       '--command',
-      'plan-issue',
+      'bug-fix',
     ])
   })
 

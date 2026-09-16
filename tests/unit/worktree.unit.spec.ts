@@ -187,7 +187,7 @@ describe('opencodeLaunchDirective (terminal-only agent-session launch, OPS26 + O
     )
   })
 
-  it('plan launches through the same session CLI (the skill is auto-submitted by the driver)', () => {
+  it('plan without a bag launches session-only — the human types /plan-issue', () => {
     expect(opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true })).toBe(
       `launch node scripts/agent-session.mjs start --purpose=plan --dir=${dir} --model=${presetInEffect()}`,
     )
@@ -252,16 +252,29 @@ describe('opencodeLaunchDirective (terminal-only agent-session launch, OPS26 + O
     )
   })
 
-  it('the argument belongs to fix alone — plan/new ignore it', () => {
+  it('the argument belongs to fix and plan — new ignores it', () => {
     expect(
       opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true, argument: 'bag x' }),
     ).toBe(
-      `launch node scripts/agent-session.mjs start --purpose=plan --dir=${dir} --model=${presetInEffect()}`,
+      `launch node scripts/agent-session.mjs start --purpose=plan --dir=${dir} --model=${presetInEffect()} --argument="bag x"`,
     )
     expect(
       opencodeLaunchDirective({ dir, purpose: 'new', terminal: true, argument: 'bag x' }),
     ).toBe(
       `launch node scripts/agent-session.mjs start --purpose=new --dir=${dir} --model=${presetInEffect()}`,
+    )
+  })
+
+  it('plan strips quotes/backslashes from the bag and drops --argument when it empties', () => {
+    expect(
+      opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true, argument: 'a"b\\c ideia' }),
+    ).toBe(
+      `launch node scripts/agent-session.mjs start --purpose=plan --dir=${dir} --model=${presetInEffect()} --argument="abc ideia"`,
+    )
+    expect(
+      opencodeLaunchDirective({ dir, purpose: 'plan', terminal: true, argument: ' "" ' }),
+    ).toBe(
+      `launch node scripts/agent-session.mjs start --purpose=plan --dir=${dir} --model=${presetInEffect()}`,
     )
   })
 

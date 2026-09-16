@@ -163,8 +163,9 @@ export const parseServerState = (text) => {
 
 /**
  * Skill command per launch purpose — the terminal launch auto-submits it on
- * the server-owned session. `new` deliberately has none ("apenas conversar"):
- * the session is created and attached, no driver.
+ * the server-owned session. `new` deliberately has none ("apenas conversar");
+ * `plan` only submits `/plan-issue` when a bag (the opening message) is given,
+ * otherwise it is driverless like `new` so the human can type the context.
  */
 export const SESSION_COMMAND_BY_PURPOSE = {
   next: 'work-issue',
@@ -175,10 +176,12 @@ export const SESSION_COMMAND_BY_PURPOSE = {
 
 /**
  * `{ command, arguments }` for the purpose, or null when there is nothing to
- * auto-submit. `next` carries only a valid claimed issue (`--issue N`), `fix`
- * carries the sanitized bag (quotes/backslashes stripped — the value rides a
- * single argv token), `plan` sends the bare command, unknown purposes degrade
- * to no command (fail-safe, mirrors the old directive).
+ * auto-submit. `next` carries only a valid claimed issue (`--issue N`); `fix`
+ * and `plan` carry the sanitized bag (quotes/backslashes stripped — the value
+ * rides a single argv token). `fix` with an empty bag still submits the bare
+ * `/bug-fix`; `plan` with an empty bag is driverless by design (no context to
+ * plan with — mirrors `new`). Unknown purposes degrade to no command
+ * (fail-safe, mirrors the old directive).
  * @param {{ purpose?: string, issueNumber?: number | string | null, argument?: string | null }} [options]
  */
 export const purposeInvocation = ({ purpose = null, issueNumber = null, argument = null } = {}) => {
@@ -189,10 +192,11 @@ export const purposeInvocation = ({ purpose = null, issueNumber = null, argument
     if (!Number.isInteger(number) || number <= 0) return null
     return { command, arguments: `--issue ${number}` }
   }
-  if (purpose === 'fix') {
+  if (purpose === 'fix' || purpose === 'plan') {
     // Mesma sanitização da diretiva de launch (fronteira dupla de propósito:
     // o xargs da camada shell e o argv do `opencode run` não honram escapes).
     const sanitized = typeof argument === 'string' ? argument.replace(/["\\]/g, '').trim() : ''
+    if (purpose === 'plan' && !sanitized) return null
     return { command, arguments: sanitized }
   }
   return { command, arguments: '' }

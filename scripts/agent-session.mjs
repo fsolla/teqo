@@ -9,7 +9,8 @@
  *   pnpm agent:session start --purpose=<next|plan|new|fix> --dir=<D> [--model=<M>] [--issue=N] [--argument="<bag>"] [--new] [--hostname=H] [--port=P]
  *       Cria a sessão endereçável, sobe o driver destacado
  *       (`opencode run --attach … --auto --command <skill> -- …`) quando o
- *       purpose tem skill, e abre o TUI anexado (`opencode attach -s <id>`).
+ *       purpose tem skill invocável (`plan` sem bag é driverless), e abre o
+ *       TUI anexado (`opencode attach -s <id>`).
  *       Fechar o TUI/terminal NÃO encerra o run; `stop` encerra. Reusa o run
  *       existente quando o driver ainda vive ou a sessão está busy; `--new`
  *       força sessão nova.
@@ -80,7 +81,7 @@ const USAGE = `Uso: pnpm agent:session <serve|start|attach|stop|list> [flags]
   stop   [--session=<ses_…>|--branch=<B>|--issue=N]  encerra de forma explícita (abort + fim do driver)
   list   [--json] [--hostname=H] [--port=P]        status dos runs registrados
 
-  --model é obrigatório quando o purpose tem skill (next/plan/fix); 'new' não dispara driver.`
+  --model é obrigatório quando o purpose dispara driver (next/fix, plan com bag); 'new' e 'plan' sem bag não disparam driver.`
 
 /** Loopback by default; the credential rides the env, never the state/log. */
 const serverPassword = () => process.env.OPENCODE_SERVER_PASSWORD ?? ''
@@ -533,7 +534,9 @@ const cmdStart = async (flags) => {
           driverArgs({ url: server.url, sessionID, dir, model, invocation }),
           { cwd: dir, logPath: state.logPath, label: `o driver do run (log: ${state.logPath})` },
         )
-      } else if (purpose !== 'new') {
+      } else if (purpose !== 'new' && purpose !== 'plan') {
+        // `plan` sem bag é driverless por desenho (o humano digita o
+        // `/plan-issue`); só os demais purposes sem comando são anomalia.
         console.warn(
           `[agent:session] purpose=${purpose} sem comando/issue válida — sessão criada sem driver.`,
         )

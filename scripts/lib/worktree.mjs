@@ -188,11 +188,11 @@ const namespaceBranchName = ({ prefix, bag = '', taken = new Set(), fallback }) 
  * is always `<root without spaces>/<slugified branch>`, so the line never needs
  * quoting for the path. `next` with an `issueNumber` carries `--issue=<N>`
  * (OPS33: the launch delivers the claimed issue to the agent; the skill reads
- * the rest from GitHub), `fix` with an `argument` carries `--argument="<bag>"`
- * (the bug description arrives with the skill; quotes/backslashes are stripped
- * because the shell layer tokenizes with xargs, which does not honor
- * backslash escapes). Returns `null` outside the terminal so the `/worktree`
- * opencode command never launches a nested TUI.
+ * the rest from GitHub), `fix` (bug description) and `plan` (opening message)
+ * with an `argument` carry `--argument="<bag>"` (the text arrives with the
+ * skill; quotes/backslashes are stripped because the shell layer tokenizes
+ * with xargs, which does not honor backslash escapes). Returns `null` outside
+ * the terminal so the `/worktree` opencode command never launches a nested TUI.
  * `sessionScript` é o caminho do CLI de sessão — `worktree.mjs` passa o
  * ABSOLUTO do checkout que emitiu a diretiva (worktrees reabertos/criados
  * antes do merge não têm o arquivo novo; o relativo apontaria para o branch
@@ -221,10 +221,10 @@ export const opencodeLaunchDirective = ({
   // The issue suffix belongs to `next` alone — `plan`/`new`/`fix` never carry
   // a claimed issue (fail-safe: a stray issueNumber must not break them).
   if (purpose === 'next' && issueNumber) args.push(`--issue=${issueNumber}`)
-  // The bag suffix belongs to `fix` alone — the bug description arrives with
-  // the skill. JSON.stringify quotes the value (it carries spaces); xargs
-  // strips the quotes at execution time.
-  if (purpose === 'fix') {
+  // The bag suffix belongs to `fix` (bug description) and `plan` (opening
+  // message) — the text arrives with the skill. JSON.stringify quotes the
+  // value (it carries spaces); xargs strips the quotes at execution time.
+  if (purpose === 'fix' || purpose === 'plan') {
     const sanitized = typeof argument === 'string' ? argument.replace(/["\\]/g, '').trim() : ''
     if (sanitized) args.push(`--argument=${JSON.stringify(sanitized)}`)
   }
