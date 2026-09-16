@@ -40,7 +40,7 @@ Mesmo padrão de `work-issue` — sub-agentes para fases pesadas:
 - [ ] 3. Executar (main agent iterativo) — `designer` nos triggers (a/b/d)
 - [ ] 4. Dispatch 2 revisores paralelos → simplify
 - [ ] 5. Dispatch capturador → triage de débitos
-- [ ] 6. PR Ready + auto-merge — crítica do `designer` (c); `DEGRADED` ⇒ sem PR (comenta Issue + `blocked`)
+- [ ] 6. PR Ready + auto-merge — crítica do `designer` (c); `DEGRADED` ⇒ sem PR (comenta Issue + `blocked`); Cloud ⇒ §Verificação pós-deploy **diferida** (registre a justificativa)
 ```
 
 ## Passo 0 — Prep
@@ -98,6 +98,10 @@ Dispatche capturador com achados + regras de `capture-review-debts`. Receba tria
 PR Ready `--base main` (GitHub) + auto-merge nativo — `pnpm push -u origin HEAD` → `node scripts/github-pr.mjs` (ou `ManagePullRequest` `draft: false` no Cloud).
 
 Antes do PR, se o diff muda UI, a crítica final do `designer` (trigger c) é obrigatória (§Design) e `Design tier: <slug>` vai no body. Sem tier primário (`DEGRADED`) **não há certificação** — exceção explícita ao contrato "PR Ready + auto-merge": **não abra PR**; comente o resultado na Issue (crítica `DEGRADED` + screenshots + `Design tier: DEGRADED (<slug>)`) e flip para `blocked`; o humano decide. `DEGRADED` nunca vira "segue sem".
+
+**Pós-deploy (staging):** Cloud/sem browsers ⇒ a §Verificação pós-deploy do
+pipeline é **diferida** — registre a justificativa no PR/Issue, nunca finja o
+passo. O executor humano (`work-issue`) é quem roda o navegador.
 
 ## Resumo final
 
