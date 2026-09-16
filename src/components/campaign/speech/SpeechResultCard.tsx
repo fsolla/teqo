@@ -106,10 +106,14 @@ const SpeechActions = ({
         {speech.matchKind === 'segment' ? 'Assistir no trecho' : 'Ver fala'}
       </Link>
     </Button>
-    {speech.sourceUrl ? (
-      <ActionLink href={speech.sourceUrl} variant="ghost" fullWidthOnMobile={fullWidthOnMobile}>
+    {speech.officialTextUrl ? (
+      <ActionLink
+        href={speech.officialTextUrl}
+        variant="ghost"
+        fullWidthOnMobile={fullWidthOnMobile}
+      >
         <ExternalLinkIcon data-icon="inline-start" aria-hidden="true" />
-        Abrir fonte
+        Abrir Diário Oficial
       </ActionLink>
     ) : null}
   </div>
@@ -218,10 +222,10 @@ export const SpeechResultCard = ({
             {watchLabel}
           </Link>
         </Button>
-        {speech.sourceUrl ? (
-          <ActionLink href={speech.sourceUrl} variant="ghost">
+        {speech.officialTextUrl ? (
+          <ActionLink href={speech.officialTextUrl} variant="ghost">
             <ExternalLinkIcon data-icon="inline-start" aria-hidden="true" />
-            Abrir fonte
+            Abrir Diário Oficial
           </ActionLink>
         ) : null}
       </div>

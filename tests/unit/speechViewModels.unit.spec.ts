@@ -34,6 +34,14 @@ describe('toSpeechListItemViewModel thumbnail (C175)', () => {
     })
 
     expect(row.thumbnailUrl).toBe('https://i.ytimg.com/vi/lLhRDkSPw0A/hqdefault.jpg')
-    expect(row.sourceUrl).toBe('https://camara.leg.br/discurso')
+    expect(row.officialTextUrl).toBe('https://camara.leg.br/discurso')
+  })
+
+  it('has no source link without the official text, never the YouTube fallback (C177)', () => {
+    expect(viewModel().officialTextUrl).toBeNull()
+    expect(viewModel({ youtubeUrl: 'https://youtu.be/lLhRDkSPw0A' }).officialTextUrl).toBeNull()
+    expect(viewModel({ officialTextUrl: 'https://camara.leg.br/discurso' }).officialTextUrl).toBe(
+      'https://camara.leg.br/discurso',
+    )
   })
 })

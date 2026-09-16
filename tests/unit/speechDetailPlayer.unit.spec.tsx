@@ -58,7 +58,7 @@ const renderPlayer = (props: Partial<Parameters<typeof SpeechDetailPlayer>[0]> =
       vodResolvable
       segments={SEGMENTS}
       initialSeconds={null}
-      sourceUrl={null}
+      officialTextUrl={null}
       durationSeconds={300}
       speechType="BREVES COMUNICAÇÕES"
       speechDateLabel="11/08/2026"
@@ -439,16 +439,53 @@ describe('SpeechDetailPlayer — C174 excerpt request from outside the player', 
 
 describe('SpeechDetailPlayer — no-video quadrant', () => {
   it('renders the unavailable block without retry or download', () => {
-    renderPlayer({ vodResolvable: false, sourceUrl: 'https://imagem.camara.leg.br/diario.pdf' })
+    renderPlayer({
+      vodResolvable: false,
+      officialTextUrl: 'https://imagem.camara.leg.br/diario.pdf',
+    })
 
     expect(screen.getByText('Vídeo indisponível neste momento.')).toBeDefined()
     expect(screen.queryByRole('button', { name: /tentar novamente/i })).toBeNull()
     expect(screen.queryByRole('button', { name: /baixar vídeo/i })).toBeNull()
-    expect(screen.getByRole('link', { name: /abrir fonte/i })).toBeDefined()
+    expect(screen.getByRole('link', { name: /abrir diário oficial/i })).toBeDefined()
     expect(screen.queryByText(/Se o vídeo não abrir aqui/)).toBeNull()
     expect(exitLink()).toBeNull()
     expect(videoElement()).toBeNull()
     expect(iframeElement()).toBeNull()
+  })
+
+  it('drops the source button without the official text (C177)', () => {
+    renderPlayer({ vodResolvable: false, officialTextUrl: null })
+
+    expect(screen.queryByRole('link', { name: /abrir diário oficial/i })).toBeNull()
+    expect(screen.queryByText(/abrir o Diário Oficial/)).toBeNull()
+  })
+
+  it('promises only the exits it renders in the no-YouTube notice (C177)', () => {
+    renderPlayer({ youtubeVideoId: null, vodResolvable: false, officialTextUrl: null })
+    expect(screen.getByText(/A seleção de trecho continua disponível\.$/)).toBeDefined()
+
+    cleanup()
+    renderPlayer({ youtubeVideoId: null, vodResolvable: true, officialTextUrl: null })
+    expect(screen.getByText(/e você ainda pode baixar o MP4\.$/)).toBeDefined()
+
+    cleanup()
+    renderPlayer({
+      youtubeVideoId: null,
+      vodResolvable: false,
+      officialTextUrl: 'https://imagem.camara.leg.br/diario.pdf',
+    })
+    expect(screen.getByText(/e você ainda pode abrir o Diário Oficial\.$/)).toBeDefined()
+
+    cleanup()
+    renderPlayer({
+      youtubeVideoId: null,
+      vodResolvable: true,
+      officialTextUrl: 'https://imagem.camara.leg.br/diario.pdf',
+    })
+    expect(
+      screen.getByText(/e você ainda pode baixar o MP4 ou abrir o Diário Oficial\.$/),
+    ).toBeDefined()
   })
 })
 

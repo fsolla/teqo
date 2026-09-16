@@ -58,7 +58,12 @@ type SpeechDetailPlayerProps = {
   vodResolvable: boolean
   segments: readonly SpeechDetailSegmentViewModel[]
   initialSeconds: number | null
-  sourceUrl: string | null
+  /**
+   * C177 — official source (Diário) link; null drops the source button. Never
+   * fed with the YouTube URL: a source button that opened a video without the
+   * point duplicated (worse) the "Abrir no YouTube" exit.
+   */
+  officialTextUrl: string | null
   /** C166 — raw duration for the excerpt picker; null falls back to the last segment end. */
   durationSeconds: number | null
   /** C166 — speech type for the share message (`null` reads as "fala"). */
@@ -152,7 +157,7 @@ export const SpeechDetailPlayer = ({
   vodResolvable,
   segments,
   initialSeconds,
-  sourceUrl,
+  officialTextUrl,
   durationSeconds,
   speechType,
   speechDateLabel,
@@ -183,6 +188,13 @@ export const SpeechDetailPlayer = ({
   const selecting = selection !== null
   const showExcerptShare = selecting && Boolean(youtubeVideoId)
   const showCutAction = selecting && vodResolvable
+  // C177 — the "no YouTube link" notice must not promise a button that is not
+  // rendered: the MP4 needs the Câmara excerpt, the Diário needs the official
+  // text (never the YouTube URL).
+  const remainingExits = [
+    vodResolvable ? 'baixar o MP4' : null,
+    officialTextUrl ? 'abrir o Diário Oficial' : null,
+  ].filter((exit): exit is string => exit !== null)
 
   // The deep link (`?t=`) seeks the already verified file on mount.
   useEffect(() => {
@@ -495,11 +507,11 @@ export const SpeechDetailPlayer = ({
             Baixar vídeo (MP4)
           </Button>
         ) : null}
-        {sourceUrl ? (
+        {officialTextUrl ? (
           <Button asChild variant="outline" className="min-h-10">
-            <a href={sourceUrl} target="_blank" rel="noreferrer">
+            <a href={officialTextUrl} target="_blank" rel="noreferrer">
               <ExternalLinkIcon data-icon="inline-start" aria-hidden="true" />
-              Abrir fonte
+              Abrir Diário Oficial
             </a>
           </Button>
         ) : null}
@@ -526,8 +538,9 @@ export const SpeechDetailPlayer = ({
             Compartilhar por link exige o vídeo no YouTube
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Esta fala não tem vídeo no YouTube — não há link externo que abra no ponto. Você ainda
-            pode baixar o MP4 ou abrir a fonte oficial, e a seleção de trecho continua disponível.
+            Esta fala não tem vídeo no YouTube — não há link externo que abra no ponto. A seleção de
+            trecho continua disponível
+            {remainingExits.length ? `, e você ainda pode ${remainingExits.join(' ou ')}.` : '.'}
           </p>
         </div>
       ) : null}
