@@ -2,9 +2,11 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { measuredVideoLagSeconds, parseYoutubeVideoId } from '@/lib/speechVod'
 import type { CampaignUser, Speech } from '@/payload-types'
 import { createEntityNotFoundError } from '@/utilities/entityNotFound'
 import { loadMunicipalityLabelsByIds } from '@/utilities/loadNamesByIds'
+import { getYouTubeVideoStart } from '@/utilities/socialFeed/youtubeFeed'
 import {
   loadSpeechCutOriginSpeechIds,
   loadSpeechCutsForSpeeches,
@@ -216,11 +218,18 @@ export const loadSpeechAcervoPageData = async (
   }
 }
 
+/**
+ * Resolves the broadcast start (ISO) of a session video. The default reads the
+ * cached YouTube anchor (C172); tests inject their own to stay offline.
+ */
+export type SpeechVideoStartResolver = (videoId: string) => Promise<string | null>
+
 export const loadSpeechDetailPageData = async (
   payload: Payload,
   user: CampaignUser,
   speechId: number,
   query?: string,
+  resolveVideoStart: SpeechVideoStartResolver = getYouTubeVideoStart,
 ): Promise<SpeechDetailViewModel> => {
   const result = await payload.find({
     collection: 'speech',
@@ -235,7 +244,13 @@ export const loadSpeechDetailPageData = async (
   const speech = result.docs[0]
   if (!speech) throw new SpeechNotFoundError()
 
-  const [segments, municipalityLabels] = await Promise.all([
+  // C172 — the anchor belongs to the session video and is only worth asking
+  // for when the row links one AND no measurement already covers it; unknown
+  // stays null (no correction).
+  const videoId = parseYoutubeVideoId(speech.youtubeUrl)
+  const skipAnchor = videoId === null || measuredVideoLagSeconds(videoId) !== null
+
+  const [segments, municipalityLabels, youtubeVideoStartAt] = await Promise.all([
     payload.find({
       collection: 'speechSegment',
       where: { speech: { equals: speechId } },
@@ -248,6 +263,7 @@ export const loadSpeechDetailPageData = async (
       overrideAccess: false,
     }),
     loadMunicipalityLabelsByIds(payload, municipalityIdsOfSpeech(speech)).then(municipalityNameMap),
+    skipAnchor ? null : resolveVideoStart(videoId),
   ])
 
   return toSpeechDetailViewModel({
@@ -259,5 +275,6 @@ export const loadSpeechDetailPageData = async (
     })),
     query,
     municipalityLabels,
+    youtubeVideoStartAt,
   })
 }

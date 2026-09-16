@@ -234,3 +234,76 @@ export const excerptOffsetSeconds = (excerptTMs: unknown, eventStartAt: unknown)
   const offset = Math.floor(wallClockSeconds(epochMs) - startSeconds)
   return offset >= 0 ? offset : null
 }
+
+/**
+ * Measured start delay of a session video, in seconds: how long after the
+ * session's declared start (`eventStartAt`) the recording actually begins.
+ * The archive cannot begin after the broadcast went live, so the anchor the
+ * player resolves from the YouTube API is only an upper bound — a lag measured
+ * against the video itself is exact and wins. Keyed by `videoId`: the delay
+ * belongs to the recording, never to a single speech. Evidence is dated; never
+ * overwrite an entry without a new measurement.
+ */
+const MEASURED_VIDEO_LAG_SECONDS: ReadonlyMap<string, number> = new Map([
+  // Fala 997 (C172, Issue #1082, 2026-09-16): app opened at 11962s, the
+  // YouTube share of the same point at 11949s.
+  ['DC_i9Kp1LVk', 13],
+  // Fala 641 (C163, 2026-09-15): the 2018-03-13 session video starts ~37s
+  // after `eventStartAt` (checked in the browser at t=608s).
+  ['2cX_gKkJH7Q', 37],
+  // Fala 981 (staging, 2026-09-16): app opened at 25156s, the YouTube share of
+  // the same point at 25125s (session of 2026-06-16).
+  ['hAUJ3fXgsIQ', 31],
+  // Fala 973 (staging, 2026-09-16): app opened at 392s, the YouTube share of
+  // the same point at ~382s (session of 2026-05-27; measurement approximate).
+  ['hZ9Yl4MFHQs', 10],
+  // Staging (2026-09-16): app opened at 11622s, the YouTube share of the same
+  // point at ~11533s (session of 2026-06-17; measurement approximate).
+  ['nHHqPaJEERI', 89],
+])
+
+/**
+ * A gap beyond this is not the session's own start delay, it is a URL that
+ * belongs to another session — treat the anchor as unknown (fail-closed).
+ */
+const MAX_SESSION_LAG_SECONDS = 3600
+
+/**
+ * Measured lag of a session video, or null when this recording was never
+ * measured — the caller then falls back to the API anchor.
+ */
+export const measuredVideoLagSeconds = (videoId: string | null): number | null =>
+  videoId === null ? null : (MEASURED_VIDEO_LAG_SECONDS.get(videoId) ?? null)
+
+/**
+ * Seconds between the session's declared start (`eventStartAt`, naive Câmara
+ * wall clock) and the moment the video itself starts (`videoStartAt`, ISO with
+ * zone — YouTube's `actualStartTime`). Both sides are read as BRT wall clock,
+ * like `excerptOffsetSeconds`. Null when either side is unparseable, when the
+ * video does not start after the declared slot (the excerpt offset is already
+ * early — nothing to correct) or when the gap is implausibly large.
+ */
+export const sessionLagSeconds = (videoStartAt: unknown, eventStartAt: unknown): number | null => {
+  const startMs = Date.parse(String(videoStartAt ?? '').trim())
+  if (!Number.isFinite(startMs) || startMs <= 0 || startMs > MAX_DATE_MS) return null
+
+  const startSeconds = naiveWallClockSeconds(eventStartAt)
+  if (startSeconds === null) return null
+
+  const lag = Math.floor(wallClockSeconds(startMs) - startSeconds)
+  return lag > 0 && lag <= MAX_SESSION_LAG_SECONDS ? lag : null
+}
+
+/**
+ * The session offset of an excerpt, moved from the declared session start to
+ * the video's own start: the second a YouTube player must open. A null lag
+ * keeps the offset as-is (today's behaviour, never a guess).
+ */
+export const correctedExcerptOffsetSeconds = (
+  excerptOffset: number | null,
+  lagSeconds: number | null,
+): number | null => {
+  if (excerptOffset === null) return null
+  if (lagSeconds === null) return excerptOffset
+  return Math.max(0, excerptOffset - lagSeconds)
+}

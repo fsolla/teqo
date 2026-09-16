@@ -2,7 +2,14 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { excerptOffsetSeconds, parseYoutubeVideoId, youtubeThumbnailUrl } from '@/lib/speechVod'
+import {
+  correctedExcerptOffsetSeconds,
+  excerptOffsetSeconds,
+  measuredVideoLagSeconds,
+  parseYoutubeVideoId,
+  sessionLagSeconds,
+  youtubeThumbnailUrl,
+} from '@/lib/speechVod'
 
 /**
  * The VOD URL/status/duration contracts moved from `scripts/lib/camaraSpeeches.mjs`
@@ -93,5 +100,72 @@ describe('youtubeThumbnailUrl', () => {
   it('returns null when there is no video id', () => {
     expect(youtubeThumbnailUrl(null)).toBeNull()
     expect(youtubeThumbnailUrl('')).toBeNull()
+  })
+})
+
+describe('sessionLagSeconds (C172)', () => {
+  it('measures the video start delay in BRT wall clock (Fase 0 literals)', () => {
+    // 2026-08-11: session slot 15:32 BRT; broadcast started 18:32:57Z = 15:32:57 BRT.
+    expect(sessionLagSeconds('2026-08-11T18:32:57Z', '2026-08-11T15:32')).toBe(57)
+    // 2018-03-13: slot 14:00 BRT; broadcast started 17:00:46Z = 14:00:46 BRT.
+    expect(sessionLagSeconds('2018-03-13T17:00:46Z', '2018-03-13T14:00')).toBe(46)
+  })
+
+  it('reads both sides as BRT wall clock across an old DST transition', () => {
+    // 2018-11-04 00:00 BRT: clocks move to -02:00; 14:00Z reads as 12:00 BRT.
+    expect(sessionLagSeconds('2018-11-04T14:00:00Z', '2018-11-04T11:00')).toBe(3600)
+  })
+
+  it('returns null when the video does not start after the declared slot', () => {
+    expect(sessionLagSeconds('2026-08-11T18:32:00Z', '2026-08-11T15:32')).toBeNull()
+    expect(sessionLagSeconds('2026-08-11T18:31:00Z', '2026-08-11T15:32')).toBeNull()
+  })
+
+  it('returns null when the gap is too large to be a session start delay', () => {
+    expect(sessionLagSeconds('2026-08-11T20:00:00Z', '2026-08-11T15:32')).toBeNull()
+  })
+
+  it('returns null on unparseable or out-of-range input', () => {
+    expect(sessionLagSeconds(null, '2026-08-11T15:32')).toBeNull()
+    expect(sessionLagSeconds('', '2026-08-11T15:32')).toBeNull()
+    expect(sessionLagSeconds('sem data', '2026-08-11T15:32')).toBeNull()
+    expect(sessionLagSeconds('2026-08-11T18:32:57Z', 'sem data')).toBeNull()
+    expect(sessionLagSeconds('2026-08-11T18:32:57Z', '2026-08-11T25:00')).toBeNull()
+  })
+})
+
+describe('measuredVideoLagSeconds (C172)', () => {
+  it('returns the lag measured for that recording (release + staging evidence)', () => {
+    // Fala 997 (Issue #1082) and fala 641 (C163).
+    expect(measuredVideoLagSeconds('DC_i9Kp1LVk')).toBe(13)
+    expect(measuredVideoLagSeconds('2cX_gKkJH7Q')).toBe(37)
+    // Staging reports of 2026-09-16.
+    expect(measuredVideoLagSeconds('hAUJ3fXgsIQ')).toBe(31)
+    expect(measuredVideoLagSeconds('hZ9Yl4MFHQs')).toBe(10)
+    expect(measuredVideoLagSeconds('nHHqPaJEERI')).toBe(89)
+  })
+
+  it('returns null for a recording that was never measured', () => {
+    expect(measuredVideoLagSeconds('lLhRDkSPw0A')).toBeNull()
+    expect(measuredVideoLagSeconds(null)).toBeNull()
+  })
+})
+
+describe('correctedExcerptOffsetSeconds (C172)', () => {
+  it('moves the offset from the declared slot to the video start (acceptance literals)', () => {
+    // Fala 997: app 11962s → YouTube share 11949s.
+    expect(correctedExcerptOffsetSeconds(11962, 13)).toBe(11949)
+    // Fala 641: Câmara excerpt 645s → t=608s.
+    expect(correctedExcerptOffsetSeconds(645, 37)).toBe(608)
+  })
+
+  it('keeps the session offset when the lag is unknown (today behaviour)', () => {
+    expect(correctedExcerptOffsetSeconds(2634, null)).toBe(2634)
+  })
+
+  it('never goes negative and never invents an offset', () => {
+    expect(correctedExcerptOffsetSeconds(5, 13)).toBe(0)
+    expect(correctedExcerptOffsetSeconds(null, 13)).toBeNull()
+    expect(correctedExcerptOffsetSeconds(null, null)).toBeNull()
   })
 })

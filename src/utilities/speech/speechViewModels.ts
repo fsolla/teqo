@@ -18,8 +18,11 @@ import {
 } from '@/lib/speechHighlight'
 import { normalizeForSearch } from '@/lib/speechSearch'
 import {
+  correctedExcerptOffsetSeconds,
   excerptOffsetSeconds,
+  measuredVideoLagSeconds,
   parseYoutubeVideoId,
+  sessionLagSeconds,
   speechVodCoordinates,
   youtubeThumbnailUrl,
 } from '@/lib/speechVod'
@@ -103,7 +106,10 @@ export type SpeechDetailViewModel = {
   segments: SpeechDetailSegmentViewModel[]
   /** YouTube default source (C162): id when the session link parses, else null. */
   youtubeVideoId: string | null
-  /** Session offset in seconds (excerpt epoch − session start), null when unknowable. */
+  /**
+   * Session offset in seconds minus the video's own start delay (C172), null
+   * when the excerpt has no known session offset.
+   */
   youtubeOffsetSeconds: number | null
   /** Stored VOD + excerpt coordinates — the Câmara may be asked on click. */
   vodResolvable: boolean
@@ -260,15 +266,23 @@ export const toSpeechDetailViewModel = ({
   segments,
   query,
   municipalityLabels,
+  youtubeVideoStartAt = null,
 }: {
   speech: SpeechDetailRecord
   segments: readonly SpeechSegmentRecord[]
   query?: string
   municipalityLabels: ReadonlyMap<number, string>
+  /** Broadcast start (ISO) of the session video — the C172 anchor, when known. */
+  youtubeVideoStartAt?: string | null
 }): SpeechDetailViewModel => {
   // The stored VOD link is a cache and never a URL handed to the client; it
   // only signals that this record had a generated excerpt to re-resolve.
   const vodResolvable = speechVodCoordinates(speech) !== null
+  const youtubeVideoId = parseYoutubeVideoId(speech.youtubeUrl)
+  // C172 — measured evidence for this recording wins over the API anchor.
+  const lagSeconds =
+    measuredVideoLagSeconds(youtubeVideoId) ??
+    sessionLagSeconds(youtubeVideoStartAt, speech.eventStartAt)
 
   return {
     id: speech.id,
@@ -293,8 +307,11 @@ export const toSpeechDetailViewModel = ({
       startLabel: formatSpeechClock(segment.startSeconds),
       parts: splitHighlightedParts(segment.text, query ?? ''),
     })),
-    youtubeVideoId: parseYoutubeVideoId(speech.youtubeUrl),
-    youtubeOffsetSeconds: excerptOffsetSeconds(speech.excerptTMs, speech.eventStartAt),
+    youtubeVideoId,
+    youtubeOffsetSeconds: correctedExcerptOffsetSeconds(
+      excerptOffsetSeconds(speech.excerptTMs, speech.eventStartAt),
+      lagSeconds,
+    ),
     vodResolvable,
   }
 }
