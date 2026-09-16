@@ -38,6 +38,7 @@ import {
   SPEECH_CUT_FORBIDDEN_MESSAGE,
   SPEECH_CUT_PUBLISH_NOT_READY_MESSAGE,
 } from '@/lib/schemas/speechCut'
+import { SPEECH_CUT_FAILURE_INTERRUPTED, SPEECH_CUT_FAILURE_UNAVAILABLE } from '@/lib/speechCut'
 import type { CampaignUser } from '@/payload-types'
 import config from '@/payload.config'
 import { getCampaignActionContext } from '@/utilities/campaignActionContext'
@@ -79,26 +80,49 @@ const campaignFixtures = installCampaignFixtures({
 const mockedGetContext = vi.mocked(getCampaignActionContext)
 const mockedStartJob = vi.mocked(startSpeechCutJobInBackground)
 
-const camaraFetchStub = (bytes: Buffer): typeof fetch =>
+const camaraVodStub = ({
+  apiState = 'PRONTO',
+  apiPlaybackUrl = PLAYBACK_URL,
+  apiDownloadUrl = DOWNLOAD_URL,
+  mediaBytes = MP4_BYTES,
+  deadUrls = [],
+}: {
+  apiState?: 'PRONTO' | 'INDISPONIVEL' | 'GERANDO'
+  apiPlaybackUrl?: string
+  apiDownloadUrl?: string
+  mediaBytes?: Buffer
+  deadUrls?: string[]
+} = {}): typeof fetch =>
   (async (input: RequestInfo | URL) => {
     const url = String(input)
     if (url.includes('video-sob-demanda')) {
       return new Response(
         JSON.stringify({
-          estado: 'PRONTO',
-          video: { linkParaReproducao: PLAYBACK_URL, linkParaDownload: DOWNLOAD_URL },
+          estado: apiState,
+          video:
+            apiState === 'PRONTO'
+              ? { linkParaReproducao: apiPlaybackUrl, linkParaDownload: apiDownloadUrl }
+              : null,
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } },
       )
     }
-    if (url === PLAYBACK_URL || url === DOWNLOAD_URL) {
-      return new Response(new Uint8Array(bytes), {
+    if (deadUrls.includes(url)) return new Response('', { status: 403 })
+    if (
+      url === apiPlaybackUrl ||
+      url === apiDownloadUrl ||
+      url === PLAYBACK_URL ||
+      url === DOWNLOAD_URL
+    ) {
+      return new Response(new Uint8Array(mediaBytes), {
         status: 200,
-        headers: { 'Content-Type': 'video/mp4', 'Content-Length': String(bytes.length) },
+        headers: { 'Content-Type': 'video/mp4', 'Content-Length': String(mediaBytes.length) },
       })
     }
     throw new Error(`Unexpected fetch to ${url}`)
   }) as typeof fetch
+
+const camaraFetchStub = (bytes: Buffer): typeof fetch => camaraVodStub({ mediaBytes: bytes })
 
 const createSpeech = async (overrides: Partial<SpeechImportBundle> = {}): Promise<number> => {
   const bundle = speechBundleFixture({
@@ -146,6 +170,22 @@ const createCut = async (data: {
   })
   createdCutIds.add(cut.id)
   return cut.id
+}
+
+/** Asserts the job published the cut with the fake ffmpeg's copy of the source. */
+const expectPublishedWithFakeFfmpeg = async (cutId: number) => {
+  const cut = await payload.findByID({
+    collection: 'speechCut',
+    id: cutId,
+    depth: 1,
+    overrideAccess: true,
+  })
+  expect(cut.status).toBe('published')
+  const media = typeof cut.media === 'object' && cut.media !== null ? cut.media : null
+  if (!media) throw new Error('media was not attached')
+  createdMediaIds.add(media.id)
+  expect(readFileSync(resolve(process.cwd(), 'media', media.filename as string))).toEqual(MP4_BYTES)
+  return { cut, media }
 }
 
 const createUsers = async () => {
@@ -384,6 +424,7 @@ describe('speech cuts (C167)', () => {
 
     const after = await getSpeechCutStatusForActor({ cutId })
     expect(after.status).toBe('failed')
+    expect(after.failureMessage).toBe(SPEECH_CUT_FAILURE_INTERRUPTED)
   })
 
   it('suggests the deterministic fallback when the AI is unavailable', async () => {
@@ -416,24 +457,11 @@ describe('speech cuts (C167)', () => {
     try {
       await runSpeechCutJob(payload, cutId)
 
-      const cut = await payload.findByID({
-        collection: 'speechCut',
-        id: cutId,
-        depth: 1,
-        overrideAccess: true,
-      })
-      expect(cut.status).toBe('published')
+      const { cut, media } = await expectPublishedWithFakeFfmpeg(cutId)
       expect(cut.step).toBeNull()
       expect(cut.publishedAt).toBeTruthy()
-      const media = typeof cut.media === 'object' && cut.media !== null ? cut.media : null
-      expect(media).toBeTruthy()
-      if (!media) throw new Error('media was not attached')
-      createdMediaIds.add(media.id)
       expect(media.filename).toBe(`corte-${cutId}-43-118.mp4`)
       expect(media.alt).toBe(cut.title)
-      expect(readFileSync(resolve(process.cwd(), 'media', media.filename as string))).toEqual(
-        MP4_BYTES,
-      )
     } finally {
       restoreFfmpeg()
       vi.unstubAllGlobals()
@@ -461,10 +489,89 @@ describe('speech cuts (C167)', () => {
       expect(cut.media ?? null).toBeNull()
       expect(cut.publishedAt ?? null).toBeNull()
       expect(cut.error).toBeTruthy()
+      // C169 — the failing step survives so the dialog can say "cortar", not a generic line.
+      expect(cut.step).toBe('cutting')
     } finally {
       if (previousFail === undefined) delete process.env.FAKE_FFMPEG_FAIL
       else process.env.FAKE_FFMPEG_FAIL = previousFail
       restoreFfmpeg()
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('publishes with the stored link when the API answers INDISPONIVEL', async () => {
+    const speech = await createSpeech()
+    const cutId = await createCut({ speech, startSeconds: 43, endSeconds: 118 })
+    vi.stubGlobal('fetch', camaraVodStub({ apiState: 'INDISPONIVEL' }))
+    const restoreFfmpeg = withFfmpegPath(FAKE_FFMPEG)
+
+    try {
+      await runSpeechCutJob(payload, cutId)
+
+      await expectPublishedWithFakeFfmpeg(cutId)
+    } finally {
+      restoreFfmpeg()
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('publishes with the stored link when the API PRONTO hash is dead', async () => {
+    const speech = await createSpeech()
+    const cutId = await createCut({ speech, startSeconds: 43, endSeconds: 118 })
+    const deadApiPlayback = 'https://cdn.camara.leg.br/hash-velho.mp4'
+    const deadApiDownload = 'https://cdn.camara.leg.br/hash-velho-download.mp4'
+    const fetched: string[] = []
+    const stub = camaraVodStub({
+      apiPlaybackUrl: deadApiPlayback,
+      apiDownloadUrl: deadApiDownload,
+      deadUrls: [deadApiPlayback, deadApiDownload],
+    })
+    vi.stubGlobal('fetch', (async (input: RequestInfo | URL, init?: RequestInit) => {
+      fetched.push(String(input))
+      return stub(input, init)
+    }) as typeof fetch)
+    const restoreFfmpeg = withFfmpegPath(FAKE_FFMPEG)
+
+    try {
+      await runSpeechCutJob(payload, cutId)
+
+      await expectPublishedWithFakeFfmpeg(cutId)
+      // The dead hash was tried and refused; the stored cache fed the cut.
+      expect(fetched).toContain(deadApiPlayback)
+      expect(fetched).toContain(PLAYBACK_URL)
+    } finally {
+      restoreFfmpeg()
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('fails with the honest cause and keeps the step when nothing is recoverable', async () => {
+    const speech = await createSpeech()
+    const cutId = await createCut({ speech, startSeconds: 0, endSeconds: 30 })
+    vi.stubGlobal(
+      'fetch',
+      camaraVodStub({ apiState: 'INDISPONIVEL', deadUrls: [PLAYBACK_URL, DOWNLOAD_URL] }),
+    )
+
+    try {
+      await runSpeechCutJob(payload, cutId)
+
+      const cut = await payload.findByID({
+        collection: 'speechCut',
+        id: cutId,
+        depth: 0,
+        overrideAccess: true,
+      })
+      expect(cut.status).toBe('failed')
+      expect(cut.step).toBe('resolving')
+      expect(cut.error).toBe(SPEECH_CUT_FAILURE_UNAVAILABLE)
+
+      const { communicator } = await createUsers()
+      asActor(communicator)
+      const poll = await getSpeechCutStatusForActor({ cutId })
+      expect(poll.status).toBe('failed')
+      expect(poll.failureMessage).toBe('A Câmara não disponibiliza mais o arquivo deste trecho.')
+    } finally {
       vi.unstubAllGlobals()
     }
   })

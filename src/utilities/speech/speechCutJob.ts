@@ -9,10 +9,16 @@ import { Readable, Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import type { Payload } from 'payload'
 
+import { SPEECH_VOD_INELIGIBLE_MESSAGE } from '@/lib/schemas/speechVod'
 import { formatSpeechDate } from '@/lib/speechClock'
 import {
   buildSpeechCutFallbackMetadata,
   buildSpeechCutFfmpegArgs,
+  SPEECH_CUT_FAILURE_GENERATING,
+  SPEECH_CUT_FAILURE_INTERRUPTED,
+  SPEECH_CUT_FAILURE_SPEECH_GONE,
+  SPEECH_CUT_FAILURE_UNAVAILABLE,
+  SPEECH_CUT_FAILURE_UNPLAYABLE,
   type SpeechCutStep,
 } from '@/lib/speechCut'
 import { CAMARA_USER_AGENT, speechVodCoordinates } from '@/lib/speechVod'
@@ -21,7 +27,7 @@ import {
   withPayloadTransaction,
   type PayloadTransactionRequest,
 } from '@/utilities/payloadTransaction'
-import { resolveSpeechVod } from '@/utilities/speech/speechVodResolver'
+import { resolveSpeechVod, SPEECH_VOD_CUT_POLICY } from '@/utilities/speech/speechVodResolver'
 
 /**
  * C167 — the cut job: resolve the Câmara VOD, cut the exact [start, end] with
@@ -91,8 +97,17 @@ const createMediaSystem = (
     ...(req ? { req } : {}),
   })
 
-const failCut = (payload: Payload, cutId: number, message: string): Promise<unknown> =>
-  updateCutSystem(payload, cutId, { status: 'failed', step: null, error: message })
+/**
+ * Fails the row and keeps the step it died on (the first stage is `resolving`
+ * by default): the dialog maps the step and the known literals into the honest
+ * message, while `error` keeps the raw detail for the admin.
+ */
+const failCut = (
+  payload: Payload,
+  cutId: number,
+  message: string,
+  step: SpeechCutStep | null = 'resolving',
+): Promise<unknown> => updateCutSystem(payload, cutId, { status: 'failed', step, error: message })
 
 const updateStep = (payload: Payload, cutId: number, step: SpeechCutStep): Promise<unknown> =>
   updateCutSystem(payload, cutId, { step })
@@ -167,39 +182,51 @@ const runFfmpeg = (args: string[], durationSeconds: number): Promise<void> =>
  */
 export const runSpeechCutJob = async (payload: Payload, cutId: number): Promise<void> => {
   let tempDir: string | null = null
+  // The step the row would be showing if the job died right now: the catch
+  // records it so the failure message separates cortar from guardar.
+  let currentStep: SpeechCutStep = 'resolving'
+  const markStep = async (step: SpeechCutStep): Promise<void> => {
+    currentStep = step
+    await updateStep(payload, cutId, step)
+  }
 
   try {
     const cut = await loadCutSystem(payload, cutId)
     if (cut.status !== 'processing') return
 
-    await updateStep(payload, cutId, 'resolving')
+    await markStep('resolving')
     const speech = typeof cut.speech === 'object' && cut.speech !== null ? cut.speech : null
     if (!speech) {
-      await failCut(payload, cutId, 'A fala deste corte não está mais disponível.')
+      await failCut(payload, cutId, SPEECH_CUT_FAILURE_SPEECH_GONE)
       return
     }
     const coordinates = speechVodCoordinates(speech)
     if (!coordinates) {
-      await failCut(payload, cutId, 'Esta fala não tem trecho de vídeo para resolver na Câmara.')
+      await failCut(payload, cutId, SPEECH_VOD_INELIGIBLE_MESSAGE)
       return
     }
 
-    const resolution = await resolveSpeechVod(coordinates)
+    const resolution = await resolveSpeechVod(coordinates, {
+      policy: SPEECH_VOD_CUT_POLICY,
+      // The stored links are the Câmara's own cache: tried only when the API
+      // left no verified URL, and probed exactly like the API links.
+      cachedUrls: { playbackUrl: speech.vodPlaybackUrl, downloadUrl: speech.vodDownloadUrl },
+    })
     if (resolution.state === 'gerando') {
-      await failCut(payload, cutId, 'A Câmara ainda está gerando o vídeo deste trecho.')
+      await failCut(payload, cutId, SPEECH_CUT_FAILURE_GENERATING)
       return
     }
     if (resolution.state !== 'pronto') {
-      await failCut(payload, cutId, 'A Câmara não entregou o arquivo deste trecho.')
+      await failCut(payload, cutId, SPEECH_CUT_FAILURE_UNAVAILABLE)
       return
     }
     const sourceUrl = resolution.playbackUrl ?? resolution.downloadUrl
     if (!sourceUrl) {
-      await failCut(payload, cutId, 'A Câmara não entregou um arquivo jogável deste trecho.')
+      await failCut(payload, cutId, SPEECH_CUT_FAILURE_UNPLAYABLE)
       return
     }
 
-    await updateStep(payload, cutId, 'cutting')
+    await markStep('cutting')
     tempDir = await mkdtemp(join(tmpdir(), 'speech-cut-'))
     const inputPath = join(tempDir, 'source.mp4')
     const outputName = `corte-${cut.id}-${Math.round(cut.startSeconds)}-${Math.round(cut.endSeconds)}.mp4`
@@ -217,7 +244,7 @@ export const runSpeechCutJob = async (payload: Payload, cutId: number): Promise<
       durationSeconds,
     )
 
-    await updateStep(payload, cutId, 'metadata')
+    await markStep('metadata')
     const fallback = buildSpeechCutFallbackMetadata({
       speechType: speech.type ?? null,
       dateLabel: formatSpeechDate(speech.speechAt),
@@ -229,7 +256,7 @@ export const runSpeechCutJob = async (payload: Payload, cutId: number): Promise<
       await updateCutSystem(payload, cutId, { title, description })
     }
 
-    await updateStep(payload, cutId, 'publishing')
+    await markStep('publishing')
     await withPayloadTransaction(payload, async ({ req }) => {
       const media = await createMediaSystem(payload, title, outputPath, req)
       await updateCutSystem(
@@ -246,7 +273,7 @@ export const runSpeechCutJob = async (payload: Payload, cutId: number): Promise<
       )
     })
   } catch (error) {
-    await failCut(payload, cutId, messageOf(error)).catch(() => undefined)
+    await failCut(payload, cutId, messageOf(error), currentStep).catch(() => undefined)
   } finally {
     if (tempDir) await rm(tempDir, { recursive: true, force: true }).catch(() => undefined)
   }
@@ -269,7 +296,7 @@ export const reapStaleSpeechCut = async (
   const result = await payload.update({
     collection: 'speechCut',
     where: { and: [{ id: { equals: cut.id } }, { status: { equals: 'processing' } }] },
-    data: { status: 'failed', step: null, error: 'O corte foi interrompido antes de terminar.' },
+    data: { status: 'failed', step: null, error: SPEECH_CUT_FAILURE_INTERRUPTED },
     // Intentional admin bypass: the reaper repairs a row the system owns.
     overrideAccess: true,
   })

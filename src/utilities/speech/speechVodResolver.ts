@@ -4,38 +4,79 @@ import {
   buildVodUrl,
   CAMARA_USER_AGENT,
   parseVodStatus,
+  type CamaraVodStatus,
   type SpeechVodResolution,
 } from '@/lib/speechVod'
 
 /**
- * C162 — interactive VOD resolution for the acervo detail. Deliberately NOT a
- * reuse of `scripts/lib/camaraFetch.mjs` (whose `resolveVod` polls for ~200s
- * and whose `probeLink` reports instead of deciding): the player's contract is
- * a bounded click, so this module owns its own short retry, timeout and the
- * media verification that decides what may reach the browser.
+ * C162/C169 — interactive VOD resolution for the acervo detail. Deliberately
+ * NOT a reuse of `scripts/lib/camaraFetch.mjs` (whose `resolveVod` polls for
+ * ~200s and whose `probeLink` reports instead of deciding): whoever calls this
+ * owns the wait budget through a `SpeechVodPolicy`, and the media verification
+ * (not the policy) decides what may reach the browser.
+ *
+ * The player keeps the bounded click of C162 (`SPEECH_VOD_PLAYER_POLICY`); the
+ * cut job (C169) needs the measured first-request window (~30s, then short
+ * polls) plus the stored links as a last verified candidate, and passes
+ * `SPEECH_VOD_CUT_POLICY` + `cachedUrls`.
  */
 
-const VOD_STATUS_ATTEMPTS = 2
-const VOD_STATUS_TIMEOUT_MS = 15_000
-const VOD_STATUS_RETRY_DELAY_MS = 1_000
+export type SpeechVodPolicy = {
+  /** Abort timeout of each `video-sob-demanda` read. */
+  statusTimeoutMs: number
+  /** Extra reads after a transport failure (total attempts = 1 + retries). */
+  statusRetries: number
+  /** Delay before retrying a transport failure. */
+  retryDelayMs: number
+  /** Extra reads after a `GERANDO` answer (the Câmara only transcodes once). */
+  pollAttempts: number
+  /** Delay between `GERANDO` polls. */
+  pollDelayMs: number
+}
+
+/** C162's player click: short, no poll, immediate answer. */
+export const SPEECH_VOD_PLAYER_POLICY: SpeechVodPolicy = {
+  statusTimeoutMs: 15_000,
+  statusRetries: 1,
+  retryDelayMs: 1_000,
+  pollAttempts: 0,
+  pollDelayMs: 1_000,
+}
+
+/** C169's cut job: covers the measured ~30s first request and 1–2 short polls. */
+export const SPEECH_VOD_CUT_POLICY: SpeechVodPolicy = {
+  statusTimeoutMs: 45_000,
+  statusRetries: 1,
+  retryDelayMs: 1_000,
+  pollAttempts: 2,
+  pollDelayMs: 5_000,
+}
+
+/** Stored links of the speech, tried (and probed) only after the API fails. */
+export type SpeechVodCachedUrls = {
+  playbackUrl?: string | null
+  downloadUrl?: string | null
+}
+
 const MEDIA_PROBE_TIMEOUT_MS = 10_000
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-/** One bounded fetch of the `video-sob-demanda` JSON; throws after the retries. */
-const fetchVodStatus = async (url: string): Promise<unknown> => {
+/** One bounded read of the `video-sob-demanda` JSON; throws after the retries. */
+const fetchVodStatus = async (url: string, policy: SpeechVodPolicy): Promise<CamaraVodStatus> => {
   let lastError: unknown
-  for (let attempt = 1; attempt <= VOD_STATUS_ATTEMPTS; attempt += 1) {
+  const attempts = policy.statusRetries + 1
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
       const response = await fetch(url, {
         headers: { 'User-Agent': CAMARA_USER_AGENT, Accept: 'application/json' },
-        signal: AbortSignal.timeout(VOD_STATUS_TIMEOUT_MS),
+        signal: AbortSignal.timeout(policy.statusTimeoutMs),
       })
       if (!response.ok) throw new Error(`HTTP ${response.status} em ${url}`)
-      return await response.json()
+      return parseVodStatus(await response.json())
     } catch (error) {
       lastError = error
-      if (attempt < VOD_STATUS_ATTEMPTS) await sleep(VOD_STATUS_RETRY_DELAY_MS)
+      if (attempt < attempts) await sleep(policy.retryDelayMs)
     }
   }
   throw lastError
@@ -75,28 +116,89 @@ const probeSpeechMedia = async (url: string | null): Promise<boolean> => {
   }
 }
 
-export const resolveSpeechVod = async ({
-  eventId,
-  audioId,
-  excerptTms,
-}: {
+type SpeechVodCoordinates = {
   eventId: number
   audioId: number
   excerptTms: number
-}): Promise<SpeechVodResolution> => {
-  const status = parseVodStatus(await fetchVodStatus(buildVodUrl(eventId, audioId, excerptTms)))
+}
 
-  if (status.state === 'GERANDO') return { state: 'gerando' }
-  if (status.state !== 'PRONTO' || !status.video) return { state: 'indisponivel' }
-
+/**
+ * Probes a pair of candidate URLs in parallel and keeps only the ones whose
+ * probe verified a real media body — a dead hash and the CDN's HTML error page
+ * both come out as null.
+ */
+const probeUrls = async (
+  playbackUrl: string | null,
+  downloadUrl: string | null,
+): Promise<SpeechVodResolution> => {
   const [playback, download] = await Promise.all([
-    probeSpeechMedia(status.video.playbackUrl),
-    probeSpeechMedia(status.video.downloadUrl),
+    probeSpeechMedia(playbackUrl),
+    probeSpeechMedia(downloadUrl),
   ])
 
   return {
     state: 'pronto',
-    playbackUrl: playback ? status.video.playbackUrl : null,
-    downloadUrl: download ? status.video.downloadUrl : null,
+    playbackUrl: playback ? playbackUrl : null,
+    downloadUrl: download ? downloadUrl : null,
   }
+}
+
+const hasVerifiedUrl = (resolution: SpeechVodResolution): boolean =>
+  resolution.state === 'pronto' &&
+  (resolution.playbackUrl !== null || resolution.downloadUrl !== null)
+
+/** The stored links, probed like the API URLs; null when none verifies. */
+const fallbackToCachedUrls = async (
+  cachedUrls: SpeechVodCachedUrls,
+): Promise<SpeechVodResolution | null> => {
+  const cached = await probeUrls(cachedUrls.playbackUrl ?? null, cachedUrls.downloadUrl ?? null)
+  return hasVerifiedUrl(cached) ? cached : null
+}
+
+/** The API answer: polls `GERANDO` while the budget lasts, probes what is PRONTO. */
+const resolveFromVodApi = async (
+  { eventId, audioId, excerptTms }: SpeechVodCoordinates,
+  policy: SpeechVodPolicy,
+): Promise<SpeechVodResolution> => {
+  const url = buildVodUrl(eventId, audioId, excerptTms)
+  let status = await fetchVodStatus(url, policy)
+  for (let poll = 0; status.state === 'GERANDO' && poll < policy.pollAttempts; poll += 1) {
+    await sleep(policy.pollDelayMs)
+    status = await fetchVodStatus(url, policy)
+  }
+
+  if (status.state === 'GERANDO') return { state: 'gerando' }
+  if (status.state !== 'PRONTO' || !status.video) return { state: 'indisponivel' }
+
+  return probeUrls(status.video.playbackUrl, status.video.downloadUrl)
+}
+
+/**
+ * Resolves one excerpt: the Câmara API first (polls while it says `GERANDO`),
+ * then — when the caller passed `cachedUrls` and the API left no verified URL
+ * — the links already stored on the speech. Without `cachedUrls` the C162
+ * behavior is preserved down to the transport error rethrown to the caller.
+ */
+export const resolveSpeechVod = async (
+  coordinates: SpeechVodCoordinates,
+  options: { policy?: SpeechVodPolicy; cachedUrls?: SpeechVodCachedUrls } = {},
+): Promise<SpeechVodResolution> => {
+  const { policy = SPEECH_VOD_PLAYER_POLICY, cachedUrls } = options
+
+  let resolution: SpeechVodResolution
+  try {
+    resolution = await resolveFromVodApi(coordinates, policy)
+  } catch (error) {
+    if (!cachedUrls) throw error
+    const cached = await fallbackToCachedUrls(cachedUrls)
+    if (cached) return cached
+    throw error
+  }
+
+  if (cachedUrls && !hasVerifiedUrl(resolution)) {
+    const cached = await fallbackToCachedUrls(cachedUrls)
+    if (cached) return cached
+  }
+
+  return resolution
 }
