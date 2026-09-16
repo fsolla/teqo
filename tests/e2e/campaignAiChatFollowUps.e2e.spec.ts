@@ -111,6 +111,12 @@ test.describe('B192 — follow-ups sugeridos após cada resposta do Sollinha', (
     await campaign.login(page, user.email!, user.password)
     await page.goto('/campanha')
 
+    // B203 — fresh desktop sessions start closed; open explicitly.
+    await waitForRouterSettled(page)
+    await page
+      .getByRole('button', { name: 'Sollinha — Assistente virtual' })
+      .filter({ visible: true })
+      .click()
     await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
 
     // B191 gesture opens the conversation; the mock answers with a block.
@@ -190,6 +196,12 @@ test.describe('B192 — follow-ups sugeridos após cada resposta do Sollinha', (
     await campaign.login(page, user.email!, user.password)
     await page.goto('/campanha')
 
+    // B203 — fresh desktop sessions start closed; open explicitly.
+    await waitForRouterSettled(page)
+    await page
+      .getByRole('button', { name: 'Sollinha — Assistente virtual' })
+      .filter({ visible: true })
+      .click()
     await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
     await askViaInput(page, 'Os dados de 2026 já existem?', 'Os dados de 2026 ainda não existem.')
     await expect(page.getByText('Os dados de 2026 ainda não existem.')).toBeVisible({

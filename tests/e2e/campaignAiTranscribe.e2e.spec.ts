@@ -53,6 +53,12 @@ const mockTranscribe = (page: Page, text: string) =>
   })
 
 const openChat = async (page: Page) => {
+  // B203 — fresh desktop sessions start closed; open explicitly.
+  await waitForRouterSettled(page)
+  await page
+    .getByRole('button', { name: 'Sollinha — Assistente virtual' })
+    .filter({ visible: true })
+    .click()
   await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
   // OPS42 — dev-only settle before interacting (see `waitForRouterSettled`).
   await waitForRouterSettled(page)

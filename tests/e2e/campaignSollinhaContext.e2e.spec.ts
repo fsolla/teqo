@@ -51,8 +51,18 @@ const gatedMockAiChat = (page: Page) => {
 const MESSAGE = 'Mensagem que sobrevive ao reload'
 const SECOND_MESSAGE = 'Segunda pergunta'
 
-const openChatAndSend = async (page: Page) => {
+const openDesktopChat = async (page: Page) => {
+  // B203 — fresh desktop sessions start closed; open explicitly via the header button.
+  await waitForRouterSettled(page)
+  await page
+    .getByRole('button', { name: 'Sollinha — Assistente virtual' })
+    .filter({ visible: true })
+    .click()
   await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
+}
+
+const openChatAndSend = async (page: Page) => {
+  await openDesktopChat(page)
   // OPS42 — dev-only settle before interacting (see `waitForRouterSettled`).
   await waitForRouterSettled(page)
   const input = page.getByRole('textbox', { name: 'Pergunte para o Sollinha...' })
@@ -141,8 +151,8 @@ test.describe('B188 — contexto da conversa persiste na sessão da janela/tab',
     const user = await campaign.fixtures.createCampaignUser('coordinator', {
       name: campaign.fixtures.value('Contexto Janela Coordenador'),
     })
-    // Mobile from the start: a desktop login would auto-open the chat (B167
-    // settle), persist `open: true` and make the drawer open "by itself" here.
+    // Mobile from the start: B203 starts every fresh session closed, so the
+    // drawer only opens on user command here.
     await page.setViewportSize({ width: 500, height: 800 })
     await campaign.login(page, user.email!, user.password)
     await page.goto('/campanha')
@@ -166,8 +176,8 @@ test.describe('B188 — contexto da conversa persiste na sessão da janela/tab',
     const user = await campaign.fixtures.createCampaignUser('coordinator', {
       name: campaign.fixtures.value('Contexto Janela Coordenador'),
     })
-    // Mobile from the start (see the sibling test): the desktop settle must
-    // never have run in this tab, so no `open: true` is ever persisted.
+    // Mobile from the start: B203 never auto-opens, so no `open: true` is
+    // ever persisted in this tab.
     await page.setViewportSize({ width: 500, height: 800 })
     await campaign.login(page, user.email!, user.password)
     await page.goto('/campanha')
@@ -182,22 +192,32 @@ test.describe('B188 — contexto da conversa persiste na sessão da janela/tab',
     })
   })
 
-  test('settle do desktop não vaza chat aberto para a visita mobile da mesma aba (OPS22)', async ({
+  test('sessão nova desktop começa fechada e não vaza chat para o mobile da mesma aba (OPS22/B203)', async ({
     page,
     campaign,
   }) => {
     const user = await campaign.fixtures.createCampaignUser('coordinator', {
       name: campaign.fixtures.value('Contexto Janela Coordenador'),
     })
-    // Desktop login: the B167 settle opens the chat and the persist effect
-    // writes `open: true` (settle-originated) for the tab.
+    // B203: desktop login starts closed — no settle auto-opens the chat, so no
+    // `open: true` is ever persisted for the tab.
     await campaign.login(page, user.email!, user.password)
-    await expect.poll(async () => (await storedSession(page))?.open).toBe(true)
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('/campanha')
+    // Guardrail: the open button stays discoverable with the chat closed.
+    await expect(
+      page.getByRole('button', { name: 'Sollinha — Assistente virtual' }).filter({ visible: true }),
+    ).toBeVisible({ timeout: 20_000 })
+    await waitForRouterSettled(page)
+    // The persist effect writes even the empty state (B188), so wait for the
+    // session to exist before asserting it stayed closed — a null session
+    // would pass vacuously.
+    await expect.poll(async () => await storedSession(page)).not.toBeNull()
+    expect((await storedSession(page))?.open).toBe(false)
 
-    // A mobile page in the SAME tab must not restore that settle-originated
-    // open: the drawer would cover the content and aria-hide it (the OPS22
-    // regression that turned the agenda-mobile e2e red). The chat stays
-    // reachable through its button.
+    // A mobile page in the SAME tab must not show a drawer on its own: the
+    // chat stays reachable through its button (the OPS22 regression that
+    // turned the agenda-mobile e2e red can no longer trigger).
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/campanha/agenda')
 

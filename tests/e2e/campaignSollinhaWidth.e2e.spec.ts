@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test'
 
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { expect, test, waitForRouterSettled } from './fixtures/campaignE2EFixtures.js'
 
 type ResponsiveCampaignFixture = {
   fixtures: {
@@ -44,10 +44,18 @@ test.describe('B166 — largura padrão do chat Sollinha com teto no desktop', (
   }) => {
     test.slow()
 
-    // Wide desktop: 25% of the group exceeds 360px, so the cap must bite. The
-    // sidebar is open by default on a fresh context.
+    // Wide desktop: 25% of the group exceeds 360px, so the cap must bite.
+    // B203 — fresh sessions start closed; open explicitly via the header button.
     await page.setViewportSize({ width: 1920, height: 1080 })
     await loginAs(page, campaign)
+    // B203 — fresh sessions start closed; open explicitly via the header button.
+    // OPS42 — dev-only settle before the click (see `waitForRouterSettled`).
+    await waitForRouterSettled(page)
+    await page
+      .getByRole('button', { name: 'Sollinha — Assistente virtual' })
+      .filter({ visible: true })
+      .click()
+    await expect(page.getByText('Olá! Eu sou o Sollinha')).toBeVisible({ timeout: 20_000 })
 
     const panel = chatPanel(page)
     await expect(panel).toBeVisible()

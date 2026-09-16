@@ -10,10 +10,8 @@ import {
   useMemo,
   useRef,
   useState,
-  type MutableRefObject,
   type ReactNode,
 } from 'react'
-import type { PanelImperativeHandle } from 'react-resizable-panels'
 
 import { useIsMobileMeasured } from '@/hooks/use-mobile'
 import type { CampaignRole } from '@/lib/campaignRoles'
@@ -44,11 +42,9 @@ const AISidebarContext = createContext<AISidebarContextValue | null>(null)
 
 export const CampaignAISidebarProvider = ({
   role,
-  panelRef,
   children,
 }: {
   role: CampaignRole
-  panelRef: MutableRefObject<PanelImperativeHandle | null>
   children: ReactNode
 }) => {
   const [open, setOpen] = useState(false)
@@ -67,15 +63,14 @@ export const CampaignAISidebarProvider = ({
   // pre-restore values) cannot overwrite a stored session.
   //
   // OPS22: the decision needs the REAL viewport, so the restore waits for the
-  // first `measured` commit (where `isMobile` is already correct). A
-  // settle-originated `open: true` (the desktop panel reconcile, B167) is
-  // layout truth, not user intent — restoring it on a mobile viewport made
+  // first `measured` commit (where `isMobile` is already correct). A legacy
+  // settle-originated `open: true` (the pre-B203 desktop panel reconcile,
+  // B167) is layout truth, not user intent — restoring it on a mobile viewport made
   // the drawer open "by itself" whenever a desktop tab visited a mobile page
   // in the same session (the e2e login at desktop width + mobile agenda
   // reproduced it deterministically). Only a user-originated open (FAB /
   // header button / drawer swipe) restores on mobile.
   const [sessionRestored, setSessionRestored] = useState(false)
-  const restoredSessionRef = useRef(false)
   const sessionReadRef = useRef(false)
   const restoredOpenByRef = useRef<SollinhaChatSessionOpenOrigin>('settle')
   // B199: the snapshot of the last settle-complete messages — the ONLY
@@ -98,14 +93,13 @@ export const CampaignAISidebarProvider = ({
       restoredOpenByRef.current = openBy
       if (session.open && (openBy === 'user' || !isMobile)) setOpen(true)
     }
-    restoredSessionRef.current = session !== null
     setSessionRestored(true)
   }, [setMessages, measured, isMobile, role])
 
   // OPS22: every user surface (FAB, header button, drawer swipe) opens/closes
   // the chat through the context `setOpen`/`toggle` — those mark the intent.
-  // The restore and the B167 settle call the raw state setter instead, so a
-  // layout-driven open never counts as a user action.
+  // Only the restore calls the raw state setter instead, so a restored open
+  // never counts as a user action.
   const userToggledOpenRef = useRef(false)
   const requestOpen = useCallback(
     (next: boolean) => {
@@ -121,7 +115,7 @@ export const CampaignAISidebarProvider = ({
   // written: closing an empty chat must overwrite a stored `open: true`,
   // otherwise a reload would reopen a drawer the user just closed. The
   // persisted `openBy` tells the next page whether the open was the user's
-  // (restore it anywhere) or the desktop settle's (desktop-only, OPS22).
+  // (restore it anywhere) or the legacy desktop settle's (desktop-only, OPS22).
   const openByForWrite = (): SollinhaChatSessionOpenOrigin =>
     userToggledOpenRef.current || restoredOpenByRef.current === 'user' ? 'user' : 'settle'
   useEffect(() => {
@@ -149,22 +143,12 @@ export const CampaignAISidebarProvider = ({
   // The chat has two surfaces keyed by viewport — the desktop panel and the
   // mobile drawer — and both derive from the SAME `open` flag. Crossing the
   // breakpoint therefore needs no migration of its own: the surface that renders
-  // just follows `open && viewport`. The only work is keeping `open` truthful:
-  // on the desktop settle the panel starts at its RRP default (25%) while `open`
-  // begins false — reconcile `open` to the panel's real visibility so a visible
-  // chat is "open" (makes close work and the drawer open on resize). A fresh
+  // just follows `open && viewport`. B203: a fresh session starts closed on
+  // every viewport — `open` begins false and only leaves it via a session
+  // restore (see above) or a user action (`requestOpen`/`toggle`). A fresh
   // mobile visit keeps `open` false (no spontaneous chat). When a session was
   // restored, the restored `open` wins instead — a chat closed before the
-  // reload must not be forced back open by the settle (B188).
-  const settledRef = useRef(false)
-  useEffect(() => {
-    if (settledRef.current) return
-    settledRef.current = measured
-    if (measured && !isMobile && !restoredSessionRef.current && !panelRef.current?.isCollapsed()) {
-      setOpen(true)
-    }
-  }, [measured, isMobile, panelRef])
-
+  // reload must not be forced back open (B188).
   const toggle = useCallback(() => {
     userToggledOpenRef.current = true
     setOpen(!open)
