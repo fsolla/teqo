@@ -43,8 +43,7 @@ const A4_HEIGHT_PX = Math.round(297 * MM_TO_PX)
 const A4_WIDTH_PX = Math.round(210 * MM_TO_PX)
 /** Rounding slack of the mm→px conversion; content must still fit the page. */
 const PAGE_FIT_TOLERANCE_PX = 10
-const DOSSIER_PAGE_ONE_BUDGET_PX = A4_HEIGHT_PX + PAGE_FIT_TOLERANCE_PX
-const BOLETIM_PAGE_BUDGET_PX = A4_HEIGHT_PX + PAGE_FIT_TOLERANCE_PX
+const PAGE_BUDGET_PX = A4_HEIGHT_PX + PAGE_FIT_TOLERANCE_PX
 
 loadCliEnv()
 
@@ -80,21 +79,29 @@ if (!slug) die('Snapshot sem "municipality.slug" — extração inválida.')
 
 const readEraResearch = async (era) => {
   const path = join(researchDir, `${slug}.${era.toLowerCase()}.research.json`)
+  const assertMatches = (research) => {
+    if (research.municipalitySlug !== slug) {
+      die(
+        `Pesquisa da Era ${era} é de "${research.municipalitySlug}", não de "${slug}" (${path}) — pare e regenere.`,
+      )
+    }
+    if (research.era !== era) {
+      die(`Pesquisa em ${path} declara Era ${research.era}, não Era ${era} — pare e regenere.`)
+    }
+    return research
+  }
   try {
     const raw = JSON.parse(await readFile(resolve(ROOT, path), 'utf8'))
-    return normalizeDossierResearchInput(raw, { now: generatedAt })
+    return assertMatches(normalizeDossierResearchInput(raw))
   } catch (error) {
     if (error?.code === 'ENOENT') {
       console.log(`[${LABEL}] Era ${era}: sem pesquisa (${path}) — vira lacuna explícita.`)
-      return normalizeDossierResearchInput(
-        {
-          municipalitySlug: slug,
-          era,
-          researchedAt: generatedAt.toISOString(),
-          items: [],
-        },
-        { now: generatedAt },
-      )
+      return normalizeDossierResearchInput({
+        municipalitySlug: slug,
+        era,
+        researchedAt: generatedAt.toISOString(),
+        items: [],
+      })
     }
     die(
       `Pesquisa da Era ${era} inválida (${path}): ${error instanceof Error ? error.message : error}`,
@@ -209,12 +216,12 @@ try {
     Boolean(document.querySelector('[data-page="resumo"]')),
   )
   if (!hasSummary) die('Página de resumo ausente no HTML do dossiê — renderer quebrado.')
-  const dossierOverflows = await measureOverflows(page, DOSSIER_PAGE_ONE_BUDGET_PX)
+  const dossierOverflows = await measureOverflows(page, PAGE_BUDGET_PX)
   if (dossierOverflows.length > 0) {
     die(
       `Página(s) do dossiê estouraram o A4 (${dossierOverflows
         .map((row) => `${row.page}: ${row.height}px`)
-        .join(', ')} > ${DOSSIER_PAGE_ONE_BUDGET_PX}px úteis). ` +
+        .join(', ')} > ${PAGE_BUDGET_PX}px úteis). ` +
         'Corte copy/caps — nenhuma página pode ser cortada pelo overflow.',
     )
   }
@@ -231,12 +238,12 @@ try {
     Boolean(document.querySelector('[data-page="boletim"]')),
   )
   if (!hasBulletin) die('Bloco do boletim ausente no HTML — renderer quebrado.')
-  const bulletinOverflows = await measureOverflows(page, BOLETIM_PAGE_BUDGET_PX)
+  const bulletinOverflows = await measureOverflows(page, PAGE_BUDGET_PX)
   if (bulletinOverflows.length > 0) {
     die(
       `O boletim estourou (${bulletinOverflows
         .map((row) => `${row.height}px`)
-        .join(', ')} > ${BOLETIM_PAGE_BUDGET_PX}px úteis). ` +
+        .join(', ')} > ${PAGE_BUDGET_PX}px úteis). ` +
         'Corte itens/caps — o boletim TEM de caber em uma página.',
     )
   }

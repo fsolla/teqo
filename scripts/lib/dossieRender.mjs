@@ -48,7 +48,9 @@ const assetBox = (title, lines) =>
     .map((line) => htmlEscape(line))
     .join('<br />')}</p></div>`
 
-const pageCount = (report) => report.meta.pageTotal ?? 5 + report.eras.length
+/** cover + trajetória + resumo + região + fontes (eras and gap sheets added separately). */
+const SHEET_COUNT_BASE = 5
+const pageCount = (report) => report.meta.pageTotal
 
 /** Gaps are paginated, never truncated: 12 rows per A4 sheet. */
 const GAPS_PER_PAGE = 12
@@ -334,6 +336,16 @@ const renderRegion = (report, pageNo) => `
     </div>
   </section>
 
+  ${
+    report.region.context.length
+      ? `<p class="meta">Contexto municipal (IBGE): ${report.region.context
+          .map(
+            (item) => `${htmlEscape(item.detail)} ${sourceLink(item.sourceUrl, `(${item.topic})`)}`,
+          )
+          .join(' · ')} — leitura relativa, nunca % estadual absoluto.</p>`
+      : ''
+  }
+
   ${renderScopeLists(report)}
 
   ${
@@ -566,7 +578,7 @@ const PRINT_CSS = `
 
 export const renderDossierHtml = (report) => {
   const gapChunks = chunkGaps(report.gaps)
-  report.meta.pageTotal = 5 + report.eras.length + gapChunks.length
+  report.meta.pageTotal = SHEET_COUNT_BASE + report.eras.length + gapChunks.length
   let page = 0
   const parts = []
   parts.push(renderCover(report))

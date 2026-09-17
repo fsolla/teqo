@@ -197,7 +197,7 @@ por item **com fonte** — o boletim não introduz fato novo.
   duas listas lado a lado (município ≠ região/polo); itens regionais com
   evidência de alcance; gancho e lacuna prioritária.
 - **Fontes e limites** — tabela de lacunas; notícias/documentos consultados
-  (larguras fixas 9/14/49/28%); limites de cobertura; regras para uso editorial;
+  (larguras fixas 12/13/47/28%); limites de cobertura; regras para uso editorial;
   nota de defeso eleitoral 2026.
 
 ## Conteúdo do Boletim modelo (1 página A4)

@@ -16,70 +16,61 @@ const snapshot = {
 }
 
 const research = mergeDossierResearch([
-  normalizeDossierResearchInput(
-    {
-      municipalitySlug: 'ilheus',
-      era: 'A',
-      researchedAt: '2026-09-16T10:00:00.000Z',
-      items: [
-        {
-          id: 'era_a_conquista',
-          answer: 'Gestão da saúde em Vitória da Conquista',
-          details: 'Detalhe <script>alert(1)</script> com {{fonte}}.',
-          sourceUrl: 'https://exemplo.test/conquista',
-          sourceDate: '2026-09-10',
-        },
-      ],
-      news: [],
-      gaps: [],
-    },
-    { now: generatedAt },
-  ),
-  normalizeDossierResearchInput(
-    {
-      municipalitySlug: 'ilheus',
-      era: 'B',
-      researchedAt: '2026-09-16T10:00:00.000Z',
-      items: [
-        {
-          id: 'era_b_equipamentos',
-          answer: '1 hospital regional',
-          sphere: 'polo',
-          sourceUrl: 'https://saude.test/hospital',
-          sourceDate: '2026-09-10',
-        },
-      ],
-      news: [],
-      gaps: [],
-    },
-    { now: generatedAt },
-  ),
-  normalizeDossierResearchInput(
-    {
-      municipalitySlug: 'ilheus',
-      era: 'C',
-      researchedAt: '2026-09-16T10:00:00.000Z',
-      items: [
-        {
-          id: 'era_c_emendas',
-          answer: 'R$ 1,2 milhão para equipamentos',
-          numbers: [{ label: 'Saúde', value: 'R$ 1,2 mi', year: '2024', phase: 'empenhado' }],
-          sourceUrl: 'https://portaldatransparencia.test/emendas',
-          sourceDate: '2026-09-15',
-        },
-      ],
-      news: [
-        {
-          title: 'Matéria local',
-          url: 'https://jornal.test/materia',
-          publishedAt: '2024-06-01',
-          outlet: 'Jornal Local',
-        },
-      ],
-      gaps: [],
-    },
-    { now: generatedAt },
-  ),
+  normalizeDossierResearchInput({
+    municipalitySlug: 'ilheus',
+    era: 'A',
+    researchedAt: '2026-09-16T10:00:00.000Z',
+    items: [
+      {
+        id: 'era_a_conquista',
+        answer: 'Gestão da saúde em Vitória da Conquista',
+        details: 'Detalhe <script>alert(1)</script> com {{fonte}}.',
+        sourceUrl: 'https://exemplo.test/conquista',
+        sourceDate: '2026-09-10',
+      },
+    ],
+    news: [],
+    gaps: [],
+  }),
+  normalizeDossierResearchInput({
+    municipalitySlug: 'ilheus',
+    era: 'B',
+    researchedAt: '2026-09-16T10:00:00.000Z',
+    items: [
+      {
+        id: 'era_b_equipamentos',
+        answer: '1 hospital regional',
+        sphere: 'polo',
+        sourceUrl: 'https://saude.test/hospital',
+        sourceDate: '2026-09-10',
+      },
+    ],
+    news: [],
+    gaps: [],
+  }),
+  normalizeDossierResearchInput({
+    municipalitySlug: 'ilheus',
+    era: 'C',
+    researchedAt: '2026-09-16T10:00:00.000Z',
+    items: [
+      {
+        id: 'era_c_emendas',
+        answer: 'R$ 1,2 milhão para equipamentos',
+        numbers: [{ label: 'Saúde', value: 'R$ 1,2 mi', year: '2024', phase: 'empenhado' }],
+        sourceUrl: 'https://portaldatransparencia.test/emendas',
+        sourceDate: '2026-09-15',
+      },
+    ],
+    news: [
+      {
+        title: 'Matéria local',
+        url: 'https://jornal.test/materia',
+        publishedAt: '2024-06-01',
+        outlet: 'Jornal Local',
+      },
+    ],
+    gaps: [],
+  }),
 ])
 
 const report = buildDossierReport({

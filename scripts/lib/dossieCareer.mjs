@@ -5,7 +5,7 @@
  * cannot drift.
  */
 
-export const SOLLA_DEPUTY_ID = 178857
+export { SOLLA_DEPUTY_ID } from './camaraSpeeches.mjs'
 export const SOLLA_BIRTH_DATE = '1961-04-11'
 export const SOLLA_BIRTH_PLACE = 'Salvador-BA'
 export const SOLLA_OFFICIAL_SITE = 'https://www.camara.leg.br/deputados/178857'

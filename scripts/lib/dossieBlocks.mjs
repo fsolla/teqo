@@ -10,7 +10,6 @@
 
 import { formatDateTimeBr, formatMoneyCompact } from './cityReportFormat.mjs'
 import {
-  CAREER_NOTES,
   CAREER_TIMELINE,
   DOSSIER_ERAS,
   DOSSIER_SCOPE,
@@ -25,7 +24,6 @@ const MAX_ERA_NUMBERS = 12
 const MAX_ERA_ACTIONS = 4
 const MAX_REGION_ITEMS = 4
 const MAX_SCOPE_LIST = 5
-const MAX_GAPS = 30
 
 const sphereLabels = { municipio: 'município', regiao: 'região', polo: 'polo' }
 export const dossierSphereLabel = (sphere) => sphereLabels[sphere] ?? sphere
@@ -59,7 +57,7 @@ const emendaNumberRows = (emendas) => {
       if (!isPositive(row[key])) continue
       rows.push({
         object: row.functionName ?? row.type ?? 'Emenda',
-        value: Number(row[key]),
+        value: formatMoneyCompact(row[key]),
         year: row.year ? String(row.year) : null,
         phase,
         sphere: 'municipio',
@@ -109,16 +107,15 @@ const eraMethod = {
   C: 'Mandato, relatorias e execução financeira têm datas e estágios distintos. Empenho não é pagamento; o valor sempre acompanha a fase.',
 }
 
-const healthNumberRows = (health) =>
-  (health?.status === 'ok' ? (health.items ?? []) : []).map((item) => ({
-    object: item.topic,
-    value: item.detail,
-    year: item.year,
-    phase: 'nao_informado',
-    sphere: 'municipio',
-    sourceUrl: item.sourceUrl,
-    sourceDate: item.sourceDate,
-  }))
+const healthContext = (health) =>
+  health?.status === 'ok'
+    ? (health.items ?? []).map((item) => ({
+        topic: item.topic,
+        detail: item.detail,
+        sourceUrl: item.sourceUrl,
+        sourceDate: item.sourceDate,
+      }))
+    : []
 
 const camaraItemsAsActions = (camara, era) =>
   (camara?.status === 'ok' ? (camara.items ?? []) : []).map((item) => ({
@@ -164,7 +161,6 @@ export const buildDossierReport = ({
   const regionalItems = items.filter((item) => item.sphere !== 'municipio')
 
   const eraRows = emendaNumberRows(emendas)
-  const healthRows = healthNumberRows(health)
   const camaraActions = camaraItemsAsActions(camara, 'C')
 
   const researchActionsByEra = (era) =>
@@ -182,33 +178,23 @@ export const buildDossierReport = ({
   const eraSections = DOSSIER_ERAS.map((era) => {
     const ownActions = researchActionsByEra(era.id)
     const extraActions = era.id === 'C' ? camaraActions : []
-    const numbers =
+    const numbers = limit(
       era.id === 'C'
-        ? limit(
-            [...emendaNumberRows(emendas), ...itemNumberRows(items.filter((i) => i.era === 'C'))],
-            MAX_ERA_NUMBERS,
-          )
-        : limit(
-            [
-              ...itemNumberRows(items.filter((i) => i.era === era.id)),
-              ...(era.id === 'B' ? healthRows : []),
-            ],
-            MAX_ERA_NUMBERS,
-          )
+        ? [...eraRows, ...itemNumberRows(items.filter((i) => i.era === 'C'))]
+        : itemNumberRows(items.filter((i) => i.era === era.id)),
+      MAX_ERA_NUMBERS,
+    )
     const honors = items
       .filter((item) => item.era === 'C' && item.id === 'era_c_titulos')
       .map((item) => ({ text: item.answer, sourceUrl: item.sourceUrl }))
     const actions = limit([...ownActions, ...extraActions], MAX_ERA_ACTIONS)
-    const remainingActions = ownActions.length + extraActions.length - actions.length
     if (numbers.length === 0 && actions.length === 0) return null
     return {
       ...era,
       method: eraMethod[era.id],
       recovery: eraRecovery[era.id],
       numbers,
-      remainingNumbers: 0,
       actions,
-      remainingActions: Math.max(0, remainingActions),
       honors,
     }
   }).filter(Boolean)
@@ -246,22 +232,18 @@ export const buildDossierReport = ({
     MAX_HOOKS_PAGE_ONE,
   )
 
-  const gaps = limit(
-    (research.gaps ?? []).map((gap) => ({
-      label: gap.label ?? gap.id,
-      reason: gap.reason,
-      nextStep: 'Apurar em fonte primária.',
-    })),
-    MAX_GAPS,
-  )
+  const gaps = (research.gaps ?? []).map((gap) => ({
+    label: gap.label ?? gap.id,
+    reason: gap.reason,
+    nextStep: 'Apurar em fonte primária.',
+  }))
 
   const pending = limit(
     (research.gaps ?? []).map((gap) => gap.label ?? gap.id),
     MAX_PENDING_PAGE_ONE,
   )
 
-  const municipalNumbers = itemNumberRows(municipalItems)
-  const regionalNumbers = itemNumberRows(regionalItems)
+  const context = healthContext(health)
   const regionItems = limit(
     regionalItems.map((item) => ({
       item: item.answer,
@@ -298,7 +280,7 @@ export const buildDossierReport = ({
         area: 'Emendas',
         headline: row.object,
         detail: null,
-        value: formatMoneyCompact(row.value),
+        value: row.value,
         numberLabel: row.object,
         year: row.year,
         phase: row.phase,
@@ -306,27 +288,6 @@ export const buildDossierReport = ({
         sourceDate: row.sourceDate,
       })),
   ]
-
-  const sources = []
-  for (const item of items) {
-    sources.push({ kind: 'web', label: item.label, date: item.sourceDate, url: item.sourceUrl })
-  }
-  for (const row of research.news ?? []) {
-    sources.push({
-      kind: 'web',
-      label: row.outlet ? `${row.outlet}: ${row.title}` : row.title,
-      date: row.publishedAt,
-      url: row.url,
-    })
-  }
-  if (emendas?.status === 'ok' && emendas.sourceUrl) {
-    sources.push({
-      kind: 'official',
-      label: 'Portal da Transparência — emendas do autor',
-      date: emendas.consultedAt,
-      url: emendas.sourceUrl,
-    })
-  }
 
   const generatedAtLabel = formatDateTimeBr(generatedAt)
   const readAtLabel = snapshot.meta?.readAt ? formatDateTimeBr(snapshot.meta.readAt) : '—'
@@ -339,8 +300,6 @@ export const buildDossierReport = ({
       generatedAt,
       generatedAtLabel,
       readAtLabel,
-      codeSha: snapshot.meta?.codeSha ?? null,
-      database: snapshot.meta?.database ?? null,
     },
     cover: {
       kicker: 'Comunicação · pesquisa documental',
@@ -371,17 +330,16 @@ export const buildDossierReport = ({
         'Um equipamento de referência ou uma política regional pode atender moradores do município sem constituir entrega exclusiva para ele. Atribuição só entra com alcance documentado.',
       municipal: {
         label: 'município',
-        numbers: municipalNumbers,
         items: limit(municipalItems, MAX_SCOPE_LIST),
         total: municipalItems.length,
       },
       regional: {
         label: 'região / polo',
-        numbers: regionalNumbers,
         items: limit(regionalItems, MAX_SCOPE_LIST),
         total: regionalItems.length,
       },
       items: regionItems,
+      context,
       hook: hooks[0] ?? null,
       priorityGap: pending[0] ?? null,
     },
@@ -405,8 +363,6 @@ export const buildDossierReport = ({
         'Valor sempre informa a fase de execução.',
       ],
     },
-    notes: CAREER_NOTES,
-    sources,
     bulletinFacts,
   }
 }
