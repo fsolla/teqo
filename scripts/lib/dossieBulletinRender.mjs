@@ -5,6 +5,7 @@
  * as an internal model.
  */
 
+import { isInstitutionUnit } from './dossieUnit.mjs'
 import { htmlEscape } from './reportText.mjs'
 
 const ASSET = (title, lines) =>
@@ -12,10 +13,22 @@ const ASSET = (title, lines) =>
     .map((line) => htmlEscape(line))
     .join('<br />')}</p></div>`
 
-const renderHighlight = (highlight) => `
+const phaseModifier = (phase) =>
+  phase === 'pago' || phase === 'liquidado'
+    ? 'phase-paid'
+    : phase === 'empenhado' || phase === 'autorizado'
+      ? 'phase-pending'
+      : ''
+
+const renderHighlight = (highlight, { showPhase = false } = {}) => `
   <article class="highlight-card">
     <p class="highlight-eyebrow">${htmlEscape(highlight.eyebrow)}</p>
     ${highlight.number ? `<p class="highlight-number tabular">${htmlEscape(highlight.number)}</p>` : ''}
+    ${
+      showPhase && highlight.number && highlight.phaseLabel
+        ? `<p class="highlight-phase"><span class="phase ${phaseModifier(highlight.phase)}">${htmlEscape(highlight.phaseLabel)}</span></p>`
+        : ''
+    }
     <h3 class="highlight-title">${htmlEscape(highlight.title)}</h3>
     ${highlight.note ? `<p class="highlight-note">${htmlEscape(highlight.note)}</p>` : ''}
   </article>`
@@ -101,7 +114,7 @@ const PRINT_CSS = `
   .bulletin-foot .stamp { margin: 0; text-align: right; font-size: 7.2pt; font-weight: 600; line-height: 1.3; color: #435264; }
 `
 
-export const renderBulletinHtml = (bulletin) => `
+const renderMunicipalityBulletinHtml = (bulletin) => `
 <!doctype html>
 <html lang="pt-BR">
 <head><meta charset="utf-8"><title>${htmlEscape(bulletin.meta.title)} — ${htmlEscape(bulletin.meta.municipality)}</title><style>${PRINT_CSS}</style></head>
@@ -192,3 +205,165 @@ export const renderBulletinHtml = (bulletin) => `
 </article>
 </body>
 </html>`
+
+/* Institution boletim (C187) — ports the institutional boletim hi-fi. */
+
+const INSTITUTION_BULLETIN_CSS = `
+  ${PRINT_CSS}
+  .defeso-band { margin-inline: -10mm; padding: 1.4mm 10mm 1.35mm; display: flex; align-items: center; justify-content: space-between; gap: 5mm; color: #68420f; background: #fff7e8; border-top: .25mm solid #e7cc9d; border-bottom: .25mm solid #e7cc9d; font-size: 7.15pt; line-height: 1.2; font-weight: 700; }
+  .identity-pill { display: inline-flex; align-items: center; min-height: 5mm; padding: .55mm 1.7mm; border: .25mm solid #cbd5dc; border-radius: 99px; color: #435264; background: #f3f6f8; font-size: 6.9pt; line-height: 1; font-weight: 700; letter-spacing: .045em; text-transform: uppercase; }
+  .bulletin-head .subject { margin: 0; font-size: 11pt; font-weight: 800; }
+  .bulletin-head .pills { margin-top: 1.3mm; display: flex; flex-wrap: wrap; gap: 1.2mm; }
+  .lacuna-panel { border: .4mm dashed #b18549; color: #684819; background: #fff7e8; }
+  .lacuna-panel .lacuna-rule { margin-top: 2mm; border-top: .25mm solid #d8bb8d; padding-top: 2mm; font-size: 7.5pt; font-weight: 700; text-transform: uppercase; line-height: 1.35; letter-spacing: .055em; }
+  .production-note { border: .25mm solid #cbd5dc; background: #f3f6f8; border-radius: .125rem; padding: 3mm; }
+  .opening { margin-top: 2.5mm; }
+  .highlights { margin-top: 3mm; }
+  .bulletin-timeline { margin-top: 2.5mm; }
+  .more { margin-top: 2.5mm; }
+  .empty-box { min-height: 30mm; }
+  .lacuna-panel .warn-icon { width: 5mm; height: 5mm; flex-shrink: 0; margin-top: .4mm; color: #8a5a18; }
+  .highlight-phase { margin: 1.2mm 0 0; }
+  .phase { display: inline-block; padding: .5mm 1.4mm; border-radius: 1mm; background: #e9eef1; color: #334553; font-size: 7.3pt; font-weight: 700; text-transform: uppercase; letter-spacing: .035em; }
+  .phase-paid { color: #285338; background: #e6f2e9; }
+  .phase-pending { color: #6b4918; background: #fff2d9; }
+`
+
+const INST_WARNING_ICON =
+  '<svg class="warn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.3 2.9 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>'
+
+const renderInstitutionBulletinHtml = (bulletin) => {
+  const sparse = Boolean(bulletin.sparse)
+  const pills = (bulletin.meta.identityBadges ?? [])
+    .map((badge) => `<span class="identity-pill">${htmlEscape(badge)}</span>`)
+    .join('')
+  const highlights = bulletin.highlights
+  const more = bulletin.moreItems
+  return `<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>${htmlEscape(bulletin.meta.title)} — ${htmlEscape(bulletin.meta.subjectName)}</title><style>${INSTITUTION_BULLETIN_CSS}</style></head>
+<body>
+<article class="sheet" data-page="boletim" aria-label="Modelo de boletim informativo institucional de uma página">
+  <header class="bulletin-head">
+    <div>
+      <p class="kicker">${htmlEscape(bulletin.meta.kicker)}</p>
+      <p class="subject">${htmlEscape(bulletin.meta.subjectName)}</p>
+      ${pills ? `<div class="pills">${pills}</div>` : ''}
+    </div>
+    <span class="model-label">${htmlEscape(bulletin.meta.modelLabel)}</span>
+  </header>
+
+  <div class="defeso-band" role="note" aria-label="Nota de defeso eleitoral">
+    <span>DEFESO 2026 · material em preparação · não publicar sem revisão editorial e jurídica</span>
+    <span style="text-transform: uppercase; letter-spacing: .07em">sem CTA · sem propaganda</span>
+  </div>
+
+  <section class="opening" aria-label="Abertura do boletim">
+    <div>
+      <p class="section-label">${sparse ? 'Somente o que está documentado' : 'Uma trajetória de trabalho junto à instituição'}</p>
+      <h1>O que Jorge Solla fez pela e na <span class="accent">${htmlEscape(bulletin.meta.subjectName)}</span></h1>
+      <p class="lead">${
+        sparse
+          ? 'Esta versão tem poucos registros confirmados. Em vez de preencher espaço, mostra só os fatos que o dossiê sustenta.'
+          : 'Ações, recursos e articulações explicados de forma direta — somente o que já foi documentado no dossiê institucional.'
+      }</p>
+    </div>
+    ${ASSET(sparse ? 'NEEDS ASSET · foto ou clipping' : 'NEEDS ASSET · foto real', [
+      sparse ? 'somente registro relacionado ao fato' : 'Solla na instituição ou na ação citada',
+      'origem, autoria e licença',
+    ])}
+  </section>
+
+  <section class="highlights" aria-label="Destaques">
+    <div class="highlights-head">
+      <div>
+        <p class="section-label">Destaques</p>
+        <h2>${sparse ? 'Poucos fatos, sem enchimento' : 'Resultados em leitura rápida'}</h2>
+      </div>
+      <p class="side">${sparse ? 'não criar cards vazios para chegar a seis' : 'cada número mantém sua fase e seu alcance'}</p>
+    </div>
+    ${
+      highlights.length
+        ? `<div class="highlight-grid" style="${sparse ? 'grid-template-columns: repeat(2, 1fr)' : ''}">${highlights.map((highlight) => renderHighlight(highlight, { showPhase: true })).join('')}</div>`
+        : '<p class="empty">Sem fato com fonte suficiente para destacar — ver lacunas no dossiê.</p>'
+    }
+  </section>
+
+  <section class="bulletin-timeline" aria-label="Trajetória">
+    <div class="timeline-head">
+      <h2>Uma trajetória de compromisso com o serviço público</h2>
+      <p class="timeline-side">${sparse ? 'contexto de carreira · não substitui fato institucional' : 'quatro momentos · linguagem direta'}</p>
+    </div>
+    <div class="timeline-grid">
+      ${bulletin.timeline
+        .map(
+          (step) => `<div class="timeline-step">
+            <p class="timeline-period">${htmlEscape(step.period)}</p>
+            <p class="timeline-text">${htmlEscape(step.text)}</p>
+          </div>`,
+        )
+        .join('')}
+    </div>
+  </section>
+
+  <section class="more" aria-label="Outras ações">
+    <div>
+      <div class="more-head">
+        <div>
+          <p class="section-label">E mais</p>
+          <h2>${sparse ? 'Outros registros confirmados' : 'Outras ações confirmadas'}</h2>
+        </div>
+        <p class="side">${sparse ? 'sem completar por inferência' : 'até 14 · sem completar por inferência'}</p>
+      </div>
+      ${
+        more.length
+          ? `<div class="more-grid">${more.map(renderMoreItem).join('')}</div>`
+          : '<div class="empty-box"><p><strong class="uppercase">Sem itens adicionais com fonte além dos destaques.</strong></p><p>Conferir as lacunas explícitas no dossiê institucional antes de ampliar o boletim.</p></div>'
+      }
+    </div>
+    ${
+      sparse
+        ? `<aside class="lacuna-panel" style="border-radius: .125rem; padding: 2.5mm" aria-label="Regra editorial para poucos fatos">
+            ${INST_WARNING_ICON}
+            <p style="margin: 0; font-size: 10.5pt; font-weight: 800">A página termina com espaço — de propósito.</p>
+            <p style="font-size: 8.7pt; line-height: 1.35">Não repetir item, não ampliar efeito e não preencher com ação de setor ou rede como se fosse entrega exclusiva da instituição.</p>
+            <p class="lacuna-rule">Poucos fatos com lastro &gt; página cheia sem lastro</p>
+          </aside>`
+        : `<aside class="more-aside" aria-label="Ativos visuais pendentes">
+            ${ASSET('NEEDS ASSET · selo', ['marca autorizada da instituição', 'arquivo vetorial'])}
+            ${ASSET('NEEDS ASSET · clipping', ['registro real da ação', 'origem e licença'])}
+          </aside>`
+    }
+  </section>
+
+  ${
+    sparse
+      ? `<section style="margin-top: 3mm; display: grid; grid-template-columns: 1fr 48mm; gap: 4mm">
+          <div class="production-note">
+            <p class="section-label">Nota de produção</p>
+            <p style="margin: 0; font-size: 9.2pt; line-height: 1.38; color: #435264">Se novos fatos forem documentados, eles entram por relevância — até seis destaques e até quatorze itens. A ausência nunca vira número zero, percentual ou afirmação genérica.</p>
+          </div>
+          ${ASSET('NEEDS ASSET · selo', ['marca autorizada da instituição', 'arquivo vetorial'])}
+        </section>`
+      : ''
+  }
+
+  <footer class="bulletin-foot">
+    <div class="row">
+      <div>
+        <p class="orig">Conteúdo selecionado do dossiê institucional.</p>
+        <p class="defeso"><strong>Controle editorial:</strong> fase acompanha cada valor · instituição, setor e rede não são somados · sem percentual estadual absoluto.</p>
+      </div>
+      <p class="stamp">MODELO · INSUMO INTERNO<br />A4 · página 1/1<br />${htmlEscape(bulletin.meta.generatedAtLabel)}</p>
+    </div>
+  </footer>
+</article>
+</body>
+</html>`
+}
+
+/** Dispatch: the institution unit renders the institutional composition. */
+export const renderBulletinHtml = (bulletin) =>
+  isInstitutionUnit(bulletin?.unit)
+    ? renderInstitutionBulletinHtml(bulletin)
+    : renderMunicipalityBulletinHtml(bulletin)
