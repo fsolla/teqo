@@ -181,3 +181,22 @@ Opções: A) prompts na prosa do SKILL + um subagente único, fan-out pelo orque
 5. **Intenção (aceite de produto) permanece satisfeita?** Sim — os dois artefatos, os literais de produto (1 página, sem fontes, rótulo de modelo, densidade) e os guardrails estão no aceite acima; a engenharia não reescreveu o outcome. — **5/5**
 
 **Total 24/25 (média 4,8/5) — passa o gate ≥4/5.**
+
+## Débitos de review (triage C186 — 2026-09-17)
+
+Findings dos dois revisores (alta/média já corrigidos em `3c1c643d`). Nenhum vira Issue: nenhum é `expensive_lock` ≥4 — só scripts, sem DB/access/schema.
+
+### Adiado com gatilho
+
+- **Plumbing do builder gêmea de `build-city-report.mjs`** (`readJson`, IIFE `currentCodeSha`, `resolveEmendas` fetch+cache+log, `MM_TO_PX`/orçamento A4, bloco Chromium fit-guard+`page.pdf`): 2 call sites e a decisão (B) já é reusar só a _técnica_, não o arquivo. **Gatilho:** ao surgir o 3º builder CLI, extrair `scripts/lib/buildPdf.mjs` (fit-guard + emit) + helper de cache de emendas.
+- **`assetBox` (`dossieRender`) × `ASSET` (`dossieBulletinRender`)**: mesmo `.asset-box`, CSS distinto por folha. **Gatilho:** 3ª superfície de render ou unificação visual; aí extrair o helper de markup.
+- **JSDoc de `dossieBlocks`** tipando `emendas`/`camara`/`health` como `any` apesar do typedef `EmendasResult` de `portalTransparenciaEmendas`. **Gatilho:** próxima edição de `dossieBlocks` (usar os typedefs existentes).
+- **`dossieCamara.maxPages` só limita proposições** (discursos: 1 página por janela de 4 anos). **Gatilho:** build real com discursos truncados que importem para o "e mais N".
+
+### Explicitamente fora (não reabrir)
+
+- **`extraSources`/`consultedAt` no item de `dossieResearch`**: completude de contrato para futuro `{{fonte:N}}`; consumidor ainda não lê (intencional).
+- **`SOLLA_BIRTH_DATE`/`SOLLA_BIRTH_PLACE`/`SOLLA_OFFICIAL_SITE`** usados só pelo spec de drift: pins de identidade intencionais (`dossieCareer` é dono dos literais).
+- **Guardas de prosa por regex/`toContain` sobre o `SKILL.md`**: precedente idêntico em `cityReportBatchSkill.unit.spec.ts`; convenção vigente.
+- **IBGE/SIDRA bloqueado por Cloudflare (403) no posto de dev**: observação de ambiente, não débito de código; falha fecha em lacuna. Anotar no build de aceite.
+- **Design tier:** crítica final do `designer` (trigger c) **CERTIFIED** nos dois artefatos (dossiê 9 páginas + boletim 1 página) após 2 rodadas de correção.
