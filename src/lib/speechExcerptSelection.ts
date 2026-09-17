@@ -26,6 +26,9 @@ export type ExcerptRange = {
 
 export type ExcerptEdge = 'start' | 'end'
 
+/** C173 — the presentation phase of the excerpt preview, shared by the player and the card. */
+export type ExcerptPreviewPhase = 'idle' | 'playing' | 'ended'
+
 export const MIN_EXCERPT_SECONDS = 5
 
 /**
@@ -49,6 +52,16 @@ export const isExcerptSelectionAvailable = (
 
 export const rangeDurationSeconds = (range: ExcerptRange): number =>
   range.endSeconds - range.startSeconds
+
+/**
+ * C173 — the stop target of the excerpt preview: the range end once
+ * `currentSeconds` reaches it (inclusive). The `<video>` `timeupdate` fires at
+ * ~4 Hz and can overshoot, so the returned value is what the player clamps back
+ * to before pausing. Null while the playhead is still inside the window. Pure
+ * and DOM-free — the rule is testable without a player, like the picker geometry.
+ */
+export const excerptPreviewStopAt = (range: ExcerptRange, currentSeconds: number): number | null =>
+  Number.isFinite(currentSeconds) && currentSeconds >= range.endSeconds ? range.endSeconds : null
 
 const durationFloor = (durationSeconds: number): number =>
   Number.isFinite(durationSeconds) ? Math.max(0, Math.floor(durationSeconds)) : 0

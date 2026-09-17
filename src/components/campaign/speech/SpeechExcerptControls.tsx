@@ -1,6 +1,6 @@
 'use client'
 
-import type { KeyboardEvent, PointerEvent } from 'react'
+import type { KeyboardEvent, PointerEvent, ReactNode } from 'react'
 import { useRef } from 'react'
 
 import { formatSpeechClock, formatSpeechSpan } from '@/lib/speechClock'
@@ -11,9 +11,11 @@ import {
   secondsFromTrackRatio,
   snapSecondsToSegmentBoundary,
   type ExcerptEdge,
+  type ExcerptPreviewPhase,
   type ExcerptRange,
   type ExcerptSegment,
 } from '@/lib/speechExcerptSelection'
+import { cn } from '@/lib/utils'
 
 /** Handles snap to a nearby phrase boundary within this screen distance... */
 const SNAP_TOLERANCE_PX = 8
@@ -34,19 +36,30 @@ type SpeechExcerptControlsProps = {
   range: ExcerptRange
   durationSeconds: number
   onChange: (range: ExcerptRange) => void
+  /**
+   * C173 — the player owns the preview (playback, timers, surface); the card
+   * only hosts the control it renders, so no media logic leaks into the pure
+   * geometry component.
+   */
+  previewArea?: ReactNode
+  /** C173 — presentation state of the preview: card ring while playing, header chip. */
+  previewState?: ExcerptPreviewPhase
 }
 
 /**
  * C166 — the excerpt range bar: two keyboard-operable handles (`role="slider"`)
  * over the speech duration, with a magnet on the transcript phrase boundaries.
  * It only translates pointers/keys into the pure geometry (`lib/speechExcerptSelection`);
- * the phrase clicks themselves stay on the transcript.
+ * the phrase clicks themselves stay on the transcript. C173 — the preview control
+ * arrives as a pre-rendered `previewArea` slot: the card frames it, the player owns it.
  */
 export const SpeechExcerptControls = ({
   segments,
   range,
   durationSeconds,
   onChange,
+  previewArea,
+  previewState = 'idle',
 }: SpeechExcerptControlsProps) => {
   const trackRef = useRef<HTMLDivElement>(null)
   const dragEdgeRef = useRef<ExcerptEdge | null>(null)
@@ -120,15 +133,44 @@ export const SpeechExcerptControls = ({
     onKeyDown: onHandleKeyDown(edge),
   })
 
+  const previewChip =
+    previewState === 'playing' ? (
+      <span className="inline-flex h-5 items-center gap-1 rounded-full bg-primary/10 px-2 text-[10px] font-medium text-primary">
+        <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />
+        REPRODUZINDO
+      </span>
+    ) : previewState === 'ended' ? (
+      <span className="text-[10px] font-medium text-muted-foreground">
+        FIM VISÍVEL · {endLabel}
+      </span>
+    ) : null
+
+  const rangeLabel = (
+    <>
+      <span className="text-foreground">{startLabel}</span> →{' '}
+      <span className="text-foreground">{endLabel}</span> · {spanLabel}
+    </>
+  )
+
   return (
-    <div className="mt-3 rounded-lg border bg-muted/30 p-3" data-slot="speech-excerpt-controls">
+    <div
+      className={cn(
+        'mt-3 rounded-lg border bg-muted/30 p-3',
+        previewState === 'playing' && 'ring-1 ring-primary/30',
+      )}
+      data-slot="speech-excerpt-controls"
+    >
+      {/* C173 — while a preview state is on, it owns the header's right slot and
+          the range drops to its own line (gallery PARADO/REPRODUZINDO/FIM VISÍVEL). */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs font-medium text-primary">Trecho selecionado</span>
-        <span className="text-xs text-muted-foreground tabular-nums">
-          <span className="text-foreground">{startLabel}</span> →{' '}
-          <span className="text-foreground">{endLabel}</span> · {spanLabel}
-        </span>
+        {previewChip ?? (
+          <span className="text-xs text-muted-foreground tabular-nums">{rangeLabel}</span>
+        )}
       </div>
+      {previewChip ? (
+        <p className="mt-1 text-xs text-muted-foreground tabular-nums">{rangeLabel}</p>
+      ) : null}
 
       <div
         ref={trackRef}
@@ -162,10 +204,18 @@ export const SpeechExcerptControls = ({
         <span>{durationLabel}</span>
       </div>
 
-      <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-        Clique nas frases: o limite encaixa no segmento (ímã). Arraste as alças para o ajuste fino.{' '}
-        {excerptLimitsLabel} — a duração aparece enquanto seleciona.
-      </p>
+      <div
+        className={cn(
+          'mt-3 flex flex-wrap items-end justify-between gap-3 pt-3',
+          previewState === 'idle' ? 'sm:border-t sm:border-border' : 'border-t border-border',
+        )}
+      >
+        <p className="min-w-0 flex-1 text-[11px] leading-relaxed text-muted-foreground">
+          Clique nas frases: o limite encaixa no segmento (ímã). Arraste as alças para o ajuste
+          fino. {excerptLimitsLabel} — a duração aparece enquanto seleciona.
+        </p>
+        {previewArea}
+      </div>
     </div>
   )
 }

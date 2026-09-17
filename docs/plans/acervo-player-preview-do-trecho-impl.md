@@ -1,10 +1,10 @@
 # Impl: Acervo: pré-visualizar no player o trecho selecionado
 
-Status: aprovado
+Status: concluído (as-built abaixo)
 Atualizado em: 2026-09-16
 Issue: #1083
 Intenção: docs/plans/acervo-player-preview-do-trecho.md
-Appetite restante: herdado (~1 dia eng; sem corte — sem schema/`Consent`/escrita; uma função pura em `src/lib` + o dono do playback + as duas suítes unit)
+Appetite restante: herdado (~1 dia eng; sem corte — sem schema/`Consent`/escrita; uma função pura em `src/lib` + o dono do playback + o card de seleção com um slot + as duas suítes unit)
 
 ## Leitura da intenção
 
@@ -124,3 +124,26 @@ flowchart LR
 ## Self-score decision-quality
 
 5/5 — (1) as decisões caras (posição do controle, postura no YouTube, gating por superfície, fim/manual stop, dono da matemática, cancelamento por seleção) têm opções + recomendação + rejeitadas explícitas; (2) cabe no appetite herdado porque corta IFrame API, resolução encadeada, segundo player e arquivo novo — uma função pura + o dono existente + o card de seleção com um slot + as duas suítes unit; (3) rabbit holes nomeados com corte (IFrame API, auto-resolve, loop, scrub nativo, telemetria); (4) depth check: reusa `SpeechDetailPlayer`, o card de seleção existente, `Button`/`PlayIcon`/`PauseIcon`, o `seekTo` do YouTube, o bloco de saída C171 e `speechExcerptSelection` — nenhum shell/twin/componente paralelo; (5) o outcome da intenção permanece intacto — a engenharia não reescreveu o aceite; a posição do botão e a postura no YouTube seguem o artefato de gate (nenhum ponto de produto em aberto).
+
+## As-built (2026-09-16)
+
+Rebase sobre `main` depois de C174 (#1084), C178 (#1081) e **C181 (#1117)** — o embed do YouTube foi removido na implementação do C178 e **restaurado pelo C181** (Câmara como entrada, embed atrás de "Assistir no YouTube"). O plano acima foi reconciliado: as decisões 1/2/3 valem sobre o arquivo pós-C181 (surface `'vod' | 'youtube'`, `seekTo` ramificado, `pendingSeekRef`). Line numbers do corpo do plano referem-se ao arquivo pré-rebase; esta seção é a autoritativa.
+
+Entregue:
+
+- **`excerptPreviewStopAt`** (`src/lib/speechExcerptSelection.ts`) — alvo de parada + clamp do overshoot do `timeupdate`; tipo `ExcerptPreviewPhase` compartilhado.
+- **`SpeechExcerptControls`** — recebe `previewArea` (slot) e `previewState` (`idle | playing | ended`): rodapé com `border-t`, `ring-1 ring-primary/30` enquanto toca, chip `REPRODUZINDO` (chip) / `FIM VISÍVEL · {fim}` (texto muted, como o artefato). A geometria (track/alças/`role="slider"`) intocada; nenhuma lógica de mídia no card.
+- **`SpeechDetailPlayer`** — `previewPhase` + `previewIntentRef`; `startPreview`/`stopPreview`/`clearPreviewIntent`; **gesto único** resolve→toca (`requestPreviewResolution`, `pendingSeekRef` mira o início do trecho); `onTimeUpdate` para no fim; `onPause`/`onPlay` fecham o preview; guard-effect em `[surface, playbackUrl]`; `applySelection` para todo caminho que muda a seleção; `onChange` do card passa por ele. YouTube só reposiciona (nunca "Parar") e o YouTube-only abre o embed no início; sem superfície → legenda da cena 4.
+
+Simplify (aplicado na sessão): `play()` rejeitado devolve a fase (sem controle mentindo); `requestPreview` morto colapsado no caminho vivo; `pendingSeekRef` limpo quando a intenção cai (não vaza para um retry); `onPlay` limpa `ended` num resume nativo; botão/legenda do YouTube deduplicados; `min-h-10` nos controles; chip de `ended` como texto.
+
+Design (trigger a + c): o `designer` estendeu o artefato com a CENA 5 (VOD a resolver: PARADO → RESOLVENDO → FALHOU) antes do markup; a crítica final contra o app renderizado (screenshots 1280/390: idle, resolvendo, reproduzindo, fim visível, YouTube reposicionado, YouTube-only, sem superfície, CENA 5A/5C) voltou **not certified** em 3 bloqueios (estado no slot direito do cabeçalho + range em segunda linha; coluna de ação de ~300px para o bloco do YouTube; botão ocupado com `border-border bg-muted/50 text-muted-foreground opacity-60`) — corrigidos (mais o `border-t` só no desktop na composição normal) e a re-crítica **certificou** (`Design tier: primary`).
+
+Já resolvido no simplify/critique (não reabrir): os P0–P2 dos dois revisores acima.
+
+Explicitamente fora / adiado com gatilho:
+
+- **Posse do layout do rodapé pelo card** (`previewArea` carrega `sm:items-end`, `max-w-[430px]`): a fronteira que importa (card media-free) está preservada; um render-prop/estado puro só quando houver 2º consumidor do `SpeechExcerptControls`.
+- **`excerptPreviewStopAt(range, current)` só lê `endSeconds`**: assinatura mais honesta (`endSeconds: number`) só quando aparecer um 2º consumidor da regra.
+- **Helpers de teste** (`selectWindow`/`mountedVideo`): hoist para o módulo quando houver 3ª cópia.
+- **`aria-pressed`** no botão de preview: deliberadamente omitido (o botão troca ação e rótulo; pressed state seria falso) — divergência do rascunho do plano, certificada pelo `designer` no fechamento.
