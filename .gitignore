@@ -88,6 +88,10 @@ next-env.d.ts
 /data/dossie-solla-cidade/
 /docs/research/dossie-solla-cidade/
 
+# C187 — dossiê Solla por instituição + boletim modelo: same rule (C186).
+/data/dossie-solla-instituicao/
+/docs/research/dossie-solla-instituicao/
+
 # Local-only sensitive material (agents may read; never commit content)
 /private/**
 !/private/README.md

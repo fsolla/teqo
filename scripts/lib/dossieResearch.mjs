@@ -1,15 +1,17 @@
 /**
- * Research contract for the C186 dossiê (owner). The dossiê is researched one
- * file per era (`<slug>.<era>.research.json`); each claim either carries a date
- * + URL or becomes an explicit gap. Reuses the C163 validation primitives
- * (exported additively from `cityReportResearch.mjs`) instead of twinning them.
+ * Research contract for the dossiê (owner: C186; unit seam added by C187). The
+ * dossiê is researched one file per era (`<slug>.<era>.research.json`); each
+ * claim either carries a date + URL or becomes an explicit gap. Reuses the C163
+ * validation primitives (exported additively from `cityReportResearch.mjs`)
+ * instead of twinning them.
+ *
+ * The `unit` descriptor selects the slug field, the sphere vocabulary and the
+ * per-era checklist; without it the behaviour is the C186 municipality one.
  */
 
 import { collectExtraSources, isNonEmptyString, isValidDate } from './cityReportResearch.mjs'
 import { DOSSIER_ERA_IDS } from './dossieCareer.mjs'
-
-/** Explicit spheres: a regional/pole item is never summed into the município. */
-const DOSSIER_SPHERES = ['municipio', 'regiao', 'polo']
+import { MUNICIPALITY_UNIT, resolveDossierUnit } from './dossieUnit.mjs'
 
 /** Execution phases (empenho ≠ pagamento). Unknown/absent degrades to "não informada". */
 const DOSSIER_PHASES = ['autorizado', 'empenhado', 'liquidado', 'pago', 'restos', 'nao_informado']
@@ -24,8 +26,8 @@ const DOSSIER_PHASES = ['autorizado', 'empenhado', 'liquidado', 'pago', 'restos'
 export const DOSSIER_BRIEF_TITLE_MAX = 80
 export const DOSSIER_BRIEF_NOTE_MAX = 120
 
-/** Checklist per era — the dossiê's research checklist. `area` labels the boletim card. */
-const DOSSIER_RESEARCH_CHECKLIST = [
+/** Municipality checklist (C186). `area` labels the boletim card. */
+const MUNICIPALITY_RESEARCH_CHECKLIST = [
   {
     id: 'era_a_formacao',
     era: 'A',
@@ -107,17 +109,135 @@ const DOSSIER_RESEARCH_CHECKLIST = [
   },
 ]
 
-export const DOSSIER_RESEARCH_CHECKLIST_IDS = DOSSIER_RESEARCH_CHECKLIST.map((item) => item.id)
+/** Institution checklist (C187) — same eras, institution-oriented. */
+const INSTITUTION_RESEARCH_CHECKLIST = [
+  {
+    id: 'era_a_formacao',
+    era: 'A',
+    area: 'Formação',
+    label: 'Formação, residência e pesquisa com vínculo nominal à instituição',
+  },
+  {
+    id: 'era_a_sesab',
+    era: 'A',
+    area: 'Gestão pública',
+    label: 'Atuação na SESAB com efeito ou menção à instituição',
+  },
+  {
+    id: 'era_a_consultor_ms',
+    era: 'A',
+    area: 'Ministério da Saúde',
+    label: 'Consultoria no Ministério da Saúde com interface institucional',
+  },
+  {
+    id: 'era_a_conquista',
+    era: 'A',
+    area: 'Gestão municipal',
+    label: 'Gestão municipal de saúde com parceria institucional',
+  },
+  {
+    id: 'era_a_sas_ms',
+    era: 'A',
+    area: 'Ministério da Saúde',
+    label: 'Secretaria de Atenção à Saúde do MS com interface institucional',
+  },
+  {
+    id: 'era_a_vinculo',
+    era: 'A',
+    area: 'Vínculo',
+    label: 'Vínculo institucional documentado (professor, pesquisador, conselheiro)',
+  },
+  {
+    id: 'era_b_sesab',
+    era: 'B',
+    area: 'Gestão estadual',
+    label: 'Gestão da SESAB (2007–2014) com a instituição',
+  },
+  {
+    id: 'era_b_equipamentos',
+    era: 'B',
+    area: 'Equipamentos',
+    label: 'Equipamentos e serviços de saúde ligados à instituição',
+  },
+  {
+    id: 'era_b_programas',
+    era: 'B',
+    area: 'Programas',
+    label: 'Programas e políticas estaduais com a instituição',
+  },
+  {
+    id: 'era_b_obras',
+    era: 'B',
+    area: 'Obras',
+    label: 'Obras e investimentos na instituição',
+  },
+  {
+    id: 'era_b_convenios',
+    era: 'B',
+    area: 'Convênios',
+    label: 'Convênios, termos e parcerias formais com a instituição',
+  },
+  {
+    id: 'era_c_discursos',
+    era: 'C',
+    area: 'Mandato',
+    label: 'Pronunciamentos e falas com menção à instituição',
+  },
+  {
+    id: 'era_c_proposicoes',
+    era: 'C',
+    area: 'Mandato',
+    label: 'Proposições e relatorias de interesse da instituição',
+  },
+  {
+    id: 'era_c_emendas',
+    era: 'C',
+    area: 'Emendas',
+    label: 'Emendas e recursos destinados à instituição',
+  },
+  {
+    id: 'era_c_titulos',
+    era: 'C',
+    area: 'Reconhecimento',
+    label: 'Títulos, honrarias e homenagens da instituição',
+  },
+  {
+    id: 'era_c_atuacao',
+    era: 'C',
+    area: 'Atuação',
+    label: 'Atuação e articulação institucional',
+  },
+  {
+    id: 'era_c_parcerias',
+    era: 'C',
+    area: 'Parcerias',
+    label: 'Parcerias, audiências e articulação formal com a instituição',
+  },
+]
 
-const checklistById = new Map(DOSSIER_RESEARCH_CHECKLIST.map((item) => [item.id, item]))
+/** @type {Record<string, Array<{ id: string, era: string, area: string, label: string }>>} */
+const CHECKLIST_BY_UNIT = {
+  municipality: MUNICIPALITY_RESEARCH_CHECKLIST,
+  institution: INSTITUTION_RESEARCH_CHECKLIST,
+}
 
-export const dossierChecklistForEra = (era) =>
-  DOSSIER_RESEARCH_CHECKLIST.filter((item) => item.era === era)
+const checklistFor = (unit) => CHECKLIST_BY_UNIT[unit.id] ?? MUNICIPALITY_RESEARCH_CHECKLIST
 
-const normalizeSphere = (value) => {
-  if (!isNonEmptyString(value)) return 'municipio'
+/** Municipality checklist ids (C186 surface kept stable). */
+export const DOSSIER_RESEARCH_CHECKLIST_IDS = MUNICIPALITY_RESEARCH_CHECKLIST.map((item) => item.id)
+
+/**
+ * @param {string} era
+ * @param {any} [unit]
+ * @returns {Array<{ id: string, era: string, area: string, label: string }>}
+ */
+export const dossierChecklistForEra = (era, unit = MUNICIPALITY_UNIT) =>
+  checklistFor(resolveDossierUnit(unit)).filter((item) => item.era === era)
+
+const normalizeSphere = (value, unit) => {
+  if (!isNonEmptyString(value)) return unit.defaultSphere
   const sphere = value.trim()
-  return DOSSIER_SPHERES.includes(sphere) ? sphere : null
+  return unit.spheres.includes(sphere) ? sphere : null
 }
 
 const normalizePhase = (value) => {
@@ -167,18 +287,38 @@ const normalizeNumbers = (entry) => {
 }
 
 /**
+ * @typedef {Object} NormalizedDossierResearch
+ * @property {string} era
+ * @property {string} researchedAt
+ * @property {any[]} items
+ * @property {any[]} news
+ * @property {any[]} gaps
+ */
+
+/**
  * Validates/normalizes one era's agent-written research JSON.
  *
  * Structural failures (no slug, no research date, no/unknown era) throw — the
  * operator fixes the file. Content failures (missing source, unknown item, item
  * from another era) degrade to explicit gaps.
+ *
+ * @param {any} raw
+ * @param {{ unit?: any }} [options]
+ * @returns {NormalizedDossierResearch & Record<string, any>}
  */
-export const normalizeDossierResearchInput = (raw) => {
+export const normalizeDossierResearchInput = (raw, { unit } = {}) => {
+  const resolvedUnit = resolveDossierUnit(unit)
+  const checklist = checklistFor(resolvedUnit)
+  const checklistById = new Map(checklist.map((item) => [item.id, item]))
+  const slug = isNonEmptyString(raw?.[resolvedUnit.slugField])
+    ? raw[resolvedUnit.slugField].trim()
+    : null
+
   if (!raw || typeof raw !== 'object') {
     throw new Error('Pesquisa do dossiê inválida: o arquivo precisa ser um objeto JSON.')
   }
-  if (!isNonEmptyString(raw.municipalitySlug)) {
-    throw new Error('Pesquisa do dossiê inválida: falta "municipalitySlug".')
+  if (!slug) {
+    throw new Error(`Pesquisa do dossiê inválida: falta "${resolvedUnit.slugField}".`)
   }
   if (!isValidDate(raw.researchedAt)) {
     throw new Error(
@@ -230,12 +370,12 @@ export const normalizeDossierResearchInput = (raw) => {
       })
       continue
     }
-    const sphere = normalizeSphere(entry.sphere)
+    const sphere = normalizeSphere(entry.sphere, resolvedUnit)
     if (!sphere) {
       gaps.push({
         id,
         label: checklistItem.label,
-        reason: `Esfera inválida (esperado ${DOSSIER_SPHERES.join('/')}).`,
+        reason: `Esfera inválida (esperado ${resolvedUnit.spheres.join('/')}).`,
       })
       continue
     }
@@ -270,7 +410,7 @@ export const normalizeDossierResearchInput = (raw) => {
     }
   }
 
-  for (const checklistItem of dossierChecklistForEra(era)) {
+  for (const checklistItem of dossierChecklistForEra(era, resolvedUnit)) {
     if (!seen.has(checklistItem.id)) {
       gaps.push({ id: checklistItem.id, label: checklistItem.label, reason: 'Não pesquisado.' })
     }
@@ -299,7 +439,7 @@ export const normalizeDossierResearchInput = (raw) => {
   }
 
   return {
-    municipalitySlug: raw.municipalitySlug.trim(),
+    [resolvedUnit.slugField]: slug,
     era,
     researchedAt: researchedAt.toISOString(),
     items,
@@ -308,31 +448,48 @@ export const normalizeDossierResearchInput = (raw) => {
   }
 }
 
-/** Short receipt the researcher subagent returns (never the body). */
-export const dossierResearchReceipt = (research) => ({
-  slug: research.municipalitySlug,
-  era: research.era,
-  status: 'ok',
-  researchPath: `data/dossie-solla-cidade/${research.municipalitySlug}.${research.era.toLowerCase()}.research.json`,
-  researchedAt: research.researchedAt,
-  itemCount: research.items.length,
-  gapCount: research.gaps.length,
-  newsCount: research.news.length,
-  gaps: research.gaps.map((gap) => gap.id),
-})
+/**
+ * Short receipt the researcher subagent returns (never the body).
+ *
+ * @param {any} research
+ * @param {{ unit?: any }} [options]
+ * @returns {any}
+ */
+export const dossierResearchReceipt = (research, { unit } = {}) => {
+  const resolvedUnit = resolveDossierUnit(unit)
+  const slug = research[resolvedUnit.slugField]
+  return {
+    slug,
+    era: research.era,
+    status: 'ok',
+    researchPath: `${resolvedUnit.researchDir}/${slug}.${research.era.toLowerCase()}.research.json`,
+    researchedAt: research.researchedAt,
+    itemCount: research.items.length,
+    gapCount: research.gaps.length,
+    newsCount: research.news.length,
+    gaps: research.gaps.map((gap) => gap.id),
+  }
+}
 
 /**
  * Merges the per-era research files into one view. Fails closed when the slugs
- * disagree (a mixed bundle would print another city's facts).
+ * disagree (a mixed bundle would print another unit's facts).
+ *
+ * @param {any} researches
+ * @param {{ unit?: any }} [options]
+ * @returns {{ eras: string[], items: any[], news: any[], gaps: any[], researchedAt: string } & Record<string, any>}
  */
-export const mergeDossierResearch = (researches) => {
+export const mergeDossierResearch = (researches, { unit } = {}) => {
+  const resolvedUnit = resolveDossierUnit(unit)
+  const slugField = resolvedUnit.slugField
   const list = Array.isArray(researches) ? researches.filter(Boolean) : []
   if (list.length === 0) throw new Error('Dossiê sem pesquisa: nenhum arquivo por era foi lido.')
-  const slug = list[0].municipalitySlug
+  const slug = list[0][slugField]
   for (const research of list) {
-    if (research.municipalitySlug !== slug) {
+    if (research[slugField] !== slug) {
+      const noun = resolvedUnit.id === 'institution' ? 'instituições' : 'municípios'
       throw new Error(
-        `Pesquisas de municípios diferentes ("${slug}" e "${research.municipalitySlug}") — pare e regenere.`,
+        `Pesquisas de ${noun} diferentes ("${slug}" e "${research[slugField]}") — pare e regenere.`,
       )
     }
   }
@@ -349,7 +506,7 @@ export const mergeDossierResearch = (researches) => {
     .sort()
     .at(-1)
   return {
-    municipalitySlug: slug,
+    [slugField]: slug,
     eras: list.map((research) => research.era),
     items,
     news,
