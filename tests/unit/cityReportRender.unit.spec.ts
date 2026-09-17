@@ -20,6 +20,23 @@ const research = normalizeResearchInput(
       sourceDate: '2026-09-10',
     })),
     news: [],
+    emendasIndicators: [
+      {
+        author: 'Zé Neto',
+        sphere: 'municipio',
+        value: 'R$ 1 mi',
+        purpose: 'Ambulância do TFD',
+        sourceUrl: 'https://exemplo.test/indicio-municipio',
+        sourceDate: '2026-09-01',
+      },
+      {
+        author: 'Deputado do Polo',
+        sphere: 'polo',
+        value: 'R$ 500 mil',
+        sourceUrl: 'https://exemplo.test/indicio-polo',
+        sourceDate: '2026-09-01',
+      },
+    ],
     gaps: [],
   },
   { now: generatedAt },
@@ -106,6 +123,20 @@ describe('renderReportHtml', () => {
     expect(html).toContain('Lacuna explícita')
     expect(html).toContain('Limites')
   })
+
+  it('renders the emenda indications with the esfera badge and per-row source link', () => {
+    expect(html).toContain('<ul class="indicators">')
+    expect(html).toContain('sphere sphere-municipio')
+    expect(html).toContain('sphere sphere-polo')
+    expect(html).toContain('href="https://exemplo.test/indicio-municipio"')
+    expect(html).toContain('Não somar região/polo')
+  })
+
+  it('renders the announce panel without the fixed "O que NÃO anunciar" copy', () => {
+    expect(html).toContain('<div class="panel decision">')
+    expect(html).toContain('O que anunciar agora')
+    expect(html).not.toContain('O que NÃO anunciar')
+  })
 })
 
 describe('renderReportMd', () => {
@@ -130,5 +161,11 @@ describe('renderReportMd', () => {
 
   it('states the base read date (dated snapshot)', () => {
     expect(md).toContain('Base Teqo (read-only) lida em')
+  })
+
+  it('renders the emenda indications in the companion with the (fonte) link', () => {
+    expect(md).toContain('**Zé Neto** — Ambulância do TFD · R$ 1 mi · _município_')
+    expect(md).toContain('[(fonte)](https://exemplo.test/indicio-municipio)')
+    expect(md).not.toContain('O que NÃO anunciar')
   })
 })

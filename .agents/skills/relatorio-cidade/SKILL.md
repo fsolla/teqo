@@ -207,6 +207,16 @@ de pesquisa que cruza para ele.
   "investments": [                 // investimentos/obras de Solla, do estado e do federal (município e região)
     { "topic": "Obra federal — saúde", "detail": "…", "sourceUrl": "https://…", "sourceDate": "…" }
   ],
+  "emendasIndicators": [           // indícios de emenda, um por autor (página 1; esfera explícita)
+    {
+      "author": "Zé Neto",         // obrigatório
+      "sphere": "municipio",       // obrigatório: municipio | regiao | polo
+      "value": "R$ 1 mi",          // opcional (como a fonte informa)
+      "purpose": "Ambulância do TFD", // opcional (o que beneficia)
+      "year": "2026",              // opcional
+      "sourceUrl": "https://…", "sourceDate": "2026-08-24"
+    }
+  ],
   "gaps": [{ "id": "…", "label": "…", "reason": "…" }] // lacunas que o agente já sabe
 }
 ```
@@ -214,9 +224,12 @@ de pesquisa que cruza para ele.
 Checklist (`id`s): `prefeito`, `vice`, `relacao_campo`, `vereadores`,
 `disputa_local`, `quem_investe`, `noticias`, `imprensa_local`, `emendas_web`.
 Item sem `sourceUrl`/`sourceDate` é convertido em lacuna pelo validador; item
-ausente também. `approach`, `preCandidates`, `leaders` e `leaderAgenda` são
+ausente também. `approach`, `preCandidates`, `leaders`, `leaderAgenda` e
+`emendasIndicators` são
 listas de pesquisa: cada entrada sem fonte vira lacuna (`abordagem_sem_fonte`,
-`precandidato_sem_fonte`, `lideranca_sem_fonte`, `agenda_lideranca_sem_fonte`) e
+`precandidato_sem_fonte`, `lideranca_sem_fonte`, `agenda_lideranca_sem_fonte`,
+`emenda_indicio_sem_fonte`; `emendasIndicators` ainda exige `author` e `sphere`
+— sem eles, `emenda_indicio_incompleto`) e
 não entra no PDF. Campos de texto livre (`detail`, `hook`, `suggestion`,
 `support`, `answer`) aceitam os **tokens de fonte inline** `{{fonte}}` /
 `{{fonte:N}}`, resolvidos para `(fonte)` no ponto exato da citação (ver "Links
@@ -237,10 +250,15 @@ de rede **sem rastro público** não vira item: fica como tarefa de ativação
 fonte oficial não atribui emenda ao município, pesquise artigos, falas e
 indicações de emenda para (a) o município, (b) a região/Território de
 Identidade e (c) a maior cidade próxima (polo regional — cidades pequenas usam
-serviços do polo). Registre cada indício com URL+data; use `extraSources` para
-mais de uma fonte. O PDF mostra o item como "Emendas — indícios web" na página
-1 e as URLs na seção de fontes. **Nunca somar** indício de região/polo como
-emenda da cidade.
+serviços do polo). Registre a síntese em `emendas_web` (answer/details +
+`extraSources`) e, principalmente, **cada indício como uma linha de
+`emendasIndicators`** — `author`, `sphere` (`municipio`/`regiao`/`polo`), valor,
+finalidade, ano e fonte+data. É essa lista estruturada que a página 1 imprime
+(autor — o que beneficia · valor · esfera, com link); o texto corrido só entra
+quando não há lista (fallback). Sem uma das linhas com fonte, o indício vira
+lacuna (`emenda_indicio_sem_fonte`) — nunca some em silêncio. O PDF mostra o
+bloco como "Emendas — indícios web" na página 1 e as URLs na seção de fontes.
+**Nunca somar** indício de região/polo como emenda da cidade.
 
 **Demografia, economia e transporte (pesquisa):** `demography`, `economy` e
 `transport` são listas de `{topic, detail, sourceUrl, sourceDate}` (sem fonte →
@@ -291,12 +309,17 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   (cenário central com pessimista/otimista)** — a meta de cadeira e a cobertura
   de pledges **saíram** da página 1; quem é quem (prefeito, vice, relação com o
   campo, lideranças, dobradinhas, vereadores), o que Solla entregou (emendas
-  oficiais com fase, acervo de falas, notícias ≤90 dias), **indícios web de
-  emendas** quando a fonte oficial não atribui ao município, anunciar × não
-  anunciar, riscos e pontos sem leitura. Os textos livres da pesquisa entram
-  **capados** (teto/orçamento de conteúdo, não layout espremido) e as listas
-  mostram `e mais N` — o texto integral de cada item fica no aprofundamento
-  (ver "respostas integrais" em `14. Fontes e limites`).
+  oficiais com fase, acervo de falas, notícias ≤90 dias), **emendas — indícios
+  web** quando a fonte oficial não atribui ao município (uma linha por autor:
+  o que beneficia · valor · **esfera explícita** `município`/`região`/`polo`, com
+  link), **O que anunciar agora** (a relação local com fonte + os compromissos
+  que a campanha cumpre) com a advertência de defeso, riscos e pontos sem
+  leitura. O painel fixo "O que NÃO anunciar" **saiu** da página 1 (copy
+  invariante; o guardrail de defeso permanece na nota do painel de anúncio). Os
+  textos livres da pesquisa entram **capados** (teto/orçamento de conteúdo, não
+  layout espremido) e as listas mostram `e mais N` — o texto integral de cada
+  item fica no aprofundamento (ver "respostas integrais" em `14. Fontes e
+  limites`).
 - **Seções 2+:** `1. Conta eleitoral` · `2. Concorrentes no município (federal
   e estadual)` — top 5 por votos de 2022 na base TSE, com série 2014/2018/2022
   e os prováveis candidatos do campo do prefeito (pesquisa), além da **frente de
@@ -362,7 +385,8 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
 
 - **Sem fonte, não publica**: afirmação não trivial sem data+URL não entra.
 - **Empenho ≠ pagamento** (defeso/ano eleitoral): o bloco de emendas mostra a
-  fase (empenhada, liquidada, paga, restos) e o "anunciar × não anunciar" é fixo.
+  fase (empenhada, liquidada, paga, restos) e a advertência de defeso acompanha o
+  painel "O que anunciar agora".
 - **Leitura relativa**: % do próprio voto, rank, LQ — nunca % estadual absoluto.
 - **PII mínima**: contatos completos (telefone/e-mail) nunca entram; nomes de
   lideranças entram porque o produto pede "quem é quem".
