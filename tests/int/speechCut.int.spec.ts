@@ -65,13 +65,17 @@ import { startSpeechCutJobInBackground } from '@/utilities/speech/speechCutSched
 import { upsertSpeechBundle, type SpeechImportBundle } from '@/utilities/speech/speechImport'
 import { loadSpeechAcervoPageData } from '@/utilities/speech/speechPageData'
 
+import {
+  camaraFetchStub,
+  camaraVodStub,
+  DOWNLOAD_URL,
+  MP4_BYTES,
+  PLAYBACK_URL,
+} from '../helpers/camaraVodStub'
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 import { speechBundleFixture } from '../helpers/speechBundleFixture'
 
 const FAKE_FFMPEG = fileURLToPath(new URL('../fixtures/fake-ffmpeg.mjs', import.meta.url))
-const PLAYBACK_URL = 'https://cdn.camara.leg.br/trecho.mp4'
-const DOWNLOAD_URL = 'https://cdn.camara.leg.br/trecho-download.mp4'
-const MP4_BYTES = Buffer.from('camara-mp4-bytes')
 
 const hasBinary = (name: string): boolean => spawnSync(name, ['-version']).status === 0
 const hasFfmpeg = hasBinary('ffmpeg') && hasBinary('ffprobe')
@@ -89,50 +93,6 @@ const campaignFixtures = installCampaignFixtures({
 
 const mockedGetContext = vi.mocked(getCampaignActionContext)
 const mockedStartJob = vi.mocked(startSpeechCutJobInBackground)
-
-const camaraVodStub = ({
-  apiState = 'PRONTO',
-  apiPlaybackUrl = PLAYBACK_URL,
-  apiDownloadUrl = DOWNLOAD_URL,
-  mediaBytes = MP4_BYTES,
-  deadUrls = [],
-}: {
-  apiState?: 'PRONTO' | 'INDISPONIVEL' | 'GERANDO'
-  apiPlaybackUrl?: string
-  apiDownloadUrl?: string
-  mediaBytes?: Buffer
-  deadUrls?: string[]
-} = {}): typeof fetch =>
-  (async (input: RequestInfo | URL) => {
-    const url = String(input)
-    if (url.includes('video-sob-demanda')) {
-      return new Response(
-        JSON.stringify({
-          estado: apiState,
-          video:
-            apiState === 'PRONTO'
-              ? { linkParaReproducao: apiPlaybackUrl, linkParaDownload: apiDownloadUrl }
-              : null,
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } },
-      )
-    }
-    if (deadUrls.includes(url)) return new Response('', { status: 403 })
-    if (
-      url === apiPlaybackUrl ||
-      url === apiDownloadUrl ||
-      url === PLAYBACK_URL ||
-      url === DOWNLOAD_URL
-    ) {
-      return new Response(new Uint8Array(mediaBytes), {
-        status: 200,
-        headers: { 'Content-Type': 'video/mp4', 'Content-Length': String(mediaBytes.length) },
-      })
-    }
-    throw new Error(`Unexpected fetch to ${url}`)
-  }) as typeof fetch
-
-const camaraFetchStub = (bytes: Buffer): typeof fetch => camaraVodStub({ mediaBytes: bytes })
 
 const createSpeech = async (overrides: Partial<SpeechImportBundle> = {}): Promise<number> => {
   const bundle = speechBundleFixture({

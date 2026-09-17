@@ -35,6 +35,8 @@ const createSpeech = async (
     keywords?: string[]
     durationSeconds?: number
     withVideo?: boolean
+    /** C182 — drop the Câmara coordinates so the frame is not resolvable. */
+    withCoordinates?: boolean
     youtubeUrl?: string | null
     eventStartAt?: string
     /** C177 — set to null to create a speech without the official text. */
@@ -42,6 +44,7 @@ const createSpeech = async (
   },
 ) => {
   const marker = input.marker
+  const withCoordinates = input.withCoordinates ?? true
   const speech = await campaign.fixtures.payload.create({
     collection: 'speech',
     data: {
@@ -63,9 +66,9 @@ const createSpeech = async (
         input.officialTextUrl === undefined
           ? 'https://camara.leg.br/discurso'
           : input.officialTextUrl,
-      eventId: 67091,
-      audioId: 558641,
-      excerptTMs: EXCERPT_TMS,
+      eventId: withCoordinates ? 67091 : null,
+      audioId: withCoordinates ? 558641 : null,
+      excerptTMs: withCoordinates ? EXCERPT_TMS : null,
       eventStartAt: input.eventStartAt ?? EXCERPT_SESSION,
       youtubeUrl: input.youtubeUrl ?? null,
       ...(input.withVideo === false
@@ -157,9 +160,10 @@ test.describe('communication vertical (C154/C162)', () => {
     expect(resultsHtml).toContain('<mark')
     expect(resultsHtml).toContain('Assistir no trecho')
     expect(resultsHtml).toContain('1 fala encontrada')
-    // C175 — the card carries the trecho thumbnail hotlinked from the YouTube
-    // CDN, linked to the same watch target the CTA owns.
-    expect(resultsHtml).toContain(`https://i.ytimg.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`)
+    // C182 — the card points at the frame of the speech (middle of the trecho),
+    // served by the internal poster route; the session cover does not take over.
+    expect(resultsHtml).toContain(`/campanha/comunicacao/acervo/${speech.id}/poster`)
+    expect(resultsHtml).not.toContain(`https://i.ytimg.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`)
     // C162 — the direct download left the card, and the stored ephemeral link
     // never reaches any list HTML.
     expect(resultsHtml).not.toContain('Baixar')
@@ -278,8 +282,11 @@ test.describe('communication vertical (C154/C162)', () => {
 
     const results = await request.get(`/campanha/comunicacao/acervo?q=${marker}`)
     expect(results.status()).toBe(200)
-    // C175 — no YouTube session link means no thumbnail and no reserved media.
-    expect(rendered(await results.text())).not.toContain('i.ytimg.com')
+    // C182 — a VOD-only speech still gets a frame at the middle of the trecho,
+    // with no YouTube cover anywhere.
+    const resultsHtml = rendered(await results.text())
+    expect(resultsHtml).toContain(`/campanha/comunicacao/acervo/${speech.id}/poster`)
+    expect(resultsHtml).not.toContain('i.ytimg.com')
 
     const detail = await request.get(`/campanha/comunicacao/acervo/${speech.id}`)
     expect(detail.status()).toBe(200)
@@ -420,6 +427,55 @@ test.describe('communication vertical (C154/C162)', () => {
       const response = await request.post(endpoint, { data: { speechId: speech.id } })
       expect(response.status()).toBe(400)
       expect(await response.text()).toContain('não tem trecho de vídeo')
+    })
+  })
+
+  test.describe('GET /campanha/comunicacao/acervo/:id/poster (C182)', () => {
+    // Only the network-free paths are asserted here: a resolvable speech would
+    // ask the real Câmara, which the browserless suite must never do.
+    test('falls back to the YouTube cover without Câmara coordinates', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('poster')
+      const speech = await createSpeech(campaign, {
+        marker,
+        withCoordinates: false,
+        youtubeUrl: `https://www.youtube.com/watch?v=${YOUTUBE_VIDEO_ID}`,
+      })
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      const response = await request.get(`/campanha/comunicacao/acervo/${speech.id}/poster`, {
+        maxRedirects: 0,
+      })
+      expect(response.status()).toBe(302)
+      expect(response.headers()['location']).toContain(
+        `i.ytimg.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`,
+      )
+    })
+
+    test('answers 404 without any media and refuses an actor outside the catalog', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('poster404')
+      const bare = await createSpeech(campaign, { marker, withCoordinates: false })
+
+      const communicator = await campaign.fixtures.createCampaignUser('communicator')
+      const communicatorRequest = await campaignRequest(communicator, communicator.password)
+      const notFound = await communicatorRequest.get(
+        `/campanha/comunicacao/acervo/${bare.id}/poster`,
+        { maxRedirects: 0 },
+      )
+      expect(notFound.status()).toBe(404)
+
+      const advisor = await campaign.fixtures.createCampaignUser('advisor')
+      const advisorRequest = await campaignRequest(advisor, advisor.password)
+      const denied = await advisorRequest.get(`/campanha/comunicacao/acervo/${bare.id}/poster`, {
+        maxRedirects: 0,
+      })
+      expect(denied.status()).toBe(404)
     })
   })
 })

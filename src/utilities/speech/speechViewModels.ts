@@ -16,6 +16,7 @@ import {
   type SpeechHighlightedExcerpt,
   type SpeechHighlightPart,
 } from '@/lib/speechHighlight'
+import { speechPosterHref, speechPosterTarget } from '@/lib/speechPoster'
 import { normalizeForSearch, speechMatchesSearchQuery } from '@/lib/speechSearch'
 import {
   correctedExcerptOffsetSeconds,
@@ -23,8 +24,8 @@ import {
   measuredVideoLagSeconds,
   parseYoutubeVideoId,
   sessionLagSeconds,
+  speechCoverUrl,
   speechVodCoordinates,
-  youtubeThumbnailUrl,
 } from '@/lib/speechVod'
 import type { Municipality } from '@/payload-types'
 import { speechScopeLabels, speechTopicLabels } from '@/utilities/speech/speechListUrl'
@@ -46,6 +47,10 @@ export type SpeechListRecord = {
   presidingOfficer?: string | null
   officialTextUrl?: string | null
   youtubeUrl?: string | null
+  /** C182 — the Câmara coordinates that make the frame resolvable. */
+  eventId?: number | null
+  audioId?: number | null
+  excerptTMs?: number | null
   /** C174 — normalized search text; lets the row tell whether it matched `q`. */
   searchText?: string | null
 }
@@ -64,7 +69,11 @@ export type SpeechListItemViewModel = {
   scopes: { value: SpeechScope; label: string }[]
   keywords: string[]
   municipalities: { id: number; name: string }[]
-  /** YouTube cover of the session link (C175); null when the speech has none. */
+  /**
+   * C182 — the frame of the middle of the speech when the Câmara can re-resolve
+   * the excerpt, else the YouTube cover of the session (C175); null when
+   * neither exists. The list never sees the raw VOD URLs.
+   */
   thumbnailUrl: string | null
   watchHref: string
   /**
@@ -198,6 +207,9 @@ export const parseSpeechSeekSeconds = (raw: string | undefined): number | null =
 
 type SpeechCuts = readonly SpeechCutSummaryViewModel[]
 
+const thumbnailUrlOf = (speech: SpeechListRecord): string | null =>
+  speechPosterTarget(speech) ? speechPosterHref(speech.id) : speechCoverUrl(speech.youtubeUrl)
+
 export const toSpeechListItemViewModel = ({
   speech,
   segments,
@@ -235,7 +247,7 @@ export const toSpeechListItemViewModel = ({
     scopes: scopeViewModels(speech),
     keywords: speech.keywords ?? [],
     municipalities: municipalityViewModels(speech, municipalityLabels),
-    thumbnailUrl: youtubeThumbnailUrl(parseYoutubeVideoId(speech.youtubeUrl)),
+    thumbnailUrl: thumbnailUrlOf(speech),
     watchHref: buildWatchHref(speech.id, matchedSegment, q),
     officialTextUrl: speech.officialTextUrl ?? null,
     cuts: [...cuts],
@@ -245,11 +257,6 @@ export const toSpeechListItemViewModel = ({
 
 export type SpeechDetailRecord = SpeechListRecord & {
   phase?: string | null
-  vodPlaybackUrl?: string | null
-  vodDownloadUrl?: string | null
-  eventId?: number | null
-  audioId?: number | null
-  excerptTMs?: number | null
   eventStartAt?: string | null
 }
 

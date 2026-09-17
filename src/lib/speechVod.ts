@@ -49,19 +49,31 @@ export type SpeechVodCoordinatesSource = {
 }
 
 /**
- * The Câmara coordinates of a speech whose excerpt can be re-resolved: a
+ * The Câmara coordinates of the excerpt, with no eligibility judgement: the
+ * speech needs `eventId`/`audioId`/`excerptTMs` and nothing else. Null when any
+ * of the three is missing; the two callers below decide what else to require.
+ */
+export const speechExcerptCoordinates = (
+  speech: SpeechVodCoordinatesSource,
+): { eventId: number; audioId: number; excerptTms: number } | null => {
+  const { eventId, audioId, excerptTMs } = speech
+  if (!eventId || !audioId || !excerptTMs) return null
+  return { eventId, audioId, excerptTms: excerptTMs }
+}
+
+/**
+ * The Câmara coordinates of a speech whose excerpt the player can re-resolve: a
  * stored VOD link (eligibility signal only — it is a cache and never a URL
- * handed to the browser) plus `eventId`/`audioId`/`excerptTMs`. Null means the
- * player must not offer the resolution; the view model and the action share
- * this one decision.
+ * handed to the browser) plus the excerpt coordinates. Null means the player
+ * must not offer the resolution; the view model and the action share this one
+ * decision. The acervo frame (C182) does not need the stored link — it reads
+ * `speechExcerptCoordinates` directly.
  */
 export const speechVodCoordinates = (
   speech: SpeechVodCoordinatesSource,
 ): { eventId: number; audioId: number; excerptTms: number } | null => {
   const hasStoredVod = Boolean(speech.vodPlaybackUrl || speech.vodDownloadUrl)
-  const { eventId, audioId, excerptTMs } = speech
-  if (!hasStoredVod || !eventId || !audioId || !excerptTMs) return null
-  return { eventId, audioId, excerptTms: excerptTMs }
+  return hasStoredVod ? speechExcerptCoordinates(speech) : null
 }
 
 /**
@@ -167,6 +179,13 @@ export const parseYoutubeVideoId = (raw: unknown): string | null => {
  */
 export const youtubeThumbnailUrl = (videoId: string | null): string | null =>
   videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null
+
+/**
+ * The session cover of a raw link: composition of the two rules above, so the
+ * list view model (C182 fallback) and the poster route build it the same way.
+ */
+export const speechCoverUrl = (youtubeUrl: unknown): string | null =>
+  youtubeThumbnailUrl(parseYoutubeVideoId(youtubeUrl))
 
 const SAO_PAULO_TIME_ZONE = 'America/Sao_Paulo'
 const NAIVE_DATETIME = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/

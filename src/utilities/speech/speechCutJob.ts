@@ -1,12 +1,8 @@
 import 'server-only'
 
-import { execFile } from 'node:child_process'
-import { createWriteStream } from 'node:fs'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { Readable, Transform } from 'node:stream'
-import { pipeline } from 'node:stream/promises'
 import type { Payload } from 'payload'
 
 import { SPEECH_VOD_INELIGIBLE_MESSAGE } from '@/lib/schemas/speechVod'
@@ -21,12 +17,13 @@ import {
   SPEECH_CUT_FAILURE_UNPLAYABLE,
   type SpeechCutStep,
 } from '@/lib/speechCut'
-import { CAMARA_USER_AGENT, speechVodCoordinates } from '@/lib/speechVod'
+import { speechVodCoordinates } from '@/lib/speechVod'
 import type { SpeechCut } from '@/payload-types'
 import {
   withPayloadTransaction,
   type PayloadTransactionRequest,
 } from '@/utilities/payloadTransaction'
+import { downloadSource, messageOf, runFfmpeg } from '@/utilities/speech/speechMediaPipeline'
 import { resolveSpeechVod, SPEECH_VOD_CUT_POLICY } from '@/utilities/speech/speechVodResolver'
 
 /**
@@ -36,22 +33,10 @@ import { resolveSpeechVod, SPEECH_VOD_CUT_POLICY } from '@/utilities/speech/spee
  * every failure leaves the row `failed` and nothing published.
  */
 
-/** `FFMPEG_PATH` lets a test/runtime point at a fake binary; the image ships `ffmpeg`. */
-const ffmpegBinary = (): string => process.env.FFMPEG_PATH?.trim() || 'ffmpeg'
-
 /** A cut stopped mid-flight (deploy/restart) is reaped to `failed` after this. */
 export const SPEECH_CUT_STALE_MS = 15 * 60_000
 
-/** Defensive ceiling for the source download (the VOD of a speech is minutes long). */
-const MAX_SOURCE_BYTES = 2 * 1024 * 1024 * 1024
-
-const SOURCE_DOWNLOAD_TIMEOUT_MS = 180_000
-const FFMPEG_MIN_TIMEOUT_MS = 30_000
-const FFMPEG_MAX_TIMEOUT_MS = 300_000
-const FFMPEG_MAX_BUFFER_BYTES = 8 * 1024 * 1024
-
-const messageOf = (error: unknown): string =>
-  error instanceof Error && error.message !== '' ? error.message : 'Falha ao processar o corte.'
+const FAILURE_FALLBACK = 'Falha ao processar o corte.'
 
 // The job runs after the create response, with no request actor: every write
 // below is an intentional admin bypass, justified because the row was created
@@ -111,69 +96,6 @@ const failCut = (
 
 const updateStep = (payload: Payload, cutId: number, step: SpeechCutStep): Promise<unknown> =>
   updateCutSystem(payload, cutId, { step })
-
-/**
- * Streams the resolved VOD to a temp file. A `text/html` body is the CDN's
- * error page wearing a 200 (same rule as the C162 probe) and is refused.
- */
-const downloadSource = async (url: string, destination: string): Promise<void> => {
-  const response = await fetch(url, {
-    headers: { 'User-Agent': CAMARA_USER_AGENT },
-    signal: AbortSignal.timeout(SOURCE_DOWNLOAD_TIMEOUT_MS),
-  })
-  const contentType = response.headers.get('content-type') ?? ''
-  if (!response.ok || contentType.includes('text/html')) {
-    throw new Error(`A Câmara não entregou o arquivo do trecho (HTTP ${response.status}).`)
-  }
-  const length = Number(response.headers.get('content-length'))
-  if (Number.isFinite(length) && length > MAX_SOURCE_BYTES) {
-    throw new Error('O arquivo do trecho na Câmara é grande demais para cortar.')
-  }
-  if (!response.body) throw new Error('A Câmara não entregou o corpo do arquivo do trecho.')
-
-  // The counter enforces the ceiling even when the CDN answers chunked (no
-  // content-length): the stream aborts instead of filling the disk.
-  let received = 0
-  const guard = new Transform({
-    transform(chunk: Buffer, _encoding, callback) {
-      received += chunk.length
-      if (received > MAX_SOURCE_BYTES) {
-        callback(new Error('O arquivo do trecho na Câmara é grande demais para cortar.'))
-        return
-      }
-      callback(null, chunk)
-    },
-  })
-
-  await pipeline(
-    Readable.fromWeb(response.body as unknown as import('node:stream/web').ReadableStream),
-    guard,
-    createWriteStream(destination),
-  )
-}
-
-const runFfmpeg = (args: string[], durationSeconds: number): Promise<void> =>
-  new Promise((resolve, reject) => {
-    const timeout = Math.min(
-      FFMPEG_MAX_TIMEOUT_MS,
-      Math.max(FFMPEG_MIN_TIMEOUT_MS, durationSeconds * 8_000),
-    )
-    execFile(
-      ffmpegBinary(),
-      args,
-      { timeout, maxBuffer: FFMPEG_MAX_BUFFER_BYTES },
-      (error, _stdout, stderr) => {
-        if (!error) {
-          resolve()
-          return
-        }
-        const detail = String(stderr ?? '')
-          .trim()
-          .slice(-400)
-        reject(new Error(`${messageOf(error)}${detail ? ` — ${detail}` : ''}`))
-      },
-    )
-  })
 
 /**
  * The whole pipeline of one cut. Never throws: an orphan job (server restart)
@@ -242,6 +164,7 @@ export const runSpeechCutJob = async (payload: Payload, cutId: number): Promise<
         endSeconds: cut.endSeconds,
       }),
       durationSeconds,
+      FAILURE_FALLBACK,
     )
 
     await markStep('metadata')
@@ -273,7 +196,9 @@ export const runSpeechCutJob = async (payload: Payload, cutId: number): Promise<
       )
     })
   } catch (error) {
-    await failCut(payload, cutId, messageOf(error), currentStep).catch(() => undefined)
+    await failCut(payload, cutId, messageOf(error, FAILURE_FALLBACK), currentStep).catch(
+      () => undefined,
+    )
   } finally {
     if (tempDir) await rm(tempDir, { recursive: true, force: true }).catch(() => undefined)
   }
