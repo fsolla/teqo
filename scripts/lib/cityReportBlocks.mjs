@@ -69,8 +69,12 @@ const PAGE_ONE_RISK_MAX = 70
 const PAGE_ONE_LIST_LIMIT = 2
 /** Joined name lists (Responsável, Dobradinhas) — one line in the strip/stat row. */
 const PAGE_ONE_NAMES_MAX = 20
-/** Page-1 emenda indications: the author/what/esfera rows shown before "e mais N". */
-const PAGE_ONE_INDICATOR_LIMIT = 4
+/**
+ * Page-1 emenda indications: the author/what/esfera rows shown before "e mais N".
+ * Three rows (not four): a city-polo with many attributed indications overflowed
+ * the one-page guard, and the full list lives in the deep dive anyway.
+ */
+const PAGE_ONE_INDICATOR_LIMIT = 3
 /** One indication per line on page 1 — the full purpose text stays in the deep dive. */
 const PAGE_ONE_INDICATOR_DETAIL_MAX = 70
 

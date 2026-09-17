@@ -731,8 +731,8 @@ describe('buildCityReport', () => {
       }),
     )
     const evidence = capped.page1.blocks.find((block) => block.kind === 'indicatorList')!
-    expect(evidence.items).toHaveLength(4)
-    expect(evidence.remaining).toBe(2)
+    expect(evidence.items).toHaveLength(3)
+    expect(evidence.remaining).toBe(3)
   })
 
   it('puts research answers in Quem é quem with compact sources and URLs in the sources section', () => {
