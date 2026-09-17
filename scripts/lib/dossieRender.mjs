@@ -30,8 +30,15 @@ const formatShortDateBr = (value) => {
   return parts.length === 3 ? `${parts[0]}/${parts[1]}/${parts[2].slice(-2)}` : full
 }
 
-/** Research text without the inline `{{fonte}}` markers — the row's own link carries the source. */
-const cleanText = (value) => htmlEscape(stripInlineSources(value))
+/**
+ * Print surfaces prefer the reformulated `brief` (short headline + note that fit
+ * the fixed A4 with no ellipsis) and fall back to the full `answer`/`details`
+ * record when an item has none — the builder's A4 fit guard then fails closed
+ * instead of silently dropping information.
+ */
+const copyHtml = (value) => htmlEscape(stripInlineSources(value))
+const briefOr = (brief, fallback) => brief?.title ?? fallback
+const noteOr = (brief, fallback) => brief?.note ?? fallback
 
 const phaseBadge = (phase) => `<span class="phase">${htmlEscape(dossierPhaseLabel(phase))}</span>`
 
@@ -52,8 +59,15 @@ const assetBox = (title, lines) =>
 const SHEET_COUNT_BASE = 5
 const pageCount = (report) => report.meta.pageTotal
 
-/** Gaps are paginated, never truncated: 12 rows per A4 sheet. */
-const GAPS_PER_PAGE = 12
+/** Gaps are paginated, never truncated: 7 full-text rows per A4 sheet. */
+const GAPS_PER_PAGE = 7
+
+/** News are paginated, never truncated: 10 full-title rows per A4 sheet. */
+const NEWS_PER_PAGE = 10
+
+/** Era "Atuação registrada" cards: 2 on the first sheet, 6 per continuation sheet. */
+const ERA_ACTIONS_FIRST_SHEET = 2
+const ERA_ACTIONS_PER_SHEET = 6
 
 const chunkGaps = (gaps) => {
   const list = Array.isArray(gaps) ? gaps : []
@@ -61,6 +75,31 @@ const chunkGaps = (gaps) => {
   const chunks = []
   for (let index = 0; index < list.length; index += GAPS_PER_PAGE) {
     chunks.push(list.slice(index, index + GAPS_PER_PAGE))
+  }
+  return chunks
+}
+
+const chunkNews = (news) => {
+  const list = Array.isArray(news) ? news : []
+  const chunks = []
+  for (let index = 0; index < list.length; index += NEWS_PER_PAGE) {
+    chunks.push(list.slice(index, index + NEWS_PER_PAGE))
+  }
+  return chunks
+}
+
+/**
+ * Era action cards, paginated so no sourced fact is dropped: the first sheet
+ * carries the design's 2 cards (with method + numbers + honors), and the rest
+ * flow to continuation sheets.
+ */
+const chunkEraActions = (era) => {
+  const actions = Array.isArray(era.actions) ? era.actions : []
+  const first = actions.slice(0, ERA_ACTIONS_FIRST_SHEET)
+  const rest = actions.slice(ERA_ACTIONS_FIRST_SHEET)
+  const chunks = [first]
+  for (let index = 0; index < rest.length; index += ERA_ACTIONS_PER_SHEET) {
+    chunks.push(rest.slice(index, index + ERA_ACTIONS_PER_SHEET))
   }
   return chunks
 }
@@ -165,8 +204,8 @@ const renderDeliveries = (report) => {
           (row) => `<div class="delivery-row">
             <div class="delivery-scope">${scopeBadge(row.sphere)}<p class="meta">Era ${htmlEscape(row.era)}${row.year ? ` · ${htmlEscape(row.year)}` : ''}</p></div>
             <div>
-              <p class="delivery-title">${cleanText(row.title)}</p>
-              ${row.detail ? `<p class="muted small">${cleanText(row.detail)}</p>` : ''}
+              <p class="delivery-title">${copyHtml(briefOr(row.brief, row.title))}</p>
+              ${noteOr(row.brief, row.detail) ? `<p class="muted small">${copyHtml(noteOr(row.brief, row.detail))}</p>` : ''}
             </div>
             <div class="delivery-value">
               <p class="value-big tabular">${valueCell(row.value, 'Valor não informado')}</p>
@@ -194,7 +233,7 @@ const renderHooksAndPending = (report) => {
             <ul class="tight-list">${hooks
               .map(
                 (hook) =>
-                  `<li><strong>Tema:</strong> ${htmlEscape(hook.topic)}. <strong>Ângulo:</strong> ${cleanText(hook.angle)} ${sourceLink(hook.sourceUrl)}</li>`,
+                  `<li><strong>Tema:</strong> ${htmlEscape(hook.topic)}. <strong>Ângulo:</strong> ${copyHtml(briefOr(hook.brief, hook.angle))} ${sourceLink(hook.sourceUrl)}</li>`,
               )
               .join('')}</ul>
           </div>`
@@ -221,11 +260,34 @@ const renderSummary = (report, pageNo) => `
   ${sheetFooter(report, 'Resumo', pageNo)}
 </article>`
 
-const renderEra = (report, era, pageNo) => `
-<article class="sheet" data-page="era-${era.id.toLowerCase()}" aria-label="${htmlEscape(era.label)}">
-  ${sheetHeader(report, era.label, `${era.period} · ${era.subtitle}`, pageNo)}
+const renderActionGrid = (actions) => `
+  <div class="action-grid">
+    ${actions
+      .map(
+        (action) => `<article class="panel">
+          <div class="action-head">${scopeBadge(action.sphere)}<span class="meta">${htmlEscape(action.year ?? '—')}</span></div>
+          <h4 class="action-title">${copyHtml(briefOr(action.brief, action.title))}</h4>
+          ${noteOr(action.brief, action.detail) ? `<p class="muted small">${copyHtml(noteOr(action.brief, action.detail))}</p>` : ''}
+          ${sourceLink(action.sourceUrl)}
+        </article>`,
+      )
+      .join('')}
+  </div>`
 
-  <div class="era-method">
+const renderEraPage = (report, era, actions, index, pageNo) => {
+  const first = index === 0
+  const slug = era.id.toLowerCase()
+  const anchor = first ? `era-${slug}` : `era-${slug}-${index + 1}`
+  const subtitle = first
+    ? `${era.period} · ${era.subtitle}`
+    : `Atuação registrada · continuação ${index + 1}`
+  return `
+<article class="sheet" data-page="${anchor}" aria-label="${htmlEscape(era.label)}">
+  ${sheetHeader(report, era.label, subtitle, pageNo)}
+
+  ${
+    first
+      ? `<div class="era-method">
     <div>
       <p class="eyebrow">Recorte e método</p>
       <p class="muted">${htmlEscape(era.method)}</p>
@@ -256,39 +318,32 @@ const renderEra = (report, era, pageNo) => `
               )
               .join('')}</tbody>
           </table>
-          <p class="warning-text small strong">Não consolidar fases como se fossem equivalentes. Um valor empenhado não é um valor pago.</p>
         </section>`
+      : ''
+  }`
       : ''
   }
 
   ${
-    era.actions.length
+    actions.length
       ? `<section class="block">
           <p class="eyebrow">Atuação registrada</p>
           <h3 class="section-title">O que fez — item, alcance e lastro</h3>
-          <div class="action-grid">
-            ${era.actions
-              .map(
-                (action) => `<article class="panel">
-                  <div class="action-head">${scopeBadge(action.sphere)}<span class="meta">${htmlEscape(action.year ?? '—')}</span></div>
-                  <h4 class="action-title">${cleanText(action.title)}</h4>
-                  ${action.detail ? `<p class="muted small">${cleanText(action.detail)}</p>` : ''}
-                  ${sourceLink(action.sourceUrl)}
-                </article>`,
-              )
-              .join('')}
-          </div>
+          ${renderActionGrid(actions)}
         </section>`
       : ''
   }
 
   ${
-    era.honors.length
+    first && era.honors.length
       ? `<section class="block honors">
           <div class="panel">
             <p class="eyebrow">Títulos, honrarias e vínculos locais</p>
             <ul class="tight-list">${era.honors
-              .map((honor) => `<li>${cleanText(honor.text)} ${sourceLink(honor.sourceUrl)}</li>`)
+              .map(
+                (honor) =>
+                  `<li>${copyHtml(briefOr(honor.brief, honor.text))} ${sourceLink(honor.sourceUrl)}</li>`,
+              )
               .join('')}</ul>
           </div>
           ${assetBox('NEEDS ASSET', ['reprodução do ato ou clipping', 'somente com origem e licença'])}
@@ -298,6 +353,7 @@ const renderEra = (report, era, pageNo) => `
 
   ${sheetFooter(report, era.label, pageNo)}
 </article>`
+}
 
 const renderScopeLists = (report) => `
   <section class="block">
@@ -307,7 +363,10 @@ const renderScopeLists = (report) => `
       <div class="panel">
         <div class="action-head">${scopeBadge('municipio')}<span class="meta strong">${report.region.municipal.total} ${report.region.municipal.total === 1 ? 'item' : 'itens'} com fonte</span></div>
         <ul class="tight-list">${report.region.municipal.items
-          .map((item) => `<li>${cleanText(item.answer)} ${sourceLink(item.sourceUrl)}</li>`)
+          .map(
+            (item) =>
+              `<li>${copyHtml(item.brief?.title ?? item.answer)} ${sourceLink(item.sourceUrl)}</li>`,
+          )
           .join(
             '',
           )}${report.region.municipal.items.length === 0 ? '<li class="muted">Nenhum item municipal com fonte.</li>' : ''}</ul>
@@ -316,7 +375,10 @@ const renderScopeLists = (report) => `
       <div class="panel panel-region">
         <div class="action-head">${scopeBadge('regiao', 'região / polo')}<span class="warning-text meta strong">SEM TOTAL COMBINADO · ${report.region.regional.total} ${report.region.regional.total === 1 ? 'item' : 'itens'}</span></div>
         <ul class="tight-list">${report.region.regional.items
-          .map((item) => `<li>${cleanText(item.answer)} ${sourceLink(item.sourceUrl)}</li>`)
+          .map(
+            (item) =>
+              `<li>${copyHtml(item.brief?.title ?? item.answer)} ${sourceLink(item.sourceUrl)}</li>`,
+          )
           .join(
             '',
           )}${report.region.regional.items.length === 0 ? '<li class="muted">Nenhum item regional com fonte.</li>' : ''}</ul>
@@ -340,7 +402,7 @@ const renderRegion = (report, pageNo) => `
     report.region.context.length
       ? `<p class="meta">Contexto municipal (IBGE): ${report.region.context
           .map(
-            (item) => `${htmlEscape(item.detail)} ${sourceLink(item.sourceUrl, `(${item.topic})`)}`,
+            (item) => `${copyHtml(item.detail)} ${sourceLink(item.sourceUrl, `(${item.topic})`)}`,
           )
           .join(' · ')} — leitura relativa, nunca % estadual absoluto.</p>`
       : ''
@@ -359,9 +421,9 @@ const renderRegion = (report, pageNo) => `
             <tbody>${report.region.items
               .map(
                 (item) => `<tr>
-                  <td>${cleanText(item.item)}</td>
+                  <td>${copyHtml(briefOr(item.brief, item.item))}</td>
                   <td>${scopeBadge(item.sphere)}</td>
-                  <td>${cleanText(item.evidence)}</td>
+                  <td>${copyHtml(noteOr(item.brief, item.evidence))}</td>
                   <td>${sourceLink(item.sourceUrl)}</td>
                 </tr>`,
               )
@@ -376,7 +438,7 @@ const renderRegion = (report, pageNo) => `
       ? `<section class="page1-grid">
           ${
             report.region.hook
-              ? `<div class="aside-accent"><p class="eyebrow">Gancho possível</p><p><strong>Tema:</strong> ${htmlEscape(report.region.hook.topic)}. <strong>Ângulo:</strong> ${cleanText(report.region.hook.angle)} ${sourceLink(report.region.hook.sourceUrl)}</p></div>`
+              ? `<div class="aside-accent"><p class="eyebrow">Gancho possível</p><p><strong>Tema:</strong> ${htmlEscape(report.region.hook.topic)}. <strong>Ângulo:</strong> ${copyHtml(briefOr(report.region.hook.brief, report.region.hook.angle))} ${sourceLink(report.region.hook.sourceUrl)}</p></div>`
               : '<div></div>'
           }
           ${
@@ -420,33 +482,34 @@ const renderGapsPage = (report, chunk, index, pageNo) => {
 </article>`
 }
 
+const renderNewsPage = (report, chunk, index, pageNo) => `
+<article class="sheet" data-page="noticias${index > 0 ? `-${index + 1}` : ''}" aria-label="Notícias e documentos consultados">
+  ${sheetHeader(report, 'Notícias e documentos consultados', `Fontes externas datadas${index > 0 ? ` (continuação ${index + 1})` : ''}`, pageNo)}
+  <section class="block">
+    <p class="eyebrow">Lista clicável</p>
+    <h3 class="section-title">Notícias e documentos consultados</h3>
+    <table class="document-table">
+      <caption class="sr-only">Fontes consultadas com largura fixa: data 12%, veículo 13%, título 47% e link 28%</caption>
+      <colgroup><col style="width:12%" /><col style="width:13%" /><col style="width:47%" /><col style="width:28%" /></colgroup>
+      <thead><tr><th>Data</th><th>Veículo</th><th>Título</th><th>Link</th></tr></thead>
+      <tbody>${chunk
+        .map(
+          (row) => `<tr>
+            <td class="numeric nowrap">${htmlEscape(formatShortDateBr(row.date))}</td>
+            <td>${htmlEscape(row.outlet)}</td>
+            <td>${htmlEscape(row.title)}</td>
+            <td>${sourceLink(row.url, '(fonte)')}</td>
+          </tr>`,
+        )
+        .join('')}</tbody>
+    </table>
+  </section>
+  ${sheetFooter(report, 'Notícias e documentos consultados · INSUMO INTERNO', pageNo)}
+</article>`
+
 const renderSourcesPage = (report, pageNo) => `
 <article class="sheet" data-page="fontes" aria-label="Fontes e limites do dossiê">
   ${sheetHeader(report, 'Fontes e limites', 'O que foi consultado e o que não se pode afirmar', pageNo)}
-
-  ${
-    report.news.length
-      ? `<section class="block">
-          <p class="eyebrow">Lista clicável</p>
-          <h3 class="section-title">Notícias e documentos consultados</h3>
-          <table class="document-table">
-            <caption class="sr-only">Fontes consultadas com largura fixa: data 12%, veículo 13%, título 47% e link 28%</caption>
-            <colgroup><col style="width:12%" /><col style="width:13%" /><col style="width:47%" /><col style="width:28%" /></colgroup>
-            <thead><tr><th>Data</th><th>Veículo</th><th>Título</th><th>Link</th></tr></thead>
-            <tbody>${report.news
-              .map(
-                (row) => `<tr>
-                  <td class="numeric nowrap">${htmlEscape(formatShortDateBr(row.date))}</td>
-                  <td>${htmlEscape(row.outlet)}</td>
-                  <td>${htmlEscape(row.title)}</td>
-                  <td>${sourceLink(row.url, '(fonte)')}</td>
-                </tr>`,
-              )
-              .join('')}</tbody>
-          </table>
-        </section>`
-      : ''
-  }
 
   <section class="page1-grid">
     <div class="panel"><p class="eyebrow">Limites de cobertura</p><ul class="tight-list">${report.limits.coverage
@@ -578,16 +641,24 @@ const PRINT_CSS = `
 
 export const renderDossierHtml = (report) => {
   const gapChunks = chunkGaps(report.gaps)
-  report.meta.pageTotal = SHEET_COUNT_BASE + report.eras.length + gapChunks.length
+  const newsChunks = chunkNews(report.news)
+  const eraSheets = report.eras.map((era) => ({ era, chunks: chunkEraActions(era) }))
+  const eraSheetCount = eraSheets.reduce((sum, entry) => sum + entry.chunks.length, 0)
+  report.meta.pageTotal = SHEET_COUNT_BASE + eraSheetCount + gapChunks.length + newsChunks.length
   let page = 0
   const parts = []
   parts.push(renderCover(report))
   page += 1
   parts.push(renderTrajectory(report, ++page))
   parts.push(renderSummary(report, ++page))
-  for (const era of report.eras) parts.push(renderEra(report, era, ++page))
+  for (const { era, chunks } of eraSheets) {
+    chunks.forEach((actions, index) =>
+      parts.push(renderEraPage(report, era, actions, index, ++page)),
+    )
+  }
   parts.push(renderRegion(report, ++page))
   gapChunks.forEach((chunk, index) => parts.push(renderGapsPage(report, chunk, index, ++page)))
+  newsChunks.forEach((chunk, index) => parts.push(renderNewsPage(report, chunk, index, ++page)))
   parts.push(renderSourcesPage(report, ++page))
 
   return `<!doctype html>

@@ -60,6 +60,12 @@ const research = mergeDossierResearch([
         sourceUrl: 'https://portaldatransparencia.test/emendas',
         sourceDate: '2026-09-15',
       },
+      {
+        id: 'era_c_titulos',
+        answer: 'Título de cidadão honorário',
+        sourceUrl: 'https://camara.test/titulo',
+        sourceDate: '2026-09-10',
+      },
     ],
     news: [
       {
@@ -119,6 +125,89 @@ describe('renderDossierHtml', () => {
 
   it('prints the defeso note', () => {
     expect(html).toContain('Nota de defeso eleitoral 2026')
+  })
+
+  it('renders the local honors only on their own era sheet (never on another era)', () => {
+    expect((html.match(/Títulos, honrarias e vínculos locais/g) ?? []).length).toBe(1)
+  })
+})
+
+describe('renderDossierHtml — reformulated brief (no ellipsis)', () => {
+  const briefedResearch = mergeDossierResearch([
+    normalizeDossierResearchInput({
+      municipalitySlug: 'ilheus',
+      era: 'C',
+      researchedAt: '2026-09-16T10:00:00.000Z',
+      items: [
+        {
+          id: 'era_c_emendas',
+          answer: 'Resposta integral bem longa que não deve aparecer no cartão impresso do dossiê',
+          details: 'Detalhe integral que também não deve aparecer no cartão impresso.',
+          brief: { title: 'Manchete reformulada para caber', note: 'Nota reformulada curta.' },
+          numbers: [{ label: 'Saúde', value: 'R$ 1,2 mi', year: '2024', phase: 'empenhado' }],
+          sourceUrl: 'https://portaldatransparencia.test/brief',
+          sourceDate: '2026-09-15',
+        },
+      ],
+      news: Array.from({ length: 12 }, (_value, index) => ({
+        title: `Notícia ${index}`,
+        url: `https://jornal.test/${index}`,
+        publishedAt: '2024-06-01',
+        outlet: 'Jornal Local',
+      })),
+      gaps: [],
+    }),
+  ])
+  const briefReport = buildDossierReport({ snapshot, research: briefedResearch, generatedAt })
+  const html = renderDossierHtml(briefReport)
+  const md = renderDossierMd(briefReport)
+
+  it('prints the short brief instead of the full record', () => {
+    expect(html).toContain('Manchete reformulada para caber')
+    expect(html).toContain('Nota reformulada curta.')
+    expect(html).not.toContain('Resposta integral bem longa')
+  })
+
+  it('never truncates with an ellipsis', () => {
+    expect(html).not.toContain('…')
+  })
+
+  it('keeps the full record in the .md companion', () => {
+    expect(md).toContain('Resposta integral bem longa')
+  })
+
+  it('paginates long news lists into continuation sheets', () => {
+    expect(html).toContain('data-page="noticias"')
+    expect(html).toContain('data-page="noticias-2"')
+  })
+})
+
+describe('renderDossierHtml — era continuation sheets', () => {
+  const manyActions = mergeDossierResearch([
+    normalizeDossierResearchInput({
+      municipalitySlug: 'ilheus',
+      era: 'C',
+      researchedAt: '2026-09-16T10:00:00.000Z',
+      items: ['discursos', 'proposicoes', 'emendas', 'titulos', 'atuacao'].map((suffix, index) => ({
+        id: `era_c_${suffix}`,
+        answer: `Ação ${index}`,
+        brief: { title: `Ação curta ${index}`, note: `Nota ${index}` },
+        sourceUrl: `https://exemplo.test/acao-${index}`,
+        sourceDate: '2026-09-10',
+      })),
+      news: [],
+      gaps: [],
+    }),
+  ])
+  const report = buildDossierReport({ snapshot, research: manyActions, generatedAt })
+  const html = renderDossierHtml(report)
+
+  it('paginates era action cards into continuation sheets instead of dropping them', () => {
+    expect(html).toContain('data-page="era-c"')
+    expect(html).toContain('data-page="era-c-2"')
+    for (let index = 0; index < 5; index += 1) {
+      expect(html).toContain(`Ação curta ${index}`)
+    }
   })
 })
 

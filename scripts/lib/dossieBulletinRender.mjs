@@ -21,7 +21,7 @@ const renderHighlight = (highlight) => `
   </article>`
 
 const renderMoreItem = (item) =>
-  `<p class="more-item"><strong>${htmlEscape(item.label)}:</strong> ${htmlEscape(item.detail)}</p>`
+  `<p class="more-item"><strong>${htmlEscape(item.label)}</strong></p>`
 
 const PRINT_CSS = `
   * { box-sizing: border-box; }

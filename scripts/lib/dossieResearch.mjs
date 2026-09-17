@@ -14,6 +14,16 @@ const DOSSIER_SPHERES = ['municipio', 'regiao', 'polo']
 /** Execution phases (empenho ≠ pagamento). Unknown/absent degrades to "não informada". */
 const DOSSIER_PHASES = ['autorizado', 'empenhado', 'liquidado', 'pago', 'restos', 'nao_informado']
 
+/**
+ * Copy budget for a printed `brief` (reformulated headline + note that must fit
+ * the fixed A4 surfaces with no ellipsis). The full `answer`/`details` stay in
+ * the record and the companion `.md`; the `brief` is the reformulated, shorter
+ * version the PDF prints. Items without a `brief` fall back to the full text and
+ * the builder's A4 fit guard fails closed if it overflows.
+ */
+export const DOSSIER_BRIEF_TITLE_MAX = 80
+export const DOSSIER_BRIEF_NOTE_MAX = 120
+
 /** Checklist per era — the dossiê's research checklist. `area` labels the boletim card. */
 const DOSSIER_RESEARCH_CHECKLIST = [
   {
@@ -116,6 +126,27 @@ const normalizePhase = (value) => {
   return DOSSIER_PHASES.includes(phase) ? phase : 'nao_informado'
 }
 
+const normalizeBrief = (entry) => {
+  const title = isNonEmptyString(entry?.title) ? entry.title.trim() : null
+  if (!title) return null
+  return { title, note: isNonEmptyString(entry?.note) ? entry.note.trim() : null }
+}
+
+/** Non-fatal: an over-budget brief is kept, but the A4 fit guard will likely fail — surface it early. */
+const warnIfBriefOverBudget = (id, brief) => {
+  if (!brief) return
+  if (brief.title.length > DOSSIER_BRIEF_TITLE_MAX) {
+    console.warn(
+      `[dossie-research] brief.title de ${id} tem ${brief.title.length} chars (teto ${DOSSIER_BRIEF_TITLE_MAX}).`,
+    )
+  }
+  if ((brief.note?.length ?? 0) > DOSSIER_BRIEF_NOTE_MAX) {
+    console.warn(
+      `[dossie-research] brief.note de ${id} tem ${brief.note.length} chars (teto ${DOSSIER_BRIEF_NOTE_MAX}).`,
+    )
+  }
+}
+
 const normalizeNumbers = (entry) => {
   const numbers = []
   for (const number of Array.isArray(entry?.numbers) ? entry.numbers : []) {
@@ -208,6 +239,8 @@ export const normalizeDossierResearchInput = (raw) => {
       })
       continue
     }
+    const brief = normalizeBrief(entry.brief)
+    warnIfBriefOverBudget(id, brief)
     items.push({
       id,
       era,
@@ -215,6 +248,7 @@ export const normalizeDossierResearchInput = (raw) => {
       area: checklistItem.area,
       answer,
       details: isNonEmptyString(entry.details) ? entry.details.trim() : null,
+      brief,
       sphere,
       numbers: normalizeNumbers(entry),
       sourceUrl,
