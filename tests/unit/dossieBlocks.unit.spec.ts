@@ -32,9 +32,7 @@ const eraFile = (era: 'A' | 'B' | 'C', items: unknown[]) => ({
 })
 
 const research = mergeDossierResearch([
-  normalizeDossierResearchInput(eraFile('A', [item('era_a_conquista', { number: undefined })]), {
-    now: generatedAt,
-  }),
+  normalizeDossierResearchInput(eraFile('A', [item('era_a_conquista')])),
   normalizeDossierResearchInput(
     eraFile('B', [
       item('era_b_sesab', {
@@ -42,7 +40,6 @@ const research = mergeDossierResearch([
       }),
       item('era_b_obras', { sphere: 'regiao', answer: 'Hospital de referência regional' }),
     ]),
-    { now: generatedAt },
   ),
   normalizeDossierResearchInput(
     eraFile('C', [
@@ -51,7 +48,6 @@ const research = mergeDossierResearch([
       }),
       item('era_c_titulos', { answer: 'Cidadão Ilheense' }),
     ]),
-    { now: generatedAt },
   ),
 ])
 
@@ -116,14 +112,13 @@ describe('buildDossierReport', () => {
     )
   })
 
-  it('includes the IBGE baseline as an Era B number', () => {
-    const eraB = build().eras.find((era) => era?.id === 'B')
-    expect(eraB?.numbers).toContainEqual(
-      expect.objectContaining({
-        object: 'População residente (Censo 2022)',
-        phase: 'nao_informado',
-      }),
+  it('surfaces the IBGE baseline as municipal context, not as an era number', () => {
+    const report = build()
+    expect(report.region.context).toContainEqual(
+      expect.objectContaining({ topic: 'População residente (Censo 2022)' }),
     )
+    const eraB = report.eras.find((era) => era?.id === 'B')
+    expect(eraB?.numbers.some((row) => row.object.includes('População'))).toBe(false)
   })
 
   it('never sums região/polo into the município list', () => {
@@ -142,9 +137,9 @@ describe('buildDossierReport', () => {
 
   it('omits an era that has no number and no action', () => {
     const empty = mergeDossierResearch([
-      normalizeDossierResearchInput(eraFile('A', []), { now: generatedAt }),
-      normalizeDossierResearchInput(eraFile('B', []), { now: generatedAt }),
-      normalizeDossierResearchInput(eraFile('C', []), { now: generatedAt }),
+      normalizeDossierResearchInput(eraFile('A', [])),
+      normalizeDossierResearchInput(eraFile('B', [])),
+      normalizeDossierResearchInput(eraFile('C', [])),
     ])
     const report = buildDossierReport({
       snapshot,

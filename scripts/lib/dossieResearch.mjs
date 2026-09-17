@@ -120,7 +120,10 @@ const normalizeNumbers = (entry) => {
   const numbers = []
   for (const number of Array.isArray(entry?.numbers) ? entry.numbers : []) {
     const label = isNonEmptyString(number?.label) ? number.label.trim() : null
-    const value = isNonEmptyString(number?.value) ? number.value.trim() : null
+    const value =
+      number?.value === null || number?.value === undefined
+        ? null
+        : String(number.value).trim() || null
     if (!label || !value) continue
     numbers.push({
       label,
@@ -139,7 +142,7 @@ const normalizeNumbers = (entry) => {
  * operator fixes the file. Content failures (missing source, unknown item, item
  * from another era) degrade to explicit gaps.
  */
-export const normalizeDossierResearchInput = (raw, { now = new Date() } = {}) => {
+export const normalizeDossierResearchInput = (raw) => {
   if (!raw || typeof raw !== 'object') {
     throw new Error('Pesquisa do dossiê inválida: o arquivo precisa ser um objeto JSON.')
   }
@@ -157,7 +160,6 @@ export const normalizeDossierResearchInput = (raw, { now = new Date() } = {}) =>
   }
 
   const researchedAt = new Date(raw.researchedAt)
-  const reference = now instanceof Date ? now : new Date(now)
   const gaps = []
   const items = []
   const seen = new Set()
@@ -266,7 +268,6 @@ export const normalizeDossierResearchInput = (raw, { now = new Date() } = {}) =>
     municipalitySlug: raw.municipalitySlug.trim(),
     era,
     researchedAt: researchedAt.toISOString(),
-    reference,
     items,
     news,
     gaps,

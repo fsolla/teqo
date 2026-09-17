@@ -57,11 +57,14 @@ describe('buildBulletin', () => {
     expect(bulletin.timeline.length).toBe(4)
   })
 
-  it('never drops the fact source from the ledger (boletim can only inherit sourced facts)', () => {
+  it('maps every highlight and "e mais" item to a ledger fact (never invents)', () => {
     const facts = Array.from({ length: 25 }, (_value, index) => fact(index))
     const bulletin = buildBulletin({ facts, municipality: 'Ilhéus', generatedAt })
-    const chosen = bulletin.highlights.length + bulletin.moreItems.length
-    expect(chosen).toBe(BULLETIN_HIGHLIGHT_LIMIT + BULLETIN_MORE_LIMIT)
-    expect(facts.every((row) => Boolean(row.sourceUrl))).toBe(true)
+    const headlines = new Set(facts.map((row) => row.headline))
+    expect(bulletin.highlights.length + bulletin.moreItems.length).toBe(
+      BULLETIN_HIGHLIGHT_LIMIT + BULLETIN_MORE_LIMIT,
+    )
+    expect(bulletin.highlights.every((row) => headlines.has(row.title))).toBe(true)
+    expect(bulletin.moreItems.every((row) => headlines.has(row.label))).toBe(true)
   })
 })

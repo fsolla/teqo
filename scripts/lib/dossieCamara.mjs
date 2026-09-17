@@ -6,28 +6,28 @@
  */
 
 import { getJsonWithBackoff, speechesUrl } from './camaraFetch.mjs'
+import { isNonEmptyString } from './cityReportResearch.mjs'
 import { SOLLA_DEPUTY_ID } from './dossieCareer.mjs'
 
 const CAMARA_API = 'https://dadosabertos.camara.leg.br/api/v2'
 export const CAMARA_DEFAULT_FROM = '2015-01-01'
 const DEFAULT_MAX_PAGES = 2
+const PAGE_SIZE = 100
 const ITEMS_PER_LIST = 20
 
 export const propositionsUrl = (deputyId, page) =>
-  `${CAMARA_API}/proposicoes?idDeputadoAutor=${deputyId}&itens=100&ordem=DESC&ordenarPor=id&pagina=${page}`
+  `${CAMARA_API}/proposicoes?idDeputadoAutor=${deputyId}&itens=${PAGE_SIZE}&ordem=DESC&ordenarPor=id&pagina=${page}`
 
-const propositionSourceUrl = (id) =>
+const propositionSourceUrl = (id, deputyId) =>
   id
     ? `https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=${id}`
-    : `https://www.camara.leg.br/deputados/${SOLLA_DEPUTY_ID}`
+    : `https://www.camara.leg.br/deputados/${deputyId}`
 
-const isNonEmpty = (value) => typeof value === 'string' && value.trim() !== ''
-
-export const normalizeProposition = (row) => {
-  const sigla = isNonEmpty(row?.siglaTipo) ? row.siglaTipo.trim() : null
+export const normalizeProposition = (row, deputyId = SOLLA_DEPUTY_ID) => {
+  const sigla = isNonEmptyString(row?.siglaTipo) ? row.siglaTipo.trim() : null
   const number = row?.numero ?? null
   const year = row?.ano ?? null
-  const ementa = isNonEmpty(row?.ementa) ? row.ementa.trim() : null
+  const ementa = isNonEmptyString(row?.ementa) ? row.ementa.trim() : null
   if (!sigla && !ementa) return null
   const identifier = [sigla, number && year ? `${number}/${year}` : number ? String(number) : null]
     .filter(Boolean)
@@ -36,17 +36,17 @@ export const normalizeProposition = (row) => {
     title: identifier || 'Proposição de autoria do deputado',
     detail: ementa,
     year: year ? String(year) : null,
-    sourceUrl: propositionSourceUrl(row?.id),
+    sourceUrl: propositionSourceUrl(row?.id, deputyId),
   }
 }
 
 export const normalizeSpeech = (row, deputyId) => {
-  const sumario = isNonEmpty(row?.sumario) ? row.sumario.trim() : null
-  const transcricao = isNonEmpty(row?.transcricao) ? row.transcricao.trim() : null
+  const sumario = isNonEmptyString(row?.sumario) ? row.sumario.trim() : null
+  const transcricao = isNonEmptyString(row?.transcricao) ? row.transcricao.trim() : null
   const detail = (sumario ?? transcricao ?? '').slice(0, 280) || null
-  if (!detail && !isNonEmpty(row?.dataHoraInicio)) return null
-  const date = isNonEmpty(row?.dataHoraInicio) ? row.dataHoraInicio.slice(0, 10) : null
-  const tipo = isNonEmpty(row?.tipoDiscurso) ? row.tipoDiscurso.trim() : 'Pronunciamento'
+  if (!detail && !isNonEmptyString(row?.dataHoraInicio)) return null
+  const date = isNonEmptyString(row?.dataHoraInicio) ? row.dataHoraInicio.slice(0, 10) : null
+  const tipo = isNonEmptyString(row?.tipoDiscurso) ? row.tipoDiscurso.trim() : 'Pronunciamento'
   return {
     title: `${tipo} em ${date ?? 'data não informada'}`,
     detail,
@@ -109,8 +109,8 @@ export const fetchCamaraActivity = async ({
         fetchImpl,
         label,
       })
-      propositions.push(...rows.map(normalizeProposition).filter(Boolean))
-      if (rows.length < 100) break
+      propositions.push(...rows.map((row) => normalizeProposition(row, deputyId)).filter(Boolean))
+      if (rows.length < PAGE_SIZE) break
     }
     for (const window of speechWindows(from, to)) {
       if (speeches.length >= ITEMS_PER_LIST) break
