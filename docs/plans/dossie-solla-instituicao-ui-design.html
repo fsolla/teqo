@@ -1,0 +1,1728 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — Dossiê Solla por instituição</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: 'Fira Sans', 'DejaVu Sans', Arial, sans-serif;
+        --color-ink: #172033;
+        --color-ink-soft: #435264;
+        --color-paper: #ffffff;
+        --color-workspace: #d8dde1;
+        --color-line: #cbd5dc;
+        --color-wash: #f3f6f8;
+        --color-accent: #315c75;
+        --color-accent-soft: #e8f0f4;
+        --color-warning: #8a5a18;
+        --color-warning-soft: #fff7e8;
+        --radius-sm: 0.125rem;
+        --radius-md: 0.25rem;
+      }
+
+      :root {
+        --ink: #172033;
+        --ink-soft: #435264;
+        --paper: #ffffff;
+        --workspace: #d8dde1;
+        --line: #cbd5dc;
+        --wash: #f3f6f8;
+        --accent: #315c75;
+        --accent-soft: #e8f0f4;
+        --warning: #8a5a18;
+        --warning-soft: #fff7e8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--workspace);
+        font-family: 'Fira Sans', 'DejaVu Sans', Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .sheet {
+        width: 210mm;
+        height: 297mm;
+        padding: 13mm 15mm 12mm;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: var(--paper);
+        box-shadow: 0 18px 44px rgb(23 32 51 / 18%);
+        font-size: 10.5pt;
+        line-height: 1.38;
+      }
+
+      .sheet p,
+      .sheet ul,
+      .sheet ol,
+      .sheet dl {
+        margin-top: 0;
+      }
+      .sheet a {
+        color: #245b78;
+        text-decoration: underline;
+        text-underline-offset: 1.5px;
+      }
+      .sheet a:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .report-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8mm;
+        padding-bottom: 3mm;
+        border-bottom: 0.45mm solid var(--ink);
+      }
+      .report-kicker {
+        margin: 0;
+        color: var(--accent);
+        font-size: 8pt;
+        line-height: 1.2;
+        font-weight: 700;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+      .report-meta {
+        min-width: 52mm;
+        margin: 0;
+        color: var(--ink-soft);
+        font-size: 7.8pt;
+        line-height: 1.45;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .report-footer {
+        margin-top: auto;
+        padding-top: 2.5mm;
+        border-top: 0.25mm solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        gap: 5mm;
+        color: var(--ink-soft);
+        font-size: 7.8pt;
+        line-height: 1.3;
+      }
+      .section-title {
+        margin: 0;
+        font-size: 13.5pt;
+        line-height: 1.18;
+        letter-spacing: -0.01em;
+      }
+      .eyebrow {
+        margin: 0 0 1.4mm;
+        color: var(--accent);
+        font-size: 8pt;
+        line-height: 1.2;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .source-link {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 1mm;
+        white-space: nowrap;
+        font-size: 8.5pt;
+        font-weight: 600;
+      }
+      .source-link svg {
+        width: 3mm;
+        height: 3mm;
+        transform: translateY(0.35mm);
+      }
+      .scope,
+      .phase,
+      .identity-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 5mm;
+        padding: 0.45mm 1.6mm;
+        border-radius: 99px;
+        font-size: 7.4pt;
+        line-height: 1;
+        font-weight: 700;
+        letter-spacing: 0.035em;
+        text-transform: uppercase;
+      }
+      .scope {
+        border: 0.25mm solid #8da3b0;
+        color: #304758;
+        background: #f7fafb;
+      }
+      .scope-sector {
+        border-color: #9d8b64;
+        color: #65501f;
+        background: #fffaf0;
+      }
+      .scope-network {
+        border-color: #8f819c;
+        color: #554362;
+        background: #faf7fc;
+      }
+      .phase {
+        border-radius: 1mm;
+        color: #334553;
+        background: #e9eef1;
+      }
+      .phase-paid {
+        color: #285338;
+        background: #e6f2e9;
+      }
+      .phase-pending {
+        color: #6b4918;
+        background: #fff2d9;
+      }
+      .identity-badge {
+        border: 0.25mm solid var(--line);
+        color: var(--ink-soft);
+        background: var(--wash);
+      }
+
+      .document-table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+        font-size: 9.4pt;
+        line-height: 1.25;
+      }
+      .document-table th {
+        padding: 1.7mm 1.5mm;
+        border-top: 0.25mm solid var(--line);
+        border-bottom: 0.35mm solid #9caab3;
+        color: var(--ink-soft);
+        background: var(--wash);
+        font-size: 7.3pt;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-align: left;
+        text-transform: uppercase;
+      }
+      .document-table td {
+        padding: 2mm 1.5mm;
+        border-bottom: 0.25mm solid #dce3e7;
+        vertical-align: top;
+        overflow-wrap: anywhere;
+      }
+      .document-table tbody tr:nth-child(even) {
+        background: #fafcfd;
+      }
+      .numeric {
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      .asset-box {
+        border: 0.35mm dashed #80919d;
+        color: #4c5c68;
+        background: #f7f9fa;
+      }
+      .empty-panel {
+        border: 0.45mm dashed #b18549;
+        color: #684819;
+        background: var(--warning-soft);
+      }
+      .timeline-item {
+        position: relative;
+        padding-left: 5mm;
+      }
+      .timeline-item::before {
+        content: '';
+        position: absolute;
+        top: 1.5mm;
+        left: 0;
+        width: 2.6mm;
+        height: 2.6mm;
+        border: 0.5mm solid var(--paper);
+        border-radius: 99px;
+        background: var(--accent);
+        box-shadow: 0 0 0 0.35mm var(--accent);
+      }
+
+      @page {
+        size: A4;
+        margin: 0;
+      }
+      @media print {
+        body {
+          background: #fff;
+        }
+        .gate-header,
+        .scene-label {
+          display: none !important;
+        }
+        .pages {
+          display: block !important;
+          padding: 0 !important;
+        }
+        .scene {
+          margin: 0 !important;
+          break-after: page;
+          page-break-after: always;
+        }
+        .scene:last-child {
+          break-after: auto;
+          page-break-after: auto;
+        }
+        .sheet {
+          width: 210mm;
+          height: 297mm;
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="gate-header mx-auto max-w-[1100px] px-6 pt-8 text-ink">
+      <p class="text-xs font-bold uppercase tracking-[0.14em] text-accent">
+        Gate visual · Impeccable C
+      </p>
+      <h1 class="mt-1 text-2xl font-semibold tracking-tight">
+        Dossiê Solla por instituição — relatório A4
+      </h1>
+      <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-soft">
+        Documento interno para preparar agendas institucionais com lastro. Oito páginas-base e uma
+        variante de lacuna explícita; conteúdo e valores são placeholders deliberados.
+      </p>
+      <div class="mt-4 flex flex-wrap gap-2 text-xs">
+        <span class="rounded-full border border-line bg-white px-3 py-1">A4 · 210 × 297 mm</span>
+        <span class="rounded-full border border-line bg-white px-3 py-1">corpo 10,5 pt</span>
+        <span class="rounded-full border border-line bg-white px-3 py-1"
+          >instituição ≠ setor ≠ rede</span
+        >
+        <span class="rounded-full border border-line bg-white px-3 py-1">fontes item a item</span>
+        <span class="rounded-full border border-line bg-white px-3 py-1">sem CTA de campanha</span>
+      </div>
+    </header>
+
+    <main class="pages mx-auto flex max-w-[1100px] flex-col items-center gap-12 px-6 py-10">
+      <!-- CENA 01 · CAPA -->
+      <section class="scene" aria-labelledby="cover-title">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
+          Cena 01 · Capa / identificação institucional
+        </p>
+        <article class="sheet relative" aria-label="Capa do dossiê institucional">
+          <div class="absolute left-0 top-0 h-[297mm] w-[4mm] bg-accent"></div>
+          <header class="flex items-start justify-between gap-8 border-b border-line pb-4">
+            <div>
+              <p class="report-kicker">Núcleo de comunicação · pesquisa documental</p>
+              <p class="mt-2 text-[9pt] font-semibold uppercase tracking-[0.08em] text-ink-soft">
+                Série institucional · agenda com lastro
+              </p>
+            </div>
+            <div
+              class="rounded-sm border border-warning bg-warning-soft px-3 py-2 text-right text-[8pt] leading-5 text-warning"
+            >
+              <strong>INSUMO INTERNO — defeso 2026</strong><br />Não circular · não publicar
+            </div>
+          </header>
+
+          <div class="mt-[24mm] max-w-[156mm]">
+            <p class="eyebrow">Dossiê de atuação pública</p>
+            <h2
+              id="cover-title"
+              class="m-0 text-[31pt] font-semibold leading-[1.03] tracking-[-0.035em]"
+            >
+              Dossiê Solla —<br /><span class="text-accent">Instituição Exemplo</span>
+            </h2>
+            <p class="mt-5 max-w-[132mm] text-[14pt] leading-[1.4] text-ink-soft">
+              O que Jorge Solla fez por, na e com a instituição ao longo da carreira
+            </p>
+          </div>
+
+          <dl class="mt-[18mm] grid grid-cols-[42mm_1fr] border-y border-line text-[10.5pt]">
+            <dt class="border-b border-line py-3 font-semibold text-ink-soft">Identificação</dt>
+            <dd class="m-0 border-b border-line py-3">
+              <span class="identity-badge">Universidade</span>
+              <span class="identity-badge">Federal</span> <span class="identity-badge">BA</span>
+            </dd>
+            <dt class="border-b border-line py-3 font-semibold text-ink-soft">Data de geração</dt>
+            <dd class="m-0 border-b border-line py-3 tabular-nums">DD de mês de AAAA · HHhMM</dd>
+            <dt class="py-3 font-semibold text-ink-soft">Escopo e versão</dt>
+            <dd class="m-0 py-3">
+              Eras A / B / C · instituição, setor e rede separados · versão 01
+            </dd>
+          </dl>
+
+          <div class="mt-6 grid grid-cols-[1fr_56mm] gap-5">
+            <div class="rounded-sm bg-accent-soft p-4">
+              <p class="m-0 text-[9pt] font-bold uppercase tracking-[.08em] text-accent">
+                Como usar
+              </p>
+              <p class="mb-0 mt-2 text-[10.5pt] leading-5 text-ink-soft">
+                Localize o vínculo ou a entrega, confira fonte, data, fase e abrangência. Transforme
+                toda lacuna em tarefa de apuração. Este arquivo não é fala pronta nem peça pública.
+              </p>
+            </div>
+            <div
+              class="asset-box flex min-h-[31mm] items-center justify-center rounded-sm p-3 text-center text-[8pt] font-semibold leading-4"
+            >
+              NEEDS ASSET<br />selo da instituição<br />uso autorizado e origem
+            </div>
+          </div>
+
+          <div class="mt-auto">
+            <div class="mb-5 h-[0.5mm] bg-ink"></div>
+            <div class="flex items-end justify-between gap-8">
+              <p class="m-0 max-w-[124mm] text-[9pt] leading-5 text-ink-soft">
+                Escopo: carreira técnica e gestão pública até 2006 · SESAB 2007–2014 · Câmara dos
+                Deputados 2015–2027. Sem fonte, não entra como entrega.
+              </p>
+              <p
+                class="m-0 text-right text-[8pt] font-semibold uppercase tracking-[.08em] text-accent"
+              >
+                Documento de trabalho<br />versão 01
+              </p>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- CENA 02 · RESUMO -->
+      <section class="scene" aria-labelledby="summary-title">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
+          Cena 02 · Página 1 — resumo de uma olhada
+        </p>
+        <article class="sheet" aria-label="Resumo de uma olhada do dossiê institucional">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê institucional · Instituição Exemplo</p>
+              <h2
+                id="summary-title"
+                class="mt-1 text-[18pt] font-semibold leading-tight tracking-tight"
+              >
+                Resumo de uma olhada
+              </h2>
+              <p class="mb-0 mt-1 text-[9pt] text-ink-soft">
+                Universidade · Federal · BA · informação datada e conferível
+              </p>
+            </div>
+            <div class="report-meta">
+              <p><strong class="text-warning">INSUMO INTERNO — defeso 2026</strong></p>
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 1/7</p>
+            </div>
+          </header>
+
+          <section
+            class="mt-4 grid grid-cols-[58mm_1fr] gap-4"
+            aria-label="Identificação e linha do tempo"
+          >
+            <div class="rounded-sm border border-line bg-wash p-3">
+              <p class="eyebrow">Identificação</p>
+              <dl class="m-0 grid grid-cols-[19mm_1fr] gap-x-2 gap-y-2 text-[9pt] leading-4">
+                <dt class="font-semibold text-ink-soft">Nome</dt>
+                <dd class="m-0">Instituição Exemplo</dd>
+                <dt class="font-semibold text-ink-soft">Tipo</dt>
+                <dd class="m-0">Universidade</dd>
+                <dt class="font-semibold text-ink-soft">Esfera</dt>
+                <dd class="m-0">Federal</dd>
+                <dt class="font-semibold text-ink-soft">Alcance</dt>
+                <dd class="m-0">BA</dd>
+                <dt class="font-semibold text-ink-soft">Alias</dt>
+                <dd class="m-0">Sigla Exemplo</dd>
+              </dl>
+            </div>
+            <div>
+              <p class="eyebrow">01 · vínculo com a instituição</p>
+              <h3 class="section-title">Linha do tempo documentada</h3>
+              <div class="mt-3 grid grid-cols-3 gap-2 border-t border-line pt-3">
+                <div class="timeline-item">
+                  <p class="m-0 text-[8pt] font-bold text-accent">AAAA–AAAA</p>
+                  <p class="mb-0 mt-1 text-[9pt] font-semibold leading-4">
+                    Vínculo acadêmico de exemplo
+                  </p>
+                  <p class="mb-0 mt-1 text-[8pt] leading-3 text-ink-soft">Fonte oficial · data</p>
+                </div>
+                <div class="timeline-item">
+                  <p class="m-0 text-[8pt] font-bold text-accent">AAAA</p>
+                  <p class="mb-0 mt-1 text-[9pt] font-semibold leading-4">Articulação registrada</p>
+                  <p class="mb-0 mt-1 text-[8pt] leading-3 text-ink-soft">Documento · data</p>
+                </div>
+                <div class="timeline-item">
+                  <p class="m-0 text-[8pt] font-bold text-accent">AAAA</p>
+                  <p class="mb-0 mt-1 text-[9pt] font-semibold leading-4">
+                    Reconhecimento institucional
+                  </p>
+                  <p class="mb-0 mt-1 text-[8pt] leading-3 text-ink-soft">Ato primário · data</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="mt-5" aria-labelledby="summary-deliveries">
+            <div class="flex items-end justify-between gap-4">
+              <div>
+                <p class="eyebrow">02 · destaques com lastro</p>
+                <h3 id="summary-deliveries" class="section-title">
+                  Principais entregas localizadas
+                </h3>
+              </div>
+              <p class="m-0 text-[8pt] font-semibold text-warning">
+                Valores ilustram o formato · não são fatos
+              </p>
+            </div>
+            <div class="mt-2 divide-y divide-line border-y border-line">
+              <div class="grid grid-cols-[24mm_1fr_39mm] gap-3 py-2.5">
+                <div>
+                  <span class="scope">instituição</span>
+                  <p class="mb-0 mt-2 text-[8pt] text-ink-soft">Era C · AAAA</p>
+                </div>
+                <div>
+                  <p class="m-0 font-semibold">Objeto documentado da Instituição Exemplo</p>
+                  <p class="mb-0 mt-1 text-[9pt] leading-4 text-ink-soft">
+                    Finalidade e autoria só entram após conferência da fonte primária.
+                  </p>
+                </div>
+                <div class="text-right">
+                  <p class="m-0 text-[14pt] font-semibold tabular-nums">R$ 0,0 mi</p>
+                  <span class="phase phase-pending">empenhado</span>
+                  <div>
+                    <a class="source-link mt-1" href="#fontes"
+                      ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                        /></svg
+                      >fonte · data</a
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="grid grid-cols-[24mm_1fr_39mm] gap-3 py-2.5">
+                <div>
+                  <span class="scope scope-sector">setor</span>
+                  <p class="mb-0 mt-2 text-[8pt] text-ink-soft">Era B · AAAA</p>
+                </div>
+                <div>
+                  <p class="m-0 font-semibold">Ação de exemplo no setor relacionado</p>
+                  <p class="mb-0 mt-1 text-[9pt] leading-4 text-ink-soft">
+                    Alcance documentado, sem atribuição exclusiva à instituição.
+                  </p>
+                </div>
+                <div class="text-right">
+                  <p class="m-0 text-[14pt] font-semibold tabular-nums">R$ 0,0 mi</p>
+                  <span class="phase">liquidado</span>
+                  <div>
+                    <a class="source-link mt-1" href="#fontes"
+                      ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                        /></svg
+                      >fonte · data</a
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="grid grid-cols-[24mm_1fr_39mm] gap-3 py-2.5">
+                <div>
+                  <span class="scope scope-network">rede</span>
+                  <p class="mb-0 mt-2 text-[8pt] text-ink-soft">Era A · AAAA</p>
+                </div>
+                <div>
+                  <p class="m-0 font-semibold">Articulação de exemplo com rede correlata</p>
+                  <p class="mb-0 mt-1 text-[9pt] leading-4 text-ink-soft">
+                    A instituição aparece no contexto, não como beneficiária única.
+                  </p>
+                </div>
+                <div class="text-right">
+                  <p class="m-0 text-[14pt] font-semibold tabular-nums">R$ 0,0 mi</p>
+                  <span class="phase phase-paid">pago</span>
+                  <div>
+                    <a class="source-link mt-1" href="#fontes"
+                      ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                        /></svg
+                      >fonte · data</a
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="mb-0 mt-2 text-[8.5pt] font-bold text-warning">
+              Guarda de leitura: autorizado ≠ empenhado ≠ liquidado ≠ pago. Restos a pagar também
+              aparecem como fase própria.
+            </p>
+          </section>
+
+          <section class="mt-5 grid grid-cols-[1.05fr_.95fr] gap-3">
+            <div class="rounded-sm border border-line p-3">
+              <p class="eyebrow">Gancho para a agenda</p>
+              <p class="mb-0 text-[9.5pt] leading-5">
+                <strong>Ponto de conversa:</strong> vínculo institucional documentado + entrega com
+                estágio confirmado. Abrir a fonte antes de adaptar para fala.
+              </p>
+            </div>
+            <div class="rounded-sm border-l-[3mm] border-warning bg-warning-soft p-3">
+              <p class="eyebrow !text-warning">O que falta</p>
+              <ul class="m-0 space-y-1.5 pl-4 text-[9pt] leading-4">
+                <li>Confirmar fase atual do valor.</li>
+                <li>Recuperar ato primário do vínculo.</li>
+                <li>Delimitar alcance do item de rede.</li>
+              </ul>
+              <p class="mb-0 mt-2 text-[8pt] font-semibold text-warning">
+                Ausência é resultado: não completar por inferência.
+              </p>
+            </div>
+          </section>
+
+          <footer class="report-footer">
+            <span
+              >Dossiê Solla por instituição · Instituição Exemplo · INSUMO INTERNO — defeso
+              2026</span
+            ><span>pág. 1/7</span>
+          </footer>
+        </article>
+      </section>
+
+      <!-- CENAS 03–05 · ERAS -->
+      <section class="scene" aria-labelledby="era-a-title">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
+          Cena 03 · Era A — vínculo técnico e formação
+        </p>
+        <article class="sheet" aria-label="Era A do dossiê institucional">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê institucional · Instituição Exemplo</p>
+              <h2
+                id="era-a-title"
+                class="mt-1 text-[18pt] font-semibold leading-tight tracking-tight"
+              >
+                Era A · Formação e gestão pública
+              </h2>
+              <p class="mb-0 mt-1 text-[9pt] text-ink-soft">
+                Até 2006 · vínculos, pesquisa, gestão municipal e federal
+              </p>
+            </div>
+            <div class="report-meta">
+              <p><strong class="text-warning">INSUMO INTERNO — defeso 2026</strong></p>
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 2/7</p>
+            </div>
+          </header>
+          <div class="mt-4 grid grid-cols-[1fr_57mm] gap-4">
+            <div>
+              <p class="eyebrow">Recorte e método</p>
+              <p class="mb-0 text-[10pt] leading-5 text-ink-soft">
+                Registros anteriores a 2007 que citem nominalmente a instituição ou comprovem
+                vínculo. Cargo geral não prova ação institucional.
+              </p>
+            </div>
+            <aside class="rounded-sm bg-accent-soft p-3 text-[9pt] leading-4">
+              <strong class="text-accent">Trilha de recuperação</strong><br />biografias oficiais ·
+              atos e diários · acervos institucionais · busca web datada
+            </aside>
+          </div>
+          <section class="mt-5">
+            <div class="flex items-end justify-between gap-4">
+              <div>
+                <p class="eyebrow">Entregas localizadas</p>
+                <h3 class="section-title">Objeto, valor, fase e alcance</h3>
+              </div>
+              <p class="m-0 text-[8pt] font-semibold text-warning">Placeholders de estrutura</p>
+            </div>
+            <table class="document-table mt-3">
+              <caption class="sr-only">
+                Entregas da Era A
+              </caption>
+              <colgroup>
+                <col style="width: 26%" />
+                <col style="width: 14%" />
+                <col style="width: 9%" />
+                <col style="width: 16%" />
+                <col style="width: 15%" />
+                <col style="width: 20%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Objeto</th>
+                  <th>Valor</th>
+                  <th>Ano</th>
+                  <th>Fase</th>
+                  <th>Abrangência</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Objeto documentado de exemplo</td>
+                  <td class="numeric"><strong>R$ 0,0 mi</strong></td>
+                  <td class="numeric">AAAA</td>
+                  <td><span class="phase">autorizado</span></td>
+                  <td><span class="scope">instituição</span></td>
+                  <td>
+                    <a class="source-link" href="#fontes"
+                      ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                        /></svg
+                      >fonte · DD/MM</a
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td>Ação técnica com setor relacionado</td>
+                  <td class="numeric">R$ —</td>
+                  <td class="numeric">AAAA</td>
+                  <td><span class="phase">não informado</span></td>
+                  <td><span class="scope scope-sector">setor</span></td>
+                  <td>
+                    <a class="source-link" href="#fontes"
+                      ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                        /></svg
+                      >fonte · DD/MM</a
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="mb-0 mt-2 text-[8pt] font-semibold text-warning">
+              Sem ato contemporâneo, registrar como lacuna — nunca atribuir pela plausibilidade do
+              cargo.
+            </p>
+          </section>
+          <section class="mt-6">
+            <p class="eyebrow">Atuação / vínculo registrado</p>
+            <h3 class="section-title">Papéis com evidência visível</h3>
+            <div class="mt-3 grid grid-cols-2 gap-3">
+              <article class="rounded-sm border border-line p-3">
+                <div class="flex justify-between gap-3">
+                  <span class="scope">instituição</span
+                  ><span class="text-[8pt] text-ink-soft">AAAA–AAAA</span>
+                </div>
+                <h4 class="mb-0 mt-2 text-[10.5pt] font-semibold">
+                  Professor ou pesquisador — exemplo de preenchimento
+                </h4>
+                <p class="mb-0 mt-1 text-[9pt] leading-4 text-ink-soft">
+                  Descrever unidade, papel e período apenas como constam no registro.
+                </p>
+                <a class="source-link mt-2" href="#fontes"
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                      d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                    /></svg
+                  >fonte · data</a
+                >
+              </article>
+              <article class="rounded-sm border border-line p-3">
+                <div class="flex justify-between gap-3">
+                  <span class="scope scope-network">rede</span
+                  ><span class="text-[8pt] text-ink-soft">AAAA</span>
+                </div>
+                <h4 class="mb-0 mt-2 text-[10.5pt] font-semibold">
+                  Participação em rede acadêmica — exemplo
+                </h4>
+                <p class="mb-0 mt-1 text-[9pt] leading-4 text-ink-soft">
+                  Nomear a rede e explicar por que ela não equivale à instituição.
+                </p>
+                <a class="source-link mt-2" href="#fontes"
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                      d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                    /></svg
+                  >fonte · data</a
+                >
+              </article>
+            </div>
+          </section>
+          <aside class="mt-6 rounded-sm border-l-[3mm] border-warning bg-warning-soft p-3">
+            <p class="eyebrow !text-warning">Lacuna da era</p>
+            <p class="mb-0 text-[9.5pt] leading-5">
+              Período exato e ato primário do vínculo ainda não localizados. Até recuperar: escrever
+              “vínculo citado em fonte secundária”, sem ampliar a afirmação.
+            </p>
+          </aside>
+          <footer class="report-footer">
+            <span>Dossiê institucional · Era A · INSUMO INTERNO — defeso 2026</span
+            ><span>pág. 2/7</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene" aria-labelledby="era-b-title">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
+          Cena 04 · Era B — gestão estadual
+        </p>
+        <article class="sheet" aria-label="Era B do dossiê institucional">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê institucional · Instituição Exemplo</p>
+              <h2
+                id="era-b-title"
+                class="mt-1 text-[18pt] font-semibold leading-tight tracking-tight"
+              >
+                Era B · Secretaria da Saúde da Bahia
+              </h2>
+              <p class="mb-0 mt-1 text-[9pt] text-ink-soft">
+                2007–2014 · parceria, gestão e articulação institucional
+              </p>
+            </div>
+            <div class="report-meta">
+              <p><strong class="text-warning">INSUMO INTERNO — defeso 2026</strong></p>
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 3/7</p>
+            </div>
+          </header>
+          <div class="mt-4 grid grid-cols-[1fr_57mm] gap-4">
+            <div>
+              <p class="eyebrow">Recorte e método</p>
+              <p class="mb-0 text-[10pt] leading-5 text-ink-soft">
+                Ações da gestão estadual com menção nominal à instituição, ao setor ou à rede.
+                Diferenciar decisão, parceria anunciada e entrega executada.
+              </p>
+            </div>
+            <aside class="rounded-sm bg-accent-soft p-3 text-[9pt] leading-4">
+              <strong class="text-accent">Trilha de recuperação</strong><br />DOE-BA · notícias
+              oficiais · convênios · acervo interno 2011+
+            </aside>
+          </div>
+          <section class="mt-5">
+            <p class="eyebrow">Entregas localizadas</p>
+            <h3 class="section-title">Objetos da era com fase explícita</h3>
+            <table class="document-table mt-3">
+              <caption class="sr-only">
+                Entregas da Era B
+              </caption>
+              <colgroup>
+                <col style="width: 26%" />
+                <col style="width: 14%" />
+                <col style="width: 9%" />
+                <col style="width: 16%" />
+                <col style="width: 15%" />
+                <col style="width: 20%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Objeto</th>
+                  <th>Valor</th>
+                  <th>Ano</th>
+                  <th>Fase</th>
+                  <th>Abrangência</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Parceria institucional de exemplo</td>
+                  <td class="numeric"><strong>R$ 0,0 mi</strong></td>
+                  <td class="numeric">AAAA</td>
+                  <td><span class="phase">liquidado</span></td>
+                  <td><span class="scope">instituição</span></td>
+                  <td>
+                    <a class="source-link" href="#fontes"
+                      ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                        /></svg
+                      >fonte · DD/MM</a
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td>Programa setorial de exemplo</td>
+                  <td class="numeric"><strong>R$ 0,0 mi</strong></td>
+                  <td class="numeric">AAAA</td>
+                  <td><span class="phase phase-paid">pago</span></td>
+                  <td><span class="scope scope-sector">setor</span></td>
+                  <td>
+                    <a class="source-link" href="#fontes"
+                      ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                        /></svg
+                      >fonte · DD/MM</a
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td>Cooperação em rede de exemplo</td>
+                  <td class="numeric">R$ —</td>
+                  <td class="numeric">AAAA</td>
+                  <td><span class="phase">não informado</span></td>
+                  <td><span class="scope scope-network">rede</span></td>
+                  <td>
+                    <a class="source-link" href="#fontes"
+                      ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1 2-2V8a2 2 0 0 1 2-2h6"
+                        /></svg
+                      >fonte · DD/MM</a
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="mb-0 mt-2 text-[8pt] font-semibold text-warning">
+              Não converter anúncio, convênio ou liquidação em pagamento sem evidência da fase
+              correspondente.
+            </p>
+          </section>
+          <section class="mt-6">
+            <p class="eyebrow">Atuação / vínculo registrado</p>
+            <h3 class="section-title">Articulação e parceria documentadas</h3>
+            <div class="mt-3 grid grid-cols-2 gap-3">
+              <article class="rounded-sm border border-line p-3">
+                <div class="flex justify-between gap-3">
+                  <span class="scope">instituição</span
+                  ><span class="text-[8pt] text-ink-soft">AAAA</span>
+                </div>
+                <h4 class="mb-0 mt-2 text-[10.5pt] font-semibold">
+                  Articulação institucional de exemplo
+                </h4>
+                <p class="mb-0 mt-1 text-[9pt] leading-4 text-ink-soft">
+                  Registrar participantes, objeto e resultado sem inferir causalidade.
+                </p>
+                <a class="source-link mt-2" href="#fontes"
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                      d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                    /></svg
+                  >fonte · data</a
+                >
+              </article>
+              <article class="rounded-sm border border-line p-3">
+                <div class="flex justify-between gap-3">
+                  <span class="scope scope-sector">setor</span
+                  ><span class="text-[8pt] text-ink-soft">AAAA</span>
+                </div>
+                <h4 class="mb-0 mt-2 text-[10.5pt] font-semibold">Ação para o setor de exemplo</h4>
+                <p class="mb-0 mt-1 text-[9pt] leading-4 text-ink-soft">
+                  Explicar o alcance e por que não constitui entrega exclusiva à instituição.
+                </p>
+                <a class="source-link mt-2" href="#fontes"
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                      d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1 2-2V8a2 2 0 0 1 2-2h6"
+                    /></svg
+                  >fonte · data</a
+                >
+              </article>
+            </div>
+          </section>
+          <aside class="mt-6 rounded-sm border-l-[3mm] border-warning bg-warning-soft p-3">
+            <p class="eyebrow !text-warning">Lacuna da era</p>
+            <p class="mb-0 text-[9.5pt] leading-5">
+              Documento financeiro primário não localizado para um item citado em notícia. Manter
+              valor e fase ausentes até conferência.
+            </p>
+          </aside>
+          <footer class="report-footer">
+            <span>Dossiê institucional · Era B · INSUMO INTERNO — defeso 2026</span
+            ><span>pág. 3/7</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene" aria-labelledby="era-c-title">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
+          Cena 05 · Era C — mandato federal
+        </p>
+        <article class="sheet" aria-label="Era C do dossiê institucional">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê institucional · Instituição Exemplo</p>
+              <h2
+                id="era-c-title"
+                class="mt-1 text-[18pt] font-semibold leading-tight tracking-tight"
+              >
+                Era C · Deputado Federal
+              </h2>
+              <p class="mb-0 mt-1 text-[9pt] text-ink-soft">
+                2015–2027 · recursos, proposições, relatorias e articulação
+              </p>
+            </div>
+            <div class="report-meta">
+              <p><strong class="text-warning">INSUMO INTERNO — defeso 2026</strong></p>
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 4/7</p>
+            </div>
+          </header>
+          <div class="mt-4 grid grid-cols-[1fr_57mm] gap-4">
+            <div>
+              <p class="eyebrow">Recorte e método</p>
+              <p class="mb-0 text-[10pt] leading-5 text-ink-soft">
+                Itens ligados nominalmente à instituição e registros temáticos cuja abrangência
+                esteja comprovada. Autoria de emenda e relatoria sempre checadas.
+              </p>
+            </div>
+            <aside class="rounded-sm bg-accent-soft p-3 text-[9pt] leading-4">
+              <strong class="text-accent">Trilha de recuperação</strong><br />Câmara Dados Abertos ·
+              CGU · Siga Brasil · acervo read-only
+            </aside>
+          </div>
+          <section class="mt-5">
+            <p class="eyebrow">Entregas localizadas</p>
+            <h3 class="section-title">Recursos e ações quantificáveis</h3>
+            <table class="document-table mt-3">
+              <caption class="sr-only">
+                Entregas da Era C
+              </caption>
+              <colgroup>
+                <col style="width: 26%" />
+                <col style="width: 14%" />
+                <col style="width: 9%" />
+                <col style="width: 16%" />
+                <col style="width: 15%" />
+                <col style="width: 20%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Objeto</th>
+                  <th>Valor</th>
+                  <th>Ano</th>
+                  <th>Fase</th>
+                  <th>Abrangência</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Recurso institucional de exemplo</td>
+                  <td class="numeric"><strong>R$ 0,0 mi</strong></td>
+                  <td class="numeric">AAAA</td>
+                  <td><span class="phase phase-pending">empenhado</span></td>
+                  <td><span class="scope">instituição</span></td>
+                  <td>
+                    <a class="source-link" href="#fontes"
+                      ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                        /></svg
+                      >fonte · DD/MM</a
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td>Ação parlamentar setorial</td>
+                  <td class="numeric"><strong>R$ 0,0 mi</strong></td>
+                  <td class="numeric">AAAA</td>
+                  <td><span class="phase">restos</span></td>
+                  <td><span class="scope scope-sector">setor</span></td>
+                  <td>
+                    <a class="source-link" href="#fontes"
+                      ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                        /></svg
+                      >fonte · DD/MM</a
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td>Projeto em rede de exemplo</td>
+                  <td class="numeric">R$ —</td>
+                  <td class="numeric">AAAA</td>
+                  <td><span class="phase">não informado</span></td>
+                  <td><span class="scope scope-network">rede</span></td>
+                  <td>
+                    <a class="source-link" href="#fontes"
+                      ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1 2-2V8a2 2 0 0 1 2-2h6"
+                        /></svg
+                      >fonte · DD/MM</a
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="mb-0 mt-2 text-[8pt] font-semibold text-warning">
+              Autorizado, empenhado, liquidado, pago e restos não formam um total único.
+            </p>
+          </section>
+          <section class="mt-6">
+            <p class="eyebrow">Atuação / vínculo registrado</p>
+            <h3 class="section-title">Mandato, relatoria e articulação</h3>
+            <div class="mt-3 grid grid-cols-2 gap-3">
+              <article class="rounded-sm border border-line p-3">
+                <div class="flex justify-between gap-3">
+                  <span class="scope">instituição</span
+                  ><span class="text-[8pt] text-ink-soft">Câmara · AAAA</span>
+                </div>
+                <h4 class="mb-0 mt-2 text-[10.5pt] font-semibold">
+                  Relatoria ou proposição de exemplo
+                </h4>
+                <p class="mb-0 mt-1 text-[9pt] leading-4 text-ink-soft">
+                  A tramitação prova o papel exercido; não converter proposição em entrega
+                  concluída.
+                </p>
+                <a class="source-link mt-2" href="#fontes"
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                      d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                    /></svg
+                  >fonte · data</a
+                >
+              </article>
+              <article class="rounded-sm border border-line p-3">
+                <div class="flex justify-between gap-3">
+                  <span class="scope scope-network">rede</span
+                  ><span class="text-[8pt] text-ink-soft">Agenda · AAAA</span>
+                </div>
+                <h4 class="mb-0 mt-2 text-[10.5pt] font-semibold">
+                  Audiência ou articulação de exemplo
+                </h4>
+                <p class="mb-0 mt-1 text-[9pt] leading-4 text-ink-soft">
+                  Registrar pauta e participantes; resultado material fica separado.
+                </p>
+                <a class="source-link mt-2" href="#fontes"
+                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                      d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                    /></svg
+                  >fonte · data</a
+                >
+              </article>
+            </div>
+          </section>
+          <aside class="mt-6 rounded-sm border-l-[3mm] border-warning bg-warning-soft p-3">
+            <p class="eyebrow !text-warning">Lacuna da era</p>
+            <p class="mb-0 text-[9.5pt] leading-5">
+              A fonte consultada não permite filtrar emendas por instituição. Sem atribuição nominal
+              e autoria checada, o resultado permanece “não localizado”, nunca zero.
+            </p>
+          </aside>
+          <footer class="report-footer">
+            <span>Dossiê institucional · Era C · INSUMO INTERNO — defeso 2026</span
+            ><span>pág. 4/7</span>
+          </footer>
+        </article>
+      </section>
+
+      <!-- CENA 06 · ABRANGÊNCIA -->
+      <section class="scene" aria-labelledby="scope-title">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
+          Cena 06 · Abrangência — instituição × setor × rede
+        </p>
+        <article class="sheet" aria-label="Painel de abrangência institucional">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê institucional · Instituição Exemplo</p>
+              <h2
+                id="scope-title"
+                class="mt-1 text-[18pt] font-semibold leading-tight tracking-tight"
+              >
+                Abrangência: instituição × setor × rede
+              </h2>
+              <p class="mb-0 mt-1 text-[9pt] text-ink-soft">
+                Três recortes, três leituras, nenhuma soma combinada
+              </p>
+            </div>
+            <div class="report-meta">
+              <p><strong class="text-warning">INSUMO INTERNO — defeso 2026</strong></p>
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 5/7</p>
+            </div>
+          </header>
+          <section
+            class="mt-5 rounded-sm border-[.45mm] border-warning bg-warning-soft p-4"
+            aria-label="Regra de abrangência"
+          >
+            <div class="flex items-start gap-3">
+              <svg
+                class="mt-0.5 h-5 w-5 shrink-0 text-warning"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M10.3 2.9 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.9a2 2 0 0 0-3.4 0Z"
+                />
+                <path d="M12 9v4M12 17h.01" />
+              </svg>
+              <div>
+                <p class="m-0 text-[12pt] font-semibold text-warning">
+                  Setor/rede não é a instituição. Não some os recortes.
+                </p>
+                <p class="mb-0 mt-1 text-[10pt] leading-5 text-ink-soft">
+                  Uma política para uma categoria ou uma articulação com entidades correlatas pode
+                  alcançar a instituição sem constituir entrega exclusiva para ela.
+                </p>
+              </div>
+            </div>
+          </section>
+          <section class="mt-6">
+            <p class="eyebrow">Leitura lado a lado</p>
+            <h3 class="section-title">O alcance acompanha cada evidência</h3>
+            <div class="mt-4 grid grid-cols-3 gap-3">
+              <article class="rounded-sm border border-line p-3">
+                <div class="flex justify-between gap-2">
+                  <span class="scope">instituição</span
+                  ><span class="text-[7.5pt] font-bold text-ink-soft">DIRETO</span>
+                </div>
+                <p class="mb-0 mt-3 text-[16pt] font-semibold tabular-nums">R$ 0,0 mi</p>
+                <p class="mt-1 text-[8pt] text-ink-soft">exemplo · fase identificada</p>
+                <ul class="m-0 space-y-3 pl-4 text-[9pt] leading-4">
+                  <li>
+                    Objeto nomeia a Instituição Exemplo.
+                    <a class="source-link" href="#fontes">fonte</a>
+                  </li>
+                  <li>
+                    Vínculo registrado em unidade identificada.
+                    <a class="source-link" href="#fontes">fonte</a>
+                  </li>
+                </ul>
+              </article>
+              <article class="rounded-sm border border-[#c9b483] bg-[#fffcf6] p-3">
+                <div class="flex justify-between gap-2">
+                  <span class="scope scope-sector">setor</span
+                  ><span class="text-[7.5pt] font-bold text-warning">NÃO SOMAR</span>
+                </div>
+                <p class="mb-0 mt-3 text-[16pt] font-semibold tabular-nums">R$ 0,0 mi</p>
+                <p class="mt-1 text-[8pt] text-ink-soft">exemplo · alcance compartilhado</p>
+                <ul class="m-0 space-y-3 pl-4 text-[9pt] leading-4">
+                  <li>
+                    Ação para a área profissional relacionada.
+                    <a class="source-link" href="#fontes">fonte</a>
+                  </li>
+                  <li>
+                    Evidência cita o setor, não a entidade.
+                    <a class="source-link" href="#fontes">fonte</a>
+                  </li>
+                </ul>
+              </article>
+              <article class="rounded-sm border border-[#b9acc3] bg-[#fcf9fd] p-3">
+                <div class="flex justify-between gap-2">
+                  <span class="scope scope-network">rede</span
+                  ><span class="text-[7.5pt] font-bold text-[#66536f]">NÃO SOMAR</span>
+                </div>
+                <p class="mb-0 mt-3 text-[16pt] font-semibold tabular-nums">R$ 0,0 mi</p>
+                <p class="mt-1 text-[8pt] text-ink-soft">exemplo · entidades correlatas</p>
+                <ul class="m-0 space-y-3 pl-4 text-[9pt] leading-4">
+                  <li>
+                    Rede parceira com vínculo documentado.
+                    <a class="source-link" href="#fontes">fonte</a>
+                  </li>
+                  <li>
+                    Instituição integra o contexto, não o total.
+                    <a class="source-link" href="#fontes">fonte</a>
+                  </li>
+                </ul>
+              </article>
+            </div>
+          </section>
+          <section class="mt-6">
+            <div class="flex items-end justify-between gap-4">
+              <div>
+                <p class="eyebrow">Evidência de alcance</p>
+                <h3 class="section-title">Por que cada item está neste recorte</h3>
+              </div>
+              <p class="m-0 text-[8pt] font-semibold text-warning">Sem evidência, vira lacuna</p>
+            </div>
+            <table class="document-table mt-3">
+              <caption class="sr-only">
+                Itens de setor e rede com evidência de alcance
+              </caption>
+              <colgroup>
+                <col style="width: 26%" />
+                <col style="width: 16%" />
+                <col style="width: 38%" />
+                <col style="width: 20%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Abrangência</th>
+                  <th>Evidência de alcance</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Ação setorial de exemplo</td>
+                  <td><span class="scope scope-sector">setor</span></td>
+                  <td>Documento nomeia a área, mas não individualiza a instituição.</td>
+                  <td><a class="source-link" href="#fontes">fonte · data</a></td>
+                </tr>
+                <tr>
+                  <td>Articulação em rede</td>
+                  <td><span class="scope scope-network">rede</span></td>
+                  <td>A instituição consta como integrante entre outras entidades.</td>
+                  <td><a class="source-link" href="#fontes">fonte · data</a></td>
+                </tr>
+                <tr>
+                  <td>Entrega institucional</td>
+                  <td><span class="scope">instituição</span></td>
+                  <td>Objeto e destinatário aparecem nominalmente no ato.</td>
+                  <td><a class="source-link" href="#fontes">fonte · data</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <section class="mt-5 grid grid-cols-2 gap-3">
+            <div class="rounded-sm bg-accent-soft p-3">
+              <p class="eyebrow">Gancho possível</p>
+              <p class="mb-0 text-[9.5pt] leading-5">
+                <strong>Ângulo:</strong> partir do vínculo direto e explicar, em separado, como
+                setor e rede ampliam o contexto da agenda.
+              </p>
+            </div>
+            <div class="rounded-sm border-l-[3mm] border-warning bg-warning-soft p-3">
+              <p class="eyebrow !text-warning">Lacuna prioritária</p>
+              <p class="mb-0 text-[9.5pt] leading-5">
+                Obter documento que individualize a Instituição Exemplo. Até lá, manter o item
+                apenas em setor/rede.
+              </p>
+            </div>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê institucional · Abrangência · INSUMO INTERNO — defeso 2026</span
+            ><span>pág. 5/7</span>
+          </footer>
+        </article>
+      </section>
+
+      <!-- CENA 07 · TÍTULOS -->
+      <section class="scene" aria-labelledby="honors-title">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
+          Cena 07 · Títulos, honrarias e vínculos
+        </p>
+        <article class="sheet" aria-label="Títulos, honrarias e vínculos institucionais">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê institucional · Instituição Exemplo</p>
+              <h2
+                id="honors-title"
+                class="mt-1 text-[18pt] font-semibold leading-tight tracking-tight"
+              >
+                Títulos, honrarias e vínculos
+              </h2>
+              <p class="mb-0 mt-1 text-[9pt] text-ink-soft">
+                Reconhecimento não substitui entrega; vínculo não prova resultado
+              </p>
+            </div>
+            <div class="report-meta">
+              <p><strong class="text-warning">INSUMO INTERNO — defeso 2026</strong></p>
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 6/7</p>
+            </div>
+          </header>
+          <section class="mt-5">
+            <p class="eyebrow">Registros confirmados</p>
+            <h3 class="section-title">Data, natureza e fonte primária</h3>
+            <table class="document-table mt-3">
+              <caption class="sr-only">
+                Títulos, honrarias e vínculos por data e fonte
+              </caption>
+              <colgroup>
+                <col style="width: 14%" />
+                <col style="width: 20%" />
+                <col style="width: 35%" />
+                <col style="width: 31%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Natureza</th>
+                  <th>Registro</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="numeric">DD/MM/AAAA</td>
+                  <td><span class="identity-badge">vínculo</span></td>
+                  <td>
+                    <strong>Papel institucional de exemplo</strong><br /><span
+                      class="text-[8.5pt] text-ink-soft"
+                      >Unidade e período conforme ato.</span
+                    >
+                  </td>
+                  <td>
+                    <a class="source-link" href="#fontes">Ato institucional · URL</a><br /><span
+                      class="text-[8pt] text-ink-soft"
+                      >consulta DD/MM/AAAA</span
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td class="numeric">DD/MM/AAAA</td>
+                  <td><span class="identity-badge">honraria</span></td>
+                  <td>
+                    <strong>Título honorífico de exemplo</strong><br /><span
+                      class="text-[8.5pt] text-ink-soft"
+                      >Nome oficial, órgão concedente e motivação.</span
+                    >
+                  </td>
+                  <td>
+                    <a class="source-link" href="#fontes">Resolução ou diploma · URL</a><br /><span
+                      class="text-[8pt] text-ink-soft"
+                      >consulta DD/MM/AAAA</span
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td class="numeric">DD/MM/AAAA</td>
+                  <td><span class="identity-badge">pesquisa</span></td>
+                  <td>
+                    <strong>Atividade acadêmica de exemplo</strong><br /><span
+                      class="text-[8.5pt] text-ink-soft"
+                      >Papel exato sem ampliar autoria ou duração.</span
+                    >
+                  </td>
+                  <td>
+                    <a class="source-link" href="#fontes">Repositório institucional · URL</a
+                    ><br /><span class="text-[8pt] text-ink-soft">consulta DD/MM/AAAA</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="numeric">DD/MM/AAAA</td>
+                  <td><span class="identity-badge">homenagem</span></td>
+                  <td>
+                    <strong>Homenagem registrada em sessão</strong><br /><span
+                      class="text-[8.5pt] text-ink-soft"
+                      >Evento, papel e contexto documentados.</span
+                    >
+                  </td>
+                  <td>
+                    <a class="source-link" href="#fontes">Ata ou notícia oficial · URL</a
+                    ><br /><span class="text-[8pt] text-ink-soft">consulta DD/MM/AAAA</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <section class="mt-6 grid grid-cols-[1fr_52mm] gap-4">
+            <div>
+              <p class="eyebrow">Como ler</p>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="rounded-sm border border-line p-3">
+                  <h3 class="m-0 text-[10.5pt] font-semibold">Vínculo documentado</h3>
+                  <p class="mb-0 mt-2 text-[9pt] leading-4 text-ink-soft">
+                    Informa papel, unidade e período. Não autoriza atribuir toda ação posterior da
+                    instituição.
+                  </p>
+                </div>
+                <div class="rounded-sm border border-line p-3">
+                  <h3 class="m-0 text-[10.5pt] font-semibold">Honraria documentada</h3>
+                  <p class="mb-0 mt-2 text-[9pt] leading-4 text-ink-soft">
+                    Registra reconhecimento e órgão concedente. Não vira prova de recurso ou
+                    entrega.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div
+              class="asset-box flex min-h-[46mm] items-center justify-center rounded-sm p-3 text-center text-[8pt] font-semibold leading-4"
+            >
+              NEEDS ASSET<br />reprodução do ato,<br />diploma ou clipping<br /><span
+                class="font-normal"
+                >origem, autoria e licença</span
+              >
+            </div>
+          </section>
+          <section class="mt-6 grid grid-cols-2 gap-3">
+            <div class="rounded-sm bg-accent-soft p-3">
+              <p class="eyebrow">Gancho para a agenda</p>
+              <p class="mb-0 text-[9.5pt] leading-5">
+                Mencionar um vínculo só na formulação que a fonte sustenta e conectá-lo a uma
+                entrega comprovada, se houver.
+              </p>
+            </div>
+            <div class="rounded-sm border-l-[3mm] border-warning bg-warning-soft p-3">
+              <p class="eyebrow !text-warning">Pendência documental</p>
+              <p class="mb-0 text-[9.5pt] leading-5">
+                Clipping cita uma homenagem, mas ato ou diploma não foi localizado. Manter fora da
+                fala até confirmação.
+              </p>
+            </div>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê institucional · Títulos e vínculos · INSUMO INTERNO — defeso 2026</span
+            ><span>pág. 6/7</span>
+          </footer>
+        </article>
+      </section>
+
+      <!-- CENA 08 · FONTES -->
+      <section class="scene" id="fontes" aria-labelledby="sources-title">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
+          Cena 08 · Fontes, limites e defeso
+        </p>
+        <article class="sheet" aria-label="Fontes, lacunas e limites do dossiê institucional">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê institucional · Instituição Exemplo</p>
+              <h2
+                id="sources-title"
+                class="mt-1 text-[18pt] font-semibold leading-tight tracking-tight"
+              >
+                Fontes e limites
+              </h2>
+              <p class="mb-0 mt-1 text-[9pt] text-ink-soft">
+                O que foi buscado, o que não foi achado e o que não se pode afirmar
+              </p>
+            </div>
+            <div class="report-meta">
+              <p><strong class="text-warning">INSUMO INTERNO — defeso 2026</strong></p>
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 7/7</p>
+            </div>
+          </header>
+          <section class="mt-4">
+            <div class="flex items-end justify-between gap-4">
+              <div>
+                <p class="eyebrow">Lacunas explícitas</p>
+                <h3 class="section-title">O que não foi encontrado</h3>
+              </div>
+              <p class="m-0 text-[8pt] font-semibold text-warning">
+                Não completar por memória ou inferência
+              </p>
+            </div>
+            <table class="document-table mt-3">
+              <caption class="sr-only">
+                Lacunas e próximos passos
+              </caption>
+              <colgroup>
+                <col style="width: 22%" />
+                <col style="width: 30%" />
+                <col style="width: 29%" />
+                <col style="width: 19%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Lacuna</th>
+                  <th>Onde foi buscado</th>
+                  <th>Limite editorial</th>
+                  <th>Próximo passo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Fase do valor</strong></td>
+                  <td>Portal oficial e documento financeiro · DD/MM/AAAA.</td>
+                  <td>Não usar “pago” nem “entregue”.</td>
+                  <td>Reconsultar execução.</td>
+                </tr>
+                <tr>
+                  <td><strong>Ato do vínculo</strong></td>
+                  <td>Site institucional, diário e repositório.</td>
+                  <td>Não afirmar período completo.</td>
+                  <td>Solicitar acervo físico.</td>
+                </tr>
+                <tr>
+                  <td><strong>Alcance da rede</strong></td>
+                  <td>Atas, notícias e documentos correlatos.</td>
+                  <td>Não atribuir à instituição.</td>
+                  <td>Obter lista oficial.</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <section class="mt-5">
+            <p class="eyebrow">Lista clicável</p>
+            <h3 class="section-title">Notícias e documentos consultados</h3>
+            <table class="document-table mt-3">
+              <caption class="sr-only">
+                Fontes consultadas com larguras fixas
+              </caption>
+              <colgroup>
+                <col style="width: 12%" />
+                <col style="width: 18%" />
+                <col style="width: 43%" />
+                <col style="width: 27%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Veículo / acervo</th>
+                  <th>Título</th>
+                  <th>Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="numeric">DD/MM/AAAA</td>
+                  <td>Fonte oficial</td>
+                  <td>Documento de exemplo sobre a Instituição Exemplo</td>
+                  <td><a class="source-link" href="#">URL da fonte</a></td>
+                </tr>
+                <tr>
+                  <td class="numeric">DD/MM/AAAA</td>
+                  <td>Acervo institucional</td>
+                  <td>Ato de exemplo — título a confirmar</td>
+                  <td><a class="source-link" href="#">URL da fonte</a></td>
+                </tr>
+                <tr>
+                  <td class="numeric">DD/MM/AAAA</td>
+                  <td>Dados públicos</td>
+                  <td>Consulta de execução do objeto de exemplo</td>
+                  <td><a class="source-link" href="#">URL da fonte</a></td>
+                </tr>
+                <tr>
+                  <td class="numeric">DD/MM/AAAA</td>
+                  <td>Acervo read-only</td>
+                  <td>Registro temático insuficiente para atribuição direta</td>
+                  <td><a class="source-link" href="#">Referência interna</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <section class="mt-5 grid grid-cols-2 gap-3">
+            <div class="rounded-sm border border-line p-3">
+              <p class="eyebrow">Limites de cobertura</p>
+              <ul class="m-0 space-y-2 pl-4 text-[9pt] leading-4">
+                <li>
+                  O acervo interno cobre 2011+; períodos anteriores dependem de fontes externas.
+                </li>
+                <li>Resultado de busca não prova ausência histórica.</li>
+                <li>Fonte temática não individualiza automaticamente a instituição.</li>
+                <li>Autoria de emenda e relatoria exige confirmação própria.</li>
+              </ul>
+            </div>
+            <div class="rounded-sm border border-line p-3">
+              <p class="eyebrow">Regras para uso editorial</p>
+              <ul class="m-0 space-y-2 pl-4 text-[9pt] leading-4">
+                <li>Sem fonte, não publica.</li>
+                <li>URL e data acompanham afirmações não triviais.</li>
+                <li>Instituição, setor e rede permanecem separados.</li>
+                <li>Todo valor informa sua fase de execução.</li>
+                <li>PII mínima; nada de contato pessoal no dossiê.</li>
+              </ul>
+            </div>
+          </section>
+          <aside class="mt-5 rounded-sm border-[.45mm] border-warning bg-warning-soft p-4">
+            <div class="flex items-start gap-3">
+              <svg
+                class="mt-0.5 h-5 w-5 shrink-0 text-warning"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+              <div>
+                <p class="eyebrow !text-warning">Nota de defeso eleitoral 2026</p>
+                <h3 class="m-0 text-[12pt] font-semibold">
+                  Insumo interno não é autorização para publicar.
+                </h3>
+                <p class="mb-0 mt-2 text-[9.5pt] leading-5 text-ink-soft">
+                  Antes de adaptar qualquer trecho para fala ou peça externa, submeta texto, imagem,
+                  autoria, período e canal à revisão editorial e jurídica responsável. O dossiê
+                  organiza evidências; não substitui essa análise.
+                </p>
+              </div>
+            </div>
+          </aside>
+          <footer class="report-footer">
+            <span>Dossiê institucional · Fontes e limites · INSUMO INTERNO — defeso 2026</span
+            ><span>pág. 7/7</span>
+          </footer>
+        </article>
+      </section>
+
+      <!-- CENA 09 · VARIANTE VAZIA -->
+      <section class="scene" aria-labelledby="empty-title">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
+          Cena 09 · Estado crítico — era sem fonte / sem pesquisa concluída
+        </p>
+        <article class="sheet" aria-label="Estado de lacuna explícita para uma era sem fonte">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê institucional · Instituição Exemplo</p>
+              <h2
+                id="empty-title"
+                class="mt-1 text-[18pt] font-semibold leading-tight tracking-tight"
+              >
+                Era A · Pesquisa sem evidência suficiente
+              </h2>
+              <p class="mb-0 mt-1 text-[9pt] text-ink-soft">
+                Variante que substitui a página da era — nunca esconder a ausência
+              </p>
+            </div>
+            <div class="report-meta">
+              <p><strong class="text-warning">INSUMO INTERNO — defeso 2026</strong></p>
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>estado de lacuna</p>
+            </div>
+          </header>
+          <div class="mt-5 grid grid-cols-[1fr_57mm] gap-4">
+            <div>
+              <p class="eyebrow">Recorte previsto</p>
+              <p class="mb-0 text-[10pt] leading-5 text-ink-soft">
+                Até 2006 · formação, vínculos técnicos e registros institucionais nominalmente
+                ligados à Instituição Exemplo.
+              </p>
+            </div>
+            <aside class="rounded-sm bg-accent-soft p-3 text-[9pt] leading-4">
+              <strong class="text-accent">Trilha tentada</strong><br />biografias · diários · acervo
+              institucional · busca web datada
+            </aside>
+          </div>
+          <section class="empty-panel mt-[20mm] rounded-sm px-[12mm] py-[14mm] text-center">
+            <svg
+              class="mx-auto h-9 w-9 text-warning"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              aria-hidden="true"
+            >
+              <path d="M10 2h4M12 14v-4M12 18h.01" />
+              <circle cx="12" cy="12" r="9" />
+            </svg>
+            <p class="eyebrow mt-4 !text-warning">Lacuna explícita · não é “zero”</p>
+            <h3 class="m-0 text-[17pt] font-semibold">
+              Nenhuma fonte suficiente foi localizada para esta era.
+            </h3>
+            <p class="mx-auto mb-0 mt-3 max-w-[126mm] text-[10.5pt] leading-5 text-ink-soft">
+              A pesquisa não encontrou documento que sustente uma afirmação institucional. Isso não
+              prova que não houve vínculo ou atuação; prova apenas que o dossiê ainda não pode
+              afirmá-los.
+            </p>
+          </section>
+          <section class="mt-8 grid grid-cols-2 gap-4">
+            <div class="rounded-sm border border-line p-4">
+              <p class="eyebrow">O que foi feito</p>
+              <ul class="m-0 space-y-2 pl-4 text-[9.5pt] leading-5">
+                <li>Busca nominal por instituição e aliases.</li>
+                <li>Consulta a fontes oficiais e acervos datados.</li>
+                <li>Triagem de resultados por vínculo e abrangência.</li>
+                <li>Descarte de menções sem lastro suficiente.</li>
+              </ul>
+            </div>
+            <div class="rounded-sm border border-line p-4">
+              <p class="eyebrow">O que falta fazer</p>
+              <ul class="m-0 space-y-2 pl-4 text-[9.5pt] leading-5">
+                <li>Solicitar consulta ao arquivo físico.</li>
+                <li>Validar nome histórico e unidade da instituição.</li>
+                <li>Recuperar ato, ata ou documento contemporâneo.</li>
+                <li>Repetir busca com alias confirmado.</li>
+              </ul>
+            </div>
+          </section>
+          <section class="mt-6 rounded-sm border-l-[3mm] border-warning bg-warning-soft p-4">
+            <p class="eyebrow !text-warning">Regra editorial</p>
+            <p class="mb-0 text-[10pt] leading-5">
+              <strong
+                >Não preencher a seção por memória, cargo provável ou texto de outra era.</strong
+              >
+              Na síntese, registrar “Era A: evidência institucional não localizada nas fontes
+              consultadas até DD/MM/AAAA”.
+            </p>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê institucional · Lacuna explícita · INSUMO INTERNO — defeso 2026</span
+            ><span>variante de página de era</span>
+          </footer>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
