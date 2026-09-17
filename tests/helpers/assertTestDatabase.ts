@@ -16,7 +16,7 @@
 // same hosts (OPS50/OPS62).
 // TEST_DATABASE_NAME_RE is the shared name contract (cli.mjs) — the same
 // regex `scripts/db-reset.mjs` uses before dropping the schema (OPS88).
-import { defaultGatewayHost, TEST_DATABASE_NAME_RE } from '../../scripts/lib/cli.mjs'
+import { databaseName, defaultGatewayHost, TEST_DATABASE_NAME_RE } from '../../scripts/lib/cli.mjs'
 
 export function assertTestDatabase(databaseUrl: string | undefined): void {
   if (!databaseUrl) {
@@ -33,7 +33,7 @@ export function assertTestDatabase(databaseUrl: string | undefined): void {
     throw new Error('DATABASE_URL is not a valid PostgreSQL connection string.')
   }
 
-  const databaseName = decodeURIComponent(parsedUrl.pathname.replace(/^\//, ''))
+  const targetDatabaseName = databaseName(parsedUrl)
   const localHosts = new Set([
     'localhost',
     '127.0.0.1',
@@ -47,12 +47,13 @@ export function assertTestDatabase(databaseUrl: string | undefined): void {
 
   if (
     parsedUrl.protocol !== 'postgresql:' ||
-    !TEST_DATABASE_NAME_RE.test(databaseName) ||
+    targetDatabaseName === null ||
+    !TEST_DATABASE_NAME_RE.test(targetDatabaseName) ||
     !localHosts.has(parsedUrl.hostname)
   ) {
     throw new Error(
       `Refusing to run tests using protocol "${parsedUrl.protocol || '(unknown)'}" against database ` +
-        `"${databaseName || '(unknown)'}" on host ` +
+        `"${targetDatabaseName ?? '(unknown)'}" on host ` +
         `"${parsedUrl.hostname || '(unknown)'}". Tests require a local database named ` +
         '`teqo_test` or `teqo_<worktree>_test` (per-worktree isolation from `pnpm worktree next`) ' +
         'over postgresql: on localhost, 127.0.0.1, or ::1. ' +

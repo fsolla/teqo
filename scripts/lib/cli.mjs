@@ -148,6 +148,25 @@ export const databaseHostname = (databaseUrl) => {
 }
 
 /**
+ * Database name of a connection string (percent-decoded), or null when the URL
+ * is missing/unparseable or its name carries invalid percent-encoding. THE one
+ * spelling of the name extraction shared by the fail-closed DB-name guards
+ * (`db-reset`, `assertTestDatabase`, staging test-account) — a decode bug here
+ * would silently misdirect a guard, so it is unit-pinned.
+ *
+ * @param {unknown} databaseUrl
+ * @returns {string | null}
+ */
+export const databaseName = (databaseUrl) => {
+  try {
+    const url = new URL(String(databaseUrl ?? ''))
+    return decodeURIComponent(url.pathname.replace(/^\//, ''))
+  } catch {
+    return null
+  }
+}
+
+/**
  * True when the connection string targets one of the LOCAL_HOSTS.
  *
  * @param {unknown} databaseUrl

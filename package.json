@@ -33,6 +33,7 @@
     "db:seed:projecao": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/import-projecao.mjs",
     "media:recover": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/recover-media.mjs",
     "db:seed:minimal": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-minimal.mjs",
+    "campaign:staging:test-account": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/bootstrap-staging-test-account.mjs",
     "db:check:push-chain": "node scripts/check-push-chain.mjs",
     "ops79:reconcile": "node scripts/reconcile-campaign-vertical.mjs",
     "ops79:migrate": "node scripts/migrate-signature-orphan.mjs",

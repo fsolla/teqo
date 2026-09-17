@@ -66,6 +66,7 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/portalTransparenciaEmendas.mjs',
   'scripts/lib/seed-minimal-manifest.mjs',
   'scripts/lib/sollaCeuciSalvadorMetrics.mjs',
+  'scripts/lib/staging-test-account.mjs',
   'scripts/lib/test-affected-core.mjs',
   'scripts/lib/testing-audit-metrics-core.mjs',
   'scripts/lib/worktree-env.mjs',
