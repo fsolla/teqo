@@ -218,13 +218,12 @@ test.describe('Agenda — calendário operacional', () => {
     )
     await expect(page.getByText(title, { exact: true })).toBeVisible()
 
-    // B167: when the viewport shrinks to mobile, a chat that was open on the
-    // desktop panel migrates to the open full-screen drawer — which would cover
-    // the agenda. Close it first so this mobile-layout step is unobstructed.
-    await page
+    // B203: fresh sessions start closed — close the chat only if it opened,
+    // so the mobile drawer never covers the agenda on resize.
+    const openChatClose = page
       .getByRole('button', { name: 'Fechar', exact: true })
       .filter({ visible: true })
-      .click()
+    if ((await openChatClose.count()) > 0) await openChatClose.click()
     await page.setViewportSize({ width: 390, height: 844 })
     // C95 — the view-mode control lives in the app top bar on mobile too; the
     // narrow fallback (no `view` param) shows "Dia" after the resize.
@@ -478,13 +477,12 @@ test.describe('Agenda — calendário operacional', () => {
 
     // The explicit choice wins over the responsive narrow fallback: shrinking
     // the viewport must NOT push the calendar back to day/week.
-    // B167: a chat that opened by itself on the desktop panel (RRP settle)
-    // migrates to the full-screen mobile drawer and covers the page — close it
-    // first so the top bar selector stays reachable in the a11y tree.
-    await page
+    // B203: fresh sessions start closed — close the chat only if it opened,
+    // or the migrating drawer would cover the page on resize.
+    const openChatClose = page
       .getByRole('button', { name: 'Fechar', exact: true })
       .filter({ visible: true })
-      .click()
+    if ((await openChatClose.count()) > 0) await openChatClose.click()
     await page.setViewportSize({ width: 390, height: 844 })
     await expect(viewSelector).toHaveAttribute('aria-label', 'Modo de visualização: Mês')
     // C101 — the mobile calendar drops the FullCalendar toolbar: the period

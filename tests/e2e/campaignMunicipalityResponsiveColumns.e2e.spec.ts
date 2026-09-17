@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test'
 
-import { expect, test } from './fixtures/campaignE2EFixtures.js'
+import { expect, test, waitForRouterSettled } from './fixtures/campaignE2EFixtures.js'
 
 const REM_IN_PIXELS = 16
 const municipalityColumnsCookie = encodeURIComponent('municipios:__none__')
@@ -166,6 +166,17 @@ test.describe('B158 — colunas responsivas por largura do conteúdo', () => {
     // would only prove that the container shrank, not that its query reacted.
     await page.setViewportSize({ width: 1600, height: 900 })
     await loginWithAllColumns(page, campaign)
+    // B203: fresh sessions start closed — open the chat explicitly so the
+    // stage below starts from the assumed "sidebar open + chat open" state.
+    // OPS42 — dev-only settle before the click (see `waitForRouterSettled`).
+    await waitForRouterSettled(page)
+    await page
+      .getByRole('button', { name: 'Sollinha — Assistente virtual' })
+      .filter({ visible: true })
+      .click()
+    await expect(
+      page.getByRole('button', { name: 'Fechar', exact: true }).filter({ visible: true }),
+    ).toBeVisible({ timeout: 20_000 })
     const container = municipalityContainer(page)
     const viewportBefore = page.viewportSize()
     const widthWithSidebar = await container.evaluate((element) => element.clientWidth)
