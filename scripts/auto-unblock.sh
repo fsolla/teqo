@@ -22,4 +22,15 @@ flock -n 9 || LOCK_BUSY=1
 
 # Hand the exact lock path to the orchestrator (its lock probe uses it).
 export TEQO_UNBLOCK_LOCK="$LOCK_FILE"
+
+# Node's global fetch ignores HTTP(S)_PROXY unless NODE_USE_ENV_PROXY is set
+# BEFORE the process starts (Node >= 24). The homeserver reaches GitHub only
+# through the runner's local CONNECT proxy (github-tunnel + http-proxy-socks),
+# and a direct fetch fails intermittently (live finding: launcher run
+# 35171293357 died on `fetch failed` reading the run's jobs). Enable the env
+# proxy whenever the runner configured one; the detached agent inherits it.
+if [[ -n "${HTTPS_PROXY:-}${HTTP_PROXY:-}" ]]; then
+  export NODE_USE_ENV_PROXY="${NODE_USE_ENV_PROXY:-1}"
+fi
+
 exec node scripts/auto-unblock.mjs "--lock-busy=$LOCK_BUSY"

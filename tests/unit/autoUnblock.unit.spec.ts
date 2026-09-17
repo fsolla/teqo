@@ -11,6 +11,7 @@ import {
   evaluateDatabaseTargets,
   outcomeComment,
   parseHeadlessDirective,
+  resolveOpenCodeBinary,
   tokenBody,
   tokenTitle,
   UNBLOCK_LABEL,
@@ -276,6 +277,65 @@ describe('classifyOutcome', () => {
     expect(
       outcomeComment({ status: 'no-pr', exitCode: 143, branch: 'fix/x', logPath: '/tmp/log' }),
     ).toContain('SEM PR')
+  })
+})
+
+describe('resolveOpenCodeBinary (o PATH do runner não tem ~/.opencode/bin)', () => {
+  const home = '/home/runner'
+  const binDir = `${home}/.opencode/bin/opencode`
+
+  it('OPENCODE_BIN tem precedência', () => {
+    expect(
+      resolveOpenCodeBinary({
+        env: { OPENCODE_BIN: '/custom/opencode', PATH: '/usr/bin' },
+        home,
+        exists: () => true,
+      }),
+    ).toBe('/custom/opencode')
+  })
+
+  it('argv0 com path é devolvido como veio (o runner pode usar caminho absoluto)', () => {
+    expect(
+      resolveOpenCodeBinary({
+        argv0: '/opt/opencode/bin/opencode',
+        env: {},
+        home: '',
+        exists: () => false,
+      }),
+    ).toBe('/opt/opencode/bin/opencode')
+  })
+
+  it('cai no install padrão ~/.opencode/bin quando fora do PATH (causa do exit 127)', () => {
+    expect(
+      resolveOpenCodeBinary({
+        argv0: 'opencode',
+        env: { PATH: '/usr/bin:/bin' },
+        home,
+        exists: (candidate) => candidate === binDir,
+      }),
+    ).toBe(binDir)
+  })
+
+  it('encontra o opencode no PATH quando presente', () => {
+    expect(
+      resolveOpenCodeBinary({
+        argv0: 'opencode',
+        env: { PATH: '/usr/bin:/usr/local/bin' },
+        home,
+        exists: (candidate) => candidate === '/usr/local/bin/opencode',
+      }),
+    ).toBe('/usr/local/bin/opencode')
+  })
+
+  it('sem candidato existente → null (caller falha fechado, sem `timeout ... opencode`)', () => {
+    expect(
+      resolveOpenCodeBinary({
+        argv0: 'opencode',
+        env: { PATH: '/usr/bin' },
+        home,
+        exists: () => false,
+      }),
+    ).toBeNull()
   })
 })
 
