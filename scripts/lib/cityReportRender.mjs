@@ -6,44 +6,12 @@
  */
 
 import { formatDateBr, formatDateTimeBr, formatInteger } from './cityReportFormat.mjs'
-
-const htmlEscape = (value) =>
-  String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-
-const URL_PATTERN = /(https?:\/\/[^\s<>"')]+)/g
-
-/** Escapes the text and turns every bare URL into a clickable anchor (PDF links). */
-const htmlWithLinks = (value) =>
-  htmlEscape(value).replace(URL_PATTERN, (url) => `<a href="${url}">${url}</a>`)
-
-const INLINE_SOURCE_PATTERN = /\{\{fonte(?::(\d+))?\}\}/g
-
-/**
- * Resolves the `{{fonte}}` / `{{fonte:N}}` tokens the content model leaves in
- * the citation text into `(fonte)` anchors — inline, right where the excerpt
- * cites the verified fact, so one text can point to more than one source.
- */
-const renderInlineSourcesHtml = (value, sources) =>
-  htmlWithLinks(value).replace(INLINE_SOURCE_PATTERN, (_match, index) => {
-    const position = Number(index ?? 1) - 1
-    const url = sources?.[position]
-    if (!url) return ''
-    const label = sources.length > 1 ? `(fonte ${position + 1})` : '(fonte)'
-    return ` <a class="inline-source" href="${htmlEscape(url)}">${label}</a>`
-  })
-
-const renderInlineSourcesMd = (value, sources) =>
-  String(value ?? '').replace(INLINE_SOURCE_PATTERN, (_match, index) => {
-    const position = Number(index ?? 1) - 1
-    const url = sources?.[position]
-    if (!url) return ''
-    const label = sources.length > 1 ? `fonte ${position + 1}` : 'fonte'
-    return ` [(${label})](${url})`
-  })
+import {
+  htmlEscape,
+  htmlWithLinks,
+  renderInlineSourcesHtml,
+  renderInlineSourcesMd,
+} from './reportText.mjs'
 
 const sourceKindLabels = {
   teqo: 'base Teqo',

@@ -16,6 +16,7 @@ const commands = [
   'testing-audit',
   'bug-fix',
   'relatorio-cidade',
+  'dossie-solla-cidade',
 ] as const
 
 describe('opencode commands couple to their skill by exact name', () => {

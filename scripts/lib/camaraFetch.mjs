@@ -22,18 +22,21 @@ const camaraHeaders = { 'User-Agent': CAMARA_USER_AGENT, Accept: 'application/js
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-async function fetchOnce(url, { timeoutMs = 30_000, headers = camaraHeaders } = {}) {
-  const response = await fetch(url, { headers, signal: AbortSignal.timeout(timeoutMs) })
+async function fetchOnce(
+  url,
+  { timeoutMs = 30_000, headers = camaraHeaders, fetchImpl = fetch } = {},
+) {
+  const response = await fetchImpl(url, { headers, signal: AbortSignal.timeout(timeoutMs) })
   if (!response.ok) throw new Error(`HTTP ${response.status} em ${url}`)
   return response
 }
 
 /** The Câmara API drops connections now and then — bounded retry for GETs. */
-export async function getText(url, { attempts = 3, ...options } = {}) {
+export async function getText(url, { attempts = 3, fetchImpl = fetch, ...options } = {}) {
   let lastError
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
-      return await (await fetchOnce(url, options)).text()
+      return await (await fetchOnce(url, { ...options, fetchImpl })).text()
     } catch (error) {
       lastError = error
       if (attempt < attempts) await sleep(2_000)
@@ -55,12 +58,12 @@ export const getJson = async (url, options) => JSON.parse(await getText(url, opt
  */
 export async function getJsonWithBackoff(
   url,
-  { attempts = 5, timeoutMs = 45_000, label = 'camara' } = {},
+  { attempts = 5, timeoutMs = 45_000, label = 'camara', fetchImpl = fetch } = {},
 ) {
   let lastError
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
-      return JSON.parse(await getText(url, { attempts: 1, timeoutMs }))
+      return JSON.parse(await getText(url, { attempts: 1, timeoutMs, fetchImpl }))
     } catch (error) {
       lastError = error
       if (attempt < attempts) {
