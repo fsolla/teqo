@@ -41,6 +41,13 @@ import {
 } from './cityReportFormat.mjs'
 import { researchItemById } from './cityReportResearch.mjs'
 import { buildTerritoryPanorama } from './cityReportTerritory.mjs'
+import {
+  capList,
+  excerptDeepDive,
+  moreItemsLabel,
+  summaryListText,
+  summarySurfaceText,
+} from './reportText.mjs'
 
 const REPORT_TITLE = 'Relatório de cidade — pré-viagem'
 
@@ -55,18 +62,20 @@ const SPEECH_SUMMARY_MAX = 220
 const SPEECH_MENTION_MAX = 220
 
 /**
- * Page-1 content budget (OPS120). The summary reuses the free text of the
- * research checklist; without a cap, long answers (pesquisa cheia) blow the
- * one-page guard. Page 1 is "uma olhada" — cap the excerpt and the joined
- * lists, and let the deepening sections carry the full text. Same spirit as
- * the dossier caps (E16): explicit ceiling, never squeeze the layout.
+ * Page-1 text budget (C188). Page 1 is a summary surface: it never cuts
+ * mid-sentence with "…". It prints the researcher's `summary` when present,
+ * else the full `answer`; when the full text does not fit the one-page guard,
+ * the builder re-renders with `textFallback='pointer'` and the line points to
+ * the deep dive (which always keeps the integral). Only the list caps below
+ * still apply — each one with a visible counter.
  */
-const PAGE_ONE_ANSWER_MAX = 90
-/** The "Quem é quem" values share a 2-column stat cell — tighter than the rest. */
-const PAGE_ONE_WHO_MAX = 26
-/** Oposição card: the source suffix ("fonte: pesquisa web · data") is appended after the cut. */
-const PAGE_ONE_RISK_MAX = 70
 const PAGE_ONE_LIST_LIMIT = 2
+/**
+ * Character ceiling for a joined list of free text (conjuncture risks) — the
+ * joined `answer`s have no deep-dive copy, so a long line degrades to the
+ * pointer when the page does not fit, instead of blowing the guard.
+ */
+const PAGE_ONE_JOINED_MAX = 90
 /** Joined name lists (Responsável, Dobradinhas) — one line in the strip/stat row. */
 const PAGE_ONE_NAMES_MAX = 20
 /**
@@ -75,8 +84,6 @@ const PAGE_ONE_NAMES_MAX = 20
  * the one-page guard, and the full list lives in the deep dive anyway.
  */
 const PAGE_ONE_INDICATOR_LIMIT = 3
-/** One indication per line on page 1 — the full purpose text stays in the deep dive. */
-const PAGE_ONE_INDICATOR_DETAIL_MAX = 70
 
 const EMENDAS_EVIDENCE_TITLE = 'Emendas — indícios web (sem atribuição oficial ao município)'
 
@@ -85,23 +92,6 @@ const EMENDA_SPHERE_LABELS = {
   municipio: 'município',
   regiao: 'região',
   polo: 'polo',
-}
-
-/** Truncates with an explicit ellipsis; short text passes through untouched. */
-const excerpt = (text, max) => {
-  const value = String(text ?? '')
-  return value.length > max ? `${value.slice(0, max).trimEnd()}…` : value
-}
-
-/**
- * First `limit` values joined, capped to `max` chars; the remainder is always
- * made explicit (`e mais N`) so the count survives the excerpt.
- */
-const joinLimited = (values, limit, max) => {
-  const items = values.filter(Boolean)
-  const shown = items.slice(0, limit)
-  const remaining = items.length - shown.length
-  return `${excerpt(shown.join(', '), max)}${remaining > 0 ? ` e mais ${remaining}` : ''}`
 }
 
 const sourceTeqo = (label, date) => ({ kind: 'teqo', label, date: date ?? null })
@@ -146,24 +136,23 @@ const withInlineSources = (text, sources) => {
 
 /**
  * Página 1 = resumo de uma olhada: a fonte do item entra compacta (pesquisa web
- * + data). A URL completa de cada item é preservada em "Fontes e limites" —
- * imprimir a URL por linha estoura a página 1 com a pesquisa real (ver guarda
- * de overflow do builder). O texto também entra capado (`PAGE_ONE_ANSWER_MAX`):
- * a resposta integral é do aprofundamento, não do resumo de uma página.
+ * + data). O texto é o `summary` do researcher quando existe; sem ele, a
+ * resposta integral — e, quando a página 1 não cabe (`fallback: 'pointer'`), uma
+ * linha aponta o aprofundamento **sem reticências**. A resposta integral é
+ * sempre preservada em "Pesquisa — respostas integrais" (C188).
  */
-const researchAnswerItem = (research, id, max = PAGE_ONE_ANSWER_MAX) => {
+const researchAnswerItem = (research, id, fallback = 'full') => {
   const item = researchItemById(research, id)
   if (!item) return null
   return {
-    text: excerpt(item.answer, max),
+    text: summarySurfaceText(item, fallback).text,
     source: sourceWeb(null, null, item.sourceDate),
   }
 }
 
 const gapCallout = (gaps, title = 'Lacunas desta seção') => {
   if (!gaps.length) return null
-  const shown = gaps.slice(0, GAP_CALLOUT_LIMIT)
-  const remaining = gaps.length - shown.length
+  const { items: shown, remaining } = capList(gaps, GAP_CALLOUT_LIMIT)
   return {
     kind: 'callout',
     tone: 'gap',
@@ -171,7 +160,9 @@ const gapCallout = (gaps, title = 'Lacunas desta seção') => {
     body: [
       GAP_COPY,
       ...shown.map((gap) => `${gap.label ? `${gap.label}: ` : ''}${gap.reason}`),
-      ...(remaining > 0 ? [`e mais ${remaining} ponto(s) sem leitura.`] : []),
+      ...(remaining > 0
+        ? [`${moreItemsLabel(remaining, 'ponto sem leitura', 'pontos sem leitura')}.`]
+        : []),
     ],
   }
 }
@@ -195,10 +186,9 @@ const buildIdentificationItems = ({ municipality, goal, conjuncture, advisors })
   {
     label: 'Responsável',
     value: advisors.length
-      ? joinLimited(
+      ? summaryListText(
           advisors.map((advisor) => advisor.name),
-          PAGE_ONE_LIST_LIMIT,
-          PAGE_ONE_NAMES_MAX,
+          { limit: PAGE_ONE_LIST_LIMIT, max: PAGE_ONE_NAMES_MAX },
         )
       : 'Sem responsável',
   },
@@ -225,15 +215,15 @@ const buildElectoralKpis = ({ electoral, conjuncture }) => {
   ]
 }
 
-const buildWhoRows = ({ leaderships, advisors, conjuncture }, research, prefeito) => {
+const buildWhoRows = ({ leaderships, advisors, conjuncture }, research, prefeito, fallback) => {
   const rows = []
   const simpleAnswers = [
     { id: 'prefeito', label: 'Prefeito(a)', item: prefeito },
-    { id: 'vice', label: 'Vice', item: researchAnswerItem(research, 'vice', PAGE_ONE_WHO_MAX) },
+    { id: 'vice', label: 'Vice', item: researchAnswerItem(research, 'vice', fallback) },
     {
       id: 'relacao_campo',
       label: 'Relação com o campo',
-      item: researchAnswerItem(research, 'relacao_campo', PAGE_ONE_WHO_MAX),
+      item: researchAnswerItem(research, 'relacao_campo', fallback),
     },
   ]
   for (const { label, item } of simpleAnswers) {
@@ -245,14 +235,13 @@ const buildWhoRows = ({ leaderships, advisors, conjuncture }, research, prefeito
     hint: advisors.length ? null : 'sem responsável vinculado',
   })
   const dobradinhas = conjuncture?.stateDeputies?.length
-    ? joinLimited(
+    ? summaryListText(
         conjuncture.stateDeputies.map((deputy) => deputy.name),
-        PAGE_ONE_LIST_LIMIT,
-        PAGE_ONE_NAMES_MAX,
+        { limit: PAGE_ONE_LIST_LIMIT, max: PAGE_ONE_NAMES_MAX, fallback },
       )
     : null
   rows.push({ label: 'Dobradinhas', value: dobradinhas ?? 'sem registro na base' })
-  const vereadores = researchAnswerItem(research, 'vereadores', PAGE_ONE_WHO_MAX)
+  const vereadores = researchAnswerItem(research, 'vereadores', fallback)
   if (vereadores) {
     rows.push({ label: 'Vereadores/dobradas', value: vereadores.text, source: vereadores.source })
   }
@@ -284,8 +273,8 @@ const buildDeliveredKpis = ({ speeches }, research, emendas) => {
   ]
 }
 
-const buildAnnouncePanel = (research) => {
-  const relacao = researchAnswerItem(research, 'relacao_campo', PAGE_ONE_WHO_MAX)
+const buildAnnouncePanel = (research, fallback) => {
+  const relacao = researchAnswerItem(research, 'relacao_campo', fallback)
   const items = []
   if (relacao) {
     // A fonte da relação local já aparece em "Quem é quem" na mesma página.
@@ -305,10 +294,10 @@ const buildAnnouncePanel = (research) => {
   }
 }
 
-const buildRiskCards = ({ leaderships, advisors, conjuncture }, research) => {
+const buildRiskCards = ({ leaderships, advisors, conjuncture }, research, fallback) => {
   const opposition =
-    researchAnswerItem(research, 'disputa_local', PAGE_ONE_RISK_MAX) ??
-    researchAnswerItem(research, 'quem_investe', PAGE_ONE_RISK_MAX)
+    researchAnswerItem(research, 'disputa_local', fallback) ??
+    researchAnswerItem(research, 'quem_investe', fallback)
   return [
     {
       title: 'Oposição local',
@@ -319,7 +308,11 @@ const buildRiskCards = ({ leaderships, advisors, conjuncture }, research) => {
     {
       title: 'Riscos na base',
       body: conjuncture?.risks?.length
-        ? joinLimited(conjuncture.risks, PAGE_ONE_LIST_LIMIT, PAGE_ONE_ANSWER_MAX)
+        ? summaryListText(conjuncture.risks, {
+            limit: PAGE_ONE_LIST_LIMIT,
+            max: PAGE_ONE_JOINED_MAX,
+            fallback,
+          })
         : 'Nenhum risco registrado',
     },
     {
@@ -343,11 +336,11 @@ const collectPageOneGaps = ({ electoral, prefeito }) => {
   return gaps
 }
 
-const buildEmendasEvidenceBlock = (research, emendas) => {
+const buildEmendasEvidenceBlock = (research, emendas, fallback) => {
   if (emendas?.status === 'ok') return null
   const indicators = research.emendasIndicators ?? []
   if (!indicators.length) {
-    const evidence = researchAnswerItem(research, 'emendas_web')
+    const evidence = researchAnswerItem(research, 'emendas_web', fallback)
     if (!evidence) return null
     return {
       kind: 'callout',
@@ -356,7 +349,7 @@ const buildEmendasEvidenceBlock = (research, emendas) => {
       body: [evidence.text, 'Não somar região/polo como emenda da cidade; URLs nas fontes.'],
     }
   }
-  const shown = indicators.slice(0, PAGE_ONE_INDICATOR_LIMIT)
+  const { items: shown, remaining } = capList(indicators, PAGE_ONE_INDICATOR_LIMIT)
   return {
     kind: 'indicatorList',
     title: EMENDAS_EVIDENCE_TITLE,
@@ -364,22 +357,16 @@ const buildEmendasEvidenceBlock = (research, emendas) => {
       author: indicator.author,
       sphere: indicator.sphere,
       sphereLabel: EMENDA_SPHERE_LABELS[indicator.sphere] ?? indicator.sphere,
-      detail: [
-        excerpt(indicator.purpose, PAGE_ONE_INDICATOR_DETAIL_MAX),
-        indicator.value,
-        indicator.year,
-      ]
-        .filter(Boolean)
-        .join(' · '),
+      detail: [indicator.purpose, indicator.value, indicator.year].filter(Boolean).join(' · '),
       source: sourceWeb(indicator.author, indicator.sourceUrl, indicator.sourceDate),
     })),
-    remaining: indicators.length - shown.length,
+    remaining,
     note: 'Não somar região/polo como emenda da cidade; a atribuição oficial fica com o Portal da Transparência.',
   }
 }
 
-const buildPageOne = ({ snapshot, research, emendas, generatedAt }) => {
-  const prefeito = researchAnswerItem(research, 'prefeito', PAGE_ONE_WHO_MAX)
+const buildPageOne = ({ snapshot, research, emendas, generatedAt, textFallback }) => {
+  const prefeito = researchAnswerItem(research, 'prefeito', textFallback)
   const gapCalloutBlock = gapCallout(
     collectPageOneGaps({ electoral: snapshot.electoral, prefeito }),
     'Pontos sem leitura',
@@ -398,7 +385,9 @@ const buildPageOne = ({ snapshot, research, emendas, generatedAt }) => {
           },
           {
             title: 'Quem é quem',
-            blocks: [{ kind: 'stats', rows: buildWhoRows(snapshot, research, prefeito) }],
+            blocks: [
+              { kind: 'stats', rows: buildWhoRows(snapshot, research, prefeito, textFallback) },
+            ],
           },
         ],
         sources: [
@@ -422,12 +411,12 @@ const buildPageOne = ({ snapshot, research, emendas, generatedAt }) => {
           sourceWeb('pesquisa web — imprensa', null, research.researchedAt),
         ],
       },
-      buildEmendasEvidenceBlock(research, emendas),
-      buildAnnouncePanel(research),
+      buildEmendasEvidenceBlock(research, emendas, textFallback),
+      buildAnnouncePanel(research, textFallback),
       {
         kind: 'cards',
         title: 'Riscos — oposição/disputa local',
-        items: buildRiskCards(snapshot, research),
+        items: buildRiskCards(snapshot, research, textFallback),
       },
       gapCalloutBlock,
       {
@@ -867,7 +856,7 @@ const buildSignalsSection = ({ snapshot }) => {
           .filter(Boolean)
           .join(' · '),
         responsible: row.responsibleName ?? '—',
-        excerpt: row.body ? row.body.slice(0, SIGNAL_EXCERPT_MAX) : '—',
+        excerpt: row.body ? excerptDeepDive(row.body, SIGNAL_EXCERPT_MAX) : '—',
       })),
       note:
         signals.totalCount > signals.rows.length
@@ -1094,7 +1083,7 @@ const speechTopicLabel = (value) =>
  * false "menção ao município".
  */
 const speechMention = (row, variant) => {
-  if (row.mentionExcerpt) return row.mentionExcerpt.slice(0, SPEECH_MENTION_MAX)
+  if (row.mentionExcerpt) return excerptDeepDive(row.mentionExcerpt, SPEECH_MENTION_MAX)
   const count = row.mentionedMunicipalityCount
   if (variant === 'region') {
     return count
@@ -1110,7 +1099,7 @@ const projectSpeechTableRow = (row, variant) => {
   const base = {
     date: formatDateBr(row.speechAt),
     phase: row.phase ?? '—',
-    description: row.summary ? row.summary.slice(0, SPEECH_SUMMARY_MAX) : '—',
+    description: row.summary ? excerptDeepDive(row.summary, SPEECH_SUMMARY_MAX) : '—',
     video: row.youtubeUrl
       ? withYoutubeTimestamp(row.youtubeUrl, youtubeStartSeconds(row))
       : (row.vodPlaybackUrl ?? '—'),
@@ -1356,8 +1345,9 @@ const buildRegionSection = ({ snapshot }) => {
 }
 
 /**
- * Page 1 caps the checklist answers; the full text of each item lives here, so
- * the cut never loses a sourced fact (OPS120).
+ * Page 1 never cuts text (C188): it prints the item's `summary` or the full
+ * `answer`, degrading to a pointer when the page does not fit. This table keeps
+ * the full text of every checklist item, so the pointer always has a target.
  */
 const buildResearchAnswersTable = (research) =>
   research.items.length
@@ -1378,7 +1368,7 @@ const buildResearchAnswersTable = (research) =>
             sources,
           }
         }),
-        note: 'A página 1 resume e capa; o texto integral de cada item da pesquisa fica nesta tabela.',
+        note: 'A página 1 imprime o resumo (ou o texto integral) e, quando não cabe, aponta para cá; o texto integral de cada item da pesquisa fica nesta tabela.',
       }
     : null
 
@@ -1514,7 +1504,13 @@ const hasSectionData = (id, snapshot) => {
   return true
 }
 
-export const buildCityReport = ({ snapshot, research, emendas, generatedAt = new Date() }) => {
+export const buildCityReport = ({
+  snapshot,
+  research,
+  emendas,
+  generatedAt = new Date(),
+  textFallback = 'full',
+}) => {
   assertSnapshotShape(snapshot)
   const generatedAtIso = generatedAt instanceof Date ? generatedAt.toISOString() : generatedAt
 
@@ -1600,7 +1596,7 @@ export const buildCityReport = ({ snapshot, research, emendas, generatedAt = new
       actorRole: snapshot.meta?.actorRole ?? null,
       researchedAt: research.researchedAt,
     },
-    page1: buildPageOne({ snapshot, research, emendas, generatedAt: generatedAtIso }),
+    page1: buildPageOne({ snapshot, research, emendas, generatedAt: generatedAtIso, textFallback }),
     sections,
   }
 }

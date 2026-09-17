@@ -31,6 +31,20 @@ describe('buildBulletin', () => {
     expect(bulletin.moreItems).toHaveLength(BULLETIN_MORE_LIMIT)
   })
 
+  it('counts the facts left out of the one-page boletim (never a silent drop, C188)', () => {
+    const facts = Array.from({ length: 25 }, (_value, index) => fact(index))
+    const bulletin = buildBulletin({ facts, municipality: 'Ilhéus', generatedAt })
+    expect(bulletin.factsTotal).toBe(25)
+    expect(bulletin.highlights.length + bulletin.moreItems.length + bulletin.factsRemaining).toBe(
+      bulletin.factsTotal,
+    )
+  })
+
+  it('has no remainder when everything fits', () => {
+    const bulletin = buildBulletin({ facts: [fact(1)], municipality: 'Ilhéus', generatedAt })
+    expect(bulletin.factsRemaining).toBe(0)
+  })
+
   it('orders município before região and a sourced number before none', () => {
     const facts = [
       fact(1, { sphere: 'regiao' }),

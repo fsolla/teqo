@@ -6,7 +6,7 @@
  */
 
 import { isInstitutionUnit } from './dossieUnit.mjs'
-import { htmlEscape } from './reportText.mjs'
+import { htmlEscape, moreItemsLabel } from './reportText.mjs'
 
 const ASSET = (title, lines) =>
   `<div class="asset-box"><p class="asset-title">${htmlEscape(title)}</p><p>${lines
@@ -100,6 +100,7 @@ const PRINT_CSS = `
   .more-grid { margin-top: 2.3mm; display: grid; grid-template-columns: 1fr 1fr; gap: 1.7mm 4mm; }
   .more-item { position: relative; margin: 0; min-height: 11mm; padding: 0 0 2mm 5mm; border-bottom: .25mm solid #cbd5dc; font-size: 9pt; line-height: 1.22; }
   .more-item::before { content: '✓'; position: absolute; left: 0; top: 0; color: #315c75; font-weight: 900; }
+  .more-counter { margin-top: 1.8mm; color: #435264; font-size: 7.6pt; font-weight: 600; }
   .more-aside { display: grid; grid-template-rows: 1fr 1fr; gap: 2.3mm; }
   .more-aside .asset-box { border-radius: .125rem; }
   .empty { margin-top: 3mm; color: #435264; font-size: 9.5pt; }
@@ -185,6 +186,11 @@ const renderMunicipalityBulletinHtml = (bulletin) => `
         bulletin.moreItems.length
           ? `<div class="more-grid">${bulletin.moreItems.map(renderMoreItem).join('')}</div>`
           : '<div class="empty-box"><p><strong class="uppercase">Sem itens adicionais com fonte além dos destaques.</strong></p><p>Conferir as lacunas explícitas no dossiê da cidade antes de ampliar o boletim.</p></div>'
+      }
+      ${
+        bulletin.factsRemaining > 0
+          ? `<p class="more-counter">${htmlEscape(moreItemsLabel(bulletin.factsRemaining, 'fato com fonte', 'fatos com fonte'))} no dossiê da cidade — o boletim de uma página não os exibe.</p>`
+          : ''
       }
     </div>
     <aside class="more-aside" aria-label="Ativos visuais pendentes">

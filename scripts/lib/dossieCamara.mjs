@@ -8,6 +8,7 @@
 import { getJsonWithBackoff, speechesUrl } from './camaraFetch.mjs'
 import { isNonEmptyString } from './cityReportResearch.mjs'
 import { SOLLA_DEPUTY_ID } from './dossieCareer.mjs'
+import { excerptDeepDive } from './reportText.mjs'
 
 const CAMARA_API = 'https://dadosabertos.camara.leg.br/api/v2'
 export const CAMARA_DEFAULT_FROM = '2015-01-01'
@@ -43,7 +44,8 @@ export const normalizeProposition = (row, deputyId = SOLLA_DEPUTY_ID) => {
 export const normalizeSpeech = (row, deputyId) => {
   const sumario = isNonEmptyString(row?.sumario) ? row.sumario.trim() : null
   const transcricao = isNonEmptyString(row?.transcricao) ? row.transcricao.trim() : null
-  const detail = (sumario ?? transcricao ?? '').slice(0, 280) || null
+  // Deep-dive surface: an explicit "…" is honest; a silent cut would not be (C188).
+  const detail = excerptDeepDive(sumario ?? transcricao ?? '', 280) || null
   if (!detail && !isNonEmptyString(row?.dataHoraInicio)) return null
   const date = isNonEmptyString(row?.dataHoraInicio) ? row.dataHoraInicio.slice(0, 10) : null
   const tipo = isNonEmptyString(row?.tipoDiscurso) ? row.tipoDiscurso.trim() : 'Pronunciamento'

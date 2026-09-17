@@ -120,6 +120,8 @@ if (snapshot.meta?.codeSha && currentCodeSha && snapshot.meta.codeSha !== curren
 }
 
 const baseName = `${slug}-${generatedAt.toISOString().slice(0, 10)}`
+const dossierPdfFile = join(outDir, `${baseName}-dossie.pdf`)
+const bulletinPdfFile = join(outDir, `${baseName}-boletim.pdf`)
 const emendasCachePath = join(CACHE_DIR, `${baseName}.emendas.json`)
 
 const resolveEmendas = async () => {
@@ -163,36 +165,53 @@ console.log(
   `[${LABEL}] câmara=${camara.status} ibge=${health.status} lacunas_pesquisa=${research.gaps.length}`,
 )
 
-const report = buildDossierReport({ snapshot, research, emendas, camara, health, generatedAt })
-const bulletin = buildBulletin({
-  facts: report.bulletinFacts,
-  municipality: snapshot.municipality.name,
-  region: snapshot.municipality.region ?? null,
-  generatedAt,
-})
-
-const dossierHtml = renderDossierHtml(report)
-const dossierMd = renderDossierMd(report)
-const bulletinHtml = renderBulletinHtml(bulletin)
-
-await mkdir(resolve(ROOT, CACHE_DIR), { recursive: true })
-await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.dossie.html`)), dossierHtml)
-await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.boletim.html`)), bulletinHtml)
-
-await mkdir(resolve(ROOT, outDir), { recursive: true })
-const dossierMdFile = join(outDir, `${baseName}-dossie.md`)
-const dossierPdfFile = join(outDir, `${baseName}-dossie.pdf`)
-const bulletinPdfFile = join(outDir, `${baseName}-boletim.pdf`)
-await writeFile(resolve(ROOT, dossierMdFile), dossierMd)
-console.log(`[${LABEL}] companion → ${dossierMdFile}`)
+/**
+ * Builds the dossiê + boletim for a given fit fallback. The resumo page never
+ * cuts with "…": pass 1 prints the researcher's `summary` (or the full answer);
+ * if a page overflows the A4 guard, pass 2 re-renders with
+ * `textFallback: 'pointer'` so the lines without a `summary` point to the era
+ * pages (which keep the integral). The guard is still fail-closed.
+ */
+const buildArtifacts = (textFallback) => {
+  const report = buildDossierReport({
+    snapshot,
+    research,
+    emendas,
+    camara,
+    health,
+    generatedAt,
+    textFallback,
+  })
+  const bulletin = buildBulletin({
+    facts: report.bulletinFacts,
+    municipality: snapshot.municipality.name,
+    region: snapshot.municipality.region ?? null,
+    generatedAt,
+  })
+  return {
+    report,
+    bulletin,
+    dossierHtml: renderDossierHtml(report),
+    dossierMd: renderDossierMd(report),
+    bulletinHtml: renderBulletinHtml(bulletin),
+  }
+}
+let artifacts = buildArtifacts('full')
 
 const browser = await launchPdfBrowser()
 try {
   await emitHtmlPairPdf(browser, {
-    dossierHtml,
-    bulletinHtml,
+    dossierHtml: artifacts.dossierHtml,
+    bulletinHtml: artifacts.bulletinHtml,
     dossierPdf: resolve(ROOT, dossierPdfFile),
     bulletinPdf: resolve(ROOT, bulletinPdfFile),
+    // Budget-gated 2-pass (C188): if the resumo sheet with the full text
+    // overflows, rebuild with pointer lines (no "…") before failing closed.
+    onDossierOverflow: async () => {
+      artifacts = buildArtifacts('pointer')
+      return artifacts.dossierHtml
+    },
+    resumoOnly: true,
   })
 } catch (error) {
   die(error instanceof Error ? error.message : String(error))
@@ -200,10 +219,21 @@ try {
   await browser.close()
 }
 
+const { report, bulletin, dossierHtml, dossierMd, bulletinHtml } = artifacts
+
+await mkdir(resolve(ROOT, CACHE_DIR), { recursive: true })
+await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.dossie.html`)), dossierHtml)
+await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.boletim.html`)), bulletinHtml)
+
+await mkdir(resolve(ROOT, outDir), { recursive: true })
+const dossierMdFile = join(outDir, `${baseName}-dossie.md`)
+await writeFile(resolve(ROOT, dossierMdFile), dossierMd)
+console.log(`[${LABEL}] companion → ${dossierMdFile}`)
+
 console.log(`[${LABEL}] PDF → ${dossierPdfFile}`)
 console.log(`[${LABEL}] boletim PDF → ${bulletinPdfFile}`)
 console.log(
-  `[${LABEL}] ${snapshot.municipality.name}: eras=${report.eras.length} entregas=${report.page1.deliveries.length} ` +
+  `[${LABEL}] ${snapshot.municipality.name}: eras=${report.eras.length} entregas=${report.page1.deliveries.items.length} ` +
     `highlights=${bulletin.highlights.length} lacunas=${research.gaps.length} html_bytes=${Buffer.byteLength(dossierHtml)}`,
 )
 

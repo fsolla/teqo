@@ -6,6 +6,7 @@ import {
   mergeDossierResearch,
   normalizeDossierResearchInput,
 } from '../../scripts/lib/dossieResearch.mjs'
+import { SUMMARY_POINTER_COPY } from '../../scripts/lib/reportText.mjs'
 
 const generatedAt = new Date('2026-09-17T12:00:00.000Z')
 
@@ -101,13 +102,13 @@ describe('buildDossierReport', () => {
     const report = build()
     expect(report.eras.map((era) => era?.id)).toEqual(['A', 'B', 'C'])
     expect(
-      report.eras.every((era) => (era?.numbers.length ?? 0) + (era?.actions.length ?? 0) > 0),
+      report.eras.every((era) => (era?.numbers.items.length ?? 0) + (era?.actions.length ?? 0) > 0),
     ).toBe(true)
   })
 
   it('turns official emenda execution into phase-labelled rows (empenho ≠ pagamento)', () => {
     const eraC = build().eras.find((era) => era?.id === 'C')
-    expect(eraC?.numbers).toContainEqual(
+    expect(eraC?.numbers.items).toContainEqual(
       expect.objectContaining({ object: 'Saúde', phase: 'empenhado', sphere: 'municipio' }),
     )
   })
@@ -118,7 +119,7 @@ describe('buildDossierReport', () => {
       expect.objectContaining({ topic: 'População residente (Censo 2022)' }),
     )
     const eraB = report.eras.find((era) => era?.id === 'B')
-    expect(eraB?.numbers.some((row) => row.object.includes('População'))).toBe(false)
+    expect(eraB?.numbers.items.some((row) => row.object.includes('População'))).toBe(false)
   })
 
   it('never sums região/polo into the município list', () => {
@@ -154,9 +155,102 @@ describe('buildDossierReport', () => {
 
   it('caps the page-1 deliveries and keeps the full timeline on its own page', () => {
     const report = build()
-    expect(report.page1.deliveries.length).toBeLessThanOrEqual(3)
+    expect(report.page1.deliveries.items.length).toBeLessThanOrEqual(3)
+    expect(report.page1.deliveries.total).toBeGreaterThanOrEqual(
+      report.page1.deliveries.items.length,
+    )
     expect(report.page1.timeline.length).toBe(6)
     expect(report.trajectory.length).toBeGreaterThan(report.page1.timeline.length)
+  })
+
+  it('prefers the researcher summary on the resumo and keeps the integral in the era (C188)', () => {
+    const summarized = mergeDossierResearch([
+      normalizeDossierResearchInput(eraFile('A', [item('era_a_conquista')])),
+      normalizeDossierResearchInput(eraFile('B', [item('era_b_sesab')])),
+      normalizeDossierResearchInput(
+        eraFile('C', [
+          item('era_c_emendas', {
+            summary: 'Emenda de R$ 1,2 mi empenhada em 2024.',
+            numbers: [{ label: 'Recurso', value: 'R$ 1,2 mi', year: '2024', phase: 'empenhado' }],
+          }),
+        ]),
+      ),
+    ])
+    const report = build({ research: summarized })
+    const delivery = report.page1.deliveries.items.find((row: { era: string }) => row.era === 'C')!
+    expect(delivery.title).toBe('Emenda de R$ 1,2 mi empenhada em 2024.')
+    const eraC = report.eras.find((era) => era?.id === 'C')!
+    expect(
+      eraC.actions.some(
+        (action: { title: string }) => action.title === 'Resposta de era_c_emendas',
+      ),
+    ).toBe(true)
+  })
+
+  it('falls back to a pointer line (never "…") without losing the era integral (C188)', () => {
+    const report = build({ textFallback: 'pointer' })
+    const delivery = report.page1.deliveries.items[0]
+    expect(delivery.title).toBe(SUMMARY_POINTER_COPY)
+    expect(delivery.detail).toBeNull()
+    expect(delivery.title.includes('…')).toBe(false)
+    const eraC = report.eras.find((era) => era?.id === 'C')!
+    expect(
+      eraC.actions.some(
+        (action: { title: string }) => action.title === 'Resposta de era_c_emendas',
+      ),
+    ).toBe(true)
+  })
+
+  it('keeps the researcher summary even on the pointer pass (C188)', () => {
+    const summarized = mergeDossierResearch([
+      normalizeDossierResearchInput(eraFile('A', [item('era_a_conquista')])),
+      normalizeDossierResearchInput(eraFile('B', [item('era_b_sesab')])),
+      normalizeDossierResearchInput(
+        eraFile('C', [
+          item('era_c_emendas', {
+            summary: 'Emenda de R$ 1,2 mi empenhada em 2024.',
+            numbers: [{ label: 'Recurso', value: 'R$ 1,2 mi', year: '2024', phase: 'empenhado' }],
+          }),
+        ]),
+      ),
+    ])
+    const report = build({ research: summarized, textFallback: 'pointer' })
+    const summaryDelivery = report.page1.deliveries.items.find(
+      (row: { era: string }) => row.era === 'C',
+    )!
+    expect(summaryDelivery.title).toBe('Emenda de R$ 1,2 mi empenhada em 2024.')
+    const hook = report.page1.hooks.items.find(
+      (row: { angle: string }) => row.angle === SUMMARY_POINTER_COPY,
+    )
+    expect(Boolean(hook)).toBe(true)
+  })
+
+  it('counts every capped list so nothing disappears in silence (C188)', () => {
+    const manyRegional = mergeDossierResearch([
+      normalizeDossierResearchInput(
+        eraFile(
+          'A',
+          [
+            'era_a_formacao',
+            'era_a_sesab',
+            'era_a_consultor_ms',
+            'era_a_conquista',
+            'era_a_sas_ms',
+          ].map((id) => item(id, { sphere: 'regiao' })),
+        ),
+      ),
+      normalizeDossierResearchInput(eraFile('B', [])),
+      normalizeDossierResearchInput(eraFile('C', [])),
+    ])
+    const report = build({ research: manyRegional })
+    const eraA = report.eras.find((era) => era?.id === 'A')!
+    expect(eraA.actions).toHaveLength(5)
+    expect(eraA.camaraActionsRemaining).toBe(0)
+    expect(report.region.evidence.items).toHaveLength(3)
+    expect(report.region.evidence.total).toBe(5)
+    expect(report.region.evidence.remaining).toBe(2)
+    expect(report.region.regional.total).toBe(5)
+    expect(report.region.regional.items.length + report.region.regional.remaining).toBe(5)
   })
 
   it('carries the defeso limits and the editorial rules', () => {

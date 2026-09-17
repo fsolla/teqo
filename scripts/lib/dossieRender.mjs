@@ -8,7 +8,7 @@
 import { formatDateBr, formatDateTimeBr } from './cityReportFormat.mjs'
 import { dossierPhaseLabel, dossierSphereBadgeClass, dossierSphereLabel } from './dossieBlocks.mjs'
 import { MUNICIPALITY_UNIT, isInstitutionUnit } from './dossieUnit.mjs'
-import { htmlEscape, stripInlineSources } from './reportText.mjs'
+import { htmlEscape, moreItemsLabel, showingLabel, stripInlineSources } from './reportText.mjs'
 
 const SOURCE_ICON =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>'
@@ -204,14 +204,15 @@ const renderTrajectory = (report, pageNo) => `
 </article>`
 
 const renderDeliveries = (report) => {
-  if (report.page1.deliveries.length === 0) return ''
+  const deliveries = report.page1.deliveries
+  if (deliveries.items.length === 0) return ''
   return `
   <section class="block">
     <div class="block-head">
       <div><p class="eyebrow">02 · destaques com lastro</p><h3 class="section-title">Principais entregas localizadas</h3></div>
     </div>
     <div class="deliveries">
-      ${report.page1.deliveries
+      ${deliveries.items
         .map(
           (row) => `<div class="delivery-row">
             <div class="delivery-scope">${scopeBadge(row.sphere)}<p class="meta">Era ${htmlEscape(row.era)}${row.year ? ` · ${htmlEscape(row.year)}` : ''}</p></div>
@@ -228,6 +229,11 @@ const renderDeliveries = (report) => {
         )
         .join('')}
     </div>
+    ${
+      deliveries.remaining > 0
+        ? `<p class="muted small strong">${htmlEscape(showingLabel(deliveries.items.length, deliveries.total, 'entrega localizada', 'entregas localizadas'))} — o restante está nas páginas das eras.</p>`
+        : ''
+    }
     <p class="muted small strong">Guarda de leitura: autorizado ≠ empenhado ≠ liquidado ≠ pago. A fase acompanha cada valor.</p>
   </section>`
 }
@@ -235,27 +241,29 @@ const renderDeliveries = (report) => {
 const renderHooksAndPending = (report) => {
   const hooks = report.page1.hooks
   const pending = report.page1.pending
-  if (hooks.length === 0 && pending.length === 0) return ''
+  if (hooks.items.length === 0 && pending.items.length === 0) return ''
   return `
   <section class="page1-grid">
     ${
-      hooks.length
+      hooks.items.length
         ? `<div class="panel">
             <p class="eyebrow">03 · ganchos para o boletim</p>
-            <ul class="tight-list">${hooks
+            <ul class="tight-list">${hooks.items
               .map(
                 (hook) =>
                   `<li><strong>Tema:</strong> ${htmlEscape(hook.topic)}. <strong>Ângulo:</strong> ${copyHtml(briefOr(hook.brief, hook.angle))} ${sourceLink(hook.sourceUrl)}</li>`,
               )
               .join('')}</ul>
+            ${hooks.remaining > 0 ? `<p class="muted small">${htmlEscape(moreItemsLabel(hooks.remaining, 'gancho', 'ganchos'))} nas eras.</p>` : ''}
           </div>`
         : '<div></div>'
     }
     ${
-      pending.length
+      pending.items.length
         ? `<div class="panel panel-warning">
             <p class="eyebrow warning-text">04 · o que falta</p>
-            <ul class="tight-list">${pending.map((item) => `<li>${htmlEscape(item)}</li>`).join('')}</ul>
+            <ul class="tight-list">${pending.items.map((item) => `<li>${htmlEscape(item)}</li>`).join('')}</ul>
+            ${pending.remaining > 0 ? `<p class="warning-text small">${htmlEscape(moreItemsLabel(pending.remaining, 'ponto', 'pontos'))} sem leitura na tabela de lacunas.</p>` : ''}
             <p class="warning-text small strong">Ausência é resultado: não completar por inferência.</p>
           </div>`
         : '<div></div>'
@@ -308,7 +316,7 @@ const renderEraPage = (report, era, actions, index, pageNo) => {
   </div>
 
   ${
-    era.numbers.length
+    era.numbers.items.length
       ? `<section class="block">
           <div class="block-head">
             <div><p class="eyebrow">Números com fase</p><h3 class="section-title">Recursos e entregas quantificáveis</h3></div>
@@ -317,7 +325,7 @@ const renderEraPage = (report, era, actions, index, pageNo) => {
             <caption class="sr-only">Valores por ano, fase, esfera e fonte</caption>
             <colgroup><col style="width:26%" /><col style="width:15%" /><col style="width:10%" /><col style="width:17%" /><col style="width:12%" /><col style="width:20%" /></colgroup>
             <thead><tr><th>Objeto</th><th>Valor</th><th>Ano</th><th>Fase</th><th>Esfera</th><th>Fonte</th></tr></thead>
-            <tbody>${era.numbers
+            <tbody>${era.numbers.items
               .map(
                 (row) => `<tr>
                   <td>${htmlEscape(row.object)}</td>
@@ -330,6 +338,8 @@ const renderEraPage = (report, era, actions, index, pageNo) => {
               )
               .join('')}</tbody>
           </table>
+          ${era.numbers.remaining > 0 ? `<p class="muted small">${htmlEscape(moreItemsLabel(era.numbers.remaining, 'número com fase', 'números com fase'))} — a lista completa está no arquivo de pesquisa da era.</p>` : ''}
+          <p class="warning-text small strong">Não consolidar fases como se fossem equivalentes. Um valor empenhado não é um valor pago.</p>
         </section>`
       : ''
   }`
@@ -342,6 +352,7 @@ const renderEraPage = (report, era, actions, index, pageNo) => {
           <p class="eyebrow">Atuação registrada</p>
           <h3 class="section-title">O que fez — item, alcance e lastro</h3>
           ${renderActionGrid(actions)}
+          ${era.camaraActionsRemaining > 0 ? `<p class="muted small">${htmlEscape(moreItemsLabel(era.camaraActionsRemaining, 'ação da Câmara', 'ações da Câmara'))} — a coleta é limitada às páginas consultadas; o restante está no acervo da Câmara.</p>` : ''}
         </section>`
       : ''
   }
@@ -382,6 +393,7 @@ const renderScopeLists = (report) => `
           .join(
             '',
           )}${report.region.municipal.items.length === 0 ? '<li class="muted">Nenhum item municipal com fonte.</li>' : ''}</ul>
+        ${report.region.municipal.remaining > 0 ? `<p class="muted small">${htmlEscape(moreItemsLabel(report.region.municipal.remaining, 'item municipal com fonte', 'itens municipais com fonte'))} — ver a tabela de evidências abaixo.</p>` : ''}
       </div>
       <div class="compare-mid" aria-hidden="true"><span>≠</span></div>
       <div class="panel panel-region">
@@ -394,6 +406,7 @@ const renderScopeLists = (report) => `
           .join(
             '',
           )}${report.region.regional.items.length === 0 ? '<li class="muted">Nenhum item regional com fonte.</li>' : ''}</ul>
+        ${report.region.regional.remaining > 0 ? `<p class="muted small">${htmlEscape(moreItemsLabel(report.region.regional.remaining, 'item regional com fonte', 'itens regionais com fonte'))} — ver a tabela de evidências abaixo.</p>` : ''}
       </div>
     </div>
   </section>`
@@ -423,14 +436,14 @@ const renderRegion = (report, pageNo) => `
   ${renderScopeLists(report)}
 
   ${
-    report.region.items.length
+    report.region.evidence.items.length
       ? `<section class="block">
           <div class="block-head"><div><p class="eyebrow">Itens regionais recuperados</p><h3 class="section-title">Evidência de alcance, sem apropriação local</h3></div>${scopeBadge('regiao')}</div>
           <table class="document-table">
             <caption class="sr-only">Itens do recorte regional com evidência e fonte</caption>
             <colgroup><col style="width:30%" /><col style="width:15%" /><col style="width:34%" /><col style="width:21%" /></colgroup>
             <thead><tr><th>Item</th><th>Esfera</th><th>Evidência de alcance</th><th>Fonte</th></tr></thead>
-            <tbody>${report.region.items
+            <tbody>${report.region.evidence.items
               .map(
                 (item) => `<tr>
                   <td>${copyHtml(briefOr(item.brief, item.item))}</td>
@@ -441,6 +454,7 @@ const renderRegion = (report, pageNo) => `
               )
               .join('')}</tbody>
           </table>
+          ${report.region.evidence.remaining > 0 ? `<p class="muted small">${htmlEscape(showingLabel(report.region.evidence.items.length, report.region.evidence.total, 'item regional recuperado', 'itens regionais recuperados'))} em evidência; o restante está no arquivo de pesquisa da era.</p>` : ''}
         </section>`
       : ''
   }
@@ -691,15 +705,21 @@ const mdEra = (era) => {
     '',
     `Trilha: ${era.recovery}`,
   ]
-  if (era.numbers.length) {
+  if (era.numbers.items.length) {
     lines.push(
       '',
       '| Objeto | Valor | Ano | Fase | Esfera | Fonte |',
       '| --- | --- | --- | --- | --- | --- |',
     )
-    for (const row of era.numbers) {
+    for (const row of era.numbers.items) {
       lines.push(
         `| ${row.object} | ${row.value ?? '—'} | ${row.year ?? '—'} | ${dossierPhaseLabel(row.phase)} | ${row.sphere} | ${row.sourceUrl ?? '—'} |`,
+      )
+    }
+    if (era.numbers.remaining > 0) {
+      lines.push(
+        '',
+        `_${moreItemsLabel(era.numbers.remaining, 'número com fase', 'números com fase')} não exibidos — ver as fontes._`,
       )
     }
   }
@@ -707,6 +727,12 @@ const mdEra = (era) => {
     lines.push(
       '',
       `- **${stripInlineSources(action.title)}** (${action.sphere}${action.year ? ` · ${action.year}` : ''})${action.detail ? ` — ${stripInlineSources(action.detail)}` : ''} [fonte](${action.sourceUrl})`,
+    )
+  }
+  if (era.camaraActionsRemaining > 0) {
+    lines.push(
+      '',
+      `_${moreItemsLabel(era.camaraActionsRemaining, 'ação da Câmara', 'ações da Câmara')} — a coleta é limitada às páginas consultadas._`,
     )
   }
   for (const honor of era.honors)
@@ -732,11 +758,17 @@ const renderMunicipalityDossierMd = (report) => {
     )
   }
 
-  if (report.page1.deliveries.length) {
+  if (report.page1.deliveries.items.length) {
     lines.push('', '## Principais entregas localizadas', '')
-    for (const row of report.page1.deliveries) {
+    for (const row of report.page1.deliveries.items) {
       lines.push(
         `- **${stripInlineSources(row.title)}** · _${row.sphere}_${row.value ? ` · ${row.value}` : ''}${row.phase ? ` (${dossierPhaseLabel(row.phase)})` : ''}${row.detail ? ` — ${stripInlineSources(row.detail)}` : ''} [fonte](${row.sourceUrl})`,
+      )
+    }
+    if (report.page1.deliveries.remaining > 0) {
+      lines.push(
+        '',
+        `_${showingLabel(report.page1.deliveries.items.length, report.page1.deliveries.total, 'entrega localizada', 'entregas localizadas')} — o restante está nas páginas das eras._`,
       )
     }
     lines.push('', '_Autorizado ≠ empenhado ≠ liquidado ≠ pago. A fase acompanha cada valor._')
@@ -758,15 +790,31 @@ const renderMunicipalityDossierMd = (report) => {
   for (const item of report.region.municipal.items) {
     lines.push(`- ${stripInlineSources(item.answer)} — [fonte](${item.sourceUrl})`)
   }
+  if (report.region.municipal.remaining > 0) {
+    lines.push(
+      `- _${moreItemsLabel(report.region.municipal.remaining, 'item municipal com fonte', 'itens municipais com fonte')} — ver a tabela de evidências._`,
+    )
+  }
   lines.push('', '### Região / polo (não somável)', '')
   for (const item of report.region.regional.items) {
     lines.push(`- ${stripInlineSources(item.answer)} — [fonte](${item.sourceUrl})`)
   }
-  if (report.region.items.length) {
+  if (report.region.regional.remaining > 0) {
+    lines.push(
+      `- _${moreItemsLabel(report.region.regional.remaining, 'item regional com fonte', 'itens regionais com fonte')} — ver a tabela de evidências._`,
+    )
+  }
+  if (report.region.evidence.items.length) {
     lines.push('', '| Item | Esfera | Evidência | Fonte |', '| --- | --- | --- | --- |')
-    for (const item of report.region.items) {
+    for (const item of report.region.evidence.items) {
       lines.push(
         `| ${stripInlineSources(item.item)} | ${item.sphere} | ${stripInlineSources(item.evidence)} | ${item.sourceUrl} |`,
+      )
+    }
+    if (report.region.evidence.remaining > 0) {
+      lines.push(
+        '',
+        `_${showingLabel(report.region.evidence.items.length, report.region.evidence.total, 'item regional recuperado', 'itens regionais recuperados')} em evidência; o restante está no arquivo de pesquisa da era._`,
       )
     }
   }
@@ -1090,7 +1138,7 @@ const renderInstitutionEra = (report, era, pageNo) => {
   </div>
 
   ${
-    era.numbers.length
+    era.numbers.items.length
       ? `<section class="block">
           <div class="block-head">
             <div><p class="eyebrow">Entregas localizadas</p><h3 class="section-title">Objeto, valor, fase e alcance</h3></div>
@@ -1099,7 +1147,7 @@ const renderInstitutionEra = (report, era, pageNo) => {
             <caption class="sr-only">Valores por ano, fase, abrangência e fonte</caption>
             <colgroup><col style="width:26%" /><col style="width:14%" /><col style="width:9%" /><col style="width:16%" /><col style="width:15%" /><col style="width:20%" /></colgroup>
             <thead><tr><th>Objeto</th><th>Valor</th><th>Ano</th><th>Fase</th><th>Abrangência</th><th>Fonte</th></tr></thead>
-            <tbody>${era.numbers
+            <tbody>${era.numbers.items
               .map(
                 (row) => `<tr>
                   <td>${htmlEscape(row.object)}</td>
@@ -1118,12 +1166,12 @@ const renderInstitutionEra = (report, era, pageNo) => {
   }
 
   ${
-    era.actions.length
+    era.actions.items.length
       ? `<section class="block">
           <p class="eyebrow">Atuação / vínculo registrado</p>
           <h3 class="section-title">Papéis com evidência visível</h3>
           <div class="action-grid">
-            ${era.actions
+            ${era.actions.items
               .map(
                 (action) => `<article class="panel">
                   <div class="action-head">${scopeBadge(action.sphere, null, report.unit)}<span class="meta">${htmlEscape(action.year ?? '—')}</span></div>
@@ -1451,19 +1499,19 @@ const institutionMdEra = (era) => {
     )
     return lines.join('\n')
   }
-  if (era.numbers.length) {
+  if (era.numbers.items.length) {
     lines.push(
       '',
       '| Objeto | Valor | Ano | Fase | Abrangência | Fonte |',
       '| --- | --- | --- | --- | --- | --- |',
     )
-    for (const row of era.numbers) {
+    for (const row of era.numbers.items) {
       lines.push(
         `| ${row.object} | ${row.value ?? '—'} | ${row.year ?? '—'} | ${dossierPhaseLabel(row.phase)} | ${row.sphere} | ${row.sourceUrl ?? '—'} |`,
       )
     }
   }
-  for (const action of era.actions) {
+  for (const action of era.actions.items) {
     lines.push(
       '',
       `- **${stripInlineSources(action.title)}** (${action.sphere}${action.year ? ` · ${action.year}` : ''})${action.detail ? ` — ${stripInlineSources(action.detail)}` : ''} [fonte](${action.sourceUrl})`,
