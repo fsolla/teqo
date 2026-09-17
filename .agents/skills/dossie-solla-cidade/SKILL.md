@@ -150,8 +150,12 @@ cruza para ele.
   "items": [
     {
       "id": "era_c_emendas",                  // id do checklist da era
-      "answer": "R$ 1,2 milhão para equipamentos de saúde",
+      "answer": "registro integral; aceita {{fonte}} / {{fonte:N}} — vai para o .md e para o lastro",
       "details": "opcional; aceita {{fonte}} / {{fonte:N}}",
+      "brief": {                                // obrigatório no item publicado: copy reformulada, curta
+        "title": "≤80 chars — manchete (o quê + onde)",
+        "note": "≤120 chars — 1 frase de contexto; opcional"
+      },
       "sphere": "municipio",                  // municipio | regiao | polo (default municipio)
       "numbers": [                             // opcional
         { "label": "Saúde", "value": "R$ 1,2 mi", "year": "2024", "phase": "empenhado" }
@@ -182,6 +186,17 @@ Item sem `sourceUrl`/`sourceDate`, item ausente ou item de outra era vira
 (`Esfera inválida`). `phase` ∈ `autorizado|empenhado|liquidado|pago|restos`
 (default `nao_informado`). O `bulletinFacts` (ledger do boletim) só é populado
 por item **com fonte** — o boletim não introduz fato novo.
+
+**`brief` (copy reformulada, sem reticências).** As páginas A4 têm altura fixa:
+em vez de cortar o texto com `…`, cada item publicado traz um `brief` **reescrito
+para caber** (`title` ≤80 / `note` ≤120) preservando o essencial (o quê, onde,
+valor + fase) — nunca inventa fato, nunca sugere exclusividade municipal para
+item `regiao`/`polo` e nunca troca a fase (empenho ≠ pagamento). O cartão/linha
+do PDF imprime `brief.title`/`brief.note`; o `answer`/`details` integrais ficam
+no registro e no companion `.md`. Sem `brief`, o renderer cai no texto integral e
+a guarda de fit A4 do builder **falha fechado** (não corta em silêncio). Tabelas
+longas (lacunas, notícias) não usam `brief`: são **paginadas** em folhas de
+continuação com o texto inteiro.
 
 ## Conteúdo do dossiê
 

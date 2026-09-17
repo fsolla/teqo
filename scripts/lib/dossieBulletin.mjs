@@ -44,14 +44,14 @@ export const buildBulletin = ({
   const highlights = ordered.slice(0, BULLETIN_HIGHLIGHT_LIMIT).map((fact) => ({
     eyebrow: `${fact.area ?? 'Atuação'} · ${dossierSphereLabel(fact.sphere)}`,
     number: fact.value,
-    title: fact.headline,
-    note: fact.detail ?? null,
+    title: fact.brief?.title ?? fact.headline,
+    note: fact.brief?.note ?? fact.detail,
   }))
   const moreItems = ordered
     .slice(BULLETIN_HIGHLIGHT_LIMIT, BULLETIN_HIGHLIGHT_LIMIT + BULLETIN_MORE_LIMIT)
     .map((fact) => ({
-      label: fact.headline,
-      detail: fact.detail ?? fact.value ?? fact.area,
+      label: fact.brief?.title ?? fact.headline,
+      detail: fact.brief?.note ?? fact.detail ?? fact.value ?? fact.area,
     }))
 
   return {

@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
+  DOSSIER_BRIEF_NOTE_MAX,
+  DOSSIER_BRIEF_TITLE_MAX,
   DOSSIER_RESEARCH_CHECKLIST_IDS,
   dossierChecklistForEra,
   dossierResearchReceipt,
@@ -39,6 +41,41 @@ describe('normalizeDossierResearchInput', () => {
     expect(research.items).toHaveLength(dossierChecklistForEra('C').length)
     expect(research.gaps).toEqual([])
     expect(research.items.every((item) => item.sphere === 'municipio')).toBe(true)
+  })
+
+  it('normalizes the reformulated brief and drops it when it has no title', () => {
+    const research = normalizeDossierResearchInput(
+      eraResearch('C', {
+        items: [
+          validItem('era_c_emendas', { brief: { title: 'Manchete curta', note: 'Nota curta' } }),
+          validItem('era_c_discursos', { brief: { note: 'sem título' } }),
+        ],
+      }),
+    )
+    const emendas = research.items.find((item) => item.id === 'era_c_emendas')
+    const discursos = research.items.find((item) => item.id === 'era_c_discursos')
+    expect(emendas?.brief).toEqual({ title: 'Manchete curta', note: 'Nota curta' })
+    expect(discursos?.brief).toBeNull()
+  })
+
+  it('warns when a brief exceeds the print budget (kept, so the A4 guard catches it)', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const research = normalizeDossierResearchInput(
+        eraResearch('C', {
+          items: [
+            validItem('era_c_emendas', {
+              brief: { title: 'x'.repeat(DOSSIER_BRIEF_TITLE_MAX + 1) },
+            }),
+          ],
+        }),
+      )
+      expect(warn).toHaveBeenCalled()
+      expect(research.items[0].brief?.title.length).toBe(DOSSIER_BRIEF_TITLE_MAX + 1)
+      expect(DOSSIER_BRIEF_NOTE_MAX).toBeGreaterThan(0)
+    } finally {
+      warn.mockRestore()
+    }
   })
 
   it('throws when the slug, the date or the era is missing', () => {

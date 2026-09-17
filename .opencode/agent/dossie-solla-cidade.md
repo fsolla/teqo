@@ -20,7 +20,9 @@ slug e coordena as demais eras/cidades em paralelo.
    (ex.: `ilheus.c.research.json`) — item sem `sourceUrl`/`sourceDate` não vai
    para o arquivo (vira lacuna explícita). Use o checklist da era e marque
    `sphere` (`municipio`/`regiao`/`polo`); região/polo nunca é somado ao
-   município.
+   município. Cada item publicado traz **`brief`** (`title` ≤80 / `note` ≤120):
+   copy **reformulada** para caber no A4, sem `…`, sem fato novo e sem trocar a
+   fase — o `answer`/`details` integrais continuam no arquivo (registro/.md).
 3. Devolver **apenas o recibo curto** (seção "Recibo do researcher" da skill):
    `slug`, `era`, `status`, `researchPath`, `researchedAt`, `itemCount`,
    `gapCount`, `newsCount`, `gaps`, `failureReason?`. **Nunca** devolva o corpo

@@ -20,10 +20,11 @@ import { stripInlineSources } from './reportText.mjs'
 const MAX_DELIVERIES_PAGE_ONE = 3
 const MAX_HOOKS_PAGE_ONE = 2
 const MAX_PENDING_PAGE_ONE = 4
-const MAX_ERA_NUMBERS = 12
-const MAX_ERA_ACTIONS = 4
-const MAX_REGION_ITEMS = 4
-const MAX_SCOPE_LIST = 5
+const MAX_ERA_NUMBERS = 6
+/** Curated research actions are all kept (the renderer paginates them); only the generic Câmara list is capped. */
+const MAX_ERA_CAMARA_ACTIONS = 4
+const MAX_REGION_ITEMS = 3
+const MAX_SCOPE_LIST = 3
 
 const sphereLabels = { municipio: 'município', regiao: 'região', polo: 'polo' }
 export const dossierSphereLabel = (sphere) => sphereLabels[sphere] ?? sphere
@@ -171,6 +172,7 @@ export const buildDossierReport = ({
         year: item.numbers?.[0]?.year ?? null,
         title: item.answer,
         detail: item.details,
+        brief: item.brief ?? null,
         sourceUrl: item.sourceUrl,
         sourceDate: item.sourceDate,
       }))
@@ -184,10 +186,17 @@ export const buildDossierReport = ({
         : itemNumberRows(items.filter((i) => i.era === era.id)),
       MAX_ERA_NUMBERS,
     )
-    const honors = items
-      .filter((item) => item.era === 'C' && item.id === 'era_c_titulos')
-      .map((item) => ({ text: item.answer, sourceUrl: item.sourceUrl }))
-    const actions = limit([...ownActions, ...extraActions], MAX_ERA_ACTIONS)
+    const honors =
+      era.id === 'C'
+        ? items
+            .filter((item) => item.id === 'era_c_titulos')
+            .map((item) => ({
+              text: item.answer,
+              brief: item.brief ?? null,
+              sourceUrl: item.sourceUrl,
+            }))
+        : []
+    const actions = [...ownActions, ...limit(extraActions, MAX_ERA_CAMARA_ACTIONS)]
     if (numbers.length === 0 && actions.length === 0) return null
     return {
       ...era,
@@ -215,6 +224,7 @@ export const buildDossierReport = ({
         year: item.numbers?.[0]?.year ?? null,
         title: item.answer,
         detail: item.details,
+        brief: item.brief ?? null,
         value: item.numbers?.[0]?.value ?? null,
         phase: item.numbers?.[0]?.phase ?? null,
         sourceUrl: item.sourceUrl,
@@ -227,6 +237,7 @@ export const buildDossierReport = ({
     [...municipalItems, ...regionalItems].map((item) => ({
       topic: item.area,
       angle: item.answer,
+      brief: item.brief ?? null,
       sourceUrl: item.sourceUrl,
     })),
     MAX_HOOKS_PAGE_ONE,
@@ -249,6 +260,7 @@ export const buildDossierReport = ({
       item: item.answer,
       sphere: item.sphere,
       evidence: item.details ?? item.label,
+      brief: item.brief ?? null,
       sourceUrl: item.sourceUrl,
     })),
     MAX_REGION_ITEMS,
@@ -264,6 +276,12 @@ export const buildDossierReport = ({
         area: item.area,
         headline: stripInlineSources(item.answer),
         detail: item.details ? stripInlineSources(item.details) : null,
+        brief: item.brief
+          ? {
+              title: stripInlineSources(item.brief.title),
+              note: item.brief.note ? stripInlineSources(item.brief.note) : null,
+            }
+          : null,
         value: item.numbers?.[0]?.value ?? null,
         numberLabel: item.numbers?.[0]?.label ?? null,
         year: item.numbers?.[0]?.year ?? null,
