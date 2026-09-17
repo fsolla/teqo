@@ -130,38 +130,52 @@ const resolveEmendas = async () => {
 }
 
 const emendas = await resolveEmendas()
-const report = buildCityReport({ snapshot, research, emendas, generatedAt })
-const html = renderReportHtml(report)
-const markdown = renderReportMd(report)
 
-const htmlPath = join(CACHE_DIR, `${baseName}.html`)
-await mkdir(resolve(ROOT, CACHE_DIR), { recursive: true })
-await writeFile(resolve(ROOT, htmlPath), html)
-console.log(`[${LABEL}] HTML intermediário → ${htmlPath}`)
-
-await mkdir(resolve(ROOT, outDir), { recursive: true })
-const mdFile = join(outDir, `${baseName}.md`)
 const pdfFile = join(outDir, `${baseName}.pdf`)
-await writeFile(resolve(ROOT, mdFile), markdown)
-console.log(`[${LABEL}] companion → ${mdFile}`)
+
+/**
+ * Renders both artifacts for a given fit fallback. Page 1 never cuts with "…":
+ * pass 1 prints the researcher's `summary` (or the full answer); if it does not
+ * fit the one-page guard, pass 2 re-renders with `textFallback: 'pointer'` and
+ * the lines without a `summary` point to the deep dive (which keeps the
+ * integral). The guard stays fail-closed if even the pointer does not fit.
+ */
+const buildArtifacts = (textFallback) => {
+  const report = buildCityReport({ snapshot, research, emendas, generatedAt, textFallback })
+  return { report, html: renderReportHtml(report), markdown: renderReportMd(report) }
+}
+let artifacts = buildArtifacts('full')
 
 const browser = await chromium.launch()
 try {
   const page = await browser.newPage()
   await page.setViewportSize({ width: PRINTABLE_WIDTH_PX, height: PRINTABLE_HEIGHT_PX })
-  await page.setContent(html, { waitUntil: 'load' })
-  await page.emulateMedia({ media: 'print' })
 
-  const summaryScrollHeight = await page.evaluate(() => {
-    const element = document.querySelector('[data-page="summary"]')
-    return element ? element.scrollHeight : null
-  })
+  const measureSummary = async () => {
+    await page.setContent(artifacts.html, { waitUntil: 'load' })
+    await page.emulateMedia({ media: 'print' })
+    return page.evaluate(() => {
+      const element = document.querySelector('[data-page="summary"]')
+      return element ? element.scrollHeight : null
+    })
+  }
+
+  let summaryScrollHeight = await measureSummary()
   if (summaryScrollHeight === null) die('Bloco de resumo ausente no HTML — renderer quebrado.')
   if (summaryScrollHeight > PAGE_ONE_BUDGET_PX) {
-    die(
-      `A página 1 estourou (${summaryScrollHeight}px > ${PAGE_ONE_BUDGET_PX}px úteis). ` +
-        'Corte copy/caps — o resumo TEM de caber em uma página.',
+    console.log(
+      `[${LABEL}] página 1 com o texto integral não coube (${summaryScrollHeight}px) — ` +
+        're-renderizando com ponteiro para o aprofundamento (sem "…").',
     )
+    artifacts = buildArtifacts('pointer')
+    summaryScrollHeight = await measureSummary()
+    if (summaryScrollHeight === null) die('Bloco de resumo ausente no HTML — renderer quebrado.')
+    if (summaryScrollHeight > PAGE_ONE_BUDGET_PX) {
+      die(
+        `A página 1 estourou até com o fallback de ponteiro (${summaryScrollHeight}px > ${PAGE_ONE_BUDGET_PX}px úteis). ` +
+          'Encurte os "summary" da pesquisa ou os itens de lista — o resumo TEM de caber em uma página.',
+      )
+    }
   }
 
   await page.pdf({
@@ -171,7 +185,7 @@ try {
     displayHeaderFooter: true,
     headerTemplate: '<div></div>',
     footerTemplate: `<div style="width:100%;font-family:'Fira Sans','DejaVu Sans',sans-serif;font-size:7pt;color:#a1a1aa;padding:0 12mm;display:flex;justify-content:space-between;">
-      <span>${report.meta.title} · ${snapshot.municipality.name} · documento interno de campanha</span>
+      <span>${artifacts.report.meta.title} · ${snapshot.municipality.name} · documento interno de campanha</span>
       <span>pág. <span class="pageNumber"></span>/<span class="totalPages"></span></span>
     </div>`,
     margin: { top: '14mm', bottom: '16mm', left: '12mm', right: '12mm' },
@@ -179,6 +193,18 @@ try {
 } finally {
   await browser.close()
 }
+
+const { html, markdown } = artifacts
+
+const htmlPath = join(CACHE_DIR, `${baseName}.html`)
+await mkdir(resolve(ROOT, CACHE_DIR), { recursive: true })
+await writeFile(resolve(ROOT, htmlPath), html)
+console.log(`[${LABEL}] HTML intermediário → ${htmlPath}`)
+
+await mkdir(resolve(ROOT, outDir), { recursive: true })
+const mdFile = join(outDir, `${baseName}.md`)
+await writeFile(resolve(ROOT, mdFile), markdown)
+console.log(`[${LABEL}] companion → ${mdFile}`)
 
 console.log(`[${LABEL}] PDF → ${pdfFile}`)
 console.log(

@@ -130,6 +130,10 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
       id,
       label: checklistById.get(id).label,
       answer,
+      // Optional short, complete, self-contained rewrite of `answer` (C188): the
+      // summary surfaces print it as-is; the deep dive keeps `answer` integral.
+      // It is not a new fact — it inherits the item's source.
+      summary: isNonEmptyString(entry.summary) ? entry.summary.trim() : null,
       details: isNonEmptyString(entry.details) ? entry.details.trim() : null,
       sourceUrl,
       sourceDate,

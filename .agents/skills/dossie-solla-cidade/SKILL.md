@@ -151,6 +151,7 @@ cruza para ele.
     {
       "id": "era_c_emendas",                  // id do checklist da era
       "answer": "registro integral; aceita {{fonte}} / {{fonte:N}} — vai para o .md e para o lastro",
+      "summary": "opcional — versão curta, completa e auto-contida do answer, redigida para caber no resumo/boletim (C188)",
       "details": "opcional; aceita {{fonte}} / {{fonte:N}}",
       "brief": {                                // obrigatório no item publicado: copy reformulada, curta
         "title": "≤80 chars — manchete (o quê + onde)",
@@ -187,6 +188,18 @@ Item sem `sourceUrl`/`sourceDate`, item ausente ou item de outra era vira
 (default `nao_informado`). O `bulletinFacts` (ledger do boletim) só é populado
 por item **com fonte** — o boletim não introduz fato novo.
 
+**`summary` (C188):** o resumo de uma olhada e o boletim **nunca cortam texto no
+meio**. Essas superfícies imprimem o `summary` do item quando existe; sem ele,
+imprimem o `answer` integral e, se a página não couber, o builder re-renderiza
+apontando o aprofundamento (as páginas das eras, que sempre guardam
+`answer`/`details` integrais) — **sem "…"**. Escreva `summary` curto e
+auto-contido para os itens que viram entrega/gancho no resumo; é a única forma de
+o texto que você redigiu aparecer no resumo. Listas capadas (entregas, ganchos,
+números, itens regionais, fatos do boletim) sempre exibem o contador `e mais N` /
+`Mostrando X de Y` — nenhum item some em silêncio. `summary` e `brief` coexistem:
+o `brief` é a copy reformulada que o PDF imprime nas páginas de era/cartões; o
+`summary` alimenta as superfícies de resumo do dossiê e o ledger do boletim.
+
 **`brief` (copy reformulada, sem reticências).** As páginas A4 têm altura fixa:
 em vez de cortar o texto com `…`, cada item publicado traz um `brief` **reescrito
 para caber** (`title` ≤80 / `note` ≤120) preservando o essencial (o quê, onde,
@@ -197,6 +210,7 @@ no registro e no companion `.md`. Sem `brief`, o renderer cai no texto integral 
 a guarda de fit A4 do builder **falha fechado** (não corta em silêncio). Tabelas
 longas (lacunas, notícias) não usam `brief`: são **paginadas** em folhas de
 continuação com o texto inteiro.
+
 
 ## Conteúdo do dossiê
 

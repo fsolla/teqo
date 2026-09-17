@@ -140,6 +140,7 @@ de pesquisa que cruza para ele.
     {
       "id": "prefeito",             // id do checklist (abaixo)
       "answer": "Nome (Partido), situação",
+      "summary": "opcional — versão curta, completa e auto-contida do answer, redigida para caber na página 1 (C188)",
       "details": "opcional",
       "sourceUrl": "https://…",     // obrigatório em item publicado
       "sourceDate": "2026-09-10",   // obrigatório
@@ -316,9 +317,15 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   que a campanha cumpre) com a advertência de defeso, riscos e pontos sem
   leitura. O painel fixo "O que NÃO anunciar" **saiu** da página 1 (copy
   invariante; o guardrail de defeso permanece na nota do painel de anúncio). Os
-  textos livres da pesquisa entram **capados** (teto/orçamento de conteúdo, não
-  layout espremido) e as listas mostram `e mais N` — o texto integral de cada
-  item fica no aprofundamento (ver "respostas integrais" em `14. Fontes e
+  textos livres da pesquisa **nunca são cortados no meio** (C188): a página 1
+  imprime o `summary` do item quando existe; sem ele, imprime o `answer`
+  integral e, se a página não couber, o builder re-renderiza apontando o
+  aprofundamento — **sem "…"**. Por isso, escreva `summary` curto e auto-contido
+  para os itens que aparecem na página 1 (`prefeito`, `vice`, `relacao_campo`,
+  `vereadores`, `disputa_local`, `quem_investe`, `emendas_web`): é a única forma
+  de a página 1 manter o texto que você redigiu. As listas mostram `e mais N`; o
+  texto integral
+  de cada item fica no aprofundamento (ver "respostas integrais" em `14. Fontes e
   limites`).
 - **Seções 2+:** `1. Conta eleitoral` · `2. Concorrentes no município (federal
   e estadual)` — top 5 por votos de 2022 na base TSE, com série 2014/2018/2022

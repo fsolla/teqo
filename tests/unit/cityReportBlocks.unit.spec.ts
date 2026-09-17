@@ -5,6 +5,7 @@ import {
   normalizeResearchInput,
   RESEARCH_CHECKLIST_IDS,
 } from '../../scripts/lib/cityReportResearch.mjs'
+import { SUMMARY_POINTER_COPY } from '../../scripts/lib/reportText.mjs'
 
 const generatedAt = new Date('2026-09-15T12:00:00.000Z')
 
@@ -749,7 +750,7 @@ describe('buildCityReport', () => {
     expect(fontes.items!.some((item) => item.url === 'https://exemplo.test/polo')).toBe(true)
   })
 
-  it('caps the page-1 research excerpt and keeps the full text in the deep dive (OPS120)', () => {
+  it('keeps the full page-1 answer (no "…") and preserves the integral in the deep dive (C188)', () => {
     const longAnswer = 'palavra '.repeat(20).trim()
     const longResearch = normalizeResearchInput(
       {
@@ -766,14 +767,68 @@ describe('buildCityReport', () => {
 
     const who = capped.page1.blocks.find((block) => block.kind === 'grid')!.cells![1].blocks[0]
     const prefeito = who.rows!.find((row) => row.label === 'Prefeito(a)')!
-    expect(prefeito.value!.length).toBeLessThan(longAnswer.length)
-    expect(prefeito.value!.endsWith('…')).toBe(true)
+    expect(prefeito.value).toBe(longAnswer)
+    expect(prefeito.value!.includes('…')).toBe(false)
 
     const appendix = capped.sections
       .find((section) => section.id === 'fontes')!
       .blocks.find((block) => block.title === 'Pesquisa — respostas integrais (texto completo)')!
     const rows = appendix.rows as unknown as TableRow[]
     expect(rows).toHaveLength(RESEARCH_CHECKLIST_IDS.length)
+    expect(rows[0].answer).toContain(longAnswer)
+  })
+
+  it('prefers the researcher summary on page 1 when present (C188)', () => {
+    const longAnswer = 'palavra '.repeat(20).trim()
+    const summary = 'Resumo curto e completo do prefeito.'
+    const summarized = normalizeResearchInput(
+      {
+        municipalitySlug: 'feira-de-santana',
+        researchedAt: '2026-09-14T10:00:00.000Z',
+        items: RESEARCH_CHECKLIST_IDS.map((id) => validItem(id, { answer: longAnswer, summary })),
+        gaps: [],
+      },
+      { now: generatedAt },
+    )
+    const capped = asReport(
+      buildCityReport({ snapshot, research: summarized, emendas, generatedAt }),
+    )
+
+    const who = capped.page1.blocks.find((block) => block.kind === 'grid')!.cells![1].blocks[0]
+    const prefeito = who.rows!.find((row) => row.label === 'Prefeito(a)')!
+    expect(prefeito.value).toBe(summary)
+  })
+
+  it('falls back to a pointer line (never "…") when the full text does not fit (C188)', () => {
+    const longAnswer = 'palavra '.repeat(20).trim()
+    const longResearch = normalizeResearchInput(
+      {
+        municipalitySlug: 'feira-de-santana',
+        researchedAt: '2026-09-14T10:00:00.000Z',
+        items: RESEARCH_CHECKLIST_IDS.map((id) => validItem(id, { answer: longAnswer })),
+        gaps: [],
+      },
+      { now: generatedAt },
+    )
+    const pointer = asReport(
+      buildCityReport({
+        snapshot,
+        research: longResearch,
+        emendas,
+        generatedAt,
+        textFallback: 'pointer',
+      }),
+    )
+
+    const who = pointer.page1.blocks.find((block) => block.kind === 'grid')!.cells![1].blocks[0]
+    const prefeito = who.rows!.find((row) => row.label === 'Prefeito(a)')!
+    expect(prefeito.value).toBe(SUMMARY_POINTER_COPY)
+    expect(prefeito.value!.includes('…')).toBe(false)
+
+    const appendix = pointer.sections
+      .find((section) => section.id === 'fontes')!
+      .blocks.find((block) => block.title === 'Pesquisa — respostas integrais (texto completo)')!
+    const rows = appendix.rows as unknown as TableRow[]
     expect(rows[0].answer).toContain(longAnswer)
   })
 

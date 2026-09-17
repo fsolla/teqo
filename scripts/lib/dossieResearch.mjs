@@ -387,6 +387,10 @@ export const normalizeDossierResearchInput = (raw, { unit } = {}) => {
       label: checklistItem.label,
       area: checklistItem.area,
       answer,
+      // Optional short, complete, self-contained rewrite of `answer` (C188): the
+      // resumo/boletim print it as-is; the era pages keep `answer`/`details`
+      // integral. Inherits the item's source — not a new fact.
+      summary: isNonEmptyString(entry.summary) ? entry.summary.trim() : null,
       details: isNonEmptyString(entry.details) ? entry.details.trim() : null,
       brief,
       sphere,

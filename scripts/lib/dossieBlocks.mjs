@@ -21,7 +21,7 @@ import {
   isInstitutionUnit,
   resolveDossierUnit,
 } from './dossieUnit.mjs'
-import { stripInlineSources } from './reportText.mjs'
+import { capList, stripInlineSources, summarySurfaceText } from './reportText.mjs'
 
 const MAX_DELIVERIES_PAGE_ONE = 3
 const MAX_HOOKS_PAGE_ONE = 2
@@ -99,14 +99,6 @@ const itemNumberRows = (items) => {
   return rows
 }
 
-/**
- * @template T
- * @param {T[]} list
- * @param {number} max
- * @returns {T[]}
- */
-const limit = (list, max) => list.slice(0, max)
-
 const eraRecovery = {
   A: 'Biografia Câmara · DOU/acervo do Ministério da Saúde · pesquisa web datada',
   B: 'DOE-BA (DOOL) · notícias SESAB · Transparência Bahia · SIOPS/DATASUS',
@@ -116,7 +108,7 @@ const eraRecovery = {
 const eraMethod = {
   A: 'Itens ligados ao município foram conferidos em fonte oficial e separados por esfera. Cargos técnicos e de gestão têm datas e objetos distintos — sem atribuição local sem documento contemporâneo.',
   B: 'A gestão estadual é lida por equipamento, política e obra; cada linha informa esfera e fonte. Região e polo não somam ao município.',
-  C: 'Mandato, relatorias e execução financeira têm datas e estágios distintos. Empenho não é pagamento; o valor sempre acompanha a fase.',
+  C: 'Mandato, relatorias e execução financeira têm datas e estágios distintos. Empenho não é pagamento; o valor sempre acompanha a fase. A coleta na API da Câmara é limitada às páginas consultadas (não é um total): o que não foi coletado não aparece.',
 }
 
 const healthContext = (health) =>
@@ -146,13 +138,13 @@ const camaraItemsAsActions = (camara, era) =>
  * @property {any} cover
  * @property {any} page1
  * @property {any[]} trajectory
- * @property {Array<{ id: string, label: string, period: string, subtitle: string, empty?: boolean, method: string, recovery: string, numbers: any[], actions: any[], honors: any[] }>} eras
+ * @property {Array<{ id: string, label: string, period: string, subtitle: string, empty?: boolean, method: string, recovery: string, numbers: { items: any[], total: number, remaining: number }, actions: any[], camaraActionsRemaining: number, honors: any[] }>} eras
  * @property {{
  *   ruleTitle: string,
  *   ruleBody: string,
- *   municipal: { label: string, items: any[], total: number },
- *   regional: { label: string, items: any[], total: number },
- *   items: any[],
+ *   municipal: { label: string, items: any[], total: number, remaining: number },
+ *   regional: { label: string, items: any[], total: number, remaining: number },
+ *   evidence: { items: any[], total: number, remaining: number },
  *   context: any[],
  *   hook: any,
  *   priorityGap: any,
@@ -199,6 +191,7 @@ const buildMunicipalityReport = ({
   camara = null,
   health = null,
   generatedAt = new Date(),
+  textFallback = 'full',
 }) => {
   const municipality = snapshot.municipality ?? {}
   const municipalityName = municipality.name ?? municipality.slug ?? 'Município'
@@ -230,7 +223,7 @@ const buildMunicipalityReport = ({
   const eraSections = DOSSIER_ERAS.map((era) => {
     const ownActions = researchActionsByEra(era.id)
     const extraActions = era.id === 'C' ? camaraActions : []
-    const numbers = limit(
+    const numbers = capList(
       era.id === 'C'
         ? [...eraRows, ...itemNumberRows(items.filter((i) => i.era === 'C'))]
         : itemNumberRows(items.filter((i) => i.era === era.id)),
@@ -246,19 +239,24 @@ const buildMunicipalityReport = ({
               sourceUrl: item.sourceUrl,
             }))
         : []
-    const actions = [...ownActions, ...limit(extraActions, MAX_ERA_CAMARA_ACTIONS)]
-    if (numbers.length === 0 && actions.length === 0) return null
+    // Curated research actions are all kept (the renderer paginates them into
+    // continuation sheets); only the generic Câmara list is capped.
+    const camaraActionsCapped = capList(extraActions, MAX_ERA_CAMARA_ACTIONS)
+    const actions = [...ownActions, ...camaraActionsCapped.items]
+    const camaraActionsRemaining = camaraActionsCapped.remaining
+    if (numbers.items.length === 0 && actions.length === 0) return null
     return {
       ...era,
       method: eraMethod[era.id],
       recovery: eraRecovery[era.id],
       numbers,
       actions,
+      camaraActionsRemaining,
       honors,
     }
   }).filter(Boolean)
 
-  const deliveries = limit(
+  const deliveries = capList(
     [...municipalItems]
       .sort((left, right) => {
         const leftEra = left.era === 'C' ? 0 : 1
@@ -268,25 +266,28 @@ const buildMunicipalityReport = ({
         const rightNumber = right.numbers?.length ? 0 : 1
         return leftNumber - rightNumber
       })
-      .map((item) => ({
-        sphere: item.sphere,
-        era: item.era,
-        year: item.numbers?.[0]?.year ?? null,
-        title: item.answer,
-        detail: item.details,
-        brief: item.brief ?? null,
-        value: item.numbers?.[0]?.value ?? null,
-        phase: item.numbers?.[0]?.phase ?? null,
-        sourceUrl: item.sourceUrl,
-        sourceDate: item.sourceDate,
-      })),
+      .map((item) => {
+        const { text, fromSummary } = summarySurfaceText(item, textFallback)
+        return {
+          sphere: item.sphere,
+          era: item.era,
+          year: item.numbers?.[0]?.year ?? null,
+          title: text,
+          detail: fromSummary ? item.details : textFallback === 'pointer' ? null : item.details,
+          brief: item.brief ?? null,
+          value: item.numbers?.[0]?.value ?? null,
+          phase: item.numbers?.[0]?.phase ?? null,
+          sourceUrl: item.sourceUrl,
+          sourceDate: item.sourceDate,
+        }
+      }),
     MAX_DELIVERIES_PAGE_ONE,
   )
 
-  const hooks = limit(
+  const hooks = capList(
     [...municipalItems, ...regionalItems].map((item) => ({
       topic: item.area,
-      angle: item.answer,
+      angle: summarySurfaceText(item, textFallback).text,
       brief: item.brief ?? null,
       sourceUrl: item.sourceUrl,
     })),
@@ -299,13 +300,13 @@ const buildMunicipalityReport = ({
     nextStep: 'Apurar em fonte primária.',
   }))
 
-  const pending = limit(
+  const pending = capList(
     (research.gaps ?? []).map((gap) => gap.label ?? gap.id),
     MAX_PENDING_PAGE_ONE,
   )
 
   const context = healthContext(health)
-  const regionItems = limit(
+  const regionalEvidence = capList(
     regionalItems.map((item) => ({
       item: item.answer,
       sphere: item.sphere,
@@ -324,7 +325,7 @@ const buildMunicipalityReport = ({
         era: item.era,
         sphere: item.sphere,
         area: item.area,
-        headline: stripInlineSources(item.answer),
+        headline: stripInlineSources(summarySurfaceText(item).text),
         detail: item.details ? stripInlineSources(item.details) : null,
         brief: item.brief
           ? {
@@ -396,20 +397,12 @@ const buildMunicipalityReport = ({
       ruleTitle: 'Região não é cidade. Não some os dois recortes.',
       ruleBody:
         'Um equipamento de referência ou uma política regional pode atender moradores do município sem constituir entrega exclusiva para ele. Atribuição só entra com alcance documentado.',
-      municipal: {
-        label: 'município',
-        items: limit(municipalItems, MAX_SCOPE_LIST),
-        total: municipalItems.length,
-      },
-      regional: {
-        label: 'região / polo',
-        items: limit(regionalItems, MAX_SCOPE_LIST),
-        total: regionalItems.length,
-      },
-      items: regionItems,
+      municipal: { label: 'município', ...capList(municipalItems, MAX_SCOPE_LIST) },
+      regional: { label: 'região / polo', ...capList(regionalItems, MAX_SCOPE_LIST) },
+      evidence: regionalEvidence,
       context,
-      hook: hooks[0] ?? null,
-      priorityGap: pending[0] ?? null,
+      hook: hooks.items[0] ?? null,
+      priorityGap: pending.items[0] ?? null,
     },
     gaps,
     news: (research.news ?? []).map((row) => ({
@@ -465,13 +458,13 @@ const institutionEraRecovery = {
 /**
  * Wraps a capped list so the renderer can declare what stayed out ("e mais N")
  * instead of dropping it silently — the C188 no-truncation rule, enforced at
- * the owner for both recortes.
+ * the owner for both recortes. `omitted` is the C187 renderer's name for the
+ * same count `capList` calls `remaining`.
  */
-const capped = (list, max) => ({
-  items: limit(list, max),
-  total: list.length,
-  omitted: Math.max(0, list.length - max),
-})
+const capped = (list, max) => {
+  const { items, total, remaining } = capList(list, max)
+  return { items, total, omitted: remaining }
+}
 
 const identityBadges = (identity) =>
   [identity.kindLabel, identity.sphereLabel, identity.scope ? identity.scopeLabel : null].filter(
@@ -530,11 +523,11 @@ const buildInstitutionReport = ({ snapshot, research, generatedAt = new Date() }
       }))
 
   const eraSections = DOSSIER_ERAS.map((era) => {
-    const numbers = limit(
+    const numbers = capped(
       itemNumberRows(items.filter((item) => item.era === era.id)),
       MAX_ERA_NUMBERS,
     )
-    const actions = limit(researchActionsByEra(era.id), MAX_ERA_CAMARA_ACTIONS)
+    const actions = capped(researchActionsByEra(era.id), MAX_ERA_CAMARA_ACTIONS)
     const honors = items
       .filter((item) => item.era === era.id && item.id === 'era_c_titulos')
       .map((item) => ({
@@ -552,7 +545,7 @@ const buildInstitutionReport = ({ snapshot, research, generatedAt = new Date() }
       numbers,
       actions,
       honors,
-      empty: numbers.length === 0 && actions.length === 0,
+      empty: numbers.items.length === 0 && actions.items.length === 0,
     }
   })
 

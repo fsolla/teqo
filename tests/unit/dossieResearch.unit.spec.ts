@@ -43,6 +43,17 @@ describe('normalizeDossierResearchInput', () => {
     expect(research.items.every((item) => item.sphere === 'municipio')).toBe(true)
   })
 
+  it('normalizes the optional per-item summary without changing the source contract (C188)', () => {
+    const items = dossierChecklistForEra('C').map((item) => validItem(item.id))
+    items[0] = validItem(items[0].id, { summary: '  Recurso de R$ 1 mi empenhado em 2024.  ' })
+    items[1] = validItem(items[1].id, { summary: '   ' })
+    const research = normalizeDossierResearchInput(eraResearch('C', { items }))
+    expect(research.items[0].summary).toBe('Recurso de R$ 1 mi empenhado em 2024.')
+    expect(research.items[0].answer).toBe(`Resposta de ${items[0].id}`)
+    expect(research.items[1].summary).toBeNull()
+    expect(research.gaps).toEqual([])
+  })
+
   it('normalizes the reformulated brief and drops it when it has no title', () => {
     const research = normalizeDossierResearchInput(
       eraResearch('C', {

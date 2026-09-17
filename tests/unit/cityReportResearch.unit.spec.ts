@@ -31,6 +31,27 @@ describe('normalizeResearchInput', () => {
     expect(research.gaps).toEqual([])
   })
 
+  it('normalizes the optional per-item summary without changing the source contract (C188)', () => {
+    const research = normalizeResearchInput(
+      baseResearch({
+        items: RESEARCH_CHECKLIST_IDS.map((id) =>
+          id === 'prefeito'
+            ? validItem(id, { summary: '  Prefeito X, do PSD, em primeiro mandato.  ' })
+            : id === 'vice'
+              ? validItem(id, { summary: '   ' })
+              : validItem(id),
+        ),
+      }),
+      { now },
+    )
+    const prefeito = research.items.find((item) => item.id === 'prefeito')!
+    expect(prefeito.summary).toBe('Prefeito X, do PSD, em primeiro mandato.')
+    expect(prefeito.answer).toBe('Resposta de prefeito')
+    expect(research.items.find((item) => item.id === 'vice')!.summary).toBeNull()
+    expect(research.items.find((item) => item.id === 'vereadores')!.summary).toBeNull()
+    expect(research.gaps).toEqual([])
+  })
+
   it('throws when the research is not dated', () => {
     expect(() => normalizeResearchInput(baseResearch({ researchedAt: null }), { now })).toThrow(
       /researchedAt/,

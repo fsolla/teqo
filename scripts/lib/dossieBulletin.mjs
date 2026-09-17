@@ -63,6 +63,7 @@ export const buildBulletin = ({
       label: fact.brief?.title ?? fact.headline,
       detail: fact.brief?.note ?? fact.detail ?? fact.value ?? fact.area,
     }))
+  const shown = highlights.length + moreItems.length
 
   return {
     unit: resolvedUnit,
@@ -81,6 +82,10 @@ export const buildBulletin = ({
     },
     highlights,
     moreItems,
+    // Never a silent drop (C188): the facts beyond the two caps are counted so
+    // the one-page boletim states how much of the sourced set it left out.
+    factsTotal: ordered.length,
+    factsRemaining: ordered.length - shown,
     timeline: BULLETIN_TIMELINE_STEPS,
   }
 }
