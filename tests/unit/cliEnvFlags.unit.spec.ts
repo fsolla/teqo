@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   ALLOW_REMOTE_DB_FLAG,
   databaseHostname,
+  databaseName,
   isLocalDatabaseUrl,
   isRemoteDbOverrideSet,
   isTruthyEnv,
@@ -47,6 +48,18 @@ describe('isRemoteDbOverrideSet (behavior preserved through the delegation refac
     }
     delete process.env[ALLOW_REMOTE_DB_FLAG]
     expect(isRemoteDbOverrideSet()).toBe(false)
+  })
+})
+
+describe('databaseName (OPS125 — the one spelling shared by the DB-name guards)', () => {
+  it('reads the decoded database name and refuses missing/invalid URLs', () => {
+    expect(databaseName('postgresql://teqo:teqo@localhost:5432/teqo_staging')).toBe('teqo_staging')
+    expect(databaseName('postgresql://teqo:teqo@postgres:5432/teqo_1313')).toBe('teqo_1313')
+    expect(databaseName('postgresql://teqo:teqo@localhost:5432/teqo%5Fwt155')).toBe('teqo_wt155')
+    expect(databaseName('postgresql://teqo:teqo@localhost:5432/')).toBe('')
+    expect(databaseName(undefined)).toBeNull()
+    expect(databaseName('not a url')).toBeNull()
+    expect(databaseName('postgresql://teqo:teqo@localhost:5432/%E0%A4%A')).toBeNull()
   })
 })
 

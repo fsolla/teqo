@@ -25,7 +25,13 @@ import { execFileSync } from 'node:child_process'
 
 import pg from 'pg'
 
-import { dieWithLabel, loadCliEnv, LOCAL_HOSTS, TEST_DATABASE_NAME_RE } from './lib/cli.mjs'
+import {
+  databaseName,
+  dieWithLabel,
+  loadCliEnv,
+  LOCAL_HOSTS,
+  TEST_DATABASE_NAME_RE,
+} from './lib/cli.mjs'
 
 loadCliEnv()
 
@@ -52,16 +58,14 @@ if (!LOCAL_HOSTS.has(parsedUrl.hostname)) {
   )
 }
 
-let databaseName
-try {
-  databaseName = decodeURIComponent(parsedUrl.pathname.replace(/^\//, ''))
-} catch {
+const targetDatabaseName = databaseName(parsedUrl)
+if (targetDatabaseName === null) {
   die('DATABASE_URL database name has invalid percent-encoding.')
 }
 
-if (!TEST_DATABASE_NAME_RE.test(databaseName)) {
+if (!TEST_DATABASE_NAME_RE.test(targetDatabaseName)) {
   die(
-    `Refusing to reset database "${databaseName}" — the name must match ` +
+    `Refusing to reset database "${targetDatabaseName}" — the name must match ` +
       '`teqo_test` or `teqo_<worktree>_test` (TEST_DATABASE_NAME_RE). The dev database is never reset.',
   )
 }
@@ -69,7 +73,7 @@ if (!TEST_DATABASE_NAME_RE.test(databaseName)) {
 try {
   const pool = new pg.Pool({ connectionString: databaseUrl, max: 1 })
   try {
-    console.log(`[db:reset] Dropping schema public on "${databaseName}"…`)
+    console.log(`[db:reset] Dropping schema public on "${targetDatabaseName}"…`)
     await pool.query('DROP SCHEMA public CASCADE')
     await pool.query('CREATE SCHEMA public')
     console.log('[db:reset] Schema rebuilt — running migrate…')

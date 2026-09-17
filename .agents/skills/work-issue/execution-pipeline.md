@@ -188,6 +188,14 @@ primitivos) em prosa; promover a helper testado só se virar necessidade reutili
   da Issue + do `*-impl.md`. Não é regressão da aplicação inteira.
 - **Ambiente:** `https://staging.jorgesolla1313.com.br` (noindex; identidades em
   `docs/ops/teqo-1313-deploy.md:132-138`).
+- **Credencial de login (OPS125):** a conta de teste é `agente-teste@teqo.invalid`
+  (papel `coordinator`); a senha vive em `~/stack/teqo-staging.env` na var
+  `STAGING_TEST_ACCOUNT_PASSWORD` (chmod 600, nunca commitada) e é **fornecida
+  pelo humano que opera o homeserver no momento do teste**. O agente só faz login
+  na aplicação: nunca lê o env file, nunca recebe `DATABASE_URL`/`ALLOW_REMOTE_DB`
+  e nunca cola a credencial no PR/Issue (só o desfecho). Criação/re-uso (após
+  recriar o banco de staging): `STAGING_TEST_ACCOUNT_CONFIRM=1 pnpm
+  campaign:staging:test-account` no homeserver — runbook §Staging.
 - **Viewports 390 e 1280**; **console sem erros** (warnings investigados) e
   **network** (status/erros) observados; screenshots viram evidência do desfecho.
 - **Ferramenta:** o browser automation da sessão (Playwright no ambiente do

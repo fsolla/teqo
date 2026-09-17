@@ -146,7 +146,9 @@ importa é a de `production`).
 2. **Env file:** `~/stack/teqo-staging.env` (chmod 600) com `DATABASE_URL`
    apontando para `teqo_staging`, `PAYLOAD_SECRET` próprio,
    `NEXT_PUBLIC_SITE_URL=https://staging.jorgesolla1313.com.br`,
-   `REVALIDATE_SECRET` próprio e `S3_*` do bucket `teqo-media-staging`.
+   `REVALIDATE_SECRET` próprio, `S3_*` do bucket `teqo-media-staging` e
+   `STAGING_TEST_ACCOUNT_PASSWORD` (senha sintética da conta de teste dos
+   agentes — OPS125; nunca commitada).
 3. **Compose:** adicionar `teqo-staging` e `teqo-staging-migrate` ao
    `~/stack/docker-compose.yml`, espelhando os serviços de produção
    (`pull_policy: never`, label `org.opencontainers.image.revision` **por
@@ -189,6 +191,31 @@ noindex` no ingress — o noindex versionado (robots.ts + metadata, OPS103)
    ```
 
    Nunca copiar dados de produção (PII/LGPD): o seed mínimo é sintético.
+
+8. **Conta de teste dos agentes (OPS125):** criar/atualizar a conta
+   `coordinator` sintética que a verificação pós-deploy do `work-issue` (OPS121)
+   usa para logar. Com o env de staging exportado e o `DATABASE_URL` reescrito
+   para o proxy do build (`127.0.0.1:5434`):
+
+   ```bash
+   ssh homeserver
+   cd ~/teqo-deploy && pnpm install
+   set -a; source ~/stack/teqo-staging.env; set +a
+   export DATABASE_URL="${DATABASE_URL/@postgres:5432/@127.0.0.1:5434}"
+   STAGING_TEST_ACCOUNT_CONFIRM=1 pnpm campaign:staging:test-account
+   ```
+
+   Idempotente (upsert por email) — re-rodar após recriar o banco de staging.
+   O guard recusa qualquer alvo que não seja `teqo_staging`: `ALLOW_REMOTE_DB`,
+   `TEQO_ENV` ≠ `staging` e host fora do allowlist local falham fechado (o nome
+   do banco é o discriminador honesto — o host é reescrito para `127.0.0.1` pelo
+   proxy). A credencial (`agente-teste@teqo.invalid` + a senha em
+   `STAGING_TEST_ACCOUNT_PASSWORD`) é fornecida ao agente **no momento do teste
+   de verificação**, pelo humano; nunca entra no PR/Issue nem no env do agente,
+   e o agente nunca recebe `DATABASE_URL` de staging/produção.
+   Nota: o `teqo_staging` deste homeserver é **cópia da produção** (com PII
+   real) — a linha "o seed mínimo é sintético" do passo 7 acima está
+   desatualizada; a correção dos docs é débito do OPS103, dono do ambiente.
 
 ### Limites do staging (o que ele NÃO valida)
 

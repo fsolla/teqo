@@ -190,7 +190,11 @@ Você (humano, com browser) é o ator que **executa** a §Verificação pós-dep
 fica só o delta: espera o run de `deploy.yml`/job `deploy-staging`, abre o staging
 e exerce a funcionalidade recém-entregue; defeito no escopo vira Issue claimável,
 observação vira `file-miss`, a Issue original (`done`) só recebe comentário de
-link. Em timeout, reporta e para. Produção segue 100% humana.
+link. Em timeout, reporta e para. Produção segue 100% humana. A credencial de
+login é a conta de teste do OPS125 (`agente-teste@teqo.invalid`, papel
+`coordinator`; senha em `~/stack/teqo-staging.env` →
+`STAGING_TEST_ACCOUNT_PASSWORD`), fornecida pelo humano no run — nunca commitada
+nem colada no PR/Issue (só o desfecho).
 
 ## Resumo final
 
