@@ -7,7 +7,7 @@ import {
 } from '@/components/SpeechCutShareActions'
 import { formatSpeechClock, formatSpeechDate } from '@/lib/speechClock'
 import { speechCutPublicPath } from '@/lib/speechCut'
-import { parseYoutubeVideoId } from '@/lib/speechVod'
+import { speechCoverUrl } from '@/lib/speechVod'
 import type { Media, Speech, SpeechCut } from '@/payload-types'
 import { getCachedDocumentById } from '@/utilities/documentReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
@@ -41,8 +41,7 @@ const speechOf = (cut: SpeechCut): Speech | null =>
 
 const youtubeCoverUrl = (cut: SpeechCut): string | null => {
   const speech = speechOf(cut)
-  const videoId = parseYoutubeVideoId(speech?.youtubeUrl)
-  return videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null
+  return speechCoverUrl(speech?.youtubeUrl)
 }
 
 const loadPublishedCut = async (id: string): Promise<SpeechCut | null> => {

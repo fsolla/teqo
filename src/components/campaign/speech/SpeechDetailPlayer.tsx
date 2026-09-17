@@ -33,7 +33,7 @@ import {
   type ExcerptRange,
 } from '@/lib/speechExcerptSelection'
 import { buildSpeechExcerptYoutubeUrl } from '@/lib/speechShare'
-import type { SpeechVodResolution } from '@/lib/speechVod'
+import { youtubeThumbnailUrl, type SpeechVodResolution } from '@/lib/speechVod'
 import { cn } from '@/lib/utils'
 import type { SpeechDetailSegmentViewModel } from '@/utilities/speech/speechViewModels'
 
@@ -143,7 +143,7 @@ const YoutubeFacade = ({ videoId, href }: { videoId: string; href: string }) => 
     <span
       aria-hidden="true"
       className="absolute inset-0 bg-cover bg-center opacity-60"
-      style={{ backgroundImage: `url(https://i.ytimg.com/vi/${videoId}/hqdefault.jpg)` }}
+      style={{ backgroundImage: `url(${youtubeThumbnailUrl(videoId)})` }}
     />
     <span
       aria-hidden="true"

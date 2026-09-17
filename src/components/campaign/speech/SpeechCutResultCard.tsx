@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 
 import { SpeechCutShareActions } from '@/components/SpeechCutShareActions'
 import type { SpeechCutViewModel } from '@/lib/speechCut'
+import { youtubeThumbnailUrl } from '@/lib/speechVod'
 
 /**
  * C167 — the acervo result of a published cut: the public link with the share
@@ -67,7 +68,7 @@ export const SpeechCutResultCard = ({ cut }: { cut: SpeechCutViewModel }) => {
         {cut.youtubeVideoId ? (
           // eslint-disable-next-line @next/next/no-img-element -- YouTube cover is an external OG image.
           <img
-            src={`https://i.ytimg.com/vi/${cut.youtubeVideoId}/hqdefault.jpg`}
+            src={youtubeThumbnailUrl(cut.youtubeVideoId) ?? undefined}
             alt=""
             className="h-20 w-32 rounded-lg border object-cover"
           />

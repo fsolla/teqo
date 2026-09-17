@@ -1,4 +1,5 @@
 import type { SpeechCutLibraryItemViewModel } from '@/lib/speechCut'
+import { youtubeThumbnailUrl } from '@/lib/speechVod'
 
 /**
  * C168 — the cut is a plain MP4 (never the YouTube/VOD source): the same
@@ -13,9 +14,7 @@ export const SpeechCutPlayer = ({ cut }: { cut: SpeechCutLibraryItemViewModel })
     )
   }
 
-  const poster = cut.youtubeVideoId
-    ? `https://i.ytimg.com/vi/${cut.youtubeVideoId}/hqdefault.jpg`
-    : undefined
+  const poster = youtubeThumbnailUrl(cut.youtubeVideoId) ?? undefined
 
   return (
     <video
