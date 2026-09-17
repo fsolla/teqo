@@ -33,9 +33,9 @@ const checklistById = new Map(RESEARCH_CHECKLIST.map((item) => [item.id, item]))
 /** Where an emenda indication points to: the município itself, its region or the regional pole. */
 const EMENDA_SPHERES = ['municipio', 'regiao', 'polo']
 
-const isNonEmptyString = (value) => typeof value === 'string' && value.trim() !== ''
+export const isNonEmptyString = (value) => typeof value === 'string' && value.trim() !== ''
 
-const isValidDate = (value) => isNonEmptyString(value) && !Number.isNaN(Date.parse(value))
+export const isValidDate = (value) => isNonEmptyString(value) && !Number.isNaN(Date.parse(value))
 
 const inNewsWindow = (publishedAt, reference) =>
   Date.parse(publishedAt) >= reference.getTime() - RESEARCH_NEWS_WINDOW_DAYS * DAY_MS &&
@@ -47,7 +47,7 @@ const inNewsWindow = (publishedAt, reference) =>
  * url+date; invalid ones are dropped (the primary source already carries the
  * item, so a broken extra is not worth a visible gap).
  */
-const collectExtraSources = (entry) =>
+export const collectExtraSources = (entry) =>
   (Array.isArray(entry?.extraSources) ? entry.extraSources : [])
     .map((extra) => ({
       label: isNonEmptyString(extra?.label) ? extra.label.trim() : null,

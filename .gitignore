@@ -83,6 +83,11 @@ next-env.d.ts
 /data/relatorios-cidade/
 /docs/research/relatorios-cidade/
 
+# C186 — dossiê Solla por cidade + boletim modelo: same rule (internal, dated,
+# carry campaign-internal data). Only the skill/scripts/changelog are committed.
+/data/dossie-solla-cidade/
+/docs/research/dossie-solla-cidade/
+
 # Local-only sensitive material (agents may read; never commit content)
 /private/**
 !/private/README.md
