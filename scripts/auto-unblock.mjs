@@ -35,6 +35,7 @@ import { fileURLToPath } from 'node:url'
 import {
   classifyDeployFailure,
   decideUnblock,
+  resolveOpenCodeBinary,
   tokenBody,
   tokenTitle,
   UNBLOCK_BLOCKED_LABEL,
@@ -74,6 +75,16 @@ const ensureLabel = async (api) => {
 }
 
 const run = (command, args) => spawnSync(command, args, { encoding: 'utf8', timeout: 30_000 })
+
+/** X_OK probe for the opencode resolver (mirrors the detached wrapper). */
+const isExecutable = (path) => {
+  try {
+    accessSync(path, constants.X_OK)
+    return true
+  } catch {
+    return false
+  }
+}
 
 const port5432State = async () => {
   // Reuses the db-start owner's parser and container name; a Docker daemon
@@ -161,7 +172,25 @@ const runCheck = async () => {
     }
     return 'node_modules ok'
   })
-  await check('opencode', version('opencode'))
+  await check('opencode', () => {
+    // The runner service PATH lacks `~/.opencode/bin`; resolve explicitly so
+    // this smoke is truthful (live finding: exit 127, launcher passed anyway).
+    const binary = resolveOpenCodeBinary({
+      argv0: 'opencode',
+      env: process.env,
+      home: homedir(),
+      exists: isExecutable,
+    })
+    if (!binary) {
+      throw new Error(
+        'binário não encontrado no PATH nem em ~/.opencode/bin — instale o opencode no usuário do runner',
+      )
+    }
+    const result = run(binary, ['--version'])
+    if (result.error) throw result.error
+    if (result.status !== 0) throw new Error(`${binary} saiu com ${result.status}`)
+    return `${(result.stdout || result.stderr || '').trim().split('\n')[0]} (${binary})`
+  })
   await check('opencode auth', () => {
     const dataHome = process.env.XDG_DATA_HOME ?? join(homedir(), '.local', 'share')
     const authFile = join(dataHome, 'opencode', 'auth.json')
@@ -295,6 +324,28 @@ const main = async () => {
     )
     await api.addLabels(created.number, [UNBLOCK_BLOCKED_LABEL])
     die('AUTOMERGE_PAT ausente — agente não disparado (token marcado blocked).')
+  }
+
+  // Fail fast on a missing opencode BEFORE provisioning a worktree/DBs: the
+  // detached agent would otherwise die with exit 127 (live finding on the
+  // homeserver, where the runner PATH lacks `~/.opencode/bin`).
+  const opencodeBinary = resolveOpenCodeBinary({
+    argv0: 'opencode',
+    env: process.env,
+    home: homedir(),
+    exists: isExecutable,
+  })
+  if (!opencodeBinary) {
+    await api.addComment(
+      created.number,
+      [
+        'opencode não encontrado no runner (fora do PATH e sem `$HOME/.opencode/bin/opencode`) —',
+        'bootstrap pendente no homeserver. Instale/autentique o opencode no usuário do runner e rode',
+        '`pnpm unblock:check`. Fail-closed: nenhum worktree foi provisionado.',
+      ].join('\n'),
+    )
+    await api.addLabels(created.number, [UNBLOCK_BLOCKED_LABEL])
+    die('opencode ausente — agente não disparado (token marcado blocked).')
   }
 
   const statePath = join(stateDir, `unblock-${runId}.json`)

@@ -6,6 +6,8 @@
  * guardrails without a GitHub token, Docker or opencode.
  */
 
+import { join } from 'node:path'
+
 import { databaseHostname, isLocalDatabaseUrl, TEST_DATABASE_NAME_RE } from './cli.mjs'
 import { isGeneratedDatabaseName } from './worktree-env.mjs'
 
@@ -21,6 +23,36 @@ export const UNBLOCK_BLOCKED_LABEL = 'blocked'
  * the TTL — the agent cap (`auto-unblock-agent.mjs`, 4h) always wins.
  */
 export const UNBLOCK_TOKEN_TTL_MS = 3 * 60 * 60 * 1000
+
+/**
+ * Locate the `opencode` executable for headless launches. The self-hosted
+ * runner service does not source the interactive shell profile, so
+ * `$HOME/.opencode/bin` is absent from its PATH — the OPS106 agent died with
+ * exit 127 (`timeout: failed to run command 'opencode'`) on the homeserver
+ * even though opencode was installed for the runner user
+ * (`unblock-35101121310.log`). Resolution order: explicit `OPENCODE_BIN`, a
+ * path-like argv0, the default install dir under HOME, then the PATH entries.
+ * Returns null when nothing matches — the caller fails closed instead of
+ * spawning a doomed `timeout ... opencode`.
+ *
+ * @param {{ argv0?: string, env?: Record<string, string | undefined>, home?: string, exists?: (path: string) => boolean }} [options]
+ * @returns {string | null}
+ */
+export const resolveOpenCodeBinary = ({
+  argv0 = 'opencode',
+  env = {},
+  home = '',
+  exists = () => false,
+} = {}) => {
+  if (env.OPENCODE_BIN) return env.OPENCODE_BIN
+  if (argv0.includes('/')) return argv0
+  const candidates = []
+  if (home) candidates.push(join(home, '.opencode', 'bin', argv0))
+  for (const dir of String(env.PATH ?? '').split(':')) {
+    if (dir) candidates.push(join(dir, argv0))
+  }
+  return candidates.find((candidate) => exists(candidate)) ?? null
+}
 
 /**
  * Local ports that are only ever the homeserver's stack DB proxies — defense

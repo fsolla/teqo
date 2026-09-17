@@ -14,7 +14,8 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { accessSync, constants, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -25,6 +26,7 @@ import {
   evaluateDatabaseTargets,
   outcomeComment,
   parseHeadlessDirective,
+  resolveOpenCodeBinary,
   UNBLOCK_BLOCKED_LABEL,
 } from './lib/auto-unblock.mjs'
 import { dieWithLabel, parseEqualsFlags } from './lib/cli.mjs'
@@ -39,6 +41,16 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const unblockHome = process.env.TEQO_UNBLOCK_HOME ?? join(process.env.HOME ?? '', 'teqo-unblock')
 
 const say = (message) => console.log(`[auto-unblock:agent] ${message}`)
+
+/** X_OK probe the resolver uses — a missing binary must fail closed, not 127. */
+const isExecutable = (path) => {
+  try {
+    accessSync(path, constants.X_OK)
+    return true
+  } catch {
+    return false
+  }
+}
 
 const { flags } = parseEqualsFlags(process.argv.slice(2))
 const tokenIssue = Number(flags.token)
@@ -151,7 +163,26 @@ const main = async () => {
   childEnv.GIT_CONFIG_VALUE_0 =
     '!f() { echo username=x-access-token; echo password=$GITHUB_TOKEN; }; f'
 
-  const [command, ...args] = directive.argv
+  const [rawCommand, ...args] = directive.argv
+  const resolvedCommand = resolveOpenCodeBinary({
+    argv0: rawCommand,
+    env: childEnv,
+    home: process.env.HOME ?? homedir(),
+    exists: isExecutable,
+  })
+  if (rawCommand === 'opencode' && !resolvedCommand) {
+    await blockToken(
+      [
+        'opencode não encontrado: fora do PATH do runner e sem `$HOME/.opencode/bin/opencode`.',
+        '',
+        'Bootstrap pendente no homeserver (instalar/autenticar opencode no usuário do runner) —',
+        'rode `pnpm unblock:check` com `GITHUB_TOKEN`/`AUTOMERGE_PAT` exportados.',
+      ].join('\n'),
+    )
+    die('opencode não encontrado — token blocked (bootstrap pendente).')
+  }
+  const command = resolvedCommand ?? rawCommand
+  say(`opencode resolver: '${rawCommand}' → ${command}`)
   const agentRun = runTimed(
     'opencode run --command bug-fix',
     AGENT_TIMEOUT_SECONDS,
