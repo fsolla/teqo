@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  excerptPreviewStopAt,
   excerptSelectionDuration,
   extendRangeToSegment,
   initialExcerptRange,
@@ -187,5 +188,29 @@ describe('track geometry', () => {
     expect(isExcerptSelectionAvailable(null, SEGMENTS)).toBe(true)
     expect(isExcerptSelectionAvailable(3, SEGMENTS)).toBe(false)
     expect(isExcerptSelectionAvailable(null, [{ startSeconds: 0, endSeconds: 2 }])).toBe(false)
+  })
+})
+
+// C173 — the pure rule behind "the preview stops at the end of the excerpt".
+describe('excerptPreviewStopAt', () => {
+  const range = { startSeconds: 43, endSeconds: 50 }
+
+  it('keeps playing while the playhead is inside the window', () => {
+    expect(excerptPreviewStopAt(range, 43)).toBeNull()
+    expect(excerptPreviewStopAt(range, 49.9)).toBeNull()
+  })
+
+  it('stops exactly at the end, inclusively', () => {
+    expect(excerptPreviewStopAt(range, 50)).toBe(50)
+  })
+
+  it('clamps back to the end when timeupdate overshoots', () => {
+    expect(excerptPreviewStopAt(range, 50.3)).toBe(50)
+    expect(excerptPreviewStopAt(range, 91)).toBe(50)
+  })
+
+  it('never stops on a non-finite playhead', () => {
+    expect(excerptPreviewStopAt(range, Number.NaN)).toBeNull()
+    expect(excerptPreviewStopAt(range, Number.POSITIVE_INFINITY)).toBeNull()
   })
 })

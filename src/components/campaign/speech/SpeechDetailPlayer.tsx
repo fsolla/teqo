@@ -1,6 +1,13 @@
 'use client'
 
-import { DownloadIcon, ExternalLinkIcon, FilmIcon, PlayIcon, ScissorsIcon } from 'lucide-react'
+import {
+  DownloadIcon,
+  ExternalLinkIcon,
+  FilmIcon,
+  PauseIcon,
+  PlayIcon,
+  ScissorsIcon,
+} from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
 import type { SpeechVodResolveResponse } from '@/app/(campaign)/campanha/(app)/comunicacao/acervo/resolver-vod/types'
@@ -15,12 +22,14 @@ import { Spinner } from '@/components/ui/Spinner'
 import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import type { SpeechCutViewModel } from '@/lib/speechCut'
 import {
+  excerptPreviewStopAt,
   excerptSelectionDuration,
   extendRangeToSegment,
   initialExcerptRange,
   isExcerptSelectionAvailable,
   MIN_EXCERPT_SECONDS,
   SPEECH_EXCERPT_REQUEST_EVENT,
+  type ExcerptPreviewPhase,
   type ExcerptRange,
 } from '@/lib/speechExcerptSelection'
 import { buildSpeechExcerptYoutubeUrl } from '@/lib/speechShare'
@@ -30,6 +39,8 @@ import type { SpeechDetailSegmentViewModel } from '@/utilities/speech/speechView
 
 const RESOLVE_ENDPOINT = '/campanha/comunicacao/acervo/resolver-vod'
 const GENERATING_TITLE = 'A Câmara está gerando o trecho deste vídeo.'
+/** C173 — the preview action keeps the row's height and goes full width on touch. */
+const PREVIEW_BUTTON_CLASS = 'min-h-10 w-full sm:w-auto'
 
 /** C181 — the pre-C178 embed contract, preserved for the in-page YouTube surface. */
 const buildYoutubeSrc = (videoId: string, startSeconds: number | null): string => {
@@ -188,6 +199,11 @@ export const SpeechDetailPlayer = ({
   // in session so the share kit stays visible after the dialog closes.
   const [cutDialogOpen, setCutDialogOpen] = useState(false)
   const [publishedCut, setPublishedCut] = useState<SpeechCutViewModel | null>(null)
+  // C173 — the selected-window preview: the phase drives the control and the
+  // card ring; the intent ref carries the single gesture through a Câmara
+  // resolution (the file is not on the page yet when the assessor asks).
+  const [previewPhase, setPreviewPhase] = useState<ExcerptPreviewPhase>('idle')
+  const previewIntentRef = useRef(false)
   // C181 — the embed's seek point survives the surface switch (session offset +
   // the excerpt start), so "Assistir no YouTube" opens at the right second.
   const [youtubeStart, setYoutubeStart] = useState<number | null>(() =>
@@ -287,10 +303,11 @@ export const SpeechDetailPlayer = ({
   }
 
   // C181 — "Assistir no YouTube" switches back to the embed, at the phrase being
-  // played (or the deep link). It never touches the Câmara request.
-  const watchYoutube = () => {
+  // played (or the deep link). It never touches the Câmara request. C173 — the
+  // excerpt preview reuses it with an explicit second, when the embed is not up.
+  const watchYoutube = (seconds?: number) => {
     if (youtubeOffsetSeconds !== null) {
-      setYoutubeStart(youtubeOffsetSeconds + (activeStart ?? initialSeconds ?? 0))
+      setYoutubeStart(youtubeOffsetSeconds + (seconds ?? activeStart ?? initialSeconds ?? 0))
     }
     setSurface('youtube')
   }
@@ -315,11 +332,63 @@ export const SpeechDetailPlayer = ({
   const onTimeUpdate = () => {
     const video = videoRef.current
     if (!video) return
-    const current = video.currentTime
+    let current = video.currentTime
+    // C173 — the preview stops at the excerpt end. `timeupdate` is coarse, so
+    // the playhead is clamped back to the end (fim visível) before pausing.
+    if (selection && previewPhase === 'playing') {
+      const stopAt = excerptPreviewStopAt(selection, current)
+      if (stopAt !== null) {
+        video.pause()
+        video.currentTime = stopAt
+        current = stopAt
+        setPreviewPhase('ended')
+      }
+    }
     const active = segments.find(
       (segment) => current >= segment.startSeconds && current < segment.endSeconds,
     )
     setActiveStart(active?.startSeconds ?? null)
+  }
+
+  /** C173 — the intent is a single owner; every cancellation path goes through here. */
+  const clearPreviewIntent = useCallback(() => {
+    previewIntentRef.current = false
+  }, [])
+
+  /** C173 — a deliberate stop (button, selection change, surface switch) leaves no trace. */
+  const stopPreview = useCallback(() => {
+    clearPreviewIntent()
+    videoRef.current?.pause()
+    setPreviewPhase('idle')
+  }, [clearPreviewIntent])
+
+  /**
+   * C173 — plays only the selected window; the end stop is owned by `onTimeUpdate`.
+   * `play()` can be refused (autoplay policy / load error), so a rejected promise
+   * takes the phase back instead of leaving a control that promises playback.
+   */
+  const startPreview = useCallback(() => {
+    const video = videoRef.current
+    if (!video || !selection) return
+    video.currentTime = selection.startSeconds
+    setActiveStart(selection.startSeconds)
+    void video
+      .play()
+      .catch(() => setPreviewPhase((phase) => (phase === 'playing' ? 'idle' : phase)))
+    setPreviewPhase('playing')
+  }, [selection])
+
+  /**
+   * C173 — the single gesture's prep from the not-yet-resolved quadrant: mark the
+   * intent, aim the mount seek at the window start, and ask the Câmara. The file
+   * arriving starts the preview (effect below); a failed/generating answer drops it.
+   * Every other surface offers the control with its own direct handler.
+   */
+  const requestPreviewResolution = () => {
+    if (!selection) return
+    previewIntentRef.current = true
+    pendingSeekRef.current = selection.startSeconds
+    void requestResolution(false)
   }
 
   /** Turns the picker on with the initial range — idempotent (keeps the current one). */
@@ -328,9 +397,16 @@ export const SpeechDetailPlayer = ({
     setSelection((current) => current ?? initialExcerptRange(segments, selectionDuration))
   }, [segments, selectionDuration])
 
+  // C173 — every path that changes the selection stops the preview first, so the
+  // player never keeps playing a window that is no longer the selected one.
+  const applySelection = (next: ExcerptRange | null) => {
+    stopPreview()
+    setSelection(next)
+  }
+
   const toggleSelection = () => {
     if (selecting) {
-      setSelection(null)
+      applySelection(null)
       return
     }
     requestSelection()
@@ -344,6 +420,32 @@ export const SpeechDetailPlayer = ({
     return () => window.removeEventListener(SPEECH_EXCERPT_REQUEST_EVENT, requestSelection)
   }, [requestSelection])
 
+  // C173 — switching surface or losing the file drops the preview (no leak).
+  useEffect(() => {
+    if (surface !== 'vod' || !playbackUrl) {
+      clearPreviewIntent()
+      setPreviewPhase('idle')
+    }
+  }, [surface, playbackUrl, clearPreviewIntent])
+
+  // C173 — the single gesture through a Câmara resolution: once the verified file
+  // is up, the pending preview starts; a generating/failed answer drops the intent
+  // and the honest panel stays in charge (a later, separate retry does not auto-play).
+  useEffect(() => {
+    if (!previewIntentRef.current) return
+    if (playbackUrl) {
+      clearPreviewIntent()
+      startPreview()
+      return
+    }
+    if (resolution.kind !== 'idle' && resolution.kind !== 'resolving') {
+      // The file will not mount: drop the intent *and* its aimed seek, so a later
+      // retry does not jump to a window the assessor never previewed.
+      clearPreviewIntent()
+      pendingSeekRef.current = null
+    }
+  }, [playbackUrl, resolution, startPreview, clearPreviewIntent])
+
   // C162 keeps the transcript click seeking; C166 turns it into a phrase magnet
   // while the explicit selection mode is on.
   const onSegmentActivate = (index: number) => {
@@ -353,10 +455,16 @@ export const SpeechDetailPlayer = ({
       seekTo(segment.startSeconds)
       return
     }
-    setSelection(extendRangeToSegment(selection, segments, index, selectionDuration))
+    applySelection(extendRangeToSegment(selection, segments, index, selectionDuration))
   }
 
   const seekable = youtubeSurface ? youtubeOffsetSeconds !== null : Boolean(playbackUrl)
+  // C173 — the honest YouTube notice: the embed cannot be told to stop, and it can
+  // only open at the window start when the session offset is known.
+  const youtubePreviewNotice =
+    youtubeOffsetSeconds === null
+      ? 'No YouTube, a pré-visualização começa no início da sessão — parar no fim exige o vídeo da Câmara.'
+      : 'No YouTube, a pré-visualização começa no início do trecho — parar no fim exige o vídeo da Câmara.'
 
   const renderMedia = (): ReactNode => {
     if (youtubeSurface && youtubeVideoId) {
@@ -379,6 +487,12 @@ export const SpeechDetailPlayer = ({
           preload="metadata"
           src={playbackUrl}
           onTimeUpdate={onTimeUpdate}
+          // C173 — a native pause (or the end-of-preview pause) leaves the
+          // preview; the functional update keeps the `ended` phase when our own
+          // `pause()` is what fires the event.
+          onPause={() => setPreviewPhase((phase) => (phase === 'playing' ? 'idle' : phase))}
+          // C173 — a native resume past the window is free playback, not a preview.
+          onPlay={() => setPreviewPhase((phase) => (phase === 'ended' ? 'idle' : phase))}
           className="aspect-video w-full rounded-lg border bg-black"
         >
           <track kind="captions" />
@@ -522,7 +636,7 @@ export const SpeechDetailPlayer = ({
                   variant="outline"
                   className="min-h-10 w-full sm:w-auto"
                   data-slot="speech-youtube-exit-embed"
-                  onClick={watchYoutube}
+                  onClick={() => watchYoutube()}
                 >
                   <YoutubeIcon />
                   Assistir no YouTube
@@ -546,6 +660,85 @@ export const SpeechDetailPlayer = ({
     )
   }
 
+  /**
+   * C173 — the preview control that lives inside the selection card (the design
+   * keeps it out of the share/cut/download row). It is rendered here, where the
+   * playback lives, and handed to the card as a slot.
+   */
+  const renderPreviewArea = (): ReactNode => {
+    if (!selection) return null
+
+    const playButton = (onClick: () => void) => (
+      <Button
+        type="button"
+        variant="outline"
+        className={PREVIEW_BUTTON_CLASS}
+        data-slot="speech-excerpt-preview"
+        onClick={onClick}
+      >
+        <PlayIcon data-icon="inline-start" aria-hidden="true" />
+        Pré-visualizar trecho
+      </Button>
+    )
+    const youtubeArea = (onClick: () => void) => (
+      <div className="flex w-full flex-col gap-2 sm:w-[300px] sm:shrink-0">
+        {playButton(onClick)}
+        <p className="text-[11px] leading-5 text-muted-foreground">{youtubePreviewNotice}</p>
+      </div>
+    )
+
+    if (youtubeSurface) {
+      // Honest posture: the embed has no stop control, so previewing only repositions.
+      return youtubeArea(() => seekTo(selection.startSeconds))
+    }
+
+    if (playbackUrl) {
+      if (previewPhase !== 'playing') return playButton(startPreview)
+      return (
+        <Button
+          type="button"
+          variant="outline"
+          className={cn(PREVIEW_BUTTON_CLASS, 'border-primary text-primary')}
+          data-slot="speech-excerpt-preview"
+          onClick={stopPreview}
+        >
+          <PauseIcon data-icon="inline-start" aria-hidden="true" />
+          Parar pré-visualização
+        </Button>
+      )
+    }
+
+    if (vodResolvable) {
+      if (resolving) {
+        return (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full cursor-wait border-border bg-muted/50 text-muted-foreground opacity-60"
+            data-slot="speech-excerpt-preview"
+            aria-busy="true"
+            disabled
+          >
+            <Spinner data-icon="inline-start" aria-label="Resolvendo o trecho" />
+            Resolvendo trecho…
+          </Button>
+        )
+      }
+      return playButton(requestPreviewResolution)
+    }
+
+    if (youtubeVideoId) {
+      // YouTube-only: the embed is one click away and opens at the window start.
+      return youtubeArea(() => watchYoutube(selection.startSeconds))
+    }
+
+    return (
+      <p className="max-w-[430px] text-[11px] leading-5 text-muted-foreground">
+        A seleção permanece ajustável. Pré-visualização não oferecida nesta superfície.
+      </p>
+    )
+  }
+
   return (
     <div data-slot="speech-player" aria-busy={resolving || undefined}>
       {renderMedia()}
@@ -557,7 +750,9 @@ export const SpeechDetailPlayer = ({
           segments={segments}
           range={selection}
           durationSeconds={selectionDuration}
-          onChange={setSelection}
+          onChange={applySelection}
+          previewArea={renderPreviewArea()}
+          previewState={youtubeSurface ? 'idle' : previewPhase}
         />
       ) : null}
 

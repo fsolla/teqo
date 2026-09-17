@@ -36,6 +36,8 @@ const gerando = { status: 'success' as const, resolution: { state: 'gerando' as 
 const indisponivel = { status: 'success' as const, resolution: { state: 'indisponivel' as const } }
 
 const fetchMock = vi.fn()
+const playMock = vi.fn(() => Promise.resolve())
+const pauseMock = vi.fn()
 
 const respondWith = (payload: unknown, ok = true) => {
   fetchMock.mockResolvedValue({ ok, json: async () => payload })
@@ -80,7 +82,11 @@ beforeAll(() => {
   // jsdom does not implement media playback; the seek contract is what matters.
   Object.defineProperty(HTMLMediaElement.prototype, 'play', {
     configurable: true,
-    value: () => Promise.resolve(),
+    value: () => playMock(),
+  })
+  Object.defineProperty(HTMLMediaElement.prototype, 'pause', {
+    configurable: true,
+    value: () => pauseMock(),
   })
   Object.defineProperty(HTMLMediaElement.prototype, 'currentTime', {
     configurable: true,
@@ -91,6 +97,8 @@ beforeAll(() => {
 
 beforeEach(() => {
   fetchMock.mockReset()
+  playMock.mockClear()
+  pauseMock.mockClear()
   vi.stubGlobal('fetch', fetchMock)
   resetCampaignCoarsePointerForTests()
   stubMatchMedia(false)
@@ -721,5 +729,196 @@ describe('SpeechDetailPlayer — C166 excerpt selection and share', () => {
       vi.advanceTimersByTime(2000)
     })
     expect(screen.getByRole('button', { name: 'Copiar link' })).toBeDefined()
+  })
+})
+
+describe('SpeechDetailPlayer — C173 preview the selected excerpt', () => {
+  const previewSlot = () =>
+    document.querySelector('[data-slot="speech-excerpt-preview"]') as HTMLButtonElement | null
+  const playPreview = () =>
+    fireEvent.click(screen.getByRole('button', { name: /^pré-visualizar trecho$/i }))
+  const stopPreview = () => screen.queryByRole('button', { name: /parar pré-visualização/i })
+  const selectWindow = (seconds: number) => {
+    fireEvent.click(screen.getByRole('button', { name: /selecionar trecho/i }))
+    // Twice: the first click extends to the phrase, the second re-selects it alone.
+    fireEvent.click(segmentButton(seconds))
+    fireEvent.click(segmentButton(seconds))
+    // Pin the range the helper promises: [seconds, seconds + the phrase length].
+    expect(
+      screen.getByRole('slider', { name: 'Início do trecho' }).getAttribute('aria-valuenow'),
+    ).toBe(String(seconds))
+  }
+
+  const mountedVideo = async () => {
+    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
+    renderPlayer()
+    fireEvent.click(watchExcerptButton())
+    await waitFor(() => expect(videoElement()).not.toBeNull())
+    return videoElement()!
+  }
+
+  it('plays only the selected window and stops at its end', async () => {
+    const video = await mountedVideo()
+    selectWindow(43)
+
+    playPreview()
+    expect(video.currentTime).toBe(43)
+    expect(playMock).toHaveBeenCalled()
+    expect(stopPreview()).not.toBeNull()
+    expect(screen.getByText('REPRODUZINDO')).toBeDefined()
+
+    // timeupdate is coarse: the playhead overshoots and is clamped back to the end.
+    pauseMock.mockClear()
+    video.currentTime = 50.4
+    fireEvent.timeUpdate(video)
+
+    expect(pauseMock).toHaveBeenCalled()
+    expect(video.currentTime).toBe(50)
+    expect(stopPreview()).toBeNull()
+    expect(screen.getByText(/FIM VISÍVEL · 00:50/)).toBeDefined()
+    expect(previewSlot()?.textContent).toContain('Pré-visualizar trecho')
+  })
+
+  it('stops the preview when the selection changes', async () => {
+    await mountedVideo()
+    selectWindow(43)
+    playPreview()
+    expect(stopPreview()).not.toBeNull()
+
+    pauseMock.mockClear()
+    fireEvent.click(segmentButton(0))
+
+    expect(pauseMock).toHaveBeenCalled()
+    expect(stopPreview()).toBeNull()
+  })
+
+  it('leaves the preview on a native pause', async () => {
+    const video = await mountedVideo()
+    selectWindow(43)
+    playPreview()
+
+    fireEvent.pause(video)
+
+    expect(stopPreview()).toBeNull()
+  })
+
+  it('cancels the preview when the surface switches to the embed', async () => {
+    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
+    renderPlayer({
+      youtubeVideoId: YOUTUBE_ID,
+      youtubeOffsetSeconds: 2634,
+      initialSeconds: 100,
+    })
+    fireEvent.click(watchExcerptButton())
+    await waitFor(() => expect(videoElement()).not.toBeNull())
+    selectWindow(43)
+    playPreview()
+    expect(stopPreview()).not.toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /assistir no youtube/i }))
+
+    expect(iframeElement()).not.toBeNull()
+    expect(stopPreview()).toBeNull()
+    expect(screen.queryByText('FIM VISÍVEL · 00:50')).toBeNull()
+  })
+
+  it('resolves and plays the window in one gesture from the unresolved state', async () => {
+    const pending = deferred<{ ok: boolean; json: () => Promise<unknown> }>()
+    fetchMock.mockReturnValue(pending.promise)
+    renderPlayer()
+
+    selectWindow(43)
+    expect(previewSlot()?.textContent).toContain('Pré-visualizar trecho')
+
+    fireEvent.click(previewSlot()!)
+    await waitFor(() => {
+      expect(previewSlot()?.getAttribute('aria-busy')).toBe('true')
+    })
+    expect(previewSlot()?.disabled).toBe(true)
+    expect(previewSlot()?.textContent).toContain('Resolvendo trecho')
+
+    await act(async () => {
+      pending.resolve({ ok: true, json: async () => pronto(PLAYBACK_URL, DOWNLOAD_URL) })
+    })
+
+    await waitFor(() => expect(videoElement()).not.toBeNull())
+    expect(playMock).toHaveBeenCalled()
+    // The window start survives the resolution: the preview does not open at 0.
+    expect(videoElement()?.currentTime).toBe(43)
+    expect(stopPreview()).not.toBeNull()
+  })
+
+  it('discards the preview intent when the resolution fails', async () => {
+    respondWith(indisponivel)
+    renderPlayer()
+
+    fireEvent.click(screen.getByRole('button', { name: /selecionar trecho/i }))
+    playPreview()
+    expect(await screen.findByText('Não foi possível carregar o vídeo deste trecho.')).toBeDefined()
+    // The control is offered again; nothing is playing.
+    expect(previewSlot()?.textContent).toContain('Pré-visualizar trecho')
+
+    // A separate retry must not auto-play the window the assessor never got.
+    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
+    fireEvent.click(screen.getByRole('button', { name: /tentar novamente/i }))
+    await waitFor(() => expect(videoElement()).not.toBeNull())
+
+    expect(playMock).not.toHaveBeenCalled()
+    expect(stopPreview()).toBeNull()
+  })
+
+  it('repositions the embed on YouTube and never promises the stop', async () => {
+    respondWith(pronto(PLAYBACK_URL, DOWNLOAD_URL))
+    renderPlayer({
+      youtubeVideoId: YOUTUBE_ID,
+      youtubeOffsetSeconds: 2634,
+      initialSeconds: 100,
+    })
+    fireEvent.click(watchExcerptButton())
+    await waitFor(() => expect(videoElement()).not.toBeNull())
+    selectWindow(43)
+
+    fireEvent.click(screen.getByRole('button', { name: /assistir no youtube/i }))
+    expect(iframeElement()).not.toBeNull()
+
+    playPreview()
+
+    expect(iframeElement()?.getAttribute('src')).toBe(
+      `https://www.youtube.com/embed/${YOUTUBE_ID}?playsinline=1&rel=0&start=2677`,
+    )
+    expect(videoElement()).toBeNull()
+    expect(stopPreview()).toBeNull()
+    expect(
+      screen.getByText(
+        'No YouTube, a pré-visualização começa no início do trecho — parar no fim exige o vídeo da Câmara.',
+      ),
+    ).toBeDefined()
+  })
+
+  it('opens the embed at the window start when only YouTube exists', () => {
+    renderPlayer({ youtubeVideoId: YOUTUBE_ID, youtubeOffsetSeconds: 2634, vodResolvable: false })
+
+    fireEvent.click(screen.getByRole('button', { name: /selecionar trecho/i }))
+    expect(iframeElement()).toBeNull()
+
+    playPreview()
+
+    expect(iframeElement()?.getAttribute('src')).toBe(
+      `https://www.youtube.com/embed/${YOUTUBE_ID}?playsinline=1&rel=0&start=2634`,
+    )
+    expect(stopPreview()).toBeNull()
+  })
+
+  it('offers no preview without any in-page surface', () => {
+    renderPlayer({ youtubeVideoId: null, vodResolvable: false })
+
+    fireEvent.click(screen.getByRole('button', { name: /selecionar trecho/i }))
+
+    expect(previewSlot()).toBeNull()
+    expect(
+      screen.getByText(
+        'A seleção permanece ajustável. Pré-visualização não oferecida nesta superfície.',
+      ),
+    ).toBeDefined()
   })
 })
