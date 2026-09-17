@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — Boletim modelo do dossiê Solla por instituição</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: 'Fira Sans', 'DejaVu Sans', Arial, sans-serif;
+        --color-ink: #172033;
+        --color-ink-soft: #435264;
+        --color-paper: #ffffff;
+        --color-workspace: #d8dde1;
+        --color-line: #cbd5dc;
+        --color-wash: #f3f6f8;
+        --color-accent: #315c75;
+        --color-accent-soft: #e8f0f4;
+        --color-warning: #8a5a18;
+        --color-warning-soft: #fff7e8;
+        --radius-sm: 0.125rem;
+        --radius-md: 0.25rem;
+      }
+
+      :root {
+        --ink: #172033;
+        --ink-soft: #435264;
+        --paper: #ffffff;
+        --workspace: #d8dde1;
+        --line: #cbd5dc;
+        --wash: #f3f6f8;
+        --accent: #315c75;
+        --accent-soft: #e8f0f4;
+        --warning: #8a5a18;
+        --warning-soft: #fff7e8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--workspace);
+        font-family: 'Fira Sans', 'DejaVu Sans', Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .sheet {
+        position: relative;
+        width: 210mm;
+        height: 297mm;
+        padding: 8mm 10mm 7mm 12mm;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: var(--paper);
+        box-shadow: 0 18px 44px rgb(23 32 51 / 18%);
+        font-size: 10.25pt;
+        line-height: 1.26;
+      }
+      .sheet::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 3.5mm;
+        background: var(--accent);
+      }
+      .sheet p,
+      .sheet h1,
+      .sheet h2,
+      .sheet h3,
+      .sheet ul {
+        margin-top: 0;
+      }
+      .tabular {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .model-label {
+        display: inline-flex;
+        align-items: center;
+        min-height: 6mm;
+        padding: 1mm 2.5mm;
+        border: 0.35mm solid var(--warning);
+        border-radius: 99px;
+        color: #68420f;
+        background: var(--warning-soft);
+        font-size: 7.3pt;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      .defeso-band {
+        margin-inline: -10mm;
+        padding: 1.4mm 10mm 1.35mm;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 5mm;
+        color: #68420f;
+        background: var(--warning-soft);
+        border-block: 0.25mm solid #e7cc9d;
+        font-size: 7.15pt;
+        line-height: 1.2;
+        font-weight: 700;
+      }
+      .kicker,
+      .section-label {
+        color: var(--accent);
+        font-size: 7.4pt;
+        line-height: 1.1;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .section-label {
+        margin-bottom: 1.2mm;
+      }
+      .identity-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 5mm;
+        padding: 0.55mm 1.7mm;
+        border: 0.25mm solid var(--line);
+        border-radius: 99px;
+        color: var(--ink-soft);
+        background: var(--wash);
+        font-size: 6.9pt;
+        line-height: 1;
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: 0.045em;
+      }
+      .asset-box {
+        border: 0.4mm dashed #748894;
+        color: #40535f;
+        background:
+          linear-gradient(135deg, transparent 49.6%, #cbd5dc 50%, transparent 50.4%),
+          linear-gradient(45deg, transparent 49.6%, #cbd5dc 50%, transparent 50.4%), #f7f9fa;
+      }
+      .highlight-card {
+        min-height: 30mm;
+        padding: 2.6mm 3mm 2.35mm;
+        border: 0.3mm solid var(--line);
+        border-top: 1.15mm solid var(--accent);
+        background: var(--paper);
+      }
+      .highlight-eyebrow {
+        margin-bottom: 1.4mm;
+        color: var(--ink-soft);
+        font-size: 6.65pt;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: 0.075em;
+        text-transform: uppercase;
+      }
+      .highlight-number {
+        margin: 0;
+        color: var(--accent);
+        font-size: 18pt;
+        line-height: 0.96;
+        font-weight: 800;
+        letter-spacing: -0.035em;
+      }
+      .highlight-title {
+        margin: 1.4mm 0 0;
+        font-size: 10.5pt;
+        line-height: 1.08;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+      .highlight-note {
+        margin: 1.2mm 0 0;
+        color: var(--ink-soft);
+        font-size: 7.9pt;
+        line-height: 1.2;
+      }
+      .timeline-step {
+        position: relative;
+        padding: 4.3mm 2.5mm 1.2mm;
+        border-top: 0.4mm solid #97aab6;
+      }
+      .timeline-step::before {
+        content: '';
+        position: absolute;
+        top: -1.6mm;
+        left: 2.5mm;
+        width: 3mm;
+        height: 3mm;
+        border: 0.65mm solid var(--accent-soft);
+        border-radius: 99px;
+        background: var(--accent);
+        box-shadow: 0 0 0 0.3mm var(--accent);
+      }
+      .more-item {
+        position: relative;
+        min-height: 10mm;
+        padding: 0 0 1.7mm 4.8mm;
+        border-bottom: 0.25mm solid var(--line);
+        font-size: 8.6pt;
+        line-height: 1.2;
+      }
+      .more-item::before {
+        content: '✓';
+        position: absolute;
+        left: 0;
+        top: 0;
+        color: var(--accent);
+        font-weight: 900;
+      }
+      .lacuna-panel {
+        border: 0.4mm dashed #b18549;
+        color: #684819;
+        background: var(--warning-soft);
+      }
+
+      @page {
+        size: A4;
+        margin: 0;
+      }
+      @media print {
+        body {
+          background: #fff;
+        }
+        .gate-header,
+        .scene-label {
+          display: none !important;
+        }
+        .pages {
+          display: block !important;
+          padding: 0 !important;
+        }
+        .scene {
+          width: 210mm;
+          height: 297mm;
+          margin: 0 !important;
+          break-after: page;
+          page-break-after: always;
+        }
+        .scene:last-child {
+          break-after: auto;
+          page-break-after: auto;
+        }
+        .sheet {
+          width: 210mm;
+          height: 297mm;
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="gate-header mx-auto max-w-[1100px] px-6 pt-8 text-ink">
+      <p class="text-xs font-bold uppercase tracking-[0.14em] text-accent">
+        Gate visual · Impeccable C
+      </p>
+      <h1 class="mt-1 text-2xl font-semibold tracking-tight">
+        Boletim modelo por instituição — uma página A4
+      </h1>
+      <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-soft">
+        Duas variações da mesma folha: composição completa e estado honesto com poucos fatos
+        documentados. Cada quadro abaixo é uma alternativa imprimível de uma página, não uma sequência.
+      </p>
+      <div class="mt-4 flex flex-wrap gap-2 text-xs">
+        <span class="rounded-full border border-line bg-white px-3 py-1">A4 · 210 × 297 mm</span>
+        <span class="rounded-full border border-line bg-white px-3 py-1">até 6 destaques</span>
+        <span class="rounded-full border border-line bg-white px-3 py-1">até 14 itens em “E mais”</span>
+        <span class="rounded-full border border-line bg-white px-3 py-1">sem fontes · sem CTA</span>
+        <span class="rounded-full border border-line bg-white px-3 py-1">fase por valor</span>
+        <span class="rounded-full border border-line bg-white px-3 py-1">setor/rede não somam</span>
+        <span class="rounded-full border border-line bg-white px-3 py-1">sem % estadual absoluto</span>
+      </div>
+    </header>
+
+    <main class="pages mx-auto flex max-w-[1100px] flex-col items-center gap-12 px-6 py-10">
+      <!-- CENA 01 · COMPOSIÇÃO COMPLETA -->
+      <section class="scene" aria-labelledby="bulletin-title">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
+          Cena 01 · Boletim completo · densidade máxima permitida
+        </p>
+        <article class="sheet" aria-label="Modelo completo do boletim institucional de uma página">
+          <header class="flex items-center justify-between gap-[5mm] border-b-[0.55mm] border-ink pb-[2.4mm]">
+            <div>
+              <p class="kicker mb-[1mm]">Boletim informativo · atuação pública</p>
+              <p class="m-0 text-[11pt] font-extrabold">Instituição Exemplo</p>
+              <div class="mt-[1.3mm] flex flex-wrap gap-[1.2mm]">
+                <span class="identity-pill">Universidade</span>
+                <span class="identity-pill">Federal</span>
+                <span class="identity-pill">Abrangência BA</span>
+              </div>
+            </div>
+            <span class="model-label">Modelo — insumo interno</span>
+          </header>
+
+          <div class="defeso-band mt-[2.2mm]" role="note" aria-label="Nota de defeso eleitoral">
+            <span>DEFESO 2026 · material em preparação · não publicar sem revisão editorial e jurídica</span>
+            <span class="shrink-0 uppercase tracking-[.07em]">sem CTA · sem propaganda</span>
+          </div>
+
+          <section class="mt-[3mm] grid grid-cols-[1fr_45mm] gap-[5mm]" aria-label="Abertura do boletim">
+            <div>
+              <p class="section-label">Uma trajetória de trabalho junto à instituição</p>
+              <h1 id="bulletin-title" class="m-0 text-[22.5pt] font-semibold leading-[1] tracking-[-0.038em]">
+                O que Jorge Solla fez pela e na
+                <span class="text-accent">Instituição Exemplo</span>
+              </h1>
+              <p class="mb-0 mt-[2.3mm] max-w-[126mm] text-[10.2pt] leading-[1.3] text-ink-soft">
+                Ações, recursos e articulações explicados de forma direta — somente o que já foi
+                documentado no dossiê institucional.
+              </p>
+            </div>
+            <div class="asset-box flex min-h-[35mm] flex-col items-center justify-center rounded-sm p-[3mm] text-center">
+              <svg class="mb-[1.4mm] h-6 w-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <circle cx="8.5" cy="10" r="1.5" />
+                <path d="m21 15-5-5L5 19" />
+              </svg>
+              <p class="m-0 text-[7.4pt] font-extrabold uppercase tracking-[.08em]">NEEDS ASSET · foto real</p>
+              <p class="mb-0 mt-[1mm] text-[6.9pt] leading-[1.22]">Solla na instituição ou na ação citada<br />origem, autoria e licença</p>
+            </div>
+          </section>
+
+          <section class="mt-[3.3mm]" aria-labelledby="highlights-title">
+            <div class="flex items-end justify-between gap-4 border-b-[0.3mm] border-line pb-[1.3mm]">
+              <div>
+                <p class="section-label">Destaques</p>
+                <h2 id="highlights-title" class="m-0 text-[13.5pt] font-semibold leading-none tracking-[-0.015em]">Resultados em leitura rápida</h2>
+              </div>
+              <p class="m-0 text-right text-[6.7pt] font-bold uppercase tracking-[.065em] text-ink-soft">cada número mantém sua fase e seu alcance</p>
+            </div>
+            <div class="mt-[2.2mm] grid grid-cols-3 gap-[2mm]">
+              <article class="highlight-card rounded-sm">
+                <p class="highlight-eyebrow">Educação · instituição</p>
+                <p class="highlight-number tabular">R$ 0,0 mi</p>
+                <h3 class="highlight-title">para fortalecer a estrutura</h3>
+                <p class="highlight-note">Fase: empenhado. Não apresentar como valor pago.</p>
+              </article>
+              <article class="highlight-card rounded-sm">
+                <p class="highlight-eyebrow">Atuação · instituição</p>
+                <p class="highlight-number tabular">00 ações</p>
+                <h3 class="highlight-title">com resultado documentado</h3>
+                <p class="highlight-note">Substituir pela contagem e pelo resultado confirmados.</p>
+              </article>
+              <article class="highlight-card rounded-sm">
+                <p class="highlight-eyebrow">Formação · setor</p>
+                <p class="highlight-number tabular">00 pessoas</p>
+                <h3 class="highlight-title">alcançadas pela iniciativa</h3>
+                <p class="highlight-note">O setor aparece separado da instituição.</p>
+              </article>
+              <article class="highlight-card rounded-sm">
+                <p class="highlight-eyebrow">Direitos · rede</p>
+                <p class="highlight-number tabular">00 iniciativas</p>
+                <h3 class="highlight-title">em defesa da rede relacionada</h3>
+                <p class="highlight-note">Não atribuir o alcance compartilhado só à instituição.</p>
+              </article>
+              <article class="highlight-card rounded-sm">
+                <p class="highlight-eyebrow">Pesquisa · instituição</p>
+                <p class="highlight-number tabular">00 projetos</p>
+                <h3 class="highlight-title">apoiados com papel comprovado</h3>
+                <p class="highlight-note">Dizer o que foi feito, sem ampliar autoria ou efeito.</p>
+              </article>
+              <article class="highlight-card rounded-sm">
+                <p class="highlight-eyebrow">Reconhecimento · rede</p>
+                <p class="highlight-number tabular">AAAA</p>
+                <h3 class="highlight-title">registro de reconhecimento</h3>
+                <p class="highlight-note">Usar o ano e o nome oficial somente após conferência.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="mt-[3mm] rounded-sm bg-accent-soft px-[3mm] pb-[2.3mm] pt-[2.5mm]" aria-labelledby="timeline-title">
+            <div class="flex items-center justify-between gap-4">
+              <h2 id="timeline-title" class="m-0 text-[10.8pt] font-semibold">Uma trajetória de compromisso com o serviço público</h2>
+              <p class="m-0 text-[6.5pt] font-bold uppercase tracking-[.075em] text-accent">quatro momentos · linguagem direta</p>
+            </div>
+            <div class="mt-[2.7mm] grid grid-cols-4">
+              <div class="timeline-step">
+                <p class="mb-[.7mm] text-[7.1pt] font-extrabold text-accent">1999–2002</p>
+                <p class="m-0 text-[8.1pt] font-semibold leading-[1.16]">Gestão municipal da saúde</p>
+              </div>
+              <div class="timeline-step">
+                <p class="mb-[.7mm] text-[7.1pt] font-extrabold text-accent">2003–2005</p>
+                <p class="m-0 text-[8.1pt] font-semibold leading-[1.16]">Atenção à saúde no governo federal</p>
+              </div>
+              <div class="timeline-step">
+                <p class="mb-[.7mm] text-[7.1pt] font-extrabold text-accent">2007–2014</p>
+                <p class="m-0 text-[8.1pt] font-semibold leading-[1.16]">Secretaria da Saúde da Bahia</p>
+              </div>
+              <div class="timeline-step">
+                <p class="mb-[.7mm] text-[7.1pt] font-extrabold text-accent">2015–2027</p>
+                <p class="m-0 text-[8.1pt] font-semibold leading-[1.16]">Atuação na Câmara Federal</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="mt-[3mm] grid grid-cols-[1fr_42mm] gap-[4mm]" aria-labelledby="more-title">
+            <div>
+              <div class="flex items-end justify-between gap-4 border-b-[0.3mm] border-line pb-[1.2mm]">
+                <div>
+                  <p class="section-label">E mais</p>
+                  <h2 id="more-title" class="m-0 text-[12pt] font-semibold leading-none">Outras ações confirmadas</h2>
+                </div>
+                <p class="m-0 text-[6.5pt] font-bold uppercase tracking-[.065em] text-ink-soft">até 14 · sem completar por inferência</p>
+              </div>
+              <div class="mt-[2mm] grid grid-cols-2 gap-x-[4mm] gap-y-[1.25mm]">
+                <p class="more-item mb-0"><strong>Estrutura:</strong> melhoria documentada na instituição.</p>
+                <p class="more-item mb-0"><strong>Ensino:</strong> apoio comprovado a uma atividade.</p>
+                <p class="more-item mb-0"><strong>Pesquisa:</strong> projeto e papel exercido.</p>
+                <p class="more-item mb-0"><strong>Extensão:</strong> público diretamente alcançado.</p>
+                <p class="more-item mb-0"><strong>Direitos:</strong> ação institucional registrada.</p>
+                <p class="more-item mb-0"><strong>Orçamento:</strong> valor com fase identificada.</p>
+                <p class="more-item mb-0"><strong>Audiência:</strong> pauta e encaminhamento concreto.</p>
+                <p class="more-item mb-0"><strong>Parceria:</strong> objeto e resultado da cooperação.</p>
+                <p class="more-item mb-0"><strong>Setor:</strong> alcance compartilhado, sem somar.</p>
+                <p class="more-item mb-0"><strong>Rede:</strong> entidades envolvidas e resultado.</p>
+                <p class="more-item mb-0"><strong>Proposição:</strong> papel parlamentar comprovado.</p>
+                <p class="more-item mb-0"><strong>Relatoria:</strong> etapa e efeito documentados.</p>
+                <p class="more-item mb-0"><strong>Homenagem:</strong> nome oficial e ano.</p>
+                <p class="more-item mb-0"><strong>Articulação:</strong> entrega distinta do anúncio.</p>
+              </div>
+            </div>
+            <aside class="grid grid-rows-2 gap-[2.2mm]" aria-label="Ativos visuais pendentes">
+              <div class="asset-box flex min-h-[24mm] items-center justify-center rounded-sm p-[2.5mm] text-center">
+                <p class="m-0 text-[6.9pt] leading-[1.22]"><strong class="uppercase tracking-[.06em]">NEEDS ASSET · selo</strong><br />marca autorizada da instituição<br />arquivo vetorial</p>
+              </div>
+              <div class="asset-box flex min-h-[24mm] items-center justify-center rounded-sm p-[2.5mm] text-center">
+                <p class="m-0 text-[6.9pt] leading-[1.22]"><strong class="uppercase tracking-[.06em]">NEEDS ASSET · clipping</strong><br />registro real da ação<br />origem e licença</p>
+              </div>
+            </aside>
+          </section>
+
+          <footer class="mt-auto border-t-[0.35mm] border-line pt-[2mm]">
+            <div class="flex items-end justify-between gap-[5mm]">
+              <div>
+                <p class="mb-[.7mm] text-[7pt] font-semibold leading-[1.22] text-accent">Conteúdo selecionado do dossiê institucional.</p>
+                <p class="m-0 max-w-[145mm] text-[7.1pt] leading-[1.25] text-ink-soft"><strong class="text-warning">Controle editorial:</strong> fase acompanha cada valor · instituição, setor e rede não são somados · sem percentual estadual absoluto.</p>
+              </div>
+              <p class="m-0 shrink-0 text-right text-[7pt] font-semibold leading-[1.28] text-ink-soft">MODELO · INSUMO INTERNO<br />A4 · página 1/1</p>
+            </div>
+          </footer>
+        </article>
+      </section>
+
+      <!-- CENA 02 · POUCOS FATOS -->
+      <section class="scene" aria-labelledby="sparse-title">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
+          Cena 02 · Variação de lacuna · poucos fatos documentados
+        </p>
+        <article class="sheet" aria-label="Variação do boletim institucional com poucos fatos documentados">
+          <header class="flex items-center justify-between gap-[5mm] border-b-[0.55mm] border-ink pb-[2.4mm]">
+            <div>
+              <p class="kicker mb-[1mm]">Boletim informativo · atuação pública</p>
+              <p class="m-0 text-[11pt] font-extrabold">Instituição Exemplo</p>
+              <div class="mt-[1.3mm] flex flex-wrap gap-[1.2mm]">
+                <span class="identity-pill">Entidade de classe</span>
+                <span class="identity-pill">Não governamental</span>
+                <span class="identity-pill">Abrangência nacional</span>
+              </div>
+            </div>
+            <span class="model-label">Modelo — insumo interno</span>
+          </header>
+
+          <div class="defeso-band mt-[2.2mm]" role="note" aria-label="Nota de defeso eleitoral">
+            <span>DEFESO 2026 · material em preparação · não publicar sem revisão editorial e jurídica</span>
+            <span class="shrink-0 uppercase tracking-[.07em]">sem CTA · sem propaganda</span>
+          </div>
+
+          <section class="mt-[3.2mm] grid grid-cols-[1fr_55mm] gap-[5mm]" aria-label="Abertura da variação com lacunas">
+            <div>
+              <p class="section-label">Somente o que está documentado</p>
+              <h1 id="sparse-title" class="m-0 text-[23pt] font-semibold leading-[1] tracking-[-0.038em]">O que Jorge Solla fez pela e na <span class="text-accent">Instituição Exemplo</span></h1>
+              <p class="mb-0 mt-[2.5mm] text-[10.4pt] leading-[1.32] text-ink-soft">Esta versão tem poucos registros confirmados. Em vez de preencher espaço, mostra só os fatos que o dossiê sustenta.</p>
+            </div>
+            <div class="asset-box flex min-h-[39mm] flex-col items-center justify-center rounded-sm p-[3mm] text-center">
+              <svg class="mb-[1.5mm] h-6 w-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <circle cx="8.5" cy="10" r="1.5" />
+                <path d="m21 15-5-5L5 19" />
+              </svg>
+              <p class="m-0 text-[7.4pt] font-extrabold uppercase tracking-[.08em]">NEEDS ASSET · foto ou clipping</p>
+              <p class="mb-0 mt-[1mm] text-[6.9pt] leading-[1.22]">somente registro relacionado ao fato<br />origem, autoria e licença</p>
+            </div>
+          </section>
+
+          <section class="mt-[5mm]" aria-labelledby="sparse-highlights">
+            <div class="flex items-end justify-between gap-4 border-b-[0.3mm] border-line pb-[1.5mm]">
+              <div>
+                <p class="section-label">Destaques</p>
+                <h2 id="sparse-highlights" class="m-0 text-[14pt] font-semibold leading-none">Dois fatos, sem enchimento</h2>
+              </div>
+              <p class="m-0 text-right text-[6.8pt] font-bold uppercase tracking-[.07em] text-warning">não criar cards vazios para chegar a seis</p>
+            </div>
+            <div class="mt-[3mm] grid grid-cols-2 gap-[3mm]">
+              <article class="highlight-card min-h-[37mm] rounded-sm p-[4mm]">
+                <p class="highlight-eyebrow">Atuação · instituição</p>
+                <p class="highlight-number tabular">00 ações</p>
+                <h3 class="highlight-title text-[12pt]">com resultado documentado</h3>
+                <p class="highlight-note text-[8.4pt]">Substituir pela contagem confirmada e explicar o resultado em uma frase.</p>
+              </article>
+              <article class="highlight-card min-h-[37mm] rounded-sm p-[4mm]">
+                <p class="highlight-eyebrow">Direitos · setor</p>
+                <p class="highlight-number tabular">AAAA</p>
+                <h3 class="highlight-title text-[12pt]">ano de uma ação confirmada</h3>
+                <p class="highlight-note text-[8.4pt]">O alcance setorial permanece separado da instituição.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="mt-[4.5mm] rounded-sm bg-accent-soft px-[3.5mm] pb-[3mm] pt-[3.2mm]" aria-labelledby="sparse-timeline">
+            <div class="flex items-center justify-between gap-4">
+              <h2 id="sparse-timeline" class="m-0 text-[11.5pt] font-semibold">Uma trajetória de compromisso com o serviço público</h2>
+              <p class="m-0 text-[6.7pt] font-bold uppercase tracking-[.08em] text-accent">contexto de carreira · não substitui fato institucional</p>
+            </div>
+            <div class="mt-[3mm] grid grid-cols-4">
+              <div class="timeline-step"><p class="mb-[.7mm] text-[7.2pt] font-extrabold text-accent">1999–2002</p><p class="m-0 text-[8.4pt] font-semibold leading-[1.18]">Gestão municipal da saúde</p></div>
+              <div class="timeline-step"><p class="mb-[.7mm] text-[7.2pt] font-extrabold text-accent">2003–2005</p><p class="m-0 text-[8.4pt] font-semibold leading-[1.18]">Atenção à saúde no governo federal</p></div>
+              <div class="timeline-step"><p class="mb-[.7mm] text-[7.2pt] font-extrabold text-accent">2007–2014</p><p class="m-0 text-[8.4pt] font-semibold leading-[1.18]">Secretaria da Saúde da Bahia</p></div>
+              <div class="timeline-step"><p class="mb-[.7mm] text-[7.2pt] font-extrabold text-accent">2015–2027</p><p class="m-0 text-[8.4pt] font-semibold leading-[1.18]">Atuação na Câmara Federal</p></div>
+            </div>
+          </section>
+
+          <section class="mt-[4.5mm] grid grid-cols-[1.15fr_.85fr] gap-[4mm]" aria-labelledby="sparse-more">
+            <div>
+              <p class="section-label">E mais</p>
+              <h2 id="sparse-more" class="m-0 border-b-[0.3mm] border-line pb-[1.5mm] text-[13pt] font-semibold leading-none">Outros registros confirmados</h2>
+              <div class="mt-[3mm] grid grid-cols-2 gap-x-[5mm] gap-y-[2.8mm]">
+                <p class="more-item mb-0"><strong>Audiência:</strong> pauta e encaminhamento documentados.</p>
+                <p class="more-item mb-0"><strong>Articulação:</strong> participantes e resultado confirmado.</p>
+                <p class="more-item mb-0"><strong>Setor:</strong> alcance compartilhado, sem somar.</p>
+                <p class="more-item mb-0"><strong>Registro:</strong> nome oficial e ano conferidos.</p>
+              </div>
+            </div>
+            <aside class="lacuna-panel rounded-sm p-[4mm]" aria-label="Regra editorial para poucos fatos">
+              <div class="flex items-start gap-[2.5mm]">
+                <svg class="mt-[.4mm] h-5 w-5 shrink-0 text-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M10.3 2.9 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.9a2 2 0 0 0-3.4 0Z" />
+                  <path d="M12 9v4M12 17h.01" />
+                </svg>
+                <div>
+                  <p class="m-0 text-[10.5pt] font-extrabold">A página termina com espaço — de propósito.</p>
+                  <p class="mb-0 mt-[2mm] text-[8.7pt] leading-[1.35]">Não repetir item, não ampliar efeito e não preencher com ação de setor ou rede como se fosse entrega exclusiva da instituição.</p>
+                </div>
+              </div>
+              <div class="mt-[4mm] border-t border-[#d8bb8d] pt-[3mm] text-[7.5pt] font-bold uppercase leading-[1.35] tracking-[.055em]">Poucos fatos com lastro &gt; página cheia sem lastro</div>
+            </aside>
+          </section>
+
+          <section class="mt-[6mm] grid grid-cols-[1fr_48mm] gap-[4mm]">
+            <div class="rounded-sm border border-line bg-wash p-[4mm]">
+              <p class="section-label">Nota de produção</p>
+              <p class="m-0 text-[9.2pt] leading-[1.38] text-ink-soft">Se novos fatos forem documentados, eles entram por relevância — até seis destaques e até quatorze itens. A ausência nunca vira número zero, percentual ou afirmação genérica.</p>
+            </div>
+            <div class="asset-box flex min-h-[28mm] items-center justify-center rounded-sm p-[3mm] text-center">
+              <p class="m-0 text-[7.1pt] leading-[1.3]"><strong class="uppercase tracking-[.06em]">NEEDS ASSET · selo</strong><br />marca autorizada da instituição<br />arquivo vetorial</p>
+            </div>
+          </section>
+
+          <footer class="mt-auto border-t-[0.35mm] border-line pt-[2.2mm]">
+            <div class="flex items-end justify-between gap-[5mm]">
+              <div>
+                <p class="mb-[.8mm] text-[7.2pt] font-semibold leading-[1.25] text-accent">Conteúdo selecionado do dossiê institucional.</p>
+                <p class="m-0 max-w-[144mm] text-[7.3pt] leading-[1.28] text-ink-soft"><strong class="text-warning">Controle editorial:</strong> fase acompanha cada valor · instituição, setor e rede não são somados · sem percentual estadual absoluto.</p>
+              </div>
+              <p class="m-0 shrink-0 text-right text-[7.2pt] font-semibold leading-[1.3] text-ink-soft">MODELO · INSUMO INTERNO<br />A4 · página 1/1</p>
+            </div>
+          </footer>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
