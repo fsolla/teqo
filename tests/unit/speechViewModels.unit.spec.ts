@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from 'vitest'
 
+import { speechPosterHref } from '@/lib/speechPoster'
 import {
   toSpeechListItemViewModel,
   type SpeechListRecord,
@@ -43,5 +44,23 @@ describe('toSpeechListItemViewModel thumbnail (C175)', () => {
     expect(viewModel({ officialTextUrl: 'https://camara.leg.br/discurso' }).officialTextUrl).toBe(
       'https://camara.leg.br/discurso',
     )
+  })
+})
+
+describe('toSpeechListItemViewModel thumbnail (C182 — frame of the speech)', () => {
+  const coordinates = { eventId: 67091, audioId: 558641, excerptTMs: 1675801808560 }
+  const cover = 'https://i.ytimg.com/vi/lLhRDkSPw0A/hqdefault.jpg'
+  const youtubeUrl = 'https://www.youtube.com/watch?v=lLhRDkSPw0A'
+
+  it('prefers the frame route over the session cover when the Câmara can resolve the excerpt', () => {
+    const row = viewModel({ id: 42, durationSeconds: 252, ...coordinates, youtubeUrl })
+
+    expect(row.thumbnailUrl).toBe(speechPosterHref(42))
+  })
+
+  it('falls back to the session cover without coordinates or without a duration', () => {
+    expect(viewModel({ durationSeconds: 252, youtubeUrl }).thumbnailUrl).toBe(cover)
+    expect(viewModel({ durationSeconds: 0, ...coordinates, youtubeUrl }).thumbnailUrl).toBe(cover)
+    expect(viewModel({ durationSeconds: 252, eventId: 67091 }).thumbnailUrl).toBeNull()
   })
 })

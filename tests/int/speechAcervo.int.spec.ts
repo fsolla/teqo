@@ -7,6 +7,7 @@ import { getPayload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { matchMunicipalityMentions } from '@/lib/speechGazetteer'
+import { speechPosterHref } from '@/lib/speechPoster'
 import config from '@/payload.config'
 import { upsertSpeechBundle, type SpeechImportBundle } from '@/utilities/speech/speechImport'
 import {
@@ -293,24 +294,36 @@ describe('speech acervo (C154)', () => {
     expect(row).not.toHaveProperty('downloadUrl')
   })
 
-  it('propagates the YouTube thumbnail to the list view model (C175)', async () => {
+  it('points the list thumbnail at the frame of the speech, or the YouTube cover (C182)', async () => {
     const runId = randomUUID().slice(0, 8)
     const marker = `miniatura${runId}`
-    const withVideo = await createSpeech({
+    const resolvable = await createSpeech({
       youtubeUrl: 'https://www.youtube.com/watch?v=lLhRDkSPw0A',
       segments: [{ startSeconds: 0, endSeconds: 3, text: `A fala ${marker} no plenário` }],
     })
+    const youtubeOnly = await createSpeech({
+      eventId: null,
+      audioId: null,
+      excerptTMs: null,
+      youtubeUrl: 'https://www.youtube.com/watch?v=lLhRDkSPw0A',
+      segments: [{ startSeconds: 0, endSeconds: 3, text: `A fala ${marker} só no YouTube` }],
+    })
     const withoutVideo = await createSpeech({
+      eventId: null,
+      audioId: null,
+      excerptTMs: null,
       segments: [{ startSeconds: 0, endSeconds: 3, text: `A fala ${marker} sem vídeo` }],
     })
 
     const { communicator } = await createUsers()
     const data = await loadSpeechAcervoPageData(payload, communicator, { q: marker })
+    const row = (id: number) => data.rows.find((item) => item.id === id)
 
-    expect(data.rows.find((row) => row.id === withVideo)?.thumbnailUrl).toBe(
-      'https://i.ytimg.com/vi/lLhRDkSPw0A/hqdefault.jpg',
-    )
-    expect(data.rows.find((row) => row.id === withoutVideo)?.thumbnailUrl).toBeNull()
+    expect(row(resolvable)?.thumbnailUrl).toBe(speechPosterHref(resolvable))
+    expect(row(youtubeOnly)?.thumbnailUrl).toBe('https://i.ytimg.com/vi/lLhRDkSPw0A/hqdefault.jpg')
+    expect(row(withoutVideo)?.thumbnailUrl).toBeNull()
+    // The raw VOD coordinates never reach the list view model.
+    expect(JSON.stringify(row(resolvable))).not.toContain('vod.camara.leg.br')
   })
 
   it('allows communicator/coordinator/candidate and denies advisor/leader', async () => {

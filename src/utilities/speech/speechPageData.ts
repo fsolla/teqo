@@ -45,6 +45,11 @@ const speechListSelect = {
   presidingOfficer: true,
   officialTextUrl: true,
   youtubeUrl: true,
+  // C182 — the list decides the frame from the Câmara coordinates alone; the
+  // stored VOD links stay out of the list query (the poster job reads them).
+  eventId: true,
+  audioId: true,
+  excerptTMs: true,
 } as const
 
 const speechDetailSelect = {
@@ -52,9 +57,6 @@ const speechDetailSelect = {
   phase: true,
   vodPlaybackUrl: true,
   vodDownloadUrl: true,
-  eventId: true,
-  audioId: true,
-  excerptTMs: true,
   eventStartAt: true,
 } as const
 
