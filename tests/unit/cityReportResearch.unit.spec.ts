@@ -107,6 +107,50 @@ describe('normalizeResearchInput', () => {
     )
   })
 
+  it('keeps sourced emenda indications and gaps those without author, esfera or source', () => {
+    const research = normalizeResearchInput(
+      baseResearch({
+        emendasIndicators: [
+          {
+            author: 'Zé Neto',
+            sphere: 'municipio',
+            value: 'R$ 1 mi',
+            purpose: 'Ambulância do TFD',
+            year: '2026',
+            sourceUrl: 'https://exemplo.test/ze-neto',
+            sourceDate: '2026-09-01',
+          },
+          {
+            author: 'Sem esfera',
+            sphere: 'capital',
+            sourceUrl: 'https://exemplo.test/capital',
+            sourceDate: '2026-09-01',
+          },
+          { author: 'Sem fonte', sphere: 'regiao' },
+        ],
+      }),
+      { now },
+    )
+    expect(research.emendasIndicators).toHaveLength(1)
+    expect(research.emendasIndicators[0]).toEqual(
+      expect.objectContaining({
+        author: 'Zé Neto',
+        sphere: 'municipio',
+        value: 'R$ 1 mi',
+        purpose: 'Ambulância do TFD',
+      }),
+    )
+    expect(research.gaps).toContainEqual(
+      expect.objectContaining({ id: 'emenda_indicio_incompleto' }),
+    )
+    expect(research.gaps).toContainEqual(
+      expect.objectContaining({
+        id: 'emenda_indicio_sem_fonte',
+        reason: expect.stringMatching(/URL e data/),
+      }),
+    )
+  })
+
   it('keeps sourced approach suggestions and gaps ones without source', () => {
     const research = normalizeResearchInput(
       baseResearch({

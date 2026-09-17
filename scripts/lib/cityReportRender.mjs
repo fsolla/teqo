@@ -5,7 +5,7 @@
  * companion cannot drift from the PDF.
  */
 
-import { formatDateBr, formatDateTimeBr } from './cityReportFormat.mjs'
+import { formatDateBr, formatDateTimeBr, formatInteger } from './cityReportFormat.mjs'
 
 const htmlEscape = (value) =>
   String(value ?? '')
@@ -79,7 +79,7 @@ const PRINT_CSS = `
   .summary .block + .block { margin-top: 2mm; }
   .summary .stats .stat { padding: .7mm 0; }
   .summary .callout { padding: 1.8mm 2.4mm; }
-  .summary .pair .panel { padding: 1.8mm 2.2mm; }
+  .summary .panel { padding: 1.8mm 2.2mm; }
   header.report-head {
     display: flex;
     justify-content: space-between;
@@ -145,14 +145,18 @@ const PRINT_CSS = `
   .callout.risk { border-left-color: #b45309; background: #fffbeb; }
   .callout h4 { margin: 0 0 1mm; font-size: 8.6pt; }
   .callout p { margin: 0 0 .8mm; }
-  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
-  .pair .panel { border: .8px solid #d4d4d8; border-radius: 1.6mm; padding: 2.4mm; }
-  .pair .panel.decision { border-color: #15803d; }
-  .pair .panel.risk { border-color: #b45309; background: #fffbeb; }
-  .pair .panel h4 { margin: 0 0 1.2mm; font-size: 8.4pt; }
-  .pair .panel ul, .bullets { margin: 0; padding-left: 4mm; }
-  .pair .panel li, .bullets li { margin-bottom: .8mm; }
-  .pair-note { color: #92400e; font-size: 7.6pt; margin: 1.2mm 0 0; }
+  .panel { border: .8px solid #d4d4d8; border-radius: 1.6mm; padding: 2.4mm; }
+  .panel.decision { border-color: #15803d; }
+  .panel.risk { border-color: #b45309; background: #fffbeb; }
+  .panel h4 { margin: 0 0 1.2mm; font-size: 8.4pt; }
+  .panel ul, .bullets { margin: 0; padding-left: 4mm; }
+  .panel li, .bullets li { margin-bottom: .8mm; }
+  .panel-note { color: #92400e; font-size: 7.6pt; margin: 1.2mm 0 0; }
+  .indicators { margin: 0; padding-left: 4mm; }
+  .indicators li { margin-bottom: .8mm; }
+  .indicators .sphere { font-size: 6.6pt; text-transform: uppercase; letter-spacing: .06em; border: .6px solid #a1a1aa; border-radius: 1.2mm; padding: 0 1mm; color: #52525b; }
+  .indicators .sphere-regiao, .indicators .sphere-polo { border-color: #b45309; color: #92400e; background: #fffbeb; }
+  .indicators .indicator-source { color: #71717a; font-size: 7.2pt; }
   table { width: 100%; border-collapse: collapse; font-size: 8pt; }
   table.table-fixed { table-layout: fixed; }
   table.table-fixed td, table.table-fixed th { overflow-wrap: anywhere; }
@@ -237,14 +241,43 @@ const renderBullets = (block) => {
   return `<ul class="bullets">${items}</ul>`
 }
 
-const renderPair = (block) => {
-  const panel = (side) => `<div class="panel ${side.tone}">
-    <h4>${htmlEscape(side.title)}</h4>
-    <ul>${side.items.map((item) => `<li>${htmlEscape(item.text)}</li>`).join('')}</ul>
-  </div>`
-  return `<div class="pair-wrap"><div class="pair">${panel(block.left)}${panel(block.right)}</div>${
-    block.note ? `<p class="pair-note">${htmlEscape(block.note)}</p>` : ''
-  }</div>`
+const renderPanel = (block) => {
+  const items = block.items
+    .map((item) => {
+      const source = item.source
+        ? ` <span class="row-source">fonte: ${htmlWithLinks(sourceLabel(item.source))}</span>`
+        : ''
+      return `<li>${htmlEscape(item.text)}${source}</li>`
+    })
+    .join('')
+  return `<div class="panel ${htmlEscape(block.tone)}"><h4>${htmlEscape(block.title)}</h4><ul>${items}</ul></div>${
+    block.note ? `<p class="panel-note">${htmlEscape(block.note)}</p>` : ''
+  }`
+}
+
+/**
+ * Emenda indications (C163 page 1): one row per author/what/esfera, each with
+ * its own source link and a date. The esfera badge is explicit — região/polo are
+ * never summed as the município's own emenda.
+ */
+const renderIndicatorList = (block) => {
+  const items = block.items
+    .map((item) => {
+      const detail = item.detail ? ` — ${htmlEscape(item.detail)}` : ''
+      const link = item.source?.url
+        ? `<a class="inline-source" href="${htmlEscape(item.source.url)}">(fonte)</a>`
+        : ''
+      const date = item.source?.date ? ` · ${htmlEscape(formatDateBr(item.source.date))}` : ''
+      return `<li><strong>${htmlEscape(item.author)}</strong>${detail} <span class="sphere sphere-${htmlEscape(item.sphere)}">${htmlEscape(item.sphereLabel)}</span> <span class="indicator-source">${link}${date}</span></li>`
+    })
+    .join('')
+  const more =
+    block.remaining > 0
+      ? `<li>e mais ${formatInteger(block.remaining)} indício(s) — texto integral nas fontes.</li>`
+      : ''
+  return `<ul class="indicators">${items}${more}</ul>${
+    block.note ? `<p class="table-note">${htmlEscape(block.note)}</p>` : ''
+  }`
 }
 
 const renderTable = (block) => {
@@ -297,13 +330,14 @@ const normalizeHeading = (value) =>
     .toLowerCase()
 
 const renderBlockHtml = (block, sectionTitle = null) => {
-  // Tables carry their title in the caption; a block title equal to the section
-  // heading is duplication (the section h3 right above already says it).
+  // Tables carry their title in the caption and the panel in its own heading; a
+  // block title equal to the section heading is also duplication (the section h3
+  // right above already says it).
   const duplicatesSection =
     Boolean(block.title && sectionTitle) &&
     normalizeHeading(block.title) === normalizeHeading(sectionTitle)
   const title =
-    block.title && block.kind !== 'table' && !duplicatesSection
+    block.title && block.kind !== 'table' && block.kind !== 'panel' && !duplicatesSection
       ? `<h4 class="block-title">${htmlEscape(block.title)}</h4>`
       : ''
   let body
@@ -326,8 +360,11 @@ const renderBlockHtml = (block, sectionTitle = null) => {
     case 'bullets':
       body = renderBullets(block)
       break
-    case 'pair':
-      body = renderPair(block)
+    case 'panel':
+      body = renderPanel(block)
+      break
+    case 'indicatorList':
+      body = renderIndicatorList(block)
       break
     case 'table':
       body = renderTable(block)
@@ -447,11 +484,22 @@ const mdBlock = (block) => {
         for (const inner of cell.blocks) lines.push(mdBlock(inner))
       }
       break
-    case 'pair':
-      lines.push(`### ${block.left.title}\n`)
-      for (const item of block.left.items) lines.push(`- ${item.text}`)
-      lines.push(`\n### ${block.right.title}\n`)
-      for (const item of block.right.items) lines.push(`- ${item.text}`)
+    case 'panel':
+      lines.push(`### ${block.title}\n`)
+      for (const item of block.items) {
+        lines.push(`- ${item.text}${item.source ? ` _(fonte: ${sourceLabel(item.source)})_` : ''}`)
+      }
+      if (block.note) lines.push(`\n> ${block.note}`)
+      break
+    case 'indicatorList':
+      lines.push(title)
+      for (const item of block.items) {
+        const detail = item.detail ? ` — ${item.detail}` : ''
+        const src = item.source?.url ? ` [(fonte)](${item.source.url})` : ''
+        const date = item.source?.date ? ` · ${formatDateBr(item.source.date)}` : ''
+        lines.push(`- **${item.author}**${detail} · _${item.sphereLabel}_${src}${date}`)
+      }
+      if (block.remaining > 0) lines.push(`- e mais ${block.remaining} indício(s).`)
       if (block.note) lines.push(`\n> ${block.note}`)
       break
     case 'table': {

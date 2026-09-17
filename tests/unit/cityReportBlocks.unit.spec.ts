@@ -118,6 +118,24 @@ const research = normalizeResearchInput(
         sourceDate: '2026-09-10',
       },
     ],
+    emendasIndicators: [
+      {
+        author: 'Zé Neto',
+        sphere: 'municipio',
+        value: 'R$ 1 mi',
+        purpose: 'Ambulância do TFD',
+        year: '2026',
+        sourceUrl: 'https://exemplo.test/ze-neto',
+        sourceDate: '2026-09-01',
+      },
+      {
+        author: 'Deputado do Polo',
+        sphere: 'polo',
+        value: 'R$ 500 mil',
+        sourceUrl: 'https://exemplo.test/polo-emenda',
+        sourceDate: '2026-09-01',
+      },
+    ],
     gaps: [],
   },
   { now: generatedAt },
@@ -347,6 +365,13 @@ type ReportItem = {
   value?: string
   hint?: string | null
   url?: string | null
+  author?: string
+  detail?: string
+  sphere?: string
+  sphereLabel?: string
+  title?: string
+  body?: string
+  source?: { url?: string | null; date?: string | null }
 }
 type ReportRow = {
   label: string
@@ -357,14 +382,15 @@ type TableRow = Record<string, string>
 type ReportBlock = {
   kind: string
   title?: string
+  tone?: string
   items?: ReportItem[]
   rows?: ReportRow[]
   columns?: Array<{ key: string; label: string; width?: number }>
   cells?: Array<{ title: string; blocks: ReportBlock[] }>
   body?: string[]
+  note?: string
+  remaining?: number
   sources?: Array<{ kind: string; url?: string | null }>
-  left?: { title: string; items: ReportItem[] }
-  right?: { title: string; items: ReportItem[] }
 }
 type ReportShape = {
   page1: { blocks: ReportBlock[] }
@@ -546,20 +572,19 @@ describe('buildCityReport', () => {
     )
   })
 
-  it('keeps page 1 in the contract order (six blocks + footer)', () => {
-    const kinds = report.page1.blocks
-      .map((block) => block.kind)
-      .filter((kind) => kind !== 'callout')
-    expect(kinds).toEqual(['strip', 'grid', 'kpis', 'pair', 'cards', 'footerNote'])
+  it('keeps page 1 in the contract order (blocks + footer)', () => {
+    const kinds = report.page1.blocks.map((block) => block.kind)
+    expect(kinds).toEqual(['strip', 'grid', 'kpis', 'panel', 'cards', 'footerNote'])
     const titles = report.page1.blocks.map((block) => block.title).filter(Boolean)
     expect(titles).toEqual(
       expect.arrayContaining(['O que Solla entregou', 'Riscos — oposição/disputa local']),
     )
     const grid = report.page1.blocks.find((block) => block.kind === 'grid')!
     expect(grid.cells!.map((cell) => cell.title)).toEqual(['Conta eleitoral 2022', 'Quem é quem'])
-    const pair = report.page1.blocks.find((block) => block.kind === 'pair')!
-    expect(pair.left!.title).toBe('O que anunciar agora')
-    expect(pair.right!.items.some((item) => item.text?.includes('Empenho'))).toBe(true)
+    const announce = report.page1.blocks.find((block) => block.kind === 'panel')!
+    expect(announce.title).toBe('O que anunciar agora')
+    expect(announce.tone).toBe('decision')
+    expect(announce.note).toContain('empenho não é pagamento')
   })
 
   it('reads the relative lens (share/rank), never the statewide absolute', () => {
@@ -606,7 +631,7 @@ describe('buildCityReport', () => {
     expect(delivered.items![0].hint).toContain('sem emenda atribuível')
   })
 
-  it('shows the web evidence for emendas when the official source is a gap', () => {
+  it('shows the structured emenda indications when the official source is a gap', () => {
     const gapReport = asReport(
       buildCityReport({
         snapshot,
@@ -623,17 +648,91 @@ describe('buildCityReport', () => {
     )
     const evidence = gapReport.page1.blocks.find(
       (block) =>
-        block.kind === 'callout' &&
+        block.kind === 'indicatorList' &&
         block.title === 'Emendas — indícios web (sem atribuição oficial ao município)',
     )
     expect(evidence).toBeTruthy()
-    expect(evidence!.body!.join(' ')).toContain('Resposta de emendas_web')
+    expect(evidence!.items!.map((item) => item.author)).toEqual(['Zé Neto', 'Deputado do Polo'])
+    expect(evidence!.items![0].sphereLabel).toBe('município')
+    expect(evidence!.items![0].detail).toBe('Ambulância do TFD · R$ 1 mi · 2026')
+    expect(evidence!.items![0].source!.url).toBe('https://exemplo.test/ze-neto')
+    expect(evidence!.items!.map((item) => item.sphereLabel)).toContain('polo')
+    expect(evidence!.note).toContain('Não somar região/polo')
     const evidenceOk = asReport(buildCityReport({ snapshot, research, emendas, generatedAt }))
     expect(
       evidenceOk.page1.blocks.some(
         (block) => block.title === 'Emendas — indícios web (sem atribuição oficial ao município)',
       ),
     ).toBe(false)
+  })
+
+  it('falls back to the emendas_web answer when the research has no structured indications', () => {
+    const legacyResearch = normalizeResearchInput(
+      {
+        municipalitySlug: 'feira-de-santana',
+        researchedAt: '2026-09-14T10:00:00.000Z',
+        items: RESEARCH_CHECKLIST_IDS.map((id) => validItem(id)),
+        gaps: [],
+      },
+      { now: generatedAt },
+    )
+    const legacy = asReport(
+      buildCityReport({
+        snapshot,
+        research: legacyResearch,
+        emendas: {
+          status: 'gap',
+          reason: 'Sem emenda do autor com localidade Feira de Santana na janela.',
+          detail: null,
+          sourceUrl: null,
+          consultedAt: null,
+        },
+        generatedAt,
+      }),
+    )
+    const evidence = legacy.page1.blocks.find(
+      (block) =>
+        block.kind === 'callout' &&
+        block.title === 'Emendas — indícios web (sem atribuição oficial ao município)',
+    )
+    expect(evidence).toBeTruthy()
+    expect(evidence!.body!.join(' ')).toContain('Resposta de emendas_web')
+  })
+
+  it('caps the emenda indications and shows the remainder', () => {
+    const manyIndicators = normalizeResearchInput(
+      {
+        municipalitySlug: 'feira-de-santana',
+        researchedAt: '2026-09-14T10:00:00.000Z',
+        items: RESEARCH_CHECKLIST_IDS.map((id) => validItem(id)),
+        emendasIndicators: Array.from({ length: 6 }, (_, index) => ({
+          author: `Autor ${index + 1}`,
+          sphere: 'municipio',
+          value: `R$ ${index + 1} mi`,
+          sourceUrl: `https://exemplo.test/indicio-${index + 1}`,
+          sourceDate: '2026-09-01',
+        })),
+        gaps: [],
+      },
+      { now: generatedAt },
+    )
+    const capped = asReport(
+      buildCityReport({
+        snapshot,
+        research: manyIndicators,
+        emendas: {
+          status: 'gap',
+          reason: 'Sem emenda do autor com localidade Feira de Santana na janela.',
+          detail: null,
+          sourceUrl: null,
+          consultedAt: null,
+        },
+        generatedAt,
+      }),
+    )
+    const evidence = capped.page1.blocks.find((block) => block.kind === 'indicatorList')!
+    expect(evidence.items).toHaveLength(4)
+    expect(evidence.remaining).toBe(2)
   })
 
   it('puts research answers in Quem é quem with compact sources and URLs in the sources section', () => {

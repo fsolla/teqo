@@ -63,12 +63,25 @@ const SPEECH_MENTION_MAX = 220
  */
 const PAGE_ONE_ANSWER_MAX = 90
 /** The "Quem é quem" values share a 2-column stat cell — tighter than the rest. */
-const PAGE_ONE_WHO_MAX = 30
+const PAGE_ONE_WHO_MAX = 26
 /** Oposição card: the source suffix ("fonte: pesquisa web · data") is appended after the cut. */
 const PAGE_ONE_RISK_MAX = 70
 const PAGE_ONE_LIST_LIMIT = 2
 /** Joined name lists (Responsável, Dobradinhas) — one line in the strip/stat row. */
 const PAGE_ONE_NAMES_MAX = 20
+/** Page-1 emenda indications: the author/what/esfera rows shown before "e mais N". */
+const PAGE_ONE_INDICATOR_LIMIT = 4
+/** One indication per line on page 1 — the full purpose text stays in the deep dive. */
+const PAGE_ONE_INDICATOR_DETAIL_MAX = 70
+
+const EMENDAS_EVIDENCE_TITLE = 'Emendas — indícios web (sem atribuição oficial ao município)'
+
+/** Where each indication points to; região/polo are never summed as the city's own emenda. */
+const EMENDA_SPHERE_LABELS = {
+  municipio: 'município',
+  regiao: 'região',
+  polo: 'polo',
+}
 
 /** Truncates with an explicit ellipsis; short text passes through untouched. */
 const excerpt = (text, max) => {
@@ -267,30 +280,23 @@ const buildDeliveredKpis = ({ speeches }, research, emendas) => {
   ]
 }
 
-const buildAnnouncePair = (research) => {
+const buildAnnouncePanel = (research) => {
   const relacao = researchAnswerItem(research, 'relacao_campo', PAGE_ONE_WHO_MAX)
   const items = []
   if (relacao) {
-    items.push({ text: `Relação local confirmada: ${relacao.text}`, source: relacao.source })
+    // A fonte da relação local já aparece em "Quem é quem" na mesma página.
+    items.push({ text: `Relação local confirmada: ${relacao.text}` })
   }
-  items.push(
-    { text: 'Pauta ou entrega com fonte e data ao lado da frase.' },
-    { text: 'Agradecimento institucional com papel confirmado.' },
-    { text: 'Compromisso novo com escopo que a campanha cumpre.' },
-  )
+  // Uma linha invariante em vez de três: a página 1 é "uma olhada" e o
+  // conteúdo fixo repetido não pode competir com os indícios da cidade.
+  items.push({
+    text: 'Pauta/entrega, agradecimento e compromisso novo — sempre com papel confirmado, fonte e data.',
+  })
   return {
-    kind: 'pair',
-    left: { title: 'O que anunciar agora', tone: 'decision', items },
-    right: {
-      title: 'O que NÃO anunciar',
-      tone: 'risk',
-      items: [
-        { text: 'Empenho tratado como pagamento (defeso).' },
-        { text: 'Nada sem fonte ("sem fonte, não publica").' },
-        { text: 'Dado staff-only fora da coordenação.' },
-        { text: 'PII além do necessário.' },
-      ],
-    },
+    kind: 'panel',
+    tone: 'decision',
+    title: 'O que anunciar agora',
+    items,
     note: ADVERTENCIA_DEFESO,
   }
 }
@@ -335,13 +341,36 @@ const collectPageOneGaps = ({ electoral, prefeito }) => {
 
 const buildEmendasEvidenceBlock = (research, emendas) => {
   if (emendas?.status === 'ok') return null
-  const evidence = researchAnswerItem(research, 'emendas_web')
-  if (!evidence) return null
+  const indicators = research.emendasIndicators ?? []
+  if (!indicators.length) {
+    const evidence = researchAnswerItem(research, 'emendas_web')
+    if (!evidence) return null
+    return {
+      kind: 'callout',
+      tone: 'decision',
+      title: EMENDAS_EVIDENCE_TITLE,
+      body: [evidence.text, 'Não somar região/polo como emenda da cidade; URLs nas fontes.'],
+    }
+  }
+  const shown = indicators.slice(0, PAGE_ONE_INDICATOR_LIMIT)
   return {
-    kind: 'callout',
-    tone: 'decision',
-    title: 'Emendas — indícios web (sem atribuição oficial ao município)',
-    body: [evidence.text, 'Não somar região/polo como emenda da cidade; URLs nas fontes.'],
+    kind: 'indicatorList',
+    title: EMENDAS_EVIDENCE_TITLE,
+    items: shown.map((indicator) => ({
+      author: indicator.author,
+      sphere: indicator.sphere,
+      sphereLabel: EMENDA_SPHERE_LABELS[indicator.sphere] ?? indicator.sphere,
+      detail: [
+        excerpt(indicator.purpose, PAGE_ONE_INDICATOR_DETAIL_MAX),
+        indicator.value,
+        indicator.year,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      source: sourceWeb(indicator.author, indicator.sourceUrl, indicator.sourceDate),
+    })),
+    remaining: indicators.length - shown.length,
+    note: 'Não somar região/polo como emenda da cidade; a atribuição oficial fica com o Portal da Transparência.',
   }
 }
 
@@ -390,7 +419,7 @@ const buildPageOne = ({ snapshot, research, emendas, generatedAt }) => {
         ],
       },
       buildEmendasEvidenceBlock(research, emendas),
-      buildAnnouncePair(research),
+      buildAnnouncePanel(research),
       {
         kind: 'cards',
         title: 'Riscos — oposição/disputa local',
