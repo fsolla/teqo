@@ -5,7 +5,7 @@
  * as an internal model.
  */
 
-import { isInstitutionUnit } from './dossieUnit.mjs'
+import { isSubjectUnit } from './dossieUnit.mjs'
 import { htmlEscape, moreItemsLabel } from './reportText.mjs'
 
 const ASSET = (title, lines) =>
@@ -21,9 +21,9 @@ const phaseModifier = (phase) =>
       : ''
 
 const renderHighlight = (highlight, { showPhase = false } = {}) => `
-  <article class="highlight-card">
+  <article class="highlight-card${highlight.textual ? ' highlight-card--textual' : ''}">
     <p class="highlight-eyebrow">${htmlEscape(highlight.eyebrow)}</p>
-    ${highlight.number ? `<p class="highlight-number tabular">${htmlEscape(highlight.number)}</p>` : ''}
+    ${!highlight.textual && highlight.number ? `<p class="highlight-number tabular">${htmlEscape(highlight.number)}</p>` : ''}
     ${
       showPhase && highlight.number && highlight.phaseLabel
         ? `<p class="highlight-phase"><span class="phase ${phaseModifier(highlight.phase)}">${htmlEscape(highlight.phaseLabel)}</span></p>`
@@ -214,10 +214,11 @@ const renderMunicipalityBulletinHtml = (bulletin) => `
 
 /* Institution boletim (C187) — ports the institutional boletim hi-fi. */
 
-const INSTITUTION_BULLETIN_CSS = `
+const SUBJECT_BULLETIN_CSS = `
   ${PRINT_CSS}
   .defeso-band { margin-inline: -10mm; padding: 1.4mm 10mm 1.35mm; display: flex; align-items: center; justify-content: space-between; gap: 5mm; color: #68420f; background: #fff7e8; border-top: .25mm solid #e7cc9d; border-bottom: .25mm solid #e7cc9d; font-size: 7.15pt; line-height: 1.2; font-weight: 700; }
   .identity-pill { display: inline-flex; align-items: center; min-height: 5mm; padding: .55mm 1.7mm; border: .25mm solid #cbd5dc; border-radius: 99px; color: #435264; background: #f3f6f8; font-size: 6.9pt; line-height: 1; font-weight: 700; letter-spacing: .045em; text-transform: uppercase; }
+  .identity-pill--code { font-family: ui-monospace, 'DejaVu Sans Mono', monospace; letter-spacing: .02em; }
   .bulletin-head .subject { margin: 0; font-size: 11pt; font-weight: 800; }
   .bulletin-head .pills { margin-top: 1.3mm; display: flex; flex-wrap: wrap; gap: 1.2mm; }
   .lacuna-panel { border: .4mm dashed #b18549; color: #684819; background: #fff7e8; }
@@ -230,6 +231,8 @@ const INSTITUTION_BULLETIN_CSS = `
   .empty-box { min-height: 30mm; }
   .lacuna-panel .warn-icon { width: 5mm; height: 5mm; flex-shrink: 0; margin-top: .4mm; color: #8a5a18; }
   .highlight-phase { margin: 1.2mm 0 0; }
+  .highlight-card--textual { border-top-color: #435264; }
+  .highlight-card--textual .highlight-title { margin-top: 0; font-size: 11.6pt; }
   .phase { display: inline-block; padding: .5mm 1.4mm; border-radius: 1mm; background: #e9eef1; color: #334553; font-size: 7.3pt; font-weight: 700; text-transform: uppercase; letter-spacing: .035em; }
   .phase-paid { color: #285338; background: #e6f2e9; }
   .phase-pending { color: #6b4918; background: #fff2d9; }
@@ -238,18 +241,27 @@ const INSTITUTION_BULLETIN_CSS = `
 const INST_WARNING_ICON =
   '<svg class="warn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.3 2.9 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>'
 
-const renderInstitutionBulletinHtml = (bulletin) => {
+const renderSubjectBulletinHtml = (bulletin) => {
   const sparse = Boolean(bulletin.sparse)
-  const pills = (bulletin.meta.identityBadges ?? [])
-    .map((badge) => `<span class="identity-pill">${htmlEscape(badge)}</span>`)
+  const copy = bulletin.unit.copy.bulletin
+  // Theme pills come from the descriptor (`Área` + canonical token + taxonomy);
+  // institution keeps the identity badges untouched.
+  const pillList = bulletin.meta.identityPills
+    ? bulletin.meta.identityPills.filter((pill) => Boolean(pill.label))
+    : (bulletin.meta.identityBadges ?? []).map((badge) => ({ label: badge }))
+  const pills = pillList
+    .map(
+      (pill) =>
+        `<span class="identity-pill${pill.code ? ' identity-pill--code' : ''}">${htmlEscape(pill.label)}</span>`,
+    )
     .join('')
   const highlights = bulletin.highlights
   const more = bulletin.moreItems
   return `<!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><title>${htmlEscape(bulletin.meta.title)} — ${htmlEscape(bulletin.meta.subjectName)}</title><style>${INSTITUTION_BULLETIN_CSS}</style></head>
+<head><meta charset="utf-8"><title>${htmlEscape(bulletin.meta.title)} — ${htmlEscape(bulletin.meta.subjectName)}</title><style>${SUBJECT_BULLETIN_CSS}</style></head>
 <body>
-<article class="sheet" data-page="boletim" aria-label="Modelo de boletim informativo institucional de uma página">
+<article class="sheet" data-page="boletim" aria-label="${htmlEscape(copy.aria ?? 'Modelo de boletim informativo institucional de uma página')}">
   <header class="bulletin-head">
     <div>
       <p class="kicker">${htmlEscape(bulletin.meta.kicker)}</p>
@@ -266,16 +278,19 @@ const renderInstitutionBulletinHtml = (bulletin) => {
 
   <section class="opening" aria-label="Abertura do boletim">
     <div>
-      <p class="section-label">${sparse ? 'Somente o que está documentado' : 'Uma trajetória de trabalho junto à instituição'}</p>
-      <h1>O que Jorge Solla fez pela e na <span class="accent">${htmlEscape(bulletin.meta.subjectName)}</span></h1>
-      <p class="lead">${
-        sparse
-          ? 'Esta versão tem poucos registros confirmados. Em vez de preencher espaço, mostra só os fatos que o dossiê sustenta.'
-          : 'Ações, recursos e articulações explicados de forma direta — somente o que já foi documentado no dossiê institucional.'
-      }</p>
+      <p class="section-label">${sparse ? 'Somente o que está documentado' : htmlEscape(copy.openingLabel)}</p>
+      <h1>${(() => {
+        const title = copy.openingTitle(bulletin.meta.subjectName)
+        const name = htmlEscape(bulletin.meta.subjectName)
+        const escaped = htmlEscape(title)
+        return escaped.includes(name)
+          ? escaped.replace(name, `<span class="accent">${name}</span>`)
+          : escaped
+      })()}</h1>
+      <p class="lead">${sparse ? htmlEscape(copy.leadSparse) : htmlEscape(copy.lead)}</p>
     </div>
     ${ASSET(sparse ? 'NEEDS ASSET · foto ou clipping' : 'NEEDS ASSET · foto real', [
-      sparse ? 'somente registro relacionado ao fato' : 'Solla na instituição ou na ação citada',
+      sparse ? copy.assetSparse : copy.asset,
       'origem, autoria e licença',
     ])}
   </section>
@@ -284,7 +299,7 @@ const renderInstitutionBulletinHtml = (bulletin) => {
     <div class="highlights-head">
       <div>
         <p class="section-label">Destaques</p>
-        <h2>${sparse ? 'Poucos fatos, sem enchimento' : 'Resultados em leitura rápida'}</h2>
+        <h2>${sparse ? htmlEscape(copy.highlightsTitleSparse) : htmlEscape(copy.highlightsTitle)}</h2>
       </div>
       <p class="side">${sparse ? 'não criar cards vazios para chegar a seis' : 'cada número mantém sua fase e seu alcance'}</p>
     </div>
@@ -297,8 +312,8 @@ const renderInstitutionBulletinHtml = (bulletin) => {
 
   <section class="bulletin-timeline" aria-label="Trajetória">
     <div class="timeline-head">
-      <h2>Uma trajetória de compromisso com o serviço público</h2>
-      <p class="timeline-side">${sparse ? 'contexto de carreira · não substitui fato institucional' : 'quatro momentos · linguagem direta'}</p>
+      <h2>${htmlEscape(copy.title)}</h2>
+      <p class="timeline-side">${sparse ? htmlEscape(copy.titleSparse) : 'quatro momentos · linguagem direta'}</p>
     </div>
     <div class="timeline-grid">
       ${bulletin.timeline
@@ -317,14 +332,14 @@ const renderInstitutionBulletinHtml = (bulletin) => {
       <div class="more-head">
         <div>
           <p class="section-label">E mais</p>
-          <h2>${sparse ? 'Outros registros confirmados' : 'Outras ações confirmadas'}</h2>
+          <h2>${sparse ? htmlEscape(copy.moreTitleSparse) : htmlEscape(copy.moreTitle)}</h2>
         </div>
         <p class="side">${sparse ? 'sem completar por inferência' : 'até 14 · sem completar por inferência'}</p>
       </div>
       ${
         more.length
           ? `<div class="more-grid">${more.map(renderMoreItem).join('')}</div>`
-          : '<div class="empty-box"><p><strong class="uppercase">Sem itens adicionais com fonte além dos destaques.</strong></p><p>Conferir as lacunas explícitas no dossiê institucional antes de ampliar o boletim.</p></div>'
+          : `<div class="empty-box"><p><strong class="uppercase">Sem itens adicionais com fonte além dos destaques.</strong></p><p>${htmlEscape(copy.moreEmpty)}</p></div>`
       }
     </div>
     ${
@@ -332,12 +347,12 @@ const renderInstitutionBulletinHtml = (bulletin) => {
         ? `<aside class="lacuna-panel" style="border-radius: .125rem; padding: 2.5mm" aria-label="Regra editorial para poucos fatos">
             ${INST_WARNING_ICON}
             <p style="margin: 0; font-size: 10.5pt; font-weight: 800">A página termina com espaço — de propósito.</p>
-            <p style="font-size: 8.7pt; line-height: 1.35">Não repetir item, não ampliar efeito e não preencher com ação de setor ou rede como se fosse entrega exclusiva da instituição.</p>
+            <p style="font-size: 8.7pt; line-height: 1.35">${htmlEscape(copy.sparseRule)}</p>
             <p class="lacuna-rule">Poucos fatos com lastro &gt; página cheia sem lastro</p>
           </aside>`
         : `<aside class="more-aside" aria-label="Ativos visuais pendentes">
-            ${ASSET('NEEDS ASSET · selo', ['marca autorizada da instituição', 'arquivo vetorial'])}
-            ${ASSET('NEEDS ASSET · clipping', ['registro real da ação', 'origem e licença'])}
+            ${ASSET('NEEDS ASSET · selo', copy.assetSelo ?? [])}
+            ${ASSET('NEEDS ASSET · clipping', copy.assetClipping ?? [])}
           </aside>`
     }
   </section>
@@ -349,7 +364,7 @@ const renderInstitutionBulletinHtml = (bulletin) => {
             <p class="section-label">Nota de produção</p>
             <p style="margin: 0; font-size: 9.2pt; line-height: 1.38; color: #435264">Se novos fatos forem documentados, eles entram por relevância — até seis destaques e até quatorze itens. A ausência nunca vira número zero, percentual ou afirmação genérica.</p>
           </div>
-          ${ASSET('NEEDS ASSET · selo', ['marca autorizada da instituição', 'arquivo vetorial'])}
+          ${ASSET('NEEDS ASSET · selo', copy.assetSelo ?? [])}
         </section>`
       : ''
   }
@@ -357,8 +372,8 @@ const renderInstitutionBulletinHtml = (bulletin) => {
   <footer class="bulletin-foot">
     <div class="row">
       <div>
-        <p class="orig">Conteúdo selecionado do dossiê institucional.</p>
-        <p class="defeso"><strong>Controle editorial:</strong> fase acompanha cada valor · instituição, setor e rede não são somados · sem percentual estadual absoluto.</p>
+        <p class="orig">${htmlEscape(copy.orig)}</p>
+        <p class="defeso"><strong>Controle editorial:</strong> ${htmlEscape(copy.defeso)}</p>
       </div>
       <p class="stamp">MODELO · INSUMO INTERNO<br />A4 · página 1/1<br />${htmlEscape(bulletin.meta.generatedAtLabel)}</p>
     </div>
@@ -368,8 +383,8 @@ const renderInstitutionBulletinHtml = (bulletin) => {
 </html>`
 }
 
-/** Dispatch: the institution unit renders the institutional composition. */
+/** Dispatch: subject-shaped units (institution/theme) render the shared subject composition. */
 export const renderBulletinHtml = (bulletin) =>
-  isInstitutionUnit(bulletin?.unit)
-    ? renderInstitutionBulletinHtml(bulletin)
+  isSubjectUnit(bulletin?.unit)
+    ? renderSubjectBulletinHtml(bulletin)
     : renderMunicipalityBulletinHtml(bulletin)

@@ -18,6 +18,7 @@ const commands = [
   'relatorio-cidade',
   'dossie-solla-cidade',
   'dossie-solla-instituicao',
+  'dossie-solla-tema',
 ] as const
 
 describe('opencode commands couple to their skill by exact name', () => {

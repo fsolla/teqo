@@ -18,7 +18,7 @@ import {
 import {
   INSTITUTION_UNIT,
   MUNICIPALITY_UNIT,
-  isInstitutionUnit,
+  isSubjectUnit,
   resolveDossierUnit,
 } from './dossieUnit.mjs'
 import { capList, stripInlineSources, summarySurfaceText } from './reportText.mjs'
@@ -220,7 +220,7 @@ const camaraItemsAsActions = (camara, era) =>
  * @returns {DossierReport}
  */
 export const buildDossierReport = (params) =>
-  isInstitutionUnit(params?.unit) ? buildInstitutionReport(params) : buildMunicipalityReport(params)
+  isSubjectUnit(params?.unit) ? buildSubjectReport(params) : buildMunicipalityReport(params)
 const buildMunicipalityReport = ({
   snapshot,
   research,
@@ -520,7 +520,9 @@ const buildMunicipalityReport = ({
 }
 
 /* ------------------------------------------------------------------ *
- * Institution branch (C187) — same owner, institution-shaped sections. *
+ * Subject branch (C187 institution / C190 theme) — same owner, the    *
+ * `subject` shape shares these sections; the vocabulary comes from    *
+ * the unit descriptor.                                                *
  * ------------------------------------------------------------------ */
 
 /**
@@ -533,21 +535,6 @@ const MAX_INSTITUTION_DELIVERIES = 3
 const MAX_INSTITUTION_TIMELINE = 3
 const MAX_INSTITUTION_HOOKS = 2
 const MAX_INSTITUTION_PENDING = 4
-
-const INSTITUTION_SCOPE =
-  'Escopo: carreira técnica e gestão pública até 2006 · SESAB 2007–2014 · Câmara dos Deputados 2015–2027. Instituição, setor e rede separados; sem fonte, não entra como entrega.'
-
-const institutionEraMethod = {
-  A: 'Registros anteriores a 2007 que citem nominalmente a instituição ou comprovem vínculo. Cargo geral não prova ação institucional.',
-  B: 'A gestão estadual é lida por equipamento, programa, convênio e obra; cada linha informa abrangência e fonte. Setor e rede não somam à instituição.',
-  C: 'Mandato, relatorias, parcerias e execução financeira têm datas e estágios distintos. Empenho não é pagamento; o valor sempre acompanha a fase.',
-}
-
-const institutionEraRecovery = {
-  A: 'biografias oficiais · atos e diários · acervos institucionais · busca web datada',
-  B: 'DOE-BA (DOOL) · notícias SESAB/instituição · Transparência Bahia · busca web datada',
-  C: 'API Câmara · Portal da Transparência · acervo interno read-only · busca web datada',
-}
 
 /**
  * Wraps a capped list so the renderer can declare what stayed out ("e mais N")
@@ -567,17 +554,12 @@ const capped = (list, max) => {
  */
 const uncapped = (list) => ({ items: list, total: list.length, omitted: 0 })
 
-const identityBadges = (identity) =>
-  [identity.kindLabel, identity.sphereLabel, identity.scope ? identity.scopeLabel : null].filter(
-    Boolean,
-  )
-
 /**
  * Speeches from the internal acervo (read-only snapshot) that the research did
  * not already carry: they are sourced evidence for the recorte, so they feed
  * the bulletin ledger too — never a second, unsourced fact.
  */
-const speechFactsFromRows = (snapshot, sphere = 'instituicao') =>
+const speechFactsFromRows = (snapshot, sphere) =>
   (snapshot.speeches?.rows ?? [])
     .filter((row) => Boolean(row.officialTextUrl || row.youtubeUrl || row.vodPlaybackUrl))
     .map((row) => ({
@@ -642,6 +624,12 @@ const itemYear = (item) =>
 const gapEraKey = (gap) => {
   const match = /^era_([abc])_/i.exec(gap.id ?? '')
   return match ? match[1].toUpperCase() : 'fora'
+}
+
+/** Theme gap field: checklist ids carry the era letter, everything else is Acervo. */
+const gapEraLabel = (id) => {
+  const match = /^era_([abc])_/i.exec(id ?? '')
+  return match ? match[1].toUpperCase() : 'Acervo'
 }
 
 const buildDossierSynthesis = ({
@@ -754,7 +742,7 @@ const buildDossierSynthesis = ({
         .join(' · ')}.`,
     )
     lines.push(
-      `Abrangência: ${bySphere.map((row) => `${row.count} ${row.label}`).join(' · ')}. Setor e rede não são somados à instituição.`,
+      `Abrangência: ${bySphere.map((row) => `${row.count} ${row.label}`).join(' · ')}. ${unit.synthesisSumGuard ?? 'Setor e rede não são somados à instituição.'}`,
     )
     if (topEra) {
       lines.push(
@@ -767,13 +755,20 @@ const buildDossierSynthesis = ({
       }. Empenho não é pagamento.`,
     )
     if (moneyTotals.count) {
-      const parts = []
-      if (moneyTotals.executed)
-        parts.push(`${formatMoneyCompact(moneyTotals.executed)} pagos/liquidados`)
-      if (moneyTotals.authorized)
-        parts.push(`${formatMoneyCompact(moneyTotals.authorized)} autorizados/empenhados`)
-      if (moneyTotals.proposed)
-        parts.push(`${formatMoneyCompact(moneyTotals.proposed)} em propostas sem fase informada`)
+      // Theme keeps every phase on its own line (never fusing pago/liquidado or
+      // autorizado/empenhado); the totals and charts stay untouched.
+      const parts =
+        unit.moneyPhaseStyle === 'separate'
+          ? moneyByPhase.map((row) => `${formatMoneyCompact(row.amount)} ${row.label}`)
+          : []
+      if (unit.moneyPhaseStyle !== 'separate') {
+        if (moneyTotals.executed)
+          parts.push(`${formatMoneyCompact(moneyTotals.executed)} pagos/liquidados`)
+        if (moneyTotals.authorized)
+          parts.push(`${formatMoneyCompact(moneyTotals.authorized)} autorizados/empenhados`)
+        if (moneyTotals.proposed)
+          parts.push(`${formatMoneyCompact(moneyTotals.proposed)} em propostas sem fase informada`)
+      }
       lines.push(`Recursos localizados: ${parts.join(' · ')}.`)
     }
     if (byArea.length) {
@@ -877,19 +872,15 @@ const buildEraSummary = ({ era, items, money, scopeLabel, unit = INSTITUTION_UNI
   return parts.join(' ')
 }
 
-const buildInstitutionReport = ({
-  snapshot,
-  research,
-  generatedAt = new Date(),
-  narrative = null,
-}) => {
-  const identity = snapshot.institution ?? {}
-  const subjectName = identity.name ?? identity.slug ?? 'Instituição'
-  const unit = INSTITUTION_UNIT
-  const speechFacts = speechFactsFromRows(snapshot)
+const buildSubjectReport = (params) => {
+  const { snapshot, research, generatedAt = new Date(), narrative = null } = params
+  const unit = resolveDossierUnit(params.unit ?? INSTITUTION_UNIT)
+  const identity = snapshot[unit.snapshotField] ?? {}
+  const subjectName = identity.name ?? identity.label ?? identity.slug ?? '—'
+  const speechFacts = speechFactsFromRows(snapshot, unit.defaultSphere)
 
   const items = research.items ?? []
-  const directItems = items.filter((item) => item.sphere === 'instituicao')
+  const directItems = items.filter((item) => item.sphere === unit.defaultSphere)
 
   /** Honors live in their own sheet; they are not repeated as era action cards. */
   const researchActionsByEra = (era) =>
@@ -924,13 +915,13 @@ const buildInstitutionReport = ({
     )
     return {
       ...era,
-      method: institutionEraMethod[era.id],
-      recovery: institutionEraRecovery[era.id],
+      method: unit.eraMethod[era.id],
+      recovery: unit.eraRecovery[era.id],
       summary: buildEraSummary({
         era,
         items: eraItems,
         money: moneyRows(eraNumberRows),
-        scopeLabel: 'no recorte institucional',
+        scopeLabel: unit.scopeLabel,
         unit,
       }),
       narrative:
@@ -1006,6 +997,7 @@ const buildInstitutionReport = ({
     label: gap.label ?? gap.id,
     reason: gap.reason,
     nextStep: 'Apurar em fonte primária.',
+    era: gapEraLabel(gap.id),
   }))
   const pendingList = (research.gaps ?? []).map((gap) => gap.label ?? gap.id)
   const pending = capped(pendingList, MAX_INSTITUTION_PENDING)
@@ -1019,9 +1011,12 @@ const buildInstitutionReport = ({
       ...uncapped(
         sphereItems.map((item) => ({
           id: item.id,
+          era: item.era,
           sphere: item.sphere,
           area: item.area,
           year: item.numbers?.[0]?.year ?? (item.sourceDate ?? '').slice(0, 4) ?? null,
+          value: item.numbers?.[0]?.value ?? null,
+          phase: item.numbers?.[0]?.phase ?? null,
           title: item.answer,
           brief: item.brief ?? null,
           evidence: item.details ?? item.label,
@@ -1031,11 +1026,9 @@ const buildInstitutionReport = ({
       ),
     }
   }
-  const scopeLists = [
-    scopeItem('instituicao', 'institution', unit.sphereLabels.instituicao),
-    scopeItem('setor', 'sector', unit.sphereLabels.setor),
-    scopeItem('rede', 'network', unit.sphereLabels.rede),
-  ]
+  const scopeLists = unit.scopeLists.map(({ key, sphere }) =>
+    scopeItem(sphere, key, unit.sphereLabels[sphere]),
+  )
 
   const synthesis = buildDossierSynthesis({
     items,
@@ -1043,7 +1036,7 @@ const buildInstitutionReport = ({
     speechFacts,
     gaps: research.gaps ?? [],
     acervoTotal: snapshot.speeches?.totalCount ?? speechFacts.length,
-    scopeLabel: 'no recorte institucional',
+    scopeLabel: unit.scopeLabel,
     unit,
   })
 
@@ -1064,7 +1057,13 @@ const buildInstitutionReport = ({
         : null,
       value: item.numbers?.[0]?.value ?? null,
       numberLabel: item.numbers?.[0]?.label ?? null,
-      year: item.numbers?.[0]?.year ?? null,
+      // Theme bulletin cards fall back to the sourced year when there is no
+      // number (C190); the institution ledger keeps its C187 shape.
+      year:
+        item.numbers?.[0]?.year ??
+        (unit.bulletinNumberFallback && item.sourceDate
+          ? String(item.sourceDate).slice(0, 4)
+          : null),
       phase: item.numbers?.[0]?.phase ?? null,
       sourceUrl: item.sourceUrl,
       sourceDate: item.sourceDate,
@@ -1081,7 +1080,7 @@ const buildInstitutionReport = ({
     title:
       typeof narrative?.title === 'string' && narrative.title.trim()
         ? narrative.title.trim()
-        : `O que Jorge Solla fez pela e na ${subjectName}`,
+        : unit.copy.openingTitle(subjectName),
     paragraphs: narrativeParagraphs.length > 0 ? narrativeParagraphs : [synthesis.lines.join(' ')],
     authored: narrativeParagraphs.length > 0,
   }
@@ -1092,7 +1091,7 @@ const buildInstitutionReport = ({
       title: unit.title,
       subjectName,
       identity,
-      identityBadges: identityBadges(identity),
+      identityBadges: unit.identityBadges(identity),
       generatedAt,
       generatedAtLabel,
       readAtLabel,
@@ -1105,10 +1104,9 @@ const buildInstitutionReport = ({
       internalNoteSub: 'Não circular · não publicar',
       eyebrow: 'Dossiê de atuação pública',
       title: subjectName,
-      subtitle: 'O que Jorge Solla fez por, na e com a instituição ao longo da carreira',
-      howToUse:
-        'Localize o vínculo ou a entrega, confira fonte, data, fase e abrangência. Transforme toda lacuna em tarefa de apuração. Este arquivo não é fala pronta nem peça pública.',
-      scope: INSTITUTION_SCOPE,
+      subtitle: unit.copy.coverSubtitle(subjectName),
+      howToUse: unit.copy.coverHowToUse,
+      scope: unit.copy.coverScope,
       version: 'Documento de trabalho · versão 01',
     },
     page1: { timeline, deliveries, hooks, pending },
@@ -1117,9 +1115,8 @@ const buildInstitutionReport = ({
     acervo,
     synthesis,
     reach: {
-      ruleTitle: 'Setor/rede não é a instituição. Não some os recortes.',
-      ruleBody:
-        'Uma política para uma categoria ou uma articulação com entidades correlatas pode alcançar a instituição sem constituir entrega exclusiva para ela.',
+      ruleTitle: unit.copy.reachRuleTitle,
+      ruleBody: unit.copy.reachRuleBody,
       lists: scopeLists,
       hook: hooks.items[0] ?? null,
       priorityGap: pending.items[0] ?? null,
@@ -1135,18 +1132,8 @@ const buildInstitutionReport = ({
       url: row.url,
     })),
     limits: {
-      coverage: [
-        'O acervo interno de falas cobre 2011+; períodos anteriores dependem de fontes externas.',
-        'Resultado de busca não prova ausência histórica.',
-        'Emenda de bancada ou relator só recebe autoria quando a fonte a confirma.',
-        'Menção a entidade correlata (setor/rede) não é atribuição à instituição.',
-      ],
-      editorial: [
-        'Sem fonte, não publica.',
-        'URL e data acompanham cada afirmação não trivial.',
-        'Instituição, setor e rede permanecem separados.',
-        'Valor sempre informa a fase de execução.',
-      ],
+      coverage: unit.copy.limits.coverage,
+      editorial: unit.copy.limits.editorial,
     },
     bulletinFacts,
   }
