@@ -2,7 +2,7 @@ import config from '@payload-config'
 import { after, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 
-import { canReadSpeechCatalog } from '@/lib/campaignRoles'
+import { canReadCommunicationCatalog } from '@/lib/campaignRoles'
 import { speechCoverUrl } from '@/lib/speechVod'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { ensureSpeechPoster, SPEECH_POSTER_WAIT_MS } from '@/utilities/speech/speechPosterJob'
@@ -55,7 +55,7 @@ export const GET = async (
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> => {
   const user = await getCampaignUser()
-  if (!user || !canReadSpeechCatalog(user.role)) return emptyResponse(404)
+  if (!user || !canReadCommunicationCatalog(user.role)) return emptyResponse(404)
 
   const { id } = await params
   const speechId = Number(id)

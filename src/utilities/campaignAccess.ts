@@ -175,3 +175,5 @@ export {
   canReadSpeechCut,
   canUpdateSpeech,
 } from '@/utilities/access/speeches'
+
+export { canDeleteReel, canReadReel } from '@/utilities/access/reels'

@@ -2,7 +2,7 @@ import { tool } from 'ai'
 import { z } from 'zod'
 
 import type { AIToolContext } from '@/lib/ai/types'
-import { canReadSpeechCatalog } from '@/lib/campaignRoles'
+import { canReadCommunicationCatalog } from '@/lib/campaignRoles'
 import { formatSpeechClock } from '@/lib/speechClock'
 import {
   buildSpeechExcerpt,
@@ -87,7 +87,7 @@ export const findSpeechExcerpts = (ctx: AIToolContext) =>
         .describe('Máximo de trechos sugeridos (default 3, max 5).'),
     }),
     execute: async ({ tema, intencao, limit }) => {
-      if (!canReadSpeechCatalog(ctx.user.role)) return { error: DENIED_MESSAGE }
+      if (!canReadCommunicationCatalog(ctx.user.role)) return { error: DENIED_MESSAGE }
 
       const terms = speechExcerptTerms(tema)
       const consulta = { tema: tema.trim(), termos: terms, intencao: intencao?.trim() ?? null }
