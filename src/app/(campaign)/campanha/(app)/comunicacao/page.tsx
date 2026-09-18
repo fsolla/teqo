@@ -9,6 +9,6 @@ import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
  * stable destination and future vertical items have a home.
  */
 export default async function CommunicationHomePage() {
-  await requireCampaignPageActor({ gate: 'speechCatalog' })
+  await requireCampaignPageActor({ gate: 'communicationCatalog' })
   redirect(CAMPAIGN_COMMUNICATION_ACERVO)
 }

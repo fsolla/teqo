@@ -14,6 +14,7 @@ import {
   CAMPAIGN_COMMUNICATION_ACERVO,
   CAMPAIGN_COMMUNICATION_CORTES,
   CAMPAIGN_COMMUNICATION_HOME,
+  CAMPAIGN_COMMUNICATION_REELS,
   CAMPAIGN_UPDATES_HREF,
 } from '@/lib/campaignPaths'
 import { ORGANIZATIONS_LIST_PATH } from '@/lib/campaignQuickActionPaths'
@@ -97,15 +98,20 @@ describe('communicator sidebar', () => {
   })
 })
 
-describe('communication vertical sub-items (C174)', () => {
-  const expectedSubHrefs = [CAMPAIGN_COMMUNICATION_ACERVO, CAMPAIGN_COMMUNICATION_CORTES]
+describe('communication vertical sub-items (C174, C194)', () => {
+  const expectedSubHrefs = [
+    CAMPAIGN_COMMUNICATION_ACERVO,
+    CAMPAIGN_COMMUNICATION_CORTES,
+    CAMPAIGN_COMMUNICATION_REELS,
+  ]
 
-  it('hangs the acervo and the cut library under Comunicação for the communicator', () => {
+  it('hangs the acervo, the cut library and the reels under Comunicação for the communicator', () => {
     const [item] = getCampaignNav('communicator')
     expect(item?.subItems?.map((sub) => sub.href)).toEqual(expectedSubHrefs)
     expect(item?.subItems?.map((sub) => sub.title)).toEqual([
       'Acervo de falas',
       'Biblioteca de cortes',
+      'Reels',
     ])
   })
 

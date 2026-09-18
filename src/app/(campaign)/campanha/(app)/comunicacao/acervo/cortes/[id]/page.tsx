@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: SpeechCutDetailPageProps) {
   if (!cutId) return campaignPageMetadata({ title: 'Corte' })
 
   const [user, payload] = await Promise.all([
-    requireCampaignPageActor({ gate: 'speechCatalog' }),
+    requireCampaignPageActor({ gate: 'communicationCatalog' }),
     getPayload({ config }),
   ])
 
@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: SpeechCutDetailPageProps) {
 export default async function SpeechCutDetailPage({ params }: SpeechCutDetailPageProps) {
   const [{ id }, user, payload] = await Promise.all([
     params,
-    requireCampaignPageActor({ gate: 'speechCatalog' }),
+    requireCampaignPageActor({ gate: 'communicationCatalog' }),
     getPayload({ config }),
   ])
   const cutId = strictDecimalInteger(id)

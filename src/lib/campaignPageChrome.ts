@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 
 import {
   CAMPAIGN_COMMUNICATION_CORTES,
+  CAMPAIGN_COMMUNICATION_REELS,
   CAMPAIGN_CONTACTS_HOME,
   CAMPAIGN_HOME,
   CAMPAIGN_UPDATES_HREF,
@@ -124,6 +125,10 @@ export const campaignPageChromeCatalog = {
   cortes: {
     title: 'Cortes',
     subtitle: 'O que já foi cortado — reencontre, ajuste o texto e republique.',
+  },
+  reels: {
+    title: 'Reels',
+    subtitle: 'Tutoriais do site prontos para a assessoria baixar e publicar fora do Teqo.',
   },
 } as const satisfies Record<string, CampaignPageChrome | null>
 
@@ -292,6 +297,12 @@ const pathRules: PathRule[] = [
     // otherwise swallow the library route and resolve it to `null`.
     match: (pathname) => pathname === CAMPAIGN_COMMUNICATION_CORTES,
     resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.cortes),
+  },
+  {
+    // C194 — the reel library list. The `/<id>` detail sets its own title
+    // through `SetCampaignPageChrome`, so it falls through to `null` here.
+    match: (pathname) => pathname === CAMPAIGN_COMMUNICATION_REELS,
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.reels),
   },
   {
     match: (pathname) => /^\/campanha\/comunicacao\/acervo\/[^/]+$/.test(pathname),

@@ -14,7 +14,12 @@ import { getCampaignUser, getCampaignUserWithAvatar } from '@/utilities/campaign
 /** Exactly the non-null actor `getCampaignUser` proves (keeps its `email` refinement). */
 export type CampaignPageActor = NonNullable<Awaited<ReturnType<typeof getCampaignUser>>>
 
-export type CampaignPageGate = 'staff' | 'unrestricted' | 'noLeader' | 'writable' | 'speechCatalog'
+export type CampaignPageGate =
+  | 'staff'
+  | 'unrestricted'
+  | 'noLeader'
+  | 'writable'
+  | 'communicationCatalog'
 
 export { LEADER_CONTACTS_HOME }
 
@@ -33,7 +38,8 @@ export const CAMPAIGN_STAFF_QUADRO_PATH = '/campanha/quadro'
  * - 'writable'     → advisor with Edição `somente_leitura` goes to `/campanha`
  *                    (C142 — write destinations must not be offered to a
  *                    read-only advisor; the server already rejects the write);
- * - 'speechCatalog'→ advisor/leader lose the communication vertical (C154);
+ * - 'communicationCatalog' → advisor/leader lose the communication vertical
+ *                    (C154; C194 generalized the name from `speechCatalog`);
  *                    communicator/coordinator/candidate pass, the same
  *                    predicate the collection access uses.
  *
@@ -69,9 +75,12 @@ export const requireCampaignPageActor = async (
   const denyRedirect = redirectTo ?? roleHome[user.role] ?? '/campanha'
 
   if (gate === 'staff' && !isStaffCampaignRole(user.role)) redirect(denyRedirect)
-  // C154 — the speech catalog vertical: communicator/coordinator/candidate,
-  // the same predicate the collection access uses.
-  if (gate === 'speechCatalog' && !canReadCommunicationCatalog(user.role)) redirect(denyRedirect)
+  // C154/C194 — the communication vertical (acervo, cortes and reels):
+  // communicator/coordinator/candidate, the same predicate the collection
+  // access uses.
+  if (gate === 'communicationCatalog' && !canReadCommunicationCatalog(user.role)) {
+    redirect(denyRedirect)
+  }
   if (gate === 'unrestricted' && !isUnrestrictedCampaignRole(user.role)) redirect(denyRedirect)
   if (gate === 'noLeader' && user.role === 'leader') redirect(denyRedirect)
   if (gate === 'writable' && !isStaffCampaignRole(user.role)) redirect(denyRedirect)
