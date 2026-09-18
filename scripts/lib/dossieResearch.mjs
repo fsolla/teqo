@@ -215,10 +215,123 @@ const INSTITUTION_RESEARCH_CHECKLIST = [
   },
 ]
 
+/** Theme/area checklist (C190) — same eras, area-oriented. */
+const THEME_RESEARCH_CHECKLIST = [
+  {
+    id: 'era_a_formacao',
+    era: 'A',
+    area: 'Formação',
+    label: 'Formação, residência e pesquisa com interface na área',
+  },
+  {
+    id: 'era_a_sesab',
+    era: 'A',
+    area: 'Gestão pública',
+    label: 'Atuação na gestão pública com efeito ou menção à área',
+  },
+  {
+    id: 'era_a_consultor_ms',
+    era: 'A',
+    area: 'Ministério da Saúde',
+    label: 'Consultoria no Ministério da Saúde na área',
+  },
+  {
+    id: 'era_a_conquista',
+    era: 'A',
+    area: 'Gestão municipal',
+    label: 'Gestão municipal de saúde com ação na área',
+  },
+  {
+    id: 'era_a_sas_ms',
+    era: 'A',
+    area: 'Ministério da Saúde',
+    label: 'Secretaria de Atenção à Saúde do MS com interface na área',
+  },
+  {
+    id: 'era_a_vinculo',
+    era: 'A',
+    area: 'Vínculo',
+    label: 'Atuação documentada na área (pesquisa, conselho, docência)',
+  },
+  {
+    id: 'era_b_sesab',
+    era: 'B',
+    area: 'Gestão estadual',
+    label: 'Gestão da SESAB (2007–2014) com a área',
+  },
+  {
+    id: 'era_b_politicas',
+    era: 'B',
+    area: 'Políticas',
+    label: 'Políticas e programas estaduais de interesse da área',
+  },
+  {
+    id: 'era_b_investimentos',
+    era: 'B',
+    area: 'Investimentos',
+    label: 'Investimentos e equipamentos ligados à área',
+  },
+  {
+    id: 'era_b_convenios',
+    era: 'B',
+    area: 'Convênios',
+    label: 'Convênios, termos e parcerias formais na área',
+  },
+  {
+    id: 'era_b_articulacao',
+    era: 'B',
+    area: 'Articulação',
+    label: 'Articulação regional e setorial da área',
+  },
+  {
+    id: 'era_c_discursos',
+    era: 'C',
+    area: 'Mandato',
+    label: 'Pronunciamentos e falas sobre a área',
+  },
+  {
+    id: 'era_c_proposicoes',
+    era: 'C',
+    area: 'Mandato',
+    label: 'Proposições e relatorias de interesse da área',
+  },
+  {
+    id: 'era_c_relatorias',
+    era: 'C',
+    area: 'Relatorias',
+    label: 'Relatorias e pareceres ligados à área',
+  },
+  {
+    id: 'era_c_emendas',
+    era: 'C',
+    area: 'Emendas',
+    label: 'Emendas e recursos destinados à área',
+  },
+  {
+    id: 'era_c_programas',
+    era: 'C',
+    area: 'Programas',
+    label: 'Programas federais e ações na área',
+  },
+  {
+    id: 'era_c_audiencias',
+    era: 'C',
+    area: 'Audiências',
+    label: 'Audiências e articulação formal com a área',
+  },
+  {
+    id: 'era_c_titulos',
+    era: 'C',
+    area: 'Reconhecimento',
+    label: 'Títulos, honrarias e homenagens ligadas à área',
+  },
+]
+
 /** @type {Record<string, Array<{ id: string, era: string, area: string, label: string }>>} */
 const CHECKLIST_BY_UNIT = {
   municipality: MUNICIPALITY_RESEARCH_CHECKLIST,
   institution: INSTITUTION_RESEARCH_CHECKLIST,
+  theme: THEME_RESEARCH_CHECKLIST,
 }
 
 const checklistFor = (unit) => CHECKLIST_BY_UNIT[unit.id] ?? MUNICIPALITY_RESEARCH_CHECKLIST
@@ -491,7 +604,7 @@ export const mergeDossierResearch = (researches, { unit } = {}) => {
   const slug = list[0][slugField]
   for (const research of list) {
     if (research[slugField] !== slug) {
-      const noun = resolvedUnit.id === 'institution' ? 'instituições' : 'municípios'
+      const noun = resolvedUnit.nounPlural ?? 'municípios'
       throw new Error(
         `Pesquisas de ${noun} diferentes ("${slug}" e "${research[slugField]}") — pare e regenere.`,
       )

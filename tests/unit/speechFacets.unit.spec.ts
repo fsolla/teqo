@@ -2,8 +2,30 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { mergeFacetClassification, parseLlmFacetResponse } from '@/lib/speechFacets'
+import {
+  mergeFacetClassification,
+  parseLlmFacetResponse,
+  resolveSpeechTopic,
+} from '@/lib/speechFacets'
 import { classifySpeechByGazetteer, matchMunicipalityMentions } from '@/lib/speechGazetteer'
+
+describe('resolveSpeechTopic (C190)', () => {
+  it('resolves the canonical value and the pt-BR label (accent/case insensitive)', () => {
+    expect(resolveSpeechTopic('educacao')?.value).toBe('educacao')
+    expect(resolveSpeechTopic('Educação')?.value).toBe('educacao')
+    expect(resolveSpeechTopic('  EDUCAÇÃO  ')?.value).toBe('educacao')
+    expect(resolveSpeechTopic('Seguranca Publica')?.value).toBe('seguranca-publica')
+    expect(resolveSpeechTopic('Direitos Humanos e Assistência Social')?.value).toBe(
+      'direitos-humanos',
+    )
+  })
+
+  it('fails closed on an unknown or empty token (never an invented slug)', () => {
+    expect(resolveSpeechTopic('educacao-infantil')).toBeNull()
+    expect(resolveSpeechTopic('')).toBeNull()
+    expect(resolveSpeechTopic('   ')).toBeNull()
+  })
+})
 
 describe('classifySpeechByGazetteer', () => {
   it('detects topics, explicit scopes and municipality mentions', () => {

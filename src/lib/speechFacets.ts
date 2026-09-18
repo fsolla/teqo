@@ -75,6 +75,18 @@ const scopeByKey = new Map(
   ]),
 )
 
+/**
+ * Resolves a canonical topic token (value or pt-BR label, accent/case
+ * insensitive) to its taxonomy entry. Fail-closed: unknown tokens return null —
+ * callers never invent a slug outside `SPEECH_TOPICS` (C190).
+ */
+export const resolveSpeechTopic = (token: string): (typeof SPEECH_TOPICS)[number] | null => {
+  const key = facetKey(token ?? '')
+  if (!key) return null
+  const value = topicByKey.get(key)
+  return SPEECH_TOPICS.find((topic) => topic.value === value) ?? null
+}
+
 // ---------------------------------------------------------------------------
 // LLM response parsing and merge
 // ---------------------------------------------------------------------------

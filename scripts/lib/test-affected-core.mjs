@@ -32,6 +32,7 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/check-test-locations.mjs',
   'scripts/cityReportSnapshot.mjs',
   'scripts/institutionSnapshot.mjs',
+  'scripts/themeSnapshot.mjs',
   'scripts/lib/agent-forgejo.mjs',
   'scripts/lib/agent-plan-lifecycle.mjs',
   'scripts/lib/agent-pool-cursor.mjs',

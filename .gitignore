@@ -92,6 +92,10 @@ next-env.d.ts
 /data/dossie-solla-instituicao/
 /docs/research/dossie-solla-instituicao/
 
+# C190 — dossiê Solla por tema/área + boletim modelo: same rule (C186).
+/data/dossie-solla-tema/
+/docs/research/dossie-solla-tema/
+
 # Local-only sensitive material (agents may read; never commit content)
 /private/**
 !/private/README.md

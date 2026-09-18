@@ -49,14 +49,22 @@ export const buildBulletin = ({
   const resolvedUnit = resolveDossierUnit(unit)
   const ordered = rankFacts(facts, resolvedUnit)
   const subjectName = municipality ?? identity?.name ?? '—'
-  const highlights = ordered.slice(0, BULLETIN_HIGHLIGHT_LIMIT).map((fact) => ({
-    eyebrow: `${fact.area ?? 'Atuação'} · ${dossierSphereLabel(fact.sphere, resolvedUnit)}`,
-    number: fact.value,
-    title: fact.brief?.title ?? fact.headline,
-    note: fact.brief?.note ?? fact.detail ?? null,
-    phase: fact.value ? (fact.phase ?? null) : null,
-    phaseLabel: fact.value ? dossierPhaseLabel(fact.phase) : null,
-  }))
+  const highlights = ordered.slice(0, BULLETIN_HIGHLIGHT_LIMIT).map((fact) => {
+    // Theme-only fallback: a fact without money value shows its year; without
+    // either, the card is textual and prints no number slot at all (never zero).
+    const number = resolvedUnit.bulletinNumberFallback
+      ? (fact.value ?? fact.year ?? null)
+      : fact.value
+    return {
+      eyebrow: `${fact.area ?? 'Atuação'} · ${dossierSphereLabel(fact.sphere, resolvedUnit)}`,
+      number,
+      ...(resolvedUnit.bulletinNumberFallback && !number ? { textual: true } : {}),
+      title: fact.brief?.title ?? fact.headline,
+      note: fact.brief?.note ?? fact.detail ?? null,
+      phase: fact.value ? (fact.phase ?? null) : null,
+      phaseLabel: fact.value ? dossierPhaseLabel(fact.phase) : null,
+    }
+  })
   const moreItems = ordered
     .slice(
       BULLETIN_HIGHLIGHT_LIMIT,
@@ -73,12 +81,14 @@ export const buildBulletin = ({
     sparse: ordered.length < 3,
     meta: {
       title: resolvedUnit.bulletinTitle,
-      kicker: 'Boletim informativo · atuação pública',
+      kicker: resolvedUnit.bulletinKicker ?? 'Boletim informativo · atuação pública',
       subjectName,
       municipality: subjectName,
       region,
       identity,
       identityBadges: identity?.badges ?? [],
+      identityPills:
+        resolvedUnit.bulletinPills && identity ? resolvedUnit.bulletinPills(identity) : null,
       generatedAt,
       generatedAtLabel: formatDateTimeBr(generatedAt),
       modelLabel: 'Modelo — insumo interno',
