@@ -20,13 +20,24 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { emitHtmlPairPdf, launchPdfBrowser } from './lib/buildPdf.mjs'
+import {
+  A4_PAGE_BUDGET_PX,
+  emitHtmlPairPdf,
+  launchPdfBrowser,
+  measureDocumentPackProbe,
+  measureDocumentSheets,
+} from './lib/buildPdf.mjs'
 import { dieWithLabel, isTruthyEnv, loadCliEnv, parseEqualsFlags } from './lib/cli.mjs'
 import { buildDossierReport } from './lib/dossieBlocks.mjs'
 import { buildBulletin } from './lib/dossieBulletin.mjs'
 import { renderBulletinHtml } from './lib/dossieBulletinRender.mjs'
 import { DOSSIER_ERA_IDS } from './lib/dossieCareer.mjs'
-import { renderDossierHtml, renderDossierMd } from './lib/dossieRender.mjs'
+import { adjustPackPlan, packProbeSections } from './lib/dossiePack.mjs'
+import {
+  INSTITUTION_PACK_ANCHORS,
+  renderDossierHtml,
+  renderDossierMd,
+} from './lib/dossieRender.mjs'
 import { mergeDossierResearch, normalizeDossierResearchInput } from './lib/dossieResearch.mjs'
 import { INSTITUTION_UNIT } from './lib/dossieUnit.mjs'
 
@@ -113,11 +124,33 @@ if (snapshot.meta?.codeSha && currentCodeSha && snapshot.meta.codeSha !== curren
   )
 }
 
+const readNarrative = async () => {
+  const path = join(researchDir, `${slug}.narrative.json`)
+  try {
+    const raw = JSON.parse(await readFile(resolve(ROOT, path), 'utf8'))
+    if (raw.institutionSlug !== slug) {
+      die(`Redação é de "${raw.institutionSlug}", não de "${slug}" (${path}) — pare e regenere.`)
+    }
+    return raw
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null
+    die(`Redação inválida (${path}): ${error instanceof Error ? error.message : error}`)
+  }
+}
+
+const narrative = await readNarrative()
+if (!narrative) {
+  console.log(
+    `[${LABEL}] sem redação autoral (${slug}.narrative.json) — a abertura repete os números.`,
+  )
+}
+
 const report = buildDossierReport({
   snapshot,
   research,
   generatedAt,
   unit: INSTITUTION_UNIT,
+  narrative,
 })
 const bulletin = buildBulletin({
   facts: report.bulletinFacts,
@@ -126,14 +159,12 @@ const bulletin = buildBulletin({
   generatedAt,
 })
 
-const dossierHtml = renderDossierHtml(report)
 const dossierMd = renderDossierMd(report)
 const bulletinHtml = renderBulletinHtml(bulletin)
 
 const baseName = `${slug}-${generatedAt.toISOString().slice(0, 10)}`
 
 await mkdir(resolve(ROOT, CACHE_DIR), { recursive: true })
-await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.dossie.html`)), dossierHtml)
 await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.boletim.html`)), bulletinHtml)
 
 await mkdir(resolve(ROOT, outDir), { recursive: true })
@@ -143,8 +174,55 @@ const bulletinPdfFile = join(outDir, `${baseName}-boletim.pdf`)
 await writeFile(resolve(ROOT, dossierMdFile), dossierMd)
 console.log(`[${LABEL}] companion → ${dossierMdFile}`)
 
+/**
+ * Flowing sheets: probe the real height of every unit, pack the sections, then
+ * re-render and measure — an overflowing sheet gives a row to the next chunk, a
+ * sheet with room takes the next row, until the plan stops changing. Nothing is
+ * capped and no page is left half empty; the final emit still guards the A4.
+ */
 const browser = await launchPdfBrowser()
+let dossierHtml = null
+let pack = null
 try {
+  const probe = await measureDocumentPackProbe(browser, renderDossierHtml(report, { probe: true }))
+  const anchors = Object.fromEntries(
+    Object.entries(INSTITUTION_PACK_ANCHORS).map(([anchor, key]) => [key, anchor]),
+  )
+  pack = packProbeSections(probe, A4_PAGE_BUDGET_PX)
+  console.log(
+    `[${LABEL}] probe: ${probe.map((section) => `${section.key}=${section.rows.length}`).join(' ')}`,
+  )
+
+  let settled = false
+  const lockedAnchors = new Set()
+  for (let attempt = 0; attempt < 16 && !settled; attempt += 1) {
+    dossierHtml = renderDossierHtml(report, { pack })
+    const sheets = await measureDocumentSheets(browser, dossierHtml)
+    for (const sheet of sheets) {
+      if (sheet.height > A4_PAGE_BUDGET_PX) lockedAnchors.add(sheet.page)
+    }
+    const adjusted = adjustPackPlan({
+      plan: pack,
+      probe,
+      sheets,
+      anchors,
+      budgetPx: A4_PAGE_BUDGET_PX,
+      lockedAnchors,
+    })
+    if (!adjusted) {
+      settled = true
+      break
+    }
+    pack = adjusted
+  }
+  if (!dossierHtml) dossierHtml = renderDossierHtml(report, { pack })
+  console.log(
+    `[${LABEL}] pack ${settled ? 'estável' : 'no teto de tentativas'}: ${Object.entries(pack)
+      .map(([key, sizes]) => `${key}=${sizes.join('+')}`)
+      .join(' ')}`,
+  )
+
+  await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.dossie.html`)), dossierHtml)
   await emitHtmlPairPdf(browser, {
     dossierHtml,
     bulletinHtml,
@@ -161,7 +239,7 @@ console.log(`[${LABEL}] PDF → ${dossierPdfFile}`)
 console.log(`[${LABEL}] boletim PDF → ${bulletinPdfFile}`)
 console.log(
   `[${LABEL}] ${report.meta.subjectName}: eras=${report.eras.length} entregas=${report.page1.deliveries.items.length} ` +
-    `highlights=${bulletin.highlights.length} lacunas=${research.gaps.length} html_bytes=${Buffer.byteLength(dossierHtml)}`,
+    `highlights=${bulletin.highlights.length} lacunas=${research.gaps.length} páginas=${report.meta.pageTotal} html_bytes=${Buffer.byteLength(dossierHtml)}`,
 )
 
 if (isTruthyEnv(process.env.DOSSIER_STRICT) && research.gaps.length > 0) {

@@ -26,6 +26,16 @@ export const MUNICIPALITY_UNIT = {
   series: 'Série municipal · BA',
   title: 'Dossiê Solla por cidade',
   bulletinTitle: 'Boletim informativo modelo',
+  /** "E mais" budget of the one-page boletim (long labels wrap, so units differ). */
+  bulletinMoreLimit: 12,
+  /** Print copy that changes with the recorte (shared renderers read these). */
+  sphereColumnLabel: 'Esfera',
+  notSummedInline: 'não somar à cidade',
+  sumGuardNote: 'região e polo não são somados ao município.',
+  acervoNote: 'recorte municipal (menção confirmada); região e polo não entram nesta conta.',
+  eraNumbersTitle: 'Recursos e entregas quantificáveis',
+  eraActionsTitle: 'O que fez — item, alcance e lastro',
+  honorsTitle: 'Títulos, honrarias e vínculos locais',
 }
 
 export const INSTITUTION_UNIT = {
@@ -40,6 +50,14 @@ export const INSTITUTION_UNIT = {
   series: 'Série institucional · agenda com lastro',
   title: 'Dossiê Solla por instituição',
   bulletinTitle: 'Boletim informativo modelo',
+  bulletinMoreLimit: 10,
+  sphereColumnLabel: 'Abrangência',
+  notSummedInline: 'não somar à instituição',
+  sumGuardNote: 'setor e rede não são somados à instituição.',
+  acervoNote: 'recorte por tema, não nominal; não somar à instituição.',
+  eraNumbersTitle: 'Objeto, valor, fase e alcance',
+  eraActionsTitle: 'Papéis com evidência visível',
+  honorsTitle: 'Títulos, honrarias e vínculos institucionais',
 }
 
 const DOSSIER_UNITS = {

@@ -34,6 +34,9 @@ slug e coordena as demais eras/cidades em paralelo.
   orquestrador (`scripts/extract-city-report-snapshot.mjs` no homeserver,
   `scripts/build-dossie-solla-cidade.mjs` local). Não faça `ssh`, `scp` nem
   render.
+- A redação de abertura e o parágrafo de consolidação por era são de **outra
+  etapa** (o redator) — não os escreva; seu produto é só o `research.json` da
+  sua era.
 - **Nunca** escreva na base de produção: não use `db:pull`/snapshot de banco.
 - **Nunca** commite o `research.json`/PDF/MD/snapshot (dado interno; repo público
   — artefato gitignored).

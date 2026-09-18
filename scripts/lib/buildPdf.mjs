@@ -47,6 +47,105 @@ const measureSheetOverflows = (page, anchor, budgetPx = A4_PAGE_BUDGET_PX) =>
     { max: budgetPx, selector: `[data-page="${anchor}"]` },
   )
 
+const openPrintPage = async (browser, html) => {
+  const page = await browser.newPage()
+  await page.setViewportSize({ width: A4_WIDTH_PX, height: A4_HEIGHT_PX })
+  await page.setContent(html, { waitUntil: 'load' })
+  await page.emulateMedia({ media: 'print' })
+  return page
+}
+
+/**
+ * Rendered sheets with their real height and used height (bottom of the last
+ * non-footer child) — the pack loop uses it to shrink overflowing sheets and
+ * grow sheets with room, so a page is never half empty and never cut.
+ */
+export const measureDocumentSheets = async (browser, html) => {
+  const page = await openPrintPage(browser, html)
+  try {
+    return await page.evaluate(() =>
+      [...document.querySelectorAll('[data-page]')].map((sheet) => {
+        const children = [...sheet.children].filter(
+          (child) => !child.classList.contains('report-footer'),
+        )
+        const used = children.reduce(
+          (max, child) =>
+            Math.max(max, child.offsetTop + Math.max(child.offsetHeight, child.scrollHeight)),
+          0,
+        )
+        return {
+          page: sheet.getAttribute('data-page'),
+          height: sheet.scrollHeight,
+          used,
+        }
+      }),
+    )
+  } finally {
+    await page.close()
+  }
+}
+
+/**
+ * Probe pass of the packed institution sections (C187 flowing sheets): each
+ * `[data-pack-section]` sheet carries every unit (`[data-pack-unit]` with
+ * `data-pack-layout` = tr|card); returns the fixed overhead and the row costs
+ * (a card row is a pair, its cost the taller card) the packer consumes.
+ *
+ * The probe renders with `INSTITUTION_PROBE_CSS` (auto height, no gaps), so the
+ * overhead is the true fixed content: headers, section titles, the era method
+ * (tagged `data-pack-fixed="method"`, absent from continuation sheets) and the
+ * footer. The packer adds the card-row gap back.
+ */
+const PACK_CARD_ROW_GAP_PX = Math.round(3 * MM_TO_PX)
+
+export const measureDocumentPackProbe = async (browser, html) => {
+  const page = await openPrintPage(browser, html)
+  try {
+    return await page.evaluate((cardRowGap) => {
+      const buildRows = (units, gap) => {
+        const rows = []
+        for (let index = 0; index < units.length; index += 1) {
+          const unit = units[index]
+          const pair = units[index + 1]
+          if (unit.layout === 'card' && pair?.layout === 'card') {
+            rows.push({
+              units: [unit.index, pair.index],
+              cost: Math.max(unit.height, pair.height) + gap,
+            })
+            index += 1
+          } else {
+            rows.push({ units: [unit.index], cost: unit.height + gap })
+          }
+        }
+        return rows
+      }
+      return [...document.querySelectorAll('[data-pack-section]')].map((sheet) => {
+        const units = [...sheet.querySelectorAll('[data-pack-unit]')].map((element) => ({
+          index: Number(element.getAttribute('data-pack-unit')),
+          layout: element.getAttribute('data-pack-layout') ?? 'tr',
+          height: Math.max(element.scrollHeight, element.offsetHeight),
+        }))
+        // The probe renders with no gaps, so the overhead uses the gap-free
+        // rows; the packer's costs add the real card-row gap back.
+        const rowsHeight = buildRows(units, 0).reduce((total, row) => total + row.cost, 0)
+        const overhead = Math.max(0, sheet.scrollHeight - rowsHeight)
+        const methodHeight = [...sheet.querySelectorAll('[data-pack-fixed]')].reduce(
+          (total, element) => total + element.offsetHeight,
+          0,
+        )
+        return {
+          key: sheet.getAttribute('data-pack-section'),
+          overhead,
+          overheadContinuation: Math.max(0, overhead - methodHeight),
+          rows: buildRows(units, cardRowGap),
+        }
+      })
+    }, PACK_CARD_ROW_GAP_PX)
+  } finally {
+    await page.close()
+  }
+}
+
 /** Throws with the list of overflowing pages — callers turn it into `die`. */
 export const assertPageFits = (overflows, label, hint) => {
   if (overflows.length === 0) return
@@ -86,9 +185,7 @@ export const emitHtmlPairPdf = async (
     resumoOnly = false,
   },
 ) => {
-  const page = await browser.newPage()
-  await page.setViewportSize({ width: A4_WIDTH_PX, height: A4_HEIGHT_PX })
-
+  const page = await openPrintPage(browser, dossierHtml)
   let currentDossierHtml = dossierHtml
   let triedFallback = false
   for (;;) {

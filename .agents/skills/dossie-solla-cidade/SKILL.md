@@ -19,7 +19,8 @@ aprovados pelo `designer`.
 - A comunicação pede "o dossiê de <cidade>" e/ou o "boletim modelo de <cidade>"
   — ou várias numa invocação (`/dossie-solla-cidade Ilheus, Itacare, Una`).
 - Quem executa são o **orquestrador** (agente principal) + um sub-agente
-  **researcher por era, por cidade**, em paralelo + os scripts (`extract` no
+  **researcher por era, por cidade**, em paralelo + um sub-agente **redator**
+  (redação de abertura e parágrafos por era) + os scripts (`extract` no
   homeserver, `build` local). O detalhe está em "Pipeline (etapas)".
 
 ## Lote (várias cidades)
@@ -62,30 +63,41 @@ parcial** explícito).
    `sourceUrl` + `sourceDate`; sem fonte, **não escreva o item** — ele vira
    lacuna). Devolve **apenas o recibo curto** (seção "Recibo do researcher").
    Não roda ssh nem build.
-3. **Extração read-only no homeserver — serializada, 1 cidade por vez.** Reusa
+3. **Redação (sub-agente, 1 por cidade).**
+   `.opencode/agent/dossie-solla-cidade-redacao.md` — depois das eras
+   pesquisadas, escreve `data/dossie-solla-cidade/<slug>.narrative.json`
+   (redação de abertura + 1 parágrafo por era) **somente** a partir dos itens
+   com fonte; devolve só o recibo (seção "Recibo do redator"). O orquestrador
+   **audita citações** (nome, data, valor, órgão) contra os `research.json` e
+   corrige ou descarta o trecho sem lastro — nunca aceita fato novo. Sem o
+   arquivo, o builder cai na consolidação determinística dos números.
+4. **Extração read-only no homeserver — serializada, 1 cidade por vez.** Reusa
    o extrator do relatório de cidade (`scripts/extract-city-report-snapshot.mjs`,
    `CITY_REPORT_CONFIRM=1`, `withReadOnlyDatabaseUrl`) e a mesma receita do
    runbook `docs/ops/teqo-1313-deploy.md` §"C163 — relatório de cidade"
    (`~/teqo-report`). O recorte do dossiê que vive na base Teqo é o **acervo de
    falas (2011+)**; o resto é API pública em tempo de build.
-4. **Fontes oficiais em tempo de build (por cidade).** O builder busca emendas
+5. **Fontes oficiais em tempo de build (por cidade).** O builder busca emendas
    do autor (`--emendas=` para replay), a atividade da Câmara (proposições e
    discursos — janela sempre explícita) e o contexto IBGE/SIDRA; qualquer falha
    **degrada para lacuna datada**, nunca zero silencioso.
-5. **Render local (por cidade):**
+6. **Render local (por cidade):**
    ```bash
    NODE_OPTIONS="--no-deprecation --import=tsx/esm" node scripts/build-dossie-solla-cidade.mjs \
      --snapshot=data/dossie-solla-cidade/<slug>.snapshot.json \
      --research-dir=data/dossie-solla-cidade \
      --out-dir=docs/research/dossie-solla-cidade
    ```
+   O builder pagina por medição (`scripts/lib/dossiePack.mjs`): render de prova
+   → pack → **grow/shrink medido** por folha até estabilizar (nada de página
+   pela metade, nada cortado), e só então emite o PDF com a guarda de A4.
    Saídas: `docs/research/dossie-solla-cidade/<slug>-<YYYY-MM-DD>-dossie.pdf` +
    `-dossie.md` + `-boletim.pdf`. Intermediários gitignored em
    `data/dossie-solla-cidade/` (HTML, JSONs, emendas, logs). Flags úteis:
    `--emendas=<json>` (replay sem rede), `--author=<nome>` (default
    `JORGE SOLLA`), `--generated-at=<ISO>`, `DOSSIER_STRICT=1` (falha o run se
    houver lacuna — conferência, não entrega).
-6. **Summary final.** Uma linha por entrada, na ordem da lista: `entrada · status
+7. **Summary final.** Uma linha por entrada, na ordem da lista: `entrada · status
    (ok|failed) · dossiê/boletim (quando ok) · motivo (quando falha)`.
 
 ## Briefing por era (A/B/C)
@@ -137,6 +149,28 @@ do `research.json` (`items[].answer/details`):
 `status: "failed"` carrega o motivo e **não** escreve corpo parcial; o
 orquestrador agrega os recibos no summary final — é o único dado de pesquisa que
 cruza para ele.
+
+## Recibo do redator
+
+O sub-agente da redação devolve **só** este recibo curto — **nunca** os
+parágrafos:
+
+```jsonc
+{
+  "slug": "ilheus",
+  "status": "ok",              // ou "failed"
+  "narrativePath": "data/dossie-solla-cidade/ilheus.narrative.json",
+  "paragraphs": 3,             // parágrafos de abertura
+  "eraParagraphs": 3,          // eras com parágrafo (A/B/C)
+  "wordCounts": { "opening": [127, 146, 140], "A": 119, "B": 119, "C": 118 },
+  "failureReason": "…"         // opcional (só quando status = failed)
+}
+```
+
+O orquestrador **audita** cada citação factual (nome, data, valor, órgão) contra
+os `research.json` antes de aceitar o arquivo; trecho sem lastro é corrigido ou
+removido. `status: "failed"` não escreve arquivo parcial — o builder segue com a
+consolidação determinística.
 
 ## Contrato dos JSONs
 
@@ -201,6 +235,26 @@ o `brief` é a copy reformulada que o PDF imprime nas páginas de era/cartões; 
 `summary` alimenta as superfícies de resumo do dossiê e o ledger do boletim.
 
 **`brief` (copy reformulada, sem reticências).** As páginas A4 têm altura fixa:
+
+**`<slug>.narrative.json` (opcional; escrito pelo redator, auditado pelo
+orquestrador):
+
+```jsonc
+{
+  "municipalitySlug": "ilheus",               // obrigatório
+  "generatedAt": "2026-09-18T00:26:19.000Z",  // obrigatório
+  "title": "O que Jorge Solla fez por Ilhéus",
+  "opening": ["parágrafo", "parágrafo", "parágrafo"],
+  "eras": { "A": "parágrafo", "B": "parágrafo", "C": "parágrafo" }
+}
+```
+
+Sem o arquivo (ou com `municipalitySlug` diferente do snapshot), o builder **não
+falha**: a abertura repete a leitura dos números e cada era usa a consolidação
+determinística. `opening` e `eras` só podem conter fatos dos itens com fonte —
+nenhum número, data, nome ou órgão novo.
+
+`brief` (copy reformulada, sem reticências).** As páginas A4 têm altura fixa:
 em vez de cortar o texto com `…`, cada item publicado traz um `brief` **reescrito
 para caber** (`title` ≤80 / `note` ≤120) preservando o essencial (o quê, onde,
 valor + fase) — nunca inventa fato, nunca sugere exclusividade municipal para
@@ -214,20 +268,45 @@ continuação com o texto inteiro.
 
 ## Conteúdo do dossiê
 
-- **Capa** — série municipal, "INSUMO INTERNO", território, região/polo
-  adotado, data, "como usar", escopo/versão.
-- **Resumo de uma olhada** — linha do tempo da carreira; principais entregas
-  localizadas (badge de esfera + valor + badge de fase + fonte); ganchos para o
-  boletim; o que falta. Guarda: **autorizado ≠ empenhado ≠ liquidado ≠ pago**.
-- **Seção por era (A/B/C)** — recorte e método + trilha de recuperação; tabela
-  **Objeto/Valor/Ano/Fase/Esfera/Fonte**; cards "Atuação registrada"; títulos,
-  honrarias e vínculos locais. Seções vazias são omitidas.
-- **Região / polo** — painel "Região não é cidade. Não some os dois recortes.";
-  duas listas lado a lado (município ≠ região/polo); itens regionais com
-  evidência de alcance; gancho e lacuna prioritária.
-- **Fontes e limites** — tabela de lacunas; notícias/documentos consultados
-  (larguras fixas 12/13/47/28%); limites de cobertura; regras para uso editorial;
-  nota de defeso eleitoral 2026.
+- **Capa** — série municipal, "INSUMO INTERNO", território, região/polo adotado,
+  data, "como usar", escopo/versão.
+- **A contribuição (carta)** — redação de abertura sobre o que Solla fez pela
+  cidade e pela região ao longo das eras, em prosa, com a nota "Como ler" (cada
+  afirmação tem lastro em item datado; a redação não preenche por inferência).
+- **Trajetória completa** — a linha do tempo da carreira.
+- **Resumo de uma olhada** — identificação + entregas localizadas (badge de
+  esfera + valor + badge de fase + fonte); ganchos; o que falta. Guarda:
+  **autorizado ≠ empenhado ≠ liquidado ≠ pago**. É a única página com listas
+  capadas — e o "e mais N" aponta para a seção onde a lista completa está.
+- **Síntese** — leitura dos números com lastro (pontos por era e esfera,
+  concentração relativa, itens com valor por fase, recursos por fase, temas,
+  lacunas) + guardas de leitura; nada que não venha dos itens.
+- **Gráficos consolidados** — recursos **com execução por ano** (empilhado por
+  fase), **propostas/articulações sem fase informada** (lista com barra e valor),
+  abrangência (município × região × polo), trajetória por ano, áreas e lacunas
+  por era, painel do acervo. Valores sempre em R$ com a fase; recortes nunca
+  somados.
+- **Seção por era (A/B/C)** — parágrafo de consolidação ("O que esta era
+  entrega", do `narrative.json` ou determinístico) + recorte e método + trilha de
+  recuperação; tabela **Objeto/Valor/Ano/Fase/Esfera/Fonte**; cards "O que fez —
+  item, alcance e lastro"; títulos/honrarias locais. **Sem cap**: a era flui por
+  quantas folhas precisar (continuações com cabeçalho "continuação N"). Uma era
+  sem evidência é omitida (nunca inventada).
+- **Região / polo** — painel "Região não é cidade. Não some os dois recortes."
+  com contagem por recorte (**nenhum total combinado**) e prévia; em seguida
+  **as duas listas completas** em tabela (item/esfera/evidência/fonte), cada uma
+  fluindo por quantas folhas precisar; gancho e lacuna prioritária.
+- **Lacunas explícitas**, **Notícias e documentos consultados** e **Acervo
+  interno** — tabelas/listas completas, também correntes (sem cap). O acervo é
+  **amostra declarada** (as falas mais recentes com link, de N do recorte
+  municipal) com painel do total; região/polo não entram nessa conta.
+- **Fontes e limites** — limites de cobertura; regras para uso editorial; nota de
+  defeso eleitoral 2026.
+- **Nada some e nada é cortado:** o dossiê **não usa caps** — o builder mede a
+  altura real de cada linha e pagina (grow/shrink) até a página ficar cheia sem
+  estourar; listas continuam em folhas de continuação com o texto inteiro. O
+  único "e mais N" é o do resumo e o da amostra do acervo, ambos apontando para
+  onde o resto está.
 
 ## Conteúdo do Boletim modelo (1 página A4)
 
@@ -241,6 +320,11 @@ continuação com o texto inteiro.
 ## Guardrails de produto (não negociáveis)
 
 - **Sem fonte, não publica**: afirmação não trivial sem URL+data vira lacuna.
+- **Redação e parágrafos com lastro**: a carta e o parágrafo de cada era só usam
+  fatos dos itens com fonte; o orquestrador audita citação por citação (nome,
+  data, valor, órgão) e remove o que não tiver lastro.
+- **Dossiê sem caps**: o conteúdo flui por quantas páginas precisar; a página é
+  preenchida por medição (grow/shrink), nunca por corte de texto.
 - **Empenho ≠ pagamento**: cada valor acompanha sua fase
   (autorizado/empenhado/liquidado/pago/restos); nunca consolidar como
   equivalentes.
@@ -259,9 +343,17 @@ continuação com o texto inteiro.
 
 ## Troubleshooting
 
-- **Página 1 do dossiê / boletim estourou**: o builder aborta com a altura
-  medida. **Aperte o teto de conteúdo/corte copy — nunca mexa no layout para
-  espremer.**
+- **Folha do dossiê estourou**: o builder mede a altura real de cada linha e
+  repagina (grow/shrink) até estabilizar; se uma folha continuar estourando, é
+  porque **uma linha sozinha** não cabe — aperte a copy daquele item, nunca o
+  layout. Página **não-packed** (carta, resumo, síntese, gráficos, fontes)
+  estourando = corte copy ou reposicione o card.
+- **Página pela metade**: o pack estabilizou? Confira o log (`pack estável`); se
+  uma seção ficou rala, o problema é o custo medido (bloco novo) — não force cap,
+  ajuste a copy do item que abre a seção.
+- **Sem redação (`narrative.json`)**: a abertura repete a leitura dos números e
+  as eras usam a consolidação determinística; não é falha, é degradação.
+  `municipalitySlug` diferente do snapshot = erro (regenere).
 - **Era sem pesquisa**: o builder sintetiza o arquivo da era com lacunas
   explícitas — não invente itens.
 - **Câmara 429/500**: `getJsonWithBackoff` + paginação com teto; falha degrada
@@ -279,9 +371,13 @@ continuação com o texto inteiro.
 - Intenção: `docs/plans/dossie-solla-cidade.md`; impl:
   `docs/plans/dossie-solla-cidade-impl.md`.
 - Designs hi-fi (fonte de verdade do port): `docs/plans/dossie-solla-cidade-ui-design.html`
-  e `docs/plans/dossie-solla-cidade-boletim-ui-design.html`.
+  e `docs/plans/dossie-solla-cidade-boletim-ui-design.html` — **desatualizados
+  desde a revisão de 2026-09-18** (carta, síntese, gráficos e folhas correntes
+  ainda não estão neles); um passe do `designer` precisa re-sincronizá-los.
 - Precedente: `.agents/skills/relatorio-cidade/SKILL.md`,
   `.opencode/agent/relatorio-cidade.md`, `scripts/build-city-report.mjs`.
-- Scripts: `scripts/build-dossie-solla-cidade.mjs`, `scripts/lib/dossie*.mjs`.
+- Scripts: `scripts/build-dossie-solla-cidade.mjs`,
+  `scripts/lib/dossiePack.mjs` (packing grow/shrink),
+  `scripts/lib/buildPdf.mjs` (probe/medição/emit), `scripts/lib/dossie*.mjs`.
 - Bio: `.opencode/skills/solla-comunicacao/referencia/perfil-e-posicoes.md`.
 - Runbook de extração read-only: `docs/ops/teqo-1313-deploy.md` §C163.

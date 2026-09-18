@@ -33,6 +33,9 @@ eras/instituições em paralelo.
   orquestrador (`scripts/extract-institution-snapshot.mjs` no homeserver,
   `scripts/build-dossie-solla-instituicao.mjs` local). Não faça `ssh`, `scp` nem
   render.
+- A redação de abertura e o parágrafo de consolidação por era são de **outra
+  etapa** (o redator) — não os escreva; seu produto é só o `research.json` da
+  sua era.
 - **Nunca** escreva na base de produção: não use `db:pull`/snapshot de banco.
 - **Nunca** commite o `research.json`/PDF/MD/snapshot (dado interno; repo público
   — artefato gitignored).

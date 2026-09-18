@@ -177,8 +177,9 @@ describe('renderDossierHtml — reformulated brief (no ellipsis)', () => {
   })
 
   it('paginates long news lists into continuation sheets', () => {
-    expect(html).toContain('data-page="noticias"')
-    expect(html).toContain('data-page="noticias-2"')
+    const packed = renderDossierHtml(briefReport, { pack: { news: [1] } })
+    expect(packed).toContain('data-page="noticias"')
+    expect(packed).toContain('data-page="noticias-2"')
   })
 })
 
@@ -200,7 +201,7 @@ describe('renderDossierHtml — era continuation sheets', () => {
     }),
   ])
   const report = buildDossierReport({ snapshot, research: manyActions, generatedAt })
-  const html = renderDossierHtml(report)
+  const html = renderDossierHtml(report, { pack: { 'era:C': [1] } })
 
   it('paginates era action cards into continuation sheets instead of dropping them', () => {
     expect(html).toContain('data-page="era-c"')

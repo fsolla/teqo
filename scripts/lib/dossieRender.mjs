@@ -5,7 +5,7 @@
  * shared escaping/source-token contract lives in `reportText.mjs`.
  */
 
-import { formatDateBr, formatDateTimeBr } from './cityReportFormat.mjs'
+import { formatDateBr, formatDateTimeBr, formatMoneyCompact } from './cityReportFormat.mjs'
 import { dossierPhaseLabel, dossierSphereBadgeClass, dossierSphereLabel } from './dossieBlocks.mjs'
 import { MUNICIPALITY_UNIT, isInstitutionUnit } from './dossieUnit.mjs'
 import { htmlEscape, moreItemsLabel, showingLabel, stripInlineSources } from './reportText.mjs'
@@ -67,54 +67,8 @@ const assetBox = (title, lines) =>
     .map((line) => htmlEscape(line))
     .join('<br />')}</p></div>`
 
-/** cover + trajetória + resumo + região + fontes (eras and gap sheets added separately). */
-const SHEET_COUNT_BASE = 5
+/** Total of sheets rendered so far — the shell's `pág. N/M` reads it. */
 const pageCount = (report) => report.meta.pageTotal
-
-/** Gaps are paginated, never truncated: 7 full-text rows per A4 sheet. */
-const GAPS_PER_PAGE = 7
-
-/** News are paginated, never truncated: 10 full-title rows per A4 sheet. */
-const NEWS_PER_PAGE = 10
-
-/** Era "Atuação registrada" cards: 2 on the first sheet, 6 per continuation sheet. */
-const ERA_ACTIONS_FIRST_SHEET = 2
-const ERA_ACTIONS_PER_SHEET = 6
-
-const chunkGaps = (gaps) => {
-  const list = Array.isArray(gaps) ? gaps : []
-  if (list.length === 0) return [[]]
-  const chunks = []
-  for (let index = 0; index < list.length; index += GAPS_PER_PAGE) {
-    chunks.push(list.slice(index, index + GAPS_PER_PAGE))
-  }
-  return chunks
-}
-
-const chunkNews = (news) => {
-  const list = Array.isArray(news) ? news : []
-  const chunks = []
-  for (let index = 0; index < list.length; index += NEWS_PER_PAGE) {
-    chunks.push(list.slice(index, index + NEWS_PER_PAGE))
-  }
-  return chunks
-}
-
-/**
- * Era action cards, paginated so no sourced fact is dropped: the first sheet
- * carries the design's 2 cards (with method + numbers + honors), and the rest
- * flow to continuation sheets.
- */
-const chunkEraActions = (era) => {
-  const actions = Array.isArray(era.actions) ? era.actions : []
-  const first = actions.slice(0, ERA_ACTIONS_FIRST_SHEET)
-  const rest = actions.slice(ERA_ACTIONS_FIRST_SHEET)
-  const chunks = [first]
-  for (let index = 0; index < rest.length; index += ERA_ACTIONS_PER_SHEET) {
-    chunks.push(rest.slice(index, index + ERA_ACTIONS_PER_SHEET))
-  }
-  return chunks
-}
 
 const timelineGrid = (rows) => `
     <div class="timeline-grid">
@@ -280,137 +234,7 @@ const renderSummary = (report, pageNo) => `
   ${sheetFooter(report, 'Resumo', pageNo)}
 </article>`
 
-const renderActionGrid = (actions) => `
-  <div class="action-grid">
-    ${actions
-      .map(
-        (action) => `<article class="panel">
-          <div class="action-head">${scopeBadge(action.sphere)}<span class="meta">${htmlEscape(action.year ?? '—')}</span></div>
-          <h4 class="action-title">${copyHtml(briefOr(action.brief, action.title))}</h4>
-          ${noteOr(action.brief, action.detail) ? `<p class="muted small">${copyHtml(noteOr(action.brief, action.detail))}</p>` : ''}
-          ${sourceLink(action.sourceUrl)}
-        </article>`,
-      )
-      .join('')}
-  </div>`
-
-const renderEraPage = (report, era, actions, index, pageNo) => {
-  const first = index === 0
-  const slug = era.id.toLowerCase()
-  const anchor = first ? `era-${slug}` : `era-${slug}-${index + 1}`
-  const subtitle = first
-    ? `${era.period} · ${era.subtitle}`
-    : `Atuação registrada · continuação ${index + 1}`
-  return `
-<article class="sheet" data-page="${anchor}" aria-label="${htmlEscape(era.label)}">
-  ${sheetHeader(report, era.label, subtitle, pageNo)}
-
-  ${
-    first
-      ? `<div class="era-method">
-    <div>
-      <p class="eyebrow">Recorte e método</p>
-      <p class="muted">${htmlEscape(era.method)}</p>
-    </div>
-    <aside class="aside-accent"><strong>Trilha de recuperação</strong><br />${htmlEscape(era.recovery)}</aside>
-  </div>
-
-  ${
-    era.numbers.items.length
-      ? `<section class="block">
-          <div class="block-head">
-            <div><p class="eyebrow">Números com fase</p><h3 class="section-title">Recursos e entregas quantificáveis</h3></div>
-          </div>
-          <table class="document-table">
-            <caption class="sr-only">Valores por ano, fase, esfera e fonte</caption>
-            <colgroup><col style="width:26%" /><col style="width:15%" /><col style="width:10%" /><col style="width:17%" /><col style="width:12%" /><col style="width:20%" /></colgroup>
-            <thead><tr><th>Objeto</th><th>Valor</th><th>Ano</th><th>Fase</th><th>Esfera</th><th>Fonte</th></tr></thead>
-            <tbody>${era.numbers.items
-              .map(
-                (row) => `<tr>
-                  <td>${htmlEscape(row.object)}</td>
-                  <td class="numeric">${valueCell(row.value, 'Valor a recuperar')}</td>
-                  <td class="numeric">${htmlEscape(row.year ?? '—')}</td>
-                  <td>${phaseBadge(row.phase)}</td>
-                  <td>${scopeBadge(row.sphere)}</td>
-                  <td>${sourceLink(row.sourceUrl)}${row.sphere !== 'municipio' ? '<br /><span class="meta">não somar à cidade</span>' : ''}</td>
-                </tr>`,
-              )
-              .join('')}</tbody>
-          </table>
-          ${era.numbers.remaining > 0 ? `<p class="muted small">${htmlEscape(moreItemsLabel(era.numbers.remaining, 'número com fase', 'números com fase'))} — a lista completa está no arquivo de pesquisa da era.</p>` : ''}
-          <p class="warning-text small strong">Não consolidar fases como se fossem equivalentes. Um valor empenhado não é um valor pago.</p>
-        </section>`
-      : ''
-  }`
-      : ''
-  }
-
-  ${
-    actions.length
-      ? `<section class="block">
-          <p class="eyebrow">Atuação registrada</p>
-          <h3 class="section-title">O que fez — item, alcance e lastro</h3>
-          ${renderActionGrid(actions)}
-          ${era.camaraActionsRemaining > 0 ? `<p class="muted small">${htmlEscape(moreItemsLabel(era.camaraActionsRemaining, 'ação da Câmara', 'ações da Câmara'))} — a coleta é limitada às páginas consultadas; o restante está no acervo da Câmara.</p>` : ''}
-        </section>`
-      : ''
-  }
-
-  ${
-    first && era.honors.length
-      ? `<section class="block honors">
-          <div class="panel">
-            <p class="eyebrow">Títulos, honrarias e vínculos locais</p>
-            <ul class="tight-list">${era.honors
-              .map(
-                (honor) =>
-                  `<li>${copyHtml(briefOr(honor.brief, honor.text))} ${sourceLink(honor.sourceUrl)}</li>`,
-              )
-              .join('')}</ul>
-          </div>
-          ${assetBox('NEEDS ASSET', ['reprodução do ato ou clipping', 'somente com origem e licença'])}
-        </section>`
-      : ''
-  }
-
-  ${sheetFooter(report, era.label, pageNo)}
-</article>`
-}
-
-const renderScopeLists = (report) => `
-  <section class="block">
-    <p class="eyebrow">Leitura lado a lado</p>
-    <h3 class="section-title">Duas listas, dois totais, nenhuma soma</h3>
-    <div class="scope-compare">
-      <div class="panel">
-        <div class="action-head">${scopeBadge('municipio')}<span class="meta strong">${report.region.municipal.total} ${report.region.municipal.total === 1 ? 'item' : 'itens'} com fonte</span></div>
-        <ul class="tight-list">${report.region.municipal.items
-          .map(
-            (item) =>
-              `<li>${copyHtml(item.brief?.title ?? item.answer)} ${sourceLink(item.sourceUrl)}</li>`,
-          )
-          .join(
-            '',
-          )}${report.region.municipal.items.length === 0 ? '<li class="muted">Nenhum item municipal com fonte.</li>' : ''}</ul>
-        ${report.region.municipal.remaining > 0 ? `<p class="muted small">${htmlEscape(moreItemsLabel(report.region.municipal.remaining, 'item municipal com fonte', 'itens municipais com fonte'))} — ver a tabela de evidências abaixo.</p>` : ''}
-      </div>
-      <div class="compare-mid" aria-hidden="true"><span>≠</span></div>
-      <div class="panel panel-region">
-        <div class="action-head">${scopeBadge('regiao', 'região / polo')}<span class="warning-text meta strong">SEM TOTAL COMBINADO · ${report.region.regional.total} ${report.region.regional.total === 1 ? 'item' : 'itens'}</span></div>
-        <ul class="tight-list">${report.region.regional.items
-          .map(
-            (item) =>
-              `<li>${copyHtml(item.brief?.title ?? item.answer)} ${sourceLink(item.sourceUrl)}</li>`,
-          )
-          .join(
-            '',
-          )}${report.region.regional.items.length === 0 ? '<li class="muted">Nenhum item regional com fonte.</li>' : ''}</ul>
-        ${report.region.regional.remaining > 0 ? `<p class="muted small">${htmlEscape(moreItemsLabel(report.region.regional.remaining, 'item regional com fonte', 'itens regionais com fonte'))} — ver a tabela de evidências abaixo.</p>` : ''}
-      </div>
-    </div>
-  </section>`
-
+/** Region cards (fixed sheet): counts per recorte, no combined total. */
 const renderRegion = (report, pageNo) => `
 <article class="sheet" data-page="regiao" aria-label="Recorte regional e polo">
   ${sheetHeader(report, 'Região / polo', 'Impacto compartilhado, apresentado fora da conta municipal', pageNo)}
@@ -433,31 +257,21 @@ const renderRegion = (report, pageNo) => `
       : ''
   }
 
-  ${renderScopeLists(report)}
-
-  ${
-    report.region.evidence.items.length
-      ? `<section class="block">
-          <div class="block-head"><div><p class="eyebrow">Itens regionais recuperados</p><h3 class="section-title">Evidência de alcance, sem apropriação local</h3></div>${scopeBadge('regiao')}</div>
-          <table class="document-table">
-            <caption class="sr-only">Itens do recorte regional com evidência e fonte</caption>
-            <colgroup><col style="width:30%" /><col style="width:15%" /><col style="width:34%" /><col style="width:21%" /></colgroup>
-            <thead><tr><th>Item</th><th>Esfera</th><th>Evidência de alcance</th><th>Fonte</th></tr></thead>
-            <tbody>${report.region.evidence.items
-              .map(
-                (item) => `<tr>
-                  <td>${copyHtml(briefOr(item.brief, item.item))}</td>
-                  <td>${scopeBadge(item.sphere)}</td>
-                  <td>${copyHtml(noteOr(item.brief, item.evidence))}</td>
-                  <td>${sourceLink(item.sourceUrl)}</td>
-                </tr>`,
-              )
-              .join('')}</tbody>
-          </table>
-          ${report.region.evidence.remaining > 0 ? `<p class="muted small">${htmlEscape(showingLabel(report.region.evidence.items.length, report.region.evidence.total, 'item regional recuperado', 'itens regionais recuperados'))} em evidência; o restante está no arquivo de pesquisa da era.</p>` : ''}
-        </section>`
-      : ''
-  }
+  <section class="block">
+    <p class="eyebrow">Leitura lado a lado</p>
+    <h3 class="section-title">Duas listas, dois totais, nenhuma soma</h3>
+    <div class="scope-compare">
+      <div class="panel">
+        <div class="action-head">${scopeBadge('municipio', null, report.unit)}<span class="meta strong">${report.region.municipal.total} ${report.region.municipal.total === 1 ? 'item' : 'itens'} com fonte · DIRETO</span></div>
+        <p class="meta">lista completa nas páginas seguintes</p>
+      </div>
+      <div class="compare-mid" aria-hidden="true"><span>≠</span></div>
+      <div class="panel panel-region">
+        <div class="action-head">${scopeBadge('regiao', 'região / polo', report.unit)}<span class="warning-text meta strong">SEM TOTAL COMBINADO · ${report.region.regional.total} ${report.region.regional.total === 1 ? 'item' : 'itens'}</span></div>
+        <p class="meta">lista completa nas páginas seguintes</p>
+      </div>
+    </div>
+  </section>
 
   ${
     report.region.hook || report.region.priorityGap
@@ -479,84 +293,57 @@ const renderRegion = (report, pageNo) => `
   ${sheetFooter(report, 'Região/polo · recortes não somáveis', pageNo)}
 </article>`
 
-const renderGapsPage = (report, chunk, index, pageNo) => {
-  const rows = chunk.length
-    ? chunk
-        .map(
-          (gap) => `<tr>
-              <td><strong>${htmlEscape(gap.label)}</strong></td>
-              <td>${htmlEscape(gap.reason)}</td>
-              <td>Não completar por inferência.</td>
-              <td>${htmlEscape(gap.nextStep)}</td>
-            </tr>`,
-        )
-        .join('')
-    : '<tr><td colspan="4" class="muted">Nenhuma lacuna declarada — confira a cobertura das eras.</td></tr>'
-  return `
-<article class="sheet" data-page="lacunas${index > 0 ? `-${index + 1}` : ''}" aria-label="Lacunas explícitas">
-  ${sheetHeader(report, 'Lacunas explícitas', `O que não foi encontrado${index > 0 ? ` (continuação ${index + 1})` : ''}`, pageNo)}
-  <section class="block">
-    <div class="block-head"><div><p class="eyebrow">O que não foi encontrado</p><h3 class="section-title">Lacunas explícitas</h3></div><p class="warning-text meta strong">Não completar por memória ou inferência</p></div>
-    <table class="document-table">
-      <caption class="sr-only">Tabela de lacunas explícitas e próximos passos de apuração</caption>
-      <colgroup><col style="width:26%" /><col style="width:30%" /><col style="width:24%" /><col style="width:20%" /></colgroup>
-      <thead><tr><th>Lacuna</th><th>Situação da busca</th><th>Limite editorial</th><th>Próximo passo</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-  </section>
-  ${sheetFooter(report, 'Lacunas explícitas · INSUMO INTERNO', pageNo)}
-</article>`
-}
-
-const renderNewsPage = (report, chunk, index, pageNo) => `
-<article class="sheet" data-page="noticias${index > 0 ? `-${index + 1}` : ''}" aria-label="Notícias e documentos consultados">
-  ${sheetHeader(report, 'Notícias e documentos consultados', `Fontes externas datadas${index > 0 ? ` (continuação ${index + 1})` : ''}`, pageNo)}
-  <section class="block">
-    <p class="eyebrow">Lista clicável</p>
-    <h3 class="section-title">Notícias e documentos consultados</h3>
-    <table class="document-table">
-      <caption class="sr-only">Fontes consultadas com largura fixa: data 12%, veículo 13%, título 47% e link 28%</caption>
-      <colgroup><col style="width:12%" /><col style="width:13%" /><col style="width:47%" /><col style="width:28%" /></colgroup>
-      <thead><tr><th>Data</th><th>Veículo</th><th>Título</th><th>Link</th></tr></thead>
-      <tbody>${chunk
-        .map(
-          (row) => `<tr>
-            <td class="numeric nowrap">${htmlEscape(formatShortDateBr(row.date))}</td>
-            <td>${htmlEscape(row.outlet)}</td>
-            <td>${htmlEscape(row.title)}</td>
-            <td>${sourceLink(row.url, '(fonte)')}</td>
+/** Full lists of the region recorte, uncapped: each one flows across sheets. */
+const regionListUnits = (report, list, probe) =>
+  list.items.map((item, index) => ({
+    layout: 'tr',
+    html: `<tr${unitAttrs(probe, index, 'tr')}>
+            <td>${copyHtml(briefOr(item.brief, item.answer))}</td>
+            <td>${scopeBadge(item.sphere, null, report.unit)}</td>
+            <td>${copyHtml(item.details ?? item.brief?.note ?? '—')}</td>
+            <td>${sourceLink(item.sourceUrl)}</td>
           </tr>`,
-        )
-        .join('')}</tbody>
-    </table>
-  </section>
-  ${sheetFooter(report, 'Notícias e documentos consultados · INSUMO INTERNO', pageNo)}
-</article>`
+  }))
 
-const renderSourcesPage = (report, pageNo) => `
-<article class="sheet" data-page="fontes" aria-label="Fontes e limites do dossiê">
-  ${sheetHeader(report, 'Fontes e limites', 'O que foi consultado e o que não se pode afirmar', pageNo)}
-
-  <section class="page1-grid">
-    <div class="panel"><p class="eyebrow">Limites de cobertura</p><ul class="tight-list">${report.limits.coverage
-      .map((item) => `<li>${htmlEscape(item)}</li>`)
-      .join('')}</ul></div>
-    <div class="panel"><p class="eyebrow">Regras para uso editorial</p><ul class="tight-list">${report.limits.editorial
-      .map((item) => `<li>${htmlEscape(item)}</li>`)
-      .join('')}</ul></div>
-  </section>
-
-  <aside class="rule-warning defeso">
+const renderRegionListSheet = ({ report, list, entry, probe, pageNo }) => `
+<article class="sheet" data-page="${entry.anchor}"${probe ? ` data-pack-section="${entry.key}"` : ''} aria-label="${htmlEscape(`Região / polo · ${list.label}`)}">
+  ${sheetHeader(
+    report,
+    `Região / polo · ${list.label}`,
+    entry.index === 0
+      ? `${list.total} ${list.total === 1 ? 'item' : 'itens'} com fonte`
+      : `continuação ${entry.index + 1} · ${list.total} ${list.total === 1 ? 'item' : 'itens'} com fonte`,
+    pageNo,
+  )}
+  ${
+    entry.index === 0
+      ? `<section class="rule-warning">
     ${WARNING_ICON}
     <div>
-      <p class="eyebrow warning-text">Nota de defeso eleitoral 2026</p>
-      <h3 class="rule-title">Insumo interno não é autorização para publicar.</h3>
-      <p class="muted">Publicidade institucional e propaganda eleitoral obedecem a regimes diferentes. Antes de adaptar qualquer trecho para peça externa, submeta texto, imagem, autoria, período e canal à revisão responsável. Este dossiê organiza evidências; não substitui análise jurídica nem editorial.</p>
+      <p class="rule-title">${htmlEscape(report.region.ruleTitle)}</p>
+      <p class="muted">Cada linha informa sua esfera; região e polo não são somados ao município.</p>
     </div>
-  </aside>
-
-  ${sheetFooter(report, 'Fontes e limites · INSUMO INTERNO', pageNo)}
+  </section>`
+      : ''
+  }
+  <section class="block">
+    <table class="document-table">
+      <caption class="sr-only">Itens do recorte com evidência de alcance e fonte</caption>
+      <colgroup><col style="width:30%" /><col style="width:15%" /><col style="width:34%" /><col style="width:21%" /></colgroup>
+      ${tableHead(['Item', 'Esfera', 'Evidência de alcance', 'Fonte'])}
+      <tbody>${entry.chunk.map((unit) => unit.html).join('')}</tbody>
+    </table>
+  </section>
+  ${sheetFooter(report, `Região/polo · ${list.label}`, pageNo)}
 </article>`
+
+const renderRegionListSheets = ({ report, key, anchor, list, pack, probe, nextPage }) => {
+  if (list.items.length === 0) return []
+  const units = regionListUnits(report, list, probe)
+  return packedSection({ key, anchor, units, pack, probe }).map((entry) =>
+    renderRegionListSheet({ report, list, entry, probe, pageNo: nextPage() }),
+  )
+}
 
 const PRINT_CSS = `
   * { box-sizing: border-box; }
@@ -664,29 +451,83 @@ const PRINT_CSS = `
   .cover-version { margin: 0; text-align: right; font-size: 8pt; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: #315c75; }
   .cover-accent { color: #315c75; }
   .defeso { margin-top: auto; }
+  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; margin-top: 3mm; }
+  .chart { display: block; width: 100%; height: auto; }
+  .chart-card { border: .25mm solid #cbd5dc; border-radius: .25rem; padding: 3mm; break-inside: avoid; }
+  .chart-title { margin: 0 0 2mm; font-size: 9.5pt; font-weight: 600; }
+  .chart-label { font-size: 7.4pt; fill: #435264; }
+  .chart-value { font-size: 7.6pt; fill: #1f2933; font-weight: 700; }
+  .chart-legend { margin: 1.5mm 0 0; font-size: 7.6pt; line-height: 1.3; color: #435264; }
+  .synthesis-lines { margin: 0; padding-left: 4.5mm; font-size: 9.5pt; line-height: 1.35; }
+  .synthesis-lines li { margin: 0 0 1.8mm; }
+  .synthesis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; margin-top: 3mm; }
+  .opening-paragraph { margin: 0 0 3.4mm; font-size: 11pt; line-height: 1.45; }
+  .opening-paragraph:last-child { margin-bottom: 0; }
+  .era-summary { margin-top: 3.4mm; border-left: 1.2mm solid #315c75; background: #f7fafb; padding: 2.6mm 3mm; }
+  .era-summary p { margin: 0; font-size: 10pt; line-height: 1.4; }
+  .value-list { list-style: none; margin: 0; padding: 0; }
+  .value-list li { display: grid; grid-template-columns: 1fr 20mm 18mm; gap: 1.6mm; align-items: center; padding: 0.9mm 0; border-bottom: .25mm solid #e3e9ec; font-size: 8.2pt; line-height: 1.22; }
+  .value-list li:last-child { border-bottom: 0; }
+  .value-list-bar { display: block; height: 2.2mm; background: #eef2f5; border-radius: 1mm; overflow: hidden; }
+  .value-list-bar span { display: block; height: 100%; background: #315c75; }
+  .value-list-value { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 `
 
-const renderMunicipalityDossierHtml = (report) => {
-  const gapChunks = chunkGaps(report.gaps)
-  const newsChunks = chunkNews(report.news)
-  const eraSheets = report.eras.map((era) => ({ era, chunks: chunkEraActions(era) }))
-  const eraSheetCount = eraSheets.reduce((sum, entry) => sum + entry.chunks.length, 0)
-  report.meta.pageTotal = SHEET_COUNT_BASE + eraSheetCount + gapChunks.length + newsChunks.length
-  let page = 0
-  const parts = []
-  parts.push(renderCover(report))
-  page += 1
-  parts.push(renderTrajectory(report, ++page))
-  parts.push(renderSummary(report, ++page))
-  for (const { era, chunks } of eraSheets) {
-    chunks.forEach((actions, index) =>
-      parts.push(renderEraPage(report, era, actions, index, ++page)),
+const renderMunicipalityDossierHtml = (report, { pack = null, probe = false } = {}) => {
+  const buildParts = () => {
+    let page = 0
+    const nextPage = () => ++page
+    const parts = []
+    parts.push(renderCover(report))
+    page += 1
+    const opening = renderUnitOpeningPage(report, page + 1)
+    if (opening) {
+      parts.push(opening)
+      page += 1
+    }
+    parts.push(renderTrajectory(report, nextPage()))
+    parts.push(renderSummary(report, nextPage()))
+    parts.push(renderUnitSynthesisPage(report, nextPage()))
+    parts.push(renderUnitChartsPage(report, nextPage()))
+    for (const era of report.eras) {
+      parts.push(...renderEraSheets({ report, era, pack, probe, nextPage, includeHonors: true }))
+    }
+    parts.push(renderRegion(report, nextPage()))
+    parts.push(
+      ...renderRegionListSheets({
+        report,
+        key: 'region:municipio',
+        anchor: 'regiao-municipio',
+        list: report.region.municipal,
+        pack,
+        probe,
+        nextPage,
+      }),
     )
+    parts.push(
+      ...renderRegionListSheets({
+        report,
+        key: 'region:regional',
+        anchor: 'regiao-regional',
+        list: report.region.regional,
+        pack,
+        probe,
+        nextPage,
+      }),
+    )
+    parts.push(...renderGapSheets({ report, pack, probe, nextPage }))
+    parts.push(...renderNewsSheets({ report, pack, probe, nextPage }))
+    parts.push(...renderAcervoSheets({ report, pack, probe, nextPage }))
+    parts.push(renderUnitSourcesPage(report, nextPage()))
+    return parts
   }
-  parts.push(renderRegion(report, ++page))
-  gapChunks.forEach((chunk, index) => parts.push(renderGapsPage(report, chunk, index, ++page)))
-  newsChunks.forEach((chunk, index) => parts.push(renderNewsPage(report, chunk, index, ++page)))
-  parts.push(renderSourcesPage(report, ++page))
+
+  // Two passes: the shell's `pág. N/M` needs the final sheet count, and the
+  // count only exists after the pack plan is applied.
+  report.meta.pageTotal = 0
+  let parts = buildParts()
+  report.meta.pageTotal = parts.length
+  parts = buildParts()
 
   return `<!doctype html>
 <html lang="pt-BR">
@@ -705,37 +546,28 @@ const mdEra = (era) => {
     '',
     `Trilha: ${era.recovery}`,
   ]
-  if (era.numbers.items.length) {
+  if (era.narrative || era.summary) {
+    lines.push('', `> ${era.narrative ?? era.summary}`)
+  }
+  if (listOf(era.numbers).length) {
     lines.push(
       '',
       '| Objeto | Valor | Ano | Fase | Esfera | Fonte |',
       '| --- | --- | --- | --- | --- | --- |',
     )
-    for (const row of era.numbers.items) {
+    for (const row of listOf(era.numbers)) {
       lines.push(
         `| ${row.object} | ${row.value ?? '—'} | ${row.year ?? '—'} | ${dossierPhaseLabel(row.phase)} | ${row.sphere} | ${row.sourceUrl ?? '—'} |`,
       )
     }
-    if (era.numbers.remaining > 0) {
-      lines.push(
-        '',
-        `_${moreItemsLabel(era.numbers.remaining, 'número com fase', 'números com fase')} não exibidos — ver as fontes._`,
-      )
-    }
   }
-  for (const action of era.actions) {
+  for (const action of listOf(era.actions)) {
     lines.push(
       '',
       `- **${stripInlineSources(action.title)}** (${action.sphere}${action.year ? ` · ${action.year}` : ''})${action.detail ? ` — ${stripInlineSources(action.detail)}` : ''} [fonte](${action.sourceUrl})`,
     )
   }
-  if (era.camaraActionsRemaining > 0) {
-    lines.push(
-      '',
-      `_${moreItemsLabel(era.camaraActionsRemaining, 'ação da Câmara', 'ações da Câmara')} — a coleta é limitada às páginas consultadas._`,
-    )
-  }
-  for (const honor of era.honors)
+  for (const honor of listOf(era.honors))
     lines.push('', `- Honraria: ${stripInlineSources(honor.text)} [fonte](${honor.sourceUrl})`)
   return lines.join('\n')
 }
@@ -749,9 +581,20 @@ const renderMunicipalityDossierMd = (report) => {
     '',
     '> INSUMO INTERNO — não circular, não publicar. Documento de trabalho.',
     '',
-    '## Linha do tempo da carreira',
-    '',
   ]
+  if (report.opening?.paragraphs?.length) {
+    lines.push(`## ${report.opening.title}`, '')
+    for (const paragraph of report.opening.paragraphs) lines.push(paragraph, '')
+    lines.push(
+      `_Redação de síntese sobre os pontos com fonte; ${
+        report.opening.authored
+          ? 'escrita a partir dos itens datados do dossiê'
+          : 'repetição da leitura dos números (sem redação autoral disponível)'
+      } — nada aqui acrescenta fato novo._`,
+      '',
+    )
+  }
+  lines.push('## Linha do tempo da carreira', '')
   for (const row of report.trajectory) {
     lines.push(
       `- **${row.period}** — ${row.role}${row.uncertain ? ` _(${row.uncertain})_` : ''} · ${row.recovery}`,
@@ -778,6 +621,29 @@ const renderMunicipalityDossierMd = (report) => {
     lines.push('', mdEra(era))
   }
 
+  if (report.synthesis?.lines?.length) {
+    lines.push('', '## Síntese do que foi localizado', '')
+    for (const line of report.synthesis.lines) lines.push(`- ${line}`)
+    lines.push('', '### Números por recorte', '')
+    lines.push('| Era | Município | Região/polo | Total |', '| --- | --- | --- | --- |')
+    for (const row of report.synthesis.byEraSphere) {
+      const countFor = (key) => row.segments.find((segment) => segment.key === key)?.count ?? 0
+      lines.push(
+        `| ${row.label} | ${countFor('municipio')} | ${countFor('regiao') + countFor('polo')} | ${row.segments.reduce((sum, segment) => sum + segment.count, 0)} |`,
+      )
+    }
+    if (report.synthesis.moneyByPhase.length) {
+      lines.push('', '### Recursos por fase', '')
+      for (const row of report.synthesis.moneyByPhase) {
+        lines.push(`- ${row.label}: ${row.count} · ${formatMoneyCompact(row.amount)}`)
+      }
+    }
+    if (report.synthesis.byArea.length) {
+      lines.push('', '### Temas com mais registros', '')
+      for (const row of report.synthesis.byArea) lines.push(`- ${row.key}: ${row.count}`)
+    }
+  }
+
   lines.push(
     '',
     '## Região / polo',
@@ -788,33 +654,28 @@ const renderMunicipalityDossierMd = (report) => {
   )
   lines.push('### Município', '')
   for (const item of report.region.municipal.items) {
-    lines.push(`- ${stripInlineSources(item.answer)} — [fonte](${item.sourceUrl})`)
-  }
-  if (report.region.municipal.remaining > 0) {
     lines.push(
-      `- _${moreItemsLabel(report.region.municipal.remaining, 'item municipal com fonte', 'itens municipais com fonte')} — ver a tabela de evidências._`,
+      `- **${stripInlineSources(briefOr(item.brief, item.answer))}** (${item.sphere})${item.details ? ` — ${stripInlineSources(item.details)}` : ''} [fonte](${item.sourceUrl})`,
     )
   }
   lines.push('', '### Região / polo (não somável)', '')
   for (const item of report.region.regional.items) {
-    lines.push(`- ${stripInlineSources(item.answer)} — [fonte](${item.sourceUrl})`)
-  }
-  if (report.region.regional.remaining > 0) {
     lines.push(
-      `- _${moreItemsLabel(report.region.regional.remaining, 'item regional com fonte', 'itens regionais com fonte')} — ver a tabela de evidências._`,
+      `- **${stripInlineSources(briefOr(item.brief, item.answer))}** (${item.sphere})${item.details ? ` — ${stripInlineSources(item.details)}` : ''} [fonte](${item.sourceUrl})`,
     )
   }
-  if (report.region.evidence.items.length) {
-    lines.push('', '| Item | Esfera | Evidência | Fonte |', '| --- | --- | --- | --- |')
-    for (const item of report.region.evidence.items) {
+
+  if (report.acervo?.items?.length) {
+    lines.push(
+      '',
+      '## Acervo interno (read-only)',
+      '',
+      `_Amostra de ${report.acervo.items.length} de ${report.acervo.recorte} falas do recorte, com link; o acervo completo fica na base Teqo. ${report.unit?.acervoNote ?? ''}_`,
+      '',
+    )
+    for (const row of report.acervo.items) {
       lines.push(
-        `| ${stripInlineSources(item.item)} | ${item.sphere} | ${stripInlineSources(item.evidence)} | ${item.sourceUrl} |`,
-      )
-    }
-    if (report.region.evidence.remaining > 0) {
-      lines.push(
-        '',
-        `_${showingLabel(report.region.evidence.items.length, report.region.evidence.total, 'item regional recuperado', 'itens regionais recuperados')} em evidência; o restante está no arquivo de pesquisa da era._`,
+        `- **${row.period}** — ${stripInlineSources(row.text)}${row.excerpt ? ` _(${stripInlineSources(row.excerpt)})_` : ''} [fonte](${row.sourceUrl})`,
       )
     }
   }
@@ -888,6 +749,52 @@ const INSTITUTION_PRINT_CSS = `
   .more-note { margin: 1.5mm 0 0; font-size: 8pt; font-weight: 600; color: #8a5a18; }
 `
 
+/**
+ * Anchor → pack-section key of the flowing sheets. The builder maps an
+ * overflowing sheet back to its pack entry and shrinks that chunk (fallback of
+ * the measured pack plan).
+ */
+const MUNICIPALITY_PACK_ANCHORS = {
+  'era-a': 'era:A',
+  'era-b': 'era:B',
+  'era-c': 'era:C',
+  'regiao-municipio': 'region:municipio',
+  'regiao-regional': 'region:regional',
+  lacunas: 'gaps',
+  noticias: 'news',
+  acervo: 'acervo',
+}
+
+export const INSTITUTION_PACK_ANCHORS = {
+  'era-a': 'era:A',
+  'era-b': 'era:B',
+  'era-c': 'era:C',
+  titulos: 'honors',
+  'abrangencia-instituicao': 'scope:instituicao',
+  'abrangencia-setor': 'scope:setor',
+  'abrangencia-rede': 'scope:rede',
+  lacunas: 'gaps',
+  noticias: 'news',
+  acervo: 'acervo',
+}
+
+/**
+ * Probe-only CSS: the packed sections measure their true content height, with
+ * no page clamp and no inter-row gaps (the packer adds the card-row gap back).
+ */
+const INSTITUTION_PROBE_CSS = `
+  .sheet { height: auto; min-height: 0; overflow: visible; }
+  [data-pack-section] .block,
+  [data-pack-section] .action-grid,
+  [data-pack-section] .document-table,
+  [data-pack-section] .tight-list,
+  [data-pack-section] .era-method,
+  [data-pack-section] .page1-grid { margin-top: 0; }
+  [data-pack-section] .action-grid,
+  [data-pack-section] .era-method { gap: 0; }
+  [data-pack-section] .tight-list li { margin-bottom: 0; }
+`
+
 const instHeader = (report, title, subtitle, pageNo) => `
   <header class="report-header">
     <div>
@@ -902,6 +809,17 @@ const instHeader = (report, title, subtitle, pageNo) => `
     </div>
   </header>`
 
+/** Shared sheets (síntese, gráficos, carta, eras correntes) use the unit's shell. */
+const unitHeader = (report, title, subtitle, pageNo) =>
+  isInstitutionUnit(report.unit)
+    ? instHeader(report, title, subtitle, pageNo)
+    : sheetHeader(report, title, subtitle, pageNo)
+
+const unitFooter = (report, left, pageNo) =>
+  isInstitutionUnit(report.unit)
+    ? instFooter(report, left, pageNo)
+    : sheetFooter(report, left, pageNo)
+
 const instFooter = (report, left, pageNo) => `
   <footer class="report-footer">
     <span>Dossiê institucional · ${htmlEscape(report.meta.subjectName)} · ${htmlEscape(left)}</span>
@@ -915,10 +833,163 @@ const CAPPED_NOUNS = {
   vínculos: 'vínculo',
 }
 
-const moreNote = (cappedList, noun = 'itens') => {
+const moreNote = (
+  cappedList,
+  noun = 'itens',
+  hint = 'com fonte fora desta página — nada foi descartado.',
+) => {
   if (cappedList.omitted <= 0) return ''
   const label = cappedList.omitted === 1 ? (CAPPED_NOUNS[noun] ?? noun) : noun
-  return `<p class="more-note">e mais ${cappedList.omitted} ${label} com fonte fora desta página — nada foi descartado.</p>`
+  return `<p class="more-note">e mais ${cappedList.omitted} ${label} ${htmlEscape(hint)}</p>`
+}
+
+/* ---------------------------------------------------------------- *
+ * Flowing sheets (C187): packed sections render as many sheets as  *
+ * the content needs — nothing is capped. In probe mode a section   *
+ * renders one sheet with every unit tagged (`data-pack-unit`), so  *
+ * the builder measures real heights and returns a pack plan.       *
+ * ---------------------------------------------------------------- */
+
+const splitUnits = (units, sizes) => {
+  const chunks = []
+  let offset = 0
+  for (const size of sizes) {
+    chunks.push(units.slice(offset, offset + size))
+    offset += size
+  }
+  if (offset < units.length) chunks.push(units.slice(offset))
+  return chunks
+}
+
+/** Sheet plans of one section: `[{ key, anchor, chunk, index }]`. */
+const packedSection = ({ key, anchor, units, pack, probe }) => {
+  const sizes = probe ? null : pack?.[key]
+  const chunks = sizes ? splitUnits(units, sizes) : [units]
+  return chunks.map((chunk, index) => ({
+    key,
+    chunk,
+    index,
+    anchor: index === 0 ? anchor : `${anchor}-${index + 1}`,
+  }))
+}
+
+const unitAttrs = (probe, index, layout) =>
+  probe ? ` data-pack-unit="${index}" data-pack-layout="${layout}"` : ''
+
+const groupUnits = (chunk) => {
+  const groups = []
+  for (const unit of chunk) {
+    const last = groups[groups.length - 1]
+    if (last && last.layout === unit.layout) last.units.push(unit)
+    else groups.push({ layout: unit.layout, units: [unit] })
+  }
+  return groups
+}
+
+const tableHead = (columns) =>
+  `<thead><tr>${columns.map((column) => `<th>${htmlEscape(column)}</th>`).join('')}</tr></thead>`
+
+/* ---------------------------------------------------------------- *
+ * Synthesis charts (inline SVG, print-safe): aggregations of the   *
+ * sourced rows only — never a new fact, never a combined total     *
+ * across abrangências.                                             *
+ * ---------------------------------------------------------------- */
+
+const CHART_COLORS = {
+  municipio: '#315c75',
+  regiao: '#9d8b64',
+  polo: '#8f819c',
+  instituicao: '#315c75',
+  setor: '#9d8b64',
+  rede: '#8f819c',
+  empenhado: '#6b4918',
+  liquidado: '#4a6b7c',
+  pago: '#285338',
+  autorizado: '#8a5a18',
+  restos: '#5b6470',
+  nao_informado: '#8b96a2',
+  default: '#315c75',
+}
+
+const barChart = ({ rows, width = 330, rowHeight = 19, labelWidth = 118 }) => {
+  const max = Math.max(1, ...rows.map((row) => row.count))
+  const barMax = width - labelWidth - 26
+  const height = rows.length * rowHeight + 4
+  return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img">
+    ${rows
+      .map((row, index) => {
+        const y = index * rowHeight + 3
+        const barWidth = Math.max(2, Math.round((row.count / max) * barMax))
+        return `<text x="0" y="${y + 11}" class="chart-label">${htmlEscape(row.label)}</text>
+        <rect x="${labelWidth}" y="${y + 2}" width="${barWidth}" height="${rowHeight - 7}" rx="1" fill="${row.color ?? CHART_COLORS.default}" />
+        <text x="${labelWidth + barWidth + 4}" y="${y + 11}" class="chart-value">${row.count}</text>`
+      })
+      .join('')}
+  </svg>`
+}
+
+/** HTML list with a proportional bar per row — long labels wrap, nothing overlaps. */
+const valueList = ({ rows, format }) => {
+  const max = Math.max(1, ...rows.map((row) => row.value))
+  return `<ul class="value-list">
+    ${rows
+      .map(
+        (row) => `<li>
+      <span>${htmlEscape(row.label)}</span>
+      <span class="value-list-bar"><span style="width:${Math.max(2, Math.round((row.value / max) * 100))}%"></span></span>
+      <span class="value-list-value">${htmlEscape(format(row))}</span>
+    </li>`,
+      )
+      .join('')}
+  </ul>`
+}
+
+/** Vertical columns with the value label above and the year label below. */
+const columnChart = ({ rows, width = 330, height = 132, format = (row) => String(row.count) }) => {
+  const max = Math.max(1, ...rows.map((row) => row.value ?? row.count))
+  const baseY = height - 18
+  const plotHeight = baseY - 16
+  const columnWidth = (width - 8) / Math.max(1, rows.length)
+  return `<svg class="chart" viewBox="0 0 ${width} ${height + 20}" role="img">
+    ${rows
+      .map((row, index) => {
+        const value = row.value ?? row.count
+        const barHeight = Math.max(2, Math.round((value / max) * plotHeight))
+        const x = 4 + index * columnWidth
+        const y = baseY - barHeight
+        return `<rect x="${x + 2}" y="${y}" width="${Math.max(2, columnWidth - 5)}" height="${barHeight}" fill="${row.color ?? CHART_COLORS.default}" />
+        <text x="${x + columnWidth / 2}" y="${y - 3}" class="chart-value" text-anchor="middle">${htmlEscape(format(row))}</text>
+        <text x="${x + columnWidth / 2}" y="${height + 12}" class="chart-label" text-anchor="middle">${htmlEscape(String(row.key).slice(-2))}</text>`
+      })
+      .join('')}
+  </svg>`
+}
+
+/** Vertical columns stacked by phase (money by year), total label above. */
+const stackedColumnChart = ({ rows, width = 330, height = 132, format }) => {
+  const max = Math.max(1, ...rows.map((row) => row.value))
+  const baseY = height - 18
+  const plotHeight = baseY - 16
+  const columnWidth = (width - 8) / Math.max(1, rows.length)
+  return `<svg class="chart" viewBox="0 0 ${width} ${height + 20}" role="img">
+    ${rows
+      .map((row, index) => {
+        const x = 4 + index * columnWidth
+        let y = baseY
+        const bars = row.segments
+          .map((segment) => {
+            const segmentHeight = Math.max(1, Math.round((segment.amount / max) * plotHeight))
+            y -= segmentHeight
+            return `<rect x="${x + 2}" y="${y}" width="${Math.max(2, columnWidth - 5)}" height="${segmentHeight}" fill="${CHART_COLORS[segment.key] ?? CHART_COLORS.default}" />`
+          })
+          .join('')
+        const top = baseY - Math.round((row.value / max) * plotHeight)
+        return `${bars}
+        <text x="${x + columnWidth / 2}" y="${top - 3}" class="chart-value" text-anchor="middle">${htmlEscape(format(row))}</text>
+        <text x="${x + columnWidth / 2}" y="${height + 12}" class="chart-label" text-anchor="middle">${htmlEscape(String(row.key).slice(-2))}</text>`
+      })
+      .join('')}
+  </svg>`
 }
 
 const identityBadgeList = (report) =>
@@ -995,7 +1066,7 @@ const renderInstitutionVincTimeline = (report) => {
         )
         .join('')}
     </div>
-    ${moreNote(timeline, 'vínculos')}`
+    ${moreNote(timeline, 'vínculos', 'com fonte — lista completa nas seções por era.')}`
 }
 
 const renderInstitutionDeliveries = (report) => {
@@ -1025,7 +1096,7 @@ const renderInstitutionDeliveries = (report) => {
         )
         .join('')}
     </div>
-    ${moreNote(deliveries, 'entregas')}
+    ${moreNote(deliveries, 'entregas', 'com fonte — lista completa nas seções por era e de abrangência.')}
     <p class="muted small strong">Guarda de leitura: autorizado ≠ empenhado ≠ liquidado ≠ pago. A fase acompanha cada valor.</p>
   </section>`
 }
@@ -1077,9 +1148,9 @@ const renderInstitutionSummary = (report, pageNo) => `
   ${instFooter(report, 'Resumo · INSUMO INTERNO', pageNo)}
 </article>`
 
-const renderInstitutionEraEmpty = (report, era, pageNo) => `
+const renderEraEmptySheet = (report, era, pageNo) => `
 <article class="sheet" data-page="era-${era.id.toLowerCase()}" aria-label="${htmlEscape(era.label)}">
-  ${instHeader(report, `${era.label} · Pesquisa sem evidência suficiente`, era.period, pageNo)}
+  ${unitHeader(report, `${era.label} · Pesquisa sem evidência suficiente`, era.period, pageNo)}
   <div class="era-method">
     <div>
       <p class="eyebrow">Recorte previsto</p>
@@ -1120,91 +1191,156 @@ const renderInstitutionEraEmpty = (report, era, pageNo) => `
       <p><strong>Não preencher a seção por memória, cargo provável ou texto de outra era.</strong> Registrar “${htmlEscape(era.label)}: evidência institucional não localizada nas fontes consultadas”.</p>
     </div>
   </aside>
-  ${instFooter(report, `${era.label} · lacuna explícita`, pageNo)}
+  ${unitFooter(report, `${era.label} · lacuna explícita`, pageNo)}
 </article>`
 
-const renderInstitutionEra = (report, era, pageNo) => {
-  if (era.empty) return renderInstitutionEraEmpty(report, era, pageNo)
-  return `
-<article class="sheet" data-page="era-${era.id.toLowerCase()}" aria-label="${htmlEscape(era.label)}">
-  ${instHeader(report, era.label, `${era.period} · ${era.subtitle}`, pageNo)}
+/** Accepts the institution's capped objects and the city's plain arrays. */
+const listOf = (value) => (Array.isArray(value) ? value : (value?.items ?? []))
 
-  <div class="era-method">
+/**
+ * Era units: value rows (table), action cards (2-col grid) and — city only, which
+ * keeps honors in the era sheet — the honor list items. Honors have their own
+ * sheet in the institution dossiê, so `includeHonors` stays false there.
+ */
+const eraUnits = (report, era, probe, { includeHonors = false } = {}) => {
+  const unit = report.unit ?? MUNICIPALITY_UNIT
+  const units = []
+  for (const row of listOf(era.numbers)) {
+    units.push({
+      layout: 'tr',
+      html: `<tr${unitAttrs(probe, units.length, 'tr')}>
+                  <td>${htmlEscape(row.object)}</td>
+                  <td class="numeric">${valueCell(row.value, 'Valor a recuperar')}</td>
+                  <td class="numeric">${htmlEscape(row.year ?? '—')}</td>
+                  <td>${phaseBadge(row.phase)}</td>
+                  <td>${scopeBadge(row.sphere, null, unit)}</td>
+                  <td>${sourceLink(row.sourceUrl)}${
+                    row.sphere !== unit.defaultSphere
+                      ? `<br /><span class="meta">${htmlEscape(unit.notSummedInline ?? 'não somar')}</span>`
+                      : ''
+                  }</td>
+                </tr>`,
+    })
+  }
+  for (const action of listOf(era.actions)) {
+    units.push({
+      layout: 'card',
+      html: `<article class="panel"${unitAttrs(probe, units.length, 'card')}>
+                  <div class="action-head">${scopeBadge(action.sphere, null, unit)}<span class="meta">${htmlEscape(action.year ?? '—')}</span></div>
+                  <h4 class="action-title">${copyHtml(briefOr(action.brief, action.title))}</h4>
+                  ${noteOr(action.brief, action.detail) ? `<p class="muted small">${copyHtml(noteOr(action.brief, action.detail))}</p>` : ''}
+                  ${sourceLink(action.sourceUrl)}
+                </article>`,
+    })
+  }
+  if (includeHonors) {
+    for (const honor of listOf(era.honors)) {
+      units.push({
+        layout: 'li',
+        html: `<li${unitAttrs(probe, units.length, 'li')}>${copyHtml(briefOr(honor.brief, honor.text))} ${sourceLink(honor.sourceUrl)}</li>`,
+      })
+    }
+  }
+  return units
+}
+
+const eraNumbersTable = (units, unit) => `
+          <table class="document-table">
+            <caption class="sr-only">Valores por ano, fase, esfera e fonte</caption>
+            <colgroup><col style="width:26%" /><col style="width:15%" /><col style="width:10%" /><col style="width:17%" /><col style="width:12%" /><col style="width:20%" /></colgroup>
+            ${tableHead(['Objeto', 'Valor', 'Ano', 'Fase', unit.sphereColumnLabel ?? 'Esfera', 'Fonte'])}
+            <tbody>${units.map((entry) => entry.html).join('')}</tbody>
+          </table>`
+
+const eraHonorsPanel = (units, unit) => `
+  <section class="block honors">
+    <div class="panel">
+      <p class="eyebrow">${htmlEscape(unit.honorsTitle ?? 'Títulos, honrarias e vínculos')}</p>
+      <ul class="tight-list">${units.map((entry) => entry.html).join('')}</ul>
+    </div>
+    ${assetBox('NEEDS ASSET', ['reprodução do ato ou clipping', 'somente com origem e licença'])}
+  </section>`
+
+const renderEraSheet = ({ report, era, entry, probe, pageNo }) => {
+  const unit = report.unit ?? MUNICIPALITY_UNIT
+  const body = groupUnits(entry.chunk)
+    .map((group) => {
+      if (group.layout === 'tr') {
+        return `<section class="block">
+          <div class="block-head">
+            <div><p class="eyebrow">Entregas localizadas</p><h3 class="section-title">${htmlEscape(unit.eraNumbersTitle ?? 'Objeto, valor, fase e alcance')}</h3></div>
+          </div>
+          ${eraNumbersTable(group.units, unit)}
+          <p class="warning-text small strong">Não consolidar fases como se fossem equivalentes. Um valor empenhado não é um valor pago.</p>
+        </section>`
+      }
+      if (group.layout === 'li') return eraHonorsPanel(group.units, unit)
+      return `<section class="block">
+          <p class="eyebrow">Atuação registrada</p>
+          <h3 class="section-title">${htmlEscape(unit.eraActionsTitle ?? 'Papéis com evidência visível')}</h3>
+          <div class="action-grid">${group.units.map((item) => item.html).join('')}</div>
+        </section>`
+    })
+    .join('')
+  return `
+<article class="sheet" data-page="${entry.anchor}"${probe ? ` data-pack-section="era:${era.id}"` : ''} aria-label="${htmlEscape(era.label)}">
+  ${unitHeader(report, era.label, entry.index === 0 ? `${era.period} · ${era.subtitle}` : `continuação ${entry.index + 1} · ${era.period}`, pageNo)}
+
+  ${
+    entry.index === 0
+      ? `<div class="era-method"${probe ? ' data-pack-fixed="method"' : ''}>
     <div>
       <p class="eyebrow">Recorte e método</p>
       <p class="muted">${htmlEscape(era.method)}</p>
     </div>
     <aside class="aside-accent"><strong>Trilha de recuperação</strong><br />${htmlEscape(era.recovery)}</aside>
-  </div>
-
-  ${
-    era.numbers.items.length
-      ? `<section class="block">
-          <div class="block-head">
-            <div><p class="eyebrow">Entregas localizadas</p><h3 class="section-title">Objeto, valor, fase e alcance</h3></div>
-          </div>
-          <table class="document-table">
-            <caption class="sr-only">Valores por ano, fase, abrangência e fonte</caption>
-            <colgroup><col style="width:26%" /><col style="width:14%" /><col style="width:9%" /><col style="width:16%" /><col style="width:15%" /><col style="width:20%" /></colgroup>
-            <thead><tr><th>Objeto</th><th>Valor</th><th>Ano</th><th>Fase</th><th>Abrangência</th><th>Fonte</th></tr></thead>
-            <tbody>${era.numbers.items
-              .map(
-                (row) => `<tr>
-                  <td>${htmlEscape(row.object)}</td>
-                  <td class="numeric">${valueCell(row.value, 'Valor a recuperar')}</td>
-                  <td class="numeric">${htmlEscape(row.year ?? '—')}</td>
-                  <td>${phaseBadge(row.phase)}</td>
-                  <td>${scopeBadge(row.sphere, null, report.unit)}</td>
-                  <td>${sourceLink(row.sourceUrl)}${row.sphere !== 'instituicao' ? '<br /><span class="meta">não somar à instituição</span>' : ''}</td>
-                </tr>`,
-              )
-              .join('')}</tbody>
-          </table>
-          <p class="warning-text small strong">Não consolidar fases como se fossem equivalentes. Um valor empenhado não é um valor pago.</p>
-        </section>`
+  </div>`
       : ''
   }
 
   ${
-    era.actions.items.length
-      ? `<section class="block">
-          <p class="eyebrow">Atuação / vínculo registrado</p>
-          <h3 class="section-title">Papéis com evidência visível</h3>
-          <div class="action-grid">
-            ${era.actions.items
-              .map(
-                (action) => `<article class="panel">
-                  <div class="action-head">${scopeBadge(action.sphere, null, report.unit)}<span class="meta">${htmlEscape(action.year ?? '—')}</span></div>
-                  <h4 class="action-title">${copyHtml(briefOr(action.brief, action.title))}</h4>
-                  ${noteOr(action.brief, action.detail) ? `<p class="muted small">${copyHtml(noteOr(action.brief, action.detail))}</p>` : ''}
-                  ${sourceLink(action.sourceUrl)}
-                </article>`,
-              )
-              .join('')}
-          </div>
-        </section>`
+    entry.index === 0 && (era.narrative || era.summary)
+      ? `<section class="era-summary"${probe ? ' data-pack-fixed="summary"' : ''}>
+    <p class="eyebrow">O que esta era entrega</p>
+    <p>${copyHtml(era.narrative ?? era.summary)}</p>
+  </section>`
       : ''
   }
 
-  ${
-    era.honors.length
-      ? `<section class="block honors">
-          <div class="panel">
-            <p class="eyebrow">Títulos, honrarias e vínculos institucionais</p>
-            <ul class="tight-list">${era.honors
-              .map(
-                (honor) =>
-                  `<li>${copyHtml(briefOr(honor.brief, honor.text))} ${sourceLink(honor.sourceUrl)}</li>`,
-              )
-              .join('')}</ul>
-          </div>
-          ${assetBox('NEEDS ASSET', ['reprodução do ato ou clipping', 'somente com origem e licença'])}
-        </section>`
-      : ''
-  }
+  ${body}
 
-  ${instFooter(report, era.label, pageNo)}
+  ${unitFooter(report, era.label, pageNo)}
 </article>`
+}
+
+const renderEraSheets = ({ report, era, pack, probe, nextPage, includeHonors = false }) => {
+  if (era.empty) return [renderEraEmptySheet(report, era, nextPage())]
+  const units = eraUnits(report, era, probe, { includeHonors })
+  return packedSection({
+    key: `era:${era.id}`,
+    anchor: `era-${era.id.toLowerCase()}`,
+    units,
+    pack,
+    probe,
+  }).map((entry) => renderEraSheet({ report, era, entry, probe, pageNo: nextPage() }))
+}
+
+/** Anchor map of the unit's packed sections (the builder inverts it). */
+export const dossierPackAnchors = (unit) =>
+  isInstitutionUnit(unit) ? INSTITUTION_PACK_ANCHORS : MUNICIPALITY_PACK_ANCHORS
+
+const INSTITUTION_SCOPE_WORDS = {
+  institution: 'instituicao',
+  sector: 'setor',
+  network: 'rede',
+}
+
+const listYearRange = (items) => {
+  const years = items
+    .map((item) => item.year)
+    .filter(Boolean)
+    .sort()
+  return years.length ? `${years[0]}–${years[years.length - 1]}` : null
 }
 
 const renderInstitutionScope = (report, pageNo) => {
@@ -1231,45 +1367,21 @@ const renderInstitutionScope = (report, pageNo) => {
           (list) => `<article class="scope-card ${cardClass[list.key] ?? ''}">
             <div class="action-head">${scopeBadge(list.sphere, null, report.unit)}<span class="meta strong">${list.sphere === 'instituicao' ? 'DIRETO' : 'NÃO SOMAR'}</span></div>
             <p class="scope-count tabular">${list.total} ${list.total === 1 ? 'item' : 'itens'}</p>
-            <p class="meta">com fonte</p>
+            <p class="meta">com fonte${listYearRange(list.items) ? ` · ${listYearRange(list.items)}` : ''} · lista completa nas páginas seguintes</p>
             <ul class="tight-list">${list.items
+              .slice(0, 2)
               .map(
                 (item) =>
-                  `<li>${copyHtml(item.brief?.title ?? item.answer)} ${sourceLink(item.sourceUrl)}</li>`,
+                  `<li>${copyHtml(briefOr(item.brief, item.title))} ${sourceLink(item.sourceUrl)}</li>`,
               )
               .join(
                 '',
               )}${list.items.length === 0 ? '<li class="muted">Nenhum item com fonte.</li>' : ''}</ul>
-            ${moreNote(list, 'itens')}
           </article>`,
         )
         .join('')}
     </div>
   </section>
-
-  ${
-    reach.evidence.items.length
-      ? `<section class="block">
-          <div class="block-head"><div><p class="eyebrow">Evidência de alcance</p><h3 class="section-title">Por que cada item está neste recorte</h3></div><p class="warning-text meta strong">Sem evidência, vira lacuna</p></div>
-          <table class="document-table">
-            <caption class="sr-only">Itens de setor e rede com evidência de alcance</caption>
-            <colgroup><col style="width:26%" /><col style="width:16%" /><col style="width:38%" /><col style="width:20%" /></colgroup>
-            <thead><tr><th>Item</th><th>Abrangência</th><th>Evidência de alcance</th><th>Fonte</th></tr></thead>
-            <tbody>${reach.evidence.items
-              .map(
-                (row) => `<tr>
-                  <td>${copyHtml(briefOr(row.brief, row.item))}</td>
-                  <td>${scopeBadge(row.sphere, null, report.unit)}</td>
-                  <td>${copyHtml(row.evidence)}</td>
-                  <td>${sourceLink(row.sourceUrl)}</td>
-                </tr>`,
-              )
-              .join('')}</tbody>
-          </table>
-          ${moreNote(reach.evidence, 'itens')}
-        </section>`
-      : ''
-  }
 
   ${
     reach.hook || reach.priorityGap
@@ -1292,44 +1404,114 @@ const renderInstitutionScope = (report, pageNo) => {
 </article>`
 }
 
+/** Sphere lists are uncapped: each one flows across as many sheets as it needs. */
+const institutionScopeUnits = (report, list, probe) =>
+  list.items.map((item, index) => ({
+    layout: 'tr',
+    html: `<tr${unitAttrs(probe, index, 'tr')}>
+            <td>${copyHtml(briefOr(item.brief, item.title))}</td>
+            <td>${scopeBadge(item.sphere, null, report.unit)}</td>
+            <td>${copyHtml(noteOr(item.brief, item.evidence))}</td>
+            <td>${sourceLink(item.sourceUrl)}</td>
+          </tr>`,
+  }))
+
+const renderInstitutionScopeListSheet = ({ report, list, entry, probe, pageNo }) => {
+  const word = INSTITUTION_SCOPE_WORDS[list.key] ?? list.key
+  const notSummable = list.sphere !== 'instituicao'
+  return `
+<article class="sheet" data-page="${entry.anchor}"${probe ? ` data-pack-section="scope:${word}"` : ''} aria-label="${htmlEscape(`Abrangência · ${list.label}`)}">
+  ${instHeader(
+    report,
+    `Abrangência · ${list.label}`,
+    entry.index === 0
+      ? `${list.total} ${list.total === 1 ? 'item' : 'itens'} com fonte · ${notSummable ? 'não somar à instituição' : 'recorte direto'}`
+      : `continuação ${entry.index + 1} · ${list.total} ${list.total === 1 ? 'item' : 'itens'} com fonte`,
+    pageNo,
+  )}
+  ${
+    entry.index === 0
+      ? `<section class="rule-warning">
+    ${WARNING_ICON}
+    <div>
+      <p class="rule-title">${htmlEscape(report.reach.ruleTitle)}</p>
+      <p class="muted">Cada linha informa sua abrangência; setor e rede não são somados à instituição.</p>
+    </div>
+  </section>`
+      : ''
+  }
+  <section class="block">
+    <table class="document-table">
+      <caption class="sr-only">Itens do recorte com evidência de alcance e fonte</caption>
+      <colgroup><col style="width:26%" /><col style="width:14%" /><col style="width:40%" /><col style="width:20%" /></colgroup>
+      ${tableHead(['Item', 'Abrangência', 'Evidência de alcance', 'Fonte'])}
+      <tbody>${entry.chunk.map((unit) => unit.html).join('')}</tbody>
+    </table>
+  </section>
+  ${instFooter(report, `Abrangência · ${list.label}`, pageNo)}
+</article>`
+}
+
+const renderInstitutionScopeListSheets = ({ report, list, pack, probe, nextPage }) => {
+  if (list.items.length === 0) return []
+  const word = INSTITUTION_SCOPE_WORDS[list.key] ?? list.key
+  const units = institutionScopeUnits(report, list, probe)
+  return packedSection({
+    key: `scope:${word}`,
+    anchor: `abrangencia-${word}`,
+    units,
+    pack,
+    probe,
+  }).map((entry) =>
+    renderInstitutionScopeListSheet({ report, list, entry, probe, pageNo: nextPage() }),
+  )
+}
+
 const honorDate = (honor) => {
   if (honor.date) return formatDateBr(honor.date)
   if (honor.year) return String(honor.year)
   return '—'
 }
 
-const institutionHonors = (report) => report.eras.find((era) => era.id === 'C')?.honors ?? []
+const institutionHonors = (report) => report.eras.find((era) => era.id === 'C')?.honors?.items ?? []
 
-const hasInstitutionHonors = (report) => institutionHonors(report).length > 0
+const institutionHonorUnits = (probe) =>
+  institutionHonors(probe.report).map((honor, index) => ({
+    layout: 'tr',
+    html: `<tr${unitAttrs(probe.probe, index, 'tr')}>
+            <td class="numeric">${htmlEscape(honorDate(honor))}</td>
+            <td><span class="identity-badge">reconhecimento</span></td>
+            <td><strong>${copyHtml(briefOr(honor.brief, honor.text))}</strong>${noteOr(honor.brief, honor.detail) ? `<br /><span class="meta">${copyHtml(noteOr(honor.brief, honor.detail))}</span>` : ''}</td>
+            <td>${sourceLink(honor.sourceUrl)}</td>
+          </tr>`,
+  }))
 
-const renderInstitutionHonors = (report, pageNo) => {
-  const honors = institutionHonors(report)
-  if (honors.length === 0) return ''
+const renderInstitutionHonorSheet = ({ report, entry, probe, pageNo }) => {
   const gap = report.gaps?.[0] ?? null
   const hook = report.reach.hook ?? report.page1.hooks.items[0] ?? null
   return `
-<article class="sheet" data-page="titulos" aria-label="Títulos, honrarias e vínculos institucionais">
-  ${instHeader(report, 'Títulos, honrarias e vínculos', 'Reconhecimento não substitui entrega; vínculo não prova resultado', pageNo)}
+<article class="sheet" data-page="${entry.anchor}"${probe ? ' data-pack-section="honors"' : ''} aria-label="Títulos, honrarias e vínculos institucionais">
+  ${instHeader(
+    report,
+    'Títulos, honrarias e vínculos',
+    entry.index === 0
+      ? 'Reconhecimento não substitui entrega; vínculo não prova resultado'
+      : `continuação ${entry.index + 1}`,
+    pageNo,
+  )}
   <section class="block">
     <p class="eyebrow">Registros confirmados</p>
     <h3 class="section-title">Data, natureza e fonte primária</h3>
     <table class="document-table">
       <caption class="sr-only">Títulos, honrarias e vínculos por data e fonte</caption>
       <colgroup><col style="width:14%" /><col style="width:20%" /><col style="width:35%" /><col style="width:31%" /></colgroup>
-      <thead><tr><th>Data</th><th>Natureza</th><th>Registro</th><th>Fonte</th></tr></thead>
-      <tbody>${honors
-        .map(
-          (honor) => `<tr>
-            <td class="numeric">${htmlEscape(honorDate(honor))}</td>
-            <td><span class="identity-badge">reconhecimento</span></td>
-            <td><strong>${copyHtml(briefOr(honor.brief, honor.text))}</strong>${noteOr(honor.brief, honor.detail) ? `<br /><span class="meta">${copyHtml(noteOr(honor.brief, honor.detail))}</span>` : ''}</td>
-            <td>${sourceLink(honor.sourceUrl)}</td>
-          </tr>`,
-        )
-        .join('')}</tbody>
+      ${tableHead(['Data', 'Natureza', 'Registro', 'Fonte'])}
+      <tbody>${entry.chunk.map((unit) => unit.html).join('')}</tbody>
     </table>
   </section>
-  <section class="block honors">
+  ${
+    entry.index === 0
+      ? `<section class="block honors">
     <div>
       <p class="eyebrow">Como ler</p>
       <div class="action-grid">
@@ -1354,80 +1536,165 @@ const renderInstitutionHonors = (report, pageNo) => {
       <p class="eyebrow warning-text">Pendência documental</p>
       <p>${gap ? `${htmlEscape(gap.label)}: ${htmlEscape(gap.reason)}` : 'Nenhuma pendência declarada para os registros desta página.'}</p>
     </div>
-  </section>
+  </section>`
+      : ''
+  }
   ${instFooter(report, 'Títulos e vínculos · INSUMO INTERNO', pageNo)}
 </article>`
 }
 
-const renderInstitutionGapsPage = (report, chunk, index, pageNo) => {
-  const rows = chunk.length
-    ? chunk
-        .map(
-          (gap) => `<tr>
+const renderInstitutionHonorSheets = ({ report, pack, probe, nextPage }) => {
+  const units = institutionHonorUnits({ report, probe })
+  if (units.length === 0) return []
+  return packedSection({ key: 'honors', anchor: 'titulos', units, pack, probe }).map((entry) =>
+    renderInstitutionHonorSheet({ report, entry, probe, pageNo: nextPage() }),
+  )
+}
+
+/**
+ * Gaps and news are long full-text tables: packed in continuation sheets, so
+ * the sources sheet keeps only the acervo, limits and defeso.
+ */
+const gapUnits = (report, probe) =>
+  report.gaps.map((gap, index) => ({
+    layout: 'tr',
+    html: `<tr${unitAttrs(probe, index, 'tr')}>
               <td><strong>${htmlEscape(gap.label)}</strong></td>
               <td>${htmlEscape(gap.reason)}</td>
               <td>Não completar por inferência.</td>
               <td>${htmlEscape(gap.nextStep)}</td>
             </tr>`,
-        )
-        .join('')
-    : '<tr><td colspan="4" class="muted">Nenhuma lacuna declarada — confira a cobertura das eras.</td></tr>'
-  return `
-<article class="sheet" data-page="lacunas${index > 0 ? `-${index + 1}` : ''}" aria-label="Lacunas explícitas">
-  ${instHeader(report, 'Lacunas explícitas', `O que não foi encontrado${index > 0 ? ` (continuação ${index + 1})` : ''}`, pageNo)}
+  }))
+
+const renderGapSheet = ({ report, entry, probe, pageNo }) => `
+<article class="sheet" data-page="${entry.anchor}"${probe ? ' data-pack-section="gaps"' : ''} aria-label="Lacunas explícitas">
+  ${unitHeader(report, 'Lacunas explícitas', `O que não foi encontrado${entry.index > 0 ? ` · continuação ${entry.index + 1}` : ''}`, pageNo)}
   <section class="block">
     <div class="block-head"><div><p class="eyebrow">O que não foi encontrado</p><h3 class="section-title">Lacunas explícitas</h3></div><p class="warning-text meta strong">Não completar por memória ou inferência</p></div>
     <table class="document-table">
       <caption class="sr-only">Tabela de lacunas explícitas e próximos passos de apuração</caption>
       <colgroup><col style="width:26%" /><col style="width:30%" /><col style="width:24%" /><col style="width:20%" /></colgroup>
-      <thead><tr><th>Lacuna</th><th>Situação da busca</th><th>Limite editorial</th><th>Próximo passo</th></tr></thead>
-      <tbody>${rows}</tbody>
+      ${tableHead(['Lacuna', 'Situação da busca', 'Limite editorial', 'Próximo passo'])}
+      <tbody>${
+        entry.chunk.length
+          ? entry.chunk.map((unit) => unit.html).join('')
+          : '<tr><td colspan="4" class="muted">Nenhuma lacuna declarada — confira a cobertura das eras.</td></tr>'
+      }</tbody>
     </table>
   </section>
-  ${instFooter(report, 'Lacunas explícitas · INSUMO INTERNO', pageNo)}
+  ${unitFooter(report, 'Lacunas explícitas · INSUMO INTERNO', pageNo)}
 </article>`
+
+const renderGapSheets = ({ report, pack, probe, nextPage }) => {
+  const units = gapUnits(report, probe)
+  if (units.length === 0) {
+    return [
+      renderGapSheet({
+        report,
+        entry: { anchor: 'lacunas', chunk: [], index: 0 },
+        probe: false,
+        pageNo: nextPage(),
+      }),
+    ]
+  }
+  return packedSection({ key: 'gaps', anchor: 'lacunas', units, pack, probe }).map((entry) =>
+    renderGapSheet({ report, entry, probe, pageNo: nextPage() }),
+  )
 }
 
-const renderInstitutionSourcesPage = (report, pageNo) => `
+const newsUnits = (report, probe) =>
+  report.news.map((row, index) => ({
+    layout: 'tr',
+    html: `<tr${unitAttrs(probe, index, 'tr')}>
+            <td class="numeric nowrap">${htmlEscape(formatShortDateBr(row.date))}</td>
+            <td>${htmlEscape(row.outlet)}</td>
+            <td>${htmlEscape(row.title)}</td>
+            <td>${sourceLink(row.url, '(fonte)')}</td>
+          </tr>`,
+  }))
+
+const renderNewsSheet = ({ report, entry, probe, pageNo }) => `
+<article class="sheet" data-page="${entry.anchor}"${probe ? ' data-pack-section="news"' : ''} aria-label="Notícias e documentos consultados">
+  ${unitHeader(report, 'Notícias e documentos consultados', `Fontes externas datadas${entry.index > 0 ? ` · continuação ${entry.index + 1}` : ''}`, pageNo)}
+  <section class="block">
+    <p class="eyebrow">Lista clicável</p>
+    <h3 class="section-title">Notícias e documentos consultados</h3>
+    <table class="document-table">
+      <caption class="sr-only">Fontes consultadas: data 12%, veículo 13%, título 47% e link 28%</caption>
+      <colgroup><col style="width:12%" /><col style="width:13%" /><col style="width:47%" /><col style="width:28%" /></colgroup>
+      ${tableHead(['Data', 'Veículo', 'Título', 'Link'])}
+      <tbody>${entry.chunk.map((unit) => unit.html).join('')}</tbody>
+    </table>
+  </section>
+  ${unitFooter(report, 'Notícias e documentos · INSUMO INTERNO', pageNo)}
+</article>`
+
+const renderNewsSheets = ({ report, pack, probe, nextPage }) => {
+  const units = newsUnits(report, probe)
+  if (units.length === 0) return []
+  return packedSection({ key: 'news', anchor: 'noticias', units, pack, probe }).map((entry) =>
+    renderNewsSheet({ report, entry, probe, pageNo: nextPage() }),
+  )
+}
+
+/** Acervo sample (source panel): declared sample with the total carried by the header. */
+const acervoUnits = (report, probe) =>
+  report.acervo.items.map((row, index) => ({
+    layout: 'tr',
+    html: `<li${unitAttrs(probe, index, 'tr')}><strong>${htmlEscape(row.period)}</strong> — ${copyHtml(row.text)} ${sourceLink(row.sourceUrl)}</li>`,
+  }))
+
+const renderAcervoSheet = ({ report, entry, probe, pageNo, isLast }) => `
+<article class="sheet" data-page="${entry.anchor}"${probe ? ' data-pack-section="acervo"' : ''} aria-label="Acervo interno de falas (amostra)">
+  ${unitHeader(
+    report,
+    'Acervo interno de falas (amostra)',
+    entry.index === 0
+      ? `Base Teqo 2011+ · ${report.acervo.items.length} de ${report.acervo.recorte} falas do recorte, com link · ${htmlEscape(report.unit.acervoNote ?? '')}`
+      : `continuação ${entry.index + 1}`,
+    pageNo,
+  )}
+  <section class="block">
+    <p class="eyebrow">Falas do mandato sobre o recorte</p>
+    <h3 class="section-title">Amostra com link direto</h3>
+    <ul class="tight-list">${entry.chunk.map((unit) => unit.html).join('')}</ul>
+    ${
+      isLast
+        ? `<p class="more-note">Amostra das falas mais recentes do recorte (${report.acervo.items.length} de ${report.acervo.recorte}); o acervo completo fica na base Teqo. ${htmlEscape(report.unit.acervoNote ?? '')}</p>`
+        : ''
+    }
+  </section>
+  ${unitFooter(report, 'Acervo interno · amostra', pageNo)}
+</article>`
+
+const renderAcervoSheets = ({ report, pack, probe, nextPage }) => {
+  const units = acervoUnits(report, probe)
+  if (units.length === 0) return []
+  const entries = packedSection({ key: 'acervo', anchor: 'acervo', units, pack, probe })
+  return entries.map((entry, index) =>
+    renderAcervoSheet({
+      report,
+      entry,
+      probe,
+      pageNo: nextPage(),
+      isLast: index === entries.length - 1,
+    }),
+  )
+}
+
+const renderUnitSourcesPage = (report, pageNo) => `
 <article class="sheet" data-page="fontes" aria-label="Fontes e limites do dossiê institucional">
-  ${instHeader(report, 'Fontes e limites', 'O que foi consultado e o que não se pode afirmar', pageNo)}
+  ${unitHeader(report, 'Fontes e limites', 'O que foi consultado e o que não se pode afirmar', pageNo)}
 
   ${
-    report.news.length
-      ? `<section class="block">
-          <p class="eyebrow">Lista clicável</p>
-          <h3 class="section-title">Notícias e documentos consultados</h3>
-          <table class="document-table">
-            <caption class="sr-only">Fontes consultadas: data 12%, veículo 13%, título 47% e link 28%</caption>
-            <colgroup><col style="width:12%" /><col style="width:13%" /><col style="width:47%" /><col style="width:28%" /></colgroup>
-            <thead><tr><th>Data</th><th>Veículo</th><th>Título</th><th>Link</th></tr></thead>
-            <tbody>${report.news
-              .map(
-                (row) => `<tr>
-                  <td class="numeric nowrap">${htmlEscape(formatShortDateBr(row.date))}</td>
-                  <td>${htmlEscape(row.outlet)}</td>
-                  <td>${htmlEscape(row.title)}</td>
-                  <td>${sourceLink(row.url, '(fonte)')}</td>
-                </tr>`,
-              )
-              .join('')}</tbody>
-          </table>
-        </section>`
-      : ''
-  }
-
-  ${
-    report.acervo?.items?.length
-      ? `<section class="block">
-          <div class="block-head"><div><p class="eyebrow">Acervo interno (read-only)</p><h3 class="section-title">Falas do mandato sobre o recorte</h3></div><p class="meta">Base Teqo, 2011+</p></div>
-          <ul class="tight-list">${report.acervo.items
-            .map(
-              (row) =>
-                `<li><strong>${htmlEscape(row.period)}</strong> — ${copyHtml(row.text)}${row.excerpt ? ` <span class="muted small">(${copyHtml(row.excerpt)})</span>` : ''} ${sourceLink(row.sourceUrl)}</li>`,
-            )
-            .join('')}</ul>
-          ${moreNote(report.acervo, 'itens')}
-        </section>`
+    report.acervo?.recorte
+      ? `<section class="rule-warning">
+    ${WARNING_ICON}
+    <div>
+      <p class="rule-title">Acervo interno: ${report.acervo.recorte} falas no recorte.</p>
+      <p class="muted">A amostra com link (${report.acervo.items.length} de ${report.acervo.recorte}) está na seção anterior; o acervo completo fica na base Teqo. ${htmlEscape(report.unit.acervoNote ?? '')}</p>
+    </div>
+  </section>`
       : ''
   }
 
@@ -1449,35 +1716,210 @@ const renderInstitutionSourcesPage = (report, pageNo) => `
     </div>
   </aside>
 
-  ${instFooter(report, 'Fontes e limites · INSUMO INTERNO', pageNo)}
+  ${unitFooter(report, 'Fontes e limites · INSUMO INTERNO', pageNo)}
 </article>`
 
-const renderInstitutionDossierHtml = (report) => {
-  const gapChunks = chunkGaps(report.gaps)
-  report.meta.pageTotal =
-    1 + // capa
-    1 + // resumo
-    report.eras.length +
-    1 + // abrangência
-    (hasInstitutionHonors(report) ? 1 : 0) +
-    gapChunks.length +
-    1 // fontes
-  let page = 0
-  const parts = []
-  parts.push(renderInstitutionCover(report))
-  page += 1
-  parts.push(renderInstitutionSummary(report, ++page))
-  for (const era of report.eras) parts.push(renderInstitutionEra(report, era, ++page))
-  parts.push(renderInstitutionScope(report, ++page))
-  if (hasInstitutionHonors(report)) parts.push(renderInstitutionHonors(report, ++page))
-  gapChunks.forEach((chunk, index) =>
-    parts.push(renderInstitutionGapsPage(report, chunk, index, ++page)),
+const renderUnitSynthesisPage = (report, pageNo) => `
+<article class="sheet" data-page="sintese" aria-label="Síntese da atuação institucional">
+  ${unitHeader(report, 'Síntese do que foi localizado', 'Leitura dos números com lastro — contagens por recorte, nunca soma entre eles', pageNo)}
+  <section class="block">
+    <p class="eyebrow">Leitura rápida</p>
+    <h3 class="section-title">O que os pontos com fonte mostram</h3>
+    <ul class="synthesis-lines">${report.synthesis.lines.map((line) => `<li>${htmlEscape(line)}</li>`).join('')}</ul>
+  </section>
+  <section class="synthesis-grid">
+    <div class="panel">
+      <p class="eyebrow">Cobertura das eras</p>
+      <ul class="tight-list">${report.eras
+        .map(
+          (era) =>
+            `<li><strong>${htmlEscape(era.label)}</strong> — ${
+              era.empty
+                ? 'sem evidência suficiente (lacuna explícita)'
+                : `${listOf(era.numbers).length + listOf(era.actions).length} pontos nesta seção`
+            }</li>`,
+        )
+        .join('')}</ul>
+    </div>
+    <div class="panel panel-warning">
+      <p class="eyebrow warning-text">Guardas de leitura</p>
+      <ul class="tight-list">
+        <li>Contagens por recorte: setor e rede nunca somados à instituição.</li>
+        <li>Cada valor mantém a fase — empenho ≠ pagamento.</li>
+        <li>Sem fonte, não publica: ausência vira lacuna explícita.</li>
+      </ul>
+    </div>
+  </section>
+
+  ${
+    report.synthesis.moneyByPhase.length
+      ? `<section class="block">
+    <p class="eyebrow">Recursos por fase</p>
+    <h3 class="section-title">Valores localizados, sem consolidar fases</h3>
+    <table class="document-table">
+      <caption class="sr-only">Valores localizados por fase de execução</caption>
+      <colgroup><col style="width:40%" /><col style="width:20%" /><col style="width:40%" /></colgroup>
+      ${tableHead(['Fase', 'Itens', 'Valor'])}
+      <tbody>${report.synthesis.moneyByPhase
+        .map(
+          (row) =>
+            `<tr><td>${phaseBadge(row.key)}</td><td class="numeric">${row.count}</td><td class="numeric">${htmlEscape(formatMoneyCompact(row.amount))}</td></tr>`,
+        )
+        .join('')}</tbody>
+    </table>
+    <p class="warning-text small strong">Soma por fase apenas; fases não são equivalentes entre si.</p>
+  </section>`
+      : ''
+  }
+  ${unitFooter(report, 'Síntese · INSUMO INTERNO', pageNo)}
+</article>`
+
+const renderUnitChartsPage = (report, pageNo) => {
+  const synthesis = report.synthesis
+  const executedPhases = new Set(['pago', 'liquidado', 'autorizado', 'empenhado'])
+  const executedYears = synthesis.moneyByYear.filter((row) =>
+    row.segments.some((segment) => executedPhases.has(segment.key)),
   )
-  parts.push(renderInstitutionSourcesPage(report, ++page))
+  return `
+<article class="sheet" data-page="graficos" aria-label="Gráficos consolidados da atuação institucional">
+  ${unitHeader(report, 'Gráficos consolidados', 'Como os recursos e as entregas chegaram à instituição — valores sempre com a fase', pageNo)}
+  <div class="chart-grid">
+    <div class="chart-card">
+      <p class="chart-title">Recursos com execução por ano (R$)</p>
+      ${
+        executedYears.length
+          ? stackedColumnChart({
+              rows: executedYears.map((row) => ({ ...row, value: row.amount })),
+              height: 136,
+              format: (row) => formatMoneyCompact(row.value),
+            })
+          : '<p class="muted small">Nenhum valor com fase de execução informada.</p>'
+      }
+      <p class="chart-legend">verde: pago/liquidado · âmbar: autorizado/empenhado — empenho não é pagamento.</p>
+    </div>
+    <div class="chart-card">
+      <p class="chart-title">Propostas e articulações sem fase informada (R$)</p>
+      ${
+        synthesis.moneyProposals.length
+          ? valueList({
+              rows: synthesis.moneyProposals.map((row) => ({
+                label: `${row.year ?? '—'} · ${row.label}`,
+                value: row.amount,
+              })),
+              format: (row) => formatMoneyCompact(row.value),
+            })
+          : '<p class="muted small">Nenhuma proposta sem fase informada.</p>'
+      }
+      <p class="chart-legend">propostas e convênios citados nas fontes, sem fase de execução declarada.</p>
+    </div>
+    <div class="chart-card">
+      <p class="chart-title">Abrangência: ${report.unit.spheres
+        .map((sphere) => htmlEscape(report.unit.sphereLabels[sphere]))
+        .join(' × ')}</p>
+      ${barChart({
+        rows: synthesis.bySphere.map((row) => ({
+          label: row.label,
+          count: row.count,
+          color: CHART_COLORS[row.key],
+        })),
+      })}
+      <p class="chart-legend">${htmlEscape(report.unit.sumGuardNote ?? '')}</p>
+    </div>
+    <div class="chart-card">
+      <p class="chart-title">Trajetória: pontos com fonte por ano (20xx)</p>
+      ${columnChart({ rows: synthesis.byYear, height: 156 })}
+    </div>
+    <div class="chart-card">
+      <p class="chart-title">Áreas com mais registros</p>
+      ${barChart({
+        rows: synthesis.byArea.slice(0, 6).map((row) => ({ label: row.key, count: row.count })),
+      })}
+    </div>
+    <div class="chart-card">
+      <p class="chart-title">Lacunas declaradas por era</p>
+      ${barChart({
+        rows: synthesis.gapsByEra.map((row) => ({ label: row.label, count: row.count })),
+      })}
+      <p class="chart-legend">ausência é resultado: cada lacuna é uma tarefa de apuração.</p>
+    </div>
+    <div class="chart-card">
+      <p class="chart-title">Acervo interno (read-only)</p>
+      <p class="scope-count tabular">${synthesis.totals.acervoRecorte}</p>
+      <p class="meta">falas no recorte temático (2011+)</p>
+      <ul class="tight-list">
+        <li>Amostra de ${synthesis.totals.acervo} falas com link direto (seção do acervo).</li>
+        <li>Temas: ${report.acervo?.topics?.join(', ') || '—'} — ${htmlEscape(report.unit.acervoNote ?? '')}</li>
+      </ul>
+    </div>
+  </div>
+  ${unitFooter(report, 'Gráficos · INSUMO INTERNO', pageNo)}
+</article>`
+}
+
+const renderUnitOpeningPage = (report, pageNo) => {
+  const opening = report.opening
+  if (!opening?.paragraphs?.length) return ''
+  return `
+<article class="sheet" data-page="carta" aria-label="A contribuição de Solla para a instituição">
+  ${unitHeader(report, opening.title, 'Redação de síntese sobre os pontos com fonte — nada aqui acrescenta fato novo', pageNo)}
+  <section class="block">
+    ${opening.paragraphs.map((paragraph) => `<p class="opening-paragraph">${copyHtml(paragraph)}</p>`).join('')}
+  </section>
+  <aside class="rule-warning">
+    ${WARNING_ICON}
+    <div>
+      <p class="eyebrow warning-text">Como ler</p>
+      <p class="muted">Cada afirmação desta redação tem lastro em um item datado do dossiê (seções por era e de abrangência). ${
+        opening.authored
+          ? 'A redação foi escrita a partir dos itens com fonte.'
+          : 'Sem redação autoral disponível: o texto repete a leitura dos números.'
+      } Onde não há fonte, o dossiê registra lacuna — a redação não preenche por inferência.</p>
+    </div>
+  </aside>
+  ${unitFooter(report, 'A contribuição · INSUMO INTERNO', pageNo)}
+</article>`
+}
+
+const renderInstitutionDossierHtml = (report, { pack = null, probe = false } = {}) => {
+  const buildParts = () => {
+    let page = 0
+    const nextPage = () => ++page
+    const parts = []
+    parts.push(renderInstitutionCover(report))
+    page += 1
+    const opening = renderUnitOpeningPage(report, page + 1)
+    if (opening) {
+      parts.push(opening)
+      page += 1
+    }
+    parts.push(renderInstitutionSummary(report, ++page))
+    parts.push(renderUnitSynthesisPage(report, nextPage()))
+    parts.push(renderUnitChartsPage(report, nextPage()))
+    for (const era of report.eras) {
+      parts.push(...renderEraSheets({ report, era, pack, probe, nextPage, includeHonors: false }))
+    }
+    parts.push(renderInstitutionScope(report, nextPage()))
+    for (const list of report.reach.lists) {
+      parts.push(...renderInstitutionScopeListSheets({ report, list, pack, probe, nextPage }))
+    }
+    parts.push(...renderInstitutionHonorSheets({ report, pack, probe, nextPage }))
+    parts.push(...renderGapSheets({ report, pack, probe, nextPage }))
+    parts.push(...renderNewsSheets({ report, pack, probe, nextPage }))
+    parts.push(...renderAcervoSheets({ report, pack, probe, nextPage }))
+    parts.push(renderUnitSourcesPage(report, nextPage()))
+    return parts
+  }
+
+  // Two passes: the shell's `pág. N/M` needs the final sheet count, and the
+  // count only exists after the pack plan is applied.
+  report.meta.pageTotal = 0
+  let parts = buildParts()
+  report.meta.pageTotal = parts.length
+  parts = buildParts()
 
   return `<!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><title>${htmlEscape(report.meta.title)} — ${htmlEscape(report.meta.subjectName)}</title><style>${INSTITUTION_PRINT_CSS}</style></head>
+<head><meta charset="utf-8"><title>${htmlEscape(report.meta.title)} — ${htmlEscape(report.meta.subjectName)}</title><style>${INSTITUTION_PRINT_CSS}</style>${probe ? `<style>${INSTITUTION_PROBE_CSS}</style>` : ''}</head>
 <body>
 ${parts.join('\n')}
 </body>
@@ -1492,6 +1934,9 @@ const institutionMdEra = (era) => {
     '',
     `Trilha: ${era.recovery}`,
   ]
+  if (era.narrative || era.summary) {
+    lines.push('', `> ${era.narrative ?? era.summary}`)
+  }
   if (era.empty) {
     lines.push(
       '',
@@ -1510,6 +1955,8 @@ const institutionMdEra = (era) => {
         `| ${row.object} | ${row.value ?? '—'} | ${row.year ?? '—'} | ${dossierPhaseLabel(row.phase)} | ${row.sphere} | ${row.sourceUrl ?? '—'} |`,
       )
     }
+    if (era.numbers.omitted > 0)
+      lines.push('', `_e mais ${era.numbers.omitted} item(ns) de valor com fonte._`)
   }
   for (const action of era.actions.items) {
     lines.push(
@@ -1517,8 +1964,12 @@ const institutionMdEra = (era) => {
       `- **${stripInlineSources(action.title)}** (${action.sphere}${action.year ? ` · ${action.year}` : ''})${action.detail ? ` — ${stripInlineSources(action.detail)}` : ''} [fonte](${action.sourceUrl})`,
     )
   }
-  for (const honor of era.honors)
+  if (era.actions.omitted > 0)
+    lines.push('', `_e mais ${era.actions.omitted} item(ns) de atuação com fonte._`)
+  for (const honor of era.honors.items)
     lines.push('', `- Honraria: ${stripInlineSources(honor.text)} [fonte](${honor.sourceUrl})`)
+  if (era.honors.omitted > 0)
+    lines.push('', `_e mais ${era.honors.omitted} honraria(s) com fonte._`)
   return lines.join('\n')
 }
 
@@ -1539,9 +1990,20 @@ const renderInstitutionDossierMd = (report) => {
     `- **Alcance:** ${report.meta.identity?.scopeLabel ?? '—'}`,
     `- **Alias:** ${(report.meta.identity?.aliases ?? []).join(' · ') || '—'}`,
     '',
-    '## Linha do tempo documentada',
-    '',
   ]
+  if (report.opening?.paragraphs?.length) {
+    lines.push(`## ${report.opening.title}`, '')
+    for (const paragraph of report.opening.paragraphs) lines.push(paragraph, '')
+    lines.push(
+      `_Redação de síntese sobre os pontos com fonte; ${
+        report.opening.authored
+          ? 'escrita a partir dos itens datados do dossiê'
+          : 'repetição da leitura dos números (sem redação autoral disponível)'
+      } — nada aqui acrescenta fato novo._`,
+      '',
+    )
+  }
+  lines.push('## Linha do tempo documentada', '')
   if (report.page1.timeline.items.length === 0) lines.push('_Nenhum vínculo datado com fonte._')
   for (const row of report.page1.timeline.items) {
     lines.push(
@@ -1565,35 +2027,60 @@ const renderInstitutionDossierMd = (report) => {
 
   for (const era of report.eras) lines.push('', institutionMdEra(era))
 
+  if (report.synthesis?.lines?.length) {
+    lines.push('', '## Síntese do que foi localizado', '')
+    for (const line of report.synthesis.lines) lines.push(`- ${line}`)
+    lines.push('', '### Números por recorte', '')
+    lines.push('| Era | Instituição | Setor | Rede | Total |', '| --- | --- | --- | --- | --- |')
+    for (const row of report.synthesis.byEraSphere) {
+      const countFor = (key) => row.segments.find((segment) => segment.key === key)?.count ?? 0
+      lines.push(
+        `| ${row.label} | ${countFor('instituicao')} | ${countFor('setor')} | ${countFor('rede')} | ${row.segments.reduce((sum, segment) => sum + segment.count, 0)} |`,
+      )
+    }
+    if (report.synthesis.byPhase.length) {
+      lines.push('', '### Itens com valor por fase', '')
+      for (const row of report.synthesis.byPhase) lines.push(`- ${row.label}: ${row.count}`)
+    }
+    if (report.synthesis.byArea.length) {
+      lines.push('', '### Temas com mais registros', '')
+      for (const row of report.synthesis.byArea) lines.push(`- ${row.key}: ${row.count}`)
+    }
+    if (report.synthesis.acervoByYear.length) {
+      lines.push('', '### Acervo interno por ano', '')
+      lines.push(report.synthesis.acervoByYear.map((row) => `${row.key}: ${row.count}`).join(' · '))
+    }
+  }
+
   lines.push('', '## Abrangência: instituição × setor × rede', '')
   lines.push(`> ${report.reach.ruleTitle}`, `> ${report.reach.ruleBody}`, '')
   for (const list of report.reach.lists) {
     lines.push(`### ${list.label}`, '')
     if (list.items.length === 0) lines.push('- Nenhum item com fonte.')
     for (const item of list.items) {
-      lines.push(`- ${stripInlineSources(item.answer)} — [fonte](${item.sourceUrl})`)
+      lines.push(
+        `- **${stripInlineSources(briefOr(item.brief, item.title))}** (${item.sphere}${item.year ? ` · ${item.year}` : ''})${noteOr(item.brief, item.evidence) ? ` — ${stripInlineSources(noteOr(item.brief, item.evidence))}` : ''} [fonte](${item.sourceUrl})`,
+      )
     }
     if (list.omitted > 0) lines.push(`- _e mais ${list.omitted} item(ns) com fonte._`)
     lines.push('')
   }
-  if (report.reach.evidence.items.length) {
-    lines.push('| Item | Abrangência | Evidência | Fonte |', '| --- | --- | --- | --- |')
-    for (const item of report.reach.evidence.items) {
-      lines.push(
-        `| ${stripInlineSources(item.item)} | ${item.sphere} | ${stripInlineSources(item.evidence)} | ${item.sourceUrl} |`,
-      )
-    }
-  }
 
   if (report.acervo?.items?.length) {
-    lines.push('', '## Acervo interno (read-only)', '')
+    lines.push(
+      '',
+      `## Acervo interno (read-only)`,
+      '',
+      `_Amostra de ${report.acervo.items.length} de ${report.acervo.recorte} falas do recorte temático, com link; o acervo completo fica na base Teqo. Recorte por tema, não nominal._`,
+      '',
+    )
     for (const row of report.acervo.items) {
       lines.push(
         `- **${row.period}** — ${stripInlineSources(row.text)}${row.excerpt ? ` _(${stripInlineSources(row.excerpt)})_` : ''} [fonte](${row.sourceUrl})`,
       )
     }
     if (report.acervo.omitted > 0)
-      lines.push(`- _e mais ${report.acervo.omitted} fala(s) com fonte._`)
+      lines.push(`- _e mais ${report.acervo.omitted} fala(s) com fonte na base._`)
   }
 
   lines.push('', '## Lacunas explícitas', '')
@@ -1629,10 +2116,10 @@ const renderInstitutionDossierMd = (report) => {
 }
 
 /** Dispatch: institution reports render with the institutional sections. */
-export const renderDossierHtml = (report) =>
+export const renderDossierHtml = (report, options) =>
   isInstitutionUnit(report.unit)
-    ? renderInstitutionDossierHtml(report)
-    : renderMunicipalityDossierHtml(report)
+    ? renderInstitutionDossierHtml(report, options)
+    : renderMunicipalityDossierHtml(report, options)
 
 export const renderDossierMd = (report) =>
   isInstitutionUnit(report.unit)

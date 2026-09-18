@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  BULLETIN_HIGHLIGHT_LIMIT,
-  BULLETIN_MORE_LIMIT,
-  buildBulletin,
-} from '../../scripts/lib/dossieBulletin.mjs'
+import { BULLETIN_HIGHLIGHT_LIMIT, buildBulletin } from '../../scripts/lib/dossieBulletin.mjs'
+import { MUNICIPALITY_UNIT } from '../../scripts/lib/dossieUnit.mjs'
 
 const fact = (index: number, overrides: Record<string, unknown> = {}) => ({
   id: `fato-${index}`,
@@ -28,7 +25,8 @@ describe('buildBulletin', () => {
     const facts = Array.from({ length: 30 }, (_value, index) => fact(index))
     const bulletin = buildBulletin({ facts, municipality: 'Ilhéus', generatedAt })
     expect(bulletin.highlights).toHaveLength(BULLETIN_HIGHLIGHT_LIMIT)
-    expect(bulletin.moreItems).toHaveLength(BULLETIN_MORE_LIMIT)
+    // The unit descriptor owns the "E mais" budget (long labels wrap).
+    expect(bulletin.moreItems).toHaveLength(MUNICIPALITY_UNIT.bulletinMoreLimit)
   })
 
   it('counts the facts left out of the one-page boletim (never a silent drop, C188)', () => {
@@ -76,7 +74,7 @@ describe('buildBulletin', () => {
     const bulletin = buildBulletin({ facts, municipality: 'Ilhéus', generatedAt })
     const headlines = new Set(facts.map((row) => row.headline))
     expect(bulletin.highlights.length + bulletin.moreItems.length).toBe(
-      BULLETIN_HIGHLIGHT_LIMIT + BULLETIN_MORE_LIMIT,
+      BULLETIN_HIGHLIGHT_LIMIT + MUNICIPALITY_UNIT.bulletinMoreLimit,
     )
     expect(bulletin.highlights.every((row) => headlines.has(row.title))).toBe(true)
     expect(bulletin.moreItems.every((row) => headlines.has(row.label))).toBe(true)

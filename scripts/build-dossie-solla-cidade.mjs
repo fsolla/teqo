@@ -18,7 +18,13 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { emitHtmlPairPdf, launchPdfBrowser } from './lib/buildPdf.mjs'
+import {
+  A4_PAGE_BUDGET_PX,
+  emitHtmlPairPdf,
+  launchPdfBrowser,
+  measureDocumentPackProbe,
+  measureDocumentSheets,
+} from './lib/buildPdf.mjs'
 import { dieWithLabel, isTruthyEnv, loadCliEnv, parseEqualsFlags } from './lib/cli.mjs'
 import { buildDossierReport } from './lib/dossieBlocks.mjs'
 import { buildBulletin } from './lib/dossieBulletin.mjs'
@@ -26,7 +32,8 @@ import { renderBulletinHtml } from './lib/dossieBulletinRender.mjs'
 import { CAMARA_DEFAULT_FROM, fetchCamaraActivity } from './lib/dossieCamara.mjs'
 import { DOSSIER_ERA_IDS } from './lib/dossieCareer.mjs'
 import { fetchHealthData } from './lib/dossieHealthData.mjs'
-import { renderDossierHtml, renderDossierMd } from './lib/dossieRender.mjs'
+import { adjustPackPlan, packProbeSections } from './lib/dossiePack.mjs'
+import { dossierPackAnchors, renderDossierHtml, renderDossierMd } from './lib/dossieRender.mjs'
 import { mergeDossierResearch, normalizeDossierResearchInput } from './lib/dossieResearch.mjs'
 import { DEFAULT_AUTHOR_NAME, fetchAuthorEmendas } from './lib/portalTransparenciaEmendas.mjs'
 
@@ -165,14 +172,36 @@ console.log(
   `[${LABEL}] câmara=${camara.status} ibge=${health.status} lacunas_pesquisa=${research.gaps.length}`,
 )
 
+const readNarrative = async () => {
+  const path = join(researchDir, `${slug}.narrative.json`)
+  try {
+    const raw = JSON.parse(await readFile(resolve(ROOT, path), 'utf8'))
+    if (raw.municipalitySlug !== slug) {
+      die(`Redação é de "${raw.municipalitySlug}", não de "${slug}" (${path}) — pare e regenere.`)
+    }
+    return raw
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null
+    die(`Redação inválida (${path}): ${error instanceof Error ? error.message : error}`)
+  }
+}
+
+const narrative = await readNarrative()
+if (!narrative) {
+  console.log(
+    `[${LABEL}] sem redação autoral (${slug}.narrative.json) — a abertura repete os números.`,
+  )
+}
+
 /**
- * Builds the dossiê + boletim for a given fit fallback. The resumo page never
- * cuts with "…": pass 1 prints the researcher's `summary` (or the full answer);
- * if a page overflows the A4 guard, pass 2 re-renders with
- * `textFallback: 'pointer'` so the lines without a `summary` point to the era
- * pages (which keep the integral). The guard is still fail-closed.
+ * Builds the dossiê + boletim for a given fit fallback and pack plan. The resumo
+ * page never cuts with "…": pass 1 prints the researcher's `summary` (or the
+ * full answer); if the resumo sheet overflows the A4 guard, pass 2 re-renders
+ * with `textFallback: 'pointer'` so the lines without a `summary` point to the
+ * era pages (which keep the integral). The other sections flow by measurement
+ * (`pack`), so they multiply sheets instead of being capped.
  */
-const buildArtifacts = (textFallback) => {
+const buildArtifacts = ({ textFallback = 'full', pack = null, probe = false } = {}) => {
   const report = buildDossierReport({
     snapshot,
     research,
@@ -181,6 +210,7 @@ const buildArtifacts = (textFallback) => {
     health,
     generatedAt,
     textFallback,
+    narrative,
   })
   const bulletin = buildBulletin({
     facts: report.bulletinFacts,
@@ -191,15 +221,64 @@ const buildArtifacts = (textFallback) => {
   return {
     report,
     bulletin,
-    dossierHtml: renderDossierHtml(report),
+    dossierHtml: renderDossierHtml(report, { pack, probe }),
     dossierMd: renderDossierMd(report),
     bulletinHtml: renderBulletinHtml(bulletin),
   }
 }
-let artifacts = buildArtifacts('full')
 
+/**
+ * Flowing sheets: probe the real height of every unit, pack the sections, then
+ * re-render and measure — an overflowing sheet gives a row to the next chunk, a
+ * sheet with room takes the next row, until the plan stops changing. Nothing is
+ * capped and no page is left half empty; the final emit still guards the A4.
+ */
 const browser = await launchPdfBrowser()
+let artifacts = buildArtifacts()
+let pack = null
 try {
+  const probeArtifacts = buildArtifacts({ probe: true })
+  const probe = await measureDocumentPackProbe(browser, probeArtifacts.dossierHtml)
+  const anchors = Object.fromEntries(
+    Object.entries(dossierPackAnchors(probeArtifacts.report.unit)).map(([anchor, key]) => [
+      key,
+      anchor,
+    ]),
+  )
+  pack = packProbeSections(probe, A4_PAGE_BUDGET_PX)
+  console.log(
+    `[${LABEL}] probe: ${probe.map((section) => `${section.key}=${section.rows.length}`).join(' ')}`,
+  )
+
+  let settled = false
+  const lockedAnchors = new Set()
+  for (let attempt = 0; attempt < 16 && !settled; attempt += 1) {
+    artifacts = buildArtifacts({ pack })
+    const sheets = await measureDocumentSheets(browser, artifacts.dossierHtml)
+    for (const sheet of sheets) {
+      if (sheet.height > A4_PAGE_BUDGET_PX) lockedAnchors.add(sheet.page)
+    }
+    const adjusted = adjustPackPlan({
+      plan: pack,
+      probe,
+      sheets,
+      anchors,
+      budgetPx: A4_PAGE_BUDGET_PX,
+      lockedAnchors,
+    })
+    if (!adjusted) {
+      settled = true
+      break
+    }
+    pack = adjusted
+  }
+  artifacts = buildArtifacts({ pack })
+  console.log(
+    `[${LABEL}] pack ${settled ? 'estável' : 'no teto de tentativas'}: ${Object.entries(pack)
+      .map(([key, sizes]) => `${key}=${sizes.join('+')}`)
+      .join(' ')}`,
+  )
+
   await emitHtmlPairPdf(browser, {
     dossierHtml: artifacts.dossierHtml,
     bulletinHtml: artifacts.bulletinHtml,
@@ -208,7 +287,7 @@ try {
     // Budget-gated 2-pass (C188): if the resumo sheet with the full text
     // overflows, rebuild with pointer lines (no "…") before failing closed.
     onDossierOverflow: async () => {
-      artifacts = buildArtifacts('pointer')
+      artifacts = buildArtifacts({ textFallback: 'pointer', pack })
       return artifacts.dossierHtml
     },
     resumoOnly: true,
@@ -234,7 +313,7 @@ console.log(`[${LABEL}] PDF → ${dossierPdfFile}`)
 console.log(`[${LABEL}] boletim PDF → ${bulletinPdfFile}`)
 console.log(
   `[${LABEL}] ${snapshot.municipality.name}: eras=${report.eras.length} entregas=${report.page1.deliveries.items.length} ` +
-    `highlights=${bulletin.highlights.length} lacunas=${research.gaps.length} html_bytes=${Buffer.byteLength(dossierHtml)}`,
+    `highlights=${bulletin.highlights.length} lacunas=${research.gaps.length} páginas=${report.meta.pageTotal} html_bytes=${Buffer.byteLength(dossierHtml)}`,
 )
 
 if (isTruthyEnv(process.env.DOSSIER_STRICT) && research.gaps.length > 0) {

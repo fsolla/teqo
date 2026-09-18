@@ -102,13 +102,13 @@ describe('buildDossierReport', () => {
     const report = build()
     expect(report.eras.map((era) => era?.id)).toEqual(['A', 'B', 'C'])
     expect(
-      report.eras.every((era) => (era?.numbers.items.length ?? 0) + (era?.actions.length ?? 0) > 0),
+      report.eras.every((era) => (era?.numbers.length ?? 0) + (era?.actions.length ?? 0) > 0),
     ).toBe(true)
   })
 
   it('turns official emenda execution into phase-labelled rows (empenho ≠ pagamento)', () => {
     const eraC = build().eras.find((era) => era?.id === 'C')
-    expect(eraC?.numbers.items).toContainEqual(
+    expect(eraC?.numbers).toContainEqual(
       expect.objectContaining({ object: 'Saúde', phase: 'empenhado', sphere: 'municipio' }),
     )
   })
@@ -119,7 +119,9 @@ describe('buildDossierReport', () => {
       expect.objectContaining({ topic: 'População residente (Censo 2022)' }),
     )
     const eraB = report.eras.find((era) => era?.id === 'B')
-    expect(eraB?.numbers.items.some((row) => row.object.includes('População'))).toBe(false)
+    expect(eraB?.numbers.some((row: { object: string }) => row.object.includes('População'))).toBe(
+      false,
+    )
   })
 
   it('never sums região/polo into the município list', () => {
@@ -245,12 +247,12 @@ describe('buildDossierReport', () => {
     const report = build({ research: manyRegional })
     const eraA = report.eras.find((era) => era?.id === 'A')!
     expect(eraA.actions).toHaveLength(5)
-    expect(eraA.camaraActionsRemaining).toBe(0)
-    expect(report.region.evidence.items).toHaveLength(3)
-    expect(report.region.evidence.total).toBe(5)
-    expect(report.region.evidence.remaining).toBe(2)
+    // Uncapped (2026-09-18): the full lists flow across sheets, so there is no
+    // remaining/omitted count on the era or region lists.
+    expect(eraA).not.toHaveProperty('camaraActionsRemaining')
+    expect(report.region.regional.items).toHaveLength(5)
     expect(report.region.regional.total).toBe(5)
-    expect(report.region.regional.items.length + report.region.regional.remaining).toBe(5)
+    expect(report.region.regional).not.toHaveProperty('remaining')
   })
 
   it('carries the defeso limits and the editorial rules', () => {

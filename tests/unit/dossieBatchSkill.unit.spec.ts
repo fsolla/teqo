@@ -14,6 +14,7 @@ const read = (path: string): string => readFileSync(resolve(repoRoot, path), 'ut
 
 const skill = read('.agents/skills/dossie-solla-cidade/SKILL.md')
 const researcher = read('.opencode/agent/dossie-solla-cidade.md')
+const writer = read('.opencode/agent/dossie-solla-cidade-redacao.md')
 
 describe('skill /dossie-solla-cidade documents the batch contract', () => {
   it('keeps the comma-separated batch entry and the single-city case', () => {
@@ -87,5 +88,51 @@ describe('subagent .opencode/agent/dossie-solla-cidade.md is researcher-only', (
   it('does not run the deterministic extract/build stages', () => {
     expect(researcher, 'researcher must not run the extractor CLI').not.toContain('--municipality=')
     expect(researcher, 'researcher must not run the builder CLI').not.toContain('--snapshot=')
+  })
+
+  it('leaves the narrative to the redator step', () => {
+    expect(researcher, 'the researcher does not write the narrative file').not.toContain(
+      'narrative.json',
+    )
+    expect(researcher).toContain('redator')
+  })
+})
+
+describe('dossiê sem caps + redação (revisão 2026-09-18)', () => {
+  it('documents the flowing sheets and the measured packing', () => {
+    expect(skill, 'no caps in the dossiê').toContain('não usa caps')
+    expect(skill).toContain('grow/shrink')
+    expect(skill).toContain('dossiePack.mjs')
+    expect(skill, 'continuation sheets carry the header').toContain('continuação N')
+  })
+
+  it('documents the opening letter, the synthesis and the charts', () => {
+    expect(skill).toContain('A contribuição (carta)')
+    expect(skill).toContain('**Síntese**')
+    expect(skill).toContain('Gráficos consolidados')
+    expect(skill, 'the era opens with a consolidation paragraph').toMatch(
+      /O que esta era\s+entrega/,
+    )
+  })
+
+  it('pins the narrative contract and the writer receipt', () => {
+    expect(skill).toContain('## Recibo do redator')
+    expect(skill).toContain('"municipalitySlug": "ilheus"')
+    expect(skill, 'the narrative file carries the era paragraphs').toContain('"eras": {')
+    expect(skill, 'the orchestrator audits the citations').toMatch(/audita/i)
+  })
+})
+
+describe('subagent .opencode/agent/dossie-solla-cidade-redacao.md is writer-only', () => {
+  it('stays a subagent that writes the narrative and returns the receipt', () => {
+    expect(writer).toMatch(/^---\n[\s\S]*mode: subagent[\s\S]*\n---/)
+    expect(writer).toContain('narrative.json')
+    expect(writer).toContain('Recibo do redator')
+  })
+
+  it('does not run the deterministic extract/build stages', () => {
+    expect(writer, 'writer must not run the extractor CLI').not.toContain('--municipality=')
+    expect(writer, 'writer must not run the builder CLI').not.toContain('--snapshot=')
+    expect(writer, 'writer must not edit the research files').toMatch(/não\*\* edite os/)
   })
 })

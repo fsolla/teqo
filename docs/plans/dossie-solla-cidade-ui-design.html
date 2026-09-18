@@ -10,7 +10,7 @@
         --font-sans: 'Fira Sans', 'DejaVu Sans', Arial, sans-serif;
         --color-ink: #172033;
         --color-ink-soft: #435264;
-        --color-paper: #ffffff;
+        --color-paper: #fff;
         --color-workspace: #d8dde1;
         --color-line: #cbd5dc;
         --color-wash: #f3f6f8;
@@ -18,14 +18,11 @@
         --color-accent-soft: #e8f0f4;
         --color-warning: #8a5a18;
         --color-warning-soft: #fff7e8;
-        --radius-sm: 0.125rem;
-        --radius-md: 0.25rem;
       }
-
       :root {
         --ink: #172033;
         --ink-soft: #435264;
-        --paper: #ffffff;
+        --paper: #fff;
         --workspace: #d8dde1;
         --line: #cbd5dc;
         --wash: #f3f6f8;
@@ -34,36 +31,33 @@
         --warning: #8a5a18;
         --warning-soft: #fff7e8;
       }
-
       * {
         box-sizing: border-box;
       }
-
       html {
         color-scheme: light;
       }
-
       body {
         margin: 0;
-        font-family: 'Fira Sans', 'DejaVu Sans', Arial, sans-serif;
         color: var(--ink);
         background: var(--workspace);
+        font-family: 'Fira Sans', 'DejaVu Sans', Arial, sans-serif;
         -webkit-font-smoothing: antialiased;
       }
-
       .sheet {
+        position: relative;
         width: 210mm;
         min-height: 297mm;
-        padding: 13mm 15mm 12mm;
-        background: var(--paper);
-        box-shadow: 0 18px 44px rgb(23 32 51 / 18%);
-        font-size: 11pt;
-        line-height: 1.38;
+        height: 297mm;
+        padding: 12mm 14mm 10mm;
+        overflow: hidden;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
+        background: var(--paper);
+        box-shadow: 0 18px 44px rgb(23 32 51 / 18%);
+        font-size: 10.5pt;
+        line-height: 1.32;
       }
-
       .sheet p,
       .sheet ul,
       .sheet ol,
@@ -75,181 +69,550 @@
         text-decoration: underline;
         text-underline-offset: 1.5px;
       }
-      .sheet a:focus-visible {
-        outline: 2px solid #315c75;
-        outline-offset: 2px;
+      .accent-bar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 4mm;
+        height: 297mm;
+        background: #315c75;
       }
-
-      /* Corpo editorial nunca desce de 10,5 pt; 7,5–9 pt ficam restritos a
-         metadados, rótulos e notas de fonte. */
-      .sheet .text-\[9pt\],
-      .sheet .text-\[9\.5pt\],
-      .sheet .text-\[10pt\] {
-        font-size: 10.5pt !important;
-      }
-
       .report-header {
         display: flex;
         justify-content: space-between;
         gap: 8mm;
         align-items: flex-start;
         padding-bottom: 3mm;
-        border-bottom: 0.45mm solid var(--ink);
+        border-bottom: 0.45mm solid #172033;
       }
-
       .report-kicker {
         margin: 0;
-        color: var(--accent);
+        color: #315c75;
         font-size: 8pt;
-        line-height: 1.2;
         font-weight: 700;
         letter-spacing: 0.13em;
         text-transform: uppercase;
       }
-
+      .sheet-title {
+        margin: 1.2mm 0 0;
+        font-size: 18pt;
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+      }
+      .sheet-sub {
+        margin: 0.8mm 0 0;
+        font-size: 10.5pt;
+        color: #435264;
+      }
       .report-meta {
         min-width: 43mm;
         margin: 0;
-        color: var(--ink-soft);
+        color: #435264;
         font-size: 8pt;
         line-height: 1.45;
         text-align: right;
         font-variant-numeric: tabular-nums;
       }
-
+      .report-meta p {
+        margin: 0;
+      }
       .report-footer {
         margin-top: auto;
         padding-top: 2.5mm;
-        border-top: 0.25mm solid var(--line);
+        border-top: 0.25mm solid #cbd5dc;
         display: flex;
         justify-content: space-between;
         gap: 5mm;
-        color: var(--ink-soft);
+        color: #435264;
         font-size: 8pt;
         line-height: 1.3;
       }
-
       .section-title {
         margin: 0;
         font-size: 13.5pt;
         line-height: 1.18;
         letter-spacing: -0.01em;
       }
-
       .eyebrow {
         margin: 0 0 1.4mm;
-        color: var(--accent);
+        color: #315c75;
         font-size: 8pt;
-        line-height: 1.2;
         font-weight: 700;
         letter-spacing: 0.1em;
         text-transform: uppercase;
       }
-
+      .warning-text {
+        color: #8a5a18;
+      }
+      .muted {
+        color: #435264;
+      }
+      .small {
+        font-size: 10.5pt;
+        line-height: 1.28;
+      }
+      .meta {
+        font-size: 7.7pt;
+        line-height: 1.2;
+        color: #435264;
+      }
+      .strong {
+        font-weight: 600;
+      }
+      .tabular {
+        font-variant-numeric: tabular-nums;
+      }
+      .block {
+        margin-top: 3.4mm;
+        break-inside: avoid;
+      }
+      .block-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 4mm;
+      }
       .source-link {
         display: inline-flex;
-        align-items: baseline;
-        gap: 1mm;
         white-space: nowrap;
         font-size: 9pt;
         font-weight: 600;
       }
-
-      .source-link svg {
-        width: 3mm;
-        height: 3mm;
-        transform: translateY(0.35mm);
-      }
-
-      .scope {
+      .scope,
+      .phase {
         display: inline-flex;
         align-items: center;
         min-height: 5mm;
         padding: 0.4mm 1.6mm;
-        border: 0.25mm solid #9aacb7;
-        border-radius: 99px;
-        color: #304758;
-        background: #f7fafb;
         font-size: 7.5pt;
         line-height: 1;
         font-weight: 700;
         letter-spacing: 0.04em;
         text-transform: uppercase;
       }
-
+      .scope {
+        border: 0.25mm solid #9aacb7;
+        border-radius: 99px;
+        color: #304758;
+        background: #f7fafb;
+      }
       .scope-region {
         border-color: #aa8752;
         color: #6b4918;
         background: #fff9ee;
       }
-
-      .phase {
-        display: inline-block;
-        padding: 0.5mm 1.4mm;
-        border-radius: 1mm;
-        background: #e9eef1;
-        color: #334553;
-        font-size: 7.5pt;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.035em;
+      .scope-pole {
+        border-color: #8f819c;
+        color: #554362;
+        background: #faf7fc;
       }
-
+      .phase {
+        border-radius: 1mm;
+        color: #334553;
+        background: #e9eef1;
+      }
+      .phase-paid {
+        color: #285338;
+        background: #e6f2e9;
+      }
+      .phase-pending {
+        color: #6b4918;
+        background: #fff2d9;
+      }
       .document-table {
         width: 100%;
         table-layout: fixed;
         border-collapse: collapse;
         font-size: 10.5pt;
         line-height: 1.22;
+        margin-top: 2.5mm;
       }
-
       .document-table th {
         padding: 1.7mm 1.6mm;
-        border-top: 0.25mm solid var(--line);
+        border-top: 0.25mm solid #cbd5dc;
         border-bottom: 0.35mm solid #9caab3;
-        background: var(--wash);
-        color: var(--ink-soft);
+        background: #f3f6f8;
+        color: #435264;
         font-size: 7.5pt;
         font-weight: 700;
         letter-spacing: 0.045em;
         text-align: left;
         text-transform: uppercase;
       }
-
       .document-table td {
         padding: 2mm 1.6mm;
         border-bottom: 0.25mm solid #dce3e7;
         vertical-align: top;
         overflow-wrap: anywhere;
       }
-
       .document-table tbody tr:nth-child(even) {
         background: #fafcfd;
       }
-      .document-table .numeric {
+      .numeric {
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
       }
-
-      .placeholder-bar {
-        display: inline-block;
-        height: 2.6mm;
-        border-radius: 1mm;
-        background: #d8e0e5;
-        vertical-align: middle;
+      .panel {
+        border: 0.25mm solid #cbd5dc;
+        border-radius: 0.25rem;
+        padding: 3mm;
+        break-inside: avoid;
       }
-
+      .panel-warning {
+        border: none;
+        border-left: 3mm solid #8a5a18;
+        background: #fff7e8;
+      }
+      .panel-region {
+        border: 0.35mm solid #c9a66d;
+        background: #fffbf3;
+      }
+      .tight-list {
+        margin: 0;
+        padding-left: 4mm;
+      }
+      .tight-list li {
+        margin-bottom: 1mm;
+      }
+      .aside-accent {
+        border-radius: 0.25rem;
+        background: #e8f0f4;
+        padding: 3mm;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+      .rule-warning {
+        display: flex;
+        align-items: flex-start;
+        gap: 3mm;
+        border: 0.45mm solid #8a5a18;
+        background: #fff7e8;
+        border-radius: 0.25rem;
+        padding: 4mm;
+        margin-top: 4mm;
+      }
+      .warn-icon {
+        width: 5mm;
+        height: 5mm;
+        color: #8a5a18;
+        flex-shrink: 0;
+        margin-top: 0.5mm;
+      }
+      .cover-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8mm;
+        border-bottom: 0.25mm solid #cbd5dc;
+        padding-bottom: 4mm;
+      }
+      .cover-series {
+        margin: 2mm 0 0;
+        font-size: 10.5pt;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #435264;
+      }
+      .internal-note {
+        border: 0.25mm solid #cbd5dc;
+        background: #f3f6f8;
+        padding: 2mm 3mm;
+        text-align: right;
+        font-size: 8pt;
+        line-height: 1.5;
+        color: #435264;
+        border-radius: 0.25rem;
+      }
+      .cover-block {
+        margin-top: 28mm;
+        max-width: 150mm;
+      }
+      .cover-title {
+        margin: 0;
+        font-size: 34pt;
+        font-weight: 700;
+        line-height: 1.03;
+        letter-spacing: -0.035em;
+      }
+      .cover-sub {
+        margin: 5mm 0 0;
+        max-width: 125mm;
+        font-size: 15pt;
+        line-height: 1.4;
+        color: #435264;
+      }
+      .cover-dl {
+        display: grid;
+        grid-template-columns: 42mm 1fr;
+        border-block: 0.25mm solid #cbd5dc;
+        margin: 22mm 0 0;
+        font-size: 11pt;
+      }
+      .cover-dl dt,
+      .cover-dl dd {
+        padding: 3mm 0;
+        border-bottom: 0.25mm solid #cbd5dc;
+      }
+      .cover-dl dt {
+        font-weight: 600;
+        color: #435264;
+      }
+      .cover-dl dd {
+        margin: 0;
+        font-weight: 600;
+      }
+      .cover-dl dt:last-of-type,
+      .cover-dl dd:last-of-type {
+        border-bottom: 0;
+      }
+      .cover-grid {
+        display: grid;
+        grid-template-columns: 1fr 56mm;
+        gap: 5mm;
+        margin-top: 6mm;
+      }
+      .how-to {
+        border-radius: 0.25rem;
+        background: #e8f0f4;
+        padding: 4mm;
+      }
+      .how-to-title {
+        margin: 0;
+        font-size: 10.5pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #315c75;
+      }
       .asset-box {
         border: 0.35mm dashed #80919d;
         color: #4c5c68;
         background: #f7f9fa;
+        padding: 3mm;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        min-height: 30mm;
+        border-radius: 0.25rem;
+        font-size: 8pt;
+        font-weight: 600;
       }
-
+      .cover-foot {
+        margin-top: auto;
+      }
+      .ink-rule {
+        height: 0.5mm;
+        background: #172033;
+        margin-bottom: 5mm;
+      }
+      .cover-foot-row {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 8mm;
+      }
+      .opening-paragraph {
+        margin: 0 0 3.4mm;
+        font-size: 11pt;
+        line-height: 1.45;
+      }
+      .timeline-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.8mm;
+        margin-top: 2.5mm;
+      }
+      .timeline-cell {
+        border-top: 1.6px solid #315c75;
+        background: #f3f6f8;
+        padding: 2mm;
+      }
+      .timeline-period {
+        margin: 0;
+        font-size: 7.6pt;
+        font-weight: 700;
+        color: #315c75;
+      }
+      .timeline-role {
+        margin: 0.8mm 0 0;
+        font-size: 10.5pt;
+        font-weight: 600;
+        line-height: 1.16;
+      }
+      .timeline-recovery {
+        margin: 0.7mm 0 0;
+        font-size: 7.5pt;
+        line-height: 1.16;
+        color: #435264;
+      }
+      .deliveries {
+        border-block: 0.25mm solid #cbd5dc;
+        margin-top: 1.8mm;
+      }
+      .delivery-row {
+        display: grid;
+        grid-template-columns: 26mm 1fr 42mm;
+        gap: 3mm;
+        padding: 2mm 0;
+        border-bottom: 0.25mm solid #cbd5dc;
+      }
+      .delivery-row:last-child {
+        border-bottom: 0;
+      }
+      .page1-grid,
+      .synthesis-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3mm;
+        margin-top: 3mm;
+      }
+      .synthesis-lines {
+        margin: 0;
+        padding-left: 4.5mm;
+        font-size: 9.5pt;
+        line-height: 1.35;
+      }
+      .synthesis-lines li {
+        margin-bottom: 1.8mm;
+      }
+      .chart-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3mm;
+        margin-top: 3mm;
+      }
+      .chart-card {
+        border: 0.25mm solid #cbd5dc;
+        border-radius: 0.25rem;
+        padding: 3mm;
+        break-inside: avoid;
+      }
+      .chart {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .chart-title {
+        margin: 0 0 2mm;
+        font-size: 9.5pt;
+        font-weight: 600;
+      }
+      .chart-label {
+        font-size: 7.4pt;
+        fill: #435264;
+      }
+      .chart-value {
+        font-size: 7.6pt;
+        fill: #1f2933;
+        font-weight: 700;
+      }
+      .chart-legend {
+        margin: 1.5mm 0 0;
+        font-size: 7.6pt;
+        color: #435264;
+      }
+      .value-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .value-list li {
+        display: grid;
+        grid-template-columns: 1fr 20mm 18mm;
+        gap: 1.6mm;
+        align-items: center;
+        padding: 0.9mm 0;
+        border-bottom: 0.25mm solid #e3e9ec;
+        font-size: 8.2pt;
+      }
+      .value-list-bar {
+        display: block;
+        height: 2.2mm;
+        background: #eef2f5;
+        border-radius: 1mm;
+        overflow: hidden;
+      }
+      .value-list-bar span {
+        display: block;
+        height: 100%;
+        background: #315c75;
+      }
+      .value-list-value {
+        text-align: right;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .era-method {
+        display: grid;
+        grid-template-columns: 1fr 55mm;
+        gap: 4mm;
+        margin-top: 4mm;
+      }
+      .era-summary {
+        margin-top: 3.4mm;
+        border-left: 1.2mm solid #315c75;
+        background: #f7fafb;
+        padding: 2.6mm 3mm;
+      }
+      .era-summary p {
+        margin: 0;
+        font-size: 10pt;
+        line-height: 1.4;
+      }
+      .action-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3mm;
+        margin-top: 3mm;
+      }
+      .action-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 3mm;
+      }
+      .action-title {
+        margin: 2mm 0 0;
+        font-size: 10.5pt;
+        font-weight: 600;
+      }
+      .scope-compare {
+        display: grid;
+        grid-template-columns: 1fr 12mm 1fr;
+        align-items: stretch;
+        gap: 3mm;
+        margin-top: 3mm;
+      }
+      .compare-mid {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #8a5a18;
+      }
+      .compare-mid:before,
+      .compare-mid:after {
+        content: '';
+        width: 1px;
+        flex: 1;
+        background: #d8c09a;
+      }
+      .compare-mid span {
+        font-size: 18pt;
+        font-weight: 700;
+        margin: 2mm 0;
+      }
+      .scope-count {
+        margin: 3mm 0 0;
+        font-size: 16pt;
+        font-weight: 600;
+      }
       @page {
         size: A4;
         margin: 0;
       }
-
       @media print {
         body {
           background: #fff;
@@ -265,16 +628,8 @@
         .scene {
           margin: 0 !important;
           break-after: page;
-          page-break-after: always;
-        }
-        .scene:last-child {
-          break-after: auto;
-          page-break-after: auto;
         }
         .sheet {
-          width: 210mm;
-          height: 297mm;
-          min-height: 297mm;
           box-shadow: none;
         }
       }
@@ -282,102 +637,62 @@
   </head>
   <body>
     <header class="gate-header mx-auto max-w-[1100px] px-6 pt-8 text-ink">
-      <p class="text-xs font-bold uppercase tracking-[0.14em] text-accent">
-        Gate visual · Impeccable C
+      <p class="text-xs font-bold uppercase tracking-[.14em] text-accent">
+        Gate visual · re-sincronizado com o port de 18/09/2026
       </p>
       <h1 class="mt-1 text-2xl font-semibold tracking-tight">
         Dossiê Solla por cidade — relatório A4
       </h1>
       <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-soft">
-        Documento interno para a assessoria localizar uma entrega, conferir o lastro e identificar o
-        que ainda falta antes de transformar pesquisa em boletim. Cinco páginas A4 estáticas; dados
-        de exemplo são deliberadamente genéricos.
+        Documentação hi-fi do layout entregue: folhas correntes, síntese, gráficos, consolidação por
+        era, região/polo e listas completas. Conteúdo deliberadamente genérico.
       </p>
-      <div class="mt-4 flex flex-wrap gap-2 text-xs">
-        <span class="rounded-full border border-line bg-white px-3 py-1">A4 · 210 × 297 mm</span>
-        <span class="rounded-full border border-line bg-white px-3 py-1">corpo 11 pt</span>
-        <span class="rounded-full border border-line bg-white px-3 py-1"
-          >institucional · sem campanha</span
-        >
-        <span class="rounded-full border border-line bg-white px-3 py-1">fontes item a item</span>
-      </div>
     </header>
-
     <main class="pages mx-auto flex max-w-[1100px] flex-col items-center gap-12 px-6 py-10">
-      <!-- CENA 01 · CAPA -->
-      <section class="scene" aria-labelledby="scene-cover">
-        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
-          Cena 01 · Capa / identificação
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 01 · Capa
         </p>
-        <article class="sheet relative" aria-label="Capa do dossiê">
-          <div class="absolute left-0 top-0 h-[297mm] w-[4mm] bg-accent"></div>
-          <header class="flex items-start justify-between gap-8 border-b border-line pb-4">
+        <article class="sheet">
+          <div class="accent-bar"></div>
+          <header class="cover-head">
             <div>
-              <p class="report-kicker">Núcleo de comunicação · pesquisa documental</p>
-              <p class="mt-2 text-[9pt] font-semibold uppercase tracking-[0.08em] text-ink-soft">
-                Série municipal · BA
-              </p>
+              <p class="report-kicker">Comunicação · pesquisa documental</p>
+              <p class="cover-series">Série municipal · BA</p>
             </div>
-            <div
-              class="rounded-sm border border-line bg-wash px-3 py-2 text-right text-[8pt] leading-5 text-ink-soft"
-            >
-              <strong class="text-ink">INSUMO INTERNO</strong><br />Não circular · não publicar
+            <div class="internal-note">
+              <strong>INSUMO INTERNO</strong><br />Não circular · não publicar
             </div>
           </header>
-
-          <div class="mt-[28mm] max-w-[150mm]">
+          <div class="cover-block">
             <p class="eyebrow">Dossiê de atuação pública</p>
-            <h2
-              id="scene-cover"
-              class="m-0 text-[34pt] font-semibold leading-[1.03] tracking-[-0.035em]"
-            >
-              Município<br />de Exemplo
-            </h2>
-            <p class="mt-5 max-w-[125mm] text-[15pt] leading-[1.4] text-ink-soft">
+            <h2 class="cover-title">Município<br />de Exemplo</h2>
+            <p class="cover-sub">
               O que Jorge Solla fez pela cidade e por seu recorte regional ao longo da carreira
             </p>
           </div>
-
-          <dl class="mt-[22mm] grid grid-cols-[42mm_1fr] border-y border-line text-[11pt]">
-            <dt class="border-b border-line py-3 font-semibold text-ink-soft">
-              Território de Identidade
-            </dt>
-            <dd class="m-0 border-b border-line py-3 font-semibold">Território de Exemplo</dd>
-            <dt class="border-b border-line py-3 font-semibold text-ink-soft">
-              Região / polo adotado
-            </dt>
-            <dd class="m-0 border-b border-line py-3">
-              Polo de Exemplo · recorte não somável ao município
-            </dd>
-            <dt class="py-3 font-semibold text-ink-soft">Data de geração</dt>
-            <dd class="m-0 py-3 font-variant-numeric tabular-nums">
-              17 de setembro de 2026 · 14h30
-            </dd>
+          <dl class="cover-dl">
+            <dt>Território de Identidade</dt>
+            <dd>Território de Exemplo</dd>
+            <dt>Região / polo adotado</dt>
+            <dd>Recorte regional não somável ao município</dd>
+            <dt>Data de geração</dt>
+            <dd>DD/MM/AAAA · HHhMM</dd>
           </dl>
-
-          <div class="mt-6 grid grid-cols-[1fr_56mm] gap-5">
-            <div class="rounded-sm bg-accent-soft p-4">
-              <p class="m-0 text-[9pt] font-bold uppercase tracking-[.08em] text-accent">
-                Como usar
-              </p>
-              <p class="mb-0 mt-2 text-[10.5pt] leading-5 text-ink-soft">
-                Escolha um tema, confira a fonte ao lado da afirmação e trate toda lacuna como
-                tarefa de apuração. Este arquivo não é texto final nem peça publicitária.
+          <div class="cover-grid">
+            <div class="how-to">
+              <p class="how-to-title">Como usar</p>
+              <p class="mt-2 text-ink-soft">
+                Escolha um tema, confira a fonte e trate toda lacuna como tarefa de apuração.
               </p>
             </div>
-            <div
-              class="asset-box flex min-h-[30mm] items-center justify-center rounded-sm p-3 text-center text-[8pt] font-semibold leading-4"
-            >
-              NEEDS ASSET<br />selo institucional autorizado<br />opcional — nunca marca de campanha
-            </div>
+            <div class="asset-box">NEEDS ASSET<br />selo autorizado<br />e origem</div>
           </div>
-
-          <div class="mt-auto">
-            <div class="mb-5 h-[0.5mm] bg-ink"></div>
-            <div class="flex items-end justify-between gap-8">
-              <p class="m-0 max-w-[118mm] text-[9pt] leading-5 text-ink-soft">
-                Escopo: carreira técnica e gestão pública até 2006 · SESAB 2007–2014 · Câmara dos
-                Deputados 2015–2027. Afirmações sem fonte não entram como entrega.
+          <div class="cover-foot">
+            <div class="ink-rule"></div>
+            <div class="cover-foot-row">
+              <p class="m-0 max-w-[118mm] text-ink-soft">
+                Escopo: carreira técnica até 2006 · SESAB 2007–2014 · Câmara 2015–2027.
               </p>
               <p
                 class="m-0 text-right text-[8pt] font-semibold uppercase tracking-[.08em] text-accent"
@@ -389,1147 +704,1218 @@
         </article>
       </section>
 
-      <!-- CENA 02 · RESUMO -->
-      <section class="scene" aria-labelledby="scene-summary">
-        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
-          Cena 02 · Página 1 — resumo de uma olhada
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 02 · A contribuição (carta)
         </p>
-        <article class="sheet" aria-label="Resumo de uma olhada do dossiê">
+        <article class="sheet">
           <header class="report-header">
             <div>
               <p class="report-kicker">Dossiê de atuação pública · Município de Exemplo</p>
-              <h2
-                id="scene-summary"
-                class="mt-1 text-[18pt] font-semibold leading-tight tracking-tight"
-              >
-                Resumo de uma olhada
-              </h2>
-              <p class="mb-0 mt-1 text-[9pt] text-ink-soft">
+              <h2 class="sheet-title">O que Jorge Solla fez pelo município</h2>
+              <p class="sheet-sub">
+                Redação de síntese sobre os pontos com fonte — nada aqui acrescenta fato novo
+              </p>
+            </div>
+            <div class="report-meta">
+              <p><strong>INSUMO INTERNO</strong></p>
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 2/N</p>
+            </div>
+          </header>
+          <section class="block">
+            <p class="opening-paragraph">
+              A primeira fase reúne vínculos técnicos e de gestão que têm relação documentada com o
+              município ou seu entorno.
+            </p>
+            <p class="opening-paragraph">
+              Na gestão estadual, equipamentos, obras e políticas aparecem com alcance municipal,
+              regional ou de polo claramente identificado.
+            </p>
+            <p class="opening-paragraph">
+              No mandato federal, recursos e atuação local mantêm autoria, fonte, data e fase de
+              execução; proposta não vira entrega e empenho não vira pagamento.
+            </p>
+          </section>
+          <aside class="rule-warning">
+            <svg
+              class="warn-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M10.3 2.9 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.9a2 2 0 0 0-3.4 0Z"
+              />
+              <path d="M12 9v4M12 17h.01" />
+            </svg>
+            <div>
+              <p class="eyebrow warning-text">Como ler</p>
+              <p class="muted mb-0">
+                Cada afirmação tem lastro em item datado. Onde não há fonte, o dossiê registra
+                lacuna — a redação não preenche por inferência.
+              </p>
+            </div>
+          </aside>
+          <footer class="report-footer">
+            <span>Dossiê por cidade · A contribuição</span><span>pág. 2/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 03 · Resumo de uma olhada
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê de atuação pública · Município de Exemplo</p>
+              <h2 class="sheet-title">Resumo de uma olhada</h2>
+              <p class="sheet-sub">
                 Território de Exemplo · informação datada e pronta para conferência
               </p>
             </div>
             <div class="report-meta">
-              <p><strong class="text-ink">Gerado em 17/09/2026</strong></p>
+              <p>Gerado em DD/MM/AAAA</p>
               <p>INSUMO INTERNO</p>
-              <p>pág. 1/5</p>
+              <p>pág. 3/N</p>
             </div>
           </header>
-
-          <section class="mt-4" aria-labelledby="timeline-title">
-            <div class="flex items-end justify-between gap-4">
+          <section class="block">
+            <div class="block-head">
               <div>
                 <p class="eyebrow">01 · trajetória</p>
-                <h3 id="timeline-title" class="section-title">Linha do tempo da carreira</h3>
+                <h3 class="section-title">Linha do tempo da carreira</h3>
               </div>
-              <p class="m-0 text-[8pt] text-ink-soft">Período + papel + trilha de recuperação</p>
+              <p class="meta">Período + papel + trilha de recuperação</p>
             </div>
-            <div class="mt-3 grid grid-cols-3 gap-2">
-              <div class="border-t-2 border-accent bg-wash p-2.5">
-                <p class="m-0 text-[8pt] font-bold text-accent">1989/90–1998</p>
-                <p class="mb-0 mt-1 text-[9pt] font-semibold leading-4">Epidemiologia · SESAB</p>
-                <p class="mb-0 mt-1 text-[7.5pt] leading-3 text-ink-soft">
-                  Biografia Câmara + fala de 2007 · data inicial incerta
-                </p>
+            <div class="timeline-grid">
+              <div class="timeline-cell">
+                <p class="timeline-period">AAAA–AAAA</p>
+                <p class="timeline-role">Papel técnico documentado</p>
+                <p class="timeline-recovery">Fonte oficial</p>
               </div>
-              <div class="border-t-2 border-accent bg-wash p-2.5">
-                <p class="m-0 text-[8pt] font-bold text-accent">1995–1999</p>
-                <p class="mb-0 mt-1 text-[9pt] font-semibold leading-4">
-                  Consultor · Ministério da Saúde
-                </p>
-                <p class="mb-0 mt-1 text-[7.5pt] leading-3 text-ink-soft">
-                  Biografia oficial da Câmara
-                </p>
+              <div class="timeline-cell">
+                <p class="timeline-period">AAAA–AAAA</p>
+                <p class="timeline-role">Gestão municipal</p>
+                <p class="timeline-recovery">Biografia + ato</p>
               </div>
-              <div class="border-t-2 border-accent bg-wash p-2.5">
-                <p class="m-0 text-[8pt] font-bold text-accent">1999–2002</p>
-                <p class="mb-0 mt-1 text-[9pt] font-semibold leading-4">
-                  Secretário municipal · Vitória da Conquista
-                </p>
-                <p class="mb-0 mt-1 text-[7.5pt] leading-3 text-ink-soft">
-                  Câmara + acervo institucional
-                </p>
+              <div class="timeline-cell">
+                <p class="timeline-period">2007–2014</p>
+                <p class="timeline-role">Gestão estadual</p>
+                <p class="timeline-recovery">DOE-BA + notícias</p>
               </div>
-              <div class="border-t-2 border-accent bg-wash p-2.5">
-                <p class="m-0 text-[8pt] font-bold text-accent">2003–2005</p>
-                <p class="mb-0 mt-1 text-[9pt] font-semibold leading-4">
-                  Secretário de Atenção à Saúde · MS
-                </p>
-                <p class="mb-0 mt-1 text-[7.5pt] leading-3 text-ink-soft">
-                  Câmara + discurso de 2007 · término a conferir
-                </p>
+              <div class="timeline-cell">
+                <p class="timeline-period">2015–2019</p>
+                <p class="timeline-role">Mandato federal</p>
+                <p class="timeline-recovery">Câmara</p>
               </div>
-              <div class="border-t-2 border-accent bg-wash p-2.5">
-                <p class="m-0 text-[8pt] font-bold text-accent">2007–2014</p>
-                <p class="mb-0 mt-1 text-[9pt] font-semibold leading-4">
-                  Secretário estadual · SESAB
-                </p>
-                <p class="mb-0 mt-1 text-[7.5pt] leading-3 text-ink-soft">
-                  DOE-BA + notícias SESAB
-                </p>
+              <div class="timeline-cell">
+                <p class="timeline-period">2019–2023</p>
+                <p class="timeline-role">Mandato federal</p>
+                <p class="timeline-recovery">Câmara</p>
               </div>
-              <div class="border-t-2 border-accent bg-wash p-2.5">
-                <p class="m-0 text-[8pt] font-bold text-accent">2015–2027</p>
-                <p class="mb-0 mt-1 text-[9pt] font-semibold leading-4">
-                  Deputado federal · 55ª–57ª legislaturas
-                </p>
-                <p class="mb-0 mt-1 text-[7.5pt] leading-3 text-ink-soft">API Câmara · id 178857</p>
+              <div class="timeline-cell">
+                <p class="timeline-period">2023–2027</p>
+                <p class="timeline-role">Mandato federal</p>
+                <p class="timeline-recovery">Câmara</p>
               </div>
             </div>
           </section>
-
-          <section class="mt-4" aria-labelledby="deliveries-title">
-            <div class="flex items-end justify-between gap-4">
-              <div>
-                <p class="eyebrow">02 · destaques com lastro</p>
-                <h3 id="deliveries-title" class="section-title">Principais entregas localizadas</h3>
-              </div>
-              <span class="text-[8pt] font-semibold text-warning"
-                >Valores abaixo são placeholders</span
-              >
-            </div>
-            <div class="mt-2 divide-y divide-line border-y border-line">
-              <div class="grid grid-cols-[24mm_1fr_40mm] gap-3 py-2.5">
+          <section class="block">
+            <p class="eyebrow">02 · destaques com lastro</p>
+            <h3 class="section-title">Principais entregas localizadas</h3>
+            <div class="deliveries">
+              <div class="delivery-row">
                 <div>
                   <span class="scope">município</span>
-                  <p class="mb-0 mt-2 text-[8pt] text-ink-soft">Era C · 2024</p>
+                  <p class="meta">Era C · AAAA</p>
                 </div>
                 <div>
-                  <p class="m-0 font-semibold">Recurso de exemplo para equipamento de saúde</p>
-                  <p class="mb-0 mt-1 text-[9pt] leading-4 text-ink-soft">
-                    Descrição genérica até conferência do objeto e da autoria.
-                  </p>
+                  <strong>Recurso documentado</strong>
+                  <p class="muted small">Objeto e autoria conferidos.</p>
                 </div>
                 <div class="text-right">
-                  <p class="m-0 text-[14pt] font-semibold tabular-nums">R$ 1,2 mi</p>
-                  <span class="phase">empenhado</span>
-                  <div>
-                    <a
-                      class="source-link mt-1"
-                      href="https://portaldatransparencia.gov.br/"
-                      aria-label="Abrir fonte do recurso de exemplo"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    >
-                  </div>
+                  R$ —<br /><span class="phase phase-paid">pago</span><br /><a href="#fontes"
+                    >fonte</a
+                  >
                 </div>
               </div>
-              <div class="grid grid-cols-[24mm_1fr_40mm] gap-3 py-2.5">
+              <div class="delivery-row">
                 <div>
                   <span class="scope scope-region">região</span>
-                  <p class="mb-0 mt-2 text-[8pt] text-ink-soft">Era B · 2012</p>
+                  <p class="meta">Era B · AAAA</p>
                 </div>
                 <div>
-                  <p class="m-0 font-semibold">
-                    Entrega regional de exemplo com alcance compartilhado
-                  </p>
-                  <p class="mb-0 mt-1 text-[9pt] leading-4 text-ink-soft">
-                    Não somar ao total municipal; alcance e beneficiários ainda a confirmar.
-                  </p>
+                  <strong>Entrega regional</strong>
+                  <p class="muted small">Alcance compartilhado; não somar à cidade.</p>
                 </div>
                 <div class="text-right">
-                  <span class="placeholder-bar w-[28mm]" aria-label="Valor desconhecido"></span>
-                  <p class="mb-0 mt-1 text-[8pt] text-ink-soft">fase: não informada</p>
-                  <div>
-                    <a
-                      class="source-link mt-1"
-                      href="https://www.saude.ba.gov.br/"
-                      aria-label="Abrir fonte da entrega regional de exemplo"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    >
-                  </div>
-                </div>
-              </div>
-              <div class="grid grid-cols-[24mm_1fr_40mm] gap-3 py-2.5">
-                <div>
-                  <span class="scope">município</span>
-                  <p class="mb-0 mt-2 text-[8pt] text-ink-soft">Era A · 2003</p>
-                </div>
-                <div>
-                  <p class="m-0 font-semibold">Ação técnica de exemplo vinculada ao município</p>
-                  <p class="mb-0 mt-1 text-[9pt] leading-4 text-ink-soft">
-                    Registro localizado; efeito quantitativo não consta na fonte.
-                  </p>
-                </div>
-                <div class="text-right">
-                  <span class="placeholder-bar w-[23mm]" aria-label="Número desconhecido"></span>
-                  <p class="mb-0 mt-1 text-[8pt] text-ink-soft">sem valor informado</p>
-                  <div>
-                    <a
-                      class="source-link mt-1"
-                      href="https://www.gov.br/saude/pt-br"
-                      aria-label="Abrir fonte da ação técnica de exemplo"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    >
-                  </div>
+                  R$ —<br /><span class="phase">não informada</span><br /><a href="#fontes"
+                    >fonte</a
+                  >
                 </div>
               </div>
             </div>
-            <p class="mb-0 mt-2 text-[8pt] font-semibold text-ink-soft">
-              Guarda de leitura: autorizado ≠ empenhado ≠ liquidado ≠ pago. A fase acompanha cada
-              valor.
-            </p>
           </section>
-
-          <section class="mt-4 grid grid-cols-[1.15fr_.85fr] gap-3" aria-label="Ganchos e lacunas">
-            <div class="rounded-sm border border-line p-3">
-              <p class="eyebrow">03 · ganchos para o boletim</p>
-              <ul class="m-0 space-y-2 pl-4 text-[9pt] leading-4">
-                <li>
-                  <strong>Tema:</strong> saúde. <strong>Ângulo:</strong> acompanhar a execução do
-                  recurso, sem chamar empenho de pagamento.
-                  <a class="source-link" href="https://portaldatransparencia.gov.br/"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                      /></svg
-                    >(fonte)</a
-                  >
-                </li>
-                <li>
-                  <strong>Tema:</strong> rede regional. <strong>Ângulo:</strong> explicar alcance
-                  compartilhado sem atribuí-lo só à cidade.
-                  <a class="source-link" href="https://www.saude.ba.gov.br/"
-                    ><svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                      /></svg
-                    >(fonte)</a
-                  >
-                </li>
+          <section class="page1-grid">
+            <div class="panel">
+              <p class="eyebrow">Ganchos</p>
+              <p class="mb-0">Tema, ângulo e fonte para conferência.</p>
+            </div>
+            <div class="panel panel-warning">
+              <p class="eyebrow warning-text">O que falta</p>
+              <ul class="tight-list">
+                <li>Confirmar fase.</li>
+                <li>Recuperar ato primário.</li>
               </ul>
             </div>
-            <div class="rounded-sm border-l-[3mm] border-warning bg-warning-soft p-3">
-              <p class="eyebrow !text-warning">04 · o que falta</p>
-              <ul class="m-0 space-y-2 pl-4 text-[9pt] leading-4">
-                <li>Confirmar pagamento do valor ilustrativo.</li>
-                <li>Recuperar ato primário da Era A.</li>
-                <li>Validar vínculo local de honraria citada.</li>
-              </ul>
-              <p class="mb-0 mt-2 text-[8pt] font-semibold text-warning">
-                Ausência é resultado: não completar por inferência.
-              </p>
-            </div>
           </section>
-
           <footer class="report-footer">
-            <span>Dossiê Solla por cidade · Município de Exemplo · INSUMO INTERNO</span>
-            <span>Gerado em 17/09/2026 · pág. 1/5</span>
+            <span>Dossiê por cidade · Resumo</span><span>pág. 3/N</span>
           </footer>
         </article>
       </section>
 
-      <!-- CENA 03 · ERA C -->
-      <section class="scene" aria-labelledby="scene-era-c">
-        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
-          Cena 03 · Seção por era — Era C
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 04 · Síntese
         </p>
-        <article class="sheet" aria-label="Era C, deputado federal">
+        <article class="sheet">
           <header class="report-header">
             <div>
               <p class="report-kicker">Dossiê de atuação pública · Município de Exemplo</p>
-              <h2
-                id="scene-era-c"
-                class="mt-1 text-[18pt] font-semibold leading-tight tracking-tight"
-              >
-                Era C · Deputado Federal
-              </h2>
-              <p class="mb-0 mt-1 text-[9pt] text-ink-soft">
-                2015–2027 · 55ª, 56ª e 57ª legislaturas
-              </p>
+              <h2 class="sheet-title">Síntese do que foi localizado</h2>
+              <p class="sheet-sub">Contagens por recorte, nunca soma entre eles</p>
             </div>
             <div class="report-meta">
-              <p><strong class="text-ink">Gerado em 17/09/2026</strong></p>
+              <p>Gerado em DD/MM/AAAA</p>
               <p>INSUMO INTERNO</p>
-              <p>pág. 3/5</p>
+              <p>pág. 4/N</p>
             </div>
           </header>
+          <section class="block">
+            <p class="eyebrow">Leitura rápida</p>
+            <h3 class="section-title">O que os pontos com fonte mostram</h3>
+            <ul class="synthesis-lines">
+              <li>N pontos com fonte no recorte municipal, distribuídos pelas eras A, B e C.</li>
+              <li>Município, região e polo permanecem em contagens separadas.</li>
+              <li>Itens com valor mantêm a fase; empenho não é pagamento.</li>
+              <li>Recursos executados e propostas sem fase têm leituras distintas.</li>
+              <li>Temas mais frequentes orientam a leitura, sem substituir a lista completa.</li>
+              <li>Acervo read-only: universo e amostra aparecem declarados.</li>
+              <li>Lacunas por era viram tarefas de apuração.</li>
+            </ul>
+          </section>
+          <section class="synthesis-grid">
+            <div class="panel">
+              <p class="eyebrow">Cobertura das eras</p>
+              <ul class="tight-list">
+                <li><strong>Era A</strong> — N pontos</li>
+                <li><strong>Era B</strong> — N pontos</li>
+                <li><strong>Era C</strong> — N pontos</li>
+              </ul>
+            </div>
+            <div class="panel panel-warning">
+              <p class="eyebrow warning-text">Guardas de leitura</p>
+              <ul class="tight-list">
+                <li>Região e polo não somam ao município.</li>
+                <li>Empenho ≠ pagamento.</li>
+                <li>Sem fonte, não publica.</li>
+              </ul>
+            </div>
+          </section>
+          <section class="block">
+            <p class="eyebrow">Recursos por fase</p>
+            <h3 class="section-title">Valores localizados, sem consolidar fases</h3>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Fase</th>
+                  <th>Itens</th>
+                  <th>Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="phase phase-paid">pago</span></td>
+                  <td>N</td>
+                  <td>R$ —</td>
+                </tr>
+                <tr>
+                  <td><span class="phase phase-pending">empenhado</span></td>
+                  <td>N</td>
+                  <td>R$ —</td>
+                </tr>
+                <tr>
+                  <td><span class="phase">não informada</span></td>
+                  <td>N</td>
+                  <td>R$ —</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="warning-text strong">Soma por fase apenas; fases não são equivalentes.</p>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê por cidade · Síntese</span><span>pág. 4/N</span>
+          </footer>
+        </article>
+      </section>
 
-          <div class="mt-4 grid grid-cols-[1fr_55mm] gap-4">
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 05 · Gráficos consolidados
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê de atuação pública · Município de Exemplo</p>
+              <h2 class="sheet-title">Gráficos consolidados</h2>
+              <p class="sheet-sub">Recursos e entregas — valores sempre com a fase</p>
+            </div>
+            <div class="report-meta">
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>INSUMO INTERNO</p>
+              <p>pág. 5/N</p>
+            </div>
+          </header>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <p class="chart-title">Recursos com execução por ano, empilhados por fase (R$)</p>
+              <svg class="chart" viewBox="0 0 330 120">
+                <rect x="35" y="48" width="52" height="54" fill="#285338" />
+                <rect x="35" y="30" width="52" height="18" fill="#8a5a18" />
+                <rect x="139" y="58" width="52" height="44" fill="#285338" />
+                <rect x="139" y="42" width="52" height="16" fill="#8a5a18" />
+                <rect x="243" y="72" width="52" height="30" fill="#285338" />
+                <rect x="243" y="62" width="52" height="10" fill="#8a5a18" />
+                <text x="61" y="116" class="chart-label" text-anchor="middle">AAAA</text>
+                <text x="165" y="116" class="chart-label" text-anchor="middle">AAAA</text>
+                <text x="269" y="116" class="chart-label" text-anchor="middle">AAAA</text>
+              </svg>
+              <p class="chart-legend">verde: pago/liquidado · âmbar: autorizado/empenhado.</p>
+            </div>
+            <div class="chart-card">
+              <p class="chart-title">Propostas sem fase informada (R$)</p>
+              <ul class="value-list">
+                <li>
+                  <span>AAAA · Proposta A</span
+                  ><span class="value-list-bar"><span style="width: 100%"></span></span
+                  ><span class="value-list-value">R$ —</span>
+                </li>
+                <li>
+                  <span>AAAA · Articulação B</span
+                  ><span class="value-list-bar"><span style="width: 48%"></span></span
+                  ><span class="value-list-value">R$ —</span>
+                </li>
+              </ul>
+              <p class="chart-legend">citadas nas fontes, sem execução declarada.</p>
+            </div>
+            <div class="chart-card">
+              <p class="chart-title">Abrangência: município × região × polo</p>
+              <svg class="chart" viewBox="0 0 330 65">
+                <text x="0" y="15" class="chart-label">município</text>
+                <rect x="118" y="5" width="186" height="12" fill="#315c75" />
+                <text x="0" y="35" class="chart-label">região</text>
+                <rect x="118" y="25" width="90" height="12" fill="#9d8b64" />
+                <text x="0" y="55" class="chart-label">polo</text>
+                <rect x="118" y="45" width="44" height="12" fill="#8f819c" />
+              </svg>
+              <p class="chart-legend">região e polo não somam ao município.</p>
+            </div>
+            <div class="chart-card">
+              <p class="chart-title">Trajetória: pontos com fonte por ano</p>
+              <svg class="chart" viewBox="0 0 330 105">
+                <path d="M8 92H322" stroke="#cbd5dc" />
+                <rect x="25" y="62" width="28" height="30" fill="#315c75" />
+                <rect x="68" y="35" width="28" height="57" fill="#315c75" />
+                <rect x="111" y="72" width="28" height="20" fill="#315c75" />
+                <rect x="154" y="20" width="28" height="72" fill="#315c75" />
+                <rect x="197" y="48" width="28" height="44" fill="#315c75" />
+                <rect x="240" y="31" width="28" height="61" fill="#315c75" />
+              </svg>
+            </div>
+            <div class="chart-card">
+              <p class="chart-title">Áreas com mais registros</p>
+              <svg class="chart" viewBox="0 0 330 90">
+                <text x="0" y="15" class="chart-label">Área A</text>
+                <rect x="100" y="5" width="200" height="12" fill="#315c75" />
+                <text x="0" y="35" class="chart-label">Área B</text>
+                <rect x="100" y="25" width="145" height="12" fill="#315c75" />
+                <text x="0" y="55" class="chart-label">Área C</text>
+                <rect x="100" y="45" width="90" height="12" fill="#315c75" />
+                <text x="0" y="75" class="chart-label">Área D</text>
+                <rect x="100" y="65" width="48" height="12" fill="#315c75" />
+              </svg>
+            </div>
+            <div class="chart-card">
+              <p class="chart-title">Lacunas declaradas por era</p>
+              <svg class="chart" viewBox="0 0 330 75">
+                <text x="0" y="15" class="chart-label">Era A</text>
+                <rect x="95" y="5" width="160" height="12" fill="#315c75" />
+                <text x="0" y="35" class="chart-label">Era B</text>
+                <rect x="95" y="25" width="105" height="12" fill="#315c75" />
+                <text x="0" y="55" class="chart-label">Era C</text>
+                <rect x="95" y="45" width="55" height="12" fill="#315c75" />
+              </svg>
+              <p class="chart-legend">cada lacuna é tarefa de apuração.</p>
+            </div>
+            <div class="chart-card">
+              <p class="chart-title">Acervo interno (read-only)</p>
+              <p class="scope-count">N</p>
+              <p class="meta">falas no recorte temático (2011+)</p>
+              <ul class="tight-list">
+                <li>Amostra de N falas com link direto.</li>
+                <li>Recorte municipal; região e polo não entram nesta conta.</li>
+              </ul>
+            </div>
+          </div>
+          <footer class="report-footer">
+            <span>Dossiê por cidade · Gráficos</span><span>pág. 5/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 06 · Era A
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê de atuação pública · Município de Exemplo</p>
+              <h2 class="sheet-title">Era A · Carreira técnica e gestão até 2006</h2>
+              <p class="sheet-sub">Formação, epidemiologia e gestão pública</p>
+            </div>
+            <div class="report-meta">
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 6/N</p>
+            </div>
+          </header>
+          <div class="era-method">
             <div>
               <p class="eyebrow">Recorte e método</p>
-              <p class="mb-0 text-[10.5pt] leading-5 text-ink-soft">
-                Itens ligados ao município foram conferidos em fonte oficial e separados por esfera.
-                Discursos, proposições e execução financeira têm datas e estágios distintos.
-              </p>
+              <p class="muted">Itens ligados ao município, separados por esfera e fonte.</p>
             </div>
-            <aside class="rounded-sm bg-accent-soft p-3 text-[9pt] leading-4">
-              <strong class="text-accent">Trilha de recuperação</strong><br />API Câmara · Portal da
-              Transparência · acervo interno read-only
+            <aside class="aside-accent">
+              <strong>Trilha de recuperação</strong><br />biografia · DOU · busca datada
             </aside>
           </div>
-
-          <section class="mt-5" aria-labelledby="numbers-title">
-            <div class="flex items-end justify-between gap-4">
-              <div>
-                <p class="eyebrow">Números com fase</p>
-                <h3 id="numbers-title" class="section-title">Recursos e entregas quantificáveis</h3>
-              </div>
-              <p class="m-0 text-[8pt] font-semibold text-warning">
-                Exemplos de preenchimento — não são fatos publicados
-              </p>
-            </div>
-            <table class="document-table mt-3" aria-describedby="numbers-note">
-              <caption class="sr-only">
-                Valores de exemplo por ano, fase, esfera e fonte
-              </caption>
-              <colgroup>
-                <col style="width: 22%" />
-                <col style="width: 15%" />
-                <col style="width: 10%" />
-                <col style="width: 17%" />
-                <col style="width: 15%" />
-                <col style="width: 21%" />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th scope="col">Objeto</th>
-                  <th scope="col">Valor</th>
-                  <th scope="col">Ano</th>
-                  <th scope="col">Fase</th>
-                  <th scope="col">Esfera</th>
-                  <th scope="col">Fonte</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Equipamento de saúde — exemplo</td>
-                  <td class="numeric"><strong>R$ 1,2 mi</strong></td>
-                  <td class="numeric">2024</td>
-                  <td><span class="phase">empenhado</span></td>
-                  <td><span class="scope">município</span></td>
-                  <td>
-                    <a class="source-link" href="https://portaldatransparencia.gov.br/"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    ><br /><span class="text-[7.5pt] text-ink-soft">consulta —/—/2026</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Custeio de exemplo</td>
-                  <td class="numeric"><span class="placeholder-bar w-[18mm]"></span></td>
-                  <td class="numeric">2022</td>
-                  <td><span class="phase">pago</span></td>
-                  <td><span class="scope">município</span></td>
-                  <td>
-                    <a class="source-link" href="https://portaldatransparencia.gov.br/"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    ><br /><span class="text-[7.5pt] text-ink-soft">valor a recuperar</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Ação compartilhada de exemplo</td>
-                  <td class="numeric">R$ —</td>
-                  <td class="numeric">2021</td>
-                  <td><span class="phase">autorizado</span></td>
-                  <td><span class="scope scope-region">região</span></td>
-                  <td>
-                    <a class="source-link" href="https://www12.senado.leg.br/orcamento/sigabrasil"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1 2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    ><br /><span class="text-[7.5pt] text-ink-soft">não somar à cidade</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Saldo inscrito de exemplo</td>
-                  <td class="numeric">R$ —</td>
-                  <td class="numeric">2020</td>
-                  <td><span class="phase">restos</span></td>
-                  <td><span class="scope">município</span></td>
-                  <td>
-                    <a class="source-link" href="https://portaldatransparencia.gov.br/"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    ><br /><span class="text-[7.5pt] text-ink-soft">situação a conferir</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <p id="numbers-note" class="mb-0 mt-2 text-[8pt] font-semibold text-warning">
-              Não consolidar fases como se fossem equivalentes. Um valor empenhado não é um valor
-              pago.
+          <section class="era-summary">
+            <p class="eyebrow">O que esta era entrega</p>
+            <p>
+              Parágrafo de consolidação: vínculos técnicos e de gestão localizados são resumidos
+              antes da lista; o recorte regional permanece separado do município.
             </p>
           </section>
-
-          <section class="mt-5" aria-labelledby="actions-title">
+          <section class="block">
             <p class="eyebrow">Atuação registrada</p>
-            <h3 id="actions-title" class="section-title">O que fez — item, alcance e lastro</h3>
-            <div class="mt-3 grid grid-cols-2 gap-3">
-              <article class="rounded-sm border border-line p-3">
-                <div class="flex items-center justify-between gap-3">
-                  <span class="scope">município</span
-                  ><span class="text-[8pt] text-ink-soft">Câmara · 2023</span>
+            <h3 class="section-title">O que fez — item, alcance e lastro</h3>
+            <div class="action-grid">
+              <article class="panel">
+                <div class="action-head">
+                  <span class="scope">município</span><span class="meta">AAAA</span>
                 </div>
-                <h4 class="mb-0 mt-2 text-[10.5pt] font-semibold">
-                  Pronunciamento de exemplo com menção direta à cidade
-                </h4>
-                <p class="mb-0 mt-1 text-[9pt] leading-4 text-ink-soft">
-                  Trecho e contexto precisam ser lidos antes do uso editorial.
-                </p>
-                <a
-                  class="source-link mt-2"
-                  href="https://dadosabertos.camara.leg.br/api/v2/deputados/178857/discursos"
-                  ><svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                    /></svg
-                  >(fonte)</a
-                >
+                <h4 class="action-title">Item municipal documentado</h4>
+                <p class="muted small">Registro com fonte datada.</p>
+                <a href="#fontes">(fonte)</a>
               </article>
-              <article class="rounded-sm border border-line p-3">
-                <div class="flex items-center justify-between gap-3">
-                  <span class="scope scope-region">polo</span
-                  ><span class="text-[8pt] text-ink-soft">Câmara · 2019</span>
+              <article class="panel">
+                <div class="action-head">
+                  <span class="scope scope-region">região</span><span class="meta">AAAA</span>
                 </div>
-                <h4 class="mb-0 mt-2 text-[10.5pt] font-semibold">
-                  Articulação de exemplo com alcance no polo regional
-                </h4>
-                <p class="mb-0 mt-1 text-[9pt] leading-4 text-ink-soft">
-                  A cidade pode estar no raio de alcance, mas não recebe atribuição exclusiva.
-                </p>
-                <a
-                  class="source-link mt-2"
-                  href="https://dadosabertos.camara.leg.br/api/v2/proposicoes?idDeputadoAutor=178857"
-                  ><svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                    /></svg
-                  >(fonte)</a
-                >
+                <h4 class="action-title">Item regional documentado</h4>
+                <p class="muted small">Não somar à cidade.</p>
+                <a href="#fontes">(fonte)</a>
               </article>
             </div>
           </section>
-
-          <section class="mt-5 grid grid-cols-[1fr_58mm] gap-4">
-            <div class="rounded-sm border border-line p-3">
-              <p class="eyebrow">Títulos, honrarias e vínculos locais</p>
-              <p class="mb-0 text-[9.5pt] leading-5">
-                <strong>Vínculo local citado em fonte secundária:</strong> confirmação documental
-                pendente.
-                <a class="source-link" href="https://www.camara.leg.br/deputados/178857/biografia"
-                  ><svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                    /></svg
-                  >(fonte)</a
-                >
-              </p>
-            </div>
-            <div
-              class="asset-box flex items-center justify-center rounded-sm p-3 text-center text-[8pt] font-semibold leading-4"
-            >
-              NEEDS ASSET<br />reprodução do ato ou clipping<br />somente com origem e licença
-            </div>
-          </section>
-
           <footer class="report-footer">
-            <span>Dossiê Solla por cidade · Era C · Município de Exemplo</span
-            ><span>Gerado em 17/09/2026 · pág. 3/5</span>
+            <span>Dossiê por cidade · Era A</span><span>pág. 6/N</span>
           </footer>
         </article>
       </section>
 
-      <!-- CENA 04 · REGIÃO / POLO -->
-      <section class="scene" aria-labelledby="scene-region">
-        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
-          Cena 04 · Região / polo — distinção não somável
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 07 · Era B
         </p>
-        <article class="sheet" aria-label="Recorte regional e polo">
+        <article class="sheet">
           <header class="report-header">
             <div>
               <p class="report-kicker">Dossiê de atuação pública · Município de Exemplo</p>
-              <h2
-                id="scene-region"
-                class="mt-1 text-[18pt] font-semibold leading-tight tracking-tight"
-              >
-                Região / polo
-              </h2>
-              <p class="mb-0 mt-1 text-[9pt] text-ink-soft">
-                Impacto compartilhado, apresentado fora da conta municipal
-              </p>
+              <h2 class="sheet-title">Era B · Secretaria Estadual de Saúde da Bahia</h2>
+              <p class="sheet-sub">2007–2014 · equipamentos, políticas e obras</p>
             </div>
             <div class="report-meta">
-              <p><strong class="text-ink">Gerado em 17/09/2026</strong></p>
-              <p>INSUMO INTERNO</p>
-              <p>pág. 4/5</p>
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 7/N</p>
             </div>
           </header>
-
-          <section
-            class="mt-5 rounded-sm border-[.45mm] border-warning bg-warning-soft p-4"
-            aria-label="Regra de leitura do recorte regional"
-          >
-            <div class="flex items-start gap-3">
-              <svg
-                class="mt-0.5 h-5 w-5 shrink-0 text-warning"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                aria-hidden="true"
-              >
-                <path
-                  d="M10.3 2.9 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.9a2 2 0 0 0-3.4 0Z"
-                />
-                <path d="M12 9v4M12 17h.01" />
-              </svg>
-              <div>
-                <p class="m-0 text-[12pt] font-semibold text-warning">
-                  Região não é cidade. Não some os dois recortes.
-                </p>
-                <p class="mb-0 mt-1 text-[10pt] leading-5 text-ink-soft">
-                  Um equipamento de referência ou uma política regional pode atender moradores do
-                  município sem constituir entrega exclusiva para ele. Atribuição só entra com
-                  alcance documentado.
-                </p>
-              </div>
+          <div class="era-method">
+            <div>
+              <p class="eyebrow">Recorte e método</p>
+              <p class="muted">Cada linha informa esfera, fase e fonte.</p>
             </div>
+            <aside class="aside-accent">
+              <strong>Trilha de recuperação</strong><br />DOE-BA · SESAB · transparência
+            </aside>
+          </div>
+          <section class="era-summary">
+            <p class="eyebrow">O que esta era entrega</p>
+            <p>
+              Parágrafo de consolidação: equipamentos, obras e políticas aparecem em linguagem
+              contínua antes da tabela, sempre distinguindo alcance municipal, regional e de polo.
+            </p>
           </section>
-
-          <section class="mt-6" aria-labelledby="scope-compare">
-            <p class="eyebrow">Leitura lado a lado</p>
-            <h3 id="scope-compare" class="section-title">Duas listas, dois totais, nenhuma soma</h3>
-            <div class="mt-4 grid grid-cols-[1fr_12mm_1fr] items-stretch gap-3">
-              <div class="rounded-sm border border-line p-4">
-                <div class="flex items-center justify-between gap-3">
-                  <span class="scope">município</span
-                  ><span class="text-[8pt] font-semibold text-ink-soft">TOTAL LOCAL</span>
-                </div>
-                <p class="mb-0 mt-3 text-[20pt] font-semibold tabular-nums">
-                  R$ 1,2 mi
-                  <span class="text-[8pt] font-normal text-ink-soft">exemplo · empenhado</span>
-                </p>
-                <ul class="mt-4 space-y-3 pl-4 text-[9.5pt] leading-4">
-                  <li>
-                    Objeto de exemplo nominalmente associado ao município.
-                    <a class="source-link" href="https://portaldatransparencia.gov.br/"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    >
-                  </li>
-                  <li>
-                    Menção direta à cidade em registro oficial.
-                    <a
-                      class="source-link"
-                      href="https://dadosabertos.camara.leg.br/api/v2/deputados/178857/discursos"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    >
-                  </li>
-                </ul>
-              </div>
-              <div
-                class="flex flex-col items-center justify-center text-center text-warning"
-                aria-hidden="true"
-              >
-                <div class="h-full w-px bg-[#d8c09a]"></div>
-                <span class="my-2 text-[18pt] font-semibold">≠</span>
-                <div class="h-full w-px bg-[#d8c09a]"></div>
-              </div>
-              <div class="rounded-sm border border-[#c9a66d] bg-[#fffbf3] p-4">
-                <div class="flex items-center justify-between gap-3">
-                  <span class="scope scope-region">região / polo</span
-                  ><span class="text-[8pt] font-semibold text-warning">SEM TOTAL COMBINADO</span>
-                </div>
-                <p class="mb-0 mt-3 text-[20pt] font-semibold tabular-nums">
-                  R$ — <span class="text-[8pt] font-normal text-ink-soft">valor compartilhado</span>
-                </p>
-                <ul class="mt-4 space-y-3 pl-4 text-[9.5pt] leading-4">
-                  <li>
-                    Serviço de exemplo sediado no polo e usado por vários municípios.
-                    <a class="source-link" href="https://www.saude.ba.gov.br/"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    >
-                  </li>
-                  <li>
-                    Política regional de exemplo; alcance municipal ainda sem série.
-                    <a class="source-link" href="https://www.transparencia.ba.gov.br/"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1 2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    >
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </section>
-
-          <section class="mt-6" aria-labelledby="regional-items">
-            <div class="flex items-end justify-between gap-4">
-              <div>
-                <p class="eyebrow">Itens regionais recuperados</p>
-                <h3 id="regional-items" class="section-title">
-                  Evidência de alcance, sem apropriação local
-                </h3>
-              </div>
-              <span class="scope scope-region">recorte regional</span>
-            </div>
-            <table class="document-table mt-3">
-              <caption class="sr-only">
-                Itens do recorte regional com evidência e fonte
-              </caption>
-              <colgroup>
-                <col style="width: 30%" />
-                <col style="width: 18%" />
-                <col style="width: 31%" />
-                <col style="width: 21%" />
-              </colgroup>
+          <section class="block">
+            <p class="eyebrow">Entregas localizadas</p>
+            <h3 class="section-title">Recursos e entregas quantificáveis</h3>
+            <table class="document-table">
               <thead>
                 <tr>
-                  <th scope="col">Item</th>
-                  <th scope="col">Esfera</th>
-                  <th scope="col">Evidência de alcance</th>
-                  <th scope="col">Fonte</th>
+                  <th>Objeto</th>
+                  <th>Valor</th>
+                  <th>Ano</th>
+                  <th>Fase</th>
+                  <th>Esfera</th>
+                  <th>Fonte</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>Unidade de referência de exemplo</td>
-                  <td><span class="scope scope-region">polo</span></td>
-                  <td>
-                    Lista de municípios atendidos não localizada; não quantificar beneficiários.
-                  </td>
-                  <td>
-                    <a class="source-link" href="https://www.saude.ba.gov.br/"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    >
-                  </td>
+                  <td>Equipamento A</td>
+                  <td>R$ —</td>
+                  <td>AAAA</td>
+                  <td><span class="phase phase-paid">pago</span></td>
+                  <td><span class="scope">município</span></td>
+                  <td><a href="#fontes">fonte</a></td>
                 </tr>
                 <tr>
-                  <td>Programa compartilhado de exemplo</td>
+                  <td>Programa B</td>
+                  <td>R$ —</td>
+                  <td>AAAA</td>
+                  <td><span class="phase">não informada</span></td>
                   <td><span class="scope scope-region">região</span></td>
-                  <td>Fonte menciona território; município não é individualizado.</td>
-                  <td>
-                    <a class="source-link" href="https://www.transparencia.ba.gov.br/"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    >
-                  </td>
-                </tr>
-                <tr>
-                  <td>Articulação federativa de exemplo</td>
-                  <td><span class="scope scope-region">região</span></td>
-                  <td>Registro documental localizado; efeito material ainda não medido.</td>
-                  <td>
-                    <a class="source-link" href="https://dadosabertos.camara.leg.br/"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    >
-                  </td>
+                  <td><a href="#fontes">fonte</a></td>
                 </tr>
               </tbody>
             </table>
           </section>
-
-          <section class="mt-5 grid grid-cols-2 gap-3">
-            <div class="rounded-sm bg-accent-soft p-3">
-              <p class="eyebrow">Gancho possível</p>
-              <p class="mb-0 text-[9.5pt] leading-5">
-                <strong>Tema:</strong> acesso regional à saúde. <strong>Ângulo:</strong> mostrar a
-                função de referência do polo e citar a cidade apenas dentro do alcance comprovado.
-                <a class="source-link" href="https://www.saude.ba.gov.br/"
-                  ><svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                    /></svg
-                  >(fonte)</a
-                >
-              </p>
-            </div>
-            <div class="rounded-sm border-l-[3mm] border-warning bg-warning-soft p-3">
-              <p class="eyebrow !text-warning">Lacuna prioritária</p>
-              <p class="mb-0 text-[9.5pt] leading-5">
-                Recuperar lista oficial de municípios atendidos e período de vigência. Até lá,
-                nenhum número de beneficiários.
-              </p>
-            </div>
-          </section>
-
           <footer class="report-footer">
-            <span>Dossiê Solla por cidade · Região/polo · recortes não somáveis</span
-            ><span>Gerado em 17/09/2026 · pág. 4/5</span>
+            <span>Dossiê por cidade · Era B</span><span>pág. 7/N</span>
           </footer>
         </article>
       </section>
 
-      <!-- CENA 05 · FONTES E LIMITES -->
-      <section class="scene" aria-labelledby="scene-sources">
-        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
-          Cena 05 · Fontes e limites + defeso eleitoral
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 08 · Era C
         </p>
-        <article class="sheet" aria-label="Fontes, lacunas e limites do dossiê">
+        <article class="sheet">
           <header class="report-header">
             <div>
               <p class="report-kicker">Dossiê de atuação pública · Município de Exemplo</p>
-              <h2
-                id="scene-sources"
-                class="mt-1 text-[18pt] font-semibold leading-tight tracking-tight"
-              >
-                Fontes e limites
-              </h2>
-              <p class="mb-0 mt-1 text-[9pt] text-ink-soft">
+              <h2 class="sheet-title">Era C · Deputado Federal</h2>
+              <p class="sheet-sub">2015–2027 · recursos, proposições e atuação</p>
+            </div>
+            <div class="report-meta">
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 8/N</p>
+            </div>
+          </header>
+          <div class="era-method">
+            <div>
+              <p class="eyebrow">Recorte e método</p>
+              <p class="muted">Autoria, ano, fase e alcance checados item a item.</p>
+            </div>
+            <aside class="aside-accent">
+              <strong>Trilha de recuperação</strong><br />Câmara · CGU · acervo
+            </aside>
+          </div>
+          <section class="era-summary">
+            <p class="eyebrow">O que esta era entrega</p>
+            <p>
+              Parágrafo de consolidação: o mandato reúne emendas e atuação local com fonte. Região e
+              polo permanecem fora da conta municipal; empenho não é pagamento.
+            </p>
+          </section>
+          <section class="block">
+            <p class="eyebrow">Entregas localizadas</p>
+            <h3 class="section-title">Recursos e entregas quantificáveis</h3>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Objeto</th>
+                  <th>Valor</th>
+                  <th>Ano</th>
+                  <th>Fase</th>
+                  <th>Esfera</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Emenda A</td>
+                  <td>R$ —</td>
+                  <td>AAAA</td>
+                  <td><span class="phase phase-paid">pago</span></td>
+                  <td><span class="scope">município</span></td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+                <tr>
+                  <td>Ação regional B</td>
+                  <td>R$ —</td>
+                  <td>AAAA</td>
+                  <td><span class="phase phase-pending">empenhado</span></td>
+                  <td><span class="scope scope-region">região</span></td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê por cidade · Era C</span><span>pág. 8/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 09 · Era C — continuação 2
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê de atuação pública · Município de Exemplo</p>
+              <h2 class="sheet-title">Era C · Deputado Federal — continuação 2</h2>
+              <p class="sheet-sub">Folha corrente · a era flui sem corte nem descarte silencioso</p>
+            </div>
+            <div class="report-meta">
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 9/N</p>
+            </div>
+          </header>
+          <section class="block">
+            <p class="eyebrow">Atuação registrada</p>
+            <h3 class="section-title">O que fez — item, alcance e lastro</h3>
+            <div class="action-grid">
+              <article class="panel">
+                <div class="action-head">
+                  <span class="scope">município</span><span class="meta">AAAA</span>
+                </div>
+                <h4 class="action-title">Pronunciamento com menção direta</h4>
+                <p class="muted small">Trecho e contexto para conferência.</p>
+                <a href="#fontes">(fonte)</a>
+              </article>
+              <article class="panel">
+                <div class="action-head">
+                  <span class="scope scope-pole">polo</span><span class="meta">AAAA</span>
+                </div>
+                <h4 class="action-title">Articulação de alcance regional</h4>
+                <p class="muted small">Sem atribuição exclusiva à cidade.</p>
+                <a href="#fontes">(fonte)</a>
+              </article>
+              <article class="panel">
+                <div class="action-head">
+                  <span class="scope">município</span><span class="meta">AAAA</span>
+                </div>
+                <h4 class="action-title">Proposição documentada</h4>
+                <p class="muted small">Tramitação não equivale a entrega concluída.</p>
+                <a href="#fontes">(fonte)</a>
+              </article>
+              <article class="panel">
+                <div class="action-head">
+                  <span class="scope">município</span><span class="meta">AAAA</span>
+                </div>
+                <h4 class="action-title">Vínculo local</h4>
+                <p class="muted small">Ato e período visíveis.</p>
+                <a href="#fontes">(fonte)</a>
+              </article>
+            </div>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê por cidade · Era C · continuação 2</span><span>pág. 9/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 10 · Região / polo — contadores
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê de atuação pública · Município de Exemplo</p>
+              <h2 class="sheet-title">Região / polo</h2>
+              <p class="sheet-sub">Impacto compartilhado, apresentado fora da conta municipal</p>
+            </div>
+            <div class="report-meta">
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 10/N</p>
+            </div>
+          </header>
+          <aside class="rule-warning">
+            <svg
+              class="warn-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M10.3 2.9 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.9a2 2 0 0 0-3.4 0Z"
+              />
+              <path d="M12 9v4M12 17h.01" />
+            </svg>
+            <div>
+              <p class="m-0 text-[12pt] font-semibold text-warning">
+                Região não é cidade. Não some os recortes.
+              </p>
+              <p class="muted mb-0">
+                Uma política regional pode alcançar moradores sem constituir entrega exclusiva.
+              </p>
+            </div>
+          </aside>
+          <section class="block">
+            <p class="eyebrow">Leitura lado a lado</p>
+            <h3 class="section-title">Duas listas, dois totais, nenhuma soma</h3>
+            <div class="scope-compare">
+              <div class="panel">
+                <span class="scope">município</span>
+                <p class="scope-count">N itens</p>
+                <p class="muted">Total local, com objeto nominalmente associado.</p>
+              </div>
+              <div class="compare-mid"><span>≠</span></div>
+              <div class="panel panel-region">
+                <span class="scope scope-region">região / polo</span>
+                <p class="scope-count">N itens</p>
+                <p class="muted">Alcance compartilhado, sem total combinado.</p>
+              </div>
+            </div>
+          </section>
+          <section class="block">
+            <p class="eyebrow">Contadores de abrangência</p>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Recorte</th>
+                  <th>Itens com fonte</th>
+                  <th>Itens com valor</th>
+                  <th>Regra</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="scope">município</span></td>
+                  <td>N</td>
+                  <td>N</td>
+                  <td>Total local</td>
+                </tr>
+                <tr>
+                  <td><span class="scope scope-region">região</span></td>
+                  <td>N</td>
+                  <td>N</td>
+                  <td>Não somar</td>
+                </tr>
+                <tr>
+                  <td><span class="scope scope-pole">polo</span></td>
+                  <td>N</td>
+                  <td>N</td>
+                  <td>Não somar</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê por cidade · Região/polo</span><span>pág. 10/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 11 · Região / polo — município · lista completa
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê de atuação pública · Município de Exemplo</p>
+              <h2 class="sheet-title">Região / polo · município</h2>
+              <p class="sheet-sub">Lista completa do recorte local</p>
+            </div>
+            <div class="report-meta">
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 11/N</p>
+            </div>
+          </header>
+          <section class="block">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Município</p>
+                <h3 class="section-title">Todos os itens com alcance direto</h3>
+              </div>
+              <span class="scope">N de N</span>
+            </div>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Era / ano</th>
+                  <th>Valor / fase</th>
+                  <th>Evidência local</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Item municipal 01</td>
+                  <td>Era A · AAAA</td>
+                  <td>R$ —</td>
+                  <td>Município nominal na fonte.</td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+                <tr>
+                  <td>Item municipal 02</td>
+                  <td>Era B · AAAA</td>
+                  <td><span class="phase phase-paid">pago</span></td>
+                  <td>Objeto local conferido.</td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+                <tr>
+                  <td>Item municipal 03</td>
+                  <td>Era C · AAAA</td>
+                  <td><span class="phase phase-pending">empenhado</span></td>
+                  <td>Autoria e localidade checadas.</td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+                <tr>
+                  <td>Item municipal 04</td>
+                  <td>Era C · AAAA</td>
+                  <td>R$ —</td>
+                  <td>Menção direta documentada.</td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+                <tr>
+                  <td>Item municipal 05</td>
+                  <td>Era C · AAAA</td>
+                  <td><span class="phase">não informada</span></td>
+                  <td>Fase não inferida.</td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="warning-text strong">
+              Lista completa no documento gerado; quando necessário, continua em folha corrente.
+            </p>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê por cidade · Região/polo · município</span><span>pág. 11/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 12 · Região / polo — regional · lista completa
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê de atuação pública · Município de Exemplo</p>
+              <h2 class="sheet-title">Região / polo · região / polo</h2>
+              <p class="sheet-sub">Lista completa do impacto compartilhado</p>
+            </div>
+            <div class="report-meta">
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 12/N</p>
+            </div>
+          </header>
+          <section class="block">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Recorte regional</p>
+                <h3 class="section-title">Evidência de alcance, sem apropriação local</h3>
+              </div>
+              <span class="scope scope-region">N de N</span>
+            </div>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Esfera</th>
+                  <th>Era / ano</th>
+                  <th>Evidência de alcance</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Unidade de referência A</td>
+                  <td><span class="scope scope-pole">polo</span></td>
+                  <td>Era B · AAAA</td>
+                  <td>Atendimento regional documentado.</td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+                <tr>
+                  <td>Programa compartilhado B</td>
+                  <td><span class="scope scope-region">região</span></td>
+                  <td>Era B · AAAA</td>
+                  <td>Território citado; município não individualizado.</td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+                <tr>
+                  <td>Articulação federativa C</td>
+                  <td><span class="scope scope-region">região</span></td>
+                  <td>Era C · AAAA</td>
+                  <td>Efeito material ainda não medido.</td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+                <tr>
+                  <td>Serviço de referência D</td>
+                  <td><span class="scope scope-pole">polo</span></td>
+                  <td>Era C · AAAA</td>
+                  <td>Lista de atendidos identificada.</td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <aside class="panel panel-warning mt-5">
+            <p class="eyebrow warning-text">Lacuna prioritária</p>
+            <p class="mb-0">
+              Recuperar lista oficial de municípios atendidos e período de vigência antes de
+              quantificar beneficiários.
+            </p>
+          </aside>
+          <footer class="report-footer">
+            <span>Dossiê por cidade · Região/polo · regional</span><span>pág. 12/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 13 · Lacunas — lista corrente
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê de atuação pública · Município de Exemplo</p>
+              <h2 class="sheet-title">Lacunas explícitas</h2>
+              <p class="sheet-sub">O que não foi localizado vira tarefa de apuração</p>
+            </div>
+            <div class="report-meta">
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 13/N</p>
+            </div>
+          </header>
+          <section class="block">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow warning-text">Ausência é resultado</p>
+                <h3 class="section-title">Lista completa de lacunas</h3>
+              </div>
+              <span class="warning-text strong">N de N</span>
+            </div>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Era</th>
+                  <th>Lacuna</th>
+                  <th>Já consultado</th>
+                  <th>Próxima busca</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Era A</td>
+                  <td>Vínculo local</td>
+                  <td>Biografia e busca datada</td>
+                  <td>Arquivo municipal</td>
+                  <td><span class="phase">aberta</span></td>
+                </tr>
+                <tr>
+                  <td>Era B</td>
+                  <td>Instrumento da obra</td>
+                  <td>Notícias e portal</td>
+                  <td>DOE-BA</td>
+                  <td><span class="phase phase-pending">prioridade</span></td>
+                </tr>
+                <tr>
+                  <td>Era C</td>
+                  <td>Fase atual</td>
+                  <td>Câmara e CGU</td>
+                  <td>Documento financeiro</td>
+                  <td><span class="phase">aberta</span></td>
+                </tr>
+                <tr>
+                  <td>Fora de era</td>
+                  <td>Acervo pré-2011</td>
+                  <td>Base read-only</td>
+                  <td>Acervo físico</td>
+                  <td><span class="phase">aberta</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <aside class="rule-warning">
+            <svg
+              class="warn-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M12 9v4M12 17h.01" />
+              <path
+                d="M10.3 2.9 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.9a2 2 0 0 0-3.4 0Z"
+              />
+            </svg>
+            <p class="mb-0">Nenhuma lacuna é preenchida por memória ou plausibilidade.</p>
+          </aside>
+          <footer class="report-footer">
+            <span>Dossiê por cidade · Lacunas</span><span>pág. 13/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 14 · Notícias e documentos — lista corrente
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê de atuação pública · Município de Exemplo</p>
+              <h2 class="sheet-title">Notícias e documentos consultados</h2>
+              <p class="sheet-sub">Inventário datado que sustenta as seções anteriores</p>
+            </div>
+            <div class="report-meta">
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 14/N</p>
+            </div>
+          </header>
+          <section class="block">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Corpus consultado</p>
+                <h3 class="section-title">Lista completa, em folhas correntes</h3>
+              </div>
+              <span class="scope">N de N</span>
+            </div>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Documento / notícia</th>
+                  <th>Origem</th>
+                  <th>Uso no dossiê</th>
+                  <th>Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Documento municipal A</td>
+                  <td>Órgão oficial</td>
+                  <td>Era A · vínculo</td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Notícia institucional B</td>
+                  <td>SESAB</td>
+                  <td>Era B · entrega</td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Registro financeiro C</td>
+                  <td>Portal oficial</td>
+                  <td>Era C · fase</td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Tramitação D</td>
+                  <td>Câmara</td>
+                  <td>Era C · atuação</td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Documento regional E</td>
+                  <td>Estado</td>
+                  <td>Região / polo</td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="meta">Continuação automática; nenhum documento é descartado para caber.</p>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê por cidade · Notícias e documentos</span><span>pág. 14/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 15 · Acervo — amostra declarada
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê de atuação pública · Município de Exemplo</p>
+              <h2 class="sheet-title">Acervo interno de falas</h2>
+              <p class="sheet-sub">Amostra declarada do recorte municipal read-only (2011+)</p>
+            </div>
+            <div class="report-meta">
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 15/N</p>
+            </div>
+          </header>
+          <section class="synthesis-grid block">
+            <div class="panel">
+              <p class="eyebrow">Universo recuperado</p>
+              <p class="scope-count">N falas</p>
+              <p class="muted mb-0">Menção municipal confirmada.</p>
+            </div>
+            <div class="panel panel-warning">
+              <p class="eyebrow warning-text">Amostra exibida</p>
+              <p class="scope-count">N de N</p>
+              <p class="muted mb-0">Quantidade e critério explícitos.</p>
+            </div>
+          </section>
+          <section class="block">
+            <p class="eyebrow">Amostra com link direto</p>
+            <h3 class="section-title">Falas selecionadas para conferência</h3>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Tema</th>
+                  <th>Trecho / contexto</th>
+                  <th>Abrangência</th>
+                  <th>Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Tema A</td>
+                  <td>Resumo fiel da fala.</td>
+                  <td><span class="scope">município</span></td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Tema B</td>
+                  <td>Menção direta confirmada.</td>
+                  <td><span class="scope">município</span></td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Tema C</td>
+                  <td>Contexto parlamentar.</td>
+                  <td><span class="scope">município</span></td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Tema D</td>
+                  <td>Recorte selecionado.</td>
+                  <td><span class="scope">município</span></td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê por cidade · Acervo · amostra declarada</span><span>pág. 15/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene" id="fontes">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 16 · Fontes e limites
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê de atuação pública · Município de Exemplo</p>
+              <h2 class="sheet-title">Fontes e limites</h2>
+              <p class="sheet-sub">
                 O que foi consultado, o que não foi achado e o que não se pode afirmar
               </p>
             </div>
             <div class="report-meta">
-              <p><strong class="text-ink">Gerado em 17/09/2026</strong></p>
-              <p>INSUMO INTERNO</p>
-              <p>pág. 5/5</p>
+              <p><strong>INSUMO INTERNO</strong></p>
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. N/N</p>
             </div>
           </header>
-
-          <section class="mt-4" aria-labelledby="gaps-title">
-            <div class="flex items-end justify-between gap-4">
-              <div>
-                <p class="eyebrow">Lacunas explícitas</p>
-                <h3 id="gaps-title" class="section-title">O que não foi encontrado</h3>
-              </div>
-              <p class="m-0 text-[8pt] font-semibold text-warning">
-                Não completar por memória ou inferência
+          <section class="block">
+            <p class="eyebrow">Hierarquia de fontes</p>
+            <h3 class="section-title">Lastro visível, item a item</h3>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Camada</th>
+                  <th>Uso</th>
+                  <th>Limite</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Fontes primárias</td>
+                  <td>Atos, portais, tramitações e documentos oficiais.</td>
+                  <td>Fase e autoria só conforme o registro.</td>
+                </tr>
+                <tr>
+                  <td>Fontes institucionais</td>
+                  <td>Notícias de município, Estado e órgãos.</td>
+                  <td>Anúncio não prova execução.</td>
+                </tr>
+                <tr>
+                  <td>Acervo interno</td>
+                  <td>Falas e recortes de 2011+.</td>
+                  <td>Não cobre a carreira anterior.</td>
+                </tr>
+                <tr>
+                  <td>Busca web datada</td>
+                  <td>Localização e triangulação.</td>
+                  <td>Sem lastro suficiente vira lacuna.</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <section class="synthesis-grid block">
+            <div class="panel">
+              <p class="eyebrow">Limites</p>
+              <ul class="tight-list">
+                <li>Município, região e polo não se somam.</li>
+                <li>Autorizado, empenhado, liquidado e pago não são equivalentes.</li>
+                <li>“Não localizado” nunca significa zero.</li>
+              </ul>
+            </div>
+            <div class="panel panel-warning">
+              <p class="eyebrow warning-text">Defeso 2026</p>
+              <p class="mb-0">
+                Documento interno de pesquisa. Não circular, publicar ou converter automaticamente
+                em peça de campanha.
               </p>
             </div>
-            <table class="document-table mt-3">
-              <caption class="sr-only">
-                Tabela de lacunas explícitas e próximos passos de apuração
-              </caption>
-              <colgroup>
-                <col style="width: 24%" />
-                <col style="width: 31%" />
-                <col style="width: 27%" />
-                <col style="width: 18%" />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th scope="col">Lacuna</th>
-                  <th scope="col">Onde foi buscado</th>
-                  <th scope="col">Limite editorial</th>
-                  <th scope="col">Próximo passo</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>Pagamento do valor ilustrativo</strong></td>
-                  <td>Portal da Transparência e documentos da emenda; consulta em 17/09/2026.</td>
-                  <td>Falar apenas em “empenhado”; não usar “pago” ou “entregue”.</td>
-                  <td>
-                    Reconsultar documento de execução.
-                    <a class="source-link" href="https://portaldatransparencia.gov.br/"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    >
-                  </td>
-                </tr>
-                <tr>
-                  <td><strong>Ato primário da Era A</strong></td>
-                  <td>Biografia Câmara, DOU e acervo web do Ministério da Saúde.</td>
-                  <td>Não atribuir ação local ao cargo sem documento contemporâneo.</td>
-                  <td>
-                    Solicitar busca em acervo físico.
-                    <a class="source-link" href="https://www.in.gov.br/consulta"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    >
-                  </td>
-                </tr>
-                <tr>
-                  <td><strong>Municípios atendidos pelo polo</strong></td>
-                  <td>SESAB, CNES e pesquisa web datada.</td>
-                  <td>Não informar total de beneficiários nem somar ao município.</td>
-                  <td>
-                    Obter relação oficial de referência.
-                    <a class="source-link" href="https://cnes.datasus.gov.br/"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    >
-                  </td>
-                </tr>
-                <tr>
-                  <td><strong>Vínculo local de honraria</strong></td>
-                  <td>Biografia oficial e imprensa local.</td>
-                  <td>Não tratar citação secundária como confirmação documental.</td>
-                  <td>
-                    Localizar decreto, ata ou diploma.
-                    <a
-                      class="source-link"
-                      href="https://www.camara.leg.br/deputados/178857/biografia"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte)</a
-                    >
-                  </td>
-                </tr>
-              </tbody>
-            </table>
           </section>
-
-          <section class="mt-5" aria-labelledby="news-sources">
-            <p class="eyebrow">Lista clicável</p>
-            <h3 id="news-sources" class="section-title">Notícias e documentos consultados</h3>
-            <table class="document-table mt-3">
-              <caption class="sr-only">
-                Fontes consultadas com largura fixa: data 9%, veículo 14%, título 49% e link 28%
-              </caption>
-              <colgroup>
-                <col style="width: 9%" />
-                <col style="width: 14%" />
-                <col style="width: 49%" />
-                <col style="width: 28%" />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th scope="col">Data</th>
-                  <th scope="col">Veículo</th>
-                  <th scope="col">Título</th>
-                  <th scope="col">Link</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="numeric">—/—/24</td>
-                  <td>Fonte oficial</td>
-                  <td>Documento de exemplo sobre recurso municipal — título a confirmar</td>
-                  <td>
-                    <a class="source-link" href="https://portaldatransparencia.gov.br/"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte) · Portal</a
-                    >
-                  </td>
-                </tr>
-                <tr>
-                  <td class="numeric">—/—/23</td>
-                  <td>Câmara</td>
-                  <td>Pronunciamento de exemplo com menção ao município</td>
-                  <td>
-                    <a
-                      class="source-link"
-                      href="https://dadosabertos.camara.leg.br/api/v2/deputados/178857/discursos"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte) · Câmara</a
-                    >
-                  </td>
-                </tr>
-                <tr>
-                  <td class="numeric">—/—/12</td>
-                  <td>SESAB</td>
-                  <td>Registro de exemplo sobre serviço de referência regional</td>
-                  <td>
-                    <a class="source-link" href="https://www.saude.ba.gov.br/"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte) · SESAB</a
-                    >
-                  </td>
-                </tr>
-                <tr>
-                  <td class="numeric">17/09/26</td>
-                  <td>CNES</td>
-                  <td>
-                    Consulta de estabelecimento — resultado insuficiente para provar alcance
-                    regional
-                  </td>
-                  <td>
-                    <a class="source-link" href="https://cnes.datasus.gov.br/"
-                      ><svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1 2-2V8a2 2 0 0 1 2-2h6"
-                        /></svg
-                      >(fonte) · CNES</a
-                    >
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </section>
-
-          <section class="mt-5 grid grid-cols-2 gap-3" aria-label="Limites do método">
-            <div class="rounded-sm border border-line p-3">
-              <p class="eyebrow">Limites de cobertura</p>
-              <ul class="m-0 space-y-2 pl-4 text-[9pt] leading-4">
-                <li>
-                  O acervo interno de falas cobre 2011+; períodos anteriores dependem de fontes
-                  externas.
-                </li>
-                <li>Resultado de busca não prova ausência histórica.</li>
-                <li>Emenda de bancada ou relator só recebe autoria quando a fonte a confirma.</li>
-              </ul>
-            </div>
-            <div class="rounded-sm border border-line p-3">
-              <p class="eyebrow">Regras para uso editorial</p>
-              <ul class="m-0 space-y-2 pl-4 text-[9pt] leading-4">
-                <li>Sem fonte, não publica.</li>
-                <li>URL e data acompanham cada afirmação não trivial.</li>
-                <li>Município, região e polo permanecem separados.</li>
-                <li>Valor sempre informa a fase de execução.</li>
-              </ul>
-            </div>
-          </section>
-
-          <aside
-            class="mt-5 rounded-sm border-[.45mm] border-warning bg-warning-soft p-4"
-            aria-labelledby="defeso-title"
-          >
-            <div class="flex items-start gap-3">
-              <svg
-                class="mt-0.5 h-5 w-5 shrink-0 text-warning"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                aria-hidden="true"
-              >
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
-                <path d="m9 12 2 2 4-4" />
-              </svg>
-              <div>
-                <p class="eyebrow !text-warning">Nota de defeso eleitoral 2026</p>
-                <h3 id="defeso-title" class="m-0 text-[12pt] font-semibold">
-                  Insumo interno não é autorização para publicar.
-                </h3>
-                <p class="mb-0 mt-2 text-[9.5pt] leading-5 text-ink-soft">
-                  Publicidade institucional e propaganda eleitoral obedecem a regimes diferentes.
-                  Antes de adaptar qualquer trecho para peça externa, submeta texto, imagem,
-                  autoria, período e canal à revisão responsável. Este dossiê organiza evidências;
-                  não substitui análise jurídica nem editorial.
-                </p>
-              </div>
-            </div>
-          </aside>
-
           <footer class="report-footer">
-            <span>Dossiê Solla por cidade · Fontes e limites · INSUMO INTERNO</span
-            ><span>Gerado em 17/09/2026 · pág. 5/5</span>
+            <span>Dossiê por cidade · Fontes e limites</span><span>pág. N/N</span>
           </footer>
         </article>
       </section>
