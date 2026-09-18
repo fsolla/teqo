@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — Gráficos de dados para Instagram</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --color-solla: #c51414;
+        --color-brand-dark: #ae1603;
+        --color-pt-red: #a21c1c;
+        --color-pt-yellow: #ffe607;
+        --color-ink: #1c1917;
+        --color-quiet: #6b7280;
+        --color-hairline: #e7e5e4;
+        --color-paper: #faf9f7;
+      }
+
+      :root {
+        --solla: #c51414;
+        --brand-dark: #ae1603;
+        --pt-red: #a21c1c;
+        --pt-yellow: #ffe607;
+        --ink: #1c1917;
+        --quiet: #6b7280;
+        --hairline: #e7e5e4;
+        --paper: #faf9f7;
+        --bar: #d6d3d1;
+        --bar-strong: #a8a29e;
+      }
+
+      * { box-sizing: border-box; }
+      html { color-scheme: light; }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #efeeeb;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .tabular { font-variant-numeric: tabular-nums; }
+      .scene-card {
+        border: 1px solid #d6d3d1;
+        border-radius: 18px;
+        background: rgb(255 255 255 / 78%);
+        box-shadow: 0 12px 34px rgb(28 25 23 / 7%);
+      }
+      .scene-label {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border: 1px solid #d6d3d1;
+        border-radius: 999px;
+        color: #57534e;
+        background: #fff;
+        font-size: 12px;
+        line-height: 1;
+        font-weight: 700;
+      }
+      .measure-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 28px;
+        padding: 0 9px;
+        border: 1px solid #d6d3d1;
+        border-radius: 7px;
+        color: #44403c;
+        background: #fff;
+        font-size: 12px;
+        font-weight: 650;
+        line-height: 1.2;
+      }
+      .measure-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--solla); }
+
+      /* The artwork is laid out at its real export size, then scaled only for this gate page. */
+      .feed-stage { width: 594px; height: 742.5px; }
+      .feed-canvas {
+        position: relative;
+        width: 1080px;
+        height: 1350px;
+        overflow: hidden;
+        transform: scale(.55);
+        transform-origin: top left;
+        color: var(--ink);
+        background: var(--paper);
+        box-shadow: 0 20px 55px rgb(28 25 23 / 18%);
+      }
+      .feed-inner {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 76px 84px 58px;
+      }
+      .top-rule {
+        width: 64px;
+        height: 10px;
+        margin-bottom: 34px;
+        background: var(--solla);
+      }
+      .chart-context {
+        margin: 0 0 18px;
+        color: var(--brand-dark);
+        font-size: 30px;
+        line-height: 1.2;
+        font-weight: 750;
+      }
+      .chart-headline {
+        max-width: 880px;
+        margin: 0;
+        font-size: 67px;
+        line-height: 1.03;
+        letter-spacing: -0.045em;
+        font-weight: 800;
+      }
+      .chart-subtitle {
+        max-width: 820px;
+        margin: 23px 0 0;
+        color: #57534e;
+        font-size: 31px;
+        line-height: 1.35;
+        font-weight: 450;
+      }
+      .rank-chart {
+        display: grid;
+        gap: 25px;
+        margin-top: 54px;
+      }
+      .rank-row {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        align-items: center;
+        gap: 22px;
+      }
+      .rank-label {
+        font-size: 31px;
+        line-height: 1.08;
+        font-weight: 650;
+      }
+      .bar-track {
+        position: relative;
+        height: 53px;
+        border-left: 2px solid #78716c;
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        height: 100%;
+        min-width: 94px;
+        padding-right: 16px;
+        color: #292524;
+        background: var(--bar);
+        font-size: 31px;
+        line-height: 1;
+        font-weight: 800;
+      }
+      .bar.highlight { color: #fff; background: var(--solla); }
+      .chart-footer {
+        margin-top: auto;
+        padding-top: 25px;
+        border-top: 2px solid var(--hairline);
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: end;
+        gap: 30px;
+      }
+      .source-line {
+        margin: 0;
+        color: #57534e;
+        font-size: 27px;
+        line-height: 1.32;
+      }
+      .source-line strong { color: var(--ink); font-weight: 750; }
+      .brand-lockup {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        min-width: 286px;
+        justify-content: flex-end;
+      }
+      .brand-signal { width: 12px; height: 48px; background: var(--pt-yellow); }
+      .brand-name { color: var(--brand-dark); font-size: 29px; line-height: .88; font-weight: 900; letter-spacing: -.045em; }
+      .brand-office { margin-top: 7px; color: #57534e; font-size: 17px; line-height: 1; font-weight: 750; letter-spacing: .04em; }
+      .asset-flag {
+        position: absolute;
+        right: 18px;
+        bottom: 12px;
+        padding: 5px 7px;
+        border: 2px dashed #78716c;
+        border-radius: 5px;
+        color: #44403c;
+        background: rgb(250 249 247 / 94%);
+        font-size: 13px;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: .04em;
+      }
+
+      .mini-canvas {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 4 / 5;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        padding: 20px 20px 16px;
+        color: var(--ink);
+        background: var(--paper);
+        border: 1px solid var(--hairline);
+      }
+      .mini-rule { width: 22px; height: 4px; margin-bottom: 11px; background: var(--solla); }
+      .mini-kicker { color: var(--brand-dark); font-size: 9px; line-height: 1.1; font-weight: 750; }
+      .mini-title { margin: 7px 0 0; font-size: 18px; line-height: 1.04; letter-spacing: -.035em; font-weight: 800; }
+      .mini-sub { margin: 6px 0 0; color: #57534e; font-size: 8px; line-height: 1.3; }
+      .mini-plot { flex: 1; min-height: 0; margin-top: 15px; }
+      .mini-footer {
+        padding-top: 8px;
+        border-top: 1px solid var(--hairline);
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 6px;
+        color: #57534e;
+        font-size: 6.7px;
+        line-height: 1.2;
+      }
+      .mini-mark { color: var(--brand-dark); font-size: 8px; font-weight: 900; white-space: nowrap; }
+      .mini-bars { display: grid; gap: 7px; }
+      .mini-bar-row { display: grid; grid-template-columns: 48px 1fr; align-items: center; gap: 5px; font-size: 7.5px; font-weight: 650; }
+      .mini-bar { height: 12px; background: var(--bar); border-left: 1px solid #78716c; }
+      .mini-bar.red { background: var(--solla); }
+      .columns {
+        height: 100%;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        align-items: end;
+        gap: 12px;
+        padding: 0 5px 19px;
+        border-bottom: 1px solid #a8a29e;
+      }
+      .column { position: relative; background: var(--bar); }
+      .column.red { background: var(--solla); }
+      .column span { position: absolute; left: 50%; bottom: -15px; transform: translateX(-50%); font-size: 7px; font-weight: 650; }
+      .big-number { margin-top: 10px; color: var(--solla); font-size: 70px; line-height: .86; letter-spacing: -.065em; font-weight: 900; }
+      .big-copy { max-width: 180px; margin: 12px 0 0; font-size: 14px; line-height: 1.14; font-weight: 750; }
+
+      .story-stage { width: 351px; height: 624px; }
+      .story-canvas {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        transform: scale(.325);
+        transform-origin: top left;
+        color: var(--ink);
+        background: var(--paper);
+        box-shadow: 0 20px 55px rgb(28 25 23 / 18%);
+      }
+      .story-canvas::before,
+      .story-canvas::after {
+        content: '';
+        position: absolute;
+        z-index: 1;
+        left: 0;
+        width: 100%;
+        height: 250px;
+        background: repeating-linear-gradient(135deg, rgb(174 22 3 / 7%) 0 12px, transparent 12px 24px);
+        pointer-events: none;
+      }
+      .story-canvas::before { top: 0; border-bottom: 3px dashed rgb(174 22 3 / 48%); }
+      .story-canvas::after { bottom: 0; border-top: 3px dashed rgb(174 22 3 / 48%); }
+      .safe-label {
+        position: absolute;
+        z-index: 3;
+        left: 44px;
+        color: #7f1d1d;
+        font-size: 25px;
+        line-height: 1;
+        font-weight: 800;
+      }
+      .safe-label.top { top: 205px; }
+      .safe-label.bottom { bottom: 205px; }
+      .story-content {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 306px 84px 310px;
+      }
+      .story-title { margin: 0; max-width: 850px; font-size: 78px; line-height: 1.02; letter-spacing: -.05em; font-weight: 850; }
+      .story-sub { margin: 27px 0 0; max-width: 820px; color: #57534e; font-size: 32px; line-height: 1.35; }
+      .story-chart { display: grid; gap: 32px; margin-top: 78px; }
+      .story-row { display: grid; grid-template-columns: 235px 1fr; align-items: center; gap: 22px; font-size: 31px; line-height: 1.1; font-weight: 680; }
+      .story-bar-track { height: 58px; border-left: 2px solid #78716c; }
+      .story-bar { height: 100%; display: flex; align-items: center; justify-content: flex-end; min-width: 100px; padding-right: 17px; background: var(--bar); font-size: 31px; font-weight: 800; }
+      .story-bar.red { color: #fff; background: var(--solla); }
+      .story-footer { margin-top: auto; padding-top: 28px; border-top: 2px solid var(--hairline); display: flex; align-items: end; justify-content: space-between; gap: 28px; }
+      .story-source { max-width: 570px; color: #57534e; font-size: 27px; line-height: 1.3; }
+
+      .state-piece {
+        position: relative;
+        aspect-ratio: 4 / 5;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        padding: 34px 34px 26px;
+        color: var(--ink);
+        background: var(--paper);
+        border: 1px solid var(--hairline);
+      }
+      .state-symbol {
+        width: 54px;
+        height: 54px;
+        display: grid;
+        place-items: center;
+        border: 2px solid #a8a29e;
+        border-radius: 999px;
+        color: #44403c;
+        font-size: 28px;
+        line-height: 1;
+        font-weight: 800;
+      }
+      .state-title { margin: 30px 0 0; max-width: 460px; font-size: 34px; line-height: 1.04; letter-spacing: -.04em; font-weight: 820; }
+      .state-copy { margin: 14px 0 0; color: #57534e; font-size: 17px; line-height: 1.45; }
+      .question-list { margin: 26px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--hairline); }
+      .question-list li { display: grid; grid-template-columns: 23px 1fr; gap: 9px; padding: 14px 0; border-bottom: 1px solid var(--hairline); font-size: 15px; line-height: 1.35; font-weight: 650; }
+      .question-number { color: var(--brand-dark); font-weight: 850; }
+      .suggestion {
+        margin-top: 23px;
+        padding: 18px;
+        border-left: 5px solid var(--solla);
+        background: #f5f5f4;
+      }
+      .suggestion strong { display: block; font-size: 17px; }
+      .suggestion p { margin: 7px 0 0; color: #57534e; font-size: 14px; line-height: 1.4; }
+      .state-footer { margin-top: auto; padding-top: 17px; border-top: 1px solid var(--hairline); display: flex; align-items: end; justify-content: space-between; gap: 15px; color: #57534e; font-size: 11px; }
+      .state-mark { color: var(--brand-dark); font-size: 14px; font-weight: 900; }
+
+      .ruler {
+        position: relative;
+        height: 42px;
+        border-top: 2px solid #78716c;
+        background: repeating-linear-gradient(90deg, #78716c 0 1px, transparent 1px 10%, #78716c 10% calc(10% + 1px), transparent calc(10% + 1px) 20%);
+        background-size: 100% 12px;
+        background-repeat: no-repeat;
+      }
+      .ruler::before,
+      .ruler::after { position: absolute; top: 15px; color: #57534e; font-size: 11px; font-weight: 700; }
+      .ruler::before { content: '0'; left: 0; }
+      .ruler::after { content: '1080 px'; right: 0; }
+
+      @media (max-width: 760px) {
+        .feed-stage { width: 378px; height: 472.5px; }
+        .feed-canvas { transform: scale(.35); }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="mx-auto max-w-[1240px] px-4 py-8 sm:px-7 lg:py-12">
+      <header class="max-w-4xl">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="scene-label">Gate visual · template v1</span>
+          <span class="scene-label">Instagram feed + Stories</span>
+        </div>
+        <h1 class="mt-5 max-w-3xl text-3xl font-extrabold tracking-[-0.035em] text-ink sm:text-4xl">Gráficos claros, sóbrios e prontos para a comunicação</h1>
+        <p class="mt-4 max-w-3xl text-[15px] leading-6 text-stone-600">A superfície desenhada é a imagem exportada — não uma tela de app. Os dados abaixo são deliberadamente genéricos; as peças fixam hierarquia, grid, tratamento de marca e limites do gerador.</p>
+      </header>
+
+      <section class="scene-card mt-9 p-4 sm:p-6 lg:p-8" aria-labelledby="main-scene-title">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-bold text-brand-dark">CENA 01 · PADRÃO</p>
+            <h2 id="main-scene-title" class="mt-1 text-xl font-bold tracking-tight">Feed 4:5 · ranking em barras horizontais</h2>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="measure-tag"><span class="measure-dot"></span>1080 × 1350</span>
+            <span class="measure-tag">Escala de visualização: 55%</span>
+          </div>
+        </div>
+
+        <div class="mt-6 grid items-start gap-7 lg:grid-cols-[594px_1fr]">
+          <div class="overflow-x-auto pb-2">
+            <div class="feed-stage">
+              <article class="feed-canvas" aria-label="Exemplo de gráfico de ranking para feed">
+                <div class="feed-inner">
+                  <div class="top-rule"></div>
+                  <p class="chart-context">Exemplo de comparação</p>
+                  <h3 class="chart-headline">Um território concentra o maior resultado do período</h3>
+                  <p class="chart-subtitle">Valores ilustrativos para demonstrar ordem, proporção e destaque.</p>
+
+                  <div class="rank-chart tabular" role="img" aria-label="Ranking ilustrativo: Território A 84, B 68, C 53, D 41, E 29 e F 18">
+                    <div class="rank-row"><span class="rank-label">Território A</span><div class="bar-track"><div class="bar highlight" style="width: 100%">84</div></div></div>
+                    <div class="rank-row"><span class="rank-label">Território B</span><div class="bar-track"><div class="bar" style="width: 81%">68</div></div></div>
+                    <div class="rank-row"><span class="rank-label">Território C</span><div class="bar-track"><div class="bar" style="width: 63%">53</div></div></div>
+                    <div class="rank-row"><span class="rank-label">Território D</span><div class="bar-track"><div class="bar" style="width: 49%">41</div></div></div>
+                    <div class="rank-row"><span class="rank-label">Território E</span><div class="bar-track"><div class="bar" style="width: 35%">29</div></div></div>
+                    <div class="rank-row"><span class="rank-label">Território F</span><div class="bar-track"><div class="bar" style="width: 22%">18</div></div></div>
+                  </div>
+
+                  <footer class="chart-footer">
+                    <p class="source-line"><strong>Fonte:</strong> fonte informada pela pessoa · período de exemplo<br />Nota: valores ilustrativos, sem unidade real.</p>
+                    <div class="brand-lockup" aria-label="Marca provisória do mandato">
+                      <span class="brand-signal"></span>
+                      <div><div class="brand-name">JORGE SOLLA</div><div class="brand-office">MANDATO DEPUTADO FEDERAL</div></div>
+                    </div>
+                  </footer>
+                </div>
+                <span class="asset-flag">NEEDS ASSET · LOGO OFICIAL</span>
+              </article>
+            </div>
+          </div>
+
+          <aside class="grid gap-4">
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">LEITURA EM 3 SEGUNDOS</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">A manchete entrega o takeaway; o olho encontra uma única barra vermelha; rótulo e valor estão juntos, sem legenda ou eixo para decodificar.</p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">REGRAS VISUAIS FIXAS</p>
+              <ul class="mt-3 grid gap-2.5 text-sm leading-5 text-stone-700">
+                <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-solla"></span><span>Ranking sempre ordenado pelo valor.</span></li>
+                <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-solla"></span><span>Barras partem da mesma linha de zero.</span></li>
+                <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-solla"></span><span>Vermelho segue o takeaway confirmado — no exemplo, ele coincide com o maior valor.</span></li>
+                <li class="flex gap-2"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-solla"></span><span>Fonte e ressalva viajam dentro da imagem.</span></li>
+              </ul>
+            </div>
+            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
+              <p class="text-xs font-extrabold text-stone-700">NEEDS ASSET</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">Substituir o lockup tipográfico provisório pelo arquivo oficial aprovado do mandato, preservando esta área e contraste.</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="mt-10" aria-labelledby="variations-title">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p class="text-xs font-bold text-brand-dark">CENA 02 · SISTEMA</p>
+            <h2 id="variations-title" class="mt-1 text-xl font-bold tracking-tight">Quatro relações, um mesmo template</h2>
+          </div>
+          <p class="max-w-xl text-sm leading-5 text-stone-600">Grid, tipografia, rodapé e uso de cor permanecem. Só o corpo do gráfico muda conforme a relação entre os dados.</p>
+        </div>
+
+        <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="scene-card p-3">
+            <article class="mini-canvas">
+              <div class="mini-rule"></div><div class="mini-kicker">Comparação</div><h3 class="mini-title">Um grupo aparece à frente</h3><p class="mini-sub">Ranking com valores ilustrativos.</p>
+              <div class="mini-plot mini-bars">
+                <div class="mini-bar-row"><span>Grupo A</span><div class="mini-bar red" style="width:100%"></div></div>
+                <div class="mini-bar-row"><span>Grupo B</span><div class="mini-bar" style="width:76%"></div></div>
+                <div class="mini-bar-row"><span>Grupo C</span><div class="mini-bar" style="width:59%"></div></div>
+                <div class="mini-bar-row"><span>Grupo D</span><div class="mini-bar" style="width:38%"></div></div>
+              </div>
+              <footer class="mini-footer"><span>Fonte: exemplo</span><span class="mini-mark">JORGE SOLLA</span></footer>
+            </article>
+            <p class="mt-3 text-sm font-bold">Barra · ranking</p><p class="mt-1 text-xs leading-4 text-stone-600">Categorias longas, leitura direta.</p>
+          </div>
+
+          <div class="scene-card p-3">
+            <article class="mini-canvas">
+              <div class="mini-rule"></div><div class="mini-kicker">Poucos períodos</div><h3 class="mini-title">O resultado cresce no período</h3><p class="mini-sub">Quatro momentos ilustrativos.</p>
+              <div class="mini-plot columns tabular">
+                <div class="column" style="height:35%"><span>P1</span></div><div class="column" style="height:51%"><span>P2</span></div><div class="column" style="height:66%"><span>P3</span></div><div class="column red" style="height:88%"><span>P4</span></div>
+              </div>
+              <footer class="mini-footer"><span>Fonte: exemplo</span><span class="mini-mark">JORGE SOLLA</span></footer>
+            </article>
+            <p class="mt-3 text-sm font-bold">Coluna · tempo curto</p><p class="mt-1 text-xs leading-4 text-stone-600">Poucos períodos, base comum em zero.</p>
+          </div>
+
+          <div class="scene-card p-3">
+            <article class="mini-canvas">
+              <div class="mini-rule"></div><div class="mini-kicker">Série de tempo</div><h3 class="mini-title">A tendência se mantém ao longo do tempo</h3><p class="mini-sub">Até sete pontos, com rótulo no fim.</p>
+              <div class="mini-plot">
+                <svg viewBox="0 0 220 120" width="100%" height="100%" role="img" aria-label="Linha ilustrativa crescente com seis pontos">
+                  <line x1="8" y1="104" x2="212" y2="104" stroke="#a8a29e" stroke-width="1" />
+                  <polyline points="12,90 51,80 90,83 129,57 168,50 207,25" fill="none" stroke="#78716c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+                  <g fill="#faf9f7" stroke="#78716c" stroke-width="3"><circle cx="12" cy="90" r="4"/><circle cx="51" cy="80" r="4"/><circle cx="90" cy="83" r="4"/><circle cx="129" cy="57" r="4"/><circle cx="168" cy="50" r="4"/></g>
+                  <circle cx="207" cy="25" r="6" fill="#c51414"/><text x="201" y="15" text-anchor="end" fill="#1c1917" font-size="10" font-weight="800">72</text>
+                </svg>
+              </div>
+              <footer class="mini-footer"><span>Fonte: exemplo</span><span class="mini-mark">JORGE SOLLA</span></footer>
+            </article>
+            <p class="mt-3 text-sm font-bold">Linha · série temporal</p><p class="mt-1 text-xs leading-4 text-stone-600">Tendência contínua, ponto final destacado.</p>
+          </div>
+
+          <div class="scene-card p-3">
+            <article class="mini-canvas">
+              <div class="mini-rule"></div><div class="mini-kicker">Número-âncora</div><h3 class="mini-title">Um número sustenta a mensagem</h3><p class="mini-sub">Sem gráfico quando há uma única medida.</p>
+              <div class="mini-plot"><div class="big-number tabular">72</div><p class="big-copy">unidades no período de exemplo</p></div>
+              <footer class="mini-footer"><span>Fonte: exemplo</span><span class="mini-mark">JORGE SOLLA</span></footer>
+            </article>
+            <p class="mt-3 text-sm font-bold">Número-âncora</p><p class="mt-1 text-xs leading-4 text-stone-600">Um valor grande + frase que explica.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene-card mt-10 p-4 sm:p-6 lg:p-8" aria-labelledby="story-title">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-bold text-brand-dark">CENA 03 · ADAPTAÇÃO</p>
+            <h2 id="story-title" class="mt-1 text-xl font-bold tracking-tight">Stories 9:16 · conteúdo dentro da área segura</h2>
+          </div>
+          <span class="measure-tag">1080 × 1920 · escala 32,5%</span>
+        </div>
+
+        <div class="mt-6 grid items-start gap-7 md:grid-cols-[351px_1fr]">
+          <div class="story-stage">
+            <article class="story-canvas" aria-label="Adaptação do gráfico para Stories com áreas seguras indicadas">
+              <span class="safe-label top">250 px · evitar conteúdo essencial</span>
+              <span class="safe-label bottom">250 px · evitar conteúdo essencial</span>
+              <div class="story-content">
+                <div class="top-rule"></div>
+                <p class="chart-context">Exemplo de comparação</p>
+                <h3 class="story-title">Um território concentra o maior resultado</h3>
+                <p class="story-sub">Valores ilustrativos para demonstrar hierarquia e proporção.</p>
+                <div class="story-chart tabular">
+                  <div class="story-row"><span>Território A</span><div class="story-bar-track"><div class="story-bar red" style="width:100%">84</div></div></div>
+                  <div class="story-row"><span>Território B</span><div class="story-bar-track"><div class="story-bar" style="width:81%">68</div></div></div>
+                  <div class="story-row"><span>Território C</span><div class="story-bar-track"><div class="story-bar" style="width:63%">53</div></div></div>
+                  <div class="story-row"><span>Território D</span><div class="story-bar-track"><div class="story-bar" style="width:49%">41</div></div></div>
+                  <div class="story-row"><span>Território E</span><div class="story-bar-track"><div class="story-bar" style="width:35%">29</div></div></div>
+                </div>
+                <footer class="story-footer">
+                  <div class="story-source"><strong>Fonte:</strong> fonte informada · valores ilustrativos.</div>
+                  <div class="brand-name">JORGE SOLLA</div>
+                </footer>
+              </div>
+              <span class="asset-flag" style="bottom:270px">NEEDS ASSET · LOGO OFICIAL</span>
+            </article>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2">
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">TOPO · 250 PX</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">Faixa reservada para chrome do Instagram, avatar e contexto. Nenhuma manchete, valor ou fonte entra aqui.</p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">BASE · 250 PX</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">Faixa reservada para resposta, CTA e controles. O rodapé da peça termina acima dela.</p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4 sm:col-span-2 md:col-span-1 lg:col-span-2">
+              <p class="text-xs font-bold text-brand-dark">MESMO SISTEMA, MAIS RESPIRO</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">A adaptação não estica o feed. Ela recompõe a hierarquia vertical, reduz um ponto do ranking e mantém título, rótulos, fonte e marca integralmente legíveis na zona central.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-10" aria-labelledby="states-title">
+        <div>
+          <p class="text-xs font-bold text-brand-dark">CENAS 04–05 · FAIL-CLOSED</p>
+          <h2 id="states-title" class="mt-1 text-xl font-bold tracking-tight">Quando o dado não permite uma peça correta</h2>
+          <p class="mt-2 max-w-3xl text-sm leading-5 text-stone-600">Estados visíveis de recusa: o template não preenche lacunas nem força um tipo de gráfico inadequado.</p>
+        </div>
+        <div class="mt-5 grid gap-5 md:grid-cols-2">
+          <div class="scene-card p-3 sm:p-4">
+            <article class="state-piece">
+              <div class="state-symbol">?</div>
+              <h3 class="state-title">Preciso confirmar os dados antes de gerar</h3>
+              <p class="state-copy">A tabela recebida não deixa claro o período nem o que o valor representa. Nenhum número será completado por suposição.</p>
+              <ol class="question-list">
+                <li><span class="question-number">1.</span><span>Qual é o período de referência?</span></li>
+                <li><span class="question-number">2.</span><span>Os valores são quantidade, percentual ou outra unidade?</span></li>
+                <li><span class="question-number">3.</span><span>Qual fonte deve aparecer no rodapé?</span></li>
+              </ol>
+              <footer class="state-footer"><span>Geração pausada · aguardando esclarecimento</span><span class="state-mark">JORGE SOLLA</span></footer>
+            </article>
+            <p class="px-1 pb-1 pt-3 text-sm font-bold">Dado faltando ou ambíguo</p>
+          </div>
+
+          <div class="scene-card p-3 sm:p-4">
+            <article class="state-piece">
+              <div class="state-symbol" aria-hidden="true">×</div>
+              <h3 class="state-title">Pizza com muitas fatias dificulta a comparação</h3>
+              <p class="state-copy">Este conjunto tem mais de cinco categorias. O formato solicitado é recusado para não esconder diferenças pequenas.</p>
+              <div class="suggestion">
+                <strong>Sugestão: usar barras horizontais</strong>
+                <p>As categorias ficam ordenadas, com rótulo direto e uma única ênfase. Se “parte de um todo” for essencial, reduza para até cinco grupos verificáveis.</p>
+                <div class="mt-4 grid gap-2">
+                  <div class="h-3 w-full bg-solla"></div><div class="h-3 w-[84%] bg-stone-300"></div><div class="h-3 w-[69%] bg-stone-300"></div><div class="h-3 w-[51%] bg-stone-300"></div><div class="h-3 w-[37%] bg-stone-300"></div>
+                </div>
+              </div>
+              <footer class="state-footer"><span>Formato não gerado · alternativa indicada</span><span class="state-mark">JORGE SOLLA</span></footer>
+            </article>
+            <p class="px-1 pb-1 pt-3 text-sm font-bold">Pizza com mais de 5 fatias</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene-card mt-10 p-5 sm:p-7 lg:p-8" aria-labelledby="measure-title">
+        <div class="grid gap-8 lg:grid-cols-[1.05fr_.95fr]">
+          <div>
+            <p class="text-xs font-bold text-brand-dark">ANOTAÇÃO DE DESIGN · NÃO EXPORTAR</p>
+            <h2 id="measure-title" class="mt-1 text-xl font-bold tracking-tight">Guia de medidas e integridade</h2>
+            <div class="mt-5 ruler" aria-label="Régua ilustrando canvas de 1080 pixels"></div>
+            <div class="mt-1 grid grid-cols-[34px_1fr_34px] items-center text-center text-[11px] font-bold text-stone-600">
+              <span>34</span><span class="border-x border-dashed border-stone-400 py-2">área segura do grid do perfil · ~1012 px</span><span>34</span>
+            </div>
+            <div class="mt-5 rounded-xl border border-stone-200 bg-paper p-4">
+              <div class="grid aspect-[4/5] grid-cols-[3.15%_1fr_3.15%]">
+                <div class="bg-[repeating-linear-gradient(135deg,rgba(174,22,3,.10)_0_6px,transparent_6px_12px)]"></div>
+                <div class="grid place-items-center border-x border-dashed border-stone-400 px-6 text-center"><div><strong class="text-lg">1012 × 1350</strong><p class="mt-2 text-xs leading-5 text-stone-600">Título, plot, fonte e marca dentro desta largura segura.</p></div></div>
+                <div class="bg-[repeating-linear-gradient(135deg,rgba(174,22,3,.10)_0_6px,transparent_6px_12px)]"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid content-start gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div class="rounded-xl border border-stone-200 bg-white p-4"><p class="text-sm font-bold">Canvas</p><p class="mt-1 text-sm leading-5 text-stone-600">1080 px de largura. Feed 1080×1350; Stories 1080×1920.</p></div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4"><p class="text-sm font-bold">Tipografia mínima</p><p class="mt-1 text-sm leading-5 text-stone-600">Headline ≥48 px; rótulos e valores ≥30 px no arquivo final.</p></div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4"><p class="text-sm font-bold">Contraste</p><p class="mt-1 text-sm leading-5 text-stone-600">Texto ≥4.5:1; marcas de dado ≥3:1. Cor nunca é a única pista.</p></div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4"><p class="text-sm font-bold">Escala honesta</p><p class="mt-1 text-sm leading-5 text-stone-600">Barras e colunas começam em zero. Sem 3D, perspectiva ou eixo truncado.</p></div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4"><p class="text-sm font-bold">Densidade</p><p class="mt-1 text-sm leading-5 text-stone-600">Até 7 pontos por gráfico. Acima disso: resumir com orientação explícita.</p></div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4"><p class="text-sm font-bold">Fundo e sinal</p><p class="mt-1 text-sm leading-5 text-stone-600">Off-white #faf9f7. Vermelho #c51414 ocupa no máximo ~10% da peça.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-stone-300 py-5 text-xs text-stone-600">
+        <span>Design hi-fi · graficos-dados-instagram · dados e fontes fictícios</span>
+        <span>Paleta Solla · Inter · sem gradiente, 3D ou chrome de dashboard</span>
+      </footer>
+    </main>
+  </body>
+</html>
