@@ -26,6 +26,14 @@ import {
 
 export const speechPageSize = 25
 
+/**
+ * C192 — search mode of the acervo. `termo` is the literal search (default,
+ * never serialized so existing deep links stay byte-identical); `tema` asks the
+ * semantic bridge for related terms. Kept as a single-value param, only
+ * meaningful alongside `q`.
+ */
+export type SpeechSearchMode = 'termo' | 'tema'
+
 /** Duration buckets are ranges over `durationSeconds`; `sem_duracao` is null. */
 export const SPEECH_DURATION_BUCKETS = [
   { value: 'curta', label: 'Até 2 min' },
@@ -51,6 +59,7 @@ export const speechScopeLabels = Object.fromEntries(
 export type SpeechListState = {
   page: number
   q?: string
+  mode?: SpeechSearchMode
   years?: number[]
   topics?: SpeechTopic[]
   scopes?: SpeechScope[]
@@ -70,6 +79,7 @@ type RawSpeechListParams = RawSearchParams
 
 const speechListParamNames = [
   'q',
+  'mode',
   'year',
   'topic',
   'scope',
@@ -95,10 +105,15 @@ const parseMunicipalityValues = (raw: string | string[] | undefined): number[] =
     .map((token) => strictDecimalInteger(token))
     .filter((id): id is number => id !== undefined && id > 0)
 
+/** Only `tema` is meaningful; anything else (and `termo`) means the default. */
+const parseSpeechSearchMode = (raw: string | string[] | undefined): SpeechSearchMode | undefined =>
+  firstValue(raw) === 'tema' ? 'tema' : undefined
+
 export const parseSpeechListParams = (params: RawSpeechListParams): SpeechListState => {
   const rawPage = strictDecimalInteger(firstValue(params.page))
   const rawQ = normalizedText(firstValue(params.q))
   const q = rawQ && isContactSearchQueryReady(rawQ) ? rawQ : undefined
+  const mode = parseSpeechSearchMode(params.mode)
   const years = parseYearValues(params.year)
   const topics = parseExhaustiveEnumParam<SpeechTopic>(params.topic, speechTopicSet)
   const scopes = parseExhaustiveEnumParam<SpeechScope>(params.scope, speechScopeSet)
@@ -112,6 +127,7 @@ export const parseSpeechListParams = (params: RawSpeechListParams): SpeechListSt
   return {
     page: rawPage ?? 1,
     ...(q ? { q } : {}),
+    ...(mode ? { mode } : {}),
     ...(years.length ? { years } : {}),
     ...(topics.length ? { topics } : {}),
     ...(scopes.length ? { scopes } : {}),
@@ -127,6 +143,7 @@ const speechListStateToRawParams = (
 ): RawSpeechListParams => ({
   page: String(page),
   q: state.q,
+  mode: state.mode,
   year: state.years?.map(String),
   topic: state.topics,
   scope: state.scopes,
@@ -141,6 +158,9 @@ export const serializeCanonicalSpeechListSearchParams = (
 ): URLSearchParams => {
   const params = new URLSearchParams()
   if (canonicalState.q) params.set('q', canonicalState.q)
+  // `termo` is the default and never serialized; `tema` only makes sense with a
+  // query, so a theme param without `q` canonicalizes away.
+  if (canonicalState.mode === 'tema' && canonicalState.q) params.set('mode', 'tema')
   for (const year of canonicalState.years ?? []) params.append('year', String(year))
   for (const topic of canonicalState.topics ?? []) params.append('topic', topic)
   for (const scope of canonicalState.scopes ?? []) params.append('scope', scope)

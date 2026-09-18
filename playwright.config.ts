@@ -242,6 +242,12 @@ export default defineConfig({
         // Keep e2e artifacts outside `.next`: a concurrent development server
         // owns that entire directory and may clear nested production bundles.
         NEXT_DIST_DIR: process.env.NEXT_DIST_DIR ?? '.next-e2e',
+        /*
+         * C192 — blank the DeepSeek key so the acervo's theme expansion always
+         * degrades to the literal search (never the network) and the degraded
+         * state stays deterministic, same principle as the Google test key.
+         */
+        DEEPSEEK_API_KEY: '',
         PAYLOAD_SECRET: process.env.PAYLOAD_SECRET ?? 'test-only-secret-not-used-in-production',
         // Prod mode serves a production build where `getCampaignInviteBaseURL`
         // fails closed unless NEXT_PUBLIC_SITE_URL is an HTTPS public DNS name

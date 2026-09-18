@@ -100,9 +100,41 @@ export const findHighlightRanges = (text: string, query: string): SpeechHighligh
     }
   }
 
-  ranges.sort((left, right) => left.start - right.start || left.end - right.end)
+  return mergeHighlightRanges(ranges)
+}
+
+/**
+ * C192 — every occurrence of the whole normalized PHRASE as a single range, so
+ * a theme match like "acesso universal à saúde" is one continuous band (the
+ * per-term search would drop the "à" and split the band). Falls back to the
+ * per-term ranges when the phrase does not occur contiguously.
+ */
+export const findPhraseRanges = (text: string, phrase: string): SpeechHighlightRange[] => {
+  const needle = normalizeForSearch(phrase)
+  if (!needle || text.length === 0) return []
+
+  const { normalized, sourceIndex } = buildNormalizedIndex(text)
+  if (normalized.length === 0) return []
+
+  const ranges: SpeechHighlightRange[] = []
+  let from = 0
+  while (from <= normalized.length - needle.length) {
+    const at = normalized.indexOf(needle, from)
+    if (at === -1) break
+    ranges.push({
+      start: sourceIndex[at]!,
+      end: sourceIndex[at + needle.length - 1]! + 1,
+    })
+    from = at + 1
+  }
+
+  return ranges.length > 0 ? mergeHighlightRanges(ranges) : findHighlightRanges(text, phrase)
+}
+
+const mergeHighlightRanges = (ranges: readonly SpeechHighlightRange[]): SpeechHighlightRange[] => {
+  const sorted = [...ranges].sort((left, right) => left.start - right.start || left.end - right.end)
   const merged: SpeechHighlightRange[] = []
-  for (const range of ranges) {
+  for (const range of sorted) {
     const last = merged[merged.length - 1]
     if (last && range.start <= last.end) {
       if (range.end > last.end) last.end = range.end
@@ -142,12 +174,12 @@ export const splitHighlightedParts = (text: string, query: string): SpeechHighli
 export const buildHighlightedExcerpt = (
   text: string,
   query: string,
-  { radius = 160 }: { radius?: number } = {},
+  { radius = 160, phrase = false }: { radius?: number; phrase?: boolean } = {},
 ): SpeechHighlightedExcerpt => {
   const trimmed = text.trim()
   if (trimmed === '') return { parts: [], truncatedStart: false, truncatedEnd: false }
 
-  const ranges = findHighlightRanges(trimmed, query)
+  const ranges = phrase ? findPhraseRanges(trimmed, query) : findHighlightRanges(trimmed, query)
   const focus = ranges[0]
   const windowStart = focus ? Math.max(0, focus.start - radius) : 0
   const windowEnd = focus

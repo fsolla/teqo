@@ -12,7 +12,10 @@ import {
 } from '@/components/campaign/shared/CampaignListPending'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { SpeechAcervoFilters } from '@/components/campaign/speech/SpeechAcervoFilters'
+import { SpeechRefineSearchButton } from '@/components/campaign/speech/SpeechRefineSearchButton'
 import { SpeechResultList } from '@/components/campaign/speech/SpeechResultList'
+import { SpeechThemeFallbackNotice } from '@/components/campaign/speech/SpeechThemeFallbackNotice'
+import { SpeechThemeRetryButton } from '@/components/campaign/speech/SpeechThemeRetryButton'
 import { Button } from '@/components/ui/button'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { CAMPAIGN_COMMUNICATION_ACERVO, CAMPAIGN_COMMUNICATION_CORTES } from '@/lib/campaignPaths'
@@ -36,6 +39,8 @@ export default async function SpeechAcervoPage({ searchParams }: SpeechAcervoPag
   if (data.redirectHref) redirect(data.redirectHref)
 
   const hasFilters = buildSpeechFiltersKey(data.state) !== ''
+  const themeMode = data.state.mode === 'tema'
+  const themeActive = themeMode && data.themeApplied && !data.themeUnavailable
 
   return (
     <CampaignPageShell aria-label="Acervo de falas">
@@ -53,28 +58,74 @@ export default async function SpeechAcervoPage({ searchParams }: SpeechAcervoPag
           key={buildSpeechFiltersKey(data.state)}
           state={data.state}
           filterOptions={data.filterOptions}
+          themeUnavailable={data.themeUnavailable}
         />
 
+        {data.themeUnavailable ? <SpeechThemeFallbackNotice /> : null}
+
         <CampaignListResults>
+          {themeMode ? (
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold">
+                  {data.themeUnavailable
+                    ? 'Resultados por termo exato'
+                    : themeActive
+                      ? 'Resultados por tema'
+                      : 'Resultados'}
+                </h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {data.themeUnavailable
+                    ? 'Comportamento atual do acervo.'
+                    : themeActive
+                      ? 'Confira o indício em cada fala antes de abrir.'
+                      : 'Nenhum termo relacionado foi acrescentado; mostramos a busca literal.'}
+                </p>
+              </div>
+              {data.themeUnavailable ? <SpeechThemeRetryButton /> : null}
+            </div>
+          ) : null}
+
           {data.rows.length > 0 ? (
             <SpeechResultList rows={data.rows} query={data.state.q} />
           ) : (
             <CampaignListEmptyState
               icon={SearchXIcon}
+              className={themeActive ? 'border-solid' : undefined}
+              mediaClassName={themeActive ? 'size-12 rounded-full' : undefined}
+              contentClassName={themeActive ? 'max-w-none' : undefined}
               title={
-                data.state.q
-                  ? `Nenhuma fala encontrada para "${data.state.q}"`
-                  : 'Nenhuma fala encontrada'
+                themeActive
+                  ? 'Nenhuma fala encontrada para este tema'
+                  : data.state.q
+                    ? `Nenhuma fala encontrada para "${data.state.q}"`
+                    : 'Nenhuma fala encontrada'
               }
               description={
-                hasFilters
-                  ? 'Tente outro termo, remova filtros ou busque por um tema.'
-                  : 'O acervo ainda não tem falas importadas.'
+                themeActive
+                  ? 'Não encontramos uma fala que corresponda ao sentido desta busca com os filtros atuais. Não vamos preencher a lista com resultados pouco relacionados.'
+                  : hasFilters
+                    ? 'Tente outro termo, remova filtros ou busque por um tema.'
+                    : 'O acervo ainda não tem falas importadas.'
               }
             >
-              <Button asChild variant="outline" className="min-h-11">
-                <Link href={CAMPAIGN_COMMUNICATION_ACERVO}>Limpar busca e filtros</Link>
-              </Button>
+              {themeActive ? (
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <SpeechRefineSearchButton />
+                  <Button asChild variant="outline" className="min-h-11">
+                    <Link href={buildSpeechListHref({ ...data.state, mode: undefined }, 1)}>
+                      Usar termo exato
+                    </Link>
+                  </Button>
+                  <Button asChild variant="ghost" className="min-h-11">
+                    <Link href={CAMPAIGN_COMMUNICATION_ACERVO}>Limpar filtros</Link>
+                  </Button>
+                </div>
+              ) : (
+                <Button asChild variant="outline" className="min-h-11">
+                  <Link href={CAMPAIGN_COMMUNICATION_ACERVO}>Limpar busca e filtros</Link>
+                </Button>
+              )}
             </CampaignListEmptyState>
           )}
 

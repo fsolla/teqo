@@ -13,7 +13,7 @@ export const speechVodRequestSchema = z.object({
  * end only would silently collapse a real refusal into the generic error.
  */
 
-/** The catalog gate (`canReadSpeechCatalog`) refused the actor. */
+/** The catalog gate (`canReadCommunicationCatalog`) refused the actor. */
 export const SPEECH_VOD_FORBIDDEN_MESSAGE = 'Você não tem acesso ao acervo de falas.'
 
 /** The speech does not exist (or the actor cannot read it). */

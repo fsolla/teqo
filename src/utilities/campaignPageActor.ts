@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 
 import { CAMPAIGN_COMMUNICATION_HOME, LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
 import {
-  canReadSpeechCatalog,
+  canReadCommunicationCatalog,
   isStaffCampaignRole,
   isUnrestrictedCampaignRole,
 } from '@/lib/campaignRoles'
@@ -71,7 +71,7 @@ export const requireCampaignPageActor = async (
   if (gate === 'staff' && !isStaffCampaignRole(user.role)) redirect(denyRedirect)
   // C154 — the speech catalog vertical: communicator/coordinator/candidate,
   // the same predicate the collection access uses.
-  if (gate === 'speechCatalog' && !canReadSpeechCatalog(user.role)) redirect(denyRedirect)
+  if (gate === 'speechCatalog' && !canReadCommunicationCatalog(user.role)) redirect(denyRedirect)
   if (gate === 'unrestricted' && !isUnrestrictedCampaignRole(user.role)) redirect(denyRedirect)
   if (gate === 'noLeader' && user.role === 'leader') redirect(denyRedirect)
   if (gate === 'writable' && !isStaffCampaignRole(user.role)) redirect(denyRedirect)

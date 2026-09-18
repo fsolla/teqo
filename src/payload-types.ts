@@ -89,6 +89,8 @@ export interface Config {
     speech: Speech;
     speechSegment: SpeechSegment;
     speechCut: SpeechCut;
+    reel: Reel;
+    reelMedia: ReelMedia;
     calendarFeed: CalendarFeed;
     googleCalendarSync: GoogleCalendarSync;
     electionTally: ElectionTally;
@@ -133,6 +135,8 @@ export interface Config {
     speech: SpeechSelect<false> | SpeechSelect<true>;
     speechSegment: SpeechSegmentSelect<false> | SpeechSegmentSelect<true>;
     speechCut: SpeechCutSelect<false> | SpeechCutSelect<true>;
+    reel: ReelSelect<false> | ReelSelect<true>;
+    reelMedia: ReelMediaSelect<false> | ReelMediaSelect<true>;
     calendarFeed: CalendarFeedSelect<false> | CalendarFeedSelect<true>;
     googleCalendarSync: GoogleCalendarSyncSelect<false> | GoogleCalendarSyncSelect<true>;
     electionTally: ElectionTallySelect<false> | ElectionTallySelect<true>;
@@ -1062,6 +1066,76 @@ export interface SpeechCut {
   createdAt: string;
 }
 /**
+ * Reels de tutorial da assessoria. Os arquivos são privados e só abrem com login da campanha; publicar não dispara nada no Instagram.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reel".
+ */
+export interface Reel {
+  id: number;
+  title: string;
+  /**
+   * Funcionalidade do site que o tutorial ensina.
+   */
+  feature: 'cards';
+  /**
+   * Despublicar tira o reel da biblioteca e para de servir os arquivos (kill switch).
+   */
+  status: 'draft' | 'published' | 'unpublished';
+  /**
+   * MP4 1080×1920 sem áudio — o arquivo principal que a assessoria baixa.
+   */
+  video: number | ReelMedia;
+  /**
+   * Variante com a narração embutida, quando existir.
+   */
+  videoWithAudio?: (number | null) | ReelMedia;
+  /**
+   * Rascunho da narração em áudio, quando existir.
+   */
+  narrationAudio?: (number | null) | ReelMedia;
+  /**
+   * Arquivo de legenda pronto, vindo da produção.
+   */
+  captions?: (number | null) | ReelMedia;
+  /**
+   * Imagem vertical usada na biblioteca e no player.
+   */
+  cover: number | ReelMedia;
+  /**
+   * Texto da narração ou roteiro, vindo da produção.
+   */
+  transcript?: string | null;
+  publishedAt?: string | null;
+  createdBy?: (number | null) | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Arquivos privados dos reels (vídeo, narração, legenda, capa). Só abrem com login da campanha.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reelMedia".
+ */
+export interface ReelMedia {
+  id: number;
+  /**
+   * Descrição do artefato para acessibilidade (capa e vídeo).
+   */
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "calendarFeed".
  */
@@ -1609,6 +1683,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'speechCut';
         value: number | SpeechCut;
+      } | null)
+    | ({
+        relationTo: 'reel';
+        value: number | Reel;
+      } | null)
+    | ({
+        relationTo: 'reelMedia';
+        value: number | ReelMedia;
       } | null)
     | ({
         relationTo: 'calendarFeed';
@@ -2190,6 +2272,43 @@ export interface SpeechCutSelect<T extends boolean = true> {
   createdBy?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reel_select".
+ */
+export interface ReelSelect<T extends boolean = true> {
+  title?: T;
+  feature?: T;
+  status?: T;
+  video?: T;
+  videoWithAudio?: T;
+  narrationAudio?: T;
+  captions?: T;
+  cover?: T;
+  transcript?: T;
+  publishedAt?: T;
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reelMedia_select".
+ */
+export interface ReelMediaSelect<T extends boolean = true> {
+  alt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2924,6 +3043,8 @@ export interface TaskCreateCollectionExport {
       | 'speech'
       | 'speechSegment'
       | 'speechCut'
+      | 'reel'
+      | 'reelMedia'
       | 'calendarFeed'
       | 'googleCalendarSync'
       | 'electionTally'

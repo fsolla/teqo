@@ -122,3 +122,61 @@ describe('buildSpeechListWhereIncludingCutOrigins (C174)', () => {
     expect(buildSpeechListWhereIncludingCutOrigins(state, [])).toEqual(buildSpeechListWhere(state))
   })
 })
+
+describe('buildSpeechListWhere theme expansion (C192)', () => {
+  it('ORs the query with every expanded theme term', () => {
+    const where = buildSpeechListWhere(parseSpeechListParams({ q: 'defesa do SUS' }), [
+      'saúde pública',
+      'SUS',
+    ])
+
+    expect(where).toEqual({
+      and: [
+        {
+          or: [
+            { searchText: { like: 'defesa do sus' } },
+            { keywords: { contains: 'defesa do SUS' } },
+            { searchText: { like: 'saude publica' } },
+            { keywords: { contains: 'saúde pública' } },
+            { searchText: { like: 'sus' } },
+            { keywords: { contains: 'SUS' } },
+          ],
+        },
+      ],
+    })
+  })
+
+  it('dedupes a term that repeats the query', () => {
+    expect(buildSpeechListWhere(parseSpeechListParams({ q: 'SUS' }), ['SUS'])).toEqual({
+      and: [{ or: [{ searchText: { like: 'sus' } }, { keywords: { contains: 'SUS' } }] }],
+    })
+  })
+
+  it('keeps the facets AND-ed and the cut origins OR-ed alongside the expansion', () => {
+    expect(
+      buildSpeechListWhereIncludingCutOrigins(
+        parseSpeechListParams({ q: 'reforma', topic: ['saude'] }),
+        [7],
+        ['saúde'],
+      ),
+    ).toEqual({
+      and: [
+        { topics: { in: ['saude'] } },
+        {
+          or: [
+            { searchText: { like: 'reforma' } },
+            { keywords: { contains: 'reforma' } },
+            { searchText: { like: 'saude' } },
+            { keywords: { contains: 'saúde' } },
+            { id: { in: [7] } },
+          ],
+        },
+      ],
+    })
+  })
+
+  it('stays byte-identical to today without theme terms', () => {
+    const state = parseSpeechListParams({ q: 'reforma' })
+    expect(buildSpeechListWhere(state, [])).toEqual(buildSpeechListWhere(state))
+  })
+})

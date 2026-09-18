@@ -72,6 +72,7 @@ import * as migration_20260913_145820_add_speech_search_text from './20260913_14
 import * as migration_20260913_150000_backfill_speech_search_text_trgm_index from './20260913_150000_backfill_speech_search_text_trgm_index';
 import * as migration_20260915_122356_add_speech_cut from './20260915_122356_add_speech_cut';
 import * as migration_20260915_142058_activity_google_import_link from './20260915_142058_activity_google_import_link';
+import * as migration_20260918_201009_add_reel from './20260918_201009_add_reel';
 
 export const migrations = [
   {
@@ -442,6 +443,11 @@ export const migrations = [
   {
     up: migration_20260915_142058_activity_google_import_link.up,
     down: migration_20260915_142058_activity_google_import_link.down,
-    name: '20260915_142058_activity_google_import_link'
+    name: '20260915_142058_activity_google_import_link',
+  },
+  {
+    up: migration_20260918_201009_add_reel.up,
+    down: migration_20260918_201009_add_reel.down,
+    name: '20260918_201009_add_reel'
   },
 ];
