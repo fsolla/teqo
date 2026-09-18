@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — S15 · Card Time de você</title>
+    <style type="text/tailwindcss">
+      :root {
+        --background: #ffffff;
+        --foreground: #000000;
+        --pt-red: #a21c1c;
+        --pt-red-dark: #47130e;
+        --pt-yellow: #ffe607;
+        --campaign-cream: #fff8f2;
+        --campaign-ink: #000000;
+        --campaign-muted: #6c615e;
+        --campaign-surface: #f9faff;
+        --campaign-band: #ebe9e9;
+        --campaign-line: rgb(0 0 0 / 12%);
+        --field-border: rgb(0 0 0 / 18%);
+        --team-red: #e50e2f;
+        --team-yellow: #ffec01;
+        --team-blue: #0061a5;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      a:focus-visible,
+      [tabindex]:focus-visible {
+        outline: 2px solid var(--pt-red);
+        outline-offset: 2px;
+      }
+      .checker {
+        background-color: #f4f1ed;
+        background-image:
+          linear-gradient(45deg, #e6e1dc 25%, transparent 25%),
+          linear-gradient(-45deg, #e6e1dc 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #e6e1dc 75%),
+          linear-gradient(-45deg, transparent 75%, #e6e1dc 75%);
+        background-position:
+          0 0,
+          0 8px,
+          8px -8px,
+          -8px 0;
+        background-size: 16px 16px;
+      }
+      .range-track {
+        appearance: none;
+        height: 4px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--pt-red) 0 46%, #d6d3d1 46% 100%);
+      }
+      .range-track::-webkit-slider-thumb {
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 3px solid white;
+        border-radius: 999px;
+        background: var(--pt-red);
+        box-shadow: 0 0 0 1px rgb(0 0 0 / 18%);
+      }
+    </style>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10">
+      <header class="max-w-4xl">
+        <p class="m-0 text-xs font-black tracking-[0.12em] text-red-400 uppercase">
+          Gate visual · S15
+        </p>
+        <h1 class="mt-2 text-2xl font-black tracking-[-0.02em] sm:text-3xl">Card “Time de você”</h1>
+        <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
+          Visitante, principalmente no celular, escolhe o quarto modelo, informa nome e foto de
+          busto, acompanha o recorte local, confere o enquadramento e baixa o card. As cenas mantêm
+          o compositor vigente: dialog no desktop, drawer no mobile, um único CTA primário e arte
+          oficial sem redesenho.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2 text-[11px] font-bold text-zinc-300">
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >1280px · desktop</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >390px · mobile</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >alvos ≥ 44px</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >contraste ≥ 4,5:1</span
+          >
+        </div>
+      </header>
+
+      <!-- Cena 1: galeria desktop -->
+      <section class="mt-14">
+        <div class="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+              Cena 1 · Home / #cards · desktop 1280
+            </h2>
+            <p class="mt-1 text-xs text-zinc-500">
+              Quatro tiles em uma linha: a arte continua dominante e a seção não ganha CTA
+              concorrente.
+            </p>
+          </div>
+          <p class="text-xs font-bold text-zinc-400">
+            Decisão: <span class="text-zinc-200">grid 4 × 1 em lg</span>
+          </p>
+        </div>
+
+        <div
+          class="mt-4 w-full max-w-[1280px] overflow-hidden rounded-xl border border-zinc-700 bg-[var(--campaign-cream)] text-[var(--campaign-ink)] shadow-2xl"
+        >
+          <section
+            id="cards"
+            aria-labelledby="cards-title-desktop"
+            class="border-b border-[var(--campaign-line)] px-10 py-14"
+          >
+            <div class="mx-auto max-w-2xl text-center">
+              <p class="m-0 text-xs font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                Faça parte
+              </p>
+              <h3 id="cards-title-desktop" class="mt-1 text-2xl font-black tracking-[-0.02em]">
+                Mostre que você está com Solla
+              </h3>
+              <p class="mt-2 text-base leading-6 text-[var(--campaign-muted)]">
+                Escolha um modelo, coloque seu nome ou sua foto e baixe seu card. Compartilhe com
+                sua gente e fortaleça nossa caminhada.
+              </p>
+            </div>
+
+            <ul aria-label="Modelos de card" class="mt-8 grid list-none grid-cols-4 gap-5 p-0">
+              <li>
+                <button
+                  aria-label="Card com seu nome"
+                  class="group flex h-full min-h-11 w-full flex-col rounded-xl text-left"
+                >
+                  <span
+                    class="relative block aspect-[3/4] w-full overflow-hidden rounded-xl border border-[var(--campaign-line)] bg-[var(--campaign-band)] transition group-hover:-translate-y-0.5 group-hover:shadow-lg"
+                  >
+                    <img
+                      src="../../public/cards/name-card-base.jpg"
+                      alt=""
+                      class="absolute inset-0 size-full object-cover"
+                    />
+                    <span
+                      class="absolute top-[30%] left-[19.7%] max-w-[66%] text-left text-[clamp(12px,1.55vw,22px)] leading-none font-black text-[#ffec01]"
+                      >SEU NOME</span
+                    >
+                  </span>
+                  <span class="mt-3 block w-full text-center text-sm font-bold"
+                    >Card com seu nome</span
+                  >
+                </button>
+              </li>
+              <li>
+                <button
+                  aria-label="Moldura quadrada"
+                  class="group flex h-full min-h-11 w-full flex-col rounded-xl text-left"
+                >
+                  <span
+                    class="checker relative block aspect-square w-full overflow-hidden rounded-xl border border-[var(--campaign-line)] transition group-hover:-translate-y-0.5 group-hover:shadow-lg"
+                  >
+                    <img
+                      src="../../public/cards/photo-square-frame.png"
+                      alt=""
+                      class="absolute inset-0 size-full object-cover"
+                    />
+                  </span>
+                  <span class="mt-3 block w-full text-center text-sm font-bold"
+                    >Moldura quadrada</span
+                  >
+                </button>
+              </li>
+              <li>
+                <button
+                  aria-label="Moldura vertical"
+                  class="group flex h-full min-h-11 w-full flex-col rounded-xl text-left"
+                >
+                  <span
+                    class="checker relative block aspect-[25/36] w-full overflow-hidden rounded-xl border border-[var(--campaign-line)] transition group-hover:-translate-y-0.5 group-hover:shadow-lg"
+                  >
+                    <img
+                      src="../../public/cards/photo-portrait-frame.png"
+                      alt=""
+                      class="absolute inset-0 size-full object-cover"
+                    />
+                  </span>
+                  <span class="mt-3 block w-full text-center text-sm font-bold"
+                    >Moldura vertical</span
+                  >
+                </button>
+              </li>
+              <li>
+                <button
+                  aria-label="Time de você"
+                  class="group flex h-full min-h-11 w-full flex-col rounded-xl text-left"
+                >
+                  <span
+                    class="relative block aspect-[3/4] w-full overflow-hidden rounded-xl border border-[var(--campaign-line)] bg-[var(--campaign-band)] transition group-hover:-translate-y-0.5 group-hover:shadow-lg"
+                  >
+                    <img
+                      src="../../public/cards/team-card-example.jpg"
+                      alt=""
+                      class="absolute inset-0 size-full object-cover"
+                    />
+                    <span
+                      class="absolute top-3 right-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-black text-[var(--team-blue)] shadow"
+                      >NOVO</span
+                    >
+                  </span>
+                  <span class="mt-3 block w-full text-center text-sm font-bold">Time de você</span>
+                </button>
+              </li>
+            </ul>
+          </section>
+        </div>
+      </section>
+
+      <!-- Cena 2: galeria mobile -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 2 · /cards · mobile 390
+        </h2>
+        <p class="mt-1 text-xs text-zinc-500">
+          A intro e a dica dizem “quatro”; o primeiro tile ocupa 78% e o segundo aparece como pista
+          de rolagem.
+        </p>
+        <div
+          class="mt-4 w-[390px] max-w-full overflow-hidden rounded-[22px] border border-zinc-700 bg-white text-black shadow-2xl"
+        >
+          <div class="px-5 pt-5">
+            <a
+              href="#"
+              class="inline-flex min-h-11 items-center text-sm font-bold text-[var(--pt-red)] underline-offset-4"
+              >← Voltar para a campanha</a
+            >
+          </div>
+          <section aria-labelledby="cards-page-title-mobile" class="px-5 pt-6 pb-10">
+            <div class="text-center">
+              <p class="text-[10px] font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                Faça parte
+              </p>
+              <h3
+                id="cards-page-title-mobile"
+                class="mt-1 text-[22px] leading-tight font-black tracking-[-0.02em]"
+              >
+                Crie seu card de apoio
+              </h3>
+              <p class="mt-2 text-sm leading-5 text-[var(--campaign-muted)]">
+                Escolha um dos quatro modelos, personalize com seu nome ou sua foto e baixe para
+                compartilhar.
+              </p>
+              <p class="mt-2 text-xs leading-5 text-[var(--campaign-muted)]">
+                Seu nome e sua foto são processados apenas no seu aparelho e não são enviados para
+                nós.
+              </p>
+            </div>
+
+            <div class="mt-7 flex w-[710px] snap-x gap-4">
+              <button
+                aria-label="Card com seu nome"
+                class="flex w-[273px] shrink-0 flex-col rounded-xl"
+              >
+                <span
+                  class="relative aspect-[3/4] w-full overflow-hidden rounded-xl border border-[var(--campaign-line)] bg-[var(--campaign-band)]"
+                >
+                  <img
+                    src="../../public/cards/name-card-base.jpg"
+                    alt=""
+                    class="absolute inset-0 size-full object-cover"
+                  />
+                  <span
+                    class="absolute top-[30%] left-[19.7%] text-[18px] leading-none font-black text-[#ffec01]"
+                    >SEU NOME</span
+                  >
+                </span>
+                <span class="mt-3 text-center text-sm font-bold">Card com seu nome</span>
+              </button>
+              <button
+                aria-label="Moldura quadrada"
+                class="flex w-[273px] shrink-0 flex-col rounded-xl"
+              >
+                <span
+                  class="checker relative aspect-square w-full overflow-hidden rounded-xl border border-[var(--campaign-line)]"
+                >
+                  <img
+                    src="../../public/cards/photo-square-frame.png"
+                    alt=""
+                    class="absolute inset-0 size-full object-cover"
+                  />
+                </span>
+                <span class="mt-3 text-center text-sm font-bold">Moldura quadrada</span>
+              </button>
+            </div>
+            <p class="mt-2 text-center text-xs font-semibold text-[var(--campaign-muted)]">
+              Deslize para ver os quatro modelos
+            </p>
+            <div class="mt-5 flex justify-center gap-2" aria-hidden="true">
+              <span class="h-1.5 w-6 rounded-full bg-[var(--pt-red)]"></span
+              ><span class="size-1.5 rounded-full bg-stone-300"></span
+              ><span class="size-1.5 rounded-full bg-stone-300"></span
+              ><span class="size-1.5 rounded-full bg-stone-300"></span>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- Cena 3: inicial desktop -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 3 · Compositor inicial · dialog desktop
+        </h2>
+        <p class="mt-1 text-xs text-zinc-500">
+          Nome e foto são pedidos juntos; instrução de qualidade sem prometer recorte perfeito. O
+          CTA final segue desabilitado.
+        </p>
+        <div
+          class="relative mt-4 flex min-h-[760px] w-full max-w-[1280px] items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-[var(--campaign-cream)] p-8 text-black shadow-2xl"
+        >
+          <div
+            class="absolute inset-0 bg-[linear-gradient(135deg,#fff8f2,#ebe9e9)] opacity-80"
+          ></div>
+          <div class="absolute inset-0 bg-black/45"></div>
+          <article
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="initial-title"
+            class="relative z-10 flex max-h-[92dvh] w-[512px] max-w-full flex-col overflow-hidden rounded-xl border border-black/10 bg-white shadow-2xl"
+          >
+            <header class="flex items-start gap-3 px-5 pt-5">
+              <div class="min-w-0">
+                <p class="text-xs font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                  Time de você
+                </p>
+                <h3 id="initial-title" class="mt-1 text-xl font-black tracking-[-0.01em]">
+                  Entre para o time
+                </h3>
+              </div>
+              <button
+                aria-label="Fechar"
+                class="ml-auto inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)] hover:bg-[var(--campaign-band)]"
+              >
+                ×
+              </button>
+            </header>
+            <div class="overflow-y-auto px-5 pt-4 pb-5">
+              <div
+                class="mx-auto w-[172px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-sm"
+              >
+                <img
+                  src="../../public/cards/team-card-example.jpg"
+                  alt="Exemplo do card Time de você"
+                  class="block aspect-[3/4] w-full object-cover"
+                />
+              </div>
+              <div class="mt-5">
+                <label for="desktop-name" class="block text-sm font-bold text-[var(--campaign-ink)]"
+                  >Seu nome</label
+                >
+                <input
+                  id="desktop-name"
+                  value=""
+                  placeholder="Como você é chamado"
+                  class="mt-2 h-11 w-full rounded-lg border border-[var(--field-border)] bg-white px-3 text-base placeholder:text-stone-500"
+                />
+                <p class="mt-2 text-xs leading-5 text-[var(--campaign-muted)]">
+                  Vai aparecer em caixa alta depois de “TIME DE”. Use um nome curto e conhecido.
+                </p>
+              </div>
+              <div
+                class="mt-5 rounded-lg border border-[var(--campaign-line)] bg-[var(--campaign-surface)] p-4"
+              >
+                <p class="text-sm font-bold">Sua foto de busto</p>
+                <p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">
+                  Para um recorte melhor, escolha uma foto nítida, de frente e com fundo simples.
+                </p>
+                <button
+                  class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-5 text-sm font-extrabold text-[var(--pt-red)] hover:bg-[var(--campaign-band)]"
+                >
+                  Escolher foto
+                </button>
+              </div>
+              <p class="mt-4 text-xs leading-5 text-[var(--campaign-muted)]">
+                Seu nome e sua foto são processados apenas no seu aparelho e não são enviados para
+                nós.
+              </p>
+            </div>
+            <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-5 text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled
+                class="inline-flex min-h-11 flex-1 cursor-not-allowed items-center justify-center rounded-lg bg-[var(--pt-red)] px-5 text-sm font-extrabold text-white opacity-50"
+              >
+                Criar meu card
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- Cena 4: processamento mobile -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 4 · Recorte em processamento · drawer mobile 390
+        </h2>
+        <p class="mt-1 text-xs text-zinc-500">
+          A primeira execução explicita download do modelo e processamento local; não promete
+          duração.
+        </p>
+        <div
+          class="relative mt-4 h-[780px] w-[390px] max-w-full overflow-hidden rounded-[22px] border border-zinc-700 bg-[var(--campaign-cream)] text-black shadow-2xl"
+        >
+          <div class="px-5 py-10 opacity-50">
+            <p class="text-xs font-black text-[var(--pt-red)] uppercase">Faça parte</p>
+            <h3 class="mt-1 text-2xl font-black">Mostre que você está com Solla</h3>
+            <div class="mt-5 h-72 rounded-xl bg-stone-200"></div>
+          </div>
+          <div class="absolute inset-0 bg-black/50"></div>
+          <article
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="processing-title"
+            class="absolute inset-x-0 bottom-0 overflow-hidden rounded-t-2xl border-t border-black/10 bg-white"
+          >
+            <div class="mx-auto mt-2 h-1.5 w-10 rounded-full bg-stone-300"></div>
+            <header class="flex items-start gap-3 px-5 pt-4">
+              <div>
+                <p class="text-[10px] font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                  Time de você
+                </p>
+                <h3 id="processing-title" class="mt-1 text-lg font-black tracking-[-0.01em]">
+                  Preparando sua foto
+                </h3>
+              </div>
+              <button
+                aria-label="Fechar"
+                class="ml-auto inline-flex size-11 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+              >
+                ×
+              </button>
+            </header>
+            <div class="px-5 pt-4 pb-5">
+              <div
+                class="mx-auto w-[144px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-sm"
+              >
+                <img
+                  src="../../public/cards/team-card-base.png"
+                  alt="Prévia do modelo enquanto a foto é preparada"
+                  class="block aspect-[3/4] w-full object-cover"
+                />
+              </div>
+              <div class="mt-5" role="status" aria-live="polite">
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-sm font-bold">Baixando o modelo de recorte…</p>
+                  <p class="text-sm font-black text-[var(--pt-red)]">36%</p>
+                </div>
+                <div
+                  class="mt-2 h-2 overflow-hidden rounded-full bg-stone-200"
+                  aria-label="Progresso do recorte: 36%"
+                >
+                  <div class="h-full w-[36%] rounded-full bg-[var(--pt-red)]"></div>
+                </div>
+                <p class="mt-3 text-sm leading-5 text-[var(--campaign-muted)]">
+                  Na primeira vez, o modelo precisa ser baixado. Depois, vamos remover o fundo da
+                  foto no seu aparelho. Isso pode levar um pouco.
+                </p>
+              </div>
+              <div class="mt-4 flex items-start gap-3 rounded-lg bg-[var(--campaign-cream)] p-3">
+                <span
+                  aria-hidden="true"
+                  class="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--team-blue)] text-xs font-black text-white"
+                  >✓</span
+                >
+                <p class="text-xs leading-5 text-[var(--campaign-muted)]">
+                  Sua foto fica neste aparelho e não é enviada para nós.
+                </p>
+              </div>
+            </div>
+            <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled
+                class="inline-flex min-h-11 flex-1 cursor-wait items-center justify-center rounded-lg bg-[var(--pt-red)] text-sm font-extrabold text-white opacity-50"
+              >
+                Processando…
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- Cena 5: pronto para criar -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 5 · Recorte pronto + enquadramento · dialog desktop
+        </h2>
+        <p class="mt-1 text-xs text-zinc-500">
+          A prévia real confirma “TIME DE MARIA”; arrastar e controles de zoom/ajuste fino são
+          escapes opcionais.
+        </p>
+        <div
+          class="relative mt-4 flex min-h-[850px] w-full max-w-[1280px] items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-[var(--campaign-band)] p-8 text-black shadow-2xl"
+        >
+          <div class="absolute inset-0 bg-black/45"></div>
+          <article
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ready-title"
+            class="relative z-10 flex max-h-[92dvh] w-[512px] max-w-full flex-col overflow-hidden rounded-xl border border-black/10 bg-white shadow-2xl"
+          >
+            <header class="flex items-start gap-3 px-5 pt-5">
+              <div>
+                <p class="text-xs font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                  Time de você
+                </p>
+                <h3 id="ready-title" class="mt-1 text-xl font-black">Confira seu card</h3>
+                <p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">
+                  O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.
+                </p>
+              </div>
+              <button
+                aria-label="Fechar"
+                class="ml-auto inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+              >
+                ×
+              </button>
+            </header>
+            <div class="overflow-y-auto px-5 pt-4 pb-5">
+              <div
+                role="group"
+                aria-label="Ajuste da foto"
+                tabindex="0"
+                class="relative mx-auto w-[240px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-md"
+              >
+                <img
+                  src="../../public/cards/team-card-example.jpg"
+                  alt="Prévia do card TIME DE MARIA"
+                  class="block aspect-[3/4] w-full object-cover"
+                />
+                <div
+                  class="pointer-events-none absolute top-[15.5%] left-1/2 flex h-[12.2%] w-[47%] -translate-x-1/2 -rotate-[4.1deg] items-center justify-center bg-[var(--team-blue)] px-1 text-center text-[27px] leading-none font-black tracking-tight text-white shadow-sm"
+                >
+                  MARIA
+                </div>
+                <span
+                  class="absolute right-2 bottom-2 rounded bg-black/70 px-2 py-1 text-[10px] font-bold text-white"
+                  >Arraste para ajustar</span
+                >
+              </div>
+
+              <div class="mt-5 flex items-center gap-3">
+                <label for="desktop-zoom" class="text-sm font-bold">Zoom</label>
+                <button
+                  aria-label="Diminuir zoom"
+                  class="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-xl font-bold"
+                >
+                  −
+                </button>
+                <input
+                  id="desktop-zoom"
+                  aria-label="Nível de zoom"
+                  type="range"
+                  value="46"
+                  class="range-track h-11 min-w-0 flex-1"
+                />
+                <button
+                  aria-label="Aumentar zoom"
+                  class="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-xl font-bold"
+                >
+                  +
+                </button>
+              </div>
+              <div class="mt-4">
+                <p class="text-sm font-bold">Ajuste fino</p>
+                <div class="mt-2 grid grid-cols-4 gap-2">
+                  <button
+                    aria-label="Mover foto para a esquerda"
+                    class="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-lg"
+                  >
+                    ←
+                  </button>
+                  <button
+                    aria-label="Mover foto para cima"
+                    class="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-lg"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    aria-label="Mover foto para baixo"
+                    class="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-lg"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    aria-label="Mover foto para a direita"
+                    class="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-lg"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+              <button
+                class="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-5 text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Trocar foto
+              </button>
+              <p class="mt-3 text-xs leading-5 text-[var(--campaign-muted)]">
+                Sua foto fica neste aparelho e não é enviada para nós.
+              </p>
+            </div>
+            <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Cancelar
+              </button>
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-[var(--pt-red)] px-5 text-sm font-extrabold text-white shadow-sm"
+              >
+                Criar meu card
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- Cena 6: resultado mobile -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 6 · Resultado · drawer mobile 390
+        </h2>
+        <p class="mt-1 text-xs text-zinc-500">
+          Uma ação primária: baixar. “Criar outro” permanece secundária e devolve ao catálogo.
+        </p>
+        <div
+          class="relative mt-4 h-[780px] w-[390px] max-w-full overflow-hidden rounded-[22px] border border-zinc-700 bg-[var(--campaign-cream)] text-black shadow-2xl"
+        >
+          <div class="absolute inset-0 bg-black/50"></div>
+          <article
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="result-title"
+            class="absolute inset-x-0 bottom-0 overflow-hidden rounded-t-2xl bg-white"
+          >
+            <div class="mx-auto mt-2 h-1.5 w-10 rounded-full bg-stone-300"></div>
+            <header class="flex items-start gap-3 px-5 pt-4">
+              <div>
+                <p class="text-[10px] font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                  Tudo certo
+                </p>
+                <h3 id="result-title" class="mt-1 text-lg leading-6 font-black">
+                  Seu card está pronto para compartilhar.
+                </h3>
+              </div>
+              <button
+                aria-label="Fechar"
+                class="ml-auto inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+              >
+                ×
+              </button>
+            </header>
+            <div class="px-5 pt-4 pb-5">
+              <div
+                class="mx-auto w-[190px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-md"
+              >
+                <img
+                  src="../../public/cards/team-card-example.jpg"
+                  alt="Seu card Time de Maria pronto"
+                  class="block aspect-[3/4] w-full object-cover"
+                />
+                <div class="pointer-events-none absolute"></div>
+              </div>
+              <div class="mt-4 flex items-start gap-3 rounded-lg bg-[var(--campaign-cream)] p-3">
+                <span
+                  aria-hidden="true"
+                  class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-green-700 text-xs font-black text-white"
+                  >✓</span
+                >
+                <p class="text-xs leading-5 text-[var(--campaign-muted)]">
+                  Seu nome e sua foto são processados apenas no seu aparelho e não são enviados para
+                  nós.
+                </p>
+              </div>
+            </div>
+            <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-3 text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Criar outro card
+              </button>
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-[var(--pt-red)] px-3 text-sm font-extrabold text-white shadow-sm"
+              >
+                Baixar meu card
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- Cena 7: erros -->
+      <section class="mt-14 pb-10">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 7 · Erros recuperáveis · conteúdo do compositor
+        </h2>
+        <p class="mt-1 text-xs text-zinc-500">
+          Os dois erros preservam o que a pessoa já informou e oferecem recuperação direta, sem beco
+          sem saída.
+        </p>
+        <div class="mt-4 grid max-w-[1048px] gap-6 lg:grid-cols-2">
+          <article
+            class="overflow-hidden rounded-xl border border-zinc-700 bg-white text-black shadow-xl"
+          >
+            <header class="flex items-start gap-3 px-5 pt-5">
+              <div>
+                <p class="text-xs font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                  Falha no recorte
+                </p>
+                <h3 class="mt-1 text-xl font-black">Vamos tentar outra vez</h3>
+              </div>
+              <button
+                aria-label="Fechar"
+                class="ml-auto inline-flex size-11 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+              >
+                ×
+              </button>
+            </header>
+            <div class="px-5 pt-4 pb-5">
+              <div role="alert" class="rounded-lg border border-[var(--pt-red)] bg-red-50 p-4">
+                <p class="text-sm font-black text-[var(--pt-red)]">
+                  Não foi possível remover o fundo desta foto.
+                </p>
+                <p class="mt-1 text-sm leading-5 text-[var(--campaign-ink)]">
+                  Tente de novo ou escolha outra foto.
+                </p>
+              </div>
+              <p class="mt-4 text-sm leading-5 text-[var(--campaign-muted)]">
+                Fotos de busto, nítidas e com fundo simples costumam funcionar melhor.
+              </p>
+              <p class="mt-3 text-xs leading-5 text-[var(--campaign-muted)]">
+                Sua foto fica neste aparelho e não é enviada para nós.
+              </p>
+              <div class="mt-5 flex gap-3">
+                <button
+                  class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-3 text-sm font-extrabold text-[var(--pt-red)]"
+                >
+                  Escolher outra foto
+                </button>
+                <button
+                  class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-[var(--pt-red)] px-3 text-sm font-extrabold text-white"
+                >
+                  Tentar de novo
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <article
+            class="overflow-hidden rounded-xl border border-zinc-700 bg-white text-black shadow-xl"
+          >
+            <header class="flex items-start gap-3 px-5 pt-5">
+              <div>
+                <p class="text-xs font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                  Nome muito longo
+                </p>
+                <h3 class="mt-1 text-xl font-black">Encurte o nome</h3>
+              </div>
+              <button
+                aria-label="Fechar"
+                class="ml-auto inline-flex size-11 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+              >
+                ×
+              </button>
+            </header>
+            <div class="px-5 pt-4 pb-5">
+              <label for="error-name" class="block text-sm font-bold">Seu nome</label>
+              <input
+                id="error-name"
+                aria-invalid="true"
+                value="MARIA DA CONCEIÇÃO OLIVEIRA"
+                class="mt-2 h-11 w-full rounded-lg border-2 border-[var(--pt-red)] bg-white px-3 text-base"
+              />
+              <p role="alert" class="mt-2 text-sm leading-5 font-semibold text-[var(--pt-red)]">
+                Não foi possível encaixar esse nome no card. Use um nome mais curto, como você é
+                chamado.
+              </p>
+              <p class="mt-4 text-xs leading-5 text-[var(--campaign-muted)]">
+                A foto escolhida e o recorte permanecem salvos neste aparelho enquanto você corrige
+                o nome.
+              </p>
+            </div>
+            <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-[var(--pt-red)] text-sm font-extrabold text-white opacity-50"
+              >
+                Criar meu card
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <aside class="border-t border-zinc-800 pt-8 text-xs leading-5 text-zinc-500">
+        <p>
+          <strong class="text-zinc-300">Arte e composição preservadas:</strong> base → foto
+          recortada → overlay → textos; banners #E50E2F / #0061A5, texto #FFEC01 / #FFFFFF. A prévia
+          usa o exemplo oficial; nenhuma arte nova foi inventada.
+        </p>
+        <p class="mt-2"><strong class="text-zinc-300">NEEDS ASSET:</strong> nenhum.</p>
+      </aside>
+    </main>
+  </body>
+</html>
