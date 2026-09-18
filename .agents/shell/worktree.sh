@@ -17,9 +17,10 @@
 # `/bug-fix <bag>` no `fix`; `new` e `plan` sem bag abrem só a sessão) e ANEXA
 # o TUI (`opencode attach -s <id>`) —
 # fechar o terminal NÃO encerra o run; reentre com `pnpm agent:session attach` e
-# encerre com `pnpm agent:session stop`. Sem `--variant` (OPS95: o yargs do TUI
-# rejeita o flag e só imprime o helper; variantes ficam na config global da
-# máquina, via Ctrl+T). Modelo por invocação: `--cheap`
+# encerre com `pnpm agent:session stop`. Sem `--variant` na diretiva nem no attach
+# (OPS95: o yargs do TUI rejeita o flag). OPS127: a sessão nasce na variante `max`
+# — ela vai no body do `POST /session` e no argv do `opencode run` do
+# driver/headless (o TUI anexado herda), nunca na linha do launch. Modelo por invocação: `--cheap`
 # (cheapestinference/deepseek-v4-flash), `--pro` (deepseek/deepseek-v4-pro),
 # `--zen` (opencode/muse-spark-1.3-contributor-free), `--go` (opencode-go/deepseek-v4.1-flash), `--alibaba`
 # (alibaba-token-plan/deepseek-v4-flash), `--glm` (opencode-go/glm-5.3-flash),

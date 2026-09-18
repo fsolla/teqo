@@ -236,15 +236,26 @@ export const parseModelRef = (model) => {
 }
 
 /**
+ * Variante única pedida em todo lançamento de worktree (OPS127). Opencode
+ * 1.18.31 aceita `variant` dentro de `model` no `POST /session` e persiste em
+ * `Session.model.variant`; a TUI anexada herda — por isso a variante viaja no
+ * body da sessão (e no `opencode run` do driver/headless), nunca como flag no
+ * `opencode attach`/diretiva do TUI (o yargs rejeita flag desconhecida —
+ * OPS95). `max` é a única variante usada, em todos os propósitos.
+ */
+export const MODEL_VARIANT = 'max'
+
+/**
  * Body of `POST /session` — `{}` when no model was requested, or
- * `{ model: { providerID, id } }` when one was (the session then reports the
- * model, so the attached TUI inherits it even on a driverless launch). No
- * `variant` (OPS95: variants stay on the machine's global config).
+ * `{ model: { providerID, id, variant } }` when one was (the session then
+ * reports the model+variant, so the attached TUI inherits them even on a
+ * driverless launch). The variant rides the body (OPS127); the machine's
+ * global config stays untouched.
  * @param {{ model?: string | null }} [options]
  */
 export const buildCreateSessionBody = ({ model = null } = {}) => {
   if (model === null || model === undefined || model === '') return {}
-  return { model: parseModelRef(model) }
+  return { model: { ...parseModelRef(model), variant: MODEL_VARIANT } }
 }
 
 /**
@@ -363,6 +374,8 @@ export const validateSessionFlags = ({ subcommand = null, flags = {} } = {}) => 
  * argument starting with `-` (`--issue 1019`) is not parsed as an opencode flag
  * by yargs — verified live on 1.18.31. No `-p`: the credential rides
  * `OPENCODE_SERVER_PASSWORD` in the inherited env (never in `ps`).
+ * `--variant` (OPS127) keeps the run on the same variant as the session body —
+ * `opencode run` supports it; the attached TUI does not.
  * @param {{ url: string, sessionID: string, dir: string, model: string, invocation: { command: string, arguments?: string } | null }} options
  */
 export const driverArgs = ({ url, sessionID, dir, model, invocation }) => {
@@ -385,6 +398,8 @@ export const driverArgs = ({ url, sessionID, dir, model, invocation }) => {
     dir,
     '--model',
     model,
+    '--variant',
+    MODEL_VARIANT,
     '--auto',
     '--command',
     invocation.command,
