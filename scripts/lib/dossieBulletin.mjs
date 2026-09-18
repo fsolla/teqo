@@ -11,7 +11,7 @@ import { BULLETIN_TIMELINE_STEPS } from './dossieCareer.mjs'
 import { resolveDossierUnit } from './dossieUnit.mjs'
 
 export const BULLETIN_HIGHLIGHT_LIMIT = 6
-export const BULLETIN_MORE_LIMIT = 14
+const BULLETIN_MORE_LIMIT = 14
 
 const eraRank = { C: 0, B: 1, A: 2 }
 
@@ -58,7 +58,10 @@ export const buildBulletin = ({
     phaseLabel: fact.value ? dossierPhaseLabel(fact.phase) : null,
   }))
   const moreItems = ordered
-    .slice(BULLETIN_HIGHLIGHT_LIMIT, BULLETIN_HIGHLIGHT_LIMIT + BULLETIN_MORE_LIMIT)
+    .slice(
+      BULLETIN_HIGHLIGHT_LIMIT,
+      BULLETIN_HIGHLIGHT_LIMIT + (resolvedUnit.bulletinMoreLimit ?? BULLETIN_MORE_LIMIT),
+    )
     .map((fact) => ({
       label: fact.brief?.title ?? fact.headline,
       detail: fact.brief?.note ?? fact.detail ?? fact.value ?? fact.area,

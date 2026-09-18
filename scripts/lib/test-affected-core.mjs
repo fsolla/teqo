@@ -62,6 +62,7 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/dossieCamara.mjs',
   'scripts/lib/dossieCareer.mjs',
   'scripts/lib/dossieHealthData.mjs',
+  'scripts/lib/dossiePack.mjs',
   'scripts/lib/dossieRender.mjs',
   'scripts/lib/dossieResearch.mjs',
   'scripts/lib/dossieUnit.mjs',

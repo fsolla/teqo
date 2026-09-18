@@ -23,14 +23,14 @@ import {
 } from './dossieUnit.mjs'
 import { capList, stripInlineSources, summarySurfaceText } from './reportText.mjs'
 
+/**
+ * Only the resumo ("one look") caps its lists; the full sections flow across as
+ * many sheets as they need (the builder packs by measured height) — C186/C187
+ * revision of 2026-09-18, same rule for both recortes.
+ */
 const MAX_DELIVERIES_PAGE_ONE = 3
 const MAX_HOOKS_PAGE_ONE = 2
 const MAX_PENDING_PAGE_ONE = 4
-const MAX_ERA_NUMBERS = 6
-/** Curated research actions are all kept (the renderer paginates them); only the generic Câmara list is capped. */
-const MAX_ERA_CAMARA_ACTIONS = 4
-const MAX_REGION_ITEMS = 3
-const MAX_SCOPE_LIST = 3
 
 /** @param {string} sphere @param {any} [unit] @returns {string} */
 export const dossierSphereLabel = (sphere, unit = MUNICIPALITY_UNIT) =>
@@ -99,6 +99,27 @@ const itemNumberRows = (items) => {
   return rows
 }
 
+/**
+ * BRL amounts written in the research copy ("R$ 1,2 mi", "R$ 1.299.027,30",
+ * "R$ 150 mil"). Returns null for non-money values ("175" vagas/leitos), so a
+ * count never enters a money chart.
+ */
+const parseMoneyBrl = (value) => {
+  if (typeof value !== 'string') return null
+  const match = /^R\$\s*([\d.,]+)\s*(mil|milh\S*|mi)?/i.exec(value.trim())
+  if (!match) return null
+  const amount = Number(match[1].replace(/\./g, '').replace(',', '.'))
+  if (!Number.isFinite(amount)) return null
+  const suffix = (match[2] ?? '').toLowerCase()
+  if (suffix === 'mil') return amount * 1e3
+  if (suffix) return amount * 1e6
+  return amount
+}
+
+const moneyRows = (numberRows) =>
+  numberRows
+    .map((row) => ({ ...row, amount: parseMoneyBrl(row.value) }))
+    .filter((row) => row.amount !== null)
 const eraRecovery = {
   A: 'Biografia Câmara · DOU/acervo do Ministério da Saúde · pesquisa web datada',
   B: 'DOE-BA (DOOL) · notícias SESAB · Transparência Bahia · SIOPS/DATASUS',
@@ -138,7 +159,7 @@ const camaraItemsAsActions = (camara, era) =>
  * @property {any} cover
  * @property {any} page1
  * @property {any[]} trajectory
- * @property {Array<{ id: string, label: string, period: string, subtitle: string, empty?: boolean, method: string, recovery: string, numbers: { items: any[], total: number, remaining: number }, actions: any[], camaraActionsRemaining: number, honors: any[] }>} eras
+ * @property {Array<{ id: string, label: string, period: string, subtitle: string, empty?: boolean, method: string, recovery: string, numbers: any, actions: any, honors: any }>} eras
  * @property {{
  *   ruleTitle: string,
  *   ruleBody: string,
@@ -153,11 +174,27 @@ const camaraItemsAsActions = (camara, era) =>
  *   ruleTitle: string,
  *   ruleBody: string,
  *   lists: Array<{ key: string, label: string, sphere: string, items: any[], total: number, omitted: number }>,
- *   evidence: { items: any[], total: number, omitted: number },
  *   hook: any,
  *   priorityGap: any,
  * }} reach
- * @property {{ items: any[], total: number, omitted: number }} acervo
+ * @property {{ items: any[], total: number, omitted: number, recorte?: number, topics?: string[] }} acervo
+ * @property {{
+ *   byEra: any[],
+ *   byEraSphere: any[],
+ *   bySphere: any[],
+ *   byPhase: any[],
+ *   byArea: any[],
+ *   byYear: any[],
+ *   acervoByYear: any[],
+ *   gapsByEra: any[],
+ *   moneyByPhase: any[],
+ *   moneyByYear: any[],
+ *   moneyProposals: any[],
+ *   moneyTotals: any,
+ *   totals: any,
+ *   lines: string[],
+ * }} [synthesis]
+ * @property {{ title: string, paragraphs: string[], authored: boolean }} [opening]
  * @property {any[]} gaps
  * @property {any[]} news
  * @property {any} limits
@@ -178,12 +215,12 @@ const camaraItemsAsActions = (camara, era) =>
  *   health?: any,
  *   generatedAt?: Date,
  *   unit?: any,
+ *   narrative?: any,
  * }} params
  * @returns {DossierReport}
  */
 export const buildDossierReport = (params) =>
   isInstitutionUnit(params?.unit) ? buildInstitutionReport(params) : buildMunicipalityReport(params)
-
 const buildMunicipalityReport = ({
   snapshot,
   research,
@@ -192,6 +229,7 @@ const buildMunicipalityReport = ({
   health = null,
   generatedAt = new Date(),
   textFallback = 'full',
+  narrative = null,
 }) => {
   const municipality = snapshot.municipality ?? {}
   const municipalityName = municipality.name ?? municipality.slug ?? 'Município'
@@ -221,14 +259,11 @@ const buildMunicipalityReport = ({
       }))
 
   const eraSections = DOSSIER_ERAS.map((era) => {
+    const eraItems = items.filter((item) => item.era === era.id)
     const ownActions = researchActionsByEra(era.id)
     const extraActions = era.id === 'C' ? camaraActions : []
-    const numbers = capList(
-      era.id === 'C'
-        ? [...eraRows, ...itemNumberRows(items.filter((i) => i.era === 'C'))]
-        : itemNumberRows(items.filter((i) => i.era === era.id)),
-      MAX_ERA_NUMBERS,
-    )
+    const numbers =
+      era.id === 'C' ? [...eraRows, ...itemNumberRows(eraItems)] : itemNumberRows(eraItems)
     const honors =
       era.id === 'C'
         ? items
@@ -239,19 +274,25 @@ const buildMunicipalityReport = ({
               sourceUrl: item.sourceUrl,
             }))
         : []
-    // Curated research actions are all kept (the renderer paginates them into
-    // continuation sheets); only the generic Câmara list is capped.
-    const camaraActionsCapped = capList(extraActions, MAX_ERA_CAMARA_ACTIONS)
-    const actions = [...ownActions, ...camaraActionsCapped.items]
-    const camaraActionsRemaining = camaraActionsCapped.remaining
-    if (numbers.items.length === 0 && actions.length === 0) return null
+    const actions = [...ownActions, ...extraActions]
+    if (numbers.length === 0 && actions.length === 0 && honors.length === 0) return null
     return {
       ...era,
       method: eraMethod[era.id],
       recovery: eraRecovery[era.id],
+      summary: buildEraSummary({
+        era,
+        items: eraItems,
+        money: moneyRows(numbers),
+        scopeLabel: 'no recorte municipal',
+        unit: MUNICIPALITY_UNIT,
+      }),
+      narrative:
+        typeof narrative?.eras?.[era.id] === 'string' && narrative.eras[era.id].trim()
+          ? narrative.eras[era.id].trim()
+          : null,
       numbers,
       actions,
-      camaraActionsRemaining,
       honors,
     }
   }).filter(Boolean)
@@ -306,16 +347,38 @@ const buildMunicipalityReport = ({
   )
 
   const context = healthContext(health)
-  const regionalEvidence = capList(
-    regionalItems.map((item) => ({
-      item: item.answer,
-      sphere: item.sphere,
-      evidence: item.details ?? item.label,
-      brief: item.brief ?? null,
-      sourceUrl: item.sourceUrl,
+  const regionItems = regionalItems.map((item) => ({
+    item: item.answer,
+    sphere: item.sphere,
+    evidence: item.details ?? item.label,
+    brief: item.brief ?? null,
+    sourceUrl: item.sourceUrl,
+  }))
+
+  const speechFacts = speechFactsFromRows(snapshot, 'municipio')
+  const acervo = {
+    items: speechFacts.map((fact) => ({
+      id: fact.id,
+      period: fact.year ?? '—',
+      text: fact.headline,
+      excerpt: fact.detail,
+      sourceUrl: fact.sourceUrl,
     })),
-    MAX_REGION_ITEMS,
-  )
+    total: speechFacts.length,
+    omitted: 0,
+    /** The municipality-tagged recorte in the base (the extractor brings the latest sample). */
+    recorte: snapshot.speeches?.totalCount ?? speechFacts.length,
+    topics: snapshot.speeches?.topics?.themes ?? [],
+  }
+  const synthesis = buildDossierSynthesis({
+    items,
+    numberRows: [...eraRows, ...itemNumberRows(items)],
+    speechFacts,
+    gaps: research.gaps ?? [],
+    acervoTotal: snapshot.speeches?.totalCount ?? speechFacts.length,
+    scopeLabel: 'no recorte municipal',
+    unit: MUNICIPALITY_UNIT,
+  })
 
   const bulletinFacts = [
     ...items
@@ -356,12 +419,26 @@ const buildMunicipalityReport = ({
         sourceUrl: row.sourceUrl,
         sourceDate: row.sourceDate,
       })),
+    ...speechFacts.map((fact) => ({ ...fact, headline: stripInlineSources(fact.headline) })),
   ]
 
   const generatedAtLabel = formatDateTimeBr(generatedAt)
   const readAtLabel = snapshot.meta?.readAt ? formatDateTimeBr(snapshot.meta.readAt) : '—'
 
+  const narrativeParagraphs = Array.isArray(narrative?.opening)
+    ? narrative.opening.filter((paragraph) => typeof paragraph === 'string' && paragraph.trim())
+    : []
+  const opening = {
+    title:
+      typeof narrative?.title === 'string' && narrative.title.trim()
+        ? narrative.title.trim()
+        : `O que Jorge Solla fez por ${municipalityName} e pela região`,
+    paragraphs: narrativeParagraphs.length > 0 ? narrativeParagraphs : [synthesis.lines.join(' ')],
+    authored: narrativeParagraphs.length > 0,
+  }
+
   return {
+    unit: MUNICIPALITY_UNIT,
     meta: {
       title: 'Dossiê Solla por cidade',
       municipalityName,
@@ -393,18 +470,32 @@ const buildMunicipalityReport = ({
     },
     trajectory: CAREER_TIMELINE,
     eras: eraSections,
+    acervo,
+    synthesis,
+    opening,
     region: {
       ruleTitle: 'Região não é cidade. Não some os dois recortes.',
       ruleBody:
         'Um equipamento de referência ou uma política regional pode atender moradores do município sem constituir entrega exclusiva para ele. Atribuição só entra com alcance documentado.',
-      municipal: { label: 'município', ...capList(municipalItems, MAX_SCOPE_LIST) },
-      regional: { label: 'região / polo', ...capList(regionalItems, MAX_SCOPE_LIST) },
-      evidence: regionalEvidence,
+      municipal: {
+        label: 'município',
+        items: municipalItems,
+        total: municipalItems.length,
+      },
+      regional: {
+        label: 'região / polo',
+        items: regionalItems,
+        total: regionalItems.length,
+      },
+      items: regionItems,
       context,
       hook: hooks.items[0] ?? null,
       priorityGap: pending.items[0] ?? null,
     },
     gaps,
+    acervo,
+    synthesis,
+    opening,
     news: (research.news ?? []).map((row) => ({
       date: row.publishedAt,
       outlet: row.outlet ?? '—',
@@ -432,13 +523,16 @@ const buildMunicipalityReport = ({
  * Institution branch (C187) — same owner, institution-shaped sections. *
  * ------------------------------------------------------------------ */
 
+/**
+ * The resumo sheet is the "one look": its lists stay capped and the note points
+ * to the full sections, which are never capped (they flow across sheets). The
+ * acervo is a sample of the internal base — a source panel, not a finding — so
+ * its count and year chart carry the whole volume.
+ */
 const MAX_INSTITUTION_DELIVERIES = 3
 const MAX_INSTITUTION_TIMELINE = 3
 const MAX_INSTITUTION_HOOKS = 2
 const MAX_INSTITUTION_PENDING = 4
-const MAX_INSTITUTION_SCOPE_LIST = 5
-const MAX_INSTITUTION_EVIDENCE = MAX_INSTITUTION_SCOPE_LIST * 2
-const MAX_INSTITUTION_ACERVO = 6
 
 const INSTITUTION_SCOPE =
   'Escopo: carreira técnica e gestão pública até 2006 · SESAB 2007–2014 · Câmara dos Deputados 2015–2027. Instituição, setor e rede separados; sem fonte, não entra como entrega.'
@@ -466,6 +560,13 @@ const capped = (list, max) => {
   return { items, total, omitted: remaining }
 }
 
+/**
+ * Institution lists are never capped: the dossiê flows across as many sheets
+ * as the content needs (the builder packs sheets by measured height). Same
+ * shape as `capped` so the renderers stay uniform.
+ */
+const uncapped = (list) => ({ items: list, total: list.length, omitted: 0 })
+
 const identityBadges = (identity) =>
   [identity.kindLabel, identity.sphereLabel, identity.scope ? identity.scopeLabel : null].filter(
     Boolean,
@@ -473,16 +574,16 @@ const identityBadges = (identity) =>
 
 /**
  * Speeches from the internal acervo (read-only snapshot) that the research did
- * not already carry: they are sourced evidence for the institution recorte, so
- * they feed the bulletin ledger too — never a second, unsourced fact.
+ * not already carry: they are sourced evidence for the recorte, so they feed
+ * the bulletin ledger too — never a second, unsourced fact.
  */
-const institutionSpeechFacts = (snapshot) =>
+const speechFactsFromRows = (snapshot, sphere = 'instituicao') =>
   (snapshot.speeches?.rows ?? [])
     .filter((row) => Boolean(row.officialTextUrl || row.youtubeUrl || row.vodPlaybackUrl))
     .map((row) => ({
       id: `fala-${row.id}`,
       era: 'C',
-      sphere: 'instituicao',
+      sphere,
       area: 'Acervo de falas',
       headline:
         row.summary ??
@@ -497,21 +598,303 @@ const institutionSpeechFacts = (snapshot) =>
       sourceDate: row.speechAt ?? null,
     }))
 
-const buildInstitutionReport = ({ snapshot, research, generatedAt = new Date() }) => {
+/* ---------------------------------------------------------------- *
+ * Dossier synthesis (C186/C187 analysis layer) — deterministic      *
+ * aggregation of the sourced rows; it introduces no fact.           *
+ * ---------------------------------------------------------------- */
+
+const SYNTHESIS_PHASE_ORDER = [
+  'empenhado',
+  'liquidado',
+  'pago',
+  'autorizado',
+  'restos',
+  'nao_informado',
+]
+
+const countBy = (list, keyOf) => {
+  const counts = new Map()
+  for (const entry of list) {
+    const key = keyOf(entry)
+    if (key === null || key === undefined || key === '') continue
+    counts.set(key, (counts.get(key) ?? 0) + 1)
+  }
+  return counts
+}
+
+const toRows = (counts, rank = null) =>
+  [...counts]
+    .map(([key, count]) => ({ key, count }))
+    .sort((left, right) =>
+      rank
+        ? (rank.get(left.key) ?? rank.size) - (rank.get(right.key) ?? rank.size)
+        : right.count - left.count || String(left.key).localeCompare(String(right.key)),
+    )
+
+const chronologicalRows = (counts) =>
+  [...counts]
+    .map(([key, count]) => ({ key, count }))
+    .sort((left, right) => String(left.key).localeCompare(String(right.key)))
+
+const itemYear = (item) =>
+  item.numbers?.[0]?.year ?? (item.sourceDate ? String(item.sourceDate).slice(0, 4) : null)
+
+const gapEraKey = (gap) => {
+  const match = /^era_([abc])_/i.exec(gap.id ?? '')
+  return match ? match[1].toUpperCase() : 'fora'
+}
+
+const buildDossierSynthesis = ({
+  items,
+  numberRows,
+  speechFacts,
+  gaps,
+  acervoTotal,
+  scopeLabel,
+  unit = INSTITUTION_UNIT,
+}) => {
+  const byEra = toRows(
+    countBy(items, (item) => item.era),
+    new Map([
+      ['A', 0],
+      ['B', 1],
+      ['C', 2],
+    ]),
+  ).map((row) => ({ key: row.key, label: `Era ${row.key}`, count: row.count }))
+  const byEraSphere = byEra.map((era) => ({
+    key: era.key,
+    label: era.label,
+    segments: unit.spheres.map((sphere) => ({
+      key: sphere,
+      label: unit.sphereLabels[sphere],
+      count: items.filter((item) => item.era === era.key && item.sphere === sphere).length,
+    })),
+  }))
+  const bySphere = unit.spheres.map((sphere) => ({
+    key: sphere,
+    label: unit.sphereLabels[sphere],
+    count: items.filter((item) => item.sphere === sphere).length,
+  }))
+  const byPhase = toRows(
+    countBy(numberRows, (row) => row.phase),
+    new Map(SYNTHESIS_PHASE_ORDER.map((phase, index) => [phase, index])),
+  ).map((row) => ({ key: row.key, label: dossierPhaseLabel(row.key), count: row.count }))
+  const byArea = toRows(countBy(items, (item) => item.area))
+  const byYear = chronologicalRows(countBy(items, itemYear))
+  const acervoByYear = chronologicalRows(countBy(speechFacts, (fact) => fact.year))
+  const gapsByEra = toRows(
+    countBy(gaps, gapEraKey),
+    new Map([
+      ['A', 0],
+      ['B', 1],
+      ['C', 2],
+      ['fora', 3],
+    ]),
+  ).map((row) => ({
+    key: row.key,
+    label: row.key === 'fora' ? 'Fora de era' : `Era ${row.key}`,
+    count: row.count,
+  }))
+
+  const money = moneyRows(numberRows)
+  const sumMoney = (rows) => rows.reduce((sum, row) => sum + row.amount, 0)
+  const moneyByPhase = toRows(
+    countBy(money, (row) => row.phase),
+    new Map(SYNTHESIS_PHASE_ORDER.map((phase, index) => [phase, index])),
+  ).map((row) => ({
+    key: row.key,
+    label: dossierPhaseLabel(row.key),
+    count: row.count,
+    amount: sumMoney(money.filter((entry) => entry.phase === row.key)),
+  }))
+  const moneyByYear = chronologicalRows(countBy(money, (row) => row.year)).map((row) => {
+    const rows = money.filter((entry) => entry.year === row.key)
+    return {
+      key: row.key,
+      count: row.count,
+      amount: sumMoney(rows),
+      label: formatMoneyCompact(sumMoney(rows)),
+      segments: SYNTHESIS_PHASE_ORDER.map((phase) => ({
+        key: phase,
+        amount: sumMoney(rows.filter((entry) => entry.phase === phase)),
+      })).filter((segment) => segment.amount > 0),
+    }
+  })
+  const executedMoney = money.filter((row) => row.phase === 'pago' || row.phase === 'liquidado')
+  const authorizedMoney = money.filter(
+    (row) => row.phase === 'autorizado' || row.phase === 'empenhado',
+  )
+  const proposedMoney = money.filter(
+    (row) => row.phase === 'nao_informado' || row.phase === 'restos',
+  )
+  const moneyTotals = {
+    executed: sumMoney(executedMoney),
+    authorized: sumMoney(authorizedMoney),
+    proposed: sumMoney(proposedMoney),
+    total: sumMoney(money),
+    count: money.length,
+  }
+  const moneyProposals = [...proposedMoney]
+    .sort((left, right) => right.amount - left.amount)
+    .map((row) => ({
+      key: `${row.object}-${row.year ?? 's/ano'}`,
+      label: row.object,
+      year: row.year,
+      amount: row.amount,
+      formatted: formatMoneyCompact(row.amount),
+    }))
+
+  const topEra = toRows(countBy(items, (item) => item.era))[0] ?? null
+  const topYears = [...acervoByYear].sort((left, right) => right.count - left.count).slice(0, 3)
+  const lines = []
+  if (items.length > 0) {
+    lines.push(
+      `Foram localizados ${items.length} pontos com fonte ${scopeLabel} — ${byEra
+        .map((row) => `${row.label}: ${row.count}`)
+        .join(' · ')}.`,
+    )
+    lines.push(
+      `Abrangência: ${bySphere.map((row) => `${row.count} ${row.label}`).join(' · ')}. Setor e rede não são somados à instituição.`,
+    )
+    if (topEra) {
+      lines.push(
+        `Concentração: a Era ${topEra.key} reúne ${topEra.count} de ${items.length} pontos com fonte (${Math.round((topEra.count / items.length) * 100)}%).`,
+      )
+    }
+    lines.push(
+      `Itens com valor: ${numberRows.length}${
+        byPhase.length ? ` — ${byPhase.map((row) => `${row.count} ${row.label}`).join(' · ')}` : ''
+      }. Empenho não é pagamento.`,
+    )
+    if (moneyTotals.count) {
+      const parts = []
+      if (moneyTotals.executed)
+        parts.push(`${formatMoneyCompact(moneyTotals.executed)} pagos/liquidados`)
+      if (moneyTotals.authorized)
+        parts.push(`${formatMoneyCompact(moneyTotals.authorized)} autorizados/empenhados`)
+      if (moneyTotals.proposed)
+        parts.push(`${formatMoneyCompact(moneyTotals.proposed)} em propostas sem fase informada`)
+      lines.push(`Recursos localizados: ${parts.join(' · ')}.`)
+    }
+    if (byArea.length) {
+      lines.push(
+        `Temas com mais registros: ${byArea
+          .slice(0, 3)
+          .map((row) => `${row.key} (${row.count})`)
+          .join(' · ')}.`,
+      )
+    }
+  } else {
+    lines.push('Nenhum ponto com fonte foi localizado — a leitura é a das lacunas explícitas.')
+  }
+  if (speechFacts.length) {
+    lines.push(
+      `Acervo interno (read-only, 2011+): ${acervoTotal} falas no recorte temático — amostra de ${speechFacts.length} com link${
+        topYears.length > 1
+          ? `; pico em ${topYears.map((row) => `${row.key} (${row.count})`).join(', ')}`
+          : ''
+      }.`,
+    )
+  }
+  if (gaps.length) {
+    const priority = gaps[0]?.label ?? gaps[0]?.id ?? '—'
+    lines.push(
+      `Lacunas declaradas: ${gaps.length}${
+        gapsByEra.length
+          ? ` — ${gapsByEra.map((row) => `${row.label}: ${row.count}`).join(' · ')}`
+          : ''
+      }. Prioridade: ${priority}.`,
+    )
+  }
+
+  return {
+    byEra,
+    byEraSphere,
+    bySphere,
+    byPhase,
+    byArea,
+    byYear,
+    acervoByYear,
+    gapsByEra,
+    moneyByPhase,
+    moneyByYear,
+    moneyProposals,
+    moneyTotals,
+    totals: {
+      items: items.length,
+      numbers: numberRows.length,
+      money: money.length,
+      acervo: speechFacts.length,
+      acervoRecorte: acervoTotal,
+      gaps: gaps.length,
+    },
+    lines,
+  }
+}
+
+/**
+ * One deterministic consolidation paragraph per era — the renderer prefers the
+ * narrative file's own paragraph when the research copy provides one.
+ */
+const buildEraSummary = ({ era, items, money, scopeLabel, unit = INSTITUTION_UNIT }) => {
+  if (items.length === 0) return null
+  const spheres = unit.spheres.map((sphere) => ({
+    sphere,
+    label: unit.sphereLabels[sphere],
+    count: items.filter((item) => item.sphere === sphere).length,
+  }))
+  const areas = toRows(countBy(items, (item) => item.area))
+  const years = items
+    .map(itemYear)
+    .filter(Boolean)
+    .sort((left, right) => String(left).localeCompare(String(right)))
+  const period = years.length ? `${years[0]}–${years[years.length - 1]}` : era.period
+  const executed = money
+    .filter((row) => row.phase === 'pago' || row.phase === 'liquidado')
+    .reduce((sum, row) => sum + row.amount, 0)
+  const proposed = money
+    .filter((row) => row.phase === 'nao_informado')
+    .reduce((sum, row) => sum + row.amount, 0)
+  const parts = [
+    `A ${era.label} reúne ${items.length} ${items.length === 1 ? 'ponto' : 'pontos'} com fonte ${scopeLabel} (${period}): ${spheres
+      .map((row) => `${row.count} ${row.label}`)
+      .join(' · ')} — recortes não somáveis.`,
+  ]
+  if (areas.length) {
+    parts.push(
+      `Concentração em ${areas
+        .slice(0, 3)
+        .map((row) => `${row.key} (${row.count})`)
+        .join(', ')}.`,
+    )
+  }
+  if (executed || proposed) {
+    const moneyParts = []
+    if (executed) moneyParts.push(`${formatMoneyCompact(executed)} com execução confirmada`)
+    if (proposed) moneyParts.push(`${formatMoneyCompact(proposed)} em proposta sem fase informada`)
+    parts.push(`Recursos: ${moneyParts.join(' · ')} — empenho não é pagamento.`)
+  }
+  return parts.join(' ')
+}
+
+const buildInstitutionReport = ({
+  snapshot,
+  research,
+  generatedAt = new Date(),
+  narrative = null,
+}) => {
   const identity = snapshot.institution ?? {}
   const subjectName = identity.name ?? identity.slug ?? 'Instituição'
   const unit = INSTITUTION_UNIT
-  const speechFacts = institutionSpeechFacts(snapshot)
+  const speechFacts = speechFactsFromRows(snapshot)
 
   const items = research.items ?? []
-  const inScope = (sphere) => items.filter((item) => item.sphere === sphere)
-  const directItems = inScope('instituicao')
-  const sectorItems = inScope('setor')
-  const networkItems = inScope('rede')
+  const directItems = items.filter((item) => item.sphere === 'instituicao')
 
+  /** Honors live in their own sheet; they are not repeated as era action cards. */
   const researchActionsByEra = (era) =>
     items
-      .filter((item) => item.era === era)
+      .filter((item) => item.era === era && item.id !== 'era_c_titulos')
       .map((item) => ({
         sphere: item.sphere,
         year: item.numbers?.[0]?.year ?? null,
@@ -523,29 +906,41 @@ const buildInstitutionReport = ({ snapshot, research, generatedAt = new Date() }
       }))
 
   const eraSections = DOSSIER_ERAS.map((era) => {
-    const numbers = capped(
-      itemNumberRows(items.filter((item) => item.era === era.id)),
-      MAX_ERA_NUMBERS,
+    const eraItems = items.filter((item) => item.era === era.id)
+    const eraNumberRows = itemNumberRows(eraItems)
+    const numbers = uncapped(eraNumberRows)
+    const actions = uncapped(researchActionsByEra(era.id))
+    const honors = uncapped(
+      items
+        .filter((item) => item.era === era.id && item.id === 'era_c_titulos')
+        .map((item) => ({
+          text: item.answer,
+          detail: item.details ?? null,
+          brief: item.brief ?? null,
+          date: item.sourceDate ?? null,
+          year: item.numbers?.[0]?.year ?? null,
+          sourceUrl: item.sourceUrl,
+        })),
     )
-    const actions = capped(researchActionsByEra(era.id), MAX_ERA_CAMARA_ACTIONS)
-    const honors = items
-      .filter((item) => item.era === era.id && item.id === 'era_c_titulos')
-      .map((item) => ({
-        text: item.answer,
-        detail: item.details ?? null,
-        brief: item.brief ?? null,
-        date: item.sourceDate ?? null,
-        year: item.numbers?.[0]?.year ?? null,
-        sourceUrl: item.sourceUrl,
-      }))
     return {
       ...era,
       method: institutionEraMethod[era.id],
       recovery: institutionEraRecovery[era.id],
+      summary: buildEraSummary({
+        era,
+        items: eraItems,
+        money: moneyRows(eraNumberRows),
+        scopeLabel: 'no recorte institucional',
+        unit,
+      }),
+      narrative:
+        typeof narrative?.eras?.[era.id] === 'string' && narrative.eras[era.id].trim()
+          ? narrative.eras[era.id].trim()
+          : null,
       numbers,
       actions,
       honors,
-      empty: numbers.items.length === 0 && actions.items.length === 0,
+      empty: numbers.items.length === 0 && actions.items.length === 0 && honors.items.length === 0,
     }
   })
 
@@ -580,16 +975,20 @@ const buildInstitutionReport = ({ snapshot, research, generatedAt = new Date() }
   }))
   const hooks = capped(hookList, MAX_INSTITUTION_HOOKS)
 
-  const acervo = capped(
-    speechFacts.map((fact) => ({
+  const acervo = {
+    items: speechFacts.map((fact) => ({
       id: fact.id,
       period: fact.year ?? '—',
       text: fact.headline,
       excerpt: fact.detail,
       sourceUrl: fact.sourceUrl,
     })),
-    MAX_INSTITUTION_ACERVO,
-  )
+    total: speechFacts.length,
+    omitted: 0,
+    /** The theme recorte in the base (the extractor brings the latest sample). */
+    recorte: snapshot.speeches?.totalCount ?? speechFacts.length,
+    topics: snapshot.speeches?.topics ?? [],
+  }
 
   const timelineList = items
     .filter((item) => item.sourceUrl)
@@ -613,23 +1012,40 @@ const buildInstitutionReport = ({ snapshot, research, generatedAt = new Date() }
 
   const scopeItem = (sphere, key, label) => {
     const sphereItems = items.filter((item) => item.sphere === sphere)
-    return { key, label, sphere, ...capped(sphereItems, MAX_INSTITUTION_SCOPE_LIST) }
+    return {
+      key,
+      label,
+      sphere,
+      ...uncapped(
+        sphereItems.map((item) => ({
+          id: item.id,
+          sphere: item.sphere,
+          area: item.area,
+          year: item.numbers?.[0]?.year ?? (item.sourceDate ?? '').slice(0, 4) ?? null,
+          title: item.answer,
+          brief: item.brief ?? null,
+          evidence: item.details ?? item.label,
+          sourceUrl: item.sourceUrl,
+          sourceDate: item.sourceDate,
+        })),
+      ),
+    }
   }
   const scopeLists = [
     scopeItem('instituicao', 'institution', unit.sphereLabels.instituicao),
     scopeItem('setor', 'sector', unit.sphereLabels.setor),
     scopeItem('rede', 'network', unit.sphereLabels.rede),
   ]
-  const scopeEvidence = capped(
-    [...sectorItems, ...networkItems].map((item) => ({
-      item: item.answer,
-      sphere: item.sphere,
-      evidence: item.details ?? item.label,
-      brief: item.brief ?? null,
-      sourceUrl: item.sourceUrl,
-    })),
-    MAX_INSTITUTION_EVIDENCE,
-  )
+
+  const synthesis = buildDossierSynthesis({
+    items,
+    numberRows: itemNumberRows(items),
+    speechFacts,
+    gaps: research.gaps ?? [],
+    acervoTotal: snapshot.speeches?.totalCount ?? speechFacts.length,
+    scopeLabel: 'no recorte institucional',
+    unit,
+  })
 
   const bulletinFacts = items
     .filter((item) => Boolean(item.sourceUrl))
@@ -658,6 +1074,18 @@ const buildInstitutionReport = ({ snapshot, research, generatedAt = new Date() }
   const generatedAtLabel = formatDateTimeBr(generatedAt)
   const readAtLabel = snapshot.meta?.readAt ? formatDateTimeBr(snapshot.meta.readAt) : '—'
 
+  const narrativeParagraphs = Array.isArray(narrative?.opening)
+    ? narrative.opening.filter((paragraph) => typeof paragraph === 'string' && paragraph.trim())
+    : []
+  const opening = {
+    title:
+      typeof narrative?.title === 'string' && narrative.title.trim()
+        ? narrative.title.trim()
+        : `O que Jorge Solla fez pela e na ${subjectName}`,
+    paragraphs: narrativeParagraphs.length > 0 ? narrativeParagraphs : [synthesis.lines.join(' ')],
+    authored: narrativeParagraphs.length > 0,
+  }
+
   return {
     unit,
     meta: {
@@ -669,6 +1097,7 @@ const buildInstitutionReport = ({ snapshot, research, generatedAt = new Date() }
       generatedAtLabel,
       readAtLabel,
     },
+    opening,
     cover: {
       kicker: 'Comunicação · pesquisa documental',
       series: unit.series,
@@ -686,16 +1115,19 @@ const buildInstitutionReport = ({ snapshot, research, generatedAt = new Date() }
     trajectory: CAREER_TIMELINE,
     eras: eraSections,
     acervo,
+    synthesis,
     reach: {
       ruleTitle: 'Setor/rede não é a instituição. Não some os recortes.',
       ruleBody:
         'Uma política para uma categoria ou uma articulação com entidades correlatas pode alcançar a instituição sem constituir entrega exclusiva para ela.',
       lists: scopeLists,
-      evidence: scopeEvidence,
       hook: hooks.items[0] ?? null,
       priorityGap: pending.items[0] ?? null,
     },
     gaps,
+    acervo,
+    synthesis,
+    opening,
     news: (research.news ?? []).map((row) => ({
       date: row.publishedAt,
       outlet: row.outlet ?? '—',

@@ -157,16 +157,13 @@ describe('buildDossierReport (institution unit)', () => {
     expect(report.page1.deliveries.omitted).toBeGreaterThanOrEqual(0)
   })
 
-  it('prints "e mais N" with the right singular when a list is capped', () => {
+  it('shows every sourced item — institution lists are never capped', () => {
     const manyItems = [
       item('era_c_emendas', 'C', { sphere: 'setor' }),
       item('era_c_atuacao', 'C', { sphere: 'setor' }),
       item('era_c_discursos', 'C', { sphere: 'setor' }),
-      item('era_c_proposicoes', 'C', { sphere: 'setor' }),
-      item('era_c_titulos', 'C', { sphere: 'setor' }),
-      item('era_c_parcerias', 'C', { sphere: 'setor' }),
     ]
-    const cappedReport = buildDossierReport({
+    const fullReport = buildDossierReport({
       snapshot,
       research: mergeDossierResearch(
         [normalizeDossierResearchInput(eraFile('C', manyItems), { unit: INSTITUTION_UNIT })],
@@ -175,11 +172,47 @@ describe('buildDossierReport (institution unit)', () => {
       generatedAt,
       unit: INSTITUTION_UNIT,
     })
-    const list = cappedReport.reach.lists.find((row) => row.key === 'sector')
-    expect(list?.omitted).toBeGreaterThan(0)
-    const html = renderDossierHtml(cappedReport)
-    expect(html).toContain(`${list?.omitted} item`)
-    expect(html, 'the plural noun must not be chopped into "iten"').not.toContain('iten ')
+    const list = fullReport.reach.lists.find((row) => row.key === 'sector')
+    expect(list).toMatchObject({ total: 3, omitted: 0 })
+    expect(list?.items).toHaveLength(3)
+    const fullHtml = renderDossierHtml(fullReport)
+    expect(fullHtml).not.toContain('e mais')
+    for (const row of manyItems) expect(fullHtml).toContain(row.answer)
+  })
+
+  it('consolidates money by phase and never counts non-money numbers as money', () => {
+    const synthesis = report.synthesis
+    expect(synthesis).toBeTruthy()
+    if (!synthesis) return
+    const moneyItem = item('era_b_equipamentos', 'B', {
+      numbers: [{ label: 'Convênio', value: 'R$ 1,2 mi', year: '2012', phase: 'pago' }],
+    })
+    const countItem = item('era_b_obras', 'B', {
+      numbers: [{ label: 'Leitos', value: '175', year: '2010', phase: 'nao_informado' }],
+    })
+    const moneyReport = buildDossierReport({
+      snapshot,
+      research: mergeDossierResearch(
+        [
+          normalizeDossierResearchInput(eraFile('B', [moneyItem, countItem]), {
+            unit: INSTITUTION_UNIT,
+          }),
+        ],
+        { unit: INSTITUTION_UNIT },
+      ),
+      generatedAt,
+      unit: INSTITUTION_UNIT,
+    })
+    const moneySynthesis = moneyReport.synthesis
+    expect(moneySynthesis).toBeTruthy()
+    if (!moneySynthesis) return
+    expect(moneySynthesis.totals.money).toBe(1)
+    expect(moneySynthesis.moneyTotals.executed).toBe(1_200_000)
+    const paid = moneySynthesis.moneyByPhase.find((row: { key: string }) => row.key === 'pago')
+    expect(paid).toMatchObject({ count: 1, amount: 1_200_000 })
+    const html = renderDossierHtml(moneyReport)
+    expect(html).toContain('R$ 1,2 mi')
+    expect(html).toContain('Recursos com execução por ano')
   })
 
   it('derives bulletinFacts only from sourced items', () => {
@@ -203,15 +236,92 @@ describe('renderDossierHtml/Md (institution unit)', () => {
     for (const anchor of [
       'capa',
       'resumo',
+      'sintese',
+      'graficos',
       'era-a',
       'era-b',
       'era-c',
       'abrangencia',
+      'abrangencia-instituicao',
+      'abrangencia-setor',
+      'abrangencia-rede',
+      'titulos',
       'lacunas',
       'fontes',
     ]) {
       expect(html).toContain(`data-page="${anchor}"`)
     }
+  })
+
+  it('prints the synthesis lines and the consolidated charts', () => {
+    const synthesis = report.synthesis
+    expect(synthesis).toBeTruthy()
+    if (!synthesis) return
+    expect(synthesis.totals.items).toBeGreaterThan(0)
+    const eraTotal = synthesis.byEra.reduce(
+      (sum: number, row: { count: number }) => sum + row.count,
+      0,
+    )
+    expect(eraTotal).toBe(synthesis.totals.items)
+    const sphereTotal = synthesis.bySphere.reduce(
+      (sum: number, row: { count: number }) => sum + row.count,
+      0,
+    )
+    expect(sphereTotal).toBe(synthesis.totals.items)
+    expect(html).toContain('data-page="sintese"')
+    expect(html).toContain('data-page="graficos"')
+    expect(html).toContain('Síntese do que foi localizado')
+    expect(html).toContain('Gráficos consolidados')
+    expect(html).toContain('chart-grid')
+    expect(md).toContain('## Síntese do que foi localizado')
+  })
+
+  it('flows across continuation sheets when the pack plan splits a section', () => {
+    const bigReport = buildDossierReport({
+      snapshot,
+      research: mergeDossierResearch(
+        [
+          normalizeDossierResearchInput(
+            {
+              institutionSlug: 'ufba',
+              era: 'C',
+              researchedAt: '2026-09-17T10:00:00.000Z',
+              items: [
+                'era_c_discursos',
+                'era_c_proposicoes',
+                'era_c_emendas',
+                'era_c_titulos',
+                'era_c_atuacao',
+                'era_c_parcerias',
+              ].map((id) => item(id, 'C', { sphere: 'setor' })),
+              news: Array.from({ length: 12 }, (_, index) => ({
+                title: `Notícia ${index + 1}`,
+                outlet: 'UFBA',
+                publishedAt: '2024-05-01',
+                url: `https://ufba.test/noticia-${index + 1}`,
+              })),
+            },
+            { unit: INSTITUTION_UNIT },
+          ),
+        ],
+        { unit: INSTITUTION_UNIT },
+      ),
+      generatedAt,
+      unit: INSTITUTION_UNIT,
+    })
+    const bigHtml = renderDossierHtml(bigReport, {
+      pack: { 'era:C': [1], 'scope:setor': [1], news: [1] },
+    })
+    expect(bigHtml).toContain('data-page="era-c"')
+    expect(bigHtml).toContain('data-page="era-c-2"')
+    expect(bigHtml).toContain('data-page="abrangencia-setor"')
+    expect(bigHtml).toContain('data-page="abrangencia-setor-2"')
+    expect(bigHtml).toContain('data-page="noticias"')
+    expect(bigHtml).toContain('data-page="noticias-2"')
+    expect(bigHtml).toContain('continuação')
+    const anchors = [...bigHtml.matchAll(/data-page="([^"]+)"/g)].map((match) => match[1])
+    expect(new Set(anchors).size, 'every sheet anchor must be unique').toBe(anchors.length)
+    expect(anchors.length).toBe(bigReport.meta.pageTotal)
   })
 
   it('ports the institutional classes and identity badges', () => {
