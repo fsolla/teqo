@@ -1,7 +1,7 @@
 'use client'
 
+import { ReelStatusBadge } from '@/components/campaign/reels/ReelStatusBadge'
 import { usePublicationToggle } from '@/components/campaign/shared/usePublicationToggle'
-import { SpeechCutStatusBadge } from '@/components/campaign/speech/SpeechCutStatusBadge'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import {
   AlertDialog,
@@ -15,38 +15,45 @@ import {
 } from '@/components/ui/AlertDialog'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
-import type { SpeechCutStatus } from '@/lib/speechCut'
+import { campaignReelPublicationHref } from '@/lib/campaignPaths'
+import type { ReelStatus } from '@/lib/reel'
 
-type SpeechCutPublicationPanelProps = {
-  cutId: number
-  status: SpeechCutStatus
+type ReelPublicationPanelProps = {
+  reelId: number
+  status: ReelStatus
 }
 
 const UNPUBLISH_WARNING =
-  'O link público deixa de funcionar para quem já recebeu. Você pode publicar de novo quando quiser.'
+  'Despublicar tira este reel da lista e bloqueia o player e os downloads. Os arquivos voltam a ficar disponíveis quando o reel for republicado.'
+
+const PUBLISH_WARNING =
+  'Republicar devolve o reel à lista e libera novamente o player e os downloads.'
 
 /**
- * C168 — the kill switch on the detail page. Publishing restores the same
- * public link; unpublishing asks for confirmation with the product copy and
- * takes it off the air. A cut without a stored file cannot be published.
+ * C194 — the kill switch on the reel detail. Publishing puts the same row back
+ * on the list and reopens the files; unpublishing takes it off the list and
+ * withholds every file (C193 serves only `published`). Confirmation only on
+ * the destructive direction.
  */
-export const SpeechCutPublicationPanel = ({ cutId, status }: SpeechCutPublicationPanelProps) => {
+export const ReelPublicationPanel = ({ reelId, status }: ReelPublicationPanelProps) => {
   const { submitting, error, setPublished } = usePublicationToggle({
-    href: `/campanha/comunicacao/acervo/cortes/${cutId}/publicacao`,
-    buildBody: (published) => ({ cutId, published }),
+    href: campaignReelPublicationHref(reelId),
+    buildBody: (published) => ({ reelId, published }),
   })
 
   return (
     <section className="rounded-xl border p-4">
-      <h2 className="text-xs tracking-wide text-muted-foreground uppercase">Publicação</h2>
+      <h2 className="text-xs tracking-wide text-muted-foreground uppercase">
+        Publicação na biblioteca
+      </h2>
 
       <div className="mt-2">
-        <SpeechCutStatusBadge status={status} />
+        <ReelStatusBadge status={status} />
       </div>
 
       {status === 'published' ? (
         <>
-          <p className="mt-2 text-xs text-muted-foreground">{UNPUBLISH_WARNING}</p>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">{UNPUBLISH_WARNING}</p>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
@@ -55,12 +62,12 @@ export const SpeechCutPublicationPanel = ({ cutId, status }: SpeechCutPublicatio
                 className="mt-3 min-h-11 w-full"
                 disabled={submitting}
               >
-                Despublicar
+                Despublicar reel
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Despublicar este corte?</AlertDialogTitle>
+                <AlertDialogTitle>Despublicar este reel?</AlertDialogTitle>
                 <AlertDialogDescription>{UNPUBLISH_WARNING}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -84,8 +91,23 @@ export const SpeechCutPublicationPanel = ({ cutId, status }: SpeechCutPublicatio
 
       {status === 'unpublished' ? (
         <>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Despublicado, o link público não responde. Publique para reativar o mesmo link.
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">{PUBLISH_WARNING}</p>
+          <Button
+            type="button"
+            className="mt-3 min-h-11 w-full"
+            disabled={submitting}
+            onClick={() => void setPublished(true)}
+          >
+            {submitting ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
+            Republicar reel
+          </Button>
+        </>
+      ) : null}
+
+      {status === 'draft' ? (
+        <>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">
+            Este reel ainda não foi publicado na biblioteca.
           </p>
           <Button
             type="button"
@@ -94,21 +116,9 @@ export const SpeechCutPublicationPanel = ({ cutId, status }: SpeechCutPublicatio
             onClick={() => void setPublished(true)}
           >
             {submitting ? <Spinner data-icon="inline-start" aria-hidden="true" /> : null}
-            Publicar corte
+            Publicar reel
           </Button>
         </>
-      ) : null}
-
-      {status === 'processing' ? (
-        <p className="mt-2 text-xs text-muted-foreground">
-          O corte ainda está sendo preparado. Assim que o arquivo ficar pronto, publique por aqui.
-        </p>
-      ) : null}
-
-      {status === 'failed' ? (
-        <p className="mt-2 text-xs text-muted-foreground">
-          Não foi possível preparar o arquivo. Tente novamente sem refazer o corte.
-        </p>
       ) : null}
 
       {error ? (

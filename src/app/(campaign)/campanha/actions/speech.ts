@@ -262,7 +262,7 @@ export const getSpeechCutStatusForActor = async (input: {
 
 // ---------------------------------------------------------------------------
 // C168 — the cut library: edit the cut's own text and toggle the public link.
-// Same fresh `speechCatalog` gate as the C167 mutations; the collection access
+// Same fresh `communicationCatalog` gate as the C167 mutations; the collection access
 // (canReadSpeech) and the whitelisted zod payload are the field boundary.
 // ---------------------------------------------------------------------------
 

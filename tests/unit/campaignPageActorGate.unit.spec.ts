@@ -25,10 +25,11 @@ vi.mock('@/utilities/access/shared', () => ({
   },
 }))
 
+import { LEADER_CONTACTS_HOME } from '@/lib/campaignPaths'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 
 type Actor = {
-  role: 'coordinator' | 'candidate' | 'advisor' | 'leader'
+  role: 'coordinator' | 'candidate' | 'communicator' | 'advisor' | 'leader'
   visibility?: 'carteira' | 'tudo'
   editing?: 'carteira' | 'tudo' | 'somente_leitura'
   email: string
@@ -79,6 +80,33 @@ describe('requireCampaignPageActor — gate: writable (C142)', () => {
     mocks.getCampaignUser.mockResolvedValue(actor('leader'))
     await requireCampaignPageActor({ gate: 'writable' })
     expect(mocks.redirect).toHaveBeenCalled()
+  })
+})
+
+describe('requireCampaignPageActor — gate: communicationCatalog (C154, renamed by C194)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('lets the three communication roles through', async () => {
+    for (const role of ['communicator', 'coordinator', 'candidate'] as const) {
+      mocks.getCampaignUser.mockResolvedValue(actor(role))
+      const user = await requireCampaignPageActor({ gate: 'communicationCatalog' })
+      expect(user.role).toBe(role)
+      expect(mocks.redirect).not.toHaveBeenCalled()
+    }
+  })
+
+  it('sends the advisor to the campaign home', async () => {
+    mocks.getCampaignUser.mockResolvedValue(actor('advisor'))
+    await requireCampaignPageActor({ gate: 'communicationCatalog' })
+    expect(mocks.redirect).toHaveBeenCalledWith('/campanha')
+  })
+
+  it('sends the leader to their contacts tool', async () => {
+    mocks.getCampaignUser.mockResolvedValue(actor('leader'))
+    await requireCampaignPageActor({ gate: 'communicationCatalog' })
+    expect(mocks.redirect).toHaveBeenCalledWith(LEADER_CONTACTS_HOME)
   })
 })
 
