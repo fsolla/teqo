@@ -335,6 +335,43 @@ test.describe('communication vertical (C154/C162)', () => {
     expect(filteredHtml).toContain('Limpar busca e filtros')
   })
 
+  test('theme mode degrades honestly to the exact search without the key (C192)', async ({
+    campaign,
+    campaignRequest,
+  }) => {
+    const marker = campaign.fixtures.value('temadeg')
+    await createSpeech(campaign, { marker })
+
+    const user = await campaign.fixtures.createCampaignUser('communicator')
+    const request = await campaignRequest(user, user.password)
+
+    // The e2e environment blanks DEEPSEEK_API_KEY (playwright.config.ts), so the
+    // expansion is unavailable and the page must fall back with the notice.
+    const themed = await request.get(`/campanha/comunicacao/acervo?q=${marker}&mode=tema`)
+    expect(themed.status()).toBe(200)
+    const themedHtml = rendered(await themed.text())
+    expect(themedHtml).toContain('Modo de busca')
+    expect(themedHtml).toContain('Termo exato')
+    expect(themedHtml).toContain('Por tema')
+    expect(themedHtml).toContain('data-testid="speech-theme-fallback"')
+    expect(themedHtml).toContain('A busca por tema está indisponível agora.')
+    expect(themedHtml).toContain('Tentar por tema novamente')
+    expect(themedHtml).toContain('Resultados por termo exato')
+    expect(themedHtml).toContain('data-testid="speech-theme-fallback"')
+    // The exact results still render and keep the highlighted term.
+    expect(themedHtml).toContain(marker)
+    expect(themedHtml).toContain('<mark')
+    // No theme badge is fabricated.
+    expect(themedHtml).not.toContain('Por que apareceu')
+
+    // The default mode stays untouched: no mode param means no notice.
+    const exact = await request.get(`/campanha/comunicacao/acervo?q=${marker}`)
+    expect(exact.status()).toBe(200)
+    const exactHtml = rendered(await exact.text())
+    expect(exactHtml).toContain(marker)
+    expect(exactHtml).not.toContain('A busca por tema está indisponível agora.')
+  })
+
   test('advisor and leader are redirected away from the acervo', async ({
     campaign,
     campaignRequest,

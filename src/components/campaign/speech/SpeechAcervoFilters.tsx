@@ -1,5 +1,6 @@
 'use client'
 
+import { SparklesIcon, TriangleAlertIcon } from 'lucide-react'
 import { useMemo, useOptimistic, useState } from 'react'
 
 import {
@@ -12,6 +13,7 @@ import {
 } from '@/components/campaign/shared/CampaignListOmnibox'
 import { useCampaignListFilterNavigation } from '@/components/campaign/shared/useCampaignListFilterNavigation'
 import { SPEECH_SCOPES, SPEECH_TOPICS } from '@/lib/speechFacets'
+import { cn } from '@/lib/utils'
 import {
   buildSpeechListHref,
   SPEECH_DURATION_BUCKETS,
@@ -20,14 +22,17 @@ import {
   speechTopicLabels,
   type SpeechFilterOptions,
   type SpeechListState,
+  type SpeechSearchMode,
 } from '@/utilities/speech/speechListUrl'
 import {
   applySpeechOmniboxSuggestion,
+  applySpeechSearchMode,
   buildSpeechOmniboxChips,
   buildSpeechOmniboxSuggestionSeeds,
   clearSpeechOmnibox,
   filterSpeechOmniboxSuggestions,
   removeSpeechOmniboxChip,
+  SPEECH_OMNIBOX_ID,
   type SpeechOmniboxAction,
 } from '@/utilities/speech/speechOmnibox'
 
@@ -58,12 +63,27 @@ const selectedTriggerLabel = (
   return `${base}: ${values.length}`
 }
 
+/** C192 — segmented search-mode button (mobile full width, desktop inline). */
+const modeButtonClass = (active: boolean, tone: 'termo' | 'tema'): string =>
+  cn(
+    'min-h-11 rounded-md px-3 text-sm md:min-h-9',
+    active
+      ? cn(
+          'bg-white font-semibold shadow-sm ring-1 ring-border',
+          tone === 'tema' ? 'text-primary' : 'text-foreground',
+        )
+      : 'font-medium text-muted-foreground',
+  )
+
 export const SpeechAcervoFilters = ({
   state,
   filterOptions,
+  themeUnavailable = false,
 }: {
   state: SpeechListState
   filterOptions: SpeechFilterOptions
+  /** C192 — the theme expansion is down; the selector reflects the fallback. */
+  themeUnavailable?: boolean
 }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
@@ -71,6 +91,9 @@ export const SpeechAcervoFilters = ({
   })
   const [query, setQuery] = useState('')
   const [viewState, setOptimisticState] = useOptimistic(state)
+
+  const activeMode: SpeechSearchMode =
+    viewState.mode === 'tema' && !themeUnavailable ? 'tema' : 'termo'
 
   const municipalityLabelsById = useMemo(() => {
     const map = new Map<number, string>()
@@ -108,6 +131,12 @@ export const SpeechAcervoFilters = ({
       return
     }
     navigate(action.state)
+  }
+
+  const runMode = (mode: SpeechSearchMode) => {
+    const next = applySpeechSearchMode({ state: viewState, mode }).state
+    setOptimisticState(next)
+    navigate(next)
   }
 
   const facetRows = (
@@ -206,7 +235,7 @@ export const SpeechAcervoFilters = ({
       }}
     >
       <CampaignListOmnibox
-        id="speech-omnibox"
+        id={SPEECH_OMNIBOX_ID}
         label="Buscar no acervo de falas"
         placeholder="Busque por assunto, tema, município ou palavra-chave…"
         chips={chips}
@@ -227,6 +256,55 @@ export const SpeechAcervoFilters = ({
           runAction(clearSpeechOmnibox(viewState))
         }}
       />
+
+      <div className="mt-3 flex flex-col gap-3 border-t border-border pt-3 md:flex-row md:flex-wrap md:items-center md:justify-between">
+        <div className="flex w-full items-center gap-2 md:w-auto">
+          <span className="hidden text-xs font-medium text-muted-foreground md:inline">
+            Buscar por
+          </span>
+          <div
+            role="group"
+            aria-label="Modo de busca"
+            className="grid w-full grid-cols-2 rounded-lg bg-muted p-1 md:inline-flex md:w-auto"
+          >
+            <button
+              type="button"
+              aria-pressed={activeMode === 'termo'}
+              className={modeButtonClass(activeMode === 'termo', 'termo')}
+              onClick={() => runMode('termo')}
+            >
+              Termo exato
+            </button>
+            <button
+              type="button"
+              aria-pressed={activeMode === 'tema'}
+              aria-disabled={themeUnavailable || undefined}
+              className={modeButtonClass(activeMode === 'tema', 'tema')}
+              onClick={() => {
+                if (themeUnavailable) return
+                runMode('tema')
+              }}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                {themeUnavailable ? (
+                  <TriangleAlertIcon
+                    className="size-3.5 text-estimate-pending-foreground"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <SparklesIcon className="size-3.5" aria-hidden="true" />
+                )}
+                Por tema
+              </span>
+            </button>
+          </div>
+        </div>
+        <p className="hidden text-xs text-muted-foreground md:block">
+          {themeUnavailable
+            ? 'Indisponível agora; mostramos o termo exato.'
+            : 'Encontra falas relacionadas pelo sentido.'}
+        </p>
+      </div>
 
       <div
         role="group"

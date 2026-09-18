@@ -17,7 +17,11 @@ import {
   type SpeechHighlightPart,
 } from '@/lib/speechHighlight'
 import { speechPosterHref, speechPosterTarget } from '@/lib/speechPoster'
-import { normalizeForSearch, speechMatchesSearchQuery } from '@/lib/speechSearch'
+import {
+  normalizeForSearch,
+  speechMatchesSearchQuery,
+  speechMatchesSearchTerm,
+} from '@/lib/speechSearch'
 import {
   correctedExcerptOffsetSeconds,
   excerptOffsetSeconds,
@@ -55,7 +59,7 @@ export type SpeechListRecord = {
   searchText?: string | null
 }
 
-type SpeechListMatchKind = 'segment' | 'keyword' | 'fallback'
+type SpeechListMatchKind = 'segment' | 'keyword' | 'theme' | 'fallback'
 
 export type SpeechListItemViewModel = {
   id: number
@@ -89,6 +93,12 @@ export type SpeechListItemViewModel = {
    * the term; the card then swaps the excerpt for the honest origin note.
    */
   matchedTextSearch: boolean
+  /**
+   * C192 — the expanded theme term that matched the speech text/keywords, or
+   * null when the search was literal (or the expansion did not surface this
+   * row). The card uses it to label the result and to explain why it appeared.
+   */
+  themeMatchTerm: string | null
 }
 
 export type SpeechDetailSegmentViewModel = {
@@ -185,6 +195,41 @@ const pickMatchingSegment = (
   })
 }
 
+/**
+ * C192 — the first expanded theme term that actually surfaced this speech. The
+ * gate is the `speechMatchesSearchTerm` mirror (the same predicate the `where`
+ * runs), so the card never claims a theme the search did not use. The evidence
+ * is the passage that carries the term, or the official keyword when that is
+ * what matched. Returns undefined when no theme term applies to this row.
+ */
+const pickThemeMatch = (
+  speech: SpeechListRecord,
+  segments: readonly SpeechSegmentRecord[],
+  themeTerms: readonly string[],
+): { term: string; segment?: SpeechSegmentRecord; keyword?: string } | undefined => {
+  for (const term of themeTerms) {
+    const trimmed = term.trim()
+    const normalized = normalizeForSearch(trimmed)
+    if (!normalized || !speechMatchesSearchTerm(speech, trimmed)) continue
+
+    if (normalizeForSearch(speech.searchText ?? '').includes(normalized)) {
+      const segment =
+        segments.find((item) => normalizeForSearch(item.text).includes(normalized)) ??
+        segments.find((item) => {
+          const text = normalizeForSearch(item.text)
+          return speechSearchTerms(trimmed).some((word) => text.includes(word))
+        }) ??
+        segments[0]
+      return { term: trimmed, segment }
+    }
+
+    const lowered = trimmed.toLowerCase()
+    const keyword = (speech.keywords ?? []).find((item) => item.toLowerCase().includes(lowered))
+    if (keyword) return { term: trimmed, keyword }
+  }
+  return undefined
+}
+
 export const buildWatchHref = (
   speechId: number,
   segment: SpeechSegmentRecord | undefined,
@@ -216,6 +261,7 @@ export const toSpeechListItemViewModel = ({
   query,
   municipalityLabels,
   cuts = [],
+  themeTerms = [],
 }: {
   speech: SpeechListRecord
   segments: readonly SpeechSegmentRecord[]
@@ -223,6 +269,8 @@ export const toSpeechListItemViewModel = ({
   municipalityLabels: ReadonlyMap<number, string>
   /** C174 — the cuts of this speech, nested in the result card. */
   cuts?: SpeechCuts
+  /** C192 — expanded theme terms; empty in the literal search. */
+  themeTerms?: readonly string[]
 }): SpeechListItemViewModel => {
   const matchedSegment = pickMatchingSegment(segments, query)
   const q = query?.trim()
@@ -232,8 +280,25 @@ export const toSpeechListItemViewModel = ({
     Boolean(normalizedQuery) &&
     (speech.keywords ?? []).some((keyword) => normalizeForSearch(keyword).includes(normalizedQuery))
 
+  // C192 — the theme evidence wins the excerpt so the card's "Por que apareceu"
+  // block shows the passage that actually matched, even when the speech also
+  // contains the literal query.
+  const themeMatch = pickThemeMatch(speech, segments, themeTerms)
+
   const excerptSource =
-    matchedSegment?.text ?? segments[0]?.text ?? speech.summary ?? speech.officialTranscript ?? ''
+    themeMatch?.segment?.text ??
+    themeMatch?.keyword ??
+    matchedSegment?.text ??
+    segments[0]?.text ??
+    speech.summary ??
+    speech.officialTranscript ??
+    ''
+
+  // C192 — the theme passage highlights the whole phrase as one band (the
+  // per-term split would drop the "à" and break it into pieces).
+  const excerpt = themeMatch
+    ? buildHighlightedExcerpt(excerptSource, themeMatch.term, { phrase: true })
+    : buildHighlightedExcerpt(excerptSource, q ?? '')
 
   return {
     id: speech.id,
@@ -241,8 +306,14 @@ export const toSpeechListItemViewModel = ({
     type: speech.type ?? null,
     durationLabel: formatSpeechDuration(speech.durationSeconds),
     presidingOfficer: speech.presidingOfficer ?? null,
-    excerpt: buildHighlightedExcerpt(excerptSource, q ?? ''),
-    matchKind: matchedSegment ? 'segment' : keywordMatch ? 'keyword' : 'fallback',
+    excerpt,
+    matchKind: matchedSegment
+      ? 'segment'
+      : keywordMatch
+        ? 'keyword'
+        : themeMatch
+          ? 'theme'
+          : 'fallback',
     topics: topicViewModels(speech),
     scopes: scopeViewModels(speech),
     keywords: speech.keywords ?? [],
@@ -252,6 +323,7 @@ export const toSpeechListItemViewModel = ({
     officialTextUrl: speech.officialTextUrl ?? null,
     cuts: [...cuts],
     matchedTextSearch: speechMatchesSearchQuery(speech, query),
+    themeMatchTerm: themeMatch?.term ?? null,
   }
 }
 

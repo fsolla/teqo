@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { parseSpeechListParams, type SpeechListState } from '@/utilities/speech/speechListUrl'
 import {
   applySpeechOmniboxSuggestion,
+  applySpeechSearchMode,
   buildSpeechOmniboxChips,
   clearSpeechOmnibox,
   removeSpeechOmniboxChip,
@@ -96,9 +97,34 @@ describe('removeSpeechOmniboxChip', () => {
     expect(emptied.state.topics).toBeUndefined()
   })
 
-  it('removes the search chip', () => {
-    const action = removeSpeechOmniboxChip({ state: state({ q: 'SUS' }), chipId: 'q' })
+  it('removes the search chip and the theme mode with it (C192)', () => {
+    const action = removeSpeechOmniboxChip({
+      state: state({ q: 'SUS', mode: 'tema' }),
+      chipId: 'q',
+    })
     expect(action.state.q).toBeUndefined()
+    expect(action.state.mode).toBeUndefined()
+  })
+})
+
+describe('applySpeechSearchMode (C192)', () => {
+  it('sets tema only with a query and resets the page', () => {
+    expect(applySpeechSearchMode({ state: state({ q: 'SUS', page: '4' }), mode: 'tema' })).toEqual({
+      kind: 'url',
+      state: { page: 1, q: 'SUS', mode: 'tema' },
+    })
+
+    expect(applySpeechSearchMode({ state: state({ page: '4' }), mode: 'tema' }).state.mode).toBe(
+      undefined,
+    )
+  })
+
+  it('clears the mode back to the exact search', () => {
+    const action = applySpeechSearchMode({
+      state: state({ q: 'SUS', mode: 'tema' }),
+      mode: 'termo',
+    })
+    expect(action.state.mode).toBeUndefined()
   })
 })
 

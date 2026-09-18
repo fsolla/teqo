@@ -2,8 +2,13 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { canReadSpeechCatalog } from '@/lib/campaignRoles'
 import { measuredVideoLagSeconds, parseYoutubeVideoId } from '@/lib/speechVod'
 import type { CampaignUser, Speech } from '@/payload-types'
+import {
+  expandSpeechSearchTheme,
+  type SpeechThemeExpansionResolver,
+} from '@/utilities/ai/expandSpeechSearchTheme'
 import { createEntityNotFoundError } from '@/utilities/entityNotFound'
 import { loadMunicipalityLabelsByIds } from '@/utilities/loadNamesByIds'
 import { getYouTubeVideoStart } from '@/utilities/socialFeed/youtubeFeed'
@@ -155,16 +160,35 @@ export type SpeechAcervoPageData = {
   totalDocs: number
   totalPages: number
   filterOptions: SpeechFilterOptions
+  /**
+   * C192 — true when the actor asked for `mode=tema` but the expansion
+   * mechanism was unavailable; the page shows the discreet fallback notice.
+   */
+  themeUnavailable: boolean
+  /** C192 — true when the expansion actually contributed terms. */
+  themeApplied: boolean
 }
 
 export const loadSpeechAcervoPageData = async (
   payload: Payload,
   user: CampaignUser,
   searchParams: Promise<SpeechListSearchParams> | SpeechListSearchParams,
+  expandTheme: SpeechThemeExpansionResolver = expandSpeechSearchTheme,
 ): Promise<SpeechAcervoPageData> => {
   const rawSearchParams = await searchParams
   const canonicalUrl = resolveSpeechListUrl(rawSearchParams)
   const state = canonicalUrl.state
+
+  // C192 — only expand for an actor who may read the catalog (the `find` below
+  // is still the final, fail-closed barrier) and only with a query.
+  const themeRequested = state.mode === 'tema' && Boolean(state.q)
+  let themeTerms: readonly string[] = []
+  let themeUnavailable = false
+  if (themeRequested && canReadSpeechCatalog(user.role)) {
+    const expansion = await expandTheme(state.q ?? '')
+    if (expansion) themeTerms = expansion.terms
+    else themeUnavailable = true
+  }
 
   // C174 (option B) — a speech also shows up when one of its cuts matches the
   // term by title/description, even if the speech text itself does not.
@@ -176,7 +200,7 @@ export const loadSpeechAcervoPageData = async (
     limit: speechPageSize,
     page: state.page,
     sort: '-speechAt',
-    where: buildSpeechListWhereIncludingCutOrigins(state, originSpeechIds),
+    where: buildSpeechListWhereIncludingCutOrigins(state, originSpeechIds, themeTerms),
     // C174 — the row only needs its normalized text to tell whether it matched
     // the term itself (option B); the unsearched list does not pay for it.
     select: state.q ? { ...speechListSelect, searchText: true } : speechListSelect,
@@ -210,6 +234,7 @@ export const loadSpeechAcervoPageData = async (
         query: state.q,
         municipalityLabels,
         cuts: cutsBySpeech.get(speech.id) ?? [],
+        themeTerms,
       }),
     ),
     state: resolvedUrl.state,
@@ -217,6 +242,8 @@ export const loadSpeechAcervoPageData = async (
     totalDocs: result.totalDocs,
     totalPages: result.totalPages,
     filterOptions,
+    themeUnavailable,
+    themeApplied: themeTerms.length > 0,
   }
 }
 
