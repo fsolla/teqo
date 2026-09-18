@@ -2,7 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
-import { canReadSpeechCatalog } from '@/lib/campaignRoles'
+import { canReadCommunicationCatalog } from '@/lib/campaignRoles'
 import { measuredVideoLagSeconds, parseYoutubeVideoId } from '@/lib/speechVod'
 import type { CampaignUser, Speech } from '@/payload-types'
 import {
@@ -184,7 +184,7 @@ export const loadSpeechAcervoPageData = async (
   const themeRequested = state.mode === 'tema' && Boolean(state.q)
   let themeTerms: readonly string[] = []
   let themeUnavailable = false
-  if (themeRequested && canReadSpeechCatalog(user.role)) {
+  if (themeRequested && canReadCommunicationCatalog(user.role)) {
     const expansion = await expandTheme(state.q ?? '')
     if (expansion) themeTerms = expansion.terms
     else themeUnavailable = true
