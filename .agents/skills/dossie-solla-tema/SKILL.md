@@ -194,7 +194,12 @@ consolidação determinística.
     {
       "id": "era_c_emendas",                  // id do checklist da era
       "answer": "R$ 5,0 milhões para a rede de ensino",
+      "summary": "opcional — versão curta, completa e auto-contida do answer, redigida para caber no resumo/boletim (C188)",
       "details": "opcional; aceita {{fonte}} / {{fonte:N}}",
+      "brief": {                               // obrigatório no item publicado: copy reformulada, curta
+        "title": "≤80 chars — manchete (o quê + onde)",
+        "note": "≤120 chars — 1 frase de contexto; opcional"
+      },
       "sphere": "area",                        // area | segmento | rede (default area)
       "numbers": [                             // opcional
         { "label": "Emenda", "value": "R$ 5,0 mi", "year": "2024", "phase": "empenhado" }
@@ -228,6 +233,17 @@ era vira **lacuna** (`Não pesquisado.` / `Sem fonte: …`); abrangência invál
 vira lacuna. `phase` ∈ `autorizado|empenhado|liquidado|pago|restos` (default
 `nao_informado`; empenho **não** é pagamento). O `bulletinFacts` (ledger do
 boletim) só é populado por item **com fonte** — o boletim não introduz fato novo.
+
+**`brief` (copy reformulada, sem reticências) e `summary` (C188).** As páginas
+A4 têm altura fixa: o `brief` é a copy que o PDF imprime nas páginas de era, nas
+listas de abrangência e nos cartões do boletim (o `answer`/`details` integrais
+ficam no `.md` e no lastro); sem ele o builder imprime o texto integral e a
+página pode estourar. Escreva `brief.title` ≤ 80 e `brief.note` ≤ 120 chars para
+**todo item publicado**; o `summary` alimenta as superfícies de resumo. O
+boletim de uma página **mede e reduz por medição**: o painel do acervo (falas
+com link) entra no contador "e mais N fatos com fonte", nunca nos destaques; se
+ainda não couber, o builder re-renderiza com menos fatos impressos e declara o
+resto — sem truncar texto e sem descarte silencioso.
 
 `<slug>.narrative.json` (opcional; escrito pelo redator, auditado pelo
 orquestrador):
@@ -299,7 +315,10 @@ nenhum número, data, nome ou órgão novo.
   abrangência", número em destaque, título curto, nota); timeline de 4 passos da
   trajetória; **"E mais" com ≤14 itens** em duas colunas; rodapé com controle
   editorial e defeso. Com **poucos fatos**, usa a variação de lacuna (não cria
-  cards vazios para chegar a seis).
+  cards vazios para chegar a seis). O painel do acervo **não ocupa vaga de
+  destaque**: entra no contador "e mais N fatos com fonte"; se os fatos
+  impressos ainda estourarem a folha, o builder mede e reduz o conjunto
+  impresso até caber, declarando o resto — nunca corta texto.
 - **Sem declaração de fontes** (as fontes vivem exclusivamente no dossiê), sem
   CTA de campanha; herda **apenas** fatos com fonte do dossiê.
 

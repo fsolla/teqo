@@ -148,25 +148,29 @@ const report = buildDossierReport({
   unit: THEME_UNIT,
   narrative,
 })
-const bulletin = buildBulletin({
-  facts: report.bulletinFacts,
-  identity: {
-    name: report.meta.subjectName,
-    badges: report.meta.identityBadges,
-    value: report.meta.identity?.value ?? null,
-    taxonomyNote: report.meta.identity?.taxonomyNote ?? null,
-  },
-  unit: THEME_UNIT,
-  generatedAt,
-})
+const bulletinIdentity = {
+  name: report.meta.subjectName,
+  badges: report.meta.identityBadges,
+  value: report.meta.identity?.value ?? null,
+  taxonomyNote: report.meta.identity?.taxonomyNote ?? null,
+}
+const buildThemeBulletin = (printLimit = null) =>
+  buildBulletin({
+    facts: report.bulletinFacts,
+    identity: bulletinIdentity,
+    unit: THEME_UNIT,
+    generatedAt,
+    printLimit,
+  })
+
+let bulletin = buildThemeBulletin()
+let bulletinHtml = renderBulletinHtml(bulletin)
 
 const dossierMd = renderDossierMd(report)
-const bulletinHtml = renderBulletinHtml(bulletin)
 
 const baseName = `${slug}-${generatedAt.toISOString().slice(0, 10)}`
 
 await mkdir(resolve(ROOT, CACHE_DIR), { recursive: true })
-await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.boletim.html`)), bulletinHtml)
 
 await mkdir(resolve(ROOT, outDir), { recursive: true })
 const dossierMdFile = join(outDir, `${baseName}-dossie.md`)
@@ -229,7 +233,18 @@ try {
     bulletinHtml,
     dossierPdf: resolve(ROOT, dossierPdfFile),
     bulletinPdf: resolve(ROOT, bulletinPdfFile),
+    // One-page fit by measurement (C188/C190): while the boletim overflows,
+    // rebuild it with two fewer printed facts — the source panel and the facts
+    // beyond the cap stay counted in the "e mais N" line, never truncated.
+    onBulletinOverflow: async () => {
+      const next = bulletin.factsPrinted - 2
+      if (bulletin.factsPrinted === 0 || next < 0) return null
+      bulletin = buildThemeBulletin(next)
+      bulletinHtml = renderBulletinHtml(bulletin)
+      return bulletinHtml
+    },
   })
+  await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.boletim.html`)), bulletinHtml)
 } catch (error) {
   die(error instanceof Error ? error.message : String(error))
 } finally {
