@@ -19,6 +19,14 @@ export const A4_WIDTH_PX = Math.round(210 * MM_TO_PX)
 export const PAGE_FIT_TOLERANCE_PX = 10
 export const A4_PAGE_BUDGET_PX = A4_HEIGHT_PX + PAGE_FIT_TOLERANCE_PX
 
+/**
+ * Bounded re-renders of the one-page boletim while an `onBulletinOverflow`
+ * callback keeps handing back a shorter document (C190). Each pass drops at
+ * least one printed fact, so the cap only exists to fail closed on a callback
+ * that stops shrinking.
+ */
+const MAX_BULLETIN_FIT_ATTEMPTS = 24
+
 export const launchPdfBrowser = () => chromium.launch()
 
 /** Every `[data-page]` taller than the budget, in document order. */
@@ -166,13 +174,19 @@ const printA4Pdf = (page, outPath) =>
 
 /**
  * One browser run, two HTML documents: sets each document, asserts its anchor
- * exists, guards the fit and emits the PDF. Shared by the C186 (city) and C187
- * (institution) builders — the pages differ, the emit contract does not.
+ * exists, guards the fit and emits the PDF. Shared by the C186 (city), C187
+ * (institution) and C190 (theme) builders — the pages differ, the emit
+ * contract does not.
  *
  * C188 fit fallback: when `onDossierOverflow` is given, only the page-1 sheet
  * (`resumoOnly`) is measured first; if it overflows, the callback rebuilds the
  * document (pointer lines, never "…") and the fit is checked again — still
  * fail-closed if even the pointer does not fit.
+ *
+ * C190 bulletin fit: the one-pager is measured and, when `onBulletinOverflow`
+ * is given, the callback rebuilds it with fewer printed facts (the remainder
+ * is declared in the "e mais N" counter) until the A4 holds — still fail-closed
+ * when the callback cannot shrink any further.
  */
 export const emitHtmlPairPdf = async (
   browser,
@@ -182,6 +196,7 @@ export const emitHtmlPairPdf = async (
     dossierPdf,
     bulletinPdf,
     onDossierOverflow = null,
+    onBulletinOverflow = null,
     resumoOnly = false,
   },
 ) => {
@@ -226,17 +241,35 @@ export const emitHtmlPairPdf = async (
   }
   await printA4Pdf(page, dossierPdf)
 
-  await page.setContent(bulletinHtml, { waitUntil: 'load' })
+  let currentBulletinHtml = bulletinHtml
+  await page.setContent(currentBulletinHtml, { waitUntil: 'load' })
   await page.emulateMedia({ media: 'print' })
-  const hasBulletin = await page.evaluate(() =>
-    Boolean(document.querySelector('[data-page="boletim"]')),
-  )
-  if (!hasBulletin) throw new Error('Bloco do boletim ausente no HTML — renderer quebrado.')
-  assertPageFits(
-    await measurePageOverflows(page, A4_PAGE_BUDGET_PX),
-    'O boletim',
-    'Corte itens/caps — o boletim TEM de caber em uma página.',
-  )
+  for (let attempt = 0; ; attempt += 1) {
+    const hasBulletin = await page.evaluate(() =>
+      Boolean(document.querySelector('[data-page="boletim"]')),
+    )
+    if (!hasBulletin) throw new Error('Bloco do boletim ausente no HTML — renderer quebrado.')
+    const overflows = await measurePageOverflows(page, A4_PAGE_BUDGET_PX)
+    if (overflows.length === 0) break
+    if (!onBulletinOverflow || attempt >= MAX_BULLETIN_FIT_ATTEMPTS) {
+      assertPageFits(
+        overflows,
+        'O boletim',
+        'Corte itens/caps — o boletim TEM de caber em uma página.',
+      )
+    }
+    const rebuilt = await onBulletinOverflow()
+    if (!rebuilt) {
+      assertPageFits(
+        overflows,
+        'O boletim',
+        'Corte itens/caps — o boletim TEM de caber em uma página.',
+      )
+    }
+    currentBulletinHtml = rebuilt
+    await page.setContent(currentBulletinHtml, { waitUntil: 'load' })
+    await page.emulateMedia({ media: 'print' })
+  }
   await printA4Pdf(page, bulletinPdf)
 
   await page.close()

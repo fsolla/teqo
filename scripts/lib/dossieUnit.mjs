@@ -206,6 +206,7 @@ export const INSTITUTION_UNIT = {
       defeso:
         'fase acompanha cada valor · instituição, setor e rede não são somados · sem percentual estadual absoluto.',
       orig: 'Conteúdo selecionado do dossiê institucional.',
+      remaining: 'no dossiê da instituição — o boletim de uma página não os exibe.',
       sparseRule:
         'Não repetir item, não ampliar efeito e não preencher com ação de setor ou rede como se fosse entrega exclusiva da instituição.',
       title: 'Uma trajetória de compromisso com o serviço público',
@@ -411,6 +412,7 @@ export const THEME_UNIT = {
       defeso:
         'fase acompanha cada valor · área, segmento e rede não são somados · sem percentual estadual absoluto.',
       orig: 'Conteúdo selecionado do dossiê da área.',
+      remaining: 'no dossiê da área — o boletim de uma página não os exibe.',
       sparseRule:
         'Não repetir item, não ampliar efeito e não preencher com ação de segmento ou rede como se fosse entrega exclusiva da área.',
       title: 'Uma trajetória de compromisso com o serviço público',
