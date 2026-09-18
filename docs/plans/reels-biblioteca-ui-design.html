@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — C194 · Biblioteca privada de reels</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-card: var(--card);
+        --color-card-foreground: var(--card-foreground);
+        --color-primary: var(--primary);
+        --color-primary-foreground: var(--primary-foreground);
+        --color-secondary: var(--secondary);
+        --color-secondary-foreground: var(--secondary-foreground);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-destructive: var(--destructive);
+        --color-border: var(--border);
+        --color-input: var(--input);
+        --color-ring: var(--ring);
+        --color-sidebar: var(--sidebar);
+        --color-sidebar-foreground: var(--sidebar-foreground);
+        --color-sidebar-accent: var(--sidebar-accent);
+        --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+        --color-sidebar-border: var(--sidebar-border);
+        --radius-sm: 0.25rem;
+        --radius-md: 0.375rem;
+        --radius-lg: 0.5rem;
+        --radius-xl: 0.75rem;
+      }
+      [data-theme='campaign'] {
+        --background: #ffffff;
+        --foreground: #1c1917;
+        --card: #ffffff;
+        --card-foreground: #1c1917;
+        --primary: #c51414;
+        --primary-foreground: #ffffff;
+        --secondary: #f5f5f4;
+        --secondary-foreground: #292524;
+        --muted: #f4f4f5;
+        --muted-foreground: #6b7280;
+        --destructive: #b42318;
+        --border: rgb(28 25 23 / 12%);
+        --input: rgb(28 25 23 / 16%);
+        --ring: #c51414;
+        --sidebar: #fafaf9;
+        --sidebar-foreground: #1c1917;
+        --sidebar-accent: #f5f5f4;
+        --sidebar-accent-foreground: #1c1917;
+        --sidebar-border: rgb(28 25 23 / 12%);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+      .artifact-grid {
+        background-color: #efeeec;
+        background-image: radial-gradient(rgb(28 25 23 / 9%) 0.7px, transparent 0.7px);
+        background-size: 16px 16px;
+      }
+      .frame-shadow {
+        box-shadow: 0 18px 54px rgb(28 25 23 / 10%);
+      }
+      .video-placeholder {
+        background:
+          linear-gradient(145deg, rgb(255 255 255 / 4%), transparent 45%),
+          linear-gradient(180deg, #44403c, #1c1917);
+      }
+      .cover-placeholder {
+        background:
+          linear-gradient(180deg, transparent 44%, rgb(28 25 23 / 78%) 100%),
+          linear-gradient(145deg, #d6d3d1, #78716c);
+      }
+    </style>
+  </head>
+  <body class="artifact-grid min-h-screen text-foreground antialiased">
+    <!-- Ícones inline seguem o grid/stroke do Lucide. Nenhum asset próprio é necessário. -->
+    <main class="mx-auto flex max-w-[1480px] flex-col gap-16 px-4 py-10 md:px-8 md:py-14">
+      <header class="max-w-3xl">
+        <div class="flex flex-wrap items-center gap-2">
+          <span
+            class="rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground"
+            >C194 · gate hi-fi</span
+          >
+          <span class="rounded-full border border-border bg-white px-2.5 py-1 text-xs font-medium"
+            >Campanha · Comunicação · privado</span
+          >
+        </div>
+        <h1 class="mt-4 text-3xl font-semibold tracking-tight">O reel certo, pronto para baixar</h1>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+          A assessoria varre capas verticais, confere o reel e baixa o vídeo sem áudio sem disputar
+          atenção com arquivos auxiliares. A biblioteca organiza; não edita nem publica em rede
+          social.
+        </p>
+        <nav aria-label="Índice de cenas" class="mt-5 flex flex-wrap gap-2 text-xs">
+          <a
+            href="#lista-desktop"
+            class="rounded-full border border-border bg-white px-3 py-1.5 font-medium"
+            >01 · Lista desktop</a
+          >
+          <a
+            href="#detalhe-desktop"
+            class="rounded-full border border-border bg-white px-3 py-1.5 font-medium"
+            >02 · Detalhe desktop</a
+          >
+          <a
+            href="#mobile"
+            class="rounded-full border border-border bg-white px-3 py-1.5 font-medium"
+            >03–04 · Mobile</a
+          >
+          <a
+            href="#estados"
+            class="rounded-full border border-border bg-white px-3 py-1.5 font-medium"
+            >05–07 · Estados críticos</a
+          >
+        </nav>
+      </header>
+
+      <!-- CENA 01 — LISTA DESKTOP -->
+      <section id="lista-desktop" aria-labelledby="lista-desktop-title">
+        <div class="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <p class="text-xs font-semibold text-primary">CENA 01 · DESKTOP ~1280</p>
+            <h2 id="lista-desktop-title" class="mt-1 text-xl font-semibold tracking-tight">
+              Lista visual, sem toolbar prematura
+            </h2>
+          </div>
+          <p class="hidden text-xs text-muted-foreground md:block">
+            Mais recentes primeiro · só publicados
+          </p>
+        </div>
+        <div
+          class="frame-shadow mx-auto h-[790px] max-w-[1280px] overflow-hidden rounded-xl border border-border bg-background"
+        >
+          <div class="flex h-full">
+            <aside
+              class="flex w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar p-3"
+            >
+              <div class="mb-4 flex h-11 items-center gap-2 px-2">
+                <div
+                  class="grid size-8 place-items-center rounded-lg bg-primary text-sm font-bold text-white"
+                >
+                  S
+                </div>
+                <div>
+                  <p class="text-sm font-semibold">Solla</p>
+                  <p class="text-xs text-muted-foreground">Campanha</p>
+                </div>
+              </div>
+              <nav class="space-y-1 text-sm" aria-label="Navegação principal ilustrativa">
+                <a
+                  href="#"
+                  class="flex h-9 items-center gap-3 rounded-md px-2 text-muted-foreground"
+                  ><svg
+                    class="size-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="m3 11 9-8 9 8" />
+                    <path d="M5 10v10h14V10" /></svg
+                  >Início</a
+                >
+                <a
+                  href="#"
+                  class="flex h-9 items-center gap-3 rounded-md px-2 text-muted-foreground"
+                  ><svg
+                    class="size-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect x="3" y="3" width="7" height="7" rx="1" />
+                    <rect x="14" y="3" width="7" height="7" rx="1" />
+                    <rect x="3" y="14" width="7" height="7" rx="1" />
+                    <rect x="14" y="14" width="7" height="7" rx="1" /></svg
+                  >Quadro</a
+                >
+                <a
+                  href="#"
+                  class="flex h-9 items-center gap-3 rounded-md px-2 text-muted-foreground"
+                  ><svg
+                    class="size-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+                    <circle cx="12" cy="10" r="2" /></svg
+                  >Municípios</a
+                >
+                <div class="rounded-lg bg-sidebar-accent p-1">
+                  <div class="flex h-9 items-center gap-3 rounded-md px-2 font-medium">
+                    <svg
+                      class="size-4 text-primary"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="m3 11 18-5v12L3 14v-3Z" />
+                      <path d="M11.6 16.8 13 21H8l-1.8-6" /></svg
+                    >Comunicação
+                  </div>
+                  <div class="ml-5 space-y-1 border-l border-sidebar-border pl-3">
+                    <a href="#" class="flex h-8 items-center rounded-md px-2 text-muted-foreground"
+                      >Acervo de falas</a
+                    >
+                    <a href="#" class="flex h-8 items-center rounded-md px-2 text-muted-foreground"
+                      >Biblioteca de cortes</a
+                    >
+                    <a
+                      href="#"
+                      aria-current="page"
+                      class="flex h-8 items-center rounded-md bg-card px-2 font-medium text-primary ring-1 ring-border"
+                      >Reels</a
+                    >
+                  </div>
+                </div>
+              </nav>
+              <div class="mt-auto border-t border-sidebar-border pt-3">
+                <div class="flex items-center gap-3 rounded-md px-2 py-2">
+                  <div class="size-8 rounded-full bg-secondary ring-1 ring-border"></div>
+                  <div>
+                    <p class="text-sm font-medium">Assessoria</p>
+                    <p class="text-xs text-muted-foreground">Comunicação</p>
+                  </div>
+                </div>
+              </div>
+            </aside>
+            <div class="min-w-0 flex-1">
+              <header class="flex h-11 items-center gap-3 border-b border-border px-4">
+                <button
+                  aria-label="Recolher menu"
+                  class="grid size-8 place-items-center rounded-md text-muted-foreground"
+                >
+                  <svg
+                    class="size-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                <div class="min-w-0"><p class="truncate text-sm font-medium">Reels</p></div>
+                <div class="ml-auto flex items-center gap-2">
+                  <div class="size-8 rounded-full bg-secondary ring-1 ring-border"></div>
+                </div>
+              </header>
+              <div class="mx-auto max-w-[1000px] p-6 lg:p-8">
+                <div class="mb-6 flex items-end justify-between gap-4">
+                  <div>
+                    <h3 class="text-lg font-semibold">Reels publicados</h3>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                      Abra um reel para assistir e baixar os arquivos.
+                    </p>
+                  </div>
+                  <span class="text-xs text-muted-foreground">4 reels</span>
+                </div>
+                <div class="grid grid-cols-4 gap-4">
+                  <article class="group overflow-hidden rounded-xl border border-border bg-card">
+                    <div class="cover-placeholder relative aspect-[9/16]">
+                      <span
+                        class="absolute left-3 top-3 rounded-full bg-white/95 px-2 py-1 text-[11px] font-medium text-foreground"
+                        >Publicado</span
+                      >
+                      <div
+                        class="absolute inset-x-3 bottom-3 rounded-lg bg-black/65 p-3 text-white"
+                      >
+                        <p class="text-[11px] text-white/70">NEEDS ASSET · capa</p>
+                        <p class="mt-1 text-sm font-semibold leading-4">Crie seu card de apoio</p>
+                      </div>
+                    </div>
+                    <div class="p-3">
+                      <h4 class="text-sm font-medium leading-5">Como criar seu card de apoio</h4>
+                      <p class="mt-1.5 text-xs text-muted-foreground">Cards · 00:28</p>
+                      <p class="mt-1 text-xs text-muted-foreground">Publicado hoje</p>
+                      <a
+                        href="#detalhe-desktop"
+                        class="mt-3 inline-flex h-8 items-center text-xs font-medium underline underline-offset-4"
+                        >Abrir reel</a
+                      >
+                    </div>
+                  </article>
+                  <article class="overflow-hidden rounded-xl border border-border bg-card">
+                    <div class="cover-placeholder relative aspect-[9/16] opacity-90">
+                      <span
+                        class="absolute left-3 top-3 rounded-full bg-white/95 px-2 py-1 text-[11px] font-medium"
+                        >Publicado</span
+                      >
+                      <div
+                        class="absolute inset-x-3 bottom-3 rounded-lg bg-black/65 p-3 text-white"
+                      >
+                        <p class="text-[11px] text-white/70">NEEDS ASSET · capa</p>
+                        <p class="mt-1 text-sm font-semibold leading-4">Escolha uma moldura</p>
+                      </div>
+                    </div>
+                    <div class="p-3">
+                      <h4 class="text-sm font-medium leading-5">
+                        Moldura para foto: passo a passo
+                      </h4>
+                      <p class="mt-1.5 text-xs text-muted-foreground">Cards · 00:34</p>
+                      <p class="mt-1 text-xs text-muted-foreground">Publicado em —</p>
+                      <a
+                        href="#"
+                        class="mt-3 inline-flex h-8 items-center text-xs font-medium underline underline-offset-4"
+                        >Abrir reel</a
+                      >
+                    </div>
+                  </article>
+                  <article class="overflow-hidden rounded-xl border border-border bg-card">
+                    <div class="cover-placeholder relative aspect-[9/16] saturate-50">
+                      <span
+                        class="absolute left-3 top-3 rounded-full bg-white/95 px-2 py-1 text-[11px] font-medium"
+                        >Publicado</span
+                      >
+                      <div
+                        class="absolute inset-x-3 bottom-3 rounded-lg bg-black/65 p-3 text-white"
+                      >
+                        <p class="text-[11px] text-white/70">NEEDS ASSET · capa</p>
+                        <p class="mt-1 text-sm font-semibold leading-4">Baixe e compartilhe</p>
+                      </div>
+                    </div>
+                    <div class="p-3">
+                      <h4 class="text-sm font-medium leading-5">Baixe seu card no celular</h4>
+                      <p class="mt-1.5 text-xs text-muted-foreground">Cards · 00:21</p>
+                      <p class="mt-1 text-xs text-muted-foreground">Publicado em —</p>
+                      <a
+                        href="#"
+                        class="mt-3 inline-flex h-8 items-center text-xs font-medium underline underline-offset-4"
+                        >Abrir reel</a
+                      >
+                    </div>
+                  </article>
+                  <article class="overflow-hidden rounded-xl border border-border bg-card">
+                    <div class="cover-placeholder relative aspect-[9/16] grayscale">
+                      <span
+                        class="absolute left-3 top-3 rounded-full bg-white/95 px-2 py-1 text-[11px] font-medium"
+                        >Publicado</span
+                      >
+                      <div
+                        class="absolute inset-x-3 bottom-3 rounded-lg bg-black/65 p-3 text-white"
+                      >
+                        <p class="text-[11px] text-white/70">NEEDS ASSET · capa</p>
+                        <p class="mt-1 text-sm font-semibold leading-4">Tutorial do site</p>
+                      </div>
+                    </div>
+                    <div class="p-3">
+                      <h4 class="text-sm font-medium leading-5">Título do reel</h4>
+                      <p class="mt-1.5 text-xs text-muted-foreground">Funcionalidade · 00:30</p>
+                      <p class="mt-1 text-xs text-muted-foreground">Publicado em —</p>
+                      <a
+                        href="#"
+                        class="mt-3 inline-flex h-8 items-center text-xs font-medium underline underline-offset-4"
+                        >Abrir reel</a
+                      >
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 02 — DETALHE DESKTOP -->
+      <section id="detalhe-desktop" aria-labelledby="detalhe-desktop-title">
+        <div class="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <p class="text-xs font-semibold text-primary">CENA 02 · DESKTOP ~1280</p>
+            <h2 id="detalhe-desktop-title" class="mt-1 text-xl font-semibold tracking-tight">
+              Detalhe: assistir, baixar, consultar
+            </h2>
+          </div>
+          <p class="hidden text-xs text-muted-foreground md:block">
+            Um único CTA primário: vídeo sem áudio
+          </p>
+        </div>
+        <div
+          class="frame-shadow mx-auto min-h-[900px] max-w-[1280px] overflow-hidden rounded-xl border border-border bg-background"
+        >
+          <header class="flex h-11 items-center gap-3 border-b border-border px-4">
+            <button class="grid size-8 place-items-center rounded-md text-muted-foreground">
+              <svg
+                class="size-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <p class="text-sm font-medium">Como criar seu card de apoio</p>
+            <div class="ml-auto size-8 rounded-full bg-secondary ring-1 ring-border"></div>
+          </header>
+          <div class="mx-auto max-w-[1120px] p-6 lg:p-8">
+            <a
+              href="#lista-desktop"
+              class="inline-flex min-h-10 items-center gap-2 text-sm text-muted-foreground"
+              ><svg
+                class="size-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="m15 18-6-6 6-6" /></svg
+              >Voltar aos reels</a
+            >
+            <div
+              class="mt-2 flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5"
+            >
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <span
+                    class="inline-flex h-5 items-center rounded-full bg-primary px-2 text-xs text-white"
+                    >Publicado</span
+                  ><span class="text-xs text-muted-foreground">Cards · 00:28 · publicado hoje</span>
+                </div>
+                <h3 class="mt-2 text-lg font-medium">Como criar seu card de apoio</h3>
+              </div>
+            </div>
+            <div class="mt-6 grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)_280px]">
+              <div>
+                <div
+                  class="video-placeholder relative mx-auto aspect-[9/16] w-full max-w-[330px] overflow-hidden rounded-xl border border-border bg-black text-white"
+                >
+                  <div class="absolute inset-0 grid place-items-center">
+                    <button
+                      aria-label="Reproduzir"
+                      class="grid size-14 place-items-center rounded-full bg-white/95 text-foreground shadow-lg"
+                    >
+                      <svg class="ml-1 size-6" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="m8 5 11 7-11 7Z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div
+                    class="absolute inset-x-0 bottom-0 flex h-11 items-center gap-3 bg-black/60 px-3"
+                  >
+                    <span class="text-[11px]">00:00</span>
+                    <div class="h-1 flex-1 rounded-full bg-white/35">
+                      <div class="h-1 w-0 rounded-full bg-primary"></div>
+                    </div>
+                    <span class="text-[11px]">00:28</span>
+                  </div>
+                  <span class="absolute left-3 top-3 rounded bg-black/55 px-2 py-1 text-[10px]"
+                    >NEEDS ASSET · MP4</span
+                  >
+                </div>
+              </div>
+              <div class="min-w-0">
+                <section class="rounded-xl border border-border p-4">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <h4 class="text-sm font-semibold">Downloads</h4>
+                      <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                        Arquivos deste reel para finalizar e publicar fora do Teqo.
+                      </p>
+                    </div>
+                    <svg
+                      class="size-5 shrink-0 text-muted-foreground"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M12 3v12" />
+                      <path d="m7 10 5 5 5-5" />
+                      <path d="M5 21h14" />
+                    </svg>
+                  </div>
+                  <a
+                    href="#"
+                    class="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                    ><svg
+                      class="size-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M12 3v12" />
+                      <path d="m7 10 5 5 5-5" />
+                      <path d="M5 21h14" /></svg
+                    >Baixar vídeo sem áudio</a
+                  >
+                  <div class="mt-3 divide-y divide-border rounded-lg border border-border">
+                    <a href="#" class="flex min-h-12 items-center gap-3 px-3"
+                      ><svg
+                        class="size-4 text-muted-foreground"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="m10 8 6 4-6 4Z" />
+                        <rect x="3" y="5" width="18" height="14" rx="2" />
+                      </svg>
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium">Vídeo com áudio</p>
+                        <p class="text-xs text-muted-foreground">Rascunho · MP4</p>
+                      </div>
+                      <span class="text-xs underline underline-offset-4">Baixar</span></a
+                    >
+                    <a href="#" class="flex min-h-12 items-center gap-3 px-3"
+                      ><svg
+                        class="size-4 text-muted-foreground"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M9 18V5l10-2v13" />
+                        <circle cx="6" cy="18" r="3" />
+                        <circle cx="16" cy="16" r="3" />
+                      </svg>
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium">Narração</p>
+                        <p class="text-xs text-muted-foreground">MP3</p>
+                      </div>
+                      <span class="text-xs underline underline-offset-4">Baixar</span></a
+                    >
+                    <a href="#" class="flex min-h-12 items-center gap-3 px-3"
+                      ><svg
+                        class="size-4 text-muted-foreground"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M4 6h16M4 12h16M4 18h10" />
+                      </svg>
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium">Legendas</p>
+                        <p class="text-xs text-muted-foreground">Arquivo .srt</p>
+                      </div>
+                      <span class="text-xs underline underline-offset-4">Baixar</span></a
+                    >
+                    <a href="#roteiro" class="flex min-h-12 items-center gap-3 px-3"
+                      ><svg
+                        class="size-4 text-muted-foreground"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+                        <path d="M14 2v6h6M8 13h8M8 17h6" />
+                      </svg>
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium">Transcrição / roteiro</p>
+                        <p class="text-xs text-muted-foreground">Texto simples</p>
+                      </div>
+                      <span class="text-xs underline underline-offset-4">Ler</span></a
+                    >
+                  </div>
+                </section>
+                <section id="roteiro" class="mt-4 rounded-xl border border-border p-4">
+                  <div class="flex items-center justify-between">
+                    <h4 class="text-sm font-semibold">Transcrição / roteiro</h4>
+                    <button class="text-xs text-muted-foreground underline underline-offset-4">
+                      Copiar texto
+                    </button>
+                  </div>
+                  <div class="mt-3 space-y-3 text-sm leading-6">
+                    <p>
+                      <span class="font-medium">[Abertura]</span> Quer mostrar que está com Solla?
+                    </p>
+                    <p>
+                      <span class="font-medium">[Passo 1]</span> Entre no site e vá até a seção de
+                      cards.
+                    </p>
+                    <p>
+                      <span class="font-medium">[Passo 2]</span> Escolha um modelo, coloque seu nome
+                      ou sua foto e crie seu card.
+                    </p>
+                    <p>
+                      <span class="font-medium">[Fechamento]</span> Baixe e compartilhe com sua
+                      gente.
+                    </p>
+                  </div>
+                </section>
+              </div>
+              <aside class="space-y-4">
+                <section class="rounded-xl border border-border p-4">
+                  <h4 class="text-xs font-medium text-muted-foreground">Sobre o reel</h4>
+                  <dl class="mt-3 space-y-3 text-sm">
+                    <div>
+                      <dt class="text-xs text-muted-foreground">Funcionalidade</dt>
+                      <dd class="mt-0.5 font-medium">Cards de apoio</dd>
+                    </div>
+                    <div>
+                      <dt class="text-xs text-muted-foreground">Duração</dt>
+                      <dd class="mt-0.5">00:28</dd>
+                    </div>
+                    <div>
+                      <dt class="text-xs text-muted-foreground">Publicado em</dt>
+                      <dd class="mt-0.5">Hoje</dd>
+                    </div>
+                  </dl>
+                </section>
+                <section class="rounded-xl border border-border p-4">
+                  <h4 class="text-xs font-medium text-muted-foreground">
+                    Publicação na biblioteca
+                  </h4>
+                  <div class="mt-2">
+                    <span
+                      class="inline-flex h-5 items-center rounded-full bg-primary px-2 text-xs text-white"
+                      >Publicado</span
+                    >
+                  </div>
+                  <p class="mt-2 text-xs leading-5 text-muted-foreground">
+                    Despublicar tira este reel da lista, mas preserva o arquivo e o acesso interno
+                    por link.
+                  </p>
+                  <button
+                    class="mt-3 min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm font-medium"
+                  >
+                    Despublicar reel
+                  </button>
+                </section>
+                <p class="rounded-lg bg-muted px-3 py-2 text-xs leading-5 text-muted-foreground">
+                  Nada é publicado no Instagram por esta tela.
+                </p>
+              </aside>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENAS 03–04 — MOBILE -->
+      <section id="mobile" aria-labelledby="mobile-title">
+        <div class="mb-4">
+          <p class="text-xs font-semibold text-primary">CENAS 03–04 · MOBILE ~390</p>
+          <h2 id="mobile-title" class="mt-1 text-xl font-semibold tracking-tight">
+            Assessoria no celular
+          </h2>
+          <p class="mt-1 text-sm text-muted-foreground">
+            Lista escaneável e detalhe em uma coluna; CTA primário aparece logo após o player.
+          </p>
+        </div>
+        <div class="grid items-start gap-8 lg:grid-cols-2">
+          <article>
+            <p class="mb-3 text-sm font-medium">03 · Lista</p>
+            <div
+              class="frame-shadow mx-auto h-[844px] w-[390px] max-w-full overflow-hidden rounded-[28px] border border-border bg-background"
+            >
+              <header class="flex min-h-14 items-center bg-primary px-4 text-primary-foreground">
+                <p class="text-sm font-semibold">Reels</p>
+                <div class="ml-auto size-8 rounded-full bg-white/15"></div>
+              </header>
+              <div class="h-[722px] overflow-hidden px-4 py-5">
+                <div class="flex items-end justify-between">
+                  <div>
+                    <h3 class="text-lg font-semibold">Reels publicados</h3>
+                    <p class="mt-1 text-sm text-muted-foreground">Toque para abrir e baixar.</p>
+                  </div>
+                  <span class="text-xs text-muted-foreground">4</span>
+                </div>
+                <div class="mt-5 grid grid-cols-2 gap-3">
+                  <article class="overflow-hidden rounded-xl border border-border">
+                    <div class="cover-placeholder relative aspect-[9/16]">
+                      <span
+                        class="absolute left-2 top-2 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-medium"
+                        >Publicado</span
+                      >
+                      <div
+                        class="absolute inset-x-2 bottom-2 rounded-md bg-black/65 p-2 text-white"
+                      >
+                        <p class="text-[9px] text-white/70">NEEDS ASSET</p>
+                        <p class="mt-0.5 text-xs font-semibold leading-4">Crie seu card</p>
+                      </div>
+                    </div>
+                    <div class="p-2.5">
+                      <h4 class="text-xs font-medium leading-4">Como criar seu card de apoio</h4>
+                      <p class="mt-1 text-[11px] text-muted-foreground">Cards · 00:28</p>
+                    </div>
+                  </article>
+                  <article class="overflow-hidden rounded-xl border border-border">
+                    <div class="cover-placeholder relative aspect-[9/16] saturate-50">
+                      <span
+                        class="absolute left-2 top-2 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-medium"
+                        >Publicado</span
+                      >
+                      <div
+                        class="absolute inset-x-2 bottom-2 rounded-md bg-black/65 p-2 text-white"
+                      >
+                        <p class="text-[9px] text-white/70">NEEDS ASSET</p>
+                        <p class="mt-0.5 text-xs font-semibold leading-4">Escolha a moldura</p>
+                      </div>
+                    </div>
+                    <div class="p-2.5">
+                      <h4 class="text-xs font-medium leading-4">Moldura para foto</h4>
+                      <p class="mt-1 text-[11px] text-muted-foreground">Cards · 00:34</p>
+                    </div>
+                  </article>
+                  <article class="overflow-hidden rounded-xl border border-border">
+                    <div class="cover-placeholder aspect-[9/16] grayscale"></div>
+                    <div class="p-2.5">
+                      <h4 class="text-xs font-medium leading-4">Baixe seu card</h4>
+                      <p class="mt-1 text-[11px] text-muted-foreground">Cards · 00:21</p>
+                    </div>
+                  </article>
+                  <article class="overflow-hidden rounded-xl border border-border">
+                    <div class="cover-placeholder aspect-[9/16] opacity-80"></div>
+                    <div class="p-2.5">
+                      <h4 class="text-xs font-medium leading-4">Título do reel</h4>
+                      <p class="mt-1 text-[11px] text-muted-foreground">Funcionalidade · 00:30</p>
+                    </div>
+                  </article>
+                </div>
+              </div>
+              <nav
+                class="grid h-[68px] grid-cols-5 border-t border-border bg-background pt-2 text-[10px] text-muted-foreground"
+              >
+                <div class="grid place-items-center">⌂<span>Início</span></div>
+                <div class="grid place-items-center">⌖<span>Municípios</span></div>
+                <div class="grid place-items-center">◉<span>Atualizações</span></div>
+                <div class="grid place-items-center">□<span>Agenda</span></div>
+                <div class="grid place-items-center text-primary">•••<span>Mais</span></div>
+              </nav>
+            </div>
+          </article>
+          <article>
+            <p class="mb-3 text-sm font-medium">
+              04 · Detalhe — ação principal sem rolagem excessiva
+            </p>
+            <div
+              class="frame-shadow mx-auto h-[844px] w-[390px] max-w-full overflow-hidden rounded-[28px] border border-border bg-background"
+            >
+              <header
+                class="flex min-h-14 items-center gap-3 bg-primary px-3 text-primary-foreground"
+              >
+                <svg
+                  class="size-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="m15 18-6-6 6-6" />
+                </svg>
+                <p class="min-w-0 truncate text-sm font-semibold">Como criar seu card</p>
+              </header>
+              <div class="h-[722px] overflow-y-auto px-4 py-4">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="rounded-full bg-primary px-2 py-0.5 text-xs text-white"
+                    >Publicado</span
+                  ><span class="text-xs text-muted-foreground">Cards · 00:28</span>
+                </div>
+                <h3 class="mt-2 text-lg font-medium">Como criar seu card de apoio</h3>
+                <div
+                  class="video-placeholder relative mx-auto mt-4 aspect-[9/16] w-[226px] overflow-hidden rounded-xl border border-border text-white"
+                >
+                  <span class="absolute left-2 top-2 rounded bg-black/55 px-2 py-1 text-[9px]"
+                    >NEEDS ASSET</span
+                  ><button
+                    class="absolute left-1/2 top-1/2 grid size-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-foreground"
+                  >
+                    <svg class="ml-0.5 size-5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="m8 5 11 7-11 7Z" />
+                    </svg>
+                  </button>
+                </div>
+                <a
+                  href="#"
+                  class="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white"
+                  ><svg
+                    class="size-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M12 3v12" />
+                    <path d="m7 10 5 5 5-5" />
+                    <path d="M5 21h14" /></svg
+                  >Baixar vídeo sem áudio</a
+                >
+                <section class="mt-4 rounded-xl border border-border p-4">
+                  <h4 class="text-sm font-semibold">Outros arquivos</h4>
+                  <div class="mt-2 divide-y divide-border text-sm">
+                    <div class="flex min-h-12 items-center justify-between">
+                      <span>Vídeo com áudio</span><span class="text-xs underline">Baixar</span>
+                    </div>
+                    <div class="flex min-h-12 items-center justify-between">
+                      <span>Narração · MP3</span><span class="text-xs underline">Baixar</span>
+                    </div>
+                    <div class="flex min-h-12 items-center justify-between">
+                      <span>Legendas · .srt</span><span class="text-xs underline">Baixar</span>
+                    </div>
+                    <div class="flex min-h-12 items-center justify-between">
+                      <span>Transcrição / roteiro</span><span class="text-xs">Abrir ↓</span>
+                    </div>
+                  </div>
+                </section>
+                <section class="mt-4 rounded-xl border border-border p-4">
+                  <div class="flex items-center justify-between gap-3">
+                    <h4 class="text-sm font-semibold">Transcrição / roteiro</h4>
+                    <button class="text-xs text-muted-foreground underline underline-offset-4">
+                      Copiar
+                    </button>
+                  </div>
+                  <p class="mt-2 text-sm leading-6">
+                    <span class="font-medium">[Abertura]</span> Quer mostrar que está com Solla?
+                  </p>
+                  <p class="mt-2 text-sm leading-6">
+                    <span class="font-medium">[Passo 1]</span> Entre no site e vá até a seção de
+                    cards.
+                  </p>
+                  <p class="mt-2 text-sm leading-6">
+                    <span class="font-medium">[Passo 2]</span> Escolha um modelo, coloque seu nome
+                    ou sua foto e crie seu card.
+                  </p>
+                </section>
+                <section class="mt-4 rounded-xl border border-border p-4">
+                  <h4 class="text-xs font-medium text-muted-foreground">
+                    Publicação na biblioteca
+                  </h4>
+                  <div class="mt-2">
+                    <span
+                      class="inline-flex h-5 items-center rounded-full bg-primary px-2 text-xs text-white"
+                      >Publicado</span
+                    >
+                  </div>
+                  <p class="mt-2 text-xs leading-5 text-muted-foreground">
+                    Despublicar tira este reel da lista, sem apagar os arquivos.
+                  </p>
+                  <button
+                    class="mt-3 min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm font-medium"
+                  >
+                    Despublicar reel
+                  </button>
+                </section>
+                <p
+                  class="mt-3 rounded-lg bg-muted px-3 py-2 text-xs leading-5 text-muted-foreground"
+                >
+                  Nada é publicado no Instagram por esta tela.
+                </p>
+              </div>
+              <nav
+                class="grid h-[68px] grid-cols-5 border-t border-border bg-background pt-2 text-[10px] text-muted-foreground"
+              >
+                <div class="grid place-items-center">⌂<span>Início</span></div>
+                <div class="grid place-items-center">⌖<span>Municípios</span></div>
+                <div class="grid place-items-center">◉<span>Atualizações</span></div>
+                <div class="grid place-items-center">□<span>Agenda</span></div>
+                <div class="grid place-items-center text-primary">•••<span>Mais</span></div>
+              </nav>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- CENAS 05–07 — ESTADOS -->
+      <section id="estados" aria-labelledby="estados-title">
+        <div class="mb-4">
+          <p class="text-xs font-semibold text-primary">CENAS 05–07 · ESTADOS CRÍTICOS</p>
+          <h2 id="estados-title" class="mt-1 text-xl font-semibold tracking-tight">
+            Sem becos sem saída
+          </h2>
+        </div>
+        <div class="grid gap-5 lg:grid-cols-3">
+          <article
+            class="overflow-hidden rounded-xl border border-border bg-background frame-shadow"
+          >
+            <div class="border-b border-border bg-muted/50 px-4 py-3">
+              <p class="text-xs font-semibold text-primary">05 · Lista vazia</p>
+            </div>
+            <div class="grid min-h-[360px] place-items-center p-6 text-center">
+              <div class="max-w-xs">
+                <div
+                  class="mx-auto grid size-11 place-items-center rounded-full bg-muted text-muted-foreground"
+                >
+                  <svg
+                    class="size-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect x="4" y="2" width="12" height="20" rx="2" />
+                    <path d="m10 9 4 3-4 3Z" />
+                  </svg>
+                </div>
+                <h3 class="mt-4 text-base font-semibold">Nenhum reel produzido ainda</h3>
+                <p class="mt-2 text-sm leading-6 text-muted-foreground">
+                  Quando um reel for aprovado e publicado na biblioteca, ele aparece aqui para a
+                  assessoria.
+                </p>
+                <p class="mt-4 text-xs text-muted-foreground">
+                  Sem CTA: a produção acontece fora desta tela.
+                </p>
+              </div>
+            </div>
+          </article>
+          <article
+            class="overflow-hidden rounded-xl border border-border bg-background frame-shadow"
+          >
+            <div class="border-b border-border bg-muted/50 px-4 py-3">
+              <p class="text-xs font-semibold text-primary">06 · Só vídeo mudo</p>
+            </div>
+            <div class="p-5">
+              <div class="flex items-center gap-2">
+                <span class="rounded-full bg-primary px-2 py-0.5 text-xs text-white">Publicado</span
+                ><span class="text-xs text-muted-foreground">Cards · 00:28</span>
+              </div>
+              <h3 class="mt-2 text-base font-medium">Como criar seu card de apoio</h3>
+              <a
+                href="#"
+                class="mt-4 flex min-h-12 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-white"
+                >Baixar vídeo sem áudio</a
+              >
+              <div class="mt-3 divide-y divide-border rounded-lg border border-border">
+                <div class="flex min-h-14 items-center gap-3 bg-muted/35 px-3 opacity-65">
+                  <div class="flex-1">
+                    <p class="text-sm font-medium">Vídeo com áudio</p>
+                    <p class="text-xs text-muted-foreground">Ainda não disponível</p>
+                  </div>
+                  <span class="text-xs">Indisponível</span>
+                </div>
+                <div class="flex min-h-14 items-center gap-3 bg-muted/35 px-3 opacity-65">
+                  <div class="flex-1">
+                    <p class="text-sm font-medium">Narração · MP3</p>
+                    <p class="text-xs text-muted-foreground">A narração será adicionada depois.</p>
+                  </div>
+                  <span class="text-xs">Indisponível</span>
+                </div>
+                <div class="flex min-h-14 items-center gap-3 bg-muted/35 px-3 opacity-65">
+                  <div class="flex-1">
+                    <p class="text-sm font-medium">Legendas · .srt</p>
+                    <p class="text-xs text-muted-foreground">A legenda ainda não foi gerada.</p>
+                  </div>
+                  <span class="text-xs">Indisponível</span>
+                </div>
+              </div>
+            </div>
+          </article>
+          <article
+            class="overflow-hidden rounded-xl border border-border bg-background frame-shadow"
+          >
+            <div class="border-b border-border bg-muted/50 px-4 py-3">
+              <p class="text-xs font-semibold text-primary">07 · Reel despublicado</p>
+            </div>
+            <div class="p-5">
+              <div class="flex items-center gap-2">
+                <span class="rounded-full border border-border px-2 py-0.5 text-xs"
+                  >Despublicado</span
+                ><span class="text-xs text-muted-foreground">Acesso interno preservado</span>
+              </div>
+              <h3 class="mt-3 text-base font-medium">Como criar seu card de apoio</h3>
+              <div class="mt-4 rounded-lg bg-muted p-3">
+                <p class="text-sm font-medium">Fora da lista</p>
+                <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                  Este reel não aparece na biblioteca, mas os arquivos continuam guardados e
+                  acessíveis por este link interno.
+                </p>
+              </div>
+              <section class="mt-4 rounded-xl border border-border p-4">
+                <h4 class="text-xs font-medium text-muted-foreground">Publicação na biblioteca</h4>
+                <p class="mt-2 text-xs leading-5 text-muted-foreground">
+                  Republicar devolve o reel à lista. Nenhum arquivo será recriado.
+                </p>
+                <button
+                  class="mt-3 min-h-11 w-full rounded-lg bg-primary px-3 text-sm font-semibold text-white"
+                >
+                  Republicar reel
+                </button>
+              </section>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <footer class="border-t border-stone-300 pt-6 text-xs leading-5 text-stone-600">
+        <p>
+          <strong>Decisão visual:</strong> capa 9:16 domina a lista; no detalhe, o player confirma e
+          o download do vídeo sem áudio domina. Secundários ficam agrupados e nunca recebem
+          vermelho.
+        </p>
+        <p class="mt-1">
+          <strong>NEEDS ASSET:</strong> capas e MP4 reais de cada reel. Os blocos cinza são
+          placeholders explícitos; nenhum dado de terceiro foi usado.
+        </p>
+        <p class="mt-1">
+          <strong>Em aberto no gate:</strong> quem opera o kill switch e se o link direto do
+          despublicado permanece acessível. Esta proposta representa a recomendação A/A do plano.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
