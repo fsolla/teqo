@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — Separar falas por pessoa</title>
+    <style type="text/tailwindcss">
+      @theme {
+        --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+        --color-background: #ffffff;
+        --color-foreground: #1c1917;
+        --color-card: #ffffff;
+        --color-primary: #c51414;
+        --color-primary-foreground: #ffffff;
+        --color-secondary: #f5f5f4;
+        --color-secondary-foreground: #292524;
+        --color-muted: #f4f4f5;
+        --color-muted-foreground: #6b7280;
+        --color-border: rgb(28 25 23 / 12%);
+        --color-input: #d6d3d1;
+        --color-destructive: #b42318;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      .icon {
+        width: 1rem;
+        height: 1rem;
+        stroke-width: 2;
+      }
+      .icon-sm {
+        width: 0.875rem;
+        height: 0.875rem;
+        stroke-width: 2;
+      }
+      .btn {
+        display: inline-flex;
+        min-height: 2.5rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        line-height: 1;
+      }
+      .btn-primary {
+        background: #c51414;
+        color: white;
+        border: 1px solid #c51414;
+      }
+      .btn-outline {
+        background: white;
+        color: #292524;
+        border: 1px solid #d6d3d1;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: #292524;
+        border: 1px solid transparent;
+      }
+      .field {
+        min-height: 2.75rem;
+        width: 100%;
+        border: 1px solid #d6d3d1;
+        border-radius: 0.5rem;
+        background: white;
+        padding: 0.625rem 0.75rem;
+        outline: none;
+      }
+      .field:focus {
+        border-color: #c51414;
+        box-shadow: 0 0 0 3px rgb(197 20 20 / 18%);
+      }
+      .scene-label {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+        color: #57534e;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+      .scene-label::after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: #d6d3d1;
+      }
+      .desktop-frame {
+        width: 1280px;
+        min-height: 720px;
+        overflow: hidden;
+        border: 1px solid #d6d3d1;
+        border-radius: 14px;
+        background: white;
+        box-shadow: 0 18px 45px rgb(28 25 23 / 10%);
+      }
+      .mobile-frame {
+        width: 390px;
+        min-height: 790px;
+        overflow: hidden;
+        border: 1px solid #d6d3d1;
+        border-radius: 28px;
+        background: white;
+        box-shadow: 0 18px 45px rgb(28 25 23 / 12%);
+      }
+      .speaker-block {
+        border: 1px solid rgb(28 25 23 / 12%);
+        border-radius: 0.75rem;
+        overflow: hidden;
+        background: white;
+      }
+      .speaker-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        border-bottom: 1px solid rgb(28 25 23 / 12%);
+        background: #fafaf9;
+        padding: 0.625rem 0.75rem;
+      }
+      .seg {
+        display: grid;
+        grid-template-columns: 3.25rem 1fr;
+        gap: 0.75rem;
+        width: 100%;
+        padding: 0.55rem 0.75rem;
+        text-align: left;
+      }
+      .seg:hover,
+      .seg-active {
+        background: #f4f4f5;
+      }
+      .chip {
+        display: inline-flex;
+        min-height: 1.75rem;
+        align-items: center;
+        gap: 0.375rem;
+        border-radius: 0.375rem;
+        background: #f4f4f5;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-stone-100 text-foreground antialiased">
+    <svg aria-hidden="true" class="absolute size-0 overflow-hidden">
+      <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </symbol>
+      <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="m6 4 14 8-14 8z" />
+      </symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" />
+      </symbol>
+      <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 21a8 8 0 0 1 16 0" />
+      </symbol>
+      <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 11v5M12 8h.01" />
+      </symbol>
+      <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="m18 6-12 12M6 6l12 12" />
+      </symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="m9 18 6-6-6-6" />
+      </symbol>
+      <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="m15 18-6-6 6-6" />
+      </symbol>
+      <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
+        <path d="M5 21h14" />
+      </symbol>
+      <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M4 6h16M7 12h10M10 18h4" />
+      </symbol>
+    </svg>
+
+    <main class="mx-auto w-max max-w-none px-10 py-10">
+      <header class="mb-8 max-w-3xl">
+        <p class="text-sm font-semibold text-primary">Teqo · acervo de comunicação</p>
+        <h1 class="mt-1 text-2xl font-semibold tracking-tight">Separar falas por pessoa</h1>
+        <p class="mt-2 text-sm leading-6 text-muted-foreground">
+          Referência hi-fi para agrupamentos acústicos e identificação humana. O produto nunca
+          sugere nem infere quem falou.
+        </p>
+      </header>
+
+      <!-- CENA 1 -->
+      <section class="mb-12" aria-labelledby="scene-1">
+        <h2 id="scene-1" class="scene-label">
+          Cena 1 · Desktop — detalhe com transcrição separada por falante
+        </h2>
+        <div class="desktop-frame">
+          <header class="flex min-h-11 items-center gap-3 border-b border-border px-4">
+            <span class="text-muted-foreground">☰</span>
+            <div>
+              <p class="text-sm font-semibold">Gravação enviada</p>
+              <p class="text-xs text-muted-foreground">Acervo</p>
+            </div>
+          </header>
+          <div class="p-6">
+            <button class="btn btn-ghost -ml-2">
+              <svg class="icon"><use href="#i-back" /></svg>Voltar ao acervo
+            </button>
+            <div class="mt-4 flex items-start justify-between">
+              <div>
+                <h3 class="text-lg font-semibold">Título da gravação</h3>
+                <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa · —:—:—</p>
+              </div>
+              <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-700"
+                >Pronto</span
+              >
+            </div>
+            <div class="mt-5 grid grid-cols-[minmax(0,1.05fr)_minmax(430px,.95fr)] gap-6">
+              <div>
+                <div class="relative grid aspect-video place-items-center rounded-lg bg-stone-900">
+                  <button
+                    class="grid size-16 place-items-center rounded-full bg-white text-stone-950 shadow-lg"
+                  >
+                    <svg class="h-7 w-7 translate-x-0.5"><use href="#i-play" /></svg>
+                  </button>
+                  <div
+                    class="absolute inset-x-4 bottom-3 flex items-center gap-3 text-xs text-white"
+                  >
+                    <span>00:00</span>
+                    <div class="h-1 flex-1 rounded-full bg-white/30">
+                      <div class="h-full w-[22%] rounded-full bg-white"></div>
+                    </div>
+                    <span>—:—:—</span>
+                  </div>
+                </div>
+                <button class="btn btn-primary mt-3">
+                  <svg class="icon"><use href="#i-download" /></svg>Baixar
+                </button>
+                <div class="mt-4 flex gap-2 rounded-lg border border-border bg-muted/50 p-3">
+                  <svg class="icon mt-0.5 shrink-0 text-muted-foreground">
+                    <use href="#i-info" />
+                  </svg>
+                  <p class="text-xs leading-5 text-muted-foreground">
+                    Os falantes são agrupados automaticamente pelo áudio. A identificação de cada
+                    pessoa é feita pela equipe.
+                  </p>
+                </div>
+              </div>
+              <section aria-label="Transcrição por falante">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-xs font-medium text-muted-foreground">TRANSCRIÇÃO POR FALANTE</h4>
+                  <span class="text-xs text-muted-foreground">Clique para posicionar</span>
+                </div>
+                <div class="mt-2 space-y-3">
+                  <article class="speaker-block">
+                    <header class="speaker-head">
+                      <div class="flex items-center gap-2">
+                        <span class="grid size-7 place-items-center rounded-full bg-muted"
+                          ><svg class="icon-sm"><use href="#i-user" /></svg
+                        ></span>
+                        <div>
+                          <h5 class="text-sm font-semibold">Falante 1</h5>
+                          <p class="text-[11px] text-muted-foreground">
+                            Agrupamento sem identificação
+                          </p>
+                        </div>
+                      </div>
+                      <button class="btn btn-outline">
+                        <svg class="icon-sm"><use href="#i-edit" /></svg>Identificar falante
+                      </button>
+                    </header>
+                    <button class="seg seg-active">
+                      <span class="text-xs tabular-nums text-primary">00:00</span
+                      ><span class="text-sm leading-5"
+                        >Texto transcrito deste agrupamento aparece neste trecho.</span
+                      ></button
+                    ><button class="seg">
+                      <span class="text-xs tabular-nums text-muted-foreground">00:38</span
+                      ><span class="text-sm leading-5"
+                        >Outra fala da mesma voz permanece no mesmo agrupamento.</span
+                      >
+                    </button>
+                  </article>
+                  <article class="speaker-block">
+                    <header class="speaker-head">
+                      <div class="flex items-center gap-2">
+                        <span
+                          class="grid size-7 place-items-center rounded-full bg-primary/10 text-primary"
+                          ><svg class="icon-sm"><use href="#i-user" /></svg
+                        ></span>
+                        <div>
+                          <h5 class="text-sm font-semibold">Nome do falante</h5>
+                          <p class="text-[11px] text-muted-foreground">
+                            Identificação feita pela equipe
+                          </p>
+                        </div>
+                      </div>
+                      <button class="btn btn-outline">
+                        <svg class="icon-sm"><use href="#i-edit" /></svg>Editar identificação
+                      </button>
+                    </header>
+                    <button class="seg">
+                      <span class="text-xs tabular-nums text-muted-foreground">00:18</span
+                      ><span class="text-sm leading-5"
+                        >O nome aplicado identifica todas as falas deste agrupamento.</span
+                      >
+                    </button>
+                  </article>
+                  <article class="speaker-block">
+                    <header class="speaker-head">
+                      <div class="flex items-center gap-2">
+                        <span class="grid size-7 place-items-center rounded-full bg-muted"
+                          ><svg class="icon-sm"><use href="#i-user" /></svg
+                        ></span>
+                        <div>
+                          <h5 class="text-sm font-semibold">Falante 3</h5>
+                          <p class="text-[11px] text-muted-foreground">
+                            Agrupamento sem identificação
+                          </p>
+                        </div>
+                      </div>
+                      <button class="btn btn-outline">
+                        <svg class="icon-sm"><use href="#i-edit" /></svg>Identificar falante
+                      </button>
+                    </header>
+                    <button class="seg">
+                      <span class="text-xs tabular-nums text-muted-foreground">01:04</span
+                      ><span class="text-sm leading-5"
+                        >Texto transcrito do terceiro agrupamento.</span
+                      >
+                    </button>
+                  </article>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 2 -->
+      <section class="mb-12" aria-labelledby="scene-2">
+        <h2 id="scene-2" class="scene-label">Cena 2 · Desktop — diálogo para rotular o falante</h2>
+        <div class="desktop-frame relative grid place-items-center bg-stone-200/70 p-8">
+          <div class="absolute inset-0 bg-stone-950/25"></div>
+          <section
+            class="relative w-full max-w-md rounded-xl border border-border bg-white p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="identify-title"
+          >
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 id="identify-title" class="text-base font-semibold">Identificar falante</h3>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  Dê um nome ao agrupamento “Falante 1”.
+                </p>
+              </div>
+              <button
+                class="grid size-8 place-items-center rounded-md hover:bg-muted"
+                aria-label="Fechar"
+              >
+                <svg class="icon"><use href="#i-x" /></svg>
+              </button>
+            </div>
+            <div class="mt-5 rounded-lg border border-border bg-muted/50 p-3">
+              <div class="flex gap-2">
+                <svg class="icon mt-0.5 shrink-0 text-muted-foreground"><use href="#i-info" /></svg>
+                <p class="text-xs leading-5 text-muted-foreground">
+                  Ouça um trecho e informe quem é a pessoa. O acervo não sugere nem identifica
+                  pessoas automaticamente.
+                </p>
+              </div>
+            </div>
+            <div class="mt-5">
+              <label for="speaker-name" class="text-sm font-medium">Nome do falante</label
+              ><input
+                id="speaker-name"
+                class="field mt-1.5 text-sm"
+                placeholder="Digite o nome do falante"
+              />
+              <p class="mt-2 text-xs text-muted-foreground">
+                O nome será aplicado a todas as falas deste agrupamento nesta gravação.
+              </p>
+            </div>
+            <div class="mt-6 flex justify-end gap-2">
+              <button class="btn btn-outline">Cancelar</button
+              ><button class="btn btn-primary">Salvar identificação</button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- CENA 3 -->
+      <section class="mb-12" aria-labelledby="scene-3">
+        <h2 id="scene-3" class="scene-label">
+          Cena 3 · Desktop — lista com faceta “Pessoa” aplicada
+        </h2>
+        <div class="desktop-frame flex">
+          <aside class="flex w-[220px] shrink-0 flex-col border-r border-border bg-stone-50 p-3">
+            <div class="flex h-12 items-center gap-2 px-2 font-semibold">
+              <span class="grid size-8 place-items-center rounded-lg bg-primary text-sm text-white"
+                >T</span
+              >
+              Campanha
+            </div>
+            <nav class="mt-3 space-y-1 text-sm">
+              <div class="rounded-md px-3 py-2 text-muted-foreground">Início</div>
+              <div class="rounded-md px-3 py-2 text-muted-foreground">Municípios</div>
+              <div class="rounded-md px-3 py-2 text-muted-foreground">Pessoas</div>
+              <div
+                class="rounded-md bg-white px-3 py-2 font-medium text-primary ring-1 ring-border"
+              >
+                Comunicação
+              </div>
+              <div class="ml-5 border-l border-border py-1 pl-3">
+                <div
+                  class="rounded-md bg-white px-3 py-2 font-medium text-primary ring-1 ring-border"
+                >
+                  Acervo
+                </div>
+                <div class="px-3 py-2 text-muted-foreground">Cortes</div>
+              </div>
+            </nav>
+          </aside>
+          <div class="min-w-0 flex-1">
+            <header class="flex min-h-11 items-center gap-3 border-b border-border px-4">
+              <span class="text-muted-foreground">☰</span>
+              <div>
+                <p class="text-sm font-semibold">Acervo</p>
+                <p class="text-xs text-muted-foreground">Comunicação</p>
+              </div>
+            </header>
+            <div class="p-6">
+              <div>
+                <h3 class="text-xl font-semibold">Acervo de falas</h3>
+                <p class="mt-1 text-sm text-muted-foreground">Gravações enviadas</p>
+              </div>
+              <div class="mt-5 inline-flex rounded-lg bg-secondary p-1 text-sm">
+                <span class="rounded-md px-3 py-2 text-muted-foreground">Falas da Câmara</span
+                ><span
+                  class="rounded-md bg-white px-3 py-2 font-medium shadow-sm ring-1 ring-border"
+                  >Gravações enviadas</span
+                >
+              </div>
+              <label class="mt-5 block text-sm font-medium">Buscar nas gravações enviadas</label>
+              <div
+                class="mt-1.5 flex min-h-11 items-center gap-2 rounded-lg border border-input px-3"
+              >
+                <svg class="icon text-muted-foreground"><use href="#i-search" /></svg
+                ><span class="text-sm text-muted-foreground"
+                  >Busque por palavra ou trecho da transcrição…</span
+                >
+              </div>
+              <div class="mt-2 flex gap-2">
+                <button class="btn btn-outline h-8 min-h-8 px-3">
+                  <svg class="icon-sm"><use href="#i-filter" /></svg>Pessoa: Nome do falante
+                  <svg class="icon-sm"><use href="#i-x" /></svg>
+                </button>
+              </div>
+              <div class="mt-5 space-y-3">
+                <article class="rounded-xl border border-border p-4">
+                  <div class="grid grid-cols-[112px_minmax(0,1fr)_auto] gap-4">
+                    <div class="aspect-video rounded-lg bg-stone-200"></div>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <h4 class="text-sm font-semibold">Título da gravação</h4>
+                        <span
+                          class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700"
+                          >Pronto</span
+                        >
+                      </div>
+                      <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa · —:—:—</p>
+                      <p class="mt-2 text-sm leading-5">
+                        Trecho da transcrição encontrado pela busca geral.
+                      </p>
+                      <div class="mt-2 flex items-center gap-2 text-xs">
+                        <span class="chip"
+                          ><svg class="icon-sm"><use href="#i-user" /></svg>Nome do falante</span
+                        ><span class="text-muted-foreground">aparece nesta gravação</span>
+                      </div>
+                    </div>
+                    <button class="btn btn-outline self-center">
+                      Abrir<svg class="icon-sm"><use href="#i-chevron" /></svg>
+                    </button>
+                  </div>
+                </article>
+                <article class="rounded-xl border border-border p-4">
+                  <div class="grid grid-cols-[112px_minmax(0,1fr)_auto] gap-4">
+                    <div class="aspect-video rounded-lg bg-stone-200"></div>
+                    <div>
+                      <h4 class="text-sm font-semibold">Outra gravação enviada</h4>
+                      <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa · —:—:—</p>
+                      <p class="mt-2 text-sm leading-5">
+                        Outro trecho continua alcançável pela busca de texto.
+                      </p>
+                      <div class="mt-2 flex items-center gap-2 text-xs">
+                        <span class="chip"
+                          ><svg class="icon-sm"><use href="#i-user" /></svg>Nome do falante</span
+                        ><span class="text-muted-foreground">aparece nesta gravação</span>
+                      </div>
+                    </div>
+                    <button class="btn btn-outline self-center">
+                      Abrir<svg class="icon-sm"><use href="#i-chevron" /></svg>
+                    </button>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 4 -->
+      <section class="mb-12" aria-labelledby="scene-4">
+        <h2 id="scene-4" class="scene-label">
+          Cena 4 · Desktop — agrupamento aproximado / qualidade ruim
+        </h2>
+        <div class="desktop-frame p-8">
+          <div class="mx-auto max-w-4xl">
+            <div>
+              <h3 class="text-lg font-semibold">Título da gravação</h3>
+              <p class="mt-1 text-xs text-muted-foreground">Transcrição por falante</p>
+            </div>
+            <div class="mt-5 flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <svg class="icon mt-0.5 shrink-0 text-amber-800"><use href="#i-info" /></svg>
+              <div>
+                <h4 class="text-sm font-semibold text-amber-950">
+                  A separação por falante pode estar imprecisa
+                </h4>
+                <p class="mt-1 text-sm leading-5 text-amber-900">
+                  O agrupamento é automático e aproximado. Ruído e falas sobrepostas podem colocar
+                  trechos no agrupamento errado. A equipe continua responsável por identificar cada
+                  falante.
+                </p>
+              </div>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-4">
+              <article class="speaker-block">
+                <header class="speaker-head">
+                  <div>
+                    <h5 class="text-sm font-semibold">Falante 1</h5>
+                    <p class="text-[11px] text-muted-foreground">Agrupamento sem identificação</p>
+                  </div>
+                  <button class="btn btn-outline">
+                    <svg class="icon-sm"><use href="#i-edit" /></svg>Identificar falante
+                  </button>
+                </header>
+                <button class="seg">
+                  <span class="text-xs text-muted-foreground">00:00</span
+                  ><span class="text-sm leading-5"
+                    >Trecho agrupado automaticamente pelo áudio.</span
+                  >
+                </button>
+              </article>
+              <article class="speaker-block">
+                <header class="speaker-head">
+                  <div>
+                    <h5 class="text-sm font-semibold">Falante 2</h5>
+                    <p class="text-[11px] text-muted-foreground">Agrupamento sem identificação</p>
+                  </div>
+                  <button class="btn btn-outline">
+                    <svg class="icon-sm"><use href="#i-edit" /></svg>Identificar falante
+                  </button>
+                </header>
+                <button class="seg">
+                  <span class="text-xs text-muted-foreground">00:19</span
+                  ><span class="text-sm leading-5"
+                    >Outro trecho pode conter sobreposição de vozes.</span
+                  >
+                </button>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 5 -->
+      <section aria-labelledby="scene-5">
+        <h2 id="scene-5" class="scene-label">
+          Cena 5 · Mobile (390 px) — detalhe com agrupamentos e identificação
+        </h2>
+        <div class="mobile-frame relative pb-20">
+          <header class="flex min-h-14 items-center gap-3 bg-primary px-4 text-white">
+            <svg class="icon"><use href="#i-back" /></svg>
+            <div>
+              <h3 class="text-sm font-semibold">Gravação enviada</h3>
+              <p class="text-xs text-white/75">Acervo</p>
+            </div>
+          </header>
+          <div class="p-4">
+            <div>
+              <h4 class="text-base font-semibold">Título da gravação</h4>
+              <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa · —:—:—</p>
+            </div>
+            <div class="relative mt-4 grid aspect-video place-items-center rounded-lg bg-stone-900">
+              <button class="grid size-12 place-items-center rounded-full bg-white">
+                <svg class="h-5 w-5 translate-x-0.5"><use href="#i-play" /></svg>
+              </button>
+            </div>
+            <div class="mt-3 flex gap-2 rounded-lg border border-border bg-muted/50 p-3">
+              <svg class="icon mt-0.5 shrink-0 text-muted-foreground"><use href="#i-info" /></svg>
+              <p class="text-xs leading-5 text-muted-foreground">
+                Agrupamento automático e aproximado. A identificação é feita pela equipe.
+              </p>
+            </div>
+            <section class="mt-5">
+              <div class="flex items-center justify-between">
+                <h5 class="text-xs font-medium text-muted-foreground">TRANSCRIÇÃO POR FALANTE</h5>
+                <span class="text-[11px] text-muted-foreground">Toque para posicionar</span>
+              </div>
+              <div class="mt-2 space-y-3">
+                <article class="speaker-block">
+                  <header class="border-b border-border bg-stone-50 p-3">
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-2">
+                        <span class="grid size-7 place-items-center rounded-full bg-muted"
+                          ><svg class="icon-sm"><use href="#i-user" /></svg
+                        ></span>
+                        <h6 class="text-sm font-semibold">Falante 1</h6>
+                      </div>
+                      <button class="btn btn-outline h-9 min-h-9 px-2">
+                        <svg class="icon-sm"><use href="#i-edit" /></svg>Identificar
+                      </button>
+                    </div>
+                  </header>
+                  <button class="seg seg-active">
+                    <span class="text-xs text-primary">00:00</span
+                    ><span class="text-sm leading-5"
+                      >Texto transcrito deste agrupamento.</span
+                    ></button
+                  ><button class="seg">
+                    <span class="text-xs text-muted-foreground">00:38</span
+                    ><span class="text-sm leading-5">Outra fala da mesma voz.</span>
+                  </button>
+                </article>
+                <article class="speaker-block">
+                  <header class="border-b border-border bg-stone-50 p-3">
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-2">
+                        <span
+                          class="grid size-7 place-items-center rounded-full bg-primary/10 text-primary"
+                          ><svg class="icon-sm"><use href="#i-user" /></svg
+                        ></span>
+                        <div>
+                          <h6 class="text-sm font-semibold">Nome do falante</h6>
+                          <p class="text-[10px] text-muted-foreground">Identificado pela equipe</p>
+                        </div>
+                      </div>
+                      <button
+                        class="grid size-9 place-items-center rounded-lg border border-input bg-white"
+                        aria-label="Editar identificação"
+                      >
+                        <svg class="icon-sm"><use href="#i-edit" /></svg>
+                      </button>
+                    </div>
+                  </header>
+                  <button class="seg">
+                    <span class="text-xs text-muted-foreground">00:18</span
+                    ><span class="text-sm leading-5"
+                      >Todas as falas deste agrupamento recebem o mesmo nome.</span
+                    >
+                  </button>
+                </article>
+              </div>
+            </section>
+          </div>
+          <nav
+            class="absolute inset-x-0 bottom-0 grid h-16 grid-cols-5 border-t border-border bg-white pt-2 text-[10px] text-muted-foreground"
+          >
+            <span class="text-center">Início</span><span class="text-center">Pessoas</span
+            ><span class="text-center text-primary">Comunicação</span
+            ><span class="text-center">Agenda</span><span class="text-center">Mais</span>
+          </nav>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
