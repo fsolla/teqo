@@ -7,7 +7,7 @@
  */
 
 import { slugify } from '../../src/lib/slug.ts'
-import { assertKnownFlags, SKILL_AUTO_FLAG } from './agent-session.mjs'
+import { assertKnownFlags, MODEL_VARIANT, SKILL_AUTO_FLAG } from './agent-session.mjs'
 
 /**
  * Prefix of every `/plan-issue` planning-worktree branch (`pnpm worktree
@@ -47,9 +47,10 @@ export const OPENCODE_PRESET_MODEL =
  * `--zen` → Muse Spark 1.3 Free.
  * The directive picks `WORKTREE_MODEL_MAP[flag]` when
  * a single flag is present, otherwise falls back to `OPENCODE_PRESET_MODEL`.
- * No `--variant` is emitted (the TUI yargs rejects the flag — OPS95):
- * variants live on the machine's global config, selectable via Ctrl+T
- * (`opencode run --variant max` remains the headless path).
+ * No `--variant` is emitted in the directive (the TUI yargs rejects the flag —
+ * OPS95). OPS127: the session is created in variant `max` — it rides the
+ * `POST /session` body and the `opencode run` argv of the driver/headless
+ * (`MODEL_VARIANT` in `./agent-session.mjs`), never the directive/attach.
  */
 export const WORKTREE_MODEL_MAP = {
   cheap: 'cheapestinference/deepseek-v4-flash',
@@ -327,7 +328,10 @@ export const opencodeLaunchDirective = ({
 export const OPENCODE_HEADLESS_COMMAND = 'bug-fix'
 
 /**
- * opencode `run` argv for the auto-unblock agent (model + report, no shell).
+ * opencode `run` argv for the auto-unblock agent (model + variant + report, no
+ * shell). `--variant` (OPS127) rides before the positional report — after it,
+ * it would be swallowed into the report argument. Unlike the attached TUI,
+ * `opencode run` accepts the flag.
  * @param {{ model?: string, report?: string, command?: string }} [options]
  */
 export const opencodeHeadlessArgs = ({
@@ -341,7 +345,18 @@ export const opencodeHeadlessArgs = ({
   if (typeof report !== 'string' || report.trim().length === 0) {
     throw new Error('opencodeHeadlessArgs: report vazio')
   }
-  return ['opencode', 'run', '--model', model, '--auto', '--command', command, report]
+  return [
+    'opencode',
+    'run',
+    '--model',
+    model,
+    '--variant',
+    MODEL_VARIANT,
+    '--auto',
+    '--command',
+    command,
+    report,
+  ]
 }
 
 /**

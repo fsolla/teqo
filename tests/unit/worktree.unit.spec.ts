@@ -293,7 +293,7 @@ describe('opencodeLaunchDirective (terminal-only agent-session launch, OPS26 + O
     )
   })
 
-  it('never emits --variant — the TUI yargs rejects it (OPS95); variants live on machine config (Ctrl+T)', () => {
+  it('never emits --variant in the directive — the TUI yargs rejects it (OPS95); the variant rides the session body/driver (OPS127)', () => {
     for (const model of Object.values(WORKTREE_MODEL_MAP)) {
       for (const purpose of ['next', 'plan', 'new']) {
         const directive = opencodeLaunchDirective({ dir, purpose, terminal: true, model })
@@ -432,6 +432,8 @@ describe('opencodeHeadlessArgs + headlessDirective (OPS106 auto-unblock)', () =>
       'run',
       '--model',
       'deepseek/deepseek-flash',
+      '--variant',
+      'max',
       '--auto',
       '--command',
       OPENCODE_HEADLESS_COMMAND,

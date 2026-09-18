@@ -43,9 +43,12 @@
  *                              (`opencode attach -s <sessionID>`) — fechar o
  *                              terminal NÃO encerra o run; encerrar é
  *                              `pnpm agent:session stop`. OPS95 continua: sem
- *                              `--variant`; variantes ficam na config global da
- *                              máquina (Ctrl+T). Presets e mapa em
- *                              scripts/lib/worktree.mjs; ciclo de vida em
+ *                              `--variant` na diretiva nem no attach (o yargs do
+ *                              TUI rejeita o flag). OPS127: a sessão nasce na
+ *                              variante `max` — ela viaja no body do
+ *                              `POST /session` e no argv do `opencode run` do
+ *                              driver/headless, nunca na diretiva. Presets e mapa
+ *                              em scripts/lib/worktree.mjs; ciclo de vida em
  *                              scripts/lib/agent-session.mjs.
  *                              OPS122: `--auto` (opt-out do GATE da skill)
  *                              transposta para a invocation; flag desconhecida
@@ -988,10 +991,10 @@ if (!subcommand) {
   console.log('    opencode command, ou a função `worktree()` de .agents/shell/worktree.sh);')
   console.log('    no terminal (TEQO_WORKTREE_TERMINAL=1) imprime também a diretiva')
   console.log(
-    '    `launch node scripts/agent-session.mjs start --purpose=next --dir=<dir> --model <preset|map> --issue=<N>` (OPS26+OPS33+OPS93+OPS95+OPS110:',
+    '    `launch node scripts/agent-session.mjs start --purpose=next --dir=<dir> --model <preset|map> --issue=<N>` (OPS26+OPS33+OPS93+OPS95+OPS110+OPS127:',
   )
   console.log(
-    `    abre a sessão com ${OPENCODE_PRESET_MODEL} (sem flag) ou com o mapa ${[
+    `    abre a sessão (variante \`max\`, herdada pelo TUI anexado) com ${OPENCODE_PRESET_MODEL} (sem flag) ou com o mapa ${[
       ...WORKTREE_MODEL_FLAGS,
     ]
       .map((flag) => `--${flag}=${WORKTREE_MODEL_MAP[flag]}`)

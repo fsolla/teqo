@@ -15,6 +15,7 @@ import {
   formatSessionList,
   isLoopbackHost,
   isStaleLock,
+  MODEL_VARIANT,
   nearestAcceptedFlag,
   parseModelRef,
   parseServerState,
@@ -325,9 +326,9 @@ describe('parseModelRef + buildCreateSessionBody (OPS122 — o modelo chega à S
     expect(() => parseModelRef(null as unknown as string)).toThrow()
   })
 
-  it('builds the POST /session body with the model ref, or an empty body without one', () => {
+  it('builds the POST /session body with the model ref + variant, or an empty body without one', () => {
     expect(buildCreateSessionBody({ model: 'opencode-go/deepseek-v4.1-flash' })).toEqual({
-      model: { providerID: 'opencode-go', id: 'deepseek-v4.1-flash' },
+      model: { providerID: 'opencode-go', id: 'deepseek-v4.1-flash', variant: MODEL_VARIANT },
     })
     expect(buildCreateSessionBody({ model: null })).toEqual({})
     expect(buildCreateSessionBody({ model: undefined })).toEqual({})
@@ -336,9 +337,8 @@ describe('parseModelRef + buildCreateSessionBody (OPS122 — o modelo chega à S
     expect(() => buildCreateSessionBody({ model: 'no-slash' })).toThrow(/inválido|provider/)
   })
 
-  it('never emits a variant (OPS95 — variants live on the machine config)', () => {
-    const body = buildCreateSessionBody({ model: 'opencode-go/deepseek-v4.1-flash' })
-    expect(body.model).not.toHaveProperty('variant')
+  it('pins max as the single launch variant (OPS127 — the TUI inherits, no attach flag)', () => {
+    expect(MODEL_VARIANT).toBe('max')
   })
 })
 
@@ -475,6 +475,8 @@ describe('driverArgs + attachArgs (o argv verificado ao vivo)', () => {
       '/work/OPS110',
       '--model',
       'deepseek/deepseek-flash',
+      '--variant',
+      'max',
       '--auto',
       '--command',
       'work-issue',
@@ -502,6 +504,8 @@ describe('driverArgs + attachArgs (o argv verificado ao vivo)', () => {
       '/work/fix',
       '--model',
       'm',
+      '--variant',
+      'max',
       '--auto',
       '--command',
       'bug-fix',
@@ -553,11 +557,12 @@ describe('driverArgs + attachArgs (o argv verificado ao vivo)', () => {
     expect(() => attachArgs({ url: 'http://x', sessionID: 'ses_a', dir: '' })).toThrow(/dir/)
   })
 
-  it('attach resumes exactly the same session/dir (never passes --auto/--model)', () => {
+  it('attach resumes exactly the same session/dir (never passes --auto/--model/--variant)', () => {
     const argv = attachArgs({ url: 'http://127.0.0.1:4199', sessionID: 'ses_abc', dir: '/work/x' })
     expect(argv).toEqual(['attach', 'http://127.0.0.1:4199', '--dir', '/work/x', '-s', 'ses_abc'])
     expect(argv).not.toContain('--auto')
     expect(argv).not.toContain('--model')
+    expect(argv).not.toContain('--variant')
   })
 
   it('serverArgs is loopback-flagged and never enables --mdns', () => {
