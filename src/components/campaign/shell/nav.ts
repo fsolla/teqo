@@ -29,7 +29,7 @@ import {
   LEADER_CONTACTS_HOME,
 } from '@/lib/campaignPaths'
 import {
-  canReadSpeechCatalog,
+  canReadCommunicationCatalog,
   isStaffCampaignRole,
   isUnrestrictedCampaignRole,
 } from '@/lib/campaignRoles'
@@ -138,8 +138,8 @@ export const getCampaignNav = (role: CampaignUser['role']): CampaignNavItem[] =>
   return staffNav.filter((item) => {
     if (item.href === '/campanha/apoiadores') return canAccessSupporterArea(role)
     if (item.href === '/campanha/assessores') return isUnrestrictedCampaignRole(role)
-    // C154 — advisor has no speech catalog access; coordinator/candidate do.
-    if (item.href === CAMPAIGN_COMMUNICATION_HOME) return canReadSpeechCatalog(role)
+    // C154 — advisor has no communication vertical access; coordinator/candidate do.
+    if (item.href === CAMPAIGN_COMMUNICATION_HOME) return canReadCommunicationCatalog(role)
     return true
   })
 }

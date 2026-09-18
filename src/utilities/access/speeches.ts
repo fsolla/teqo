@@ -4,7 +4,7 @@
 
 import type { Access } from 'payload'
 
-import { canReadSpeechCatalog } from '@/lib/campaignRoles'
+import { canReadCommunicationCatalog } from '@/lib/campaignRoles'
 import {
   getFreshCampaignUser,
   isCampaignUnrestricted,
@@ -20,7 +20,7 @@ export const canReadSpeech: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  return currentUser ? canReadSpeechCatalog(currentUser.role) : false
+  return currentUser ? canReadCommunicationCatalog(currentUser.role) : false
 }
 
 /** Manual facet correction — unrestricted roles (and Payload admin) only. */
@@ -40,7 +40,7 @@ export const canDeleteSpeechCut: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  return currentUser ? canReadSpeechCatalog(currentUser.role) : false
+  return currentUser ? canReadCommunicationCatalog(currentUser.role) : false
 }
 
 /**
@@ -54,7 +54,7 @@ export const canReadSpeechCut: Access = async ({ req }) => {
   if (isPayloadAdmin(req.user)) return true
 
   const currentUser = await getFreshCampaignUser(req)
-  return currentUser && canReadSpeechCatalog(currentUser.role)
+  return currentUser && canReadCommunicationCatalog(currentUser.role)
     ? true
     : { status: { equals: 'published' } }
 }

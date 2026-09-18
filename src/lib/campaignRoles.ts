@@ -18,9 +18,11 @@ export const isUnrestrictedCampaignRole = (role: CampaignRole): boolean =>
   role === 'coordinator' || role === 'candidate'
 
 /**
- * Speech catalog readers (C153): the communication assessor plus the
- * unrestricted roles. Deliberately NOT part of `isStaffCampaignRole` — the
- * communicator does not inherit any staff area, only the catalog vertical.
+ * Communication vertical readers (C153/C193): the communication assessor plus
+ * the unrestricted roles. Owns the gate of the whole vertical — acervo de
+ * falas, biblioteca de cortes and the private reel library. Deliberately NOT
+ * part of `isStaffCampaignRole` — the communicator does not inherit any staff
+ * area, only the communication vertical.
  */
-export const canReadSpeechCatalog = (role: CampaignRole): boolean =>
+export const canReadCommunicationCatalog = (role: CampaignRole): boolean =>
   role === 'communicator' || isUnrestrictedCampaignRole(role)
