@@ -33,6 +33,10 @@ export const E2E_CURATED_SPECS = [
   // covering the new URL contract, and a migration always classifies the PR
   // as high-risk (curated only).
   'campaignSpeechCut',
+  // C191-runtime — deliberate: the real-Chromium PNG smoke is the only run
+  // exercising the export dimensions/size guard; the e2e manifest maps only
+  // `src/**`, so without the curated entry a scripts/ diff would never wake it.
+  'campaignChartPng',
 ]
 
 /**

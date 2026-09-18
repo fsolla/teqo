@@ -29,6 +29,7 @@ import {
  * HIGH_RISK_EXACT below is intentional — this group is the exact map.
  */
 export const SCRIPTS_SPEC_PINNED = [
+  'scripts/build-chart-from-data.mjs',
   'scripts/check-test-locations.mjs',
   'scripts/cityReportSnapshot.mjs',
   'scripts/institutionSnapshot.mjs',

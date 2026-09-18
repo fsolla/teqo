@@ -112,6 +112,9 @@ O builder **recusa** em vez de desenhar algo enganoso:
 - **"N pontos (> 7)"** → agrupe/remova categorias com a pessoa.
 - **"pizza não é gerada"** → ofereça barras horizontais.
 - **Número pt-BR:** `1.234,56` é lido como 1234,56; `1,5` como 1,5.
+  **Separador único é sempre decimal:** `1.234` é lido como 1,234 e `1.500`
+  como 1,5 — para milhar, escreva os dois separadores (`1.234,56`) ou nenhum
+  (`1234`). Separador repetido (`1.234.567`) é recusado como não numérico.
 - **PNG grande:** a guarda de 8MB falha fechado; simplifique o gráfico.
 
 ## Referências

@@ -28,6 +28,17 @@ describe('parseNumber — pt-BR/en amounts, never invents a zero', () => {
     expect(parseNumber('')).toBeNull()
     expect(parseNumber(null)).toBeNull()
   })
+
+  it('reads a single separator as the decimal — the documented pt-BR rule', () => {
+    expect(parseNumber('1.234')).toBe(1.234)
+    expect(parseNumber('1,234')).toBe(1.234)
+    expect(parseNumber('1.500')).toBe(1.5)
+  })
+
+  it('refuses a repeated separator instead of guessing the thousands', () => {
+    expect(parseNumber('1.234.567')).toBeNull()
+    expect(parseNumber('1,234,567')).toBeNull()
+  })
 })
 
 describe('parseInput — the data as it came', () => {
@@ -85,6 +96,15 @@ describe('parseInput — the data as it came', () => {
   it('reads a bare number as an unlabeled single measure', () => {
     const dataset = parseInput({ text: '72', format: 'txt' })
     expect(dataset.rows).toEqual([{ label: '', value: 72 }])
+    expect(dataset.issues).toEqual([])
+  })
+
+  it('does not flag a single separator as ambiguous (the rule is intentional)', () => {
+    const dataset = parseInput({ text: 'Ilhéus 1.234\nItabuna 1,500\n', format: 'txt' })
+    expect(dataset.rows).toEqual([
+      { label: 'Ilhéus', value: 1.234 },
+      { label: 'Itabuna', value: 1.5 },
+    ])
     expect(dataset.issues).toEqual([])
   })
 })
