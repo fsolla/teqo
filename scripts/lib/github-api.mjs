@@ -23,6 +23,9 @@ const DEFAULT_GRAPHQL_URL = 'https://api.github.com/graphql'
 const DEFAULT_REPOSITORY = 'fsolla/teqo'
 const USER_AGENT = 'teqo-agent-scripts/1.0 (github)'
 const RETRYABLE_STATUSES = new Set([502, 503, 504])
+const AUTH_401_HINT =
+  'token rejeitado — GITHUB_TOKEN inválido/expirado ou revogado? Rode `gh auth status` e rotacione ' +
+  'o PAT (um token inválido no ambiente também sombreia o login do `gh`).'
 
 /**
  * @typedef {object} GithubApiOptions
@@ -131,7 +134,10 @@ export const createApi = ({
       }
       if (response.status === 404 && method === 'GET') return null
       if (!response.ok) {
-        throw new Error(`GitHub API ${method} ${path} → ${response.status}: ${text.slice(0, 400)}`)
+        const hint = response.status === 401 ? `${AUTH_401_HINT} ` : ''
+        throw new Error(
+          `GitHub API ${method} ${path} → ${response.status}: ${hint}${text.slice(0, 400)}`,
+        )
       }
       if (!text) return null
       try {
@@ -155,7 +161,8 @@ export const createApi = ({
     }
     const text = await response.text()
     if (!response.ok) {
-      throw new Error(`GitHub GraphQL → ${response.status}: ${text.slice(0, 400)}`)
+      const hint = response.status === 401 ? `${AUTH_401_HINT} ` : ''
+      throw new Error(`GitHub GraphQL → ${response.status}: ${hint}${text.slice(0, 400)}`)
     }
     const parsed = JSON.parse(text)
     const firstError = parsed?.errors?.[0]
