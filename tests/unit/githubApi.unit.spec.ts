@@ -487,6 +487,33 @@ describe('github-api (issue tracker layer)', () => {
     await expect(api.getPullRequestAutoMergeStatus(99)).rejects.toThrow(/não encontrado/)
   })
 
+  it('surfaces an actionable hint when GITHUB_TOKEN is rejected (401, no retry)', async () => {
+    let calls = 0
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async () => {
+        calls += 1
+        return ok({ message: 'Bad credentials' }, 401)
+      },
+    })
+    const error = await api.listIssues().then(
+      () => null,
+      (reason: Error) => reason,
+    )
+    expect(error?.message).toContain('401')
+    expect(error?.message).toContain('GITHUB_TOKEN')
+    expect(error?.message).toContain('gh auth status')
+    expect(calls).toBe(1)
+  })
+
+  it('adds the same 401 hint to GraphQL credential failures', async () => {
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async () => ok({ message: 'Bad credentials' }, 401),
+    })
+    await expect(api.getPullRequestAutoMergeStatus(1)).rejects.toThrow(/GITHUB_TOKEN/)
+  })
+
   it('convertPullRequestToDraft sends the GraphQL draft mutation with the node id', async () => {
     const calls: FetchCall[] = []
     const api = createApi({
