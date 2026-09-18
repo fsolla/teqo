@@ -67,6 +67,12 @@ describe('parseSpeechListParams', () => {
     expect(state.topics).toBeUndefined()
     expect(state.durations).toBeUndefined()
   })
+
+  it('parses the theme mode and ignores any other value (C192)', () => {
+    expect(parseSpeechListParams({ q: 'SUS', mode: 'tema' }).mode).toBe('tema')
+    expect(parseSpeechListParams({ q: 'SUS', mode: 'termo' }).mode).toBeUndefined()
+    expect(parseSpeechListParams({ q: 'SUS', mode: 'exato' }).mode).toBeUndefined()
+  })
 })
 
 describe('serializeCanonicalSpeechListSearchParams', () => {
@@ -84,6 +90,18 @@ describe('serializeCanonicalSpeechListSearchParams', () => {
     expect(params.getAll('topic')).toEqual(['saude', 'educacao'])
     expect(params.getAll('duration')).toEqual(['curta'])
   })
+
+  it('serializes mode=tema only alongside a query (C192)', () => {
+    expect(
+      serializeCanonicalSpeechListSearchParams(
+        parseSpeechListParams({ q: 'SUS', mode: 'tema' }),
+      ).toString(),
+    ).toBe('q=SUS&mode=tema')
+    // A theme without a query canonicalizes away.
+    expect(
+      serializeCanonicalSpeechListSearchParams(parseSpeechListParams({ mode: 'tema' })).toString(),
+    ).toBe('')
+  })
 })
 
 describe('buildSpeechListHref', () => {
@@ -92,6 +110,15 @@ describe('buildSpeechListHref', () => {
       '/campanha/comunicacao/acervo?q=SUS&page=2',
     )
     expect(buildSpeechListHref(parseSpeechListParams({}), 1)).toBe('/campanha/comunicacao/acervo')
+  })
+
+  it('keeps the exact-search deep link byte-identical (C192)', () => {
+    expect(buildSpeechListHref(parseSpeechListParams({ q: 'SUS' }), 1)).toBe(
+      '/campanha/comunicacao/acervo?q=SUS',
+    )
+    expect(buildSpeechListHref(parseSpeechListParams({ q: 'SUS', mode: 'tema' }), 1)).toBe(
+      '/campanha/comunicacao/acervo?q=SUS&mode=tema',
+    )
   })
 })
 
@@ -106,6 +133,15 @@ describe('resolveSpeechListUrl', () => {
     const resolved = resolveSpeechListUrl({ q: 'saude', page: '9' }, 2)
     expect(resolved.state.page).toBe(2)
     expect(resolved.redirectHref).toContain('page=2')
+  })
+
+  it('canonicalizes a theme mode without a query into a redirect (C192)', () => {
+    const withQuery = resolveSpeechListUrl({ q: 'SUS', mode: 'tema' })
+    expect(withQuery.state.mode).toBe('tema')
+    expect(withQuery.redirectHref).toBeUndefined()
+
+    const empty = resolveSpeechListUrl({ mode: 'tema' })
+    expect(empty.redirectHref).toBe('/campanha/comunicacao/acervo')
   })
 })
 

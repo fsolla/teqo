@@ -21,12 +21,29 @@ type SpeechSearchableRecord = {
 }
 
 /**
- * C180 — pure mirror of the textual `where` branch
+ * C180 — pure mirror of a SINGLE textual `where` branch
  * (`speechListFilters.buildSpeechTextBranches`): normalized `searchText` LIKE
- * the normalized query, OR a raw official keyword containing the query.
+ * the normalized term, OR a raw official keyword containing the term.
  * `keywords` compare case-insensitively (accent still significant) to match the
- * ILIKE `%q%` Postgres runs. Adding or removing a branch there means changing
- * this predicate and its test in the same commit.
+ * ILIKE `%term%` Postgres runs. Adding or removing a branch there means
+ * changing this predicate and its test in the same commit. An empty term never
+ * matches (a branch with no term cannot surface a row).
+ */
+export const speechMatchesSearchTerm = (
+  speech: SpeechSearchableRecord,
+  term: string | undefined,
+): boolean => {
+  const trimmed = term?.trim()
+  if (!trimmed) return false
+  if (normalizeForSearch(speech.searchText ?? '').includes(normalizeForSearch(trimmed))) return true
+  const lowered = trimmed.toLowerCase()
+  return (speech.keywords ?? []).some((keyword) => keyword.toLowerCase().includes(lowered))
+}
+
+/**
+ * C180 — the search query mirror: empty/missing query is an unconditional match
+ * (no textual filter), otherwise any of its terms. C192 reuses
+ * `speechMatchesSearchTerm` for the expanded theme terms.
  */
 export const speechMatchesSearchQuery = (
   speech: SpeechSearchableRecord,
@@ -34,9 +51,7 @@ export const speechMatchesSearchQuery = (
 ): boolean => {
   const trimmed = query?.trim()
   if (!trimmed) return true
-  if (normalizeForSearch(speech.searchText ?? '').includes(normalizeForSearch(trimmed))) return true
-  const lowered = trimmed.toLowerCase()
-  return (speech.keywords ?? []).some((keyword) => keyword.toLowerCase().includes(lowered))
+  return speechMatchesSearchTerm(speech, trimmed)
 }
 
 /**
