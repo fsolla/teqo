@@ -11,6 +11,7 @@
  */
 
 import { chromium } from '@playwright/test'
+import { stat } from 'node:fs/promises'
 
 const MM_TO_PX = 96 / 25.4
 export const A4_HEIGHT_PX = Math.round(297 * MM_TO_PX)
@@ -20,6 +21,38 @@ export const PAGE_FIT_TOLERANCE_PX = 10
 export const A4_PAGE_BUDGET_PX = A4_HEIGHT_PX + PAGE_FIT_TOLERANCE_PX
 
 export const launchPdfBrowser = () => chromium.launch()
+
+/**
+ * Exact-size PNG of a screen-media document (C191 Instagram canvas). The
+ * `.canvas` element is authored at the output size, so the viewport and the
+ * clip are the same rectangle; no A4 constant is touched. Chromium PNGs are
+ * already sRGB. Fails closed when the file exceeds `maxBytes` (default 8 MB).
+ */
+export const screenshotHtmlPng = async (
+  browser,
+  { html, width, height, outPath, maxBytes = 8 * 1024 * 1024 },
+) => {
+  const page = await browser.newPage()
+  try {
+    await page.setViewportSize({ width, height })
+    await page.setContent(html, { waitUntil: 'load' })
+    await page.evaluate(() => document.fonts.ready)
+    await page.screenshot({
+      path: outPath,
+      type: 'png',
+      clip: { x: 0, y: 0, width, height },
+    })
+  } finally {
+    await page.close()
+  }
+  const { size } = await stat(outPath)
+  if (size > maxBytes) {
+    throw new Error(
+      `PNG ${outPath} tem ${size} bytes (> ${maxBytes}); simplifique o gráfico ou reduza pontos.`,
+    )
+  }
+  return { size }
+}
 
 /** Every `[data-page]` taller than the budget, in document order. */
 const measurePageOverflows = (page, budgetPx = A4_PAGE_BUDGET_PX) =>

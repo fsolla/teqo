@@ -43,3 +43,57 @@ describe('emitHtmlPairPdf', () => {
     expect(typeof emitHtmlPairPdf).toBe('function')
   })
 })
+
+import { mkdtemp, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
+import { screenshotHtmlPng } from '../../scripts/lib/buildPdf.mjs'
+
+// C191: the PNG path is additive to the Chromium owner. The guard is on the
+// critical path (a >8 MB export must fail closed), so it is pinned with a fake
+// browser — no real Chromium launch in the unit suite.
+
+const fakeBrowser = (calls: string[]) => ({
+  newPage: async () => ({
+    setViewportSize: async (size: { width: number; height: number }) =>
+      calls.push(`viewport:${size.width}x${size.height}`),
+    setContent: async () => calls.push('content'),
+    evaluate: async () => calls.push('fonts'),
+    screenshot: async (options: { clip: { width: number; height: number } }) =>
+      calls.push(`shot:${options.clip.width}x${options.clip.height}`),
+    close: async () => calls.push('close'),
+  }),
+})
+
+describe('screenshotHtmlPng', () => {
+  it('sets the exact viewport, clips the canvas and closes the page', async () => {
+    const calls: string[] = []
+    const outPath = join(await mkdtemp(join(tmpdir(), 'c191-')), 'out.png')
+    await writeFile(outPath, 'x')
+    const result = await screenshotHtmlPng(fakeBrowser(calls), {
+      html: '<html></html>',
+      width: 1080,
+      height: 1350,
+      outPath,
+    })
+    expect(result.size).toBe(1)
+    expect(calls).toContain('viewport:1080x1350')
+    expect(calls).toContain('shot:1080x1350')
+    expect(calls.at(-1)).toBe('close')
+  })
+
+  it('fails closed when the PNG exceeds maxBytes', async () => {
+    const outPath = join(await mkdtemp(join(tmpdir(), 'c191-')), 'big.png')
+    await writeFile(outPath, 'x'.repeat(10))
+    await expect(
+      screenshotHtmlPng(fakeBrowser([]), {
+        html: '',
+        width: 1080,
+        height: 1080,
+        outPath,
+        maxBytes: 4,
+      }),
+    ).rejects.toThrow(/> 4/)
+  })
+})
