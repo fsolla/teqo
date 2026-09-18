@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — C196 · Sistema visual dos reels tutoriais</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-primary: var(--pt-red);
+        --color-primary-foreground: #ffffff;
+        --color-muted: #ebe9e9;
+        --color-muted-foreground: var(--campaign-muted);
+        --color-border: var(--campaign-line);
+      }
+      [data-theme='campaign-site'] {
+        --background: #fff8f2;
+        --foreground: #000000;
+        --pt-red: #a21c1c;
+        --pt-red-dark: #47130e;
+        --pt-yellow: #ffe607;
+        --campaign-cream: #fff8f2;
+        --campaign-muted: #6c615e;
+        --campaign-surface: #f9faff;
+        --campaign-band: #ebe9e9;
+        --campaign-line: rgb(0 0 0 / 12%);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      .brexter {
+        /* Brexter is the approved face; Impact is the standalone gate fallback. */
+        font-family: Brexter, Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+        font-weight: 900;
+      }
+      .artifact-grid {
+        background-color: #ebe9e9;
+        background-image: radial-gradient(rgb(71 19 14 / 10%) 0.7px, transparent 0.7px);
+        background-size: 18px 18px;
+      }
+      .frame {
+        position: relative;
+        aspect-ratio: 9 / 16;
+        overflow: hidden;
+        background: #fff8f2;
+        container-type: inline-size;
+      }
+      .crop-preview {
+        container-type: inline-size;
+      }
+      .frame-shadow {
+        box-shadow: 0 22px 62px rgb(71 19 14 / 18%);
+      }
+      .site-placeholder {
+        background:
+          linear-gradient(180deg, rgb(255 255 255 / 6%), transparent 24%),
+          linear-gradient(145deg, #dedbd8, #aaa39e);
+      }
+      .safe-line {
+        border-color: rgb(255 230 7 / 82%);
+      }
+      .crop-line {
+        border-color: rgb(255 255 255 / 78%);
+      }
+      .logo-lockup {
+        letter-spacing: -0.055em;
+        transform: skew(-4deg);
+      }
+      .cursor {
+        filter: drop-shadow(0 2px 2px rgb(0 0 0 / 35%));
+      }
+    </style>
+  </head>
+  <body class="artifact-grid min-h-screen text-foreground antialiased">
+    <main class="mx-auto max-w-[1500px] px-4 py-10 md:px-8 md:py-14">
+      <header class="max-w-4xl">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="rounded-full bg-(--pt-red) px-2.5 py-1 text-xs font-semibold text-white"
+            >C196 · gate hi-fi</span
+          >
+          <span
+            class="rounded-full border border-black/10 bg-(--campaign-cream) px-2.5 py-1 text-xs font-medium"
+            >Vídeo 1080 × 1920 · 9:16</span
+          >
+          <span
+            class="rounded-full border border-black/10 bg-(--campaign-cream) px-2.5 py-1 text-xs font-medium"
+            >Sem áudio · legenda queimada</span
+          >
+        </div>
+        <h1 class="mt-4 text-3xl font-semibold tracking-tight">Tutorial que se entende no mudo</h1>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+          Um sistema de frames para ensinar o site com ritmo, contraste e marca — sem competir com a
+          gravação. O vermelho enquadra a história; amarelo aponta a ação; Brexter carrega o
+          impacto.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2 text-xs">
+          <a
+            href="#sequencia"
+            class="rounded-full border border-black/10 bg-white px-3 py-1.5 font-medium"
+            >01–03 · Sequência</a
+          >
+          <a
+            href="#safe-zone"
+            class="rounded-full border border-black/10 bg-white px-3 py-1.5 font-medium"
+            >04 · Safe zone</a
+          >
+          <a
+            href="#capa"
+            class="rounded-full border border-black/10 bg-white px-3 py-1.5 font-medium"
+            >05 · Capa e recortes</a
+          >
+          <a
+            href="#spec"
+            class="rounded-full border border-black/10 bg-white px-3 py-1.5 font-medium"
+            >06 · Sistema</a
+          >
+        </div>
+      </header>
+
+      <!-- SEQUÊNCIA -->
+      <section id="sequencia" class="mt-16" aria-labelledby="sequencia-title">
+        <div class="mb-5">
+          <p class="text-xs font-semibold text-(--pt-red)">CENAS 01–03 · LINHA DO TEMPO</p>
+          <h2 id="sequencia-title" class="mt-1 text-xl font-semibold tracking-tight">
+            Hook → gesto → ação
+          </h2>
+          <p class="mt-1 text-sm text-muted-foreground">
+            Frames em escala. Tudo crítico permanece no miolo seguro.
+          </p>
+        </div>
+        <div class="grid gap-8 md:grid-cols-3">
+          <!-- HOOK -->
+          <article>
+            <div class="mb-3 flex items-end justify-between">
+              <div>
+                <p class="text-sm font-semibold">01 · Hook</p>
+                <p class="text-xs text-muted-foreground">0–1,5s</p>
+              </div>
+              <span class="rounded-full bg-black px-2 py-1 text-[10px] font-semibold text-white"
+                >ABERTURA</span
+              >
+            </div>
+            <div
+              class="frame frame-shadow mx-auto w-full max-w-[360px] rounded-[22px] border border-black/15 bg-(--pt-red)"
+            >
+              <div
+                class="absolute inset-0 bg-[radial-gradient(circle_at_85%_18%,rgb(255_230_7/28%),transparent_22%),linear-gradient(160deg,#a21c1c_0%,#8f1717_55%,#47130e_100%)]"
+              ></div>
+              <div
+                class="absolute -right-[12%] top-[15%] size-[52%] rotate-12 rounded-[30%] border-[14px] border-(--pt-yellow)/90"
+              ></div>
+              <div class="absolute left-[6%] right-[6%] top-[14%]">
+                <div
+                  class="inline-flex rounded-full bg-(--pt-yellow) px-[4%] py-[1.7%] text-[3.5cqw] font-black text-black"
+                >
+                  FAÇA PARTE
+                </div>
+                <h3
+                  class="brexter mt-[8%] max-w-[88%] text-[12cqw] leading-[0.88] uppercase tracking-[-0.045em] text-white"
+                >
+                  Seu apoio<br />vira card<br /><span class="text-(--pt-yellow)">em segundos.</span>
+                </h3>
+              </div>
+              <div class="absolute inset-x-[6%] bottom-[15%] flex items-end justify-between gap-3">
+                <p class="max-w-[58%] text-[3.8cqw] font-semibold leading-[1.2] text-white">
+                  Veja como criar o seu pelo celular.
+                </p>
+                <div class="text-right">
+                  <p class="logo-lockup brexter text-[8cqw] leading-none text-white">SOLLA</p>
+                  <p class="text-[2.6cqw] font-bold text-(--pt-yellow)">13 13</p>
+                </div>
+              </div>
+              <span
+                class="absolute bottom-[5%] left-[6%] rounded bg-black/45 px-2 py-1 text-[2.5cqw] text-white"
+                >NEEDS ASSET · logo oficial</span
+              >
+            </div>
+            <p class="mx-auto mt-3 max-w-[360px] text-xs leading-5 text-muted-foreground">
+              <strong class="text-foreground">Movimento:</strong> título entra em dois beats; aro
+              amarelo expande 96% → 100%. Sem zoom de site ainda.
+            </p>
+          </article>
+
+          <!-- PASSO -->
+          <article>
+            <div class="mb-3 flex items-end justify-between">
+              <div>
+                <p class="text-sm font-semibold">02 · Passo</p>
+                <p class="text-xs text-muted-foreground">demonstração</p>
+              </div>
+              <span
+                class="rounded-full bg-(--pt-yellow) px-2 py-1 text-[10px] font-black text-black"
+                >1 / 3</span
+              >
+            </div>
+            <div
+              class="frame frame-shadow mx-auto w-full max-w-[360px] rounded-[22px] border border-black/15 bg-black"
+            >
+              <div class="site-placeholder absolute inset-0">
+                <div class="absolute inset-x-0 top-0 h-[7%] bg-(--pt-red)">
+                  <div
+                    class="absolute left-[6%] top-1/2 h-[18%] w-[28%] -translate-y-1/2 rounded-full bg-white/75"
+                  ></div>
+                  <div
+                    class="absolute right-[6%] top-1/2 size-[7%] -translate-y-1/2 rounded-full bg-white/25"
+                  ></div>
+                </div>
+                <div class="absolute inset-x-[6%] top-[11%] text-center">
+                  <p class="text-[2.4cqw] font-black tracking-[0.1em] text-(--pt-red) uppercase">
+                    Faça parte
+                  </p>
+                  <h4 class="mt-[1%] text-[5cqw] font-black leading-tight">
+                    Mostre que você está com Solla
+                  </h4>
+                  <p
+                    class="mx-auto mt-[2%] max-w-[86%] text-[2.7cqw] leading-[1.3] text-(--campaign-muted)"
+                  >
+                    Escolha um modelo, coloque seu nome ou sua foto e baixe seu card.
+                  </p>
+                </div>
+                <div class="absolute inset-x-[6%] top-[28%] flex gap-[3%]">
+                  <div
+                    class="aspect-square flex-1 rounded-[6%] border border-black/10 bg-(--campaign-cream) p-[3%]"
+                  >
+                    <div class="h-full rounded-[5%] bg-(--pt-red)"></div>
+                    <p class="mt-[3%] text-center text-[2.1cqw] font-bold">Card com seu nome</p>
+                  </div>
+                  <div
+                    class="aspect-square flex-1 rounded-[6%] border border-black/10 bg-white p-[3%] opacity-70"
+                  >
+                    <div class="h-full rounded-[5%] bg-stone-300"></div>
+                  </div>
+                </div>
+                <div
+                  class="absolute inset-x-[5%] bottom-[22%] rounded-[5%] bg-white p-[5%] shadow-xl ring-1 ring-black/10"
+                >
+                  <p class="text-[4.5cqw] font-black">Personalize com seu nome</p>
+                  <div
+                    class="mt-[4%] h-[10cqw] rounded-lg border border-black/20 px-[4%] py-[3%] text-[3.3cqw] text-black/60"
+                  >
+                    Seu nome
+                  </div>
+                  <div
+                    class="mt-[4%] h-[10cqw] rounded-lg bg-(--pt-red) pt-[3%] text-center text-[3.2cqw] font-bold text-white"
+                  >
+                    Criar meu card
+                  </div>
+                </div>
+              </div>
+              <!-- badge de passo -->
+              <div
+                class="absolute left-[6%] top-[15%] flex items-center gap-[2%] rounded-full bg-(--pt-yellow) px-[4%] py-[2%] text-[3.2cqw] font-black text-black shadow-lg"
+              >
+                <span
+                  class="grid size-[6cqw] place-items-center rounded-full bg-black text-[2.8cqw] text-white"
+                  >1</span
+                >Escolha um modelo
+              </div>
+              <!-- zoom target -->
+              <div
+                class="absolute left-[5%] top-[27%] aspect-square w-[47%] rounded-[7%] border-[3px] border-(--pt-yellow) shadow-[0_0_0_5px_rgb(255_230_7/18%)]"
+              ></div>
+              <svg
+                class="cursor absolute left-[40%] top-[49%] w-[8%] text-white"
+                viewBox="0 0 24 30"
+                fill="currentColor"
+                stroke="#000"
+                stroke-width="1.4"
+              >
+                <path d="M3 2v22l6-6 4 9 4-2-4-9h8L3 2Z" />
+              </svg>
+              <div class="absolute inset-x-[6%] top-[60%] flex justify-center">
+                <p
+                  class="max-w-[90%] rounded-[4%] bg-black/86 px-[5%] py-[3.5%] text-center text-[4.1cqw] font-bold leading-[1.18] text-white shadow-xl"
+                >
+                  Toque em <span class="text-(--pt-yellow)">“Card com seu nome”</span>.
+                </p>
+              </div>
+              <div class="absolute bottom-[13%] right-[6%] text-right">
+                <p class="logo-lockup brexter text-[6cqw] leading-none text-white drop-shadow">
+                  SOLLA
+                </p>
+                <p class="text-[2.1cqw] font-black text-(--pt-yellow)">13 13</p>
+              </div>
+              <span
+                class="absolute bottom-[5%] left-[6%] rounded bg-black/55 px-2 py-1 text-[2.5cqw] text-white"
+                >NEEDS ASSET · captura real + logo</span
+              >
+            </div>
+            <p class="mx-auto mt-3 max-w-[360px] text-xs leading-5 text-muted-foreground">
+              <strong class="text-foreground">Câmera:</strong> zoom suave até 118% no tile; cursor
+              chega 180ms antes do clique; halo amarelo pulsa uma vez. A legenda fica a ~1160px no
+              arquivo final.
+            </p>
+          </article>
+
+          <!-- CTA -->
+          <article>
+            <div class="mb-3 flex items-end justify-between">
+              <div>
+                <p class="text-sm font-semibold">03 · Fechamento / CTA</p>
+                <p class="text-xs text-muted-foreground">últimos 2–3s</p>
+              </div>
+              <span class="rounded-full bg-black px-2 py-1 text-[10px] font-semibold text-white"
+                >FINAL</span
+              >
+            </div>
+            <div
+              class="frame frame-shadow mx-auto w-full max-w-[360px] rounded-[22px] border border-black/15 bg-(--campaign-cream)"
+            >
+              <div class="absolute inset-x-0 top-0 h-[47%] bg-(--pt-red)">
+                <div
+                  class="absolute -left-[10%] top-[22%] size-[55%] -rotate-12 rounded-[32%] border-[14px] border-(--pt-yellow)/90"
+                ></div>
+              </div>
+              <div class="absolute inset-x-[7%] top-[14%] text-center text-white">
+                <p class="text-[3cqw] font-black tracking-[0.12em] uppercase text-(--pt-yellow)">
+                  Seu card, sua voz
+                </p>
+                <h3 class="brexter mt-[4%] text-[12cqw] leading-[0.9] uppercase">
+                  Agora é<br />com você.
+                </h3>
+              </div>
+              <div
+                class="absolute inset-x-[7%] top-[51%] rounded-[6%] bg-white p-[7%] text-center shadow-[0_14px_40px_rgb(71_19_14/14%)] ring-1 ring-black/10"
+              >
+                <div
+                  class="mx-auto grid size-[14cqw] place-items-center rounded-full bg-(--pt-yellow)"
+                >
+                  <svg
+                    class="size-[7cqw]"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.3"
+                  >
+                    <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
+                    <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
+                  </svg>
+                </div>
+                <p class="mt-[5%] text-[4cqw] font-semibold">Acesse o site pelo</p>
+                <p class="brexter mt-[1%] text-[8cqw] leading-none uppercase text-(--pt-red)">
+                  link na bio
+                </p>
+                <p class="mt-[4%] text-[3cqw] leading-[1.35] text-(--campaign-muted)">
+                  Escolha seu modelo, crie e compartilhe.
+                </p>
+              </div>
+              <div class="absolute inset-x-[7%] bottom-[11%] flex items-end justify-between">
+                <p
+                  class="max-w-[52%] text-[2.8cqw] font-semibold leading-[1.3] text-(--pt-red-dark)"
+                >
+                  jorgesolla1313.com.br
+                </p>
+                <div class="text-right">
+                  <p class="logo-lockup brexter text-[7cqw] leading-none text-(--pt-red)">SOLLA</p>
+                  <p class="text-[2.5cqw] font-black">13 13</p>
+                </div>
+              </div>
+              <span
+                class="absolute bottom-[4%] left-[7%] rounded bg-black/75 px-2 py-1 text-[2.5cqw] text-white"
+                >NEEDS ASSET · logo oficial</span
+              >
+            </div>
+            <p class="mx-auto mt-3 max-w-[360px] text-xs leading-5 text-muted-foreground">
+              <strong class="text-foreground">Final:</strong> sem botão falso. “Link na bio” é a
+              única instrução; URL reforça a origem. Segura por 2s para leitura.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- SAFE ZONE -->
+      <section id="safe-zone" class="mt-20" aria-labelledby="safe-zone-title">
+        <div class="mb-5">
+          <p class="text-xs font-semibold text-(--pt-red)">CENA 04 · SAFE ZONE</p>
+          <h2 id="safe-zone-title" class="mt-1 text-xl font-semibold tracking-tight">
+            O Instagram ocupa as bordas; o tutorial ocupa o miolo
+          </h2>
+          <p class="mt-1 max-w-3xl text-sm text-muted-foreground">
+            Guias são apenas de produção e não aparecem no render final.
+          </p>
+        </div>
+        <div class="grid gap-8 lg:grid-cols-[400px_minmax(0,1fr)]">
+          <div
+            class="frame frame-shadow mx-auto w-full max-w-[400px] rounded-[22px] border border-black/15 bg-black"
+          >
+            <div class="site-placeholder absolute inset-0 opacity-85">
+              <div class="absolute inset-x-0 top-0 h-[7%] bg-(--pt-red)"></div>
+              <div class="absolute inset-x-[8%] top-[23%] h-[31%] rounded-[4%] bg-white/70"></div>
+            </div>
+            <div
+              class="absolute inset-x-[6%] top-[14%] bottom-[35%] border-2 border-dashed safe-line"
+            ></div>
+            <div class="absolute inset-x-0 top-0 h-[14%] bg-(--pt-red-dark)/72 p-[5%] text-white">
+              <p class="text-[3.4cqw] font-bold">~250px · topo</p>
+              <p class="mt-[1%] text-[2.5cqw] text-white/80">nome, áudio e chrome podem cobrir</p>
+            </div>
+            <div
+              class="absolute inset-x-0 bottom-0 h-[35%] bg-(--pt-red-dark)/78 p-[5%] text-white"
+            >
+              <p class="text-[3.4cqw] font-bold">~672px · base conservadora</p>
+              <p class="mt-[1%] max-w-[64%] text-[2.5cqw] leading-tight text-white/80">
+                legenda, descrição e botões do Instagram disputam esta área
+              </p>
+            </div>
+            <div class="absolute inset-y-[14%] left-0 w-[6%] bg-(--pt-yellow)/45"></div>
+            <div class="absolute inset-y-[14%] right-0 w-[6%] bg-(--pt-yellow)/45"></div>
+            <div class="absolute inset-x-[6%] top-[47%] flex justify-center">
+              <p
+                class="max-w-[88%] rounded-[4%] bg-black/88 px-[5%] py-[3.5%] text-center text-[4cqw] font-bold leading-[1.18] text-white"
+              >
+                Legenda entre <span class="text-(--pt-yellow)">1100–1250px</span>, até 900px de
+                largura.
+              </p>
+            </div>
+            <div
+              class="absolute left-[8%] top-[16%] rounded bg-(--pt-yellow) px-[3%] py-[1.5%] text-[2.7cqw] font-black"
+            >
+              MIOLO ÚTIL ~1080 × 1420
+            </div>
+          </div>
+          <div class="rounded-2xl border border-black/10 bg-(--campaign-cream) p-6 md:p-8">
+            <h3 class="text-lg font-semibold">Regras que o compositor não pode quebrar</h3>
+            <ol class="mt-5 space-y-5">
+              <li class="flex gap-4">
+                <span
+                  class="grid size-8 shrink-0 place-items-center rounded-full bg-(--pt-red) text-sm font-bold text-white"
+                  >1</span
+                >
+                <div>
+                  <p class="text-sm font-semibold">Gancho abaixo do topo crítico</p>
+                  <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                    A primeira linha começa depois de ~250px. Marca pode encostar mais na borda
+                    apenas como elemento redundante.
+                  </p>
+                </div>
+              </li>
+              <li class="flex gap-4">
+                <span
+                  class="grid size-8 shrink-0 place-items-center rounded-full bg-(--pt-red) text-sm font-bold text-white"
+                  >2</span
+                >
+                <div>
+                  <p class="text-sm font-semibold">Legenda curta, central e queimada</p>
+                  <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                    Uma ideia por bloco, até duas linhas, peso alto, branco sobre preto ≥86%.
+                    Palavras de ação recebem amarelo.
+                  </p>
+                </div>
+              </li>
+              <li class="flex gap-4">
+                <span
+                  class="grid size-8 shrink-0 place-items-center rounded-full bg-(--pt-red) text-sm font-bold text-white"
+                  >3</span
+                >
+                <div>
+                  <p class="text-sm font-semibold">Alvo visível antes do clique</p>
+                  <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                    Cursor sintético + halo amarelo. O zoom amplia a ação, sem cortar o elemento
+                    clicado nem desalinhá-lo.
+                  </p>
+                </div>
+              </li>
+              <li class="flex gap-4">
+                <span
+                  class="grid size-8 shrink-0 place-items-center rounded-full bg-(--pt-red) text-sm font-bold text-white"
+                  >4</span
+                >
+                <div>
+                  <p class="text-sm font-semibold">Rodapé não carrega instrução crítica</p>
+                  <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                    A base conservadora admite apenas marca redundante. CTA e resultado ficam acima
+                    dela.
+                  </p>
+                </div>
+              </li>
+            </ol>
+            <div class="mt-6 rounded-xl border border-(--pt-red)/25 bg-white p-4">
+              <p class="text-xs font-bold text-(--pt-red)">NEEDS ASSET</p>
+              <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                Captura real do site em viewport mobile, logo oficial transparente e, se aprovada no
+                futuro, foto oficial. Nenhum desses ativos foi inventado neste gate.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAPA -->
+      <section id="capa" class="mt-20" aria-labelledby="capa-title">
+        <div class="mb-5">
+          <p class="text-xs font-semibold text-(--pt-red)">CENA 05 · CAPA</p>
+          <h2 id="capa-title" class="mt-1 text-xl font-semibold tracking-tight">
+            Título no núcleo que todos os recortes preservam
+          </h2>
+          <p class="mt-1 text-sm text-muted-foreground">
+            Composição própria — não um frame aleatório do vídeo.
+          </p>
+        </div>
+        <div class="grid gap-8 xl:grid-cols-[400px_minmax(0,1fr)]">
+          <div
+            class="frame frame-shadow mx-auto w-full max-w-[400px] rounded-[22px] border border-black/15 bg-(--pt-red)"
+          >
+            <div
+              class="absolute inset-0 bg-[radial-gradient(circle_at_80%_25%,rgb(255_230_7/30%),transparent_22%),linear-gradient(160deg,#a21c1c,#47130e)]"
+            ></div>
+            <div
+              class="absolute -right-[9%] top-[18%] size-[48%] rotate-12 rounded-[30%] border-[14px] border-(--pt-yellow)"
+            ></div>
+            <!-- central 1080x1350 = 70.3125% height, centered -->
+            <div
+              class="absolute inset-x-0 top-[14.84375%] h-[70.3125%] border-y-2 border-dashed crop-line"
+            ></div>
+            <div class="absolute left-[7%] right-[7%] top-[22%]">
+              <span
+                class="inline-flex rounded-full bg-(--pt-yellow) px-[4%] py-[1.5%] text-[3cqw] font-black text-black"
+                >TUTORIAL DO SITE</span
+              >
+              <h3 class="brexter mt-[7%] text-[12cqw] leading-[0.88] uppercase text-white">
+                Crie seu<br />card de<br /><span class="text-(--pt-yellow)">apoio.</span>
+              </h3>
+              <p class="mt-[6%] max-w-[65%] text-[3.7cqw] font-semibold leading-[1.2] text-white">
+                Seu nome ou sua foto, direto pelo celular.
+              </p>
+            </div>
+            <div class="absolute inset-x-[7%] bottom-[18%] flex items-end justify-between">
+              <p class="rounded bg-black/40 px-[3%] py-[1.5%] text-[2.4cqw] text-white">#cards</p>
+              <div class="text-right">
+                <p class="logo-lockup brexter text-[7cqw] leading-none text-white">SOLLA</p>
+                <p class="text-[2.4cqw] font-black text-(--pt-yellow)">13 13</p>
+              </div>
+            </div>
+            <div
+              class="absolute left-[2%] top-[15.5%] rounded bg-white px-2 py-1 text-[2.5cqw] font-bold text-black"
+            >
+              RECORTE CENTRAL ~1080 × 1350
+            </div>
+            <span
+              class="absolute bottom-[4%] left-[7%] rounded bg-black/55 px-2 py-1 text-[2.5cqw] text-white"
+              >NEEDS ASSET · logo oficial</span
+            >
+          </div>
+          <div class="grid content-start gap-5 md:grid-cols-2">
+            <article class="rounded-2xl border border-black/10 bg-white p-5">
+              <div class="mb-3 flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-semibold">Feed 4:5</p>
+                  <p class="text-xs text-muted-foreground">1080 × 1350</p>
+                </div>
+                <span class="rounded-full bg-(--campaign-band) px-2 py-1 text-[10px] font-bold"
+                  >SOBREVIVE</span
+                >
+              </div>
+              <div
+                class="crop-preview relative mx-auto aspect-[4/5] max-w-[270px] overflow-hidden rounded-xl bg-[linear-gradient(155deg,#a21c1c,#47130e)] p-[7%] text-white"
+              >
+                <span
+                  class="inline-flex rounded-full bg-(--pt-yellow) px-[4%] py-[2%] text-[2.3cqw] font-black text-black"
+                  >TUTORIAL DO SITE</span
+                >
+                <p class="brexter mt-[9%] text-[9cqw] leading-[0.88] uppercase">
+                  Crie seu<br />card de<br /><span class="text-(--pt-yellow)">apoio.</span>
+                </p>
+                <p class="absolute bottom-[8%] right-[7%] logo-lockup brexter text-[5.5cqw]">
+                  SOLLA
+                </p>
+              </div>
+              <p class="mt-3 text-xs leading-5 text-muted-foreground">
+                Eyebrow, título inteiro e marca continuam visíveis. Copy auxiliar pode sair.
+              </p>
+            </article>
+            <article class="rounded-2xl border border-black/10 bg-white p-5">
+              <div class="mb-3 flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-semibold">Grade 1:1 / 3:4</p>
+                  <p class="text-xs text-muted-foreground">recorte central</p>
+                </div>
+                <span class="rounded-full bg-(--campaign-band) px-2 py-1 text-[10px] font-bold"
+                  >SOBREVIVE</span
+                >
+              </div>
+              <div
+                class="crop-preview relative mx-auto aspect-square max-w-[270px] overflow-hidden rounded-xl bg-[linear-gradient(155deg,#a21c1c,#47130e)] p-[7%] text-white"
+              >
+                <span
+                  class="inline-flex rounded-full bg-(--pt-yellow) px-[4%] py-[2%] text-[2.3cqw] font-black text-black"
+                  >TUTORIAL</span
+                >
+                <p class="brexter mt-[9%] text-[9cqw] leading-[0.88] uppercase">
+                  Crie seu<br />card de<br /><span class="text-(--pt-yellow)">apoio.</span>
+                </p>
+                <p class="absolute bottom-[7%] right-[7%] logo-lockup brexter text-[5.5cqw]">
+                  SOLLA
+                </p>
+              </div>
+              <p class="mt-3 text-xs leading-5 text-muted-foreground">
+                Título nunca depende do terço inferior. A marca reduz, mas não desaparece.
+              </p>
+            </article>
+            <div
+              class="md:col-span-2 rounded-xl border border-black/10 bg-(--campaign-cream) p-4 text-sm leading-6"
+            >
+              <strong>Hierarquia da capa:</strong> “Crie seu card de apoio” é a mensagem; “Tutorial
+              do site” só categoriza. Não usar screenshot legível como fundo — vira ruído na grade.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SISTEMA -->
+      <section id="spec" class="mt-20" aria-labelledby="spec-title">
+        <div class="mb-5">
+          <p class="text-xs font-semibold text-(--pt-red)">CENA 06 · SISTEMA VISUAL</p>
+          <h2 id="spec-title" class="mt-1 text-xl font-semibold tracking-tight">
+            Receita consistente, não vinheta pesada
+          </h2>
+        </div>
+        <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <article class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="text-xs font-bold text-(--pt-red)">TIPOGRAFIA</p>
+            <p class="brexter mt-4 text-4xl leading-[0.9] uppercase">Texto de<br />impacto.</p>
+            <p class="mt-4 text-sm leading-6 text-muted-foreground">
+              Brexter Bold só em hook, capa e CTA final. Inter no badge de passo e legendas.
+            </p>
+          </article>
+          <article class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="text-xs font-bold text-(--pt-red)">PALETA</p>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+              <div
+                class="aspect-[3/2] rounded-lg bg-(--pt-red) p-2 text-[10px] font-bold text-white"
+              >
+                #A21C1C
+              </div>
+              <div class="aspect-[3/2] rounded-lg bg-(--pt-yellow) p-2 text-[10px] font-bold">
+                #FFE607
+              </div>
+              <div
+                class="aspect-[3/2] rounded-lg bg-(--campaign-cream) p-2 text-[10px] font-bold ring-1 ring-black/10"
+              >
+                CREME
+              </div>
+              <div
+                class="aspect-[3/2] rounded-lg bg-(--pt-red-dark) p-2 text-[10px] font-bold text-white"
+              >
+                #47130E
+              </div>
+            </div>
+            <p class="mt-4 text-sm leading-6 text-muted-foreground">
+              Amarelo sinaliza ação; nunca vira fundo longo de legenda.
+            </p>
+          </article>
+          <article class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="text-xs font-bold text-(--pt-red)">LEGENDA</p>
+            <div class="mt-4 rounded-xl bg-stone-400 p-5">
+              <p
+                class="rounded-lg bg-black/90 px-4 py-3 text-center text-base font-bold leading-tight text-white"
+              >
+                Toque em <span class="text-(--pt-yellow)">“Card com seu nome”</span>.
+              </p>
+            </div>
+            <p class="mt-4 text-sm leading-6 text-muted-foreground">
+              Máx. 2 linhas · largura ≤900px · centro em 1100–1250px.
+            </p>
+          </article>
+          <article class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="text-xs font-bold text-(--pt-red)">GESTO</p>
+            <div class="relative mt-4 aspect-[3/2] overflow-hidden rounded-xl bg-stone-300">
+              <div
+                class="absolute left-[18%] top-[18%] size-[58%] rounded-xl border-[3px] border-(--pt-yellow) shadow-[0_0_0_6px_rgb(255_230_7/22%)]"
+              ></div>
+              <svg
+                class="cursor absolute left-[61%] top-[56%] w-[12%] text-white"
+                viewBox="0 0 24 30"
+                fill="currentColor"
+                stroke="#000"
+                stroke-width="1.4"
+              >
+                <path d="M3 2v22l6-6 4 9 4-2-4-9h8L3 2Z" />
+              </svg>
+            </div>
+            <p class="mt-4 text-sm leading-6 text-muted-foreground">
+              Zoom 108–122%; cursor chega antes; halo pulsa uma vez; easing suave.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <footer class="mt-16 border-t border-black/15 pt-6 text-xs leading-5 text-muted-foreground">
+        <p>
+          <strong class="text-foreground">NEEDS ASSET:</strong> captura real do fluxo `#cards`, logo
+          oficial transparente e qualquer foto oficial aprovada. A composição usa placeholders
+          explícitos.
+        </p>
+        <p class="mt-1">
+          <strong class="text-foreground">Fonte:</strong> o port deve carregar o Brexter Bold
+          oficial. Este HTML autossuficiente usa uma fallback condensada apenas quando Brexter não
+          estiver instalada localmente.
+        </p>
+        <p class="mt-1">
+          <strong class="text-foreground">Em aberto no gate:</strong> confirmar composição própria
+          da capa (recomendação B do plano) e aprovar a frase do hook “Seu apoio vira card em
+          segundos”.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
