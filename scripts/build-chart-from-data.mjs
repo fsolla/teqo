@@ -16,7 +16,8 @@
  */
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, extname, join } from 'node:path'
+import { dirname, extname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { launchPdfBrowser, screenshotHtmlPng } from './lib/buildPdf.mjs'
 import {
@@ -30,8 +31,7 @@ import {
 import { dieWithLabel, parseEqualsFlags } from './lib/cli.mjs'
 import { renderChartHtml } from './lib/graficosInstagramRender.mjs'
 
-const die = dieWithLabel('graficos-dados')
-const repoRoot = process.cwd()
+const LABEL = 'graficos-dados'
 
 const FORMAT_BY_EXT = {
   '.xlsx': 'xlsx',
@@ -67,8 +67,27 @@ const readInput = async (flags) => {
   return { text: buffer.toString('utf8'), format }
 }
 
-const main = async () => {
-  const { flags } = parseEqualsFlags(process.argv.slice(2))
+/**
+ * Testable orchestrator: the Chromium launch, the screenshot and the exit path
+ * are injectable, so the unit suite covers the CLI paths with fakes — no real
+ * browser and no `process.exit` killing the worker.
+ *
+ * @param {{
+ *   argv?: string[],
+ *   launchBrowser?: () => Promise<{ close: () => Promise<void> }>,
+ *   screenshot?: typeof screenshotHtmlPng,
+ *   die?: (message: string) => never,
+ *   repoRoot?: string,
+ * }} [options]
+ */
+export const main = async ({
+  argv = process.argv.slice(2),
+  launchBrowser = launchPdfBrowser,
+  screenshot = screenshotHtmlPng,
+  die = dieWithLabel(LABEL),
+  repoRoot = process.cwd(),
+} = {}) => {
+  const { flags } = parseEqualsFlags(argv)
 
   let spec
   if (flags.spec) {
@@ -132,25 +151,29 @@ const main = async () => {
     sizeKey === 'story' && (spec.chartType === 'bar' || spec.chartType === 'column')
       ? MAX_POINTS_STORY
       : MAX_POINTS
-  const browser = await launchPdfBrowser()
+  const browser = await launchBrowser()
   try {
     await mkdir(dirname(outPath), { recursive: true })
     await mkdir(dirname(specPath), { recursive: true })
     await writeFile(specPath, `${JSON.stringify(spec, null, 2)}\n`)
-    const { size } = await screenshotHtmlPng(browser, {
+    const { size } = await screenshot(browser, {
       html,
       width: canvas.width,
       height: canvas.height,
       outPath,
     })
     console.log(
-      `[graficos-dados] PNG ${outPath} (${canvas.width}×${canvas.height}, ${Math.round(size / 1024)} KB) · tipo=${spec.chartType} · ${spec.rows.length} ponto(s) ≤ ${pointCap}`,
+      `[${LABEL}] PNG ${outPath} (${canvas.width}×${canvas.height}, ${Math.round(size / 1024)} KB) · tipo=${spec.chartType} · ${spec.rows.length} ponto(s) ≤ ${pointCap}`,
     )
   } finally {
     await browser.close()
   }
 }
 
-main().catch((error) => {
-  die(error?.message ?? String(error))
-})
+const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+
+if (isMain) {
+  main().catch((error) => {
+    dieWithLabel(LABEL)(error?.message ?? String(error))
+  })
+}

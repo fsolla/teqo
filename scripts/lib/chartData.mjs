@@ -45,9 +45,12 @@ const TEMPORAL_RE =
 export const isTemporalLabel = (label) => TEMPORAL_RE.test(String(label).trim())
 
 /**
- * pt-BR/en number: strips currency/spaces/percent, treats the last separator as
- * the decimal when both `.` and `,` appear, and comma-as-decimal otherwise.
- * Returns null (never 0) for anything non-numeric, so "missing" stays honest.
+ * pt-BR/en number: strips currency/spaces/percent. A single separator is
+ * always the decimal (`1.234` and `1,234` both read 1.234; `1.500` reads 1.5) —
+ * for thousands write both separators (`1.234,56`) or none (`1234`). With both
+ * present the last one is the decimal; a repeated separator (`1.234.567`,
+ * `1,234,567`) is refused instead of guessed. Returns null (never 0) for
+ * anything non-numeric, so "missing" stays honest.
  */
 export const parseNumber = (raw) => {
   if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null
