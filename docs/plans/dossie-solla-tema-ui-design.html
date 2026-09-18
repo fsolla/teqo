@@ -1,0 +1,1719 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — Dossiê Solla por área</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: 'Fira Sans', 'DejaVu Sans', Arial, sans-serif;
+        --color-ink: #172033;
+        --color-ink-soft: #435264;
+        --color-paper: #ffffff;
+        --color-workspace: #d8dde1;
+        --color-line: #cbd5dc;
+        --color-wash: #f3f6f8;
+        --color-accent: #315c75;
+        --color-accent-soft: #e8f0f4;
+        --color-warning: #8a5a18;
+        --color-warning-soft: #fff7e8;
+      }
+      :root {
+        --ink: #172033;
+        --ink-soft: #435264;
+        --paper: #fff;
+        --workspace: #d8dde1;
+        --line: #cbd5dc;
+        --wash: #f3f6f8;
+        --accent: #315c75;
+        --accent-soft: #e8f0f4;
+        --warning: #8a5a18;
+        --warning-soft: #fff7e8;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--workspace);
+        font-family: 'Fira Sans', 'DejaVu Sans', Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .sheet {
+        position: relative;
+        width: 210mm;
+        height: 297mm;
+        padding: 12mm 14mm 10mm;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: var(--paper);
+        box-shadow: 0 18px 44px rgb(23 32 51 / 18%);
+        font-size: 10.5pt;
+        line-height: 1.32;
+      }
+      .sheet p,
+      .sheet ul,
+      .sheet dl {
+        margin-top: 0;
+      }
+      .sheet a {
+        color: #245b78;
+        text-decoration: underline;
+        text-underline-offset: 1.5px;
+      }
+      .accent-bar {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4mm;
+        background: var(--accent);
+      }
+      .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8mm;
+        padding-bottom: 3mm;
+        border-bottom: 0.45mm solid var(--ink);
+      }
+      .report-kicker,
+      .eyebrow {
+        margin: 0;
+        color: var(--accent);
+        font-size: 8pt;
+        font-weight: 700;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+      }
+      .eyebrow {
+        margin-bottom: 1.4mm;
+      }
+      .sheet-title {
+        margin: 1.2mm 0 0;
+        font-size: 18pt;
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+      }
+      .sheet-sub {
+        margin: 0.8mm 0 0;
+        color: var(--ink-soft);
+        font-size: 10.5pt;
+      }
+      .report-meta {
+        min-width: 43mm;
+        margin: 0;
+        color: var(--ink-soft);
+        font-size: 8pt;
+        line-height: 1.45;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .report-meta p {
+        margin: 0;
+      }
+      .report-footer {
+        margin-top: auto;
+        padding-top: 2.5mm;
+        border-top: 0.25mm solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        gap: 5mm;
+        color: var(--ink-soft);
+        font-size: 8pt;
+      }
+      .section-title {
+        margin: 0;
+        font-size: 13.5pt;
+        line-height: 1.18;
+        letter-spacing: -0.01em;
+      }
+      .block {
+        margin-top: 3.4mm;
+        break-inside: avoid;
+      }
+      .block-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 4mm;
+      }
+      .muted {
+        color: var(--ink-soft);
+      }
+      .meta {
+        color: var(--ink-soft);
+        font-size: 7.7pt;
+        line-height: 1.2;
+      }
+      .small {
+        font-size: 9.2pt;
+        line-height: 1.3;
+      }
+      .strong {
+        font-weight: 700;
+      }
+      .warning-text {
+        color: var(--warning);
+      }
+      .tabular {
+        font-variant-numeric: tabular-nums;
+      }
+      .panel {
+        border: 0.25mm solid var(--line);
+        border-radius: 0.25rem;
+        padding: 3mm;
+        break-inside: avoid;
+      }
+      .panel-warning {
+        border: 0;
+        border-left: 3mm solid var(--warning);
+        background: var(--warning-soft);
+      }
+      .aside-accent {
+        border-radius: 0.25rem;
+        background: var(--accent-soft);
+        padding: 3mm;
+      }
+      .tight-list {
+        margin: 0;
+        padding-left: 4mm;
+      }
+      .tight-list li {
+        margin-bottom: 1mm;
+      }
+      .scope,
+      .phase,
+      .identity-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 5mm;
+        padding: 0.4mm 1.6mm;
+        font-size: 7.5pt;
+        line-height: 1;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .scope {
+        border: 0.25mm solid #9aacb7;
+        border-radius: 99px;
+        color: #304758;
+        background: #f7fafb;
+      }
+      .scope-segment {
+        border-color: #9d8b64;
+        color: #65501f;
+        background: #fffaf0;
+      }
+      .scope-network {
+        border-color: #8f819c;
+        color: #554362;
+        background: #faf7fc;
+      }
+      .phase {
+        border-radius: 1mm;
+        color: #334553;
+        background: #e9eef1;
+      }
+      .phase-paid {
+        color: #285338;
+        background: #e6f2e9;
+      }
+      .phase-pending {
+        color: #6b4918;
+        background: #fff2d9;
+      }
+      .identity-badge {
+        border: 0.25mm solid var(--line);
+        border-radius: 99px;
+        color: var(--ink-soft);
+        background: var(--wash);
+      }
+      .document-table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+        margin-top: 2.5mm;
+        font-size: 9pt;
+        line-height: 1.22;
+      }
+      .document-table th {
+        padding: 1.7mm 1.5mm;
+        border-block: 0.25mm solid var(--line);
+        background: var(--wash);
+        color: var(--ink-soft);
+        font-size: 7.3pt;
+        letter-spacing: 0.045em;
+        text-align: left;
+        text-transform: uppercase;
+      }
+      .document-table td {
+        padding: 2mm 1.5mm;
+        border-bottom: 0.25mm solid #dce3e7;
+        vertical-align: top;
+        overflow-wrap: anywhere;
+      }
+      .document-table tbody tr:nth-child(even) {
+        background: #fafcfd;
+      }
+      .rule-warning {
+        display: flex;
+        gap: 3mm;
+        border: 0.45mm solid var(--warning);
+        background: var(--warning-soft);
+        border-radius: 0.25rem;
+        padding: 4mm;
+        margin-top: 4mm;
+      }
+      .warn-icon {
+        width: 5mm;
+        height: 5mm;
+        color: var(--warning);
+        flex: none;
+      }
+      .cover-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 8mm;
+        border-bottom: 0.25mm solid var(--line);
+        padding-bottom: 4mm;
+      }
+      .cover-series {
+        margin: 2mm 0 0;
+        color: var(--ink-soft);
+        font-size: 10.5pt;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .internal-note {
+        border: 0.25mm solid var(--line);
+        background: var(--wash);
+        padding: 2mm 3mm;
+        text-align: right;
+        font-size: 8pt;
+        line-height: 1.5;
+        color: var(--ink-soft);
+        border-radius: 0.25rem;
+      }
+      .cover-block {
+        margin-top: 28mm;
+        max-width: 156mm;
+      }
+      .cover-title {
+        margin: 0;
+        font-size: 34pt;
+        font-weight: 700;
+        line-height: 1.03;
+        letter-spacing: -0.035em;
+      }
+      .cover-sub {
+        margin: 5mm 0 0;
+        max-width: 130mm;
+        color: var(--ink-soft);
+        font-size: 15pt;
+        line-height: 1.4;
+      }
+      .cover-dl {
+        display: grid;
+        grid-template-columns: 42mm 1fr;
+        border-block: 0.25mm solid var(--line);
+        margin: 20mm 0 0;
+        font-size: 11pt;
+      }
+      .cover-dl dt,
+      .cover-dl dd {
+        padding: 3mm 0;
+        border-bottom: 0.25mm solid var(--line);
+      }
+      .cover-dl dt {
+        color: var(--ink-soft);
+        font-weight: 600;
+      }
+      .cover-dl dd {
+        margin: 0;
+        font-weight: 600;
+      }
+      .cover-dl dt:last-of-type,
+      .cover-dl dd:last-of-type {
+        border-bottom: 0;
+      }
+      .cover-grid {
+        display: grid;
+        grid-template-columns: 1fr 56mm;
+        gap: 5mm;
+        margin-top: 6mm;
+      }
+      .how-to {
+        border-radius: 0.25rem;
+        background: var(--accent-soft);
+        padding: 4mm;
+      }
+      .asset-box {
+        min-height: 30mm;
+        border: 0.35mm dashed #80919d;
+        color: #4c5c68;
+        background: #f7f9fa;
+        border-radius: 0.25rem;
+        padding: 3mm;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 8pt;
+        font-weight: 600;
+      }
+      .cover-foot {
+        margin-top: auto;
+      }
+      .ink-rule {
+        height: 0.5mm;
+        background: var(--ink);
+        margin-bottom: 5mm;
+      }
+      .cover-foot-row {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 8mm;
+      }
+      .opening-paragraph {
+        margin: 0 0 3.4mm;
+        font-size: 11pt;
+        line-height: 1.45;
+      }
+      .summary-top {
+        display: grid;
+        grid-template-columns: 58mm 1fr;
+        gap: 4mm;
+        margin-top: 4mm;
+      }
+      .id-card {
+        border: 0.25mm solid var(--line);
+        border-radius: 0.25rem;
+        background: var(--wash);
+        padding: 3mm;
+      }
+      .id-card dl {
+        display: grid;
+        grid-template-columns: 22mm 1fr;
+        gap: 1mm 2mm;
+        font-size: 9pt;
+      }
+      .id-card dt {
+        color: var(--ink-soft);
+        font-weight: 600;
+      }
+      .id-card dd {
+        margin: 0;
+      }
+      .vinc-timeline {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2mm;
+        border-top: 0.25mm solid var(--line);
+        padding-top: 3mm;
+        margin-top: 3mm;
+      }
+      .timeline-item {
+        position: relative;
+        padding-left: 5mm;
+      }
+      .timeline-item::before {
+        content: '';
+        position: absolute;
+        top: 1.5mm;
+        left: 0;
+        width: 2.6mm;
+        height: 2.6mm;
+        border: 0.5mm solid #fff;
+        border-radius: 99px;
+        background: var(--accent);
+        box-shadow: 0 0 0 0.35mm var(--accent);
+      }
+      .deliveries {
+        border-block: 0.25mm solid var(--line);
+        margin-top: 1.8mm;
+      }
+      .delivery-row {
+        display: grid;
+        grid-template-columns: 27mm 1fr 42mm;
+        gap: 3mm;
+        padding: 2mm 0;
+        border-bottom: 0.25mm solid var(--line);
+      }
+      .delivery-row:last-child {
+        border-bottom: 0;
+      }
+      .two-grid,
+      .chart-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3mm;
+        margin-top: 3mm;
+      }
+      .chart-card {
+        border: 0.25mm solid var(--line);
+        border-radius: 0.25rem;
+        padding: 3mm;
+      }
+      .chart-title {
+        margin: 0 0 2mm;
+        font-size: 9.5pt;
+        font-weight: 600;
+      }
+      .chart {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .chart-label {
+        font-size: 7.4pt;
+        fill: #435264;
+      }
+      .chart-legend {
+        margin: 1.5mm 0 0;
+        color: var(--ink-soft);
+        font-size: 7.6pt;
+      }
+      .placeholder-bar {
+        display: grid;
+        grid-template-columns: 28mm 1fr;
+        gap: 2mm;
+        align-items: center;
+        margin: 2mm 0;
+        font-size: 8pt;
+        color: var(--ink-soft);
+      }
+      .placeholder-bar span {
+        display: block;
+        height: 3mm;
+        border-radius: 2mm;
+        background: #dce3e7;
+      }
+      .era-method {
+        display: grid;
+        grid-template-columns: 1fr 55mm;
+        gap: 4mm;
+        margin-top: 4mm;
+      }
+      .era-summary {
+        margin-top: 3.4mm;
+        border-left: 1.2mm solid var(--accent);
+        background: #f7fafb;
+        padding: 2.6mm 3mm;
+      }
+      .action-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3mm;
+        margin-top: 3mm;
+      }
+      .action-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 3mm;
+      }
+      .action-title {
+        margin: 2mm 0 0;
+        font-size: 10.5pt;
+        font-weight: 600;
+      }
+      .scope-cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 3mm;
+        margin-top: 4mm;
+      }
+      .scope-card {
+        border: 0.25mm solid var(--line);
+        border-radius: 0.25rem;
+        padding: 3mm;
+      }
+      .card-segment {
+        border-color: #c9b483;
+        background: #fffcf6;
+      }
+      .card-network {
+        border-color: #b9acc3;
+        background: #fcf9fd;
+      }
+      .scope-count {
+        margin: 3mm 0 0;
+        font-size: 16pt;
+        font-weight: 600;
+      }
+      @page {
+        size: A4;
+        margin: 0;
+      }
+      @media print {
+        body {
+          background: #fff;
+        }
+        .gate-header,
+        .scene-label {
+          display: none !important;
+        }
+        .pages {
+          display: block !important;
+          padding: 0 !important;
+        }
+        .scene {
+          margin: 0 !important;
+          break-after: page;
+        }
+        .sheet {
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="gate-header mx-auto max-w-[1100px] px-6 pt-8 text-ink">
+      <p class="text-xs font-bold uppercase tracking-[.14em] text-accent">
+        Gate visual · Impeccable C · variante por área
+      </p>
+      <h1 class="mt-1 text-2xl font-semibold tracking-tight">
+        Dossiê Solla por área — relatório A4
+      </h1>
+      <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-soft">
+        Mesma família documental do dossiê institucional, agora identificada pela taxonomia do
+        acervo. Todos os fatos e valores abaixo são placeholders editoriais.
+      </p>
+      <div class="mt-4 flex flex-wrap gap-2 text-xs">
+        <span class="rounded-full border border-line bg-white px-3 py-1">Área: Educação</span>
+        <span class="rounded-full border border-line bg-white px-3 py-1">Token: educacao</span>
+        <span class="rounded-full border border-line bg-white px-3 py-1">Speech.topics direto</span>
+        <span class="rounded-full border border-line bg-white px-3 py-1"
+          >A4 · folhas correntes</span
+        >
+        <span class="rounded-full border border-line bg-white px-3 py-1"
+          >sem fonte, não publica</span
+        >
+      </div>
+    </header>
+    <main class="pages mx-auto flex max-w-[1100px] flex-col items-center gap-12 px-6 py-10">
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 01 · Capa e identificação da área
+        </p>
+        <article class="sheet">
+          <div class="accent-bar"></div>
+          <header class="cover-head">
+            <div>
+              <p class="report-kicker">Comunicação · pesquisa documental</p>
+              <p class="cover-series">Série temática · por área</p>
+            </div>
+            <div class="internal-note">
+              <strong>INSUMO INTERNO — defeso 2026</strong><br />Não circular · não publicar
+            </div>
+          </header>
+          <div class="cover-block">
+            <p class="eyebrow">Dossiê de atuação pública</p>
+            <h2 class="cover-title">
+              Dossiê Solla —<br /><span class="text-accent">Educação</span>
+            </h2>
+            <p class="cover-sub">O que Jorge Solla fez pela Educação ao longo da carreira</p>
+          </div>
+          <dl class="cover-dl">
+            <dt>Área</dt>
+            <dd><span class="identity-badge">Educação</span></dd>
+            <dt>Valor canônico</dt>
+            <dd><code>educacao</code> · taxonomia do acervo / <code>Speech.topics</code></dd>
+            <dt>Data de geração</dt>
+            <dd>DD/MM/AAAA · HHhMM</dd>
+            <dt>Escopo e versão</dt>
+            <dd>Eras A / B / C · área, segmento e rede separados · versão 01</dd>
+          </dl>
+          <div class="cover-grid">
+            <div class="how-to">
+              <p class="eyebrow">Como usar</p>
+              <p class="mb-0 text-ink-soft">
+                Localize a entrega, confira fonte, data, fase e abrangência. A área vem da taxonomia
+                canônica; segmento e rede não são somados a ela.
+              </p>
+            </div>
+            <div class="asset-box">NEEDS ASSET<br />selo autorizado<br />e origem</div>
+          </div>
+          <div class="cover-foot">
+            <div class="ink-rule"></div>
+            <div class="cover-foot-row">
+              <p class="m-0 max-w-[125mm] text-ink-soft">
+                Escopo: carreira técnica e gestão pública até 2006 · SESAB 2007–2014 · Câmara
+                2015–2027.
+              </p>
+              <p
+                class="m-0 text-right text-[8pt] font-semibold uppercase tracking-[.08em] text-accent"
+              >
+                Documento de trabalho<br />versão 01
+              </p>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 02 · A contribuição (carta)
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê temático · Educação</p>
+              <h2 class="sheet-title">A contribuição de Jorge Solla para a Educação</h2>
+              <p class="sheet-sub">Síntese dos pontos com fonte — sem acrescentar fato novo</p>
+            </div>
+            <div class="report-meta">
+              <p><strong class="warning-text">INSUMO INTERNO</strong></p>
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 2/N</p>
+            </div>
+          </header>
+          <section class="block">
+            <p class="opening-paragraph">
+              Na primeira fase, a pesquisa procura vínculos técnicos, decisões públicas e
+              iniciativas relacionadas à Educação. Só entra o que uma fonte identifica de forma
+              direta; memória e associação plausível não bastam.
+            </p>
+            <p class="opening-paragraph">
+              Na gestão estadual, programas, projetos e articulações são descritos com objeto,
+              período, fase e alcance. Uma ação dirigida a um segmento ou a uma rede permanece nesse
+              recorte.
+            </p>
+            <p class="opening-paragraph">
+              No mandato federal, recursos, proposições, relatorias, audiências e articulações
+              preservam autoria e estágio de execução. A redação não converte proposta em entrega
+              nem empenho em pagamento.
+            </p>
+          </section>
+          <aside class="rule-warning">
+            <svg
+              class="warn-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M10.3 2.9 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.9a2 2 0 0 0-3.4 0Z"
+              />
+              <path d="M12 9v4M12 17h.01" />
+            </svg>
+            <div>
+              <p class="eyebrow warning-text">Como ler</p>
+              <p class="muted mb-0">
+                Cada afirmação remete a um item datado. Onde não há fonte suficiente, o documento
+                registra uma lacuna — nunca completa por inferência.
+              </p>
+            </div>
+          </aside>
+          <footer class="report-footer">
+            <span>Dossiê temático · A contribuição · INSUMO INTERNO</span><span>pág. 2/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 03 · Resumo de uma olhada
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê temático · Educação</p>
+              <h2 class="sheet-title">Resumo de uma olhada</h2>
+              <p class="sheet-sub">Informação datada e pronta para conferência</p>
+            </div>
+            <div class="report-meta">
+              <p><strong class="warning-text">INSUMO INTERNO</strong></p>
+              <p>pág. 3/N</p>
+            </div>
+          </header>
+          <section class="summary-top">
+            <div class="id-card">
+              <p class="eyebrow">Identificação</p>
+              <dl>
+                <dt>Área</dt>
+                <dd>Educação</dd>
+                <dt>Token</dt>
+                <dd><code>educacao</code></dd>
+                <dt>Origem</dt>
+                <dd>Taxonomia do acervo</dd>
+                <dt>Filtro</dt>
+                <dd><code>Speech.topics</code></dd>
+              </dl>
+            </div>
+            <div>
+              <p class="eyebrow">01 · vínculo com a área</p>
+              <h3 class="section-title">Linha do tempo documentada</h3>
+              <div class="vinc-timeline">
+                <div class="timeline-item">
+                  <strong class="text-accent">Era A</strong>
+                  <p>Atuação localizada</p>
+                  <span class="meta">fonte · data</span>
+                </div>
+                <div class="timeline-item">
+                  <strong class="text-accent">Era B</strong>
+                  <p>Gestão registrada</p>
+                  <span class="meta">fonte · data</span>
+                </div>
+                <div class="timeline-item">
+                  <strong class="text-accent">Era C</strong>
+                  <p>Ação parlamentar</p>
+                  <span class="meta">fonte · data</span>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="block">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">02 · destaques com lastro</p>
+                <h3 class="section-title">Principais entregas localizadas</h3>
+              </div>
+              <span class="warning-text meta strong">valor sempre com fase e abrangência</span>
+            </div>
+            <div class="deliveries">
+              <div class="delivery-row">
+                <div>
+                  <span class="scope">área</span>
+                  <p class="meta">Era C · AAAA</p>
+                </div>
+                <div>
+                  <strong>Entrega documentada para a política de Educação</strong>
+                  <p class="muted small">Descrição conferível, sem ampliar efeito ou autoria.</p>
+                </div>
+                <div class="text-right">
+                  <strong>R$ —</strong><br /><span class="phase phase-paid">pago</span><br /><a
+                    href="#fontes"
+                    >(fonte)</a
+                  >
+                </div>
+              </div>
+              <div class="delivery-row">
+                <div>
+                  <span class="scope scope-segment">segmento</span>
+                  <p class="meta">Era B · AAAA</p>
+                </div>
+                <div>
+                  <strong>Ação dirigida a um segmento educacional</strong>
+                  <p class="muted small">Não somar ao total da área.</p>
+                </div>
+                <div class="text-right">
+                  <strong>R$ —</strong><br /><span class="phase">não informada</span><br /><a
+                    href="#fontes"
+                    >(fonte)</a
+                  >
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="two-grid">
+            <div class="panel">
+              <p class="eyebrow">Gancho para a agenda</p>
+              <p class="mb-0">
+                Entrega + público alcançado + estágio confirmado, com a fonte aberta.
+              </p>
+            </div>
+            <div class="panel panel-warning">
+              <p class="eyebrow warning-text">O que falta</p>
+              <ul class="tight-list">
+                <li>Confirmar fase atual.</li>
+                <li>Comprovar atribuição à área.</li>
+              </ul>
+            </div>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê temático · Resumo</span><span>pág. 3/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 04 · Síntese
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê temático · Educação</p>
+              <h2 class="sheet-title">Síntese do que foi localizado</h2>
+              <p class="sheet-sub">Contagens por recorte; área, segmento e rede nunca se somam</p>
+            </div>
+            <div class="report-meta">
+              <p>Gerado em DD/MM/AAAA</p>
+              <p>pág. 4/N</p>
+            </div>
+          </header>
+          <section class="block">
+            <p class="eyebrow">Leitura rápida</p>
+            <h3 class="section-title">O que os pontos com fonte mostram</h3>
+            <ul class="tight-list mt-[3mm]">
+              <li>Foram localizados N pontos com fonte, distribuídos pelas eras A, B e C.</li>
+              <li>Área, segmento e rede permanecem em contagens independentes.</li>
+              <li>
+                Valores conservam a fase: autorizado, empenhado, liquidado, pago, restos ou não
+                informada.
+              </li>
+              <li>
+                Atribuição temática em fonte externa é explícita; ausência de atribuição vira
+                lacuna.
+              </li>
+              <li>
+                O acervo interno usa o tema canônico diretamente e informa universo e amostra.
+              </li>
+              <li>O acervo cobre 2011+; períodos anteriores ficam marcados como lacuna.</li>
+            </ul>
+          </section>
+          <section class="two-grid">
+            <div class="panel">
+              <p class="eyebrow">Cobertura das eras</p>
+              <ul class="tight-list">
+                <li><strong>Era A</strong> — N pontos</li>
+                <li><strong>Era B</strong> — N pontos</li>
+                <li><strong>Era C</strong> — N pontos</li>
+              </ul>
+            </div>
+            <div class="panel panel-warning">
+              <p class="eyebrow warning-text">Guardas de leitura</p>
+              <ul class="tight-list">
+                <li>Segmento e rede não são somados à área.</li>
+                <li>Empenho ≠ pagamento.</li>
+                <li>Sem fonte, não publica.</li>
+              </ul>
+            </div>
+          </section>
+          <section class="block">
+            <p class="eyebrow">Recursos por fase</p>
+            <h3 class="section-title">Valores localizados, sem consolidar fases</h3>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Fase</th>
+                  <th>Itens</th>
+                  <th>Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="phase phase-paid">pago</span></td>
+                  <td>N</td>
+                  <td>R$ —</td>
+                </tr>
+                <tr>
+                  <td><span class="phase phase-pending">empenhado</span></td>
+                  <td>N</td>
+                  <td>R$ —</td>
+                </tr>
+                <tr>
+                  <td><span class="phase">não informada</span></td>
+                  <td>N</td>
+                  <td>R$ —</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="warning-text small strong">
+              Soma apenas dentro da mesma fase; fases não são equivalentes.
+            </p>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê temático · Síntese</span><span>pág. 4/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 05 · Gráficos consolidados
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê temático · Educação</p>
+              <h2 class="sheet-title">Gráficos consolidados</h2>
+              <p class="sheet-sub">Estruturas de leitura — dados não verificados ficam em cinza</p>
+            </div>
+            <div class="report-meta"><p>pág. 5/N</p></div>
+          </header>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <p class="chart-title">Recursos por ano e fase (R$)</p>
+              <svg
+                class="chart"
+                viewBox="0 0 330 112"
+                role="img"
+                aria-label="Barras cinza de dados pendentes"
+              >
+                <path d="M8 98H322" stroke="#cbd5dc" />
+                <rect x="35" y="54" width="46" height="44" fill="#dce3e7" />
+                <rect x="142" y="30" width="46" height="68" fill="#cbd5dc" />
+                <rect x="249" y="70" width="46" height="28" fill="#dce3e7" />
+                <text x="58" y="109" class="chart-label" text-anchor="middle">AAAA</text>
+                <text x="165" y="109" class="chart-label" text-anchor="middle">AAAA</text>
+                <text x="272" y="109" class="chart-label" text-anchor="middle">AAAA</text>
+              </svg>
+              <p class="chart-legend">placeholder · preencher somente após conferência de fase.</p>
+            </div>
+            <div class="chart-card">
+              <p class="chart-title">Tipos de atuação localizados</p>
+              <div class="placeholder-bar">Recursos<span style="width: 100%"></span></div>
+              <div class="placeholder-bar">Proposições<span style="width: 72%"></span></div>
+              <div class="placeholder-bar">Programas<span style="width: 48%"></span></div>
+              <div class="placeholder-bar">Articulações<span style="width: 34%"></span></div>
+              <p class="chart-legend">comprimentos ilustrativos, sem representar contagem.</p>
+            </div>
+            <div class="chart-card">
+              <p class="chart-title">Abrangência dos pontos com fonte</p>
+              <div class="placeholder-bar">Área<span style="width: 100%"></span></div>
+              <div class="placeholder-bar">Segmento<span style="width: 58%"></span></div>
+              <div class="placeholder-bar">Rede<span style="width: 31%"></span></div>
+              <p class="chart-legend">recortes separados e não somáveis.</p>
+            </div>
+            <div class="chart-card">
+              <p class="chart-title">Trajetória por era</p>
+              <svg class="chart" viewBox="0 0 330 90">
+                <path d="M8 78H322" stroke="#cbd5dc" />
+                <rect x="48" y="48" width="44" height="30" fill="#dce3e7" />
+                <rect x="143" y="25" width="44" height="53" fill="#cbd5dc" />
+                <rect x="238" y="39" width="44" height="39" fill="#dce3e7" />
+                <text x="70" y="89" class="chart-label" text-anchor="middle">Era A</text>
+                <text x="165" y="89" class="chart-label" text-anchor="middle">Era B</text>
+                <text x="260" y="89" class="chart-label" text-anchor="middle">Era C</text>
+              </svg>
+            </div>
+            <div class="chart-card">
+              <p class="chart-title">Fases informadas</p>
+              <div class="placeholder-bar">Pago<span style="width: 100%"></span></div>
+              <div class="placeholder-bar">Empenhado<span style="width: 65%"></span></div>
+              <div class="placeholder-bar">Outras<span style="width: 42%"></span></div>
+              <div class="placeholder-bar">Não informada<span style="width: 30%"></span></div>
+            </div>
+            <div class="chart-card">
+              <p class="chart-title">Lacunas declaradas por era</p>
+              <div class="placeholder-bar">Era A<span style="width: 100%"></span></div>
+              <div class="placeholder-bar">Era B<span style="width: 64%"></span></div>
+              <div class="placeholder-bar">Era C<span style="width: 38%"></span></div>
+              <p class="chart-legend">cada lacuna vira tarefa de apuração.</p>
+            </div>
+            <div class="chart-card">
+              <p class="chart-title">Acervo interno · tema direto</p>
+              <p class="scope-count tabular">N</p>
+              <p class="meta">falas com <code>Speech.topics = educacao</code> (2011+)</p>
+              <ul class="tight-list">
+                <li>Amostra declarada de N falas.</li>
+                <li>Link direto para conferência.</li>
+              </ul>
+            </div>
+          </div>
+          <footer class="report-footer">
+            <span>Dossiê temático · Gráficos</span><span>pág. 5/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 06 · Era A
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê temático · Educação</p>
+              <h2 class="sheet-title">Era A · Carreira técnica e gestão até 2006</h2>
+              <p class="sheet-sub">Vínculos, decisões e iniciativas relacionadas à área</p>
+            </div>
+            <div class="report-meta"><p>pág. 6/N</p></div>
+          </header>
+          <div class="era-method">
+            <div>
+              <p class="eyebrow">Recorte e método</p>
+              <p class="muted">
+                Registros anteriores a 2007 que relacionem diretamente a atuação à Educação.
+              </p>
+            </div>
+            <aside class="aside-accent">
+              <strong>Trilha de recuperação</strong><br />atos · biografias · acervos
+            </aside>
+          </div>
+          <section class="era-summary">
+            <p class="eyebrow">O que esta era entrega</p>
+            <p class="mb-0">
+              Síntese editorial baseada somente nos itens abaixo. O acervo interno não cobre
+              integralmente o período anterior a 2011.
+            </p>
+          </section>
+          <section class="block">
+            <p class="eyebrow">Atuação registrada</p>
+            <h3 class="section-title">Papéis e iniciativas com evidência visível</h3>
+            <div class="action-grid">
+              <article class="panel">
+                <div class="action-head">
+                  <span class="scope">área</span><span class="meta">AAAA–AAAA</span>
+                </div>
+                <h4 class="action-title">Atuação temática documentada</h4>
+                <p class="muted small">Descrição objetiva do papel e do período.</p>
+                <a href="#fontes">(fonte)</a>
+              </article>
+              <article class="panel">
+                <div class="action-head">
+                  <span class="scope scope-segment">segmento</span><span class="meta">AAAA</span>
+                </div>
+                <h4 class="action-title">Iniciativa para segmento educacional</h4>
+                <p class="muted small">Alcance preservado conforme a fonte.</p>
+                <a href="#fontes">(fonte)</a>
+              </article>
+            </div>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê temático · Era A</span><span>pág. 6/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 07 · Era B
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê temático · Educação</p>
+              <h2 class="sheet-title">Era B · Secretaria Estadual de Saúde da Bahia</h2>
+              <p class="sheet-sub">2007–2014 · programas, projetos e articulações intersetoriais</p>
+            </div>
+            <div class="report-meta"><p>pág. 7/N</p></div>
+          </header>
+          <div class="era-method">
+            <div>
+              <p class="eyebrow">Recorte e método</p>
+              <p class="muted">
+                A relação com Educação precisa estar nomeada na fonte; proximidade temática não
+                basta.
+              </p>
+            </div>
+            <aside class="aside-accent">
+              <strong>Trilha de recuperação</strong><br />DOE-BA · notícias · convênios
+            </aside>
+          </div>
+          <section class="era-summary">
+            <p class="eyebrow">O que esta era entrega</p>
+            <p class="mb-0">
+              Programas e articulações são resumidos sem converter anúncio em execução nem atribuir
+              uma ação intersetorial à área inteira.
+            </p>
+          </section>
+          <section class="block">
+            <p class="eyebrow">Entregas localizadas</p>
+            <h3 class="section-title">Objeto, valor, ano, fase e abrangência</h3>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Objeto</th>
+                  <th>Valor</th>
+                  <th>Ano</th>
+                  <th>Fase</th>
+                  <th>Abrangência</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Programa documentado</td>
+                  <td>R$ —</td>
+                  <td>AAAA</td>
+                  <td><span class="phase">não informada</span></td>
+                  <td><span class="scope">área</span></td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+                <tr>
+                  <td>Ação dirigida a uma rede</td>
+                  <td>R$ —</td>
+                  <td>AAAA</td>
+                  <td><span class="phase phase-paid">pago</span></td>
+                  <td><span class="scope scope-network">rede</span></td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê temático · Era B</span><span>pág. 7/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 08 · Era C
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê temático · Educação</p>
+              <h2 class="sheet-title">Era C · Deputado Federal</h2>
+              <p class="sheet-sub">2015–2027 · recursos, proposições, relatorias e articulação</p>
+            </div>
+            <div class="report-meta"><p>pág. 8/N</p></div>
+          </header>
+          <div class="era-method">
+            <div>
+              <p class="eyebrow">Recorte e método</p>
+              <p class="muted">
+                Atribuição à Educação, autoria, ano, fase e abrangência são checados item a item.
+              </p>
+            </div>
+            <aside class="aside-accent">
+              <strong>Trilha de recuperação</strong><br />Câmara · CGU · Siga Brasil
+            </aside>
+          </div>
+          <section class="era-summary">
+            <p class="eyebrow">O que esta era entrega</p>
+            <p class="mb-0">
+              Recursos e atuação parlamentar aparecem em trilhas distintas. Portais sem filtro por
+              área exigem fonte que faça a atribuição temática.
+            </p>
+          </section>
+          <section class="block">
+            <p class="eyebrow">Entregas localizadas</p>
+            <h3 class="section-title">Recursos e ações quantificáveis</h3>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Objeto</th>
+                  <th>Valor</th>
+                  <th>Ano</th>
+                  <th>Fase</th>
+                  <th>Abrangência</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Recurso com atribuição temática</td>
+                  <td>R$ —</td>
+                  <td>AAAA</td>
+                  <td><span class="phase phase-paid">pago</span></td>
+                  <td><span class="scope">área</span></td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+                <tr>
+                  <td>Ação para segmento educacional</td>
+                  <td>R$ —</td>
+                  <td>AAAA</td>
+                  <td><span class="phase phase-pending">empenhado</span></td>
+                  <td><span class="scope scope-segment">segmento</span></td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+                <tr>
+                  <td>Projeto em rede</td>
+                  <td>R$ —</td>
+                  <td>AAAA</td>
+                  <td><span class="phase">não informada</span></td>
+                  <td><span class="scope scope-network">rede</span></td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê temático · Era C</span><span>pág. 8/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 09 · Folha corrente / continuação
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê temático · Educação</p>
+              <h2 class="sheet-title">Era C · Deputado Federal — continuação 2</h2>
+              <p class="sheet-sub">A lista flui sem corte nem descarte silencioso</p>
+            </div>
+            <div class="report-meta"><p>pág. 9/N</p></div>
+          </header>
+          <section class="block">
+            <p class="eyebrow">Atuação parlamentar</p>
+            <h3 class="section-title">Proposições, relatorias, audiências e articulações</h3>
+            <div class="action-grid">
+              <article class="panel">
+                <div class="action-head">
+                  <span class="scope">área</span><span class="meta">AAAA</span>
+                </div>
+                <h4 class="action-title">Proposição documentada</h4>
+                <p class="muted small">Tramitação visível; proposição não vira entrega.</p>
+                <a href="#fontes">(fonte)</a>
+              </article>
+              <article class="panel">
+                <div class="action-head">
+                  <span class="scope scope-network">rede</span><span class="meta">AAAA</span>
+                </div>
+                <h4 class="action-title">Articulação em rede</h4>
+                <p class="muted small">Pauta e resultado material aparecem separados.</p>
+                <a href="#fontes">(fonte)</a>
+              </article>
+              <article class="panel">
+                <div class="action-head">
+                  <span class="scope scope-segment">segmento</span><span class="meta">AAAA</span>
+                </div>
+                <h4 class="action-title">Audiência de segmento</h4>
+                <p class="muted small">Alcance descrito conforme a fonte.</p>
+                <a href="#fontes">(fonte)</a>
+              </article>
+              <article class="panel">
+                <div class="action-head">
+                  <span class="scope">área</span><span class="meta">AAAA</span>
+                </div>
+                <h4 class="action-title">Relatoria documentada</h4>
+                <p class="muted small">Papel, etapa e efeito sem extrapolação.</p>
+                <a href="#fontes">(fonte)</a>
+              </article>
+            </div>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê temático · Era C · continuação 2</span><span>pág. 9/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 10 · Abrangência — lista completa
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê temático · Educação</p>
+              <h2 class="sheet-title">Abrangência · área</h2>
+              <p class="sheet-sub">
+                Lista completa do recorte direto — segmento e rede ficam fora desta conta
+              </p>
+            </div>
+            <div class="report-meta"><p>pág. 10/N</p></div>
+          </header>
+          <div class="scope-cards">
+            <div class="scope-card">
+              <span class="scope">área</span>
+              <p class="scope-count">N</p>
+              <p class="meta">itens da política como um todo</p>
+            </div>
+            <div class="scope-card card-segment">
+              <span class="scope scope-segment">segmento</span>
+              <p class="scope-count">N</p>
+              <p class="meta">básica, superior, EJA… · não somar</p>
+            </div>
+            <div class="scope-card card-network">
+              <span class="scope scope-network">rede</span>
+              <p class="scope-count">N</p>
+              <p class="meta">entidades e instituições · não somar</p>
+            </div>
+          </div>
+          <aside class="rule-warning">
+            <svg
+              class="warn-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M12 9v4M12 17h.01" />
+              <path
+                d="M10.3 2.9 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.9a2 2 0 0 0-3.4 0Z"
+              />
+            </svg>
+            <p class="mb-0">
+              <strong>Guarda:</strong> segmento e rede não são somados à área. Cada badge conserva o
+              alcance declarado pela fonte.
+            </p>
+          </aside>
+          <section class="block">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Área</p>
+                <h3 class="section-title">Todos os itens do recorte direto</h3>
+              </div>
+              <span class="scope">N de N</span>
+            </div>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Era / ano</th>
+                  <th>Valor / fase</th>
+                  <th>Evidência temática</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Item de área 01</td>
+                  <td>Era A · AAAA</td>
+                  <td>R$ —</td>
+                  <td>A política de Educação está nomeada.</td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+                <tr>
+                  <td>Item de área 02</td>
+                  <td>Era B · AAAA</td>
+                  <td><span class="phase">não informada</span></td>
+                  <td>Objeto explicitamente educacional.</td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+                <tr>
+                  <td>Item de área 03</td>
+                  <td>Era C · AAAA</td>
+                  <td><span class="phase phase-paid">pago</span></td>
+                  <td>Atribuição temática conferida.</td>
+                  <td><a href="#fontes">fonte</a></td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="warning-text small strong">
+              Se exceder a folha, continua em “Abrangência · área — continuação N”.
+            </p>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê temático · Abrangência</span><span>pág. 10/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 11 · Lacunas — lista corrente
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê temático · Educação</p>
+              <h2 class="sheet-title">Lacunas explícitas</h2>
+              <p class="sheet-sub">O que não foi localizado vira tarefa de apuração</p>
+            </div>
+            <div class="report-meta"><p>pág. 11/N</p></div>
+          </header>
+          <section class="block">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow warning-text">Ausência é resultado</p>
+                <h3 class="section-title">Lista completa de lacunas</h3>
+              </div>
+              <span class="warning-text strong">N de N</span>
+            </div>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Era</th>
+                  <th>Lacuna</th>
+                  <th>Já consultado</th>
+                  <th>Próxima busca</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Era A</td>
+                  <td>Atuação anterior a 2007</td>
+                  <td>Biografias oficiais</td>
+                  <td>Atos e acervo físico</td>
+                  <td><span class="phase">aberta</span></td>
+                </tr>
+                <tr>
+                  <td>Era B</td>
+                  <td>Atribuição temática do programa</td>
+                  <td>Notícias e transparência</td>
+                  <td>Documento primário</td>
+                  <td><span class="phase">aberta</span></td>
+                </tr>
+                <tr>
+                  <td>Era C</td>
+                  <td>Fase atual do recurso</td>
+                  <td>Portal consultado</td>
+                  <td>Documento financeiro</td>
+                  <td><span class="phase phase-pending">prioridade</span></td>
+                </tr>
+                <tr>
+                  <td>Acervo</td>
+                  <td>Registros anteriores a 2011</td>
+                  <td>Acervo read-only</td>
+                  <td>Acervo físico</td>
+                  <td><span class="phase">aberta</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <aside class="rule-warning">
+            <svg
+              class="warn-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M12 9v4M12 17h.01" />
+              <path
+                d="M10.3 2.9 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.9a2 2 0 0 0-3.4 0Z"
+              />
+            </svg>
+            <p class="mb-0">
+              Portais que não filtram por área não autorizam atribuição. Sem fonte temática, a linha
+              permanece lacuna — nunca zero.
+            </p>
+          </aside>
+          <footer class="report-footer">
+            <span>Dossiê temático · Lacunas</span><span>pág. 11/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 12 · Notícias e documentos
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê temático · Educação</p>
+              <h2 class="sheet-title">Notícias e documentos consultados</h2>
+              <p class="sheet-sub">Inventário datado que sustenta as seções anteriores</p>
+            </div>
+            <div class="report-meta"><p>pág. 12/N</p></div>
+          </header>
+          <section class="block">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Corpus consultado</p>
+                <h3 class="section-title">Lista completa, em folhas correntes</h3>
+              </div>
+              <span class="scope">N de N</span>
+            </div>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Documento / notícia</th>
+                  <th>Origem</th>
+                  <th>Uso no dossiê</th>
+                  <th>Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Título do documento oficial A</td>
+                  <td>Órgão oficial</td>
+                  <td>Era A · vínculo temático</td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Título da notícia B</td>
+                  <td>Fonte institucional</td>
+                  <td>Era B · programa</td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Registro financeiro C</td>
+                  <td>Portal oficial</td>
+                  <td>Era C · fase</td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Tramitação legislativa D</td>
+                  <td>Câmara</td>
+                  <td>Era C · atuação</td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="meta">
+              Continuação automática quando a lista excede a folha; nenhum documento é descartado
+              para caber.
+            </p>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê temático · Notícias e documentos</span><span>pág. 12/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 13 · Acervo interno por tema
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê temático · Educação</p>
+              <h2 class="sheet-title">Acervo interno de falas</h2>
+              <p class="sheet-sub">
+                Recorte direto por <code>Speech.topics = educacao</code> · cobertura 2011+
+              </p>
+            </div>
+            <div class="report-meta"><p>pág. 13/N</p></div>
+          </header>
+          <section class="two-grid block">
+            <div class="panel">
+              <p class="eyebrow">Universo recuperado</p>
+              <p class="scope-count">N falas</p>
+              <p class="muted mb-0">Todas classificadas no tema canônico Educação.</p>
+            </div>
+            <div class="panel panel-warning">
+              <p class="eyebrow warning-text">Amostra exibida</p>
+              <p class="scope-count">N de N</p>
+              <p class="muted mb-0">
+                Quantidade e critério permanecem explícitos; a lista não finge exaustividade.
+              </p>
+            </div>
+          </section>
+          <section class="block">
+            <p class="eyebrow">Amostra declarada · link direto</p>
+            <h3 class="section-title">Falas selecionadas para conferência</h3>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Tema canônico</th>
+                  <th>Trecho / contexto</th>
+                  <th>Abrangência</th>
+                  <th>Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Educação</td>
+                  <td>Resumo fiel da fala selecionada.</td>
+                  <td><span class="scope">área</span></td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Educação</td>
+                  <td>Menção a uma etapa de ensino.</td>
+                  <td><span class="scope scope-segment">segmento</span></td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+                <tr>
+                  <td>DD/MM/AAAA</td>
+                  <td>Educação</td>
+                  <td>Contexto de instituições relacionadas.</td>
+                  <td><span class="scope scope-network">rede</span></td>
+                  <td><a href="#fontes">abrir</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <aside class="rule-warning">
+            <svg
+              class="warn-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M12 9v4M12 17h.01" />
+              <path
+                d="M10.3 2.9 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.9a2 2 0 0 0-3.4 0Z"
+              />
+            </svg>
+            <p class="mb-0">
+              O tema prova pertinência ao recorte do acervo; não prova por si só entrega, autoria
+              material ou execução financeira.
+            </p>
+          </aside>
+          <footer class="report-footer">
+            <span>Dossiê temático · Acervo · amostra declarada</span><span>pág. 13/N</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene" id="fontes">
+        <p class="scene-label mb-2 text-xs font-bold uppercase tracking-[.12em] text-ink-soft">
+          Cena 14 · Fontes, limites e defeso
+        </p>
+        <article class="sheet">
+          <header class="report-header">
+            <div>
+              <p class="report-kicker">Dossiê temático · Educação</p>
+              <h2 class="sheet-title">Fontes e limites</h2>
+              <p class="sheet-sub">
+                O que foi consultado, o que não foi achado e o que não se pode afirmar
+              </p>
+            </div>
+            <div class="report-meta">
+              <p><strong class="warning-text">INSUMO INTERNO</strong></p>
+              <p>pág. N/N</p>
+            </div>
+          </header>
+          <section class="block">
+            <p class="eyebrow">Hierarquia de fontes</p>
+            <h3 class="section-title">Lastro visível, item a item</h3>
+            <table class="document-table">
+              <thead>
+                <tr>
+                  <th>Camada</th>
+                  <th>Uso</th>
+                  <th>Limite</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Fontes primárias</td>
+                  <td>Atos, portais, tramitações e documentos oficiais.</td>
+                  <td>Área, fase e autoria só conforme o registro.</td>
+                </tr>
+                <tr>
+                  <td>Fontes institucionais</td>
+                  <td>Notícias e acervos públicos.</td>
+                  <td>Anúncio não prova execução.</td>
+                </tr>
+                <tr>
+                  <td>Acervo interno</td>
+                  <td>Falas filtradas diretamente por <code>Speech.topics</code>.</td>
+                  <td>Cobertura 2011+; classificação não prova entrega.</td>
+                </tr>
+                <tr>
+                  <td>Busca web datada</td>
+                  <td>Localização e triangulação.</td>
+                  <td>Sem fonte suficiente vira lacuna.</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+          <section class="two-grid block">
+            <div class="panel">
+              <p class="eyebrow">Limites</p>
+              <ul class="tight-list">
+                <li>Área, segmento e rede não se somam.</li>
+                <li>Autorizado, empenhado, liquidado, pago e restos não são equivalentes.</li>
+                <li>Nenhum “não localizado” significa zero.</li>
+                <li>Sem percentual estadual absoluto.</li>
+              </ul>
+            </div>
+            <div class="panel panel-warning">
+              <p class="eyebrow warning-text">Defeso 2026</p>
+              <p class="mb-0">
+                Documento interno de pesquisa. Não circular, publicar nem converter automaticamente
+                em peça de campanha. Toda saída pública exige revisão editorial e jurídica.
+              </p>
+            </div>
+          </section>
+          <footer class="report-footer">
+            <span>Dossiê temático · Fontes e limites</span><span>pág. N/N</span>
+          </footer>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
