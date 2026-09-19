@@ -345,12 +345,18 @@ const parseFreeText = (text, { delta = false } = {}) => {
 }
 
 /**
+ * @typedef {{ label: string, value?: number, initial?: number, final?: number }} DatasetRow
+ * @typedef {{ name: string, rows: { label: string, value: number }[] }} DatasetSeries
+ */
+
+/**
  * Parse the raw input into `{ rows, format, issues }`. `buffer` is required for
  * xlsx/xls; `text` for csv/md/txt. `format` overrides the extension inference.
  * `delta` reads the table through the variation-bar contract (label + initial +
  * final, header naming the two periods) instead of the single-measure path.
  *
  * @param {{ text?: string | null, buffer?: Buffer | null, format?: string | null, delta?: boolean }} [options]
+ * @returns {{ rows: DatasetRow[], series?: DatasetSeries[], startLabel?: string, endLabel?: string, format: string, issues: string[] }}
  */
 export const parseInput = ({ text = null, buffer = null, format = null, delta = false } = {}) => {
   if (format === 'xlsx' || format === 'xls') {
@@ -379,7 +385,7 @@ export const parseInput = ({ text = null, buffer = null, format = null, delta = 
  * series (few periods as columns, many as a line); anything else is a
  * ranking/comparison in horizontal bars.
  *
- * @param {{ label: string, value: number }[]} rows
+ * @param {DatasetRow[]} rows
  * @param {string | null} [forcedType]
  */
 export const classifyRelation = (rows, forcedType = null) => {
