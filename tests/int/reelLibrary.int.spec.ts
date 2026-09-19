@@ -153,7 +153,7 @@ describe('reel library data (C194)', () => {
     const newest = data.rows.find((row) => row.id === newer.id)
     expect(newest).toMatchObject({
       title: 'Reel novo',
-      featureLabel: 'Cards de apoio (#cards)',
+      featureLabel: 'Cards de apoio',
       status: 'published',
       statusLabel: 'Publicado',
       coverUrl: `/campanha/comunicacao/reels/${newer.id}/media/cover`,

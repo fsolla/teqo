@@ -27,20 +27,30 @@ export const ReelDownloadPanel = ({ reel }: { reel: ReelDetailViewModel }) => {
   const secondary = reel.downloads.filter((item) => !item.primary)
 
   return (
-    <section className="rounded-xl border border-border p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-semibold">Downloads</h2>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Arquivos deste reel para finalizar e publicar fora do Teqo.
-          </p>
+    <section className="flex flex-col rounded-xl border border-border p-4">
+      <div className="order-2 mt-4 lg:order-1 lg:mt-0">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="hidden text-sm font-semibold lg:block">Downloads</h2>
+            <h2 className="text-sm font-semibold lg:hidden">Outros arquivos</h2>
+            <p className="mt-1 hidden text-xs leading-5 text-muted-foreground lg:block">
+              Arquivos deste reel para finalizar e publicar fora do Teqo.
+            </p>
+          </div>
+          <DownloadIcon
+            className="hidden size-5 shrink-0 text-muted-foreground lg:block"
+            aria-hidden="true"
+          />
         </div>
-        <DownloadIcon className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
       </div>
 
-      {primary ? <PrimaryDownload item={primary} /> : null}
+      {primary ? (
+        <div className="order-1 lg:order-2">
+          <PrimaryDownload item={primary} />
+        </div>
+      ) : null}
 
-      <div className="mt-3 divide-y divide-border rounded-lg border border-border">
+      <div className="order-3 mt-3 divide-y divide-border rounded-lg border border-border">
         {secondary.map((item) => (
           <DownloadRow key={item.kind} item={item} />
         ))}
