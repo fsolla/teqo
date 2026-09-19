@@ -64,9 +64,17 @@ describe('campaignPageChrome', () => {
     })
     expect(resolveCampaignPageChrome('/campanha/comunicacao/acervo', 'communicator')).toEqual({
       title: 'Acervo de falas',
-      subtitle: 'Discursos do Deputado Jorge Solla na Câmara.',
+      subtitle: 'Busque nas falas da Câmara ou nas gravações da equipe.',
     })
     expect(resolveCampaignPageChrome('/campanha/comunicacao/acervo/42', 'communicator')).toBeNull()
+    // C199 — the recordings alias has its own entry BEFORE the generic detail
+    // regex, which would otherwise read `gravacoes` as a speech id.
+    expect(
+      resolveCampaignPageChrome('/campanha/comunicacao/acervo/gravacoes', 'communicator'),
+    ).toEqual({ title: 'Gravações enviadas' })
+    expect(
+      resolveCampaignPageChrome('/campanha/comunicacao/acervo/gravacoes/7', 'communicator'),
+    ).toBeNull()
   })
 
   it('resolves the reel library list and leaves the detail title to the page (C194)', () => {

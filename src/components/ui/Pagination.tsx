@@ -16,7 +16,9 @@ const Pagination = ({ className, ...props }: React.ComponentProps<'nav'>) => (
 const PaginationContent = ({ className, ...props }: React.ComponentProps<'ul'>) => (
   <ul
     data-slot="pagination-content"
-    className={cn('flex items-center gap-0.5', className)}
+    // `m-0 list-none`: the frontend prose base styles every `ul` with disc
+    // markers and margins, which leaked dots onto the campaign pagination.
+    className={cn('m-0 flex list-none items-center gap-0.5', className)}
     {...props}
   />
 )

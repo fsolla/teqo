@@ -12,12 +12,13 @@ import {
   speechPosterTarget,
 } from '@/lib/speechPoster'
 import type { Media } from '@/payload-types'
+import { messageOf, runFfmpeg } from '@/utilities/media/ffmpeg'
 import {
   withPayloadTransaction,
   type PayloadTransactionRequest,
 } from '@/utilities/payloadTransaction'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
-import { downloadSource, messageOf, runFfmpeg } from '@/utilities/speech/speechMediaPipeline'
+import { downloadSource } from '@/utilities/speech/speechMediaPipeline'
 import { resolveSpeechVod, SPEECH_VOD_PLAYER_POLICY } from '@/utilities/speech/speechVodResolver'
 
 /**

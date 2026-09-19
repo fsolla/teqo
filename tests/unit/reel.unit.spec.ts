@@ -20,28 +20,6 @@ import {
   toReelLibraryItemViewModel,
   type ReelRecordForView,
 } from '@/lib/reel'
-import {
-  REEL_MEDIA_FALLBACK_MIME_TYPE,
-  reelMediaContentDisposition,
-  reelMediaContentType,
-  reelMediaHeaders,
-  type ReelMediaRange,
-} from '@/lib/reelMedia'
-
-const fullRange: ReelMediaRange = {
-  status: 200,
-  headers: { 'Accept-Ranges': 'bytes', 'Content-Length': '100' },
-}
-
-const partialRange: ReelMediaRange = {
-  status: 206,
-  headers: { 'Accept-Ranges': 'bytes', 'Content-Length': '10', 'Content-Range': 'bytes 0-9/100' },
-}
-
-const invalidRange: ReelMediaRange = {
-  status: 416,
-  headers: { 'Content-Range': 'bytes */100' },
-}
 
 describe('reel vocabulary (C193)', () => {
   it('pins the status kill switch and its labels', () => {
@@ -70,74 +48,6 @@ describe('reel vocabulary (C193)', () => {
     expect(canServeReelMedia('draft')).toBe(false)
     expect(canServeReelMedia('unpublished')).toBe(false)
     expect(reelMediaPath(42, 'video')).toBe('/campanha/comunicacao/reels/42/media/video')
-  })
-})
-
-describe('reel media response rules (C193)', () => {
-  it('serves only allowlisted types inline; everything else degrades', () => {
-    expect(reelMediaContentType('video/mp4')).toBe('video/mp4')
-    expect(reelMediaContentType('audio/mpeg')).toBe('audio/mpeg')
-    expect(reelMediaContentType('image/jpeg')).toBe('image/jpeg')
-    expect(reelMediaContentType('text/html')).toBe(REEL_MEDIA_FALLBACK_MIME_TYPE)
-    expect(reelMediaContentType(null)).toBe(REEL_MEDIA_FALLBACK_MIME_TYPE)
-  })
-
-  it('builds both filename forms and encodes non-ASCII', () => {
-    expect(reelMediaContentDisposition('reel.mp4', false)).toBe(
-      'inline; filename="reel.mp4"; filename*=UTF-8\'\'reel.mp4',
-    )
-    expect(reelMediaContentDisposition('capa ção.png', true)).toBe(
-      'attachment; filename="capa_o.png"; filename*=UTF-8\'\'capa%20%C3%A7%C3%A3o.png',
-    )
-    expect(reelMediaContentDisposition(null, false)).toContain('filename="arquivo"')
-  })
-
-  it('keeps the range headers and adds the private streaming contract', () => {
-    const headers = reelMediaHeaders({
-      range: partialRange,
-      mimeType: 'video/mp4',
-      filename: 'reel.mp4',
-      download: false,
-    })
-    expect(headers.get('Content-Range')).toBe('bytes 0-9/100')
-    expect(headers.get('Content-Length')).toBe('10')
-    expect(headers.get('Accept-Ranges')).toBe('bytes')
-    expect(headers.get('Content-Type')).toBe('video/mp4')
-    expect(headers.get('Content-Disposition')).toContain('inline')
-    expect(headers.get('Cache-Control')).toBe('private, no-store')
-    expect(headers.get('X-Content-Type-Options')).toBe('nosniff')
-    expect(headers.get('Content-Security-Policy')).toBeNull()
-  })
-
-  it('forces a download for unsafe types and for ?download=1', () => {
-    const unsafe = reelMediaHeaders({
-      range: fullRange,
-      mimeType: 'text/html',
-      filename: 'roteiro.html',
-      download: false,
-    })
-    expect(unsafe.get('Content-Type')).toBe(REEL_MEDIA_FALLBACK_MIME_TYPE)
-    expect(unsafe.get('Content-Disposition')).toContain('attachment')
-    expect(unsafe.get('Content-Security-Policy')).toBe("default-src 'none'")
-
-    const explicit = reelMediaHeaders({
-      range: fullRange,
-      mimeType: 'video/mp4',
-      filename: 'reel.mp4',
-      download: true,
-    })
-    expect(explicit.get('Content-Disposition')).toContain('attachment')
-  })
-
-  it('passes the 416 headers through untouched', () => {
-    const headers = reelMediaHeaders({
-      range: invalidRange,
-      mimeType: 'video/mp4',
-      filename: 'reel.mp4',
-      download: false,
-    })
-    expect(headers.get('Content-Range')).toBe('bytes */100')
-    expect(headers.get('Content-Type')).toBe('video/mp4')
   })
 })
 

@@ -177,3 +177,9 @@ export {
 } from '@/utilities/access/speeches'
 
 export { canDeleteReel, canReadReel } from '@/utilities/access/reels'
+
+export {
+  canDeleteRecording,
+  canReadRecording,
+  canUploadRecording,
+} from '@/utilities/access/recordings'

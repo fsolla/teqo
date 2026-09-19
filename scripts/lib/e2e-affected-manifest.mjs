@@ -259,8 +259,10 @@ export const E2E_AFFECTED_MANIFEST = [
     specs: ['campaignPermissionProfileHttp', 'campaignDemandVisibility'],
   },
   {
+    // C199 — the recordings' timestamped ASR uses the same provider owner; the
+    // acervo spec exercises the recordings surface the job feeds.
     prefixes: ['src/utilities/ai'],
-    specs: ['campaignAiTranscribe'],
+    specs: ['campaignAiTranscribe', 'campaignSpeechAcervo'],
   },
   {
     // Zod input schemas surface in the browser through form flows; the
@@ -316,10 +318,18 @@ export const E2E_AFFECTED_MANIFEST = [
       `${CAMPAIGN_APP}/comunicacao`,
       'src/components/campaign/speech',
       'src/components/campaign/reels',
+      // C199 — the uploaded recordings source and its private media owner.
+      'src/components/campaign/recording',
       'src/utilities/speech',
       'src/utilities/reels',
+      // C199 — the shared private-media owner and the ffmpeg runner.
+      'src/utilities/recordings',
+      'src/utilities/privateMedia',
+      'src/utilities/media',
       'src/lib/speech',
       'src/lib/reel',
+      'src/lib/recording',
+      'src/lib/privateMedia',
       // The role predicates drive the vertical gate and the assistant surfaces.
       'src/lib/campaignRoles',
     ],

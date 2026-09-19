@@ -58,6 +58,7 @@ next-env.d.ts
 
 /media
 /reelMedia
+/recordingMedia
 
 # TSE open-data zip cache (pnpm db:seed:tse)
 /data/tse/

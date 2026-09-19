@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import type { Metadata } from 'next'
 
 import {
+  CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES,
   CAMPAIGN_COMMUNICATION_CORTES,
   CAMPAIGN_COMMUNICATION_REELS,
   CAMPAIGN_CONTACTS_HOME,
@@ -120,7 +121,10 @@ export const campaignPageChromeCatalog = {
   },
   acervo: {
     title: 'Acervo de falas',
-    subtitle: 'Discursos do Deputado Jorge Solla na Câmara.',
+    subtitle: 'Busque nas falas da Câmara ou nas gravações da equipe.',
+  },
+  gravacoes: {
+    title: 'Gravações enviadas',
   },
   cortes: {
     title: 'Cortes',
@@ -303,6 +307,13 @@ const pathRules: PathRule[] = [
     // through `SetCampaignPageChrome`, so it falls through to `null` here.
     match: (pathname) => pathname === CAMPAIGN_COMMUNICATION_REELS,
     resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.reels),
+  },
+  {
+    // C199 — same C168 lesson: the generic acervo-detail regex would read
+    // `gravacoes` as an id. The list redirects to `?source=enviadas`; this
+    // entry only backs the transient alias.
+    match: (pathname) => pathname === CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES,
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.gravacoes),
   },
   {
     match: (pathname) => /^\/campanha\/comunicacao\/acervo\/[^/]+$/.test(pathname),

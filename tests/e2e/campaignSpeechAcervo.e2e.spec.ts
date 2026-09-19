@@ -1,6 +1,8 @@
 import { request as playwrightRequest } from '@playwright/test'
 
 import type { SpeechScope, SpeechTopic } from '@/lib/speechFacets'
+import { normalizeForSearch } from '../../src/lib/speechSearch.js'
+import { hookFilledCreateData } from '../../src/utilities/hookFilledData.js'
 
 import type { CampaignE2EOwnership } from './fixtures/campaignE2EFixtures.js'
 import { assertCampaignRedirect, expect, rendered, test } from './fixtures/campaignHttpTest.js'
@@ -513,6 +515,175 @@ test.describe('communication vertical (C154/C162)', () => {
         maxRedirects: 0,
       })
       expect(denied.status()).toBe(404)
+    })
+  })
+
+  test.describe('uploaded recordings (C199)', () => {
+    const createRecording = async (
+      campaign: { fixtures: CampaignE2EOwnership },
+      input: { marker: string; status?: 'processing' | 'ready' | 'failed'; withSegments?: boolean },
+    ) => {
+      const bytes = Buffer.from(`recording-${input.marker}`)
+      const media = await campaign.fixtures.payload.create({
+        collection: 'recordingMedia',
+        data: { alt: `Arquivo ${input.marker}` },
+        file: {
+          data: bytes,
+          mimetype: 'video/mp4',
+          name: `${input.marker}.mp4`,
+          size: bytes.length,
+        },
+      })
+      const recording = await campaign.fixtures.payload.create({
+        collection: 'recording',
+        data: {
+          title: `Gravação ${input.marker}`,
+          status: input.status ?? 'ready',
+          recordedAt: '2026-09-01T00:00:00.000Z',
+          media: media.id,
+        },
+        depth: 0,
+      })
+
+      if (input.withSegments ?? true) {
+        await campaign.fixtures.payload.create({
+          collection: 'recordingSegment',
+          data: hookFilledCreateData<'recordingSegment'>({
+            recording: recording.id,
+            order: 1,
+            startSeconds: 12,
+            endSeconds: 20,
+            text: `A plenária discutiu a merenda ${input.marker} com a comunidade.`,
+          }),
+          depth: 0,
+        })
+        await campaign.fixtures.payload.update({
+          collection: 'recording',
+          id: recording.id,
+          data: {
+            searchText: normalizeForSearch(
+              `A plenária discutiu a merenda ${input.marker} com a comunidade.`,
+            ),
+          },
+          depth: 0,
+        })
+      }
+
+      return { recording, media, bytes }
+    }
+
+    test('the recordings source renders the row, the excerpt and the switcher', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('gravacao')
+      const { recording } = await createRecording(campaign, { marker })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      const response = await request.get(`/campanha/comunicacao/acervo?source=enviadas&q=${marker}`)
+      expect(response.status()).toBe(200)
+      const html = rendered(await response.text())
+      expect(html).toContain('Gravações enviadas')
+      expect(html).toContain('aria-current="page"')
+      expect(html).toContain(`Gravação ${marker}`)
+      expect(html).toContain('Pronto')
+      expect(html).toContain('<mark')
+      expect(html).toContain(`?t=12`)
+      expect(html).toContain(`/campanha/comunicacao/acervo/gravacoes/${recording.id}`)
+
+      const miss = await request.get('/campanha/comunicacao/acervo?source=enviadas&q=zzzznada')
+      expect(rendered(await miss.text())).toContain('Nenhuma gravação encontrada para')
+
+      // The alias segment resolves to the source instead of being swallowed by
+      // the speech detail regex (the route gate streams, so the redirect may
+      // arrive as a meta tag — `assertCampaignRedirect` accepts both).
+      await assertCampaignRedirect(
+        request,
+        '/campanha/comunicacao/acervo/gravacoes',
+        '/campanha/comunicacao/acervo?source=enviadas',
+      )
+    })
+
+    test('the detail renders the private player, the clickable transcript and the download', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('gravacaodetalhe')
+      const { recording } = await createRecording(campaign, { marker })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      const response = await request.get(
+        `/campanha/comunicacao/acervo/gravacoes/${recording.id}?t=12&q=${marker}`,
+      )
+      expect(response.status()).toBe(200)
+      const html = rendered(await response.text())
+      expect(html).toContain(`Gravação ${marker}`)
+      expect(html).toContain(`/campanha/comunicacao/acervo/gravacoes/${recording.id}/arquivo`)
+      expect(html).toContain('data-start-seconds="12"')
+      expect(html).toContain('<mark')
+      expect(html).toContain('Baixar')
+      expect(html).toContain('Apagar')
+      expect(html).toContain('Voltar ao acervo')
+    })
+
+    test('the private file answers only the acervo roles, with range and download', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('gravacaofile')
+      const { recording, bytes } = await createRecording(campaign, { marker })
+
+      const communicator = await campaign.fixtures.createCampaignUser('communicator')
+      const communicatorRequest = await campaignRequest(communicator, communicator.password)
+
+      const full = await communicatorRequest.get(
+        `/campanha/comunicacao/acervo/gravacoes/${recording.id}/arquivo`,
+      )
+      expect(full.status()).toBe(200)
+      expect(full.headers()['content-type']).toBe('video/mp4')
+      expect(full.headers()['cache-control']).toBe('private, no-store')
+      expect(Buffer.from(await full.body())).toEqual(bytes)
+
+      const partial = await communicatorRequest.get(
+        `/campanha/comunicacao/acervo/gravacoes/${recording.id}/arquivo`,
+        { headers: { Range: 'bytes=0-3' } },
+      )
+      expect(partial.status()).toBe(206)
+
+      const download = await communicatorRequest.get(
+        `/campanha/comunicacao/acervo/gravacoes/${recording.id}/arquivo?download=1`,
+      )
+      expect(download.headers()['content-disposition']).toContain('attachment')
+
+      const advisor = await campaign.fixtures.createCampaignUser('advisor')
+      const advisorRequest = await campaignRequest(advisor, advisor.password)
+      const denied = await advisorRequest.get(
+        `/campanha/comunicacao/acervo/gravacoes/${recording.id}/arquivo`,
+      )
+      expect(denied.status()).toBe(404)
+    })
+
+    test('the upload route refuses cross-origin and advisor actors', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+      const uploadUrl = '/campanha/comunicacao/acervo/gravacoes/enviar?title=Teste&filename=t.mp4'
+
+      const crossOrigin = await request.post(uploadUrl, {
+        headers: { Origin: 'https://evil.example' },
+      })
+      expect(crossOrigin.status()).toBe(403)
+
+      const advisor = await campaign.fixtures.createCampaignUser('advisor')
+      const advisorRequest = await campaignRequest(advisor, advisor.password)
+      const denied = await advisorRequest.post(uploadUrl)
+      expect(denied.status()).toBe(403)
     })
   })
 })

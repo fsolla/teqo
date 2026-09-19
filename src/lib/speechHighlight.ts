@@ -77,6 +77,29 @@ export const matchesSearchTerms = (text: string, query: string): boolean => {
   return terms.every((term) => normalized.includes(term))
 }
 
+/** Any record carrying the searchable text of one segment (speech/recording). */
+export type SearchableSegment = { text: string }
+
+/**
+ * C154/C199 — the first segment that carries the whole query (all terms, any
+ * order), else the first one carrying any term. Shared by the speech acervo and
+ * the uploaded recordings, which pick the excerpt of a result the same way.
+ */
+export const pickMatchingSegment = <Segment extends SearchableSegment>(
+  segments: readonly Segment[],
+  query: string | undefined,
+): Segment | undefined => {
+  const q = query?.trim()
+  if (!q || segments.length === 0) return undefined
+  const allTerms = segments.find((segment) => matchesSearchTerms(segment.text, q))
+  if (allTerms) return allTerms
+  const terms = speechSearchTerms(q)
+  return segments.find((segment) => {
+    const normalized = normalizeForSearch(segment.text)
+    return terms.some((term) => normalized.includes(term))
+  })
+}
+
 /** Every occurrence of every term, mapped back to source offsets and merged. */
 export const findHighlightRanges = (text: string, query: string): SpeechHighlightRange[] => {
   const terms = speechSearchTerms(query)

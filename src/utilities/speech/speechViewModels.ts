@@ -10,7 +10,7 @@ import type { SpeechExcerptSegment } from '@/lib/speechExcerpt'
 import type { SpeechScope, SpeechTopic } from '@/lib/speechFacets'
 import {
   buildHighlightedExcerpt,
-  matchesSearchTerms,
+  pickMatchingSegment,
   speechSearchTerms,
   splitHighlightedParts,
   type SpeechHighlightedExcerpt,
@@ -180,21 +180,6 @@ const topicViewModels = (speech: SpeechListRecord) =>
 const scopeViewModels = (speech: SpeechListRecord) =>
   (speech.scopes ?? []).map((value) => ({ value, label: speechScopeLabels[value] }))
 
-const pickMatchingSegment = (
-  segments: readonly SpeechSegmentRecord[],
-  query: string | undefined,
-): SpeechSegmentRecord | undefined => {
-  const q = query?.trim()
-  if (!q || segments.length === 0) return undefined
-  const allTerms = segments.find((segment) => matchesSearchTerms(segment.text, q))
-  if (allTerms) return allTerms
-  const terms = speechSearchTerms(q)
-  return segments.find((segment) => {
-    const normalized = normalizeForSearch(segment.text)
-    return terms.some((term) => normalized.includes(term))
-  })
-}
-
 /**
  * C192 — the first expanded theme term that actually surfaced this speech. The
  * gate is the `speechMatchesSearchTerm` mirror (the same predicate the `where`
@@ -241,13 +226,6 @@ export const buildWatchHref = (
   if (query) params.set('q', query)
   const queryString = params.toString()
   return `${CAMPAIGN_COMMUNICATION_ACERVO}/${speechId}${queryString ? `?${queryString}` : ''}`
-}
-
-/** Seek offset from the detail URL (`?t=`), non-negative seconds or null. */
-export const parseSpeechSeekSeconds = (raw: string | undefined): number | null => {
-  if (raw === undefined) return null
-  const seconds = Number(raw)
-  return Number.isFinite(seconds) && seconds >= 0 ? seconds : null
 }
 
 type SpeechCuts = readonly SpeechCutSummaryViewModel[]
