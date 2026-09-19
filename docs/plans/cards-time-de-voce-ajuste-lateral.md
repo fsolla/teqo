@@ -45,7 +45,7 @@ O enquadramento automático da S18 está certo e fica: a proporção da cabeça 
 
 - **Vou apresentar dados?** Não — nenhuma métrica de produto entra nesta tela.
 - **Decisões desbloqueadas:** nenhuma — a medida de posição é geometria efêmera no aparelho, não vira dado de campanha.
-- **Forma:** *adiada ao plano de implementação* — restrição de produto: nada de telemetria de foto/posição; a privacidade do funil fica como está.
+- **Forma:** _adiada ao plano de implementação_ — restrição de produto: nada de telemetria de foto/posição; a privacidade do funil fica como está.
 
 ## Dados da decisão (literais)
 
