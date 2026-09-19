@@ -96,6 +96,10 @@ next-env.d.ts
 /data/dossie-solla-tema/
 /docs/research/dossie-solla-tema/
 
+# C196 — reels tutoriais: o shot list é versionado (scripts/reels/shot-lists);
+# o pacote (reel.mp4/capa.png/metadata.json) e os intermediários são regeneráveis.
+/data/reels/
+
 # Local-only sensitive material (agents may read; never commit content)
 /private/**
 !/private/README.md

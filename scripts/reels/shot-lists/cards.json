@@ -1,0 +1,86 @@
+{
+  "slug": "cards",
+  "title": "Crie seu card de apoio",
+  "feature": "cards",
+  "route": "/",
+  "fixture": {
+    "cardName": "Joana"
+  },
+  "scenes": [
+    {
+      "id": "hook",
+      "kind": "graphic",
+      "template": "hook",
+      "durationMs": 2400
+    },
+    {
+      "id": "step-1",
+      "kind": "capture",
+      "badge": { "number": 1, "total": 3, "label": "Escolha um modelo" },
+      "caption": {
+        "parts": [
+          { "text": "Toque em " },
+          { "text": "“Card com seu nome”", "accent": true },
+          { "text": "." }
+        ]
+      },
+      "captionDelayMs": 500,
+      "captionDurationMs": 3200,
+      "leadInMs": 700,
+      "trailOutMs": 900,
+      "setup": [{ "action": "scrollIntoView", "selector": "#cards-title" }],
+      "steps": [
+        { "action": "click", "selector": "[data-card-model-tile=\"eu-sou-solla\"]" },
+        { "action": "waitFor", "selector": "role=heading[name=\"Personalize com seu nome\"]" }
+      ]
+    },
+    {
+      "id": "step-2",
+      "kind": "capture",
+      "badge": { "number": 2, "total": 3, "label": "Escreva seu nome" },
+      "caption": {
+        "parts": [
+          { "text": "Digite seu nome e toque em " },
+          { "text": "“Criar meu card”", "accent": true },
+          { "text": "." }
+        ]
+      },
+      "captionDelayMs": 500,
+      "captionDurationMs": 3600,
+      "leadInMs": 600,
+      "trailOutMs": 1000,
+      "setup": [{ "action": "scrollIntoView", "selector": "role=textbox[name=\"Seu nome\"]" }],
+      "steps": [
+        { "action": "fill", "selector": "role=textbox[name=\"Seu nome\"]" },
+        { "action": "click", "selector": "role=button[name=\"Criar meu card\"]" },
+        { "action": "waitFor", "selector": "text=Seu card está pronto para compartilhar." }
+      ]
+    },
+    {
+      "id": "step-3",
+      "kind": "capture",
+      "badge": { "number": 3, "total": 3, "label": "Baixe seu card" },
+      "caption": {
+        "parts": [
+          { "text": "Baixe e compartilhe o " },
+          { "text": "seu card", "accent": true },
+          { "text": "." }
+        ]
+      },
+      "captionDelayMs": 400,
+      "captionDurationMs": 2800,
+      "leadInMs": 600,
+      "trailOutMs": 900,
+      "setup": [
+        { "action": "scrollIntoView", "selector": "role=button[name=\"Baixar meu card\"]" }
+      ],
+      "steps": [{ "action": "download", "selector": "role=button[name=\"Baixar meu card\"]" }]
+    },
+    {
+      "id": "cta",
+      "kind": "graphic",
+      "template": "cta",
+      "durationMs": 3200
+    }
+  ]
+}
