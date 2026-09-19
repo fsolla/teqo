@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { removeCardPhotoBackground } from '@/components/cards/cardCutout'
+import { harmonizeCardCutout } from '@/components/cards/cardPhotoHarmonyCanvas'
 import type { CardRect } from '@/lib/cardModels'
 import { frameCardPhotoOnBbox, type CardPhotoTransform } from '@/lib/cardPhotoTransform'
 
@@ -12,6 +13,12 @@ export type CardCutoutState =
   | {
       status: 'ready'
       canvas: HTMLCanvasElement
+      /**
+       * S17 — tone-harmonized variant of `canvas` (same size/alpha). Equals
+       * `canvas` when the photo is already on tone; `null` when the reference
+       * could not be read (the composer then hides the control).
+       */
+      harmonized: HTMLCanvasElement | null
       width: number
       height: number
       /** Initial framing: cutout top on the slot top, centered, covering it. */
@@ -25,8 +32,11 @@ export type CardCutoutState =
  * so a stale inference or an unmount never writes state. The engine itself is a
  * page-lifetime singleton in the adapter (re-creating the wasm session per open
  * would cost seconds); each result's masks/bitmap are released there.
+ *
+ * S17 — the ready state also carries the harmonized variant, computed once
+ * before the first ready paint (default ON must not flash the raw photo).
  */
-export const useCardCutout = (photoWindow: CardRect | undefined) => {
+export const useCardCutout = (photoWindow: CardRect | undefined, harmonyReferenceSrc?: string) => {
   const [state, setState] = useState<CardCutoutState>({ status: 'idle' })
   const fileRef = useRef<File | null>(null)
   const runRef = useRef(0)
@@ -68,15 +78,21 @@ export const useCardCutout = (photoWindow: CardRect | undefined) => {
         return
       }
 
+      const harmonized = harmonyReferenceSrc
+        ? await harmonizeCardCutout(result.canvas, harmonyReferenceSrc)
+        : null
+      if (runRef.current !== run) return
+
       setState({
         status: 'ready',
         canvas: result.canvas,
+        harmonized,
         width: result.width,
         height: result.height,
         transform,
       })
     },
-    [photoWindow],
+    [photoWindow, harmonyReferenceSrc],
   )
 
   const retry = useCallback(() => {

@@ -14,6 +14,7 @@
 import type { ImageSegmenter, MPMask } from '@mediapipe/tasks-vision'
 
 import type { CardAlphaBbox } from '@/lib/cardPhotoTransform'
+import { CARD_CUTOUT_ALPHA_THRESHOLD } from '@/lib/cardPhotoTransform'
 
 declare global {
   interface Window {
@@ -25,7 +26,6 @@ declare global {
 const WASM_DIR = '/cards/mediapipe/wasm'
 const MODEL_URL = '/cards/selfie_segmenter.tflite'
 const CUTOUT_MAX_EDGE = 1600
-const ALPHA_THRESHOLD = 32
 const STUB_ENABLED = process.env.NEXT_PUBLIC_CARDS_CUTOUT_STUB === '1'
 const STUB_DELAY_MS = 1500
 const STUB_PROGRESS = 0.36
@@ -243,7 +243,7 @@ const readAlphaBbox = (canvas: HTMLCanvasElement): CardAlphaBbox | null => {
   for (let y = 0; y < height; y += 1) {
     const row = y * width * 4
     for (let x = 0; x < width; x += 1) {
-      if (pixels[row + x * 4 + 3]! > ALPHA_THRESHOLD) {
+      if (pixels[row + x * 4 + 3] > CARD_CUTOUT_ALPHA_THRESHOLD) {
         if (x < minX) minX = x
         if (x > maxX) maxX = x
         if (y < minY) minY = y
