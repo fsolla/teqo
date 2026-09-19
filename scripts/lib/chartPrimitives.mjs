@@ -501,7 +501,7 @@ export const lineChart = ({
   height = 420,
   format,
   stroke = '#78716c',
-  highlight = '#c51414',
+  highlight = '#e4102f',
   paper = '#faf9f7',
   ink = '#1c1917',
   grid = '#a8a29e',

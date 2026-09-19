@@ -42,6 +42,13 @@ describe('skill /graficos-dados documents the flow', () => {
     expect(skill).toContain('--source')
     expect(skill).toMatch(/fail-closed/i)
   })
+
+  it('pins the official kit 1313 brand and palette (C203)', () => {
+    expect(skill).toContain('jorge-solla-positivo.png')
+    expect(skill).toContain('#e4102f')
+    expect(skill).toContain('#184e92')
+    expect(skill).not.toContain('#c51414')
+  })
 })
 
 describe('command /graficos-dados couples to the skill', () => {
@@ -50,5 +57,6 @@ describe('command /graficos-dados couples to the skill', () => {
     expect(command).toContain('`graficos-dados`')
     expect(command).toContain('$ARGUMENTS')
     expect(command).toContain('.agents/skills/graficos-dados/SKILL.md')
+    expect(command).toContain('kit 1313')
   })
 })

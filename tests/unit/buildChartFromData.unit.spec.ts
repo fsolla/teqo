@@ -26,7 +26,9 @@ const launchTracker = () => {
 }
 
 const screenshotStub = () =>
-  vi.fn(async (_browser: unknown, _options: { width: number; height: number }) => ({ size: 2048 }))
+  vi.fn(async (_browser: unknown, _options: { html: string; width: number; height: number }) => ({
+    size: 2048,
+  }))
 
 const writeInput = async (dir: string, body: string) => {
   const path = join(dir, 'dados.txt')
@@ -167,6 +169,12 @@ describe('main — spec assembly, replay and the per-size log', () => {
       expect.objectContaining({ width, height, outPath }),
     )
     expect(close).toHaveBeenCalledOnce()
+
+    // C203: the official kit mark is embedded even though `repoRoot` is a temp
+    // dir — the asset resolves from the module, never from the cwd.
+    const html = screenshot.mock.calls[0][1].html
+    expect(html).toContain('data:image/png;base64,')
+    expect(html).not.toContain('MANDATO DEPUTADO FEDERAL')
 
     const spec = JSON.parse(
       await readFile(join(dir, 'data/graficos-instagram/ranking-de-teste.chart-spec.json'), 'utf8'),

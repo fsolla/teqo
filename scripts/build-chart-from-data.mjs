@@ -20,6 +20,7 @@ import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { launchPdfBrowser, screenshotHtmlPng } from './lib/buildPdf.mjs'
+import { readKitAssets } from './lib/campaignKitAssets.mjs'
 import {
   MAX_POINTS,
   MAX_POINTS_LINE,
@@ -192,7 +193,16 @@ export const main = async ({
         `${slug || 'grafico'}-${today()}-${spec.size ?? 'feed'}.png`,
       )
 
-  const html = renderChartHtml(spec)
+  let brandLogo = ''
+  try {
+    const assets = await readKitAssets()
+    brandLogo = assets.namePositive
+  } catch (error) {
+    die(
+      `falha ao ler a marca oficial em public/campaign-kit/jorge-solla-positivo.png: ${error?.message ?? error}`,
+    )
+  }
+  const html = renderChartHtml(spec, { brandLogo })
   const sizeKey = SIZES[spec.size] ? spec.size : 'feed'
   const canvas = SIZES[sizeKey]
   const pointCap = spec.series?.length

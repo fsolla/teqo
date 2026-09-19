@@ -47,6 +47,7 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/buildPdf.mjs',
   'scripts/lib/camaraFetch.mjs',
   'scripts/lib/camaraSpeeches.mjs',
+  'scripts/lib/campaignKitAssets.mjs',
   'scripts/lib/changelog.mjs',
   'scripts/lib/chartData.mjs',
   'scripts/lib/chartPrimitives.mjs',
