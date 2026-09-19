@@ -86,11 +86,11 @@ flowchart LR
 
 ### Componentes / mudanças
 
-1. **`scripts/lib/campaignKitAssets.mjs` (novo — dono da leitura do kit):** `KIT_ASSETS` verbatim de `reelRender.mjs:121-127` (5 arquivos) + `readKitAssets({ root })` devolvendo data URIs; default `root = join(dirname(fileURLToPath(import.meta.url)), '..', '..')` (repo root, cwd-independente); exporta **só** `readKitAssets` (`KIT_ASSETS` privado — `knip.json` rules `exports: error`); JSDoc; sem dep além de `node:fs/promises`/`node:path`/`node:url`.
+1. **`scripts/lib/campaignKitAssets.mjs` (novo — dono da leitura do kit):** `KIT_ASSETS` verbatim de `reelRender.mjs:121-127` (5 arquivos) + `readKitAssets({ root, keys })` devolvendo data URIs (default `keys` = todos; o gráfico pede só `namePositive`); default `root = join(dirname(fileURLToPath(import.meta.url)), '..', '..')` (repo root, cwd-independente); exporta **só** `readKitAssets` (`KIT_ASSETS` privado — `knip.json` rules `exports: error`); JSDoc `@param`/`@returns`; sem dep além de `node:fs/promises`/`node:path`/`node:url`.
 2. **`scripts/lib/reelRender.mjs` (editar):** remover `KIT_ASSETS`/`readKitAssets` (`:121-138`); nenhum outro comportamento muda (saída do reel C196 inalterada).
 3. **`scripts/build-reel.mjs` (editar):** `readKitAssets` passa a vir de `./lib/campaignKitAssets.mjs` (import atual em `:51`); chamada `:145` mantém `{ root: ROOT }`.
 4. **`scripts/lib/graficosInstagramRender.mjs` (editar):** `SOLLA_PALETTE` oficial; CSS `.top-rule`/`.context`→azul e bloco `.brand*` substituído por `.brand-logo-frame`+`img` (286×90, contain); `footer` recebe o data URI; `renderChartHtml(spec, { brandLogo })` sync/puro e fail-closed (ausente ou fora de `data:image/png;base64,`); `alt="Jorge Solla — Deputado Federal"`; `lineChart` chamado com `highlight: SOLLA_PALETTE.highlight` (já passa).
-5. **`scripts/build-chart-from-data.mjs` (editar):** importar `readKitAssets`; após `validateSpec` e antes do browser, ler `namePositive` com `readKitAssets()` (**sem** `repoRoot`!) e chamar `renderChartHtml(spec, { brandLogo })` (`:195`); falha na leitura → `die` acionável citando o kit.
+5. **`scripts/build-chart-from-data.mjs` (editar):** importar `readKitAssets`; após `validateSpec` e antes do browser, ler só `namePositive` com `readKitAssets({ keys: ['namePositive'] })` (**sem** `repoRoot`!) e chamar `renderChartHtml(spec, { brandLogo })` (`:195`); falha na leitura → `die` acionável citando o kit.
 6. **`scripts/lib/chartPrimitives.mjs` (editar):** default `highlight` do `lineChart` (`:504`); `CHART_COLORS` e os demais emissores intactos.
 7. **`.agents/skills/graficos-dados/SKILL.md` (editar):** frontmatter (marca/paleta oficiais do kit 1313); `:126` e `:169` `#c51414`→`#e4102f`; guardrail do rodapé com o ativo oficial (nunca recriar lockup); referências ao `public/campaign-kit/README.md` e a `docs/plans/graficos-dados-marca-kit-1313.md`.
 8. **`.opencode/commands/graficos-dados.md` (editar):** descrição `:2` — "na marca e paleta oficiais do kit 1313".
@@ -142,8 +142,13 @@ Total ~1,0 dia (0,80 de código+testes, 0,15 de prova/crítica, 0,05 de fechamen
 - **Limpar os resíduos de ilustração do hi-fi** (`:1966-1975`, `:2127-2130`) — sem trigger (a); a revisão C203 é a autoridade; se quiserem consistência do arquivo, item de design separado.
 - **Editor gráfico / configurar cores** — template fixo + dados de entrada.
 - **Expor amarelo/verde na paleta** — eles só vivem dentro dos ativos; expor é furar o guardrail.
+- **Unificar os defaults de `chartPrimitives` com `SOLLA_PALETTE` (S10)** — decisão (iv) travada; unificar importaria a paleta do kit para dentro do dono compartilhado e os neutros já existem assim em `main`.
 - **Migration/schema/DB/Consent/access** — ferramenta local, sem persistência.
 - **Commitar PNG/dado** — saídas gitignored.
+
+## Adiado com gatilho (triage pós-simplify)
+
+- **S9 — root redundante em `scripts/build-reel.mjs:145`:** gatilho: na próxima edição de `build-reel.mjs`, trocar `readKitAssets({ root: ROOT })` por `readKitAssets()` — o default do dono resolve o mesmo repo root e passa a ser a única resolução.
 
 ## Riscos e mitigação
 

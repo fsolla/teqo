@@ -170,12 +170,6 @@ describe('main — spec assembly, replay and the per-size log', () => {
     )
     expect(close).toHaveBeenCalledOnce()
 
-    // C203: the official kit mark is embedded even though `repoRoot` is a temp
-    // dir — the asset resolves from the module, never from the cwd.
-    const html = screenshot.mock.calls[0][1].html
-    expect(html).toContain('data:image/png;base64,')
-    expect(html).not.toContain('MANDATO DEPUTADO FEDERAL')
-
     const spec = JSON.parse(
       await readFile(join(dir, 'data/graficos-instagram/ranking-de-teste.chart-spec.json'), 'utf8'),
     )
@@ -192,6 +186,31 @@ describe('main — spec assembly, replay and the per-size log', () => {
     expect(log).toContain(`(${width}×${height}`)
     expect(log).toContain(`≤ ${cap}`)
     expect(log).toContain('tipo=bar')
+  })
+
+  it('embeds the official kit mark even with a temp repoRoot (C203)', async () => {
+    const input = await writeInput(dir, fiveRows)
+    const { launchBrowser } = launchTracker()
+    const screenshot = screenshotStub()
+
+    await main({
+      argv: [
+        `--in=${input}`,
+        '--headline=Ranking de teste',
+        '--source=TSE 2022',
+        '--type=bar',
+        `--out=${join(dir, 'brand.png')}`,
+      ],
+      repoRoot: dir,
+      launchBrowser,
+      screenshot,
+    })
+
+    // The asset resolves from the module, never from the cwd: `repoRoot` is a
+    // temp dir here and the official mark still reaches the HTML.
+    const html = screenshot.mock.calls[0][1].html
+    expect(html).toContain('data:image/png;base64,')
+    expect(html).not.toContain('MANDATO DEPUTADO FEDERAL')
   })
 
   it('assembles the delta spec from a table with the two periods', async () => {

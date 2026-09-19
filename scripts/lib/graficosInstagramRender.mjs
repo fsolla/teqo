@@ -192,13 +192,13 @@ const plotBody = (spec) => {
   return rankingBody(spec)
 }
 
-const brandLogo = (brandLogoDataUri) => `<div class="brand-logo-frame">
-    <img src="${brandLogoDataUri}" alt="Jorge Solla — Deputado Federal" />
+const brandMark = (brandMarkDataUri) => `<div class="brand-logo-frame">
+    <img src="${brandMarkDataUri}" alt="Jorge Solla — Deputado Federal" />
   </div>`
 
-const footer = (spec, brandLogoDataUri) => `<footer class="footer">
+const footer = (spec, brandMarkDataUri) => `<footer class="footer">
     <p class="source"><strong>Fonte:</strong> ${htmlEscape(spec.source)}${spec.note ? `<br />Nota: ${htmlEscape(spec.note)}` : ''}</p>
-    ${brandLogo(brandLogoDataUri)}
+    ${brandMark(brandMarkDataUri)}
   </footer>`
 
 const CSS = `* { box-sizing: border-box; }
@@ -364,9 +364,9 @@ const layoutFor = (size) => {
  * lockup is never recreated.
  */
 export const renderChartHtml = (spec, { brandLogo: brandLogoDataUri } = {}) => {
-  if (!brandLogoDataUri || !brandLogoDataUri.startsWith('data:image/png;base64,')) {
+  if (!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(brandLogoDataUri ?? '')) {
     throw new Error(
-      'marca oficial do kit ausente: leia jorge-solla-positivo.png com readKitAssets() e passe brandLogo.',
+      'marca oficial ausente: passe brandLogo como data:image/png;base64,… do ativo oficial do kit.',
     )
   }
   const sizeKey = SIZES[spec.size] ? spec.size : 'feed'
