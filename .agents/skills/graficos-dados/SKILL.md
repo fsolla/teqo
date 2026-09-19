@@ -55,7 +55,13 @@ lockup tipográfico); a paleta oficial é `#e4102f` (destaque/valência boa),
    - **duas medidas por categoria → `delta`**: barra de variação com a base
      (0 → inicial) num tom e a extensão (inicial → final) noutro, os dois valores
      numa gutter de duas colunas e o vermelho fora do plot (sem valência);
-   - **uma única medida → `anchor`** (número grande + frase que explica).
+   - **uma única medida → `anchor`** (número grande + frase que explica);
+   - **duas categorias, ambas boas notícias → `column` com `--dual-positive`**:
+     duas colunas verticais no vermelho oficial `#e4102f` — a valência boa é
+     compartilhada, não há vencedor —, na ordem do dado, sem hierarquia nem
+     cinza; certificada no feed, 280px por coluna;
+   - **ambas neutras (sem valência) → `--no-highlight`**: barras/colunas no tom
+     neutro, sem vermelho no plot.
    Ambíguo (mais de um tipo plausível) → **pergunte**; não escolha no escuro.
    Escreva a **manchete = takeaway** (não "Gráfico de X"), subtítulo opcional e a
    **fonte** (viaja dentro da imagem).
@@ -83,6 +89,13 @@ lockup tipográfico); a paleta oficial é `#e4102f` (destaque/valência boa),
      --subtitle="Vitória da Conquista — número de equipes por tipo (2020 → jul/2026)" \
      --source="Ministério da Saúde — CNES" \
      --note="Sem variação: EMAD, EMAP, ENASF-AB e ECR."
+   ```
+   Duas categorias, ambos os resultados bons (dois tons de vermelho, sem hierarquia):
+   ```bash
+   node scripts/build-chart-from-data.mjs --in=<arquivo> --type=column --size=feed \
+     --dual-positive --unit=% \
+     --headline="A maioria dos internados nos dois hospitais mora na cidade" \
+     --source="Ministério da Saúde — SIH/SUS"
    ```
    Saída default: `docs/research/graficos-instagram/<slug>-<data>-<size>.png`
    (gitignored) + o `chart-spec.json` em `data/graficos-instagram/`. `--size`:
@@ -127,7 +140,10 @@ Na linha de 2 séries, `series` substitui `rows` e `projectedLabel` marca o
 ```
 
 `chartType` ∈ `bar | column | line | anchor | delta`; `highlight` é o rótulo que
-recebe o único vermelho `#e4102f` (default: o maior valor). Em `series`, `tone` ∈
+recebe o único vermelho `#e4102f` (default: o maior valor); `unit` anexa o
+sufixo aos rótulos de valor (ex.: `"%"`). O `kicker` (spec) segue a **relação**
+dos dados, não o layout — colunas verticais de categorias leem "Comparação",
+poucos períodos leem "Poucos períodos". Em `series`, `tone` ∈
 `good | bad` (os dois tons ou nenhum) e as duas séries compartilham os mesmos
 rótulos temporais; `rows` e `highlight` não entram nessa variante.
 `projectedLabel` marca a projeção no último período e `crossingLabel` só é aceito
@@ -135,9 +151,15 @@ quando a série boa de fato ultrapassa a ruim naquele período (confirmação
 textual, nunca inferência automática). Os rótulos finais trazem a variação
 observada (primeiro → último ponto observado, fora a projeção).
 
-Na barra de variação, `rows` traz `initial`/`final` por categoria e
-`startLabel`/`endLabel` nomeiam os dois períodos da gutter (o vermelho não entra
-no plot e a variante não aceita `highlight`):
+A comparação positiva dupla (`--dual-positive`, spec `dualPositive: true`) usa
+`column` + `rows` com exatamente 2 categorias: as duas colunas no vermelho
+oficial `#e4102f` — valência boa compartilhada, sem vencedor; as classes
+`positive-a`/`positive-b` seguem a ordem do dado, nunca o maior valor —, sem
+`highlight`. `--no-highlight` (spec `noHighlight: true`) é a
+peça sem valência (sem vermelho no plot). Na barra de variação, `rows` traz
+`initial`/`final` por categoria e `startLabel`/`endLabel` nomeiam os dois
+períodos da gutter (o vermelho não entra no plot e a variante não aceita
+`highlight`):
 
 ```json
 {
@@ -168,6 +190,10 @@ O builder **recusa** em vez de desenhar algo enganoso:
   retração (final < inicial) é recusada com a linha de 2 séries no lugar;
   `--highlight`/valência não entram (o par de tons é fixo e o vermelho fica fora
   do plot).
+- **Comparação positiva dupla (`--dual-positive`)** exige `column`, exatamente 2
+  categorias e `feed`; recusa `--highlight` e `--no-highlight`; os tons seguem a
+  ordem de entrada (nunca o maior) e ambos leem como resultado bom — cor nunca
+  carrega sozinha (cada coluna tem rótulo e valor).
 - **Valência só na linha de 2 séries**, em par (`good`/`bad`) e sempre por
   palavra + seta + forma do marcador + cor — **cor nunca carrega sozinha**:
   bom = vermelho `#e4102f`, círculo, "↑ amplia" (o vermelho é a cor do

@@ -562,6 +562,50 @@ export const validateSpec = (spec) => {
       `tamanho inválido: ${JSON.stringify(spec.size)} (use ${Object.keys(SIZES).join(', ')})`,
     )
   }
+  if (spec.unit !== undefined && spec.unit !== null && typeof spec.unit !== 'string') {
+    throw new Error('unidade inválida — use uma string (ex.: --unit="%").')
+  }
+  if (spec.noHighlight !== undefined && typeof spec.noHighlight !== 'boolean') {
+    throw new Error('noHighlight inválido — use booleano.')
+  }
+  if (spec.noHighlight && spec.highlight) {
+    throw new Error(
+      'destaque e peça sem destaque são exclusivos — use --highlight ou --no-highlight, nunca os dois.',
+    )
+  }
+  if (spec.dualPositive !== undefined && typeof spec.dualPositive !== 'boolean') {
+    throw new Error('dualPositive inválido — use booleano.')
+  }
+  if (spec.dualPositive) {
+    if (chartType !== 'column') {
+      throw new Error('a comparação positiva dupla exige o tipo coluna (--type=column).')
+    }
+    if (!Array.isArray(spec.rows) || spec.rows.length !== 2) {
+      throw new Error(
+        `a comparação positiva dupla desenha exatamente 2 categorias (${spec.rows?.length ?? 0} recebidas).`,
+      )
+    }
+    if (spec.highlight) {
+      throw new Error('a comparação positiva dupla não usa destaque — remova o --highlight.')
+    }
+    if (spec.noHighlight) {
+      throw new Error(
+        'a comparação positiva dupla já é a peça positiva — não combine com --no-highlight.',
+      )
+    }
+    if (spec.size && spec.size !== 'feed') {
+      throw new Error(
+        'a comparação positiva dupla está certificada no tamanho feed; peça o design das versões quadrada/story antes.',
+      )
+    }
+  }
+  if (
+    spec.kicker !== undefined &&
+    spec.kicker !== null &&
+    (typeof spec.kicker !== 'string' || spec.kicker.trim() === '')
+  ) {
+    throw new Error('kicker inválido — use uma string não vazia.')
+  }
   if (!CHART_TYPES.includes(chartType)) {
     if (chartType === 'pie') {
       throw new Error(

@@ -80,6 +80,69 @@ describe('renderChartHtml — canvas and template', () => {
     const html = render(spec({ chartType: 'column' }))
     expect(html).toContain('columns')
     expect(html).toContain('column highlight')
+    // Few columns are capped and centered; four or more keep the 1fr rhythm.
+    expect(html).toContain('grid-template-columns:repeat(3, minmax(0, 320px))')
+    expect(html).toContain('justify-content: center')
+  })
+
+  it('appends the optional unit to value labels and honors a relation kicker', () => {
+    const html = render(
+      spec({
+        chartType: 'column',
+        unit: '%',
+        kicker: 'Comparação',
+        rows: [
+          { label: 'Municipal (Esaú Matos)', value: 60.57 },
+          { label: 'Estadual (CHVC)', value: 54.67 },
+        ],
+      }),
+    )
+    expect(html).toContain('60,6%')
+    expect(html).toContain('54,7%')
+    expect(html).toContain('>Comparação<')
+    expect(html).not.toContain('Poucos períodos')
+  })
+
+  it('carries the unit into the bar and the anchor value labels too', () => {
+    expect(render(spec({ unit: '%' }))).toContain('84%')
+    expect(
+      render(spec({ chartType: 'anchor', unit: '%', rows: [{ label: '', value: 72 }] })),
+    ).toContain('72%')
+  })
+
+  it(`renders the two-positive pair in the official red, by input order`, () => {
+    const html = render(
+      spec({
+        chartType: 'column',
+        unit: '%',
+        dualPositive: true,
+        rows: [
+          { label: 'Municipal', value: 60.57 },
+          { label: 'Estadual', value: 54.67 },
+        ],
+      }),
+    )
+    expect(html).toContain('dual-positive-plot')
+    expect(html).toContain('column positive-a')
+    expect(html).toContain('column positive-b')
+    expect(html).not.toContain('column highlight')
+    expect(html).toContain('grid-template-columns:repeat(2, minmax(0, 280px))')
+    expect(html).toContain('60,6%')
+    expect(html).toContain('54,7%')
+    expect(html).toContain('font-size: 60px')
+    // C203 + designer re-decision: one shared official red — never a second tone.
+    expect(html).toContain('#e4102f')
+    expect(html).not.toContain('#a21c1c')
+  })
+
+  it('keeps the red out of the plot when the piece is explicitly neutral', () => {
+    const html = render(spec({ unit: '%', noHighlight: true }))
+    expect(html).not.toContain('bar highlight')
+    expect(html).toContain('84%')
+    const column = render(spec({ chartType: 'column', noHighlight: true }))
+    const plot = column.slice(column.indexOf('<div class="columns'), column.indexOf('<footer'))
+    expect(plot).not.toContain('highlight')
+    expect(plot).not.toContain('#e4102f')
   })
 
   it('renders the line chart with the last point highlighted', () => {
