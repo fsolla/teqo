@@ -58,6 +58,23 @@ const resolveSiteUrl = (source: SiteMetadataSource): string | null => {
   return null
 }
 
+/**
+ * Public origin of the running deployment — the only host guaranteed to serve
+ * this app's own asset paths (`/api/media/file/…`, the media proxy). Real
+ * deployments always carry `NEXT_PUBLIC_SITE_URL` (staging/production fail the
+ * deploy without it; worktrees and CI set their local origin; the production
+ * build inlines it, same carrier as `isStagingSite`), while the `metadata`
+ * global `URL` can be a canonical content domain served by another platform.
+ * Asset URLs (OG images) must use this origin; canonical URLs keep the
+ * global-first chain of `resolveSiteMetadata`.
+ */
+export const resolveDeploymentOrigin = (fallbackSiteUrl: string | null): string | null => {
+  const fromEnv = nonEmpty(process.env.NEXT_PUBLIC_SITE_URL)
+  if (fromEnv) return stripTrailingSlash(fromEnv)
+
+  return fallbackSiteUrl
+}
+
 const flattenKeywords = (source: SiteMetadataSource): string[] =>
   (source.keywords ?? [])
     .map((entry) => nonEmpty(typeof entry === 'string' ? entry : entry?.keyword))
