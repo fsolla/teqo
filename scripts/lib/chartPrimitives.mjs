@@ -541,11 +541,12 @@ export const lineChart = ({
 }
 
 /**
- * Geometry of the approved three-series time line (C205 extension, feed only).
- * The data box is narrower than the two-series one (x=52…560) so the wider end
- * gutter (x=600…880, 280px) holds three three-line blocks; x=560…600 belongs to
- * the leaders only. Lanes: name / metric / valence with 30–40px line boxes and
- * a 196px pitch (design: 62/108/150 · 258/304/346 · 454/500/542).
+ * Geometry of the approved three-series time line (C205 extension, feed only;
+ * projected final period added by C207). The data box is narrower than the
+ * two-series one (x=52…560) so the wider end gutter (x=600…880, 280px) holds
+ * three three-line blocks; x=560…600 belongs to the leaders only. Lanes:
+ * name / metric / valence with 30–40px line boxes and a 196px pitch (design:
+ * 62/108/150 · 258/304/346 · 454/500/542).
  */
 const TRIPLE_GEOMETRY = {
   feed: {
@@ -561,31 +562,52 @@ const TRIPLE_GEOMETRY = {
     triangleWidth: 20,
     triangleTop: 8,
     triangleApex: 10,
+    projectedDotRadius: 11,
+    projectedDiamondSize: 28,
+    projectedTriangleWidth: 30,
+    projectedTriangleTop: 11,
+    projectedTriangleApex: 15,
     axisSize: 30,
     axisY: 636,
     zeroX: 42,
     zeroY: 538,
     nameSize: 30,
     metricSize: 34,
+    projectedMetricSize: 30,
     valenceSize: 30,
+    changeX: 874,
     textX: 600,
     leader: { start: 570, rail: 580, bend: 590, end: 594 },
+    projectedLeader: { start: 578, rail: 584, bend: 590, end: 594 },
     laneOffsets: [62, 108, 150],
     lanePitch: 196,
   },
 }
 
 /**
- * Three-series time line (C205 extension of the two-series variant): three
- * observed series on a shared zero-based scale and the triad of redundant tones
- * (melhor = red circle ↑ "amplia"; neutro = gray diamond ↗ "cresce"; neutro
- * escuro = ink triangle ↘ "diminui") with a three-line end gutter. Every point
- * is observed — no band, no dash, no hollow marker, no "projeção".
+ * Three-series time line (C205 extension of the two-series variant, projected
+ * final period certified by C207): three series on a shared zero-based scale
+ * and the triad of redundant tones (melhor = red circle ↑ "amplia"; neutro =
+ * gray diamond ↗ "cresce"; neutro escuro = ink triangle ↘ "diminui") with a
+ * three-line end gutter. Every point observed — no band, no dash, no hollow
+ * marker, no "projeção". When `projected` is on (last period only): the band
+ * covers the final step, its top label names the projected period ("projeção
+ * 2026"), only the last segment dashes and the three final markers are hollow,
+ * and the gutter shows the projected value beside the variation that runs
+ * first → projected period (human gate feedback on C207: the percentage must
+ * close on the same pair as the headline).
  *
  * `series` items are `{ name, tone: 'good'|'neutral'|'neutral-dark', rows }`;
  * the caller owns the palette and the valence words (never color alone).
  */
-export const tripleLineChart = ({ series, size = 'feed', colors, valence, format }) => {
+export const tripleLineChart = ({
+  series,
+  size = 'feed',
+  projected = false,
+  colors,
+  valence,
+  format,
+}) => {
   const cfg = TRIPLE_GEOMETRY[size] ?? TRIPLE_GEOMETRY.feed
   const count = series[0].rows.length
   const max = niceMax(Math.max(...series.flatMap((serie) => serie.rows.map((row) => row.value))))
@@ -606,6 +628,29 @@ export const tripleLineChart = ({ series, size = 'feed', colors, valence, format
     return `<circle cx="${x}" cy="${y}" r="${cfg.dotRadius}" />`
   }
 
+  /** Hollow final marker of the projected period (C207): same tone shape, big. */
+  const projectedMarker = (tone, x, y) => {
+    const color = colors[tone] ?? colors.neutral
+    const className = `triple-marker-projected triple-marker-projected-${tone}`
+    if (tone === 'neutral') {
+      const half = cfg.projectedDiamondSize / 2
+      return `<path class="${className}" d="M${x} ${y - half} L${x + half} ${y} L${x} ${y + half} L${x - half} ${y} Z" fill="${colors.paper}" stroke="${color}" stroke-width="5" stroke-linejoin="round" />`
+    }
+    if (tone === 'neutral-dark') {
+      const half = cfg.projectedTriangleWidth / 2
+      return `<path class="${className}" d="M${x - half} ${y - cfg.projectedTriangleTop} L${x + half} ${y - cfg.projectedTriangleTop} L${x} ${y + cfg.projectedTriangleApex} Z" fill="${colors.paper}" stroke="${color}" stroke-width="5" stroke-linejoin="round" />`
+    }
+    return `<circle class="${className}" cx="${x}" cy="${y}" r="${cfg.projectedDotRadius}" fill="${colors.paper}" stroke="${color}" stroke-width="5" />`
+  }
+
+  const band = projected
+    ? `<rect class="triple-projection-band" x="${xAt(count - 2)}" y="0" width="${xAt(count - 1) - xAt(count - 2)}" height="${cfg.baseline}" fill="${colors.grid}" fill-opacity="0.16" />`
+    : ''
+
+  const projectionLabel = projected
+    ? `<text x="${cfg.right - 8}" y="${cfg.top - 11}" text-anchor="end" class="triple-projection-label" font-size="${cfg.axisSize}">projeção ${htmlEscape(series[0].rows[lastIndex].label)}</text>`
+    : ''
+
   const gridLines = `<line class="triple-grid-line" x1="${cfg.left}" y1="${cfg.top}" x2="${cfg.right}" y2="${cfg.top}" stroke="${colors.grid}" stroke-opacity="0.32" stroke-width="2" />
       <line class="triple-grid-line" x1="${cfg.left}" y1="${Math.round((cfg.top + cfg.baseline) / 2)}" x2="${cfg.right}" y2="${Math.round((cfg.top + cfg.baseline) / 2)}" stroke="${colors.grid}" stroke-opacity="0.32" stroke-width="2" />
       <line class="triple-zero-line" x1="${cfg.left}" y1="${cfg.baseline}" x2="${cfg.right}" y2="${cfg.baseline}" stroke="${colors.grid}" stroke-width="2" />
@@ -615,14 +660,28 @@ export const tripleLineChart = ({ series, size = 'feed', colors, valence, format
     .map((serie) => {
       const color = colors[serie.tone] ?? colors.neutral
       const points = serie.rows.map((row, index) => ({ x: xAt(index), y: yAt(row.value) }))
-      return `<polyline class="triple-series triple-series-${serie.tone}" points="${points.map((point) => `${point.x},${point.y}`).join(' ')}" fill="none" stroke="${color}" stroke-width="${cfg.stroke}" stroke-linecap="round" stroke-linejoin="round" />
-      <g class="triple-markers-${serie.tone}" fill="${color}">${points.map((point) => marker(serie.tone, point.x, point.y)).join('')}</g>`
+      const solid = projected ? points.slice(0, -1) : points
+      const polyline = `<polyline class="triple-series triple-series-${serie.tone}" points="${solid.map((point) => `${point.x},${point.y}`).join(' ')}" fill="none" stroke="${color}" stroke-width="${cfg.stroke}" stroke-linecap="round" stroke-linejoin="round" />`
+      const dashed = projected
+        ? `<line class="triple-series-projection triple-series-${serie.tone}" x1="${points[count - 2].x}" y1="${points[count - 2].y}" x2="${points[count - 1].x}" y2="${points[count - 1].y}" stroke="${color}" stroke-width="${cfg.stroke}" stroke-linecap="round" stroke-dasharray="18 12" />`
+        : ''
+      const markers = `<g class="triple-markers-${serie.tone}" fill="${color}">${solid.map((point) => marker(serie.tone, point.x, point.y)).join('')}</g>`
+      return `${polyline}${dashed}${markers}`
     })
     .join('')
 
+  const projectedMarkers = projected
+    ? series
+        .map((serie) => {
+          const point = { x: xAt(lastIndex), y: yAt(serie.rows[lastIndex].value) }
+          return projectedMarker(serie.tone, point.x, point.y)
+        })
+        .join('')
+    : ''
+
   const changeOf = (serie) => {
     const firstValue = serie.rows[0].value
-    const observed = serie.rows[lastIndex].value
+    const observed = serie.rows[lastIndex]?.value
     if (!(firstValue > 0) || !Number.isFinite(observed)) return null
     const percent = Math.round(((observed - firstValue) / firstValue) * 100)
     const sign = percent > 0 ? '+' : percent < 0 ? '−' : ''
@@ -645,22 +704,36 @@ export const tripleLineChart = ({ series, size = 'feed', colors, valence, format
   const endBlocks = blocks
     .map((block) => {
       const { baselines, point } = block
+      const leader = projected ? cfg.projectedLeader : cfg.leader
+      const metricSize = projected ? cfg.projectedMetricSize : cfg.metricSize
       const metric = `${format(block.serie.rows[lastIndex])}${
         block.change ? ` · ${block.change.percentLabel}` : ''
       }`
-      const text = (className, size, fill, value, index) =>
-        `<text x="${cfg.textX}" y="${baselines[index]}" class="${className}" font-size="${size}"${fill ? ` fill="${fill}"` : ''}>${htmlEscape(value)}</text>`
+      const text = (className, size, fill, value, index, options = {}) =>
+        `<text x="${options.x ?? cfg.textX}" y="${baselines[index]}"${options.anchor ? ` text-anchor="${options.anchor}"` : ''} class="${className}" font-size="${size}"${fill ? ` fill="${fill}"` : ''}>${htmlEscape(value)}</text>`
+      const metricLine = projected
+        ? [
+            text('triple-end-metric', metricSize, null, format(block.serie.rows[lastIndex]), 1),
+            block.change
+              ? text('triple-end-metric', metricSize, null, `· ${block.change.percentLabel}`, 1, {
+                  x: cfg.changeX,
+                  anchor: 'end',
+                })
+              : '',
+          ].join('')
+        : text('triple-end-metric', metricSize, null, metric, 1)
+      const valenceLine = text(
+        'triple-end-valence',
+        cfg.valenceSize,
+        block.color,
+        valence[block.serie.tone] ?? '',
+        2,
+      )
       return [
-        `<polyline class="triple-end-leader" points="${cfg.leader.start},${point.y} ${cfg.leader.rail},${point.y} ${cfg.leader.bend},${baselines[1]} ${cfg.leader.end},${baselines[1]}" fill="none" stroke="${block.color}" stroke-width="3" />`,
+        `<polyline class="triple-end-leader" points="${leader.start},${point.y} ${leader.rail},${point.y} ${leader.bend},${baselines[1]} ${leader.end},${baselines[1]}" fill="none" stroke="${block.color}" stroke-width="3" />`,
         text('triple-end-name', cfg.nameSize, null, block.serie.name, 0),
-        text('triple-end-metric', cfg.metricSize, null, metric, 1),
-        text(
-          'triple-end-valence',
-          cfg.valenceSize,
-          block.color,
-          valence[block.serie.tone] ?? '',
-          2,
-        ),
+        metricLine,
+        valenceLine,
       ].join('')
     })
     .join('')
@@ -682,14 +755,28 @@ export const tripleLineChart = ({ series, size = 'feed', colors, valence, format
           : change.percent < 0
             ? 'diminuição'
             : 'sem variação'
-      const trend = change ? `, ${direction} de ${Math.abs(change.percent)} por cento` : ''
-      return `${serie.name}: de ${format(serie.rows[0])} em ${serie.rows[0].label} para ${format(serie.rows[lastIndex])} em ${serie.rows[lastIndex].label}${trend}`
+      const destination = projected
+        ? ` para projeção de ${format(serie.rows[lastIndex])} em ${serie.rows[lastIndex].label}`
+        : ` para ${format(serie.rows[lastIndex])} em ${serie.rows[lastIndex].label}`
+      const trend = !change
+        ? ''
+        : projected
+          ? `, variação de ${change.percent > 0 ? 'mais ' : change.percent < 0 ? 'menos ' : ''}${Math.abs(change.percent)} por cento até ${serie.rows[lastIndex].label} (projeção)`
+          : `, ${direction} de ${Math.abs(change.percent)} por cento`
+      return `${serie.name}: de ${format(serie.rows[0])} em ${serie.rows[0].label}${destination}${trend}`
     })
-    .join('. ')}. Todos os pontos de cada série são observados.`
+    .join('. ')}. ${
+    projected
+      ? `O último segmento e os três marcadores de ${series[0].rows[lastIndex].label} são projetados.`
+      : 'Todos os pontos de cada série são observados.'
+  }`
 
   return `<svg class="chart triple-chart" viewBox="0 0 ${cfg.width} ${cfg.height}" role="img" aria-label="${htmlEscape(ariaLabel)}" preserveAspectRatio="xMidYMid meet">
+      ${band}
       ${gridLines}
+      ${projectionLabel}
       ${lines}
+      ${projectedMarkers}
       ${endBlocks}
       ${axis}
     </svg>`

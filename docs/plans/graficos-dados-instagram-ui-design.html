@@ -508,6 +508,35 @@
         stroke-linecap: square;
         stroke-linejoin: round;
       }
+      /* C207 · extensão projetada da C205. A faixa termina no limite do plot
+         (x=560): nunca entra no corredor de leaders nem na gutter. */
+      .triple-projection-band {
+        fill: #a8a29e;
+        fill-opacity: 0.16;
+      }
+      .triple-projection-label {
+        fill: #78716c;
+        font-size: 30px;
+        font-weight: 700;
+      }
+      .triple-series-projection {
+        stroke-dasharray: 18 12;
+      }
+      .triple-marker-projected {
+        fill: var(--paper);
+        stroke-width: 5px;
+        stroke-linejoin: round;
+      }
+      .triple-projected .triple-end-metric {
+        font-size: 30px;
+      }
+      .feed-canvas.triple-projected .chart-headline {
+        max-width: 910px;
+        font-size: 48px;
+      }
+      .feed-canvas.triple-projected .source-line {
+        max-width: 620px;
+      }
       .rule-code {
         display: inline-flex;
         padding: 2px 6px;
@@ -998,23 +1027,26 @@
       <div
         class="mb-6 rounded-2xl border border-[#184e92]/30 bg-[#184e92]/[0.05] p-5 sm:p-6"
         role="note"
-        aria-label="Base C203 aprovada e revisões C205 e C206 aprovadas no gate de 2026-09-19"
+        aria-label="Base C203 e revisões C205, C206 e C207 aprovadas no gate humano de 2026-09-19"
       >
         <div class="flex flex-wrap items-start gap-x-5 gap-y-3">
           <span
             class="inline-flex items-center rounded-md bg-[#184e92] px-3 py-1 text-sm font-black tracking-[0.14em] text-white"
-            >BASE C203 APROVADA · C205/C206 APROVADAS</span
+            >BASE C203 APROVADA · C205/C206/C207 APROVADAS</span
           >
           <div class="max-w-3xl">
             <p class="text-sm font-extrabold text-[#184e92]">
-              Base C203 aprovada em 2026-09-19 · revisões C205 e C206 aprovadas no gate em
+              Base C203 aprovada em 2026-09-19 · revisões C205, C206 e C207 aprovadas no gate em
               2026-09-19.
             </p>
             <p class="mt-1 text-sm leading-6 text-stone-700">
               O aceite C203 permanece intacto. A C205 revisa no lugar a CENA 02D — linha temporal de
               três séries — e supera a C204, que nunca foi certificada. A C206 revisa somente o
-              rodapé compartilhado para ampliar a marca oficial. As duas são a fonte de verdade do
-              port desde o gate humano de 2026-09-19.
+              rodapé compartilhado para ampliar a marca oficial. A C207 estende a C205 com o último
+              período projetado (CENA 02E).
+              <strong
+                >As três são a fonte de verdade do port desde o gate humano de 2026-09-19.</strong
+              >
             </p>
           </div>
         </div>
@@ -1023,7 +1055,7 @@
       <header class="max-w-4xl">
         <div class="flex flex-wrap items-center gap-2">
           <span class="scene-label border-blue-200 bg-blue-50 text-[#184e92]"
-            >Revisões C205 + C206 · aprovadas no gate</span
+            >C207 · aprovada no gate de 2026-09-19</span
           >
           <span class="scene-label">Base C203 aprovada · C205/C206 aprovadas</span>
           <span class="scene-label">Instagram feed + Stories</span>
@@ -1033,7 +1065,7 @@
         </h1>
         <p class="mt-4 max-w-3xl text-[15px] leading-6 text-stone-600">
           A superfície desenhada é a imagem exportada — não uma tela de app. Os exemplos-base são
-          deliberadamente genéricos; a variante de duas séries usa o caso fornecido de Vitória da
+          deliberadamente genéricos; as linhas multi-série usam casos fornecidos de Vitória da
           Conquista. As peças fixam hierarquia, grid, tratamento de marca e limites do gerador.
         </p>
       </header>
@@ -1171,6 +1203,34 @@
           02B e 02D. O rodapé segue off-white, com filete <strong>#e7e5e4</strong> e texto
           <strong>#57534e</strong>; o contraste e as margens laterais de 84 px permanecem.
         </p>
+      </section>
+
+      <section
+        class="mt-4 rounded-2xl border border-blue-200 bg-blue-50/70 p-5 sm:p-6"
+        aria-labelledby="revision-c207-title"
+      >
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="max-w-3xl">
+            <p class="text-xs font-extrabold tracking-[0.08em] text-[#184e92]">
+              REVISÃO VISÍVEL · C207 · AJUSTE PÓS-FEEDBACK DO GATE · APROVADA NO GATE 2026-09-19
+            </p>
+            <h2 id="revision-c207-title" class="mt-1 text-lg font-bold tracking-tight">
+              Três séries com o último período projetado
+            </h2>
+            <p class="mt-2 text-sm leading-6 text-stone-700">
+              A <strong>CENA 02E</strong> estende a C205 no feed, sem alterar a variante observada:
+              aplica às três formas a linguagem de projeção já certificada na CENA 02B. Faixa,
+              tracejado final, marcadores vazados, aria-label e nota tornam 2026 inequívoco. Após o
+              feedback humano no gate, valor e variação da gutter agora fecham no mesmo ponto
+              projetado de 2026. O ano migra para o rótulo superior “projeção 2026”; a terceira lane
+              da gutter preserva somente a valência, sem colisão. A peça final foi aprovada pelo
+              humano no gate de 2026-09-19.
+            </p>
+          </div>
+          <span class="scene-label border-blue-200 bg-blue-50 text-[#184e92]"
+            >APROVADA · GATE 2026-09-19</span
+          >
+        </div>
       </section>
 
       <section class="scene-card mt-9 p-4 sm:p-6 lg:p-8" aria-labelledby="main-scene-title">
@@ -1374,7 +1434,7 @@
           <div>
             <p class="text-xs font-bold text-brand-dark">CENA 02 · SISTEMA</p>
             <h2 id="variations-title" class="mt-1 text-xl font-bold tracking-tight">
-              Cinco variações-base + duas extensões, um mesmo template
+              Cinco variações-base + três extensões, um mesmo template
             </h2>
           </div>
           <p class="max-w-xl text-sm leading-5 text-stone-600">
@@ -2715,6 +2775,524 @@
       </section>
 
       <!-- ================================================================== -->
+      <!-- CENA 02E · C207 — EXTENSÃO DA C205, APROVADA NO GATE 2026-09-19.  -->
+      <!-- Três séries; 2026 é projeção comum às três. CENA 02D não muda.     -->
+      <!-- ================================================================== -->
+      <section
+        class="scene-card mt-10 border-2 border-blue-200 p-4 sm:p-6 lg:p-8"
+        aria-labelledby="triple-projected-title"
+      >
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-bold text-brand-dark">
+              CENA 02E · REVISÃO C207 · AJUSTE PÓS-FEEDBACK · APROVADA NO GATE 2026-09-19
+            </p>
+            <h2 id="triple-projected-title" class="mt-1 text-xl font-bold tracking-tight">
+              Feed 4:5 · linha temporal de três séries com projeção final
+            </h2>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="measure-tag"><span class="measure-dot"></span>1080 × 1350</span>
+            <span class="measure-tag">Plot SVG · viewBox 880 × 650</span>
+            <span class="measure-tag">33 observadas + 3 projetadas</span>
+          </div>
+        </div>
+
+        <div class="mt-6 grid items-start gap-7 lg:grid-cols-[594px_1fr]">
+          <div class="overflow-x-auto pb-2">
+            <div class="feed-stage">
+              <article
+                class="feed-canvas triple-series triple-projected"
+                aria-label="Consultas e exames estaduais crescem oito vezes enquanto os municipais caem pela metade em Vitória da Conquista entre 2015 e 2026. A faixa do último período está rotulada projeção 2026. Estadual: de 522.656 em 2015 para projeção de 4.213.052 em 2026, variação de mais 706 por cento até 2026 (projeção). Municipal: de 2.904.003 em 2015 para projeção de 1.492.020 em 2026, variação de menos 49 por cento até 2026 (projeção). Rede privada: de 833.679 em 2015 para projeção de 855.684 em 2026, variação de mais 3 por cento até 2026 (projeção). 2026 é projeção pela média de janeiro a junho multiplicada por dois. O último segmento e os três marcadores de 2026 são projetados."
+              >
+                <div class="feed-inner">
+                  <div class="top-rule"></div>
+                  <p class="chart-context">Comparação no tempo</p>
+                  <h3 class="chart-headline">
+                    Consultas e exames estaduais crescem 8x enquanto os municipais caem pela metade
+                  </h3>
+                  <p class="chart-subtitle">
+                    Consultas e exames do SUS · Vitória da Conquista (BA) · 2015–2026
+                  </p>
+
+                  <div class="triple-line-plot tabular">
+                    <svg
+                      viewBox="0 0 880 650"
+                      role="img"
+                      aria-label="A faixa do último período está rotulada projeção 2026. Estadual: de 522.656 em 2015 para projeção de 4.213.052 em 2026, variação de mais 706 por cento até 2026 (projeção). Municipal: de 2.904.003 em 2015 para projeção de 1.492.020 em 2026, variação de menos 49 por cento até 2026 (projeção). Rede privada: de 833.679 em 2015 para projeção de 855.684 em 2026, variação de mais 3 por cento até 2026 (projeção). O último segmento e os três marcadores de 2026 são projetados."
+                      preserveAspectRatio="xMidYMid meet"
+                    >
+                      <rect
+                        class="triple-projection-band"
+                        x="514"
+                        y="0"
+                        width="46"
+                        height="544"
+                        fill="#a8a29e"
+                        fill-opacity="0.16"
+                      />
+                      <line
+                        class="triple-grid-line"
+                        x1="52"
+                        y1="56"
+                        x2="560"
+                        y2="56"
+                        stroke="#a8a29e"
+                        stroke-opacity="0.32"
+                        stroke-width="2"
+                      />
+                      <line
+                        class="triple-grid-line"
+                        x1="52"
+                        y1="300"
+                        x2="560"
+                        y2="300"
+                        stroke="#a8a29e"
+                        stroke-opacity="0.32"
+                        stroke-width="2"
+                      />
+                      <line
+                        class="triple-zero-line"
+                        x1="52"
+                        y1="544"
+                        x2="560"
+                        y2="544"
+                        stroke="#a8a29e"
+                        stroke-width="2"
+                      />
+                      <text x="42" y="538" text-anchor="end" class="triple-axis-label">0</text>
+                      <text x="552" y="45" text-anchor="end" class="triple-projection-label">
+                        projeção 2026
+                      </text>
+
+                      <polyline
+                        class="triple-series triple-series-good"
+                        points="52,493 98,491 144,465 191,399 237,277 283,235 329,188 375,181 421,186 468,204 514,176"
+                        fill="none"
+                        stroke="#e4102f"
+                        stroke-width="7"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <line
+                        class="triple-series-projection triple-series-good"
+                        x1="514"
+                        y1="176"
+                        x2="560"
+                        y2="133"
+                        stroke="#e4102f"
+                        stroke-width="7"
+                        stroke-linecap="round"
+                        stroke-dasharray="18 12"
+                      />
+                      <polyline
+                        class="triple-series triple-series-neutral-dark"
+                        points="52,261 98,316 144,336 191,348 237,352 283,425 329,380 375,362 421,347 468,343 514,355"
+                        fill="none"
+                        stroke="#1c1917"
+                        stroke-width="7"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <line
+                        class="triple-series-projection triple-series-neutral-dark"
+                        x1="514"
+                        y1="355"
+                        x2="560"
+                        y2="398"
+                        stroke="#1c1917"
+                        stroke-width="7"
+                        stroke-linecap="round"
+                        stroke-dasharray="18 12"
+                      />
+                      <polyline
+                        class="triple-series triple-series-neutral"
+                        points="52,463 98,475 144,477 191,469 237,474 283,494 329,487 375,476 421,457 468,458 514,455"
+                        fill="none"
+                        stroke="#78716c"
+                        stroke-width="7"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <line
+                        class="triple-series-projection triple-series-neutral"
+                        x1="514"
+                        y1="455"
+                        x2="560"
+                        y2="460"
+                        stroke="#78716c"
+                        stroke-width="7"
+                        stroke-linecap="round"
+                        stroke-dasharray="18 12"
+                      />
+
+                      <g class="triple-markers-good" fill="#e4102f">
+                        <circle cx="52" cy="493" r="8" />
+                        <circle cx="98" cy="491" r="8" />
+                        <circle cx="144" cy="465" r="8" />
+                        <circle cx="191" cy="399" r="8" />
+                        <circle cx="237" cy="277" r="8" />
+                        <circle cx="283" cy="235" r="8" />
+                        <circle cx="329" cy="188" r="8" />
+                        <circle cx="375" cy="181" r="8" />
+                        <circle cx="421" cy="186" r="8" />
+                        <circle cx="468" cy="204" r="8" />
+                        <circle cx="514" cy="176" r="8" />
+                      </g>
+                      <g class="triple-markers-neutral-dark" fill="#1c1917">
+                        <path d="M42 253 L62 253 L52 271 Z" />
+                        <path d="M88 308 L108 308 L98 326 Z" />
+                        <path d="M134 328 L154 328 L144 346 Z" />
+                        <path d="M181 340 L201 340 L191 358 Z" />
+                        <path d="M227 344 L247 344 L237 362 Z" />
+                        <path d="M273 417 L293 417 L283 435 Z" />
+                        <path d="M319 372 L339 372 L329 390 Z" />
+                        <path d="M365 354 L385 354 L375 372 Z" />
+                        <path d="M411 339 L431 339 L421 357 Z" />
+                        <path d="M458 335 L478 335 L468 353 Z" />
+                        <path d="M504 347 L524 347 L514 365 Z" />
+                      </g>
+                      <g class="triple-markers-neutral" fill="#78716c">
+                        <rect x="45" y="456" width="14" height="14" transform="rotate(45 52 463)" />
+                        <rect x="91" y="468" width="14" height="14" transform="rotate(45 98 475)" />
+                        <rect
+                          x="137"
+                          y="470"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 144 477)"
+                        />
+                        <rect
+                          x="184"
+                          y="462"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 191 469)"
+                        />
+                        <rect
+                          x="230"
+                          y="467"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 237 474)"
+                        />
+                        <rect
+                          x="276"
+                          y="487"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 283 494)"
+                        />
+                        <rect
+                          x="322"
+                          y="480"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 329 487)"
+                        />
+                        <rect
+                          x="368"
+                          y="469"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 375 476)"
+                        />
+                        <rect
+                          x="414"
+                          y="450"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 421 457)"
+                        />
+                        <rect
+                          x="461"
+                          y="451"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 468 458)"
+                        />
+                        <rect
+                          x="507"
+                          y="448"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 514 455)"
+                        />
+                      </g>
+
+                      <circle
+                        class="triple-marker-projected triple-marker-projected-good"
+                        cx="560"
+                        cy="133"
+                        r="11"
+                        fill="#faf9f7"
+                        stroke="#e4102f"
+                        stroke-width="5"
+                      />
+                      <path
+                        class="triple-marker-projected triple-marker-projected-neutral-dark"
+                        d="M545 387 L575 387 L560 413 Z"
+                        fill="#faf9f7"
+                        stroke="#1c1917"
+                        stroke-width="5"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        class="triple-marker-projected triple-marker-projected-neutral"
+                        d="M560 446 L574 460 L560 474 L546 460 Z"
+                        fill="#faf9f7"
+                        stroke="#78716c"
+                        stroke-width="5"
+                        stroke-linejoin="round"
+                      />
+
+                      <polyline
+                        class="triple-end-leader"
+                        points="578,133 584,133 590,108 594,108"
+                        stroke="#e4102f"
+                      />
+                      <text x="600" y="62" class="triple-end-name">Estadual</text>
+                      <text x="600" y="108" class="triple-end-metric">4.213.052</text>
+                      <text x="874" y="108" text-anchor="end" class="triple-end-metric">
+                        · +706%
+                      </text>
+                      <text x="600" y="150" class="triple-end-valence" fill="#e4102f">
+                        ↑ amplia
+                      </text>
+
+                      <polyline
+                        class="triple-end-leader"
+                        points="578,398 584,398 590,304 594,304"
+                        stroke="#1c1917"
+                      />
+                      <text x="600" y="258" class="triple-end-name">Municipal</text>
+                      <text x="600" y="304" class="triple-end-metric">1.492.020</text>
+                      <text x="874" y="304" text-anchor="end" class="triple-end-metric">
+                        · −49%
+                      </text>
+                      <text x="600" y="346" class="triple-end-valence" fill="#1c1917">
+                        ↘ diminui
+                      </text>
+
+                      <polyline
+                        class="triple-end-leader"
+                        points="578,460 584,460 590,500 594,500"
+                        stroke="#78716c"
+                      />
+                      <text x="600" y="454" class="triple-end-name">Rede privada</text>
+                      <text x="600" y="500" class="triple-end-metric">855.684</text>
+                      <text x="874" y="500" text-anchor="end" class="triple-end-metric">· +3%</text>
+                      <text x="600" y="542" class="triple-end-valence" fill="#78716c">
+                        ↗ cresce
+                      </text>
+
+                      <g class="triple-axis-label" text-anchor="middle">
+                        <text x="52" y="636">2015</text>
+                        <text x="144" y="636">2017</text>
+                        <text x="237" y="636">2019</text>
+                        <text x="329" y="636">2021</text>
+                        <text x="421" y="636">2023</text>
+                        <text x="560" y="636">2026</text>
+                      </g>
+                    </svg>
+                  </div>
+
+                  <footer class="chart-footer">
+                    <p class="source-line">
+                      <strong>Fonte:</strong> Ministério da Saúde — Sistema de Informações
+                      Ambulatoriais do SUS (SIA/SUS)<br />Nota: 2026 é projeção pela média de
+                      janeiro a junho × 2. Rede privada = Empresariais + Sem Fins Lucrativos.
+                    </p>
+                    <div class="brand-logo-frame">
+                      <img
+                        src="../../public/campaign-kit/jorge-solla-positivo.png"
+                        alt="Jorge Solla — Deputado Federal"
+                      />
+                    </div>
+                  </footer>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <aside class="grid gap-4">
+            <div class="rounded-xl border border-amber-300 bg-amber-50/70 p-4">
+              <p class="text-xs font-extrabold text-amber-800">
+                PROJEÇÃO COMUM · TRÊS FORMAS VAZADAS
+              </p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                Só 2026 é projetado. Círculo, triângulo e losango finais preservam a forma de cada
+                tom, crescem e recebem papel <span class="rule-code">#faf9f7</span> + contorno de 5
+                px. O vazio significa projeção em todas as séries; nunca ausência de dado.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">FAIXA NÃO VAZA PARA A GUTTER</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                A faixa ocupa <span class="rule-code">x=514…560</span>, exatamente o último passo
+                observado→projetado, e termina no limite do plot. “projeção 2026” ancora em
+                x=552/y=45, text-anchor=end, acima do grid: não toca o eixo, o corredor de leaders
+                nem o texto da gutter.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">VALOR E VARIAÇÃO FECHAM NA PROJEÇÃO</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                +706%, −49% e +3% comparam 2015 ao ponto projetado de 2026 — o mesmo ponto dos
+                valores grandes. O rótulo superior único “projeção 2026” nomeia a base final do
+                cálculo para os três blocos; a terceira lane contém somente a palavra de valência.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">C205 CONTINUA INTACTA</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                A CENA 02D segue sendo a variante de três séries totalmente observadas. A C207 só
+                entra quando o rótulo projetado coincide com o último período das três séries e o
+                método pode viajar na nota e no aria-label.
+              </p>
+            </div>
+          </aside>
+        </div>
+
+        <div
+          class="mt-7 border-t border-stone-200 pt-6"
+          aria-labelledby="triple-projected-rules-title"
+        >
+          <p class="text-xs font-bold text-amber-800">
+            REGRAS DA LINHA DE 3 SÉRIES + PROJEÇÃO · C207
+          </p>
+          <h3 id="triple-projected-rules-title" class="mt-1 text-lg font-bold tracking-tight">
+            Contrato visual da extensão para o porte classe-a-classe
+          </h3>
+          <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Aplicação e fail-closed</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Exatamente 3 séries, 2–12 períodos alinhados, feed 1080×1350 e tons distintos
+                <span class="rule-code">good / neutral / neutral-dark</span>. O período informado em
+                <span class="rule-code">projectedLabel</span> tem de ser o último e comum às três.
+                Projeção ausente, parcial, intermediária ou sem método → perguntar; nunca inferir.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Faixa e label · geometria exata</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                No viewBox <span class="rule-code">880×650</span>, a faixa é
+                <span class="rule-code">rect x=514 y=0 width=46 height=544</span>, fill
+                <span class="rule-code">#a8a29e</span> a 16%. Ela cobre 2025→2026 e termina em
+                x=560. Literal <span class="rule-code">projeção 2026</span> em
+                <span class="rule-code">x=552 y=45 text-anchor=end</span>, 30/700 em #78716c; fica
+                11 px acima do grid de topo y=56 e 8 px antes do limite do plot.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Segmentos sólidos × projetados</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Cada <span class="rule-code">triple-series-*</span> sólido termina em x=514 (2025).
+                Somente x=514→560 usa <span class="rule-code">triple-series-projection</span>, linha
+                7 px, round cap e <span class="rule-code">stroke-dasharray="18 12"</span>. Nenhum
+                segmento anterior recebe dash; a escala compartilhada continua zero-based, 0…5 mi.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Vazados por tom · atributos exatos</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Good: círculo <span class="rule-code">cx=560 r=11</span>. Neutral: losango path
+                <span class="rule-code">M560 446 L574 460 L560 474 L546 460 Z</span> (28×28).
+                Neutral-dark: triângulo ▼
+                <span class="rule-code">M545 387 L575 387 L560 413 Z</span> (30×26). Todos usam fill
+                #faf9f7, stroke do tom, stroke-width 5 e linejoin round; são maiores que r=8,
+                losango 14×14 rotado e triângulo 20×18 observados.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Tons e vocabulário preservados</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Melhor = <span class="rule-code">#e4102f + círculo + ↑ “amplia”</span>; neutro =
+                <span class="rule-code">#78716c + losango + ↗ “cresce”</span>; neutro escuro =
+                <span class="rule-code">#1c1917 + triângulo + ↘ “diminui”</span>. Cor nunca viaja
+                sozinha; azul não entra nos dados; vermelho segue abaixo de 10% da peça.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Gutter, lanes e leaders</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Gutter x=600…880 e lanes C205 intactas: 62/108/150, 258/304/346 e 454/500/542,
+                ordenadas pelo y projetado. O footprint dos vazados termina até x=577,5; por isso o
+                leader começa em x=578, passa x=584, dobra em x=590 e termina x=594, com 6 px antes
+                do texto. Faixa/label nunca entram no corredor x=560…600; ali só ficam o marcador
+                final e seu leader, sem texto. A terceira lane usa somente a valência em x=600,
+                30/850; não existe literal ancorado à direita nessa baseline.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Valor projetado + variação até a projeção</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Linha 1: nome. Linha 2: valor projetado de 2026 à esquerda + variação 2015→2026
+                projetado à direita, no literal <span class="rule-code">valor · ±N%</span>, em 30 px
+                tabular (redução controlada dos 34 px da C205 para os valores milionários). Linha 3:
+                somente seta/palavra à esquerda, em 30/850:
+                <span class="rule-code">x=600 y=150 ↑ amplia</span>,
+                <span class="rule-code">x=600 y=346 ↘ diminui</span> e
+                <span class="rule-code">x=600 y=542 ↗ cresce</span>. Não há literal à direita e não
+                se cria quarta linha. Literais de métrica: <strong>4.213.052 · +706%</strong>;
+                <strong>1.492.020 · −49%</strong>; <strong>855.684 · +3%</strong>. No aria-label,
+                escrever por extenso:
+                <strong>“para projeção de X em 2026, variação de Y até 2026 (projeção)”</strong>.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Eixo, aria e nota obrigatórios</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Eixo mantém 2015/2017/2019/2021/2023/2026 em x=52/144/237/329/421/560; “projeção
+                2026” nunca desce para o eixo. O SVG tem role=img e aria-label que anuncia o rótulo
+                da faixa, as três projeções e as três variações que incluem a projeção. A nota
+                informa o método
+                <strong>“2026 é projeção pela média de janeiro a junho × 2”</strong>, e a frase
+                final confirma que o último segmento e os três marcadores de 2026 são projetados.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Copy e fonte · literais desta cena</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Manchete: “Consultas e exames estaduais crescem 8x enquanto os municipais caem pela
+                metade”. Subtítulo: “Consultas e exames do SUS · Vitória da Conquista (BA) ·
+                2015–2026”. Fonte: “Ministério da Saúde — Sistema de Informações Ambulatoriais do
+                SUS (SIA/SUS)”. Nota: “2026 é projeção pela média de janeiro a junho × 2. Rede
+                privada = Empresariais + Sem Fins Lucrativos.” Rótulo superior: “projeção 2026”.
+                Lane 3 da gutter: somente “↑ amplia”, “↘ diminui” e “↗ cresce”.
+              </p>
+            </div>
+            <div
+              class="rounded-xl border border-stone-200 bg-white p-4 md:col-span-2 xl:col-span-3"
+            >
+              <p class="text-sm font-bold">Mapa de classes C207</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Reusar a estrutura das classes C205
+                <span class="rule-code">triple-line-plot</span>,
+                <span class="rule-code">triple-series-*</span>,
+                <span class="rule-code">triple-markers-*</span>,
+                <span class="rule-code">triple-axis-label</span>,
+                <span class="rule-code">triple-end-leader</span>,
+                <span class="rule-code">triple-end-name</span>,
+                <span class="rule-code">triple-end-metric</span> e
+                <span class="rule-code">triple-end-valence</span>; nesta cena, métrica fica em 30 px
+                e valência preserva 30/850, sozinha na terceira lane. C207 acrescenta
+                <span class="rule-code">triple-projected</span> no canvas,
+                <span class="rule-code">triple-projection-band</span>,
+                <span class="rule-code">triple-projection-label</span>,
+                <span class="rule-code">triple-series-projection</span>,
+                <span class="rule-code">triple-marker-projected</span> e os modificadores
+                <span class="rule-code">triple-marker-projected-good</span>,
+                <span class="rule-code">-neutral</span> e
+                <span class="rule-code">-neutral-dark</span>. Rodapé e marca seguem C206.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================== -->
       <!-- CENA 02C · PROPOSTA DEGRADED — variante "delta" (barra de          -->
       <!-- variação por categoria). NÃO CERTIFICADA. Escrita no tier          -->
       <!-- degradado; exige sign-off humano antes do porte. A base C203 e     -->
@@ -3374,8 +3952,9 @@
               <p class="mt-1 text-sm leading-5 text-stone-600">
                 Barra, coluna e linha simples: até 7 pontos. Exceção aprovada: linha de 2 séries,
                 até 12 pontos alinhados por série. Revisão C205 aprovada: linha de 3 séries no feed,
-                até 12 pontos alinhados por série (36 marcas). Story mantém 5 apenas para
-                barra/coluna; C205 não certifica quadrado nem story.
+                até 12 pontos alinhados por série (36 marcas). A C207 certifica o mesmo teto com o
+                último período projetado, aprovada no gate de 2026-09-19. Story mantém 5 apenas para
+                barra/coluna; C205/C207 não certificam quadrado nem story.
               </p>
             </div>
             <div class="rounded-xl border border-stone-200 bg-white p-4">
@@ -3405,9 +3984,12 @@
         <span
           >base C203 <strong>aprovada</strong> · extensão C191
           <strong>certificada pelo designer e aprovada pelo humano</strong> · C205 (supera a C204) +
-          C206 <strong>aprovadas no gate de 2026-09-19</strong></span
+          C206 + C207 <strong>aprovadas no gate de 2026-09-19</strong></span
         >
-        <span>Kit 1313 oficial · valência redundante · marca ampliada · NEEDS ASSET resolvido</span>
+        <span
+          >Kit 1313 oficial · valência redundante · projeção explícita · marca ampliada · NEEDS
+          ASSET resolvido</span
+        >
       </footer>
     </main>
   </body>

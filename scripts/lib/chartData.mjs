@@ -423,8 +423,9 @@ export const classifyRelation = (rows, forcedType = null) => {
 /**
  * Guardrails of the multi-series time line (approved variants): aligned
  * periods, at most `MAX_POINTS_LINE` per series, honest zero base, the tone
- * pair (2 series) or triad (3 series, C204 — feed only, no projection, no
- * crossing) informed together and the projection only on the last period.
+ * pair (2 series) or triad (3 series, C207 — feed only, projection on the last
+ * period, no crossing) informed together and the projection only on the last
+ * period.
  */
 const validateSeries = (spec) => {
   const { series } = spec
@@ -440,9 +441,6 @@ const validateSeries = (spec) => {
     )
   }
   if (series.length === MAX_SERIES) {
-    if (spec.projectedLabel) {
-      throw new Error('a linha de três séries não certifica projeção — remova --projected.')
-    }
     if (spec.crossingLabel) {
       throw new Error('a linha de três séries não certifica cruzamento — remova --crossing.')
     }

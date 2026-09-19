@@ -403,3 +403,107 @@ describe('tripleLineChart — the approved three-series extension (C205, feed)',
     expect(evil).toContain('&lt;b&gt;x&lt;/b&gt;')
   })
 })
+
+describe('tripleLineChart — the projected final period (C207, feed)', () => {
+  const annual = (values: number[]) =>
+    values.map((value, index) => ({ label: `${2015 + index}`, value }))
+  const series = [
+    {
+      name: 'Estadual',
+      tone: 'good',
+      rows: annual([
+        522656, 545643, 804451, 1482193, 2733904, 3165119, 3646160, 3718176, 3669352, 3486832,
+        3774183, 4213052,
+      ]),
+    },
+    {
+      name: 'Rede privada',
+      tone: 'neutral',
+      rows: annual([
+        833679, 708303, 688405, 767470, 715170, 512628, 583789, 700002, 888211, 880871, 908345,
+        855684,
+      ]),
+    },
+    {
+      name: 'Municipal',
+      tone: 'neutral-dark',
+      rows: annual([
+        2904003, 2331052, 2133853, 2010696, 1968664, 1223339, 1682379, 1861214, 2014870, 2057296,
+        1937385, 1492020,
+      ]),
+    },
+  ]
+  const colors = {
+    good: '#e4102f',
+    neutral: '#78716c',
+    'neutral-dark': '#1c1917',
+    grid: '#a8a29e',
+    paper: '#faf9f7',
+    ink: '#1c1917',
+  }
+  const valence = { good: '↑ amplia', neutral: '↗ cresce', 'neutral-dark': '↘ diminui' }
+  const format = (row: { value: number }) =>
+    new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(row.value)
+  const svg = tripleLineChart({ series, colors, valence, format, projected: true })
+
+  it('covers exactly the last step with the band and names the projected period on top', () => {
+    expect(svg).toContain('class="triple-projection-band" x="514" y="0" width="46" height="544"')
+    expect(svg).toContain(
+      'x="552" y="45" text-anchor="end" class="triple-projection-label" font-size="30">projeção 2026</text>',
+    )
+    expect(svg.match(/>projeção 2026</g)).toHaveLength(1)
+  })
+
+  it('dashes only the last segment of each series', () => {
+    expect(svg.match(/class="triple-series-projection/g)).toHaveLength(3)
+    expect(svg.match(/stroke-dasharray="18 12"/g)).toHaveLength(3)
+    expect(svg).toContain(
+      'points="52,493 98,491 144,465 191,399 237,277 283,235 329,188 375,181 421,186 468,204 514,176"',
+    )
+    expect(svg).toContain(
+      'class="triple-series-projection triple-series-good" x1="514" y1="176" x2="560" y2="133"',
+    )
+  })
+
+  it('hollows the three projected markers keeping the tone shape', () => {
+    expect(svg).toContain(
+      'class="triple-marker-projected triple-marker-projected-good" cx="560" cy="133" r="11" fill="#faf9f7" stroke="#e4102f" stroke-width="5"',
+    )
+    expect(svg).toContain(
+      'class="triple-marker-projected triple-marker-projected-neutral-dark" d="M545 387 L575 387 L560 413 Z" fill="#faf9f7" stroke="#1c1917"',
+    )
+    expect(svg).toContain(
+      'class="triple-marker-projected triple-marker-projected-neutral" d="M560 446 L574 460 L560 474 L546 460 Z" fill="#faf9f7" stroke="#78716c"',
+    )
+  })
+
+  it('shows the projected value with the variation that closes on the projected period', () => {
+    expect(svg).toContain('points="578,133 584,133 590,108 594,108"')
+    expect(svg).toContain('>4.213.052<')
+    expect(svg).toContain('>· +706%<')
+    expect(svg).toContain('>↑ amplia<')
+    expect(svg).toContain('>1.492.020<')
+    expect(svg).toContain('>· −49%<')
+    expect(svg).toContain('>↘ diminui<')
+    expect(svg).toContain('>855.684<')
+    expect(svg).toContain('>· +3%<')
+    expect(svg).toContain('>↗ cresce<')
+    expect(svg).not.toContain('até 2025')
+    expect(svg.indexOf('>Estadual<')).toBeLessThan(svg.indexOf('>Municipal<'))
+    expect(svg.indexOf('>Municipal<')).toBeLessThan(svg.indexOf('>Rede privada<'))
+  })
+
+  it('announces the projection and the observed variation in the aria label', () => {
+    expect(svg).toContain(
+      'Estadual: de 522.656 em 2015 para projeção de 4.213.052 em 2026, variação de mais 706 por cento até 2026 (projeção)',
+    )
+    expect(svg).toContain(
+      'Municipal: de 2.904.003 em 2015 para projeção de 1.492.020 em 2026, variação de menos 49 por cento até 2026 (projeção)',
+    )
+    expect(svg).toContain(
+      'Rede privada: de 833.679 em 2015 para projeção de 855.684 em 2026, variação de mais 3 por cento até 2026 (projeção)',
+    )
+    expect(svg).toContain('O último segmento e os três marcadores de 2026 são projetados')
+    expect(svg).not.toContain('Todos os pontos de cada série são observados')
+  })
+})
