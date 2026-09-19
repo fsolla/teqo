@@ -26,6 +26,11 @@ export type CardNameFit =
       fontSize: number
       lineHeight: number
       capHeight: number
+      /**
+       * Measured ink at `fontSize`: the widest line (S16 — the renderer uses it
+       * to grow the banner only as much as the text needs).
+       */
+      inkWidth: number
     }
   | { ok: false; reason: 'empty' | 'too-long' }
 
@@ -128,6 +133,7 @@ export const fitCardName = (
       fontSize: singleSize,
       lineHeight: singleSize * LINE_HEIGHT_RATIO,
       capHeight: capAt(measure, singleSize),
+      inkWidth: widthAt(measure, normalized, singleSize),
     }
   }
 
@@ -141,6 +147,10 @@ export const fitCardName = (
         fontSize: twoLines.fontSize,
         lineHeight: twoLines.fontSize * LINE_HEIGHT_RATIO,
         capHeight: capAt(measure, twoLines.fontSize),
+        inkWidth: Math.max(
+          widthAt(measure, twoLines.lines[0], twoLines.fontSize),
+          widthAt(measure, twoLines.lines[1], twoLines.fontSize),
+        ),
       }
     }
   }

@@ -88,6 +88,7 @@ describe('card model catalog (S13/S15)', () => {
       centerX: 545,
       centerY: 162,
       width: 693,
+      maxWidth: 693,
       height: 118,
       rotationDeg: -3.5,
       background: '#e50e2f',
@@ -98,6 +99,7 @@ describe('card model catalog (S13/S15)', () => {
       centerX: 545,
       centerY: 313,
       width: 509,
+      maxWidth: 1000,
       height: 176,
       rotationDeg: -4.1,
       background: '#0061a5',
@@ -107,11 +109,27 @@ describe('card model catalog (S13/S15)', () => {
       align: 'center',
       banner: TEAM_CARD_NAME_BANNER,
       capHeight: 130,
-      minCapHeight: 56,
-      maxInkWidth: 470,
+      minCapHeight: 40,
+      maxInkWidth: 961,
       maxLines: 1,
       fill: '#ffffff',
     })
+  })
+
+  it('keeps the dynamic name banner ceiling inside the measured card bounds (S16)', () => {
+    const model = getCardModel('time-de-voce')!
+    const halfWidth = TEAM_CARD_NAME_BANNER.maxWidth / 2
+    const halfHeight = TEAM_CARD_NAME_BANNER.height / 2
+    const tilt = (Math.abs(TEAM_CARD_NAME_BANNER.rotationDeg) * Math.PI) / 180
+    const halfSpanX = halfWidth * Math.cos(tilt) + halfHeight * Math.sin(tilt)
+    const lowestCorner =
+      TEAM_CARD_NAME_BANNER.centerY + halfHeight * Math.cos(tilt) + halfWidth * Math.sin(tilt)
+
+    // The ceiling preserves the S15 ink padding: 1000 − 961 = 509 − 470 = 39.
+    expect(TEAM_CARD_NAME_BANNER.maxWidth - TEAM_CARD_NAME_SLOT.maxInkWidth).toBe(39)
+    expect(TEAM_CARD_NAME_BANNER.centerX - halfSpanX).toBeGreaterThanOrEqual(0)
+    expect(TEAM_CARD_NAME_BANNER.centerX + halfSpanX).toBeLessThanOrEqual(model.width)
+    expect(lowestCorner).toBeLessThan(model.photoWindow!.y)
   })
 
   it('sanitizes query-param values through isCardModelId', () => {

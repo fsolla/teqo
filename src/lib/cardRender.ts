@@ -79,11 +79,30 @@ export type CardNameDrawArgs = {
 
 type CardBannerDrawArgs = {
   banner: CardBanner
+  /** S16 — the drawn width: the model width, or the resolved dynamic one. */
+  width: number
   text: string
   fill: string
   fontSize: number
   capHeight: number
   fontFamily: string
+}
+
+/**
+ * S16 — resolves the name banner width from the measured ink: the model's
+ * reference width while the ink fits `width - padding` (= 470), then growing
+ * with the ink so the model's side padding (`maxWidth - maxInkWidth` = 39) is
+ * preserved, never past the ceiling. Assumes `maxWidth >= width` (fixed
+ * banners use equal values and resolve to themselves).
+ */
+export const resolveCardBannerWidth = (
+  slot: Pick<CardNameBannerSlot, 'banner' | 'maxInkWidth'>,
+  inkWidth: number,
+): number => {
+  const { banner } = slot
+  const padding = banner.maxWidth - slot.maxInkWidth
+
+  return Math.max(banner.width, Math.min(banner.maxWidth, inkWidth + padding))
 }
 
 /**
@@ -93,12 +112,13 @@ type CardBannerDrawArgs = {
  */
 const drawCardBanner = (ctx: CardDrawContext, args: CardBannerDrawArgs): void => {
   const { banner } = args
+  const width = args.width ?? banner.width
 
   ctx.save()
   ctx.translate(banner.centerX, banner.centerY)
   ctx.rotate((banner.rotationDeg * Math.PI) / 180)
   ctx.fillStyle = banner.background
-  ctx.fillRect(-banner.width / 2, -banner.height / 2, banner.width, banner.height)
+  ctx.fillRect(-width / 2, -banner.height / 2, width, banner.height)
   ctx.font = `700 ${args.fontSize}px ${args.fontFamily}`
   ctx.fillStyle = args.fill
   ctx.textAlign = 'center'
@@ -120,6 +140,7 @@ export const drawCardName = (ctx: CardDrawContext, args: CardNameDrawArgs): void
   if (slot.align === 'center') {
     drawCardBanner(ctx, {
       banner: slot.banner,
+      width: resolveCardBannerWidth(slot, fit.inkWidth),
       text: fit.lines[0],
       fill: slot.fill,
       fontSize: fit.fontSize,
@@ -222,6 +243,7 @@ export const renderTeamCard = (
 
   drawCardBanner(ctx, {
     banner: TEAM_CARD_LABEL,
+    width: TEAM_CARD_LABEL.width,
     text: TEAM_CARD_LABEL.text,
     fill: TEAM_CARD_LABEL.fill,
     fontSize: resolveFontSizeForCapHeight(args.measure, TEAM_CARD_LABEL.capHeight),

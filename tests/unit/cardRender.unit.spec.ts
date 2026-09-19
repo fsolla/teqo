@@ -20,6 +20,7 @@ import {
   renderNameCard,
   renderPhotoCard,
   renderTeamCard,
+  resolveCardBannerWidth,
   type CardDrawContext,
 } from '@/lib/cardRender'
 
@@ -56,7 +57,7 @@ const createFakeContext = () => {
     measureText: (text) => {
       const size = fontSizeFrom(ctx.font)
       return {
-        width: text.length * size * 0.6,
+        width: text.length * size * 0.84,
         actualBoundingBoxAscent: size * 0.72,
         actualBoundingBoxDescent: size * 0.2,
       }
@@ -209,10 +210,14 @@ describe('renderTeamCard', () => {
       width: TEAM_CARD_LABEL.width,
       height: TEAM_CARD_LABEL.height,
     })
+    // S16 — `MARIA` at the ideal cap (130/0.72) with the 0.84em fake measures
+    // ≈758.33 of ink; the banner grows by the model's 39px padding: ≈797.33.
     expect(rectCalls[1]).toMatchObject({
-      width: TEAM_CARD_NAME_BANNER.width,
+      y: -TEAM_CARD_NAME_BANNER.height / 2,
       height: TEAM_CARD_NAME_BANNER.height,
     })
+    expect(rectCalls[1]!.width).toBeCloseTo(797.33, 1)
+    expect(rectCalls[1]!.x).toBeCloseTo(-797.33 / 2, 1)
     expect(ops.filter((op) => op.op === 'save')).toHaveLength(2)
     expect(ops.filter((op) => op.op === 'restore')).toHaveLength(2)
     expect(ops.map((op) => op.op)).toEqual([
@@ -241,6 +246,39 @@ describe('renderTeamCard', () => {
   })
 })
 
+describe('resolveCardBannerWidth (S16)', () => {
+  const slot = TEAM_CARD_NAME_SLOT
+  const maxInkWidth = slot.maxInkWidth
+
+  it('pins the design table pairs (ink = width − 39: reference 509 → ceiling 1000)', () => {
+    const designPairs: [ink: number, width: number][] = [
+      [470, 509],
+      [527, 566],
+      [807, 846],
+      [925, 964],
+      [951, 990],
+      [952, 991],
+      [961, 1000],
+    ]
+
+    for (const [ink, width] of designPairs) {
+      expect(resolveCardBannerWidth(slot, ink)).toBe(width)
+    }
+  })
+
+  it('keeps the reference width for short names and clamps past the ceiling', () => {
+    expect(resolveCardBannerWidth(slot, 0)).toBe(slot.banner.width)
+    expect(resolveCardBannerWidth(slot, 200)).toBe(slot.banner.width)
+    expect(resolveCardBannerWidth(slot, 2000)).toBe(slot.banner.maxWidth)
+  })
+
+  it('never grows a fixed banner (the red TIME DE label)', () => {
+    const labelSlot = { banner: TEAM_CARD_LABEL, maxInkWidth }
+    expect(resolveCardBannerWidth(labelSlot, 0)).toBe(TEAM_CARD_LABEL.width)
+    expect(resolveCardBannerWidth(labelSlot, 5000)).toBe(TEAM_CARD_LABEL.width)
+  })
+})
+
 describe('drawCardName (centered team slot)', () => {
   it('draws the blue banner with the centered name through the same banner helper', () => {
     const { ctx, textCalls, rectCalls, ops } = createFakeContext()
@@ -250,14 +288,14 @@ describe('drawCardName (centered team slot)', () => {
 
     drawCardName(ctx, { fit, fontFamily: 'Brexter', slot: TEAM_CARD_NAME_SLOT })
 
-    expect(rectCalls).toEqual([
-      {
-        x: -TEAM_CARD_NAME_BANNER.width / 2,
-        y: -TEAM_CARD_NAME_BANNER.height / 2,
-        width: TEAM_CARD_NAME_BANNER.width,
-        height: TEAM_CARD_NAME_BANNER.height,
-      },
-    ])
+    // S16 — dynamic width resolved from the fitted ink (same ≈797.33 as above).
+    expect(rectCalls).toHaveLength(1)
+    expect(rectCalls[0]).toMatchObject({
+      y: -TEAM_CARD_NAME_BANNER.height / 2,
+      height: TEAM_CARD_NAME_BANNER.height,
+    })
+    expect(rectCalls[0]!.width).toBeCloseTo(797.33, 1)
+    expect(rectCalls[0]!.x).toBeCloseTo(-797.33 / 2, 1)
     expect(ops).toEqual([
       { op: 'save', args: [] },
       { op: 'translate', args: [TEAM_CARD_NAME_BANNER.centerX, TEAM_CARD_NAME_BANNER.centerY] },

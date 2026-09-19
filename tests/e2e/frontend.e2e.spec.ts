@@ -1,6 +1,8 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 
+import { TEAM_CARD_NAME_BANNER } from '@/lib/cardModels'
+
 import { adminHeaders } from '../helpers/adminApi'
 import { seedTestUser } from '../helpers/seedUser'
 import { instagramStubUrlFor, youtubeStubUrlFor } from '../helpers/socialStub'
@@ -1847,6 +1849,52 @@ const uploadBustPhoto = (dialog: Locator) =>
     buffer: TEST_PHOTO_PNG,
   })
 
+/**
+ * S16 — the blue name banner probe: scan only the rows where the rotated
+ * rectangle spans its full width (|v| ≤ h/2·cos − w/2·sin) and take the widest
+ * run of solid banner pixels. The banner is the only source of that exact color
+ * there, so a long name shows a much wider run than the 509 reference (~505
+ * pixels) — the fixed-width regression fails the count.
+ */
+const NAME_BANNER_PROBE = (() => {
+  const banner = TEAM_CARD_NAME_BANNER
+  const tilt = (Math.abs(banner.rotationDeg) * Math.PI) / 180
+  const fullChordHalfSpan =
+    (banner.height / 2) * Math.cos(tilt) - (banner.maxWidth / 2) * Math.sin(tilt)
+
+  return {
+    background: banner.background,
+    band: {
+      top: Math.ceil(banner.centerY - fullChordHalfSpan),
+      bottom: Math.floor(banner.centerY + fullChordHalfSpan),
+    },
+  }
+})()
+
+const widestNameBannerRun = (canvas: Locator) =>
+  canvas.evaluate((element, probe) => {
+    const node = element as HTMLCanvasElement
+    const ctx = node.getContext('2d')!
+    const fill = Number.parseInt(probe.background.slice(1), 16)
+    const red = (fill >> 16) & 0xff
+    const green = (fill >> 8) & 0xff
+    const blue = fill & 0xff
+    let widest = 0
+
+    for (let y = probe.band.top; y <= probe.band.bottom; y++) {
+      const { data } = ctx.getImageData(0, y, node.width, 1)
+      let matches = 0
+      for (let index = 0; index < data.length; index += 4) {
+        if (data[index] === red && data[index + 1] === green && data[index + 2] === blue) {
+          matches += 1
+        }
+      }
+      if (matches > widest) widest = matches
+    }
+
+    return widest
+  }, NAME_BANNER_PROBE)
+
 test.describe('Cards personalizados (S15 — Time de você)', () => {
   test('cuts the photo on device, reaches the result and downloads a real PNG', async ({
     page,
@@ -1863,7 +1911,7 @@ test.describe('Cards personalizados (S15 — Time de você)', () => {
 
     const primary = dialog.getByRole('button', { name: 'Criar meu card' })
     await expect(primary).toBeDisabled()
-    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
+    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria Eduarda')
     await uploadBustPhoto(dialog)
 
     // Processing is observable (first run: model download + local cutout).
@@ -1878,6 +1926,10 @@ test.describe('Cards personalizados (S15 — Time de você)', () => {
     await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
     await expect(primary).toBeEnabled()
     await expect(dialog.getByText('Arraste para ajustar')).toBeVisible()
+
+    // S16 — `Maria Eduarda` only fits by widening the blue banner beyond the
+    // 509 reference (the real Brexter ink goes to ~954 → banner ~993).
+    await expect.poll(() => widestNameBannerRun(canvas)).toBeGreaterThan(700)
 
     await primary.click()
     await expect(dialog.getByText('Seu card está pronto para compartilhar.')).toBeVisible()
