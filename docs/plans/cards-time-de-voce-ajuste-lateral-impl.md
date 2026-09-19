@@ -142,16 +142,16 @@ Não se aplica — nenhum KPI, mapa ou série; nenhum dado apresentado/coletado/
 
 ## Triagem de débitos (simplify — 2 revisores paralelos)
 
-| ID  | Resumo                                                                   | Origem           | Score | Tipo          | Destino       |
-| --- | ------------------------------------------------------------------------ | ---------------- | ----- | ------------- | ------------- |
-| S1  | Rosto do MediaPipe pode vir fora da fonte → hull podia abrir gap          | simplify/estrut. | 3     | cheap_polish  | já_resolvido  |
-| S2  | `x`/`y` NaN na face viraria offset NaN                                    | simplify/qual.   | 3     | cheap_polish  | já_resolvido  |
-| S3  | `anchorOffsetRange` sem dizer que é o eixo X                              | simplify/qual.   | 1     | cheap_polish  | já_resolvido  |
-| S4  | `244.5` mágico e grid "nunca pior" prometido viravam 2 casos              | simplify/qual.   | 2     | cheap_polish  | já_resolvido  |
-| S5  | Asserção tautológica desenho == retorno no teste do render                | simplify/qual.   | 1     | cheap_polish  | já_resolvido  |
-| S6  | Piso do time duplicado composer/render (débito S18)                       | simplify/ambos   | 2     | defer_trigger | descartar     |
-| S7  | `useMemo` do `photoClamp` dispensável                                     | simplify/qual.   | 1     | cheap_polish  | descartar     |
-| S8  | e2e não mede o curso em pixels (seam novo)                                | simplify/estrut. | 1     | cheap_polish  | descartar     |
+| ID  | Resumo                                                           | Origem           | Score | Tipo          | Destino      |
+| --- | ---------------------------------------------------------------- | ---------------- | ----- | ------------- | ------------ |
+| S1  | Rosto do MediaPipe pode vir fora da fonte → hull podia abrir gap | simplify/estrut. | 3     | cheap_polish  | já_resolvido |
+| S2  | `x`/`y` NaN na face viraria offset NaN                           | simplify/qual.   | 3     | cheap_polish  | já_resolvido |
+| S3  | `anchorOffsetRange` sem dizer que é o eixo X                     | simplify/qual.   | 1     | cheap_polish  | já_resolvido |
+| S4  | `244.5` mágico e grid "nunca pior" prometido viravam 2 casos     | simplify/qual.   | 2     | cheap_polish  | já_resolvido |
+| S5  | Asserção tautológica desenho == retorno no teste do render       | simplify/qual.   | 1     | cheap_polish  | já_resolvido |
+| S6  | Piso do time duplicado composer/render (débito S18)              | simplify/ambos   | 2     | defer_trigger | descartar    |
+| S7  | `useMemo` do `photoClamp` dispensável                            | simplify/qual.   | 1     | cheap_polish  | descartar    |
+| S8  | e2e não mede o curso em pixels (seam novo)                       | simplify/estrut. | 1     | cheap_polish  | descartar    |
 
 - **Já resolvido no simplify (não reabrir):** S1 (guarda de ranges disjuntos em `clampPhotoOffset` + teste), S2 (`isUsableCardFace` exige `x/y/width/height` finitos), S3 (`anchorXOffsetRange` + doc), S4 (curso derivado de `(TEAM_WINDOW.width − REFERENCE) / 2` + grid de zooms/âncoras/offsets), S5 (asserções cross-contexto).
 - **Explicitamente fora:** S6 — já é débito registrado na S18 (`docs/plans/cards-time-de-voce-escala-cabeca-impl.md`, gatilho "piso duplicado em composer e render"); o render segue dono do piso do time nesta entrega. S7 — memo barato que estabiliza as deps do efeito. S8 — decidido na D7 (unit pina a régua; e2e pina a integração sem seam novo).
