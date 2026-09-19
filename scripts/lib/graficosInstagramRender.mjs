@@ -76,6 +76,63 @@ const columnBody = (spec) => {
   </div>`
 }
 
+const formatPercent = (value) => {
+  const rounded = Math.round(value * 10) / 10
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+}
+
+const deltaOrder = (rows) =>
+  [...rows].sort(
+    (a, b) => b.final - a.final || a.initial - b.initial || a.label.localeCompare(b.label, 'pt-BR'),
+  )
+
+/** The sigla before "·" gets the bold of the approved variant; plain labels stay plain. */
+const deltaLabelHtml = (label) => {
+  const separator = label.indexOf('·')
+  if (separator < 0) return htmlEscape(label)
+  return `<b>${htmlEscape(label.slice(0, separator).trim())}</b> · ${htmlEscape(
+    label.slice(separator + 1).trim(),
+  )}`
+}
+
+/**
+ * Variation bar (approved C191 variant): one zero-based bar per category, the
+ * 0 → initial segment in the base tone and the initial → final extension in the
+ * lighter tone. A flat category has no extension segment at all, and the two
+ * numbers in the gutter carry the reading — never the color alone.
+ */
+const deltaBody = (spec) => {
+  const rows = deltaOrder(spec.rows)
+  const max = Math.max(1, ...rows.map((row) => row.final))
+  const aria = `Barras por tipo, de ${spec.startLabel} a ${spec.endLabel}: ${rows
+    .map((row) => `${row.label} ${formatValue(row.initial)} → ${formatValue(row.final)}`)
+    .join('; ')}.`
+  return `<div class="delta-grade" role="img" aria-label="${htmlEscape(aria)}">
+    <div class="delta-head">
+      <span></span><span></span>
+      <span class="delta-period">${htmlEscape(spec.startLabel)}</span>
+      <span class="delta-period">${htmlEscape(spec.endLabel)}</span>
+    </div>
+    ${rows
+      .map((row) => {
+        const flat = row.final === row.initial
+        return `<div class="delta-row${flat ? ' is-flat' : ''}">
+      <span class="delta-label">${deltaLabelHtml(row.label)}</span>
+      <div class="delta-track">
+        <span class="delta-base" style="width:${formatPercent((row.initial / max) * 100)}%"></span>${
+          flat
+            ? ''
+            : `<span class="delta-ext" style="width:${formatPercent(((row.final - row.initial) / max) * 100)}%"></span>`
+        }
+      </div>
+      <span class="delta-value initial">${formatValue(row.initial)}</span>
+      <span class="delta-value final">${formatValue(row.final)}</span>
+    </div>`
+      })
+      .join('')}
+  </div>`
+}
+
 const anchorBody = (spec) => {
   const row = spec.rows[0]
   const copy = row.label || spec.subtitle || ''
@@ -117,6 +174,7 @@ const dualBody = (spec) => {
 }
 
 const plotBody = (spec) => {
+  if (spec.chartType === 'delta') return deltaBody(spec)
   if (Array.isArray(spec.series) && spec.series.length > 0) return dualBody(spec)
   if (spec.chartType === 'anchor') return anchorBody(spec)
   if (spec.chartType === 'column') return columnBody(spec)
@@ -176,6 +234,58 @@ html, body { margin: 0; background: ${SOLLA_PALETTE.paper}; }
 }
 .bar.highlight { color: #fff; background: ${SOLLA_PALETTE.highlight}; }
 .bar.zero { min-width: 0; padding: 0 0 0 8px; justify-content: flex-start; }
+.delta-grade {
+  --delta-label-w: 292px;
+  --delta-v1-w: 88px;
+  --delta-v2-w: 110px;
+  --delta-gap: 20px;
+  --delta-bar-h: 53px;
+  --delta-base: ${SOLLA_PALETTE.barStrong};
+  --delta-ext: ${SOLLA_PALETTE.bar};
+  flex: none;
+  display: grid;
+  gap: var(--delta-gap);
+  margin-top: 34px;
+}
+.delta-head,
+.delta-row {
+  display: grid;
+  grid-template-columns: var(--delta-label-w) 1fr var(--delta-v1-w) var(--delta-v2-w);
+  align-items: center;
+  gap: var(--delta-gap);
+}
+.delta-head { align-items: end; padding-bottom: 6px; }
+.delta-label { font-size: 30px; line-height: 1.1; font-weight: 650; }
+.delta-label b { font-weight: 850; }
+.delta-track {
+  position: relative;
+  display: flex;
+  height: var(--delta-bar-h);
+  border-left: 2px solid ${SOLLA_PALETTE.axis};
+}
+.delta-base { height: 100%; background: var(--delta-base); }
+.delta-ext {
+  height: 100%;
+  background: var(--delta-ext);
+  border-left: 3px solid ${SOLLA_PALETTE.axis};
+}
+.delta-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 31px;
+  line-height: 1;
+  text-align: right;
+  white-space: nowrap;
+}
+.delta-value.initial { color: ${SOLLA_PALETTE.label}; font-weight: 700; }
+.delta-value.final { color: ${SOLLA_PALETTE.ink}; font-weight: 850; }
+.delta-period {
+  color: ${SOLLA_PALETTE.label};
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 750;
+  text-align: right;
+  white-space: nowrap;
+}
 .columns { display: grid; align-items: end; gap: 26px; height: 100%; padding-bottom: 46px; border-bottom: 3px solid ${SOLLA_PALETTE.barStrong}; }
 .column-cell { position: relative; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
 .column-value { margin-bottom: 10px; text-align: center; font-size: 31px; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -264,6 +374,14 @@ export const renderChartHtml = (spec) => {
       : sizeKey === 'square'
         ? '.inner { padding: 56px 84px 48px; } .headline { font-size: 54px; } .plot { margin-top: 20px; }'
         : '.headline { font-size: 64px; } .plot { margin-top: 28px; }'
+  const delta = spec.chartType === 'delta'
+  const deltaStyles = !delta
+    ? ''
+    : sizeKey === 'feed'
+      ? '.plot { margin-top: 0; } .headline { font-size: 60px; max-width: 900px; } .subtitle { margin-top: 18px; font-size: 28px; } .delta-grade { margin-top: 30px; }'
+      : sizeKey === 'square'
+        ? '.inner { padding: 56px 84px 48px; } .plot { margin-top: 0; } .headline { font-size: 54px; } .subtitle { font-size: 28px; } .delta-grade { margin-top: 24px; --delta-bar-h: 42px; --delta-gap: 12px; --delta-v1-w: 84px; --delta-v2-w: 104px; } .delta-value { font-size: 30px; }'
+        : '.plot { margin-top: 0; } .headline { font-size: 64px; } .delta-grade { margin-top: 40px; --delta-gap: 22px; --delta-bar-h: 52px; }'
   const kicker = dual ? SERIES_RELATION_LABEL : (RELATION_LABEL[spec.chartType] ?? 'Gráfico')
   const anchorUsesSubtitle = spec.chartType === 'anchor' && !spec.rows[0]?.label
   const showSubtitle = Boolean(spec.subtitle) && !anchorUsesSubtitle
@@ -281,6 +399,7 @@ export const renderChartHtml = (spec) => {
       .subtitle { margin-top: ${Math.round(layout.gapAfterContext * 1.28)}px; font-size: ${layout.subtitle}px; max-width: ${canvas.width - 260}px; }
       .plot { margin-top: ${layout.plotGap}px; }
       ${dualStyles}
+      ${deltaStyles}
     </style>
   </head>
   <body>

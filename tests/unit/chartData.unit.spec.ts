@@ -261,6 +261,42 @@ describe('parseInput — two aligned measures become series, not a ranking', () 
   })
 })
 
+describe('parseInput — the variation bar (delta)', () => {
+  it('reads a table whose header names the two periods', () => {
+    const dataset = parseInput({
+      text: 'Tipo\t2020\tjul/2026\nESF · Saúde da Família\t58\t63\nENASF-AB · Ampliado\t5\t5\n',
+      format: 'tsv',
+      delta: true,
+    })
+    expect(dataset.startLabel).toBe('2020')
+    expect(dataset.endLabel).toBe('jul/2026')
+    expect(dataset.rows).toEqual([
+      { label: 'ESF · Saúde da Família', initial: 58, final: 63 },
+      { label: 'ENASF-AB · Ampliado', initial: 5, final: 5 },
+    ])
+    expect(dataset.issues).toEqual([])
+  })
+
+  it('flags a missing measure instead of completing it', () => {
+    const dataset = parseInput({
+      text: 'Tipo\t2020\t2026\nECR · Consultórios na Rua\t-\t1\n',
+      format: 'tsv',
+      delta: true,
+    })
+    expect(dataset.rows).toEqual([])
+    expect(dataset.issues.join(' ')).toContain('inicial')
+  })
+
+  it('reads the delta table from the free-text path too', () => {
+    const dataset = parseInput({
+      text: 'Tipo\t2020\t2026\nESB · Saúde Bucal\t40\t53\n',
+      format: 'txt',
+      delta: true,
+    })
+    expect(dataset.rows).toEqual([{ label: 'ESB · Saúde Bucal', initial: 40, final: 53 }])
+  })
+})
+
 describe('validateSpec — the two-series time line', () => {
   const seriesSpec = (overrides = {}) => ({
     chartType: 'line',
@@ -388,10 +424,81 @@ describe('validateSpec — the two-series time line', () => {
   })
 })
 
+describe('validateSpec — the variation bar (delta)', () => {
+  const deltaSpec = (overrides = {}) => ({
+    chartType: 'delta',
+    headline: 'Quatro dos sete tipos seguem sem ampliação desde 2020',
+    startLabel: '2020',
+    endLabel: 'jul/2026',
+    rows: [
+      { label: 'ESF · Saúde da Família', initial: 58, final: 63 },
+      { label: 'ESB · Saúde Bucal', initial: 40, final: 53 },
+      { label: 'ENASF-AB · Ampliado', initial: 5, final: 5 },
+    ],
+    ...overrides,
+  })
+
+  it('accepts a zero-based variation with the two periods named', () => {
+    expect(validateSpec(deltaSpec())).toBeTruthy()
+  })
+
+  it('refuses a retraction and points to the two-series line', () => {
+    expect(() =>
+      validateSpec(deltaSpec({ rows: [{ label: 'ESF', initial: 63, final: 58 }] })),
+    ).toThrow(/linha de duas séries/)
+  })
+
+  it('refuses --highlight (the two-tone pair is fixed and there is no valence)', () => {
+    expect(() => validateSpec(deltaSpec({ highlight: 'ESB · Saúde Bucal' }))).toThrow(/destaque/)
+  })
+
+  it('requires the two period labels of the gutter', () => {
+    expect(() => validateSpec(deltaSpec({ startLabel: '' }))).toThrow(/startLabel/)
+    expect(() => validateSpec(deltaSpec({ endLabel: undefined }))).toThrow(/endLabel/)
+  })
+
+  it(`caps the categories at ${MAX_POINTS}`, () => {
+    const rows = Array.from({ length: MAX_POINTS + 1 }, (_v, index) => ({
+      label: `Tipo ${index}`,
+      initial: 1,
+      final: 2,
+    }))
+    expect(() => validateSpec(deltaSpec({ rows }))).toThrow(/resuma/)
+  })
+
+  it('allows the seven categories on the Stories canvas (no ranking cut)', () => {
+    const rows = Array.from({ length: MAX_POINTS }, (_v, index) => ({
+      label: `Tipo ${index}`,
+      initial: 1,
+      final: 2,
+    }))
+    expect(validateSpec(deltaSpec({ size: 'story', rows }))).toBeTruthy()
+  })
+
+  it('refuses a missing or negative measure and a non-positive final', () => {
+    expect(() => validateSpec(deltaSpec({ rows: [{ label: 'ESF', initial: 1 }] }))).toThrow(
+      /final ausente/,
+    )
+    expect(() =>
+      validateSpec(deltaSpec({ rows: [{ label: 'ESF', initial: -1, final: 2 }] })),
+    ).toThrow(/negativo/)
+    expect(() =>
+      validateSpec(deltaSpec({ rows: [{ label: 'ESF', initial: 0, final: 0 }] })),
+    ).toThrow(/não positivo/)
+  })
+
+  it('is the relation of a two-measure table and still honours an explicit type', () => {
+    const rows = [{ label: 'ESF', initial: 1, final: 2 }]
+    expect(classifyRelation(rows)).toBe('delta')
+    expect(classifyRelation(rows, 'bar')).toBe('bar')
+  })
+})
+
 describe('contracts', () => {
-  it('declares the four v1 types, labels and sizes', () => {
-    expect(CHART_TYPES).toEqual(['bar', 'column', 'line', 'anchor'])
+  it('declares the v1 types plus the delta variant, labels and sizes', () => {
+    expect(CHART_TYPES).toEqual(['bar', 'column', 'line', 'anchor', 'delta'])
     expect(RELATION_LABEL.line).toBe('Série de tempo')
+    expect(RELATION_LABEL.delta).toBe('Variação no período')
     expect(SIZES.story).toMatchObject({ width: 1080, height: 1920, safeTop: 250, safeBottom: 250 })
     expect(SIZES.feed).toMatchObject({ width: 1080, height: 1350 })
     expect(SIZES.square).toMatchObject({ width: 1080, height: 1080 })

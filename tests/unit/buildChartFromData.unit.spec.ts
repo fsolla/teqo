@@ -186,6 +186,45 @@ describe('main — spec assembly, replay and the per-size log', () => {
     expect(log).toContain('tipo=bar')
   })
 
+  it('assembles the delta spec from a table with the two periods', async () => {
+    const input = await writeInput(
+      dir,
+      'Tipo\t2020\t2026\nESF · Saúde da Família\t58\t63\nENASF-AB · Ampliado\t5\t5\n',
+    )
+    const { launchBrowser, close } = launchTracker()
+    const screenshot = screenshotStub()
+    const outPath = join(dir, 'delta.png')
+
+    await main({
+      argv: [
+        `--in=${input}`,
+        '--type=delta',
+        '--headline=Quatro dos sete seguem sem ampliação',
+        '--source=Ministério da Saúde — CNES',
+        `--out=${outPath}`,
+      ],
+      repoRoot: dir,
+      launchBrowser,
+      screenshot,
+    })
+
+    expect(screenshot).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ width: 1080, height: 1350, outPath }),
+    )
+    expect(close).toHaveBeenCalledOnce()
+
+    const spec = JSON.parse(
+      await readFile(
+        join(dir, 'data/graficos-instagram/quatro-dos-sete-seguem-sem-ampliacao.chart-spec.json'),
+        'utf8',
+      ),
+    )
+    expect(spec).toMatchObject({ chartType: 'delta', startLabel: '2020', endLabel: '2026' })
+    expect(spec.rows).toHaveLength(2)
+    expect(stdout.join('')).toContain('tipo=delta')
+  })
+
   it('replays a --spec without reparsing the input and closes the browser', async () => {
     const specPath = join(dir, 'replay.chart-spec.json')
     await writeFile(

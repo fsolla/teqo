@@ -48,6 +48,9 @@ O template visual é o artefato aprovado
      de medida e a primeira coluna temporal; `--good=`/`--bad=` marcam a valência
      bom/ruim (par ou nenhum), `--projected=` marca o último período projetado e
      `--crossing=<período>` confirma a ultrapassagem que ganha anotação;
+   - **duas medidas por categoria → `delta`**: barra de variação com a base
+     (0 → inicial) num tom e a extensão (inicial → final) noutro, os dois valores
+     numa gutter de duas colunas e o vermelho fora do plot (sem valência);
    - **uma única medida → `anchor`** (número grande + frase que explica).
    Ambíguo (mais de um tipo plausível) → **pergunte**; não escolha no escuro.
    Escreva a **manchete = takeaway** (não "Gráfico de X"), subtítulo opcional e a
@@ -68,6 +71,14 @@ O template visual é o artefato aprovado
      --note="2026 é projeção pela média de janeiro a junho × 2." \
      --type=line --size=feed \
      --good="Estadual" --bad="Municipal" --projected=2026 --crossing=2024
+   ```
+   Barra de variação (base + extensão, tabela de rótulo + inicial + final):
+   ```bash
+   node scripts/build-chart-from-data.mjs --in=<arquivo> --type=delta --size=feed \
+     --headline="Quatro dos sete tipos de equipe de saúde seguem sem ampliação desde 2020" \
+     --subtitle="Vitória da Conquista — número de equipes por tipo (2020 → jul/2026)" \
+     --source="Ministério da Saúde — CNES" \
+     --note="Sem variação: EMAD, EMAP, ENASF-AB e ECR."
    ```
    Saída default: `docs/research/graficos-instagram/<slug>-<data>-<size>.png`
    (gitignored) + o `chart-spec.json` em `data/graficos-instagram/`. `--size`:
@@ -111,14 +122,30 @@ Na linha de 2 séries, `series` substitui `rows` e `projectedLabel` marca o
 }
 ```
 
-`chartType` ∈ `bar | column | line | anchor`; `highlight` é o rótulo que recebe o
-único vermelho `#c51414` (default: o maior valor). Em `series`, `tone` ∈
+`chartType` ∈ `bar | column | line | anchor | delta`; `highlight` é o rótulo que
+recebe o único vermelho `#c51414` (default: o maior valor). Em `series`, `tone` ∈
 `good | bad` (os dois tons ou nenhum) e as duas séries compartilham os mesmos
 rótulos temporais; `rows` e `highlight` não entram nessa variante.
 `projectedLabel` marca a projeção no último período e `crossingLabel` só é aceito
 quando a série boa de fato ultrapassa a ruim naquele período (confirmação
 textual, nunca inferência automática). Os rótulos finais trazem a variação
 observada (primeiro → último ponto observado, fora a projeção).
+
+Na barra de variação, `rows` traz `initial`/`final` por categoria e
+`startLabel`/`endLabel` nomeiam os dois períodos da gutter (o vermelho não entra
+no plot e a variante não aceita `highlight`):
+
+```json
+{
+  "chartType": "delta",
+  "size": "feed",
+  "headline": "Quatro dos sete tipos seguem sem ampliação desde 2020",
+  "source": "Ministério da Saúde — CNES",
+  "startLabel": "2020",
+  "endLabel": "jul/2026",
+  "rows": [{ "label": "ESF · Saúde da Família", "initial": 58, "final": 63 }]
+}
+```
 
 ## Guardrails (fail-closed)
 
@@ -130,7 +157,13 @@ O builder **recusa** em vez de desenhar algo enganoso:
   séries** comporta **até 12 pontos por série**, sempre com os mesmos rótulos
   temporais alinhados. Em **stories**, o ranking comporta **até 5** pontos (a
   adaptação vertical reduz um ponto, conforme o design aprovado). Acima disso,
-  resuma as categorias e explique.
+  resuma as categorias e explique. A **barra de variação** (`delta`) também
+  comporta **até 7 categorias**, e no story ela **não corta** (um top-N apagaria
+  a manchete "quatro dos sete").
+- **Barra de variação (`delta`)** parte do zero com `0 ≤ inicial ≤ final`;
+  retração (final < inicial) é recusada com a linha de 2 séries no lugar;
+  `--highlight`/valência não entram (o par de tons é fixo e o vermelho fica fora
+  do plot).
 - **Valência só na linha de 2 séries**, em par (`good`/`bad`) e sempre por
   palavra + seta + forma do marcador + cor — **cor nunca carrega sozinha**:
   bom = vermelho `#c51414`, círculo, "↑ amplia" (o vermelho é a cor do
