@@ -471,6 +471,10 @@ describe('src/utilities top-level is pinned', () => {
     // (municipality + people): pure client-side factory, no Payload/Next.
     'campaignSavedFilterStore.ts',
     'campaignPageActor.ts',
+    // S19 — cached slug-keyed read of a published share link (listing tag) and
+    // the OG image resolver with the site-default fallback; the sibling of
+    // `documentReads.ts` (config-dependent side of the tag vocabulary).
+    'shareLinkReads.ts',
     'campaignPasswordReset.ts',
     'campaignPwa.ts',
     'campaignPwaClient.ts',

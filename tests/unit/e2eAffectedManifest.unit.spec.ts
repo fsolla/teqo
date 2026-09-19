@@ -65,6 +65,9 @@ describe('E2E_AFFECTED_MANIFEST (OPS5)', () => {
       // C191-runtime — deliberate: real-Chromium PNG smoke; the curated net is
       // the only path that wakes it for a scripts/ (high-risk) diff.
       'campaignChartPng',
+      // S19 — deliberate: the share-link OG/redirect contract is new and the
+      // migration makes every PR of this delivery high-risk (curated only).
+      'frontendShareLink',
     ])
     const onDisk = new Set(specNamesOnDisk())
     for (const spec of E2E_CURATED_SPECS) {

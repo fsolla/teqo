@@ -22,9 +22,12 @@ export const revalidateDocumentById = <Slug extends Collection>(
   id: string | number,
 ) => revalidateTag(getDocumentCacheTag(collection, id))
 
-const getListingTag = <Slug extends Collection>(collection: Slug) => `${collection}s`
+export const getCollectionListingTag = <Slug extends Collection>(collection: Slug) =>
+  `${collection}s`
 
 const revalidateCollectionListing = <Slug extends Collection>(collection: Slug) =>
-  revalidateTag(getListingTag(collection))
+  revalidateTag(getCollectionListingTag(collection))
 
 export const revalidatePostsListing = () => revalidateCollectionListing('post')
+
+export const revalidateShareLinksListing = () => revalidateCollectionListing('shareLink')

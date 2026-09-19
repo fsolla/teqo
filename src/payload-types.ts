@@ -107,6 +107,7 @@ export interface Config {
     subscription: Subscription;
     post: Post;
     tag: Tag;
+    shareLink: ShareLink;
     exports: Export;
     imports: Import;
     'payload-kv': PayloadKv;
@@ -156,6 +157,7 @@ export interface Config {
     subscription: SubscriptionSelect<false> | SubscriptionSelect<true>;
     post: PostSelect<false> | PostSelect<true>;
     tag: TagSelect<false> | TagSelect<true>;
+    shareLink: ShareLinkSelect<false> | ShareLinkSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     imports: ImportsSelect<false> | ImportsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -1523,6 +1525,41 @@ export interface Tag {
   createdAt: string;
 }
 /**
+ * Links curtos com miniatura personalizada para compartilhar no WhatsApp. O endereço é jorgesolla1313.com.br/<slug> e o clique leva direto ao destino.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shareLink".
+ */
+export interface ShareLink {
+  id: number;
+  /**
+   * Título do cartão no WhatsApp — o WhatsApp mostra no máximo 2 linhas (~60–90 caracteres).
+   */
+  title: string;
+  /**
+   * Endereço curto: jorgesolla1313.com.br/<slug>. Gerado do título quando vazio; não pode repetir nem usar palavra reservada do site. O WhatsApp guarda a miniatura em cache por URL: para trocar a miniatura de um link já compartilhado, use um slug novo.
+   */
+  slug: string;
+  /**
+   * URL completa do destino (ex.: o link do Google Meet da plenária), começando com http:// ou https://.
+   */
+  destination: string;
+  /**
+   * Texto do cartão no WhatsApp: ~80 caracteres já bastam; evitar passar de ~160.
+   */
+  description: string;
+  /**
+   * Imagem do cartão: 1200×630 px (proporção 1,91:1), arquivo até 600 KB, JPG ou PNG, largura mínima 300 px; evitar imagens muito largas (proporção máx. 4:1). A página do link monta a URL pública absoluta na hora de exibir o cartão. Vazio = imagem padrão do site.
+   */
+  image?: (number | null) | Media;
+  /**
+   * Desmarcado, o link responde 404 (kill switch).
+   */
+  published?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports".
  */
@@ -1867,6 +1904,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'tag';
         value: number | Tag;
+      } | null)
+    | ({
+        relationTo: 'shareLink';
+        value: number | ShareLink;
       } | null);
   globalSlug?: string | null;
   user:
@@ -2736,6 +2777,20 @@ export interface TagSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shareLink_select".
+ */
+export interface ShareLinkSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  destination?: T;
+  description?: T;
+  image?: T;
+  published?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports_select".
  */
 export interface ExportsSelect<T extends boolean = true> {
@@ -3245,6 +3300,7 @@ export interface TaskCreateCollectionExport {
       | 'subscription'
       | 'post'
       | 'tag'
+      | 'shareLink'
       | 'exports'
       | 'imports';
     drafts?: ('yes' | 'no') | null;

@@ -37,6 +37,7 @@ import { RecordingMedia } from './collections/RecordingMedia'
 import { RecordingSegment } from './collections/RecordingSegment'
 import { Reel } from './collections/Reel'
 import { ReelMedia } from './collections/ReelMedia'
+import { ShareLink } from './collections/ShareLink'
 import { Signature } from './collections/Signature'
 import { Speech } from './collections/Speech'
 import { SpeechCut } from './collections/SpeechCut'
@@ -140,6 +141,7 @@ export default buildConfig({
     Subscription,
     Post,
     Tag,
+    ShareLink,
   ],
   globals: [SiteSettings, HomePage, Metadata, PrivacyPolicy, CampaignGoals, SocialFeedSettings],
   editor: lexicalEditor(),

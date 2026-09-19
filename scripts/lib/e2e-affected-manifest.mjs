@@ -37,6 +37,9 @@ export const E2E_CURATED_SPECS = [
   // exercising the export dimensions/size guard; the e2e manifest maps only
   // `src/**`, so without the curated entry a scripts/ diff would never wake it.
   'campaignChartPng',
+  // S19 — deliberate: the share-link OG/redirect contract is new and the
+  // migration makes every PR of this delivery high-risk (curated only).
+  'frontendShareLink',
 ]
 
 /**
@@ -70,6 +73,21 @@ export const E2E_AFFECTED_MANIFEST = [
   {
     prefixes: ['src/app/(frontend)'],
     specs: ['frontend'],
+  },
+  {
+    // S19 — the share-link surface: the `[type]` branch serves the OG card and
+    // the instant handoff, and the pure module/collection/cached read own the
+    // slug, destination and publish contract.
+    prefixes: [
+      'src/app/(frontend)/[type]',
+      'src/lib/shareLink',
+      'src/utilities/shareLinkReads.ts',
+      // The tag/revalidation vocabulary owner for the shareLinks listing.
+      'src/utilities/documents.ts',
+      'src/collections/ShareLink.ts',
+      'src/components/ShareLinkRedirect.tsx',
+    ],
+    specs: ['frontendShareLink'],
   },
   {
     // S13 — the personalized-cards studio lives in shared cards components and
