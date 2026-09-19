@@ -52,8 +52,8 @@ nos reels.
 
 ### Ícones e pattern
 
-Ícones soltos e um pattern da linguagem visual do kit, ainda sem legenda de uso
-no manual; as entradas abaixo descrevem a forma (uso a confirmar no manual).
+Ícones soltos e um pattern da linguagem visual do kit, sem legenda de uso no
+manual; as entradas abaixo descrevem a forma (uso a confirmar).
 
 - **`bahia.png`** — silhueta do mapa da Bahia em branco recortada em quarto de
   círculo vermelho.
