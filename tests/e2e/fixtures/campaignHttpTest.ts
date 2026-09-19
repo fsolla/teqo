@@ -122,7 +122,7 @@ export const rendered = (html: string) => html.replaceAll('<!-- -->', '')
 
 /**
  * The route-gate redirect contract (OPS35 → OPS87, 4 call sites; C154
- * generalized the target): `noLeader`/`staff`/`speechCatalog` gates throw
+ * generalized the target): `noLeader`/`staff`/`communicationCatalog` gates throw
  * `redirect()` deep in the page, after the layout has started streaming — so
  * the document usually answers 200 carrying Next's route-redirect meta tag
  * instead of a 3xx; when the redirect beats the stream it is a real 3xx (dev

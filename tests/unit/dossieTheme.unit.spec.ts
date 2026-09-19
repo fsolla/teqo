@@ -516,3 +516,48 @@ describe('buildBulletin (theme unit)', () => {
     expect(sparseHtml).toContain('entrega exclusiva da área')
   })
 })
+
+describe('buildBulletin (theme unit, one-page fit)', () => {
+  const identity = {
+    name: report.meta.subjectName,
+    badges: report.meta.identityBadges,
+    value: report.meta.identity?.value ?? null,
+    taxonomyNote: report.meta.identity?.taxonomyNote ?? null,
+  }
+  const fala = report.bulletinFacts.find((fact) => String(fact.id).startsWith('fala-'))
+
+  it('marks the acervo as a declared source panel, out of the printed slots', () => {
+    expect(fala).toMatchObject({ sourcePanel: true })
+    const bulletin = buildBulletin({
+      facts: fala ? [fala] : [],
+      identity,
+      unit: THEME_UNIT,
+      generatedAt,
+    })
+    expect(bulletin.highlights).toHaveLength(0)
+    expect(bulletin.moreItems).toHaveLength(0)
+    expect(bulletin.factsTotal).toBe(1)
+    expect(bulletin.factsPrinted).toBe(0)
+    expect(bulletin.factsRemaining).toBe(1)
+    expect(bulletin.sparse).toBe(true)
+    const html = renderBulletinHtml(bulletin)
+    expect(html).not.toContain(fala?.headline ?? '')
+    expect(html).toContain('e mais 1 fato com fonte no dossiê da área')
+  })
+
+  it('shrinks the printed set on printLimit and declares every remaining fact', () => {
+    const facts = report.bulletinFacts.filter((fact) => !fact.sourcePanel)
+    const full = buildBulletin({ facts, identity, unit: THEME_UNIT, generatedAt })
+    const fitted = buildBulletin({ facts, identity, unit: THEME_UNIT, generatedAt, printLimit: 2 })
+    expect(full.highlights).toHaveLength(6)
+    expect(full.moreItems).toHaveLength(0)
+    expect(fitted.highlights).toHaveLength(2)
+    expect(fitted.moreItems).toHaveLength(0)
+    expect(fitted.factsPrinted).toBe(2)
+    expect(fitted.factsPrintable).toBe(facts.length)
+    expect(fitted.factsRemaining).toBeGreaterThan(full.factsRemaining)
+    expect(renderBulletinHtml(fitted)).toContain(
+      `e mais ${fitted.factsRemaining} fatos com fonte no dossiê da área`,
+    )
+  })
+})

@@ -30,12 +30,13 @@ const rankFacts = (facts, unit) => {
 
 /**
  * @param {{
- *   facts?: Array<{ id: string, era: string, sphere: string, area: string, headline: string, detail: string|null, value: string|null, year: string|null, phase: string|null, sourceUrl: string, sourceDate: string }>,
+ *   facts?: Array<{ id: string, era: string, sphere: string, area: string, headline: string, detail: string|null, value: string|null, year: string|null, phase: string|null, sourceUrl: string, sourceDate: string, sourcePanel?: boolean }>,
  *   municipality?: string,
  *   region?: string | null,
  *   identity?: { name: string, badges?: string[] } | null,
  *   unit?: any,
  *   generatedAt?: Date,
+ *   printLimit?: number | null,
  * }} params
  */
 export const buildBulletin = ({
@@ -45,11 +46,20 @@ export const buildBulletin = ({
   identity = null,
   unit,
   generatedAt = new Date(),
+  printLimit = null,
 }) => {
   const resolvedUnit = resolveDossierUnit(unit)
   const ordered = rankFacts(facts, resolvedUnit)
+  // The acervo sample is a source panel, not a finding (C190): it is counted in
+  // the one-pager but never takes a printed slot from a sourced finding.
+  const printable = ordered.filter((fact) => !fact.sourcePanel)
+  const target =
+    printLimit === null
+      ? BULLETIN_HIGHLIGHT_LIMIT + (resolvedUnit.bulletinMoreLimit ?? BULLETIN_MORE_LIMIT)
+      : Math.max(0, printLimit)
+  const printed = printable.slice(0, target)
   const subjectName = municipality ?? identity?.name ?? '—'
-  const highlights = ordered.slice(0, BULLETIN_HIGHLIGHT_LIMIT).map((fact) => {
+  const highlights = printed.slice(0, BULLETIN_HIGHLIGHT_LIMIT).map((fact) => {
     // Theme-only fallback: a fact without money value shows its year; without
     // either, the card is textual and prints no number slot at all (never zero).
     const number = resolvedUnit.bulletinNumberFallback
@@ -65,20 +75,15 @@ export const buildBulletin = ({
       phaseLabel: fact.value ? dossierPhaseLabel(fact.phase) : null,
     }
   })
-  const moreItems = ordered
-    .slice(
-      BULLETIN_HIGHLIGHT_LIMIT,
-      BULLETIN_HIGHLIGHT_LIMIT + (resolvedUnit.bulletinMoreLimit ?? BULLETIN_MORE_LIMIT),
-    )
-    .map((fact) => ({
-      label: fact.brief?.title ?? fact.headline,
-      detail: fact.brief?.note ?? fact.detail ?? fact.value ?? fact.area,
-    }))
+  const moreItems = printed.slice(BULLETIN_HIGHLIGHT_LIMIT).map((fact) => ({
+    label: fact.brief?.title ?? fact.headline,
+    detail: fact.brief?.note ?? fact.detail ?? fact.value ?? fact.area,
+  }))
   const shown = highlights.length + moreItems.length
 
   return {
     unit: resolvedUnit,
-    sparse: ordered.length < 3,
+    sparse: printable.length < 3,
     meta: {
       title: resolvedUnit.bulletinTitle,
       kicker: resolvedUnit.bulletinKicker ?? 'Boletim informativo · atuação pública',
@@ -95,9 +100,12 @@ export const buildBulletin = ({
     },
     highlights,
     moreItems,
-    // Never a silent drop (C188): the facts beyond the two caps are counted so
-    // the one-page boletim states how much of the sourced set it left out.
+    // Never a silent drop (C188): the facts beyond the two caps — and the whole
+    // source panel — are counted so the one-page boletim states how much of the
+    // sourced set it left out.
     factsTotal: ordered.length,
+    factsPrintable: printable.length,
+    factsPrinted: shown,
     factsRemaining: ordered.length - shown,
     timeline: BULLETIN_TIMELINE_STEPS,
   }

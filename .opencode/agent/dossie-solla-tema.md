@@ -18,7 +18,10 @@ slug da área na taxonomia e coordena as demais eras/áreas em paralelo.
 2. Fazer a **pesquisa web datada** da era e escrever
    `data/dossie-solla-tema/<slug>.<era>.research.json` no contrato da skill
    (ex.: `educacao.c.research.json`) — item sem `sourceUrl`/`sourceDate` não vai
-   para o arquivo (vira lacuna explícita). Use o checklist da era e marque
+   para o arquivo (vira lacuna explícita). Todo item publicado leva `brief`
+   (`title` ≤ 80, `note` ≤ 120 chars) e, quando ajudar o resumo, `summary`
+   curto e auto-contido (C188): é a copy que o PDF e o boletim imprimem; sem ela
+   o texto integral pode estourar a página. Use o checklist da era e marque
    `sphere` (`area`/`segmento`/`rede`); segmento e rede **nunca** são somados à
    área.
 3. Devolver **apenas o recibo curto** (seção "Recibo do researcher" da skill):

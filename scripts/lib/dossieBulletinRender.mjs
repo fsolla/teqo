@@ -229,6 +229,7 @@ const SUBJECT_BULLETIN_CSS = `
   .bulletin-timeline { margin-top: 2.5mm; }
   .more { margin-top: 2.5mm; }
   .empty-box { min-height: 30mm; }
+  .more-counter { margin-top: 1.8mm; color: #435264; font-size: 7.6pt; font-weight: 600; }
   .lacuna-panel .warn-icon { width: 5mm; height: 5mm; flex-shrink: 0; margin-top: .4mm; color: #8a5a18; }
   .highlight-phase { margin: 1.2mm 0 0; }
   .highlight-card--textual { border-top-color: #435264; }
@@ -340,6 +341,11 @@ const renderSubjectBulletinHtml = (bulletin) => {
         more.length
           ? `<div class="more-grid">${more.map(renderMoreItem).join('')}</div>`
           : `<div class="empty-box"><p><strong class="uppercase">Sem itens adicionais com fonte além dos destaques.</strong></p><p>${htmlEscape(copy.moreEmpty)}</p></div>`
+      }
+      ${
+        bulletin.factsRemaining > 0
+          ? `<p class="more-counter">${htmlEscape(moreItemsLabel(bulletin.factsRemaining, 'fato com fonte', 'fatos com fonte'))} ${htmlEscape(copy.remaining)}</p>`
+          : ''
       }
     </div>
     ${

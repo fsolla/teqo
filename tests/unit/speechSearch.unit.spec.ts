@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import {
   normalizeForSearch,
   speechMatchesSearchQuery,
+  speechMatchesSearchTerm,
   uniqueByNormalizedForm,
 } from '@/lib/speechSearch'
 
@@ -45,5 +46,20 @@ describe('speechMatchesSearchQuery', () => {
     const speech = { searchText: null, keywords: null }
     expect(speechMatchesSearchQuery(speech, undefined)).toBe(true)
     expect(speechMatchesSearchQuery(speech, '   ')).toBe(true)
+  })
+})
+
+describe('speechMatchesSearchTerm (C192)', () => {
+  it('mirrors a single textual where branch', () => {
+    const speech = { searchText: 'a saude publica baiana', keywords: ['Farmácia Popular'] }
+    expect(speechMatchesSearchTerm(speech, 'SAÚDE Pública')).toBe(true)
+    expect(speechMatchesSearchTerm(speech, 'FARMÁCIA')).toBe(true)
+    expect(speechMatchesSearchTerm(speech, 'educação')).toBe(false)
+  })
+
+  it('never matches an empty term', () => {
+    const speech = { searchText: 'a saude publica', keywords: ['SUS'] }
+    expect(speechMatchesSearchTerm(speech, undefined)).toBe(false)
+    expect(speechMatchesSearchTerm(speech, '   ')).toBe(false)
   })
 })

@@ -57,6 +57,7 @@ next-env.d.ts
 .env
 
 /media
+/reelMedia
 
 # TSE open-data zip cache (pnpm db:seed:tse)
 /data/tse/
@@ -95,6 +96,10 @@ next-env.d.ts
 # C190 — dossiê Solla por tema/área + boletim modelo: same rule (C186).
 /data/dossie-solla-tema/
 /docs/research/dossie-solla-tema/
+# C191 — Instagram data charts: raw input + chart-spec intermediates + final
+# PNG/SVG carry campaign-internal data; the public repo never commits them.
+/data/graficos-instagram/
+/docs/research/graficos-instagram/
 
 # C196 — reels tutoriais: o shot list é versionado (scripts/reels/shot-lists);
 # o pacote (reel.mp4/capa.png/metadata.json) e os intermediários são regeneráveis.
@@ -122,6 +127,9 @@ next-env.d.ts
 
 # Proprietary design font files kept only in the local workspace
 /public/arial-mt/
+
+# S15 — MediaPipe wasm runtime, copied from node_modules at dev/build time
+/public/cards/mediapipe/
 
 /data/encode/
 /data/poster-candidates/

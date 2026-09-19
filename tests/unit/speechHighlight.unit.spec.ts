@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildHighlightedExcerpt,
   findHighlightRanges,
+  findPhraseRanges,
   matchesSearchTerms,
   splitHighlightedParts,
 } from '@/lib/speechHighlight'
@@ -39,6 +40,32 @@ describe('findHighlightRanges', () => {
   it('returns nothing for an empty query or a miss', () => {
     expect(findHighlightRanges('texto', '')).toEqual([])
     expect(findHighlightRanges('texto', 'inexistente')).toEqual([])
+  })
+})
+
+describe('findPhraseRanges (C192)', () => {
+  it('highlights the whole phrase as one continuous range, keeping the accents', () => {
+    const text = 'Defendemos o atendimento público e acesso universal à saúde para todos'
+    const ranges = findPhraseRanges(text, 'acesso universal à saúde')
+
+    expect(ranges).toHaveLength(1)
+    expect(text.slice(ranges[0]!.start, ranges[0]!.end)).toBe('acesso universal à saúde')
+  })
+
+  it('finds overlapping occurrences of the same phrase', () => {
+    expect(findPhraseRanges('ana ana', 'ana')).toEqual([
+      { start: 0, end: 3 },
+      { start: 4, end: 7 },
+    ])
+  })
+
+  it('falls back to the per-term ranges when the phrase is not contiguous', () => {
+    const ranges = findPhraseRanges('saúde pública e muito acesso', 'acesso universal')
+    expect(ranges).toEqual([{ start: 22, end: 28 }])
+  })
+
+  it('returns nothing for an empty phrase', () => {
+    expect(findPhraseRanges('texto', '')).toEqual([])
   })
 })
 

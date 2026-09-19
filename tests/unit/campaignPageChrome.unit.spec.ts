@@ -69,6 +69,14 @@ describe('campaignPageChrome', () => {
     expect(resolveCampaignPageChrome('/campanha/comunicacao/acervo/42', 'communicator')).toBeNull()
   })
 
+  it('resolves the reel library list and leaves the detail title to the page (C194)', () => {
+    expect(resolveCampaignPageChrome('/campanha/comunicacao/reels', 'communicator')).toEqual({
+      title: 'Reels',
+      subtitle: 'Tutoriais do site prontos para a assessoria baixar e publicar fora do Teqo.',
+    })
+    expect(resolveCampaignPageChrome('/campanha/comunicacao/reels/42', 'communicator')).toBeNull()
+  })
+
   it('separates staff contatos from the leader meus-contatos (C139)', () => {
     expect(resolveCampaignPageChrome('/campanha/contatos', 'coordinator')).toEqual({
       title: 'Contatos',

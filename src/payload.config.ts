@@ -32,6 +32,8 @@ import { Organization } from './collections/Organization'
 import { Petition } from './collections/Petition'
 import { Post } from './collections/Post'
 import { PushSubscription } from './collections/PushSubscription'
+import { Reel } from './collections/Reel'
+import { ReelMedia } from './collections/ReelMedia'
 import { Signature } from './collections/Signature'
 import { Speech } from './collections/Speech'
 import { SpeechCut } from './collections/SpeechCut'
@@ -117,6 +119,8 @@ export default buildConfig({
     Speech,
     SpeechSegment,
     SpeechCut,
+    Reel,
+    ReelMedia,
     CalendarFeed,
     GoogleCalendarSync,
     ElectionTally,
@@ -162,6 +166,9 @@ export default buildConfig({
           s3Storage({
             collections: {
               media: true,
+              // C193 — private reel artifacts; without this entry they would
+              // fall back to the container's ephemeral disk in production.
+              reelMedia: true,
             },
             bucket: mediaStorage.bucket,
             config: {

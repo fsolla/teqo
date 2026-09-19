@@ -419,7 +419,11 @@ const buildMunicipalityReport = ({
         sourceUrl: row.sourceUrl,
         sourceDate: row.sourceDate,
       })),
-    ...speechFacts.map((fact) => ({ ...fact, headline: stripInlineSources(fact.headline) })),
+    ...speechFacts.map((fact) => ({
+      ...fact,
+      headline: stripInlineSources(fact.headline),
+      sourcePanel: true,
+    })),
   ]
 
   const generatedAtLabel = formatDateTimeBr(generatedAt)
@@ -557,7 +561,9 @@ const uncapped = (list) => ({ items: list, total: list.length, omitted: 0 })
 /**
  * Speeches from the internal acervo (read-only snapshot) that the research did
  * not already carry: they are sourced evidence for the recorte, so they feed
- * the bulletin ledger too — never a second, unsourced fact.
+ * the bulletin ledger too — never a second, unsourced fact. They enter as a
+ * declared source panel (`sourcePanel: true`): counted in the one-pager, never
+ * displacing a finding from the printed slots.
  */
 const speechFactsFromRows = (snapshot, sphere) =>
   (snapshot.speeches?.rows ?? [])
@@ -1068,7 +1074,13 @@ const buildSubjectReport = (params) => {
       sourceUrl: item.sourceUrl,
       sourceDate: item.sourceDate,
     }))
-    .concat(speechFacts.map((fact) => ({ ...fact, headline: stripInlineSources(fact.headline) })))
+    .concat(
+      speechFacts.map((fact) => ({
+        ...fact,
+        headline: stripInlineSources(fact.headline),
+        sourcePanel: true,
+      })),
+    )
 
   const generatedAtLabel = formatDateTimeBr(generatedAt)
   const readAtLabel = snapshot.meta?.readAt ? formatDateTimeBr(snapshot.meta.readAt) : '—'

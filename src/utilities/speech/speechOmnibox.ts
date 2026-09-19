@@ -22,12 +22,19 @@ import {
   speechTopicLabels,
   type SpeechDurationBucket,
   type SpeechListState,
+  type SpeechSearchMode,
 } from '@/utilities/speech/speechListUrl'
 
 export type SpeechFilterOption = {
   value: string
   label: string
 }
+
+/**
+ * C192 — the omnibox input's DOM id, shared by the filters bar and the empty
+ * state's "Reformular busca" focus action.
+ */
+export const SPEECH_OMNIBOX_ID = 'speech-omnibox'
 
 export type SpeechOmniboxAction =
   | { kind: 'url'; state: SpeechListState }
@@ -238,12 +245,31 @@ export const removeSpeechOmniboxChip = ({
   state: SpeechListState
   chipId: string
 }): SpeechOmniboxAction => {
-  if (chipId === 'q') return { kind: 'url', state: withPageReset({ ...state, q: undefined }) }
+  // Dropping the query also drops the theme mode: a theme without a query has
+  // nothing to expand.
+  if (chipId === 'q') {
+    return { kind: 'url', state: withPageReset({ ...state, q: undefined, mode: undefined }) }
+  }
 
   const { key, value } = chipPrefix(chipId)
   const next = mutateFacet(withPageReset(state), key, value, 'remove')
   return { kind: 'url', state: next ?? state }
 }
+
+/**
+ * C192 — the search mode toggle. `tema` only sticks with a query; `termo`
+ * (the default) clears the param so the URL stays canonical and shareable.
+ */
+export const applySpeechSearchMode = ({
+  state,
+  mode,
+}: {
+  state: SpeechListState
+  mode: SpeechSearchMode
+}): SpeechOmniboxAction => ({
+  kind: 'url',
+  state: withPageReset({ ...state, mode: mode === 'tema' && state.q ? 'tema' : undefined }),
+})
 
 export const clearSpeechOmnibox = (_state: SpeechListState): SpeechOmniboxAction => ({
   kind: 'clear',

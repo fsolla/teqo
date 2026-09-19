@@ -1,9 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-
-import type { SpeechCutPublicationResponse } from '@/app/(campaign)/campanha/(app)/comunicacao/acervo/cortes/[id]/types'
+import { usePublicationToggle } from '@/components/campaign/shared/usePublicationToggle'
 import { SpeechCutStatusBadge } from '@/components/campaign/speech/SpeechCutStatusBadge'
 import { Alert, AlertDescription } from '@/components/ui/Alert'
 import {
@@ -18,7 +15,6 @@ import {
 } from '@/components/ui/AlertDialog'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/Spinner'
-import { postCampaignJson } from '@/lib/campaignJsonRequest'
 import type { SpeechCutStatus } from '@/lib/speechCut'
 
 type SpeechCutPublicationPanelProps = {
@@ -35,34 +31,10 @@ const UNPUBLISH_WARNING =
  * takes it off the air. A cut without a stored file cannot be published.
  */
 export const SpeechCutPublicationPanel = ({ cutId, status }: SpeechCutPublicationPanelProps) => {
-  const router = useRouter()
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const setPublished = async (published: boolean) => {
-    setSubmitting(true)
-    setError(null)
-
-    try {
-      const { ok, payload } = await postCampaignJson<SpeechCutPublicationResponse>(
-        `/campanha/comunicacao/acervo/cortes/${cutId}/publicacao`,
-        { cutId, published },
-      )
-
-      if (!ok || payload.status !== 'success') {
-        setError(
-          payload.status === 'error' ? payload.message : 'Não foi possível atualizar a publicação.',
-        )
-        return
-      }
-
-      router.refresh()
-    } catch {
-      setError('Não foi possível atualizar a publicação.')
-    } finally {
-      setSubmitting(false)
-    }
-  }
+  const { submitting, error, setPublished } = usePublicationToggle({
+    href: `/campanha/comunicacao/acervo/cortes/${cutId}/publicacao`,
+    buildBody: (published) => ({ cutId, published }),
+  })
 
   return (
     <section className="rounded-xl border p-4">

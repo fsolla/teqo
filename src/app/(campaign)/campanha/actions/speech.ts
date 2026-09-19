@@ -2,7 +2,7 @@
 
 import type { Payload } from 'payload'
 
-import { canReadSpeechCatalog } from '@/lib/campaignRoles'
+import { canReadCommunicationCatalog } from '@/lib/campaignRoles'
 import {
   SPEECH_CUT_FORBIDDEN_MESSAGE,
   SPEECH_CUT_INVALID_RANGE_MESSAGE,
@@ -56,7 +56,7 @@ export const resolveSpeechVodForActor = async (input: {
   const { speechId } = speechVodRequestSchema.parse(input)
   const { payload, actor } = await getCampaignActionContext()
 
-  if (!canReadSpeechCatalog(actor.role)) throw new Error(SPEECH_VOD_FORBIDDEN_MESSAGE)
+  if (!canReadCommunicationCatalog(actor.role)) throw new Error(SPEECH_VOD_FORBIDDEN_MESSAGE)
 
   const result = await payload.find({
     collection: 'speech',
@@ -227,7 +227,7 @@ export const saveSpeechCutForActor = async (
   const parsed = speechCutRequestSchema.parse(input)
   const { payload, actor } = await getCampaignActionContext()
 
-  if (!canReadSpeechCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
+  if (!canReadCommunicationCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
 
   return 'retryOf' in parsed
     ? retrySpeechCut(payload, actor, parsed.retryOf)
@@ -241,7 +241,7 @@ export const getSpeechCutStatusForActor = async (input: {
   const { cutId } = speechCutStatusRequestSchema.parse(input)
   const { payload, actor } = await getCampaignActionContext()
 
-  if (!canReadSpeechCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
+  if (!canReadCommunicationCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
 
   let cut = await loadSpeechCutForActor(payload, actor, cutId)
   if (!cut) throw new Error(SPEECH_CUT_NOT_FOUND_MESSAGE)
@@ -262,7 +262,7 @@ export const getSpeechCutStatusForActor = async (input: {
 
 // ---------------------------------------------------------------------------
 // C168 — the cut library: edit the cut's own text and toggle the public link.
-// Same fresh `speechCatalog` gate as the C167 mutations; the collection access
+// Same fresh `communicationCatalog` gate as the C167 mutations; the collection access
 // (canReadSpeech) and the whitelisted zod payload are the field boundary.
 // ---------------------------------------------------------------------------
 
@@ -273,7 +273,7 @@ export const updateSpeechCutTextForActor = async (
   const parsed = speechCutTextUpdateRequestSchema.parse(input)
   const { payload, actor } = await getCampaignActionContext()
 
-  if (!canReadSpeechCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
+  if (!canReadCommunicationCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
 
   const current = await loadSpeechCutForActor(payload, actor, parsed.cutId)
   if (!current) throw new Error(SPEECH_CUT_NOT_FOUND_MESSAGE)
@@ -300,7 +300,7 @@ export const setSpeechCutPublishedForActor = async (
   const parsed = speechCutPublicationRequestSchema.parse(input)
   const { payload, actor } = await getCampaignActionContext()
 
-  if (!canReadSpeechCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
+  if (!canReadCommunicationCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
 
   const current = await loadSpeechCutForActor(payload, actor, parsed.cutId)
   if (!current) throw new Error(SPEECH_CUT_NOT_FOUND_MESSAGE)
@@ -333,7 +333,7 @@ export const deleteSpeechCutForActor = async (
   const parsed = speechCutCutIdRequestSchema.parse(input)
   const { payload, actor } = await getCampaignActionContext()
 
-  if (!canReadSpeechCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
+  if (!canReadCommunicationCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
 
   const current = await loadSpeechCutForActor(payload, actor, parsed.cutId)
   if (!current) throw new Error(SPEECH_CUT_NOT_FOUND_MESSAGE)
@@ -358,7 +358,7 @@ export const retrySpeechCutForActor = async (
   const parsed = speechCutCutIdRequestSchema.parse(input)
   const { payload, actor } = await getCampaignActionContext()
 
-  if (!canReadSpeechCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
+  if (!canReadCommunicationCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
 
   return retrySpeechCut(payload, actor, parsed.cutId)
 }
@@ -372,7 +372,7 @@ export const suggestSpeechCutMetadataForActor = async (input: {
   const parsed = speechCutSuggestionRequestSchema.parse(input)
   const { payload, actor } = await getCampaignActionContext()
 
-  if (!canReadSpeechCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
+  if (!canReadCommunicationCatalog(actor.role)) throw new Error(SPEECH_CUT_FORBIDDEN_MESSAGE)
 
   const speech = await loadSpeechForCut(payload, actor, parsed.speechId)
   if (!speech) throw new Error(SPEECH_CUT_SPEECH_NOT_FOUND_MESSAGE)

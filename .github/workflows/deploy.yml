@@ -195,6 +195,9 @@ jobs:
         env:
           NEXT_DIST_DIR: .next-e2e
           NEXT_PUBLIC_SITE_URL: https://feed.e2e.teqo.test
+          # S15 — deterministic cutout stub: the e2e build never downloads the
+          # MediaPipe wasm nor runs inference.
+          NEXT_PUBLIC_CARDS_CUTOUT_STUB: '1'
       - name: E2E tests (full suite, single job, 4 workers)
         # Explicit CI workers; the local default stays 2 (playwright.config.ts).
         # No `--` separator: pnpm would forward it verbatim to playwright and

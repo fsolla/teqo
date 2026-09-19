@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — Gravações enviadas no acervo</title>
+    <style type="text/tailwindcss">
+      @theme {
+        --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+        --color-background: #ffffff;
+        --color-foreground: #1c1917;
+        --color-card: #ffffff;
+        --color-primary: #c51414;
+        --color-primary-foreground: #ffffff;
+        --color-secondary: #f5f5f4;
+        --color-secondary-foreground: #292524;
+        --color-muted: #f4f4f5;
+        --color-muted-foreground: #6b7280;
+        --color-border: rgb(28 25 23 / 12%);
+        --color-input: #d6d3d1;
+        --color-destructive: #b42318;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      .icon {
+        width: 1rem;
+        height: 1rem;
+        stroke-width: 2;
+      }
+      .icon-sm {
+        width: 0.875rem;
+        height: 0.875rem;
+        stroke-width: 2;
+      }
+      .btn {
+        display: inline-flex;
+        min-height: 2.5rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        line-height: 1;
+        transition: 150ms ease;
+      }
+      .btn-primary {
+        background: #c51414;
+        color: white;
+        border: 1px solid #c51414;
+      }
+      .btn-outline {
+        background: white;
+        color: #292524;
+        border: 1px solid #d6d3d1;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: #292524;
+        border: 1px solid transparent;
+      }
+      .field {
+        min-height: 2.75rem;
+        width: 100%;
+        border: 1px solid #d6d3d1;
+        border-radius: 0.5rem;
+        background: white;
+        padding: 0.625rem 0.75rem;
+        color: #1c1917;
+        outline: none;
+      }
+      .field:focus {
+        border-color: #c51414;
+        box-shadow: 0 0 0 3px rgb(197 20 20 / 18%);
+      }
+      .scene-label {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+        color: #57534e;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+      .scene-label::after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: #d6d3d1;
+      }
+      .desktop-frame {
+        width: 1280px;
+        min-height: 720px;
+        overflow: hidden;
+        border: 1px solid #d6d3d1;
+        border-radius: 14px;
+        background: white;
+        box-shadow: 0 18px 45px rgb(28 25 23 / 10%);
+      }
+      .mobile-frame {
+        width: 390px;
+        min-height: 760px;
+        overflow: hidden;
+        border: 1px solid #d6d3d1;
+        border-radius: 28px;
+        background: white;
+        box-shadow: 0 18px 45px rgb(28 25 23 / 12%);
+      }
+      .status {
+        display: inline-flex;
+        min-height: 1.25rem;
+        align-items: center;
+        gap: 0.375rem;
+        border-radius: 9999px;
+        padding: 0.125rem 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .status-ready {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .status-work {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .status-failed {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .status-upload {
+        background: #eef0f3;
+        color: #46505c;
+      }
+      .seg {
+        display: grid;
+        grid-template-columns: 3.25rem 1fr;
+        gap: 0.75rem;
+        width: 100%;
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+        text-align: left;
+      }
+      .seg:hover,
+      .seg-active {
+        background: #f4f4f5;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-stone-100 text-foreground antialiased">
+    <svg aria-hidden="true" class="absolute size-0 overflow-hidden">
+      <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 3v12m0-12 4 4m-4-4L8 7" />
+        <path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
+      </symbol>
+      <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="m6 4 14 8-14 8z" />
+      </symbol>
+      <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
+        <path d="M5 21h14" />
+      </symbol>
+      <symbol id="i-video" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <rect x="3" y="5" width="14" height="14" rx="2" />
+        <path d="m17 10 4-2v8l-4-2z" />
+      </symbol>
+      <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <path d="M14 2v6h6" />
+      </symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M20 7h-5V2" />
+        <path d="M20 7a9 9 0 1 0 1 8" />
+      </symbol>
+      <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="m18 6-12 12M6 6l12 12" />
+      </symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="m9 18 6-6-6-6" />
+      </symbol>
+      <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="m15 18-6-6 6-6" />
+      </symbol>
+      <symbol id="i-library" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="m16 6 4 14M12 6v14M8 8v12M4 4v16" />
+      </symbol>
+      <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+      </symbol>
+    </svg>
+
+    <main class="mx-auto w-max max-w-none px-10 py-10">
+      <header class="mb-8 max-w-3xl">
+        <p class="text-sm font-semibold text-primary">Teqo · acervo de comunicação</p>
+        <h1 class="mt-1 text-2xl font-semibold tracking-tight">Gravações enviadas no acervo</h1>
+        <p class="mt-2 text-sm leading-6 text-muted-foreground">
+          Referência hi-fi para enviar, acompanhar, buscar e consultar gravações próprias. A
+          transcrição é somente leitura.
+        </p>
+      </header>
+
+      <!-- CENA 1 -->
+      <section class="mb-12" aria-labelledby="scene-1">
+        <h2 id="scene-1" class="scene-label">Cena 1 · Desktop — acervo com alternador de fonte</h2>
+        <div class="desktop-frame flex">
+          <aside class="flex w-[220px] shrink-0 flex-col border-r border-border bg-stone-50 p-3">
+            <div class="flex h-12 items-center gap-2 px-2 font-semibold">
+              <span class="grid size-8 place-items-center rounded-lg bg-primary text-sm text-white"
+                >T</span
+              >
+              Campanha
+            </div>
+            <nav class="mt-3 space-y-1 text-sm">
+              <div class="rounded-md px-3 py-2 text-muted-foreground">Início</div>
+              <div class="rounded-md px-3 py-2 text-muted-foreground">Municípios</div>
+              <div class="rounded-md px-3 py-2 text-muted-foreground">Pessoas</div>
+              <div
+                class="rounded-md bg-white px-3 py-2 font-medium text-primary ring-1 ring-border"
+              >
+                Comunicação
+              </div>
+              <div class="ml-5 border-l border-border py-1 pl-3">
+                <div
+                  class="rounded-md bg-white px-3 py-2 font-medium text-primary ring-1 ring-border"
+                >
+                  Acervo
+                </div>
+                <div class="px-3 py-2 text-muted-foreground">Cortes</div>
+              </div>
+            </nav>
+            <div class="mt-auto border-t border-border px-2 pt-3 text-xs text-muted-foreground">
+              Assessor de Comunicação
+            </div>
+          </aside>
+          <div class="min-w-0 flex-1">
+            <header class="flex min-h-11 items-center gap-3 border-b border-border px-4">
+              <span class="text-muted-foreground">☰</span>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold">Acervo</p>
+                <p class="text-xs text-muted-foreground">Comunicação</p>
+              </div>
+            </header>
+            <div class="p-6">
+              <div class="flex items-end justify-between gap-4">
+                <div>
+                  <h3 class="text-xl font-semibold tracking-tight">Acervo de falas</h3>
+                  <p class="mt-1 text-sm text-muted-foreground">
+                    Busque nas falas da Câmara ou nas gravações da equipe.
+                  </p>
+                </div>
+                <button class="btn btn-primary">
+                  <svg class="icon"><use href="#i-upload" /></svg>Enviar gravação
+                </button>
+              </div>
+              <div
+                class="mt-5 inline-flex rounded-lg bg-secondary p-1 text-sm"
+                role="tablist"
+                aria-label="Fonte do acervo"
+              >
+                <button class="rounded-md px-3 py-2 text-muted-foreground" data-source-tab="camara">
+                  Falas da Câmara
+                </button>
+                <button
+                  class="rounded-md bg-white px-3 py-2 font-medium text-foreground shadow-sm ring-1 ring-border"
+                  data-source-tab="enviadas"
+                >
+                  Gravações enviadas
+                </button>
+              </div>
+              <label class="mt-5 block text-sm font-medium" for="search-1"
+                >Buscar nas gravações enviadas</label
+              >
+              <div
+                class="mt-1.5 flex min-h-11 items-center gap-2 rounded-lg border border-input bg-white px-3 shadow-xs"
+              >
+                <svg class="icon text-muted-foreground"><use href="#i-search" /></svg
+                ><input
+                  id="search-1"
+                  class="min-w-0 flex-1 border-0 bg-transparent text-sm outline-none"
+                  placeholder="Busque por palavra ou trecho da transcrição…"
+                />
+              </div>
+              <div class="mt-5 space-y-3">
+                <article
+                  class="grid grid-cols-[112px_minmax(0,1fr)_auto] gap-4 rounded-xl border border-border bg-card p-4"
+                >
+                  <div
+                    class="grid aspect-video place-items-center rounded-lg bg-stone-200 text-stone-500"
+                  >
+                    <svg class="h-7 w-7"><use href="#i-video" /></svg>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                      <h4 class="truncate text-sm font-semibold">Título da gravação</h4>
+                      <span class="status status-ready">Pronto</span>
+                    </div>
+                    <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa · —:—:—</p>
+                    <p class="mt-2 line-clamp-2 text-sm leading-5 text-foreground/90">
+                      Texto transcrito da gravação aparece aqui quando corresponde à busca.
+                    </p>
+                  </div>
+                  <button class="btn btn-outline self-center">
+                    Abrir<svg class="icon-sm"><use href="#i-chevron" /></svg>
+                  </button>
+                </article>
+                <article
+                  class="grid grid-cols-[112px_minmax(0,1fr)_auto] gap-4 rounded-xl border border-border bg-card p-4"
+                >
+                  <div
+                    class="grid aspect-video place-items-center rounded-lg bg-stone-200 text-stone-500"
+                  >
+                    <svg class="h-7 w-7"><use href="#i-video" /></svg>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                      <h4 class="truncate text-sm font-semibold">Outra gravação enviada</h4>
+                      <span class="status status-work">Processando</span>
+                    </div>
+                    <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa · —:—:—</p>
+                    <p class="mt-2 text-sm text-muted-foreground">
+                      Transcrevendo a gravação. Ela ainda não aparece na busca.
+                    </p>
+                  </div>
+                  <button class="btn btn-outline self-center">
+                    Abrir<svg class="icon-sm"><use href="#i-chevron" /></svg>
+                  </button>
+                </article>
+                <article
+                  class="grid grid-cols-[112px_minmax(0,1fr)_auto] gap-4 rounded-xl border border-border bg-card p-4"
+                >
+                  <div
+                    class="grid aspect-video place-items-center rounded-lg bg-stone-200 text-stone-500"
+                  >
+                    <svg class="h-7 w-7"><use href="#i-video" /></svg>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                      <h4 class="truncate text-sm font-semibold">
+                        Gravação com falha na transcrição
+                      </h4>
+                      <span class="status status-failed">Falhou</span>
+                    </div>
+                    <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa · —:—:—</p>
+                    <p class="mt-2 text-sm text-muted-foreground">
+                      O arquivo foi preservado. Reprocesse a transcrição no detalhe.
+                    </p>
+                  </div>
+                  <button class="btn btn-outline self-center">
+                    Abrir<svg class="icon-sm"><use href="#i-chevron" /></svg>
+                  </button>
+                </article>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 2 -->
+      <section class="mb-12" aria-labelledby="scene-2">
+        <h2 id="scene-2" class="scene-label">
+          Cena 2 · Desktop — estados de processamento na lista e no detalhe
+        </h2>
+        <div class="desktop-frame p-8">
+          <div class="mx-auto max-w-5xl">
+            <div class="flex items-end justify-between">
+              <div>
+                <h3 class="text-xl font-semibold">Estados da gravação</h3>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  O arquivo permanece visível desde o envio.
+                </p>
+              </div>
+              <span class="text-xs text-muted-foreground">Gravações enviadas</span>
+            </div>
+            <div class="mt-6 grid grid-cols-2 gap-4">
+              <article class="rounded-xl border border-border p-4">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <span class="status status-upload">Enviando</span>
+                    <h4 class="mt-3 text-sm font-semibold">Título da gravação</h4>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                      Arquivo sendo enviado · ainda não pesquisável
+                    </p>
+                  </div>
+                  <svg class="h-5 w-5 text-muted-foreground"><use href="#i-upload" /></svg>
+                </div>
+                <div class="mt-5 h-2 overflow-hidden rounded-full bg-muted">
+                  <div class="h-full w-[58%] rounded-full bg-primary"></div>
+                </div>
+                <p class="mt-2 text-xs text-muted-foreground">Enviando arquivo…</p>
+              </article>
+              <article class="rounded-xl border border-border p-4">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <span class="status status-work">Processando</span>
+                    <h4 class="mt-3 text-sm font-semibold">Título da gravação</h4>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                      Transcrevendo · ainda não pesquisável
+                    </p>
+                  </div>
+                  <span
+                    class="size-5 animate-spin rounded-full border-2 border-stone-300 border-t-primary motion-reduce:animate-none"
+                  ></span>
+                </div>
+                <div class="mt-5 rounded-lg bg-muted/70 p-3 text-xs text-muted-foreground">
+                  A transcrição ficará disponível neste detalhe quando o processamento terminar.
+                </div>
+              </article>
+              <article class="rounded-xl border border-destructive/30 p-4">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <span class="status status-failed">Falhou</span>
+                    <h4 class="mt-3 text-sm font-semibold">Título da gravação</h4>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                      A transcrição não foi concluída. O arquivo foi preservado.
+                    </p>
+                  </div>
+                  <svg class="h-5 w-5 text-destructive"><use href="#i-file" /></svg>
+                </div>
+                <button class="btn btn-outline mt-5">
+                  <svg class="icon-sm"><use href="#i-refresh" /></svg>Reprocessar transcrição
+                </button>
+              </article>
+              <article class="rounded-xl border border-border p-4">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <span class="status status-ready">Pronto</span>
+                    <h4 class="mt-3 text-sm font-semibold">Título da gravação</h4>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                      Transcrição disponível e pesquisável
+                    </p>
+                  </div>
+                  <span
+                    class="grid size-6 place-items-center rounded-full bg-green-100 text-sm text-green-700"
+                    >✓</span
+                  >
+                </div>
+                <button class="btn btn-outline mt-5">
+                  <svg class="icon-sm"><use href="#i-play" /></svg>Abrir gravação
+                </button>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 3 -->
+      <section class="mb-12" aria-labelledby="scene-3">
+        <h2 id="scene-3" class="scene-label">Cena 3 · Desktop — detalhe da gravação</h2>
+        <div class="desktop-frame">
+          <header class="flex min-h-11 items-center gap-3 border-b border-border px-4">
+            <span class="text-muted-foreground">☰</span>
+            <div>
+              <p class="text-sm font-semibold">Gravação enviada</p>
+              <p class="text-xs text-muted-foreground">Acervo</p>
+            </div>
+          </header>
+          <div class="p-6">
+            <button class="btn btn-ghost -ml-2">
+              <svg class="icon"><use href="#i-back" /></svg>Voltar ao acervo
+            </button>
+            <div class="mt-4 flex items-start justify-between gap-4">
+              <div>
+                <h3 class="text-lg font-semibold">Título da gravação</h3>
+                <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa · —:—:—</p>
+              </div>
+              <span class="status status-ready">Pronto</span>
+            </div>
+            <div class="mt-5 grid grid-cols-[minmax(0,1.35fr)_minmax(340px,.65fr)] gap-6">
+              <div>
+                <div
+                  class="relative grid aspect-video place-items-center overflow-hidden rounded-lg border border-black/30 bg-stone-900"
+                >
+                  <span
+                    class="absolute inset-0 bg-[linear-gradient(145deg,#292524_0%,#0c0a09_100%)]"
+                  ></span
+                  ><button
+                    class="relative grid size-16 place-items-center rounded-full bg-white text-stone-950 shadow-lg"
+                  >
+                    <svg class="h-7 w-7 translate-x-0.5"><use href="#i-play" /></svg>
+                  </button>
+                  <div
+                    class="absolute inset-x-4 bottom-3 flex items-center gap-3 text-xs text-white"
+                  >
+                    <span>00:00</span>
+                    <div class="h-1 flex-1 rounded-full bg-white/30">
+                      <div class="h-full w-[18%] rounded-full bg-white"></div>
+                    </div>
+                    <span>—:—:—</span>
+                  </div>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <button class="btn btn-primary">
+                    <svg class="icon"><use href="#i-download" /></svg>Baixar
+                  </button>
+                </div>
+              </div>
+              <section aria-label="Transcrição">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-xs font-medium text-muted-foreground">TRANSCRIÇÃO</h4>
+                  <span class="text-xs text-muted-foreground">Clique para posicionar</span>
+                </div>
+                <ol class="mt-2 space-y-0.5">
+                  <li>
+                    <button class="seg seg-active">
+                      <span class="pt-0.5 text-xs tabular-nums text-primary">00:00</span
+                      ><span class="text-sm leading-relaxed"
+                        >Texto transcrito do primeiro segmento da gravação aparece aqui.</span
+                      >
+                    </button>
+                  </li>
+                  <li>
+                    <button class="seg">
+                      <span class="pt-0.5 text-xs tabular-nums text-muted-foreground">00:18</span
+                      ><span class="text-sm leading-relaxed"
+                        >O próximo segmento mantém a leitura contínua e posiciona o player quando
+                        selecionado.</span
+                      >
+                    </button>
+                  </li>
+                  <li>
+                    <button class="seg">
+                      <span class="pt-0.5 text-xs tabular-nums text-muted-foreground">00:42</span
+                      ><span class="text-sm leading-relaxed"
+                        >A transcrição é somente leitura nesta versão do acervo.</span
+                      >
+                    </button>
+                  </li>
+                  <li>
+                    <button class="seg">
+                      <span class="pt-0.5 text-xs tabular-nums text-muted-foreground">01:06</span
+                      ><span class="text-sm leading-relaxed"
+                        >Mais um trecho transcrito continua disponível para busca.</span
+                      >
+                    </button>
+                  </li>
+                </ol>
+              </section>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 4 -->
+      <section class="mb-12" aria-labelledby="scene-4">
+        <h2 id="scene-4" class="scene-label">Cena 4 · Desktop — envio de gravação</h2>
+        <div class="desktop-frame relative grid place-items-center bg-stone-200/70 p-8">
+          <div class="absolute inset-0 bg-stone-950/25"></div>
+          <section
+            class="relative w-full max-w-lg rounded-xl border border-border bg-white p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="upload-title"
+          >
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 id="upload-title" class="text-base font-semibold">Enviar gravação</h3>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  Adicione um arquivo local ao acervo.
+                </p>
+              </div>
+              <button
+                class="grid size-8 place-items-center rounded-md hover:bg-muted"
+                aria-label="Fechar"
+              >
+                <svg class="icon"><use href="#i-x" /></svg>
+              </button>
+            </div>
+            <div class="mt-5 space-y-4">
+              <div>
+                <label class="text-sm font-medium">Arquivo de vídeo</label
+                ><button
+                  class="mt-1.5 flex min-h-28 w-full flex-col items-center justify-center rounded-lg border border-dashed border-input bg-stone-50 px-4 text-center"
+                >
+                  <svg class="h-6 w-6 text-muted-foreground"><use href="#i-upload" /></svg
+                  ><span class="mt-2 text-sm font-medium">Selecionar arquivo local</span
+                  ><span class="mt-1 text-xs text-muted-foreground"
+                    >O limite será informado antes do envio.</span
+                  >
+                </button>
+              </div>
+              <div>
+                <label class="text-sm font-medium" for="title-upload"
+                  >Título <span class="text-destructive">*</span></label
+                ><input
+                  id="title-upload"
+                  class="field mt-1.5 text-sm"
+                  placeholder="Título da gravação"
+                />
+              </div>
+              <div>
+                <label class="text-sm font-medium" for="date-upload">Data da gravação</label
+                ><input
+                  id="date-upload"
+                  class="field mt-1.5 text-sm text-muted-foreground"
+                  placeholder="dd/mm/aaaa"
+                />
+              </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-2">
+              <button class="btn btn-outline">Cancelar</button
+              ><button class="btn btn-primary">
+                <svg class="icon"><use href="#i-upload" /></svg>Enviar
+              </button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- CENA 5 -->
+      <section class="mb-12" aria-labelledby="scene-5">
+        <h2 id="scene-5" class="scene-label">Cena 5 · Desktop — vazio</h2>
+        <div class="desktop-frame p-8">
+          <div class="mx-auto max-w-5xl">
+            <div class="inline-flex rounded-lg bg-secondary p-1 text-sm">
+              <span class="rounded-md px-3 py-2 text-muted-foreground">Falas da Câmara</span
+              ><span class="rounded-md bg-white px-3 py-2 font-medium shadow-sm ring-1 ring-border"
+                >Gravações enviadas</span
+              >
+            </div>
+            <div
+              class="mt-5 flex min-h-72 flex-col items-center justify-center rounded-xl border border-border px-6 text-center"
+            >
+              <span
+                class="grid size-12 place-items-center rounded-lg bg-muted text-muted-foreground"
+                ><svg class="h-6 w-6"><use href="#i-video" /></svg
+              ></span>
+              <h3 class="mt-4 text-base font-semibold">Nenhuma gravação enviada ainda</h3>
+              <p class="mt-1 max-w-md text-sm text-muted-foreground">
+                Envie um arquivo de vídeo para acompanhar a transcrição e pesquisar o conteúdo no
+                acervo.
+              </p>
+              <button class="btn btn-primary mt-5">
+                <svg class="icon"><use href="#i-upload" /></svg>Enviar gravação
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 6 -->
+      <section aria-labelledby="scene-6">
+        <h2 id="scene-6" class="scene-label">
+          Cena 6 · Mobile (390 px) — lista e detalhe com transcrição
+        </h2>
+        <div class="flex items-start gap-8">
+          <div>
+            <p class="mb-2 text-xs font-medium text-muted-foreground">Lista de gravações</p>
+            <div class="mobile-frame relative pb-20">
+              <header class="flex min-h-14 items-center bg-primary px-4 text-white">
+                <h3 class="text-sm font-semibold">Acervo</h3>
+                <button class="btn ml-auto border border-white/30 bg-white/10 text-white">
+                  <svg class="icon"><use href="#i-upload" /></svg>Enviar
+                </button>
+              </header>
+              <div class="border-b border-border bg-white px-4 pt-3 pb-2">
+                <div class="grid grid-cols-2 rounded-lg bg-secondary p-1 text-xs">
+                  <button class="rounded-md px-2 py-2 text-muted-foreground">Falas da Câmara</button
+                  ><button
+                    class="rounded-md bg-white px-2 py-2 font-medium shadow-sm ring-1 ring-border"
+                  >
+                    Gravações enviadas
+                  </button>
+                </div>
+                <div class="mt-2 flex min-h-10 items-center gap-2 rounded-lg px-2">
+                  <svg class="icon text-muted-foreground"><use href="#i-search" /></svg
+                  ><span class="text-sm text-muted-foreground">Buscar nas gravações…</span>
+                </div>
+              </div>
+              <div class="space-y-3 p-4">
+                <article class="rounded-xl border border-border p-4">
+                  <div class="aspect-video rounded-lg bg-stone-200"></div>
+                  <div class="mt-3 flex items-start justify-between gap-2">
+                    <div>
+                      <h4 class="text-sm font-semibold">Título da gravação</h4>
+                      <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa · —:—:—</p>
+                    </div>
+                    <span class="status status-ready">Pronto</span>
+                  </div>
+                  <p class="mt-3 text-sm leading-5">
+                    Texto transcrito correspondente à busca aparece aqui.
+                  </p>
+                  <button class="btn btn-outline mt-3 w-full">
+                    Abrir gravação<svg class="icon-sm"><use href="#i-chevron" /></svg>
+                  </button>
+                </article>
+                <article class="rounded-xl border border-border p-4">
+                  <div class="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 class="text-sm font-semibold">Outra gravação</h4>
+                      <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa · —:—:—</p>
+                    </div>
+                    <span class="status status-work">Processando</span>
+                  </div>
+                  <p class="mt-3 text-sm text-muted-foreground">
+                    Transcrevendo. Ainda não pesquisável.
+                  </p>
+                </article>
+              </div>
+              <nav
+                class="absolute inset-x-0 bottom-0 grid h-16 grid-cols-5 border-t border-border bg-white pt-2 text-[10px] text-muted-foreground"
+              >
+                <span class="text-center">Início</span><span class="text-center">Pessoas</span
+                ><span class="text-center text-primary">Comunicação</span
+                ><span class="text-center">Agenda</span><span class="text-center">Mais</span>
+              </nav>
+            </div>
+          </div>
+          <div>
+            <p class="mb-2 text-xs font-medium text-muted-foreground">Detalhe</p>
+            <div class="mobile-frame relative pb-20">
+              <header class="flex min-h-14 items-center gap-3 bg-primary px-4 text-white">
+                <svg class="icon"><use href="#i-back" /></svg>
+                <div>
+                  <h3 class="text-sm font-semibold">Gravação enviada</h3>
+                  <p class="text-xs text-white/75">Acervo</p>
+                </div>
+              </header>
+              <div class="p-4">
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <h4 class="text-base font-semibold">Título da gravação</h4>
+                    <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa · —:—:—</p>
+                  </div>
+                  <span class="status status-ready">Pronto</span>
+                </div>
+                <div
+                  class="relative mt-4 grid aspect-video place-items-center rounded-lg bg-stone-900"
+                >
+                  <button class="grid size-12 place-items-center rounded-full bg-white">
+                    <svg class="h-5 w-5 translate-x-0.5"><use href="#i-play" /></svg>
+                  </button>
+                </div>
+                <button class="btn btn-primary mt-3 w-full">
+                  <svg class="icon"><use href="#i-download" /></svg>Baixar
+                </button>
+                <section class="mt-5">
+                  <div class="flex items-center justify-between">
+                    <h5 class="text-xs font-medium text-muted-foreground">TRANSCRIÇÃO</h5>
+                    <span class="text-[11px] text-muted-foreground">Toque para posicionar</span>
+                  </div>
+                  <ol class="mt-2 space-y-1">
+                    <li>
+                      <button class="seg seg-active">
+                        <span class="text-xs text-primary">00:00</span
+                        ><span class="text-sm leading-5"
+                          >Texto transcrito do primeiro segmento.</span
+                        >
+                      </button>
+                    </li>
+                    <li>
+                      <button class="seg">
+                        <span class="text-xs text-muted-foreground">00:18</span
+                        ><span class="text-sm leading-5"
+                          >O próximo segmento continua a leitura da gravação.</span
+                        >
+                      </button>
+                    </li>
+                    <li>
+                      <button class="seg">
+                        <span class="text-xs text-muted-foreground">00:42</span
+                        ><span class="text-sm leading-5"
+                          >A transcrição permanece somente leitura.</span
+                        >
+                      </button>
+                    </li>
+                  </ol>
+                </section>
+              </div>
+              <nav
+                class="absolute inset-x-0 bottom-0 grid h-16 grid-cols-5 border-t border-border bg-white pt-2 text-[10px] text-muted-foreground"
+              >
+                <span class="text-center">Início</span><span class="text-center">Pessoas</span
+                ><span class="text-center text-primary">Comunicação</span
+                ><span class="text-center">Agenda</span><span class="text-center">Mais</span>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      document.querySelectorAll('[data-source-tab]').forEach((tab) => {
+        tab.addEventListener('click', () => {
+          document
+            .querySelectorAll('[data-source-tab]')
+            .forEach((item) => (item.className = 'rounded-md px-3 py-2 text-muted-foreground'))
+          tab.className =
+            'rounded-md bg-white px-3 py-2 font-medium text-foreground shadow-sm ring-1 ring-border'
+        })
+      })
+    </script>
+  </body>
+</html>

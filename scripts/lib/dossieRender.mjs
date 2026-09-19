@@ -5,6 +5,13 @@
  * shared escaping/source-token contract lives in `reportText.mjs`.
  */
 
+import {
+  CHART_COLORS,
+  barChart,
+  columnChart,
+  stackedColumnChart,
+  valueList,
+} from './chartPrimitives.mjs'
 import { formatDateBr, formatDateTimeBr, formatMoneyCompact } from './cityReportFormat.mjs'
 import { dossierPhaseLabel, dossierSphereBadgeClass, dossierSphereLabel } from './dossieBlocks.mjs'
 import { MUNICIPALITY_UNIT, isSubjectUnit, resolveDossierUnit } from './dossieUnit.mjs'
@@ -896,118 +903,6 @@ const groupUnits = (chunk) => {
 
 const tableHead = (columns) =>
   `<thead><tr>${columns.map((column) => `<th>${htmlEscape(column)}</th>`).join('')}</tr></thead>`
-
-/* ---------------------------------------------------------------- *
- * Synthesis charts (inline SVG, print-safe): aggregations of the   *
- * sourced rows only — never a new fact, never a combined total     *
- * across abrangências.                                             *
- * ---------------------------------------------------------------- */
-
-const CHART_COLORS = {
-  municipio: '#315c75',
-  regiao: '#9d8b64',
-  polo: '#8f819c',
-  instituicao: '#315c75',
-  setor: '#9d8b64',
-  rede: '#8f819c',
-  empenhado: '#6b4918',
-  liquidado: '#4a6b7c',
-  pago: '#285338',
-  autorizado: '#8a5a18',
-  restos: '#5b6470',
-  nao_informado: '#8b96a2',
-  default: '#315c75',
-}
-
-const barChart = ({ rows, width = 330, rowHeight = 19, labelWidth = 118 }) => {
-  const max = Math.max(1, ...rows.map((row) => row.count))
-  const barMax = width - labelWidth - 26
-  const height = rows.length * rowHeight + 4
-  return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img">
-    ${rows
-      .map((row, index) => {
-        const y = index * rowHeight + 3
-        const barWidth = Math.max(2, Math.round((row.count / max) * barMax))
-        return `<text x="0" y="${y + 11}" class="chart-label">${htmlEscape(row.label)}</text>
-        <rect x="${labelWidth}" y="${y + 2}" width="${barWidth}" height="${rowHeight - 7}" rx="1" fill="${row.color ?? CHART_COLORS.default}" />
-        <text x="${labelWidth + barWidth + 4}" y="${y + 11}" class="chart-value">${row.count}</text>`
-      })
-      .join('')}
-  </svg>`
-}
-
-/** HTML list with a proportional bar per row — long labels wrap, nothing overlaps. */
-const valueList = ({ rows, format }) => {
-  const max = Math.max(1, ...rows.map((row) => row.value))
-  return `<ul class="value-list">
-    ${rows
-      .map(
-        (row) => `<li>
-      <span>${htmlEscape(row.label)}</span>
-      <span class="value-list-bar"><span style="width:${Math.max(2, Math.round((row.value / max) * 100))}%"></span></span>
-      <span class="value-list-value">${htmlEscape(format(row))}</span>
-    </li>`,
-      )
-      .join('')}
-  </ul>`
-}
-
-/**
- * Vertical columns with the value label above and the year label below. `fullYearLabel`
- * prints the whole year (theme axis); the institution keeps the 2-digit label.
- */
-const columnChart = ({
-  rows,
-  width = 330,
-  height = 132,
-  format = (row) => String(row.count),
-  fullYearLabel = false,
-}) => {
-  const max = Math.max(1, ...rows.map((row) => row.value ?? row.count))
-  const baseY = height - 18
-  const plotHeight = baseY - 16
-  const columnWidth = (width - 8) / Math.max(1, rows.length)
-  return `<svg class="chart" viewBox="0 0 ${width} ${height + 20}" role="img">
-    ${rows
-      .map((row, index) => {
-        const value = row.value ?? row.count
-        const barHeight = Math.max(2, Math.round((value / max) * plotHeight))
-        const x = 4 + index * columnWidth
-        const y = baseY - barHeight
-        return `<rect x="${x + 2}" y="${y}" width="${Math.max(2, columnWidth - 5)}" height="${barHeight}" fill="${row.color ?? CHART_COLORS.default}" />
-        <text x="${x + columnWidth / 2}" y="${y - 3}" class="chart-value" text-anchor="middle">${htmlEscape(format(row))}</text>
-        <text x="${x + columnWidth / 2}" y="${height + 12}" class="chart-label" text-anchor="middle">${htmlEscape(fullYearLabel ? String(row.key) : String(row.key).slice(-2))}</text>`
-      })
-      .join('')}
-  </svg>`
-}
-
-/** Vertical columns stacked by phase (money by year), total label above. */
-const stackedColumnChart = ({ rows, width = 330, height = 132, format, fullYearLabel = false }) => {
-  const max = Math.max(1, ...rows.map((row) => row.value))
-  const baseY = height - 18
-  const plotHeight = baseY - 16
-  const columnWidth = (width - 8) / Math.max(1, rows.length)
-  return `<svg class="chart" viewBox="0 0 ${width} ${height + 20}" role="img">
-    ${rows
-      .map((row, index) => {
-        const x = 4 + index * columnWidth
-        let y = baseY
-        const bars = row.segments
-          .map((segment) => {
-            const segmentHeight = Math.max(1, Math.round((segment.amount / max) * plotHeight))
-            y -= segmentHeight
-            return `<rect x="${x + 2}" y="${y}" width="${Math.max(2, columnWidth - 5)}" height="${segmentHeight}" fill="${CHART_COLORS[segment.key] ?? CHART_COLORS.default}" />`
-          })
-          .join('')
-        const top = baseY - Math.round((row.value / max) * plotHeight)
-        return `${bars}
-        <text x="${x + columnWidth / 2}" y="${top - 3}" class="chart-value" text-anchor="middle">${htmlEscape(format(row))}</text>
-        <text x="${x + columnWidth / 2}" y="${height + 12}" class="chart-label" text-anchor="middle">${htmlEscape(fullYearLabel ? String(row.key) : String(row.key).slice(-2))}</text>`
-      })
-      .join('')}
-  </svg>`
-}
 
 const identityBadgeList = (report) =>
   report.meta.identityBadges

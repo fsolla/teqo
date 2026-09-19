@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { NAME_CARD_SLOT } from '@/lib/cardModels'
+import { NAME_CARD_SLOT, TEAM_CARD_NAME_SLOT } from '@/lib/cardModels'
 import {
   fitCardName,
   normalizeCardName,
@@ -115,5 +115,45 @@ describe('fitCardName', () => {
 
     expect(fit.ok).toBe(true)
     if (fit.ok) expect(fit.lines[0]).toBe('CORAÇÃO')
+  })
+
+  describe('team slot (single line, centered)', () => {
+    it('keeps the measured cap for a short name and never wraps', () => {
+      const fit = fitCardName('Ana', measure, TEAM_CARD_NAME_SLOT)
+
+      expect(fit).toMatchObject({ ok: true, lines: ['ANA'] })
+      if (fit.ok) {
+        expect(fit.capHeight).toBeCloseTo(TEAM_CARD_NAME_SLOT.capHeight, 5)
+        expect(inkWidth(fit.lines[0], fit.fontSize)).toBeLessThanOrEqual(
+          TEAM_CARD_NAME_SLOT.maxInkWidth,
+        )
+      }
+    })
+
+    it('shrinks a name that overflows the ink width down to the readable minimum', () => {
+      const fit = fitCardName('Maria', measure, TEAM_CARD_NAME_SLOT)
+
+      expect(fit).toMatchObject({ ok: true, lines: ['MARIA'] })
+      if (fit.ok) {
+        expect(fit.capHeight).toBeLessThan(TEAM_CARD_NAME_SLOT.capHeight)
+        expect(fit.fontSize).toBeGreaterThanOrEqual(
+          resolveFontSizeForCapHeight(measure, TEAM_CARD_NAME_SLOT.minCapHeight),
+        )
+        expect(inkWidth(fit.lines[0], fit.fontSize)).toBeLessThanOrEqual(
+          TEAM_CARD_NAME_SLOT.maxInkWidth,
+        )
+      }
+    })
+
+    it('fails with too-long instead of wrapping below the readable minimum', () => {
+      expect(fitCardName('Maria da Conceição', measure, TEAM_CARD_NAME_SLOT)).toEqual({
+        ok: false,
+        reason: 'too-long',
+      })
+      expect(fitCardName('Bartolomeucostajunior', measure, TEAM_CARD_NAME_SLOT)).toEqual({
+        ok: false,
+        reason: 'too-long',
+      })
+    })
   })
 })

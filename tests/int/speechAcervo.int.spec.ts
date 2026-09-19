@@ -347,4 +347,73 @@ describe('speech acervo (C154)', () => {
       loadSpeechDetailPageData(payload, communicator, 999_999_999),
     ).rejects.toBeInstanceOf(SpeechNotFoundError)
   })
+
+  it('finds a speech by expanded theme terms and explains the match (C192)', async () => {
+    const runId = randomUUID().slice(0, 8)
+    const marker = `tema${runId}`
+    const id = await createSpeech({
+      segments: [
+        {
+          startSeconds: 0,
+          endSeconds: 3,
+          text: `Garantir o atendimento universal ${marker} na rede pública`,
+        },
+      ],
+    })
+
+    const { coordinator } = await createUsers()
+    const expansionCalls: string[] = []
+    const data = await loadSpeechAcervoPageData(
+      payload,
+      coordinator,
+      { q: 'defesa do SUS', mode: 'tema' },
+      async (theme) => {
+        expansionCalls.push(theme)
+        return { terms: [`atendimento universal ${marker}`] }
+      },
+    )
+
+    expect(expansionCalls).toEqual(['defesa do SUS'])
+    expect(data.themeUnavailable).toBe(false)
+    expect(data.themeApplied).toBe(true)
+    const row = data.rows.find((item) => item.id === id)
+    expect(row?.matchKind).toBe('theme')
+    expect(row?.themeMatchTerm).toBe(`atendimento universal ${marker}`)
+    expect(row?.matchedTextSearch).toBe(false)
+    expect(row?.excerpt.parts.some((part) => part.highlighted)).toBe(true)
+  })
+
+  it('degrades to the literal search when the expansion is unavailable (C192)', async () => {
+    const runId = randomUUID().slice(0, 8)
+    const marker = `literal${runId}`
+    const id = await createSpeech({
+      segments: [{ startSeconds: 0, endSeconds: 3, text: `A defesa do SUS ${marker} no plenário` }],
+    })
+
+    const { coordinator } = await createUsers()
+    const data = await loadSpeechAcervoPageData(
+      payload,
+      coordinator,
+      { q: `defesa do SUS ${marker}`, mode: 'tema' },
+      async () => null,
+    )
+
+    expect(data.themeUnavailable).toBe(true)
+    expect(data.themeApplied).toBe(false)
+    const row = data.rows.find((item) => item.id === id)
+    expect(row?.themeMatchTerm).toBeNull()
+    expect(row?.matchedTextSearch).toBe(true)
+  })
+
+  it('never expands for an actor outside the catalog gate (C192)', async () => {
+    const { advisor } = await createUsers()
+    let called = false
+    await expect(
+      loadSpeechAcervoPageData(payload, advisor, { q: 'SUS', mode: 'tema' }, async () => {
+        called = true
+        return { terms: ['saúde'] }
+      }),
+    ).rejects.toThrow(/permissão/i)
+    expect(called).toBe(false)
+  })
 })

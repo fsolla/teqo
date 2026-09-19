@@ -29,6 +29,7 @@ import {
  * HIGH_RISK_EXACT below is intentional — this group is the exact map.
  */
 export const SCRIPTS_SPEC_PINNED = [
+  'scripts/build-chart-from-data.mjs',
   'scripts/check-test-locations.mjs',
   'scripts/cityReportSnapshot.mjs',
   'scripts/institutionSnapshot.mjs',
@@ -47,6 +48,8 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/camaraFetch.mjs',
   'scripts/lib/camaraSpeeches.mjs',
   'scripts/lib/changelog.mjs',
+  'scripts/lib/chartData.mjs',
+  'scripts/lib/chartPrimitives.mjs',
   'scripts/lib/cityReportBlocks.mjs',
   'scripts/lib/cityReportDatabase.mjs',
   'scripts/lib/cityReportFormat.mjs',
@@ -71,6 +74,7 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/github-api.mjs',
   'scripts/lib/github-branch-protection.mjs',
   'scripts/lib/github-pr-flow.mjs',
+  'scripts/lib/graficosInstagramRender.mjs',
   'scripts/lib/imageFill.mjs',
   'scripts/lib/imageResize.mjs',
   'scripts/lib/issues-panel.mjs',

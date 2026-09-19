@@ -19,6 +19,7 @@ const commands = [
   'dossie-solla-cidade',
   'dossie-solla-instituicao',
   'dossie-solla-tema',
+  'graficos-dados',
   'reels-tutoriais',
 ] as const
 
