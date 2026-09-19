@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>DEGRADED — Design S18 · Card Time de você: escala da cabeça</title>
+    <style type="text/tailwindcss">
+      :root {
+        --background: #ffffff;
+        --foreground: #000000;
+        --pt-red: #a21c1c;
+        --pt-red-dark: #47130e;
+        --pt-yellow: #ffe607;
+        --campaign-cream: #fff8f2;
+        --campaign-ink: #000000;
+        --campaign-muted: #6c615e;
+        --campaign-surface: #f9faff;
+        --campaign-band: #ebe9e9;
+        --campaign-line: rgb(0 0 0 / 12%);
+        --field-border: rgb(0 0 0 / 18%);
+        --team-red: #e50e2f;
+        --team-yellow: #ffec01;
+        --team-blue: #0061a5;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      a:focus-visible,
+      [tabindex]:focus-visible {
+        outline: 2px solid var(--pt-red);
+        outline-offset: 2px;
+      }
+      .range-track {
+        appearance: none;
+        height: 4px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--pt-red) 0 46%, #d6d3d1 46% 100%);
+      }
+      .range-track::-webkit-slider-thumb {
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 3px solid white;
+        border-radius: 999px;
+        background: var(--pt-red);
+        box-shadow: 0 0 0 1px rgb(0 0 0 / 18%);
+      }
+
+      .tcard {
+        position: relative;
+        aspect-ratio: 1080 / 1440;
+        overflow: hidden;
+        border-radius: 12px;
+        background: #cfe7f7;
+        container-type: inline-size;
+      }
+      .tcard-base,
+      .tcard-front {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        pointer-events: none;
+      }
+      /* janela da foto S15: x=286 y=439 w=592 h=577 (card 1080x1440) */
+      .tcard-window {
+        position: absolute;
+        left: 26.481%;
+        top: 30.486%;
+        width: 54.815%;
+        height: 40.069%;
+        overflow: hidden;
+      }
+      .tcard-bust {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        height: auto;
+        transform: translateX(-50%);
+        color: #8b98a6;
+      }
+      .tcard-banner {
+        position: absolute;
+        left: 50.463%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: translate(-50%, -50%) rotate(var(--rot, -4.1deg));
+        overflow: hidden;
+      }
+      .tcard-banner-red {
+        top: 11.25%;
+        height: 8.194%;
+        width: 64.167%;
+        background: var(--team-red);
+        color: var(--team-yellow);
+        --rot: -3.5deg;
+      }
+      .tcard-banner-blue {
+        top: 21.736%;
+        height: 12.222%;
+        width: 47.13%;
+        background: var(--team-blue);
+        color: #ffffff;
+        --rot: -4.1deg;
+      }
+      .tcard-face {
+        font-family: Brexter, Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+        font-weight: 700;
+        line-height: 1;
+        white-space: nowrap;
+        letter-spacing: -0.005em;
+        font-size: calc(var(--fs, 9) * 1cqw);
+      }
+      /* régua do rosto (aprox., ilustrativa) */
+      .ruler {
+        position: absolute;
+        border: 2px dashed #10b981;
+        border-radius: 4px;
+      }
+      .ruler::after {
+        content: attr(data-label);
+        position: absolute;
+        top: -18px;
+        left: -2px;
+        white-space: nowrap;
+        border-radius: 3px;
+        background: #10b981;
+        padding: 1px 4px;
+        font-size: 9px;
+        font-weight: 900;
+        color: #052e22;
+      }
+      .ctrl-btn {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid var(--campaign-line);
+        background: #fff;
+        color: var(--campaign-ink);
+        font-size: 18px;
+        line-height: 1;
+      }
+    </style>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <div
+      class="border-b border-amber-500/60 bg-amber-500/10 px-4 py-2 text-center text-[11px] font-black tracking-[0.14em] text-amber-300 uppercase"
+    >
+      DEGRADED — não certificado; exige sign-off humano · tier opencode-go/deepseek-v4.1-flash
+    </div>
+
+    <main class="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10">
+      <header class="max-w-4xl">
+        <p class="m-0 text-xs font-black tracking-[0.12em] text-red-400 uppercase">
+          Gate visual · S18 · DEGRADED
+        </p>
+        <h1 class="mt-2 text-2xl font-black tracking-[-0.02em] sm:text-3xl">
+          Card “Time de você”: cabeça do visitante proporcional à dos candidatos
+        </h1>
+        <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
+          O enquadramento automático passa a mirar a proporção da cabeça: a cabeça do visitante fica
+          na mesma ordem de grandeza das cabeças dos candidatos (±20%), medida pela mesma régua nos
+          dois lados. Sem controle novo; arrastar e zoom seguem como escape. Sem rosto detectado, vale
+          o enquadramento de hoje — sem erro visível.
+        </p>
+        <p class="mt-3 max-w-3xl text-xs leading-5 text-amber-300/90">
+          <strong>DEGRADED:</strong> este design não está certificado. É insumo para decisão humana no
+          gate/PR — o tier degradado nunca aprova.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2 text-[11px] font-bold text-zinc-300">
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >1280px · desktop</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >390px · mobile</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >sem controle novo</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >fallback silencioso</span
+          >
+        </div>
+      </header>
+
+      <!-- Cena 1: 3 previews -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 1 · Prévia do card · desktop 1280 — cabeça pequena / proporcional / grande
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          Mesmo card, mesmo recorte: só o zoom do enquadramento automático muda. O alvo é a faixa
+          proporcional (±20% da cabeça dos candidatos); cobertura da janela sempre prevalece.
+        </p>
+
+        <div
+          class="mt-4 overflow-hidden rounded-xl border border-zinc-700 bg-[var(--campaign-cream)] p-8 text-black shadow-2xl"
+        >
+          <div class="grid gap-8 sm:grid-cols-3">
+            <figure class="m-0">
+              <div class="relative mx-auto w-[240px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-md">
+                <div class="tcard">
+                  <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                  <div class="tcard-window">
+                    <svg
+                      class="tcard-bust"
+                      style="width: 16%"
+                      viewBox="0 0 100 130"
+                      aria-hidden="true"
+                    >
+                      <circle cx="50" cy="30" r="26" fill="currentColor" />
+                      <path
+                        d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </div>
+                  <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                  <div class="tcard-banner tcard-banner-red">
+                    <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                  </div>
+                  <div class="tcard-banner tcard-banner-blue">
+                    <span class="tcard-face" style="--fs: 13">MARIA</span>
+                  </div>
+                </div>
+              </div>
+              <figcaption class="mt-3 text-center">
+                <p class="text-sm font-black">Cabeça pequena demais</p>
+                <p class="mt-1 text-[11px] leading-4 text-[var(--campaign-muted)]">
+                  Selfie de longe · hoje fica fora da ordem de grandeza dos candidatos
+                </p>
+              </figcaption>
+            </figure>
+
+            <figure class="m-0">
+              <div class="relative mx-auto w-[240px] overflow-hidden rounded-lg border-2 border-emerald-500 shadow-md">
+                <div class="tcard">
+                  <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                  <div class="tcard-window">
+                    <svg
+                      class="tcard-bust"
+                      style="width: 38%"
+                      viewBox="0 0 100 130"
+                      aria-hidden="true"
+                    >
+                      <circle cx="50" cy="30" r="26" fill="currentColor" />
+                      <path
+                        d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </div>
+                  <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                  <div class="tcard-banner tcard-banner-red">
+                    <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                  </div>
+                  <div class="tcard-banner tcard-banner-blue">
+                    <span class="tcard-face" style="--fs: 13">MARIA</span>
+                  </div>
+                </div>
+                <span
+                  class="absolute top-2 left-1/2 -translate-x-1/2 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-black text-white shadow"
+                  >alvo ±20%</span
+                >
+              </div>
+              <figcaption class="mt-3 text-center">
+                <p class="text-sm font-black text-emerald-700">Proporcional (alvo)</p>
+                <p class="mt-1 text-[11px] leading-4 text-[var(--campaign-muted)]">
+                  Cabeça na mesma ordem de grandeza dos candidatos, rosto inteiro
+                </p>
+              </figcaption>
+            </figure>
+
+            <figure class="m-0">
+              <div class="relative mx-auto w-[240px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-md">
+                <div class="tcard">
+                  <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                  <div class="tcard-window">
+                    <svg
+                      class="tcard-bust"
+                      style="width: 82%"
+                      viewBox="0 0 100 130"
+                      aria-hidden="true"
+                    >
+                      <circle cx="50" cy="30" r="26" fill="currentColor" />
+                      <path
+                        d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </div>
+                  <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                  <div class="tcard-banner tcard-banner-red">
+                    <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                  </div>
+                  <div class="tcard-banner tcard-banner-blue">
+                    <span class="tcard-face" style="--fs: 13">MARIA</span>
+                  </div>
+                </div>
+              </div>
+              <figcaption class="mt-3 text-center">
+                <p class="text-sm font-black">Cabeça grande demais</p>
+                <p class="mt-1 text-[11px] leading-4 text-[var(--campaign-muted)]">
+                  Selfie de perto · hoje fica gigante ao lado do time
+                </p>
+              </figcaption>
+            </figure>
+          </div>
+          <p class="mt-6 text-center text-xs leading-5 text-[var(--campaign-muted)]">
+            Foto do visitante = placeholder cinza (NEEDS ASSET). A arte oficial dos candidatos é a
+            real.
+          </p>
+        </div>
+      </section>
+
+      <!-- Cena 2: a mesma regua -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 2 · A mesma régua nos dois lados — caixa do rosto
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          A medida é a mesma dos dois lados: a caixa do rosto. A referência dos candidatos é medida
+          uma vez sobre a arte-mestre e vira constante; a do visitante é medida na foto no momento do
+          recorte. O alvo é a mesma ordem de grandeza, ±20%.
+        </p>
+        <div
+          class="mt-4 overflow-hidden rounded-xl border border-zinc-700 bg-[var(--campaign-cream)] p-8 text-black shadow-2xl"
+        >
+          <div class="grid gap-8 sm:grid-cols-2">
+            <figure class="m-0">
+              <div class="relative mx-auto w-[260px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-md">
+                <div class="tcard">
+                  <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                  <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                  <div
+                    class="ruler"
+                    data-label="cabeça dos candidatos"
+                    style="left: 39.4%; top: 33.4%; width: 12%; height: 9%"
+                  ></div>
+                </div>
+              </div>
+              <figcaption class="mt-3 text-center text-[11px] leading-4 text-[var(--campaign-muted)]">
+                Referência medida uma vez na arte-mestre (aprox. ilustrativa).
+              </figcaption>
+            </figure>
+
+            <figure class="m-0">
+              <div class="relative mx-auto w-[260px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-md">
+                <div class="tcard">
+                  <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                  <div class="tcard-window">
+                    <svg
+                      class="tcard-bust"
+                      style="width: 38%"
+                      viewBox="0 0 100 130"
+                      aria-hidden="true"
+                    >
+                      <circle cx="50" cy="30" r="26" fill="currentColor" />
+                      <path
+                        d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </div>
+                  <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                  <div
+                    class="ruler"
+                    data-label="cabeça do visitante"
+                    style="left: 44.6%; top: 31.1%; width: 12%; height: 9%"
+                  ></div>
+                </div>
+              </div>
+              <figcaption class="mt-3 text-center text-[11px] leading-4 text-[var(--campaign-muted)]">
+                Mesma caixa, medida na foto do visitante; igual em ordem de grandeza.
+              </figcaption>
+            </figure>
+          </div>
+          <ul class="mx-auto mt-6 max-w-3xl list-disc space-y-2 pl-5 text-xs leading-5 text-[var(--campaign-muted)]">
+            <li>Em foto com mais de um rosto, vale o maior rosto (o do visitante).</li>
+            <li>O rosto nunca é cortado pelo enquadramento proporcional.</li>
+            <li>Cobertura da janela prevalece: sem buraco no card, mesmo que limite a proporção.</li>
+            <li>A medida é feita no recorte; arrastar/zoom não re-medem nem re-enquadram.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Cena 3: fallback -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 3 · Fallback silencioso · drawer mobile 390 — sem rosto detectado
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          Sem rosto detectado, com detecção indisponível ou em qualquer falha, vale exatamente o
+          enquadramento de hoje (pelo contorno da foto): nenhum aviso, nenhum erro, nenhum bloqueio. O
+          único erro recuperável continua sendo o do recorte de fundo.
+        </p>
+        <div class="mt-4 grid gap-6 lg:grid-cols-[390px_1fr]">
+          <div
+            class="relative h-[720px] w-[390px] max-w-full overflow-hidden rounded-[22px] border border-zinc-700 bg-[var(--campaign-cream)] text-black shadow-2xl"
+          >
+            <div class="absolute inset-0 bg-black/50"></div>
+            <article
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="s18-fallback-title"
+              class="absolute inset-x-0 bottom-0 max-h-[97%] overflow-hidden rounded-t-2xl bg-white"
+            >
+              <div class="mx-auto mt-2 h-1.5 w-10 rounded-full bg-stone-300"></div>
+              <header class="flex items-start gap-3 px-5 pt-4">
+                <div>
+                  <p class="text-[10px] font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                    Time de você
+                  </p>
+                  <h3 id="s18-fallback-title" class="mt-1 text-lg leading-6 font-black">
+                    Confira seu card
+                  </h3>
+                  <p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">
+                    O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.
+                  </p>
+                </div>
+                <button
+                  aria-label="Fechar"
+                  class="ml-auto inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+                >
+                  ×
+                </button>
+              </header>
+              <div class="px-5 pt-3 pb-5">
+                <div
+                  class="relative mx-auto w-[190px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-md"
+                >
+                  <div class="tcard">
+                    <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                    <div class="tcard-window">
+                      <svg
+                        class="tcard-bust"
+                        style="width: 40%"
+                        viewBox="0 0 100 130"
+                        aria-hidden="true"
+                      >
+                        <circle cx="50" cy="30" r="26" fill="currentColor" />
+                        <path
+                          d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                    </div>
+                    <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                    <div class="tcard-banner tcard-banner-red">
+                      <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                    </div>
+                    <div class="tcard-banner tcard-banner-blue">
+                      <span class="tcard-face" style="--fs: 13">MARIA</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-4 grid grid-cols-4 gap-2">
+                  <button aria-label="Mover foto para a esquerda" class="ctrl-btn min-h-11">
+                    ←
+                  </button>
+                  <button aria-label="Mover foto para cima" class="ctrl-btn min-h-11">↑</button>
+                  <button aria-label="Mover foto para baixo" class="ctrl-btn min-h-11">↓</button>
+                  <button aria-label="Mover foto para a direita" class="ctrl-btn min-h-11">→</button>
+                </div>
+                <button
+                  class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-5 text-sm font-extrabold text-[var(--pt-red)]"
+                >
+                  Trocar foto
+                </button>
+                <p class="mt-3 text-xs leading-5 text-[var(--campaign-muted)]">
+                  Sua foto fica neste aparelho e não é enviada para nós.
+                </p>
+              </div>
+              <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+                <button
+                  class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-[var(--pt-red)] text-sm font-extrabold text-white"
+                >
+                  Criar meu card
+                </button>
+              </footer>
+            </article>
+          </div>
+
+          <div class="min-w-0">
+            <div class="rounded-xl border border-zinc-700 bg-zinc-900 p-5">
+              <h3 class="text-sm font-black tracking-wide text-emerald-300 uppercase">
+                Fallback — sem estado visual novo
+              </h3>
+              <ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-5 text-zinc-300">
+                <li>Sem rosto detectado: enquadramento de hoje, pelo contorno da foto.</li>
+                <li>Detecção indisponível: mesmo caminho, sem tentar de novo e sem travar.</li>
+                <li>Qualquer falha na detecção: silêncio total — nenhum toast, alerta ou badge.</li>
+                <li>O card nunca falha por causa da detecção; o recorte segue o único erro.</li>
+                <li>Nada de upload: a medida é efêmera, no aparelho, e não entra em analytics.</li>
+              </ul>
+            </div>
+            <div
+              class="mt-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 text-xs leading-5 text-zinc-400"
+            >
+              <strong class="text-zinc-300">O escape continua o de sempre:</strong> arrastar a foto e
+              os controles de zoom/ajuste fino. Nenhum botão novo, nenhum passo novo, nenhum aviso
+              quando a medida não é possível.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cena 4: fluxo e regras -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 4 · Fluxo e regras — sem controle novo
+        </h2>
+        <div
+          class="mt-4 rounded-xl border border-zinc-700 bg-zinc-900 p-5 text-xs leading-6 text-zinc-300"
+        >
+          <p class="font-mono text-[11px] text-zinc-400">
+            [foto escolhida] → [recorte no aparelho: progresso | erro + retry] → [rosto medido?] — sim
+            → [zoom p/ cabeça a ±20% da cabeça dos candidatos] · não → [enquadramento de hoje, pelo
+            contorno] → [prévia (arrastar/zoom como escape)] → [baixar PNG]
+          </p>
+        </div>
+        <div class="mt-4 grid gap-4 lg:grid-cols-3">
+          <div class="rounded-xl border border-zinc-700 bg-zinc-900 p-5">
+            <h3 class="text-sm font-black tracking-wide text-zinc-200 uppercase">Ordem de mando</h3>
+            <ol class="mt-3 list-decimal space-y-2 pl-5 text-xs leading-5 text-zinc-300">
+              <li>Cobertura da janela (nunca sobra buraco).</li>
+              <li>Proporção da cabeça (±20%).</li>
+              <li>Nada — em caso de conflito, não se ajusta além do permitido.</li>
+            </ol>
+          </div>
+          <div class="rounded-xl border border-zinc-700 bg-zinc-900 p-5">
+            <h3 class="text-sm font-black tracking-wide text-zinc-200 uppercase">
+              Garantias do recorte
+            </h3>
+            <ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-5 text-zinc-300">
+              <li>O rosto nunca é cortado pelo enquadramento proporcional.</li>
+              <li>Em multi-rosto, vale o maior (o do visitante).</li>
+              <li>A medida acontece uma vez, no recorte.</li>
+            </ul>
+          </div>
+          <div class="rounded-xl border border-zinc-700 bg-zinc-900 p-5">
+            <h3 class="text-sm font-black tracking-wide text-zinc-200 uppercase">Intocados</h3>
+            <ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-5 text-zinc-300">
+              <li>Sem controle novo; arrastar/zoom seguem como escape.</li>
+              <li>Os 3 modelos anteriores, a arte-mestre e os textos.</li>
+              <li>A nota de privacidade existente.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <aside class="mt-14 border-t border-zinc-800 pt-8 text-xs leading-5 text-zinc-500">
+        <p
+          class="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 font-bold text-amber-300"
+        >
+          DEGRADED — não certificado; exige sign-off humano. Tier: opencode-go/deepseek-v4.1-flash.
+        </p>
+        <p>
+          <strong class="text-zinc-300">Janela da foto (S15) intocada:</strong> x=286, y=439,
+          largura=592, altura=577 (card 1080×1440). Banners e demais geometrias do S15 seguem
+          literais.
+        </p>
+        <p class="mt-2">
+          <strong class="text-zinc-300">Em aberto (validar com produto):</strong> referência dos
+          candidatos como constante medida uma vez vs medida em runtime; só automático com fallback vs
+          toggle; detector (caixa do rosto vs malha facial).
+        </p>
+        <p class="mt-2">
+          <strong class="text-zinc-300">NEEDS ASSET:</strong> foto real do visitante (com e sem rosto)
+          para validar a proporção; aqui usamos silhueta cinza. A arte oficial dos candidatos é real.
+        </p>
+        <p class="mt-2">
+          <strong class="text-zinc-300">Ilustração:</strong> as caixas da régua e as escalas dos
+          placeholders são aproximações para comunicar a intenção — a métrica final é a caixa do rosto
+          medida pelo detector, com tolerância ±20% e cobertura sempre prevalecendo.
+        </p>
+      </aside>
+    </main>
+  </body>
+</html>
