@@ -83,7 +83,6 @@ Triggers/non-triggers, ladder e o fechamento fail-closed vivem em `execution-pip
 - [ ] 5. Dispatch 2 sub-agentes revisores (paralelo) → receber achados
 - [ ] 6. Dispatch sub-agente capturador → receber triage
 - [ ] 7. PR → merge — crítica do `designer` (c); `DEGRADED` ⇒ sign-off humano antes do push
-- [ ] 8. Verificação pós-deploy em staging (§Verificação pós-deploy do pipeline)
 ```
 
 ## Passo 1 — Contexto da sessão
@@ -183,19 +182,6 @@ Siga `execution-pipeline.md`: changelog → `pnpm push` → PR no GitHub `--base
 
 Antes do push, se o diff muda UI, a crítica final do `designer` (trigger c) é obrigatória (§Design). Com crítica certificada, registre `Design tier: <slug>` no body. Com `DEGRADED`/tier não-primário, **pare antes do `pnpm push`**, apresente a crítica `DEGRADED` + screenshots e aguarde sign-off humano explícito; só então o PR nasce Ready com `Design tier: DEGRADED (<slug>)` + o registro do sign-off — nunca "segue sem".
 
-## Passo 8 — Verificação pós-deploy em staging
-
-Você (humano, com browser) é o ator que **executa** a §Verificação pós-deploy
-(staging) do pipeline — a mecânica, os literais e a fronteira dura moram lá; aqui
-fica só o delta: espera o run de `deploy.yml`/job `deploy-staging`, abre o staging
-e exerce a funcionalidade recém-entregue; defeito no escopo vira Issue claimável,
-observação vira `file-miss`, a Issue original (`done`) só recebe comentário de
-link. Em timeout, reporta e para. Produção segue 100% humana. A credencial de
-login é a conta de teste do OPS125 (`agente-teste@teqo.invalid`, papel
-`coordinator`; senha em `~/stack/teqo-staging.env` →
-`STAGING_TEST_ACCOUNT_PASSWORD`), fornecida pelo humano no run — nunca commitada
-nem colada no PR/Issue (só o desfecho).
-
 ## Resumo final
 
-Issue · impl plan · simplify + débitos · PR + merge · verificação pós-deploy em staging.
+Issue · impl plan · simplify + débitos · PR + merge.

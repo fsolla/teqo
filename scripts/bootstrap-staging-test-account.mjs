@@ -1,10 +1,12 @@
 /**
  * OPS125 — bootstrap the synthetic staging test account.
  *
- * Creates/updates the `campaignUser` the `work-issue` post-deploy verification
- * (OPS121) logs in with at `https://staging.jorgesolla1313.com.br`. Runs ONLY
- * against the `teqo_staging` database on the homeserver, guarded by
- * `assertStagingTestAccountTarget` (see `scripts/lib/staging-test-account.mjs`).
+ * Creates/updates the `campaignUser` used for manual testing at
+ * `https://staging.jorgesolla1313.com.br` (the mandatory `work-issue`
+ * post-deploy verification that used it was removed in OPS128; the
+ * infrastructure stays). Runs ONLY against the `teqo_staging` database on the
+ * homeserver, guarded by `assertStagingTestAccountTarget` (see
+ * `scripts/lib/staging-test-account.mjs`).
  *
  * The password comes from `STAGING_TEST_ACCOUNT_PASSWORD` (never in code, never
  * committed) — read from `~/stack/teqo-staging.env` on the homeserver:
@@ -18,8 +20,8 @@
  * Re-run after recreating the staging DB (e.g. a fresh copy of production).
  * Runbook: docs/ops/teqo-1313-deploy.md §Staging.
  *
- * The agent that consumes the credential NEVER runs this script and never
- * receives `DATABASE_URL` — it only logs into the application.
+ * Whoever consumes the credential (agent or human) NEVER runs this script and
+ * never receives `DATABASE_URL` — login happens only in the application.
  */
 
 import { getPayload } from 'payload'
