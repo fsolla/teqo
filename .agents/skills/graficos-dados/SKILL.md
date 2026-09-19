@@ -1,6 +1,6 @@
 ---
 name: graficos-dados
-description: 'Transforma números que a comunicação recebeu (xlsx/csv/md/txt/texto colado) num gráfico PNG pronto para o Instagram — 1080×1350 feed, 1080×1080 quadrado ou 1080×1920 stories — com a paleta Jorge Solla, título-manchete, um único destaque de cor e guardrails de correção; dado ambíguo vira pergunta, nunca invenção.'
+description: 'Transforma números que a comunicação recebeu (xlsx/csv/md/txt/texto colado) num gráfico PNG pronto para o Instagram — 1080×1350 feed, 1080×1080 quadrado ou 1080×1920 stories — na marca e na paleta oficiais do kit 1313, título-manchete, um único destaque de cor e guardrails de correção; dado ambíguo vira pergunta, nunca invenção.'
 ---
 
 # Gráficos de dados para Instagram (C191)
@@ -14,9 +14,13 @@ comunicação transformar o gráfico no material final (legenda, carrossel,
 contexto). É a **base visual confiável**, não a peça acabada.
 
 O template visual é o artefato aprovado
-`docs/plans/graficos-dados-instagram-ui-design.html`; o renderer
+`docs/plans/graficos-dados-instagram-ui-design.html` (revisão C203 — marca e
+paleta oficiais do kit 1313); o renderer
 (`scripts/lib/graficosInstagramRender.mjs`) porta esse design classe-a-classe.
-**Nunca invente estrutura visual** — o dono é o `designer`.
+**Nunca invente estrutura visual** — o dono é o `designer`. O rodapé usa o
+ativo oficial `public/campaign-kit/jorge-solla-positivo.png` (nunca recriar
+lockup tipográfico); a paleta oficial é `#e4102f` (destaque/valência boa),
+`#184e92` (sinal de marca), com amarelo/verde só dentro dos ativos.
 
 ## Quando usar
 
@@ -123,7 +127,7 @@ Na linha de 2 séries, `series` substitui `rows` e `projectedLabel` marca o
 ```
 
 `chartType` ∈ `bar | column | line | anchor | delta`; `highlight` é o rótulo que
-recebe o único vermelho `#c51414` (default: o maior valor). Em `series`, `tone` ∈
+recebe o único vermelho `#e4102f` (default: o maior valor). Em `series`, `tone` ∈
 `good | bad` (os dois tons ou nenhum) e as duas séries compartilham os mesmos
 rótulos temporais; `rows` e `highlight` não entram nessa variante.
 `projectedLabel` marca a projeção no último período e `crossingLabel` só é aceito
@@ -166,7 +170,7 @@ O builder **recusa** em vez de desenhar algo enganoso:
   do plot).
 - **Valência só na linha de 2 séries**, em par (`good`/`bad`) e sempre por
   palavra + seta + forma do marcador + cor — **cor nunca carrega sozinha**:
-  bom = vermelho `#c51414`, círculo, "↑ amplia" (o vermelho é a cor do
+  bom = vermelho `#e4102f`, círculo, "↑ amplia" (o vermelho é a cor do
   mandato/PT e nunca marca a perda); ruim = cinza `#78716c`, quadrado,
   "↓ recua". Sem tons, a comparação é neutra: sem setas, sem palavras de
   valência e **sem vermelho no plot**.
@@ -182,6 +186,11 @@ O builder **recusa** em vez de desenhar algo enganoso:
 - **Dado faltando/ambíguo → pergunta, nunca completa.** O builder sai com
   `{ needsQuestion: true, issues: [...] }` e não gera imagem.
 - **Sem fonte, sem peça:** `--source` é obrigatório.
+- **Marca oficial (C203):** o rodapé usa o ativo
+  `public/campaign-kit/jorge-solla-positivo.png` como data URI (paleta oficial:
+  destaque/valência boa `#e4102f`, sinal de marca `#184e92`; amarelo/verde só
+  dentro dos ativos). Sem o ativo, o builder falha — nunca recria o lockup
+  tipográfico.
 - Legibilidade: headline ≥48px e rótulos ≥30px no canvas 1080; contraste ≥4.5:1
   no texto e ≥3:1 nas marcas; **cor nunca é a única pista** (o destaque tem
   valor e posição).
@@ -210,7 +219,11 @@ O builder **recusa** em vez de desenhar algo enganoso:
 ## Referências
 
 - Design aprovado: `docs/plans/graficos-dados-instagram-ui-design.html` (inclui
-  a variação certificada de linha de duas séries, com valência bom/ruim).
+  a variação certificada de linha de duas séries, com valência bom/ruim; revisão
+  C203 — marca e paleta oficiais do kit 1313).
 - Plano de intenção: `docs/plans/graficos-dados-instagram.md`; impl:
   `docs/plans/graficos-dados-instagram-impl.md`.
+- Marca oficial: `docs/plans/graficos-dados-marca-kit-1313.md` (impl:
+  `docs/plans/graficos-dados-marca-kit-1313-impl.md`), `public/campaign-kit/README.md`
+  e o manual `docs/campaign-kit/manual-campanha-jorge-solla-1313.pdf`.
 - Irmãos (mesmo padrão skill + command + builder local): C186/C187.

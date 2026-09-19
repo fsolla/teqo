@@ -13,12 +13,10 @@ import { RELATION_LABEL, SERIES_RELATION_LABEL, SIZES } from './chartData.mjs'
 import { dualLineChart, lineChart, proportionalPercent } from './chartPrimitives.mjs'
 import { htmlEscape } from './reportText.mjs'
 
-/** Solla palette (verbatim from the intention). */
+/** Official kit 1313 palette, mapped by role (C203). */
 export const SOLLA_PALETTE = {
-  highlight: '#c51414',
-  brandDark: '#ae1603',
-  ptRed: '#a21c1c',
-  ptYellow: '#ffe607',
+  highlight: '#e4102f',
+  brandBlue: '#184e92',
   ink: '#1c1917',
   hairline: '#e7e5e4',
   paper: '#faf9f7',
@@ -194,17 +192,13 @@ const plotBody = (spec) => {
   return rankingBody(spec)
 }
 
-const brandLockup = () => `<div class="brand">
-    <span class="brand-signal"></span>
-    <div>
-      <div class="brand-name">JORGE SOLLA</div>
-      <div class="brand-office">MANDATO DEPUTADO FEDERAL</div>
-    </div>
+const brandLogo = (brandLogoDataUri) => `<div class="brand-logo-frame">
+    <img src="${brandLogoDataUri}" alt="Jorge Solla — Deputado Federal" />
   </div>`
 
-const footer = (spec) => `<footer class="footer">
+const footer = (spec, brandLogoDataUri) => `<footer class="footer">
     <p class="source"><strong>Fonte:</strong> ${htmlEscape(spec.source)}${spec.note ? `<br />Nota: ${htmlEscape(spec.note)}` : ''}</p>
-    ${brandLockup()}
+    ${brandLogo(brandLogoDataUri)}
   </footer>`
 
 const CSS = `* { box-sizing: border-box; }
@@ -218,8 +212,8 @@ html, body { margin: 0; background: ${SOLLA_PALETTE.paper}; }
   -webkit-font-smoothing: antialiased;
 }
 .inner { position: absolute; inset: 0; display: flex; flex-direction: column; }
-.top-rule { width: 64px; height: 10px; background: ${SOLLA_PALETTE.highlight}; }
-.context { margin: 0; color: ${SOLLA_PALETTE.brandDark}; font-size: 30px; line-height: 1.2; font-weight: 750; }
+.top-rule { width: 64px; height: 10px; background: ${SOLLA_PALETTE.brandBlue}; }
+.context { margin: 0; color: ${SOLLA_PALETTE.brandBlue}; font-size: 30px; line-height: 1.2; font-weight: 750; }
 .headline { margin: 0; font-weight: 800; line-height: 1.03; letter-spacing: -0.045em; }
 .subtitle { margin: 0; color: ${SOLLA_PALETTE.label}; font-weight: 450; line-height: 1.35; }
 .plot { flex: 1; min-height: 0; }
@@ -319,10 +313,14 @@ html, body { margin: 0; background: ${SOLLA_PALETTE.paper}; }
 }
 .source { margin: 0; color: ${SOLLA_PALETTE.label}; font-size: 27px; line-height: 1.32; }
 .source strong { color: ${SOLLA_PALETTE.ink}; font-weight: 750; }
-.brand { display: flex; align-items: center; gap: 13px; justify-content: flex-end; }
-.brand-signal { width: 12px; height: 48px; background: ${SOLLA_PALETTE.ptYellow}; }
-.brand-name { color: ${SOLLA_PALETTE.brandDark}; font-size: 29px; line-height: 0.88; font-weight: 900; letter-spacing: -0.045em; }
-.brand-office { margin-top: 7px; color: ${SOLLA_PALETTE.label}; font-size: 17px; line-height: 1; font-weight: 750; letter-spacing: 0.04em; }`
+.brand-logo-frame {
+  width: 286px; height: 90px; flex: 0 0 286px;
+  display: flex; align-items: center; justify-content: flex-end;
+}
+.brand-logo-frame img {
+  display: block; max-width: 100%; max-height: 100%; width: auto; height: auto;
+  object-fit: contain;
+}`
 
 /** Per-size vertical rhythm of the template (feed 4:5, square, stories 9:16). */
 const layoutFor = (size) => {
@@ -360,9 +358,17 @@ const layoutFor = (size) => {
 
 /**
  * Full HTML document of the chart, at the exact export size. `spec` must have
- * passed `validateSpec` (the entry does it before rendering).
+ * passed `validateSpec` (the entry does it before rendering). `brandLogo` is
+ * the official kit mark as a `data:image/png;base64,` URI (read by the entry
+ * with `readKitAssets`); the render fails closed without it — the typographic
+ * lockup is never recreated.
  */
-export const renderChartHtml = (spec) => {
+export const renderChartHtml = (spec, { brandLogo: brandLogoDataUri } = {}) => {
+  if (!brandLogoDataUri || !brandLogoDataUri.startsWith('data:image/png;base64,')) {
+    throw new Error(
+      'marca oficial do kit ausente: leia jorge-solla-positivo.png com readKitAssets() e passe brandLogo.',
+    )
+  }
   const sizeKey = SIZES[spec.size] ? spec.size : 'feed'
   const canvas = SIZES[sizeKey]
   const layout = layoutFor(sizeKey)
@@ -410,7 +416,7 @@ export const renderChartHtml = (spec) => {
         <h1 class="headline">${htmlEscape(spec.headline)}</h1>
         ${showSubtitle ? `<p class="subtitle">${htmlEscape(spec.subtitle)}</p>` : ''}
         <div class="plot">${plotBody(spec)}</div>
-        ${footer(spec)}
+        ${footer(spec, brandLogoDataUri)}
       </div>
     </article>
   </body>

@@ -10,7 +10,7 @@
 
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
 
 import { REEL_DEVICE_SCALE, REEL_VIEWPORT, sleep, startFrameRecorder } from './reelCapture.mjs'
 import { encodeFrames, PREVIEW_CRF, PREVIEW_PRESET } from './reelFfmpeg.mjs'
@@ -116,25 +116,6 @@ export const loadFontCss = async ({
     )
   }
   return css.join('\n')
-}
-
-const KIT_ASSETS = {
-  namePositive: 'jorge-solla-positivo.png',
-  nameNegative: 'jorge-solla-negativo.png',
-  completePositive: 'marca-positiva-completa.png',
-  completeNegative: 'marca-negativa-completa.png',
-  star: 'estrela.png',
-}
-
-/** Official campaign kit marks as data URIs (committed under `public/campaign-kit`). */
-export const readKitAssets = async ({ root = process.cwd() } = {}) => {
-  const entries = await Promise.all(
-    Object.entries(KIT_ASSETS).map(async ([key, file]) => {
-      const bytes = await readFile(resolve(root, 'public/campaign-kit', file))
-      return [key, `data:image/png;base64,${bytes.toString('base64')}`]
-    }),
-  )
-  return Object.fromEntries(entries)
 }
 
 const settle = async (page) => {

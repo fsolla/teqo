@@ -20,6 +20,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { readKitAssets } from './lib/campaignKitAssets.mjs'
 import { dieWithLabel, loadCliEnv, parseEqualsFlags } from './lib/cli.mjs'
 import {
   gotoReelSite,
@@ -48,7 +49,6 @@ import {
   extractFontFaces,
   loadFontCss,
   openRenderContext,
-  readKitAssets,
   recordGraphicScene,
   renderCover,
   renderOverlay,

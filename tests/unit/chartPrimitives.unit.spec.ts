@@ -138,7 +138,7 @@ describe('lineChart — series with one highlighted end', () => {
   })
 
   it('marks the last point with the Solla red', () => {
-    expect(svg).toContain('fill="#c51414"')
+    expect(svg).toContain('fill="#e4102f"')
   })
 })
 
@@ -158,7 +158,7 @@ describe('dualLineChart — the approved two-series time line', () => {
     },
   ]
   const colors = {
-    good: '#c51414',
+    good: '#e4102f',
     bad: '#78716c',
     neutralA: '#1c1917',
     neutralB: '#78716c',
@@ -182,10 +182,10 @@ describe('dualLineChart — the approved two-series time line', () => {
 
   it('draws the good path in the mandate red and the bad one neutral', () => {
     expect(svg).toContain('class="dual-series dual-series-good"')
-    expect(svg).toContain('stroke="#c51414"')
+    expect(svg).toContain('stroke="#e4102f"')
     expect(svg).toContain('class="dual-series dual-series-bad"')
     expect(svg).toContain('stroke="#78716c"')
-    expect(svg).toContain('<g class="dual-markers-good" fill="#c51414"><circle')
+    expect(svg).toContain('<g class="dual-markers-good" fill="#e4102f"><circle')
     expect(svg).toContain('<g class="dual-markers-bad" fill="#78716c"><rect')
   })
 
@@ -276,7 +276,7 @@ describe('dualLineChart — the approved two-series time line', () => {
     })
     expect(neutral).toContain('class="dual-series dual-series-a"')
     expect(neutral).toContain('class="dual-series dual-series-b"')
-    expect(neutral).not.toContain('#c51414')
+    expect(neutral).not.toContain('#e4102f')
     expect(neutral).not.toContain('amplia')
     expect(neutral).not.toContain('recua')
     expect(neutral).not.toContain('dual-projection-band')

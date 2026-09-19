@@ -24,58 +24,73 @@ const spec = (overrides = {}) => ({
   ...overrides,
 })
 
+// C203: the official kit mark travels as a data URI injected by the entry.
+const brandLogo = 'data:image/png;base64,c203-stub'
+const render = (chartSpec: Parameters<typeof renderChartHtml>[0]) =>
+  renderChartHtml(chartSpec, { brandLogo })
+
 describe('renderChartHtml — canvas and template', () => {
   it('authors the feed canvas at exactly 1080×1350', () => {
-    const html = renderChartHtml(spec())
+    const html = render(spec())
     expect(html).toContain('width: 1080px; height: 1350px')
   })
 
   it('adapts to square and to Stories safe bands', () => {
-    expect(renderChartHtml(spec({ size: 'square' }))).toContain('width: 1080px; height: 1080px')
-    const story = renderChartHtml(spec({ size: 'story' }))
+    expect(render(spec({ size: 'square' }))).toContain('width: 1080px; height: 1080px')
+    const story = render(spec({ size: 'story' }))
     expect(story).toContain('width: 1080px; height: 1920px')
     expect(story).toContain('padding: 306px 84px 310px')
   })
 
   it('keeps the headline at/above the minimum size', () => {
-    expect(renderChartHtml(spec())).toMatch(/\.headline \{ font-size: 67px/)
-    expect(renderChartHtml(spec({ size: 'story' }))).toMatch(/\.headline \{ font-size: 78px/)
+    expect(render(spec())).toMatch(/\.headline \{ font-size: 67px/)
+    expect(render(spec({ size: 'story' }))).toMatch(/\.headline \{ font-size: 78px/)
   })
 
-  it('carries the source and the provisional brand lockup inside the image', () => {
-    const html = renderChartHtml(spec())
+  it('carries the source and the official kit mark inside the image', () => {
+    const html = render(spec())
     expect(html).toContain('TSE 2026')
-    expect(html).toContain('JORGE SOLLA')
-    expect(html).toContain('MANDATO DEPUTADO FEDERAL')
+    expect(html).toContain('brand-logo-frame')
+    expect(html).toContain('data:image/png;base64,')
+    expect(html).toContain('alt="Jorge Solla — Deputado Federal"')
+    expect(html).not.toContain('MANDATO DEPUTADO FEDERAL')
+  })
+
+  it('fails closed without the official kit mark', () => {
+    expect(() => renderChartHtml(spec())).toThrow(/marca oficial/)
+    expect(() => renderChartHtml(spec(), { brandLogo: 'https://example.com/logo.png' })).toThrow(
+      /marca oficial/,
+    )
   })
 
   it('marks exactly one row with the Solla highlight', () => {
-    const html = renderChartHtml(spec())
+    const html = render(spec())
     expect((html.match(/bar highlight/g) ?? []).length).toBe(1)
     expect(html).toContain('Território B')
-    expect(html).toContain('#c51414')
+    expect(html).toContain('#e4102f')
+    expect(html).not.toContain('#c51414')
   })
 
   it('sorts the ranking by value, descending', () => {
-    const html = renderChartHtml(spec())
+    const html = render(spec())
     expect(html.indexOf('Território A')).toBeLessThan(html.indexOf('Território B'))
     expect(html.indexOf('Território B')).toBeLessThan(html.indexOf('Território C'))
   })
 
   it('renders a column chart with a zero base line', () => {
-    const html = renderChartHtml(spec({ chartType: 'column' }))
+    const html = render(spec({ chartType: 'column' }))
     expect(html).toContain('columns')
     expect(html).toContain('column highlight')
   })
 
   it('renders the line chart with the last point highlighted', () => {
-    const html = renderChartHtml(spec({ chartType: 'line' }))
+    const html = render(spec({ chartType: 'line' }))
     expect(html).toContain('<polyline')
-    expect(html).toContain('#c51414')
+    expect(html).toContain('#e4102f')
   })
 
   it('renders the anchor with the value and the copy', () => {
-    const html = renderChartHtml(
+    const html = render(
       spec({
         chartType: 'anchor',
         rows: [{ label: '', value: 72 }],
@@ -88,22 +103,23 @@ describe('renderChartHtml — canvas and template', () => {
   })
 
   it('escapes untrusted headline and source', () => {
-    const html = renderChartHtml(spec({ headline: '<script>x</script>', source: 'a & b' }))
+    const html = render(spec({ headline: '<script>x</script>', source: 'a & b' }))
     expect(html).not.toContain('<script>x</script>')
     expect(html).toContain('&lt;script&gt;')
     expect(html).toContain('a &amp; b')
   })
 })
 
-describe('SOLLA_PALETTE — the verbatim brand colors', () => {
-  it('matches the intention literals', () => {
+describe('SOLLA_PALETTE — the official kit 1313 colors', () => {
+  it('matches the gate literals and retires the provisional palette', () => {
     expect(SOLLA_PALETTE).toMatchObject({
-      highlight: '#c51414',
-      brandDark: '#ae1603',
-      ptRed: '#a21c1c',
-      ptYellow: '#ffe607',
+      highlight: '#e4102f',
+      brandBlue: '#184e92',
       paper: '#faf9f7',
     })
+    expect(SOLLA_PALETTE).not.toHaveProperty('brandDark')
+    expect(SOLLA_PALETTE).not.toHaveProperty('ptRed')
+    expect(SOLLA_PALETTE).not.toHaveProperty('ptYellow')
   })
 })
 
@@ -137,7 +153,7 @@ const seriesSpec = (overrides = {}) => ({
 
 describe('renderChartHtml — the two-series time line', () => {
   it('renders the dual plot with the fixed kicker, changes and valence words', () => {
-    const html = renderChartHtml(seriesSpec())
+    const html = render(seriesSpec())
     expect(html).toContain('dual-line-plot')
     expect(html).toContain('Comparação no tempo')
     expect(html).toContain('↑ amplia')
@@ -148,28 +164,28 @@ describe('renderChartHtml — the two-series time line', () => {
   })
 
   it('annotates the confirmed crossing without inferring it by itself', () => {
-    expect(renderChartHtml(seriesSpec())).toContain('ultrapassa')
-    expect(renderChartHtml(seriesSpec({ crossingLabel: null }))).not.toContain('ultrapassa')
+    expect(render(seriesSpec())).toContain('ultrapassa')
+    expect(render(seriesSpec({ crossingLabel: null }))).not.toContain('ultrapassa')
   })
 
   it('uses the compact feed rhythm of the variant', () => {
-    const html = renderChartHtml(seriesSpec())
+    const html = render(seriesSpec())
     expect(html).toContain('font-size: 60px')
     expect(html).toContain('margin-top: 28px')
   })
 
   it('adapts the plot and the rhythm to square and to Stories', () => {
-    const square = renderChartHtml(seriesSpec({ size: 'square' }))
+    const square = render(seriesSpec({ size: 'square' }))
     expect(square).toContain('viewBox="0 0 880 440"')
     expect(square).toContain('font-size: 54px')
-    const story = renderChartHtml(seriesSpec({ size: 'story' }))
+    const story = render(seriesSpec({ size: 'story' }))
     expect(story).toContain('viewBox="0 0 880 700"')
     expect(story).toContain('font-size: 64px')
   })
 
   it('keeps red out of the plot when the comparison is neutral', () => {
     const { series } = seriesSpec()
-    const html = renderChartHtml(
+    const html = render(
       seriesSpec({
         crossingLabel: null,
         series: series.map((serie: { name: string; rows: unknown[] }) => ({
@@ -179,15 +195,15 @@ describe('renderChartHtml — the two-series time line', () => {
       }),
     )
     const svg = html.slice(html.indexOf('<svg'), html.indexOf('</svg>'))
-    expect(svg).not.toContain('#c51414')
+    expect(svg).not.toContain('#e4102f')
     expect(svg).not.toContain('amplia')
   })
 
   it('carries the projection note and the source inside the image', () => {
-    const html = renderChartHtml(seriesSpec())
+    const html = render(seriesSpec())
     expect(html).toContain('2026 é projeção pela média de janeiro a junho × 2.')
     expect(html).toContain('Ministério da Saúde — SIH/SUS')
-    expect(html).toContain('JORGE SOLLA')
+    expect(html).toContain('alt="Jorge Solla — Deputado Federal"')
   })
 })
 
@@ -217,7 +233,7 @@ const deltaSpec = (overrides = {}) => ({
 
 describe('renderChartHtml — the variation bar (delta)', () => {
   it('renders the fixed kicker, the periods and the two-value gutter', () => {
-    const html = renderChartHtml(deltaSpec())
+    const html = render(deltaSpec())
     expect(html).toContain('Variação no período')
     expect(html).toContain('delta-period">2020')
     expect(html).toContain('delta-period">jul/2026')
@@ -226,16 +242,16 @@ describe('renderChartHtml — the variation bar (delta)', () => {
   })
 
   it('sorts by the final value and keeps the red out of the plot', () => {
-    const html = renderChartHtml(deltaSpec())
+    const html = render(deltaSpec())
     const body = html.slice(html.indexOf('<div class="delta-grade'))
     expect(body.indexOf('ESF · Saúde da Família')).toBeLessThan(body.indexOf('ESB · Saúde Bucal'))
     expect(body.indexOf('ESB · Saúde Bucal')).toBeLessThan(body.indexOf('ENASF-AB'))
     const plot = body.slice(0, body.indexOf('<footer'))
-    expect(plot).not.toContain('#c51414')
+    expect(plot).not.toContain('#e4102f')
   })
 
   it('leaves a flat category without the extension segment', () => {
-    const html = renderChartHtml(deltaSpec())
+    const html = render(deltaSpec())
     const start = html.indexOf('class="delta-row is-flat"')
     const flat = html.slice(start, html.indexOf('class="delta-row"', start))
     expect(flat).not.toContain('delta-ext')
@@ -244,17 +260,17 @@ describe('renderChartHtml — the variation bar (delta)', () => {
   })
 
   it('proportions base and extension against the biggest final value', () => {
-    const html = renderChartHtml(deltaSpec())
+    const html = render(deltaSpec())
     expect(html).toContain('width:92.1%')
     expect(html).toContain('width:7.9%')
   })
 
   it('bolds the sigla before the middle dot', () => {
-    expect(renderChartHtml(deltaSpec())).toContain('<b>ESF</b> · Saúde da Família')
+    expect(render(deltaSpec())).toContain('<b>ESF</b> · Saúde da Família')
   })
 
   it('adapts the rhythm and keeps every category on the Stories canvas', () => {
-    const story = renderChartHtml(deltaSpec({ size: 'story' }))
+    const story = render(deltaSpec({ size: 'story' }))
     expect(story).toContain('padding: 306px 84px 310px')
     expect(story).toMatch(/\.headline \{ font-size: 64px/)
     expect((story.match(/class="delta-row/g) ?? []).length).toBe(deltaRows.length)
