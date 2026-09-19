@@ -9,10 +9,14 @@
       @theme inline {
         --font-sans:
           Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        --color-solla: #c51414;
-        --color-brand-dark: #ae1603;
-        --color-pt-red: #a21c1c;
-        --color-pt-yellow: #ffe607;
+        /* Paleta oficial do kit 1313, mapeada por semântica (ver card "Mapeamento semântico"). */
+        --color-solla: #e4102f; /* destaque único + valência boa */
+        --color-brand-dark: #184e92; /* sinal/régua de marca, kicker, texto de marca auxiliar */
+        --color-brand-blue: #184e92;
+        --color-pt-red: #e4102f;
+        --color-brand-yellow: #ffeb00; /* só dentro do ativo oficial; nunca texto/eixo/dado */
+        --color-pt-yellow: #ffeb00;
+        --color-brand-green: #009647; /* só dentro dos ativos oficiais */
         --color-ink: #1c1917;
         --color-quiet: #6b7280;
         --color-hairline: #e7e5e4;
@@ -20,10 +24,13 @@
       }
 
       :root {
-        --solla: #c51414;
-        --brand-dark: #ae1603;
-        --pt-red: #a21c1c;
-        --pt-yellow: #ffe607;
+        --solla: #e4102f; /* #e4102f — destaque único e valência boa */
+        --brand-dark: #184e92; /* #184e92 — sinal/régua, kicker, texto de marca auxiliar */
+        --brand-blue: #184e92;
+        --pt-red: #e4102f;
+        --brand-yellow: #ffeb00; /* #ffeb00 — só dentro do ativo oficial */
+        --pt-yellow: #ffeb00;
+        --brand-green: #009647; /* #009647 — só dentro dos ativos oficiais */
         --ink: #1c1917;
         --quiet: #6b7280;
         --hairline: #e7e5e4;
@@ -123,7 +130,7 @@
         width: 64px;
         height: 10px;
         margin-bottom: 34px;
-        background: var(--solla);
+        background: var(--brand-blue);
       }
       .chart-context {
         margin: 0 0 18px;
@@ -205,46 +212,23 @@
         color: var(--ink);
         font-weight: 750;
       }
-      .brand-lockup {
+      /* Ativo oficial do kit (jorge-solla-positivo.png): exibido inteiro, sem recorte e sem
+         distorção. O arquivo é o lockup do nome; nunca recriar o lockup com tipografia. */
+      .brand-logo-frame {
+        width: 286px;
+        height: 90px;
+        flex: 0 0 286px;
         display: flex;
         align-items: center;
-        gap: 13px;
-        min-width: 286px;
         justify-content: flex-end;
       }
-      .brand-signal {
-        width: 12px;
-        height: 48px;
-        background: var(--pt-yellow);
-      }
-      .brand-name {
-        color: var(--brand-dark);
-        font-size: 29px;
-        line-height: 0.88;
-        font-weight: 900;
-        letter-spacing: -0.045em;
-      }
-      .brand-office {
-        margin-top: 7px;
-        color: #57534e;
-        font-size: 17px;
-        line-height: 1;
-        font-weight: 750;
-        letter-spacing: 0.04em;
-      }
-      .asset-flag {
-        position: absolute;
-        right: 18px;
-        bottom: 12px;
-        padding: 5px 7px;
-        border: 2px dashed #78716c;
-        border-radius: 5px;
-        color: #44403c;
-        background: rgb(250 249 247 / 94%);
-        font-size: 13px;
-        line-height: 1;
-        font-weight: 800;
-        letter-spacing: 0.04em;
+      .brand-logo-frame img {
+        display: block;
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
       }
 
       .mini-canvas {
@@ -263,7 +247,7 @@
         width: 22px;
         height: 4px;
         margin-bottom: 11px;
-        background: var(--solla);
+        background: var(--brand-blue);
       }
       .mini-kicker {
         color: var(--brand-dark);
@@ -300,11 +284,21 @@
         font-size: 6.7px;
         line-height: 1.2;
       }
-      .mini-mark {
-        color: var(--brand-dark);
-        font-size: 8px;
-        font-weight: 900;
-        white-space: nowrap;
+      .mini-logo-frame {
+        width: 70px;
+        height: 23px;
+        flex: 0 0 70px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      .mini-logo-frame img {
+        display: block;
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
       }
       .mini-bars {
         display: grid;
@@ -491,24 +485,24 @@
         height: 250px;
         background: repeating-linear-gradient(
           135deg,
-          rgb(174 22 3 / 7%) 0 12px,
+          rgb(24 78 146 / 7%) 0 12px,
           transparent 12px 24px
         );
         pointer-events: none;
       }
       .story-canvas::before {
         top: 0;
-        border-bottom: 3px dashed rgb(174 22 3 / 48%);
+        border-bottom: 3px dashed rgb(24 78 146 / 48%);
       }
       .story-canvas::after {
         bottom: 0;
-        border-top: 3px dashed rgb(174 22 3 / 48%);
+        border-top: 3px dashed rgb(24 78 146 / 48%);
       }
       .safe-label {
         position: absolute;
         z-index: 3;
         left: 44px;
-        color: #7f1d1d;
+        color: var(--brand-blue);
         font-size: 25px;
         line-height: 1;
         font-weight: 800;
@@ -674,10 +668,21 @@
         color: #57534e;
         font-size: 11px;
       }
-      .state-mark {
-        color: var(--brand-dark);
-        font-size: 14px;
-        font-weight: 900;
+      .state-logo-frame {
+        width: 116px;
+        height: 36px;
+        flex: 0 0 116px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      .state-logo-frame img {
+        display: block;
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
       }
 
       .ruler {
@@ -724,9 +729,35 @@
   </head>
   <body>
     <main class="mx-auto max-w-[1240px] px-4 py-8 sm:px-7 lg:py-12">
+      <div
+        class="mb-6 rounded-2xl border border-[#184e92]/30 bg-[#184e92]/[0.05] p-5 sm:p-6"
+        role="note"
+        aria-label="Design aprovado no gate em 2026-09-19"
+      >
+        <div class="flex flex-wrap items-start gap-x-5 gap-y-3">
+          <span
+            class="inline-flex items-center rounded-md bg-[#184e92] px-3 py-1 text-sm font-black tracking-[0.14em] text-white"
+            >APROVADO</span
+          >
+          <div class="max-w-3xl">
+            <p class="text-sm font-extrabold text-[#184e92]">
+              Aprovado no gate em 2026-09-19 — revisão C203 (marca e paleta oficiais do kit 1313).
+            </p>
+            <p class="mt-1 text-sm leading-6 text-stone-700">
+              O humano validou a substituição do lockup tipográfico pelo ativo oficial e o
+              mapeamento de cor fixado aqui; este artefato é o registro do aceite visual e a fonte
+              de verdade do port.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <header class="max-w-4xl">
         <div class="flex flex-wrap items-center gap-2">
-          <span class="scene-label">Design certificado · C191</span>
+          <span class="scene-label border-blue-200 bg-blue-50 text-[#184e92]"
+            >Revisão C203 · marca oficial do kit 1313</span
+          >
+          <span class="scene-label">Aprovado no gate · 2026-09-19</span>
           <span class="scene-label">Instagram feed + Stories</span>
         </div>
         <h1 class="mt-5 max-w-3xl text-3xl font-extrabold tracking-[-0.035em] text-ink sm:text-4xl">
@@ -738,6 +769,32 @@
           Conquista. As peças fixam hierarquia, grid, tratamento de marca e limites do gerador.
         </p>
       </header>
+
+      <section
+        class="mt-6 rounded-2xl border border-blue-200 bg-blue-50/70 p-5 sm:p-6"
+        aria-labelledby="revision-title"
+      >
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="max-w-3xl">
+            <p class="text-xs font-extrabold tracking-[0.08em] text-[#184e92]">
+              REVISÃO VISÍVEL · C203
+            </p>
+            <h2 id="revision-title" class="mt-1 text-lg font-bold tracking-tight">
+              Marca e paleta oficiais do kit 1313
+            </h2>
+            <p class="mt-2 text-sm leading-6 text-stone-700">
+              O débito <strong>NEEDS ASSET · LOGO OFICIAL</strong> foi resolvido: todo rodapé usa o
+              arquivo oficial <strong>jorge-solla-positivo.png</strong>, sem lockup tipográfico
+              recriado. A paleta provisória saiu; grid, headline-manchete, um único destaque,
+              formatos e guardrails permanecem.
+              <strong>Revisão aprovada no gate em 2026-09-19.</strong>
+            </p>
+          </div>
+          <span class="scene-label border-blue-200 bg-blue-50 text-[#184e92]"
+            >APROVADA · GATE 2026-09-19</span
+          >
+        </div>
+      </section>
 
       <section class="scene-card mt-9 p-4 sm:p-6 lg:p-8" aria-labelledby="main-scene-title">
         <div class="flex flex-wrap items-start justify-between gap-4">
@@ -805,16 +862,14 @@
                       <strong>Fonte:</strong> fonte informada pela pessoa · período de exemplo<br />Nota:
                       valores ilustrativos, sem unidade real.
                     </p>
-                    <div class="brand-lockup" aria-label="Marca provisória do mandato">
-                      <span class="brand-signal"></span>
-                      <div>
-                        <div class="brand-name">JORGE SOLLA</div>
-                        <div class="brand-office">MANDATO DEPUTADO FEDERAL</div>
-                      </div>
+                    <div class="brand-logo-frame">
+                      <img
+                        src="../../public/campaign-kit/jorge-solla-positivo.png"
+                        alt="Jorge Solla — Deputado Federal"
+                      />
                     </div>
                   </footer>
                 </div>
-                <span class="asset-flag">NEEDS ASSET · LOGO OFICIAL</span>
               </article>
             </div>
           </div>
@@ -851,11 +906,86 @@
                 </li>
               </ul>
             </div>
-            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
-              <p class="text-xs font-extrabold text-stone-700">NEEDS ASSET</p>
-              <p class="mt-2 text-sm leading-5 text-stone-600">
-                Substituir o lockup tipográfico provisório pelo arquivo oficial aprovado do mandato,
-                preservando esta área e contraste.
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">MAPEAMENTO SEMÂNTICO · FIXO (C203)</p>
+              <p class="mt-2 text-xs leading-5 text-stone-600">
+                Regra visual fixa que o port deve seguir. As cores oficiais viram <em>papéis</em>,
+                não decoração.
+              </p>
+              <ul class="mt-3 grid gap-3 text-sm leading-5 text-stone-700">
+                <li class="grid grid-cols-[18px_1fr] gap-2.5">
+                  <span class="mt-0.5 size-4 rounded-sm bg-[#e4102f]"></span>
+                  <span
+                    ><strong>#e4102f · vermelho de destaque:</strong> o <em>único</em> destaque da
+                    peça (barra/ponto/âncora) e a valência boa. Vem sempre com círculo + ↑ + palavra
+                    ("amplia").</span
+                  >
+                </li>
+                <li class="grid grid-cols-[18px_1fr] gap-2.5">
+                  <span class="mt-0.5 size-4 rounded-sm bg-[#78716c]"></span>
+                  <span
+                    ><strong>#78716c · cinza de valência ruim:</strong> quadrado + ↓ + palavra
+                    ("recua"). Nunca usar o vermelho de marca para perda.</span
+                  >
+                </li>
+                <li class="grid grid-cols-[18px_1fr] gap-2.5">
+                  <span class="mt-0.5 size-4 rounded-sm bg-[#184e92]"></span>
+                  <span
+                    ><strong>#184e92 · azul do sinal/barra de marca:</strong> régua superior, kicker
+                    e texto de marca auxiliar. Não é cor de dado nem de destaque.</span
+                  >
+                </li>
+                <li class="grid grid-cols-[18px_1fr] gap-2.5">
+                  <span class="mt-0.5 size-4 rounded-sm bg-[#1c1917]"></span>
+                  <span
+                    ><strong>#1c1917 · tinta:</strong> texto principal. Neutros funcionais (papel
+                    #faf9f7, barras cinza #d6d3d1/#a8a29e, eixos) permanecem como estão.</span
+                  >
+                </li>
+                <li class="grid grid-cols-[18px_1fr] gap-2.5">
+                  <span
+                    class="mt-0.5 size-4 rounded-sm border border-stone-300 bg-[#ffeb00]"
+                  ></span>
+                  <span
+                    ><strong>#ffeb00 · amarelo:</strong> só existe dentro do ativo oficial ou em
+                    área grande não textual. Nunca em texto, eixo ou dado.</span
+                  >
+                </li>
+                <li class="grid grid-cols-[18px_1fr] gap-2.5">
+                  <span
+                    class="mt-0.5 size-4 rounded-sm border border-stone-300 bg-[#009647]"
+                  ></span>
+                  <span
+                    ><strong>#009647 · verde:</strong> exclusivamente dentro dos ativos oficiais
+                    (detalhe da estrela). Não vira cor de gráfico.</span
+                  >
+                </li>
+              </ul>
+              <p class="mt-3 border-t border-stone-200 pt-3 text-xs leading-5 text-stone-600">
+                Contraste conferido no kit: tinta #1c1917 sobre papel #faf9f7 ≥ 14:1; vermelho
+                #e4102f sobre papel ≈ 4,8:1 (≥4,5:1 para texto; ≥3:1 como marca/barra de dado). Azul
+                #184e92 sobre papel ≈ 8:1. Amarelo e verde nunca carregam texto (contraste
+                insuficiente).
+              </p>
+            </div>
+            <div class="rounded-xl border border-blue-200 bg-blue-50/70 p-4">
+              <p class="text-xs font-extrabold text-[#184e92]">MARCA OFICIAL · ATIVO RESOLVIDO</p>
+              <p class="mt-2 text-sm leading-5 text-stone-700">
+                Fundo off-white exige a marca <strong>positiva</strong>:
+                <strong>jorge-solla-positivo.png</strong> (lockup do nome, vermelho/azul). Usar o
+                PNG oficial <em>sem</em> redesenhar, recolorir, distorcer ou separar seus elementos
+                — nunca recriar o lockup com tipografia. Se a peça pedir a marca completa, aí é que
+                o slogan "Mais Saúde, Mais Futuro" aparece: ele vive dentro de
+                <strong>marca-positiva-completa.png</strong>, jamais como headline ou 4ª mensagem.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">ESTRELA · REGRA DO 100%</p>
+              <p class="mt-2 text-sm leading-5 text-stone-700">
+                A estrela (<strong>estrela.png</strong>, roundel amarelo/verde com estrela vermelha)
+                só entra a <strong>100% sobre disco branco do mesmo diâmetro</strong>. Nunca com
+                opacidade reduzida — opacidade mistura as cores com o fundo e suja o ativo. Nesta
+                peça ela é opcional; o template aprovado fecha no lockup do nome.
               </p>
             </div>
           </aside>
@@ -902,7 +1032,12 @@
                 </div>
               </div>
               <footer class="mini-footer">
-                <span>Fonte: exemplo</span><span class="mini-mark">JORGE SOLLA</span>
+                <span>Fonte: exemplo</span>
+                <span class="mini-logo-frame"
+                  ><img
+                    src="../../public/campaign-kit/jorge-solla-positivo.png"
+                    alt="Jorge Solla — Deputado Federal"
+                /></span>
               </footer>
             </article>
             <p class="mt-3 text-sm font-bold">Barra · ranking</p>
@@ -922,7 +1057,12 @@
                 <div class="column red" style="height: 88%"><span>P4</span></div>
               </div>
               <footer class="mini-footer">
-                <span>Fonte: exemplo</span><span class="mini-mark">JORGE SOLLA</span>
+                <span>Fonte: exemplo</span>
+                <span class="mini-logo-frame"
+                  ><img
+                    src="../../public/campaign-kit/jorge-solla-positivo.png"
+                    alt="Jorge Solla — Deputado Federal"
+                /></span>
               </footer>
             </article>
             <p class="mt-3 text-sm font-bold">Coluna · tempo curto</p>
@@ -961,7 +1101,7 @@
                     <circle cx="129" cy="57" r="4" />
                     <circle cx="168" cy="50" r="4" />
                   </g>
-                  <circle cx="207" cy="25" r="6" fill="#c51414" />
+                  <circle cx="207" cy="25" r="6" fill="#e4102f" />
                   <text
                     x="201"
                     y="15"
@@ -975,7 +1115,12 @@
                 </svg>
               </div>
               <footer class="mini-footer">
-                <span>Fonte: exemplo</span><span class="mini-mark">JORGE SOLLA</span>
+                <span>Fonte: exemplo</span>
+                <span class="mini-logo-frame"
+                  ><img
+                    src="../../public/campaign-kit/jorge-solla-positivo.png"
+                    alt="Jorge Solla — Deputado Federal"
+                /></span>
               </footer>
             </article>
             <p class="mt-3 text-sm font-bold">Linha · série temporal</p>
@@ -995,7 +1140,12 @@
                 <p class="big-copy">unidades no período de exemplo</p>
               </div>
               <footer class="mini-footer">
-                <span>Fonte: exemplo</span><span class="mini-mark">JORGE SOLLA</span>
+                <span>Fonte: exemplo</span>
+                <span class="mini-logo-frame"
+                  ><img
+                    src="../../public/campaign-kit/jorge-solla-positivo.png"
+                    alt="Jorge Solla — Deputado Federal"
+                /></span>
               </footer>
             </article>
             <p class="mt-3 text-sm font-bold">Número-âncora</p>
@@ -1022,7 +1172,7 @@
                   <polyline
                     points="10,72 26,68 42,61 58,66 74,55 90,47 106,49 122,28 138,23"
                     fill="none"
-                    stroke="#c51414"
+                    stroke="#e4102f"
                     stroke-width="3.5"
                     stroke-linecap="round"
                     stroke-linejoin="round"
@@ -1032,7 +1182,7 @@
                     y1="23"
                     x2="151"
                     y2="16"
-                    stroke="#c51414"
+                    stroke="#e4102f"
                     stroke-width="3.5"
                     stroke-dasharray="6 4"
                   />
@@ -1053,7 +1203,7 @@
                     stroke-width="3"
                     stroke-dasharray="6 4"
                   />
-                  <g fill="#c51414">
+                  <g fill="#e4102f">
                     <circle cx="10" cy="72" r="2.5" />
                     <circle cx="26" cy="68" r="2.5" />
                     <circle cx="42" cy="61" r="2.5" />
@@ -1080,7 +1230,7 @@
                     cy="16"
                     r="4"
                     fill="#faf9f7"
-                    stroke="#c51414"
+                    stroke="#e4102f"
                     stroke-width="2.5"
                   />
                   <rect
@@ -1093,7 +1243,7 @@
                     stroke-width="2"
                   />
                   <text x="159" y="8" class="mini-dual-label">Estadual</text>
-                  <text x="159" y="17" class="mini-dual-label" style="fill: #c51414">
+                  <text x="159" y="17" class="mini-dual-label" style="fill: #e4102f">
                     23.294 · ↑ amplia
                   </text>
                   <text x="159" y="42" class="mini-dual-label">Municipal</text>
@@ -1113,7 +1263,12 @@
                 </svg>
               </div>
               <footer class="mini-footer">
-                <span>Fonte: SIH/SUS</span><span class="mini-mark">JORGE SOLLA</span>
+                <span>Fonte: SIH/SUS</span>
+                <span class="mini-logo-frame"
+                  ><img
+                    src="../../public/campaign-kit/jorge-solla-positivo.png"
+                    alt="Jorge Solla — Deputado Federal"
+                /></span>
               </footer>
             </article>
             <p class="mt-3 text-sm font-bold">Linha · duas séries</p>
@@ -1127,7 +1282,7 @@
       <section class="scene-card mt-10 p-4 sm:p-6 lg:p-8" aria-labelledby="dual-line-title">
         <div class="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p class="text-xs font-bold text-brand-dark">CENA 02B · VARIAÇÃO CERTIFICADA</p>
+            <p class="text-xs font-bold text-brand-dark">CENA 02B · VARIAÇÃO PRESERVADA</p>
             <h2 id="dual-line-title" class="mt-1 text-xl font-bold tracking-tight">
               Feed 4:5 · linha temporal de duas séries
             </h2>
@@ -1211,7 +1366,7 @@
                         class="dual-series dual-series-good"
                         points="52,352 113,336 174,314 235,331 296,288 356,256 417,261 478,144 539,122"
                         fill="none"
-                        stroke="#c51414"
+                        stroke="#e4102f"
                         stroke-width="8"
                         stroke-linecap="round"
                         stroke-linejoin="round"
@@ -1222,7 +1377,7 @@
                         y1="122"
                         x2="600"
                         y2="89"
-                        stroke="#c51414"
+                        stroke="#e4102f"
                         stroke-width="8"
                         stroke-linecap="round"
                         stroke-dasharray="18 12"
@@ -1248,7 +1403,7 @@
                         stroke-dasharray="18 12"
                       />
 
-                      <g class="dual-markers-good" fill="#c51414">
+                      <g class="dual-markers-good" fill="#e4102f">
                         <circle cx="52" cy="352" r="8" />
                         <circle cx="113" cy="336" r="8" />
                         <circle cx="174" cy="314" r="8" />
@@ -1276,7 +1431,7 @@
                         cy="89"
                         r="11"
                         fill="#faf9f7"
-                        stroke="#c51414"
+                        stroke="#e4102f"
                         stroke-width="5"
                       />
                       <rect
@@ -1291,7 +1446,7 @@
                       />
 
                       <circle class="dual-crossing-ring" cx="478" cy="144" r="14" />
-                      <circle cx="478" cy="144" r="7" fill="#c51414" />
+                      <circle cx="478" cy="144" r="7" fill="#e4102f" />
                       <rect
                         class="dual-crossing-box"
                         x="351"
@@ -1316,12 +1471,12 @@
                         y1="89"
                         x2="635"
                         y2="89"
-                        stroke="#c51414"
+                        stroke="#e4102f"
                         stroke-width="3"
                       />
                       <text x="642" y="54" class="dual-end-name">Estadual</text>
                       <text x="642" y="96" class="dual-end-value">23.294</text>
-                      <text x="642" y="136" class="dual-end-valence" fill="#c51414">↑ amplia</text>
+                      <text x="642" y="136" class="dual-end-valence" fill="#e4102f">↑ amplia</text>
                       <text x="642" y="176" class="dual-end-change">+121% até 2025</text>
                       <line
                         class="dual-end-leader"
@@ -1353,16 +1508,14 @@
                       ano)<br />
                       Nota: 2026 é projeção pela média de janeiro a junho × 2.
                     </p>
-                    <div class="brand-lockup" aria-label="Marca provisória do mandato">
-                      <span class="brand-signal"></span>
-                      <div>
-                        <div class="brand-name">JORGE SOLLA</div>
-                        <div class="brand-office">MANDATO DEPUTADO FEDERAL</div>
-                      </div>
+                    <div class="brand-logo-frame">
+                      <img
+                        src="../../public/campaign-kit/jorge-solla-positivo.png"
+                        alt="Jorge Solla — Deputado Federal"
+                      />
                     </div>
                   </footer>
                 </div>
-                <span class="asset-flag">NEEDS ASSET · LOGO OFICIAL</span>
               </article>
             </div>
           </div>
@@ -1371,8 +1524,8 @@
             <div class="rounded-xl border border-stone-200 bg-white p-4">
               <p class="text-xs font-bold text-brand-dark">VALÊNCIA SEM DEPENDER DA COR</p>
               <p class="mt-2 text-sm leading-6 text-stone-700">
-                Estadual (bom) usa o vermelho do mandato, círculo e “↑ amplia”. Municipal (ruim)
-                recua em cinza de eixo, quadrado e “↓ recua”: a cor do PT nunca carrega o caminho
+                Estadual (bom) usa o vermelho oficial do kit, círculo e “↑ amplia”. Municipal (ruim)
+                recua em cinza de eixo, quadrado e “↓ recua”: o vermelho nunca carrega o caminho
                 ruim. Nome, valor, seta, palavra e forma mantêm a leitura redundante.
               </p>
             </div>
@@ -1423,11 +1576,11 @@
               <p class="text-sm font-bold">Bom × ruim · tons presentes</p>
               <p class="mt-2 text-sm leading-5 text-stone-600">
                 Tons entram sempre em par. Bom =
-                <span class="rule-code">#c51414 + círculo + ↑ “amplia”</span>. Ruim =
+                <span class="rule-code">#e4102f + círculo + ↑ “amplia”</span>. Ruim =
                 <span class="rule-code">#78716c + quadrado + ↓ “recua”</span>. No caso: Estadual é
-                bom; Municipal é ruim. Vermelho é marca do mandato/PT e aponta o caminho desejável;
-                nunca significa perda. O ruim permanece neutro. Palavra, seta, forma e cor tornam a
-                leitura redundante, não decorativa.
+                bom; Municipal é ruim. Vermelho é a cor oficial de destaque e aponta o caminho
+                desejável; nunca significa perda. O ruim permanece neutro. Palavra, seta, forma e
+                cor tornam a leitura redundante, não decorativa.
               </p>
             </div>
             <div class="rounded-xl border border-stone-200 bg-white p-4">
@@ -1620,10 +1773,14 @@
                   <div class="story-source">
                     <strong>Fonte:</strong> fonte informada · valores ilustrativos.
                   </div>
-                  <div class="brand-name">JORGE SOLLA</div>
+                  <div class="brand-logo-frame">
+                    <img
+                      src="../../public/campaign-kit/jorge-solla-positivo.png"
+                      alt="Jorge Solla — Deputado Federal"
+                    />
+                  </div>
                 </footer>
               </div>
-              <span class="asset-flag" style="bottom: 270px">NEEDS ASSET · LOGO OFICIAL</span>
             </article>
           </div>
 
@@ -1691,7 +1848,11 @@
               </ol>
               <footer class="state-footer">
                 <span>Geração pausada · aguardando esclarecimento</span
-                ><span class="state-mark">JORGE SOLLA</span>
+                ><span class="state-logo-frame"
+                  ><img
+                    src="../../public/campaign-kit/jorge-solla-positivo.png"
+                    alt="Jorge Solla — Deputado Federal"
+                /></span>
               </footer>
             </article>
             <p class="px-1 pb-1 pt-3 text-sm font-bold">Dado faltando ou ambíguo</p>
@@ -1721,7 +1882,11 @@
               </div>
               <footer class="state-footer">
                 <span>Formato não gerado · alternativa indicada</span
-                ><span class="state-mark">JORGE SOLLA</span>
+                ><span class="state-logo-frame"
+                  ><img
+                    src="../../public/campaign-kit/jorge-solla-positivo.png"
+                    alt="Jorge Solla — Deputado Federal"
+                /></span>
               </footer>
             </article>
             <p class="px-1 pb-1 pt-3 text-sm font-bold">Pizza com mais de 5 fatias</p>
@@ -1748,7 +1913,7 @@
             <div class="mt-5 rounded-xl border border-stone-200 bg-paper p-4">
               <div class="grid aspect-[4/5] grid-cols-[3.15%_1fr_3.15%]">
                 <div
-                  class="bg-[repeating-linear-gradient(135deg,rgba(174,22,3,.10)_0_6px,transparent_6px_12px)]"
+                  class="bg-[repeating-linear-gradient(135deg,rgba(24,78,146,.10)_0_6px,transparent_6px_12px)]"
                 ></div>
                 <div
                   class="grid place-items-center border-x border-dashed border-stone-400 px-6 text-center"
@@ -1761,7 +1926,7 @@
                   </div>
                 </div>
                 <div
-                  class="bg-[repeating-linear-gradient(135deg,rgba(174,22,3,.10)_0_6px,transparent_6px_12px)]"
+                  class="bg-[repeating-linear-gradient(135deg,rgba(24,78,146,.10)_0_6px,transparent_6px_12px)]"
                 ></div>
               </div>
             </div>
@@ -1802,7 +1967,8 @@
             <div class="rounded-xl border border-stone-200 bg-white p-4">
               <p class="text-sm font-bold">Fundo e sinal</p>
               <p class="mt-1 text-sm leading-5 text-stone-600">
-                Off-white #faf9f7. Vermelho #c51414 ocupa no máximo ~10% da peça.
+                Off-white #faf9f7. Vermelho oficial #e4102f ocupa no máximo ~10% da peça; a régua de
+                marca usa azul #184e92.
               </p>
             </div>
           </div>
@@ -1812,10 +1978,8 @@
       <footer
         class="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-stone-300 py-5 text-xs text-stone-600"
       >
-        <span
-          >Design hi-fi certificado · graficos-dados-instagram · cinco variações integradas</span
-        >
-        <span>Paleta Solla · valência redundante · sem gradiente, 3D ou chrome de dashboard</span>
+        <span>revisão C203 · design hi-fi <strong>aprovado no gate</strong> · 2026-09-19</span>
+        <span>Kit 1313 oficial · valência redundante · NEEDS ASSET resolvido</span>
       </footer>
     </main>
   </body>
