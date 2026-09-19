@@ -190,3 +190,73 @@ describe('renderChartHtml — the two-series time line', () => {
     expect(html).toContain('JORGE SOLLA')
   })
 })
+
+// C191 approved variant: the variation bar (delta) draws 0→initial in the base
+// tone and initial→final in the lighter tone, the two values in a tabular
+// gutter; a flat category has no extension segment and the red stays out of the
+// plot (the piece has no valence).
+const deltaRows = [
+  { label: 'ESF · Saúde da Família', initial: 58, final: 63 },
+  { label: 'ESB · Saúde Bucal', initial: 40, final: 53 },
+  { label: 'ENASF-AB · Ampliado', initial: 5, final: 5 },
+  { label: 'EABP · Atenção Primária Prisional', initial: 1, final: 4 },
+  { label: 'EMAD · Atenção Domiciliar', initial: 1, final: 1 },
+]
+const deltaSpec = (overrides = {}) => ({
+  chartType: 'delta',
+  size: 'feed',
+  headline: 'Quatro dos sete tipos de equipe de saúde seguem sem ampliação desde 2020',
+  subtitle: 'Vitória da Conquista — número de equipes por tipo (2020 → jul/2026)',
+  source: 'Ministério da Saúde — CNES',
+  note: 'Sem variação: EMAD, EMAP, ENASF-AB e ECR.',
+  startLabel: '2020',
+  endLabel: 'jul/2026',
+  rows: deltaRows,
+  ...overrides,
+})
+
+describe('renderChartHtml — the variation bar (delta)', () => {
+  it('renders the fixed kicker, the periods and the two-value gutter', () => {
+    const html = renderChartHtml(deltaSpec())
+    expect(html).toContain('Variação no período')
+    expect(html).toContain('delta-period">2020')
+    expect(html).toContain('delta-period">jul/2026')
+    expect(html).toContain('delta-value initial">58')
+    expect(html).toContain('delta-value final">63')
+  })
+
+  it('sorts by the final value and keeps the red out of the plot', () => {
+    const html = renderChartHtml(deltaSpec())
+    const body = html.slice(html.indexOf('<div class="delta-grade'))
+    expect(body.indexOf('ESF · Saúde da Família')).toBeLessThan(body.indexOf('ESB · Saúde Bucal'))
+    expect(body.indexOf('ESB · Saúde Bucal')).toBeLessThan(body.indexOf('ENASF-AB'))
+    const plot = body.slice(0, body.indexOf('<footer'))
+    expect(plot).not.toContain('#c51414')
+  })
+
+  it('leaves a flat category without the extension segment', () => {
+    const html = renderChartHtml(deltaSpec())
+    const start = html.indexOf('class="delta-row is-flat"')
+    const flat = html.slice(start, html.indexOf('class="delta-row"', start))
+    expect(flat).not.toContain('delta-ext')
+    expect(flat).toContain('delta-value initial">5')
+    expect(flat).toContain('delta-value final">5')
+  })
+
+  it('proportions base and extension against the biggest final value', () => {
+    const html = renderChartHtml(deltaSpec())
+    expect(html).toContain('width:92.1%')
+    expect(html).toContain('width:7.9%')
+  })
+
+  it('bolds the sigla before the middle dot', () => {
+    expect(renderChartHtml(deltaSpec())).toContain('<b>ESF</b> · Saúde da Família')
+  })
+
+  it('adapts the rhythm and keeps every category on the Stories canvas', () => {
+    const story = renderChartHtml(deltaSpec({ size: 'story' }))
+    expect(story).toContain('padding: 306px 84px 310px')
+    expect(story).toMatch(/\.headline \{ font-size: 64px/)
+    expect((story.match(/class="delta-row/g) ?? []).length).toBe(deltaRows.length)
+  })
+})

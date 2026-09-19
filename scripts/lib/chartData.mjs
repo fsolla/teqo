@@ -11,7 +11,7 @@
 import { parse as parseCsv } from 'csv-parse/sync'
 import XLSX from 'xlsx'
 
-export const CHART_TYPES = ['bar', 'column', 'line', 'anchor']
+export const CHART_TYPES = ['bar', 'column', 'line', 'anchor', 'delta']
 
 /** Max data points per chart (honest density; above this the person must summarize). */
 export const MAX_POINTS = 7
@@ -44,6 +44,7 @@ export const RELATION_LABEL = {
   column: 'Poucos períodos',
   line: 'Série de tempo',
   anchor: 'Número-âncora',
+  delta: 'Variação no período',
 }
 
 /** Kicker of the two-series time line (approved C191 variant). */
@@ -227,6 +228,54 @@ const matrixToDataset = (matrix, format) => {
   return { rows, format, issues }
 }
 
+/**
+ * Delta table (approved C191 variant): the first row is the header naming the
+ * two observed periods; every body row carries the label and the two measures
+ * (initial and final) of one category. A missing/invalid measure is an explicit
+ * issue — never a completed value.
+ */
+const matrixToDelta = (matrix, format) => {
+  const cleaned = cleanMatrix(matrix)
+  const empty = { rows: [], startLabel: '', endLabel: '', format }
+  if (cleaned.length < 2) {
+    return {
+      ...empty,
+      issues: ['a barra de variação exige o cabeçalho com os dois períodos e ao menos uma linha.'],
+    }
+  }
+  const [header, ...body] = cleaned
+  if (header.length < 3) {
+    return {
+      ...empty,
+      issues: ['a barra de variação exige três colunas: rótulo, valor inicial e valor final.'],
+    }
+  }
+  const issues = []
+  const rows = []
+  const seen = new Set()
+  for (const row of body) {
+    const label = row[0]
+    if (!label) {
+      issues.push(`linha sem rótulo: ${JSON.stringify(row.join(' | '))}`)
+      continue
+    }
+    if (seen.has(label)) issues.push(`rótulo repetido: "${label}"`)
+    seen.add(label)
+    const initial = parseNumber(row[1] ?? '')
+    const final = parseNumber(row[2] ?? '')
+    if (initial === null) {
+      issues.push(`valor inicial não numérico em "${label}": ${JSON.stringify(row[1] ?? '')}`)
+      continue
+    }
+    if (final === null) {
+      issues.push(`valor final não numérico em "${label}": ${JSON.stringify(row[2] ?? '')}`)
+      continue
+    }
+    rows.push({ label, initial, final })
+  }
+  return { rows, startLabel: header[1] ?? '', endLabel: header[2] ?? '', format, issues }
+}
+
 const sniffDelimiter = (line) => {
   let best = null
   let bestCount = 0
@@ -269,14 +318,27 @@ const splitPair = (line) => {
   return [line, '']
 }
 
-const parseFreeText = (text) => {
+const parseFreeText = (text, { delta = false } = {}) => {
   const lines = text.split(/\r?\n/).filter((line) => line.trim() !== '')
   if (lines.length === 0) return { rows: [], format: 'txt', issues: ['nenhum dado encontrado'] }
-  if (isMarkdownTable(lines)) return matrixToDataset(parseMarkdownTable(lines), 'md')
+  if (isMarkdownTable(lines)) {
+    const matrix = parseMarkdownTable(lines)
+    return delta ? matrixToDelta(matrix, 'md') : matrixToDataset(matrix, 'md')
+  }
   const delimiter = sniffDelimiter(lines[0])
   if (delimiter) {
     const matrix = lines.map((line) => line.split(delimiter))
-    return matrixToDataset(matrix, delimiter === '\t' ? 'tsv' : 'csv')
+    const format = delimiter === '\t' ? 'tsv' : 'csv'
+    return delta ? matrixToDelta(matrix, format) : matrixToDataset(matrix, format)
+  }
+  if (delta) {
+    return {
+      rows: [],
+      startLabel: '',
+      endLabel: '',
+      format: 'txt',
+      issues: ['a barra de variação exige uma tabela (rótulo + valor inicial + valor final).'],
+    }
   }
   const matrix = lines.map(splitPair)
   return matrixToDataset(matrix, 'txt')
@@ -285,15 +347,17 @@ const parseFreeText = (text) => {
 /**
  * Parse the raw input into `{ rows, format, issues }`. `buffer` is required for
  * xlsx/xls; `text` for csv/md/txt. `format` overrides the extension inference.
+ * `delta` reads the table through the variation-bar contract (label + initial +
+ * final, header naming the two periods) instead of the single-measure path.
  *
- * @param {{ text?: string | null, buffer?: Buffer | null, format?: string | null }} [options]
+ * @param {{ text?: string | null, buffer?: Buffer | null, format?: string | null, delta?: boolean }} [options]
  */
-export const parseInput = ({ text = null, buffer = null, format = null } = {}) => {
+export const parseInput = ({ text = null, buffer = null, format = null, delta = false } = {}) => {
   if (format === 'xlsx' || format === 'xls') {
     const workbook = XLSX.read(buffer, { type: 'buffer' })
     const sheet = workbook.Sheets[workbook.SheetNames[0]]
     const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: false })
-    return matrixToDataset(matrix, 'xlsx')
+    return delta ? matrixToDelta(matrix, 'xlsx') : matrixToDataset(matrix, 'xlsx')
   }
   const body = String(text ?? '')
   if (format === 'csv' || format === 'tsv') {
@@ -304,15 +368,16 @@ export const parseInput = ({ text = null, buffer = null, format = null } = {}) =
       skip_empty_lines: true,
       relax_column_count: true,
     })
-    return matrixToDataset(matrix, format)
+    return delta ? matrixToDelta(matrix, format) : matrixToDataset(matrix, format)
   }
-  return parseFreeText(body)
+  return parseFreeText(body, { delta })
 }
 
 /**
- * Relation of the data → chart type. One measure is an anchor; every-temporal
- * labels are a series (few periods as columns, many as a line); anything else
- * is a ranking/comparison in horizontal bars.
+ * Relation of the data → chart type. One measure is an anchor; two measures per
+ * category (initial/final) are the variation bar; every-temporal labels are a
+ * series (few periods as columns, many as a line); anything else is a
+ * ranking/comparison in horizontal bars.
  *
  * @param {{ label: string, value: number }[]} rows
  * @param {string | null} [forcedType]
@@ -327,6 +392,12 @@ export const classifyRelation = (rows, forcedType = null) => {
       )
     }
     return forcedType
+  }
+  if (
+    rows.length > 0 &&
+    rows.every((row) => Number.isFinite(row.initial) && Number.isFinite(row.final))
+  ) {
+    return 'delta'
   }
   if (rows.length === 1) return 'anchor'
   if (rows.length > 1 && rows.every((row) => isTemporalLabel(row.label))) {
@@ -432,6 +503,49 @@ const validateSeries = (spec) => {
 }
 
 /**
+ * Guardrails of the approved variation bar (delta variant): zero-based, at most
+ * `MAX_POINTS` categories, both measures present, no retraction (a zero-based
+ * bar cannot carry a fall — the person gets the two-series line instead) and no
+ * highlight (the two-tone pair is fixed; the piece has no valence).
+ */
+const validateDelta = (spec) => {
+  const { rows, startLabel, endLabel } = spec
+  if (spec.highlight) {
+    throw new Error('a barra de variação não aceita destaque: o par de tons é fixo e sem valência.')
+  }
+  if (
+    typeof startLabel !== 'string' ||
+    startLabel.trim() === '' ||
+    typeof endLabel !== 'string' ||
+    endLabel.trim() === ''
+  ) {
+    throw new Error('a barra de variação exige startLabel e endLabel (os dois períodos da gutter).')
+  }
+  if (!Array.isArray(rows) || rows.length === 0)
+    throw new Error('sem pontos de dado para desenhar.')
+  if (rows.length > MAX_POINTS) {
+    throw new Error(
+      `${rows.length} pontos (> ${MAX_POINTS}): resuma as categorias antes de gerar o gráfico.`,
+    )
+  }
+  for (const row of rows) {
+    if (!row.label) throw new Error('ponto de dado sem rótulo.')
+    if (!Number.isFinite(row.initial))
+      throw new Error(`valor inicial ausente/inválido em "${row.label}".`)
+    if (!Number.isFinite(row.final))
+      throw new Error(`valor final ausente/inválido em "${row.label}".`)
+    if (row.initial < 0 || row.final < 0)
+      throw new Error(`valor negativo em "${row.label}" — a barra parte do zero.`)
+    if (row.final < row.initial) {
+      throw new Error(
+        `retração em "${row.label}" (${row.initial} → ${row.final}): a barra de base zero não representa queda — use a linha de duas séries.`,
+      )
+    }
+    if (row.final <= 0) throw new Error(`valor final não positivo em "${row.label}".`)
+  }
+}
+
+/**
  * Fail-closed guardrails of the approved template. Throws with the actionable
  * reason instead of drawing a misleading chart.
  */
@@ -450,7 +564,9 @@ export const validateSpec = (spec) => {
     }
     throw new Error(`tipo de gráfico inválido: ${JSON.stringify(chartType)}`)
   }
-  if (Array.isArray(series) && series.length > 0) {
+  if (chartType === 'delta') {
+    validateDelta(spec)
+  } else if (Array.isArray(series) && series.length > 0) {
     validateSeries(spec)
   } else {
     if (!Array.isArray(rows) || rows.length === 0)

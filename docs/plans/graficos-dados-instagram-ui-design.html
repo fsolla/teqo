@@ -460,6 +460,129 @@
         line-height: 1.4;
       }
 
+      /* ------------------------------------------------------------------ */
+      /* CENA 02C · PROPOSTA DEGRADED — variante "delta": uma barra por      */
+      /* categoria com base (0→inicial) e extensão (inicial→final). O        */
+      /* vermelho NÃO entra no plot: a leitura é crítica e não há valência   */
+      /* de "bom". O par de tons é a única ênfase, repetida por linha.       */
+      /* ------------------------------------------------------------------ */
+      .delta-grade {
+        --delta-label-w: 292px;
+        --delta-v1-w: 88px;
+        --delta-v2-w: 110px;
+        --delta-gap: 20px;
+        --delta-bar-h: 53px;
+        --delta-base: #a8a29e;
+        --delta-ext: #d6d3d1;
+        flex: none;
+        display: grid;
+        gap: var(--delta-gap);
+        margin-top: 34px;
+      }
+      .delta-head,
+      .delta-row {
+        display: grid;
+        grid-template-columns: var(--delta-label-w) 1fr var(--delta-v1-w) var(--delta-v2-w);
+        align-items: center;
+        gap: var(--delta-gap);
+      }
+      .delta-head {
+        align-items: end;
+        padding-bottom: 6px;
+      }
+      .delta-label {
+        font-size: 30px;
+        line-height: 1.1;
+        font-weight: 650;
+      }
+      .delta-label b {
+        font-weight: 850;
+      }
+      .delta-track {
+        position: relative;
+        display: flex;
+        height: var(--delta-bar-h);
+        border-left: 2px solid #78716c; /* zero real, nunca truncado */
+      }
+      .delta-base {
+        height: 100%;
+        background: var(--delta-base);
+      }
+      .delta-ext {
+        height: 100%;
+        background: var(--delta-ext);
+        border-left: 3px solid #78716c; /* marcador de degrau: forma, não cor */
+      }
+      .delta-value {
+        font-variant-numeric: tabular-nums;
+        font-size: 31px;
+        line-height: 1;
+        text-align: right;
+        white-space: nowrap;
+      }
+      .delta-value.initial {
+        color: #57534e;
+        font-weight: 700;
+      }
+      .delta-value.final {
+        color: #1c1917;
+        font-weight: 850;
+      }
+      .delta-period {
+        color: #57534e;
+        font-size: 30px;
+        line-height: 1;
+        font-weight: 750;
+        text-align: right;
+        white-space: nowrap;
+      }
+      .feed-canvas.delta .chart-headline {
+        max-width: 900px;
+        font-size: 60px;
+      }
+      .feed-canvas.delta .chart-subtitle {
+        margin-top: 18px;
+        font-size: 28px;
+      }
+      .feed-canvas.delta .delta-grade {
+        margin-top: 30px;
+      }
+      .story-canvas.delta .delta-grade {
+        --delta-gap: 22px;
+        --delta-bar-h: 52px;
+        margin-top: 40px;
+      }
+      .story-canvas.delta .story-title {
+        font-size: 64px;
+      }
+      .degraded-banner {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 18px;
+        padding: 12px 16px;
+        border: 2px dashed var(--solla);
+        border-radius: 10px;
+        background: #fff5f5;
+        color: #7f1d1d;
+        font-size: 14px;
+        line-height: 1.35;
+        font-weight: 700;
+      }
+      .degraded-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 26px;
+        padding: 0 9px;
+        border-radius: 6px;
+        background: var(--solla);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+      }
+
       .story-stage {
         width: 351px;
         height: 624px;
@@ -1705,6 +1828,414 @@
                 <span class="rule-code">dual-crossing-box</span>,
                 <span class="rule-code">dual-crossing-year</span> e
                 <span class="rule-code">dual-crossing-copy</span>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================== -->
+      <!-- CENA 02C · PROPOSTA DEGRADED — variante "delta" (barra de          -->
+      <!-- variação por categoria). NÃO CERTIFICADA. Escrita no tier          -->
+      <!-- degradado; exige sign-off humano antes do porte. As cenas          -->
+      <!-- certificadas acima e abaixo permanecem intactas.                   -->
+      <!-- ================================================================== -->
+      <section
+        class="scene-card mt-10 border-2 border-dashed border-solla/60 p-4 sm:p-6 lg:p-8"
+        aria-labelledby="delta-title"
+      >
+        <div class="degraded-banner">
+          <span class="degraded-badge">DEGRADED · SIGN-OFF HUMANO 2026-09-19</span>
+          <span
+            >Proposta criada no tier degradado (quota do designer frontier indisponível) e
+            <strong>aprovada por sign-off humano</strong> em 2026-09-19 — visual como está, com o
+            “quatro dos sete tipos” confirmado. Portada classe-a-classe no renderer e nos testes na
+            mesma data; a certificação pelo designer frontier segue pendente.</span
+          >
+        </div>
+
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-bold text-brand-dark">
+              CENA 02C · SEXTA VARIAÇÃO · SIGN-OFF HUMANO 2026-09-19
+            </p>
+            <h2 id="delta-title" class="mt-1 text-xl font-bold tracking-tight">
+              Feed 4:5 · barra de variação por categoria (2020 → jul/2026)
+            </h2>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="measure-tag"><span class="measure-dot"></span>1080 × 1350</span>
+            <span class="measure-tag">chartType proposto: delta</span>
+          </div>
+        </div>
+
+        <div class="mt-6 grid items-start gap-7 lg:grid-cols-[594px_1fr]">
+          <div class="overflow-x-auto pb-2">
+            <div class="feed-stage">
+              <article
+                class="feed-canvas delta"
+                aria-label="Exemplo de barra de variação por categoria para feed, com dados de Vitória da Conquista"
+              >
+                <div class="feed-inner">
+                  <div class="top-rule"></div>
+                  <p class="chart-context">Variação no período</p>
+                  <h3 class="chart-headline">
+                    Quatro dos sete tipos de equipe de saúde seguem sem ampliação desde 2020
+                  </h3>
+                  <p class="chart-subtitle">
+                    Vitória da Conquista — número de equipes por tipo (2020 → jul/2026)
+                  </p>
+
+                  <div
+                    class="delta-grade tabular"
+                    role="img"
+                    aria-label="Barras por tipo de equipe de saúde. ESF: 58 equipes em 2020 e 63 em julho de 2026. ESB: 40 e 53. ENASF-AB: 5 e 5. EABP: 1 e 4. EMAD: 1 e 1. EMAP: 1 e 1. ECR: 1 e 1. Quatro dos sete tipos seguem sem ampliação; a escala parte do zero real."
+                  >
+                    <div class="delta-head">
+                      <span></span>
+                      <span></span>
+                      <span class="delta-period">2020</span>
+                      <span class="delta-period">jul/2026</span>
+                    </div>
+                    <div class="delta-row">
+                      <span class="delta-label"><b>ESF</b> · Saúde da Família</span>
+                      <div class="delta-track">
+                        <span class="delta-base" style="width: 92.1%"></span>
+                        <span class="delta-ext" style="width: 7.9%"></span>
+                      </div>
+                      <span class="delta-value initial">58</span>
+                      <span class="delta-value final">63</span>
+                    </div>
+                    <div class="delta-row">
+                      <span class="delta-label"><b>ESB</b> · Saúde Bucal</span>
+                      <div class="delta-track">
+                        <span class="delta-base" style="width: 63.5%"></span>
+                        <span class="delta-ext" style="width: 20.6%"></span>
+                      </div>
+                      <span class="delta-value initial">40</span>
+                      <span class="delta-value final">53</span>
+                    </div>
+                    <div class="delta-row">
+                      <span class="delta-label"><b>ENASF-AB</b> · Núcleo Ampliado</span>
+                      <div class="delta-track">
+                        <span class="delta-base" style="width: 7.9%"></span>
+                      </div>
+                      <span class="delta-value initial">5</span>
+                      <span class="delta-value final">5</span>
+                    </div>
+                    <div class="delta-row">
+                      <span class="delta-label"><b>EABP</b> · Atenção Primária Prisional</span>
+                      <div class="delta-track">
+                        <span class="delta-base" style="width: 1.6%"></span>
+                        <span class="delta-ext" style="width: 4.8%"></span>
+                      </div>
+                      <span class="delta-value initial">1</span>
+                      <span class="delta-value final">4</span>
+                    </div>
+                    <div class="delta-row">
+                      <span class="delta-label"><b>EMAD</b> · Atenção Domiciliar</span>
+                      <div class="delta-track">
+                        <span class="delta-base" style="width: 1.6%"></span>
+                      </div>
+                      <span class="delta-value initial">1</span>
+                      <span class="delta-value final">1</span>
+                    </div>
+                    <div class="delta-row">
+                      <span class="delta-label"><b>EMAP</b> · Apoio Multidisciplinar</span>
+                      <div class="delta-track">
+                        <span class="delta-base" style="width: 1.6%"></span>
+                      </div>
+                      <span class="delta-value initial">1</span>
+                      <span class="delta-value final">1</span>
+                    </div>
+                    <div class="delta-row">
+                      <span class="delta-label"><b>ECR</b> · Consultórios na Rua</span>
+                      <div class="delta-track">
+                        <span class="delta-base" style="width: 1.6%"></span>
+                      </div>
+                      <span class="delta-value initial">1</span>
+                      <span class="delta-value final">1</span>
+                    </div>
+                  </div>
+
+                  <footer class="chart-footer">
+                    <p class="source-line">
+                      <strong>Fonte:</strong> Ministério da Saúde — CNES<br />Nota: sem variação:
+                      EMAD, EMAP, ENASF-AB e ECR.
+                    </p>
+                    <div class="brand-lockup" aria-label="Marca provisória do mandato">
+                      <span class="brand-signal"></span>
+                      <div>
+                        <div class="brand-name">JORGE SOLLA</div>
+                        <div class="brand-office">MANDATO DEPUTADO FEDERAL</div>
+                      </div>
+                    </div>
+                  </footer>
+                </div>
+                <span class="asset-flag">NEEDS ASSET · LOGO OFICIAL</span>
+              </article>
+            </div>
+          </div>
+
+          <aside class="grid gap-4">
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">O QUE A BARRA DIZ · SEM VALÊNCIA</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                Base (0 → 2020) em <span class="rule-code">#a8a29e</span>; extensão (2020 → 2026) em
+                <span class="rule-code">#d6d3d1</span>, separados por um tick de 3 px em
+                <span class="rule-code">#78716c</span> no ponto de degrau. Não há seta, palavra
+                “amplia/recua”, bom/ruim nem valorização: a extensão maior não ganha cor de prêmio.
+              </p>
+            </div>
+            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
+              <p class="text-xs font-extrabold text-stone-700">O VERMELHO FICA FORA DO PLOT</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                <span class="rule-code">#c51414</span> não entra em nenhum segmento. O único
+                vermelho da peça continua sendo a régua superior e a marca do template. O “destaque
+                único” vira a própria leitura: a ausência de extensão em quatro linhas, sustentada
+                pela nota — não uma marca de cor.
+                <strong>Reinterpretação sujeita a sign-off.</strong>
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">SEM EXTENSÃO = SEM SEGMENTO</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Quando inicial = final, o <span class="rule-code">delta-ext</span> simplesmente não
+                existe: a barra é um tom só e a gutter mostra dois números iguais (5 / 5, 1 / 1).
+                Nada de extensão falsa e nada de <span class="rule-code">min-width</span> que infle
+                o crescimento.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">POR QUE OS VALORES NA GUTTER</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                São dois valores por linha e a base pode ser minúscula (1 de 63). A gutter tabular à
+                direita, com duas colunas alinhadas sob “2020” e “jul/2026”, mantém os dois números
+                legíveis sem distorcer a barra; o ranking de valor único continua pondo o número na
+                ponta.
+              </p>
+            </div>
+          </aside>
+        </div>
+
+        <div class="mt-8 border-t border-stone-200 pt-6">
+          <p class="text-xs font-bold text-brand-dark">
+            ADAPTAÇÃO STORIES · MESMA REGRA, SEM CORTAR CATEGORIA
+          </p>
+          <h3 class="mt-1 text-lg font-bold tracking-tight">
+            Stories 9:16 · as sete categorias, sem top-N
+          </h3>
+          <p class="mt-2 max-w-3xl text-sm leading-5 text-stone-600">
+            O ranking certificado reduz para 5 pontos no story. Esta variante
+            <strong>não reduz</strong>: um top-N apagaria a manchete “quatro dos sete”. O story
+            recomprime a barra e o gap, mantém os dois números na gutter e exige a nota das
+            categorias sem variação.
+          </p>
+
+          <div class="story-stage mt-6">
+            <article
+              class="story-canvas delta"
+              aria-label="Adaptação da barra de variação para Stories, com faixas seguras de 250 pixels e as sete categorias"
+            >
+              <span class="safe-label top">250 px · evitar conteúdo essencial</span>
+              <span class="safe-label bottom">250 px · evitar conteúdo essencial</span>
+              <div class="story-content">
+                <div class="top-rule"></div>
+                <p class="chart-context">Variação no período</p>
+                <h3 class="story-title">
+                  Quatro dos sete tipos de equipe de saúde seguem sem ampliação desde 2020
+                </h3>
+                <p class="story-sub">
+                  Vitória da Conquista — número de equipes por tipo (2020 → jul/2026)
+                </p>
+                <div
+                  class="delta-grade tabular"
+                  role="img"
+                  aria-label="Barras por tipo de equipe de saúde. ESF: 58 equipes em 2020 e 63 em julho de 2026. ESB: 40 e 53. ENASF-AB: 5 e 5. EABP: 1 e 4. EMAD: 1 e 1. EMAP: 1 e 1. ECR: 1 e 1. Quatro dos sete tipos seguem sem ampliação."
+                >
+                  <div class="delta-head">
+                    <span></span>
+                    <span></span>
+                    <span class="delta-period">2020</span>
+                    <span class="delta-period">jul/2026</span>
+                  </div>
+                  <div class="delta-row">
+                    <span class="delta-label"><b>ESF</b> · Saúde da Família</span>
+                    <div class="delta-track">
+                      <span class="delta-base" style="width: 92.1%"></span>
+                      <span class="delta-ext" style="width: 7.9%"></span>
+                    </div>
+                    <span class="delta-value initial">58</span>
+                    <span class="delta-value final">63</span>
+                  </div>
+                  <div class="delta-row">
+                    <span class="delta-label"><b>ESB</b> · Saúde Bucal</span>
+                    <div class="delta-track">
+                      <span class="delta-base" style="width: 63.5%"></span>
+                      <span class="delta-ext" style="width: 20.6%"></span>
+                    </div>
+                    <span class="delta-value initial">40</span>
+                    <span class="delta-value final">53</span>
+                  </div>
+                  <div class="delta-row">
+                    <span class="delta-label"><b>ENASF-AB</b> · Núcleo Ampliado</span>
+                    <div class="delta-track">
+                      <span class="delta-base" style="width: 7.9%"></span>
+                    </div>
+                    <span class="delta-value initial">5</span>
+                    <span class="delta-value final">5</span>
+                  </div>
+                  <div class="delta-row">
+                    <span class="delta-label"><b>EABP</b> · Atenção Primária Prisional</span>
+                    <div class="delta-track">
+                      <span class="delta-base" style="width: 1.6%"></span>
+                      <span class="delta-ext" style="width: 4.8%"></span>
+                    </div>
+                    <span class="delta-value initial">1</span>
+                    <span class="delta-value final">4</span>
+                  </div>
+                  <div class="delta-row">
+                    <span class="delta-label"><b>EMAD</b> · Atenção Domiciliar</span>
+                    <div class="delta-track">
+                      <span class="delta-base" style="width: 1.6%"></span>
+                    </div>
+                    <span class="delta-value initial">1</span>
+                    <span class="delta-value final">1</span>
+                  </div>
+                  <div class="delta-row">
+                    <span class="delta-label"><b>EMAP</b> · Apoio Multidisciplinar</span>
+                    <div class="delta-track">
+                      <span class="delta-base" style="width: 1.6%"></span>
+                    </div>
+                    <span class="delta-value initial">1</span>
+                    <span class="delta-value final">1</span>
+                  </div>
+                  <div class="delta-row">
+                    <span class="delta-label"><b>ECR</b> · Consultórios na Rua</span>
+                    <div class="delta-track">
+                      <span class="delta-base" style="width: 1.6%"></span>
+                    </div>
+                    <span class="delta-value initial">1</span>
+                    <span class="delta-value final">1</span>
+                  </div>
+                </div>
+                <footer class="story-footer">
+                  <div class="story-source">
+                    <strong>Fonte:</strong> Ministério da Saúde — CNES · Nota: sem variação: EMAD,
+                    EMAP, ENASF-AB e ECR.
+                  </div>
+                  <div class="brand-name">JORGE SOLLA</div>
+                </footer>
+              </div>
+              <span class="asset-flag" style="bottom: 270px">NEEDS ASSET · LOGO OFICIAL</span>
+            </article>
+          </div>
+        </div>
+
+        <div class="mt-7 border-t border-stone-200 pt-6" aria-labelledby="delta-rules-title">
+          <p class="text-xs font-bold text-brand-dark">
+            REGRAS DA VARIANTE DE VARIAÇÃO (PROPOSTA DEGRADED)
+          </p>
+          <h3 id="delta-rules-title" class="mt-1 text-lg font-bold tracking-tight">
+            Contrato visual proposto para o porte classe-a-class — pendente de sign-off
+          </h3>
+          <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
+              <p class="text-sm font-bold">Entrada, teto e ordem</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                N categorias com <span class="rule-code">initial</span> e
+                <span class="rule-code">final</span>,
+                <span class="rule-code">0 ≤ initial ≤ final</span>. Máximo <strong>7</strong>.
+                Ordem: final desc (regra do ranking; empate por initial, depois rótulo). Nada de
+                top-N, “Outros” ou corte silencioso: acima de 7 ou desalinhado,
+                <strong>perguntar</strong>.
+              </p>
+            </div>
+            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
+              <p class="text-sm font-bold">Tons e regra do vermelho</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Par fixo: base = <span class="rule-code">#a8a29e</span> (0 → inicial), extensão =
+                <span class="rule-code">#d6d3d1</span> (inicial → final). O vermelho
+                <span class="rule-code">#c51414</span> <strong>não entra no plot</strong>;
+                `highlight` não é aceito nesta variante. Sem `↑`/`↓`, sem “amplia/recua”, sem
+                valência bom/ruim. O único vermelho é a régua superior e a marca.
+              </p>
+            </div>
+            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
+              <p class="text-sm font-bold">Valores e zero</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Gutter à direita com duas colunas alinhadas (“2020” e “jul/2026”), tabular-nums.
+                Inicial em <span class="rule-code">#57534e</span>, final em
+                <span class="rule-code">#1c1917</span>. Zero = borda esquerda de 2 px
+                <span class="rule-code">#78716c</span> do track; sem eixo truncado. A extensão é
+                exatamente proporcional (sem min-width): o número carrega o que a barra não alcança.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Feed · 1080×1350</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Padding 76/84/58; headline <strong>60 px</strong>; subtítulo 28 px; plot margin-top
+                30. Linha: label 292 / gap 20 / track / gutter 88 + 110; barra 53 px; gap 20;
+                valores 31 px; cabeçalho 30 px. 7 categorias (2 linhas de rótulo, se preciso).
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Quadrado · 1080×1080</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Padding 56/84/48; headline 54 px; subtítulo 28 px; plot margin-top 24. Barra 42 px;
+                gap 12; label 292; gutter 84 + 104; valores 30 px. Mantém as 7 categorias: se as
+                duas linhas de rótulo não couberem, encurtar descriptor/headline ou sugerir feed —
+                nunca top-N.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Story · 1080×1920</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Faixas de 250 px; conteúdo padding 306/84/310; headline 64 px; plot margin-top 40.
+                Barra 52 px; gap 22; label 292; gutter 88 + 110; valores 31 px. Mantém as
+                <strong>7</strong> categorias (não reduz para 5); tudo entre y=250 e y=1670. Nota
+                com as sem-variação obrigatória.
+              </p>
+            </div>
+            <div
+              class="rounded-xl border border-dashed border-solla/60 bg-white p-4 md:col-span-2 xl:col-span-3"
+            >
+              <p class="text-sm font-bold">Fail-closed (proposto)</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                <span class="rule-code">final &lt; initial</span> (retração) → recusar: uma barra de
+                base zero não representa queda sem eixo negativo; sugerir a linha de 2 séries ou uma
+                variante de retração a definir. <span class="rule-code">initial</span> ausente →
+                perguntar. <span class="rule-code">final ≤ 0</span> → recusar. Mais de 7 categorias
+                → perguntar/agrupar. Sem <span class="rule-code">source</span> → recusar. Nada de
+                interpolar, completar ou abreviar sozinho.
+              </p>
+            </div>
+            <div
+              class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4 md:col-span-2 xl:col-span-3"
+            >
+              <p class="text-sm font-bold">Mapa de classes proposto</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Container: <span class="rule-code">delta-grade</span>; cabeçalho
+                <span class="rule-code">delta-head</span> +
+                <span class="rule-code">delta-period</span>; linha
+                <span class="rule-code">delta-row</span>; rótulo
+                <span class="rule-code">delta-label</span> (+
+                <span class="rule-code">&lt;b&gt;</span> para a sigla); trilho
+                <span class="rule-code">delta-track</span>; base
+                <span class="rule-code">delta-base</span>; extensão
+                <span class="rule-code">delta-ext</span> (ausente quando inicial = final); valores
+                <span class="rule-code">delta-value initial</span> /
+                <span class="rule-code">delta-value final</span>. Modificador de linha sem extensão:
+                <span class="rule-code">is-flat</span> (estado/aria; sem mudança visual — a ausência
+                do <span class="rule-code">delta-ext</span> é a pista). Reaproveitados:
+                <span class="rule-code">top-rule</span>,
+                <span class="rule-code">chart-context</span>,
+                <span class="rule-code">chart-headline</span>,
+                <span class="rule-code">chart-subtitle</span>,
+                <span class="rule-code">chart-footer</span>,
+                <span class="rule-code">source-line</span>,
+                <span class="rule-code">brand-lockup</span> e
+                <span class="rule-code">asset-flag</span>.
               </p>
             </div>
           </div>

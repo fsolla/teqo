@@ -122,13 +122,14 @@ export const main = async ({
     }
   } else {
     if (!flags.in) die('informe --in=<arquivo|-> com os dados (ou --spec=<json> para replay).')
+    const forcedType = flags.type ? String(flags.type) : null
     let input
     try {
       input = await readInput(flags)
     } catch (error) {
       die(`falha ao ler --in=${flags.in}: ${error?.message ?? error}`)
     }
-    const dataset = parseInput(input)
+    const dataset = parseInput({ ...input, delta: forcedType === 'delta' })
 
     if (flags.inspect) {
       process.stdout.write(`${JSON.stringify(dataset, null, 2)}\n`)
@@ -152,7 +153,6 @@ export const main = async ({
       die('dado ambíguo ou faltando — pergunte à pessoa antes de gerar (nada é completado).')
     }
 
-    const forcedType = flags.type ? String(flags.type) : null
     const chartType = hasSeries
       ? (forcedType ?? 'line')
       : classifyRelation(dataset.rows, forcedType)
@@ -169,7 +169,13 @@ export const main = async ({
             ...(flags.crossing ? { crossingLabel: String(flags.crossing) } : {}),
             series: applyTones(dataset.series, flags, die),
           }
-        : { highlight: flags.highlight ? String(flags.highlight) : null, rows: dataset.rows }),
+        : {
+            highlight: flags.highlight ? String(flags.highlight) : null,
+            rows: dataset.rows,
+            ...(chartType === 'delta'
+              ? { startLabel: dataset.startLabel, endLabel: dataset.endLabel }
+              : {}),
+          }),
     }
   }
 
