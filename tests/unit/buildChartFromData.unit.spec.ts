@@ -419,6 +419,49 @@ describe('main — spec assembly, replay and the per-size log', () => {
     expect(stdout.join('')).toContain('3 séries × 3')
   })
 
+  it('assembles the projected three-series spec (C207)', async () => {
+    const input = await writeInput(
+      dir,
+      'Ano,Estadual,Privada,Municipal\n2024,300,100,200\n2025,400,120,150\n2026,500,121,100\n',
+    )
+    const { launchBrowser } = launchTracker()
+    const screenshot = screenshotStub()
+    const outPath = join(dir, 'triple-projected.png')
+
+    await main({
+      argv: [
+        `--in=${input}`,
+        '--type=line',
+        '--headline=Produção estadual cresce e municipal cai',
+        '--source=Ministério da Saúde — SIA/SUS',
+        '--good=Estadual',
+        '--neutral=Privada',
+        '--neutral-dark=Municipal',
+        '--projected=2026',
+        `--out=${outPath}`,
+      ],
+      repoRoot: dir,
+      launchBrowser,
+      screenshot,
+    })
+
+    expect(screenshot).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ width: 1080, height: 1350, outPath }),
+    )
+    const spec = JSON.parse(
+      await readFile(
+        join(
+          dir,
+          'data/graficos-instagram/producao-estadual-cresce-e-municipal-cai.chart-spec.json',
+        ),
+        'utf8',
+      ),
+    )
+    expect(spec).toMatchObject({ chartType: 'line', size: 'feed', projectedLabel: '2026' })
+    expect(stdout.join('')).toContain('3 séries × 3')
+  })
+
   it('refuses an incomplete triad and a 2-series tone on the three-series line', async () => {
     const input = await writeInput(dir, 'Ano,Estadual,Municipal,Privada\n2015,1,2,3\n2016,2,2,2\n')
     const { launchBrowser } = launchTracker()

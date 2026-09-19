@@ -56,8 +56,9 @@ lockup tipográfico); a paleta oficial é `#e4102f` (destaque/valência melhor),
      ultrapassagem que ganha anotação. A **extensão de três séries** (C205) usa o
      trio `--good=`/`--neutral=`/`--neutral-dark=` informado junto — melhor =
      vermelho/círculo/"↑ amplia", neutro = cinza/losango/"↗ cresce", neutro
-     escuro = tinta/triângulo/"↘ diminui" —, só no feed e sem projeção nem
-     cruzamento;
+     escuro = tinta/triângulo/"↘ diminui" —, só no feed, sem cruzamento e com
+     projeção no último período desde a C207 (marcadores finais vazados, faixa e
+     tracejado próprios);
    - **duas medidas por categoria → `delta`**: barra de variação com a base
      (0 → inicial) num tom e a extensão (inicial → final) noutro, os dois valores
      numa gutter de duas colunas e o vermelho fora do plot (sem valência);
@@ -96,6 +97,16 @@ lockup tipográfico); a paleta oficial é `#e4102f` (destaque/valência melhor),
      --source="Ministério da Saúde — CNES · leitos de internação por esfera jurídica" \
      --type=line --size=feed \
      --good="Hospital Estadual" --neutral="Rede municipal" --neutral-dark="Rede privada"
+   ```
+   Três séries com o último período projetado (extensão C207, feed):
+   ```bash
+   node scripts/build-chart-from-data.mjs --in=<arquivo> \
+     --headline="Produção estadual cresce 8x enquanto a municipal cai pela metade" \
+     --subtitle="Procedimentos ambulatoriais do SUS · Vitória da Conquista (BA) · 2015–2026" \
+     --source="Ministério da Saúde — Sistema de Informações Ambulatoriais do SUS (SIA/SUS)" \
+     --note="2026 é projeção pela média de janeiro a junho × 2." \
+     --type=line --size=feed \
+     --good="Estadual" --neutral="Rede privada" --neutral-dark="Municipal" --projected=2026
    ```
    Barra de variação (base + extensão, tabela de rótulo + inicial + final):
    ```bash
@@ -176,7 +187,8 @@ sufixo aos rótulos de valor (ex.: `"%"`). O `kicker` (spec) segue a **relação
 dos dados, não o layout — colunas verticais de categorias leem "Comparação",
 poucos períodos leem "Poucos períodos". Em `series`, `tone` ∈
 `good | bad` (os dois tons ou nenhum) ou `good | neutral | neutral-dark` (o trio
-da extensão C205, só no feed, sem `projectedLabel` nem `crossingLabel`); as
+da extensão C205/C207, só no feed, sem `crossingLabel`; a projeção no último
+período é certificada desde a C207); as
 séries compartilham os mesmos rótulos temporais; `rows` e `highlight` não entram
 nessas variantes.
 `projectedLabel` marca a projeção no último período e `crossingLabel` só é aceito
@@ -237,10 +249,15 @@ O builder **recusa** em vez de desenhar algo enganoso:
   círculo, "↑ amplia"; neutro = cinza `#78716c`, losango, "↗ cresce"; neutro
   escuro = tinta `#1c1917`, triângulo, "↘ diminui" (direções factuais, nunca
   "recua"/perda) — e o azul `#184e92` não entra em dado nesta variante.
-- **Projeção** (`--projected=`) só no último período das duas séries (o trio de
-  três séries não certifica projeção): último segmento tracejado, marcador final
-  vazado e nota do método; sem projeção não há faixa, tracejado nem ressalva
-  automática.
+- **Projeção** (`--projected=`) só no último período da linha multi-série
+  (certificada no par de 2 séries e no trio de 3 desde a C207): último segmento
+  tracejado, marcador final vazado (nas três formas do trio), faixa neutra com o
+  rótulo "projeção \<período>" no topo e nota do método. No par, a variação da
+  gutter fecha no último ponto **observado** ("±N% até \<período observado>");
+  no trio (C207), a variação fecha no próprio ponto projetado — o mesmo par da
+  manchete — também nomeado no rótulo superior (feedback do gate humano:
+  porcentagem tem de bater com o valor exibido e com a manchete). Sem projeção
+  não há faixa, tracejado nem ressalva automática.
 - **Cruzamento** (`--crossing=<período>`, só no par de 2 séries) só com
   confirmação textual e quando a série boa realmente ultrapassa a ruim naquele
   período; a anotação nunca é inferida sozinha.
@@ -271,10 +288,10 @@ O builder **recusa** em vez de desenhar algo enganoso:
   rótulo, valor não numérico, rótulo repetido. Pergunte à pessoa; não invente.
 - **"N pontos (> 7)"** → agrupe/remova categorias com a pessoa. Na linha
   multi-série o teto é 12 por série.
-- **Séries desalinhadas / tom ímpar (par ou trio incompletos) / projeção ou
-  cruzamento na linha de três séries / três séries fora do feed / cruzamento não
-  confirmado** → o builder pede a correção com mensagem acionável; nunca
-  interpola, completa nem infere ultrapassagem.
+- **Séries desalinhadas / tom ímpar (par ou trio incompletos) / cruzamento na
+  linha de três séries / três séries fora do feed / cruzamento não confirmado /
+  projeção fora do último período** → o builder pede a correção com mensagem
+  acionável; nunca interpola, completa nem infere ultrapassagem.
 - **"pizza não é gerada"** → ofereça barras horizontais.
 - **Número pt-BR:** `1.234,56` é lido como 1234,56; `1,5` como 1,5.
   **Separador único é sempre decimal:** `1.234` é lido como 1,234 e `1.500`
@@ -286,9 +303,9 @@ O builder **recusa** em vez de desenhar algo enganoso:
 
 - Design aprovado: `docs/plans/graficos-dados-instagram-ui-design.html` (inclui
   a variação certificada de linha de duas séries, com valência bom/ruim; a
-  extensão C205 de três séries observadas e a revisão C206 do rodapé/marca,
-  ambas pendentes de gate humano; base C203 — marca e paleta oficiais do kit
-  1313).
+  extensão C205 de três séries observadas; a revisão C207 da projeção no trio,
+  nova e aguardando gate humano; e a revisão C206 do rodapé/marca; base C203 —
+  marca e paleta oficiais do kit 1313).
 - Plano de intenção: `docs/plans/graficos-dados-instagram.md`; impl:
   `docs/plans/graficos-dados-instagram-impl.md`.
 - Marca oficial: `docs/plans/graficos-dados-marca-kit-1313.md` (impl:

@@ -187,16 +187,18 @@ const dualBody = (spec) => {
 
 /**
  * Three-series time line (approved C205 extension of the two-series variant,
- * feed only): melhor = red + circle + "↑ amplia"; neutro = gray + diamond +
- * "↗ cresce"; neutro escuro = ink + triangle + "↘ diminui" (factual direction,
- * never the bad valence "↓ recua"). Every tone travels by word + arrow + shape
- * + color, and the brand blue leaves the data entirely.
+ * projected final period certified by C207; feed only): melhor = red + circle +
+ * "↑ amplia"; neutro = gray + diamond + "↗ cresce"; neutro escuro = ink +
+ * triangle + "↘ diminui" (factual direction, never the bad valence "↓ recua").
+ * Every tone travels by word + arrow + shape + color, and the brand blue leaves
+ * the data entirely.
  */
 const TRIPLE_COLORS = {
   good: SOLLA_PALETTE.highlight,
   neutral: SOLLA_PALETTE.axis,
   'neutral-dark': SOLLA_PALETTE.ink,
   grid: SOLLA_PALETTE.barStrong,
+  paper: SOLLA_PALETTE.paper,
   ink: SOLLA_PALETTE.ink,
 }
 
@@ -206,6 +208,7 @@ const tripleBody = (spec) =>
   `<div class="triple-line-plot">${tripleLineChart({
     series: spec.series,
     size: 'feed',
+    projected: Boolean(spec.projectedLabel),
     colors: TRIPLE_COLORS,
     valence: TRIPLE_VALENCE,
     format: (row) => formatValue(row.value),
@@ -358,6 +361,12 @@ html, body { margin: 0; background: ${SOLLA_PALETTE.paper}; }
 .triple-end-metric { fill: ${SOLLA_PALETTE.ink}; font-weight: 850; font-variant-numeric: tabular-nums; }
 .triple-end-valence { font-weight: 850; }
 .triple-end-leader { fill: none; stroke-width: 3; stroke-linecap: square; stroke-linejoin: round; }
+.triple-projection-band { fill: ${SOLLA_PALETTE.barStrong}; fill-opacity: 0.16; }
+.triple-projection-label { fill: ${SOLLA_PALETTE.axis}; font-weight: 700; }
+.triple-series-projection { stroke-dasharray: 18 12; }
+.triple-marker-projected { fill: ${SOLLA_PALETTE.paper}; stroke-width: 5; stroke-linejoin: round; }
+.triple-projected .triple-end-metric { font-size: 30px; }
+.triple-projected .source { max-width: 620px; }
 .anchor { padding-top: 20px; }
 .anchor-number { color: ${SOLLA_PALETTE.highlight}; font-size: 300px; line-height: 0.86; letter-spacing: -0.065em; font-weight: 900; font-variant-numeric: tabular-nums; }
 .anchor-copy { max-width: 760px; margin: 40px 0 0; font-size: 52px; line-height: 1.12; font-weight: 750; }
@@ -426,6 +435,7 @@ export const renderChartHtml = (spec, { brandLogo: brandLogoDataUri } = {}) => {
   const seriesCount = Array.isArray(spec.series) ? spec.series.length : 0
   const dual = seriesCount === 2
   const triple = seriesCount === 3
+  const tripleProjected = triple && Boolean(spec.projectedLabel)
   const dualPositive = Boolean(spec.dualPositive)
   const dualPositiveStyles =
     !dualPositive || sizeKey !== 'feed'
@@ -480,7 +490,7 @@ export const renderChartHtml = (spec, { brandLogo: brandLogoDataUri } = {}) => {
     </style>
   </head>
   <body>
-    <article class="canvas${dual ? ' dual-series' : ''}${triple ? ' triple-series' : ''}" role="img" aria-label="${htmlEscape(spec.headline)}">
+    <article class="canvas${dual ? ' dual-series' : ''}${triple ? ' triple-series' : ''}${tripleProjected ? ' triple-projected' : ''}" role="img" aria-label="${htmlEscape(spec.headline)}">
       <div class="inner">
         <div class="top-rule"></div>
         <p class="context">${htmlEscape(kicker)}</p>

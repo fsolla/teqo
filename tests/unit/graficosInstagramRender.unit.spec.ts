@@ -411,6 +411,34 @@ describe('renderChartHtml — the three-series time line (C205)', () => {
   })
 })
 
+// C207 approved extension: the projected final period rides the same triad
+// (feed only) with the neutral band, the dashed last segment and the three
+// hollow markers, while the gutter variation still closes on the last observed
+// period.
+describe('renderChartHtml — the projected three-series line (C207)', () => {
+  const html = render(tripleSpec({ projectedLabel: '2026' }))
+  const svg = html.slice(html.indexOf('<svg'), html.indexOf('</svg>'))
+
+  it('marks the canvas and brings band, label, dash and hollow markers', () => {
+    expect(html).toContain('canvas triple-series triple-projected')
+    expect(svg).toContain('class="triple-projection-band"')
+    expect(svg).toContain('projeção')
+    expect(svg.match(/class="triple-series-projection/g)).toHaveLength(3)
+    expect(svg).toContain('class="triple-marker-projected triple-marker-projected-good"')
+    expect(svg).toContain('class="triple-marker-projected triple-marker-projected-neutral"')
+    expect(svg).toContain('class="triple-marker-projected triple-marker-projected-neutral-dark"')
+    expect(svg).not.toContain('Todos os pontos de cada série são observados')
+  })
+
+  it('ports the C207 classes and the reduced projected metric size', () => {
+    expect(html).toContain('.triple-projection-band { fill:')
+    expect(html).toContain('.triple-projection-label { fill:')
+    expect(html).toContain('.triple-marker-projected { fill:')
+    expect(html).toContain('.triple-projected .triple-end-metric { font-size: 30px; }')
+    expect(html).toContain('.triple-projected .source { max-width: 620px; }')
+  })
+})
+
 describe('renderChartHtml — the shared footer (C206 brand mark)', () => {
   it('hugs the official asset ratio on the feed canvas', () => {
     const html = render(spec())

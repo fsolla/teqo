@@ -479,7 +479,7 @@ describe('validateSpec — the two-series time line', () => {
   })
 })
 
-describe('validateSpec — the three-series time line (C205 extension)', () => {
+describe('validateSpec — the three-series time line (C205 extension, C207 projection)', () => {
   const annual = (values: number[]) =>
     values.map((value, index) => ({ label: `${2015 + index}`, value }))
   const tripleSpec = (overrides = {}) => ({
@@ -530,8 +530,9 @@ describe('validateSpec — the three-series time line (C205 extension)', () => {
     ).toThrow(/tom inválido/)
   })
 
-  it('refuses projection and crossing on the three-series extension', () => {
-    expect(() => validateSpec(tripleSpec({ projectedLabel: '2026' }))).toThrow(/projeção/)
+  it('certifies the projected last period (C207) and still refuses crossing', () => {
+    expect(validateSpec(tripleSpec({ projectedLabel: '2026' }))).toBeTruthy()
+    expect(() => validateSpec(tripleSpec({ projectedLabel: '2017' }))).toThrow(/último período/)
     expect(() => validateSpec(tripleSpec({ crossingLabel: '2026' }))).toThrow(/cruzamento/)
   })
 
