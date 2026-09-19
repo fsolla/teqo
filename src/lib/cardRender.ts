@@ -7,12 +7,22 @@
  * recorder instead of jsdom canvas.
  */
 
-import { BRAND_FALLBACK_FONT, NAME_CARD_SLOT, type CardModel, type CardRect } from './cardModels'
+import {
+  BRAND_FALLBACK_FONT,
+  NAME_CARD_SLOT,
+  TEAM_CARD_LABEL,
+  TEAM_CARD_NAME_SLOT,
+  type CardBanner,
+  type CardModel,
+  type CardNameBannerSlot,
+  type CardNameSlot,
+  type CardRect,
+} from './cardModels'
 import {
   fitCardName,
+  resolveFontSizeForCapHeight,
   type CardMeasureText,
   type CardNameFit,
-  type CardNameSlot,
   type CardTextMetrics,
 } from './cardNameFit'
 import {
@@ -28,8 +38,13 @@ export type CardDrawContext = {
   textAlign: CanvasTextAlign
   textBaseline: CanvasTextBaseline
   drawImage(image: CanvasImageSource, dx: number, dy: number, dWidth: number, dHeight: number): void
+  fillRect(x: number, y: number, width: number, height: number): void
   fillText(text: string, x: number, y: number): void
   measureText(text: string): CardTextMetrics
+  save(): void
+  restore(): void
+  translate(x: number, y: number): void
+  rotate(angle: number): void
 }
 
 export const createCardMeasure = (
@@ -62,14 +77,57 @@ export type CardNameDrawArgs = {
   slot?: CardNameSlot
 }
 
+type CardBannerDrawArgs = {
+  banner: CardBanner
+  text: string
+  fill: string
+  fontSize: number
+  capHeight: number
+  fontFamily: string
+}
+
 /**
- * S14 — draws only the fitted name (no base image) so the home tile preview
+ * S15 — draws one official top banner: the rotated rectangle plus its centered
+ * cap-height text. Both team banners (the fixed `TIME DE` label and the fitted
+ * name) share this so the measured geometry lives once.
+ */
+const drawCardBanner = (ctx: CardDrawContext, args: CardBannerDrawArgs): void => {
+  const { banner } = args
+
+  ctx.save()
+  ctx.translate(banner.centerX, banner.centerY)
+  ctx.rotate((banner.rotationDeg * Math.PI) / 180)
+  ctx.fillStyle = banner.background
+  ctx.fillRect(-banner.width / 2, -banner.height / 2, banner.width, banner.height)
+  ctx.font = `700 ${args.fontSize}px ${args.fontFamily}`
+  ctx.fillStyle = args.fill
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'alphabetic'
+  ctx.fillText(args.text, 0, args.capHeight / 2)
+  ctx.restore()
+}
+
+/**
+ * S14/S15 — draws only the fitted name (no base image) so the home tile preview
  * reuses the exact composer geometry. `fit.ok` is the caller's contract: a
- * failed fit never draws (names are never cut silently).
+ * failed fit never draws (names are never cut silently). Left slots draw on the
+ * master's border; the team slot draws the blue banner + centered name.
  */
 export const drawCardName = (ctx: CardDrawContext, args: CardNameDrawArgs): void => {
   const slot = args.slot ?? NAME_CARD_SLOT
   const { fit } = args
+
+  if (slot.align === 'center') {
+    drawCardBanner(ctx, {
+      banner: slot.banner,
+      text: fit.lines[0],
+      fill: slot.fill,
+      fontSize: fit.fontSize,
+      capHeight: fit.capHeight,
+      fontFamily: args.fontFamily,
+    })
+    return
+  }
 
   ctx.font = `700 ${fit.fontSize}px ${args.fontFamily}`
   ctx.fillStyle = slot.fill
@@ -124,4 +182,59 @@ export const renderPhotoCard = (
   ctx.drawImage(args.frame, 0, 0, args.frameSize.width, args.frameSize.height)
 
   return clampCardPhotoTransform(args.transform, args.photoSize, args.window)
+}
+
+export type TeamCardRenderArgs = {
+  base: CanvasImageSource
+  overlay: CanvasImageSource
+  photo: CanvasImageSource
+  photoSize: CardPhotoSize
+  transform: CardPhotoTransform
+  window: CardRect
+  name: string
+  fontFamily: string
+  measure: CardMeasureText
+  slot?: CardNameBannerSlot
+}
+
+export type TeamCardRenderResult = {
+  fit: CardNameFit
+  transform: CardPhotoTransform
+}
+
+/**
+ * S15 — the team card composition, in the measured order: master base → cutout
+ * photo (framed by the transform) → master front overlay → `TIME DE` banner →
+ * blue name banner (only when the name fits; never cut silently). The two
+ * banners are drawn by the renderer because neither master carries them.
+ */
+export const renderTeamCard = (
+  ctx: CardDrawContext,
+  model: CardModel,
+  args: TeamCardRenderArgs,
+): TeamCardRenderResult => {
+  ctx.drawImage(args.base, 0, 0, model.width, model.height)
+
+  const rect = cardPhotoDrawRect(args.transform, args.photoSize, args.window)
+  ctx.drawImage(args.photo, rect.x, rect.y, rect.width, rect.height)
+
+  ctx.drawImage(args.overlay, 0, 0, model.width, model.height)
+
+  drawCardBanner(ctx, {
+    banner: TEAM_CARD_LABEL,
+    text: TEAM_CARD_LABEL.text,
+    fill: TEAM_CARD_LABEL.fill,
+    fontSize: resolveFontSizeForCapHeight(args.measure, TEAM_CARD_LABEL.capHeight),
+    capHeight: TEAM_CARD_LABEL.capHeight,
+    fontFamily: args.fontFamily,
+  })
+
+  const slot = args.slot ?? TEAM_CARD_NAME_SLOT
+  const fit = fitCardName(args.name, args.measure, slot)
+  if (fit.ok) drawCardName(ctx, { fit, fontFamily: args.fontFamily, slot })
+
+  return {
+    fit,
+    transform: clampCardPhotoTransform(args.transform, args.photoSize, args.window),
+  }
 }

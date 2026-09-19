@@ -184,6 +184,11 @@ body,
   --campaign-band: #ebe9e9;
   --campaign-line: rgb(0 0 0 / 12%);
   --campaign-content-inset: clamp(20px, calc(25.36vw - 79.64px), 180px);
+  /* S15 — literal colors of the "Time de você" card banners, measured from the
+     reference card. The canvas renderer keeps the same literals in `src/lib`. */
+  --team-red: #e50e2f;
+  --team-yellow: #ffec01;
+  --team-blue: #0061a5;
   /* S9 — the "novidades" capture form sits on the light band, so the field
      border must be visible against it (the :root default is a white border
      for the dark WhatsApp page). */

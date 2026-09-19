@@ -21,6 +21,7 @@
   "license": "UNLICENSED",
   "type": "module",
   "scripts": {
+    "prebuild": "node scripts/copy-card-vision-assets.mjs",
     "build": "cross-env NODE_OPTIONS=\"--no-deprecation --conditions=react-server\" payload migrate && cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
     "db:start": "node scripts/db-start.mjs",
     "db:stop": "docker compose -p teqo down",
@@ -101,6 +102,7 @@
     "@fullcalendar/react": "7.0.2",
     "@hookform/resolvers": "^5.2.2",
     "@imgly/background-removal-node": "^1.4.5",
+    "@mediapipe/tasks-vision": "^1.0.1",
     "@payloadcms/db-postgres": "3.82.0",
     "@payloadcms/email-resend": "3.82.0",
     "@payloadcms/live-preview-react": "3.82.0",

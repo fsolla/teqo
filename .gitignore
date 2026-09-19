@@ -123,6 +123,9 @@ next-env.d.ts
 # Proprietary design font files kept only in the local workspace
 /public/arial-mt/
 
+# S15 — MediaPipe wasm runtime, copied from node_modules at dev/build time
+/public/cards/mediapipe/
+
 /data/encode/
 /data/poster-candidates/
 

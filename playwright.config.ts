@@ -221,6 +221,13 @@ export default defineConfig({
         DATABASE_URL: process.env.DATABASE_URL as string,
         PORT: webServerPort,
         /*
+         * S15 — the card-cutout engine is replaced by a deterministic stub in
+         * tests: no 12 MB wasm download, no inference, no console noise. The
+         * real engine is exercised manually (craft/UAT). CI's prod build passes
+         * the same flag in its "Build for e2e" step.
+         */
+        NEXT_PUBLIC_CARDS_CUTOUT_STUB: process.env.NEXT_PUBLIC_CARDS_CUTOUT_STUB ?? '1',
+        /*
          * C122 — the fake service-account key lets the agenda Google mirror
          * derive real states (synced/disabled/paused) in the server process.
          * It parses as a credential but fails locally at JWT signing, so any

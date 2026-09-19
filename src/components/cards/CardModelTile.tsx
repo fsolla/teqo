@@ -6,10 +6,11 @@ import type { CardModel } from '@/lib/cardModels'
 import { cn } from '@/lib/utils'
 
 /**
- * S13 — artwork preview of one card model, shared by the home section and the
- * `/cards` gallery. The name tile reuses the empty master with a `SEU NOME`
+ * S13/S15 — artwork preview of one card model, shared by the home section and
+ * the `/cards` gallery. The name tile reuses the empty master with a `SEU NOME`
  * preview drawn by the real composer pipeline (S14); the photo tiles show the
- * official transparent overlay above a neutral photo slot.
+ * official transparent overlay above a neutral photo slot; the team tile shows
+ * the filled example (`previewSrc`) with its `NOVO` badge.
  */
 export const CardModelTile = ({
   model,
@@ -50,10 +51,10 @@ export const CardModelTile = ({
     ) : null}
 
     <Image
-      src={model.assetSrc}
+      src={model.previewSrc ?? model.assetSrc}
       alt=""
       fill
-      sizes="(min-width: 1024px) 340px, 78vw"
+      sizes="(min-width: 1024px) 260px, 78vw"
       className="object-cover"
     />
 
@@ -62,6 +63,10 @@ export const CardModelTile = ({
     {selected ? (
       <span className="absolute top-3 right-3 inline-flex size-7 items-center justify-center rounded-full bg-(--pt-red) text-white shadow-md">
         <CheckIcon className="size-4" aria-hidden="true" />
+      </span>
+    ) : model.badge ? (
+      <span className="absolute top-3 right-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-black text-(--team-blue) shadow">
+        {model.badge}
       </span>
     ) : null}
   </span>

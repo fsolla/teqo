@@ -9,7 +9,7 @@
  * DOM and unit-testable with a deterministic fake.
  */
 
-import { NAME_CARD_SLOT } from './cardModels'
+import { NAME_CARD_SLOT, type CardNameBlockSlot, type CardNameSlot } from './cardModels'
 
 export type CardTextMetrics = {
   width: number
@@ -28,8 +28,6 @@ export type CardNameFit =
       capHeight: number
     }
   | { ok: false; reason: 'empty' | 'too-long' }
-
-export type CardNameSlot = typeof NAME_CARD_SLOT
 
 const CAP_PROBE = 'X'
 const LINE_HEIGHT_RATIO = 1.25
@@ -73,7 +71,7 @@ const fitSingleLine = (
 const fitTwoLines = (
   words: string[],
   measure: CardMeasureText,
-  slot: CardNameSlot,
+  slot: CardNameBlockSlot,
 ): { fontSize: number; lines: [string, string] } | null => {
   const idealSize = resolveFontSizeForCapHeight(measure, slot.capHeight)
   const maxBlockHeight = slot.maxBlockBottom - slot.capTop
@@ -134,7 +132,7 @@ export const fitCardName = (
   }
 
   const words = normalized.split(' ')
-  if (slot.maxLines >= 2 && words.length > 1) {
+  if (slot.align === 'left' && slot.maxLines >= 2 && words.length > 1) {
     const twoLines = fitTwoLines(words, measure, slot)
     if (twoLines !== null && twoLines.fontSize >= minFontSize) {
       return {

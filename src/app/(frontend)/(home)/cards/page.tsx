@@ -8,7 +8,7 @@ import { CardsStudio } from '@/components/cards/CardsStudio'
 import { isCardModelId } from '@/lib/cardModels'
 
 const intro =
-  'Escolha um dos três modelos, personalize com seu nome ou sua foto e baixe para compartilhar.'
+  'Escolha um dos quatro modelos, personalize com seu nome ou sua foto e baixe para compartilhar.'
 
 export const metadata: Metadata = {
   title: 'Crie seu card de apoio | Jorge Solla',

@@ -1,13 +1,22 @@
 import { describe, expect, it } from 'vitest'
 
-import { CARD_MODELS, NAME_CARD_SLOT, getCardModel, isCardModelId } from '@/lib/cardModels'
+import {
+  CARD_MODELS,
+  NAME_CARD_SLOT,
+  TEAM_CARD_LABEL,
+  TEAM_CARD_NAME_BANNER,
+  TEAM_CARD_NAME_SLOT,
+  getCardModel,
+  isCardModelId,
+} from '@/lib/cardModels'
 
-describe('card model catalog (S13)', () => {
-  it('exposes the three shipped models with unique ids', () => {
+describe('card model catalog (S13/S15)', () => {
+  it('exposes the four shipped models with unique ids', () => {
     expect(CARD_MODELS.map((model) => model.id)).toEqual([
       'eu-sou-solla',
       'perfil-quadrado',
       'perfil-retangular',
+      'time-de-voce',
     ])
     expect(new Set(CARD_MODELS.map((model) => model.id)).size).toBe(CARD_MODELS.length)
   })
@@ -50,6 +59,7 @@ describe('card model catalog (S13)', () => {
 
   it('guards the name slot geometry measured from the filled master', () => {
     expect(NAME_CARD_SLOT).toMatchObject({
+      align: 'left',
       leftX: 213,
       capTop: 430,
       capHeight: 106,
@@ -57,10 +67,58 @@ describe('card model catalog (S13)', () => {
     })
   })
 
+  it('pins the team model, its overlay assets and the measured photo window', () => {
+    expect(getCardModel('time-de-voce')).toMatchObject({
+      kind: 'team',
+      label: 'Time de você',
+      assetSrc: '/cards/team-card-base.png',
+      overlaySrc: '/cards/team-card-front.png',
+      previewSrc: '/cards/team-card-example.jpg',
+      badge: 'NOVO',
+      width: 1080,
+      height: 1440,
+      photoWindow: { x: 286, y: 439, width: 592, height: 577 },
+    })
+    expect(getCardModel('eu-sou-solla')?.overlaySrc).toBeUndefined()
+  })
+
+  it('guards the team banners and name slot measured from the example card', () => {
+    expect(TEAM_CARD_LABEL).toMatchObject({
+      text: 'TIME DE',
+      centerX: 545,
+      centerY: 162,
+      width: 693,
+      height: 118,
+      rotationDeg: -3.5,
+      background: '#e50e2f',
+      fill: '#ffec01',
+      capHeight: 93,
+    })
+    expect(TEAM_CARD_NAME_BANNER).toMatchObject({
+      centerX: 545,
+      centerY: 313,
+      width: 509,
+      height: 176,
+      rotationDeg: -4.1,
+      background: '#0061a5',
+      fill: '#ffffff',
+    })
+    expect(TEAM_CARD_NAME_SLOT).toMatchObject({
+      align: 'center',
+      banner: TEAM_CARD_NAME_BANNER,
+      capHeight: 130,
+      minCapHeight: 56,
+      maxInkWidth: 470,
+      maxLines: 1,
+      fill: '#ffffff',
+    })
+  })
+
   it('sanitizes query-param values through isCardModelId', () => {
     expect(isCardModelId('eu-sou-solla')).toBe(true)
     expect(isCardModelId('perfil-quadrado')).toBe(true)
     expect(isCardModelId('perfil-retangular')).toBe(true)
+    expect(isCardModelId('time-de-voce')).toBe(true)
     expect(isCardModelId('modelo-inventado')).toBe(false)
     expect(isCardModelId(['perfil-quadrado'])).toBe(false)
     expect(isCardModelId(undefined)).toBe(false)

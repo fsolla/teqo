@@ -12,10 +12,10 @@ const tileClassName =
   'group flex h-full w-full flex-col rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--pt-red) focus-visible:ring-offset-2 focus-visible:ring-offset-(--campaign-cream)'
 
 /**
- * S14 — the three models side by side on desktop and a one-item-with-peek snap
- * track on mobile, as buttons for the studio island: selecting a tile opens the
- * single composer in place (home or `/cards`). Both tracks come from the same
- * catalog (S13).
+ * S14/S15 — the four models side by side on desktop and a one-item-with-peek
+ * snap track on mobile, as buttons for the studio island: selecting a tile
+ * opens the single composer in place (home or `/cards`). Both tracks come from
+ * the same catalog (S13).
  */
 export const CardModelGallery = ({
   ariaLabel,
@@ -47,7 +47,7 @@ export const CardModelGallery = ({
     <div className="mt-8">
       <ul
         aria-label={`${ariaLabel} (desktop)`}
-        className="m-0 hidden list-none grid-cols-3 gap-5 p-0 sm:gap-6 lg:grid"
+        className="m-0 hidden list-none grid-cols-4 gap-5 p-0 sm:gap-6 lg:grid"
       >
         {CARD_MODELS.map((model) => (
           <li key={model.id} className="m-0">
@@ -68,7 +68,7 @@ export const CardModelGallery = ({
       </ul>
 
       <p className="mt-1 text-center text-xs font-semibold text-(--campaign-muted) lg:hidden">
-        Deslize para ver os três modelos
+        Deslize para ver os quatro modelos
       </p>
     </div>
   )
