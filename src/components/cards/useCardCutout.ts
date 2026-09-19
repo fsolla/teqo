@@ -5,7 +5,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { removeCardPhotoBackground } from '@/components/cards/cardCutout'
 import { harmonizeCardCutout } from '@/components/cards/cardPhotoHarmonyCanvas'
 import { TEAM_CARD_FACE_REFERENCE_SIZE, type CardRect } from '@/lib/cardModels'
-import { frameCardPhotoOnFace, type CardPhotoTransform } from '@/lib/cardPhotoTransform'
+import {
+  frameCardPhotoOnFace,
+  type CardAlphaBbox,
+  type CardFaceBox,
+  type CardPhotoTransform,
+} from '@/lib/cardPhotoTransform'
 
 export type CardCutoutState =
   | { status: 'idle' }
@@ -23,6 +28,9 @@ export type CardCutoutState =
       height: number
       /** Initial framing: cutout top on the slot top, face centered (S18). */
       transform: CardPhotoTransform
+      /** S20 — silhouette and detected face, kept for the fine-tuning anchor. */
+      bbox: CardAlphaBbox
+      face: CardFaceBox | null
     }
   | { status: 'error'; reason: 'engine' | 'empty' }
 
@@ -92,6 +100,8 @@ export const useCardCutout = (photoWindow: CardRect | undefined, harmonyReferenc
         width: result.width,
         height: result.height,
         transform,
+        bbox: result.bbox,
+        face: result.face,
       })
     },
     [photoWindow, harmonyReferenceSrc],

@@ -38,7 +38,9 @@ import {
   cardPhotoTransformsEqual,
   centerCardPhotoTransform,
   panCardPhotoTransform,
+  resolveCardPhotoAnchor,
   zoomCardPhotoTransform,
+  type CardPhotoClamp,
   type CardPhotoSize,
   type CardPhotoTransform,
 } from '@/lib/cardPhotoTransform'
@@ -205,6 +207,18 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     ? (photoTransform ?? teamReady?.transform ?? null)
     : photoTransform
 
+  /**
+   * S20 — the fine-tuning clamp context: the team's anchor is the detected face
+   * when usable, else the silhouette; the photo models keep the S13 defaults.
+   */
+  const photoClamp = useMemo<CardPhotoClamp>(
+    () => ({
+      minZoom: photoMinZoom,
+      anchorBox: teamReady ? resolveCardPhotoAnchor(teamReady.bbox, teamReady.face) : null,
+    }),
+    [photoMinZoom, teamReady],
+  )
+
   // Assets + font load once per model: typing/panning must not flip the preview
   // back into the loading state (flicker) nor re-announce the live region.
   useEffect(() => {
@@ -268,6 +282,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
           photoSize: { width: teamReady.width, height: teamReady.height },
           transform: effectiveTransform,
           window: photoWindow,
+          anchorBox: photoClamp.anchorBox,
           name,
           fontFamily,
           measure,
@@ -322,6 +337,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     photoSize,
     effectiveTransform,
     photoWindow,
+    photoClamp,
   ])
 
   const handlePhotoFile = async (file: File | undefined) => {
@@ -385,7 +401,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     const dy = (event.clientY - drag.y) * scale
     dragRef.current = { ...drag, x: event.clientX, y: event.clientY }
     withTransform((transform, size, window) =>
-      panCardPhotoTransform(transform, size, window, dx, dy, photoMinZoom),
+      panCardPhotoTransform(transform, size, window, dx, dy, photoClamp),
     )
   }
 
@@ -395,13 +411,13 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
 
   const panBy = (dx: number, dy: number) => {
     withTransform((transform, size, window) =>
-      panCardPhotoTransform(transform, size, window, dx, dy, photoMinZoom),
+      panCardPhotoTransform(transform, size, window, dx, dy, photoClamp),
     )
   }
 
   const zoomTo = (zoom: number) => {
     withTransform((transform, size, window) =>
-      zoomCardPhotoTransform(transform, size, window, zoom, { minZoom: photoMinZoom }),
+      zoomCardPhotoTransform(transform, size, window, zoom, photoClamp),
     )
   }
 
